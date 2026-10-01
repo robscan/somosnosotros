@@ -9,7 +9,7 @@ import { IconoCorreo } from "@/components/ui/Iconos";
 import { LogoApple, LogoGoogle } from "@/components/ui/LogosEntrar";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
 import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/entrarCon";
-import { apuntarVuelta, desdeElReferente, leerDesde } from "@/lib/historial";
+import { apuntarVuelta, desdeElReferente, haciaDonde, leerDesde } from "@/lib/historial";
 import { correoValido } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import Limpiar from "@/components/ui/Limpiar";
@@ -129,16 +129,20 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
     return leerDesde(window.history.state) ?? desdeElReferente(document.referrer, window.location.origin, window.location.pathname);
   }
 
+  /** Lo que se apunta para el regreso: cuántas entradas tiene el historial y hasta dónde retroceder al volver (`haciaDonde`). */
+  function apunte() {
+    const desde = deDondeVengo();
+    apuntarVuelta(window.sessionStorage, { siguiente, largo: window.history.length, hacia: haciaDonde(desde, siguiente), detras: desde !== null, cuando: Date.now() });
+  }
+
   /**
-   * Se apunta de qué pantalla se vino antes de salir hacia Apple o Google (OL-069). La vuelta del proveedor es una carga
-   * completa y deja su pantalla pegada detrás del destino; con el apunte, `Navegacion` repone la de la persona y Atrás
-   * no sale del sitio. Se apunta al llegar, no al tocar el botón: así vale aunque el toque llegue antes que el
-   * JavaScript. Si no se sabe de dónde se vino, no se apunta nada y Atrás hace lo de siempre.
+   * Se apunta el regreso antes de salir hacia Apple o Google (OL-069 y OL-249). La vuelta del proveedor es una carga completa y deja sus pantallas
+   * entre las de la persona y el destino; con el apunte, `Navegacion` retrocede hasta la pantalla de la que se vino y Atrás (o el gesto) lleva a
+   * donde estaba la persona antes de la tarea. Se apunta al llegar, no al tocar el botón: así vale aunque el toque llegue antes que el JavaScript.
    */
   useEffect(() => {
-    if (proveedores.length === 0) return; // sin botones de Apple o Google no hay salida del sitio que reponer
-    const desde = deDondeVengo();
-    if (desde) apuntarVuelta(window.sessionStorage, { desde, siguiente, cuando: Date.now() });
+    if (proveedores.length === 0) return; // sin botones de Apple o Google no hay salida del sitio que deshacer
+    apunte();
     // Solo al llegar a la pantalla; al tocar el botón se refresca la hora por si la persona se quedó un rato.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -146,8 +150,7 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
   /** Al tocar el botón del proveedor, el apunte se refresca: uno viejo caduca a los 10 minutos. */
   function refrescarApunte(e: React.MouseEvent<HTMLAnchorElement>) {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // otra pestaña: su historial es suyo
-    const desde = deDondeVengo();
-    if (desde) apuntarVuelta(window.sessionStorage, { desde, siguiente, cuando: Date.now() });
+    apunte();
   }
 
   /** El campo aparece y se enfoca dentro del mismo toque: así el iPhone abre el teclado sin un toque más. */

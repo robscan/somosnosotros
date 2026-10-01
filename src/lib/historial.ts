@@ -5,7 +5,7 @@
  * de vuelta en la primera) va a la pantalla madre. `history.length` no sirve para decidirlo: cuenta también las entradas
  * de adelante y las de otros sitios. Terminar una tarea (guardar, entrar) mira de qué pantalla se vino para volver a ella.
  * La instala `Navegacion` (en el layout) sobre el historial del navegador; Atrás la lee al tocar.
- * Aquí vive también la vuelta de entrar con Apple o Google (OL-069), que es el único camino por el que la app sale del
+ * Aquí vive también la vuelta de entrar con Apple o Google (OL-069 y OL-249), que es el único camino por el que la app sale del
  * sitio y regresa con una carga completa.
  */
 import { rutaSegura } from "./rutas";
@@ -78,16 +78,27 @@ export function marcaDeLlegada(referente: string, origen: string, largoDelHistor
   }
 }
 
-/** Lo que la pantalla de Entrar deja apuntado antes de salir hacia Apple o Google, para saber a dónde vuelve Atrás. */
+/** Lo que la pantalla de Entrar deja apuntado antes de salir hacia Apple o Google, para deshacer al volver lo que el proveedor añade al historial. */
 export const APUNTE_VUELTA = "sn_vuelta";
+/** Lo que deja el rebobinado (`rebobinar`) para comprobar dónde se aterrizó. */
+export const APUNTE_REBOBINADO = "sn_rebobinado";
 /** El apunte caduca con el intento de entrar (10 minutos): pasado eso, la carga ya no es aquella vuelta. */
 const VIGENCIA_APUNTE_MS = 600_000;
+/** El aterrizaje del rebobinado es cosa de unos segundos. */
+const VIGENCIA_REBOBINADO_MS = 60_000;
+/** Lo más que se retrocede: Apple y Google añaden una o dos entradas; más de esto no es lo que se esperaba. */
+const MAXIMO_PASOS = 12;
 
 /** Lo que se usa del almacén de la pestaña (en las pruebas, uno de mentira). */
 export type Almacen = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-/** De qué pantalla se vino y a cuál iba, apuntado al salir hacia el proveedor. */
-export type Apunte = { desde: string; siguiente: string; cuando: number };
+/**
+ * Lo que apunta Entrar al llegar y al tocar el botón del proveedor: a dónde iba la persona (`siguiente`), cuántas entradas tenía el historial
+ * (`largo`), hasta dónde se retrocede al volver (`hacia`): `origen` si la pantalla de la que se vino es la misma a la que se vuelve (Voy desde una
+ * ficha, que vuelve a esa ficha), y `entrar` si es otra (el «+» desde Agenda, que va a /nuevo); y si se sabe que Entrar tiene una pantalla de la app detrás
+ * (`detras`), para que la que aterrice en su lugar lo sepa también y Atrás pueda volver con el historial.
+ */
+export type Apunte = { siguiente: string; largo: number; hacia: "origen" | "entrar"; detras: boolean; cuando: number };
 
 /**
  * La pantalla de la app de la que se vino, leída del referente. Sirve cuando la entrada no la anotó porque se llegó
@@ -106,20 +117,25 @@ export function desdeElReferente(referente: string, origen: string, aqui: string
   }
 }
 
-/** Entrar lo apunta al tocar "Continuar con Apple" o "Continuar con Google". Si el almacén no está, no pasa nada. */
+/** Entrar lo apunta al llegar y al tocar "Continuar con Apple" o "Continuar con Google". Si el almacén no está, no pasa nada. */
 export function apuntarVuelta(almacen: Almacen | null, apunte: Apunte): void {
   try {
     almacen?.setItem(APUNTE_VUELTA, JSON.stringify(apunte));
   } catch {}
 }
 
+/** Hasta dónde retroceder al volver: a la pantalla de origen si es la misma a la que se vuelve (misma ruta); si no, a Entrar. */
+export function haciaDonde(desde: string | null, siguiente: string): Apunte["hacia"] {
+  return desde !== null && rutaDe(desde) === rutaDe(siguiente) ? "origen" : "entrar";
+}
+
 /**
- * La pantalla a la que debe volver Atrás, leída del apunte y borrándolo (sirve una sola vez, como el intento). Null si
- * no hay apunte, si no se entiende, si caducó o si esta carga no es la vuelta que esperaba: por cualquier otro camino
- * Atrás hace lo de siempre. Una ruta que no sea del sitio se cambia por el inicio: el apunte vive en la pestaña y
- * nadie puede usarlo para mandar a la persona fuera.
+ * El apunte, leído y borrado (sirve una sola vez, como el intento). Null si no hay, si no se entiende, si caducó o si esta carga no es la vuelta que
+ * esperaba: solo cuenta la que llega a la ruta de destino, y por cualquier otro camino Atrás hace lo de siempre. Cuenta la ruta y no la dirección
+ * entera porque la pantalla de destino aplica la intención (`?accion=voy`) y se redirige a su dirección limpia: la carga de la vuelta nunca lleva
+ * la consulta con la que se salió.
  */
-export function leerVuelta(almacen: Almacen | null, url: string, ahora: number): string | null {
+export function leerVuelta(almacen: Almacen | null, url: string, ahora: number): Apunte | null {
   let crudo: string | null = null;
   try {
     crudo = almacen?.getItem(APUNTE_VUELTA) ?? null;
@@ -130,10 +146,73 @@ export function leerVuelta(almacen: Almacen | null, url: string, ahora: number):
   if (!crudo) return null;
   try {
     const a = JSON.parse(crudo) as Partial<Apunte>;
-    if (typeof a.desde !== "string" || typeof a.siguiente !== "string" || typeof a.cuando !== "number") return null;
+    if (typeof a.siguiente !== "string" || !Number.isInteger(a.largo) || (a.hacia !== "origen" && a.hacia !== "entrar") || typeof a.detras !== "boolean" || typeof a.cuando !== "number") return null;
     if (ahora - a.cuando > VIGENCIA_APUNTE_MS || a.cuando > ahora + 60_000) return null;
-    if (a.siguiente !== url) return null;
-    return rutaSegura(a.desde, "/");
+    if (rutaDe(a.siguiente) !== rutaDe(url)) return null;
+    return { siguiente: rutaSegura(a.siguiente, "/"), largo: a.largo as number, hacia: a.hacia, detras: a.detras, cuando: a.cuando };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Cuántas entradas retroceder: las que se añadieron desde Entrar (las del proveedor y la de esta carga) y una más si se llega hasta la pantalla de
+ * origen. Null si no cuadra (el historial no tiene las entradas que debía, o son demasiadas).
+ */
+export function pasosParaRebobinar(a: Apunte, largoAhora: number): number | null {
+  const pasos = largoAhora - a.largo + (a.hacia === "origen" ? 1 : 0);
+  return pasos >= 1 && pasos <= MAXIMO_PASOS ? pasos : null;
+}
+
+/** Lo que se usa del historial para rebobinar (en las pruebas, uno de mentira). */
+export type HistorialRebobinable = { readonly length: number; go(delta: number): void };
+
+/**
+ * Deshace al volver lo que Apple o Google añadieron al historial (OL-249, ajuste 6). La vuelta del proveedor llega con una carga completa, con su
+ * pantalla —y las que ella apile— entre las de la persona y el destino: con Atrás, o con el gesto de deslizar desde el borde, se salía del sitio o
+ * se volvía a la ficha. Apilar una entrada de reemplazo no sirve: el navegador se salta las que una página crea sin que la persona haya tocado
+ * nada (la «intervención del historial»), y justo el gesto es lo que usa la persona. Se retrocede de verdad, con `history.go`, hasta la pantalla
+ * de origen o hasta Entrar, que son entradas que la persona sí creó, y ahí `alAterrizar` hace el resto: queda el historial de antes de salir,
+ * con el destino en el lugar de Entrar. Devuelve cuántas entradas retrocedió, o null si esta carga no es la vuelta de entrar con un proveedor.
+ */
+export function rebobinar(h: HistorialRebobinable, almacen: Almacen | null, url: string, ahora: number): number | null {
+  const a = leerVuelta(almacen, url, ahora);
+  if (a === null) return null;
+  const pasos = pasosParaRebobinar(a, h.length);
+  if (pasos === null) return null;
+  try {
+    almacen?.setItem(APUNTE_REBOBINADO, JSON.stringify({ siguiente: a.siguiente, detras: a.detras, cuando: ahora }));
+  } catch {}
+  h.go(-pasos);
+  return pasos;
+}
+
+/** Lo que dice `alAterrizar`: qué hacer (`recargar` la pantalla, o `reemplazar` por el destino; ninguna, si todo está bien) y si hay una pantalla de la app detrás. */
+export type Aterrizaje = { accion: "nada" | "recargar" | "reemplazar"; destino: string; detras: boolean };
+
+/**
+ * Qué hacer al aterrizar tras `rebobinar` (en la carga, o al restaurarse la página desde la memoria del navegador, `restaurada`). Si se aterrizó en
+ * la ruta del destino no hay nada que mover (la pantalla de origen, o Entrar, que con sesión ya redirigió al destino); restaurada de la memoria
+ * del navegador, esa pantalla enseña lo que tenía al salir, sin la intención aplicada, así que se recarga. En cualquier otra ruta, algo no salió
+ * como se esperaba y se reemplaza por el destino, que es lo que pasaba antes. Null si esta carga no es un aterrizaje. `detras`: la entrada que
+ * aterriza en lugar de Entrar no conserva su marca (la redirección del servidor la deja sin estado), así que se le dice si hay una pantalla detrás.
+ */
+export function alAterrizar(almacen: Almacen | null, ruta: string, ahora: number, restaurada: boolean): Aterrizaje | null {
+  let crudo: string | null = null;
+  try {
+    crudo = almacen?.getItem(APUNTE_REBOBINADO) ?? null;
+    almacen?.removeItem(APUNTE_REBOBINADO);
+  } catch {
+    return null;
+  }
+  if (!crudo) return null;
+  try {
+    const a = JSON.parse(crudo) as { siguiente?: unknown; detras?: unknown; cuando?: unknown };
+    if (typeof a.siguiente !== "string" || typeof a.cuando !== "number" || ahora - a.cuando > VIGENCIA_REBOBINADO_MS || a.cuando > ahora + 60_000) return null;
+    const destino = rutaSegura(a.siguiente, "/");
+    const detras = a.detras === true;
+    if (rutaDe(destino) !== rutaDe(ruta)) return { accion: "reemplazar", destino, detras };
+    return { accion: restaurada ? "recargar" : "nada", destino, detras };
   } catch {
     return null;
   }
@@ -183,30 +262,4 @@ export function ponerMarca(h: Historial, llegada: number, ubicacion: () => strin
     reemplazar.call(h, conMarca(estado, marcaAlReemplazar(leerMarca(h.state), leerMarca(estado)), leerDesde(h.state) ?? leerDesde(estado)), titulo, url);
   };
   if (leerMarca(h.state) === null) reemplazar.call(h, conMarca(h.state, llegada), "");
-}
-
-/**
- * Lo que Next.js pone en el estado de sus entradas (`__NA` y la pantalla guardada). Su router mira dos cosas: al
- * escribir el historial, si el estado ya lleva `__NA` o `_N` lo deja pasar tal cual en vez de copiarle lo suyo y dar
- * la URL por navegada; al volver a una entrada, si no lleva `__NA` recarga la página. Una entrada con `_N` es, para
- * él, de fuera: no la toca al crearla y la recarga al volver. Justo lo que necesita la pantalla que reponemos.
- */
-const AJENA_A_NEXT = { _N: true } as const;
-
-/**
- * Repone la pantalla de la que se vino al entrar con Apple o con Google (OL-069). La vuelta del proveedor llega con una
- * carga completa y deja su pantalla pegada detrás del destino, así que el primer Atrás (botón o gesto) salía del sitio.
- * Aquí la entrada que ocupa el destino pasa a ser la pantalla de origen y el destino se apila encima, con el estado que
- * Next.js ya le había puesto: queda una pantalla nuestra de por medio y Atrás vuelve a donde estaba la persona.
- * La entrada repuesta no lleva la pantalla guardada de Next.js —no la tenemos, es de otra ruta—, así que al volver a
- * ella su router recarga: la pantalla llega entera y `MemoriaScroll` repone la posición, como en cualquier recarga.
- * Devuelve a dónde se repuso, o null si esta carga no es la vuelta de entrar con un proveedor.
- */
-export function reponerPantallaAnterior(h: Historial, almacen: Almacen | null, url: string, ahora: number): string | null {
-  const origen = leerVuelta(almacen, url, ahora);
-  if (origen === null) return null;
-  const delDestino = h.state;
-  h.replaceState({ ...AJENA_A_NEXT }, "", origen);
-  h.pushState(delDestino, "", url);
-  return origen;
 }

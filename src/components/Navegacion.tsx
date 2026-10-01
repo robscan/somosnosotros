@@ -1,7 +1,7 @@
 "use client";
 
 import { crearRegistroVolver } from "@/lib/gestoAtras";
-import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, reponerPantallaAnterior, vuelveA } from "@/lib/historial";
+import { alAterrizar, hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, rebobinar, vuelveA } from "@/lib/historial";
 
 const INSTALADA = "__somosnosotrosMarca";
 
@@ -46,12 +46,23 @@ if (typeof window !== "undefined") {
   if (!w[INSTALADA]) {
     w[INSTALADA] = true;
     try {
-      ponerMarca(window.history, marcaDeLlegada(document.referrer, window.location.origin, window.history.length), () => window.location.pathname + window.location.search);
-      // Antes de que Next.js arranque: si esta carga es la vuelta de entrar con Apple o Google, la pantalla de la que
-      // se vino se repone en el historial, para que Atrás (y el gesto) no salgan del sitio a la del proveedor.
-      reponerPantallaAnterior(window.history, sesion(), window.location.pathname + window.location.search, Date.now());
+      // Antes de que Next.js arranque. Si esta carga es el aterrizaje de un rebobinado (`alAterrizar`), se comprueba que se llegó donde se debía y la
+      // marca de llegada cuenta la pantalla que hay detrás; si es la vuelta de entrar con Apple o Google, se retrocede hasta la pantalla de la que se
+      // vino (`rebobinar`).
+      const ruta = window.location.pathname;
+      const aterrizaje = alAterrizar(sesion(), ruta, Date.now(), false);
+      const llegada = Math.max(marcaDeLlegada(document.referrer, window.location.origin, window.history.length), aterrizaje?.detras ? 1 : 0);
+      ponerMarca(window.history, llegada, () => window.location.pathname + window.location.search);
+      if (aterrizaje?.accion === "reemplazar") window.location.replace(aterrizaje.destino);
+      else if (!aterrizaje) rebobinar(window.history, sesion(), ruta + window.location.search, Date.now());
     } catch {}
     window.addEventListener("popstate", () => alVolverSuscritos.forEach((fn) => fn()));
+    // Restaurada de la memoria del navegador (Safari lo hace al retroceder), la pantalla de aterrizaje enseña lo que tenía al salir y su carga no corre.
+    window.addEventListener("pageshow", (e) => {
+      const aterrizaje = e.persisted ? alAterrizar(sesion(), window.location.pathname, Date.now(), true) : null;
+      if (aterrizaje?.accion === "recargar") window.location.reload();
+      else if (aterrizaje?.accion === "reemplazar") window.location.replace(aterrizaje.destino);
+    });
     // Dentro de la app de iPhone (OL-205, `GestoAtrasPlugin.swift`): el gesto de deslizar desde el borde avisa aquí
     // en vez de navegar solo con el `WKBackForwardList` nativo; se ejecuta la misma función que ya usa "Atrás" o la
     // ✕ visibles (`ui/Atras.tsx`), la que respeta la marca propia del historial. En el navegador normal `Capacitor`
