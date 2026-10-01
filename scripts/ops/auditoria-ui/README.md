@@ -46,7 +46,7 @@ toque se mide con la resolución de un píxel.
 verosímiles; carteles públicos de `imagenes.json`). `npm run medir` lo levanta solo. Para usarlo a mano: `node
 respaldo-local/server.mjs 8823`, un `.env.local` temporal con `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8823` y una llave
 anon inventada, `next build && next start -p 3100`, y la sesión es la cookie `sb-127-auth-token` que exporta `fixture.mjs`
-(`cookie`). Nunca toca producción ni un `.env` real.
+(`cookie`). Con `PROVEEDORES=1` Entrar enseña Apple y Google (para probar la vuelta de un proveedor; `npm run medir` no lo usa). Nunca toca producción ni un `.env` real.
 
 ## Lo que queda de la auditoría
 

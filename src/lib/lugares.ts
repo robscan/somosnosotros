@@ -103,6 +103,48 @@ export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distan
   return { lista, km };
 }
 
+/** Un grupo de la lista de la hoja de Lugares: su título (que va pegado) y sus lugares, ya en orden. */
+export type GrupoLugares<T> = { clave: "con-eventos" | "sin-eventos"; titulo: string; lugares: T[] };
+
+/**
+ * La lista de la hoja en dos grupos con su título (OL-249, ajuste 7; propuesta del gestor, ante el pedido del founder de ordenar primero los lugares con
+ * eventos): «Con eventos», los que tienen un evento próximo, y «Sin eventos próximos». Un orden mezclado y sin explicar desorienta en un directorio; con
+ * los dos títulos se entiende solo, y lo que asoma en los dos renglones y medio de la hoja es lo más útil: adónde ir. Con ubicación, cada grupo va por
+ * distancia (como antes de los grupos); sin ella, el de eventos, del más próximo al más lejano en fecha, y el otro, por nombre. Un grupo sin lugares no
+ * existe: con filtros puestos pueden quedar uno o ninguno.
+ */
+export function agruparLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null): { grupos: GrupoLugares<T>[]; km: Map<string, number> } {
+  const con = ordenarLugares(
+    lugares.filter((l) => l.proximo !== null),
+    punto,
+  );
+  const sin = ordenarLugares(
+    lugares.filter((l) => l.proximo === null),
+    punto,
+  );
+  const porFecha = (a: T, b: T) => a.proximo!.inicio.localeCompare(b.proximo!.inicio) || compararNombres(a.nombre, b.nombre) || a.id.localeCompare(b.id);
+  const grupos: GrupoLugares<T>[] = [
+    { clave: "con-eventos", titulo: "Con eventos", lugares: punto ? con.lista : [...con.lista].sort(porFecha) },
+    { clave: "sin-eventos", titulo: "Sin eventos próximos", lugares: sin.lista },
+  ];
+  return { grupos: grupos.filter((g) => g.lugares.length > 0), km: new Map([...con.km, ...sin.km]) };
+}
+
+/**
+ * Los primeros `n` renglones de la lista, en sus grupos (la carga progresiva reparte en tandas cuánto se pinta): se llena el primer grupo y, si
+ * sobra, el siguiente; un grupo que no llega a pintar ningún renglón no sale. Cada grupo conserva su `total`, para el número junto al título.
+ */
+export function primerosDeGrupos<T>(grupos: GrupoLugares<T>[], n: number): (GrupoLugares<T> & { total: number })[] {
+  const salida: (GrupoLugares<T> & { total: number })[] = [];
+  let resto = n;
+  for (const g of grupos) {
+    if (resto <= 0) break;
+    salida.push({ ...g, lugares: g.lugares.slice(0, resto), total: g.lugares.length });
+    resto -= g.lugares.length;
+  }
+  return salida;
+}
+
 /** Cuántos lugares como mínimo (si no, se completa con los cercanos) y como tope al completar, en el encuadre inicial del mapa. */
 export const MIN_ENCUADRE_INICIAL = 3;
 export const TOPE_ENCUADRE_INICIAL = 6;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { APUNTE_VUELTA, apuntarVuelta, conMarca, desdeElReferente, hayPantallaAnterior, leerDesde, leerMarca, leerVuelta, marcaAlApilar, marcaAlReemplazar, marcaDeLlegada, ponerMarca, reponerPantallaAnterior, rutaDe, vuelveA, type Almacen, type Historial } from "./historial";
+import { alAterrizar, APUNTE_REBOBINADO, APUNTE_VUELTA, apuntarVuelta, conMarca, desdeElReferente, haciaDonde, hayPantallaAnterior, leerDesde, leerMarca, leerVuelta, marcaAlApilar, marcaAlReemplazar, marcaDeLlegada, pasosParaRebobinar, ponerMarca, rebobinar, rutaDe, vuelveA, type Almacen, type Apunte, type Historial } from "./historial";
 
 /** Un historial de navegador de mentira: entradas con estado y URL, apilar corta las de adelante, atrás y adelante. */
 class HistorialDePrueba implements Historial {
@@ -27,6 +27,10 @@ class HistorialDePrueba implements Historial {
   }
   back() {
     if (this.i > 0) this.i--;
+  }
+  /** `history.go`: se mueve entre las entradas, sin pasarse de los extremos. */
+  go(delta: number) {
+    this.i = Math.min(this.entradas.length - 1, Math.max(0, this.i + delta));
   }
 }
 
@@ -220,9 +224,9 @@ describe("volver de entrar con Apple o Google (OL-069)", () => {
     expect(desdeElReferente("no es una url", origen, "/entrar")).toBeNull();
   });
   it("el apunte sirve una sola vez, caduca y solo vale para la vuelta que esperaba", () => {
-    const bueno = { desde: "/lugares?ciudad=slp", siguiente: "/perfil", cuando: 1000 };
+    const bueno: Apunte = { siguiente: "/perfil", largo: 3, hacia: "entrar", detras: true, cuando: 1000 };
     const a = conApunte(bueno);
-    expect(leerVuelta(a, "/perfil", 2000)).toBe("/lugares?ciudad=slp");
+    expect(leerVuelta(a, "/perfil", 2000)).toEqual(bueno);
     expect(a.getItem(APUNTE_VUELTA)).toBeNull(); // se borra al leerlo
     expect(leerVuelta(a, "/perfil", 2000)).toBeNull();
     // Caducado (más de 10 minutos) o con la hora movida hacia atrás.
@@ -237,26 +241,30 @@ describe("volver de entrar con Apple o Google (OL-069)", () => {
     roto.setItem(APUNTE_VUELTA, "{no es json");
     expect(leerVuelta(roto, "/perfil", 2000)).toBeNull();
     expect(leerVuelta(conApunte({ siguiente: "/perfil", cuando: 1000 }), "/perfil", 2000)).toBeNull();
+    expect(leerVuelta(conApunte({ ...bueno, hacia: "otro" }), "/perfil", 2000)).toBeNull();
+    expect(leerVuelta(conApunte({ ...bueno, largo: 2.5 }), "/perfil", 2000)).toBeNull();
+    expect(leerVuelta(conApunte({ ...bueno, detras: "sí" }), "/perfil", 2000)).toBeNull();
+  });
+  it("la vuelta se reconoce por la ruta: la pantalla aplica la intención y se redirige a su dirección limpia", () => {
+    const a = (siguiente: string): Apunte => ({ siguiente, largo: 3, hacia: "origen", detras: true, cuando: 1000 });
+    expect(leerVuelta(conApunte(a("/eventos/1?accion=voy")), "/eventos/1", 2000)?.siguiente).toBe("/eventos/1?accion=voy");
+    expect(leerVuelta(conApunte(a("/lugares/7?accion=seguir")), "/lugares/7", 2000)).not.toBeNull();
+    expect(leerVuelta(conApunte(a("/eventos/1?accion=voy")), "/eventos/2", 2000)).toBeNull();
+    expect(leerVuelta(conApunte(a("/eventos/1?accion=voy")), "/entrar?siguiente=/eventos/1&error=apple", 2000)).toBeNull();
   });
   it("el apunte no puede mandar a la persona fuera del sitio", () => {
-    const fuera = (desde: string) => leerVuelta(conApunte({ desde, siguiente: "/perfil", cuando: 1000 }), "/perfil", 2000);
-    expect(fuera("https://otro.sitio/robo")).toBe("/");
-    expect(fuera("http://otro.sitio/robo")).toBe("/");
-    expect(fuera("//otro.sitio/robo")).toBe("/");
-    expect(fuera("/\\otro.sitio")).toBe("/");
-    expect(fuera("javascript:alert(1)")).toBe("/");
-    expect(fuera("")).toBe("/");
-    // Con espacios o saltos de línea delante, para colarse por delante de la comprobación.
-    expect(fuera(" //otro.sitio")).toBe("/");
-    expect(fuera("\n//otro.sitio")).toBe("/");
-    expect(fuera("\t//otro.sitio")).toBe("/");
-    expect(fuera("\nhttps://otro.sitio")).toBe("/");
-    expect(fuera(" /lugares")).toBe("/");
-    // Y lo que sí es una ruta del sitio pasa entera, con su consulta y su ancla.
+    const fuera = (siguiente: string) => leerVuelta(conApunte({ siguiente, largo: 3, hacia: "entrar", detras: true, cuando: 1000 }), rutaDe(siguiente), 2000)?.siguiente;
     expect(fuera("/lugares/7")).toBe("/lugares/7");
     expect(fuera("/artistas?hace=musica#fechas")).toBe("/artistas?hace=musica#fechas");
+    // Lo que no es una ruta del sitio se cambia por el inicio (con la misma ruta que lee la vuelta, aquí «/»).
+    const raro = (siguiente: string) => leerVuelta(conApunte({ siguiente, largo: 3, hacia: "entrar", detras: true, cuando: 1000 }), siguiente, 2000)?.siguiente;
+    expect(raro("https://otro.sitio/robo")).toBe("/");
+    expect(raro("//otro.sitio/robo")).toBe("/");
+    expect(raro("/\\otro.sitio")).toBe("/");
+    expect(raro("javascript:alert(1)")).toBe("/");
+    expect(raro(" //otro.sitio")).toBe("/");
   });
-  it("sin almacén, con el almacén bloqueado o sin apunte, el historial se queda como estaba", () => {
+  it("sin almacén o con el almacén bloqueado, el historial se queda como estaba", () => {
     // Modo privado o almacenamiento negado: el navegador lanza al leer o al escribir.
     const bloqueado: Almacen = {
       getItem() {
@@ -269,46 +277,111 @@ describe("volver de entrar con Apple o Google (OL-069)", () => {
         throw new Error("bloqueado");
       },
     };
-    expect(() => apuntarVuelta(bloqueado, { desde: "/lugares", siguiente: "/perfil", cuando: 1000 })).not.toThrow();
+    expect(() => apuntarVuelta(bloqueado, { siguiente: "/perfil", largo: 3, hacia: "entrar", detras: true, cuando: 1000 })).not.toThrow();
     expect(leerVuelta(bloqueado, "/perfil", 2000)).toBeNull();
     const h = new HistorialDePrueba("/perfil");
     instalar(h);
     const antes = structuredClone(h.entradas);
-    expect(reponerPantallaAnterior(h, bloqueado, "/perfil", 2000)).toBeNull();
-    expect(reponerPantallaAnterior(h, null, "/perfil", 2000)).toBeNull();
+    expect(rebobinar(h, bloqueado, "/perfil", 2000)).toBeNull();
+    expect(rebobinar(h, null, "/perfil", 2000)).toBeNull();
+    expect(alAterrizar(bloqueado, "/perfil", 2000, false)).toBeNull();
+    expect(alAterrizar(null, "/perfil", 2000, false)).toBeNull();
     expect(h.entradas).toEqual(antes);
-    // Y Atrás sigue decidiendo con la marca de siempre.
-    expect(atrasVuelve(h)).toBe(false);
+    expect(h.i).toBe(0);
   });
-  it("lo apuntado por Entrar es lo que lee la vuelta", () => {
-    const a = new AlmacenDePrueba();
-    apuntarVuelta(a, { desde: "/artistas", siguiente: "/eventos/1?accion=voy", cuando: 1000 });
-    expect(leerVuelta(a, "/eventos/1?accion=voy", 1500)).toBe("/artistas");
-    expect(() => apuntarVuelta(null, { desde: "/x", siguiente: "/y", cuando: 1 })).not.toThrow();
+  it("hasta dónde retroceder: a la pantalla de origen si es la misma a la que se vuelve, y si no, a Entrar", () => {
+    expect(haciaDonde("/eventos/1", "/eventos/1?accion=voy")).toBe("origen");
+    expect(haciaDonde("/lugares/7?x=1", "/lugares/7?accion=seguir")).toBe("origen");
+    expect(haciaDonde("/novedades", "/novedades")).toBe("origen");
+    expect(haciaDonde("/agenda", "/nuevo?tipo=evento")).toBe("entrar"); // el «+»
+    expect(haciaDonde("/lugares", "/lugares/7?accion=seguir")).toBe("entrar"); // Seguir desde la lista
+    expect(haciaDonde("/agenda", "/perfil")).toBe("entrar");
+    expect(haciaDonde(null, "/eventos/1?accion=voy")).toBe("entrar"); // sin saber de dónde se vino
   });
-  it("Atrás vuelve a la pantalla de la que se vino, no a la del proveedor", () => {
-    // El historial tal como queda medido: la pantalla del proveedor y, encima, el destino. El relevo no deja entrada
-    // propia (se reenvía antes de cargar del todo), así que el proveedor queda pegado detrás.
-    const h = new HistorialDePrueba("https://accounts.google.com/o/oauth2/v2/auth");
-    h.pushState(null, "", "/perfil");
-    instalar(h, marcaDeLlegada("https://somosnosotros.org/auth/google", "https://somosnosotros.org", h.length));
-    expect(atrasVuelve(h)).toBe(false); // sin la reposición, Atrás iría a la pantalla madre
-    expect(reponerPantallaAnterior(h, conApunte({ desde: "/artistas?hace=musica", siguiente: "/perfil", cuando: 1000 }), "/perfil", 2000)).toBe("/artistas?hace=musica");
-    next.reemplazar(h, "/perfil"); // Next.js arranca sobre el destino
-    expect(h.url).toBe("/perfil");
-    expect(atrasVuelve(h)).toBe(true);
-    h.back();
-    expect(h.url).toBe("/artistas?hace=musica");
-    expect((h.state as { __NA?: true }).__NA).toBeUndefined(); // sin la pantalla guardada de Next.js: la recarga entera
-    expect(atrasVuelve(h)).toBe(false); // y desde ahí, a la pantalla madre: tampoco sale a la del proveedor
+  it("cuántas entradas retroceder: las que se añadieron desde Entrar y, hacia el origen, una más", () => {
+    const entrar = (largo: number): Apunte => ({ siguiente: "/perfil", largo, hacia: "entrar", detras: true, cuando: 1 });
+    const origen = (largo: number): Apunte => ({ siguiente: "/eventos/1", largo, hacia: "origen", detras: true, cuando: 1 });
+    // Entrar era la entrada 4 (largo 4); el proveedor añadió una y esta carga otra: 6 entradas, dos de más.
+    expect(pasosParaRebobinar(entrar(4), 6)).toBe(2);
+    expect(pasosParaRebobinar(origen(4), 6)).toBe(3);
+    // Sin entradas añadidas (la carga ocupó el lugar de Entrar): nada que retroceder hacia Entrar; hacia el origen, una.
+    expect(pasosParaRebobinar(entrar(4), 4)).toBeNull();
+    expect(pasosParaRebobinar(origen(4), 4)).toBe(1);
+    // Lo que no cuadra: menos entradas de las que había, o demasiadas.
+    expect(pasosParaRebobinar(entrar(4), 3)).toBeNull();
+    expect(pasosParaRebobinar(entrar(4), 40)).toBeNull();
   });
-  it("por cualquier otro camino el historial se queda como estaba", () => {
-    const h = new HistorialDePrueba("/lugares");
-    instalar(h);
-    next.apilar(h, "/perfil");
-    const antes = structuredClone(h.entradas);
-    expect(reponerPantallaAnterior(h, new AlmacenDePrueba(), "/perfil", 2000)).toBeNull();
-    expect(h.entradas).toEqual(antes);
-    expect(h.length).toBe(2);
+  describe("el historial real, entrada por entrada", () => {
+    /** Agenda → ficha del evento → Entrar (con lo que apunta Entrar al llegar), como queda tras tocar «Voy» sin cuenta. */
+    function hastaEntrar(siguiente: string, camino: string[], pantallaDeEntrar = "/entrar") {
+      const h = new HistorialDePrueba("/agenda");
+      instalar(h);
+      for (const ruta of camino) next.apilar(h, ruta);
+      next.apilar(h, `${pantallaDeEntrar}?siguiente=${encodeURIComponent(siguiente)}`);
+      const almacen = new AlmacenDePrueba();
+      apuntarVuelta(almacen, { siguiente, largo: h.length, hacia: haciaDonde(leerDesde(h.state), siguiente), detras: leerDesde(h.state) !== null, cuando: 1000 });
+      return { h, almacen };
+    }
+    /** La persona sale al proveedor (que añade `paginas` entradas) y vuelve con una carga completa en `destino`: una entrada más, sin marca. */
+    function volverDelProveedor(h: HistorialDePrueba, destino: string, paginas = 1) {
+      // Entradas de otros documentos: no pasan por la marca (que envuelve solo el historial del documento de la app).
+      const apilar = (url: string) => HistorialDePrueba.prototype.pushState.call(h, null, "", url);
+      for (let i = 0; i < paginas; i++) apilar(`https://appleid.apple.com/paso-${i}`);
+      apilar(destino);
+      instalar(h, marcaDeLlegada("", "https://somosnosotros.org", h.length));
+    }
+    it("Voy en una ficha: se retrocede hasta la ficha, que es la entrada que la persona creó, y Atrás lleva a Agenda", () => {
+      for (const paginas of [1, 2, 3]) {
+        const { h, almacen } = hastaEntrar("/eventos/1?accion=voy", ["/eventos/1"]);
+        volverDelProveedor(h, "/eventos/1", paginas);
+        expect(atrasVuelve(h)).toBe(false); // sin rebobinar, Atrás saldría a la pantalla del proveedor
+        expect(rebobinar(h, almacen, "/eventos/1", 2000)).toBe(paginas + 2);
+        expect(h.url).toBe("/eventos/1"); // la ficha de antes de entrar, con su marca y su pantalla de detrás
+        expect(leerMarca(h.state)).toBe(1);
+        expect(leerDesde(h.state)).toBe("/agenda");
+        expect(atrasVuelve(h)).toBe(true);
+        h.back();
+        expect(h.url).toBe("/agenda");
+      }
+    });
+    it("el «+», Perfil y las demás tareas hacia otra ruta: se retrocede hasta Entrar, que con sesión redirige al destino", () => {
+      const { h, almacen } = hastaEntrar("/nuevo?tipo=evento", [], "/entrar");
+      volverDelProveedor(h, "/nuevo?tipo=evento", 2);
+      expect(rebobinar(h, almacen, "/nuevo?tipo=evento", 2000)).toBe(3);
+      expect(h.url).toMatch(/^\/entrar/);
+      next.reemplazar(h, "/nuevo?tipo=evento"); // el servidor redirige a la entrada de Entrar y Next.js la reemplaza por el destino
+      expect(h.entradas.slice(0, h.i + 1).map((e) => e.url)).toEqual(["/agenda", "/nuevo?tipo=evento"]);
+      expect(leerDesde(h.state)).toBe("/agenda");
+      h.back();
+      expect(h.url).toBe("/agenda");
+    });
+    it("el aterrizaje: en la ruta del destino no hay nada que mover; restaurada de la memoria, se recarga; en otra, se reemplaza por el destino", () => {
+      const aterrizar = (ruta: string, restaurada: boolean, detras = true) => {
+        const a = new AlmacenDePrueba();
+        a.setItem(APUNTE_REBOBINADO, JSON.stringify({ siguiente: "/eventos/1?accion=voy", detras, cuando: 5000 }));
+        return alAterrizar(a, ruta, 5000, restaurada);
+      };
+      expect(aterrizar("/eventos/1", false)).toEqual({ accion: "nada", destino: "/eventos/1?accion=voy", detras: true });
+      expect(aterrizar("/eventos/1", true)?.accion).toBe("recargar");
+      expect(aterrizar("/entrar", false)?.accion).toBe("reemplazar");
+      expect(aterrizar("/entrar", true)).toEqual({ accion: "reemplazar", destino: "/eventos/1?accion=voy", detras: true });
+      expect(aterrizar("/lugares", false)?.accion).toBe("reemplazar");
+      expect(aterrizar("/eventos/1", false, false)?.detras).toBe(false);
+      // Sirve una sola vez y caduca: una carga cualquiera, más tarde, no es un aterrizaje.
+      const a = new AlmacenDePrueba();
+      a.setItem(APUNTE_REBOBINADO, JSON.stringify({ siguiente: "/eventos/1", detras: true, cuando: 5000 }));
+      expect(alAterrizar(a, "/lugares", 5000 + 60_001, false)).toBeNull();
+      expect(a.getItem(APUNTE_REBOBINADO)).toBeNull();
+      expect(alAterrizar(a, "/lugares", 5000, false)).toBeNull();
+    });
+    it("por cualquier otro camino el historial se queda como estaba", () => {
+      const h = new HistorialDePrueba("/lugares");
+      instalar(h);
+      next.apilar(h, "/perfil");
+      const antes = structuredClone(h.entradas);
+      expect(rebobinar(h, new AlmacenDePrueba(), "/perfil", 2000)).toBeNull();
+      expect(h.entradas).toEqual(antes);
+      expect(h.i).toBe(1);
+    });
   });
 });

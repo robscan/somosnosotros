@@ -2,7 +2,7 @@ import { ocupaRango } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeUrl, type Cuando } from "./cuando";
 import type { EventoResumen } from "./eventos";
-import { esCooperacion, nombreSitio } from "./eventos";
+import { claseDeCosto, nombreSitio, type ClaseDeCosto } from "./eventos";
 import { diaCorto, diaLocal, localAIso, ZONA_INICIAL } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
 
@@ -126,13 +126,14 @@ export function textoDistancia(km: number): string {
   return `a ${km < 10 ? km.toFixed(1).replace(".0", "") : Math.round(km)} km`;
 }
 
-/** Cuánto cuesta (la hoja Filtros): sin precio es gratis y «Cooperación solidaria» es el costo sin cifra (OL-140). */
-export type Cuanto = "gratis" | "cooperacion";
+/** Cuánto cuesta (la hoja Filtros): las tres clases de `claseDeCosto`, que juntas cubren todos los eventos. */
+export type Cuanto = ClaseDeCosto;
 export const CUANTOS: { clave: Cuanto; etiqueta: string }[] = [
   { clave: "gratis", etiqueta: "Gratis" },
   { clave: "cooperacion", etiqueta: "Cooperación" },
+  { clave: "costo", etiqueta: "Con costo" },
 ];
-const cuesta = (e: Pick<EventoAgenda, "precio">, cuanto: readonly Cuanto[] = []) => cuanto.length === 0 || cuanto.some((c) => (c === "gratis" ? e.precio === null : esCooperacion(e.precio)));
+const cuesta = (e: Pick<EventoAgenda, "precio">, cuanto: readonly Cuanto[] = []) => cuanto.length === 0 || cuanto.includes(claseDeCosto(e.precio));
 
 /** Lo que la persona puso en la fila de contexto de Agenda (y de Inicio): Cuándo, Cuánto y si solo lo que sigue. */
 export type FiltrosAgenda = { cuando: Cuando | null; cuanto: Cuanto[]; siguiendo: boolean };
@@ -186,7 +187,7 @@ export type ContextoFiltro = {
   eventosSeguidos?: string[];
   /** Los días elegidos con Cuándo, o null: un evento cuenta en cada día que ocupa, en la zona del propio evento. */
   cuando: Cuando | null;
-  /** Solo lo gratis, solo lo de cooperación o los dos; vacío o sin él, cualquier precio. */
+  /** Las clases de costo elegidas (gratis, cooperación, con costo); vacío o sin él, cualquier precio. */
   cuanto?: readonly Cuanto[];
   /** La pestaña Nuevos: solo lo publicado desde ese instante (`corteNuevos`), lo más reciente primero y con el tope de `LIMITE_NUEVOS`; sin él, toda la agenda. */
   nuevosDesde?: number;

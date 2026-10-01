@@ -9,6 +9,9 @@
  *  termina la entrada, y con «reducir movimiento» o desde 792 nada se mueve. Y (ajuste del founder, 2026-09-30) el botón de volver arriba de
  *  las listas, en la hoja: aparece con la lista desplazada más de una pantalla, la devuelve a su principio sin cerrar la hoja (al instante con
  *  «reducir movimiento») y no sale con la ficha a la vista; desde 792 lo enseña el panel.
+ *  Y (ajustes 3 y 4 del founder, 2026-10-01) que `recoger` baje la hoja a su altura más baja cuando la persona mueve el mapa, y que al soltar con el dedo (toques
+ *  reales por CDP) la hoja vaya directo a su altura —un jalón rápido, a la siguiente; uno lento, a la más cercana— sin parar a medio camino, con la inercia de la
+ *  lista llena entera.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -62,6 +65,7 @@ before(async () => {
         const manejo = useRef(null);
         const renglones = Number(new URLSearchParams(location.search).get('renglones') ?? 14);
         window.qa.mostrar = () => manejo.current.mostrarLista();
+        window.qa.recoger = () => manejo.current.recoger();
         // El cuerpo es un solo elemento con data-cuerpo (así lo entrega CuerpoLugar) y la pastilla, otro hijo de la ficha.
         const piezas = {
           cuerpo: <div data-cuerpo><ul data-datos style={{ height: 130, listStyle: 'none' }}><li>datos</li></ul><div style={{ height: 1400 }}>el resto de la ficha</div></div>,
@@ -123,8 +127,8 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(ancho = 390, alto = 844, reducir = false, consulta = "") {
-  const context = await browser.newContext({ viewport: { width: ancho, height: alto }, reducedMotion: reducir ? "reduce" : "no-preference" });
+async function abrir(ancho = 390, alto = 844, reducir = false, consulta = "", tactil = false) {
+  const context = await browser.newContext({ viewport: { width: ancho, height: alto }, reducedMotion: reducir ? "reduce" : "no-preference", hasTouch: tactil, isMobile: tactil });
   const page = await context.newPage();
   const errores = [];
   page.on("pageerror", (e) => errores.push(e.message));
@@ -260,6 +264,130 @@ test("al filtrar, la lista recogida sube a asoma; en asoma o llena, o con la fic
   assert.deepEqual(page.errores, []);
 });
 
+test("cuando la persona mueve el mapa, `recoger` baja la hoja a su altura más baja: de asoma, de llena y con la ficha; en recogida no hace nada, ni en el panel", async () => {
+  const page = await abrir();
+  const recoger = async () => {
+    await page.evaluate(() => window.qa.recoger());
+    await page.waitForTimeout(900);
+    return estado(page);
+  };
+  assert.equal((await estado(page)).hoja, "asoma");
+  const desdeAsoma = await recoger();
+  assert.deepEqual([desdeAsoma.hoja, desdeAsoma.y], ["recogida", 0]);
+  assert.deepEqual([(await recoger()).hoja, (await recoger()).y], ["recogida", 0], "ya recogida, no hace nada");
+  await rueda(page, 650);
+  assert.equal((await estado(page)).hoja, "llena");
+  assert.equal((await recoger()).hoja, "recogida", "de llena también baja");
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  await page.waitForTimeout(900);
+  assert.deepEqual([(await estado(page)).ficha, (await estado(page)).hoja], [true, "media"]);
+  const conFicha = await recoger();
+  assert.deepEqual([conFicha.hoja, conFicha.y], ["recogida", 0], "la ficha baja a su cabecera");
+  assert.deepEqual(page.errores, []);
+  const panel = await abrir(1280, 800);
+  await panel.evaluate(() => { document.querySelector('[role="region"][aria-label="Lugares"]').scrollTop = 300; });
+  await panel.evaluate(() => window.qa.recoger());
+  await panel.waitForTimeout(500);
+  assert.equal((await estado(panel)).y, 300, "desde 792 la hoja es un panel: no se recoge");
+});
+
+/** Un jalón con el dedo, a mano (toques reales por CDP): `ms` de recorrido, `freno` > 1 lo va deteniendo y `quieto` es lo que espera parado antes de soltar.
+ *  Devuelve el desplazamiento cuadro a cuadro desde el momento de soltar y dónde quedó. */
+async function jalar(page, cdp, { y0, dy, ms, freno = 1, quieto = 0 }) {
+  await page.evaluate(() => {
+    const hoja = document.querySelector('[role="region"][aria-label="Lugares"]');
+    window.__traza = { soltado: null, y: [] };
+    hoja.addEventListener("touchend", () => (window.__traza.soltado = performance.now()), { once: true });
+    const paso = () => {
+      window.__traza.y.push([performance.now(), hoja.scrollTop]);
+      if (window.__traza.y.length < 1200) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  });
+  // Los toques llevan su propia hora (16 ms entre uno y otro): con varias pruebas a la vez, Chrome tarda más en recibirlos y, sin esto, el jalón saldría lento.
+  let hora = Date.now() / 1000;
+  const toque = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, timestamp: hora, touchPoints: type === "touchEnd" ? [] : [{ x: 195, y, id: 0 }] });
+  await toque("touchStart", y0);
+  const pasos = Math.max(2, Math.round(ms / 16));
+  for (let i = 1; i <= pasos; i++) {
+    hora += 0.016;
+    await toque("touchMove", y0 + dy * (1 - Math.pow(1 - i / pasos, freno)));
+    await page.waitForTimeout(16);
+  }
+  hora += quieto / 1000;
+  if (quieto) await page.waitForTimeout(quieto);
+  hora += 0.016;
+  await toque("touchEnd", 0);
+  await page.waitForTimeout(2600);
+  const { soltado, y } = await page.evaluate(() => window.__traza);
+  const trasSoltar = y.filter(([t]) => t >= soltado);
+  const final = Math.round(trasSoltar.at(-1)[1]);
+  let ultimo = 0;
+  trasSoltar.forEach(([, v], i) => {
+    if (i && Math.abs(v - trasSoltar[i - 1][1]) > 0.5) ultimo = i;
+  });
+  // Una parada a medio camino: 90 ms o más casi quieta (menos de 0,3 px por cuadro) antes de la última vez que se movió.
+  let parada = 0;
+  let desde = null;
+  for (let i = 1; i <= ultimo; i++) {
+    if (Math.abs(trasSoltar[i][1] - trasSoltar[i - 1][1]) < 0.3) {
+      desde ??= trasSoltar[i - 1][0];
+      if (trasSoltar[i][0] - desde >= 90) {
+        parada++;
+        desde = Infinity;
+      }
+    } else desde = null;
+  }
+  return { final, hastaQuieta: Math.round(trasSoltar[ultimo][0] - trasSoltar[0][0]), parada, mayor: Math.round(Math.max(...trasSoltar.map(([, v]) => v))), alSoltar: Math.round(trasSoltar[0][1]) };
+}
+
+test("al soltar, la hoja va directo a su altura: un jalón rápido, a la siguiente; un arrastre lento, a la más cercana; la lista llena conserva su inercia y la que baja de ella no queda entre dos alturas", async () => {
+  const page = await abrir(390, 844, false, "", true);
+  const cdp = await page.context().newCDPSession(page);
+  const poner = async (y) => {
+    await page.evaluate((y) => { document.querySelector('[role="region"][aria-label="Lugares"]').scrollTop = y; }, y);
+    await page.waitForTimeout(700);
+  };
+  const asoma = (await estado(page)).y;
+  cerca(asoma, 250);
+  const LLENA = 660;
+  const alturas = async (esperado, mensaje) => { const e = await estado(page); cerca(e.y, esperado, 2); assert.equal(e.hoja, { 0: "recogida", 250: "asoma", 660: "llena" }[esperado], mensaje); };
+
+  // Rápido hacia arriba, aunque no pase de la mitad: a la siguiente (de asoma, llena; de recogida, asoma), sin pararse a medio camino.
+  const sube = await jalar(page, cdp, { y0: 700, dy: -100, ms: 70 });
+  cerca(sube.final, LLENA, 2);
+  assert.equal(sube.parada, 0, "una sola animación, sin parar a medio camino");
+  assert.ok(sube.mayor <= LLENA + 1, "no se pasa de llena");
+  assert.ok(sube.hastaQuieta < 1000, `llega pronto (${sube.hastaQuieta} ms)`);
+  await alturas(LLENA, "llena");
+  // Rápido hacia abajo: a la anterior.
+  const baja = await jalar(page, cdp, { y0: 300, dy: 160, ms: 90 });
+  cerca(baja.final, asoma, 2);
+  assert.equal(baja.parada, 0);
+  assert.ok(baja.hastaQuieta < 1000);
+  const recoge = await jalar(page, cdp, { y0: 500, dy: 100, ms: 70 });
+  cerca(recoge.final, 0, 2);
+  assert.equal(recoge.parada, 0);
+  const sube2 = await jalar(page, cdp, { y0: 750, dy: -110, ms: 70 });
+  cerca(sube2.final, asoma, 2);
+  assert.equal(sube2.parada, 0);
+  // Lento y soltando quieto: a la más cercana, que es la de donde salió.
+  await poner(asoma);
+  cerca((await jalar(page, cdp, { y0: 700, dy: -70, ms: 900, freno: 3, quieto: 150 })).final, asoma, 2);
+  cerca((await jalar(page, cdp, { y0: 500, dy: 70, ms: 900, freno: 3, quieto: 150 })).final, asoma, 2);
+  // Pasado más de la mitad y soltado quieto: a la de ese lado.
+  const larga = await jalar(page, cdp, { y0: 700, dy: -400, ms: 1200, freno: 3, quieto: 150 });
+  cerca(larga.final, LLENA, 2);
+  // Llena: el contenido se desplaza con su inercia entera (no se acorta ni se ancla)...
+  await poner(LLENA);
+  const lista = await jalar(page, cdp, { y0: 600, dy: -200, ms: 150 });
+  assert.ok(lista.final > LLENA + 150, `la inercia de la lista sigue: terminó en ${lista.final}`);
+  // ...y la que baja de llena termina en una altura, nunca entre dos (en Safari se detiene en llena; Chrome sigue y se ancla en la de abajo).
+  const vuelve = await jalar(page, cdp, { y0: 300, dy: 300, ms: 120 });
+  assert.ok([asoma, LLENA].some((altura) => Math.abs(vuelve.final - altura) <= 2), `terminó en ${vuelve.final}`);
+  assert.deepEqual(page.errores, []);
+});
+
 test("en reposo el mapa recibe los toques del hueco y la hoja los del cuerpo", async () => {
   const page = await abrir();
   const arriba = await page.evaluate(() => document.elementFromPoint(195, 100)?.id);
@@ -292,6 +420,8 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   });
   cerca(media.visible, esperada, 3);
   assert.equal(media.compacta, false);
+  await rueda(page, 3000);
+  assert.deepEqual([(await estado(page)).hoja, (await estado(page)).compacta], ["llena", false], "un empujón largo desde media se detiene en llena, con la portada todavía a la vista");
   await rueda(page, 3000);
   const llena = await estado(page);
   assert.equal(llena.hoja, "llena");
@@ -418,7 +548,8 @@ test("la pastilla de Seguir vive en el héroe junto al menú «···» mientras
   cerca(enElHeroe.centroP, enElHeroe.centroM, 1); // en la fila del menú
   cerca(enElHeroe.hueco, 8, 1); // pegada a su izquierda
   assert.equal(Math.round(enElHeroe.alto), 48, "la pastilla mide lo de un toque");
-  await rueda(page, 3000);
+  await rueda(page, 3000); // llena: el empujón se detiene ahí
+  await rueda(page, 3000); // y este desplaza la ficha
   const llena = await estado(page);
   assert.equal(llena.hoja, "llena");
   assert.equal(llena.compacta, true);
@@ -536,8 +667,9 @@ test("volver arriba, como en las listas: la hoja llena y desplazada más de una 
 
 test("volver arriba con «reducir movimiento» llega al instante, y desde 792 el panel lo enseña igual", async () => {
   const quieto = await abrir(390, 844, true, "/?renglones=40");
-  await rueda(quieto, 300);
+  await rueda(quieto, 1400); // el empujón sube la hoja y se detiene en llena
   const principio = await estado(quieto);
+  assert.equal(principio.hoja, "llena");
   await rueda(quieto, 1400);
   const boton = quieto.getByRole("button", { name: "Volver arriba" });
   await boton.waitFor();

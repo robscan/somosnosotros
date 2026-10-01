@@ -17,6 +17,7 @@ import {
   sinSeguirSinSesion,
   textoDistancia,
   tituloPublicacion,
+  type Cuanto,
   type EventoAgenda,
   type EventoBuscable,
 } from "./agenda";
@@ -138,14 +139,16 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
     expect(filtrarAgenda([expo], { ...sinFiltros, cuando: { desde: "2026-09-19", hasta: "2026-09-20" } }).map((e) => e.id)).toEqual(["expo"]);
     expect(filtrarAgenda([expo], { ...sinFiltros, cuando: { desde: "2026-10-01", hasta: "2026-10-02" } })).toEqual([]);
   });
-  it("Cuánto deja lo gratis (sin precio), lo de cooperación, o los dos; vacío no filtra", () => {
+  it("Cuánto deja lo gratis, lo de cooperación, lo que cuesta, o cualquier suma; vacío no filtra, y las tres clases cubren todo", () => {
     const gratis = evento({ id: "gratis", inicio: "2026-09-19T01:00:00Z", precio: null });
     const coop = evento({ id: "coop", inicio: "2026-09-19T02:00:00Z", precio: "Cooperación solidaria" });
     const pago = evento({ id: "pago", inicio: "2026-09-19T03:00:00Z", precio: "$150" });
-    const de = (cuanto: ("gratis" | "cooperacion")[]) => filtrarAgenda([gratis, coop, pago], { ...sinFiltros, cuanto }).map((e) => e.id);
+    const de = (cuanto: Cuanto[]) => filtrarAgenda([gratis, coop, pago], { ...sinFiltros, cuanto }).map((e) => e.id);
     expect(de(["gratis"])).toEqual(["gratis"]);
     expect(de(["cooperacion"])).toEqual(["coop"]);
+    expect(de(["costo"])).toEqual(["pago"]);
     expect(de(["gratis", "cooperacion"])).toEqual(["gratis", "coop"]);
+    expect(de(["gratis", "cooperacion", "costo"])).toEqual(["gratis", "coop", "pago"]);
     expect(de([])).toEqual(["gratis", "coop", "pago"]);
   });
   it("con `desde`, lo que empezó antes va en el primer día del rango y no en el que ya pasó", () => {

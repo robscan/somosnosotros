@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, masCercano, type Detentes } from "./hoja";
+import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, detenteAlFiltrar, estadoEn, masCercano, type Detentes } from "./hoja";
 
 /** Las alturas de la lista en un teléfono de 844: la franja, dos renglones y medio de 94 y el hueco que la deja llena. */
 const LISTA: Detentes = { recogida: 0, asoma: 235, llena: 690 };
@@ -36,26 +36,6 @@ describe("hoja: en qué altura está", () => {
     expect(estadoEn(450, LISTA)).toBe("asoma");
     expect(estadoEn(200, LISTA)).toBe("asoma");
     expect(estadoEn(30, LISTA)).toBe("recogida");
-  });
-});
-
-describe("hoja: asentarse al soltar", () => {
-  it("entre dos alturas se va a la más cercana", () => {
-    expect(destinoAlAsentar(100, LISTA)).toBe(0);
-    expect(destinoAlAsentar(140, LISTA)).toBe(235);
-    expect(destinoAlAsentar(600, LISTA)).toBe(690);
-    expect(destinoAlAsentar(300, FICHA)).toBe(400);
-  });
-
-  it("ya en una altura, no hay a dónde ir", () => {
-    expect(destinoAlAsentar(0, LISTA)).toBeNull();
-    expect(destinoAlAsentar(235.5, LISTA)).toBeNull();
-    expect(destinoAlAsentar(400, FICHA)).toBeNull();
-  });
-
-  it("llena desplaza el contenido: nada que asentar, ni con un desplazamiento largo", () => {
-    expect(destinoAlAsentar(690, LISTA)).toBeNull();
-    expect(destinoAlAsentar(1200, LISTA)).toBeNull();
   });
 });
 

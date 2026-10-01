@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
+import { agruparLugares, calleCorta, primerosDeGrupos, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -93,6 +93,66 @@ describe("ordenarLugares", () => {
     expect(lista.map((l) => l.id)).toEqual(["b", "a", "c"]);
     expect(km.get("b")).toBe(0);
     expect(km.get("c")!).toBeGreaterThan(5);
+  });
+});
+
+describe("agruparLugares", () => {
+  const base = { tipo: "foro" as const, direccion: null, portada: null };
+  const evento = (id: string, inicio: string) => ({ id, inicio, zona: "America/Mexico_City", titulo: "Evento" });
+  const sinEvento = { ...base, id: "s1", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: null };
+  const otroSinEvento = { ...base, id: "s2", nombre: "Alfa", lat: 22.3, lng: -100.9, proximo: null };
+  const tarde = { ...base, id: "c1", nombre: "Beta", lat: 22.16, lng: -100.98, proximo: evento("e1", "2026-09-25T01:00:00Z") };
+  const pronto = { ...base, id: "c2", nombre: "Ñandú", lat: 22.2, lng: -100.9, proximo: evento("e2", "2026-09-20T01:00:00Z") };
+  const mismoDia = { ...base, id: "c3", nombre: "Aether", lat: 22.18, lng: -100.95, proximo: evento("e3", "2026-09-20T01:00:00Z") };
+  const todos = [sinEvento, tarde, otroSinEvento, pronto, mismoDia];
+  it("dos grupos con su título: primero «Con eventos» y luego «Sin eventos próximos»", () => {
+    const { grupos } = agruparLugares(todos, null);
+    expect(grupos.map((g) => [g.clave, g.titulo])).toEqual([
+      ["con-eventos", "Con eventos"],
+      ["sin-eventos", "Sin eventos próximos"],
+    ]);
+  });
+  it("sin ubicación: los de eventos, del más próximo al más lejano en fecha (a igual fecha, por nombre), y los demás por nombre", () => {
+    const { grupos } = agruparLugares(todos, null);
+    expect(grupos[0].lugares.map((l) => l.id)).toEqual(["c3", "c2", "c1"]);
+    expect(grupos[1].lugares.map((l) => l.id)).toEqual(["s2", "s1"]);
+  });
+  it("con ubicación: cada grupo por distancia, con los km de todos", () => {
+    const { grupos, km } = agruparLugares(todos, { lat: 22.16, lng: -100.98 });
+    expect(grupos[0].lugares.map((l) => l.id)).toEqual(["c1", "c3", "c2"]);
+    expect(grupos[1].lugares.map((l) => l.id)).toEqual(["s1", "s2"]);
+    expect(km.get("c1")).toBe(0);
+    expect([...km.keys()].sort()).toEqual(["c1", "c2", "c3", "s1", "s2"]);
+  });
+  it("un grupo sin lugares no existe: con filtros puestos queda uno, o ninguno", () => {
+    expect(agruparLugares([tarde, pronto], null).grupos.map((g) => g.clave)).toEqual(["con-eventos"]);
+    expect(agruparLugares([sinEvento], null).grupos.map((g) => g.clave)).toEqual(["sin-eventos"]);
+    expect(agruparLugares([], null).grupos).toEqual([]);
+  });
+  it("no pierde ni repite lugares y no toca la lista que recibe", () => {
+    const copia = [...todos];
+    const { grupos } = agruparLugares(todos, null);
+    expect(grupos.flatMap((g) => g.lugares.map((l) => l.id)).sort()).toEqual(["c1", "c2", "c3", "s1", "s2"]);
+    expect(todos).toEqual(copia);
+  });
+});
+
+describe("primerosDeGrupos", () => {
+  const grupos = [
+    { clave: "con-eventos" as const, titulo: "Con eventos", lugares: ["a", "b", "c"] },
+    { clave: "sin-eventos" as const, titulo: "Sin eventos próximos", lugares: ["d", "e"] },
+  ];
+  it("llena el primer grupo y, si sobra, el siguiente; cada grupo conserva su total", () => {
+    expect(primerosDeGrupos(grupos, 4)).toEqual([
+      { ...grupos[0], total: 3 },
+      { ...grupos[1], lugares: ["d"], total: 2 },
+    ]);
+    expect(primerosDeGrupos(grupos, 99).flatMap((g) => g.lugares)).toEqual(["a", "b", "c", "d", "e"]);
+  });
+  it("un grupo que no llega a pintar ningún renglón no sale", () => {
+    expect(primerosDeGrupos(grupos, 2)).toEqual([{ ...grupos[0], lugares: ["a", "b"], total: 3 }]);
+    expect(primerosDeGrupos(grupos, 3).map((g) => g.clave)).toEqual(["con-eventos"]);
+    expect(primerosDeGrupos(grupos, 0)).toEqual([]);
   });
 });
 

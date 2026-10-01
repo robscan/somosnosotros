@@ -254,6 +254,8 @@ const servidor = http.createServer(async (req, res) => {
   if (ruta === "/auth/v1/user") return responder(res, 200, usuario);
   if (ruta === "/auth/v1/token") return responder(res, 200, sesion);
   if (ruta === "/auth/v1/logout") return responder(res, 204);
+  // Con `PROVEEDORES=1`, Entrar enseña «Continuar con Apple» y «con Google» (para probar la vuelta de un proveedor); sin él, no (lo que mide `npm run medir`).
+  if (ruta === "/auth/v1/settings") return responder(res, 200, process.env.PROVEEDORES ? { external: { apple: true, google: true } } : {});
   if (ruta.startsWith("/auth/v1/.well-known")) return responder(res, 200, { keys: [] });
   if (ruta.startsWith("/auth/v1/")) return responder(res, 200, {});
   // RPC

@@ -62,8 +62,8 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
       ? Promise.resolve(supabase.from("seguimientos").select("artista_id").eq("usuario_id", usuarioId).not("artista_id", "is", null).limit(1000)).then((r) => ((r.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id))
       : Promise.resolve(usuarioId ? [] : null);
   // «Tus planes» (OL-219): Voy + Me interesa, la misma consulta que ya usa Mi perfil (`cargarPersona`), sin filtro
-  // de ciudad (un compromiso ya hecho no deja de ser tuyo por cambiar de ciudad en Inicio). No entra en la regla de
-  // no repetir (OL-221): es la agenda de la persona, no un carril de descubrir.
+  // de ciudad (un compromiso ya hecho no deja de ser tuyo por cambiar de ciudad en Inicio). Los demás carriles
+  // le restan sus eventos al cargar con `agenda.asistencias` (`calcularCarrilesAgenda`), no con esta consulta.
   const personaPromise: Promise<Persona | null> = usuarioId ? cargarPersona(usuarioId) : Promise.resolve(null);
   const seguidosLugaresPromise = agendaPromise.then((a) => a.seguidos);
 

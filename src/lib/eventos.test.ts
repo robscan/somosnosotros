@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COOPERACION_SOLIDARIA, cartelAFormulario, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { COOPERACION_SOLIDARIA, cartelAFormulario, claseDeCosto, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -105,6 +105,18 @@ describe("validarEvento", () => {
   });
   it("lugar registrado inválido", () => {
     expect(validarEvento({ ...base, lugar_id: "x" }).errores.lugar_id).toBeTruthy();
+  });
+});
+
+describe("claseDeCosto", () => {
+  it("sin precio o con «Gratis» escrito a mano es gratis", () => {
+    for (const precio of [null, undefined, "", "  ", "Gratis", "gratis ", "Entrada libre", "Sin costo"]) expect(claseDeCosto(precio)).toBe("gratis");
+  });
+  it("lo que empieza por «Cooperación» es cooperación", () => {
+    for (const precio of [COOPERACION_SOLIDARIA, "Cooperación voluntaria", "cooperacion"]) expect(claseDeCosto(precio)).toBe("cooperacion");
+  });
+  it("cualquier otro texto es con costo, con cifra o sin ella", () => {
+    for (const precio of ["$150", "$120 a $250", "taquilla", "Con costo", "$100 estudiantes", "Gratis con boleto de entrada al museo", "Costo por confirmar"]) expect(claseDeCosto(precio)).toBe("costo");
   });
 });
 

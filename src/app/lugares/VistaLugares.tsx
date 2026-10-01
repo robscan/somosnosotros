@@ -18,7 +18,7 @@ import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { agruparLugares, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -340,7 +340,7 @@ type PropsCuerpo = {
  * de ese estado.
  */
 function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
-  const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
+  const { grupos, km } = useMemo(() => agruparLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
   // de la ficha abierta, que crece, lleva aro y sombra y queda encima de los demás (P8, 2026-09-29).
@@ -373,6 +373,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           tapaAbajo={tapaAbajo}
           onFuera={setFuera}
           onDespejar={() => hojaRef.current?.irA("recogida")}
+          onGesto={() => hojaRef.current?.recoger()}
         />
         {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={`${styles.avisoMapa} ${conEncuadrar ? styles.avisoMapaBajo : ""}`} />}
         <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
@@ -400,8 +401,8 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
         alAsentar={alAsentar}
         alLejos={alLejos}
       >
-        {lista.length > 0 ? (
-          <ListaLugares lugares={lista} km={km} seguidos={extra.seguidos} avisos={extra.avisos} alAbrir={onAbrir} />
+        {grupos.length > 0 ? (
+          <ListaLugares grupos={grupos} km={km} seguidos={extra.seguidos} avisos={extra.avisos} alAbrir={onAbrir} />
         ) : lugares.length === 0 ? (
           <section className={comun.vacio}>
             <h2>Lugares</h2>
