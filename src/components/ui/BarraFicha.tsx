@@ -20,8 +20,8 @@ type Props = {
 /**
  * La barra de una ficha (docs/rediseno/50, P6). Sobre la portada: Atrás y el menú «···» en círculos blancos, sin fondo, y al pasar
  * la portada, `data-compacta` en la ficha la vuelve la barra compacta (la portada oscurecida detrás del título); ese aviso lo da
- * el propio desplazamiento, sin volver a pintar nada. Sólida: la barra blanca de una ficha sin portada. Desde 792 no se ve: su Atrás
- * y su menú se le prestan a la barra de la app (`EnBarra`), que ya los trae en su sitio.
+ * el propio desplazamiento, sin volver a pintar nada. Sólida: la barra blanca de una ficha sin portada. Desde 792 queda solo su Atrás,
+ * sobre la portada (`Ficha.module.css`); el menú se le presta a la barra de la app (`EnBarra`), que ya lo trae en su sitio.
  */
 export default function BarraFicha({ volver, titulo, children, solida = false }: Props) {
   const barra = useRef<HTMLElement>(null);
@@ -52,7 +52,7 @@ export default function BarraFicha({ volver, titulo, children, solida = false }:
           </MenuAcciones>
         )}
       </header>
-      <EnBarra volver={volver} menu={menuEnLaBarraDeLaApp} />
+      <EnBarra menu={menuEnLaBarraDeLaApp} />
     </>
   );
 }

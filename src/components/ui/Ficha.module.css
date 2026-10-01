@@ -42,7 +42,7 @@
 /* 2. La barra: en reposo es transparente sobre el héroe, con Atrás y el menú en círculos blancos; compacta (`data-compacta`, que
    pone la página al pasar la portada o la hoja al desplazarse) toma la portada oscurecida, enseña el título y los botones pasan a
    blanco sin fondo: un héroe en miniatura. Sus hijos van en la segunda fila, Atrás a la izquierda, el título en medio y el menú
-   a la derecha; el asa de la hoja abarca las dos filas. Desde 792 la ficha no lleva barra: su Atrás y su menú están en la barra
+   a la derecha; el asa de la hoja abarca las dos filas. Desde 792 queda solo su Atrás, sobre la portada; el menú está en la barra
    de la app (nunca dos barras). */
 .barra {
   grid-area: barra;
@@ -93,9 +93,23 @@
   box-shadow: none;
   color: var(--primario-texto);
 }
+/* Desde 792 la barra de la app está encima y el menú «···» va en ella; de la barra de la ficha queda solo Atrás, quieto sobre la
+   portada, arriba a la izquierda y a la altura de los chips de la fila de contexto (founder, 2026-09-30: junto al «+» no se entendía).
+   Sin pegarse ni volverse compacta: su círculo blanco se queda como está. */
 @media (min-width: 792px) {
-  :global([data-vista="ficha"]) .barra {
+  :global([data-vista="ficha"]) .ficha > .barra {
+    --barra-arriba: var(--espacio-1); /* el mismo aire que los chips de la fila de contexto bajo la barra de la app */
+    position: static;
+    padding-bottom: 0;
+    background: none;
+  }
+  :global([data-vista="ficha"]) .ficha > .barra > :not(:first-child) {
     display: none;
+  }
+  :global([data-vista="ficha"]) .ficha > .barra > a {
+    background: var(--fondo);
+    box-shadow: var(--sombra);
+    color: var(--texto);
   }
 }
 
@@ -367,8 +381,16 @@
 .barraSolida > .tituloBarra {
   opacity: 1;
 }
+/* Desde 792, igual que la barra sobre la portada: solo Atrás, quieto y a la altura de los chips. */
 @media (min-width: 792px) {
-  :global([data-vista="ficha"]) .barraSolida {
+  :global([data-vista="ficha"]) .ficha > .barraSolida {
+    position: static;
+    height: auto;
+    padding: 0 var(--gutter);
+    background: none;
+    box-shadow: none;
+  }
+  :global([data-vista="ficha"]) .ficha > .barraSolida > :not(:first-child) {
     display: none;
   }
 }
