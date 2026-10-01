@@ -25,9 +25,9 @@ export type EstadoDestacado = "elegido" | "quitado" | "ninguno";
 export type Decidido = { estado: EstadoDestacado; plazo: string | null; creado: string | null };
 export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: null };
 /** Una tarjeta de la tira, lista para pintarse. `foto` es null cuando no tiene (quien la pinta pone su relleno o no lleva imagen);
- *  `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde); `hoy` (empieza hoy) y `van` los pone solo
+ *  `cuando` dice que `detalle` es un día y una hora (se pinta en violeta) y no un tipo o una disciplina; `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde); `hoy` (empieza hoy) y `van` los pone solo
  *  `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number; hoy?: boolean };
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number; hoy?: boolean; cuando?: boolean };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -74,16 +74,16 @@ export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {
-  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? null, titulo: e.titulo, detalle: minuscula(formatearCuando(e.inicio, null, ahora, e.zona)), sitio: sitioEnLista(e), van: e.van, hoy: diaCorto(e.inicio, ahora, e.zona) === "Hoy", inicio: e.inicio, fin: e.fin, zona: e.zona };
+  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? null, titulo: e.titulo, detalle: minuscula(formatearCuando(e.inicio, null, ahora, e.zona)), sitio: sitioEnLista(e), van: e.van, cuando: true, hoy: diaCorto(e.inicio, ahora, e.zona) === "Hoy", inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
-  return { id: l.id, href: hrefLugar(l), foto: l.portada, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
+  return { id: l.id, href: hrefLugar(l), foto: l.portada, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0, ...(l.proximo ? { cuando: true } : {}) };
 }
 
 /** La tarjeta de artista usa el mismo rectángulo que eventos; la fecha va sin el sitio. */
 export function tarjetaArtista(a: ArtistaLista, ahora = new Date()): Tarjeta {
-  return { id: a.id, href: hrefArtista(a), foto: a.foto, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0 };
+  return { id: a.id, href: hrefArtista(a), foto: a.foto, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0, ...(a.proxima ? { cuando: true } : {}) };
 }
 
 /** "hasta mañana" o "hasta el mié 30 de sep", en la zona de la ficha. */

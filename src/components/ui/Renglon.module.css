@@ -141,6 +141,18 @@
   color: var(--texto);
   font-weight: 500;
 }
+/* La línea de cuándo (la que lleva `b`: evento, próximo de un lugar o artista) va en violeta, icono y hora o fecha (founder,
+   2026-10-01, OL-251; #6d34c8 sobre #fff y #f6f5f1 pasa 4.5:1). Lo que sigue sin clase (« · Gratis», « · 2 van») vuelve al gris; las
+   etiquetas («Te interesa») traen su propio color. */
+.frente > small > span:has(> b) {
+  color: var(--primario);
+}
+.frente > small > span:has(> b) > b {
+  color: inherit;
+}
+.frente > small > span:has(> b) > span:not([class]) {
+  color: var(--texto-suave);
+}
 /* Pulsado y, con ratón, al pasar por encima: la fila entera se levanta en blanco con una marca del color de acción a
    la izquierda; el elegido (`aria-current`) va en el tono suave del color de acción. El resaltado llega a los bordes
    del gutter sin mover nada (sombra extendida). Va en la fila (con `:has()`) y no en el enlace: parado ahí se cortaba

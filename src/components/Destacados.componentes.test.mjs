@@ -1,6 +1,6 @@
 /** La tarjeta del carril (OL-176, bitácora 211; doc 50, P10): un solo rótulo sobre la foto («Te interesa» si la persona ya lo
- *  decidió, luego «Hoy», luego «N van»), la tarjeta sin foto compacta, los datos en dos líneas, las filas compartidas del carril
- *  (`subgrid`) y las medidas de los tokens `--tarjeta-*`, con el «+» dentro de la caja de la tarjeta en las redondas.
+ *  decidió, luego «Hoy», luego «N van»), la tarjeta sin foto compacta, los datos en dos líneas, cada tarjeta ajustada a su contenido
+ *  (sin filas compartidas, OL-251) y las medidas de los tokens `--tarjeta-*`, con el «+» dentro de la caja de la tarjeta en las redondas.
  *  «Te interesa» sale solo si el llamador pasa `estadoDe` (los carriles de eventos); sin ese prop (lugares, artistas) no aparece.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`, como las demás `.componentes.test.mjs` del repo). */
@@ -34,7 +34,7 @@ before(async () => {
       import Destacados from './src/components/Destacados';import './src/app/globals.css';
 
       // Una tarjeta de evento con cartel; los cambios pisan lo que haga falta (sin foto, hoy, un sitio largo…).
-      function tarjeta(id, van, cambios) { return { id, href: '/eventos/' + id, foto: '/cartel.jpg', titulo: 'Evento ' + id, detalle: 'vie 10 de oct · 19:00', sitio: 'Teatro de la Paz', van, ...cambios }; }
+      function tarjeta(id, van, cambios) { return { id, href: '/eventos/' + id, foto: '/cartel.jpg', titulo: 'Evento ' + id, detalle: 'vie 10 de oct · 19:00', sitio: 'Teatro de la Paz', van, cuando: true, ...cambios }; }
       function boton(id) { return { objeto: 'evento', decidido: false, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
       function botonDecidido(id) { return { objeto: 'evento', decidido: true, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
       // El glifo lo decide qué se hace: seguir un lugar o un artista (y, decidido, la palomita en los tres).
@@ -56,7 +56,7 @@ before(async () => {
       const sinSesion = tarjeta('sin-sesion', 4);
 
       // Un carril de lugares o artistas: tampoco se pasa estadoDe, y nunca trae «van» ni «hoy». Sus datos son una sola línea.
-      const lugar = tarjeta('un-lugar', 0, { sitio: undefined });
+      const lugar = tarjeta('un-lugar', 0, { sitio: undefined, detalle: 'Museo', cuando: false });
       const artista = tarjeta('un-artista', 0, { sitio: undefined });
       const lugarSeguido = tarjeta('lugar-seguido', 0, { sitio: undefined });
       const artistaSeguido = tarjeta('artista-seguido', 0, { sitio: undefined });
@@ -204,12 +204,15 @@ test("sin foto la tarjeta es compacta: sin imagen, el fondo suave de lo que no t
     const vecina = a.closest("ul").querySelector('a[href="/eventos/titulo-corto"]');
     return {
       fondo: fondo.backgroundColor, nombre: getComputedStyle(a.querySelector("b")).fontSize,
-      alto: Math.round(a.getBoundingClientRect().height), altoVecina: Math.round(vecina.getBoundingClientRect().height),
+      alto: Math.round(a.getBoundingClientRect().height), altoDatos: Math.round(a.querySelector("small").getBoundingClientRect().height),
+      altoVecina: Math.round(vecina.getBoundingClientRect().height), altoTituloVecina: Math.round(vecina.querySelector("b").getBoundingClientRect().height), altoDatosVecina: Math.round(vecina.querySelector("small").getBoundingClientRect().height),
+      altoFotoVecina: Math.round(vecina.querySelector("img").getBoundingClientRect().height),
     };
   });
   assert.equal(datos.fondo, "rgb(230, 230, 226)", "--fondo-miniatura");
   assert.equal(datos.nombre, "19px", "el nombre va a --letra-xl, más grande que el título de una tarjeta con foto (17px)");
-  assert.equal(datos.alto, datos.altoVecina, "mide lo mismo que las tarjetas con foto de su carril");
+  assert.equal(datos.alto - datos.altoDatos, datos.altoFotoVecina, "el fondo suave mide lo que la foto de las demás (el título se ajusta a cada tarjeta)");
+  assert.equal(datos.altoVecina, datos.altoFotoVecina + datos.altoTituloVecina + datos.altoDatosVecina, "y las tarjetas con foto suman foto + título + datos, sin hueco");
   assert.deepEqual(await rotulos(enlace), ["Hoy"]);
   assert.equal(await p.locator('a[href="/eventos/sin-foto"] + button').count(), 1);
 });
@@ -227,19 +230,33 @@ test("los datos van en dos líneas (cuándo, dónde), cada una con su elipsis", 
   assert.equal(await tarjeta(p, "un-lugar").locator("small > span").count(), 1);
 });
 
-test("las tarjetas comparten las filas del carril: los datos de todas quedan a la misma altura aunque un título ocupe dos líneas", async (t) => {
+test("cada tarjeta se ajusta a su contenido: con un título de una línea los datos quedan pegados a él, y las fotos siguen arriba y del mismo alto", async (t) => {
   const p = await pagina(t);
-  // Las líneas que de verdad tiene cada título (su caja mide lo mismo en todas: es la fila compartida).
-  const arribas = async (id) =>
+  const medidas = async (id) =>
     tarjeta(p, id).evaluate((a) => {
       const rango = document.createRange();
       rango.selectNodeContents(a.querySelector("b"));
-      return { titulo: new Set([...rango.getClientRects()].map((r) => Math.round(r.top))).size, datos: Math.round(a.querySelector("small").getBoundingClientRect().top) };
+      const lineas = new Set([...rango.getClientRects()].map((r) => Math.round(r.top))).size;
+      const b = a.querySelector("b").getBoundingClientRect(), d = a.querySelector("small").getBoundingClientRect(), f = a.querySelector("img").getBoundingClientRect();
+      return { lineas, hueco: Math.round(d.top - b.bottom), titulo: Math.round(b.height), fotoTop: Math.round(f.top), fotoAlto: Math.round(f.height), color: getComputedStyle(a.querySelector("small > span")).color };
     });
-  const corto = await arribas("titulo-corto");
-  const largo = await arribas("titulo-largo");
-  assert.ok(largo.titulo > corto.titulo, "el título largo sí ocupa más líneas");
-  assert.equal(corto.datos, largo.datos, "y aun así sus datos empiezan a la misma altura (subgrid)");
+  const corto = await medidas("titulo-corto");
+  const largo = await medidas("titulo-largo");
+  assert.equal(corto.lineas, 1);
+  assert.ok(largo.lineas > corto.lineas, "el título largo sí ocupa más líneas");
+  assert.ok(largo.titulo > corto.titulo, "la caja del título mide lo que su texto, no lo del título más largo del carril");
+  assert.equal(corto.hueco, 0, "con una línea los datos quedan pegados al título, sin hueco blanco");
+  assert.equal(largo.hueco, 0);
+  assert.equal(corto.fotoTop, largo.fotoTop, "las fotos siguen alineadas arriba");
+  assert.equal(corto.fotoAlto, largo.fotoAlto, "y del mismo alto (el alto explícito de --foto)");
+});
+
+test("la línea de cuándo va en violeta (--primario) y el sitio en el gris de siempre; un lugar sin próximo no la pinta", async (t) => {
+  const p = await pagina(t);
+  const colores = await tarjeta(p, "titulo-largo").evaluate((a) => [...a.querySelectorAll("small > span")].map((s) => getComputedStyle(s).color));
+  assert.deepEqual(colores, ["rgb(109, 52, 200)", "rgb(92, 92, 92)"], "cuándo en #6d34c8; dónde en --texto-suave");
+  const tipo = await tarjeta(p, "un-lugar").evaluate((a) => getComputedStyle(a.querySelector("small > span")).color);
+  assert.equal(tipo, "rgb(92, 92, 92)", "el tipo de un lugar sin próximo (detalle que no es un cuándo) queda en gris");
 });
 
 test("las medidas salen de los tokens de tarjeta: mediana 220×132, grande 165×248 (190×285 desde 1048) y chica 104", async (t) => {
