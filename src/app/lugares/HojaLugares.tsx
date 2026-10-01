@@ -167,7 +167,9 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     const arribaDelMapa = techo.getBoundingClientRect().top;
     const mandos = [...techo.querySelectorAll("[data-libre]")].map((m) => m.getBoundingClientRect());
     const libre = mandos.length ? mandos[0].top - arribaDelMapa + Math.max(...mandos.map((m) => m.bottom)) - arribaDelMapa : 0;
-    const asoma = alturaAsoma(fila ? RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
+    // Lo que hay antes del primer renglón (el título de su grupo) también asoma: los renglones que se ven siguen siendo dos y medio.
+    const antesDeLaFila = fila && lista ? fila.getBoundingClientRect().top - lista.getBoundingClientRect().top : 0;
+    const asoma = alturaAsoma(fila ? antesDeLaFila + RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
     return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity, techo: bajaElTecho };
   }, []);
 

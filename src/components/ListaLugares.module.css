@@ -1,5 +1,11 @@
-/* Los renglones de la hoja de Lugares: la lista pone su gutter; los renglones vienen de ui/Renglon.module.css */
-.lista > ul {
-  list-style: none;
-  padding: 0 var(--gutter);
+/* La lista de la hoja de Lugares. Sus títulos de grupo (`ui/Grupo`) se pegan dentro de la hoja, que es el contenedor que desplaza y empieza en `--tope`:
+   bajo la fila de contexto, que la hoja deja pasar por debajo (y que sube con la barra recogida: `--barra-vista`). Los renglones vienen de ui/Renglon.module.css. */
+.lista {
+  --pegado-grupo: calc(var(--barra-vista, var(--tope)) + var(--alto-cabecera) - var(--tope));
+}
+/* Desde 792 la hoja es el panel, que empieza bajo la fila de contexto: los títulos se pegan arriba del todo. */
+@media (min-width: 792px) {
+  .lista {
+    --pegado-grupo: 0px;
+  }
 }
