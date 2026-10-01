@@ -305,10 +305,38 @@ describe("Inicio: los carriles de una sola agenda (estelar, esta semana, nuevos)
     expect(r.estelar).toHaveLength(12);
     expect(r.estaSemana.map((e) => e.id).sort()).toEqual(["e12", "e13"]);
   });
-  it("'Tus planes' no le quita eventos a los carriles de descubrir: lo que ya está en tus planes sigue saliendo aquí (founder, OL-221)", () => {
-    const enTusPlanes = eventoAgenda("en-tus-planes", { lugar_id: "lugar-1", van: 50 });
-    expect(carrilTusPlanes([enTusPlanes], []).map((e) => e.id)).toEqual(["en-tus-planes"]);
-    const r = calcularCarrilesAgenda(agenda({ eventos: [enTusPlanes], seguidos: ["lugar-1"] }), ahora);
-    expect(r.estelar.map((e) => e.id)).toEqual(["en-tus-planes"]);
+  describe("lo que ya está en Tus planes (founder, 2026-10-01)", () => {
+    const enPlanes = (id: string, cambios = {}) => eventoAgenda(id, { lugar_id: "lugar-1", ...cambios });
+    it("un destacado que ya está en Tus planes no sale en el estelar", () => {
+      const planeado = enPlanes("planeado", { lugar_id: "lugar-9" });
+      const otro = enPlanes("otro", { lugar_id: "lugar-9" });
+      const r = calcularCarrilesAgenda(agenda({ eventos: [planeado, otro], seguidos: [], asistencias: { planeado: "voy" }, destacados: [{ id: "planeado", motivo: "elegido", hasta: null, van: 0 }, { id: "otro", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
+      expect(r.estelar.map((e) => e.id)).toEqual(["otro"]);
+    });
+    it("un favorito con Voy o Me interesa no sale en el estelar, y un evento de Tus planes no sale en ninguna otra fila", () => {
+      const voy = enPlanes("voy", { van: 9 });
+      const interesa = enPlanes("interesa", { van: 8 });
+      const libre = enPlanes("libre", { van: 1 });
+      const nuevos = ["n1", "n2", "n3"].map((id) => eventoAgenda(id, { inicio: "2026-10-20T01:00:00Z", fin: "2026-10-20T03:00:00Z", creado_en: "2026-09-22T18:00:00Z" }));
+      const planeadoNuevo = eventoAgenda("n-planeado", { inicio: "2026-10-21T01:00:00Z", fin: "2026-10-21T03:00:00Z", creado_en: "2026-09-22T18:00:00Z" });
+      const r = calcularCarrilesAgenda(agenda({ eventos: [voy, interesa, libre, planeadoNuevo, ...nuevos], seguidos: ["lugar-1"], asistencias: { voy: "voy", interesa: "me_interesa", "n-planeado": "voy" } }), ahora);
+      expect(r.titulo).toBe("Seleccionados para ti");
+      expect(r.estelar.map((e) => e.id)).toEqual(["libre"]);
+      expect(r.estaSemana).toEqual([]);
+      expect(r.nuevos.map((e) => e.id).sort()).toEqual(["n1", "n2", "n3"]);
+      const todos = [...r.estelar, ...r.estaSemana, ...r.nuevos].map((e) => e.id);
+      expect(todos).not.toContain("voy");
+      expect(todos).not.toContain("interesa");
+      expect(todos).not.toContain("n-planeado");
+    });
+    it("lo de Esta semana que ya está en Tus planes tampoco sale ahí", () => {
+      const r = calcularCarrilesAgenda(agenda({ eventos: [eventoAgenda("a"), eventoAgenda("b")], seguidos: [], asistencias: { a: "me_interesa" } }), ahora);
+      expect(r.estaSemana.map((e) => e.id)).toEqual(["b"]);
+    });
+    it("sin sesión (asistencias null) nada cambia", () => {
+      const e = eventoAgenda("a");
+      const r = calcularCarrilesAgenda(agenda({ eventos: [e], seguidos: null, asistencias: null, destacados: [{ id: "a", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
+      expect(r.estelar.map((x) => x.id)).toEqual(["a"]);
+    });
   });
 });

@@ -14,7 +14,7 @@ type Parte = { parte: "estelar" | "estaSemana" } | { parte: "nuevos"; ciudad: st
  * "Nuevos eventos", OL-219) — una consulta, no tres — y recalcula los carriles completos de
  * forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
- * "Tus planes" no les quita eventos (OL-221): ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
+ * Lo que ya está en «Tus planes» al cargar no sale en ninguno de los tres: ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
  */
 export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref, ...carril }: { agendaPromise: Promise<Agenda>; avisos: AvisosLista | null; verTodosHref: string } & Parte) {
   const agenda = await agendaPromise;

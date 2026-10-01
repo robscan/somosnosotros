@@ -123,12 +123,14 @@ export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "
 /** Los tres carriles de eventos de Inicio que salen de una sola `cargarAgenda` (estelar, esta semana, nuevos): se calculan
  *  juntos y puros, a partir del mismo objeto `Agenda`, para poder recalcularlos sin red desde cualquier carril que los
  *  pida (streaming, OL-156: cada carril puede recalcular esto por su cuenta sin depender del orden de llegada de otro).
- *  "Tus planes" no entra en la regla de no repetir (founder, 2026-09-26, OL-221): es la agenda de la persona, no un
- *  carril de descubrir; si le quitaba eventos a estos, al tocar «Voy» el evento desaparecía de la fila donde se tocó.
- *  Aquí sigue saliendo, con su check de «Voy». */
+ *  «Tus planes» (Voy y Me interesa) sí les quita eventos, pero solo al cargar (founder, 2026-10-01, sobre la regla de OL-221:
+ *  «Seleccionados para ti» no debe repetir lo que ya está en Tus planes): los ids vienen de `agenda.asistencias`, lo decidido
+ *  hasta esa carga. Lo que la persona decide durante la visita no recalcula nada y la tarjeta se queda donde está (si no,
+ *  al tocar «Voy» desaparecería de la fila donde se tocó, la queja de OL-221); en la próxima carga ya no sale. Sin sesión
+ *  (`asistencias` es null) nada cambia. */
 export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; nuevos: EventoAgenda[] };
 export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date()): CarrilesDeAgenda {
-  const vistos = new Set<string>();
+  const vistos = new Set(Object.keys(agenda.asistencias ?? {}));
   const favoritos = filtrarAgenda(agenda.eventos, { siguiendo: true, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: null });
   const hayFavoritos = favoritos.length > 0;
   const destacados = enOrden(agenda.destacados, agenda.eventos);
