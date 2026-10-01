@@ -109,11 +109,11 @@ const A = {
 };
 // Inicio solo destaca a quien tiene foto (doc 50, H-03): los tres con evento próximo usan el cartel público de su propio evento.
 const cartel = (slug) => imagenes.eventos[slug] ?? null;
-const artista = (id, slug, nombre, disciplina, detalle, tipo, descripcion = null, redes = [], foto = null) => ({
-  id, slug, nombre, nombre_orden: nombre.toLowerCase(), disciplina, detalle, tipo, foto, descripcion, ciudad: CIUDAD, redes, creado_por: null, visible: true, origen: null, creado_en: hace(40),
+const artista = (id, slug, nombre, disciplina, detalle, tipo, descripcion = null, redes = [], foto = null, portada = null) => ({
+  id, slug, nombre, nombre_orden: nombre.toLowerCase(), disciplina, detalle, tipo, foto, portada, descripcion, ciudad: CIUDAD, redes, creado_por: null, visible: true, origen: null, creado_en: hace(40),
 });
 const artistas = [
-  artista(A.osslp, "orquesta-sinfonica-de-san-luis-potosi", "Orquesta Sinfónica de San Luis Potosí", "musica", "Música académica y clásica", "grupo", "Orquesta estatal fundada en 1946.", [{ url: "https://www.facebook.com/osslp" }], cartel("concierto-de-la-orquesta-sinfonica-de-san-luis-potosi")),
+  artista(A.osslp, "orquesta-sinfonica-de-san-luis-potosi", "Orquesta Sinfónica de San Luis Potosí", "musica", "Música académica y clásica", "grupo", "Orquesta estatal fundada en 1946.", [{ url: "https://www.facebook.com/osslp" }], cartel("concierto-de-la-orquesta-sinfonica-de-san-luis-potosi"), imagenes.lugares["teatro-de-la-paz"] ?? null),
   artista(A.cadena, "aaron-cadena", "Aaron Cadena", "artes_visuales", "Fotografía", "solista", "Artista visual, fotoperiodista y fotógrafo documental originario de San Luis Potosí.", [{ url: "https://aaroncadena.example.com" }]),
   artista(A.pimpolina, "pimpolina", "Pimpolina", "teatro", "Clown", "solista", null, [], cartel("delirium-pollum-clown-y-pantomima-con-pimpolina")),
   artista(A.feleal, "feleal", "Feleal", "musica", "Acordeón", "solista", null, [], cartel("feleal-un-viaje-por-el-mundo-en-acordeon")),

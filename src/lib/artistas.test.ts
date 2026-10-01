@@ -147,7 +147,7 @@ describe("conProximaFecha y textoProximaFecha", () => {
     { artista_id: "orquesta", evento: { id: "e-sinfonica", titulo: "Sinfónica en San Sebastián", inicio: "2026-09-18T02:00:00Z", sitio: "Parroquia de San Sebastián", zona: SLP } },
     { artista_id: "mariachi", evento: { id: "e-demostracion", titulo: "Demostración folclórica", inicio: "2026-09-18T01:00:00Z", sitio: "Teatro de la Paz", zona: SLP } },
   ];
-  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null, slug: "x" };
+  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null, portada: null, slug: "x" };
   const artistas = [
     { ...base, id: "coro", nombre: "Coro Vuela Alto" },
     { ...base, id: "orquesta", nombre: "Orquesta de Cámara" },
@@ -196,7 +196,7 @@ describe("validarArtista", () => {
   it("acepta lo mínimo y limpia", () => {
     const { datos, errores } = validarArtista({ nombre: "  Los Vecinos ", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", enlaces: JSON.stringify(["@losvecinos"]), foto: "" });
     expect(errores).toEqual({});
-    expect(datos).toMatchObject({ nombre: "Los Vecinos", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", foto: null, redes: [{ red: "instagram", url: "https://www.instagram.com/losvecinos/" }] });
+    expect(datos).toMatchObject({ nombre: "Los Vecinos", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", foto: null, portada: null, redes: [{ red: "instagram", url: "https://www.instagram.com/losvecinos/" }] });
   });
   it("avisa del nombre vacío y la disciplina desconocida; un enlace que no es nada se descarta sin error", () => {
     const { datos, errores } = validarArtista({ nombre: "", disciplina: "pintura", tipo: "grupo", enlaces: JSON.stringify(["hola"]) });
@@ -210,6 +210,18 @@ describe("validarArtista", () => {
     expect(validarArtista({ nombre: "Los Vecinos", ciudad: "" }).datos.ciudad).toBe("San Luis Potosí");
     expect(validarArtista({ nombre: "Los Vecinos" }).datos.ciudad).toBe("San Luis Potosí");
   });
+  describe("OL-247: la portada sigue la misma regla que la foto", () => {
+    it("sin portada queda null y no estorba", () => {
+      expect(validarArtista({ nombre: "Los Vecinos" }).datos.portada).toBeNull();
+    });
+    it("una portada de otro dominio se rechaza salvo para la administración o si ya estaba guardada", () => {
+      const url = "https://evil.example/x.png";
+      expect(validarArtista({ nombre: "Los Vecinos", portada: url }).errores.portada).toBe("La portada no se subió bien. Intenta de nuevo.");
+      expect(validarArtista({ nombre: "Los Vecinos", portada: url }, { esAdmin: true }).errores.portada).toBeUndefined();
+      expect(validarArtista({ nombre: "Los Vecinos", portada: url }, { portadaActual: url }).errores.portada).toBeUndefined();
+    });
+  });
+
   describe("S-01 (docs/rediseno/46): la foto solo acepta cualquier dominio cuando esAdmin viene de la sesión", () => {
     it("sin esAdmin (por defecto), una foto de otro dominio se rechaza", () => {
       const { errores } = validarArtista({ nombre: "Los Vecinos", foto: "https://evil.example/x.png" });

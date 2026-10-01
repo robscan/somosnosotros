@@ -30,7 +30,7 @@ export type ResultadoArtista =
 
 
 function leer(formData: FormData) {
-  const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", "enlaces", "ciudad"];
+  const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", "portada", "enlaces", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
@@ -73,13 +73,13 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
 
 export async function actualizarArtista(id: string, _previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
   const { supabase, user } = await sesionOEntrar(`/artistas/${id}/editar`);
-  const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("artistas").select("foto").eq("id", id).maybeSingle()]);
-  const { datos, errores } = validarArtista(leer(formData), { esAdmin, fotoActual: existente?.foto ?? null });
+  const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("artistas").select("foto, portada").eq("id", id).maybeSingle()]);
+  const { datos, errores } = validarArtista(leer(formData), { esAdmin, fotoActual: existente?.foto ?? null, portadaActual: existente?.portada ?? null });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   // La ciudad también se edita: es un renglón del formulario (pedido del founder, 2026-09-16, noche).
-  const { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad } = datos;
-  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad };
+  const { nombre, disciplina, detalle, tipo, descripcion, foto, portada, redes, ciudad } = datos;
+  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, portada, redes, ciudad };
   const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id, slug").maybeSingle();
   if (error?.code === "23505") return { ok: false, errores: { nombre: `Ya hay otra ficha con ese nombre en ${ciudad}.` } };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu ficha?" };
