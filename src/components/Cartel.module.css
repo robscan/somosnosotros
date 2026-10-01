@@ -35,8 +35,10 @@
   height: 100%;
   object-fit: cover;
 }
-/* El visor: la imagen entera sobre negro, a pantalla completa; tocar donde sea (o la ✕) la cierra */
+/* El visor (`VisorImagen`): la imagen entera sobre negro, a pantalla completa, que se acerca con los gestos de la imagen (por eso `touch-action: none`:
+   el navegador no debe hacer zoom ni desplazar); tocar el negro, la imagen sin acercar o la ✕ lo cierra */
 .visor {
+  touch-action: none;
   position: fixed;
   inset: 0;
   z-index: var(--z-capa);
@@ -50,6 +52,13 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* El salto de un doble toque se anima; el pellizco y el arrastre siguen al dedo sin transición */
+.visorImagen[data-suave] {
+  transition: transform var(--duracion) var(--curva);
 }
 .visorCerrar {
   position: absolute;
