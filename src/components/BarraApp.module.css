@@ -29,8 +29,8 @@
 .derecho {
   justify-content: flex-end;
 }
-/* El lugar de Atrás y el del menú «···»: en el teléfono no hay (la barra no se ve con una ficha); desde 792 se reservan
-   aunque no haya ficha, para que lo demás no se mueva al pasar de una pantalla a otra. */
+/* El lugar del menú «···» (a la derecha) y su par vacío a la izquierda: en el teléfono no hay (la barra no se ve con una ficha);
+   desde 792 se reservan aunque no haya ficha, para que lo demás no se mueva al pasar de una pantalla a otra. */
 .hueco {
   display: none;
 }
@@ -53,8 +53,8 @@
     visibility 0s var(--duracion-recogida);
 }
 
-/* Desde 792, con una ficha a la vista, trae Atrás junto al «+» y el menú junto a la sesión, y la ficha ya no lleva cabecera
-   propia. Sus lados reservan sitio para ellos aunque no haya ficha, y su filete cierra la región. */
+/* Desde 792, con una ficha a la vista, trae el menú junto a la sesión (el Atrás de la ficha va sobre su portada), y la ficha ya
+   no lleva cabecera propia. Sus lados reservan sitio para ellos aunque no haya ficha, y su filete cierra la región. */
 @media (min-width: 792px) {
   .barra {
     padding-inline: var(--espacio-4);

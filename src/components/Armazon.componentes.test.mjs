@@ -61,7 +61,7 @@ before(async () => {
           <Armazon barra={<BarraApp admin={sesion === 'admin' ? llave : null} sesion={sesion === 'sin-sesion' ? null : campana} />} nav={<NavSecciones perfil={<span>A</span>} />}>
             <Tarea />
             <main className="raiz">
-              <EnBarra volver={{ href: '/agenda', texto: 'Agenda' }} menu={menu} />
+              <EnBarra menu={menu} />
               <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} />
               <div data-gutter style={{ margin: '0 var(--gutter)', height: 10 }} />
               {new URLSearchParams(location.search).get('hecho') && <Hecho texto="Te interesa «Concierto»" onDeshacer={() => {}} onCerrar={() => {}} />}
@@ -270,7 +270,7 @@ test("la fila de contexto: el relleno blanco de 300 px sobre ella no tapa la bar
   assert.deepEqual(r, { alto: "300px", fondo: "rgb(255, 255, 255)", eventos: "none", encima: "Buscar" });
 });
 
-test("desde 792: la barra está en las fichas y las tareas, con Atrás y el menú solo en la ficha; en la pantalla completa no; no se recoge", async (t) => {
+test("desde 792: la barra está en las fichas y las tareas, con el menú solo en la ficha y nunca Atrás (va sobre la portada); en la pantalla completa no; no se recoge", async (t) => {
   const p = await pagina(t, 1280, 800);
   await ir(p, "/agenda");
   assert.deepEqual((({ y, h }) => [y, h])(await caja(barra(p))), [0, 56]);
@@ -280,24 +280,25 @@ test("desde 792: la barra está en las fichas y las tareas, con Atrás y el men�
   const campana = (await caja(barra(p).locator("a[aria-label='Novedades']"))).x;
   await ir(p, "/eventos/concierto");
   const botones = await barra(p).locator("a, button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
-  assert.ok(botones.includes("Atrás (Agenda)") && botones.includes("Más acciones"), `${botones}`);
+  assert.ok(botones.includes("Más acciones") && !botones.some((b) => b?.startsWith("Atrás")), `${botones}`);
   const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
   assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, "el logotipo, al centro de la ventana");
-  assert.deepEqual([(await caja(barra(p).locator("a[aria-label='Buscar']"))).x, (await caja(barra(p).locator("a[aria-label='Novedades']"))).x], [lupa, campana], "la lupa y la campana no se mueven cuando llegan Atrás y el menú");
+  assert.deepEqual([(await caja(barra(p).locator("a[aria-label='Buscar']"))).x, (await caja(barra(p).locator("a[aria-label='Novedades']"))).x], [lupa, campana], "la lupa y la campana no se mueven cuando llega el menú");
   await ir(p, "/nuevo");
   assert.equal((await caja(barra(p))).display, "grid");
-  assert.equal(await barra(p).locator("a[aria-label^='Atrás']").count(), 0, "las tareas no traen Atrás en la barra de la app");
+  assert.equal(await barra(p).locator("a[aria-label^='Atrás'], button[aria-label='Más acciones']").count(), 0, "las tareas no traen Atrás ni menú en la barra de la app");
   await ir(p, "/obra/4d2e/pared");
   assert.equal((await caja(barra(p))).display, "none");
 });
 
-test("desde 792: en una ficha el logotipo sigue al centro sin sesión y con la llave de administración, con Atrás y el menú a la vista", async (t) => {
+test("desde 792: en una ficha el logotipo sigue al centro sin sesión y con la llave de administración, con el menú a la vista", async (t) => {
   for (const sesion of ["entrar", "admin"]) {
     const p = await pagina(t, 1280, 800, `?sesion=${sesion}`);
     await ir(p, "/eventos/concierto");
     const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
     assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, `${sesion}: centro del logotipo en ${logo.x + logo.w / 2}`);
-    assert.equal(await barra(p).locator("a[aria-label^='Atrás'], button[aria-label='Más acciones']").count(), 2, `${sesion}: Atrás y el menú a la vista`);
+    assert.equal(await barra(p).locator("button[aria-label='Más acciones']").count(), 1, `${sesion}: el menú a la vista`);
+    assert.equal(await barra(p).locator("a[aria-label^='Atrás']").count(), 0, `${sesion}: sin Atrás en la barra de la app`);
   }
 });
 
