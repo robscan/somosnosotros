@@ -3,13 +3,13 @@
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactNode, type Ref } from "react";
 import { avisarHoja } from "@/components/Armazon";
 import { CARRIL } from "@/lib/armazon";
-import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
+import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
 import { movimiento, sinMovimiento } from "@/lib/movimiento";
 import styles from "./HojaLugares.module.css";
 
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
 const RENGLONES_QUE_ASOMAN = 2.5;
-/** Sin desplazamiento durante este tiempo (ms) el gesto se da por terminado y la hoja se asienta. */
+/** Sin desplazamiento durante este tiempo (ms) el gesto se da por terminado y se avisa dónde quedó la hoja. */
 const REPOSO_MS = 140;
 /** Lo que queda de la hoja por encima del borde del cuerpo cuando se recorta el hueco (px): su sombra. */
 const REBORDE = 24;
@@ -28,6 +28,8 @@ type Medidas = {
   franja: number;
   /** Desde qué `y` la cabecera de la ficha ya no deja ver su portada y se vuelve compacta. */
   compactaDesde: number;
+  /** Cuánto baja el techo de la hoja llena desde su borde de arriba (px): la lista llena se detiene bajo la fila de contexto; la ficha, arriba del todo. */
+  techo: number;
 };
 
 /** Cómo está la hoja cuando se asienta: la altura, el desplazamiento y cuánto tapa del mapa por abajo (px; llena, lo que taparía a media altura). */
@@ -81,8 +83,8 @@ type Props = {
  * La hoja de Lugares (docs/rediseno/50, P5b; bloque «8. Lugares» del prototipo firmado): un solo elemento que cubre la pantalla y
  * desplaza, con un hueco transparente arriba (el mapa se ve y se toca a través de él) y el cuerpo blanco que asoma desde abajo.
  * Arrastrar el cuerpo lo sube; cuando su borde llega arriba (llena) el mismo gesto sigue desplazando el contenido, con una sola
- * inercia. Al soltar entre dos alturas se asienta en la más cercana: la lista, recogida (la franja con la cantidad) · asoma · llena;
- * la ficha, recogida (su cabecera) · media (foto y datos) · llena. Nada se cierra al jalar: la ficha solo con su ✕. Cada una llena
+ * inercia. Al soltar, el navegador la ancla (`scroll-snap`) en la altura que dicen la posición y la velocidad del dedo y va directo a ella, sin
+ * recorrer las intermedias: la lista, recogida (la franja con la cantidad) · asoma · llena; la ficha, recogida (su cabecera) · media (foto y datos) · llena. Nada se cierra al jalar: la ficha solo con su ✕. Cada una llena
  * hasta donde le toca: la lista vive bajo sus filtros y llena se detiene justo debajo de la fila de contexto, que se queda siempre a la
  * vista (la barra de la app se recoge y vuelve con su desplazamiento, como en cualquier raíz); la ficha es una página y llena cubre la
  * pantalla. En las dos, llena, la navegación se va. Desde 792 es el panel de la izquierda, sin hueco ni asa, y desplaza como cualquier
@@ -107,9 +109,11 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
   const hoja = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
   const franja = useRef<HTMLDivElement>(null);
-  const medidas = useRef<Medidas>({ detentes: {}, franja: 0, compactaDesde: Infinity });
+  const medidas = useRef<Medidas>({ detentes: {}, franja: 0, compactaDesde: Infinity, techo: 0 });
   const reposo = useRef(0);
   const tocando = useRef(false);
+  /** El dedo ya se levantó y la hoja sigue en movimiento (su inercia o su ajuste): hasta el reposo no se le quita el anclaje. */
+  const enInercia = useRef(false);
   /** La entrada o la salida en curso (o la última). */
   const enCurso = useRef<Animation | null>(null);
   /** La ficha se está yendo con su salida: al cerrarse, la lista entra igual desde abajo. */
@@ -141,7 +145,10 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     // Una entrada o una salida a medias tiene movida la hoja entera: su borde y el del cuerpo se miden ya movidos y el techo, que no se mueve, no.
     // Lo demás son restas entre cosas de la hoja, que se mueven juntas.
     const movida = new DOMMatrixReadOnly(getComputedStyle(h).transform).m42;
-    const llena = alturaLlena({ arribaDelCuerpo: arribaDelCuerpo - movida, y: h.scrollTop, arribaDeLaHoja: h.getBoundingClientRect().top - movida, bajoLaFila: techo.getBoundingClientRect().top, conFicha: !!abierta });
+    const arribaDeLaHoja = h.getBoundingClientRect().top - movida;
+    const bajoLaFila = techo.getBoundingClientRect().top;
+    const llena = alturaLlena({ arribaDelCuerpo: arribaDelCuerpo - movida, y: h.scrollTop, arribaDeLaHoja, bajoLaFila, conFicha: !!abierta });
+    const bajaElTecho = abierta ? 0 : bajoLaFila - arribaDeLaHoja;
     const abajoDe = (el: Element) => el.getBoundingClientRect().bottom - arribaDelCuerpo;
     const arribaDe = (el: Element) => el.getBoundingClientRect().top - arribaDelCuerpo;
     if (abierta) {
@@ -151,7 +158,7 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
       const primero = abierta.querySelector("[data-cuerpo] > :first-child") ?? cabecera;
       const siguiente = abierta.querySelector("[data-cuerpo] > :nth-child(2)");
       const media = Math.min(llena, (siguiente ? arribaDe(siguiente) : abajoDe(primero)) - alto);
-      return { detentes: { recogida: 0, media, llena }, franja: alto, compactaDesde: llena + abajoDe(abierta.querySelector("[data-portada]")!) - alto };
+      return { detentes: { recogida: 0, media, llena }, franja: alto, compactaDesde: llena + abajoDe(abierta.querySelector("[data-portada]")!) - alto, techo: bajaElTecho };
     }
     const lista = franja.current!.nextElementSibling;
     const fila = lista?.querySelector("li");
@@ -161,8 +168,17 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     const mandos = [...techo.querySelectorAll("[data-libre]")].map((m) => m.getBoundingClientRect());
     const libre = mandos.length ? mandos[0].top - arribaDelMapa + Math.max(...mandos.map((m) => m.bottom)) - arribaDelMapa : 0;
     const asoma = alturaAsoma(fila ? RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
-    return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity };
+    return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity, techo: bajaElTecho };
   }, []);
+
+  /** Mide la hoja y le da al CSS lo que necesita para anclar el desplazamiento en cada altura (`--ancla-techo`, `--ancla-media`). */
+  const remedir = useCallback(() => {
+    const m = medir();
+    medidas.current = m;
+    hoja.current!.style.setProperty("--ancla-techo", `${m.techo}px`);
+    hoja.current!.style.setProperty("--ancla-media", `${m.detentes.asoma ?? m.detentes.media ?? 0}px`);
+    return m;
+  }, [medir]);
 
   /** Pone en el DOM lo que dice el desplazamiento: la altura (para el CSS) y la cabecera compacta de la ficha; y le cuenta al armazón si la hoja llena. */
   const pintar = useCallback((y: number) => {
@@ -171,6 +187,13 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     const detente = estadoEn(y, detentes);
     if (panel) delete hoja.current!.dataset.hoja;
     else hoja.current!.dataset.hoja = detente;
+    // Llena el anclaje se quita, para que el contenido tenga su inercia entera. Con el dedo puesto o en reposo cambia con la posición; a media inercia no: la
+    // que sube y pasa por llena sin el dedo debe parar en ella (el anclaje sigue puesto), y la de la lista que baja de llena se detiene arriba de la lista
+    // en vez de seguir con una hoja que ya no tiene anclaje (Safari la dejaría entre dos alturas).
+    const llenaYa = detentes.llena !== undefined && y >= detentes.llena - 1;
+    const h = hoja.current!;
+    if (!enInercia.current) h.toggleAttribute("data-libre", !panel && llenaYa);
+    else if (h.hasAttribute("data-libre") && !llenaYa) h.scrollTop = detentes.llena!;
     cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", cabeceraCompacta(y, compactaDesde, detente, panel));
     // Más de una pantalla de lista desplazada, sin ficha: desde ahí la pantalla ofrece volver arriba (como una lista de la ventana).
     const lejos = !habiaFicha.current && y - (detentes.llena ?? 0) > window.innerHeight;
@@ -183,7 +206,6 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     const llena = !panel && detente === "llena";
     if (llena || llenaAvisada.current) {
       llenaAvisada.current = llena;
-      const h = hoja.current!;
       avisarHoja(llena ? { llena, pagina: habiaFicha.current, y: y - (detentes.llena ?? 0), alFinal: y + h.clientHeight >= h.scrollHeight - 4 } : { llena });
     }
   }, []);
@@ -209,6 +231,14 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     hoja.current!.scrollTo({ top: y, behavior: sinMovimiento() ? "auto" : "smooth" });
   }, []);
 
+  /** Pone la hoja en `y` de un salto. Si `y` es llena o más allá (una lista que vuelve a donde estaba), el anclaje se quita antes: con él el
+   *  navegador devolvería la hoja a llena. */
+  const ponerEn = useCallback((y: number) => {
+    const h = hoja.current!;
+    h.toggleAttribute("data-libre", !enPanel() && y >= (medidas.current.detentes.llena ?? Infinity) - 1);
+    h.scrollTop = y;
+  }, []);
+
   /** La hoja sube desde el borde de abajo hasta donde está (el resorte de `globals.css`). Cancela lo que hubiera en curso: una salida a medias
    *  la reemplaza la ficha que entra. */
   const entrar = useCallback(() => {
@@ -231,18 +261,18 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     enCurso.current.onfinish = alTerminar;
   }, []);
 
-  /** El gesto terminó: entre dos alturas la hoja se va a la más cercana; en una (o llena) solo lo avisa. */
-  const asentar = useCallback(() => {
+  /** El gesto terminó (sin desplazamiento y sin un dedo encima): el navegador ya ancló la hoja en una altura y solo se avisa cuál. */
+  const alReposo = useCallback(() => {
     if (tocando.current) return;
-    const destino = destinoAlAsentar(hoja.current!.scrollTop, medidas.current.detentes);
-    if (destino === null) avisar();
-    else irA(destino);
-  }, [avisar, irA]);
+    enInercia.current = false;
+    pintar(hoja.current!.scrollTop);
+    avisar();
+  }, [pintar, avisar]);
 
   const esperarReposo = useCallback(() => {
     window.clearTimeout(reposo.current);
-    reposo.current = window.setTimeout(asentar, REPOSO_MS);
-  }, [asentar]);
+    reposo.current = window.setTimeout(alReposo, REPOSO_MS);
+  }, [alReposo]);
 
   const manejo = useMemo<Manejo>(
     () => ({
@@ -260,25 +290,25 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
         // Sin alturas (el panel) o con la ficha a la vista, la lista no sube. Sube de un salto, como la ficha al abrirse: llega a la vez que
         // la lista nueva y sin depender de un desplazamiento animado que un cambio de tamaño o una pausa del navegador podrían torcer.
         if (destino !== actual && !enPanel() && !habiaFicha.current) {
-          d.scrollTop = detentes[destino] ?? d.scrollTop;
+          ponerEn(detentes[destino] ?? d.scrollTop);
           pintar(d.scrollTop);
         }
         avisar();
       },
       salir,
     }),
-    [irA, pintar, avisar, salir],
+    [irA, ponerEn, pintar, avisar, salir],
   );
   useImperativeHandle(ref, () => manejo, [manejo]);
 
   // Al montar: en el teléfono, asoma (o donde estaba, `desde`, más abajo).
   useLayoutEffect(() => {
-    medidas.current = medir();
     const d = hoja.current!;
-    if (!enPanel()) d.scrollTop = medidas.current.detentes.asoma ?? 0;
+    remedir();
+    if (!enPanel()) ponerEn(medidas.current.detentes.asoma ?? 0);
     pintar(d.scrollTop);
     avisar();
-  }, [medir, pintar, avisar]);
+  }, [remedir, ponerEn, pintar, avisar]);
 
   // Con la ficha abierta, la hoja sube a foto y datos; al cerrarla, la lista vuelve a donde estaba.
   const conFicha = !!ficha;
@@ -286,19 +316,19 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     if (conFicha === habiaFicha.current) return;
     habiaFicha.current = conFicha;
     const d = hoja.current!;
-    medidas.current = medir();
+    remedir();
     if (conFicha) {
       antes.current = { detente: (d.dataset.hoja as Detente | undefined) ?? "asoma", y: d.scrollTop };
-      d.scrollTop = enPanel() ? 0 : (medidas.current.detentes.media ?? 0);
+      ponerEn(enPanel() ? 0 : (medidas.current.detentes.media ?? 0));
     } else {
-      d.scrollTop = antes.current?.y ?? (enPanel() ? 0 : (medidas.current.detentes.asoma ?? 0));
+      ponerEn(antes.current?.y ?? (enPanel() ? 0 : (medidas.current.detentes.asoma ?? 0)));
       antes.current = null;
       // La ficha se fue con su salida: la lista entra igual desde abajo, para que no aparezca de golpe.
       if (saliendo.current) entrar();
     }
     pintar(d.scrollTop);
     avisar();
-  }, [conFicha, medir, pintar, avisar, entrar]);
+  }, [conFicha, remedir, ponerEn, pintar, avisar, entrar]);
 
   // Una ficha entra por un gesto de la persona: la hoja sube desde el borde de abajo. Va después del efecto de arriba, que ya la puso en su altura.
   const entradaVista = useRef(entrada);
@@ -312,15 +342,14 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
   useLayoutEffect(() => {
     if (!desde) return;
     const d = hoja.current!;
-    medidas.current = medir();
-    const { detentes } = medidas.current;
+    const { detentes } = remedir();
     const objetivo = enPanel() || desde.y > (detentes.llena ?? 0) ? desde.y : (detentes[desde.detente] ?? detentes.asoma ?? 0);
-    d.scrollTop = objetivo;
+    ponerEn(objetivo);
     // Con la ficha que aún llega por la red, el contenido no alcanza: se repone al llegar.
     pendiente.current = d.scrollTop < objetivo - 1 ? objetivo : null;
     pintar(d.scrollTop);
     avisar();
-  }, [desde, medir, pintar, avisar]);
+  }, [desde, remedir, ponerEn, pintar, avisar]);
 
   // Si cambia el tamaño de la ventana o de lo que hay dentro (la ficha llega, se cargan más renglones), cada altura se vuelve a medir
   // y la hoja se queda en la suya; una hoja llena que se está desplazando no se toca.
@@ -330,10 +359,9 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     const observador = new ResizeObserver(() => {
       // Al salir de la pantalla el aviso puede llegar con la hoja ya quitada, antes de que esto se desconecte: nada que medir.
       if (!d.isConnected) return;
-      medidas.current = medir();
-      const { detentes } = medidas.current;
+      const { detentes } = remedir();
       if (pendiente.current !== null && d.scrollHeight - d.clientHeight >= pendiente.current) {
-        d.scrollTop = pendiente.current;
+        ponerEn(pendiente.current);
         pendiente.current = null;
       } else if (!enPanel() && d.scrollTop <= (detentes.llena ?? 0) + 1) {
         const altura = detentes[hoja.current!.dataset.hoja as Detente];
@@ -345,7 +373,7 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     observador.observe(d);
     observador.observe(c);
     return () => observador.disconnect();
-  }, [medir, pintar, irA, esperarReposo]);
+  }, [remedir, ponerEn, pintar, irA, esperarReposo]);
 
   useEffect(
     () => () => {
@@ -357,6 +385,7 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
 
   const alSoltar = () => {
     tocando.current = false;
+    enInercia.current = true;
     esperarReposo();
   };
 
@@ -376,6 +405,8 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
         onTouchStart={() => {
           enCurso.current?.finish(); // el gesto gana: una entrada a medias termina de golpe y el dedo sigue desde su altura
           tocando.current = true;
+          enInercia.current = false;
+          pintar(hoja.current!.scrollTop);
           pendiente.current = null;
           recortar(false);
         }}
@@ -394,6 +425,9 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
           {children}
           {ficha}
         </div>
+        <span className={styles.anclaBaja} aria-hidden />
+        <span className={styles.anclaMedia} aria-hidden />
+        <span className={styles.anclaLlena} aria-hidden />
       </div>
     </Contexto.Provider>
   );

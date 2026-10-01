@@ -3,7 +3,7 @@
  * desplaza y cada altura es una posición de ese desplazamiento (`y`): 0 es la más baja (solo asoma su franja) y la más
  * alta es `llena`, cuando la hoja ya cubre la pantalla y el mismo gesto sigue desplazando su contenido. La lista tiene
  * tres (recogida · asoma · llena) y la ficha otras tres (recogida · media · llena). Quien la dibuja mide las posiciones
- * en el DOM; aquí se decide hasta dónde sube cada una, cuál es la altura más cercana, cuándo asentarse y a dónde lleva el asa.
+ * en el DOM; aquí se decide hasta dónde sube cada una, cuál es la altura más cercana y a dónde lleva el asa. Al soltar, a qué altura va la hoja lo decide el navegador (`scroll-snap`).
  */
 export type Detente = "recogida" | "asoma" | "media" | "llena";
 export type Detentes = Partial<Record<Detente, number>>;
@@ -28,16 +28,6 @@ export function masCercano(y: number, detentes: Detentes): Detente {
 /** En qué altura está la hoja: `llena` en cuanto llega arriba (y desde ahí, todo lo que baje del contenido); si no, la más cercana. */
 export function estadoEn(y: number, detentes: Detentes): Detente {
   return detentes.llena !== undefined && y >= detentes.llena - HOLGURA ? "llena" : masCercano(y, detentes);
-}
-
-/**
- * A dónde asentar la hoja cuando el dedo deja de moverla: la altura más cercana, o nada si ya está en ella o si está
- * llena (ahí el gesto desplaza el contenido y no hay nada que asentar).
- */
-export function destinoAlAsentar(y: number, detentes: Detentes): number | null {
-  if (detentes.llena !== undefined && y >= detentes.llena - HOLGURA) return null;
-  const destino = detentes[masCercano(y, detentes)];
-  return destino !== undefined && Math.abs(destino - y) > HOLGURA ? destino : null;
 }
 
 /** Tocar el asa: la siguiente altura hacia arriba y, desde la más alta, la más baja. */

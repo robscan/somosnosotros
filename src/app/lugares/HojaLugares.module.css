@@ -2,8 +2,8 @@
    La hoja de Lugares (docs/rediseno/50, P5b; bloque «8. Lugares» del prototipo firmado).
    La hoja es un solo elemento que cubre la pantalla, de la franja de estado al pie, y DESPLAZA: un hueco arriba (`::before`, la hoja
    entera menos lo que asoma recogida) y luego el cuerpo blanco, que asoma desde abajo. Arrastrar el cuerpo lo sube; cuando su borde
-   llega arriba (llena) el mismo gesto sigue desplazando el contenido: una sola inercia. Las alturas las mide y las asienta
-   `HojaLugares.tsx`, y el CSS solo lee `data-hoja` (recogida · asoma · media · llena), que pone la hoja en el teléfono. Llena, la lista
+   llega arriba (llena) el mismo gesto sigue desplazando el contenido: una sola inercia. Las alturas las mide `HojaLugares.tsx` y al soltar
+   las ancla el navegador (`scroll-snap`), y el CSS solo lee `data-hoja` (recogida · asoma · media · llena), que pone la hoja en el teléfono. Llena, la lista
    se detiene bajo la fila de contexto (la hoja pasa por debajo de la barra y de la fila) y la ficha cubre la pantalla.
    1. La hoja · 2. El cuerpo y su franja · 3. Desde 792, el panel
    ========================================================================== */
@@ -23,6 +23,11 @@
   overscroll-behavior: contain;
   /* La posición de la hoja la lleva HojaLugares, no el navegador: sin anclaje, que la movía sola al cambiar lo que hay dentro. */
   overflow-anchor: none;
+  /* Al soltar, el navegador elige la altura con la posición y la velocidad del dedo y va directo a ella (una sola animación): recogida, asoma
+     (o media) y llena son tres puntos de anclaje (abajo). Ya llena (`data-libre`, que pone `HojaLugares`), el anclaje se quita: el contenido se desplaza
+     con libertad y con su inercia entera (con anclaje, Safari la acorta). `--ancla-techo` (lo que baja el techo de llena) y `--ancla-media` los mide `HojaLugares`. */
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: var(--ancla-techo, 0px);
   scrollbar-width: none;
 }
 .hoja[data-ficha] {
@@ -47,6 +52,30 @@
   content: "";
   display: block;
   height: calc(100% - var(--nav-abajo) - var(--hoja-recogida));
+}
+.hoja[data-libre] {
+  scroll-snap-type: none;
+}
+/* Los puntos de anclaje de las alturas, de un píxel y sin estorbar (con alto cero Safari no los toma por anclajes): recogida, asoma (o media)
+   y llena, que es donde empieza el cuerpo, medido como el hueco de arriba. */
+.anclaBaja,
+.anclaMedia,
+.anclaLlena {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  scroll-snap-align: start;
+  pointer-events: none;
+}
+.anclaBaja {
+  top: var(--ancla-techo, 0px);
+}
+.anclaMedia {
+  top: calc(var(--ancla-techo, 0px) + var(--ancla-media, 0px));
+}
+.anclaLlena {
+  top: calc(100% - var(--nav-abajo) - var(--hoja-recogida));
 }
 /* Llena, la hoja enseña su barra de desplazamiento (la del sistema en el iPhone, al desplazar; una fina en los navegadores de
    escritorio): la hoja cubre la pantalla y la barra es la suya. */
@@ -138,11 +167,15 @@
     background: var(--fondo-contenido);
     scrollbar-width: thin;
     scrollbar-color: var(--barra-desplazamiento) transparent;
+    scroll-snap-type: none;
   }
   .hoja::-webkit-scrollbar {
     display: block;
   }
   .hoja::before,
+  .anclaBaja,
+  .anclaMedia,
+  .anclaLlena,
   .asa {
     display: none;
   }
