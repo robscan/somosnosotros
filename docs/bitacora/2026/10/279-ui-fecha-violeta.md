@@ -1,6 +1,6 @@
 # 279 · Fecha y hora en violeta; el título de las tarjetas se ajusta a su contenido (OL-251)
 
-**Fecha:** 2026-10-01 · **Rama:** `ui-fecha-violeta`, desde `origin/main` (`6b6c000f`) · **OL:** OL-251 · **PR:** (ver abajo) contra `main`, sin unir · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
+**Fecha:** 2026-10-01 · **Rama:** `ui-fecha-violeta`, desde `origin/main` (`6b6c000f`) · **OL:** OL-251 · **PR:** #290 contra `main`, sin unir · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
 
 Dos cambios del founder, decididos sobre el prototipo (versión 3, variante «A · Solo color»): «para que sea más barato el cambio, solo haz ajuste de color sobre el productivo».
 
