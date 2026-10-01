@@ -1,6 +1,6 @@
 /* La tira de destacados (docs/rediseno/20; doc 50, P10): título y un carril que se desliza de lado, con la siguiente tarjeta asomando.
-   El carril es una rejilla de tres filas (foto, título, datos) y cada tarjeta la comparte con `subgrid`: los títulos y los datos de todas
-   quedan alineados aunque uno ocupe dos líneas. Las medidas son los tokens `--tarjeta-*` de `:root` (a 1048 crece la tarjeta grande);
+   Cada tarjeta es su propia rejilla de tres filas (foto, título, datos) y se ajusta a su contenido (OL-251): con un título de una línea
+   los datos suben pegados a él; las tarjetas se alinean arriba. Las medidas son los tokens `--tarjeta-*` de `:root` (a 1048 crece la tarjeta grande);
    el esqueleto (CarrilEsqueleto) usa este mismo CSS, así que no hay un número copiado. */
 /*
  * Espaciado (founder, 2026-09-23, tras probar en producción, OL-156): la barra de título con "Ver todos" queda más
@@ -65,14 +65,14 @@
   flex: none;
 }
 
-/* El carril: tres filas (foto, título, datos) y una columna por tarjeta. Es la mediana; `.grande`, `.chica` y `.sola` cambian sus
+/* El carril: una columna por tarjeta, alineadas arriba. Es la mediana; `.grande`, `.chica` y `.sola` cambian sus
    medidas, y solo eso. Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. */
 .carril {
   --foto: var(--tarjeta-mediana-foto); /* el alto de la fila de la foto; `.grande` y `.chica` lo cambian */
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: var(--tarjeta-mediana);
-  grid-template-rows: var(--foto) auto auto;
+  align-items: start;
   gap: var(--espacio-1) var(--espacio-3);
   overflow-x: auto;
   padding: var(--espacio-1) var(--gutter) var(--espacio-2);
@@ -89,8 +89,6 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: subgrid;
-  grid-row: 1 / -1;
   min-width: 0;
   scroll-snap-align: start;
 }
@@ -103,12 +101,11 @@
   right: var(--espacio-2);
 }
 
-/* La tarjeta: hija de la rejilla del carril por sus tres filas. */
+/* La tarjeta: su propia rejilla, con la foto a su alto (`--foto`) y el título y los datos a lo que miden. */
 .tarjeta {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: subgrid;
-  grid-row: 1 / -1;
+  grid-template-rows: var(--foto) auto auto;
   min-width: 0;
   color: var(--texto);
   text-decoration: none;
@@ -148,8 +145,7 @@
   font-variation-settings: var(--ancho-lista-titulo);
   line-height: var(--interlinea-lista);
 }
-/* Los datos: cuándo y dónde, una línea cada uno, cortadas con puntos suspensivos. Las dos líneas quedan juntas aunque la fila
-   la haya crecido otra tarjeta. */
+/* Los datos: cuándo y dónde, una línea cada uno, cortadas con puntos suspensivos. */
 .tarjeta > small {
   grid-area: 3 / 1;
   display: grid;
@@ -166,25 +162,28 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Cuándo pasa (founder, 2026-10-01, OL-251): solo el color, el violeta de acción; nada cambia de tamaño ni de peso. */
+.tarjeta > small > .cuando {
+  color: var(--primario);
+}
 
-/* Sin foto (H-03): sin bloque de imagen. El fondo suave de lo que no tiene foto ocupa el sitio de la foto y del título, con el nombre
-   grande y el rótulo dentro; los datos siguen debajo, como en toda tarjeta. El fondo es de un pseudoelemento (un relleno de la
-   tarjeta sumaría a las filas del carril) y el aire es relleno del nombre, que cabe en la fila de la foto. */
+/* Sin foto (H-03): sin bloque de imagen. El fondo suave de lo que no tiene foto ocupa el sitio de la foto (OL-251: ya no el de la foto y
+   el título, que ahora se ajusta a cada tarjeta), con el nombre grande y el rótulo dentro; los datos siguen debajo, como en toda
+   tarjeta. El fondo es de un pseudoelemento y el aire es relleno del nombre, que cabe en la fila de la foto. */
 .sinFoto::before {
   content: "";
-  grid-area: 1 / 1 / 3 / 2;
+  grid-area: 1 / 1;
   border-radius: var(--radio);
   background: var(--fondo-miniatura);
 }
 .sinFoto > b {
-  grid-area: 1 / 1 / 3 / 2;
+  grid-area: 1 / 1;
   align-self: start;
   padding: var(--espacio-3) calc(var(--boton-icono) + var(--espacio-3)) 0 var(--espacio-3); /* el botón queda a la derecha */
   font-size: var(--letra-xl);
   -webkit-line-clamp: 3;
 }
 .sinFoto > .rotulo {
-  grid-row: 1 / 3;
   margin: 0 0 var(--espacio-3) var(--espacio-3);
 }
 
@@ -228,6 +227,8 @@
  */
 .sola {
   grid-auto-columns: 100%;
+}
+.sola .tarjeta {
   grid-template-rows: auto auto auto;
 }
 .sola .foto {

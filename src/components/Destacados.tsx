@@ -126,7 +126,7 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
                 {t.foto && <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />}
                 <b>{t.titulo}</b>
                 <small>
-                  <span>{t.detalle}</span>
+                  <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
                   {t.sitio && <span>{t.sitio}</span>}
                 </small>
                 {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda. */}
