@@ -1,6 +1,6 @@
 # 274 · Carril de Inicio: la foto a su alto en Safari (OL-246)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-foto-safari`, desde `origin/main` (`74fdca0d`, la reestructura ya publicada) · **OL:** OL-246 · **PR:** por abrir, contra `main` (sin unir hasta el «publica» del founder) · **Quién:** el gestor de cambios III.
+**Fecha:** 2026-09-30 · **Rama:** `ui-foto-safari`, desde `origin/main` (`74fdca0d`, la reestructura ya publicada) · **OL:** OL-246 · **PR:** [#285](https://github.com/robscan/somosnosotros/pull/285) contra `main` (sin unir hasta el «publica» del founder) · **Quién:** el gestor de cambios III.
 
 ## Pedido
 
