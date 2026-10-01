@@ -1,6 +1,6 @@
 # 276 · Fichas desde 792: el Atrás sobre la portada (OL-248)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-atras-ficha`, desde `origin/main` (`74fdca0d`) · **OL:** OL-248 · **PR:** por abrir, contra `main` (sin unir hasta el «publica» del founder) · **Quién:** el gestor de cambios III.
+**Fecha:** 2026-09-30 · **Rama:** `ui-atras-ficha`, desde `origin/main` (`74fdca0d`) · **OL:** OL-248 · **PR:** [#287](https://github.com/robscan/somosnosotros/pull/287) contra `main` (sin unir hasta el «publica» del founder) · **Quién:** el gestor de cambios III.
 
 ## Pedido
 
