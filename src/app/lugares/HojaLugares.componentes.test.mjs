@@ -304,14 +304,19 @@ async function jalar(page, cdp, { y0, dy, ms, freno = 1, quieto = 0 }) {
     };
     requestAnimationFrame(paso);
   });
-  const toque = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: 195, y, id: 0 }] });
+  // Los toques llevan su propia hora (16 ms entre uno y otro): con varias pruebas a la vez, Chrome tarda más en recibirlos y, sin esto, el jalón saldría lento.
+  let hora = Date.now() / 1000;
+  const toque = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, timestamp: hora, touchPoints: type === "touchEnd" ? [] : [{ x: 195, y, id: 0 }] });
   await toque("touchStart", y0);
   const pasos = Math.max(2, Math.round(ms / 16));
   for (let i = 1; i <= pasos; i++) {
+    hora += 0.016;
     await toque("touchMove", y0 + dy * (1 - Math.pow(1 - i / pasos, freno)));
     await page.waitForTimeout(16);
   }
+  hora += quieto / 1000;
   if (quieto) await page.waitForTimeout(quieto);
+  hora += 0.016;
   await toque("touchEnd", 0);
   await page.waitForTimeout(2600);
   const { soltado, y } = await page.evaluate(() => window.__traza);

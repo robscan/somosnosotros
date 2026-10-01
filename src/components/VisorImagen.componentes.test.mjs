@@ -83,6 +83,16 @@ async function abrir({ tactil = true } = {}) {
   await page.getByRole("button", { name: /entero/ }).click();
   await page.getByRole("dialog").waitFor();
   const toque = (tipo, puntos) => cdp.send("Input.dispatchTouchEvent", { type: tipo, touchPoints: puntos.map(([x, y], id) => ({ x, y, id })) });
+  /** Un doble toque con su propia hora (100 ms entre uno y otro): con varias pruebas a la vez, Chrome tarda más en recibir los toques y dos toques reales podrían salir más lejos que el tiempo de un doble toque. */
+  const dobleToque = async (x, y) => {
+    let hora = Date.now() / 1000;
+    for (let i = 0; i < 2; i++) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", timestamp: hora, touchPoints: [{ x, y, id: 0 }] });
+      hora += 0.04;
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", timestamp: hora, touchPoints: [] });
+      hora += 0.1;
+    }
+  };
   /** Mueve los dedos en `pasos` pasos de `desde` a `hasta` (listas de puntos) y los suelta. */
   const jalar = async (desde, hasta, pasos = 10) => {
     await toque("touchStart", desde);
@@ -102,7 +112,7 @@ async function abrir({ tactil = true } = {}) {
       return { izq: r.left, der: r.right, arriba: r.top, abajo: r.bottom, ancho: r.width, alto: r.height, escala: m.a, x: m.e, y: m.f };
     });
   const abierto = () => page.getByRole("dialog").count().then((n) => n === 1);
-  return { context, page, errores, toque, jalar, imagen, abierto };
+  return { context, page, errores, toque, jalar, dobleToque, imagen, abierto };
 }
 
 test("pellizcar acerca alrededor de los dedos, hasta 4× y no más", async () => {
@@ -156,13 +166,11 @@ test("con un dedo la imagen acercada se mueve sin salirse de sus bordes; a 1× n
 });
 
 test("un doble toque alterna 1× y 2,5× en el punto tocado", async () => {
-  const { context, page, imagen, abierto } = await abrir();
+  const { context, page, dobleToque, imagen, abierto } = await abrir();
   const punto = [260, 422]; // sobre la imagen, a la derecha del centro y a su altura media
   const fraccion = (v) => [(punto[0] - v.izq) / v.ancho, (punto[1] - v.arriba) / v.alto];
   const antes = fraccion(await imagen());
-  await page.touchscreen.tap(...punto);
-  await espera(60);
-  await page.touchscreen.tap(...punto);
+  await dobleToque(...punto);
   await espera(400); // la transición corta
   const acercada = await imagen();
   cerca(acercada.escala, 2.5, 0.02);
@@ -170,9 +178,7 @@ test("un doble toque alterna 1× y 2,5× en el punto tocado", async () => {
   cerca(despues[0], antes[0], 0.01);
   cerca(despues[1], antes[1], 0.01);
   assert.equal(await abierto(), true, "el doble toque no cierra");
-  await page.touchscreen.tap(...punto);
-  await espera(60);
-  await page.touchscreen.tap(...punto);
+  await dobleToque(...punto);
   await espera(400);
   const vuelta = await imagen();
   assert.deepEqual([vuelta.escala, vuelta.x, vuelta.y], [1, 0, 0], "otro doble toque vuelve a 1×");
@@ -180,7 +186,7 @@ test("un doble toque alterna 1× y 2,5× en el punto tocado", async () => {
 });
 
 test("tocar sin moverse cierra con la imagen a 1× (tras el tiempo de un doble toque) y no con ella acercada; la ✕, el negro y Escape siempre", async () => {
-  const { context, page, abierto, imagen } = await abrir();
+  const { context, page, dobleToque, abierto, imagen } = await abrir();
   await page.touchscreen.tap(195, 422);
   await espera(120);
   assert.equal(await abierto(), true, "no cierra al instante: podría ser un doble toque");
@@ -195,9 +201,7 @@ test("tocar sin moverse cierra con la imagen a 1× (tras el tiempo de un doble t
 
   await page.getByRole("button", { name: /entero/ }).click();
   await page.getByRole("dialog").waitFor();
-  await page.touchscreen.tap(195, 422);
-  await espera(60);
-  await page.touchscreen.tap(195, 422);
+  await dobleToque(195, 422);
   await espera(400);
   assert.ok((await imagen()).escala > 2);
   await page.touchscreen.tap(195, 422);
