@@ -123,6 +123,10 @@ before(async () => {
       destino.searchParams.delete("accion");
       return redirigir(`${destino.pathname}${destino.search}`);
     }
+    // La vuelta de Apple en la app de iPhone: el envoltorio carga esta dirección a mano; canjea el enlace (la sesión) y sigue al destino.
+    if (url.pathname === "/auth/app-regreso") return redirigir(url.searchParams.get("siguiente"), { "Set-Cookie": "sesion=1; Path=/" });
+    // La pantalla de destino con la intención puesta se redirige a su dirección limpia con una carga completa (quita `?accion=`).
+    if (url.pathname.startsWith("/eventos/") && url.searchParams.has("accion")) return enviar(html[0], html[1] + "<script>location.replace(location.pathname)</script>");
     if (url.pathname === "/app.js") return enviar(...aplicacion);
     if (url.pathname === "/app.css") return enviar(...estilos);
     return enviar(...html);
@@ -139,6 +143,19 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
+/**
+ * Lo que hace `GestoAtrasPlugin.swift` en la app de iPhone: todo retroceso que cruza de un documento a otro se cancela (y avisa a la web). Aquí se anota
+ * (`window.__cruces`) y, donde el navegador deja, se cancela: un Atrás que dependa de él se queda sin efecto, como en la app.
+ */
+const CANCELA_RETROCESOS_ENTRE_DOCUMENTOS = `
+  window.__cruces = JSON.parse(sessionStorage.getItem('qa_cruces') ?? '0');
+  navigation.addEventListener('navigate', (e) => {
+    if (e.navigationType !== 'traverse' || e.destination.sameDocument) return;
+    sessionStorage.setItem('qa_cruces', String(++window.__cruces));
+    if (e.cancelable) e.preventDefault();
+  });
+`;
+
 /** Cada caso: por dónde llega la persona a la pantalla de origen (desde Agenda), a dónde iba y a dónde debe llevar Atrás tras entrar. */
 const CASOS = [
   { nombre: "Voy en la ficha de un evento", camino: ["/eventos/x"], siguiente: "/eventos/x?accion=voy", destino: "/eventos/x", atras: "/agenda" },
@@ -151,8 +168,9 @@ const CASOS = [
   { nombre: "Perfil", camino: [], siguiente: "/perfil", destino: "/perfil", atras: "/agenda" },
 ];
 
-async function llegarAEntrar(caso) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+async function llegarAEntrar(caso, contexto = {}) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, ...contexto });
+  if (contexto.userAgent) await context.addInitScript(CANCELA_RETROCESOS_ENTRE_DOCUMENTOS);
   const page = await context.newPage();
   const errores = [];
   page.on("pageerror", (e) => errores.push(e.message));
@@ -239,3 +257,26 @@ for (const caso of CASOS) {
     });
   }
 }
+
+test("la app de iPhone, Voy desde una ficha: la vuelta cargada a mano (sin páginas de proveedor) deja a Atrás llevar a Agenda y, desde un lugar abierto después, a la ficha", async () => {
+  const caso = CASOS[0];
+  const { context, page, errores } = await llegarAEntrar(caso, { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 SomosNosotrosApp" });
+  // Lo que hace el envoltorio: la ida a Apple no entra al historial; al volver carga la vuelta a mano en el mismo WebView (una carga completa más).
+  await page.goto(`${origen}/auth/app-regreso?token_hash=x&siguiente=${encodeURIComponent(caso.siguiente)}`);
+  await page.waitForURL(`${origen}/eventos/x`, { timeout: 10000 });
+  await enPantalla(page, "/eventos/x");
+  await page.waitForTimeout(500); // la segunda carga (la dirección limpia) y lo que sigue
+  assert.equal(await page.getByText("con sesión").count(), 1, "vuelve con la sesión puesta");
+  assert.equal(await page.evaluate(() => sessionStorage.getItem("sn_rebobinado")), null, "no queda ningún estado de rebobinado");
+  // Un lugar abierto después es de este documento: Atrás vuelve a la ficha con el historial.
+  await page.evaluate(() => window.qa.ir("/lugares/7"));
+  await enPantalla(page, "/lugares/7");
+  await volver(page, "botón");
+  await enPantalla(page, "/eventos/x");
+  // Y desde la ficha, Atrás no depende del historial de otro documento (que el envoltorio cancela): va a la pantalla de antes de entrar.
+  await volver(page, "botón");
+  await enPantalla(page, "/agenda");
+  assert.equal(await page.evaluate(() => Number(sessionStorage.getItem("qa_cruces") ?? 0)), 0, "ningún retroceso cruzó a otro documento");
+  assert.deepEqual(errores, []);
+  await context.close();
+});

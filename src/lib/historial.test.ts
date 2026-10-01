@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alAterrizar, APUNTE_REBOBINADO, APUNTE_VUELTA, apuntarVuelta, conMarca, desdeElReferente, haciaDonde, hayPantallaAnterior, leerDesde, leerMarca, leerVuelta, marcaAlApilar, marcaAlReemplazar, marcaDeLlegada, pasosParaRebobinar, ponerMarca, rebobinar, rutaDe, vuelveA, type Almacen, type Apunte, type Historial } from "./historial";
+import { alAterrizar, APUNTE_PREVIA, aterrizarEnApp, leerAntes, previaTrasEntrarEnApp, APUNTE_REBOBINADO, APUNTE_VUELTA, apuntarVuelta, conMarca, desdeElReferente, haciaDonde, hayPantallaAnterior, leerDesde, leerMarca, leerVuelta, marcaAlApilar, marcaAlReemplazar, marcaDeLlegada, pasosParaRebobinar, ponerMarca, rebobinar, rutaDe, vuelveA, type Almacen, type Apunte, type Historial } from "./historial";
 
 /** Un historial de navegador de mentira: entradas con estado y URL, apilar corta las de adelante, atrás y adelante. */
 class HistorialDePrueba implements Historial {
@@ -383,5 +383,116 @@ describe("volver de entrar con Apple o Google (OL-069)", () => {
       expect(h.entradas).toEqual(antes);
       expect(h.i).toBe(1);
     });
+  });
+});
+
+describe("la app de iPhone: la vuelta de Apple cargada a mano, sin páginas del proveedor (OL-250)", () => {
+  /** Agenda → ficha → Entrar (con lo que apunta Entrar), y el envoltorio carga la vuelta: una entrada más de OTRO documento, con la ficha ya sin consulta. */
+  function entrarYVolver(siguiente: string, camino: string[]) {
+    const h = new HistorialDePrueba("/agenda");
+    instalar(h);
+    for (const ruta of camino) next.apilar(h, ruta);
+    next.apilar(h, `/entrar?siguiente=${encodeURIComponent(siguiente)}`);
+    const almacen = new AlmacenDePrueba();
+    const desde = leerDesde(h.state);
+    const hacia = haciaDonde(desde, siguiente);
+    apuntarVuelta(almacen, { siguiente, largo: h.length, hacia, detras: desde !== null, cuando: 1000, previa: hacia === "origen" ? leerAntes(h.state) : desde });
+    return { h, almacen };
+  }
+  /** El documento nuevo: una entrada más sin marca (el referente es la pantalla de Entrar, del mismo sitio: llega con marca 1) y sus marcas puestas de nuevo. */
+  function cargarDocumento(h: HistorialDePrueba, destino: string, almacen: AlmacenDePrueba) {
+    HistorialDePrueba.prototype.pushState.call(h, null, "", destino);
+    instalar(h, marcaDeLlegada("https://somosnosotros.org/entrar", "https://somosnosotros.org", h.length));
+    return aterrizarEnApp(h, almacen, destino, 2000);
+  }
+  const atras = (h: HistorialDePrueba, base: number) => hayPantallaAnterior(leerMarca(h.state), h.length, base);
+
+  it("la entrada de Entrar apunta la pantalla de antes de la de origen", () => {
+    const { h } = entrarYVolver("/eventos/1?accion=voy", ["/eventos/1"]);
+    expect(leerDesde(h.state)).toBe("/eventos/1");
+    expect(leerAntes(h.state)).toBe("/agenda");
+  });
+  it("Voy desde una ficha: no se rebobina, Atrás no usa el historial y lleva a Agenda, y desde un lugar abierto después vuelve a la ficha", () => {
+    const { h, almacen } = entrarYVolver("/eventos/1?accion=voy", ["/eventos/1"]);
+    const largo = h.length;
+    const base = cargarDocumento(h, "/eventos/1", almacen);
+    expect(h.length).toBe(largo + 1); // nada retrocedió ni se apiló de más
+    expect(almacen.getItem(APUNTE_VUELTA)).toBeNull(); // el apunte se consumió: no queda nada vivo
+    expect(almacen.getItem(APUNTE_REBOBINADO)).toBeNull();
+    expect(atras(h, base)).toBe(false); // retroceder cruzaría a otro documento: el envoltorio lo cancelaría
+    expect(leerDesde(h.state)).toBe("/agenda"); // a dónde ir en su lugar
+    next.apilar(h, "/lugares/1"); // abrir el lugar es del mismo documento
+    expect(atras(h, base)).toBe(true);
+    h.back();
+    expect(h.url).toBe("/eventos/1");
+    expect(atras(h, base)).toBe(false); // y de vuelta en la ficha, otra vez a Agenda
+  });
+  it("el «+» desde Agenda: tras entrar, Atrás desde el destino lleva a Agenda", () => {
+    const { h, almacen } = entrarYVolver("/nuevo?tipo=evento", []);
+    const base = cargarDocumento(h, "/nuevo", almacen);
+    expect(atras(h, base)).toBe(false);
+    expect(leerDesde(h.state)).toBe("/agenda");
+  });
+  it("la pantalla de destino que se recarga entera para quitar `?accion=`: la segunda carga, sin estado, conserva la pantalla de detrás", () => {
+    const { h, almacen } = entrarYVolver("/eventos/1?accion=voy", ["/eventos/1"]);
+    cargarDocumento(h, "/eventos/1?accion=voy", almacen);
+    expect(leerDesde(h.state)).toBe("/agenda");
+    // `location.replace` a la dirección limpia: la misma entrada, sin estado; el referente es la carga anterior.
+    h.entradas[h.i] = { estado: null, url: "/eventos/1" };
+    instalar(h, 1);
+    expect(leerDesde(h.state)).toBeNull();
+    const base = aterrizarEnApp(h, almacen, "/eventos/1", 3000);
+    expect(leerDesde(h.state)).toBe("/agenda");
+    expect(atras(h, base)).toBe(false);
+    expect(almacen.getItem(APUNTE_PREVIA)).toBeNull(); // se usa una vez
+    // Caducada, o de otra ruta, no se usa.
+    const viejo = new AlmacenDePrueba();
+    viejo.setItem(APUNTE_PREVIA, JSON.stringify({ previa: "/agenda", ruta: "/eventos/1", cuando: 1000 }));
+    h.entradas[h.i] = { estado: null, url: "/eventos/1" };
+    instalar(h, 1);
+    aterrizarEnApp(h, viejo, "/eventos/1", 1000 + 30_001);
+    expect(leerDesde(h.state)).toBeNull();
+    viejo.setItem(APUNTE_PREVIA, JSON.stringify({ previa: "/agenda", ruta: "/lugares/1", cuando: 1000 }));
+    aterrizarEnApp(h, viejo, "/eventos/1", 1500);
+    expect(leerDesde(h.state)).toBeNull();
+  });
+  it("si no se sabe de qué pantalla se vino, Atrás no usa el historial: la pantalla madre", () => {
+    const h = new HistorialDePrueba("/eventos/1");
+    instalar(h);
+    next.apilar(h, "/entrar?siguiente=%2Feventos%2F1");
+    const almacen = new AlmacenDePrueba();
+    apuntarVuelta(almacen, { siguiente: "/eventos/1", largo: h.length, hacia: "origen", detras: false, cuando: 1000 });
+    const base = cargarDocumento(h, "/eventos/1", almacen);
+    expect(atras(h, base)).toBe(false);
+    expect(leerDesde(h.state)).toBeNull();
+  });
+  it("sin apunte, o caducado, una carga cualquiera tampoco deja a Atrás sin efecto", () => {
+    const h = new HistorialDePrueba("/agenda");
+    instalar(h);
+    next.apilar(h, "/eventos/1");
+    expect(previaTrasEntrarEnApp(new AlmacenDePrueba(), "/eventos/1", 2000)).toBeNull();
+    const viejo = new AlmacenDePrueba();
+    apuntarVuelta(viejo, { siguiente: "/eventos/1", largo: 2, hacia: "origen", detras: true, cuando: 1000, previa: "/agenda" });
+    expect(previaTrasEntrarEnApp(viejo, "/eventos/1", 1000 + 600_001)).toBeNull();
+    const base = cargarDocumento(h, "/eventos/1", new AlmacenDePrueba());
+    expect(atras(h, base)).toBe(false);
+  });
+  it("la base solo se usa en la app: sin ella (Safari, Chrome) el historial sigue siendo lo que decide", () => {
+    expect(hayPantallaAnterior(1, 5)).toBe(true);
+    expect(hayPantallaAnterior(1, 5, null)).toBe(true);
+    expect(hayPantallaAnterior(1, 5, 1)).toBe(false);
+    expect(hayPantallaAnterior(2, 5, 1)).toBe(true);
+    expect(hayPantallaAnterior(0, 5, 0)).toBe(false);
+    expect(vuelveA({ somosnosotros: 1, somosnosotrosDesde: "/eventos/1" }, 5, "/eventos/1")).toBe(true);
+    expect(vuelveA({ somosnosotros: 1, somosnosotrosDesde: "/eventos/1" }, 5, "/eventos/1", 1)).toBe(false);
+  });
+  it("una recarga de la pantalla también es un documento nuevo: sus entradas de detrás no se alcanzan con el historial", () => {
+    const h = new HistorialDePrueba("/agenda");
+    instalar(h);
+    next.apilar(h, "/eventos/1");
+    next.apilar(h, "/lugares/1");
+    instalar(h); // otra carga del documento: la entrada actual ya trae su marca (2)
+    const base = leerMarca(h.state) as number;
+    expect(atras(h, base)).toBe(false);
   });
 });

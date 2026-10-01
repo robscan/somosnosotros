@@ -1,7 +1,8 @@
 "use client";
 
+import { esAppNativa } from "@/lib/appNativa";
 import { crearRegistroVolver } from "@/lib/gestoAtras";
-import { alAterrizar, hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, rebobinar, vuelveA } from "@/lib/historial";
+import { alAterrizar, aterrizarEnApp, hayPantallaAnterior, leerDesde, leerMarca, marcaDeLlegada, ponerMarca, rebobinar, vuelveA } from "@/lib/historial";
 
 const INSTALADA = "__somosnosotrosMarca";
 
@@ -16,6 +17,9 @@ function sesion(): Storage | null {
     return null;
   }
 }
+
+/** Solo en la app de iPhone (OL-250): la marca de la entrada con la que cargó este documento; Atrás no retrocede por el historial más allá de ella (ver `hayPantallaAnterior`). */
+let baseDelDocumento: number | null = null;
 
 /** Quienes necesitan enterarse de una vuelta antes de que se pinte la pantalla de destino. */
 const alVolverSuscritos = new Set<() => void>();
@@ -45,6 +49,7 @@ if (typeof window !== "undefined") {
   const w = window as Window & { [INSTALADA]?: true };
   if (!w[INSTALADA]) {
     w[INSTALADA] = true;
+    const enApp = esAppNativa(window.navigator.userAgent);
     try {
       // Antes de que Next.js arranque. Si esta carga es el aterrizaje de un rebobinado (`alAterrizar`), se comprueba que se llegó donde se debía y la
       // marca de llegada cuenta la pantalla que hay detrás; si es la vuelta de entrar con Apple o Google, se retrocede hasta la pantalla de la que se
@@ -54,7 +59,9 @@ if (typeof window !== "undefined") {
       const llegada = Math.max(marcaDeLlegada(document.referrer, window.location.origin, window.history.length), aterrizaje?.detras ? 1 : 0);
       ponerMarca(window.history, llegada, () => window.location.pathname + window.location.search);
       if (aterrizaje?.accion === "reemplazar") window.location.replace(aterrizaje.destino);
-      else if (!aterrizaje) rebobinar(window.history, sesion(), ruta + window.location.search, Date.now());
+      else if (!aterrizaje && !enApp) rebobinar(window.history, sesion(), ruta + window.location.search, Date.now());
+      // La vuelta de Apple o Google cargada a mano por el envoltorio: no se rebobina nada; la pantalla de la que se vino queda anotada como la de detrás.
+      if (enApp) baseDelDocumento = aterrizarEnApp(window.history, sesion(), ruta + window.location.search, Date.now());
     } catch {}
     window.addEventListener("popstate", () => alVolverSuscritos.forEach((fn) => fn()));
     // Restaurada de la memoria del navegador (Safari lo hace al retroceder), la pantalla de aterrizaje enseña lo que tenía al salir y su carga no corre.
@@ -75,12 +82,20 @@ if (typeof window !== "undefined") {
 
 /** Si Atrás puede volver con el historial a una pantalla de la app (lo pregunta Atrás al tocarlo). */
 export function hayAnterior(): boolean {
-  return hayPantallaAnterior(leerMarca(window.history.state), window.history.length);
+  return hayPantallaAnterior(leerMarca(window.history.state), window.history.length, baseDelDocumento);
+}
+
+/**
+ * A dónde ir cuando Atrás no puede retroceder por el historial y la app sabe de qué pantalla se vino (la vuelta de entrar con Apple en la app de iPhone,
+ * OL-250), o null (entonces, la pantalla madre).
+ */
+export function destinoSinHistorial(): string | null {
+  return baseDelDocumento === null ? null : leerDesde(window.history.state);
 }
 
 /** Si terminar una tarea puede volver con el historial a `destino` (la pantalla de detrás tiene su misma ruta). */
 export function vuelveADestino(destino: string): boolean {
-  return vuelveA(window.history.state, window.history.length, destino);
+  return vuelveA(window.history.state, window.history.length, destino, baseDelDocumento);
 }
 
 /**
