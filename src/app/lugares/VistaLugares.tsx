@@ -373,6 +373,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           tapaAbajo={tapaAbajo}
           onFuera={setFuera}
           onDespejar={() => hojaRef.current?.irA("recogida")}
+          onGesto={() => hojaRef.current?.recoger()}
         />
         {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={`${styles.avisoMapa} ${conEncuadrar ? styles.avisoMapaBajo : ""}`} />}
         <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">

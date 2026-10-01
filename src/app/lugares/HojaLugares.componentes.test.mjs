@@ -62,6 +62,7 @@ before(async () => {
         const manejo = useRef(null);
         const renglones = Number(new URLSearchParams(location.search).get('renglones') ?? 14);
         window.qa.mostrar = () => manejo.current.mostrarLista();
+        window.qa.recoger = () => manejo.current.recoger();
         // El cuerpo es un solo elemento con data-cuerpo (así lo entrega CuerpoLugar) y la pastilla, otro hijo de la ficha.
         const piezas = {
           cuerpo: <div data-cuerpo><ul data-datos style={{ height: 130, listStyle: 'none' }}><li>datos</li></ul><div style={{ height: 1400 }}>el resto de la ficha</div></div>,
@@ -258,6 +259,33 @@ test("al filtrar, la lista recogida sube a asoma; en asoma o llena, o con la fic
   const conFicha = await mostrar();
   assert.deepEqual([(await estado(page)).hoja, conFicha.detente], ["recogida", "recogida"], "con la ficha a la vista la lista no sube");
   assert.deepEqual(page.errores, []);
+});
+
+test("cuando la persona mueve el mapa, `recoger` baja la hoja a su altura más baja: de asoma, de llena y con la ficha; en recogida no hace nada, ni en el panel", async () => {
+  const page = await abrir();
+  const recoger = async () => {
+    await page.evaluate(() => window.qa.recoger());
+    await page.waitForTimeout(900);
+    return estado(page);
+  };
+  assert.equal((await estado(page)).hoja, "asoma");
+  const desdeAsoma = await recoger();
+  assert.deepEqual([desdeAsoma.hoja, desdeAsoma.y], ["recogida", 0]);
+  assert.deepEqual([(await recoger()).hoja, (await recoger()).y], ["recogida", 0], "ya recogida, no hace nada");
+  await rueda(page, 650);
+  assert.equal((await estado(page)).hoja, "llena");
+  assert.equal((await recoger()).hoja, "recogida", "de llena también baja");
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  await page.waitForTimeout(900);
+  assert.deepEqual([(await estado(page)).ficha, (await estado(page)).hoja], [true, "media"]);
+  const conFicha = await recoger();
+  assert.deepEqual([conFicha.hoja, conFicha.y], ["recogida", 0], "la ficha baja a su cabecera");
+  assert.deepEqual(page.errores, []);
+  const panel = await abrir(1280, 800);
+  await panel.evaluate(() => { document.querySelector('[role="region"][aria-label="Lugares"]').scrollTop = 300; });
+  await panel.evaluate(() => window.qa.recoger());
+  await panel.waitForTimeout(500);
+  assert.equal((await estado(panel)).y, 300, "desde 792 la hoja es un panel: no se recoge");
 });
 
 test("en reposo el mapa recibe los toques del hueco y la hoja los del cuerpo", async () => {

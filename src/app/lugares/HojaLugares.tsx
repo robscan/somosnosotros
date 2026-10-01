@@ -37,6 +37,8 @@ export type DondeEstaba = { detente: Detente; y: number };
 export type Manejo = {
   /** Lleva la hoja a una de sus alturas (el «Atrás» de la ficha llena vuelve a la media). */
   irA: (detente: Detente) => void;
+  /** La persona mueve el mapa: la hoja baja a su altura más baja si no lo está. Nada que hacer en el panel (no hay alturas) ni con un dedo sobre la hoja. */
+  recoger: () => void;
   /** Lo que hace el asa: la siguiente altura hacia arriba y, desde la más alta, la más baja. */
   siguiente: () => void;
   /** Cambió lo que se ve (un filtro, un chip, otra ciudad): la lista recogida sube a asoma para enseñar el resultado, y avisa cómo quedó. */
@@ -245,6 +247,10 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
   const manejo = useMemo<Manejo>(
     () => ({
       irA: (detente) => irA(medidas.current.detentes[detente] ?? 0),
+      recoger: () => {
+        const { detentes } = medidas.current;
+        if (!enPanel() && !tocando.current && estadoEn(hoja.current!.scrollTop, detentes) !== "recogida") irA(detentes.recogida ?? 0);
+      },
       siguiente: () => irA(alturaSiguiente(hoja.current!.scrollTop, medidas.current.detentes)),
       mostrarLista: () => {
         const d = hoja.current!;

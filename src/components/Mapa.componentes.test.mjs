@@ -2,7 +2,8 @@
  *  verdad sobre un estilo vacío servido aquí (sin red ni llaves), en Chrome con toques reales. Cubre que sostener un punto vacío saque el anillo y luego la marca
  *  con la tarjeta «Lugar nuevo» y su enlace al alta con el punto (y que siga ahí al soltar); que sostener sobre un lugar ya registrado lo abra como un toque y
  *  no ofrezca registrar otro; que la tarjeta se vaya con la ✕, al tocar el mapa, al arrastrarlo y al abrir una ficha; que tocar, arrastrar y pellizcar no la saquen;
- *  y que con «reducir movimiento» no haya anillo pero sí tarjeta. El sitio del mapa base bajo el dedo se prueba aparte (`lib/mapa.test.ts`: los sitios son de los
+ *  y que con «reducir movimiento» no haya anillo pero sí tarjeta. Y (ajuste 3 del founder, 2026-10-01) que arrastrar, pellizcar o tocar dos veces avisen a la hoja
+ *  (`onGesto`), y que tocar y los movimientos de cámara de la propia app no. El sitio del mapa base bajo el dedo se prueba aparte (`lib/mapa.test.ts`: los sitios son de los
  *  mosaicos vectoriales de Mapbox, que aquí no hay).
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
@@ -41,7 +42,7 @@ before(async () => {
       contents: `
       import React, {useState} from 'react';import {createRoot} from 'react-dom/client';
       import Mapa from './src/components/Mapa';import './src/app/globals.css';
-      window.qa = { mapas: undefined, pines: [], navegaciones: [], despejadas: 0 };
+      window.qa = { mapas: undefined, pines: [], navegaciones: [], despejadas: 0, gestos: 0 };
       const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.9764, lat: 22.1497 }, zoom: 13 };
       const lugar = (id, nombre, lng, lat) => ({ id, slug: id, nombre, tipo: 'galeria', direccion: null, lat, lng, portada: null, proximo: null });
       const lugares = [lugar('centro', 'Galería del Centro', -100.9764, 22.1497), lugar('norte', 'Foro del Norte', -100.9764, 22.1597)];
@@ -51,7 +52,7 @@ before(async () => {
         const [tapa, setTapa] = useState(Number(new URLSearchParams(location.search).get('tapa') ?? 0));
         window.qa.elegir = setElegido;
         window.qa.tapar = setTapa;
-        return <div style={{ position: 'relative', width: 390, height: 500 }}><Mapa lugares={lugares} ciudad={ciudad} elegido={elegido} onPin={(l) => window.qa.pines.push(l.id)} tapaAbajo={tapa} onDespejar={() => { window.qa.despejadas++; setTapa(60); }} /></div>;
+        return <div style={{ position: 'relative', width: 390, height: 500 }}><Mapa lugares={lugares} ciudad={ciudad} elegido={elegido} onPin={(l) => window.qa.pines.push(l.id)} tapaAbajo={tapa} onDespejar={() => { window.qa.despejadas++; setTapa(60); }} onGesto={() => window.qa.gestos++} /></div>;
       }
       createRoot(document.getElementById('root')).render(<App />);
     `,
@@ -252,5 +253,45 @@ test("si la tarjeta no cabe en lo que la hoja deja ver, se pide recoger la hoja 
   await page.evaluate(() => window.qa.tapar(300));
   await espera(300);
   assert.equal(await page.evaluate(() => window.qa.despejadas), 1);
+  await context.close();
+});
+
+test("arrastrar, pellizcar y el doble toque avisan a la hoja (`onGesto`), un arrastre una sola vez; un toque y la cámara de la propia app, no", async () => {
+  const { context, page, toque } = await abrir();
+  const gestos = () => page.evaluate(() => window.qa.gestos);
+  await page.touchscreen.tap(100, 120);
+  await espera(300);
+  assert.equal(await gestos(), 0, "un toque");
+  // Lo que mueve la propia app: encuadres, saltos, vuelos.
+  await page.evaluate(() => {
+    const m = window.qa.mapas[0];
+    m.jumpTo({ zoom: 12 });
+    m.easeTo({ center: [-100.97, 22.16], duration: 200 });
+    m.fitBounds([[-101, 22.1], [-100.9, 22.2]], { duration: 200 });
+  });
+  await espera(600);
+  assert.equal(await gestos(), 0, "movimientos de cámara de la app");
+  await toque("touchStart", [[100, 120]]);
+  for (let i = 1; i <= 12; i++) {
+    await toque("touchMove", [[100 + i * 6, 120]]);
+    await espera(30);
+  }
+  await toque("touchEnd", []);
+  await espera(400);
+  assert.equal(await gestos(), 1, "un arrastre, una vez aunque dure");
+  await toque("touchStart", [[150, 200], [250, 200]]);
+  for (let i = 1; i <= 8; i++) {
+    await toque("touchMove", [[150 - i * 8, 200], [250 + i * 8, 200]]);
+    await espera(30);
+  }
+  await toque("touchEnd", []);
+  await espera(400);
+  assert.ok((await gestos()) >= 2, "un pellizco avisa");
+  // Un doble toque acerca: también es de la persona. (La rueda, en cambio, no trae evento en el `zoomstart` de Mapbox, y solo existe con ratón.)
+  const antes = await gestos();
+  await page.touchscreen.tap(200, 250);
+  await page.touchscreen.tap(200, 250);
+  await espera(600);
+  assert.ok((await gestos()) > antes, "un doble toque avisa");
   await context.close();
 });

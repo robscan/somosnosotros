@@ -44,6 +44,9 @@ type Props = {
   onFuera?: (fuera: boolean) => void;
   /** Sostener el dedo saca una tarjeta que no cabe en lo que la hoja deja ver del mapa: que la hoja se recoja para darle sitio. */
   onDespejar?: () => void;
+  /** La persona mueve el mapa con un gesto (arrastrar, acercar, girar o inclinar): la hoja se recoge para dejarlo ver. Los movimientos de
+   *  cámara de la propia app (encuadres, «Mi ubicación», abrir una ficha) no cuentan: solo los que traen el evento del dedo o del ratón. */
+  onGesto?: () => void;
 };
 
 /** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba, que es de menor a mayor rango (Mapbox coloca primero la
@@ -249,7 +252,7 @@ function lugarTocado(mapa: MapaGL, { x, y }: PuntoEnPantalla): string | null {
  * Mapa de los lugares, llenando la caja donde se pone (acuerdo del council: "un solo renderer de mapa" para Lugares).
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera, onDespejar = NADA }: Props) {
+export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera, onDespejar = NADA, onGesto }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -260,6 +263,10 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
   useEffect(() => {
     onPinRef.current = onPin;
   }, [onPin]);
+  const onGestoRef = useRef(onGesto);
+  useEffect(() => {
+    onGestoRef.current = onGesto;
+  }, [onGesto]);
   // Cada encuadre lee la última altura de la hoja sin repetirse cuando ella cambia (la cámara solo se mueve al encuadrar).
   const tapaRef = useRef(tapaAbajo);
   useEffect(() => {
@@ -323,6 +330,13 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
       mapa.on("click", (e) => {
         if (mapa) abrirLugarEn(e.point);
       });
+      // Un gesto de la persona (trae `originalEvent`) recoge la hoja; la cámara que mueve la app no lo trae.
+      for (const inicio of ["dragstart", "zoomstart", "rotatestart", "pitchstart"] as const) {
+        // Mapbox trae `originalEvent` en estos eventos, pero sus tipos no lo declaran.
+        mapa.on(inicio, (e) => {
+          if ((e as { originalEvent?: Event }).originalEvent) onGestoRef.current?.();
+        });
+      }
       // Con ratón, la mano sobre un lugar.
       mapa.on("mousemove", (e) => {
         if (mapa) mapa.getCanvas().style.cursor = lugarTocado(mapa, e.point) ? "pointer" : "";
