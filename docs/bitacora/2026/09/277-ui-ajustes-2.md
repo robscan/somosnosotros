@@ -1,6 +1,6 @@
 # 277 · Ajustes del founder, segunda tanda (OL-249)
 
-**Fecha:** 2026-10-01 · **Rama:** `ui-ajustes-2`, desde `origin/main` (`b91ac1b5`, ya con la reestructura de la UI en producción) · **OL:** OL-249 · **PR:** #PR contra `main` (sin unir: lo une el gestor con el «publica» del founder) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
+**Fecha:** 2026-10-01 · **Rama:** `ui-ajustes-2`, desde `origin/main` (`b91ac1b5`, ya con la reestructura de la UI en producción) · **OL:** OL-249 · **PR:** #288 contra `main` (sin unir: lo une el gestor con el «publica» del founder) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
 
 ## Pedido
 
