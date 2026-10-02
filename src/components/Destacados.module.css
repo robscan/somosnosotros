@@ -138,13 +138,14 @@
   background: var(--primario);
   color: var(--primario-texto);
 }
-/* La marca de destacado (ui/MarcaDestacado): arriba a la izquierda de la foto, la esquina libre (el botón, a la derecha; el rótulo, abajo). */
+/* La marca de destacado (ui/MarcaDestacado): una cinta que cuelga del borde superior de la foto, a la izquierda (el botón va a la derecha;
+   el rótulo, abajo). */
 .tarjeta > .marca {
-  --marca-lado: var(--marca-tarjeta);
+  --marca-ancho: var(--marca-tarjeta);
   grid-area: 1 / 1;
   align-self: start;
   justify-self: start;
-  margin: var(--espacio-2) 0 0 var(--espacio-2);
+  margin-left: var(--espacio-2);
 }
 .tarjeta > b {
   grid-area: 2 / 1;

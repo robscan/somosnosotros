@@ -16,7 +16,7 @@ type Parte = { parte: "estelar" | "estaSemana" } | { parte: "nuevos"; ciudad: st
  * forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
  * Lo que ya está en «Tus planes» al cargar no sale en ninguno de los tres: ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
- * Un evento destacado (`agenda.destacados`) lleva la flama en cualquiera de ellos, salvo dentro de la tira «Destacados» misma, donde
+ * Un evento destacado (`agenda.destacados`) lleva la cinta en cualquiera de ellos, salvo dentro de la tira «Destacados» misma, donde
  * todos lo son (OL-253).
  */
 export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref, ...carril }: { agendaPromise: Promise<Agenda>; avisos: AvisosLista | null; verTodosHref: string } & Parte) {

@@ -26,7 +26,7 @@ export type Decidido = { estado: EstadoDestacado; plazo: string | null; creado: 
 export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: null };
 /** Una tarjeta de la tira, lista para pintarse. `foto` es null cuando no tiene (quien la pinta pone su relleno o no lleva imagen);
  *  `cuando` dice que `detalle` es un día y una hora (se pinta en violeta) y no un tipo o una disciplina; `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde); `hoy` (empieza hoy), `van` y `destacado` (lo eligió
- *  la administración o tiene 3 «Voy»: lleva la flama) los pone solo `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
+ *  la administración o tiene 3 «Voy»: lleva la cinta) los pone solo `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
 export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number; hoy?: boolean; cuando?: boolean; destacado?: boolean };
 
 /**

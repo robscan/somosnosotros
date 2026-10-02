@@ -41,6 +41,7 @@
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
   --sombra-asa: 0 0 3px rgba(0, 0, 0, 0.35); /* el asa de la hoja de Lugares */
+  --sombra-cinta: 0 1px 1px rgba(0, 0, 0, 0.25); /* la cinta de «destacado»: se lee sobre fotos claras */
   --sombra-punto: 0 1px 4px rgba(0, 0, 0, 0.3); /* el punto «tú estás aquí» del mapa */
   --sombra-perilla: 0 1px 3px rgba(0, 0, 0, 0.3); /* la perilla de un interruptor */
 
@@ -154,8 +155,8 @@
   --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
   --tarjeta-sola-foto: 264px; /* tope del alto de la foto de una tarjeta sola, que ocupa el ancho del carril */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
-  --marca-tarjeta: 28px; /* lado de la flama de «destacado» sobre la foto de una tarjeta (ui/MarcaDestacado) */
-  --marca-renglon: 22px; /* y sobre la miniatura de un renglón */
+  --marca-tarjeta: 22px; /* ancho de la cinta de «destacado» que cuelga de la foto de una tarjeta (ui/MarcaDestacado; alto 30) */
+  --marca-renglon: 14px; /* y de la miniatura de un renglón (alto 19) */
   --avatar-ficha: 64px; /* avatar redondo dentro del héroe de la ficha de un artista */
   --avatar-perfil: 72px; /* avatar redondo de la cabecera de una persona (Mi perfil y su ficha) */
 

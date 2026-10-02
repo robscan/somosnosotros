@@ -70,7 +70,7 @@ before(async () => {
       const redondas = ['uno', 'dos', 'tres'].map((id) => tarjeta('lug-' + id, 0, { sitio: undefined, detalle: 'mié 30 sep · 19:00' }));
       // Una redonda sin foto (lugar o artista): lleva el símbolo SN ya generado.
       const redondaSinFoto = tarjeta('lug-sin-foto', 0, { sitio: undefined, foto: null, detalle: 'Hoy · 19:00' });
-      // Eventos destacados (OL-253): con «Hoy» y con «N van», para ver que la flama no compite con el rótulo ni con el botón.
+      // Eventos destacados (OL-253): con «Hoy» y con «N van», para ver que la cinta no compite con el rótulo ni con el botón.
       const marcadas = [tarjeta('destacada-hoy', 3, { destacado: true, hoy: true }), tarjeta('destacada-van', 5, { destacado: true })];
       const sola = tarjeta('la-sola', 0);
 
@@ -318,7 +318,7 @@ test("«Hoy» va en el color de acción con texto blanco (7,06:1); «N van» sig
   assert.equal(van.texto, "rgb(26, 26, 26)");
 });
 
-test("un evento destacado lleva la flama arriba a la izquierda de la foto, con aire del borde, sin pisar el rótulo ni el botón", async (t) => {
+test("un evento destacado lleva una cinta colgando del borde superior de la foto, a la izquierda, sin pisar el rótulo ni el botón", async (t) => {
   const p = await pagina(t);
   assert.equal(await tarjeta(p, "sin-nada").locator('[role="img"][aria-label="Destacado"]').count(), 0, "sin destacado no hay marca");
   for (const id of ["destacada-hoy", "destacada-van"]) {
@@ -330,14 +330,14 @@ test("un evento destacado lleva la flama arriba a la izquierda de la foto, con a
       const r = m.getBoundingClientRect();
       const otras = [a.parentElement.querySelector("button"), ...[...a.children].filter((el) => el.tagName === "SPAN" && el !== m)].map((el) => el.getBoundingClientRect());
       const cruza = (x) => r.left < x.right && r.right > x.left && r.top < x.bottom && r.bottom > x.top;
-      return { lado: [Math.round(r.width), Math.round(r.height)], izquierda: Math.round(r.left - f.left), arriba: Math.round(r.top - f.top), cruces: otras.filter(cruza).length, fondo: getComputedStyle(m).backgroundColor, color: getComputedStyle(m).color, radio: getComputedStyle(m).borderTopLeftRadius };
+      return { lado: [Math.round(r.width), Math.round(r.height)], izquierda: Math.round(r.left - f.left), arriba: Math.round(r.top - f.top), cruces: otras.filter(cruza).length, fondo: getComputedStyle(m).backgroundColor, relleno: getComputedStyle(m.querySelector("svg")).fill, sombra: getComputedStyle(m).filter };
     });
-    assert.deepEqual(caja.lado, [28, 28], "--marca-tarjeta");
-    assert.deepEqual([caja.izquierda, caja.arriba], [8, 8], "--espacio-2 del borde de la foto");
+    assert.deepEqual(caja.lado, [22, 30], "--marca-tarjeta de ancho y la proporción 22×30 de la cinta");
+    assert.deepEqual([caja.izquierda, caja.arriba], [8, 0], "--espacio-2 a la izquierda y pegada al borde superior, sin hueco");
     assert.equal(caja.cruces, 0, "no toca el botón ni el rótulo");
-    assert.equal(caja.color, "rgb(109, 52, 200)", "la flama en --primario");
-    assert.match(caja.fondo, /rgba\(255, 255, 255, 0\.92\)/, "vidrio");
-    assert.equal(caja.radio, "50%", "círculo");
+    assert.equal(caja.relleno, "rgb(109, 52, 200)", "la cinta en --primario");
+    assert.equal(caja.fondo, "rgba(0, 0, 0, 0)", "sin círculo ni vidrio");
+    assert.match(caja.sombra, /drop-shadow\(rgba\(0, 0, 0, 0\.25\) 0px 1px 1px\)/, "sombra suave para leerse sobre fotos claras");
   }
 });
 

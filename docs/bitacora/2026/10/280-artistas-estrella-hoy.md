@@ -1,8 +1,8 @@
-# 280 · Artistas con eventos esta semana, flama en los destacados, «Hoy» y fecha en violeta (OL-253)
+# 280 · Artistas con eventos esta semana, cinta en los destacados, «Hoy» y fecha en violeta (OL-253)
 
 **Fecha:** 2026-10-01 · **Rama:** `inicio-artistas-estrella`, desde `origin/main` (`af6bf926`) · **OL:** OL-253 · **PR:** contra `main`, sin unir · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
 
-Encargo del founder en dos tiempos: prototipo (`docs/rediseno/prototipos/ol-253/index.html`, capturas `docs/rediseno/capturas-280/01-` a `07-`) y, aprobado, el código (capturas `app-01-` a `app-05-`). Decisiones del founder sobre el prototipo: la marca de destacado es una **flama** (no una estrella: la estrella ya es la pestaña Artistas), opción A (círculo de vidrio arriba a la izquierda de la foto); en Agenda también A, con más aire del borde; «Hoy» opción A (fondo `--primario`, texto `--primario-texto`); sin marca dentro de la tira «Destacados»; el artista que ya sale en «Artistas destacadxs» no se repite; «Lugares con eventos» pasa a «Lugares con eventos esta semana»; fecha violeta en lugares y artistas; `sin-foto.png` para lo que no tiene foto.
+Encargo del founder en dos tiempos: prototipo (`docs/rediseno/prototipos/ol-253/index.html`, capturas `docs/rediseno/capturas-280/01-` a `07-`) y, aprobado, el código (capturas `app-01-` a `app-05-`). Decisiones del founder sobre el prototipo: la marca de destacado no es una estrella (la estrella ya es la pestaña Artistas); en un primer código fue una flama de trazo en un círculo de vidrio, y **el mismo día (2026-10-01) el founder la descartó por ilegible y pidió una cinta colgante violeta**, sin círculo, como un separador de libro (ver 2); «Hoy» opción A (fondo `--primario`, texto `--primario-texto`); sin marca dentro de la tira «Destacados»; el artista que ya sale en «Artistas destacadxs» no se repite; «Lugares con eventos» pasa a «Lugares con eventos esta semana»; fecha violeta en lugares y artistas; `sin-foto.png` para lo que no tiene foto.
 
 ## 1. Carril «Artistas con eventos esta semana»
 
@@ -14,12 +14,14 @@ Se repone lo mínimo de lo que retiraron P5 (OL-233, `17fad74e`) y OL-243 (`63f4
 - `Destacados.tsx`: una tarjeta **redonda** (`chica`) sin foto pinta `SIN_FOTO` (`/sin-foto.png`, la imagen ya generada, nunca compuesta en vivo) dentro del círculo; las demás sin foto siguen con el nombre grande sobre fondo suave (H-03). Antes, una redonda sin foto caía en ese fondo con el nombre dentro y salía cuadrada.
 - Título «Lugares con eventos» → «Lugares con eventos esta semana» (`page.tsx`).
 
-## 2. Flama en los eventos destacados
+## 2. Cinta en los eventos destacados
 
-- `ui/Iconos.tsx`: `IconoFlama`, dibujada en el mismo trazo (1.8, 24×24, puntas redondas) que el resto; no había una en el set. Rellena parecía una gota de agua a 17 px; de trazo se lee como flama, así que va de trazo.
-- `ui/MarcaDestacado.tsx` + `.module.css`: círculo de `--vidrio` con la flama en `--primario` (dos tercios del círculo), `role="img"` con nombre «Destacado». Su lado y su sitio los pone quien la lleva (`--marca-lado`, y el área de su rejilla): tokens `--marca-tarjeta` (28 px) y `--marca-renglon` (22 px) en `globals.css`.
-- **Tarjetas** (`Destacados.module.css`): hijo del `<a>` en el área de la foto (`1 / 1`), arriba a la izquierda con `--espacio-2` de aire: es la esquina libre (el botón va arriba a la derecha y el rótulo único, abajo a la izquierda, H-02). Sin `position: absolute`.
-- **Renglones de Agenda** (`ui/Renglon.tsx`, prop `destacado`; `Renglon.module.css`): hijo de `.frente` en el área `foto`, arriba a la izquierda con `--espacio-2` (el prototipo lo tenía a 2 px, «muy pegado al borde»). Ni el renglón ni el título ni la meta se mueven (lo comprueba la prueba).
+Decisión del founder (2026-10-01): la flama de trazo no se lee (a 17 px se veía como una gota; de relleno, peor) → cinta colgante violeta, sin círculo ni vidrio, que cuelga del borde superior de la foto como un separador de libro.
+
+- `ui/Iconos.tsx`: `IconoCinta` (viewBox 22×30, `M0 0h22v30l-11-7-11 7z`, relleno `currentColor`, sin trazo; con `width`/`height` 22×30 para que su proporción sea la del dibujo y el alto salga del ancho). `IconoFlama` se quita: ya nadie la usa.
+- `ui/MarcaDestacado.tsx` + `.module.css`: la cinta en `--primario` con `filter: drop-shadow(var(--sombra-cinta))` (token nuevo `0 1px 1px rgba(0,0,0,.25)`, para que se lea sobre fotos claras), `role="img"` con nombre «Destacado». Sin círculo. Quien la lleva le da su sitio (el área de su rejilla) y su ancho (`--marca-ancho`: `--marca-tarjeta` 22 px o `--marca-renglon` 14 px, `globals.css`).
+- **Tarjetas** (`Destacados.module.css`): hijo del `<a>` en el área de la foto (`1 / 1`), pegada al borde superior (sin margen arriba) y a `--espacio-2` del borde izquierdo: 22×30. Sin `position: absolute` ni márgenes negativos.
+- **Renglones de Agenda** (`ui/Renglon.tsx`, prop `destacado`; `Renglon.module.css`): hijo de `.frente` en el área `foto`, colgando del borde superior de la miniatura con `--espacio-2` a la izquierda: 14×19 (la proporción de 22×30 sobre la miniatura de 56 px). Ni el renglón ni el título ni la meta se mueven (lo comprueba la prueba).
 - Qué es «destacado»: los ids de `agenda.destacados` (`tira_destacados('eventos', ciudad)`). `tarjetaEvento(e, ahora, destacado)` lo copia a la tarjeta (`destacado`, solo cuando es verdad); `CarrilAgenda` lo pide para «Esta semana», «Nuevos eventos» y, con sesión y seguimientos, «Seleccionados para ti» (que mezcla destacados con lo que se sigue). **No lleva marca la tira «Destacados» misma** (todos lo son), ni «Tus planes» (agenda personal; no recibe la tira). `AgendaLista` y `AgendaNuevos` pasan `destacado` a `RenglonEvento`.
 
 ## 3. «Hoy» en violeta y fecha violeta
@@ -31,8 +33,8 @@ Se repone lo mínimo de lo que retiraron P5 (OL-233, `17fad74e`) y OL-243 (`63f4
 
 - `eventosSemana.test.ts` / `cargarEventosSemana.test.ts`: las de artistas restauradas; la de H-03 cambia de sentido (la ficha sin foto entra, con `foto: null` y `cuando: true`).
 - `destacados.test.ts`: `selloDeTarjeta` con `hoy`; `destacado` solo si se pide.
-- `Destacados.componentes.test.mjs` (+3): «Hoy» `rgb(109, 52, 200)` con texto blanco y «N van» sin tocar; la flama a 28×28, 8 px de la foto, sin cruzar botón ni rótulo, vidrio y violeta; la redonda sin foto con `/sin-foto.png`, `border-radius: 50%` y fecha violeta; las no redondas sin foto, sin imagen. `Renglon.componentes.test.mjs` (+1): la flama a 22×22, a 8 px, dentro de la miniatura, sin mover el renglón.
-- `npm run lint` (solo el aviso previo de `VisorImagen.componentes.test.mjs`), `typecheck`, `test` (1685), `inventario` (sin novedades), `test:componentes` (209 de 209), `medir` (sin novedades tras anotar los presupuestos de abajo): verdes.
+- `Destacados.componentes.test.mjs` (+3): «Hoy» `rgb(109, 52, 200)` con texto blanco y «N van» sin tocar; la cinta a 22×30, a 8 px del borde izquierdo y a 0 del superior, sin cruzar botón ni rótulo, relleno `rgb(109, 52, 200)`, fondo transparente y sombra de `--sombra-cinta`; la redonda sin foto con `/sin-foto.png`, `border-radius: 50%` y fecha violeta; las no redondas sin foto, sin imagen. `Renglon.componentes.test.mjs` (+1): la cinta a 14×19, a 8 px a la izquierda y a 0 arriba, dentro de la miniatura, sin mover el renglón.
+- `npm run lint` (solo el aviso previo de `VisorImagen.componentes.test.mjs`), `typecheck`, `test` (1685), `inventario` (sin novedades), `test:componentes` (209 de 209), `medir` (sin novedades tras anotar los presupuestos de abajo; el cambio de flama a cinta no movió ninguna medida: mismos nodos y profundidad): verdes.
 
 ### Presupuestos de `medir` que subieron, uno por uno (`medidas.aceptadas.json`)
 
@@ -41,8 +43,8 @@ El respaldo local (`respaldo-local/fixture.mjs`) gana tres relaciones evento-art
 | Pantalla | Antes → después (nodos) | Causa |
 |---|---|---|
 | `01-inicio` | 257 → 295 (+38) | el carril nuevo: encabezado, enlace y 3 tarjetas redondas con botón |
-| `s01-inicio-sesion` | 266 → 308 (+42) | lo mismo, más dos flamas en «Seleccionados para ti» (Master Class y DESIERTO; 2 nodos cada una: el círculo y su svg) |
-| `02-agenda` | 260 → 268 (+8) | 4 flamas en los renglones destacados (2 nodos cada una) |
+| `s01-inicio-sesion` | 266 → 308 (+42) | lo mismo, más dos marcas en «Seleccionados para ti» (Master Class y DESIERTO; 2 nodos cada una: el contenedor y su svg) |
+| `02-agenda` | 260 → 268 (+8) | 4 marcas en los renglones destacados (2 nodos cada una) |
 | `s02-agenda-sesion` | 263 → 271 (+8) | ídem |
 | `s14-agenda-nuevos` | 180 → 188 (+8) | ídem |
 | `05-artistas` | 134 → 143 (+9) | los tres artistas del fixture ahora tienen próxima fecha (su línea de cuándo: 3 nodos cada una) |
@@ -52,15 +54,15 @@ Ningún otro presupuesto cambió y ningún hallazgo de caja, toque, tapado ni ma
 
 ## Capturas (`docs/rediseno/capturas-280/app-*.png`, 390×844 a 2x, Chrome, build local contra el respaldo de datos inventados con el reloj fijo de `medir`, 2026-10-07 10:00; los carteles son los públicos del respaldo)
 
-- `app-01-inicio-seleccionados-con-flama.png`: Ana (con sesión). «Tus planes» sin marca; «Seleccionados para ti» con la flama de trazo violeta en un círculo blanco arriba a la izquierda de «Master Class» y de «DESIERTO», el botón de palomita arriba a la derecha.
+- `app-01-inicio-seleccionados-con-cinta.png`: Ana (con sesión). «Tus planes» sin marca; «Seleccionados para ti» con la cinta violeta de muesca en V colgando del borde superior de la foto, a la izquierda, en «Master Class» y en «DESIERTO», con su sombra suave (se lee sobre el cartel claro de DESIERTO y el oscuro de Master Class); el botón de palomita arriba a la derecha, sin cruzarse.
 - `app-02-inicio-lugares-y-artistas-con-eventos.png`: «Lugares con eventos esta semana» con las fechas en violeta («Mañana · 19:30», «sáb 10 de oct · 18:00» partida en dos líneas); debajo «Artistas con eventos esta semana» con «Ver artistas» a la derecha, tres círculos con el símbolo SN gris (0Backside0 «Hoy · 19:00», Abril Merlot, Aaron Cadena, fechas violetas) y el botón de seguir; al final asoma «Artistas destacadxs» con los artistas con cartel, que no se repiten arriba.
 - `app-03-inicio-destacados-sin-marca.png`: sin sesión. La tira «Destacados» no lleva flama en ninguna tarjeta («2 van» sigue en vidrio); debajo, «Esta semana» con el sello «Hoy» ya violeta.
 - `app-04-inicio-hoy-violeta.png`: «Esta semana», el sello «Hoy» en píldora violeta con texto blanco sobre el cartel de la Orquesta Sinfónica, junto a «1 va» en vidrio blanco en la tarjeta de al lado.
-- `app-05-agenda-flama-en-miniatura.png`: Agenda; «LXS COLOCAOS» con la flama de 22 px sobre su miniatura, a 8 px del borde de arriba y de la izquierda, las demás filas (Inauguración, Susurros, Feleal) sin marca, título, hora violeta y sitio en su sitio.
+- `app-05-agenda-cinta-en-miniatura.png`: Agenda; «LXS COLOCAOS» con la cinta de 14×19 colgando del borde superior de su miniatura, a 8 px del borde izquierdo; las demás filas (Inauguración, Susurros, Feleal) sin marca, con título, hora violeta y sitio en su sitio.
 
 ## Límites y pendientes
 
-- Ninguna captura de Nuevos (hace falta tener más de dos eventos recién publicados) ni de «Tus planes» con marca (no la lleva).
+- Ninguna captura de Nuevos (hace falta tener más de dos eventos recién publicados) ni de «Tus planes» con marca (no la lleva). Las capturas `app-01` y `app-05` se rehicieron al cambiar la marca (las de la flama se retiraron); `app-02` a `app-04` no la muestran y se conservan.
 - El carril de artistas con pocas tarjetas no se desliza (con tres caben); el desplazamiento y la memoria de pantalla son los de `Destacados`, ya probados.
 - Con 3 artistas sin foto el carril sale sin ninguna con foto; en producción, quien tiene foto y evento esta semana sale en «Artistas destacadxs» (hasta 12) y solo repite carril si lo deja fuera el tope.
 - Las capturas del prototipo (`docs/rediseno/capturas-280/0*.png`) se conservan junto a las de la app.

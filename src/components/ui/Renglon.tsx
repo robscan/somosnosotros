@@ -13,7 +13,7 @@ type Props = {
   /** En una lista larga (artistas) las fotos se piden al llegar a ellas. */
   perezosa?: boolean;
   titulo: string;
-  /** Un evento destacado: la marca va sobre la esquina superior izquierda de la miniatura. */
+  /** Un evento destacado: la cinta de la marca cuelga del borde superior de la miniatura. */
   destacado?: boolean;
   /** El botón de la derecha (Voy, Seguir): hermano del enlace, nunca dentro de él. */
   accion?: ReactNode;

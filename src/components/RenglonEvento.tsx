@@ -15,7 +15,7 @@ type Props = {
   estado?: Asistencia;
   /** Con botón, "Voy" o "Vas" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
   boton?: EstadoBotonRenglon;
-  /** Lo eligió la administración o tiene 3 «Voy» (`agenda.destacados`): lleva la flama sobre su miniatura. */
+  /** Lo eligió la administración o tiene 3 «Voy» (`agenda.destacados`): lleva la cinta colgando de su miniatura. */
   destacado?: boolean;
   /**
    * Muestra el día además de la hora ("jue 8 de oct · 19:00"). Solo lo pide la pestaña Nuevos, donde el encabezado dice

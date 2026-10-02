@@ -156,7 +156,7 @@ test("lista: la foto mide el token (56) y el esqueleto mide lo que el renglón",
   assert.equal(await esqueletos.nth(1).locator("span").first().evaluate((e) => getComputedStyle(e).borderRadius), "50%", "redonda, como la de un artista");
 });
 
-test("lista: un evento destacado lleva la flama en el área de la miniatura, con aire del borde y sin mover nada (OL-253)", async (t) => {
+test("lista: un evento destacado lleva la cinta colgando de la miniatura y no mueve nada (OL-253)", async (t) => {
   const p = await pagina(t);
   const fila = (href) => p.locator("ul[aria-label=lista] > li").filter({ has: p.locator(`a[href="${href}"]`) });
   const marca = fila("/destacado").locator('[role="img"][aria-label="Destacado"]');
@@ -164,11 +164,11 @@ test("lista: un evento destacado lleva la flama en el área de la miniatura, con
   assert.equal(await fila("/corto").locator('[role="img"]').count(), 0, "sin destacado no hay marca");
   const foto = await rect(fila("/destacado").locator("img"));
   const m = await rect(marca);
-  assert.deepEqual([m.w, m.h], [22, 22], "--marca-renglon");
-  assert.deepEqual([Math.round(m.x - foto.x), Math.round(m.y - foto.y)], [8, 8], "--espacio-2 del borde de la miniatura");
+  assert.deepEqual([m.w, Math.round(m.h)], [14, 19], "--marca-renglon de ancho y la proporción 22×30 de la cinta");
+  assert.deepEqual([Math.round(m.x - foto.x), Math.round(m.y - foto.y)], [8, 0], "--espacio-2 a la izquierda y pegada al borde superior de la miniatura");
   assert.ok(m.r <= foto.r && m.b <= foto.b, "queda dentro de la miniatura");
-  const estilo = await marca.evaluate((e) => ({ fondo: getComputedStyle(e).backgroundColor, color: getComputedStyle(e).color, radio: getComputedStyle(e).borderTopLeftRadius }));
-  assert.deepEqual(estilo, { fondo: "rgba(255, 255, 255, 0.92)", color: "rgb(109, 52, 200)", radio: "50%" });
+  const estilo = await marca.evaluate((e) => ({ fondo: getComputedStyle(e).backgroundColor, relleno: getComputedStyle(e.querySelector("svg")).fill }));
+  assert.deepEqual(estilo, { fondo: "rgba(0, 0, 0, 0)", relleno: "rgb(109, 52, 200)" });
   // La marca es un hijo más de la rejilla: ni el renglón ni el título ni la meta se mueven respecto al renglón sin marca.
   assert.equal((await rect(fila("/destacado"))).h, (await rect(fila("/corto"))).h);
   const titulo = (href) => rect(fila(href).locator("a > b"));
