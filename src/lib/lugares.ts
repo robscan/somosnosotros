@@ -107,6 +107,14 @@ export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distan
 export type GrupoLugares<T> = { clave: "con-eventos" | "sin-eventos"; titulo: string; lugares: T[] };
 
 /**
+ * El punto con el que Lugares ordena por cercanía (OL-255): el que la persona pidió con «Mi ubicación» o, con el permiso ya concedido, la
+ * ubicación al día sin que toque nada; siempre el más reciente. Sin permiso y sin toque, ninguno: nada se ordena ni se lee hasta un toque.
+ */
+export function puntoDeCercania<P>(pedido: P | null, fresca: P | null, concedido: boolean): P | null {
+  return pedido || concedido ? (fresca ?? pedido) : null;
+}
+
+/**
  * La lista de la hoja en dos grupos con su título (OL-249, ajuste 7; propuesta del gestor, ante el pedido del founder de ordenar primero los lugares con
  * eventos): «Con eventos», los que tienen un evento próximo, y «Sin eventos próximos». Un orden mezclado y sin explicar desorienta en un directorio; con
  * los dos títulos se entiende solo, y lo que asoma en los dos renglones y medio de la hoja es lo más útil: adónde ir. Con ubicación, cada grupo va por

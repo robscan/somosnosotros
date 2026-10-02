@@ -149,7 +149,7 @@ describe("ubicación al día sin toque (OL-255)", () => {
 
   /** Un navegador con el permiso en `estado` (sin `permissions` si es null) cuya posición actual es `lat`. */
   function navegador(estado: PermissionState | null, lat = 22.15) {
-    const getCurrentPosition = vi.fn((exito: PositionCallback, _mal?: PositionErrorCallback, _opciones?: PositionOptions) => exito({ coords: { latitude: lat, longitude: -100.98 } } as GeolocationPosition));
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((exito) => exito({ coords: { latitude: lat, longitude: -100.98 } } as GeolocationPosition));
     const query = vi.fn(async () => ({ state: estado }) as PermissionStatus);
     vi.stubGlobal("navigator", { geolocation: { getCurrentPosition }, ...(estado ? { permissions: { query } } : {}) });
     return { getCurrentPosition };
@@ -250,6 +250,15 @@ describe("ubicación al día sin toque (OL-255)", () => {
       await expect(releerUbicacionAlDia()).resolves.toBe(false);
       expect(getCurrentPosition).not.toHaveBeenCalled();
     });
+  });
+
+  it("permisoConcedido: granted sí; prompt, denied o sin API no, y nada se lee", async () => {
+    const { permisoConcedido } = await import("./ubicacion");
+    for (const [estado, esperado] of [["granted", true], ["prompt", false], ["denied", false], [null, false]] as const) {
+      const { getCurrentPosition } = navegador(estado);
+      await expect(permisoConcedido()).resolves.toBe(esperado);
+      expect(getCurrentPosition).not.toHaveBeenCalled();
+    }
   });
 
   it("varias pantallas a la vez comparten una sola lectura", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { Punto } from "@/lib/geo";
 import { releerUbicacionAlDia, ubicacionCercanaFresca } from "@/lib/ubicacion";
 
@@ -33,7 +33,8 @@ export function useUbicacionFresca(): Punto | null {
     document.addEventListener("visibilitychange", alVolver);
     return () => document.removeEventListener("visibilitychange", alVolver);
   }, []);
-  return JSON.parse(useSyncExternalStore(suscribir, leer, () => "null")) as Punto | null;
+  const texto = useSyncExternalStore(suscribir, leer, () => "null");
+  return useMemo(() => JSON.parse(texto) as Punto | null, [texto]); // el mismo objeto mientras no cambie el punto
 }
 
 /** Avisa a quien la mira que la memoria cambió: la persona acaba de pedir una ubicación nueva. */

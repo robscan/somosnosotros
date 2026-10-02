@@ -112,7 +112,7 @@ function edadUbicacionCercana(): number | null {
  * ¿El permiso de ubicación ya está concedido? Lo dice `permissions.query` (navegadores, Safari 16+). Donde no existe o lanza (el WKWebView
  * de la app de iPhone), vale haber leído ya bien en esta sesión; sin ninguna de las dos es que no, y entonces solo se pide tras un toque.
  */
-async function permisoConcedido(): Promise<boolean> {
+export async function permisoConcedido(): Promise<boolean> {
   try {
     return (await navigator.permissions.query({ name: "geolocation" })).state === "granted";
   } catch {
