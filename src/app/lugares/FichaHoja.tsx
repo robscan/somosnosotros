@@ -7,7 +7,7 @@ import { EsqueletoKpis } from "@/components/ui/Esqueleto";
 import { estiloPortada } from "@/components/ui/Ficha";
 import ficha from "@/components/ui/Ficha.module.css";
 import Heroe from "@/components/ui/Heroe";
-import { IconoCerrar, IconoChevronIzquierda } from "@/components/ui/Iconos";
+import { IconoCaret, IconoCerrar } from "@/components/ui/Iconos";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import { etiquetaTipo, hrefLugar, type LugarLista } from "@/lib/lugares";
 import { useHoja } from "./HojaLugares";
@@ -34,8 +34,8 @@ function CuerpoCargando() {
 
 /**
  * La ficha de un lugar dentro de la hoja de Lugares (docs/rediseno/50, P5b y P6): la misma de `/lugares/:id` —la misma rejilla
- * (`ui/Ficha.module.css`), el mismo héroe y el mismo cuerpo (`../[id]/CuerpoLugar.tsx`)— con su barra propia: el asa, la ✕ (o Atrás,
- * con la hoja llena), el título (que aparece al desplazar) y el menú «···». Toda su información vive en la hoja, nunca en la barra
+ * (`ui/Ficha.module.css`), el mismo héroe y el mismo cuerpo (`../[id]/CuerpoLugar.tsx`)— con su barra propia: el asa, la ✕ (o la flecha
+ * que la baja, con la hoja llena), el título (que aparece al desplazar) y el menú «···». Toda su información vive en la hoja, nunca en la barra
  * del sitio. Desplazada, o con la hoja recogida, la barra se vuelve compacta con la portada oscurecida detrás del título
  * (`data-compacta`, que pone la hoja). Solo se cierra con la ✕, y la hoja baja hasta salir antes de que `onCerrar` la cierre de verdad.
  */
@@ -52,8 +52,8 @@ export default function FichaHoja({ lugar, piezas, onCerrar }: Props) {
         <BotonIcono tamano="accion" relieve="elevado" className={styles.cerrar} onClick={() => salir(onCerrar)} aria-label="Cerrar la ficha">
           <IconoCerrar width={22} height={22} />
         </BotonIcono>
-        <BotonIcono tamano="accion" relieve="elevado" className={styles.atras} onClick={() => irA("media")} aria-label="Atrás">
-          <IconoChevronIzquierda width={22} height={22} />
+        <BotonIcono tamano="accion" relieve="elevado" className={styles.bajar} onClick={() => irA("recogida")} aria-label="Bajar la ficha">
+          <IconoCaret width={22} height={22} />
         </BotonIcono>
         <b className={ficha.tituloBarra} aria-hidden="true">{lugar.nombre}</b>
         {abierta && (

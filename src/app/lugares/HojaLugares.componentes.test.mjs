@@ -428,15 +428,13 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   assert.equal(llena.compacta, true, "desplazada, la cabecera se vuelve compacta con la portada detrás del título");
   assert.equal(await quienEsta(page, 195, 30), "hoja", "la ficha es una página: llena cubre toda la pantalla, también la fila de contexto");
   assert.equal((await ultimoAviso(page)).pagina, true, "y se lleva la barra entera");
-  assert.equal(await page.getByRole("button", { name: "Atrás" }).isVisible(), true, "llena, el mando es Atrás");
+  assert.equal(await page.getByRole("button", { name: "Bajar la ficha", exact: true }).isVisible(), true, "llena, el mando es la flecha que baja la ficha");
   assert.equal(await page.getByRole("button", { name: "Cerrar la ficha" }).isVisible(), false);
-  await page.getByRole("button", { name: "Atrás" }).click();
+  await page.getByRole("button", { name: "Bajar la ficha", exact: true }).click();
   await page.waitForTimeout(900);
-  assert.equal((await estado(page)).hoja, "media", "Atrás vuelve a foto y datos");
-  await rueda(page, -3000);
   const recogida = await estado(page);
-  assert.equal(recogida.hoja, "recogida");
-  assert.equal(recogida.ficha, true, "jalar la recoge a su cabecera pero no la cierra");
+  assert.equal(recogida.hoja, "recogida", "la flecha baja la ficha llena hasta su cabecera");
+  assert.equal(recogida.ficha, true, "baja pero no cierra");
   cerca(recogida.visible, 76);
   await page.getByRole("button", { name: "Cerrar la ficha" }).click();
   await page.waitForTimeout(900);
@@ -445,6 +443,23 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   assert.equal(despues.hoja, antes.hoja);
   cerca(despues.y, antes.y);
   assert.deepEqual(page.errores, []);
+});
+
+test("con un toque de verdad (touchstart y touchend), la flecha de la ficha llena la baja a recogida de un solo gesto", async () => {
+  const page = await abrir(390, 844, false, "", true);
+  await rueda(page, 2000);
+  await abrirRenglon(page, 13);
+  await page.waitForTimeout(900);
+  await rueda(page, 3000);
+  await rueda(page, 3000);
+  assert.equal((await estado(page)).hoja, "llena");
+  assert.equal((await estado(page)).compacta, true, "desplazada: el botón sale de un contenido ya recorrido");
+  await page.getByRole("button", { name: "Bajar la ficha", exact: true }).tap();
+  await page.waitForTimeout(900);
+  const recogida = await estado(page);
+  assert.equal(recogida.hoja, "recogida");
+  assert.equal(recogida.ficha, true, "baja pero no cierra");
+  cerca(recogida.visible, 76);
 });
 
 /** El movimiento de la hoja ahora: cuánto lleva corrida hacia abajo (px), cuántas animaciones de `transform` tiene (con «reducir movimiento» las
