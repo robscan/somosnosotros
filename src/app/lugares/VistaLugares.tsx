@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import ListaLugares from "@/components/ListaLugares";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
+import { useUbicacionFresca } from "@/components/useUbicacionFresca";
 import Mapa from "@/components/Mapa";
 import PantallaConAviso from "@/components/useCanalDeListas";
 import { useResuelta } from "@/components/useResuelta";
@@ -111,7 +112,10 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   }
   const [conEventos, setConEventos] = useState<ConEventos | null>(null);
   const [soloSigo, setSoloSigo] = useState(false);
-  const [punto, setPunto] = useState<Punto | null>(null);
+  const [puntoPedido, setPunto] = useState<Punto | null>(null);
+  // Tras el primer toque en «Mi ubicación», el orden y el punto azul siguen a la ubicación al día (se relee sola al abrir y al volver con el permiso concedido).
+  const fresca = useUbicacionFresca();
+  const punto = puntoPedido && (fresca ?? puntoPedido);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const [encuadre, setEncuadre] = useState<Encuadre | null>(null);
