@@ -33,7 +33,7 @@ type Props = {
 
 /**
  * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Tus planes, Destacados, Esta semana,
- * Nuevos eventos, Lugares con eventos esta semana, Artistas con eventos esta semana y Artistas destacadxs, cada uno con su título a la izquierda y, a la derecha, el
+ * Nuevos eventos, Lugares con eventos esta semana, Artistas destacadxs y Artistas con eventos esta semana, cada uno con su título a la izquierda y, a la derecha, el
  * enlace que dice a dónde lleva — bajo la fila de contexto de las pantallas de eventos (`FilaEventos`: ciudad, Cuándo y
  * Filtros). Cuándo y Filtros no filtran a Inicio: al aplicarlos llevan a Agenda con eso puesto. Carga progresiva (pedido
  * del founder tras probar en producción): esta pantalla ya no espera ninguna consulta antes de pintar; cada carril llega
@@ -76,10 +76,11 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
       <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
       <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
       <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
-      <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotArtistasSemana}</Suspense>
       {/* OL-165: «Artistas destacadxs» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto
           cambia con él para no saltar cuando llega la respuesta real. */}
       <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotArtistasDestacados}</Suspense>
+      {/* OL-253: va después de los destacados porque no los repite (`app/page.tsx`). */}
+      <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotArtistasSemana}</Suspense>
     </PantallaConAviso>
   );
 }

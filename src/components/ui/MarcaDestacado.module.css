@@ -1,9 +1,9 @@
-/* La marca de «destacado» (ui/MarcaDestacado): una cinta del color de acción con una sombra suave para leerse sobre fotos claras. El ancho
+/* La marca de «destacado» (ui/MarcaDestacado): una cinta blanca (`--primario-texto`) con una sombra suave (`--sombra-cinta`) para leerse sobre fotos claras. El ancho
    (`--marca-ancho`) y el sitio los pone quien la lleva; el alto sale de la proporción del icono. */
 .marca {
   display: block;
   width: var(--marca-ancho);
-  color: var(--primario);
+  color: var(--primario-texto);
   filter: drop-shadow(var(--sombra-cinta));
 }
 .marca > svg {

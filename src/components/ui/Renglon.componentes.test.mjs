@@ -168,7 +168,7 @@ test("lista: un evento destacado lleva la cinta colgando de la miniatura y no mu
   assert.deepEqual([Math.round(m.x - foto.x), Math.round(m.y - foto.y)], [8, 0], "--espacio-2 a la izquierda y pegada al borde superior de la miniatura");
   assert.ok(m.r <= foto.r && m.b <= foto.b, "queda dentro de la miniatura");
   const estilo = await marca.evaluate((e) => ({ fondo: getComputedStyle(e).backgroundColor, relleno: getComputedStyle(e.querySelector("svg")).fill }));
-  assert.deepEqual(estilo, { fondo: "rgba(0, 0, 0, 0)", relleno: "rgb(109, 52, 200)" });
+  assert.deepEqual(estilo, { fondo: "rgba(0, 0, 0, 0)", relleno: "rgb(255, 255, 255)" });
   // La marca es un hijo más de la rejilla: ni el renglón ni el título ni la meta se mueven respecto al renglón sin marca.
   assert.equal((await rect(fila("/destacado"))).h, (await rect(fila("/corto"))).h);
   const titulo = (href) => rect(fila(href).locator("a > b"));

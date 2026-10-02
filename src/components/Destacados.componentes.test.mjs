@@ -335,9 +335,9 @@ test("un evento destacado lleva una cinta colgando del borde superior de la foto
     assert.deepEqual(caja.lado, [22, 30], "--marca-tarjeta de ancho y la proporción 22×30 de la cinta");
     assert.deepEqual([caja.izquierda, caja.arriba], [8, 0], "--espacio-2 a la izquierda y pegada al borde superior, sin hueco");
     assert.equal(caja.cruces, 0, "no toca el botón ni el rótulo");
-    assert.equal(caja.relleno, "rgb(109, 52, 200)", "la cinta en --primario");
+    assert.equal(caja.relleno, "rgb(255, 255, 255)", "la cinta blanca, --primario-texto");
     assert.equal(caja.fondo, "rgba(0, 0, 0, 0)", "sin círculo ni vidrio");
-    assert.match(caja.sombra, /drop-shadow\(rgba\(0, 0, 0, 0\.25\) 0px 1px 1px\)/, "sombra suave para leerse sobre fotos claras");
+    assert.match(caja.sombra, /drop-shadow\(rgba\(0, 0, 0, 0\.45\) 0px 1px 2px\)/, "sombra suave para leerse sobre fotos claras");
   }
 });
 
