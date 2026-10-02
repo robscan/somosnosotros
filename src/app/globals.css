@@ -154,6 +154,8 @@
   --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
   --tarjeta-sola-foto: 264px; /* tope del alto de la foto de una tarjeta sola, que ocupa el ancho del carril */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
+  --marca-tarjeta: 28px; /* lado de la flama de «destacado» sobre la foto de una tarjeta (ui/MarcaDestacado) */
+  --marca-renglon: 22px; /* y sobre la miniatura de un renglón */
   --avatar-ficha: 64px; /* avatar redondo dentro del héroe de la ficha de un artista */
   --avatar-perfil: 72px; /* avatar redondo de la cabecera de una persona (Mi perfil y su ficha) */
 

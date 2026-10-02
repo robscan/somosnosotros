@@ -38,7 +38,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 /**
  * Carga progresiva (pedido del founder tras probar en producción, OL-156): esta función solo espera la ciudad y la
  * sesión —rápidas, un par de consultas chicas— antes de pintar el shell entero (cabecera, barra). Las consultas de
- * los carriles (agenda, "Tus planes"/`cargarPersona`, lugares de la semana, artistas destacados) NUNCA se
+ * los carriles (agenda, "Tus planes"/`cargarPersona`, lugares y artistas de la semana, artistas destacados) NUNCA se
  * esperan aquí: se pasan como promesas sin resolver a cada carril (un componente de servidor propio, dentro de su
  * `<Suspense>` en `Inicio.tsx`), que las espera por su cuenta y transmite (streaming del App Router) en cuanto
  * responde. Antes de esta pieza, `InicioPagina` esperaba todo con un solo `Promise.all` y Next mostraba el cargador
@@ -55,8 +55,13 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
 
   // Sin await: cada promesa viaja tal cual a su carril, que la espera dentro de su propio <Suspense>.
   const agendaPromise = cargarAgenda(ciudad, usuarioId, supabase);
-  const semanaLugaresPromise = cargarEventosSemana(supabase, ciudad.nombre, ahora);
+  const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
   const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
+  // «Artistas con eventos esta semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí.
+  const semanaArtistasPromise = Promise.all([cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora), artistasDestacadosPromise]).then(([semana, destacados]) => {
+    const yaSalen = new Set(destacados.map((t) => t.id));
+    return semana.filter((t) => !yaSalen.has(t.id));
+  });
   const seguidosArtistasPromise: Promise<string[] | null> =
     usuarioId && supabase
       ? Promise.resolve(supabase.from("seguimientos").select("artista_id").eq("usuario_id", usuarioId).not("artista_id", "is", null).limit(1000)).then((r) => ((r.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id))
@@ -90,7 +95,8 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
-        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
+        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos esta semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
+        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos esta semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
       />
     </main>

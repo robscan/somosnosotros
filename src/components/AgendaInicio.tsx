@@ -159,6 +159,7 @@ function AgendaLista({
 }) {
   const datos = use(agenda);
   const { seguidos, eventosSeguidos, asistencias } = datos;
+  const destacados = new Set(datos.destacados.map((d) => d.id));
   const ahora = new Date();
   const canal = useCanalDeListas();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
@@ -197,7 +198,7 @@ function AgendaLista({
         {agruparPorDia(lista.slice(0, mostrados), ahora, filtros.cuando?.desde).map((g) => (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
+              <RenglonEvento key={e.id} evento={e} destacado={destacados.has(e.id)} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
             ))}
           </Grupo>
         ))}
@@ -226,6 +227,7 @@ function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Prom
   const ahora = new Date();
   const canal = useCanalDeListas();
   const asistencia = useAsistenciaEnLista(datos.asistencias, avisos, canal);
+  const destacados = new Set(datos.destacados.map((d) => d.id));
   const lista = listarAgenda(datos, filtros, desde);
   const vistoTodo = !conFiltros(filtros);
   useEffect(() => {
@@ -242,7 +244,7 @@ function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Prom
         agruparPorPublicacion(lista, ahora).map((g) => (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} conDia estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
+              <RenglonEvento key={e.id} evento={e} conDia destacado={destacados.has(e.id)} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
             ))}
           </Grupo>
         ))

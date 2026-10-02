@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
 import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
+import { SIN_FOTO } from "@/lib/imagen";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import CarrilEsqueleto from "./CarrilEsqueleto";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
 import { IconoChevronDerecha } from "./ui/Iconos";
+import MarcaDestacado from "./ui/MarcaDestacado";
 import styles from "./Destacados.module.css";
 
 /**
@@ -119,22 +121,25 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
       <ul ref={recordar} className={`${styles.carril} ${styles[forma]}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
         {ordenadas.map((t) => {
           const sello = selloDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
+          // La redonda de un lugar o un artista sin foto lleva el símbolo SN ya generado; las demás, el nombre grande sobre fondo suave (H-03).
+          const foto = t.foto ?? (tamano === "chica" ? SIN_FOTO : null);
           return (
             <li key={t.id}>
-              <Link href={t.href} className={t.foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
+              <Link href={t.href} className={foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                {t.foto && <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />}
+                {foto && <img src={foto} alt="" className={styles.foto} loading="lazy" decoding="async" />}
                 <b>{t.titulo}</b>
                 <small>
                   <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
                   {t.sitio && <span>{t.sitio}</span>}
                 </small>
-                {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda. */}
+                {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda, y la marca de destacado, arriba. */}
                 {sello && (
-                  <Chip variante={sello.tuyo ? "estado" : "sello"} className={styles.rotulo}>
+                  <Chip variante={sello.tuyo ? "estado" : "sello"} className={sello.hoy ? `${styles.rotulo} ${styles.hoy}` : styles.rotulo}>
                     {sello.texto}
                   </Chip>
                 )}
+                {t.destacado && <MarcaDestacado className={styles.marca} />}
               </Link>
               {boton && <BotonRenglon {...boton(t)} sobreFoto />}
             </li>

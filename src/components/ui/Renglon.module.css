@@ -71,6 +71,15 @@
 .frente > :first-child {
   align-self: start;
 }
+/* La marca de destacado (ui/MarcaDestacado): un hijo más de la rejilla, en el área de la miniatura, arriba a la izquierda y con aire
+   del borde de la foto. */
+.frente > .marca {
+  --marca-lado: var(--marca-renglon);
+  grid-area: foto;
+  align-self: start;
+  justify-self: start;
+  margin: var(--espacio-2) 0 0 var(--espacio-2);
+}
 /* El botón de acción de la fila (ui/BotonRenglon): el icono a secas, en el color de acción (H-19); decidido, el círculo verde de
    siempre. */
 .lista > button:not([aria-pressed="true"]) {

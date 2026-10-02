@@ -133,6 +133,19 @@
   justify-self: start;
   margin: 0 0 var(--espacio-2) var(--espacio-2);
 }
+/* «Hoy» en el color de acción, como la fecha en texto (founder, 2026-10-01, OL-253; blanco sobre #6d34c8: 7,06:1). */
+.tarjeta > .hoy {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+/* La marca de destacado (ui/MarcaDestacado): arriba a la izquierda de la foto, la esquina libre (el botón, a la derecha; el rótulo, abajo). */
+.tarjeta > .marca {
+  --marca-lado: var(--marca-tarjeta);
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: start;
+  margin: var(--espacio-2) 0 0 var(--espacio-2);
+}
 .tarjeta > b {
   grid-area: 2 / 1;
   display: -webkit-box;

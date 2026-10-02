@@ -32,19 +32,19 @@ describe("ordenarTarjetasPorFoto", () => {
 
 describe("selloDeTarjeta: un solo rótulo por foto (H-02)", () => {
   it("«Hoy» va antes que «N van»", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5 })).toEqual({ texto: "Hoy", tuyo: false });
+    expect(selloDeTarjeta({ hoy: true, van: 5 })).toEqual({ texto: "Hoy", tuyo: false, hoy: true });
   });
   it("sin ser hoy, cuántos van: «1 va», «3 van»", () => {
-    expect(selloDeTarjeta({ van: 1 })).toEqual({ texto: "1 va", tuyo: false });
-    expect(selloDeTarjeta({ hoy: false, van: 3 })).toEqual({ texto: "3 van", tuyo: false });
+    expect(selloDeTarjeta({ van: 1 })).toEqual({ texto: "1 va", tuyo: false, hoy: false });
+    expect(selloDeTarjeta({ hoy: false, van: 3 })).toEqual({ texto: "3 van", tuyo: false, hoy: false });
   });
   it("sin ninguno de los dos, nada", () => {
     expect(selloDeTarjeta({ van: 0 })).toBeNull();
     expect(selloDeTarjeta({ hoy: false, van: 0 })).toBeNull();
   });
   it("lo que la persona ya decidió («Te interesa») va primero y es suyo; «Recién agregado» ya no es un sello", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5 }, true)).toEqual({ texto: "Te interesa", tuyo: true });
-    expect(selloDeTarjeta({ van: 0 }, true)).toEqual({ texto: "Te interesa", tuyo: true });
+    expect(selloDeTarjeta({ hoy: true, van: 5 }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
+    expect(selloDeTarjeta({ van: 0 }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
     expect(tarjetaEvento(evento({ creado_en: "2026-09-16T00:00:00Z" }), AHORA)).not.toHaveProperty("reciente");
   });
 });
@@ -61,6 +61,11 @@ describe("tarjetas", () => {
   it("evento: «hoy» marca lo que empieza el día de hoy en su zona, no lo de mañana", () => {
     expect(tarjetaEvento(evento({ inicio: "2026-09-17T02:00:00Z" }), AHORA)).toMatchObject({ hoy: true, detalle: "hoy · 20:00" });
     expect(tarjetaEvento(evento(), AHORA).hoy).toBe(false);
+  });
+  it("evento: «destacado» solo aparece cuando se pide, para que la tarjeta no cargue una marca falsa", () => {
+    expect(tarjetaEvento(evento(), AHORA)).not.toHaveProperty("destacado");
+    expect(tarjetaEvento(evento(), AHORA, false)).not.toHaveProperty("destacado");
+    expect(tarjetaEvento(evento(), AHORA, true)).toMatchObject({ destacado: true });
   });
   it("lugar: su próximo evento o, sin él, qué es", () => {
     expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: null, detalle: "Próximo: mañana · 19:00", cuando: true });

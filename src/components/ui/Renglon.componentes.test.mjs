@@ -52,6 +52,9 @@ before(async () => {
               <Renglon href="/corto" foto={FOTO} titulo="Título corto" accion={voy('Voy corto')}>
                 <span><IconoReloj width={15} height={15} /><b>19:00</b></span>
               </Renglon>
+              <Renglon href="/destacado" foto={FOTO} destacado titulo="Título corto" accion={voy('Voy destacado')}>
+                <span><IconoReloj width={15} height={15} /><b>19:00</b></span>
+              </Renglon>
               <EsqueletoRenglon />
               <EsqueletoRenglon redonda />
               <Renglon href="/evento" foto={FOTO} titulo="Concierto de la Orquesta Sinfónica de San Luis Potosí con su director invitado, el coro universitario y las voces de la Huasteca" accion={voy('Voy evento')}>
@@ -151,6 +154,27 @@ test("lista: la foto mide el token (56) y el esqueleto mide lo que el renglón",
   const ancho = await rect(esqueletos.first().locator("span").first());
   assert.deepEqual([ancho.w, ancho.h], [56, 56], "la foto del esqueleto es la del renglón");
   assert.equal(await esqueletos.nth(1).locator("span").first().evaluate((e) => getComputedStyle(e).borderRadius), "50%", "redonda, como la de un artista");
+});
+
+test("lista: un evento destacado lleva la flama en el área de la miniatura, con aire del borde y sin mover nada (OL-253)", async (t) => {
+  const p = await pagina(t);
+  const fila = (href) => p.locator("ul[aria-label=lista] > li").filter({ has: p.locator(`a[href="${href}"]`) });
+  const marca = fila("/destacado").locator('[role="img"][aria-label="Destacado"]');
+  assert.equal(await marca.count(), 1);
+  assert.equal(await fila("/corto").locator('[role="img"]').count(), 0, "sin destacado no hay marca");
+  const foto = await rect(fila("/destacado").locator("img"));
+  const m = await rect(marca);
+  assert.deepEqual([m.w, m.h], [22, 22], "--marca-renglon");
+  assert.deepEqual([Math.round(m.x - foto.x), Math.round(m.y - foto.y)], [8, 8], "--espacio-2 del borde de la miniatura");
+  assert.ok(m.r <= foto.r && m.b <= foto.b, "queda dentro de la miniatura");
+  const estilo = await marca.evaluate((e) => ({ fondo: getComputedStyle(e).backgroundColor, color: getComputedStyle(e).color, radio: getComputedStyle(e).borderTopLeftRadius }));
+  assert.deepEqual(estilo, { fondo: "rgba(255, 255, 255, 0.92)", color: "rgb(109, 52, 200)", radio: "50%" });
+  // La marca es un hijo más de la rejilla: ni el renglón ni el título ni la meta se mueven respecto al renglón sin marca.
+  assert.equal((await rect(fila("/destacado"))).h, (await rect(fila("/corto"))).h);
+  const titulo = (href) => rect(fila(href).locator("a > b"));
+  const sin = await titulo("/corto");
+  const con = await titulo("/destacado");
+  assert.deepEqual([con.x, con.w, con.h], [sin.x, sin.w, sin.h]);
 });
 
 test("lista: el botón de acción es el icono a secas de 44, en el color de acción y sin círculo ni sombra (H-19); decidido, solo el círculo verde", async (t) => {

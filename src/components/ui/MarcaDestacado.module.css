@@ -1,0 +1,15 @@
+/* La marca de «destacado» (ui/MarcaDestacado): un círculo de vidrio con la flama en el color de acción. El lado (`--marca-lado`) y el
+   sitio los pone quien la lleva; la flama ocupa dos tercios del círculo. */
+.marca {
+  display: grid;
+  place-items: center;
+  width: var(--marca-lado);
+  height: var(--marca-lado);
+  border-radius: 50%;
+  background: var(--vidrio);
+  color: var(--primario);
+}
+.marca > svg {
+  width: 66%;
+  height: 66%;
+}

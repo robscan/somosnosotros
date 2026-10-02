@@ -19,7 +19,7 @@ type Props = {
   /** La agenda, diferida como los carriles: de ella salen los puntos del calendario y el número de eventos de cada hoja. */
   agenda: Promise<Agenda>;
   conSesion: boolean;
-  /** Los seis carriles, ya construidos (cada uno, un componente de servidor dentro de su propio `<Suspense>` en
+  /** Los siete carriles, ya construidos (cada uno, un componente de servidor dentro de su propio `<Suspense>` en
    *  `src/app/page.tsx`). `slotTusPlanes` solo se pinta con sesión (OL-219: sin cuenta, ese carril no existe, no
    *  colapsa vacío). */
   slotTusPlanes: React.ReactNode;
@@ -27,12 +27,13 @@ type Props = {
   slotEstaSemana: React.ReactNode;
   slotNuevos: React.ReactNode;
   slotLugaresSemana: React.ReactNode;
+  slotArtistasSemana: React.ReactNode;
   slotArtistasDestacados: React.ReactNode;
 };
 
 /**
  * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Tus planes, Destacados, Esta semana,
- * Nuevos eventos, Lugares con eventos y Artistas destacadxs, cada uno con su título a la izquierda y, a la derecha, el
+ * Nuevos eventos, Lugares con eventos esta semana, Artistas con eventos esta semana y Artistas destacadxs, cada uno con su título a la izquierda y, a la derecha, el
  * enlace que dice a dónde lleva — bajo la fila de contexto de las pantallas de eventos (`FilaEventos`: ciudad, Cuándo y
  * Filtros). Cuándo y Filtros no filtran a Inicio: al aplicarlos llevan a Agenda con eso puesto. Carga progresiva (pedido
  * del founder tras probar en producción): esta pantalla ya no espera ninguna consulta antes de pintar; cada carril llega
@@ -46,7 +47,7 @@ type Props = {
  * crear cuenta en inicio»): y la barra tampoco lleva «Entrar» (founder, 2026-09-29): el acceso se ofrece al entrar a Perfil y al
  * seguir o marcar «Voy», sin bloquear nada delante del contenido de eventos, lugares y artistas.
  */
-export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotTusPlanes, slotEstelar, slotEstaSemana, slotNuevos, slotLugaresSemana, slotArtistasDestacados }: Props) {
+export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotTusPlanes, slotEstelar, slotEstaSemana, slotNuevos, slotLugaresSemana, slotArtistasSemana, slotArtistasDestacados }: Props) {
   const router = useRouter();
   const esCiudadInicial = ciudad.slug === CIUDAD_INICIAL.slug;
 
@@ -75,6 +76,7 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
       <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
       <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
       <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
+      <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotArtistasSemana}</Suspense>
       {/* OL-165: «Artistas destacadxs» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto
           cambia con él para no saltar cuando llega la respuesta real. */}
       <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotArtistasDestacados}</Suspense>
