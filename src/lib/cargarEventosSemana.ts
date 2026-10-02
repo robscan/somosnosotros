@@ -2,7 +2,10 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tarjetasDeSemana, type AparicionSemana } from "./eventosSemana";
 
-type FilaLugar = Omit<AparicionSemana["evento"], "lugar"> & { lugar: AparicionSemana["ficha"] & { portada: string | null } };
+type Ficha = AparicionSemana["ficha"];
+type Evento = AparicionSemana["evento"];
+type FilaArtista = { artista: Ficha; evento: Evento };
+type FilaLugar = Omit<Evento, "lugar"> & { lugar: Ficha & { portada: string | null } };
 const LOTE = 500;
 /** Un atajo no puede competir con el directorio: hasta 1 000 relaciones en dos lecturas y 750 ms en total.
  * Si una ciudad supera eso, se oculta esta tira hasta poder resolverlo con una consulta agregada en la base. */
@@ -32,11 +35,11 @@ async function antesDelPlazo<T>(consulta: ConsultaAbortable<Respuesta<T>>, contr
   }
 }
 
-/** Lectura pública de los lugares con eventos hoy o en los próximos siete días, por ciudad y en lotes con orden total; nunca usa
- * llave de servicio ni una consulta por ficha. El margen UTC de nueve días contiene hoy+7 en cualquier zona; el corte exacto lo
- * hace tarjetasDeSemana. Si falla un lote no se ofrece un carril incompleto. El directorio y los destacados siguen disponibles.
+/** Lectura pública, por ciudad y lotes con orden total; nunca usa llave de servicio ni una consulta por ficha.
+ * El margen UTC de nueve días contiene hoy+7 en cualquier zona; el corte exacto lo hace tarjetasDeSemana.
+ * Si falla un lote no se ofrece un carril incompleto. El directorio y los destacados siguen disponibles.
  */
-export async function cargarEventosSemana(supabase: SupabaseClient | null, ciudad: string, ahora = new Date(), opciones: OpcionesDeLecturaSemanal = {}) {
+export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo: "artistas" | "lugares", ciudad: string, ahora = new Date(), opciones: OpcionesDeLecturaSemanal = {}) {
   if (!supabase) return [];
   const presupuesto = { ...PRESUPUESTO_SEMANAL, ...opciones };
   const limite = new Date(ahora.getTime() + 9 * 86400000).toISOString();
@@ -47,21 +50,39 @@ export async function cargarEventosSemana(supabase: SupabaseClient | null, ciuda
   let consultas = 0;
   for (let desde = 0; ; desde += LOTE) {
     if (consultas >= presupuesto.consultas || filas >= presupuesto.filas) return [];
-    const consulta = supabase.from("eventos")
-      .select("id, inicio, termina, zona, visible, lugar_id, lugar:lugares!inner(id, slug, nombre, portada, visible, privado)")
-      .eq("visible", true).eq("ciudad", ciudad)
-      .eq("lugar.visible", true).eq("lugar.privado", false).eq("lugar.ciudad", ciudad)
-      .gte("termina", ahora.toISOString()).lt("inicio", limite)
-      .order("id").range(desde, desde + LOTE - 1);
-    consultas += 1;
-    const respuesta = await antesDelPlazo(consulta, controlador, venceEn - Date.now());
-    if (!respuesta?.data || respuesta.error || filas + respuesta.data.length > presupuesto.filas) return [];
-    const { data } = respuesta;
-    filas += data.length;
-    for (const fila of data as unknown as FilaLugar[]) {
-      apariciones.push({ ficha: { ...fila.lugar, foto: fila.lugar.portada }, evento: { ...fila, lugar: { visible: fila.lugar.visible, privado: !!fila.lugar.privado } } });
+    if (tipo === "artistas") {
+      const consulta = supabase.from("eventos_artistas")
+        .select("artista_id, evento_id, artista:artistas!inner(id, slug, nombre, foto, visible), evento:eventos!inner(id, inicio, termina, zona, visible, lugar_id, lugar:lugares(visible, privado))")
+        .eq("artista.visible", true).eq("artista.ciudad", ciudad)
+        .eq("evento.visible", true).eq("evento.ciudad", ciudad)
+        .gte("evento.termina", ahora.toISOString()).lt("evento.inicio", limite)
+        .order("evento_id").order("artista_id").range(desde, desde + LOTE - 1);
+      consultas += 1;
+      const respuesta = await antesDelPlazo(consulta, controlador, venceEn - Date.now());
+      if (!respuesta?.data || respuesta.error || filas + respuesta.data.length > presupuesto.filas) return [];
+      const { data } = respuesta;
+      filas += data.length;
+      for (const fila of (data ?? []) as unknown as FilaArtista[]) {
+        apariciones.push({ ficha: fila.artista, evento: fila.evento });
+      }
+      if (data.length < LOTE) break;
+    } else {
+      const consulta = supabase.from("eventos")
+        .select("id, inicio, termina, zona, visible, lugar_id, lugar:lugares!inner(id, slug, nombre, portada, visible, privado)")
+        .eq("visible", true).eq("ciudad", ciudad)
+        .eq("lugar.visible", true).eq("lugar.privado", false).eq("lugar.ciudad", ciudad)
+        .gte("termina", ahora.toISOString()).lt("inicio", limite)
+        .order("id").range(desde, desde + LOTE - 1);
+      consultas += 1;
+      const respuesta = await antesDelPlazo(consulta, controlador, venceEn - Date.now());
+      if (!respuesta?.data || respuesta.error || filas + respuesta.data.length > presupuesto.filas) return [];
+      const { data } = respuesta;
+      filas += data.length;
+      for (const fila of (data ?? []) as unknown as FilaLugar[]) {
+        apariciones.push({ ficha: { ...fila.lugar, foto: fila.lugar.portada }, evento: { ...fila, lugar: { visible: fila.lugar.visible, privado: !!fila.lugar.privado } } });
+      }
+      if (data.length < LOTE) break;
     }
-    if (data.length < LOTE) break;
   }
-  return tarjetasDeSemana(apariciones, ahora);
+  return tarjetasDeSemana(apariciones, tipo, ahora);
 }

@@ -45,12 +45,13 @@ export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
 /**
  * El único rótulo que lleva una tarjeta sobre su foto (docs/rediseno/50, H-02): no se apilan tres sobre el cartel. Lo tuyo primero
  * («Te interesa»), luego lo que ayuda a decidir: «Hoy» antes que «N van»; sin ninguno, nada. «Recién agregado» ya no es un sello: el
- * carril que lo agrupa lo dice. `tuyo` es lo que la persona ya decidió (un estado); lo demás, un dato del evento (un sello).
+ * carril que lo agrupa lo dice. `tuyo` es lo que la persona ya decidió (un estado); lo demás, un dato del evento (un sello); `hoy` marca
+ * el de «Hoy», que va en el color de acción (founder, 2026-10-01, OL-253).
  */
-export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van">, interesa = false): { texto: string; tuyo: boolean } | null {
-  if (interesa) return { texto: "Te interesa", tuyo: true };
-  if (t.hoy) return { texto: "Hoy", tuyo: false };
-  if (t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false };
+export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
+  if (interesa) return { texto: "Te interesa", tuyo: true, hoy: false };
+  if (t.hoy) return { texto: "Hoy", tuyo: false, hoy: true };
+  if (t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
   return null;
 }
 

@@ -124,6 +124,11 @@ const eventos_artistas = [
   { evento_id: E.sinfonica, artista_id: A.osslp, orden: 1 },
   { evento_id: E.pimpolina, artista_id: A.pimpolina, orden: 1 },
   { evento_id: E.feleal, artista_id: A.feleal, orden: 1 },
+  // Sin foto y con evento esta semana: «Artistas con eventos esta semana» los pinta con el símbolo SN (OL-253). Los de arriba tienen
+  // cartel, así que salen en «Artistas destacadxs» y no se repiten allí.
+  { evento_id: E.macario, artista_id: A.backside, orden: 1 },
+  { evento_id: E.cristiada, artista_id: A.merlot, orden: 1 },
+  { evento_id: E.arttoy, artista_id: A.cadena, orden: 1 },
 ];
 
 // ---------- lo de las personas ----------

@@ -4,8 +4,9 @@ import { DIAS_ESTA_SEMANA } from "./cuando";
 import { enOrden } from "./destacados";
 
 /**
- * Inicio: seis carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
- * «Populares» y «Artistas con eventos»: el prototipo firmado trae esos seis). Aquí solo lo que se puede probar sin
+ * Inicio: siete carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
+ * «Populares» y «Artistas con eventos»: el prototipo firmado trae seis; OL-253, bitácora 280, repuso «Artistas con eventos
+ * esta semana» por decisión del founder). Aquí solo lo que se puede probar sin
  * base de datos ni navegador: la ventana de "esta semana", el peso de "Tus planes" y del carril estelar, el orden de
  * Nuevos eventos (con su criterio nuevo, que ya no compite con "Esta semana") y que no se repita un evento entre carriles.
  */
