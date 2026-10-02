@@ -133,6 +133,11 @@
   justify-self: start;
   margin: 0 0 var(--espacio-2) var(--espacio-2);
 }
+/* «Hoy» en el color de acción, como la fecha en texto (founder, 2026-10-01, OL-253; blanco sobre #6d34c8: 7,06:1). */
+.tarjeta > .hoy {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
 .tarjeta > b {
   grid-area: 2 / 1;
   display: -webkit-box;

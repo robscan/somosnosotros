@@ -68,6 +68,8 @@ before(async () => {
 
       const grandes = [tarjeta('grande-a', 1), tarjeta('grande-b', 0)];
       const redondas = ['uno', 'dos', 'tres'].map((id) => tarjeta('lug-' + id, 0, { sitio: undefined, detalle: 'mié 30 sep · 19:00' }));
+      // Una redonda sin foto (lugar o artista): lleva el símbolo SN ya generado.
+      const redondaSinFoto = tarjeta('lug-sin-foto', 0, { sitio: undefined, foto: null, detalle: 'Hoy · 19:00' });
       const sola = tarjeta('la-sola', 0);
 
       function App() {
@@ -81,7 +83,7 @@ before(async () => {
           React.createElement(Destacados, { tarjetas: [artistaSeguido, tarjeta('otro-artista-seguido', 0)], encabezado: 'Carril de artistas seguidos', memoria: 'm7', boton: botonDe('artista', true) }),
           React.createElement(Destacados, { tarjetas: [corta, larga, sinFoto], encabezado: 'Carril de datos', memoria: 'm8', boton }),
           React.createElement(Destacados, { tarjetas: grandes, tamano: 'grande', encabezado: 'Carril grande', memoria: 'm9', boton }),
-          React.createElement(Destacados, { tarjetas: redondas, tamano: 'chica', encabezado: 'Carril chico', memoria: 'm10', boton: botonDe('lugar', false) }),
+          React.createElement(Destacados, { tarjetas: [...redondas, redondaSinFoto], tamano: 'chica', encabezado: 'Carril chico', memoria: 'm10', boton: botonDe('lugar', false) }),
           React.createElement(Destacados, { tarjetas: [sola], encabezado: 'Carril solo', memoria: 'm11', boton }),
           React.createElement(Destacados, { tarjetas: [], encabezado: 'Carril vacio', memoria: 'm12' }),
         );
@@ -302,6 +304,25 @@ test("un carril vacío no deja hueco: se recoge a alto 0 y no se oye", async (t)
   await p.waitForFunction(() => document.querySelector('[aria-hidden="true"]') !== null);
   const alto = await p.locator("div[aria-hidden='true']").first().evaluate((d) => Math.round(d.getBoundingClientRect().height));
   assert.equal(alto, 0);
+});
+
+test("«Hoy» va en el color de acción con texto blanco (7,06:1); «N van» sigue en vidrio", async (t) => {
+  const p = await pagina(t);
+  const colores = (id) => tarjeta(p, id).locator(":scope > span").evaluate((r) => ({ fondo: getComputedStyle(r).backgroundColor, texto: getComputedStyle(r).color }));
+  assert.deepEqual(await colores("hoy-y-van"), { fondo: "rgb(109, 52, 200)", texto: "rgb(255, 255, 255)" }, "--primario con --primario-texto");
+  const van = await colores("solo-van");
+  assert.notEqual(van.fondo, "rgb(109, 52, 200)", "un dato que no es «Hoy» no se vuelve violeta");
+  assert.equal(van.texto, "rgb(26, 26, 26)");
+});
+
+test("la redonda sin foto lleva el símbolo SN ya generado, en círculo, y la fecha en violeta", async (t) => {
+  const p = await pagina(t);
+  const enlace = tarjeta(p, "lug-sin-foto");
+  const foto = await enlace.locator("img").evaluate((i) => ({ src: new URL(i.src).pathname, radio: getComputedStyle(i).borderTopLeftRadius, lado: Math.round(i.getBoundingClientRect().width) }));
+  assert.deepEqual(foto, { src: "/sin-foto.png", radio: "50%", lado: 104 });
+  assert.equal(await enlace.locator("small > span").evaluate((s) => getComputedStyle(s).color), "rgb(109, 52, 200)");
+  // Las no redondas sin foto siguen sin imagen (el nombre grande sobre el fondo suave, H-03).
+  assert.equal(await tarjeta(p, "sin-foto").locator("img").count(), 0);
 });
 
 // Los trazos de los tres glifos de acción (ui/Iconos): la palomita, la campana con «+» y la persona con «+».

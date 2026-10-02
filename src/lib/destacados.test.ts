@@ -32,19 +32,19 @@ describe("ordenarTarjetasPorFoto", () => {
 
 describe("selloDeTarjeta: un solo rótulo por foto (H-02)", () => {
   it("«Hoy» va antes que «N van»", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5 })).toEqual({ texto: "Hoy", tuyo: false });
+    expect(selloDeTarjeta({ hoy: true, van: 5 })).toEqual({ texto: "Hoy", tuyo: false, hoy: true });
   });
   it("sin ser hoy, cuántos van: «1 va», «3 van»", () => {
-    expect(selloDeTarjeta({ van: 1 })).toEqual({ texto: "1 va", tuyo: false });
-    expect(selloDeTarjeta({ hoy: false, van: 3 })).toEqual({ texto: "3 van", tuyo: false });
+    expect(selloDeTarjeta({ van: 1 })).toEqual({ texto: "1 va", tuyo: false, hoy: false });
+    expect(selloDeTarjeta({ hoy: false, van: 3 })).toEqual({ texto: "3 van", tuyo: false, hoy: false });
   });
   it("sin ninguno de los dos, nada", () => {
     expect(selloDeTarjeta({ van: 0 })).toBeNull();
     expect(selloDeTarjeta({ hoy: false, van: 0 })).toBeNull();
   });
   it("lo que la persona ya decidió («Te interesa») va primero y es suyo; «Recién agregado» ya no es un sello", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5 }, true)).toEqual({ texto: "Te interesa", tuyo: true });
-    expect(selloDeTarjeta({ van: 0 }, true)).toEqual({ texto: "Te interesa", tuyo: true });
+    expect(selloDeTarjeta({ hoy: true, van: 5 }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
+    expect(selloDeTarjeta({ van: 0 }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
     expect(tarjetaEvento(evento({ creado_en: "2026-09-16T00:00:00Z" }), AHORA)).not.toHaveProperty("reciente");
   });
 });
