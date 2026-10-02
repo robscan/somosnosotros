@@ -139,12 +139,6 @@ export const IconoEstrella = (p: P) => (
     <path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z" />
   </svg>
 );
-/** La cinta colgante de «destacado»: un rectángulo con muesca en V, relleno del color del texto; su proporción es la de su viewBox (22×30). */
-export const IconoCinta = (p: P) => (
-  <svg {...base({ viewBox: "0 0 22 30", width: 22, height: 30, fill: "currentColor", stroke: "none", ...p })}>
-    <path d="M0 0h22v30l-11-7-11 7z" />
-  </svg>
-);
 export const IconoCaret = (p: P) => (
   <svg {...base({ strokeWidth: 2, ...p })}>
     <path d="M6 9l6 6 6-6" />

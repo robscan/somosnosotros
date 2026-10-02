@@ -62,11 +62,6 @@ describe("tarjetas", () => {
     expect(tarjetaEvento(evento({ inicio: "2026-09-17T02:00:00Z" }), AHORA)).toMatchObject({ hoy: true, detalle: "hoy · 20:00" });
     expect(tarjetaEvento(evento(), AHORA).hoy).toBe(false);
   });
-  it("evento: «destacado» solo aparece cuando se pide, para que la tarjeta no cargue una marca falsa", () => {
-    expect(tarjetaEvento(evento(), AHORA)).not.toHaveProperty("destacado");
-    expect(tarjetaEvento(evento(), AHORA, false)).not.toHaveProperty("destacado");
-    expect(tarjetaEvento(evento(), AHORA, true)).toMatchObject({ destacado: true });
-  });
   it("lugar: su próximo evento o, sin él, qué es", () => {
     expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: null, detalle: "Próximo: mañana · 19:00", cuando: true });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });

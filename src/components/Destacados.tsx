@@ -10,7 +10,6 @@ import CarrilEsqueleto from "./CarrilEsqueleto";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
 import { IconoChevronDerecha } from "./ui/Iconos";
-import MarcaDestacado from "./ui/MarcaDestacado";
 import styles from "./Destacados.module.css";
 
 /**
@@ -133,13 +132,12 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
                   <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
                   {t.sitio && <span>{t.sitio}</span>}
                 </small>
-                {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda, y la marca de destacado, arriba. */}
+                {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda. */}
                 {sello && (
                   <Chip variante={sello.tuyo ? "estado" : "sello"} className={sello.hoy ? `${styles.rotulo} ${styles.hoy}` : styles.rotulo}>
                     {sello.texto}
                   </Chip>
                 )}
-                {t.destacado && <MarcaDestacado className={styles.marca} />}
               </Link>
               {boton && <BotonRenglon {...boton(t)} sobreFoto />}
             </li>

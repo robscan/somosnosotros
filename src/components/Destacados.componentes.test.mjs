@@ -70,8 +70,6 @@ before(async () => {
       const redondas = ['uno', 'dos', 'tres'].map((id) => tarjeta('lug-' + id, 0, { sitio: undefined, detalle: 'mié 30 sep · 19:00' }));
       // Una redonda sin foto (lugar o artista): lleva el símbolo SN ya generado.
       const redondaSinFoto = tarjeta('lug-sin-foto', 0, { sitio: undefined, foto: null, detalle: 'Hoy · 19:00' });
-      // Eventos destacados (OL-253): con «Hoy» y con «N van», para ver que la cinta no compite con el rótulo ni con el botón.
-      const marcadas = [tarjeta('destacada-hoy', 3, { destacado: true, hoy: true }), tarjeta('destacada-van', 5, { destacado: true })];
       const sola = tarjeta('la-sola', 0);
 
       function App() {
@@ -88,7 +86,6 @@ before(async () => {
           React.createElement(Destacados, { tarjetas: [...redondas, redondaSinFoto], tamano: 'chica', encabezado: 'Carril chico', memoria: 'm10', boton: botonDe('lugar', false) }),
           React.createElement(Destacados, { tarjetas: [sola], encabezado: 'Carril solo', memoria: 'm11', boton }),
           React.createElement(Destacados, { tarjetas: [], encabezado: 'Carril vacio', memoria: 'm12' }),
-          React.createElement(Destacados, { tarjetas: marcadas, encabezado: 'Carril de destacados', memoria: 'm13', boton }),
         );
       }
       createRoot(document.getElementById('root')).render(React.createElement(App));
@@ -316,29 +313,6 @@ test("«Hoy» va en el color de acción con texto blanco (7,06:1); «N van» sig
   const van = await colores("solo-van");
   assert.notEqual(van.fondo, "rgb(109, 52, 200)", "un dato que no es «Hoy» no se vuelve violeta");
   assert.equal(van.texto, "rgb(26, 26, 26)");
-});
-
-test("un evento destacado lleva una cinta colgando del borde superior de la foto, a la izquierda, sin pisar el rótulo ni el botón", async (t) => {
-  const p = await pagina(t);
-  assert.equal(await tarjeta(p, "sin-nada").locator('[role="img"][aria-label="Destacado"]').count(), 0, "sin destacado no hay marca");
-  for (const id of ["destacada-hoy", "destacada-van"]) {
-    const enlace = tarjeta(p, id);
-    assert.equal(await enlace.locator('[role="img"][aria-label="Destacado"]').count(), 1, id);
-    const caja = await enlace.evaluate((a) => {
-      const f = a.querySelector("img").getBoundingClientRect();
-      const m = a.querySelector('[role="img"]');
-      const r = m.getBoundingClientRect();
-      const otras = [a.parentElement.querySelector("button"), ...[...a.children].filter((el) => el.tagName === "SPAN" && el !== m)].map((el) => el.getBoundingClientRect());
-      const cruza = (x) => r.left < x.right && r.right > x.left && r.top < x.bottom && r.bottom > x.top;
-      return { lado: [Math.round(r.width), Math.round(r.height)], izquierda: Math.round(r.left - f.left), arriba: Math.round(r.top - f.top), cruces: otras.filter(cruza).length, fondo: getComputedStyle(m).backgroundColor, relleno: getComputedStyle(m.querySelector("svg")).fill, sombra: getComputedStyle(m).filter };
-    });
-    assert.deepEqual(caja.lado, [22, 30], "--marca-tarjeta de ancho y la proporción 22×30 de la cinta");
-    assert.deepEqual([caja.izquierda, caja.arriba], [8, 0], "--espacio-2 a la izquierda y pegada al borde superior, sin hueco");
-    assert.equal(caja.cruces, 0, "no toca el botón ni el rótulo");
-    assert.equal(caja.relleno, "rgb(255, 255, 255)", "la cinta blanca, --primario-texto");
-    assert.equal(caja.fondo, "rgba(0, 0, 0, 0)", "sin círculo ni vidrio");
-    assert.match(caja.sombra, /drop-shadow\(rgba\(0, 0, 0, 0\.45\) 0px 1px 2px\)/, "sombra suave para leerse sobre fotos claras");
-  }
 });
 
 test("la redonda sin foto lleva el símbolo SN ya generado, en círculo, y la fecha en violeta", async (t) => {

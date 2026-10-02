@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { MouseEventHandler, ReactNode } from "react";
 import { SIN_FOTO } from "@/lib/imagen";
-import MarcaDestacado from "./MarcaDestacado";
 import styles from "./Renglon.module.css";
 
 type Props = {
@@ -13,8 +12,6 @@ type Props = {
   /** En una lista larga (artistas) las fotos se piden al llegar a ellas. */
   perezosa?: boolean;
   titulo: string;
-  /** Un evento destacado: la cinta de la marca cuelga del borde superior de la miniatura. */
-  destacado?: boolean;
   /** El botón de la derecha (Voy, Seguir): hermano del enlace, nunca dentro de él. */
   accion?: ReactNode;
   /** Lo que hace el toque además de llevar a `href` (quien lo pone puede frenar la navegación: la ficha se abre en otro sitio). */
@@ -32,7 +29,7 @@ type Props = {
  * con icono a la derecha, y el botón de acción (OL-104, bitácora 139) a la derecha del todo. Las otras tres pieles del
  * renglón (dato, ajuste y resuelto) son las clases de `Renglon.module.css`.
  */
-export default function Renglon({ href, foto, redonda = false, perezosa = false, destacado = false, titulo, accion, onClick, children }: Props) {
+export default function Renglon({ href, foto, redonda = false, perezosa = false, titulo, accion, onClick, children }: Props) {
   return (
     <li className={styles.lista}>
       <Link href={href} className={styles.frente} onClick={onClick}>
@@ -40,7 +37,6 @@ export default function Renglon({ href, foto, redonda = false, perezosa = false,
         <img src={foto ?? SIN_FOTO} alt="" className={redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : undefined} decoding={perezosa ? "async" : undefined} />
         <b>{titulo}</b>
         <small>{children}</small>
-        {destacado && <MarcaDestacado className={styles.marca} />}
       </Link>
       {accion}
     </li>
