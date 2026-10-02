@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparLugares, calleCorta, primerosDeGrupos, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
+import { agruparLugares, calleCorta, primerosDeGrupos, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, puntoDeCercania, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -123,6 +123,13 @@ describe("agruparLugares", () => {
     expect(grupos[1].lugares.map((l) => l.id)).toEqual(["s1", "s2"]);
     expect(km.get("c1")).toBe(0);
     expect([...km.keys()].sort()).toEqual(["c1", "c2", "c3", "s1", "s2"]);
+  });
+  it("la cercanía ordena dentro de cada grupo, nunca por encima: un lugar sin eventos más cercano no sube sobre uno con eventos más lejano", () => {
+    const yo = { lat: 22.15, lng: -100.98 }; // s1 (sin eventos) está encima de mí; pronto (con eventos) es el más lejano
+    const { grupos, km } = agruparLugares(todos, yo);
+    expect(km.get("s1")!).toBeLessThan(km.get("c2")!);
+    expect(grupos.map((g) => g.clave)).toEqual(["con-eventos", "sin-eventos"]);
+    expect(grupos.flatMap((g) => g.lugares.map((l) => l.id)).indexOf("c2")).toBeLessThan(grupos.flatMap((g) => g.lugares.map((l) => l.id)).indexOf("s1"));
   });
   it("un grupo sin lugares no existe: con filtros puestos queda uno, o ninguno", () => {
     expect(agruparLugares([tarde, pronto], null).grupos.map((g) => g.clave)).toEqual(["con-eventos"]);
@@ -297,5 +304,24 @@ describe("hrefLugar", () => {
     expect(hrefLugar({ id: "a1", slug: null })).toBe("/lugares/a1");
     expect(hrefLugar({ id: "a1" })).toBe("/lugares/a1");
     expect(hrefLugar({ id: "a1", slug: "" })).toBe("/lugares/a1");
+  });
+});
+
+describe("puntoDeCercania (OL-255)", () => {
+  const pedido = { lat: 1, lng: 1 };
+  const fresca = { lat: 2, lng: 2 };
+  it("con el permiso concedido ordena sin toque, con la ubicación al día", () => {
+    expect(puntoDeCercania(null, fresca, true)).toBe(fresca);
+  });
+  it("sin permiso ni toque no hay punto, aunque quede uno guardado", () => {
+    expect(puntoDeCercania(null, fresca, false)).toBeNull();
+    expect(puntoDeCercania(null, null, false)).toBeNull();
+  });
+  it("tras el toque sigue al punto más reciente, o se queda con el pedido", () => {
+    expect(puntoDeCercania(pedido, fresca, false)).toBe(fresca);
+    expect(puntoDeCercania(pedido, null, false)).toBe(pedido);
+  });
+  it("concedido pero sin punto todavía: nada hasta que llegue", () => {
+    expect(puntoDeCercania(null, null, true)).toBeNull();
   });
 });
