@@ -37,7 +37,7 @@ export type EstadoHoja = { detente: Detente; y: number; cubre: number };
 export type DondeEstaba = { detente: Detente; y: number };
 
 export type Manejo = {
-  /** Lleva la hoja a una de sus alturas (el «Atrás» de la ficha llena vuelve a la media). */
+  /** Lleva la hoja a una de sus alturas (la flecha de la ficha llena la baja a recogida). */
   irA: (detente: Detente) => void;
   /** La persona mueve el mapa: la hoja baja a su altura más baja si no lo está. Nada que hacer en el panel (no hay alturas) ni con un dedo sobre la hoja. */
   recoger: () => void;
@@ -229,7 +229,10 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     alAsentarActual.current({ detente: estadoEn(y, detentes), y, cubre: enPanel() ? 0 : alto + Math.min(y, alturaConMapa) });
   }, [recortar]);
 
+  /** Un movimiento pedido (un botón, el asa) no es la inercia de un dedo: el toque que lo pidió acaba de soltarse y dejaría `enInercia` puesta, y
+   *  `pintar` devolvería a llena la hoja que baja de ella —con el anclaje aún quitado— en vez de dejarla ir. */
   const irA = useCallback((y: number) => {
+    enInercia.current = false;
     hoja.current!.scrollTo({ top: y, behavior: sinMovimiento() ? "auto" : "smooth" });
   }, []);
 

@@ -1,7 +1,7 @@
 /* ==========================================================================
    La ficha de un lugar dentro de la hoja de Lugares (docs/rediseno/50, P5b y P6). Es la rejilla de la ficha a pantalla completa
    (`ui/Ficha.module.css`: barra, héroe, cuerpo y pastilla flotante) con lo propio de estar en una hoja: fondo blanco, la barra con el
-   asa arriba y la ✕ (o Atrás, con la hoja llena), y la pastilla de Seguir: en el héroe, junto al menú «···», mientras la portada se
+   asa arriba y la ✕ (o la flecha que la baja, con la hoja llena), y la pastilla de Seguir: en el héroe, junto al menú «···», mientras la portada se
    ve; flotando abajo (sobre la navegación mientras la hoja asoma, al pie cuando está llena) cuando ya no. Lo que cambia con la
    altura de la hoja lo dice `data-hoja` (recogida · asoma · media · llena), que pone la hoja; y `data-compacta`, en esta ficha, la
    barra con la portada oscurecida detrás del título.
@@ -58,19 +58,19 @@
   }
 }
 
-/* Llena, la hoja es una página completa: el mando de la izquierda es Atrás (vuelve a foto y datos); la ✕ solo mientras asoma. Con
+/* Llena, la hoja es una página completa: el mando de la izquierda es la flecha que baja la ficha a su cabecera; la ✕ solo mientras asoma. Con
    `.enHoja` delante pesan más que el `display` del botón (ui/BotonIcono) y no dependen del orden en que llegue cada módulo. */
 .cerrar,
-.atras {
+.bajar {
   grid-column: 1;
 }
-.enHoja .atras {
+.enHoja .bajar {
   display: none;
 }
 :global([data-hoja="llena"]) .enHoja .cerrar {
   display: none;
 }
-:global([data-hoja="llena"]) .enHoja .atras {
+:global([data-hoja="llena"]) .enHoja .bajar {
   display: inline-grid;
 }
 
