@@ -1,6 +1,6 @@
 # 288 · Redirecciones internas seguras (OL-261 / H04)
 
-**Fecha:** 2026-10-03. **Estado:** candidato probado, listo para revisión.
+**Fecha:** 2026-10-03. **Estado:** publicado y comprobado en dominio; Safari físico pendiente del founder.
 Reserva de Gestor de cambios III: rama `seguridad-redirecciones`, base
 `origin/main 3d7945c8`, worktree `/Users/apple-1/somosnosotros-seguridad-redirecciones`.
 OL261/bit288; numeración comprobada. Sin migración ni subagentes. Founder ordenó
@@ -73,3 +73,24 @@ Entrar con destino manipulado sin completar OAuth ni escribir datos reales.
 Recuperación: revertir este cambio reintroduce H04; preferir corregir la frontera
 si apareciera una regresión. Sin migraciones ni cambios de configuración que
 revertir.
+
+## Publicado y comprobado
+
+Gestor aceptó candidato `1753fd8e` y cedió ventana tras CI verde. PR
+[303](https://github.com/robscan/somosnosotros/pull/303), CI37160715356 correcto
+(3m40s), unido `f8f5de679ba254b21c1abbcefd15197d44f21243` a las23:11:55 UTC.
+Sin migración. Production6834276419 del mismo SHA en success23:12:33 UTC.
+
+Comprobación en `somosnosotros.org`, navegador sin sesión:
+
+- Entrar con `siguiente=%2F%09%2Fexample.test` permanece en el sitio y los enlaces
+  Apple/Google llevan únicamente `siguiente=%2Fperfil`.
+- Entrar con `/ajustes?desde=perfil#avisos` conserva íntegro ese destino en ambos
+  enlaces de acceso, con query y fragmento codificados.
+- `/api/estado` HTTP200 con `supabase:ok`. No se completó OAuth, se enviaron
+  correos/push ni se escribieron datos reales para verificar la publicación.
+
+La prueba de callback con sesión está cubierta por unitarias y build con Auth
+sintético; no se presenta
+como acceso real en un iPhone. Servidores locales detenidos, viewport restaurado,
+árbol propio limpio al entregar. H04 resuelto; Safari físico pendiente del founder.
