@@ -87,7 +87,7 @@ Comprobación en `somosnosotros.org`, navegador sin sesión:
   Apple/Google llevan únicamente `siguiente=%2Fperfil`.
 - Entrar con `/ajustes?desde=perfil#avisos` conserva íntegro ese destino en ambos
   enlaces de acceso, con query y fragmento codificados.
-- `/api/estado` HTTP200 con `supabase:ok`. No se completó OAuth, se enviaron
+- `/api/estado` HTTP200 con `supabase:ok`. No se completó OAuth ni se enviaron
   correos/push ni se escribieron datos reales para verificar la publicación.
 
 La prueba de callback con sesión está cubierta por unitarias y build con Auth
