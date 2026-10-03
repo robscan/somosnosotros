@@ -87,8 +87,8 @@ descargada, copiada o capturada por quien antes tuvo acceso.
 - `npm run medir` queda a cargo del job CI existente (navegador automatizado en
   GitHub Actions); la revisión local de navegador se hizo por CUA.
 
-Capturas: [antes, ficha cerrada](../../../ops/assets/ol257/movil-antes.png) y
-[build con consulta reservada](../../../ops/assets/ol257/movil-390-build.png).
+Capturas: [antes, ficha cerrada](../../../rediseno/capturas-284/movil-antes.png) y
+[build con consulta reservada](../../../rediseno/capturas-284/movil-390-build.png).
 La captura inicial se tomó a 325 × 703 CSS; la final a 390 × 844 CSS, comprobado
 en DOM tras ajustar la escala del navegador integrado. Son evidencia de estados,
 no una comparación de píxeles entre tamaños iguales ni una prueba de iPhone físico.
@@ -112,7 +112,15 @@ transforma información existente al aplicar estas migraciones. La validación
 inicial de la FK y el DDL requieren bloqueo de tabla: coordinar la ventana al
 publicar, especialmente si hay escrituras concurrentes.
 
-Responsable siguiente: gestor, revisar el candidato/CI, conciliar OPS y proponer
+Revisión técnica del gestor (2026-10-03, PR296 sobre `67150c8b`): migraciones
+correctas, sin bloqueos. Se atiende su ajuste documental de mover las capturas
+a `docs/rediseno/capturas-284/`. Señaló además la excepción a la regla de
+2026-09-14: para hacer efectiva la ventana aceptada por el founder el 2026-10-03,
+la ficha reservada sigue accesible con sesión durante la gracia; las fichas
+de dirección pública mantienen la regla anterior. Este efecto se comunicó
+explícitamente al founder y al gestor, sin extender el plazo ni publicar.
+
+Responsable siguiente: gestor, conciliar CI y OPS y proponer
 la publicación autorizada al founder. Pendientes separados: purga a siete días,
 eliminación administrativa excepcional, resto de auditoría y validación Safari
 física del founder. No se consideran resueltos por este PR.
