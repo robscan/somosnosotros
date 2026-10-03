@@ -108,9 +108,7 @@ export async function run({ as, check, expectError, query, connection }) {
   ));
   const otraLectura = await as("authenticated", OTRA, () => query("select endpoint from public.suscripciones_push where usuario_id = $1", [PERSONA]));
   check(otraLectura.rowCount === 0, "otra cuenta no lee endpoints ajenos");
-  const estadoSql = `select s.endpoint from public.suscripciones_push s
-    join public.perfiles p on p.id = s.usuario_id
-    where s.endpoint = $1 and s.usuario_id = auth.uid() and p.avisos_push = true`;
+  const estadoSql = `select $1::text endpoint where public.mi_push_activo($1)`;
   const sinConsentir = await as("authenticated", PERSONA, () => query(estadoSql, [existente.endpoint]));
   check(sinConsentir.rowCount === 0, "un endpoint registrado sin consentimiento no esta activo");
   await as("authenticated", PERSONA, () => query("update public.perfiles set avisos_push = true where id = auth.uid()"));
