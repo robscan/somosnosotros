@@ -5,6 +5,10 @@
     {
       "path": "/api/recordatorios",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/purgar-sitios-privados",
+      "schedule": "0 9 * * *"
     }
   ]
 }
