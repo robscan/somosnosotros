@@ -105,3 +105,9 @@ bit056 de invitaciones CAPO. Código probado sin cambios; se reutiliza su eviden
   en Safari/iPhone queda al founder; el cierre de código no equivale a esa firma.
 - La ventana se libera al notificar este cierre al gestor. CI adicional de main
   `37155932389` seguía en curso al escribir; no sustituye el CI verde del candidato.
+
+Comprobación posterior: CI de main37155932389 terminó verde. El gestor confirmó
+independientemente el mismo SHA en main/Production, migraciones hasta140000,
+funciones definer con execute solo authenticated y es_admin dentro, anon excluido,
+auditoría con RLS y solo SELECT autenticado (0 filas), purga solo service_role y
+FK de eventos RESTRICT. Ventana cerrada; pidió PR de solo documentos para conciliar.
