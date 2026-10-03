@@ -1,6 +1,6 @@
 # 285 · Purga de direcciones reservadas (OL-258)
 
-**Fecha:** 2026-10-03. **Estado: checkpoint local, no listo para publicar.**
+**Fecha:** 2026-10-03. **Estado: entrega implementada y verificada; revisión y CI pendientes.**
 Operador Codex, sin subagentes. Rama `seguridad-purga-sitio`, worktree aislado,
 base `bb6b8365d90606cb665fcf453b25ddda1e841f2a` (PR296 ya publicado).
 Gestor de cambios III reservó OL-258, bit285 y la migración
@@ -53,7 +53,7 @@ administración o privados reutilizables, ni se borran eventos o sus autores.
   `api-rojo.log`. No contiene datos de producción. No hubo SQL remoto ni envíos
   reales para OL258; la migración y el cron nuevos permanecen sin activar.
 
-## Pendientes necesarios antes de una entrega publicable
+## Pendientes del checkpoint inicial (resueltos en la entrega)
 
 1. El formulario actual exige dirección en un evento reservado: al purgarla,
    impide editar metadatos; la ficha puede anunciar una revelación que ya pasó.
@@ -75,3 +75,53 @@ de bit284 (merge, migraciones y Production correctos), liberar su ventana remota
 pedir los archivos de edición mencionados y conciliar la autorización de publicar
 entregas probadas en su memoria. No inventar la respuesta ni autoampliar ownership.
 PR294/295, TestFlight y la excepción administrativa siguen fuera de esta pieza.
+
+
+## Entrega completa — 2026-10-03
+
+Desbloqueada la Mac, el gestor recibió el cierre de PR296 y verificó por su
+cuenta merge, migraciones, FK RESTRICT y dominio. Cerró la ventana y amplió
+expresamente la reserva de OL258 a ficha, edición, FormularioEvento, acciones,
+lib/eventos, helper de retención y pruebas. No hay conflictos con PR294/295.
+
+Se completó la edición histórica: permite cambiar metadatos de un reservado
+vencido, sin reenviar su dirección. El estado original se relee en servidor;
+SQL exige tanto el vencimiento original como el final propuesto, con bloqueo,
+revisión e idempotencia. Una reprogramación dentro de la vigencia requiere una
+dirección nueva; altas y eventos vigentes no pueden usar la excepción. La zona
+original se conserva al no existir el pin eliminado. La ficha muestra que la
+dirección dejó de estar disponible, sin anunciar una revelación pasada.
+
+Verificación final local:
+
+- PostgreSQL: **70 migraciones / 1068 comprobaciones correctas**. La regresión
+  de edición fallaba en dos casos antes de completar la RPC. Ahora pasan
+  metadatos después de purga y antes del cron, autor/admin, reintento, rechazo
+  con rollback de fechas al reprogramar sin dirección y nueva dirección válida.
+- **1717 unitarias / 128 archivos**, typecheck, lint e inventario correctos.
+  Lint conserva un warning previo en VisorImagen.componentes.test.mjs:169.
+- `next build` correcto con respaldo sintético en loopback, sin secretos reales.
+- CUA en **390 × 844 CSS**, ancho de documento 390: cambiar título y guardar
+  devuelve a la ficha; RPC simulada recibe `p_privado: null`. Reprogramar con el
+  calendario exige confirmar dirección y deshabilita guardar. PostgreSQL real
+  comprueba las escrituras y permisos: el respaldo HTTP no simula RLS.
+- Build final mirado en móvil y escritorio. Aviso, alias y controles legibles,
+  sin desborde horizontal. Capturas en `docs/rediseno/capturas-285/`: formulario
+  antes, reprogramación pendiente, editar-build-movil, editar-build-escritorio y
+  ficha-build-movil. La captura inicial de página completa quedó escalada por el
+  navegador; las finales de viewport son 390 × 844 y se revisaron completas.
+- `medir` queda a cargo del CI existente; QA local se hizo exclusivamente con CUA.
+  Safari físico sigue pendiente del founder, sin presentarlo como probado.
+
+Activación por entrega autorizada por el founder: después de revisión/CI,
+coordinar ventana con el gestor, dry-run (debe listar solo la migración reservada),
+aplicarla antes de la app, merge y Production del mismo SHA. Llamar una vez a la
+ruta protegida para verificar la purga inicial, repetir para comprobar idempotencia
+y verificar dominio. Reutiliza CRON_SECRET y la llave de servicio existentes;
+no requiere variables nuevas. Registrar cantidades sin direcciones/IDs/secretos.
+
+La migración instala reglas y funciones, no ejecuta la purga al aplicarse. Para
+revertir la aplicación, mantener el cierre de lectura y pausar solo el cron si
+fuera necesario; no restaurar direcciones ya eliminadas ni relajar las políticas.
+El borrado físico afecta datos; revisión y prueba preceden su primera ejecución.
+La eliminación excepcional administrativa sigue para una entrega separada.

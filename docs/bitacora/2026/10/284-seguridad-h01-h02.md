@@ -160,3 +160,8 @@ entregar porque la Mac se bloqueó; desbloqueo solicitado al founder. El gestor
 mantiene reservada la ventana hasta recibir el aviso. La pieza siguiente,
 OL-258 / bit285 (`seguridad-purga-sitio`), parte del merge anterior y permanece
 local. La excepción administrativa queda para una reserva posterior.
+
+
+Actualización de coordinación: el gestor recibió el cierre tras desbloquear la
+Mac y verificó de forma independiente producción, FK y migraciones. Ventana
+remota cerrada; OL258 continúa con alcance de edición ampliado.

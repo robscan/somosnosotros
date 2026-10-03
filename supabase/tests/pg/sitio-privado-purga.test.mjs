@@ -58,6 +58,31 @@ export async function run({ as, query, check, expectError, connection }) {
     check(await purgar() === 0, 'repetir purga no elimina nada adicional');
     await as('authenticated', autora, () => expectError(() => query('select public.guardar_evento_completo($1,$2::jsonb,$3::jsonb,\'[]\',$4,$5)', [vencido, JSON.stringify(e), JSON.stringify(p), e.revision, randomUUID()]), '40001', 'pestaña antigua no restaura dirección ni metadatos tras la purga'));
     await as('authenticated', autora, () => expectError(() => query("insert into public.eventos_sitio_privado(evento_id,direccion,lat,lng,revelar_desde) values ($1,'Reposición',22,-100,now())", [vencido]), '23514', 'INSERT directo no resucita copia vencida'));
+    const guardar = (id, datos, privado, revision, operacion = randomUUID(), usuario = autora) => as('authenticated', usuario,
+      () => query("select public.guardar_evento_completo($1,$2::jsonb,$3::jsonb,'[]',$4,$5) resultado", [id, JSON.stringify(datos), JSON.stringify(privado), revision, operacion]));
+    const actual = async id => (await query('select *,actualizado_en::text as revision from public.eventos where id=$1', [id])).rows[0];
+    const historico = { ...await actual(vencido), titulo: 'Metadatos conservados' };
+    const operacion = randomUUID();
+    try {
+      await guardar(vencido, historico, null, historico.revision, operacion);
+      check((await actual(vencido)).titulo === historico.titulo && !await privada(vencido), 'metadatos de reservado purgado se editan sin reponer dirección');
+      check((await guardar(vencido, historico, null, historico.revision, operacion)).rows[0].resultado.repetido, 'reintento de metadatos conserva idempotencia');
+    } catch (e) { check(false, `edición de metadatos tras purga: ${e.code}`); }
+    const reprogramado = { ...await actual(vencido), inicio: new Date(Date.now()+3600000).toISOString(), fin: new Date(Date.now()+7200000).toISOString() };
+    await expectError(() => guardar(vencido, reprogramado, null, reprogramado.revision), '23514', 'reprogramar sin dirección nueva se rechaza');
+    check((await actual(vencido)).inicio < new Date(), 'rechazo revierte también la fecha');
+    await expectError(() => guardar(null, historico, null, null), '23514', 'un alta no aprovecha la excepción de retención');
+    const activo = await actual(vigente);
+    await expectError(() => guardar(vigente, activo, null, activo.revision), '23514', 'un reservado vigente no puede omitir su dirección');
+    await guardar(vencido, reprogramado, { ...p, direccion: 'Dirección nueva confirmada', revelar_desde: reprogramado.sitio_revelar_desde }, reprogramado.revision);
+    check(await privada(vencido) && (await actual(vencido)).inicio > new Date(), 'reprogramar con dirección nueva vuelve a crear una copia vigente');
+    const pendiente = await crear();
+    const antesCron = { ...await actual(pendiente), titulo: 'Editado antes del cron' };
+    try {
+      await guardar(pendiente, antesCron, null, antesCron.revision, randomUUID(), admin);
+      check((await actual(pendiente)).titulo === antesCron.titulo && await privada(pendiente), 'admin edita al vencer aunque la copia espere todavía al cron');
+    } catch (e) { check(false, `metadatos antes de purga física: ${e.code}`); }
+    await purgar();
     for (let i = 0; i < 3; i++) await crear();
     check(await purgar(2) === 2 && await purgar(2) === 1 && await purgar(2) === 0, 'lotes respetan el tope y drenan sin duplicar trabajo');
 

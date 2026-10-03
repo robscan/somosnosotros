@@ -173,5 +173,6 @@ describe("dirección reservada tras el fin (OL-257)", () => {
     preparar(false, true, true);
     const elementos = [...recorrer(await ficha())];
     expect(elementos.find(e => e.type === Heroe)?.props.titulo).toBe(EVENTO.titulo);
+    expect(elementos.some(e => e.type === "small" && e.props.children === "La dirección ya no está disponible por privacidad.")).toBe(true);
   });
 });
