@@ -81,3 +81,6 @@ El error «tiene eventos» de la ficha ofrece a administración la salida al pan
 Evidencia temporal: `/tmp/sn-ol259-evidencia/`. La aprobación vigente del founder
 permite publicar cada entrega probada; se coordina ventana después de revisión.
 Publicar la función no autoriza usarla para borrar un lugar real durante QA.
+
+Base conciliada antes de PR: origin/main `1b9461e4`, solo incorporó la línea de
+bit056 de invitaciones CAPO. Código probado sin cambios; se reutiliza su evidencia.
