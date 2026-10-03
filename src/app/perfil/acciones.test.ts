@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { borrarSuscripcionPush, guardarSuscripcionPush, suscripcionPushActiva, tokenApnsActivo } from "./acciones";
 
 const mocks = vi.hoisted(() => ({ cliente: vi.fn(), usuario: vi.fn(), upsert: vi.fn(), perfil: vi.fn(),
-  filtroPerfil: vi.fn(), seleccionar: vi.fn(), filtro: vi.fn(), leer: vi.fn(), invalidar: vi.fn(),
-  apnsUpsert: vi.fn(), apnsSeleccionar: vi.fn(), apnsFiltro: vi.fn(), apnsLeer: vi.fn(),
+  filtroPerfil: vi.fn(), rpc: vi.fn(), leer: vi.fn(), invalidar: vi.fn(),
+  apnsUpsert: vi.fn(), apnsLeer: vi.fn(),
   borrarWeb: vi.fn(), borrarApns: vi.fn(), contarWeb: vi.fn(), contarApns: vi.fn(),
   // `after` (OL-212, tercera vuelta): aquí se ejecuta el cuerpo al toque, como si la respuesta ya hubiera salido,
   // para que las pruebas de abajo (ya escritas antes de esta pieza) seguir viendo `invalidar` sin tocarlas; la
@@ -24,30 +24,26 @@ beforeEach(() => {
   mocks.usuario.mockResolvedValue({ data: { user: { id: "persona" } }, error: null });
   mocks.upsert.mockResolvedValue({ error: null });
   mocks.apnsUpsert.mockResolvedValue({ error: null });
-  mocks.perfil.mockResolvedValue({ data: { id: "persona", avisos_push: true }, error: null });
-  mocks.filtroPerfil.mockReturnValue({ select: () => ({ maybeSingle: mocks.perfil }) });
-  mocks.leer.mockResolvedValue({ data: { endpoint: sub.endpoint, perfiles: { avisos_push: true } }, error: null });
-  const lectura = { eq: mocks.filtro, maybeSingle: mocks.leer };
-  mocks.filtro.mockReturnValue(lectura);
-  mocks.seleccionar.mockReturnValue(lectura);
-  mocks.apnsLeer.mockResolvedValue({ data: { token: TOKEN_APNS, perfiles: { avisos_push: true } }, error: null });
-  const lecturaApns = { eq: mocks.apnsFiltro, maybeSingle: mocks.apnsLeer };
-  mocks.apnsFiltro.mockReturnValue(lecturaApns);
-  mocks.apnsSeleccionar.mockReturnValue(lecturaApns);
+  mocks.perfil.mockResolvedValue({ data: true, error: null });
+  mocks.filtroPerfil.mockResolvedValue({ error: null });
+  mocks.leer.mockResolvedValue({ data: true, error: null });
+  mocks.apnsLeer.mockResolvedValue({ data: true, error: null });
+  mocks.rpc.mockImplementation((nombre: string, args?: { p_endpoint?: string; p_token?: string }) => {
+    if (nombre === "activar_mis_avisos_push") return mocks.perfil();
+    if (nombre === "mi_push_activo") return args?.p_endpoint ? mocks.leer() : mocks.apnsLeer();
+    throw new Error("RPC inesperada");
+  });
   mocks.borrarWeb.mockReturnValue({ eq: () => Promise.resolve({ error: null }) });
   mocks.borrarApns.mockReturnValue({ eq: () => Promise.resolve({ error: null }) });
   mocks.contarWeb.mockReturnValue({ eq: () => Promise.resolve({ count: 0 }) });
   mocks.contarApns.mockReturnValue({ eq: () => Promise.resolve({ count: 0 }) });
-  // `select(cols, { count, head })` (quedanDispositivos) usa una segunda firma; se distingue por el número de
-  // argumentos de `select(cols)` (suscripcionPushActiva/tokenApnsActivo), que solo recibe uno.
   mocks.cliente.mockImplementation(async () => ({
     auth: { getUser: mocks.usuario },
+    rpc: mocks.rpc,
     from: (table: string) => ({
       upsert: table === "suscripciones_push" ? mocks.upsert : mocks.apnsUpsert,
       delete: table === "suscripciones_push" ? mocks.borrarWeb : mocks.borrarApns,
-      select: (...args: unknown[]) => (args.length > 1
-        ? (table === "suscripciones_push" ? mocks.contarWeb() : mocks.contarApns())
-        : (table === "suscripciones_push" ? mocks.seleccionar(args[0] as string) : mocks.apnsSeleccionar(args[0] as string))),
+      select: () => table === "suscripciones_push" ? mocks.contarWeb() : mocks.contarApns(),
       update: () => ({ eq: mocks.filtroPerfil }),
     }),
   }));
@@ -70,7 +66,7 @@ describe("guardarSuscripcionPush", () => {
   it("registra solo en la cuenta autenticada", async () => {
     expect(await guardarSuscripcionPush(sub)).toBe(true);
     expect(mocks.upsert).toHaveBeenCalledWith({ endpoint: sub.endpoint, usuario_id: "persona", ...sub.keys });
-    expect(mocks.filtroPerfil).toHaveBeenCalledWith("id", "persona");
+    expect(mocks.rpc).toHaveBeenCalledWith("activar_mis_avisos_push");
     expect(mocks.invalidar).toHaveBeenCalledTimes(2);
   });
   it("OL-212 (tercera vuelta): revalida con `after`, no de inmediato — quien llama ya se entera solo (su propio estado o su propio router.refresh), y revalidar aquí de más solo repintaría la pantalla desde la que se guarda", async () => {
@@ -109,12 +105,9 @@ describe("guardarSuscripcionPush", () => {
 });
 
 describe("suscripcionPushActiva", () => {
-  it("exige endpoint, cuenta y consentimiento en la misma consulta RLS", async () => {
+  it("exige endpoint y consentimiento mediante RPC ligada a sesión", async () => {
     expect(await suscripcionPushActiva(sub.endpoint)).toBe(true);
-    expect(mocks.seleccionar).toHaveBeenCalledWith("endpoint, perfiles!inner(avisos_push)");
-    expect(mocks.filtro.mock.calls).toEqual([
-      ["endpoint", sub.endpoint], ["usuario_id", "persona"], ["perfiles.avisos_push", true],
-    ]);
+    expect(mocks.rpc).toHaveBeenCalledWith("mi_push_activo", { p_endpoint: sub.endpoint });
     expect(mocks.upsert).not.toHaveBeenCalled();
     expect(mocks.perfil).not.toHaveBeenCalled();
   });
@@ -125,7 +118,7 @@ describe("suscripcionPushActiva", () => {
   it("sin sesion no consulta endpoints", async () => {
     mocks.usuario.mockResolvedValue({ data: { user: null }, error: null });
     expect(await suscripcionPushActiva(sub.endpoint)).toBe(false);
-    expect(mocks.seleccionar).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it("sin configuracion no declara encendido", async () => {
     mocks.cliente.mockResolvedValue(null);
@@ -134,7 +127,7 @@ describe("suscripcionPushActiva", () => {
   it("un error de autenticacion no autoriza la lectura", async () => {
     mocks.usuario.mockResolvedValue({ data: { user: { id: "persona" } }, error: { message: "sesion expirada" } });
     expect(await suscripcionPushActiva(sub.endpoint)).toBe(false);
-    expect(mocks.seleccionar).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it.each(["sin registro", "consentimiento apagado"])("no declara encendido: %s", async () => {
     mocks.leer.mockResolvedValue({ data: null, error: null });
@@ -145,7 +138,8 @@ describe("suscripcionPushActiva", () => {
     mocks.usuario.mockResolvedValue({ data: { user: { id: "otra" } }, error: null });
     mocks.leer.mockResolvedValue({ data: null, error: null });
     expect(await suscripcionPushActiva(sub.endpoint)).toBe(false);
-    expect(mocks.filtro).toHaveBeenCalledWith("usuario_id", "otra");
+    expect(mocks.usuario).toHaveBeenCalledTimes(2);
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
   });
   it("no acepta datos parciales de una consulta fallida", async () => {
     mocks.leer.mockResolvedValue({ data: { endpoint: sub.endpoint }, error: { message: "fallo" } });
@@ -159,7 +153,7 @@ describe("suscripcionPushActiva", () => {
 });
 
 // ---------- OL-213 (bitácora 242): dentro de la app de iPhone no hay endpoint/llaves, solo un token APNs; mismas
-// reglas que arriba (cuenta autenticada, consentimiento en la misma consulta RLS), tabla distinta. ----------
+// reglas que arriba (cuenta autenticada, consentimiento en la misma consulta privada), tabla distinta. ----------
 describe("guardarSuscripcionPush: token APNs (dentro de la app)", () => {
   it("registra en dispositivos_apns, no en suscripciones_push", async () => {
     expect(await guardarSuscripcionPush({ apns: { token: TOKEN_APNS, entorno: "sandbox" } })).toBe(true);
@@ -184,12 +178,9 @@ describe("guardarSuscripcionPush: token APNs (dentro de la app)", () => {
 });
 
 describe("tokenApnsActivo", () => {
-  it("exige token, cuenta y consentimiento en la misma consulta RLS", async () => {
+  it("exige token y consentimiento mediante RPC ligada a sesión", async () => {
     expect(await tokenApnsActivo(TOKEN_APNS)).toBe(true);
-    expect(mocks.apnsSeleccionar).toHaveBeenCalledWith("token, perfiles!inner(avisos_push)");
-    expect(mocks.apnsFiltro.mock.calls).toEqual([
-      ["token", TOKEN_APNS], ["usuario_id", "persona"], ["perfiles.avisos_push", true],
-    ]);
+    expect(mocks.rpc).toHaveBeenCalledWith("mi_push_activo", { p_token: TOKEN_APNS });
   });
   it.each([null, 12, "no-es-hex"])("rechaza entrada invalida: %s", async (token) => {
     expect(await tokenApnsActivo(token as string)).toBe(false);

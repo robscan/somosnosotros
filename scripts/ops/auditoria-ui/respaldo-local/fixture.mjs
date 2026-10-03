@@ -172,6 +172,9 @@ export const FK = {
 const van = (id) => asistencias.filter((a) => a.evento_id === id && a.estado === "voy").length;
 const resumenArtista = (a) => ({ id: a.id, slug: a.slug, nombre: a.nombre, disciplina: a.disciplina, detalle: a.detalle, tipo: a.tipo, foto: a.foto });
 export const rpcs = {
+  // Respaldo sintético de la cuenta autenticada. Los permisos reales se prueban en PostgreSQL.
+  mi_perfil: (_args, t) => t.perfiles.find(p => p.id === ANA) ?? null,
+
   van_por_evento: ({ ids }) => (ids || []).map((id) => ({ evento_id: id, n: van(id) })).filter((x) => x.n > 0),
   tira_destacados: ({ p_tipo }) => (p_tipo === "eventos" ? destacados.map((d) => ({ id: d.evento_id, motivo: "elegido", hasta: null, van: van(d.evento_id) })) : []),
   cuenta_seguidores: ({ p_lugar, p_artista }) => seguimientos.filter((s) => (p_lugar ? s.lugar_id === p_lugar : s.artista_id === p_artista)).length,
