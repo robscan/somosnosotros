@@ -125,3 +125,29 @@ revertir la aplicación, mantener el cierre de lectura y pausar solo el cron si
 fuera necesario; no restaurar direcciones ya eliminadas ni relajar las políticas.
 El borrado físico afecta datos; revisión y prueba preceden su primera ejecución.
 La eliminación excepcional administrativa sigue para una entrega separada.
+
+## Incidencia de activación y corrección — 2026-10-03
+
+PR297 en `43c0053b` superó CI37152224489 (incluido medir) y revisión del gestor;
+este cedió la ventana de publicación. El dry-run remoto listó únicamente
+`20261003130000`. Al aplicarla, PostgreSQL rechazó crear la función con
+`SET app.avisos_outbox = 'off'` (42501). La transacción revirtió todo: el gestor
+comprobó que no quedaron registro, funciones, trigger ni política nuevos.
+No se mezcló el PR ni se ejecutó purga. Producción conserva PR296.
+
+Causa reproducida en PostgreSQL local: una conexión nueva con un rol sin
+superusuario no puede declarar ese parámetro todavía desconocido en la firma de
+CREATE FUNCTION. La prueba anterior instalaba migraciones como superusuario y
+no detectaba esa diferencia. La nueva regresión falló con 42501 antes del ajuste.
+
+Se sustituye solamente ese SET por `set_config` dentro de la función, siguiendo
+el patrón existente del guardado con avisos. Conserva el valor anterior y lo
+restaura al terminar y al propagar errores, sin conceder permisos adicionales.
+También se prueba que una purga real con opt-in inicialmente activo no encola
+avisos y devuelve el estado del llamador. **70 migraciones / 1075 comprobaciones,
+cero fallos**; ESLint focalizado y diff correctos. Evidencia local:
+`/tmp/sn-ol258-evidencia/pg-sin-super-rojo.log` y `pg-sin-super-verde.log`.
+
+Se reentrega el ajuste para revisión del gestor y nueva CI antes de repetir
+activación. No cambia la interfaz; se reutilizan las capturas y pruebas del
+mismo código UI. Se mantiene la reserva de la ventana, sin otras piezas.

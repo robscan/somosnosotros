@@ -40,11 +40,14 @@ create trigger sitio_privado_retencion before insert or update on public.eventos
   for each row execute function public.sitio_privado_validar_retencion();
 
 create function public.purgar_sitios_privados(p_limite integer default 500)
-returns integer language plpgsql security definer set search_path = ''
-set app.avisos_outbox = 'off' as $$
+returns integer language plpgsql security definer set search_path = '' as $$
 declare
   eliminadas integer;
+  optin_anterior text := current_setting('app.avisos_outbox', true);
 begin
+  -- Como el guardado con avisos: SET en la firma requiere superusuario si esta
+  -- conexión todavía no conoce el parámetro. set_config no amplía privilegios.
+  perform set_config('app.avisos_outbox', 'off', true);
   if p_limite is null or p_limite < 1 or p_limite > 1000 then
     raise exception 'limite_invalido' using errcode = '22023';
   end if;
@@ -60,7 +63,11 @@ begin
   get diagnostics eliminadas = row_count;
   -- avisos_privado ya incrementa actualizado_en: guardar con la revisión anterior
   -- falla de forma atómica. El opt-in apagado impide encolar avisos de esta purga.
+  perform set_config('app.avisos_outbox', coalesce(optin_anterior, ''), true);
   return eliminadas;
+exception when others then
+  perform set_config('app.avisos_outbox', coalesce(optin_anterior, ''), true);
+  raise;
 end;
 $$;
 revoke all on function public.purgar_sitios_privados(integer) from public, anon, authenticated;

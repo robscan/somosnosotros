@@ -26,6 +26,32 @@ export async function run({ as, query, check, expectError, connection }) {
     if (!existe) return;
     const f = (await query("select prosecdef,proconfig,has_function_privilege('anon',oid,'execute') anon,has_function_privilege('authenticated',oid,'execute') usuario,has_function_privilege('service_role',oid,'execute') servicio from pg_proc where oid='public.purgar_sitios_privados(integer)'::regprocedure")).rows[0];
     check(f.prosecdef && f.proconfig.includes('search_path=""') && !f.anon && !f.usuario && f.servicio, 'definer con search_path vacío; solo service_role ejecuta');
+    // Una conexión nueva todavía no conoce el parámetro app.avisos_outbox.
+    // CREATE FUNCTION ... SET lo rechaza sin superusuario (como Supabase).
+    const definicion = (await query("select pg_get_functiondef('public.purgar_sitios_privados(integer)'::regprocedure) sql")).rows[0].sql;
+    await connection(async c => {
+      await c.query('begin');
+      try {
+        await c.query('create schema ol258_instalacion authorization authenticated');
+        await c.query('set local role authenticated');
+        check(!(await c.query('select rolsuper from pg_roles where rolname=current_user')).rows[0].rolsuper, 'instalación se comprueba sin superusuario');
+        await c.query(definicion.replace('public.purgar_sitios_privados', 'ol258_instalacion.purgar_sitios_privados'));
+        check(true, 'función de purga se instala con parámetro desconocido y sin superusuario');
+        await c.query("select set_config('app.avisos_outbox','on',true)");
+        check((await c.query('select ol258_instalacion.purgar_sitios_privados() n')).rows[0].n === 0, 'set_config funciona también al ejecutar sin superusuario');
+        check((await c.query("select current_setting('app.avisos_outbox') valor")).rows[0].valor === 'on', 'restaura opt-in del llamador al terminar');
+        await c.query('savepoint error_purga');
+        try {
+          await c.query('select ol258_instalacion.purgar_sitios_privados(0)');
+          check(false, 'purga inválida debe fallar');
+        } catch (e) {
+          await c.query('rollback to savepoint error_purga');
+          check(e.code === '22023', 'error de purga conserva su código sin superusuario');
+          check((await c.query("select current_setting('app.avisos_outbox') valor")).rows[0].valor === 'on', 'error no altera el opt-in del llamador');
+        }
+      } catch (e) { check(false, `instalar/ejecutar purga sin superusuario: ${e.code}`); }
+      finally { await c.query('rollback'); }
+    });
     for (const [rol, user] of [['anon', null], ['authenticated', autora], ['authenticated', admin]]) {
       await as(rol, user, () => expectError(() => query('select public.purgar_sitios_privados()'), '42501', `${rol}/${user === admin ? 'admin' : 'usuario'} no ejecuta purga`));
     }
@@ -48,7 +74,11 @@ export async function run({ as, query, check, expectError, connection }) {
       const id = randomUUID(); lugares.push(id);
       await query("insert into public.lugares(id,nombre,tipo,direccion,lat,lng,creado_por,visible,privado) values ($1,'Lugar independiente OL258','otro','Dirección de lugar',22,-100,$2,false,true)", [id, propietario]);
     }
-    check(await purgar(1) === 1 && !await privada(vencido), 'purga borra la copia vencida');
+    await query("select set_config('app.avisos_outbox','on',false)");
+    try {
+      check(await purgar(1) === 1 && !await privada(vencido), 'purga borra la copia vencida incluso si el llamador tenía opt-in activo');
+      check((await query("select current_setting('app.avisos_outbox') valor")).rows[0].valor === 'on', 'purga real restaura el opt-in después de borrar');
+    } finally { await query("select set_config('app.avisos_outbox','',false)"); }
     const posterior = (await query('select *,actualizado_en::text as revision from public.eventos where id=$1', [vencido])).rows[0];
     check(posterior.titulo === e.titulo && posterior.sitio_reservado && posterior.creado_por === autora && posterior.revision !== e.revision, 'conserva evento/autor/alias e invalida la edición antigua');
     check(await privada(vigente), 'no elimina copia aún vigente');
