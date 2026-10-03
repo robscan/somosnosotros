@@ -158,18 +158,14 @@ export async function cambiarSeguimiento(lugarId: string, seguir: boolean, difer
 }
 
 /**
- * Borrar un lugar: su autor si no tiene eventos de otras personas (si los tiene, que lo oculte);
- * el admin siempre. Los eventos del lugar se van con él (cascada en la base).
+ * Borrado atómico en PostgreSQL: autor o admin, sin eliminar eventos ajenos
+ * (incluidos los ocultos y los de una cuenta eliminada).
  */
 export async function borrarLugar(id: string) {
-  const { supabase, user } = await sesionOEntrar(`/lugares/${id}`);
-  const { data: perfil } = await supabase.from("perfiles").select("rol").eq("id", user.id).maybeSingle();
-  if (perfil?.rol !== "admin") {
-    const { count } = await supabase.from("eventos").select("*", { count: "exact", head: true }).eq("lugar_id", id).neq("creado_por", user.id);
-    if ((count ?? 0) > 0) redirect(`/lugares/${id}?error=tiene-eventos`);
-  }
-  const { data } = await supabase.from("lugares").delete().eq("id", id).select("id").maybeSingle();
-  if (!data) redirect(`/lugares/${id}?error=borrar`);
+  const { supabase } = await sesionOEntrar(`/lugares/${id}`);
+  const { data, error } = await supabase.rpc("borrar_lugar", { p_lugar: id });
+  if (error?.code === "23503") redirect(`/lugares/${id}?error=tiene-eventos`);
+  if (error || !data) redirect(`/lugares/${id}?error=borrar`);
   revalidatePath("/");
   redirect("/borrado?que=lugar");
 }

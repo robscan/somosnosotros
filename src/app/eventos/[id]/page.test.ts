@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
 import Heroe from "@/components/ui/Heroe";
+import Asistencia from "./Asistencia";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 /**
  * OL-161 (bitácora 196): la cabecera de la ficha (foto, nombre, cuándo, dónde, JSON-LD, canonical) tiene que salir
@@ -117,5 +119,59 @@ describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () =
     const metadata = await generateMetadata({ params: Promise.resolve({ id: "evento-de-prueba" }) });
     expect(metadata.alternates?.canonical).toBe("https://somosnosotros.org/eventos/evento-de-prueba");
     expect(metadata.title).toBe("Evento de prueba · Somos Nosotros");
+  });
+});
+
+describe("dirección reservada tras el fin (OL-257)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+
+  const preparar = (privado: boolean, sesion = true, autor = false, reservado = true) => {
+    const upsert = vi.fn();
+    const evento = { ...EVENTO, inicio: "2000-01-01T19:00:00Z", fin: "2000-01-01T20:00:00Z", sitio_reservado: reservado };
+    const cliente = clienteFalso({ eventos: { data: evento }, eventos_sitio_privado: { data: privado ? { direccion: "Calle reservada 257", lat: 22, lng: -100, indicaciones: null } : null } });
+    const from = cliente.from;
+    cliente.from = (tabla: string) => tabla === "asistencias" ? { ...chain({ data: [] }), upsert } : from(tabla);
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    vi.mocked(usuarioActual).mockResolvedValue(sesion ? { correo: "prueba@example.com", perfil: { id: autor ? "autor-1" : "lectora", nombre: "Prueba", rol: "usuario", foto: null, colonia: null, bio: null } } : null);
+    return upsert;
+  };
+  const ficha = async (accion?: string) => {
+    const { default: FichaEvento } = await import("./page");
+    return FichaEvento({ params: Promise.resolve({ id: EVENTO.slug }), searchParams: Promise.resolve({ accion }) });
+  };
+  it("con fila autorizada por RLS permite consultar la dirección y explica que el evento terminó", async () => {
+    preparar(true);
+    const elementos = [...recorrer(await ficha())];
+    expect(elementos.find(e => e.type === "b" && e.props.children === "Calle reservada 257")).toBeTruthy();
+    expect(elementos.find(e => e.props.role === "status")?.props.children).toBe("Este evento ya terminó. La dirección sigue disponible hasta dos horas después de su fin.");
+    expect(elementos.some(e => e.type === Asistencia)).toBe(false);
+    expect(elementos.some(e => e.type === "script" && e.props.type === "application/ld+json")).toBe(false);
+  });
+  it("no ejecuta un Voy pendiente después del fin", async () => {
+    const upsert = preparar(true);
+    await ficha("voy");
+    expect(upsert).not.toHaveBeenCalled();
+  });
+  it("sin asistentes, el bloque diferido no invita a registrarse para un evento terminado", async () => {
+    preparar(true);
+    const diferido = [...recorrer(await ficha())].find(e => typeof e.type === "function" && e.props.consultaTrasFin === true);
+    expect(diferido).toBeTruthy();
+    const componente = diferido!.type as (props: Record<string, unknown>) => Promise<unknown>;
+    const elementos = [...recorrer(await componente(diferido!.props))];
+    expect(elementos.find(e => e.type === "p")?.props.children).toBe("Nadie confirmó asistencia.");
+  });
+  it.each([
+    [false, true, true], // ventana vencida/revocada: RLS no devuelve fila.
+    [false, false, true], // anónimo.
+    [true, false, true], // ni una respuesta privada inesperada sustituye la sesión.
+    [false, true, false], // evento ordinario pasado.
+  ])("sin acceso reservado vigente conserva 404: %j", async (privado, sesion, reservado) => {
+    preparar(privado, sesion, false, reservado);
+    await expect(ficha()).rejects.toThrow("NOT_FOUND");
+  });
+  it("la autora conserva acceso a su evento pasado aunque no haya dirección privada", async () => {
+    preparar(false, true, true);
+    const elementos = [...recorrer(await ficha())];
+    expect(elementos.find(e => e.type === Heroe)?.props.titulo).toBe(EVENTO.titulo);
   });
 });
