@@ -1,6 +1,6 @@
 # 286 · Eliminación excepcional de lugares (OL-259)
 
-**Fecha:** 2026-10-03. **Estado:** candidato local completo, listo para revisión del gestor y CI.
+**Fecha:** 2026-10-03. **Estado:** publicado y comprobado; Safari físico pendiente del founder.
 Operador Codex, sin subagentes. Reserva de Gestor de cambios III:
 `seguridad-borrado-excepcional`, base `5f166c51` (PR297 publicado), worktree
 `/Users/apple-1/somosnosotros-seguridad-borrado-excepcional`. OL259/bit286 y
@@ -84,3 +84,30 @@ Publicar la función no autoriza usarla para borrar un lugar real durante QA.
 
 Base conciliada antes de PR: origin/main `1b9461e4`, solo incorporó la línea de
 bit056 de invitaciones CAPO. Código probado sin cambios; se reutiliza su evidencia.
+
+## Publicación y cierre · 2026-10-03
+
+- PR [298](https://github.com/robscan/somosnosotros/pull/298), candidato
+  `039fcaee0bc29d10399d9076048b942fc404c254`. Gestor revisó y aceptó sin bloqueos;
+  comprobó en producción las siete FK y cedió ventana tras CI verde.
+- CI del PR [37155569722](https://github.com/robscan/somosnosotros/actions/runs/37155569722)
+  correcta, incluido `medir`; preview lista. Sin cambios de código tras revisión.
+- Dry-run previo mostró solo `20261003140000`; aplicada correctamente. Dry-run
+  final `upToDate:true`, ninguna migración pendiente. No se ejecutó borrado real.
+- Merge `eb4c175952278f7a3e911cd9389099a18c3a1a40`, 21:40:29Z.
+  Deployment Production `6833452272`, exactamente ese SHA, success21:41:05Z:
+  [despliegue](https://somosnosotros-nfm1g0oqh-robscans-projects.vercel.app).
+- Dominio real: `/`, `/agenda` y `/api/estado` devuelven200; Supabase ok y Mapbox
+  configurado. RPC impacto y borrado rechazan anon con401/42501 (UUID sintético).
+  Purga sin credenciales conserva401; no se invocó purga autenticada en este lote.
+- CUA QA del build quedó guardado; base/servidores sintéticos detenidos. Worktree
+  aislado, sin tocar cambios ajenos ni el carril de ubicación/iOS. La prueba física
+  en Safari/iPhone queda al founder; el cierre de código no equivale a esa firma.
+- La ventana se libera al notificar este cierre al gestor. CI adicional de main
+  `37155932389` seguía en curso al escribir; no sustituye el CI verde del candidato.
+
+Comprobación posterior: CI de main37155932389 terminó verde. El gestor confirmó
+independientemente el mismo SHA en main/Production, migraciones hasta140000,
+funciones definer con execute solo authenticated y es_admin dentro, anon excluido,
+auditoría con RLS y solo SELECT autenticado (0 filas), purga solo service_role y
+FK de eventos RESTRICT. Ventana cerrada; pidió PR de solo documentos para conciliar.
