@@ -95,7 +95,11 @@ no una comparación de píxeles entre tamaños iguales ni una prueba de iPhone f
 
 ## Integración y estado operativo
 
-**Preparado para revisión del gestor; no activado en producción.** Dos migraciones
+**[PR296](https://github.com/robscan/somosnosotros/pull/296), preparado para revisión
+del gestor; no activado en producción.** Código y pruebas en `178e74b7`; los
+commits posteriores de esta entrega solo concilian documentación. El estado
+vigente de CI y de la preview se consulta en los checks del PR (una preview no
+significa que las migraciones estén aplicadas). Dos migraciones
 nuevas; no se reescribió el historial SQL ni se cambian variables de entorno.
 Aplicar ambas migraciones antes de publicar la aplicación, con la aprobación
 específica de producción. Mientras la app anterior siga activa, la FK endurecida
