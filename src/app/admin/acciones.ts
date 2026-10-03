@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { fechasValidas, type EstadoDestacado } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
 import { textoCodigoRol, type Decision } from "@/lib/panel";
@@ -132,4 +133,54 @@ export async function verCorreo(perfilId: string): Promise<{ ok: true; correo: s
   if (error) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
   if (!data) return { ok: false, error: "Esta cuenta no tiene correo." };
   return { ok: true, correo: String(data) };
+}
+
+const cuentaImpacto = z.number().int().nonnegative().safe();
+const esquemaImpacto = z.object({
+  lugar_id: z.string().uuid(), nombre: z.string().min(1).max(120),
+  eventos: cuentaImpacto, ajenos: cuentaImpacto, por_ocultar: cuentaImpacto,
+  seguimientos: cuentaImpacto, cuentas: cuentaImpacto, destacados: cuentaImpacto,
+  obras: cuentaImpacto, contactos: cuentaImpacto, invitaciones: cuentaImpacto,
+  permitido: z.boolean(), confirmacion: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export type ImpactoBorradoLugar = z.infer<typeof esquemaImpacto>;
+
+/** Consulta sin escrituras; la base comprueba administración y cuenta también filas ocultas. */
+export async function consultarImpactoBorradoLugar(id: string): Promise<{ ok: true; impacto: ImpactoBorradoLugar } | { ok: false; error: string }> {
+  if (!esUuid(id)) return { ok: false, error: "No encontramos ese lugar." };
+  const db = await soloAdmin();
+  try {
+    const { data, error } = await db.rpc("impacto_borrado_lugar_admin", { p_lugar: id });
+    const lectura = esquemaImpacto.safeParse(data);
+    if (error || !lectura.success || lectura.data.lugar_id !== id) {
+      return { ok: false, error: "No se pudo consultar el impacto. Recarga e intenta de nuevo." };
+    }
+    return { ok: true, impacto: lectura.data };
+  } catch {
+    return { ok: false, error: "No se pudo consultar el impacto. Intenta de nuevo." };
+  }
+}
+
+/** Excepción separada del borrado normal: motivo + confirmación del impacto, nunca cascada de eventos. */
+export async function borrarLugarExcepcional(id: string, confirmacion: string, motivo: string): Promise<{ ok: false; error: string; revisar?: boolean }> {
+  if (!esUuid(id) || !/^[a-f0-9]{64}$/.test(confirmacion) || typeof motivo !== "string" || motivo.trim().length < 10 || motivo.trim().length > 500) {
+    return { ok: false, error: "Revisa la confirmación y escribe un motivo de 10 a 500 caracteres." };
+  }
+  const db = await soloAdmin();
+  try {
+    const { data, error } = await db.rpc("borrar_lugar_excepcional_admin", { p_lugar: id, p_confirmacion: confirmacion, p_motivo: motivo.trim() });
+    if (error?.code === "40001") return { ok: false, revisar: true, error: "Cambió el lugar o alguno de sus vínculos. Revisa el impacto otra vez." };
+    if (error?.code === "23503") return { ok: false, revisar: true, error: "Hay obras, contactos o invitaciones vinculadas que deben resolverse antes." };
+    if (error || data?.ok !== true || !Number.isSafeInteger(data.eventos) || data.eventos < 0) {
+      return { ok: false, error: "No se pudo confirmar la eliminación. Puedes reintentar con el mismo motivo." };
+    }
+  } catch {
+    return { ok: false, error: "No se pudo confirmar la eliminación. Puedes reintentar con el mismo motivo." };
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/lugares");
+  revalidatePath("/admin/eventos");
+  revalidatePath("/lugares");
+  revalidatePath("/agenda");
+  redirect("/borrado?que=lugar");
 }
