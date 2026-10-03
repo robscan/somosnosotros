@@ -40,7 +40,7 @@ export default async function EditarEvento({ params }: { params: Promise<{ id: s
     <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefEvento(evento), texto: "Volver al evento" }} />
       <h1 className="titulo">Editar evento</h1>
-      <FormularioEvento accion={actualizarEvento.bind(null, evento.id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} revision={evento.actualizado_en} privado={privado as SitioPrivado | null} zonaSitio={zonaDelSitio(evento, privado as SitioPrivado | null)} modo="editar" usuarioId={actual.perfil.id} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} />
+      <FormularioEvento accion={actualizarEvento.bind(null, evento.id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} revision={evento.actualizado_en} privado={privado as SitioPrivado | null} zonaSitio={evento.sitio_reservado && !privado ? evento.zona : zonaDelSitio(evento, privado as SitioPrivado | null)} modo="editar" usuarioId={actual.perfil.id} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }

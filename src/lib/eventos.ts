@@ -4,6 +4,7 @@ import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import { LIMITES_EVENTO } from "./limites";
+import { puedeConservarReservadoSinDireccion } from "./retencionSitio";
 
 export { LIMITES_EVENTO } from "./limites";
 
@@ -286,7 +287,7 @@ export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `imagenActual` es la
  *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la imagen de una ficha importada
  *  de otro dominio (S-01, docs/rediseno/46). */
-export type OpcionesValidarEvento = { esAdmin?: boolean; imagenActual?: string | null };
+export type OpcionesValidarEvento = { esAdmin?: boolean; imagenActual?: string | null; eventoActual?: Partial<Evento> | null };
 
 /** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */
 export function validarEvento(
@@ -343,6 +344,10 @@ export function validarEvento(
       : null,
   };
 
+  const conservarSinDireccion = puedeConservarReservadoSinDireccion(opciones.eventoActual, datos);
+  // La dirección caducada no vuelve a la base, aunque una pestaña antigua aún la
+  // tenga en memoria. SQL comprueba por su cuenta la revisión y ambos plazos.
+  if (conservarSinDireccion) datos.privado = null;
   const errores: ErroresEvento = {};
   if (modo === "lugar" && !esUuid(lugarId)) errores.lugar_id = "Elige el lugar donde es.";
   if (modo !== "lugar" && !sitioTexto) errores.sitio_texto = esReservado ? "Di cómo se anuncia el sitio (ej. \"Casa en Tequis\")." : "Di dónde es (ej. \"Plaza de Armas\").";
@@ -359,7 +364,7 @@ export function validarEvento(
   if (modo !== "lugar" && limpiar(entrada.sitio_pin_pendiente) === "si") {
     errores[esReservado ? "direccion_privada" : "sitio_direccion"] = "Confirma la ubicación eligiendo una dirección o poniendo el pin.";
   }
-  if (esReservado && !direccionPrivada) errores.direccion_privada = "Pon la dirección exacta: solo se revela cuando toca.";
+  if (esReservado && !direccionPrivada && !conservarSinDireccion) errores.direccion_privada = "Pon la dirección exacta: solo se revela cuando toca.";
   if (direccionPrivada.length > LIMITES_EVENTO.direccion) errores.direccion_privada = `Máximo ${LIMITES_EVENTO.direccion} caracteres.`;
   if (!datos.titulo) errores.titulo = "Ponle título al evento.";
   else if (datos.titulo.length > LIMITES_EVENTO.titulo) errores.titulo = `Máximo ${LIMITES_EVENTO.titulo} caracteres.`;

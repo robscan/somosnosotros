@@ -124,3 +124,44 @@ Responsable siguiente: gestor, conciliar CI y OPS y proponer
 la publicación autorizada al founder. Pendientes separados: purga a siete días,
 eliminación administrativa excepcional, resto de auditoría y validación Safari
 física del founder. No se consideran resueltos por este PR.
+
+
+## Publicación verificada — 2026-10-03, 19:26 UTC
+
+Esta actualización sustituye el estado anterior de «preparado, sin producción».
+El founder autorizó directamente en esta tarea: «Ok continua. Si ya probaste y
+en unitarias no hubo problemas, entonces manda a prod al final de cada entrega
+probada». Se conservan revisión técnica, CI y verificación del dominio por
+entrega. El gestor cedió expresamente a Codex la ventana de publicación del
+PR296 y solicitó cierre con SHA, migraciones y despliegue; no se publican PR294/295
+ni TestFlight por esta instrucción.
+
+- Candidato final `984802b77343109e16a9b958be413f23955e630b`, revisión del gestor
+  sin bloqueos; CI `37147038106` correcta: 1,698 unitarias / 126 archivos,
+  69 migraciones / 1,034 comprobaciones PostgreSQL, lint, tipos, build,
+  inventario y medir (24 pantallas × 4 anchos).
+- `scripts/db-push.mjs --dry-run` señaló exactamente las migraciones
+  `20261003120000_lugares_borrar_sin_eventos_ajenos.sql` y
+  `20261003120100_sitio_privado_ventana.sql`. Aplicadas correctamente antes del
+  merge, sin otras migraciones ni cambios de configuración.
+- PR296 unido con merge commit `bb6b8365d90606cb665fcf453b25ddda1e841f2a`
+  a las 19:26:08 UTC. Despliegue Production `6832063526`, mismo SHA, estado
+  `success` a las 19:26:48 UTC. [Despliegue verificado](https://somosnosotros-ldag4nt0j-robscans-projects.vercel.app).
+- Segundo dry-run: `upToDate: true`, ninguna migración pendiente. Dominio real:
+  `/api/estado` devuelve Supabase `ok` y Mapbox `configurado`; Inicio y Agenda
+  responden HTTP 200. No se sembraron eventos ni se enviaron avisos para probar
+  producción. La prueba física de Safari sigue a cargo del founder.
+- Una comprobación adicional opcional del catálogo mediante node-postgres no
+  pudo conectar por la cadena CA de Supabase. No se relajó TLS ni se desactivó
+  validación de certificados; no se cuenta esa consulta como evidencia.
+
+**Estado: en producción.** La notificación de cierre al gestor no se pudo
+entregar porque la Mac se bloqueó; desbloqueo solicitado al founder. El gestor
+mantiene reservada la ventana hasta recibir el aviso. La pieza siguiente,
+OL-258 / bit285 (`seguridad-purga-sitio`), parte del merge anterior y permanece
+local. La excepción administrativa queda para una reserva posterior.
+
+
+Actualización de coordinación: el gestor recibió el cierre tras desbloquear la
+Mac y verificó de forma independiente producción, FK y migraciones. Ventana
+remota cerrada; OL258 continúa con alcance de edición ampliado.

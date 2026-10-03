@@ -37,6 +37,7 @@ import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
 import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel, type CampoFlyer } from "./gestosFlyer";
 import { sitioListo, textoDelSitio } from "./direccionEvento";
+import { puedeConservarReservadoSinDireccion, sitioReservadoVencido } from "@/lib/retencionSitio";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -356,7 +357,13 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
 
   const lugar = listaLugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
-  const dondeResuelto = modoSitio === "lugar" ? !!lugar : sitioListo(otro);
+  const direccionRetirada = modo === "editar" && !privado && sitioReservadoVencido(evento);
+  const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : clavePunto ? zonaPin : direccionRetirada && modoSitio === "reservado" ? evento?.zona : ZONA_INICIAL);
+  const inicioIso = localAIso(inicio, zona);
+  const conservarSinDireccion = modo === "editar" && puedeConservarReservadoSinDireccion(evento, {
+    sitio_reservado: modoSitio === "reservado", inicio: inicioIso ?? undefined, fin: fin ? localAIso(fin, zona) : null, zona,
+  });
+  const dondeResuelto = modoSitio === "lugar" ? !!lugar : sitioListo(otro) || (conservarSinDireccion && !!otro.sitioTexto.trim());
   // Vacío de verdad (nada escrito) contra leído-pendiente-de-confirmar (hay nombre/dirección, pero el pin no está
   // puesto o falta la dirección exacta reservada): "Falta" solo es el primero; el segundo dice "Confirmar" (L3).
   const dondeVacio = modoSitio === "lugar" ? !lugar : !otro.sitioTexto.trim();
@@ -367,8 +374,6 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const falta = faltaEnEvento({ nombre: titulo, donde: dondeResuelto ? "listo" : dondeConfirmar ? "por-confirmar" : "falta" });
 
   const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${textoDelSitio(otro)} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
-  const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : clavePunto ? zonaPin : ZONA_INICIAL);
-  const inicioIso = localAIso(inicio, zona);
   const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta";
   const valorCuanto = gratis ? "Gratis" : cooperacion ? COOPERACION_SOLIDARIA : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
@@ -615,6 +620,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           <li className={`${renglon.resuelto} ${dondeResuelto ? "" : renglon.pendiente}`}>
             <IconoPin width={20} height={20} />
             <small>Dónde</small>
+            {direccionRetirada && modoSitio === "reservado" && (
+              <p className={renglon.nota}>La dirección ya no está disponible por privacidad. Si reprogramas el evento, añade una nueva.</p>
+            )}
             {dondeResuelto ? (
               <>
                 <b>{valorDonde}</b>

@@ -1,4 +1,5 @@
 import { cache, Suspense } from "react";
+import { sitioReservadoVencido } from "@/lib/retencionSitio";
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -437,7 +438,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <div className={renglon.dato}>
                   {privado ? <IconoPin width={20} height={20} /> : <IconoCandado width={20} height={20} />}
                   <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
-                  {privado ? privado.indicaciones && <small>{privado.indicaciones}</small> : <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>}
+                  {privado ? privado.indicaciones && <small>{privado.indicaciones}</small> : sitioReservadoVencido(e) ? <small>La dirección ya no está disponible por privacidad.</small> : <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>}
                 </div>
               ) : (
                 // Sin sesión no se ve la dirección reservada: toda la fila lleva a entrar.
