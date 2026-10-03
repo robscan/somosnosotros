@@ -1,6 +1,6 @@
 # 285 · Purga de direcciones reservadas (OL-258)
 
-**Fecha:** 2026-10-03. **Estado: entrega implementada y verificada; revisión y CI pendientes.**
+**Fecha:** 2026-10-03. **Estado: publicada y comprobada en producción; Safari físico pendiente del founder.**
 Operador Codex, sin subagentes. Rama `seguridad-purga-sitio`, worktree aislado,
 base `bb6b8365d90606cb665fcf453b25ddda1e841f2a` (PR296 ya publicado).
 Gestor de cambios III reservó OL-258, bit285 y la migración
@@ -151,3 +151,33 @@ cero fallos**; ESLint focalizado y diff correctos. Evidencia local:
 Se reentrega el ajuste para revisión del gestor y nueva CI antes de repetir
 activación. No cambia la interfaz; se reutilizan las capturas y pruebas del
 mismo código UI. Se mantiene la reserva de la ventana, sin otras piezas.
+
+## Cierre de producción — 2026-10-03, 20:53 UTC
+
+El gestor aceptó `5f82888bf381af9647d7c83a1e66908c6078e76f` y la CI
+[37152853980](https://github.com/robscan/somosnosotros/actions/runs/37152853980)
+terminó en verde: lint, tipos, 1717 unitarias, 1075 comprobaciones PostgreSQL,
+build, inventario y medir. Se conserva el warning previo de VisorImagen.
+
+- Segundo dry-run: solo `20261003130000_sitio_privado_purga.sql`. Aplicación
+  correcta; dry-run final `upToDate: true`, sin migraciones pendientes.
+- [PR297](https://github.com/robscan/somosnosotros/pull/297) mezclado a las
+  20:52:26 UTC, merge **`5f166c5136400fff4f2876f74dbc1959389a86fa`**.
+- Deployment **6832949959**, entorno **Production**, mismo SHA, `success` a las
+  20:53:07 UTC. URL: https://somosnosotros-epyug6ifo-robscans-projects.vercel.app.
+- Dominio real `https://somosnosotros.org`: `/` y `/agenda` HTTP200;
+  `/api/estado` HTTP200 con Supabase `ok` y Mapbox `configurado`.
+- `/api/purgar-sitios-privados`: sin credenciales HTTP401; dos llamadas
+  autenticadas HTTP200, `ok: true`, **0 y 0 filas eliminadas**, `no-store`.
+  Solo se registran cantidades. La primera ejecución no encontró filas elegibles;
+  el borrado y las carreras con datos sintéticos se comprobaron en PostgreSQL.
+- Cron configurado a las 09:00 UTC. La llamada manual confirma el endpoint; la
+  primera ejecución automática del horario aún no ha ocurrido. El límite de
+  lectura ya está activo y es independiente del cron.
+
+Se cerraron los servidores sintéticos y el clúster PostgreSQL local. El árbol
+principal y su archivo ajeno sin seguimiento no se tocaron. No hubo envíos a
+usuarios, cambios en lugares ocultos/privados, PR294/295 ni TestFlight.
+El gestor recibe el cierre y la liberación de ventana para conciliar sus registros.
+La excepción administrativa y los demás hallazgos siguen pendientes de sus
+propias asignaciones; no forman parte de este cierre.
