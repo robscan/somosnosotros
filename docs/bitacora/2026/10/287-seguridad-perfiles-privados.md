@@ -1,6 +1,6 @@
 # 287 · Preferencias de perfiles privadas (OL-260 / H03)
 
-**Fecha:** 2026-10-03. **Estado:** paso A publicado; paso B listo para revisión y aplicación.
+**Fecha:** 2026-10-03. **Estado:** A/B aplicados y unidos; catálogo remoto verificado. Verificación final por API bloqueada por cuota de Supabase.
 Operador Codex, sin subagentes. Reserva de Gestor de cambios III:
 `seguridad-perfiles-privados`, base `f2dd8be9`, worktree propio. OL260/bit287,
 `20261003150000_perfiles_privados.sql` (A) y
@@ -120,3 +120,38 @@ preferencias antes del ensayo reversible. Evidencia JS/build/QA reutilizada de A
 porque B no cambia aplicación. CI obligatorio de PR vuelve a ejecutar sus checks.
 Pendiente: revisión del gestor, ventana de B, dry-run solo 150100, aplicación,
 verificación remota y cierre. H03 aún no se declara cerrado en producción.
+
+## Paso B aplicado; incidencia de proveedor
+
+PR [301](https://github.com/robscan/somosnosotros/pull/301), candidato `aafb49f3`,
+aceptado por el gestor; CI37158837447 verde (4m14s). Dry-run listó únicamente
+150100 y su aplicación terminó correctamente. Inmediatamente después, la API
+respondió **HTTP402** tanto a identidad pública con limit=0 como a consulta
+privada e invocación anónima de RPC. Mensaje del proveedor:
+`exceed_cached_egress_quota`. `/api/estado` devuelve HTTP200 con
+`supabase:error` y detalle «Supabase respondió 402»; HTTP200 de la página no
+acredita servicio saludable. No se atribuye este 402 a los grants SQL.
+
+Gestor de cambios III comprobó de forma independiente por conexión directa:
+
+- migraciones aplicadas hasta150100;
+- sin SELECT general en perfiles para PUBLIC, anon ni authenticated;
+- SELECT de columna exclusivamente bio, colonia, foto, id, nombre, reservado y rol;
+- las tres RPC privadas ejecutables solo por authenticated.
+
+El gestor ordenó unir B para conciliar el repo con la base, conservar el cierre
+de privacidad y dejar pendiente la comprobación por API hasta levantar la
+restricción. Merge `2fa4a95a` a las22:41 UTC. No se modificaron facturación, plan,
+tope de gasto, datos personales ni preferencias reales. No se reabrieron permisos.
+
+**Responsables y salida:** founder decide cómo resolver la cuota en Supabase;
+el gestor coordina la incidencia. Operador, tras restablecerse el servicio,
+comprueba identidad pública200, preferencias y filtros privados42501, RPC
+anónima42501, Inicio/ficha de persona/Entrar y Ajustes, y concilia con gestor.
+No se declara H03 cerrado de punta a punta; Safari físico sigue pendiente.
+Por instrucción del gestor, no abrir otra pieza mientras dure la incidencia.
+Servidores locales de QA y PostgreSQL temporal detenidos; worktree sin cambios
+ajenos. No se instaló vigilancia ni se prometió seguimiento automático.
+
+Production6834000749 del SHA2fa4a95a figura success a las22:41:43 UTC. Esto acredita
+el despliegue, no la recuperación de Supabase; el bloqueo402 sigue separado.
