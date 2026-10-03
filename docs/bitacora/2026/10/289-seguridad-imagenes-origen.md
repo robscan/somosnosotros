@@ -1,6 +1,6 @@
 # 289 · Origen de imágenes en la base (OL-262 / H05)
 
-**Fecha:** 2026-10-03. **Estado:** implementación probada, revisión/publicación pendientes.
+**Fecha:** 2026-10-03. **Estado:** publicado y comprobado; conciliación final de catálogo con gestor pendiente por bloqueo del Mac.
 Reserva del Gestor de cambios III: `seguridad-imagenes-origen`, base `0a0e26a3`
 tras PR304, worktree `/Users/apple-1/somosnosotros-seguridad-imagenes-origen`.
 OL262/bit289 comprobados por el script de numeración. Migración reservada
@@ -129,3 +129,34 @@ para comprobación de catálogo sin relajar TLS.
 Si hubiera una regresión de validación, corregir mediante una nueva migración
 revisada; quitar la frontera reintroduce H05. La migración no borra ni transforma
 imágenes históricas, por lo que no hay datos que reconstruir para revertir.
+
+## Publicación y comprobación posterior
+
+Gestor aceptó `1cba930c` y cedió ventana condicionada al CI del PR en verde.
+[PR305](https://github.com/robscan/somosnosotros/pull/305), CI37162695434 completo
+y correcto, incluida medición visual. CI de main37163005342 también correcto. Antes de operar se consultó explícitamente
+la conclusión y el SHA: coincide con el candidato aceptado. Preview correcta.
+
+Dry-run enumeró únicamente160000; `db:push` aplicó esa migración sin seeds ni
+cambios de roles. PR unido con merge `ee284157e21047b1270e1e6fce3c7d657b023d2b`
+a las23:49:53 UTC. Production6834601894 del mismo SHA, success23:50:28 UTC.
+
+Comprobaciones posteriores en producción:
+
+- `/api/estado` HTTP200: `supabase:ok`, Mapbox configurado.
+- La nueva RPC **pura y sin escritura** devuelve HTTP200: propia=true, externa
+  normal=false, Google perfil=true, Google ficha=false, externa admin=true.
+  No se crearon imágenes, objetos, cuentas ni fichas para probarlo.
+- La regresión H03 conserva identidad pública200 y preferencias/filtros privados
+  y RPC de perfil anónima401/42501; consultas con limit0, sin datos personales.
+- Navegador sin sesión: `/perfil` y `/ajustes` llevan a Entrar y mantienen su
+  respectivo `siguiente` en Apple/Google. No hay sesión real disponible; no se
+  presenta esta comprobación como carga autenticada ni login OAuth/Safari físico.
+- Cluster PG local detenido; código de producto congelado y árbol sin cambios
+  ajenos. Se prepara este cierre documental sin repetir unitarias/build.
+
+Al entregar el cierre, la herramienta de comunicación informó que el Mac está
+bloqueado y el desbloqueo automático falló. Se solicitó al founder desbloquearlo.
+Pendiente del gestor: confirmar catálogo remoto (funciones, cuatro disparadores
+y permisos) y conciliar cierre. No se oculta esta limitación ni se promete un
+seguimiento desatendido. La publicación ya fue autorizada, probada y ejecutada.
