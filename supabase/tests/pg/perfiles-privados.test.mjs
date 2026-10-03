@@ -1,6 +1,15 @@
 import { createECDH, randomBytes, randomUUID } from 'node:crypto';
 
 export async function run({ query, check, as, expectError }) {
+  // El cierre debe estar aplicado por la migración, antes del ensayo reversible.
+  const publicas = new Set(['id','nombre','foto','colonia','bio','rol','reservado']);
+  for (const rol of ['anon','authenticated']) {
+    check(!(await query("select has_table_privilege($1,'public.perfiles','SELECT') ok",[rol])).rows[0].ok,
+      `${rol}: no conserva SELECT general en el candidato final`);
+    const columnas=(await query("select attname,has_column_privilege($1,attrelid,attnum,'SELECT') ok from pg_attribute where attrelid='public.perfiles'::regclass and attnum>0 and not attisdropped",[rol])).rows;
+    check(columnas.every(c=>c.ok===publicas.has(c.attname)), `${rol}: únicamente siete columnas públicas legibles`);
+    await as(rol,null,()=>expectError(()=>query('select avisos_push from public.perfiles limit 0'),'42501',`${rol}: cierre real antes del ensayo`));
+  }
   const firmas = ['public.mi_perfil()', 'public.mi_push_activo(text,text)', 'public.activar_mis_avisos_push()'];
   for (const firma of firmas) {
     const f = (await query("select prosecdef,proconfig,has_function_privilege('anon',oid,'execute') anon,has_function_privilege('authenticated',oid,'execute') titular,has_function_privilege('service_role',oid,'execute') servicio from pg_proc where oid=to_regprocedure($1)", [firma])).rows[0];

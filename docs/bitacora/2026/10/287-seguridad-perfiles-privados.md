@@ -1,6 +1,6 @@
 # 287 · Preferencias de perfiles privadas (OL-260 / H03)
 
-**Fecha:** 2026-10-03. **Estado:** paso A listo para revisión; cierre de permisos pendiente del paso B.
+**Fecha:** 2026-10-03. **Estado:** paso A publicado; paso B listo para revisión y aplicación.
 Operador Codex, sin subagentes. Reserva de Gestor de cambios III:
 `seguridad-perfiles-privados`, base `f2dd8be9`, worktree propio. OL260/bit287,
 `20261003150000_perfiles_privados.sql` (A) y
@@ -94,3 +94,29 @@ No volver a una versión anterior a A tras aplicar B. Si B ocasiona una regresi�
 corregir el consumidor o revertir B con revisión del gestor; reabrir SELECT general
 reintroduciría H03 y no debe hacerse silenciosamente. A es aditiva y no modifica
 ningún dato existente.
+
+## Paso A publicado; paso B entregado
+
+El gestor aceptó `3291bc6e` sin bloqueos y cedió ventana tras CI verde.
+PR [300](https://github.com/robscan/somosnosotros/pull/300), CI37158316459 correcto.
+Dry-run listó solo 150000; aplicada correctamente. Merge `d6f7f640` a las
+22:29 UTC; Production6833898801 de ese SHA en success a las 22:30 UTC.
+Dominio: Inicio, Entrar y estado HTTP200. Ajustes sin sesión redirige a Entrar
+con retorno a Ajustes, comprobado en navegador. No había sesión real disponible:
+el acceso autenticado se probó en build sintético y contratos PG, no se simuló una
+firma del founder ni se inició un acceso nuevo. RPC anónima 401/42501. En A las
+columnas privadas todavía respondían 200 con limit=0, como corresponde a la
+transición: ninguna fila privada fue leída en esa comprobación.
+
+Paso B añade exclusivamente `20261003150100_perfiles_columnas_publicas.sql`:
+revoca SELECT de tabla y todos los grants previos por columna a PUBLIC/anon/
+authenticated; permite solo las siete columnas públicas y recarga PostgREST.
+No cambia filas, FK, políticas de escritura ni permisos de servicio.
+
+Suite PG completa con **73 migraciones y 1226 comprobaciones, cero fallos**:
+todos los consumidores se ejecutan ahora con el cierre real aplicado. Se añade
+aserción inicial del conjunto exacto de columnas legibles y denegación de
+preferencias antes del ensayo reversible. Evidencia JS/build/QA reutilizada de A
+porque B no cambia aplicación. CI obligatorio de PR vuelve a ejecutar sus checks.
+Pendiente: revisión del gestor, ventana de B, dry-run solo 150100, aplicación,
+verificación remota y cierre. H03 aún no se declara cerrado en producción.
