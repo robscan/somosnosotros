@@ -1,6 +1,6 @@
 # 287 · Preferencias de perfiles privadas (OL-260 / H03)
 
-**Fecha:** 2026-10-03. **Estado:** A/B aplicados y unidos; catálogo remoto verificado. Verificación final por API bloqueada por cuota de Supabase.
+**Fecha:** 2026-10-03. **Estado:** publicado y confirmado tras recuperar Supabase; Safari físico pendiente del founder.
 Operador Codex, sin subagentes. Reserva de Gestor de cambios III:
 `seguridad-perfiles-privados`, base `f2dd8be9`, worktree propio. OL260/bit287,
 `20261003150000_perfiles_privados.sql` (A) y
@@ -155,3 +155,16 @@ ajenos. No se instaló vigilancia ni se prometió seguimiento automático.
 
 Production6834000749 del SHA2fa4a95a figura success a las22:41:43 UTC. Esto acredita
 el despliegue, no la recuperación de Supabase; el bloqueo402 sigue separado.
+
+## Recuperación y cierre confirmado (2026-10-03)
+
+Founder: «supabase regresó, gestor confirmó entrega continua». Gestor de cambios
+III comprobó API anónima (identidad legible, preferencias y SELECT completo
+denegados, mi_perfil sin sesión denegado), Agenda con datos y estado saludable;
+confirmó cierre H03 y actualizó ASIGNACIONES. Operador corroboró una vez:
+identidad pública con limit=0 HTTP200; preferencias, filtro de preferencias y RPC
+sin sesión HTTP401/código42501; `/api/estado` HTTP200 con supabase:ok.
+Queda levantado el bloqueo operativo; no hubo que reabrir permisos ni modificar
+código. La comprobación autenticada se sustenta en contratos PG/build sintético;
+Safari físico sigue a cargo del founder. Cierre documental incorporado a la
+siguiente entrega OL261/bit288 por autorización del gestor, sin repetir suites.
