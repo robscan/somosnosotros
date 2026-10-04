@@ -9,8 +9,8 @@ import { compararNombres, normalizarNombre } from "./lugares";
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
 export type EventoAgenda = EventoResumen & {
   creado_en: string;
-  /** Cuántas personas dijeron "Voy". */
-  van: number;
+  /** Cuántas personas dijeron "Voy"; null si el recuento no está disponible. */
+  van: number | null;
 };
 
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };

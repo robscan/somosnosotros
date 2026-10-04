@@ -18,11 +18,11 @@ import type { Agenda } from "./cargarAgenda";
 import { eventoPaso } from "./fechas";
 
 const ahora = new Date("2026-09-23T18:00:00Z");
-function evento(id: string, cambios: Partial<{ inicio: string; fin: string; van: number; titulo: string; creado_en: string }> = {}) {
+function evento(id: string, cambios: Partial<{ inicio: string; fin: string; van: number | null; titulo: string; creado_en: string }> = {}) {
   return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", zona: "America/Mexico_City", van: 0, creado_en: "2026-09-01T00:00:00Z", ...cambios };
 }
 function agenda(cambios: Partial<Agenda> = {}): Agenda {
-  return { eventos: [], seguidos: [], eventosSeguidos: [], asistencias: {}, destacados: [], ...cambios };
+  return { artistasSeguidos: null, eventos: [], seguidos: [], eventosSeguidos: [], asistencias: {}, destacados: [], ...cambios };
 }
 /** Un ISO fuera de la ventana de "Esta semana" (más de 7 días desde `ahora`): lo que necesita "Nuevos eventos". */
 const fechaFueraDeEstaSemana = (horasDeMas = 0) => new Date(ahora.getTime() + (DIAS_ESTA_SEMANA_MS + horasDeMas * 3600000)).toISOString();
@@ -374,5 +374,17 @@ describe("Inicio: los carriles de una sola agenda (estelar, esta semana, nuevos)
       const r = calcularCarrilesAgenda(agenda({ eventos: [e], seguidos: null, asistencias: null, destacados: [{ id: "a", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
       expect(r.estelar.map((x) => x.id)).toEqual(["a"]);
     });
+  });
+});
+
+
+describe("recuentos de Agenda no disponibles", () => {
+  it("con algún dato desconocido usa fecha para todo el grupo, sin alterar los destacados", () => {
+    const temprano = evento("temprano", { van: 0, inicio: "2026-10-04T10:00:00Z" });
+    const sinRecuento = evento("desconocido", { van: null, inicio: "2026-10-04T11:00:00Z" });
+    const tarde = evento("tarde", { van: 100, inicio: "2026-10-04T12:00:00Z" });
+    const destacado = evento("destacado", { van: null, inicio: "2026-10-08T10:00:00Z" });
+    expect(carrilEstelar([destacado], [tarde, sinRecuento, temprano], new Set()).map((e) => e.id))
+      .toEqual(["destacado", "temprano", "desconocido", "tarde"]);
   });
 });

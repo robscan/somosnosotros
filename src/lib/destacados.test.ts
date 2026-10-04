@@ -141,3 +141,11 @@ describe("qué se puede destacar", () => {
     expect(puedeDestacarse({ visible: true, paso: false, lugar: { visible: false, privado: false } })).toBe(false);
   });
 });
+
+
+it("el recuento desconocido viaja hasta la tarjeta y no crea una cifra", () => {
+  const tarjeta = tarjetaEvento(evento({ van: null }), AHORA);
+  expect(tarjeta.van).toBeNull();
+  expect(selloDeTarjeta(tarjeta)).toBeNull();
+  expect(selloDeTarjeta({ hoy: true, van: null })?.texto).toBe("Hoy");
+});

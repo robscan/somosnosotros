@@ -61,10 +61,8 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   // «Artistas con eventos esta semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí.
   const semanaArtistasPromise = Promise.all([cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora), artistasDestacadosPromise])
     .then(([semana, destacados]) => seleccionarArtistasSemana(semana, destacados, TOPE_ARTISTAS_DESTACADOS));
-  const seguidosArtistasPromise: Promise<string[] | null> =
-    usuarioId && supabase
-      ? Promise.resolve(supabase.from("seguimientos").select("artista_id").eq("usuario_id", usuarioId).not("artista_id", "is", null).limit(1000)).then((r) => ((r.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id))
-      : Promise.resolve(usuarioId ? [] : null);
+  // Reutiliza la lectura validada de Agenda: un fallo no se convierte en "no sigues a nadie".
+  const seguidosArtistasPromise = agendaPromise.then((a) => a.artistasSeguidos);
   // «Tus planes» (OL-219): Voy + Me interesa, la misma consulta que ya usa Mi perfil (`cargarPersona`), sin filtro
   // de ciudad (un compromiso ya hecho no deja de ser tuyo por cambiar de ciudad en Inicio). Los demás carriles
   // le restan sus eventos al cargar con `agenda.asistencias` (`calcularCarrilesAgenda`), no con esta consulta.

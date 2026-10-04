@@ -30,7 +30,7 @@ type Props = {
  * todos); la segunda, el nombre del sitio, sin su dirección postal (esa vive en la ficha).
  */
 export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false }: Props) {
-  const ademas = [e.precio, e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
+  const ademas = [e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
     <Renglon href={hrefEvento(e)} foto={e.imagen ?? e.lugar?.portada ?? null} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>
