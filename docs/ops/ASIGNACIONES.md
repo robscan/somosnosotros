@@ -737,3 +737,17 @@ Estado al relevo (main `6d870573`):
     - permiso concedido, negado y sin pedir;
     - teclado en pantalla con 13 ciudades (Artistas);
     - CI completa.
+- **OL-271 / bitácora 298 · Investigaciones de eventos, artistas y lugares, solo documentos (2026-10-04, reserva para Codex, chat 01a10807).** El founder pidió un documento por petición, con hallazgos, propuestas y plan para implementar, en un repositorio de investigaciones dentro de `docs`. Principios del founder:
+  - ampliar lo que el sistema y la IA hacen solos antes de añadir campos;
+  - UX invisible y progressive disclosure;
+  - confirmación humana de toda sugerencia.
+
+  No autoriza producto, prototipos ni migraciones. C5 / OL-151 sigue detenida para código.
+  - **Rama:** `investigaciones`, desde `origin/main` `0375c774`, en un worktree propio (`.claude/worktrees/investigaciones`), nunca en la carpeta principal ni sobre `main`.
+  - **Archivos asignados:**
+    - `docs/investigaciones/README.md`, `eventos.md`, `artistas.md` y `lugares.md`;
+    - `docs/bitacora/2026/10/298-investigaciones.md`;
+    - la línea OL-271 y el «Last updated» de `OPEN_LOOPS.md`.
+  - **No tocar:** `docs/rediseno/24-grafo-cultural.md`, `42-festivales.md` y `44-novedades-artista.md`, `COLA_DE_PIEZAS.md`, `DEFINICION.md` ni `ASIGNACIONES.md` (los lleva el gestor). Se citan y se enlazan.
+  - **Verificación:** solo documental, sin build ni suites. Enlaces relativos válidos, sin datos privados (correos ni teléfonos de personas), y cifras con fecha y fuente.
+  - **Entrega:** commit local en la rama. Sin push, PR ni unión salvo instrucción expresa; la publicación la hace el gestor con el «publica» del founder.
