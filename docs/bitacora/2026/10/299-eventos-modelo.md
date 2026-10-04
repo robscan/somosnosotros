@@ -72,3 +72,39 @@ no cambió producto. Se entrega commit local al gestor con alcance y límites.
 Siguiente resultado revisable: decisiones del founder sobre modelo y recorrido;
 si lo pide, el gestor reserva aparte un prototipo de captura y consulta antes
 del código. Esta propuesta no autoriza por sí misma reanudar C5 ni publicar.
+
+## Iteración: casos felices y crítica de las propuestas
+
+El founder pidió casuísticas empezando por happy paths y cuestionar sus ideas:
+publicar inauguración y proponer exposición con periodo; en festivales,
+no sugerir al primer registro y relacionar al finalizar la segunda fecha.
+El gestor, mensaje 116, descongeló `83baed3d` y mantuvo OL-272, rama, worktree
+y propiedad. Permite modelo, referencias mínimas en Eventos/índice, bit299 y
+solo OL-272/cabecera. Sin documento nuevo, código, prototipo ni publicación.
+
+Se incorporó la matriz de ocho casos felices, costo de atención, ignorar,
+corregir/deshacer, ocho variantes y orden de prototipo. La crítica recomienda
+reutilizar la apertura ya publicada, distinguir inauguración de recinto,
+aprovechar periodos presentes sin pedirlos otra vez y no copiar a la muestra
+horario, costo o participantes de la ceremonia sin respaldo.
+
+Para festival, el segundo acto distinto es el momento ordinario recomendado,
+con evidencia de marco/edición. Fechas, sede o artista compartidos no bastan;
+edición o reintento no cuentan como otro acto. Programa completo en primera
+carga y festival existente son excepciones propuestas, pendientes del founder.
+El recorrido previo se concilia: la captura conjunta sigue disponible para
+material completo, mientras un alta individual puede terminar sin ampliar.
+
+Los datos y relaciones internos propuestos no se vuelven hechos públicos
+sin revisión. Se distingue estado interno candidato de asociación confirmada;
+el fallo de una ampliación no revierte el evento original. Historial conserva
+unidad, papel y fuente. La evaluación focalizada de falsos positivos confirmó
+la necesidad de identificar edición, acto frente a sesión y menciones del
+festival que solo describen antecedentes del artista.
+
+Esta iteración es propuesta para revisión, no firma de nuevas reglas de
+producto. Se entrega nuevo commit local al gestor después de verificar
+enlaces/anclas, diff y conservación de cadena/entradas de OPEN_LOOPS.
+Verificación de la iteración: 140 destinos locales y 21 anclas válidos;
+cinco archivos dentro de reserva, sin modificar Artistas/Lugares ni fuentes
+históricas. No se ejecutaron suites o build por tratarse solo de documentos.

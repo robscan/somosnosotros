@@ -4,6 +4,8 @@
 
 Leer primero [Eventos: investigación y antecedentes](eventos.md). Este documento desarrolla su etapa E1: unidades, relaciones, reglas temporales, captura y consulta. [Artistas](artistas.md) y [Lugares](lugares.md) aportan contratos mínimos; sus proyectos completos conservan alcance propio.
 
+**Iteración de casos:** [casos felices y variantes](#10-casos-felices-y-variantes-para-revisar) concreta la nueva propuesta del founder: primero publicar la actividad y después sugerir su ampliación; para altas individuales de festival, esperar un segundo acto. Los ajustes y excepciones expuestos allí son recomendaciones para revisar, no acuerdos ya firmados.
+
 ## 1. Recomendación
 
 Conservar una identidad estable para cada actividad y distinguir su forma de ocurrir: momento puntual, periodo visitable o curso con sesiones. Un festival agrupa actividades; una convocatoria representa una oportunidad. La IA prepara estas estructuras desde material o título, y la persona confirma una representación comprensible. **La estructura aumenta en el sistema, sin añadir un cuestionario al registro.**
@@ -116,7 +118,9 @@ La entrada sigue siendo aportar cartel/programa o escribir. El título activa un
 4. **Confirmar el conjunto revisado.** Una acción confirma la versión presentada y las conexiones propuestas que se pudieron revisar. «Encontré 8 actividades» por sí solo no confirma sus fechas o artistas ocultos: antes se presenta la síntesis de los actos incluidos. No exigir un clic por campo ni publicar relaciones no mostradas.
 5. **Guardar y continuar.** Publicar el conjunto aprobado de forma atómica e idempotente. Las unidades pendientes quedan fuera del lote, con su estado visible y borrador recuperable. Un fallo conserva la revisión y permite reintentar; no deja media publicación ni duplica fichas. Las correcciones manuales ganan a respuestas tardías de IA.
 
-Escribir solo «Festival del vino» permite ofrecer «Parece un festival; agrega el programa para preparar sus actividades». No crea conciertos ni sedes. Escribir «Exposición temporal de X» permite proponer la clase y buscar artista/lugar; se solicitan únicamente los datos temporales indispensables que no estén ya en el material.
+Escribir solo «Festival del vino» permite preparar un candidato interno de agrupación, sin crear conciertos ni sedes. En el recorrido de altas individuales propuesto en la [iteración de casos](#10-casos-felices-y-variantes-para-revisar), no se añade una petición de programa en la primera alta. Escribir «Exposición temporal de X» permite proponer la clase y buscar artista/lugar; se solicitan únicamente los datos temporales indispensables que no estén ya en el material.
+
+La captura conjunta sigue siendo una opción cuando el material ya contiene un programa completo y la persona quiere registrarlo. Para quien aporta una actividad, se propone terminar su alta y ofrecer después una ampliación opcional. Ambas formas conservan confirmación visible y guardado seguro; el sistema no obliga a repetir formularios ni convierte una ampliación pendiente en requisito del evento original.
 
 En un programa grande, la revisión se organiza por día o sede, con el estado de revisión de cada bloque. Esto revela complejidad real cuando hace falta; no oculta un formulario largo con preguntas repetidas. Reutilizar y corregir datos comunes reduce trabajo, conservando diferencias por acto.
 
@@ -177,3 +181,76 @@ Se recomienda aceptar el modelo lógico de la sección 1 y los enriquecimientos 
 - Quién puede confirmar realización y cuándo se abre archivo público: dependencias de trayectoria/informes, sin inferirlo del paso del tiempo.
 
 Aceptar este documento no publica código ni reanuda por sí solo C5. El siguiente resultado revisable es un prototipo de captura y consulta reservado aparte; el modelo físico se concreta con las pruebas de contratos antes de migrar. [Índice y continuidad](README.md), [plan general de Eventos](eventos.md#8-plan-de-implementación-por-piezas).
+
+## 10. Casos felices y variantes para revisar
+
+### Qué conservar y qué cuestionar de la propuesta del founder
+
+**Inauguración primero, periodo después.** Conserva el recorrido conocido y permite terminar el alta sin investigar cuánto durará una muestra. Tiene valor como ampliación opcional, pero requiere tres precisiones:
+
+- Si ya se publicó la inauguración, se reutiliza ese registro. Aceptar la ayuda crea o vincula la exposición y su periodo; no crea otra apertura.
+- «Inauguración» por sí sola no identifica una exposición: puede abrir un recinto, una tienda o un festival. La fuente debe vincular la apertura con una muestra específica. Un texto que diga «exposición» tampoco prueba una ceremonia de apertura.
+- Si la fuente ya contiene el periodo, volver a pedirlo desperdicia el trabajo de la IA. La sugerencia muestra las fechas extraídas para confirmarlas; solo revela edición o pide el dato que falta cuando la persona decide completar la exposición.
+
+La exposición es una clase de actividad en el sistema. No se presenta al usuario como «otro tipo de evento llamado exposición»: se habla de la muestra y de hasta cuándo puede visitarse. Su horario, costo y participantes no se copian sin criterio desde la ceremonia de apertura.
+
+**Festival al finalizar el segundo acto.** Es un buen recorrido predeterminado para quien registra actos uno por uno: posterga una decisión hasta que hay algo útil que agrupar. **El número de fechas no identifica un festival.** Se cuentan actividades distintas, no ediciones del mismo registro, reintentos o fechas de una misma función. Dos actos pueden ocurrir el mismo día; dos fechas distintas pueden ser sesiones de curso.
+
+Se recomienda conservar la espera propuesta cuando solo se aporta el primer acto. El sistema prepara candidatos sin publicarlos ni avisar. Al terminar de guardar un segundo acto, ofrece una relación únicamente si hay evidencia del mismo festival y de su edición, no por sede, artista o cercanía de fechas. Las siguientes excepciones se proponen para discutir:
+
+1. **Programa completo desde la primera carga:** ofrecer registrar su conjunto en una revisión; esperar otra carga obliga a rehacer trabajo y no aporta más certeza.
+2. **Festival existente, explícitamente mencionado:** una sugerencia discreta al final del primer acto puede ahorrar que quede aislado. Es opcional; si se prefiere la regla estricta del segundo acto, la asociación queda disponible al editar, sin aviso en la primera alta.
+
+Ninguna de estas excepciones crea relaciones públicas sin confirmación. La propuesta actual de «segunda fecha» se interpreta como segundo acto distinto y suficiente evidencia; ese ajuste y las excepciones aún requieren decisión del founder.
+
+### Matriz de casos felices
+
+Las frases son ejemplos de contenido, no diseño visual firmado. Los toques indicados más adelante son metas del recorrido, aún sin medir en prototipo.
+
+| Caso y disparador | Acción del sistema | Confirmar o posponer | Resultado y protección |
+| --- | --- | --- | --- |
+| **H1. Apertura de muestra, con periodo.** El cartel distingue inauguración el 5 a las 19:00 y visita del 6 al 30 | Preparar el alta puntual; después del éxito ofrecer «También puedes publicar la exposición, del 6 al 30» con título y lugar | «Publicar exposición» confirma los datos resumidos; se puede ignorar | Una apertura existente y una exposición relacionadas. Se respeta que la visita inicia al día siguiente; no se hereda el horario de la ceremonia |
+| **H2. Apertura de muestra, sin periodo.** La fuente identifica la exposición pero solo fecha la inauguración | Publicar la apertura y ofrecer «Agregar periodo de visita»; buscar primero si la muestra ya existe | Al tocar, mostrar propuesta disponible o pedir únicamente las fechas sin respaldo; la ampliación queda pendiente si no responde | La apertura sigue publicada. No se fabrica duración ni se afirma que la muestra sigue activa; falta de horario general no bloquea el periodo cuando se conoce |
+| **H3. Exposición sin inauguración anunciada.** El material incluye artista, sede y periodo | Preparar directamente una exposición; reutilizar horarios aplicables como propuesta cuando existan | La revisión normal confirma la muestra; sin pregunta sobre ceremonia | Una exposición, sin apertura inventada. «Expone» acredita relación con la muestra, no presencia diaria |
+| **H4. Dos actos del mismo festival, altas separadas.** Nombre y edición coinciden explícitamente en fuentes; ambos actos son distintos | Primera alta sin sugerencia. Después de la segunda, mostrar «Estos dos eventos forman parte de Festival X · edición 2026», con sus títulos | «Relacionar los dos» confirma el marco y vínculos; si lo ignora, ambos siguen independientes | Un marco con programa registrado de dos actos, sin inferir duración total, sedes o artistas para el resto. Funciona aunque ambos actos sean el mismo día |
+| **H5. Festival ya existente.** El nuevo acto menciona de forma explícita la edición conocida | Buscar el marco existente antes de preparar uno nuevo; recomendar sugerencia al finalizar incluso el primer acto como excepción a H4 | Confirmar vinculación; si el marco es ajeno, conservar propuesta pendiente según permisos | Se evita duplicar el festival. Registrar un acto no da edición sobre el marco ni sobre actividades ajenas |
+| **H6. Programa con varios actos en una carga.** La fuente distingue títulos, horarios y sedes | Preparar resumen por acto y ofrecer revisión conjunta; permitir publicar un subconjunto confirmado | Una confirmación del conjunto presentado; el resto queda como borrador | Actividades con identidad propia dentro de un marco. No forzar otra carga para activar la ayuda ni interpretar que todo sucede continuamente |
+| **H7. Taller con inscripción única y sesiones explícitas.** La fuente dice «4 sesiones» y enumera fechas | Preparar un curso y sus sesiones en la revisión; resumir próxima sesión y número total | Confirmación normal; calendario y correcciones al tocarlos | Un curso, sin repetir altas ni llenar días intermedios. Sede/docente excepcionales quedan en su sesión |
+| **H8. Funciones independientes repetidas.** Misma obra viernes y sábado, con entradas separadas | Preparar funciones separadas con datos comunes reutilizables | Confirmar las funciones que se quieran publicar; no pedir si es festival sin evidencia | Cada función conserva «Voy» y horario propios. Una segunda fecha no convierte la obra en festival ni en curso |
+
+En H1/H2, si existe la exposición, se propone vincularla en lugar de crearla otra vez. Si la misma fuente describe un curso, no se añade por analogía una «exposición»: cada ayuda conserva el sentido de la actividad.
+
+### Costo de atención, ignorar y deshacer
+
+| Recorrido | Ganancia y costo propuesto | Si se ignora | Cómo corregir o deshacer |
+| --- | --- | --- | --- |
+| H1, periodo ya leído | Visibilidad de la muestra tras la apertura; un toque adicional de confirmación si todo está resuelto | No se crea la exposición ni se repite la sugerencia en esa alta | Quitar la relación mantiene ambas fichas; retirar la exposición creada sigue los permisos normales, sin retirar la apertura |
+| H2, periodo ausente | Oportunidad de completar la visita; un toque para abrir el detalle, datos faltantes y una confirmación | Apertura válida; ampliación recuperable al editar, sin tareas obligatorias | Corregir periodo antes de confirmar; después editar/retirar la exposición según permisos |
+| H4/H5, relación clara | Programa conectado; un toque si el resumen y permisos están resueltos | Actos publicados independientes; no volver a preguntar en la misma alta | Quitar el vínculo mantiene los actos y sus participantes; no borrar el programa entero |
+| H6, material completo | Ahorra repetir formularios; cuesta revisar el resumen de los actos incluidos | Se conserva el borrador y se permite continuar con la unidad elegida | Corregir o excluir actos antes de confirmar; después aplicar permisos por ficha |
+| H7/H8, estructura explícita | El sistema prepara fechas; no agrega decisión aparte del guardado revisado | No publica sesiones/funciones ocultas o no confirmadas | Corregir una sesión/función sin desplazar automáticamente las demás |
+
+La ayuda aparece en la confirmación de éxito dentro del flujo, **sin modal obligatorio, push ni aviso posterior a otra pantalla**. No se muestra «la IA detectó…»; se muestra qué puede agregarse y qué beneficio ofrece. Una sola sugerencia opcional visible: si concurren exposición y festival, priorizar el periodo visitable; la asociación queda disponible al solicitarla. El prototipo debe comprobar si este orden y los textos permiten salir con claridad después de publicar.
+
+Ignorar no es confirmar. Una sugerencia descartada se conserva como tal, sin insistir en cada edición ni volver a ofrecer la misma agrupación por registrar un tercer o cuarto acto. Sigue recuperable al solicitar relaciones o aportar un programa; corregir una evidencia contradictoria puede justificar otra revisión, agregar una fecha más por sí solo no. Una respuesta tardía no roba foco ni reabre una pantalla cerrada. La publicación original nunca espera una llamada extra de IA destinada solo al enriquecimiento.
+
+### Variantes que protegen el flujo
+
+| Situación | Respuesta recomendada |
+| --- | --- |
+| **Inauguración de un recinto** o palabra «inauguración» sin muestra identificable | Publicar la actividad que corresponda; no ofrecer exposición por la palabra sola. Mantener las reglas de elegibilidad del proyecto |
+| **Apertura de varias salas/exposiciones** | Una inauguración, propuestas de las muestras identificadas y periodos propios. Revisarlas como conjunto solo al solicitar la ampliación; no imponer la misma duración a todas |
+| **«Ganador del Festival X»** en reseña del artista, patrocinio o comparación | No proponer pertenencia del evento. Esa frase habla de antecedentes/promoción, no del programa actual |
+| **Mismo nombre, otro año/edición**, o festival homónimo en otra ciudad | Mantener candidatos separados; preguntar solo al intentar relacionar si la edición sigue ambigua. No resolver por semejanza de nombre |
+| **Mismo acto cargado otra vez o segunda fecha que corrige la primera** | Buscar el registro existente y distinguir duplicado, corrección o función nueva antes de publicar. No contarlo como segundo acto para activar H4; no sobrescribir un evento ajeno |
+| **Horario/costo de apertura distinto al de visita**, o cierre del museo | Conservar disponibilidad y costo propios de la muestra. Aplicar horario del lugar necesita confirmación; ausencia de horario dice «Horario por confirmar», cierre conocido no produce «visitable hoy» |
+| **Participantes distintos entre apertura, exposición o sesiones** | Conservar roles y unidades acreditados. Un músico de la apertura no se vuelve expositor, ni un docente de una sesión imparte todo el curso; miembros actuales de la banda no reciben créditos automáticos |
+| **Confirmación de ampliación falla o se reintenta** | Mantener el evento original publicado y el borrador de la ampliación. Crear exposición/marco y relaciones como una operación segura que no deje huérfanos ni duplicados; informar el error solo en esa acción |
+
+### Qué prototipar y cómo decidir
+
+Se recomienda empezar por **H1, H2 y H4**: un periodo ya presente, uno ausente y dos actos registrados por separado. H3 sirve de control para comprobar que no se obliga a inventar una inauguración. H6 verifica la excepción de material completo; H5 requiere decidir si merece ofrecer ayuda desde el primer acto.
+
+El prototipo debe mostrar alta normal, éxito con una sugerencia, aceptación, salida sin aceptar y edición posterior. La revisión comprueba: carga adicional de toques, si se entiende qué se crea o relaciona, si ignorar permite terminar, si no hay pregunta repetida y si cada actividad mantiene identidad y participantes. La calidad de asociación se evalúa con casos de mención promocional, homónimos, ediciones y sesiones; no con un porcentaje de confianza sin significado para la persona.
+
+Las decisiones inmediatas son el momento posterior al guardado para la ampliación de exposición, usar **segundo acto distinto más evidencia** para la sugerencia ordinaria de festival, y aceptar o descartar las excepciones H5/H6. No se pretende resolver todas las variantes con nuevos controles; primero se comprueba que el sistema prepare correctamente estos casos y haga preguntas solo al solicitar una ampliación incompleta.

@@ -50,6 +50,7 @@ El primer avance de inauguraciones, talleres dentro de festivales y programas es
 | ¿Cómo mantener visible una exposición tras la inauguración? | [Eventos](eventos.md), información y descubrimiento | [Lugares](lugares.md), vigencia y horarios |
 | ¿Cómo registrar un festival o un taller sin repetir formularios? | [Eventos](eventos.md), interpretación y revisión conjunta | [Artistas](artistas.md), identidad y papel; Lugares, disponibilidad |
 | ¿Cómo concretar ahora Eventos y sus conexiones? | [Modelo y recorridos de Eventos](eventos-modelo.md) | Horarios y formación opcionales; historial derivado de cada actividad confirmada |
+| ¿Qué casos felices prototipar y cuándo sugerir relaciones? | [Casos de Eventos](eventos-modelo.md#10-casos-felices-y-variantes-para-revisar) | Apertura y periodo; segundo acto con evidencia; excepciones, salida sin aceptar y corrección |
 | ¿Cómo acreditar lo que hizo un artista? | [Artistas](artistas.md), trayectoria y antecedentes | Evento concreto, formación y fuente; evitar crédito por todo el festival |
 | ¿Cómo informar actividad de un espacio? | [Lugares](lugares.md), artistas e informes | Unidades de Eventos, papeles de Artistas y cobertura comprobada |
 | ¿Qué falta para mini tours? | [Eventos](eventos.md), preparación para recorridos | Horarios y excepciones de Lugares; no prometer una ruta con datos desconocidos |

@@ -4,6 +4,8 @@
 
 **Continuación enfocada en Eventos:** [modelo concreto y recorridos propuestos](eventos-modelo.md), OL-272. Desarrolla unidades, reglas temporales, permisos, captura y consulta, con los contratos mínimos de horarios, integrantes e historial. Esta investigación conserva los antecedentes; el documento complementario permite revisar la etapa E1 sin volver a abrir los proyectos completos de Artistas y Lugares.
 
+La [iteración de casos felices](eventos-modelo.md#10-casos-felices-y-variantes-para-revisar) desarrolla alta seguida de ampliación opcional, segundo acto de festival, material completo, sesiones y funciones; incluye crítica, costo de atención, ignorar/deshacer y falsos positivos.
+
 ## 1. Petición y resultado buscado
 
 Registrar y distinguir festivales, exposiciones que continúan después de su inauguración, talleres de varias sesiones y convocatorias. Encontrarlos por fecha, lugar, artista o clase de actividad y conservar información útil para futuros mini tours.
