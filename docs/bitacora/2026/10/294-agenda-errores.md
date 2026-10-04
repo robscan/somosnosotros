@@ -1,6 +1,6 @@
 # 294 · Errores de carga en Inicio y Agenda (OL-267 / H11)
 
-**Fecha:** 2026-10-04 UTC (2026-10-03 en México). **Estado:** candidato local probado; revisión y publicación pendientes.
+**Fecha:** 2026-10-04 UTC (2026-10-03 en México). **Estado:** publicado y verificado; cierre técnico completo, Safari físico pendiente.
 
 Reserva del Gestor de cambios III, PR319 / `63bc24052e4f84b484f9eaf2a9d0392fb90c5fe5`,
 después de PR318 / `972c3e9d`. Rama `agenda-errores`, worktree
@@ -89,3 +89,36 @@ Evidencia persistente:
 Procesos temporales cerrados. Checkout principal preservado y limpio. Falta CI,
 preview del SHA final y revisión/ventana del gestor; Safari físico sigue a cargo
 del founder.
+
+
+## Revisión, publicación y cierre técnico
+
+El gestor aceptó [PR320](https://github.com/robscan/somosnosotros/pull/320),
+candidato `fcb1336d13db73877ef3763a6722ca6c1512628b`, tras revisar los16 archivos
+y abrir la captura de error390. Cedió la ventana con CI y preview verdes.
+
+[CI37177469628](https://github.com/robscan/somosnosotros/actions/runs/37177469628)
+**success antes de unir**:217 componentes inventariados,215 correctos,
+2 excepciones Linux declaradas en OL265,0 fallos,84,64s;1860 unitarias,
+PostgreSQL, build, tipos, lint, inventario y96 mediciones correctos.
+Preview6836871981 success en ese SHA, comprobada anónimamente a390×844:
+Inicio20 Nuevos/12 artistas, Agenda/Todos y Nuevos, recuentos reales visibles,
+cero errores de consola.
+
+Merge `27d419debe54e697e1119bb6a2c59c029755f798`,04:40:54 UTC del2026-10-04.
+[CI main37177705634](https://github.com/robscan/somosnosotros/actions/runs/37177705634)
+**success** sobre ese merge. Production6836907729 **success**,04:41:26 UTC,
+`https://somosnosotros-cfxrvbblr-robscans-projects.vercel.app`.
+
+Dominio `https://somosnosotros.org` comprobado a390×844: Inicio normal con12
+artistas semanales; Agenda/Todos y Nuevos cargan; el recuento confirmado de
+FELEAL2026 conserva «1 va»; cero errores de consola. `/`, `/agenda`, `/entrar`
+y `/api/estado` responden200, Supabase ok y Mapbox configurado. Los fallos se
+inyectaron exclusivamente en el respaldo local. Pestañas propias cerradas,
+viewport restablecido y ningún proceso de QA queda escuchando3126/3127.
+
+Se comunicó al gestor SHA, pruebas y comprobación de Production. Evidencia
+persistida incluye CI PR/main, preview y producción. Checkout principal limpio
+en `1b9461e4`. No se cambió SQL, configuración ni datos reales. La validación
+física en Safari sigue pendiente del founder; el siguiente encargo exige reserva
+del gestor y se inicia después del cierre documental.
