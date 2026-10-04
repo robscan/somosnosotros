@@ -732,6 +732,15 @@ Estado al relevo (main `6d870573`):
     - la bitácora 297 y la línea OL-270.
   - **No tocar:** `ui/Hoja`, `ui/Boton`, `ui/Renglon`, `ui/Buscador` (se usan tal cual), `HojaLugares`, `apps/ios`, ni `ubicacion.ts` y `useUbicacionFresca.ts` más allá de lo que ya trae #294. Sin migración.
   - **A decidir con el gestor antes de programar:** el nombre de la ciudad cuando estás lejos requiere geocodificación inversa (Mapbox). Es un uso nuevo de la ubicación, que hoy «sirve para ordenar por cercanía, nada más». Propuesta: pedirla solo con coordenadas redondeadas a 2 decimales, sin guardarla, y documentarlo en la bitácora.
+  - **Asignado por Codex y confirmado por el gestor (2026-10-04):**
+    - Codex trabaja en `hoja-ciudades`, con main traído mediante `resolver_ol.py`. El PR va contra `main`.
+    - El botón llama a `leerUbicacionCercana()` y después a `avisarUbicacion()`; para ocultarlo usa `permisoConcedido()`. El «negado» se guarda en `sessionStorage`.
+    - Variante `buscar`: título «Ciudades», nota de lugares o eventos, sin alta.
+    - Filtro por sección dentro de `Ciudad.tsx`, conservando siempre la ciudad actual. La cercanía se calcula sobre la lista ya filtrada.
+    - Archivos añadidos:
+      - `FilaEventos.componentes.test.mjs`, solo el caso de la línea 334;
+      - comentarios de `ui/Renglon.module.css:276` y `ui/Buscador.tsx:21`.
+    - Sin Mapbox: el botón dice «… donde estás».
   - **Pruebas:**
     - los cinco estados del prototipo en 390×844 y 320 px, con capturas en `docs/rediseno/capturas-297/`;
     - permiso concedido, negado y sin pedir;
@@ -751,3 +760,66 @@ Estado al relevo (main `6d870573`):
   - **No tocar:** `docs/rediseno/24-grafo-cultural.md`, `42-festivales.md` y `44-novedades-artista.md`, `COLA_DE_PIEZAS.md`, `DEFINICION.md` ni `ASIGNACIONES.md` (los lleva el gestor). Se citan y se enlazan.
   - **Verificación:** solo documental, sin build ni suites. Enlaces relativos válidos, sin datos privados (correos ni teléfonos de personas), y cifras con fecha y fuente.
   - **Entrega:** commit local en la rama. Sin push, PR ni unión salvo instrucción expresa; la publicación la hace el gestor con el «publica» del founder.
+- **OL-271 publicada por el gestor** con autorización expresa del founder («autorizo publicar», en el chat Codex 01a10807). PR #332, desde el candidato `869dcc90` revisado sin hallazgos.
+- **OL-272 / bitácora 299 · Eventos: modelo y recorrido, solo documentos (2026-10-04, reserva para Codex, chat 01a10807).** Continuación de OL-271 pedida por el founder: «retomemos eventos», sin perder de vista cómo se conecta con Artistas y Lugares.
+  - **Qué se documenta:**
+    - el modelo concreto de Eventos (marco y actos, sesiones, exposición visitable, convocatoria);
+    - los contratos que necesita de los otros proyectos:
+      - horarios de operación reutilizables del lugar;
+      - integrantes individuales de un grupo;
+      - toda actividad deja historial en el artista y en el lugar;
+    - la propuesta de recorrido de captura y de consulta.
+  - **Principios:** UX invisible, progressive disclosure, capacidades antes que campos y revisión humana de lo que propone la IA.
+  - **Rama:** `investigacion-eventos`, desde `origin/main` después de unir #332, en el worktree `.claude/worktrees/investigacion-eventos`.
+  - **Archivos asignados:**
+    - `docs/investigaciones/eventos.md`;
+    - un documento nuevo `docs/investigaciones/eventos-modelo.md` si el modelo no cabe en eventos.md;
+    - en `README.md`, `artistas.md` y `lugares.md` solo los enlaces o los contratos que Eventos necesita, no sus proyectos completos;
+    - `docs/bitacora/2026/10/299-eventos-modelo.md`;
+    - la línea OL-272 y el «Last updated».
+  - **No tocar:** los mismos documentos que en OL-271 (24, 42, 44, COLA, DEFINICION, ASIGNACIONES).
+  - Sin código, sin prototipo construido y sin migraciones. C5 / OL-151 sigue detenida para código. Si hace falta un prototipo, se pide aparte.
+  - **Entrega:** commit local y aviso al gestor. Se publica con el «publica» del founder.
+- **OL-271 unida:** #332 → `fd11330b`.
+  - La CI del PR falló solo por la medida intermitente conocida de `s13` (168 contra 167 nodos a 390). Es un PR de solo documentos.
+  - `publicar.sh` la unió porque su espera de 8 min se agotó con la verificación todavía en curso.
+  - La CI de main en `fd11330b` salió en verde.
+  - Script corregido: espera hasta 20 min y nunca une si la verificación sigue en curso o falló.
+- **OL-270, precisiones del gestor (2026-10-04):**
+  - **Prueba en Safari iOS 26.3 (simulador):**
+    - el buscador funciona con 13 ciudades;
+    - el primer toque en un resultado se perdía al encogerse la hoja con `onBlur` (se corrige con `buscando || texto`);
+    - había una franja sin velo entre la hoja y el teclado.
+  - **Medida de la franja:** `vv.height` 358 frente a `innerHeight` 695. La barra flotante de Safari ocupa unos 43 pt que `visualViewport` no cuenta.
+  - **Autorizado un cambio mínimo en `ui/Hoja`:** el velo cubre `innerHeight` completo y el fondo de la hoja se prolonga detrás de la barra, con regresión de las hojas que llevan campo.
+  - **Añadido por el founder:** con buscador, texto escrito y cero coincidencias, `Boton` primario «Agregar un lugar» → `/nuevo?tipo=lugar`, sin pasar el texto al alta.
+- **OL-270, decisión del founder (2026-10-04):** «Agregar un lugar» cuando no hay coincidencias **no sale en Artistas**, porque un lugar nuevo no hace aparecer su ciudad en esa lista. Se queda en Agenda, Inicio, Lugares y Buscar, siempre con el texto «lugar». Recomendación del gestor, aceptada.
+- **OL-270, revisión y CI de `064d25a2`:** aceptada por el gestor con prueba real en Safari iOS. CI `37232698189` en verde y vista previa `6846381610` en verde. El PR #333 sigue en borrador.
+  - Falta el ajuste de Artistas decidido por el founder (entrada anterior): nuevo SHA de Codex y revisión del gestor.
+  - **Pendientes y responsables:**
+    - prueba en el iPhone físico: el founder;
+    - «publica» de #294 y luego de #333: el founder;
+    - traer main y unir en ese orden: el gestor.
+- **OL-270, ajuste de Artistas en `4f93978d`:** revisado por el gestor y aceptado.
+  - El cambio de código es una sola condición (`seccion !== "artistas"`).
+  - Pruebas: en Artistas no aparece el botón; en Lugares, Eventos y Buscar con 13 ciudades sí aparece.
+  - Nueva captura `estado-6` en Lugares.
+  - Falta la CI exacta de `4f93978d` para cerrar la revisión.
+- **OL-270 en `fa828b15`:** aceptada por el gestor.
+  - Mientras se busca, se ocultan la ubicación, su error y el alta lejana.
+  - Prueba real en Safari iOS 26.3 con teclado y 13 ciudades en Lugares:
+    - al enfocar el campo desaparece «Usar mi ubicación»;
+    - con «zz» salen «Nada con «zz».» y «Agregar un lugar» completo, arriba del teclado;
+    - al cerrar y volver a abrir, «Usar mi ubicación» reaparece.
+  - Evidencia en `capturas-297-revision/fa828b15-*`.
+  - Falta la CI exacta de `fa828b15` para cerrar la revisión.
+- **OL-272 descongelada para una segunda iteración (2026-10-04):** a pedido del founder, casuísticas de Eventos empezando por los casos felices.
+  - Casos: inauguración que sugiere una exposición con su periodo; festival sin sugerencia en la primera alta y con relación solo al final de la segunda fecha.
+  - La matriz de cada caso cubre disparador, acción, confirmar o posponer, resultado y protección contra falsos positivos.
+  - Misma rama `investigacion-eventos` y mismos archivos. Sin documento nuevo, código, prototipo ni publicación.
+  - Nuevo SHA para revisión del gestor.
+- **OL-270, revisión técnica cerrada:** `fa828b15`, CI `37234759756` en verde (1900 unitarias, 244 componentes, 96 mediciones) y vista previa `6846726019` en verde. El PR #333 sigue en borrador con ese mismo HEAD.
+  - **Pendientes:**
+    - prueba en el iPhone físico: el founder;
+    - «publica» de #294 y después de #333: el founder;
+    - traer main y unir en ese orden: el gestor.
