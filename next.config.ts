@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { CONFIG_IMAGENES } from "./src/lib/imagenOptima";
 
 /**
  * Cabeceras de seguridad (revisión 2026-09-14, M1). Sin CSP completa todavía: Next y Mapbox exigen
@@ -29,6 +30,7 @@ const NOINDEX = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
 const BOTS_SIN_STREAMING = /[\w-]+-Google|Google-[\w-]+|Googlebot|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight/i;
 
 const nextConfig: NextConfig = {
+  images: CONFIG_IMAGENES,
   // Al cambiar de sección con la barra inferior (Agenda · Lugares · Artistas) la página vista hace menos de un minuto
   // se reutiliza en el teléfono sin esperar al servidor; publicar, Voy y Seguir la invalidan (revalidatePath).
   experimental: { staleTimes: { dynamic: 60 } },

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { MouseEventHandler, ReactNode } from "react";
 import { SIN_FOTO } from "@/lib/imagen";
+import Imagen from "./Imagen";
 import styles from "./Renglon.module.css";
 
 type Props = {
@@ -33,8 +34,7 @@ export default function Renglon({ href, foto, redonda = false, perezosa = false,
   return (
     <li className={styles.lista}>
       <Link href={href} className={styles.frente} onClick={onClick}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-        <img src={foto ?? SIN_FOTO} alt="" className={redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : undefined} decoding={perezosa ? "async" : undefined} />
+        <Imagen src={foto ?? SIN_FOTO} alt="" width={56} height={56} sizes="56px" className={redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : "eager"} />
         <b>{titulo}</b>
         <small>{children}</small>
       </Link>

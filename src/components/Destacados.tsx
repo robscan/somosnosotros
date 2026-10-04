@@ -5,6 +5,8 @@ import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UI
 import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { SIN_FOTO } from "@/lib/imagen";
+import { tamanoImagenCarril } from "@/lib/imagenOptima";
+import Imagen from "./ui/Imagen";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import CarrilEsqueleto from "./CarrilEsqueleto";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -125,8 +127,7 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
           return (
             <li key={t.id}>
               <Link href={t.href} className={foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                {foto && <img src={foto} alt="" className={styles.foto} loading="lazy" decoding="async" />}
+                {foto && <Imagen src={foto} alt="" className={styles.foto} width={384} height={384} sizes={tamanoImagenCarril(forma)} />}
                 <b>{t.titulo}</b>
                 <small>
                   <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
