@@ -1,0 +1,212 @@
+[
+  {
+    "estado": 1,
+    "ancho": 390,
+    "imagen": "estado-1-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 488.015625,
+        "bottom": 844,
+        "height": 355.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nAguascalientes\n1 evento\nSan Miguel de Allende\n3 lugares · 3 eventos"
+  },
+  {
+    "estado": 2,
+    "ancho": 390,
+    "imagen": "estado-2-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 488.015625,
+        "bottom": 844,
+        "height": 355.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nAguascalientes\n1 evento\nSan Miguel de Allende\n3 lugares · 3 eventos"
+  },
+  {
+    "estado": 3,
+    "ancho": 390,
+    "imagen": "estado-3-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 548.015625,
+        "bottom": 844,
+        "height": 295.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nAguascalientes\n0 km · 1 evento\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos"
+  },
+  {
+    "estado": 4,
+    "ancho": 390,
+    "imagen": "estado-4-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 48,
+        "bottom": 508,
+        "height": 460
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista"
+  },
+  {
+    "estado": 5,
+    "ancho": 390,
+    "imagen": "estado-5-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 488.015625,
+        "bottom": 844,
+        "height": 355.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nAguascalientes\n178 km · 1 evento\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAgregar un evento donde estás"
+  },
+  {
+    "estado": 1,
+    "ancho": 320,
+    "imagen": "estado-1-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 467.765625,
+        "bottom": 844,
+        "height": 376.234375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nAguascalientes\n1 evento\nSan Miguel de Allende\n3 lugares · 3 eventos"
+  },
+  {
+    "estado": 2,
+    "ancho": 320,
+    "imagen": "estado-2-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 467.765625,
+        "bottom": 844,
+        "height": 376.234375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nAguascalientes\n1 evento\nSan Miguel de Allende\n3 lugares · 3 eventos"
+  },
+  {
+    "estado": 3,
+    "ancho": 320,
+    "imagen": "estado-3-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 508.265625,
+        "bottom": 844,
+        "height": 335.734375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nAguascalientes\n0 km · 1 evento\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos"
+  },
+  {
+    "estado": 4,
+    "ancho": 320,
+    "imagen": "estado-4-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 48,
+        "bottom": 508,
+        "height": 460
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista"
+  },
+  {
+    "estado": 5,
+    "ancho": 320,
+    "imagen": "estado-5-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 467.765625,
+        "bottom": 844,
+        "height": 376.234375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nAguascalientes\n178 km · 1 evento\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAgregar un evento donde estás"
+  },
+  {
+    "webkit": true,
+    "viewportSimulado": 508,
+    "cajas": {
+      "input": {
+        "top": 150.921875,
+        "bottom": 174.71875
+      },
+      "fila": {
+        "top": 198.828125,
+        "bottom": 258.125
+      },
+      "hoja": {
+        "top": 48,
+        "bottom": 508
+      }
+    },
+    "errores": [],
+    "limite": "Área visual reducida en WebKit; sin teclado nativo ni aviso nativo de iOS."
+  }
+]

@@ -126,6 +126,49 @@ export function ciudadPorNombre<T extends Ciudad>(nombre: string | null | undefi
   return ciudades.find((c) => c.nombre === canon) ?? ciudades.find((c) => c.slug === CIUDAD_INICIAL.slug) ?? (CIUDAD_INICIAL as T);
 }
 
+export type SeccionCiudades = "eventos" | "lugares" | "artistas" | "buscar";
+/** OL-270: el catálogo más cercano representa «aquí» hasta 50 km de su centro. */
+const RADIO_CIUDAD_KM = 50;
+
+/** El contenido de cada sección decide la lista; la ciudad actual permanece aunque esté vacía. No cambia las consultas. */
+export function ciudadesDeHoja<T extends CiudadConDatos | CiudadConArtistas>(actual: Ciudad, ciudades: readonly T[], seccion: SeccionCiudades): T[] {
+  return ciudades.filter(c => c.slug === actual.slug || (seccion === "artistas"
+    ? "artistas" in c && c.artistas > 0
+    : "lugares" in c && (seccion === "eventos" ? c.eventos > 0 : seccion === "lugares" ? c.lugares > 0 : c.lugares > 0 || c.eventos > 0)));
+}
+
+/** La lista directa: la ciudad actual primero sin punto; con punto, por distancia. Artistas no tiene centros fiables. */
+export function filasDeCiudades<T extends Ciudad>(actual: Ciudad, ciudades: readonly T[], punto: Punto | null, seccion: SeccionCiudades) {
+  const posicion = seccion === "artistas" ? null : punto;
+  const orden = ciudadesPorCercania(actual, ciudades);
+  const filas = ciudades.map((ciudad) => ({ ciudad, distancia: posicion ? distanciaKm(posicion, ciudad.centro) : null, estasAqui: false }));
+  filas.sort((a, b) => posicion ? a.distancia! - b.distancia! : orden.indexOf(a.ciudad.nombre) - orden.indexOf(b.ciudad.nombre));
+  if (filas[0]?.distancia !== null && filas[0]?.distancia !== undefined && filas[0].distancia <= RADIO_CIUDAD_KM) filas[0].estasAqui = true;
+  return filas;
+}
+
+/** Una elección previa (URL o marca del teléfono) siempre gana a la cercanía. Nunca aproxima a una ciudad lejana. */
+export function ciudadInicialCercana<T extends Ciudad>(actual: Ciudad, ciudades: readonly T[], punto: Punto | null, seccion: SeccionCiudades, explicita: boolean, marcada: boolean): T | null {
+  if (!punto || explicita || marcada || seccion === "artistas") return null;
+  const primera = filasDeCiudades(actual, ciudades, punto, seccion)[0];
+  return primera?.estasAqui && primera.ciudad.slug !== actual.slug ? primera.ciudad : null;
+}
+
+/** Sin geocodificación: el alta existente recibe solo el tipo, nunca coordenadas de la persona en su URL. */
+export function altaLejosDeCiudades(actual: Ciudad, ciudades: readonly Ciudad[], punto: Punto | null, seccion: SeccionCiudades): { texto: string; href: string } | null {
+  if (!punto || seccion === "artistas" || seccion === "buscar") return null;
+  const filas = filasDeCiudades(actual, ciudades, punto, seccion);
+  if (filas.some((fila) => fila.estasAqui)) return null;
+  return seccion === "lugares"
+    ? { texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" }
+    : { texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" };
+}
+
+/** La consulta del permiso solo observa; hasta resolverla, no aparece un botón que luego desaparezca. */
+export function ofrecerUbicacionCiudades(seccion: SeccionCiudades, punto: Punto | null, concedido: boolean | null, negado: boolean): boolean {
+  return seccion !== "artistas" && !punto && concedido === false && !negado;
+}
+
 /**
  * La raíz de una sección (/, /lugares, /artistas) con la ciudad que se está viendo y nada más (OL-055): tocar la
  * sección en la que ya se está, o el logotipo en el inicio, suelta los filtros pero no la ciudad.
