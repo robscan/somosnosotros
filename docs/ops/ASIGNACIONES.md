@@ -257,7 +257,266 @@ Estado al relevo (main `6d870573`):
 - **Pendientes de decisión del founder (van con la vista previa final):** (a) el doc 41 sigue con la regla vieja de «Seleccionados para ti» (ahora los destacados entran primero, en su orden): actualizarlo en la pasada siguiente; (b) la pulsación larga ofrece cualquier rótulo `poi_label` del mapa base, también comercios («Negocios no entran»): filtrar por `class` es una línea si lo pide; (c) Nuevos (pestaña y carril) ve solo los 300 eventos que trae `cargarAgenda`, los más próximos; (d) el carril «Nuevos eventos» de Inicio desaparece si sus tres primeros ya salieron como destacados (mínimo de 3); (e) el vacío de Nuevos es solo «Nada nuevo desde tu última visita.» (sustituye los dos textos del doc 23, con nota); (f) hallazgos no tocados: con «reducir movimiento» la lista queda 12 px corta al cerrar una ficha llena; cerrar una ficha con la lista muy desplazada la devuelve a 708; el fixture trae «Gratis» como texto; el reloj fijo de `medir` congela la barra.
 - **Vista previa final enviada al founder (2026-09-30, noche):** `https://somosnosotros-git-ui-ajustes-robscans-projects.vercel.app`, con la lista de qué mirar. A la espera de su «publica».
 - **Publicación hecha (founder «publica» a las 15:40 del 2026-09-30; uniones de 16:15 a 17:10).** Los 17 PR unidos en orden con `publicar-cadena.sh` (scratchpad: copia de `publicar.sh`/`traer_main.sh` con el resolutor mejorado, que salta los ya unidos), cada uno con su CI en verde antes de unir: #266 e607a2b · #268 01fd96c · #269 9529698 · #270 982646d · #271 30d4c9a · #272 1cb28d0 · #273 d1bee10 · #274 1398f5b · #275 c6f5e23 · #276 1b86cce · #277 02d3e5b · #278 0899740 · #279 49c6b01 · #280 5f934f0 · #281 76a8269 · #282 fdc4742 · #283 e3cef21. Producción: despliegue de Vercel de e3cef21 en verde a las 17:11; comprobado en somosnosotros.org (barra de cinco destinos, «Artistas destacadxs», Agenda con Todos · Nuevos). Tres paros del resolutor de OPEN_LOOPS: #266 (la cabecera de la rama llevaba la séptima vuelta al FINAL de la línea, detrás de la base: se movió al frente), #269 (la comprobación «main conserva la base» exigía trozos exactos separados por «; antes, » y P1 pegó el suyo con «. Antes, »: ahora se comprueba por piezas fechadas, con los dos separadores) y #280 (P12 trajo la cabecera de #266 con esa cola pegada al último trozo: una pieza vale si está en main por segmentos). Incidente del gestor en #280: un encadenado con un salto de línea hizo commit y relanzó aunque el resolutor había fallado; el commit con marcas (f906e653) llegó a la rama, se mató el proceso antes de la unión y se sustituyó por 14757d36 con `--force-with-lease`; `main` nunca lo recibió. El resolutor mejorado sustituye al de la carpeta privada del gestor (respaldo `resolver_ol.py.2026-09-30.bak`). Lecciones: ensayar la unión CON el resolutor, no solo con `git merge`; y encadenar commit/push solo dentro de un script con `set -e`.
+- **OL-246 · la foto del carril de Inicio en Safari (2026-09-30, 18:09–18:40; lo hizo el gestor).** Tras la publicación el founder vio en su iPhone (TestFlight y Safari) las fotos de la segunda tarjeta de «Esta semana» y «Nuevos eventos» sobre el título y creyó que era caché. Comprobado en Chromium (producción, 375×812: todas las tarjetas 220×132 / 165×248, título a 4 px) y reproducido en el Safari del simulador con una página A/B: `height: 100%` de la foto dentro de la subrejilla doble del carril se resuelve como `auto` en Safari y la imagen crece a su alto natural. Corrección de siete líneas en `Destacados.module.css` (`--foto` en el carril; la foto con alto explícito), rama `ui-foto-safari`, bitácora 274, capturas 274-01…03, PR #285 unido con el «publica» del founder (31d5492, CI verde). Evidencia Chromium: 16 pruebas de componente, inventario y `medir` sin novedades. Límite: la app local no pinta Inicio en el Safari del simulador (pendiente de mirar). Limpieza: 23 carpetas de trabajo borradas, 15 GB liberados (quedan `somosnosotros-cierre-pendientes`, no unida y con un cambio, y `capo-un-correo`).
+- **Comentarios del founder tras probar (2026-09-30, 19:00).** (1) «Falta componente para agregar portada de artista» → OL-247 / bitácora 275, operador Sonnet `ad918e1b1fce13836`, rama `artista-portada`, PR #286 (entregado: migración que solo añade `artistas.portada`, renglón «Portada» en el formulario, ficha y Open Graph con portada; `s11-alta-artista` +8 nodos por el renglón; decisiones suyas: proporción 3:2 como el lugar, icono «encuadrar» en el renglón, URL del administrador en «Más»; la subida real a Storage y el guardado contra la base real no se probaron; PENDIENTE aplicar la migración en Supabase antes de unir). (2) «el botón de “atrás” … a un lado derecho del de publicar, no se entiende … arriba de la imagen, en el extremo superior izquierdo, a la altura de la barra de filtros» → OL-248 / bitácora 276, lo hizo el gestor: rama `ui-atras-ficha`, PR #287 (Ficha.module.css: desde 792 queda solo el Atrás de la ficha sobre la portada; BarraApp sin el Atrás prestado; `EnBarra`/`prestamoBarra` sin `volver`; prueba del armazón adaptada; +1 nodo en cinco fichas desde 820). Hallazgo: la compilación que deja `medir` lleva incrustada la URL de su respaldo; para `next start` a mano hay que recompilar con el `.env.local` propio.
+- **Publicados OL-247 y OL-248 (founder: «aplica migración tu y luego publica», 2026-09-30, 19:00–19:10).** Migración `20260930120000_artistas_portada.sql` aplicada por el gestor con `npm run db:push` (la cadena `POSTGRES_URL_NON_POOLING` del `.env` del árbol principal, sin comillas; prueba en seco antes: solo esa pendiente) y comprobada con `psql` (columna `portada` presente). #286 unido (73fc711) y #287 unido (b91ac1b), CI verde en ambos; registro conciliado por el resolutor en #287.
+- **Reserva viva · OL-249 / bitácora 277 · Ajustes del founder, segunda tanda (2026-10-01; gestor en Opus 5.5 por decisión del founder de no esperar a Fable).** Operador Sonnet en `ui-ajustes-2` desde `origin/main`, un commit por ajuste: (1) Cuánto: tercera clase «Con costo» y por qué Cooperación sale vacía; (2) Seleccionados para ti (y Esta semana, Nuevos) excluyen al cargar lo que ya está en Tus planes, sin romper OL-221 (la tarjeta tocada se queda hasta recargar); (3) gesto de la persona en el mapa → hoja a recogida (peek), lista y ficha, solo teléfono; (4) al soltar la hoja va directo a su altura por posición y velocidad (scroll-snap nativo primero); (5) pinch, arrastre y doble toque en el visor de portada; (6) Atrás tras entrar con Apple/Google/código no atrapa en el evento: inventario de casos y `replace` donde sobra historial; (7) propuesta del gestor ante «cuestiona eso»: la lista de la hoja en dos grupos titulados, «Con eventos» (por fecha más próxima) y «Sin eventos próximos» (por nombre), con distancia dentro de cada grupo si hay ubicación; vetable por el founder.
+- **OL-249 entregada (2026-10-01):** PR #288 (`ui-ajustes-2`, 7dc197d8), revisada por el gestor (código de la lógica leído; sin correos reales, llaves, migraciones ni .env; 1 676 pruebas, 203 de componente). Hallazgos: Cooperación salía vacía solo porque ningún evento la usaba; el Atrás tras entrar con proveedor nunca reponía el historial (comparaba la URL entera) y ahora retrocede con `history.go`; scroll-snap en Safari 1,9–2,4 s → 0,43–0,52 s. Decisiones del operador para el founder: tocar la imagen a 1× cierra a los 280 ms (para el doble toque); un solo grupo conserva su título. Pendiente validar Apple/Google reales en el iPhone. **Publicada** con el «publica» del founder (2026-10-01, 13:44): #288 unido (9e7cf70), producción desplegada.
+- **Reserva viva · OL-250 / bitácora 278 · Atrás bloqueado en la app de iPhone tras entrar (2026-10-01, urgente).** Founder en TestFlight: tras «Voy» sin cuenta y entrar con Apple, Atrás no hace nada en el evento ni en un lugar abierto después; tuvo que matar la app. Sospecha: el rebobinado de #288 (OL-249, ajuste 6) se probó solo en Safari/Chrome; en la app nativa el proveedor va por `ASWebAuthenticationSession` y la vuelta se carga a mano en el WKWebView. Operador Sonnet en `atras-app-nativa`, reproducción en el simulador con la app nativa apuntando a la app local.
+- **OL-250 entregada:** PR #289 (`atras-app-nativa`, 1f53bea2), CI verde, solo web (sin compilación nueva). Causa: en la app nativa `GestoAtrasPlugin` cancela todo retroceso entre documentos; la vuelta de Apple se carga a mano (documento nuevo, y otro al limpiar la URL) con marca 1 por el referente de Entrar, así que Atrás hacía `router.back()` hacia el documento de Entrar y el plugin lo cancelaba. Ya ocurría antes de #288. Arreglo: en la app, Atrás no retrocede más allá de la entrada con la que cargó el documento y va a la pantalla de antes de entrar (apuntada por Entrar) o a la madre; sin rebobinado en la app. **Publicada** con el «publica» del founder (2026-10-01): #289 unido.
+- **OL-251 / bitácora 279 · Fecha y hora en violeta; el título de las tarjetas se ajusta (2026-10-01).** Decidido por el founder sobre el prototipo https://claude.ai/artifact/KBSavRvz5ALSb3ffU4WqVd (v3, «prod + color + ajuste de alto en título (hug)»). Operador Sonnet, PR #290 (`ui-fecha-violeta`, 01678f12), CI verde, revisado (capturas vistas). Cambios: línea de cuándo en `--primario` en tarjetas (campo `cuando` nuevo en la tarjeta) y renglones (`Renglon.module.css`, también «Próximo:»); fuera el subgrid del carril (cada tarjeta se ajusta; título de una línea 39,1 → 19,5 px); la tarjeta sin foto ocupa solo la fila de la foto. Incidente del operador: un `pkill` general de `next-server` que pudo parar un servidor de otro chat (anotado en su bitácora). **Publicada** con el «publica» del founder (2026-10-01): #290 unido.
 - **Cadena para el «publica» (actualizada 2026-09-30):** #266 y después #268 → #283, en orden, con `publicar.sh`.
 - **Herramientas que funcionan:** `/Users/apple-1/somosnosotros-privado/gestor/publicar.sh <worktree> <rama> <PR>` une un PR tras el «publica» del founder (trae main, resuelve OPEN_LOOPS con `resolver_ol.py`, espera CI); `scripts/ops/siguiente-bitacora.sh` para números (el número escrito en «Siguiente libre» de OPEN_LOOPS es el bueno: el script cuenta esa mención y da uno más); respaldo local inventado y capturas reales con Chrome (bitácoras 253-255); simuladores propios con `xcrun simctl` (crear y borrar, no tocar los FLOWYA); App Store Connect y Vercel desde el Chrome del founder con su sesión (él entra; los cambios de dominio los hace él).
 - **Abiertos sin prisa:** Inicio en producción tardó 25 s en responder una vez (2026-09-29, 00:05; el founder lo vio como «no carga»; las siguientes peticiones bajaron a menos de 1 s, despliegue y CI verdes): vigilar si se repite. en la ficha de lugar con cinco botones, Instagram queda pegado al borde derecho; en el mapa, las etiquetas de día de dos lugares muy juntos se enciman (los dos, candidatos a la reestructura); Google Play y sus 12 probadores (founder); certificado Pass Type ID para Wallet (founder); propuestas sin firmar: festivales (OL-151), boletín (OL-138), ajustes de transiciones (E9/OL-152); «Ahora» de OPEN_LOOPS tiene 194 entradas y más de la mitad ya están en producción: ordenarlo (pasar lo terminado a «Cerrado») cuando el founder lo pida.
 - **Carpetas de trabajo:** `.claude/worktrees/reverent-germain-8bb38f` (gestor II), `agent-a5dc46c95b583d7b4` y `agent-a7adfdf4447af3ac7` (unidas, bloqueadas por la app hasta que las suelte), `/Users/apple-1/somosnosotros-cierre-pendientes` (codex, PR #104 unido) y `/Users/apple-1/somosnosotros-medir-acciones` (unida): todas se pueden quitar con `git worktree remove --force`.
+- **OL-253 / bitácora 280 · Artistas con eventos esta semana, estrella en destacados y fecha violeta en carriles de entidad (2026-10-01).** Encargo del founder: revivir el carril «Artistas con eventos esta semana» que P5 (OL-233) retiró sin su decisión; icono de estrella en los eventos destacados en carriles de Inicio y listado de Agenda; fecha y hora en `--primario` en «Lugares con eventos» y en el carril de artistas. Prototipo primero, código tras su aprobación. Operador Sonnet, rama `inicio-artistas-estrella`, base main `af6bf926`. (OL-252 ya lo vio el script en otra parte: se salta.) Prototipo https://claude.ai/artifact/Ai42xacCJM2bH1pBZMc67V (v2, capturas). **Decidido por el founder (2026-10-01):** flama en lugar de estrella (la estrella es la pestaña Artistas), sobre la foto (A) en carriles y sobre la miniatura en Agenda con más aire del borde; «Hoy» violeta sólido con texto blanco (7,06:1); sin marca dentro de «Destacados»; el carril de artistas de la semana no repite a quien ya está en «Artistas destacadxs»; «Lugares con eventos esta semana». Pasa a código. **Entregada:** PR #291 (`inicio-artistas-estrella`, 3397abb1), verificación local verde (1685 pruebas, 209 de componentes), capturas `app-01..05` vistas por el gestor. Flama de trazo (`IconoFlama`, `ui/MarcaDestacado`), aire de 8 px en el renglón; la regla «destacado exige foto» se relaja solo en el carril de la semana; el respaldo local gana tres ligas evento-artista sin foto. Vueltas del founder: flama de trazo ilegible → cinta colgante → cinta blanca → **marca de destacado descartada, queda para después** (258835e3, sin rastro en el código); artistas destacadxs antes que los de la semana. Queda: carril de artistas de la semana, «Lugares con eventos esta semana», fecha violeta en lugares y artistas, «Hoy» violeta. **Publicada** con el «publica» del founder (2026-10-01): #291 unido (e828aa4), producción desplegada.
+- **OL-254 / bitácora 281 · Ficha de lugar en la hoja: Atrás → chevron abajo que baja a recogida (2026-10-01).** Reporte del founder: con la hoja llena, el Atrás de la ficha de lugar no baja la hoja a media. Decisión del founder: el icono es un chevron hacia abajo y manda la hoja a recogida (peek). Operador Sonnet, rama `ficha-hoja-bajar`, base main `122fc10`. Sin prototipo (cambio de icono y destino, con la causa del fallo). **Entregada:** PR #293 (aa310dc4). Causa: el toque al botón dejaba puesta la marca de inercia del dedo y `pintar` devolvía la hoja a llena; `irA` la limpia (una línea). Botón `IconoCaret`, «Bajar la ficha», `irA("recogida")`; prueba de componentes con toque real que falla sin el arreglo (208/208). Capturas vistas por el gestor. **Publicada** con el «publica» del founder (2026-10-01): #293 unido (567b39b).
+- **OL-255 / bitácora 282 · Distancia al día sin toque cuando ya hay permiso (2026-10-01).** Pregunta del founder (probando la app nativa): la distancia no sale hasta un toque, y con la caché de 15 min queda vieja si la persona camina. Decidido: con permiso ya concedido, releer la ubicación aproximada sin toque al abrir Lugares o una ficha (o volver a la app) si el último punto tiene más de 1 min; mostrar la anterior mientras llega; sin permiso, igual que hoy (solo tras un toque). Sin seguimiento continuo. Comprobar en la app nativa (Capacitor/WKWebView). Operador Sonnet, rama `ubicacion-al-dia`. **Entregada:** PR #294 (97a9ae11). En el WKWebView `permissions.query` lanza NotSupportedError y WebKit vuelve a preguntar «¿permitir a este sitio?» en la primera lectura tras cada arranque en frío (probado en el SE con una app mínima, no la real): por eso el «ya concedido» vive solo en memoria de la sesión. `releerUbicacionAlDia()` (una sola lectura a la vez) desde `useUbicacionFresca`, relee si >1 min y al volver al frente; 15 min queda como respaldo. Pendiente del founder: plugin nativo de geolocalización (nueva versión de TestFlight) para quitar el aviso del sitio; si Lugares ordena por cercanía sin el primer toque.
+  - **Decidido por el founder (2026-10-01): «sí a los dos puntos».** (a) Con permiso concedido, Lugares ordena por cercanía sin el primer toque: va en #294 (mismo operador). (b) Plugin nativo de geolocalización + nueva compilación de TestFlight para quitar el aviso del sitio al arrancar: pieza aparte **OL-256 / bitácora 283** (reservada), arranca cuando #294 se entregue (un operador a la vez). La subida a TestFlight se confirma con el founder antes de hacerla.
+- **OL-256 / bitácora 283 · Ubicación nativa en la app de iPhone — entregada (2026-10-01).** PR #295 (`ubicacion-nativa`, 5ee9ec39, base `ubicacion-al-dia`). `@capacitor/geolocation` 8.2.2, `CURRENT_PROJECT_VERSION` 3→4; la web usa `window.Capacitor.Plugins.Geolocation` (checkPermissions/getCurrentPosition) si existe y, si no, sigue como #294 (app vieja y navegadores). Simulador SE con página de prueba: tras cerrar y reabrir, distancia al día sin aviso del sitio. Sin subir a TestFlight: espera el sí del founder (compilación 1.0 (4), tras unir #294 y #295).
+- **En pausa por el founder (2026-10-01, noche):** #294 (OL-255) y #295 (OL-256) quedan abiertos y sin publicar, «hasta pensar mejor implicaciones». No unir ni subir a TestFlight sin su indicación. Trabajo cerrado por hoy.
+- **OL-257 / bitácora 284 · Seguridad H01 + H02 (2026-10-03).** Coordinación desde Codex, tarea «Audita bugs y seguridad» (`01a0fece-65fd-79e3-a64d-296a4b8fa13c`); el founder la trajo al gestor y su plan de remediación está aprobado según Codex. Implementa y prueba Codex en persona (sin operadores ni subagentes). Rama `seguridad-h01-h02`, base `origin/main` `567b39bc`.
+  - **H01:** borrar un lugar por la API arrastra eventos ajenos (ON DELETE CASCADE; la comprobación solo vive en la acción de Next). Arreglo en la base: sin cascada implícita sobre eventos de otras cuentas.
+  - **H02:** `eventos_sitio_privado` se lee desde otra cuenta pasado `revelar_desde` aunque el evento padre esté oculto. Ventana decidida: desde `revelar_desde` hasta el fin efectivo +2 h; sin fin, hasta las 02:00 del día siguiente (hora local). Ocultar o cancelar revoca el acceso de terceros al instante.
+  - **Fuera de esta entrega (piezas aparte, se reservan cuando toque):** purga de la copia privada a los 7 días del fin, con autor y admin; borrado excepcional del admin (motivo, impacto, confirmación, atómico y auditado). Nunca caducan, se borran ni se publican los lugares privados u ocultos del admin ni los privados reutilizables de usuarios (OL-179).
+  - **Migraciones reservadas (solo añaden):** `supabase/migrations/20261003120000_lugares_borrar_sin_eventos_ajenos.sql` y `supabase/migrations/20261003120100_sitio_privado_ventana.sql`.
+  - **Archivos asignados:**
+    - las dos migraciones;
+    - pruebas PG nuevas en `supabase/tests/pg/` (p. ej. `lugares-borrado.test.mjs`) y ampliar `evento-direccion.test.mjs`;
+    - `src/app/lugares/acciones.ts` (borrar);
+    - si hace falta, `src/app/eventos/[id]/page.tsx` y `editar/page.tsx`;
+    - bitácora 284 y la línea OL-257.
+  - **No tocar:** `src/lib/lugares.ts`, `src/lib/ubicacion.ts`, `src/app/lugares/VistaLugares.tsx` ni `apps/ios`. Los tocan #294 y #295, en pausa.
+  - **Límite:** sin SQL remoto, despliegues ni envíos reales. La migración en producción la aplica el gestor (`db:push`) con el «publica» del founder. #294, #295 y TestFlight siguen en pausa.
+  - **Entregada por Codex:** PR #296 (`seguridad-h01-h02`, código 178e74b7, HEAD 67150c8b). Revisión del gestor (2026-10-03): las dos migraciones están bien (RESTRICT + `borrar_lugar` invoker con FOR UPDATE; política con `e.visible and e.sitio_reservado and now() < e.termina + 2 h`, y `termina` sin fin = fin del día local, así que da las 02:00). Hallazgos:
+    1. La ficha de un evento pasado con dirección reservada queda visible 2 h a cualquiera con sesión; contradice la regla del 2026-09-14 y no pasa con los de dirección pública. Lo confirma el founder.
+    2. Al publicar, primero `db:push` y luego unir, porque la acción llama a `borrar_lugar`.
+    3. Las capturas están en `docs/ops/assets/ol257/` y no en `docs/rediseno/capturas-284/`.
+    4. El admin no puede borrar lugares con eventos sin autor hasta la pieza de borrado excepcional (aceptado).
+  - Codex movió las capturas a `capturas-284` (HEAD 984802b7, solo documentación). Según Codex, el founder aceptó el 3 de octubre la gracia de 2 h en la ficha como excepción acotada a la regla del 14 de septiembre (solo dirección reservada, con sesión y sin asistencia). Pendiente: «publica» del founder; orden: `db:push`, luego unir.
+  - **2026-10-03:** el dry-run contra producción da exactamente las dos migraciones de OL-257. Codex trae una autorización persistente del founder para publicar al cierre de cada entrega probada de esta auditoría. El gestor **pidió confirmarla en su propio chat** antes de aplicar la base y unir #296.
+- **OL-258 / bitácora 285 · Purga de la copia de dirección a los 7 días (2026-10-03, reserva para Codex).** Borrar `eventos_sitio_privado` de eventos cuyo fin efectivo (`termina`) pasó hace más de 7 días.
+  - **Nunca toca `lugares`:** ni los privados u ocultos del admin ni los privados reutilizables (OL-179).
+  - **Rama:** `seguridad-purga-sitio`, desde `origin/main` tras unir #296.
+  - **Migración:** `supabase/migrations/20261003130000_sitio_privado_purga.sql`. Una función de purga idempotente (`security definer`, `search_path` vacío), ejecutable solo por `service_role`, que devuelve cuántas filas borró.
+  - **Activación:** una ruta en `src/app/api/` protegida con `CRON_SECRET`, como `/api/recordatorios`, y una entrada diaria en `vercel.json`. Antes de añadir un cron nuevo, comprobar el límite del plan de Vercel; si no cabe, llamarla desde el cron diario que ya existe.
+  - **Archivos asignados:** la migración, la ruta y su prueba, `vercel.json`, las pruebas PG, la bitácora 285 y la línea OL-258.
+  - **Al quedar probada, el gestor publica:** `db:push` y unión. El cron se activa al desplegar `vercel.json`. Después, verificar la primera corrida o llamarla a mano una vez.
+  - **2026-10-03:** Codex pidió la ventana operativa de #296 (base, unión y verificación), con autorización recibida del founder en su tarea. El gestor **la cede**: no ejecuta `db:push` ni une #296 mientras Codex no avise el cierre. El gestor conserva la revisión y la conciliación; al cierre, comprueba el despliegue de producción y la lista de migraciones aplicadas.
+  - **#296 publicado por Codex (2026-10-03).** Unión `bb6b8365`; Production 6832063526 en verde con el mismo SHA. Comprobado por el gestor:
+    - `schema_migrations` llega hasta `20261003120100`;
+    - `eventos_lugar_id_fkey` es RESTRICT (`r`);
+    - el dominio responde 200.
+
+    Ventana remota liberada.
+  - **OL-258, reserva ampliada (2026-10-03):** se suman `src/app/eventos/[id]/page.tsx`, `src/app/eventos/[id]/editar/page.tsx`, `FormularioEvento.tsx`, `src/app/eventos/acciones.ts`, `src/lib/eventos.ts`, el helper de retención y sus pruebas. Así un evento con la dirección ya purgada puede editar sus datos históricos sin recuperarla, y al reprogramarlo se pide una dirección nueva. #294 y #295 no tocan esos archivos. Siguen fuera de la reserva los lugares y la ubicación.
+  - **OL-258 entregada por Codex:** PR #297 (`43c0053b`), CI en verde. Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - `guardar_evento_completo` difiere de su última definición (`20260918160000`) solo en `omitir_privado` y en la excepción histórica, que exige que el evento anterior y el nuevo estén pasados de 168 h; su fórmula coincide con la de la columna `termina`.
+    - El disparador de retención impide reponer una copia vencida.
+    - La política corta la lectura a 168 h aunque el cron no corra.
+    - Purga por lotes con SKIP LOCKED, solo para `service_role`; la ruta va protegida con `CRON_SECRET`, como `/api/recordatorios`; segundo cron diario a las 09:00 UTC.
+
+    Ventana de publicación **cedida a Codex**, con la autorización del founder recibida en su tarea: `db:push` solo de `20261003130000`, unión, primera corrida autenticada y comprobación de Production. El gestor comprueba al cierre.
+  - **Incidencia de activación (2026-10-03):** `db:push` de `20261003130000` falló con 42501, porque `SET app.avisos_outbox = off` en la definición de la función no está permitido al rol de migración en producción. La transacción se revirtió. El gestor comprobó en producción que no hay migración registrada, ni funciones, ni disparador, ni política nueva, y que #297 sigue sin unir. Codex corrige en la misma migración con `set_config`, como `guardar_evento_con_avisos`, añade una prueba con un rol sin superusuario y vuelve a entregar. La ventana sigue con Codex, sin más SQL remoto hasta la revisión del gestor.
+  - **Reentrega revisada (2026-10-03):** `5f82888b`. El diff de SQL solo toca `purgar_sitios_privados`: `set_config` local con restauración en el éxito y en la excepción, el mismo patrón que `guardar_evento_con_avisos` (`20260918140000`). Aceptada a condición de que la CI quede en verde. La ventana sigue con Codex: dry-run solo de `20261003130000`, `db:push`, unión, corrida autenticada y Production.
+  - **#297 publicado por Codex (2026-10-03).** Unión `5f166c51`; Production con el mismo SHA. Comprobado por el gestor:
+    - `schema_migrations` llega hasta `20261003130000` y `purgar_sitios_privados` existe;
+    - sin autenticación, la ruta responde 401.
+
+    Ventana liberada.
+  - **Pendientes:**
+    - el commit documental de cierre `8601468b` está solo en la rama; entra en la siguiente pieza;
+    - la primera corrida automática del cron (09:00 UTC);
+    - la prueba en Safari físico.
+- **OL-259 / bitácora 286 · Eliminación excepcional de un lugar por la administración (2026-10-03, reserva para Codex).** Aceptada por el founder según Codex: motivo, impacto, confirmación, operación atómica, auditoría mínima y sin cascada implícita sobre eventos ajenos.
+  - **Rama:** `seguridad-borrado-excepcional`, desde `origin/main` `5f166c51`. Lo primero es traer `8601468b` con cherry-pick, el cierre documental de OL-258.
+  - **Migración:** `supabase/migrations/20261003140000_borrado_excepcional_admin.sql`, que solo añade.
+  - **Límites:**
+    - la FK `eventos.lugar_id` sigue en RESTRICT y no se reabre CASCADE;
+    - `borrar_lugar` no cambia;
+    - una función aparte, solo para el admin (`es_admin()`), con un paso de impacto que no escribe y otro de ejecución que exige motivo y una confirmación ligada a ese impacto (rechaza si cambió);
+    - los eventos ajenos se tratan de forma explícita dentro de la misma transacción, como el founder decida (borrar o desligar), nunca por cascada;
+    - la tabla de auditoría guarda quién, cuándo, el motivo y los conteos, sin direcciones ni datos personales de terceros;
+    - nunca toca los lugares privados u ocultos del admin ni los privados reutilizables (OL-179), salvo el lugar elegido;
+    - sin avisos masivos, salvo decisión del founder.
+  - **Archivos asignados:**
+    - la migración;
+    - las pruebas PG nuevas;
+    - en `src/app/admin/`: `acciones.ts`, `[seccion]/MenuFicha.tsx` y `consultas.ts`, solo si hace falta;
+    - en `src/app/lugares/[id]/page.tsx`: solo el aviso y la salida de administración;
+    - la bitácora 286 y la línea OL-259.
+  - **No tocar:** `src/lib/lugares.ts`, `src/lib/ubicacion.ts`, `VistaLugares.tsx` ni `apps/ios` (#294 y #295 en pausa).
+  - **Publicación:** con la ventana cedida a Codex, igual que en #296 y #297, y con revisión del gestor antes.
+  - **Decidido por el founder (en Codex, 2026-10-03):** «Conservar los eventos y retirar su vínculo al lugar». Codex creó la rama desde `5f166c51` y trajo el cierre de OL-258 como `06df3c30`. Nota del gestor: `eventos_donde` exige `lugar_id` o `sitio_texto`, así que cada evento desligado necesita un `sitio_texto` (p. ej. el nombre del lugar, nunca su dirección ni sus coordenadas si era oculto o privado), y sus avisos y destacados deben seguir siendo coherentes.
+  - **Límites de OL-259 confirmados por el gestor (2026-10-03):**
+    - El impacto cuenta a todos los hijos con CASCADE.
+    - La ejecución se bloquea si hay obras colectivas, contactos importados o invitaciones de agenda.
+    - Seguimientos, cuentas y destacados del lugar se muestran en el impacto y se borran de forma explícita.
+    - **Lugar oculto o privado:** `sitio_texto` pasa a «Lugar retirado», sin nombre, dirección ni pin. Los eventos que al desligarse saldrían a listados públicos se quedan con `visible=false`; se cuentan en el impacto y la auditoría registra cuántos, y solo el admin puede volver a mostrarlos.
+    - **Lugar público:** se conserva el nombre como `sitio_texto` y la visibilidad.
+    - La FK y `borrar_lugar` no cambian.
+  - **OL-259 entregada por Codex:** PR #298 (`039fcaee`). Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - La migración solo añade: tabla de auditoría con RLS solo para el admin y sin escritura por la API.
+    - El impacto (`security definer`, solo admin) calcula una huella SHA-256 de la instantánea completa, ligada al actor.
+    - La ejecución bloquea el lugar y sus 7 tipos de hijo y vuelve a calcular la huella; rechaza con 40001 si cambió y con 23503 si hay obras, contactos o invitaciones.
+    - Desliga los eventos con `sitio_texto` igual al nombre si el lugar era público, o «Lugar retirado» si era privado u oculto, y entonces deja `visible=false`.
+    - Borra de forma explícita seguimientos, cuentas y destacados. Avisos apagados con `set_config`, con restauración.
+    - La FK y `borrar_lugar` no cambian. Las 7 referencias a `lugares` son las mismas que existen en main.
+
+    Ventana cedida a Codex cuando la CI quede en verde: dry-run solo de `20261003140000`, `db:push`, unión y Production. Sin borrar lugares reales para QA.
+  - **#298 publicado por Codex (2026-10-03), comprobado por el gestor:**
+    - main y Production en `eb4c1759`; `schema_migrations` llega hasta `20261003140000`.
+    - Las dos funciones son `security definer` y solo `authenticated` puede ejecutarlas, con `es_admin()` dentro; `anon` no tiene acceso. `purgar_sitios_privados` solo la ejecuta `service_role`.
+    - `borrados_lugares_admin`: RLS activa, solo SELECT para `authenticated` y 0 filas.
+    - `eventos_lugar_id_fkey` sigue en RESTRICT.
+
+    Ventana cerrada.
+  - **Pendientes:** el cierre documental `ace0b7e3` (local, sobre la unión) entra a main en un PR de solo documentos; Safari físico, del founder. Con esto termina la serie de remediación H01, H02, purga y borrado excepcional.
+  - **#299 (cierre documental de OL-259) unido por Codex (2026-10-03):** `f2dd8be9`, comprobado en main por el gestor. **Serie de seguridad cerrada** (OL-257, OL-258 y OL-259). Ninguna ventana activa. Pendiente: Safari físico, del founder.
+- **OL-260 / bitácora 287 · Seguridad H03: privacidad de perfiles (2026-10-03, reserva para Codex).** El founder dijo «avanza» en Codex. Que `anon` y las demás cuentas no lean preferencias de avisos, consentimientos, estado de entrega ni `novedades_vistas_en`.
+  - **Se conserva:** la identidad pública, la privacidad «reservado», el acceso del titular y del admin, y las operaciones de avisos existentes.
+  - **Antes de elegir interfaz o separar estado:** inventario de todos los consumidores (SQL y servidor).
+  - **Rama:** `seguridad-perfiles-privados`, desde `origin/main` `f2dd8be9`.
+  - **Migración:** `supabase/migrations/20261003150000_perfiles_privados.sql`, que solo añade. Si hace falta una segunda, `20261003150100_*`, avisando antes.
+  - **Archivos asignados:**
+    - la migración y las pruebas PG;
+    - `src/lib/supabase/servidor.ts`;
+    - `src/app/personas/consultas.ts`;
+    - tipos y acciones de perfil, avisos y novedades, solo si la frontera lo exige;
+    - la bitácora 287 y la línea OL-260.
+  - **No tocar:** `src/lib/lugares.ts`, `src/lib/ubicacion.ts`, `VistaLugares.tsx` ni `apps/ios` (#294 y #295 en pausa; no se cruzan con estos archivos). Tampoco proveedores de entrada ni envíos reales.
+  - **Publicación:** con la ventana cedida tras la revisión del gestor, como en las demás piezas de la serie.
+  - **Transición aprobada por el gestor (2026-10-03):** dos PR seguidos bajo OL-260 y la bitácora 287.
+    1. `20261003150000`: RPC privadas ligadas a `auth.uid()` (perfil propio, estado de dispositivo, activación del consentimiento push) y consumidores compatibles. Se publica primero.
+    2. `20261003150100_perfiles_columnas_publicas.sql` (reservada): revoca el SELECT genérico de `perfiles` y concede solo las columnas públicas (`id, nombre, foto, colonia, bio, rol, reservado`). Se aplica solo cuando el código del paso 1 ya esté en Production.
+
+    Codex queda autorizado a adaptar el respaldo local de QA y las pruebas afectadas.
+
+    **Comprobaciones antes del paso 2:**
+    - ningún `select *` ni embed `perfiles(*)` desde el cliente o el servidor con la llave anon;
+    - las políticas RLS de otras tablas y las funciones `security invoker` que lean columnas de `perfiles` solo usan columnas públicas;
+    - lo mismo para triggers y realtime;
+    - prueba PG con `authenticated` y con `anon` sobre cada consumidor.
+  - **Paso A entregado por Codex:** PR #300 (`3291bc6e`). Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - `20261003150000` solo añade 3 funciones `security definer` con `search_path` vacío, ligadas a `auth.uid()` y sin parámetro de usuario, ejecutables solo por `authenticated`. `mi_perfil` devuelve una lista explícita de columnas.
+    - `usuarioActual` comprueba que `perfil.id` coincida con `claims.sub`.
+    - Las acciones push usan `mi_push_activo` y `activar_mis_avisos_push`.
+
+    Ventana cedida a Codex cuando la CI quede en verde: dry-run solo de `150000`, `db:push`, unión y Production. El paso B (`150100`) se prepara después, con su propia revisión.
+  - **Paso A publicado por Codex:** `d6f7f640`. Comprobado por el gestor: migraciones hasta `150000`; las 3 RPC solo para `authenticated`.
+  - **Paso B entregado:** PR #301 (`aafb49f3`). Revisión del gestor, sin hallazgos que bloqueen:
+    - `150100` revoca el SELECT de tabla y de todas las columnas a `public`, `anon` y `authenticated`, concede las 7 públicas y recarga PostgREST.
+    - Las escrituras de `src/` sobre `perfiles` son UPDATE con `.eq("id")` (y `nombre` en `auth/fin`), sin RETURNING de columnas privadas; las de `service_role` no cambian.
+    - Políticas de `perfiles`: lectura pública y «edito el mío o soy admin».
+
+    Ventana B cedida a Codex cuando la CI quede en verde. Al cierre, el gestor comprueba en el catálogo los permisos de columna y las RPC.
+  - **Paso B aplicado (2026-10-03, ~22:45 UTC).** Comprobado por el gestor por conexión directa, sin la API:
+    - migraciones hasta `150100`;
+    - sin SELECT de tabla para `anon`, `authenticated` ni `PUBLIC`;
+    - SELECT de columna solo para `bio, colonia, foto, id, nombre, reservado, rol`, con `anon` y `authenticated`;
+    - las RPC privadas solo para `authenticated`.
+
+    Decisión del gestor: Codex une #301 (sin JS; el repo debe reflejar la base) y la comprobación por la API queda pendiente.
+  - **INCIDENCIA DEL PROVEEDOR:** la API de Supabase responde 402 a todo, «Service for this project is restricted due to exceed_cached_egress_quota». `/api/estado` da `supabase: error`. El sitio responde 200, pero sin datos. No la causa la migración. Solo el founder puede resolverla (plan o tope de gasto en Supabase); ni el gestor ni Codex tocan facturación.
+  - **#301 unido por Codex:** `2fa4a95a` (22:41 UTC), Production en verde. SQL de OL-260 (A y B) aplicado y ventana de migraciones libre.
+    - Prueba final por la API **bloqueada por la cuota de Supabase (402)**. Sin vigilancia programada: se repite cuando el founder resuelva la cuota.
+    - Cierre documental: PR #302 (`4107cd46`, solo la bitácora 287 y OPEN_LOOPS), aceptado por el gestor para unir con la CI en verde.
+    - **H03 no queda cerrado de punta a punta** hasta esa prueba.
+  - **#302 unido por Codex:** `3d7945c8`, CI en verde. OL-260 documentado en main. Ninguna operación abierta. Pendiente: la prueba por la API cuando Supabase levante la restricción de cuota (decisión del founder).
+- **Supabase recuperado (2026-10-03):** el founder resolvió la cuota; `/api/estado` vuelve a `supabase: ok`. Prueba de H03 por la API, con la llave anon:
+  - las 7 columnas públicas responden 200;
+  - una columna privada (`avisos_correo`) da 42501;
+  - `select=*` da 42501;
+  - la RPC `mi_perfil` sin sesión da 42501;
+  - Agenda vuelve a pintar eventos.
+
+  **OL-260 (H03) cerrada de punta a punta.**
+- **OL-261 / bitácora 288 · Seguridad H04: redirecciones seguras (2026-10-03, reserva para Codex).** `rutaSegura` admite caracteres de control entre barras, y `new URL` puede cambiar el origen. El gestor mantiene H04 como siguiente: es del plan de seguridad aceptado. La pieza de reducir el tráfico de imágenes espera la decisión del founder.
+  - **Rama:** `seguridad-redirecciones`, desde `origin/main` `3d7945c8`.
+  - **Archivos asignados:**
+    - `src/lib/rutas.ts` y `rutas.test.ts`;
+    - las pruebas de consumidores: `auth/[proveedor]/route.ts`, `auth/callback/route.ts`, `auth/app-regreso/route.ts`, `entrar/page.tsx`, `lib/entrarCon.ts`, `lib/historial.ts` y `lugares/acciones.ts`, con cambios solo si la frontera lo exige;
+    - la bitácora 288 y la línea OL-261.
+  - **Autorizado:** sumar en el mismo PR el cierre documental de H03 (bitácora 287 y OL-260: prueba por la API en verde tras recuperar Supabase).
+  - **Sin migración.**
+  - **No tocar:** proveedores ni configuración de Auth, `apps/ios`, `src/lib/ubicacion.ts`, `src/lib/lugares.ts` ni `VistaLugares.tsx`.
+  - **Publicación:** con la ventana cedida tras la revisión del gestor.
+  - **OL-261 entregada por Codex:** PR #303 (`1753fd8e`). Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - `rutaSegura` rechaza caracteres de control y barras inversas;
+    - normaliza con `new URL` sobre un origen ficticio y exige el mismo origen;
+    - rechaza el `pathname` que empiece por `//` tras normalizar;
+    - devuelve `pathname + search + hash`.
+
+    Nota: los acentos de una ruta salen codificados (`%C3%B1`), cosa que Next resuelve. Sin migración. Incluye el cierre documental de H03, que estaba autorizado. Ventana cedida a Codex cuando la CI quede en verde.
+  - **#303 publicado por Codex:** `f8f5de67`. Comprobado por el gestor: main y Production en ese SHA. Cierre documental en PR #304 (solo la bitácora 288 y OPEN_LOOPS), aceptado para unir con la CI en verde.
+- **OL-262 / bitácora 289 · Seguridad H05: origen de imágenes en la base (2026-10-03, reserva para Codex).** Que la regla de `imagenPermitida` (`src/lib/imagenes.ts`) también valga al escribir directo en la base: artistas (`foto`, `portada`), eventos (`imagen`), lugares (`portada`) y perfiles (`foto`). Hoy un usuario normal puede guardar una URL externa.
+  - **Rama:** `seguridad-imagenes-origen`, desde `origin/main` tras unir #304.
+  - **Migración:** `supabase/migrations/20261003160000_imagenes_origen_permitido.sql`, que solo añade.
+  - **Límites:**
+    - Antes del SQL, inventario de orígenes reales en producción (solo lectura y solo dominios, sin URLs completas) y propuesta de excepciones concretas al gestor: admin, importaciones CAPO e instituciones, fotos de Auth de Apple y Google.
+    - La regla solo valida cuando la columna cambia (INSERT, o UPDATE con un valor distinto), para que editar otros campos de una ficha con foto antigua siga funcionando. Sin reescribir datos antiguos.
+    - Sin tocar la configuración de Auth ni de Storage.
+    - La pieza de tráfico de imágenes sigue fuera.
+  - **Archivos asignados:**
+    - la migración y las pruebas PG;
+    - `src/lib/imagenes.ts` y su prueba, solo para alinear la regla;
+    - la bitácora 289 y la línea OL-262.
+  - **No tocar:** `apps/ios`, `src/lib/ubicacion.ts`, `src/lib/lugares.ts` ni `VistaLugares.tsx`.
+  - **Incidente de secuencia (Codex, 2026-10-03):** #304 se unió antes de que la CI del PR terminara (`0a0e26a3`). La CI del PR falló solo en `medir`: `s13-lugares-ficha-en-hoja` a 320 px, con 168 nodos frente a 167 y el marcador de Mapbox desplazado 63 px. El diff solo traía documentos. La CI de main con el mismo código salió en verde. El gestor lo da por **una medición inestable del mapa, no una regresión**, y autoriza seguir con OL-262. Lección: unir solo con la CI del PR terminada en verde, también en los PR de documentos.
+  - **Inventario de imágenes en producción para H05** (el gestor, solo lectura, agregado por dominio):
+    - `artistas.foto`: 323 de Supabase Storage y 335 nulas.
+    - `artistas.portada`: 3 de Storage y 655 nulas.
+    - `eventos.imagen`: 123 de Storage y 145 nulas.
+    - `lugares.portada`: 47 de Storage y 19 nulas.
+    - `perfiles.foto`: 23 `lh3.googleusercontent.com`, 7 de Storage y 19 nulas.
+    - Ninguna vacía, sin https ni de otros dominios. Todas las de Storage son `/storage/v1/object/public/`.
+  - **Política de H05 aceptada por el gestor (2026-10-03):**
+    - **Disparador:** actúa en INSERT y en UPDATE solo cuando la columna cambia; NULL o vacío sirven para quitar la imagen.
+    - **Usuario normal:** solo `https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/<objeto>`, con la gramática estricta.
+    - **Admin y `service_role`:** se permite HTTPS externo válido. La comprobación es real en la base; nunca por `origen`, `creado_por` ni el JWT.
+    - **`perfiles.foto`:** admite además `lh3.googleusercontent.com`, y la excepción no pasa a las fichas.
+    - **`crear_perfil` se sanea en la misma migración**, a condición de que su diff frente a la última definición se limite a filtrar `avatar_url` (NULL si no es válido) y conserve nombre, rol y `on conflict`. El diff de esa función va en la entrega.
+    - **Origen propio:** constante en SQL; en TypeScript, `configPublica`, con pruebas de paridad.
+    - **Respaldo local de QA:** comprobar que sus imágenes siguen entrando por la vía admin o servicio, o avisar.
+  - **OL-262 entregada por Codex:** PR #305 (`1cba930c`). Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - **Validador `imagen_origen_permitido`:** inmutable e invoker, con `search_path` vacío y gramática estricta. Solo `/storage/v1/object/public/fotos/` del proyecto, y Google solo en perfil.
+    - **Disparadores** `before insert or update of <columna>` en las 4 tablas: se saltan el valor sin cambio, así que la edición histórica funciona.
+    - **Vía externa:** `role = service_role` o un admin real con `auth.uid()`.
+    - **`crear_perfil`:** el diff solo filtra `avatar_url` y conserva nombre, rol, `on conflict` y `search_path`.
+    - **Permisos:** el EXECUTE del validador es solo para `authenticated` y `service_role`; las escrituras de `anon` ya las corta RLS.
+
+    Ventana cedida a Codex cuando la CI quede en verde: dry-run solo de `160000`, `db:push`, unión y Production. Al cierre, el gestor comprueba el catálogo.
+  - **#305 publicado por Codex:** `ee284157`. Cierre documental en #306 (`a8a78dd1`). Comprobado por el gestor (2026-10-03):
+    - migraciones hasta `20261003160000`;
+    - `imagen_origen_permitido` es inmutable e invoker, con EXECUTE solo para `authenticated` y `service_role`;
+    - `proteger_imagen_origen` es invoker y nadie la ejecuta directamente;
+    - los 4 disparadores están en `artistas`, `eventos`, `lugares` y `perfiles`;
+    - `crear_perfil` (definer) filtra con el validador y `al_crear_usuario` sigue en `auth.users`;
+    - Production está en `ee284157`. El despliegue del commit de documentos se omite por `vercel-ignorar`.
+
+    **OL-262 (H05) cerrada.** Ventana libre.
+  - **Nota de registro:** ASIGNACIONES vive en la rama del gestor (`claude/goofy-khayyam-d25b72`), con commits locales sin subir, y por eso main no refleja las reservas de OL-246 a OL-262. Subirla es decisión del founder.
+- **Registro conciliado con main (2026-10-03):** el founder dijo «publica y continúa» (por Codex). Rama `gestor-registro-conciliado`, desde `origin/main` `a8a78dd1`: solo este archivo, sin borrar líneas. Punto de reanudación verificable:
+  - main con este registro;
+  - Production en `ee284157`;
+  - migraciones hasta `20261003160000`;
+  - H01 a H05 (OL-257 a OL-262) cerradas;
+  - en pausa: #294, #295 y TestFlight.
+- **OL-263 / bitácora 290 · H13: reducir el tráfico de imágenes (2026-10-03, reserva para Codex).** Causa del bloqueo de Supabase por `exceed_cached_egress_quota`.
+  - **Datos, según el gestor:** el bucket `fotos` tiene 526 objetos y 147 MB, con una media de 285 kB y un máximo de 4 MB. Las listas usan `<img>` directo a Storage con el original; `src/lib/imagen.ts` comprime a JPEG al subir.
+  - **Rama:** `trafico-imagenes`, desde `origin/main` tras unir el registro conciliado.
+  - **Primero, diagnóstico y propuesta al gestor antes del código.** Qué se sirve dónde, el tamaño real por pantalla, el `Cache-Control` de los objetos y las opciones:
+    - miniaturas al subir, más un relleno de las existentes;
+    - tope de tamaño o recompresión al subir;
+    - caché larga;
+    - `next/image` o las transformaciones de Supabase, con su costo y los límites del plan.
+
+    Recomendar una sola opción.
+  - **Archivos asignados:**
+    - `src/lib/imagen.ts` y su prueba;
+    - los componentes que pintan imágenes en carriles, renglones, fichas y héroe (`src/components/ui/*`, `Destacados*`), con cambios solo para elegir la variante;
+    - un script en `scripts/` si hace falta rellenar;
+    - la bitácora 290 y la línea OL-263.
+  - **Escrituras en Storage de producción** (rellenar miniaturas o recomprimir): solo con el «sí» del founder, transmitido por el gestor, y nunca borrando originales.
+  - **No tocar:** la configuración de Auth ni la de Storage (buckets y políticas) sin consultar; tampoco la regla de origen de H05, que las variantes deben cumplir, ni `apps/ios`, `ubicacion.ts`, `lugares.ts` o `VistaLugares.tsx`.
+  - **Pruebas:** unitarias, `medir`, componentes y capturas de 390 px que muestren que no se pierde calidad visible.
