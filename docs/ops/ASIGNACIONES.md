@@ -710,3 +710,30 @@ Estado al relevo (main `6d870573`):
   - el doble toque del asa de la hoja (hallazgo de producto);
   - las 8 entradas de herramientas de desarrollo en npm audit;
   - #294, #295 y TestFlight, en pausa.
+- **OL-270 / bitácora 297 · Hoja de ciudades (antes «Dónde estás») (2026-10-04, reserva para Codex).** El founder aprobó toda la propuesta en el prototipo (comentario en el artifact, 2026-10-04 18:21) y pidió que la haga Codex.
+  - **Prototipo firmado:** `docs/rediseno/prototipos/donde-estas.html`, cinco estados. Hoy `src/components/Ciudad.tsx` (`ChipCiudad` y `HojaDonde`).
+  - **Qué cambia:**
+    - Lista directa al abrir: sin la frase explicativa, sin el paso «Otra ciudad», sin flechas. Tocar una ciudad la elige y cierra.
+    - Título según la sección: «Ciudades con eventos» en Agenda e Inicio, «Ciudades con lugares» en Lugares, «Ciudades con artistas» en Artistas. Debajo, `hoja.nota`: «Solo salen ciudades donde ya hay … publicados».
+    - Botón aparte «Usar mi ubicación» (`ui/Boton` secundario, píldora), fuera de la tarjeta de filas, solo mientras no haya ubicación. El aviso de iOS sale solo tras ese toque. Si lo niegan, el botón desaparece.
+    - Con la ubicación ya concedida se usa sin preguntar: orden por distancia, distancia en la meta de cada fila, y «Estás aquí» (`--ok`) en la ciudad a menos de 50 km.
+    - La palomita va siempre en la ciudad que se está viendo. Solo cuando la persona no ha elegido ciudad nunca, se elige sola la más cercana.
+    - Buscador (`CampoBuscar`) arriba de la lista solo con más de 8 ciudades. Al enfocarlo, la hoja sube a toda la altura y los resultados quedan entre el campo y el teclado. Sin acentos ni mayúsculas.
+    - A más de 50 km de todas las ciudades (con ubicación), al final, `ui/Boton` primario: «Agregar un evento en [ciudad]» en Agenda e Inicio, «Agregar un lugar en [ciudad]» en Lugares. Abre el alta con la ciudad ya escrita. En Artistas no hay botón.
+    - Si no se obtiene el nombre de la ciudad, el letrero es «Agregar un evento donde estás».
+  - **Base:** la rama `ubicacion-al-dia` (#294, en pausa). Reutilizar `useUbicacionFresca` y `releerUbicacionAlDia`; no duplicar la lectura de permiso. La aprobación del founder cubre usar la ubicación concedida sin toque, pero #294 se publica antes que esta pieza y solo con el «publica» del founder.
+  - **Rama:** `hoja-ciudades`, desde `origin/ubicacion-al-dia`.
+  - **Archivos asignados:**
+    - `src/components/Ciudad.tsx` y `Ciudad.module.css`;
+    - `src/lib/ciudad.ts` y sus pruebas;
+    - los usos de `ChipCiudad` solo para pasar la sección o la acción: `FilaEventos.tsx`, `FilaLugares.tsx`, `ListaArtistas.tsx`, `BuscarPantalla.tsx`;
+    - `src/app/nuevo/page.tsx` y `Alta.tsx`, solo para aceptar la ciudad prellenada;
+    - las pruebas de `Ciudad` (nuevas);
+    - la bitácora 297 y la línea OL-270.
+  - **No tocar:** `ui/Hoja`, `ui/Boton`, `ui/Renglon`, `ui/Buscador` (se usan tal cual), `HojaLugares`, `apps/ios`, ni `ubicacion.ts` y `useUbicacionFresca.ts` más allá de lo que ya trae #294. Sin migración.
+  - **A decidir con el gestor antes de programar:** el nombre de la ciudad cuando estás lejos requiere geocodificación inversa (Mapbox). Es un uso nuevo de la ubicación, que hoy «sirve para ordenar por cercanía, nada más». Propuesta: pedirla solo con coordenadas redondeadas a 2 decimales, sin guardarla, y documentarlo en la bitácora.
+  - **Pruebas:**
+    - los cinco estados del prototipo en 390×844 y 320 px, con capturas en `docs/rediseno/capturas-297/`;
+    - permiso concedido, negado y sin pedir;
+    - teclado en pantalla con 13 ciudades (Artistas);
+    - CI completa.
