@@ -1,6 +1,6 @@
 # 290 · Imágenes adaptadas al tamaño visible (OL-263 / H13)
 
-**Fecha:** 2026-10-03. **Estado:** candidato local probado, listo para revisión final del gestor.
+**Fecha:** 2026-10-03. **Estado:** publicado y comprobado en producción; pendiente firma en Safari físico.
 
 Reserva del Gestor de cambios III en ASIGNACIONES, publicada mediante
 [PR307](https://github.com/robscan/somosnosotros/pull/307), CI37165521850 correcto.
@@ -146,3 +146,34 @@ No hay pruebas destructivas, mensajes, cuentas nuevas ni escrituras de producci�
 Recuperación: revertir este PR devuelve la presentación directa; no hay datos ni
 esquema que restaurar. Los importadores no borran originales ni cambian sus URLs
 existentes. Safari físico y medición de cuota facturada quedan separados del QA.
+
+## Publicación y comprobación del dominio
+
+Gestor de cambios III revisó140158d8 sin hallazgos bloqueantes y cedió la ventana
+con CI verde. PR308 pasó CI37167549828; se marcó listo y se unió mediante merge
+commit el2026-10-04 01:21:50UTC (3octubre en México):
+`fb49a8ee4553bc28bca7ab7811d00e3d3c54c6d0`.
+Production6835359888 terminó correcto en ese SHA. No hubo migración.
+
+En `somosnosotros.org`, Inicio, Artistas y `/eventos/susurros-del-inconsciente`
+responden200 e incluyen variantes. Capturas390×844 revisadas en navegador:
+carriles y fotos56px cargados con srcset, ficha con portada optimizada y visor con
+original1205×1600 completo. La ficha local de Lxs Colocaos no existía bajo ese slug
+en producción; se usó el enlace real de Susurros visible en Inicio. El mapa real
+de esa ficha también cargó. Prueba de navegación pública, sin sesión de producto,
+sin modificar Voy/Seguir ni registros.
+
+Optimizador de producción:200WebP,6942bytes para la muestra192px, HIT en dos
+peticiones, `Cache-Control: public, max-age=2592000, must-revalidate`.
+Cinco controles negativos devuelven400: dominio ajeno, bucket ajeno, query,
+ancho193 y calidad80. `produccion.json` y capturas `produccion-*.png` en la carpeta
+de evidencia indicada arriba. La preview6835322581 también se revisó con imágenes
+cargadas; su acceso HTTP sin sesión redirige al SSO de Vercel normalmente.
+
+**Seguimiento pedido por el gestor:** revisar en el panel el uso del optimizador
+de Vercel durante la primera semana (hasta10octubre); responsable founder/gestor,
+plan Vercel todavía sin confirmar. No se contrató nada ni se abrió facturación.
+No hay monitor automático configurado ni promesa de vigilancia en segundo plano.
+Firma de Safari físico pendiente del founder. Revertir PR308 restaura la carga
+original sin restauración de DB/Storage. Cierre documental en PR separado; no
+repetir suites locales por ese cambio exclusivo de documentos.
