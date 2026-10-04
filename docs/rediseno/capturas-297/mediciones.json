@@ -73,7 +73,8 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista"
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista",
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
   },
   {
     "estado": 5,
@@ -93,6 +94,27 @@
     },
     "errores": [],
     "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento\nAgregar un evento donde estás"
+  },
+  {
+    "estado": 6,
+    "ancho": 390,
+    "imagen": "estado-6-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 48,
+        "bottom": 508,
+        "height": 460
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
   },
   {
     "estado": 1,
@@ -168,7 +190,8 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista"
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista",
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
   },
   {
     "estado": 5,
@@ -188,6 +211,27 @@
     },
     "errores": [],
     "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento\nAgregar un evento donde estás"
+  },
+  {
+    "estado": 6,
+    "ancho": 320,
+    "imagen": "estado-6-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 48,
+        "bottom": 508,
+        "height": 460
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
   },
   {
     "webkit": true,

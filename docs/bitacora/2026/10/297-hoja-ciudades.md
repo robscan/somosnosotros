@@ -1,10 +1,10 @@
 # 297 · OL-270 · Hoja de ciudades
 
 Fecha: 2026-10-04. Operador: Codex, chat `01a1082a-33fb-7302-b694-1889ceaaf549`.
-Estado actual: **revisión completa del gestor recibida en `194cda39`**, con un
-hallazgo de orden sin punto corregido. Lo demás está aprobado. El gestor autorizó
-push y PR en borrador contra main para CI/preview, y probará el teclado real en
-Safari del simulador. Sin publicación; el historial de candidatos queda abajo.
+Estado actual: **PR #333 en borrador; correcciones de Safari y botón de alta sin
+coincidencias listas para nueva revisión consolidada del gestor**. CI del anterior
+`3887bf76` correcta; no equivale a validar este nuevo candidato. Sin publicación.
+El historial de asignaciones, candidatos y hallazgos se conserva abajo.
 
 ## Encargo y acuerdos comprobados
 
@@ -259,3 +259,94 @@ main**, declarando #294 `f704c8b2` incluido hasta integrarlo, para CI y Vercel.
 Debe recibir SHA y URL de preview para probar él el **teclado real en Safari del
 simulador de iOS**, en especial `.buscando { height:100dvh }`; el founder lo prueba
 en su iPhone. No quitar borrador, no unir; #294 primero y «publica» expreso.
+
+
+## PR borrador y revisión real de Safari de `3887bf76`
+
+PR [#333](https://github.com/robscan/somosnosotros/pull/333), base main, head
+`hoja-ciudades`, **draft**, creado con la autorización del mensaje88 y adjuntado
+al chat Codex. CI37230599197 del `3887bf76` **success**. Preview GitHub6846011086
+success para ese SHA; la protección de Vercel requiere login en el simulador, y
+se conservó. La revisión del mensaje92 se hizo con la misma app compilada contra
+el respaldo local y 13 ciudades de Artistas, sin modificar datos de producción.
+
+Gestor III aceptó el orden, probó Safari iOS26.3 / iPhone15Pro de simulador con
+**teclado de pantalla real** y devolvió dos hallazgos bloqueantes: franja de página
+sin hoja/velo bajo los resultados, y primer toque que solo quitaba el foco.
+Evidencia en su rama: `capturas-297-revision/teclado-safari-ios-gua.png` y
+`tras-tocar-resultado.png`. Ambos PNG se observaron completos.
+
+Se consultó alcance antes de tocar `ui/Hoja`: ya tenía el observador de
+visualViewport, por lo que añadir otro en Ciudad no resolvería la geometría.
+Mensaje96 del gestor: medición con proxy local de diagnóstico en Safari:
+
+| Estado | innerHeight | scrollY | vv.height / offsetTop | Velo / dialog |
+|---|---:|---:|---|---|
+| Sin teclado | 695 | 0 | 695 / 0 | 0–695 / 48–695 |
+| Con teclado | 695 | 0 | 358 / 0 | 0–358 / 48–358 |
+
+La barra de dirección flotante de Safari iOS26 ocupa unos43pt excluidos del
+visualViewport y es translúcida. El gestor **autorizó expresamente ampliar el
+alcance a `ui/Hoja.tsx`, `Hoja.module.css` y su regresión focalizada**, conservando
+diseño, tokens, foco, inert y gestos; HojaLugares queda fuera.
+
+Corrección: el velo conserva innerHeight y offsetTop; `--alto-visible` mantiene
+contenido/borde inferior de la hoja en visualViewport.height. Un pseudo-elemento
+con `var(--fondo)` prolonga el blanco detrás de la barra móvil. En escritorio el
+diálogo conserva el centro del área visible y no prolonga blanco. Sin teclado
+se retira el marco inline y queda el canon CSS original. No se añade nodo, nueva
+medida literal, color, z-index, dependencia ni prop pública del canon.
+
+Toque: se conserva la altura después de enfocar, hasta cerrar; evita mover la
+fila al perder foco incluso si aún no se ha escrito. Se mantiene `buscando ||
+texto`, retirando el colapso en onBlur. Regresión con pointer down/up separado y
+un solo replace, con texto y campo vacío; la fila se desplaza primero a la vista,
+sin debilitar el criterio de posición. El fallo original se reprodujo antes.
+
+## Petición adicional expresa del founder: alta con búsqueda vacía
+
+El founder escribió en este chat: «recuerda agregar el botón de agregar lugar
+cuando no hay resultados de busqueda en el caso de que se muestra buscador.
+Dile a gestor que te lo pedí así. incluye en la entrega». Se transmitió literal
+al gestor (mensaje95); mensaje96 confirma el alcance:
+
+- Con buscador (>8 ciudades), texto significativo y cero coincidencias, debajo de
+  «Nada con «texto».», **Boton canónico primario completo «Agregar un lugar»**.
+- Aplica en toda sección con buscador, incluido Artistas; sustituye el alta lejana
+  en ese vacío para evitar dos botones. No hay botón de vacío con resultados ni
+  con texto vacío/espacios.
+- Destino `/nuevo?tipo=lugar`, cierre de hoja; no se inventa slug ni se pasa el
+  texto como ciudad o nombre. El alta existente obtiene ciudad de la dirección.
+- Se conservan las reglas anteriores del alta por distancia fuera de ese vacío.
+
+## Verificación del candidato corregido
+
+- Base main `fd11330b` conciliada en `9d3dc682`: único conflicto OPEN_LOOPS,
+  resolutor con faltantes main0/rama0/marcas0. Carpeta principal intacta y limpia.
+- Regresión negativa del marco: esperaba velo43–887, anterior43–551; falla antes
+  y pasa después. Foco, inert, Escape/pila, móvil320/390, centro820/1280, retorno
+  de marco al cerrar teclado y fondo continuo correctos.
+- Regresión de consumidores: **HojaFiltros real con campo y pie** y **HojaCiudad
+  real del alta/edición de Artistas**,320/390 con viewport reducido y cierre.
+  Alta/edición de evento/lugar usan HojaDonde independiente, sin usar ui/Hoja;
+  no se cambia ni se atribuye esa hoja a esta regresión.
+- Componentes finales Ciudad+Hoja **22/22**,18,45s. FilaEventos+FilaLugares14/14
+  del mismo código reutilizadas (ejecución combinada36, con un fallo del nuevo
+  montaje al tocar Querétaro fuera de la zona visible, corregido con scroll a la
+  vista sin cambiar aserciones). CI completa del nuevo SHA requerida.
+- `npm test`: **1900/1900**,137 archivos,7,98s. Tipos/build correctos. Lint0errores,
+  warning previo de VisorImagen:171. Inventario104CSS/1213reglas, sin novedades;
+  344medidas y2duplicados conservan presupuestos. Medir final: build6s,
+  24pantallas×4anchos, **96mediciones correctas**,83s, sin novedades.
+- App compilada: cinco estados renovados390/320; los PNG1/2/3/5 son idénticos y
+  conservan revisión visual previa. Nuevos estado4 y estado6 (vacío con alta),
+  más WebKit390, observados completos. Bricolage cargada;0errores/desbordes.
+- Toque del **Link real de Next** en el vacío llega a `/nuevo?tipo=lugar` y cierra
+  la hoja a320/390; no es solo aserción del href. Datos y permisos simulados.
+- Área visual reducida en Chrome/WebKit sigue siendo **simulada**, no teclado
+  nativo. El gestor debe repetir Safari real con su proxy sobre el nuevo SHA,
+  revisar todo el delta y aceptar o devolver hallazgos consolidados.
+
+Se conserva PR333 draft, #294 primero y «publica» expreso del founder para
+producción. Firma física del iPhone sigue pendiente; sin SQL/env/configuración,
+Mapbox inverso, datos reales escritos ni servidores propios permanentes.

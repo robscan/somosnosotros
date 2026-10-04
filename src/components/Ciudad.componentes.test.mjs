@@ -28,7 +28,7 @@ before(async () => {
       import Ciudad from './src/components/Ciudad';import './src/app/globals.css';
       const params=new URLSearchParams(location.search);
       const seccion=params.get('seccion')||'eventos';
-      const catalogo=seccion==='artistas'?${JSON.stringify(artistas)}:${JSON.stringify([SLP, QRO, GDL, AGS])};
+      const catalogo=seccion==='artistas'?${JSON.stringify(artistas)}:params.has('muchas')?${JSON.stringify(artistas.map(c => ({ ...c, artistas: undefined })))}:${JSON.stringify([SLP, QRO, GDL, AGS])};
       function App(){
         const [slug,setSlug]=React.useState(params.get('ciudad')||'san-luis-potosi');
         window.elegirDesdeRouter=()=>setSlug(new URLSearchParams(location.search).get('ciudad')||'san-luis-potosi');
@@ -63,7 +63,7 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(t, { ancho = 390, seccion = "eventos", permiso = "prompt", punto, edad = 0, ciudad, marcada, resultado = "bien", storage = true } = {}) {
+async function abrir(t, { ancho = 390, seccion = "eventos", permiso = "prompt", punto, edad = 0, ciudad, marcada, resultado = "bien", storage = true, muchas = false } = {}) {
   const context = await browser.newContext({ viewport: { width: ancho, height: 844 } });
   t.after(() => context.close());
   await context.addInitScript(({ permiso, punto, edad, marcada, resultado, storage }) => {
@@ -89,7 +89,7 @@ async function abrir(t, { ancho = 390, seccion = "eventos", permiso = "prompt", 
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
-  await page.goto(`${origin}/?seccion=${seccion}${ciudad ? `&ciudad=${ciudad}` : ""}`);
+  await page.goto(`${origin}/?seccion=${seccion}${ciudad ? `&ciudad=${ciudad}` : ""}${muchas ? "&muchas=1" : ""}`);
   await page.locator("#root button").waitFor();
   return page;
 }
@@ -200,6 +200,7 @@ test("Artistas: 13 ciudades, sin consultar ubicación; búsqueda sin acentos y r
     const page = await abrir(t, { ancho, seccion: "artistas", permiso: "granted" });
     await abrirHoja(page);
     assert.equal(await filas(page).count(), 13);
+    assert.equal(await page.getByRole("link", { name: "Agregar un lugar", exact: true }).count(), 0);
     assert.deepEqual(await page.evaluate(() => [window.qa.queries, window.qa.geo]), [0, 0]);
     assert.equal(await page.getByRole("button", { name: "Usar mi ubicación" }).count(), 0);
     const input = page.getByRole("searchbox", { name: "Nombre de la ciudad" });
@@ -209,7 +210,7 @@ test("Artistas: 13 ciudades, sin consultar ubicación; búsqueda sin acentos y r
       Object.defineProperty(visualViewport, "height", { configurable: true, value: 508 });
       visualViewport.dispatchEvent(new Event("resize"));
     });
-    await page.waitForFunction(() => document.querySelector('[role=dialog]').getBoundingClientRect().bottom <= 508);
+    await page.waitForFunction(() => { const r = document.querySelector('[role=dialog]').getBoundingClientRect(); return r.bottom <= 508 && r.top <= 49; });
     const cajas = await page.evaluate(() => {
       const cuadro = e => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; };
       return { input: cuadro(document.querySelector('input')), fila: cuadro(document.querySelector('li button')), hoja: cuadro(document.querySelector('[role=dialog]')), ancho: document.documentElement.scrollWidth };
@@ -219,10 +220,60 @@ test("Artistas: 13 ciudades, sin consultar ubicación; búsqueda sin acentos y r
     await input.fill("zzzzz");
     assert.equal(await filas(page).count(), 0);
     assert.match(await page.getByRole("dialog").innerText(), /Nada con «zzzzz»/);
+    const agregar = page.getByRole("link", { name: "Agregar un lugar", exact: true });
+    assert.equal(await agregar.getAttribute("href"), "/nuevo?tipo=lugar", "sin inventar ciudad ni nombre en la URL");
+    const cajaAgregar = await agregar.boundingBox();
+    assert.ok(cajaAgregar.y + cajaAgregar.height <= 508, "alta visible encima del teclado");
+    // El Link del montaje es un <a>: comprobar el cierre sin salir del documento de prueba.
+    await agregar.evaluate(e => e.addEventListener("click", evento => evento.preventDefault(), { once: true }));
+    await agregar.click();
+    await page.getByRole("dialog").waitFor({ state: "detached" });
+    assert.equal(await page.getByRole("dialog").count(), 0);
   }
 });
 
-test("lejos: alta por tipo sin coordenadas en URL; Artistas nunca ofrece alta", async t => {
+test("un toque en resultado con campo enfocado conserva su sitio hasta elegir y hace un solo replace", async t => {
+  for (const texto of ["queretaro", ""]) {
+    const page = await abrir(t, { seccion: "artistas" });
+    await abrirHoja(page);
+    const input = page.getByRole("searchbox", { name: "Nombre de la ciudad" });
+    await input.fill(texto);
+    await input.focus();
+    await page.evaluate(() => {
+      Object.defineProperty(visualViewport, "height", { configurable: true, value: 508 });
+      visualViewport.dispatchEvent(new Event("resize"));
+    });
+    await page.waitForFunction(() => document.querySelector('[role=dialog]').getBoundingClientRect().bottom <= 508);
+    const resultado = page.getByRole("dialog").getByRole("button", { name: /Querétaro/ });
+    await resultado.scrollIntoViewIfNeeded();
+    const antes = await resultado.boundingBox();
+    assert.ok(antes.y >= 0 && antes.y + antes.height <= 508, "la fila que se toca está visible");
+    await page.mouse.move(antes.x + antes.width / 2, antes.y + antes.height / 2);
+    await page.mouse.down();
+    const trasQuitarFoco = await resultado.boundingBox();
+    assert.ok(Math.abs(antes.y - trasQuitarFoco.y) < 1, "perder foco no mueve el resultado bajo el dedo, incluso sin texto");
+    await page.mouse.up();
+    await page.getByRole("dialog").waitFor({ state: "detached" });
+    assert.deepEqual(await page.evaluate(() => window.qa.replaces), ["?seccion=artistas&ciudad=queretaro"]);
+  }
+});
+
+test("búsqueda sin coincidencias ofrece una sola alta de lugar en cualquier sección con buscador", async t => {
+  for (const seccion of ["eventos", "lugares", "buscar"]) {
+    const page = await abrir(t, { seccion, muchas: true, punto: { lat: 40.4, lng: -3.7 }, ciudad: SLP.slug });
+    await abrirHoja(page);
+    const input = page.getByRole("searchbox", { name: "Nombre de la ciudad" });
+    await input.fill("zzzzz");
+    const alta = page.getByRole("dialog").getByRole("link");
+    assert.equal(await alta.count(), 1, "no duplica el alta lejana");
+    assert.equal(await alta.innerText(), "Agregar un lugar");
+    assert.equal(await alta.getAttribute("href"), "/nuevo?tipo=lugar");
+    await input.fill(" ");
+    assert.equal(await page.getByRole("link", { name: "Agregar un lugar", exact: true }).count(), 0);
+  }
+});
+
+test("lejos: alta por tipo sin coordenadas en URL; Artistas no ofrece alta por distancia", async t => {
   for (const seccion of ["eventos", "lugares", "artistas", "buscar"]) {
     const page = await abrir(t, { seccion, punto: { lat: 40.4, lng: -3.7 } });
     await abrirHoja(page);
