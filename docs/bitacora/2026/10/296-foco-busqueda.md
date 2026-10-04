@@ -1,6 +1,6 @@
 # 296 · Foco modal, enlaces de búsqueda y prueba de chips (OL-269)
 
-**Fecha:** 2026-10-04. **Estado:** candidato local probado; pendiente CI, preview y revisión del gestor antes de publicar.
+**Fecha:** 2026-10-04. **Estado:** primera publicación PR326; H09 y chips comprobados, H10 reabierta por memoria antigua y corrección en verificación.
 
 Reserva del Gestor de cambios III, mensaje151 y PR324/21ff1abf. Rama
 `foco-busqueda`, worktree `/Users/apple-1/somosnosotros-foco-busqueda`, base
@@ -68,3 +68,62 @@ producción. Árbol principal preservado limpio en1b9461e4. Responsable Codex:
 entregar candidato congelado al gestor, esperar CI exacta y revisión, publicar
 con la autorización continua vigente y comprobar dominio. Safari físico del
 founder pendiente; no se creó monitor.
+
+## Primera publicación y reapertura de H10
+
+Gestor aceptó el candidato `2fb0301cafb6aaddf641e0927a816da7eae76467`
+(mensaje155). CI [37182231128](https://github.com/robscan/somosnosotros/actions/runs/37182231128)
+**success en el primer intento**:1871 unitarias,1391 contratos PG/75 migraciones,
+224 componentes (222 correctos,0 fallos,2 excepciones Linux previas de OL265),
+96 mediciones79s. Preview6837616544 correcta sobre ese SHA: búsqueda Rob con
+resultados reales, Filtros con foco dentro/ciclo inverso/Escape, ciudad conserva
+autofocus y retorno; PNG390 inspeccionados, sin errores de consola.
+
+[PR326](https://github.com/robscan/somosnosotros/pull/326) unido a06:22:55UTC,
+merge `23010e3f5a12683cf2f3bb773d7d3bb710272f96`. Production6837681984 success
+a06:23:25UTC, mismo SHA. Dominio: cinco rutas/salud HTTP200, Supabase ok.
+**H09 comprobada**: aria-modal, foco Cerrar, Shift+Tab→Ver146 eventos,
+Escape→Filtros, sin hoja restante.
+
+**H10 no cerrada:** la pestaña usada para reproducir el defecto conservaba
+una memoria vacía en `/buscar?q=Rob`; el hook compartido la restauraba sobre
+el texto del enlace. La preview con sesión nueva no contenía esa memoria y
+había pasado. Al encontrarlo en el dominio no se declaró la entrega completa;
+se notificó al gestor. Mensaje157 mantiene rama/OL/bit y autoriza corregir solo
+Buscar y sus pruebas, sin tocar `useMemoriaPantalla` compartida. Pide cubrir
+además volver desde ficha después de editar la consulta.
+
+Corrección de continuidad: al montar se captura si la URL trae q explícita,
+antes de retirarla; en ese caso Buscar no aplica una memoria anterior. Al
+volver a la URL limpia, sí permite restaurar lo editado, aunque Next reutilice
+props de la consulta original. Capturar la decisión al inicio evita que el
+segundo montaje de comprobación de StrictMode invierta la prioridad después
+de consumir q. No cambia el contrato de memoria de otras pantallas.
+
+Regresión de componente con memoria antigua: antes4 correctas/1 fallo;
+después5/5 correctas en StrictMode. Caso contrario incluido: URL limpia con
+props Rob reutilizadas y memoria Ana restaura Ana. No se borra la memoria
+del navegador ni se pide a usuarios limpiar datos para eludir el defecto.
+
+La QA compilada de esta corrección detectó además que reenviar todo
+`history.state` (incluido `__NA`) a replaceState hace que Next16.3.8 omita
+actualizar `useSearchParams`: la memoria se guardaba bajo `/buscar?q=Rob`,
+aunque la barra ya decía `/buscar`. Con memoria vieja en ambas claves, Atrás
+restauraba la consulta equivocada. Se reprodujo y leyó el comportamiento en
+`node_modules/next/dist/client/components/app-router.js` (no modificado).
+Buscar usa ahora `replaceState(null, ...)`, como Agenda: Next copia su estado
+interno y actualiza los parámetros reactivos; `Navegacion` conserva la marca
+propia y procedencia de la entrada. La regresión comprueba esa marca real de
+la app, no un campo artificial `marca` del harness anterior. No se cambió
+historial compartido ni se manipulan los campos internos del router.
+
+Verificación del candidato de continuidad:1871 unitarias,5 componentes de
+Buscar, tipos y lint correctos (solo warning previo); build incremental5s,
+96 mediciones73s sin novedades. QA compilada ahora siembra memoria vacía en
+la URL con q y memoria «Anterior» en la URL limpia: el enlace muestra Rob y
+resultados; entrar a ficha/Atrás conserva Rob; editar a «Orquesta», abrir un
+evento y volver conserva Orquesta y sus resultados. Enlace desde Lugares también
+correcto;0 errores, capturas nuevas `buscar-390.png` y `buscar-editado-390.png`
+abiertas e inspeccionadas. No cambió Hoja ni el producto de chips.
+CI de main de la primera publicación37182639233 terminó success. H10 queda
+pendiente de revisión/publicación del segundo candidato, no cerrada por esa CI.
