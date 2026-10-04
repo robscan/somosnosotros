@@ -1,6 +1,6 @@
 # 291 · Next con parches de seguridad (OL-264 / H14)
 
-**Fecha:** 2026-10-03. **Estado:** candidato local probado, listo para revisión del gestor.
+**Fecha:** 2026-10-03. **Estado:** publicado y comprobado en producción (PR311 / `7eef8bc5`).
 
 Reserva del Gestor de cambios III en PR310/39fd313f: rama `seguridad-next`,
 base `39fd313f`, después del cierre documental PR309/d5b7365b de OL-263.
@@ -63,13 +63,15 @@ Capturas locales390×844/DPR3 de Inicio, Agenda, ficha y Entrar revisadas comple
 carriles con carteles, filas de agenda con fotos56px, portada/KPIs/acciones de ficha
 y formulario de correo visibles sin nueva alteración. Todas200 y sin pageerror.
 El mapa de la ficha se bloqueó deliberadamente en este fixture; no se declara
-validado aquí. Entrar local solo correo porque el fixture no configura proveedores;
-Apple/Google se comprobarán en la preview real sin iniciar sesión. Googlebot recibe
+validado aquí. Entrar local solo correo porque el fixture no configura proveedores.
+La comprobación posterior confirmó que la preview oculta Apple/Google por la
+política existente de dominios registrados; se comprobaron en producción sin
+iniciar sesión. Googlebot recibe
 título y canonical dentro de head (bots.json); patrón upstream idéntico16.3.5/8.
 
 Evidencia persistente:
 `/Users/apple-1/.codex/visualizations/2026/10/02/01a0fece-65fd-79e3-a64d-296a4b8fa13c/seguridad-next/`.
-Después: revisión del gestor, CI y preview de Inicio/Agenda/ficha/Entrar/imagen.
+Revisión del gestor, CI y preview completadas; cierre detallado debajo.
 No se crean cuentas, no se inicia sesión de producto ni se escriben datos reales.
 
 `npm audit --omit=dev` devuelve0 vulnerabilidades. La auditoría completa deja0 críticos y ya no lista Next. Quedan8 entradas
@@ -80,3 +82,39 @@ o subirían Vitest a5 fuera de este alcance. Se comunican al gestor.
 Rollback: revertir la actualización de paquetes y reconstruir. No requiere
 restaurar datos, pero devuelve una dependencia con el aviso crítico conocido;
 no es el estado normal deseado.
+
+## Publicación y cierre (2026-10-03, hora de México)
+
+El gestor aceptó el candidato `4fb1462f6a1733956006bd4799a9dafe1e943065`
+y cedió la ventana al quedar CI y preview correctas. PR [311](https://github.com/robscan/somosnosotros/pull/311)
+unido en `7eef8bc570005edc38a9ff7d7044b9636ac63e7e`, a las 01:49:14 UTC del 4 de octubre.
+CI del PR37168916332 **success antes del merge**; CI de main37169160909 también
+success. Deployment Production6835582058 success sobre el mismo SHA.
+
+Preview6835543402 sobre el candidato: Inicio, Agenda, ficha Susurros y Entrar
+revisados completos a 390×844. La preview muestra correo y oculta proveedores por
+la política de dominios de `botonesProveedor`; no es una regresión de esta pieza.
+En `somosnosotros.org/entrar`, Apple, Google y correo visibles; enlaces Apple/Google
+con retorno interno a Perfil. No se inicia sesión ni se envía código.
+
+Comprobación del dominio real y capturas completas a 390×844:
+
+- Inicio, Agenda y ficha Susurros responden 200 y muestran imágenes optimizadas.
+  La ficha carga el mapa real; la ausencia deliberada del mapa en el fixture local
+  no se usa como evidencia de producción.
+- `/_next/image`: WebP de 192 px, 6942 bytes, dos respuestas HIT y
+  `Cache-Control: public, max-age=2592000, must-revalidate` (30d).
+- Cinco entradas no permitidas devuelven 400: dominio ajeno, otro bucket,
+  query en el origen, ancho 193 y calidad 80.
+- Googlebot recibe título y canonical en head en el dominio real.
+
+Evidencia en la carpeta persistente indicada arriba: `preview-*.png`,
+`produccion-*.png`, `produccion.json`, `bots-produccion.json` y `ci-pr311.log`.
+Navegador automatizado Chrome; Safari físico sigue pendiente del founder.
+Servidores y pestañas de prueba propios cerrados; sin SQL ni escrituras reales.
+
+OL264/H14 resuelto. Siguiente pieza acordada: H12, suite de componentes en CI,
+con reserva de rama/OL/bitácora a cargo del gestor antes de iniciar código.
+Las ocho entradas de herramientas de desarrollo y el plan de Vercel sin confirmar
+quedan comunicados; Supabase Pro sí fue confirmado por el founder. No se contrata
+ni cambia ningún plan, y no se programa monitoreo automático.
