@@ -654,3 +654,38 @@ Estado al relevo (main `6d870573`):
     - la bitácora 295 y la línea OL-268.
   - **No tocar:** `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
   - **Pruebas:** 350 eventos inventados (Todos completo por rango y Nuevos con los últimos publicados), ciudades frente a la consulta actual, `medir`, componentes y la vista previa.
+  - **OL-268, decisión del gestor sobre el alcance (2026-10-04):** a) y c) obligan a volver a consultar al cambiar los filtros, a tocar `AgendaInicio`, `CarrilAgenda`, `inicio.ts`, `FilaEventos` y los recuentos de «Ver N eventos», y a decidir la paginación. Con 152 eventos frente al corte de 300, el costo no se justifica hoy. **OL-268 se reduce a:**
+    - **b)** ciudades agregadas en SQL (migración `20261004090000`);
+    - **d)** una señal en el servidor, sin datos personales, cuando `cargarAgenda` llegue al tope (por ejemplo, ≥ 90 % de 300), para saber cuándo hace falta a) y c).
+
+    a) y c) quedan **diferidas** como pieza aparte, que se abre cuando la señal salte o lo pida el founder, con la propuesta visual de paginación primero. Archivos: `ciudades.ts` y `cargarAgenda.ts` (solo la señal), sus pruebas, la migración y las pruebas PG, la bitácora 295 y la línea OL-268.
+  - #322 lo unió Codex (`1259dd07`) con la CI en verde. **OL-267 (H11) cerrada.** Codex creó `topes-lectura` desde `1259dd07` y trabaja en b) y d).
+  - **OL-268, ampliación aceptada:** se suman `scripts/ops/auditoria-ui/respaldo-local/fixture.mjs` y su prueba de paridad, solo para añadir respuestas sintéticas de `ciudades_agregadas` y `ciudades_artistas_agregadas`, ambas invoker y solo con agregados públicos.
+  - **OL-268 entregada por Codex:** PR #323 (`9f67331e`). Revisión del gestor (2026-10-04), sin hallazgos que bloqueen:
+    - Las dos RPC son invoker, estables, con `search_path` vacío; devuelven un JSON escalar (no las recorta `max_rows`), filtran `visible` y `not privado` e incluyen al admin.
+    - `p_ahora` en manos de `anon` solo cambia el corte de recuentos de eventos ya públicos: riesgo despreciable, aceptado.
+    - La app conserva `ciudadCanonica`, el centro y la zona. La señal de `cargarAgenda` salta a 270 de 300.
+
+    Ventana cedida a Codex con la CI en verde: dry-run solo de `20261004090000`, **`db:push` antes de unir**, comprobar las RPC con anon y unir. El selector de ciudad y Lugares deben dar lo mismo que antes.
+  - **OL-268, CI con un fallo ajeno a la pieza:** `FilaEventos.componentes.test.mjs:313`, salto de 2,98 px frente a una tolerancia de 2,5 px al quitar un chip; depende del muestreo de `requestAnimationFrame` bajo carga. Ni el test ni el producto cambian respecto a main. El gestor acepta **una sola** repetición del job en el mismo SHA para clasificarlo, registrando los dos resultados en la bitácora 295.
+    - **Si vuelve a fallar:** pieza aparte para hacer la prueba robusta, sin publicar OL-268 hasta resolverlo.
+    - **Si pasa:** se publica, y el test queda anotado como inestable para revisarlo (no se mete en la cuarentena sin decidirlo).
+  - **#323 publicado por Codex:** `1942b521`. Comprobado por el gestor: main y Production en ese SHA; migraciones hasta `20261004090000`; las dos RPC existen. **OL-268 (H07 b y d) cerrada** cuando se una su cierre documental; a) y c) siguen diferidas.
+- **OL-269 / bitácora 296 · H09 + H10 + robustez de la prueba de chips (2026-10-04, reserva para Codex).** Una pieza para ahorrar ciclos; los archivos no se cruzan.
+  - **H09:** `ui/Hoja` debe gestionar el foco como diálogo modal: foco inicial dentro, fondo inerte, ciclo de Tab y Shift+Tab, `aria-modal` y devolución del foco al botón que la abrió. Revisar sus usos (`HojaFiltros` y las demás hojas) sin cambiar su aspecto.
+  - **H10:** `/buscar` usa `q` como valor inicial al llegar de enlaces antiguos (`/artistas?q=…` y `/lugares?q=…`) y ejecuta la búsqueda. Si se quiere privacidad, se retira de la URL después de leerlo (`replaceState`, sin apilar).
+  - **Prueba inestable:** `FilaEventos.componentes.test.mjs:313` mide el salto al quitar un chip por muestreo de `requestAnimationFrame`. Debe medir el resultado de forma determinista (por ejemplo, la posición final y que no haya salto entre estados estables), **sin subir la tolerancia** y sin tocar `FilaEventos.tsx` salvo un fallo real.
+  - **Rama:** `foco-busqueda`, desde `origin/main` tras el cierre documental de #323.
+  - **Archivos asignados:**
+    - `src/components/ui/Hoja.tsx` y `Hoja.module.css`, solo si hace falta para `inert` o el foco;
+    - `src/components/ui/HojaFiltros.tsx`;
+    - `src/app/buscar/BuscarPantalla.tsx` y `page.tsx`;
+    - `src/components/FilaEventos.componentes.test.mjs`;
+    - las pruebas de `Hoja` y `Buscar`;
+    - la bitácora 296 y la línea OL-269.
+  - **No tocar:** `HojaLugares` (su física de gesto está en cuarentena), `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
+  - **Pruebas:**
+    - teclado en 320 y 390 px (Tab no sale de la hoja, Escape cierra y devuelve el foco);
+    - `/artistas?q=Rob` muestra «Rob» y resultados;
+    - la prueba de chips 5 veces seguidas en local sin fallo;
+    - CI completa.
