@@ -220,15 +220,7 @@ test("Artistas: 13 ciudades, sin consultar ubicación; búsqueda sin acentos y r
     await input.fill("zzzzz");
     assert.equal(await filas(page).count(), 0);
     assert.match(await page.getByRole("dialog").innerText(), /Nada con «zzzzz»/);
-    const agregar = page.getByRole("link", { name: "Agregar un lugar", exact: true });
-    assert.equal(await agregar.getAttribute("href"), "/nuevo?tipo=lugar", "sin inventar ciudad ni nombre en la URL");
-    const cajaAgregar = await agregar.boundingBox();
-    assert.ok(cajaAgregar.y + cajaAgregar.height <= 508, "alta visible encima del teclado");
-    // El Link del montaje es un <a>: comprobar el cierre sin salir del documento de prueba.
-    await agregar.evaluate(e => e.addEventListener("click", evento => evento.preventDefault(), { once: true }));
-    await agregar.click();
-    await page.getByRole("dialog").waitFor({ state: "detached" });
-    assert.equal(await page.getByRole("dialog").count(), 0);
+    assert.equal(await page.getByRole("link", { name: "Agregar un lugar", exact: true }).count(), 0, "Artistas sin coincidencias conserva solo la nota");
   }
 });
 
@@ -258,7 +250,7 @@ test("un toque en resultado con campo enfocado conserva su sitio hasta elegir y 
   }
 });
 
-test("búsqueda sin coincidencias ofrece una sola alta de lugar en cualquier sección con buscador", async t => {
+test("búsqueda sin coincidencias ofrece una sola alta de lugar en Eventos, Lugares y Buscar con más de ocho ciudades", async t => {
   for (const seccion of ["eventos", "lugares", "buscar"]) {
     const page = await abrir(t, { seccion, muchas: true, punto: { lat: 40.4, lng: -3.7 }, ciudad: SLP.slug });
     await abrirHoja(page);
@@ -268,8 +260,20 @@ test("búsqueda sin coincidencias ofrece una sola alta de lugar en cualquier sec
     assert.equal(await alta.count(), 1, "no duplica el alta lejana");
     assert.equal(await alta.innerText(), "Agregar un lugar");
     assert.equal(await alta.getAttribute("href"), "/nuevo?tipo=lugar");
+    await page.evaluate(() => {
+      Object.defineProperty(visualViewport, "height", { configurable: true, value: 508 });
+      visualViewport.dispatchEvent(new Event("resize"));
+    });
+    await page.waitForFunction(() => document.querySelector('[role=dialog]').getBoundingClientRect().bottom <= 508);
+    const caja = await alta.boundingBox();
+    assert.ok(caja.y + caja.height <= 508, "alta visible encima del teclado");
     await input.fill(" ");
     assert.equal(await page.getByRole("link", { name: "Agregar un lugar", exact: true }).count(), 0);
+    await input.fill("zzzzz");
+    // El Link del montaje es un <a>: comprobar el cierre sin salir del documento de prueba.
+    await alta.evaluate(e => e.addEventListener("click", evento => evento.preventDefault(), { once: true }));
+    await alta.click();
+    await page.getByRole("dialog").waitFor({ state: "detached" });
   }
 });
 

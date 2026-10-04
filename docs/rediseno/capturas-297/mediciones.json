@@ -112,9 +112,11 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nUsar mi ubicación\n\nNada con «zzzzz».\n\nAgregar un lugar",
     "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
-    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
+    "seccion": "lugares",
+    "ciudadesSimuladas": 13,
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Vacio con alta en Lugares, Artistas excluida por decision final del founder."
   },
   {
     "estado": 1,
@@ -229,9 +231,11 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nUsar mi ubicación\n\nNada con «zzzzz».\n\nAgregar un lugar",
     "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
-    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
+    "seccion": "lugares",
+    "ciudadesSimuladas": 13,
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Vacio con alta en Lugares, Artistas excluida por decision final del founder."
   },
   {
     "webkit": true,

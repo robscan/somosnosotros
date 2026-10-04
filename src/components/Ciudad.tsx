@@ -82,7 +82,7 @@ function HojaCiudades({ ciudad, ciudades, seccion, hrefDe, punto, onCerrar }: Pr
   const todas: readonly (CiudadConDatos | CiudadConArtistas)[] = ciudades;
   const buscado = normalizarNombre(texto);
   const filas = filasDeCiudades(ciudad, todas, punto, seccion).filter(({ ciudad: c }) => normalizarNombre(c.nombre).includes(buscado));
-  const sinCoincidencias = todas.length > 8 && !!buscado && filas.length === 0;
+  const sinCoincidencias = seccion !== "artistas" && todas.length > 8 && !!buscado && filas.length === 0;
   const alta = altaLejosDeCiudades(ciudad, todas, punto, seccion);
   const { titulo, nota } = TITULOS[seccion];
   useEffect(() => {

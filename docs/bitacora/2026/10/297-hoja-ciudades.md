@@ -1,10 +1,10 @@
 # 297 · OL-270 · Hoja de ciudades
 
 Fecha: 2026-10-04. Operador: Codex, chat `01a1082a-33fb-7302-b694-1889ceaaf549`.
-Estado actual: **PR #333 en borrador; correcciones de Safari y botón de alta sin
-coincidencias listas para nueva revisión consolidada del gestor**. CI del anterior
-`3887bf76` correcta; no equivale a validar este nuevo candidato. Sin publicación.
-El historial de asignaciones, candidatos y hallazgos se conserva abajo.
+Estado actual: **revisión completa, Safari real del simulador y CI de `064d25a2`
+aceptadas; ajuste posterior del founder aplicado: Artistas sin botón de alta**.
+Nuevo candidato preparado para revisar solo esa excepción, con capturas en
+Lugares. PR #333 continúa en borrador y sin publicación. El historial se conserva.
 
 ## Encargo y acuerdos comprobados
 
@@ -350,3 +350,47 @@ al gestor (mensaje95); mensaje96 confirma el alcance:
 Se conserva PR333 draft, #294 primero y «publica» expreso del founder para
 producción. Firma física del iPhone sigue pendiente; sin SQL/env/configuración,
 Mapbox inverso, datos reales escritos ni servidores propios permanentes.
+
+
+## Aceptación de `064d25a2` y ajuste posterior de Artistas
+
+Mensaje100: el gestor revisó todo el delta de `064d25a2`, aceptó el cambio mínimo
+del canon y repitió Safari iOS26.3 con teclado de pantalla real. Franja blanca
+continua, campo/resultados visibles, Guadalajara elegida con un toque; vacío y
+alta correctos. Sin sesión llega a «Entra para registrar un lugar». Sus capturas
+`064d25a2-teclado-gua.png` y `064d25a2-sin-coincidencias.png`, en su carpeta
+`capturas-297-revision`, se observaron completas.
+
+CI [37232698189](https://github.com/robscan/somosnosotros/actions/runs/37232698189)
+**success** en ese SHA:1900 unitarias,243 componentes correctos/0fallos y2omisiones
+Linux previas,96mediciones78s correctas. Preview GitHub6846381610 success para
+064d25a2. No se retiró draft ni publicó. Esta evidencia se conserva como historia;
+la condición del nuevo código requiere su propia CI.
+
+**Decisión posterior del founder, transmitida y confirmada por Gestor III**
+(mensaje101: «Lo dejamos en lugares solamente»; ajuste explícito del gestor,
+confirmado de nuevo en108): Artistas no ofrece «Agregar un lugar» sin coincidencias,
+porque registrar un lugar no añade una ciudad al catálogo de Artistas. No se
+sustituye por un botón de artista. Las demás secciones con buscador (Agenda,
+Inicio, Lugares y Buscar) conservan el alta de lugar. Sustituye expresamente la
+confirmación previa de mensaje96 que la permitía en Artistas.
+
+Cambio acotado: `sinCoincidencias` exige además `seccion !== "artistas"`. Se
+actualiza la expectativa del vacío de Artistas a botón0 y el caso de catálogo
+con13ciudades en Lugares (también Eventos/Buscar) confirma un solo Boton completo,
+URL exacta, visible sobre el área reducida, cierre y ausencia con espacios.
+Componentes Ciudad **11/11**,12,84s; lint focalizado correcto, tipos/build correctos.
+No se repite suite local general ni Safari: el gestor permite reutilizar la
+prueba del canon/teclado de064d25a2 porque este delta no los cambia; exige nueva
+CI completa y su revisión de la excepción.
+
+`estado-6-{320,390}.png` ahora muestra **Lugares**, catálogo local sintético de
+13ciudades, fuente cargada,0errores/desbordes. Ambos PNG observados completos.
+Toque real de Next llega a `/nuevo?tipo=lugar` y cierra. Mediciones actualizadas
+solo para estado6; estados1–5 y WebKit se conservan. Datos/permiso/altura del
+viewport simulados; no afirmar teclado nativo nuevo para estas capturas.
+
+Responsables confirmados en108: el gestor revisa nueva excepción/CI, trae main
+y une en orden cuando se autorice; el founder prueba iPhone físico y da «publica»
+para #294 y luego #333. PR333 permanece draft. No hay otros cambios de diseño,
+canon, geocodificación, SQL, variables ni producción.
