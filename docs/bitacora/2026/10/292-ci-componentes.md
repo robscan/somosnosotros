@@ -1,6 +1,6 @@
 # 292 · Suite completa de componentes en CI (OL-265 / H12)
 
-**Fecha:** 2026-10-03. **Estado:** control negativo comprobado; candidato sin fallo provocado preparado para CI y revisión.
+**Fecha:** 2026-10-03. **Estado:** bloqueada para publicación: CI Linux 213/214; gestor debe resolver alcance/contrato del caso de inercia.
 
 Reserva del Gestor de cambios III publicada en PR313 / `cc7bfb33`: rama
 `ci-componentes`, base `cc7bfb33ef3ca9ffafdcf2a84382c0bd3b5eed2d`, después del cierre
@@ -118,3 +118,42 @@ con el costo de tiempo que se medirá. Ninguna aserción o caso se elimina.
 
 La hipótesis sobre competencia de navegadores sigue sin validarse en Linux; no
 se declara corregido ese segundo fallo hasta comprobar el nuevo candidato.
+
+
+## Bloqueo vigente: la ejecución serial tampoco resuelve el caso de inercia
+
+[CI37171465834](https://github.com/robscan/somosnosotros/actions/runs/37171465834)
+sobre `99732513fad2eeca6266e49bb76e73b008955bc0`: 213/214, 0 omitidas/canceladas,
+267,995 s (4 min 28 s). Ahora sí ejecuta un archivo por vez. El arrastre desde llena
+espera asoma (250) pero acaba recogida (0), línea 367. La hipótesis de competencia
+entre navegadores no basta; no reintentar ni publicar esperando verde por azar.
+La serialización agrega tiempo sin solucionar el defecto observado: se propone
+retirarla del candidato cuando el gestor resuelva el siguiente paso.
+
+La instrucción del founder registrada en bit277 §4 exige terminar directo en la
+altura correspondiente, sin inercia larga y un tirón posterior. La implementación
+y su prueba añadieron «jalón rápido → siguiente altura». El CSS actual usa
+scroll-snap-stop normal (por defecto). La [especificación W3C, §5.3 y §6](https://www.w3.org/TR/css-scroll-snap-1/#scroll-snap-stop)
+permite pasar puntos con normal y deja al navegador buena parte de la elección.
+Eso explica una posible diferencia de contrato, pero no prueba por sí solo que
+la discrepancia de Linux sea del producto y no del envío CDP. No se cambia la
+aserción a «cualquier altura válida» sin resolver esa distinción.
+
+**Siguiente acción y responsable:** el gestor debe ampliar el diagnóstico al caso
+de inercia del mismo harness o reservar una corrección de producto si se exige
+exactamente una altura por gesto. PR314 permanece en borrador; sin merge ni
+publicación. No se omite la prueba, no se añade continue-on-error ni reintento.
+Los cambios de aplicación siguen siendo cero. Caso de clics e Imagen pasan en
+las ejecuciones posteriores al control negativo. No se abre otra pieza sin reserva.
+
+**Doble toque solicitado por el gestor:** diagnóstico CDP en Chromium táctil,
+390×844, dos toques consecutivos sobre las mismas coordenadas: el asa recibe
+ambos en y=660 y y=658 y vuelve a llena. Con 60/150/600 ms entre toques solo el
+primero llega al asa, que ya se ha movido, y termina recogida. Es comportamiento
+real de Chromium con entrada táctil simulada, aún sin comprobación física en
+Safari. Se entrega como hallazgo separado de producto, sin corregirlo en H12.
+
+Todos los logs quedan en la carpeta persistente: `ci-serial-real.log/json`,
+`doble-toque.log`, además de los anteriores. Capturas/producto de OL264 conservan
+su validez; esta pieza de CI sigue pendiente. Los diagnósticos locales cerraron
+sus propios servidores y navegadores.
