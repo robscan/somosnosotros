@@ -576,3 +576,28 @@ Estado al relevo (main `6d870573`):
     - la bitácora 292 y la línea OL-265.
   - **No tocar:** el código de producto, presupuestos de `medir`, `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
   - **Pruebas:** la CI en verde con la suite completa (contar cuántas y cuánto tarda), y una prueba de que una regresión de componentes rompe la CI (rama o commit temporal, sin unir).
+  - **OL-265, ampliación aceptada (2026-10-03):** se suma `src/app/lugares/HojaLugares.componentes.test.mjs`. El caso de animación da dos toques seguidos al asa sin esperar a que termine el primer desplazamiento suave, y en Linux acaba en recogida en vez de asoma. Se sincroniza la prueba con la posición alcanzada, sin quitar aserciones ni tocar producto.
+    - **Condición:** dejar dicho en la bitácora 292 si dos toques rápidos en el iPhone dan también un resultado raro. Si es así, va como hallazgo aparte para el founder, no se arregla aquí.
+    - #312 lo unió Codex (`fb9218cd`) con la CI en verde. #294 y #295 no tocan ese archivo.
+  - **OL-265, decisión del gestor (2026-10-03).** El caso de inercia de `HojaLugares` (un jalón rápido da una sola altura) falla en Linux de forma no determinista, también en secuencia: termina en llena o en recogida en vez de asoma. En Mac, con el Chromium fijado, pasa. El emulador táctil de Chromium en Linux no representa el gesto del iPhone y el estándar deja al navegador elegir el punto al lanzar. **No se sigue depurando** por costo y por falta de representatividad.
+    - **Cuarentena explícita y acotada:** la CI corre la suite completa excepto los casos de física de gesto de `HojaLugares` (inercia y doble toque del asa), marcados por nombre en una lista única con su motivo. Esos casos siguen siendo obligatorios en la verificación local (Mac) de toda pieza que toque la hoja; nada se borra ni se debilita.
+    - Sin cambios de producto ni de la concurrencia del runner (se retira la ejecución secuencial). Se retira el fallo temporal de `Imagen`. El candidato debe dar verde en la CI con el número de casos en cuarentena declarado.
+    - **Hallazgo de producto para el founder:** dos toques inmediatos al asa vuelven a llena; separados, el segundo no alcanza el asa móvil. Sin probar en Safari físico.
+  - **OL-265, segunda ampliación aceptada (2026-10-03):** se suma `src/app/entrar/Entrar.componentes.test.mjs`. `page.evaluate(() => history.back())` cae con «Execution context was destroyed»; se cambia por `page.goBack({ waitUntil: "domcontentloaded" })` en esos dos puntos, que además es el Atrás del navegador que el caso describe. Se conservan las comprobaciones, sin cambios de Auth ni de producto y sin una tercera cuarentena. Es la última ampliación del harness en esta pieza: si aparece otro fallo, se reporta antes de tocar nada.
+  - **#314 publicado por Codex:** `ac6cb4c8`. Comprobado por el gestor: main y Production en ese SHA y `ci.yml` corre `npm run test:componentes`. CI de main: 212 casos y 2 en cuarentena (`scripts/pruebas/cuarentena-componentes.json`). Cierre documental en #315 (`29f158c8`), para unir con la CI del PR en verde. **OL-265 (H12) cerrada.**
+- **OL-266 / bitácora 293 · H06 + H08: «Esta semana» con el fin efectivo y tope de «Nuevos eventos» (2026-10-03, reserva para Codex).**
+  - **H06:** Inicio da por terminado un evento sin fin a su hora de inicio, mientras que Agenda lo mantiene hasta acabar el día local. Debe haber una sola regla (`terminaDe`, o la columna `termina`, con su zona horaria) en todos los filtros.
+  - **H08:** el carril «Nuevos eventos» de Inicio no tiene tope (94 tarjetas). Tope de 20 en el servidor, el mismo `LIMITE_NUEVOS` de Agenda, también al recalcular en el cliente, y que se continúe en Agenda.
+  - **Tope del carril «Artistas con eventos esta semana»** (48 imágenes): lo decide el founder. El gestor propone 12, como «Artistas destacadxs». Sin su respuesta, no se cambia.
+  - **Rama:** `inicio-semana-nuevos`, desde `origin/main` tras unir #315. Sin SQL previsto; si hace falta, avisar antes.
+  - **Archivos asignados:**
+    - `src/lib/inicio.ts` y `src/lib/fechas.ts` (solo para reutilizar la regla);
+    - `src/lib/eventosSemana.ts` y `src/lib/cargarEventosSemana.ts`;
+    - los componentes de Inicio que recalculan en el cliente (`AgendaInicio`, `inicio/CarrilAgenda`), solo si hace falta;
+    - las pruebas de todo lo anterior;
+    - la bitácora 293 y la línea OL-266.
+  - **No tocar:** `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
+  - **Pruebas:**
+    - unitarias en la frontera: sin fin antes y después del inicio, cambio de día local, fin explícito y varias zonas, comparando Inicio y Agenda en el mismo instante;
+    - 100 candidatos dan 20;
+    - `medir` (Inicio bajará de nodos; explicar los presupuestos), componentes y la vista previa.
