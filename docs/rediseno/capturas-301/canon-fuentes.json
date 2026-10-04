@@ -7,132 +7,108 @@
       "sha256": "1074df072f602cb363a33de5805854fd3edcd2fdb428cfcf93810eaf9a9a4452"
     },
     {
-      "ruta": "src/components/NavSecciones.tsx",
-      "sha256": "c2f7b5fd2eda74cadd3ba361926be04cb72f1b5787f9a0de605a4545301f76c7"
-    },
-    {
-      "ruta": "src/components/ui/Pestanas.tsx",
-      "sha256": "b9d146b48e0038bb5a64cf30ab3f982f1694a0fc8f4b08b6ff48516958f663c0"
-    },
-    {
-      "ruta": "src/components/ui/Cabecera.tsx",
-      "sha256": "8c7f832fc394cfb7362d982d6c8d63e0a3284ea5f35630c026d2389e41adfbb1"
-    },
-    {
-      "ruta": "src/components/FilaEventos.tsx",
-      "sha256": "5d010b3e0e57ca63b096e18ce8fb658c74c4d3693a08c5f73041576398e44abe"
-    },
-    {
-      "ruta": "src/app/lugares/FilaLugares.tsx",
-      "sha256": "86827c58dbf75b105923496a4aea9abab0a31758e85e27acfbf6bdf7997a0163"
-    },
-    {
-      "ruta": "fa828b15/src/lib/ciudad.ts",
-      "sha256": "02de455082abc45df6e6895e30a3bdb59fc1c65eb40b362931acbfb847ad1f3f"
-    },
-    {
-      "ruta": "src/components/ui/Plantilla.module.css",
-      "sha256": "b8ee892a2a9ec37b076d01dba8e04772fc79c1f24a2c4fe262776fe339e3c54d"
-    },
-    {
-      "ruta": "src/app/lugares/HojaLugares.tsx",
-      "sha256": "387b9d656ad6bf23a56b73d22fca662ff9db3b5258a40ceb2c9443c47b6970aa"
-    },
-    {
-      "ruta": "src/components/inicio/CarrilEventosCliente.tsx",
-      "sha256": "7fa707e511a1e9ce6a47ff3491e9017b322db809a38a337fca35d897f2e4cdd8"
+      "ruta": "src/components/Lista.module.css",
+      "sha256": "29d5f15d4ffd47213a3a1c29d7006273dfebb158d3f9a05df53e11329cd4152e"
     },
     {
       "ruta": "src/lib/inicio.ts",
       "sha256": "b6ea9af89e3316070d6af30b1652c0ca49c1c4005a7bc1dd7430ae5b5ad9fbda"
     },
     {
-      "ruta": "src/components/BarraApp.tsx",
-      "sha256": "4c69eeddfa62da58f407ca3e68a830da8ec90784630b8d8a65f7161a6326ba03"
-    },
-    {
-      "ruta": "src/components/Lista.module.css",
-      "sha256": "29d5f15d4ffd47213a3a1c29d7006273dfebb158d3f9a05df53e11329cd4152e"
-    },
-    {
-      "ruta": "src/components/ui/Grupo.tsx",
-      "sha256": "cda01267f216103717896d4543c710d5712b97e20acde56e4da9f6b6d94a1965"
-    },
-    {
-      "ruta": "src/components/RenglonEvento.tsx",
-      "sha256": "c829113eda8c5f9f7a6202029ffc764f1c3937255c09e04464ad742442b64c1a"
+      "ruta": "src/app/lugares/lugares.module.css",
+      "sha256": "9d74917d9c9c3bd3cec8a136e1c6dc109f0cc96b469d2fe5d82aa04897d27efb"
     },
     {
       "ruta": "src/components/ui/Iconos.tsx",
       "sha256": "55dd092d51466633b34438bf5cf0251626ab9c43044a49b145eaba053bf30a42"
     },
     {
-      "ruta": "src/components/ui/Renglon.tsx",
-      "sha256": "39f39f9a1bc033541708eac5071dd98b0af975d33a165dab34a35755f10dfdca"
+      "ruta": "src/components/RenglonEvento.tsx",
+      "sha256": "c829113eda8c5f9f7a6202029ffc764f1c3937255c09e04464ad742442b64c1a"
     },
     {
-      "ruta": "src/components/ui/Boton.tsx",
-      "sha256": "b1a2e24d6a44262ff73bac4b8d2e931b1fa653d6fe6588d1da1fcb9fe903a063"
+      "ruta": "src/components/ui/Grupo.tsx",
+      "sha256": "cda01267f216103717896d4543c710d5712b97e20acde56e4da9f6b6d94a1965"
     },
     {
-      "ruta": "src/lib/destacados.ts",
-      "sha256": "1767f55d334d998a43f7a7eaa3869237ab30ff297282e826e14151c391556e62"
+      "ruta": "src/components/ui/Cabecera.tsx",
+      "sha256": "8c7f832fc394cfb7362d982d6c8d63e0a3284ea5f35630c026d2389e41adfbb1"
+    },
+    {
+      "ruta": "src/components/Destacados.module.css",
+      "sha256": "b8eb4df57a5c689cde0d3cd4c6a9adffd09f563c84249d1b3eaf5d277e34d1e1"
+    },
+    {
+      "ruta": "src/components/FilaEventos.tsx",
+      "sha256": "5d010b3e0e57ca63b096e18ce8fb658c74c4d3693a08c5f73041576398e44abe"
+    },
+    {
+      "ruta": "src/app/lugares/HojaLugares.tsx",
+      "sha256": "387b9d656ad6bf23a56b73d22fca662ff9db3b5258a40ceb2c9443c47b6970aa"
+    },
+    {
+      "ruta": "src/components/NavSecciones.tsx",
+      "sha256": "c2f7b5fd2eda74cadd3ba361926be04cb72f1b5787f9a0de605a4545301f76c7"
+    },
+    {
+      "ruta": "src/components/ui/Plantilla.module.css",
+      "sha256": "b8ee892a2a9ec37b076d01dba8e04772fc79c1f24a2c4fe262776fe339e3c54d"
     },
     {
       "ruta": "src/lib/agenda.ts",
       "sha256": "533d4a72b79d4fb8c02f79176b0bdb4d6d11fd1c4a7317e2b5a3661c53952c4f"
     },
     {
+      "ruta": "src/lib/destacados.ts",
+      "sha256": "1767f55d334d998a43f7a7eaa3869237ab30ff297282e826e14151c391556e62"
+    },
+    {
+      "ruta": "src/components/ui/Pestanas.tsx",
+      "sha256": "b9d146b48e0038bb5a64cf30ab3f982f1694a0fc8f4b08b6ff48516958f663c0"
+    },
+    {
+      "ruta": "src/components/BarraApp.tsx",
+      "sha256": "4c69eeddfa62da58f407ca3e68a830da8ec90784630b8d8a65f7161a6326ba03"
+    },
+    {
+      "ruta": "src/components/inicio/CarrilEventosCliente.tsx",
+      "sha256": "7fa707e511a1e9ce6a47ff3491e9017b322db809a38a337fca35d897f2e4cdd8"
+    },
+    {
+      "ruta": "src/app/lugares/FilaLugares.tsx",
+      "sha256": "86827c58dbf75b105923496a4aea9abab0a31758e85e27acfbf6bdf7997a0163"
+    },
+    {
       "ruta": "src/lib/lugares.ts",
       "sha256": "74fa71ca3433b2f65b62d3da4fa20ce9605a2a859f402ff861314b604a8994a7"
     },
     {
-      "ruta": "src/app/lugares/lugares.module.css",
-      "sha256": "9d74917d9c9c3bd3cec8a136e1c6dc109f0cc96b469d2fe5d82aa04897d27efb"
+      "ruta": "fa828b15/src/lib/ciudad.ts",
+      "sha256": "02de455082abc45df6e6895e30a3bdb59fc1c65eb40b362931acbfb847ad1f3f"
     },
     {
-      "ruta": "src/components/Destacados.tsx",
-      "sha256": "b66cb4b2853e7238e5531c8ac5d7211bf25092a3b71f408bb44b0054179e85d5"
+      "ruta": "src/components/ui/Boton.tsx",
+      "sha256": "b1a2e24d6a44262ff73bac4b8d2e931b1fa653d6fe6588d1da1fcb9fe903a063"
     },
     {
-      "ruta": "src/components/ui/Chip.tsx",
-      "sha256": "956c7be38793a9a1f0fa1d714741efd322cc10efa454b8f34dd502f734314f66"
-    },
-    {
-      "ruta": "src/components/ui/HojaFiltros.tsx",
-      "sha256": "af42ef0db4cc791e4e4a35553a32f088ea2ec47e9bbecb02138df75a006b6d82"
-    },
-    {
-      "ruta": "src/components/ui/Renglon.module.css",
-      "sha256": "887f8715c817b9d071fd17bb3a50e58a6f87e985b99bdb0d2e38031f8a94e124"
-    },
-    {
-      "ruta": "src/components/ui/Palanca.tsx",
-      "sha256": "0b22c1cffff95a59022afbffea5cacc9d32fa887d4bfe36e397496d7c53dbd97"
-    },
-    {
-      "ruta": "src/components/ui/Grupo.module.css",
-      "sha256": "c1eff15b2194d8bdb390906e4754818bc0deb80006945c5e0dc11f72602c2ca7"
-    },
-    {
-      "ruta": "fa828b15/src/components/Ciudad.tsx",
-      "sha256": "21d35a1631841621ba8985c6cc061ab258aa9dc94b7054dd7a87b62bcde14e61"
+      "ruta": "src/components/ui/Renglon.tsx",
+      "sha256": "39f39f9a1bc033541708eac5071dd98b0af975d33a165dab34a35755f10dfdca"
     },
     {
       "ruta": "src/components/ui/Pestanas.module.css",
       "sha256": "e4d8d1540304d6bde570912b36955a2e8d7999ab072140b8d5c6979229587fa0"
     },
     {
-      "ruta": "src/components/Armazon.module.css",
-      "sha256": "d313e582e275caf0453b158b62f01692254b357e1567e481bc0eabc98be6085f"
+      "ruta": "src/components/ui/Grupo.module.css",
+      "sha256": "c1eff15b2194d8bdb390906e4754818bc0deb80006945c5e0dc11f72602c2ca7"
     },
     {
-      "ruta": "src/lib/armazon.ts",
-      "sha256": "05e9fba719222deedb9d26524401ec09411cb6309a285164c7cb8a9303535d65"
+      "ruta": "src/components/Destacados.tsx",
+      "sha256": "b66cb4b2853e7238e5531c8ac5d7211bf25092a3b71f408bb44b0054179e85d5"
     },
     {
-      "ruta": "src/components/ui/Palanca.module.css",
-      "sha256": "9b7e1509acd4b7392cb4953a519bbfb964d9380227a5c28e40f1b1c81ce3221a"
+      "ruta": "fa828b15/src/components/Ciudad.tsx",
+      "sha256": "21d35a1631841621ba8985c6cc061ab258aa9dc94b7054dd7a87b62bcde14e61"
     },
     {
       "ruta": "fa828b15/src/lib/geo.ts",
@@ -143,28 +119,40 @@
       "sha256": "4483ab9e0869442a664fcef00dbc428f3b54dc7d10552196b701ed549ccaa8a3"
     },
     {
-      "ruta": "src/lib/hoja.ts",
-      "sha256": "e992c1420954208726783964e791d4c7ac0dc8ba10370d05979d4400be8a12d2"
+      "ruta": "src/components/Armazon.module.css",
+      "sha256": "d313e582e275caf0453b158b62f01692254b357e1567e481bc0eabc98be6085f"
+    },
+    {
+      "ruta": "src/lib/armazon.ts",
+      "sha256": "05e9fba719222deedb9d26524401ec09411cb6309a285164c7cb8a9303535d65"
     },
     {
       "ruta": "src/app/lugares/HojaLugares.module.css",
       "sha256": "cfd9efc59dfcfb36b77d1c3781076fcc4add3c277bc5d517b9d57d79ef829b3a"
     },
     {
+      "ruta": "src/lib/hoja.ts",
+      "sha256": "e992c1420954208726783964e791d4c7ac0dc8ba10370d05979d4400be8a12d2"
+    },
+    {
       "ruta": "src/lib/movimiento.ts",
       "sha256": "68fa1424ae5bf651ae5a83138ec7a428a0a791111fedde0a47ccc9cd4d7732d2"
     },
     {
-      "ruta": "src/components/ui/Boton.module.css",
-      "sha256": "c730f521a8a81829cc39ea76095aacc176dc79cbdc9f6d5ac862205c269e4e0e"
+      "ruta": "src/components/ui/Chip.tsx",
+      "sha256": "956c7be38793a9a1f0fa1d714741efd322cc10efa454b8f34dd502f734314f66"
     },
     {
-      "ruta": "src/components/ui/EnCamino.tsx",
-      "sha256": "9d5899370474f6d00bb0f46b71d9a20db371a3d647052f5995f718bb4e4265b0"
+      "ruta": "src/components/ui/HojaFiltros.tsx",
+      "sha256": "af42ef0db4cc791e4e4a35553a32f088ea2ec47e9bbecb02138df75a006b6d82"
     },
     {
-      "ruta": "src/components/NavSecciones.module.css",
-      "sha256": "e297216edf1ffa86d9edf4cd5a7151943910ac7ee12762fc9c8ebac950c81a13"
+      "ruta": "src/components/ui/Palanca.tsx",
+      "sha256": "0b22c1cffff95a59022afbffea5cacc9d32fa887d4bfe36e397496d7c53dbd97"
+    },
+    {
+      "ruta": "src/components/ui/Renglon.module.css",
+      "sha256": "887f8715c817b9d071fd17bb3a50e58a6f87e985b99bdb0d2e38031f8a94e124"
     },
     {
       "ruta": "src/components/ui/Imagen.tsx",
@@ -175,6 +163,22 @@
       "sha256": "b2bdc03deac5ae9f858f758dde265b6c69d2058fb27866981d5dee82cb362877"
     },
     {
+      "ruta": "src/components/ui/EnCamino.tsx",
+      "sha256": "9d5899370474f6d00bb0f46b71d9a20db371a3d647052f5995f718bb4e4265b0"
+    },
+    {
+      "ruta": "src/components/ui/Boton.module.css",
+      "sha256": "c730f521a8a81829cc39ea76095aacc176dc79cbdc9f6d5ac862205c269e4e0e"
+    },
+    {
+      "ruta": "src/lib/cuando.ts",
+      "sha256": "5a05b0f274653f8f0cf0803dc7968d2b07b80ba57dbea7de00a07743b1f1a1b5"
+    },
+    {
+      "ruta": "src/lib/eventos.ts",
+      "sha256": "d15db2abfa8a6a7c6fd613daaf2c8647e68f1c57d9f23e39dcff57447d4870fa"
+    },
+    {
       "ruta": "src/lib/fechas.ts",
       "sha256": "4483ab9e0869442a664fcef00dbc428f3b54dc7d10552196b701ed549ccaa8a3"
     },
@@ -183,32 +187,64 @@
       "sha256": "f12731b3f411f871e748c262a23a4e907d48ca159fc0d4415eda4716f4f71eb3"
     },
     {
-      "ruta": "src/lib/eventos.ts",
-      "sha256": "d15db2abfa8a6a7c6fd613daaf2c8647e68f1c57d9f23e39dcff57447d4870fa"
-    },
-    {
-      "ruta": "src/lib/cuando.ts",
-      "sha256": "5a05b0f274653f8f0cf0803dc7968d2b07b80ba57dbea7de00a07743b1f1a1b5"
-    },
-    {
-      "ruta": "src/lib/calendario.ts",
-      "sha256": "978032f6558fbea21177e32432e4cb8d9ceb5ac7be2e5e2beeaa0d787543b4db"
+      "ruta": "src/components/NavSecciones.module.css",
+      "sha256": "e297216edf1ffa86d9edf4cd5a7151943910ac7ee12762fc9c8ebac950c81a13"
     },
     {
       "ruta": "src/components/ui/BotonRenglon.tsx",
       "sha256": "4ed7b0bfe137e7fa8d78cbacb6478c908f437bc31137364732700632f933e737"
     },
     {
-      "ruta": "src/components/ui/HojaFiltros.module.css",
-      "sha256": "8de0a079e826f9208440a2375b383f553b22d1b1b6cc1ce941626e7ee5dfb17b"
+      "ruta": "src/lib/calendario.ts",
+      "sha256": "978032f6558fbea21177e32432e4cb8d9ceb5ac7be2e5e2beeaa0d787543b4db"
+    },
+    {
+      "ruta": "src/components/ui/BotonIcono.tsx",
+      "sha256": "e8b7c6087540db64d1e0ef6632873734b7daa36ab7cbfbf2681f6dcb4d1799dd"
+    },
+    {
+      "ruta": "src/components/ui/tiraDeChips.ts",
+      "sha256": "bfaadf9c3c24153454be622f00f230689059c8b293d99a94fefe3a8357699629"
+    },
+    {
+      "ruta": "src/components/ui/useTiraQueSigue.ts",
+      "sha256": "a433e5ea505838da0abf52c727b8aba5ce15e4e548d55bbc26926da8abecf766"
     },
     {
       "ruta": "src/components/ui/Cabecera.module.css",
       "sha256": "1f91ffd4ba6fd2a8e2a51979a8070f963946fcdd9c11d133d5ed8722f4286d8c"
     },
     {
-      "ruta": "src/components/ui/BotonIcono.tsx",
-      "sha256": "e8b7c6087540db64d1e0ef6632873734b7daa36ab7cbfbf2681f6dcb4d1799dd"
+      "ruta": "src/components/BarraApp.module.css",
+      "sha256": "83a7a4f589e5b3e9b21b5c24e5db851fa97bc44e4f66183190a53361e85ab5f8"
+    },
+    {
+      "ruta": "src/components/prestamoBarra.ts",
+      "sha256": "600b63a54de69ca6e9f48be852318517301e060887fce3e95d802c20d8aaa0ec"
+    },
+    {
+      "ruta": "src/components/ui/Logotipo.tsx",
+      "sha256": "951f154a14e0a67f5a7176ef4df7ec7dced2ea5e42740e4e0c710c002f57a6b0"
+    },
+    {
+      "ruta": "src/components/ui/Palanca.module.css",
+      "sha256": "9b7e1509acd4b7392cb4953a519bbfb964d9380227a5c28e40f1b1c81ce3221a"
+    },
+    {
+      "ruta": "src/lib/imagenOptima.ts",
+      "sha256": "3e26a559a004d91df919f5bdadb23d75a2a5292f98eee609143230361a14ecbd"
+    },
+    {
+      "ruta": "src/components/useResuelta.ts",
+      "sha256": "887e6b50a0b33cbafc91664e39e2fe0d19e7490bfc235cdaa8456e00cff6542f"
+    },
+    {
+      "ruta": "src/components/ui/Calendario.tsx",
+      "sha256": "f329bf8afec2bf446ec4b6c82635184128bc54e6a83dc6948ee2afa6166424f9"
+    },
+    {
+      "ruta": "src/components/ui/HojaFiltros.module.css",
+      "sha256": "8de0a079e826f9208440a2375b383f553b22d1b1b6cc1ce941626e7ee5dfb17b"
     },
     {
       "ruta": "src/components/ui/Hoja.tsx",
@@ -219,20 +255,44 @@
       "sha256": "992e1fd193e963d7b4949c71223c185fc8d0812d0e357fbdf9bc5ce4d1d9c8f4"
     },
     {
-      "ruta": "src/components/ui/tiraDeChips.ts",
-      "sha256": "bfaadf9c3c24153454be622f00f230689059c8b293d99a94fefe3a8357699629"
+      "ruta": "src/lib/geo.ts",
+      "sha256": "e12b459f890743431119fa1c3c7a4726b1f27bf8bf2737b25131892ec03981a2"
     },
     {
-      "ruta": "src/components/prestamoBarra.ts",
-      "sha256": "600b63a54de69ca6e9f48be852318517301e060887fce3e95d802c20d8aaa0ec"
+      "ruta": "src/lib/limites.ts",
+      "sha256": "1d908ee7b171077b718740ed310abf0f9e4f6deac56114973a7234f0082504b2"
     },
     {
-      "ruta": "src/components/ui/useTiraQueSigue.ts",
-      "sha256": "a433e5ea505838da0abf52c727b8aba5ce15e4e548d55bbc26926da8abecf766"
+      "ruta": "src/lib/formulario.ts",
+      "sha256": "2b44b667b8a4f0dda280aec299a8866aa4de2945aa18419618956fd9a88e3614"
     },
     {
-      "ruta": "src/components/BarraApp.module.css",
-      "sha256": "83a7a4f589e5b3e9b21b5c24e5db851fa97bc44e4f66183190a53361e85ab5f8"
+      "ruta": "src/lib/imagenes.ts",
+      "sha256": "ea2a18b08cef36b340439ef15b212cf90efeb952d8550c38f2a495c6dbb9ec09"
+    },
+    {
+      "ruta": "src/lib/ciudad.ts",
+      "sha256": "b877d40adcc89283eb9d70f7581b4a713becb29488890144723899121385f9a8"
+    },
+    {
+      "ruta": "src/lib/enlaces.ts",
+      "sha256": "a02393f0a85ff34f4b0412d4b8f6b413a65af3ca756285f7a5f8774ccfd03e29"
+    },
+    {
+      "ruta": "src/components/ui/BotonIcono.module.css",
+      "sha256": "f1562f711034b8d662c93cde81b4654d443099eb01e839e464e40a38d8f091a7"
+    },
+    {
+      "ruta": "src/lib/retencionSitio.ts",
+      "sha256": "5992cd4ea5e00780ef6301d9f788f8ce67eb72a2459b55bedb6d309ac5afa7ba"
+    },
+    {
+      "ruta": "src/lib/config.ts",
+      "sha256": "5add2e7df5cb51fb2289c3b9328ddbd47c700a19264c25e2845d98dc54a6151e"
+    },
+    {
+      "ruta": "src/components/ui/Logotipo.module.css",
+      "sha256": "ea7c16bd0310a0439e53c5e7d46b4bb2298285a5705d5b478bc6e434043a1d01"
     },
     {
       "ruta": "src/components/ui/Chip.module.css",
@@ -243,14 +303,6 @@
       "sha256": "76bdd019ed08b0ae43ba502ec4c9b3e1ba3ffad31eca581f15530614e47433d2"
     },
     {
-      "ruta": "src/components/ui/Logotipo.tsx",
-      "sha256": "951f154a14e0a67f5a7176ef4df7ec7dced2ea5e42740e4e0c710c002f57a6b0"
-    },
-    {
-      "ruta": "src/lib/imagenOptima.ts",
-      "sha256": "3e26a559a004d91df919f5bdadb23d75a2a5292f98eee609143230361a14ecbd"
-    },
-    {
       "ruta": "src/lib/deslizar.ts",
       "sha256": "9f40078ea2880ffc9e9815e84ca794858ac159fe5f11b05bb65e7c5133c5aa68"
     },
@@ -259,76 +311,32 @@
       "sha256": "918621126b581518ba704e07edf96b6ba8cfe9f87b67a028722b5c3071a48163"
     },
     {
-      "ruta": "src/components/Destacados.module.css",
-      "sha256": "b8eb4df57a5c689cde0d3cd4c6a9adffd09f563c84249d1b3eaf5d277e34d1e1"
-    },
-    {
-      "ruta": "src/lib/geo.ts",
-      "sha256": "e12b459f890743431119fa1c3c7a4726b1f27bf8bf2737b25131892ec03981a2"
-    },
-    {
-      "ruta": "src/lib/ciudad.ts",
-      "sha256": "b877d40adcc89283eb9d70f7581b4a713becb29488890144723899121385f9a8"
-    },
-    {
-      "ruta": "src/lib/limites.ts",
-      "sha256": "1d908ee7b171077b718740ed310abf0f9e4f6deac56114973a7234f0082504b2"
-    },
-    {
-      "ruta": "src/lib/enlaces.ts",
-      "sha256": "a02393f0a85ff34f4b0412d4b8f6b413a65af3ca756285f7a5f8774ccfd03e29"
-    },
-    {
-      "ruta": "src/lib/imagenes.ts",
-      "sha256": "ea2a18b08cef36b340439ef15b212cf90efeb952d8550c38f2a495c6dbb9ec09"
-    },
-    {
-      "ruta": "src/lib/formulario.ts",
-      "sha256": "2b44b667b8a4f0dda280aec299a8866aa4de2945aa18419618956fd9a88e3614"
-    },
-    {
-      "ruta": "src/components/ui/Calendario.tsx",
-      "sha256": "f329bf8afec2bf446ec4b6c82635184128bc54e6a83dc6948ee2afa6166424f9"
-    },
-    {
-      "ruta": "src/components/useResuelta.ts",
-      "sha256": "887e6b50a0b33cbafc91664e39e2fe0d19e7490bfc235cdaa8456e00cff6542f"
+      "ruta": "src/components/ui/Calendario.module.css",
+      "sha256": "4d0b7bb5770fb98bb037538861da9b93569d0e2259e735e582f7552958812a94"
     },
     {
       "ruta": "src/components/ui/SoloLector.module.css",
       "sha256": "e641fae51b55ff05d141e2cbe44db12d6ffe9ec84d42a86276ac075af5a884d0"
     },
     {
-      "ruta": "src/lib/config.ts",
-      "sha256": "5add2e7df5cb51fb2289c3b9328ddbd47c700a19264c25e2845d98dc54a6151e"
-    },
-    {
-      "ruta": "src/components/ui/BotonIcono.module.css",
-      "sha256": "f1562f711034b8d662c93cde81b4654d443099eb01e839e464e40a38d8f091a7"
-    },
-    {
       "ruta": "fa828b15/src/components/ui/Boton.tsx",
       "sha256": "b1a2e24d6a44262ff73bac4b8d2e931b1fa653d6fe6588d1da1fcb9fe903a063"
     },
     {
-      "ruta": "fa828b15/src/components/Ciudad.module.css",
-      "sha256": "5dbb4c6a2c5e7660af5c3f85b5a12d22f3b21bc88794faa054f1a946f332f658"
+      "ruta": "fa828b15/src/components/ui/Chip.tsx",
+      "sha256": "956c7be38793a9a1f0fa1d714741efd322cc10efa454b8f34dd502f734314f66"
     },
     {
       "ruta": "fa828b15/src/components/ui/Buscador.tsx",
       "sha256": "1b29bf72063065ea8c76e8978935f5f9d876bd033a933bc30aaf4c2349bc7d27"
     },
     {
-      "ruta": "fa828b15/src/components/ui/Hoja.module.css",
-      "sha256": "95bb79888754860c7721ba2930a9eb534d06cee349d1fb801971980170cb2d29"
+      "ruta": "fa828b15/src/components/Ciudad.module.css",
+      "sha256": "5dbb4c6a2c5e7660af5c3f85b5a12d22f3b21bc88794faa054f1a946f332f658"
     },
     {
       "ruta": "fa828b15/src/components/ui/Renglon.module.css",
       "sha256": "9d8481850d1aaf070728189e61d185e3ba01327f22ac64695a0af128a46b24ea"
-    },
-    {
-      "ruta": "fa828b15/src/components/ui/Chip.tsx",
-      "sha256": "956c7be38793a9a1f0fa1d714741efd322cc10efa454b8f34dd502f734314f66"
     },
     {
       "ruta": "fa828b15/src/components/ui/Iconos.tsx",
@@ -339,8 +347,8 @@
       "sha256": "c314609a8a230981306a739d5488831c37700ac1a9c14a8f24bc65e4b78baf19"
     },
     {
-      "ruta": "src/lib/retencionSitio.ts",
-      "sha256": "5992cd4ea5e00780ef6301d9f788f8ce67eb72a2459b55bedb6d309ac5afa7ba"
+      "ruta": "fa828b15/src/components/ui/Hoja.module.css",
+      "sha256": "95bb79888754860c7721ba2930a9eb534d06cee349d1fb801971980170cb2d29"
     },
     {
       "ruta": "src/components/CarrilEsqueleto.module.css",
@@ -349,10 +357,6 @@
     {
       "ruta": "src/components/ui/Esqueleto.module.css",
       "sha256": "eb94426260a7ba5e0968a4247bf40913d8956192e5b96d1c33fa39ebe9682abb"
-    },
-    {
-      "ruta": "src/components/ui/Logotipo.module.css",
-      "sha256": "ea7c16bd0310a0439e53c5e7d46b4bb2298285a5705d5b478bc6e434043a1d01"
     },
     {
       "ruta": "fa828b15/src/components/ui/Boton.module.css",
@@ -365,10 +369,6 @@
     {
       "ruta": "fa828b15/src/components/ui/Buscador.module.css",
       "sha256": "8dba3ae40d99a1ee83909c0e4eb25e717088867f667950b94d52d40ccbf7395c"
-    },
-    {
-      "ruta": "src/components/ui/Calendario.module.css",
-      "sha256": "4d0b7bb5770fb98bb037538861da9b93569d0e2259e735e582f7552958812a94"
     },
     {
       "ruta": "fa828b15/src/components/ui/Chip.module.css",
@@ -393,7 +393,14 @@
   ],
   "autonomo": true,
   "cssSinCambios": true,
-  "htmlSha256": "5b266aef1cd5d68b2798723d3ecd5bec1ee93356ca521bc48578eb300b1eba87",
+  "htmlSha256": "fd24ef51457af5503bd6502eb0199fc0ab9d6d27579b0937bb17c7c80d03a40f",
+  "cssFuentesIntactas": true,
+  "excepcionVisualPrototipo": {
+    "gestor": "143, confirmación145",
+    "selector": ".sola .sinFoto::before",
+    "declaraciones": "width:100%; aspect-ratio:5 /3; max-height:var(--tarjeta-sola-foto)",
+    "produccionModificada": false
+  },
   "recursosIncrustados": [
     {
       "ruta": "public/logotipo.svg",
