@@ -7,6 +7,8 @@ import { type Destacado } from "./destacados";
 import { filtroSinPasar } from "./fechas";
 import { clienteServidor } from "./supabase/servidor";
 
+const TOPE_AGENDA = 300;
+
 type Fila = Omit<EventoAgenda, "lugar" | "van"> & {
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
 };
@@ -52,11 +54,13 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
   const [e, s, destacados] = await Promise.all([
-    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, lugar:lugares(nombre, portada)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(300), "eventos", true),
+    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, lugar:lugares(nombre, portada)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? leer(supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000), "seguimientos propios", true) : Promise.resolve(null),
     leer<Destacado>(supabase.rpc("tira_destacados", { p_tipo: "eventos", p_ciudad: ciudad.nombre }), "destacados"),
   ]);
+  // Señal preventiva para abrir la pieza de filtros/paginación antes de alcanzar el corte (OL-268).
+  if ((e?.length ?? 0) >= TOPE_AGENDA * 0.9) console.warn("[agenda] capacidad: lectura al 90% del tope");
   const ids = (e ?? []).map((x) => x.id as string);
   // Cuántos van y, con sesión, qué decidió la persona en esos eventos (se ve en el renglón y cambia al deslizar).
   const [a, m] = await Promise.all([
