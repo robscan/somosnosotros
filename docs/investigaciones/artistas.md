@@ -23,6 +23,12 @@ Fuentes: [ficha del artista](../../src/app/artistas/[id]/page.tsx), [acceso a ev
 
 La [propuesta 44 de novedades](../rediseno/44-novedades-artista.md) es un antecedente distinto. Su cabecera aún dice propuesta, pero el código actual ya consulta y muestra `novedades_artista`. Esta investigación no la vuelve a encargar ni modifica el documento anterior; una publicación de audio o video no acredita por sí misma una participación histórica.
 
+### Conexión con el primer avance de actividades
+
+La [propuesta 42](../rediseno/42-festivales.md), entregada en [bitácora 186](../bitacora/2026/09/186-festivales.md), incluía varias salas y talleres/conciertos del EIMIM. Su aprendizaje útil para trayectoria es conservar identidad por acto. Estar vinculado al marco no acredita participación en todos sus actos, y las distintas salas necesitan papeles de exposición propios.
+
+La [síntesis y evolución de Eventos](eventos.md#3-antecedentes-de-exposiciones-talleres-y-festivales) distingue esa propuesta detenida del soporte temporal ya implementado. Este proyecto toma de Eventos la unidad concreta, de [Lugares](lugares.md) la sede y disponibilidad, y añade crédito, fuente y formación. Un intervalo de exposición o curso no genera un crédito por cada día. El [mapa de antecedentes](README.md#antecedentes-conectados) permite consultar las fuentes sin asumir que la firma del grafo aprobó el modelo de festivales.
+
 ## 3. Qué significa hoy el KPI «Lugares»
 
 **Cuenta los `lugar_id` distintos de las primeras 30 fechas visibles del artista que todavía no han terminado según su fin efectivo.**
@@ -115,3 +121,5 @@ Cada pantalla futura pasa por prototipo y aprobación antes del código. Las pru
 Los papeles y la procedencia son comunes a [Eventos](eventos.md) y [Lugares](lugares.md); se implementan una vez. La formación concreta alimenta créditos individuales y estadísticas del espacio. El archivo permitido debe compartir las mismas reglas de visibilidad en pantalla y exportaciones.
 
 Prioridad sugerida: relaciones confiables y trayectoria consultable antes de redactar currículos con IA. Los riesgos principales son homónimos, fuentes contradictorias, convertir anuncios en hechos, atribuir toda la historia de un grupo a sus integrantes actuales y conceder permisos por capturar una ficha. Esta propuesta no introduce puntuaciones de carrera ni verificación de asistentes.
+
+Para un agente que retome esta pieza: seguir la [ruta de lectura común](README.md#ruta-de-lectura-para-un-agente-nuevo), comprobar el significado vigente del KPI en el código y elegir una etapa. Las fuentes históricas explican el origen; las reglas públicas, permisos y estado de implementación se revalidan en la base asignada.

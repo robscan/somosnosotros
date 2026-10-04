@@ -23,6 +23,14 @@ Fuentes: [modelo de lugar](../../src/lib/lugares.ts), [formulario](../../src/app
 
 No existe hoy una sección pública de artistas históricos ni un informe periódico con cobertura declarada. El proyecto de [Artistas](artistas.md) documenta también el límite del acceso público a eventos pasados.
 
+### Conexión con el primer avance de exposiciones y talleres
+
+El primer esfuerzo, [modelo 42](../rediseno/42-festivales.md) y [entrega 186](../bitacora/2026/09/186-festivales.md), trató la inauguración de varias salas y talleres dentro de un festival. No incorporó horarios del lugar ni el periodo visitable posterior. Su contenido original está conservado en esta rama; [Eventos](eventos.md#3-antecedentes-de-exposiciones-talleres-y-festivales) compila alternativas, preguntas y ampliaciones actuales.
+
+La [bitácora 247 / OL-218](../bitacora/2026/09/247-calendario-codigo.md) sí corrigió el filtro de Lugares para un evento que ocupa varios días. La [261 / OL-233](../bitacora/2026/09/261-ui-raices.md) documenta la evolución de los rangos de Agenda. Ambas sirven como soporte reutilizable; ninguna prueba apertura real de un museo ni sesiones de un taller.
+
+La [carga institucional de octubre](../agendas/2026-10/carga-2026-10-01.md) muestra aperturas puntuales registradas en Museo del Ferrocarril y casas de cultura. Son ejemplos para analizar por qué después de inaugurar puede faltar actividad visible, sin inventar una duración que la fuente no dio. Este proyecto completa el lado del espacio: disponibilidad y consulta. [Artistas](artistas.md) completa quién hizo qué y la acreditación histórica.
+
 ## 3. Saber qué sigue activo
 
 La inauguración permanece como momento concreto. La exposición tiene su propio periodo de visita y una relación «inaugurada por» con ese momento. De ese modo, al pasar la apertura, el lugar puede seguir mostrando la exposición hasta el cierre confirmado. Un mismo acto puede inaugurar varias salas; no se duplica el acto para cada exposición.
@@ -117,3 +125,5 @@ Las consultas se filtran antes de paginar. Las listas completas no dependen del 
 [Eventos](eventos.md) aporta exposiciones, sesiones y programas. [Artistas](artistas.md) aporta papeles, procedencia, realización, archivo permitido y formación concreta. Lugares añade horarios reutilizables y cobertura/informes, sin duplicar esas relaciones.
 
 Se preparan datos para mini tours; no se construye aquí planificación de rutas, seguimiento de visitantes ni evaluación del valor cultural de los lugares. Los puntos pendientes son el criterio de realización, la autoridad para confirmar horarios, el periodo de cobertura comprobable y las unidades de cada informe.
+
+Para retomar: usar la [ruta de lectura](README.md#ruta-de-lectura-para-un-agente-nuevo) y el [mapa de antecedentes](README.md#antecedentes-conectados), verificar consultas y permisos en la base asignada y reservar una etapa. No convertir una fecha de inauguración importada en horario de visita ni importar la UI de un calendario histórico como solución nueva.

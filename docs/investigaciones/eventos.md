@@ -23,17 +23,57 @@ Fuentes: [lectura de cartel](../../src/lib/cartel.ts), [formulario](../../src/ap
 
 La conversión actual puede ofrecer 19:00 o gratis cuando falta información. Esos valores de ayuda no deben convertirse en hechos extraídos ni propagarse a todas las actividades de un programa. El esquema de participantes y su validación actual tienen un máximo de seis; un programa o formación mayor necesita revisar ese contrato, sin truncar silenciosamente.
 
-## 3. Antecedente de festivales
+## 3. Antecedentes de exposiciones, talleres y festivales
 
 El gestor confirmó el primer esfuerzo en la rama `festivales-modelo`: OL-151, [bitácora 186](../bitacora/2026/09/186-festivales.md) y [propuesta 42](../rediseno/42-festivales.md), incorporada documentalmente por PR #183. El founder la detuvo el 23 de septiembre de 2026: «tengo dudas, detén ese proyecto hasta que piense al respecto».
 
-Ese documento comparó evento padre, programa plano y etiquetas, y recomendó padre con actos hijos. Es un antecedente útil, **no un modelo aprobado**. La nueva investigación conserva la identidad y ficha de cada actividad, pero propone revisar tres puntos:
+### Primer avance: qué entregó y qué dejó abierto
+
+La propuesta original y su bitácora ya están en esta rama y coinciden con `festivales-modelo` en `9f443633`. La creación fue `5cb9c74f`; la suspensión se registró en `43856a94`. No es necesario mezclar la rama antigua: la entrega consistía en documentos, sin código ni migraciones.
+
+Los cinco casos fueron Fotovisión, inauguración de varias salas, EIMIM con talleres y conciertos, cine de varios días en una sede y cine con varias sedes. Las fechas y ejemplos corresponden a las fuentes de entonces; no se presentan como programación actual verificada.
+
+| Alternativa del primer avance | Qué resolvía | Límite identificado entonces |
+| --- | --- | --- |
+| A. Evento padre y actos hijos | Ficha, sede, horario, «Voy» y compartir propios por actividad; recomendación original | Registro padre/actos, agrupación y reglas para ocultar o borrar el marco |
+| B. Evento único con programa plano | Un solo registro en agenda | Sin identidad, asistencia o compartir propios por acto |
+| C. Agrupación mediante festival y tabla puente | Actividades independientes vinculadas a un marco | Nuevo registro/ficha de festival y decisión de presentación en agenda |
+
+El primer avance también propuso extraer `actos` y nombre del festival desde la fuente y confirmarlos con la persona. Su alta sugería un renglón opcional «¿Es parte de un festival?». Esa interacción no se hereda como decisión: la petición actual prioriza deducción y captura conjunta antes de añadir controles.
+
+La inauguración de salas y los talleres del EIMIM estaban contemplados como actos; **no se desarrolló un modelo específico de exposición visitable tras la apertura, horarios semanales ni curso con sesiones separadas**. Esta investigación incorpora esas brechas. La búsqueda focalizada de documentación e historial no localizó otra entrega específica anterior que las resolviera.
+
+Las tres preguntas originales siguen conectadas con el nuevo plan:
+
+| Pregunta heredada | Propuesta actual para revisarla | Sigue pendiente |
+| --- | --- | --- |
+| ¿El marco de una inauguración necesita horario propio? | Registrar el acto de apertura con su horario y relacionarlo con exposiciones; distinguirlo de un marco agrupador | Modelo final y presentación de un acto que abre varias salas |
+| ¿Un acto hereda sede del padre? | Reutilizarla como propuesta y conservar sede confirmada por acto | Regla cuando cambia la sede del marco o hay información contradictoria |
+| ¿Quién registra actos dentro de un festival ajeno? | Capturar sin conceder edición del marco; confirmar la asociación según permisos | Autoridad de asociación y corrección |
+
+La nueva investigación conserva la identidad y ficha de cada actividad y propone revisar además:
 
 - Capturar un programa en conjunto, evitando registrar primero un padre y después repetir formularios por acto.
 - Al filtrar, mostrar los actos que cumplen el criterio dentro del marco del festival; una sola fila del festival no debe ocultar coincidencias por día, artista o disciplina.
 - Distinguir «forma parte de» de «inaugura»: una inauguración puede abrir varias exposiciones y una exposición puede pertenecer a un festival. Una sola columna padre no cubre por sí sola horarios, papeles y evidencia.
 
 Estas diferencias y la reanudación para prototipo/código requieren decisión del founder. [Cola C5 y C6](../ops/COLA_DE_PIEZAS.md).
+
+### Capacidad temporal que sí se implementó después
+
+La [bitácora 247, OL-218](../bitacora/2026/09/247-calendario-codigo.md) documenta un fallo real: un evento del 6 al 8 no aparecía al elegir el 7. Se corrigió el filtro de Agenda y Lugares para considerar días intermedios. Es soporte general de intervalos, no la implementación de la propuesta 42 ni una solución de horarios de visita.
+
+Después, la [bitácora 261, OL-233](../bitacora/2026/09/261-ui-raices.md) incorporó rangos de consulta y reemplazó `ocupaDia` por `ocupaRango`. El código actual en [calendario](../../src/lib/calendario.ts) y [agenda](../../src/lib/agenda.ts) es la referencia para filtrar y agrupar respecto a `desde`. La observación histórica de 247 sobre agrupación bajo el inicio debe leerse junto a esa evolución; no recuperar una función retirada.
+
+**Qué se reutiliza:** intervalo, zona, filtro por solapamiento, fichas existentes y protección de gestos. **Qué se propone añadir:** disponibilidad real, sesiones, agrupación con identidad, papeles/procedencia y revisión conjunta. La separación evita encargar otra vez lo construido o declarar terminado lo que solo se propuso.
+
+### Casos registrados para aprender y comprobar
+
+La [carga institucional de octubre](../agendas/2026-10/carga-2026-10-01.md) contiene inauguraciones como Customart Toy, Xantolo y Amueblado del alma, además de clases magistrales de guitarra en fechas distintas. Sirven para revisar la brecha: una apertura no informa por sí misma hasta cuándo se visita; dos clases con título parecido no prueban que sean sesiones de una sola inscripción. Las [fuentes de agendas](../ops/AGENDAS_CULTURALES.md) ayudan a localizar material para aclararlo.
+
+Para reutilizar estos casos en pruebas o prototipos, separar hechos del registro y datos hipotéticos del ejemplo. No añadir finales, horarios o relaciones a los registros reales solo para completar una demostración.
+
+**Conexión entre proyectos:** [Lugares](lugares.md) reutiliza periodo y sesiones para actividad vigente y añade horarios; [Artistas](artistas.md) reutiliza cada actividad concreta para crédito y trayectoria. «Forma parte de», «inaugura», «expone» e «imparte» conservan sentidos diferentes. La [ruta de lectura](README.md#ruta-de-lectura-para-un-agente-nuevo) conecta el criterio firmado, el primer modelo, su entrega y el soporte posterior.
 
 ## 4. Capacidad propuesta antes de controles nuevos
 
@@ -121,3 +161,7 @@ Las pantallas futuras se verifican con estados de carga, vacío, error y éxito;
 Los principales riesgos son falsos programas deducidos solo del título, duplicados entre agendas y carteles, cierres desconocidos, horas/precios sugeridos tratados como hechos, avisos repetidos por cada acto y permisos de edición demasiado amplios. Se resuelven mediante evidencia, revisión conjunta y contratos explícitos, no con más preguntas permanentes en el formulario.
 
 Quedan pendientes del founder el modelo definitivo de agrupación, el alcance de convocatorias, quién confirma actos de otros publicadores y la asistencia a talleres con varias sesiones. Cualquier ampliación a antecedentes de fecha parcial o actividades sin hora requiere conciliar la regla vigente «un evento tiene fecha y hora»; no se modifica aquí la [definición](../DEFINICION.md).
+
+## 10. Qué comprobar al retomar
+
+Partir del [índice y estado de antecedentes](README.md#antecedentes-conectados), revalidar la reserva del gestor y leer la etapa elegida. Para captura, contrastar [cartel](../../src/lib/cartel.ts), [gestos](../../src/app/eventos/gestosFlyer.ts) y [formulario](../../src/app/eventos/FormularioEvento.tsx); para disponibilidad, [calendario](../../src/lib/calendario.ts), [agenda](../../src/lib/agenda.ts) y el contrato de [Lugares](lugares.md). Antes de créditos o conteos, leer las reglas de [Artistas](artistas.md). No asumir permiso de implementar por encontrar un SQL propuesto en el doc 42.

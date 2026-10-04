@@ -64,3 +64,33 @@ Investigación documentada para revisión del founder. No implica aprobación
 del modelo ni reanudación de implementación. El gestor recibe la entrega local
 con SHA. Cuando el founder decida abordar una etapa o publicar los documentos,
 el gestor revisa la base vigente y reserva el alcance correspondiente.
+
+## Continuidad: conectar el primer avance (4 de octubre de 2026)
+
+El founder pidió incluir en la misma rama el primer avance de exposiciones y
+talleres, mediante contenido o referencias, y facilitar aprendizaje a agentes
+nuevos. Se actualizan los mismos cuatro documentos ya asignados, sin ampliar
+propiedad ni editar los originales históricos.
+
+Se comprobó en Git: doc 42 y bitácora 186 coinciden entre esta rama y
+`festivales-modelo` (`9f443633`). La propuesta nació en `5cb9c74f` y su
+suspensión quedó en `43856a94`; ya está integrada documentalmente. No requiere
+cherry-pick ni incorporación de código. La búsqueda focalizada no localizó otra
+entrega específica de periodos visitables o talleres por sesiones.
+
+El índice reúne ruta de lectura, estados de antecedentes y consulta por pregunta.
+Eventos compila los cinco casos, las tres alternativas y preguntas originales,
+lo reutilizable y las diferencias de la petición actual. Conecta propuesta
+42/186 con prototipo 245, implementación 247 (OL-218), evolución 261 (OL-233),
+fuentes de agendas y casos importados de octubre. Artistas y Lugares explican
+cómo ese antecedente se relaciona con créditos, periodos, horarios y conteos.
+
+Se distingue criterio firmado, propuesta detenida, capacidad implementada y dato
+importado. Las fuentes antiguas permanecen como referencia única; no se
+duplican ni se altera su estado. La bitácora 247 no es OL-247. El código vigente
+usa `ocupaRango`; no se recupera la función retirada `ocupaDia`.
+
+Verificación: destinos y anclas de enlaces, conexión entre los cuatro documentos,
+igualdad de los archivos históricos y diff solo documental. Sin build, suites,
+prototipos, migraciones ni publicación. El aviso por la interfaz del gestor
+sigue condicionado a desbloquear el Mac; no se considera enviado.
