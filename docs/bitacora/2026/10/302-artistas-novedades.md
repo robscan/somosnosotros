@@ -30,7 +30,7 @@ La revisión visual detectó el sello de la ficha estirado por la rejilla de avi
 
 Gestor III revisó `ad64310f` y aceptó la regla, el orden, los sellos de tarjeta/lista/ficha y la llegada a la novedad. Devolvió un único desvío de canon: la ciudad de la cabecera era una píldora violeta de muestra, sin el pin ni la flecha actuales. Se incorporó el `ChipCiudad` real en Inicio y Artistas, con su CSS sin cambios. Ubicación fija sintética, sin permiso ni GPS. Se regeneraron y abrieron las 14 capturas afectadas a 320/390; se reutilizaron las ocho capturas de fichas intactas. Se actualizó el inventario de fuentes (92) y se verificaron de nuevo los mismos 20 estados; no se ejecutó ninguna suite de la app.
 
-El laboratorio del HTML abre, cambia escenarios y se puede cerrar; su selector tiene un nombre accesible explícito. Ver artistas y Atrás a la lista funcionan. Ningún hijo de los renglones rebasa el enlace contenedor. Esta entrega vuelve al gestor antes de mostrarla al founder.
+El laboratorio del HTML abre, cambia escenarios y se puede cerrar; su selector tiene un nombre accesible explícito. Ver artistas y Atrás a la lista funcionan. Ningún hijo de los renglones rebasa el enlace contenedor. Gestor III aceptó el candidato corregido `ca665a7bc27dc7324f52569f23a007be96d8005e`: comprobó las capturas de carril a 390 y lista a 320, los sellos y el truncado del nombre largo. Autorizó presentarlo al founder con la guía; el HTML y sus pruebas quedan congelados. Se preparó la vista local `http://127.0.0.1:8275/artistas-novedades.html`, y la apertura del prototipo y la guía quedó encolada en esta tarea de Codex. Se solicitó la firma mediante pregunta accionable; pendiente de respuesta.
 
 ## Verificación y alcance de la evidencia
 
@@ -42,4 +42,4 @@ El laboratorio del HTML abre, cambia escenarios y se puede cerrar; su selector t
 - Cero errores de navegador y cero solicitudes HTTP externas; datos, servicios y navegación simulados.
 - Solo documentación/prototipo: sin build de Next ni suites de la app. Revisión de diff, enlaces y alcance antes del commit.
 
-**Estado:** listo para revisión final de Gestor III; después, presentación y firma del founder. No se afirma que la funcionalidad exista en producción. No hay migración ni propuesta SQL final: antes de fase 2, revisar consulta, permisos, costo y caché con el gestor. Safari físico todavía no probado para esta propuesta.
+**Estado:** prototipo aceptado por Gestor III en `ca665a7b` y presentado al founder; pendiente de su firma visual. No se afirma que la funcionalidad exista en producción. No hay migración ni propuesta SQL final: antes de fase 2, revisar consulta, permisos, costo y caché con el gestor. Safari físico todavía no probado para esta propuesta.
