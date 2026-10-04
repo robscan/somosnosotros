@@ -85,3 +85,46 @@ Evidencia persistente (guiones, PNG, JSON y logs):
 `/Users/apple-1/.codex/visualizations/2026/10/02/01a0fece-65fd-79e3-a64d-296a4b8fa13c/inicio-semana-nuevos/`.
 Pendientes preview del candidato, suite completa en CI con las dos excepciones
 Linux ya autorizadas en OL265, entrega consolidada y ventana del gestor.
+
+## Revisión del primer candidato y decisión posterior del founder
+
+Primer candidato `296c50df`, PR317: CI37174739779 **success**, 215 componentes
+inventariados, 213 correctos, 2 excepciones Linux de OL265, 0 fallos, 98,74 s.
+Preview6836450214 correcto sobre ese SHA. Inicio real muestra20 Nuevos y el enlace
+abre Agenda/Nuevos; sin errores del navegador. Producción anterior tenía81 tarjetas
+al comparar (el inventario vivo ya difiere de94 en la auditoría). No es una medición
+de transferencia o factura.
+
+El gestor revisó y aceptó H06/H08. Antes de publicar comunica la decisión del founder
+en su tarea: «Acepto tus recomendaciones», aprobando un tope de12 en «Artistas con
+eventos esta semana». **Sustituye la espera de decisión indicada arriba.** Se incorpora
+al mismo PR y OL266; todavía no se publica el primer candidato.
+
+La exclusión de quienes ya aparecen en Destacados sucede en `src/app/page.tsx`;
+cortar antes en la carga semanal podría dejar una tira vacía aunque existan otros
+candidatos. El gestor amplía expresamente solo ese bloque y sus importaciones para
+conectar `seleccionarArtistasSemana` (helper puro de eventosSemana). Conserva
+`Promise.all`: primero se quitan los destacados y luego se corta con la constante
+existente `TOPE_ARTISTAS_DESTACADOS` (12), antes de entregar al cliente. Sin nuevas
+consultas, SQL, modificaciones de Lugares o cargarArtistasDestacados.
+
+Regresión: 30 artistas dan12; si los primeros12 están destacados, salen los12
+siguientes; si quedan menos se conservan, si todos están destacados no sale ninguno.
+La lista de entrada y el carril de Lugares conservan30. 23 pruebas focalizadas
+correctas y1837 unitarias en133 archivos; tipos y lint correctos. Nuevo build6s y
+medir focalizado de Inicio,8 combinaciones,14s sin novedades; la CI hará las96.
+Se reutilizan las9 pruebas de Agenda/Nuevos y capturas del mismo código H06/H08.
+
+Ventana del gestor: con CI verde sobre el candidato ampliado, unir y verificar en
+Production Nuevos<=20 y artistas<=12, comunicar SHA y cerrar documentación.
+
+QA adicional del candidato ampliado: app compilada con30 artistas inventados y los
+12 primeros destacados devuelve exactamente los artistas13…24 en la tira semanal,
+mantiene20 Nuevos y «Ver artistas» abre el directorio (36 artistas en el fixture).
+Cero errores de página; capturas `artistas-390.png` y `directorio-artistas-390.png`
+abiertas y revisadas. Se mantienen las tarjetas redondas, su fecha y el enlace.
+El primer intento del guion de QA detectó que el respaldo devuelve vacío para
+la RPC de destacados de artistas; completar ese doble temporal con los12 elegidos
+resolvió el desajuste, sin modificar producto ni el respaldo versionado. Log
+conservado como `qa-artistas-fixture-incompleto.log`, resultado final en
+`qa-artistas.json`. Procesos propios finalizados.
