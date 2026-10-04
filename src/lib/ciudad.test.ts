@@ -98,15 +98,42 @@ describe("ciudad", () => {
 
 describe("hoja de ciudades (OL-270)", () => {
   const slp = CIUDAD_INICIAL;
-  const qro = { ...slp, slug: "queretaro", nombre: "Querétaro", centro: { lat: 20.59, lng: -100.39 } };
-  const gdl = { ...slp, slug: "guadalajara", nombre: "Guadalajara", centro: { lat: 20.67, lng: -103.35 } };
+  const qro = { ...slp, slug: "queretaro", nombre: "Querétaro", centro: { lat: 20.59, lng: -100.39 }, centroConocido: true };
+  const gdl = { ...slp, slug: "guadalajara", nombre: "Guadalajara", centro: { lat: 20.67, lng: -103.35 }, centroConocido: true };
   const catalogo = [gdl, slp, qro];
   const lejos = { lat: 40.4, lng: -3.7 };
+  it("la ciudad inicial sigue con centro conocido aunque un doble anterior no lleve la marca", () => {
+    const filas = filasDeCiudades(qro, [slp], slp.centro, "eventos");
+    expect(filas[0]).toMatchObject({ distancia: 0, estasAqui: true });
+    expect(ciudadInicialCercana(qro, [slp], slp.centro, "eventos", false, false)?.slug).toBe(slp.slug);
+    expect(altaLejosDeCiudades(qro, [slp], slp.centro, "eventos")).toBeNull();
+  });
+  it("identifica centros conocidos sin cambiar el respaldo de una ciudad sin lugares", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }]);
+    expect(ciudades.find(c => c.slug === slp.slug)).toMatchObject({ centroConocido: true, centro: slp.centro });
+    expect(ciudades.find(c => c.slug === qro.slug)).toMatchObject({ centroConocido: true, centro: qro.centro });
+    expect(ciudades.find(c => c.slug === "aguascalientes")).toMatchObject({ centroConocido: false, centro: slp.centro });
+  });
+  it("una ciudad sin lugares no da distancia ni aquí y queda detrás de los centros conocidos", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }, { ciudad: "Puebla" }]);
+    const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
+    const filas = filasDeCiudades(aguascalientes, ciudades, slp.centro, "eventos");
+    expect(filas.map(f => f.ciudad.slug)).toEqual([slp.slug, qro.slug, "aguascalientes", "puebla"]);
+    expect(filas.filter(f => !f.ciudad.centroConocido).every(f => f.distancia === null && !f.estasAqui)).toBe(true);
+    expect(ciudadInicialCercana(qro, [aguascalientes], slp.centro, "eventos", false, false)).toBeNull();
+  });
+  it("la oferta de alta ignora centros desconocidos dentro del catálogo ya filtrado", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }]);
+    const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
+    const soloDesconocida = ciudadesDeHoja(aguascalientes, ciudades, "eventos");
+    expect(altaLejosDeCiudades(aguascalientes, soloDesconocida, slp.centro, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" });
+    expect(altaLejosDeCiudades(aguascalientes, ciudades, slp.centro, "eventos")).toBeNull();
+  });
   it("filtra cada catálogo por contenido y siempre mantiene la actual vacía", () => {
     const datos = [
-      { ...slp, lugares: 0, eventos: 0, zona: "America/Mexico_City" },
-      { ...qro, lugares: 0, eventos: 1, zona: "America/Mexico_City" },
-      { ...gdl, lugares: 1, eventos: 0, zona: "America/Mexico_City" },
+      { ...slp, lugares: 0, eventos: 0, zona: "America/Mexico_City", centroConocido: true },
+      { ...qro, lugares: 0, eventos: 1, zona: "America/Mexico_City", centroConocido: false },
+      { ...gdl, lugares: 1, eventos: 0, zona: "America/Mexico_City", centroConocido: true },
     ];
     expect(ciudadesDeHoja(slp, datos, "eventos").map(c => c.slug)).toEqual([slp.slug, qro.slug]);
     expect(ciudadesDeHoja(slp, datos, "lugares").map(c => c.slug)).toEqual([slp.slug, gdl.slug]);

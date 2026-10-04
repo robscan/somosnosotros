@@ -54,7 +54,7 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nAguascalientes\n0 km · 1 evento\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos"
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento"
   },
   {
     "estado": 4,
@@ -92,7 +92,7 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nAguascalientes\n178 km · 1 evento\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAgregar un evento donde estás"
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento\nAgregar un evento donde estás"
   },
   {
     "estado": 1,
@@ -149,7 +149,7 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nAguascalientes\n0 km · 1 evento\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos"
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento"
   },
   {
     "estado": 4,
@@ -187,7 +187,7 @@
       ]
     },
     "errores": [],
-    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nAguascalientes\n178 km · 1 evento\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAgregar un evento donde estás"
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento\nAgregar un evento donde estás"
   },
   {
     "webkit": true,

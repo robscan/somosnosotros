@@ -2,7 +2,7 @@
  *  Filtros, dentro de la `Cabecera` real y con sus estilos. Cubre: los atajos de Cuándo salen de hoy y el botón dice cuántos
  *  eventos da cada uno (o «Sin eventos» y apagado); «Elegir fecha…» abre el calendario en la misma hoja, con un punto en
  *  los días con eventos, un día con un toque y un rango con dos; Filtros cuenta lo gratis y lo que se sigue y lo puesto sale
- *  como chip con su ✕, y «Solo lo que sigo» solo se ofrece con sesión; «Dónde estás» ofrece «Otra ciudad» con sugerencias que se filtran sin acentos; y la fila se desliza y
+ *  como chip con su ✕, y «Solo lo que sigo» solo se ofrece con sesión; la hoja de ciudades abre la lista directa y elige con replace; y la fila se desliza y
  *  avisa que sigue cuando los chips no caben (H-11). Y (ajuste del founder, 2026-09-30) lo que se pone en la fila se nota: el chip entra con el
  *  resorte y la fila se desliza para mostrarlo, Cuándo se anima en su sitio con su valor, y al quitar uno sale cerrando el hueco antes de quitarse
  *  el filtro; lo que trae la pantalla al abrir y «reducir movimiento» no se animan. Cerrar una hoja sin aplicar no cambia nada.
@@ -31,7 +31,7 @@ let browser, server, dir, origin;
 
 const mocks = {
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
-  "next/navigation": "export const useRouter=()=>({push(){},replace(){}});export const usePathname=()=>'/agenda';export const useSearchParams=()=>new URLSearchParams();",
+  "next/navigation": "export const useRouter=()=>({push(href){window.qa?.apilados?.push(href)},replace(href){window.qa?.reemplazos?.push(href)}});export const usePathname=()=>'/agenda';export const useSearchParams=()=>new URLSearchParams();",
 };
 
 before(async () => {
@@ -50,8 +50,8 @@ before(async () => {
       const inicial = { cuando: null, cuanto: params.get('puestos') ? ['gratis','cooperacion'] : [], siguiendo: !!params.get('puestos') };
       window.qa = { cambios: [] };
       const agenda = Promise.resolve({ eventos: ${JSON.stringify(EVENTOS)}, seguidos: ['L1'], eventosSeguidos: [], asistencias: null, destacados: [] });
-      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, zoom: 13, lugares: 9, eventos: 5, zona: 'America/Mexico_City' };
-      const queretaro = { slug: 'queretaro', nombre: 'Querétaro', centro: { lng: -100.39, lat: 20.59 }, zoom: 13, lugares: 3, eventos: 12, zona: 'America/Mexico_City' };
+      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, centroConocido: true, zoom: 13, lugares: 9, eventos: 5, zona: 'America/Mexico_City' };
+      const queretaro = { slug: 'queretaro', nombre: 'Querétaro', centro: { lng: -100.39, lat: 20.59 }, centroConocido: true, zoom: 13, lugares: 3, eventos: 12, zona: 'America/Mexico_City' };
       function App(){
         const [valor,setValor]=useState(inicial);
         return <Cabecera contexto={<FilaEventos ciudad={ciudad} ciudades={[ciudad, queretaro]} hrefDeCiudad={()=>'/agenda'} hoy='${HOY}' zona='America/Mexico_City' agenda={agenda} conSesion={!params.has('sinSesion')} valor={valor} onCambiar={(v)=>{window.qa.cambios.push(v);setValor(v);}} />} />;
@@ -331,19 +331,21 @@ test("la fila se desliza cuando los chips no caben y avisa que sigue hasta llega
   await context.close();
 });
 
-test("Dónde estás: «Otra ciudad» abre un campo con las demás ciudades, que se filtran sin acentos", async () => {
+test("Ciudades: lista directa, elección con replace y cierre sin apilar ni pasos anteriores", async () => {
   const { context, page } = await abrir();
+  await page.evaluate(() => { window.qa.reemplazos = []; window.qa.apilados = []; });
   await page.getByRole("button", { name: /San Luis Potosí/ }).first().click();
-  const dialogo = hoja(page, "Dónde estás");
-  assert.equal(await dialogo.getByRole("link").count(), 0, "las demás ciudades esperan a «Otra ciudad»");
-  await dialogo.getByRole("button", { name: /Otra ciudad/ }).click();
-  const sugerencias = dialogo.getByRole("link");
-  assert.equal(await sugerencias.count(), 1);
-  assert.match(await sugerencias.first().innerText(), /Querétaro\s+3 lugares · 12 eventos/);
-  await dialogo.getByRole("searchbox", { name: "Nombre de la ciudad" }).fill("queretaro");
-  assert.equal(await sugerencias.count(), 1, "sin acentos también la encuentra");
-  await dialogo.getByRole("searchbox", { name: "Nombre de la ciudad" }).fill("zzz");
-  assert.equal(await sugerencias.count(), 0);
-  assert.equal(await dialogo.getByText(/Nada con «zzz»/).count(), 1);
+  const dialogo = hoja(page, "Ciudades con eventos");
+  await dialogo.waitFor();
+  assert.equal(await dialogo.locator("li button").count(), 2, "ambas ciudades están desde que abre");
+  assert.match(await dialogo.getByRole("button", { name: /Querétaro/ }).innerText(), /Querétaro\s+3 lugares · 12 eventos/);
+  assert.equal(await dialogo.getByRole("searchbox").count(), 0, "dos ciudades no necesitan buscador");
+  assert.equal(await hoja(page, "Dónde estás").count(), 0);
+  assert.equal(await dialogo.getByRole("button", { name: /Otra ciudad|Cerca de ti/ }).count(), 0);
+  await dialogo.getByRole("button", { name: /Querétaro/ }).click();
+  await dialogo.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => window.qa.reemplazos), ["/agenda"]);
+  assert.deepEqual(await page.evaluate(() => window.qa.apilados), []);
+  assert.equal(await page.evaluate(() => localStorage.getItem("sn:ciudad-elegida")), "queretaro");
   await context.close();
 });

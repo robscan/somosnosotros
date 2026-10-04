@@ -1,9 +1,10 @@
 # 297 · OL-270 · Hoja de ciudades
 
 Fecha: 2026-10-04. Operador: Codex, chat `01a1082a-33fb-7302-b694-1889ceaaf549`.
-Estado: avance local guardado; **no listo para integrar**. Falta resolver con el
-gestor el centro de las ciudades sin lugares, autorizar la actualización de una
-prueba anterior y recibir revisión final. Sin push, PR ni publicación de OL-270.
+Estado actual: **candidato local terminado para revisión del gestor**, con centros
+de respaldo excluidos de cercanía y prueba anterior adaptada con autorización.
+Pendiente su revisión final y la integración/publicación que él coordine. Sin
+push, PR ni publicación de OL-270. El historial del avance inicial queda abajo.
 
 ## Encargo y acuerdos comprobados
 
@@ -71,7 +72,7 @@ selección, alta lejana y oferta del botón. El código mantiene por ahora el
 contrato recibido de centros; el hallazgo siguiente impide declararlo correcto
 para ciudades sin lugares.
 
-## Pruebas y evidencia reutilizable
+## Pruebas y evidencia del avance inicial `4dded093`
 
 Pruebas sobre el mismo código; la conciliación #331 solo añadió documentación.
 Servicios, permisos, coordenadas y cuentas de los recorridos son **simulados**.
@@ -111,7 +112,7 @@ Bricolage Grotesque cargada. Se corrigió solo la preparación de capturas que
 vencía el punto simulado por una diferencia de relojes; no fue cambio de producto.
 Logs temporales de sesión: `/tmp/sn-ol270/`.
 
-### Revisión visual (cada PNG completo observado)
+### Revisión visual inicial (PNG en el commit `4dded093`, antes de la corrección)
 
 | Estado | Observación a 390 y 320 px |
 |---|---|
@@ -127,7 +128,7 @@ la adaptación de layout; **no sustituye teclado/permiso nativos ni Safari en el
 iPhone físico del founder**. Las imágenes 2 y 4 no reproducen las capas nativas
 del prototipo firmado; deben validarse en ese dispositivo antes del cierre físico.
 
-## Pendientes concretos y siguiente acción
+## Pendientes del avance inicial (resueltos en la continuidad siguiente)
 
 1. **Respuesta del gestor a ampliación mínima de prueba.** Se envió en Claude
    (mensaje 73) la solicitud para reemplazar únicamente el caso obsoleto de
@@ -152,7 +153,84 @@ del prototipo firmado; deben validarse en ese dispositivo antes del cierre físi
    main cuando corresponda y completar CI. **Este avance no es entrega final**.
    #294 va antes; producción requiere el «publica» expreso del founder.
 
-No cambian `ui/*`, consultas, SQL, permisos, backend, `apps/ios`, ni librerías de
+En ese avance no cambiaron `ui/*`, consultas, SQL, permisos, backend, `apps/ios`, ni librerías de
 ubicación aparte de la dependencia #294 ya asignada. Sin migraciones ni nuevas
 variables de entorno de producción. Dependencias locales instaladas con el lock
 existente; no se cambió `package.json`/lock.
+
+## Continuidad después de desbloquear la Mac
+
+El founder confirmó «listo» y se retomó el mismo canal. Gestor III, mensajes
+74/80/84/86, resolvió todos los pendientes de alcance antes de aplicar cambios:
+
+- Sustituir únicamente el caso anterior de `FilaEventos.componentes.test.mjs`.
+  Instrumentar `push/replace` en su doble solo cuando el caso nuevo activa las
+  listas de registro; otros casos mantienen el mismo comportamiento. 11/11.
+- Actualizar solo los comentarios de `ui/Renglon.module.css` y `ui/Buscador.tsx`:
+  «hoja de ciudades». **No cambió ninguna regla CSS ni comportamiento en ui/**.
+- Añadir `centroConocido: boolean` obligatorio a `CiudadConDatos`, en
+  `armarCiudades` y `cargarCiudades` (`lib/ciudades.ts` asignado expresamente):
+  true para SLP o ciudades con lugares > 0, false para las demás. Centro de
+  respaldo, RPC, consulta y zona conservados.
+- Centros desconocidos: sin distancia/«Estás aquí»/selección automática; con
+  punto, después de los conocidos en el orden de catálogo recibido (conteo y
+  nombre). Selección explícita y excepción de ciudad actual conservadas.
+- Alta lejana se calcula sobre centros conocidos del catálogo ya filtrado.
+  El gestor rechazó ocultarla por existir una ciudad de centro desconocido.
+- Defensa explícita: SLP se considera conocida aunque un doble antiguo omita
+  la marca; cualquier otra ciudad requiere la marca true. Unitaria específica.
+- Typecheck detectó solo el arreglo propio de `ciudad.test.ts`; se informó antes
+  de completarlo. Inspección de `.mjs` y scripts encontró cinco objetos en cuatro
+  archivos. El gestor autorizó **solo añadir la marca**, sin cambiar casos,
+  expectativas ni tolerancias: `FilaEventos.componentes.test.mjs` (SLP/Qro),
+  `FilaLugares.componentes.test.mjs`, `BuscarPantalla.componentes.test.mjs` y
+  `AgendaNuevos.componentes.test.mjs` (SLP). Scripts entra por el cargador real:
+  no requiere cambios. Dobles propios de Ciudad incluyen Aguascalientes false.
+
+Regresión del defecto de centros: antes de corregir, tres pruebas nuevas fallan
+y las 14 anteriores pasan; después pasan las 18 de ciudad. Prueba nueva de
+componente mantiene palomita en Aguascalientes sin 0 km/«Estás aquí» ni replace,
+conocidos primero. No se amplió SQL ni el diseño.
+
+### Evidencia del candidato actual
+
+| Verificación | Resultado |
+|---|---|
+| `npm test` | 137 archivos, 1899/1899, 15,87 s (18 de ciudad) |
+| `npm run typecheck` | Correcto, contrato obligatorio comprobado |
+| `npm run lint` | 0 errores; único warning previo en VisorImagen:171 |
+| Componentes afectados | 37/37, 21,48 s: Ciudad9, FilaEventos11, FilaLugares3, Buscar5, AgendaNuevos9 |
+| `npm run medir` tras añadir la marca | Build10 s, 96 mediciones/77 s, sin novedades |
+| Build final tras defensa de SLP/fixtures | `next build` contra respaldo sintético, correcto; captura sobre ese binario |
+| Capturas finales específicas | 11 PNG observados completos; 0 errores de página/desbordamientos laterales |
+| CSS | Reutilizado inventario aprobado: cuerpo sin cambios; ui solo dos comentarios |
+| `git diff --check` | Correcto |
+
+No se repitieron las 96 mediciones tras añadir únicamente la defensa de SLP y
+marcas a dobles: mismo layout. Sí se ejecutaron unitarias/componentes afectados,
+tipos/lint y un build final para capturar el código exacto entregado.
+
+Los PNG actuales y `mediciones.json` sustituyen los del avance inicial; el antes
+sigue accesible en `4dded093`. Estados 1/2: lista/píldora y palomita completas,
+nota envuelta a 320. Estado 3: SLP «Estás aquí», SMA a 139 km con palomita,
+Aguascalientes al final con «1 evento» **sin distancia falsa**, a 390 y 320.
+Estado 5: SLP178/SMA279 km, Aguascalientes al final sin km y acción primaria
+completa. Estado 4 y WebKit: campo y dos resultados dentro de y48–508, misma
+limitación declarada de área visual/permiso/teclado simulados, sin capas nativas.
+
+### Límites vigentes y salida
+
+- El gestor comprobó que los eventos sin lugar sí tienen coordenadas propias,
+  pero `ciudades_agregadas` no las promedia. Abrirá una pieza SQL aparte al cerrar
+  OL-270. No inventamos coordenadas en esta pieza.
+- Una persona en una ciudad de centro desconocido puede ver «Agregar un evento
+  donde estás» aunque la ciudad aparezca en el catálogo. **Limitación conocida
+  aceptada por el gestor**: el alta es válida; «lejos» solo mide centros conocidos.
+- Se mantiene fallback sin Mapbox inverso ni nombre de ciudad prellenado nuevo;
+  el alta usa el punto fresco existente del cliente, sin cambios a `/nuevo`.
+- Permiso/teclado/Safari físicos siguen pendientes del founder; simulación
+  declarada. Sin migraciones, nuevos secretos/variables de producción ni datos
+  reales escritos. Ningún cambio de componentes canónicos fuera de comentarios.
+- Entrega congelada local al gestor con SHA, diff y estos PNG para revisión
+  completa. Responsable siguiente: Gestor III, devolver hallazgos o aceptar y
+  coordinar PR/CI/preview. #294 antes y «publica» expreso del founder para producción.

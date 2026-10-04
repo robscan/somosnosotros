@@ -9,7 +9,7 @@ import { distanciaKm, type Punto } from "./geo";
 
 export type Ciudad = { slug: string; nombre: string; centro: { lng: number; lat: number }; zoom: number };
 /** Una ciudad con lo que tiene: cuántos lugares y cuántos eventos próximos, y su zona horaria (la de "hoy" en su agenda). */
-export type CiudadConDatos = Ciudad & { lugares: number; eventos: number; zona: string };
+export type CiudadConDatos = Ciudad & { lugares: number; eventos: number; zona: string; centroConocido: boolean };
 /** Una ciudad de Artistas con cuántos artistas tiene. */
 export type CiudadConArtistas = Ciudad & { artistas: number };
 
@@ -81,6 +81,7 @@ export function armarCiudades(lugares: { ciudad: string; lat: number; lng: numbe
       slug: slugDeCiudad(a.nombre),
       nombre: a.nombre,
       centro: a.nombre === inicial ? CIUDAD_INICIAL.centro : a.lugares ? { lat: a.lat / a.lugares, lng: a.lng / a.lugares } : CIUDAD_INICIAL.centro,
+      centroConocido: a.nombre === inicial || a.lugares > 0,
       zoom: a.nombre === inicial ? CIUDAD_INICIAL.zoom : 13,
       lugares: a.lugares,
       eventos: a.eventos,
@@ -137,12 +138,22 @@ export function ciudadesDeHoja<T extends CiudadConDatos | CiudadConArtistas>(act
     : "lugares" in c && (seccion === "eventos" ? c.eventos > 0 : seccion === "lugares" ? c.lugares > 0 : c.lugares > 0 || c.eventos > 0)));
 }
 
-/** La lista directa: la ciudad actual primero sin punto; con punto, por distancia. Artistas no tiene centros fiables. */
+/** El respaldo de centro sigue sirviendo al mapa, pero no representa la posición de una ciudad sin lugares. */
+function centroConocido(ciudad: Ciudad): boolean {
+  return ciudad.slug === CIUDAD_INICIAL.slug || ("centroConocido" in ciudad && ciudad.centroConocido === true);
+}
+
+/** La ciudad actual primero sin punto; con punto, centros conocidos por distancia y desconocidos en su orden de catálogo. */
 export function filasDeCiudades<T extends Ciudad>(actual: Ciudad, ciudades: readonly T[], punto: Punto | null, seccion: SeccionCiudades) {
   const posicion = seccion === "artistas" ? null : punto;
   const orden = ciudadesPorCercania(actual, ciudades);
-  const filas = ciudades.map((ciudad) => ({ ciudad, distancia: posicion ? distanciaKm(posicion, ciudad.centro) : null, estasAqui: false }));
-  filas.sort((a, b) => posicion ? a.distancia! - b.distancia! : orden.indexOf(a.ciudad.nombre) - orden.indexOf(b.ciudad.nombre));
+  const filas = ciudades.map((ciudad) => ({ ciudad, distancia: posicion && centroConocido(ciudad) ? distanciaKm(posicion, ciudad.centro) : null, estasAqui: false }));
+  filas.sort((a, b) => {
+    if (!posicion) return orden.indexOf(a.ciudad.nombre) - orden.indexOf(b.ciudad.nombre);
+    if (a.distancia === null) return b.distancia === null ? 0 : 1;
+    if (b.distancia === null) return -1;
+    return a.distancia - b.distancia;
+  });
   if (filas[0]?.distancia !== null && filas[0]?.distancia !== undefined && filas[0].distancia <= RADIO_CIUDAD_KM) filas[0].estasAqui = true;
   return filas;
 }

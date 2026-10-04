@@ -9,9 +9,10 @@ import { join } from "node:path";
 import { build } from "esbuild";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const SLP = { slug: "san-luis-potosi", nombre: "San Luis Potosí", centro: { lat: 22.1497, lng: -100.9764 }, zoom: 13, lugares: 63, eventos: 138, zona: "America/Mexico_City" };
+const SLP = { slug: "san-luis-potosi", nombre: "San Luis Potosí", centro: { lat: 22.1497, lng: -100.9764 }, centroConocido: true, zoom: 13, lugares: 63, eventos: 138, zona: "America/Mexico_City" };
 const QRO = { ...SLP, slug: "queretaro", nombre: "Querétaro", centro: { lat: 20.59, lng: -100.39 }, lugares: 3, eventos: 3 };
 const GDL = { ...SLP, slug: "guadalajara", nombre: "Guadalajara", centro: { lat: 20.67, lng: -103.35 }, lugares: 1, eventos: 1 };
+const AGS = { ...SLP, slug: "aguascalientes", nombre: "Aguascalientes", lugares: 0, eventos: 1, centroConocido: false };
 const artistas = [SLP, QRO, GDL, ...Array.from({ length: 10 }, (_, i) => ({ ...SLP, slug: `otra-${i}`, nombre: `Ciudad cultural con nombre muy largo ${i}` }))].map(c => ({ ...c, artistas: 1 }));
 let browser, server, dir, origin;
 before(async () => {
@@ -27,7 +28,7 @@ before(async () => {
       import Ciudad from './src/components/Ciudad';import './src/app/globals.css';
       const params=new URLSearchParams(location.search);
       const seccion=params.get('seccion')||'eventos';
-      const catalogo=seccion==='artistas'?${JSON.stringify(artistas)}:${JSON.stringify([SLP, QRO, GDL])};
+      const catalogo=seccion==='artistas'?${JSON.stringify(artistas)}:${JSON.stringify([SLP, QRO, GDL, AGS])};
       function App(){
         const [slug,setSlug]=React.useState(params.get('ciudad')||'san-luis-potosi');
         window.elegirDesdeRouter=()=>setSlug(new URLSearchParams(location.search).get('ciudad')||'san-luis-potosi');
@@ -101,7 +102,7 @@ test("lista directa a 320/390: nota y botones canónicos, selección por replace
     await abrirHoja(page);
     const hoja = page.getByRole("dialog", { name: "Ciudades con eventos" });
     await hoja.getByRole("button", { name: "Usar mi ubicación" }).waitFor();
-    assert.equal(await filas(page).count(), 3);
+    assert.equal(await filas(page).count(), 4);
     assert.match(await hoja.innerText(), /Solo salen ciudades donde ya hay eventos publicados/);
     assert.equal(await hoja.getByRole("searchbox").count(), 0);
     assert.equal(await hoja.getByRole("button", { name: /Otra ciudad|Cerca de ti/ }).count(), 0);
@@ -122,6 +123,18 @@ test("concedido: relectura automática sin toque, cercanía distinta de palomita
   assert.match(await page.locator('[role=dialog] [aria-current="true"]').innerText(), /Querétaro/);
   assert.equal(await page.getByRole("button", { name: "Usar mi ubicación" }).count(), 0);
   assert.equal(await page.evaluate(() => window.qa.geo), 1, "relectura compartida incluso en StrictMode");
+  assert.deepEqual(await page.evaluate(() => window.qa.replaces), []);
+});
+
+test("ciudad sin centro: conserva selección, sin 0 km ni aquí, después de centros conocidos", async t => {
+  const page = await abrir(t, { punto: SLP.centro, ciudad: AGS.slug });
+  await abrirHoja(page);
+  const aguascalientes = filas(page).last();
+  assert.equal(await filas(page).count(), 4);
+  assert.match(await aguascalientes.innerText(), /Aguascalientes\s+1 evento/);
+  assert.doesNotMatch(await aguascalientes.innerText(), /km|Estás aquí/);
+  assert.equal(await aguascalientes.getAttribute("aria-current"), "true");
+  assert.match(await filas(page).first().innerText(), /San Luis Potosí.*Estás aquí/s);
   assert.deepEqual(await page.evaluate(() => window.qa.replaces), []);
 });
 

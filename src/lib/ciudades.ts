@@ -44,6 +44,7 @@ export const cargarCiudades = cache(async (): Promise<CiudadConDatos[]> => {
   return [...ciudades].map(([nombre, a]) => ({
     slug: slugDeCiudad(nombre), nombre,
     centro: nombre === inicial || !a.lugares ? CIUDAD_INICIAL.centro : { lat: a.lat / a.lugares, lng: a.lng / a.lugares },
+    centroConocido: nombre === inicial || a.lugares > 0,
     zoom: nombre === inicial ? CIUDAD_INICIAL.zoom : 13,
     lugares: a.lugares, eventos: a.eventos,
     zona: [...a.zonas].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))[0]?.[0] ?? ZONA_INICIAL,
