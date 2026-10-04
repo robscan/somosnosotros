@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:componentes": "PLAYWRIGHT_MODULE=$PWD/node_modules/playwright-core/index.mjs node --test --test-concurrency=1 \"src/**/*.componentes.test.mjs\"",
+    "test:componentes": "PLAYWRIGHT_MODULE=$PWD/node_modules/playwright-core/index.mjs node --test \"src/**/*.componentes.test.mjs\"",
     "test:db": "node scripts/test-db.mjs",
     "inventario": "node scripts/ops/auditoria-ui/inventario-css.mjs",
     "medir": "node scripts/ops/auditoria-ui/medir-pantallas.mjs",

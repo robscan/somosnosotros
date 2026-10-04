@@ -1,6 +1,6 @@
 # 292 · Suite completa de componentes en CI (OL-265 / H12)
 
-**Fecha:** 2026-10-03. **Estado:** bloqueada para publicación: CI Linux 213/214; gestor debe resolver alcance/contrato del caso de inercia.
+**Fecha:** 2026-10-03. **Estado:** candidato con cuarentena explícita autorizada; pendiente CI y revisión final.
 
 Reserva del Gestor de cambios III publicada en PR313 / `cc7bfb33`: rama
 `ci-componentes`, base `cc7bfb33ef3ca9ffafdcf2a84382c0bd3b5eed2d`, después del cierre
@@ -157,3 +157,32 @@ Todos los logs quedan en la carpeta persistente: `ci-serial-real.log/json`,
 `doble-toque.log`, además de los anteriores. Capturas/producto de OL264 conservan
 su validez; esta pieza de CI sigue pendiente. Los diagnósticos locales cerraron
 sus propios servidores y navegadores.
+
+
+## Decisión posterior del gestor: cuarentena explícita de dos casos
+
+El Gestor de cambios III ordena detener la investigación de física de gestos en
+Linux, retirar la serialización y mantener dos excepciones declaradas en una
+lista única: el caso de inercia y el de entrada/salida con clics del asa. Sustituye
+para esos dos casos el requisito inicial de ejecutar toda la suite en CI; no es
+una decisión unilateral del operador ni una afirmación de 214 pruebas aprobadas.
+No se afirma que esté descartado todo posible defecto de producto por esta decisión.
+
+`scripts/pruebas/cuarentena-componentes.json` contiene archivo, nombre exacto,
+motivo y obligación de validación local de cada caso. Solo sus dos declaraciones
+usan `pruebaConCuarentena`; exige entrada con motivo en esa lista y marca skip
+únicamente cuando CI=true y plataforma Linux. El runner nativo informa el motivo.
+En Mac y fuera de CI las aserciones completas siguen ejecutándose; ambas son
+obligatorias al revisar cualquier pieza que toque la hoja. No se borran ni alteran
+aserciones. El ajuste previo de esperar recogida entre clics queda conservado.
+
+Objetivo del candidato: 214 casos inventariados, 212 correctos y 2 en cuarentena,
+con tiempo y excepción declarados. El control negativo de Imagen sigue documentado
+como evidencia de que otro fallo detiene el job. No se cambia producto ni se abre
+otra pieza. El posible efecto del doble toque sigue separado para el founder.
+
+
+Verificación local del candidato con la cuarentena instalada: `CI=true` en Mac,
+Chromium fijado, los dos casos ejecutados y correctos (2/2, 0 skips, 43,10 s).
+Confirma que la excepción no desactiva las obligaciones locales. ESLint focalizado
+y diff correctos; package.json e Imagen idénticos a main. CI Linux pendiente.
