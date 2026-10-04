@@ -1,6 +1,6 @@
 # 292 · Suite completa de componentes en CI (OL-265 / H12)
 
-**Fecha:** 2026-10-03. **Estado:** preparada; validación de CI y control negativo pendientes.
+**Fecha:** 2026-10-03. **Estado:** control negativo comprobado; candidato sin fallo provocado preparado para CI y revisión.
 
 Reserva del Gestor de cambios III publicada en PR313 / `cc7bfb33`: rama
 `ci-componentes`, base `cc7bfb33ef3ca9ffafdcf2a84382c0bd3b5eed2d`, después del cierre
@@ -24,7 +24,8 @@ navegador instalado. No se establece una ruta de la Mac en CI.
 El paso conserva el código de salida de `npm run test:componentes`; sin
 `continue-on-error`, reintentos, filtros ni pruebas omitidas. Límite de 10 minutos
 para evitar esperas indefinidas; la ejecución completa local previa tardó 110 s.
-Ninguna modificación de producto, SQL, secretos, presupuestos ni pruebas finales.
+Ninguna modificación de producto, SQL, secretos ni presupuestos. La ampliación
+posterior del gestor permite sincronizar un caso de prueba, como se detalla abajo.
 
 ## Verificación prevista y evidencia reutilizada
 
@@ -42,3 +43,38 @@ Se registrarán SHA, ejecución, conteos y duración de ambos resultados.
 Siguiente: control negativo, candidato limpio verde, entrega consolidada al gestor,
 revisión y publicación según la autorización vigente. No requiere una pantalla
 nueva ni repetir capturas del producto; Safari físico previo sigue pendiente.
+
+
+## Control negativo y ampliación puntual del gestor
+
+[CI 37170081642](https://github.com/robscan/somosnosotros/actions/runs/37170081642),
+commit temporal `c05b2df6a0f4e2870ab69d9ba7242a9add4644e3`, PR314 en borrador:
+214 pruebas, 210 correctas, 4 fallos, 0 omitidas/canceladas, 101,37 s. Tres fallos
+son exactamente los provocados en Imagen a DPR 1/2/3 (`57 !== 56`); paso y job
+terminan failure, exit 1, y medir no se ejecuta. El control demuestra propagación
+real del fallo; ese commit se retira antes de integrar y no modifica el candidato.
+
+El cuarto fallo, anterior e independiente, es HojaLugares: el caso de animación
+hace dos clics consecutivos sin esperar al desplazamiento del primero; en Linux
+ambos pueden partir de llena y terminar recogida cuando esperaba asoma. El gestor
+autoriza expresamente sumar solo `HojaLugares.componentes.test.mjs`, tras comprobar
+que PR294/295 no lo tocan. Se espera recogida y scrollTop <= 1 entre los dos clics
+en los dos ciclos del caso. No se cambia producto, ninguna aserción ni presupuesto,
+y no se añade un reintento. Caso focalizado local correcto (1/1, 10,34 s).
+
+**Hallazgo de producto separado, pendiente de validación física:** sí hay riesgo
+de que dos activaciones muy rápidas no avancen dos alturas. `siguiente()` calcula
+la siguiente altura desde scrollTop presente, sin encolar el destino pedido.
+Diagnóstico en Chromium con viewport táctil 390×844: dos activaciones DOM en el
+mismo cuadro observaron ambas y=660/llena y terminaron y=0/recogida. Esto demuestra
+el mecanismo con activaciones programáticas; no equivale a dos toques físicos en
+Safari. En un teléfono la posición del asa también cambia mientras se desplaza,
+por lo que el destino del segundo toque puede variar. Comunicar al founder para
+probar doble toque rápido y decidir el comportamiento deseado; no corregirlo en
+H12 ni presentar la sincronización de la prueba como arreglo del producto.
+
+El fixture de Imagen vuelve exactamente a main; diff final: workflow, esta
+sincronización y documentación propia. Evidencia persistente:
+`/Users/apple-1/.codex/visualizations/2026/10/02/01a0fece-65fd-79e3-a64d-296a4b8fa13c/ci-componentes/`.
+Se conserva el SHA/diff temporal, log completo y JSON de la CI roja, diagnóstico
+y log focalizado. Próxima comprobación: candidato final completo en Linux.

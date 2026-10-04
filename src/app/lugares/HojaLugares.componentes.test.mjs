@@ -483,6 +483,11 @@ test("con movimiento, la ficha entra desde el borde de abajo, la ✕ la baja y s
   await page.waitForTimeout(900);
   const llena = (await estado(page)).y;
   await asaLista.click();
+  // El segundo clic parte de recogida: no competir con el scroll smooth del primero.
+  await page.waitForFunction(() => {
+    const hoja = document.querySelector('[role="region"][aria-label="Lugares"]');
+    return hoja.dataset.hoja === "recogida" && hoja.scrollTop <= 1;
+  }, null, { timeout: 2000 });
   await asaLista.click();
   await page.waitForTimeout(900);
   assert.equal((await estado(page)).hoja, "asoma");
@@ -522,6 +527,11 @@ test("con movimiento, la ficha entra desde el borde de abajo, la ✕ la baja y s
   await page.waitForTimeout(900);
   cerca((await estado(page)).y, llena, 1); // «llena» sigue donde estaba: lo medido a media entrada no lo movió
   await asaLista.click();
+  // El segundo clic parte de recogida: no competir con el scroll smooth del primero.
+  await page.waitForFunction(() => {
+    const hoja = document.querySelector('[role="region"][aria-label="Lugares"]');
+    return hoja.dataset.hoja === "recogida" && hoja.scrollTop <= 1;
+  }, null, { timeout: 2000 });
   await asaLista.click();
   await page.waitForTimeout(900);
   // El gesto gana: un dedo sobre la hoja a media entrada la termina de golpe.
