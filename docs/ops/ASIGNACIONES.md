@@ -601,3 +601,29 @@ Estado al relevo (main `6d870573`):
     - unitarias en la frontera: sin fin antes y después del inicio, cambio de día local, fin explícito y varias zonas, comparando Inicio y Agenda en el mismo instante;
     - 100 candidatos dan 20;
     - `medir` (Inicio bajará de nodos; explicar los presupuestos), componentes y la vista previa.
+  - #315 lo unió Codex (`da4595e2`) con la CI en verde. El registro con OL-266 está en main (#316, `be6d23af`). Se confirma que la reserva incluye `src/components/inicio/CarrilNuevos.tsx` y `src/components/AgendaNuevos.componentes.test.mjs`. H06 está en `eventosEstaSemana` (`fin ?? inicio`); `cargarEventosSemana` ya usa `termina`.
+  - **Decidido por el founder (2026-10-03):** «Acepto tus recomendaciones». Tope de 12 en el carril «Artistas con eventos esta semana», como `TOPE_ARTISTAS_DESTACADOS`, aplicado en el servidor; quien no quepa se ve en Artistas. Entra en OL-266 con los mismos archivos (`cargarEventosSemana` y `eventosSemana`) y sus pruebas.
+  - **OL-266 entregada por Codex:** PR #317 (`296c50df`). Revisión del gestor (2026-10-03):
+    - **H06:** `eventosEstaSemana` usa `terminaDe(inicio, fin, zona)`.
+    - **H08:** `carrilNuevos` y `CarrilNuevos` recortan a `LIMITE_NUEVOS` (20), y solo las elegidas entran en `vistos`.
+    - **Hallazgo:** **falta el tope de 12 en «Artistas con eventos esta semana»**, que el founder aceptó durante la pieza (Codex no recibió el aviso). Se suma al mismo PR antes de publicarlo: un commit más, con su CI.
+  - **OL-266, ampliación aceptada:** se suma `src/app/page.tsx`, solo el bloque de las líneas 61 a 64, para conectar un helper puro de `eventosSemana` que primero quita a los destacados y después corta a `TOPE_ARTISTAS_DESTACADOS`. Se conservan las lecturas en paralelo. Prueba: 30 candidatos con los 12 primeros destacados dan los 12 siguientes. Lugares sin cambios.
+  - **#317 publicado por Codex:** `06fbf261`, incluido el tope de 12 artistas (`36e52d81`). Comprobado por el gestor: main y Production en ese SHA. Cierre documental en #318, para unir con la CI en verde. **OL-266 (H06 + H08) cerrada.**
+- **OL-267 / bitácora 294 · H11: un error de datos no se muestra como agenda vacía (2026-10-04, reserva para Codex).** Hoy las consultas hacen `data ?? []` e ignoran el error.
+  - **Alcance de esta pieza:** solo el camino de la agenda (Inicio y `/agenda`).
+    - La consulta principal de eventos es necesaria: si falla, se ve un estado de error con «Reintentar», nunca «no hay eventos».
+    - Los recuentos secundarios (asistentes, seguimientos) se degradan de forma explícita, sin mostrar 0 como dato.
+    - Traza en el servidor sin datos personales.
+    - El resto de pantallas (artistas, lugares, admin, sitemap) quedan para después.
+  - **Rama:** `agenda-errores`, desde `origin/main` tras unir #318.
+  - **Archivos asignados:**
+    - `src/lib/cargarAgenda.ts`, `src/lib/cargarEventosSemana.ts` y `src/lib/cargarArtistasDestacados.ts`, con sus pruebas;
+    - `src/app/page.tsx` y `src/app/agenda/page.tsx`, solo para conectar el estado;
+    - reutilizar `src/app/error.tsx` (ya existe, igual que `global-error.tsx`) o, si hace falta un texto propio, un `error.tsx` en `agenda/`;
+    - la bitácora 294 y la línea OL-267.
+  - **Texto visible:** llano y breve, por ejemplo «No pudimos cargar la agenda. Reintentar». Va en las capturas para que el founder lo vea.
+  - **No tocar:** `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`. Sin SQL.
+  - **Pruebas:**
+    - error de eventos frente a respuesta vacía real;
+    - error solo de los recuentos;
+    - componentes, `medir`, captura de 390 px del estado de error y de la agenda vacía real.
