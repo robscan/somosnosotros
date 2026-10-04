@@ -133,3 +133,139 @@ describe("ubicación cercana (caché de frescura, OL-095 L25/L50)", () => {
     await expect(leerUbicacionCercana()).resolves.toEqual({ lat: 22.15, lng: -100.98 });
   });
 });
+
+describe("ubicación al día sin toque (OL-255)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-01T12:00:00Z"));
+    vi.stubGlobal("window", { localStorage: crearAlmacenFalso() });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** Un navegador con el permiso en `estado` (sin `permissions` si es null) cuya posición actual es `lat`. */
+  function navegador(estado: PermissionState | null, lat = 22.15) {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((exito) => exito({ coords: { latitude: lat, longitude: -100.98 } } as GeolocationPosition));
+    const query = vi.fn(async () => ({ state: estado }) as PermissionStatus);
+    vi.stubGlobal("navigator", { geolocation: { getCurrentPosition }, ...(estado ? { permissions: { query } } : {}) });
+    return { getCurrentPosition };
+  }
+
+  it("debeReleer: solo con permiso concedido y el punto viejo o ausente", async () => {
+    const { debeReleer, RELECTURA_MS } = await import("./ubicacion");
+    expect(debeReleer(true, null)).toBe(true);
+    expect(debeReleer(true, RELECTURA_MS + 1)).toBe(true);
+    expect(debeReleer(true, RELECTURA_MS)).toBe(false);
+    expect(debeReleer(false, null)).toBe(false);
+    expect(debeReleer(false, RELECTURA_MS + 1)).toBe(false);
+  });
+
+  it("concedido y con más de un minuto: relee y guarda el punto nuevo", async () => {
+    const { leerUbicacionCercana, releerUbicacionAlDia, ubicacionCercanaFresca } = await import("./ubicacion");
+    navegador("granted", 22.15);
+    await leerUbicacionCercana(); // el toque de la persona
+    const { getCurrentPosition } = navegador("granted", 22.2); // la persona camina
+    vi.advanceTimersByTime(61 * 1000);
+
+    await expect(releerUbicacionAlDia()).resolves.toBe(true);
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(ubicacionCercanaFresca()).toEqual({ lat: 22.2, lng: -100.98 });
+  });
+
+  it("concedido y fresco (menos de un minuto): no vuelve a llamar", async () => {
+    const { leerUbicacionCercana, releerUbicacionAlDia } = await import("./ubicacion");
+    const { getCurrentPosition } = navegador("granted");
+    await leerUbicacionCercana();
+    vi.advanceTimersByTime(30 * 1000);
+
+    await expect(releerUbicacionAlDia()).resolves.toBe(false);
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1); // solo la del toque
+  });
+
+  it("la relectura es aproximada y no acepta del navegador una posición de más de un minuto", async () => {
+    const { releerUbicacionAlDia } = await import("./ubicacion");
+    const { getCurrentPosition } = navegador("granted");
+    await releerUbicacionAlDia();
+    expect(getCurrentPosition.mock.calls[0][2]).toMatchObject({ enableHighAccuracy: false, maximumAge: 60000 });
+  });
+
+  it.each([["prompt"], ["denied"], [null]] as const)("con el permiso en %s: nunca llama a getCurrentPosition", async (estado) => {
+    const { releerUbicacionAlDia } = await import("./ubicacion");
+    const { getCurrentPosition } = navegador(estado);
+
+    await expect(releerUbicacionAlDia()).resolves.toBe(false);
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it("si el permiso se revoca entre la consulta y la lectura, no truena ni insiste", async () => {
+    const { releerUbicacionAlDia } = await import("./ubicacion");
+    const getCurrentPosition = vi.fn((_ok: PositionCallback, mal: PositionErrorCallback) => mal({ code: 1, PERMISSION_DENIED: 1 } as GeolocationPositionError));
+    vi.stubGlobal("navigator", { geolocation: { getCurrentPosition }, permissions: { query: async () => ({ state: "granted" }) } });
+
+    await expect(releerUbicacionAlDia()).resolves.toBe(false);
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  });
+
+  describe("en el WKWebView de la app (permissions.query lanza)", () => {
+    function webviewIos() {
+      const getCurrentPosition = vi.fn((exito: PositionCallback) => exito({ coords: { latitude: 22.15, longitude: -100.98 } } as GeolocationPosition));
+      const query = vi.fn(async () => {
+        throw new DOMException("Permissions::query does not support this API", "NotSupportedError");
+      });
+      vi.stubGlobal("navigator", { geolocation: { getCurrentPosition }, permissions: { query } });
+      return { getCurrentPosition };
+    }
+
+    it("recién abierta la app no lee sola: iOS volvería a preguntar sin que nadie toque", async () => {
+      const { releerUbicacionAlDia } = await import("./ubicacion");
+      const { getCurrentPosition } = webviewIos();
+
+      await expect(releerUbicacionAlDia()).resolves.toBe(false);
+      expect(getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it("tras una lectura buena en esta sesión (el toque de la persona), sí relee pasado el minuto", async () => {
+      const { leerUbicacionCercana, releerUbicacionAlDia } = await import("./ubicacion");
+      const { getCurrentPosition } = webviewIos();
+      await leerUbicacionCercana();
+      vi.advanceTimersByTime(61 * 1000);
+
+      await expect(releerUbicacionAlDia()).resolves.toBe(true);
+      expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+    });
+
+    it("si después se niega, deja de releer", async () => {
+      const { leerUbicacionCercana, leerUbicacion, releerUbicacionAlDia } = await import("./ubicacion");
+      const { getCurrentPosition } = webviewIos();
+      await leerUbicacionCercana();
+      getCurrentPosition.mockImplementationOnce((_ok: PositionCallback, mal?: PositionErrorCallback | null) => mal?.({ code: 1, PERMISSION_DENIED: 1 } as GeolocationPositionError));
+      await expect(leerUbicacion()).rejects.toBe("negado");
+      getCurrentPosition.mockClear();
+      vi.advanceTimersByTime(61 * 1000);
+
+      await expect(releerUbicacionAlDia()).resolves.toBe(false);
+      expect(getCurrentPosition).not.toHaveBeenCalled();
+    });
+  });
+
+  it("permisoConcedido: granted sí; prompt, denied o sin API no, y nada se lee", async () => {
+    const { permisoConcedido } = await import("./ubicacion");
+    for (const [estado, esperado] of [["granted", true], ["prompt", false], ["denied", false], [null, false]] as const) {
+      const { getCurrentPosition } = navegador(estado);
+      await expect(permisoConcedido()).resolves.toBe(esperado);
+      expect(getCurrentPosition).not.toHaveBeenCalled();
+    }
+  });
+
+  it("varias pantallas a la vez comparten una sola lectura", async () => {
+    const { releerUbicacionAlDia } = await import("./ubicacion");
+    const { getCurrentPosition } = navegador("granted");
+
+    await Promise.all([releerUbicacionAlDia(), releerUbicacionAlDia(), releerUbicacionAlDia()]);
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  });
+});

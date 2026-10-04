@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import ListaLugares from "@/components/ListaLugares";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
+import { useUbicacionFresca } from "@/components/useUbicacionFresca";
 import Mapa from "@/components/Mapa";
 import PantallaConAviso from "@/components/useCanalDeListas";
 import { useResuelta } from "@/components/useResuelta";
@@ -18,8 +19,8 @@ import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { agruparLugares, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
-import { leerUbicacionCercana } from "@/lib/ubicacion";
+import { agruparLugares, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, puntoDeCercania, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { leerUbicacionCercana, permisoConcedido } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
 import HojaLugares, { type DondeEstaba, type EstadoHoja, type Manejo } from "./HojaLugares";
@@ -111,7 +112,16 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   }
   const [conEventos, setConEventos] = useState<ConEventos | null>(null);
   const [soloSigo, setSoloSigo] = useState(false);
-  const [punto, setPunto] = useState<Punto | null>(null);
+  const [puntoPedido, setPunto] = useState<Punto | null>(null);
+  // Con el permiso ya concedido (o tras el primer toque en «Mi ubicación») el orden y el punto azul siguen a la ubicación al día, que se relee sola
+  // al abrir y al volver; sin permiso ni toque, nada. No mueve la cámara ni toca el historial: solo reordena la lista.
+  const fresca = useUbicacionFresca();
+  const [concedido, setConcedido] = useState(false);
+  const hayFresca = fresca !== null;
+  useEffect(() => {
+    void permisoConcedido().then(setConcedido);
+  }, [hayFresca]);
+  const punto = puntoDeCercania(puntoPedido, fresca, concedido);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const [encuadre, setEncuadre] = useState<Encuadre | null>(null);
