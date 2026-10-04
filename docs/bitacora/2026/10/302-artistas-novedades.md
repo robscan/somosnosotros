@@ -24,7 +24,13 @@ El comprobador `bash scripts/ops/siguiente-bitacora.sh` confirmó última 301/OL
 
 La revisión visual detectó el sello de la ficha estirado por la rejilla de avisos; se corrigió su colocación con `justify-self:start`. Se repitieron únicamente las comprobaciones del prototipo después de esa corrección y de conciliar la pastilla Seguir con el canon. Ningún archivo real de producto se editó.
 
-[Guía y evidencia](../../../rediseno/capturas-302/README.md): 22 PNG a 320×844/390×844, medidas e inventario de fuentes con sus hashes. Todas las capturas finales se abrieron para revisión visual. Carril con foto sintética, elegidos+novedades; ambos tipos de sello; mismo artista en lista/ficha; ficha sin foto; día 8; recálculo al borrar; respaldo y textos al límite 80/40.
+[Guía y evidencia](../../../rediseno/capturas-302/README.md): 22 PNG a 320×844/390×844, medidas e inventario de 92 fuentes reales con sus hashes. Todas las capturas finales se abrieron para revisión visual. Carril con foto sintética, elegidos+novedades; ambos tipos de sello; mismo artista en lista/ficha; ficha sin foto; día 8; recálculo al borrar; respaldo y textos al límite 80/40.
+
+## Corrección tras revisión del gestor
+
+Gestor III revisó `ad64310f` y aceptó la regla, el orden, los sellos de tarjeta/lista/ficha y la llegada a la novedad. Devolvió un único desvío de canon: la ciudad de la cabecera era una píldora violeta de muestra, sin el pin ni la flecha actuales. Se incorporó el `ChipCiudad` real en Inicio y Artistas, con su CSS sin cambios. Ubicación fija sintética, sin permiso ni GPS. Se regeneraron y abrieron las 14 capturas afectadas a 320/390; se reutilizaron las ocho capturas de fichas intactas. Se actualizó el inventario de fuentes (92) y se verificaron de nuevo los mismos 20 estados; no se ejecutó ninguna suite de la app.
+
+El laboratorio del HTML abre, cambia escenarios y se puede cerrar; su selector tiene un nombre accesible explícito. Ver artistas y Atrás a la lista funcionan. Ningún hijo de los renglones rebasa el enlace contenedor. Esta entrega vuelve al gestor antes de mostrarla al founder.
 
 ## Verificación y alcance de la evidencia
 
