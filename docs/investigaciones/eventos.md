@@ -2,6 +2,8 @@
 
 **Fecha:** 4 de octubre de 2026. **Estado:** investigación y propuesta; sin aprobación de implementación. [Índice y criterios comunes](README.md).
 
+**Continuación enfocada en Eventos:** [modelo concreto y recorridos propuestos](eventos-modelo.md), OL-272. Desarrolla unidades, reglas temporales, permisos, captura y consulta, con los contratos mínimos de horarios, integrantes e historial. Esta investigación conserva los antecedentes; el documento complementario permite revisar la etapa E1 sin volver a abrir los proyectos completos de Artistas y Lugares.
+
 ## 1. Petición y resultado buscado
 
 Registrar y distinguir festivales, exposiciones que continúan después de su inauguración, talleres de varias sesiones y convocatorias. Encontrarlos por fecha, lugar, artista o clase de actividad y conservar información útil para futuros mini tours.
@@ -146,7 +148,7 @@ Cada fila es un encargo futuro; no es autorización para ejecutarlo.
 
 | Etapa | Qué toca y entregable | Migración | Prueba que la cierra | Decisión del founder |
 | --- | --- | --- | --- | --- |
-| E1. Contratos y ejemplos | Datos/IA: acordar casos, identidad de actividad, sesiones, relaciones y procedencia | No; diseño documental | Un concierto, exposición con apertura, curso con huecos, festival multisede y convocatoria se representan sin inventar datos | Reanudar C5; aceptar separación de casos y alcance de C6 |
+| E1. Contratos y ejemplos | Datos/IA: revisar el [modelo concreto](eventos-modelo.md), con identidad de actividad, sesiones, relaciones, permisos y procedencia | No; diseño documental | Un concierto, exposición con apertura, curso con huecos, festival multisede y convocatoria se representan sin inventar datos | Modelo, excepciones de fecha/hora y asistencia; reanudar C5; alcance de C6 |
 | E2. Mejor interpretación | IA: ampliar salida estructurada y resolución de fichas; comparar calidad y costo con lectura actual | No para evaluar borradores; persistencia va en E3 | Fuentes con varias actividades, datos ausentes, homónimos y respuestas tardías; ningún valor sugerido se presenta como extraído | Fuentes y límites de costo; criterios de revisión |
 | E3. Relaciones y disponibilidad | Datos: periodos/sesiones, relaciones tipadas, papeles y procedencia, coordinados con Artistas/Lugares | Sí, aditiva; nombres los reserva el gestor | Contratos PG/RLS, zonas y cierres, ciclos, permisos y visibilidad; eventos simples mantienen comportamiento | Modelo final; autorización de asociaciones y reglas de conservación |
 | E4. Captura conjunta | Pantalla y servidor: prototipo de síntesis/corrección; después guardado idempotente del conjunto | Solo si el contrato/RPC requiere ampliación | Material único produce un programa revisable; reintento no duplica; no hay publicación parcial silenciosa; corrección manual gana | Firma del recorrido y tratamiento de actividades pendientes |
@@ -161,6 +163,8 @@ Las pantallas futuras se verifican con estados de carga, vacío, error y éxito;
 Los principales riesgos son falsos programas deducidos solo del título, duplicados entre agendas y carteles, cierres desconocidos, horas/precios sugeridos tratados como hechos, avisos repetidos por cada acto y permisos de edición demasiado amplios. Se resuelven mediante evidencia, revisión conjunta y contratos explícitos, no con más preguntas permanentes en el formulario.
 
 Quedan pendientes del founder el modelo definitivo de agrupación, el alcance de convocatorias, quién confirma actos de otros publicadores y la asistencia a talleres con varias sesiones. Cualquier ampliación a antecedentes de fecha parcial o actividades sin hora requiere conciliar la regla vigente «un evento tiene fecha y hora»; no se modifica aquí la [definición](../DEFINICION.md).
+
+El [modelo concreto](eventos-modelo.md#9-decisiones-propuestas-para-continuar) recomienda cómo resolver estas decisiones: marco con actos independientes, exposición y apertura relacionadas, sesiones de inscripción común, horarios/formación opcionales y confirmación de asociaciones a marcos ajenos. Son recomendaciones para revisar, no acuerdos nuevos ya firmados.
 
 ## 10. Qué comprobar al retomar
 
