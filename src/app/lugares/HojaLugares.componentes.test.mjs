@@ -27,6 +27,8 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 let browser, server, dir, origin;
 
 const mocks = {
+  // El optimizador real se prueba en Imagen.componentes; aquí se mide el consumidor.
+  "next/image": "import React from 'react';export default function Image({quality,...p}){return React.createElement('img',p)}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
   "next/navigation": "export const useRouter=()=>({push(){},replace(){}});export const usePathname=()=>'/lugares';export const useSearchParams=()=>new URLSearchParams();",
   // Lo que pide la pastilla de Seguir (`components/Seguir`): sin permisos ni avisos del teléfono, sin hablar con el servidor.

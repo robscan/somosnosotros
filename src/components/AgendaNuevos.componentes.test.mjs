@@ -33,6 +33,8 @@ const EVENTOS = [
 let browser, server, dir, origin;
 
 const mocks = {
+  // El optimizador real se prueba en Imagen.componentes; aquí se mide el consumidor.
+  "next/image": "import React from 'react';export default function Image({quality,...p}){return React.createElement('img',p)}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
   // Como Next: cambiar la dirección con `history.replaceState` actualiza `useSearchParams` sin pedir nada al servidor.
   "next/navigation": `import {useSyncExternalStore} from 'react';
