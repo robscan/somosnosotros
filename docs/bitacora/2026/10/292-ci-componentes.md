@@ -100,3 +100,21 @@ conservando todos los casos, las aserciones y el límite de 10 minutos. Configur
 del runner dentro de la reserva; no cambia el comando local por defecto ni añade
 reintentos. Se validará una ejecución completa de este candidato en Linux y se
 registrará el tiempo real. El log del fallo adicional también queda preservado.
+
+
+### Corrección de la posición del argumento del runner
+
+CI37171095565 / `6df9c1d8` terminó 213/214, 115,51 s, con otro destino inesperado
+del mismo caso de inercia. Esa ejecución **no fue serial**: Node 22 ignora la
+opción de concurrencia añadida después del patrón de archivos mediante npm.
+La comprobación inicial de exit 0 fue insuficiente; error del operador corregido.
+
+Control cronometrado con dos archivos de 500 ms: argumento después del patrón,
+inicios simultáneos y total 605 ms; argumento antes, inicios separados y total
+1189 ms. Se coloca `--test-concurrency=1` antes del patrón dentro del script
+existente de package.json. El workflow vuelve a invocar solo npm run; no se añade
+ningún script ni dependencia. El comando local completo también queda serial,
+con el costo de tiempo que se medirá. Ninguna aserción o caso se elimina.
+
+La hipótesis sobre competencia de navegadores sigue sin validarse en Linux; no
+se declara corregido ese segundo fallo hasta comprobar el nuevo candidato.
