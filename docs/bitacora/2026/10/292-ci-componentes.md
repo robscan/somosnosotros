@@ -186,3 +186,28 @@ Verificación local del candidato con la cuarentena instalada: `CI=true` en Mac,
 Chromium fijado, los dos casos ejecutados y correctos (2/2, 0 skips, 43,10 s).
 Confirma que la excepción no desactiva las obligaciones locales. ESLint focalizado
 y diff correctos; package.json e Imagen idénticos a main. CI Linux pendiente.
+
+
+## Última ampliación del gestor: navegación del harness de Entrar
+
+CI37172311906 / `68c1f8ef`: la cuarentena se aplica exactamente a dos casos,
+211 correctos, 1 fallo, 2 skips, 96,60 s. El nuevo fallo ocurre en Entrar, caso
+«+ para publicar / proveedor de 2 páginas / Atrás gesto»: `page.evaluate` ejecuta
+history.back y la navegación destruye su contexto antes de devolver el resultado.
+No alcanza las aserciones de destino; no se presenta como fallo demostrado de Auth.
+
+El gestor acepta solo `src/app/entrar/Entrar.componentes.test.mjs`: sustituir los
+dos history.back invocados por evaluate por `page.goBack({waitUntil:
+"domcontentloaded"})`. En el segundo punto también se elimina el catch vacío.
+Se conservan las comprobaciones de sesión, ruta, regreso a about:blank y ausencia
+de errores. Sin producto ni Auth, sin ampliar la cuarentena.
+
+Esta es la última ampliación del harness en OL265: cualquier nuevo fallo debe
+reportarse al gestor antes de modificar nada. Ventana cedida a Codex cuando los
+49 casos de Entrar y la CI final (212 correctos + 2 cuarentena) pasen; después unir
+y comprobar que la CI de main también ejecuta la suite.
+
+
+Entrar focalizado tras el arreglo: 49/49, 0 fallos/omitidas/canceladas, 51,70 s
+con Chromium fijado. ESLint del archivo y diff correctos. Log `entrar-final.log`
+en la evidencia persistente; candidato siguiente para la CI final.
