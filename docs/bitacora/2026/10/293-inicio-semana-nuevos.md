@@ -1,6 +1,6 @@
 # 293 · Fin efectivo en Inicio y tope de Nuevos (OL-266 / H06 + H08)
 
-**Fecha:** 2026-10-03. **Estado:** corrección local; verificaciones y revisión pendientes.
+**Fecha:** 2026-10-03. **Estado:** publicado y verificado; cierre técnico completo, prueba física en Safari pendiente.
 
 Reserva del Gestor de cambios III en PR316 / `be6d23aff1f57f28b59388646102a327eca70e04`,
 tras el cierre PR315 de OL265. Rama `inicio-semana-nuevos`, worktree
@@ -128,3 +128,40 @@ la RPC de destacados de artistas; completar ese doble temporal con los12 elegido
 resolvió el desajuste, sin modificar producto ni el respaldo versionado. Log
 conservado como `qa-artistas-fixture-incompleto.log`, resultado final en
 `qa-artistas.json`. Procesos propios finalizados.
+
+
+## Publicación y cierre técnico
+
+Candidato final `36e52d815e1237a5c1eebb20715798e83ebe2a85`: CI
+[37175497999](https://github.com/robscan/somosnosotros/actions/runs/37175497999)
+**success antes del merge**. 215 componentes inventariados:213 correctos,
+2 excepciones Linux declaradas en OL265,0 fallos,98,7369 s. Tipos, lint,
+1837 unitarias, contratos PostgreSQL, build, inventario y96 mediciones correctos.
+Preview6836566828 correcto en ese SHA:20 Nuevos,12 artistas semanales y
+continuación al directorio,0 errores de navegador.
+
+Con la ventana del gestor, [PR317](https://github.com/robscan/somosnosotros/pull/317)
+unido el 2026-10-04 a04:02:33 UTC (2026-10-03 en México), merge
+`06fbf261d7d8b4f66a9061817db221406b146971`. CI de main
+[37175828406](https://github.com/robscan/somosnosotros/actions/runs/37175828406)
+**success** sobre ese merge. Production6836618148 **success**,04:03:04 UTC,
+URL `https://somosnosotros-2hmlk3b0x-robscans-projects.vercel.app`.
+
+Comprobación anónima en `https://somosnosotros.org`,390×844:
+
+- Inicio devuelve20 Nuevos y12 artistas semanales; ninguno de esos12 repite los4
+  destacados presentes. Esta semana conserva eventos sin fin cuya hora de inicio
+  ya pasó, de acuerdo con la regresión de fin efectivo.
+- «Ver la agenda» de Nuevos abre `/agenda?ver=nuevos`, con Nuevos seleccionado.
+  «Ver artistas» abre `/artistas`, directorio de638 artistas en la lectura.
+- Capturas reales observadas, composición conservada y cero errores de consola.
+  `/`, `/agenda`, `/artistas`, `/entrar` y `/api/estado` responden200;
+  estado informa Supabase ok y Mapbox configurado.
+
+Sin SQL, variables nuevas ni escrituras de datos reales. El checkout principal
+permanece limpio en `1b9461e4`; el árbol de la pieza se actualizó al merge.
+Procesos y pestañas propios cerrados; se retiró el viewport temporal. Evidencia
+local persistida en la carpeta antes citada, incluidos CI final, CI main y
+`produccion.json`. La evidencia automatizada no sustituye Safari físico: queda al
+founder comprobar en su iPhone las tarjetas, su desplazamiento y los enlaces.
+La siguiente pieza requiere reserva expresa del gestor; no se autoasigna.
