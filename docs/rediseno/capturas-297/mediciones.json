@@ -103,20 +103,36 @@
       "anchoDocumento": 390,
       "hoja": {
         "top": 48,
-        "bottom": 508,
-        "height": 460
+        "bottom": 358,
+        "height": 310
       },
       "fuera": 0,
       "fuentes": [
         "Bricolage Grotesque"
       ]
     },
+    "geometria358": {
+      "boton": {
+        "top": 241.40625,
+        "bottom": 289.40625
+      },
+      "campo": {
+        "top": 139.15625,
+        "bottom": 185.15625
+      },
+      "cuerpo": {
+        "top": 106.90625,
+        "bottom": 338
+      },
+      "tocable": true
+    },
     "errores": [],
-    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nUsar mi ubicación\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
     "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
     "seccion": "lugares",
     "ciudadesSimuladas": 13,
-    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Vacio con alta en Lugares, Artistas excluida por decision final del founder."
+    "viewportSimulado": 358,
+    "limite": "Datos y visualViewport358 simulados, sin teclado nativo nuevo. Geometría completa del campo/botón y elementFromPoint correctos; ubicación/alta lejana ocultas durante búsqueda."
   },
   {
     "estado": 1,
@@ -222,20 +238,36 @@
       "anchoDocumento": 320,
       "hoja": {
         "top": 48,
-        "bottom": 508,
-        "height": 460
+        "bottom": 358,
+        "height": 310
       },
       "fuera": 0,
       "fuentes": [
         "Bricolage Grotesque"
       ]
     },
+    "geometria358": {
+      "boton": {
+        "top": 261.625,
+        "bottom": 309.625
+      },
+      "campo": {
+        "top": 159.375,
+        "bottom": 205.375
+      },
+      "cuerpo": {
+        "top": 106.875,
+        "bottom": 338
+      },
+      "tocable": true
+    },
     "errores": [],
-    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nUsar mi ubicación\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
     "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
     "seccion": "lugares",
     "ciudadesSimuladas": 13,
-    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Vacio con alta en Lugares, Artistas excluida por decision final del founder."
+    "viewportSimulado": 358,
+    "limite": "Datos y visualViewport358 simulados, sin teclado nativo nuevo. Geometría completa del campo/botón y elementFromPoint correctos; ubicación/alta lejana ocultas durante búsqueda."
   },
   {
     "webkit": true,

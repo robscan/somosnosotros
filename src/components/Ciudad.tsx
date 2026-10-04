@@ -80,6 +80,7 @@ function HojaCiudades({ ciudad, ciudades, seccion, hrefDe, punto, onCerrar }: Pr
   const [leyendo, setLeyendo] = useState(false);
   const [aviso, setAviso] = useState(false);
   const todas: readonly (CiudadConDatos | CiudadConArtistas)[] = ciudades;
+  const enBusqueda = buscando || !!texto;
   const buscado = normalizarNombre(texto);
   const filas = filasDeCiudades(ciudad, todas, punto, seccion).filter(({ ciudad: c }) => normalizarNombre(c.nombre).includes(buscado));
   const sinCoincidencias = seccion !== "artistas" && todas.length > 8 && !!buscado && filas.length === 0;
@@ -114,11 +115,11 @@ function HojaCiudades({ ciudad, ciudades, seccion, hrefDe, punto, onCerrar }: Pr
 
   return <Hoja etiqueta={titulo} titulo={titulo} plano onCerrar={onCerrar}>
     <p className={hoja.nota}>{nota}</p>
-    <div className={[styles.opciones, (buscando || texto) && styles.buscando].filter(Boolean).join(" ")}>
-      {ofrecerUbicacionCiudades(seccion, punto, concedido, negado) && <Boton variante="secundario" forma="pildora" onClick={usarUbicacion} disabled={leyendo} aria-busy={leyendo}>
+    <div className={[styles.opciones, enBusqueda && styles.buscando].filter(Boolean).join(" ")}>
+      {!enBusqueda && ofrecerUbicacionCiudades(seccion, punto, concedido, negado) && <Boton variante="secundario" forma="pildora" onClick={usarUbicacion} disabled={leyendo} aria-busy={leyendo}>
         <IconoUbicacion width={20} height={20} /> Usar mi ubicación
       </Boton>}
-      {aviso && <p className={hoja.nota} role="status">No pudimos leer tu ubicación.</p>}
+      {!enBusqueda && aviso && <p className={hoja.nota} role="status">No pudimos leer tu ubicación.</p>}
       {/* Conserva la altura hasta cerrar: perder el foco no debe mover una fila durante el toque. */}
       {todas.length > 8 && <div onFocus={() => setBuscando(true)}>
         <CampoBuscar valor={texto} onCambiar={setTexto} placeholder="Nombre de la ciudad" ariaLabel="Nombre de la ciudad" />
@@ -133,7 +134,7 @@ function HojaCiudades({ ciudad, ciudades, seccion, hrefDe, punto, onCerrar }: Pr
           </button>
         </li>)}
       </ul> : <p className={hoja.nota}>{buscado ? `Nada con «${texto.trim()}».` : "Aún no hay ciudades."}</p>}
-      {sinCoincidencias ? <Boton href="/nuevo?tipo=lugar" onClick={onCerrar}>Agregar un lugar</Boton> : alta && <Boton href={alta.href} onClick={onCerrar}>{alta.texto}</Boton>}
+      {sinCoincidencias ? <Boton href="/nuevo?tipo=lugar" onClick={onCerrar}>Agregar un lugar</Boton> : !enBusqueda && alta && <Boton href={alta.href} onClick={onCerrar}>{alta.texto}</Boton>}
     </div>
   </Hoja>;
 }

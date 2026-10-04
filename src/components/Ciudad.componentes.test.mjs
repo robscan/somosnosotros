@@ -255,6 +255,8 @@ test("búsqueda sin coincidencias ofrece una sola alta de lugar en Eventos, Luga
     const page = await abrir(t, { seccion, muchas: true, punto: { lat: 40.4, lng: -3.7 }, ciudad: SLP.slug });
     await abrirHoja(page);
     const input = page.getByRole("searchbox", { name: "Nombre de la ciudad" });
+    await input.fill("queretaro");
+    assert.equal(await page.getByRole("link", { name: /donde estás/ }).count(), 0, "buscar con resultados no compite con alta lejana");
     await input.fill("zzzzz");
     const alta = page.getByRole("dialog").getByRole("link");
     assert.equal(await alta.count(), 1, "no duplica el alta lejana");
@@ -274,6 +276,36 @@ test("búsqueda sin coincidencias ofrece una sola alta de lugar en Eventos, Luga
     await alta.evaluate(e => e.addEventListener("click", evento => evento.preventDefault(), { once: true }));
     await alta.click();
     await page.getByRole("dialog").waitFor({ state: "detached" });
+  }
+});
+
+test("buscar a358 en320/390: ubicación y error se ocultan, campo y alta quedan completos y tocables, ubicación vuelve al reabrir", async t => {
+  for (const ancho of [320, 390]) {
+    const page = await abrir(t, { ancho, seccion: "lugares", muchas: true, resultado: "error" });
+    await abrirHoja(page);
+    await page.getByRole("button", { name: "Usar mi ubicación" }).click();
+    await page.getByRole("status").waitFor();
+    await page.getByRole("searchbox", { name: "Nombre de la ciudad" }).fill("zzzzz");
+    await page.evaluate(() => {
+      Object.defineProperty(visualViewport, "height", { configurable: true, value: 358 });
+      visualViewport.dispatchEvent(new Event("resize"));
+    });
+    await page.waitForFunction(() => document.querySelector('[role=dialog]').getBoundingClientRect().bottom <= 358);
+    assert.equal(await page.getByRole("button", { name: "Usar mi ubicación" }).count(), 0);
+    assert.equal(await page.getByRole("status").count(), 0);
+    const alta = page.getByRole("link", { name: "Agregar un lugar", exact: true });
+    const cajas = await alta.evaluate(e => {
+      const caja = x => { const r = x.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
+      const centro = e.getBoundingClientRect();
+      return { alta: caja(e), campo: caja(document.querySelector('input[type=search]').closest('label')), cuerpo: caja(e.parentElement.parentElement), tocable: document.elementFromPoint(centro.x + centro.width / 2, centro.y + centro.height / 2)?.closest('a') === e };
+    });
+    for (const elemento of [cajas.alta, cajas.campo]) assert.ok(elemento.top >= cajas.cuerpo.top && elemento.bottom <= cajas.cuerpo.bottom, "rectángulo completo dentro del cuerpo visible");
+    assert.equal(cajas.tocable, true, "sin scroll automático que esconda un recorte");
+    await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+    await abrirHoja(page);
+    await page.getByRole("button", { name: "Usar mi ubicación" }).waitFor();
+    assert.equal(await page.getByRole("searchbox").inputValue(), "");
+    assert.equal(await page.getByRole("status").count(), 0);
   }
 });
 

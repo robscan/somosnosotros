@@ -1,10 +1,11 @@
 # 297 · OL-270 · Hoja de ciudades
 
 Fecha: 2026-10-04. Operador: Codex, chat `01a1082a-33fb-7302-b694-1889ceaaf549`.
-Estado actual: **revisión completa, Safari real del simulador y CI de `064d25a2`
-aceptadas; ajuste posterior del founder aplicado: Artistas sin botón de alta**.
-Nuevo candidato preparado para revisar solo esa excepción, con capturas en
-Lugares. PR #333 continúa en borrador y sin publicación. El historial se conserva.
+Estado actual: **recorte del botón a358 corregido conforme al mensaje112**.
+Artistas sigue sin alta; al buscar se ocultan ubicación/error y alta por distancia,
+con campo y alta del vacío completos a320/390. Nuevo candidato preparado para
+revisión/Safari del gestor y CI. PR #333 continúa en borrador, sin publicación.
+El historial y las aprobaciones anteriores quedan abajo.
 
 ## Encargo y acuerdos comprobados
 
@@ -394,3 +395,45 @@ Responsables confirmados en108: el gestor revisa nueva excepción/CI, trae main
 y une en orden cuando se autorice; el founder prueba iPhone físico y da «publica»
 para #294 y luego #333. PR333 permanece draft. No hay otros cambios de diseño,
 canon, geocodificación, SQL, variables ni producción.
+
+
+## Hallazgo a358 y disposición confirmada por el gestor (mensajes111–112)
+
+Mensaje110 aceptó `4f93978d` y la excepción de Artistas; CI37233704253 de ese SHA
+terminó success. **No se considera cierre**: antes de entregar se comprobó Lugares
+con vv.height358 (medida real anterior del gestor), permiso prompt y sin punto.
+El botón de ubicación añade60px que no existían en Artistas. A390 el alta mide
+301,4–349,4 con cuerpo terminado en338; a320 mide321,6–369,6 y el centro devuelve
+el dialog, no el enlace. PNG negativos vistos completos, ahora guardados como
+`antes-recorte-358-{320,390}.png`. La comprobación usa altura simulada; no es
+prueba nativa adicional. El click automático de Playwright desplaza overflowhidden
+y ocultaría el fallo: por eso se comprueba rectángulo/hit-test antes de tocar.
+
+Se comunicó el hallazgo y se pidió confirmación de disposición antes de cambiar
+el código. Mensaje112 autoriza progressive disclosure: mientras `buscando || texto`
+se ocultan **Usar mi ubicación, su error y el alta lejana**. Conserva título/nota,
+campo, resultados y, sin coincidencias fuera de Artistas, **Agregar un lugar**.
+Al reabrir, acciones normales; sin cambios a permisos/lectura/sessionStorage,
+orden, diseño, CSS ni ui/Hoja. Se descarta agregar scroll extra.
+
+Corrección solo en Ciudad: `enBusqueda` gobierna las tres acciones y la altura.
+Regresión nueva falla antes (ubicación todavía visible) y pasa después. Ciudad
+**12/12**,14,11s; incluye error oculto, alta lejana ausente con resultados/texto,
+acciones recuperadas al reabrir y bbox completo + elementFromPoint a358/320/390.
+Lint focalizado, tipos y build correctos. No se repite suite local general ni
+mediciones normales del mismo canon: nueva CI completa requerida.
+
+App compilada con13ciudades locales de Lugares, capturas oficiales **estado6 a358**
+renovadas y vistas completas. Rectángulos finales:
+
+| Ancho | Campo | Alta | Cuerpo | Centro del alta |
+|---|---|---|---|---|
+| 390 | 139,2–185,2 | 241,4–289,4 | 106,9–338 | enlace |
+| 320 | 159,4–205,4 | 261,6–309,6 | 106,9–338 | enlace |
+
+Ambos controles completos dentro del cuerpo;0errores/desbordes, Bricolage cargada.
+El Link real de Next llega a `/nuevo?tipo=lugar` y cierra. Mediciones estado6
+actualizadas con358 e hit-test, estados1–5 conservados. Servicios/altura simulados.
+El gestor repetirá **Safari con teclado real sobre el nuevo SHA** porque cambia
+la disposición al buscar; debe revisar el delta y recibir la nueva CI exacta.
+Sin producción, PR333 draft, #294 primero y responsables ya confirmados en108.
