@@ -43,6 +43,7 @@ jobs:
       - run: npm run inventario
       - run: npx playwright-core install --with-deps --only-shell chromium
       - name: Pruebas de componentes en Chromium
-        run: npm run test:componentes
+        # Un archivo por vez: los gestos CDP no compiten con otros navegadores del runner.
+        run: npm run test:componentes -- --test-concurrency=1
         timeout-minutes: 10
       - run: npm run medir

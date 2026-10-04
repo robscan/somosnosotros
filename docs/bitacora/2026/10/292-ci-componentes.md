@@ -78,3 +78,25 @@ sincronización y documentación propia. Evidencia persistente:
 `/Users/apple-1/.codex/visualizations/2026/10/02/01a0fece-65fd-79e3-a64d-296a4b8fa13c/ci-componentes/`.
 Se conserva el SHA/diff temporal, log completo y JSON de la CI roja, diagnóstico
 y log focalizado. Próxima comprobación: candidato final completo en Linux.
+
+
+## Segunda ejecución y aislamiento del navegador en Linux
+
+[CI 37170629062](https://github.com/robscan/somosnosotros/actions/runs/37170629062)
+en `6e5c81c0`: 213/214, 106,57 s. Imagen y el caso de clics corregido pasan; falla
+el arrastre desde recogida que esperaba y=250 y acaba y=660 (HojaLugares, caso de
+inercia). No se presenta como verde ni se reintenta el mismo candidato.
+
+Diagnóstico focalizado con Chromium headless 153.0.8010.12, revisión 1243 de
+playwright-core 1.63.0 (la fijada en CI): las nueve fases del gesto pasan en Mac,
+38,06 s. Esto no prueba Linux ni Safari. El harness envía eventos CDP a intervalos
+cortos y la ejecución simultánea de archivos abre varios navegadores; la presión
+sobre el runner puede cambiar su entrega al compositor. Hipótesis operativa,
+sin afirmar una causa de producto demostrada.
+
+Se ajusta exclusivamente el paso de CI a
+`npm run test:componentes -- --test-concurrency=1`: un archivo/navegador a la vez,
+conservando todos los casos, las aserciones y el límite de 10 minutos. Configuración
+del runner dentro de la reserva; no cambia el comando local por defecto ni añade
+reintentos. Se validará una ejecución completa de este candidato en Linux y se
+registrará el tiempo real. El log del fallo adicional también queda preservado.
