@@ -1,6 +1,6 @@
 # 296 · Foco modal, enlaces de búsqueda y prueba de chips (OL-269)
 
-**Fecha:** 2026-10-04. **Estado:** primera publicación PR326; H09 y chips comprobados, H10 reabierta por memoria antigua y corrección en verificación.
+**Fecha:** 2026-10-04. **Estado:** publicado y verificado en producción; H09, H10 y prueba de chips cerrados técnicamente. Safari físico pendiente.
 
 Reserva del Gestor de cambios III, mensaje151 y PR324/21ff1abf. Rama
 `foco-busqueda`, worktree `/Users/apple-1/somosnosotros-foco-busqueda`, base
@@ -127,3 +127,39 @@ correcto;0 errores, capturas nuevas `buscar-390.png` y `buscar-editado-390.png`
 abiertas e inspeccionadas. No cambió Hoja ni el producto de chips.
 CI de main de la primera publicación37182639233 terminó success. H10 queda
 pendiente de revisión/publicación del segundo candidato, no cerrada por esa CI.
+
+## Segunda publicación y cierre técnico
+
+Gestor revisó y aceptó `3bdc7596fd3300b2272c469cde434b4a46565b9d`
+(mensaje159), exigiendo verificar la sesión antigua en producción.
+CI [37183085200](https://github.com/robscan/somosnosotros/actions/runs/37183085200)
+**success en el primer intento**:1871 unitarias,1391 contratos PG,
+226 componentes (224 correctos,0 fallos,2 excepciones Linux anteriores),
+96 mediciones78s. Preview6837750047 success sobre el SHA exacto. Recorrido real
+390×844: guardar «Anterior», abrir el enlace Rob, editar a Roberto, abrir su ficha
+y regresar conserva Roberto y resultados. Captura inspeccionada,0 errores.
+
+- [PR327](https://github.com/robscan/somosnosotros/pull/327) unido con merge
+  **`7e16a3ce4f8b8fc938c6ae10e0a696c033afbc2b`**, a06:41:07UTC, después de CI y
+  revisión/preview correctas.
+- Production **6837822382**, mismo SHA, success a06:41:38UTC:
+  https://somosnosotros-ncdzlqgqh-robscans-projects.vercel.app.
+- **Dominio real, misma pestaña21 que había fallado antes, sin borrar memoria:**
+  `/artistas?q=Rob` muestra Rob y resultados reales, q se retira de la URL.
+  Editar a Roberto, abrir la ficha cargada de Roberto Amir El Charrito y pulsar
+  **Atrás de la app** conserva Roberto y su resultado. PNG390 inspeccionados,
+  cero errores de consola. No se sustituyó por una sesión nueva para el cierre.
+- Cinco rutas y salud HTTP200; Supabase ok y Mapbox configurado. H09 permanece
+  comprobada en producción con foco dentro, Shift+Tab y Escape al disparador.
+- CI posterior del merge: [37183522892](https://github.com/robscan/somosnosotros/actions/runs/37183522892).
+  Su resultado se comprueba junto con el de este cierre antes de unir documentos.
+
+**H09, H10 y la estabilidad de chips quedan cerradas técnicamente.** Sustituye
+los pendientes de revisión y publicación anteriores, sin borrar el hallazgo de
+la primera publicación. Gestor informado con SHA y reproducción resuelta.
+Sin SQL, cambios de permisos, contenido real ni módulos compartidos adicionales.
+Se conservaron los eventos/direcciones y las piezas ajenas. Evidencia final en
+`preview-segunda.json`, `ci-segunda.json/log`, `merge-segunda.json`,
+`smoke-http-segunda.json`, `produccion-segunda.json` y las capturas/documentos
+antes indicados. La comprobación física en Safari sigue a cargo del founder;
+H07 a)+c) permanecen diferidas por el gestor. No se inició otra pieza ni monitor.
