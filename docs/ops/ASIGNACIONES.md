@@ -552,3 +552,27 @@ Estado al relevo (main `6d870573`):
   - **Sin SQL.**
   - **No tocar:** `apps/ios` (con su propio `package.json`), `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
   - **Pruebas:** la verificación completa, componentes, `medir` sin cambiar presupuestos (si cambian, explicar), el build, y la vista previa con Inicio, Agenda, una ficha, Entrar y el optimizador de imágenes.
+  - **OL-264, ampliación aceptada (2026-10-03):**
+    - **Aviso:** GHSA-vcvr-r3jv-pc5j (corregido desde la 16.3.6). Se sube a la 16.3.8, que también corrige GHSA-cjq9-62q9-8jv4 del optimizador. El patrón `html-bots` es idéntico.
+    - **Fallo de OL-263 que la CI no vio** (por H12): la suite completa de componentes falla con `process is not defined` en `HojaLugares.componentes` y otras que importan `next/image` de forma indirecta. Se reproduce con la 16.3.5, así que no es una regresión de la actualización.
+    - **Archivos sumados:** solo los `*.componentes.test.mjs` que importan consumidores de `Imagen` y no tienen doble de `next/image`. Se conserva la prueba real `Imagen.componentes` y no se debilita ninguna aserción.
+    - **Lección para H12:** la suite completa de componentes debe correr en la CI.
+  - **OL-264 entregada por Codex:** candidato `4fb1462f`. Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - `next` y `eslint-config-next` pasan de `^16.3.5` a `^16.3.8`. El lock solo cambia la familia Next.
+    - En pruebas, solo +2 líneas (dobles de `next/image`) en `HojaLugares.componentes` y `AgendaNuevos.componentes`.
+    - Suite completa de componentes: 214/214. La auditoría de dependencias de producción da 0.
+
+    Las 8 entradas de herramientas de desarrollo quedan fuera; se anotan para después. Ventana cedida a Codex tras abrir el PR y con la CI en verde: comprobar en Production Entrar con Apple y Google (solo los enlaces) y `/_next/image`.
+  - **#311 publicado por Codex:** `7eef8bc5`. Comprobado por el gestor: main y Production en ese SHA, el dominio responde 200 y `next` está en `^16.3.8`. Cierre documental en #312 (`25d6095f`), para unir con la CI del PR en verde. **OL-264 (H14) cerrada.**
+- **OL-265 / bitácora 292 · H12: la suite de componentes en la CI (2026-10-03, reserva para Codex).**
+  - **Rama:** `ci-componentes`, desde `origin/main` tras unir #312.
+  - **Alcance:** que `npm run test:componentes` corra completo en la CI de cada PR y de main.
+    - En Linux, con el Chrome del runner o el de `playwright-core`, sin descargas no fijadas.
+    - Fallar con código distinto de 0 si cualquier prueba falla.
+    - Tiempo razonable, sin que el reintento esconda fallos.
+  - **Archivos asignados:**
+    - `.github/workflows/ci.yml`;
+    - el runner o la configuración de `test:componentes` (`package.json`, scripts de la suite), solo si Linux lo exige;
+    - la bitácora 292 y la línea OL-265.
+  - **No tocar:** el código de producto, presupuestos de `medir`, `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
+  - **Pruebas:** la CI en verde con la suite completa (contar cuántas y cuánto tarda), y una prueba de que una regresión de componentes rompe la CI (rama o commit temporal, sin unir).
