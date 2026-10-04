@@ -287,30 +287,34 @@ test("al quitar un chip, su ✕ lo encoge y cierra el hueco, y solo entonces se 
   const cooperacion = page.getByRole("button", { name: "Quitar Cooperación" });
   await cooperacion.waitFor();
   await page.waitForTimeout(200);
-  // Cada cuadro: dónde está el de detrás y si el chip sigue en la fila.
-  await page.evaluate(() => {
-    window.cuadros = [];
-    const seguir = () => {
-      const c = document.querySelector('[aria-label="Quitar Cooperación"]');
-      window.cuadros.push({ x: c?.getBoundingClientRect().x, chip: !!document.querySelector('[aria-label="Quitar Gratis"]'), cambios: window.qa.cambios.length });
-      if (window.cuadros.length < 90) requestAnimationFrame(seguir);
+  // Pausar la animación real al crearla: el reloj de la prueba no depende de cuántos cuadros entregue CI.
+  await gratis.evaluate((chip) => {
+    const animar = chip.animate.bind(chip);
+    chip.animate = (...args) => {
+      const animacion = animar(...args);
+      animacion.pause();
+      animacion.currentTime = 0;
+      window.salida = animacion;
+      return animacion;
     };
-    requestAnimationFrame(seguir);
   });
-  const antes = (await cooperacion.boundingBox()).x;
   await gratis.click();
   assert.equal(await page.evaluate(() => window.qa.cambios.length), 0, "el filtro no se quita hasta que el chip termina de salir");
   assert.deepEqual(await animaciones(page, "Quitar Gratis"), [{ duracion: 366, propiedades: ["marginRight", "opacity", "transform"] }], "sale con el recorte del resorte");
+  const antes = (await cooperacion.boundingBox()).x;
+  const finalConChip = await page.evaluate(() => {
+    window.salida.finish();
+    // La animación ya tiene su estilo final; la promesa finished aún no ha retirado el nodo.
+    return { x: document.querySelector('[aria-label="Quitar Cooperación"]').getBoundingClientRect().x,
+      chip: !!document.querySelector('[aria-label="Quitar Gratis"]'), cambios: window.qa.cambios.length };
+  });
+  assert.equal(finalConChip.chip, true);
+  assert.equal(finalConChip.cambios, 0);
+  assert.ok(finalConChip.x < antes - 40, `el hueco se cerró antes de retirar el chip (de ${antes} a ${finalConChip.x})`);
   await page.waitForFunction(() => window.qa.cambios.length === 1);
   await gratis.waitFor({ state: "detached" });
   assert.deepEqual(await page.evaluate(() => window.qa.cambios.at(-1).cuanto), ["cooperacion"]);
-  await page.waitForTimeout(400);
-  const cuadros = await page.evaluate(() => window.cuadros);
-  const conChip = cuadros.filter((c) => c.chip);
-  const sinChip = cuadros.filter((c) => !c.chip);
-  assert.ok(conChip.length > 5 && sinChip.length > 3, "se ven cuadros con el chip saliendo y sin él");
-  assert.ok(conChip.at(-1).x < antes - 40, `el de detrás llegó a ocupar el hueco antes de que el chip se quitara (de ${antes} a ${conChip.at(-1).x})`);
-  cerca(sinChip[0].x, conChip.at(-1).x, 2.5); // al quitarlo de verdad no hay salto: a lo más lo que avanza un cuadro al final de la curva (sin el margen negativo serían unos 100 px)
+  cerca((await cooperacion.boundingBox()).x, finalConChip.x, 2.5); // misma tolerancia, ahora entre dos estados finales
   await context.close();
 });
 

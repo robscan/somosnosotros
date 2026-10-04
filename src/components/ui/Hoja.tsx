@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { IconoCerrar } from "./Iconos";
 import styles from "./Hoja.module.css";
@@ -30,6 +30,27 @@ type Props = {
 const nada = () => () => {};
 /** Cuántas hojas hay abiertas: la página se suelta cuando se cierra la última. */
 let abiertas = 0;
+/** Solo la hoja superior es interactiva. Se conservan los inert ajenos al abrir/cerrar la pila. */
+const fondos: HTMLElement[] = [];
+const inertPrevio = new Map<HTMLElement, boolean>();
+let observarFondo: MutationObserver | null = null;
+function actualizarFondo() {
+  const superior = fondos.at(-1);
+  if (!superior) {
+    for (const [elemento, previo] of inertPrevio) elemento.inert = previo;
+    inertPrevio.clear();
+    return;
+  }
+  for (const elemento of document.body.children) {
+    if (!(elemento instanceof HTMLElement)) continue;
+    if (!inertPrevio.has(elemento)) inertPrevio.set(elemento, elemento.inert);
+    elemento.inert = elemento !== superior;
+  }
+}
+function enfocables(panel: HTMLElement) {
+  return [...panel.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]')]
+    .filter(e => e.tabIndex >= 0 && !e.matches(':disabled') && !e.closest('[inert]') && e.getClientRects().length > 0 && getComputedStyle(e).visibility === 'visible');
+}
 /** true solo en el navegador y después de hidratar: en el servidor no hay body donde pintar el portal. */
 const enNavegador = () => true;
 const enServidor = () => false;
@@ -37,11 +58,54 @@ const enServidor = () => false;
 export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, children }: Props) {
   const montada = useSyncExternalStore(nada, enNavegador, enServidor);
   const [marco, setMarco] = useState<{ top: number; height: number } | null>(null);
-  useEffect(() => {
-    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
-    document.addEventListener("keydown", alTeclear);
-    return () => document.removeEventListener("keydown", alTeclear);
-  }, [onCerrar]);
+  const fondo = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const cerrar = useRef(onCerrar);
+  const focoPropio = useRef<HTMLElement | null>(null);
+  // Antes de montar los hijos: un campo con autoFocus no debe reemplazar al disparador recordado.
+  const [disparador] = useState(() => typeof document !== "undefined" && document.activeElement instanceof HTMLElement ? document.activeElement : null);
+  useLayoutEffect(() => { cerrar.current = onCerrar; }, [onCerrar]);
+  useLayoutEffect(() => {
+    const fondoActual = fondo.current, panelActual = panel.current;
+    if (!montada || !fondoActual || !panelActual) return;
+    fondos.push(fondoActual);
+    actualizarFondo();
+    if (!observarFondo) {
+      observarFondo = new MutationObserver(actualizarFondo);
+      observarFondo.observe(document.body, { childList: true });
+    }
+    const enfocar = () => (enfocables(panelActual)[0] ?? panelActual).focus({ preventScroll: true });
+    if (!panelActual.contains(document.activeElement)) {
+      if (focoPropio.current?.isConnected) focoPropio.current.focus({ preventScroll: true });
+      else enfocar();
+    }
+    const alTeclear = (e: KeyboardEvent) => {
+      if (fondos.at(-1) !== fondoActual) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        cerrar.current();
+      } else if (e.key === "Tab") {
+        const controles = enfocables(panelActual);
+        const primero = controles[0], ultimo = controles.at(-1);
+        const fuera = !panelActual.contains(document.activeElement) || document.activeElement === panelActual;
+        if (!primero || fuera || (e.shiftKey ? document.activeElement === primero : document.activeElement === ultimo)) {
+          e.preventDefault();
+          (e.shiftKey ? ultimo ?? panelActual : primero ?? panelActual).focus({ preventScroll: true });
+        }
+      }
+    };
+    document.addEventListener("keydown", alTeclear, true);
+    return () => {
+      document.removeEventListener("keydown", alTeclear, true);
+      // StrictMode repite montaje/limpieza: conservar el autofocus interno durante esa comprobación.
+      if (document.activeElement instanceof HTMLElement && panelActual.contains(document.activeElement)) focoPropio.current = document.activeElement;
+      fondos.splice(fondos.indexOf(fondoActual), 1);
+      if (!fondos.length) { observarFondo?.disconnect(); observarFondo = null; }
+      actualizarFondo();
+      if (disparador?.isConnected && !disparador.closest('[inert]')) disparador.focus({ preventScroll: true });
+    };
+  }, [montada, disparador]);
   useEffect(() => {
     // Solo en <html>: con <html> y <body> a la vez, la página volvía arriba al abrir la hoja (medido: de 300 a 0).
     const raiz = document.documentElement;
@@ -70,8 +134,8 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
   };
   if (!montada) return null;
   return createPortal(
-    <div className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
-      <div className={[styles.hoja, titulo && styles.conCabecera].filter(Boolean).join(" ")} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
+    <div ref={fondo} className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
+      <div ref={panel} tabIndex={-1} className={[styles.hoja, titulo && styles.conCabecera].filter(Boolean).join(" ")} role="dialog" aria-modal="true" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
           <IconoCerrar width={22} height={22} />
         </button>
