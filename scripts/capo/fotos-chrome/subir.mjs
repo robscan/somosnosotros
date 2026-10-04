@@ -1,5 +1,6 @@
 import fs from "fs";
 import { createRequire } from "module";
+import { objetoYaExiste, rutaConContenido } from "../../fotos/nombre-contenido.mjs";
 const require = createRequire("/Users/apple-1/somosnosotros/package.json");
 const { createClient } = require("@supabase/supabase-js");
 const sharp = require("sharp");
@@ -14,9 +15,9 @@ for (const [i,r] of bajadas.entries()) {
   let buf = fs.readFileSync(r.archivo); let ct = r.ct.split(";")[0]; let ext = r.archivo.split(".").pop();
   if (buf.length > 1_000_000) { const m = await sharp(buf).metadata(); const s = sharp(buf).rotate(); buf = await (m.width>1200||m.height>1200 ? s.resize({width:1200,height:1200,fit:"inside",withoutEnlargement:true}) : s).toFormat(ext==="png"?"png":"jpeg",{quality:85}).toBuffer(); reducidas++; }
   if (buf.length > 5_000_000) { fallos.push({nombre:r.nombre, motivo:`pesa ${buf.length} tras reducir`}); continue; }
-  const ruta = `artistas/${AUTOR}/importadas/${r.slug}.${ext}`;
-  const { error } = await db.storage.from("fotos").upload(ruta, buf, { contentType: ct, upsert: true });
-  if (error) { fallos.push({nombre:r.nombre, motivo:error.message}); continue; }
+  const ruta = rutaConContenido(`artistas/${AUTOR}/importadas/${r.slug}.${ext}`, buf);
+  const { error } = await db.storage.from("fotos").upload(ruta, buf, { contentType: ct, upsert: false });
+  if (error && !objetoYaExiste(error)) { fallos.push({nombre:r.nombre, motivo:error.message}); continue; }
   const publica = db.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
   subidas.push({ nombre: r.nombre, url: publica });
   if ((i+1)%50===0) console.log(`${i+1}/${bajadas.length}`);
