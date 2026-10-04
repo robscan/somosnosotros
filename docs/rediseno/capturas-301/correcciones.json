@@ -1,0 +1,121 @@
+{
+  "gestor": "143 y145",
+  "base": "e454a334",
+  "reproduccionMain": {
+    "componente": "Destacados real de main, sin CSS añadido",
+    "archivo": "reproduccion-main-390.png",
+    "ancho": 350,
+    "areaNombreAlto": 33.8438,
+    "aspectoPseudo": "auto"
+  },
+  "estados": [
+    {
+      "ancho": 320,
+      "caso": "normal",
+      "areaNombreAlto": 168,
+      "areaNombreAncho": 280,
+      "aspectoPseudo": "5 / 3",
+      "boton": {
+        "pressed": "false",
+        "nombre": "Voy — Un León Marinero",
+        "fondo": "rgb(255, 255, 255)",
+        "color": "rgb(109, 52, 200)"
+      },
+      "planes": false,
+      "adelante": true,
+      "desborde": false
+    },
+    {
+      "ancho": 320,
+      "caso": "varios",
+      "areaNombreAlto": 132,
+      "areaNombreAncho": 220,
+      "aspectoPseudo": "auto",
+      "boton": {
+        "pressed": "false",
+        "nombre": "Voy — Evento de muestra 1",
+        "fondo": "rgb(255, 255, 255)",
+        "color": "rgb(109, 52, 200)"
+      },
+      "planes": false,
+      "adelante": true,
+      "desborde": false
+    },
+    {
+      "ancho": 320,
+      "caso": "planes",
+      "areaNombreAlto": 168,
+      "areaNombreAncho": 280,
+      "aspectoPseudo": "5 / 3",
+      "boton": {
+        "pressed": "true",
+        "nombre": "Ya vas — Un León Marinero",
+        "fondo": "rgb(31, 111, 67)",
+        "color": "rgb(255, 255, 255)"
+      },
+      "planes": true,
+      "adelante": false,
+      "desborde": false
+    },
+    {
+      "ancho": 320,
+      "caso": "sin-carriles",
+      "vacioCanonico": true,
+      "masAdelante": false
+    },
+    {
+      "ancho": 390,
+      "caso": "normal",
+      "areaNombreAlto": 210,
+      "areaNombreAncho": 350,
+      "aspectoPseudo": "5 / 3",
+      "boton": {
+        "pressed": "false",
+        "nombre": "Voy — Un León Marinero",
+        "fondo": "rgb(255, 255, 255)",
+        "color": "rgb(109, 52, 200)"
+      },
+      "planes": false,
+      "adelante": true,
+      "desborde": false
+    },
+    {
+      "ancho": 390,
+      "caso": "varios",
+      "areaNombreAlto": 132,
+      "areaNombreAncho": 220,
+      "aspectoPseudo": "auto",
+      "boton": {
+        "pressed": "false",
+        "nombre": "Voy — Evento de muestra 1",
+        "fondo": "rgb(255, 255, 255)",
+        "color": "rgb(109, 52, 200)"
+      },
+      "planes": false,
+      "adelante": true,
+      "desborde": false
+    },
+    {
+      "ancho": 390,
+      "caso": "planes",
+      "areaNombreAlto": 210,
+      "areaNombreAncho": 350,
+      "aspectoPseudo": "5 / 3",
+      "boton": {
+        "pressed": "true",
+        "nombre": "Ya vas — Un León Marinero",
+        "fondo": "rgb(31, 111, 67)",
+        "color": "rgb(255, 255, 255)"
+      },
+      "planes": true,
+      "adelante": false,
+      "desborde": false
+    },
+    {
+      "ancho": 390,
+      "caso": "sin-carriles",
+      "vacioCanonico": true,
+      "masAdelante": false
+    }
+  ]
+}
