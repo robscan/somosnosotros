@@ -58,7 +58,10 @@ export const TOPE_ESTELAR = 12;
  */
 export function carrilEstelar<T extends Pick<EventoAgenda, "id" | "van" | "titulo" | "inicio">>(destacadosEnOrden: T[], favoritos: T[], vistos: Set<string>): T[] {
   const idsDestacados = new Set(destacadosEnOrden.map((e) => e.id));
-  const resto = favoritos.filter((e) => !idsDestacados.has(e.id)).toSorted((a, b) => b.van - a.van || compararEventos(a, b));
+  const candidatos = favoritos.filter((e) => !idsDestacados.has(e.id));
+  // Si falta algún recuento, orden cronológico para todo el grupo (comparador transitivo, sin ceros inventados).
+  const recuentosCompletos = candidatos.every((e) => e.van !== null);
+  const resto = candidatos.toSorted((a, b) => (recuentosCompletos ? b.van! - a.van! : 0) || compararEventos(a, b));
   const propios = sinRepetidos([...destacadosEnOrden, ...resto], new Set(vistos)).slice(0, TOPE_ESTELAR);
   for (const e of propios) vistos.add(e.id);
   return propios;
