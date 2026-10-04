@@ -33,6 +33,8 @@ type Respuesta = { texto: string; resultado: ResultadoBusqueda };
 type Recordado = { texto: string; tipo: GrupoBuscador | null; abiertos: GrupoBuscador[]; respuesta: Respuesta | null };
 
 type Props = {
+  /** Texto de un enlace antiguo; se usa una vez y se retira de la URL. */
+  consultaInicial?: string;
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
   /** El tipo de la sección desde la que se abrió Buscar: su grupo sale primero. */
@@ -70,8 +72,11 @@ function useRecientes(): Reciente[] {
  * esta pantalla como estaba. Si no hay nada con lo escrito y hay sesión, se ofrece registrarlo: como lugar si se abrió desde Lugares, como
  * artista desde cualquier otra sección (a una persona o a un grupo se le da de alta por su nombre; un evento pide más que eso).
  */
-export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion }: Props) {
-  const [texto, setTexto] = useState("");
+export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion, consultaInicial = "" }: Props) {
+  const [texto, setTexto] = useState(consultaInicial);
+  // Capturar antes de consumir q: el enlace explícito manda sobre memorias antiguas, incluso en StrictMode.
+  // Al volver a la URL limpia, Next puede reutilizar props del enlace anterior; allí sí manda la memoria.
+  const [consultaExplicita] = useState(() => !!consultaInicial && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("q") === consultaInicial);
   const [tipo, setTipo] = useState<GrupoBuscador | null>(null);
   const [abiertos, setAbiertos] = useState<GrupoBuscador[]>([]);
   const [respuesta, setRespuesta] = useState<Respuesta | null>(null);
@@ -86,11 +91,22 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
   const vista = buscable && respuesta ? armarVista(respuesta.resultado, respuesta.texto, desde, tipo) : null;
   const buscado = respuesta?.texto ?? "";
 
+  // Compatibilidad con enlaces antiguos, sin dejar el texto en la URL ni agregar otra entrada al historial.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!consultaInicial || url.searchParams.get("q") !== consultaInicial) return;
+    url.searchParams.delete("q");
+    // Igual que Agenda: Next actualiza useSearchParams y copia su estado interno; Navegacion conserva nuestra marca.
+    // Reenviar history.state con __NA haría que Next ignorara el cambio y la memoria siguiera guardando bajo ?q.
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, [consultaInicial]);
+
   // Buscar no se apila sobre Buscar: su lupa, en la barra de la app, enfoca el campo.
   useEffect(() => prestarALaBarra({ buscar: () => campo.current?.focus() }), []);
 
   // Al volver de una ficha, sin robar el foco: lo escrito, lo elegido y lo que se encontró, tal como estaba.
   useMemoriaPantalla<Recordado>(null, { texto, tipo, abiertos, respuesta }, (r) => {
+    if (consultaExplicita) return;
     setTexto(r.texto);
     setTipo(r.tipo);
     setAbiertos(r.abiertos);

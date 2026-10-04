@@ -27,7 +27,7 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
 /** Una tarjeta de la tira, lista para pintarse. `foto` es null cuando no tiene (quien la pinta pone su relleno o no lleva imagen);
  *  `cuando` dice que `detalle` es un día y una hora (se pinta en violeta) y no un tipo o una disciplina; `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde); `hoy` (empieza hoy) y `van` los pone solo
  *  `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number; hoy?: boolean; cuando?: boolean };
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -51,7 +51,7 @@ export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
 export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
   if (interesa) return { texto: "Te interesa", tuyo: true, hoy: false };
   if (t.hoy) return { texto: "Hoy", tuyo: false, hoy: true };
-  if (t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
+  if (t.van !== null && t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
   return null;
 }
 

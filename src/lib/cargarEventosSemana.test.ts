@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cargarEventosSemana } from "./cargarEventosSemana";
+
+afterEach(() => vi.restoreAllMocks());
 
 const ahora = new Date("2026-09-18T18:00:00Z");
 const evento = { id: "evento", inicio: "2026-09-19T01:00:00Z", termina: "2026-09-19T06:00:00Z", zona: "America/Mexico_City", visible: true, lugar_id: null, lugar: null };
@@ -84,4 +86,13 @@ describe("lectura semanal independiente de la página del directorio", () => {
   it("sin conexión configurada devuelve un carril vacío", async () => {
     expect(await cargarEventosSemana(null, "lugares", "San Luis Potosí", ahora)).toEqual([]);
   });
+});
+
+
+it("el carril semanal fallido deja traza estática; vacío real no es un fallo", async () => {
+  const traza = vi.spyOn(console, "warn").mockImplementation(() => {});
+  await cargarEventosSemana(banco([{ data: [], error: null }]).cliente, "artistas", "San Luis Potosí", ahora);
+  expect(traza).not.toHaveBeenCalled();
+  await cargarEventosSemana(banco([{ data: null, error: { message: "correo@privado.test" } }]).cliente, "artistas", "San Luis Potosí", ahora);
+  expect(traza).toHaveBeenCalledExactlyOnceWith("[agenda] carril semanal no disponible: artistas");
 });

@@ -47,18 +47,22 @@ export async function esAdminDeSesion(supabase: ClienteServidor, usuarioId: stri
   return data?.rol === "admin";
 }
 
-export type Perfil = {
+export type PerfilPublico = {
   id: string;
   nombre: string;
   foto: string | null;
   colonia: string | null;
   bio: string | null;
   rol: "admin" | "usuario";
+  /** Ficha reservada: a qué va y qué sigue solo lo ve ella (migración 0020). */
+  reservado?: boolean;
+};
+
+/** Estado de la cuenta: solo se obtiene por la sesión de su titular. */
+export type Perfil = PerfilPublico & {
   avisos_correo?: boolean;
   avisos_push?: boolean;
   avisos_preguntado?: boolean;
-  /** Ficha reservada: a qué va y qué sigue solo lo ve ella (migración 0020). */
-  reservado?: boolean;
   /** Cuándo abrió Novedades por última vez (migración 0021). */
   novedades_vistas_en?: string | null;
 };
@@ -71,11 +75,7 @@ export async function usuarioActual(): Promise<{ correo: string | null; perfil: 
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (!claims?.sub) return null;
-  const { data: perfil } = await supabase
-    .from("perfiles")
-    .select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado, reservado, novedades_vistas_en")
-    .eq("id", claims.sub)
-    .maybeSingle();
-  if (!perfil) return null;
+  const { data: perfil, error } = await supabase.rpc("mi_perfil");
+  if (error || !perfil || perfil.id !== claims.sub) return null;
   return { correo: (claims.email as string | undefined) ?? null, perfil: perfil as Perfil };
 }

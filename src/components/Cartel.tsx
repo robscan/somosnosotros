@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "@/lib/imagen";
 import VisorImagen from "./VisorImagen";
+import Imagen from "./ui/Imagen";
 import styles from "./Cartel.module.css";
 
 /**
@@ -35,8 +36,7 @@ export default function Cartel({
         onClick={() => setAbierto(true)}
         aria-label={`Ver ${alt} entero`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-        <img src={src} alt={alt} className={styles.imagen} />
+        <Imagen src={src} alt={alt} className={styles.imagen} width={forma === "avatar" ? 64 : 1280} height={forma === "avatar" ? 64 : 853} sizes={forma === "avatar" ? "64px" : "(min-width: 1048px) 50vw, 100vw"} loading="eager" />
       </button>
       {abierto && createPortal(<VisorImagen src={src} alt={alt} onCerrar={cerrar} />, document.body)}
     </>

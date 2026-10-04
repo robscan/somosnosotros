@@ -211,7 +211,7 @@ async function esperarAterrizaje(page, ruta) {
 /** Volver: con el botón Atrás de la app, o con el gesto del navegador (el deslizar desde el borde del iPhone, el botón de Safari). */
 async function volver(page, via) {
   if (via === "botón") await page.getByRole("button", { name: /Atrás/ }).or(page.getByRole("link", { name: /Atrás/ })).first().click();
-  else await page.evaluate(() => history.back());
+  else await page.goBack({ waitUntil: "domcontentloaded" });
 }
 
 for (const caso of CASOS) {
@@ -234,7 +234,7 @@ for (const caso of CASOS) {
         assert.equal(await rutaActual(page), caso.atras);
         // Y otro Atrás no entra a las páginas del proveedor ni a Entrar: el historial es el de antes de salir (Agenda venía de una página en blanco).
         if (caso.atras === "/agenda") {
-          await page.evaluate(() => history.back()).catch(() => {}); // la carga destruye el contexto
+          await page.goBack({ waitUntil: "domcontentloaded" });
           await page.waitForURL("about:blank", { timeout: 8000 });
         }
         assert.deepEqual(errores, []);

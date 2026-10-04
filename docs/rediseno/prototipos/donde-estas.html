@@ -1,0 +1,240 @@
+<title>Dónde estás, propuesta</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+/* Sala de prototipos: teléfonos de 390 × 844 lado a lado sobre el gris de estudio; la app usa sus tokens reales (tema claro único). */
+:root {
+  color-scheme: light;
+  --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #75736e;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-suave: color-mix(in srgb, #6d34c8 12%, white); --ok: #1f6f43; --asa: #d9d9d9;
+  --velo-hoja: rgba(0,0,0,.32); --teclado: #d1d3d9; --tecla: #fcfcfe;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: "wdth" 80; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; padding-inline: 16px; padding-block: 24px 48px; }
+ul { list-style: none; }
+.cabeza { max-width: 1680px; margin: 0 auto 20px; display: grid; gap: 10px; }
+.cabeza h1 { font-variation-settings: "wdth" 75; font-size: 28px; text-wrap: balance; }
+.cabeza p { max-width: 70ch; font-size: 16px; line-height: 1.45; }
+.analisis { max-width: 1680px; margin: 0 auto 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.analisis article { background: #f7f6f3; border-radius: 12px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+.analisis h2 { font-variation-settings: "wdth" 75; font-size: 18px; }
+.analisis p { font-size: 15px; line-height: 1.45; min-width: 0; }
+.veredicto { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.si { color: var(--ok); } .matiz { color: #a94400; }
+.sala { max-width: 1680px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+figure { display: grid; gap: 10px; width: 390px; max-width: 100%; }
+figcaption { display: grid; gap: 2px; }
+figcaption b { font-size: 17px; font-variation-settings: "wdth" 75; }
+figcaption span { font-size: 14px; color: var(--estudio-suave); line-height: 1.4; }
+
+/* El teléfono */
+.tel { position: relative; width: 390px; max-width: 100%; height: 844px; border-radius: 44px; overflow: hidden; background: var(--fondo-contenido); box-shadow: 0 0 0 10px #111, 0 24px 60px rgba(0,0,0,.25); color: var(--texto); font-variation-settings: "wdth" 80; }
+.estado { height: 54px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 30px; font-weight: 700; font-size: 16px; background: #fff; }
+.estado i { width: 120px; height: 34px; border-radius: 17px; background: #000; }
+.barra { height: 56px; background: #fff; display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 18px; align-items: center; padding: 0 20px; }
+.logo { justify-self: center; font-weight: 800; font-size: 24px; font-variation-settings: "wdth" 75; letter-spacing: -.02em; }
+.chips { background: #fff; display: flex; gap: 8px; padding: 6px 20px 12px; border-bottom: 1px solid var(--borde); }
+.chip { height: 36px; border: 1px solid var(--borde); border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 15px; font-weight: 600; }
+.fondo-app { padding: 20px; display: grid; gap: 12px; }
+.fondo-app .t { height: 22px; width: 50%; border-radius: 6px; background: #e3e2dd; }
+.fondo-app .c { height: 150px; border-radius: 12px; background: #dedcd6; }
+.velo { position: absolute; inset: 0; background: var(--velo-hoja); }
+
+/* La hoja */
+.hoja { position: absolute; inset: auto 0 0; background: var(--fondo); border-radius: 24px 24px 0 0; padding: 10px 20px 34px; display: grid; gap: 14px; align-content: start; }
+.hoja.alta { top: 64px; }
+.asa { justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--asa); }
+.titulo { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+.titulo h3 { font-size: 19px; font-variation-settings: "wdth" 75; } /* hoja h3: --letra-xl */
+/* ui/Renglon .tarjeta + .ajuste */
+.lista { border: 1px solid var(--borde); border-radius: 8px; background: var(--fondo); overflow: hidden; }
+.fila { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: "i t a" "i m a"; column-gap: 12px; align-items: center; align-content: center; min-height: 52px; padding: 8px 14px; }
+.fila + .fila { border-top: 1px solid var(--borde); }
+
+.fila > svg:first-child { grid-area: i; color: var(--texto-suave); }
+.fila b { grid-area: t; font-size: 17px; font-weight: 600; }
+.fila small { grid-area: m; font-size: 15px; color: var(--texto-suave); line-height: 1.3; }
+.fila .a { grid-area: a; width: 16px; height: 16px; color: var(--texto-suave); }
+
+
+.aqui { color: var(--ok); font-weight: 600; }
+/* ui/Boton secundario, forma píldora */
+.usar { display: flex; gap: 8px; align-items: center; justify-content: center; min-height: 48px; padding: 8px 16px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-weight: 700; font-size: 18px; }
+/* ui/Buscador CampoBuscar, con foco */
+.busca { min-height: 44px; border: 1px solid var(--texto); border-radius: 999px; display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: center; padding: 0 12px; font-size: 17px; background: var(--fondo); }
+.busca > svg { color: var(--texto-suave); }
+.busca span { color: var(--texto); }
+.busca .cursor { display: inline-block; width: 2px; height: 20px; background: var(--primario); vertical-align: -4px; margin-left: 1px; }
+.busca.quieta { border-color: var(--borde); color: var(--texto-suave); }
+.marca { background: var(--primario-suave); border-radius: 3px; }
+/* ui/Hoja .nota */
+.nota { font-size: 15px; line-height: 1.35; color: var(--texto-suave); margin-top: -8px; }
+/* ui/Boton primario (recta) */
+.boton { min-height: 48px; padding: 8px 16px; border-radius: 8px; background: var(--primario); color: #fff; font-weight: 700; font-size: 18px; display: grid; place-items: center; margin-top: 6px; }
+.mas { font-size: 15px; color: var(--texto-suave); padding-top: 4px; }
+
+/* Teclado */
+.teclado { position: absolute; inset: auto 0 0; height: 336px; background: var(--teclado); padding: 8px 4px 0; display: grid; grid-template-rows: 38px repeat(4, 46px); gap: 10px; }
+.sug { display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; text-align: center; font-size: 16px; }
+.renglon { display: flex; gap: 6px; justify-content: center; }
+.renglon i { flex: 0 0 33px; border-radius: 6px; background: var(--tecla); box-shadow: 0 1px 0 rgba(0,0,0,.25); font-style: normal; display: grid; place-items: center; font-size: 21px; }
+.renglon .w { flex-basis: 46px; background: #adb2bc; }
+.renglon .esp { flex-basis: 190px; }
+.renglon .ir { flex-basis: 90px; background: #1a73e8; color: #fff; font-size: 16px; }
+
+/* Aviso del sistema (iOS) */
+.alerta { position: absolute; left: 50%; top: 300px; transform: translateX(-50%); width: 270px; border-radius: 14px; background: rgba(242,242,247,.97); text-align: center; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,.25); font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+.alerta p { padding: 18px 16px 14px; font-size: 15px; line-height: 1.3; }
+.alerta p b { display: block; font-size: 16px; margin-bottom: 4px; }
+.alerta div { border-top: 1px solid #c6c6c8; padding: 11px; color: #0a7aff; font-size: 16px; }
+.alerta div + div { font-weight: 600; }
+.velo-alerta { position: absolute; inset: 0; background: rgba(0,0,0,.2); }
+@media (max-width: 440px) { .tel { transform-origin: top left; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="mira" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+  <symbol id="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></symbol>
+  <symbol id="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+</svg>
+
+<header class="cabeza">
+  <h1>Hoja de ciudades: lista directa, sin pasos</h1>
+  <p>Lo que propones, cuestionado punto por punto, y cinco estados de la hoja nueva. Botón, filas, buscador y nota copian los componentes de la app (ui/Boton, ui/Renglon, ui/Buscador, ui/Hoja). Datos reales de hoy: en Agenda y Lugares hay 2 ciudades con lugares (San Luis 63, San Miguel 3); en Artistas hay 13.</p>
+</header>
+
+<section class="analisis">
+  <article><span class="veredicto si">De acuerdo</span><h2>Quitar texto y el paso «Otra ciudad»</h2><p>La frase de arriba explica una regla interna; la persona solo quiere cambiar de ciudad. Las ciudades salen listadas al abrir, sin tocar nada más. Sin flechas: elegir no lleva a otra pantalla.</p></article>
+  <article><span class="veredicto si">De acuerdo</span><h2>Que escale y el teclado no tape</h2><p>El buscador sale solo con más de 8 ciudades y va arriba de la lista. Al tocarlo, la hoja sube a toda la altura: lo que se filtra queda entre el campo y el teclado, nunca debajo.</p></article>
+  <article><span class="veredicto matiz">Con matiz</span><h2>La más cercana, seleccionada</h2><p>Sí cuando la persona todavía no eligió ciudad (primera vez): se elige sola la más cercana. Si ya eligió otra, no se la cambiamos; la cercana sube a la primera fila con «Estás aquí» y la palomita sigue en lo que está viendo.</p></article>
+  <article><span class="veredicto matiz">Con matiz</span><h2>Pedir la ubicación de entrada</h2><p>Usarla si ya está concedida, sí. Pedirla sola al abrir, no: si alguien toca «No permitir» en el aviso de iOS, Safari deja de preguntar y perdemos la cercanía también en Lugares. Se pide con un toque en «Usar mi ubicación». Ojo: usarla sin toque es lo mismo que dejaste en pausa en #294; aprobar esto lo destraba.</p></article>
+  <article><span class="veredicto si">Tu precisión</span><h2>La lista depende del catálogo, no de ti</h2><p>El título dice qué se lista según la sección («Ciudades con eventos», «con lugares», «con artistas») y una línea aclara que solo salen las que ya tienen contenido. Si tu ubicación queda a más de 50 km de todas, abajo aparece «Agregar un evento en tu ciudad» con el nombre ya puesto (estado 5).</p></article>
+</section>
+
+<main class="sala">
+
+  <!-- 1. Sin permiso de ubicación -->
+  <figure>
+    <div class="tel">
+      <div class="estado"><span>11:43</span><i></i><span></span></div>
+      <div class="barra"><span></span><span></span><span class="logo">SMSNSTRS</span><span></span><span></span></div>
+      <div class="chips"><span class="chip"><svg width="16" height="16"><use href="#pin"/></svg>San Luis Potosí<svg width="12" height="12"><use href="#caret"/></svg></span><span class="chip"><svg width="16" height="16"><use href="#cal"/></svg>Cuándo</span></div>
+      <div class="fondo-app"><div class="t"></div><div class="c"></div><div class="t"></div><div class="c"></div></div>
+      <div class="velo"></div>
+      <div class="hoja">
+        <span class="asa"></span>
+        <div class="titulo"><h3>Ciudades con eventos</h3><svg width="26" height="26"><use href="#x"/></svg></div>
+        <p class="nota">Solo salen ciudades donde ya hay eventos publicados.</p>
+        <div class="usar"><svg width="22" height="22"><use href="#mira"/></svg>Usar mi ubicación</div>
+        <div class="lista">
+          <div class="fila" aria-current="true"><svg width="22" height="22"><use href="#pin"/></svg><b>San Luis Potosí</b><small>63 lugares · 138 eventos</small><svg class="a" width="16" height="16"><use href="#ok"/></svg></div>
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>Aguascalientes</b><small>1 evento</small></div>
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>San Miguel de Allende</b><small>3 lugares · 3 eventos</small></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>1 · Sin permiso todavía</b><span>Un botón aparte para usar la ubicación, separado de la lista; luego las ciudades, ordenadas por cercanía a la que estás viendo. Tocar una ciudad la elige y cierra.</span></figcaption>
+  </figure>
+
+  <!-- 2. Tocó «Usar mi ubicación»: aviso de iOS -->
+  <figure>
+    <div class="tel">
+      <div class="estado"><span>11:43</span><i></i><span></span></div>
+      <div class="barra"><span></span><span></span><span class="logo">SMSNSTRS</span><span></span><span></span></div>
+      <div class="chips"><span class="chip"><svg width="16" height="16"><use href="#pin"/></svg>San Luis Potosí<svg width="12" height="12"><use href="#caret"/></svg></span><span class="chip"><svg width="16" height="16"><use href="#cal"/></svg>Cuándo</span></div>
+      <div class="fondo-app"><div class="t"></div><div class="c"></div><div class="t"></div><div class="c"></div></div>
+      <div class="velo"></div>
+      <div class="hoja">
+        <span class="asa"></span>
+        <div class="titulo"><h3>Ciudades con eventos</h3><svg width="26" height="26"><use href="#x"/></svg></div>
+        <p class="nota">Solo salen ciudades donde ya hay eventos publicados.</p>
+        <div class="usar"><svg width="22" height="22"><use href="#mira"/></svg>Usar mi ubicación</div>
+        <div class="lista">
+          <div class="fila" aria-current="true"><svg width="22" height="22"><use href="#pin"/></svg><b>San Luis Potosí</b><small>63 lugares · 138 eventos</small><svg class="a" width="16" height="16"><use href="#ok"/></svg></div>
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>Aguascalientes</b><small>1 evento</small></div>
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>San Miguel de Allende</b><small>3 lugares · 3 eventos</small></div>
+        </div>
+      </div>
+      <div class="velo-alerta"></div>
+      <div class="alerta"><p><b>¿Permitir que «somosnosotros.org» use tu ubicación?</b></p><div>No permitir</div><div>Permitir</div></div>
+    </div>
+    <figcaption><b>2 · El aviso sale solo tras el toque</b><span>La persona ya sabe para qué es. Si permite, la lista se reordena (estado 3). Si no, la línea «Usar mi ubicación» desaparece y todo sigue funcionando por ciudad.</span></figcaption>
+  </figure>
+
+  <!-- 3. Con ubicación concedida -->
+  <figure>
+    <div class="tel">
+      <div class="estado"><span>11:43</span><i></i><span></span></div>
+      <div class="barra"><span></span><span></span><span class="logo">SMSNSTRS</span><span></span><span></span></div>
+      <div class="chips"><span class="chip"><svg width="16" height="16"><use href="#pin"/></svg>San Miguel de Allende<svg width="12" height="12"><use href="#caret"/></svg></span><span class="chip"><svg width="16" height="16"><use href="#cal"/></svg>Cuándo</span></div>
+      <div class="fondo-app"><div class="t"></div><div class="c"></div><div class="t"></div><div class="c"></div></div>
+      <div class="velo"></div>
+      <div class="hoja">
+        <span class="asa"></span>
+        <div class="titulo"><h3>Ciudades con eventos</h3><svg width="26" height="26"><use href="#x"/></svg></div>
+        <p class="nota">Solo salen ciudades donde ya hay eventos publicados.</p>
+        <div class="lista">
+          <div class="fila"><svg width="22" height="22"><use href="#mira"/></svg><b>San Luis Potosí</b><small><span class="aqui">Estás aquí</span> · 63 lugares · 138 eventos</small></div>
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>Aguascalientes</b><small>138 km · 1 evento</small></div>
+          <div class="fila" aria-current="true"><svg width="22" height="22"><use href="#pin"/></svg><b>San Miguel de Allende</b><small>140 km · 3 lugares · 3 eventos</small><svg class="a" width="16" height="16"><use href="#ok"/></svg></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>3 · Ubicación ya concedida</b><span>No hay nada que pedir: la ciudad donde estás sube primero con «Estás aquí» y cada ciudad dice su distancia. Aquí la persona miraba San Miguel; la palomita se queda en lo que eligió.</span></figcaption>
+  </figure>
+
+  <!-- 4. Muchas ciudades y escribiendo (Artistas) -->
+  <figure>
+    <div class="tel">
+      <div class="estado"><span>11:43</span><i></i><span></span></div>
+      <div class="barra"><span></span><span></span><span class="logo">SMSNSTRS</span><span></span><span></span></div>
+      <div class="velo"></div>
+      <div class="hoja alta">
+        <span class="asa"></span>
+        <div class="titulo"><h3>Ciudades con artistas</h3><svg width="26" height="26"><use href="#x"/></svg></div>
+        <p class="nota">Solo salen ciudades donde ya hay artistas registrados.</p>
+        <div class="busca"><svg width="20" height="20"><use href="#lupa"/></svg><span>gua<i class="cursor"></i></span></div>
+        <div class="lista">
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b><span class="marca">Gua</span>dalajara</b><small>1 artista</small></div>
+        </div>
+      </div>
+      <div class="teclado">
+        <div class="sug"><span>«gua»</span><span>guapo</span><span>guardar</span></div>
+        <div class="renglon"><i>q</i><i>w</i><i>e</i><i>r</i><i>t</i><i>y</i><i>u</i><i>i</i><i>o</i><i>p</i></div>
+        <div class="renglon"><i>a</i><i>s</i><i>d</i><i>f</i><i>g</i><i>h</i><i>j</i><i>k</i><i>l</i><i>ñ</i></div>
+        <div class="renglon"><i class="w">⇧</i><i>z</i><i>x</i><i>c</i><i>v</i><i>b</i><i>n</i><i>m</i><i class="w">⌫</i></div>
+        <div class="renglon"><i class="w">123</i><i class="esp"></i><i class="ir">Buscar</i></div>
+      </div>
+    </div>
+    <figcaption><b>4 · Muchas ciudades: buscar arriba</b><span>Con más de 8 ciudades (Artistas tiene 13) el campo sale arriba de la lista. Al escribir la hoja ocupa toda la pantalla y los resultados quedan visibles sobre el teclado. Sin importar acentos ni mayúsculas: «gua» encuentra Guadalajara.</span></figcaption>
+  </figure>
+
+  <!-- 5. Lejos de todas las ciudades -->
+  <figure>
+    <div class="tel">
+      <div class="estado"><span>11:43</span><i></i><span></span></div>
+      <div class="barra"><span></span><span></span><span class="logo">SMSNSTRS</span><span></span><span></span></div>
+      <div class="chips"><span class="chip"><svg width="16" height="16"><use href="#pin"/></svg>San Luis Potosí<svg width="12" height="12"><use href="#caret"/></svg></span><span class="chip"><svg width="16" height="16"><use href="#cal"/></svg>Cuándo</span></div>
+      <div class="fondo-app"><div class="t"></div><div class="c"></div><div class="t"></div><div class="c"></div></div>
+      <div class="velo"></div>
+      <div class="hoja">
+        <span class="asa"></span>
+        <div class="titulo"><h3>Ciudades con eventos</h3><svg width="26" height="26"><use href="#x"/></svg></div>
+        <p class="nota">Solo salen ciudades donde ya hay eventos publicados.</p>
+        <div class="lista">
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>Aguascalientes</b><small>103 km · 1 evento</small></div>
+          <div class="fila" aria-current="true"><svg width="22" height="22"><use href="#pin"/></svg><b>San Luis Potosí</b><small>179 km · 63 lugares · 138 eventos</small><svg class="a" width="16" height="16"><use href="#ok"/></svg></div>
+          <div class="fila"><svg width="22" height="22"><use href="#pin"/></svg><b>San Miguel de Allende</b><small>280 km · 3 lugares · 3 eventos</small></div>
+        </div>
+        <span class="boton">Agregar un evento en Zacatecas</span>
+      </div>
+    </div>
+    <figcaption><b>5 · Estás lejos de todas</b><span>Ubicación concedida y estás en Zacatecas, a más de 50 km de cualquier ciudad de la lista. Abajo, un botón abre el formulario con la ciudad ya escrita; en Lugares diría «Agregar un lugar en…». Sin ubicación no sale: no sabemos dónde estás. Si no logramos el nombre de la ciudad: «Agregar un evento donde estás».</span></figcaption>
+  </figure>
+
+</main>

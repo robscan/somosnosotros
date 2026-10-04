@@ -1,7 +1,8 @@
-import { compararEventos, corteNuevos, eventosNuevos, filtrarAgenda, type EventoAgenda } from "./agenda";
+import { compararEventos, corteNuevos, eventosNuevos, filtrarAgenda, LIMITE_NUEVOS, type EventoAgenda } from "./agenda";
 import type { Agenda } from "./cargarAgenda";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import { enOrden } from "./destacados";
+import { terminaDe } from "./fechas";
 
 /**
  * Inicio: siete carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
@@ -12,11 +13,11 @@ import { enOrden } from "./destacados";
  */
 
 /** "Esta semana" = próximos 7 días desde ahora (decisión del founder, segunda vuelta de doc 41): no es la semana de
- *  calendario (`DIAS_ESTA_SEMANA`, lib/cuando). Un evento que ya empezó cuenta si todavía no termina. */
-export function eventosEstaSemana<T extends Pick<EventoAgenda, "inicio" | "fin">>(eventos: T[], ahora: Date = new Date()): T[] {
+ *  calendario (`DIAS_ESTA_SEMANA`, lib/cuando). Un evento que ya empezó cuenta hasta su fin o la medianoche de su zona, igual que Agenda. */
+export function eventosEstaSemana<T extends Pick<EventoAgenda, "inicio" | "fin" | "zona">>(eventos: T[], ahora: Date = new Date()): T[] {
   const desde = ahora.getTime();
   const hasta = desde + DIAS_ESTA_SEMANA * 86400000;
-  return eventos.filter((e) => new Date(e.fin ?? e.inicio).getTime() >= desde && new Date(e.inicio).getTime() < hasta);
+  return eventos.filter((e) => new Date(terminaDe(e.inicio, e.fin, e.zona)).getTime() >= desde && new Date(e.inicio).getTime() < hasta);
 }
 
 /**
@@ -57,7 +58,10 @@ export const TOPE_ESTELAR = 12;
  */
 export function carrilEstelar<T extends Pick<EventoAgenda, "id" | "van" | "titulo" | "inicio">>(destacadosEnOrden: T[], favoritos: T[], vistos: Set<string>): T[] {
   const idsDestacados = new Set(destacadosEnOrden.map((e) => e.id));
-  const resto = favoritos.filter((e) => !idsDestacados.has(e.id)).toSorted((a, b) => b.van - a.van || compararEventos(a, b));
+  const candidatos = favoritos.filter((e) => !idsDestacados.has(e.id));
+  // Si falta algún recuento, orden cronológico para todo el grupo (comparador transitivo, sin ceros inventados).
+  const recuentosCompletos = candidatos.every((e) => e.van !== null);
+  const resto = candidatos.toSorted((a, b) => (recuentosCompletos ? b.van! - a.van! : 0) || compararEventos(a, b));
   const propios = sinRepetidos([...destacadosEnOrden, ...resto], new Set(vistos)).slice(0, TOPE_ESTELAR);
   for (const e of propios) vistos.add(e.id);
   return propios;
@@ -91,7 +95,7 @@ export const TOPE_ESTA_SEMANA = 20;
  * diferencia de Nuevos eventos, no tiene piso: con 1 o 2 eventos se ve igual de corto, nunca vacío de
  * mentira (esa regla es solo de Nuevos eventos, ver `carrilNuevos`).
  */
-export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
+export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
   const candidatos = eventosEstaSemana(eventos, ahora).toSorted(compararEventos);
   return sinRepetidos(candidatos, vistos).slice(0, TOPE_ESTA_SEMANA);
 }
@@ -105,7 +109,7 @@ export const MINIMO_NUEVOS = 3;
  * definición de la pestaña Nuevos de Agenda, a donde lleva su «Ver la agenda») con fecha DESPUÉS de la ventana de "Esta semana" — ya no
  * compite por los mismos eventos recién publicados dentro de esos 7 días (antes se llamaba "Eventos nuevos esta semana" y sí competía; el
  * `Set` de deduplicación decidía quién se los quedaba, a veces dejando este carril casi vacío). De lo más reciente hacia atrás; a igual
- * publicación, el orden de siempre de la agenda.
+ * publicación, el orden de siempre de la agenda. Tope de `LIMITE_NUEVOS` antes de enviar tarjetas al cliente; se continúa en Agenda.
  *
  * El servidor no sabe cuándo miró la persona por última vez (esa marca vive en su teléfono): aquí «nuevo» es lo de los últimos 7 días y
  * `CarrilNuevos`, ya en el teléfono, deja lo que sigue siéndolo para ella.
@@ -117,8 +121,9 @@ export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "
   const empiezaDespuesDeEstaSemana = ahora.getTime() + DIAS_ESTA_SEMANA * 86400000;
   const candidatos = eventosNuevos(eventos, corteNuevos(null, ahora)).filter((e) => new Date(e.inicio).getTime() >= empiezaDespuesDeEstaSemana && !vistos.has(e.id));
   if (candidatos.length < MINIMO_NUEVOS) return [];
-  for (const e of candidatos) vistos.add(e.id);
-  return candidatos;
+  const propios = candidatos.slice(0, LIMITE_NUEVOS);
+  for (const e of propios) vistos.add(e.id);
+  return propios;
 }
 
 /** Los tres carriles de eventos de Inicio que salen de una sola `cargarAgenda` (estelar, esta semana, nuevos): se calculan

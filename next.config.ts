@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { CONFIG_IMAGENES } from "./src/lib/imagenOptima";
 
 /**
  * Cabeceras de seguridad (revisión 2026-09-14, M1). Sin CSP completa todavía: Next y Mapbox exigen
@@ -19,7 +20,7 @@ const CABECERAS = [
 const NOINDEX = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
 
 /**
- * Copiado de `node_modules/next/dist/shared/lib/router/utils/html-bots.js` (Next 16.3.5), más Googlebot: Next 16
+ * Copiado de `node_modules/next/dist/shared/lib/router/utils/html-bots.js` (Next 16.3.8, patrón revisado sin cambios), más Googlebot: Next 16
  * manda el `<title>`, la descripción y el canonical de una página con `generateMetadata` en streaming dentro de
  * `<body>` (revisión de gestión de cambios, OL-059) — Google ignora un canonical fuera de `<head>`. Este patrón le
  * dice a Next qué visitantes no pueden esperar el streaming y deben recibir el HTML completo, con la metadata ya
@@ -29,6 +30,7 @@ const NOINDEX = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
 const BOTS_SIN_STREAMING = /[\w-]+-Google|Google-[\w-]+|Googlebot|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight/i;
 
 const nextConfig: NextConfig = {
+  images: CONFIG_IMAGENES,
   // Al cambiar de sección con la barra inferior (Agenda · Lugares · Artistas) la página vista hace menos de un minuto
   // se reutiliza en el teléfono sin esperar al servidor; publicar, Voy y Seguir la invalidan (revalidatePath).
   experimental: { staleTimes: { dynamic: 60 } },

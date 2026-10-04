@@ -40,7 +40,11 @@ async function antesDelPlazo<T>(consulta: ConsultaAbortable<Respuesta<T>>, contr
  * Si falla un lote no se ofrece un carril incompleto. El directorio y los destacados siguen disponibles.
  */
 export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo: "artistas" | "lugares", ciudad: string, ahora = new Date(), opciones: OpcionesDeLecturaSemanal = {}) {
-  if (!supabase) return [];
+  const omitir = () => {
+    console.warn(`[agenda] carril semanal no disponible: ${tipo}`);
+    return [];
+  };
+  if (!supabase) return omitir();
   const presupuesto = { ...PRESUPUESTO_SEMANAL, ...opciones };
   const limite = new Date(ahora.getTime() + 9 * 86400000).toISOString();
   const apariciones: AparicionSemana[] = [];
@@ -49,7 +53,7 @@ export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo:
   let filas = 0;
   let consultas = 0;
   for (let desde = 0; ; desde += LOTE) {
-    if (consultas >= presupuesto.consultas || filas >= presupuesto.filas) return [];
+    if (consultas >= presupuesto.consultas || filas >= presupuesto.filas) return omitir();
     if (tipo === "artistas") {
       const consulta = supabase.from("eventos_artistas")
         .select("artista_id, evento_id, artista:artistas!inner(id, slug, nombre, foto, visible), evento:eventos!inner(id, inicio, termina, zona, visible, lugar_id, lugar:lugares(visible, privado))")
@@ -59,7 +63,7 @@ export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo:
         .order("evento_id").order("artista_id").range(desde, desde + LOTE - 1);
       consultas += 1;
       const respuesta = await antesDelPlazo(consulta, controlador, venceEn - Date.now());
-      if (!respuesta?.data || respuesta.error || filas + respuesta.data.length > presupuesto.filas) return [];
+      if (!respuesta || respuesta.error || !Array.isArray(respuesta.data) || filas + respuesta.data.length > presupuesto.filas) return omitir();
       const { data } = respuesta;
       filas += data.length;
       for (const fila of (data ?? []) as unknown as FilaArtista[]) {
@@ -75,7 +79,7 @@ export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo:
         .order("id").range(desde, desde + LOTE - 1);
       consultas += 1;
       const respuesta = await antesDelPlazo(consulta, controlador, venceEn - Date.now());
-      if (!respuesta?.data || respuesta.error || filas + respuesta.data.length > presupuesto.filas) return [];
+      if (!respuesta || respuesta.error || !Array.isArray(respuesta.data) || filas + respuesta.data.length > presupuesto.filas) return omitir();
       const { data } = respuesta;
       filas += data.length;
       for (const fila of (data ?? []) as unknown as FilaLugar[]) {

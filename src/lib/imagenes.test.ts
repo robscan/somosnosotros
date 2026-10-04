@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { imagenPermitida } from "./imagenes";
+import casos from "../../supabase/tests/imagenes-origen.json";
 
 const SUPABASE_URL = "https://xyz.supabase.co";
 const PROPIA = `${SUPABASE_URL}/storage/v1/object/public/fotos/artistas/abc/foto-1.jpg`;
@@ -52,9 +53,29 @@ describe("imagenPermitida (S-01, docs/rediseno/46)", () => {
     expect(imagenPermitida(AJENA, { esAdmin: false, actual: "https://otra.example/y.png" })).toBe(false);
   });
 
+  it("normaliza únicamente host/puerto y conserva el límite del bucket", () => {
+    expect(imagenPermitida(PROPIA.replace("xyz.supabase.co", "XYZ.SUPABASE.CO:443"), { esAdmin: false })).toBe(true);
+    expect(imagenPermitida(PROPIA.replace(".co/", ".co:8443/"), { esAdmin: false })).toBe(false);
+    expect(imagenPermitida(PROPIA.replace("/fotos/", "/obras/"), { esAdmin: false })).toBe(false);
+    expect(imagenPermitida(PROPIA.replace("https://", "https://persona@"), { esAdmin: false })).toBe(false);
+  });
+
+  it("una imagen histórica idéntica no bloquea la edición aunque hoy no pasara la regla", () => {
+    const antigua = "http://archivo.example/foto.jpg";
+    expect(imagenPermitida(antigua, { esAdmin: false, actual: antigua })).toBe(true);
+    expect(imagenPermitida(antigua + "?otra=1", { esAdmin: false, actual: antigua })).toBe(false);
+  });
+
   it("sin NEXT_PUBLIC_SUPABASE_URL configurado, ninguna URL cuenta como del Storage propio", () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     expect(imagenPermitida(PROPIA, { esAdmin: false })).toBe(false);
     expect(imagenPermitida(PROPIA, { esAdmin: true })).toBe(true);
+  });
+
+  it.each(casos)("política compartida con PostgreSQL: $url", (caso) => {
+    const url = caso.url?.replace("{storage}", `${SUPABASE_URL}/storage/v1/object/public/fotos/`) ?? null;
+    expect(imagenPermitida(url, { esAdmin: false })).toBe(caso.normal);
+    expect(imagenPermitida(url, { esAdmin: true })).toBe(caso.admin);
+    expect(imagenPermitida(url, { esAdmin: false, perfil: true })).toBe(caso.perfil ?? caso.normal);
   });
 });

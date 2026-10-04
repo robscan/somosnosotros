@@ -13,15 +13,16 @@ import {
   TOPE_ESTELAR,
   tituloEstelar,
 } from "./inicio";
-import { corteNuevos, eventosNuevos, listarAgenda, SIN_FILTROS } from "./agenda";
+import { corteNuevos, eventosNuevos, LIMITE_NUEVOS, listarAgenda, SIN_FILTROS } from "./agenda";
 import type { Agenda } from "./cargarAgenda";
+import { eventoPaso } from "./fechas";
 
 const ahora = new Date("2026-09-23T18:00:00Z");
-function evento(id: string, cambios: Partial<{ inicio: string; fin: string; van: number; titulo: string; creado_en: string }> = {}) {
-  return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", van: 0, creado_en: "2026-09-01T00:00:00Z", ...cambios };
+function evento(id: string, cambios: Partial<{ inicio: string; fin: string; van: number | null; titulo: string; creado_en: string }> = {}) {
+  return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", zona: "America/Mexico_City", van: 0, creado_en: "2026-09-01T00:00:00Z", ...cambios };
 }
 function agenda(cambios: Partial<Agenda> = {}): Agenda {
-  return { eventos: [], seguidos: [], eventosSeguidos: [], asistencias: {}, destacados: [], ...cambios };
+  return { artistasSeguidos: null, eventos: [], seguidos: [], eventosSeguidos: [], asistencias: {}, destacados: [], ...cambios };
 }
 /** Un ISO fuera de la ventana de "Esta semana" (más de 7 días desde `ahora`): lo que necesita "Nuevos eventos". */
 const fechaFueraDeEstaSemana = (horasDeMas = 0) => new Date(ahora.getTime() + (DIAS_ESTA_SEMANA_MS + horasDeMas * 3600000)).toISOString();
@@ -39,6 +40,28 @@ describe("Inicio: esta semana (próximos 7 días)", () => {
     expect(eventosEstaSemana([enCurso, yaTermino], ahora).map((e) => e.id)).toEqual(["c"]);
   });
   it("sin eventos no ofrece nada", () => expect(eventosEstaSemana([], ahora)).toEqual([]));
+  it.each([
+    ["antes del inicio", "America/Mexico_City", "2026-10-03T21:00:00Z", null, "2026-10-03T20:59:59Z", true],
+    ["después del inicio", "America/Mexico_City", "2026-10-03T21:00:00Z", null, "2026-10-03T21:00:01Z", true],
+    ["antes de medianoche", "America/Mexico_City", "2026-10-03T21:00:00Z", null, "2026-10-04T05:59:59.999Z", true],
+    ["frontera inclusiva de Agenda", "America/Mexico_City", "2026-10-03T21:00:00Z", null, "2026-10-04T06:00:00Z", true],
+    ["después de medianoche", "America/Mexico_City", "2026-10-03T21:00:00Z", null, "2026-10-04T06:00:00.001Z", false],
+    ["medianoche posterior a México", "America/Los_Angeles", "2026-10-03T21:00:00Z", null, "2026-10-04T06:30:00Z", true],
+    ["terminado en Los Ángeles", "America/Los_Angeles", "2026-10-03T21:00:00Z", null, "2026-10-04T07:00:00.001Z", false],
+    ["medianoche anterior a UTC", "Asia/Tokyo", "2026-10-03T01:00:00Z", null, "2026-10-03T14:59:59Z", true],
+    ["terminado en Tokio", "Asia/Tokyo", "2026-10-03T01:00:00Z", null, "2026-10-03T15:00:00.001Z", false],
+    ["día de 25 horas por horario estacional", "America/New_York", "2026-11-01T05:30:00Z", null, "2026-11-02T04:59:59Z", true],
+    ["fin explícito exacto", "America/Mexico_City", "2026-10-03T21:00:00Z", "2026-10-03T22:00:00Z", "2026-10-03T22:00:00Z", true],
+    ["fin explícito cumplido", "America/Mexico_City", "2026-10-03T21:00:00Z", "2026-10-03T22:00:00Z", "2026-10-03T22:00:00.001Z", false],
+  ])("usa el mismo fin efectivo que Agenda: %s", (_caso, zona, inicio, fin, instante, vigente) => {
+    const e = eventoAgenda("evento", { zona, inicio, fin });
+    const reloj = new Date(instante);
+    // Agenda recibe de la base termina >= ahora; eventoPaso es su equivalente local.
+    const deAgenda = listarAgenda(agenda({ eventos: [e].filter((x) => !eventoPaso(x.inicio, x.fin, reloj, x.zona)) }), SIN_FILTROS);
+    expect(deAgenda.map((x) => x.id)).toEqual(vigente ? ["evento"] : []);
+    expect(eventosEstaSemana([e], reloj)).toEqual(deAgenda);
+    expect(calcularCarrilesAgenda(agenda({ eventos: [e] }), reloj).estaSemana).toEqual(deAgenda);
+  });
 });
 
 describe("Inicio: sin duplicar eventos entre carriles", () => {
@@ -175,6 +198,19 @@ describe("Inicio: carril Esta semana (todos los próximos 7 días, tope 20)", ()
 });
 
 describe("Inicio: carril Nuevos eventos (publicado hace ≤7 días Y empieza después de Esta semana)", () => {
+  it("de 100 candidatos entrega los 20 más recientes al cliente y solo marca esos como vistos", () => {
+    const eventos = Array.from({ length: 100 }, (_, i) => eventoAgenda(`nuevo-${i}`, {
+      inicio: fechaFueraDeEstaSemana(i), fin: null,
+      creado_en: new Date(ahora.getTime() - i * 60000).toISOString(),
+    })).reverse();
+    const vistos = new Set(["previo", "nuevo-0"]);
+    const r = carrilNuevos(eventos, vistos, ahora);
+    expect(LIMITE_NUEVOS).toBe(20);
+    expect(r.map((e) => e.id)).toEqual(Array.from({ length: 20 }, (_, i) => `nuevo-${i + 1}`));
+    expect(vistos).toEqual(new Set(["previo", "nuevo-0", ...r.map((e) => e.id)]));
+    expect(calcularCarrilesAgenda(agenda({ eventos }), ahora).nuevos).toHaveLength(20);
+    expect(listarAgenda(agenda({ eventos }), SIN_FILTROS)).toHaveLength(100);
+  });
   it("un evento dentro de la ventana de Esta semana no cuenta como Nuevo, aunque se haya publicado hace poco", () => {
     const vistos = new Set<string>();
     const dentroDeEstaSemana = evento("dentro", { creado_en: ahora.toISOString(), inicio: "2026-09-25T01:00:00Z" });
@@ -338,5 +374,17 @@ describe("Inicio: los carriles de una sola agenda (estelar, esta semana, nuevos)
       const r = calcularCarrilesAgenda(agenda({ eventos: [e], seguidos: null, asistencias: null, destacados: [{ id: "a", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
       expect(r.estelar.map((x) => x.id)).toEqual(["a"]);
     });
+  });
+});
+
+
+describe("recuentos de Agenda no disponibles", () => {
+  it("con algún dato desconocido usa fecha para todo el grupo, sin alterar los destacados", () => {
+    const temprano = evento("temprano", { van: 0, inicio: "2026-10-04T10:00:00Z" });
+    const sinRecuento = evento("desconocido", { van: null, inicio: "2026-10-04T11:00:00Z" });
+    const tarde = evento("tarde", { van: 100, inicio: "2026-10-04T12:00:00Z" });
+    const destacado = evento("destacado", { van: null, inicio: "2026-10-08T10:00:00Z" });
+    expect(carrilEstelar([destacado], [tarde, sinRecuento, temprano], new Set()).map((e) => e.id))
+      .toEqual(["destacado", "temprano", "desconocido", "tarde"]);
   });
 });

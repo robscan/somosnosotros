@@ -43,3 +43,18 @@ it("con un token_hash válido pero un siguiente externo, cae a /perfil (rutaSegu
   const respuesta = await GET(new NextRequest("https://somosnosotros.org/auth/app-regreso?token_hash=el-token&siguiente=https%3A%2F%2Fmalo.com"));
   expect(respuesta.headers.get("location")).toBe("https://somosnosotros.org/perfil");
 });
+
+it.each(["/\t/example.test", "/\r/example.test", "/\n/example.test", "/\\example.test", "/a/..//example.test"])("el callback rechaza el destino manipulado %j, codificado en la query", async (siguiente) => {
+  cliente.mockResolvedValue({ auth: { verifyOtp: vi.fn().mockResolvedValue({ error: null }) } } as unknown as NonNullable<Awaited<ReturnType<typeof clienteServidor>>>);
+  const query = new URLSearchParams({ token_hash: "el-token", siguiente });
+  const respuesta = await GET(new NextRequest(`https://somosnosotros.org/auth/app-regreso?${query}`));
+  expect(respuesta.status).toBe(303);
+  expect(respuesta.headers.get("location")).toBe("https://somosnosotros.org/perfil");
+});
+
+it("el callback conserva el destino interno con búsqueda y fragmento", async () => {
+  cliente.mockResolvedValue({ auth: { verifyOtp: vi.fn().mockResolvedValue({ error: null }) } } as unknown as NonNullable<Awaited<ReturnType<typeof clienteServidor>>>);
+  const query = new URLSearchParams({ token_hash: "el-token", siguiente: "/eventos/abc?accion=voy#horario" });
+  const respuesta = await GET(new NextRequest(`https://somosnosotros.org/auth/app-regreso?${query}`));
+  expect(respuesta.headers.get("location")).toBe("https://somosnosotros.org/eventos/abc?accion=voy#horario");
+});

@@ -60,6 +60,16 @@ describe("leerEncendidos", () => {
 });
 
 describe("intento en la cookie", () => {
+  it("sanea el destino al crear el intento y al leer una cookie manipulada", () => {
+    for (const siguiente of ["/\t/example.test", "/\r/example.test", "/\n/example.test", "/a/..//example.test"]) {
+      const i = nuevoIntento("google", siguiente, 1000);
+      expect(i.siguiente).toBe("/perfil");
+      const cookie = codificarIntento({ ...i, siguiente });
+      const destino = leerIntento(cookie, 2000)?.siguiente;
+      expect(destino).toBe("/perfil");
+      expect(new URL(destino!, "https://somosnosotros.org").origin).toBe("https://somosnosotros.org");
+    }
+  });
   it("va y vuelve igual, con el destino limpio", () => {
     const i = nuevoIntento("apple", "/eventos/abc?accion=voy", 1000);
     expect(leerIntento(codificarIntento(i), 2000)).toEqual(i);

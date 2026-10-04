@@ -42,4 +42,7 @@ jobs:
       # y sin ninguna llave. `medir` levanta el respaldo y la app por su cuenta y espera a que respondan.
       - run: npm run inventario
       - run: npx playwright-core install --with-deps --only-shell chromium
+      - name: Pruebas de componentes en Chromium
+        run: npm run test:componentes
+        timeout-minutes: 10
       - run: npm run medir
