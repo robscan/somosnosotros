@@ -689,3 +689,24 @@ Estado al relevo (main `6d870573`):
     - `/artistas?q=Rob` muestra «Rob» y resultados;
     - la prueba de chips 5 veces seguidas en local sin fallo;
     - CI completa.
+  - #325 (cierre documental de OL-268) lo unió Codex (`ff855ad6`) con la CI en verde. **OL-268 cerrada.** OL-269 en curso, en la rama `foco-busqueda` desde `ff855ad6`.
+  - **OL-269 entregada por Codex:** PR #326 (`2fb0301c`). Revisión del gestor (2026-10-04), sin hallazgos que bloqueen. Son 9 archivos dentro de la reserva.
+    - **`ui/Hoja`:** pila de hojas en el módulo, `inert` en los hijos de `body` salvo la hoja superior, restaurando el valor anterior, y un `MutationObserver` mientras haya hojas abiertas. Ciclo de Tab, Escape solo en la superior y devolución del foco al disparador, que se captura antes del `autoFocus`.
+    - **Buscar:** `q` como valor inicial y `replaceState` que conserva el estado, los demás parámetros y el hash.
+    - **Prueba de chips:** determinista; 5 de 5 seguidas y control negativo de 4 px con la tolerancia intacta.
+
+    Nota: los portales que se monten con la hoja abierta (avisos, toasts) también quedan inertes hasta cerrarla; es lo esperado en un modal. Ventana cedida a Codex con la CI y la vista previa en verde.
+  - **#326 publicado por Codex:** `23010e3f`. Production con el mismo SHA. **H10 sigue abierta:** en una sesión con memoria de pantalla previa de `/buscar`, `useMemoriaPantalla` repone el texto vacío por encima de `consultaInicial`. H09 no está afectada. Codex corrige en la misma OL-269, dentro de los archivos de Buscar y sus pruebas, sin tocar la memoria compartida: la `q` explícita gana a la memoria y se cubre el regreso tras editar la consulta. Antes de publicar, nuevo candidato y revisión del gestor.
+  - **Segundo candidato de OL-269:** PR #327 (`3bdc7596`), solo `BuscarPantalla` y sus pruebas. Revisión del gestor (2026-10-04), sin hallazgos que bloqueen:
+    - Captura al montar si la `q` venía explícita en la URL, para ignorar la memoria vieja.
+    - `replaceState(null, …)`, el mismo patrón de Agenda. Con `history.state` + `__NA`, Next no actualizaba `useSearchParams`.
+    - La marca propia del historial y `desde` se conservan, según la prueba de Codex.
+
+    Ventana cedida a Codex con la CI en verde. H10 se cierra solo cuando se compruebe en Production con una sesión antigua.
+  - **#327 publicado por Codex:** `7e16a3ce`. Comprobado por el gestor: main y Production en ese SHA. Codex probó H10 en la misma pestaña con memoria vieja y H09 con el teclado en el dominio. **OL-269 (H09 + H10 + prueba de chips) cerrada** cuando se una su cierre documental.
+- **Estado de la auditoría (2026-10-04):** H01–H06 y H08–H14 cerradas en producción. Queda diferida H07 a) y c) («Nuevos» con consulta propia y paginación de Agenda), que se abre cuando salte la señal de 270 o lo pida el founder. Pendientes fuera de la auditoría:
+  - Safari físico del founder;
+  - revisar el uso del optimizador en Vercel hasta el 10 de octubre;
+  - el doble toque del asa de la hoja (hallazgo de producto);
+  - las 8 entradas de herramientas de desarrollo en npm audit;
+  - #294, #295 y TestFlight, en pausa.
