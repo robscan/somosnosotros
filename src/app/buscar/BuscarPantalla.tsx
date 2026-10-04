@@ -74,6 +74,9 @@ function useRecientes(): Reciente[] {
  */
 export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion, consultaInicial = "" }: Props) {
   const [texto, setTexto] = useState(consultaInicial);
+  // Capturar antes de consumir q: el enlace explícito manda sobre memorias antiguas, incluso en StrictMode.
+  // Al volver a la URL limpia, Next puede reutilizar props del enlace anterior; allí sí manda la memoria.
+  const [consultaExplicita] = useState(() => !!consultaInicial && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("q") === consultaInicial);
   const [tipo, setTipo] = useState<GrupoBuscador | null>(null);
   const [abiertos, setAbiertos] = useState<GrupoBuscador[]>([]);
   const [respuesta, setRespuesta] = useState<Respuesta | null>(null);
@@ -93,7 +96,9 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
     const url = new URL(window.location.href);
     if (!consultaInicial || url.searchParams.get("q") !== consultaInicial) return;
     url.searchParams.delete("q");
-    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    // Igual que Agenda: Next actualiza useSearchParams y copia su estado interno; Navegacion conserva nuestra marca.
+    // Reenviar history.state con __NA haría que Next ignorara el cambio y la memoria siguiera guardando bajo ?q.
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }, [consultaInicial]);
 
   // Buscar no se apila sobre Buscar: su lupa, en la barra de la app, enfoca el campo.
@@ -101,6 +106,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
 
   // Al volver de una ficha, sin robar el foco: lo escrito, lo elegido y lo que se encontró, tal como estaba.
   useMemoriaPantalla<Recordado>(null, { texto, tipo, abiertos, respuesta }, (r) => {
+    if (consultaExplicita) return;
     setTexto(r.texto);
     setTipo(r.tipo);
     setAbiertos(r.abiertos);
