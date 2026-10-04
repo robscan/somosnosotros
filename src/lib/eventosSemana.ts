@@ -46,3 +46,9 @@ export function tarjetasDeSemana(apariciones: AparicionSemana[], tipo: "artistas
       cuando: true,
     }));
 }
+
+/** El servidor quita primero quienes ya salen en Destacados y después limita la tira: cortar antes puede dejarla vacía. */
+export function seleccionarArtistasSemana(semana: Tarjeta[], destacados: Pick<Tarjeta, "id">[], tope: number): Tarjeta[] {
+  const yaSalen = new Set(destacados.map((t) => t.id));
+  return semana.filter((t) => !yaSalen.has(t.id)).slice(0, tope);
+}

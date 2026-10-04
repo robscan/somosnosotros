@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { tarjetasDeSemana, type AparicionSemana } from "./eventosSemana";
+import { seleccionarArtistasSemana, tarjetasDeSemana, type AparicionSemana } from "./eventosSemana";
+import { TOPE_ARTISTAS_DESTACADOS } from "./cargarArtistasDestacados";
 
 const ahora = new Date("2026-09-18T18:00:00Z"); // Viernes, mediodía en México.
 function aparicion(id: string, inicio = "2026-09-19T01:00:00Z", cambios: Partial<AparicionSemana["evento"]> = {}): AparicionSemana {
@@ -11,6 +12,21 @@ function aparicion(id: string, inicio = "2026-09-19T01:00:00Z", cambios: Partial
 const tarjetas = (a: AparicionSemana[]) => tarjetasDeSemana(a, "artistas", ahora);
 
 describe("Con eventos esta semana", () => {
+  it("limita 30 artistas a12 sin recortar el carril de lugares", () => {
+    const apariciones = Array.from({ length: 30 }, (_, i) => aparicion(`artista-${String(i).padStart(2, "0")}`));
+    const semana = tarjetas(apariciones);
+    expect(TOPE_ARTISTAS_DESTACADOS).toBe(12);
+    expect(seleccionarArtistasSemana(semana, [], TOPE_ARTISTAS_DESTACADOS)).toEqual(semana.slice(0, 12));
+    expect(semana).toHaveLength(30);
+    expect(tarjetasDeSemana(apariciones, "lugares", ahora)).toHaveLength(30);
+  });
+  it("quita los destacados antes del tope: si los primeros12 ya salen, elige los siguientes12", () => {
+    const semana = tarjetas(Array.from({ length: 30 }, (_, i) => aparicion(`artista-${String(i).padStart(2, "0")}`)));
+    const destacados = semana.slice(0, 12);
+    expect(seleccionarArtistasSemana(semana, destacados, TOPE_ARTISTAS_DESTACADOS)).toEqual(semana.slice(12, 24));
+    expect(seleccionarArtistasSemana(semana.slice(0, 15), destacados, TOPE_ARTISTAS_DESTACADOS)).toEqual(semana.slice(12, 15));
+    expect(seleccionarArtistasSemana(semana, semana, TOPE_ARTISTAS_DESTACADOS)).toEqual([]);
+  });
   it("sin eventos no ofrece tarjetas", () => expect(tarjetas([])).toEqual([]));
   it("abarca hoy y siete días, también al cruzar el domingo; excluye el octavo día", () => {
     expect(tarjetas([
