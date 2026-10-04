@@ -172,6 +172,26 @@ export const FK = {
 const van = (id) => asistencias.filter((a) => a.evento_id === id && a.estado === "voy").length;
 const resumenArtista = (a) => ({ id: a.id, slug: a.slug, nombre: a.nombre, disciplina: a.disciplina, detalle: a.detalle, tipo: a.tipo, foto: a.foto });
 export const rpcs = {
+  // OL-268: mismo contrato agregado de SQL; los permisos/RLS se comprueban en PostgreSQL.
+  ciudades_agregadas: ({ p_ahora = new Date().toISOString() }, t) => {
+    const grupos = new Map();
+    const grupo = (fila) => {
+      const clave = JSON.stringify([fila.ciudad, fila.zona]);
+      if (!grupos.has(clave)) grupos.set(clave, { ciudad: fila.ciudad, zona: fila.zona, lugares: 0, eventos: 0, lat_suma: 0, lng_suma: 0 });
+      return grupos.get(clave);
+    };
+    for (const l of t.lugares.filter(l => l.visible && !l.privado)) {
+      const g = grupo(l);
+      g.lugares++; g.lat_suma += l.lat; g.lng_suma += l.lng;
+    }
+    for (const e of t.eventos.filter(e => e.visible && new Date(e.termina) >= new Date(p_ahora))) grupo(e).eventos++;
+    return [...grupos.values()];
+  },
+  ciudades_artistas_agregadas: (_args, t) => {
+    const grupos = new Map();
+    for (const a of t.artistas.filter(a => a.visible)) grupos.set(a.ciudad, (grupos.get(a.ciudad) ?? 0) + 1);
+    return [...grupos].map(([ciudad, artistas]) => ({ ciudad, artistas }));
+  },
   // Respaldo sintético de la cuenta autenticada. Los permisos reales se prueban en PostgreSQL.
   mi_perfil: (_args, t) => t.perfiles.find(p => p.id === ANA) ?? null,
 

@@ -67,3 +67,14 @@ describe("Agenda distingue fallos de una lista vacía", () => {
     expect(traza).toHaveBeenCalled();
   });
 });
+
+describe("señal preventiva de capacidad", () => {
+  it.each([269, 270, 300])("%i eventos: avisa desde el90% sin registrar ciudad ni cuenta", async (n) => {
+    const traza = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const b = banco({ eventos: { data: Array.from({ length: n }, (_, i) => ({ ...fila, id: `evento-${i}` })) } });
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);
+    expect(r.eventos).toHaveLength(n);
+    expect(traza).toHaveBeenCalledTimes(n >= 270 ? 1 : 0);
+    if (n >= 270) expect(traza).toHaveBeenCalledWith("[agenda] capacidad: lectura al 90% del tope");
+  });
+});
