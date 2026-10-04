@@ -1,0 +1,130 @@
+{
+  "htmlSha256": "5b266aef1cd5d68b2798723d3ecd5bec1ee93356ca521bc48578eb300b1eba87",
+  "capturas": [
+    {
+      "archivo": "agenda-leon-320.png",
+      "sha256": "fcc331d8be39485cb9193b8dcd857d4dc41634d18f1c6f05d64ce180b40d787d",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "agenda-leon-390.png",
+      "sha256": "0e20e9c96d6f9ee8a103a2f122f767c39b19149770fc2b43bc2842fe46754f0f",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "agenda-vacio-320.png",
+      "sha256": "6a9796aa0ea95ea78023866308788b8d894aa410f7d7f6659b1c5de67e9006ba",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "agenda-vacio-390.png",
+      "sha256": "a27399b44c5fd9d3f9e935e0d0acc3a0a29908213fe563cbb51d29b16e2dbd06",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "artistas-leon-320.png",
+      "sha256": "7b3ede309e1126753caff00dd4eee58729ef95f4febf75eb23f6624982224d4e",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "artistas-leon-390.png",
+      "sha256": "f2ffd7c5d324123975f806cf58832862a3c3ca7037eae2141fdc54a40fc5c5fc",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "buscar-vacio-320.png",
+      "sha256": "83913cc00c850a43d60fc225f5245f47df1e6244eb726f9ee3f6a7994eca6387",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "buscar-vacio-390.png",
+      "sha256": "34365064d24c1dfb1297f194b503618c28cbb4cdead48f7c98b304b03d1e8d12",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "gps-slp-ciudad-leon-390.png",
+      "sha256": "d1b10d69ee9c45a56a9c7aad24d154d25cf0520bc73d10625c3efdf80d08b13b",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "hoja-ciudades-320.png",
+      "sha256": "a821199743cccf46ab328511399426f12b8b4c6cc1ae8e5006b0553b32e82750",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "hoja-ciudades-390.png",
+      "sha256": "7b3f216300b78c1ff9ef5cf8fbb81e3a9ab0353b026a8bdd8d562a07e1d267dd",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-leon-320.png",
+      "sha256": "7133065ea2544af6602a91754acf271516fc6affa1e4ddce1ae169c097ae7388",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-leon-390.png",
+      "sha256": "17e70a279dd617dc4547cc6030094c559c2aaecec7f81a45b2309698888d1749",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-planes-320.png",
+      "sha256": "38246b8c1a994e8039bf9b6869c8536c31bf7d237f3273f459b5e30c3f12fd5b",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-planes-390.png",
+      "sha256": "eeb4c3905f52963b36288826f378b43b618f6cda8a7c510be9d1d7f44f0494f8",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-puebla-320.png",
+      "sha256": "5b242c1eff1c0b54b0db89184aa08e199c32b86342619dedd577e7dd7f6d9eee",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-puebla-390.png",
+      "sha256": "3bd5393a4d28b9fae89c129226f460fcf88c0a7f1e03d93dfecbc6b44711a1f2",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-semana-320.png",
+      "sha256": "2a2088e6b6353d74f44f7e5b064c4da09392535e0456a5225c4f1e6858252b37",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-semana-390.png",
+      "sha256": "65f449940018362bfe9a0a1811a7df6833d74d37406a19ae113923baac2c8093",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-vacio-320.png",
+      "sha256": "7f5088ca1f24bc91b7d75c2b947170ce44c77d5260ec0994872850740869e73a",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-vacio-390.png",
+      "sha256": "6128804100d33503bbeb31a002014ce58793d7ca6a8ec2bdf717b48b5b7d46c1",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-varios-320.png",
+      "sha256": "b371931c1222832fedfdb32415ba3cd6c9c0b84c4f1dc6d2af1b738de5abc0ca",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "inicio-varios-390.png",
+      "sha256": "613de186d063d758578469e6568a25fde8a7535c5625147baa5682e0adbfc432",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "lugares-leon-320.png",
+      "sha256": "051c7432463a14b2afa5087ed3b57c1aa859d7e10ce472ae7faf3e02a2625e9e",
+      "vistaCompleta": true
+    },
+    {
+      "archivo": "lugares-leon-390.png",
+      "sha256": "e3363a502e7d9a56c8313715c5a373bef451a8f5aa8ad7b14b1fc9918c62706b",
+      "vistaCompleta": true
+    }
+  ]
+}
