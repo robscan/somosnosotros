@@ -1,6 +1,8 @@
 # Investigaciones de producto
 
-**Fecha:** 4 de octubre de 2026. **Pieza documental:** OL-271, bitácora 298.
+**Fecha:** 4 de octubre de 2026. **Piezas documentales:** OL-271 / bitácora 298; continuación de Eventos OL-272 / bitácora 299.
+
+**Publicación comprobada:** [PR #332](https://github.com/robscan/somosnosotros/pull/332), unión `fd11330b`, contiene la investigación y los antecedentes conectados. **Continuación local:** OL-272 / [bitácora 299](../bitacora/2026/10/299-eventos-modelo.md), propuesta concreta de Eventos; aún sin aprobación de implementación ni publicación de esta ampliación.
 
 Este repositorio reúne el resultado de la investigación y las propuestas solicitadas por el founder. Cada documento permite retomar un proyecto por separado: describe capacidades comprobadas, límites, experiencia propuesta, datos necesarios, etapas, pruebas de cierre y decisiones pendientes.
 
@@ -11,6 +13,7 @@ Este repositorio reúne el resultado de la investigación y las propuestas solic
 | Documento | Peticiones que aborda | Resultado buscado |
 | --- | --- | --- |
 | [Eventos](eventos.md) | Festivales y programas; exposiciones visitables después de inaugurarse; talleres de varias sesiones; convocatorias; captura con IA; filtros; preparación para mini tours | Registrar y encontrar actividades complejas con el menor esfuerzo de captura |
+| [Eventos: modelo y recorridos](eventos-modelo.md) | Desarrollo de E1: identidades, tiempo, captura conjunta, consulta y contratos mínimos con horarios, formación e historial | Revisar el siguiente paso de Eventos sin ampliar los otros proyectos |
 | [Artistas](artistas.md) | KPI «Lugares»; trayectoria; lugares y actividades compartidas; antecedentes; integrantes de grupos; reseña y presentación para bookers | Construir una trayectoria comprobable y reutilizable, bajo control del artista |
 | [Lugares](lugares.md) | Qué sigue activo en museos y galerías; horarios; artistas que participaron; informes por periodo; alcance del registro automático | Explicar qué se puede visitar y documentar la actividad del espacio |
 
@@ -18,7 +21,7 @@ Este repositorio reúne el resultado de la investigación y las propuestas solic
 
 1. **Ubicarse antes de actuar:** leer las instrucciones del proyecto, [memoria del gestor](../ops/MEMORIA_GESTOR.md), [asignaciones](../ops/ASIGNACIONES.md), [gestión de cambios](../ops/GESTION_DE_CAMBIOS.md) y [estado operativo](../ops/OPEN_LOOPS.md). Comprobar Git y la reserva actual; esta investigación no asigna trabajo de implementación.
 2. **Entender el criterio:** [definición](../DEFINICION.md), [principios UX](../PRINCIPIOS_UX.md) y [grafo cultural firmado](../rediseno/24-grafo-cultural.md). La firma de un criterio no prueba que todas sus capacidades estén construidas.
-3. **Elegir el proyecto:** leer Eventos, Artistas o Lugares, desde la petición hasta su plan. Las capacidades actuales, propuestas y decisiones pendientes están separadas dentro de cada documento.
+3. **Elegir el proyecto:** leer Eventos, Artistas o Lugares, desde la petición hasta su plan. Las capacidades actuales, propuestas y decisiones pendientes están separadas dentro de cada documento. Para continuar Eventos, abrir después su [modelo y recorridos](eventos-modelo.md); no sustituye los antecedentes ni autoriza código.
 4. **Aprender del primer avance:** consultar la [síntesis de antecedentes de Eventos](eventos.md#3-antecedentes-de-exposiciones-talleres-y-festivales) y abrir la fuente original solo cuando haga falta profundizar. No es necesario recorrer una rama antigua para entenderlo.
 5. **Comprobar qué sigue vigente:** contrastar las bitácoras con el código de la base asignada. Por ejemplo, `ocupaDia` del calendario antiguo fue reemplazado por `ocupaRango`; no recuperar código ni pantallas retiradas por copiar una bitácora histórica.
 6. **Retomar una pieza concreta:** usar el plan del proyecto y sus dependencias; entregar al gestor objetivo, límites y prueba de cierre. El founder decide los puntos pendientes antes de implementar.
@@ -46,6 +49,8 @@ El primer avance de inauguraciones, talleres dentro de festivales y programas es
 | ¿Qué hubo en el primer esfuerzo? | [Antecedentes de Eventos](eventos.md#3-antecedentes-de-exposiciones-talleres-y-festivales) | Doc 42/186 y diferencia entre propuesta y soporte temporal implementado |
 | ¿Cómo mantener visible una exposición tras la inauguración? | [Eventos](eventos.md), información y descubrimiento | [Lugares](lugares.md), vigencia y horarios |
 | ¿Cómo registrar un festival o un taller sin repetir formularios? | [Eventos](eventos.md), interpretación y revisión conjunta | [Artistas](artistas.md), identidad y papel; Lugares, disponibilidad |
+| ¿Cómo concretar ahora Eventos y sus conexiones? | [Modelo y recorridos de Eventos](eventos-modelo.md) | Horarios y formación opcionales; historial derivado de cada actividad confirmada |
+| ¿Qué casos felices prototipar y cuándo sugerir relaciones? | [Casos de Eventos](eventos-modelo.md#10-casos-felices-y-variantes-para-revisar) | Apertura y periodo; segundo acto con evidencia; excepciones, salida sin aceptar y corrección |
 | ¿Cómo acreditar lo que hizo un artista? | [Artistas](artistas.md), trayectoria y antecedentes | Evento concreto, formación y fuente; evitar crédito por todo el festival |
 | ¿Cómo informar actividad de un espacio? | [Lugares](lugares.md), artistas e informes | Unidades de Eventos, papeles de Artistas y cobertura comprobada |
 | ¿Qué falta para mini tours? | [Eventos](eventos.md), preparación para recorridos | Horarios y excepciones de Lugares; no prometer una ruta con datos desconocidos |
@@ -72,6 +77,8 @@ Estos criterios desarrollan la [definición firmada](../DEFINICION.md), el [graf
 | Membresía de grupos y formación concreta por actividad | Artistas | Créditos de Eventos y estadísticas de Lugares |
 
 Cada proyecto puede empezar por sus contratos, ejemplos y propuesta de interacción. La implementación de una dependencia se encarga una sola vez y se cita desde los demás proyectos; no se mantienen copias del historial ni bases paralelas. Se conserva Postgres/Supabase y el stack vigente.
+
+La continuación de Eventos define [contratos mínimos](eventos-modelo.md#4-contratos-mínimos-con-lugares-y-artistas) antes de construir los proyectos completos de horarios o integrantes. Registrar una banda sin formación o una actividad sin horario general del lugar sigue siendo posible; se conservan las ausencias y no se reinterpretan silenciosamente registros antiguos al enriquecerlos.
 
 Orden recomendado: capacidades de interpretación y relaciones verificables; actividades vigentes y programas; horarios cuando haya fuente; trayectorias y antecedentes; integrantes y formación; informes y presentación profesional. Los mini tours se preparan mediante datos reutilizables, sin construir todavía su generador.
 

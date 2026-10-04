@@ -78,6 +78,8 @@ Un texto como «Ana, voz; Luis, guitarra» permite proponer el conjunto y buscar
 
 **La membresía no acredita haber participado en todos los eventos del grupo.** Registrar aparte la formación concreta cuando un cartel, programa o responsable la sustente. Un invitado a un concierto no se convierte por ello en integrante permanente.
 
+La continuación de [Eventos define el contrato mínimo](eventos-modelo.md#4-contratos-mínimos-con-lugares-y-artistas): el grupo puede publicarse sin formación individual; añadir miembros prepara identidades, pero los créditos históricos requieren participación específica confirmada. Esta dependencia no exige completar el proyecto de trayectoria ni concede gestión de fichas personales.
+
 - Ser integrante hoy no concede conciertos anteriores a su ingreso.
 - Coincidir con un periodo de membresía no prueba automáticamente cada actuación.
 - Cambiar integrantes actuales no reescribe las formaciones históricas.

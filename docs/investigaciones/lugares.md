@@ -124,6 +124,8 @@ Las consultas se filtran antes de paginar. Las listas completas no dependen del 
 
 [Eventos](eventos.md) aporta exposiciones, sesiones y programas. [Artistas](artistas.md) aporta papeles, procedencia, realización, archivo permitido y formación concreta. Lugares añade horarios reutilizables y cobertura/informes, sin duplicar esas relaciones.
 
+El [modelo concreto de Eventos](eventos-modelo.md#4-contratos-mínimos-con-lugares-y-artistas) consume horarios como enriquecimiento opcional: su ausencia no impide publicar una actividad o una exposición con periodo conocido. La disponibilidad conserva horario aplicable y excepciones; los cambios del horario actual no reescriben el pasado ni sustituyen automáticamente horarios específicos de los actos.
+
 Se preparan datos para mini tours; no se construye aquí planificación de rutas, seguimiento de visitantes ni evaluación del valor cultural de los lugares. Los puntos pendientes son el criterio de realización, la autoridad para confirmar horarios, el periodo de cobertura comprobable y las unidades de cada informe.
 
 Para retomar: usar la [ruta de lectura](README.md#ruta-de-lectura-para-un-agente-nuevo) y el [mapa de antecedentes](README.md#antecedentes-conectados), verificar consultas y permisos en la base asignada y reservar una etapa. No convertir una fecha de inauguración importada en horario de visita ni importar la UI de un calendario histórico como solución nueva.
