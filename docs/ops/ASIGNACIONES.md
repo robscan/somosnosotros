@@ -520,3 +520,35 @@ Estado al relevo (main `6d870573`):
   - **Escrituras en Storage de producción** (rellenar miniaturas o recomprimir): solo con el «sí» del founder, transmitido por el gestor, y nunca borrando originales.
   - **No tocar:** la configuración de Auth ni la de Storage (buckets y políticas) sin consultar; tampoco la regla de origen de H05, que las variantes deben cumplir, ni `apps/ios`, `ubicacion.ts`, `lugares.ts` o `VistaLugares.tsx`.
   - **Pruebas:** unitarias, `medir`, componentes y capturas de 390 px que muestren que no se pierde calidad visible.
+  - **Diagnóstico de OL-263 (Codex) y decisión del gestor (2026-10-03).** Se acepta `next/image` (optimizador de Vercel) solo para el host propio y el bucket `fotos`, en WebP con calidad 75, con `sizes` según la caja y el original solo en el visor. Sin relleno, sin escrituras en Storage, sin SQL y sin dependencias nuevas.
+    - **Condiciones:**
+      1. Caché larga (`minimumCacheTTL` de 30 días como mínimo, no 24 h); con 24 h, las transformaciones diarias superarían el cupo Hobby de 5 000 al mes.
+      2. Pocos anchos de verdad usados (los 6 propuestos o menos) y una sola calidad.
+      3. Si una importación sobrescribe la misma ruta, invalidar la caché con un parámetro de versión, o documentar que hoy no pasa.
+      4. Medir antes y después: bytes por pantalla a 390 px y el número de transformaciones por visita.
+    - **Archivos sumados:** `next.config.ts` (solo `images`), `src/lib/imagenOptima.ts` y su prueba, `src/components/ui/Imagen.tsx`, y los consumidores Cartel, Renglon y Destacados.
+    - **Plan de Vercel y de Supabase:** el gestor no lo conoce y no se consulta la facturación; lo confirma el founder.
+  - **OL-263, ampliación aceptada (2026-10-03):** se suman `scripts/fotos/aplicar.ts` y `scripts/capo/fotos-chrome/subir.mjs`. Las subidas futuras usarán un nombre con hash SHA-256 del contenido, `upsert: false`, y reutilizarán la ruta si ya existe. Se añade un helper puro de nombre con su prueba. Los scripts no se ejecutan ni se escribe en Storage, y no se reescriben filas existentes.
+    - **Precisiones para la bitácora 290:** `no-cache` guarda y revalida, no obliga a descargar todo cada vez. El optimizador puede volver a pedir el original por cada tamaño o al vencer la caché; no hay una descarga única garantizada.
+  - **OL-263 entregada por Codex:** PR #308 en borrador (`140158d8`). Revisión del gestor (2026-10-03), sin hallazgos que bloqueen:
+    - `CONFIG_IMAGENES`: solo el host propio y el bucket `fotos`, sin parámetros; anchos 96, 192, 384, 768, 1280 y 1920; WebP con calidad 75; TTL de 30 días; sin redirecciones, sin SVG ni IP local; tope de 5 MiB.
+    - `ui/Imagen`: un solo intento con el original si el optimizador falla.
+    - `optimizable`: la misma gramática que H05.
+    - Los importadores usan nombre por hash con `upsert: false`.
+    - Medición local de bytes: Inicio −91 %, Artistas −94 %, ficha −66 %.
+    - Supabase Pro, confirmado por el founder; el plan de Vercel sin confirmar.
+
+    Ventana cedida a Codex cuando la CI quede en verde (sin migración): marcar listo, unir, comprobar Production con `/_next/image` y que Inicio, Artistas y una ficha carguen.
+  - **#308 publicado por Codex:** `fb49a8ee`. Comprobado por el gestor: main y Production en ese SHA y el dominio responde 200. Cierre documental en #309 (solo la bitácora 290 y OL-263), para unir con la CI del PR en verde. Revisión del uso del optimizador en Vercel hasta el 10 de octubre, a cargo del founder y el gestor. **OL-263 (H13) cerrada.**
+- **Orden del resto de la auditoría, según el gestor (2026-10-03):** H14 (Next con aviso crítico, preventivo) → H06 («Esta semana» quita antes de tiempo los eventos sin fin) y H08 («Nuevos eventos» sin tope) → H11 (un error de datos se ve como agenda vacía) → H07 (topes de lectura) → H12 (la CI sin la suite de componentes) → H09 y H10 (foco de Filtros y búsquedas antiguas). Una pieza a la vez.
+- **OL-264 / bitácora 291 · H14: actualizar Next (2026-10-03, reserva para Codex).**
+  - **Rama:** `seguridad-next`, desde `origin/main` tras unir #309.
+  - **Alcance:** subir `next` (y `eslint-config-next`, si va pareja) a la versión con el parche del aviso, **dentro de la misma mayor (16.x)**. Antes: identificar el aviso (GHSA o CVE) y la versión mínima corregida.
+  - **Archivos asignados:**
+    - `package.json` y `package-lock.json`;
+    - `next.config.ts`, solo si la versión lo exige; revisar el patrón copiado de `html-bots.js`, que el comentario ata a la 16.3.5;
+    - los ajustes mínimos que rompa la actualización, uno por uno y explicados;
+    - la bitácora 291 y la línea OL-264.
+  - **Sin SQL.**
+  - **No tocar:** `apps/ios` (con su propio `package.json`), `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
+  - **Pruebas:** la verificación completa, componentes, `medir` sin cambiar presupuestos (si cambian, explicar), el build, y la vista previa con Inicio, Agenda, una ficha, Entrar y el optimizador de imágenes.
