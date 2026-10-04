@@ -30,6 +30,21 @@ before(async () => {
       import './src/app/globals.css';
       // ?alto=largo: un cuerpo más alto que la ventana; ?titulo=1: con cabecera fija (ui/Hoja, prop titulo) y un pie.
       const q = new URLSearchParams(location.search);
+      function ModalPrueba() {
+        const [abierta, setAbierta] = React.useState(false);
+        const [otra, setOtra] = React.useState(false);
+        const [n, setN] = React.useState(0);
+        return <><button id="abrir" onClick={() => setAbierta(true)}>Abrir</button><a href="#fondo">Fondo</a>
+          {abierta && <Hoja etiqueta="Principal" titulo="Principal" onCerrar={() => setAbierta(false)} pie={<button>Aplicar</button>}>
+            <input aria-label="Campo" autoFocus={q.has('autofocus')} />
+            <button disabled>Deshabilitado</button><button hidden>Oculto</button>
+            <a href="#dentro">Enlace interno</a>
+            <button onClick={() => setOtra(true)}>Abrir otra</button>
+            <button onClick={() => setN(n + 1)}>Actualizar {n}</button>
+            {otra && <Hoja etiqueta="Segunda" titulo="Segunda" onCerrar={() => setOtra(false)}><input aria-label="Campo secundario" /></Hoja>}
+          </Hoja>}
+        </>;
+      }
       function App() {
         const [abierta, setAbierta] = React.useState(true);
         if (!abierta) return <p id="cerrada">cerrada</p>;
@@ -38,12 +53,12 @@ before(async () => {
           ? <Hoja etiqueta="Prueba" titulo="Prueba" pie={<button type="button">Ver</button>} onCerrar={() => setAbierta(false)}>{cuerpo}</Hoja>
           : <Hoja etiqueta="Prueba" onCerrar={() => setAbierta(false)}><h3>Prueba</h3>{cuerpo}</Hoja>;
       }
-      createRoot(document.getElementById('root')).render(<App />);
+      createRoot(document.getElementById('root')).render(q.has('modal') ? <React.StrictMode><ModalPrueba /></React.StrictMode> : <App />);
     `,
     },
   });
   const assets = new Map([
-    ["/", ["text/html", '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--fuente-bricolage:Arial}</style><div id="root"></div><script src="/app.js"></script>']],
+    ["/", ["text/html", '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--fuente-bricolage:Arial}</style><div id="root"></div><aside id="ya-inerte" inert></aside><script src="/app.js"></script>']],
     ["/app.js", ["text/javascript", await readFile(join(dir, "app.js"))]],
     ["/app.css", ["text/css", await readFile(join(dir, "app.css"))]],
   ]);
@@ -72,7 +87,7 @@ async function abrir(t, ancho, alto, consulta = "") {
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
   await p.goto(origin + consulta);
-  await p.locator("[role=dialog]").waitFor();
+  await p.locator(consulta.includes("modal") ? "#abrir" : "[role=dialog]").waitFor();
   return p;
 }
 /** La caja de la hoja, sus esquinas (arriba-izquierda, abajo-izquierda) y si el asa se dibuja. */
@@ -125,4 +140,58 @@ test("la hoja se cierra con la ✕, con Escape y tocando fuera, en el teléfono 
       await p.locator("#cerrada").waitFor();
     }
   }
+});
+
+for (const ancho of [320, 390]) {
+  test(`modal a ${ancho}: foco inicial, fondo inerte, Tab/Shift+Tab, Escape y devolución al disparador`, async (t) => {
+    const p = await abrir(t, ancho, 844, "?modal=1");
+    await p.locator("#abrir").press("Enter");
+    const dialogo = p.getByRole("dialog", { name: "Principal" });
+    assert.equal(await dialogo.getAttribute("aria-modal"), "true");
+    assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Cerrar");
+    assert.equal(await p.locator("#root").evaluate(e => e.inert), true);
+    for (const esperado of ["Campo", "Enlace interno", "Abrir otra", "Actualizar 0", "Aplicar", "Cerrar"]) {
+      await p.keyboard.press("Tab");
+      assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent), esperado);
+    }
+    await p.keyboard.press("Shift+Tab");
+    assert.equal(await p.evaluate(() => document.activeElement?.textContent), "Aplicar");
+    await p.keyboard.press("Escape");
+    await dialogo.waitFor({ state: "detached" });
+    assert.equal(await p.evaluate(() => document.activeElement?.id), "abrir");
+    assert.equal(await p.locator("#root").evaluate(e => e.inert), false);
+    assert.equal(await p.locator("#ya-inerte").evaluate(e => e.inert), true, "se conserva un inert ajeno preexistente");
+  });
+}
+
+test("autofocus interno se respeta, un rerender no roba el foco y los hermanos nuevos quedan inertes", async (t) => {
+  const p = await abrir(t, 390, 844, "?modal=1&autofocus=1");
+  await p.locator("#abrir").click();
+  assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Campo");
+  await p.getByRole("button", { name: "Actualizar 0" }).click();
+  assert.equal(await p.evaluate(() => document.activeElement?.textContent), "Actualizar 1");
+  await p.evaluate(() => { const b = document.createElement('button'); b.id = 'tardio'; b.textContent = 'Fondo tardío'; document.body.append(b); });
+  await p.waitForFunction(() => document.getElementById('tardio').inert);
+  await p.keyboard.press("Escape");
+  await p.getByRole("dialog").waitFor({ state: "detached" });
+  assert.equal(await p.evaluate(() => document.activeElement?.id), "abrir");
+  assert.equal(await p.locator("#tardio").evaluate(e => e.inert), false);
+});
+
+test("con dos hojas Escape cierra solo la superior y restaura foco y fondo en orden", async (t) => {
+  const p = await abrir(t, 390, 844, "?modal=1");
+  await p.locator("#abrir").click();
+  await p.getByRole("button", { name: "Abrir otra" }).click();
+  const segunda = p.getByRole("dialog", { name: "Segunda" });
+  await segunda.waitFor();
+  assert.equal(await p.locator('[aria-label="Principal"]').evaluate(e => e.parentElement.inert), true);
+  await p.keyboard.press("Escape");
+  await segunda.waitFor({ state: "detached" });
+  assert.equal(await p.getByRole("dialog", { name: "Principal" }).count(), 1);
+  assert.equal(await p.evaluate(() => document.activeElement?.textContent), "Abrir otra");
+  assert.equal(await p.locator("#root").evaluate(e => e.inert), true);
+  await p.keyboard.press("Escape");
+  await p.getByRole("dialog").waitFor({ state: "detached" });
+  assert.equal(await p.evaluate(() => document.activeElement?.id), "abrir");
+  assert.equal(await p.locator("#root").evaluate(e => e.inert), false);
 });

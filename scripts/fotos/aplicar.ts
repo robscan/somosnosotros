@@ -9,6 +9,7 @@
 import { readFileSync } from "node:fs";
 import { normalizarNombre } from "../../src/lib/lugares";
 import { guardarInforme, preparar } from "../instituciones/entorno";
+import { objetoYaExiste, rutaConContenido } from "./nombre-contenido.mjs";
 
 type Entrada = { nombre?: string; titulo?: string; url?: string | null; portada?: string | null; foto_url?: string | null; foto_origen?: string | null };
 const tabla = (["lugares", "eventos"].includes(process.argv[2] ?? "") ? process.argv[2] : "artistas") as "artistas" | "lugares" | "eventos";
@@ -40,9 +41,10 @@ async function subir(nombre: string, url: string): Promise<string | null> {
   const bytes = Buffer.from(await r.arrayBuffer());
   if (bytes.length > 5 * 1024 * 1024) return null;
   const ext = tipo === "image/png" ? "png" : tipo === "image/webp" ? "webp" : "jpg";
-  const ruta = `${carpeta}/${autor}/importadas/${slug(nombre)}.${ext}`;
-  const { error } = await db.storage.from("fotos").upload(ruta, bytes, { contentType: tipo, upsert: true });
-  if (error) return null;
+  const ruta = rutaConContenido(`${carpeta}/${autor}/importadas/${slug(nombre)}.${ext}`, bytes);
+  const { error } = await db.storage.from("fotos").upload(ruta, bytes, { contentType: tipo, upsert: false });
+  // Estos mismos bytes ya tienen su URL. Cualquier otro error sigue siendo fallo.
+  if (error && !objetoYaExiste(error)) return null;
   return db.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
 }
 

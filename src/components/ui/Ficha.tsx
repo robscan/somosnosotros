@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { fondoImagen } from "@/lib/imagenOptima";
 import { claseBoton } from "./Boton";
 import { claseBotonIcono } from "./BotonIcono";
 import styles from "./Ficha.module.css";
@@ -13,7 +14,7 @@ export const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "co
  * no hay variable y la barra queda oscura, lisa.
  */
 export function estiloPortada(portada: string | null | undefined): CSSProperties {
-  return { "--portada": portada ? `url(${JSON.stringify(portada)})` : undefined } as CSSProperties;
+  return { "--portada": portada ? `url(${JSON.stringify(fondoImagen(portada))})` : undefined } as CSSProperties;
 }
 
 /**

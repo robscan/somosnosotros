@@ -30,6 +30,23 @@ beforeEach(() => {
 });
 
 describe("transporte de direccion del formulario al guardado", () => {
+  it("edita un reservado vencido sin reponer dirección y conserva su zona", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { sitio_reservado: true, inicio: "2000-01-01T12:00:00Z", fin: null, zona: "Asia/Tokyo", imagen: null } });
+    const fd = formulario(); fd.set("modo_sitio", "reservado"); fd.set("inicio", "2000-01-01T21:00");
+    expect((await actualizarEvento(ID, null, fd)).ok).toBe(true);
+    expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_privado: null, p_datos: { sitio_reservado: true, zona: "Asia/Tokyo", inicio: "2000-01-01T12:00:00.000Z" } });
+  });
+  it("un reservado vencido reprogramado exige una dirección nueva", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { sitio_reservado: true, inicio: "2000-01-01T12:00:00Z", fin: null, zona: "Asia/Tokyo" } });
+    const fd = formulario(); fd.set("modo_sitio", "reservado");
+    expect(await actualizarEvento(ID, null, fd)).toMatchObject({ ok: false, errores: { direccion_privada: expect.any(String) } });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+  it("un campo manipulado no habilita la omisión en un evento vigente", async () => {
+    const fd = formulario(); fd.set("modo_sitio", "reservado"); fd.set("direccion_retirada", "si");
+    expect(await actualizarEvento(ID, null, fd)).toMatchObject({ ok: false, errores: { direccion_privada: expect.any(String) } });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
   it("el alta entrega nombre, direccion y punto por separado a la RPC", async () => {
     await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
     expect(m.rpc).toHaveBeenCalledTimes(1);

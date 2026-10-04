@@ -17,6 +17,8 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 let browser, server, dir, origin;
 
 const mocks = {
+  // La selección/fallo de Next/Image se prueba con el componente real en Imagen.componentes.
+  "next/image": "import React from 'react';export default function Image({quality,...p}){return React.createElement('img',p)}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
   "next/navigation": "export const useRouter=()=>({push(){},replace(){}});export const usePathname=()=>'/';export const useSearchParams=()=>new URLSearchParams();",
 };
