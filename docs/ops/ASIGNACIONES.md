@@ -627,3 +627,30 @@ Estado al relevo (main `6d870573`):
     - error de eventos frente a respuesta vacía real;
     - error solo de los recuentos;
     - componentes, `medir`, captura de 390 px del estado de error y de la agenda vacía real.
+  - **OL-267, ampliación y criterio aceptados (2026-10-04).** #318 lo unió Codex (`972c3e9d`).
+    - **Archivos sumados:** `src/lib/agenda.ts`, `src/lib/destacados.ts`, `src/lib/inicio.ts` y `src/components/RenglonEvento.tsx`, más sus pruebas. #294 y #295 no los tocan.
+    - **Criterio:**
+      - Si falla el recuento de asistentes, `van: null`: sin cifra y sin ordenar por él.
+      - Si falla el recuento de seguidores, se omite el carril de artistas; no se elige con ceros inventados.
+      - Las asistencias y seguimientos **propios** con sesión son necesarios: si fallan, estado de error con reintento (`src/app/error.tsx`), nunca fingir que no sigue nada.
+      - Traza estática, sin `error.message` ni IDs.
+  - **OL-267 entregada por Codex:** PR #320 (`fcb1336d`). Revisión del gestor (2026-10-04), sin hallazgos que bloqueen:
+    - 16 archivos dentro de la reserva y su ampliación; `error.tsx` reutilizado sin cambios.
+    - Captura `agenda-error-390.png` vista por el gestor: «Algo falló», la explicación, «Intentar de nuevo» y Atrás, con la barra inferior.
+    - El vacío real sigue separado del error.
+
+    Ventana cedida a Codex con la CI en verde. Fuera del alcance: Tus planes, `cargarPersona` y las demás pantallas.
+  - **#320 publicado por Codex:** `27d419de`. Comprobado por el gestor: main y Production en ese SHA. **OL-267 (H11) cerrada** cuando se una su cierre documental.
+- **OL-268 / bitácora 295 · H07: topes de lectura (2026-10-04, reserva para Codex).** Hoy hay 152 eventos próximos visibles en San Luis Potosí, por debajo del corte de 300: es preventivo y no urge.
+  - **Alcance por partes, en un solo PR si cabe:**
+    - **a)** «Nuevos» con una consulta propia, ordenada por publicación y con tope de `LIMITE_NUEVOS` en la base.
+    - **b)** Ciudades calculadas por agregación en SQL o RPC, sin descargar miles de filas. Migración reservada: `supabase/migrations/20261004090000_ciudades_agregadas.sql`, que solo añade.
+    - **c)** Agenda «Todos» y los rangos de fecha lejanos: los filtros se aplican antes del límite. Si hace falta paginar, primero **propuesta de cómo se ve** («Ver más» o carga al bajar) para el founder, antes de escribir código. a) y b) no esperan a c).
+  - **Rama:** `topes-lectura`, desde `origin/main` tras el cierre documental de #320.
+  - **Archivos asignados:**
+    - `src/lib/cargarAgenda.ts`, `src/lib/ciudades.ts` y `src/lib/agenda.ts`, con sus pruebas;
+    - las páginas de Inicio y Agenda, solo para conectar;
+    - la migración y las pruebas PG;
+    - la bitácora 295 y la línea OL-268.
+  - **No tocar:** `apps/ios`, `ubicacion.ts`, `lugares.ts` ni `VistaLugares.tsx`.
+  - **Pruebas:** 350 eventos inventados (Todos completo por rango y Nuevos con los últimos publicados), ciudades frente a la consulta actual, `medir`, componentes y la vista previa.
