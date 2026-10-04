@@ -143,13 +143,19 @@ function centroConocido(ciudad: Ciudad): boolean {
   return ciudad.slug === CIUDAD_INICIAL.slug || ("centroConocido" in ciudad && ciudad.centroConocido === true);
 }
 
-/** La ciudad actual primero sin punto; con punto, centros conocidos por distancia y desconocidos en su orden de catálogo. */
+/** Sin punto, actual primero y conocidos por cercanía; con punto, por distancia. Desconocidos al final en orden de catálogo. */
 export function filasDeCiudades<T extends Ciudad>(actual: Ciudad, ciudades: readonly T[], punto: Punto | null, seccion: SeccionCiudades) {
   const posicion = seccion === "artistas" ? null : punto;
   const orden = ciudadesPorCercania(actual, ciudades);
   const filas = ciudades.map((ciudad) => ({ ciudad, distancia: posicion && centroConocido(ciudad) ? distanciaKm(posicion, ciudad.centro) : null, estasAqui: false }));
   filas.sort((a, b) => {
-    if (!posicion) return orden.indexOf(a.ciudad.nombre) - orden.indexOf(b.ciudad.nombre);
+    if (!posicion) {
+      const actualA = a.ciudad.slug === actual.slug, actualB = b.ciudad.slug === actual.slug;
+      if (actualA !== actualB) return actualA ? -1 : 1;
+      const conocidaA = centroConocido(a.ciudad), conocidaB = centroConocido(b.ciudad);
+      if (conocidaA !== conocidaB) return conocidaA ? -1 : 1;
+      return conocidaA ? orden.indexOf(a.ciudad.nombre) - orden.indexOf(b.ciudad.nombre) : 0;
+    }
     if (a.distancia === null) return b.distancia === null ? 0 : 1;
     if (b.distancia === null) return -1;
     return a.distancia - b.distancia;

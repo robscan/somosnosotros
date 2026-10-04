@@ -1,10 +1,10 @@
 # 297 · OL-270 · Hoja de ciudades
 
 Fecha: 2026-10-04. Operador: Codex, chat `01a1082a-33fb-7302-b694-1889ceaaf549`.
-Estado actual: **candidato local terminado para revisión del gestor**, con centros
-de respaldo excluidos de cercanía y prueba anterior adaptada con autorización.
-Pendiente su revisión final y la integración/publicación que él coordine. Sin
-push, PR ni publicación de OL-270. El historial del avance inicial queda abajo.
+Estado actual: **revisión completa del gestor recibida en `194cda39`**, con un
+hallazgo de orden sin punto corregido. Lo demás está aprobado. El gestor autorizó
+push y PR en borrador contra main para CI/preview, y probará el teclado real en
+Safari del simulador. Sin publicación; el historial de candidatos queda abajo.
 
 ## Encargo y acuerdos comprobados
 
@@ -234,3 +234,28 @@ limitación declarada de área visual/permiso/teclado simulados, sin capas nativ
 - Entrega congelada local al gestor con SHA, diff y estos PNG para revisión
   completa. Responsable siguiente: Gestor III, devolver hallazgos o aceptar y
   coordinar PR/CI/preview. #294 antes y «publica» expreso del founder para producción.
+
+## Revisión consolidada del gestor y corrección de orden
+
+Mensaje 88: Gestor III revisó **todo el diff, canon y capturas** de `194cda39`.
+Aprobó alcance, comentarios ui, cargador sin cambio de RPC, fallback/alta sin
+coordenadas en URL, componentes canónicos, filtro de sección, radio50, primera
+selección, permisos/negativa, separación de Artistas y capturas3/búsqueda.
+Devolvió un único hallazgo: sin punto, el orden todavía medía cercanía desde
+centros de respaldo y Aguascalientes aparecía antes de SMA.
+
+Corrección asignada solo en `ciudad.ts`: sin punto, actual primero aunque tenga
+centro desconocido; luego conocidas por cercanía a la actual; al final las
+desconocidas en orden estable del catálogo. Con punto se conserva el orden ya
+aprobado. Regresión: un caso nuevo falla antes (18 pasan), después ciudad19/19 y
+cargador5/5. Suite1900/1900 (6,35 s), tipos correctos, componentes Ciudad+Fila20/20
+(15,98 s); resto de la evidencia37/37 se reutiliza. Lint sin nuevos errores.
+Build final correcto contra respaldo; estados1/2 renovados a390/320 y vistos
+completos: SLP con palomita, SMA segunda, Aguascalientes al final, mismos controles,
+nota y espaciado; botón atenuado tras toque pendiente. Sin cambio de diseño/CSS.
+
+El gestor autorizó expresamente **push de `hoja-ciudades` y PR en borrador contra
+main**, declarando #294 `f704c8b2` incluido hasta integrarlo, para CI y Vercel.
+Debe recibir SHA y URL de preview para probar él el **teclado real en Safari del
+simulador de iOS**, en especial `.buscando { height:100dvh }`; el founder lo prueba
+en su iPhone. No quitar borrador, no unir; #294 primero y «publica» expreso.

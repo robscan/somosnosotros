@@ -122,6 +122,12 @@ describe("hoja de ciudades (OL-270)", () => {
     expect(filas.filter(f => !f.ciudad.centroConocido).every(f => f.distancia === null && !f.estasAqui)).toBe(true);
     expect(ciudadInicialCercana(qro, [aguascalientes], slp.centro, "eventos", false, false)).toBeNull();
   });
+  it("sin punto conserva la actual primero, conocidos por cercanía y desconocidos al final en su orden", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }, { ciudad: "Puebla" }]);
+    const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
+    expect(filasDeCiudades(slp, ciudades, null, "eventos").map(f => f.ciudad.slug)).toEqual([slp.slug, qro.slug, "aguascalientes", "puebla"]);
+    expect(filasDeCiudades(aguascalientes, ciudades, null, "eventos").map(f => f.ciudad.slug)).toEqual(["aguascalientes", slp.slug, qro.slug, "puebla"]);
+  });
   it("la oferta de alta ignora centros desconocidos dentro del catálogo ya filtrado", () => {
     const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }]);
     const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
