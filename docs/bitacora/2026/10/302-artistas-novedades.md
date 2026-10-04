@@ -53,15 +53,15 @@ El problema de acceso móvil quedó resuelto por [el enlace HTTPS fijo](https://
 
 ### Propuesta concreta, todavía sin código de aplicación
 
-Añadir dos RPC en vez de modificar `tira_destacados`: el carril recibe como máximo12 identificadores y el resumen de su novedad; la lista solicita en lote solo los ids cargados, también sin traer textos, URLs ni autores. La ficha reutiliza sus novedades ya cargadas para el sello. Se conserva la consulta de fechas y el respaldo actuales, usado solo cuando la RPC del carril queda vacía. Los elegidos mantienen también su desempate actual por asistentes, nombre e id. La novedad no mueve la posición de un elegido.
+Añadir dos RPC en vez de modificar `tira_destacados`: el carril recibe como máximo12 identificadores y el resumen de su novedad; la lista solicita en lote solo los ids cargados, también sin traer textos, URLs ni autores. La ficha reutiliza sus novedades ya cargadas para el sello. La propuesta revisada conserva elegidos → novedades → asistentes y hereda el límite interno8 de la tira actual. Se conserva la consulta de fechas y el respaldo actuales, usado solo cuando los tres grupos de la RPC del carril quedan vacíos. Elegidos y asistentes salen de `tira_destacados` con su posición original (`WITH ORDINALITY`), sin copiar su cálculo ni desempates. La novedad no mueve la posición de un elegido; un artista que era de asistentes y tiene novedad sale una vez en el grupo de novedades.
 
 Las RPC son `security definer` porque `destacados` está deliberadamente cerrado a visitantes. No se abre esa tabla ni se alteran políticas: se exige artista visible y ciudad exacta, novedad visible y menos de168 horas (frontera estricta; no futuras), con bloqueo del emisor respetado y la excepción administrativa actual. La tabla artistas no tiene una columna `privado`: su retirada se representa con `visible=false`, que se excluye incluso para su autor o administración. Las novedades ocultas tampoco dan sello a quien puede gestionarlas. Borrar/ocultar devuelve la anterior visible aún vigente; orden de empate por id, sin duplicados.
 
-**Dos puntos para decisión del gestor:** la propuesta interpreta que quitar la elección manual deja de elegir, pero una novedad visible vigente sigue siendo una causa independiente para entrar (se quita ocultando esa novedad). Confirmar ese borde. También confirmar si se conserva el índice parcial nuevo: con13 novedades el plan puede recorrer la tabla pequeña; el índice acota por recencia cuando crezca, pero no se atribuye una mejora de rendimiento actual no medida.
+**Revisión179 de Gestor III:** la propuesta inicial fue devuelta por perder asistentes y duplicar el cálculo de `van`; aclaró que `quitado=true` vigente también veta la entrada por novedad. SQL corregido abajo: usa la tira actual como única fuente, conserva los tres grupos y filtra ese veto editorial. El gestor confirmó el índice parcial (barato, escrituras raras, preparado para crecimiento) y todos los archivos listados. Sigue sin autorización de `src` hasta revisar este SQL corregido. El límite interno8 se conserva; con más de8 elegidos puede dejar fuera una elección y, si esa ficha tiene novedad, entrar por ese grupo. Se informa esta limitación antes de cualquier cambio a la función actual; no se altera su límite.
 
-**Archivos necesarios para confirmar alcance:** el cargador real es `src/lib/cargarArtistasDestacados.ts` (no `inicio.ts`); `artistas.ts` para el resumen opcional, `novedadesArtista.ts` para elegir/sellar, `destacados.ts`, `Destacados.tsx`, `RenglonArtista.tsx`, carga de `src/app/artistas/page.tsx`, ficha/SeccionNovedades y sus pruebas. Las acciones de novedades hoy solo invalidan la ficha: se necesitan además Inicio y Artistas después de publicar/editar/ocultar/borrar, para que la regla sea inmediata y el sello cambie. No caché compartida de resúmenes que dependen del bloqueo de la cuenta. Esto se solicita antes de editar esos archivos.
+**Archivos necesarios para confirmar alcance:** el cargador real es `src/lib/cargarArtistasDestacados.ts` (no `inicio.ts`); `artistas.ts` para el resumen opcional, `novedadesArtista.ts` para elegir/sellar, `destacados.ts`, `Destacados.tsx`, `RenglonArtista.tsx`, carga de `src/app/artistas/page.tsx`, ficha/SeccionNovedades y sus pruebas. Las acciones de novedades hoy solo invalidan la ficha: se necesitan además Inicio y Artistas después de publicar/editar/ocultar/borrar, para que la regla sea inmediata y el sello cambie. No caché compartida de resúmenes que dependen del bloqueo de la cuenta. Archivos confirmados por el gestor en179; todavía se espera la aceptación final del SQL antes de editarlos.
 
-### Costo medido
+### Costo medido de la propuesta inicial (sustituida)
 
 PG17.11 temporal y aislado en loopback,75 migraciones de main aplicadas,520 artistas,13 novedades con emisor de muestra y5 destacados vigentes. Datos sintéticos; no es una medición de Supabase. `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` de cada RPC, tres muestras por rol; sesiones reales de muestra para persona y admin. Se separa la primera ejecución de las dos calientes.
 
@@ -109,53 +109,52 @@ comment on function public.novedades_recientes_artistas(text, uuid[]) is
   'OL-275: última novedad visible y no bloqueada de artistas públicos de una ciudad; máximo una por artista, vigente menos de 168 horas. Sin títulos, URLs ni autores.';
 
 -- La decisión editorial privada se lee aquí, sin abrir su tabla a visitantes.
--- Primero elegidos en su orden actual; después novedades por recencia; máximo 12 con foto.
--- El respaldo existente de próximos/seguidores queda en la aplicación solo si esta tira está vacía.
+-- Elegidos → novedades → asistentes; orden heredado de la tira; máximo12 con foto.
+-- El respaldo existente de próximos/seguidores queda en la aplicación solo si los tres grupos de esta tira quedan vacíos.
 create function public.artistas_destacados_novedades(p_ciudad text)
-returns table (id uuid, motivo text, hasta timestamptz, novedad_id uuid, proveedor text, novedad_creado_en timestamptz)
+returns table (id uuid, motivo text, hasta timestamptz, van integer, novedad_id uuid, proveedor text, novedad_creado_en timestamptz)
 language sql stable security definer set search_path = '' as $$
-  with elegidos as materialized (
-    select a.id, a.nombre, d.hasta, d.creado_en,
-      (select count(distinct asistencia.usuario_id)::integer
-       from public.eventos_artistas ea
-       join public.eventos e on e.id = ea.evento_id
-       left join public.lugares l on l.id = e.lugar_id
-       join public.asistencias asistencia on asistencia.evento_id = e.id and asistencia.estado = 'voy'
-       join public.perfiles perfil on perfil.id = asistencia.usuario_id
-       where ea.artista_id = a.id and e.visible and e.termina >= now()
-         and (e.lugar_id is null or (l.visible and not l.privado))
-         and public.rol_en(perfil.id, asistencia.creado_en) <> 'admin') as van
-    from public.destacados d
-    join public.artistas a on a.id = d.artista_id
-    where d.quitado is false and d.hasta > now() and a.visible and a.ciudad = p_ciudad
-      and nullif(btrim(a.foto), '') is not null
-    order by d.creado_en desc, van desc, a.nombre, a.id
-    limit 12
+  with tira as materialized (
+    -- Única fuente de la decisión, asistentes y orden existentes; conserva su tope interno8.
+    select t.id, t.motivo, t.hasta, t.van, t.posicion, a.nombre
+    from public.tira_destacados('artistas', p_ciudad)
+      with ordinality as t(id, motivo, hasta, van, posicion)
+    join public.artistas a on a.id = t.id
+    where a.visible and a.ciudad = p_ciudad and nullif(btrim(a.foto), '') is not null
   ),
   ultimas as materialized (
     select * from public.novedades_recientes_artistas(p_ciudad)
   ),
   candidatas as (
-    select e.id, e.nombre, 'elegido'::text as motivo, e.hasta, e.creado_en as orden,
-      e.van, 0 as grupo, n.novedad_id, n.proveedor, n.creado_en as novedad_creado_en
-    from elegidos e left join ultimas n on n.artista_id = e.id
+    select t.id, t.nombre, t.motivo, t.hasta, t.van, 0 as grupo, t.posicion,
+      n.novedad_id, n.proveedor, n.creado_en as novedad_creado_en
+    from tira t left join ultimas n on n.artista_id = t.id
+    where t.motivo = 'elegido'
     union all
-    select a.id, a.nombre, 'novedad', n.creado_en + interval '168 hours', n.creado_en,
-      0, 1, n.novedad_id, n.proveedor, n.creado_en
-    from ultimas n
-    join public.artistas a on a.id = n.artista_id
-    where nullif(btrim(a.foto), '') is not null
-      and not exists (select 1 from elegidos e where e.id = a.id)
+    select a.id, a.nombre, 'novedad', n.creado_en + interval '168 hours', 0, 1, null::bigint,
+      n.novedad_id, n.proveedor, n.creado_en
+    from ultimas n join public.artistas a on a.id = n.artista_id
+    where a.visible and a.ciudad = p_ciudad and nullif(btrim(a.foto), '') is not null
+      and not exists (select 1 from tira t where t.id = a.id and t.motivo = 'elegido')
+      and not exists (select 1 from public.destacados d
+        where d.artista_id = a.id and d.quitado and d.hasta > now())
+    union all
+    select t.id, t.nombre, t.motivo, t.hasta, t.van, 2, t.posicion,
+      null::uuid, null::text, null::timestamptz
+    from tira t
+    where t.motivo = 'asistentes' and not exists (select 1 from ultimas n where n.artista_id = t.id)
   )
-  select c.id, c.motivo, c.hasta, c.novedad_id, c.proveedor, c.novedad_creado_en
+  select c.id, c.motivo, c.hasta, c.van, c.novedad_id, c.proveedor, c.novedad_creado_en
   from candidatas c
-  order by c.grupo, c.orden desc, c.van desc, c.nombre, c.id
+  order by c.grupo,
+    case when c.grupo = 1 then c.novedad_creado_en end desc nulls last,
+    c.posicion nulls last, c.nombre, c.id
   limit 12;
 $$;
 revoke all on function public.artistas_destacados_novedades(text) from public;
 grant execute on function public.artistas_destacados_novedades(text) to anon, authenticated, service_role;
 comment on function public.artistas_destacados_novedades(text) is
-  'OL-275: artistas visibles de la ciudad con foto; elegidos primero, después novedades vigentes por recencia, máximo12 sin duplicados. No cambia la tira de eventos o lugares.';
+  'OL-275: artistas visibles de la ciudad con foto; elegidos, novedades vigentes por recencia y asistentes; veto editorial vigente, máximo12 sin duplicados. No cambia la tira de eventos o lugares.';
 ```
 
 ### Pruebas PG previstas
@@ -167,3 +166,20 @@ comment on function public.artistas_destacados_novedades(text) is
 - `tira_destacados` de eventos/lugares y permisos/escrituras existentes sin cambios; tipos de `destacados` cerrados a visitantes.
 
 **Estado de fase2:** propuesta lista para revisión de Gestor III, que confirma SQL, índice, el borde de quitar manualmente y archivos. No se escribió `src` ni la migración reservada; no hubo aplicación remota ni push. Las unitarias/componentes/PG del código, `medir` y capturas320/390 se ejecutan después de aceptar la propuesta e implementar.
+
+
+### Nueva medida tras revisión179
+
+Mismo banco y volumen (520/13/5), sin duplicar cálculo de asistentes: la RPC nueva llama a la tira actual. `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)`, tres muestras por rol.
+
+| Rol | Primera ms | Calientes ms | Filas | Bloques compartidos calientes |
+|---|---:|---|---:|---:|
+| anon | 6.984 | 2.115 / 1.907 | 12 | 105 |
+| persona | 2.228 | 2.278 / 1.824 | 12 | 157 |
+| admin | 1.959 | 1.858 / 2.104 | 12 | 129 |
+
+La primera ejecución anónima incluye compilación/caché de la composición (6,984ms); calientes1,824–2,278ms con12 filas. El costo es mayor que la propuesta inicial porque se conserva el cálculo actual completo, sin duplicarlo. Planes íntegros en `/private/tmp/sn-ol275/costo-sql-v2.json`; SQL vigente en el bloque anterior y `/private/tmp/sn-ol275/propuesta.sql`.
+
+Pruebas PG adicionales confirmadas por el gestor: quitado con novedad vigente excluido del carril; artista con tres asistentes después de las novedades; elegido con novedad una vez, como elegido y con sello; tope12 con los tres grupos mezclados. Los sellos de lista/ficha indican la publicación, independientemente del veto del carril.
+
+**Entrega revisada:** lista para revisión final del SQL; no `src`, migración en repo, push ni operación remota. El gestor confirma el SQL y decide la limitación heredada de8 antes de programar.
