@@ -1,6 +1,6 @@
 # 292 · Suite completa de componentes en CI (OL-265 / H12)
 
-**Fecha:** 2026-10-03. **Estado:** candidato con cuarentena explícita autorizada; pendiente CI y revisión final.
+**Fecha:** 2026-10-03. **Estado:** publicado y comprobado (PR314 / `ac6cb4c8`); CI PR y main correctas, 212 aprobadas + 2 en cuarentena Linux.
 
 Reserva del Gestor de cambios III publicada en PR313 / `cc7bfb33`: rama
 `ci-componentes`, base `cc7bfb33ef3ca9ffafdcf2a84382c0bd3b5eed2d`, después del cierre
@@ -211,3 +211,37 @@ y comprobar que la CI de main también ejecuta la suite.
 Entrar focalizado tras el arreglo: 49/49, 0 fallos/omitidas/canceladas, 51,70 s
 con Chromium fijado. ESLint del archivo y diff correctos. Log `entrar-final.log`
 en la evidencia persistente; candidato siguiente para la CI final.
+
+
+## Publicación y cierre (2026-10-03, hora de México)
+
+Cumplidas las condiciones del gestor: 49/49 de Entrar locales y CI final
+[37172826238](https://github.com/robscan/somosnosotros/actions/runs/37172826238)
+**success antes del merge**, candidato `986276b42011d4a08f81b8fafa726edb82cc4fc3`.
+214 componentes inventariados, 212 aprobados, 2 skips declarados, 0 fallos y
+0 cancelaciones; 98,77 s. Lint/tipos, 1822 unitarias en 133 archivos, PostgreSQL,
+build, inventario y 96 mediciones correctos. Un aviso previo de lint permanece.
+
+[PR314](https://github.com/robscan/somosnosotros/pull/314) unido en
+`ac6cb4c8c64ffdc19182dc0a9a809e8727a49796` a las 03:08:32 UTC del 4 de octubre.
+Deployment Production6836212575 **success** sobre ese mismo SHA (03:09 UTC).
+Dominio real: Inicio, Agenda y Entrar HTTP200; Apple, Google y correo presentes;
+`/api/estado` informa Supabase ok y Mapbox configurado. Lecturas anónimas, sin
+iniciar sesión ni escribir datos. Se reutiliza QA visual de OL264: producto intacto.
+
+CI de main [37173199885](https://github.com/robscan/somosnosotros/actions/runs/37173199885)
+**success**, sobre el merge exacto. El paso nuevo sí se ejecuta en push a main:
+212 aprobados + 2 skips, 98,76 s, sin fallos ni cancelaciones. Medir también pasa.
+No confundir las dos excepciones autorizadas con 214 aprobadas en Linux.
+
+El commit temporal `c05b2df6` no es ancestro de main, comprobado. Package.json e
+Imagen están idénticos a la base; producto y presupuestos sin diferencias. No se
+requieren migraciones ni configuración remota. Checkout principal preservado;
+worktree propio limpio tras el cierre, procesos de diagnóstico terminados.
+
+Evidencia persistente adicional: `ci-986276b4.log/json`, `ci-main.log/json`,
+`produccion.json`, `entrar-final.log` y `cuarentena-local.log`.
+OL265/H12 cerrado con la política de cuarentena explícita del gestor. El gestor
+concilia ASIGNACIONES y reserva la siguiente pieza de la auditoría antes de abrir
+otra rama. Doble toque rápido del asa y Safari físico siguen como validación de
+producto separada; no se declaran corregidos por esta entrega.
