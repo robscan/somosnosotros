@@ -823,3 +823,83 @@ Estado al relevo (main `6d870573`):
     - prueba en el iPhone físico: el founder;
     - «publica» de #294 y después de #333: el founder;
     - traer main y unir en ese orden: el gestor.
+- **OL-270 reabierta para revisión funcional (2026-10-04):** el founder la probó y reportó dos problemas.
+  - León, Monterrey, Morelia y Puebla salen con 1 evento, pero al elegirlas no se muestra nada.
+  - Al cambiar de sección se vuelve a San Luis; pide que la ciudad elegida persista entre secciones.
+  - El cierre técnico de `fa828b15` no equivale a la aceptación del founder: no se publica hasta resolverlo.
+  - Codex diagnostica en solo lectura y propone. El gestor delimita antes de cualquier código.
+- **OL-270, diagnóstico de Codex y delimitación del gestor (2026-10-04):**
+  - **El conteo no es falso:** la agenda y la RPC usan el mismo criterio de eventos futuros.
+  - **Lo que pierde la oferta es Inicio:** su ventana de 7 días, «Nuevos» con mínimo de 3 y los destacados dejan Inicio vacío en ciudades con eventos a más de una semana.
+  - **La persistencia está rota:** `NavSecciones` vuelve a la última URL de cada sección y Artistas cae en silencio a San Luis.
+  - **Delimitación:**
+    - la persistencia y la identidad de la ciudad se quedan en OL-270, en la rama `hoja-ciudades`;
+    - Inicio sin oferta cercana pasa a una pieza aparte (OL-273, sin reservar), porque necesita una decisión de diseño del founder.
+  - Se programa solo con las respuestas de producto del founder.
+- **OL-270, decisión del founder:** la ciudad elegida persiste entre secciones, también en las vacías.
+  - Pendiente: confirmar si el vacío que vio fue en Inicio o en Agenda. La reproducción de Codex da 1 en Agenda «Todos» y 0 en Inicio, en condiciones sintéticas, así que no se afirma que su Agenda funcione.
+  - Pendiente: dos preferencias del founder:
+    - el vacío solo dice que no hay, o además ofrece otras ciudades;
+    - para Inicio (OL-273), un carril «Más adelante» o un aviso del próximo evento.
+- **OL-273 / bitácora 300 · Prototipo de sugerencias en el alta de Eventos (H1, H2 y H4) (2026-10-04, reserva para Codex, chat 01a10807).** El founder dio «bien, adelante» a las casuísticas de OL-272 (`5a946a56`) y a validarlas con un prototipo.
+  - **Alcance:** prototipo local y autónomo, con datos sintéticos y canon vigente.
+    - Recorridos: alta habitual, éxito con una sugerencia opcional, aceptar o ignorar, completar el periodo que falta y corregir la relación después.
+    - Solo H1, H2 y H4. H5 y H6 quedan fuera.
+  - **Rama:** `prototipo-eventos`, desde `5a946a56` (investigacion-eventos), en el worktree `.claude/worktrees/prototipo-eventos`.
+  - **Archivos:**
+    - `docs/rediseno/prototipos/eventos-sugerencias.html`;
+    - `docs/rediseno/capturas-300/` con su guía;
+    - `docs/bitacora/2026/10/300-prototipo-eventos.md`;
+    - un enlace en `docs/investigaciones/eventos-modelo.md`;
+    - la línea OL-273 y el «Last updated».
+  - **Sin** `src`, dependencias, SQL ni servicios reales de IA. Sin publicar.
+  - El número de Inicio sin oferta cercana (mencionado como OL-273 en la delimitación de OL-270) pasa al siguiente libre cuando el founder elija.
+- **OL-274 / bitácora 301 · Prototipo: ciudad que persiste entre secciones e Inicio «Más adelante» (2026-10-04, reserva para Codex, chat 01a1082a).** El founder pidió un prototipo antes de tocar `src`.
+  - **Rama:** `prototipo-ciudad`, desde `origin/main` `e454a334`, en el worktree `.claude/worktrees/prototipo-ciudad`.
+  - **Archivos:**
+    - `docs/rediseno/prototipos/ciudad-persistente.html`;
+    - `docs/rediseno/capturas-301/`;
+    - `docs/bitacora/2026/10/301-prototipo-ciudad.md`;
+    - la línea OL-274 y el «Last updated».
+  - **Después:** la parte A (persistencia) se programa dentro de OL-270 y la B (Inicio) como código de OL-274.
+  - `fa828b15` y el PR #333 siguen congelados.
+- **OL-275 / bitácora 302 · Artistas con novedades en destacados y chip «Nuevo video» / «Nuevo audio» (2026-10-04, reserva para Codex).** Pedido del founder, que aprobó la regla del gestor cambiando el letrero.
+  - **Regla:**
+    - una novedad visible pone a su artista en «Artistas destacados» de su ciudad de inmediato y durante 7 días desde su última novedad;
+    - orden: primero los elegidos por la administración y luego los de novedad, el más reciente primero, con el mismo tope de 12;
+    - el artista sale si la novedad se oculta o se borra;
+    - no cuentan artistas ocultos ni privados.
+  - **Chip:**
+    - «Nuevo video» para YouTube y Vimeo;
+    - «Nuevo audio» para SoundCloud, Bandcamp y Mixcloud;
+    - según la última novedad, mientras duren los 7 días.
+  - **Fases:** primero el prototipo del chip y del carril, luego la firma del founder, y después el código con una migración que solo añade.
+- **OL-274, revisión del prototipo `ff593b5d` (2026-10-04):** devuelta con dos hallazgos que bloquean y una aclaración.
+  - Una sola tarjeta sin foto queda aplastada en «Más adelante» (`.sola` + `.sinFoto`; probablemente un fallo real de `Destacados`).
+  - Inicio queda totalmente en blanco en una ciudad sin eventos.
+  - Aclaración pendiente: el estado «ya marcado» aparece en tarjetas de una sesión que no muestra «Tus planes».
+  - Todavía no se le muestra al founder.
+- **OL-273, revisión del prototipo `04952f8f`:** devuelta con tres desvíos del canon.
+  - Atrás es un enlace «Volver» en vez de `ui/Atras`.
+  - La hoja de periodo se cierra con el texto «Cerrar» en vez de la ✕ de `ui/Hoja`.
+  - El periodo usa `input type=date` nativo en vez de `ui/Calendario`, en modo rango como la hoja «Cuándo».
+  - La lógica de los recorridos está aceptada.
+- **OL-275, revisión del prototipo `ad64310f`:** la regla, el orden, el sello en la tarjeta (tratamiento de «Hoy») y el sello en la lista y la ficha quedan aceptados.
+  - Un desvío del canon que corregir: el chip de ciudad de la cabecera es una píldora violeta rellena, sin pin ni flecha, en vez de `ChipCiudad`.
+- **OL-274, prototipo `bb4f4ae1` aceptado por el gestor.** Se puede enseñar al founder.
+  - La tarjeta sola sin foto ya se ve en 5:3 y el Inicio sin carriles muestra el `Vacio` de Agenda.
+  - **Fallo de producción confirmado** (`reproduccion-main-390.png`): un carril con un único evento sin foto se aplasta en el `Destacados` real. Se arregla en el código de OL-274, o antes si el founder lo pide.
+- **OL-275, prototipo `ca665a7b` aceptado por el gestor.** El chip de ciudad ya es `ChipCiudad`. Se puede enseñar al founder para su firma antes de la fase 2.
+- **OL-273, ajuste local a 320 aceptado** (rejilla del calendario con -20 px por debajo de 360). Pendiente: comprobar si la hoja «Cuándo» de producción recorta el domingo a 320. Si lo hace, se abre una pieza chica aparte.
+- **#294 (OL-255) en producción:** `9489355f`, publicada con el «publica lo que está listo» del founder.
+  - CI de main en verde y despliegue de Production en `success`.
+  - `/lugares` responde 200 y `/api/estado` con Supabase y Mapbox bien.
+  - #295 sigue en pausa.
+  - #333 ya puede traer main directamente.
+- **OL-272 en main:** `feaef7bf` (#335).
+- **OL-273, prototipo `901215d3` aceptado por el gestor.** Usa `ui/Atras`, `IconoCerrar` y `ui/Calendario` de rango. La excepción a 320 está documentada. Se puede enseñar al founder; no se publica ni se implementa sin su decisión.
+- **Fallo de producción, pieza chica pendiente (sin número ni reserva):** la hoja «Cuándo» a 320.
+  - Codex lo reprodujo con `Hoja` y `Calendario` reales de `9489355f`: la rejilla mide 280 frente a 320 de contenido.
+  - El cuerpo oculta el desborde: el domingo queda de 24×44 y los días interiores de 38×44.
+  - Archivos probables: `ui/Calendario.module.css`. Se reserva cuando el founder lo pida o junto a otra pieza de UI.
+- **Prototipos en main con «publica» del founder:** OL-274 #336 → `bfe2a1e` y OL-275 #337 → `d6d9f29d`, los dos con la CI en verde. Solo documentos. La firma de cada uno sigue pendiente para la fase de código. OL-273 sigue local (`4308172f`), en espera del visto bueno del founder.

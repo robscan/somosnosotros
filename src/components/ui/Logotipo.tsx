@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { raizConCiudad } from "@/lib/ciudad";
 import styles from "./Logotipo.module.css";
 
@@ -20,6 +21,14 @@ type Props = {
  * Dos nodos: el enlace (área de toque de 44 px) y el dibujo. La altura va en rem y crece con el texto del teléfono.
  */
 export default function Logotipo({ chico = false, className }: Props) {
+  return <Suspense fallback={<EnlaceLogotipo chico={chico} className={className} consulta="" />}><LogotipoConCiudad chico={chico} className={className} /></Suspense>;
+}
+
+function LogotipoConCiudad(props: Props) {
+  return <EnlaceLogotipo {...props} consulta={useSearchParams().toString()} />;
+}
+
+function EnlaceLogotipo({ chico = false, className, consulta }: Props & { consulta: string }) {
   const enInicio = usePathname() === "/";
   const router = useRouter();
   function alTocar(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -28,7 +37,7 @@ export default function Logotipo({ chico = false, className }: Props) {
     router.replace(raizConCiudad("/", window.location.search));
   }
   return (
-    <Link href="/" replace={enInicio} onClick={alTocar} className={[styles.logotipo, className].filter(Boolean).join(" ")} aria-label="Somos Nosotros, ir al inicio">
+    <Link href={raizConCiudad("/", consulta)} replace={enInicio} onClick={alTocar} className={[styles.logotipo, className].filter(Boolean).join(" ")} aria-label="Somos Nosotros, ir al inicio">
       <Image
         src={chico ? "/logotipo-chico.svg" : "/logotipo.svg"}
         alt=""

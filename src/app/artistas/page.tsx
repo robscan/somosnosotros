@@ -1,3 +1,4 @@
+import { leerNovedadesRecientes } from "@/lib/novedadesArtista";
 import { Suspense } from "react";
 import ListaArtistas from "@/components/ListaArtistas";
 import ListaEsqueleto from "@/components/ListaEsqueleto";
@@ -34,7 +35,7 @@ type SearchParams = { ciudad?: string; hace?: string; que?: string; n?: string }
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudadesDeArtistas();
+  const ciudades = await cargarCiudadesDeArtistas(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/artistas" : `/artistas?ciudad=${resuelta.slug}`;
   const titulo = "Artistas · Somos Nosotros";
@@ -117,7 +118,9 @@ async function cargar(f: FiltroLeido, ciudad: string): Promise<Cargado> {
   if (f.hace) lista = lista.eq("disciplina", f.hace);
   if (f.que) lista = lista.ilike("detalle", f.que.replace(/[%_]/g, ""));
   const a = await lista.order("nombre_orden").range(0, f.n - 1);
-  const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
+  const listaCargada = (a.data ?? []) as ArtistaResumen[];
+  const novedades = await leerNovedadesRecientes(supabase, ciudad, listaCargada.map((a) => a.id));
+  const artistas = conProximaFecha(listaCargada, fechas).map((a) => ({ ...a, novedad: novedades.get(a.id) ?? null }));
   return { artistas, total: a.count ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, letras, posiciones };
 }
 
@@ -129,7 +132,7 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
   const { ciudad: slug, ...resto } = await searchParams;
   const filtro = filtroDesdeUrl(resto);
   // Las ciudades de Artistas salen de los artistas que hay; la del alta es la elegida aquí y se cambia en el formulario.
-  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(true), usuarioActual()]);
   const ciudad: Ciudad = ciudadPorSlug(slug, ciudades);
   // Arriba del listado, solo con sesión (OL-177, pedido del founder 2026-09-24): "Mis artistas" (las fichas que
   // ya gestiona, mismo componente y carga que en Mi perfil — perfil/page.tsx) y, si su correo coincide con el

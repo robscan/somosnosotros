@@ -15,7 +15,10 @@
   transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ficha {
+  .ficha,
+  .ficha.cerrada,
+  .ficha.abierta {
     transition: none;
+    transform: none;
   }
 }

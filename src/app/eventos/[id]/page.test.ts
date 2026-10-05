@@ -103,6 +103,9 @@ describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () =
     const datos = JSON.parse((jsonLd!.props.dangerouslySetInnerHTML as { __html: string }).__html);
     expect(datos["@type"]).toBe("Event");
     expect(datos.name).toBe("Evento de prueba");
+    const { generateMetadata } = await import("./page");
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: EVENTO.slug }) });
+    expect(datos.url).toBe(metadata.alternates?.canonical);
 
     // El número «Van», el bloque «Artistas» y la sección «Quién va»: cada uno su límite, con su propia consulta.
     const suspenses = elementos.filter((e) => e.type === Suspense);
@@ -119,6 +122,28 @@ describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () =
     const metadata = await generateMetadata({ params: Promise.resolve({ id: "evento-de-prueba" }) });
     expect(metadata.alternates?.canonical).toBe("https://somosnosotros.org/eventos/evento-de-prueba");
     expect(metadata.title).toBe("Evento de prueba · Somos Nosotros");
+  });
+});
+
+describe("JSON-LD de un evento activo reservado (OL-278)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+
+  it("no publica Event aunque la sesión reciba la dirección privada autorizada", async () => {
+    const evento = { ...EVENTO, sitio_reservado: true, sitio_direccion: null };
+    const cliente = clienteFalso({
+      eventos: { data: evento },
+      asistencias: { data: null },
+      eventos_sitio_privado: { data: { direccion: "Calle reservada 278", lat: 22, lng: -100, indicaciones: null } },
+    });
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    vi.mocked(usuarioActual).mockResolvedValue({ correo: "prueba@example.com", perfil: { id: "lectora", nombre: "Prueba", rol: "usuario", foto: null, colonia: null, bio: null } });
+    const { default: FichaEvento } = await import("./page");
+    const elementos = [...recorrer(await FichaEvento({ params: Promise.resolve({ id: EVENTO.slug }) }))];
+    expect(elementos.some(e => e.type === "b" && e.props.children === "Calle reservada 278")).toBe(true);
+    const estructurados = elementos.filter(e => e.type === "script" && e.props.type === "application/ld+json")
+      .map(e => JSON.parse((e.props.dangerouslySetInnerHTML as { __html: string }).__html));
+    expect(estructurados.some(d => d["@type"] === "Event")).toBe(false);
+    expect(JSON.stringify(estructurados)).not.toContain("Calle reservada 278");
   });
 });
 

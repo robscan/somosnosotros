@@ -17,14 +17,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await clienteServidor();
   if (!supabase) return rutasEstaticas();
 
-  // Topes muy por encima de lo que hay hoy (unas decenas de lugares y eventos, ~520 artistas), para no depender
-  // del corte silencioso de PostgREST en 1 000 filas si la ciudad crece (mismo tope que `cargarCiudades`).
+  // Se conservan los topes de consulta actuales; la paginación del catálogo es una pieza aparte.
   const [l, e, a, ac] = await Promise.all([
     supabase.from("lugares").select("id, slug, visible, privado, actualizado_en").eq("visible", true).limit(5000),
     supabase.from("eventos").select("id, slug, visible, termina, actualizado_en").eq("visible", true).limit(5000),
     supabase.from("artistas").select("id, slug, visible, origen, actualizado_en").eq("visible", true).limit(5000),
     supabase.from("artistas_cuentas").select("artista_id").limit(5000),
   ]);
+
+  // Un error no es un catálogo vacío: Next responde 5xx y el buscador puede reintentar, en vez de recibir un 200
+  // con fichas omitidas. El respaldo sin cliente configurado sigue limitado a las páginas generales.
+  if ([l, e, a, ac].some(({ error }) => error)) throw new Error("No se pudo generar el sitemap completo");
 
   const reclamados = new Set((ac.data ?? []).map((f) => f.artista_id as string));
   const artistas = (a.data ?? []).map((f) => ({ ...(f as { id: string; slug: string; visible: boolean; origen: string | null; actualizado_en: string }), reclamado: reclamados.has(f.id as string) }));

@@ -18,7 +18,7 @@ type PropsCampo = {
   borrar?: boolean;
 };
 
-/** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL (administración), Buscar y «Otra ciudad». */
+/** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL (administración), Buscar y la hoja de ciudades. */
 export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, inputRef, borrar = true }: PropsCampo) {
   return (
     <label className={styles.buscar}>

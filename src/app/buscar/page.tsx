@@ -20,7 +20,7 @@ const DESDE: readonly GrupoBuscador[] = ["eventos", "lugares", "artistas"];
 export default async function Buscar({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug, desde, q } = await searchParams;
   const consultaInicial = typeof q === "string" ? q : "";
-  const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudades(true), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   return <BuscarPantalla key={consultaInicial} consultaInicial={consultaInicial} ciudad={ciudad} ciudades={ciudades} desde={DESDE.find((g) => g === desde) ?? "eventos"} hoy={diaLocal(new Date(), ciudad.zona)} conSesion={!!actual} />;
 }

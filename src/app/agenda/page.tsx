@@ -22,7 +22,7 @@ type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; desde?:
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudades();
+  const ciudades = await cargarCiudades(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
   const titulo = "Agenda cultural · Somos Nosotros";
@@ -51,7 +51,7 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
   // — la cabecera (ciudad, Cuándo, Filtros, lupa) pinta con la barra, y solo la lista lleva esqueleto (OL-161,
   // bitácora 196; antes, el gestor observó en la captura 01 de la bitácora 193 que también la cabecera salía como
   // esqueleto).
-  const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudades(true), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const agenda = cargarAgenda(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
