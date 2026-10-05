@@ -82,9 +82,13 @@ Solo se conservan las de «antes» (la compilación de `origin/main`), que son l
 | --- | --- | --- |
 | Evento · Dónde (vacío) | Falta | Falta el lugar |
 | Evento · Cuándo (sin fecha) | Falta | Falta la fecha |
-| Lugar · Dónde (vacío) | Falta | Falta dónde está |
-| Lugar · Tipo (sin elegir) | Por el nombre | Tipo según el nombre |
-| Artista · Qué hace (sin elegir) | Por el nombre | Disciplina según el nombre |
+| Evento · Más | Descripción, enlace, foto (o imagen) | Más detalles |
+| Lugar · Dónde (vacío) | Falta | Sin ubicación |
+| Lugar · Tipo (sin nombre escrito) | Por el nombre, con «Cambiar» | Tipo de lugar, en gris, con «Elegir» |
+| Lugar · Tipo (con nombre: deducido o elegido) | Museo, con «Cambiar» | Museo (el valor mismo, en tinta), con «Cambiar»; igual que antes |
+| Lugar · Más | Descripción, redes, foto | Más detalles |
+| Artista · Qué hace (sin nombre escrito) | Por el nombre, con «Cambiar» | Disciplina, en gris, con «Elegir» |
+| Artista · Qué hace (con nombre: deducido o elegido) | Música, con «Cambiar» | Música (el valor mismo, en tinta), con «Cambiar»; igual que antes |
 | Artista · Foto | Sin foto | Sin foto de perfil |
 | Artista · Foto (subiendo) | Subiendo… | Subiendo la foto… |
 | Artista · Foto (puesta) | Lista | Foto de perfil lista |
@@ -93,7 +97,7 @@ Solo se conservan las de «antes» (la compilación de `origin/main`), que son l
 | Artista · Soy yo / es mi grupo (apagado) | No | Soy yo / es mi grupo |
 | Artista · Soy yo / es mi grupo (encendido) | Sí: podrás editar la ficha y publicar sus fechas | Es mi ficha: podrás editar y publicar sus fechas |
 
-Quedan igual por explicarse solos: «Hoy · 19:00» y las demás fechas, el lugar elegido o su dirección, «Sin artista», los nombres de artistas, «Gratis», «Con costo», «Descripción, enlace, foto», «Descripción, redes, foto», «Redes, descripción», «Solista» y demás tipos, y la ciudad.
+Quedan igual por explicarse solos: «Hoy · 19:00» y las demás fechas, el lugar elegido o su dirección, «Sin artista», los nombres de artistas, «Gratis», «Con costo», «Redes, descripción», «Solista» y demás tipos, y la ciudad.
 
 ### Medidas antes (`main`) y después (a 390 y 320, Chrome; WebKit coincide)
 
@@ -135,3 +139,11 @@ Sí, a simple vista, aunque por contraste y no por dibujo: el obligatorio es 1 p
 - **Estado «Confirmar»** de «Dónde» del evento (lugar leído del cartel, pin sin confirmar): también lleva la línea gris, porque el renglón no está resuelto; el valor es la dirección leída.
 - **El borde del renglón no se pone rojo** al fallar (no lo hacía antes): solo la nota. Si se quiere, es una regla aparte.
 - **WebKit** y el `scrollWidth` previo de la alta de artista y de Editar perfil: no es de esta pieza, pero conviene mirarlo en el iPhone.
+
+### Tercera entrega de la segunda vuelta (último ajuste antes de publicar; el founder delegó en el gestor: «haz tus recomendaciones»)
+
+- **Tipo y Disciplina.** En el código, sin nombre escrito el tipo (lugar) queda vacío y la disciplina (artista) también; con nombre escrito, el tipo sale de `deducirTipo` (u «Otro») y la disciplina de `deducirDisciplina` (que siempre devuelve una, «Música» si no hay pista). «Por el nombre» solo se mostraba con el renglón vacío, nunca junto a un valor deducido, así que no se pierde información: el valor deducido ya iba solo. Ahora, vacío: «Tipo de lugar» / «Disciplina» en gris (el color de un opcional sin llenar) con la acción «Elegir»; con algo deducido o elegido: el valor en tinta («Museo», «Música») con «Cambiar», como antes. Comprobado en pantalla escribiendo «Museo de Arte Popular» (Museo · Cambiar) y «Los Cuervos del Norte» (Música · Cambiar, Grupo · Cambiar), a 390 y a 320.
+- **Ningún renglón de las tres altas se parte en dos líneas con sus textos por defecto, a 390 y a 320 (Chromium y WebKit).** Medido por renglón (alto del valor entre su interlineado). A 320 se partían tres: «Falta la ubicación» del lugar (junto a los dos botones redondos), «Descripción, enlace, foto» del evento y «Descripción, redes, foto» del lugar. Cambios llanos: «Sin ubicación» (como «Sin artista» y «Sin portada»; el borde punteado y la nota bajo el botón ya dicen que falta) y «Más detalles» en los dos «Más» (el evento y el lugar; el del artista, «Redes, descripción», cabía y se queda). «Más detalles» pierde el recordatorio de qué se puede agregar; al abrir, los campos lo dicen.
+- La prueba de componentes del alta de evento (`cupo`) buscaba el renglón por «Descripción, enlace»; ahora lo busca por «Más detalles».
+- Capturas rehechas (todas las de «después», para que coincidan con el texto final): `despues-lugar-390.png`, `despues-lugar-320.png` (Sin ubicación, Tipo de lugar con «Elegir», Más detalles, los tres en una línea), `despues-artista-390.png`, `despues-artista-320.png` (Disciplina con «Elegir», el resto igual), `despues-evento-*.png` y `despues-evento-publicar-*.png`/`despues-evento-error-simulado-*.png` (Más detalles), `despues-editar-perfil-*.png` (sin cambio), y nuevas con nombre escrito: `despues-lugar-connombre-390.png`, `despues-lugar-connombre-320.png` («Museo» con «Cambiar»; la nota baja a «Falta dónde está.»), `despues-artista-connombre-390.png`, `despues-artista-connombre-320.png` («Música» y «Grupo» con «Cambiar»; el botón ya violeta). `despues-webkit-lugar-320.png` confirma lo mismo en WebKit.
+- Aviso de una corrección mía: en el informe anterior dije que el proceso que quedó escuchando era ajeno. No lo era: era el `next-server` hijo de mi propia compilación (el PID guardado era el del envoltorio); lo detuve al empezar este ajuste.

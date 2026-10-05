@@ -288,7 +288,7 @@ test("al montar consulta datos nuevos sin que la prop inicial los reponga", { sk
 
 test("la reconciliacion conserva todos los valores manuales, incluso con error y nuevas props", { skip: !!baseline }, async t => {
   const p = await pantalla(t);
-  await p.locator("li").filter({ hasText: "Descripción, enlace" }).getByRole("button", { name: "Agregar" }).click();
+  await p.locator("li").filter({ hasText: "Más detalles" }).getByRole("button", { name: "Agregar" }).click();
   await p.getByRole("button", { name: "Descripción", exact: true }).click();
   await p.getByRole("textbox", { name: "Descripción", exact: true }).fill("Descripcion escrita a mano"); // la capa (dialog) y el campo llevan el mismo nombre
   await p.getByRole("dialog", { name: "Descripción" }).getByRole("button", { name: "Listo" }).click(); // el renglón abierto trae su propio «Listo»

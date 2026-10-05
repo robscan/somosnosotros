@@ -386,7 +386,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
               </>
             ) : (
               <>
-                <b className={renglon.falta}>Falta dónde está</b>
+                <b className={renglon.falta}>Sin ubicación</b>
                 <span className={renglon.opciones}>
                   <BotonIcono relieve="contorno" onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
@@ -410,9 +410,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           <li className={`${renglon.resuelto} ${renglon.sinClave} ${tipoAbierto ? renglon.abierto : ""}`}>
             <IconoEtiqueta width={20} height={20} />
             <small>Tipo</small>
-            <b className={tipo ? undefined : renglon.falta}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Tipo según el nombre"}</b>
+            <b className={tipo ? undefined : renglon.falta}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Tipo de lugar"}</b>
             <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
-              {tipoAbierto ? "Listo" : "Cambiar"}
+              {tipoAbierto ? "Listo" : tipo ? "Cambiar" : "Elegir"}
             </Boton>
             {tipoAbierto && (
               <div className={renglon.cuerpo}>
@@ -451,7 +451,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           <li className={`${renglon.resuelto} ${renglon.sinClave} ${masAbierto ? renglon.abierto : renglon.opcional}`}>
             <IconoMas width={20} height={20} />
             <small>Más</small>
-            <b className={renglon.falta}>Descripción, redes, foto</b>
+            <b className={renglon.falta}>Más detalles</b>
             <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
               {masAbierto ? "Listo" : "Agregar"}
             </Boton>

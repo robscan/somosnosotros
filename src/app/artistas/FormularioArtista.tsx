@@ -163,7 +163,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const repetido = existente ?? (coincide(existenteServidor) ? existenteServidor : null);
   // Lo único que dice qué falta es la nota bajo el botón (doc 50, H-29 y H-32).
   const falta = faltaEnArtista({ nombre, repetido: !!repetido });
-  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Disciplina según el nombre";
+  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Disciplina";
   const avisoRepetidoAbierto = enfocadoNombre && !!repetido;
 
   return (
@@ -241,7 +241,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <small>Qué hace</small>
           <b className={disciplina ? undefined : renglon.falta}>{valorHace}</b>
           <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta(abierta === "hace" ? null : "hace")} aria-expanded={abierta === "hace"}>
-            {abierta === "hace" ? "Listo" : "Cambiar"}
+            {abierta === "hace" ? "Listo" : disciplina ? "Cambiar" : "Elegir"}
           </Boton>
           {abierta === "hace" && (
             <div className={renglon.cuerpo}>

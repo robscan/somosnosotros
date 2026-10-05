@@ -725,7 +725,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           <li className={`${renglon.resuelto} ${renglon.sinClave} ${masAbierto ? renglon.abierto : renglon.opcional}`}>
             <IconoMas width={20} height={20} />
             <small>Más</small>
-            <b className={renglon.falta}>Descripción, enlace, {imagen ? "imagen" : "foto"}</b>
+            <b className={renglon.falta}>Más detalles</b>
             <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
               {masAbierto ? "Listo" : "Agregar"}
             </Boton>
