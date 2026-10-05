@@ -333,7 +333,7 @@ test("la fila se desliza cuando los chips no caben y avisa que sigue hasta llega
 
 test("Ciudades: lista directa, elección con replace y cierre sin apilar ni pasos anteriores", async () => {
   const { context, page } = await abrir();
-  await page.evaluate(() => { window.qa.reemplazos = []; window.qa.apilados = []; });
+  await page.evaluate(() => { history.replaceState(null, "", "/agenda?ciudad=san-luis-potosi"); window.qa.reemplazos = []; window.qa.apilados = []; });
   await page.getByRole("button", { name: /San Luis Potosí/ }).first().click();
   const dialogo = hoja(page, "Ciudades con eventos");
   await dialogo.waitFor();
@@ -344,7 +344,7 @@ test("Ciudades: lista directa, elección con replace y cierre sin apilar ni paso
   assert.equal(await dialogo.getByRole("button", { name: /Otra ciudad|Cerca de ti/ }).count(), 0);
   await dialogo.getByRole("button", { name: /Querétaro/ }).click();
   await dialogo.waitFor({ state: "detached" });
-  assert.deepEqual(await page.evaluate(() => window.qa.reemplazos), ["/agenda"]);
+  assert.deepEqual(await page.evaluate(() => window.qa.reemplazos), ["/agenda?ciudad=queretaro"]);
   assert.deepEqual(await page.evaluate(() => window.qa.apilados), []);
   assert.equal(await page.evaluate(() => localStorage.getItem("sn:ciudad-elegida")), "queretaro");
   await context.close();

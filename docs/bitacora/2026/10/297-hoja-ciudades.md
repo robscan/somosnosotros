@@ -489,3 +489,8 @@ La hoja B/Inicio «Más adelante» se implementa aparte según la reserva306.
 Nueva CI y preview exactas requeridas por el gestor antes de integrar; esta
 bitácora no declara la pieza publicada. Sin SQL propio, servicios reales escritos,
 geocodificación, variables nuevas ni cambios a accesos.
+
+CI37250687353 detectó una expectativa anterior en el caso autorizado de FilaEventos334:
+el doble no cambia URL al replace y esperaba `/agenda` sin ciudad. Se adaptó solo
+ese caso a una entrada explícita SLP y destino explícito Querétaro. Regresión
+focalizada correcta; no cambia código ni invalida build/QA. CI nueva requerida.
