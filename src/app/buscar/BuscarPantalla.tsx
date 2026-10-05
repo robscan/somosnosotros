@@ -161,7 +161,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
       {!buscable && (
         <>
           <div className={styles.contexto}>
-            <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => enlaceDeBusqueda(c.slug === CIUDAD_INICIAL.slug ? null : c.slug, desde)} />
+            <ChipCiudad ciudad={ciudad} ciudades={ciudades} seccion="buscar" hrefDe={(c) => enlaceDeBusqueda(c.slug === CIUDAD_INICIAL.slug ? null : c.slug, desde)} />
           </div>
           {recientes.length > 0 && (
             <Grupo titulo="Recientes">

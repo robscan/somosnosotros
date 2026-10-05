@@ -273,7 +273,7 @@
   color: var(--texto-suave);
 }
 
-/* La tarjeta de filas: una caja con borde que junta renglones `ajuste` con una raya entre ellos (la hoja «Dónde estás»). */
+/* La tarjeta de filas: una caja con borde que junta renglones `ajuste` con una raya entre ellos (la hoja de ciudades). */
 .tarjeta {
   list-style: none;
   border: 1px solid var(--borde);

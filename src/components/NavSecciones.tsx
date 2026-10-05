@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useSyncExternalStore, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useSyncExternalStore, type ReactNode } from "react";
 import { DESTINOS, estaEnDestino } from "@/lib/armazon";
-import { raizConCiudad } from "@/lib/ciudad";
+import { destinoDeCiudad, raizConCiudad } from "@/lib/ciudad";
 import { leerUrlSeccion } from "@/lib/memoriaPantalla";
 import { pedirVuelta } from "./MemoriaScroll";
 import { IconoCalendario, IconoCasa, IconoEstrella, IconoPin } from "./ui/Iconos";
@@ -17,12 +17,6 @@ function sinSuscripcion() {
 }
 function leerUltimas() {
   return DESTINOS.map((d) => (d.recuerda ? (leerUrlSeccion(d.clave) ?? "") : "")).join("\n");
-}
-/** Solo vale una URL de la propia sección (la raíz o la raíz con consulta). */
-function ultimaValida(raiz: string, url: string | undefined): string | null {
-  if (!url) return null;
-  if (raiz === "/") return url === "/" || url.startsWith("/?") ? url : null;
-  return url === raiz || url.startsWith(`${raiz}?`) ? url : null;
 }
 
 /**
@@ -40,7 +34,17 @@ function ultimaValida(raiz: string, url: string | undefined): string | null {
  * raíz sin apilar historial, con la ciudad que se está viendo: sigue siendo la misma pantalla (OL-055).
  */
 export default function NavSecciones({ perfil }: { perfil: ReactNode }) {
+  return <Suspense fallback={<Navegacion perfil={perfil} consulta="" />}><NavConCiudad perfil={perfil} /></Suspense>;
+}
+
+function NavConCiudad({ perfil }: { perfil: ReactNode }) {
+  return <Navegacion perfil={perfil} consulta={useSearchParams().toString()} />;
+}
+
+function Navegacion({ perfil, consulta }: { perfil: ReactNode; consulta: string }) {
   const ruta = usePathname();
+  const params = new URLSearchParams(consulta);
+  const ciudad = params.get("ciudad");
   const router = useRouter();
   /** La sección en la que ya se está: a su raíz, reemplazando y sin soltar la ciudad (se lee al tocar, no al pintar). */
   function aLaRaiz(e: React.MouseEvent<HTMLAnchorElement>, raiz: string) {
@@ -56,7 +60,7 @@ export default function NavSecciones({ perfil }: { perfil: ReactNode }) {
       {DESTINOS.map((d, i) => {
         const activo = estaEnDestino(ruta, d.href);
         return (
-          <Link key={d.href} href={activo ? d.href : (ultimaValida(d.href, ultimas[i]) ?? d.href)} replace={activo} onClick={activo ? (e) => aLaRaiz(e, d.href) : pedirVuelta} className={[styles.destino, activo && styles.activo, d.clave === "perfil" && styles.perfil].filter(Boolean).join(" ")} aria-current={activo ? "page" : undefined}>
+          <Link key={d.href} href={d.clave === "perfil" ? d.href : activo ? raizConCiudad(d.href, params.toString()) : destinoDeCiudad(d.href, ultimas[i], ciudad)} replace={activo} onClick={activo ? (e) => aLaRaiz(e, d.href) : pedirVuelta} className={[styles.destino, activo && styles.activo, d.clave === "perfil" && styles.perfil].filter(Boolean).join(" ")} aria-current={activo ? "page" : undefined}>
             <span className={styles.icono}>{d.clave === "perfil" ? perfil : <Icono clave={d.clave} />}</span>
             <span>{d.etiqueta}</span>
           </Link>

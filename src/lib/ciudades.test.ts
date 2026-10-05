@@ -57,3 +57,16 @@ describe("ciudades agregadas: mismo resultado sin descargar cada ficha", () => {
     expect(JSON.stringify(traza.mock.calls)).not.toMatch(/privado/);
   });
 });
+
+
+it("catálogo compartido conserva ciudades vacías en otra sección sin inventar oferta ni centro", async () => {
+  const rpc=vi.fn(async (nombre:string) => ({error:null,data:nombre === "ciudades_agregadas"
+    ? [{ciudad:"León",zona:"America/Mexico_City",lugares:0,eventos:1,lat_suma:0,lng_suma:0}]
+    : [{ciudad:"Zacatecas",artistas:2}]}));
+  vi.mocked(clienteServidor).mockResolvedValue({rpc} as unknown as NonNullable<Awaited<ReturnType<typeof clienteServidor>>>);
+  const artistas=await cargarCiudadesDeArtistas(true);
+  expect(artistas.find(c=>c.slug === "leon")).toMatchObject({nombre:"León",artistas:0});
+  const oferta=await cargarCiudades(true);
+  expect(oferta.find(c=>c.slug === "zacatecas")).toMatchObject({nombre:"Zacatecas",lugares:0,eventos:0,centroConocido:false});
+  expect(oferta.find(c=>c.slug === "leon")).toMatchObject({eventos:1,lugares:0});
+});
