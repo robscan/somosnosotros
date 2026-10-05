@@ -215,3 +215,31 @@ describe("la hora sugerida sigue a la zona del sitio", () => {
     expect(resugerirCuando({ inicio: "2026-09-19T19:00", fin: "" }, "", "Europe/Madrid", AHORA)).toBeNull();
   });
 });
+
+describe("un evento de varios días sin hora de fin no escribe su 23:59 (OL-298)", () => {
+  // Inicio sáb 26 sep 19:00 en la ciudad (UTC-6); fin lun 28 sep 23:59 en la ciudad = 05:59Z del 29.
+  const inicio = "2026-09-27T01:00:00Z";
+  const finDelDia = "2026-09-29T05:59:00Z";
+
+  it("varios días con 23:59: el texto dice solo el último día", () => {
+    expect(formatearCuando(inicio, finDelDia, AHORA)).toBe("sáb 26 de sep · 19:00 → lun 28 de sep");
+    expect(formatearLargo(inicio, AHORA, finDelDia)).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre");
+    expect(fraseCuando("2026-09-26T19:00", "2026-09-28T23:59", AHORA)).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre");
+  });
+  it("varios días con otra hora de fin: con su hora, como siempre", () => {
+    expect(formatearCuando(inicio, "2026-09-29T03:00:00Z", AHORA)).toBe("sáb 26 de sep · 19:00 → lun 28 de sep · 21:00");
+    expect(formatearCuando(inicio, "2026-09-29T05:58:00Z", AHORA)).toBe("sáb 26 de sep · 19:00 → lun 28 de sep · 23:58");
+    expect(formatearLargo(inicio, AHORA, "2026-09-29T03:00:00Z")).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre · 21:00");
+  });
+  it("un solo día que termina a las 23:59 la conserva", () => {
+    expect(formatearCuando(inicio, "2026-09-27T05:59:00Z", AHORA)).toBe("sáb 26 de sep · 19:00–23:59");
+    expect(formatearLargo(inicio, AHORA, "2026-09-27T05:59:00Z")).toBe("sábado 26 de septiembre · 19:00 a 23:59");
+  });
+  it("respeta la zona del evento: las 23:59 de la ciudad no son las 23:59 de Madrid", () => {
+    // Las 23:59 de Madrid (21:59Z) se esconden allá; el mismo instante visto con la zona de la ciudad (15:59) lleva su hora.
+    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA, "Europe/Madrid")).toBe("sáb 26 de sep · 19:00 → lun 28 de sep");
+    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA)).toBe("sáb 26 de sep · 11:00 → lun 28 de sep · 15:59");
+    // Y las 23:59 de la ciudad, vistas desde Madrid (07:59 del día siguiente), también llevan su hora.
+    expect(formatearCuando(inicio, finDelDia, AHORA, "Europe/Madrid")).toBe("dom 27 de sep · 03:00 → mar 29 de sep · 07:59");
+  });
+});

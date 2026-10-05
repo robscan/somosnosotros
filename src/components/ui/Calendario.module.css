@@ -1,4 +1,4 @@
-/* El calendario del mes (ui/Calendario): lo comparten la hoja de fecha y hora (SelectorFecha) y la hoja Cuándo. Sin
+/* El calendario del mes (ui/Calendario): lo comparten la hoja de días (SelectorDia) y la hoja Cuándo. Sin
    envoltorio propio: sus tres piezas (el mes con sus flechas, las letras de la semana y la rejilla) van directas en la
    caja que lo aloja. */
 .cabeceraMes {
