@@ -378,7 +378,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const falta = faltaEnEvento({ nombre: titulo, donde: dondeResuelto ? "listo" : dondeConfirmar ? "por-confirmar" : "falta" });
 
   const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${textoDelSitio(otro)} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
-  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta";
+  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta la fecha";
   const valorCuanto = gratis ? "Gratis" : cooperacion ? COOPERACION_SOLIDARIA : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
 
@@ -588,7 +588,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
 
         <ul className={renglon.renglones}>
           {/* 2. Cuándo: hoy a las 19:00 ya resuelto; al abrir, Empieza y Termina como el calendario del teléfono. */}
-          <li className={`${renglon.resuelto} ${abierta === "cuando" ? renglon.abierto : ""}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "cuando" ? renglon.abierto : inicioIso ? "" : renglon.pendiente}`}>
             <IconoReloj width={20} height={20} />
             <small>Cuándo</small>
             <b className={inicioIso ? undefined : renglon.falta}>{valorCuando}</b>
@@ -621,7 +621,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           </li>
 
           {/* 3. Dónde: una sola salida, la lupa abre la hoja "Dónde es" (decisión 2). */}
-          <li className={`${renglon.resuelto} ${dondeResuelto ? "" : renglon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${dondeResuelto ? "" : renglon.pendiente}`}>
             <IconoPin width={20} height={20} />
             <small>Dónde</small>
             {direccionRetirada && modoSitio === "reservado" && (
@@ -646,7 +646,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               </>
             ) : (
               <>
-                <b className={renglon.falta}>Falta</b>
+                <b className={renglon.falta}>Falta el lugar</b>
                 <span className={renglon.opciones}>
                   <BotonIcono relieve="contorno" onClick={() => setHoja({ ubicarme: true })} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
@@ -665,7 +665,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           </li>
 
           {/* 4. Quién: opcional, no detiene la publicación (Artistas, decisión 12). */}
-          <li className={`${renglon.resuelto} ${abierta === "quien" ? renglon.abierto : quien.length ? "" : renglon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "quien" ? renglon.abierto : quien.length ? "" : renglon.opcional}`}>
             <IconoPersonas width={20} height={20} />
             <small>Quién</small>
             <b className={quien.length ? undefined : renglon.falta}>{valorQuien}</b>
@@ -680,7 +680,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           </li>
 
           {/* 5. Cuánto: gratis ya resuelto; al abrir, Gratis / Con costo y el precio. */}
-          <li className={`${renglon.resuelto} ${abierta === "cuanto" ? renglon.abierto : ""}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "cuanto" ? renglon.abierto : ""}`}>
             <IconoBoleto width={20} height={20} />
             <small>Cuánto</small>
             <b>{valorCuanto}</b>
@@ -722,7 +722,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           </li>
 
           {/* 6. Más: descripción, enlace, cartel o foto. Se esconde, no se desmonta. */}
-          <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${masAbierto ? renglon.abierto : renglon.opcional}`}>
             <IconoMas width={20} height={20} />
             <small>Más</small>
             <b className={renglon.falta}>Descripción, enlace, {imagen ? "imagen" : "foto"}</b>

@@ -1,0 +1,19 @@
+/* La línea de «por completar» (OL-297; founder, 2026-10-05): punteada, de 1 px, con guiones de 4 y 5 de aire, que sigue el radio del
+   renglón o del campo. `border-style: dashed` no deja fijar la separación, así que se dibuja con una máscara de SVG sobre un fondo
+   de color: el color sale de un token. Para cambiarla hay dos sitios y solo dos: el COLOR, en la declaración `background` de abajo
+   (hoy gris `--texto-suave`; el founder rechazó el violeta por agresivo y eligió la opción 2, 1 px con guion de 4 y aire de 5, el 2026-10-05), y el GROSOR, los guiones y su aire en la
+   máscara `--linea-por-completar` de globals.css (`stroke-width` = el doble del grosor visible, `stroke-dasharray` = guion y aire). La usan `Renglon.pendiente` y
+   `FormularioCanon.campoFalta` con `composes`. `--linea-sangria` la sube al borde del renglón (su borde propio es transparente). */
+.linea {
+  position: relative;
+}
+.linea::after {
+  content: "";
+  position: absolute;
+  inset: var(--linea-sangria, 0);
+  border-radius: var(--radio);
+  background: var(--texto-suave);
+  -webkit-mask: var(--linea-por-completar) center / 100% 100% no-repeat;
+  mask: var(--linea-por-completar) center / 100% 100% no-repeat;
+  pointer-events: none;
+}

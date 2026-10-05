@@ -163,7 +163,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const repetido = existente ?? (coincide(existenteServidor) ? existenteServidor : null);
   // Lo único que dice qué falta es la nota bajo el botón (doc 50, H-29 y H-32).
   const falta = faltaEnArtista({ nombre, repetido: !!repetido });
-  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre";
+  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Disciplina según el nombre";
   const avisoRepetidoAbierto = enfocadoNombre && !!repetido;
 
   return (
@@ -236,7 +236,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
 
       <ul className={renglon.renglones}>
         {/* 2. Qué hace: deducido del nombre; chips y "en una palabra" al abrir. */}
-        <li className={`${renglon.resuelto} ${abierta === "hace" ? renglon.abierto : ""}`}>
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "hace" ? renglon.abierto : ""}`}>
           <IconoNota width={20} height={20} />
           <small>Qué hace</small>
           <b className={disciplina ? undefined : renglon.falta}>{valorHace}</b>
@@ -356,7 +356,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </li>
 
         {/* 3. Es: deducido del nombre ("Los", "Trío", "Colectivo"); chips al abrir. */}
-        <li className={`${renglon.resuelto} ${abierta === "es" ? renglon.abierto : ""}`}>
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "es" ? renglon.abierto : ""}`}>
           <IconoPersonas width={20} height={20} />
           <small>Es</small>
           <b>{etiquetaTipoArtista(tipo)}</b>
@@ -389,7 +389,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </li>
 
         {/* 4. Ciudad: la de entrada casi siempre es la buena; si no, se busca en una hoja (el teclado no tapa los resultados). */}
-        <li className={renglon.resuelto}>
+        <li className={`${renglon.resuelto} ${renglon.sinClave}`}>
           <IconoPin width={20} height={20} />
           <small>Ciudad</small>
           <b>{ciudad}</b>
@@ -399,7 +399,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </li>
 
         {/* 5. Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
-        <li className={`${renglon.resuelto} ${foto ? "" : renglon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${foto ? "" : renglon.opcional}`}>
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
             <img src={foto} alt="" />
@@ -407,7 +407,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
             <IconoCamara width={20} height={20} />
           )}
           <small>Foto</small>
-          <b className={foto ? undefined : renglon.falta}>{subiendo ? "Subiendo…" : foto ? "Lista" : "Sin foto"}</b>
+          <b className={foto ? undefined : renglon.falta}>{subiendo ? "Subiendo la foto…" : foto ? "Foto de perfil lista" : "Sin foto de perfil"}</b>
           <div className={renglon.opciones}>
             <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
               <IconoCamara width={22} height={22} />
@@ -427,7 +427,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </li>
 
         {/* 6. Portada: opcional, la imagen ancha de la cabecera; sin ella la ficha lleva el símbolo SN. */}
-        <li className={`${renglon.resuelto} ${portada ? "" : renglon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${portada ? "" : renglon.opcional}`}>
           {portada ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
             <img src={portada} alt="" />
@@ -435,7 +435,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
             <IconoEncuadrar width={20} height={20} />
           )}
           <small>Portada</small>
-          <b className={portada ? undefined : renglon.falta}>{subiendo ? "Subiendo…" : portada ? "Lista" : "Sin portada"}</b>
+          <b className={portada ? undefined : renglon.falta}>{subiendo ? "Subiendo la portada…" : portada ? "Portada lista" : "Sin portada"}</b>
           <div className={renglon.opciones}>
             <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={portada ? "Cambiar la portada" : "Elegir una portada"}>
               <IconoCamara width={22} height={22} />
@@ -456,16 +456,16 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
 
         {/* 7. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
         {esAlta && (
-          <li className={renglon.resuelto}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave}`}>
             <IconoPersona width={20} height={20} />
             <small>Soy yo / es mi grupo</small>
-            <b className={soy ? undefined : renglon.falta}>{soy ? "Sí: podrás editar la ficha y publicar sus fechas" : "No"}</b>
+            <b className={soy ? undefined : renglon.falta}>{soy ? "Es mi ficha: podrás editar y publicar sus fechas" : "Soy yo / es mi grupo"}</b>
             <Palanca encendida={soy} aria-label="Soy yo / es mi grupo" onClick={() => setSoy((s) => !s)} />
           </li>
         )}
 
         {/* 8. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
-        <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${masAbierto ? renglon.abierto : renglon.opcional}`}>
           <IconoMas width={20} height={20} />
           <small>Más</small>
           <b className={renglon.falta}>Redes, descripción</b>

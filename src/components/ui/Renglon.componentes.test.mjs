@@ -42,7 +42,7 @@ before(async () => {
       import Palanca from './src/components/ui/Palanca';
       import SoloLector from './src/components/ui/SoloLector';
       import IconoEnCirculo from './src/components/ui/IconoEnCirculo';
-      import {IconoBoleto, IconoChevronDerecha, IconoLapiz, IconoNota, IconoOk, IconoPin, IconoReloj} from './src/components/ui/Iconos';
+      import {IconoBoleto, IconoChevronDerecha, IconoLapiz, IconoMas, IconoNota, IconoOk, IconoPin, IconoReloj} from './src/components/ui/Iconos';
       import './src/app/globals.css';
       const FOTO = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
       // El botón real de un renglón (H-19): el icono a secas sobre el fondo hueso.
@@ -78,6 +78,9 @@ before(async () => {
             <ul aria-label="resueltos" className={rs.renglones}>
               <li className={rs.resuelto} data-id="resuelto"><IconoReloj width={20} height={20} /><small>Cuándo</small><b>Hoy · 19:00</b><Boton type="button" variante="texto" alto="control" ancho="contenido">Cambiar</Boton></li>
               <li className={rs.resuelto + ' ' + rs.pendiente} data-id="pendiente"><IconoPin width={20} height={20} /><small>Dónde</small><b className={rs.falta}>Falta</b><Boton type="button" variante="texto" alto="control" ancho="contenido">Agregar</Boton></li>
+              <li className={rs.resuelto + ' ' + rs.opcional} data-id="opcional"><IconoMas width={20} height={20} /><small>Más</small><b className={rs.falta}>Descripción, enlace, foto</b><Boton type="button" variante="texto" alto="control" ancho="contenido">Agregar</Boton></li>
+              <li className={rs.resuelto + ' ' + rs.sinClave + ' ' + rs.pendiente} data-id="sin-clave"><IconoPin width={20} height={20} /><small>Dónde</small><b className={rs.falta}>Falta el lugar</b><Boton type="button" variante="texto" alto="control" ancho="contenido">Agregar</Boton></li>
+              <li className={rs.resuelto + ' ' + rs.sinClave} data-id="sin-clave-resuelto"><IconoReloj width={20} height={20} /><small>Cuándo</small><b>Hoy · 19:00</b><Boton type="button" variante="texto" alto="control" ancho="contenido">Cambiar</Boton></li>
               <li className={rs.resuelto + ' ' + rs.abierto} data-id="abierto"><IconoBoleto width={20} height={20} /><small>Cuánto</small><b>Gratis</b><Boton type="button" variante="texto" alto="control" ancho="contenido">Listo</Boton><div className={rs.cuerpo} data-id="cuerpo">El cuerpo abierto</div></li>
             </ul>
             <div data-id="soloLector" style={{ position: 'relative' }}><SoloLector>Cambiar la fecha,</SoloLector></div>
@@ -236,7 +239,7 @@ test("ajuste: 52 de alto, icono en una columna de 24, chevron y palanca a la der
   assert.equal(await color("ajuste-apagado"), "rgb(92, 92, 92)", "apagado: la etiqueta, en gris");
 });
 
-test("resuelto: la clave sobre el valor, 60 de alto, pendiente con borde discontinuo de 2 px en el color de acción y abierto con el de tinta", async (t) => {
+test("resuelto: la clave sobre el valor, 60 de alto, por completar con la línea gris, opcional con el punteado gris, sin clave de 48 y abierto con el de tinta", async (t) => {
   const p = await pagina(t);
   const fila = dato(p, "resuelto");
   const caja = await rect(fila);
@@ -250,17 +253,34 @@ test("resuelto: la clave sobre el valor, 60 de alto, pendiente con borde discont
   assert.equal(cambiar.r, caja.r - 15, "el botón va al borde de la derecha, dentro de su relleno de 14 y su borde de 1");
   const estilos = (id) => dato(p, id).evaluate((e) => ({ borde: getComputedStyle(e).borderTopStyle, color: getComputedStyle(e).borderTopColor }));
   assert.equal((await estilos("resuelto")).borde, "solid");
-  assert.equal((await estilos("pendiente")).borde, "dashed");
-  // Pendiente (founder, 2026-10-05, OL-297): 2 px en el color de acción, el valor «Falta» también; la clave, el icono y la caja no cambian.
+  // Por completar (founder, 2026-10-05, OL-297): el borde propio es transparente y la línea (gris) la dibuja una máscara;
+  // el valor va en tinta, la clave y el icono en gris y la acción en violeta. La caja mide lo mismo que la de un renglón resuelto.
   const pendiente = dato(p, "pendiente");
   const detalle = await pendiente.evaluate((e) => {
     const c = (n) => getComputedStyle(n);
-    return { ancho: c(e).borderTopWidth, color: c(e).borderTopColor, valor: c(e.querySelector("b")).color, clave: c(e.querySelector("small")).color, icono: c(e.firstElementChild).color, accion: c(e.querySelector("button")).color };
+    const l = getComputedStyle(e, "::after");
+    return { borde: c(e).borderTopColor, ancho: c(e).borderTopWidth, valor: c(e.querySelector("b")).color, clave: c(e.querySelector("small")).color, icono: c(e.firstElementChild).color, accion: c(e.querySelector("button")).color, linea: l.backgroundColor, mascara: /url\("data:image\/svg\+xml/.test(l.maskImage || l.webkitMaskImage) };
   });
-  assert.deepEqual(detalle, { ancho: "2px", color: "rgb(109, 52, 200)", valor: "rgb(109, 52, 200)", clave: "rgb(92, 92, 92)", icono: "rgb(92, 92, 92)", accion: "rgb(109, 52, 200)" });
-  assert.equal((await rect(pendiente)).h, (await rect(fila)).h, "pasar de 1 a 2 px de borde no cambia el alto del renglón");
+  assert.deepEqual(detalle, { borde: "rgba(0, 0, 0, 0)", ancho: "1px", valor: "rgb(26, 26, 26)", clave: "rgb(92, 92, 92)", icono: "rgb(92, 92, 92)", accion: "rgb(109, 52, 200)", linea: "rgb(92, 92, 92)", mascara: true });
+  assert.equal((await rect(pendiente)).h, (await rect(fila)).h, "la línea de por completar no cambia el alto del renglón");
   const xTexto = async (loc) => (await rect(loc.locator("b"))).x;
   assert.equal(await xTexto(pendiente), await xTexto(fila), "ni mueve el texto");
+  const linea = await pendiente.evaluate((e) => { const r = getComputedStyle(e, "::after"); const b = e.getBoundingClientRect(); return [r.position, parseFloat(r.width), parseFloat(r.height), b.width, b.height]; });
+  assert.deepEqual(linea.slice(0, 1).concat(linea.slice(1, 3).map(Math.round)), ["absolute", Math.round(linea[3]), Math.round(linea[4])], "la línea cubre la caja del renglón (borde incluido)");
+  // Opcional: el punteado gris de 1 px de siempre y el valor en gris.
+  const opcional = await estilos("opcional");
+  assert.deepEqual([opcional.borde, opcional.color], ["dashed", "rgb(220, 220, 216)"]);
+  assert.equal(await dato(p, "opcional").evaluate((e) => getComputedStyle(e.querySelector("b")).color), "rgb(92, 92, 92)");
+  // Sin clave a la vista: icono | valor | acción, de --toque (48) de alto; la clave sigue en el árbol de accesibilidad.
+  for (const id of ["sin-clave", "sin-clave-resuelto"]) {
+    const f = dato(p, id);
+    const c = await rect(f);
+    assert.equal(c.h, 48, `${id}: sin clave el renglón mide --toque`);
+    const clave = await rect(f.locator("small"));
+    assert.ok(clave.w <= 1 && clave.h <= 1, "la clave no se ve");
+    assert.equal(await f.locator("small").evaluate((e) => e.textContent.length > 0), true, "pero sigue en el árbol");
+  }
+  assert.equal((await rect(dato(p, "sin-clave"))).h, (await rect(dato(p, "sin-clave-resuelto"))).h, "pendiente y resuelto sin clave miden igual");
   assert.equal((await estilos("abierto")).color, "rgb(26, 26, 26)");
   assert.equal((await estilos("resuelto")).color, "rgb(220, 220, 216)");
   const cuerpo = await rect(dato(p, "cuerpo"));

@@ -374,7 +374,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
 
         <ul className={renglon.renglones}>
           {/* 2. Dónde: resuelto en cuanto algo lo resuelve; si falta, dos salidas por intención. */}
-          <li className={`${renglon.resuelto} ${punto ? "" : renglon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${punto ? "" : renglon.pendiente}`}>
             <IconoPin width={20} height={20} />
             <small>Dónde</small>
             {punto ? (
@@ -386,7 +386,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
               </>
             ) : (
               <>
-                <b className={renglon.falta}>Falta</b>
+                <b className={renglon.falta}>Falta dónde está</b>
                 <span className={renglon.opciones}>
                   <BotonIcono relieve="contorno" onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
@@ -407,10 +407,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           </li>
 
           {/* 3. Tipo: deducido del nombre; chips al abrir; con Otro, qué es (opcional). */}
-          <li className={`${renglon.resuelto} ${tipoAbierto ? renglon.abierto : ""}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${tipoAbierto ? renglon.abierto : ""}`}>
             <IconoEtiqueta width={20} height={20} />
             <small>Tipo</small>
-            <b className={tipo ? undefined : renglon.falta}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre"}</b>
+            <b className={tipo ? undefined : renglon.falta}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Tipo según el nombre"}</b>
             <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
               {tipoAbierto ? "Listo" : "Cambiar"}
             </Boton>
@@ -448,7 +448,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           </li>
 
           {/* 4. Más: descripción, redes, foto (y lo del administrador). Puede hacerse después. */}
-          <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${renglon.sinClave} ${masAbierto ? renglon.abierto : renglon.opcional}`}>
             <IconoMas width={20} height={20} />
             <small>Más</small>
             <b className={renglon.falta}>Descripción, redes, foto</b>
