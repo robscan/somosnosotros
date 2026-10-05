@@ -1,0 +1,39 @@
+{
+  "errores": [],
+  "requestsExternas": [],
+  "comprobaciones": [
+    "320: vacío de búsqueda mantiene Agregar un lugar",
+    "390: vacío de búsqueda mantiene Agregar un lugar",
+    "Ciudad León persiste en Agenda; no hereda filtro SLP",
+    "Ciudad León persiste en Lugares; no hereda filtro SLP",
+    "Ciudad León persiste en Artistas; no hereda filtro SLP",
+    "Ciudad León persiste en Inicio; no hereda filtro SLP",
+    "Más adelante → Agenda Todos León sin filtros, evento visible",
+    "Logo, recarga y entrada sin ciudad conservan preferencia León",
+    "URL Puebla explícita gana a preferencia León sin reescribirla",
+    "GPS SLP solo ordena la hoja, no sustituye León",
+    "Volver a SLP mediante el mismo chip guarda SLP",
+    "Las cuatro ciudades reportadas muestran su evento futuro en Inicio y Agenda",
+    "Condiciones B: ausente con semana o cero, sin duplicar Tus planes, tope20 de24"
+  ],
+  "capturas": [
+    "inicio-leon-320.png",
+    "agenda-leon-320.png",
+    "lugares-leon-320.png",
+    "artistas-leon-320.png",
+    "inicio-semana-320.png",
+    "inicio-vacio-320.png",
+    "agenda-vacio-320.png",
+    "inicio-planes-320.png",
+    "inicio-varios-320.png",
+    "inicio-leon-390.png",
+    "agenda-leon-390.png",
+    "lugares-leon-390.png",
+    "artistas-leon-390.png",
+    "inicio-semana-390.png",
+    "inicio-vacio-390.png",
+    "agenda-vacio-390.png",
+    "inicio-planes-390.png",
+    "inicio-varios-390.png"
+  ]
+}

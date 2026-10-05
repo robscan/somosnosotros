@@ -732,6 +732,15 @@ Estado al relevo (main `6d870573`):
     - la bitácora 297 y la línea OL-270.
   - **No tocar:** `ui/Hoja`, `ui/Boton`, `ui/Renglon`, `ui/Buscador` (se usan tal cual), `HojaLugares`, `apps/ios`, ni `ubicacion.ts` y `useUbicacionFresca.ts` más allá de lo que ya trae #294. Sin migración.
   - **A decidir con el gestor antes de programar:** el nombre de la ciudad cuando estás lejos requiere geocodificación inversa (Mapbox). Es un uso nuevo de la ubicación, que hoy «sirve para ordenar por cercanía, nada más». Propuesta: pedirla solo con coordenadas redondeadas a 2 decimales, sin guardarla, y documentarlo en la bitácora.
+  - **Asignado por Codex y confirmado por el gestor (2026-10-04):**
+    - Codex trabaja en `hoja-ciudades`, con main traído mediante `resolver_ol.py`. El PR va contra `main`.
+    - El botón llama a `leerUbicacionCercana()` y después a `avisarUbicacion()`; para ocultarlo usa `permisoConcedido()`. El «negado» se guarda en `sessionStorage`.
+    - Variante `buscar`: título «Ciudades», nota de lugares o eventos, sin alta.
+    - Filtro por sección dentro de `Ciudad.tsx`, conservando siempre la ciudad actual. La cercanía se calcula sobre la lista ya filtrada.
+    - Archivos añadidos:
+      - `FilaEventos.componentes.test.mjs`, solo el caso de la línea 334;
+      - comentarios de `ui/Renglon.module.css:276` y `ui/Buscador.tsx:21`.
+    - Sin Mapbox: el botón dice «… donde estás».
   - **Pruebas:**
     - los cinco estados del prototipo en 390×844 y 320 px, con capturas en `docs/rediseno/capturas-297/`;
     - permiso concedido, negado y sin pedir;
@@ -751,3 +760,146 @@ Estado al relevo (main `6d870573`):
   - **No tocar:** `docs/rediseno/24-grafo-cultural.md`, `42-festivales.md` y `44-novedades-artista.md`, `COLA_DE_PIEZAS.md`, `DEFINICION.md` ni `ASIGNACIONES.md` (los lleva el gestor). Se citan y se enlazan.
   - **Verificación:** solo documental, sin build ni suites. Enlaces relativos válidos, sin datos privados (correos ni teléfonos de personas), y cifras con fecha y fuente.
   - **Entrega:** commit local en la rama. Sin push, PR ni unión salvo instrucción expresa; la publicación la hace el gestor con el «publica» del founder.
+- **OL-271 publicada por el gestor** con autorización expresa del founder («autorizo publicar», en el chat Codex 01a10807). PR #332, desde el candidato `869dcc90` revisado sin hallazgos.
+- **OL-272 / bitácora 299 · Eventos: modelo y recorrido, solo documentos (2026-10-04, reserva para Codex, chat 01a10807).** Continuación de OL-271 pedida por el founder: «retomemos eventos», sin perder de vista cómo se conecta con Artistas y Lugares.
+  - **Qué se documenta:**
+    - el modelo concreto de Eventos (marco y actos, sesiones, exposición visitable, convocatoria);
+    - los contratos que necesita de los otros proyectos:
+      - horarios de operación reutilizables del lugar;
+      - integrantes individuales de un grupo;
+      - toda actividad deja historial en el artista y en el lugar;
+    - la propuesta de recorrido de captura y de consulta.
+  - **Principios:** UX invisible, progressive disclosure, capacidades antes que campos y revisión humana de lo que propone la IA.
+  - **Rama:** `investigacion-eventos`, desde `origin/main` después de unir #332, en el worktree `.claude/worktrees/investigacion-eventos`.
+  - **Archivos asignados:**
+    - `docs/investigaciones/eventos.md`;
+    - un documento nuevo `docs/investigaciones/eventos-modelo.md` si el modelo no cabe en eventos.md;
+    - en `README.md`, `artistas.md` y `lugares.md` solo los enlaces o los contratos que Eventos necesita, no sus proyectos completos;
+    - `docs/bitacora/2026/10/299-eventos-modelo.md`;
+    - la línea OL-272 y el «Last updated».
+  - **No tocar:** los mismos documentos que en OL-271 (24, 42, 44, COLA, DEFINICION, ASIGNACIONES).
+  - Sin código, sin prototipo construido y sin migraciones. C5 / OL-151 sigue detenida para código. Si hace falta un prototipo, se pide aparte.
+  - **Entrega:** commit local y aviso al gestor. Se publica con el «publica» del founder.
+- **OL-271 unida:** #332 → `fd11330b`.
+  - La CI del PR falló solo por la medida intermitente conocida de `s13` (168 contra 167 nodos a 390). Es un PR de solo documentos.
+  - `publicar.sh` la unió porque su espera de 8 min se agotó con la verificación todavía en curso.
+  - La CI de main en `fd11330b` salió en verde.
+  - Script corregido: espera hasta 20 min y nunca une si la verificación sigue en curso o falló.
+- **OL-270, precisiones del gestor (2026-10-04):**
+  - **Prueba en Safari iOS 26.3 (simulador):**
+    - el buscador funciona con 13 ciudades;
+    - el primer toque en un resultado se perdía al encogerse la hoja con `onBlur` (se corrige con `buscando || texto`);
+    - había una franja sin velo entre la hoja y el teclado.
+  - **Medida de la franja:** `vv.height` 358 frente a `innerHeight` 695. La barra flotante de Safari ocupa unos 43 pt que `visualViewport` no cuenta.
+  - **Autorizado un cambio mínimo en `ui/Hoja`:** el velo cubre `innerHeight` completo y el fondo de la hoja se prolonga detrás de la barra, con regresión de las hojas que llevan campo.
+  - **Añadido por el founder:** con buscador, texto escrito y cero coincidencias, `Boton` primario «Agregar un lugar» → `/nuevo?tipo=lugar`, sin pasar el texto al alta.
+- **OL-270, decisión del founder (2026-10-04):** «Agregar un lugar» cuando no hay coincidencias **no sale en Artistas**, porque un lugar nuevo no hace aparecer su ciudad en esa lista. Se queda en Agenda, Inicio, Lugares y Buscar, siempre con el texto «lugar». Recomendación del gestor, aceptada.
+- **OL-270, revisión y CI de `064d25a2`:** aceptada por el gestor con prueba real en Safari iOS. CI `37232698189` en verde y vista previa `6846381610` en verde. El PR #333 sigue en borrador.
+  - Falta el ajuste de Artistas decidido por el founder (entrada anterior): nuevo SHA de Codex y revisión del gestor.
+  - **Pendientes y responsables:**
+    - prueba en el iPhone físico: el founder;
+    - «publica» de #294 y luego de #333: el founder;
+    - traer main y unir en ese orden: el gestor.
+- **OL-270, ajuste de Artistas en `4f93978d`:** revisado por el gestor y aceptado.
+  - El cambio de código es una sola condición (`seccion !== "artistas"`).
+  - Pruebas: en Artistas no aparece el botón; en Lugares, Eventos y Buscar con 13 ciudades sí aparece.
+  - Nueva captura `estado-6` en Lugares.
+  - Falta la CI exacta de `4f93978d` para cerrar la revisión.
+- **OL-270 en `fa828b15`:** aceptada por el gestor.
+  - Mientras se busca, se ocultan la ubicación, su error y el alta lejana.
+  - Prueba real en Safari iOS 26.3 con teclado y 13 ciudades en Lugares:
+    - al enfocar el campo desaparece «Usar mi ubicación»;
+    - con «zz» salen «Nada con «zz».» y «Agregar un lugar» completo, arriba del teclado;
+    - al cerrar y volver a abrir, «Usar mi ubicación» reaparece.
+  - Evidencia en `capturas-297-revision/fa828b15-*`.
+  - Falta la CI exacta de `fa828b15` para cerrar la revisión.
+- **OL-272 descongelada para una segunda iteración (2026-10-04):** a pedido del founder, casuísticas de Eventos empezando por los casos felices.
+  - Casos: inauguración que sugiere una exposición con su periodo; festival sin sugerencia en la primera alta y con relación solo al final de la segunda fecha.
+  - La matriz de cada caso cubre disparador, acción, confirmar o posponer, resultado y protección contra falsos positivos.
+  - Misma rama `investigacion-eventos` y mismos archivos. Sin documento nuevo, código, prototipo ni publicación.
+  - Nuevo SHA para revisión del gestor.
+- **OL-270, revisión técnica cerrada:** `fa828b15`, CI `37234759756` en verde (1900 unitarias, 244 componentes, 96 mediciones) y vista previa `6846726019` en verde. El PR #333 sigue en borrador con ese mismo HEAD.
+  - **Pendientes:**
+    - prueba en el iPhone físico: el founder;
+    - «publica» de #294 y después de #333: el founder;
+    - traer main y unir en ese orden: el gestor.
+- **OL-270 reabierta para revisión funcional (2026-10-04):** el founder la probó y reportó dos problemas.
+  - León, Monterrey, Morelia y Puebla salen con 1 evento, pero al elegirlas no se muestra nada.
+  - Al cambiar de sección se vuelve a San Luis; pide que la ciudad elegida persista entre secciones.
+  - El cierre técnico de `fa828b15` no equivale a la aceptación del founder: no se publica hasta resolverlo.
+  - Codex diagnostica en solo lectura y propone. El gestor delimita antes de cualquier código.
+- **OL-270, diagnóstico de Codex y delimitación del gestor (2026-10-04):**
+  - **El conteo no es falso:** la agenda y la RPC usan el mismo criterio de eventos futuros.
+  - **Lo que pierde la oferta es Inicio:** su ventana de 7 días, «Nuevos» con mínimo de 3 y los destacados dejan Inicio vacío en ciudades con eventos a más de una semana.
+  - **La persistencia está rota:** `NavSecciones` vuelve a la última URL de cada sección y Artistas cae en silencio a San Luis.
+  - **Delimitación:**
+    - la persistencia y la identidad de la ciudad se quedan en OL-270, en la rama `hoja-ciudades`;
+    - Inicio sin oferta cercana pasa a una pieza aparte (OL-273, sin reservar), porque necesita una decisión de diseño del founder.
+  - Se programa solo con las respuestas de producto del founder.
+- **OL-270, decisión del founder:** la ciudad elegida persiste entre secciones, también en las vacías.
+  - Pendiente: confirmar si el vacío que vio fue en Inicio o en Agenda. La reproducción de Codex da 1 en Agenda «Todos» y 0 en Inicio, en condiciones sintéticas, así que no se afirma que su Agenda funcione.
+  - Pendiente: dos preferencias del founder:
+    - el vacío solo dice que no hay, o además ofrece otras ciudades;
+    - para Inicio (OL-273), un carril «Más adelante» o un aviso del próximo evento.
+- **OL-273 / bitácora 300 · Prototipo de sugerencias en el alta de Eventos (H1, H2 y H4) (2026-10-04, reserva para Codex, chat 01a10807).** El founder dio «bien, adelante» a las casuísticas de OL-272 (`5a946a56`) y a validarlas con un prototipo.
+  - **Alcance:** prototipo local y autónomo, con datos sintéticos y canon vigente.
+    - Recorridos: alta habitual, éxito con una sugerencia opcional, aceptar o ignorar, completar el periodo que falta y corregir la relación después.
+    - Solo H1, H2 y H4. H5 y H6 quedan fuera.
+  - **Rama:** `prototipo-eventos`, desde `5a946a56` (investigacion-eventos), en el worktree `.claude/worktrees/prototipo-eventos`.
+  - **Archivos:**
+    - `docs/rediseno/prototipos/eventos-sugerencias.html`;
+    - `docs/rediseno/capturas-300/` con su guía;
+    - `docs/bitacora/2026/10/300-prototipo-eventos.md`;
+    - un enlace en `docs/investigaciones/eventos-modelo.md`;
+    - la línea OL-273 y el «Last updated».
+  - **Sin** `src`, dependencias, SQL ni servicios reales de IA. Sin publicar.
+  - El número de Inicio sin oferta cercana (mencionado como OL-273 en la delimitación de OL-270) pasa al siguiente libre cuando el founder elija.
+- **OL-274 / bitácora 301 · Prototipo: ciudad que persiste entre secciones e Inicio «Más adelante» (2026-10-04, reserva para Codex, chat 01a1082a).** El founder pidió un prototipo antes de tocar `src`.
+  - **Rama:** `prototipo-ciudad`, desde `origin/main` `e454a334`, en el worktree `.claude/worktrees/prototipo-ciudad`.
+  - **Archivos:**
+    - `docs/rediseno/prototipos/ciudad-persistente.html`;
+    - `docs/rediseno/capturas-301/`;
+    - `docs/bitacora/2026/10/301-prototipo-ciudad.md`;
+    - la línea OL-274 y el «Last updated».
+  - **Después:** la parte A (persistencia) se programa dentro de OL-270 y la B (Inicio) como código de OL-274.
+  - `fa828b15` y el PR #333 siguen congelados.
+- **OL-275 / bitácora 302 · Artistas con novedades en destacados y chip «Nuevo video» / «Nuevo audio» (2026-10-04, reserva para Codex).** Pedido del founder, que aprobó la regla del gestor cambiando el letrero.
+  - **Regla:**
+    - una novedad visible pone a su artista en «Artistas destacados» de su ciudad de inmediato y durante 7 días desde su última novedad;
+    - orden: primero los elegidos por la administración y luego los de novedad, el más reciente primero, con el mismo tope de 12;
+    - el artista sale si la novedad se oculta o se borra;
+    - no cuentan artistas ocultos ni privados.
+  - **Chip:**
+    - «Nuevo video» para YouTube y Vimeo;
+    - «Nuevo audio» para SoundCloud, Bandcamp y Mixcloud;
+    - según la última novedad, mientras duren los 7 días.
+  - **Fases:** primero el prototipo del chip y del carril, luego la firma del founder, y después el código con una migración que solo añade.
+- **OL-274, revisión del prototipo `ff593b5d` (2026-10-04):** devuelta con dos hallazgos que bloquean y una aclaración.
+  - Una sola tarjeta sin foto queda aplastada en «Más adelante» (`.sola` + `.sinFoto`; probablemente un fallo real de `Destacados`).
+  - Inicio queda totalmente en blanco en una ciudad sin eventos.
+  - Aclaración pendiente: el estado «ya marcado» aparece en tarjetas de una sesión que no muestra «Tus planes».
+  - Todavía no se le muestra al founder.
+- **OL-273, revisión del prototipo `04952f8f`:** devuelta con tres desvíos del canon.
+  - Atrás es un enlace «Volver» en vez de `ui/Atras`.
+  - La hoja de periodo se cierra con el texto «Cerrar» en vez de la ✕ de `ui/Hoja`.
+  - El periodo usa `input type=date` nativo en vez de `ui/Calendario`, en modo rango como la hoja «Cuándo».
+  - La lógica de los recorridos está aceptada.
+- **OL-275, revisión del prototipo `ad64310f`:** la regla, el orden, el sello en la tarjeta (tratamiento de «Hoy») y el sello en la lista y la ficha quedan aceptados.
+  - Un desvío del canon que corregir: el chip de ciudad de la cabecera es una píldora violeta rellena, sin pin ni flecha, en vez de `ChipCiudad`.
+- **OL-274, prototipo `bb4f4ae1` aceptado por el gestor.** Se puede enseñar al founder.
+  - La tarjeta sola sin foto ya se ve en 5:3 y el Inicio sin carriles muestra el `Vacio` de Agenda.
+  - **Fallo de producción confirmado** (`reproduccion-main-390.png`): un carril con un único evento sin foto se aplasta en el `Destacados` real. Se arregla en el código de OL-274, o antes si el founder lo pide.
+- **OL-275, prototipo `ca665a7b` aceptado por el gestor.** El chip de ciudad ya es `ChipCiudad`. Se puede enseñar al founder para su firma antes de la fase 2.
+- **OL-273, ajuste local a 320 aceptado** (rejilla del calendario con -20 px por debajo de 360). Pendiente: comprobar si la hoja «Cuándo» de producción recorta el domingo a 320. Si lo hace, se abre una pieza chica aparte.
+- **#294 (OL-255) en producción:** `9489355f`, publicada con el «publica lo que está listo» del founder.
+  - CI de main en verde y despliegue de Production en `success`.
+  - `/lugares` responde 200 y `/api/estado` con Supabase y Mapbox bien.
+  - #295 sigue en pausa.
+  - #333 ya puede traer main directamente.
+- **OL-272 en main:** `feaef7bf` (#335).
+- **OL-273, prototipo `901215d3` aceptado por el gestor.** Usa `ui/Atras`, `IconoCerrar` y `ui/Calendario` de rango. La excepción a 320 está documentada. Se puede enseñar al founder; no se publica ni se implementa sin su decisión.
+- **Fallo de producción, pieza chica pendiente (sin número ni reserva):** la hoja «Cuándo» a 320.
+  - Codex lo reprodujo con `Hoja` y `Calendario` reales de `9489355f`: la rejilla mide 280 frente a 320 de contenido.
+  - El cuerpo oculta el desborde: el domingo queda de 24×44 y los días interiores de 38×44.
+  - Archivos probables: `ui/Calendario.module.css`. Se reserva cuando el founder lo pida o junto a otra pieza de UI.
+- **Prototipos en main con «publica» del founder:** OL-274 #336 → `bfe2a1e` y OL-275 #337 → `d6d9f29d`, los dos con la CI en verde. Solo documentos. La firma de cada uno sigue pendiente para la fase de código. OL-273 sigue local (`4308172f`), en espera del visto bueno del founder.

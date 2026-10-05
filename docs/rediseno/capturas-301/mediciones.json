@@ -1,0 +1,133 @@
+{
+  "filas": [
+    {
+      "ancho": 320,
+      "barra": {
+        "x": 0,
+        "y": 0,
+        "w": 320,
+        "h": 56
+      },
+      "cabecera": {
+        "x": 0,
+        "y": 56,
+        "w": 320,
+        "h": 52
+      },
+      "chip": {
+        "x": 20,
+        "y": 60,
+        "w": 106.234375,
+        "h": 36
+      },
+      "chipAntes": {
+        "alto": "44px",
+        "top": "-5px"
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "w": 320,
+        "h": 60
+      },
+      "tarjeta": {
+        "x": 20,
+        "y": 204,
+        "w": 280,
+        "h": 207
+      },
+      "fecha": {
+        "texto": "sáb 17 de oct · 19:00",
+        "client": 280,
+        "scroll": 280
+      },
+      "desbordeHorizontal": false,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "titulo": "19px"
+    },
+    {
+      "ancho": 320,
+      "estado": "artistas-vacio",
+      "tituloX": 20,
+      "tituloPx": "19px",
+      "parrafoPx": "15px",
+      "botonAlto": 48,
+      "desbordeHorizontal": false
+    },
+    {
+      "ancho": 320,
+      "estado": "agenda",
+      "cabecera": 96,
+      "miniatura": 56,
+      "tactoVoy": 44,
+      "imagenesRotas": 0
+    },
+    {
+      "ancho": 390,
+      "barra": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 56
+      },
+      "cabecera": {
+        "x": 0,
+        "y": 56,
+        "w": 390,
+        "h": 52
+      },
+      "chip": {
+        "x": 20,
+        "y": 60,
+        "w": 106.234375,
+        "h": 36
+      },
+      "chipAntes": {
+        "alto": "44px",
+        "top": "-5px"
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "w": 390,
+        "h": 60
+      },
+      "tarjeta": {
+        "x": 20,
+        "y": 204,
+        "w": 350,
+        "h": 249
+      },
+      "fecha": {
+        "texto": "sáb 17 de oct · 19:00",
+        "client": 350,
+        "scroll": 350
+      },
+      "desbordeHorizontal": false,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "titulo": "19px"
+    },
+    {
+      "ancho": 390,
+      "estado": "artistas-vacio",
+      "tituloX": 20,
+      "tituloPx": "19px",
+      "parrafoPx": "15px",
+      "botonAlto": 48,
+      "desbordeHorizontal": false
+    },
+    {
+      "ancho": 390,
+      "estado": "agenda",
+      "cabecera": 96,
+      "miniatura": 56,
+      "tactoVoy": 44,
+      "imagenesRotas": 0
+    }
+  ],
+  "comprobaciones": [
+    "Misma ciudad León: vuelve filtro Gratis y scroll350 al regresar de Artistas a Agenda",
+    "Elegir la ciudad que ya muestra una URL explícita también guarda preferencia manual",
+    "HTML abre por file://, navega a Lugares y no consulta HTTP, src ni servicios"
+  ]
+}

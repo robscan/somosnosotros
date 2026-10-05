@@ -1,0 +1,588 @@
+{
+  "fecha": "2026-10-04",
+  "motor": "Chrome headless",
+  "base": "e454a334",
+  "pantallas": [
+    {
+      "width": 320,
+      "nombre": "carril-video",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "nombre": "carril-audio",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "nombre": "ficha-audio-novedad",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "nombre": "lista",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "nombre": "ficha-sin-foto",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "nombre": "dia8-carril",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": []
+    },
+    {
+      "width": 320,
+      "nombre": "dia8-lista",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": []
+    },
+    {
+      "width": 320,
+      "nombre": "recalculo-visible",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "nombre": "respaldo",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": []
+    },
+    {
+      "width": 320,
+      "nombre": "nombre-largo",
+      "ancho": 320,
+      "documento": 320,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "carril-video",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "carril-audio",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "ficha-audio-novedad",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "lista",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "ficha-sin-foto",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "dia8-carril",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": []
+    },
+    {
+      "width": 390,
+      "nombre": "dia8-lista",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": []
+    },
+    {
+      "width": 390,
+      "nombre": "recalculo-visible",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo video",
+          "ancho": 85.109375,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgb(109, 52, 200)",
+          "color": "rgb(255, 255, 255)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "nombre": "respaldo",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": []
+    },
+    {
+      "width": 390,
+      "nombre": "nombre-largo",
+      "ancho": 390,
+      "documento": 390,
+      "fuente": "\"Bricolage Grotesque\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "bricolage": true,
+      "sellos": [
+        {
+          "texto": "Nuevo audio",
+          "ancho": 85.625,
+          "alto": 25.59375,
+          "font": "14px",
+          "fondo": "rgba(255, 255, 255, 0.92)",
+          "color": "rgb(26, 26, 26)"
+        }
+      ]
+    }
+  ],
+  "errores": [],
+  "peticionesExternas": [],
+  "alcance": "Pruebas del prototipo sintético; sin app, SQL ni proveedores reales"
+}
