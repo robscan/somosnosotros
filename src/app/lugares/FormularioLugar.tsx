@@ -386,7 +386,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
               </>
             ) : (
               <>
-                <b className={renglon.falta}>Sin ubicación</b>
+                <b className={renglon.falta}>Falta el lugar</b>
                 <span className={renglon.opciones}>
                   <BotonIcono relieve="contorno" onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />

@@ -83,7 +83,7 @@ Solo se conservan las de «antes» (la compilación de `origin/main`), que son l
 | Evento · Dónde (vacío) | Falta | Falta el lugar |
 | Evento · Cuándo (sin fecha) | Falta | Falta la fecha |
 | Evento · Más | Descripción, enlace, foto (o imagen) | Más detalles |
-| Lugar · Dónde (vacío) | Falta | Sin ubicación |
+| Lugar · Dónde (vacío) | Falta | Falta el lugar (decisión final del founder, ver abajo) |
 | Lugar · Tipo (sin nombre escrito) | Por el nombre, con «Cambiar» | Tipo de lugar, en gris, con «Elegir» |
 | Lugar · Tipo (con nombre: deducido o elegido) | Museo, con «Cambiar» | Museo (el valor mismo, en tinta), con «Cambiar»; igual que antes |
 | Lugar · Más | Descripción, redes, foto | Más detalles |
@@ -147,3 +147,7 @@ Sí, a simple vista, aunque por contraste y no por dibujo: el obligatorio es 1 p
 - La prueba de componentes del alta de evento (`cupo`) buscaba el renglón por «Descripción, enlace»; ahora lo busca por «Más detalles».
 - Capturas rehechas (todas las de «después», para que coincidan con el texto final): `despues-lugar-390.png`, `despues-lugar-320.png` (Sin ubicación, Tipo de lugar con «Elegir», Más detalles, los tres en una línea), `despues-artista-390.png`, `despues-artista-320.png` (Disciplina con «Elegir», el resto igual), `despues-evento-*.png` y `despues-evento-publicar-*.png`/`despues-evento-error-simulado-*.png` (Más detalles), `despues-editar-perfil-*.png` (sin cambio), y nuevas con nombre escrito: `despues-lugar-connombre-390.png`, `despues-lugar-connombre-320.png` («Museo» con «Cambiar»; la nota baja a «Falta dónde está.»), `despues-artista-connombre-390.png`, `despues-artista-connombre-320.png` («Música» y «Grupo» con «Cambiar»; el botón ya violeta). `despues-webkit-lugar-320.png` confirma lo mismo en WebKit.
 - Aviso de una corrección mía: en el informe anterior dije que el proceso que quedó escuchando era ajeno. No lo era: era el `next-server` hijo de mi propia compilación (el PID guardado era el del envoltorio); lo detuve al empezar este ajuste.
+
+### Cierre: «Falta el lugar» también en el alta de lugar
+
+El founder decidió («Si, Falta el lugar»): el renglón obligatorio de la ubicación vacío dice «Falta el lugar» en el alta de lugar, igual que en la de evento; «Sin…» queda para lo opcional («Sin artista», «Sin portada», «Sin foto de perfil»). Sustituye a «Sin ubicación» de la entrega anterior. A 320 cabe en una línea junto a los dos botones redondos (medido: 1 línea y 48 de alto, en Chromium y en WebKit; ningún renglón de las tres altas ocupa dos líneas con sus textos por defecto), así que no hizo falta tocar huecos ni anchos. Capturas rehechas: `despues-lugar-390.png`, `despues-lugar-320.png`, `despues-lugar-connombre-390.png`, `despues-lugar-connombre-320.png` y `despues-webkit-lugar-320.png`, abiertas y miradas.
