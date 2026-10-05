@@ -1,10 +1,10 @@
 # 297 · OL-270 · Hoja de ciudades
 
 Fecha: 2026-10-04. Operador: Codex, chat `01a1082a-33fb-7302-b694-1889ceaaf549`.
-Estado actual: **recorte del botón a358 corregido conforme al mensaje112**.
-Artistas sigue sin alta; al buscar se ocultan ubicación/error y alta por distancia,
-con campo y alta del vacío completos a320/390. Nuevo candidato preparado para
-revisión/Safari del gestor y CI. PR #333 continúa en borrador, sin publicación.
+Estado actual: **persistencia de ciudad implementada, parte A autorizada por el founder**.
+Base conciliada con PR339 (`f653e639`) mediante `resolver_ol.py`. Candidato para
+revisión final del gestor y CI en PR333; publicará A antes de OL-274 B sin volver
+a pedir firma. Sin cambio de diseño ni migración en esta pieza.
 El historial y las aprobaciones anteriores quedan abajo.
 
 ## Encargo y acuerdos comprobados
@@ -437,3 +437,55 @@ actualizadas con358 e hit-test, estados1–5 conservados. Servicios/altura simul
 El gestor repetirá **Safari con teclado real sobre el nuevo SHA** porque cambia
 la disposición al buscar; debe revisar el delta y recibir la nueva CI exacta.
 Sin producción, PR333 draft, #294 primero y responsables ya confirmados en108.
+
+
+## Parte A · ciudad persistente (firma y encargo del gestor259)
+
+El founder aprobó el prototipo OL-274 y ordenó: «Listo. Apruebo, notifica a gestor
+vamos a prod». Transmitido literalmente al gestor (258). El gestor259 reserva
+A en esta rama/PR333 y B en `inicio-mas-adelante`, bit306, sobre main posterior a
+PR339. El gestor registra la firma y revisa/publica A→B; no repetir aprobación.
+
+Causa reproducida con regresiones negativas: NavSecciones reutilizaba URLs SLP
+y filtros de otra ciudad, y una entrada sin `?ciudad` ignoraba la preferencia.
+Artistas además resolvía solo su catálogo propio. Se conserva un catálogo común
+por dos agregados cacheados; la hoja sigue filtrando según oferta. La navegación
+y el logotipo llevan la ciudad actual y solo recuperan filtros/scroll de una URL
+de la misma sección y ciudad. La preferencia local se aplica con replace en
+entradas sin ciudad; una URL explícita gana sin sobrescribirla. Elegir SLP deja
+su slug explícito para distinguirla de una entrada sin elección. Almacén bloqueado
+y SSR conservan su comportamiento seguro. No se editó `memoriaPantalla`.
+
+`useSearchParams` en el logotipo compartido hizo fallar prerender de `/borrado`;
+se aisló exclusivamente la lectura del href bajo Suspense, igual en Nav, con
+fallback del mismo elemento y sin nodos/estilos adicionales. Build final correcto,
+incluidas páginas estáticas. No se tocó carriles, Destacados ni reglas de Inicio.
+
+Verificación local:
+- 1904 unitarias (137 archivos) sobre base90f136b4 antes de conciliar339;
+  33 componentes focalizados Ciudad/Armazon, sin fallos ni omisiones;
+  lint0errores (1advertencia previa VisorImagen171), tipos correctos.
+- `medir`: build7s,96mediciones/24pantallas×4anchos,92s sin novedades;
+  anterior al merge339, cuyo delta no cambia el canon de esta hoja/navegación.
+- Build repetido tras conciliar339 y QA real de Next sobre ese código:
+  elegir León en Agenda con antiguo filtro Gratis de SLP → Lugares → Artistas →
+  Inicio → Agenda → recarga. El evento futuro sigue en Todos; ninguna sección
+  vuelve a SLP. Artistas sin fichas mantiene León y su vacío canonizado.
+- Entrada `/lugares` restaura León; URL explícita Puebla gana y su logotipo la
+  lleva a Inicio, sin cambiar `sn:ciudad-elegida=leon`.
+- A320/390, alta lejana Agenda/Lugares cierra hoja y llega al alta existente/Entrar;
+  Artistas tiene0botones de alta. Búsqueda Lugares sin coincidencias a vv358:
+  Boton completo, hit-test correcto y enlace real `/nuevo?tipo=lugar`.
+  Bbox390:241,4–289,4;320:261,6–309,6, cuerpo hasta338.
+
+Evidencia en `capturas-297/persistencia/`:10PNG completos observados y `qa.json`.
+León y su mensaje de ausencia visibles en Artistas; Agenda Todos con fecha y
+renglón completos; hojas mantienen título/✕/campo/filas del canon, botón final
+violeta sin recortes. Área visual/GPS/datos simulados y navegador Chrome local:
+no afirmar teclado/Safari físico. Se mantiene el pedido expreso del founder de
+**Agregar un lugar cuando el buscador no tiene resultados**, fuera de Artistas.
+La hoja B/Inicio «Más adelante» se implementa aparte según la reserva306.
+
+Nueva CI y preview exactas requeridas por el gestor antes de integrar; esta
+bitácora no declara la pieza publicada. Sin SQL propio, servicios reales escritos,
+geocodificación, variables nuevas ni cambios a accesos.
