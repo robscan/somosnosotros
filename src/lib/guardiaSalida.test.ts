@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { pedirSalida, ponerGuardia, quitarGuardia } from "./guardiaSalida";
+import { hayGuardia, pedirSalida, ponerGuardia, quitarGuardia } from "./guardiaSalida";
 
 describe("guardia de salida", () => {
   afterEach(() => quitarGuardia());
@@ -25,5 +25,15 @@ describe("guardia de salida", () => {
     expect(pedirSalida(() => {})).toBe(true);
     quitarGuardia(a);
     expect(pedirSalida(() => {})).toBe(false);
+  });
+  it("hayGuardia dice si esa guardia sigue puesta: la quita publicar o salir, y otra pantalla no la cuenta", () => {
+    const a = () => {};
+    const b = () => {};
+    expect(hayGuardia(a)).toBe(false);
+    ponerGuardia(a);
+    expect(hayGuardia(a)).toBe(true);
+    expect(hayGuardia(b)).toBe(false);
+    quitarGuardia();
+    expect(hayGuardia(a)).toBe(false);
   });
 });
