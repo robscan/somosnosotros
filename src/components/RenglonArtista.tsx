@@ -1,3 +1,5 @@
+import { selloNovedadArtista } from "@/lib/novedadesArtista";
+import { Chip } from "./ui/Chip";
 import { etiquetaArtista, hrefArtista, textoProximaFecha, type ArtistaResumen, type Disciplina, type ProximaFecha } from "@/lib/artistas";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
@@ -24,7 +26,7 @@ export function IconoDisciplina({ disciplina }: { disciplina: Disciplina }) {
 }
 
 type Props = {
-  artista: Pick<ArtistaResumen, "id" | "slug" | "nombre" | "foto" | "disciplina" | "detalle" | "tipo"> & { proxima?: ProximaFecha | null };
+  artista: Pick<ArtistaResumen, "id" | "slug" | "nombre" | "foto" | "disciplina" | "detalle" | "tipo" | "novedad"> & { proxima?: ProximaFecha | null };
   /** Con botón, "Seguir" o "Sigues" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
   boton?: EstadoBotonRenglon;
 };
@@ -34,6 +36,7 @@ type Props = {
  * las listas de artistas, como RenglonEvento para los eventos.
  */
 export default function RenglonArtista({ artista: a, boton }: Props) {
+  const sello = selloNovedadArtista(a.novedad);
   return (
     <Renglon href={hrefArtista(a)} foto={a.foto} redonda perezosa titulo={a.nombre} accion={boton && <BotonRenglon {...boton} />}>
       <span>
@@ -46,6 +49,7 @@ export default function RenglonArtista({ artista: a, boton }: Props) {
           <b>{textoProximaFecha(a.proxima)}</b>
         </span>
       )}
+      {sello && <Chip variante="sello">{sello}</Chip>}
     </Renglon>
   );
 }

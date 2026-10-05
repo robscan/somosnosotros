@@ -18,6 +18,13 @@ function leer(formData: FormData) {
   return { url: formData.get("url"), titulo: formData.get("titulo"), texto: formData.get("texto") };
 }
 
+/** La misma publicación cambia la ficha, el directorio y el carril de Inicio. */
+function revalidarNovedades(volver: string) {
+  revalidatePath(volver);
+  revalidatePath("/");
+  revalidatePath("/artistas");
+}
+
 const CHECK_VIOLATION = "23514";
 const TIEMPO_LIMITE_OEMBED_MS = 6000;
 const ERROR_BANDCAMP = "No pude leer ese enlace de Bandcamp. Revisa que sea la página de un álbum o una pista.";
@@ -88,7 +95,7 @@ export async function publicarNovedadArtista(artistaId: string, volver: string, 
     return { ok: false, errores: {}, general: "No se pudo publicar. ¿Sigues con sesión y es tu ficha?" };
   }
 
-  revalidatePath(volver);
+  revalidarNovedades(volver);
   return { ok: true, volver };
 }
 
@@ -131,7 +138,7 @@ export async function actualizarNovedadArtista(artistaId: string, novedadId: str
   }
   if (!data) return { ok: false, errores: {}, general: AVISO_GUARDAR };
 
-  revalidatePath(volver);
+  revalidarNovedades(volver);
   return { ok: true, volver };
 }
 
@@ -143,6 +150,6 @@ export async function actualizarNovedadArtista(artistaId: string, novedadId: str
 export async function borrarNovedadArtista(artistaId: string, novedadId: string, volver: string): Promise<void> {
   const { supabase } = await sesionOEntrar(`/artistas/${artistaId}/novedades/${novedadId}/editar`);
   await supabase.from("novedades_artista").delete().eq("id", novedadId).eq("artista_id", artistaId);
-  revalidatePath(volver);
+  revalidarNovedades(volver);
   redirect(volver);
 }

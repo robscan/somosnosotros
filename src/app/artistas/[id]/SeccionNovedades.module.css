@@ -18,6 +18,7 @@
   padding: var(--espacio-3) 0;
 }
 .novedad {
+  scroll-margin-top: calc(var(--alto-barra) + var(--espacio-4));
   padding: var(--espacio-3) 0;
   border-bottom: 1px solid var(--borde);
 }
