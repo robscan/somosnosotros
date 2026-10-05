@@ -23,7 +23,7 @@ export default function Privacidad() {
 
         <h2>Quién responde por tus datos</h2>
         <p>
-          {RESPONSABLE.nombre}, responsable del sitio somosnosotros.org, una plataforma sin fines de lucro para que la gente de San Luis Potosí conozca sus lugares culturales, sus artistas y su agenda. Puedes escribirnos a {RESPONSABLE.contacto}.
+          {RESPONSABLE.nombre}, responsable del sitio somosnosotros.org, una plataforma para que la gente conozca los lugares culturales, los artistas y la agenda de su ciudad. Puedes escribirnos a {RESPONSABLE.contacto}.
         </p>
 
         <h2>Qué datos guardamos</h2>

@@ -15,7 +15,7 @@ export default function Reglas() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Reglas de uso</h1>
-        <p className="subtitulo">Somos Nosotros es de la gente de San Luis Potosí. Estas son las reglas para que siga sirviendo.</p>
+        <p className="subtitulo">Estas son las reglas para que Somos Nosotros siga sirviendo a la gente que lo usa.</p>
 
         <h2>Qué se publica aquí</h2>
         <ul>
