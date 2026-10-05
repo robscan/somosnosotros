@@ -135,3 +135,10 @@ El founder: «ok, solo deja en morado elegir y la linea, disminuye grosor, pero 
 - **Regla final del campo por completar:** línea gris (`--texto-suave`), 1 px, guion de 4 px con 5 px de aire; en violeta solo la acción de la derecha; el valor en tinta; el icono en gris. Aplicada en los dos prototipos; en la app va en OL-297.
 - **Si no gustan los diseños del cartel** («acepto Ver otros y publicar sin cartel cuando no guste»): la pantalla «Elige un diseño» lleva «Ver otros» (trae otros cuatro) y «Publicar sin cartel». Sin editor de colores ni letras. Capturas `sin-12-disenos` y `sin-13-disenos-otros`.
 - Sin errores ni desbordes a 320 y 390 en los dos prototipos.
+
+## Novena vuelta (2026-10-05, noche): «Ver otros» con espera a propósito y rebote en lo que falta
+
+- El founder: «Al seleccionar ver otros aplicamos umbral de doherty a la inversa, que tome unos segundos cargar y presentamos cargador que exprese un proceso complejo detrás. Que el usuario sepa que al seleccionar ver otros se desencadena mas esfuerzo y eso puede costar». Tras «Ver otros», pantalla «Armando otros cuatro» durante unos 3 segundos: cuatro huecos que laten y cuatro pasos que se van palomeando (leer los datos, acomodar título y fecha, probar colores y composiciones, revisar que todo se lea). Captura `sin-13-disenos-armando`.
+  - Nota del gestor: los pasos mostrados deben ser los que de verdad hace el sistema; si un día «Ver otros» tiene costo o cupo, se dice ahí con número («te quedan 2»), no solo con la espera.
+- El founder: «Podemos agregar un leve rebote al o los campos que faltan por llenar?» Los renglones por completar dan un rebote de 5 px, una vez, medio segundo después de entrar a la pantalla; apagado con «reducir movimiento». (Sustituye el «nada de rebotes» del doc 51 solo para este caso.) No se ve en captura fija.
+- Sin errores ni desbordes a 320 y 390.

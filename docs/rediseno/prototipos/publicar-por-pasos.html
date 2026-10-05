@@ -221,6 +221,15 @@ button.renglon { cursor: pointer; }
 .horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
 .renglon.sin-clave { min-height: var(--toque); }
+.armando { display: grid; gap: var(--espacio-5); }
+.disenos.fantasma span { aspect-ratio: 4 / 5; border-radius: var(--radio); background: var(--fondo-suave); }
+.armando ol { display: grid; gap: var(--espacio-3); margin: 0; padding: 0; list-style: none; }
+.armando li { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; color: var(--texto-suave); }
+.armando li.hecho { color: var(--texto); } .armando li.hecho svg { width: 20px; height: 20px; color: var(--ok); stroke-width: 2.4; }
+.armando li.ahora { color: var(--texto); font-weight: 700; }
+.armando li i { justify-self: center; width: 10px; height: 10px; border-radius: 50%; background: var(--borde); }
+.armando li.ahora i { background: var(--primario); }
+@media (prefers-reduced-motion: no-preference) { .disenos.fantasma span { animation: late 0.9s ease-in-out infinite alternate; } .disenos.fantasma span:nth-child(2) { animation-delay: 0.2s; } .disenos.fantasma span:nth-child(3) { animation-delay: 0.4s; } .disenos.fantasma span:nth-child(4) { animation-delay: 0.6s; } .armando li.ahora i { animation: late 0.5s ease-in-out infinite alternate; } }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
 .final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
@@ -234,6 +243,10 @@ button.renglon { cursor: pointer; }
   .cae > *:nth-child(2) { animation-delay: 0.08s; } .cae > *:nth-child(3) { animation-delay: 0.16s; } .cae > *:nth-child(4) { animation-delay: 0.24s; } .cae > *:nth-child(5) { animation-delay: 0.32s; }
   .final .sello-ok { animation: sella 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
   .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; }
+  /* Un rebote leve, una sola vez, en lo que falta por completar (founder, 2026-10-05). Va después de la entrada de la pantalla. */
+  .pagina.entra .renglon.pendiente, .pagina.vuelve .renglon.pendiente { animation: entra 0.2s ease-out both, rebote 0.5s 0.45s ease-out 1; }
+  .pagina.vuelve .renglon.pendiente { animation-name: vuelve, rebote; }
+  @keyframes rebote { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-5px); } 65% { transform: translateY(2px); } }
   @keyframes entra { from { transform: translateX(28px); opacity: 0; } }
   @keyframes vuelve { from { transform: translateX(-28px); opacity: 0; } }
   @keyframes cae { from { transform: translateY(-10px); opacity: 0; } }
@@ -300,7 +313,7 @@ const LEIDO = {
 const PROGRAMA = [['Concierto de Trío Bruma', '7 de noviembre · 18:00 · Centro de las Artes'], ['Taller de gráfica en vivo', '8 de noviembre · 11:00 · Museo Federico Silva'], ['Proyección: Cortos del Altiplano', '8 de noviembre · 19:30 · Cineteca Alameda']];
 const SITIOS = [['Centro de las Artes', 'Lugar del directorio · Calz. de Guadalupe 705'], ['Centro Cultural Bicentenario', 'Lugar del directorio · Av. Sierra Leona 550'], ['Centro Histórico, Jardín de San Juan de Dios', 'Del mapa · no está en el directorio']];
 let caso = 'legible', e;
-function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, tanda: 0, flyer: null, mapa: false, fuera: false, editar: null }; }
+function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, tanda: 0, armando: null, flyer: null, mapa: false, fuera: false, editar: null }; }
 
 // Los pasos se arman con lo que falta: lo ya leído no se pregunta.
 function pasos() {
@@ -378,7 +391,12 @@ const VISTAS = {
     pie: '',
     notas: ['Las tres opciones ya aceptadas en el prototipo de Eventos, ahora como un paso propio.', 'Si el mapa dice que es un bar, un café o un restaurante, «Guardarlo como lugar» no se ofrece.'],
   }),
-  flyer: () => ({
+  flyer: () => (e.armando !== null ? {
+    titulo: 'Tu cartel', pregunta: 'Armando otros cuatro',
+    cuerpo: `<div class="armando" role="status"><div class="disenos fantasma">${'<span></span>'.repeat(4)}</div><ol>${ARMAR.map((t, i) => `<li class="${i < e.armando ? 'hecho' : i === e.armando ? 'ahora' : ''}">${i < e.armando ? ic('ok') : '<i></i>'}${t}</li>`).join('')}</ol></div>`,
+    pie: '',
+    notas: ['Pedido del founder (2026-10-05): «Ver otros» tarda a propósito unos segundos y enseña el trabajo que hay detrás, para que se sienta que pedir más cuesta esfuerzo (el umbral de Doherty al revés).', 'Los pasos que se muestran deben ser los que de verdad hace el sistema al armar cuatro carteles; si un día «Ver otros» tiene costo, aquí es donde se dice cuántos quedan.'],
+  } : {
     titulo: 'Tu cartel', pregunta: 'Elige un diseño',
     cuerpo: `<div class="disenos">${[['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'], ['#1d4a3a', '#f0c23b', '#2b3f7a', '#c4477a'], ['#7a2e1d', '#e9e4da', '#143a4a', '#5a3b8c']][e.tanda % 3].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
     pie: `<button class="btn sec" data-a="otros">Ver otros</button><button class="quieto" data-a="sin-flyer-publicar">Publicar sin cartel</button>`,
@@ -410,7 +428,7 @@ const VISTAS = {
         ${conCartel ? '' : e.flyer !== null ? `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Cartel: diseño ${e.flyer + 1}</b><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon sin-clave pendiente aparte" data-a="flyer">${ic('camara')}<b>Falta elegir el diseño del cartel</b><span class="accion">Elegir</span></button>` : `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Sin cartel</b><span class="accion">Hacer uno</span></button>`}
         <button class="quieto" data-a="mas">Agregar artistas, descripción o enlace</button>`,
       pie: e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
-      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
+      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'Lo que falta da un rebote leve al llegar a la pantalla, una sola vez; con «reducir movimiento» no se mueve.', 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
     };
   },
   publicado: () => {
@@ -431,6 +449,8 @@ const VISTAS = {
   },
 };
 
+const ARMAR = ['Leyendo los datos del evento', 'Acomodando el título y la fecha', 'Probando colores y composiciones', 'Revisando que todo se lea'];
+function armar() { e.armando++; if (e.armando >= ARMAR.length) { clearInterval(armar.t); e.armando = null; e.tanda++; } e.dir = 'fija'; pintar(); }
 function hojaFecha() {
   if (e.hoja === 'cal') {
     const dias = '<span></span>'.repeat(6) + Array.from({ length: 30 }, (_, k) => { const n = k + 1, ext = n === e.calIni || n === e.calFin, den = e.calFin !== null && n > e.calIni && n < e.calFin; return `<button class="dia ${ext ? 'extremo' : den ? 'dentro' : ''}" data-dia="${n}" ${n < 6 ? 'disabled' : ''}>${n}</button>`; }).join('');
@@ -460,7 +480,7 @@ function pintar(foco) {
   if (c && (foco || e.dir !== 'fija')) { c.focus({ preventScroll: true }); c.setSelectionRange?.(c.value.length, c.value.length); }
   if (p === 'leyendo') { clearTimeout(pintar.t); pintar.t = setTimeout(() => ir(e.i + 1), 1100); }
 }
-function reiniciar() { clearTimeout(pintar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
+function reiniciar() { clearTimeout(pintar.t); clearInterval(armar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
 
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-fin],[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar],[data-uso],[data-diseno],[data-inicio]');
@@ -492,7 +512,7 @@ document.addEventListener('click', (ev) => {
   if (a === 'sug-no') { e.sug = 'no'; e.dir = 'fija'; return pintar(); }
   if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
   if (a === 'quiere-flyer') { e.quiereFlyer = !e.quiereFlyer; e.dir = 'fija'; return pintar('#nombre'); }
-  if (a === 'otros') { e.tanda++; e.dir = 'fija'; return pintar(); }
+  if (a === 'otros') { e.armando = 0; e.dir = 'fija'; pintar(); clearInterval(armar.t); armar.t = setInterval(armar, 800); return; }
   if (a === 'sin-flyer-publicar') { e.quiereFlyer = false; e.flyer = null; e.editar = null; return ir(pasos().length - 1); }
   if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
   if (a === 'descargar') { e.bajado = true; e.dir = 'fija'; return pintar(); }
