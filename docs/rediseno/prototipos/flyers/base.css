@@ -1,0 +1,4 @@
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1350px;overflow:hidden}
+.lienzo{position:relative;width:1080px;height:1350px;overflow:hidden}
+.marca{position:absolute;font:500 22px/1 "Inter",sans-serif;letter-spacing:.04em}
