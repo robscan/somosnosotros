@@ -26,7 +26,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const resuelta = ciudadPorSlug(slug, ciudades);
   const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
   const titulo = "Agenda cultural · Somos Nosotros";
-  const descripcion = "Qué hay hoy y esta semana en los centros culturales cerca de ti. Gratis, sin cuenta para mirar.";
+  const descripcion = "Qué hay hoy y esta semana en los centros culturales cerca de ti. Sin cuenta para mirar.";
   const canonical = esInicial ? "/agenda" : `/agenda?ciudad=${resuelta.slug}`;
   return {
     title: titulo,
