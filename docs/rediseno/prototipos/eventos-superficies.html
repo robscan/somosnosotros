@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eventos: sugerencias y Dónde</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-286 (bitácora 314). Una columna de teléfono con la app simulada; arriba, la tira del prototipo para elegir el caso.
+   Tema claro único, como la app. Medidas y colores de src/app/globals.css; piezas de ui/Renglon, ui/Hoja, ui/Ficha, ui/Campo + ui/Limpiar. */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #ede6f8; --ok: #1f6f43; --ok-suave: #e4eee8; --error: #b3261e;
+  --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec; --asa: #d9d9d9; --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --velo-hoja: rgba(0, 0, 0, 0.32); --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --boton-icono: 48px; --boton-icono-grande: 56px; --alto-barra: 56px; --columna: 600px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --piso: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: "wdth" 80; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button, input, select { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h1, h2, h3 { font-variation-settings: "wdth" 75; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: 1.625rem; font-weight: 800; }
+h2 { font-size: var(--letra-xl); font-weight: 700; }
+small, .meta { font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.35; }
+svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul { list-style: none; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--espacio-2); align-items: center; padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); min-width: 0; width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); font-size: var(--letra-sm); }
+.tira label { display: flex; align-items: center; gap: 6px; min-height: var(--toque-min); font-size: var(--letra-xs); white-space: nowrap; }
+.tira input { width: 20px; height: 20px; accent-color: var(--primario); }
+.tira button { min-height: var(--toque-min); padding: 0 var(--espacio-2); font-size: var(--letra-xs); font-weight: 700; text-decoration: underline; }
+
+/* La app: una columna con su barra; el cuerpo desplaza por dentro. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; background: var(--fondo); display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+.barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); padding: 0 var(--espacio-5); border-bottom: 1px solid var(--borde); }
+.barra img { height: 26px; width: auto; }
+.atras { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque-min); padding: 0 var(--espacio-4) 0 var(--espacio-2); border: 1px solid var(--borde); border-radius: var(--radio-pildora); font-size: var(--letra-sm); font-weight: 700; }
+.atras svg { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+.pagina { overflow-y: auto; padding: var(--espacio-6) var(--espacio-5) calc(var(--espacio-6) + var(--piso)); display: grid; align-content: start; gap: var(--espacio-4); }
+.pagina.contenido { background: var(--fondo-contenido); }
+
+/* ui/Boton */
+.btn { display: flex; width: 100%; min-height: var(--toque); align-items: center; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-lg); font-weight: 700; line-height: 1.2; text-align: center; }
+.btn.sec { background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); }
+.btn:disabled { background: var(--fondo-suave); color: var(--texto-suave); cursor: default; }
+.quieto { display: block; width: 100%; min-height: var(--toque-min); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; text-decoration: underline; }
+
+/* ui/Campo con icono + ui/Limpiar */
+.campo { position: relative; display: grid; }
+.campo > svg { position: absolute; left: 14px; top: 12px; color: var(--texto-suave); pointer-events: none; }
+.campo input { width: 100%; min-height: var(--toque); padding: 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: var(--letra-md); }
+.campo input:focus { border-color: var(--texto); outline: none; }
+.limpiar { position: absolute; right: 0; top: 0; width: var(--toque); height: var(--toque); display: grid; place-items: center; color: var(--texto-suave); }
+.limpiar svg { width: 18px; height: 18px; stroke-width: 2; }
+.campo input:placeholder-shown ~ .limpiar { display: none; }
+
+/* ui/Renglon, piel "resuelto": icono | clave / valor | acción. Pendiente = borde punteado. */
+.renglon { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon small { display: block; font-size: var(--letra-xs); text-transform: uppercase; letter-spacing: 0.04em; }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.renglon.pendiente { border-style: dashed; border-color: var(--texto-suave); }
+.renglon.elegible { min-height: 68px; }
+.renglon.elegible b + span { display: block; font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.3; }
+.grupo { display: grid; gap: var(--espacio-2); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
+.chip { min-height: 36px; padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; }
+
+/* Publicado + la sugerencia: la ficha de lo que se crearía, en punteado mientras no existe. */
+.hecho { display: flex; align-items: center; gap: var(--espacio-2); color: var(--ok); font-size: var(--letra-sm); font-weight: 700; }
+.hecho svg { width: 20px; height: 20px; stroke-width: 2.2; }
+.tarjeta { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.tarjeta .fecha { display: grid; place-items: center; align-content: center; width: 56px; height: 56px; border-radius: var(--radio); background: var(--fondo-suave); font-weight: 800; line-height: 1; font-variation-settings: "wdth" 75; }
+.tarjeta .fecha span { font-size: var(--letra-2xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); margin-top: 3px; }
+.tarjeta b { display: block; font-weight: 700; line-height: 1.2; }
+.sugerencia { display: grid; gap: var(--espacio-3); padding: var(--espacio-4); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--fondo); }
+.sugerencia.lista { border: 1px solid var(--borde); }
+.sello { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.sello.ok { background: var(--ok-suave); color: var(--ok); }
+.sello.gris { background: var(--fondo-suave); color: var(--texto-suave); }
+.sello svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.sugerencia h2 { font-size: 1.375rem; font-weight: 800; }
+.datos { display: grid; gap: 6px; }
+.datos li { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--espacio-2); align-items: start; font-size: var(--letra-sm); line-height: 1.35; }
+.datos svg { width: 20px; height: 20px; color: var(--texto-suave); }
+.datos .falta { color: var(--texto-suave); }
+/* Los actos de un festival: unidos por una línea (conectividad). */
+.actos { display: grid; }
+.actos li { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--espacio-3); padding-bottom: var(--espacio-3); }
+.actos li::before { content: ""; width: 10px; height: 10px; margin: 6px 5px 0; border-radius: 50%; background: var(--primario); }
+.actos li:not(:last-child)::after { content: ""; position: absolute; left: 9px; top: 18px; bottom: -4px; width: 2px; background: var(--primario); opacity: 0.35; }
+.actos b { display: block; line-height: 1.2; }
+.actos li.nuevo::before { background: var(--fondo); box-shadow: inset 0 0 0 2px var(--primario); }
+
+/* Ficha de evento (ui/Ficha): portada, acciones redondas, tarjeta Dónde. */
+.portada { display: grid; align-content: end; aspect-ratio: 3 / 2; max-width: none; margin: calc(var(--espacio-6) * -1) calc(var(--espacio-5) * -1) 0; padding: var(--espacio-5); background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.2) 60%), var(--tono); color: var(--primario-texto); }
+.portada small { color: var(--primario-texto); opacity: 0.85; }
+.acciones { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--espacio-2); }
+.accion-ficha { display: grid; justify-items: center; gap: 6px; font-size: var(--letra-xs); font-weight: 600; text-align: center; line-height: 1.2; }
+.accion-ficha .circulo { display: grid; place-items: center; width: var(--boton-icono-grande); height: var(--boton-icono-grande); border-radius: 50%; box-shadow: inset 0 0 0 1px var(--borde); background: var(--fondo); }
+.accion-ficha.principal .circulo { background: var(--primario); color: var(--primario-texto); box-shadow: none; }
+.caja { display: grid; gap: var(--espacio-3); padding: var(--espacio-4); border-radius: var(--radio-grande); background: var(--fondo); border: 1px solid var(--borde); }
+.mapa-ficha { display: block; width: 100%; aspect-ratio: 16 / 7; border-radius: var(--radio); overflow: hidden; background: var(--fondo-mapa); }
+.mapa-ficha svg, .lienzo svg { width: 100%; height: 100%; stroke: none; }
+.dato { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque-min); text-align: left; }
+.dato > svg { width: 20px; height: 20px; color: var(--texto-suave); }
+.dato > svg:last-child { width: 18px; height: 18px; stroke-width: 2; }
+.dato b { display: block; font-weight: 600; line-height: 1.25; }
+
+/* El mapa de la plataforma con la hoja media encima. */
+.vista-mapa { position: absolute; inset: 0; z-index: 5; background: var(--fondo-mapa); }
+.lienzo { position: absolute; inset: 0 0 38% 0; }
+.flotante { position: absolute; top: var(--espacio-3); left: var(--espacio-4); z-index: 2; display: grid; place-items: center; width: var(--boton-icono); height: var(--boton-icono); border-radius: 50%; background: var(--fondo); box-shadow: var(--sombra-flotante); }
+.flotante svg { stroke-width: 2; }
+.hoja { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; align-content: start; gap: var(--espacio-3); max-height: 78%; min-height: 46%; overflow-y: auto; padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+.hoja::before { content: ""; justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--asa); }
+.cabeza-lugar { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; }
+.cabeza-lugar.sin-foto { grid-template-columns: minmax(0, 1fr); row-gap: var(--espacio-2); }
+.miniatura { display: grid; place-items: center; width: 64px; height: 64px; border-radius: var(--radio); background: var(--tono); color: var(--primario-texto); font-weight: 800; font-variation-settings: "wdth" 75; }
+.cabeza-lugar h2 { font-size: 1.375rem; font-weight: 800; }
+.velo { position: absolute; inset: 0; z-index: 8; background: var(--velo-hoja); }
+.velo .hoja { min-height: 0; max-height: calc(100% - 48px); }
+.aviso { position: absolute; left: var(--espacio-4); right: var(--espacio-4); bottom: calc(var(--espacio-4) + var(--piso)); z-index: 9; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-3); min-height: var(--toque); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); box-shadow: var(--sombra-flotante); }
+.aviso button { min-height: var(--toque-min); font-weight: 700; text-decoration: underline; }
+
+/* ¿Dónde es?: buscar, y la lista flota bajo el campo. */
+.lista-flotante { display: grid; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra-flotante); overflow: hidden; }
+.lista-flotante button { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-3); text-align: left; }
+.lista-flotante button + button { border-top: 1px solid var(--borde); }
+.lista-flotante svg { width: 20px; height: 20px; color: var(--texto-suave); }
+.lista-flotante b { display: block; font-weight: 600; line-height: 1.2; }
+.confirma { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: start; padding: var(--espacio-3); border-radius: var(--radio); background: var(--fondo-suave); font-size: var(--letra-sm); line-height: 1.35; }
+.confirma svg { width: 20px; height: 20px; color: var(--ok); stroke-width: 2.2; }
+
+/* Calendario (ui/Calendario): círculos de 44, 7 columnas. */
+.mes { display: flex; align-items: center; justify-content: space-between; }
+.mes button { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.mes button:disabled { opacity: 0.35; }
+.mes button svg { width: 18px; height: 18px; stroke-width: 2; }
+.semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; text-align: center; }
+.semana > span { font-size: var(--letra-xs); color: var(--texto-suave); padding: var(--espacio-1) 0; }
+.dia { justify-self: center; width: 100%; max-width: var(--toque-min); aspect-ratio: 1; min-width: 0; border-radius: 50%; font-size: var(--letra-sm); }
+.dia:disabled { color: var(--texto-suave); opacity: 0.65; cursor: default; }
+.dia.extremo { background: var(--primario); color: var(--primario-texto); opacity: 1; }
+.dia.dentro { justify-self: stretch; align-self: stretch; max-width: none; aspect-ratio: auto; height: auto; border-radius: 0; background: var(--primario-suave); }
+
+.notas { padding-top: var(--espacio-2); border-top: 1px dashed var(--borde); font-size: var(--letra-sm); color: var(--texto-suave); }
+.notas summary { min-height: var(--toque-min); display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.notas li { margin: 0 0 var(--espacio-2) var(--espacio-5); list-style: disc; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+@media (prefers-reduced-motion: no-preference) { .hoja { animation: sube 0.22s ease-out; } @keyframes sube { from { transform: translateY(24px); opacity: 0.6; } } }
+</style>
+</head>
+<body>
+<svg aria-hidden="true" style="display:none"><defs>
+  <!-- Trazos de src/components/ui/Iconos.tsx -->
+  <symbol id="i-atras" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></symbol>
+  <symbol id="i-personas" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.5"/></symbol>
+  <symbol id="i-boleto" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z"/><path d="M13 8v8" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-ruta" viewBox="0 0 24 24"><path d="M12 3l9 9-9 9-9-9z"/><path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8"/></symbol>
+  <symbol id="i-compartir" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11"/></symbol>
+  <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></symbol>
+  <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-camara" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-corazon" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.6 12 20 12 20z"/></symbol>
+</defs></svg>
+
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <optgroup label="Al publicar un evento">
+      <option value="h1">Inauguración: el cartel trae las fechas de visita</option>
+      <option value="h2">Inauguración: el cartel no dice hasta cuándo</option>
+      <option value="h4">Segundo evento de un mismo festival</option>
+      <option value="programa">El cartel trae varios eventos de un festival</option>
+      <option value="taller">Taller de varias sesiones</option>
+    </optgroup>
+    <optgroup label="Renglón «Dónde» de un evento">
+      <option value="catalogo">Lugar del directorio</option>
+      <option value="publico">Sitio fuera del directorio</option>
+      <option value="negocio">Sitio fuera del directorio: un bar</option>
+      <option value="sinpunto">Sitio sin punto en el mapa</option>
+      <option value="reservado">Sitio reservado</option>
+    </optgroup>
+    <optgroup label="Elegir el sitio al publicar">
+      <option value="sitio">Un sitio que no está en el directorio</option>
+    </optgroup>
+  </select>
+  <label><input type="checkbox" id="sesion" checked>Con sesión</label>
+  <button id="reiniciar" type="button">Reiniciar</button>
+</div>
+
+<div class="app">
+  <header class="barra"><button class="atras" type="button" data-a="atras"><svg><use href="#i-atras"/></svg>Atrás</button><img alt="Somos Nosotros" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii01OSAtNzcwIDM5MDMgNzkwIiB3aWR0aD0iMzkwMyIgaGVpZ2h0PSI3OTAiPjxwYXRoIHRyYW5zZm9ybT0ic2NhbGUoMSwtMSkiIGZpbGw9IiMxYTFhMWEiIGQ9Ik0yMjA4IC0xMlEyMjc4IC0xMiAyMzIwIDEyUTIzNjMgMzUgMjM4MiA3NlEyNDAyIDExOCAyNDAyIDE3MFEyNDAyIDIxNiAyMzkwIDI1MVEyMzc3IDI4NiAyMzU2IDMxM1EyMzM0IDM0MCAyMzA3IDM2MlEyMjkyIDM3MyAyMjc3IDM4NEMyMjc5IDM4NCAyMjgxIDM4NCAyMjgzIDM4NUMyMjg5IDM4NiAyMjk0IDM5MSAyMjk2IDM5N0MyMjk2IDM5NiAyMjk2IDM5NSAyMjk2IDM5NUMyMjk3IDM5MiAyMjk4IDM5MSAyMjk4IDM4OUMyMzAxIDM3OCAyMzEyIDM3MiAyMzIyIDM3NUMyMzI3IDM3NiAyMzMxIDM3OSAyMzM0IDM4M0MyMzM4IDM3OCAyMzQ2IDM3NCAyMzUzIDM3NkMyMzYxIDM3NyAyMzY4IDM4MyAyMzcwIDM5MEMyMzc0IDM4NyAyMzgwIDM4NSAyMzg1IDM4NkMyMzk2IDM4NyAyNDA0IDM5OCAyNDAyIDQwOUMyNDAyIDQxMCAyNDAyIDQxMiAyNDAyIDQxM0MyNDAyIDQxOCAyNDAxIDQyMSAyNDAxIDQyNUMyNDA3IDQyMiAyNDEzIDQyMSAyNDE5IDQyNUMyNDI3IDQzMSAyNDI4IDQ0MCAyNDI1IDQ0OUMyNDMwIDQ0OSAyNDM0IDQ1MCAyNDM4IDQ1M0MyNDM3IDQ0NiAyNDQxIDQzOCAyNDQ4IDQzNkMyNDU2IDQzNCAyNDYzIDQzNyAyNDY3IDQ0NEMyNDY4IDQ0MCAyNDcxIDQzNiAyNDc2IDQzNUMyNDgzIDQzMiAyNDkyIDQzNiAyNDk0IDQ0M0MyNDk1IDQ0NiAyNDk2IDQ0OCAyNDk3IDQ1MEMyNDk4IDQ0NiAyNTAxIDQ0MiAyNTA2IDQ0MEMyNTEzIDQzOCAyNTIwIDQ0MiAyNTIyIDQ0OEMyNTIzIDQ1MSAyNTI0IDQ1MiAyNTI0IDQ1NEMyNTI2IDQ2MSAyNTI4IDQ2NiAyNTI5IDQ3M0MyNTMwIDQ4MCAyNTMxIDQ4MyAyNTMyIDQ4OUMyNTMzIDQ5MyAyNTM0IDQ5NiAyNTM1IDQ5OUMyNTM2IDUwMyAyNTM2IDUwNiAyNTM3IDUxMEMyNTM4IDUxNSAyNTM4IDUxOCAyNTM4IDUyMkMyNTM5IDUyNyAyNTM5IDUzMCAyNTM5IDUzNUgyNTcwVjE3MkMyNTcwIDEzNyAyNTY1IDExNiAyNTY1IDgwQzI1NjUgNzAgMjU1OCA2NSAyNTU1IDU1QzI1NTEgNDcgMjU0OSA0MiAyNTQ4IDM0QzI1NDcgMzIgMjU0NyAzMSAyNTQ3IDI5TDI1NDcgMjlMMjU0NyAyOUMyNTQ1IDIyIDI1NDQgMTcgMjU0NSA5QzI1NDYgNCAyNTUwIDAgMjU1NSAwSDI4MDZDMjgxMiAwIDI4MTggMyAyODE5IDlDMjgyMCAxMSAyODIwIDEyIDI4MjAgMTNMMjgyMCAxM0wyODIwIDEzQzI4MjEgMTggMjgyMiAyMiAyODIxIDI4QzI4MTkgMzcgMjgxOCA0MyAyODEyIDUxQzI4MDYgNTkgMjgwMSA2MiAyNzkyIDY2QzI3ODEgNzEgMjc3MyA2OSAyNzYyIDc0QzI3NTEgNzggMjc0MCA3OSAyNzM1IDg5QzI3MjQgMTEzIDI3MjQgMTMwIDI3MjQgMTU2VjUzNUgyNzU0QzI3NTQgNTMwIDI3NTQgNTI3IDI3NTUgNTIyQzI3NTUgNTE4IDI3NTUgNTE1IDI3NTYgNTEwQzI3NTcgNTA2IDI3NTcgNTAzIDI3NTggNDk5QzI3NTkgNDk2IDI3NjAgNDkzIDI3NjEgNDg5QzI3NjIgNDgzIDI3NjMgNDgwIDI3NjQgNDc0QzI3NjUgNDY2IDI3NjcgNDYxIDI3NzAgNDUzQzI3NzEgNDUxIDI3NzEgNDQ5IDI3NzIgNDQ3QzI3NzUgNDQwIDI3ODMgNDM3IDI3ODkgNDQwQzI3OTMgNDQxIDI3OTYgNDQ1IDI3OTcgNDQ5TDI3OTcgNDQ5QzI3OTggNDQ2IDI3OTkgNDQ0IDI4MDEgNDQwQzI4MDMgNDMzIDI4MTIgNDI5IDI4MTkgNDMxQzI4MjQgNDMzIDI4MjcgNDM3IDI4MjggNDQxQzI4MzIgNDM0IDI4NDEgNDMwIDI4NDkgNDM0QzI4NTUgNDM2IDI4NTggNDQyIDI4NTggNDQ4QzI4NjEgNDQ3IDI4NjQgNDQ3IDI4NjcgNDQ4QzI4NzUgNDUwIDI4ODAgNDU5IDI4NzcgNDY2QzI4NzcgNDY5IDI4NzYgNDcxIDI4NzYgNDc0QzI4NzQgNDc5IDI4NzQgNDgyIDI4NzMgNDg2QzI4NzcgNDg1IDI4ODAgNDg1IDI4ODQgNDg2VjEzNkMyODg0IDExNCAyODc5IDEwMSAyODc5IDgwQzI4NzkgNzAgMjg3MiA2NSAyODY5IDU1QzI4NjUgNDcgMjg2MyA0MiAyODYyIDM0QzI4NjEgMzIgMjg2MSAzMSAyODYxIDI5TDI4NjEgMjlMMjg2MSAyOUMyODU5IDIyIDI4NTggMTcgMjg1OSA5QzI4NjAgNCAyODY0IDAgMjg2OSAwSDMwODlDMzA5NSAwIDMxMDAgMiAzMTAyIDdDMzEwMyAzIDMxMDYgMCAzMTExIDBIMzM0M0MzMzUwIDAgMzM1NiAzIDMzNTcgOUMzMzU3IDExIDMzNTggMTIgMzM1OCAxM1YxM0MzMzU5IDE4IDMzNjAgMjIgMzM1OSAyN0MzMzU3IDM3IDMzNTUgNDMgMzM0OSA1MEMzMzQ0IDU4IDMzMzggNjEgMzMzMCA2NUMzMzIyIDcwIDMzMTYgNjkgMzMwOSA3M0MzMzAwIDc4IDMyOTcgODMgMzI4OSA4OEMzMjg2IDkwIDMyODMgOTAgMzI4MCA5MEMzMjc2IDkwIDMyNzIgOTAgMzI3MiA5NEwzMjcxIDEwMUwzMjY3IDEyOVEzMjYyIDE3MyAzMjUxIDIwNlEzMjQwIDI0MCAzMjEzIDI2MFEzMTg2IDI4MCAzMTMzIDI4MlYyOTFRMzE2OSAyOTcgMzE5NSAzMTJRMzIyMSAzMjggMzIzOCAzNTBRMzI1NiAzNzMgMzI2NCA0MDJRMzI3MiA0MzEgMzI3MiA0NjRRMzI3MiA1MDQgMzI2MiA1MzZRMzI1MSA1NjcgMzIzMiA1OTBRMzIxMyA2MTMgMzE4OCA2MjlRMzE2MiA2NDUgMzEzMSA2NTJRMzEwMCA2NjAgMzA2NiA2NjBIMjg4NFY1MTVDMjg4MiA1MTggMjg4MCA1MjEgMjg3OCA1MjNDMjg3NiA1MjYgMjg3MiA1MjUgMjg2OCA1MjRDMjg2NCA1MjMgMjg2MSA1MjEgMjg2MCA1MjVDMjg2MCA1MjYgMjg2MCA1MjcgMjg2MCA1MjhDMjg1OSA1MjkgMjg1OSA1MzAgMjg1OSA1MzFDMjg1OSA1MzMgMjg1OSA1MzQgMjg1OSA1MzVWNjYwSDI0MzRWNTM1QzI0MzQgNTM0IDI0MzQgNTMzIDI0MzQgNTMxQzI0MzQgNTMwIDI0MzQgNTI5IDI0MzMgNTI4QzI0MzMgNTI3IDI0MzMgNTI2IDI0MzMgNTI1QzI0MzIgNTIxIDI0MjggNTIyIDI0MjUgNTIzQzI0MjEgNTI0IDI0MTcgNTI1IDI0MTUgNTIyQzI0MDYgNTEyIDIzOTggNDk3IDI0MDggNDg5QzI0MTIgNDg2IDI0MTYgNDg1IDI0MjAgNDg2QzI0MTkgNDgzIDI0MTggNDgwIDI0MTcgNDc3QzI0MTYgNDc1IDI0MTUgNDczIDI0MTQgNDcxQzI0MTIgNDc1IDI0MDcgNDczIDI0MDIgNDcyQzIzOTcgNDcxIDIzOTIgNDcwIDIzOTIgNDc0QzIzOTEgNDc2IDIzOTEgNDc3IDIzOTEgNDc4QzIzOTEgNDgwIDIzOTEgNDgxIDIzOTEgNDgzQzIzOTEgNDg2IDIzOTAgNDg3IDIzOTAgNDg5UTIzOTAgNTMzIDIzNzggNTY4UTIzNTkgNjE4IDIzMTYgNjQ1UTIyNzIgNjcyIDIyMDQgNjcyUTIxNDQgNjcyIDIxMDIgNjUwUTIwNTkgNjI5IDIwMzcgNTkwUTIwMTUgNTUyIDIwMTUgNTAxUTIwMTUgNDYyIDIwMjYgNDMyUTIwMzggNDAyIDIwNTcgMzc4UTIwNzYgMzU1IDIwOTkgMzM2UTIxMjIgMzE4IDIxNDQgMzAyUTIxNjkgMjg1IDIxOTMgMjY1UTIyMTcgMjQ1IDIyMzIgMjE4UTIyNDggMTkyIDIyNDggMTU1UTIyNDggMTM2IDIyNDQgMTI0UTIyMzkgMTEyIDIyMzAgMTA2UTIyMjIgMTAwIDIyMTAgMTAwUTIxODUgMTAwIDIxNzQgMTIyUTIxNjMgMTQ1IDIxNjIgMTgwUTIxNjIgMTg1IDIxNjIgMTg5VjE4OUwyMTYyIDE4OUMyMTYyIDE5MyAyMTYwIDE5NCAyMTYwIDE5N0MyMTYwIDIwMiAyMTU4IDIwNSAyMTU4IDIwOUMyMTU3IDIxMyAyMTU1IDIxNSAyMTU1IDIxOUMyMTU0IDIyNCAyMTU0IDIyNyAyMTUzIDIzMkMyMTUzIDIzOCAyMTUzIDI0MSAyMTUzIDI0NkMyMTUzIDI1MCAyMTUzIDI1MyAyMTUzIDI1NUMyMTUyIDI1OSAyMTUyIDI2MyAyMTUyIDI2OEMyMTUyIDI2OSAyMTUyIDI2OSAyMTUyIDI3MEwyMTUyIDI3MEwyMTUyIDI3MEMyMTUyIDI3MSAyMTUyIDI3MiAyMTUyIDI3M0MyMTUzIDI4MiAyMTQ1IDI5MCAyMTM2IDI5MEMyMTI3IDI5MSAyMTE5IDI4MyAyMTE5IDI3NEMyMTE5IDI3MyAyMTE5IDI3MiAyMTE5IDI3MUMyMTE4IDI3MyAyMTE4IDI3NSAyMTE4IDI3OEMyMTE4IDI4MSAyMTE3IDI4MyAyMTE3IDI4NkMyMTE3IDI5NiAyMTA4IDMwNCAyMDk4IDMwNEMyMDkwIDMwMyAyMDgzIDI5OCAyMDgxIDI5MUMyMDc3IDI5OCAyMDY5IDMwMyAyMDYwIDMwMkMyMDUwIDMwMSAyMDQyIDI5MSAyMDQzIDI4MEMyMDM4IDI4NiAyMDMwIDI4OSAyMDIyIDI4N0MyMDEyIDI4NCAyMDA2IDI3MyAyMDA5IDI2M0MyMDEwIDI2MSAyMDEwIDI2MCAyMDEwIDI1OEMyMDExIDI1NCAyMDEyIDI1MCAyMDEzIDI0NkMyMDA1IDI0OSAxOTk3IDI0OCAxOTkyIDI0MkMxOTgyIDIzMCAxOTkyIDIxMyAyMDAzIDIwM0MyMDA2IDIwMSAyMDEwIDIwMyAyMDE0IDIwNEMyMDE4IDIwNiAyMDIxIDIwOCAyMDIyIDIwNEMyMDIyIDIwMyAyMDIxIDIwMyAyMDIxIDIwMkMyMDIxIDIwMiAyMDIwIDIwMSAyMDIwIDIwMUMyMDIwIDIwMCAyMDIwIDIwMCAyMDE5IDE5OUMyMDE5IDE5OSAyMDE4IDE5OCAyMDE4IDE5N0MyMDE4IDE5NiAyMDE4IDE5NSAyMDE3IDE5M0MyMDE3IDE5MyAyMDE2IDE5MiAyMDE2IDE5MUwyMDE2IDE5MVEyMDE2IDE5MCAyMDE2IDE5MFEyMDEyIDE1OSAyMDE2IDEzMlEyMDIxIDg3IDIwNDUgNTRRMjA2OSAyMiAyMTEwIDVRMjE1MSAtMTIgMjIwOCAtMTJaTTU5NyAxMTNWNTIwSDYwMEw2NzIgMEg4MjRMODk2IDUyMEg4OTlWMTI4Qzg5OSAxMDggODk1IDk1IDg5NSA3NUM4OTUgNjYgODg4IDYxIDg4NCA1MkM4ODIgNDUgODgwIDQwIDg3OCAzMkM4NzggMzAgODc3IDI5IDg3NyAyOEM4NzYgMjEgODc1IDE2IDg3NiA5Qzg3NyA0IDg4MCAwIDg4NCAwSDExMTJDMTExOCAwIDExMjQgMyAxMTI1IDlDMTEyNSAxMCAxMTI2IDExIDExMjYgMTJDMTEyNyAxNyAxMTI4IDIxIDExMjcgMjZDMTEyNSAzNSAxMTIzIDQxIDExMTggNDhDMTExMiA1NSAxMTA3IDU4IDEwOTkgNjJDMTA5MSA2NyAxMDg0IDY2IDEwNzYgNzBDMTA2NyA3NCAxMDYwIDc2IDEwNTQgODRDMTA0NyA5NCAxMDQ0IDEwMSAxMDQ0IDExM1Y2NjBIODAwTDc1NyAxNDBINzU0TDcwNSA2NjBINDUyVjEyOEM0NTIgMTA4IDQ0OCA5NSA0NDggNzVDNDQ4IDY2IDQ0MSA2MSA0MzggNTJDNDM1IDQ1IDQzMyA0MCA0MzEgMzJDNDMxIDMwIDQzMCAyOSA0MzAgMjhDNDI5IDIxIDQyOCAxNiA0MjkgOUM0MzAgNCA0MzMgMCA0MzggMEg2MzNDNjM5IDAgNjQ1IDMgNjQ2IDlDNjQ3IDEwIDY0NyAxMSA2NDcgMTJMNjQ3IDEyQzY0OCAxNyA2NDkgMjEgNjQ4IDI2QzY0NiAzNSA2NDQgNDEgNjM5IDQ4QzYzNCA1NSA2MjcgNTYgNjIwIDYyQzYxOCA2NSA2MTcgNjcgNjE1IDcwQzYxMiA3NSA2MTAgNzggNjA3IDg0QzYwMyA5NSA1OTcgMTAxIDU5NyAxMTNaTTE2NjYgMTA4VjM5NUgxNjY5TDE3OTEgMEgyMDIyQzIwMjYgMCAyMDI5IDIgMjAzMSA2QzIwMzIgNyAyMDMzIDggMjAzNCAxMEwyMDM0IDEwQzIwMzYgMTMgMjAzOCAxNiAyMDM3IDIwQzIwMzQgMjkgMjAyOCAzMyAyMDIxIDM5QzIwMTIgNDYgMjAwNSA0NyAxOTk2IDU0QzE5ODcgNjEgMTk4MSA2NiAxOTc0IDc1QzE5NjcgODcgMTk2MCA5NCAxOTYwIDEwN1Y1OTBDMTk2MCA1OTUgMTk2MCA1OTggMTk2MCA2MDNDMTk2MCA2MDggMTk1OSA2MTEgMTk1OSA2MTZDMTk1OSA2MjAgMTk1OSA2MjIgMTk1OCA2MjdDMTk1OCA2MzAgMTk1OCA2MzIgMTk1OSA2MzVDMTk1OSA2MzcgMTk1OSA2MzkgMTk1OSA2NDFDMTk2MCA2NDkgMTk2MCA2NTUgMTk1OSA2NjJWNjYyQzE5NTkgNjY0IDE5NTkgNjY2IDE5NTkgNjY4QzE5NTkgNjc5IDE5NDggNjg2IDE5MzcgNjg2QzE5MzMgNjg2IDE5MjggNjg0IDE5MjUgNjgyQzE5MjAgNjg5IDE5MTEgNjkyIDE5MDIgNjkyQzE4OTkgNjkxIDE4OTcgNjkxIDE4OTQgNjkwQzE4OTQgNjkyIDE4OTQgNjk0IDE4OTQgNjk3QzE4OTQgNzAzIDE4OTMgNzEwIDE4OTMgNzE4QzE4OTMgNzI3IDE4OTIgNzMzIDE4OTIgNzQyQzE4OTEgNzUzIDE4ODIgNzYzIDE4NzAgNzYyQzE4NTkgNzYyIDE4NTAgNzUyIDE4NTAgNzQxQzE4NTAgNzM2IDE4NTAgNzMyIDE4NTAgNzI4TDE4NTAgNzI4QzE4NTAgNzI1IDE4NTAgNzIxIDE4NTAgNzE3QzE4NTAgNzA4IDE4NTAgNzAwIDE4NDkgNjkzQzE4NDYgNzAwIDE4NDMgNzA2IDE4NDAgNzE0QzE4MzYgNzIyIDE4MzMgNzI2IDE4MzAgNzM0QzE4MjUgNzQ1IDE4MTMgNzQ5IDE4MDMgNzQ1QzE3OTMgNzQwIDE3ODggNzI4IDE3OTIgNzE4QzE3OTYgNzEwIDE3OTcgNzA1IDE4MDEgNjk3QzE4MDcgNjgyIDE4MTAgNjcyIDE4MTcgNjU2QzE4MTcgNjU1IDE4MTcgNjU1IDE4MTggNjU0QzE4MDggNjYxIDE3OTUgNjYzIDE3ODcgNjU1QzE3NzUgNjQ1IDE3ODAgNjI3IDE3OTAgNjE2QzE3OTMgNjEzIDE3OTggNjE0IDE4MDMgNjE1QzE4MDkgNjE1IDE4MTMgNjE2IDE4MTQgNjExQzE4MTQgNjA5IDE4MTQgNjA3IDE4MTQgNjA1QzE4MTUgNjAyIDE4MTUgNjAwIDE4MTUgNTk3QzE4MTUgNTk1IDE4MTUgNTkzIDE4MTUgNTkwVjI2NUgxODEyTDE2ODggNjYwSDE1MjBWMTIzQzE1MjAgMTA1IDE1MTYgOTQgMTUxNiA3NkMxNTE2IDY3IDE1MTIgNjEgMTUxMCA1M0MxNTA2IDM5IDE1MDEgMzEgMTUwMCAxOEMxNTAwIDE3IDE1MDAgMTcgMTUwMCAxNkMxNTAwIDkgMTQ5OSAwIDE1MDUgMEgxNzM2QzE3NDAgMCAxNzQzIDIgMTc0NSA2QzE3NDYgNyAxNzQ2IDggMTc0NyAxMEMxNzUwIDEzIDE3NTIgMTYgMTc1MSAyMEMxNzQ4IDMwIDE3NDIgMzQgMTczNSAzOUMxNzI1IDQ3IDE3MTYgNDcgMTcwNiA1NEMxNjk1IDYxIDE2ODggNjYgMTY4MSA3NkMxNjczIDg3IDE2NjYgOTUgMTY2NiAxMDhaTTIwOCAtMTJRMjc4IC0xMiAzMjAgMTJRMzYzIDM1IDM4MiA3NlE0MDIgMTE4IDQwMiAxNzBRNDAyIDIxNiAzOTAgMjUxUTM3NyAyODYgMzU2IDMxM1EzMzQgMzQwIDMwNyAzNjJRMjkyIDM3MyAyNzcgMzg0QzI3OSAzODQgMjgxIDM4NCAyODMgMzg0QzI4OSAzODYgMjk0IDM5MCAyOTYgMzk2QzI5NiAzOTUgMjk2IDM5NSAyOTYgMzk0QzI5NyAzOTEgMjk3IDM5MCAyOTggMzg3QzMwMSAzNzcgMzEyIDM3MSAzMjIgMzc0QzMyNyAzNzUgMzMxIDM3OCAzMzMgMzgyQzMzOCAzNzcgMzQ1IDM3NCAzNTIgMzc1QzM2MSAzNzcgMzY4IDM4NCAzNzAgMzkyQzM3NCAzODcgMzgxIDM4NSAzODggMzg3QzM5OSAzODkgNDA2IDQwMCA0MDMgNDExQzQwMyA0MTMgNDAzIDQxNCA0MDMgNDE2QzQwMiA0MjAgNDAxIDQyNCA0MDEgNDI4QzQwOSA0MjQgNDE3IDQyMyA0MjMgNDI5QzQzNiA0NDEgNDI0IDQ2MCA0MTMgNDc0QzQxMCA0NzcgNDA1IDQ3NSA0MDEgNDczQzM5NiA0NzIgMzkyIDQ3MCAzOTIgNDc0QzM5MSA0NzYgMzkxIDQ3NyAzOTEgNDc4QzM5MSA0ODAgMzkxIDQ4MSAzOTEgNDgzQzM5MSA0ODYgMzkwIDQ4NyAzOTAgNDg5UTM5MCA1MzMgMzc4IDU2OFEzNTkgNjE4IDMxNiA2NDVRMjcyIDY3MiAyMDQgNjcyUTE0NCA2NzIgMTAyIDY1MFE1OSA2MjkgMzcgNTkwUTE1IDU1MiAxNSA1MDFRMTUgNDYyIDI2IDQzMlEzOCA0MDIgNTcgMzc4UTc2IDM1NSA5OSAzMzZRMTIyIDMxOCAxNDQgMzAyUTE2OSAyODUgMTkzIDI2NVEyMTcgMjQ1IDIzMiAyMThRMjQ4IDE5MiAyNDggMTU1UTI0OCAxMzYgMjQ0IDEyNFEyMzkgMTEyIDIzMCAxMDZRMjIyIDEwMCAyMTAgMTAwUTE4NSAxMDAgMTc0IDEyMlExNjMgMTQ1IDE2MiAxODBRMTYyIDE4MiAxNjIgMTgzTDE2MiAxODRDMTYyIDIwMCAxNTggMjA5IDE1NCAyMjVDMTUwIDI0MiAxNDQgMjUxIDEzNSAyNjVDMTI4IDI3OCAxMjEgMjg0IDExMSAyOTVDMTA3IDI5OCAxMDUgMzAxIDEwMSAzMDRDOTggMzA3IDk0IDMwNyA5MyAzMTFDOTAgMzIwIDg3IDMyNSA4NCAzMzRDODMgMzM3IDgyIDMzOSA4MSAzNDJDNzggMzUwIDY5IDM1NCA2MSAzNTJDNTMgMzQ5IDQ4IDM0MCA1MSAzMzJDNTIgMzI5IDUyIDMyNyA1MyAzMjRDNTUgMzE4IDU2IDMxNCA1NyAzMTBDNTQgMzE1IDUwIDMyMCA0NiAzMjZDNDMgMzMwIDQxIDMzMyAzOCAzMzdDMzIgMzQ1IDIxIDM0NyAxMyAzNDJDNSAzMzcgMyAzMjUgOSAzMTdDMTIgMzEzIDEzIDMxMCAxNiAzMDZDMTcgMzA0IDE5IDMwMSAyMCAzMDBDMTcgMzAyIDE0IDMwNCAxMSAzMDdDNyAzMTEgNCAzMTMgMCAzMTdDLTcgMzI0IC0xOSAzMjQgLTI2IDMxNkMtMzMgMzA5IC0zMyAyOTYgLTI2IDI4OUMtMjIgMjg2IC0yMCAyODMgLTE2IDI3OUMtMTMgMjc3IC0xMSAyNzUgLTkgMjczQy0xMSAyNzMgLTEyIDI3NCAtMTQgMjc2Qy0xOCAyNzggLTIxIDI3OSAtMjQgMjgxQy0zMyAyODYgLTQ0IDI4MyAtNDkgMjc0Qy01NCAyNjYgLTUxIDI1NCAtNDMgMjQ5Qy0zOSAyNDcgLTM3IDI0NSAtMzMgMjQzQy0yNiAyMzkgLTIxIDIzNiAtMTYgMjMyQy0zMSAyMjkgLTQ0IDIyMSAtNDIgMjA3Qy00MCAxODggLTE0IDE4OCA1IDE5MEM5IDE5MCAxMCAxOTUgMTEgMTk5QzEyIDIwMiAxMyAyMDUgMTUgMjAzQzE2IDIwMiAxNiAyMDEgMTYgMjAwQzE2IDE5OSAxNiAxOTggMTcgMTk3QzE4IDE5NiAxNyAxOTUgMTcgMTk0QzE3IDE5MiAxNyAxOTEgMTcgMTkwQzE4IDE4OCAxNyAxODcgMTYgMTg1QzE2IDE4NCAxNSAxODMgMTUgMTgyTDE1IDE4MlExNSAxODEgMTUgMTgxUTEzIDE1NSAxNiAxMzJRMjEgODcgNDUgNTRRNjkgMjIgMTEwIDVRMTUxIC0xMiAyMDggLTEyWk0xMjk4IC0xMlExMzY4IC0xMiAxNDEwIDEyUTE0NTMgMzUgMTQ3MiA3NlExNDkyIDExOCAxNDkyIDE3MFExNDkyIDIxNiAxNDgwIDI1MVExNDY3IDI4NiAxNDQ2IDMxM1ExNDI0IDM0MCAxMzk3IDM2MlExMzc5IDM3NiAxMzYwIDM4OUMxMzYzIDM4OCAxMzY1IDM4OCAxMzY4IDM4OEMxMzc1IDM4OSAxMzgxIDM5NSAxMzgzIDQwMUMxMzgzIDQwMCAxMzgzIDM5OCAxMzg0IDM5N0MxMzg2IDM4NiAxMzk3IDM4MCAxNDA3IDM4MkMxNDEzIDM4MyAxNDE3IDM4NyAxNDIwIDM5MkMxNDIwIDM5MiAxNDIwIDM5MiAxNDIwIDM5MUMxNDIzIDM4MCAxNDM1IDM3NCAxNDQ1IDM3N0MxNDU1IDM3OSAxNDYxIDM4OCAxNDYxIDM5N0MxNDY2IDM5NCAxNDcyIDM5MiAxNDc4IDM5NEMxNDg5IDM5NyAxNDk1IDQwOSAxNDkyIDQxOUMxNDkyIDQyMCAxNDkyIDQyMSAxNDkxIDQyMkMxNDkwIDQyNiAxNDkwIDQyOSAxNDg5IDQzMkMxNDk2IDQyOCAxNTAzIDQyOCAxNTEwIDQzM0MxNTIzIDQ0MyAxNTEzIDQ2NCAxNTAyIDQ3N0MxNTAwIDQ4MCAxNDk1IDQ3OCAxNDkwIDQ3NkMxNDg2IDQ3NCAxNDgyIDQ3MiAxNDgxIDQ3NkMxNDgxIDQ3OCAxNDgxIDQ3OCAxNDgxIDQ4MEMxNDgxIDQ4MSAxNDgxIDQ4MiAxNDgxIDQ4NEMxNDgxIDQ4NiAxNDgwIDQ4NyAxNDgwIDQ4OVExNDgwIDUzMyAxNDY4IDU2OFExNDQ5IDYxOCAxNDA2IDY0NVExMzYyIDY3MiAxMjk0IDY3MlExMjM0IDY3MiAxMTkyIDY1MFExMTQ5IDYyOSAxMTI3IDU5MFExMTA1IDU1MiAxMTA1IDUwMVExMTA1IDQ2MiAxMTE2IDQzMlExMTI4IDQwMiAxMTQ3IDM3OFExMTY2IDM1NSAxMTg5IDMzNlExMjEyIDMxOCAxMjM0IDMwMlExMjU5IDI4NSAxMjgzIDI2NVExMzA3IDI0NSAxMzIyIDIxOFExMzM4IDE5MiAxMzM4IDE1NVExMzM4IDEzNiAxMzM0IDEyNFExMzI5IDExMiAxMzIwIDEwNlExMzEyIDEwMCAxMzAwIDEwMFExMjc1IDEwMCAxMjY0IDEyMlExMjUzIDE0NSAxMjUyIDE4MFExMjUyIDE4NSAxMjUyIDE4OVYxODlMMTI1MiAxODlDMTI1MiAxOTEgMTI1MSAxOTIgMTI1MSAxOTNDMTI1MCAxOTQgMTI1MCAxOTUgMTI1MCAxOTdDMTI1MCAxOTkgMTI0OSAyMDAgMTI0OCAyMDJDMTI0OCAyMDQgMTI0NyAyMDUgMTI0NyAyMDhDMTI0NyAyMTEgMTI0NCAyMTMgMTI0NCAyMTdMMTI0NCAyMjFDMTI0NCAyMjMgMTI0NSAyMjMgMTI0NyAyMjRDMTI0OCAyMjUgMTI1MCAyMjYgMTI1MSAyMjdDMTI1MiAyMzAgMTI1MiAyMzIgMTI1MSAyMzVDMTI0OSAyMzggMTI0NCAyMzkgMTI0NCAyMzlDMTI0NCAyMzkgMTI0OSAyNDIgMTI1MCAyNDVDMTI1MiAyNDggMTI1MSAyNTAgMTI1MCAyNTNDMTI0OCAyNTYgMTI0NCAyNTcgMTI0NCAyNTdDMTI0NCAyNTcgMTI0OCAyNjAgMTI0OSAyNjNDMTI1MCAyNjYgMTI0OSAyNjkgMTI0OCAyNzJDMTI0NiAyNzQgMTI0MSAyNzYgMTI0MSAyNzZDMTI0MSAyNzYgMTI0NyAyNzkgMTI0NiAyODFDMTI0MiAyODcgMTIzNyAyODkgMTIzMCAyOTBDMTIyMCAyOTIgMTIxMyAyOTEgMTIwMyAyOTBDMTIwMSAyOTAgMTE5OSAyOTAgMTE5NiAyOTBDMTE4NyAyODkgMTE3MyAyODYgMTE3MyAyODZDMTE3MyAyODYgMTE2OCAyOTggMTE2NyAzMDVDMTE2NyAzMTMgMTE2NiAzMTggMTE2MSAzMjNDMTE1NyAzMjggMTE1MiAzMzEgMTE0NiAzMzFDMTEzOSAzMzAgMTEzNSAzMjcgMTEzMiAzMjFDMTEyOCAzMTUgMTEyOSAzMTAgMTEzMCAzMDJDMTEzMCAzMDEgMTEzMCAyOTkgMTEzMCAyOThDMTEzMSAyOTQgMTEzMiAyOTEgMTEyOSAyODdDMTEyNSAyNzkgMTExNiAyODAgMTExMiAyNzJDMTEwNyAyNjMgMTEwNiAyNTYgMTEwNiAyNDVDMTEwOCAyMzAgMTExMiAyMjEgMTExMyAyMDZDMTExMyAyMDYgMTExMyAyMDUgMTExMiAyMDRDMTExMiAyMDQgMTExMSAyMDMgMTExMSAyMDJDMTExMSAyMDIgMTExMSAyMDEgMTExMCAyMDBDMTExMCAyMDAgMTEwOSAxOTkgMTEwOSAxOThDMTEwOSAxOTUgMTEwNyAxOTQgMTEwNiAxOTFMMTEwNiAxOTFRMTEwNiAxOTAgMTEwNiAxOTBRMTEwMiAxNTkgMTEwNiAxMzJRMTExMSA4NyAxMTM1IDU0UTExNTkgMjIgMTIwMCA1UTEyNDEgLTEyIDEyOTggLTEyWk0zNTMxIC0xMlEzNjAxIC0xMiAzNjQ0IDEyUTM2ODYgMzUgMzcwNiA3NlEzNzI1IDExOCAzNzI1IDE3MFEzNzI1IDIxNiAzNzEyIDI1MVEzNzAwIDI4NiAzNjc4IDMxM1EzNjU3IDM0MCAzNjMwIDM2MlEzNjAzIDM4MyAzNTc0IDQwMlEzNTUzIDQxNiAzNTM0IDQzMFEzNTE0IDQ0NSAzNTAyIDQ2NFEzNDkwIDQ4MiAzNDkwIDUwN1EzNDkwIDUyMiAzNDk0IDUzMlEzNDk5IDU0MyAzNTA4IDU0OVEzNTE2IDU1NSAzNTI3IDU1NVEzNTQzIDU1NSAzNTU0IDU0NFEzNTY0IDUzNCAzNTY5IDUxNlEzNTcxIDUxMCAzNTcyIDUwNEwzNTcyIDUwNEMzNTc2IDQ4MyAzNTgxIDQ3MSAzNTkxIDQ1MkMzNjAwIDQzMyAzNjA5IDQyMyAzNjI0IDQwOEMzNjM2IDM5NSAzNjQ2IDM4OSAzNjYxIDM4MEMzNjY2IDM3NyAzNjY4IDM3NCAzNjcyIDM3MUMzNjc5IDM2NSAzNjg0IDM2MiAzNjkyIDM1NkMzNzAwIDM1MCAzNzExIDM1NSAzNzE3IDM2M0MzNzIwIDM2NiAzNzIxIDM3MCAzNzIxIDM3NUMzNzI5IDM3NCAzNzM2IDM3OSAzNzQwIDM4NkMzNzQzIDM5MCAzNzQ0IDM5NCAzNzQ0IDM5OEMzNzUwIDQwMCAzNzU2IDQwNSAzNzYwIDQxMUMzNzYyIDQxNCAzNzYzIDQxOCAzNzY0IDQyMkMzNzcxIDQxOCAzNzc4IDQxNSAzNzg3IDQxMEMzNzk0IDQwNSAzNzk5IDQwMyAzODA3IDM5OUMzODE3IDM5NCAzODI5IDM5NyAzODM0IDQwN0MzODM5IDQxNiAzODM2IDQyOSAzODI2IDQzNEMzODE5IDQzOCAzODE0IDQ0MSAzODA2IDQ0NkMzNzkyIDQ1NCAzNzgzIDQ2MCAzNzY5IDQ2OEMzNzY2IDQ2OSAzNzY0IDQ3MCAzNzYxIDQ3MUMzNzcwIDQ3NSAzNzc2IDQ4MiAzNzc2IDQ5MUMzNzc1IDUwNSAzNzU5IDUxMiAzNzQ2IDUxMUMzNzQxIDUxMSAzNzM5IDUwNiAzNzM3IDUwMkMzNzM1IDQ5NyAzNzMzIDQ5MyAzNzI5IDQ5NUMzNzI1IDQ5OCAzNzI0IDUwMCAzNzIxIDUwM0MzNzE3IDUwNyAzNzE2IDUxMSAzNzEzIDUxNUMzNzExIDUyMCAzNzExIDUyMyAzNzExIDUyOEwzNzEwIDUyOEwzNzEwIDUyOFEzNzA3IDU0OSAzNzAwIDU2OFEzNjgyIDYxOCAzNjM4IDY0NVEzNTk1IDY3MiAzNTI3IDY3MlEzNDY3IDY3MiAzNDI0IDY1MFEzMzgyIDYyOSAzMzYwIDU5MFEzMzM4IDU1MiAzMzM4IDUwMVEzMzM4IDQ2MiAzMzUwIDQzMlEzMzYxIDQwMiAzMzgwIDM3OFEzMzk5IDM1NSAzNDIyIDMzNlEzNDQ1IDMxOCAzNDY3IDMwMlEzNDkyIDI4NSAzNTE2IDI2NVEzNTQwIDI0NSAzNTU2IDIxOFEzNTcxIDE5MiAzNTcxIDE1NVEzNTcxIDEzNiAzNTY2IDEyNFEzNTYyIDExMiAzNTU0IDEwNlEzNTQ1IDEwMCAzNTMzIDEwMFEzNTA4IDEwMCAzNDk3IDEyMlEzNDg2IDE0NSAzNDg1IDE4MFEzNDg1IDE4NSAzNDg1IDE4OVYxODlMMzQ4NSAxODlDMzQ4NSAxOTMgMzQ4MyAxOTQgMzQ4MyAxOTdDMzQ4MyAyMDIgMzQ4MSAyMDUgMzQ4MSAyMDlDMzQ4MCAyMTMgMzQ3OCAyMTUgMzQ3OCAyMTlDMzQ3NyAyMjQgMzQ3NyAyMjcgMzQ3NiAyMzJDMzQ3NiAyMzkgMzQ3NiAyNDMgMzQ3NiAyNDlDMzQ3NiAyNTMgMzQ3NiAyNTYgMzQ3NiAyNTlDMzQ3NSAyNjMgMzQ3NSAyNjcgMzQ3NSAyNzFDMzQ3NSAyNzMgMzQ3NSAyNzMgMzQ3NSAyNzRDMzQ3NSAyNzUgMzQ3NSAyNzYgMzQ3NSAyNzdDMzQ3NiAyODYgMzQ2OSAyOTQgMzQ2MCAyOTRDMzQ1MSAyOTUgMzQ0NCAyODggMzQ0MyAyNzlDMzQ0MyAyNzcgMzQ0MyAyNzUgMzQ0MyAyNzNDMzQ0MiAyNzAgMzQ0MiAyNjggMzQ0MiAyNjVDMzQzOCAyNzAgMzQzMSAyNzIgMzQyNSAyNzFDMzQyMCAyNzEgMzQxNSAyNjkgMzQxMSAyNjdDMzQwNiAyNjkgMzQwMCAyNzAgMzM5NCAyNzBDMzM5MCAyNjkgMzM4NSAyNjggMzM4MSAyNjVDMzM4MCAyNzEgMzM3OCAyNzYgMzM3NiAyODJDMzM3NSAyODcgMzM3NCAyODkgMzM3MyAyOTRDMzM3MCAzMDQgMzM2MCAzMTAgMzM1MCAzMDhDMzMzOSAzMDUgMzMzMyAyOTUgMzMzNiAyODVDMzMzNyAyODAgMzMzNyAyNzcgMzMzOCAyNzJDMzM0MSAyNjAgMzM0MiAyNTMgMzM0NSAyNDFDMzMyOSAyNDcgMzMxMCAyNDkgMzMwMyAyMzNDMzI5NyAyMTcgMzMxNSAyMDQgMzMzMiAxOTdDMzMzNSAxOTYgMzMzOCAxOTkgMzM0MCAyMDJDMzM0MyAyMDUgMzM0NCAyMDcgMzM0NSAyMDRDMzM0NSAyMDMgMzM0NCAyMDMgMzM0NCAyMDJDMzM0NCAyMDIgMzM0MyAyMDEgMzM0MyAyMDFDMzM0MyAyMDAgMzM0MyAyMDAgMzM0MiAxOTlDMzM0MiAxOTkgMzM0MSAxOTggMzM0MSAxOTdDMzM0MSAxOTYgMzM0MSAxOTUgMzM0MCAxOTNDMzM0MCAxOTMgMzMzOSAxOTIgMzMzOSAxOTFMMzMzOSAxOTFRMzMzOSAxOTAgMzMzOSAxOTBRMzMzNSAxNTkgMzMzOCAxMzJRMzM0NCA4NyAzMzY4IDU0UTMzOTIgMjIgMzQzMyA1UTM0NzQgLTEyIDM1MzEgLTEyWk0zMDM4IDMzMFY1MzdIMzA1OFEzMDg5IDUzNyAzMTAzIDUxNVEzMTE3IDQ5MyAzMTE3IDQ0MFEzMTE3IDM4MiAzMTAwIDM1NlEzMDg0IDMzMCAzMDUwIDMzMFpNMzAzOCAxMjBWMjI4SDMwNDVRMzA3NSAyMjcgMzA4OCAyMTFRMzEwMiAxOTUgMzEwNyAxNjhRMzEwOSAxNTUgMzExMSAxNDBDMzEwMyAxMzIgMzEwOCAxMTEgMzExMiA5MEMzMTE1IDgxIDMxMTcgNzIgMzExNyA2NEMzMTE4IDYxIDMxMTYgNjAgMzExNCA1OUMzMTEzIDU4IDMxMTIgNTYgMzExMSA1NUMzMTA3IDQ3IDMxMDYgNDIgMzEwNCAzM0MzMTA0IDMzIDMxMDQgMzIgMzEwNCAzMUMzMTAyIDM5IDMxMDAgNDQgMzA5NSA1MUMzMDg5IDU5IDMwODMgNjEgMzA3NSA2NkMzMDcwIDY5IDMwNjcgNzAgMzA2MyA3NEMzMDU3IDc5IDMwNTMgODIgMzA0OSA4OUMzMDQzIDEwMCAzMDM4IDEwOCAzMDM4IDEyMFpNMjY0IDM5M1EyNTcgMzk4IDI1MSA0MDJRMjMwIDQxNiAyMTAgNDMwUTE5MSA0NDUgMTc5IDQ2NFExNjcgNDgyIDE2NyA1MDdRMTY3IDUyMiAxNzIgNTMyUTE3NiA1NDMgMTg0IDU0OVExOTMgNTU1IDIwNCA1NTVRMjIwIDU1NSAyMzAgNTQ0UTI0MSA1MzQgMjQ2IDUxNlEyNTAgNTAxIDI1MSA0ODJMMjUxIDQ4MkMyNTEgNDc5IDI1MSA0NzcgMjUyIDQ3NEMyNTIgNDcwIDI1MiA0NjggMjUzIDQ2NEMyNTMgNDYxIDI1MyA0NTkgMjU0IDQ1NkMyNTQgNDUwIDI1NSA0NDcgMjU1IDQ0MkMyNTYgNDM1IDI1NiA0MzAgMjU3IDQyM0MyNTggNDE0IDI2MCA0MTAgMjYxIDQwMUMyNjIgNDAwIDI2MiAzOTkgMjYyIDM5OEMyNjMgMzk2IDI2MyAzOTUgMjY0IDM5M1pNMjI2NCAzOTNRMjI1OCAzOTggMjI1MSA0MDJRMjIzMCA0MTYgMjIxMCA0MzBRMjE5MSA0NDUgMjE3OSA0NjRRMjE2NyA0ODIgMjE2NyA1MDdRMjE2NyA1MjIgMjE3MiA1MzJRMjE3NiA1NDMgMjE4NCA1NDlRMjE5MyA1NTUgMjIwNCA1NTVRMjIyMCA1NTUgMjIzMCA1NDRRMjI0MSA1MzQgMjI0NiA1MTZRMjI1MCA1MDEgMjI1MSA0ODJMMjI1MSA0ODJDMjI1MSA0NzkgMjI1MSA0NzcgMjI1MiA0NzRDMjI1MiA0NzAgMjI1MiA0NjggMjI1MyA0NjRDMjI1MyA0NjEgMjI1MyA0NTkgMjI1NCA0NTZDMjI1NCA0NTAgMjI1NSA0NDcgMjI1NSA0NDJDMjI1NiA0MzUgMjI1NiA0MzEgMjI1NyA0MjRDMjI1OCA0MTUgMjI1OSA0MTAgMjI2MSA0MDFDMjI2MiA0MDAgMjI2MiAzOTkgMjI2MiAzOThDMjI2MyAzOTYgMjI2MyAzOTUgMjI2NCAzOTNaTTEzNTIgMzk0UTEzNDcgMzk4IDEzNDEgNDAyUTEzMjAgNDE2IDEzMDAgNDMwUTEyODEgNDQ1IDEyNjkgNDY0UTEyNTcgNDgyIDEyNTcgNTA3UTEyNTcgNTIyIDEyNjIgNTMyUTEyNjYgNTQzIDEyNzQgNTQ5UTEyODMgNTU1IDEyOTQgNTU1UTEzMTAgNTU1IDEzMjAgNTQ0UTEzMzEgNTM0IDEzMzYgNTE2UTEzNDAgNTAxIDEzNDEgNDgyTDEzNDEgNDgyQzEzNDEgNDgwIDEzNDEgNDc5IDEzNDIgNDc2QzEzNDIgNDczIDEzNDIgNDcyIDEzNDIgNDY5QzEzNDIgNDY2IDEzNDIgNDY1IDEzNDMgNDYyQzEzNDMgNDU3IDEzNDQgNDU0IDEzNDQgNDQ4QzEzNDQgNDQxIDEzNDQgNDM3IDEzNDUgNDMwQzEzNDUgNDIyIDEzNDcgNDE2IDEzNDggNDA4QzEzNDggNDA2IDEzNDggNDA1IDEzNDggNDAzQzEzNDkgNDAwIDEzNTAgMzk3IDEzNTIgMzk0WiIvPjwvc3ZnPgo="><span></span></header>
+  <main class="pagina" id="pagina"></main>
+  <div id="capas"></div>
+</div>
+
+<script>
+'use strict';
+// Solo datos de ejemplo. Nada sale de este navegador: sin API, sin Mapbox, sin cuenta.
+const $ = (s) => document.querySelector(s);
+const ic = (id) => `<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const dia = (iso) => `${Number(iso.slice(8))} de ${MESES[Number(iso.slice(5, 7)) - 1]}`;
+const corto = (iso) => [Number(iso.slice(8)), MESES[Number(iso.slice(5, 7)) - 1].slice(0, 3)];
+
+const SITIOS = {
+  catalogo: { nombre: 'Teatro de la Paz', tipo: 'Foro', direccion: 'Villerías 205, Centro Histórico', distancia: 'A 850 m', tono: '#8a4b3c', evento: 'Concierto de la Orquesta Sinfónica', cuando: 'Viernes 9 de octubre · 20:00', proximos: [['Concierto de la Orquesta Sinfónica', 'Vie 9 oct · 20:00'], ['Gala de danza folclórica', 'Dom 18 oct · 18:00']] },
+  publico: { nombre: 'Caja del Agua', direccion: 'Calzada de Guadalupe, Barrio de San Miguelito', distancia: 'A 1.2 km', evento: 'Fotomúsica: caminata para tomar fotos', cuando: 'Sábado 10 de octubre · 17:00', tono: '#3d6b6b' },
+  negocio: { nombre: 'Rockabilly Bar', direccion: 'Av. Venustiano Carranza 1140, Tequisquiapan', distancia: 'A 2.4 km', evento: 'The Black Parade', cuando: 'Sábado 17 de octubre · 21:00', tono: '#3a3a4a', negocio: true },
+  sinpunto: { nombre: 'Alameda Juan Sarabia, junto al monumento a Hidalgo', direccion: null, evento: 'Recorrido por el barrio del Montecillo', cuando: 'Domingo 11 de octubre · 10:00', tono: '#5b6b3a' },
+  reservado: { nombre: 'Casa particular en Lomas', evento: 'Sesión íntima de son huasteco', cuando: 'Sábado 24 de octubre · 19:00', tono: '#6b3a5b' },
+};
+const APERTURA = { titulo: 'Inauguración de Ecos de papel', fecha: '2026-11-05', hora: '19:00', lugar: 'Museo Federico Silva', quien: 'Lucía Montaño', precio: 'Gratis' };
+const ACTOS = [
+  { titulo: 'Concierto de Trío Bruma', fecha: '2026-11-07', hora: '18:00', lugar: 'Centro de las Artes', quien: 'Trío Bruma', precio: '$100' },
+  { titulo: 'Taller de gráfica en vivo', fecha: '2026-11-08', hora: '11:00', lugar: 'Museo Federico Silva', quien: 'Lucía Montaño', precio: '$150' },
+];
+const TALLER = { titulo: 'Taller de grabado en linóleo', fecha: '2026-11-07', hora: '10:00', lugar: 'Centro de las Artes', quien: 'Lucía Montaño', precio: '$600 · las 4 sesiones' };
+const SESIONES = [['2026-11-07', '10:00', 'Centro de las Artes'], ['2026-11-14', '10:00', 'Centro de las Artes'], ['2026-11-21', '10:00', 'Centro de las Artes'], ['2026-11-28', '10:00', 'Museo Federico Silva']];
+const PROGRAMA = [...ACTOS, { titulo: 'Proyección: Cortos del Altiplano', fecha: '2026-11-08', hora: '19:30', lugar: 'Cineteca Alameda', quien: 'Varios', precio: 'Gratis' }];
+const PUBLICAR = ['h1', 'h2', 'h4', 'programa', 'taller'];
+const RESULTADOS = [{ nombre: 'Jardín Colón', direccion: 'Av. Constitución s/n, Centro', mapa: true }, { nombre: 'Jardín de San Francisco', direccion: 'Lugar del directorio · Centro', mapa: false }];
+let caso = 'h1', e;
+function nuevo() { return { v: caso === 'programa' ? 'programa' : PUBLICAR.includes(caso) ? 'alta' : caso === 'sitio' ? 'alta-sitio' : 'ficha', elegidos: [true, true, true], sesiones: SESIONES.map(() => true), sug: 'abierta', hasta: caso === 'h1' ? '2026-11-30' : null, cal: null, aviso: null, tipo: null, alta: false, q: '', sitio: null, uso: null, hoja: null, mapa: false, pila: [] }; }
+
+// ---------- piezas ----------
+const renglon = (i, clave, valor, accion = 'Cambiar', extra = '') => `<div class="renglon ${extra}">${ic(i)}<div><small>${clave}</small><b>${valor}</b></div>${accion ? `<span class="accion">${accion}</span>` : ''}</div>`;
+const tarjeta = (ev) => { const [d, m] = corto(ev.fecha); return `<div class="tarjeta"><div class="fecha">${d}<span>${m}</span></div><div><b>${ev.titulo}</b><small>${ev.hora} · ${ev.lugar}</small></div></div>`; };
+const notas = (items) => `<details class="notas"><summary>Notas de diseño</summary><ul>${items.map((t) => `<li>${t}</li>`).join('')}</ul></details>`;
+function mapa(pin, temporal) {
+  const marca = pin ? (temporal
+    ? `<path d="M195 268s-34-30-34-58a34 34 0 0 1 68 0c0 28-34 58-34 58z" fill="#fff" stroke="#6d34c8" stroke-width="3" stroke-dasharray="7 5"/><circle cx="195" cy="210" r="10" fill="#6d34c8"/>`
+    : `<path d="M195 268s-34-30-34-58a34 34 0 0 1 68 0c0 28-34 58-34 58z" fill="#6d34c8" stroke="#fff" stroke-width="3"/><circle cx="195" cy="210" r="11" fill="#fff"/>`) : '';
+  return `<svg viewBox="0 0 390 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa"><rect width="390" height="480" fill="#eef0ec"/>
+    <g fill="#e3e6df"><rect x="-10" y="-10" width="112" height="92"/><rect x="122" y="-10" width="120" height="92"/><rect x="262" y="-10" width="140" height="92"/><rect x="-10" y="102" width="112" height="120"/><rect x="262" y="102" width="140" height="120"/><rect x="-10" y="318" width="112" height="100"/><rect x="122" y="318" width="120" height="100"/><rect x="262" y="318" width="140" height="100"/><rect x="-10" y="438" width="252" height="60"/><rect x="262" y="438" width="140" height="60"/></g>
+    <rect x="122" y="102" width="120" height="196" rx="6" fill="#d5e3cf"/><rect x="-10" y="242" width="112" height="56" fill="#e3e6df"/><rect x="262" y="242" width="140" height="56" fill="#e3e6df"/>
+    <g fill="#5c5c5c" font-family="sans-serif" font-size="10"><text x="16" y="96">Av. Universidad</text><text x="270" y="312">Calz. de Guadalupe</text></g>${marca}</svg>`;
+}
+
+// ---------- pantallas ----------
+function altaEvento() {
+  const ev = caso === 'h4' ? ACTOS[1] : caso === 'taller' ? TALLER : APERTURA;
+  const n = e.sesiones.filter(Boolean).length;
+  const cuando = caso === 'taller' ? `<button class="renglon" data-a="sesiones">${ic('reloj')}<span><small>Cuándo · ${n} sesiones</small><b>Sábados de noviembre · 10:00</b></span><span class="accion">Ver</span></button>` : renglon('reloj', 'Cuándo', `${dia(ev.fecha)} · ${ev.hora}`);
+  return `<h1>Publicar un evento</h1>
+    ${caso === 'h4' ? `<p class="meta">Ayer publicaste «${ACTOS[0].titulo}». Este es tu segundo evento.</p>` : ''}
+    ${renglon('camara', 'Cartel', 'Leí el cartel')}
+    <div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="${ev.titulo}"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+    <div class="grupo">${cuando}${renglon('pin', 'Dónde', ev.lugar)}${renglon('personas', 'Quién', ev.quien)}${renglon('boleto', 'Cuánto', ev.precio)}</div>
+    <button class="btn" data-a="publicar">Publicar</button>
+    ${notas(caso === 'taller' ? ['El cartel dice «4 sesiones, sábados de noviembre». Es un solo taller con sus sesiones: no se publican cuatro eventos ni se llenan los días de en medio.', 'El renglón «Cuándo» resume; al tocarlo se ven las fechas y se puede quitar una. La sesión en otra sede conserva la suya.', 'No hay pregunta extra: publicar cuesta lo mismo que un evento de un día.'] : ['El alta no cambia: la sugerencia llega después de publicar, nunca antes.', 'Publicar no espera a la lectura extra del cartel; si la sugerencia tarda, «Publicado» sale sin ella.'])}`;
+}
+function sugerencia() {
+  if (e.sug === 'no') return '';
+  if (caso === 'h4') {
+    if (e.sug === 'hecha') return `<section class="sugerencia lista"><span class="sello ok">${ic('ok')}Festival</span><h2>Festival Umbral 2026</h2><ul class="actos">${ACTOS.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.lugar}</small></div></li>`).join('')}</ul><button class="btn sec" data-a="ver-relacion">Ver el festival</button></section>`;
+    return `<section class="sugerencia" aria-label="Sugerencia"><span class="sello">Los dos carteles lo nombran</span><h2>Festival Umbral 2026</h2>
+      <ul class="actos"><li><div><b>${ACTOS[0].titulo}</b><small>${dia(ACTOS[0].fecha)} · ${ACTOS[0].lugar}</small></div></li><li class="nuevo"><div><b>${ACTOS[1].titulo}</b><small>${dia(ACTOS[1].fecha)} · ${ACTOS[1].lugar} · recién publicado</small></div></li></ul>
+      <button class="btn" data-a="aceptar">Juntarlos en el festival</button><button class="quieto" data-a="ahora-no">Ahora no</button></section>`;
+  }
+  const periodo = e.hasta ? `Del 6 al ${dia(e.hasta)}` : null;
+  if (e.sug === 'hecha') return `<section class="sugerencia lista"><span class="sello ok">${ic('ok')}Exposición publicada</span><h2>Ecos de papel</h2><ul class="datos"><li>${ic('calendario')}<span>${periodo}</span></li><li>${ic('pin')}<span>${APERTURA.lugar}</span></li></ul><button class="btn sec" data-a="ver-relacion">Ver la exposición</button></section>`;
+  return `<section class="sugerencia" aria-label="Sugerencia"><span class="sello">El cartel también anuncia</span><h2>Ecos de papel</h2>
+    <ul class="datos"><li>${ic('calendario')}<span class="${periodo ? '' : 'falta'}">${periodo ? `${periodo} · exposición` : 'Exposición · falta hasta cuándo se puede visitar'}</span></li><li>${ic('pin')}<span>${APERTURA.lugar}</span></li><li>${ic('personas')}<span>${APERTURA.quien} · expone</span></li></ul>
+    <button class="btn" data-a="${periodo ? 'aceptar' : 'calendario'}">${periodo ? 'Publicar la exposición' : 'Elegir hasta cuándo'}</button><button class="quieto" data-a="ahora-no">Ahora no</button></section>`;
+}
+function publicado() {
+  if (caso === 'programa') {
+    const pub = PROGRAMA.filter((_, i) => e.elegidos[i]);
+    return `<p class="hecho">${ic('ok')}${pub.length} eventos publicados</p>
+      <section class="sugerencia lista"><span class="sello ok">${ic('ok')}Festival</span><h2>Festival Umbral 2026</h2><small>Programa registrado: ${pub.length} eventos</small><ul class="actos">${pub.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small></div></li>`).join('')}</ul></section>
+      <button class="btn" data-a="ver-relacion">Ver el festival</button>
+      ${notas(['Cada evento tiene su ficha, con su «Voy» y su hora. El festival los junta.', 'Dice «programa registrado: 3 eventos»: no promete que el festival sea solo eso.', PROGRAMA.length > pub.length ? 'El evento que no marcaste queda como borrador; no se publicó.' : 'Si desmarcas uno antes de publicar, queda como borrador.'])}`;
+  }
+  if (caso === 'taller') {
+    const ses = SESIONES.filter((_, i) => e.sesiones[i]);
+    return `<p class="hecho">${ic('ok')}Taller publicado</p>${tarjeta(TALLER)}
+      <section class="caja"><h2>${ses.length} sesiones</h2>${ses.map(([f, h, l], i) => `<div class="dato">${ic('calendario')}<span><b>${dia(f)} · ${h}</b><small>${l}${i === 0 ? ' · próxima' : ''}</small></span><span></span></div>`).join('')}</section>
+      <button class="btn" data-a="ver-evento">Ver el taller</button>
+      ${notas(['Una sola ficha con sus sesiones. En la agenda aparece en cada fecha, siempre como el mismo taller.', 'Aquí no hay sugerencia: el cartel ya traía todo.'])}`;
+  }
+  const ev = caso === 'h4' ? ACTOS[1] : APERTURA;
+  return `<p class="hecho">${ic('ok')}Evento publicado</p>${tarjeta(ev)}${sugerencia()}
+    <button class="btn ${e.sug === 'abierta' ? 'sec' : ''}" data-a="ver-evento">Ver el evento</button>
+    ${notas(caso === 'h4'
+      ? ['Con el primer evento no se sugirió nada. Aparece al publicar el segundo, y solo porque los dos carteles nombran el mismo festival y edición.', 'Lo punteado todavía no existe. Un toque lo crea; «Ahora no» no vuelve a preguntar por estos dos eventos.', 'El festival muestra solo los eventos registrados: no inventa fechas ni sedes del resto del programa.', 'Tras aceptar hay «Deshacer» unos segundos; después se quita desde Editar.']
+      : ['Una sola sugerencia, con la forma de lo que se va a crear: es la ficha de la exposición, todavía en punteado.', 'Si el cartel trae las fechas, publicar la exposición cuesta un toque. Si no las trae, se pide solo el último día.', 'La inauguración no cambia y conserva su ficha. La exposición no hereda su hora ni su precio.', '«Ahora no» deja salir sin más; la exposición se puede agregar después desde Editar.'])}`;
+}
+function fichaEvento() {
+  if (caso === 'taller') {
+    const ses = SESIONES.filter((_, i) => e.sesiones[i]);
+    return `<div class="portada" style="--tono:#3d5a4a"><h1>${TALLER.titulo}</h1><small>Taller · ${ses.length} sesiones · próxima: ${dia(ses[0][0])}</small></div>
+      <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ok')}</span>Voy</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span><span class="accion-ficha"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span></div>
+      <section class="caja"><h2>Cuándo</h2>${ses.map(([f, h, l], i) => `<div class="dato">${ic('calendario')}<span><b>${dia(f)} · ${h}</b><small>${l === TALLER.lugar ? `Sesión ${i + 1} de ${ses.length}` : `Sesión ${i + 1} de ${ses.length} · en ${l}`}</small></span><span></span></div>`).join('')}</section>
+      <section class="caja"><h2>Dónde</h2><div class="dato">${ic('pin')}<span><b>${TALLER.lugar}</b><small>Calz. de Guadalupe 705</small></span>${ic('chevron')}</div></section>
+      ${notas(['«Voy» es al taller entero: la inscripción es una.', 'La sesión en otra sede lo dice en su renglón; «Dónde» muestra la sede habitual.'])}`;
+  }
+  if (PUBLICAR.includes(caso)) {
+    const ev = caso === 'h4' ? ACTOS[1] : APERTURA, rel = e.sug === 'hecha';
+    return `<div class="portada" style="--tono:#4a3a6b"><h1>${ev.titulo}</h1><small>${dia(ev.fecha)} · ${ev.hora}</small></div>
+      ${rel ? `<section class="caja"><h2>${caso === 'h4' ? 'Parte de' : 'Exposición'}</h2><button class="dato" data-a="ver-relacion">${ic(caso === 'h4' ? 'personas' : 'calendario')}<span><b>${caso === 'h4' ? 'Festival Umbral 2026' : 'Ecos de papel'}</b><small>${caso === 'h4' ? '2 eventos registrados' : `Se puede visitar hasta el ${dia(e.hasta)}`}</small></span>${ic('chevron')}</button></section>` : ''}
+      <section class="caja"><h2>Dónde</h2><div class="dato">${ic('pin')}<span><b>${ev.lugar}</b><small>Álvaro Obregón 80, Centro</small></span>${ic('chevron')}</div></section>
+      ${notas([rel ? 'Así se ve la relación en la ficha del evento: un renglón que lleva a la exposición o al festival.' : 'Sin relación aceptada, la ficha queda como hoy.'])}`;
+  }
+  const s = SITIOS[caso];
+  const donde = caso === 'reservado'
+    ? `<div class="dato">${ic('candado')}<span><b>${s.nombre} · sitio reservado</b><small>La dirección se revela aquí el día del evento.</small></span></div>`
+    : `${s.direccion ? `<button class="mapa-ficha" data-a="abrir-mapa" aria-label="Abrir el mapa de ${s.nombre}">${mapa(true, caso !== 'catalogo' && !e.alta)}</button>` : ''}
+       <button class="dato" data-a="abrir-mapa">${ic('pin')}<span><b>${s.nombre}</b><small>${[s.direccion, s.distancia].filter(Boolean).join(' · ') || 'Sin punto en el mapa'}</small></span>${ic('chevron')}</button>`;
+  const porCaso = {
+    catalogo: ['Hoy este renglón salta a la ficha del lugar. Aquí abre el mapa de la plataforma con la ficha en una hoja media: se ve dónde está sin perder el evento.', 'El mapa chico y el renglón hacen lo mismo.'],
+    publico: ['Hoy este renglón no hace nada. Aquí abre el mismo mapa con un pin temporal (punteado: no es un lugar del directorio).', 'Quita la palomita «Con sesión» para ver la hoja sin «Agregar como lugar».'],
+    negocio: ['Mismo pin temporal. Un bar no ofrece «Agregar como lugar»: los negocios no entran al directorio.', 'Decidido el 2026-10-05: se sabe por la categoría que da el mapa en ese punto.'],
+    sinpunto: ['Sin coordenadas no hay pin que mostrar. El renglón abre igual el mapa, centrado en la ciudad, y ofrece buscar el sitio por su nombre.'],
+    reservado: ['Los sitios reservados quedan fuera: el renglón no abre el mapa ni manda nada a Mapbox. Sigue como hoy.'],
+  }[caso];
+  return `<div class="portada" style="--tono:${s.tono}"><h1>${s.evento}</h1><small>${s.cuando}</small></div>
+    <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ok')}</span>Voy</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span><span class="accion-ficha"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span></div>
+    <section class="caja"><h2>Dónde</h2>${donde}</section>${notas(porCaso)}`;
+}
+function vistaMapa() {
+  const s = SITIOS[caso], sesion = $('#sesion').checked, enCatalogo = caso === 'catalogo' || e.alta;
+  let cuerpo;
+  if (enCatalogo) {
+    const prox = s.proximos || [[s.evento, s.cuando]];
+    cuerpo = `<div class="cabeza-lugar"><div class="miniatura" style="--tono:${s.tono}">SN</div><div><h2>${s.nombre}</h2><small>${s.tipo || e.tipo} · ${s.distancia}</small></div></div><small>${s.direccion}</small>
+      <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span><span class="accion-ficha"><span class="circulo">${ic('corazon')}</span>Seguir</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span></div>
+      <div class="grupo"><small>Próximos aquí</small>${prox.map(([t, c]) => `<div class="dato">${ic('calendario')}<span><b>${t}</b><small>${c}</small></span>${ic('chevron')}</div>`).join('')}</div>
+      <button class="btn sec">Ver la ficha completa</button>`;
+  } else if (caso === 'sinpunto') {
+    cuerpo = `<div class="cabeza-lugar sin-foto"><span class="sello gris">Sin punto en el mapa</span><h2>${s.nombre}</h2></div><small>Quien publicó el evento escribió el sitio, pero no lo marcó en el mapa.</small>
+      <button class="btn">${ic('buscar')}Buscarlo en Mapas</button>`;
+  } else {
+    cuerpo = `<div class="cabeza-lugar sin-foto"><span class="sello gris">Fuera del directorio</span><h2>${s.nombre}</h2></div><small>${s.direccion} · ${s.distancia}</small>
+      <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span></div>
+      ${sesion && !s.negocio ? `<button class="renglon pendiente" data-a="alta-lugar">${ic('mas')}<span><small>¿Es un espacio cultural?</small><b>Agregar como lugar</b></span>${ic('chevron')}</button>` : ''}
+      ${s.negocio ? notas(['No sale «Agregar como lugar» porque es un bar. Decidido el 2026-10-05: si la categoría que da el mapa en ese punto es bar, café o restaurante, la acción no se ofrece. Si alguien lo intenta por el alta normal, lo revisa el admin como hoy.']) : ''}`;
+  }
+  return `<div class="vista-mapa"><button class="flotante" data-a="cerrar-mapa" aria-label="Volver al evento">${ic('atras')}</button><div class="lienzo">${mapa(caso !== 'sinpunto', !enCatalogo)}</div><div class="hoja" role="dialog" aria-label="${s.nombre}">${cuerpo}</div></div>`;
+}
+function altaLugar() {
+  const s = SITIOS[caso], TIPOS = ['Casa de cultura', 'Museo', 'Foro', 'Galería', 'Escuela', 'Colectivo', 'Biblioteca', 'Plaza, jardín o parque', 'Otro'];
+  return `<h1>Agregar un lugar</h1>
+    <div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del lugar" placeholder="Nombre del lugar" value="${s.nombre}"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+    <div class="grupo">${renglon('pin', 'Dónde · del pin del evento', s.direccion)}
+      ${e.tipo ? renglon('personas', 'Tipo', e.tipo) : `${renglon('personas', 'Tipo', 'Falta', '', 'pendiente')}<div class="chips">${TIPOS.map((t) => `<button class="chip" data-tipo="${t}">${t}</button>`).join('')}</div>`}
+      ${renglon('mas', 'Más', 'Descripción, redes, foto', 'Agregar')}</div>
+    <button class="btn" data-a="publicar-lugar" ${e.tipo ? '' : 'disabled'}>${e.tipo ? 'Publicar el lugar' : 'Falta el tipo'}</button>
+    ${notas(['Es el alta de lugar de siempre, ya con el nombre y el punto del evento: solo falta el tipo.', 'Al publicar, el evento pasa a usar el lugar nuevo y el pin deja de ser temporal.', '«Plaza, jardín o parque» es un tipo nuevo, aprobado por el founder el 2026-10-05.'])}`;
+}
+function altaSitio() {
+  const detalle = { evento: 'Solo para este evento', lugar: 'Guardado como lugar', reservado: 'Sitio reservado' }[e.uso];
+  return `<h1>Publicar un evento</h1>
+    <div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="Cine al aire libre: Macario"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+    <div class="grupo">${renglon('reloj', 'Cuándo', '16 de octubre · 20:00')}
+      <button class="renglon ${e.sitio ? '' : 'pendiente'}" data-a="donde-es">${ic('pin')}<span><small>Dónde${detalle ? ` · ${detalle}` : ''}</small><b>${e.sitio ? e.sitio.nombre : 'Falta'}</b></span><span class="accion">${e.sitio ? 'Cambiar' : 'Buscar'}</span></button>
+      ${renglon('boleto', 'Cuánto', 'Gratis')}</div>
+    <button class="btn" ${e.sitio ? '' : 'disabled'}>${e.sitio ? 'Publicar' : 'Falta dónde es'}</button>
+    ${notas(['Toca «Dónde» y escribe «jardín».', 'Tus dos notas del 29 de septiembre: la dirección leída ya no parece un campo, y al elegir un sitio que no está en el directorio se pregunta qué hacer con él.'])}`;
+}
+function dondeEs() {
+  const hay = e.q.trim().length >= 2 && !e.sitio;
+  return `<h1>¿Dónde es?</h1>
+    <div class="campo">${ic('buscar')}<input id="q" aria-label="Buscar el sitio" placeholder="Nombre del lugar o dirección" value="${e.sitio ? e.sitio.nombre : e.q}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar-q" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+    ${hay ? `<div class="lista-flotante">${RESULTADOS.map((r, i) => `<button data-res="${i}">${ic('pin')}<span><b>${r.nombre}</b><small>${r.direccion}</small></span>${r.mapa ? '<span class="sello gris">Del mapa</span>' : '<span></span>'}</button>`).join('')}</div>` : ''}
+    ${e.sitio ? `<div class="mapa-ficha">${mapa(true, e.sitio.mapa)}</div><p class="confirma">${ic('ok')}<span><b>${e.sitio.direccion}</b><br>¿No es aquí? Borra el nombre con la ✕ y busca otra vez.</span></p><button class="btn" data-a="listo-sitio">Listo</button>` : e.q ? '' : '<small>Si no está en el directorio, lo buscamos en el mapa.</small>'}`;
+}
+function hojaUso() {
+  const op = (uso, i, t, d) => `<button class="renglon elegible" data-uso="${uso}">${ic(i)}<span><b>${t}</b><span>${d}</span></span>${ic('chevron')}</button>`;
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="Qué hacer con el sitio"><h2>${e.sitio.nombre} no está en el directorio</h2>
+    <div class="grupo">${op('evento', 'pin', 'Usarlo solo en este evento', 'Sale con su nombre y su punto en el mapa.')}${op('lugar', 'mas', 'Guardarlo como lugar', 'Tendrá su ficha y servirá para otros eventos.')}${op('reservado', 'candado', 'Es un sitio reservado', 'La dirección solo se muestra a quien va, el día del evento.')}</div></div></div>`;
+}
+function calendario() {
+  const c = e.cal, primero = new Date(Date.UTC(c.a, c.m, 1)), n = new Date(Date.UTC(c.a, c.m + 1, 0)).getUTCDate(), hueco = (primero.getUTCDay() + 6) % 7;
+  const INI = '2026-11-05';
+  let dias = '<span></span>'.repeat(hueco);
+  for (let d = 1; d <= n; d++) {
+    const iso = `${c.a}-${String(c.m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const cls = iso === INI || iso === c.hasta ? 'extremo' : c.hasta && iso > INI && iso < c.hasta ? 'dentro' : '';
+    dias += `<button class="dia ${cls}" data-dia="${iso}" ${iso <= INI ? 'disabled' : ''} aria-label="${dia(iso)}">${d}</button>`;
+  }
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="Hasta cuándo se puede visitar"><h2>¿Hasta cuándo se puede visitar?</h2><small>Ecos de papel abre el 5 de noviembre. Toca el último día.</small>
+    <div class="mes"><button data-mes="-1" aria-label="Mes anterior" ${c.m === 10 && c.a === 2026 ? 'disabled' : ''}><svg style="transform:rotate(180deg)"><use href="#i-chevron"/></svg></button><b>${MESES[c.m][0].toUpperCase() + MESES[c.m].slice(1)} de ${c.a}</b><button data-mes="1" aria-label="Mes siguiente">${ic('chevron')}</button></div>
+    <div class="semana">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => `<span>${l}</span>`).join('')}${dias}</div>
+    <button class="btn" data-a="confirmar-cal" ${c.hasta ? '' : 'disabled'}>${c.hasta ? `Publicar la exposición · hasta el ${dia(c.hasta)}` : 'Falta el último día'}</button></div></div>`;
+}
+function relacion() {
+  if (caso === 'programa') { const pub = PROGRAMA.filter((_, i) => e.elegidos[i]); return `<span class="sello gris">Festival · edición 2026</span><h1>Festival Umbral</h1><p class="meta">Programa registrado: ${pub.length} eventos</p><ul class="actos">${pub.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small></div></li>`).join('')}</ul>${notas(['Las fechas son las de los eventos registrados; no dicen cuánto dura el festival.'])}`; }
+  if (caso === 'h4') return `<span class="sello gris">Festival · edición 2026</span><h1>Festival Umbral</h1><p class="meta">2 eventos registrados</p>
+    <ul class="actos">${ACTOS.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small></div></li>`).join('')}</ul>
+    ${notas(['Las fechas son las de los eventos registrados; no dicen cuánto dura el festival.'])}`;
+  return `<div class="portada" style="--tono:#4a3a6b"><h1>Ecos de papel</h1><small>Exposición · hasta el ${dia(e.hasta)}</small></div>
+    <section class="caja"><h2>Cuándo</h2><div class="dato">${ic('calendario')}<span><b>Del 6 al ${dia(e.hasta)}</b><small>Horario de visita por confirmar</small></span><span></span></div><div class="dato">${ic('reloj')}<span><b>${APERTURA.titulo}</b><small>${dia(APERTURA.fecha)} · ${APERTURA.hora}</small></span>${ic('chevron')}</div></section>
+    <section class="caja"><h2>Dónde</h2><div class="dato">${ic('pin')}<span><b>${APERTURA.lugar}</b><small>Álvaro Obregón 80, Centro</small></span>${ic('chevron')}</div></section>
+    ${notas(['La exposición tiene su ficha propia, con «hasta cuándo» en vez de una hora. Su horario no se copia de la inauguración.'])}`;
+}
+
+function programa() {
+  const n = e.elegidos.filter(Boolean).length;
+  return `<h1>El cartel trae ${PROGRAMA.length} eventos</h1>
+    ${renglon('camara', 'Cartel', 'Festival Umbral 2026')}
+    <div class="grupo">${PROGRAMA.map((a, i) => `<button class="renglon ${e.elegidos[i] ? '' : 'pendiente'}" data-elegir="${i}" aria-pressed="${e.elegidos[i]}">${ic(e.elegidos[i] ? 'ok' : 'mas')}<span><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small><b>${a.titulo}</b></span><span class="accion">${e.elegidos[i] ? 'Quitar' : 'Incluir'}</span></button>`).join('')}</div>
+    <button class="btn" data-a="publicar" ${n ? '' : 'disabled'}>${n === 0 ? 'Marca al menos un evento' : n === 1 ? 'Publicar 1 evento' : `Publicar los ${n} eventos`}</button>
+    ${notas(['El cartel es el programa de un festival: el sistema separa cada evento con su fecha, hora y sede, y los ofrece juntos. No hay que subir el cartel tres veces.', 'Toca un evento para dejarlo fuera; queda como borrador.', 'Un toque publica todo lo marcado y los junta en el festival. En el flujo por pasos (doc 51), esta sería la pantalla de «revisa lo que leímos».', 'Falta en este prototipo: tocar un evento para corregir un dato antes de publicar.'])}`;
+}
+function hojaSesiones() {
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="Sesiones del taller"><h2>Sesiones</h2><small>Leídas del cartel. Toca una para quitarla o reponerla.</small>
+    <div class="grupo">${SESIONES.map(([f, h, l], i) => `<button class="renglon ${e.sesiones[i] ? '' : 'pendiente'}" data-sesion="${i}" aria-pressed="${e.sesiones[i]}">${ic(e.sesiones[i] ? 'ok' : 'mas')}<span><small>${l === TALLER.lugar ? 'Sesión' : `En ${l}`}</small><b>${dia(f)} · ${h}</b></span><span class="accion">${e.sesiones[i] ? 'Quitar' : 'Reponer'}</span></button>`).join('')}</div>
+    <button class="btn" data-a="listo-sesiones" ${e.sesiones.some(Boolean) ? '' : 'disabled'}>${e.sesiones.some(Boolean) ? 'Listo' : 'Falta al menos una sesión'}</button></div></div>`;
+}
+const VISTAS = { programa, alta: altaEvento, publicado, ficha: fichaEvento, 'alta-lugar': altaLugar, 'alta-sitio': altaSitio, 'donde-es': dondeEs, relacion };
+function pintar(foco) {
+  const pagina = $('#pagina');
+  pagina.className = 'pagina' + (['ficha', 'relacion'].includes(e.v) && caso !== 'programa' || (e.v === 'ficha') ? ' contenido' : '');
+  pagina.innerHTML = VISTAS[e.v]();
+  $('#capas').innerHTML = (e.mapa ? vistaMapa() : '') + (e.hoja === 'cal' ? calendario() : e.hoja === 'uso' ? hojaUso() : e.hoja === 'ses' ? hojaSesiones() : '') + (e.aviso ? `<div class="aviso" role="status"><span>${e.aviso.texto}</span>${e.aviso.deshacer ? '<button data-a="deshacer">Deshacer</button>' : '<span></span>'}</div>` : '');
+  if (foco) { const c = $(foco); if (c) { c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
+}
+function ir(v) { e.pila.push(e.v); e.v = v; pintar(); $('#pagina').scrollTop = 0; }
+function avisar(texto, deshacer) { e.aviso = { texto, deshacer }; clearTimeout(avisar.t); avisar.t = setTimeout(() => { e.aviso = null; pintar(); }, 6000); }
+function reiniciar() { caso = $('#caso').value; e = nuevo(); clearTimeout(avisar.t); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
+
+document.addEventListener('click', (ev) => {
+  const t = ev.target;
+  const d = t.closest('[data-dia]'); if (d) { e.cal.hasta = d.dataset.dia; return pintar(); }
+  const m = t.closest('[data-mes]'); if (m) { const f = new Date(Date.UTC(e.cal.a, e.cal.m + Number(m.dataset.mes), 1)); e.cal.a = f.getUTCFullYear(); e.cal.m = f.getUTCMonth(); return pintar(); }
+  const tipo = t.closest('[data-tipo]'); if (tipo) { e.tipo = tipo.dataset.tipo; return pintar(); }
+  const res = t.closest('[data-res]'); if (res) { e.sitio = RESULTADOS[Number(res.dataset.res)]; return pintar(); }
+  const el = t.closest('[data-elegir]'); if (el) { const i = Number(el.dataset.elegir); e.elegidos[i] = !e.elegidos[i]; return pintar(); }
+  const ses = t.closest('[data-sesion]'); if (ses) { const i = Number(ses.dataset.sesion); e.sesiones[i] = !e.sesiones[i]; return pintar(); }
+  const uso = t.closest('[data-uso]'); if (uso) { e.uso = uso.dataset.uso; e.hoja = null; e.v = 'alta-sitio'; e.pila = []; avisar(e.uso === 'lugar' ? 'Jardín Colón quedó guardado como lugar.' : e.uso === 'reservado' ? 'La dirección se revelará el día del evento.' : 'Jardín Colón se usará solo en este evento.'); return pintar(); }
+  const b = t.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a;
+  if (a === 'cerrar-hoja') { if (t === b) { e.hoja = null; pintar(); } return; }
+  if (a === 'limpiar') { const c = $('#nombre'); c.value = ''; c.focus(); }
+  else if (a === 'limpiar-q') { e.q = ''; e.sitio = null; pintar('#q'); }
+  else if (a === 'publicar') ir('publicado');
+  else if (a === 'sesiones') { e.hoja = 'ses'; pintar(); }
+  else if (a === 'listo-sesiones') { e.hoja = null; pintar(); }
+  else if (a === 'aceptar') { e.sug = 'hecha'; avisar(caso === 'h4' ? 'Los dos eventos ya son parte del festival.' : 'Exposición publicada.', true); pintar(); }
+  else if (a === 'deshacer') { e.sug = 'abierta'; e.aviso = null; if (caso === 'h2') e.hasta = null; if (e.v !== 'publicado') { e.v = 'publicado'; e.pila = ['alta']; } pintar(); }
+  else if (a === 'ahora-no') { e.sug = 'no'; pintar(); }
+  else if (a === 'calendario') { e.cal = { a: 2026, m: 10, hasta: null }; e.hoja = 'cal'; pintar(); }
+  else if (a === 'confirmar-cal') { e.hasta = e.cal.hasta; e.hoja = null; e.sug = 'hecha'; avisar('Exposición publicada.', true); pintar(); }
+  else if (a === 'ver-evento') ir('ficha');
+  else if (a === 'ver-relacion') ir('relacion');
+  else if (a === 'abrir-mapa') { e.mapa = true; pintar(); }
+  else if (a === 'cerrar-mapa') { e.mapa = false; pintar(); }
+  else if (a === 'alta-lugar') { e.mapa = false; ir('alta-lugar'); }
+  else if (a === 'publicar-lugar') { e.alta = true; e.v = 'ficha'; e.pila = []; e.mapa = true; avisar(`${SITIOS[caso].nombre} ya es un lugar. Este evento lo usa.`); pintar(); }
+  else if (a === 'donde-es') { e.q = ''; e.sitio = null; ir('donde-es'); $('#q').focus(); }
+  else if (a === 'listo-sitio') { if (e.sitio.mapa) { e.hoja = 'uso'; pintar(); } else { e.uso = null; e.v = 'alta-sitio'; e.pila = []; pintar(); } }
+  else if (a === 'atras') { if (e.mapa) e.mapa = false; else if (e.pila.length) e.v = e.pila.pop(); pintar(); }
+});
+document.addEventListener('input', (ev) => { if (ev.target.id === 'q') { e.q = ev.target.value; e.sitio = null; pintar('#q'); } });
+$('#caso').addEventListener('change', reiniciar);
+$('#reiniciar').addEventListener('click', reiniciar);
+$('#sesion').addEventListener('change', () => pintar());
+const inicial = location.hash.slice(1); if ([...$('#caso').options].some((o) => o.value === inicial)) $('#caso').value = inicial;
+reiniciar();
+</script>
+</body>
+</html>
