@@ -1,0 +1,55 @@
+/** OL-274: visibilidad efectiva de carriles reales, marca local de Nuevos y vacío de Inicio. */
+import {before,after,test} from 'node:test';import assert from 'node:assert/strict';
+import {createServer} from 'node:http';import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';import {join} from 'node:path';import {fileURLToPath,pathToFileURL} from 'node:url';import {build} from 'esbuild';
+const root=fileURLToPath(new URL('../../../',import.meta.url));let dir,server,browser,origin;
+before(async()=>{
+ dir=await mkdtemp(join(tmpdir(),'inicio-carriles-'));
+ const mocks={
+ 'next/image':"import React from 'react';export default function Image({quality,...p}){return React.createElement('img',p)}",
+ 'next/link':"import React from 'react';export const useLinkStatus=()=>({pending:false});export default function Link({replace,...p}){return React.createElement('a',p)}",
+ 'next/navigation':"export const useRouter=()=>({push(){},replace(){}});export const usePathname=()=>'/';export const useSearchParams=()=>new URLSearchParams(location.search)",
+ '@/components/useAsistenciaEnLista':"export const useAsistenciaEnLista=(asistencias)=>({estado:id=>asistencias?.[id]??null,boton:t=>({objeto:'evento',decidido:asistencias?.[t.id]==='voy',nombreAccesible:'Voy — '+t.titulo,alTocar(){}}),extras:null})",
+ '@/components/useSeguirEnLista':"export const useSeguirEnLista=()=>({boton:()=>({objeto:'artista',decidido:false,nombreAccesible:'Seguir',alTocar(){}}),extras:null})",
+ './useCanalDeListas':"import React from 'react';export default function Pantalla(p){return React.createElement(React.Fragment,null,p.children)};export const useCanalDeListas=()=>({});export const useCanalDePantalla=()=>({});export const AvisoAbajo=()=>null",
+ '@/components/useCanalDeListas':"import React from 'react';export default function Pantalla(p){return React.createElement(React.Fragment,null,p.children)};export const useCanalDeListas=()=>({});export const useCanalDePantalla=()=>({});export const AvisoAbajo=()=>null",
+ './FilaEventos':"export default function Fila(){return null}",
+ };
+ mocks['./useAsistenciaEnLista']=mocks['@/components/useAsistenciaEnLista'];
+ mocks['./useSeguirEnLista']=mocks['@/components/useSeguirEnLista'];
+ await build({absWorkingDir:root,bundle:true,outfile:join(dir,'app.js'),jsx:'automatic',stdin:{resolveDir:root,loader:'tsx',contents:`
+ import React,{use} from 'react';import{createRoot}from'react-dom/client';
+ import Inicio from './src/components/Inicio';import Eventos from './src/components/inicio/CarrilEventosCliente';
+ import Entidad from './src/components/inicio/CarrilEntidadCliente';import Nuevos from './src/components/inicio/CarrilNuevos';
+ import Mas from './src/components/inicio/CarrilMasAdelanteCliente';import{useEstadoCarriles}from'./src/components/inicio/EstadoCarriles';import './src/app/globals.css';
+ const modo=new URLSearchParams(location.search).get('modo');let liberar;const pendiente=new Promise((r,rechazar)=>{liberar=r;window.fallar=()=>rechazar(new Error('Error de lectura simulado'))});window.liberar=liberar;
+ class LimiteError extends React.Component { state={error:false};static getDerivedStateFromError(){return{error:true}};render(){return this.state.error?<p role='alert'>No pudimos cargar el carril.</p>:this.props.children} }
+ const ciudad={slug:'puebla',nombre:'Puebla',centro:{lat:19,lng:-98},zoom:13,lugares:0,eventos:0,zona:'America/Mexico_City',centroConocido:false};
+ const tarjeta=(id)=>({id,href:'/eventos/'+id,foto:null,titulo:'Evento '+id,detalle:'vie 30 de oct · 18:00',sitio:'Foro',van:0,cuando:true,inicio:'2026-10-31T00:00:00Z',fin:null,zona:'America/Mexico_City',creado_en:'2026-10-06T00:00:00Z'});
+ const una=[tarjeta('a')],tres=[...una,tarjeta('b'),tarjeta('c')];const comun={asistencias:null,avisos:null,tamano:'mediana',verTodos:{href:'/agenda?ciudad=puebla',etiqueta:'Ver la agenda'}};
+ function Probe(){const s=useEstadoCarriles();return <span data-probe data-eventos-listos={s.eventosResueltos} data-vacio={s.vacio}/>}
+ function Ultimo(){if(modo==='cargando'||modo==='error')use(pendiente);return <><Entidad tarjetas={modo==='entidades'?una:[]} que='artista' seguidos={null} avisos={null} titulo='Artistas destacadxs' memoria='inicio-artistas-destacados' verTodosHref='/artistas?ciudad=puebla'/></>}
+ const evento=(memoria,titulo,tarjetas)=> <Eventos {...comun} memoria={memoria} titulo={titulo} tarjetas={tarjetas}/>;
+ createRoot(document.getElementById('root')).render(<LimiteError><Inicio ciudad={ciudad} ciudades={[ciudad]} hoy='2026-10-07' zona={ciudad.zona} agenda={Promise.resolve({})} conSesion={modo==='planes'}
+ slotTusPlanes={<Eventos {...comun} memoria='inicio-tus-planes' titulo='Tus planes' tarjetas={una} asistencias={{a:'voy'}} tusPlanes/>}
+ slotEstelar={<>{evento('inicio-estelar','Destacados',[])}<Probe/></>}
+ slotEstaSemana={evento('inicio-esta-semana','Esta semana',modo==='semana'?una:[])}
+ slotNuevos={<Nuevos {...comun} ciudad='puebla' memoria='inicio-nuevos' titulo='Nuevos eventos' tarjetas={modo==='nuevos'?tres:[]}/>}
+ slotMasAdelante={<Mas tarjetas={modo==='uno'?una:modo==='nuevos'?tres:[]} asistencias={null} avisos={null} verTodosHref='/agenda?ciudad=puebla'/>}
+ slotLugaresSemana={<Entidad tarjetas={[]} que='lugar' seguidos={null} avisos={null} titulo='Lugares' memoria='inicio-lugares-semana' verTodosHref='/lugares'/>}
+ slotArtistasDestacados={<Ultimo/>}
+ slotArtistasSemana={<Entidad tarjetas={[]} que='artista' seguidos={null} avisos={null} titulo='Artistas' memoria='inicio-artistas-semana' verTodosHref='/artistas'/>}/></LimiteError>);
+ `},plugins:[{name:'dobles',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:mocks[a.path],loader:'js',resolveDir:root}));}}],loader:{'.png':'dataurl'}});
+ server=createServer(async(req,res)=>{if(req.url.startsWith('/app.')){const ext=req.url.startsWith('/app.css')?'css':'js';res.setHeader('content-type',ext==='css'?'text/css; charset=utf-8':'text/javascript; charset=utf-8');res.end(await readFile(join(dir,'app.'+ext)));}else{res.setHeader('content-type','text/html; charset=utf-8');res.end('<link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script>');}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;
+ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');browser=await chromium.launch({executablePath:process.env.CHROME_EXECUTABLE??(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined),headless:true});
+});
+after(async()=>{await browser?.close();await new Promise(r=>server?.close(r));if(dir)await rm(dir,{recursive:true,force:true});});
+async function pagina(t,modo,marca=false){const c=await browser.newContext({viewport:{width:390,height:844}});t.after(()=>c.close());if(marca)await c.addInitScript(()=>localStorage.setItem('somosnosotros:nuevos-visto:puebla','2026-10-07T16:00:00Z'));const p=await c.newPage();const errores=[];p.on('pageerror',e=>errores.push(e.message));t.after(()=>assert.deepEqual(errores,[]));p.setDefaultTimeout(5000);await p.clock.install({time:new Date('2026-10-07T16:00:00Z')});await p.goto(origin+'/?modo='+modo);return p;}
+test('un futuro solo se muestra con Más adelante y enlaza Todos de su ciudad',async t=>{const p=await pagina(t,'uno');await p.getByRole('heading',{name:'Más adelante',exact:true}).waitFor();assert.equal(await p.getByRole('link',{name:'Ver la agenda: Más adelante'}).getAttribute('href'),'/agenda?ciudad=puebla');assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);});
+test('Esta semana y Nuevos visibles suprimen Más adelante',async t=>{for(const modo of ['semana','nuevos']){const p=await pagina(t,modo);await p.getByRole('heading',{name:modo==='semana'?'Esta semana':'Nuevos eventos',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Más adelante',exact:true}).count(),0);assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);}});
+test('la marca local vacía Nuevos y activa Más adelante con los mismos tres eventos',async t=>{const p=await pagina(t,'nuevos',true);await p.getByRole('heading',{name:'Más adelante',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Nuevos eventos',exact:true}).count(),0);assert.equal(await p.getByRole('link',{name:/Evento [abc]/}).count(),3);});
+test('un artista o Tus planes evitan declarar vacío el Inicio',async t=>{for(const modo of ['entidades','planes']){const p=await pagina(t,modo);await p.getByRole('heading',{name:modo==='planes'?'Tus planes':'Artistas destacadxs',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);}});
+test('el vacío exacto de Agenda llega solo al resolver todos los carriles',async t=>{const p=await pagina(t,'cargando');await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);await p.evaluate(()=>window.liberar(null));await p.getByRole('heading',{name:'Próximos días',exact:true}).waitFor();assert.equal(await p.getByText('Aún no hay eventos próximos en Puebla. Si sabes de uno, publícalo.',{exact:true}).count(),1);});
+
+test('un fallo de un stream conserva la causa y nunca se convierte en vacío',async t=>{const p=await pagina(t,'error');await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);await p.evaluate(()=>window.fallar());await p.getByRole('alert').waitFor();assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);});

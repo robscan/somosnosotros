@@ -19,5 +19,5 @@ export type TarjetaNueva = TarjetaConFecha & { creado_en: string };
 export default function CarrilNuevos({ ciudad, tarjetas, ...resto }: Omit<ComponentProps<typeof CarrilEventosCliente>, "tarjetas"> & { ciudad: string; tarjetas: TarjetaNueva[] }) {
   const marca = useMarcaNuevos(ciudad);
   const nuevas = eventosNuevos(tarjetas, corteNuevos(marca)).slice(0, LIMITE_NUEVOS);
-  return <CarrilEventosCliente {...resto} tarjetas={nuevas.length < MINIMO_NUEVOS ? [] : nuevas} />;
+  return <CarrilEventosCliente {...resto} tarjetas={nuevas.length < MINIMO_NUEVOS ? [] : nuevas} resuelto={marca !== undefined} />;
 }

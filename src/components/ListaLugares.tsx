@@ -21,7 +21,9 @@ type Props = {
   /** Para la pregunta de avisos tras el primer Seguir; null = sin sesión. */
   avisos: AvisosLista | null;
   /** Tocar un renglón abre el lugar (la ficha dentro de la hoja) en vez de ir a su página. */
-  alAbrir: (lugar: LugarLista) => void;
+  alAbrir?: (lugar: LugarLista) => void;
+  /** Cuenta aún desconocida: enlaces públicos sin acciones de Seguir hasta que llegue la personalización. */
+  accionesPendientes?: boolean;
 };
 
 /**
@@ -31,7 +33,7 @@ type Props = {
  * el mapa) y en su orden. La cantidad y lo que dice una lista vacía son de la propia hoja. Si la pantalla puso su canal (Lugares), el
  * aviso y la pregunta son de ella.
  */
-export default function ListaLugares({ grupos, km, seguidos, avisos, alAbrir }: Props) {
+export default function ListaLugares({ grupos, km, seguidos, avisos, alAbrir, accionesPendientes = false }: Props) {
   const seguir = useSeguirEnLista("lugar", seguidos, avisos, useCanalDePantalla());
 
   // Carga progresiva (OL-158): la lista ya está completa en el teléfono (como siempre); lo que se reparte en tandas es cuánto
@@ -55,7 +57,7 @@ export default function ListaLugares({ grupos, km, seguidos, avisos, alAbrir }: 
       {primerosDeGrupos(grupos, mostrados).map((g) => (
         <Grupo key={g.clave} titulo={g.titulo} cuenta={g.total}>
           {g.lugares.map((l) => (
-            <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={seguir.boton(l.id, l.nombre)} alAbrir={() => alAbrir(l)} />
+            <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={accionesPendientes ? undefined : seguir.boton(l.id, l.nombre)} alAbrir={alAbrir ? () => alAbrir(l) : undefined} />
           ))}
         </Grupo>
       ))}

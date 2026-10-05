@@ -4,11 +4,12 @@ import Inicio from "@/components/Inicio";
 import CarrilAgenda from "@/components/inicio/CarrilAgenda";
 import CarrilEntidad from "@/components/inicio/CarrilEntidad";
 import CarrilTusPlanes from "@/components/inicio/CarrilTusPlanes";
+import CarrilMasAdelante from "@/components/inicio/CarrilMasAdelante";
 import { hrefAgenda, SIN_FILTROS } from "@/lib/agenda";
 import { cargarAgenda } from "@/lib/cargarAgenda";
 import { cargarArtistasDestacados, TOPE_ARTISTAS_DESTACADOS } from "@/lib/cargarArtistasDestacados";
 import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
-import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, ciudadPorSlug, hrefConCiudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { tarjetaArtista } from "@/lib/destacados";
@@ -92,6 +93,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
+        slotMasAdelante={<CarrilMasAdelante agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefConCiudad("/agenda", ciudad.slug)} />}
         slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos esta semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
         slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos esta semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
