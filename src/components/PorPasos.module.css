@@ -1,0 +1,66 @@
+/* ==========================================================================
+   El armazón de un alta por pasos (components/PorPasos; prototipo firmado de la bitácora 323): una columna de arriba abajo con sus
+   hijos directos —la barra (ui/Barra, de borde a borde), la pregunta, sus controles y el pie—, sin envoltorios. Es una columna
+   flexible y no una rejilla porque el pie va al fondo de la pantalla aunque el paso sea corto (`margin-top: auto`), y eso una rejilla de
+   filas automáticas no lo hace sin una fila de relleno o un contenedor de más.
+   1. La columna · 2. La pregunta · 3. El pie · 4. La transición
+   ========================================================================== */
+
+/* 1. Lo que entra de lado no abre un desplazamiento a lo ancho (`clip`, que no vuelve a la columna un contenedor de desplazamiento:
+   la barra y el pie siguen pegados a la ventana). */
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-5);
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
+  overflow-x: clip;
+  background: var(--fondo);
+}
+/* Lo del paso va en la columna de lectura, con el aire de los lados (`--gutter`); la barra y el pie, de borde a borde. Lo que se abre
+   encima del paso, un diálogo fijo a la ventana (el texto largo), no lleva aire ni entra de lado. */
+.pasos > :not(header, footer, [role="dialog"]) {
+  margin-inline: var(--gutter);
+}
+
+/* 2. La pregunta: el encabezado del paso, grande y condensado como el título de una ficha. */
+.pregunta {
+  font-size: var(--letra-3xl);
+  font-weight: 800;
+}
+
+/* 3. El pie: al fondo de la pantalla y pegado abajo al desplazar, con la raya arriba y la zona segura del iPhone debajo. Con el teclado
+   abierto, `PiePaso` le pone su `bottom`. */
+.pie {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-pegajoso);
+  display: grid;
+  gap: var(--espacio-2);
+  margin-top: auto;
+  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-4) + var(--piso));
+  border-top: 1px solid var(--borde);
+  background: var(--fondo);
+}
+
+/* 4. El paso siguiente entra por la derecha y el anterior por la izquierda, en el tiempo y la curva de todo lo que se mueve (doc 51:
+   «la animación explica de dónde viene cada cosa»). Nunca retrasa un toque, y con «reducir movimiento» no hay ninguna. */
+@media (prefers-reduced-motion: no-preference) {
+  .pasos[data-direccion="entra"] > :not(header, footer, [role="dialog"]) {
+    animation: entra var(--duracion) var(--curva);
+  }
+  .pasos[data-direccion="vuelve"] > :not(header, footer, [role="dialog"]) {
+    animation: vuelve var(--duracion) var(--curva);
+  }
+}
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateX(var(--espacio-7));
+  }
+}
+@keyframes vuelve {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--espacio-7) * -1));
+  }
+}

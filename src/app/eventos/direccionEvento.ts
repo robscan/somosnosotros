@@ -1,11 +1,16 @@
 import { puntoValido } from "@/lib/buscarLugares";
 import type { Punto } from "@/lib/geo";
-import type { OtroSitio } from "@/lib/eventos";
+import type { ModoSitio, OtroSitio } from "@/lib/eventos";
 
 export function textoDelSitio(otro: OtroSitio): string {
   const nombre = otro.sitioTexto.trim();
   const direccion = otro.reservado ? "" : (otro.direccion ?? "").trim();
   return [nombre, direccion === nombre ? "" : direccion].filter(Boolean).join(" · ");
+}
+
+/** Lo que dice «Dónde» ya resuelto: el nombre del lugar registrado, o el sitio con su dirección y si es reservado. */
+export function valorDelSitio(modo: ModoSitio, lugar: { nombre: string } | undefined, otro: OtroSitio): string {
+  return modo === "lugar" ? (lugar?.nombre ?? "") : `${textoDelSitio(otro)} · ${modo === "reservado" ? "reservado" : "otro sitio"}`;
 }
 
 /** No se interpreta texto legacy: al cambiar su direccion se pide un nombre publico nuevo. */

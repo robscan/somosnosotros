@@ -63,6 +63,16 @@
   color: var(--primario);
   font-size: var(--letra-sm);
 }
+/* Quieto: un enlace subrayado en gris, del alto de un toque, para lo opcional que no debe competir con el botón principal (doc 51;
+   prototipo firmado de la bitácora 323). */
+.quieto {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-2);
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-decoration: underline;
+}
 
 /* Flotante: la pastilla de una acción principal (Me interesa, Voy, Seguir): píldora de una línea con la letra de los títulos y la
    sombra de lo que flota. Lo que ya quedó (`aria-pressed`): el primario, en verde («Vas», «Sigues»); el secundario, del color de acción. */

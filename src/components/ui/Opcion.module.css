@@ -1,0 +1,44 @@
+/* La opción grande (ui/Opcion): una rejilla con áreas, icono | respuesta / detalle | chevron, en una tarjeta con borde que mide al
+   menos un toque y su aire. Es un `<button>`: lleva el reinicio del canon (sin borde ni fondo nativos) antes de dibujar el suyo. */
+.opcion {
+  appearance: none;
+  display: grid;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icono titulo flecha"
+    "icono detalle flecha";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  width: 100%;
+  min-height: calc(var(--toque) + var(--espacio-4));
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.opcion > svg:first-child {
+  grid-area: icono;
+  color: var(--primario);
+}
+.opcion > b {
+  grid-area: titulo;
+  min-width: 0;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.opcion > small {
+  grid-area: detalle;
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.opcion > svg:last-child {
+  grid-area: flecha;
+  color: var(--texto-suave);
+}

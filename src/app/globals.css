@@ -86,6 +86,8 @@
   --alto-cabecera: 96px; /* lo que mide ui/Cabecera (fila 52 + pestañas 44); ella lo remide en vivo */
   --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
   --alto-modos: 56px; /* la tira de tipos de la pantalla de alta (Evento · Lugar · Artista), sin el área segura */
+  --alto-avance: 3px; /* la línea de avance de un alta por pasos, bajo su barra (`ui/Barra`, prototipo de la bitácora 323) */
+  --alto-subir-cartel: 200px; /* el recuadro «Sube el cartel» al empezar a publicar un evento (bitácora 323, tercera vuelta) */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
 
   /* Zonas seguras. `--tope` es el alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone,
