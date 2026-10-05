@@ -730,7 +730,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         </ul>
 
         {/* Todo viaja escondido: la hoja vive fuera del formulario y los renglones cerrados no tienen campos. */}
-        <CamposSitio modo={modoSitio} lugarId={lugarId} otro={otro} />
+        <CamposSitio modo={modoSitio} lugarId={lugarId} otro={otro} ciudadContexto={ciudadContexto} />
         {abierta !== "cuando" && (
           <>
             <input type="hidden" name="inicio" value={inicio} />

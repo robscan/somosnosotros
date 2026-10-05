@@ -81,7 +81,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           <input type="hidden" name="titulo" value={r.nombre} />
           <input type="hidden" name="inicio" value={inicioDe(r)} />
           <input type="hidden" name="fin" value={r.fin ?? ""} />
-          <CamposSitio modo={r.sitio.modo} lugarId={r.sitio.lugarId} otro={r.sitio.otro} />
+          <CamposSitio modo={r.sitio.modo} lugarId={r.sitio.lugarId} otro={r.sitio.otro} ciudadContexto={ciudadContexto} />
           <input type="hidden" name="gratis" value={r.costo === "gratis" ? "si" : "no"} />
           <input type="hidden" name="cooperacion" value={r.costo === "cooperacion" ? "si" : "no"} />
           <input type="hidden" name="precio" value={r.costo === "precio" ? r.precio : ""} />

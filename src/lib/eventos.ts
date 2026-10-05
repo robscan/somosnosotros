@@ -1,4 +1,4 @@
-import { ciudadCanonica } from "./ciudad";
+import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import type { Punto } from "./geo";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
@@ -129,6 +129,22 @@ export type DatosEvento = {
 export type ErroresEvento = Partial<
   Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
 >;
+
+/**
+ * La ciudad de un evento que no es en un lugar registrado (OL-299): la del pin que mandó el formulario. Sin ella, un punto
+ * nuevo no se publica (null: el servidor dice que no pudo saber en qué ciudad está); con el mismo punto que ya tenía el
+ * evento que se edita, conserva su ciudad. Un sitio sin punto (escrito sin coordenadas) no tiene de dónde deducirla: sigue
+ * en la inicial, como siempre.
+ */
+export function ciudadDelSitio(
+  datos: Pick<DatosEvento, "ciudad" | "sitio_lat" | "sitio_lng" | "privado">,
+  actual?: { ciudad: string; sitio_lat: number | null; sitio_lng: number | null } | null,
+): string | null {
+  if (datos.ciudad) return datos.ciudad;
+  const { lat, lng } = datos.privado ?? { lat: datos.sitio_lat, lng: datos.sitio_lng };
+  if (lat === null || lng === null) return CIUDAD_INICIAL.nombre;
+  return actual?.ciudad && actual.sitio_lat === lat && actual.sitio_lng === lng ? actual.ciudad : null;
+}
 
 /**
  * ¿El enlace de boletos/más información está bien formado? (S-04, docs/rediseno/46). No pasa por

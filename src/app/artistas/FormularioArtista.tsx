@@ -107,9 +107,10 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const campoNombreRef = useRef<HTMLElement>(null);
   const [enfocadoNombre, setEnfocadoNombre] = useState(false);
 
-  // Lo deducido del nombre manda hasta que la persona lo cambie a mano (decisión 4).
-  const hayNombre = nombre.trim().length > 0;
-  const disciplina: Disciplina | "" = disciplinaElegida || (hayNombre ? deducirDisciplina(nombre) : "");
+  // Lo deducido del nombre manda hasta que la persona lo cambie a mano (decisión 4). Sin pista en el nombre no se adivina:
+  // en el alta, la disciplina queda por elegir y es obligatoria (OL-299); al editar, una ficha por completar sigue así.
+  const disciplina: Disciplina | "" = disciplinaElegida || deducirDisciplina(nombre) || "";
+  const sinDisciplina = esAlta && !disciplina;
   const tipo: TipoArtista = tipoElegido || deducirTipoArtista(nombre) || "solista";
   const subcategorias = disciplina ? (subcategoriasPorDisciplina[disciplina] ?? []) : [];
 
@@ -162,8 +163,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const existente = artistaIgual(candidatos.filter((a) => a.ciudad === ciudad), nombre);
   const repetido = existente ?? (coincide(existenteServidor) ? existenteServidor : null);
   // Lo único que dice qué falta es la nota bajo el botón (doc 50, H-29 y H-32).
-  const falta = faltaEnArtista({ nombre, repetido: !!repetido });
-  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Disciplina";
+  const falta = faltaEnArtista({ nombre, conDisciplina: !sinDisciplina, repetido: !!repetido });
+  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : sinDisciplina ? "Falta la disciplina" : "Disciplina";
   const avisoRepetidoAbierto = enfocadoNombre && !!repetido;
 
   return (
@@ -235,8 +236,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       </ListaFlotante>
 
       <ul className={renglon.renglones}>
-        {/* 2. Qué hace: deducido del nombre; chips y "en una palabra" al abrir. */}
-        <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "hace" ? renglon.abierto : ""}`}>
+        {/* 2. Qué hace: deducido del nombre; sin pista, por elegir y obligatorio (pendiente); chips y "en una palabra" al abrir. */}
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "hace" ? renglon.abierto : sinDisciplina ? renglon.pendiente : ""}`}>
           <IconoNota width={20} height={20} />
           <small>Qué hace</small>
           <b className={disciplina ? undefined : renglon.falta}>{valorHace}</b>

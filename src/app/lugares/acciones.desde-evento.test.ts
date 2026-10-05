@@ -53,6 +53,16 @@ describe("crearLugarDesdeEvento (OL-173, panel Agregar lugar)", () => {
     expect(m.rpc).not.toHaveBeenCalled();
     expect(m.insert).not.toHaveBeenCalled();
   });
+  it("sin ciudad (el mapa no la dio y no había contexto cercano) no publica ni cae en San Luis Potosí en silencio (OL-299)", async () => {
+    const r = await crearLugarDesdeEvento({ ...datos, ciudad: "" });
+    expect(r).toEqual({ ok: false, error: "No pudimos saber en qué ciudad está. Intenta de nuevo." });
+    expect(m.rpc).not.toHaveBeenCalled();
+    expect(m.insert).not.toHaveBeenCalled();
+  });
+  it("de otra ciudad, la guarda con esa ciudad (la que dio el mapa), no con la inicial", async () => {
+    await crearLugarDesdeEvento({ ...datos, ciudad: "Querétaro" });
+    expect(m.insert.mock.calls[0][0]).toMatchObject({ ciudad: "Querétaro" });
+  });
   it("manda «siguiente» para que crearLugar nunca intente redirigir (se usa el resultado en línea, sin navegar)", async () => {
     await expect(crearLugarDesdeEvento(datos)).resolves.toMatchObject({ ok: true });
   });

@@ -130,9 +130,10 @@ export function deducirTipoArtista(nombre: string): TipoArtista | null {
 
 /**
  * Del nombre se deduce qué hace (decisión 4 de docs/rediseno/15): "Ballet Folclórico" baila, "Compañía de Teatro" actúa,
- * "Coro", "Orquesta" o "Mariachi" tocan. Sin pista, Música, que es lo más común; el renglón se cambia con un toque.
+ * "Coro", "Orquesta" o "Mariachi" tocan. Sin pista, null: no se adivina (OL-299; un pintor que solo escribe su nombre no
+ * es músico) y quien registra elige la disciplina.
  */
-export function deducirDisciplina(nombre: string): Disciplina {
+export function deducirDisciplina(nombre: string): Disciplina | null {
   const n = normalizarNombre(nombre);
   if (/\b(teatro|teatral|titeres|clown|payas[oa]s?)\b/.test(n)) return "teatro";
   if (/\b(danza|ballet|bailarin[a]?|bailes?)\b/.test(n)) return "danza";
@@ -140,7 +141,8 @@ export function deducirDisciplina(nombre: string): Disciplina {
   if (/\b(circo|circense|malabar(es|istas?)|acrobat[ai]s?)\b/.test(n)) return "circo";
   if (/\b(grabado|grafica|pintura|escultura|fotografia|ceramica|muralis[mt][oa]s?|ilustracion)\b/.test(n)) return "artes_visuales";
   if (/\b(poesia|poetas?|letras|literari[oa]|narrador(a|es)?|cuentacuentos)\b/.test(n)) return "letras";
-  return "musica";
+  if (/\b(musica|musical(es)?|orquesta|coro|mariachi|banda|trio|cuarteto|quinteto|sonora|ensamble|cantautor(a|es)?|cantante|rock|jazz)\b/.test(n)) return "musica";
+  return null;
 }
 
 /** Cuántos artistas trae cada página de la lista; "Ver más" suma otros tantos. */
@@ -310,8 +312,8 @@ export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "
 
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `fotoActual` es la
  *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la foto de una ficha importada
- *  de otro dominio (S-01, docs/rediseno/46). */
-export type OpcionesValidarArtista = { esAdmin?: boolean; fotoActual?: string | null; portadaActual?: string | null };
+ *  de otro dominio (S-01, docs/rediseno/46); `alta` es el alta de una ficha nueva, que exige la disciplina (OL-299). */
+export type OpcionesValidarArtista = { esAdmin?: boolean; fotoActual?: string | null; portadaActual?: string | null; alta?: boolean };
 
 export function validarArtista(
   entrada: Record<string, FormDataEntryValue | null | undefined>,
@@ -334,7 +336,11 @@ export function validarArtista(
   const errores: ErroresArtista = {};
   if (!datos.nombre) errores.nombre = "Escribe el nombre de artista o grupo.";
   else if (datos.nombre.length > LIMITES_ARTISTA.nombre) errores.nombre = `Máximo ${LIMITES_ARTISTA.nombre} caracteres.`;
-  if (disciplina !== "por_completar" && !DISCIPLINAS.some((d) => d.valor === disciplina)) errores.disciplina = "Elige qué hace.";
+  if (!DISCIPLINAS.some((d) => d.valor === disciplina)) {
+    // Editar una ficha por completar la deja como está; solo el alta exige elegir (OL-299).
+    if (disciplina !== "por_completar") errores.disciplina = "Elige qué hace.";
+    else if (opciones.alta) errores.disciplina = "Falta la disciplina.";
+  }
   if (!TIPOS_ARTISTA.some((t) => t.valor === tipo)) errores.tipo = "Elige si es solista, grupo o colectivo.";
   if (datos.detalle && datos.detalle.length > LIMITES_ARTISTA.detalle) errores.detalle = `Máximo ${LIMITES_ARTISTA.detalle} caracteres.`;
   if (datos.descripcion && datos.descripcion.length > LIMITES_ARTISTA.descripcion) errores.descripcion = `Máximo ${LIMITES_ARTISTA.descripcion} caracteres.`;

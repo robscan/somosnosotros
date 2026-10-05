@@ -106,8 +106,8 @@ export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: 
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
   const { supabase, user } = await sesionOEntrar(`/lugares/${id}/editar`);
-  const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("lugares").select("portada").eq("id", id).maybeSingle()]);
-  const { datos, errores } = validarLugar(leer(formData), { esAdmin, portadaActual: existente?.portada ?? null });
+  const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("lugares").select("portada, ciudad, lat, lng").eq("id", id).maybeSingle()]);
+  const { datos, errores } = validarLugar(leer(formData), { esAdmin, portadaActual: existente?.portada ?? null, actual: existente });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase

@@ -1,5 +1,5 @@
 import { diasActivosCalendario, sumarDiasIso } from "./calendario";
-import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
+import { ciudadCanonica, SIN_CIUDAD } from "./ciudad";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
@@ -292,16 +292,17 @@ export type DatosLugar = {
   portada: string | null;
   privado: boolean;
   detalle: string | null;
-  /** Deducida por Mapbox al ubicar el lugar; la inicial si no dijo nada. */
+  /** Deducida por Mapbox al ubicar el lugar (o la de contexto si el punto cae cerca de su centro); vacía, no se publica. */
   ciudad: string;
 };
-export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle", string>>;
+export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle" | "ciudad", string>>;
 
 
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `portadaActual` es la
  *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la portada de una ficha importada
- *  de otro dominio (S-01, docs/rediseno/46). */
-export type OpcionesValidarLugar = { esAdmin?: boolean; portadaActual?: string | null };
+ *  de otro dominio (S-01, docs/rediseno/46). `actual` es el lugar que se edita: si el punto no cambió, conserva su
+ *  ciudad tal cual (OL-299); solo un alta o un punto nuevo sin ciudad se rechaza. */
+export type OpcionesValidarLugar = { esAdmin?: boolean; portadaActual?: string | null; actual?: { ciudad: string; lat: number; lng: number } | null };
 
 export function validarLugar(
   entrada: Record<string, FormDataEntryValue | null | undefined>,
@@ -311,6 +312,8 @@ export function validarLugar(
   const lng = Number(limpiar(entrada.lng));
   const tipo = limpiar(entrada.tipo) as Tipo;
   const redes = enlacesDesdeJson(entrada.enlaces);
+  const { actual } = opciones;
+  const mismoPunto = !!actual && Math.abs(lat - actual.lat) < 1e-9 && Math.abs(lng - actual.lng) < 1e-9;
   const datos: DatosLugar = {
     nombre: limpiar(entrada.nombre),
     tipo,
@@ -322,7 +325,7 @@ export function validarLugar(
     portada: limpiar(entrada.portada) || null,
     privado: limpiar(entrada.privado) === "1",
     detalle: tipo === "otro" ? limpiar(entrada.detalle) || null : null,
-    ciudad: (ciudadCanonica(limpiar(entrada.ciudad)) || CIUDAD_INICIAL.nombre).slice(0, 80),
+    ciudad: ciudadCanonica(limpiar(entrada.ciudad)).slice(0, 80) || (mismoPunto ? actual.ciudad : ""),
   };
   const errores: ErroresLugar = {};
   if (datos.detalle && datos.detalle.length > LIMITES_LUGAR.detalle) errores.detalle = `Máximo ${LIMITES_LUGAR.detalle} caracteres.`;
@@ -332,6 +335,7 @@ export function validarLugar(
   if (datos.direccion.length > LIMITES_LUGAR.direccion) errores.direccion = `Máximo ${LIMITES_LUGAR.direccion} caracteres.`;
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
     errores.ubicacion = "Falta la ubicación: busca la dirección o mueve el pin en el mapa.";
+  if (!datos.ciudad && !mismoPunto) errores.ciudad = SIN_CIUDAD;
   if (datos.descripcion.length > LIMITES_LUGAR.descripcion) errores.descripcion = `Máximo ${LIMITES_LUGAR.descripcion} caracteres.`;
   if (datos.portada && !imagenPermitida(datos.portada, { esAdmin: !!opciones.esAdmin, actual: opciones.portadaActual })) errores.portada = "La foto no se subió bien. Intenta de nuevo.";
   if (redes.some((e) => e.url.length > 300)) errores.enlaces = "Hay un enlace demasiado largo.";

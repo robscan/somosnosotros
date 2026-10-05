@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COOPERACION_SOLIDARIA, cartelAFormulario, claseDeCosto, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { COOPERACION_SOLIDARIA, cartelAFormulario, ciudadDelSitio, claseDeCosto, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -105,6 +105,27 @@ describe("validarEvento", () => {
   });
   it("lugar registrado inválido", () => {
     expect(validarEvento({ ...base, lugar_id: "x" }).errores.lugar_id).toBeTruthy();
+  });
+});
+
+describe("ciudadDelSitio (OL-299)", () => {
+  const publico = { ciudad: null, sitio_lat: 22.15, sitio_lng: -100.98, privado: null };
+  const reservado = { ciudad: null, sitio_lat: null, sitio_lng: null, privado: { direccion: "x", lat: 20.6, lng: -100.4, indicaciones: null, revelar_desde: "" } };
+  it("la del pin que mandó el formulario manda", () => {
+    expect(ciudadDelSitio({ ...publico, ciudad: "Querétaro" })).toBe("Querétaro");
+    expect(ciudadDelSitio({ ...reservado, ciudad: "Querétaro" }, { ciudad: "San Luis Potosí", sitio_lat: null, sitio_lng: null })).toBe("Querétaro");
+  });
+  it("un pin nuevo sin ciudad no se publica: null", () => {
+    expect(ciudadDelSitio(publico)).toBeNull();
+    expect(ciudadDelSitio(reservado)).toBeNull();
+    expect(ciudadDelSitio(publico, { ciudad: "Querétaro", sitio_lat: 20.6, sitio_lng: -100.4 })).toBeNull();
+  });
+  it("al editar con el mismo pin y sin ciudad en el formulario, conserva la del evento", () => {
+    expect(ciudadDelSitio(publico, { ciudad: "Querétaro", sitio_lat: 22.15, sitio_lng: -100.98 })).toBe("Querétaro");
+  });
+  it("un sitio sin punto (escrito sin coordenadas) no tiene de dónde deducirla: sigue en la inicial, como siempre", () => {
+    expect(ciudadDelSitio({ ciudad: null, sitio_lat: null, sitio_lng: null, privado: null })).toBe("San Luis Potosí");
+    expect(ciudadDelSitio({ ciudad: null, sitio_lat: null, sitio_lng: null, privado: { direccion: "x", lat: null, lng: null, indicaciones: null, revelar_desde: "" } })).toBe("San Luis Potosí");
   });
 });
 
