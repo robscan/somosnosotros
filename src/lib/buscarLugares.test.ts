@@ -66,6 +66,21 @@ describe("deducirTipo", () => {
     expect(deducirTipo("Colectivo Nido")).toBe("colectivo");
     expect(deducirTipo("La Bodega")).toBeNull();
   });
+  it("plaza, jardín, parque y alameda proponen «Plaza, jardín o parque», sin acentos ni mayúsculas", () => {
+    expect(deducirTipo("Jardín Botánico El Izotal")).toBe("plaza");
+    expect(deducirTipo("PARQUE TANGAMANGA I")).toBe("plaza");
+    expect(deducirTipo("Plaza de Armas")).toBe("plaza");
+    expect(deducirTipo("Alameda Juan Sarabia")).toBe("plaza");
+    expect(deducirTipo("Sitio sin pista", ["park"])).toBe("plaza");
+    expect(deducirTipo("Sitio sin pista", ["garden"])).toBe("plaza");
+  });
+  it("una palabra institucional gana a la de plaza o parque", () => {
+    expect(deducirTipo("Teatro del Parque")).toBe("foro");
+    expect(deducirTipo("Museo del Jardín")).toBe("museo");
+    expect(deducirTipo("Galería Plaza Norte")).toBe("galeria");
+    expect(deducirTipo("Estacionamiento Parking", ["parking"])).toBeNull();
+    expect(deducirTipo("Parquesol Eventos")).toBeNull();
+  });
 });
 
 describe("interpretarSugerencias · direcciones", () => {
