@@ -1,0 +1,52 @@
+[
+  {
+    "width": 390,
+    "recorrido": "Elegir León en Agenda → Lugares → Artistas → Inicio → Agenda → recarga; entrada sin ciudad restaura León; URL Puebla vence y logotipo la conserva sin cambiar preferencia",
+    "errors": []
+  },
+  {
+    "width": 390,
+    "section": "agenda",
+    "altaLejana": true
+  },
+  {
+    "width": 390,
+    "section": "lugares",
+    "altaLejana": true,
+    "vacioBusqueda": {
+      "top": 241.40625,
+      "bottom": 289.40625,
+      "tocable": true
+    }
+  },
+  {
+    "width": 390,
+    "section": "artistas",
+    "altaLejana": false
+  },
+  {
+    "width": 320,
+    "recorrido": "Elegir León en Agenda → Lugares → Artistas → Inicio → Agenda → recarga; entrada sin ciudad restaura León; URL Puebla vence y logotipo la conserva sin cambiar preferencia",
+    "errors": []
+  },
+  {
+    "width": 320,
+    "section": "agenda",
+    "altaLejana": true
+  },
+  {
+    "width": 320,
+    "section": "lugares",
+    "altaLejana": true,
+    "vacioBusqueda": {
+      "top": 261.625,
+      "bottom": 309.625,
+      "tocable": true
+    }
+  },
+  {
+    "width": 320,
+    "section": "artistas",
+    "altaLejana": false
+  }
+]

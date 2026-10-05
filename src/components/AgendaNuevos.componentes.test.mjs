@@ -62,7 +62,7 @@ before(async () => {
       import React, {useState} from 'react';import {createRoot} from 'react-dom/client';
       import AgendaInicio from './src/components/AgendaInicio';import CarrilNuevos from './src/components/inicio/CarrilNuevos';
       import {hrefAgenda, SIN_FILTROS} from './src/lib/agenda';import './src/app/globals.css';
-      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, zoom: 13, lugares: 9, eventos: 6, zona: '${ZONA}' };
+      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, centroConocido: true, zoom: 13, lugares: 9, eventos: 6, zona: '${ZONA}' };
       const eventos = new URLSearchParams(location.search).has('muchos') ? ${JSON.stringify(MUCHOS)} : ${JSON.stringify(EVENTOS)};
       const agenda = Promise.resolve({ eventos, seguidos: null, eventosSeguidos: [], asistencias: null, destacados: [] });
       const tarjetas = eventos.filter((e) => e.id !== 'viejo').map((e) => ({ id: e.id, href: '/eventos/' + e.id, foto: null, titulo: e.titulo, detalle: 'jue 8 de oct · 19:00', sitio: 'Foro', van: 0, inicio: e.inicio, fin: null, zona: e.zona, creado_en: e.creado_en }));

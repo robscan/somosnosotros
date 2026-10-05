@@ -39,7 +39,7 @@ before(async () => {
       import FilaLugares from './src/app/lugares/FilaLugares';import Cabecera from './src/components/ui/Cabecera';import './src/app/globals.css';
       const params = new URLSearchParams(location.search);
       window.qa = { cambios: [] };
-      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, zoom: 13, lugares: 8, eventos: 5, zona: 'America/Mexico_City' };
+      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, centroConocido: true, zoom: 13, lugares: 8, eventos: 5, zona: 'America/Mexico_City' };
       function App(){
         const [valor,setValor]=useState({ tipo: null, conEventos: null, soloSigo: false });
         return <Cabecera contexto={<FilaLugares ciudad={ciudad} ciudades={[ciudad]} hrefDeCiudad={()=>'/lugares'} lugares={${JSON.stringify(LUGARES)}} hoy='${HOY}' seguidos={['l1']} conSesion={!params.has('sinSesion')} valor={valor} onCambiar={(v)=>{window.qa.cambios.push(v);setValor(v);}} />} />;

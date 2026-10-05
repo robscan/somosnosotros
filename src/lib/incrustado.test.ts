@@ -44,6 +44,21 @@ describe("incrustadoDeNovedad", () => {
     });
   });
 
+  it.each([
+    "https://www.mixcloud.com/robscan/randomatic-oct-26",
+    "https://www.mixcloud.com/robscan/randomatic-oct-26/",
+    "https://mixcloud.com/robscan/randomatic-oct-26?utm_source=share#player",
+  ])("OL-280: el feed de Mixcloud conserva su barra final, incluso desde la URL guardada: %s", (url) => {
+    const r = incrustadoDeNovedad({ proveedor: "mixcloud", url, embed_id: null });
+    expect(r).not.toBeNull();
+    const widget = new URL(r!.src);
+    expect(widget.searchParams.get("feed")).toBe("/robscan/randomatic-oct-26/");
+    expect(widget.searchParams.has("utm_source")).toBe(false);
+    expect(widget.hash).toBe("");
+    expect(r!.sandbox).toBe("allow-scripts allow-same-origin");
+    expect(r!.allow).toBe("");
+  });
+
   it("Bandcamp: sin embed_id, todavía no hay reproductor (no es un error, aún no se conoce el id)", () => {
     expect(incrustadoDeNovedad({ proveedor: "bandcamp", url: "https://anareyes.bandcamp.com/album/nuevo-disco", embed_id: null })).toBeNull();
   });

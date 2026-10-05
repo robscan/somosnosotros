@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { fechaRelativaNovedadArtista, reconocerNovedadEnlace, validarNovedadArtista } from "./novedadesArtista";
+import { describe, expect, it, vi } from "vitest";
+import { incrustadoDeNovedad } from "./incrustado";
+import { leerNovedadesRecientes, selloNovedadArtista, VIGENCIA_NOVEDAD_ARTISTA_MS, fechaRelativaNovedadArtista, reconocerNovedadEnlace, validarNovedadArtista } from "./novedadesArtista";
 
 describe("reconocerNovedadEnlace", () => {
   it("un enlace de YouTube se reconoce, normalizado", () => {
@@ -27,6 +28,18 @@ describe("reconocerNovedadEnlace", () => {
     // reconocerEnlace normaliza sin la barra final (lib/enlaces.ts, sin tocarlo).
     expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/set-de-otono/")).toEqual({ url: "https://www.mixcloud.com/anareyes/set-de-otono", proveedor: "mixcloud" });
     expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/")).toBeNull();
+  });
+
+  it("OL-280: reconocer y guardar Mixcloud sin barra no rompe el reproductor de la previa ni la ficha", () => {
+    const pegado = "https://www.mixcloud.com/robscan/randomatic-oct-26/";
+    const reconocido = reconocerNovedadEnlace(pegado);
+    const { datos, errores } = validarNovedadArtista({ url: pegado });
+    expect(errores).toEqual({});
+    expect(datos.url).toBe("https://www.mixcloud.com/robscan/randomatic-oct-26");
+    for (const novedad of [reconocido!, { proveedor: datos.proveedor!, url: datos.url }]) {
+      const iframe = incrustadoDeNovedad({ ...novedad, embed_id: null });
+      expect(new URL(iframe!.src).searchParams.get("feed")).toBe("/robscan/randomatic-oct-26/");
+    }
   });
 
   it("Bandcamp: álbum o pista de un subdominio de artista se reconocen; www.bandcamp.com y bandcamp.com pelón no", () => {
@@ -132,5 +145,35 @@ describe("fechaRelativaNovedadArtista", () => {
 
   it("más viejo que ayer, día y mes cortos, sin año ni día de la semana", () => {
     expect(fechaRelativaNovedadArtista("2026-09-12T15:00:00.000Z", ahora)).toBe("12 sep");
+  });
+});
+
+
+describe("novedad reciente OL-275", () => {
+  const ahora = new Date("2026-10-07T16:00:00Z");
+  it.each(["youtube", "vimeo", "soundcloud", "bandcamp", "mixcloud"] as const)("%s da el letrero firmado", (proveedor) => {
+    expect(selloNovedadArtista({ novedad_id: "n", proveedor, creado_en: ahora.toISOString() }, ahora)).toBe(["youtube", "vimeo"].includes(proveedor) ? "Nuevo video" : "Nuevo audio");
+  });
+  it("la frontera exacta de168 horas vence, antes por1ms sigue; futuro e inválido no sellan", () => {
+    const n = { novedad_id: "n", proveedor: "youtube" as const, creado_en: new Date(+ahora - VIGENCIA_NOVEDAD_ARTISTA_MS + 1).toISOString() };
+    expect(selloNovedadArtista(n, ahora)).toBe("Nuevo video");
+    for (const creado_en of [new Date(+ahora - VIGENCIA_NOVEDAD_ARTISTA_MS).toISOString(), new Date(+ahora + 1).toISOString(), "inválida"]) expect(selloNovedadArtista({ ...n, creado_en }, ahora)).toBeNull();
+    expect(selloNovedadArtista(null, ahora)).toBeNull();
+  });
+  it("usa un solo lote de ids cargados, sin duplicados; vacío no consulta", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [{ artista_id: "a", novedad_id: "n", proveedor: "youtube", creado_en: ahora.toISOString() }], error: null });
+    const cliente = { rpc } as unknown as import("@supabase/supabase-js").SupabaseClient;
+    expect((await leerNovedadesRecientes(cliente, "Ciudad", ["a", "a", "b"])).get("a")).toEqual({ novedad_id: "n", proveedor: "youtube", creado_en: ahora.toISOString() });
+    expect(rpc).toHaveBeenCalledWith("novedades_recientes_artistas", { p_ciudad: "Ciudad", p_ids: ["a", "b"] });
+    await leerNovedadesRecientes(cliente, "Ciudad", []);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+  it("un fallo omite únicamente el sello, sin detalles privados", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const cliente = { rpc: vi.fn().mockRejectedValue(new Error("dato privado")) } as unknown as import("@supabase/supabase-js").SupabaseClient;
+      expect((await leerNovedadesRecientes(cliente, "Ciudad", ["a"])).size).toBe(0);
+      expect(warn).toHaveBeenCalledWith("[artistas] novedades recientes no disponibles");
+    } finally { warn.mockRestore(); }
   });
 });
