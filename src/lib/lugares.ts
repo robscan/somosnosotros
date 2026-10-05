@@ -17,6 +17,7 @@ export const TIPOS = [
   { valor: "escuela", etiqueta: "Escuela" },
   { valor: "colectivo", etiqueta: "Colectivo" },
   { valor: "biblioteca", etiqueta: "Biblioteca" },
+  { valor: "plaza", etiqueta: "Plaza, jardín o parque" },
   { valor: "otro", etiqueta: "Otro" },
 ] as const;
 export type Tipo = (typeof TIPOS)[number]["valor"];
