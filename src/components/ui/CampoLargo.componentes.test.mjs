@@ -87,6 +87,7 @@ const cajas = (p) =>
       cursor: [area.selectionStart, area.selectionEnd, area.value.length],
       alFinal: area.scrollHeight - area.scrollTop - area.clientHeight <= 1,
       enfocada: document.activeElement === area,
+      opaca: getComputedStyle(capa).backgroundColor !== "rgba(0, 0, 0, 0)" && getComputedStyle(capa).backgroundColor !== "transparent",
     };
   });
 const teclado = (p, height, offsetTop) =>
@@ -104,14 +105,16 @@ test("sin teclado la capa cubre la ventana entera y el cursor queda al final", a
   assert.ok(c.enfocada);
 });
 
-test("teclado abierto con la ventana desplazada: la capa toma el top y el alto del área visible y la cabecera queda arriba de lo visible", async (t) => {
+test("teclado abierto con la ventana desplazada: la capa arranca en el top del área visible, su blanco llega al fondo de la ventana y el texto termina sobre el teclado", async (t) => {
   const p = await abrir(t);
   await teclado(p, 508, 43);
   await p.waitForFunction(() => document.querySelector("[role=dialog]").getBoundingClientRect().top === 43);
   const c = await cajas(p);
-  assert.deepEqual(c.capa, [43, 551], "la capa mide de offsetTop a offsetTop + alto del área visible, no la ventana");
+  assert.equal(c.capa[0], 43, "la capa arranca en offsetTop");
+  assert.ok(c.capa[1] >= 844, "el blanco de la capa llega al menos hasta el final de la ventana (la barra translúcida de iOS 26 queda fuera del visualViewport)");
+  assert.ok(c.opaca, "el fondo de la capa es opaco: no se ve la página de debajo");
   assert.equal(c.cabeceraTop, 43, "título, contador y Listo empiezan donde empieza lo visible");
-  assert.equal(c.area[1], 551, "el área de texto llega hasta el teclado");
+  assert.equal(c.area[1], 551, "el área de texto termina en offsetTop + alto del área visible, sobre el teclado");
   assert.ok(c.area[0] > 43 && c.area[0] < 120, "el área de texto sigue a la cabecera");
   await teclado(p, 844, 0);
   await p.waitForFunction(() => document.querySelector("[role=dialog]").getBoundingClientRect().top === 0);
@@ -128,7 +131,10 @@ test("el teclado ya estaba abierto al tocar el renglón: la capa nace sobre el �
   await teclado(p, 508, 43);
   await p.getByRole("button", { name: "Texto (opcional)" }).click();
   await p.getByRole("dialog").waitFor();
-  assert.deepEqual((await cajas(p)).capa, [43, 551]);
+  const c = await cajas(p);
+  assert.equal(c.capa[0], 43);
+  assert.ok(c.capa[1] >= 844);
+  assert.equal(c.area[1], 551);
 });
 
 test("texto largo: el cursor queda al final y el área muestra esa posición, también con el teclado", async (t) => {
