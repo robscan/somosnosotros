@@ -87,6 +87,7 @@ before(async () => {
           React.createElement(Destacados, { tarjetas: grandes, tamano: 'grande', encabezado: 'Carril grande', memoria: 'm9', boton }),
           React.createElement(Destacados, { tarjetas: [...redondas, redondaSinFoto], tamano: 'chica', encabezado: 'Carril chico', memoria: 'm10', boton: botonDe('lugar', false) }),
           React.createElement(Destacados, { tarjetas: [sola], encabezado: 'Carril solo', memoria: 'm11', boton }),
+          React.createElement(Destacados, { tarjetas: [tarjeta('sola-sin-foto', 0, {foto: null})], encabezado: 'Carril solo sin foto', memoria: 'm13', boton }),
           React.createElement(Destacados, { tarjetas: [], encabezado: 'Carril vacio', memoria: 'm12' }),
         );
       }
@@ -115,6 +116,17 @@ before(async () => {
   origin = `http://127.0.0.1:${server.address().port}`;
   const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
   browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_EXECUTABLE });
+});
+
+test("una sola tarjeta sin foto conserva el fondo 5:3 a320/390", async (t) => {
+  const p = await pagina(t);
+  for (const ancho of [390, 320]) {
+    await p.setViewportSize({ width: ancho, height: 844 });
+    const enlace = tarjeta(p, "sola-sin-foto");
+    await enlace.scrollIntoViewIfNeeded();
+    const caja = await enlace.evaluate(e => ({ ancho: e.getBoundingClientRect().width, altoFondo: parseFloat(getComputedStyle(e, "::before").height) }));
+    assert.ok(Math.abs(caja.altoFondo - caja.ancho * 3 / 5) < 1, JSON.stringify(caja));
+  }
 });
 after(async () => {
   await browser?.close();

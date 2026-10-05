@@ -145,3 +145,11 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date())
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
   return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, nuevos };
 }
+
+/** Respaldo de Inicio: los próximos veinte por fecha, sin los compromisos de Tus planes.
+ * Su visibilidad se decide con los carriles realmente pintados en el teléfono (Nuevos tiene una marca local).
+ * Destacados conserva su presentación: primero fotos, por fecha dentro de cada grupo. */
+export function carrilMasAdelante(agenda: Agenda): EventoAgenda[] {
+  const propios = new Set(Object.keys(agenda.asistencias ?? {}));
+  return agenda.eventos.filter(e => !propios.has(e.id)).toSorted(compararEventos).slice(0, 20);
+}

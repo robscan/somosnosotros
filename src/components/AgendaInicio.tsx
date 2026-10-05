@@ -254,7 +254,7 @@ function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Prom
 }
 
 /** Un vacío con su causa. */
-function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
+export function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className={comun.vacio}>
       <h2>{titulo}</h2>

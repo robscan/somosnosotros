@@ -4,6 +4,7 @@ import Destacados from "@/components/Destacados";
 import { useCanalDePantalla } from "@/components/useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "@/components/useSeguirEnLista";
 import type { Tarjeta } from "@/lib/destacados";
+import { useCarrilResuelto } from "./EstadoCarriles";
 
 /**
  * El carril de lugares o artistas, ya en el cliente (mismo patrón que `CarrilEventosCliente`): el botón es Seguir.
@@ -14,6 +15,7 @@ import type { Tarjeta } from "@/lib/destacados";
 export default function CarrilEntidadCliente({ tarjetas, que, seguidos, avisos, titulo, memoria, verTodosHref, grande = false }: { tarjetas: Tarjeta[]; que: "lugar" | "artista"; seguidos: string[] | null; avisos: AvisosLista | null; titulo: string; memoria: string; verTodosHref: string; grande?: boolean }) {
   const canal = useCanalDePantalla();
   const seguir = useSeguirEnLista(que, seguidos, avisos, canal);
+  useCarrilResuelto(memoria, tarjetas.length);
   return (
     <>
       <Destacados tarjetas={tarjetas} tamano={grande ? "grande" : "chica"} memoria={memoria} encabezado={titulo} verTodos={{ href: verTodosHref, etiqueta: que === "lugar" ? "Ver lugares" : "Ver artistas" }} boton={(t) => seguir.boton(t.id, t.titulo)} />
