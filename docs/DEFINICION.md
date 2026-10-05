@@ -1,6 +1,6 @@
 # somosnosotros — definición (una página)
 
-**Qué es.** Una plataforma sin fines de lucro para que la gente de una ciudad se entere de dónde están sus centros culturales, qué pasa en ellos, y conozca a otras personas locales. Empieza en **San Luis Potosí**. Cada evento publicado deja constancia de quién participó, dónde y con quién. Con el tiempo, la agenda arma sola el mapa de la cultura de la ciudad y la trayectoria de sus artistas: eso es el **grafo cultural** (founder, 2026-09-21).
+**Qué es.** Un directorio de centros culturales y una agenda de eventos para que la gente de una ciudad se entere de dónde están sus centros culturales, qué pasa en ellos, y conozca a otras personas locales. Empezó en **San Luis Potosí** y no se limita a ella: el catálogo se abrirá a más ciudades. No afirma nada sobre su naturaleza legal o comercial (founder, 2026-10-05: «elimina la leyenda sin fines de lucro. Podríamos introducir un creador de flyers en el futuro. Solo por protección elimina eso. Además deja de decir que solo es directorio de San Luis. Abriremos el catálogo a más ciudades pronto.»; sustituye a «plataforma sin fines de lucro» y a «Empieza en San Luis Potosí»; OL-290). Cada evento publicado deja constancia de quién participó, dónde y con quién. Con el tiempo, la agenda arma sola el mapa de la cultura de la ciudad y la trayectoria de sus artistas: eso es el **grafo cultural** (founder, 2026-09-21).
 
 **Para quién.**
 - **Público local**: quiere saber qué hay cerca hoy o esta semana, y encontrar gente con intereses parecidos.

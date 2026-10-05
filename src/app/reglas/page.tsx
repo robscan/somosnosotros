@@ -6,8 +6,8 @@ import styles from "../privacidad/legal.module.css";
 export const metadata: Metadata = { title: "Reglas de uso · Somos Nosotros" };
 
 /**
- * Reglas de uso, en llano. No son "términos y condiciones" de abogado: un directorio sin cobro no los necesita,
- * pero sí hace falta decir qué se puede publicar y qué hace el administrador. Borrador de la revisión del 2026-09-14.
+ * Reglas de uso, en llano. No son "términos y condiciones" de abogado: dicen qué se puede publicar
+ * y qué hace el administrador. Borrador de la revisión del 2026-09-14.
  */
 export default function Reglas() {
   return (
@@ -15,7 +15,7 @@ export default function Reglas() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Reglas de uso</h1>
-        <p className="subtitulo">Somos Nosotros es de la gente de San Luis Potosí. Estas son las reglas para que siga sirviendo.</p>
+        <p className="subtitulo">Estas son las reglas para que Somos Nosotros siga sirviendo a la gente que lo usa.</p>
 
         <h2>Qué se publica aquí</h2>
         <ul>

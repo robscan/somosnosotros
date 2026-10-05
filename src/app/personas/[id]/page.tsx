@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // en Google, y así no hay que decidir a mano qué tanto de cada persona sale en un resultado de búsqueda.
   if (!d) return { title: "Persona · Somos Nosotros", robots: { index: false, follow: false } };
   const n = d.eventos.length;
-  const descripcion = `${n === 0 ? "Está en Somos Nosotros" : n === 1 ? "Va a 1 evento próximo" : `Va a ${n} eventos próximos`} · San Luis Potosí`;
+  const descripcion = `${n === 0 ? "Está en Somos Nosotros" : n === 1 ? "Va a 1 evento próximo" : `Va a ${n} eventos próximos`}`;
   const imagen = d.perfil.foto ?? undefined;
   return {
     title: `${d.perfil.nombre} · Somos Nosotros`,
