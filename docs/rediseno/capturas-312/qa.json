@@ -1,0 +1,160 @@
+{
+  "datos": "respaldo inventado, Auth simulado, Chrome local; no prueba física Safari",
+  "base": "3519a8991e665649bfac8e6442b64df97cde672a",
+  "fuentes": "Ciudad.tsx final, con limpieza al abandonar la ruta",
+  "inicio": [
+    {
+      "width": 390,
+      "cantidadPlanes": 1,
+      "planesIdenticos": true,
+      "avisoUnico": true,
+      "sinBoton": true,
+      "errors": []
+    },
+    {
+      "width": 320,
+      "cantidadPlanes": 1,
+      "planesIdenticos": true,
+      "avisoUnico": true,
+      "sinBoton": true,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "cantidadPlanes": 3,
+      "planesIdenticos": true,
+      "avisoUnico": true,
+      "sinBoton": true,
+      "errors": []
+    },
+    {
+      "width": 320,
+      "cantidadPlanes": 3,
+      "planesIdenticos": true,
+      "avisoUnico": true,
+      "sinBoton": true,
+      "errors": []
+    }
+  ],
+  "lugares": {
+    "avisoUnico": true,
+    "atrasSinAviso": true,
+    "errores": []
+  },
+  "capturas": [
+    {
+      "archivo": "312-1-planes-slp-390.png",
+      "pantalla": "inicio",
+      "planes": 1,
+      "ancho": 390,
+      "alto": 844,
+      "ciudad": "slp"
+    },
+    {
+      "archivo": "312-1-planes-leon-390.png",
+      "pantalla": "inicio",
+      "planes": 1,
+      "ancho": 390,
+      "alto": 844,
+      "ciudad": "leon",
+      "aviso": {
+        "x": 20,
+        "y": 720,
+        "ancho": 350,
+        "alto": 52
+      }
+    },
+    {
+      "archivo": "312-1-planes-slp-320.png",
+      "pantalla": "inicio",
+      "planes": 1,
+      "ancho": 320,
+      "alto": 844,
+      "ciudad": "slp"
+    },
+    {
+      "archivo": "312-1-planes-leon-320.png",
+      "pantalla": "inicio",
+      "planes": 1,
+      "ancho": 320,
+      "alto": 844,
+      "ciudad": "leon",
+      "aviso": {
+        "x": 20,
+        "y": 720,
+        "ancho": 280,
+        "alto": 52
+      }
+    },
+    {
+      "archivo": "312-3-planes-slp-390.png",
+      "pantalla": "inicio",
+      "planes": 3,
+      "ancho": 390,
+      "alto": 844,
+      "ciudad": "slp"
+    },
+    {
+      "archivo": "312-3-planes-leon-390.png",
+      "pantalla": "inicio",
+      "planes": 3,
+      "ancho": 390,
+      "alto": 844,
+      "ciudad": "leon",
+      "aviso": {
+        "x": 20,
+        "y": 720,
+        "ancho": 350,
+        "alto": 52
+      }
+    },
+    {
+      "archivo": "312-3-planes-slp-320.png",
+      "pantalla": "inicio",
+      "planes": 3,
+      "ancho": 320,
+      "alto": 844,
+      "ciudad": "slp"
+    },
+    {
+      "archivo": "312-3-planes-leon-320.png",
+      "pantalla": "inicio",
+      "planes": 3,
+      "ancho": 320,
+      "alto": 844,
+      "ciudad": "leon",
+      "aviso": {
+        "x": 20,
+        "y": 720,
+        "ancho": 280,
+        "alto": 52
+      }
+    },
+    {
+      "archivo": "312-lugares-leon-390.png",
+      "pantalla": "lugares",
+      "ancho": 390,
+      "alto": 844,
+      "ciudad": "leon",
+      "aviso": {
+        "x": 20,
+        "y": 720,
+        "ancho": 350,
+        "alto": 52
+      }
+    },
+    {
+      "archivo": "312-lugares-leon-320.png",
+      "pantalla": "lugares",
+      "ancho": 320,
+      "alto": 844,
+      "ciudad": "leon",
+      "aviso": {
+        "x": 20,
+        "y": 720,
+        "ancho": 280,
+        "alto": 52
+      }
+    }
+  ]
+}

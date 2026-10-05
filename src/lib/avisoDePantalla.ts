@@ -17,7 +17,7 @@
 /** El aviso de abajo: lo hecho con Deshacer, o que no se pudo guardar con Reintentar. */
 export type Aviso = {
   texto: string;
-  boton: () => void;
+  boton?: () => void;
   etiqueta?: string;
   fallo?: boolean;
   /** Quién lo publicó (cada lista y cada barra, el suyo): solo él puede limpiarlo sin poner nada en su lugar. */
