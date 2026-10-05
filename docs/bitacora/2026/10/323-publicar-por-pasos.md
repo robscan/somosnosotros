@@ -128,3 +128,32 @@ El founder: «ok, solo deja en morado elegir y la linea, disminuye grosor, pero 
 - Igual en el prototipo de Eventos. Capturas `sin-11-revisar-falta-diseno` y `eventos-pendiente-en-hoja`. Sin errores ni desbordes a 320 y 390.
 
 **Idea del founder, misma noche:** «Para eventos creados sin cartel, al editar podemos presentar opción de generar cartel.» De acuerdo: editar entra directo a «Revisa», y ahí el renglón «Sin cartel · Hacer uno» ya existe; sirve además para los eventos que hoy no tienen cartel (144 de 273 según la medición del doc 52). Va con la pieza del generador de flyers.
+
+## Octava vuelta (2026-10-05, noche): la línea del pendiente, decidida, y «Ver otros»
+
+- El founder retiró el violeta de la línea: «la linea punteada es agresiva visualmente en ese color, regresemos al color que usabas antes». Pidió ver opciones en una imagen: `opciones-linea-ocho.png` (ocho tratamientos, A a H). Eligió el color de la A («me gusta la opción A por el color, pero me gustaría ver un poco mas de aire sin llegar a opción B ahí ya te pasaste») y, sobre `opciones-linea-aire.png` (cuatro aires intermedios), **la opción 2**: «vamos con opción 2 por favor para campos faltantes, actualiza el canon cuando publiquemos».
+- **Regla final del campo por completar:** línea gris (`--texto-suave`), 1 px, guion de 4 px con 5 px de aire; en violeta solo la acción de la derecha; el valor en tinta; el icono en gris. Aplicada en los dos prototipos; en la app va en OL-297.
+- **Si no gustan los diseños del cartel** («acepto Ver otros y publicar sin cartel cuando no guste»): la pantalla «Elige un diseño» lleva «Ver otros» (trae otros cuatro) y «Publicar sin cartel». Sin editor de colores ni letras. Capturas `sin-12-disenos` y `sin-13-disenos-otros`.
+- Sin errores ni desbordes a 320 y 390 en los dos prototipos.
+
+## Novena vuelta (2026-10-05, noche): «Ver otros» con espera a propósito y rebote en lo que falta
+
+- El founder: «Al seleccionar ver otros aplicamos umbral de doherty a la inversa, que tome unos segundos cargar y presentamos cargador que exprese un proceso complejo detrás. Que el usuario sepa que al seleccionar ver otros se desencadena mas esfuerzo y eso puede costar». Tras «Ver otros», pantalla «Armando otros cuatro» durante unos 3 segundos: cuatro huecos que laten y cuatro pasos que se van palomeando (leer los datos, acomodar título y fecha, probar colores y composiciones, revisar que todo se lea). Captura `sin-13-disenos-armando`.
+  - Nota del gestor: los pasos mostrados deben ser los que de verdad hace el sistema; si un día «Ver otros» tiene costo o cupo, se dice ahí con número («te quedan 2»), no solo con la espera.
+- El founder: «Podemos agregar un leve rebote al o los campos que faltan por llenar?» Los renglones por completar dan un rebote de 5 px, una vez, medio segundo después de entrar a la pantalla; apagado con «reducir movimiento». (Sustituye el «nada de rebotes» del doc 51 solo para este caso.) No se ve en captura fija.
+- Sin errores ni desbordes a 320 y 390.
+
+**Corrección del founder a la espera de «Ver otros»:** «el proceso de creación de carteles no se ve, se coloca debajo de skeletons, debe ser el elemento estelar en ese momento.» Ahora el proceso va arriba y en grande: barra de avance, cuatro pasos numerados de 19 px (hecho con paloma verde, el actual en violeta y negrita) y, debajo y chicos, los cuatro huecos. Captura `sin-13-disenos-armando` rehecha.
+
+## Aceptación final y alcance de la primera fase (2026-10-05, noche)
+
+El founder: «perfecto, acepto prototipo, solo debemos considerar caso en el que no hay tokens o la ia no está disponible para generar cartel, deberíamos eliminar esa opción desde el inicio. De hecho para una primera fase, tal vez es mejor lanzar sin creador de cartel, luego lo integramos.»
+
+- **Primera fase: sin creador de cartel.** El prototipo abre así por defecto: tras «No tengo cartel» no hay casilla, «Revisa» no lleva renglón de cartel y el botón es «Publicar». Capturas `sin-1-fase1-nombre`, `sin-2-fase1-revisar`, `sin-3-fase1-publicado`. Recorrido sin cartel, un día, fin a dos horas, lugar del directorio y gratis: 8 toques y 2 escrituras.
+- **Fase posterior** (casilla «Con creador de cartel» en la tira del prototipo): todo lo diseñado se conserva (casilla «Hazme un cartel», renglón en «Revisa», cuatro diseños, «Ver otros» con su espera, «Publicar sin cartel», descargar, y hacerlo al editar un evento sin cartel).
+- **Regla para cuando exista:** si no hay cupo o el servicio no está disponible, la opción no aparece desde el inicio.
+- «Descargar el cartel» se queda en la primera fase solo para eventos con cartel subido.
+
+Plan de construcción, ajustado: 1) selector de día y hora en dos (OL-298, entregado, PR #373); 2) armazón por pasos y camino sin cartel; 3) camino con cartel; 4) «Dónde» con mapa y sitio fuera del directorio; 5) «Publicado» con «Compartir» y «Descargar». Fuera de la primera fase: creador de cartel, exposición/festival/taller (piden modelo de datos), guardar lo contestado y crear sin conexión, lugar y artista por pasos.
+
+**Análisis para lugar y artista:** a pedido del founder, antes de construir, `docs/rediseno/54-lugar-y-artista-por-pasos.md` (qué aplica del canon, recorridos propuestos, costos en toques y datos que hoy se publican sin leerse).

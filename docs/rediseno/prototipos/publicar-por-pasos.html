@@ -164,6 +164,7 @@ ul { list-style: none; }
 @media (prefers-reduced-motion: no-preference) { .hoja { animation: sube 0.22s ease-out; } @keyframes sube { from { transform: translateY(24px); opacity: 0.6; } } }
 /* ---- Propio de este prototipo (OL-295, bitácora 323): un paso por pantalla, con el botón pegado abajo. ---- */
 .tira { grid-template-columns: minmax(0, 1fr); }
+.tira label { white-space: normal; }
 .tira output { font-size: var(--letra-xs); font-variant-numeric: tabular-nums; }
 .app { grid-template-rows: auto auto minmax(0, 1fr) auto; }
 .barra { grid-template-columns: auto 1fr auto; column-gap: var(--espacio-3); }
@@ -215,12 +216,24 @@ button.renglon { cursor: pointer; }
 .diseno b { font-size: var(--letra-lg); font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; overflow-wrap: anywhere; }
 .diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
 /* Lo que falta por completar: punteado marcado y en el color de acción (founder, 2026-10-05). */
-/* Por completar: en violeta solo la línea (1,5 px, guiones de 6 con 8 de aire) y la acción; el valor, en tinta (founder, 2026-10-05). */
-.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%236d34c8' stroke-width='3' stroke-dasharray='6 8'/%3E%3C/svg%3E"); background-origin: border-box; }
+/* Por completar: línea gris fina con algo más de aire (guion 4, aire 5; provisional hasta que el founder elija) y solo la acción en violeta. */
+.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%235c5c5c' stroke-width='2' stroke-dasharray='4 5'/%3E%3C/svg%3E"); background-origin: border-box; }
 .renglon.aparte { margin-top: var(--espacio-4); }
 .horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
 .renglon.sin-clave { min-height: var(--toque); }
+.armando { display: grid; gap: var(--espacio-6); }
+/* El proceso es lo que se mira: pasos grandes arriba, con su avance; los cuatro huecos, chicos y abajo. */
+.barra-armar { height: 6px; border-radius: var(--radio-pildora); background: var(--fondo-suave); overflow: hidden; }
+.barra-armar i { display: block; height: 100%; border-radius: var(--radio-pildora); background: var(--primario); transition: width 0.7s linear; }
+.armando ol { display: grid; gap: var(--espacio-4); margin: 0; padding: 0; list-style: none; }
+.armando li { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; font-size: var(--letra-xl); line-height: 1.2; color: var(--texto-suave); }
+.armando .marca { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--fondo-suave); font-size: var(--letra-md); font-weight: 700; }
+.armando li.hecho { color: var(--texto); } .armando li.hecho .marca { background: var(--ok-suave); color: var(--ok); } .armando li.hecho svg { width: 22px; height: 22px; stroke-width: 2.6; }
+.armando li.ahora { color: var(--texto); font-weight: 800; } .armando li.ahora .marca { background: var(--primario); color: var(--primario-texto); }
+.disenos.fantasma { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); }
+.disenos.fantasma span { aspect-ratio: 4 / 5; border-radius: var(--radio-chico, 4px); background: var(--fondo-suave); }
+@media (prefers-reduced-motion: no-preference) { .armando li.ahora .marca { animation: late 0.5s ease-in-out infinite alternate; } .disenos.fantasma span { animation: late 0.9s ease-in-out infinite alternate; } .disenos.fantasma span:nth-child(2) { animation-delay: 0.2s; } .disenos.fantasma span:nth-child(3) { animation-delay: 0.4s; } .disenos.fantasma span:nth-child(4) { animation-delay: 0.6s; } }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
 .final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
@@ -234,6 +247,10 @@ button.renglon { cursor: pointer; }
   .cae > *:nth-child(2) { animation-delay: 0.08s; } .cae > *:nth-child(3) { animation-delay: 0.16s; } .cae > *:nth-child(4) { animation-delay: 0.24s; } .cae > *:nth-child(5) { animation-delay: 0.32s; }
   .final .sello-ok { animation: sella 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
   .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; }
+  /* Un rebote leve, una sola vez, en lo que falta por completar (founder, 2026-10-05). Va después de la entrada de la pantalla. */
+  .pagina.entra .renglon.pendiente, .pagina.vuelve .renglon.pendiente { animation: entra 0.2s ease-out both, rebote 0.5s 0.45s ease-out 1; }
+  .pagina.vuelve .renglon.pendiente { animation-name: vuelve, rebote; }
+  @keyframes rebote { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-5px); } 65% { transform: translateY(2px); } }
   @keyframes entra { from { transform: translateX(28px); opacity: 0; } }
   @keyframes vuelve { from { transform: translateX(-28px); opacity: 0; } }
   @keyframes cae { from { transform: translateY(-10px); opacity: 0; } }
@@ -271,6 +288,7 @@ button.renglon { cursor: pointer; }
     <option value="programa">Cartel de un festival con 3 eventos</option>
     <option value="taller">Cartel de un taller con 4 sesiones</option>
   </select>
+  <label><input type="checkbox" id="creador">Con creador de cartel (fase posterior)</label>
   <output id="cuenta" aria-live="polite"></output>
 </div>
 
@@ -300,7 +318,7 @@ const LEIDO = {
 const PROGRAMA = [['Concierto de Trío Bruma', '7 de noviembre · 18:00 · Centro de las Artes'], ['Taller de gráfica en vivo', '8 de noviembre · 11:00 · Museo Federico Silva'], ['Proyección: Cortos del Altiplano', '8 de noviembre · 19:30 · Cineteca Alameda']];
 const SITIOS = [['Centro de las Artes', 'Lugar del directorio · Calz. de Guadalupe 705'], ['Centro Cultural Bicentenario', 'Lugar del directorio · Av. Sierra Leona 550'], ['Centro Histórico, Jardín de San Juan de Dios', 'Del mapa · no está en el directorio']];
 let caso = 'legible', e;
-function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, flyer: null, mapa: false, fuera: false, editar: null }; }
+function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, tanda: 0, armando: null, flyer: null, mapa: false, fuera: false, editar: null }; }
 
 // Los pasos se arman con lo que falta: lo ya leído no se pregunta.
 function pasos() {
@@ -322,6 +340,8 @@ const sigue = () => (e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : 
 
 const mini = (grande) => `<div class="cartel-mini" style="--tono:${e.d.tono}">${LEIDO[caso].nombre || 'Tu cartel'}</div>`;
 const MAPA = `<svg viewBox="0 0 390 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa"><rect width="390" height="300" fill="#eef0ec"/><g fill="#e3e6df"><rect x="-10" y="-10" width="112" height="82"/><rect x="122" y="-10" width="120" height="82"/><rect x="262" y="-10" width="140" height="82"/><rect x="-10" y="92" width="112" height="120"/><rect x="262" y="92" width="140" height="120"/><rect x="-10" y="232" width="252" height="80"/><rect x="262" y="232" width="140" height="80"/></g><rect x="122" y="92" width="120" height="120" rx="6" fill="#d5e3cf"/><path d="M195 190s-30-27-30-52a30 30 0 0 1 60 0c0 25-30 52-30 52z" fill="#fff" stroke="#6d34c8" stroke-width="3" stroke-dasharray="7 5"/><circle cx="195" cy="138" r="9" fill="#6d34c8"/></svg>`;
+const CREADOR = () => $('#creador').checked;
+const casilla = () => `<button class="casilla" role="checkbox" aria-checked="${e.quiereFlyer}" data-a="quiere-flyer"><span class="cuadro">${e.quiereFlyer ? ic('ok') : ''}</span><span><b>Hazme un cartel</b><small>Con los datos que escribas; al final eliges entre 4 diseños</small></span></button>`;
 const FALTA = { cuando: 'Falta el día y la hora', donde: 'Falta el lugar', cuanto: 'Falta el precio', quien: 'Sin artista' };
 // Sin etiqueta a la vista (founder, 2026-10-05): el icono y el valor dicen de qué se trata; la clave queda para lectores de pantalla.
 const renglon = (i, clave, valor, campo) => `<button class="renglon sin-clave ${valor ? '' : 'pendiente'}" data-editar="${campo}" aria-label="${clave}: ${valor || FALTA[campo]}">${ic(i)}<b>${valor || FALTA[campo]}</b><span class="accion">${valor ? 'Cambiar' : 'Poner'}</span></button>`;
@@ -338,9 +358,9 @@ const VISTAS = {
   nombre: () => ({
     titulo: 'Publicar', pregunta: '¿Cómo se llama?',
     cuerpo: `<div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="${e.d.nombre}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" data-de="nombre" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
-      <button class="casilla" role="checkbox" aria-checked="${e.quiereFlyer}" data-a="quiere-flyer"><span class="cuadro">${e.quiereFlyer ? ic('ok') : ''}</span><span><b>Hazme un cartel</b><small>Con los datos que escribas; al final eliges entre 4 diseños</small></span></button>`,
+      ${CREADOR() ? casilla() : ''}`,
     pie: `<button class="btn" data-a="sigue" ${e.d.nombre.trim() ? '' : 'disabled'}>${e.d.nombre.trim() ? 'Siguiente' : 'Falta el nombre'}</button>`,
-    notas: ['Tras decir «No tengo cartel», la opción «Hazme un cartel» está a la vista desde el primer paso, como una casilla que se marca. No estorba: se puede seguir sin tocarla.', 'Una pregunta por pantalla, con el campo ya enfocado y el botón pegado sobre el teclado: nada queda tapado.', 'El botón dice qué falta, como en el canon actual.'],
+    notas: ['Primera fase (founder, 2026-10-05): se lanza SIN creador de cartel. Marca arriba «Con creador de cartel» para ver la fase posterior: la casilla «Hazme un cartel» aquí, el renglón en «Revisa» y los cuatro diseños.', 'Cuando exista el creador: si no hay cupo o el servicio no está disponible, la opción no aparece desde el inicio; nunca se ofrece algo que luego no se puede cumplir.', 'Una pregunta por pantalla, con el campo ya enfocado y el botón pegado sobre el teclado: nada queda tapado.', 'El botón dice qué falta, como en el canon actual.'],
   }),
   dia: () => ({
     titulo: 'Publicar', pregunta: '¿Qué día es?',
@@ -378,11 +398,16 @@ const VISTAS = {
     pie: '',
     notas: ['Las tres opciones ya aceptadas en el prototipo de Eventos, ahora como un paso propio.', 'Si el mapa dice que es un bar, un café o un restaurante, «Guardarlo como lugar» no se ofrece.'],
   }),
-  flyer: () => ({
-    titulo: 'Tu cartel', pregunta: 'Elige un diseño',
-    cuerpo: `<div class="disenos">${['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
+  flyer: () => (e.armando !== null ? {
+    titulo: 'Tu cartel', pregunta: 'Armando otros cuatro',
+    cuerpo: `<div class="armando" role="status"><div class="barra-armar"><i style="width:${Math.round(((e.armando + 0.5) / ARMAR.length) * 100)}%"></i></div><ol>${ARMAR.map((t, i) => `<li class="${i < e.armando ? 'hecho' : i === e.armando ? 'ahora' : ''}"><span class="marca">${i < e.armando ? ic('ok') : i + 1}</span>${t}</li>`).join('')}</ol><div class="disenos fantasma">${'<span></span>'.repeat(4)}</div></div>`,
     pie: '',
-    notas: ['Cuatro diseños ya rellenos con los datos del evento (doc 52: plantillas hechas de antemano, formato de publicación 4:5). Aquí son marcadores de color.', 'Elegir uno vuelve a «Revisa» con el cartel puesto.'],
+    notas: ['Pedido del founder (2026-10-05): «Ver otros» tarda a propósito unos segundos y enseña el trabajo que hay detrás, para que se sienta que pedir más cuesta esfuerzo (el umbral de Doherty al revés).', 'Los pasos que se muestran deben ser los que de verdad hace el sistema al armar cuatro carteles; si un día «Ver otros» tiene costo, aquí es donde se dice cuántos quedan.'],
+  } : {
+    titulo: 'Tu cartel', pregunta: 'Elige un diseño',
+    cuerpo: `<div class="disenos">${[['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'], ['#1d4a3a', '#f0c23b', '#2b3f7a', '#c4477a'], ['#7a2e1d', '#e9e4da', '#143a4a', '#5a3b8c']][e.tanda % 3].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
+    pie: `<button class="btn sec" data-a="otros">Ver otros</button><button class="quieto" data-a="sin-flyer-publicar">Publicar sin cartel</button>`,
+    notas: ['Si ninguno gusta (founder, 2026-10-05): «Ver otros» trae otros cuatro y «Publicar sin cartel» deja salir; el cartel se puede hacer después desde editar. Sin editor de colores ni letras.', 'Cuatro diseños ya rellenos con los datos del evento (doc 52: plantillas hechas de antemano, formato de publicación 4:5). Aquí son marcadores de color.', 'Elegir uno vuelve a «Revisa» con el cartel puesto.'],
   }),
   cuanto: () => ({
     titulo: 'Publicar', pregunta: '¿Cuánto cuesta?',
@@ -407,10 +432,10 @@ const VISTAS = {
       titulo: 'Revisa',
       cuerpo: `<div class="cabeza-revisar ${conCartel ? '' : 'sin'}">${conCartel ? mini() : ''}<div>${conCartel ? `<span class="leido">${ic('ok')}Leído del cartel</span>` : ''}<h1>${d.nombre}</h1></div></div>
         <div class="grupo ${e.dir === 'entra' ? 'cae' : ''}">${renglon('reloj', 'Cuándo', d.cuando, 'cuando')}${renglon('pin', 'Dónde', d.donde, 'donde')}${renglon('boleto', 'Cuánto', d.cuanto, 'cuanto')}${d.quien ? renglon('personas', 'Quién', d.quien, 'quien') : ''}</div>
-        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Cartel: diseño ${e.flyer + 1}</b><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon sin-clave pendiente aparte" data-a="flyer">${ic('camara')}<b>Falta elegir el diseño del cartel</b><span class="accion">Elegir</span></button>` : `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Sin cartel</b><span class="accion">Hacer uno</span></button>`}
+        ${conCartel || !CREADOR() ? '' : e.flyer !== null ? `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Cartel: diseño ${e.flyer + 1}</b><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon sin-clave pendiente aparte" data-a="flyer">${ic('camara')}<b>Falta elegir el diseño del cartel</b><span class="accion">Elegir</span></button>` : `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Sin cartel</b><span class="accion">Hacer uno</span></button>`}
         <button class="quieto" data-a="mas">Agregar artistas, descripción o enlace</button>`,
-      pie: e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
-      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
+      pie: CREADOR() && e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
+      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'Lo que falta da un rebote leve al llegar a la pantalla, una sola vez; con «reducir movimiento» no se mueve.', 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
     };
   },
   publicado: () => {
@@ -431,6 +456,8 @@ const VISTAS = {
   },
 };
 
+const ARMAR = ['Leyendo los datos del evento', 'Acomodando el título y la fecha', 'Probando colores y composiciones', 'Revisando que todo se lea'];
+function armar() { e.armando++; if (e.armando >= ARMAR.length) { clearInterval(armar.t); e.armando = null; e.tanda++; } e.dir = 'fija'; pintar(); }
 function hojaFecha() {
   if (e.hoja === 'cal') {
     const dias = '<span></span>'.repeat(6) + Array.from({ length: 30 }, (_, k) => { const n = k + 1, ext = n === e.calIni || n === e.calFin, den = e.calFin !== null && n > e.calIni && n < e.calFin; return `<button class="dia ${ext ? 'extremo' : den ? 'dentro' : ''}" data-dia="${n}" ${n < 6 ? 'disabled' : ''}>${n}</button>`; }).join('');
@@ -460,7 +487,7 @@ function pintar(foco) {
   if (c && (foco || e.dir !== 'fija')) { c.focus({ preventScroll: true }); c.setSelectionRange?.(c.value.length, c.value.length); }
   if (p === 'leyendo') { clearTimeout(pintar.t); pintar.t = setTimeout(() => ir(e.i + 1), 1100); }
 }
-function reiniciar() { clearTimeout(pintar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
+function reiniciar() { clearTimeout(pintar.t); clearInterval(armar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
 
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-fin],[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar],[data-uso],[data-diseno],[data-inicio]');
@@ -492,6 +519,8 @@ document.addEventListener('click', (ev) => {
   if (a === 'sug-no') { e.sug = 'no'; e.dir = 'fija'; return pintar(); }
   if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
   if (a === 'quiere-flyer') { e.quiereFlyer = !e.quiereFlyer; e.dir = 'fija'; return pintar('#nombre'); }
+  if (a === 'otros') { e.armando = 0; e.dir = 'fija'; pintar(); clearInterval(armar.t); armar.t = setInterval(armar, 800); return; }
+  if (a === 'sin-flyer-publicar') { e.quiereFlyer = false; e.flyer = null; e.editar = null; return ir(pasos().length - 1); }
   if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
   if (a === 'descargar') { e.bajado = true; e.dir = 'fija'; return pintar(); }
   e.dir = 'fija'; if (a === 'mas' || a === 'compartir') return pintar();
@@ -503,6 +532,7 @@ document.addEventListener('input', (ev) => {
   e.dir = 'fija'; pintar('#' + id);
 });
 $('#caso').addEventListener('change', reiniciar);
+$('#creador').addEventListener('change', reiniciar);
 const inicial = location.hash.slice(1); if ([...$('#caso').options].some((o) => o.value === inicial)) $('#caso').value = inicial;
 reiniciar();
 </script>

@@ -1272,3 +1272,24 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 - **Pendiente del founder:** probar en su iPhone el texto largo («Editar novedad»), el calendario «Cuándo» y el alta de lugar con el tipo nuevo; decidir si algún lugar pasa de «Otro» a «Plaza, jardín o parque».
 - **Sigue:** segunda vuelta del prototipo de Eventos (taller con sesiones, festival con programa completo) y, después, el prototipo de publicar por pasos (doc 51), con la puerta «No tengo cartel» abierta para el generador de flyers (doc 52).
 - **Siguientes libres: OL-292 y bitácora 320.**
+
+**Jornada del gestor IV, 2026-10-05 (noche):**
+
+- **OL-286 aceptada por el founder** (prototipo de Eventos, dos vueltas; PR #365 unido). **OL-293** inventario de las pantallas de publicar (agente; PR #366 unido): línea base del rediseño.
+- **OL-295 · Publicar un evento por pasos (prototipo del gestor), aceptado tras diez vueltas con el founder** (PR #370 y #372 unidos; bitácora 323; doc 51, doc 54). Decisiones firmadas: recuadro «Sube el cartel» chico y botón «No tengo cartel» del mismo ancho; con cartel solo se confirma lo leído; una pregunta por pantalla; día y hora por separado con inicio y fin; confirmar en el mapa el sitio fuera del directorio y «Estoy aquí»; renglones sin etiqueta visible; campo obligatorio por completar con línea gris de 1 px, guion 4 y aire 5, y violeta solo en la acción; rebote leve; sugerencias de día y hora medidas en producción (274 eventos); «Compartir» y «Descargar el cartel» al final. **Primera fase sin creador de cartel**; cuando exista: casilla tras «No tengo cartel», «Ver otros» con espera a propósito, «Publicar sin cartel», y no ofrecerlo si no hay cupo o servicio. Crear sin conexión y el borrador: con la construcción del flujo, no antes.
+- **Publicadas con el «publica» del founder, CI en verde:**
+
+  | Pieza | PR | Unión | Notas |
+  | --- | --- | --- | --- |
+  | OL-292 medición `s13` estable | #367 | `b57f947a` | Solo el guion de medir |
+  | OL-294 aviso del navegador al recargar con cambios | #368 | `231a4cb1` | No reactiva el borrador (apagado a propósito, bitácoras 044 y 049). La primera CI «falló» porque GitHub no asignó máquina al job |
+  | OL-296 la guardia sigue tras un error del servidor | #369 | `cf0d39cd` | Dependía de #368 |
+  | OL-298 selector de día y hora en dos hojas | #373 | `30d67579` | Varios días sin hora de fin: no se muestra el 23:59. Falta probar en iPhone |
+  | OL-297 canon de campos por completar y renglones sin etiqueta | #371 | `59d99204` | Opción 2 del founder; «Falta el lugar»; Editar perfil intacto |
+
+  Production en `59d99204`, `success`; dominio 200.
+- **En curso (agentes):** OL-299 / bitácora 327, rama `datos-sin-leer` (artista sin pista ya no queda como «Música»; lugar sin ciudad ya no cae en San Luis Potosí); **OL-300 / bitácora 328, rama `armazon-por-pasos`** (armazón de pasos y camino «No tengo cartel» del alta de evento, en una ruta nueva sin enlazar; modelo Opus).
+- **Plan de construcción de la primera fase** (una pieza a la vez, cada una con su «publica» y su prueba en el iPhone del founder): 1) selector en dos, hecho; 2) armazón y camino sin cartel (OL-300); 3) camino con cartel; 4) «Dónde» con mapa y sitio fuera del directorio; 5) «Publicado» con «Compartir» y «Descargar»; al final, cambio de la ruta y retiro del formulario viejo. Después: lugar y artista por pasos (doc 54), creador de cartel (doc 52), exposición/festival/taller, sin conexión.
+- **Exigencia del founder para todo el código de la serie:** «procede con extremo cuidado, como siempre maquetación impecable, sin sobre anidación, codigo limpio». El gestor lee marcado y CSS de cada entrega y prueba con el teclado real antes de pedir el «publica».
+- **Sin confirmar en un iPhone real:** texto largo con teclado (OL-288), calendario a 320 (OL-282), selector en dos (OL-298), canon de campos (OL-297), aviso `beforeunload` (se espera que Safari no lo muestre).
+- **Siguientes libres: OL-301 y bitácora 329.**
