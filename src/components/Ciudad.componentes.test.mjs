@@ -20,25 +20,42 @@ before(async () => {
   const mocks = {
     "next/link": "import React from 'react';export const useLinkStatus=()=>({pending:false});export default function Link({children,replace,...p}){return React.createElement('a',p,children)}",
     "next/navigation": "const router={replace:(href)=>{window.qa.replaces.push(href);history.replaceState(null,'',href);window.elegirDesdeRouter?.()}};export const useRouter=()=>router;export const usePathname=()=>location.pathname;export const useSearchParams=()=>new URLSearchParams(location.search);",
+    "@/app/lugares/acciones": "export const cambiarSeguimiento=()=>new Promise(r=>window.qa.completarSeguir=r);",
+    "@/app/artistas/acciones": "export const cambiarSeguimientoArtista=async()=>true;",
+    "./ConsentimientoAvisos": "export default function ConsentimientoAvisos(){return null}",
   };
   await build({
     absWorkingDir: root, bundle: true, outfile: join(dir, "app.js"), define: { "process.env.NODE_ENV": '"development"' },
     stdin: { resolveDir: root, loader: "tsx", contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
       import Ciudad from './src/components/Ciudad';import './src/app/globals.css';
+      import PantallaConAviso,{useCanalDePantalla} from './src/components/useCanalDeListas';
+      import {useSeguirEnLista} from './src/components/useSeguirEnLista';
       const params=new URLSearchParams(location.search);
       const seccion=params.get('seccion')||'eventos';
       const catalogo=seccion==='artistas'?${JSON.stringify(artistas)}:params.has('muchas')?${JSON.stringify(artistas.map(c => ({ ...c, artistas: undefined })))}:${JSON.stringify([SLP, QRO, GDL, AGS])};
+      const seguidos=[];const avisos={cuenta:'cuenta-de-prueba',preguntado:true,correo:'a...@example.com',llavePush:''};
+      function SeguirDePrueba(){
+        const seguir=useSeguirEnLista('lugar',seguidos,avisos,useCanalDePantalla());
+        const b=seguir.boton('museo','Museo de prueba');
+        return <><button aria-label={b.nombreAccesible} onClick={b.alTocar}>Seguir</button>{seguir.extras}</>;
+      }
       function App(){
         const [slug,setSlug]=React.useState(params.get('ciudad')||'san-luis-potosi');
-        window.elegirDesdeRouter=()=>setSlug(new URLSearchParams(location.search).get('ciudad')||'san-luis-potosi');
+        const [pantalla,setPantalla]=React.useState(params.get('pantalla'));
+        const [,repintar]=React.useState(0);
+        const resolver=()=>setSlug(new URLSearchParams(location.search).get('ciudad')||'san-luis-potosi');
+        window.elegirDesdeRouter=()=>{if(params.has('esperar')){window.qa.completarCiudad=resolver;repintar(n=>n+1)}else resolver()};
+        window.qa.cambiarRuta=(href,otraPantalla=pantalla)=>{history.replaceState(null,'',href);setPantalla(otraPantalla);resolver();repintar(n=>n+1)};
+        React.useEffect(()=>{const volver=()=>{resolver();repintar(n=>n+1)};window.addEventListener('popstate',volver);return()=>window.removeEventListener('popstate',volver)},[]);
         const ciudad=catalogo.find(c=>c.slug===slug)||catalogo[0];
-        return <Ciudad ciudad={ciudad} ciudades={catalogo} seccion={seccion} hrefDe={c=>'?seccion='+seccion+'&ciudad='+c.slug}/>;
+        const contenido=<><Ciudad ciudad={ciudad} ciudades={catalogo} seccion={seccion} hrefDe={c=>{const p=new URLSearchParams(location.search);p.set('seccion',seccion);p.set('ciudad',c.slug);return '?'+p.toString()}}/>{params.has('seguir')&&<SeguirDePrueba/>}</>;
+        return pantalla==='inicio'||pantalla==='lugares'?<PantallaConAviso key={pantalla==='inicio'?slug:'lugares'}>{contenido}</PantallaConAviso>:contenido;
       }
       createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);
     ` },
     plugins: [{ name: "router", setup(b) {
-      b.onResolve({ filter: /^next\// }, a => a.path in mocks ? { path: a.path, namespace: "mock" } : undefined);
+      b.onResolve({ filter: /^(next\/|@\/app\/|\.\/ConsentimientoAvisos$)/ }, a => a.path in mocks ? { path: a.path, namespace: "mock" } : undefined);
       b.onLoad({ filter: /.*/, namespace: "mock" }, a => ({ contents: mocks[a.path], loader: "js", resolveDir: root }));
     } }],
   });
@@ -63,7 +80,7 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(t, { ancho = 390, seccion = "eventos", permiso = "prompt", punto, edad = 0, ciudad, marcada, resultado = "bien", storage = true, muchas = false } = {}) {
+async function abrir(t, { ancho = 390, seccion = "eventos", permiso = "prompt", punto, edad = 0, ciudad, marcada, resultado = "bien", storage = true, muchas = false, pantalla, esperar = false, seguir = false } = {}) {
   const context = await browser.newContext({ viewport: { width: ancho, height: 844 } });
   t.after(() => context.close());
   await context.addInitScript(({ permiso, punto, edad, marcada, resultado, storage }) => {
@@ -89,12 +106,120 @@ async function abrir(t, { ancho = 390, seccion = "eventos", permiso = "prompt", 
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
-  await page.goto(`${origin}/?seccion=${seccion}${ciudad ? `&ciudad=${ciudad}` : ""}${muchas ? "&muchas=1" : ""}`);
-  await page.locator("#root button").waitFor();
+  await page.goto(`${origin}/?seccion=${seccion}${ciudad ? `&ciudad=${ciudad}` : ""}${muchas ? "&muchas=1" : ""}${pantalla ? `&pantalla=${pantalla}` : ""}${esperar ? "&esperar=1" : ""}${seguir ? "&seguir=1" : ""}`);
+  await page.locator('#root > button[aria-haspopup="dialog"]').waitFor();
   return page;
 }
-const abrirHoja = async page => { await page.locator("#root button").click(); await page.getByRole("dialog").waitFor(); };
+const abrirHoja = async page => { await page.locator('#root > button[aria-haspopup="dialog"]').click(); await page.getByRole("dialog").waitFor(); };
 const filas = page => page.getByRole("dialog").locator("li button");
+
+const avisoCiudad = page => page.getByRole("status").filter({ hasText: /^Ciudad cambiada a / });
+async function elegirCiudad(page, nombre = "Querétaro") {
+  await abrirHoja(page);
+  await page.getByRole("dialog").getByRole("button", { name: new RegExp(nombre) }).click();
+}
+
+test("aviso manual único: espera ciudad y ruta resueltas, incluso con el remonte de Inicio", async t => {
+  for (const pantalla of ["inicio", "lugares"]) {
+    const page = await abrir(t, { pantalla, esperar: true, ciudad: SLP.slug });
+    await page.evaluate(() => {
+      window.qa.anuncios = [];
+      new MutationObserver(records => {
+        for (const r of records) for (const n of r.addedNodes) {
+          if (n.nodeType === 1 && n.matches('[role="status"]')) window.qa.anuncios.push(n.textContent);
+        }
+      }).observe(document.getElementById("root"), { childList: true, subtree: true });
+    });
+    assert.equal(await avisoCiudad(page).count(), 0, "entrada sin aviso");
+    await elegirCiudad(page);
+    assert.equal(new URL(page.url()).searchParams.get("ciudad"), QRO.slug);
+    assert.equal(await page.locator("#root > button").innerText(), SLP.nombre, "ruta anunciada, datos todavía anteriores");
+    assert.equal(await avisoCiudad(page).count(), 0, "no confirma antes de resolver la ciudad");
+    await page.evaluate(() => window.qa.completarCiudad());
+    await avisoCiudad(page).waitFor();
+    assert.equal(await avisoCiudad(page).innerText(), "Ciudad cambiada a Querétaro");
+    assert.equal(await avisoCiudad(page).count(), 1);
+    assert.equal(await avisoCiudad(page).getByRole("button").count(), 0);
+    assert.deepEqual(await page.evaluate(() => window.qa.anuncios), ["Ciudad cambiada a Querétaro"], "StrictMode no lo anuncia dos veces");
+    await page.evaluate(() => window.qa.cambiarRuta(location.href));
+    assert.deepEqual(await page.evaluate(() => window.qa.anuncios), ["Ciudad cambiada a Querétaro"], "marca consumida una sola vez");
+  }
+});
+
+test("misma ciudad, preferencia, GPS, entrada explícita y recarga no anuncian cambio", async t => {
+  const misma = await abrir(t, { pantalla: "inicio", ciudad: SLP.slug });
+  await elegirCiudad(misma, SLP.nombre);
+  assert.equal(await avisoCiudad(misma).count(), 0);
+  assert.deepEqual(await misma.evaluate(() => window.qa.replaces), []);
+  for (const opciones of [{ marcada: QRO.slug }, { punto: QRO.centro }, { ciudad: QRO.slug }]) {
+    const page = await abrir(t, { pantalla: "inicio", ...opciones });
+    await page.getByRole("button", { name: QRO.nombre, exact: true }).waitFor();
+    assert.equal(await avisoCiudad(page).count(), 0);
+  }
+  const page = await abrir(t, { pantalla: "lugares", ciudad: SLP.slug });
+  await elegirCiudad(page);
+  await avisoCiudad(page).waitFor();
+  assert.deepEqual(await page.evaluate(() => Object.keys(localStorage).filter(k => k.includes("ciudad"))), ["sn:ciudad-elegida"], "aviso efímero, sin marca persistida");
+  await page.reload();
+  await page.getByRole("button", { name: QRO.nombre, exact: true }).waitFor();
+  assert.equal(await avisoCiudad(page).count(), 0);
+});
+
+test("Agenda, Artistas y Buscar conservan su cambio sin aviso", async t => {
+  for (const [pantalla, seccion] of [["agenda", "eventos"], ["artistas", "artistas"], ["buscar", "buscar"]]) {
+    const page = await abrir(t, { pantalla, seccion, ciudad: SLP.slug });
+    await elegirCiudad(page);
+    await page.getByRole("button", { name: QRO.nombre, exact: true }).waitFor();
+    assert.equal(await avisoCiudad(page).count(), 0);
+  }
+});
+
+test("Atrás y navegación cancelada descartan la confirmación pendiente", async t => {
+  for (const cancelar of ["atras", "otra-ruta"]) {
+    const page = await abrir(t, { pantalla: "inicio", esperar: true, ciudad: SLP.slug });
+    await page.evaluate(() => history.pushState(null, "", location.href));
+    await elegirCiudad(page);
+    assert.equal(await avisoCiudad(page).count(), 0);
+    if (cancelar === "atras") {
+      await page.goBack();
+      await page.waitForURL(u => u.searchParams.get("ciudad") === SLP.slug);
+    } else {
+      await page.evaluate(() => window.qa.cambiarRuta("/?seccion=eventos&ciudad=san-luis-potosi&pantalla=agenda", "agenda"));
+    }
+    await page.evaluate(() => window.qa.completarCiudad());
+    assert.equal(await avisoCiudad(page).count(), 0);
+    await page.evaluate(() => window.qa.cambiarRuta("/?seccion=eventos&ciudad=queretaro&pantalla=inicio", "inicio"));
+    await page.getByRole("button", { name: QRO.nombre, exact: true }).waitFor();
+    assert.equal(await avisoCiudad(page).count(), 0, "volver al destino no resucita un cambio cancelado");
+  }
+});
+
+test("Atrás tampoco deja visible la confirmación de la ciudad que se acaba de abandonar", async t => {
+  const page = await abrir(t, { pantalla: "lugares", ciudad: SLP.slug });
+  await page.evaluate(() => history.pushState(null, "", location.href));
+  await elegirCiudad(page);
+  await avisoCiudad(page).waitFor();
+  await page.goBack();
+  await page.getByRole("button", { name: SLP.nombre, exact: true }).waitFor();
+  assert.equal(await avisoCiudad(page).count(), 0, "el aviso de Querétaro no queda sobre San Luis Potosí");
+});
+
+test("Lugares comparte el aviso con un Seguir real todavía en curso", async t => {
+  for (const guardado of [true, false]) {
+    const page = await abrir(t, { pantalla: "lugares", seguir: true, ciudad: SLP.slug });
+    await page.getByRole("button", { name: "Seguir — Museo de prueba", exact: true }).click();
+    await page.waitForFunction(() => typeof window.qa.completarSeguir === "function");
+    assert.equal(await page.locator('[role="status"], [role="alert"]').count(), 1);
+    await elegirCiudad(page);
+    await avisoCiudad(page).waitFor();
+    assert.equal(await page.locator('[role="status"], [role="alert"]').count(), 1);
+    await page.evaluate(guardado => window.qa.completarSeguir(guardado), guardado);
+    if (!guardado) await page.getByRole("alert").waitFor();
+    assert.equal(await page.locator('[role="status"], [role="alert"]').count(), 1);
+    if (guardado) assert.equal(await avisoCiudad(page).innerText(), "Ciudad cambiada a Querétaro");
+    else assert.equal(await page.getByRole("alert").getByRole("button", { name: "Reintentar" }).count(), 1, "el fallo de Seguir mantiene su salida canónica");
+  }
+});
 
 test("lista directa a 320/390: nota y botones canónicos, selección por replace y foco devuelto", async t => {
   for (const ancho of [320, 390]) {

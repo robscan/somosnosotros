@@ -5,6 +5,18 @@ const nada = () => {};
 const aviso = (de: string, texto: string, fallo = false): Omit<Aviso, "vez"> => ({ texto, boton: nada, de, fallo });
 
 describe("el aviso de abajo de una pantalla", () => {
+  it("un aviso solo de texto comparte reemplazo y cierre con los avisos de acción", () => {
+    const seguir = alAvisar(null, aviso("lista", "Sigues al Museo"));
+    const ciudad = alAvisar(seguir, { texto: "Ciudad cambiada a León", de: "ciudad" });
+    expect(ciudad.boton).toBeUndefined();
+    expect(ciudad.vez).toBe(2);
+    expect(alCerrar(ciudad, seguir.vez)).toBe(ciudad);
+    expect(alLimpiar(ciudad, "lista")).toBe(ciudad);
+    const fallo = alAvisar(ciudad, aviso("lista", "No se pudo guardar", true));
+    expect(fallo.boton).toBe(nada);
+    expect(alCerrar(fallo, ciudad.vez)).toBe(fallo);
+  });
+
   it("el nuevo reemplaza al anterior y cada uno cierra solo el suyo", () => {
     const uno = alAvisar(null, aviso("lista", "Te interesa"));
     expect(uno.vez).toBe(1);
