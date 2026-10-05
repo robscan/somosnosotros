@@ -119,3 +119,12 @@ El founder cuestionó: «Tenemos que seguir poniendo "cuando" "donde" "cuanto" c
 Probado en «Revisa»: los renglones resueltos muestran solo icono, valor y «Cambiar» («Jueves 5 de noviembre · 19:00», «Museo Federico Silva», «Gratis», «Lucía Montaño»). Se entiende sin la clave y cada renglón baja de 60 a 48 px de alto. Lo que falta lo dice el propio valor («Falta el lugar», «Falta el precio», «Falta elegir el diseño del cartel»), porque «Falta» a secas ya no tendría contexto. La clave se conserva como nombre accesible (`aria-label`) para lectores de pantalla. Capturas `legible-2-revisar`, `sin-11-revisar-falta-diseno`, `sin-13-revisar`, `taller-1-revisar`. Sin errores ni desbordes a 320 y 390.
 
 Riesgo anotado: funciona mientras el valor se explica solo; un valor ambiguo (un número suelto, un nombre que puede ser lugar o artista) depende del icono. Por eso el cartel lleva la palabra en el valor («Cartel: diseño 2»).
+
+## Séptima vuelta (2026-10-05, noche): el pendiente, solo línea y acción
+
+El founder: «ok, solo deja en morado elegir y la linea, disminuye grosor, pero aumenta el espacio en blanco entre lineas punteadas» y «con elegir quise decir el accionable». Su «ok» responde a la propuesta de llevar al canon de la app (a) violeta punteado solo para lo obligatorio que falta y (b) renglones sin etiqueta visible.
+
+- **Pendiente:** en violeta solo la línea y la acción de la derecha («Elegir», «Poner», «Buscar»). El valor («Falta elegir el diseño del cartel») va en tinta, y la clave y el icono, en gris. La línea baja a 1,5 px con guiones de 6 y 8 de aire. El punteado de CSS no deja fijar el aire, así que se dibuja con un SVG de fondo (en el prototipo, con el color escrito; en la app habrá que hacerlo con máscara para usar el token).
+- Igual en el prototipo de Eventos. Capturas `sin-11-revisar-falta-diseno` y `eventos-pendiente-en-hoja`. Sin errores ni desbordes a 320 y 390.
+
+**Idea del founder, misma noche:** «Para eventos creados sin cartel, al editar podemos presentar opción de generar cartel.» De acuerdo: editar entra directo a «Revisa», y ahí el renglón «Sin cartel · Hacer uno» ya existe; sirve además para los eventos que hoy no tienen cartel (144 de 273 según la medición del doc 52). Va con la pieza del generador de flyers.

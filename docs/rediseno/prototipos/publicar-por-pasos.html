@@ -215,8 +215,8 @@ button.renglon { cursor: pointer; }
 .diseno b { font-size: var(--letra-lg); font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; overflow-wrap: anywhere; }
 .diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
 /* Lo que falta por completar: punteado marcado y en el color de acción (founder, 2026-10-05). */
-.renglon.pendiente { border: 2px dashed var(--primario); }
-.renglon.pendiente b { color: var(--primario); }
+/* Por completar: en violeta solo la línea (1,5 px, guiones de 6 con 8 de aire) y la acción; el valor, en tinta (founder, 2026-10-05). */
+.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%236d34c8' stroke-width='3' stroke-dasharray='6 8'/%3E%3C/svg%3E"); background-origin: border-box; }
 .renglon.aparte { margin-top: var(--espacio-4); }
 .horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
