@@ -1,5 +1,6 @@
 import { cache, Suspense } from "react";
 import { esUuid } from "@/lib/formulario";
+import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
@@ -68,10 +69,16 @@ const cargarLigadas = cache(async (id: string): Promise<{ perfil_id: string }[]>
  */
 async function cargarArtista(idOSlug: string): Promise<ArtistaConAutor | null> {
   const supabase = await clienteServidor();
-  if (!supabase) return null;
+  if (!supabase) {
+    console.warn("[ficha] cliente no disponible: artista");
+    throw new Error(ERROR_FICHA);
+  }
   const columnas = "id, slug, nombre, disciplina, detalle, tipo, foto, portada, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)";
-  const porSlug = await supabase.from("artistas").select(columnas).eq("slug", idOSlug).maybeSingle();
-  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("artistas").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
+  const data = await leerFicha<ArtistaConAutor>(
+    "artista",
+    () => supabase.from("artistas").select(columnas).eq("slug", idOSlug).maybeSingle(),
+    esUuid(idOSlug) ? () => supabase.from("artistas").select(columnas).eq("id", idOSlug).maybeSingle() : null,
+  );
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
   return { ...(data as unknown as Artista), autor: autor as ArtistaConAutor["autor"] };
@@ -206,7 +213,10 @@ function EsqueletoSeccionFechas() {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
-  const a = await cargarArtista(id);
+  const a = await cargarArtista(id).catch(() => undefined);
+  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotros»), sin
+  // `noindex` ni canonical; si la excepción saliera de aquí Next descartaría todas las etiquetas, también el título (OL-289).
+  if (a === undefined) return {};
   if (!a) return { title: "Artista · Somos Nosotros" };
   const descripcion = etiquetaArtista(a);
   // Del CAPO y sin reclamar (OL-059): mismo interruptor que el sitemap (src/lib/sitemap.ts). Sin esto la ficha seguía
