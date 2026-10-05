@@ -144,3 +144,14 @@ El founder: «ok, solo deja en morado elegir y la linea, disminuye grosor, pero 
 - Sin errores ni desbordes a 320 y 390.
 
 **Corrección del founder a la espera de «Ver otros»:** «el proceso de creación de carteles no se ve, se coloca debajo de skeletons, debe ser el elemento estelar en ese momento.» Ahora el proceso va arriba y en grande: barra de avance, cuatro pasos numerados de 19 px (hecho con paloma verde, el actual en violeta y negrita) y, debajo y chicos, los cuatro huecos. Captura `sin-13-disenos-armando` rehecha.
+
+## Aceptación final y alcance de la primera fase (2026-10-05, noche)
+
+El founder: «perfecto, acepto prototipo, solo debemos considerar caso en el que no hay tokens o la ia no está disponible para generar cartel, deberíamos eliminar esa opción desde el inicio. De hecho para una primera fase, tal vez es mejor lanzar sin creador de cartel, luego lo integramos.»
+
+- **Primera fase: sin creador de cartel.** El prototipo abre así por defecto: tras «No tengo cartel» no hay casilla, «Revisa» no lleva renglón de cartel y el botón es «Publicar». Capturas `sin-1-fase1-nombre`, `sin-2-fase1-revisar`, `sin-3-fase1-publicado`. Recorrido sin cartel, un día, fin a dos horas, lugar del directorio y gratis: 8 toques y 2 escrituras.
+- **Fase posterior** (casilla «Con creador de cartel» en la tira del prototipo): todo lo diseñado se conserva (casilla «Hazme un cartel», renglón en «Revisa», cuatro diseños, «Ver otros» con su espera, «Publicar sin cartel», descargar, y hacerlo al editar un evento sin cartel).
+- **Regla para cuando exista:** si no hay cupo o el servicio no está disponible, la opción no aparece desde el inicio.
+- «Descargar el cartel» se queda en la primera fase solo para eventos con cartel subido.
+
+Plan de construcción, ajustado: 1) selector de día y hora en dos (OL-298, entregado, PR #373); 2) armazón por pasos y camino sin cartel; 3) camino con cartel; 4) «Dónde» con mapa y sitio fuera del directorio; 5) «Publicado» con «Compartir» y «Descargar». Fuera de la primera fase: creador de cartel, exposición/festival/taller (piden modelo de datos), guardar lo contestado y crear sin conexión, lugar y artista por pasos.
