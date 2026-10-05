@@ -81,6 +81,8 @@ async function abrir(t, ancho) {
   t.after(() => assert.deepEqual(errores, []));
   await p.route("**/*", (r) => (new URL(r.request().url()).origin === origin ? r.continue() : r.abort()));
   await p.goto(origin);
+  // El ancho propio de un input (20 caracteres) depende de la letra del sistema: en la CI de Linux pasaba de la tarjeta a 320. Aquí se ensancha a propósito.
+  await p.evaluate(() => { document.querySelector('input[name=nombre]').size = 30; });
   const guardar = async (nombre) => capturas && p.screenshot({ path: join(capturas, `${nombre}-${ancho}.png`), fullPage: true });
   return { p, guardar };
 }
