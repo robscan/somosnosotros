@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparLugares, calleCorta, primerosDeGrupos, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, puntoDeCercania, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
+import { agruparLugares, calleCorta, etiquetaTipo, TIPOS, primerosDeGrupos, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, puntoDeCercania, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -14,6 +14,21 @@ describe("tiposPresentes", () => {
   it("Museo y Escuela entran en el orden de los chips con su etiqueta", () => {
     const l = [{ tipo: "escuela" }, { tipo: "foro" }, { tipo: "museo" }];
     expect(tiposPresentes(l).map((t) => t.etiqueta)).toEqual(["Museo", "Foro", "Escuela"]);
+  });
+});
+
+describe("Plaza, jardín o parque", () => {
+  it("va justo antes de Otro, con su etiqueta, y se cuenta como cualquier tipo", () => {
+    const valores = TIPOS.map((t) => t.valor);
+    expect(valores.at(-2)).toBe("plaza");
+    expect(valores.at(-1)).toBe("otro");
+    expect(etiquetaTipo("plaza")).toBe("Plaza, jardín o parque");
+    const base = { nombre: "Jardín Botánico El Izotal", tipo: "plaza", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "", detalle: "Jardín" };
+    const { datos, errores } = validarLugar(base);
+    expect(errores).toEqual({});
+    expect(datos.tipo).toBe("plaza");
+    expect(datos.detalle).toBeNull();
+    expect(tiposPresentes([{ tipo: "otro" }, { tipo: "plaza" }, { tipo: "museo" }]).map((t) => t.etiqueta)).toEqual(["Museo", "Plaza, jardín o parque", "Otro"]);
   });
 });
 

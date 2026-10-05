@@ -127,6 +127,8 @@ export function deducirTipo(nombre: string, categorias: string[] = []): Tipo | n
   if (/\b(casa de (la )?cultura|centro cultural|centro de las artes|centro de artes)\b/.test(n) || /cultural|community center|arts cent/.test(c)) return "casa_de_cultura";
   if (/\b(teatro|foro|auditorio|theater|theatre)\b/.test(n) || /theat|concert|music venue|performing/.test(c)) return "foro";
   if (/\b(colectivo|taller|cooperativa)\b/.test(n)) return "colectivo";
+  // Al final: «Teatro del Parque» es foro y «Museo del Jardín» es museo; solo el sitio al aire libre cae aquí.
+  if (/\b(plaza|jardin|parque|alameda)\b/.test(n) || /\b(park|garden)\b/.test(c)) return "plaza";
   return null;
 }
 
