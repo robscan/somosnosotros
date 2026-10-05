@@ -47,4 +47,4 @@ export function textoCompartirPersona(nombre: string, eventos: number, mia: bool
 }
 
 /** Texto de la invitación al sitio, desde Mi perfil. */
-export const TEXTO_INVITAR = "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. Gratis, sin cuenta para mirar:";
+export const TEXTO_INVITAR = "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. Sin cuenta para mirar:";

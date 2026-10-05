@@ -27,7 +27,7 @@ export default function Ayuda() {
         </p>
 
         <h2>¿Qué es Somos Nosotros?</h2>
-        <p>Un directorio de los lugares culturales de San Luis Potosí y su agenda de eventos, para que la gente de la ciudad se entere de qué hay y se conozca. Sin fines de lucro; lo publican la administración y quienes se registran.</p>
+        <p>Un directorio de lugares culturales y su agenda de eventos, para que la gente se entere de qué hay en su ciudad y se conozca. Lo publican la administración y quienes se registran.</p>
 
         <h2>¿Cómo publico un evento?</h2>
         <p>Con tu cuenta, toca «Publicar evento», elige el lugar y pon fecha y hora. Si subes una foto del cartel, la app intenta leer el título, la fecha, el lugar y quién se presenta por ti; tú revisas y ajustas antes de publicar.</p>
