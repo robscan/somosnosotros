@@ -236,7 +236,7 @@ test("ajuste: 52 de alto, icono en una columna de 24, chevron y palanca a la der
   assert.equal(await color("ajuste-apagado"), "rgb(92, 92, 92)", "apagado: la etiqueta, en gris");
 });
 
-test("resuelto: la clave sobre el valor, 60 de alto, pendiente con borde discontinuo y abierto con el de tinta", async (t) => {
+test("resuelto: la clave sobre el valor, 60 de alto, pendiente con borde discontinuo de 2 px en el color de acción y abierto con el de tinta", async (t) => {
   const p = await pagina(t);
   const fila = dato(p, "resuelto");
   const caja = await rect(fila);
@@ -251,6 +251,16 @@ test("resuelto: la clave sobre el valor, 60 de alto, pendiente con borde discont
   const estilos = (id) => dato(p, id).evaluate((e) => ({ borde: getComputedStyle(e).borderTopStyle, color: getComputedStyle(e).borderTopColor }));
   assert.equal((await estilos("resuelto")).borde, "solid");
   assert.equal((await estilos("pendiente")).borde, "dashed");
+  // Pendiente (founder, 2026-10-05, OL-297): 2 px en el color de acción, el valor «Falta» también; la clave, el icono y la caja no cambian.
+  const pendiente = dato(p, "pendiente");
+  const detalle = await pendiente.evaluate((e) => {
+    const c = (n) => getComputedStyle(n);
+    return { ancho: c(e).borderTopWidth, color: c(e).borderTopColor, valor: c(e.querySelector("b")).color, clave: c(e.querySelector("small")).color, icono: c(e.firstElementChild).color, accion: c(e.querySelector("button")).color };
+  });
+  assert.deepEqual(detalle, { ancho: "2px", color: "rgb(109, 52, 200)", valor: "rgb(109, 52, 200)", clave: "rgb(92, 92, 92)", icono: "rgb(92, 92, 92)", accion: "rgb(109, 52, 200)" });
+  assert.equal((await rect(pendiente)).h, (await rect(fila)).h, "pasar de 1 a 2 px de borde no cambia el alto del renglón");
+  const xTexto = async (loc) => (await rect(loc.locator("b"))).x;
+  assert.equal(await xTexto(pendiente), await xTexto(fila), "ni mueve el texto");
   assert.equal((await estilos("abierto")).color, "rgb(26, 26, 26)");
   assert.equal((await estilos("resuelto")).color, "rgb(220, 220, 216)");
   const cuerpo = await rect(dato(p, "cuerpo"));

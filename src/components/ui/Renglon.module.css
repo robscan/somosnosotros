@@ -300,7 +300,9 @@
     "foto titulo accion"
     "cuerpo cuerpo cuerpo";
   min-height: 60px;
-  padding: 10px 14px;
+  --relleno-y: 10px;
+  --relleno-x: 14px;
+  padding: var(--relleno-y) var(--relleno-x);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
@@ -327,8 +329,15 @@
   border-radius: 50%;
   object-fit: cover;
 }
+/* Pendiente (founder, 2026-10-05, OL-297): la línea punteada de 2 px y el valor («Falta», «Sin foto») en el color de acción.
+   La clave, el icono y la acción de la derecha no cambian (el `Boton` de texto ya es de ese color; los `BotonIcono` de
+   contorno llevan el glifo en tinta). El grosor extra se descuenta del relleno: la caja mide lo mismo y nada se mueve. */
 .pendiente {
-  border-style: dashed;
+  padding: calc(var(--relleno-y) - 1px) calc(var(--relleno-x) - 1px);
+  border: 2px dashed var(--primario);
+}
+.pendiente > .falta {
+  color: var(--primario);
 }
 .abierto {
   border-color: var(--texto);

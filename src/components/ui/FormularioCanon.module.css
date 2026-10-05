@@ -20,8 +20,10 @@
   pointer-events: none;
 }
 .campo > input {
+  --relleno-fin: 14px;
+  --relleno-ini: 44px;
   min-height: var(--toque);
-  padding: 0 14px 0 44px;
+  padding: 0 var(--relleno-fin) 0 var(--relleno-ini);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
@@ -35,11 +37,18 @@
   border-color: var(--error);
 }
 
-/* El campo vacío se marca como faltante, mismo peso que ".pendiente" en los renglones: borde discontinuo, sin
-   rojo de error (ese color se reserva para un error de verdad, tras intentar publicar). Founder, 2026-09-21:
-   con un cartel sin título el campo del nombre no se veía faltante (OL-113). */
-.campoFalta > input {
-  border-style: dashed;
+/* El campo vacío se marca como faltante, mismo peso que ".pendiente" en los renglones: borde discontinuo de 2 px en el
+   color de acción (founder, 2026-10-05, OL-297: «la línea punteada más acentuada… de color accionable»; el placeholder y la
+   lupa siguen grises), sin rojo de error (ese color se reserva para un error de verdad, tras intentar publicar, y gana si
+   coinciden). Founder, 2026-09-21: con un cartel sin título el campo del nombre no se veía faltante (OL-113). El grosor
+   extra se descuenta del relleno lateral: el texto no se mueve. */
+.campoFalta > input:not([aria-invalid="true"]) {
+  padding-left: calc(var(--relleno-ini) - 1px);
+  padding-right: calc(var(--relleno-fin) - 1px);
+  border: 2px dashed var(--texto);
+}
+.campoFalta > input:not([aria-invalid="true"], :focus) {
+  border-color: var(--primario);
 }
 
 /* 1 bis. El cartel, antes del formulario (firmado por el founder, 2026-09-17). Es lo único que explica la
