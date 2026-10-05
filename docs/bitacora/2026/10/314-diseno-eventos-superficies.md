@@ -45,3 +45,9 @@ Pedido del founder: «agregar elementos al flujo de eventos en caso de ser festi
 - **Taller de varias sesiones.** El alta es la de siempre; «Cuándo» dice «4 sesiones · Sábados de noviembre · 10:00» y al tocarlo se ven las fechas leídas, con «Quitar» en cada una. Se publica un solo taller; su ficha lista las sesiones y marca la que va en otra sede. «Voy» es al taller entero.
 - Capturas `programa-1…4` y `taller-1…4` en `docs/rediseno/capturas-314/` (390×844): revisar con tres marcados, con uno fuera (punteado, «Incluir»), publicados con el festival, ficha del festival; alta del taller, hoja de sesiones, publicado con sus cuatro fechas, ficha con «Sesión n de 4». Sin errores ni desbordes a 320 y 390.
 - Falta en el prototipo: corregir un dato de un evento del programa antes de publicar, y funciones repetidas de una misma obra (H8).
+
+## Firma del founder (2026-10-05, noche)
+
+«Muy bien, me gusta el prototipo, no te corrijo nada de interfaz pues es lo que se viene, en terminos generales bien resueltas las casuísticas para el renglón "donde" te acepto propuestas también.»
+
+Quedan aceptados en prototipo: las sugerencias en punteado (H1, H2, H4), el festival con programa completo (H6), el taller con sesiones (H7), el renglón «Dónde» con sus cinco casos y la elección de un sitio fuera del directorio con sus tres opciones. No corrige la interfaz porque el formulario de publicación se rehará por pasos (doc 51): estas casuísticas son la base de ese prototipo. Nada de esto autoriza código todavía.
