@@ -98,3 +98,16 @@ Cambios:
 Costo medido: sin cartel, con rango de días, fin de hora y cartel hecho por la plataforma, el recorrido de prueba sube a 16 toques y 1 escritura (el camino corto con chips, un día, fin a dos horas, lugar del directorio y gratis son 8 toques y 2 escrituras). La hora de fin suma un toque siempre.
 
 Capturas rehechas (27 del flujo más la de la ficha): nuevas `sin-3-dia`, `sin-4-hoja-calendario`, `sin-5-hoja-calendario-rango` (14 al 16 con su banda), `sin-6-hora`, `sin-7-hora-termina` (19:00 marcada y los chips de fin), `sin-8-hoja-termina` (solo horas desde 19:15), `sin-11-revisar-falta-diseno` (solo línea, valor y acción en violeta). Sin errores ni desbordes a 320 y 390 en los dos prototipos.
+
+## Aceptación del founder (2026-10-05, noche)
+
+«muy bien! me gusta la solución Avancemos». El recorrido por pasos, con sus cinco vueltas, queda como base para construir el alta de evento.
+
+## Plan de construcción propuesto (piezas chicas, cada una con su «publica»)
+
+1. **Partir `ui/SelectorFecha` en dos** (calendario solo, con inicio y fin; lista de horas sola), sin cambiar todavía el alta actual más que en eso. Pedido expreso del founder.
+2. **Armazón del flujo por pasos** del alta de evento (barra con Atrás, avance, pie pegado, transiciones con «reducir movimiento»), con los pasos de nombre, día, hora, dónde, cuánto y «Revisa» para el caso sin cartel.
+3. **Con cartel:** leer → «Revisa» con «Leído del cartel»; solo se pregunta lo que falte.
+4. **Dónde:** confirmar en el mapa (sitio fuera del directorio y «Estoy aquí») y las tres opciones del sitio.
+5. **Publicado:** el final con «Compartir», «Descargar el cartel» y la sugerencia en punteado; «Descargar» también en la ficha del evento.
+6. **Después, con su propio diseño y decisiones:** exposición, festival con programa y taller con sesiones (necesitan modelo de datos: doc `investigaciones/eventos-modelo.md`), el cartel hecho por la plataforma (doc 52), guardar lo contestado y crear sin conexión, y el alta de lugar y de artista por pasos.
