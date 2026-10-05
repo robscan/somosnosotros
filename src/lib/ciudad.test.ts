@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadMasCercana, ciudadPorNombre, ciudadPorSlug, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
+import { destinoDeCiudad, guardarEleccionCiudad, hrefConCiudad, leerEleccionCiudad, altaLejosDeCiudades, armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadInicialCercana, ciudadesDeHoja, ciudadMasCercana, ciudadPorNombre, ciudadPorSlug, filasDeCiudades, ofrecerUbicacionCiudades, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
 
 describe("ciudad", () => {
   it("«Cerca de ti» lleva a la ciudad cuyo centro queda más cerca, y sin lista, a la inicial", () => {
@@ -93,5 +93,127 @@ describe("ciudad", () => {
     expect(c[1]).toMatchObject({ slug: "queretaro", zoom: 13 });
     expect(ciudadPorSlug("guadalajara", c).artistas).toBe(1);
     expect(armarCiudadesDeArtistas([])).toEqual([{ ...CIUDAD_INICIAL, artistas: 0 }]);
+  });
+});
+
+describe("hoja de ciudades (OL-270)", () => {
+  const slp = CIUDAD_INICIAL;
+  const qro = { ...slp, slug: "queretaro", nombre: "Querétaro", centro: { lat: 20.59, lng: -100.39 }, centroConocido: true };
+  const gdl = { ...slp, slug: "guadalajara", nombre: "Guadalajara", centro: { lat: 20.67, lng: -103.35 }, centroConocido: true };
+  const catalogo = [gdl, slp, qro];
+  const lejos = { lat: 40.4, lng: -3.7 };
+  it("la ciudad inicial sigue con centro conocido aunque un doble anterior no lleve la marca", () => {
+    const filas = filasDeCiudades(qro, [slp], slp.centro, "eventos");
+    expect(filas[0]).toMatchObject({ distancia: 0, estasAqui: true });
+    expect(ciudadInicialCercana(qro, [slp], slp.centro, "eventos", false, false)?.slug).toBe(slp.slug);
+    expect(altaLejosDeCiudades(qro, [slp], slp.centro, "eventos")).toBeNull();
+  });
+  it("identifica centros conocidos sin cambiar el respaldo de una ciudad sin lugares", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }]);
+    expect(ciudades.find(c => c.slug === slp.slug)).toMatchObject({ centroConocido: true, centro: slp.centro });
+    expect(ciudades.find(c => c.slug === qro.slug)).toMatchObject({ centroConocido: true, centro: qro.centro });
+    expect(ciudades.find(c => c.slug === "aguascalientes")).toMatchObject({ centroConocido: false, centro: slp.centro });
+  });
+  it("una ciudad sin lugares no da distancia ni aquí y queda detrás de los centros conocidos", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }, { ciudad: "Puebla" }]);
+    const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
+    const filas = filasDeCiudades(aguascalientes, ciudades, slp.centro, "eventos");
+    expect(filas.map(f => f.ciudad.slug)).toEqual([slp.slug, qro.slug, "aguascalientes", "puebla"]);
+    expect(filas.filter(f => !f.ciudad.centroConocido).every(f => f.distancia === null && !f.estasAqui)).toBe(true);
+    expect(ciudadInicialCercana(qro, [aguascalientes], slp.centro, "eventos", false, false)).toBeNull();
+  });
+  it("sin punto conserva la actual primero, conocidos por cercanía y desconocidos al final en su orden", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }, { ciudad: "Puebla" }]);
+    const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
+    expect(filasDeCiudades(slp, ciudades, null, "eventos").map(f => f.ciudad.slug)).toEqual([slp.slug, qro.slug, "aguascalientes", "puebla"]);
+    expect(filasDeCiudades(aguascalientes, ciudades, null, "eventos").map(f => f.ciudad.slug)).toEqual(["aguascalientes", slp.slug, qro.slug, "puebla"]);
+  });
+  it("la oferta de alta ignora centros desconocidos dentro del catálogo ya filtrado", () => {
+    const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }]);
+    const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
+    const soloDesconocida = ciudadesDeHoja(aguascalientes, ciudades, "eventos");
+    expect(altaLejosDeCiudades(aguascalientes, soloDesconocida, slp.centro, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" });
+    expect(altaLejosDeCiudades(aguascalientes, ciudades, slp.centro, "eventos")).toBeNull();
+  });
+  it("filtra cada catálogo por contenido y siempre mantiene la actual vacía", () => {
+    const datos = [
+      { ...slp, lugares: 0, eventos: 0, zona: "America/Mexico_City", centroConocido: true },
+      { ...qro, lugares: 0, eventos: 1, zona: "America/Mexico_City", centroConocido: false },
+      { ...gdl, lugares: 1, eventos: 0, zona: "America/Mexico_City", centroConocido: true },
+    ];
+    expect(ciudadesDeHoja(slp, datos, "eventos").map(c => c.slug)).toEqual([slp.slug, qro.slug]);
+    expect(ciudadesDeHoja(slp, datos, "lugares").map(c => c.slug)).toEqual([slp.slug, gdl.slug]);
+    expect(ciudadesDeHoja(slp, datos, "buscar").map(c => c.slug)).toEqual([slp.slug, qro.slug, gdl.slug]);
+    expect(ciudadesDeHoja(slp, datos.map(c => ({ ...c, artistas: c.eventos })), "artistas").map(c => c.slug)).toEqual([slp.slug, qro.slug]);
+    const filtradas = ciudadesDeHoja(slp, datos, "lugares");
+    expect(ciudadInicialCercana(slp, filtradas, qro.centro, "lugares", false, false)).toBeNull();
+    expect(altaLejosDeCiudades(slp, filtradas, qro.centro, "lugares")).not.toBeNull();
+  });
+  it("ordena sin mutar el catálogo y distingue la cercanía de la selección", () => {
+    expect(filasDeCiudades(qro, catalogo, null, "eventos").map(f => f.ciudad.slug)).toEqual([qro.slug, slp.slug, gdl.slug]);
+    const filas = filasDeCiudades(qro, catalogo, slp.centro, "lugares");
+    expect(filas.map(f => f.ciudad.slug)).toEqual([slp.slug, qro.slug, gdl.slug]);
+    expect(filas.map(f => f.estasAqui)).toEqual([true, false, false]);
+    expect(filas[0].distancia).toBe(0);
+    expect(catalogo).toEqual([gdl, slp, qro]);
+  });
+  it("la frontera de 50 km determina aquí, selección inicial y oferta de alta", () => {
+    const actual = { ...slp, slug: "actual", centro: lejos };
+    const ciudad = { ...qro, centro: { lat: 0, lng: 0 } };
+    for (const [km, dentro] of [[49.999, true], [50, true], [50.001, false]] as const) {
+      const punto = { lat: km / 6371 * 180 / Math.PI, lng: 0 };
+      expect(filasDeCiudades(actual, [ciudad], punto, "eventos")[0].estasAqui).toBe(dentro);
+      expect(!!ciudadInicialCercana(actual, [ciudad], punto, "eventos", false, false)).toBe(dentro);
+      expect(!!altaLejosDeCiudades(actual, [ciudad], punto, "eventos")).toBe(!dentro);
+    }
+  });
+  it("ninguna elección previa se cambia; tampoco la ciudad ya actual ni una ciudad sin centro fiable", () => {
+    expect(ciudadInicialCercana(slp, catalogo, qro.centro, "eventos", false, false)?.slug).toBe(qro.slug);
+    for (const [explicita, marcada] of [[true, false], [false, true], [true, true]]) expect(ciudadInicialCercana(slp, catalogo, qro.centro, "eventos", explicita, marcada)).toBeNull();
+    expect(ciudadInicialCercana(qro, catalogo, qro.centro, "eventos", false, false)).toBeNull();
+    expect(ciudadInicialCercana(slp, catalogo, lejos, "eventos", false, false)).toBeNull();
+    expect(ciudadInicialCercana(slp, catalogo, null, "eventos", false, false)).toBeNull();
+    expect(ciudadInicialCercana(slp, catalogo, qro.centro, "artistas", false, false)).toBeNull();
+    expect(filasDeCiudades(qro, catalogo, slp.centro, "artistas").every(f => f.distancia === null && !f.estasAqui)).toBe(true);
+  });
+  it("ofrece el alta correspondiente solo con un punto lejano; la URL no contiene ubicación", () => {
+    expect(altaLejosDeCiudades(slp, catalogo, lejos, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" });
+    expect(altaLejosDeCiudades(slp, catalogo, lejos, "lugares")).toEqual({ texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" });
+    expect(altaLejosDeCiudades(slp, catalogo, lejos, "artistas")).toBeNull();
+    expect(altaLejosDeCiudades(slp, catalogo, lejos, "buscar")).toBeNull();
+    expect(altaLejosDeCiudades(slp, catalogo, slp.centro, "eventos")).toBeNull();
+    expect(altaLejosDeCiudades(slp, catalogo, null, "eventos")).toBeNull();
+  });
+  it("el botón espera el permiso consultado, sin punto y sin negativa de sesión", () => {
+    expect(ofrecerUbicacionCiudades("eventos", null, false, false)).toBe(true);
+    expect(ofrecerUbicacionCiudades("lugares", null, false, false)).toBe(true);
+    expect(ofrecerUbicacionCiudades("artistas", null, false, false)).toBe(false);
+    expect(ofrecerUbicacionCiudades("eventos", null, null, false)).toBe(false);
+    expect(ofrecerUbicacionCiudades("eventos", null, true, false)).toBe(false);
+    expect(ofrecerUbicacionCiudades("eventos", slp.centro, false, false)).toBe(false);
+    expect(ofrecerUbicacionCiudades("eventos", null, false, true)).toBe(false);
+  });
+});
+
+
+describe("elección y enlaces de ciudad", () => {
+  it("la memoria se restaura solo dentro de la misma ciudad y sección", () => {
+    expect(destinoDeCiudad("/agenda", "/agenda?cuanto=gratis", "leon")).toBe("/agenda?ciudad=leon");
+    expect(destinoDeCiudad("/agenda", "/agenda?ciudad=leon&cuanto=gratis", "leon")).toBe("/agenda?ciudad=leon&cuanto=gratis");
+    expect(destinoDeCiudad("/agenda", "/lugares?ciudad=leon", "leon")).toBe("/agenda?ciudad=leon");
+    expect(destinoDeCiudad("/agenda", "/agenda?cuanto=gratis", "san-luis-potosi")).toBe("/agenda?cuanto=gratis");
+    expect(destinoDeCiudad("/", "/?ciudad=leon&cuanto=gratis", "puebla")).toBe("/?ciudad=puebla");
+  });
+  it("hace explícita incluso San Luis sin perder parámetros de la entrada", () => {
+    expect(hrefConCiudad("/agenda?cuanto=gratis#fecha", "san-luis-potosi")).toBe("/agenda?cuanto=gratis&ciudad=san-luis-potosi#fecha");
+  });
+  it("guarda la elección y soporta almacenamiento inaccesible", () => {
+    const datos = new Map<string,string>();
+    const almacen = {getItem:(k:string)=>datos.get(k)??null,setItem:(k:string,v:string)=>{datos.set(k,v)}};
+    guardarEleccionCiudad("leon", almacen);
+    expect(leerEleccionCiudad(almacen)).toBe("leon");
+    const cerrado = {getItem:()=>{throw Error()},setItem:()=>{throw Error()}};
+    expect(leerEleccionCiudad(cerrado)).toBeNull();
+    expect(() => guardarEleccionCiudad("leon", cerrado)).not.toThrow();
   });
 });

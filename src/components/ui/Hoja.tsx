@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { IconoCerrar } from "./Iconos";
 import styles from "./Hoja.module.css";
@@ -57,7 +57,7 @@ const enServidor = () => false;
 
 export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, children }: Props) {
   const montada = useSyncExternalStore(nada, enNavegador, enServidor);
-  const [marco, setMarco] = useState<{ top: number; height: number } | null>(null);
+  const [marco, setMarco] = useState<{ top: number; height: number; ventana: number } | null>(null);
   const fondo = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const cerrar = useRef(onCerrar);
@@ -118,7 +118,7 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
     const vv = window.visualViewport;
     if (!vv) return;
     // Solo cuando el área visible difiere de la ventana (teclado abierto): el resto del tiempo, inset: 0 del CSS.
-    const ajustar = () => setMarco(Math.abs(vv.height - window.innerHeight) > 1 || vv.offsetTop > 0 ? { top: vv.offsetTop, height: vv.height } : null);
+    const ajustar = () => setMarco(Math.abs(vv.height - window.innerHeight) > 1 || vv.offsetTop > 0 ? { top: vv.offsetTop, height: vv.height, ventana: window.innerHeight } : null);
     ajustar();
     vv.addEventListener("resize", ajustar);
     vv.addEventListener("scroll", ajustar);
@@ -134,7 +134,7 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
   };
   if (!montada) return null;
   return createPortal(
-    <div ref={fondo} className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
+    <div ref={fondo} className={styles.fondo} style={marco ? { top: marco.top, height: marco.ventana, bottom: "auto", "--alto-visible": `${marco.height}px` } as CSSProperties : undefined} onClick={onCerrar}>
       <div ref={panel} tabIndex={-1} className={[styles.hoja, titulo && styles.conCabecera].filter(Boolean).join(" ")} role="dialog" aria-modal="true" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
           <IconoCerrar width={22} height={22} />
