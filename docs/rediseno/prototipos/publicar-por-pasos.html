@@ -215,8 +215,8 @@ button.renglon { cursor: pointer; }
 .diseno b { font-size: var(--letra-lg); font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; overflow-wrap: anywhere; }
 .diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
 /* Lo que falta por completar: punteado marcado y en el color de acción (founder, 2026-10-05). */
-/* Por completar: en violeta solo la línea (1,5 px, guiones de 6 con 8 de aire) y la acción; el valor, en tinta (founder, 2026-10-05). */
-.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%236d34c8' stroke-width='3' stroke-dasharray='6 8'/%3E%3C/svg%3E"); background-origin: border-box; }
+/* Por completar: línea gris fina con algo más de aire (guion 4, aire 5; provisional hasta que el founder elija) y solo la acción en violeta. */
+.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%235c5c5c' stroke-width='2' stroke-dasharray='4 5'/%3E%3C/svg%3E"); background-origin: border-box; }
 .renglon.aparte { margin-top: var(--espacio-4); }
 .horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
@@ -300,7 +300,7 @@ const LEIDO = {
 const PROGRAMA = [['Concierto de Trío Bruma', '7 de noviembre · 18:00 · Centro de las Artes'], ['Taller de gráfica en vivo', '8 de noviembre · 11:00 · Museo Federico Silva'], ['Proyección: Cortos del Altiplano', '8 de noviembre · 19:30 · Cineteca Alameda']];
 const SITIOS = [['Centro de las Artes', 'Lugar del directorio · Calz. de Guadalupe 705'], ['Centro Cultural Bicentenario', 'Lugar del directorio · Av. Sierra Leona 550'], ['Centro Histórico, Jardín de San Juan de Dios', 'Del mapa · no está en el directorio']];
 let caso = 'legible', e;
-function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, flyer: null, mapa: false, fuera: false, editar: null }; }
+function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, tanda: 0, flyer: null, mapa: false, fuera: false, editar: null }; }
 
 // Los pasos se arman con lo que falta: lo ya leído no se pregunta.
 function pasos() {
@@ -380,9 +380,9 @@ const VISTAS = {
   }),
   flyer: () => ({
     titulo: 'Tu cartel', pregunta: 'Elige un diseño',
-    cuerpo: `<div class="disenos">${['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
-    pie: '',
-    notas: ['Cuatro diseños ya rellenos con los datos del evento (doc 52: plantillas hechas de antemano, formato de publicación 4:5). Aquí son marcadores de color.', 'Elegir uno vuelve a «Revisa» con el cartel puesto.'],
+    cuerpo: `<div class="disenos">${[['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'], ['#1d4a3a', '#f0c23b', '#2b3f7a', '#c4477a'], ['#7a2e1d', '#e9e4da', '#143a4a', '#5a3b8c']][e.tanda % 3].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
+    pie: `<button class="btn sec" data-a="otros">Ver otros</button><button class="quieto" data-a="sin-flyer-publicar">Publicar sin cartel</button>`,
+    notas: ['Si ninguno gusta (founder, 2026-10-05): «Ver otros» trae otros cuatro y «Publicar sin cartel» deja salir; el cartel se puede hacer después desde editar. Sin editor de colores ni letras.', 'Cuatro diseños ya rellenos con los datos del evento (doc 52: plantillas hechas de antemano, formato de publicación 4:5). Aquí son marcadores de color.', 'Elegir uno vuelve a «Revisa» con el cartel puesto.'],
   }),
   cuanto: () => ({
     titulo: 'Publicar', pregunta: '¿Cuánto cuesta?',
@@ -492,6 +492,8 @@ document.addEventListener('click', (ev) => {
   if (a === 'sug-no') { e.sug = 'no'; e.dir = 'fija'; return pintar(); }
   if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
   if (a === 'quiere-flyer') { e.quiereFlyer = !e.quiereFlyer; e.dir = 'fija'; return pintar('#nombre'); }
+  if (a === 'otros') { e.tanda++; e.dir = 'fija'; return pintar(); }
+  if (a === 'sin-flyer-publicar') { e.quiereFlyer = false; e.flyer = null; e.editar = null; return ir(pasos().length - 1); }
   if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
   if (a === 'descargar') { e.bajado = true; e.dir = 'fija'; return pintar(); }
   e.dir = 'fija'; if (a === 'mas' || a === 'compartir') return pintar();

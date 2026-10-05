@@ -128,3 +128,10 @@ El founder: «ok, solo deja en morado elegir y la linea, disminuye grosor, pero 
 - Igual en el prototipo de Eventos. Capturas `sin-11-revisar-falta-diseno` y `eventos-pendiente-en-hoja`. Sin errores ni desbordes a 320 y 390.
 
 **Idea del founder, misma noche:** «Para eventos creados sin cartel, al editar podemos presentar opción de generar cartel.» De acuerdo: editar entra directo a «Revisa», y ahí el renglón «Sin cartel · Hacer uno» ya existe; sirve además para los eventos que hoy no tienen cartel (144 de 273 según la medición del doc 52). Va con la pieza del generador de flyers.
+
+## Octava vuelta (2026-10-05, noche): la línea del pendiente, decidida, y «Ver otros»
+
+- El founder retiró el violeta de la línea: «la linea punteada es agresiva visualmente en ese color, regresemos al color que usabas antes». Pidió ver opciones en una imagen: `opciones-linea-ocho.png` (ocho tratamientos, A a H). Eligió el color de la A («me gusta la opción A por el color, pero me gustaría ver un poco mas de aire sin llegar a opción B ahí ya te pasaste») y, sobre `opciones-linea-aire.png` (cuatro aires intermedios), **la opción 2**: «vamos con opción 2 por favor para campos faltantes, actualiza el canon cuando publiquemos».
+- **Regla final del campo por completar:** línea gris (`--texto-suave`), 1 px, guion de 4 px con 5 px de aire; en violeta solo la acción de la derecha; el valor en tinta; el icono en gris. Aplicada en los dos prototipos; en la app va en OL-297.
+- **Si no gustan los diseños del cartel** («acepto Ver otros y publicar sin cartel cuando no guste»): la pantalla «Elige un diseño» lleva «Ver otros» (trae otros cuatro) y «Publicar sin cartel». Sin editor de colores ni letras. Capturas `sin-12-disenos` y `sin-13-disenos-otros`.
+- Sin errores ni desbordes a 320 y 390 en los dos prototipos.
