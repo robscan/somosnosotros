@@ -135,7 +135,14 @@ export function horaCorta(iso: string, zona: string = ZONA_INICIAL): string {
   return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
 }
 
-/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. */
+/** La hora de fin de un evento de varios días al que nadie le puso hora (OL-298, `FIN_DEL_DIA` en `calendario.ts`): acaba con su último
+ *  día y se guarda como las 23:59 de ese día. Esa hora no se escribe: el texto dice solo el día. Solo si el fin cae en otro día que el
+ *  inicio (un evento de un solo día que termina a las 23:59 la conserva) y con la hora de la zona del evento. El dato guardado no cambia. */
+function acabaConSuUltimoDia(inicio: Date, fin: Date, zona: string): boolean {
+  return diaLocal(fin, zona) !== diaLocal(inicio, zona) && horaCorta(fin.toISOString(), zona) === "23:59";
+}
+
+/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. Un fin otro día a las 23:59 (sin hora de fin) va solo con su día. */
 export function formatearCuando(inicio: string, fin?: string | null, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
   const d = new Date(inicio);
   const dia = diaLocal(d, zona);
@@ -145,19 +152,25 @@ export function formatearCuando(inicio: string, fin?: string | null, ahora: Date
   if (fin) {
     const f = new Date(fin);
     const horaFin = horaCorta(fin, zona);
-    texto += diaLocal(f, zona) === dia ? `–${horaFin}` : ` → ${diaCortoDe(f, ahora, zona)} · ${horaFin}`;
+    if (diaLocal(f, zona) === dia) texto += `–${horaFin}`;
+    else texto += acabaConSuUltimoDia(d, f, zona) ? ` → ${diaCortoDe(f, ahora, zona)}` : ` → ${diaCortoDe(f, ahora, zona)} · ${horaFin}`;
   }
   return texto;
 }
 
-/** Fecha larga para la ficha: "sábado 20 de septiembre · 19:00" (con año si no es el de hoy; con " a 21:00" si hay fin el mismo día). */
+/** El día largo de la ficha: "sábado 20 de septiembre" (con año si no es el actual). */
+function diaLargoDe(d: Date, ahora: Date, zona: string): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora, zona) }).format(d).replace(",", "");
+}
+
+/** Fecha larga para la ficha: "sábado 20 de septiembre · 19:00" (con año si no es el de hoy; con " a 21:00" si hay fin el mismo día). Un fin otro día a las 23:59 va solo con su día. */
 export function formatearLargo(iso: string, ahora: Date = new Date(), fin?: string | null, zona: string = ZONA_INICIAL): string {
   const d = new Date(iso);
-  const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora, zona) }).format(d).replace(",", "");
-  let texto = `${fecha} · ${horaCorta(iso, zona)}`;
+  let texto = `${diaLargoDe(d, ahora, zona)} · ${horaCorta(iso, zona)}`;
   if (fin) {
     const f = new Date(fin);
-    texto += diaLocal(f, zona) === diaLocal(d, zona) ? ` a ${horaCorta(fin, zona)}` : ` hasta ${formatearLargo(fin, ahora, null, zona)}`;
+    if (diaLocal(f, zona) === diaLocal(d, zona)) texto += ` a ${horaCorta(fin, zona)}`;
+    else texto += acabaConSuUltimoDia(d, f, zona) ? ` hasta ${diaLargoDe(f, ahora, zona)}` : ` hasta ${formatearLargo(fin, ahora, null, zona)}`;
   }
   return texto;
 }
