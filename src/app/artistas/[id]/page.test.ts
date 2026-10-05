@@ -59,7 +59,7 @@ const ARTISTA = {
 };
 
 vi.mock("@/lib/supabase/servidor", () => ({
-  clienteServidor: vi.fn(async () => clienteFalso({ artistas: { data: ARTISTA }, eventos: { data: [] }, artistas_cuentas: { data: [] } }, { cuenta_seguidores: { data: 0 } })),
+  clienteServidor: vi.fn(async () => clienteFalso({ artistas: { data: ARTISTA }, eventos: { data: [] }, artistas_cuentas: { data: [] } }, { cuenta_seguidores: { data: 0 }, novedades_recientes_artistas: { data: [] } })),
   usuarioActual: vi.fn(async () => null),
 }));
 
@@ -108,4 +108,41 @@ describe("ficha de artista: la cabecera pinta antes que sus fechas (OL-161)", ()
     expect(metadata.alternates?.canonical).toBe("https://somosnosotros.org/artistas/artista-de-prueba");
     expect(metadata.title).toBe("Artista de prueba · Somos Nosotros");
   });
+});
+
+
+it("la redirección UUID conserva el destino de la publicación exacta", async () => {
+  const { default: FichaArtista } = await import("./page");
+  const novedad = "00000000-0000-4000-8000-000000000123";
+  await expect(FichaArtista({ params: Promise.resolve({ id: "artista-1" }), searchParams: Promise.resolve({ novedad }) })).rejects.toThrow(`PERMANENT_REDIRECT:/artistas/artista-de-prueba?novedad=${novedad}`);
+});
+
+it("el destino fuera de las primeras50 se carga por esta ficha y visible, sin pedir el catálogo completo", async () => {
+  const { clienteServidor } = await import("@/lib/supabase/servidor");
+  const { default: SeccionNovedades } = await import("./SeccionNovedades");
+  const { default: FichaArtista } = await import("./page");
+  const previo = vi.mocked(clienteServidor).getMockImplementation()!;
+  const destino = { id: "00000000-0000-4000-8000-000000000123", creado_en: "2026-09-01T00:00:00Z", visible: true, proveedor: "youtube", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", embed_id: null, titulo: "Destino", texto: null };
+  const consultas: ReturnType<typeof chain>[] = [];
+  const cliente = clienteFalso({ artistas: { data: ARTISTA }, artistas_cuentas: { data: [] } }, { novedades_recientes_artistas: { data: [] } });
+  const from = cliente.from;
+  cliente.from = (tabla) => {
+    if (tabla !== "novedades_artista") return from(tabla);
+    const q = chain({ data: Array.from({ length: 50 }, (_, i) => ({ ...destino, id: `previa-${i}`, creado_en: "2026-10-01T00:00:00Z" })) });
+    q.eq = vi.fn(() => q);
+    q.limit = vi.fn(() => q);
+    q.maybeSingle = vi.fn(async () => ({ data: destino }));
+    consultas.push(q);
+    return q;
+  };
+  vi.mocked(clienteServidor).mockResolvedValue(cliente as never);
+  try {
+    const arbol = await FichaArtista({ params: Promise.resolve({ id: ARTISTA.slug }), searchParams: Promise.resolve({ novedad: destino.id }) });
+    const seccion = [...recorrer(arbol)].find(e => e.type === SeccionNovedades)!;
+    expect(seccion.props.novedadId).toBe(destino.id);
+    expect(seccion.props.novedades).toHaveLength(51);
+    expect(consultas).toHaveLength(2);
+    expect(consultas[0].limit).toHaveBeenCalledWith(50);
+    expect(consultas[1].eq.mock.calls).toEqual([["artista_id", ARTISTA.id], ["id", destino.id], ["visible", true]]);
+  } finally { vi.mocked(clienteServidor).mockImplementation(previo); }
 });

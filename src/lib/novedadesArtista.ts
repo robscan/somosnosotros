@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { limpiar } from "./formulario";
 import { reconocerEnlace } from "./enlaces";
 import { diaLocal, ZONA_INICIAL } from "./fechas";
@@ -100,3 +101,28 @@ export function fechaRelativaNovedadArtista(iso: string, ahora: Date = new Date(
 
 /** Cuántas se muestran en la ficha antes de "Ver más" (doc 44 §4). */
 export const NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA = 3;
+
+/** Resumen público OL-275: sin URL, título, texto ni emisor. La base elige la última visible. */
+export type NovedadRecienteArtista = { novedad_id: string; proveedor: ProveedorNovedadArtista; creado_en: string };
+export const VIGENCIA_NOVEDAD_ARTISTA_MS = 168 * 3600000;
+
+/** El mismo sello en carril, lista y ficha; el instante exacto de siete días ya no es nuevo. */
+export function selloNovedadArtista(novedad: NovedadRecienteArtista | null | undefined, ahora = new Date()): "Nuevo video" | "Nuevo audio" | null {
+  if (!novedad) return null;
+  const edad = ahora.getTime() - Date.parse(novedad.creado_en);
+  if (!Number.isFinite(edad) || edad < 0 || edad >= VIGENCIA_NOVEDAD_ARTISTA_MS) return null;
+  return novedad.proveedor === "youtube" || novedad.proveedor === "vimeo" ? "Nuevo video" : "Nuevo audio";
+}
+
+/** Una lectura por lote de fichas cargadas; usa la sesión actual, sin caché compartida entre cuentas. */
+export async function leerNovedadesRecientes(supabase: SupabaseClient | null, ciudad: string, ids: string[]): Promise<Map<string, NovedadRecienteArtista>> {
+  if (!supabase || ids.length === 0) return new Map();
+  try {
+    const { data, error } = await supabase.rpc("novedades_recientes_artistas", { p_ciudad: ciudad, p_ids: [...new Set(ids)] });
+    if (error || !Array.isArray(data)) throw new Error("resumen no disponible");
+    return new Map((data as (NovedadRecienteArtista & { artista_id: string })[]).map(({ artista_id, ...novedad }) => [artista_id, novedad]));
+  } catch {
+    console.warn("[artistas] novedades recientes no disponibles");
+    return new Map();
+  }
+}

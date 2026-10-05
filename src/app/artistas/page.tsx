@@ -1,3 +1,4 @@
+import { leerNovedadesRecientes } from "@/lib/novedadesArtista";
 import { Suspense } from "react";
 import ListaArtistas from "@/components/ListaArtistas";
 import ListaEsqueleto from "@/components/ListaEsqueleto";
@@ -117,7 +118,9 @@ async function cargar(f: FiltroLeido, ciudad: string): Promise<Cargado> {
   if (f.hace) lista = lista.eq("disciplina", f.hace);
   if (f.que) lista = lista.ilike("detalle", f.que.replace(/[%_]/g, ""));
   const a = await lista.order("nombre_orden").range(0, f.n - 1);
-  const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
+  const listaCargada = (a.data ?? []) as ArtistaResumen[];
+  const novedades = await leerNovedadesRecientes(supabase, ciudad, listaCargada.map((a) => a.id));
+  const artistas = conProximaFecha(listaCargada, fechas).map((a) => ({ ...a, novedad: novedades.get(a.id) ?? null }));
   return { artistas, total: a.count ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, letras, posiciones };
 }
 

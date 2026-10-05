@@ -149,3 +149,12 @@ it("el recuento desconocido viaja hasta la tarjeta y no crea una cifra", () => {
   expect(selloDeTarjeta(tarjeta)).toBeNull();
   expect(selloDeTarjeta({ hoy: true, van: null })?.texto).toBe("Hoy");
 });
+
+
+it("la tarjeta de artista lleva a su novedad exacta solo mientras es reciente", () => {
+  const a: ArtistaLista = { id: "a", slug: "artista", nombre: "Artista", foto: "/a.jpg", disciplina: "musica", tipo: "solista", detalle: null, proxima: null,
+    novedad: { novedad_id: "00000000-0000-4000-8000-000000000123", proveedor: "soundcloud", creado_en: AHORA.toISOString() } };
+  expect(tarjetaArtista(a, AHORA).href).toBe("/artistas/artista?novedad=00000000-0000-4000-8000-000000000123");
+  expect(tarjetaArtista(a, new Date(+AHORA + 168 * 3600000)).href).toBe("/artistas/artista");
+  expect(tarjetaArtista({ ...a, novedad: null }, AHORA).novedad).toBeNull();
+});
