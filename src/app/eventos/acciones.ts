@@ -5,11 +5,11 @@ import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { intentarDrenarAvisos } from "@/lib/avisosWorker";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, SIN_CIUDAD } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
-import { cartelAFormulario, hrefEvento, validarEvento, type CambioEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { cartelAFormulario, ciudadDelSitio, hrefEvento, validarEvento, type CambioEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
@@ -60,10 +60,15 @@ export async function zonaDelPunto(lat: number, lng: number): Promise<string> {
   return zonaDePunto(lat, lng);
 }
 
-/** La ciudad del evento: la de su lugar; en otro sitio, la del pin (Mapbox); si no se supo, la inicial. */
-function ciudadDe(datos: DatosEvento, lugar: LugarDelEvento): string {
-  if (!datos.lugar_id) return datos.ciudad || CIUDAD_INICIAL.nombre;
+/** La ciudad del evento: la de su lugar; en otro sitio, la del pin (Mapbox o la de contexto cercana; null si no se supo, OL-299). */
+function ciudadDe(datos: DatosEvento, lugar: LugarDelEvento, actual?: Parameters<typeof ciudadDelSitio>[1]): string | null {
+  if (!datos.lugar_id) return ciudadDelSitio(datos, actual);
   return lugar?.ciudad ?? CIUDAD_INICIAL.nombre;
+}
+
+/** El aviso de «no supimos la ciudad» va donde la persona ve el pin: la dirección del sitio, o la privada si es reservado. */
+function sinCiudad(datos: DatosEvento): { ok: false; errores: ErroresEvento } {
+  return { ok: false, errores: { [datos.sitio_reservado ? "direccion_privada" : "sitio_direccion"]: SIN_CIUDAD } };
 }
 
 /** Se revalida por id (la dirección vieja, que sigue resolviendo) y por slug (la de hoy) si ya se conoce: las dos pueden estar cacheadas. */
@@ -101,6 +106,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
+  if (ciudad === null) return sinCiudad(datos);
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"));
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   // La función guarda_evento_con_avisos no devuelve el slug (lo pone el disparador); una lectura de sobra para
@@ -115,12 +121,13 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
   const entrada = leer(formData);
-  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("imagen, inicio, fin, zona, sitio_reservado").eq("id", id).maybeSingle()]);
+  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("imagen, inicio, fin, zona, sitio_reservado, ciudad, sitio_lat, sitio_lng").eq("id", id).maybeSingle()]);
   const sinPuntoTrasRetencion = sitioReservadoVencido(existente) && entrada.modo_sitio === "reservado" && !entrada.privado_lat && !entrada.privado_lng;
   const zona = sinPuntoTrasRetencion ? zonaSegura(existente?.zona) : zonaDelEvento(entrada, lugar);
   const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente });
   if (Object.keys(errores).length) return { ok: false, errores };
-  const ciudad = ciudadDe(datos, lugar);
+  const ciudad = ciudadDe(datos, lugar, existente);
+  if (ciudad === null) return sinCiudad(datos);
   const revision = formData.get("revision");
   if (typeof revision !== "string" || !revision.trim() || !Number.isFinite(Date.parse(revision))) {
     return { ok: false, errores: {}, general: "Vuelve a abrir el evento para cargar su versión actual. Tus cambios no se guardaron." };

@@ -312,7 +312,7 @@ export default function HojaDonde(props: Props) {
     setAvisoTocado(null);
     const version = ++versionPin.current;
     const editable = !!evento;
-    setBorrador((actual) => ({ origen: "manual", nombre: nombreFijo ?? (actual?.editable ? actual.nombre : ""), direccion: "Ubicando…", punto, editable, ciudad: actual?.editable ? actual.ciudad : null }));
+    setBorrador((actual) => ({ origen: "manual", nombre: nombreFijo ?? (actual?.editable ? actual.nombre : ""), direccion: "Ubicando…", punto, editable, ciudad: null }));
     reflejarEnElPanel("Ubicando…");
     const { mapboxToken } = configPublica();
     if (!mapboxToken) {
@@ -326,7 +326,7 @@ export default function HojaDonde(props: Props) {
       const r = await lugarDesdePunto(punto, mapboxToken);
       if (version !== versionPin.current) return;
       const direccionResuelta = r?.direccion ?? "";
-      setBorrador((a) => (a && a.punto === punto ? { ...a, direccion: direccionResuelta, ciudad: r?.ciudad ?? a.ciudad } : a));
+      setBorrador((a) => (a && a.punto === punto ? { ...a, direccion: direccionResuelta, ciudad: r?.ciudad ?? null } : a));
       reflejarEnElPanel(direccionResuelta);
     } catch {
       if (version === versionPin.current) {

@@ -131,8 +131,11 @@ export type SeccionCiudades = "eventos" | "lugares" | "artistas" | "buscar";
 /** OL-270: el catálogo más cercano representa «aquí» hasta 50 km de su centro. */
 const RADIO_CIUDAD_KM = 50;
 
+/** Lo que se dice cuando un punto nuevo no trae ciudad y no hay de dónde sacarla (lugar y evento; OL-299). */
+export const SIN_CIUDAD = "No pudimos saber en qué ciudad está. Intenta de nuevo.";
+
 /**
- * La ciudad con la que se guarda un lugar nuevo (OL-299). La que el mapa dio para su punto; si no dio ninguna, la ciudad de
+ * La ciudad con la que se guarda un punto nuevo (OL-299). La que el mapa dio para su punto; si no dio ninguna, la ciudad de
  * contexto, solo si el punto cae a menos de 50 km de su centro; si tampoco, null: no se adivina (antes el servidor ponía
  * San Luis Potosí en silencio y un lugar de otra ciudad quedaba mal).
  */

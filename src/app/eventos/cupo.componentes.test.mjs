@@ -89,7 +89,7 @@ before(async () => {
   ]);
   server = createServer((req, res) => {
     const asset = assets.get(req.url);
-    res.writeHead(asset ? 200 : 404, { "Content-Type": asset?.[0] ?? "text/plain" });
+    res.writeHead(asset ? 200 : 404, { "Content-Type": `${asset?.[0] ?? "text/plain"}; charset=utf-8` }); // sin charset, el JS con acentos combinantes (normalizarNombre, slugDeCiudad) se lee mal
     res.end(asset?.[1] ?? "Not found");
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));

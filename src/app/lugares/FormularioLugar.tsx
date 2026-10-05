@@ -546,9 +546,11 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           avisoUbicacion={avisoUbicacion}
           onEstoyAqui={estoyAqui}
           onListo={({ punto: p, direccion: d, ciudad: c }) => {
+            // Confirmar el mismo punto no lo cambia: si el mapa no dio ciudad, se queda la que ya tenía (OL-299).
+            const mismo = punto?.lat === p.lat && punto?.lng === p.lng;
             setPunto(p);
             setDireccion(d);
-            setCiudad(c ?? "");
+            setCiudad(c ?? (mismo ? ciudad : ""));
           }}
           onCerrar={() => setHoja(null)}
         />

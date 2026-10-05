@@ -19,7 +19,7 @@ Tras el análisis del doc [54](../../../rediseno/54-lugar-y-artista-por-pasos.md
 - Servidor · `validarArtista(..., { alta: true })` (lo pasa solo `crearArtista`) rechaza el alta sin disciplina, o con «por_completar» puesto a mano, con `errores.disciplina = "Falta la disciplina."`, el mismo texto de la nota del botón (una prueba los compara). Una disciplina fuera de la lista sigue diciendo «Elige qué hace.».
 - **No cambia:** cómo se deduce «Solista/Grupo/Colectivo»; ninguna ficha ya guardada (un artista guardado como «Música» se queda como está).
 
-**Decisión que conviene mirar: la edición.** `actualizarArtista` no pasa `alta`, así que una ficha «por completar» (creada desde un evento o importada) se puede seguir guardando sin disciplina. Lo único que cambia al editarla es que el formulario ya no la convierte en silencio en «Música»: sin pista queda «por completar» (el renglón dice «Disciplina» con «Elegir», no pendiente y sin bloquear el botón). Exigirla también al editar es una línea (`alta: true` en `actualizarArtista`) pero obliga a quien solo corrige una foto a elegir disciplina; lo dejo al founder.
+**Decisión (confirmada por el gestor en la revisión, 2026-10-05): la edición no exige disciplina, y la lista de palabras de música se queda.** `actualizarArtista` no pasa `alta`, así que una ficha «por completar» (creada desde un evento o importada) se puede seguir guardando sin disciplina. Lo único que cambia al editarla es que el formulario ya no la convierte en silencio en «Música»: sin pista queda «por completar» (el renglón dice «Disciplina» con «Elegir», no pendiente y sin bloquear el botón). 
 
 ### Quién dependía del «Música» por omisión
 
@@ -44,7 +44,7 @@ La ciudad nace del contexto de Mapbox (`lib/geocodificar.ts:41`, `ciudadDelConte
 3. **La hoja «¿Dónde está?» del alta de lugar** · `HojaDonde.tsx:315` (`ciudad` del borrador en `null` al mover el pin) y `:329` (`r?.ciudad ?? a.ciudad`); elegir en la hoja la dirección de un lugar ya registrado fija la ciudad en `null` (`:430`, `LugarResumen` no trae ciudad). «Listo» devolvía `null` (`:544`) y `FormularioLugar.tsx:544` (`if (c) setCiudad(c)`) conservaba la anterior.
 4. **«Agregar lugar» desde el alta de un evento** · `HojaDonde.tsx:483`: `ciudad: borrador.ciudad ?? contexto.ciudad.nombre`. Con un pin puesto (siempre, para guardar un lugar), `contextoDondeEsta` devuelve **San Luis Potosí fijo** (`lib/hojaDonde.ts:205`, `if (punto) return { ciudad: CIUDAD_INICIAL, ... }`), así que un pin de otra ciudad sin ciudad deducida se guardaba como San Luis Potosí sin importar la ciudad elegida. Es el mismo defecto en otra puerta, con otro texto.
 5. **Servidor** · `lib/lugares.ts:325`: `|| CIUDAD_INICIAL.nombre`. Era la red de seguridad que lo escondía todo.
-6. **El mismo camino en «otro sitio» de un evento** (comparte `HojaDonde` y `lugarDesdePunto`): la ciudad del **evento** (no la de un lugar) cae igual en `ciudadDe`, `eventos/acciones.ts:65` (`datos.ciudad || CIUDAD_INICIAL.nombre`). **No lo toqué:** es otro dato (la ciudad de un evento), en la acción del evento que se rehace por pasos; lo anoto para el gestor (ver «Dudas»).
+6. **El mismo camino en «otro sitio» de un evento** (comparte `HojaDonde` y `lugarDesdePunto`): la ciudad del **evento** (no la de un lugar) cae igual en `ciudadDe`, `eventos/acciones.ts:65` (`datos.ciudad || CIUDAD_INICIAL.nombre`). **En la primera entrega no lo toqué; en la revisión del gestor entró a la pieza** (ver «Segunda vuelta»).
 
 No es un camino: el alta de artista (la ciudad es un renglón con valor siempre), ni los importadores (`scripts/instituciones/importar.ts` y `capo/importar.ts` ya escriben `ciudad: CIUDAD` a mano).
 
@@ -119,7 +119,7 @@ Resultado con el respaldo local solo (9 lugares, una ciudad): **A = 0 filas, B =
 
 - **Unitarias (nuevas o ampliadas):** `artistas.test.ts` (deducción con pista, sin pista y nombre vacío, pista de otra disciplina que gana a una palabra de música; validación del alta sin disciplina, sin el campo, con «por_completar» a mano, con una de la lista y fuera de ella, y la edición que la deja como está); `formulario.test.ts` (la nota con y sin disciplina, sola o junto al nombre); `artistas/acciones.alta.test.ts` (el servidor rechaza el alta sin disciplina sin tocar la base, y con ella publica); `ciudad.test.ts` (`ciudadParaPunto`: la del mapa manda y se canoniza, contexto cercano, contexto lejano, sin contexto); `lugares.test.ts` (sin ciudad no se publica, vacía o de espacios, y la canónica se conserva); `lugares/acciones.desde-evento.test.ts` (sin ciudad no publica y no llama a la base; de otra ciudad, se guarda con esa).
 - **De componentes (nuevas, Chromium real con los estilos reales, acción simulada, sin red):** `artistas/FormularioArtista.componentes.test.mjs` (390 y 320: vacío → «Falta el nombre y la disciplina.»; sin pista → renglón pendiente con «Falta la disciplina», botón apagado que no envía; elegir un chip → resuelto, botón encendido, el envío lleva la disciplina y ninguna subcategoría; con pista → la disciplina sale sola y publicar está listo; cambiar a un nombre sin pista vuelve a pendiente, y lo elegido a mano se queda; nada desborda) y `lugares/FormularioLugar.ciudad.componentes.test.mjs` (punto cerca del contexto sin ciudad del mapa → se envía la de contexto; lejos → se envía vacía y el aviso del servidor sale en «Dónde»; el mapa da la ciudad → se envía esa aunque esté lejos del contexto).
-- **Resultados:** `npm run lint` 0 errores (1 aviso que ya estaba, `VisorImagen.componentes.test.mjs`); `npm run typecheck` verde; `npm test` 142 archivos, 2058 pruebas verdes; componentes de las altas y afines (las dos nuevas, `Renglon`, `guardado`, `cupo`, `SelectorCuando`, `guardiaTrasError`, `SalirSinPublicar`) 57 de 57; `npm run inventario` sin novedades (343 medidas en duro, sin cambios); `npm run medir -- --solo=alta` sin novedades (s03, s07 y s11 a 320, 390, 820 y 1280; nodos 60 del artista a 320 y 390, sin cambios).
+- **Resultados de la primera entrega:** `npm run lint` 0 errores (1 aviso que ya estaba, `VisorImagen.componentes.test.mjs`); `npm run typecheck` verde; `npm test` 142 archivos, 2058 pruebas verdes; componentes de las altas y afines 57 de 57; `npm run inventario` sin novedades; `npm run medir -- --solo=alta` sin novedades. Los de la segunda vuelta están abajo.
 - **PG:** no toqué SQL ni migraciones; no corrí `test:db`.
 
 ## Evidencia (`docs/rediseno/capturas-327/`, 780×1688 y 640×1280, 2×; app compilada contra el respaldo local en los puertos 8934 y 3934, reloj fijo, letra Bricolage cargada)
@@ -134,10 +134,51 @@ Cada PNG abierto y descrito:
 
 Medido en el DOM en cada estado, a 390 y a 320: la página no se desplaza de lado (`scrollWidth` igual al ancho), el renglón queda dentro de la ventana, el valor del renglón y la nota del botón caben en una línea, `Bricolage Grotesque` cargada y usada por el valor, y ningún error de página.
 
+## Segunda vuelta: revisión del gestor al commit `cb86af49` (2026-10-05)
+
+### 1. Editar un lugar que ya existe (`actualizarLugar` comparte `validarLugar`)
+
+**Qué había antes del arreglo** (probado: las pruebas nuevas de `acciones.editar.test.ts` contra el código de `cb86af49`):
+
+| Caso | Antes | Veredicto |
+| --- | --- | --- |
+| (a) Editar solo la descripción, sin tocar el punto | El formulario manda la ciudad guardada (`ciudad` arranca en `lugar.ciudad`) y se guarda; **con el formulario sin ciudad** (sin contexto ni Mapbox) el servidor rechazaba con «No pudimos saber…». | Bien en el navegador; **roto en el servidor** si no llega ciudad. |
+| (b) Lugar en un parque o camino (Mapbox no da ciudad para su punto) | Al editar sin mover el pin no se geocodifica (no hay `puntoInicial`), así que no se vacía nada; mismo hueco del servidor que en (a). | Igual que (a). |
+| (c) Mover el pin a un punto sin ciudad y lejos del contexto | El aviso salía en «Dónde». Lo demás escrito (nombre, descripción, punto) sobrevive: la descripción vive en el estado de `CampoLargo` y los demás campos son controlados. | Bien: se comprobó con el componente real. |
+| (d) Lugar antiguo con la ciudad guardada vacía | El esquema (`ciudad text not null default 'San Luis Potosí'`, sin `check`) **admite `''`**; ese lugar no se podía volver a editar sin mover el pin. Una ciudad «rara» (p. ej. «S.L.P.») pasaba tal cual. | **Roto**: bloqueaba la edición. |
+
+Además encontré un hueco del cliente: en la hoja «¿Dónde está?», confirmar **el mismo punto** cuando el mapa no devolvía ciudad vaciaba la ciudad guardada (`setCiudad(c ?? "")`).
+
+**Qué cambié** (regla: en la edición, si el punto no cambió, la ciudad guardada se conserva tal cual; el rechazo es solo para un alta o un punto nuevo):
+
+- **Servidor:** `validarLugar` recibe `actual` (`ciudad`, `lat`, `lng` del registro que se edita; lo pasa `actualizarLugar`, que ahora lee esas columnas). Con el mismo punto (diferencia menor de 1e-9) y sin ciudad en el formulario, usa la del registro, rara o vacía, y no avisa de nada. Un punto nuevo sin ciudad, o un alta, sigue rechazándose con `SIN_CIUDAD` (constante nueva en `lib/ciudad.ts`, el texto de siempre).
+- **Cliente:** `FormularioLugar` · «Listo» de la hoja con el mismo punto y sin ciudad del mapa conserva la ciudad que ya tenía.
+- **Pruebas:** `lugares.test.ts` (+5: el mismo punto conserva la guardada, la rara, la vacía; la del formulario gana; un punto nuevo o un alta sin ciudad se rechazan), `lugares/acciones.editar.test.ts` (5, la acción real con la base simulada; las dos del servidor fallaban con el código anterior), `lugares/FormularioLugar.editar.componentes.test.mjs` (6 en Chromium: (a) se envía la de siempre sin contexto ni Mapbox; (b) con Mapbox que no da ciudad no se geocodifica al editar; confirmar el mismo punto no pierde la ciudad; (c) mover el pin lejos y sin ciudad: sale el aviso en «Dónde» y el nombre, la descripción y el punto escritos siguen ahí; mover a un punto sin ciudad pero cerca del contexto envía la de contexto; (d) ciudad vacía: se envía vacía y el servidor decide).
+
+### 2. La ciudad de un evento en «otro sitio» entra en la pieza
+
+Antes caía en San Luis Potosí en `ciudadDe` (`eventos/acciones.ts:65`) y, además, la hoja arrastraba la ciudad de un pin anterior al mover el pin de un evento (`HojaDonde.tsx:315`, `ciudad: actual?.editable ? actual.ciudad : null`, y `:329`, `r?.ciudad ?? a.ciudad`).
+
+- **`lib/eventos.ts` · `ciudadDelSitio(datos, actual)`** (pura): la del pin que mandó el formulario; sin ella y **con punto** (el público, o el privado si es reservado): en la edición con el **mismo pin** que ya tenía el evento, la ciudad del evento; si no, `null`. **Un sitio sin punto** (escrito sin coordenadas; también el reservado sin pin nuevo) **conserva el comportamiento de hoy: la inicial. No se rechaza**: ahí no hay de dónde deducirla (es el caso de los eventos que carga `scripts/instituciones/importar-eventos.ts`, que no trae coordenadas y no cambia).
+- **Servidor:** `crearEvento` y `actualizarEvento` (que ahora lee `ciudad`, `sitio_lat` y `sitio_lng` del evento) devuelven el aviso `SIN_CIUDAD` en `sitio_direccion` (otro sitio) o `direccion_privada` (reservado), los renglones «Dónde» que ya muestran sus errores.
+- **Cliente:** `FormularioEvento` manda `ciudadParaPunto(pin, ciudad del pin, ciudadContexto)` (la de Mapbox; sin ella, la de contexto si el pin cae a menos de 50 km de su centro; si no, vacía). `HojaDonde` ya no arrastra la ciudad de un pin anterior: al mover el pin la ciudad queda en `null` hasta que Mapbox responde, y si no responde se queda así.
+- **Pruebas:** `eventos.test.ts` (+4 de `ciudadDelSitio`), `eventos/direccion.acciones.test.ts` (+6: el alta con pin de otra ciudad la guarda; con pin y sin ciudad no se publica y lo dice en la dirección del sitio; reservado con pin nuevo y sin ciudad lo dice en la dirección privada; un sitio sin coordenadas sigue en la inicial y se publica; edición con el mismo pin conserva la del evento; edición moviendo el pin sin ciudad no se guarda; y los formularios de las pruebas de antes ahora mandan su ciudad), `eventos/ciudadSitio.componentes.test.mjs` (4 en Chromium: pin con ciudad guardada; sin ciudad y cerca del contexto; sin ciudad y lejos o sin contexto; sin punto).
+
+### 3. Lo que se queda
+
+Editar una ficha de artista «por completar» **no** exige disciplina, y la lista de palabras de música se queda (decisión del gestor).
+
+### Hallazgo de paso
+
+`eventos/cupo.componentes.test.mjs` servía el JS sin `charset=utf-8` y, en cuanto `FormularioEvento` empezó a empaquetar `lib/ciudad.ts` (por `ciudadParaPunto`), la expresión de acentos combinantes de `slugDeCiudad` se leía mal y las 13 pruebas fallaban con «Invalid regular expression». Es un defecto del arnés de esa prueba (las demás ya ponían el charset), no de la app; se arregló allí (una línea).
+
+### Resultados de la segunda vuelta
+
+`npm run lint` 0 errores (el aviso de siempre); `npm run typecheck` verde; `npm test` 143 archivos, 2078 pruebas verdes; componentes de las altas y de editar lugar y evento (artistas, lugares, eventos, `Renglon`, `SalirSinPublicar`) 92 de 92; **todos** los de componentes (`npm run test:componentes`) 331 de 331; `npm run inventario` sin novedades; `npm run medir -- --solo=alta` sin novedades (s03, s07 y s11) y `--solo=editar` sin novedades (s08-editar-perfil: es la única pantalla de ese nombre en `pantallas-sesion.json`; los formularios de editar lugar, artista y evento no están en la medición y se probaron con los componentes de arriba). Sin migración.
+
 ## Dudas y qué falta
 
-1. **Edición de una ficha «por completar»:** hoy no exige disciplina (arriba). ¿Se exige también al editar?
-2. **La ciudad de un evento en «otro sitio»** sigue cayendo en San Luis Potosí si el mapa no la dio (`eventos/acciones.ts:65`): mismo defecto, otro dato, en la acción que se rehace por pasos. Se arregla con `ciudadParaPunto` al construir el evento y un aviso como el del lugar; no lo hice por estar fuera de esta pieza.
-3. **Pedir la ciudad a la persona** cuando no se pueda saber (pantalla nueva) y el segundo intento de Mapbox con `types=place,locality`: ver B.3.
-4. **Lista de palabras de música:** la añadí yo para no perder aciertos de hoy (Orquesta, Coro, Mariachi…); si el founder prefiere que solo las otras seis disciplinas deduzcan, se borra la última línea de `deducirDisciplina` y esos nombres piden elegir.
-5. **Solo en un iPhone real:** el toque de «Elegir» y de los chips con el pulgar, el teclado abierto con el renglón pendiente, y la geocodificación inversa de verdad (aquí el token de Mapbox es inventado: la ciudad del mapa se probó con un doble, no contra Mapbox).
+1. **Editar un lugar con la ciudad guardada vacía** se guarda vacía mientras no se mueva el pin (no hay de dónde sacar otra); si el gestor quiere que la edición la complete con la de contexto, es un cambio de una línea. Hoy el formulario sí manda la de contexto si el pin cae cerca, así que en la práctica la completa.
+2. **Evento reservado, al editar sin mover el pin:** su pin no se reenvía, así que sigue el camino de «sin punto»: el formulario manda la ciudad que ya tenía el evento y el servidor la guarda; si alguna vez llegara vacía, quedaría en la inicial como hasta hoy (no se rechaza).
+3. **Pedir la ciudad a la persona** cuando no se pueda saber (pantalla nueva) y el segundo intento de Mapbox con `types=place,locality`: siguen siendo mejoras posibles (ver B.3); no hechas.
+4. **Solo en un iPhone real:** el toque de «Elegir» y de los chips con el pulgar, el teclado abierto con el renglón pendiente, y la geocodificación inversa de verdad (aquí el token de Mapbox es inventado: la ciudad del mapa se probó con dobles, no contra Mapbox).
