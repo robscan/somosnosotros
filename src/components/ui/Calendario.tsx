@@ -37,7 +37,7 @@ type Props = {
 };
 
 /**
- * El calendario del mes (OL-162, bitácora 197; extraído de `SelectorFecha` en P5 para que la hoja Cuándo lo use dentro de
+ * El calendario del mes (OL-162, bitácora 197; extraído de la antigua `SelectorFecha` en P5 para que la hoja Cuándo lo use dentro de
  * sí misma, sin copiarlo): flechas de mes, lunes a domingo, hoy marcado, los pasados apagados y, con `diasActivos`, un
  * punto en los que tienen eventos. Un día elegido va en círculo lleno; con un rango, los dos extremos van llenos y los
  * de en medio en el tono suave. Teclado de rejilla: flechas entre días (y meses), Enter o espacio para elegir.

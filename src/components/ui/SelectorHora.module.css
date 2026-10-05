@@ -1,0 +1,43 @@
+/* Hoja de horas (OL-298): las horas en una rejilla de tres columnas con los chips del canon (`ui/Chip`); la duración, informativa, debajo. */
+.horas {
+  /* Alto: seis filas y media (cada una, el toque mínimo más su hueco). La media fila asomada avisa que la lista se desplaza; sin
+     ella, a 6 filas justas, nada dice que hay más horas. Con `position: relative` para que `offsetTop` cuente desde aquí y la hoja
+     centre la hora elegida moviendo solo esta lista (SelectorHora.tsx). */
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espacio-2);
+  align-content: start;
+  max-height: calc(6.5 * (var(--toque-min) + var(--espacio-2)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Cada hora llena su celda y mide el toque mínimo: el `.toque` del chip mide `--alto-chip` y esto lo sube. Con el selector de hijo
+   (más fuerte que su clase) no depende del orden en que lleguen los dos módulos. */
+.horas > button {
+  justify-content: center;
+  min-height: var(--toque-min);
+  padding: 0;
+}
+.sinFin {
+  grid-column: 1 / -1;
+}
+.sugerida {
+  font-weight: 700;
+}
+
+.duracion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--toque-min);
+  margin-top: var(--espacio-1);
+  padding-top: var(--espacio-2);
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.duracion b {
+  color: var(--texto);
+  font-weight: 700;
+}

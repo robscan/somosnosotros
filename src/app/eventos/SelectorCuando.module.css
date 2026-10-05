@@ -4,6 +4,8 @@
 }
 .fila {
   display: flex;
+  flex-wrap: wrap; /* a 320 px, rótulo + fecha + hora + ✕ no caben en un renglón: la hora pasa abajo, alineada a la derecha, en vez de salirse de la tarjeta */
+  justify-content: flex-end;
   align-items: center;
   gap: var(--espacio-2);
   min-height: 56px;
@@ -13,7 +15,7 @@
   border-bottom: none;
 }
 .rotulo {
-  flex: 1;
+  flex: 1 0 auto;
   font-size: var(--letra-md);
 }
 .quitar {

@@ -104,7 +104,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
     <form action={guardar} noValidate>
       <ul className={renglon.renglones}>
         {/* Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
-        <li className={`${renglon.resuelto} ${foto ? "" : renglon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${foto ? "" : renglon.opcional}`}>
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
             <img src={foto} alt="" />

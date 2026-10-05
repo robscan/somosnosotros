@@ -35,11 +35,18 @@
   border-color: var(--error);
 }
 
-/* El campo vacío se marca como faltante, mismo peso que ".pendiente" en los renglones: borde discontinuo, sin
-   rojo de error (ese color se reserva para un error de verdad, tras intentar publicar). Founder, 2026-09-21:
-   con un cartel sin título el campo del nombre no se veía faltante (OL-113). */
+/* El campo vacío (el nombre, obligatorio) se marca como faltante con la línea de «por completar» (gris, punteada de 1 px con
+   aire entre guiones; ui/LineaPorCompletar), sin rojo de error (ese color se reserva para un error de verdad, tras intentar publicar).
+   Founder, 2026-09-21: con un cartel sin título el campo del nombre no se veía faltante (OL-113); 2026-10-05, OL-297: la línea nueva.
+   Al enfocarlo, la línea se va y queda el borde de tinta de siempre. */
+.campoFalta {
+  composes: linea from "./LineaPorCompletar.module.css";
+}
 .campoFalta > input {
-  border-style: dashed;
+  border-color: transparent;
+}
+.campoFalta:focus-within::after {
+  display: none;
 }
 
 /* 1 bis. El cartel, antes del formulario (firmado por el founder, 2026-09-17). Es lo único que explica la

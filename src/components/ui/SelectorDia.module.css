@@ -1,0 +1,7 @@
+/* Hoja de días (OL-298): el calendario va en `ui/Calendario`; aquí, el texto de estado y el botón. */
+.estado {
+  min-height: calc(2 * 1.35em); /* el texto de «Empieza el… Si dura varios días, toca el último.» llega a dos renglones: la hoja no salta al tocar */
+}
+.listo {
+  margin-top: var(--espacio-3);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { archivoIcs, datosEventoNativo, diasActivosCalendario, diasEnMes, escaparIcs, etiquetaDia, hayMesAnterior, haySiguienteMes, mesAnterior, mesInicial, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
+import { archivoIcs, botonDias, datosEventoNativo, diasActivosCalendario, diasEnMes, diasIniciales, escaparIcs, etiquetaDia, etiquetaHora, FIN_DEL_DIA, hayMesAnterior, haySiguienteMes, horasDeFin, mesAnterior, mesInicial, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso, textoDias, tocarDia, ultimoDia } from "./calendario";
 
 const evento = { id: "fba5bd3e-7898-4261-b4fd-97a17b1d61ee", titulo: "Navidad queretana: danza, música; y más", inicio: "2026-12-06T18:00:00.000Z", fin: null, descripcion: "Espectáculo\nnavideño", lugar: "Teatro del IMSS, Tomasa Estévez 805" };
 
@@ -73,7 +73,7 @@ describe("nombreArchivoIcs", () => {
   });
 });
 
-// El calendario del mes y las horas del día, para SelectorFecha (OL-162, bitácora 197).
+// El calendario del mes y las horas del día, para las hojas de día y de hora (OL-162, bitácora 197; OL-298, bitácora 326).
 describe("calendario del mes", () => {
   it("cuenta los días del mes, incluido el año bisiesto", () => {
     expect(diasEnMes(2026, 9)).toBe(30);
@@ -256,5 +256,105 @@ describe("mesInicial", () => {
   });
   it("sin fecha elegida, el mes del límite (hoy, o `min` si es posterior)", () => {
     expect(mesInicial("", "2026-09-19")).toEqual({ anio: 2026, mes: 9 });
+  });
+});
+
+describe("hoja de días: tocarDia (OL-298)", () => {
+  it("el primer toque elige el inicio y espera el fin", () => {
+    expect(tocarDia({ desde: "", hasta: null }, "2026-11-14")).toEqual({ desde: "2026-11-14", hasta: null });
+  });
+  it("un segundo toque en un día posterior elige el fin", () => {
+    expect(tocarDia({ desde: "2026-11-14", hasta: null }, "2026-11-16")).toEqual({ desde: "2026-11-14", hasta: "2026-11-16" });
+  });
+  it("un fin anterior al inicio es imposible: el toque anterior vuelve a empezar desde ese día", () => {
+    expect(tocarDia({ desde: "2026-11-14", hasta: null }, "2026-11-12")).toEqual({ desde: "2026-11-12", hasta: null });
+  });
+  it("tocar otra vez el único día marcado no cambia nada (la fecha es obligatoria)", () => {
+    const uno = { desde: "2026-11-14", hasta: null };
+    expect(tocarDia(uno, "2026-11-14")).toBe(uno);
+  });
+  it("con el rango cerrado, cualquier toque empieza de nuevo (posterior, anterior o uno de los extremos)", () => {
+    const rango = { desde: "2026-11-14", hasta: "2026-11-16" };
+    expect(tocarDia(rango, "2026-11-20")).toEqual({ desde: "2026-11-20", hasta: null });
+    expect(tocarDia(rango, "2026-11-10")).toEqual({ desde: "2026-11-10", hasta: null });
+    expect(tocarDia(rango, "2026-11-14")).toEqual({ desde: "2026-11-14", hasta: null });
+    expect(tocarDia(rango, "2026-11-16")).toEqual({ desde: "2026-11-16", hasta: null });
+  });
+  it("cruza de mes y de año al marcar el fin", () => {
+    expect(tocarDia({ desde: "2026-12-30", hasta: null }, "2027-01-02")).toEqual({ desde: "2026-12-30", hasta: "2027-01-02" });
+  });
+});
+
+describe("hoja de días: diasIniciales", () => {
+  it("un solo día entra como elección cerrada: el primer toque empieza de nuevo, no alarga", () => {
+    for (const hasta of ["2026-11-14", "", undefined]) {
+      const inicial = diasIniciales("2026-11-14", hasta);
+      expect(inicial).toEqual({ desde: "2026-11-14", hasta: "2026-11-14" });
+      expect(tocarDia(inicial, "2026-11-20")).toEqual({ desde: "2026-11-20", hasta: null });
+    }
+  });
+  it("un fin posterior es un rango cerrado; uno anterior (dato roto) se ignora", () => {
+    expect(diasIniciales("2026-11-14", "2026-11-16")).toEqual({ desde: "2026-11-14", hasta: "2026-11-16" });
+    expect(diasIniciales("2026-11-14", "2026-11-10")).toEqual({ desde: "2026-11-14", hasta: "2026-11-14" });
+  });
+  it("lo que se aplica: el último día solo si el evento dura más de uno", () => {
+    expect(ultimoDia({ desde: "2026-11-14", hasta: "2026-11-16" })).toBe("2026-11-16");
+    expect(ultimoDia({ desde: "2026-11-14", hasta: "2026-11-14" })).toBeNull();
+    expect(ultimoDia({ desde: "2026-11-14", hasta: null })).toBeNull();
+  });
+  it("sin día de inicio no hay rango", () => {
+    expect(diasIniciales("", "2026-11-16")).toEqual({ desde: "", hasta: null });
+  });
+});
+
+describe("hoja de días: textoDias y botonDias", () => {
+  const hoy = "2026-10-07";
+  it("sin día, dice qué tocar y el botón dice qué falta", () => {
+    expect(textoDias({ desde: "", hasta: null }, hoy)).toBe("Toca el día en que empieza.");
+    expect(botonDias({ desde: "", hasta: null })).toBe("Falta el día");
+  });
+  it("con un inicio recién tocado, avisa que se puede alargar y el botón dice «un solo día»", () => {
+    expect(textoDias({ desde: "2026-11-14", hasta: null }, hoy)).toBe("Empieza el 14 de noviembre. Si dura varios días, toca el último.");
+    expect(botonDias({ desde: "2026-11-14", hasta: null })).toBe("Listo, un solo día");
+  });
+  it("con un solo día ya confirmado (el que trae el evento), dice cuál es", () => {
+    expect(textoDias({ desde: "2026-11-14", hasta: "2026-11-14" }, hoy)).toBe("El 14 de noviembre.");
+    expect(botonDias({ desde: "2026-11-14", hasta: "2026-11-14" })).toBe("Listo, un solo día");
+  });
+  it("con un rango del mismo mes, «Del 14 al 16 de noviembre»", () => {
+    expect(textoDias({ desde: "2026-11-14", hasta: "2026-11-16" }, hoy)).toBe("Del 14 al 16 de noviembre.");
+    expect(botonDias({ desde: "2026-11-14", hasta: "2026-11-16" })).toBe("Listo");
+  });
+  it("con un rango entre meses, cada día con su mes; con otro año, el año", () => {
+    expect(textoDias({ desde: "2026-11-30", hasta: "2026-12-02" }, hoy)).toBe("Del 30 de noviembre al 2 de diciembre.");
+    expect(textoDias({ desde: "2027-02-10", hasta: "2027-02-12" }, hoy)).toBe("Del 10 al 12 de febrero de 2027.");
+    expect(textoDias({ desde: "2026-12-30", hasta: "2027-01-02" }, hoy)).toBe("Del 30 de diciembre al 2 de enero de 2027.");
+  });
+});
+
+describe("hoja de horas: horasDeFin y etiquetaHora", () => {
+  it("sin límite, las 96 horas del día", () => {
+    expect(horasDeFin()).toHaveLength(96);
+  });
+  it("el mismo día solo ofrece las posteriores al inicio, nunca la misma hora", () => {
+    const horas = horasDeFin("19:00");
+    expect(horas[0]).toBe("19:15");
+    expect(horas.at(-1)).toBe("23:45");
+    expect(horas).not.toContain("19:00");
+    expect(horas).toHaveLength(19);
+  });
+  it("un inicio que no cae en un cuarto de hora (cartel leído) también corta bien", () => {
+    expect(horasDeFin("19:10")[0]).toBe("19:15");
+  });
+  it("un inicio a las 23:45 no deja ninguna hora ese día", () => {
+    expect(horasDeFin("23:45")).toEqual([]);
+  });
+  it("la etiqueta es de 12 horas con a. m. y p. m.", () => {
+    expect(etiquetaHora("19:00").replace(/\s/g, " ")).toBe("7:00 p.m.");
+    expect(etiquetaHora("00:15").replace(/\s/g, " ")).toBe("12:15 a.m.");
+  });
+  it("«sin hora de fin» de un evento de varios días acaba con su último día", () => {
+    expect(FIN_DEL_DIA).toBe("23:59");
+    expect(pasosHora(15)).not.toContain(FIN_DEL_DIA); // no se puede elegir a mano: nadie lo confunde con una hora de la lista
   });
 });

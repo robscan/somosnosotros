@@ -70,6 +70,7 @@
   --radio-grande: 12px; /* portadas y tarjetas grandes */
   --radio-hoja: 24px; /* las dos esquinas de arriba de una hoja */
   --radio-pildora: 999px; /* chips, sellos y botones en píldora */
+  --linea-por-completar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='black' stroke-width='2' stroke-dasharray='4 5'/%3E%3C/svg%3E"); /* máscara de la línea de «por completar» (ui/LineaPorCompletar): trazo de 2 recortado por el borde = 1 visible, guion de 4 y aire de 5; rx = --radio */
 
   /* Controles: lo que se toca */
   --control: 44px; /* alto de lo que se toca en barras y cabeceras */
