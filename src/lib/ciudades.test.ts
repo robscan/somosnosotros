@@ -70,3 +70,44 @@ it("catálogo compartido conserva ciudades vacías en otra sección sin inventar
   expect(oferta.find(c=>c.slug === "zacatecas")).toMatchObject({nombre:"Zacatecas",lugares:0,eventos:0,centroConocido:false});
   expect(oferta.find(c=>c.slug === "leon")).toMatchObject({eventos:1,lugares:0});
 });
+
+describe("OL-283: centro de ciudades sin lugares a partir de sus eventos con punto público", () => {
+  const Z = "America/Mexico_City";
+  const buscar = async (slug: string) => (await cargarCiudades()).find(c => c.slug === slug);
+  it("solo eventos con punto: centro promedio de esos puntos y centro conocido", async () => {
+    banco([
+      { ciudad: "Morelia", zona: Z, lugares: 0, eventos: 3, lat_suma: 0, lng_suma: 0, eventos_con_punto: 2, ev_lat_suma: 39, ev_lng_suma: -202 },
+    ]);
+    expect(await buscar("morelia")).toMatchObject({ lugares: 0, eventos: 3, centro: { lat: 19.5, lng: -101 }, centroConocido: true });
+  });
+  it("el promedio une zonas distintas de la misma ciudad", async () => {
+    banco([
+      { ciudad: "Puebla", zona: Z, lugares: 0, eventos: 1, lat_suma: 0, lng_suma: 0, eventos_con_punto: 1, ev_lat_suma: 19, ev_lng_suma: -98 },
+      { ciudad: "Puebla", zona: "America/Cancun", lugares: 0, eventos: 1, lat_suma: 0, lng_suma: 0, eventos_con_punto: 1, ev_lat_suma: 21, ev_lng_suma: -96 },
+    ]);
+    expect(await buscar("puebla")).toMatchObject({ eventos: 2, centro: { lat: 20, lng: -97 }, centroConocido: true });
+  });
+  it("eventos sin punto (o solo con sitio reservado): sin centro conocido y respaldo de la ciudad inicial", async () => {
+    banco([{ ciudad: "León", zona: Z, lugares: 0, eventos: 2, lat_suma: 0, lng_suma: 0, eventos_con_punto: 0, ev_lat_suma: 0, ev_lng_suma: 0 }]);
+    const inicial = (await cargarCiudades())[0];
+    expect(await buscar("leon")).toMatchObject({ eventos: 2, centro: inicial.centro, centroConocido: false });
+  });
+  it("con lugares usa solo los lugares, sin mezclar los puntos de los eventos", async () => {
+    banco([
+      { ciudad: "Querétaro", zona: Z, lugares: 2, eventos: 0, lat_suma: 44, lng_suma: -196, eventos_con_punto: 0, ev_lat_suma: 0, ev_lng_suma: 0 },
+      { ciudad: "Querétaro", zona: Z, lugares: 0, eventos: 4, lat_suma: 0, lng_suma: 0, eventos_con_punto: 4, ev_lat_suma: 400, ev_lng_suma: 400 },
+    ]);
+    expect(await buscar("queretaro")).toMatchObject({ lugares: 2, eventos: 4, centro: { lat: 22, lng: -98 }, centroConocido: true });
+  });
+  it("la ciudad inicial conserva su centro fijo aunque sus eventos traigan puntos", async () => {
+    banco([{ ciudad: "San Luis Potosí", zona: Z, lugares: 0, eventos: 2, lat_suma: 0, lng_suma: 0, eventos_con_punto: 2, ev_lat_suma: 40, ev_lng_suma: -200 }]);
+    const inicial = (await cargarCiudades())[0];
+    expect(inicial.centro).toEqual(armarCiudades([], [])[0].centro);
+    expect(inicial.centroConocido).toBe(true);
+  });
+  it("función vieja sin los campos nuevos: se comporta como antes", async () => {
+    banco([{ ciudad: "León", zona: Z, lugares: 0, eventos: 1, lat_suma: 0, lng_suma: 0 }]);
+    const inicial = (await cargarCiudades())[0];
+    expect(await buscar("leon")).toMatchObject({ eventos: 1, centro: inicial.centro, centroConocido: false });
+  });
+});
