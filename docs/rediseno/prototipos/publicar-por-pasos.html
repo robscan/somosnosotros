@@ -221,15 +221,18 @@ button.renglon { cursor: pointer; }
 .horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
 .renglon.sin-clave { min-height: var(--toque); }
-.armando { display: grid; gap: var(--espacio-5); }
-.disenos.fantasma span { aspect-ratio: 4 / 5; border-radius: var(--radio); background: var(--fondo-suave); }
-.armando ol { display: grid; gap: var(--espacio-3); margin: 0; padding: 0; list-style: none; }
-.armando li { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; color: var(--texto-suave); }
-.armando li.hecho { color: var(--texto); } .armando li.hecho svg { width: 20px; height: 20px; color: var(--ok); stroke-width: 2.4; }
-.armando li.ahora { color: var(--texto); font-weight: 700; }
-.armando li i { justify-self: center; width: 10px; height: 10px; border-radius: 50%; background: var(--borde); }
-.armando li.ahora i { background: var(--primario); }
-@media (prefers-reduced-motion: no-preference) { .disenos.fantasma span { animation: late 0.9s ease-in-out infinite alternate; } .disenos.fantasma span:nth-child(2) { animation-delay: 0.2s; } .disenos.fantasma span:nth-child(3) { animation-delay: 0.4s; } .disenos.fantasma span:nth-child(4) { animation-delay: 0.6s; } .armando li.ahora i { animation: late 0.5s ease-in-out infinite alternate; } }
+.armando { display: grid; gap: var(--espacio-6); }
+/* El proceso es lo que se mira: pasos grandes arriba, con su avance; los cuatro huecos, chicos y abajo. */
+.barra-armar { height: 6px; border-radius: var(--radio-pildora); background: var(--fondo-suave); overflow: hidden; }
+.barra-armar i { display: block; height: 100%; border-radius: var(--radio-pildora); background: var(--primario); transition: width 0.7s linear; }
+.armando ol { display: grid; gap: var(--espacio-4); margin: 0; padding: 0; list-style: none; }
+.armando li { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; font-size: var(--letra-xl); line-height: 1.2; color: var(--texto-suave); }
+.armando .marca { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--fondo-suave); font-size: var(--letra-md); font-weight: 700; }
+.armando li.hecho { color: var(--texto); } .armando li.hecho .marca { background: var(--ok-suave); color: var(--ok); } .armando li.hecho svg { width: 22px; height: 22px; stroke-width: 2.6; }
+.armando li.ahora { color: var(--texto); font-weight: 800; } .armando li.ahora .marca { background: var(--primario); color: var(--primario-texto); }
+.disenos.fantasma { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); }
+.disenos.fantasma span { aspect-ratio: 4 / 5; border-radius: var(--radio-chico, 4px); background: var(--fondo-suave); }
+@media (prefers-reduced-motion: no-preference) { .armando li.ahora .marca { animation: late 0.5s ease-in-out infinite alternate; } .disenos.fantasma span { animation: late 0.9s ease-in-out infinite alternate; } .disenos.fantasma span:nth-child(2) { animation-delay: 0.2s; } .disenos.fantasma span:nth-child(3) { animation-delay: 0.4s; } .disenos.fantasma span:nth-child(4) { animation-delay: 0.6s; } }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
 .final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
@@ -393,7 +396,7 @@ const VISTAS = {
   }),
   flyer: () => (e.armando !== null ? {
     titulo: 'Tu cartel', pregunta: 'Armando otros cuatro',
-    cuerpo: `<div class="armando" role="status"><div class="disenos fantasma">${'<span></span>'.repeat(4)}</div><ol>${ARMAR.map((t, i) => `<li class="${i < e.armando ? 'hecho' : i === e.armando ? 'ahora' : ''}">${i < e.armando ? ic('ok') : '<i></i>'}${t}</li>`).join('')}</ol></div>`,
+    cuerpo: `<div class="armando" role="status"><div class="barra-armar"><i style="width:${Math.round(((e.armando + 0.5) / ARMAR.length) * 100)}%"></i></div><ol>${ARMAR.map((t, i) => `<li class="${i < e.armando ? 'hecho' : i === e.armando ? 'ahora' : ''}"><span class="marca">${i < e.armando ? ic('ok') : i + 1}</span>${t}</li>`).join('')}</ol><div class="disenos fantasma">${'<span></span>'.repeat(4)}</div></div>`,
     pie: '',
     notas: ['Pedido del founder (2026-10-05): «Ver otros» tarda a propósito unos segundos y enseña el trabajo que hay detrás, para que se sienta que pedir más cuesta esfuerzo (el umbral de Doherty al revés).', 'Los pasos que se muestran deben ser los que de verdad hace el sistema al armar cuatro carteles; si un día «Ver otros» tiene costo, aquí es donde se dice cuántos quedan.'],
   } : {

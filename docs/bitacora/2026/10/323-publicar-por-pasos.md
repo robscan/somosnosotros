@@ -142,3 +142,5 @@ El founder: «ok, solo deja en morado elegir y la linea, disminuye grosor, pero 
   - Nota del gestor: los pasos mostrados deben ser los que de verdad hace el sistema; si un día «Ver otros» tiene costo o cupo, se dice ahí con número («te quedan 2»), no solo con la espera.
 - El founder: «Podemos agregar un leve rebote al o los campos que faltan por llenar?» Los renglones por completar dan un rebote de 5 px, una vez, medio segundo después de entrar a la pantalla; apagado con «reducir movimiento». (Sustituye el «nada de rebotes» del doc 51 solo para este caso.) No se ve en captura fija.
 - Sin errores ni desbordes a 320 y 390.
+
+**Corrección del founder a la espera de «Ver otros»:** «el proceso de creación de carteles no se ve, se coloca debajo de skeletons, debe ser el elemento estelar en ese momento.» Ahora el proceso va arriba y en grande: barra de avance, cuatro pasos numerados de 19 px (hecho con paloma verde, el actual en violeta y negrita) y, debajo y chicos, los cuatro huecos. Captura `sin-13-disenos-armando` rehecha.
