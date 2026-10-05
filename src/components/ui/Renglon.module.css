@@ -327,8 +327,39 @@
   border-radius: 50%;
   object-fit: cover;
 }
+/* Por completar y obligatorio (`pendiente`; founder, 2026-10-05, OL-297): la línea punteada (1 px, guiones de 4 con 5 de aire,
+   gris; dibujada por `LineaPorCompletar`, donde se cambia su color y su grosor) y la acción de la derecha, que ya es del color de
+   acción; la clave y el icono siguen grises y el valor, en tinta como uno resuelto. El borde propio pasa a transparente: la caja mide lo mismo. */
 .pendiente {
+  composes: linea from "./LineaPorCompletar.module.css";
+  --linea-sangria: calc(1px * -1);
+  border-color: transparent;
+}
+.pendiente > .falta {
+  color: var(--texto);
+  font-weight: 600;
+}
+/* Opcional (`opcional`: Quién, Más, foto y portada): no es «por completar», no pide nada; el punteado gris fino de siempre. */
+.opcional {
   border-style: dashed;
+}
+/* Sin clave a la vista (las tres altas; aceptado por el founder tras el prototipo): icono | valor | acción, de `--toque` de alto.
+   La clave («Dónde») se queda en el árbol de accesibilidad: sale de la vista y del flujo, como `ui/SoloLector`. */
+.sinClave {
+  position: relative;
+  grid-template-areas:
+    "foto titulo accion"
+    "cuerpo cuerpo cuerpo";
+  min-height: var(--toque);
+  padding-block: 1px;
+}
+.sinClave > small {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .abierto {
   border-color: var(--texto);
