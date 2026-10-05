@@ -86,6 +86,7 @@ async function main() {
       descripcion: i.descripcion,
       portada: "",
       enlaces: JSON.stringify(i.enlaces),
+      ciudad: CIUDAD,
     });
     if (Object.keys(errores).length) {
       informe.fallidos.push(`- ${i.nombre}: ${Object.values(errores).join(" ")}`);

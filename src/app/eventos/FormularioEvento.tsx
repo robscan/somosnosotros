@@ -21,7 +21,7 @@ import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, 
 import { faltaEnEvento } from "@/lib/formulario";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
-import type { Ciudad } from "@/lib/ciudad";
+import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
@@ -171,6 +171,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   // que el punto cambia (hoja, borrador). Sin punto, la de la ciudad inicial, como al guardar.
   const puntoActivo = modoSitio === "reservado" ? otro.privadoPunto : modoSitio === "otro" ? otro.sitioPunto : null;
   const clavePunto = puntoActivo ? `${puntoActivo.lat},${puntoActivo.lng}` : "";
+  // La ciudad del sitio es la del pin: la de Mapbox o, sin ella, la de contexto si el pin cae cerca; sin ninguna, el servidor no publica (OL-299).
+  const ciudadSitio = puntoActivo ? ciudadParaPunto(puntoActivo, otro.ciudad, ciudadContexto) : otro.ciudad;
   const [zonaPin, setZonaPin] = useState(zonaSitio);
   // Mientras nadie la toque, la hora sugerida sigue a la zona del sitio (resugerir), con el fin detrás.
   const sugerida = useRef(modo === "editar" ? "" : inicio);
@@ -763,7 +765,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         <input type="hidden" name="privado_lng" value={modoSitio === "reservado" && otro.privadoPunto ? otro.privadoPunto.lng : ""} />
         <input type="hidden" name="revelar_horas" value={otro.revelarHoras} />
         <input type="hidden" name="indicaciones" value={modoSitio === "reservado" ? otro.indicaciones : ""} />
-        <input type="hidden" name="ciudad" value={modoSitio === "lugar" ? "" : (otro.ciudad ?? "")} />
+        <input type="hidden" name="ciudad" value={modoSitio === "lugar" ? "" : (ciudadSitio ?? "")} />
         {abierta !== "cuando" && (
           <>
             <input type="hidden" name="inicio" value={inicio} />

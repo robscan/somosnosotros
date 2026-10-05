@@ -16,7 +16,7 @@ function formulario() {
   const fd = new FormData();
   for (const [k, v] of Object.entries({ operacion: ID, revision: "2030-09-01T12:00:00Z", modo_sitio: "otro",
     sitio_texto: "Foro de prueba", sitio_direccion: "Calle Prueba 123", sitio_lat: "22.15", sitio_lng: "-100.98",
-    sitio_pin_pendiente: "no", titulo: "Evento", inicio: "2030-10-01T19:00", gratis: "si", quien: "[]" })) fd.set(k, v);
+    sitio_pin_pendiente: "no", ciudad: "San Luis Potosí", titulo: "Evento", inicio: "2030-10-01T19:00", gratis: "si", quien: "[]" })) fd.set(k, v);
   return fd;
 }
 beforeEach(() => {
@@ -74,5 +74,44 @@ describe("transporte de direccion del formulario al guardado", () => {
     expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_datos: { sitio_direccion: null, sitio_lat: null, sitio_lng: null, sitio_reservado: true },
       p_privado: { direccion: "Calle Reservada 789", lat: 22.16, lng: -100.99 } });
     expect(JSON.stringify(m.rpc.mock.calls[0][1].p_datos)).not.toContain("Calle Reservada");
+  });
+});
+
+const SIN_CIUDAD = "No pudimos saber en qué ciudad está. Intenta de nuevo.";
+
+/** OL-299: la ciudad de un evento en «otro sitio» ya no cae en San Luis Potosí en silencio cuando hay un punto. */
+describe("ciudad del evento en otro sitio", () => {
+  it("el alta con un pin de otra ciudad guarda esa ciudad, no la inicial", async () => {
+    const fd = formulario(); fd.set("ciudad", "Querétaro");
+    await expect(crearEvento(null, fd)).rejects.toThrow("REDIRECT");
+    expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_datos: { ciudad: "Querétaro" } });
+  });
+  it("el alta con un pin y sin ciudad no se publica y lo dice en la dirección del sitio", async () => {
+    const fd = formulario(); fd.set("ciudad", "");
+    expect(await crearEvento(null, fd)).toEqual({ ok: false, errores: { sitio_direccion: SIN_CIUDAD } });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+  it("un reservado con pin nuevo y sin ciudad tampoco, y lo dice en la dirección privada", async () => {
+    const fd = formulario(); fd.set("ciudad", ""); fd.set("modo_sitio", "reservado"); fd.set("direccion_privada", "Calle Reservada 789");
+    fd.set("privado_lat", "20.6"); fd.set("privado_lng", "-100.4");
+    expect(await crearEvento(null, fd)).toEqual({ ok: false, errores: { direccion_privada: SIN_CIUDAD } });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+  it("un sitio escrito sin coordenadas no tiene de dónde deducir la ciudad: sigue en la inicial y se publica", async () => {
+    const fd = formulario(); fd.set("ciudad", ""); fd.set("sitio_direccion", ""); fd.set("sitio_lat", ""); fd.set("sitio_lng", "");
+    await expect(crearEvento(null, fd)).rejects.toThrow("REDIRECT");
+    expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_datos: { ciudad: "San Luis Potosí" } });
+  });
+  it("(edición) con el mismo pin y sin ciudad en el formulario conserva la del evento guardado", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { sitio_reservado: false, inicio: "2030-10-01T19:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, ciudad: "Querétaro", sitio_lat: 22.15, sitio_lng: -100.98 } });
+    const fd = formulario(); fd.set("ciudad", "");
+    expect((await actualizarEvento(ID, null, fd)).ok).toBe(true);
+    expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_evento: ID, p_datos: { ciudad: "Querétaro" } });
+  });
+  it("(edición) moviendo el pin a un punto sin ciudad no se guarda y lo dice", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { sitio_reservado: false, inicio: "2030-10-01T19:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, ciudad: "Querétaro", sitio_lat: 20.6, sitio_lng: -100.4 } });
+    const fd = formulario(); fd.set("ciudad", "");
+    expect(await actualizarEvento(ID, null, fd)).toEqual({ ok: false, errores: { sitio_direccion: SIN_CIUDAD } });
+    expect(m.rpc).not.toHaveBeenCalled();
   });
 });

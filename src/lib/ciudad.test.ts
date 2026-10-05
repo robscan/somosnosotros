@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destinoDeCiudad, guardarEleccionCiudad, hrefConCiudad, leerEleccionCiudad, altaLejosDeCiudades, armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadInicialCercana, ciudadesDeHoja, ciudadMasCercana, ciudadPorNombre, ciudadPorSlug, filasDeCiudades, ofrecerUbicacionCiudades, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
+import { destinoDeCiudad, guardarEleccionCiudad, hrefConCiudad, leerEleccionCiudad, altaLejosDeCiudades, armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadInicialCercana, ciudadesDeHoja, ciudadMasCercana, ciudadParaPunto, ciudadPorNombre, ciudadPorSlug, filasDeCiudades, ofrecerUbicacionCiudades, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
 
 describe("ciudad", () => {
   it("«Cerca de ti» lleva a la ciudad cuyo centro queda más cerca, y sin lista, a la inicial", () => {
@@ -93,6 +93,28 @@ describe("ciudad", () => {
     expect(c[1]).toMatchObject({ slug: "queretaro", zoom: 13 });
     expect(ciudadPorSlug("guadalajara", c).artistas).toBe(1);
     expect(armarCiudadesDeArtistas([])).toEqual([{ ...CIUDAD_INICIAL, artistas: 0 }]);
+  });
+});
+
+describe("ciudadParaPunto (OL-299)", () => {
+  const queretaro: Ciudad = { slug: "queretaro", nombre: "Querétaro", centro: { lng: -100.39, lat: 20.59 }, zoom: 13 };
+  it("la ciudad que dio el mapa manda, aunque haya contexto, y se guarda canónica", () => {
+    expect(ciudadParaPunto({ lat: 20.6, lng: -100.4 }, "Querétaro", CIUDAD_INICIAL)).toBe("Querétaro");
+    expect(ciudadParaPunto({ lat: 22.18, lng: -100.93 }, "Soledad de Graciano Sánchez", null)).toBe("San Luis Potosí");
+    expect(ciudadParaPunto({ lat: 37.88, lng: -4.78 }, "Córdoba, España", CIUDAD_INICIAL)).toBe("Córdoba, España");
+  });
+  it("sin ciudad del mapa y con el punto cerca del centro de la ciudad de contexto, usa la de contexto", () => {
+    expect(ciudadParaPunto({ lat: 22.16, lng: -100.99 }, null, CIUDAD_INICIAL)).toBe("San Luis Potosí");
+    expect(ciudadParaPunto({ lat: 20.6, lng: -100.4 }, "", queretaro)).toBe("Querétaro");
+    expect(ciudadParaPunto({ lat: 22.4, lng: -100.9764 }, undefined, CIUDAD_INICIAL)).toBe("San Luis Potosí");
+  });
+  it("sin ciudad del mapa y lejos del contexto (más de 50 km), no inventa ninguna", () => {
+    expect(ciudadParaPunto({ lat: 20.6, lng: -100.4 }, null, CIUDAD_INICIAL)).toBeNull();
+    expect(ciudadParaPunto({ lat: 22.7, lng: -100.9764 }, "", CIUDAD_INICIAL)).toBeNull();
+  });
+  it("sin ciudad del mapa y sin ciudad de contexto, tampoco", () => {
+    expect(ciudadParaPunto({ lat: 22.15, lng: -100.97 }, null, null)).toBeNull();
+    expect(ciudadParaPunto({ lat: 22.15, lng: -100.97 }, "  ", undefined)).toBeNull();
   });
 });
 

@@ -20,6 +20,8 @@
   pointer-events: none;
 }
 .campo > input {
+  /* Sin esto, el ancho propio del input (20 caracteres de la letra del sistema) empuja la columna y el campo se sale de la tarjeta en pantallas angostas. */
+  min-width: 0;
   min-height: var(--toque);
   padding: 0 14px 0 44px;
   border: 1px solid var(--borde);

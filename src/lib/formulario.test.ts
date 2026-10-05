@@ -31,9 +31,14 @@ describe("qué falta en cada alta", () => {
     expect(faltaEnLugar({ nombre: "", ubicado: true })).toBe("Falta el nombre.");
     expect(faltaEnLugar({ nombre: "Foro del Carmen", ubicado: true })).toBeNull();
   });
-  it("artista: solo el nombre, y que no esté ya registrado en su ciudad", () => {
-    expect(faltaEnArtista({ nombre: "", repetido: false })).toBe("Falta el nombre.");
-    expect(faltaEnArtista({ nombre: " Los Vecinos ", repetido: false })).toBeNull();
-    expect(faltaEnArtista({ nombre: "Los Vecinos", repetido: true })).toBe("Ese nombre ya tiene ficha.");
+  it("artista: el nombre y la disciplina, y que no esté ya registrado en su ciudad", () => {
+    expect(faltaEnArtista({ nombre: "", conDisciplina: true, repetido: false })).toBe("Falta el nombre.");
+    expect(faltaEnArtista({ nombre: " Los Vecinos ", conDisciplina: true, repetido: false })).toBeNull();
+    expect(faltaEnArtista({ nombre: "Los Vecinos", conDisciplina: true, repetido: true })).toBe("Ese nombre ya tiene ficha.");
+  });
+  it("artista: sin pista en el nombre falta la disciplina (OL-299), sola o junto al nombre", () => {
+    expect(faltaEnArtista({ nombre: "Ana Ruiz", conDisciplina: false, repetido: false })).toBe("Falta la disciplina.");
+    expect(faltaEnArtista({ nombre: "", conDisciplina: false, repetido: false })).toBe("Falta el nombre y la disciplina.");
+    expect(faltaEnArtista({ nombre: "Ana Ruiz", conDisciplina: false, repetido: true })).toBe("Falta la disciplina.");
   });
 });
