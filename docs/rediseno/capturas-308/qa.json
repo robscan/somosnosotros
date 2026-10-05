@@ -1,0 +1,103 @@
+{
+  "fuente": "Next16.3.8 real; perfil/sesión/fila inventados; iframe Mixcloud real sin reproducción",
+  "url": "https://www.mixcloud.com/robscan/randomatic-oct-26/",
+  "casos": [
+    {
+      "width": 320,
+      "modo": "nueva",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 280,
+      "documento": 320,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 320,
+      "modo": "editar",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 280,
+      "documento": 320,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 320,
+      "modo": "ficha",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 280,
+      "documento": 320,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 320,
+      "modo": "recarga",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 280,
+      "documento": 320,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 390,
+      "modo": "nueva",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 350,
+      "documento": 390,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 390,
+      "modo": "editar",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 350,
+      "documento": 390,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 390,
+      "modo": "ficha",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 350,
+      "documento": 390,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    },
+    {
+      "width": 390,
+      "modo": "recarga",
+      "src": "https://www.mixcloud.com/widget/iframe/?feed=%2Frobscan%2Frandomatic-oct-26%2F&hide_cover=1&light=1",
+      "x": 20,
+      "ancho": 350,
+      "documento": 390,
+      "fuente": [
+        "Bricolage Grotesque"
+      ],
+      "reproductor": "Randomatic Oct 26, 00:00"
+    }
+  ],
+  "errores": []
+}

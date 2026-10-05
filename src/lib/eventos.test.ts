@@ -260,6 +260,11 @@ describe("queCambio", () => {
 
 describe("jsonLdEvento", () => {
   const base = { id: "e1", titulo: "Noche de jazz", descripcion: null, inicio: "2026-09-20T19:00:00.000Z", fin: null, imagen: null, gratis: true, sitioNombre: "Teatro de la Paz", direccionPublica: "Av. Venustiano Carranza 1815", ciudadPublica: "San Luis Potosí", sitioLat: null, sitioLng: null };
+  it("la URL con slug coincide con la dirección canónica de la ficha; sin slug conserva el respaldo UUID", () => {
+    const evento = { ...base, slug: "noche-de-jazz" };
+    expect(jsonLdEvento(evento).url).toBe(`https://somosnosotros.org${hrefEvento(evento)}`);
+    expect(jsonLdEvento(base).url).toBe(`https://somosnosotros.org${hrefEvento(base)}`);
+  });
   it("trae lo mínimo: tipo, nombre, dirección con ciudad, fecha y sitio", () => {
     const d = jsonLdEvento(base);
     expect(d).toMatchObject({

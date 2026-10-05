@@ -23,7 +23,7 @@ type SearchParams = { ciudad?: string; lugar?: string };
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudades();
+  const ciudades = await cargarCiudades(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/lugares" : `/lugares?ciudad=${resuelta.slug}`;
   const titulo = "Lugares · Somos Nosotros";
@@ -79,7 +79,7 @@ async function cargarExtras(ciudad: Ciudad): Promise<ExtrasLugares> {
 
 export default async function Lugares({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug, lugar } = await searchParams;
-  const ciudades = await cargarCiudades();
+  const ciudades = await cargarCiudades(true);
   const ciudad = ciudadPorSlug(slug, ciudades);
   // `lugares` es lo único que pide la fila de contexto: se espera aquí, aparte de `extras` (destacados, seguidos, avisos), que solo
   // necesitan el mapa y la hoja y se difieren abajo.

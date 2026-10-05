@@ -26,7 +26,7 @@ type SearchParams = { ciudad?: string };
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudades();
+  const ciudades = await cargarCiudades(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${resuelta.slug}`;
   return {
@@ -48,7 +48,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  */
 export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug } = await searchParams;
-  const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudades(true), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const usuarioId = actual?.perfil.id ?? null;
   const supabase = await clienteServidor();

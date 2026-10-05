@@ -64,7 +64,7 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
 
   return (
     <>
-      <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={hrefDeCiudad} />
+      <ChipCiudad ciudad={ciudad} ciudades={ciudades} seccion="eventos" hrefDe={hrefDeCiudad} />
       <Chip variante="contexto" icono={<IconoCalendario width={16} height={16} />} activo={!!valor.cuando} onClick={() => abrir("cuando")}>
         {valor.cuando ? etiquetaCuando(valor.cuando, hoy, zona) : "Cuándo"}
       </Chip>

@@ -12,6 +12,7 @@ Este repositorio reúne el resultado de la investigación y las propuestas solic
 
 | Documento | Peticiones que aborda | Resultado buscado |
 | --- | --- | --- |
+| [SEO](seo.md) | Estado de indexación y visibilidad, rastreo, contenido local, fichas y sitemap | Conservar la auditoría y priorizar mejoras con evidencia; D0/A autorizadas por el gestor, demás etapas pendientes |
 | [Eventos](eventos.md) | Festivales y programas; exposiciones visitables después de inaugurarse; talleres de varias sesiones; convocatorias; captura con IA; filtros; preparación para mini tours | Registrar y encontrar actividades complejas con el menor esfuerzo de captura |
 | [Eventos: modelo y recorridos](eventos-modelo.md) | Desarrollo de E1: identidades, tiempo, captura conjunta, consulta y contratos mínimos con horarios, formación e historial | Revisar el siguiente paso de Eventos sin ampliar los otros proyectos |
 | [Artistas](artistas.md) | KPI «Lugares»; trayectoria; lugares y actividades compartidas; antecedentes; integrantes de grupos; reseña y presentación para bookers | Construir una trayectoria comprobable y reutilizable, bajo control del artista |

@@ -4,14 +4,28 @@
   z-index: var(--z-hoja);
   background: var(--velo-hoja);
 }
+/* Safari iOS deja ver la página por su barra de dirección translúcida, fuera del visualViewport.
+   El velo cubre la ventana y el blanco continúa detrás de esa barra; el contenido termina antes. */
+.fondo::after {
+  content: "";
+  position: absolute;
+  top: var(--alto-visible, 100%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: var(--columna);
+  margin-inline: auto;
+  background: var(--fondo);
+  pointer-events: none;
+}
 .hoja {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(100% - var(--alto-visible, 100%));
   max-width: var(--columna); /* desde 792, del ancho de la columna y centrada */
   margin-inline: auto;
-  max-height: calc(100% - 48px);
+  max-height: calc(var(--alto-visible, 100%) - 48px);
   overflow-y: auto;
   /* A los lados, el relleno del teléfono y no var(--gutter): el gutter crece con la ventana para centrar lo que va a todo
      lo ancho, y dentro de una hoja que ya mide la columna se comía el ancho (en escritorio el texto quedaba en una tira de
@@ -36,10 +50,15 @@
 @media (min-width: 792px) {
   .fondo {
     display: grid;
+    grid-template-rows: var(--alto-visible, 100%);
     place-items: center;
+  }
+  .fondo::after {
+    display: none;
   }
   .hoja {
     position: relative;
+    bottom: 0;
     width: 100%;
     padding-bottom: var(--espacio-4);
     border-radius: var(--radio-hoja);

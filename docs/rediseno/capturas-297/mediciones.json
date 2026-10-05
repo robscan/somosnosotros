@@ -1,0 +1,292 @@
+[
+  {
+    "estado": 1,
+    "ancho": 390,
+    "imagen": "estado-1-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 488.015625,
+        "bottom": 844,
+        "height": 355.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nSan Miguel de Allende\n3 lugares · 3 eventos\nAguascalientes\n1 evento"
+  },
+  {
+    "estado": 2,
+    "ancho": 390,
+    "imagen": "estado-2-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 488.015625,
+        "bottom": 844,
+        "height": 355.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nSan Miguel de Allende\n3 lugares · 3 eventos\nAguascalientes\n1 evento"
+  },
+  {
+    "estado": 3,
+    "ancho": 390,
+    "imagen": "estado-3-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 548.015625,
+        "bottom": 844,
+        "height": 295.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento"
+  },
+  {
+    "estado": 4,
+    "ancho": 390,
+    "imagen": "estado-4-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 48,
+        "bottom": 508,
+        "height": 460
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista",
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
+  },
+  {
+    "estado": 5,
+    "ancho": 390,
+    "imagen": "estado-5-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 488.015625,
+        "bottom": 844,
+        "height": 355.984375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento\nAgregar un evento donde estás"
+  },
+  {
+    "estado": 6,
+    "ancho": 390,
+    "imagen": "estado-6-390.png",
+    "medida": {
+      "anchoDocumento": 390,
+      "hoja": {
+        "top": 48,
+        "bottom": 358,
+        "height": 310
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "geometria358": {
+      "boton": {
+        "top": 241.40625,
+        "bottom": 289.40625
+      },
+      "campo": {
+        "top": 139.15625,
+        "bottom": 185.15625
+      },
+      "cuerpo": {
+        "top": 106.90625,
+        "bottom": 338
+      },
+      "tocable": true
+    },
+    "errores": [],
+    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
+    "seccion": "lugares",
+    "ciudadesSimuladas": 13,
+    "viewportSimulado": 358,
+    "limite": "Datos y visualViewport358 simulados, sin teclado nativo nuevo. Geometría completa del campo/botón y elementFromPoint correctos; ubicación/alta lejana ocultas durante búsqueda."
+  },
+  {
+    "estado": 1,
+    "ancho": 320,
+    "imagen": "estado-1-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 467.765625,
+        "bottom": 844,
+        "height": 376.234375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nSan Miguel de Allende\n3 lugares · 3 eventos\nAguascalientes\n1 evento"
+  },
+  {
+    "estado": 2,
+    "ancho": 320,
+    "imagen": "estado-2-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 467.765625,
+        "bottom": 844,
+        "height": 376.234375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nUsar mi ubicación\nSan Luis Potosí\n63 lugares · 138 eventos\nSan Miguel de Allende\n3 lugares · 3 eventos\nAguascalientes\n1 evento"
+  },
+  {
+    "estado": 3,
+    "ancho": 320,
+    "imagen": "estado-3-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 508.265625,
+        "bottom": 844,
+        "height": 335.734375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\nEstás aquí · 63 lugares · 138 eventos\nSan Miguel de Allende\n139 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento"
+  },
+  {
+    "estado": 4,
+    "ancho": 320,
+    "imagen": "estado-4-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 48,
+        "bottom": 508,
+        "height": 460
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con artistas\n\nSolo salen ciudades donde ya hay artistas registrados.\n\nAguascalientes\n1 artista\nGuadalajara\n1 artista",
+    "limite": "visualViewport.height=508 simulado; sin teclado nativo. Hoja blanca continúa hasta innerHeight; contenido acotado a 508."
+  },
+  {
+    "estado": 5,
+    "ancho": 320,
+    "imagen": "estado-5-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 467.765625,
+        "bottom": 844,
+        "height": 376.234375
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "errores": [],
+    "texto": "Ciudades con eventos\n\nSolo salen ciudades donde ya hay eventos publicados.\n\nSan Luis Potosí\n178 km · 63 lugares · 138 eventos\nSan Miguel de Allende\n279 km · 3 lugares · 3 eventos\nAguascalientes\n1 evento\nAgregar un evento donde estás"
+  },
+  {
+    "estado": 6,
+    "ancho": 320,
+    "imagen": "estado-6-320.png",
+    "medida": {
+      "anchoDocumento": 320,
+      "hoja": {
+        "top": 48,
+        "bottom": 358,
+        "height": 310
+      },
+      "fuera": 0,
+      "fuentes": [
+        "Bricolage Grotesque"
+      ]
+    },
+    "geometria358": {
+      "boton": {
+        "top": 261.625,
+        "bottom": 309.625
+      },
+      "campo": {
+        "top": 159.375,
+        "bottom": 205.375
+      },
+      "cuerpo": {
+        "top": 106.875,
+        "bottom": 338
+      },
+      "tocable": true
+    },
+    "errores": [],
+    "texto": "Ciudades con lugares\n\nSolo salen ciudades donde ya hay lugares publicados.\n\nNada con «zzzzz».\n\nAgregar un lugar",
+    "destinoTrasToque": "http://127.0.0.1:8831/nuevo?tipo=lugar",
+    "seccion": "lugares",
+    "ciudadesSimuladas": 13,
+    "viewportSimulado": 358,
+    "limite": "Datos y visualViewport358 simulados, sin teclado nativo nuevo. Geometría completa del campo/botón y elementFromPoint correctos; ubicación/alta lejana ocultas durante búsqueda."
+  },
+  {
+    "webkit": true,
+    "viewportSimulado": 508,
+    "cajas": {
+      "input": {
+        "top": 150.921875,
+        "bottom": 174.71875
+      },
+      "fila": {
+        "top": 198.828125,
+        "bottom": 258.125
+      },
+      "hoja": {
+        "top": 48,
+        "bottom": 508
+      }
+    },
+    "errores": [],
+    "limite": "Área visual reducida en WebKit; sin teclado nativo ni aviso nativo de iOS."
+  }
+]
