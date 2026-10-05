@@ -1135,3 +1135,65 @@ Estado al relevo (main `6d870573`):
     - el founder prueba TestFlight 1.0 (4).
   - **SEO:** C y D pendientes; la línea base de Search Console llega en 2 o 3 días.
   - **Sin respuesta todavía:** la luz verde para el diagnóstico SEO D.
+
+## Relevo del gestor IV (2026-10-05)
+
+El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`) entrega a «Gestor de cambios IV» por orden del founder (2026-10-05, 08:46): «revisa listado de pendientes en este chat, luego abre uno nuevo (Gestor de cambios IV) y comienza a ejecutar ahí a partir de las 9». Valen las mismas reglas: este registro, `docs/ops/GESTION_DE_CAMBIOS.md` y `docs/ops/MEMORIA_GESTOR.md`.
+
+**Estado al relevo (08:55):**
+
+- **main:** `0e64cc37`. **Producción:** `992fe299`. La diferencia es solo el registro (#349): Vercel no despliega las uniones de solo documentos («Ignored Build Step»).
+- **Sin PR abiertos.** La CI de main está en verde. Desde OL-281 corre en paralelo (unos 4 minutos) y sus checks son `codigo`, `contratos`, `interfaz` y `verificar`.
+- **La rama del gestor III** (`claude/goofy-khayyam-d25b72`) es idéntica a main. El gestor IV lleva el registro desde su propia rama.
+- **Números:** están reservados y todavía no existen en el repo OL-282, OL-283 y OL-285, y las bitácoras 310, 311 y 313. `siguiente-bitacora.sh` no los ve. **Los siguientes libres son OL-286 y la bitácora 314.**
+
+**Cómo se trabaja (lo que no está en otros documentos):**
+
+- **Publicar:** `/Users/apple-1/somosnosotros-privado/gestor/publicar.sh <worktree> <rama> <PR>`. Trae main con `resolver_ol.py`, espera la CI hasta 20 minutos y une solo si sale en verde. Después se comprueba el SHA del despliegue de Production y que el dominio responda.
+  - Si el resolutor se detiene por la cabecera de `OPEN_LOOPS.md`, se resuelve a mano sin perder líneas de main y se une con la CI en verde.
+- **Registro a main:** en el worktree `.claude/worktrees/registro-gestor`, rama `gestor-registro-N` desde `origin/main` (la última fue la 13), solo con `docs/ops/ASIGNACIONES.md`. PR, CI en verde y unión.
+- **Codex:** el founder pega sus mensajes en el chat del gestor y pega de vuelta la respuesta. El gestor reserva OL, bitácora, rama y archivos, revisa cada entrega (diff, evidencia y CI del SHA exacto) y publica.
+  - Código nuevo solo con el «publica» del founder.
+  - Las migraciones las aplica el gestor (`db:push`, primero `--dry-run`) antes de unir el código.
+  - Sin ayudantes ni varios agentes.
+- **Prototipos en el celular del founder:** se sirven con raw.githack.com fijado a un commit (`https://raw.githack.com/robscan/somosnosotros/<sha>/docs/rediseno/prototipos/<archivo>.html`). La vista previa de Vercel pide sesión.
+- **Teclado real de iOS:** se compila la rama contra `scripts/ops/auditoria-ui/respaldo-local` (`next build` y `next start`) y se abre en el Safari del simulador, con `ConnectHardwareKeyboard` en falso y tecleando con toques.
+- **Reglas del founder que se revisan en cada entrega:**
+  - canon de `ui/*` sin improvisar;
+  - la ✕ para limpiar en todo campo de texto;
+  - prototipo antes que código;
+  - frases llanas.
+
+**Cola del gestor IV, en orden:**
+
+1. **Sesión de diseño con Fable (pieza propia del gestor; prototipo antes que código):**
+   - **OL-273, sugerencias al publicar un evento.** El prototipo de Codex está aceptado (`901215d3`, cierre `54b473a3`, rama `prototipo-eventos` en origin, sin PR) y en pausa: el founder quiere superficies nuevas diseñadas por el gestor. Le falta la ✕ en sus campos.
+   - **El renglón «Dónde» de la ficha de evento.** Siempre abre el mapa. Un sitio fuera del catálogo abre un pin temporal con «Cómo llegar» y, solo con sesión y si no es un negocio, «Agregar como lugar». Los sitios reservados quedan fuera. Mapbox recibe solo las coordenadas del sitio.
+   - **El teclado tapa campos en «Editar novedad»** (Safari iOS; reporte del founder del 2026-10-04). Se reproduce y se mide en el simulador antes de proponer.
+   - **Las notas del chat «Actividad de investigación de eventos»:** hay que pedírselas. Son: dirección editable confusa, guardar un sitio nuevo al elegirlo, rutina de redes al repositorio, reto expo/festival y artistas de fuera.
+2. **Reservas vivas para Codex, sin arrancar (no hay ramas):** hay que confirmar con el founder si ya le pegó los encargos.
+   - OL-282 / bitácora 310: calendario «Cuándo» a 320.
+   - OL-283 / bitácora 311: centro de las ciudades con eventos sin lugar (el SQL primero).
+   - OL-285 / bitácora 313: una novedad posterior al «quitado» lo levanta (el SQL primero).
+3. **Pruebas del founder:**
+   - TestFlight 1.0 (4), con los pasos de la bitácora 283, paso 7;
+   - en su iPhone, lo publicado el 2026-10-04: la ciudad que persiste, el aviso «Ciudad cambiada a…», «Más adelante» y Mixcloud.
+4. **SEO:**
+   - Search Console: revisar el sitemap (quedó como «No se ha podido obtener» recién enviado) y la línea base desde el 2026-10-07;
+   - etapa D (diagnóstico de solo lectura): falta la luz verde del founder;
+   - etapa C (páginas por ciudad): con prototipo;
+   - Bing: opcional.
+5. **Para después, pedido por el founder:**
+   - el mini reproductor persistente de novedades, con prototipo;
+   - un control para ocultar novedades, con prototipo;
+   - el aviso de ciudad en Agenda, Artistas y Buscar, solo si lo pide.
+6. **Sin prisa:**
+   - revisar el uso del optimizador de imágenes de Vercel antes del 2026-10-10;
+   - la medición intermitente `s13` de Lugares;
+   - 8 avisos de npm audit en herramientas de desarrollo;
+   - H07 a y c, con la señal de 270 eventos;
+   - el doble toque del asa de la hoja de Lugares;
+   - la hoja de Lugares, que carga llena en el móvil (anotado en OL-279);
+   - el respaldo de destacados, que puede mostrar a un artista quitado;
+   - el nombre de la ciudad con Mapbox: «no por ahora»;
+   - C5 / OL-151, detenida para código, y C6, sin decidir.
