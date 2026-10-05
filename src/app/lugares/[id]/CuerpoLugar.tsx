@@ -27,6 +27,7 @@ import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
+import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { etiquetaTipo, hrefLugar, partesDeDireccion, type Lugar } from "@/lib/lugares";
 import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
@@ -62,10 +63,16 @@ const correoDe = (actual: Actual | null) => (actual?.correo ? enmascararCorreo(a
  */
 export async function cargarLugar(idOSlug: string): Promise<LugarConAutor | null> {
   const supabase = await clienteServidor();
-  if (!supabase) return null;
+  if (!supabase) {
+    console.warn("[ficha] cliente no disponible: lugar");
+    throw new Error(ERROR_FICHA);
+  }
   const columnas = "id, slug, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)";
-  const porSlug = await supabase.from("lugares").select(columnas).eq("slug", idOSlug).maybeSingle();
-  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("lugares").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
+  const data = await leerFicha<LugarConAutor>(
+    "lugar",
+    () => supabase.from("lugares").select(columnas).eq("slug", idOSlug).maybeSingle(),
+    esUuid(idOSlug) ? () => supabase.from("lugares").select(columnas).eq("id", idOSlug).maybeSingle() : null,
+  );
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
   return { ...(data as unknown as Lugar), autor: autor as LugarConAutor["autor"] };
