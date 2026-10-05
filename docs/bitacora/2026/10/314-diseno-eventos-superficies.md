@@ -29,3 +29,10 @@
 - Tipo nuevo «Plaza o jardín».
 - Las tres opciones al elegir un sitio fuera del directorio, y su orden.
 - Arreglo del editor de texto largo con el teclado (pieza de código aparte).
+
+## Decisiones del founder (2026-10-05, tras ver la primera vuelta)
+
+- **La ficha en punteado sustituye** a la tarjeta de sugerencia del prototipo de Codex (OL-273).
+- **Negocios:** de acuerdo con identificarlos por la categoría que da el mapa en ese punto (bar, café, restaurante): ahí no se ofrece «Agregar como lugar».
+- **Tipo de lugar nuevo:** «Plaza, jardín o parque» («si agrega plaza o jardín/ parque»). El prototipo ya usa la lista real de tipos más este.
+- Siguen abiertas: las tres opciones al elegir un sitio fuera del directorio y el arreglo del texto largo con el teclado.

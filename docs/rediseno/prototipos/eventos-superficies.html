@@ -223,7 +223,7 @@ const dia = (iso) => `${Number(iso.slice(8))} de ${MESES[Number(iso.slice(5, 7))
 const corto = (iso) => [Number(iso.slice(8)), MESES[Number(iso.slice(5, 7)) - 1].slice(0, 3)];
 
 const SITIOS = {
-  catalogo: { nombre: 'Teatro de la Paz', tipo: 'Teatro', direccion: 'Villerías 205, Centro Histórico', distancia: 'A 850 m', tono: '#8a4b3c', evento: 'Concierto de la Orquesta Sinfónica', cuando: 'Viernes 9 de octubre · 20:00', proximos: [['Concierto de la Orquesta Sinfónica', 'Vie 9 oct · 20:00'], ['Gala de danza folclórica', 'Dom 18 oct · 18:00']] },
+  catalogo: { nombre: 'Teatro de la Paz', tipo: 'Foro', direccion: 'Villerías 205, Centro Histórico', distancia: 'A 850 m', tono: '#8a4b3c', evento: 'Concierto de la Orquesta Sinfónica', cuando: 'Viernes 9 de octubre · 20:00', proximos: [['Concierto de la Orquesta Sinfónica', 'Vie 9 oct · 20:00'], ['Gala de danza folclórica', 'Dom 18 oct · 18:00']] },
   publico: { nombre: 'Caja del Agua', direccion: 'Calzada de Guadalupe, Barrio de San Miguelito', distancia: 'A 1.2 km', evento: 'Fotomúsica: caminata para tomar fotos', cuando: 'Sábado 10 de octubre · 17:00', tono: '#3d6b6b' },
   negocio: { nombre: 'Rockabilly Bar', direccion: 'Av. Venustiano Carranza 1140, Tequisquiapan', distancia: 'A 2.4 km', evento: 'The Black Parade', cuando: 'Sábado 17 de octubre · 21:00', tono: '#3a3a4a', negocio: true },
   sinpunto: { nombre: 'Alameda Juan Sarabia, junto al monumento a Hidalgo', direccion: null, evento: 'Recorrido por el barrio del Montecillo', cuando: 'Domingo 11 de octubre · 10:00', tono: '#5b6b3a' },
@@ -301,7 +301,7 @@ function fichaEvento() {
   const porCaso = {
     catalogo: ['Hoy este renglón salta a la ficha del lugar. Aquí abre el mapa de la plataforma con la ficha en una hoja media: se ve dónde está sin perder el evento.', 'El mapa chico y el renglón hacen lo mismo.'],
     publico: ['Hoy este renglón no hace nada. Aquí abre el mismo mapa con un pin temporal (punteado: no es un lugar del directorio).', 'Quita la palomita «Con sesión» para ver la hoja sin «Agregar como lugar».'],
-    negocio: ['Mismo pin temporal. Un bar no ofrece «Agregar como lugar»: los negocios no entran al directorio.', 'Falta decidir contigo cómo sabe el sistema que es un negocio (ver la nota en la hoja).'],
+    negocio: ['Mismo pin temporal. Un bar no ofrece «Agregar como lugar»: los negocios no entran al directorio.', 'Decidido el 2026-10-05: se sabe por la categoría que da el mapa en ese punto.'],
     sinpunto: ['Sin coordenadas no hay pin que mostrar. El renglón abre igual el mapa, centrado en la ciudad, y ofrece buscar el sitio por su nombre.'],
     reservado: ['Los sitios reservados quedan fuera: el renglón no abre el mapa ni manda nada a Mapbox. Sigue como hoy.'],
   }[caso];
@@ -325,19 +325,19 @@ function vistaMapa() {
     cuerpo = `<div class="cabeza-lugar sin-foto"><span class="sello gris">Fuera del directorio</span><h2>${s.nombre}</h2></div><small>${s.direccion} · ${s.distancia}</small>
       <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span></div>
       ${sesion && !s.negocio ? `<button class="renglon pendiente" data-a="alta-lugar">${ic('mas')}<span><small>¿Es un espacio cultural?</small><b>Agregar como lugar</b></span>${ic('chevron')}</button>` : ''}
-      ${s.negocio ? notas(['No sale «Agregar como lugar» porque es un bar. Propuesta: si la categoría que da el mapa en ese punto es bar, café o restaurante, la acción no se ofrece. Si alguien lo intenta por el alta normal, lo revisa el admin como hoy.']) : ''}`;
+      ${s.negocio ? notas(['No sale «Agregar como lugar» porque es un bar. Decidido el 2026-10-05: si la categoría que da el mapa en ese punto es bar, café o restaurante, la acción no se ofrece. Si alguien lo intenta por el alta normal, lo revisa el admin como hoy.']) : ''}`;
   }
   return `<div class="vista-mapa"><button class="flotante" data-a="cerrar-mapa" aria-label="Volver al evento">${ic('atras')}</button><div class="lienzo">${mapa(caso !== 'sinpunto', !enCatalogo)}</div><div class="hoja" role="dialog" aria-label="${s.nombre}">${cuerpo}</div></div>`;
 }
 function altaLugar() {
-  const s = SITIOS[caso], TIPOS = ['Centro cultural', 'Galería', 'Teatro', 'Museo', 'Plaza o jardín', 'Otro'];
+  const s = SITIOS[caso], TIPOS = ['Casa de cultura', 'Museo', 'Foro', 'Galería', 'Escuela', 'Colectivo', 'Biblioteca', 'Plaza, jardín o parque', 'Otro'];
   return `<h1>Agregar un lugar</h1>
     <div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del lugar" placeholder="Nombre del lugar" value="${s.nombre}"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
     <div class="grupo">${renglon('pin', 'Dónde · del pin del evento', s.direccion)}
       ${e.tipo ? renglon('personas', 'Tipo', e.tipo) : `${renglon('personas', 'Tipo', 'Falta', '', 'pendiente')}<div class="chips">${TIPOS.map((t) => `<button class="chip" data-tipo="${t}">${t}</button>`).join('')}</div>`}
       ${renglon('mas', 'Más', 'Descripción, redes, foto', 'Agregar')}</div>
     <button class="btn" data-a="publicar-lugar" ${e.tipo ? '' : 'disabled'}>${e.tipo ? 'Publicar el lugar' : 'Falta el tipo'}</button>
-    ${notas(['Es el alta de lugar de siempre, ya con el nombre y el punto del evento: solo falta el tipo.', 'Al publicar, el evento pasa a usar el lugar nuevo y el pin deja de ser temporal.', '«Plaza o jardín» no existe hoy como tipo (el Jardín Botánico El Izotal quedó como «otro»): lo propongo aquí para que lo decidas.'])}`;
+    ${notas(['Es el alta de lugar de siempre, ya con el nombre y el punto del evento: solo falta el tipo.', 'Al publicar, el evento pasa a usar el lugar nuevo y el pin deja de ser temporal.', '«Plaza, jardín o parque» es un tipo nuevo, aprobado por el founder el 2026-10-05.'])}`;
 }
 function altaSitio() {
   const detalle = { evento: 'Solo para este evento', lugar: 'Guardado como lugar', reservado: 'Sitio reservado' }[e.uso];
