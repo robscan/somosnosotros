@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Publicar por pasos</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-286 (bitácora 314). Una columna de teléfono con la app simulada; arriba, la tira del prototipo para elegir el caso.
+   Tema claro único, como la app. Medidas y colores de src/app/globals.css; piezas de ui/Renglon, ui/Hoja, ui/Ficha, ui/Campo + ui/Limpiar. */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #ede6f8; --ok: #1f6f43; --ok-suave: #e4eee8; --error: #b3261e;
+  --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec; --asa: #d9d9d9; --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --velo-hoja: rgba(0, 0, 0, 0.32); --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --boton-icono: 48px; --boton-icono-grande: 56px; --alto-barra: 56px; --columna: 600px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --piso: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: "wdth" 80; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button, input, select { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h1, h2, h3 { font-variation-settings: "wdth" 75; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: 1.625rem; font-weight: 800; }
+h2 { font-size: var(--letra-xl); font-weight: 700; }
+small, .meta { font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.35; }
+svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul { list-style: none; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--espacio-2); align-items: center; padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); min-width: 0; width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); font-size: var(--letra-sm); }
+.tira label { display: flex; align-items: center; gap: 6px; min-height: var(--toque-min); font-size: var(--letra-xs); white-space: nowrap; }
+.tira input { width: 20px; height: 20px; accent-color: var(--primario); }
+.tira button { min-height: var(--toque-min); padding: 0 var(--espacio-2); font-size: var(--letra-xs); font-weight: 700; text-decoration: underline; }
+
+/* La app: una columna con su barra; el cuerpo desplaza por dentro. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; background: var(--fondo); display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+.barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); padding: 0 var(--espacio-5); border-bottom: 1px solid var(--borde); }
+.barra img { height: 26px; width: auto; }
+.atras { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque-min); padding: 0 var(--espacio-4) 0 var(--espacio-2); border: 1px solid var(--borde); border-radius: var(--radio-pildora); font-size: var(--letra-sm); font-weight: 700; }
+.atras svg { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+.pagina { overflow-y: auto; padding: var(--espacio-6) var(--espacio-5) calc(var(--espacio-6) + var(--piso)); display: grid; align-content: start; gap: var(--espacio-4); }
+.pagina.contenido { background: var(--fondo-contenido); }
+
+/* ui/Boton */
+.btn { display: flex; width: 100%; min-height: var(--toque); align-items: center; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-lg); font-weight: 700; line-height: 1.2; text-align: center; }
+.btn.sec { background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); }
+.btn:disabled { background: var(--fondo-suave); color: var(--texto-suave); cursor: default; }
+.quieto { display: block; width: 100%; min-height: var(--toque-min); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; text-decoration: underline; }
+
+/* ui/Campo con icono + ui/Limpiar */
+.campo { position: relative; display: grid; }
+.campo > svg { position: absolute; left: 14px; top: 12px; color: var(--texto-suave); pointer-events: none; }
+.campo input { width: 100%; min-height: var(--toque); padding: 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: var(--letra-md); }
+.campo input:focus { border-color: var(--texto); outline: none; }
+.limpiar { position: absolute; right: 0; top: 0; width: var(--toque); height: var(--toque); display: grid; place-items: center; color: var(--texto-suave); }
+.limpiar svg { width: 18px; height: 18px; stroke-width: 2; }
+.campo input:placeholder-shown ~ .limpiar { display: none; }
+
+/* ui/Renglon, piel "resuelto": icono | clave / valor | acción. Pendiente = borde punteado. */
+.renglon { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon small { display: block; font-size: var(--letra-xs); text-transform: uppercase; letter-spacing: 0.04em; }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.renglon.pendiente { border-style: dashed; border-color: var(--texto-suave); }
+.renglon.elegible { min-height: 68px; }
+.renglon.elegible b + span { display: block; font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.3; }
+.grupo { display: grid; gap: var(--espacio-2); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
+.chip { min-height: 36px; padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; }
+
+/* Publicado + la sugerencia: la ficha de lo que se crearía, en punteado mientras no existe. */
+.hecho { display: flex; align-items: center; gap: var(--espacio-2); color: var(--ok); font-size: var(--letra-sm); font-weight: 700; }
+.hecho svg { width: 20px; height: 20px; stroke-width: 2.2; }
+.tarjeta { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.tarjeta .fecha { display: grid; place-items: center; align-content: center; width: 56px; height: 56px; border-radius: var(--radio); background: var(--fondo-suave); font-weight: 800; line-height: 1; font-variation-settings: "wdth" 75; }
+.tarjeta .fecha span { font-size: var(--letra-2xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); margin-top: 3px; }
+.tarjeta b { display: block; font-weight: 700; line-height: 1.2; }
+.sugerencia { display: grid; gap: var(--espacio-3); padding: var(--espacio-4); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--fondo); }
+.sugerencia.lista { border: 1px solid var(--borde); }
+.sello { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.sello.ok { background: var(--ok-suave); color: var(--ok); }
+.sello.gris { background: var(--fondo-suave); color: var(--texto-suave); }
+.sello svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.sugerencia h2 { font-size: 1.375rem; font-weight: 800; }
+.datos { display: grid; gap: 6px; }
+.datos li { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--espacio-2); align-items: start; font-size: var(--letra-sm); line-height: 1.35; }
+.datos svg { width: 20px; height: 20px; color: var(--texto-suave); }
+.datos .falta { color: var(--texto-suave); }
+/* Los actos de un festival: unidos por una línea (conectividad). */
+.actos { display: grid; }
+.actos li { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--espacio-3); padding-bottom: var(--espacio-3); }
+.actos li::before { content: ""; width: 10px; height: 10px; margin: 6px 5px 0; border-radius: 50%; background: var(--primario); }
+.actos li:not(:last-child)::after { content: ""; position: absolute; left: 9px; top: 18px; bottom: -4px; width: 2px; background: var(--primario); opacity: 0.35; }
+.actos b { display: block; line-height: 1.2; }
+.actos li.nuevo::before { background: var(--fondo); box-shadow: inset 0 0 0 2px var(--primario); }
+
+/* Ficha de evento (ui/Ficha): portada, acciones redondas, tarjeta Dónde. */
+.portada { display: grid; align-content: end; aspect-ratio: 3 / 2; max-width: none; margin: calc(var(--espacio-6) * -1) calc(var(--espacio-5) * -1) 0; padding: var(--espacio-5); background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.2) 60%), var(--tono); color: var(--primario-texto); }
+.portada small { color: var(--primario-texto); opacity: 0.85; }
+.acciones { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--espacio-2); }
+.accion-ficha { display: grid; justify-items: center; gap: 6px; font-size: var(--letra-xs); font-weight: 600; text-align: center; line-height: 1.2; }
+.accion-ficha .circulo { display: grid; place-items: center; width: var(--boton-icono-grande); height: var(--boton-icono-grande); border-radius: 50%; box-shadow: inset 0 0 0 1px var(--borde); background: var(--fondo); }
+.accion-ficha.principal .circulo { background: var(--primario); color: var(--primario-texto); box-shadow: none; }
+.caja { display: grid; gap: var(--espacio-3); padding: var(--espacio-4); border-radius: var(--radio-grande); background: var(--fondo); border: 1px solid var(--borde); }
+.mapa-ficha { display: block; width: 100%; aspect-ratio: 16 / 7; border-radius: var(--radio); overflow: hidden; background: var(--fondo-mapa); }
+.mapa-ficha svg, .lienzo svg { width: 100%; height: 100%; stroke: none; }
+.dato { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque-min); text-align: left; }
+.dato > svg { width: 20px; height: 20px; color: var(--texto-suave); }
+.dato > svg:last-child { width: 18px; height: 18px; stroke-width: 2; }
+.dato b { display: block; font-weight: 600; line-height: 1.25; }
+
+/* El mapa de la plataforma con la hoja media encima. */
+.vista-mapa { position: absolute; inset: 0; z-index: 5; background: var(--fondo-mapa); }
+.lienzo { position: absolute; inset: 0 0 38% 0; }
+.flotante { position: absolute; top: var(--espacio-3); left: var(--espacio-4); z-index: 2; display: grid; place-items: center; width: var(--boton-icono); height: var(--boton-icono); border-radius: 50%; background: var(--fondo); box-shadow: var(--sombra-flotante); }
+.flotante svg { stroke-width: 2; }
+.hoja { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; align-content: start; gap: var(--espacio-3); max-height: 78%; min-height: 46%; overflow-y: auto; padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+.hoja::before { content: ""; justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--asa); }
+.cabeza-lugar { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; }
+.cabeza-lugar.sin-foto { grid-template-columns: minmax(0, 1fr); row-gap: var(--espacio-2); }
+.miniatura { display: grid; place-items: center; width: 64px; height: 64px; border-radius: var(--radio); background: var(--tono); color: var(--primario-texto); font-weight: 800; font-variation-settings: "wdth" 75; }
+.cabeza-lugar h2 { font-size: 1.375rem; font-weight: 800; }
+.velo { position: absolute; inset: 0; z-index: 8; background: var(--velo-hoja); }
+.velo .hoja { min-height: 0; max-height: calc(100% - 48px); }
+.aviso { position: absolute; left: var(--espacio-4); right: var(--espacio-4); bottom: calc(var(--espacio-4) + var(--piso)); z-index: 9; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-3); min-height: var(--toque); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); box-shadow: var(--sombra-flotante); }
+.aviso button { min-height: var(--toque-min); font-weight: 700; text-decoration: underline; }
+
+/* ¿Dónde es?: buscar, y la lista flota bajo el campo. */
+.lista-flotante { display: grid; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra-flotante); overflow: hidden; }
+.lista-flotante button { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-3); text-align: left; }
+.lista-flotante button + button { border-top: 1px solid var(--borde); }
+.lista-flotante svg { width: 20px; height: 20px; color: var(--texto-suave); }
+.lista-flotante b { display: block; font-weight: 600; line-height: 1.2; }
+.confirma { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: start; padding: var(--espacio-3); border-radius: var(--radio); background: var(--fondo-suave); font-size: var(--letra-sm); line-height: 1.35; }
+.confirma svg { width: 20px; height: 20px; color: var(--ok); stroke-width: 2.2; }
+
+/* Calendario (ui/Calendario): círculos de 44, 7 columnas. */
+.mes { display: flex; align-items: center; justify-content: space-between; }
+.mes button { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.mes button:disabled { opacity: 0.35; }
+.mes button svg { width: 18px; height: 18px; stroke-width: 2; }
+.semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; text-align: center; }
+.semana > span { font-size: var(--letra-xs); color: var(--texto-suave); padding: var(--espacio-1) 0; }
+.dia { justify-self: center; width: 100%; max-width: var(--toque-min); aspect-ratio: 1; min-width: 0; border-radius: 50%; font-size: var(--letra-sm); }
+.dia:disabled { color: var(--texto-suave); opacity: 0.65; cursor: default; }
+.dia.extremo { background: var(--primario); color: var(--primario-texto); opacity: 1; }
+.dia.dentro { justify-self: stretch; align-self: stretch; max-width: none; aspect-ratio: auto; height: auto; border-radius: 0; background: var(--primario-suave); }
+
+.notas { padding-top: var(--espacio-2); border-top: 1px dashed var(--borde); font-size: var(--letra-sm); color: var(--texto-suave); }
+.notas summary { min-height: var(--toque-min); display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.notas li { margin: 0 0 var(--espacio-2) var(--espacio-5); list-style: disc; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+@media (prefers-reduced-motion: no-preference) { .hoja { animation: sube 0.22s ease-out; } @keyframes sube { from { transform: translateY(24px); opacity: 0.6; } } }
+/* ---- Propio de este prototipo (OL-295, bitácora 323): un paso por pantalla, con el botón pegado abajo. ---- */
+.tira { grid-template-columns: minmax(0, 1fr); }
+.tira output { font-size: var(--letra-xs); font-variant-numeric: tabular-nums; }
+.app { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.barra { grid-template-columns: auto 1fr auto; column-gap: var(--espacio-3); }
+.barra b { font-size: var(--letra-md); font-weight: 700; text-align: center; }
+.barra .hueco { width: var(--toque-min); }
+.redondo { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.redondo svg { stroke-width: 2; }
+.avance { height: 3px; background: var(--fondo-suave); }
+.avance i { display: block; height: 100%; background: var(--primario); transition: width 0.2s ease-out; }
+.pagina { gap: var(--espacio-5); padding-top: var(--espacio-7, 32px); }
+.pie { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-top: 1px solid var(--borde); background: var(--fondo); }
+.pie:empty { display: none; }
+.pregunta { font-size: 1.875rem; font-weight: 800; }
+.ayuda { margin-top: calc(var(--espacio-3) * -1); }
+.cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), var(--tono); color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
+.leyendo .cartel-mini { width: 168px; font-size: 1rem; padding: var(--espacio-3); }
+/* Revisar: la ficha como se verá, y cada dato es un renglón que se toca para cambiarlo. */
+.cabeza-revisar { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--espacio-4); align-items: end; }
+.cabeza-revisar.sin { grid-template-columns: minmax(0, 1fr); }
+.cabeza-revisar h1 { font-size: 1.5rem; }
+.leido { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); font-size: var(--letra-xs); font-weight: 700; }
+.leido svg { width: 16px; height: 16px; stroke-width: 2.4; }
+button.renglon { cursor: pointer; }
+/* Opciones grandes: una decisión por pantalla; elegir avanza solo. */
+.opciones { display: grid; gap: var(--espacio-3); }
+.opcion { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; min-height: 64px; padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.opcion > svg:first-child { color: var(--primario); }
+.opcion > svg:last-child { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+.opcion small { display: block; font-weight: 400; }
+.fila-chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
+.fila-chips .chip { min-height: var(--toque-min); font-size: var(--letra-md); }
+.chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
+/* El recuadro para subir el cartel y, del mismo ancho, «No tengo cartel». */
+.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-2); width: 100%; min-height: 200px; padding: var(--espacio-5); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-lg); font-weight: 700; text-align: center; }
+.subir .marco { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+.subir small { color: var(--texto-suave); font-weight: 400; }
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: var(--radio-chico, 4px); }
+.casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+.casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
+.casilla b { display: block; font-weight: 700; }
+/* Confirmar en el mapa y elegir el diseño del cartel. */
+.mapa-paso { aspect-ratio: 4 / 3; max-height: 38vh; border-radius: var(--radio-grande); overflow: hidden; background: var(--fondo-mapa); }
+.mapa-paso svg { width: 100%; height: 100%; stroke: none; }
+.disenos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--espacio-3); }
+.diseno { display: grid; align-content: end; gap: 4px; aspect-ratio: 4 / 5; padding: var(--espacio-3); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0)), var(--tono); color: var(--primario-texto); text-align: left; overflow: hidden; }
+.diseno b { font-size: var(--letra-lg); font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; overflow-wrap: anywhere; }
+.diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
+/* Lo que falta por completar: punteado marcado y en el color de acción (founder, 2026-10-05). */
+/* Por completar: en violeta solo la línea (1,5 px, guiones de 6 con 8 de aire) y la acción; el valor, en tinta (founder, 2026-10-05). */
+.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%236d34c8' stroke-width='3' stroke-dasharray='6 8'/%3E%3C/svg%3E"); background-origin: border-box; }
+.renglon.aparte { margin-top: var(--espacio-4); }
+.horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
+.horas .chip { min-height: var(--toque-min); padding: 0; }
+.renglon.sin-clave { min-height: var(--toque); }
+/* El final. */
+.final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
+.final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
+.final .sello-ok svg { width: 44px; height: 44px; stroke-width: 2.6; }
+.final h1 { font-size: 1.875rem; }
+.tarjeta { text-align: left; }
+@media (prefers-reduced-motion: no-preference) {
+  .pagina.entra > * { animation: entra 0.2s ease-out both; }
+  .pagina.vuelve > * { animation: vuelve 0.2s ease-out both; }
+  .cae > * { animation: cae 0.24s ease-out both; }
+  .cae > *:nth-child(2) { animation-delay: 0.08s; } .cae > *:nth-child(3) { animation-delay: 0.16s; } .cae > *:nth-child(4) { animation-delay: 0.24s; } .cae > *:nth-child(5) { animation-delay: 0.32s; }
+  .final .sello-ok { animation: sella 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+  .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; }
+  @keyframes entra { from { transform: translateX(28px); opacity: 0; } }
+  @keyframes vuelve { from { transform: translateX(-28px); opacity: 0; } }
+  @keyframes cae { from { transform: translateY(-10px); opacity: 0; } }
+  @keyframes sella { from { transform: scale(0.4); opacity: 0; } }
+  @keyframes late { to { opacity: 0.6; } }
+}
+</style>
+</head>
+<body>
+<svg aria-hidden="true" style="display:none"><defs>
+  <!-- Trazos de src/components/ui/Iconos.tsx -->
+  <symbol id="i-atras" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></symbol>
+  <symbol id="i-personas" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.5"/></symbol>
+  <symbol id="i-boleto" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z"/><path d="M13 8v8" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-ruta" viewBox="0 0 24 24"><path d="M12 3l9 9-9 9-9-9z"/><path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8"/></symbol>
+  <symbol id="i-compartir" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11"/></symbol>
+  <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></symbol>
+  <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-camara" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-corazon" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.6 12 20 12 20z"/></symbol>
+<symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 20h14"/></symbol>
+</defs></svg>
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <option value="legible">Cartel que se lee completo</option>
+    <option value="medias">Cartel sin lugar ni precio</option>
+    <option value="sin">Sin cartel</option>
+    <option value="programa">Cartel de un festival con 3 eventos</option>
+    <option value="taller">Cartel de un taller con 4 sesiones</option>
+  </select>
+  <output id="cuenta" aria-live="polite"></output>
+</div>
+
+<div class="app">
+  <header class="barra" id="barra"></header>
+  <div class="avance"><i id="avance"></i></div>
+  <main class="pagina" id="pagina"></main>
+  <footer class="pie" id="pie"></footer>
+  <div id="capas"></div>
+</div>
+
+<script>
+'use strict';
+// Solo datos de ejemplo. Nada sale de este navegador: sin cámara, sin IA, sin Mapbox, sin cuenta.
+const $ = (s) => document.querySelector(s);
+const ic = (id) => `<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const notas = (items) => `<details class="notas"><summary>Notas de diseño</summary><ul>${items.map((t) => `<li>${t}</li>`).join('')}</ul></details>`;
+// Lo que cuesta hoy cada caso (docs/rediseno/53-inventario-publicar.md): toques + escrituras, sin contar el selector de fotos.
+const HOY = { legible: '2 y 0', medias: '6 a 8 y 1 a 2', sin: '6 a 10 y 2', programa: 'tres altas seguidas', taller: 'no existe: se publica como un solo día' };
+const LEIDO = {
+  legible: { nombre: 'Inauguración de Ecos de papel', cuando: 'Jueves 5 de noviembre · 19:00', donde: 'Museo Federico Silva', cuanto: 'Gratis', quien: 'Lucía Montaño', tono: '#4a3a6b' },
+  medias: { nombre: 'Noche de son huasteco', cuando: 'Sábado 14 de noviembre · 20:00', donde: null, cuanto: null, quien: 'Trío Bruma', tono: '#6b3a3a' },
+  sin: { nombre: '', cuando: null, donde: null, cuanto: null, quien: null, tono: '#3d5a4a' },
+  programa: { nombre: 'Festival Umbral 2026', tono: '#3a4a6b' },
+  taller: { nombre: 'Taller de grabado en linóleo', cuando: '4 sesiones · sábados de noviembre · 10:00', donde: 'Centro de las Artes', cuanto: '$600 · las 4 sesiones', quien: 'Lucía Montaño', tono: '#3d5a4a' },
+};
+const PROGRAMA = [['Concierto de Trío Bruma', '7 de noviembre · 18:00 · Centro de las Artes'], ['Taller de gráfica en vivo', '8 de noviembre · 11:00 · Museo Federico Silva'], ['Proyección: Cortos del Altiplano', '8 de noviembre · 19:30 · Cineteca Alameda']];
+const SITIOS = [['Centro de las Artes', 'Lugar del directorio · Calz. de Guadalupe 705'], ['Centro Cultural Bicentenario', 'Lugar del directorio · Av. Sierra Leona 550'], ['Centro Histórico, Jardín de San Juan de Dios', 'Del mapa · no está en el directorio']];
+let caso = 'legible', e;
+function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, flyer: null, mapa: false, fuera: false, editar: null }; }
+
+// Los pasos se arman con lo que falta: lo ya leído no se pregunta.
+function pasos() {
+  if (caso === 'programa') return ['cartel', 'leyendo', 'programa', 'publicado'];
+  const p = caso === 'sin' ? ['cartel', 'nombre'] : ['cartel', 'leyendo'];
+  const L = LEIDO[caso];
+  if (!L.cuando) p.push('dia', 'hora');
+  if (!L.donde) { p.push('donde'); if (e.mapa) p.push('mapa'); if (e.fuera) p.push('uso'); }
+  if (!L.cuanto) p.push('cuanto');
+  return [...p, 'revisar', 'publicado'];
+}
+const paso = () => e.editar || pasos()[e.i];
+function ir(n, dir = 'entra') { e.editar = null; e.i = Math.max(0, Math.min(pasos().length - 1, n)); e.dir = dir; pintar(); }
+const sumar = (h, n) => { const [a, b] = h.split(':').map(Number); return `${String((a + n) % 24).padStart(2, '0')}:${String(b).padStart(2, '0')}`; };
+const trasDia = () => { e.hIni = null; if (e.editar) { e.editar = 'hora'; e.dir = 'entra'; return pintar(); } return ir(e.i + 1); };
+function finHora() { e.d.cuando = `${e.dia}${e.diaFin ? ` al ${e.diaFin}` : ''} · ${e.hIni}${e.hFin ? ` a ${e.hFin}` : ''}`; if (e.editar) { e.editar = null; e.dir = 'vuelve'; return pintar(); } return ir(e.i + 1); }
+const trasDonde = () => (e.editar ? (e.editar = e.mapa ? 'mapa' : null, e.dir = e.mapa ? 'entra' : 'vuelve', pintar()) : ir(e.i + 1));
+const sigue = () => (e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : ir(e.i + 1));
+
+const mini = (grande) => `<div class="cartel-mini" style="--tono:${e.d.tono}">${LEIDO[caso].nombre || 'Tu cartel'}</div>`;
+const MAPA = `<svg viewBox="0 0 390 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa"><rect width="390" height="300" fill="#eef0ec"/><g fill="#e3e6df"><rect x="-10" y="-10" width="112" height="82"/><rect x="122" y="-10" width="120" height="82"/><rect x="262" y="-10" width="140" height="82"/><rect x="-10" y="92" width="112" height="120"/><rect x="262" y="92" width="140" height="120"/><rect x="-10" y="232" width="252" height="80"/><rect x="262" y="232" width="140" height="80"/></g><rect x="122" y="92" width="120" height="120" rx="6" fill="#d5e3cf"/><path d="M195 190s-30-27-30-52a30 30 0 0 1 60 0c0 25-30 52-30 52z" fill="#fff" stroke="#6d34c8" stroke-width="3" stroke-dasharray="7 5"/><circle cx="195" cy="138" r="9" fill="#6d34c8"/></svg>`;
+const FALTA = { cuando: 'Falta el día y la hora', donde: 'Falta el lugar', cuanto: 'Falta el precio', quien: 'Sin artista' };
+// Sin etiqueta a la vista (founder, 2026-10-05): el icono y el valor dicen de qué se trata; la clave queda para lectores de pantalla.
+const renglon = (i, clave, valor, campo) => `<button class="renglon sin-clave ${valor ? '' : 'pendiente'}" data-editar="${campo}" aria-label="${clave}: ${valor || FALTA[campo]}">${ic(i)}<b>${valor || FALTA[campo]}</b><span class="accion">${valor ? 'Cambiar' : 'Poner'}</span></button>`;
+
+const VISTAS = {
+  cartel: () => ({
+    titulo: 'Publicar',
+    cuerpo: `<button class="subir" data-inicio="subir"><span class="marco">${ic('camara')}</span>Sube el cartel<small>Leemos el nombre, la fecha, el lugar y el precio</small></button>
+      <button class="btn sec" data-inicio="sin">No tengo cartel</button>`,
+    pie: '',
+    notas: ['Vuelve el recuadro para subir el cartel, más chico, y «No tengo cartel» pasa a ser un botón del mismo ancho justo debajo: ya no es un enlace quieto al pie (hoy 144 de 273 eventos no tienen cartel).', 'La opción de que la plataforma haga el cartel aparece después de decir «No tengo cartel», no aquí.', 'En este prototipo el selector de arriba decide qué «trae» el cartel que se sube.'],
+  }),
+  leyendo: () => ({ titulo: 'Leyendo', cuerpo: `<div class="leyendo">${mini()}<p class="meta" role="status">Leyendo el cartel…</p></div>`, pie: '', notas: [] }),
+  nombre: () => ({
+    titulo: 'Publicar', pregunta: '¿Cómo se llama?',
+    cuerpo: `<div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="${e.d.nombre}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" data-de="nombre" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+      <button class="casilla" role="checkbox" aria-checked="${e.quiereFlyer}" data-a="quiere-flyer"><span class="cuadro">${e.quiereFlyer ? ic('ok') : ''}</span><span><b>Hazme un cartel</b><small>Con los datos que escribas; al final eliges entre 4 diseños</small></span></button>`,
+    pie: `<button class="btn" data-a="sigue" ${e.d.nombre.trim() ? '' : 'disabled'}>${e.d.nombre.trim() ? 'Siguiente' : 'Falta el nombre'}</button>`,
+    notas: ['Tras decir «No tengo cartel», la opción «Hazme un cartel» está a la vista desde el primer paso, como una casilla que se marca. No estorba: se puede seguir sin tocarla.', 'Una pregunta por pantalla, con el campo ya enfocado y el botón pegado sobre el teclado: nada queda tapado.', 'El botón dice qué falta, como en el canon actual.'],
+  }),
+  dia: () => ({
+    titulo: 'Publicar', pregunta: '¿Qué día es?',
+    cuerpo: `<div class="fila-chips">${['Este viernes', 'Este sábado', 'Otro día'].map((t) => `<button class="chip" data-dia="${t}">${t}</button>`).join('')}</div>
+      <button class="quieto" data-dia="Otro día">Dura varios días</button>`,
+    pie: '',
+    notas: ['Corrección del founder (2026-10-05): el día y la hora se preguntan por separado, y en los dos se puede decir inicio y fin.', 'Un chip elige un solo día y avanza. «Otro día» y «Dura varios días» abren solo el calendario: el primer toque es el inicio y un segundo toque, en un día posterior, el fin.', 'Sugerencias medidas: el 51 % de los 274 eventos publicados es viernes o sábado.'],
+  }),
+  hora: () => ({
+    titulo: 'Publicar', pregunta: '¿A qué hora?',
+    cuerpo: `<div class="grupo"><small>Empieza</small><div class="fila-chips">${['19:00', '20:00', '17:00', '12:00', 'Otra hora'].map((t) => `<button class="chip" data-hora="${t}" aria-pressed="${e.hIni === t}">${t}</button>`).join('')}${e.hIni && !['19:00', '20:00', '17:00', '12:00'].includes(e.hIni) ? `<button class="chip" aria-pressed="true" data-hora="Otra hora">${e.hIni}</button>` : ''}</div></div>
+      ${e.hIni ? `<div class="grupo cae"><small>Termina</small><div class="fila-chips">${[1, 2, 3].map((n) => `<button class="chip" data-fin="${n}">${sumar(e.hIni, n)}</button>`).join('')}<button class="chip" data-fin="otra">Otra hora</button><button class="chip" data-fin="sin">Sin hora de fin</button></div></div>` : ''}`,
+    pie: '',
+    notas: ['Primero cuándo empieza; al elegirlo aparece cuándo termina, ya calculado a una, dos y tres horas. Elegir el fin avanza.', '«Sin hora de fin» es una respuesta válida: no se inventa una duración.', '«Otra hora» abre solo la lista de horas, cada 15 minutos.', 'Sugerencias medidas: 19:00, 20:00, 17:00 y 12:00 son el 51 % de los inicios.'],
+  }),
+  donde: () => {
+    const hay = e.q.trim().length >= 2;
+    return {
+      titulo: 'Publicar', pregunta: '¿Dónde es?',
+      cuerpo: `<div class="campo">${ic('buscar')}<input id="q" aria-label="Buscar el lugar" placeholder="Nombre del lugar o dirección" value="${e.q}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" data-de="q" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+        ${hay ? `<div class="lista-flotante">${SITIOS.map(([n, d], i) => `<button data-sitio="${i}">${ic('pin')}<span><b>${n}</b><small>${d}</small></span><span></span></button>`).join('')}</div>` : `<button class="opcion" data-a="aqui">${ic('pin')}<span>Estoy aquí<small>Usa la ubicación del teléfono</small></span>${ic('chevron')}</button>`}`,
+      pie: '',
+      notas: ['Escribe «centro». La lista sale bajo el campo y elegir avanza solo.', 'Si el sitio no está en el directorio, aquí va la pregunta ya aceptada: solo este evento, guardarlo como lugar o sitio reservado.', 'Hoy esta hoja abre vacía y, si el resultado es una dirección, pide además el nombre del sitio.'],
+    };
+  },
+  mapa: () => ({
+    titulo: 'Publicar', pregunta: '¿Es aquí?',
+    cuerpo: `<div class="mapa-paso">${MAPA}</div><p class="confirma">${ic('ok')}<span><b>${e.d.donde}</b><br>${e.fuera ? 'Jardín de San Juan de Dios, Centro Histórico' : 'A 40 m de ti · lugar del directorio'}</span></p><small>Si el pin no está en su sitio, arrástralo.</small>`,
+    pie: `<button class="btn" data-a="mapa-ok">Sí, es aquí</button><button class="quieto" data-a="atras">Buscar otro</button>`,
+    notas: ['Corrección del founder: un sitio que no está en el directorio, o «Estoy aquí», se confirma en el mapa antes de seguir.', 'Un lugar del directorio no pasa por aquí: su punto ya está confirmado.', 'La dirección es una confirmación, no un campo (nota del founder del 29 de septiembre).'],
+  }),
+  uso: () => ({
+    titulo: 'Publicar', pregunta: 'No está en el directorio',
+    cuerpo: `<div class="opciones">${[['evento', 'pin', 'Usarlo solo en este evento', 'Sale con su nombre y su punto en el mapa'], ['lugar', 'mas', 'Guardarlo como lugar', 'Tendrá su ficha y servirá para otros eventos'], ['reservado', 'candado', 'Es un sitio reservado', 'La dirección solo se muestra a quien va']].map(([u, i, t, d]) => `<button class="opcion" data-uso="${u}">${ic(i)}<span>${t}<small>${d}</small></span>${ic('chevron')}</button>`).join('')}</div>`,
+    pie: '',
+    notas: ['Las tres opciones ya aceptadas en el prototipo de Eventos, ahora como un paso propio.', 'Si el mapa dice que es un bar, un café o un restaurante, «Guardarlo como lugar» no se ofrece.'],
+  }),
+  flyer: () => ({
+    titulo: 'Tu cartel', pregunta: 'Elige un diseño',
+    cuerpo: `<div class="disenos">${['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
+    pie: '',
+    notas: ['Cuatro diseños ya rellenos con los datos del evento (doc 52: plantillas hechas de antemano, formato de publicación 4:5). Aquí son marcadores de color.', 'Elegir uno vuelve a «Revisa» con el cartel puesto.'],
+  }),
+  cuanto: () => ({
+    titulo: 'Publicar', pregunta: '¿Cuánto cuesta?',
+    cuerpo: e.precioAbierto
+      ? `<div class="campo">${ic('boleto')}<input id="precio" inputmode="numeric" aria-label="Precio" placeholder="Ej. 150" value="${e.precio}"><button class="limpiar" type="button" data-a="limpiar" data-de="precio" aria-label="Borrar el texto">${ic('cerrar')}</button></div>`
+      : `<div class="opciones">${[['Gratis', 'Entrada libre'], ['Cooperación', 'Cada quien pone lo que puede'], ['Tiene precio', 'Escribe cuánto']].map(([t, d]) => `<button class="opcion" data-cuanto="${t}">${ic('boleto')}<span>${t}<small>${d}</small></span>${ic('chevron')}</button>`).join('')}</div>`,
+    pie: e.precioAbierto ? `<button class="btn" data-a="precio-listo" ${e.precio.trim() ? '' : 'disabled'}>${e.precio.trim() ? 'Siguiente' : 'Falta el precio'}</button>` : '',
+    notas: ['Tres opciones grandes; una se toca y avanza. Hoy «Gratis» viene puesto y se publica aunque el cartel no diga nada.'],
+  }),
+  programa: () => {
+    const n = e.elegidos.filter(Boolean).length;
+    return {
+      titulo: 'Revisa', pregunta: `El cartel trae ${PROGRAMA.length} eventos`,
+      cuerpo: `<div class="grupo cae">${PROGRAMA.map(([t, d], i) => `<button class="renglon ${e.elegidos[i] ? '' : 'pendiente'}" data-elegir="${i}" aria-pressed="${e.elegidos[i]}">${ic(e.elegidos[i] ? 'ok' : 'mas')}<span><small>${d}</small><b>${t}</b></span><span class="accion">${e.elegidos[i] ? 'Quitar' : 'Incluir'}</span></button>`).join('')}</div>`,
+      pie: `<button class="btn" data-a="sigue" ${n ? '' : 'disabled'}>${n === 0 ? 'Marca al menos un evento' : n === 1 ? 'Publicar 1 evento' : `Publicar los ${n} eventos`}</button>`,
+      notas: ['Un cartel, tres eventos, un toque. Hoy son tres altas seguidas subiendo el mismo cartel.', 'Cada evento se publica con su ficha y quedan juntos en el festival.'],
+    };
+  },
+  revisar: () => {
+    const d = e.d, conCartel = caso !== 'sin';
+    return {
+      titulo: 'Revisa',
+      cuerpo: `<div class="cabeza-revisar ${conCartel ? '' : 'sin'}">${conCartel ? mini() : ''}<div>${conCartel ? `<span class="leido">${ic('ok')}Leído del cartel</span>` : ''}<h1>${d.nombre}</h1></div></div>
+        <div class="grupo ${e.dir === 'entra' ? 'cae' : ''}">${renglon('reloj', 'Cuándo', d.cuando, 'cuando')}${renglon('pin', 'Dónde', d.donde, 'donde')}${renglon('boleto', 'Cuánto', d.cuanto, 'cuanto')}${d.quien ? renglon('personas', 'Quién', d.quien, 'quien') : ''}</div>
+        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Cartel: diseño ${e.flyer + 1}</b><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon sin-clave pendiente aparte" data-a="flyer">${ic('camara')}<b>Falta elegir el diseño del cartel</b><span class="accion">Elegir</span></button>` : `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Sin cartel</b><span class="accion">Hacer uno</span></button>`}
+        <button class="quieto" data-a="mas">Agregar artistas, descripción o enlace</button>`,
+      pie: e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
+      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
+    };
+  },
+  publicado: () => {
+    const d = e.d, n = e.elegidos.filter(Boolean).length;
+    const sug = caso === 'legible' && e.sug !== 'no'
+      ? (e.sug === 'hecha'
+        ? `<section class="sugerencia lista"><span class="sello ok">${ic('ok')}Exposición publicada</span><h2>Ecos de papel</h2><small>Del 6 al 30 de noviembre · ${d.donde}</small></section>`
+        : `<section class="sugerencia"><span class="sello">El cartel también anuncia</span><h2>Ecos de papel</h2><small>Exposición · del 6 al 30 de noviembre · ${d.donde}</small><button class="btn" data-a="sug">Publicar la exposición</button><button class="quieto" data-a="sug-no">Ahora no</button></section>`)
+      : '';
+    return {
+      titulo: '', final: true,
+      cuerpo: `<div class="final"><span class="sello-ok">${ic('ok')}</span><h1>${caso === 'programa' ? `${n} eventos publicados` : caso === 'taller' ? 'Taller publicado' : 'Evento publicado'}</h1><p class="meta">${caso === 'programa' ? 'Ya están en la agenda, juntos en Festival Umbral 2026.' : 'Ya está en la agenda. Así lo ve la gente:'}</p></div>
+        ${caso === 'programa' ? `<section class="sugerencia lista"><span class="sello ok">${ic('ok')}Festival</span><h2>Festival Umbral 2026</h2><ul class="actos">${PROGRAMA.filter((_, i) => e.elegidos[i]).map(([t, x]) => `<li><div><b>${t}</b><small>${x}</small></div></li>`).join('')}</ul></section>` : `<div class="tarjeta"><div class="fecha">${(d.cuando || '').match(/(\d+) de/)?.[1] || 'sáb'}<span>${/ de /.test(d.cuando || '') ? 'nov' : 'próx'}</span></div><div><b>${d.nombre}</b><small>${[d.cuando, d.donde].filter(Boolean).join(' · ')}</small></div></div>`}
+        ${sug}`,
+      pie: `<button class="btn ${sug && e.sug === 'abierta' ? 'sec' : ''}" data-a="compartir">Compartir</button>${caso !== 'sin' || e.flyer !== null ? `<button class="btn sec" data-a="descargar">${ic('descargar')}${e.bajado ? 'Cartel descargado' : 'Descargar el cartel'}</button>` : ''}<button class="quieto" data-a="otro">Publicar otro</button>`,
+      notas: ['El final es el momento que se recuerda: confirmación grande, el evento como quedó y una sola invitación a seguir.', 'La sugerencia en punteado es la ya aceptada (exposición, festival). Nunca hay dos a la vez.', '«Descargar el cartel» sale cuando el evento tiene cartel, subido o hecho por la plataforma (pedido del founder): sirve para llevarlo a WhatsApp o a Instagram. También está en la ficha del evento.', 'Compara arriba: toques y escrituras de este recorrido contra los de la pantalla de hoy.'],
+    };
+  },
+};
+
+function hojaFecha() {
+  if (e.hoja === 'cal') {
+    const dias = '<span></span>'.repeat(6) + Array.from({ length: 30 }, (_, k) => { const n = k + 1, ext = n === e.calIni || n === e.calFin, den = e.calFin !== null && n > e.calIni && n < e.calFin; return `<button class="dia ${ext ? 'extremo' : den ? 'dentro' : ''}" data-dia="${n}" ${n < 6 ? 'disabled' : ''}>${n}</button>`; }).join('');
+    const texto = e.calIni === null ? 'Toca el día en que empieza.' : e.calFin === null ? `Empieza el ${e.calIni} de noviembre. Si dura varios días, toca el último.` : `Del ${e.calIni} al ${e.calFin} de noviembre.`;
+    return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="¿Qué día es?"><h2>¿Qué día es?</h2><small role="status">${texto}</small>
+      <div class="mes"><span></span><b>Noviembre de 2026</b><span></span></div><div class="semana">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => `<span>${l}</span>`).join('')}${dias}</div>
+      <button class="btn" data-a="cal-lista" ${e.calIni === null ? 'disabled' : ''}>${e.calIni === null ? 'Falta el día' : e.calFin === null ? 'Listo, un solo día' : 'Listo'}</button></div></div>`;
+  }
+  const fin = e.hoja === 'hfin', horas = [];
+  for (let h = 8; h <= 23; h++) for (const m of ['00', '15', '30', '45']) { const x = `${String(h).padStart(2, '0')}:${m}`; if (!fin || x > e.hIni) horas.push(x); }
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="${fin ? 'Termina' : 'Empieza'}"><h2>${fin ? `Termina (empieza ${e.hIni})` : 'Empieza'}</h2>
+    <div class="horas" role="listbox" aria-label="Hora">${horas.map((h) => `<button class="chip" data-hora="${h}">${h}</button>`).join('')}</div></div></div>`;
+}
+function pintar(foco) {
+  const p = paso(), v = VISTAS[p](), total = pasos().length - 1;
+  $('#barra').innerHTML = v.final ? '<span class="hueco"></span><b></b><span class="hueco"></span>'
+    : `<button class="redondo" data-a="${e.i === 0 && !e.editar ? 'cerrar' : 'atras'}" aria-label="${e.i === 0 && !e.editar ? 'Cerrar' : 'Atrás'}">${ic(e.i === 0 && !e.editar ? 'cerrar' : 'atras')}</button><b>${v.titulo}</b><span class="hueco"></span>`;
+  $('#avance').style.width = `${Math.round((e.i / total) * 100)}%`;
+  const pagina = $('#pagina');
+  pagina.className = `pagina ${e.dir}`;
+  pagina.innerHTML = (v.pregunta ? `<h1 class="pregunta">${v.pregunta}</h1>` : '') + v.cuerpo + (v.notas.length ? notas(v.notas) : '');
+  pagina.scrollTop = 0;
+  $('#pie').innerHTML = v.pie;
+  $('#capas').innerHTML = e.hoja ? hojaFecha() : '';
+  $('#cuenta').textContent = `Aquí: ${e.toques} toques y ${e.escritos.size} escrituras · Hoy: ${HOY[caso]}`;
+  const c = foco ? $(foco) : pagina.querySelector('input');
+  if (c && (foco || e.dir !== 'fija')) { c.focus({ preventScroll: true }); c.setSelectionRange?.(c.value.length, c.value.length); }
+  if (p === 'leyendo') { clearTimeout(pintar.t); pintar.t = setTimeout(() => ir(e.i + 1), 1100); }
+}
+function reiniciar() { clearTimeout(pintar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
+
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('[data-fin],[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar],[data-uso],[data-diseno],[data-inicio]');
+  if (!t || t.closest('.tira')) return;
+  e.toques++; e.dir = 'entra';
+  const { a, dia, hora, fin, sitio, cuanto, elegir, editar, uso, diseno, inicio } = t.dataset;
+  if (dia && t.closest('.hoja')) { const n = Number(dia); if (e.calIni === null || e.calFin !== null || n < e.calIni) { e.calIni = n; e.calFin = null; } else if (n > e.calIni) e.calFin = n; e.dir = 'fija'; return pintar(); }
+  if (hora && t.closest('.hoja')) { const eraFin = e.hoja === 'hfin'; e.hoja = null; if (eraFin) { e.hFin = hora; return finHora(); } e.hIni = hora; e.hFin = null; e.dir = 'fija'; return pintar(); }
+  if (dia) { if (dia === 'Otro día') { e.hoja = 'cal'; e.calIni = null; e.calFin = null; e.dir = 'fija'; return pintar(); } e.dia = dia; e.diaFin = null; return trasDia(); }
+  if (hora) { if (hora === 'Otra hora') { e.hoja = 'hini'; e.dir = 'fija'; return pintar(); } e.hIni = hora; e.hFin = null; e.dir = 'fija'; return pintar(); }
+  if (fin) { if (fin === 'otra') { e.hoja = 'hfin'; e.dir = 'fija'; return pintar(); } e.hFin = fin === 'sin' ? '' : sumar(e.hIni, Number(fin)); return finHora(); }
+  if (a === 'cerrar-hoja') { e.toques--; if (ev.target === t) { e.hoja = null; e.dir = 'fija'; pintar(); } return; }
+  if (a === 'cal-lista') { e.dia = `${e.calIni} de noviembre`; e.diaFin = e.calFin ? `${e.calFin} de noviembre` : null; e.hoja = null; return trasDia(); }
+  if (sitio) { const n = Number(sitio); e.d.donde = n === 2 ? 'Jardín de San Juan de Dios' : SITIOS[n][0]; e.q = ''; e.fuera = n === 2; e.mapa = n === 2; return trasDonde(); }
+  if (uso) { e.usoSitio = uso; return e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : sigue(); }
+  if (diseno) { e.flyer = Number(diseno); e.editar = null; e.dir = 'vuelve'; return pintar(); }
+  if (inicio) { if (inicio === 'subir') { if (caso === 'sin') { caso = 'legible'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; } return ir(1); } caso = 'sin'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; return ir(1); }
+  if (cuanto) { if (cuanto === 'Tiene precio') { e.precioAbierto = true; return pintar(); } e.d.cuanto = cuanto; return sigue(); }
+  if (elegir) { const i = Number(elegir); e.elegidos[i] = !e.elegidos[i]; e.dir = 'fija'; return pintar(); }
+  if (editar) { if (editar === 'quien') { e.toques--; return; } e.editar = editar === 'cuando' ? 'dia' : editar; e.hIni = null; e.precioAbierto = false; return pintar(); }
+  if (a === 'sigue') return sigue();
+  if (a === 'aqui') { e.d.donde = 'Jardín de San Francisco'; e.fuera = false; e.mapa = true; return trasDonde(); }
+  if (a === 'mapa-ok') { if (e.editar) { e.editar = e.fuera ? 'uso' : null; e.dir = e.fuera ? 'entra' : 'vuelve'; return pintar(); } return sigue(); }
+  if (a === 'precio-listo') { e.d.cuanto = `$${e.precio.trim()}`; e.precioAbierto = false; return sigue(); }
+  if (a === 'limpiar') { e.toques--; const id = t.dataset.de; if (id === 'q') e.q = ''; else if (id === 'precio') e.precio = ''; else e.d.nombre = ''; e.dir = 'fija'; return pintar('#' + id); }
+  if (a === 'atras') { if (e.editar) { e.editar = null; e.dir = 'vuelve'; return pintar(); } const ps = pasos(); let n = e.i - 1; if (ps[n] === 'leyendo') n--; return ir(n, 'vuelve'); }
+  if (a === 'cerrar' || a === 'otro') { e.toques = 0; return reiniciar(); }
+  if (a === 'sug') { e.sug = 'hecha'; e.dir = 'fija'; return pintar(); }
+  if (a === 'sug-no') { e.sug = 'no'; e.dir = 'fija'; return pintar(); }
+  if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
+  if (a === 'quiere-flyer') { e.quiereFlyer = !e.quiereFlyer; e.dir = 'fija'; return pintar('#nombre'); }
+  if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
+  if (a === 'descargar') { e.bajado = true; e.dir = 'fija'; return pintar(); }
+  e.dir = 'fija'; if (a === 'mas' || a === 'compartir') return pintar();
+});
+document.addEventListener('input', (ev) => {
+  const id = ev.target.id; if (!['nombre', 'q', 'precio'].includes(id)) return;
+  e.escritos.add(id + e.i);
+  if (id === 'nombre') e.d.nombre = ev.target.value; else if (id === 'q') e.q = ev.target.value; else e.precio = ev.target.value.replace(/\D/g, '');
+  e.dir = 'fija'; pintar('#' + id);
+});
+$('#caso').addEventListener('change', reiniciar);
+const inicial = location.hash.slice(1); if ([...$('#caso').options].some((o) => o.value === inicial)) $('#caso').value = inicial;
+reiniciar();
+</script>
+</body>
+</html>
