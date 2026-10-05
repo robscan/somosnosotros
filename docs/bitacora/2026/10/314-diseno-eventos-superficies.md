@@ -36,3 +36,12 @@
 - **Negocios:** de acuerdo con identificarlos por la categoría que da el mapa en ese punto (bar, café, restaurante): ahí no se ofrece «Agregar como lugar».
 - **Tipo de lugar nuevo:** «Plaza, jardín o parque» («si agrega plaza o jardín/ parque»). El prototipo ya usa la lista real de tipos más este.
 - Siguen abiertas: las tres opciones al elegir un sitio fuera del directorio y el arreglo del texto largo con el teclado.
+
+## Segunda vuelta (2026-10-05, tarde): festival con programa completo y taller con sesiones
+
+Pedido del founder: «agregar elementos al flujo de eventos en caso de ser festival o taller». Dos casos nuevos en el mismo prototipo (H6 y H7 del modelo):
+
+- **El cartel trae varios eventos de un festival.** Tras leer el cartel, una sola pantalla: «El cartel trae 3 eventos», cada uno como renglón con su fecha, hora y sede, todos marcados. Un toque publica los marcados y los junta en el festival («Programa registrado: 3 eventos»); el que se desmarca queda como borrador. No hay que subir el cartel tres veces ni esperar al segundo evento.
+- **Taller de varias sesiones.** El alta es la de siempre; «Cuándo» dice «4 sesiones · Sábados de noviembre · 10:00» y al tocarlo se ven las fechas leídas, con «Quitar» en cada una. Se publica un solo taller; su ficha lista las sesiones y marca la que va en otra sede. «Voy» es al taller entero.
+- Capturas  y  en  (390×844): revisar con tres marcados, con uno fuera (punteado, «Incluir»), publicados con el festival, ficha del festival; alta del taller, hoja de sesiones, publicado con sus cuatro fechas, ficha con «Sesión n de 4». Sin errores ni desbordes a 320 y 390.
+- Falta en el prototipo: corregir un dato de un evento del programa antes de publicar, y funciones repetidas de una misma obra (H8).

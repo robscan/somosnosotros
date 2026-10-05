@@ -191,6 +191,8 @@ ul { list-style: none; }
       <option value="h1">Inauguración: el cartel trae las fechas de visita</option>
       <option value="h2">Inauguración: el cartel no dice hasta cuándo</option>
       <option value="h4">Segundo evento de un mismo festival</option>
+      <option value="programa">El cartel trae varios eventos de un festival</option>
+      <option value="taller">Taller de varias sesiones</option>
     </optgroup>
     <optgroup label="Renglón «Dónde» de un evento">
       <option value="catalogo">Lugar del directorio</option>
@@ -234,9 +236,13 @@ const ACTOS = [
   { titulo: 'Concierto de Trío Bruma', fecha: '2026-11-07', hora: '18:00', lugar: 'Centro de las Artes', quien: 'Trío Bruma', precio: '$100' },
   { titulo: 'Taller de gráfica en vivo', fecha: '2026-11-08', hora: '11:00', lugar: 'Museo Federico Silva', quien: 'Lucía Montaño', precio: '$150' },
 ];
+const TALLER = { titulo: 'Taller de grabado en linóleo', fecha: '2026-11-07', hora: '10:00', lugar: 'Centro de las Artes', quien: 'Lucía Montaño', precio: '$600 · las 4 sesiones' };
+const SESIONES = [['2026-11-07', '10:00', 'Centro de las Artes'], ['2026-11-14', '10:00', 'Centro de las Artes'], ['2026-11-21', '10:00', 'Centro de las Artes'], ['2026-11-28', '10:00', 'Museo Federico Silva']];
+const PROGRAMA = [...ACTOS, { titulo: 'Proyección: Cortos del Altiplano', fecha: '2026-11-08', hora: '19:30', lugar: 'Cineteca Alameda', quien: 'Varios', precio: 'Gratis' }];
+const PUBLICAR = ['h1', 'h2', 'h4', 'programa', 'taller'];
 const RESULTADOS = [{ nombre: 'Jardín Colón', direccion: 'Av. Constitución s/n, Centro', mapa: true }, { nombre: 'Jardín de San Francisco', direccion: 'Lugar del directorio · Centro', mapa: false }];
 let caso = 'h1', e;
-function nuevo() { return { v: caso.startsWith('h') ? 'alta' : caso === 'sitio' ? 'alta-sitio' : 'ficha', sug: 'abierta', hasta: caso === 'h1' ? '2026-11-30' : null, cal: null, aviso: null, tipo: null, alta: false, q: '', sitio: null, uso: null, hoja: null, mapa: false, pila: [] }; }
+function nuevo() { return { v: caso === 'programa' ? 'programa' : PUBLICAR.includes(caso) ? 'alta' : caso === 'sitio' ? 'alta-sitio' : 'ficha', elegidos: [true, true, true], sesiones: SESIONES.map(() => true), sug: 'abierta', hasta: caso === 'h1' ? '2026-11-30' : null, cal: null, aviso: null, tipo: null, alta: false, q: '', sitio: null, uso: null, hoja: null, mapa: false, pila: [] }; }
 
 // ---------- piezas ----------
 const renglon = (i, clave, valor, accion = 'Cambiar', extra = '') => `<div class="renglon ${extra}">${ic(i)}<div><small>${clave}</small><b>${valor}</b></div>${accion ? `<span class="accion">${accion}</span>` : ''}</div>`;
@@ -254,14 +260,16 @@ function mapa(pin, temporal) {
 
 // ---------- pantallas ----------
 function altaEvento() {
-  const ev = caso === 'h4' ? ACTOS[1] : APERTURA;
+  const ev = caso === 'h4' ? ACTOS[1] : caso === 'taller' ? TALLER : APERTURA;
+  const n = e.sesiones.filter(Boolean).length;
+  const cuando = caso === 'taller' ? `<button class="renglon" data-a="sesiones">${ic('reloj')}<span><small>Cuándo · ${n} sesiones</small><b>Sábados de noviembre · 10:00</b></span><span class="accion">Ver</span></button>` : renglon('reloj', 'Cuándo', `${dia(ev.fecha)} · ${ev.hora}`);
   return `<h1>Publicar un evento</h1>
     ${caso === 'h4' ? `<p class="meta">Ayer publicaste «${ACTOS[0].titulo}». Este es tu segundo evento.</p>` : ''}
     ${renglon('camara', 'Cartel', 'Leí el cartel')}
     <div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="${ev.titulo}"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
-    <div class="grupo">${renglon('reloj', 'Cuándo', `${dia(ev.fecha)} · ${ev.hora}`)}${renglon('pin', 'Dónde', ev.lugar)}${renglon('personas', 'Quién', ev.quien)}${renglon('boleto', 'Cuánto', ev.precio)}</div>
+    <div class="grupo">${cuando}${renglon('pin', 'Dónde', ev.lugar)}${renglon('personas', 'Quién', ev.quien)}${renglon('boleto', 'Cuánto', ev.precio)}</div>
     <button class="btn" data-a="publicar">Publicar</button>
-    ${notas(['El alta no cambia: la sugerencia llega después de publicar, nunca antes.', 'Publicar no espera a la lectura extra del cartel; si la sugerencia tarda, «Publicado» sale sin ella.'])}`;
+    ${notas(caso === 'taller' ? ['El cartel dice «4 sesiones, sábados de noviembre». Es un solo taller con sus sesiones: no se publican cuatro eventos ni se llenan los días de en medio.', 'El renglón «Cuándo» resume; al tocarlo se ven las fechas y se puede quitar una. La sesión en otra sede conserva la suya.', 'No hay pregunta extra: publicar cuesta lo mismo que un evento de un día.'] : ['El alta no cambia: la sugerencia llega después de publicar, nunca antes.', 'Publicar no espera a la lectura extra del cartel; si la sugerencia tarda, «Publicado» sale sin ella.'])}`;
 }
 function sugerencia() {
   if (e.sug === 'no') return '';
@@ -278,6 +286,20 @@ function sugerencia() {
     <button class="btn" data-a="${periodo ? 'aceptar' : 'calendario'}">${periodo ? 'Publicar la exposición' : 'Elegir hasta cuándo'}</button><button class="quieto" data-a="ahora-no">Ahora no</button></section>`;
 }
 function publicado() {
+  if (caso === 'programa') {
+    const pub = PROGRAMA.filter((_, i) => e.elegidos[i]);
+    return `<p class="hecho">${ic('ok')}${pub.length} eventos publicados</p>
+      <section class="sugerencia lista"><span class="sello ok">${ic('ok')}Festival</span><h2>Festival Umbral 2026</h2><small>Programa registrado: ${pub.length} eventos</small><ul class="actos">${pub.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small></div></li>`).join('')}</ul></section>
+      <button class="btn" data-a="ver-relacion">Ver el festival</button>
+      ${notas(['Cada evento tiene su ficha, con su «Voy» y su hora. El festival los junta.', 'Dice «programa registrado: 3 eventos»: no promete que el festival sea solo eso.', PROGRAMA.length > pub.length ? 'El evento que no marcaste queda como borrador; no se publicó.' : 'Si desmarcas uno antes de publicar, queda como borrador.'])}`;
+  }
+  if (caso === 'taller') {
+    const ses = SESIONES.filter((_, i) => e.sesiones[i]);
+    return `<p class="hecho">${ic('ok')}Taller publicado</p>${tarjeta(TALLER)}
+      <section class="caja"><h2>${ses.length} sesiones</h2>${ses.map(([f, h, l], i) => `<div class="dato">${ic('calendario')}<span><b>${dia(f)} · ${h}</b><small>${l}${i === 0 ? ' · próxima' : ''}</small></span><span></span></div>`).join('')}</section>
+      <button class="btn" data-a="ver-evento">Ver el taller</button>
+      ${notas(['Una sola ficha con sus sesiones. En la agenda aparece en cada fecha, siempre como el mismo taller.', 'Aquí no hay sugerencia: el cartel ya traía todo.'])}`;
+  }
   const ev = caso === 'h4' ? ACTOS[1] : APERTURA;
   return `<p class="hecho">${ic('ok')}Evento publicado</p>${tarjeta(ev)}${sugerencia()}
     <button class="btn ${e.sug === 'abierta' ? 'sec' : ''}" data-a="ver-evento">Ver el evento</button>
@@ -286,7 +308,15 @@ function publicado() {
       : ['Una sola sugerencia, con la forma de lo que se va a crear: es la ficha de la exposición, todavía en punteado.', 'Si el cartel trae las fechas, publicar la exposición cuesta un toque. Si no las trae, se pide solo el último día.', 'La inauguración no cambia y conserva su ficha. La exposición no hereda su hora ni su precio.', '«Ahora no» deja salir sin más; la exposición se puede agregar después desde Editar.'])}`;
 }
 function fichaEvento() {
-  if (caso.startsWith('h')) {
+  if (caso === 'taller') {
+    const ses = SESIONES.filter((_, i) => e.sesiones[i]);
+    return `<div class="portada" style="--tono:#3d5a4a"><h1>${TALLER.titulo}</h1><small>Taller · ${ses.length} sesiones · próxima: ${dia(ses[0][0])}</small></div>
+      <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ok')}</span>Voy</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span><span class="accion-ficha"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span></div>
+      <section class="caja"><h2>Cuándo</h2>${ses.map(([f, h, l], i) => `<div class="dato">${ic('calendario')}<span><b>${dia(f)} · ${h}</b><small>${l === TALLER.lugar ? `Sesión ${i + 1} de ${ses.length}` : `Sesión ${i + 1} de ${ses.length} · en ${l}`}</small></span><span></span></div>`).join('')}</section>
+      <section class="caja"><h2>Dónde</h2><div class="dato">${ic('pin')}<span><b>${TALLER.lugar}</b><small>Calz. de Guadalupe 705</small></span>${ic('chevron')}</div></section>
+      ${notas(['«Voy» es al taller entero: la inscripción es una.', 'La sesión en otra sede lo dice en su renglón; «Dónde» muestra la sede habitual.'])}`;
+  }
+  if (PUBLICAR.includes(caso)) {
     const ev = caso === 'h4' ? ACTOS[1] : APERTURA, rel = e.sug === 'hecha';
     return `<div class="portada" style="--tono:#4a3a6b"><h1>${ev.titulo}</h1><small>${dia(ev.fecha)} · ${ev.hora}</small></div>
       ${rel ? `<section class="caja"><h2>${caso === 'h4' ? 'Parte de' : 'Exposición'}</h2><button class="dato" data-a="ver-relacion">${ic(caso === 'h4' ? 'personas' : 'calendario')}<span><b>${caso === 'h4' ? 'Festival Umbral 2026' : 'Ecos de papel'}</b><small>${caso === 'h4' ? '2 eventos registrados' : `Se puede visitar hasta el ${dia(e.hasta)}`}</small></span>${ic('chevron')}</button></section>` : ''}
@@ -376,6 +406,7 @@ function calendario() {
     <button class="btn" data-a="confirmar-cal" ${c.hasta ? '' : 'disabled'}>${c.hasta ? `Publicar la exposición · hasta el ${dia(c.hasta)}` : 'Falta el último día'}</button></div></div>`;
 }
 function relacion() {
+  if (caso === 'programa') { const pub = PROGRAMA.filter((_, i) => e.elegidos[i]); return `<span class="sello gris">Festival · edición 2026</span><h1>Festival Umbral</h1><p class="meta">Programa registrado: ${pub.length} eventos</p><ul class="actos">${pub.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small></div></li>`).join('')}</ul>${notas(['Las fechas son las de los eventos registrados; no dicen cuánto dura el festival.'])}`; }
   if (caso === 'h4') return `<span class="sello gris">Festival · edición 2026</span><h1>Festival Umbral</h1><p class="meta">2 eventos registrados</p>
     <ul class="actos">${ACTOS.map((a) => `<li><div><b>${a.titulo}</b><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small></div></li>`).join('')}</ul>
     ${notas(['Las fechas son las de los eventos registrados; no dicen cuánto dura el festival.'])}`;
@@ -385,12 +416,25 @@ function relacion() {
     ${notas(['La exposición tiene su ficha propia, con «hasta cuándo» en vez de una hora. Su horario no se copia de la inauguración.'])}`;
 }
 
-const VISTAS = { alta: altaEvento, publicado, ficha: fichaEvento, 'alta-lugar': altaLugar, 'alta-sitio': altaSitio, 'donde-es': dondeEs, relacion };
+function programa() {
+  const n = e.elegidos.filter(Boolean).length;
+  return `<h1>El cartel trae ${PROGRAMA.length} eventos</h1>
+    ${renglon('camara', 'Cartel', 'Festival Umbral 2026')}
+    <div class="grupo">${PROGRAMA.map((a, i) => `<button class="renglon ${e.elegidos[i] ? '' : 'pendiente'}" data-elegir="${i}" aria-pressed="${e.elegidos[i]}">${ic(e.elegidos[i] ? 'ok' : 'mas')}<span><small>${dia(a.fecha)} · ${a.hora} · ${a.lugar}</small><b>${a.titulo}</b></span><span class="accion">${e.elegidos[i] ? 'Quitar' : 'Incluir'}</span></button>`).join('')}</div>
+    <button class="btn" data-a="publicar" ${n ? '' : 'disabled'}>${n === 0 ? 'Marca al menos un evento' : n === 1 ? 'Publicar 1 evento' : `Publicar los ${n} eventos`}</button>
+    ${notas(['El cartel es el programa de un festival: el sistema separa cada evento con su fecha, hora y sede, y los ofrece juntos. No hay que subir el cartel tres veces.', 'Toca un evento para dejarlo fuera; queda como borrador.', 'Un toque publica todo lo marcado y los junta en el festival. En el flujo por pasos (doc 51), esta sería la pantalla de «revisa lo que leímos».', 'Falta en este prototipo: tocar un evento para corregir un dato antes de publicar.'])}`;
+}
+function hojaSesiones() {
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="Sesiones del taller"><h2>Sesiones</h2><small>Leídas del cartel. Toca una para quitarla o reponerla.</small>
+    <div class="grupo">${SESIONES.map(([f, h, l], i) => `<button class="renglon ${e.sesiones[i] ? '' : 'pendiente'}" data-sesion="${i}" aria-pressed="${e.sesiones[i]}">${ic(e.sesiones[i] ? 'ok' : 'mas')}<span><small>${l === TALLER.lugar ? 'Sesión' : `En ${l}`}</small><b>${dia(f)} · ${h}</b></span><span class="accion">${e.sesiones[i] ? 'Quitar' : 'Reponer'}</span></button>`).join('')}</div>
+    <button class="btn" data-a="listo-sesiones" ${e.sesiones.some(Boolean) ? '' : 'disabled'}>${e.sesiones.some(Boolean) ? 'Listo' : 'Falta al menos una sesión'}</button></div></div>`;
+}
+const VISTAS = { programa, alta: altaEvento, publicado, ficha: fichaEvento, 'alta-lugar': altaLugar, 'alta-sitio': altaSitio, 'donde-es': dondeEs, relacion };
 function pintar(foco) {
   const pagina = $('#pagina');
-  pagina.className = 'pagina' + (['ficha', 'relacion'].includes(e.v) ? ' contenido' : '');
+  pagina.className = 'pagina' + (['ficha', 'relacion'].includes(e.v) && caso !== 'programa' || (e.v === 'ficha') ? ' contenido' : '');
   pagina.innerHTML = VISTAS[e.v]();
-  $('#capas').innerHTML = (e.mapa ? vistaMapa() : '') + (e.hoja === 'cal' ? calendario() : e.hoja === 'uso' ? hojaUso() : '') + (e.aviso ? `<div class="aviso" role="status"><span>${e.aviso.texto}</span>${e.aviso.deshacer ? '<button data-a="deshacer">Deshacer</button>' : '<span></span>'}</div>` : '');
+  $('#capas').innerHTML = (e.mapa ? vistaMapa() : '') + (e.hoja === 'cal' ? calendario() : e.hoja === 'uso' ? hojaUso() : e.hoja === 'ses' ? hojaSesiones() : '') + (e.aviso ? `<div class="aviso" role="status"><span>${e.aviso.texto}</span>${e.aviso.deshacer ? '<button data-a="deshacer">Deshacer</button>' : '<span></span>'}</div>` : '');
   if (foco) { const c = $(foco); if (c) { c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
 }
 function ir(v) { e.pila.push(e.v); e.v = v; pintar(); $('#pagina').scrollTop = 0; }
@@ -403,6 +447,8 @@ document.addEventListener('click', (ev) => {
   const m = t.closest('[data-mes]'); if (m) { const f = new Date(Date.UTC(e.cal.a, e.cal.m + Number(m.dataset.mes), 1)); e.cal.a = f.getUTCFullYear(); e.cal.m = f.getUTCMonth(); return pintar(); }
   const tipo = t.closest('[data-tipo]'); if (tipo) { e.tipo = tipo.dataset.tipo; return pintar(); }
   const res = t.closest('[data-res]'); if (res) { e.sitio = RESULTADOS[Number(res.dataset.res)]; return pintar(); }
+  const el = t.closest('[data-elegir]'); if (el) { const i = Number(el.dataset.elegir); e.elegidos[i] = !e.elegidos[i]; return pintar(); }
+  const ses = t.closest('[data-sesion]'); if (ses) { const i = Number(ses.dataset.sesion); e.sesiones[i] = !e.sesiones[i]; return pintar(); }
   const uso = t.closest('[data-uso]'); if (uso) { e.uso = uso.dataset.uso; e.hoja = null; e.v = 'alta-sitio'; e.pila = []; avisar(e.uso === 'lugar' ? 'Jardín Colón quedó guardado como lugar.' : e.uso === 'reservado' ? 'La dirección se revelará el día del evento.' : 'Jardín Colón se usará solo en este evento.'); return pintar(); }
   const b = t.closest('[data-a]'); if (!b) return;
   const a = b.dataset.a;
@@ -410,6 +456,8 @@ document.addEventListener('click', (ev) => {
   if (a === 'limpiar') { const c = $('#nombre'); c.value = ''; c.focus(); }
   else if (a === 'limpiar-q') { e.q = ''; e.sitio = null; pintar('#q'); }
   else if (a === 'publicar') ir('publicado');
+  else if (a === 'sesiones') { e.hoja = 'ses'; pintar(); }
+  else if (a === 'listo-sesiones') { e.hoja = null; pintar(); }
   else if (a === 'aceptar') { e.sug = 'hecha'; avisar(caso === 'h4' ? 'Los dos eventos ya son parte del festival.' : 'Exposición publicada.', true); pintar(); }
   else if (a === 'deshacer') { e.sug = 'abierta'; e.aviso = null; if (caso === 'h2') e.hasta = null; if (e.v !== 'publicado') { e.v = 'publicado'; e.pila = ['alta']; } pintar(); }
   else if (a === 'ahora-no') { e.sug = 'no'; pintar(); }
