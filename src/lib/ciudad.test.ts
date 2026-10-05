@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { altaLejosDeCiudades, armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadInicialCercana, ciudadesDeHoja, ciudadMasCercana, ciudadPorNombre, ciudadPorSlug, filasDeCiudades, ofrecerUbicacionCiudades, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
+import { destinoDeCiudad, guardarEleccionCiudad, hrefConCiudad, leerEleccionCiudad, altaLejosDeCiudades, armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadInicialCercana, ciudadesDeHoja, ciudadMasCercana, ciudadPorNombre, ciudadPorSlug, filasDeCiudades, ofrecerUbicacionCiudades, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
 
 describe("ciudad", () => {
   it("«Cerca de ti» lleva a la ciudad cuyo centro queda más cerca, y sin lista, a la inicial", () => {
@@ -192,5 +192,28 @@ describe("hoja de ciudades (OL-270)", () => {
     expect(ofrecerUbicacionCiudades("eventos", null, true, false)).toBe(false);
     expect(ofrecerUbicacionCiudades("eventos", slp.centro, false, false)).toBe(false);
     expect(ofrecerUbicacionCiudades("eventos", null, false, true)).toBe(false);
+  });
+});
+
+
+describe("elección y enlaces de ciudad", () => {
+  it("la memoria se restaura solo dentro de la misma ciudad y sección", () => {
+    expect(destinoDeCiudad("/agenda", "/agenda?cuanto=gratis", "leon")).toBe("/agenda?ciudad=leon");
+    expect(destinoDeCiudad("/agenda", "/agenda?ciudad=leon&cuanto=gratis", "leon")).toBe("/agenda?ciudad=leon&cuanto=gratis");
+    expect(destinoDeCiudad("/agenda", "/lugares?ciudad=leon", "leon")).toBe("/agenda?ciudad=leon");
+    expect(destinoDeCiudad("/agenda", "/agenda?cuanto=gratis", "san-luis-potosi")).toBe("/agenda?cuanto=gratis");
+    expect(destinoDeCiudad("/", "/?ciudad=leon&cuanto=gratis", "puebla")).toBe("/?ciudad=puebla");
+  });
+  it("hace explícita incluso San Luis sin perder parámetros de la entrada", () => {
+    expect(hrefConCiudad("/agenda?cuanto=gratis#fecha", "san-luis-potosi")).toBe("/agenda?cuanto=gratis&ciudad=san-luis-potosi#fecha");
+  });
+  it("guarda la elección y soporta almacenamiento inaccesible", () => {
+    const datos = new Map<string,string>();
+    const almacen = {getItem:(k:string)=>datos.get(k)??null,setItem:(k:string,v:string)=>{datos.set(k,v)}};
+    guardarEleccionCiudad("leon", almacen);
+    expect(leerEleccionCiudad(almacen)).toBe("leon");
+    const cerrado = {getItem:()=>{throw Error()},setItem:()=>{throw Error()}};
+    expect(leerEleccionCiudad(cerrado)).toBeNull();
+    expect(() => guardarEleccionCiudad("leon", cerrado)).not.toThrow();
   });
 });

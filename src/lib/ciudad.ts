@@ -194,3 +194,33 @@ export function raizConCiudad(raiz: string, consulta: string): string {
   const ciudad = new URLSearchParams(consulta).get("ciudad");
   return ciudad ? `${raiz}?ciudad=${encodeURIComponent(ciudad)}` : raiz;
 }
+
+/** La elección vive en este teléfono. Un enlace explícito no la sobrescribe. */
+const ELECCION = "sn:ciudad-elegida";
+type AlmacenCiudad = Pick<Storage, "getItem" | "setItem">;
+function almacenCiudad(): AlmacenCiudad | null {
+  try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+}
+export function leerEleccionCiudad(almacen: AlmacenCiudad | null = almacenCiudad()): string | null {
+  try { return almacen?.getItem(ELECCION) || null; } catch { return null; }
+}
+export function guardarEleccionCiudad(slug: string, almacen: AlmacenCiudad | null = almacenCiudad()): void {
+  try { almacen?.setItem(ELECCION, slug); } catch { /* Sin almacenamiento, la URL conserva el contexto. */ }
+}
+
+/** También hace explícita la ciudad inicial: recibir un enlace debe ganar a la preferencia. */
+export function hrefConCiudad(href: string, slug: string): string {
+  const url = new URL(href, "https://somosnosotros.org");
+  url.searchParams.set("ciudad", slug);
+  return url.pathname + url.search + url.hash;
+}
+
+/** Solo restaura filtros/scroll de una URL de la propia sección y de la ciudad actual. */
+export function destinoDeCiudad(raiz: string, ultima: string | undefined, slug: string | null): string {
+  const actual = slug || CIUDAD_INICIAL.slug;
+  if (ultima && (ultima === raiz || ultima.startsWith(`${raiz}?`))) {
+    const guardada = new URL(ultima, "https://somosnosotros.org");
+    if ((guardada.searchParams.get("ciudad") || CIUDAD_INICIAL.slug) === actual) return ultima;
+  }
+  return slug ? hrefConCiudad(raiz, slug) : raiz;
+}

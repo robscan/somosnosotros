@@ -110,7 +110,7 @@ test("lista directa a 320/390: nota y botones canónicos, selección por replace
     await hoja.getByRole("button", { name: /Querétaro/ }).click();
     assert.equal(await page.getByRole("dialog").count(), 0);
     assert.equal(await page.evaluate(() => localStorage.getItem("sn:ciudad-elegida")), QRO.slug);
-    assert.deepEqual(await page.evaluate(() => window.qa.replaces), ["?seccion=eventos&ciudad=queretaro"]);
+    assert.deepEqual(await page.evaluate(() => window.qa.replaces), ["/?seccion=eventos&ciudad=queretaro"]);
     assert.equal(await page.locator("#root button").evaluate(e => document.activeElement === e), true);
   }
 });
@@ -158,7 +158,7 @@ test("solo la primera visita sin elección toma la cercana; marca previa y stora
   const vieja = await abrir(t, { punto: QRO.centro, marcada: SLP.slug });
   await abrirHoja(vieja);
   assert.match(await vieja.locator('[role=dialog] [aria-current="true"]').innerText(), /San Luis/);
-  assert.deepEqual(await vieja.evaluate(() => window.qa.replaces), []);
+  assert.deepEqual(await vieja.evaluate(() => window.qa.replaces), ["/?seccion=eventos&ciudad=san-luis-potosi"]);
   const privada = await abrir(t, { storage: false });
   await abrirHoja(privada);
   await privada.getByRole("button", { name: /Querétaro/ }).click();
@@ -246,7 +246,7 @@ test("un toque en resultado con campo enfocado conserva su sitio hasta elegir y 
     assert.ok(Math.abs(antes.y - trasQuitarFoco.y) < 1, "perder foco no mueve el resultado bajo el dedo, incluso sin texto");
     await page.mouse.up();
     await page.getByRole("dialog").waitFor({ state: "detached" });
-    assert.deepEqual(await page.evaluate(() => window.qa.replaces), ["?seccion=artistas&ciudad=queretaro"]);
+    assert.deepEqual(await page.evaluate(() => window.qa.replaces), ["/?seccion=artistas&ciudad=queretaro"]);
   }
 });
 
@@ -320,4 +320,22 @@ test("lejos: alta por tipo sin coordenadas en URL; Artistas no ofrece alta por d
     if (seccion === "buscar") assert.equal(await page.getByRole("dialog").getAttribute("aria-label"), "Ciudades");
     assert.equal(await page.getByText("Estás aquí", { exact: true }).count(), 0);
   }
+});
+
+
+test("entrada sin ciudad y recarga recuperan la elección manual antes de la cercanía", async t => {
+  const page = await abrir(t, {marcada:QRO.slug, punto:SLP.centro});
+  await page.getByRole("button", {name:"Querétaro",exact:true}).waitFor();
+  assert.equal(new URL(page.url()).searchParams.get("ciudad"), QRO.slug);
+  assert.equal(await page.evaluate(() => localStorage.getItem("sn:ciudad-elegida")), QRO.slug);
+  await page.reload();
+  await page.getByRole("button", {name:"Querétaro",exact:true}).waitFor();
+});
+
+
+test("URL explícita gana a la preferencia y al GPS sin sobrescribir la elección guardada", async t => {
+  const page = await abrir(t, {ciudad:GDL.slug,marcada:QRO.slug,punto:SLP.centro});
+  await page.getByRole("button", {name:"Guadalajara",exact:true}).waitFor();
+  assert.deepEqual(await page.evaluate(() => window.qa.replaces), []);
+  assert.equal(await page.evaluate(() => localStorage.getItem("sn:ciudad-elegida")), QRO.slug);
 });

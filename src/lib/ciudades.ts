@@ -24,7 +24,7 @@ async function leerAgregados<T>(rpc: "ciudades_agregadas" | "ciudades_artistas_a
  * Los alias de ciudad se unen en la app para reutilizar ciudadCanonica y no duplicar esas reglas en SQL.
  * cache() evita repetir esta RPC entre metadata y página en una misma petición.
  */
-export const cargarCiudades = cache(async (): Promise<CiudadConDatos[]> => {
+const cargarCiudadesConOferta = cache(async (): Promise<CiudadConDatos[]> => {
   const filas = await leerAgregados<Agregado>("ciudades_agregadas");
   if (!filas.length) return armarCiudades([], []);
   type Acum = { lugares: number; eventos: number; lat: number; lng: number; zonas: Map<string, number> };
@@ -52,7 +52,7 @@ export const cargarCiudades = cache(async (): Promise<CiudadConDatos[]> => {
 });
 
 /** Misma lista y orden de Artistas, con un recuento agregado por ciudad en vez de cada artista. */
-export const cargarCiudadesDeArtistas = cache(async (): Promise<CiudadConArtistas[]> => {
+const cargarCiudadesConArtistas = cache(async (): Promise<CiudadConArtistas[]> => {
   const filas = await leerAgregados<{ ciudad: string; artistas: number }>("ciudades_artistas_agregadas");
   if (!filas.length) return armarCiudadesDeArtistas([]);
   const inicial = CIUDAD_INICIAL.nombre;
@@ -64,4 +64,25 @@ export const cargarCiudadesDeArtistas = cache(async (): Promise<CiudadConArtista
   return [...cuenta].map(([nombre, artistas]) => ({
     ...CIUDAD_INICIAL, slug: slugDeCiudad(nombre), nombre, zoom: nombre === inicial ? CIUDAD_INICIAL.zoom : 13, artistas,
   })).sort((a, b) => (a.nombre === inicial ? -1 : b.nombre === inicial ? 1 : b.artistas - a.artistas || a.nombre.localeCompare(b.nombre, "es")));
+});
+
+
+/** Catálogo común para resolver identidad; la hoja filtra la oferta por sección.
+ * Se reutilizan los dos agregados cacheados, sin consultar fichas ni inventar centros. */
+export const cargarCiudades = cache(async (compartidas = false): Promise<CiudadConDatos[]> => {
+  const propias = await cargarCiudadesConOferta();
+  if (!compartidas) return propias;
+  const artistas = await cargarCiudadesConArtistas();
+  const slugs = new Set(propias.map(c => c.slug));
+  return [...propias, ...artistas.filter(c => !slugs.has(c.slug)).map(c => ({
+    slug: c.slug, nombre: c.nombre, zoom: c.zoom, centro: CIUDAD_INICIAL.centro, centroConocido: false,
+    lugares: 0, eventos: 0, zona: ZONA_INICIAL,
+  }))];
+});
+export const cargarCiudadesDeArtistas = cache(async (compartidas = false): Promise<CiudadConArtistas[]> => {
+  const propias = await cargarCiudadesConArtistas();
+  if (!compartidas) return propias;
+  const oferta = await cargarCiudadesConOferta();
+  const slugs = new Set(propias.map(c => c.slug));
+  return [...propias, ...oferta.filter(c => !slugs.has(c.slug)).map(c => ({...c, artistas: 0}))];
 });

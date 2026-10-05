@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { altaLejosDeCiudades, ciudadInicialCercana, ciudadesDeHoja, filasDeCiudades, ofrecerUbicacionCiudades, type Ciudad, type CiudadConArtistas, type CiudadConDatos, type SeccionCiudades } from "@/lib/ciudad";
+import { altaLejosDeCiudades, ciudadInicialCercana, ciudadesDeHoja, filasDeCiudades, guardarEleccionCiudad, hrefConCiudad, leerEleccionCiudad, ofrecerUbicacionCiudades, type Ciudad, type CiudadConArtistas, type CiudadConDatos, type SeccionCiudades } from "@/lib/ciudad";
 import type { Punto } from "@/lib/geo";
 import { normalizarNombre } from "@/lib/lugares";
 import { leerUbicacionCercana, permisoConcedido } from "@/lib/ubicacion";
@@ -23,14 +23,7 @@ type Props = {
   /** Filtrar reemplaza la entrada de historial; no abre otra pantalla. */
   hrefDe: (c: Ciudad) => string;
 };
-const ELECCION = "sn:ciudad-elegida";
 const NEGADO = "sn:ubicacion-negada";
-function guardarEleccion(slug: string) {
-  try { window.localStorage.setItem(ELECCION, slug); } catch { /* Almacenamiento privado o lleno. */ }
-}
-function hayEleccion() {
-  try { return !!window.localStorage.getItem(ELECCION); } catch { return false; }
-}
 function leerNegado() {
   try { return window.sessionStorage.getItem(NEGADO) === "1"; } catch { return false; }
 }
@@ -43,9 +36,7 @@ const TITULOS: Record<SeccionCiudades, { titulo: string; nota: string }> = {
 
 /** Artistas no tiene centros propios: no lee ni consulta la ubicación para esta hoja. */
 export default function ChipCiudad(props: Props) {
-  const ciudades = ciudadesDeHoja(props.ciudad, props.ciudades, props.seccion);
-  const filtradas = { ...props, ciudades };
-  return props.seccion === "artistas" ? <SelectorCiudad {...filtradas} punto={null} /> : <CiudadConUbicacion {...filtradas} />;
+  return props.seccion === "artistas" ? <SelectorCiudad {...props} punto={null} /> : <CiudadConUbicacion {...props} />;
 }
 function CiudadConUbicacion(props: Props) {
   const punto = useUbicacionFresca();
@@ -57,17 +48,25 @@ function SelectorCiudad({ ciudad, ciudades, seccion, hrefDe, punto }: Props & { 
   const [abierta, setAbierta] = useState(false);
   const inicialResuelta = useRef(false);
   useEffect(() => {
+    const explicita = new URLSearchParams(window.location.search).has("ciudad");
+    const eleccion = leerEleccionCiudad();
+    // La preferencia se resuelve contra el catálogo común, no contra la oferta de esta sección.
+    if (!explicita && eleccion && ciudades.some(c => c.slug === eleccion)) {
+      inicialResuelta.current = true;
+      router.replace(hrefConCiudad(window.location.pathname + window.location.search, eleccion));
+      return;
+    }
     if (inicialResuelta.current || !punto) return;
     inicialResuelta.current = true;
-    const cercana = ciudadInicialCercana(ciudad, ciudades, punto, seccion, new URLSearchParams(window.location.search).has("ciudad"), hayEleccion());
+    const cercana = ciudadInicialCercana(ciudad, ciudadesDeHoja(ciudad, ciudades, seccion), punto, seccion, explicita, !!eleccion);
     if (cercana) {
-      guardarEleccion(cercana.slug);
-      router.replace(hrefDe(cercana));
+      guardarEleccionCiudad(cercana.slug);
+      router.replace(hrefConCiudad(hrefDe(cercana), cercana.slug));
     }
   }, [ciudad, ciudades, punto, seccion, hrefDe, router]);
   return <>
     <Chip variante="contexto" icono={<IconoPin width={16} height={16} />} fin={<IconoCaret width={12} height={12} />} onClick={() => setAbierta(true)}>{ciudad.nombre}</Chip>
-    {abierta && <HojaCiudades ciudad={ciudad} ciudades={ciudades} seccion={seccion} hrefDe={hrefDe} punto={punto} onCerrar={() => setAbierta(false)} />}
+    {abierta && <HojaCiudades ciudad={ciudad} ciudades={ciudadesDeHoja(ciudad, ciudades, seccion)} seccion={seccion} hrefDe={hrefDe} punto={punto} onCerrar={() => setAbierta(false)} />}
   </>;
 }
 
@@ -108,9 +107,9 @@ function HojaCiudades({ ciudad, ciudades, seccion, hrefDe, punto, onCerrar }: Pr
     } finally { setLeyendo(false); }
   }
   function elegir(c: Ciudad) {
-    guardarEleccion(c.slug);
+    guardarEleccionCiudad(c.slug);
     onCerrar();
-    if (c.slug !== ciudad.slug) router.replace(hrefDe(c));
+    if (c.slug !== ciudad.slug) router.replace(hrefConCiudad(hrefDe(c), c.slug));
   }
 
   return <Hoja etiqueta={titulo} titulo={titulo} plano onCerrar={onCerrar}>
