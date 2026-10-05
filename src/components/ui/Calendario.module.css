@@ -57,17 +57,28 @@
   gap: 2px;
 }
 .semana {
+  /* minmax(0, 1fr): con `1fr` a secas la columna no baja del ancho de su contenido y siete días de 44 px más seis huecos
+     (320 px) no caben en los 280 px que deja la hoja de un teléfono de 320: el domingo se salía de la hoja (OL-282, bitácora
+     310). Filas fijas de 44 px: el día va centrado en ellas y su toque (::before) las llena aunque el círculo mida menos.
+     Es contenedor de ancho para que cada día calcule su diámetro con el ancho real de la columna (cqw). */
+  --hueco: 2px;
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: var(--toque-min);
+  align-items: center;
+  gap: var(--hueco);
 }
 .dia {
-  /* Círculo de 44px (toque mínimo) centrado en su columna: sin aspect-ratio, que con columnas de ~80px de ancho
-     (600px de columna / 7) estiraba las filas a ~80px de alto y desperdiciaba la hoja (corrección del gestor). */
+  /* Círculo de 44px (toque mínimo) centrado en su columna; si la columna es más angosta (7 columnas en 280 px: 38 px) baja
+     a lo que cabe, en píxeles enteros para que el número no salte medio píxel de una columna a otra. Sin aspect-ratio: con
+     columnas de ~80px (600px de columna / 7) estiraba las filas a ~80px de alto y desperdiciaba la hoja (corrección del
+     gestor); aquí el diámetro tiene tope de 44. */
+  --d: round(down, min(var(--toque-min), (100cqw - 6 * var(--hueco)) / 7), 1px);
   position: relative;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  margin: 0 auto;
+  width: var(--d);
+  height: var(--d);
+  justify-self: center;
   display: grid;
   place-items: center;
   border: none;
@@ -76,6 +87,19 @@
   color: var(--texto);
   font-size: var(--letra-sm);
   cursor: pointer;
+}
+/* El toque: la fila entera de 44 px y la columna entera (1 px a cada lado cierra el hueco entre columnas; en los extremos
+   no, para no salirse de la rejilla), como el ::before de ui/Chip. Con el círculo de 44 no añade nada. */
+.dia::before {
+  content: "";
+  position: absolute;
+  inset: calc((100% - var(--toque-min)) / 2) calc(var(--hueco) / -2);
+}
+.dia:first-child::before {
+  left: 0;
+}
+.dia:last-child::before {
+  right: 0;
 }
 /* `:not(.elegido)`: sin él, `:hover` (dos clases de especificidad) le gana a `.elegido` (una), sin importar el
    orden — un día ya elegido se veía gris al pasar el mouse encima, como si se hubiera desmarcado (bug real,
@@ -105,7 +129,7 @@
   box-shadow: none;
 }
 /* Un rango: los días de en medio van en el tono suave y a todo lo ancho de su columna; la sombra de un píxel a cada lado
-   cierra el hueco de 2 px entre columnas, así la banda no se corta. */
+   cierra el hueco de 2 px entre columnas, así la banda no se corta. Su alto es el del círculo (--d). */
 .enRango {
   width: 100%;
   border-radius: 0;

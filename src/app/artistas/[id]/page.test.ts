@@ -146,3 +146,62 @@ it("el destino fuera de las primeras50 se carga por esta ficha y visible, sin pe
     expect(consultas[1].eq.mock.calls).toEqual([["artista_id", ARTISTA.id], ["id", destino.id], ["visible", true]]);
   } finally { vi.mocked(clienteServidor).mockImplementation(previo); }
 });
+
+describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", () => {
+  /** Corre `fn` con un cliente que responde `respuesta` a la consulta de la ficha (o sin cliente, si es `null`). */
+  async function con(respuesta: unknown, fn: () => Promise<void>) {
+    m.notFound.mockClear();
+    const { clienteServidor } = await import("@/lib/supabase/servidor");
+    const previo = vi.mocked(clienteServidor).getMockImplementation()!;
+    vi.mocked(clienteServidor).mockImplementation((async () => (respuesta === null ? null : clienteFalso({ artistas: respuesta }))) as never);
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await fn();
+      // La traza dice qué lectura falló, nunca la respuesta remota.
+      for (const llamada of aviso.mock.calls) expect(JSON.stringify(llamada)).not.toContain("secreto-remoto");
+    } finally {
+      aviso.mockRestore();
+      vi.mocked(clienteServidor).mockImplementation(previo);
+    }
+  }
+  const pedir = async () => {
+    const { default: Ficha } = await import("./page");
+    return Ficha({ params: Promise.resolve({ id: "artista-de-prueba" }), searchParams: Promise.resolve({}) });
+  };
+  const metadatos = async () => {
+    const { generateMetadata } = await import("./page");
+    return generateMetadata({ params: Promise.resolve({ id: "artista-de-prueba" }) });
+  };
+
+  it("sin fila y sin error es «no existe»: notFound y título de ficha inexistente", async () => {
+    await con({ data: null, error: null }, async () => {
+      await expect(pedir()).rejects.toThrow("NOT_FOUND");
+      expect((await metadatos()).title).toBe("Artista · Somos Nosotros");
+    });
+  });
+
+  it("un error de la consulta (402 de cuota, 5xx, más de una fila) lanza y no es notFound", async () => {
+    await con({ data: null, error: { code: "PGRST000", message: "secreto-remoto" } }, async () => {
+      await expect(pedir()).rejects.toThrow("No pudimos cargar la ficha.");
+      expect(m.notFound).not.toHaveBeenCalled();
+    });
+  });
+
+  it("un error con datos de relleno tampoco hace pasar la ficha por viva", async () => {
+    await con({ data: {}, error: { message: "secreto-remoto" } }, async () => {
+      await expect(pedir()).rejects.toThrow("No pudimos cargar la ficha.");
+    });
+  });
+
+  it("sin cliente (variables de entorno ausentes) lanza", async () => {
+    await con(null, async () => {
+      await expect(pedir()).rejects.toThrow("No pudimos cargar la ficha.");
+    });
+  });
+
+  it("generateMetadata ante un fallo no lleva robots ni canonical (rigen las etiquetas del sitio) y no lanza", async () => {
+    await con({ data: null, error: { message: "secreto-remoto" } }, async () => {
+      expect(await metadatos()).toEqual({});
+    });
+  });
+});

@@ -44,7 +44,7 @@ export function urlFicha(artistaId: string, slug?: string | null): string {
 export function cuerpoTexto(nombre: string, url: string): string {
   return `Hola,
 
-Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de Somos Nosotros, donde la gente de San Luis Potosí encuentra centros culturales y eventos.
+Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de Somos Nosotros, donde la gente encuentra centros culturales y eventos.
 
 Tu ficha está aquí: ${url}
 
@@ -60,7 +60,7 @@ Somos Nosotros`;
 export function cuerpoHtml(_nombre: string, url: string): string {
   return [
     "<p>Hola,</p>",
-    `<p>Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de Somos Nosotros, donde la gente de San Luis Potosí encuentra centros culturales y eventos.</p>`,
+    `<p>Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de Somos Nosotros, donde la gente encuentra centros culturales y eventos.</p>`,
     `<p>Tu ficha está aquí: <a href="${url}">${url}</a></p>`,
     `<p>Ábrela y toca “Soy yo / es mi grupo” para hacerla tuya: le pones foto, la editas y publicas tus próximas fechas.</p>`,
     `<p>Si prefieres que no aparezcas, ábrela y toca “Soy yo / es mi grupo” también: ahí puedes pedir que se quite.</p>`,
