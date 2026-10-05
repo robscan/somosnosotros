@@ -214,6 +214,12 @@ button.renglon { cursor: pointer; }
 .diseno { display: grid; align-content: end; gap: 4px; aspect-ratio: 4 / 5; padding: var(--espacio-3); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0)), var(--tono); color: var(--primario-texto); text-align: left; overflow: hidden; }
 .diseno b { font-size: var(--letra-lg); font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; overflow-wrap: anywhere; }
 .diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
+/* Lo que falta por completar: punteado marcado y en el color de acción (founder, 2026-10-05). */
+.renglon.pendiente { border: 2px dashed var(--primario); }
+.renglon.pendiente > svg, .renglon.pendiente small, .renglon.pendiente b { color: var(--primario); }
+.renglon.aparte { margin-top: var(--espacio-4); }
+.horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 132px; overflow-y: auto; }
+.horas .chip { min-height: var(--toque-min); padding: 0; }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
 .final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
@@ -331,10 +337,10 @@ const VISTAS = {
   }),
   cuando: () => ({
     titulo: 'Publicar', pregunta: '¿Cuándo es?',
-    cuerpo: `<div class="grupo"><small>Día</small><div class="fila-chips">${['Hoy', 'Mañana', 'Este sábado', 'Otro día'].map((t) => `<button class="chip" data-dia="${t}" aria-pressed="${e.dia === t}">${t}</button>`).join('')}</div></div>
-      ${e.dia ? `<div class="grupo cae"><small>Hora</small><div class="fila-chips">${['12:00', '17:00', '19:00', '20:00', 'Otra hora'].map((t) => `<button class="chip" data-hora="${t}">${t}</button>`).join('')}</div></div>` : ''}`,
+    cuerpo: `<div class="grupo"><small>Día</small><div class="fila-chips">${['Este viernes', 'Este sábado', 'Otro día'].map((t) => `<button class="chip" data-dia="${t}" aria-pressed="${e.dia === t}">${t}</button>`).join('')}</div></div>
+      ${e.dia ? `<div class="grupo cae"><small>Hora</small><div class="fila-chips">${['19:00', '20:00', '17:00', '12:00', 'Otra hora'].map((t) => `<button class="chip" data-hora="${t}">${t}</button>`).join('')}</div></div>` : ''}`,
     pie: '',
-    notas: ['Elegir la hora avanza solo: no hay botón «Siguiente» cuando la respuesta es un toque.', '«Otro día» y «Otra hora» abren el calendario y el selector que ya existen (no dibujados aquí).', 'Hoy la app propone una fecha y deja publicar sin que nadie la lea. Aquí la fecha se elige o se confirma siempre.'],
+    notas: ['Las sugerencias salen de los 274 eventos publicados (medido el 2026-10-05): el 51 % es viernes o sábado, y el 51 % empieza a las 19:00, 20:00, 17:00 o 12:00, en ese orden. «Hoy» y «Mañana» se quitaron: solo 7 de 274 se publicaron para el mismo día o el siguiente.', 'Ojo: casi todos esos eventos los cargó la administración desde agendas; cuando publique más gente, estas sugerencias se vuelven a medir.', '«Otro día» y «Otra hora» abren la hoja de fecha y hora que ya existe (calendario y lista de horas cada 15 minutos).', 'Elegir la hora avanza solo.'],
   }),
   donde: () => {
     const hay = e.q.trim().length >= 2;
@@ -387,7 +393,7 @@ const VISTAS = {
       titulo: 'Revisa',
       cuerpo: `<div class="cabeza-revisar ${conCartel ? '' : 'sin'}">${conCartel ? mini() : ''}<div>${conCartel ? `<span class="leido">${ic('ok')}Leído del cartel</span>` : ''}<h1>${d.nombre}</h1></div></div>
         <div class="grupo ${e.dir === 'entra' ? 'cae' : ''}">${renglon('reloj', 'Cuándo', d.cuando, 'cuando')}${renglon('pin', 'Dónde', d.donde, 'donde')}${renglon('boleto', 'Cuánto', d.cuanto, 'cuanto')}${d.quien ? renglon('personas', 'Quién', d.quien, 'quien') : ''}</div>
-        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Diseño ${e.flyer + 1}, con estos datos</b></span><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon pendiente" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Falta elegir el diseño</b></span><span class="accion">Elegir</span></button>` : `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Sin cartel</b></span><span class="accion">Hacer uno</span></button>`}
+        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Diseño ${e.flyer + 1}, con estos datos</b></span><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon pendiente aparte" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Falta elegir el diseño</b></span><span class="accion">Elegir</span></button>` : `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Sin cartel</b></span><span class="accion">Hacer uno</span></button>`}
         <button class="quieto" data-a="mas">Agregar artistas, descripción o enlace</button>`,
       pie: e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
       notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
@@ -411,6 +417,15 @@ const VISTAS = {
   },
 };
 
+function hojaFecha() {
+  const dias = '<span></span>'.repeat(6) + Array.from({ length: 30 }, (_, k) => `<button class="dia ${String(k + 1) === e.hojaDia ? 'extremo' : ''}" data-dia="${k + 1}" ${k + 1 < 6 ? 'disabled' : ''}>${k + 1}</button>`).join('');
+  const horas = []; for (let h = 9; h <= 22; h++) for (const m of ['00', '15', '30', '45']) horas.push(`${String(h).padStart(2, '0')}:${m}`);
+  const listo = e.hojaDia && e.hojaHora;
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="Selecciona la fecha del evento"><h2>Selecciona la fecha del evento</h2>
+    ${/^\D/.test(e.hojaDia || '') ? `<small>${e.hojaDia}</small>` : `<div class="mes"><span></span><b>Noviembre de 2026</b><span></span></div><div class="semana">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => `<span>${l}</span>`).join('')}${dias}</div>`}
+    <div class="horas" role="listbox" aria-label="Hora">${horas.map((h) => `<button class="chip" data-hora="${h}" aria-pressed="${e.hojaHora === h}">${h}</button>`).join('')}</div>
+    <button class="btn" data-a="hoja-lista" ${listo ? '' : 'disabled'}>${listo ? 'Listo' : !e.hojaDia ? 'Falta el día' : 'Falta la hora'}</button></div></div>`;
+}
 function pintar(foco) {
   const p = paso(), v = VISTAS[p](), total = pasos().length - 1;
   $('#barra').innerHTML = v.final ? '<span class="hueco"></span><b></b><span class="hueco"></span>'
@@ -421,6 +436,7 @@ function pintar(foco) {
   pagina.innerHTML = (v.pregunta ? `<h1 class="pregunta">${v.pregunta}</h1>` : '') + v.cuerpo + (v.notas.length ? notas(v.notas) : '');
   pagina.scrollTop = 0;
   $('#pie').innerHTML = v.pie;
+  $('#capas').innerHTML = e.hoja ? hojaFecha() : '';
   $('#cuenta').textContent = `Aquí: ${e.toques} toques y ${e.escritos.size} escrituras · Hoy: ${HOY[caso]}`;
   const c = foco ? $(foco) : pagina.querySelector('input');
   if (c && (foco || e.dir !== 'fija')) { c.focus({ preventScroll: true }); c.setSelectionRange?.(c.value.length, c.value.length); }
@@ -433,8 +449,12 @@ document.addEventListener('click', (ev) => {
   if (!t || t.closest('.tira')) return;
   e.toques++; e.dir = 'entra';
   const { a, dia, hora, sitio, cuanto, elegir, editar, uso, diseno, inicio } = t.dataset;
-  if (dia) { e.dia = dia; e.dir = 'fija'; return pintar(); }
-  if (hora) { e.d.cuando = `${e.dia} · ${hora === 'Otra hora' ? '21:00' : hora}`; return sigue(); }
+  if (dia && t.closest('.hoja')) { e.hojaDia = dia; e.dir = 'fija'; return pintar(); }
+  if (hora && t.closest('.hoja')) { e.hojaHora = hora; e.dir = 'fija'; return pintar(); }
+  if (dia) { if (dia === 'Otro día') { e.hoja = true; e.hojaDia = null; e.hojaHora = null; e.dir = 'fija'; return pintar(); } e.dia = dia; e.dir = 'fija'; return pintar(); }
+  if (hora) { if (hora === 'Otra hora') { e.hoja = true; e.hojaDia = e.dia; e.hojaHora = null; e.dir = 'fija'; return pintar(); } e.d.cuando = `${e.dia} · ${hora}`; return sigue(); }
+  if (a === 'cerrar-hoja') { if (ev.target === t) { e.hoja = false; e.dir = 'fija'; pintar(); } e.toques--; return; }
+  if (a === 'hoja-lista') { e.d.cuando = `${/^\d/.test(e.hojaDia) ? `${e.hojaDia} de noviembre` : e.hojaDia} · ${e.hojaHora}`; e.hoja = false; return sigue(); }
   if (sitio) { const n = Number(sitio); e.d.donde = n === 2 ? 'Jardín de San Juan de Dios' : SITIOS[n][0]; e.q = ''; e.fuera = n === 2; e.mapa = n === 2; return trasDonde(); }
   if (uso) { e.usoSitio = uso; return e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : sigue(); }
   if (diseno) { e.flyer = Number(diseno); e.editar = null; e.dir = 'vuelve'; return pintar(); }

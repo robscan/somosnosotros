@@ -67,3 +67,17 @@ El founder corrigió la segunda vuelta: «no, la opción de "No hazme uno" apare
 - Capturas rehechas (21): `legible-1-inicio` muestra el recuadro y el botón; `sin-1-nombre-vacio` la casilla sin marcar con «Falta el nombre»; `sin-2-nombre` la casilla marcada. Sin errores ni desbordes a 320 y 390.
 
 **Decisiones del founder («Adelante con tus recomendaciones»):** este recorrido es la base para rehacer el alta de evento (evento primero; lugar y artista después); sin cartel, la fecha se pregunta siempre; al final «Compartir» es la acción principal salvo que haya una sugerencia en punteado. Preguntó además por crear sin conexión: ver la respuesta del gestor en el registro.
+
+## Cuarta vuelta (2026-10-05, noche): sugerencias con datos, hoja de fecha y lo que falta en el color de acción
+
+Preguntas y pedido del founder: «de donde sacas las sugerencias de cuando es? y a que hora? tienes datos para presentar esas? Al seleccionar otro día y otra hora se muestran los selectores de fecha y hora… que hicimos verdad? Respecto a Cartel, falta elegir diseño, debes separar más el elemento del resto, y la linea punteada mas acentuada… colorearla de color accionable, lo mismo que el texto… aplicalo al canon de esos campos por completar».
+
+- **Las sugerencias de la primera vuelta eran inventadas.** Medido en producción el 2026-10-05, solo lectura, 274 eventos visibles:
+  - Hora de inicio: 19:00 (52), 20:00 (39), 17:00 (28), 12:00 (22), 19:30 (20), 18:00 (18), 11:00 (18). Las cuatro primeras suman el 51 %.
+  - Día: sábado 71, viernes 68, jueves 51, miércoles 30, domingo 23, martes 19, lunes 12. Viernes y sábado, el 51 %.
+  - Anticipación al publicar (eventos con autor): mismo día 2, día siguiente 5, de 2 a 7 días 86, de 8 a 30 días 158, más de 30 días 23.
+  - Límite: casi todos los cargó la administración desde agendas institucionales; no es todavía el comportamiento de la gente.
+- **Cambio:** los chips de día son «Este viernes», «Este sábado» y «Otro día» (se quitan «Hoy» y «Mañana»); los de hora, 19:00, 20:00, 17:00, 12:00 y «Otra hora», en ese orden.
+- **«Otro día» y «Otra hora»** abren la hoja «Selecciona la fecha del evento», como la de `ui/SelectorFecha` de la app: calendario del mes y lista de horas cada 15 minutos en la misma hoja, con «Listo» que dice qué falta. (En la app esa hoja ya existe y se usa en «Empieza» y «Termina».)
+- **Lo que falta por completar:** borde punteado de 2 px en el violeta de acción y su texto en el mismo color; el renglón «Cartel» va separado del grupo de datos. Aplicado también al prototipo de Eventos (`eventos-superficies.html`). Para la app se abre una pieza aparte (OL-297): es el estado `pendiente` de `ui/Renglon` y el campo faltante de `FormularioCanon`.
+- Capturas rehechas (25): nuevas `sin-3-cuando` (tres chips de día), `sin-4-hoja-fecha` (hoja con «Falta el día»), `sin-5-hoja-fecha-lista` (día 14 y 10:30 elegidos, «Listo»), `sin-8-revisar-falta-diseno` (renglón «Cartel» punteado en violeta y separado). Sin errores ni desbordes a 320 y 390.

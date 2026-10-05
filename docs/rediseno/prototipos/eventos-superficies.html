@@ -72,7 +72,8 @@ ul { list-style: none; }
 .renglon small { display: block; font-size: var(--letra-xs); text-transform: uppercase; letter-spacing: 0.04em; }
 .renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
-.renglon.pendiente { border-style: dashed; border-color: var(--texto-suave); }
+.renglon.pendiente { border: 2px dashed var(--primario); }
+.renglon.pendiente > svg, .renglon.pendiente small, .renglon.pendiente b { color: var(--primario); }
 .renglon.elegible { min-height: 68px; }
 .renglon.elegible b + span { display: block; font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.3; }
 .grupo { display: grid; gap: var(--espacio-2); }
