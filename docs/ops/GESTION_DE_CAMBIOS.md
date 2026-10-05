@@ -30,6 +30,22 @@ su revision; no hay dos escritores sobre el mismo candidato.
 8. **Push y merge solo cuando el founder lo pida.** El orden de los merges lo propone el encargado (primero lo que otros PR necesitan; los PR con migración, con el founder aplicándola antes de que se use). Después de cada merge: despliegue de Vercel en verde y OPEN_LOOPS diciendo "en producción".
 9. **Ninguna carpeta fuera del proyecto** (regla del founder, 2026-10-05: «le vamos a prohibir a códex crear carpetas fuera del proyecto. Que te pregunte donde guardarlas y tú gestiona eso»). Cada pieza, de cualquier operador (Claude, Codex u otro), vive en un árbol de trabajo dentro de `/Users/apple-1/somosnosotros/.claude/worktrees/<rama>` (`git worktree add .claude/worktrees/<rama> -b <rama> origin/main`). Quien necesite otra ubicación se la pide antes al gestor. Al quedar unida la rama, el gestor quita el árbol (`git worktree remove`, sin forzar: solo limpio y unido). El 2026-10-05 se retiraron 14 carpetas `somosnosotros-<pieza>` de Codex, de casi 1 GB cada una.
 
+## Cómo se usa Codex (founder, 2026-10-05)
+
+El founder tiene créditos de Codex y aceptó usarlos «sin ponernos en riesgo» así («Acepto tus sugerencias de uso para códex. Intégralo al plan de esa manera y pídele que ejecute actividades cuando se necesite»). El gestor redacta cada encargo y el founder lo pega en el chat de Codex; la respuesta vuelve igual.
+
+En orden de preferencia:
+
+1. **Segunda revisión de cada PR antes de publicar** (solo lectura). El gestor le da el número del PR; Codex busca errores en el diff y contesta con hallazgos (archivo, línea, qué falla y con qué entrada). No toca nada. No sustituye la revisión del gestor ni la CI: la complementa.
+2. **Auditorías de solo lectura** con informe (lecturas que confunden «falló» con «no hay nada», textos, accesibilidad).
+3. **Inventarios y mediciones** que sirven de línea base a un rediseño. Si dejan un documento, va en una rama y un árbol que asigna el gestor.
+4. **Pruebas que faltan** para código que ya existe, sin cambiar ese código.
+5. **Piezas de código chicas y sin migración**, solo cuando el gestor tenga cola.
+
+No se le encarga: migraciones, permisos o datos de personas, diseño de pantallas nuevas ni piezas que ya tiene un agente del gestor.
+
+Candados de todo encargo: árbol de trabajo dentro del proyecto, asignado por el gestor (regla 9); sube su rama y no abre PR ni publica; no aplica nada en ninguna base; sin ayudantes; el gestor revisa y publica solo con el «publica» del founder. En lo que es solo lectura no hay rama: el informe llega por el founder.
+
 ## Tablero
 
 ### Ajuste de pruebas por costo (founder, 2026-09-18)

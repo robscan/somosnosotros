@@ -1248,3 +1248,14 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 - **Codex y OL-282, OL-283, OL-285:** sin rastro en el repo (ni rama, ni commit, ni bitácoras 310, 311 y 313, ni línea en OPEN_LOOPS). Codex escribió desde «Contactar gestor y hallar proyectos» (`01a10cfe`) que está cotejando sus chats `01a1082a` y `01a108e1`. Respuesta del gestor: ramas `calendario-320`, `ciudades-centro-eventos` y `novedad-levanta-quitado` en `.claude/worktrees/<rama>`; migraciones `20261005130000_ciudades_centro_eventos.sql` y `20261005140000_novedad_levanta_quitado.sql`; primero la evidencia de qué existe.
 - **Publicar por pasos (doc 51, en `origin/prototipo-eventos-donde`):** al founder le gusta la propuesta. Precisión suya (11:20): «si el usuario ingresa cartel entonces se usa la información capturada para ahorrar pasos y solo se presenta para confirmación».
 - **Siguientes libres: OL-291 y bitácora 319.**
+
+**Jornada del gestor IV, 2026-10-05 (tarde, segunda parte):**
+
+- **Codex confirmó (por mensaje pegado por el founder) que OL-282, OL-283 y OL-285 nunca se empezaron.** El gestor las tomó con agentes (Sonnet): `calendario-320`, `ciudades-centro-eventos`, `novedad-levanta-quitado`.
+  - **OL-283 entregada:** `6139a10c`, PR #359. SQL y `src/lib/ciudades.ts` revisados por el gestor. Migración `20261005130000_ciudades_centro_eventos.sql` sin aplicar. Falta el «publica».
+- **OL-288 PUBLICADA:** PR #355, unión `5aec7cec`, despliegue de Production `6865060130` en `success`, dominio 200.
+- **OL-290 entregada:** `81ff7b45`, PR #358. Decisión del founder sobre las cláusulas dudosas («Acepto tus recomendaciones acerca de ajustes de textos»): se quita «Gratis» de la promesa general del sitio; «No vendemos ni cedemos tus datos» y «Sin rastreo ni publicidad» se quedan; la fecha del aviso de privacidad pasa al 2026-10-05. El agente lo aplica en la misma rama. Falta el «publica». Fuera del repo, a mano: ficha de la App Store, redes, plantillas de correo de Supabase y Resend, descripción del repo.
+- **Uso de Codex, aceptado por el founder:** escrito en `GESTION_DE_CAMBIOS.md`, sección «Cómo se usa Codex». Primeros encargos:
+  - revisión de solo lectura de los PR #356, #358 y #359 (sin rama ni números);
+  - **OL-291 / bitácora 319 · Inventario de las pantallas de publicar** (línea base del doc 51): rama `inventario-publicar` en `.claude/worktrees/inventario-publicar`, un solo documento `docs/rediseno/52-inventario-publicar.md` más su bitácora y su línea OL. Sin código.
+  - **Siguientes libres: OL-292 y bitácora 320.**
