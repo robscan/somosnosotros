@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Incrustado from "@/components/ui/Incrustado";
 import type { Incrustado as IncrustadoType } from "@/lib/incrustado";
@@ -40,17 +40,49 @@ export default function SeccionNovedades({
   artistaNombre,
   hrefPublicar,
   hrefFicha,
+  novedadId,
 }: {
   novedades: NovedadParaFicha[];
   artistaNombre: string;
   hrefPublicar: string | null;
   hrefFicha: string;
+  /** Abre la publicación señalada por el carril, sin activar su reproductor. */
+  novedadId?: string;
 }) {
+  const indiceDestino = novedades.findIndex((n) => n.id === novedadId && n.visible);
+  const destino = indiceDestino >= 0 ? novedades[indiceDestino].id : null;
   const [abierto, setAbierto] = useState(false);
+  const ancla = useRef<HTMLLIElement>(null);
+  const expandido = abierto || indiceDestino >= NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA;
+  useEffect(() => {
+    if (!destino) return;
+    let cancelado = false;
+    let cuadro = 0;
+    const inicio = performance.now();
+    // La entrada de la ficha y las fechas suspendidas todavía pueden mover la publicación.
+    // Esperar su posición final evita que el scroll se calcule sobre la pantalla de carga.
+    function colocar() {
+      if (cancelado || !ancla.current) return;
+      let entrando = false;
+      for (let nodo: HTMLElement | null = ancla.current; nodo; nodo = nodo.parentElement) {
+        if (getComputedStyle(nodo).transform !== "none") entrando = true;
+      }
+      const cargando = ancla.current.closest("main")?.querySelector('[aria-busy="true"]');
+      if ((entrando || cargando) && performance.now() - inicio < 4000) {
+        cuadro = requestAnimationFrame(colocar);
+        return;
+      }
+      ancla.current.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+    void document.fonts.ready.then(() => {
+      if (!cancelado) cuadro = requestAnimationFrame(colocar);
+    });
+    return () => { cancelado = true; cancelAnimationFrame(cuadro); };
+  }, [destino, expandido]);
   if (novedades.length === 0 && !hrefPublicar) return null;
 
-  const visibles = abierto ? novedades : novedades.slice(0, NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA);
-  const hayMas = !abierto && novedades.length > NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA;
+  const visibles = expandido ? novedades : novedades.slice(0, NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA);
+  const hayMas = !expandido && novedades.length > NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA;
 
   return (
     <section className={ficha.bloque} aria-label="Novedades">
@@ -68,7 +100,7 @@ export default function SeccionNovedades({
         <>
           <ul className={styles.lista}>
             {visibles.map((n) => (
-              <li key={n.id} className={styles.novedad}>
+              <li key={n.id} id={`novedad-${n.id}`} ref={n.id === destino ? ancla : undefined} className={styles.novedad}>
                 {n.incrustado && <Incrustado incrustado={n.incrustado} proveedor={n.proveedor} nombre={artistaNombre} />}
                 {n.titulo && <h3 className={styles.titulo}>{n.titulo}</h3>}
                 {n.texto && <p className={styles.texto}>{n.texto}</p>}

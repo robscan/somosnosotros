@@ -51,3 +51,31 @@ describe("el carril opcional no inventa destacados cuando faltan datos", () => {
     expect(b.from).not.toHaveBeenCalledWith("seguimientos");
   });
 });
+
+
+it("el carril toma la nueva RPC, conserva sus grupos/orden y lleva la publicación exacta; no activa respaldo", async () => {
+  const b = respaldo({
+    tira: { data: [
+      { id: "b", motivo: "elegido", novedad_id: "nb", proveedor: "youtube", novedad_creado_en: "2026-10-07T15:00:00Z" },
+      { id: "a", motivo: "novedad", novedad_id: "na", proveedor: "soundcloud", novedad_creado_en: "2026-10-07T16:00:00Z" },
+      { id: "c", motivo: "asistentes", van: 3 },
+    ] },
+    artistas: { data: ["a", "c", "b"].map((id) => ({ id, slug: id, nombre: id, foto: "/a.jpg", disciplina: "musica", tipo: "solista", detalle: null })) },
+    seguimientos: { data: null, error: {} },
+  });
+  const resultado = await cargarArtistasDestacados(b, "San Luis Potosí");
+  expect(b.rpc).toHaveBeenCalledWith("artistas_destacados_novedades", { p_ciudad: "San Luis Potosí" });
+  expect(resultado.map((a) => a.id)).toEqual(["b", "a", "c"]);
+  expect(resultado[0].novedad?.novedad_id).toBe("nb");
+  expect(resultado[1].novedad?.proveedor).toBe("soundcloud");
+  expect(resultado[2].novedad).toBeNull();
+  expect(b.from).not.toHaveBeenCalledWith("seguimientos");
+});
+
+it("borde heredado187: si el veto deja vacía la RPC, el respaldo puede traer al quitado, sin sello", async () => {
+  // La decisión privada ya se filtró en SQL (contrato PG OL-275). El respaldo conserva su comportamiento.
+  const b = respaldo({ tira: { data: [] } });
+  const artistas = await cargarArtistasDestacados(b, "San Luis Potosí");
+  expect(artistas).toMatchObject([{ id: "a", novedad: null }]);
+  expect(b.from).toHaveBeenCalledWith("seguimientos");
+});

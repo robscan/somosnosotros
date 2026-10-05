@@ -183,3 +183,26 @@ La primera ejecución anónima incluye compilación/caché de la composición (6
 Pruebas PG adicionales confirmadas por el gestor: quitado con novedad vigente excluido del carril; artista con tres asistentes después de las novedades; elegido con novedad una vez, como elegido y con sello; tope12 con los tres grupos mezclados. Los sellos de lista/ficha indican la publicación, independientemente del veto del carril.
 
 **Entrega revisada:** lista para revisión final del SQL; no `src`, migración en repo, push ni operación remota. El gestor confirma el SQL y decide la limitación heredada de8 antes de programar.
+
+## Implementación de fase2 y entrega para revisión
+
+Gestor III aceptó el SQL revisado en181, autorizó el código y conservó conscientemente el límite interno8 de `tira_destacados`. La migración reservada solo añade el índice parcial y las dos RPC del bloque anterior, con los permisos descritos. El cargador preserva elegidos → novedades → asistentes, tope12, foto y veto; el resumen de la lista se pide una vez para los ids cargados y la ficha usa un lote de un id. No hay caché compartida entre sesiones ni lecturas nuevas de autores, textos o URLs para pintar sellos.
+
+Carril, lista y ficha reutilizan `Chip variante="sello"`; la tarjeta conserva el tratamiento de Hoy. La tarjeta enlaza `?novedad=<uuid>`; la ficha preserva esa consulta al redirigir UUID a slug, expande las primeras tres cuando procede y espera la entrada, tipografía y fechas suspendidas antes de colocar el destino. Esta espera corrigió una llegada calculada sobre el contenido todavía corto. No activa el reproductor. Un enlace fuera de las50 publicaciones cargadas consulta únicamente ese id visible y de esa misma ficha.
+
+Publicar, editar y borrar invalidan ficha, Inicio y Artistas. El gestor183 indicó conservar las acciones actuales: no inventar botón/acción para ocultar. El administrador puede ocultar desde DB; una futura acción web de ocultar queda fuera de esta pieza y deberá invalidar las mismas rutas. La revisión185 recordó la ✕ canónica de todos los campos: esta pieza no añade ni cambia campos de texto.
+
+Bordes aceptados: el elegido9 puede entrar como novedad por el tope8 heredado; una elección sin foto dentro de esos8 puede dejar fuera otra con foto. Si la RPC queda vacía, el respaldo actual de próximos/seguidores puede reintroducir un quitado **sin sello**. El gestor187 confirmó conservar ese comportamiento y separó una revisión futura; hay regresión unitaria explícita. El veto sí excluye la entrada por novedades/asistentes en SQL. Al ocultar/borrar, el contrato PG repone la anterior visible vigente; al vencer, un elegido permanece sin sello.
+
+Verificación final local sobre base `a5ad0838`, Next16.3.8:
+
+- Lint y tipos correctos; único warning heredado en VisorImagen.componentes.test.mjs:171.
+-137 archivos /1905 unitarias correctas, después del ajuste del ancla.
+- PostgreSQL real, banco limpio:76 migraciones /1461 comprobaciones, incluidas70 nuevas de OL-275, sin fallos. Roles anon/persona/autor/ligado/admin/service_role, privacidad, frontera168h, bloqueo, veto, tres grupos, límites8/12, recálculo y empate por id.
+-21 componentes focales (19 canónicos de Destacados y2 propios a320/390); los2 propios se repitieron tras corregir el ancla e incluyen crecimiento de fechas suspendidas, Seguir separado y destino oculto/ajeno.
+- Build correcto e inventario sin novedades;24 pantallas×4 anchos correctas, sin cambiar presupuestos. Tras corregir el ancla se reconstruyó y se hizo QA focal de12 estados con novedades; no se repitió la medición general cuyo layout no cambió.
+- [Capturas fase2](../../../rediseno/capturas-302/fase2/README.md):12 PNG mirados, Bricolage real, proveedor/datos/imágenes simulados; ancho320/390 sin desborde, destino exacto completo y recarga correcta. Sin errores de navegador ni autoplay.
+
+La QA encontró un fallo heredado en EntradaFicha con movimiento reducido (SSR cerrada, cliente quieta). El gestor189 lo confirmó y reservó **OL-276 /303** en otra rama para todas las fichas; autorizó QA de OL-275 con movimiento normal y publicar OL-276 primero. No se mezcló esa corrección en este código.
+
+**Estado:** implementación local probada y lista para PR sin unir y revisión final de Gestor III. La migración remota la aplica el gestor, primero dry-run, antes de unir el código. Sin SQL remoto ni publicación de la aplicación. Firma Safari física y «publica» de esta fase pendientes del founder.
