@@ -14,10 +14,15 @@
 .campo > svg {
   position: absolute;
   left: 14px;
-  top: 50%;
+  top: calc(var(--toque) / 2);
   transform: translateY(-50%);
   color: var(--texto-suave);
   pointer-events: none;
+}
+/* El icono y la ✕ (ui/Limpiar) se centran en el renglón del campo, no en toda la etiqueta: cerca del tope aparece el contador
+   («120/120») debajo, la etiqueta crece, y a la mitad de su alto los dos bajaban (OL-300, con un nombre al tope). */
+.campo > button {
+  top: calc(var(--toque) / 2);
 }
 .campo > input {
   min-height: var(--toque);

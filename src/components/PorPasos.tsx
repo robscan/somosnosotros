@@ -58,7 +58,7 @@ export default function PorPasos({ titulo, paso, direccion, avance, salida, onAt
     const main = pantalla.current;
     const activo = document.activeElement;
     if (!main || (activo instanceof HTMLInputElement && main.contains(activo))) return;
-    main.querySelector<HTMLElement>("h2, h1")?.focus({ preventScroll: true });
+    (main.querySelector("h2") ?? main.querySelector("h1"))?.focus({ preventScroll: true });
   }, [paso]);
 
   return (
