@@ -9,6 +9,12 @@
 
 Criterio aplicado: no se sustituye por ninguna otra afirmación sobre la naturaleza legal o comercial del proyecto. El proyecto se describe por lo que hace (un directorio de centros culturales y una agenda de eventos para que la gente se conozca). San Luis Potosí aparece solo como «empezó en» donde la frase lo necesita, o no aparece. La regla «los negocios no entran al directorio» no cambia.
 
+## Segunda decisión: «Gratis» del servicio (founder, 2026-10-05)
+
+El founder aceptó las recomendaciones del gestor: «Acepto tus recomendaciones acerca de ajustes de textos». Alcance: quitar «Gratis» de la promesa de que el servicio es gratis; se quedan «No vendemos ni cedemos tus datos a nadie más» y «Sin rastreo ni publicidad»; la fecha del aviso de privacidad pasa al 5 de octubre de 2026; el comentario de `reglas/page.tsx` se reescribe sin la afirmación del cobro. No se añade ninguna otra promesa. «Gratis» como precio de un evento, los chips y el filtro de Agenda son datos de eventos y no se tocan.
+
+Filas añadidas a la tabla de abajo: las seis últimas (layout, Agenda, invitar, fecha de privacidad, comentario de Reglas). Reglas no tiene fecha propia, así que no cambió ninguna.
+
 ## Textos cambiados
 
 | Archivo | Antes | Después |
@@ -26,8 +32,13 @@ Criterio aplicado: no se sustituye por ninguna otra afirmación sobre la natural
 | `CLAUDE.md` (primera descripción) | «Plataforma sin fines de lucro: directorio de centros culturales y agenda de eventos para que la gente local se conozca. Empieza en San Luis Potosí.» | «Directorio de centros culturales y agenda de eventos para que la gente local se conozca. Empezó en San Luis Potosí y no se limita a ella: el catálogo se abrirá a más ciudades.» Más un párrafo nuevo con la decisión, la fecha y las palabras textuales. |
 | `docs/DEFINICION.md` («Qué es») | «Una plataforma sin fines de lucro para que la gente de una ciudad se entere… Empieza en **San Luis Potosí**.» | «Un directorio de centros culturales y una agenda de eventos para que la gente de una ciudad se entere… Empezó en **San Luis Potosí** y no se limita a ella: el catálogo se abrirá a más ciudades. No afirma nada sobre su naturaleza legal o comercial» con la decisión, fecha y palabras textuales entre paréntesis (marca como sustituidas las dos frases anteriores). |
 | `docs/ops/PROMPT_INICIO.md` | «plataforma sin fines de lucro, directorio de centros culturales y agenda de eventos para que la gente local de San Luis Potosí se entere de qué hay y se conozca.» | «directorio de centros culturales y agenda de eventos para que la gente local se entere de qué hay y se conozca (empezó en San Luis Potosí).» |
+| `src/app/layout.tsx` (descripción, Open Graph y Twitter; tres textos) | «Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. Gratis, sin cuenta para mirar.» | «Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. Sin cuenta para mirar.» |
+| `src/app/agenda/page.tsx` (descripción de Agenda, también la de Open Graph y Twitter) | «Qué hay hoy y esta semana en los centros culturales cerca de ti. Gratis, sin cuenta para mirar.» | «Qué hay hoy y esta semana en los centros culturales cerca de ti. Sin cuenta para mirar.» |
+| `src/lib/perfil.ts` (`TEXTO_INVITAR`, el texto de «invitar») | «…conoce a la gente. Gratis, sin cuenta para mirar:» | «…conoce a la gente. Sin cuenta para mirar:» |
+| `src/app/privacidad/page.tsx` (subtítulo) | «Última actualización: 16 de septiembre de 2026.» | «Última actualización: 5 de octubre de 2026.» |
+| `src/app/reglas/page.tsx` (comentario del código, no sale en pantalla) | «un directorio sin cobro no los necesita [términos y condiciones], pero sí hace falta decir qué se puede publicar…» | «dicen qué se puede publicar y qué hace el administrador.» |
 
-El aviso de privacidad y las reglas no se tocaron en nada más (ni cláusulas ni la fecha «Última actualización»).
+Las cláusulas «No vendemos ni cedemos tus datos» y «Sin rastreo ni publicidad» se quedan como están por decisión del founder. En el aviso y en Reglas no se cambió nada más.
 
 ## Lo que NO se tocó, y por qué
 
@@ -41,9 +52,9 @@ Metadatos SEO, Open Graph, `manifest.ts`, JSON-LD y títulos: ya no nombraban Sa
 - **Historia (c):** bitácoras, `docs/heredado`, `docs/investigaciones/seo.md` (consultas de búsqueda reales), `docs/council`, `docs/diseno/TIPOGRAFIAS_PREMIUM.md` (la nota sobre descuentos de fundiciones para «organizaciones sin fines de lucro» es un hecho de esa investigación, no una descripción del proyecto), prototipos ya firmados, capturas, `ASIGNACIONES.md`, `COLA_DE_PIEZAS.md`, `REVISION_*`, `PEDIR_AYUDA_*` y las entradas viejas de `OPEN_LOOPS.md`.
 - **«La regla de los negocios»** y toda la lista de «Qué NO es» de `DEFINICION.md`: sin cambios.
 
-## Para decidir por el founder (no se reescribió nada)
+## Para decidir por el founder (resuelto el 2026-10-05, ver «Segunda decisión»)
 
-Afirmaciones que hoy dependen de que el proyecto no cobre ni venda. No se tocaron:
+Lista original de afirmaciones que dependían de que el proyecto no cobre ni venda. Resolución: 1, 4 y 5 se aplicaron; 2 y 3 se quedan; 6 no se toca.
 
 1. `src/app/layout.tsx` (descripción, Open Graph y Twitter), `src/app/agenda/page.tsx` y `src/lib/perfil.ts` (`TEXTO_INVITAR`, el texto de «invitar»): «**Gratis**, sin cuenta para mirar». Es una promesa de costo en el texto que sale al compartir el sitio. Si el creador de flyers fuera de pago, convendría quitar «Gratis» (queda «Sin cuenta para mirar»).
 2. `src/app/privacidad/page.tsx`, «Con quién se comparten»: «**No vendemos ni cedemos tus datos** a nadie más.»
@@ -79,3 +90,10 @@ Afirmaciones que hoy dependen de que el proyecto no cobre ni venda. No se tocaro
 
   «San Luis Potosí» sigue saliendo en `/`, `/lugares`, `/artistas` y `/agenda` solo como la ciudad elegida por defecto y como datos de los lugares y eventos (variables y fixtures); en `/ayuda`, `/privacidad` y `/reglas` ya no sale. `manifest.webmanifest` no nombra la ciudad.
 - Sin captura móvil: solo cambia texto de tres páginas legales y metadatos de un compartido; no hay cambio de estructura ni de estilo.
+
+## Comprobaciones de la segunda entrega
+
+- Se trajo `origin/main` a la rama (merge); el único choque fue `docs/ops/OPEN_LOOPS.md`: se conservaron todas las líneas de `main` (la cadena «Last updated» pasó de 450 a 451 trozos: el mío al frente, sin duplicados) y las dos líneas OL (OL-290 y OL-288) en «Ahora».
+- `npm run lint`: 0 errores (1 aviso previo en `VisorImagen.componentes.test.mjs`). `npm run typecheck`: limpio.
+- `npx vitest run src/lib/perfil src/app/agenda src/app/layout scripts/capo scripts/instituciones/invitar-agendas src/lib/estructurados src/lib/agenda`: 6 archivos, 97 pruebas, todas en verde. Ninguna prueba afirmaba los textos cambiados.
+- Segundo build local contra el respaldo (puertos 8851 y 3151, cerrados por PID): las siete rutas siguen en 200, con 0 apariciones de «lucro» y 0 de «Gratis, sin cuenta»; «Sin cuenta para mirar» sale en las descripciones de `/`, `/agenda`, `/ayuda`, `/privacidad` y `/reglas` (la de Agenda con su texto propio); el aviso muestra «Última actualización: 5 de octubre de 2026.»

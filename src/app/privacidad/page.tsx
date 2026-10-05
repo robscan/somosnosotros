@@ -19,7 +19,7 @@ export default function Privacidad() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
-        <p className="subtitulo">Última actualización: 16 de septiembre de 2026.</p>
+        <p className="subtitulo">Última actualización: 5 de octubre de 2026.</p>
 
         <h2>Quién responde por tus datos</h2>
         <p>

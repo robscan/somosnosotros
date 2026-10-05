@@ -6,8 +6,8 @@ import styles from "../privacidad/legal.module.css";
 export const metadata: Metadata = { title: "Reglas de uso · Somos Nosotros" };
 
 /**
- * Reglas de uso, en llano. No son "términos y condiciones" de abogado: un directorio sin cobro no los necesita,
- * pero sí hace falta decir qué se puede publicar y qué hace el administrador. Borrador de la revisión del 2026-09-14.
+ * Reglas de uso, en llano. No son "términos y condiciones" de abogado: dicen qué se puede publicar
+ * y qué hace el administrador. Borrador de la revisión del 2026-09-14.
  */
 export default function Reglas() {
   return (

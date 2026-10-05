@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type TextareaHTMLAttributes } from "react";
 import ContadorCaracteres from "./ContadorCaracteres";
 import { IconoChevronDerecha } from "./Iconos";
+import useAreaVisible from "./useAreaVisible";
 import campo from "./Campo.module.css";
 import styles from "./CampoLargo.module.css";
 
@@ -38,8 +39,18 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const tope = typeof resto.maxLength === "number" ? resto.maxLength : 0;
 
+  // Con el teclado abierto, la capa arranca donde arranca el área visible (no en la ventana de maquetación, que el teclado deja
+  // desplazada) y su blanco sigue hasta abajo de la ventana: el visualViewport termina antes de la barra translúcida de iOS 26
+  // (flechas y píldora de la dirección), y por ahí se vería la página. El relleno inferior deja cabecera y texto en el área visible.
+  const visible = useAreaVisible(abierto);
+
   useEffect(() => {
-    if (abierto) areaRef.current?.focus();
+    const area = areaRef.current;
+    if (!abierto || !area) return;
+    area.focus();
+    // El cursor al final del texto existente, y esa posición a la vista.
+    area.setSelectionRange(area.value.length, area.value.length);
+    area.scrollTop = area.scrollHeight;
   }, [abierto]);
 
   function alCambiar(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -81,7 +92,7 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
   }
 
   return (
-    <div className={styles.capa} role="dialog" aria-label={etiqueta}>
+    <div className={styles.capa} role="dialog" aria-label={etiqueta} style={visible ? { top: visible.top, height: visible.ventana, bottom: "auto", paddingBottom: visible.ventana - visible.height } : undefined}>
       <div className={styles.cabecera}>
         <h2>{etiqueta}</h2>
         {mostrarContador && tope > 0 && <ContadorCaracteres valor={texto} tope={tope} error={error} />}
