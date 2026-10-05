@@ -45,3 +45,15 @@ Calendario y selector de hora de «Otro día» / «Otra hora» (se reutilizan lo
 - Si «Cuándo» siempre se pregunta sin cartel (hoy se propone una fecha y se puede publicar sin tocarla).
 - El final: ¿«Compartir» como acción principal?
 - Orden de construcción: evento primero; lugar y artista después.
+
+## Segunda vuelta (2026-10-05, noche): tres correcciones del founder
+
+Sus palabras: «la opción de no tengo cartel no debe ir en terciario, por que no es un caso borde, y subir cartel tiene demasiada jerarquía visual. En ¿Donde es? me gustaria considerar caso donde lugar no está en catálogo, agregar paso adicional donde usuario confirma en mapa ubicación, al igual que cuando pone estoy aqui. el componente de "Cartel" podría presentarse desde inicio, como un check box o algo que se seleccione claramente.»
+
+1. **Primera pantalla:** «¿Tienes cartel?» con tres opciones del mismo peso: «Sí, subirlo», «No, hazme uno» y «No, seguir sin cartel». Se quita el recuadro grande de subir.
+2. **Confirmar en el mapa:** paso «¿Es aquí?» con el pin, la dirección como confirmación y «Sí, es aquí», tanto para un sitio que no está en el directorio como para «Estoy aquí». Un lugar del directorio no pasa por ahí. Si el sitio no está en el directorio, sigue el paso de las tres opciones ya aceptadas (solo este evento, guardarlo como lugar, sitio reservado).
+3. **El cartel hecho por la plataforma se elige desde el inicio** («No, hazme uno»). En «Revisa» el renglón «Cartel» dice «Falta elegir el diseño» y el botón principal lleva a elegir entre cuatro diseños ya rellenos (marcadores de color; doc 52); «Publicar sin cartel» queda como salida.
+
+Las 20 capturas de `docs/rediseno/capturas-323/` se rehicieron con esta versión (sustituyen a las de la primera vuelta): `legible-1-inicio` (las tres opciones), `medias-1…6` (lista con un resultado «Del mapa», ¿Es aquí? con pin punteado, «No está en el directorio», ¿Cuánto cuesta?, revisar, publicado), `sin-1…7` (nombre, ¿Dónde es? con «Estoy aquí», ¿Es aquí? a 40 m de un lugar del directorio, revisar con «Falta elegir el diseño», cuatro diseños, revisar con el diseño puesto, publicado), `programa-1…2`, `taller-1…2` (revisar y revisar tras cambiar el sitio por uno fuera del directorio). Sin errores ni desbordes a 320 y 390.
+
+Conteo con las correcciones (toques y escrituras): cartel completo 2 y 0; cartel sin lugar ni precio con un sitio fuera del directorio 6 y 1 (dos toques más que con un lugar del directorio: confirmar el mapa y decir qué hacer con el sitio); sin cartel, con «Estoy aquí», gratis y cartel hecho por la plataforma 10 y 1.

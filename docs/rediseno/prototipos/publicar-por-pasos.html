@@ -178,11 +178,6 @@ ul { list-style: none; }
 .pie:empty { display: none; }
 .pregunta { font-size: 1.875rem; font-weight: 800; }
 .ayuda { margin-top: calc(var(--espacio-3) * -1); }
-/* El cartel: la única cosa de la primera pantalla. */
-.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-3); width: 100%; aspect-ratio: 4 / 5; max-height: 52vh; border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-xl); font-weight: 700; }
-.subir .marco { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
-.subir .marco svg { width: 32px; height: 32px; }
-.subir small { color: var(--texto-suave); font-weight: 400; }
 .cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), var(--tono); color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
 .leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
 .leyendo .cartel-mini { width: 168px; font-size: 1rem; padding: var(--espacio-3); }
@@ -202,6 +197,13 @@ button.renglon { cursor: pointer; }
 .fila-chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
 .fila-chips .chip { min-height: var(--toque-min); font-size: var(--letra-md); }
 .chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
+/* Confirmar en el mapa y elegir el diseño del cartel. */
+.mapa-paso { aspect-ratio: 4 / 3; max-height: 38vh; border-radius: var(--radio-grande); overflow: hidden; background: var(--fondo-mapa); }
+.mapa-paso svg { width: 100%; height: 100%; stroke: none; }
+.disenos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--espacio-3); }
+.diseno { display: grid; align-content: end; gap: 4px; aspect-ratio: 4 / 5; padding: var(--espacio-3); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0)), var(--tono); color: var(--primario-texto); text-align: left; overflow: hidden; }
+.diseno b { font-size: var(--letra-lg); font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; overflow-wrap: anywhere; }
+.diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
 .final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
@@ -247,7 +249,7 @@ button.renglon { cursor: pointer; }
   <select id="caso" aria-label="Caso del prototipo">
     <option value="legible">Cartel que se lee completo</option>
     <option value="medias">Cartel sin lugar ni precio</option>
-    <option value="sin">No tengo cartel</option>
+    <option value="sin">Sin cartel</option>
     <option value="programa">Cartel de un festival con 3 eventos</option>
     <option value="taller">Cartel de un taller con 4 sesiones</option>
   </select>
@@ -280,7 +282,7 @@ const LEIDO = {
 const PROGRAMA = [['Concierto de Trío Bruma', '7 de noviembre · 18:00 · Centro de las Artes'], ['Taller de gráfica en vivo', '8 de noviembre · 11:00 · Museo Federico Silva'], ['Proyección: Cortos del Altiplano', '8 de noviembre · 19:30 · Cineteca Alameda']];
 const SITIOS = [['Centro de las Artes', 'Lugar del directorio · Calz. de Guadalupe 705'], ['Centro Cultural Bicentenario', 'Lugar del directorio · Av. Sierra Leona 550'], ['Centro Histórico, Jardín de San Juan de Dios', 'Del mapa · no está en el directorio']];
 let caso = 'legible', e;
-function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', flyer: false, editar: null }; }
+function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', quiereFlyer: false, flyer: null, mapa: false, fuera: false, editar: null }; }
 
 // Los pasos se arman con lo que falta: lo ya leído no se pregunta.
 function pasos() {
@@ -288,23 +290,28 @@ function pasos() {
   const p = caso === 'sin' ? ['cartel', 'nombre'] : ['cartel', 'leyendo'];
   const L = LEIDO[caso];
   if (!L.cuando) p.push('cuando');
-  if (!L.donde) p.push('donde');
+  if (!L.donde) { p.push('donde'); if (e.mapa) p.push('mapa'); if (e.fuera) p.push('uso'); }
   if (!L.cuanto) p.push('cuanto');
   return [...p, 'revisar', 'publicado'];
 }
 const paso = () => e.editar || pasos()[e.i];
 function ir(n, dir = 'entra') { e.editar = null; e.i = Math.max(0, Math.min(pasos().length - 1, n)); e.dir = dir; pintar(); }
+const trasDonde = () => (e.editar ? (e.editar = e.mapa ? 'mapa' : null, e.dir = e.mapa ? 'entra' : 'vuelve', pintar()) : ir(e.i + 1));
 const sigue = () => (e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : ir(e.i + 1));
 
 const mini = (grande) => `<div class="cartel-mini" style="--tono:${e.d.tono}">${LEIDO[caso].nombre || 'Tu cartel'}</div>`;
+const MAPA = `<svg viewBox="0 0 390 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa"><rect width="390" height="300" fill="#eef0ec"/><g fill="#e3e6df"><rect x="-10" y="-10" width="112" height="82"/><rect x="122" y="-10" width="120" height="82"/><rect x="262" y="-10" width="140" height="82"/><rect x="-10" y="92" width="112" height="120"/><rect x="262" y="92" width="140" height="120"/><rect x="-10" y="232" width="252" height="80"/><rect x="262" y="232" width="140" height="80"/></g><rect x="122" y="92" width="120" height="120" rx="6" fill="#d5e3cf"/><path d="M195 190s-30-27-30-52a30 30 0 0 1 60 0c0 25-30 52-30 52z" fill="#fff" stroke="#6d34c8" stroke-width="3" stroke-dasharray="7 5"/><circle cx="195" cy="138" r="9" fill="#6d34c8"/></svg>`;
 const renglon = (i, clave, valor, campo) => `<button class="renglon ${valor ? '' : 'pendiente'}" data-editar="${campo}">${ic(i)}<span><small>${clave}</small><b>${valor || 'Falta'}</b></span><span class="accion">${valor ? 'Cambiar' : 'Poner'}</span></button>`;
 
 const VISTAS = {
   cartel: () => ({
-    titulo: 'Publicar',
-    cuerpo: `<button class="subir" data-a="subir"><span class="marco">${ic('camara')}</span>Sube el cartel<small>Leemos el nombre, la fecha, el lugar y el precio</small></button>`,
-    pie: `<button class="quieto" data-a="sin-cartel">No tengo cartel</button>`,
-    notas: ['La primera pantalla tiene una sola cosa. Evento · Lugar · Artista se elige antes, al tocar «+».', 'En este prototipo el selector de arriba decide qué «trae» el cartel; tocar «Sube el cartel» simula elegir la foto.', '«No tengo cartel» es la puerta para escribir los datos y, más adelante, para el generador de flyers (doc 52).'],
+    titulo: 'Publicar', pregunta: '¿Tienes cartel?',
+    cuerpo: `<div class="opciones">
+      <button class="opcion" data-inicio="subir">${ic('camara')}<span>Sí, subirlo<small>Leemos el nombre, la fecha, el lugar y el precio</small></span>${ic('chevron')}</button>
+      <button class="opcion" data-inicio="flyer">${ic('mas')}<span>No, hazme uno<small>Con los datos que escribas; eliges entre 4 diseños</small></span>${ic('chevron')}</button>
+      <button class="opcion" data-inicio="sin">${ic('reloj')}<span>No, seguir sin cartel<small>Lo puedes agregar después</small></span>${ic('chevron')}</button></div>`,
+    pie: '',
+    notas: ['Corrección del founder (2026-10-05): «No tengo cartel» no es un caso raro (hoy 144 de 273 eventos no tienen), así que pesa lo mismo que subirlo. Tres opciones iguales; una se toca y avanza.', 'El cartel hecho por la plataforma se ofrece desde el inicio, como una opción clara, no escondido al final.', 'En este prototipo el selector de arriba decide qué «trae» el cartel que se sube.'],
   }),
   leyendo: () => ({ titulo: 'Leyendo', cuerpo: `<div class="leyendo">${mini()}<p class="meta" role="status">Leyendo el cartel…</p></div>`, pie: '', notas: [] }),
   nombre: () => ({
@@ -330,6 +337,24 @@ const VISTAS = {
       notas: ['Escribe «centro». La lista sale bajo el campo y elegir avanza solo.', 'Si el sitio no está en el directorio, aquí va la pregunta ya aceptada: solo este evento, guardarlo como lugar o sitio reservado.', 'Hoy esta hoja abre vacía y, si el resultado es una dirección, pide además el nombre del sitio.'],
     };
   },
+  mapa: () => ({
+    titulo: 'Publicar', pregunta: '¿Es aquí?',
+    cuerpo: `<div class="mapa-paso">${MAPA}</div><p class="confirma">${ic('ok')}<span><b>${e.d.donde}</b><br>${e.fuera ? 'Jardín de San Juan de Dios, Centro Histórico' : 'A 40 m de ti · lugar del directorio'}</span></p><small>Si el pin no está en su sitio, arrástralo.</small>`,
+    pie: `<button class="btn" data-a="mapa-ok">Sí, es aquí</button><button class="quieto" data-a="atras">Buscar otro</button>`,
+    notas: ['Corrección del founder: un sitio que no está en el directorio, o «Estoy aquí», se confirma en el mapa antes de seguir.', 'Un lugar del directorio no pasa por aquí: su punto ya está confirmado.', 'La dirección es una confirmación, no un campo (nota del founder del 29 de septiembre).'],
+  }),
+  uso: () => ({
+    titulo: 'Publicar', pregunta: 'No está en el directorio',
+    cuerpo: `<div class="opciones">${[['evento', 'pin', 'Usarlo solo en este evento', 'Sale con su nombre y su punto en el mapa'], ['lugar', 'mas', 'Guardarlo como lugar', 'Tendrá su ficha y servirá para otros eventos'], ['reservado', 'candado', 'Es un sitio reservado', 'La dirección solo se muestra a quien va']].map(([u, i, t, d]) => `<button class="opcion" data-uso="${u}">${ic(i)}<span>${t}<small>${d}</small></span>${ic('chevron')}</button>`).join('')}</div>`,
+    pie: '',
+    notas: ['Las tres opciones ya aceptadas en el prototipo de Eventos, ahora como un paso propio.', 'Si el mapa dice que es un bar, un café o un restaurante, «Guardarlo como lugar» no se ofrece.'],
+  }),
+  flyer: () => ({
+    titulo: 'Tu cartel', pregunta: 'Elige un diseño',
+    cuerpo: `<div class="disenos">${['#1f1f24', '#e2371d', '#f3e2bf', '#3d2a5c'].map((c, i) => `<button class="diseno" data-diseno="${i}" style="--tono:${c}" aria-label="Diseño ${i + 1}"><b>${e.d.nombre || 'Tu evento'}</b><small>${[e.d.cuando, e.d.donde].filter(Boolean).join(' · ')}</small></button>`).join('')}</div>`,
+    pie: '',
+    notas: ['Cuatro diseños ya rellenos con los datos del evento (doc 52: plantillas hechas de antemano, formato de publicación 4:5). Aquí son marcadores de color.', 'Elegir uno vuelve a «Revisa» con el cartel puesto.'],
+  }),
   cuanto: () => ({
     titulo: 'Publicar', pregunta: '¿Cuánto cuesta?',
     cuerpo: e.precioAbierto
@@ -353,10 +378,10 @@ const VISTAS = {
       titulo: 'Revisa',
       cuerpo: `<div class="cabeza-revisar ${conCartel ? '' : 'sin'}">${conCartel ? mini() : ''}<div>${conCartel ? `<span class="leido">${ic('ok')}Leído del cartel</span>` : ''}<h1>${d.nombre}</h1></div></div>
         <div class="grupo ${e.dir === 'entra' ? 'cae' : ''}">${renglon('reloj', 'Cuándo', d.cuando, 'cuando')}${renglon('pin', 'Dónde', d.donde, 'donde')}${renglon('boleto', 'Cuánto', d.cuanto, 'cuanto')}${d.quien ? renglon('personas', 'Quién', d.quien, 'quien') : ''}</div>
-        ${conCartel ? '' : `<button class="renglon pendiente" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>${e.flyer ? 'Cartel creado con estos datos' : 'Crear uno con estos datos'}</b></span><span class="accion">${e.flyer ? 'Cambiar' : 'Crear'}</span></button>`}
+        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Diseño ${e.flyer + 1}, con estos datos</b></span><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon pendiente" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Falta elegir el diseño</b></span><span class="accion">Elegir</span></button>` : `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Sin cartel</b></span><span class="accion">Hacer uno</span></button>`}
         <button class="quieto" data-a="mas">Agregar artistas, descripción o enlace</button>`,
-      pie: `<button class="btn" data-a="sigue">Publicar</button>`,
-      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : '«Crear uno con estos datos» es la puerta del generador de flyers: opcional, no bloquea publicar.'],
+      pie: e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
+      notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
     };
   },
   publicado: () => {
@@ -395,27 +420,30 @@ function pintar(foco) {
 function reiniciar() { clearTimeout(pintar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
 
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar]');
+  const t = ev.target.closest('[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar],[data-uso],[data-diseno],[data-inicio]');
   if (!t || t.closest('.tira')) return;
   e.toques++; e.dir = 'entra';
-  const { a, dia, hora, sitio, cuanto, elegir, editar } = t.dataset;
+  const { a, dia, hora, sitio, cuanto, elegir, editar, uso, diseno, inicio } = t.dataset;
   if (dia) { e.dia = dia; e.dir = 'fija'; return pintar(); }
   if (hora) { e.d.cuando = `${e.dia} · ${hora === 'Otra hora' ? '21:00' : hora}`; return sigue(); }
-  if (sitio) { e.d.donde = SITIOS[Number(sitio)][0]; e.q = ''; return sigue(); }
+  if (sitio) { const n = Number(sitio); e.d.donde = n === 2 ? 'Jardín de San Juan de Dios' : SITIOS[n][0]; e.q = ''; e.fuera = n === 2; e.mapa = n === 2; return trasDonde(); }
+  if (uso) { e.usoSitio = uso; return e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : sigue(); }
+  if (diseno) { e.flyer = Number(diseno); e.editar = null; e.dir = 'vuelve'; return pintar(); }
+  if (inicio) { if (inicio === 'subir') { if (caso === 'sin') { caso = 'legible'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; } return ir(1); } caso = 'sin'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; e.quiereFlyer = inicio === 'flyer'; return ir(1); }
   if (cuanto) { if (cuanto === 'Tiene precio') { e.precioAbierto = true; return pintar(); } e.d.cuanto = cuanto; return sigue(); }
   if (elegir) { const i = Number(elegir); e.elegidos[i] = !e.elegidos[i]; e.dir = 'fija'; return pintar(); }
   if (editar) { if (editar === 'quien') { e.toques--; return; } e.editar = editar; e.dia = null; e.precioAbierto = false; return pintar(); }
-  if (a === 'subir') return ir(1);
-  if (a === 'sin-cartel') { $('#caso').value = 'sin'; caso = 'sin'; const tq = e.toques; e = nuevo(); e.toques = tq; return ir(1); }
   if (a === 'sigue') return sigue();
-  if (a === 'aqui') { e.d.donde = 'Jardín de San Francisco'; return sigue(); }
+  if (a === 'aqui') { e.d.donde = 'Jardín de San Francisco'; e.fuera = false; e.mapa = true; return trasDonde(); }
+  if (a === 'mapa-ok') { if (e.editar) { e.editar = e.fuera ? 'uso' : null; e.dir = e.fuera ? 'entra' : 'vuelve'; return pintar(); } return sigue(); }
   if (a === 'precio-listo') { e.d.cuanto = `$${e.precio.trim()}`; e.precioAbierto = false; return sigue(); }
   if (a === 'limpiar') { e.toques--; const id = t.dataset.de; if (id === 'q') e.q = ''; else if (id === 'precio') e.precio = ''; else e.d.nombre = ''; e.dir = 'fija'; return pintar('#' + id); }
   if (a === 'atras') { if (e.editar) { e.editar = null; e.dir = 'vuelve'; return pintar(); } const ps = pasos(); let n = e.i - 1; if (ps[n] === 'leyendo') n--; return ir(n, 'vuelve'); }
   if (a === 'cerrar' || a === 'otro') { e.toques = 0; return reiniciar(); }
   if (a === 'sug') { e.sug = 'hecha'; e.dir = 'fija'; return pintar(); }
   if (a === 'sug-no') { e.sug = 'no'; e.dir = 'fija'; return pintar(); }
-  if (a === 'flyer') { e.flyer = true; e.dir = 'fija'; return pintar(); }
+  if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
+  if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
   e.dir = 'fija'; if (a === 'mas' || a === 'compartir') return pintar();
 });
 document.addEventListener('input', (ev) => {
