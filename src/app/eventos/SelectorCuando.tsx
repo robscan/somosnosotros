@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { combinarFechaHora, localAIso, sumarHoras, yaPaso } from "@/lib/fechas";
+import { etiquetaHora as horaDe } from "@/lib/calendario";
+import { conDias, conHoraFin, conHoraInicio, finDelDia, horasEntre, partirLocal, terminaOtroDia, type InicioFin } from "@/lib/cuandoEvento";
+import { localAIso, yaPaso } from "@/lib/fechas";
 import { Chip } from "@/components/ui/Chip";
-import SelectorFecha from "@/components/ui/SelectorFecha";
+import SelectorDia from "@/components/ui/SelectorDia";
+import SelectorHora from "@/components/ui/SelectorHora";
 import { IconoCerrar } from "@/components/ui/Iconos";
 import styles from "./SelectorCuando.module.css";
 
@@ -21,26 +24,14 @@ type Props = {
   sugeridaActual?: () => string;
 };
 
-function partir(local: string): { fecha: string; hora: string } {
-  const [fecha = "", hora = ""] = local.split("T");
-  return { fecha, hora: hora.slice(0, 5) };
-}
-function horasEntre(inicio: string, fin: string, zona: string): number {
-  const a = localAIso(inicio, zona);
-  const b = localAIso(fin, zona);
-  if (!a || !b) return 0;
-  return Math.round(((new Date(b).getTime() - new Date(a).getTime()) / 3600000) * 4) / 4;
-}
 /** "14 sep 2026": el día de calendario, igual en cualquier zona (se escribe su mediodía en UTC). */
 function etiquetaFecha(fecha: string): string {
   const iso = localAIso(`${fecha}T12:00`, "Etc/UTC");
   return iso ? new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "") : "Fecha";
 }
-/** "9:00 p.m." */
+/** "9:00 p.m."; sin hora, "Hora". */
 function etiquetaHora(hora: string): string {
-  if (!hora) return "Hora";
-  const [h, m] = hora.split(":").map(Number);
-  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(2000, 0, 1, h, m));
+  return hora ? horaDe(hora) : "Hora";
 }
 /** "2 horas", "1 hora y 30 min", "Sin hora de fin": la duración tal cual se calcula hoy, para mostrarla en la
  *  hoja de "Empieza" (corrección del gestor, bitácora 197: que se vea que sigue funcionando igual). */
@@ -56,9 +47,13 @@ function etiquetaDuracion(horas: number): string {
 }
 
 /**
- * Cuándo, como en el calendario del teléfono (referencia del founder, 2026-09-14): dos renglones, Empieza y Termina,
- * cada uno con su fecha y su hora en píldoras que abren la hoja propia (`ui/SelectorFecha`, calendario + horas).
- * Sin frase de confirmación: las píldoras ya lo dicen.
+ * Cuándo, como en el calendario del teléfono (referencia del founder, 2026-09-14): dos renglones, Empieza y Termina, cada
+ * uno con su fecha y su hora en píldoras. Sin frase de confirmación: las píldoras ya lo dicen.
+ *
+ * El día y la hora van en hojas aparte (OL-298, bitácora 326; founder, 2026-10-05: «ese componente donde se ve calendario y
+ * horas uno sobre otro hay que partirlo en dos, no sirve, es muy grande»): tocar una fecha, la de Empieza o la de Termina,
+ * abre la hoja de días (`ui/SelectorDia`, con inicio y último día en el mismo calendario); tocar una hora abre la hoja de
+ * horas (`ui/SelectorHora`) de Empieza o de Termina. Antes las dos iban apiladas en una sola (`SelectorFecha`).
  *
  * Hasta OL-218 (bitácora 247) el selector nativo (`<input type="date|time">`) seguía siendo la rama táctil/móvil
  * (la hoja propia solo reemplazaba al nativo en escritorio con puntero fino, OL-162, bitácora 197 — el nativo de
@@ -67,28 +62,28 @@ function etiquetaDuracion(horas: number): string {
  * hay rama nativa aquí tampoco.
  */
 export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInicio, errorFin, sugeridaActual }: Props) {
-  const { fecha, hora } = partir(inicio);
-  const finP = partir(fin);
-  const duracion = fin ? horasEntre(inicio, fin, zona) : 0;
-  const [hoja, setHoja] = useState<"inicio" | "fin" | null>(null);
+  const { fecha, hora } = partirLocal(inicio);
+  const finP = partirLocal(fin);
+  const actual: InicioFin = { inicio, fin };
+  const sinHoraDeFin = !fin || finDelDia(actual);
+  const duracion = fin && !sinHoraDeFin ? horasEntre(inicio, fin, zona) : 0;
+  const [hoja, setHoja] = useState<"dia" | "inicio" | "fin" | null>(null);
   const disparador = useRef<HTMLButtonElement | null>(null);
   // Instantánea de la hora sugerida, tomada al abrir la hoja (evento, no render): `sugeridaActual` vive en una
   // ref del padre.
   const [sugeridaHoja, setSugeridaHoja] = useState("");
 
-  function fijarInicio(nuevaFecha: string, nuevaHora: string) {
-    const nuevoInicio = combinarFechaHora(nuevaFecha, nuevaHora);
-    // Al mover el inicio, el fin se mueve con él (misma duración).
-    onCambio(nuevoInicio, nuevoInicio && duracion > 0 ? sumarHoras(nuevoInicio, duracion, zona) : "");
-  }
-  function fijarFin(nuevaFecha: string, nuevaHora: string) {
-    onCambio(inicio, nuevaHora ? combinarFechaHora(nuevaFecha || fecha, nuevaHora) : "");
+  function aplicar(nuevo: InicioFin) {
+    onCambio(nuevo.inicio, nuevo.fin);
+    cerrarHoja();
   }
 
-  function abrirHoja(cual: "inicio" | "fin", e: React.MouseEvent<HTMLButtonElement>) {
+  function abrirHoja(cual: "dia" | "inicio" | "fin", e: React.MouseEvent<HTMLButtonElement>) {
     disparador.current = e.currentTarget;
-    if (cual === "inicio") setSugeridaHoja(sugeridaActual?.() ?? "");
-    setHoja(cual);
+    // Sin día no hay a qué ponerle hora: primero el día.
+    const abre = cual !== "dia" && !fecha ? "dia" : cual;
+    if (abre === "inicio") setSugeridaHoja(sugeridaActual?.() ?? "");
+    setHoja(abre);
   }
   function cerrarHoja() {
     setHoja(null);
@@ -99,12 +94,8 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
     <div className={styles.selector}>
       <div className={styles.fila}>
         <span className={styles.rotulo}>Empieza</span>
-        <Chip onClick={(e) => abrirHoja("inicio", e)}>
-          {etiquetaFecha(fecha)}
-        </Chip>
-        <Chip onClick={(e) => abrirHoja("inicio", e)}>
-          {etiquetaHora(hora)}
-        </Chip>
+        <Chip onClick={(e) => abrirHoja("dia", e)}>{etiquetaFecha(fecha)}</Chip>
+        <Chip onClick={(e) => abrirHoja("inicio", e)}>{etiquetaHora(hora)}</Chip>
       </div>
       {errorInicio && (
         <p className={styles.error} role="alert">
@@ -113,16 +104,10 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
       )}
       <div className={styles.fila}>
         <span className={styles.rotulo}>Termina</span>
-        {fin && (
-          <Chip onClick={(e) => abrirHoja("fin", e)}>
-            {etiquetaFecha(finP.fecha)}
-          </Chip>
-        )}
-        <Chip onClick={(e) => abrirHoja("fin", e)}>
-          {fin ? etiquetaHora(finP.hora) : "Sin hora de fin"}
-        </Chip>
-        {fin && (
-          <button type="button" className={styles.quitar} onClick={() => onCambio(inicio, "")} aria-label="Quitar la hora de fin">
+        {fin && <Chip onClick={(e) => abrirHoja("dia", e)}>{etiquetaFecha(finP.fecha)}</Chip>}
+        <Chip onClick={(e) => abrirHoja("fin", e)}>{sinHoraDeFin ? "Sin hora de fin" : etiquetaHora(finP.hora)}</Chip>
+        {fin && !sinHoraDeFin && (
+          <button type="button" className={styles.quitar} onClick={() => { const nuevo = conHoraFin(actual, ""); onCambio(nuevo.inicio, nuevo.fin); }} aria-label="Quitar la hora de fin">
             <IconoCerrar width={20} height={20} />
           </button>
         )}
@@ -141,34 +126,17 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
       <input type="hidden" name="inicio" value={inicio} />
       <input type="hidden" name="fin" value={fin} />
 
+      {hoja === "dia" && <SelectorDia titulo="¿Qué día es?" desde={fecha} hasta={fin ? finP.fecha : ""} zona={zona} onListo={(desde, hasta) => aplicar(conDias(actual, desde, hasta))} onCerrar={cerrarHoja} />}
       {hoja === "inicio" && (
-        <SelectorFecha
-          // Precisión del founder (OL-218, bitácora 247): "Selecciona la fecha del evento" en el alta y la edición.
-          titulo="Selecciona la fecha del evento"
-          fecha={fecha}
-          hora={hora || "19:00"}
-          zona={zona}
-          conHora
-          sugerida={sugeridaHoja}
-          duracion={etiquetaDuracion(duracion)}
-          onListo={(f, h) => {
-            fijarInicio(f, h ?? hora ?? "19:00");
-            cerrarHoja();
-          }}
-          onCerrar={cerrarHoja}
-        />
+        <SelectorHora titulo="Empieza" hora={hora} sugerida={sugeridaHoja} duracion={etiquetaDuracion(duracion)} onElegir={(h) => aplicar(conHoraInicio(actual, h, zona))} onCerrar={cerrarHoja} />
       )}
       {hoja === "fin" && (
-        <SelectorFecha
-          titulo="Selecciona la fecha del evento"
-          fecha={finP.fecha || fecha}
-          hora={finP.hora}
-          zona={zona}
-          conHora
-          onListo={(f, h) => {
-            if (h) fijarFin(f, h);
-            cerrarHoja();
-          }}
+        <SelectorHora
+          titulo={hora ? `Termina (empieza ${etiquetaHora(hora)})` : "Termina"}
+          hora={sinHoraDeFin ? "" : finP.hora}
+          despuesDe={hora && !terminaOtroDia(actual) ? hora : undefined}
+          sinHoraDeFin
+          onElegir={(h) => aplicar(conHoraFin(actual, h))}
           onCerrar={cerrarHoja}
         />
       )}
