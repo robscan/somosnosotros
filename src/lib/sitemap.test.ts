@@ -1,5 +1,64 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { artistasParaSitemap, CAPO_SIN_RECLAMAR_EN_SITEMAP, eventosParaSitemap, lugaresParaSitemap, ORIGEN, rutasEstaticas } from "./sitemap";
+import sitemap from "@/app/sitemap";
+import { clienteServidor } from "@/lib/supabase/servidor";
+
+vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: vi.fn() }));
+
+describe("sitemap completo ante fallos de consulta (OL-278)", () => {
+  afterEach(() => vi.mocked(clienteServidor).mockReset());
+
+  const filas = {
+    lugares: [{ id: "l1", slug: "foro", visible: true, privado: false, actualizado_en: "2026-10-04T00:00:00Z" }],
+    eventos: [{ id: "e1", slug: "concierto", visible: true, termina: "2099-01-01T00:00:00Z", actualizado_en: "2026-10-04T00:00:00Z" }],
+    artistas: [{ id: "a1", slug: "artista", visible: true, origen: "capo", actualizado_en: "2026-10-04T00:00:00Z" }],
+    artistas_cuentas: [{ artista_id: "a1" }],
+  };
+
+  function preparar(falla?: keyof typeof filas, conDatosParciales = false, vacio = false) {
+    const from = vi.fn((tabla: keyof typeof filas) => {
+      const resultado = {
+        data: vacio || (tabla === falla && !conDatosParciales) ? [] : filas[tabla],
+        error: tabla === falla ? { message: "Error de prueba" } : null,
+      };
+      const consulta = { select: vi.fn(() => consulta), eq: vi.fn(() => consulta), limit: vi.fn(async () => resultado) };
+      return consulta;
+    });
+    vi.mocked(clienteServidor).mockResolvedValue({ from } as unknown as NonNullable<Awaited<ReturnType<typeof clienteServidor>>>);
+    return from;
+  }
+
+  it("devuelve las páginas generales y los tres catálogos cuando todas las consultas responden bien", async () => {
+    const from = preparar();
+    expect(await sitemap()).toEqual([
+      ...rutasEstaticas(),
+      { url: `${ORIGEN}/lugares/foro`, lastModified: "2026-10-04T00:00:00Z" },
+      { url: `${ORIGEN}/eventos/concierto`, lastModified: "2026-10-04T00:00:00Z" },
+      { url: `${ORIGEN}/artistas/artista`, lastModified: "2026-10-04T00:00:00Z" },
+    ]);
+    expect(from.mock.calls.map(([tabla]) => tabla)).toEqual(Object.keys(filas));
+  });
+
+  it.each(Object.keys(filas) as (keyof typeof filas)[])("rechaza el sitemap si falla %s, aunque las otras consultas tengan filas", async (tabla) => {
+    preparar(tabla);
+    await expect(sitemap()).rejects.toThrow("No se pudo generar el sitemap completo");
+  });
+
+  it.each(Object.keys(filas) as (keyof typeof filas)[])("rechaza también si %s devuelve error junto con datos parciales", async (tabla) => {
+    preparar(tabla, true);
+    await expect(sitemap()).rejects.toThrow("No se pudo generar el sitemap completo");
+  });
+
+  it("un catálogo realmente vacío no se confunde con error", async () => {
+    preparar(undefined, false, true);
+    expect(await sitemap()).toEqual(rutasEstaticas());
+  });
+
+  it("sin cliente configurado conserva únicamente las páginas generales", async () => {
+    vi.mocked(clienteServidor).mockResolvedValue(null);
+    expect(await sitemap()).toEqual(rutasEstaticas());
+  });
+});
 
 describe("sitemap", () => {
   it("trae las rutas fijas, sin ninguna privada ni de administración", () => {

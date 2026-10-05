@@ -267,6 +267,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     e.visible && !paso && direccionYCiudad
       ? jsonLdEvento({
           id: e.id,
+          slug: e.slug,
           titulo: e.titulo,
           descripcion: e.descripcion,
           inicio: e.inicio,
