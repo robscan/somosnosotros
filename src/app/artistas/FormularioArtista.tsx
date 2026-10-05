@@ -21,7 +21,7 @@ import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
 import { faltaEnArtista } from "@/lib/formulario";
 import { normalizarNombre } from "@/lib/lugares";
-import { quitarGuardia } from "@/lib/guardiaSalida";
+import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
@@ -71,6 +71,10 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   useEffect(() => {
     if (resultado?.ok) terminar(resultado.volver);
   }, [resultado, terminar]);
+  // Si el servidor no publicó, lo escrito sigue en pantalla: la guardia que apartó «Publicar» vuelve (OL-296).
+  useEffect(() => {
+    if (resultado && !resultado.ok) reponerGuardia();
+  }, [resultado]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const existenteServidor = resultado && !resultado.ok ? resultado.existente : undefined;
 
@@ -169,7 +173,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       hidden={oculta}
       action={(fd) => {
         if (falta) return;
-        quitarGuardia();
+        apartarGuardia();
         enviar(fd);
       }}
       noValidate

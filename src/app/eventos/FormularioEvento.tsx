@@ -24,7 +24,7 @@ import type { LugarResumen } from "@/lib/lugares";
 import type { Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
-import { quitarGuardia } from "@/lib/guardiaSalida";
+import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
@@ -131,6 +131,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   useEffect(() => {
     if (resultado?.ok) terminar(resultado.volver);
   }, [resultado, terminar]);
+  // Si el servidor no publicó, lo escrito sigue en pantalla: la guardia que apartó «Publicar» vuelve (OL-296).
+  useEffect(() => {
+    if (resultado && !resultado.ok) reponerGuardia();
+  }, [resultado]);
 
   const modoInicial: ModoSitio = evento?.sitio_reservado ? "reservado" : evento?.sitio_texto ? "otro" : "lugar";
   const [modoSitio, setModoSitio] = useState<ModoSitio>(modoInicial);
@@ -542,7 +546,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           fd.set("operacion", operacion.current.id);
           // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
           if (esAlta) olvidarBorrador();
-          quitarGuardia();
+          apartarGuardia();
           enviar(fd);
         }}
         noValidate
