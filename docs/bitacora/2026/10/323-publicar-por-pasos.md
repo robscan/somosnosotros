@@ -81,3 +81,20 @@ Preguntas y pedido del founder: «de donde sacas las sugerencias de cuando es? y
 - **«Otro día» y «Otra hora»** abren la hoja «Selecciona la fecha del evento», como la de `ui/SelectorFecha` de la app: calendario del mes y lista de horas cada 15 minutos en la misma hoja, con «Listo» que dice qué falta. (En la app esa hoja ya existe y se usa en «Empieza» y «Termina».)
 - **Lo que falta por completar:** borde punteado de 2 px en el violeta de acción y su texto en el mismo color; el renglón «Cartel» va separado del grupo de datos. Aplicado también al prototipo de Eventos (`eventos-superficies.html`). Para la app se abre una pieza aparte (OL-297): es el estado `pendiente` de `ui/Renglon` y el campo faltante de `FormularioCanon`.
 - Capturas rehechas (25): nuevas `sin-3-cuando` (tres chips de día), `sin-4-hoja-fecha` (hoja con «Falta el día»), `sin-5-hoja-fecha-lista` (día 14 y 10:30 elegidos, «Listo»), `sin-8-revisar-falta-diseno` (renglón «Cartel» punteado en violeta y separado). Sin errores ni desbordes a 320 y 390.
+
+## Quinta vuelta (2026-10-05, noche): día y hora por separado con inicio y fin, pendientes afinados y descargar el cartel
+
+Palabras del founder:
+- «sigue presentando fecha y hora por separado y ese componente… donde se ve calendario y horas uno sobre otro hay que partirlo en dos, no sirve, es muy grande, adicional deja que el usuario pueda seleccionar inicio y fin en los dos casos».
+- «no me gusta que pintaste todos los elementos del campo vacio de morado… solo linea y texto Falta elegir y elegir. No "Cartel" ni icono.»
+- «ofrece opción de descargar cartel de eventos. Al final del flujo y en la ficha del evento».
+
+Cambios:
+1. **Dos pasos:** «¿Qué día es?» (chips «Este viernes», «Este sábado», «Otro día» y el enlace «Dura varios días») y «¿A qué hora?» («Empieza» con 19:00, 20:00, 17:00, 12:00 y «Otra hora»; al elegir aparece «Termina» a una, dos y tres horas, «Otra hora» y «Sin hora de fin»).
+2. **La hoja se parte en dos:** una solo con el calendario (primer toque, inicio; segundo toque en un día posterior, fin; el botón dice «Falta el día», «Listo, un solo día» o «Listo») y otra solo con la lista de horas cada 15 minutos (para «Empieza» o para «Termina», que solo ofrece horas posteriores al inicio). **En la app esto implica partir `ui/SelectorFecha`**, que hoy apila calendario y horas: va con la construcción del flujo.
+3. **Pendientes:** en violeta solo la línea punteada de 2 px, el valor («Falta elegir el diseño») y la acción («Elegir»); la clave («CARTEL») y el icono siguen grises. Igual en el prototipo de Eventos. La pieza de la app (OL-297) recibió la misma corrección.
+4. **Descargar el cartel:** botón secundario en «Publicado» cuando el evento tiene cartel (subido o hecho por la plataforma) y cuarta acción «Cartel» en la ficha del evento (prototipo de Eventos; captura `ficha-evento-con-descargar`).
+
+Costo medido: sin cartel, con rango de días, fin de hora y cartel hecho por la plataforma, el recorrido de prueba sube a 16 toques y 1 escritura (el camino corto con chips, un día, fin a dos horas, lugar del directorio y gratis son 8 toques y 2 escrituras). La hora de fin suma un toque siempre.
+
+Capturas rehechas (27 del flujo más la de la ficha): nuevas `sin-3-dia`, `sin-4-hoja-calendario`, `sin-5-hoja-calendario-rango` (14 al 16 con su banda), `sin-6-hora`, `sin-7-hora-termina` (19:00 marcada y los chips de fin), `sin-8-hoja-termina` (solo horas desde 19:15), `sin-11-revisar-falta-diseno` (solo línea, valor y acción en violeta). Sin errores ni desbordes a 320 y 390 en los dos prototipos.

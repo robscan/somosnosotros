@@ -216,9 +216,9 @@ button.renglon { cursor: pointer; }
 .diseno small { color: var(--primario-texto); opacity: 0.9; font-size: var(--letra-2xs); }
 /* Lo que falta por completar: punteado marcado y en el color de acción (founder, 2026-10-05). */
 .renglon.pendiente { border: 2px dashed var(--primario); }
-.renglon.pendiente > svg, .renglon.pendiente small, .renglon.pendiente b { color: var(--primario); }
+.renglon.pendiente b { color: var(--primario); }
 .renglon.aparte { margin-top: var(--espacio-4); }
-.horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 132px; overflow-y: auto; }
+.horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
@@ -260,6 +260,7 @@ button.renglon { cursor: pointer; }
   <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-camara" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
   <symbol id="i-corazon" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.6 12 20 12 20z"/></symbol>
+<symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 20h14"/></symbol>
 </defs></svg>
 <div class="tira">
   <select id="caso" aria-label="Caso del prototipo">
@@ -298,20 +299,23 @@ const LEIDO = {
 const PROGRAMA = [['Concierto de Trío Bruma', '7 de noviembre · 18:00 · Centro de las Artes'], ['Taller de gráfica en vivo', '8 de noviembre · 11:00 · Museo Federico Silva'], ['Proyección: Cortos del Altiplano', '8 de noviembre · 19:30 · Cineteca Alameda']];
 const SITIOS = [['Centro de las Artes', 'Lugar del directorio · Calz. de Guadalupe 705'], ['Centro Cultural Bicentenario', 'Lugar del directorio · Av. Sierra Leona 550'], ['Centro Histórico, Jardín de San Juan de Dios', 'Del mapa · no está en el directorio']];
 let caso = 'legible', e;
-function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', quiereFlyer: false, flyer: null, mapa: false, fuera: false, editar: null }; }
+function nuevo() { return { i: 0, d: { ...LEIDO[caso] }, elegidos: [true, true, true], q: '', precio: '', toques: 0, escritos: new Set(), dir: 'entra', sug: 'abierta', hoja: null, calIni: null, calFin: null, hIni: null, hFin: null, quiereFlyer: false, flyer: null, mapa: false, fuera: false, editar: null }; }
 
 // Los pasos se arman con lo que falta: lo ya leído no se pregunta.
 function pasos() {
   if (caso === 'programa') return ['cartel', 'leyendo', 'programa', 'publicado'];
   const p = caso === 'sin' ? ['cartel', 'nombre'] : ['cartel', 'leyendo'];
   const L = LEIDO[caso];
-  if (!L.cuando) p.push('cuando');
+  if (!L.cuando) p.push('dia', 'hora');
   if (!L.donde) { p.push('donde'); if (e.mapa) p.push('mapa'); if (e.fuera) p.push('uso'); }
   if (!L.cuanto) p.push('cuanto');
   return [...p, 'revisar', 'publicado'];
 }
 const paso = () => e.editar || pasos()[e.i];
 function ir(n, dir = 'entra') { e.editar = null; e.i = Math.max(0, Math.min(pasos().length - 1, n)); e.dir = dir; pintar(); }
+const sumar = (h, n) => { const [a, b] = h.split(':').map(Number); return `${String((a + n) % 24).padStart(2, '0')}:${String(b).padStart(2, '0')}`; };
+const trasDia = () => { e.hIni = null; if (e.editar) { e.editar = 'hora'; e.dir = 'entra'; return pintar(); } return ir(e.i + 1); };
+function finHora() { e.d.cuando = `${e.dia}${e.diaFin ? ` al ${e.diaFin}` : ''} · ${e.hIni}${e.hFin ? ` a ${e.hFin}` : ''}`; if (e.editar) { e.editar = null; e.dir = 'vuelve'; return pintar(); } return ir(e.i + 1); }
 const trasDonde = () => (e.editar ? (e.editar = e.mapa ? 'mapa' : null, e.dir = e.mapa ? 'entra' : 'vuelve', pintar()) : ir(e.i + 1));
 const sigue = () => (e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : ir(e.i + 1));
 
@@ -335,12 +339,19 @@ const VISTAS = {
     pie: `<button class="btn" data-a="sigue" ${e.d.nombre.trim() ? '' : 'disabled'}>${e.d.nombre.trim() ? 'Siguiente' : 'Falta el nombre'}</button>`,
     notas: ['Tras decir «No tengo cartel», la opción «Hazme un cartel» está a la vista desde el primer paso, como una casilla que se marca. No estorba: se puede seguir sin tocarla.', 'Una pregunta por pantalla, con el campo ya enfocado y el botón pegado sobre el teclado: nada queda tapado.', 'El botón dice qué falta, como en el canon actual.'],
   }),
-  cuando: () => ({
-    titulo: 'Publicar', pregunta: '¿Cuándo es?',
-    cuerpo: `<div class="grupo"><small>Día</small><div class="fila-chips">${['Este viernes', 'Este sábado', 'Otro día'].map((t) => `<button class="chip" data-dia="${t}" aria-pressed="${e.dia === t}">${t}</button>`).join('')}</div></div>
-      ${e.dia ? `<div class="grupo cae"><small>Hora</small><div class="fila-chips">${['19:00', '20:00', '17:00', '12:00', 'Otra hora'].map((t) => `<button class="chip" data-hora="${t}">${t}</button>`).join('')}</div></div>` : ''}`,
+  dia: () => ({
+    titulo: 'Publicar', pregunta: '¿Qué día es?',
+    cuerpo: `<div class="fila-chips">${['Este viernes', 'Este sábado', 'Otro día'].map((t) => `<button class="chip" data-dia="${t}">${t}</button>`).join('')}</div>
+      <button class="quieto" data-dia="Otro día">Dura varios días</button>`,
     pie: '',
-    notas: ['Las sugerencias salen de los 274 eventos publicados (medido el 2026-10-05): el 51 % es viernes o sábado, y el 51 % empieza a las 19:00, 20:00, 17:00 o 12:00, en ese orden. «Hoy» y «Mañana» se quitaron: solo 7 de 274 se publicaron para el mismo día o el siguiente.', 'Ojo: casi todos esos eventos los cargó la administración desde agendas; cuando publique más gente, estas sugerencias se vuelven a medir.', '«Otro día» y «Otra hora» abren la hoja de fecha y hora que ya existe (calendario y lista de horas cada 15 minutos).', 'Elegir la hora avanza solo.'],
+    notas: ['Corrección del founder (2026-10-05): el día y la hora se preguntan por separado, y en los dos se puede decir inicio y fin.', 'Un chip elige un solo día y avanza. «Otro día» y «Dura varios días» abren solo el calendario: el primer toque es el inicio y un segundo toque, en un día posterior, el fin.', 'Sugerencias medidas: el 51 % de los 274 eventos publicados es viernes o sábado.'],
+  }),
+  hora: () => ({
+    titulo: 'Publicar', pregunta: '¿A qué hora?',
+    cuerpo: `<div class="grupo"><small>Empieza</small><div class="fila-chips">${['19:00', '20:00', '17:00', '12:00', 'Otra hora'].map((t) => `<button class="chip" data-hora="${t}" aria-pressed="${e.hIni === t}">${t}</button>`).join('')}${e.hIni && !['19:00', '20:00', '17:00', '12:00'].includes(e.hIni) ? `<button class="chip" aria-pressed="true" data-hora="Otra hora">${e.hIni}</button>` : ''}</div></div>
+      ${e.hIni ? `<div class="grupo cae"><small>Termina</small><div class="fila-chips">${[1, 2, 3].map((n) => `<button class="chip" data-fin="${n}">${sumar(e.hIni, n)}</button>`).join('')}<button class="chip" data-fin="otra">Otra hora</button><button class="chip" data-fin="sin">Sin hora de fin</button></div></div>` : ''}`,
+    pie: '',
+    notas: ['Primero cuándo empieza; al elegirlo aparece cuándo termina, ya calculado a una, dos y tres horas. Elegir el fin avanza.', '«Sin hora de fin» es una respuesta válida: no se inventa una duración.', '«Otra hora» abre solo la lista de horas, cada 15 minutos.', 'Sugerencias medidas: 19:00, 20:00, 17:00 y 12:00 son el 51 % de los inicios.'],
   }),
   donde: () => {
     const hay = e.q.trim().length >= 2;
@@ -411,20 +422,24 @@ const VISTAS = {
       cuerpo: `<div class="final"><span class="sello-ok">${ic('ok')}</span><h1>${caso === 'programa' ? `${n} eventos publicados` : caso === 'taller' ? 'Taller publicado' : 'Evento publicado'}</h1><p class="meta">${caso === 'programa' ? 'Ya están en la agenda, juntos en Festival Umbral 2026.' : 'Ya está en la agenda. Así lo ve la gente:'}</p></div>
         ${caso === 'programa' ? `<section class="sugerencia lista"><span class="sello ok">${ic('ok')}Festival</span><h2>Festival Umbral 2026</h2><ul class="actos">${PROGRAMA.filter((_, i) => e.elegidos[i]).map(([t, x]) => `<li><div><b>${t}</b><small>${x}</small></div></li>`).join('')}</ul></section>` : `<div class="tarjeta"><div class="fecha">${(d.cuando || '').match(/(\d+) de/)?.[1] || 'sáb'}<span>${/ de /.test(d.cuando || '') ? 'nov' : 'próx'}</span></div><div><b>${d.nombre}</b><small>${[d.cuando, d.donde].filter(Boolean).join(' · ')}</small></div></div>`}
         ${sug}`,
-      pie: `<button class="btn ${sug && e.sug === 'abierta' ? 'sec' : ''}" data-a="compartir">Compartir</button><button class="quieto" data-a="otro">Publicar otro</button>`,
-      notas: ['El final es el momento que se recuerda: confirmación grande, el evento como quedó y una sola invitación a seguir.', 'La sugerencia en punteado es la ya aceptada (exposición, festival). Nunca hay dos a la vez.', 'Compara arriba: toques y escrituras de este recorrido contra los de la pantalla de hoy.'],
+      pie: `<button class="btn ${sug && e.sug === 'abierta' ? 'sec' : ''}" data-a="compartir">Compartir</button>${caso !== 'sin' || e.flyer !== null ? `<button class="btn sec" data-a="descargar">${ic('descargar')}${e.bajado ? 'Cartel descargado' : 'Descargar el cartel'}</button>` : ''}<button class="quieto" data-a="otro">Publicar otro</button>`,
+      notas: ['El final es el momento que se recuerda: confirmación grande, el evento como quedó y una sola invitación a seguir.', 'La sugerencia en punteado es la ya aceptada (exposición, festival). Nunca hay dos a la vez.', '«Descargar el cartel» sale cuando el evento tiene cartel, subido o hecho por la plataforma (pedido del founder): sirve para llevarlo a WhatsApp o a Instagram. También está en la ficha del evento.', 'Compara arriba: toques y escrituras de este recorrido contra los de la pantalla de hoy.'],
     };
   },
 };
 
 function hojaFecha() {
-  const dias = '<span></span>'.repeat(6) + Array.from({ length: 30 }, (_, k) => `<button class="dia ${String(k + 1) === e.hojaDia ? 'extremo' : ''}" data-dia="${k + 1}" ${k + 1 < 6 ? 'disabled' : ''}>${k + 1}</button>`).join('');
-  const horas = []; for (let h = 9; h <= 22; h++) for (const m of ['00', '15', '30', '45']) horas.push(`${String(h).padStart(2, '0')}:${m}`);
-  const listo = e.hojaDia && e.hojaHora;
-  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="Selecciona la fecha del evento"><h2>Selecciona la fecha del evento</h2>
-    ${/^\D/.test(e.hojaDia || '') ? `<small>${e.hojaDia}</small>` : `<div class="mes"><span></span><b>Noviembre de 2026</b><span></span></div><div class="semana">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => `<span>${l}</span>`).join('')}${dias}</div>`}
-    <div class="horas" role="listbox" aria-label="Hora">${horas.map((h) => `<button class="chip" data-hora="${h}" aria-pressed="${e.hojaHora === h}">${h}</button>`).join('')}</div>
-    <button class="btn" data-a="hoja-lista" ${listo ? '' : 'disabled'}>${listo ? 'Listo' : !e.hojaDia ? 'Falta el día' : 'Falta la hora'}</button></div></div>`;
+  if (e.hoja === 'cal') {
+    const dias = '<span></span>'.repeat(6) + Array.from({ length: 30 }, (_, k) => { const n = k + 1, ext = n === e.calIni || n === e.calFin, den = e.calFin !== null && n > e.calIni && n < e.calFin; return `<button class="dia ${ext ? 'extremo' : den ? 'dentro' : ''}" data-dia="${n}" ${n < 6 ? 'disabled' : ''}>${n}</button>`; }).join('');
+    const texto = e.calIni === null ? 'Toca el día en que empieza.' : e.calFin === null ? `Empieza el ${e.calIni} de noviembre. Si dura varios días, toca el último.` : `Del ${e.calIni} al ${e.calFin} de noviembre.`;
+    return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="¿Qué día es?"><h2>¿Qué día es?</h2><small role="status">${texto}</small>
+      <div class="mes"><span></span><b>Noviembre de 2026</b><span></span></div><div class="semana">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => `<span>${l}</span>`).join('')}${dias}</div>
+      <button class="btn" data-a="cal-lista" ${e.calIni === null ? 'disabled' : ''}>${e.calIni === null ? 'Falta el día' : e.calFin === null ? 'Listo, un solo día' : 'Listo'}</button></div></div>`;
+  }
+  const fin = e.hoja === 'hfin', horas = [];
+  for (let h = 8; h <= 23; h++) for (const m of ['00', '15', '30', '45']) { const x = `${String(h).padStart(2, '0')}:${m}`; if (!fin || x > e.hIni) horas.push(x); }
+  return `<div class="velo" data-a="cerrar-hoja"><div class="hoja" role="dialog" aria-label="${fin ? 'Termina' : 'Empieza'}"><h2>${fin ? `Termina (empieza ${e.hIni})` : 'Empieza'}</h2>
+    <div class="horas" role="listbox" aria-label="Hora">${horas.map((h) => `<button class="chip" data-hora="${h}">${h}</button>`).join('')}</div></div></div>`;
 }
 function pintar(foco) {
   const p = paso(), v = VISTAS[p](), total = pasos().length - 1;
@@ -445,23 +460,24 @@ function pintar(foco) {
 function reiniciar() { clearTimeout(pintar.t); caso = $('#caso').value; e = nuevo(); try { history.replaceState(null, '', '#' + caso); } catch { /* sin historial, sigue igual */ } pintar(); }
 
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar],[data-uso],[data-diseno],[data-inicio]');
+  const t = ev.target.closest('[data-fin],[data-a],[data-dia],[data-hora],[data-sitio],[data-cuanto],[data-elegir],[data-editar],[data-uso],[data-diseno],[data-inicio]');
   if (!t || t.closest('.tira')) return;
   e.toques++; e.dir = 'entra';
-  const { a, dia, hora, sitio, cuanto, elegir, editar, uso, diseno, inicio } = t.dataset;
-  if (dia && t.closest('.hoja')) { e.hojaDia = dia; e.dir = 'fija'; return pintar(); }
-  if (hora && t.closest('.hoja')) { e.hojaHora = hora; e.dir = 'fija'; return pintar(); }
-  if (dia) { if (dia === 'Otro día') { e.hoja = true; e.hojaDia = null; e.hojaHora = null; e.dir = 'fija'; return pintar(); } e.dia = dia; e.dir = 'fija'; return pintar(); }
-  if (hora) { if (hora === 'Otra hora') { e.hoja = true; e.hojaDia = e.dia; e.hojaHora = null; e.dir = 'fija'; return pintar(); } e.d.cuando = `${e.dia} · ${hora}`; return sigue(); }
-  if (a === 'cerrar-hoja') { if (ev.target === t) { e.hoja = false; e.dir = 'fija'; pintar(); } e.toques--; return; }
-  if (a === 'hoja-lista') { e.d.cuando = `${/^\d/.test(e.hojaDia) ? `${e.hojaDia} de noviembre` : e.hojaDia} · ${e.hojaHora}`; e.hoja = false; return sigue(); }
+  const { a, dia, hora, fin, sitio, cuanto, elegir, editar, uso, diseno, inicio } = t.dataset;
+  if (dia && t.closest('.hoja')) { const n = Number(dia); if (e.calIni === null || e.calFin !== null || n < e.calIni) { e.calIni = n; e.calFin = null; } else if (n > e.calIni) e.calFin = n; e.dir = 'fija'; return pintar(); }
+  if (hora && t.closest('.hoja')) { const eraFin = e.hoja === 'hfin'; e.hoja = null; if (eraFin) { e.hFin = hora; return finHora(); } e.hIni = hora; e.hFin = null; e.dir = 'fija'; return pintar(); }
+  if (dia) { if (dia === 'Otro día') { e.hoja = 'cal'; e.calIni = null; e.calFin = null; e.dir = 'fija'; return pintar(); } e.dia = dia; e.diaFin = null; return trasDia(); }
+  if (hora) { if (hora === 'Otra hora') { e.hoja = 'hini'; e.dir = 'fija'; return pintar(); } e.hIni = hora; e.hFin = null; e.dir = 'fija'; return pintar(); }
+  if (fin) { if (fin === 'otra') { e.hoja = 'hfin'; e.dir = 'fija'; return pintar(); } e.hFin = fin === 'sin' ? '' : sumar(e.hIni, Number(fin)); return finHora(); }
+  if (a === 'cerrar-hoja') { e.toques--; if (ev.target === t) { e.hoja = null; e.dir = 'fija'; pintar(); } return; }
+  if (a === 'cal-lista') { e.dia = `${e.calIni} de noviembre`; e.diaFin = e.calFin ? `${e.calFin} de noviembre` : null; e.hoja = null; return trasDia(); }
   if (sitio) { const n = Number(sitio); e.d.donde = n === 2 ? 'Jardín de San Juan de Dios' : SITIOS[n][0]; e.q = ''; e.fuera = n === 2; e.mapa = n === 2; return trasDonde(); }
   if (uso) { e.usoSitio = uso; return e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : sigue(); }
   if (diseno) { e.flyer = Number(diseno); e.editar = null; e.dir = 'vuelve'; return pintar(); }
   if (inicio) { if (inicio === 'subir') { if (caso === 'sin') { caso = 'legible'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; } return ir(1); } caso = 'sin'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; return ir(1); }
   if (cuanto) { if (cuanto === 'Tiene precio') { e.precioAbierto = true; return pintar(); } e.d.cuanto = cuanto; return sigue(); }
   if (elegir) { const i = Number(elegir); e.elegidos[i] = !e.elegidos[i]; e.dir = 'fija'; return pintar(); }
-  if (editar) { if (editar === 'quien') { e.toques--; return; } e.editar = editar; e.dia = null; e.precioAbierto = false; return pintar(); }
+  if (editar) { if (editar === 'quien') { e.toques--; return; } e.editar = editar === 'cuando' ? 'dia' : editar; e.hIni = null; e.precioAbierto = false; return pintar(); }
   if (a === 'sigue') return sigue();
   if (a === 'aqui') { e.d.donde = 'Jardín de San Francisco'; e.fuera = false; e.mapa = true; return trasDonde(); }
   if (a === 'mapa-ok') { if (e.editar) { e.editar = e.fuera ? 'uso' : null; e.dir = e.fuera ? 'entra' : 'vuelve'; return pintar(); } return sigue(); }
@@ -474,6 +490,7 @@ document.addEventListener('click', (ev) => {
   if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
   if (a === 'quiere-flyer') { e.quiereFlyer = !e.quiereFlyer; e.dir = 'fija'; return pintar('#nombre'); }
   if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
+  if (a === 'descargar') { e.bajado = true; e.dir = 'fija'; return pintar(); }
   e.dir = 'fija'; if (a === 'mas' || a === 'compartir') return pintar();
 });
 document.addEventListener('input', (ev) => {

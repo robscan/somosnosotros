@@ -73,7 +73,7 @@ ul { list-style: none; }
 .renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
 .renglon.pendiente { border: 2px dashed var(--primario); }
-.renglon.pendiente > svg, .renglon.pendiente small, .renglon.pendiente b { color: var(--primario); }
+.renglon.pendiente b { color: var(--primario); }
 .renglon.elegible { min-height: 68px; }
 .renglon.elegible b + span { display: block; font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.3; }
 .grupo { display: grid; gap: var(--espacio-2); }
@@ -184,6 +184,7 @@ ul { list-style: none; }
   <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-camara" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
   <symbol id="i-corazon" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.6 12 20 12 20z"/></symbol>
+<symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 20h14"/></symbol>
 </defs></svg>
 
 <div class="tira">
@@ -337,8 +338,8 @@ function fichaEvento() {
     reservado: ['Los sitios reservados quedan fuera: el renglón no abre el mapa ni manda nada a Mapbox. Sigue como hoy.'],
   }[caso];
   return `<div class="portada" style="--tono:${s.tono}"><h1>${s.evento}</h1><small>${s.cuando}</small></div>
-    <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ok')}</span>Voy</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span><span class="accion-ficha"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span></div>
-    <section class="caja"><h2>Dónde</h2>${donde}</section>${notas(porCaso)}`;
+    <div class="acciones"><span class="accion-ficha principal"><span class="circulo">${ic('ok')}</span>Voy</span><span class="accion-ficha"><span class="circulo">${ic('compartir')}</span>Compartir</span><span class="accion-ficha"><span class="circulo">${ic('ruta')}</span>Cómo llegar</span><span class="accion-ficha"><span class="circulo">${ic('descargar')}</span>Cartel</span></div>
+    <section class="caja"><h2>Dónde</h2>${donde}</section>${notas([...porCaso, 'Cuarta acción de la ficha: «Cartel» descarga el cartel del evento (pedido del founder, 2026-10-05). Solo sale si el evento tiene cartel.'])}`;
 }
 function vistaMapa() {
   const s = SITIOS[caso], sesion = $('#sesion').checked, enCatalogo = caso === 'catalogo' || e.alta;
