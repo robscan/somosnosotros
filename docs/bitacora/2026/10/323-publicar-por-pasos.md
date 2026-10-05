@@ -57,3 +57,13 @@ Sus palabras: «la opción de no tengo cartel no debe ir en terciario, por que n
 Las 20 capturas de `docs/rediseno/capturas-323/` se rehicieron con esta versión (sustituyen a las de la primera vuelta): `legible-1-inicio` (las tres opciones), `medias-1…6` (lista con un resultado «Del mapa», ¿Es aquí? con pin punteado, «No está en el directorio», ¿Cuánto cuesta?, revisar, publicado), `sin-1…7` (nombre, ¿Dónde es? con «Estoy aquí», ¿Es aquí? a 40 m de un lugar del directorio, revisar con «Falta elegir el diseño», cuatro diseños, revisar con el diseño puesto, publicado), `programa-1…2`, `taller-1…2` (revisar y revisar tras cambiar el sitio por uno fuera del directorio). Sin errores ni desbordes a 320 y 390.
 
 Conteo con las correcciones (toques y escrituras): cartel completo 2 y 0; cartel sin lugar ni precio con un sitio fuera del directorio 6 y 1 (dos toques más que con un lugar del directorio: confirmar el mapa y decir qué hacer con el sitio); sin cartel, con «Estoy aquí», gratis y cartel hecho por la plataforma 10 y 1.
+
+## Tercera vuelta (2026-10-05, noche): el recuadro vuelve y «Hazme un cartel» va después
+
+El founder corrigió la segunda vuelta: «no, la opción de "No hazme uno" aparece después de decir que no tengo cartel, me gustaba el componente que usabas antes para leer cartel.»
+
+- **Primera pantalla:** vuelve el recuadro «Sube el cartel», más chico (200 px de alto en vez de media pantalla), y justo debajo «No tengo cartel» como botón del mismo ancho. Ya no hay tres opciones.
+- **«Hazme un cartel»** aparece tras tocar «No tengo cartel», en el primer paso (¿Cómo se llama?), como casilla que se marca; se puede seguir sin tocarla. En «Revisa», el renglón «Cartel» y el botón principal siguen como en la segunda vuelta.
+- Capturas rehechas (21): `legible-1-inicio` muestra el recuadro y el botón; `sin-1-nombre-vacio` la casilla sin marcar con «Falta el nombre»; `sin-2-nombre` la casilla marcada. Sin errores ni desbordes a 320 y 390.
+
+**Decisiones del founder («Adelante con tus recomendaciones»):** este recorrido es la base para rehacer el alta de evento (evento primero; lugar y artista después); sin cartel, la fecha se pregunta siempre; al final «Compartir» es la acción principal salvo que haya una sugerencia en punteado. Preguntó además por crear sin conexión: ver la respuesta del gestor en el registro.

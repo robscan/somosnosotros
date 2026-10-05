@@ -197,6 +197,16 @@ button.renglon { cursor: pointer; }
 .fila-chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
 .fila-chips .chip { min-height: var(--toque-min); font-size: var(--letra-md); }
 .chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
+/* El recuadro para subir el cartel y, del mismo ancho, «No tengo cartel». */
+.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-2); width: 100%; min-height: 200px; padding: var(--espacio-5); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-lg); font-weight: 700; text-align: center; }
+.subir .marco { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+.subir small { color: var(--texto-suave); font-weight: 400; }
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: var(--radio-chico, 4px); }
+.casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+.casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
+.casilla b { display: block; font-weight: 700; }
 /* Confirmar en el mapa y elegir el diseño del cartel. */
 .mapa-paso { aspect-ratio: 4 / 3; max-height: 38vh; border-radius: var(--radio-grande); overflow: hidden; background: var(--fondo-mapa); }
 .mapa-paso svg { width: 100%; height: 100%; stroke: none; }
@@ -305,20 +315,19 @@ const renglon = (i, clave, valor, campo) => `<button class="renglon ${valor ? ''
 
 const VISTAS = {
   cartel: () => ({
-    titulo: 'Publicar', pregunta: '¿Tienes cartel?',
-    cuerpo: `<div class="opciones">
-      <button class="opcion" data-inicio="subir">${ic('camara')}<span>Sí, subirlo<small>Leemos el nombre, la fecha, el lugar y el precio</small></span>${ic('chevron')}</button>
-      <button class="opcion" data-inicio="flyer">${ic('mas')}<span>No, hazme uno<small>Con los datos que escribas; eliges entre 4 diseños</small></span>${ic('chevron')}</button>
-      <button class="opcion" data-inicio="sin">${ic('reloj')}<span>No, seguir sin cartel<small>Lo puedes agregar después</small></span>${ic('chevron')}</button></div>`,
+    titulo: 'Publicar',
+    cuerpo: `<button class="subir" data-inicio="subir"><span class="marco">${ic('camara')}</span>Sube el cartel<small>Leemos el nombre, la fecha, el lugar y el precio</small></button>
+      <button class="btn sec" data-inicio="sin">No tengo cartel</button>`,
     pie: '',
-    notas: ['Corrección del founder (2026-10-05): «No tengo cartel» no es un caso raro (hoy 144 de 273 eventos no tienen), así que pesa lo mismo que subirlo. Tres opciones iguales; una se toca y avanza.', 'El cartel hecho por la plataforma se ofrece desde el inicio, como una opción clara, no escondido al final.', 'En este prototipo el selector de arriba decide qué «trae» el cartel que se sube.'],
+    notas: ['Vuelve el recuadro para subir el cartel, más chico, y «No tengo cartel» pasa a ser un botón del mismo ancho justo debajo: ya no es un enlace quieto al pie (hoy 144 de 273 eventos no tienen cartel).', 'La opción de que la plataforma haga el cartel aparece después de decir «No tengo cartel», no aquí.', 'En este prototipo el selector de arriba decide qué «trae» el cartel que se sube.'],
   }),
   leyendo: () => ({ titulo: 'Leyendo', cuerpo: `<div class="leyendo">${mini()}<p class="meta" role="status">Leyendo el cartel…</p></div>`, pie: '', notas: [] }),
   nombre: () => ({
     titulo: 'Publicar', pregunta: '¿Cómo se llama?',
-    cuerpo: `<div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="${e.d.nombre}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" data-de="nombre" aria-label="Borrar el texto">${ic('cerrar')}</button></div>`,
+    cuerpo: `<div class="campo">${ic('buscar')}<input id="nombre" aria-label="Nombre del evento" placeholder="Nombre del evento" value="${e.d.nombre}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" data-de="nombre" aria-label="Borrar el texto">${ic('cerrar')}</button></div>
+      <button class="casilla" role="checkbox" aria-checked="${e.quiereFlyer}" data-a="quiere-flyer"><span class="cuadro">${e.quiereFlyer ? ic('ok') : ''}</span><span><b>Hazme un cartel</b><small>Con los datos que escribas; al final eliges entre 4 diseños</small></span></button>`,
     pie: `<button class="btn" data-a="sigue" ${e.d.nombre.trim() ? '' : 'disabled'}>${e.d.nombre.trim() ? 'Siguiente' : 'Falta el nombre'}</button>`,
-    notas: ['Una pregunta por pantalla, con el campo ya enfocado y el botón pegado sobre el teclado: nada queda tapado.', 'El botón dice qué falta, como en el canon actual.'],
+    notas: ['Tras decir «No tengo cartel», la opción «Hazme un cartel» está a la vista desde el primer paso, como una casilla que se marca. No estorba: se puede seguir sin tocarla.', 'Una pregunta por pantalla, con el campo ya enfocado y el botón pegado sobre el teclado: nada queda tapado.', 'El botón dice qué falta, como en el canon actual.'],
   }),
   cuando: () => ({
     titulo: 'Publicar', pregunta: '¿Cuándo es?',
@@ -429,7 +438,7 @@ document.addEventListener('click', (ev) => {
   if (sitio) { const n = Number(sitio); e.d.donde = n === 2 ? 'Jardín de San Juan de Dios' : SITIOS[n][0]; e.q = ''; e.fuera = n === 2; e.mapa = n === 2; return trasDonde(); }
   if (uso) { e.usoSitio = uso; return e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : sigue(); }
   if (diseno) { e.flyer = Number(diseno); e.editar = null; e.dir = 'vuelve'; return pintar(); }
-  if (inicio) { if (inicio === 'subir') { if (caso === 'sin') { caso = 'legible'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; } return ir(1); } caso = 'sin'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; e.quiereFlyer = inicio === 'flyer'; return ir(1); }
+  if (inicio) { if (inicio === 'subir') { if (caso === 'sin') { caso = 'legible'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; } return ir(1); } caso = 'sin'; $('#caso').value = caso; const tq = e.toques; e = nuevo(); e.toques = tq; return ir(1); }
   if (cuanto) { if (cuanto === 'Tiene precio') { e.precioAbierto = true; return pintar(); } e.d.cuanto = cuanto; return sigue(); }
   if (elegir) { const i = Number(elegir); e.elegidos[i] = !e.elegidos[i]; e.dir = 'fija'; return pintar(); }
   if (editar) { if (editar === 'quien') { e.toques--; return; } e.editar = editar; e.dia = null; e.precioAbierto = false; return pintar(); }
@@ -443,6 +452,7 @@ document.addEventListener('click', (ev) => {
   if (a === 'sug') { e.sug = 'hecha'; e.dir = 'fija'; return pintar(); }
   if (a === 'sug-no') { e.sug = 'no'; e.dir = 'fija'; return pintar(); }
   if (a === 'flyer') { e.editar = 'flyer'; return pintar(); }
+  if (a === 'quiere-flyer') { e.quiereFlyer = !e.quiereFlyer; e.dir = 'fija'; return pintar('#nombre'); }
   if (a === 'sin-flyer') { e.quiereFlyer = false; e.flyer = null; e.dir = 'fija'; return pintar(); }
   e.dir = 'fija'; if (a === 'mas' || a === 'compartir') return pintar();
 });
