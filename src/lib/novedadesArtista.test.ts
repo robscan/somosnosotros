@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { incrustadoDeNovedad } from "./incrustado";
 import { leerNovedadesRecientes, selloNovedadArtista, VIGENCIA_NOVEDAD_ARTISTA_MS, fechaRelativaNovedadArtista, reconocerNovedadEnlace, validarNovedadArtista } from "./novedadesArtista";
 
 describe("reconocerNovedadEnlace", () => {
@@ -27,6 +28,18 @@ describe("reconocerNovedadEnlace", () => {
     // reconocerEnlace normaliza sin la barra final (lib/enlaces.ts, sin tocarlo).
     expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/set-de-otono/")).toEqual({ url: "https://www.mixcloud.com/anareyes/set-de-otono", proveedor: "mixcloud" });
     expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/")).toBeNull();
+  });
+
+  it("OL-280: reconocer y guardar Mixcloud sin barra no rompe el reproductor de la previa ni la ficha", () => {
+    const pegado = "https://www.mixcloud.com/robscan/randomatic-oct-26/";
+    const reconocido = reconocerNovedadEnlace(pegado);
+    const { datos, errores } = validarNovedadArtista({ url: pegado });
+    expect(errores).toEqual({});
+    expect(datos.url).toBe("https://www.mixcloud.com/robscan/randomatic-oct-26");
+    for (const novedad of [reconocido!, { proveedor: datos.proveedor!, url: datos.url }]) {
+      const iframe = incrustadoDeNovedad({ ...novedad, embed_id: null });
+      expect(new URL(iframe!.src).searchParams.get("feed")).toBe("/robscan/randomatic-oct-26/");
+    }
   });
 
   it("Bandcamp: álbum o pista de un subdominio de artista se reconocen; www.bandcamp.com y bandcamp.com pelón no", () => {
