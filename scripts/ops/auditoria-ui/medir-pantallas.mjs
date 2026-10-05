@@ -89,14 +89,17 @@ async function esperar(url, proceso) {
 
 // ---------- una pantalla a un ancho ----------
 // La pantalla está quieta cuando React colocó todo lo que llegó por streaming, el mapa terminó de cargar, no queda ninguna animación
-// con fin (el pulso del pin elegido dura medio segundo y vive en el DOM) y pasaron 30 cuadros sin cambios en el DOM. Se cuentan cuadros
-// y no milisegundos: con la máquina cargada el mapa y sus animaciones también avanzan más despacio.
+// con fin ni el anillo del pulso del pin elegido en el DOM, y pasaron 30 cuadros sin cambios en el DOM. Se cuentan cuadros y no
+// milisegundos: con la máquina cargada el mapa y sus animaciones también avanzan más despacio.
+// El pulso (`Mapa.tsx`: un marcador que se quita en su `animationend`) hay que esperarlo por su presencia y no solo por su animación:
+// con la máquina cargada `getAnimations()` ya lo da por terminado (`finished`) uno o varios cuadros antes de que se despache el
+// `animationend` que lo retira, y la medición lo contaba (un nodo de más y un marcador fuera de la caja de su padre; OL-292).
 async function aquietar(page) {
   await page.waitForLoadState("networkidle", { timeout: 20000 });
   const pendiente = await page.evaluate(async () => {
     await document.fonts.ready;
     const animando = () => document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
-    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando();
+    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando() || document.querySelector('.mapboxgl-marker[class*="__pulso"]') !== null;
     const quieto = (cuadros) =>
       new Promise((ok) => {
         let n = 0;
