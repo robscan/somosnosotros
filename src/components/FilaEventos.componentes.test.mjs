@@ -88,8 +88,8 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(consulta = "", reducir = false) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: reducir ? "reduce" : "no-preference" });
+async function abrir(consulta = "", reducir = false, ancho = 390) {
+  const context = await browser.newContext({ viewport: { width: ancho, height: 844 }, reducedMotion: reducir ? "reduce" : "no-preference" });
   const page = await context.newPage();
   await page.clock.install({ time: new Date(`${HOY}T12:00:00`) });
   await page.goto(origin + consulta);
@@ -158,6 +158,43 @@ test("Cuándo: «Elegir fecha…» abre el calendario en la misma hoja, con punt
   await aplicar(page, "Cuándo").click();
   assert.deepEqual(await page.evaluate(() => window.qa.cambios.at(-1).cuando), { desde: "2026-10-03", hasta: "2026-10-04" });
   await context.close();
+});
+
+test("Cuándo: a 320, 390 y 1280 px los siete días caben en la hoja, el círculo mide 44 donde cabe y el toque llena la fila (OL-282)", async () => {
+  for (const ancho of [320, 390, 1280]) {
+    const { context, page } = await abrir("", false, ancho);
+    await page.getByRole("button", { name: "Cuándo" }).click();
+    await hoja(page, "Cuándo").getByRole("button", { name: "Elegir fecha…" }).click();
+    await dia(page, "2026-09-30").waitFor();
+    const m = await page.evaluate(() => {
+      const grid = document.querySelector('[role="grid"]');
+      const caja = grid.closest('[role="dialog"]').getBoundingClientRect();
+      const dias = [...grid.querySelectorAll("button")];
+      // El toque real: caminando desde el centro hacia arriba y hacia abajo mientras `elementFromPoint` siga devolviendo el día.
+      const alto = (el) => {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const suyo = (y) => document.elementFromPoint(cx, y) === el;
+        let a = 0, b = 0;
+        while (a < 30 && suyo(r.top - a - 1)) a++;
+        while (b < 30 && suyo(r.bottom + b + 0.5)) b++;
+        return r.height + a + b;
+      };
+      const visibles = dias.filter((d) => getComputedStyle(d).visibility !== "hidden");
+      return {
+        sobra: Math.max(...dias.map((d) => d.getBoundingClientRect().right)) - caja.right,
+        desborda: grid.scrollWidth > grid.clientWidth,
+        pagina: document.documentElement.scrollWidth > innerWidth,
+        circulo: Math.min(...visibles.map((d) => d.getBoundingClientRect().width)),
+        altoToque: Math.min(...visibles.map(alto)),
+      };
+    });
+    assert.ok(m.sobra <= 0, `a ${ancho} px un día sobresale ${m.sobra} px de la hoja`);
+    assert.ok(!m.desborda && !m.pagina, `a ${ancho} px la rejilla o la página se desplazan de lado`);
+    assert.ok(m.circulo >= (ancho === 320 ? 38 : 44), `a ${ancho} px el círculo mide ${m.circulo}`);
+    assert.ok(m.altoToque >= 44, `a ${ancho} px el toque mide ${m.altoToque} de alto`);
+    await context.close();
+  }
 });
 
 test("Cuándo: el calendario del mes en curso arranca en la semana de hoy, sin las que ya pasaron", async () => {
