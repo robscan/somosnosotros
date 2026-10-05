@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { IconoCerrar } from "./Iconos";
+import useAreaVisible from "./useAreaVisible";
 import styles from "./Hoja.module.css";
 
 type Props = {
@@ -57,7 +58,8 @@ const enServidor = () => false;
 
 export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, children }: Props) {
   const montada = useSyncExternalStore(nada, enNavegador, enServidor);
-  const [marco, setMarco] = useState<{ top: number; height: number; ventana: number } | null>(null);
+  // Solo cuando el área visible difiere de la ventana (teclado abierto): el resto del tiempo, inset: 0 del CSS.
+  const marco = useAreaVisible();
   const fondo = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const cerrar = useRef(onCerrar);
@@ -112,19 +114,6 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
     if (abiertas++ === 0) raiz.style.overflow = "hidden";
     return () => {
       if (--abiertas === 0) raiz.style.overflow = "";
-    };
-  }, []);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    // Solo cuando el área visible difiere de la ventana (teclado abierto): el resto del tiempo, inset: 0 del CSS.
-    const ajustar = () => setMarco(Math.abs(vv.height - window.innerHeight) > 1 || vv.offsetTop > 0 ? { top: vv.offsetTop, height: vv.height, ventana: window.innerHeight } : null);
-    ajustar();
-    vv.addEventListener("resize", ajustar);
-    vv.addEventListener("scroll", ajustar);
-    return () => {
-      vv.removeEventListener("resize", ajustar);
-      vv.removeEventListener("scroll", ajustar);
     };
   }, []);
   // Con el teclado arriba, un arrastre dentro de la hoja lo guarda (salvo sobre el mismo campo, para mover el cursor).
