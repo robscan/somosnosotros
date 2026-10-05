@@ -41,3 +41,11 @@ Capturas afectadas rehechas y vistas antes de medir; medidas/huellas regeneradas
 ## Aceptación del gestor151
 
 Gestor III revisó `bb4f4ae108e014b5122a8def662677dd50a8d9eb` y **aceptó OL274 como prototipo**, autorizando mostrarlo al founder con la guía. Confirmó alcance, proporción5:3 a320/390, diferencia autorizada documentada, Vacio de Agenda en Inicio, ambos estados Voy/Ya vas y Agregar un lugar en búsqueda vacía. La aceptación no publica ni inicia código. Siguiente: firma visual del founder; después el gestor delimita A en `hoja-ciudades`/OL270 y B (Más adelante, vacío Inicio y arreglo Destacados) en OL274. Prototipo presentado mediante el navegador de Codex con el URL local y guía. Esta actualización solo documenta el cierre de revisión; HTML/PNG/huellas aceptados no cambian.
+
+## Acceso desde el celular — corrección de la entrega
+
+El founder insiste: «No puedo ver tus prototipos en mi celular». La presentación anterior mediante localhost y archivos locales no era una entrega accesible desde su teléfono. Gestor III, mensaje255, confirma el canal establecido `raw.githack.com` y pide comprobar acceso anónimo y recorrido, y registrarlo aquí. No se necesita otro despliegue ni modificar el HTML.
+
+[Abrir el prototipo desde el celular](https://raw.githack.com/robscan/somosnosotros/d6d9f29d/docs/rediseno/prototipos/ciudad-persistente.html?seccion=inicio&ciudad=leon). Archivo público fijado al commit `d6d9f29d`: HTTP200, `text/html; charset=utf-8`, SHA256 `fd24ef51457af5503bd6502eb0199fc0ab9d6d27579b0937bb17c7c80d03a40f`, idéntico al HTML aceptado y al archivo local. Comprobado sin credenciales mediante HTTP y navegador: Inicio muestra Más adelante; Agenda Todos muestra el evento; Lugares y Artistas conservan León en sus vacíos; regreso a Inicio conserva León y su evento. La primera visita puede mostrar «External Content Notice»: se toca «Open the page», según el canal confirmado por el gestor.
+
+Entregado el enlace HTTPS en este chat. Verificación de navegador de escritorio, no firma ni prueba física del iPhone del founder. El HTML/canon/capturas no cambian; esta corrección de acceso no implementa ni publica A/B en la app y no toca Vercel, SQL ni permisos. Sigue pendiente la firma visual del founder para la fase de código.
