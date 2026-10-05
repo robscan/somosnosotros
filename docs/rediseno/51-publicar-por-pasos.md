@@ -8,6 +8,8 @@
 
 Orden que pidió: primero se termina la solución de Eventos como va (sugerencias, «Dónde», taller y festival); después se mejora con estos ajustes.
 
+**Respuesta del founder (2026-10-05):** le gusta la propuesta. Precisa: «si el usuario ingresa cartel entonces se usa la información capturada para ahorrar pasos y solo se presenta para confirmación». Es decir: con cartel, el paso 2 es solo confirmar; no se pregunta lo que ya se leyó.
+
 ## Qué tiene hoy la pantalla de publicar un evento
 
 Una sola pantalla con todo a la vista (`src/app/eventos/FormularioEvento.tsx`, 807 líneas y 31 estados; `HojaDonde.tsx`, 863 líneas y 23 estados):
