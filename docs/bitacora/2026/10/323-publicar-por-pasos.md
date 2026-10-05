@@ -111,3 +111,11 @@ Capturas rehechas (27 del flujo más la de la ficha): nuevas `sin-3-dia`, `sin-4
 4. **Dónde:** confirmar en el mapa (sitio fuera del directorio y «Estoy aquí») y las tres opciones del sitio.
 5. **Publicado:** el final con «Compartir», «Descargar el cartel» y la sugerencia en punteado; «Descargar» también en la ficha del evento.
 6. **Después, con su propio diseño y decisiones:** exposición, festival con programa y taller con sesiones (necesitan modelo de datos: doc `investigaciones/eventos-modelo.md`), el cartel hecho por la plataforma (doc 52), guardar lo contestado y crear sin conexión, y el alta de lugar y de artista por pasos.
+
+## Sexta vuelta (2026-10-05, noche): renglones sin etiqueta
+
+El founder cuestionó: «Tenemos que seguir poniendo "cuando" "donde" "cuanto" como labels en los campos? … cuestionaria si funciona sin ellos, los iconos y el campo llenado nos da para intuir de que se trata».
+
+Probado en «Revisa»: los renglones resueltos muestran solo icono, valor y «Cambiar» («Jueves 5 de noviembre · 19:00», «Museo Federico Silva», «Gratis», «Lucía Montaño»). Se entiende sin la clave y cada renglón baja de 60 a 48 px de alto. Lo que falta lo dice el propio valor («Falta el lugar», «Falta el precio», «Falta elegir el diseño del cartel»), porque «Falta» a secas ya no tendría contexto. La clave se conserva como nombre accesible (`aria-label`) para lectores de pantalla. Capturas `legible-2-revisar`, `sin-11-revisar-falta-diseno`, `sin-13-revisar`, `taller-1-revisar`. Sin errores ni desbordes a 320 y 390.
+
+Riesgo anotado: funciona mientras el valor se explica solo; un valor ambiguo (un número suelto, un nombre que puede ser lugar o artista) depende del icono. Por eso el cartel lleva la palabra en el valor («Cartel: diseño 2»).

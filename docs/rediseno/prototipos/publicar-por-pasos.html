@@ -220,6 +220,7 @@ button.renglon { cursor: pointer; }
 .renglon.aparte { margin-top: var(--espacio-4); }
 .horas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-2); max-height: 46vh; overflow-y: auto; }
 .horas .chip { min-height: var(--toque-min); padding: 0; }
+.renglon.sin-clave { min-height: var(--toque); }
 /* El final. */
 .final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
 .final .sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: var(--primario-texto); }
@@ -321,7 +322,9 @@ const sigue = () => (e.editar ? (e.editar = null, e.dir = 'vuelve', pintar()) : 
 
 const mini = (grande) => `<div class="cartel-mini" style="--tono:${e.d.tono}">${LEIDO[caso].nombre || 'Tu cartel'}</div>`;
 const MAPA = `<svg viewBox="0 0 390 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa"><rect width="390" height="300" fill="#eef0ec"/><g fill="#e3e6df"><rect x="-10" y="-10" width="112" height="82"/><rect x="122" y="-10" width="120" height="82"/><rect x="262" y="-10" width="140" height="82"/><rect x="-10" y="92" width="112" height="120"/><rect x="262" y="92" width="140" height="120"/><rect x="-10" y="232" width="252" height="80"/><rect x="262" y="232" width="140" height="80"/></g><rect x="122" y="92" width="120" height="120" rx="6" fill="#d5e3cf"/><path d="M195 190s-30-27-30-52a30 30 0 0 1 60 0c0 25-30 52-30 52z" fill="#fff" stroke="#6d34c8" stroke-width="3" stroke-dasharray="7 5"/><circle cx="195" cy="138" r="9" fill="#6d34c8"/></svg>`;
-const renglon = (i, clave, valor, campo) => `<button class="renglon ${valor ? '' : 'pendiente'}" data-editar="${campo}">${ic(i)}<span><small>${clave}</small><b>${valor || 'Falta'}</b></span><span class="accion">${valor ? 'Cambiar' : 'Poner'}</span></button>`;
+const FALTA = { cuando: 'Falta el día y la hora', donde: 'Falta el lugar', cuanto: 'Falta el precio', quien: 'Sin artista' };
+// Sin etiqueta a la vista (founder, 2026-10-05): el icono y el valor dicen de qué se trata; la clave queda para lectores de pantalla.
+const renglon = (i, clave, valor, campo) => `<button class="renglon sin-clave ${valor ? '' : 'pendiente'}" data-editar="${campo}" aria-label="${clave}: ${valor || FALTA[campo]}">${ic(i)}<b>${valor || FALTA[campo]}</b><span class="accion">${valor ? 'Cambiar' : 'Poner'}</span></button>`;
 
 const VISTAS = {
   cartel: () => ({
@@ -404,7 +407,7 @@ const VISTAS = {
       titulo: 'Revisa',
       cuerpo: `<div class="cabeza-revisar ${conCartel ? '' : 'sin'}">${conCartel ? mini() : ''}<div>${conCartel ? `<span class="leido">${ic('ok')}Leído del cartel</span>` : ''}<h1>${d.nombre}</h1></div></div>
         <div class="grupo ${e.dir === 'entra' ? 'cae' : ''}">${renglon('reloj', 'Cuándo', d.cuando, 'cuando')}${renglon('pin', 'Dónde', d.donde, 'donde')}${renglon('boleto', 'Cuánto', d.cuanto, 'cuanto')}${d.quien ? renglon('personas', 'Quién', d.quien, 'quien') : ''}</div>
-        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Diseño ${e.flyer + 1}, con estos datos</b></span><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon pendiente aparte" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Falta elegir el diseño</b></span><span class="accion">Elegir</span></button>` : `<button class="renglon" data-a="flyer">${ic('camara')}<span><small>Cartel</small><b>Sin cartel</b></span><span class="accion">Hacer uno</span></button>`}
+        ${conCartel ? '' : e.flyer !== null ? `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Cartel: diseño ${e.flyer + 1}</b><span class="accion">Cambiar</span></button>` : e.quiereFlyer ? `<button class="renglon sin-clave pendiente aparte" data-a="flyer">${ic('camara')}<b>Falta elegir el diseño del cartel</b><span class="accion">Elegir</span></button>` : `<button class="renglon sin-clave" data-a="flyer">${ic('camara')}<b>Sin cartel</b><span class="accion">Hacer uno</span></button>`}
         <button class="quieto" data-a="mas">Agregar artistas, descripción o enlace</button>`,
       pie: e.quiereFlyer && e.flyer === null && !conCartel ? `<button class="btn" data-a="flyer">Elegir el diseño del cartel</button><button class="quieto" data-a="sin-flyer">Publicar sin cartel</button>` : `<button class="btn" data-a="sigue">Publicar</button>`,
       notas: [conCartel ? 'Con cartel, esta es la única pantalla de trabajo: confirmar. Cada dato leído cae en su renglón; si uno está mal, se toca y se abre solo su pregunta.' : 'Sin cartel, se llega aquí después de cuatro preguntas cortas. Todo lo contestado se ve junto antes de publicar.', 'Lo opcional (artistas, descripción, enlace) es un enlace quieto: no compite con «Publicar».', conCartel ? 'El nombre también se toca para corregirlo.' : 'El renglón «Cartel» dice lo que se eligió al inicio: si se pidió uno, falta elegir el diseño; si no, se puede hacer aquí. Nunca bloquea publicar.'],
