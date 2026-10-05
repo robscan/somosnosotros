@@ -1197,3 +1197,78 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
    - el respaldo de destacados, que puede mostrar a un artista quitado;
    - el nombre de la ciudad con Mapbox: «no por ahora»;
    - C5 / OL-151, detenida para código, y C6, sin decidir.
+
+**Arranque del gestor IV (2026-10-05, 09:03):** sesión `local_e38b4025-4401-4bb7-aa58-840fc5a96f9d`, título «Gestor de cambios IV», modelo `claude-fable-5-1` comprobado con `get_session`, hija del gestor III. Worktree propio `.claude/worktrees/priceless-gates-787b65`; el registro sigue saliendo de `.claude/worktrees/registro-gestor` (esta es la rama `gestor-registro-15`). main al arrancar: `69288660` (#350 unido). Sin PR abiertos.
+
+- **OL-286 / bitácora 314 · Sesión de diseño de Eventos (pieza propia del gestor IV, solo prototipo).** Reservada el 2026-10-05.
+  - **Rama y worktree:** `prototipo-eventos-donde` desde `origin/main` (`69288660`), en `.claude/worktrees/prototipo-eventos-donde`.
+  - **Archivos propios:** `docs/rediseno/prototipos/eventos-superficies.html`, `docs/rediseno/capturas-314/`, la bitácora 314 y la línea OL-286. Nada de `src/`.
+  - **Alcance:** superficies de sugerencias al publicar un evento (inauguración → exposición; segundo acto → festival; parte de OL-273, prototipo de Codex `901215d3` en `origin/prototipo-eventos`), el renglón «Dónde» que siempre abre el mapa (lugar del catálogo en hoja media; sitio fuera del catálogo con pin temporal, «Cómo llegar» y «Agregar como lugar» solo con sesión y si no es negocio; reservados fuera; Mapbox solo con coordenadas) y la medición en el simulador del teclado que tapa campos en «Editar novedad».
+  - **Notas pedidas** al chat «Actividad de investigación de eventos» (`local_cd16e55a`) el 2026-10-05, 09:05.
+  - **Siguientes libres tras esta reserva: OL-287 y bitácora 315.**
+
+**Jornada del gestor IV, 2026-10-05 (mañana):**
+
+- **Corrección de la reserva OL-286:** la rama `prototipo-eventos-donde` vive en el worktree del propio gestor (`.claude/worktrees/priceless-gates-787b65`), no en uno aparte: la app impide a esta sesión escribir con sus herramientas de edición en otros worktrees. Por lo mismo, el registro sale desde ahora de ramas `gestor-registro-N` creadas en ese worktree (esta es la 16); `.claude/worktrees/registro-gestor` queda sin uso.
+- **OL-286 entregada para revisión del founder (prototipo, sin PR):** commit `6ae5ddd9` en `origin/prototipo-eventos-donde`. Prototipo `docs/rediseno/prototipos/eventos-superficies.html` (nueve casos), bitácora 314 y 32 capturas en `docs/rediseno/capturas-314/`. Publicado como Artifact privado para verlo en el celular. Medido: sin errores de página ni desbordes a 320 y 390.
+  - **Teclado en «Editar novedad»:** reproducido en el simulador. El defecto está en `ui/CampoLargo` (la capa del texto largo queda fuera de la vista si se abre con el teclado ya arriba). Pieza de código aparte, sin reservar todavía: espera al founder.
+  - **Pendiente del founder:** si la sugerencia como ficha en punteado sustituye a la tarjeta del prototipo de Codex; cómo se sabe que un sitio es negocio; tipo «Plaza o jardín»; las tres opciones al elegir un sitio fuera del directorio.
+- **Instrucción del founder (2026-10-05, 09:20):** «revisa lo que hizo estos días Codex y además lo que lanzamos con Opus, identifica si hay errores en esos PR, es cierto que estamos con foco en eventos pero revisa plan completo con investigación que incluye usuarios y lugares modificados para tener plano general. Además de agregar elementos al flujo de eventos en caso de ser festival o taller, vamos a seguir cuestionando interfaz para que sea lo mas facil de usar que podamos.»
+- **Revisión de los PR del 2026-10-04 y 05 (lectura del código de app, sin volver a correr las suites; la CI de main `69288660` está en verde y el dominio responde 200):** #308, #317, #320, #323, #326, #327, #333, #339, #340, #341, #342 (parcial), #343, #346 y #348. **Sin errores que bloqueen.** Observaciones para piezas futuras:
+  1. `ui/Hoja` (#326) vuelve inerte todo lo que cuelga de `<body>` salvo la hoja de arriba. `ui/ListaFlotante` y el visor de `Cartel` se montan en `<body>`: hoy ninguno se abre desde dentro de una `ui/Hoja`, pero el día que una hoja lleve sugerencias o un cartel, no se podrán tocar. Regla para encargos: sugerencias dentro de una hoja se montan dentro de la hoja.
+  2. La ciudad guardada (#333) se repone en el teléfono después de pintar: quien eligió otra ciudad ve un instante la de San Luis antes del cambio. Es el costo conocido de guardarla en el teléfono; se anota por si el founder lo nota.
+  3. Si falla la lectura de ciudades (#323), la app cae en silencio a San Luis aunque el enlace pida otra ciudad. Raro; sin aviso a la persona.
+  4. `artistas_destacados_novedades` y los carriles de artistas siguen filtrando por la ciudad del artista: es la nota 5 del founder (artistas de fuera con evento en la ciudad), aún sin pieza.
+- **Investigaciones leídas** (`docs/investigaciones/`: índice, Eventos, modelo de Eventos, Artistas, Lugares): orden recomendado ahí, primero interpretación y relaciones, luego actividades vigentes y programas (exposición, festival, taller con sesiones), después horarios de lugares, trayectoria e integrantes de artistas e informes.
+- **Siguiente en la sesión de diseño:** segunda vuelta del prototipo con taller de varias sesiones y festival con programa completo desde la primera carga (H6 a H8), tras la reacción del founder a la primera.
+
+**Jornada del gestor IV, 2026-10-05 (mediodía):**
+
+- **Decisiones del founder sobre OL-286 (09:55):** «La ficha punteada si sustituye. De acuerdo con sugerencia para identificar negocios, si agrega plaza o jardín/ parque.» Aplicadas al prototipo en `523cba48` (`origin/prototipo-eventos-donde`). Siguen abiertas las tres opciones al elegir un sitio fuera del directorio y el arreglo del texto largo con el teclado.
+- **Codex (OL-282, OL-283, OL-285):** el founder dice que ya hizo esas tareas con Codex y que «solo quedó pendiente una parte hasta después de medición». En `origin` no hay todavía ramas ni PR de esas piezas: el gestor las revisa cuando el founder pegue la entrega.
+- **OL-287 / bitácora 315 · Tipo de lugar «Plaza, jardín o parque» (reservada, sin arrancar).** Rama `tipo-plaza-parque` desde `origin/main`. Migración que solo amplía la lista cerrada de `lugares.tipo`: `20261005120000_tipo_plaza_parque.sql` (la aplica el gestor antes de unir el código). Archivos: `src/lib/lugares.ts` (lista `TIPOS` y deducción por el nombre: plaza, jardín, parque, alameda), su prueba, icono del tipo si la lista de Lugares lo usa, la migración, la bitácora 315 y la línea OL-287. Operador nuevo con chip (Sonnet). Código a producción solo con el «publica».
+  - **Siguientes libres: OL-288 y bitácora 316.**
+- **SEO etapa D, diagnóstico de solo lectura (autorizado por el founder: «haz diagnóstico»).** Producción, 2026-10-05, con agente de iPhone y de Googlebot:
+  - Una ruta que no existe (`/no-existe-…`) responde **404** de verdad.
+  - Una ficha que no existe, vencida u oculta (`/eventos/<algo>`, `/artistas/<algo>`, `/lugares/<algo>`, también con UUID) responde **200** con `noindex` y la pantalla «No está», igual para persona y para Googlebot.
+  - **Causa:** `src/app/loading.tsx` envuelve todas las páginas en una pantalla de carga; Next manda la respuesta (200) antes de que la ficha llame a `notFound()`, y ya no puede cambiar el estado: solo añade `noindex`. Para Google eso equivale a «excluida por noindex»: no ensucia el índice. Riesgo bajo.
+  - **Hallazgo que sí importa:** las tres fichas leen con `maybeSingle()` y miran solo `data`, nunca `error`. Si la base falla (como el 2026-10-03 con la cuota), una ficha viva responde 200 + `noindex` + «No está»: Google puede sacar del índice páginas buenas, y la persona lee que la ficha no existe cuando es un fallo pasajero.
+  - **Ajuste mínimo propuesto (código, sin reservar; espera al founder):** (1) en las tres fichas, distinguir fallo de lectura de «no existe» y, ante un fallo, lanzar error (pantalla «No pudimos cargar», estado 5xx, sin `noindex`), como ya hace la Agenda desde OL-267; (2) el 404 real de las fichas inexistentes es opcional y más caro (resolver la existencia antes de la pantalla de carga): se deja fuera salvo que Search Console muestre un problema.
+  - Rendimiento: sin medir todavía; la línea base de Search Console empieza el 2026-10-07.
+
+**Jornada del gestor IV, 2026-10-05 (tarde):**
+
+- **Regla del founder (10:20): no abrir chats nuevos por pieza.** «No abras chats nuevos, entiendo que es más barato si operas aquí mismo con agentes y es más eficiente?» Las piezas se encargan con agentes desde el chat del gestor (Sonnet, árbol de trabajo aislado). Sustituye la regla de chips por pieza del 2026-09-23.
+- **Regla del founder: ninguna carpeta fuera del proyecto.** Escrita como regla 9 de `GESTION_DE_CAMBIOS.md`. Se retiraron las 14 carpetas `somosnosotros-<pieza>` de Codex: 12 con el trabajo ya unido y sin cambios; `seguridad-purga-sitio` (su único commit sin unir era el cierre de OL-258, que ya está en main como `06df3c30`) y `cierre-pendientes` (candidato de integración del 2026-09-18; lo único sin guardar era el bloque que Next escribe solo en `CLAUDE.md`), con el «borra» del founder. Las ramas locales `codex/cierre-pendientes` y `seguridad-purga-sitio` se conservan.
+- **Autorización del founder (10:20):** «Te autorizo a hacer todo lo que pides» (el arreglo del texto largo con el teclado y el de las fichas ante fallos de la base).
+- **OL-287 · Tipo «Plaza, jardín o parque»: PUBLICADA.** Agente (Sonnet), `74851ef6`, PR #354. Revisión del gestor: diff de `src` y de la migración; CI del PR en verde. Migración `20261005120000_tipo_plaza_parque.sql` aplicada por el gestor (dry-run con solo esa migración; después, `lugares_tipo_check` incluye `plaza`). «Publica» del founder (10:55). Unión `791c8994`; despliegue de Production `6864934267`. Ningún lugar existente cambió de tipo: pasar fichas de «Otro» al tipo nuevo lo decide el founder.
+- **OL-288 / bitácora 316 · Texto largo con el teclado de iOS.** Agente (Sonnet), rama `texto-largo-teclado`, `f6fe20f3` y corrección `9c5966cc` (el blanco de la capa llega hasta abajo de la ventana), PR #355. Verificado por el gestor en el simulador (iPhone 15 Pro, iOS 26.3, Safari, teclado en pantalla) solo en «Editar novedad». «Publica» del founder (10:55); en cola de unión tras #354.
+- **OL-289 / bitácora 317 · Fichas: «no existe» frente a «falló la lectura» (SEO D).** Agente (Sonnet), rama `fichas-fallo-lectura`, `f6091906`, PR #356. Revisado el diff por el gestor. Medido por el agente en la app compilada: con la base respondiendo 402, una ficha viva pasa de 200 + `noindex` + «Esto ya no está» a 200 sin `noindex` y pantalla «Algo falló». No hay 5xx (lo impide `loading.tsx`). **Falta el «publica» del founder.**
+- **OL-290 / bitácora 318 · Quitar «sin fines de lucro» y dejar de presentar el proyecto como directorio solo de San Luis.** Decisión del founder (11:05): «elimina la leyenda sin fines de lucro. Podríamos introducir un creador de flyers en el futuro. Solo por protección elimina eso. Además deja de decir que solo es directorio de San Luis. Abriremos el catálogo a más ciudades pronto.» Agente (Sonnet) en curso, rama `textos-sin-lucro-ciudades`. No toca historia, datos ni la ciudad por defecto.
+- **Codex y OL-282, OL-283, OL-285:** sin rastro en el repo (ni rama, ni commit, ni bitácoras 310, 311 y 313, ni línea en OPEN_LOOPS). Codex escribió desde «Contactar gestor y hallar proyectos» (`01a10cfe`) que está cotejando sus chats `01a1082a` y `01a108e1`. Respuesta del gestor: ramas `calendario-320`, `ciudades-centro-eventos` y `novedad-levanta-quitado` en `.claude/worktrees/<rama>`; migraciones `20261005130000_ciudades_centro_eventos.sql` y `20261005140000_novedad_levanta_quitado.sql`; primero la evidencia de qué existe.
+- **Publicar por pasos (doc 51, en `origin/prototipo-eventos-donde`):** al founder le gusta la propuesta. Precisión suya (11:20): «si el usuario ingresa cartel entonces se usa la información capturada para ahorrar pasos y solo se presenta para confirmación».
+- **Siguientes libres: OL-291 y bitácora 319.**
+
+**Jornada del gestor IV, 2026-10-05 (cierre de la tarde):**
+
+- **Codex confirmó que OL-282, OL-283 y OL-285 nunca se empezaron**; el gestor las hizo con agentes (Sonnet). Después el founder pausó a Codex: «deja de considerarlo… se queda como respaldo». No se le preparan encargos. La sección «Cómo se usa Codex» no entró a `GESTION_DE_CAMBIOS.md` (PR #360 cerrado sin unir).
+- **«Publica» del founder** («publica fue mio», «Publica todo lo que está listo»). Publicadas, cada una con la CI del PR en verde:
+
+  | Pieza | PR | Unión | Notas |
+  | --- | --- | --- | --- |
+  | OL-288 texto largo con el teclado | #355 | `5aec7cec` | Verificado en simulador solo en «Editar novedad» |
+  | OL-289 fichas: «no existe» frente a «falló la lectura» | #356 | `064e8896` | Sin 5xx: lo impide `loading.tsx` |
+  | OL-290 textos sin «sin fines de lucro», «Gratis» ni «solo San Luis» | #358 | `628aa8c5` | Comprobado en el dominio: 0 apariciones en `/`, `/ayuda`, `/privacidad`, `/agenda`; aviso con fecha 5 de octubre |
+  | OL-282 calendario a 320 | #362 | `e61ed00a` | Toque de 44 × 39 a 320; sin probar en Safari real |
+  | OL-283 centro de ciudades con eventos sin lugar | #359 | `3716ffd9` | Migración `20261005130000` aplicada antes por el gestor |
+  | OL-285 una novedad posterior al quitado lo levanta | #361 | `9238ff7b` | Migración `20261005140000` aplicada antes; solo SQL |
+  | OL-291 propuesta del generador de flyers (chat de redes, solo documentos) | #363 | `d7f1b1e3` | Alcance acortado por el founder a publicación 4:5; no autoriza construir |
+
+  Despliegues de Production en `success` hasta `9238ff7b`; dominio 200. `OPEN_LOOPS.md` de main sin marcas de conflicto.
+- **Incidencias de la publicación:**
+  - La CI del #359 falló una vez en `interfaz` por la medición intermitente `s13-lugares-ficha-en-hoja` (168 nodos contra 167: aparece el punto de «tú estás aquí»); pasó al repetirla sin cambios. **Pendiente: pieza chica para estabilizar esa medición.**
+  - Error del gestor: al resolver a mano `OPEN_LOOPS.md` del #359, una aserción falló y el comando siguió; se subió el archivo con marcas de conflicto a la rama del PR (`6bbeedb5`). No llegó a main. Corregido en `33f8bd3a`. Lección en la memoria `feedback-publicar-ensayo-con-resolutor`: toda la resolución, el commit y el push dentro de un solo script que se detenga.
+- **Pendiente fuera del repo (OL-290), a mano:** ficha de la App Store, redes, plantillas de correo de Supabase y Resend, descripción del repo en GitHub.
+- **Pendiente del founder:** probar en su iPhone el texto largo («Editar novedad»), el calendario «Cuándo» y el alta de lugar con el tipo nuevo; decidir si algún lugar pasa de «Otro» a «Plaza, jardín o parque».
+- **Sigue:** segunda vuelta del prototipo de Eventos (taller con sesiones, festival con programa completo) y, después, el prototipo de publicar por pasos (doc 51), con la puerta «No tengo cartel» abierta para el generador de flyers (doc 52).
+- **Siguientes libres: OL-292 y bitácora 320.**

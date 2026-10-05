@@ -298,7 +298,7 @@ function escapar(s: string): string {
   return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-const INTRO = "Somos Nosotros es un directorio sin fines de lucro de centros culturales y agenda de eventos de San Luis Potosí, para que la gente local se conozca.";
+const INTRO = "Somos Nosotros es un directorio de centros culturales y agenda de eventos, para que la gente local se conozca.";
 const SALIDA = 'Si prefieren que no les volvamos a escribir, contesten con "no me escriban más"';
 
 export function asuntoDe(d: Destino, variante: VarianteAsunto = "A", recordatorio = false): string {

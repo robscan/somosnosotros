@@ -44,7 +44,7 @@
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   },
-  "description": "Directorio de centros culturales y agenda de eventos. San Luis Potosí.",
+  "description": "Directorio de centros culturales y agenda de eventos.",
   "engines": {
     "node": "22.x"
   }

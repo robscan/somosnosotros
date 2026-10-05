@@ -30,7 +30,7 @@ export async function run({ as, query, check }) {
         check(grupo?.lugares === 2 && grupo?.eventos === 5002, `${rol}/${sujeto === admin ? 'admin' : 'público'}: más de 5000 eventos y frontera inclusiva sin recorte`, grupo);
         check(grupo?.lat_suma === 42 && grupo?.lng_suma === -202, 'centro usa exclusivamente lugares públicos', grupo);
         check(!ciudades.some(c => ['OL268 Privada', 'OL268 Oculta', 'OL268 Vencida'].includes(c.ciudad)), 'agregado no publica ocultos, reservados ni vencidos');
-        check(ciudades.every(c => Object.keys(c).sort().join() === 'ciudad,eventos,lat_suma,lng_suma,lugares,zona'), 'solo expone el contrato agregado, sin identificadores ni direcciones');
+        check(ciudades.every(c => Object.keys(c).sort().join() === 'ciudad,ev_lat_suma,ev_lng_suma,eventos,eventos_con_punto,lat_suma,lng_suma,lugares,zona'), 'solo expone el contrato agregado, sin identificadores ni direcciones');
         const artistas = (await query('select public.ciudades_artistas_agregadas() as datos')).rows[0].datos;
         check(artistas.find(c => c.ciudad === 'OL268 Pública')?.artistas === 5001 && !artistas.some(c => c.ciudad === 'OL268 Oculta'), 'artistas completos y visibles incluso para admin');
         check(artistas.every(c => Object.keys(c).sort().join() === 'artistas,ciudad'), 'artistas sin datos individuales');

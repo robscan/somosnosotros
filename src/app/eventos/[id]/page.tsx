@@ -1,6 +1,7 @@
 import { cache, Suspense } from "react";
 import { sitioReservadoVencido } from "@/lib/retencionSitio";
 import { esUuid } from "@/lib/formulario";
+import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
 import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
@@ -52,12 +53,18 @@ const ORIGEN = "https://somosnosotros.org";
  */
 async function cargarEvento(idOSlug: string): Promise<EventoConLugar | null> {
   const supabase = await clienteServidor();
-  if (!supabase) return null;
+  if (!supabase) {
+    console.warn("[ficha] cliente no disponible: evento");
+    throw new Error(ERROR_FICHA);
+  }
   const columnas = "*, lugar:lugares(id, slug, nombre, direccion, ciudad, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)";
-  const porSlug = await supabase.from("eventos").select(columnas).eq("slug", idOSlug).maybeSingle();
-  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("eventos").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
+  const data = await leerFicha<EventoConLugar & { lugar: unknown; autor: unknown }>(
+    "evento",
+    () => supabase.from("eventos").select(columnas).eq("slug", idOSlug).maybeSingle(),
+    esUuid(idOSlug) ? () => supabase.from("eventos").select(columnas).eq("id", idOSlug).maybeSingle() : null,
+  );
   if (!data) return null;
-  const fila = data as unknown as EventoConLugar & { lugar: unknown; autor: unknown };
+  const fila = data;
   const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
   const autor = Array.isArray(fila.autor) ? (fila.autor[0] ?? null) : fila.autor;
   return { ...fila, lugar: lugar as EventoConLugar["lugar"], autor: autor as EventoConLugar["autor"] };
@@ -180,7 +187,10 @@ async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
 /** Vista previa al compartir (WhatsApp lee estas etiquetas): título, cuándo y dónde, imagen. */
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
-  const e = await cargarEvento(id);
+  const e = await cargarEvento(id).catch(() => undefined);
+  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotros»), sin
+  // `noindex` ni canonical; si la excepción saliera de aquí Next descartaría todas las etiquetas, también el título (OL-289).
+  if (e === undefined) return {};
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14).
   if (!e || eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { title: "Evento · Somos Nosotros" };
   const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);

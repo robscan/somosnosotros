@@ -103,7 +103,7 @@ Con esto: **41 correos individuales** (uno por institución, con su propia ficha
 
 > Hola,
 >
-> Somos Nosotros es un directorio sin fines de lucro de centros culturales y agenda de eventos de San Luis Potosí, para que la gente local se conozca. {Nombre de la institución} ya tiene su ficha en la plataforma, tomada de la investigación de instituciones culturales que hicimos en septiembre: {enlace a la ficha}
+> Somos Nosotros es un directorio de centros culturales y agenda de eventos, para que la gente local se conozca. {Nombre de la institución} ya tiene su ficha en la plataforma, tomada de la investigación de instituciones culturales que hicimos en septiembre: {enlace a la ficha}
 >
 > Nos ayudaría muchísimo que nos manden su **agenda o cartelera de este mes** — no hace falta que la preparen: con los mismos carteles, el PDF o el enlace que ya tengan nos basta. Nosotros nos encargamos de subir los eventos a la plataforma.
 >
@@ -137,7 +137,7 @@ Con esto: **41 correos individuales** (uno por institución, con su propia ficha
 
 > Hola,
 >
-> Somos Nosotros es un directorio sin fines de lucro de centros culturales y agenda de eventos de San Luis Potosí, para que la gente local se conozca. Ya tenemos fichas de {lista corta de sedes, por ejemplo "el Museo de Sitio y el Auditorio Rafael Nieto"} en la plataforma, tomadas de la investigación de instituciones culturales que hicimos en septiembre.
+> Somos Nosotros es un directorio de centros culturales y agenda de eventos, para que la gente local se conozca. Ya tenemos fichas de {lista corta de sedes, por ejemplo "el Museo de Sitio y el Auditorio Rafael Nieto"} en la plataforma, tomadas de la investigación de instituciones culturales que hicimos en septiembre.
 >
 > Nos ayudaría muchísimo que nos ayuden a conseguir su **agenda o cartelera de este mes** — con los carteles, el PDF o el enlace que ya tengan nos basta. Si tienen un correo de contacto directo de cada sede, también nos sirve muchísimo para escribirles a ellas directamente el próximo mes.
 >

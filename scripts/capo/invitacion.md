@@ -19,8 +19,7 @@ Por confirmar con el founder antes de mandar nada: el texto y cuál de las dos v
 Hola,
 
 Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal)
-para armar el directorio de Somos Nosotros, donde la gente de San Luis Potosí encuentra centros
-culturales y eventos.
+para armar el directorio de Somos Nosotros, donde la gente encuentra centros culturales y eventos.
 
 Tu ficha está aquí: {{url}}
 
