@@ -5,6 +5,7 @@ import {
   carrilEstaSemana,
   carrilEstelar,
   carrilNuevos,
+  carrilMasAdelante,
   carrilTusPlanes,
   eventosEstaSemana,
   MINIMO_NUEVOS,
@@ -27,6 +28,21 @@ function agenda(cambios: Partial<Agenda> = {}): Agenda {
 /** Un ISO fuera de la ventana de "Esta semana" (más de 7 días desde `ahora`): lo que necesita "Nuevos eventos". */
 const fechaFueraDeEstaSemana = (horasDeMas = 0) => new Date(ahora.getTime() + (DIAS_ESTA_SEMANA_MS + horasDeMas * 3600000)).toISOString();
 const DIAS_ESTA_SEMANA_MS = 8 * 86400000; // 8 días: de sobra, más allá de los 7 de la ventana.
+
+describe("Inicio: candidatos de Más adelante", () => {
+  it("rescata un evento futuro aunque Nuevos no alcance tres y excluye Voy/Me interesa", () => {
+    const futuro = evento("futuro", { inicio: fechaFueraDeEstaSemana(), creado_en: ahora.toISOString() }) as Agenda["eventos"][number];
+    const datos = agenda({ eventos: [futuro, {...futuro, id: "voy"}, {...futuro, id: "interesa"}], asistencias: {voy: "voy", interesa: "me_interesa"} });
+    expect(calcularCarrilesAgenda(datos, ahora).nuevos).toHaveLength(0);
+    expect(carrilMasAdelante(datos).map(e => e.id)).toEqual(["futuro"]);
+  });
+  it("elige los veinte próximos por fecha antes de la presentación por fotos", () => {
+    const eventos = Array.from({length: 25}, (_, i) => ({ ...evento(String(i), {inicio: fechaFueraDeEstaSemana(i)}), imagen: i === 24 ? "/cartel.png" : null })) as Agenda["eventos"];
+    const datos = agenda({eventos: eventos.toReversed(), asistencias: null});
+    expect(carrilMasAdelante(datos).map(e => e.id)).toEqual(eventos.slice(0,20).map(e => e.id));
+    expect(datos.eventos[0].id).toBe("24");
+  });
+});
 
 describe("Inicio: esta semana (próximos 7 días)", () => {
   it("incluye hoy y el séptimo día, excluye el octavo", () => {
