@@ -146,3 +146,22 @@ App compilada (`next build && next start`, puerto 3173) contra el respaldo local
 11. En «Revisa», tocar en cualquier parte de un renglón abre su pregunta; con VoiceOver, se oye «Cuándo», «Cambiar cuándo» y la pregunta de cada paso al llegar.
 12. «¿Quieres agregar algo?»: Quién con sus sugerencias, la descripción a pantalla completa con el teclado, el enlace.
 13. Publicar de verdad en la vista previa: lleva a la ficha nueva con «Publicado.»; con un enlace mal escrito, el error sale en «Revisa» y la ✕ vuelve a preguntar.
+
+## Prueba del gestor en el simulador (iPhone 15 Pro, iOS 26.3, Safari, 2026-10-05)
+
+Contra el respaldo local (`respaldo-local/server.mjs`, puerto 8842) y `next build && next start -p 3100`; sesión por `/auth/app-regreso`. Capturas `sim-01` a `sim-11` en `docs/rediseno/capturas-328/`, cada una mirada entera:
+
+- `sim-01-inicio`: ✕ a la izquierda, «Publicar», recuadro «Sube el cartel» punteado y, del mismo ancho, «No tengo cartel». Igual al prototipo.
+- `sim-02-nombre-teclado`: al tocar «No tengo cartel» el foco cae en el campo y el teclado sale solo; el pie «Falta el nombre» queda **justo encima del teclado**, sin hueco ni tapado (visualViewport funciona en Safari real).
+- `sim-03-nombre-escrito`: con texto aparece la ✕ del campo y el botón dice «Siguiente»; al bajar el teclado el pie vuelve al fondo sin saltar.
+- `sim-04-dia`: tres chips (Este viernes · Este sábado · Otro día) y «Dura varios días»; sin pie, porque elegir avanza.
+- `sim-05-calendario`: la hoja de solo calendario; al tocar el 17 la frase cambia a «Empieza el 17 de octubre. Si dura varios días, toca el último.» y el botón a «Listo, un solo día».
+- `sim-06-hora-fin`: tras elegir 7:00 p.m. aparece «Termina» con 8:00, 9:00, 10:00, «Otra hora» y «Sin hora de fin».
+- `sim-07-donde-buscar`: la hoja de «¿Dónde es?» de siempre con el buscador y los resultados del directorio; el mapa no carga por el token inventado del respaldo (esperado). Elegir «ACHE Galería» y «Listo» lleva a «¿Cuánto cuesta?».
+- `sim-08-cuanto`: tres opciones grandes (Gratis · Cooperación · Tiene precio) con icono, respuesta, detalle y chevron.
+- `sim-09-precio-vacio`: campo numérico con el icono del boleto y «Falta el precio». (El teclado de pantalla no salió en esta captura porque teclear con `simctl` lo esconde; la mecánica del pie es la misma de `sim-02`.)
+- `sim-10-revisa`: «Noche de son»; renglones sin etiqueta —reloj «sáb 17 de oct · 19:00», pin «ACHE Galería», boleto «$150»— con «Cambiar» en violeta; «Agregar artistas, descripción o enlace»; «Publicar» abajo.
+- Al tocar «Publicar» la acción `crearEvento` corrió y la app fue a la ficha; el respaldo local contesta las escrituras sin guardarlas (id `undefined`), por eso la ficha dice «Esto ya no está». Es cosa del respaldo, no del flujo.
+- `sim-11-salir`: con un nombre escrito, Atrás hasta el primer paso y ✕ → hoja «¿Salir sin publicar? Se borra lo que escribiste.» con «Seguir editando» y «Salir y borrar».
+
+Hallazgo fuera de esta pieza: en «¿A qué hora?», al elegir un chip los demás se reacomodan (12:00 p.m. baja de renglón) porque `ui/Chip .activo` pone `font-weight: 600` y el chip se ensancha. Viene del canon de chips, no del armazón; se anota para una pieza chica (reservar el ancho de la negrita).
