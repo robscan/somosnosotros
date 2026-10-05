@@ -1248,3 +1248,27 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 - **Codex y OL-282, OL-283, OL-285:** sin rastro en el repo (ni rama, ni commit, ni bitácoras 310, 311 y 313, ni línea en OPEN_LOOPS). Codex escribió desde «Contactar gestor y hallar proyectos» (`01a10cfe`) que está cotejando sus chats `01a1082a` y `01a108e1`. Respuesta del gestor: ramas `calendario-320`, `ciudades-centro-eventos` y `novedad-levanta-quitado` en `.claude/worktrees/<rama>`; migraciones `20261005130000_ciudades_centro_eventos.sql` y `20261005140000_novedad_levanta_quitado.sql`; primero la evidencia de qué existe.
 - **Publicar por pasos (doc 51, en `origin/prototipo-eventos-donde`):** al founder le gusta la propuesta. Precisión suya (11:20): «si el usuario ingresa cartel entonces se usa la información capturada para ahorrar pasos y solo se presenta para confirmación».
 - **Siguientes libres: OL-291 y bitácora 319.**
+
+**Jornada del gestor IV, 2026-10-05 (cierre de la tarde):**
+
+- **Codex confirmó que OL-282, OL-283 y OL-285 nunca se empezaron**; el gestor las hizo con agentes (Sonnet). Después el founder pausó a Codex: «deja de considerarlo… se queda como respaldo». No se le preparan encargos. La sección «Cómo se usa Codex» no entró a `GESTION_DE_CAMBIOS.md` (PR #360 cerrado sin unir).
+- **«Publica» del founder** («publica fue mio», «Publica todo lo que está listo»). Publicadas, cada una con la CI del PR en verde:
+
+  | Pieza | PR | Unión | Notas |
+  | --- | --- | --- | --- |
+  | OL-288 texto largo con el teclado | #355 | `5aec7cec` | Verificado en simulador solo en «Editar novedad» |
+  | OL-289 fichas: «no existe» frente a «falló la lectura» | #356 | `064e8896` | Sin 5xx: lo impide `loading.tsx` |
+  | OL-290 textos sin «sin fines de lucro», «Gratis» ni «solo San Luis» | #358 | `628aa8c5` | Comprobado en el dominio: 0 apariciones en `/`, `/ayuda`, `/privacidad`, `/agenda`; aviso con fecha 5 de octubre |
+  | OL-282 calendario a 320 | #362 | `e61ed00a` | Toque de 44 × 39 a 320; sin probar en Safari real |
+  | OL-283 centro de ciudades con eventos sin lugar | #359 | `3716ffd9` | Migración `20261005130000` aplicada antes por el gestor |
+  | OL-285 una novedad posterior al quitado lo levanta | #361 | `9238ff7b` | Migración `20261005140000` aplicada antes; solo SQL |
+  | OL-291 propuesta del generador de flyers (chat de redes, solo documentos) | #363 | `d7f1b1e3` | Alcance acortado por el founder a publicación 4:5; no autoriza construir |
+
+  Despliegues de Production en `success` hasta `9238ff7b`; dominio 200. `OPEN_LOOPS.md` de main sin marcas de conflicto.
+- **Incidencias de la publicación:**
+  - La CI del #359 falló una vez en `interfaz` por la medición intermitente `s13-lugares-ficha-en-hoja` (168 nodos contra 167: aparece el punto de «tú estás aquí»); pasó al repetirla sin cambios. **Pendiente: pieza chica para estabilizar esa medición.**
+  - Error del gestor: al resolver a mano `OPEN_LOOPS.md` del #359, una aserción falló y el comando siguió; se subió el archivo con marcas de conflicto a la rama del PR (`6bbeedb5`). No llegó a main. Corregido en `33f8bd3a`. Lección en la memoria `feedback-publicar-ensayo-con-resolutor`: toda la resolución, el commit y el push dentro de un solo script que se detenga.
+- **Pendiente fuera del repo (OL-290), a mano:** ficha de la App Store, redes, plantillas de correo de Supabase y Resend, descripción del repo en GitHub.
+- **Pendiente del founder:** probar en su iPhone el texto largo («Editar novedad»), el calendario «Cuándo» y el alta de lugar con el tipo nuevo; decidir si algún lugar pasa de «Otro» a «Plaza, jardín o parque».
+- **Sigue:** segunda vuelta del prototipo de Eventos (taller con sesiones, festival con programa completo) y, después, el prototipo de publicar por pasos (doc 51), con la puerta «No tengo cartel» abierta para el generador de flyers (doc 52).
+- **Siguientes libres: OL-292 y bitácora 320.**
