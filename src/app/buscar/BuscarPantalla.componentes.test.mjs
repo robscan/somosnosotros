@@ -20,7 +20,7 @@ before(async () => {
     import React from 'react';import {createRoot} from 'react-dom/client';
     import BuscarPantalla from './src/app/buscar/BuscarPantalla';import './src/app/globals.css';
     window.qa={llamadas:[],historial:history.length};
-    const ciudad={slug:'san-luis-potosi',nombre:'San Luis Potosí',centro:{lat:22,lng:-100},zoom:13,zona:'America/Mexico_City',lugares:1,eventos:1};
+    const ciudad={slug:'san-luis-potosi',nombre:'San Luis Potosí',centro:{lat:22,lng:-100},centroConocido:true,zoom:13,zona:'America/Mexico_City',lugares:1,eventos:1};
     createRoot(document.getElementById('root')).render(<React.StrictMode><BuscarPantalla consultaInicial={window.consultaAnterior ?? new URLSearchParams(location.search).get('q')??''} ciudad={ciudad} ciudades={[ciudad]} desde="artistas" hoy="2026-10-04" conSesion={false}/></React.StrictMode>);
   ` }, plugins: [{ name: "dobles", setup(b) {
     b.onResolve({ filter: /.*/ }, a => a.path in mocks ? { path: a.path, namespace: "mock" } : undefined);

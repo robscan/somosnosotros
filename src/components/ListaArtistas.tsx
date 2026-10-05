@@ -113,7 +113,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
     <Cabecera
       contexto={
         <>
-          <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />
+          <ChipCiudad ciudad={ciudad} ciudades={ciudades} seccion="artistas" hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />
           {conChips && disciplinas.length > 1 && (
             <Chip variante="contexto" icono={<IconoFiltros width={16} height={16} />} cuenta={(filtro.hace ? 1 : 0) + (filtro.que ? 1 : 0)} onClick={() => setFiltrando(true)}>
               Filtros

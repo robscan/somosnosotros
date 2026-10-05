@@ -1,16 +1,22 @@
-/* La hoja «Dónde estás» (Ciudad.tsx): la nota, el aviso si no se pudo leer la ubicación y el bloque de «Otra ciudad»
-   (el campo y sus sugerencias, que aparecen juntos bajo la lista). Las filas son las de ui/Renglon. */
-.aviso {
-  margin-top: var(--espacio-3);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
+/* El cuerpo usa Hoja.plano: campo y acciones conservan su sitio; solo se desplaza la tarjeta de ciudades. */
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  min-height: 0;
 }
-.otra {
-  display: grid;
-  gap: var(--espacio-2);
-  margin-top: var(--espacio-3);
+.opciones > :not(.lista) {
+  flex-shrink: 0;
 }
-.otra > p {
-  margin: 0;
+.buscando {
+  height: 100dvh;
+}
+.lista {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.aqui {
+  color: var(--ok);
+  font-weight: 600;
 }
