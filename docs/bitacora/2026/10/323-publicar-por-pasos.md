@@ -155,3 +155,5 @@ El founder: «perfecto, acepto prototipo, solo debemos considerar caso en el que
 - «Descargar el cartel» se queda en la primera fase solo para eventos con cartel subido.
 
 Plan de construcción, ajustado: 1) selector de día y hora en dos (OL-298, entregado, PR #373); 2) armazón por pasos y camino sin cartel; 3) camino con cartel; 4) «Dónde» con mapa y sitio fuera del directorio; 5) «Publicado» con «Compartir» y «Descargar». Fuera de la primera fase: creador de cartel, exposición/festival/taller (piden modelo de datos), guardar lo contestado y crear sin conexión, lugar y artista por pasos.
+
+**Análisis para lugar y artista:** a pedido del founder, antes de construir, `docs/rediseno/54-lugar-y-artista-por-pasos.md` (qué aplica del canon, recorridos propuestos, costos en toques y datos que hoy se publican sin leerse).
