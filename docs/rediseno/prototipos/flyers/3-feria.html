@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Caveat:wght@700&family=Inter:wght@500;700&display=block" rel="stylesheet">
+<link rel="stylesheet" href="base.css"><style>
+body{background:#f6e7c8;color:#3a1d14}
+.picado{position:absolute;top:0;left:0;width:1080px;height:190px}
+.marco{position:absolute;left:80px;right:80px;top:330px;height:470px;border-radius:28px;background:url(marcador.svg) 35% center/cover;border:14px solid #fff;box-shadow:0 0 0 6px #d6452b,0 22px 0 6px rgba(58,29,20,.18);transform:rotate(-1.6deg)}
+.etq{position:absolute;top:220px;left:0;right:0;text-align:center;font:700 26px/1 Inter;letter-spacing:.2em;text-transform:uppercase;color:#d6452b}
+.mano{position:absolute;top:262px;left:0;right:0;text-align:center;font:700 50px/1 Caveat;color:#1e6e5a}
+h1{position:absolute;top:850px;left:40px;right:40px;text-align:center;font:400 128px/.95 "Alfa Slab One";color:#d6452b;text-shadow:5px 5px 0 #3a1d14}
+.sub{position:absolute;top:1100px;left:0;right:0;text-align:center;font:700 56px/1 Caveat;color:#1e6e5a}
+.cinta{position:absolute;bottom:92px;left:80px;right:80px;background:#3a1d14;color:#f6e7c8;border-radius:999px;padding:22px 36px;display:flex;justify-content:space-between;font:700 30px/1 Inter}
+.marca{bottom:40px;left:0;right:0;text-align:center;color:#3a1d14;opacity:.6}
+</style></head><body><div class="lienzo">
+<svg class="picado" viewBox="0 0 1080 190"><path d="M0 8 Q540 40 1080 8" stroke="#3a1d14" stroke-width="3" fill="none"/>
+<g id="b"></g></svg>
+<div class="etq">Estreno internacional · 9° Festival de Cine UASLP</div>
+<div class="mano">¡Vengan todos al estreno!</div>
+<div class="marco"></div>
+<h1>Sangre de Coyote</h1>
+<div class="sub">semilla que florece el barrio</div>
+<div class="cinta"><span>Mar 6 oct · 17:15 h</span><span>Centro Cultural Bicentenario</span></div>
+<div class="marca">somosnosotros.org</div>
+<script>
+const cols=["#d6452b","#f2a33a","#1e6e5a","#c9338f","#2f6db5","#f2d03a"];const g=document.getElementById("b");let s="";
+for(let i=0;i<9;i++){const x=12+i*118,y=8+Math.sin(i/8*Math.PI)*24,c=cols[i%cols.length];
+s+=`<g transform="translate(${x},${y})"><path d="M0 0H106V150L94 138 82 150 70 138 58 150 46 138 34 150 22 138 10 150 0 140Z" fill="${c}"/>
+<circle cx="53" cy="58" r="20" fill="#f6e7c8"/><path d="M53 92l14 24H39z" fill="#f6e7c8"/><rect x="18" y="22" width="12" height="12" transform="rotate(45 24 28)" fill="#f6e7c8"/><rect x="76" y="22" width="12" height="12" transform="rotate(45 82 28)" fill="#f6e7c8"/></g>`}
+g.innerHTML=s;</script>
+</div></body></html>
