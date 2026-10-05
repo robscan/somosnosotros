@@ -11,11 +11,44 @@ export type ErrorUbicacion = "sin-soporte" | "negado" | "error";
 let leidaEnEstaSesion = false;
 
 /**
- * La ubicación de la persona, una sola vez (no se guarda). Rechaza con "sin-soporte", "negado" o "error".
- * `precisa` pide GPS (para poner un pin); sin ella basta la aproximada (para ordenar por cercanía), y `edadMaximaMs` es cuánto puede
- * tener de vieja la que el navegador ya tenga a mano.
+ * La geolocalización nativa de la app de iPhone (OL-256): el plugin `@capacitor/geolocation` de `apps/ios`, que Capacitor deja en
+ * `window.Capacitor.Plugins` (mismo patrón que `calendarioNativo.ts`; sin paquete de npm en la web). Sabe el permiso real del sistema
+ * (`checkPermissions`) y lee con CoreLocation, así que WebKit no pregunta «¿permitir a este sitio…?» en cada arranque. En Safari, Chrome
+ * y las versiones de la app anteriores al plugin no existe (`null`) y todo sigue con `navigator.geolocation`. Su `getCurrentPosition`
+ * pide el permiso del sistema por su cuenta si aún no se ha decidido: por eso la lectura de un toque no necesita `requestPermissions`.
  */
-export function leerUbicacion(precisa = false, edadMaximaMs = 300000): Promise<Punto> {
+type PuenteGeolocalizacion = {
+  checkPermissions: () => Promise<{ location: string }>;
+  getCurrentPosition: (opciones: { enableHighAccuracy: boolean; timeout: number; maximumAge: number }) => Promise<{ coords: { latitude: number; longitude: number; accuracy: number } }>;
+};
+
+function geolocalizacionNativa(): PuenteGeolocalizacion | null {
+  if (typeof window === "undefined") return null;
+  return (window as { Capacitor?: { Plugins?: { Geolocation?: PuenteGeolocalizacion } } }).Capacitor?.Plugins?.Geolocation ?? null;
+}
+
+/** Los códigos con que el plugin de iOS rechaza cuando la persona negó el permiso (0003) o el sistema lo restringe (0008). */
+const CODIGOS_NEGADO_NATIVO = ["OS-PLUG-GLOC-0003", "OS-PLUG-GLOC-0008"];
+
+type OpcionesLectura = { precisa: boolean; timeoutMs: number; edadMaximaMs: number };
+type Lectura = { punto: Punto; precisionM: number };
+
+/**
+ * La única lectura de la posición actual, por el plugin nativo si está y si no por el navegador. Anota en `leidaEnEstaSesion` el
+ * resultado (la memoria que usa `permisoConcedido` donde no hay otra forma de saberlo). Rechaza con `ErrorUbicacion`.
+ */
+function leerPosicion({ precisa, timeoutMs, edadMaximaMs }: OpcionesLectura): Promise<Lectura> {
+  const nativa = geolocalizacionNativa();
+  if (nativa) {
+    return nativa
+      .getCurrentPosition({ enableHighAccuracy: precisa, timeout: timeoutMs, maximumAge: edadMaximaMs })
+      .then(
+        ({ coords }) => ({ punto: { lat: coords.latitude, lng: coords.longitude }, precisionM: Number.isFinite(coords.accuracy) ? coords.accuracy : 0 }),
+        (err: { code?: string }) => {
+          throw (CODIGOS_NEGADO_NATIVO.includes(err?.code ?? "") ? "negado" : "error") satisfies ErrorUbicacion;
+        },
+      );
+  }
   return new Promise((resolver, rechazar) => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       rechazar("sin-soporte" satisfies ErrorUbicacion);
@@ -24,15 +57,24 @@ export function leerUbicacion(precisa = false, edadMaximaMs = 300000): Promise<P
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         leidaEnEstaSesion = true;
-        resolver({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        resolver({ punto: { lat: pos.coords.latitude, lng: pos.coords.longitude }, precisionM: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : 0 });
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) leidaEnEstaSesion = false;
         rechazar((err.code === err.PERMISSION_DENIED ? "negado" : "error") satisfies ErrorUbicacion);
       },
-      precisa ? { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 } : { enableHighAccuracy: false, timeout: 8000, maximumAge: edadMaximaMs },
+      { enableHighAccuracy: precisa, timeout: timeoutMs, maximumAge: edadMaximaMs },
     );
   });
+}
+
+/**
+ * La ubicación de la persona, una sola vez (no se guarda). Rechaza con "sin-soporte", "negado" o "error".
+ * `precisa` pide GPS (para poner un pin); sin ella basta la aproximada (para ordenar por cercanía), y `edadMaximaMs` es cuánto puede
+ * tener de vieja la que el navegador ya tenga a mano.
+ */
+export async function leerUbicacion(precisa = false, edadMaximaMs = 300000): Promise<Punto> {
+  return (await leerPosicion(precisa ? { precisa, timeoutMs: 10000, edadMaximaMs: 30000 } : { precisa, timeoutMs: 8000, edadMaximaMs })).punto;
 }
 
 const CLAVE_CACHE = "sn:ubicacion-cercana";
@@ -109,10 +151,19 @@ function edadUbicacionCercana(): number | null {
 }
 
 /**
- * ¿El permiso de ubicación ya está concedido? Lo dice `permissions.query` (navegadores, Safari 16+). Donde no existe o lanza (el WKWebView
- * de la app de iPhone), vale haber leído ya bien en esta sesión; sin ninguna de las dos es que no, y entonces solo se pide tras un toque.
+ * ¿El permiso de ubicación ya está concedido? En la app con el plugin nativo lo dice el sistema (`checkPermissions`, también recién
+ * abierta). En los navegadores, `permissions.query` (Safari 16+). Donde no hay ninguno (el WKWebView de una app sin el plugin), vale
+ * haber leído ya bien en esta sesión; sin nada de eso es que no, y entonces solo se pide tras un toque.
  */
 export async function permisoConcedido(): Promise<boolean> {
+  const nativa = geolocalizacionNativa();
+  if (nativa) {
+    try {
+      return (await nativa.checkPermissions()).location === "granted";
+    } catch {
+      return false;
+    }
+  }
   try {
     return (await navigator.permissions.query({ name: "geolocation" })).state === "granted";
   } catch {
@@ -162,22 +213,6 @@ export async function leerUbicacionCercana(): Promise<Punto> {
  * La ubicación precisa con la precisión que reporta el aparato, en metros (OL-127: la cercanía del mando suma esa
  * precisión al radio). Mismos rechazos que `leerUbicacion`. Siempre tras un toque de la persona (el de encender).
  */
-export function leerUbicacionConPrecision(): Promise<{ punto: Punto; precisionM: number }> {
-  return new Promise((resolver, rechazar) => {
-    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-      rechazar("sin-soporte" satisfies ErrorUbicacion);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        leidaEnEstaSesion = true;
-        resolver({ punto: { lat: pos.coords.latitude, lng: pos.coords.longitude }, precisionM: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : 0 });
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) leidaEnEstaSesion = false;
-        rechazar((err.code === err.PERMISSION_DENIED ? "negado" : "error") satisfies ErrorUbicacion);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
-    );
-  });
+export function leerUbicacionConPrecision(): Promise<Lectura> {
+  return leerPosicion({ precisa: true, timeoutMs: 12000, edadMaximaMs: 0 });
 }
