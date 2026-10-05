@@ -88,7 +88,14 @@ async function abrir(t, ancho) {
 /** El renglón «Qué hace» (su clave queda a la vista solo para el lector de pantalla). */
 const queHace = (p) => p.locator("li", { has: p.locator("small", { hasText: "Qué hace" }) });
 const publicar = (p) => p.getByRole("button", { name: "Publicar artista" });
-const sinDesbordes = (p) => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+/** Nada se sale de lado: devuelve null si todo cabe y, si no, qué mide la página y qué elementos pasan del borde (para que un fallo diga dónde). */
+const desborde = (p) =>
+  p.evaluate(() => {
+    const de = document.documentElement;
+    if (de.scrollWidth <= innerWidth) return null;
+    const fuera = [...document.querySelectorAll("body *")].filter((e) => e.getBoundingClientRect().right > innerWidth + 0.5).slice(0, 8);
+    return JSON.stringify({ scrollWidth: de.scrollWidth, clientWidth: de.clientWidth, innerWidth, fuera: fuera.map((e) => `${e.tagName}.${e.className} ${Math.round(e.getBoundingClientRect().right)}`) });
+  });
 
 for (const ancho of [390, 320]) {
   test(`Sin pista en el nombre: la disciplina queda por elegir, es obligatoria y elegir un chip basta, ${ancho}`, async (t) => {
@@ -105,7 +112,7 @@ for (const ancho of [390, 320]) {
     assert.equal(await publicar(p).getAttribute("aria-disabled"), "true");
     await publicar(p).click({ force: true });
     assert.equal(await p.evaluate(() => window.qa.envios.length), 0, "apagado, no envía nada");
-    assert.ok(await sinDesbordes(p));
+    assert.equal(await desborde(p), null);
     await guardar("sin-pista-falta-la-disciplina");
 
     // Elegir la disciplina resuelve el renglón y habilita el botón: la subcategoría no se pide.
@@ -115,7 +122,7 @@ for (const ancho of [390, 320]) {
     assert.equal(await renglon.locator("b").innerText(), "Artes visuales");
     assert.equal(await publicar(p).getAttribute("aria-disabled"), null);
     assert.equal(await p.getByText("Falta la disciplina.", { exact: true }).count(), 0);
-    assert.ok(await sinDesbordes(p));
+    assert.equal(await desborde(p), null);
     await guardar("disciplina-elegida");
     await publicar(p).click();
     await p.waitForFunction(() => window.qa.envios.length === 1);
@@ -133,7 +140,7 @@ for (const ancho of [390, 320]) {
     assert.doesNotMatch(await renglon.getAttribute("class"), /pendiente/);
     assert.equal(await renglon.getByRole("button", { name: "Cambiar" }).count(), 1);
     assert.equal(await publicar(p).getAttribute("aria-disabled"), null);
-    assert.ok(await sinDesbordes(p));
+    assert.equal(await desborde(p), null);
     await guardar("con-pista");
     await publicar(p).click();
     await p.waitForFunction(() => window.qa.envios.length === 1);
