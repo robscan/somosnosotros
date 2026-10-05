@@ -30,9 +30,12 @@ const EVENTOS = [
   evento("semana", "2026-09-14T10:00:00Z", "2026-09-20T01:00:00Z"),
   evento("viejo", "2026-09-01T10:00:00Z", "2026-09-21T01:00:00Z"),
 ];
+const MUCHOS = Array.from({ length: 100 }, (_, i) => evento(`nuevo-${i}`, new Date(Date.parse(AHORA) - i * 60000).toISOString(), "2026-10-09T01:00:00Z")).reverse();
 let browser, server, dir, origin;
 
 const mocks = {
+  // El optimizador real se prueba en Imagen.componentes; aquí se mide el consumidor.
+  "next/image": "import React from 'react';export default function Image({quality,...p}){return React.createElement('img',p)}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
   // Como Next: cambiar la dirección con `history.replaceState` actualiza `useSearchParams` sin pedir nada al servidor.
   "next/navigation": `import {useSyncExternalStore} from 'react';
@@ -59,8 +62,8 @@ before(async () => {
       import React, {useState} from 'react';import {createRoot} from 'react-dom/client';
       import AgendaInicio from './src/components/AgendaInicio';import CarrilNuevos from './src/components/inicio/CarrilNuevos';
       import {hrefAgenda, SIN_FILTROS} from './src/lib/agenda';import './src/app/globals.css';
-      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, zoom: 13, lugares: 9, eventos: 6, zona: '${ZONA}' };
-      const eventos = ${JSON.stringify(EVENTOS)};
+      const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, centroConocido: true, zoom: 13, lugares: 9, eventos: 6, zona: '${ZONA}' };
+      const eventos = new URLSearchParams(location.search).has('muchos') ? ${JSON.stringify(MUCHOS)} : ${JSON.stringify(EVENTOS)};
       const agenda = Promise.resolve({ eventos, seguidos: null, eventosSeguidos: [], asistencias: null, destacados: [] });
       const tarjetas = eventos.filter((e) => e.id !== 'viejo').map((e) => ({ id: e.id, href: '/eventos/' + e.id, foto: null, titulo: e.titulo, detalle: 'jue 8 de oct · 19:00', sitio: 'Foro', van: 0, inicio: e.inicio, fin: null, zona: e.zona, creado_en: e.creado_en }));
       window.qa = {};
@@ -290,4 +293,15 @@ test("el carril «Nuevos eventos» de Inicio deja lo mismo que la pestaña, y ll
   assert.equal(await pocas.page.getByRole("heading", { name: "Nuevos eventos" }).count(), 0);
   assert.deepEqual(await ids(pocas.page), []);
   await pocas.context.close();
+});
+
+test("Inicio limita 100 tarjetas a 20 también en el cliente y conserva la continuación en Agenda", async () => {
+  for (const marca of [undefined, "2026-09-17T17:51:00Z"]) {
+    const { page, context } = await abrir("/inicio?muchos=1", { marca });
+    await page.getByRole("heading", { name: "Nuevos eventos" }).waitFor();
+    const cantidad = marca ? 10 : 20;
+    assert.deepEqual(await ids(page), Array.from({ length: cantidad }, (_, i) => `nuevo-${i}`));
+    assert.equal(await page.getByRole("link", { name: /Ver la agenda/ }).getAttribute("href"), "/agenda?ver=nuevos");
+    await context.close();
+  }
 });

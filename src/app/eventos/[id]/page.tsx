@@ -1,4 +1,5 @@
 import { cache, Suspense } from "react";
+import { sitioReservadoVencido } from "@/lib/retencionSitio";
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -154,9 +155,17 @@ function EsqueletoQuienVa() {
 }
 
 /** La lista de quién va (`QuienVa`), diferida: la misma consulta que `KpiVan`, memoizada por `cache()`. */
-async function QuienVaDiferido({ eventoId, miId, conSesion }: { eventoId: string; miId: string | null; conSesion: boolean }) {
+async function QuienVaDiferido({ eventoId, miId, conSesion, consultaTrasFin }: { eventoId: string; miId: string | null; conSesion: boolean; consultaTrasFin: boolean }) {
   const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
   const totalVan = Math.max(totalVanRpc, asistencias.van.length);
+  if (consultaTrasFin && totalVan === 0) {
+    return (
+      <section className={ficha.bloque} id="quien-va" aria-label="Quién va">
+        <h2>Quién va</h2>
+        <p className={ficha.vacio}>Nadie confirmó asistencia.</p>
+      </section>
+    );
+  }
   return <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={conSesion} />;
 }
 
@@ -203,11 +212,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     permanentRedirect(`${hrefEvento(e)}${q ? `?${q}` : ""}`);
   }
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
-  // Un evento que ya pasó se oculta como uno oculto: solo lo ven su autor y el administrador (decisión del founder, 2026-09-14).
+  // OL-257: RLS decide si aún se puede consultar la dirección reservada
+  // (hasta fin efectivo + 2 h). Autor/admin conservan su acceso habitual.
   const paso = eventoPaso(e.inicio, e.fin, new Date(), e.zona);
-  if (paso && !puedeEditar) notFound();
+  const privado = e.sitio_reservado ? await cargarPrivado(e.id) : null;
+  if (paso && !puedeEditar && !(actual && privado)) notFound();
+  const consultaTrasFin = paso && !puedeEditar;
   // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola.
-  if (actual && (accion === "voy" || accion === "me_interesa")) {
+  if (actual && !consultaTrasFin && (accion === "voy" || accion === "me_interesa")) {
     const supabase = await clienteServidor();
     await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
     redirect(hrefEvento(e));
@@ -216,7 +228,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // difiere en `<Suspense>` (OL-161, bitácora 196) — la cabecera (foto, nombre, cuándo, dónde) no la espera. Solo mi
   // estado, para las pastillas, que sí se pintan al instante, se pide aquí (una fila, no la lista entera).
   const miEstado = await cargarMiEstado(e.id, actual?.perfil.id ?? null);
-  const privado = e.sitio_reservado ? await cargarPrivado(e.id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
@@ -256,6 +267,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     e.visible && !paso && direccionYCiudad
       ? jsonLdEvento({
           id: e.id,
+          slug: e.slug,
           titulo: e.titulo,
           descripcion: e.descripcion,
           inicio: e.inicio,
@@ -352,7 +364,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           )}
           {(!e.visible || paso) && (
             <p className={`aviso-error ${ficha.oculto}`} role="status">
-              {paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven quien lo publicó y la administración.
+              {consultaTrasFin
+                ? "Este evento ya terminó. La dirección sigue disponible hasta dos horas después de su fin."
+                : `${paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven quien lo publicó y la administración.`}
             </p>
           )}
         </div>
@@ -425,7 +439,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <div className={renglon.dato}>
                   {privado ? <IconoPin width={20} height={20} /> : <IconoCandado width={20} height={20} />}
                   <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
-                  {privado ? privado.indicaciones && <small>{privado.indicaciones}</small> : <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>}
+                  {privado ? privado.indicaciones && <small>{privado.indicaciones}</small> : sitioReservadoVencido(e) ? <small>La dirección ya no está disponible por privacidad.</small> : <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>}
                 </div>
               ) : (
                 // Sin sesión no se ve la dirección reservada: toda la fila lleva a entrar.
@@ -456,23 +470,25 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         )}
 
         <Suspense fallback={<EsqueletoQuienVa />}>
-          <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} />
+          <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} consultaTrasFin={consultaTrasFin} />
         </Suspense>
 
         <p className={ficha.pie}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}</p>
       </div>
 
-      <Asistencia
-        eventoId={e.id}
-        eventoSlug={e.slug}
-        titulo={e.titulo}
-        miEstado={miEstado}
-        conSesion={!!actual}
-        cuenta={actual?.perfil.id ?? ""}
-        avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
-        correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
-        llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
-      />
+      {!consultaTrasFin && (
+        <Asistencia
+          eventoId={e.id}
+          eventoSlug={e.slug}
+          titulo={e.titulo}
+          miEstado={miEstado}
+          conSesion={!!actual}
+          cuenta={actual?.perfil.id ?? ""}
+          avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
+          correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
+          llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+        />
+      )}
     </Ficha>
   );
 }

@@ -1,0 +1,14 @@
+[
+  {
+    "archivo": "src/app/lugares/HojaLugares.componentes.test.mjs",
+    "nombre": "al soltar, la hoja va directo a su altura: un jalón rápido, a la siguiente; un arrastre lento, a la más cercana; la lista llena conserva su inercia y la que baja de ella no queda entre dos alturas",
+    "motivo": "OL-265: Chromium Linux elige otra altura para el jalón CDP; falla también aislando archivos. Sin equivalencia física con Safari.",
+    "verificacionLocal": "Obligatoria en Mac para cualquier cambio que toque la hoja; conservar todas las aserciones."
+  },
+  {
+    "archivo": "src/app/lugares/HojaLugares.componentes.test.mjs",
+    "nombre": "con movimiento, la ficha entra desde el borde de abajo, la ✕ la baja y solo después la cierra, y la lista vuelve entrando igual sin perder sus alturas; tocar la hoja termina la entrada",
+    "motivo": "OL-265: caso de entrada/salida y clics rápidos del asa sensible a la sincronización del scroll en Linux; cuarentena ordenada por el gestor junto al caso de inercia.",
+    "verificacionLocal": "Obligatoria en Mac para cualquier cambio que toque la hoja; conservar todas las aserciones."
+  }
+]

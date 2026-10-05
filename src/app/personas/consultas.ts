@@ -5,12 +5,12 @@ import { sitioEnLista } from "@/lib/eventos";
 import { eventoPaso, filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { conProximo, type ProximoEvento } from "@/lib/lugares";
-import { clienteServidor, type Perfil } from "@/lib/supabase/servidor";
+import { clienteServidor, type PerfilPublico } from "@/lib/supabase/servidor";
 
 /** Con `proximo` y `proxima` cuando la ficha los pide: el mismo renglón que en Lugares y Artistas (OL-057). */
 export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null };
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
-export type Persona = { perfil: Perfil; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
+export type Persona = { perfil: PerfilPublico; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
 type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
@@ -68,7 +68,7 @@ export function relacionDe(persona: Persona, sobre?: Persona): { decididas: Reco
 export async function cargarPersona(id: string, { conProximos: proximos = false }: { conProximos?: boolean } = {}): Promise<Persona | null> {
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(id)) return null;
-  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado, reservado").eq("id", id).maybeSingle();
+  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol, reservado").eq("id", id).maybeSingle();
   if (!perfil) return null;
   // Topes explícitos (una sola persona): de sobra para lo que sigue y a lo que va; guardan del corte silencioso
   // de PostgREST en 1 000 filas sin tocar lo que hoy se ve (revisión 2026-09-14, A1).
@@ -92,7 +92,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   for (const c of (conteo ?? []) as { evento_id: string; n: number }[]) van.set(c.evento_id, Number(c.n));
   const aAgenda = (e: FilaEvento): EventoAgenda => ({ ...e, lugar: uno(e.lugar), van: van.get(e.id) ?? 0 });
   const porEstado = (estado: string) => filas.filter((x) => x.estado === estado).map((x) => aAgenda(x.e)).sort((a, b) => a.inicio.localeCompare(b.inicio));
-  return { perfil: perfil as Perfil, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };
+  return { perfil: perfil as PerfilPublico, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };
 }
 
 /** Quien mira bloqueó a esta ficha (OL-203): su propia fila en `bloqueos`, la única que su sesión puede leer. */

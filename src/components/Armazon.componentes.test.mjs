@@ -22,7 +22,7 @@ const mocks = {
   "next/image": "import React from 'react';export default function Image({unoptimized,preload,...p}){return React.createElement('img',p)}",
   // La ruta se cambia a mano (`window.__ponerRuta`), como al navegar.
   "next/navigation":
-    "import {useSyncExternalStore} from 'react';const oy=new Set();window.__ruta='/agenda';window.__ponerRuta=(r)=>{window.__ruta=r;oy.forEach((f)=>f())};const sub=(f)=>{oy.add(f);return()=>oy.delete(f)};export function usePathname(){return useSyncExternalStore(sub,()=>window.__ruta,()=>'/')}export function useSearchParams(){return new URLSearchParams('')}export function useRouter(){return {push(){},replace(){},back(){},refresh(){},prefetch(){}}}",
+    "import {useSyncExternalStore} from 'react';const oy=new Set();window.__ruta='/agenda';window.__ponerRuta=(r)=>{window.__ruta=r;oy.forEach((f)=>f())};const sub=(f)=>{oy.add(f);return()=>oy.delete(f)};export function usePathname(){return useSyncExternalStore(sub,()=>window.__ruta,()=>'/')}export function useSearchParams(){return new URLSearchParams(location.search)}export function useRouter(){return {push(){},replace(){},back(){},refresh(){},prefetch(){}}}",
 };
 
 before(async () => {
@@ -416,4 +416,23 @@ test("lo que se pinta fijo (el aviso con Deshacer y volver arriba) pasa el carri
     const volver = await caja(p.locator("button[aria-label='Volver arriba']"));
     assert.deepEqual([volver.x, volver.b], [izquierda, alto - 16], `${ancho}: volver arriba, en la columna y a 16 del pie (en el teléfono, con la navegación ya recogida)`);
   }
+});
+
+
+test("ciudad entre secciones: León gana a la memoria de San Luis y el logotipo la conserva", async t => {
+  const p = await pagina(t, 390, 844, "?ciudad=leon");
+  await p.evaluate(() => {
+    sessionStorage.setItem("somosnosotros:seccion:agenda", "/agenda?cuanto=gratis");
+    sessionStorage.setItem("somosnosotros:seccion:lugares", "/lugares?ciudad=san-luis-potosi");
+  });
+  await ir(p, "/artistas");
+  assert.deepEqual((await hrefs(p)).slice(0, 4), ["/?ciudad=leon", "/agenda?ciudad=leon", "/lugares?ciudad=leon", "/artistas?ciudad=leon"]);
+  assert.equal(await barra(p).getByRole("link", {name:"Somos Nosotros, ir al inicio"}).getAttribute("href"), "/?ciudad=leon");
+});
+
+test("la memoria de la misma ciudad conserva sus filtros, sin prestar filtros a otra ciudad", async t => {
+  const p = await pagina(t, 320, 844, "?ciudad=leon");
+  await p.evaluate(() => sessionStorage.setItem("somosnosotros:seccion:agenda", "/agenda?ciudad=leon&cuanto=gratis"));
+  await ir(p, "/lugares");
+  assert.equal(await nav(p).getByRole("link", {name:"Agenda",exact:true}).getAttribute("href"), "/agenda?ciudad=leon&cuanto=gratis");
 });

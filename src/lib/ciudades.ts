@@ -1,32 +1,88 @@
 import { cache } from "react";
-import { armarCiudades, armarCiudadesDeArtistas, type CiudadConArtistas, type CiudadConDatos } from "./ciudad";
-import { filtroSinPasar } from "./fechas";
+import { armarCiudades, armarCiudadesDeArtistas, CIUDAD_INICIAL, ciudadCanonica, slugDeCiudad, type CiudadConArtistas, type CiudadConDatos } from "./ciudad";
+import { ZONA_INICIAL } from "./fechas";
 import { clienteServidor } from "./supabase/servidor";
 
-/**
- * Las ciudades que hay, a partir de los lugares visibles y los eventos próximos (para la agenda y Lugares).
- * `cache()` de React: `filtroSinPasar()` mete la hora exacta en la consulta, así que dos llamadas en la misma
- * petición (la metadata de la página y la página misma) no son la misma consulta para Next y no se deduplican
- * solas — sin esto se pedía dos veces por visita (gestión de cambios, OL-059). Por eso ya no recibe el cliente:
- * lo crea ella misma, así la memoria vale para cualquiera que la llame en la misma petición.
- */
-export const cargarCiudades = cache(async (): Promise<CiudadConDatos[]> => {
+type Agregado = { ciudad: string; zona: string; lugares: number; eventos: number; lat_suma: number; lng_suma: number };
+
+/** Agregados de la base; sin trasladar miles de fichas ni depender del límite de filas de PostgREST. */
+async function leerAgregados<T>(rpc: "ciudades_agregadas" | "ciudades_artistas_agregadas"): Promise<T[]> {
   const supabase = await clienteServidor();
-  if (!supabase) return armarCiudades([], []);
-  // Tope explícito para no chocar con el corte silencioso de PostgREST en 1 000 filas; 5 000 cubre por mucho
-  // el país entero de lugares y eventos próximos de hoy (revisión 2026-09-14, A1).
-  const [l, e] = await Promise.all([
-    supabase.from("lugares").select("ciudad, lat, lng, zona").eq("visible", true).eq("privado", false).limit(5000),
-    supabase.from("eventos").select("ciudad, zona").eq("visible", true).or(filtroSinPasar()).limit(5000),
-  ]);
-  return armarCiudades((l.data ?? []) as { ciudad: string; lat: number; lng: number; zona: string }[], (e.data ?? []) as { ciudad: string; zona: string }[]);
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.rpc(rpc);
+    if (!error && Array.isArray(data)) return data as T[];
+  } catch {
+    // El respaldo de ciudad inicial se conserva también ante fallos del transporte.
+  }
+  console.warn(`[ciudades] agregado no disponible: ${rpc}`);
+  return [];
+}
+
+/**
+ * Conserva la canonización, el centro ponderado y el voto por zona de armarCiudades, ahora por grupos.
+ * Los alias de ciudad se unen en la app para reutilizar ciudadCanonica y no duplicar esas reglas en SQL.
+ * cache() evita repetir esta RPC entre metadata y página en una misma petición.
+ */
+const cargarCiudadesConOferta = cache(async (): Promise<CiudadConDatos[]> => {
+  const filas = await leerAgregados<Agregado>("ciudades_agregadas");
+  if (!filas.length) return armarCiudades([], []);
+  type Acum = { lugares: number; eventos: number; lat: number; lng: number; zonas: Map<string, number> };
+  const vacio = (): Acum => ({ lugares: 0, eventos: 0, lat: 0, lng: 0, zonas: new Map() });
+  const inicial = CIUDAD_INICIAL.nombre;
+  const ciudades = new Map<string, Acum>([[inicial, vacio()]]);
+  for (const fila of filas) {
+    const nombre = ciudadCanonica(fila.ciudad) || inicial;
+    const a = ciudades.get(nombre) ?? vacio();
+    a.lugares += Number(fila.lugares);
+    a.eventos += Number(fila.eventos);
+    a.lat += Number(fila.lat_suma);
+    a.lng += Number(fila.lng_suma);
+    if (fila.zona) a.zonas.set(fila.zona, (a.zonas.get(fila.zona) ?? 0) + Number(fila.lugares) + Number(fila.eventos));
+    ciudades.set(nombre, a);
+  }
+  return [...ciudades].map(([nombre, a]) => ({
+    slug: slugDeCiudad(nombre), nombre,
+    centro: nombre === inicial || !a.lugares ? CIUDAD_INICIAL.centro : { lat: a.lat / a.lugares, lng: a.lng / a.lugares },
+    centroConocido: nombre === inicial || a.lugares > 0,
+    zoom: nombre === inicial ? CIUDAD_INICIAL.zoom : 13,
+    lugares: a.lugares, eventos: a.eventos,
+    zona: [...a.zonas].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))[0]?.[0] ?? ZONA_INICIAL,
+  })).sort((a, b) => (a.nombre === inicial ? -1 : b.nombre === inicial ? 1 : b.lugares - a.lugares || a.nombre.localeCompare(b.nombre, "es")));
 });
 
-/** Las ciudades de Artistas, a partir de los artistas visibles (Artistas y su alta). Memoizada por la misma razón. */
-export const cargarCiudadesDeArtistas = cache(async (): Promise<CiudadConArtistas[]> => {
-  const supabase = await clienteServidor();
-  if (!supabase) return armarCiudadesDeArtistas([]);
-  // Mismo tope que arriba: hoy son unos 520 artistas.
-  const { data } = await supabase.from("artistas").select("ciudad").eq("visible", true).limit(5000);
-  return armarCiudadesDeArtistas((data ?? []) as { ciudad: string }[]);
+/** Misma lista y orden de Artistas, con un recuento agregado por ciudad en vez de cada artista. */
+const cargarCiudadesConArtistas = cache(async (): Promise<CiudadConArtistas[]> => {
+  const filas = await leerAgregados<{ ciudad: string; artistas: number }>("ciudades_artistas_agregadas");
+  if (!filas.length) return armarCiudadesDeArtistas([]);
+  const inicial = CIUDAD_INICIAL.nombre;
+  const cuenta = new Map<string, number>([[inicial, 0]]);
+  for (const fila of filas) {
+    const nombre = ciudadCanonica(fila.ciudad) || inicial;
+    cuenta.set(nombre, (cuenta.get(nombre) ?? 0) + Number(fila.artistas));
+  }
+  return [...cuenta].map(([nombre, artistas]) => ({
+    ...CIUDAD_INICIAL, slug: slugDeCiudad(nombre), nombre, zoom: nombre === inicial ? CIUDAD_INICIAL.zoom : 13, artistas,
+  })).sort((a, b) => (a.nombre === inicial ? -1 : b.nombre === inicial ? 1 : b.artistas - a.artistas || a.nombre.localeCompare(b.nombre, "es")));
+});
+
+
+/** Catálogo común para resolver identidad; la hoja filtra la oferta por sección.
+ * Se reutilizan los dos agregados cacheados, sin consultar fichas ni inventar centros. */
+export const cargarCiudades = cache(async (compartidas = false): Promise<CiudadConDatos[]> => {
+  const propias = await cargarCiudadesConOferta();
+  if (!compartidas) return propias;
+  const artistas = await cargarCiudadesConArtistas();
+  const slugs = new Set(propias.map(c => c.slug));
+  return [...propias, ...artistas.filter(c => !slugs.has(c.slug)).map(c => ({
+    slug: c.slug, nombre: c.nombre, zoom: c.zoom, centro: CIUDAD_INICIAL.centro, centroConocido: false,
+    lugares: 0, eventos: 0, zona: ZONA_INICIAL,
+  }))];
+});
+export const cargarCiudadesDeArtistas = cache(async (compartidas = false): Promise<CiudadConArtistas[]> => {
+  const propias = await cargarCiudadesConArtistas();
+  if (!compartidas) return propias;
+  const oferta = await cargarCiudadesConOferta();
+  const slugs = new Set(propias.map(c => c.slug));
+  return [...propias, ...oferta.filter(c => !slugs.has(c.slug)).map(c => ({...c, artistas: 0}))];
 });

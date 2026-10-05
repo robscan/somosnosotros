@@ -41,8 +41,8 @@ type FichaAbierta = { lugar: LugarLista; piezas: PiezasFicha | "fallo" | null; d
 
 /**
  * Lo que solo necesitan el mapa y la hoja, nunca la fila de contexto (OL-161, bitácora 196): quién sigue qué y la tira de
- * destacados. Llega como promesa (`Props.extras`) para que `VistaLugares` pinte su cabecera al instante con solo `lugares`; el mapa
- * y la hoja salen cuando llega (`useResuelta`).
+ * destacados. Llega como promesa (`Props.extras`): la cabecera y la lista pública salen con solo `lugares`; el mapa
+ * y las acciones de cuenta esperan a que llegue (`useResuelta`).
  */
 export type ExtrasLugares = {
   conSesion: boolean;
@@ -273,36 +273,31 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
           contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} conSesion={!!conSesion} valor={eleccion} onCambiar={cambiar} />}
           volverArriba={{ lejos, volver: () => hojaRef.current?.irA("llena") }}
         />
-        {/* El mapa y la hoja esperan una consulta aparte (quién sigue qué, destacados): mientras llega, un esqueleto del alto del mapa
-            (OL-161, bitácora 196). */}
-        {extra ? (
-          <CuerpoLugares
-            extra={extra}
-            lugares={lugares}
-            visibles={visibles}
-            ciudad={ciudad}
-            eleccion={eleccion}
-            punto={punto}
-            vez={vez}
-            encuadre={encuadre}
-            tapaAbajo={hoja.cubre}
-            notaGeo={notaGeo}
-            geoPidiendo={geo === "pidiendo"}
-            onCerrarGeo={() => setGeo("sin-pedir")}
-            onUbicacion={centrarEnMi}
-            onEncuadrar={encuadrar}
-            ficha={abierta}
-            entrada={entrada}
-            onAbrir={abrir}
-            onCerrarFicha={cerrar}
-            restaurar={restaurar}
-            alAsentar={alAsentar}
-            alLejos={setLejos}
-            hojaRef={hojaRef}
-          />
-        ) : (
-          <EsqueletoCaja className={styles.mapa} />
-        )}
+        {/* La lista pública sale desde el servidor; solo el mapa y las acciones esperan la consulta diferida (OL-279). */}
+        <CuerpoLugares
+          extra={extra}
+          lugares={lugares}
+          visibles={visibles}
+          ciudad={ciudad}
+          eleccion={eleccion}
+          punto={punto}
+          vez={vez}
+          encuadre={encuadre}
+          tapaAbajo={hoja.cubre}
+          notaGeo={notaGeo}
+          geoPidiendo={geo === "pidiendo"}
+          onCerrarGeo={() => setGeo("sin-pedir")}
+          onUbicacion={centrarEnMi}
+          onEncuadrar={encuadrar}
+          ficha={abierta}
+          entrada={entrada}
+          onAbrir={abrir}
+          onCerrarFicha={cerrar}
+          restaurar={restaurar}
+          alAsentar={alAsentar}
+          alLejos={setLejos}
+          hojaRef={hojaRef}
+        />
       </main>
     </PantallaConAviso>
   );
@@ -317,7 +312,7 @@ function porQueNoHay({ tipo, conEventos, soloSigo }: EleccionLugares): string {
 }
 
 type PropsCuerpo = {
-  extra: ExtrasLugares;
+  extra: ExtrasLugares | null;
   lugares: LugarLista[];
   visibles: LugarLista[];
   ciudad: Ciudad;
@@ -345,23 +340,13 @@ type PropsCuerpo = {
 };
 
 /**
- * El mapa y la hoja, ya con lo que llegó de su propia consulta (OL-161, bitácora 196). Lo que la fila necesita mostrar (los
+ * La hoja pública no espera datos de cuenta; el mapa espera sus destacados (OL-279). Lo que la fila necesita mostrar (los
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
 function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
   const { grupos, km } = useMemo(() => agruparLugares(visibles, punto), [visibles, punto]);
-  // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
-  // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
-  // de la ficha abierta, que crece, lleva aro y sombra y queda encima de los demás (P8, 2026-09-29).
-  const enTira = useMemo(() => extra.destacados.map((d) => d.id), [extra.destacados]);
-  const idsSeguidos = useMemo(() => extra.seguidos ?? [], [extra.seguidos]);
-  // El encuadre al abrir (docs/rediseno/35, "Cómo se decide el encuadre"): los lugares de esta semana y los destacados; con
-  // menos de tres, se completa con los cercanos al centro. Se calcula una sola vez, al montar este componente.
-  const [inicial] = useState<Encuadre | null>(() => {
-    const iniciales = lugaresEncuadreInicial(visibles, enTira, ciudad.centro);
-    return iniciales.length > 0 ? { puntos: iniciales, vez: 1 } : null;
-  });
+  const enTira = useMemo(() => extra?.destacados.map((d) => d.id) ?? [], [extra?.destacados]);
   const cantidad = visibles.length === 1 ? "1 lugar" : `${visibles.length} lugares`;
   // «Encuadrar los lugares» sale cuando ninguno de los lugares (con una ficha abierta, el suyo) queda en lo que se ve del mapa, y los trae de vuelta.
   const [fuera, setFuera] = useState(false);
@@ -370,21 +355,10 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
 
   return (
     <>
+      {/* Misma área de rejilla que el mapa, sin sustituir la hoja ni el contenedor que ella mide. */}
+      {!extra && <EsqueletoCaja className={styles.mapa} />}
       <div className={styles.mapa} data-techo-hoja>
-        <Mapa
-          lugares={visibles}
-          encuadre={encuadre ?? inicial}
-          ciudad={ciudad}
-          onPin={onAbrir}
-          elegido={ficha?.lugar.id ?? null}
-          ubicacion={punto ? { ...punto, vez } : null}
-          seguidos={idsSeguidos}
-          destacados={enTira}
-          tapaAbajo={tapaAbajo}
-          onFuera={setFuera}
-          onDespejar={() => hojaRef.current?.irA("recogida")}
-          onGesto={() => hojaRef.current?.recoger()}
-        />
+        {extra && <MapaLugares extra={extra} visibles={visibles} ciudad={ciudad} encuadre={encuadre} ficha={ficha} punto={punto} vez={vez} tapaAbajo={tapaAbajo} onAbrir={onAbrir} onFuera={setFuera} hojaRef={hojaRef} />}
         {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={`${styles.avisoMapa} ${conEncuadrar ? styles.avisoMapaBajo : ""}`} />}
         <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
           <IconoUbicacion width={22} height={22} />
@@ -412,19 +386,49 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
         alLejos={alLejos}
       >
         {grupos.length > 0 ? (
-          <ListaLugares grupos={grupos} km={km} seguidos={extra.seguidos} avisos={extra.avisos} alAbrir={onAbrir} />
+          <ListaLugares grupos={grupos} km={km} seguidos={extra?.seguidos ?? null} avisos={extra?.avisos ?? null} accionesPendientes={!extra} alAbrir={extra ? onAbrir : undefined} />
         ) : lugares.length === 0 ? (
           <section className={comun.vacio}>
             <h2>Lugares</h2>
             <p>Aún no hay lugares en {ciudad.nombre}. Registra el primero.</p>
-            <Boton href={extra.conSesion ? ALTA_DE_LUGAR : `/entrar?siguiente=${encodeURIComponent(ALTA_DE_LUGAR)}`} variante="secundario">
-              Registrar un lugar
-            </Boton>
+            {extra && (
+              <Boton href={extra.conSesion ? ALTA_DE_LUGAR : `/entrar?siguiente=${encodeURIComponent(ALTA_DE_LUGAR)}`} variante="secundario">
+                Registrar un lugar
+              </Boton>
+            )}
           </section>
         ) : (
           <p className={styles.nada}>{porQueNoHay(eleccion)}</p>
         )}
       </HojaLugares>
     </>
+  );
+}
+
+/** Se monta al recibir los destacados: adelantar la lista no cambia el encuadre inicial ni remonta el mapa al revalidar. */
+function MapaLugares({ extra, visibles, ciudad, encuadre, ficha, punto, vez, tapaAbajo, onAbrir, onFuera, hojaRef }: Pick<PropsCuerpo, "visibles" | "ciudad" | "encuadre" | "ficha" | "punto" | "vez" | "tapaAbajo" | "onAbrir" | "hojaRef"> & { extra: ExtrasLugares; onFuera: (fuera: boolean) => void }) {
+  // Destacados en naranja, seguidos en verde (gana verde), con el mismo contrato de pines.
+  const enTira = useMemo(() => extra.destacados.map((d) => d.id), [extra.destacados]);
+  const idsSeguidos = useMemo(() => extra.seguidos ?? [], [extra.seguidos]);
+  // Una sola vez al montar, con la consulta completa: semana y destacados, completados cerca del centro.
+  const [inicial] = useState<Encuadre | null>(() => {
+    const iniciales = lugaresEncuadreInicial(visibles, enTira, ciudad.centro);
+    return iniciales.length > 0 ? { puntos: iniciales, vez: 1 } : null;
+  });
+  return (
+    <Mapa
+      lugares={visibles}
+      encuadre={encuadre ?? inicial}
+      ciudad={ciudad}
+      onPin={onAbrir}
+      elegido={ficha?.lugar.id ?? null}
+      ubicacion={punto ? { ...punto, vez } : null}
+      seguidos={idsSeguidos}
+      destacados={enTira}
+      tapaAbajo={tapaAbajo}
+      onFuera={onFuera}
+      onDespejar={() => hojaRef.current?.irA("recogida")}
+      onGesto={() => hojaRef.current?.recoger()}
+    />
   );
 }

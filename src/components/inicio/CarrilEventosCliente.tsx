@@ -8,6 +8,7 @@ import type { AvisosLista } from "@/components/useSeguirEnLista";
 import { crudoDecisionesVisita, limpiarTarjetasTusPlanesResueltas, suscribirseDecisionesVisita, tarjetasTusPlanes } from "@/lib/decisionesVisita";
 import type { TarjetaConFecha } from "@/lib/destacados";
 import Destacados from "@/components/Destacados";
+import { useCarrilResuelto } from "./EstadoCarriles";
 
 function sinSuscripcion() {
   return () => {};
@@ -40,7 +41,7 @@ const sinDatosServidor = () => "";
  * fila sigue mostrando una copia vieja (`staleTimes`, hasta 60 s, o Atrás), y borrarla ahí perdería la tarjeta antes
  * de que esta fila la usara (bug real, visto al reproducir con Chrome: ir y volver de Agenda la borraba).
  */
-export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, titulo, tamano, memoria, verTodos, tusPlanes = false }: { tarjetas: TarjetaConFecha[]; asistencias: Decididas; avisos: AvisosLista | null; titulo: string; tamano: "grande" | "mediana"; memoria: string; verTodos: { href: string; etiqueta: string }; tusPlanes?: boolean }) {
+export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, titulo, tamano, memoria, verTodos, tusPlanes = false, resuelto = true }: { tarjetas: TarjetaConFecha[]; asistencias: Decididas; avisos: AvisosLista | null; titulo: string; tamano: "grande" | "mediana"; memoria: string; verTodos: { href: string; etiqueta: string }; tusPlanes?: boolean; resuelto?: boolean }) {
   const canal = useCanalDePantalla();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
   const cuenta = avisos?.cuenta ?? null;
@@ -51,6 +52,7 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
     if (tusPlanes) limpiarTarjetasTusPlanesResueltas(cuenta, tarjetas);
   }, [tusPlanes, cuenta, tarjetas]);
   const visibles = tusPlanes ? tarjetasTusPlanes(cuenta, tarjetas, new Date()).filter((t) => asistencia.estado(t.id) !== null) : tarjetas;
+  useCarrilResuelto(memoria, resuelto ? visibles.length : null);
   return (
     <>
       <Destacados tarjetas={visibles} tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />

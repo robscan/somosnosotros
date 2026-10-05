@@ -41,7 +41,7 @@ export default function FilaLugares({ ciudad, ciudades, hrefDeCiudad, lugares, h
 
   return (
     <>
-      <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={hrefDeCiudad} />
+      <ChipCiudad ciudad={ciudad} ciudades={ciudades} seccion="lugares" hrefDe={hrefDeCiudad} />
       {conFiltros && (
         <Chip variante="contexto" icono={<IconoFiltros width={16} height={16} />} cuenta={eleccionesPuestas(valor)} onClick={() => setAbierta(true)}>
           Filtros

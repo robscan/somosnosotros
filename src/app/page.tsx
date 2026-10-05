@@ -4,15 +4,17 @@ import Inicio from "@/components/Inicio";
 import CarrilAgenda from "@/components/inicio/CarrilAgenda";
 import CarrilEntidad from "@/components/inicio/CarrilEntidad";
 import CarrilTusPlanes from "@/components/inicio/CarrilTusPlanes";
+import CarrilMasAdelante from "@/components/inicio/CarrilMasAdelante";
 import { hrefAgenda, SIN_FILTROS } from "@/lib/agenda";
 import { cargarAgenda } from "@/lib/cargarAgenda";
-import { cargarArtistasDestacados } from "@/lib/cargarArtistasDestacados";
+import { cargarArtistasDestacados, TOPE_ARTISTAS_DESTACADOS } from "@/lib/cargarArtistasDestacados";
 import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
-import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, ciudadPorSlug, hrefConCiudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { tarjetaArtista } from "@/lib/destacados";
 import { diaLocal } from "@/lib/fechas";
+import { seleccionarArtistasSemana } from "@/lib/eventosSemana";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import plantilla from "@/components/ui/Plantilla.module.css";
 
@@ -25,7 +27,7 @@ type SearchParams = { ciudad?: string };
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudades();
+  const ciudades = await cargarCiudades(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${resuelta.slug}`;
   return {
@@ -47,7 +49,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  */
 export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug } = await searchParams;
-  const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudades(true), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const usuarioId = actual?.perfil.id ?? null;
   const supabase = await clienteServidor();
@@ -58,14 +60,10 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
   const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
   // «Artistas con eventos esta semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí.
-  const semanaArtistasPromise = Promise.all([cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora), artistasDestacadosPromise]).then(([semana, destacados]) => {
-    const yaSalen = new Set(destacados.map((t) => t.id));
-    return semana.filter((t) => !yaSalen.has(t.id));
-  });
-  const seguidosArtistasPromise: Promise<string[] | null> =
-    usuarioId && supabase
-      ? Promise.resolve(supabase.from("seguimientos").select("artista_id").eq("usuario_id", usuarioId).not("artista_id", "is", null).limit(1000)).then((r) => ((r.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id))
-      : Promise.resolve(usuarioId ? [] : null);
+  const semanaArtistasPromise = Promise.all([cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora), artistasDestacadosPromise])
+    .then(([semana, destacados]) => seleccionarArtistasSemana(semana, destacados, TOPE_ARTISTAS_DESTACADOS));
+  // Reutiliza la lectura validada de Agenda: un fallo no se convierte en "no sigues a nadie".
+  const seguidosArtistasPromise = agendaPromise.then((a) => a.artistasSeguidos);
   // «Tus planes» (OL-219): Voy + Me interesa, la misma consulta que ya usa Mi perfil (`cargarPersona`), sin filtro
   // de ciudad (un compromiso ya hecho no deja de ser tuyo por cambiar de ciudad en Inicio). Los demás carriles
   // le restan sus eventos al cargar con `agenda.asistencias` (`calcularCarrilesAgenda`), no con esta consulta.
@@ -95,6 +93,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
+        slotMasAdelante={<CarrilMasAdelante agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefConCiudad("/agenda", ciudad.slug)} />}
         slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos esta semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
         slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos esta semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}

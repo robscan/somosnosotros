@@ -5,8 +5,28 @@ on:
   push:
     branches: [main]
 
+# Solo una revisión nueva del mismo PR sustituye a la anterior; los push de main se completan.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  verificar:
+  codigo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # Compilación sin variables: también se conserva la compilación contra el respaldo dentro de medir.
+      - run: npm run build
+
+  contratos:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -29,17 +49,42 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
       - run: npm run test:db
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
 
-      - run: npm run build
-
-      # Protección de la interfaz (docs/rediseno/50 § 9): los estilos y el DOM medido, con el respaldo local de datos inventados
-      # y sin ninguna llave. `medir` levanta el respaldo y la app por su cuenta y espera a que respondan.
+  interfaz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Los estilos, componentes y DOM siguen comprobándose con sus presupuestos y cuarentenas vigentes.
       - run: npm run inventario
       - run: npx playwright-core install --with-deps --only-shell chromium
+      - name: Pruebas de componentes en Chromium
+        run: npm run test:componentes
+        timeout-minutes: 10
       - run: npm run medir
+
+  # Main exige este nombre. Un trabajo omitido o cancelado nunca equivale a una comprobación correcta.
+  verificar:
+    runs-on: ubuntu-latest
+    needs: [codigo, contratos, interfaz]
+    if: ${{ always() }}
+    steps:
+      - name: Comprobar todos los resultados
+        env:
+          CODIGO: ${{ needs.codigo.result }}
+          CONTRATOS: ${{ needs.contratos.result }}
+          INTERFAZ: ${{ needs.interfaz.result }}
+        run: |
+          for resultado in "$CODIGO" "$CONTRATOS" "$INTERFAZ"; do
+            if [ "$resultado" != success ]; then
+              echo "La CI exige que los tres trabajos terminen correctamente. Resultado: $resultado"
+              exit 1
+            fi
+          done

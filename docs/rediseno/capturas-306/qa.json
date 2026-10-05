@@ -1,0 +1,64 @@
+[
+  {
+    "width": 390,
+    "caso": "leon",
+    "datos": {
+      "ancho": 350,
+      "altoFondo": 210,
+      "fecha": "vie 30 de oct · 17:00\nForo de León",
+      "recorridoConA": true
+    },
+    "errors": []
+  },
+  {
+    "width": 390,
+    "caso": "puebla",
+    "errors": []
+  },
+  {
+    "width": 390,
+    "caso": "monterrey",
+    "errors": []
+  },
+  {
+    "width": 390,
+    "caso": "monterrey-visto",
+    "errors": []
+  },
+  {
+    "width": 390,
+    "caso": "merida",
+    "errors": []
+  },
+  {
+    "width": 320,
+    "caso": "leon",
+    "datos": {
+      "ancho": 280,
+      "altoFondo": 168,
+      "fecha": "vie 30 de oct · 17:00\nForo de León",
+      "recorridoConA": true
+    },
+    "errors": []
+  },
+  {
+    "width": 320,
+    "caso": "puebla",
+    "errors": []
+  },
+  {
+    "width": 320,
+    "caso": "monterrey",
+    "errors": []
+  },
+  {
+    "width": 320,
+    "caso": "monterrey-visto",
+    "errors": []
+  },
+  {
+    "width": 320,
+    "caso": "merida",
+    "errors": []
+  }
+]

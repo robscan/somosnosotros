@@ -16,6 +16,7 @@ import type { LugarResumen } from "@/lib/lugares";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
+import { sitioReservadoVencido } from "@/lib/retencionSitio";
 
 /** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
 export type ResultadoEvento = { ok: true; id: string; volver: string } | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
@@ -114,8 +115,10 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
   const entrada = leer(formData);
-  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("imagen").eq("id", id).maybeSingle()]);
-  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin, imagenActual: existente?.imagen ?? null });
+  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("imagen, inicio, fin, zona, sitio_reservado").eq("id", id).maybeSingle()]);
+  const sinPuntoTrasRetencion = sitioReservadoVencido(existente) && entrada.modo_sitio === "reservado" && !entrada.privado_lat && !entrada.privado_lng;
+  const zona = sinPuntoTrasRetencion ? zonaSegura(existente?.zona) : zonaDelEvento(entrada, lugar);
+  const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente });
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   const revision = formData.get("revision");

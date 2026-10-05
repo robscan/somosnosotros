@@ -241,3 +241,8 @@
   max-height: var(--tarjeta-sola-foto);
   aspect-ratio: 5 / 3;
 }
+.sola .sinFoto::before {
+  width: 100%;
+  max-height: var(--tarjeta-sola-foto);
+  aspect-ratio: 5 / 3;
+}

@@ -5,6 +5,7 @@ import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import { normalizarNombre } from "./lugares";
+import type { NovedadRecienteArtista } from "./novedadesArtista";
 import type { Origen } from "./origen";
 import { LIMITES_ARTISTA } from "./limites";
 
@@ -42,6 +43,8 @@ export type ArtistaResumen = {
   detalle: string | null;
   tipo: TipoArtista;
   foto: string | null;
+  /** Última publicación visible y vigente, cuando esta lista carga los sellos (OL-275). */
+  novedad?: NovedadRecienteArtista | null;
 };
 
 /** La fecha más cercana de un artista: qué día y dónde. */

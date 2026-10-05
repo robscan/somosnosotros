@@ -98,7 +98,9 @@ export function incrustadoDeNovedad({ proveedor, url, embed_id }: { proveedor: P
   if (proveedor === "mixcloud") {
     const ruta = rutaMixcloud(url);
     if (!ruta) return null;
-    const src = `https://www.mixcloud.com/widget/iframe/?feed=${encodeURIComponent(ruta)}&hide_cover=1&light=1`;
+    // Mixcloud exige la barra final de su cloudcast key; los enlaces guardados no la llevan.
+    const feed = ruta.endsWith("/") ? ruta : `${ruta}/`;
+    const src = `https://www.mixcloud.com/widget/iframe/?feed=${encodeURIComponent(feed)}&hide_cover=1&light=1`;
     return dominioPermitido(src) ? { src, sandbox: "allow-scripts allow-same-origin", allow: "", alto: 120 } : null;
   }
   if (proveedor === "bandcamp") {

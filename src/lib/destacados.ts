@@ -1,3 +1,4 @@
+import { selloNovedadArtista, type NovedadRecienteArtista } from "./novedadesArtista";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
@@ -27,7 +28,7 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
 /** Una tarjeta de la tira, lista para pintarse. `foto` es null cuando no tiene (quien la pinta pone su relleno o no lleva imagen);
  *  `cuando` dice que `detalle` es un día y una hora (se pinta en violeta) y no un tipo o una disciplina; `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde); `hoy` (empieza hoy) y `van` los pone solo
  *  `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number; hoy?: boolean; cuando?: boolean };
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -46,12 +47,14 @@ export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
  * El único rótulo que lleva una tarjeta sobre su foto (docs/rediseno/50, H-02): no se apilan tres sobre el cartel. Lo tuyo primero
  * («Te interesa»), luego lo que ayuda a decidir: «Hoy» antes que «N van»; sin ninguno, nada. «Recién agregado» ya no es un sello: el
  * carril que lo agrupa lo dice. `tuyo` es lo que la persona ya decidió (un estado); lo demás, un dato del evento (un sello); `hoy` marca
- * el de «Hoy», que va en el color de acción (founder, 2026-10-01, OL-253).
+ * el tratamiento de «Hoy», también para «Nuevo video/audio» de artistas (OL-275), en el color de acción.
  */
-export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
+export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van" | "novedad">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
   if (interesa) return { texto: "Te interesa", tuyo: true, hoy: false };
+  const nuevo = selloNovedadArtista(t.novedad);
+  if (nuevo) return { texto: nuevo, tuyo: false, hoy: true };
   if (t.hoy) return { texto: "Hoy", tuyo: false, hoy: true };
-  if (t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
+  if (t.van !== null && t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
   return null;
 }
 
@@ -67,7 +70,7 @@ export async function leerTira(supabase: SupabaseClient | null, seccion: Seccion
 }
 
 /** Las fichas ya cargadas, en el orden de la tira. */
-export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]): T[] {
+export function enOrden<T extends { id: string }>(tira: { id: string }[], fichas: T[]): T[] {
   const porId = new Map(fichas.map((f) => [f.id, f]));
   return tira.flatMap((d) => porId.get(d.id) ?? []);
 }
@@ -84,7 +87,8 @@ export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
 
 /** La tarjeta de artista usa el mismo rectángulo que eventos; la fecha va sin el sitio. */
 export function tarjetaArtista(a: ArtistaLista, ahora = new Date()): Tarjeta {
-  return { id: a.id, href: hrefArtista(a), foto: a.foto, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0, ...(a.proxima ? { cuando: true } : {}) };
+  const novedad = selloNovedadArtista(a.novedad, ahora) ? a.novedad : null;
+  return { id: a.id, href: `${hrefArtista(a)}${novedad ? `?novedad=${encodeURIComponent(novedad.novedad_id)}` : ""}`, novedad, foto: a.foto, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0, ...(a.proxima ? { cuando: true } : {}) };
 }
 
 /** "hasta mañana" o "hasta el mié 30 de sep", en la zona de la ficha. */

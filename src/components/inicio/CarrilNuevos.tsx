@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { corteNuevos, eventosNuevos } from "@/lib/agenda";
+import { corteNuevos, eventosNuevos, LIMITE_NUEVOS } from "@/lib/agenda";
 import type { TarjetaConFecha } from "@/lib/destacados";
 import { MINIMO_NUEVOS } from "@/lib/inicio";
 import { useMarcaNuevos } from "../useMarcaNuevos";
@@ -18,6 +18,6 @@ export type TarjetaNueva = TarjetaConFecha & { creado_en: string };
  */
 export default function CarrilNuevos({ ciudad, tarjetas, ...resto }: Omit<ComponentProps<typeof CarrilEventosCliente>, "tarjetas"> & { ciudad: string; tarjetas: TarjetaNueva[] }) {
   const marca = useMarcaNuevos(ciudad);
-  const nuevas = eventosNuevos(tarjetas, corteNuevos(marca));
-  return <CarrilEventosCliente {...resto} tarjetas={nuevas.length < MINIMO_NUEVOS ? [] : nuevas} />;
+  const nuevas = eventosNuevos(tarjetas, corteNuevos(marca)).slice(0, LIMITE_NUEVOS);
+  return <CarrilEventosCliente {...resto} tarjetas={nuevas.length < MINIMO_NUEVOS ? [] : nuevas} resuelto={marca !== undefined} />;
 }

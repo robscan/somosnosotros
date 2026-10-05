@@ -99,6 +99,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           {error === "tiene-eventos" && (
             <p className="aviso-error" role="alert">
               Este lugar tiene eventos publicados por otras personas; no se puede borrar. Si ya no existe, ocúltalo o avisa a la administración.
+              {actual?.perfil.rol === "admin" && <> <Link href={`/admin/lugares?q=${encodeURIComponent(lugar.nombre)}`}>Revisar eliminación excepcional en Administración</Link>.</>}
             </p>
           )}
           {error === "borrar" && (
