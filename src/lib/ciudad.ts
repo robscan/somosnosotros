@@ -9,7 +9,7 @@ import { distanciaKm, type Punto } from "./geo";
 
 export type Ciudad = { slug: string; nombre: string; centro: { lng: number; lat: number }; zoom: number };
 /** Una ciudad con lo que tiene: cuántos lugares y cuántos eventos próximos, y su zona horaria (la de "hoy" en su agenda). */
-export type CiudadConDatos = Ciudad & { lugares: number; eventos: number; zona: string };
+export type CiudadConDatos = Ciudad & { lugares: number; eventos: number; zona: string; centroConocido: boolean };
 /** Una ciudad de Artistas con cuántos artistas tiene. */
 export type CiudadConArtistas = Ciudad & { artistas: number };
 
@@ -81,6 +81,7 @@ export function armarCiudades(lugares: { ciudad: string; lat: number; lng: numbe
       slug: slugDeCiudad(a.nombre),
       nombre: a.nombre,
       centro: a.nombre === inicial ? CIUDAD_INICIAL.centro : a.lugares ? { lat: a.lat / a.lugares, lng: a.lng / a.lugares } : CIUDAD_INICIAL.centro,
+      centroConocido: a.nombre === inicial || a.lugares > 0,
       zoom: a.nombre === inicial ? CIUDAD_INICIAL.zoom : 13,
       lugares: a.lugares,
       eventos: a.eventos,
@@ -126,6 +127,65 @@ export function ciudadPorNombre<T extends Ciudad>(nombre: string | null | undefi
   return ciudades.find((c) => c.nombre === canon) ?? ciudades.find((c) => c.slug === CIUDAD_INICIAL.slug) ?? (CIUDAD_INICIAL as T);
 }
 
+export type SeccionCiudades = "eventos" | "lugares" | "artistas" | "buscar";
+/** OL-270: el catálogo más cercano representa «aquí» hasta 50 km de su centro. */
+const RADIO_CIUDAD_KM = 50;
+
+/** El contenido de cada sección decide la lista; la ciudad actual permanece aunque esté vacía. No cambia las consultas. */
+export function ciudadesDeHoja<T extends CiudadConDatos | CiudadConArtistas>(actual: Ciudad, ciudades: readonly T[], seccion: SeccionCiudades): T[] {
+  return ciudades.filter(c => c.slug === actual.slug || (seccion === "artistas"
+    ? "artistas" in c && c.artistas > 0
+    : "lugares" in c && (seccion === "eventos" ? c.eventos > 0 : seccion === "lugares" ? c.lugares > 0 : c.lugares > 0 || c.eventos > 0)));
+}
+
+/** El respaldo de centro sigue sirviendo al mapa, pero no representa la posición de una ciudad sin lugares. */
+function centroConocido(ciudad: Ciudad): boolean {
+  return ciudad.slug === CIUDAD_INICIAL.slug || ("centroConocido" in ciudad && ciudad.centroConocido === true);
+}
+
+/** Sin punto, actual primero y conocidos por cercanía; con punto, por distancia. Desconocidos al final en orden de catálogo. */
+export function filasDeCiudades<T extends Ciudad>(actual: Ciudad, ciudades: readonly T[], punto: Punto | null, seccion: SeccionCiudades) {
+  const posicion = seccion === "artistas" ? null : punto;
+  const orden = ciudadesPorCercania(actual, ciudades);
+  const filas = ciudades.map((ciudad) => ({ ciudad, distancia: posicion && centroConocido(ciudad) ? distanciaKm(posicion, ciudad.centro) : null, estasAqui: false }));
+  filas.sort((a, b) => {
+    if (!posicion) {
+      const actualA = a.ciudad.slug === actual.slug, actualB = b.ciudad.slug === actual.slug;
+      if (actualA !== actualB) return actualA ? -1 : 1;
+      const conocidaA = centroConocido(a.ciudad), conocidaB = centroConocido(b.ciudad);
+      if (conocidaA !== conocidaB) return conocidaA ? -1 : 1;
+      return conocidaA ? orden.indexOf(a.ciudad.nombre) - orden.indexOf(b.ciudad.nombre) : 0;
+    }
+    if (a.distancia === null) return b.distancia === null ? 0 : 1;
+    if (b.distancia === null) return -1;
+    return a.distancia - b.distancia;
+  });
+  if (filas[0]?.distancia !== null && filas[0]?.distancia !== undefined && filas[0].distancia <= RADIO_CIUDAD_KM) filas[0].estasAqui = true;
+  return filas;
+}
+
+/** Una elección previa (URL o marca del teléfono) siempre gana a la cercanía. Nunca aproxima a una ciudad lejana. */
+export function ciudadInicialCercana<T extends Ciudad>(actual: Ciudad, ciudades: readonly T[], punto: Punto | null, seccion: SeccionCiudades, explicita: boolean, marcada: boolean): T | null {
+  if (!punto || explicita || marcada || seccion === "artistas") return null;
+  const primera = filasDeCiudades(actual, ciudades, punto, seccion)[0];
+  return primera?.estasAqui && primera.ciudad.slug !== actual.slug ? primera.ciudad : null;
+}
+
+/** Sin geocodificación: el alta existente recibe solo el tipo, nunca coordenadas de la persona en su URL. */
+export function altaLejosDeCiudades(actual: Ciudad, ciudades: readonly Ciudad[], punto: Punto | null, seccion: SeccionCiudades): { texto: string; href: string } | null {
+  if (!punto || seccion === "artistas" || seccion === "buscar") return null;
+  const filas = filasDeCiudades(actual, ciudades, punto, seccion);
+  if (filas.some((fila) => fila.estasAqui)) return null;
+  return seccion === "lugares"
+    ? { texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" }
+    : { texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" };
+}
+
+/** La consulta del permiso solo observa; hasta resolverla, no aparece un botón que luego desaparezca. */
+export function ofrecerUbicacionCiudades(seccion: SeccionCiudades, punto: Punto | null, concedido: boolean | null, negado: boolean): boolean {
+  return seccion !== "artistas" && !punto && concedido === false && !negado;
+}
+
 /**
  * La raíz de una sección (/, /lugares, /artistas) con la ciudad que se está viendo y nada más (OL-055): tocar la
  * sección en la que ya se está, o el logotipo en el inicio, suelta los filtros pero no la ciudad.
@@ -133,4 +193,34 @@ export function ciudadPorNombre<T extends Ciudad>(nombre: string | null | undefi
 export function raizConCiudad(raiz: string, consulta: string): string {
   const ciudad = new URLSearchParams(consulta).get("ciudad");
   return ciudad ? `${raiz}?ciudad=${encodeURIComponent(ciudad)}` : raiz;
+}
+
+/** La elección vive en este teléfono. Un enlace explícito no la sobrescribe. */
+const ELECCION = "sn:ciudad-elegida";
+type AlmacenCiudad = Pick<Storage, "getItem" | "setItem">;
+function almacenCiudad(): AlmacenCiudad | null {
+  try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+}
+export function leerEleccionCiudad(almacen: AlmacenCiudad | null = almacenCiudad()): string | null {
+  try { return almacen?.getItem(ELECCION) || null; } catch { return null; }
+}
+export function guardarEleccionCiudad(slug: string, almacen: AlmacenCiudad | null = almacenCiudad()): void {
+  try { almacen?.setItem(ELECCION, slug); } catch { /* Sin almacenamiento, la URL conserva el contexto. */ }
+}
+
+/** También hace explícita la ciudad inicial: recibir un enlace debe ganar a la preferencia. */
+export function hrefConCiudad(href: string, slug: string): string {
+  const url = new URL(href, "https://somosnosotros.org");
+  url.searchParams.set("ciudad", slug);
+  return url.pathname + url.search + url.hash;
+}
+
+/** Solo restaura filtros/scroll de una URL de la propia sección y de la ciudad actual. */
+export function destinoDeCiudad(raiz: string, ultima: string | undefined, slug: string | null): string {
+  const actual = slug || CIUDAD_INICIAL.slug;
+  if (ultima && (ultima === raiz || ultima.startsWith(`${raiz}?`))) {
+    const guardada = new URL(ultima, "https://somosnosotros.org");
+    if ((guardada.searchParams.get("ciudad") || CIUDAD_INICIAL.slug) === actual) return ultima;
+  }
+  return slug ? hrefConCiudad(raiz, slug) : raiz;
 }

@@ -1,0 +1,387 @@
+{
+  "fuente": "app Next16.3.8 compilada, respaldo/proveedores/imágenes sintéticos; no Supabase remoto",
+  "movimiento": "normal; reducido tiene fallo heredado separado OL-276",
+  "pantallas": [
+    {
+      "nombre": "inicio",
+      "width": 320,
+      "url": "http://127.0.0.1:30475/",
+      "scrollY": 770,
+      "anchoDocumento": 320,
+      "altoDocumento": 1899,
+      "bodyTexto": "San Luis Potosí\nCuándo\nFiltros\nDestacados\nVer la agenda\nLXS COLOCAOS: La última fogueada\ndom 11 de oct · 19:00\nMUNI Muse",
+      "main": {
+        "x": 0,
+        "y": -714,
+        "width": 320,
+        "height": 1843.421875,
+        "top": -714,
+        "right": 320,
+        "bottom": 1129.421875,
+        "left": 0
+      },
+      "elemento": "BUTTON"
+    },
+    {
+      "nombre": "novedad-exacta",
+      "width": 320,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina?novedad=dddd0275-0000-4000-8000-000000000002",
+      "scrollY": 675,
+      "anchoDocumento": 320,
+      "altoDocumento": 1716,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": -675,
+        "width": 320,
+        "height": 1715.859375,
+        "top": -675,
+        "right": 320,
+        "bottom": 1040.859375,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": -528.515625,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": -528.515625,
+        "right": 167.484375,
+        "bottom": -506.671875,
+        "left": 96
+      },
+      "destino": {
+        "x": 20,
+        "y": 72.328125,
+        "width": 280,
+        "height": 254.84375,
+        "top": 72.328125,
+        "right": 300,
+        "bottom": 327.171875,
+        "left": 20
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "novedad-recarga",
+      "width": 320,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina?novedad=dddd0275-0000-4000-8000-000000000002",
+      "scrollY": 675,
+      "anchoDocumento": 320,
+      "altoDocumento": 1716,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": -675,
+        "width": 320,
+        "height": 1715.859375,
+        "top": -675,
+        "right": 320,
+        "bottom": 1040.859375,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": -528.515625,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": -528.515625,
+        "right": 167.484375,
+        "bottom": -506.671875,
+        "left": 96
+      },
+      "destino": {
+        "x": 20,
+        "y": 72.328125,
+        "width": 280,
+        "height": 254.84375,
+        "top": 72.328125,
+        "right": 300,
+        "bottom": 327.171875,
+        "left": 20
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "ficha",
+      "width": 320,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina",
+      "scrollY": 0,
+      "anchoDocumento": 320,
+      "altoDocumento": 1716,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 1715.859375,
+        "top": 0,
+        "right": 320,
+        "bottom": 1715.859375,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": 146.484375,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": 146.484375,
+        "right": 167.484375,
+        "bottom": 168.328125,
+        "left": 96
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "lista",
+      "width": 320,
+      "url": "http://127.0.0.1:30475/artistas",
+      "scrollY": 0,
+      "anchoDocumento": 320,
+      "altoDocumento": 1192,
+      "bodyTexto": "San Luis Potosí\n#\nA\nF\nO\nP\n\n6 artistas\n\nO\nOrquesta Sinfónica de San Luis Potosí\nMúsica académica y clásica · Grupo\nPróxim",
+      "main": {
+        "x": 0,
+        "y": 56,
+        "width": 320,
+        "height": 1135.75,
+        "top": 56,
+        "right": 320,
+        "bottom": 1191.75,
+        "left": 0
+      },
+      "elemento": "svg"
+    },
+    {
+      "nombre": "novedad-fuera-de-tres",
+      "width": 320,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina?novedad=dddd0275-0000-4000-8000-000000000007",
+      "scrollY": 1337,
+      "anchoDocumento": 320,
+      "altoDocumento": 2181,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": -1337,
+        "width": 320,
+        "height": 2180.546875,
+        "top": -1337,
+        "right": 320,
+        "bottom": 843.546875,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": -1190.515625,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": -1190.515625,
+        "right": 167.484375,
+        "bottom": -1168.671875,
+        "left": 96
+      },
+      "destino": {
+        "x": 20,
+        "y": 440.203125,
+        "width": 280,
+        "height": 257.34375,
+        "top": 440.203125,
+        "right": 300,
+        "bottom": 697.546875,
+        "left": 20
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "inicio",
+      "width": 390,
+      "url": "http://127.0.0.1:30475/",
+      "scrollY": 770,
+      "anchoDocumento": 390,
+      "altoDocumento": 1899,
+      "bodyTexto": "San Luis Potosí\nCuándo\nFiltros\nDestacados\nVer la agenda\nLXS COLOCAOS: La última fogueada\ndom 11 de oct · 19:00\nMUNI Muse",
+      "main": {
+        "x": 0,
+        "y": -714,
+        "width": 390,
+        "height": 1843.421875,
+        "top": -714,
+        "right": 390,
+        "bottom": 1129.421875,
+        "left": 0
+      },
+      "elemento": "BUTTON"
+    },
+    {
+      "nombre": "novedad-exacta",
+      "width": 390,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina?novedad=dddd0275-0000-4000-8000-000000000002",
+      "scrollY": 722,
+      "anchoDocumento": 390,
+      "altoDocumento": 1841,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": -722,
+        "width": 390,
+        "height": 1841.28125,
+        "top": -722,
+        "right": 390,
+        "bottom": 1119.28125,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": -528.84375,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": -528.84375,
+        "right": 167.484375,
+        "bottom": -507,
+        "left": 96
+      },
+      "destino": {
+        "x": 20,
+        "y": 72,
+        "width": 350,
+        "height": 254.84375,
+        "top": 72,
+        "right": 370,
+        "bottom": 326.84375,
+        "left": 20
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "novedad-recarga",
+      "width": 390,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina?novedad=dddd0275-0000-4000-8000-000000000002",
+      "scrollY": 722,
+      "anchoDocumento": 390,
+      "altoDocumento": 1841,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": -722,
+        "width": 390,
+        "height": 1841.28125,
+        "top": -722,
+        "right": 390,
+        "bottom": 1119.28125,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": -528.84375,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": -528.84375,
+        "right": 167.484375,
+        "bottom": -507,
+        "left": 96
+      },
+      "destino": {
+        "x": 20,
+        "y": 72,
+        "width": 350,
+        "height": 254.84375,
+        "top": 72,
+        "right": 370,
+        "bottom": 326.84375,
+        "left": 20
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "ficha",
+      "width": 390,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina",
+      "scrollY": 0,
+      "anchoDocumento": 390,
+      "altoDocumento": 1841,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1841.28125,
+        "top": 0,
+        "right": 390,
+        "bottom": 1841.28125,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": 193.15625,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": 193.15625,
+        "right": 167.484375,
+        "bottom": 215,
+        "left": 96
+      },
+      "elemento": "A"
+    },
+    {
+      "nombre": "lista",
+      "width": 390,
+      "url": "http://127.0.0.1:30475/artistas",
+      "scrollY": 0,
+      "anchoDocumento": 390,
+      "altoDocumento": 1192,
+      "bodyTexto": "San Luis Potosí\n#\nA\nF\nO\nP\n\n6 artistas\n\nO\nOrquesta Sinfónica de San Luis Potosí\nMúsica académica y clásica · Grupo\nPróxim",
+      "main": {
+        "x": 0,
+        "y": 56,
+        "width": 390,
+        "height": 1135.75,
+        "top": 56,
+        "right": 390,
+        "bottom": 1191.75,
+        "left": 0
+      },
+      "elemento": "svg"
+    },
+    {
+      "nombre": "novedad-fuera-de-tres",
+      "width": 390,
+      "url": "http://127.0.0.1:30475/artistas/pimpolina?novedad=dddd0275-0000-4000-8000-000000000007",
+      "scrollY": 1541,
+      "anchoDocumento": 390,
+      "altoDocumento": 2385,
+      "bodyTexto": "Pimpolina\nTEATRO\nPimpolina\n\nClown · Solista · San Luis Potosí\n\nNuevo audio\nFECHAS\n1 próxima\nSIGUEN\n0\nLUGARES\n1\nCompartir",
+      "main": {
+        "x": 0,
+        "y": -1541,
+        "width": 390,
+        "height": 2384.71875,
+        "top": -1541,
+        "right": 390,
+        "bottom": 843.71875,
+        "left": 0
+      },
+      "h1": {
+        "x": 96,
+        "y": -1347.84375,
+        "width": 71.484375,
+        "height": 21.84375,
+        "top": -1347.84375,
+        "right": 167.484375,
+        "bottom": -1326,
+        "left": 96
+      },
+      "destino": {
+        "x": 20,
+        "y": 401,
+        "width": 350,
+        "height": 296.71875,
+        "top": 401,
+        "right": 370,
+        "bottom": 697.71875,
+        "left": 20
+      },
+      "elemento": "A"
+    }
+  ],
+  "errores": []
+}

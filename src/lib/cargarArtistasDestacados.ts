@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { conProximaFecha, type ArtistaLista, type ArtistaResumen, type FechaDeArtista } from "./artistas";
-import { enOrden, type Destacado } from "./destacados";
+import { enOrden } from "./destacados";
+import type { ProveedorNovedadArtista } from "./novedadesArtista";
 import { sitioEnLista } from "./eventos";
 import { filtroSinPasar } from "./fechas";
 
@@ -26,7 +27,8 @@ export function ordenarPorSeguidores(ids: string[], conteo: Map<string, number>,
 
 /**
  * Los artistas del carril "Artistas destacadxs" de Inicio, con su próxima fecha: primero la tira que elige la
- * administración (el mismo criterio que ya usa `/artistas`, `leerTira`); sin tira, los artistas de la ciudad con más
+ * administración, después las novedades visibles de los últimos siete días y después los asistentes (SQL OL-275).
+ * Solo si los tres grupos están vacíos se usa el respaldo existente: artistas de la ciudad con más
  * seguidores entre los que tienen un evento próximo — el founder no fijó un criterio exacto para este respaldo
  * (decisión anotada en la bitácora 191, no en OPEN_LOOPS: no es una decisión del founder, es la lectura del gestor
  * de "un criterio razonable" que pidió el encargo). Un destacado exige foto (docs/rediseno/50, H-03): el artista que no la
@@ -44,7 +46,7 @@ export async function cargarArtistasDestacados(supabase: SupabaseClient | null, 
 
 async function leerArtistasDestacados(supabase: SupabaseClient, ciudad: string, ahora: Date): Promise<ArtistaLista[]> {
   const [t, f1] = await Promise.all([
-    supabase.rpc("tira_destacados", { p_tipo: "artistas", p_ciudad: ciudad }),
+    supabase.rpc("artistas_destacados_novedades", { p_ciudad: ciudad }),
     supabase
       .from("eventos_artistas")
       .select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre))")
@@ -56,7 +58,7 @@ async function leerArtistasDestacados(supabase: SupabaseClient, ciudad: string, 
       .limit(500),
   ]);
   if (t.error || !Array.isArray(t.data) || f1.error || !Array.isArray(f1.data)) throw new Error("lectura incompleta");
-  const tira = t.data as Destacado[];
+  const tira = t.data as { id: string; motivo: "elegido" | "novedad" | "asistentes"; van: number; novedad_id: string | null; proveedor: ProveedorNovedadArtista | null; novedad_creado_en: string | null }[];
   const fechas: FechaDeArtista[] = [];
   for (const fila of (f1.data ?? []) as unknown as FilaFecha[]) {
     const e = Array.isArray(fila.evento) ? fila.evento[0] : fila.evento;
@@ -81,6 +83,10 @@ async function leerArtistasDestacados(supabase: SupabaseClient, ciudad: string, 
 
   const { data, error } = await supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto").eq("visible", true).eq("ciudad", ciudad).not("foto", "is", null).in("id", ids);
   if (error || !Array.isArray(data)) throw new Error("artistas no disponibles");
-  const artistas = conProximaFecha((data ?? []) as ArtistaResumen[], fechas);
+  const porId = new Map(tira.map((d) => [d.id, d]));
+  const artistas = conProximaFecha((data ?? []) as ArtistaResumen[], fechas).map((a) => {
+    const d = porId.get(a.id);
+    return { ...a, novedad: d?.novedad_id && d.proveedor && d.novedad_creado_en ? { novedad_id: d.novedad_id, proveedor: d.proveedor, creado_en: d.novedad_creado_en } : null };
+  });
   return (tira.length ? enOrden(tira, artistas) : artistas).slice(0, TOPE_ARTISTAS_DESTACADOS);
 }

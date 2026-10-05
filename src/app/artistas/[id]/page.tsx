@@ -17,6 +17,7 @@ import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import BarraFicha from "@/components/ui/BarraFicha";
+import { Chip } from "@/components/ui/Chip";
 import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
@@ -35,7 +36,7 @@ import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { incrustadoDeNovedad } from "@/lib/incrustado";
-import type { NovedadArtista } from "@/lib/novedadesArtista";
+import { leerNovedadesRecientes, selloNovedadArtista, type NovedadArtista } from "@/lib/novedadesArtista";
 import { qrDeUrl } from "@/lib/qr";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { videoEmbedDe } from "@/lib/video";
@@ -45,7 +46,7 @@ import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from 
 import EsMiNombre from "./EsMiNombre";
 import SeccionNovedades, { type NovedadParaFicha } from "./SeccionNovedades";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; novedad?: string }> };
 type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null };
 type FilaEvento = Omit<EventoAgenda, "lugar" | "van"> & { lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 
@@ -118,7 +119,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
  * visitante sin ese permiso nunca recibe una fila con `visible = false`: la etiqueta "Oculta" de la ficha
  * (`SeccionNovedades`) se apoya en ese contrato de la base, no en una comprobación propia aquí — antes de esta
  * pieza el filtro explícito ocultaba lo oculto incluso a quien gestiona, que es lo que pedía corregir el encargo. */
-async function cargarNovedadesArtista(artistaId: string): Promise<NovedadParaFicha[]> {
+async function cargarNovedadesArtista(artistaId: string, novedadId?: string): Promise<NovedadParaFicha[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
   const { data } = await supabase
@@ -126,8 +127,17 @@ async function cargarNovedadesArtista(artistaId: string): Promise<NovedadParaFic
     .select("id, url, proveedor, embed_id, titulo, texto, creado_en, visible")
     .eq("artista_id", artistaId)
     .order("creado_en", { ascending: false })
+    .order("id", { ascending: false })
     .limit(50);
-  return ((data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "embed_id" | "titulo" | "texto" | "creado_en" | "visible">[]).map((n) => ({
+  const filas = (data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "embed_id" | "titulo" | "texto" | "creado_en" | "visible">[];
+  // Un enlace antiguo puede apuntar fuera de las primeras50. Solo esa publicación, de esta ficha y visible.
+  if (novedadId && esUuid(novedadId) && !filas.some((n) => n.id === novedadId)) {
+    const { data: destino } = await supabase.from("novedades_artista")
+      .select("id, url, proveedor, embed_id, titulo, texto, creado_en, visible")
+      .eq("artista_id", artistaId).eq("id", novedadId).eq("visible", true).maybeSingle();
+    if (destino) filas.push(destino);
+  }
+  return filas.toSorted((a, b) => Date.parse(b.creado_en) - Date.parse(a.creado_en) || b.id.localeCompare(a.id)).map((n) => ({
     id: n.id,
     titulo: n.titulo,
     texto: n.texto,
@@ -217,7 +227,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 /** Ficha de artista: decisiones 6 a 11 y 15 de docs/rediseno/08-artistas-flujo-y-estados.md. */
 export default async function FichaArtista({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo, accion, error } = (await searchParams) ?? {};
+  const { nuevo, accion, error, novedad } = (await searchParams) ?? {};
   const [a, actual] = await Promise.all([cargarArtista(id), usuarioActual()]);
   if (!a) notFound();
   // La dirección vieja (/artistas/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
@@ -227,6 +237,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
     if (nuevo) p.set("nuevo", nuevo);
     if (accion) p.set("accion", accion);
     if (error) p.set("error", error);
+    if (novedad && esUuid(novedad)) p.set("novedad", novedad);
     const q = p.toString();
     permanentRedirect(`${hrefArtista(a)}${q ? `?${q}` : ""}`);
   }
@@ -240,10 +251,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   // `MetaArtista` y `SeccionFechasArtista`, memoizadas con `cache()` para pedirse una sola vez). La cabecera (foto,
   // nombre, etiqueta), el menú de administración y el compartir junto al avatar no las esperan. Si yo lo sigo se
   // pregunta aparte, una fila como mucho (nunca la lista entera), para que el botón Seguir salga ya con su estado.
-  const [mio, ligados, novedades] = await Promise.all([
+  const [mio, ligados, novedades, recientes] = await Promise.all([
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("artista_id", a.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
     cargarLigadas(a.id),
-    cargarNovedadesArtista(a.id),
+    cargarNovedadesArtista(a.id, novedad),
+    leerNovedadesRecientes(supabase, a.ciudad, [a.id]),
   ]);
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
@@ -278,7 +290,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const migajas = jsonLdVisible ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Artistas", url: "/artistas" }, { nombre: a.nombre, url: hrefArtista(a) }]) : null;
 
   const detalle = a.detalle ? a.detalle.charAt(0).toUpperCase() + a.detalle.slice(1) : null;
-  const hayAvisos = nuevo === "1" || (puedeEditar && faltanDetalles) || error === "borrar" || !a.visible;
+  const sello = a.visible ? selloNovedadArtista(recientes.get(a.id)) : null;
+  const hayAvisos = !!sello || nuevo === "1" || (puedeEditar && faltanDetalles) || error === "borrar" || !a.visible;
 
   return (
     // Con portada propia (OL-247) el héroe la enseña; sin ella lleva el símbolo SN. La foto va siempre de avatar (docs/rediseno/50, puntos 41 y 49).
@@ -332,6 +345,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
       {hayAvisos && (
         <div className={ficha.avisos}>
+          {sello && <div><Chip variante="sello">{sello}</Chip></div>}
           {nuevo === "1" && (
             <div className={ficha.publicado} role="status">
               <b>Publicado.</b>
@@ -397,7 +411,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
         {/* Novedades, fase 1 (doc 44 §1, OL-175): después de las fechas, antes de «Sobre». Sin novedades y sin poder publicar,
             la sección no aparece. */}
-        <SeccionNovedades novedades={novedades} artistaNombre={a.nombre} hrefPublicar={hrefPublicarNovedad} hrefFicha={hrefArtista(a)} />
+        <SeccionNovedades novedades={novedades} artistaNombre={a.nombre} hrefPublicar={hrefPublicarNovedad} hrefFicha={hrefArtista(a)} novedadId={novedad} />
 
         {videos.length > 0 && (
           <section className={ficha.bloque} aria-label="Video">

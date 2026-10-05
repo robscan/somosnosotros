@@ -281,3 +281,12 @@ describe("borrarNovedadArtista", () => {
     expect(m.redirigir).toHaveBeenCalledWith(VOLVER);
   });
 });
+
+
+it.each(["publicar", "editar", "borrar"] as const)("%s revalida la ficha, Inicio y Artistas", async (accion) => {
+  const fd = formulario({ url: URL_YT });
+  if (accion === "publicar") await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, fd);
+  else if (accion === "editar") await actualizarNovedadArtista(ARTISTA_ID, NOVEDAD_ID, VOLVER, null, fd);
+  else await borrarNovedadArtista(ARTISTA_ID, NOVEDAD_ID, VOLVER);
+  expect(m.revalidar.mock.calls).toEqual([[VOLVER], ["/"], ["/artistas"]]);
+});
