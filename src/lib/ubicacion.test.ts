@@ -269,3 +269,113 @@ describe("ubicación al día sin toque (OL-255)", () => {
     expect(getCurrentPosition).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("geolocalización nativa de la app (plugin de Capacitor, OL-256)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-01T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * La app con el plugin: `window.Capacitor.Plugins.Geolocation` con el permiso en `estado`. El WKWebView sigue sin `permissions.query`
+   * (lanza) y su `navigator.geolocation` no debe tocarse nunca: es el que haría salir el aviso del sitio.
+   */
+  function appConPlugin(estado: string, lat = 22.15) {
+    const checkPermissions = vi.fn(async () => ({ location: estado }));
+    const getCurrentPosition = vi.fn<(opciones: object) => Promise<{ coords: object }>>(async () => ({ coords: { latitude: lat, longitude: -100.98, accuracy: 65 } }));
+    const navegadorGetCurrentPosition = vi.fn();
+    vi.stubGlobal("window", { localStorage: crearAlmacenFalso(), Capacitor: { Plugins: { Geolocation: { checkPermissions, getCurrentPosition } } } });
+    vi.stubGlobal("navigator", {
+      geolocation: { getCurrentPosition: navegadorGetCurrentPosition },
+      permissions: {
+        query: async () => {
+          throw new DOMException("Permissions::query does not support this API", "NotSupportedError");
+        },
+      },
+    });
+    return { checkPermissions, getCurrentPosition, navegadorGetCurrentPosition };
+  }
+
+  it("concedido: recién abierta la app relee sola, por el plugin y nunca por el navegador", async () => {
+    const { releerUbicacionAlDia, ubicacionCercanaFresca } = await import("./ubicacion");
+    const { getCurrentPosition, navegadorGetCurrentPosition } = appConPlugin("granted");
+
+    await expect(releerUbicacionAlDia()).resolves.toBe(true);
+    expect(getCurrentPosition).toHaveBeenCalledWith({ enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+    expect(navegadorGetCurrentPosition).not.toHaveBeenCalled();
+    expect(ubicacionCercanaFresca()).toEqual({ lat: 22.15, lng: -100.98 });
+  });
+
+  it.each([["prompt"], ["denied"]])("con el permiso en %s: no lee sin toque", async (estado) => {
+    const { releerUbicacionAlDia, permisoConcedido } = await import("./ubicacion");
+    const { getCurrentPosition, navegadorGetCurrentPosition } = appConPlugin(estado);
+
+    await expect(permisoConcedido()).resolves.toBe(false);
+    await expect(releerUbicacionAlDia()).resolves.toBe(false);
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+    expect(navegadorGetCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it("si checkPermissions falla, cuenta como no concedido y no lee", async () => {
+    const { permisoConcedido } = await import("./ubicacion");
+    const { checkPermissions, getCurrentPosition } = appConPlugin("granted");
+    checkPermissions.mockRejectedValueOnce(new Error("sin servicios de ubicación"));
+
+    await expect(permisoConcedido()).resolves.toBe(false);
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it("la lectura de un toque (permiso por decidir) va por el plugin, que pide el permiso al sistema", async () => {
+    const { leerUbicacionCercana } = await import("./ubicacion");
+    const { getCurrentPosition, navegadorGetCurrentPosition } = appConPlugin("prompt");
+
+    await expect(leerUbicacionCercana()).resolves.toEqual({ lat: 22.15, lng: -100.98 });
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(navegadorGetCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it("la precisa pide GPS y devuelve la precisión del plugin", async () => {
+    const { leerUbicacionConPrecision } = await import("./ubicacion");
+    const { getCurrentPosition } = appConPlugin("granted");
+
+    await expect(leerUbicacionConPrecision()).resolves.toEqual({ punto: { lat: 22.15, lng: -100.98 }, precisionM: 65 });
+    expect(getCurrentPosition).toHaveBeenCalledWith({ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+  });
+
+  it("los rechazos del plugin: permiso negado o restringido es «negado»; cualquier otro, «error»", async () => {
+    const { leerUbicacion } = await import("./ubicacion");
+    const { getCurrentPosition } = appConPlugin("granted");
+
+    getCurrentPosition.mockRejectedValueOnce({ code: "OS-PLUG-GLOC-0003" });
+    await expect(leerUbicacion()).rejects.toBe("negado");
+    getCurrentPosition.mockRejectedValueOnce({ code: "OS-PLUG-GLOC-0008" });
+    await expect(leerUbicacion()).rejects.toBe("negado");
+    getCurrentPosition.mockRejectedValueOnce({ code: "OS-PLUG-GLOC-0010" });
+    await expect(leerUbicacion()).rejects.toBe("error");
+    getCurrentPosition.mockRejectedValueOnce(new Error("sin código"));
+    await expect(leerUbicacion()).rejects.toBe("error");
+  });
+
+  it("sin el plugin (app vieja de TestFlight o web) todo sigue como en OL-255: window.Capacitor sin Geolocation", async () => {
+    const { releerUbicacionAlDia } = await import("./ubicacion");
+    const getCurrentPosition = vi.fn((exito: PositionCallback) => exito({ coords: { latitude: 22.15, longitude: -100.98 } } as GeolocationPosition));
+    vi.stubGlobal("window", { localStorage: crearAlmacenFalso(), Capacitor: { Plugins: { Calendario: {} } } });
+    vi.stubGlobal("navigator", {
+      geolocation: { getCurrentPosition },
+      permissions: {
+        query: async () => {
+          throw new DOMException("Permissions::query does not support this API", "NotSupportedError");
+        },
+      },
+    });
+
+    await expect(releerUbicacionAlDia()).resolves.toBe(false); // WKWebView recién abierto: ni un aviso sin toque
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+  });
+});
