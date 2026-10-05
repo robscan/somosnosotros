@@ -1197,3 +1197,12 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
    - el respaldo de destacados, que puede mostrar a un artista quitado;
    - el nombre de la ciudad con Mapbox: «no por ahora»;
    - C5 / OL-151, detenida para código, y C6, sin decidir.
+
+**Arranque del gestor IV (2026-10-05, 09:03):** sesión `local_e38b4025-4401-4bb7-aa58-840fc5a96f9d`, título «Gestor de cambios IV», modelo `claude-fable-5-1` comprobado con `get_session`, hija del gestor III. Worktree propio `.claude/worktrees/priceless-gates-787b65`; el registro sigue saliendo de `.claude/worktrees/registro-gestor` (esta es la rama `gestor-registro-15`). main al arrancar: `69288660` (#350 unido). Sin PR abiertos.
+
+- **OL-286 / bitácora 314 · Sesión de diseño de Eventos (pieza propia del gestor IV, solo prototipo).** Reservada el 2026-10-05.
+  - **Rama y worktree:** `prototipo-eventos-donde` desde `origin/main` (`69288660`), en `.claude/worktrees/prototipo-eventos-donde`.
+  - **Archivos propios:** `docs/rediseno/prototipos/eventos-superficies.html`, `docs/rediseno/capturas-314/`, la bitácora 314 y la línea OL-286. Nada de `src/`.
+  - **Alcance:** superficies de sugerencias al publicar un evento (inauguración → exposición; segundo acto → festival; parte de OL-273, prototipo de Codex `901215d3` en `origin/prototipo-eventos`), el renglón «Dónde» que siempre abre el mapa (lugar del catálogo en hoja media; sitio fuera del catálogo con pin temporal, «Cómo llegar» y «Agregar como lugar» solo con sesión y si no es negocio; reservados fuera; Mapbox solo con coordenadas) y la medición en el simulador del teclado que tapa campos en «Editar novedad».
+  - **Notas pedidas** al chat «Actividad de investigación de eventos» (`local_cd16e55a`) el 2026-10-05, 09:05.
+  - **Siguientes libres tras esta reserva: OL-287 y bitácora 315.**
