@@ -70,10 +70,10 @@ export function datosEventoNativo(e: EventoCalendario): EventoCalendarioNativo {
 }
 
 /**
- * Calendario del mes y horas del día para `ui/SelectorFecha` (OL-162, bitácora 197): la hoja propia de fecha y
- * hora para escritorio. El selector nativo de Chrome no aparece en la app instalada en un monitor externo
- * (bitácora 195, OL-160) — «es un riesgo que no quiero correr» (founder). Lógica pura, sin DOM: se prueba sola
- * en `calendario.test.ts`; la usa `SelectorFecha`, que además sabe pintar la rejilla y responder al teclado.
+ * Calendario del mes y horas del día para las hojas propias de día y de hora (OL-162, bitácora 197; partidas en dos en
+ * OL-298, bitácora 326: `ui/SelectorDia` y `ui/SelectorHora`). El selector nativo de Chrome no aparece en la app instalada
+ * en un monitor externo (bitácora 195, OL-160) — «es un riesgo que no quiero correr» (founder). Lógica pura, sin DOM: se
+ * prueba sola en `calendario.test.ts`; la usan `ui/Calendario` y las dos hojas, que además saben pintar y responder al teclado.
  */
 
 const MS_DIA = 86400000;
@@ -158,6 +158,74 @@ export function pasosHora(paso = 15): string[] {
     out.push(`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
   }
   return out;
+}
+
+/** Las horas que se ofrecen para terminar: las del día, o solo las posteriores a `despuesDe` ("HH:MM") cuando el evento
+ *  termina el mismo día que empieza (nunca se puede terminar antes de empezar ni a la misma hora). */
+export function horasDeFin(despuesDe?: string, paso = 15): string[] {
+  const horas = pasosHora(paso);
+  return despuesDe ? horas.filter((h) => h > despuesDe) : horas;
+}
+
+/** La hora de fin de un evento de varios días al que nadie le puso hora: acaba con su último día. Es la misma regla
+ *  de `terminaDe` (sin fin, el evento dura hasta el final de su día), escrita como hora porque `eventos.fin` guarda
+ *  siempre un instante: no se puede tener un día de fin sin hora (OL-298). En el selector se lee «Sin hora de fin». */
+export const FIN_DEL_DIA = "23:59";
+
+/** "9:00 p.m." a partir de "HH:MM". */
+export function etiquetaHora(hora: string): string {
+  const [h, m] = hora.split(":").map(Number);
+  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(2000, 0, 1, h, m));
+}
+
+/** Lo que van marcando los toques de la hoja de días: el primero es el inicio; uno posterior, el fin (`hasta`).
+ *  `hasta` null es «esperando el fin» (se tocó un inicio y falta saber si dura más); `hasta` igual a `desde` es un solo día
+ *  ya confirmado (el que trae un evento al abrir la hoja); posterior a `desde`, un rango cerrado. */
+export type DiasElegidos = { desde: string; hasta: string | null };
+
+/** Qué pasa al tocar un día (OL-298): el primer toque elige el inicio; un segundo toque en un día posterior elige el
+ *  fin; tocar uno anterior, o tocar con el rango (o el día) ya cerrado, empieza de nuevo desde ese día. Tocar otra vez el
+ *  inicio recién marcado no cambia nada (la fecha es obligatoria: no se puede dejar vacía). */
+export function tocarDia(actual: DiasElegidos, dia: string): DiasElegidos {
+  if (!actual.desde || actual.hasta !== null || dia < actual.desde) return { desde: dia, hasta: null };
+  if (dia > actual.desde) return { desde: actual.desde, hasta: dia };
+  return actual;
+}
+
+/** El estado de partida de la hoja de días: lo que ya hay, como elección cerrada (un fin posterior al inicio es un rango;
+ *  si no, un solo día). El primer toque siempre empieza de nuevo: si abrir la hoja dejara el día «esperando el fin», tocar
+ *  otro día para cambiar la fecha la alargaría sin que nadie lo pidiera. */
+export function diasIniciales(desde: string, hasta?: string): DiasElegidos {
+  return { desde, hasta: desde ? (hasta && hasta > desde ? hasta : desde) : null };
+}
+
+/** Lo que se aplica al confirmar: `hasta` solo si el evento dura más de un día; null si es uno solo. */
+export function ultimoDia({ desde, hasta }: DiasElegidos): string | null {
+  return hasta !== null && hasta > desde ? hasta : null;
+}
+
+/** "14 de noviembre" (con " de 2027" si no es el año de `hoy`): un día de calendario, igual en cualquier zona. */
+function diaTexto(fecha: string, hoy: string, conMes = true): string {
+  const d = new Date(`${fecha}T12:00:00Z`);
+  const dia = String(d.getUTCDate());
+  if (!conMes) return dia;
+  const mes = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", month: "long" }).format(d);
+  return `${dia} de ${mes}${fecha.slice(0, 4) === hoy.slice(0, 4) ? "" : ` de ${fecha.slice(0, 4)}`}`;
+}
+
+/** El texto de estado de la hoja de días: dice qué se eligió y qué falta. */
+export function textoDias({ desde, hasta }: DiasElegidos, hoy: string): string {
+  if (!desde) return "Toca el día en que empieza.";
+  if (hasta === null) return `Empieza el ${diaTexto(desde, hoy)}. Si dura varios días, toca el último.`;
+  if (hasta === desde) return `El ${diaTexto(desde, hoy)}.`;
+  // Mismo mes: "Del 14 al 16 de noviembre"; si no, cada día con su mes ("Del 30 de noviembre al 2 de diciembre").
+  const mismoMes = desde.slice(0, 7) === hasta.slice(0, 7);
+  return `Del ${diaTexto(desde, hoy, !mismoMes)} al ${diaTexto(hasta, hoy)}.`;
+}
+
+/** Lo que dice el botón de la hoja de días: «Falta el día», «Listo, un solo día» o «Listo». */
+export function botonDias({ desde, hasta }: DiasElegidos): string {
+  return !desde ? "Falta el día" : hasta === null || hasta === desde ? "Listo, un solo día" : "Listo";
 }
 
 /** El paso más cercano a `hora` (para marcar la sugerida aunque no caiga justo en un paso de la lista). */
