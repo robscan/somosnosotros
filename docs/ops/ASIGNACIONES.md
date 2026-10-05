@@ -903,3 +903,235 @@ Estado al relevo (main `6d870573`):
   - El cuerpo oculta el desborde: el domingo queda de 24×44 y los días interiores de 38×44.
   - Archivos probables: `ui/Calendario.module.css`. Se reserva cuando el founder lo pida o junto a otra pieza de UI.
 - **Prototipos en main con «publica» del founder:** OL-274 #336 → `bfe2a1e` y OL-275 #337 → `d6d9f29d`, los dos con la CI en verde. Solo documentos. La firma de cada uno sigue pendiente para la fase de código. OL-273 sigue local (`4308172f`), en espera del visto bueno del founder.
+- **Decisiones del founder (2026-10-04, noche):**
+  - **OL-275 FIRMADO.** Pasa a la fase 2, el código, con Codex, en la rama `novedades-destacados` desde `origin/main`. Antes de programar, Codex propone la forma SQL y su costo al gestor.
+  - **OL-274 sin firma todavía.** Quiere ver el caso de quien está en un lugar sin ciudad registrada, con el botón «Agregar un lugar donde estás». Codex lo añade al prototipo.
+  - **OL-273 en pausa.** Implica nuevas superficies de diseño. Las hará el gestor con el modelo Fable al día siguiente (2026-10-05), cuando haya tokens.
+- **OL-275, fase 2, migración reservada:** `supabase/migrations/20261005090000_destacados_novedades.sql`. Solo añade. La aplica el gestor después de revisar el SQL.
+- **OL-275, revisión del SQL de Codex (`e51954f6`):** devuelto con tres cambios antes de `src`.
+  - No perder los destacados automáticos por asistentes (3 o más), que la tira actual incluye: orden elegidos → novedades → asistentes.
+  - Reutilizar `tira_destacados('artistas', …)` en vez de duplicar el cálculo de `van`.
+  - Un `quitado = true` vigente veta al artista también por novedad.
+  - El índice parcial se conserva.
+  - Archivos confirmados: `cargarArtistasDestacados.ts`, `artistas.ts`, `novedadesArtista.ts`, `destacados.ts`, `Destacados.tsx`, `RenglonArtista.tsx`, `app/artistas/page.tsx`, la ficha con `SeccionNovedades`, las acciones de novedades (para que revaliden Inicio y Artistas) y sus pruebas.
+- **OL-275, SQL `ea4e840a` aceptado por el gestor. Luz verde para `src`.**
+  - El orden es elegidos → novedades → asistentes, con `tira_destacados` como única fuente y veto por `quitado`.
+  - El límite interno de 8 de la tira se acepta como regla existente («hasta 8 por sección»): un noveno elegido con novedad entra como novedad, con su sello.
+  - Costo: unos 2 ms en caliente y 7 ms en frío.
+- **OL-275:** el control «Ocultar / Volver a mostrar» para novedades queda fuera de la pieza.
+  - Retirar una novedad hoy: el artista la borra, o la administración la oculta en la base.
+  - Pendiente futura: un control de moderación de novedades, con prototipo antes.
+- **Regla recordada por el founder (2026-10-04):** todo campo de texto, sobre todo los buscadores, muestra la ✕ para limpiar en cuanto hay texto (`ui/Limpiar` o la de `CampoBuscar`). El gestor la revisa en cada entrega.
+  - En producción, los formularios con texto ya la usan.
+  - Al prototipo de OL-273 le falta en «Nombre del evento» y en los campos de sus hojas; se corrige al retomarlo.
+- **OL-275:** el veto de `quitado` aplica a las entradas por novedad y por asistentes. El respaldo de próximos y seguidores no cambia.
+  - Pendiente futuro heredado: si la tira queda vacía, el respaldo puede mostrar a un artista quitado, como ya pasa hoy.
+- **OL-276 / bitácora 303 · Ficha en blanco con «reducir movimiento» al entrar directo (2026-10-04, reserva para Codex, chat 01a108e1).** Fallo de producción heredado que encontró la QA de OL-275.
+  - Causa: `EntradaFicha` nace «cerrada» en el servidor y «quieta» en el cliente según `matchMedia`; la hidratación conserva «cerrada» y nada la vuelve a cambiar.
+  - **Rama:** `ficha-movimiento-reducido`, desde `origin/main`, en su propio worktree.
+  - **Archivos:**
+    - `src/components/ui/EntradaFicha.tsx` y `EntradaFicha.module.css`;
+    - su prueba de regresión de SSR e hidratación;
+    - la bitácora 303 y la línea OL-276.
+  - **Arreglo mínimo:** el mismo estado inicial en servidor y cliente. Con movimiento reducido, pasa a «quieta» en un efecto, y el CSS reducido pone `transform: none` desde el primer pintado. Sin rediseño.
+  - Se publica aparte y antes que OL-275, con la revisión del gestor y el «publica» del founder.
+- **OL-275, PR #339 (`899eb7c4`) revisado por el gestor:**
+  - la migración es idéntica al SQL aceptado;
+  - el cargador usa la RPC nueva;
+  - el sello va con el tratamiento de «Hoy»;
+  - las tres acciones revalidan la ficha, Inicio y Artistas.
+
+  **Migración `20261005090000` aplicada en producción** (primero en simulacro). Solo añade, y el código de producción no la llama todavía.
+  - La RPC como anon en San Luis devuelve 5: 4 elegidos (2 con YouTube) y 1 de novedad.
+  - Producción sigue respondiendo 200.
+  - Falta el «publica» del founder para unir #339, después de OL-276 (#340).
+- **OL-277 / bitácora 304 · Investigación SEO, solo documentos (2026-10-04, reserva para Codex, chat 01a10965).** Encargo del founder: guardar el informe con las demás investigaciones y presentar un plan.
+  - **Rama:** `investigacion-seo`, desde `origin/main`, en su propio worktree.
+  - **Archivos:**
+    - `docs/investigaciones/seo.md` (nuevo);
+    - una fila en `docs/investigaciones/README.md`;
+    - la bitácora 304, la línea OL-277 y el «Last updated».
+  - Sin código. Publica el gestor con el «publica» del founder.
+- **OL-278 / bitácora 305 · SEO etapa A: URL de Event igual al canonical y sitemap que no publica un catálogo parcial (reserva para Codex, chat 01a10965).**
+  - **Rama:** `seo-eventos-sitemap`, desde `origin/main`.
+  - **Archivos:**
+    - `src/app/eventos/[id]/page.tsx`, solo el argumento `slug` de `jsonLdEvento`;
+    - `src/lib/eventos.test.ts` y `src/app/eventos/[id]/page.test.ts` (solo pruebas, añadido por el gestor);
+    - `src/app/sitemap.ts`, `src/lib/sitemap.ts` y `src/lib/sitemap.test.ts`;
+    - la bitácora 305 y la línea OL-278.
+  - **A2, decisión del gestor:**
+    - si falla cualquiera de las consultas, el sitemap responde con error (5xx) y no un 200 parcial;
+    - sin cliente o sin variables de entorno, solo las páginas generales.
+  - B, C y D quedan como propuesta. Search Console depende del founder.
+- **Datos corregidos con autorización del founder (2026-10-04):** dos eventos del 9° Festival de Cine UASLP («apertura-juana» y «el-diablo-fuma…») tenían el sitio en texto con erratas («Bicenteario» y una «т» cirílica) y sin lugar.
+  - Ahora apuntan a la ficha del CC200 (`e83c27aa`), como el tercero del festival, y se limpió el sitio en texto.
+  - Producción publica ya `Event` con CC200 en las dos fichas.
+- **OL-276, PR #340 (`c7fbaec9`) aceptado por el gestor.** El estado inicial es igual en servidor y cliente; el primer efecto decide entre «quieta» y «abierta»; el CSS reducido pone `transform: none`. La CI está en verde. Falta el «publica»; va antes que #339.
+- **Search Console:** la cuenta de Google del founder en Chrome no tiene ninguna propiedad. El DNS del dominio está en Vercel (`ns1.vercel-dns.com`). Dar de alta la propiedad de dominio requiere un registro TXT, y eso pide permiso del founder.
+- **OL-277, documentos `f73fca03` aceptados por el gestor.**
+  - Cuatro archivos dentro de la reserva, enlaces bien, cadena de OPEN_LOOPS conservada y sin correos.
+  - Se publican con el «publica» del founder.
+  - Nota que va a la bitácora 305: la corrección de datos tocó dos eventos, no uno.
+- **«Publica» del founder para OL-276 (#340) y OL-275 (#339)**, transmitido por Codex (chat 01a108e1): «Apruebo». El gestor publica en ese orden con `publicar.sh` y comprueba el despliegue.
+- **OL-274 FIRMADO por el founder, con autorización expresa de producción** («Listo. Apruebo, notifica a gestor vamos a prod», chat 01a1082a, sobre el enlace `d6d9f29d`). El caso lejano ya está en el código de `fa828b15` (estado 5) y se verifica en la QA del código, sin añadirlo al prototipo.
+  - **A · persistencia de la ciudad en OL-270**, rama `hoja-ciudades` (PR #333). Traer `origin/main` con el resolutor.
+    - **Archivos:**
+      - `src/lib/ciudad.ts`, `src/lib/ciudades.ts` y sus pruebas;
+      - `src/components/Ciudad.tsx` y su prueba de componentes;
+      - `src/components/NavSecciones.tsx` y la prueba de componentes del armazón;
+      - `src/components/ui/Logotipo.tsx`, solo el `href`;
+      - las `page.tsx` de Inicio, Agenda, Lugares, Artistas y Buscar, solo para resolver la ciudad y su metadata;
+      - la bitácora 297.
+    - `memoriaPantalla` no se toca, salvo que se demuestre imprescindible.
+  - **B · código de OL-274, bitácora 306**, rama `inicio-mas-adelante`, desde `origin/main` después de unir #339.
+    - **Archivos:**
+      - `src/lib/inicio.ts` y su prueba;
+      - `src/components/Inicio.tsx`;
+      - `src/components/inicio/*` (los carriles), solo lo necesario para «Más adelante»;
+      - `src/app/page.tsx`, para la carga de Inicio;
+      - `src/components/AgendaInicio.tsx`, solo para exportar `Vacio` sin cambiarlo;
+      - `src/components/Destacados.module.css`, solo el arreglo de `.sola .sinFoto`, con su prueba;
+      - la bitácora 306 y la línea OL-274.
+  - **Publicación:** el gestor revisa cada PR y publica sin otra confirmación del founder. Primero A (#333) y después B.
+- **OL-278, PR #341 (`0b0250d2`) aceptado por el gestor.**
+  - A1 es una sola línea: `slug` en `jsonLdEvento`.
+  - A2: si falla cualquiera de las cuatro consultas, se lanza un error y Next responde 5xx o conserva la versión anterior (`revalidate` 3600). Sin cliente, solo las páginas generales.
+  - Las cuatro consultas responden bien hoy en producción como anon.
+  - La CI está en verde. Falta el «publica» del founder, junto con los documentos de OL-277.
+- **OL-276 (#340 → `90f136b`) y OL-275 (#339 → `f653e639`) en producción.**
+  - En #339 el resolutor no pudo con OPEN_LOOPS (las dos cabeceras habían cambiado). El gestor lo resolvió a mano sin perder ninguna línea de main, con la CI del PR en verde antes de unir.
+  - Production en `f653e639` con estado `success`; Inicio y Artistas responden 200 y `/api/estado` está bien.
+  - El Inicio de producción ya muestra «Nuevo video» (3 apariciones).
+  - B de OL-274 ya puede partir de `origin/main`.
+- **Propuesta del founder** (llegó desde el chat «Actividad de investigación de eventos»): en la ficha de evento, el renglón «Dónde» siempre lleva al mapa.
+  - Si es un lugar del catálogo, abre su ficha en una hoja media.
+  - Si es «otro sitio», abre un pin temporal con una ficha armada con datos de Mapbox (por coordenadas del sitio) y una acción para darlo de alta.
+  - Hoy, «otro sitio» es un `div` que parece tocable y no hace nada.
+  - Va con el diseño de superficies de Eventos del 2026-10-05 (OL-273, gestor con Fable).
+  - Pendiente: confirmar con el founder la frase cortada. Los sitios reservados quedan fuera.
+- **OL-279 / bitácora 307 · SEO etapa B: la lista de Lugares en el HTML del servidor (reserva para Codex, chat 01a10965).**
+  - **Propuesta aceptada:** montar `HojaLugares` y la `ListaLugares` pública desde el primer render; la personalización llega después; Seguir no se habilita hasta conocer la sesión; el mapa sigue diferido, con el encuadre al recibir los destacados.
+  - **Rama:** `lugares-ssr`, desde `origin/main` `f653e639`.
+  - **Archivos:** `src/app/lugares/VistaLugares.tsx`, `src/components/ListaLugares.tsx`, sus pruebas nuevas o focalizadas, la bitácora 307 y la línea OL-279.
+  - **No tocar:** `useResuelta`, `HojaLugares` (física y CSS), `lugares/page.tsx` (es de OL-270 A), consultas, topes ni privacidad.
+  - Hoy no hay cruce de archivos con `hoja-ciudades`: su diff solo incluye `VistaLugares` por los commits de #294, que ya están en main.
+- **OL-280 / bitácora 308 · Mixcloud: «Sorry we can't find that content» en la novedad (reserva para Codex, chat 01a108e1).** Fallo reportado por el founder al publicar una pista de Mixcloud.
+  - **Rama:** `mixcloud-incrustado`, desde `origin/main` `f653e639`.
+  - **Archivos:** `src/lib/incrustado.ts`, `src/lib/incrustado.test.ts`, las regresiones de `src/lib/novedadesArtista.test.ts`, la QA focal del formulario y del reproductor, la bitácora 308 y la línea OL-280.
+  - Otros archivos solo con justificación previa.
+  - El arreglo debe servir para las novedades ya guardadas, sin migración de datos.
+  - Ninguna otra pieza activa toca esos archivos.
+- **OL-270 A, PR #333 (`fdc34d3d`) revisado por el gestor.**
+  - Los enlaces de `NavSecciones` y del `Logotipo` llevan la ciudad (`useSearchParams` dentro de `Suspense`).
+  - `destinoDeCiudad` repone la memoria solo si es de la misma ciudad.
+  - El catálogo común de ciudades permite León sin oferta en Artistas.
+  - Se publica sin nueva firma, porque el founder ya autorizó producción, en cuanto la CI salga en verde.
+- **OL-270 A (#333 → `9fa3d4e5`) en producción**, con la autorización del founder. CI en verde y Production en `success`. Responden 200 `/`, `/agenda`, `/lugares`, `/artistas` y `/agenda?ciudad=leon`, y `/api/estado` está bien. Falta B de OL-274.
+- **OL-279, PR #342 (`e0129de0`) aceptado por el gestor.**
+  - `CuerpoLugares` se monta desde el primer render: la lista pública con enlaces normales y sin Seguir mientras falta la cuenta.
+  - El mapa queda en `MapaLugares`, que se monta con los extras y conserva el encuadre inicial con los destacados completos.
+  - Solo 2 archivos de producto. El conflicto que queda es solo de OPEN_LOOPS, por #333.
+  - Se publica con el «publica» del founder junto con OL-277 y #341.
+- **OL-281 / bitácora 309 · CI en paralelo (reserva para Codex, chat 01a10965), a pedido del founder para agilizar.**
+  - **Rama:** `ci-paralela`, desde `origin/main`.
+  - **Archivos:** `.github/workflows/ci.yml`, la bitácora 309 y la línea OL-281.
+  - **Diseño:** tres jobs paralelos (lint, tipos, unitarias y build; PostgreSQL y contratos; inventario, componentes y medir) y un job final con el nombre requerido «verificar» que falla si cualquiera falla, se omite o se cancela.
+  - Se cancelan solo las ejecuciones obsoletas del mismo PR, nunca las de main.
+  - Se conservan todas las pruebas, cuarentenas, presupuestos y la protección de main. Sin permisos, dependencias ni servicios nuevos.
+- **OL-280, PR #343 (`c974536e`) aceptado por el gestor.**
+  - Un solo cambio de producto: `incrustadoDeNovedad` añade la barra final al `feed` de Mixcloud después de validar. No toca lo guardado ni a los demás proveedores.
+  - Causa reproducida con el widget oficial (Randomatic Oct26): sin barra, «Sorry we can't find that content».
+  - La CI está en verde. Falta el «publica» del founder.
+- **«Publica todo» del founder (2026-10-04):** se publican en orden #343 (OL-280), #344 (OL-277), #341 (OL-278), #342 (OL-279) y #345 (registro de OL-274), cada uno solo con la CI en verde.
+- **OL-274 B, PR #346 (`0ee11448`) revisado y aceptado por el gestor.**
+  - 14 archivos dentro de la reserva: `inicio/*` (incluido el nuevo `CarrilMasAdelante`), `lib/inicio`, `page.tsx`, `Vacio` exportado sin cambios y la regla `.sola .sinFoto::before` 5:3 con su prueba.
+  - Sin consulta nueva.
+  - Se publica sin nueva firma, por la autorización del founder, después de la cadena de «publica todo», solo con la CI en verde.
+- **Plan de cierre aprobado por el founder («sí a tus recomendaciones», 2026-10-04):**
+  - #237 y #242 cerrados, con las ramas conservadas.
+  - Mapbox para el nombre de la ciudad: no por ahora.
+  - #295 se retoma después de la cadena: traer main y subir 1.0 (4) a TestFlight.
+  - El alta de Search Console la hace el gestor en el Chrome del founder, por su encargo expreso.
+- **OL-282 / bitácora 310 · Calendario «Cuándo» a 320 sin recortar el domingo (reserva para Codex).**
+  - **Rama:** `calendario-320`, desde `origin/main`.
+  - **Archivos:** `src/components/ui/Calendario.module.css`, `Calendario.tsx` solo si hace falta, la prueba de componentes de `Calendario` (y de la hoja «Cuándo» si la hay), la bitácora 310 y la línea OL-282.
+  - **Criterio:** los siete días completos y tocables (al menos 44 px) a 320, sin cambiar el aspecto a 390 ni en escritorio.
+- **OL-283 / bitácora 311 · Centro de las ciudades con eventos sin lugar (reserva para Codex).**
+  - **Rama:** `ciudades-centro-eventos`, desde `origin/main`.
+  - **Archivos:** una migración que solo añade (`create or replace` de `ciudades_agregadas`, que también suma las coordenadas de los eventos sin lugar), `src/lib/ciudades.ts` (`centroConocido` también con eventos con coordenadas), sus pruebas unitarias y PG, la bitácora 311 y la línea OL-283.
+  - El gestor revisa el SQL antes de `src` y aplica la migración.
+- **Search Console dado de alta por el gestor (2026-10-04, encargo del founder).**
+  - Propiedad de dominio `sc-domain:somosnosotros.org`, verificada por DNS: registro TXT `google-site-verification=…` en Vercel DNS, con el comentario «Verificacion de Google Search Console». **No borrar ese registro.**
+  - Sitemap `https://somosnosotros.org/sitemap.xml` enviado: responde 200 con 892 URL. La primera lectura de Google aparece como «No se ha podido obtener», algo normal recién enviado; se revisa en 1 o 2 días.
+  - Línea base de SEO: los datos empiezan a llegar en 2 o 3 días.
+- **OL-281, PR #347 (`5555b3d8`) aceptado por el gestor.**
+  - Tres jobs en paralelo (codigo, contratos, interfaz) y un `verificar` final con `needs` + `always()` que exige los tres en `success`.
+  - La concurrencia cancela solo las ejecuciones viejas del mismo PR; los push a main tienen grupo único.
+  - Mismos comandos y cuarentenas, sin permisos ni secretos.
+  - Medido: la espera baja de 7m18s a unos 4m25s (−39 %); el cómputo acumulado sube un 28-37 %.
+  - Falta el «publica» del founder.
+- **«Publica» del founder para #347 (OL-281).** Va en cola después de #346.
+- **OL-284 / bitácora 312 · Aviso al cambiar de ciudad (reserva para Codex, chat 01a1082a).**
+  - El founder eligió A: «Tus planes» siguen globales y arriba, sin desplazar la vista. Después pidió «un toast de confirmación».
+  - **Tratamiento:** el `Hecho` existente, solo con texto y `role=status`, con el letrero «Ciudad cambiada a {ciudad}».
+    - Sale solo tras una elección manual de otra ciudad en la hoja de ciudades, en cualquier sección, una vez que la ruta nueva resuelve esa ciudad.
+    - No sale al elegir la misma ciudad, con la selección automática por GPS, al entrar, al recargar, con una URL ni con Atrás.
+    - Un solo aviso a la vez, por el canal existente.
+  - **Rama:** `aviso-ciudad`, desde `origin/main` después de unir #346.
+  - **Archivos:** `src/components/Ciudad.tsx`, `src/components/useCanalDeListas.tsx` (solo hacer opcional el botón en el tipo, si hace falta y sin cambiar comportamiento), las pruebas de componentes de `Ciudad`, la bitácora 312 y la línea OL-284.
+  - Sin estilos, duraciones ni controles nuevos.
+- **OL-284, alcance ajustado por el gestor:** el aviso sale solo en las pantallas que ya tienen canal (Inicio y Lugares, con `PantallaConAviso`). Agenda, Artistas y Buscar no se recablean ahora.
+  - Archivos añadidos: `src/lib/avisoDePantalla.ts`, solo para hacer opcional el `boton`, con su prueba de contrato.
+  - La marca de elección manual vive en la memoria del módulo de `Ciudad`, de un solo uso.
+  - `useCanalDeListas.tsx` sale de la reserva.
+- **En producción, cadena de «publica todo» completa:**
+  - #343 (OL-280) `f9ba5ff`, #344 (OL-277) `8bf167f`, #341 (OL-278) `79c87b4`, #342 (OL-279), #345 (registro de OL-274) `38e5889` y #346 (OL-274 B) `0fe0b360`.
+  - Production en `0fe0b360` con estado `success`.
+  - **Verificado:**
+    - `/?ciudad=leon` muestra «Más adelante» con «Un León Marinero» (vie 13 de nov);
+    - `/lugares` trae 20 enlaces a fichas en el HTML del servidor;
+    - el `Event` de «apertura-juana» lleva la URL con slug;
+    - el sitemap responde 200 con 892 URL.
+  - **OL-274 completa** (A y B). #347 (OL-281) va después.
+- **Mixcloud comprobado por el founder en su iPhone (2026-10-04):** «Randomatic Oct 26» se reconoce y el reproductor carga, con duración 55:56. OL-280 confirmada.
+- **Nuevo reporte del founder, para revisar el 2026-10-05:** en «Editar novedad» (Safari iOS), con el teclado abierto, el teclado tapa algunos campos. En su captura, «Texto (opcional)» queda bajo el teclado.
+  - Hay que medir si se puede desplazar hasta los campos de abajo y si el campo enfocado siempre queda visible (`scroll-margin`, `visualViewport` y la barra de Safari iOS 26).
+  - Probablemente afecta a todos los formularios del canon. Se reproduce en el simulador antes de proponer nada.
+- **OL-281 (#347 → `3519a899`) en main.** La primera CI en paralelo en main salió en verde (codigo, contratos, interfaz y verificar). `publicar.sh` ya lee los checks nuevos.
+- **Robscan:** su «quitado» lo reemplazó una elección de la administración (2026-10-05 02:44 UTC, hasta el 19 de octubre). Ahora sale primero, con «Nuevo audio».
+  - Propuesta pendiente de respuesta del founder: que una novedad posterior al «quitado» lo levante.
+- **OL-285 / bitácora 313 · Una novedad posterior al «quitado» lo levanta (reserva para Codex, chat 01a108e1).** Regla aprobada por el founder (2026-10-04).
+  - **Rama:** `novedad-levanta-quitado`, desde `origin/main`.
+  - **Archivos:**
+    - una migración nueva con `create or replace function public.artistas_destacados_novedades` (el veto solo si `destacados.creado_en` del «quitado» es posterior o igual a la novedad vigente);
+    - sus pruebas PG;
+    - la bitácora 313 y la línea OL-285.
+  - Antes, comprobar que `cambiar_destacado` fija `creado_en` cuando se quita. Si no es así, proponer al gestor cómo fecharlo.
+  - El gestor revisa el SQL y aplica la migración.
+- **Pregunta del founder, para diseño:** que el reproductor de novedades siga sonando y visible al navegar (mini reproductor), y que la pantalla de bloqueo muestre la información. Pendiente de prototipo; ver la respuesta del gestor.
+- **Pendiente para después (founder, 2026-10-04): mini reproductor persistente de novedades.**
+  - Barra fija sobre la navegación que sigue sonando al cambiar de sección. SoundCloud, Mixcloud, YouTube y Vimeo tienen API para controlarlo; Bandcamp no.
+  - Prototipo primero; toca el armazón.
+  - Fuera: la miniatura flotante de video en iPhone, que los iframes no permiten.
+  - La pantalla de bloqueo la pone cada plataforma; con más margen en la app nativa.
+  - Va después de la sesión de diseño de Eventos.
+- **OL-284, PR #348 (`44ce6b68`) aceptado por el gestor.**
+  - `Ciudad.tsx`: la marca de módulo se anota solo en una elección manual distinta y solo si hay canal (Inicio y Lugares). Se descarta con `popstate` o `pagehide`, o al irse a otra ruta.
+  - El aviso «Ciudad cambiada a…» sale cuando la ruta y la ciudad coinciden. Al volver con Atrás se limpia solo el aviso propio, sin tocar el de Seguir.
+  - `Aviso.boton` pasa a opcional en el tipo.
+  - La CI está en verde. Falta el «publica» del founder.
+- **«Publica» del founder para #348 (OL-284).** Va en cola después de #295.
+- **OL-256 / #295 (ubicación nativa) unida y subida a TestFlight por el gestor (2026-10-04)**, por encargo del founder («terminarla y subirla»).
+  - Unión en main: `0ac8bdb8`, con la CI en paralelo en verde.
+  - Compilación 1.0 (4) desde una copia limpia de main, con Xcode 26.2 local.
+  - Firma comprobada: Apple Distribution AT53235M7U, perfil «iOS Team Store», `get-task-allow` false, `CFBundleVersion` 4, texto del permiso de ubicación presente.
+  - «Upload succeeded»: llega sola al grupo interno «Equipo» al terminar de procesarse.
+  - **Falta la prueba del founder** (bitácora 283, paso 7): con el permiso dado, la distancia y el orden por cercanía salen solos tras cerrar la app; en una instalación nueva, el primer toque muestra solo el aviso de la app.
+- **OL-284 (#348 → `992fe299`) en producción.** Production en `success`; Inicio, León, Lugares, Agenda y Artistas responden 200.
+- **Cierre de la jornada (2026-10-04, noche).**
+  - **Para el 2026-10-05:**
+    - el gestor diseña con Fable las sugerencias de Eventos (OL-273), el renglón «Dónde» y el teclado en los formularios;
+    - el gestor revisa OL-282, OL-283 y OL-285 de Codex;
+    - el founder prueba TestFlight 1.0 (4).
+  - **SEO:** C y D pendientes; la línea base de Search Console llega en 2 o 3 días.
+  - **Sin respuesta todavía:** la luz verde para el diagnóstico SEO D.
