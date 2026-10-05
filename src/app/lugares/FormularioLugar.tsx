@@ -27,7 +27,7 @@ import { contextoDondeEsta } from "@/lib/hojaDonde";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
 import { etiquetaTipo, hrefLugar, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
-import { quitarGuardia } from "@/lib/guardiaSalida";
+import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion, ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
@@ -78,6 +78,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
   useEffect(() => {
     if (resultado?.ok) terminar(resultado.volver);
   }, [resultado, terminar]);
+  // Si el servidor no publicó, lo escrito sigue en pantalla: la guardia que apartó «Publicar» vuelve (OL-296).
+  useEffect(() => {
+    if (resultado && !resultado.ok) reponerGuardia();
+  }, [resultado]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const parecidos = resultado && !resultado.ok ? resultado.parecidos : undefined;
 
@@ -274,7 +278,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
         hidden={oculta}
         action={(fd) => {
           if (falta) return;
-          quitarGuardia();
+          apartarGuardia();
           enviar(fd);
         }}
         noValidate
