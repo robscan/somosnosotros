@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode, type TransitionEvent } from "react";
 import styles from "./EntradaFicha.module.css";
-import { debePasarAQuieta, estadoInicial, type EstadoFicha } from "./entradaFichaEstado";
+import { debePasarAQuieta, type EstadoFicha } from "./entradaFichaEstado";
 
 /** Tope de seguridad: 220 ms de transición + margen. Si `transitionend` no llega (p. ej. pestaña oculta),
  * esto deja la ficha quieta de todos modos (OL-157). */
@@ -23,14 +23,13 @@ const TOPE_QUIETA_MS = 400;
  * de las fichas de lugar y artista dejaba de pegarse al borde de la ventana.
  */
 export default function EntradaFicha({ children }: { children: ReactNode }) {
-  const [estado, setEstado] = useState<EstadoFicha>(() =>
-    estadoInicial(typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches),
-  );
+  // SSR y primera hidratación deben coincidir. El CSS reducido ya evita el desplazamiento inicial.
+  const [estado, setEstado] = useState<EstadoFicha>("cerrada");
   const topeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (estado !== "cerrada") return;
-    const id = requestAnimationFrame(() => setEstado("abierta"));
+    const id = requestAnimationFrame(() => setEstado(window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "quieta" : "abierta"));
     return () => cancelAnimationFrame(id);
   }, [estado]);
 
