@@ -17,7 +17,10 @@ type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
-  const lugar = await cargarLugar(id);
+  const lugar = await cargarLugar(id).catch(() => undefined);
+  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotros»), sin
+  // `noindex` ni canonical; si la excepción saliera de aquí Next descartaría todas las etiquetas, también el título (OL-289).
+  if (lugar === undefined) return {};
   if (!lugar) return { title: "Lugar · Somos Nosotros" };
   const descripcion = `${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`;
   // Sin portada, la imagen por defecto del sitio: el enlace compartido nunca sale sin imagen (OL-143, doc 36).

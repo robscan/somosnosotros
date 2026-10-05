@@ -29,17 +29,17 @@ Consecuencia: el título largo es el caso normal, no la excepción. Las seis mue
 
 ## 3. Propuesta
 
-### 3.1 Los dos formatos
+### 3.1 El formato
 
-| Formato | Medida | Dónde sirve |
-|---|---|---|
-| Publicación 4:5 | 1080 × 1350 | Publicación de Instagram y de Facebook; también WhatsApp |
-| Historia 9:16 | 1080 × 1920 | Historias de Instagram y de Facebook, estados de WhatsApp |
+**Alcance acortado por el founder (2026-10-05):** «acortaremos el alcance, solo publicacion por ahora, es muy complejo buscar cubrir todo desde inicio y se ahorran tokens si solo atacamos la mas probable y común.»
 
-- Cada plantilla se diseña una vez con zonas (foto, título, datos, pie) y las zonas se reacomodan en cada formato. No es la misma imagen recortada.
+| Formato | Medida | Dónde sirve | Cuándo |
+|---|---|---|---|
+| Publicación 4:5 | 1080 × 1350 | Publicación de Instagram y de Facebook; también WhatsApp | Ahora |
+| Historia 9:16 | 1080 × 1920 | Historias de Instagram y de Facebook, estados de WhatsApp | Después |
+
 - Publicación: lo esencial dentro del cuadrado central, porque la cuadrícula del perfil recorta la vista previa.
-- Historia: 250 px libres arriba y 340 px abajo, donde Instagram pone su interfaz.
-- La persona elige un estilo y recibe los dos archivos.
+- La historia se pidió el mismo día y queda para después. Para no cerrarle la puerta, cada plantilla se diseña por zonas (foto, título, datos, pie) que se puedan reacomodar; la historia pediría 250 px libres arriba y 340 px abajo, donde Instagram pone su interfaz.
 
 ### 3.2 Campos y máximos
 
@@ -61,12 +61,12 @@ Consecuencia: el título largo es el caso normal, no la excepción. Las seis mue
 3. **Reparto con IA solo si no cabe.** Si el título pasa de 80 o trae varios datos pegados, la IA propone repartirlo: «Estreno Sangre de Coyote: Semilla que florece el barrio (documental)» pasa a etiqueta «Estreno · Documental», título «Sangre de Coyote», subtítulo «Semilla que florece el barrio». La persona lo ve y lo acepta o lo corrige; nunca se cambia su texto a escondidas. No inventa datos ni recorta nombres propios.
 4. **Comprobación antes de mostrar.** Cada opción se dibuja y se mide: si un texto se desborda o se encima, esa plantilla no se ofrece. Las 4 que se ven ya pasaron.
 
-Además, **banco de pruebas para dar de alta una plantilla**: no entra al catálogo hasta pasar unos 12 casos reales (título de 107 caracteres, sin foto, 8 artistas, lugar de 59 caracteres, precio largo, sin precio) en los dos formatos. Esto y las reglas del reparto son el «prompt/skill» que pide el founder.
+Además, **banco de pruebas para dar de alta una plantilla**: no entra al catálogo hasta pasar unos 12 casos reales (título de 107 caracteres, sin foto, 8 artistas, lugar de 59 caracteres, precio largo, sin precio). Esto y las reglas del reparto son el «prompt/skill» que pide el founder.
 
 ### 3.4 Catálogo de plantillas y cómo se eligen 4
 
 - **Paso previo:** estudiar los carteles ya cargados (129 eventos con cartel) y clasificarlos por familia de estilo, para construir las que la gente ya usa.
-- **Arranque:** 12 plantillas (6 familias × 2), cada una con tres tramos de título, versión con foto y sin foto, y los dos formatos. Después se añaden por tandas.
+- **Arranque:** 12 plantillas (6 familias × 2), cada una con tres tramos de título, versión con foto y sin foto. Después se añaden por tandas.
 - Cada plantilla lleva etiquetas: familia, si necesita foto, cuántos artistas aguanta, para qué tipo de lugar y disciplina va bien.
 - **Selección por reglas (sin IA):** se descartan las que no sirven con los datos disponibles, se ordena por afinidad con el lugar y la disciplina, y se muestran 4 de familias distintas. «Ver otras 4» trae las siguientes.
 - **Memoria del lugar:** el estilo elegido la vez anterior sale primero.
@@ -77,11 +77,28 @@ Además, **banco de pruebas para dar de alta una plantilla**: no entra al catál
 
 En el flujo nuevo de eventos, cuando el evento no trae cartel: «¿Quieres un flyer?». Lo diseña el gestor en su momento, con prototipo antes que código.
 
+### 3.6 Dónde se guardan las imágenes (propuesta, sin decidir)
+
+El founder pidió (2026-10-05): «Propón donde se guardan las imagenes, ahora tenemos supabase pro pero dime si no es suficiente para probar.»
+
+1. **Las 4 opciones no se guardan.** Se dibujan en el teléfono mientras la persona elige.
+2. **Solo se guarda la elegida**, en JPEG, en el bucket `fotos`, y queda como cartel del evento.
+3. **Junto a la imagen, su «receta»:** plantilla, textos y paleta. Permite corregir o rehacer el flyer sin guardar más imágenes y ofrecer «como mi flyer anterior». Necesita un lugar en la base (migración que solo añade), sin diseñar.
+4. **La descarga sale del teléfono**, no del servidor.
+
+Tamaño medido con las seis muestras en JPEG de calidad 85: de 99 a 272 KB, unos 200 KB de media. Mil flyers son unos 0,2 GB; diez mil, unos 2 GB. El plan Pro de Supabase alcanza para probar; sus topes (100 GB de almacenamiento y 250 GB de tráfico al mes, según la lista de precios conocida) no se consultaron en el panel ese día.
+
+Para quien lo construya:
+
+- El bucket `fotos` es público y las imágenes se sirven por el optimizador de Vercel solo desde `/storage/v1/object/public/fotos/` con extensión jpg, png, webp o avif (OL-263, `src/lib/imagenOptima.ts`). El flyer guardado debe cumplirlo.
+- Si el flyer queda como cartel del evento, la lectura de carteles con IA no debe volver a leerlo como si fuera un cartel subido.
+- Depende de que el flyer se dibuje fiel en el teléfono, que no está probado (sección 4). Si hubiera que dibujarlo en el servidor, sería una sola vez al elegir y el guardado no cambia.
+
 ## 4. Límites y dudas abiertas
 
 - **Cómo se dibuja la imagen final** está sin decidir y sin probar: en el servidor de Vercel con la herramienta de imágenes de Next (acepta solo una parte de CSS) o con un navegador sin pantalla (acepta todo, más pesado). Hace falta una prueba corta antes de diseñar las plantillas, porque decide qué CSS se puede usar.
 - **Costo de IA:** con plantillas la IA solo reparte textos que no caben; se espera de centavos por flyer, sin medir. El cálculo anterior (4 a 6 pesos) era con la IA diseñando cada flyer.
-- **Tráfico de imágenes:** la cuota de Supabase ya se agotó una vez (2026-10-03). Los flyers generados son imágenes nuevas que alguien descarga; hay que decidir dónde se guardan.
+- **Tráfico de imágenes:** la cuota de Supabase se agotó una vez con el plan anterior (2026-10-03) por el tráfico general de imágenes de la app. Un flyer guardado se sirve como cualquier cartel: no empeora ese problema ni lo arregla. Propuesta de guardado en 3.6.
 - **Lo que no se puede hacer bien:** ilustración y lettering dibujado. Las plantillas son tipografía, foto y formas.
 - **Canva descartado:** su conexión pide plan Enterprise y cuenta de Canva por usuario, y ya no tiene editor para incrustar.
 - **Por decidir el founder:** el modelo de cobro (su ejemplo: uno al mes sin costo y paquetes de 6 y 15), si los flyers sin costo llevan el sello «somosnosotros.org», y si el flyer generado se guarda como cartel del evento.

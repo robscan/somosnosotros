@@ -27,6 +27,16 @@ Canva: la conexión para llenar plantillas pide el plan Enterprise y una cuenta 
 
 Defecto visible: en Zine la cinta amarilla de la izquierda pisa la palabra «Estreno» de la etiqueta. Se deja así: son muestras de estilo y el doc 52 explica que hicieron falta tres vueltas de ajuste a mano por textos encimados, que es justo lo que la propuesta resuelve con variantes y comprobación.
 
+## Segunda entrega (2026-10-05): alcance acortado y guardado
+
+El founder, tras leer la propuesta: «acortaremos el alcance, solo publicacion por ahora, es muy complejo buscar cubrir todo desde inicio y se ahorran tokens si solo atacamos la mas probable y común. Propón donde se guardan las imagenes, ahora tenemos supabase pro pero dime si no es suficiente para probar.»
+
+- Doc 52, sección 3.1: un solo formato por ahora (publicación 4:5); la historia 9:16 queda anotada para después.
+- Doc 52, sección 3.6 nueva: propuesta de guardado, sin decidir, con las dos notas del gestor (optimizador de Vercel y bucket público; no releer el flyer como cartel).
+- Medido: las seis muestras convertidas a JPEG de calidad 85 pesan 217, 99, 208, 272, 168 y 177 KB.
+- Los topes del plan Pro de Supabase se citan de memoria; no se abrió el panel.
+- Se trajo `origin/main` a la rama; conflicto solo en `OPEN_LOOPS.md`, resuelto conservando las líneas de main (OL-289) y las de esta pieza.
+
 ## No se hizo
 
 - Ninguna prueba de cómo dibujar la imagen en el servidor.
