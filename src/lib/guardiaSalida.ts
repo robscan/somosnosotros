@@ -19,6 +19,11 @@ export function quitarGuardia(g?: Guardia): void {
   if (!g || guardia === g) guardia = null;
 }
 
+/** true si `g` sigue siendo la guardia puesta (la quitan publicar y «Salir y borrar»; `beforeunload` solo avisa mientras siga). */
+export function hayGuardia(g: Guardia): boolean {
+  return guardia === g;
+}
+
 /** true si hay guardia y se le pasó la salida (Atrás no debe irse por su cuenta). */
 export function pedirSalida(continuar: () => void): boolean {
   if (!guardia) return false;

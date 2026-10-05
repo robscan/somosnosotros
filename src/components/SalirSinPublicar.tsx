@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { ponerGuardia, quitarGuardia, type Guardia } from "@/lib/guardiaSalida";
+import { hayGuardia, ponerGuardia, quitarGuardia, type Guardia } from "@/lib/guardiaSalida";
 import Boton from "./ui/Boton";
 import Hoja from "./ui/Hoja";
 import styles from "./SalirSinPublicar.module.css";
@@ -15,7 +15,7 @@ function huellaDe(pantalla: HTMLElement): string {
  * Guardia de salida estándar de la pantalla de alta (pedido del founder, 2026-09-16): Atrás o la ✕ preguntan solo si lo escrito
  * cambió respecto a cómo se abrió. Se compara campo por campo, no si está vacío: un alta que llega con el lugar o el artista
  * puestos, o un duplicado, no pregunta hasta que se toca algo. Vale para los tres formularios de la pantalla (aunque solo se vea
- * uno, lo escrito en los otros también cuenta). `olvidar` corre al confirmar la salida (el borrador del alta de evento). Devuelve
+ * uno, lo escrito en los otros también cuenta). `olvidar` corre al confirmar la salida (el borrador del alta de evento). También avisa con `beforeunload` si se recarga o se cierra con cambios. Devuelve
  * la hoja «¿Salir sin publicar?» para pintarla dentro de la pantalla.
  */
 export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olvidar?: () => void) {
@@ -29,7 +29,18 @@ export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olv
       else continuar();
     };
     ponerGuardia(g);
-    return () => quitarGuardia(g);
+    // Cerrar la pestaña, recargar o irse a otro sitio con cambios: el navegador pregunta con su propio aviso (donde lo respeta; Safari del
+    // iPhone no). El atrás del navegador dentro de la app no descarga el documento y no se puede atrapar sin entradas falsas en el historial.
+    const alDescargar = (e: BeforeUnloadEvent) => {
+      if (!hayGuardia(g) || !pantalla.current || huellaDe(pantalla.current) === inicial.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", alDescargar);
+    return () => {
+      window.removeEventListener("beforeunload", alDescargar);
+      quitarGuardia(g);
+    };
   }, [pantalla]);
   if (!salida) return null;
   const seguir = () => setSalida(null);
