@@ -23,7 +23,7 @@ describe("Plaza, jardín o parque", () => {
     expect(valores.at(-2)).toBe("plaza");
     expect(valores.at(-1)).toBe("otro");
     expect(etiquetaTipo("plaza")).toBe("Plaza, jardín o parque");
-    const base = { nombre: "Jardín Botánico El Izotal", tipo: "plaza", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "", detalle: "Jardín" };
+    const base = { nombre: "Jardín Botánico El Izotal", tipo: "plaza", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "", detalle: "Jardín", ciudad: "San Luis Potosí" };
     const { datos, errores } = validarLugar(base);
     expect(errores).toEqual({});
     expect(datos.tipo).toBe("plaza");
@@ -33,7 +33,7 @@ describe("Plaza, jardín o parque", () => {
 });
 
 describe("validarLugar", () => {
-  const base = { nombre: "Foro X", tipo: "foro", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "" };
+  const base = { nombre: "Foro X", tipo: "foro", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "", ciudad: "San Luis Potosí" };
   it("acepta un lugar mínimo y limpia", () => {
     const { datos, errores } = validarLugar({ ...base, enlaces: JSON.stringify([" @forox ", "vimeo.com/forox"]) });
     expect(errores).toEqual({});
@@ -54,6 +54,17 @@ describe("validarLugar", () => {
     expect(errores.nombre).toBeTruthy();
     expect(errores.tipo).toBeTruthy();
     expect(errores.ubicacion).toBeTruthy();
+  });
+  it("sin ciudad no se publica (OL-299): ya no cae en San Luis Potosí en silencio", () => {
+    const sin = { ...base, ciudad: "" };
+    expect(validarLugar(sin).errores.ciudad).toBe("No pudimos saber en qué ciudad está. Intenta de nuevo.");
+    expect(validarLugar({ ...base, ciudad: undefined }).errores.ciudad).toBeDefined();
+    expect(validarLugar({ ...base, ciudad: "   " }).errores.ciudad).toBeDefined();
+  });
+  it("la ciudad que trae se guarda canónica: con su país fuera de México y unida a su área metropolitana", () => {
+    expect(validarLugar({ ...base, ciudad: "Córdoba, España" }).datos.ciudad).toBe("Córdoba, España");
+    expect(validarLugar({ ...base, ciudad: "Soledad de Graciano Sánchez" }).datos.ciudad).toBe("San Luis Potosí");
+    expect(validarLugar({ ...base, ciudad: "Querétaro" }).errores.ciudad).toBeUndefined();
   });
   it("reconoce el WhatsApp por el número y descarta lo que no es nada", () => {
     expect(validarLugar({ ...base, enlaces: JSON.stringify(["123"]) }).datos.redes).toEqual([]);

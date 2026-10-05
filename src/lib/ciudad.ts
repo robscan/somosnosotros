@@ -131,6 +131,17 @@ export type SeccionCiudades = "eventos" | "lugares" | "artistas" | "buscar";
 /** OL-270: el catálogo más cercano representa «aquí» hasta 50 km de su centro. */
 const RADIO_CIUDAD_KM = 50;
 
+/**
+ * La ciudad con la que se guarda un lugar nuevo (OL-299). La que el mapa dio para su punto; si no dio ninguna, la ciudad de
+ * contexto, solo si el punto cae a menos de 50 km de su centro; si tampoco, null: no se adivina (antes el servidor ponía
+ * San Luis Potosí en silencio y un lugar de otra ciudad quedaba mal).
+ */
+export function ciudadParaPunto(punto: Punto, deducida: string | null | undefined, contexto: Ciudad | null | undefined): string | null {
+  const dada = ciudadCanonica(deducida);
+  if (dada) return dada;
+  return contexto && distanciaKm(punto, contexto.centro) <= RADIO_CIUDAD_KM ? contexto.nombre : null;
+}
+
 /** El contenido de cada sección decide la lista; la ciudad actual permanece aunque esté vacía. No cambia las consultas. */
 export function ciudadesDeHoja<T extends CiudadConDatos | CiudadConArtistas>(actual: Ciudad, ciudades: readonly T[], seccion: SeccionCiudades): T[] {
   return ciudades.filter(c => c.slug === actual.slug || (seccion === "artistas"

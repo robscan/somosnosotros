@@ -31,7 +31,7 @@ export function faltaEnLugar({ nombre, ubicado }: { nombre: string; ubicado: boo
   return queFalta([!nombre.trim() && "el nombre", !ubicado && "dónde está"]);
 }
 
-/** Un artista pide solo el nombre (lo demás se deduce o se completa después), y que no tenga ya ficha en su ciudad. */
-export function faltaEnArtista({ nombre, repetido }: { nombre: string; repetido: boolean }): string | null {
-  return queFalta([!nombre.trim() && "el nombre"]) ?? (repetido ? "Ese nombre ya tiene ficha." : null);
+/** Un artista pide el nombre y qué hace (su disciplina, que no se adivina sin pista en el nombre), y que no tenga ya ficha en su ciudad. */
+export function faltaEnArtista({ nombre, conDisciplina, repetido }: { nombre: string; conDisciplina: boolean; repetido: boolean }): string | null {
+  return queFalta([!nombre.trim() && "el nombre", !conDisciplina && "la disciplina"]) ?? (repetido ? "Ese nombre ya tiene ficha." : null);
 }

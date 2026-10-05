@@ -53,7 +53,7 @@ async function existenteIgual(supabase: Cliente, nombre: string, ciudad: string)
 export async function crearArtista(_previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("artista", null).href);
   const esAdmin = await esAdminDeSesion(supabase, user.id);
-  const { datos, errores } = validarArtista(leer(formData), { esAdmin });
+  const { datos, errores } = validarArtista(leer(formData), { esAdmin, alta: true });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase

@@ -1,14 +1,26 @@
 import { describe, expect, it } from "vitest";
+import { faltaEnArtista } from "./formulario";
 import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, etiquetaArtista, filtroDesdeUrl, hrefArtistas, hrefLetreroArtista, nombreArchivoQr, pasoQueHace, preguntaSubcategoria, quienDesdeJson, subcategoriaParecida, textoLetrero, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirDisciplina", () => {
-  it("lee la disciplina del nombre y, sin pista, propone música", () => {
+  it("lee la disciplina del nombre", () => {
     expect(deducirDisciplina("Ballet Folclórico Universitario")).toBe("danza");
     expect(deducirDisciplina("Compañía de Teatro La Carpa")).toBe("teatro");
     expect(deducirDisciplina("Taller de Gráfica Índigo")).toBe("artes_visuales");
     expect(deducirDisciplina("Cineclub Alameda")).toBe("cine");
-    expect(deducirDisciplina("Los Vecinos")).toBe("musica");
-    expect(deducirDisciplina("")).toBe("musica");
+    expect(deducirDisciplina("Orquesta Sinfónica Juvenil")).toBe("musica");
+    expect(deducirDisciplina("Trío Xóchitl")).toBe("musica");
+    expect(deducirDisciplina("Mariachi Los Reyes")).toBe("musica");
+  });
+  it("sin pista en el nombre no adivina (OL-299): ni «Música» para un pintor que solo escribe su nombre", () => {
+    expect(deducirDisciplina("Los Vecinos")).toBeNull();
+    expect(deducirDisciplina("Ana Ruiz")).toBeNull();
+    expect(deducirDisciplina("")).toBeNull();
+    expect(deducirDisciplina("   ")).toBeNull();
+  });
+  it("una pista de otra disciplina gana a una palabra de música («Teatro Musical», «Coro de Danza»)", () => {
+    expect(deducirDisciplina("Teatro Musical Potosino")).toBe("teatro");
+    expect(deducirDisciplina("Coro de Danza Folclórica")).toBe("danza");
   });
 });
 
@@ -203,6 +215,26 @@ describe("validarArtista", () => {
     expect(errores.nombre).toBeDefined();
     expect(errores.disciplina).toBeDefined();
     expect(datos.redes).toEqual([]);
+  });
+  describe("OL-299: el alta exige la disciplina; la edición de una ficha por completar no", () => {
+    it("alta sin disciplina: «Falta la disciplina.», el mismo texto de la nota del botón", () => {
+      const { errores } = validarArtista({ nombre: "Ana Ruiz", disciplina: "" }, { alta: true });
+      expect(errores.disciplina).toBe("Falta la disciplina.");
+      expect(errores.disciplina).toBe(faltaEnArtista({ nombre: "Ana Ruiz", conDisciplina: false, repetido: false }));
+    });
+    it("alta sin el campo, o con «por_completar» a mano, tampoco pasa", () => {
+      expect(validarArtista({ nombre: "Ana Ruiz" }, { alta: true }).errores.disciplina).toBe("Falta la disciplina.");
+      expect(validarArtista({ nombre: "Ana Ruiz", disciplina: "por_completar" }, { alta: true }).errores.disciplina).toBe("Falta la disciplina.");
+    });
+    it("alta con una disciplina de la lista pasa; con una que no existe sigue diciendo «Elige qué hace.»", () => {
+      expect(validarArtista({ nombre: "Ana Ruiz", disciplina: "artes_visuales" }, { alta: true }).errores).toEqual({});
+      expect(validarArtista({ nombre: "Ana Ruiz", disciplina: "pintura" }, { alta: true }).errores.disciplina).toBe("Elige qué hace.");
+    });
+    it("al editar (sin `alta`), una ficha por completar se guarda como está", () => {
+      const { datos, errores } = validarArtista({ nombre: "Ana Ruiz", disciplina: "" });
+      expect(errores.disciplina).toBeUndefined();
+      expect(datos.disciplina).toBe("por_completar");
+    });
   });
   it("toma la ciudad del renglón Ciudad, unida a su área metropolitana; sin ciudad, la inicial", () => {
     expect(validarArtista({ nombre: "Los Vecinos", ciudad: "Querétaro" }).datos.ciudad).toBe("Querétaro");

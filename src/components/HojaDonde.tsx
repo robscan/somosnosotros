@@ -12,7 +12,7 @@ import renglon from "@/components/ui/Renglon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
 import { altoTeclado, combinarResultados, consultarMapa, deducirTipo, lugaresPorTexto, modoDePantalla, puntoValido, recuperarLugar, sugerirLugares, type LugarSugerido, type ResultadoBusqueda } from "@/lib/buscarLugares";
-import type { Ciudad } from "@/lib/ciudad";
+import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarConContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
 import { LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
@@ -480,7 +480,7 @@ export default function HojaDonde(props: Props) {
     try {
       // Con privado o sin él, el lugar se registra (OL-179, founder 2026-09-24): la diferencia es si además, al guardar el
       // evento, se usa por `lugar_id` (normal) o como sitio reservado (privado de verdad).
-      const r = await crearLugarDesdeEvento({ nombre, direccion, lat: punto.lat, lng: punto.lng, ciudad: borrador.ciudad ?? contexto.ciudad.nombre, volverA: evento.volverA, privado: destino === "privado" });
+      const r = await crearLugarDesdeEvento({ nombre, direccion, lat: punto.lat, lng: punto.lng, ciudad: ciudadParaPunto(punto, borrador.ciudad, ciudadContexto) ?? "", volverA: evento.volverA, privado: destino === "privado" });
       if (!r.ok) {
         setErrorAgregar(r.error);
         return;

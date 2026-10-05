@@ -17,7 +17,7 @@ import limpiar from "@/components/ui/Limpiar.module.css";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBuscar, IconoEtiqueta, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
-import type { Ciudad } from "@/lib/ciudad";
+import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { consultarMapa, deducirTipo, lugaresPorTexto, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
 import { buscarConContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
@@ -200,7 +200,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
       if (r) {
         setPunto({ lat: r.lat, lng: r.lng });
         setDireccion(r.direccion || s.direccion);
-        if (r.ciudad) setCiudad(r.ciudad);
+        setCiudad(r.ciudad ?? "");
       } else {
         setDireccion(s.direccion);
       }
@@ -215,18 +215,20 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
   }
 
   // La dirección y la ciudad de un punto, deducidas solas: las del pin movido con el dedo, las de "Estoy aquí" y las del punto con el que abrió el alta.
+  // La ciudad es la del punto: si el mapa no la dio, queda vacía y no la de un punto anterior (OL-299).
   const deducirDireccion = useCallback((p: Punto) => {
     const { mapboxToken } = configPublica();
     if (!mapboxToken) return;
     lugarDesdePunto(p, mapboxToken).then((r) => {
       if (r?.direccion) setDireccion(r.direccion);
-      if (r?.ciudad) setCiudad(r.ciudad);
+      setCiudad(r?.ciudad ?? "");
     });
   }, []);
   // Pin movido con el dedo (o "Estoy aquí"): la dirección se deduce sola.
   const alMoverPin = useCallback(
     (p: Punto) => {
       setPunto(p);
+      setCiudad("");
       deducirDireccion(p);
     },
     [deducirDireccion],
@@ -266,6 +268,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
 
   // Lo único que dice qué falta es la nota bajo el botón; cada renglón dice su estado con su valor «Falta» y su borde discontinuo.
   const falta = faltaEnLugar({ nombre, ubicado: !!punto });
+  // La ciudad que se guarda: la del mapa para el punto o, si no dio ninguna, la de contexto cercana (sin ninguna, el servidor no publica).
+  const ciudadAlta = punto ? ciudadParaPunto(punto, ciudad, ciudadContexto) : null;
+  const errorDonde = errores.ubicacion ?? errores.ciudad ?? errores.direccion;
   const sugerenciasAbiertas = enfocadoNombre && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0 || !!errorBusqueda);
   // Al salir del campo, si sigue habiendo coincidencia, una sola línea de ayuda (no el panel) — recortada a una
   // línea, con el nombre completo disponible al abrir el lugar (revisión del gestor, 2026-09-21).
@@ -278,6 +283,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
         hidden={oculta}
         action={(fd) => {
           if (falta) return;
+          // Sin ciudad (el mapa aún no la dio) el servidor no publica: se vuelve a preguntar por el punto para que el siguiente intento la lleve.
+          if (punto && !ciudadAlta) deducirDireccion(punto);
           apartarGuardia();
           enviar(fd);
         }}
@@ -397,9 +404,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
                 </span>
               </>
             )}
-            {errores.ubicacion || errores.direccion ? (
+            {errorDonde ? (
               <p className={renglon.nota} role="alert">
-                {errores.ubicacion ?? errores.direccion}
+                {errorDonde}
               </p>
             ) : (
               avisoUbicacion && <p className={renglon.nota}>{avisoUbicacion}</p>
@@ -489,7 +496,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
         <input type="hidden" name="lat" value={punto?.lat ?? ""} />
         <input type="hidden" name="lng" value={punto?.lng ?? ""} />
         <input type="hidden" name="portada" value={portada ?? ""} />
-        <input type="hidden" name="ciudad" value={ciudad} />
+        <input type="hidden" name="ciudad" value={ciudadAlta ?? ""} />
         <input type="hidden" name="privado" value={privado ? "1" : ""} />
         {!(tipoAbierto && tipo === "otro") && <input type="hidden" name="detalle" value={detalle} />}
 
@@ -541,7 +548,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           onListo={({ punto: p, direccion: d, ciudad: c }) => {
             setPunto(p);
             setDireccion(d);
-            if (c) setCiudad(c);
+            setCiudad(c ?? "");
           }}
           onCerrar={() => setHoja(null)}
         />
