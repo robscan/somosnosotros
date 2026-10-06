@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lugar y artista por pasos</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-314 (bitácora 342): el alta de lugar y de artista por pasos (doc 54), con el mismo armazón del evento.
+   Mismo estilo que publicar-por-pasos.html (tokens de src/app/globals.css). Arriba, la tira del prototipo para elegir el caso. */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #ede6f8; --ok: #1f6f43; --ok-suave: #e4eee8; --error: #b3261e;
+  --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --alto-barra: 56px; --columna: 600px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --piso: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: "wdth" 85; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button, input, select { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h1, h2, h3 { font-variation-settings: "wdth" 75; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: 1.5rem; font-weight: 800; }
+small, .meta { font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.35; }
+svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul { list-style: none; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); }
+.tira label { display: flex; align-items: center; gap: 6px; min-height: var(--toque-min); font-size: var(--letra-xs); }
+.tira input { width: 20px; height: 20px; accent-color: var(--primario); }
+
+/* La app: barra, línea de avance, cuerpo que desplaza por dentro, pie. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; background: var(--fondo); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden; }
+.barra { display: grid; grid-template-columns: auto 1fr auto; column-gap: var(--espacio-3); align-items: center; min-height: var(--alto-barra); padding: 0 var(--espacio-3); border-bottom: 1px solid var(--borde); }
+.barra b { font-size: var(--letra-md); font-weight: 700; text-align: center; }
+.redondo { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.redondo svg { stroke-width: 2; }
+.avance { height: 3px; background: var(--fondo-suave); }
+.avance i { display: block; height: 100%; background: var(--primario); transition: width 0.2s ease-out; }
+.pagina { overflow-y: auto; display: grid; align-content: start; gap: var(--espacio-5); padding: var(--espacio-7) var(--espacio-5) calc(var(--espacio-6) + var(--piso)); }
+.pie { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-top: 1px solid var(--borde); background: var(--fondo); }
+.pie:empty { display: none; }
+.pregunta { font-size: 1.875rem; font-weight: 800; }
+
+/* ui/Boton */
+.btn { display: flex; width: 100%; min-height: var(--toque); align-items: center; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-md); font-weight: 700; }
+.btn.sec { background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); }
+.btn:disabled { background: var(--primario-suave); color: var(--primario-texto); cursor: default; opacity: 0.8; }
+.quieto { display: block; width: 100%; min-height: var(--toque-min); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; text-decoration: underline; }
+
+/* ui/Campo con icono + ui/Limpiar */
+.campo { position: relative; display: grid; }
+.campo > svg { position: absolute; left: 14px; top: 12px; color: var(--texto-suave); pointer-events: none; }
+.campo input { width: 100%; min-height: var(--toque); padding: 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: var(--letra-md); }
+.campo input:focus { border-color: var(--texto); outline: none; }
+.limpiar { position: absolute; right: 0; top: 0; width: var(--toque); height: var(--toque); display: grid; place-items: center; color: var(--texto-suave); }
+.limpiar svg { width: 18px; height: 18px; stroke-width: 2; }
+.campo input:placeholder-shown ~ .limpiar { display: none; }
+
+/* El recuadro del cartel: siempre se puede subir. Lo que cambia es la línea de abajo (si se lee o no) y la salida extra. */
+.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-2); width: 100%; min-height: 200px; padding: var(--espacio-5); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-lg); font-weight: 700; text-align: center; }
+.subir .marco { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+.subir small { color: var(--texto-suave); font-weight: 400; }
+.subir .lecturas { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.subir .lecturas svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.subir .lecturas.ok { color: var(--ok); }
+
+/* Región común (ley de región común): el recuadro y la casilla de lectura comparten un mismo marco punteado y un mismo fondo; la casilla
+   es la última fila de ese marco, pegada al recuadro sin aire (conectividad uniforme: lo que va junto se toca). «No tengo cartel» queda
+   fuera, con aire doble: es la otra puerta, no parte del cartel. */
+.con-cartel-grupo { display: grid; border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); overflow: hidden; }
+.con-cartel-grupo .subir { border: 0; border-radius: 0; background: none; min-height: 176px; }
+.con-cartel-grupo .casilla { border: 0; border-top: 1px dashed var(--primario); border-radius: 0; background: var(--fondo); }
+.con-cartel-grupo .casilla[aria-checked="true"] { background: var(--fondo); }
+/* «No tengo cartel»: la otra puerta, como una opción que avanza (ui/Opcion): texto a la izquierda y el ángulo a la derecha. */
+.otra-puerta { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--espacio-3); width: 100%; min-height: var(--toque); margin-top: var(--espacio-4); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.otra-puerta svg { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+/* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
+.casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+.casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
+/* La casilla del canon: nombre arriba (17 px, negrita) y debajo el contador (14 px), los dos a la izquierda. */
+.casilla .texto { display: grid; min-width: 0; }
+.casilla b { font-weight: 700; font-size: var(--letra-md); }
+.casilla small { font-size: var(--letra-xs); line-height: 1.3; }
+.casilla:disabled { opacity: 0.55; cursor: default; }
+
+/* La miniatura del cartel y «Leyendo». */
+.cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), #4a3a6b; color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
+.leyendo .cartel-mini { width: 168px; font-size: 1rem; padding: var(--espacio-3); }
+@media (prefers-reduced-motion: no-preference) { .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; } @keyframes late { to { transform: scale(1.03); } } }
+
+/* La pregunta con el cartel ya guardado: una fila chica arriba —miniatura y sello— que confirma sin estorbar. */
+.con-cartel { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; }
+.con-cartel .cartel-mini { width: 40px; padding: 4px; font-size: 0.4rem; border-radius: 6px; }
+.sello { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo-suave); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.sello.ok { background: var(--ok-suave); color: var(--ok); }
+.sello svg { width: 14px; height: 14px; stroke-width: 2.4; }
+
+/* Revisar: la cabeza con la miniatura; con lectura, el sello «Leído del cartel». */
+.cabeza-revisar { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--espacio-4); align-items: end; row-gap: var(--espacio-2); }
+.renglon { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.lista { display: grid; gap: var(--espacio-3); }
+
+.notas { padding-top: var(--espacio-2); border-top: 1px dashed var(--borde); font-size: var(--letra-sm); color: var(--texto-suave); }
+.notas summary { min-height: var(--toque-min); display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.notas li { margin: 0 0 var(--espacio-2) var(--espacio-5); list-style: disc; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+
+/* Lo propio de este prototipo: lista flotante bajo el campo, opciones grandes, mapa doble, tarjeta de confirmación, renglones de Revisa,
+   el final con sello y la sugerencia en punteado, y la pantalla de elegir qué publicar. */
+.lista-flotante { display: grid; margin-top: calc(var(--espacio-3) * -1); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: 0 6px 20px rgba(0,0,0,.12); overflow: hidden; }
+.lista-flotante button { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-4); border-bottom: 1px solid var(--borde); text-align: left; }
+.lista-flotante button:last-child { border-bottom: 0; }
+.lista-flotante button > svg { color: var(--texto-suave); }
+.lista-flotante b { display: block; font-weight: 700; }
+.lista-flotante small { display: block; }
+.lista-flotante .ficha b { color: var(--primario); }
+.opciones { display: grid; gap: var(--espacio-3); }
+.opcion { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; column-gap: var(--espacio-3); align-items: center; min-height: 64px; padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.opcion > svg:first-child { color: var(--primario); }
+.opcion > svg:last-child { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+.opcion small { display: block; font-weight: 400; }
+.opciones.compactas .opcion { min-height: var(--toque); font-size: var(--letra-md); }
+.mapa-paso { aspect-ratio: 4 / 3; max-height: 38vh; display: grid; place-items: center; border-radius: var(--radio-grande); background: #eef0ec; color: var(--primario); }
+.mapa-paso svg { width: 44px; height: 44px; fill: currentColor; stroke: none; }
+.confirma { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3); border-radius: var(--radio); background: var(--fondo-suave); }
+.confirma > svg { color: var(--ok); }
+.confirma b { display: block; }
+.confirma small { display: block; }
+.aviso { color: var(--texto-suave); font-size: var(--letra-sm); }
+.aviso.alerta { color: var(--error); }
+.lista { display: grid; gap: var(--espacio-3); }
+.renglon { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0.5' y='0.5' width='100%25' height='100%25' rx='8' fill='none' stroke='%235c5c5c' stroke-width='1' stroke-dasharray='4 5'/%3E%3C/svg%3E"); }
+.renglon.opcional { border-style: dashed; border-color: var(--borde); }
+.final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
+.sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: #fff; }
+.sello-ok svg { width: 44px; height: 44px; stroke-width: 2.6; }
+.tarjeta { display: grid; grid-template-columns: 56px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.tarjeta .mini { width: 56px; height: 56px; border-radius: var(--radio); background: var(--primario-suave); display: grid; place-items: center; color: var(--primario); }
+.tarjeta.redonda .mini { border-radius: 50%; }
+.tarjeta b { display: block; }
+.sugerencia { display: grid; gap: var(--espacio-2); padding: var(--espacio-4); border: 1.5px dashed var(--texto-suave); border-radius: var(--radio-grande); }
+.sugerencia h2 { font-size: var(--letra-lg); font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
+.chip { min-height: 36px; padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
+.app { position: relative; }
+</style>
+</head>
+<body>
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <option value="elegir">0 · «+» sin contexto: ¿qué publicas?</option>
+    <option value="lugar-sug">1 · Lugar con sugerencia del mapa (nombre resuelve dirección, punto y tipo)</option>
+    <option value="lugar-sin">2 · Lugar sin sugerencia (dónde está y qué tipo es, preguntados)</option>
+    <option value="lugar-ficha">3 · Lugar que ya tiene ficha</option>
+    <option value="lugar-negocio">4 · Lugar que es un negocio (café)</option>
+    <option value="artista-pista">5 · Artista con pista en el nombre («Compañía de Teatro…»)</option>
+    <option value="artista-sin">6 · Artista sin pista (se pregunta qué hace)</option>
+    <option value="artista-ficha">7 · Artista que ya tiene ficha</option>
+  </select>
+  <label style="opacity:.8">Mismo armazón del alta de evento: barra, avance, una pregunta por pantalla, pie que dice qué falta.</label>
+</div>
+<div class="app" id="app"></div>
+<script>
+const ic = (n) => ({
+  ok: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  cerrar: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  atras: '<svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>',
+  buscar: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  pinlleno: '<svg viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12zm0-9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>',
+  etiqueta: '<svg viewBox="0 0 24 24"><path d="M20 12 12 20 4 12V4h8z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>',
+  persona: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>',
+  personas: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c0-3.3 3-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.5c3 0 5.5 1.9 5.5 4.5"/></svg>',
+  musica: '<svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>',
+  mas: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  calendario: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  casa: '<svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg>',
+  camara: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  ciudad: '<svg viewBox="0 0 24 24"><path d="M4 20V8l5-3v15M9 20V11l5-2v11M14 20V13l6-2v9M3 20h18"/></svg>',
+})[n];
+const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Plaza, jardín o parque','Otro'];
+const DISCIPLINAS = ['Música','Teatro','Danza','Artes visuales','Letras','Cine','Artes circenses','Otro'];
+let caso = 'elegir', e;
+const CASOS = {
+  'elegir': { que: null },
+  'lugar-sug': { que: 'lugar', q: 'Casa del Poeta', sug: { nombre: 'Casa del Poeta Ramón López Velarde', direccion: 'Vallejo 150, Centro, San Luis Potosí', tipo: 'Museo' } },
+  'lugar-sin': { que: 'lugar', q: 'Taller La Grieta', sug: null },
+  'lugar-ficha': { que: 'lugar', q: 'ACHE Gal', ficha: 'ACHE Galería' },
+  'lugar-negocio': { que: 'lugar', q: 'Café del Jardín', sug: { nombre: 'Café del Jardín', direccion: 'Jardín Guerrero 12, Centro, San Luis Potosí', tipo: null, negocio: true } },
+  'artista-pista': { que: 'artista', q: 'Compañía de Teatro La Rendija', hace: 'Teatro', tipo: 'Grupo' },
+  'artista-sin': { que: 'artista', q: 'Mariana Ruvalcaba', hace: null, tipo: 'Solista' },
+  'artista-ficha': { que: 'artista', q: 'Trío Bru', ficha: 'Trío Bruma' },
+};
+function nuevo() {
+  const c = CASOS[caso];
+  e = { paso: c.que ? 'nombre' : 'elegir', que: c.que, q: '', tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, soyYo: false, escrito: false };
+}
+nuevo();
+const c = () => CASOS[caso];
+const pasosLugar = () => ['nombre', 'mapa', ...(e.tipo ? [] : ['tipo']), 'revisa', 'publicado'];
+const pasosArtista = () => ['nombre', ...(e.hace ? [] : ['hace']), 'revisa', 'publicado'];
+const orden = () => (e.que === 'lugar' ? pasosLugar() : pasosArtista());
+const avance = () => { const o = orden(); const i = o.indexOf(e.paso); return i < 0 ? 0 : i / (o.length - 1); };
+function siguiente() { const o = orden(); const i = o.indexOf(e.paso); if (i >= 0 && i < o.length - 1) e.paso = o[i + 1]; pintar(); }
+function atras() { const o = orden(); const i = o.indexOf(e.paso); if (i > 0) e.paso = o[i - 1]; pintar(); }
+
+const campo = (ph, valor) => `<label class="campo">${ic('buscar')}<input id="q" placeholder="${ph}" value="${valor}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></label>`;
+
+const PANTALLAS = {
+  elegir: () => ({
+    titulo: 'Publicar', avance: 0, cerrar: true,
+    cuerpo: `<h1 class="pregunta">¿Qué publicas?</h1>
+      <div class="opciones">
+        <button class="opcion" data-a="que" data-que="evento">${ic('calendario')}<span>Un evento<small>Con cartel o sin él</small></span>${ic('chevron')}</button>
+        <button class="opcion" data-a="que" data-que="lugar">${ic('casa')}<span>Un lugar<small>Centro cultural, museo, foro, galería…</small></span>${ic('chevron')}</button>
+        <button class="opcion" data-a="que" data-que="artista">${ic('persona')}<span>Un artista o grupo<small>Tu ficha o la de alguien más</small></span>${ic('chevron')}</button>
+      </div>`,
+    pie: '',
+    notas: ['Doc 54 (aceptado): al tocar «+» sin contexto (Inicio, Agenda), una pantalla con tres opciones que avanzan al tocarlas. Desde Lugares o Artistas el «+» entra directo a su alta. Sustituye a la tira de tipos al pie, que chocaba con el botón pegado abajo; mientras no exista, la tira sigue en el primer paso del evento (OL-313).', 'Tres toques máximo para llegar a cualquier alta: «+», el tipo y ya estás en «¿Cómo se llama?».'],
+  }),
+  nombre: () => {
+    const k = c(); const hay = e.q.trim().length >= 3;
+    let lista = '';
+    if (hay && k.ficha) lista = `<div class="lista-flotante"><button class="ficha" data-a="ir-ficha">${ic(e.que === 'lugar' ? 'pin' : 'persona')}<span><b>${k.ficha}</b><small>Ya tiene ficha · ir a su ficha</small></span></button></div>`;
+    else if (hay && k.sug) lista = `<div class="lista-flotante"><button data-a="sugerencia">${ic('pin')}<span><b>${k.sug.nombre}</b><small>${k.sug.direccion}</small></span></button></div>`;
+    const esLugar = e.que === 'lugar';
+    return {
+      titulo: esLugar ? 'Registrar un lugar' : 'Registrar artista', avance: avance(), cerrar: true,
+      cuerpo: `<h1 class="pregunta">¿Cómo se llama?</h1>${campo(esLugar ? 'Nombre del lugar' : 'Nombre de artista o grupo', e.q)}${lista}`,
+      pie: `<button class="btn" data-a="seguir" ${hay ? '' : 'disabled'}>${hay ? 'Siguiente' : 'Falta el nombre'}</button>`,
+      notas: [
+        'El nombre resuelve casi todo. Lugar: tocar la sugerencia del mapa trae dirección, punto, ciudad y tipo (caso 1) y avanza solo; escribir sin tocar nada (caso 2) deja «¿Dónde está?» y «¿Qué tipo es?» por preguntar. Artista: del nombre se deduce qué hace y si es grupo (caso 5); sin pista (caso 6) se pregunta.',
+        'Si ya tiene ficha (casos 3 y 7), se dice aquí, bajo el campo, y la salida es ir a esa ficha: no se llega a «Publicar». Hoy el aviso del lugar llega después de tocar «Publicar» y cuesta dos toques más.',
+        'La casilla «Soy yo / es mi grupo» no es una pregunta: va en «Revisa» (recomendación aceptada del doc 54).',
+      ],
+    };
+  },
+  mapa: () => {
+    const k = c(); const con = !!k.sug;
+    return {
+      titulo: 'Registrar un lugar', avance: avance(), atras: true,
+      cuerpo: `<h1 class="pregunta">${con ? '¿Es aquí?' : '¿Dónde está?'}</h1>
+        ${con ? '' : campo('Dirección o referencia', '') + `<button class="opcion" data-a="aqui">${ic('pin')}<span>Estoy aquí<small>Usa la ubicación del teléfono</small></span>${ic('chevron')}</button>`}
+        <div class="mapa-paso">${ic('pinlleno')}</div>
+        ${con ? `<p class="confirma">${ic('ok')}<span><b>${k.sug.nombre}</b><small>${k.sug.direccion}</small></span></p><small class="aviso">Si el pin no está en su sitio, arrástralo.</small>` : `<small class="aviso">Toca el mapa o arrastra el pin hasta la entrada del lugar.</small>`}
+        ${k.sug?.negocio ? `<p class="aviso alerta">Los bares, cafés y restaurantes no entran al directorio aunque tengan programa cultural. Si es un espacio cultural con otro nombre, cámbialo arriba.</p>` : ''}
+        ${caso === 'lugar-sin' ? `<p class="confirma">${ic('ok')}<span><b>¿Es este?</b><small>A 40 m hay un lugar con ficha: Taller La Grieta. <u>Ir a su ficha</u></small></span></p>` : ''}`,
+      pie: k.sug?.negocio ? `<button class="btn" disabled>No entra al directorio</button>` : `<button class="btn" data-a="seguir">${con ? 'Sí, es aquí' : 'Listo'}</button>${con ? '<button class="quieto" data-a="atras">Buscar otro</button>' : ''}`,
+      notas: [
+        'Confirmar en el mapa sale SIEMPRE en el lugar (decisión recomendada del doc 54): el punto se queda en el directorio y lo usarán todos sus eventos. Con sugerencia es «¿Es aquí?» (tarjeta de confirmación, sin campos); sin sugerencia es «¿Dónde está?» (dirección, «Estoy aquí» o mover el pin).',
+        'Aquí mismo va «¿Es este?» si hay un lugar con ficha a menos de 150 m (caso 2), y el aviso de que los negocios no entran (caso 4), con el botón apagado y claro: «No entra al directorio».',
+      ],
+    };
+  },
+  tipo: () => ({
+    titulo: 'Registrar un lugar', avance: avance(), atras: true,
+    cuerpo: `<h1 class="pregunta">¿Qué tipo de lugar es?</h1><div class="opciones compactas">${TIPOS.map((t) => `<button class="opcion" data-a="tipo" data-v="${t}">${ic('etiqueta')}<span>${t}</span>${ic('chevron')}</button>`).join('')}</div>`,
+    pie: '',
+    notas: ['Solo si el nombre no lo dijo (caso 2). Nueve opciones, una se toca y avanza. Hoy, sin pista, el lugar se publica como «Otro» sin preguntar.'],
+  }),
+  hace: () => ({
+    titulo: 'Registrar artista', avance: avance(), atras: true,
+    cuerpo: `<h1 class="pregunta">¿Qué hace?</h1><div class="opciones compactas">${DISCIPLINAS.map((d) => `<button class="opcion" data-a="hace" data-v="${d}">${ic('musica')}<span>${d}</span>${ic('chevron')}</button>`).join('')}</div>`,
+    pie: '',
+    notas: ['Solo si el nombre no lo dijo (caso 6). Ocho opciones, una se toca y avanza. La subcategoría («Fotografía», «Clown») deja de ser un paso: queda en «Revisa» como opcional. Hoy, sin pista, el artista sale como «Música».'],
+  }),
+  revisa: () => {
+    const k = c(); const esLugar = e.que === 'lugar';
+    const renglones = esLugar
+      ? `<button class="renglon">${ic('pin')}<b>${k.sug ? k.sug.direccion : 'Calle Inventada 12, Centro, San Luis Potosí'}</b><span class="accion">Cambiar</span></button>
+         <button class="renglon">${ic('etiqueta')}<b>${e.tipo ?? 'Otro'}</b><span class="accion">Cambiar</span></button>
+         <button class="renglon opcional">${ic('mas')}<b>Foto, descripción o redes</b><span class="accion">Agregar</span></button>`
+      : `<button class="renglon">${ic('musica')}<b>${e.hace ?? 'Teatro'}</b><span class="accion">Cambiar</span></button>
+         <button class="renglon">${ic(k.tipo === 'Solista' ? 'persona' : 'personas')}<b>${k.tipo}</b><span class="accion">Cambiar</span></button>
+         <button class="renglon">${ic('ciudad')}<b>San Luis Potosí</b><span class="accion">Cambiar</span></button>
+         <button class="casilla" role="checkbox" aria-checked="${e.soyYo}" data-a="soyyo"><span class="cuadro">${e.soyYo ? ic('ok') : ''}</span><span class="texto"><b>${k.tipo === 'Solista' ? 'Soy yo' : 'Es mi grupo'}</b><small>Podrás editar la ficha y publicar sus fechas</small></span></button>
+         <button class="renglon opcional">${ic('mas')}<b>Foto, portada, redes o descripción</b><span class="accion">Agregar</span></button>`;
+    return {
+      titulo: 'Revisa', avance: avance(), atras: true,
+      cuerpo: `<h1>${c().sug?.nombre ?? c().q}</h1><div class="lista">${renglones}</div>`,
+      pie: `<button class="btn" data-a="seguir">${esLugar ? 'Publicar lugar' : 'Publicar artista'}</button>`,
+      notas: ['Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: la casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
+    };
+  },
+  publicado: () => {
+    const k = c(); const esLugar = e.que === 'lugar'; const nombre = k.sug?.nombre ?? k.q;
+    return {
+      titulo: '', avance: 1, final: true,
+      cuerpo: `<div class="final"><span class="sello-ok">${ic('ok')}</span><h1>${esLugar ? 'Lugar publicado' : 'Artista publicado'}</h1><p class="meta">Ya está en el directorio. Así lo ve la gente:</p></div>
+        <div class="tarjeta ${esLugar ? '' : 'redonda'}"><div class="mini">${ic(esLugar ? 'casa' : 'persona')}</div><div><b>${nombre}</b><small>${esLugar ? `${e.tipo ?? 'Otro'} · Centro` : `${e.hace ?? 'Teatro'} · ${k.tipo}`}</small></div></div>
+        ${esLugar ? `<section class="sugerencia"><h2>¿Hay algo próximo en ${nombre.split(' ')[0]}…?</h2><small>Publica su primer evento con el lugar ya puesto.</small><button class="btn" data-a="nada">Publicar un evento aquí</button></section>` : `<section class="sugerencia"><h2>Agrega una foto</h2><small>Las fichas sin foto no salen en destacados.</small><button class="btn" data-a="nada">${ic('camara')}Agregar foto</button></section>`}`,
+      pie: `<button class="btn sec" data-a="nada">Compartir</button><button class="quieto" data-a="reiniciar">Publicar otro</button>`,
+      notas: ['El final del canon: sello, el elemento como quedó y UNA sugerencia en punteado. Lugar: «Publicar un evento aquí» (abre el alta de evento con el lugar puesto). Artista: «Agrega una foto» (las fichas sin foto no salen en destacados: es la que más le sirve).'],
+    };
+  },
+};
+
+function pintar() {
+  const p = PANTALLAS[e.paso]();
+  document.getElementById('app').innerHTML = `
+    <div class="barra">${p.final ? '<span class="redondo"></span>' : p.cerrar ? `<button class="redondo" data-a="reiniciar" aria-label="Cerrar">${ic('cerrar')}</button>` : `<button class="redondo" data-a="atras" aria-label="Atrás">${ic('atras')}</button>`}<b>${p.titulo}</b>${p.final ? `<button class="redondo" data-a="reiniciar" aria-label="Cerrar">${ic('cerrar')}</button>` : '<span class="redondo"></span>'}</div>
+    <div class="avance"><i style="width:${Math.round(p.avance * 100)}%"></i></div>
+    <div class="pagina">${p.cuerpo}<details class="notas"><summary>Notas del prototipo</summary><ul>${p.notas.map((n) => `<li>${n}</li>`).join('')}</ul></details></div>
+    <div class="pie">${p.pie}</div>`;
+  const q = document.getElementById('q');
+  if (q && e.paso === 'nombre') { q.addEventListener('input', (ev) => { e.q = ev.target.value; pintar(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }); if (!e.q && !e.escrito) { e.escrito = true; } }
+}
+document.getElementById('app').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a;
+  if (a === 'que') { e.que = b.dataset.que; if (e.que === 'evento') { alert('Abre el alta de evento por pasos (ya construida).'); return; } caso = e.que === 'lugar' ? 'lugar-sug' : 'artista-pista'; document.getElementById('caso').value = caso; nuevo(); e.paso = 'nombre'; pintar(); return; }
+  if (a === 'limpiar') { e.q = ''; pintar(); document.getElementById('q').focus(); return; }
+  if (a === 'sugerencia') { e.tipo = c().sug.tipo; siguiente(); return; }
+  if (a === 'ir-ficha') { alert('Va a la ficha que ya existe.'); return; }
+  if (a === 'seguir') { if (e.paso === 'nombre' && !e.q.trim()) return; siguiente(); return; }
+  if (a === 'aqui') { pintar(); return; }
+  if (a === 'tipo') { e.tipo = b.dataset.v; siguiente(); return; }
+  if (a === 'hace') { e.hace = b.dataset.v; siguiente(); return; }
+  if (a === 'soyyo') { e.soyYo = !e.soyYo; pintar(); return; }
+  if (a === 'atras') { atras(); return; }
+  if (a === 'reiniciar') { nuevo(); pintar(); return; }
+});
+document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); if (CASOS[caso].que) { e.q = CASOS[caso].q; } pintar(); });
+// Arranca con el texto del caso ya escrito en los casos con nombre, para ver la lista sin teclear.
+pintar();
+</script>
+</body>
+</html>
