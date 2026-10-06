@@ -82,7 +82,9 @@ ul { list-style: none; }
 .con-cartel-grupo .subir { border: 0; border-radius: 0; background: none; min-height: 176px; }
 .con-cartel-grupo .casilla { border: 0; border-top: 1px dashed var(--primario); border-radius: 0; background: var(--fondo); }
 .con-cartel-grupo .casilla[aria-checked="true"] { background: var(--fondo); }
-.otra-puerta { margin-top: var(--espacio-4); }
+/* «No tengo cartel»: la otra puerta, como una opción que avanza (ui/Opcion): texto a la izquierda y el ángulo a la derecha. */
+.otra-puerta { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--espacio-3); width: 100%; min-height: var(--toque); margin-top: var(--espacio-4); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.otra-puerta svg { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
 /* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
 .casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
 .casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
@@ -144,6 +146,7 @@ const ic = (n) => ({
   pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
   boleto: '<svg viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 0 0 4v1a2 2 0 0 0 0 4v2h16v-2a2 2 0 0 1 0-4v-1a2 2 0 0 1 0-4V5H4z"/><path d="M12 5v14" stroke-dasharray="2 2.5"/></svg>',
   alerta: '<svg viewBox="0 0 24 24"><path d="M12 4 3 20h18z"/><path d="M12 10v4M12 17v.5"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>',
 })[n];
 const MINI = (t) => `<div class="cartel-mini">${t ? 'ECOS DE PAPEL<br><span style="font-weight:400">jue 5 nov · 19:00</span>' : ''}</div>`;
 
@@ -180,7 +183,7 @@ const PANTALLAS = {
           </button>
           ${casilla()}
         </div>
-        <button class="btn sec otra-puerta" data-a="sin">No tengo cartel</button>`,
+        <button class="otra-puerta" data-a="sin"><span>No tengo cartel</span>${ic('chevron')}</button>`,
       pie: '',
       notas: [
         'El recuadro dice «Sube el cartel» y para qué sirve (la portada del evento), no lo que el sistema hará con él. Es igual en todos los casos.',
