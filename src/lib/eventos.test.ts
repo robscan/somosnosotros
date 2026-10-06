@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COOPERACION_SOLIDARIA, cartelAFormulario, ciudadDelSitio, claseDeCosto, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { COOPERACION_SOLIDARIA, cartelAFormulario, ciudadDelSitio, claseDeCosto, compartirEvento, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -262,6 +262,22 @@ describe("textoCompartir", () => {
     expect(textoCompartir("Noche de jazz", "Hoy · 19:00", "Teatro de la Paz", "https://somosnosotros.org/eventos/1")).toBe(
       "Noche de jazz\nHoy · 19:00 · Teatro de la Paz\nhttps://somosnosotros.org/eventos/1",
     );
+  });
+});
+
+describe("compartirEvento", () => {
+  const e = { id: "00000000-0000-4000-8000-0000000000e1", slug: "noche-de-jazz-ab12", titulo: "Noche de jazz", inicio: "2035-12-01T01:00:00Z", fin: null, zona: "America/Mexico_City" };
+  it("la dirección pública con el dominio de siempre, y el texto sin el enlace al final (va aparte)", () => {
+    const { url, texto } = compartirEvento(e, "Teatro de la Paz");
+    expect(url).toBe("https://somosnosotros.org/eventos/noche-de-jazz-ab12");
+    expect(texto.split("\n")).toHaveLength(2);
+    expect(texto).toMatch(/^Noche de jazz\n.+ · Teatro de la Paz$/);
+    expect(texto).not.toContain(url);
+  });
+  it("sin slug todavía, la dirección cae al UUID; sin sitio, el cuándo va solo", () => {
+    const { url, texto } = compartirEvento({ ...e, slug: null }, null);
+    expect(url).toBe(`https://somosnosotros.org/eventos/${e.id}`);
+    expect(texto).not.toContain(" · Teatro");
   });
 });
 

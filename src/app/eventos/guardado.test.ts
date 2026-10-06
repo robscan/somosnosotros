@@ -51,6 +51,31 @@ describe("guardado completo del evento", () => {
     expect(m.redirect).toHaveBeenCalledWith(`/eventos/${ID}?nuevo=1`, "replace");
   });
 
+  it("con `quedarse` (el alta por pasos) devuelve lo publicado en vez de redirigir, con el mismo guardado y los mismos avisos", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { slug: "evento-ab12" } });
+    const fd = formulario();
+    fd.set("quedarse", "1");
+    expect(await crearEvento(null, fd)).toEqual({ ok: true, id: ID, slug: "evento-ab12", href: "/eventos/evento-ab12", volver: "/eventos/evento-ab12" });
+    expect(m.redirect).not.toHaveBeenCalled();
+    expect(m.rpc).toHaveBeenCalledTimes(1);
+    expect(m.after).toHaveBeenCalledTimes(1);
+    expect(m.invalidar).toHaveBeenCalledWith("/eventos/evento-ab12");
+  });
+
+  it("con `quedarse` y sin slug todavía, la dirección cae al UUID como en la ficha", async () => {
+    const fd = formulario();
+    fd.set("quedarse", "1");
+    expect(await crearEvento(null, fd)).toEqual({ ok: true, id: ID, slug: null, href: `/eventos/${ID}`, volver: `/eventos/${ID}` });
+  });
+
+  it("`quedarse` no cambia los errores: un formulario incompleto sigue sin llamar a la base", async () => {
+    const fd = formulario();
+    fd.set("quedarse", "1");
+    fd.set("titulo", "");
+    expect((await crearEvento(null, fd)).ok).toBe(false);
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+
   it("un fallo de cualquier parte no confirma, no avisa ni redirige", async () => {
     m.rpc.mockResolvedValue({ data: null, error: { code: "23514" } });
     expect((await crearEvento(null, formulario())).ok).toBe(false);

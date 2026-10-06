@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import Borrar from "@/components/Borrar";
 import BotonCalendario from "@/components/BotonCalendario";
 import BotonCompartir from "@/components/BotonCompartir";
+import BotonDescargarCartel from "@/components/BotonDescargarCartel";
 import Desplegable from "@/components/Desplegable";
 import { EsqueletoBloqueTexto, EsqueletoKpi } from "@/components/ui/Esqueleto";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
@@ -19,22 +20,24 @@ import Reportar from "@/components/Reportar";
 import BarraFicha from "@/components/ui/BarraFicha";
 import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
-import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
+import { cartelDescargable } from "@/lib/cartelDescarga";
+import { configPublica } from "@/lib/config";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { jsonLdMigajas } from "@/lib/estructurados";
 import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
+import { compartirEvento, direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar } from "@/lib/eventos";
 import { kpiCuando } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
-import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
+import { eventoPaso, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -241,8 +244,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
-  const url = `${ORIGEN}${hrefEvento(e)}`;
-  const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
+  const { url, texto } = compartirEvento(e, sitio);
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
   // .ics (`donde` en .../calendario/route.ts) para que la hoja nativa del sistema muestre algo útil para llegar.
   const lugarCalendario = e.lugar ? [e.lugar.nombre, e.lugar.direccion].filter(Boolean).join(", ") : sitio;
@@ -298,6 +300,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const cuando = kpiCuando(e.inicio, e.fin, e.zona);
   const hayAvisos = nuevo === "1" || error === "borrar" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
+  // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
+  const hayCartel = e.visible && !paso && cartelDescargable(e.imagen, configPublica().supabaseUrl);
 
   return (
     <Ficha portada={portada}>
@@ -422,6 +426,21 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               Cómo llegar
               <small>sin dirección</small>
             </span>
+          )}
+          {/* Para llevar el cartel a WhatsApp o Instagram (OL-304, pedido del founder): la hoja de compartir con la imagen, o la descarga. */}
+          {hayCartel && (
+            <BotonDescargarCartel
+              id={e.slug}
+              titulo={e.titulo}
+              className={ficha.accion}
+              icono={
+                <span className={CIRCULO}>
+                  <IconoDescarga />
+                </span>
+              }
+              textos={{ reposo: "Cartel", listo: "Descargado", fallo: "No se pudo" }}
+              etiqueta="Descargar el cartel"
+            />
           )}
         </div>
 

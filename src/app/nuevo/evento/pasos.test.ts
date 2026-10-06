@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LugarResumen } from "@/lib/lugares";
-import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas } from "./pasos";
+import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas } from "./pasos";
 
 const ZONA = "America/Mexico_City";
 const pasar = (e: Estado, ...acciones: Accion[]) => acciones.reduce(flujo, e);
@@ -297,3 +297,59 @@ describe("«Dónde» en tres pasos: buscar, confirmar en el mapa y qué hacer co
     expect(nombreDelSitio(e.r.sitio, undefined)).toBe("Jardín de San Juan de Dios");
   });
 });
+
+describe("el final: «Publicado» (OL-304)", () => {
+  it("al publicar se llega a «Publicado», con la línea de avance completa y lo contestado intacto (la tarjeta lo usa)", () => {
+    const revisa = hastaRevisa();
+    const e = flujo(revisa, { tipo: "publicado" });
+    expect(pasoActual(e)).toBe("publicado");
+    expect(avance("publicado")).toBe(1);
+    expect(e.direccion).toBe("entra");
+    expect(e.r).toEqual(revisa.r);
+  });
+
+  it("no hay vuelta: la pila queda en el final y Atrás no hace nada", () => {
+    const e = flujo(hastaRevisa(), { tipo: "publicado" });
+    expect(e.pila).toEqual(["publicado"]);
+    expect(flujo(e, { tipo: "atras", desde: "publicado" })).toBe(e);
+  });
+
+  it("antes de publicar, ningún paso llega a 1: el avance completo es solo del final", () => {
+    for (const paso of ["inicio", "nombre", "dia", "hora", "donde", "mapa", "uso", "cuanto", "revisa", "mas"] as const) expect(avance(paso), paso).toBeLessThan(1);
+  });
+
+  describe("el evento como quedó (la tarjeta)", () => {
+    const CREADO = { id: "0e0e0e0e-0000-4000-8000-000000000001", slug: "lectura-en-voz-alta-ab12", creadoEn: "2026-10-07T16:00:00.000Z" };
+    const teatro = { nombre: "Teatro de la Paz", portada: "https://x.test/teatro.jpg" };
+
+    it("en un lugar del directorio: su nombre y su portada, la hora en la zona del sitio y sin precio si es gratis", () => {
+      const e = eventoPublicado(hastaRevisa().r, CREADO, { lugar: teatro, zona: ZONA, imagen: null });
+      expect(e).toMatchObject({ id: CREADO.id, slug: CREADO.slug, titulo: "Lectura en voz alta", inicio: "2026-10-11T01:00:00.000Z", fin: "2026-10-11T03:00:00.000Z", zona: ZONA, imagen: null, precio: null, lugar_id: LUGAR.lugarId, sitio_texto: null, sitio_reservado: false, lugar: teatro, van: null });
+    });
+
+    it("el precio sale como lo guarda el servidor: con signo, o «Cooperación solidaria»", () => {
+      const base = hastaRevisa().r;
+      expect(eventoPublicado({ ...base, costo: "precio", precio: "150" }, CREADO, { lugar: teatro, zona: ZONA, imagen: null }).precio).toBe("$150");
+      expect(eventoPublicado({ ...base, costo: "cooperacion" }, CREADO, { lugar: teatro, zona: ZONA, imagen: null }).precio).toBe("Cooperación solidaria");
+    });
+
+    it("con cartel lleva la imagen; sin hora de fin, no hay fin; el título se recorta como lo recorta el servidor", () => {
+      const base = hastaRevisa().r;
+      const e = eventoPublicado({ ...base, fin: "", nombre: `  ${"x".repeat(130)}  ` }, CREADO, { lugar: teatro, zona: ZONA, imagen: "https://x.test/cartel.jpg" });
+      expect(e.imagen).toBe("https://x.test/cartel.jpg");
+      expect(e.fin).toBeNull();
+      expect(e.titulo).toBe("x".repeat(120));
+    });
+
+    it("en otro sitio: su nombre y su dirección públicos y ningún lugar; reservado: el nombre sin la dirección", () => {
+      const otro = { ...OTRO_VACIO, sitioTexto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1", sitioPunto: { lat: 22.15, lng: -100.97 } };
+      const base = hastaRevisa().r;
+      const publico = eventoPublicado({ ...base, sitio: { modo: "otro", lugarId: "", otro } }, CREADO, { lugar: undefined, zona: ZONA, imagen: null });
+      expect(publico).toMatchObject({ lugar_id: null, lugar: null, sitio_texto: "Jardín de San Juan de Dios", sitio_direccion: "Calle Madero 1", sitio_reservado: false });
+      const reservado = eventoPublicado({ ...base, sitio: { modo: "reservado", lugarId: "", otro: { ...otro, reservado: true, direccionPrivada: "Calle Secreta 9" } } }, CREADO, { lugar: undefined, zona: ZONA, imagen: null });
+      expect(reservado).toMatchObject({ lugar: null, sitio_texto: "Jardín de San Juan de Dios", sitio_direccion: null, sitio_reservado: true });
+      expect(JSON.stringify(reservado)).not.toContain("Calle Secreta");
+    });
+  });
+});
+

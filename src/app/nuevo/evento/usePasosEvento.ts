@@ -20,6 +20,7 @@ export function usePasosEvento(quienInicial: QuienItem[]) {
       elegir: (candidato: Candidato) => despachar({ tipo: "elegir", candidato }),
       confirmar: (candidato: Candidato) => despachar({ tipo: "confirmar", candidato }),
       usar: (uso: UsoSitio) => despachar({ tipo: "usar", uso }),
+      publicado: () => despachar({ tipo: "publicado" }),
     }),
     [],
   );

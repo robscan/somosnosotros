@@ -1,7 +1,7 @@
 import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import type { Punto } from "./geo";
 import { esUuid, limpiar } from "./formulario";
-import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { formatearCuando, localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import { LIMITES_EVENTO } from "./limites";
 import { puedeConservarReservadoSinDireccion } from "./retencionSitio";
@@ -403,6 +403,15 @@ export function validarEvento(
 /** Texto para compartir: título, cuándo, dónde y el enlace. */
 export function textoCompartir(titulo: string, cuando: string, lugar: string | null, url: string): string {
   return [`${titulo}`, `${cuando}${lugar ? ` · ${lugar}` : ""}`, url].join("\n");
+}
+
+/**
+ * Lo que se comparte de un evento, igual en la ficha y en el final del alta por pasos: la dirección pública con el dominio de siempre y el
+ * texto sin el enlace al final (la hoja de compartir lo manda aparte en `url`). `sitio` es el nombre del sitio, como lo dice `nombreSitio`.
+ */
+export function compartirEvento(e: Pick<EventoResumen, "titulo" | "inicio" | "fin" | "zona"> & { id: string; slug?: string | null }, sitio: string | null): { url: string; texto: string } {
+  const url = `https://somosnosotros.org${hrefEvento(e)}`;
+  return { url, texto: textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "") };
 }
 
 /** Lo que se lee de un cartel (viene del modelo de visión). Todo puede faltar. */

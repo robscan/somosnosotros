@@ -16,16 +16,17 @@ import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { respuestasDelCartel } from "./cartelPorPasos";
-import { avance, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Paso, type Uso } from "./pasos";
+import { avance, eventoPublicado, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Uso } from "./pasos";
 import { PasoInicio, PasoLeyendo } from "./PasoCartel";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
+import Publicado from "./Publicado";
 import Revisa from "./Revisa";
 import { useLeerCartel } from "./useLeerCartel";
 import { usePasosEvento } from "./usePasosEvento";
 
 type Props = {
-  /** La acción de siempre del alta de evento (`crearEvento`): mismos campos, mismas validaciones; al publicar lleva a la ficha. */
+  /** La acción de siempre del alta de evento (`crearEvento`): mismos campos, mismas validaciones. Con el campo `quedarse` no lleva a la ficha: devuelve lo creado. */
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
   /** Artistas ligados a mi cuenta: si es uno solo, Quién ya viene con él (como en el alta de siempre, decisión 12). */
@@ -57,17 +58,33 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
   mas: "¿Quieres agregar algo?",
 };
 
+type Interno = Props & {
+  /** «Publicar otro»: el alta empieza de cero. */
+  onOtro: () => void;
+  /** Un lugar que se guardó desde «No está en el directorio»: queda en la lista aunque se publique otro evento. */
+  onLugarNuevo: (lugar: LugarResumen) => void;
+};
+
 /**
- * El alta de evento por pasos (OL-300, OL-301 y OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Sin cartel («No tengo
+ * El alta de evento por pasos (OL-300, OL-301, OL-302 y OL-304; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Sin cartel («No tengo
  * cartel»): ¿Cómo se llama? → ¿Qué día es? → ¿A qué hora? → ¿Dónde es? (con «¿Es aquí?» y «No está en el directorio» si el sitio no es
  * del directorio) → ¿Cuánto cuesta? → Revisa → Publicar. Con cartel («Sube el cartel»): se sube y se lee en «Leyendo» (`useLeerCartel`),
  * lo leído rellena las respuestas y solo se preguntan los pasos que falten (`cartelPorPasos.ts`); con todo leído se pasa directo a
  * «Revisa». Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el
  * alta de siempre, que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve,
- * y el error sale en «Revisa».
+ * y el error sale en «Revisa». Si publica, la pantalla no sale: se queda en «Publicado» (el formulario manda `quedarse`, y la acción
+ * devuelve lo creado en vez de redirigir a la ficha). «Publicar otro» la vuelve a montar con otra `key`: respuestas, cartel, error y clave de
+ * la operación empiezan de cero y la guardia de salida se arma de nuevo; los lugares que se guardaron en el camino se conservan aquí.
  */
-export default function AltaEvento({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo }: Props) {
-  const { r, candidato, paso, direccion, primero, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
+export default function AltaEvento(props: Props) {
+  const [vuelta, setVuelta] = useState(0);
+  const [lugares, setLugares] = useState(props.lugares);
+  const agregar = useCallback((nuevo: LugarResumen) => setLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo])), []);
+  return <AltaPorPasos key={vuelta} {...props} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
+}
+
+function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, onOtro, onLugarNuevo }: Interno) {
+  const { r, candidato, paso, direccion, primero, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar, publicado } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
   // Lo escrito en «¿Dónde es?» vive aquí y no en el paso: al volver de «¿Es aquí?» (Atrás, «Buscar otro») la lista sigue ahí.
   const [busqueda, setBusqueda] = useState("");
   // Con cartel: se sube y se lee en «Leyendo»; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»).
@@ -82,17 +99,24 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
     },
   });
   const ubicacion = useEstoyAqui();
-  // Un lugar que se guarda desde «No está en el directorio» aún no está en la lista que trajo el servidor: se agrega aquí.
-  const [listaLugares, setListaLugares] = useState(lugares);
   const [guardando, setGuardando] = useState(false);
   const [errorLugar, setErrorLugar] = useState<string | null>(null);
-  const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
+  // Lo que devolvió el servidor al publicar; con eso y las respuestas se arma la tarjeta de «Publicado».
+  const [creado, setCreado] = useState<Creado | null>(null);
+  const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(async (previo, datos) => {
+    const hecho = await accion(previo, datos);
+    if (hecho.ok) {
+      setCreado({ id: hecho.id, slug: hecho.slug ?? null, creadoEn: new Date().toISOString() });
+      publicado();
+    }
+    return hecho;
+  }, null);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   useEffect(() => {
     if (resultado && !resultado.ok) reponerGuardia();
   }, [resultado]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
-  const lugar = r.sitio.modo === "lugar" ? listaLugares.find((l) => l.id === r.sitio.lugarId) : undefined;
+  const lugar = r.sitio.modo === "lugar" ? lugares.find((l) => l.id === r.sitio.lugarId) : undefined;
   // Un lugar del directorio ya tiene su punto confirmado: contesta sin pasar por el mapa.
   const elegirLugar = (l: LugarResumen) => contestar({ sitio: sitioDeLugar(l, r.sitio.otro) });
   // «Guardarlo como lugar»: crea el lugar con la acción de la hoja de siempre (si ya existe uno igual cerca, usa ese) y el sitio pasa a ser ese lugar.
@@ -103,13 +127,13 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
     try {
       const nombre = c.nombre.trim();
       const direccion = c.direccion.trim();
-      const creado = await crearLugarDesdeEvento({ nombre, direccion, lat: c.punto.lat, lng: c.punto.lng, ciudad: ciudadParaPunto(c.punto, c.ciudad, ciudadContexto) ?? "", volverA: VOLVER_A, privado: false });
-      if (!creado.ok) {
+      const lugarCreado = await crearLugarDesdeEvento({ nombre, direccion, lat: c.punto.lat, lng: c.punto.lng, ciudad: ciudadParaPunto(c.punto, c.ciudad, ciudadContexto) ?? "", volverA: VOLVER_A, privado: false });
+      if (!lugarCreado.ok) {
         setErrorLugar(NO_SE_GUARDO);
         return;
       }
-      const nuevo = listaLugares.find((l) => l.id === creado.id) ?? { id: creado.id, nombre, tipo: deducirTipo(nombre, c.categorias) ?? "otro", direccion, lat: c.punto.lat, lng: c.punto.lng, portada: null };
-      setListaLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo]));
+      const nuevo = lugares.find((l) => l.id === lugarCreado.id) ?? { id: lugarCreado.id, nombre, tipo: deducirTipo(nombre, c.categorias) ?? "otro", direccion, lat: c.punto.lat, lng: c.punto.lng, portada: null };
+      onLugarNuevo(nuevo);
       contestar({ sitio: sitioDeLugar(nuevo, r.sitio.otro) });
     } catch {
       setErrorLugar(NO_SE_GUARDO);
@@ -159,6 +183,8 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           <input type="hidden" name="descripcion" value={r.descripcion} />
           <input type="hidden" name="enlace" value={r.enlace} />
           <input type="hidden" name="imagen" value={cartel.subido?.url ?? ""} />
+          {/* Publicar no sale de la pantalla: la acción devuelve lo creado y el paso «Publicado» lo enseña. */}
+          <input type="hidden" name="quedarse" value="1" />
         </form>
       }
     >
@@ -171,7 +197,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
         <PasoDonde
           q={busqueda}
           onBuscar={setBusqueda}
-          lugares={listaLugares}
+          lugares={lugares}
           contexto={contextoDondeEsta(null, busqueda, ciudadContexto, ubicacion.yo, ubicacionCercanaFresca())}
           ubicando={ubicacion.ubicando}
           avisoUbicacion={ubicacion.avisoUbicacion}
@@ -183,7 +209,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
       {paso === "mapa" && candidato && (
         <PasoMapa
           candidato={candidato}
-          lugares={listaLugares}
+          lugares={lugares}
           ciudad={ciudadContexto ?? CIUDAD_INICIAL}
           yo={ubicacion.yo}
           onLugar={elegirLugar}
@@ -209,6 +235,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
         />
       )}
       {paso === "mas" && <PasoMas r={r} mios={mios} ciudadContexto={ciudadContexto} errores={errores} onCambio={cambiar} onListo={seguir} />}
+      {paso === "publicado" && creado && <Publicado evento={eventoPublicado(r, creado, { lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} onOtro={onOtro} />}
     </PorPasos>
   );
 }
