@@ -20,7 +20,7 @@ import type { Ciudad } from "@/lib/ciudad";
 import { partirLocal } from "@/lib/cuandoEvento";
 import { LIMITES_EVENTO, type ErroresEvento } from "@/lib/eventos";
 import { diaLargo, diaLocal } from "@/lib/fechas";
-import { DURACIONES, HORAS_SUGERIDAS, diasSugeridos, etiquetaDuracion, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
+import { DURACIONES, HORAS_SUGERIDAS, diasElegidos, diasSugeridos, etiquetaDuracion, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
 import styles from "./AltaEvento.module.css";
 
 /**
@@ -93,7 +93,7 @@ export function PasoDia({ dias, zona, onElegir }: { dias: Dias | null; zona: str
       <Boton type="button" variante="quieto" onClick={() => setCalendario(true)}>
         Dura varios días
       </Boton>
-      {calendario && <SelectorDia titulo="¿Qué día es?" desde={dias?.desde ?? ""} hasta={dias?.hasta ?? ""} zona={zona} onListo={(desde, hasta) => onElegir({ desde, hasta })} onCerrar={() => setCalendario(false)} />}
+      {calendario && <SelectorDia titulo="¿Qué día es?" desde={dias?.desde ?? ""} hasta={dias?.hasta ?? ""} zona={zona} onListo={(desde, hasta) => onElegir(diasElegidos(desde, hasta))} onCerrar={() => setCalendario(false)} />}
     </>
   );
 }
