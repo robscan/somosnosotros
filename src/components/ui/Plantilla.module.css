@@ -31,7 +31,7 @@
 
 /* 2. Pantallas de tarea y de formulario (`<main className={plantilla.pagina}>`): una rejilla de tres columnas, el aire de los lados
    (`--gutter`) a cada lado y la columna en medio, donde va todo lo que no diga otra cosa. La barra interior (`ui/Barra`, un `header`)
-   ocupa las tres y llega de borde a borde. Scroll normal: el botón va en el flujo y nunca queda bajo el teclado. Sin barra (error,
+   ocupa las tres y llega de borde a borde. Scroll normal: el botón va en el flujo y, con el teclado abierto, el relleno de abajo suma lo que el teclado tapa (`--teclado`, de `ui/useCampoVisible`) para que el campo enfocado tenga por dónde subir. Sin barra (error,
    404), lo primero baja lo que pide la zona segura de arriba; con ella, la barra ya lo pone (`Barra.module.css` `.interior`; OL-205,
    auditoría OL-202 problema 2, docs/rediseno/48-shell-ios.md §2). `.paginaContenido` es la misma sobre el tono del contenido y con más
    aire abajo (Ajustes, administración, Novedades). */
@@ -41,7 +41,7 @@
   grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
   align-content: start;
   min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding-bottom: calc(var(--espacio-6) + var(--piso));
+  padding-bottom: calc(var(--espacio-6) + var(--piso) + var(--teclado, 0px));
 }
 :where(.pagina, .paginaContenido) > * {
   grid-column: 2;
@@ -50,6 +50,6 @@
   margin-top: calc(var(--espacio-5) + env(safe-area-inset-top, 0px));
 }
 .paginaContenido {
-  padding-bottom: calc(var(--espacio-8) + var(--piso));
+  padding-bottom: calc(var(--espacio-8) + var(--piso) + var(--teclado, 0px));
   background: var(--fondo-contenido);
 }
