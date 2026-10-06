@@ -7,7 +7,7 @@
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
 <style>
-/* Prototipo OL-306 (bitácora 334): el cartel se sube siempre; la lectura es un servicio que se enciende cuando está disponible.
+/* Prototipo OL-306 (bitácora 334): el cartel se sube siempre, con la misma pantalla; la lectura es un valor agregado que pasa cuando hay con qué y no se menciona cuando no.
    Mismo estilo que publicar-por-pasos.html (tokens de src/app/globals.css). Arriba, la tira del prototipo para elegir el caso. */
 :root {
   color-scheme: light;
@@ -105,13 +105,11 @@ ul { list-style: none; }
 <body>
 <div class="tira">
   <select id="caso" aria-label="Caso del prototipo">
-    <option value="lee">1 · Hay lectura: se sube y se lee (como hoy)</option>
-    <option value="agotado">2 · Se acabaron las lecturas del mes (cuenta gratuita)</option>
-    <option value="sinia">3 · Sin servicio de lectura (sin llave o créditos agotados)</option>
-    <option value="falla">4 · Hay lectura pero falla al leer</option>
-    <option value="pocas">5 · Quedan pocas lecturas (cuenta de pago)</option>
+    <option value="lee">1 · Hay lectura: se sube, se lee y se nota</option>
+    <option value="sinlectura">2 · Sin lectura (sin cupo, sin llave o sin créditos): se sube y se pregunta</option>
+    <option value="falla">3 · Hay lectura pero falla: se sigue igual, sin excusas</option>
   </select>
-  <label><input type="checkbox" id="sinleer"> Mostrar «Subir sin leer» cuando hay lectura (variante a discutir)</label>
+  <label style="opacity:.8">La primera pantalla es la misma en los tres casos: eso es la propuesta.</label>
 </div>
 <div class="app" id="app"></div>
 <script>
@@ -129,67 +127,55 @@ const ic = (n) => ({
 const MINI = (t) => `<div class="cartel-mini">${t ? 'ECOS DE PAPEL<br><span style="font-weight:400">jue 5 nov · 19:00</span>' : ''}</div>`;
 
 const CASOS = {
-  lee:     { lee: true,  linea: 'Leemos el nombre, la fecha, el lugar y el precio', chip: '' },
-  agotado: { lee: false, linea: 'Hoy lo llenas tú: se acabaron tus lecturas del mes', chip: 'Se renuevan el 1 de noviembre', pedir: true },
-  sinia:   { lee: false, linea: 'Tú pones los datos; el cartel queda como imagen del evento', chip: '' },
-  falla:   { lee: true,  linea: 'Leemos el nombre, la fecha, el lugar y el precio', chip: '', falla: true },
-  pocas:   { lee: true,  linea: 'Leemos el nombre, la fecha, el lugar y el precio', chip: 'Te quedan 2 lecturas este mes' },
+  lee: { lee: true },
+  sinlectura: { lee: false },
+  falla: { lee: true, falla: true },
 };
 let caso = 'lee', e;
-const nuevo = () => (e = { paso: 'inicio', pedido: false, leido: false, sinLeer: false });
+const nuevo = () => (e = { paso: 'inicio' });
 nuevo();
 const casoActual = () => CASOS[caso];
 
 const PANTALLAS = {
   inicio: () => {
-    const c = casoActual();
-    const mostrarSinLeer = document.getElementById('sinleer').checked && c.lee;
     return {
       titulo: 'Publicar', avance: 0, cerrar: true,
       cuerpo: `<button class="subir" data-a="subir">
           <span class="marco">${ic('camara')}</span>
           <span>Sube el cartel</span>
-          <small>${c.linea}</small>
-          ${c.chip ? `<span class="lecturas">${c.lee ? ic('ok') : ''}${c.chip}</span>` : ''}
+          <small>Será la imagen del evento</small>
         </button>
-        ${c.pedir ? `<button class="quieto" data-a="pedir">${e.pedido ? 'Ya pedimos más lecturas para ti' : 'Pedir más lecturas'}</button>` : ''}
-        ${mostrarSinLeer ? `<button class="quieto" data-a="subir-sin-leer">Subir sin leer</button>` : ''}
         <button class="btn sec" data-a="sin">No tengo cartel</button>`,
       pie: '',
       notas: [
-        'El recuadro «Sube el cartel» está SIEMPRE. El cartel vale por sí mismo: es la imagen del evento en la ficha y la agenda. Hoy, sin llave o sin cupo, el recuadro no sale y solo queda «No tengo cartel»; eso es lo que se corrige.',
-        'La lectura es un servicio que se enciende cuando está disponible, igual que el creador de cartel: la segunda línea del recuadro dice si leemos o si lo llenas tú. Nadie elige entre leer o no: el sistema lo decide (UX invisible).',
-        'Sin cupo (caso 2): «Pedir más lecturas» sigue como salida quieta, debajo del recuadro, no dentro de él, para que el recuadro siga siendo «subir».',
-        'Con pocas lecturas (caso 5): el recuadro dice cuántas quedan (regla ya escrita en el código: solo desde 3 o menos). Es información, no una decisión.',
-        'La casilla de la tira enseña la variante «Subir sin leer» para cuentas de pago que quieran ahorrar créditos. Mi recomendación: NO en la primera fase. Agrega una decisión a la primera pantalla y la lectura es justo lo que ahorra pasos; si alguien no quiere gastar, le basta con no tener cupo. Se retoma cuando existan cuentas de pago.',
+        'La primera pantalla es la misma haya o no lectura: el recuadro dice «Sube el cartel» y para qué sirve el cartel (la imagen del evento), no lo que el sistema hará con él. Ninguna promesa, ninguna excusa.',
+        'La lectura es un valor agregado: si hay con qué, pasa y se nota después («Leyendo…», «Leído del cartel»); si no, no se menciona. El sistema nunca queda a deber algo que no ofreció.',
+        'Cupo, «Pedir más lecturas» y cuántas quedan salen de este flujo: son cosas de la cuenta y viven en el perfil/ajustes (y, cuando haya cuentas de pago, en su pantalla de créditos).',
+        'Hoy la segunda línea dice «Leemos el nombre, la fecha, el lugar y el precio» y, sin llave o sin cupo, el recuadro ni sale: eso es lo que se corrige.',
       ],
     };
   },
-  leyendo: () => ({ titulo: 'Publicar', avance: 0, cerrar: true, cuerpo: `<div class="leyendo">${MINI(true)}<p class="meta" role="status">Leyendo el cartel…</p></div>`, pie: '', notas: ['Igual que hoy. Si la lectura falla a medias, no se vuelve al inicio: la imagen ya está y se sigue con las preguntas (caso 4).'] }),
+  leyendo: () => ({ titulo: 'Publicar', avance: 0, cerrar: true, cuerpo: `<div class="leyendo">${MINI(true)}<p class="meta" role="status">Leyendo el cartel…</p></div>`, pie: '', notas: ['Solo existe cuando hay lectura: aquí es donde se nota el valor agregado. Si falla a medias (caso 3), no se vuelve al inicio ni se avisa nada: la imagen ya está y se sigue con las preguntas.'] }),
   nombre: () => {
-    const c = casoActual();
-    const sello = c.falla
-      ? `<span class="sello">${ic('alerta')}No pude leer el cartel · llénalo tú</span>`
-      : `<span class="sello">${ic('ok')}Cartel guardado · lo llenas tú</span>`;
     return {
       titulo: 'Publicar', avance: 1 / 6, atras: true,
-      cuerpo: `<div class="con-cartel">${MINI(true)}${sello}</div>
+      cuerpo: `<div class="con-cartel">${MINI(true)}<span class="sello">${ic('ok')}Cartel guardado</span></div>
         <h1 class="pregunta">¿Cómo se llama?</h1>
         <label class="campo">${ic('buscar')}<input id="q" placeholder="Nombre del evento" autocomplete="off"><button class="limpiar" type="button" aria-label="Borrar el texto">${ic('cerrar')}</button></label>`,
       pie: `<button class="btn" data-a="seguir">Siguiente</button>`,
       notas: [
-        'Tras subir sin lectura (o cuando la lectura falló), se sigue directo a la primera pregunta: nunca se le pide a la persona que toque «No tengo cartel» cuando sí lo tiene (hoy pasa).',
-        'La fila de arriba —miniatura y sello— solo sale en la primera pregunta: confirma que el cartel quedó guardado y por qué se pregunta. En las demás preguntas no se repite; vuelve en «Revisa».',
+        'Tras subir sin lectura (o si la lectura falló), se sigue directo a la primera pregunta, como si hubiera tocado «No tengo cartel» pero con el cartel ya guardado. Nunca se le pide que toque «No tengo cartel» cuando sí lo tiene (hoy pasa).',
+        'La fila de arriba —miniatura y «Cartel guardado»— solo sale en la primera pregunta, como confirmación de que la foto llegó. No dice por qué se pregunta: preguntar es lo normal; leer era el extra.',
         'De aquí en adelante son los pasos ya construidos: día, hora, dónde, cuánto. En el prototipo «Siguiente» salta a «Revisa».',
       ],
     };
   },
   revisa: () => {
     const c = casoActual();
-    const leido = c.lee && !c.falla && !e.sinLeer;
+    const leido = c.lee && !c.falla;
     return {
       titulo: 'Revisa', avance: 5 / 6, atras: true,
-      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel</span>` : `<span class="sello">${ic('ok')}Cartel</span>`}<h1>Inauguración de Ecos de papel</h1></div></div>
+      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel</span>` : ''}<h1>Inauguración de Ecos de papel</h1></div></div>
         <div class="lista">
           <button class="renglon">${ic('reloj')}<b>jue 5 de nov · 19:00</b><span class="accion">Cambiar</span></button>
           <button class="renglon">${ic('pin')}<b>Teatro de la Paz</b><span class="accion">Cambiar</span></button>
@@ -197,7 +183,7 @@ const PANTALLAS = {
         </div>`,
       pie: `<button class="btn" data-a="publicar">Publicar</button>`,
       notas: [
-        'La cabeza lleva la miniatura siempre que haya cartel. El sello verde «Leído del cartel» solo cuando de él salieron datos; si no, un sello gris «Cartel» que dice que la imagen va con el evento.',
+        'La cabeza lleva la miniatura siempre que haya cartel. El sello verde «Leído del cartel» solo cuando de él salieron datos; sin lectura, nada: la miniatura ya dice que la imagen va con el evento.',
         'Los datos se ven iguales hayan salido del cartel o de las preguntas.',
       ],
     };
@@ -224,17 +210,14 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (!b) return;
   const a = b.dataset.a;
   const c = casoActual();
-  if (a === 'subir') { e.sinLeer = false; if (c.lee) { ir('leyendo'); setTimeout(() => ir(c.falla ? 'nombre' : 'revisa'), 1400); } else ir('nombre'); }
-  if (a === 'subir-sin-leer') { e.sinLeer = true; ir('nombre'); }
+  if (a === 'subir') { if (c.lee) { ir('leyendo'); setTimeout(() => ir(c.falla ? 'nombre' : 'revisa'), 1400); } else ir('nombre'); }
   if (a === 'sin') ir('nombre');
-  if (a === 'pedir') { e.pedido = true; pintar(); }
   if (a === 'seguir') ir('revisa');
   if (a === 'atras') ir(e.paso === 'revisa' ? 'nombre' : 'inicio');
   if (a === 'reiniciar') { nuevo(); pintar(); }
   if (a === 'publicar') { alert('Publicado (el final ya está construido: OL-304).'); nuevo(); pintar(); }
 });
 document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); pintar(); });
-document.getElementById('sinleer').addEventListener('change', () => pintar());
 pintar();
 </script>
 </body>
