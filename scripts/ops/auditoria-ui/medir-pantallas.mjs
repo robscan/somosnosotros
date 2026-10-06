@@ -2,8 +2,10 @@
 // abre cada pantalla de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px en Chromium y comprueba lo que dice
 // `medidas.aceptadas.json`: nodos y profundidad dentro del presupuesto y, salvo excepción declarada con su porqué, ningún hijo fuera de
 // la caja de su padre, ningún desplazamiento horizontal, ningún control con toque real menor de 44, ningún accionable tapado por un
-// elemento fijo y ningún margen negativo. Además, la comprobación «teclado» (OL-305): con la ventana a 390×508 —el iPhone con su teclado—,
-// cada campo de texto visible de cada pantalla se enfoca y debe quedar entero dentro de la ventana y sin nada pegado encima. Sin llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador y
+// elemento fijo y ningún margen negativo. Además, la comprobación «teclado» (OL-305, OL-308): con el área visible a 390×508 —el iPhone con su
+// teclado—, cada campo de texto visible de cada pantalla se enfoca y debe quedar entero dentro del área visible y sin nada pegado encima, y
+// los botones de abajo (los del pie y los de todo lo pegado o fijo abajo) también deben verse enteros y sin nada encima: las acciones quedan
+// sobre el teclado. Sin llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador y
 // el reloj está fijo (`reloj-fijo.cjs`), así que salen los mismos números cualquier día y a cualquier hora.
 //   npm run medir                     la prueba entera (compila la app en `.next`, así que no la corras con `next dev` abierto)
 //   npm run medir -- --aceptar        anota los presupuestos de hoy (las excepciones se escriben a mano, con su porqué)
@@ -141,10 +143,11 @@ async function aquietar(page) {
   if (pendiente) throw new Error("la pantalla no se aquietó (React, el mapa o una animación seguían pendientes)");
 }
 /** Abre la pantalla a un tamaño: contexto de Chromium con el reloj, la sesión, las imágenes y el mapa contestados, y los pasos que pide. */
-async function abrir(browser, base, p, ancho, alto) {
+async function abrir(browser, base, p, ancho, alto, antes = null) {
   const ctx = await browser.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: 1, locale: "es-MX", timezoneId: "America/Mexico_City", ...dispositivo(ancho) });
   try {
     await ctx.clock.setFixedTime(new Date(AHORA));
+    if (antes) await ctx.addInitScript(antes);
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: cookie, url: base }]);
     await ctx.route("**/_vercel/**", (r) => r.fulfill({ contentType: "text/javascript", body: "" }));
     await ctx.route((u) => u.hostname !== "127.0.0.1", (r) =>
@@ -174,13 +177,38 @@ async function medirPantalla(browser, medirJs, base, p, i) {
 }
 
 // ---------- el teclado ----------
-// El iPhone con su teclado abierto deja 844 − 336 = 508 px de alto (390×508). Chromium no puede sacar el teclado de iOS ni imitar cómo Safari
-// desplaza la vista, así que esta comprobación cubre el caso «el campo enfocado no queda tapado por lo pegado ni fuera de la ventana» con la
-// ventana ya reducida; lo que no cubre (que la página tenga por dónde desplazar, el `offsetTop` de Safari) lo prueba el simulador de iPhone
-// (bitácora 333) y `PorPasos.componentes.test.mjs`, que simula `visualViewport`. Campos: texto, búsqueda, número, correo, enlace y teléfono.
+// El iPhone con su teclado abierto deja 844 − 336 = 508 px de alto de área visible. Chromium no puede sacar el teclado de iOS ni imitar cómo
+// Safari desplaza la vista, así que la comprobación corre de dos maneras (OL-308):
+//  - «ventana»: la ventana de Chromium a 390×508. Cubre «el campo y los botones de abajo no quedan fuera ni bajo lo pegado» con la ventana ya
+//    reducida; no mueve `visualViewport`, así que `useCampoVisible` no publica `--teclado`.
+//  - «area»: la ventana a 390×844 con un `visualViewport` simulado (un EventTarget con `height` y `pageTop`, como en `PorPasos.componentes.test.mjs`)
+//    que se encoge 336 px al enfocar. Con él sí actúa el mecanismo del teclado: el pie sale del flujo y se ancla sobre el teclado, y la columna
+//    deja sitio. Lo que no cubre (Safari de verdad desplazando por su cuenta, su `offsetTop` desfasado) lo prueban el simulador de iPhone
+//    (bitácoras 333 y 336) y los componentes.
+// Campos: texto, búsqueda, número, correo, enlace y teléfono. Botones: los de los `footer` y los de lo pegado (`sticky`) o fijo (`fixed`) que
+// está en la mitad de abajo del área visible.
 const ANCHO_TECLADO = 390;
 const ALTO_TECLADO = 508;
+const ALTO_VENTANA_TECLADO = 844;
 const SELECTOR_CAMPOS = 'input:is(:not([type]), [type="text"], [type="search"], [type="number"], [type="email"], [type="url"], [type="tel"]), textarea';
+/** Corre en la página antes de que cargue: un `visualViewport` propio que `window.__teclado(px)` encoge (y avisa con `resize`). */
+const simularVisualViewport = () => {
+  const vv = new EventTarget();
+  Object.defineProperties(vv, {
+    height: { value: window.innerHeight, writable: true },
+    width: { value: window.innerWidth },
+    offsetTop: { value: 0 },
+    offsetLeft: { value: 0 },
+    scale: { value: 1 },
+    pageTop: { get: () => window.scrollY },
+    pageLeft: { value: 0 },
+  });
+  Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
+  window.__teclado = (px) => {
+    vv.height = window.innerHeight - px;
+    vv.dispatchEvent(new Event("resize"));
+  };
+};
 /**
  * Corre en la página, una vez: `window.__campos()` da los campos de texto visibles, en el orden del documento. No cuentan los que nadie puede
  * tocar: el cebo del teclado (`layout.tsx`: de 1 px, `aria-hidden` y fuera del orden de tabulación), los deshabilitados y los de solo lectura.
@@ -194,14 +222,36 @@ const instalarCampos = (selector) => {
 };
 /** Corre en la página: el nombre con el que se anuncia cada campo visible. */
 const nombresDeCampos = () => window.__campos().map((el, i) => el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.name || el.id || `campo ${i + 1}`);
-/** Corre en la página, con el campo `i` ya enfocado y asentado: dónde quedó y qué hay encima de su centro. */
-const dondeQuedo = (i) => {
+/** Corre en la página, con el campo `i` ya enfocado y asentado: dónde quedó, qué hay encima de su centro y dónde quedaron los botones de abajo. `alto` es el del área visible. */
+const dondeQuedo = ([i, alto]) => {
+  const encimaDe = (r, el) => {
+    const encima = document.elementFromPoint(Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1), Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1));
+    const tapa = encima && !(encima === el || el.contains(encima) || encima.contains(el)) ? encima : null;
+    const clase = tapa && typeof tapa.className === "string" && tapa.className ? `.${tapa.className.split(" ")[0]}` : "";
+    return tapa ? `${tapa.tagName.toLowerCase()}${clase} «${(tapa.textContent || "").trim().slice(0, 40)}»` : null;
+  };
   const el = window.__campos()[i];
   const r = el.getBoundingClientRect();
-  const encima = document.elementFromPoint(Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1), Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1));
-  const tapa = encima && !(encima === el || el.contains(encima) || encima.contains(el)) ? encima : null;
-  const clase = tapa && typeof tapa.className === "string" && tapa.className ? `.${tapa.className.split(" ")[0]}` : "";
-  return { activo: document.activeElement === el, top: Math.round(r.top), bottom: Math.round(r.bottom), alto: innerHeight, tapa: tapa ? `${tapa.tagName.toLowerCase()}${clase} «${(tapa.textContent || "").trim().slice(0, 40)}»` : null };
+  // Los botones de abajo: los de un `footer` y los de un ancestro `sticky` o `fixed` cuyo centro cae en la mitad de abajo del área visible.
+  const botones = [];
+  for (const b of document.querySelectorAll('button, [role="button"], input[type="submit"], input[type="button"]')) {
+    const rb = b.getBoundingClientRect();
+    if (rb.width < 2 || rb.height < 2 || getComputedStyle(b).visibility === "hidden" || b.closest("[inert], [hidden], [aria-hidden=true]")) continue;
+    let pegado = null;
+    for (let n = b; n && n !== document.body; n = n.parentElement) {
+      const posicion = getComputedStyle(n).position;
+      if (posicion === "sticky" || posicion === "fixed") {
+        pegado = n;
+        break;
+      }
+    }
+    const caja = (pegado ?? b).getBoundingClientRect();
+    const abajo = pegado ? caja.top + caja.height / 2 > alto / 2 : false;
+    if (!abajo && !b.closest("footer")) continue;
+    const nombre = b.getAttribute("aria-label") || (b.textContent || "").trim().slice(0, 40) || b.getAttribute("title") || "sin nombre";
+    botones.push({ nombre, top: Math.round(rb.top), bottom: Math.round(rb.bottom), tapa: encimaDe(rb, b) });
+  }
+  return { activo: document.activeElement === el, top: Math.round(r.top), bottom: Math.round(r.bottom), alto, tapa: encimaDe(r, el), botones };
 };
 /** Espera a que el desplazamiento se asiente: la página sin moverse durante 12 cuadros seguidos (el de `useCampoVisible` es suave y llega tras dos cuadros). */
 const asentar = (page) =>
@@ -219,9 +269,12 @@ const asentar = (page) =>
         })();
       }),
   );
-async function medirTeclado(browser, base, p) {
-  const { ctx, page } = await abrir(browser, base, p, ANCHO_TECLADO, ALTO_TECLADO);
+/** `modo`: «ventana» (390×508 de verdad) o «area» (390×844 con el `visualViewport` simulado). */
+async function medirTeclado(browser, base, p, modo) {
+  const enArea = modo === "area";
+  const { ctx, page } = await abrir(browser, base, p, ANCHO_TECLADO, enArea ? ALTO_VENTANA_TECLADO : ALTO_TECLADO, enArea ? simularVisualViewport : null);
   const hallazgos = [];
+  const botonesVistos = new Set();
   try {
     await page.evaluate(instalarCampos, SELECTOR_CAMPOS);
     const nombres = await page.evaluate(nombresDeCampos);
@@ -229,17 +282,30 @@ async function medirTeclado(browser, base, p) {
       await page.evaluate(() => window.scrollTo(0, 0));
       // Se suelta el foco antes (un campo con `autoFocus` ya lo tiene al llegar) y se enfoca sin desplazar: Chromium lleva solo el campo al
       // centro de la ventana, pero Safari del iPhone con el teclado no siempre lo hace, así que lo que se mide es lo que logra `useCampoVisible`.
-      await page.evaluate((i) => {
-        document.activeElement?.blur();
-        window.__campos()[i].focus({ preventScroll: true });
-      }, i);
+      await page.evaluate(
+        ([i, area]) => {
+          document.activeElement?.blur();
+          if (area) window.__teclado(0);
+          window.__campos()[i].focus({ preventScroll: true });
+        },
+        [i, enArea],
+      );
+      // Con el área simulada, el teclado sube ya enfocado el campo, como en el iPhone.
+      if (enArea) await page.evaluate((px) => window.__teclado(px), ALTO_VENTANA_TECLADO - ALTO_TECLADO);
       await asentar(page);
-      const d = await page.evaluate(dondeQuedo, i);
+      const d = await page.evaluate(dondeQuedo, [i, ALTO_TECLADO]);
       if (!d.activo) continue; // un campo que no se deja enfocar (se quita al enfocar) no tiene teclado que lo tape
-      if (d.top < 0 || d.bottom > d.alto) hallazgos.push({ que: nombre, detalle: `fuera de la ventana de ${d.alto} px: va de ${d.top} a ${d.bottom}` });
+      if (d.top < 0 || d.bottom > d.alto) hallazgos.push({ que: nombre, detalle: `fuera del área visible de ${d.alto} px: va de ${d.top} a ${d.bottom}` });
       else if (d.tapa) hallazgos.push({ que: nombre, detalle: `queda bajo ${d.tapa} (va de ${d.top} a ${d.bottom} en ${d.alto} px)` });
+      // Con el campo enfocado, las acciones de abajo se ven enteras sobre el teclado y sin nada encima.
+      for (const b of d.botones) {
+        botonesVistos.add(`${modo} · ${b.nombre}`);
+        const que = `botón «${b.nombre}»`;
+        if (b.top < 0 || b.bottom > d.alto) hallazgos.push({ que, detalle: `fuera del área visible de ${d.alto} px con «${nombre}» enfocado: va de ${b.top} a ${b.bottom}` });
+        else if (b.tapa) hallazgos.push({ que, detalle: `queda bajo ${b.tapa} con «${nombre}» enfocado (va de ${b.top} a ${b.bottom} en ${d.alto} px)` });
+      }
     }
-    return { campos: nombres.length, hallazgos };
+    return { campos: nombres.length, hallazgos, botones: [...botonesVistos] };
   } finally {
     await ctx.close();
   }
@@ -310,18 +376,30 @@ try {
     }),
   );
 
-  // El teclado: cada campo de texto visible de cada pantalla, con la ventana a 390×508 (ver `medirTeclado`).
+  // Android (OL-308): el HTML trae `interactive-widget=resizes-content` en el viewport, para que Chrome encoja la ventana con el teclado.
+  try {
+    const html = await (await fetch(`${base}/`)).text();
+    const viewport = html.match(/<meta[^>]*name="viewport"[^>]*>/)?.[0] ?? "";
+    if (!/interactive-widget=resizes-content/.test(viewport)) fallos.push({ regla: "viewport", pantalla: "layout", ancho: 0, que: "meta viewport", detalle: `falta interactive-widget=resizes-content (Android): ${viewport || "sin meta viewport"}` });
+  } catch (e) {
+    fallos.push({ regla: "carga", pantalla: "layout", ancho: 0, que: "/", detalle: `viewport: ${String(e.message).split("\n")[0]}` });
+  }
+
+  // El teclado: cada campo de texto visible de cada pantalla y los botones de abajo, de las dos maneras (ver `medirTeclado`).
   const conTeclado = new Map();
-  const colaTeclado = [...pantallas];
+  const botonesDeAbajo = new Map();
+  const colaTeclado = pantallas.flatMap((p) => ["ventana", "area"].map((modo) => ({ p, modo })));
   await Promise.all(
     Array.from({ length: Math.min(Number(process.env.MEDIR_HILOS) || 4, os.availableParallelism()) }, async () => {
-      for (let p = colaTeclado.shift(); p; p = colaTeclado.shift()) {
+      for (let t = colaTeclado.shift(); t; t = colaTeclado.shift()) {
+        const { p, modo } = t;
         try {
-          const m = await medirTeclado(browser, base, p);
+          const m = await medirTeclado(browser, base, p, modo);
           conTeclado.set(p.id, m.campos);
-          for (const h of m.hallazgos) if (!permitido("teclado", p.id, ANCHO_TECLADO, h.que)) fallos.push({ regla: "teclado", pantalla: p.id, ancho: ANCHO_TECLADO, ...h });
+          botonesDeAbajo.set(`${p.id}@${modo}`, m.botones);
+          for (const h of m.hallazgos) if (!permitido("teclado", p.id, ANCHO_TECLADO, h.que)) fallos.push({ regla: "teclado", pantalla: p.id, ancho: ANCHO_TECLADO, ...h, detalle: `(${modo}) ${h.detalle}` });
         } catch (e) {
-          fallos.push({ pantalla: p.id, ancho: ANCHO_TECLADO, regla: "carga", que: p.url, detalle: `teclado: ${String(e.message).split("\n")[0]}` });
+          fallos.push({ pantalla: p.id, ancho: ANCHO_TECLADO, regla: "carga", que: p.url, detalle: `teclado (${modo}): ${String(e.message).split("\n")[0]}` });
         }
       }
     }),
@@ -353,7 +431,8 @@ try {
     process.exitCode = 1;
   }
   const conCampos = pantallas.filter((p) => conTeclado.get(p.id) > 0);
-  console.log(`\nteclado (${ANCHO_TECLADO}×${ALTO_TECLADO}): ${[...conTeclado.values()].reduce((a, b) => a + b, 0)} campos de texto en ${conCampos.length} pantallas (${conCampos.map((p) => `${p.id} ${conTeclado.get(p.id)}`).join(", ")})`);
+  console.log(`\nteclado (${ANCHO_TECLADO}×${ALTO_TECLADO}, de dos maneras): ${[...conTeclado.values()].reduce((a, b) => a + b, 0)} campos de texto en ${conCampos.length} pantallas (${conCampos.map((p) => `${p.id} ${conTeclado.get(p.id)}`).join(", ")})`);
+  console.log(`botones de abajo comprobados con el teclado: ${conCampos.map((p) => `${p.id} ${["ventana", "area"].map((m) => `${m} [${(botonesDeAbajo.get(`${p.id}@${m}`) ?? []).map((b) => b.split(" · ")[1]).join(", ") || "—"}]`).join(" ")}`).join("; ")}`);
   console.log(`\nmedidas: ${pantallas.length} pantallas × ${ANCHOS.length} anchos en ${Math.round((Date.now() - inicio) / 1000)} s, ${problemas.length ? "CON FALLOS" : aceptar ? "presupuestos anotados" : "sin novedades"}`);
 } catch (e) {
   console.error(e.message);

@@ -91,15 +91,37 @@ function AtrasDelPaso({ onAtras }: { onAtras: () => void }) {
 }
 
 /**
- * El pie del paso, pegado abajo con su botón. En la columna de los pasos, con el teclado del iPhone abierto deja de estar pegado y queda en el
- * flujo, tras el campo, sobre el teclado (ver `.pie` en el CSS y `ui/useCampoVisible`). Quien lo usa en una capa fija con su propio
- * desplazamiento (la hoja «¿Dónde es?», OL-303) no tiene esa columna: le pasa en `abajo` lo que el teclado le quita a su ventana (con el
- * desfase de `visualViewport`, como sus demás piezas) y el pie, pegado, queda sobre el teclado. `ref` es para quien necesita medirlo (la
- * lista flotante de esa hoja no debe taparlo). Lo que el botón dice (qué falta) se anuncia al cambiar.
+ * El pie del paso, pegado abajo con su botón. Con el teclado del iPhone abierto queda anclado justo encima de él (`bottom: var(--abajo-visible)`
+ * en el CSS, publicado por `ui/useCampoVisible`): las acciones nunca quedan bajo el teclado. En la columna de los pasos sale del flujo para
+ * eso, y publica su alto en `--alto-pie` para que la columna le deje sitio al campo enfocado; en una capa fija con su propio desplazamiento
+ * (la hoja «¿Dónde es?», OL-303) sigue pegado. `ref` es para quien necesita medirlo (la lista flotante de esa hoja no debe taparlo). Lo que el
+ * botón dice (qué falta) se anuncia al cambiar.
  */
-export function PiePaso({ children, ref, abajo }: { children: ReactNode; ref?: Ref<HTMLElement>; abajo?: number }) {
+export function PiePaso({ children, ref }: { children: ReactNode; ref?: Ref<HTMLElement> }) {
+  const propio = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const pie = propio.current;
+    if (!pie) return;
+    const raiz = document.documentElement;
+    const medir = () => raiz.style.setProperty("--alto-pie", `${pie.getBoundingClientRect().height}px`);
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(pie);
+    return () => {
+      observador.disconnect();
+      raiz.style.removeProperty("--alto-pie");
+    };
+  }, []);
   return (
-    <footer ref={ref} className={styles.pie} style={abajo ? { bottom: abajo } : undefined} aria-live="polite">
+    <footer
+      ref={(el) => {
+        propio.current = el;
+        if (typeof ref === "function") ref(el);
+        else if (ref) ref.current = el;
+      }}
+      className={styles.pie}
+      aria-live="polite"
+    >
       {children}
     </footer>
   );
