@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { CARRIL, vistaDeRuta } from "@/lib/armazon";
+import useCampoVisible from "./ui/useCampoVisible";
 import styles from "./Armazon.module.css";
 
 /** Del prototipo firmado: se recoge tras bajar más que esto, y solo si el dedo sigue bajando; vuelve al subir un poco. */
@@ -44,11 +45,15 @@ export function avisarHoja(aviso: AvisoHoja) {
  * teléfono, en las raíces, la barra y la navegación se recogen al bajar y vuelven al subir: eso es `data-recogida`, que
  * cambia aquí sin volver a pintar nada; desde 792 (el carril) nada se recoge y el atributo no se pone. La hoja de Lugares, cuando cubre
  * la ventana, esconde además la navegación (`data-llena`) y le presta su desplazamiento a la barra (`avisarHoja`). `barra` y `nav`
- * llegan ya armadas del servidor (la sesión se lee allí).
+ * llegan ya armadas del servidor (la sesión se lee allí). Aquí se monta también `useCampoVisible`, una sola vez para toda la app: ningún
+ * campo de texto queda bajo el teclado ni bajo lo pegado de la pantalla.
  */
 export default function Armazon({ barra, nav, children }: { barra: ReactNode; nav: ReactNode; children: ReactNode }) {
   const ruta = usePathname();
   const armazon = useRef<HTMLDivElement>(null);
+
+  // Todo campo de texto queda a la vista al enfocarse, con el teclado abierto (regla del founder, 2026-10-05; OL-305).
+  useCampoVisible();
 
   // Cada pantalla empieza con la barra y la navegación a la vista.
   useLayoutEffect(() => {

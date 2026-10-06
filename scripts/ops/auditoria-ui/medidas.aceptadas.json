@@ -8,7 +8,12 @@
     { "regla": "toque", "elemento": "input[file]", "porque": "Permanente: el campo de archivo es invisible (1×1); lo que se toca es el botón que lo abre, que mide más de 44." },
     { "regla": "tapado", "elemento": "lugares/ubicacion", "pantalla": "hoja-llena", "anchos": [320, 390], "porque": "Permanente: con la hoja llena el mapa queda cubierto a propósito." },
     { "regla": "tapado", "elemento": "a.mapboxgl-ctrl-logo", "pantalla": "hoja-llena", "anchos": [320, 390], "porque": "Permanente: con la hoja llena el mapa queda cubierto a propósito." },
-    { "regla": "tapado", "elemento": "button.mapboxgl-ctrl-attrib-button", "pantalla": "hoja-llena", "anchos": [320, 390], "porque": "Permanente: con la hoja llena el mapa queda cubierto a propósito." }
+    { "regla": "tapado", "elemento": "button.mapboxgl-ctrl-attrib-button", "pantalla": "hoja-llena", "anchos": [320, 390], "porque": "Permanente: con la hoja llena el mapa queda cubierto a propósito." },
+    { "regla": "fuera-de-la-caja", "elemento": "mapboxgl-marker", "pantalla": "s17", "porque": "Permanente: los marcadores de Mapbox (el pin y «tú») se colocan con transform dentro del lienzo, cuyo contenedor no tiene altura propia; así se pintan, no es un desborde." },
+    { "regla": "fuera-de-la-caja", "elemento": "div.mapboxgl-ctrl-bottom-right", "pantalla": "s17", "porque": "Permanente: el contenedor de los controles de Mapbox no tiene caja propia (como el de arriba a la izquierda)." },
+    { "regla": "fuera-de-la-caja", "elemento": "div.mapboxgl-ctrl-bottom-left", "pantalla": "s17", "porque": "Permanente: el contenedor de los controles de Mapbox no tiene caja propia (como el de arriba a la izquierda)." },
+    { "regla": "fuera-de-la-caja", "elemento": "a.mapboxgl-ctrl-logo", "pantalla": "s17", "porque": "Permanente: Mapbox pone su logotipo con un margen de −4 px; no se toca." },
+    { "regla": "margen-negativo", "elemento": "a.mapboxgl-ctrl-logo", "pantalla": "s17", "porque": "Permanente: Mapbox pone su logotipo con un margen de −4 px; no se toca." }
   ],
   "presupuestos": {
     "01-inicio": { "nodos": [295, 295, 297, 297], "profundidad": [11, 11, 11, 11] },
@@ -35,6 +40,8 @@
     "s12-lugares-hoja-llena": { "nodos": [188, 188, 186, 186], "profundidad": [13, 13, 13, 13] },
     "s13-lugares-ficha-en-hoja": { "nodos": [167, 167, 165, 165], "profundidad": [14, 14, 14, 14] },
     "s14-agenda-nuevos": { "nodos": [180, 180, 182, 182], "profundidad": [10, 10, 10, 10] },
-    "s15-alta-evento-pasos": { "nodos": [14, 14, 48, 48], "profundidad": [6, 6, 6, 6] }
+    "s15-alta-evento-pasos": { "nodos": [14, 14, 48, 48], "profundidad": [6, 6, 6, 6] },
+    "s16-alta-evento-nombre": { "nodos": [14, 14, 48, 48], "profundidad": [6, 6, 6, 6] },
+    "s17-alta-evento-es-aqui": { "nodos": [42, 42, 76, 76], "profundidad": [11, 11, 11, 11] }
   }
 }

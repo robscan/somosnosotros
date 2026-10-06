@@ -7,7 +7,6 @@ import Barra from "./ui/Barra";
 import BotonIcono from "./ui/BotonIcono";
 import Cerrar from "./ui/Cerrar";
 import { IconoChevronIzquierda } from "./ui/Iconos";
-import useAreaVisible from "./ui/useAreaVisible";
 import styles from "./PorPasos.module.css";
 
 /** Hacia dónde se movió el paso: el siguiente entra por la derecha y el anterior (Atrás, o la vuelta a «Revisa») por la izquierda. */
@@ -89,16 +88,15 @@ function AtrasDelPaso({ onAtras }: { onAtras: () => void }) {
 }
 
 /**
- * El pie del paso, pegado abajo con su botón. Con el teclado del iPhone abierto se queda justo encima de él: la ventana de maquetación
- * sigue midiendo hasta el borde de la pantalla y el teclado tapa su parte de abajo, así que el pie sube lo que el teclado ocupa (el área
- * visible, `useAreaVisible`, como `ui/Hoja` y `ui/CampoLargo`). Lo que el botón dice (qué falta) se anuncia al cambiar. `ref` es para
- * quien necesita medirlo (la hoja «¿Dónde es?», OL-303: la lista flotante no debe taparlo).
+ * El pie del paso, pegado abajo con su botón. En la columna de los pasos, con el teclado del iPhone abierto deja de estar pegado y queda en el
+ * flujo, tras el campo, sobre el teclado (ver `.pie` en el CSS y `ui/useCampoVisible`). Quien lo usa en una capa fija con su propio
+ * desplazamiento (la hoja «¿Dónde es?», OL-303) no tiene esa columna: le pasa en `abajo` lo que el teclado le quita a su ventana (con el
+ * desfase de `visualViewport`, como sus demás piezas) y el pie, pegado, queda sobre el teclado. `ref` es para quien necesita medirlo (la
+ * lista flotante de esa hoja no debe taparlo). Lo que el botón dice (qué falta) se anuncia al cambiar.
  */
-export function PiePaso({ children, ref }: { children: ReactNode; ref?: Ref<HTMLElement> }) {
-  const area = useAreaVisible();
-  const teclado = area ? Math.max(0, area.ventana - area.top - area.height) : 0;
+export function PiePaso({ children, ref, abajo }: { children: ReactNode; ref?: Ref<HTMLElement>; abajo?: number }) {
   return (
-    <footer ref={ref} className={styles.pie} style={teclado ? { bottom: teclado } : undefined} aria-live="polite">
+    <footer ref={ref} className={styles.pie} style={abajo ? { bottom: abajo } : undefined} aria-live="polite">
       {children}
     </footer>
   );
