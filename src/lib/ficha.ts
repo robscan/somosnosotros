@@ -19,11 +19,11 @@ export function kpiCuando(inicio: string, fin: string | null, zona: string = ZON
 }
 
 /**
- * Cuándo es un evento con horario por día (OL-311): los días dicen hasta cuándo y, donde va la hora, «Horarios por día»; las horas de cada
+ * Cuándo es un evento con horario por día (OL-311): los días dicen hasta cuándo y, donde va la hora, «Por día» (más largo no cabe en una tarjeta de un tercio de ancho a 320 px: se corta con puntos suspensivos); las horas de cada
  * día van en la lista de debajo (`listaDeSesiones`).
  */
 export function kpiCuandoPorDia(inicio: string, fin: string, zona: string = ZONA_INICIAL, ahora: Date = new Date()): { dia: string; hora: string } {
-  return { dia: rangoCorto(diaLocal(new Date(inicio), zona), diaLocal(new Date(fin), zona), diaLocal(ahora, zona)), hora: "Horarios por día" };
+  return { dia: rangoCorto(diaLocal(new Date(inicio), zona), diaLocal(new Date(fin), zona), diaLocal(ahora, zona)), hora: "Por día" };
 }
 
 /** La distancia en línea recta a un lugar: «550 m» hasta el kilómetro, después «1,4 km» y, de 10 en adelante, sin decimales. */

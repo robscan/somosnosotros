@@ -214,8 +214,8 @@ describe("lo que lee la ficha de un evento con sesiones", () => {
     expect(lineasDeSesiones(vigentes, ZONA, new Date("2026-10-06T12:00:00Z"))[0]).toBe("vie 9 de oct · 20:00–21:00");
     expect(horasDeSesion(vigentes[1], ZONA)).toBe("18:00");
   });
-  it("el número de la fecha dice los días y «Horarios por día»", () => {
-    expect(kpiCuandoPorDia(evento.inicio, evento.fin, ZONA, new Date("2026-10-06T12:00:00Z"))).toEqual({ dia: "Del 9 al 11 de oct", hora: "Horarios por día" });
+  it("el número de la fecha dice los días y «Por día»", () => {
+    expect(kpiCuandoPorDia(evento.inicio, evento.fin, ZONA, new Date("2026-10-06T12:00:00Z"))).toEqual({ dia: "Del 9 al 11 de oct", hora: "Por día" });
   });
 });
 

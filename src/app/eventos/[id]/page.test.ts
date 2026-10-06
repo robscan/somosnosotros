@@ -282,9 +282,9 @@ describe("horario por día en la ficha (OL-311)", () => {
   /** El texto plano de un elemento: lo que lleva dentro, en orden. */
   const textoDe = (hijos: unknown): string => (Array.isArray(hijos) ? hijos.map(textoDe).join("") : typeof hijos === "string" || typeof hijos === "number" ? String(hijos) : "");
 
-  it("el número de la fecha dice los días y «Horarios por día», y debajo va la lista de días con sus horas en 24 h", async () => {
+  it("el número de la fecha dice los días y «Por día», y debajo va la lista de días con sus horas en 24 h", async () => {
     const elementos = await ficha({ ...EVENTO_POR_DIA, sesiones: SESIONES });
-    const cuando = elementos.find((e) => e.type === Kpi && e.props.icono !== undefined && typeof e.props.valor === "string" && e.props.etiqueta === "Horarios por día");
+    const cuando = elementos.find((e) => e.type === Kpi && e.props.icono !== undefined && typeof e.props.valor === "string" && e.props.etiqueta === "Por día");
     expect(cuando?.props.valor).toMatch(/^Del 1 al 3 de ene de 2099$/);
     const seccion = elementos.find((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día");
     expect(seccion).toBeTruthy();
@@ -307,10 +307,10 @@ describe("horario por día en la ficha (OL-311)", () => {
     expect(compartir?.props.texto).toContain("Del 1 al 3 de ene de 2099 · horarios por día");
   });
 
-  it("sin sesiones la ficha es la de siempre: ni lista ni «Horarios por día»", async () => {
+  it("sin sesiones la ficha es la de siempre: ni lista ni «Por día»", async () => {
     const elementos = await ficha({ ...EVENTO_POR_DIA, sesiones: [] });
     expect(elementos.some((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día")).toBe(false);
-    expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Horarios por día")).toBe(false);
+    expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Por día")).toBe(false);
     const sinCampo = await ficha(EVENTO_POR_DIA);
     expect(sinCampo.some((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día")).toBe(false);
   });
@@ -318,6 +318,6 @@ describe("horario por día en la ficha (OL-311)", () => {
   it("si el evento se editó por el formulario y sus horas ya no coinciden con las sesiones, se lee con su inicio y su fin", async () => {
     const elementos = await ficha({ ...EVENTO_POR_DIA, inicio: "2099-01-02T01:00:00Z", sesiones: SESIONES });
     expect(elementos.some((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día")).toBe(false);
-    expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Horarios por día")).toBe(false);
+    expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Por día")).toBe(false);
   });
 });
