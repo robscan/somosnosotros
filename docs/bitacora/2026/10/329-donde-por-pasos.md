@@ -95,3 +95,15 @@ Todo cuelga directo de `main` (hijos medidos: `header, h2, label, button, form` 
 4. «Ponle nombre» con una dirección: una sola caja, el pie sobre el teclado, el botón que dice «Falta el nombre» solo cuando no hay ni nombre ni dirección.
 5. «Guardarlo como lugar» con un sitio del mapa (crea de verdad un lugar: hay que borrarlo después desde Ajustes o el panel si fue de prueba) y comprobar que «Revisa» lo nombra. Un bar o café del mapa: solo dos opciones. Un sitio reservado: «Revisa» con «Sitio reservado».
 6. Atrás en cada paso, «Buscar otro», y «Cambiar» el lugar desde «Revisa».
+
+## Prueba del gestor en el simulador (iPhone 15 Pro, iOS 26.3, Safari, 2026-10-05, noche)
+
+App compilada con el token real de Mapbox y el respaldo local de datos (puerto 8842); sesión por `/auth/app-regreso`. Cinco capturas `sim-01…05`, cada una mirada entera:
+
+- `sim-01-donde-vacio`: «¿Dónde es?» con el campo enfocado (teclado abierto), la lupa y el placeholder «Nombre del lugar o dirección»; debajo la opción «Estoy aquí · Usa la ubicación del teléfono». Un solo campo: lo que pidió el founder.
+- `sim-02-lista-mapa-real`: con «Jardín de san» (iOS puso la mayúscula) la lista flotante trae cuatro resultados reales del mapa —Parque Jardín de San Francisco, Fuente del Jardín de San Francisco, Jardín de San Miguelito, Jardín de San Juan de Guadalupe— con «Del mapa · dirección» en letra chica; la ✕ del campo a la vista.
+- `sim-03-es-aqui-mapa-real`: «¿Es aquí?» con el mapa real centrado en el Jardín de San Miguelito y el pin encima; la tarjeta con la palomita, el nombre en negrita y la dirección en letra suave; «Si el pin no está en su sitio, arrástralo»; pie «Sí, es aquí» y «Buscar otro». Ningún campo de texto.
+- `sim-04-no-esta-en-el-directorio`: las tres opciones grandes (no es negocio).
+- `sim-05-revisa-sitio-del-mapa`: tras «Usarlo solo en este evento» y «Gratis», «Revisa» con «sáb 10 de oct · 19:00–20:00», «Jardín de San Miguelito» y «Gratis».
+
+Hallazgo fuera de la pieza: la dirección que da Mapbox repite el código postal («78339, Miguel Barragán 408, 78339 San Luis Potosí, México»); pasa igual en la hoja de siempre. Pieza chica: limpiar la dirección antes de enseñarla.
