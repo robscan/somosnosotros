@@ -1,23 +1,33 @@
 import { sitioListo } from "@/app/eventos/direccionEvento";
 import type { QuienItem } from "@/lib/artistas";
+import { esNegocio } from "@/lib/buscarLugares";
 import { FIN_DEL_DIA, sumarDiasIso } from "@/lib/calendario";
 import { conHoraFin } from "@/lib/cuandoEvento";
-import type { ModoSitio, OtroSitio } from "@/lib/eventos";
+import { LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
 import { combinarFechaHora, sumarHoras } from "@/lib/fechas";
 import { queFalta } from "@/lib/formulario";
+import { distanciaKm, type Punto } from "@/lib/geo";
+import type { LugarResumen } from "@/lib/lugares";
 
 /**
  * El alta de evento por pasos, sin DOM (OL-300; prototipo firmado `publicar-por-pasos.html`, bitácora 323): qué se pregunta, en qué
  * orden y adónde lleva cada respuesta. Los pasos salen de lo que falta: lo contestado no se vuelve a preguntar, y al terminar se llega a
  * «Revisa». Desde «Revisa» se abre una sola pregunta y, al contestarla, se vuelve. `mas` es lo opcional (artistas, descripción, enlace).
+ *
+ * «Dónde» son tres pasos (OL-301): `donde` (buscar el sitio), `mapa` («¿Es aquí?», solo si no es un lugar del directorio) y `uso`
+ * («No está en el directorio»: qué hacer con ese sitio). Un lugar del directorio ya tiene su punto confirmado y salta los otros dos.
  */
-export type Paso = "inicio" | "nombre" | "dia" | "hora" | "donde" | "cuanto" | "revisa" | "mas";
+export type Paso = "inicio" | "nombre" | "dia" | "hora" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas";
 
 /** El camino sin cartel, de principio a fin: también da la línea de avance. */
 const ORDEN: readonly Paso[] = ["inicio", "nombre", "dia", "hora", "donde", "cuanto", "revisa"];
 
 export type Costo = "gratis" | "cooperacion" | "precio";
-export type Sitio = { modo: ModoSitio; lugarId: string; otro: OtroSitio };
+/**
+ * `guardar`: se eligió «Guardarlo como lugar». En esta fase solo queda dicho: el sitio se publica como «otro» con su nombre y su punto
+ * (hoy el lugar se crea al elegirlo en la hoja de siempre, con una acción aparte; falta hacer lo mismo aquí al publicar).
+ */
+export type Sitio = { modo: ModoSitio; lugarId: string; otro: OtroSitio; guardar?: true };
 export type Dias = { desde: string; hasta: string | null };
 
 export type Respuestas = {
@@ -37,8 +47,26 @@ export type Respuestas = {
   enlace: string;
 };
 
+/** El sitio que se está confirmando en el mapa: un resultado de la búsqueda o «Estoy aquí». Todavía no es la respuesta. */
+export type Candidato = {
+  /** El nombre del sitio; "" si el mapa solo dio una dirección (una dirección ubica, no nombra). */
+  nombre: string;
+  direccion: string;
+  punto: Punto;
+  ciudad: string | null;
+  /** Lo que dice el mapa que es (`poi_category`), para saber si es un negocio. */
+  categorias: string[];
+  /** «Estoy aquí» no trae dirección: el mapa se la pide al punto. */
+  origen: "aqui" | "busqueda";
+};
+
+/** Qué hacer con un sitio que no está en el directorio. */
+export type Uso = "evento" | "lugar" | "reservado";
+
 export type Estado = {
   r: Respuestas;
+  /** El sitio que se confirma en `mapa` y se resuelve en `uso`. */
+  candidato: Candidato | null;
   /** Los pasos por los que se llegó al actual (el último): Atrás quita uno. */
   pila: Paso[];
   /** Cómo se llegó al paso actual, para su transición; null al abrir la pantalla. */
@@ -54,14 +82,21 @@ export type Accion =
   | { tipo: "seguir" }
   /** Desde «Revisa»: solo esa pregunta. */
   | { tipo: "abrir"; paso: Paso }
-  /** Atrás desde `desde`; se ignora si ya no se está ahí (la hoja «¿Dónde es?» avisa que cierra justo después de contestar). */
-  | { tipo: "atras"; desde: Paso };
+  /** Atrás desde `desde`; se ignora si ya no se está ahí. */
+  | { tipo: "atras"; desde: Paso }
+  /** Un resultado del mapa o «Estoy aquí»: a confirmarlo en el mapa. */
+  | { tipo: "elegir"; candidato: Candidato }
+  /** «Sí, es aquí» con un sitio que no es del directorio (con el pin donde quedó): a decir qué hacer con él. */
+  | { tipo: "confirmar"; candidato: Candidato }
+  /** Lo que se hace con el sitio: se vuelve su respuesta y sigue lo que falte. */
+  | { tipo: "usar"; uso: Uso };
 
 export const OTRO_VACIO: OtroSitio = { reservado: false, sitioTexto: "", direccion: "", sitioPunto: null, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: null };
 
 export function estadoInicial(quien: QuienItem[] = []): Estado {
   return {
     r: { nombre: "", dias: null, hora: null, fin: null, sitio: { modo: "lugar", lugarId: "", otro: OTRO_VACIO }, costo: null, precio: "", quien, descripcion: "", enlace: "" },
+    candidato: null,
     pila: ["inicio"],
     direccion: null,
   };
@@ -82,7 +117,7 @@ export function faltan(r: Respuestas): Paso[] {
   return p;
 }
 
-const FALTA: Record<Exclude<Paso, "inicio" | "revisa" | "mas">, string> = { nombre: "el nombre", dia: "el día", hora: "la hora", donde: "el lugar", cuanto: "el precio" };
+const FALTA: Record<Exclude<Paso, "inicio" | "mapa" | "uso" | "revisa" | "mas">, string> = { nombre: "el nombre", dia: "el día", hora: "la hora", donde: "el lugar", cuanto: "el precio" };
 
 /** Lo que dice el botón de «Revisa» mientras algo falte («Falta el día y la hora»); null si ya se puede publicar. Sin punto: es un botón. */
 export function faltaParaPublicar(r: Respuestas): string | null {
@@ -120,12 +155,68 @@ export function flujo(e: Estado, a: Accion): Estado {
       return apilar(e, a.paso);
     case "atras":
       return pasoActual(e) === a.desde && e.pila.length > 1 ? { ...e, pila: e.pila.slice(0, -1), direccion: "vuelve" } : e;
+    case "elegir":
+      return apilar({ ...e, candidato: a.candidato }, "mapa");
+    case "confirmar":
+      return apilar({ ...e, candidato: a.candidato }, "uso");
+    case "usar":
+      return e.candidato ? siguiente({ ...e, r: { ...e.r, sitio: sitioDeCandidato(e.candidato, a.uso, e.r.sitio.otro) } }) : e;
   }
 }
 
-/** Lo recorrido, de 0 a 1 (lo opcional cuenta como «Revisa»). */
+/** Un sitio nuevo parte de lo que ya había en lo que no se pregunta aquí (cuántas horas antes se revela, indicaciones). */
+const base = (otro: OtroSitio): OtroSitio => ({ ...OTRO_VACIO, revelarHoras: otro.revelarHoras, indicaciones: otro.indicaciones });
+
+/** Un lugar del directorio como sitio. Uno privado (solo lo ve su autor) va como sitio reservado, nunca por `lugar_id` (OL-179). */
+export function sitioDeLugar(l: LugarResumen, otro: OtroSitio): Sitio {
+  if (!l.privado) return { modo: "lugar", lugarId: l.id, otro };
+  const nombre = l.nombre.trim().slice(0, LIMITES_EVENTO.sitio);
+  const direccionPrivada = ((l.direccion ?? "").trim() || nombre).slice(0, LIMITES_EVENTO.direccion);
+  return { modo: "reservado", lugarId: "", otro: { ...base(otro), reservado: true, sitioTexto: nombre, direccionPrivada, privadoPunto: { lat: l.lat, lng: l.lng }, pinPendiente: false } };
+}
+
+/** El nombre del sitio elegido, como se dice en «Revisa»: el del lugar del directorio o el que se le puso; "" si todavía no hay. */
+export const nombreDelSitio = (sitio: Sitio, lugar: Pick<LugarResumen, "nombre"> | undefined): string => (sitio.modo === "lugar" ? (lugar?.nombre ?? "") : sitio.otro.sitioTexto);
+
+/** Lo que dice la tarjeta de «¿Es aquí?» como título: el nombre y, si el mapa no lo dio, la dirección. */
+export const tituloDe = (c: Pick<Candidato, "nombre" | "direccion">): string => c.nombre.trim() || c.direccion.trim();
+
+/** El nombre que sale con un sitio reservado cuando el mapa no dio ninguno: nunca la dirección, que es lo que se reserva. */
+export const NOMBRE_RESERVADO = "Sitio reservado";
+
+/** Un sitio que no es del directorio, según lo que se hace con él: el mismo punto, público o con la dirección reservada. */
+export function sitioDeCandidato(c: Candidato, uso: Uso, otro: OtroSitio): Sitio {
+  const nombre = tituloDe(c).slice(0, LIMITES_EVENTO.sitio);
+  const direccion = c.direccion.trim().slice(0, LIMITES_EVENTO.direccion);
+  if (uso === "reservado") {
+    const visible = c.nombre.trim().slice(0, LIMITES_EVENTO.sitio) || NOMBRE_RESERVADO;
+    return { modo: "reservado", lugarId: "", otro: { ...base(otro), reservado: true, sitioTexto: visible, direccionPrivada: direccion || visible, privadoPunto: c.punto, pinPendiente: false, ciudad: c.ciudad } };
+  }
+  return { modo: "otro", lugarId: "", otro: { ...base(otro), sitioTexto: nombre, direccion, sitioPunto: c.punto, pinPendiente: false, ciudad: c.ciudad }, ...(uso === "lugar" ? { guardar: true as const } : {}) };
+}
+
+/** «Guardarlo como lugar» pide un nombre (la dirección no nombra un lugar) y que no sea un negocio (bar, café, restaurante). */
+export const puedeGuardarComoLugar = (c: Candidato): boolean => !!c.nombre.trim() && !esNegocio(c.nombre, c.categorias);
+
+/** Las opciones del paso «No está en el directorio», en su orden. */
+export const usosDisponibles = (c: Candidato): Uso[] => (puedeGuardarComoLugar(c) ? ["evento", "lugar", "reservado"] : ["evento", "reservado"]);
+
+/** Hasta dónde un lugar del directorio cuenta como «el mismo sitio» que el pin (en metros). */
+export const RADIO_MISMO_SITIO_M = 50;
+
+/** El lugar del directorio que cae a menos de `RADIO_MISMO_SITIO_M` del punto (el más cercano), con la distancia en metros. */
+export function lugarAlLado(lugares: readonly LugarResumen[], punto: Punto): { lugar: LugarResumen; metros: number } | null {
+  let mejor: { lugar: LugarResumen; metros: number } | null = null;
+  for (const lugar of lugares) {
+    const metros = distanciaKm(punto, { lat: lugar.lat, lng: lugar.lng }) * 1000;
+    if (metros < RADIO_MISMO_SITIO_M && (!mejor || metros < mejor.metros)) mejor = { lugar, metros };
+  }
+  return mejor && { ...mejor, metros: Math.round(mejor.metros) };
+}
+
+/** Lo recorrido, de 0 a 1 (lo opcional cuenta como «Revisa»; confirmar el sitio en el mapa y decidir qué hacer con él, como «Dónde»). */
 export function avance(paso: Paso): number {
-  return ORDEN.indexOf(paso === "mas" ? "revisa" : paso) / ORDEN.length;
+  return ORDEN.indexOf(paso === "mas" ? "revisa" : paso === "mapa" || paso === "uso" ? "donde" : paso) / ORDEN.length;
 }
 
 /**

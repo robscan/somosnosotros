@@ -1,7 +1,7 @@
 /* ==========================================================================
    Los pasos del alta de evento (prototipo firmado `publicar-por-pasos.html`, bitácora 323). Todo va como hijo directo de la columna de
    `PorPasos`; aquí solo lo que es de estos pasos.
-   1. «Sube el cartel» · 2. Chips de una pregunta · 3. Opciones · 4. «Revisa»
+   1. «Sube el cartel» · 2. Chips de una pregunta · 3. Opciones · 4. «Revisa» · 5. «¿Dónde es?»
    ========================================================================== */
 
 /* 1. El recuadro del cartel (tercera vuelta: chico, no media pantalla): punteado en el color de acción, la cámara en un círculo, el
@@ -87,4 +87,58 @@
   content: "";
   position: absolute;
   inset: 0;
+}
+
+.dato > b > small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 500;
+}
+
+/* 5. «¿Dónde es?» (OL-301): el aviso en letra suave (la ubicación que no se pudo leer, «Si el pin no está en su sitio…»), el aviso dentro de
+   la lista flotante, el mapa de «¿Es aquí?» —llena lo que sobra entre la pregunta y el pie, con un mínimo— y su tarjeta de confirmación:
+   icono | título / detalle. */
+.aviso {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.avisoLista {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.mapaPaso {
+  position: relative;
+  flex: 1 0 var(--alto-mapa-paso);
+  overflow: hidden;
+  border-radius: var(--radio-grande);
+  background: var(--fondo-mapa);
+}
+.confirma {
+  display: grid;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr);
+  grid-template-areas:
+    "icono titulo"
+    "icono detalle";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  padding: var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+.confirma > svg {
+  grid-area: icono;
+  color: var(--ok);
+}
+.confirma > b {
+  grid-area: titulo;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.confirma > small {
+  grid-area: detalle;
+  overflow-wrap: anywhere;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }

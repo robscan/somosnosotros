@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { deducirTipo, interpretarRecuperado, interpretarSugerencias, recuperarLugar, sugerirLugares, urlSugerir } from "./buscarLugares";
+import { deducirTipo, esNegocio, interpretarRecuperado, interpretarSugerencias, recuperarLugar, sugerirLugares, urlSugerir } from "./buscarLugares";
 
 describe("buscarLugares", () => {
   it("arma la URL de sugerencias con sesión, cercanía y tipos poi+address, de cualquier país", () => {
@@ -93,5 +93,32 @@ describe("interpretarSugerencias · direcciones", () => {
     });
     expect(r.map((s) => s.esDireccion)).toEqual([false, true]);
     expect(r[1].direccion).toBe("Calle 850, Centro, San Luis Potosí");
+  });
+});
+
+describe("esNegocio", () => {
+  it("un bar, un café, un restaurante o un antro, por la categoría del mapa o por su nombre, es un negocio", () => {
+    expect(esNegocio("La Cantina", ["bar"])).toBe(true);
+    expect(esNegocio("Café Tacuba", ["coffee_shop"])).toBe(true);
+    expect(esNegocio("Tacuba", ["cafe"])).toBe(true);
+    expect(esNegocio("Casa Luna", ["restaurant"])).toBe(true);
+    expect(esNegocio("Casa Luna", ["fast_food"])).toBe(true);
+    expect(esNegocio("Fuego", ["night_club"])).toBe(true);
+    expect(esNegocio("Cantina Don Beto")).toBe(true);
+    expect(esNegocio("Cafetería Central")).toBe(true);
+  });
+  it("un espacio cultural no lo es, aunque el mapa lo junte con un café", () => {
+    expect(esNegocio("Museo Federico Silva", ["museum"])).toBe(false);
+    expect(esNegocio("Teatro de la Paz", ["theatre", "cafe"])).toBe(false);
+    expect(esNegocio("Centro de las Artes")).toBe(false);
+    expect(esNegocio("Jardín de San Juan de Dios", ["park"])).toBe(false);
+    expect(esNegocio("Galería Ángel", ["art_gallery", "bar"])).toBe(false);
+  });
+  it("«plaza, jardín o parque» en el nombre no salva a un café", () => {
+    expect(esNegocio("Café del Jardín", ["cafe"])).toBe(true);
+  });
+  it("una dirección sin nombre ni categorías no es un negocio", () => {
+    expect(esNegocio("")).toBe(false);
+    expect(esNegocio("", [])).toBe(false);
   });
 });

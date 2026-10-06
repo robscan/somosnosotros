@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DURACIONES, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, pasoActual, type Accion, type Estado, type Respuestas } from "./pasos";
+import type { LugarResumen } from "@/lib/lugares";
+import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas } from "./pasos";
 
 const ZONA = "America/Mexico_City";
 const pasar = (e: Estado, ...acciones: Accion[]) => acciones.reduce(flujo, e);
@@ -180,5 +181,112 @@ describe("la duración: el fin a una, dos y tres horas", () => {
     expect(finConHora(conHora("22:00"), "01:00")).toBe("2026-10-10T01:00");
     // En el cambio de mes cae en el día 1.
     expect(finConHora({ ...conHora("22:00"), dias: { desde: "2026-10-31", hasta: null } }, "01:00")).toBe("2026-11-01T01:00");
+  });
+});
+
+/** Hasta «¿Dónde es?»: sin cartel, con nombre, día y hora ya contestados. */
+function enDonde(): Estado {
+  return pasar(estadoInicial(), { tipo: "cambiar", cambios: { nombre: "Noche de son", dias: { desde: "2026-10-09", hasta: null } } }, { tipo: "cambiar", cambios: { hora: "19:00", fin: "" } }, { tipo: "seguir" });
+}
+const JARDIN: Candidato = { nombre: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico", punto: { lat: 22.1511, lng: -100.9772 }, ciudad: "San Luis Potosí", categorias: ["park"], origen: "busqueda" };
+const SOLO_DIRECCION: Candidato = { nombre: "", direccion: "Galeana 423, Centro", punto: { lat: 22.15, lng: -100.98 }, ciudad: "San Luis Potosí", categorias: [], origen: "busqueda" };
+const BAR: Candidato = { nombre: "La Cantina", direccion: "Calle Zaragoza 12", punto: { lat: 22.152, lng: -100.979 }, ciudad: "San Luis Potosí", categorias: ["bar"], origen: "busqueda" };
+const LUGAR_DIR: LugarResumen = { id: "0b0b0b0b-0000-4000-8000-000000000001", nombre: "Teatro de la Paz", tipo: "foro", direccion: "Villerías 205", lat: 22.15, lng: -100.97, portada: null };
+
+describe("«Dónde» en tres pasos: buscar, confirmar en el mapa y qué hacer con el sitio (OL-301)", () => {
+  it("un lugar del directorio contesta «¿Dónde es?» y salta el mapa y «No está en el directorio»: sigue «¿Cuánto cuesta?»", () => {
+    const e = flujo(enDonde(), contestar({ sitio: sitioDeLugar(LUGAR_DIR, OTRO_VACIO) }));
+    expect(pasoActual(e)).toBe("cuanto");
+    expect(e.pila).toEqual(["inicio", "donde", "cuanto"]);
+    expect(e.r.sitio).toEqual({ modo: "lugar", lugarId: LUGAR_DIR.id, otro: OTRO_VACIO });
+  });
+
+  it("un resultado del mapa o «Estoy aquí» van a «¿Es aquí?»; «Sí, es aquí» a «No está en el directorio»; elegir qué hacer sigue con «¿Cuánto cuesta?»", () => {
+    const mapa = flujo(enDonde(), { tipo: "elegir", candidato: JARDIN });
+    expect(pasoActual(mapa)).toBe("mapa");
+    expect(mapa.candidato).toEqual(JARDIN);
+    // Mientras no se resuelve, el sitio sigue sin respuesta: nada se publica con un pin sin confirmar.
+    expect(faltan(mapa.r)).toContain("donde");
+    const uso = flujo(mapa, { tipo: "confirmar", candidato: JARDIN });
+    expect(pasoActual(uso)).toBe("uso");
+    expect(faltan(uso.r)).toContain("donde");
+    const cuanto = flujo(uso, { tipo: "usar", uso: "evento" });
+    expect(pasoActual(cuanto)).toBe("cuanto");
+    expect(faltan(cuanto.r)).not.toContain("donde");
+    expect(cuanto.pila).toEqual(["inicio", "donde", "mapa", "uso", "cuanto"]);
+    expect(cuanto.direccion).toBe("entra");
+  });
+
+  it("«Buscar otro» (Atrás desde el mapa) vuelve a «¿Dónde es?» sin perder lo contestado, y Atrás desde «No está en el directorio» vuelve al mapa con el pin confirmado", () => {
+    const mapa = flujo(enDonde(), { tipo: "elegir", candidato: JARDIN });
+    const otro = flujo(mapa, { tipo: "atras", desde: "mapa" });
+    expect(pasoActual(otro)).toBe("donde");
+    expect(otro.r.nombre).toBe("Noche de son");
+    const movido = { ...JARDIN, punto: { lat: 22.152, lng: -100.978 } };
+    const uso = pasar(mapa, { tipo: "confirmar", candidato: movido });
+    const atras = flujo(uso, { tipo: "atras", desde: "uso" });
+    expect(pasoActual(atras)).toBe("mapa");
+    expect(atras.candidato).toEqual(movido);
+  });
+
+  it("«Usarlo solo en este evento» deja el sitio como «otro» con su nombre, su dirección y su punto; «Guardarlo como lugar» lo deja igual y anota que se quiso guardar", () => {
+    const otro = sitioDeCandidato(JARDIN, "evento", OTRO_VACIO);
+    expect(otro).toMatchObject({ modo: "otro", lugarId: "", otro: { reservado: false, sitioTexto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico", sitioPunto: JARDIN.punto, ciudad: "San Luis Potosí", pinPendiente: false, direccionPrivada: "", privadoPunto: null } });
+    expect(otro.guardar).toBeUndefined();
+    const lugar = sitioDeCandidato(JARDIN, "lugar", OTRO_VACIO);
+    expect(lugar.guardar).toBe(true);
+    expect({ ...lugar, guardar: undefined }).toEqual({ ...otro, guardar: undefined });
+  });
+
+  it("un sitio reservado guarda la dirección y el punto como privados y deja los públicos vacíos; conserva «cuántas horas antes» e indicaciones", () => {
+    const base = { ...OTRO_VACIO, revelarHoras: 6, indicaciones: "Toca el timbre" };
+    const r = sitioDeCandidato(JARDIN, "reservado", base);
+    expect(r).toMatchObject({ modo: "reservado", otro: { reservado: true, sitioTexto: "Jardín de San Juan de Dios", direccion: "", sitioPunto: null, direccionPrivada: "Calle Madero 1, Centro Histórico", privadoPunto: JARDIN.punto, revelarHoras: 6, indicaciones: "Toca el timbre" } });
+    expect(faltan({ ...estadoInicial().r, nombre: "x", dias: { desde: "2026-10-09", hasta: null }, hora: "19:00", fin: "", sitio: r, costo: "gratis" })).toEqual([]);
+  });
+
+  it("una dirección sin nombre: el título es la dirección, y reservada sale con «Sitio reservado», nunca con la dirección como nombre público", () => {
+    const publico = sitioDeCandidato(SOLO_DIRECCION, "evento", OTRO_VACIO);
+    expect(publico.otro.sitioTexto).toBe("Galeana 423, Centro");
+    const reservado = sitioDeCandidato(SOLO_DIRECCION, "reservado", OTRO_VACIO);
+    expect(reservado.otro.sitioTexto).toBe(NOMBRE_RESERVADO);
+    expect(reservado.otro.direccionPrivada).toBe("Galeana 423, Centro");
+    expect(nombreDelSitio(reservado, undefined)).toBe(NOMBRE_RESERVADO);
+  });
+
+  it("un negocio (bar, café, restaurante) no ofrece «Guardarlo como lugar»; tampoco una dirección sin nombre", () => {
+    expect(usosDisponibles(JARDIN)).toEqual(["evento", "lugar", "reservado"]);
+    expect(usosDisponibles(BAR)).toEqual(["evento", "reservado"]);
+    expect(puedeGuardarComoLugar(BAR)).toBe(false);
+    expect(usosDisponibles(SOLO_DIRECCION)).toEqual(["evento", "reservado"]);
+    expect(usosDisponibles({ ...JARDIN, nombre: "Café del Jardín", categorias: ["cafe"] })).toEqual(["evento", "reservado"]);
+    expect(usosDisponibles({ ...JARDIN, nombre: "Museo Federico Silva", categorias: ["museum"] })).toEqual(["evento", "lugar", "reservado"]);
+  });
+
+  it("un lugar privado del directorio va como sitio reservado, nunca por su id", () => {
+    const s = sitioDeLugar({ ...LUGAR_DIR, privado: true }, OTRO_VACIO);
+    expect(s).toMatchObject({ modo: "reservado", lugarId: "", otro: { reservado: true, sitioTexto: "Teatro de la Paz", direccionPrivada: "Villerías 205", privadoPunto: { lat: 22.15, lng: -100.97 } } });
+  });
+
+  it("un lugar del directorio a menos de 50 m del pin se ofrece como el sitio; a más, no", () => {
+    // 0.0004° de latitud son unos 44 m; 0.001° son unos 111 m.
+    expect(lugarAlLado([LUGAR_DIR], { lat: 22.1504, lng: -100.97 })).toEqual({ lugar: LUGAR_DIR, metros: 44 });
+    expect(lugarAlLado([LUGAR_DIR], { lat: 22.151, lng: -100.97 })).toBeNull();
+    const otro = { ...LUGAR_DIR, id: "otro", lat: 22.15001 };
+    expect(lugarAlLado([LUGAR_DIR, otro], { lat: 22.1504, lng: -100.97 })?.lugar.id).toBe("otro");
+  });
+
+  it("la línea de avance no cuenta el mapa ni «No está en el directorio» como pasos aparte", () => {
+    expect(avance("mapa")).toBe(avance("donde"));
+    expect(avance("uso")).toBe(avance("donde"));
+  });
+
+  it("cambiar el sitio desde «Revisa» y elegir otro del mapa regresa a «Revisa» con el sitio nuevo", () => {
+    const revisa = hastaRevisa();
+    const e = pasar(revisa, { tipo: "abrir", paso: "donde" }, { tipo: "elegir", candidato: JARDIN }, { tipo: "confirmar", candidato: JARDIN }, { tipo: "usar", uso: "reservado" });
+    expect(pasoActual(e)).toBe("revisa");
+    expect(e.direccion).toBe("vuelve");
+    expect(e.r.sitio.modo).toBe("reservado");
+    expect(nombreDelSitio(e.r.sitio, undefined)).toBe("Jardín de San Juan de Dios");
   });
 });

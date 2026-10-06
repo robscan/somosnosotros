@@ -27,5 +27,5 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
     supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre") ?? { data: [] },
     cargarMisArtistas(actual.perfil.id),
   ]);
-  return <AltaEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} mios={mios} ciudadContexto={ciudadDesdeSlug(ciudad, ciudades)} salida={{ href: "/", texto: "Volver" }} volverA={aqui} />;
+  return <AltaEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} mios={mios} ciudadContexto={ciudadDesdeSlug(ciudad, ciudades)} salida={{ href: "/", texto: "Volver" }} />;
 }
