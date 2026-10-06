@@ -132,6 +132,26 @@ export function deducirTipo(nombre: string, categorias: string[] = []): Tipo | n
   return null;
 }
 
+/** Las categorías de Mapbox (`poi_category`, ids en inglés) y las palabras de un nombre que son de un negocio. */
+const CATEGORIAS_NEGOCIO = new Set(["night_club", "nightclub", "sports_bar", "wine_bar", "fast_food", "food_and_drink"]);
+const PALABRAS_CATEGORIA_NEGOCIO = new Set(["bar", "pub", "cafe", "coffee", "restaurant", "food", "brewery", "winery", "bakery", "lounge", "casino", "shop", "store", "shopping", "hotel", "lodging", "bank"]);
+const NOMBRE_DE_NEGOCIO = /\b(bar|cantina|cafe|cafeteria|restaurante|restaurant|taqueria|antro|pulqueria|cerveceria|discoteca|hotel)\b/;
+
+/**
+ * ¿Lo que dice el mapa de este sitio es un negocio (bar, café, restaurante, tienda)? Un lugar del directorio es un espacio cultural, no
+ * un negocio (docs/DEFINICION.md, regla del founder): a un sitio así no se le ofrece «Guardarlo como lugar», aunque sí puede ser el
+ * sitio de un evento. Un nombre que se dice cultural (un museo, una galería, un teatro: `deducirTipo`) no cuenta aunque el mapa lo
+ * ponga junto a un café; «plaza, jardín o parque» no basta («Café del Jardín» es un café).
+ */
+export function esNegocio(nombre: string, categorias: readonly string[] = []): boolean {
+  const tipo = deducirTipo(nombre, [...categorias]);
+  if (tipo && tipo !== "plaza") return false;
+  const ids = categorias.map((c) => c.toLowerCase());
+  const deCategoria = ids.some((id) => CATEGORIAS_NEGOCIO.has(id) || id.split(/[^a-z]+/).some((p) => PALABRAS_CATEGORIA_NEGOCIO.has(p)));
+  const sinAcentos = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return deCategoria || NOMBRE_DE_NEGOCIO.test(sinAcentos);
+}
+
 /**
  * Lugares registrados cuyo nombre o dirección contienen TODAS las palabras del texto escrito (sin acentos ni
  * mayúsculas): la misma búsqueda que usa la pantalla completa "¿Dónde es?" (OL-173) para mezclar el directorio con
