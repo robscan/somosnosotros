@@ -14,9 +14,10 @@ import { zonaSegura } from "@/lib/fechas";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
+import { sesionesParaEnviar } from "@/lib/sesionesEvento";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { respuestasDelCartel } from "./cartelPorPasos";
-import { avance, eventoPublicado, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Respuestas, type Uso } from "./pasos";
+import { avance, eventoPublicado, faltaParaPublicar, finDe, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Respuestas, type Uso } from "./pasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
@@ -182,7 +183,9 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         <form id={FORMULARIO} action={publicar} hidden>
           <input type="hidden" name="titulo" value={r.nombre} />
           <input type="hidden" name="inicio" value={inicioDe(r)} />
-          <input type="hidden" name="fin" value={r.fin ?? ""} />
+          <input type="hidden" name="fin" value={finDe(r) ?? ""} />
+          {/* Solo con la casilla «Mismo horario todos los días» desmarcada: una sesión por día; sin ella el evento se guarda como siempre. */}
+          {r.sesiones && <input type="hidden" name="sesiones" value={sesionesParaEnviar(r.sesiones)} />}
           <CamposSitio modo={r.sitio.modo} lugarId={r.sitio.lugarId} otro={r.sitio.otro} ciudadContexto={ciudadContexto} />
           <input type="hidden" name="gratis" value={r.costo === "gratis" ? "si" : "no"} />
           <input type="hidden" name="cooperacion" value={r.costo === "cooperacion" ? "si" : "no"} />
@@ -200,7 +203,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       {!cartel.espera && paso === "inicio" && <PasoInicio casilla={cartel.casilla} error={cartel.error} onElegir={cartel.elegir} onSinCartel={seguir} />}
       {paso === "nombre" && <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />}
       {paso === "dia" && <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />}
-      {paso === "hora" && <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} />}
+      {paso === "hora" && <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} onCambiar={cambiar} onSeguir={seguir} />}
       {paso === "donde" && (
         <PasoDonde
           q={busqueda}
@@ -243,7 +246,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         />
       )}
       {paso === "mas" && <PasoMas r={r} mios={mios} ciudadContexto={ciudadContexto} errores={errores} onCambio={cambiar} onListo={seguir} />}
-      {paso === "publicado" && creado && <Publicado evento={eventoPublicado(r, creado, { lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} onOtro={onOtro} />}
+      {paso === "publicado" && creado && <Publicado evento={eventoPublicado(r, creado, { lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} conSesiones={!!r.sesiones} onOtro={onOtro} />}
     </PorPasos>
   );
 }

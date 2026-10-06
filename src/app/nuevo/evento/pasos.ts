@@ -7,6 +7,7 @@ import { conHoraFin } from "@/lib/cuandoEvento";
 import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
 import { combinarFechaHora, localAIso, sumarHoras } from "@/lib/fechas";
 import { queFalta } from "@/lib/formulario";
+import { inicioFinDeHorarios, type HorarioDia } from "@/lib/sesionesEvento";
 import { distanciaKm, type Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 
@@ -40,8 +41,11 @@ export type Respuestas = {
   dias: Dias | null;
   /** La hora de inicio, "HH:MM". */
   hora: string | null;
-  /** El fin, «YYYY-MM-DDTHH:MM» en la hora del sitio; "" es «Sin hora de fin» y null, que todavía no se contesta. */
+  /** El fin, «YYYY-MM-DDTHH:MM» en la hora del sitio; "" es «Sin hora de fin» y null, que todavía no se contesta. Con horario por día
+   *  (`sesiones`) es el horario común, al que vuelve la casilla «Mismo horario todos los días»; el fin del evento sale de la última sesión. */
   fin: string | null;
+  /** El horario de cada día cuando la casilla «Mismo horario todos los días» está desmarcada (OL-311); null con la casilla marcada. */
+  sesiones: HorarioDia[] | null;
   sitio: Sitio;
   costo: Costo | null;
   /** Solo dígitos; cuenta cuando `costo` es «precio». */
@@ -103,7 +107,7 @@ export const OTRO_VACIO: OtroSitio = { reservado: false, sitioTexto: "", direcci
 
 export function estadoInicial(quien: QuienItem[] = []): Estado {
   return {
-    r: { nombre: "", dias: null, hora: null, fin: null, sitio: { modo: "lugar", lugarId: "", otro: OTRO_VACIO }, costo: null, precio: "", quien, descripcion: "", enlace: "" },
+    r: { nombre: "", dias: null, hora: null, fin: null, sesiones: null, sitio: { modo: "lugar", lugarId: "", otro: OTRO_VACIO }, costo: null, precio: "", quien, descripcion: "", enlace: "" },
     candidato: null,
     pila: ["inicio"],
     direccion: null,
@@ -135,10 +139,11 @@ export function faltaParaPublicar(r: Respuestas): string | null {
 
 /**
  * La hora va con su día: contestar el día vuelve a preguntar la hora y el fin (el fin de un evento de un día no vale para uno de
- * tres; y desde «Revisa», tocar «Cuándo» es elegir el día y después la hora, como en el prototipo).
+ * tres; y desde «Revisa», tocar «Cuándo» es elegir el día y después la hora, como en el prototipo) y borra el horario por día, que era
+ * de otros días.
  */
 function con(r: Respuestas, cambios: Partial<Respuestas>): Respuestas {
-  return { ...r, ...(cambios.dias !== undefined ? { hora: null, fin: null } : {}), ...cambios };
+  return { ...r, ...(cambios.dias !== undefined ? { hora: null, fin: null, sesiones: null } : {}), ...cambios };
 }
 
 const apilar = (e: Estado, paso: Paso): Estado => ({ ...e, pila: [...e.pila, paso], direccion: "entra" });
@@ -259,8 +264,11 @@ export const DURACIONES = [1, 2, 3] as const;
 /** «1 hora», «2 horas». */
 export const etiquetaDuracion = (horas: number): string => `${horas} ${horas === 1 ? "hora" : "horas"}`;
 
-/** «YYYY-MM-DDTHH:MM» del inicio; "" sin día o sin hora. */
-export const inicioDe = (r: Respuestas): string => (r.dias && r.hora ? combinarFechaHora(r.dias.desde, r.hora) : "");
+/** «YYYY-MM-DDTHH:MM» del inicio; "" sin día o sin hora. Con horario por día, la hora del primer día. */
+export const inicioDe = (r: Respuestas): string => (r.sesiones ? inicioFinDeHorarios(r.sesiones).inicio : r.dias && r.hora ? combinarFechaHora(r.dias.desde, r.hora) : "");
+
+/** El fin del evento como se guarda: `r.fin`, o con horario por día el de la última sesión (sin hora de fin, el fin de ese día). null: todavía no se contesta. */
+export const finDe = (r: Respuestas): string | null => (r.sesiones ? inicioFinDeHorarios(r.sesiones).fin : r.fin);
 
 /** El último día del evento: el de inicio si dura uno solo. */
 const ultimoDia = (dias: Dias): string => dias.hasta ?? dias.desde;
@@ -297,12 +305,13 @@ export type Creado = { id: string; slug: string | null; creadoEn: string };
  */
 export function eventoPublicado(r: Respuestas, creado: Creado, { lugar, zona, imagen }: { lugar: Pick<LugarResumen, "nombre" | "portada"> | undefined; zona: string; imagen: string | null }): EventoAgenda {
   const { modo, lugarId, otro } = r.sitio;
+  const fin = finDe(r);
   return {
     id: creado.id,
     slug: creado.slug,
     titulo: r.nombre.trim().slice(0, LIMITES_EVENTO.titulo),
     inicio: localAIso(inicioDe(r), zona) ?? "",
-    fin: r.fin ? localAIso(r.fin, zona) : null,
+    fin: fin ? localAIso(fin, zona) : null,
     zona,
     imagen,
     precio: r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" ? `$${r.precio}` : null,

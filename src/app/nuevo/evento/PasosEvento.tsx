@@ -5,6 +5,7 @@ import { PiePaso } from "@/components/PorPasos";
 import SelectorQuien from "@/app/eventos/SelectorQuien";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import Casilla from "@/components/ui/Casilla";
 import { Chip } from "@/components/ui/Chip";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { IconoBoleto, IconoBuscar } from "@/components/ui/Iconos";
@@ -20,7 +21,9 @@ import type { Ciudad } from "@/lib/ciudad";
 import { partirLocal, resumenCadaDia } from "@/lib/cuandoEvento";
 import { LIMITES_EVENTO, type ErroresEvento } from "@/lib/eventos";
 import { diaLargo, diaLocal } from "@/lib/fechas";
+import { admitePorDia, finComun, horarioComun, resumenPorDia, type HorarioDia } from "@/lib/sesionesEvento";
 import { DURACIONES, HORAS_SUGERIDAS, diasElegidos, diasSugeridos, etiquetaDuracion, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
+import HorarioPorDia from "./HorarioPorDia";
 import styles from "./AltaEvento.module.css";
 
 /**
@@ -102,11 +105,16 @@ export function PasoDia({ dias, zona, onElegir }: { dias: Dias | null; zona: str
  * Primero cuándo empieza; al elegirlo aparece cuánto dura (1, 2 o 3 horas, «Otra hora» o «Sin hora de fin»), con el fin ya calculado
  * desde el inicio: puede caer en el día siguiente («empieza 10:00 p.m., dura 3 horas, termina 1:00 a.m.»). Elegir el fin avanza. En
  * un evento de varios días «cuánto dura» no tiene sentido (un festival no dura «2 horas»): la pregunta es «¿A qué hora, cada día?» (el
- * horario del primer día vale para todos), «Termina» son horas del día y «Sin hora de fin» es que acaba con el último; debajo, una línea
- * suave lo dice en palabras («Del 10 al 12 de oct · cada día de 8:00 a 9:00 p.m.»). Lo guardado es el mismo: el inicio del primer día y
- * el fin del último. Las horas distintas por día piden sesiones (OL-310).
+ * horario del primer día vale para todos), «Termina» son horas del día y «Sin hora de fin» es que acaba con el último; debajo, la casilla
+ * «Mismo horario todos los días» (marcada de entrada) y una línea suave que lo dice en palabras («Del 10 al 12 de oct · cada día de 8:00 a
+ * 9:00 p.m.»). Lo guardado es el mismo: el inicio del primer día y el fin del último.
+ *
+ * Desmarcar la casilla (OL-311; prototipo firmado `horario-por-dia.html`) quita los chips comunes y pone un renglón por día, todos con el horario
+ * común (`HorarioPorDia`): tocar uno abre su hoja. El pie dice «Siguiente» (elegir una hora ya no avanza solo) y volver a marcar la casilla
+ * devuelve a todos el horario común. Hasta 31 días: con más, la casilla queda marcada y quieta y dice por qué. La casilla aparece con «Termina»,
+ * cuando ya hay un horario común de donde partir.
  */
-export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: string; onInicio: (hora: string) => void; onFin: (fin: string) => void }) {
+export function PasoHora({ r, zona, onInicio, onFin, onCambiar, onSeguir }: { r: Respuestas; zona: string; onInicio: (hora: string) => void; onFin: (fin: string) => void; onCambiar: (cambios: Partial<Respuestas>) => void; onSeguir: () => void }) {
   const [hoja, setHoja] = useState<"inicio" | "fin" | null>(null);
   const idEmpieza = useId();
   const idTermina = useId();
@@ -114,28 +122,33 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
   const sinFin = finConHora(r, "");
   const dias = r.dias?.hasta ? { desde: r.dias.desde, hasta: r.dias.hasta } : null;
   const varios = !!dias;
+  const porDia = !!dias && !!r.sesiones;
   // Con un fin puesto en un evento de un día, se dice a qué hora termina y si ya es el día siguiente (la hora de «Otra hora» no se ve
   // en ningún chip).
   const fin = r.fin && r.dias && !varios ? partirLocal(r.fin) : null;
   // Un fin que no es ninguno de los sugeridos ni «Sin hora de fin» vino de la hoja: el chip «Otra hora» queda marcado (como en «Empieza»).
   const sugeridos = finesSugeridos(r, zona);
+  const hoy = diaLocal(new Date(), zona);
+  const cambiarDia = (dia: string, cambios: Partial<Pick<HorarioDia, "hora" | "fin">>) => onCambiar({ sesiones: r.sesiones?.map((h) => (h.dia === dia ? { ...h, ...cambios } : h)) ?? null });
   return (
     <>
-      <div className={styles.grupo} role="group" aria-labelledby={idEmpieza}>
-        <span id={idEmpieza}>Empieza</span>
-        {HORAS_SUGERIDAS.map((hora) => (
-          <Chip key={hora} activo={r.hora === hora} onClick={() => onInicio(hora)}>
-            {etiquetaHora(hora)}
-          </Chip>
-        ))}
-        <Chip onClick={() => setHoja("inicio")}>Otra hora</Chip>
-        {propia && (
-          <Chip activo onClick={() => setHoja("inicio")}>
-            {etiquetaHora(propia)}
-          </Chip>
-        )}
-      </div>
-      {r.hora && (
+      {!porDia && (
+        <div className={styles.grupo} role="group" aria-labelledby={idEmpieza}>
+          <span id={idEmpieza}>Empieza</span>
+          {HORAS_SUGERIDAS.map((hora) => (
+            <Chip key={hora} activo={r.hora === hora} onClick={() => onInicio(hora)}>
+              {etiquetaHora(hora)}
+            </Chip>
+          ))}
+          <Chip onClick={() => setHoja("inicio")}>Otra hora</Chip>
+          {propia && (
+            <Chip activo onClick={() => setHoja("inicio")}>
+              {etiquetaHora(propia)}
+            </Chip>
+          )}
+        </div>
+      )}
+      {!porDia && r.hora && (
         <div className={`${styles.grupo} ${styles.aparece}`} role="group" aria-labelledby={idTermina}>
           <span id={idTermina}>{varios ? "Termina" : "¿Cuánto dura?"}</span>
           {sugeridos.map((sugerido, i) => (
@@ -155,9 +168,20 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
               {fin.fecha > r.dias.desde && " del día siguiente"}
             </small>
           )}
-          {dias && <small>{resumenCadaDia(dias, r.hora, r.fin ?? "", diaLocal(new Date(), zona))}</small>}
         </div>
       )}
+      {dias && r.hora && (
+        <Casilla
+          titulo="Mismo horario todos los días"
+          detalle={admitePorDia(dias) ? null : "Ajustar día por día es para eventos de hasta 31 días."}
+          marcada={!porDia}
+          disabled={!admitePorDia(dias)}
+          onCambio={(marcada) => onCambiar(marcada ? { sesiones: null } : { sesiones: horarioComun(dias, r.hora ?? "", r.fin ?? ""), fin: r.fin ?? sinFin })}
+        />
+      )}
+      {porDia && r.sesiones && r.hora && <HorarioPorDia horarios={r.sesiones} comun={{ hora: r.hora, fin: finComun(r.hora, r.fin ?? "") }} zona={zona} onCambio={cambiarDia} />}
+      {dias && r.hora && <p className={styles.aviso}>{porDia && r.sesiones ? resumenPorDia(r.sesiones, { hora: r.hora, fin: finComun(r.hora, r.fin ?? "") }, hoy) : resumenCadaDia(dias, r.hora, r.fin ?? "", hoy)}</p>}
+      {porDia && <Siguiente falta={null} onSeguir={onSeguir} />}
       {hoja === "inicio" && (
         <SelectorHora
           titulo="Empieza"

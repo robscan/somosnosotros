@@ -442,10 +442,11 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   await hastaVariosDias(p);
   assert.equal(await pregunta(p), "¿A qué hora, cada día?");
   const termina = p.getByRole("group", { name: "Termina", exact: true });
-  // Sin hora de inicio todavía no hay horario que resumir.
-  assert.equal(await p.locator("main small").filter({ hasText: /cada día/ }).count(), 0);
+  // La línea del horario va bajo los chips y la casilla (prototipo de OL-310); sin hora de inicio todavía no hay horario que resumir.
+  const resumen = p.locator("main > p").filter({ hasText: /^Del 9 al 11 de oct/ });
+  assert.equal(await resumen.count(), 0);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
-  assert.match(await termina.locator("small").innerText(), /^Del 9 al 11 de oct · cada día desde las 8:00\s*p\.?\s?m\.?$/);
+  assert.match(await resumen.innerText(), /^Del 9 al 11 de oct · cada día desde las 8:00\s*p\.?\s?m\.?$/);
   if (capturas) await foto(p, "cada-dia-1-hora");
   // Un fin elegido avanza; al volver, la línea lo dice completo y «Revisa» lo enseña con días y horas.
   await termina.getByRole("button", { name: /^9:00/ }).click();
@@ -458,7 +459,7 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   await boton(p, "Atrás").click();
   await boton(p, "Atrás").click();
   assert.equal(await pregunta(p), "¿A qué hora, cada día?");
-  assert.match(await termina.locator("small").innerText(), /^Del 9 al 11 de oct · cada día de 8:00 a 9:00\s*p\.?\s?m\.?$/);
+  assert.match(await resumen.innerText(), /^Del 9 al 11 de oct · cada día de 8:00 a 9:00\s*p\.?\s?m\.?$/);
   if (capturas) await foto(p, "cada-dia-2-resumen");
   // «Sin hora de fin»: acaba con su último día y «Revisa» solo dice la hora de inicio; lo guardado es el de siempre.
   await termina.getByRole("button", { name: "Sin hora de fin" }).click();
@@ -474,8 +475,213 @@ test("un solo día sigue preguntando «¿A qué hora?» y sin línea de «cada d
   await hastaHora(p);
   assert.equal(await pregunta(p), "¿A qué hora?");
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
-  assert.equal(await p.locator("main small").filter({ hasText: /cada día/ }).count(), 0);
+  assert.equal(await p.locator("main").getByText(/cada día/).count(), 0);
+  assert.equal(await p.getByRole("checkbox").count(), 0);
 });
+
+/** El horario común de un evento del 9 al 11 de octubre (de 8:00 a 9:00 p.m.) ya contestado, y de vuelta en «¿A qué hora, cada día?» con todo puesto. */
+async function hastaCasilla(p) {
+  await hastaVariosDias(p);
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
+  await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  await boton(p, "Atrás").click();
+  assert.equal(await pregunta(p), "¿A qué hora, cada día?");
+}
+const mismoHorario = (p) => p.getByRole("checkbox", { name: "Mismo horario todos los días" });
+/** Los renglones de la lista de días: lo que dice cada uno. */
+const listaDias = (p) => p.locator("main ul > li").allInnerTexts();
+const hoja = (p) => p.getByRole("dialog");
+/** La línea de abajo del paso (el resumen del horario). */
+const resumenDe = (p) => p.locator("main > p").filter({ hasText: /^Del 9/ });
+/** Las horas de un día en la lista, sin espacios raros: «de 8:00 p.m. a 9:00 p.m.». */
+const limpio = (texto) => texto.replace(/\s+/g, " ").replace(/ | /g, " ").replace(/p\.\s?m\./g, "p.m.").replace(/a\.\s?m\./g, "a.m.");
+
+test("horario por día, casilla marcada: nada cambia (sin lista ni sesiones, elegir el fin avanza) y lo publicado es lo de siempre", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaVariosDias(p);
+  // La casilla llega con el horario común (después de «Empieza»), marcada, sin línea de fechas y sin «Siguiente» en el pie.
+  assert.equal(await mismoHorario(p).count(), 0);
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
+  assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "true");
+  assert.equal(await mismoHorario(p).locator("small").count(), 0);
+  assert.equal(await p.locator("footer").count(), 0);
+  assert.equal(await p.locator("main ul > li").count(), 0);
+  if (capturas) await foto(p, "dia-1-casilla-marcada");
+  await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ inicio: d.inicio, fin: d.fin, sesiones: d.sesiones }, { inicio: "2026-10-09T20:00", fin: "2026-10-11T21:00", sesiones: undefined });
+});
+
+test("horario por día: desmarcar pone un renglón por día; la hoja de un día cambia solo ese; «Siguiente» llega a «Revisa» con «horarios por día» y publicar manda tres sesiones", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaCasilla(p);
+  await mismoHorario(p).click();
+  assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "false");
+  // Los chips comunes se van; hay un renglón por día, todos con el horario común, y el pie dice «Siguiente».
+  assert.equal(await p.getByRole("group", { name: "Empieza" }).count(), 0);
+  assert.equal(await p.getByRole("group", { name: "Termina", exact: true }).count(), 0);
+  const antes = (await listaDias(p)).map(limpio);
+  assert.equal(antes.length, 3);
+  assert.match(antes[0], /^vie 9 de oct de 8:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
+  assert.match(antes[1], /^sáb 10 de oct de 8:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
+  assert.match(antes[2], /^dom 11 de oct de 8:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
+  assert.match(await resumenDe(p).innerText(), /^Del 9 al 11 de oct · cada día igual$/);
+  assert.ok(await boton(p, "Siguiente").isVisible());
+  if (capturas) await foto(p, "dia-2-lista-de-dias");
+  // Tocar el sábado abre su hoja, con sus dos grupos y «Listo».
+  await boton(p, "Cambiar sáb 10 de oct").click();
+  assert.equal(await hoja(p).getAttribute("aria-label"), "sáb 10 de oct");
+  assert.equal(await hoja(p).getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).getAttribute("aria-pressed"), "true");
+  assert.equal(await hoja(p).getByRole("group", { name: "Termina" }).getByRole("button", { name: /^9:00/ }).getAttribute("aria-pressed"), "true");
+  if (capturas) await foto(p, "dia-3-hoja-del-sabado");
+  await hoja(p).getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await boton(p, "Listo").click();
+  assert.equal(await hoja(p).count(), 0);
+  const despues = (await listaDias(p)).map(limpio);
+  assert.match(despues[1], /^sáb 10 de oct de 7:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
+  assert.equal(despues[0], antes[0]);
+  assert.equal(despues[2], antes[2]);
+  // Solo el sábado lleva sus horas en tinta y en negrita; los demás, en gris.
+  const peso = (i) => p.locator("main ul > li").nth(i).locator("small").evaluate((e) => ({ peso: Number(getComputedStyle(e).fontWeight), color: getComputedStyle(e).color }));
+  const [vie, sab, dom] = [await peso(0), await peso(1), await peso(2)];
+  assert.ok(sab.peso >= 600 && vie.peso < 600 && dom.peso < 600);
+  assert.notEqual(sab.color, vie.color);
+  assert.equal(vie.color, dom.color);
+  assert.match(await resumenDe(p).innerText(), /^Del 9 al 11 de oct · 1 día con otro horario$/);
+  if (capturas) await foto(p, "dia-4-sabado-distinto");
+  // «Siguiente» y a «Revisa»: el renglón del cuándo dice «horarios por día».
+  await boton(p, "Siguiente").click();
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  const cuando = p.locator("main ul > li").first();
+  assert.match(await cuando.innerText(), /Del 9 al 11 de oct · horarios por día/);
+  if (capturas) await foto(p, "dia-5-revisa-horarios-por-dia");
+  // «Cambiar» vuelve al paso con la lista abierta (la casilla sigue desmarcada y el sábado, distinto).
+  await boton(p, "Cambiar cuándo").click();
+  assert.equal(await pregunta(p), "¿A qué hora, cada día?");
+  assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "false");
+  assert.match(limpio((await listaDias(p))[1]), /7:00 p\.m\. a 9:00 p\.m\./);
+  await boton(p, "Siguiente").click();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ inicio: d.inicio, fin: d.fin }, { inicio: "2026-10-09T20:00", fin: "2026-10-11T21:00" });
+  assert.deepEqual(JSON.parse(d.sesiones), [
+    { inicio: "2026-10-09T20:00", fin: "2026-10-09T21:00" },
+    { inicio: "2026-10-10T19:00", fin: "2026-10-10T21:00" },
+    { inicio: "2026-10-11T20:00", fin: "2026-10-11T21:00" },
+  ]);
+});
+
+test("horario por día: el inicio del primer día y el fin del último son los del evento; «Sin hora de fin» y «Otra hora» valen por día", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaCasilla(p);
+  await mismoHorario(p).click();
+  // El primer día empieza a las 12:00 y el último, sin hora de fin: el evento guarda el 12:00 del 9 y el fin del 11.
+  await boton(p, "Cambiar vie 9 de oct").click();
+  await hoja(p).getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^12:00/ }).click();
+  // Su fin (9:00 p.m.) sigue después de las 12:00; una hora propia sale de «Otra hora».
+  await hoja(p).getByRole("group", { name: "Termina" }).getByRole("button", { name: "Otra hora" }).click();
+  await p.getByRole("dialog", { name: /^Termina/ }).getByRole("button", { name: /^3:30/ }).click();
+  await boton(p, "Listo").click();
+  await boton(p, "Cambiar dom 11 de oct").click();
+  await hoja(p).getByRole("group", { name: "Termina" }).getByRole("button", { name: "Sin hora de fin" }).click();
+  await boton(p, "Listo").click();
+  const lista = (await listaDias(p)).map(limpio);
+  assert.match(lista[0], /^vie 9 de oct de 12:00 p\.m\. a 3:30 p\.m\. Cambiar$/);
+  assert.match(lista[2], /^dom 11 de oct desde las 8:00 p\.m\. Cambiar$/);
+  assert.match(await resumenDe(p).innerText(), /2 días con otro horario/);
+  await boton(p, "Siguiente").click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ inicio: d.inicio, fin: d.fin }, { inicio: "2026-10-09T12:00", fin: "2026-10-11T23:59" });
+  assert.deepEqual(JSON.parse(d.sesiones).map((x) => x.fin), ["2026-10-09T15:30", "2026-10-10T21:00", ""]);
+});
+
+test("horario por día: volver a marcar la casilla devuelve a todos el horario común y no manda sesiones", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaCasilla(p);
+  await mismoHorario(p).click();
+  await boton(p, "Cambiar sáb 10 de oct").click();
+  await hoja(p).getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^12:00/ }).click();
+  await boton(p, "Listo").click();
+  assert.match(await resumenDe(p).innerText(), /1 día con otro horario/);
+  await mismoHorario(p).click();
+  assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "true");
+  assert.equal(await p.locator("main ul > li").count(), 0);
+  assert.equal(await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).getAttribute("aria-pressed"), "true");
+  assert.match(await resumenDe(p).innerText(), /cada día de 8:00 a 9:00/);
+  // Desmarcarla otra vez arranca de nuevo con el común: el sábado ya no es distinto.
+  await mismoHorario(p).click();
+  assert.match(limpio((await listaDias(p))[1]), /8:00 p\.m\. a 9:00 p\.m\./);
+  await mismoHorario(p).click();
+  await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  assert.equal((await enviado(p)).sesiones, undefined);
+});
+
+test("horario por día: cambiar los días borra el horario por día; con más de 31 días la casilla queda marcada y quieta y dice por qué", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaCasilla(p);
+  await mismoHorario(p).click();
+  assert.equal((await listaDias(p)).length, 3);
+  // Atrás hasta «¿Qué día es?» y un rango de más de un mes (del 9 de octubre al 15 de noviembre: 38 días).
+  await boton(p, "Atrás").click();
+  assert.equal(await pregunta(p), "¿Qué día es?");
+  await boton(p, "Dura varios días").click();
+  // Con el rango anterior cerrado, el primer toque empieza de nuevo.
+  await p.locator('[data-fecha="2026-10-09"]').click();
+  await hoja(p).getByRole("button", { name: "Mes siguiente" }).click();
+  await p.locator('[data-fecha="2026-11-15"]').click();
+  await hoja(p).getByRole("button", { name: "Listo", exact: true }).click();
+  // Las horas se preguntan de nuevo (el día nuevo las borra, y con ellas el horario por día).
+  assert.equal(await pregunta(p), "¿A qué hora, cada día?");
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
+  assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "true");
+  assert.equal(await mismoHorario(p).isDisabled(), true);
+  assert.match(await mismoHorario(p).innerText(), /hasta 31 días/);
+  await mismoHorario(p).click({ force: true });
+  assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "true");
+  assert.equal(await p.locator("main ul > li").count(), 0);
+  if (capturas) await foto(p, "dia-6-mas-de-31-dias");
+});
+
+for (const ancho of [320, 390]) {
+  test(`horario por día a ${ancho}: la lista, la hoja de un día y el nombre largo de la casilla no desbordan`, TOPE, async (t) => {
+    const p = await pagina(t, { ancho });
+    await hastaCasilla(p);
+    // El nombre de la casilla puede partirse en dos renglones en una pantalla angosta (no lleva «nowrap»); nada se sale.
+    assert.equal(await mismoHorario(p).locator("b").evaluate((e) => getComputedStyle(e).whiteSpace), "normal");
+    assert.deepEqual((await desborda(p)).fuera, []);
+    await mismoHorario(p).click();
+    const d = await desborda(p);
+    assert.equal(d.scroll <= 0, true);
+    assert.deepEqual(d.fuera, []);
+    await boton(p, "Cambiar sáb 10 de oct").click();
+    // La hoja vive fuera de `main`: se mide aparte. «Listo» queda siempre a la vista, bajo los chips.
+    const fuera = await p.evaluate(() => {
+      const w = document.documentElement.clientWidth;
+      return [...document.querySelectorAll('[role="dialog"] *')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > w + 0.5 || r.left < -0.5); }).map((e) => e.tagName + "." + e.className);
+    });
+    assert.deepEqual(fuera, []);
+    const listo = await boton(p, "Listo").boundingBox();
+    assert.ok(listo && listo.y + listo.height <= 844);
+    if (ancho === 320 && capturas) await foto(p, "dia-7-hoja-a-320");
+  });
+}
 
 for (const ancho of [320, 390]) {
   test(`varios días en «Revisa» a ${ancho}: las horas no se parten (CSS, no la cadena), el renglón parte entre los días y las horas y nada desborda`, TOPE, async (t) => {

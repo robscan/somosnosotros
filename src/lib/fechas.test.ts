@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, cuandoVariosDias, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -283,5 +283,26 @@ describe("rangoCorto: «Del 10 al 12 de oct»", () => {
   it("el año solo se escribe si no es el actual", () => {
     expect(rangoCorto("2027-02-10", "2027-02-12", HOY)).toBe("Del 10 al 12 de feb de 2027");
     expect(rangoCorto("2026-12-30", "2027-01-02", HOY)).toBe("Del 30 de dic al 2 de ene de 2027");
+  });
+});
+
+
+describe("el día de una sesión y el cuándo con horario por día (OL-311)", () => {
+  const ahora = new Date("2026-10-06T12:00:00Z");
+  it("diaConMes dice «vie 9 de oct» (sin «Hoy» ni «Mañana») en la zona del evento, con el año si no es el actual", () => {
+    // Las 8:00 p.m. del viernes en San Luis son las 02:00 UTC del sábado: el día es el del lugar, no el de UTC.
+    expect(diaConMes("2026-10-10T02:00:00Z", ahora, "America/Mexico_City")).toBe("vie 9 de oct");
+    expect(diaConMes("2026-10-07T02:00:00Z", ahora, "America/Mexico_City")).toBe("mar 6 de oct");
+    expect(diaConMes("2027-02-11T02:00:00Z", ahora, "America/Mexico_City")).toBe("mié 10 de feb de 2027");
+  });
+  it("diaConMesDe lo dice desde un día de calendario; uno que no es fecha vuelve tal cual", () => {
+    expect(diaConMesDe("2026-10-09", ahora, "America/Mexico_City")).toBe("vie 9 de oct");
+    expect(diaConMesDe("2026-10-11", ahora, "America/Mexico_City")).toBe("dom 11 de oct");
+    expect(diaConMesDe("no es fecha", ahora)).toBe("no es fecha");
+  });
+  it("cuandoPorDia: los días y «horarios por día», con la cadena limpia", () => {
+    const texto = cuandoPorDia("2026-10-10T02:00:00Z", "2026-10-12T03:00:00Z", "America/Mexico_City", ahora);
+    expect(texto).toBe("Del 9 al 11 de oct · horarios por día");
+    expect(texto).not.toMatch(/[\u00a0\u202f\u2060]/);
   });
 });

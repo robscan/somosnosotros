@@ -1,7 +1,7 @@
 import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import type { Punto } from "./geo";
 import { esUuid, limpiar } from "./formulario";
-import { formatearCuando, localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { cuandoPorDia, formatearCuando, localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import { LIMITES_EVENTO } from "./limites";
 import { puedeConservarReservadoSinDireccion } from "./retencionSitio";
@@ -127,7 +127,7 @@ export type DatosEvento = {
   zona: string;
 };
 export type ErroresEvento = Partial<
-  Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
+  Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "sesiones" | "descripcion" | "imagen" | "precio" | "enlace", string>
 >;
 
 /**
@@ -408,10 +408,12 @@ export function textoCompartir(titulo: string, cuando: string, lugar: string | n
 /**
  * Lo que se comparte de un evento, igual en la ficha y en el final del alta por pasos: la dirección pública con el dominio de siempre y el
  * texto sin el enlace al final (la hoja de compartir lo manda aparte en `url`). `sitio` es el nombre del sitio, como lo dice `nombreSitio`.
+ * Con horario por día (`conSesiones`, OL-311) el cuándo es «Del 9 al 11 de oct · horarios por día»: no hay un solo horario que decir.
  */
-export function compartirEvento(e: Pick<EventoResumen, "titulo" | "inicio" | "fin" | "zona"> & { id: string; slug?: string | null }, sitio: string | null): { url: string; texto: string } {
+export function compartirEvento(e: Pick<EventoResumen, "titulo" | "inicio" | "fin" | "zona"> & { id: string; slug?: string | null }, sitio: string | null, conSesiones = false): { url: string; texto: string } {
   const url = `https://somosnosotros.org${hrefEvento(e)}`;
-  return { url, texto: textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "") };
+  const cuando = conSesiones && e.fin ? cuandoPorDia(e.inicio, e.fin, e.zona) : formatearCuando(e.inicio, e.fin, new Date(), e.zona);
+  return { url, texto: textoCompartir(e.titulo, cuando, sitio, url).replace(`\n${url}`, "") };
 }
 
 /** Lo que se lee de un cartel (viene del modelo de visión). Todo puede faltar. */

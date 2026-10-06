@@ -97,6 +97,17 @@ function diaCortoDe(x: Date, ahora: Date, zona: string): string {
   return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "short", day: "numeric", month: "short", ...conAnio(x, ahora, zona) }).format(x).replace(/[.,]/g, "");
 }
 
+/** "vie 9 de oct" (con año si no es el actual): el día de un instante, sin «Hoy» ni «Mañana» (el día de una sesión, en la lista de la ficha). */
+export function diaConMes(iso: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
+  return diaCortoDe(new Date(iso), ahora, zona);
+}
+
+/** Lo mismo desde un día de calendario (YYYY-MM-DD) en la zona: el alta todavía no tiene instantes. */
+export function diaConMesDe(dia: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
+  const iso = localAIso(`${dia}T12:00`, zona);
+  return iso ? diaConMes(iso, ahora, zona) : dia;
+}
+
 /** "Hoy", "Mañana" o "sáb 20 de sep": el título del día en la agenda, con hoy y mañana de la zona del evento. */
 export function diaCorto(iso: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
   const d = new Date(iso);
@@ -179,6 +190,14 @@ export function cuandoVariosDias(inicio: string, fin: string | null | undefined,
   // Cadena limpia (viaja a compartir, avisos y correos); que la hora no se parta en un renglón angosto lo resuelve quien la pinta, con CSS.
   const horas = acabaConSuUltimoDia(d, f, zona) ? horaInicio : `${horaInicio}–${horaFin}`;
   return { dias: rangoCorto(diaInicio, diaFin, diaLocal(ahora, zona)), horas };
+}
+
+/** Lo que dice un evento con horario por día donde antes iba el horario («Del 9 al 11 de oct · horarios por día»). */
+export const HORARIOS_POR_DIA = "horarios por día";
+
+/** «Del 9 al 11 de oct · horarios por día», de un evento guardado (su inicio y su fin dicen los días). */
+export function cuandoPorDia(inicio: string, fin: string, zona: string, ahora: Date = new Date()): string {
+  return `${rangoCorto(diaLocal(new Date(inicio), zona), diaLocal(new Date(fin), zona), diaLocal(ahora, zona))} · ${HORARIOS_POR_DIA}`;
 }
 
 /** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. Un evento de varios días dice sus días y su horario de cada día (`cuandoVariosDias`); uno que solo cruza la medianoche, "→ dom 21 sep · 01:00". */

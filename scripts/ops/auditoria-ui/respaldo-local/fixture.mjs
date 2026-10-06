@@ -148,7 +148,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -157,6 +157,7 @@ export const FK = {
   lugares: { perfiles: "creado_por" },
   artistas: { perfiles: "creado_por" },
   eventos_artistas: { eventos: "evento_id", artistas: "artista_id" },
+  eventos_sesiones: { eventos: "evento_id" },
   asistencias: { eventos: "evento_id", perfiles: "usuario_id" },
   seguimientos: { lugares: "lugar_id", artistas: "artista_id", perfiles: "usuario_id" },
   artistas_cuentas: { artistas: "artista_id", perfiles: "perfil_id" },
