@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartel sin lectura</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-306 (bitácora 334): el cartel se sube siempre; la lectura es un servicio que se enciende cuando está disponible.
+   Mismo estilo que publicar-por-pasos.html (tokens de src/app/globals.css). Arriba, la tira del prototipo para elegir el caso. */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #ede6f8; --ok: #1f6f43; --ok-suave: #e4eee8; --error: #b3261e;
+  --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --alto-barra: 56px; --columna: 600px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --piso: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: "wdth" 85; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button, input, select { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h1, h2, h3 { font-variation-settings: "wdth" 75; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: 1.5rem; font-weight: 800; }
+small, .meta { font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.35; }
+svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul { list-style: none; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); }
+.tira label { display: flex; align-items: center; gap: 6px; min-height: var(--toque-min); font-size: var(--letra-xs); }
+.tira input { width: 20px; height: 20px; accent-color: var(--primario); }
+
+/* La app: barra, línea de avance, cuerpo que desplaza por dentro, pie. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; background: var(--fondo); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden; }
+.barra { display: grid; grid-template-columns: auto 1fr auto; column-gap: var(--espacio-3); align-items: center; min-height: var(--alto-barra); padding: 0 var(--espacio-3); border-bottom: 1px solid var(--borde); }
+.barra b { font-size: var(--letra-md); font-weight: 700; text-align: center; }
+.redondo { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.redondo svg { stroke-width: 2; }
+.avance { height: 3px; background: var(--fondo-suave); }
+.avance i { display: block; height: 100%; background: var(--primario); transition: width 0.2s ease-out; }
+.pagina { overflow-y: auto; display: grid; align-content: start; gap: var(--espacio-5); padding: var(--espacio-7) var(--espacio-5) calc(var(--espacio-6) + var(--piso)); }
+.pie { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-top: 1px solid var(--borde); background: var(--fondo); }
+.pie:empty { display: none; }
+.pregunta { font-size: 1.875rem; font-weight: 800; }
+
+/* ui/Boton */
+.btn { display: flex; width: 100%; min-height: var(--toque); align-items: center; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-md); font-weight: 700; }
+.btn.sec { background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); }
+.btn:disabled { background: var(--primario-suave); color: var(--primario-texto); cursor: default; opacity: 0.8; }
+.quieto { display: block; width: 100%; min-height: var(--toque-min); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; text-decoration: underline; }
+
+/* ui/Campo con icono + ui/Limpiar */
+.campo { position: relative; display: grid; }
+.campo > svg { position: absolute; left: 14px; top: 12px; color: var(--texto-suave); pointer-events: none; }
+.campo input { width: 100%; min-height: var(--toque); padding: 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: var(--letra-md); }
+.campo input:focus { border-color: var(--texto); outline: none; }
+.limpiar { position: absolute; right: 0; top: 0; width: var(--toque); height: var(--toque); display: grid; place-items: center; color: var(--texto-suave); }
+.limpiar svg { width: 18px; height: 18px; stroke-width: 2; }
+.campo input:placeholder-shown ~ .limpiar { display: none; }
+
+/* El recuadro del cartel: siempre se puede subir. Lo que cambia es la línea de abajo (si se lee o no) y la salida extra. */
+.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-2); width: 100%; min-height: 200px; padding: var(--espacio-5); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-lg); font-weight: 700; text-align: center; }
+.subir .marco { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+.subir small { color: var(--texto-suave); font-weight: 400; }
+.subir .lecturas { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.subir .lecturas svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.subir .lecturas.ok { color: var(--ok); }
+
+/* La miniatura del cartel y «Leyendo». */
+.cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), #4a3a6b; color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
+.leyendo .cartel-mini { width: 168px; font-size: 1rem; padding: var(--espacio-3); }
+@media (prefers-reduced-motion: no-preference) { .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; } @keyframes late { to { transform: scale(1.03); } } }
+
+/* La pregunta con el cartel ya guardado: una fila chica arriba —miniatura y sello— que confirma sin estorbar. */
+.con-cartel { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; }
+.con-cartel .cartel-mini { width: 40px; padding: 4px; font-size: 0.4rem; border-radius: 6px; }
+.sello { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo-suave); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.sello.ok { background: var(--ok-suave); color: var(--ok); }
+.sello svg { width: 14px; height: 14px; stroke-width: 2.4; }
+
+/* Revisar: la cabeza con la miniatura; con lectura, el sello «Leído del cartel». */
+.cabeza-revisar { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--espacio-4); align-items: end; row-gap: var(--espacio-2); }
+.renglon { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.lista { display: grid; gap: var(--espacio-3); }
+
+.notas { padding-top: var(--espacio-2); border-top: 1px dashed var(--borde); font-size: var(--letra-sm); color: var(--texto-suave); }
+.notas summary { min-height: var(--toque-min); display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.notas li { margin: 0 0 var(--espacio-2) var(--espacio-5); list-style: disc; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+</style>
+</head>
+<body>
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <option value="lee">1 · Hay lectura: se sube y se lee (como hoy)</option>
+    <option value="agotado">2 · Se acabaron las lecturas del mes (cuenta gratuita)</option>
+    <option value="sinia">3 · Sin servicio de lectura (sin llave o créditos agotados)</option>
+    <option value="falla">4 · Hay lectura pero falla al leer</option>
+    <option value="pocas">5 · Quedan pocas lecturas (cuenta de pago)</option>
+  </select>
+  <label><input type="checkbox" id="sinleer"> Mostrar «Subir sin leer» cuando hay lectura (variante a discutir)</label>
+</div>
+<div class="app" id="app"></div>
+<script>
+const ic = (n) => ({
+  camara: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  ok: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  cerrar: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  atras: '<svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>',
+  buscar: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  boleto: '<svg viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 0 0 4v1a2 2 0 0 0 0 4v2h16v-2a2 2 0 0 1 0-4v-1a2 2 0 0 1 0-4V5H4z"/><path d="M12 5v14" stroke-dasharray="2 2.5"/></svg>',
+  alerta: '<svg viewBox="0 0 24 24"><path d="M12 4 3 20h18z"/><path d="M12 10v4M12 17v.5"/></svg>',
+})[n];
+const MINI = (t) => `<div class="cartel-mini">${t ? 'ECOS DE PAPEL<br><span style="font-weight:400">jue 5 nov · 19:00</span>' : ''}</div>`;
+
+const CASOS = {
+  lee:     { lee: true,  linea: 'Leemos el nombre, la fecha, el lugar y el precio', chip: '' },
+  agotado: { lee: false, linea: 'Hoy lo llenas tú: se acabaron tus lecturas del mes', chip: 'Se renuevan el 1 de noviembre', pedir: true },
+  sinia:   { lee: false, linea: 'Tú pones los datos; el cartel queda como imagen del evento', chip: '' },
+  falla:   { lee: true,  linea: 'Leemos el nombre, la fecha, el lugar y el precio', chip: '', falla: true },
+  pocas:   { lee: true,  linea: 'Leemos el nombre, la fecha, el lugar y el precio', chip: 'Te quedan 2 lecturas este mes' },
+};
+let caso = 'lee', e;
+const nuevo = () => (e = { paso: 'inicio', pedido: false, leido: false, sinLeer: false });
+nuevo();
+const casoActual = () => CASOS[caso];
+
+const PANTALLAS = {
+  inicio: () => {
+    const c = casoActual();
+    const mostrarSinLeer = document.getElementById('sinleer').checked && c.lee;
+    return {
+      titulo: 'Publicar', avance: 0, cerrar: true,
+      cuerpo: `<button class="subir" data-a="subir">
+          <span class="marco">${ic('camara')}</span>
+          <span>Sube el cartel</span>
+          <small>${c.linea}</small>
+          ${c.chip ? `<span class="lecturas">${c.lee ? ic('ok') : ''}${c.chip}</span>` : ''}
+        </button>
+        ${c.pedir ? `<button class="quieto" data-a="pedir">${e.pedido ? 'Ya pedimos más lecturas para ti' : 'Pedir más lecturas'}</button>` : ''}
+        ${mostrarSinLeer ? `<button class="quieto" data-a="subir-sin-leer">Subir sin leer</button>` : ''}
+        <button class="btn sec" data-a="sin">No tengo cartel</button>`,
+      pie: '',
+      notas: [
+        'El recuadro «Sube el cartel» está SIEMPRE. El cartel vale por sí mismo: es la imagen del evento en la ficha y la agenda. Hoy, sin llave o sin cupo, el recuadro no sale y solo queda «No tengo cartel»; eso es lo que se corrige.',
+        'La lectura es un servicio que se enciende cuando está disponible, igual que el creador de cartel: la segunda línea del recuadro dice si leemos o si lo llenas tú. Nadie elige entre leer o no: el sistema lo decide (UX invisible).',
+        'Sin cupo (caso 2): «Pedir más lecturas» sigue como salida quieta, debajo del recuadro, no dentro de él, para que el recuadro siga siendo «subir».',
+        'Con pocas lecturas (caso 5): el recuadro dice cuántas quedan (regla ya escrita en el código: solo desde 3 o menos). Es información, no una decisión.',
+        'La casilla de la tira enseña la variante «Subir sin leer» para cuentas de pago que quieran ahorrar créditos. Mi recomendación: NO en la primera fase. Agrega una decisión a la primera pantalla y la lectura es justo lo que ahorra pasos; si alguien no quiere gastar, le basta con no tener cupo. Se retoma cuando existan cuentas de pago.',
+      ],
+    };
+  },
+  leyendo: () => ({ titulo: 'Publicar', avance: 0, cerrar: true, cuerpo: `<div class="leyendo">${MINI(true)}<p class="meta" role="status">Leyendo el cartel…</p></div>`, pie: '', notas: ['Igual que hoy. Si la lectura falla a medias, no se vuelve al inicio: la imagen ya está y se sigue con las preguntas (caso 4).'] }),
+  nombre: () => {
+    const c = casoActual();
+    const sello = c.falla
+      ? `<span class="sello">${ic('alerta')}No pude leer el cartel · llénalo tú</span>`
+      : `<span class="sello">${ic('ok')}Cartel guardado · lo llenas tú</span>`;
+    return {
+      titulo: 'Publicar', avance: 1 / 6, atras: true,
+      cuerpo: `<div class="con-cartel">${MINI(true)}${sello}</div>
+        <h1 class="pregunta">¿Cómo se llama?</h1>
+        <label class="campo">${ic('buscar')}<input id="q" placeholder="Nombre del evento" autocomplete="off"><button class="limpiar" type="button" aria-label="Borrar el texto">${ic('cerrar')}</button></label>`,
+      pie: `<button class="btn" data-a="seguir">Siguiente</button>`,
+      notas: [
+        'Tras subir sin lectura (o cuando la lectura falló), se sigue directo a la primera pregunta: nunca se le pide a la persona que toque «No tengo cartel» cuando sí lo tiene (hoy pasa).',
+        'La fila de arriba —miniatura y sello— solo sale en la primera pregunta: confirma que el cartel quedó guardado y por qué se pregunta. En las demás preguntas no se repite; vuelve en «Revisa».',
+        'De aquí en adelante son los pasos ya construidos: día, hora, dónde, cuánto. En el prototipo «Siguiente» salta a «Revisa».',
+      ],
+    };
+  },
+  revisa: () => {
+    const c = casoActual();
+    const leido = c.lee && !c.falla && !e.sinLeer;
+    return {
+      titulo: 'Revisa', avance: 5 / 6, atras: true,
+      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel</span>` : `<span class="sello">${ic('ok')}Cartel</span>`}<h1>Inauguración de Ecos de papel</h1></div></div>
+        <div class="lista">
+          <button class="renglon">${ic('reloj')}<b>jue 5 de nov · 19:00</b><span class="accion">Cambiar</span></button>
+          <button class="renglon">${ic('pin')}<b>Teatro de la Paz</b><span class="accion">Cambiar</span></button>
+          <button class="renglon">${ic('boleto')}<b>Gratis</b><span class="accion">Cambiar</span></button>
+        </div>`,
+      pie: `<button class="btn" data-a="publicar">Publicar</button>`,
+      notas: [
+        'La cabeza lleva la miniatura siempre que haya cartel. El sello verde «Leído del cartel» solo cuando de él salieron datos; si no, un sello gris «Cartel» que dice que la imagen va con el evento.',
+        'Los datos se ven iguales hayan salido del cartel o de las preguntas.',
+      ],
+    };
+  },
+};
+
+function ir(paso) { e.paso = paso; pintar(); }
+function pintar() {
+  const p = PANTALLAS[e.paso]();
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="barra">
+      ${p.cerrar ? `<button class="redondo" data-a="reiniciar" aria-label="Cerrar">${ic('cerrar')}</button>` : p.atras ? `<button class="redondo" data-a="atras" aria-label="Atrás">${ic('atras')}</button>` : '<span class="redondo"></span>'}
+      <b>${p.titulo}</b><span class="redondo"></span>
+    </div>
+    <div class="avance"><i style="width:${Math.round(p.avance * 100)}%"></i></div>
+    <div class="pagina">${p.cuerpo}
+      <details class="notas"><summary>Notas del prototipo</summary><ul>${p.notas.map((n) => `<li>${n}</li>`).join('')}</ul></details>
+    </div>
+    <div class="pie">${p.pie}</div>`;
+}
+document.getElementById('app').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-a]');
+  if (!b) return;
+  const a = b.dataset.a;
+  const c = casoActual();
+  if (a === 'subir') { e.sinLeer = false; if (c.lee) { ir('leyendo'); setTimeout(() => ir(c.falla ? 'nombre' : 'revisa'), 1400); } else ir('nombre'); }
+  if (a === 'subir-sin-leer') { e.sinLeer = true; ir('nombre'); }
+  if (a === 'sin') ir('nombre');
+  if (a === 'pedir') { e.pedido = true; pintar(); }
+  if (a === 'seguir') ir('revisa');
+  if (a === 'atras') ir(e.paso === 'revisa' ? 'nombre' : 'inicio');
+  if (a === 'reiniciar') { nuevo(); pintar(); }
+  if (a === 'publicar') { alert('Publicado (el final ya está construido: OL-304).'); nuevo(); pintar(); }
+});
+document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); pintar(); });
+document.getElementById('sinleer').addEventListener('change', () => pintar());
+pintar();
+</script>
+</body>
+</html>
