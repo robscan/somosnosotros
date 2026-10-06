@@ -347,6 +347,23 @@ test("Android (interactive-widget=resizes-content): con la ventana encogida por 
   assert.ok(c.campoBottom <= c.pieTop, `el campo (abajo en ${c.campoBottom}) no queda bajo el pie (arriba en ${c.pieTop})`);
 });
 
+test("con zona segura abajo (--piso, el indicador de inicio del iPhone) el pie no deja un hueco sobre el teclado: con teclado no la suma", async (t) => {
+  const p = await pagina(t, "?corto=1");
+  const relleno = () => p.evaluate(() => parseFloat(getComputedStyle(document.querySelector("footer")).paddingBottom));
+  await p.evaluate(() => document.documentElement.style.setProperty("--piso", "34px"));
+  await asentarCuadros(p); // la transición de 0,01 ms de globals.css deja el valor anterior un cuadro
+  const sin = await relleno();
+  assert.equal(sin, 16 + 34, `sin teclado el pie respeta la zona segura (mide ${sin})`);
+  await abrirTeclado(p, "Nombre del lugar");
+  await asentarCuadros(p);
+  assert.equal(await relleno(), 16, "con el teclado, que la cubre, solo el aire de siempre");
+  const c = await cajas(p, "Nombre del lugar");
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y el teclado empieza en ${c.visible}`);
+  // El botón queda a 16 px del teclado: nada más entre los dos.
+  const boton = await p.evaluate(() => document.querySelector("footer button").getBoundingClientRect().bottom);
+  assert.ok(Math.abs(c.visible - boton - 16) <= 1, `el botón termina en ${boton}, a ${c.visible - boton} px del teclado`);
+});
+
 test("al cerrar el teclado todo vuelve: --teclado a 0, el pie pegado y sin aire de más", async (t) => {
   const p = await pagina(t);
   await abrirTeclado(p, "Nombre del lugar");

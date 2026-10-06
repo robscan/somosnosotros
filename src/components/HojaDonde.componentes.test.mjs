@@ -262,6 +262,7 @@ test("app de la tienda (Capacitor: el visualViewport no cambia, el teclado llega
   await p.getByLabel("Buscar el lugar").fill("teatro");
   await lista(p).waitFor();
   const antes = await caja(p.getByRole("button", { name: "Estoy aquí" }));
+  await p.evaluate(() => document.documentElement.style.setProperty("--piso", "34px")); // la zona segura de abajo de un iPhone
   // Como `@capacitor/keyboard` en modo body: `keyboardHeight` puesto en el propio evento (sin `detail`) y el `<body>` encogido a mano.
   await p.evaluate((alto) => {
     for (const nombre of ["keyboardWillShow", "keyboardDidShow"]) {
@@ -276,6 +277,8 @@ test("app de la tienda (Capacitor: el visualViewport no cambia, el teclado llega
   assert.equal(await p.evaluate(() => window.visualViewport.height), ALTO, "el área visible no cambió");
   const f = await caja(pie(p));
   assert.equal(Math.round(f.y + f.height), ALTO - TECLADO, "el pie queda justo encima del teclado");
+  const b = await caja(listo(p));
+  assert.ok(ALTO - TECLADO - (b.y + b.height) <= 17, `el botón «Listo» queda a ${ALTO - TECLADO - (b.y + b.height)} px del teclado: sin hueco de zona segura`);
   const a = await caja(agregar(p));
   assert.ok(a.y + a.height <= f.y, `«Agregar» (abajo en ${a.y + a.height}) queda sobre el pie (arriba en ${f.y})`);
   const campo = await caja(p.getByLabel("Buscar el lugar"));

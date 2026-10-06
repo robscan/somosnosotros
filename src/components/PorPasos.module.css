@@ -62,7 +62,11 @@
   right: 0;
   bottom: var(--abajo-visible, 0px);
   left: 0;
-  /* El teclado cubre la zona segura de abajo (el indicador de inicio): ahí ya no hace falta su aire. */
+}
+/* El teclado cubre la zona segura de abajo (el indicador de inicio): ahí ya no hace falta su aire (`--piso`). Sin esto queda un hueco blanco
+   de esa altura entre el pie y el teclado (50 px en un iPhone con la app de la tienda, medido en el simulador, bitácora 336). Vale para el pie
+   de los pasos y para el de la hoja «¿Dónde es?». */
+:global(html[data-teclado]) .pie {
   padding-bottom: var(--espacio-4);
 }
 
