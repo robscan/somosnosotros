@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useId, useState } from "react";
 import { PiePaso } from "@/components/PorPasos";
 import SelectorQuien from "@/app/eventos/SelectorQuien";
@@ -8,7 +7,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip } from "@/components/ui/Chip";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
-import { IconoBoleto, IconoBuscar, IconoCamara } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoBuscar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import Opcion from "@/components/ui/Opcion";
 import SelectorDia from "@/components/ui/SelectorDia";
@@ -45,25 +44,6 @@ function Siguiente({ falta, onSeguir }: { falta: string | null; onSeguir: () => 
 const conIntro = (seguir: (() => void) | null) => (e: React.KeyboardEvent<HTMLInputElement>) => {
   if (e.key === "Enter" && seguir) seguir();
 };
-
-/** Empieza con lo que se tiene: el recuadro del cartel y, del mismo ancho, «No tengo cartel». */
-export function PasoInicio({ onSinCartel }: { onSinCartel: () => void }) {
-  return (
-    <>
-      {/* Mientras se construye el camino con cartel (la pieza siguiente), el recuadro lleva al alta de siempre, que ya lo lee. */}
-      <Link href="/nuevo?tipo=evento" prefetch={false} className={styles.subir}>
-        <span>
-          <IconoCamara width={26} height={26} />
-        </span>
-        <b>Sube el cartel</b>
-        <small>Leemos el nombre, la fecha, el lugar y el precio</small>
-      </Link>
-      <Boton type="button" variante="secundario" onClick={onSinCartel}>
-        No tengo cartel
-      </Boton>
-    </>
-  );
-}
 
 export function PasoNombre({ nombre, onCambio, onSeguir }: { nombre: string; onCambio: (nombre: string) => void; onSeguir: () => void }) {
   const listo = !!nombre.trim();

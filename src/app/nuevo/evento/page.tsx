@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { cargarMisArtistas } from "@/app/artistas/consultas";
-import { crearEvento } from "@/app/eventos/acciones";
+import { crearEvento, cupoDeCartel } from "@/app/eventos/acciones";
+import { lecturaDeCartelActiva } from "@/lib/cartel";
 import { cargarCiudades } from "@/lib/ciudades";
 import { ciudadDesdeSlug } from "@/lib/direccionContexto";
 import type { LugarResumen } from "@/lib/lugares";
@@ -22,10 +23,12 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(aqui)}`);
   const supabase = await clienteServidor();
   // Los mismos lugares que `/nuevo`: los privados de la cuenta entran por la política de lectura y «¿Dónde es?» los marca «Privado».
-  const [ciudades, { data: lugares }, mios] = await Promise.all([
+  const cartelActivo = lecturaDeCartelActiva();
+  const [ciudades, { data: lugares }, mios, cupo] = await Promise.all([
     cargarCiudades(),
     supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre") ?? { data: [] },
     cargarMisArtistas(actual.perfil.id),
+    cartelActivo ? cupoDeCartel() : null,
   ]);
-  return <AltaEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} mios={mios} ciudadContexto={ciudadDesdeSlug(ciudad, ciudades)} salida={{ href: "/", texto: "Volver" }} volverA={aqui} />;
+  return <AltaEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} mios={mios} ciudadContexto={ciudadDesdeSlug(ciudad, ciudades)} salida={{ href: "/", texto: "Volver" }} volverA={aqui} usuarioId={actual.perfil.id} cartelActivo={cartelActivo} cupo={cupo} />;
 }

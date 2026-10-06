@@ -149,7 +149,10 @@ export async function cambiarVisibleEvento(id: string, lugarId: string | null, v
 }
 
 export type ResultadoCartel =
-  | { ok: true; valores: ReturnType<typeof cartelAFormulario>; lugarId: string | null; quien: QuienItem[] }
+  /** `horaLeida` y `costoLeido`: el cartel trae esa hora y ese precio de verdad. `valores` rellena lo que falta (las 19:00 si hay fecha
+   *  sin hora, «gratis» si no dice nada de precio) porque el alta de siempre se apoya en eso; el alta por pasos necesita saber qué no
+   *  se leyó para preguntarlo en vez de publicarlo a ciegas. */
+  | { ok: true; valores: ReturnType<typeof cartelAFormulario>; lugarId: string | null; quien: QuienItem[]; horaLeida: boolean; costoLeido: boolean }
   | { ok: false; mensaje: string }
   | { ok: false; sinCupo: true };
 
@@ -180,7 +183,7 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
     const igual = artistaIgual((data ?? []) as ArtistaResumen[], nombre);
     quien.push(igual ? { id: igual.id, nombre: igual.nombre } : { nombre });
   }
-  return { ok: true, valores, lugarId, quien };
+  return { ok: true, valores, lugarId, quien, horaLeida: /^\d{2}:\d{2}$/.test(lectura.hora ?? ""), costoLeido: lectura.gratis === true || valores.precio !== "" };
 }
 
 export type EstadoAsistencia = "voy" | "me_interesa" | null;

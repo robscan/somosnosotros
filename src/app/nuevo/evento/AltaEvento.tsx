@@ -3,7 +3,7 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import HojaDonde from "@/components/HojaDonde";
 import PorPasos from "@/components/PorPasos";
-import type { ResultadoEvento } from "@/app/eventos/acciones";
+import type { Cupo, ResultadoEvento } from "@/app/eventos/acciones";
 import CamposSitio from "@/app/eventos/CamposSitio";
 import { operacionEvento } from "@/app/eventos/operacionEvento";
 import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
@@ -12,9 +12,12 @@ import type { Ciudad } from "@/lib/ciudad";
 import { zonaSegura } from "@/lib/fechas";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import type { LugarResumen } from "@/lib/lugares";
+import { respuestasDelCartel } from "./cartelPorPasos";
 import { avance, faltaParaPublicar, inicioDe, type Paso } from "./pasos";
-import { PasoCuanto, PasoDia, PasoHora, PasoInicio, PasoMas, PasoNombre } from "./PasosEvento";
+import { PasoInicio, PasoLeyendo } from "./PasoCartel";
+import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
 import Revisa from "./Revisa";
+import { useLeerCartel } from "./useLeerCartel";
 import { usePasosEvento } from "./usePasosEvento";
 
 type Props = {
@@ -29,20 +32,30 @@ type Props = {
   salida: { href: string; texto: string };
   /** La hoja «¿Dónde es?» lo pide para registrar ahí mismo un lugar (la acción nunca redirige). */
   volverA: string;
+  /** Quien publica: la carpeta de Storage donde sube el cartel. */
+  usuarioId: string;
+  /** Si el servidor puede leer carteles; apagado, el primer paso solo ofrece «No tengo cartel». */
+  cartelActivo: boolean;
+  /** Las lecturas de cartel que le quedan este mes al abrir la pantalla; null si no se supo o no aplica. */
+  cupo: Cupo | null;
 };
 
 const FORMULARIO = "publicar-evento";
 const PREGUNTA: Partial<Record<Paso, string>> = { nombre: "¿Cómo se llama?", dia: "¿Qué día es?", hora: "¿A qué hora?", cuanto: "¿Cuánto cuesta?", mas: "¿Quieres agregar algo?" };
 
 /**
- * El alta de evento por pasos, camino «No tengo cartel» (OL-300; prototipo firmado `publicar-por-pasos.html`, bitácora 323): ¿Cómo se
- * llama? → ¿Qué día es? → ¿A qué hora? → ¿Dónde es? (la hoja de siempre, `HojaDonde`) → ¿Cuánto cuesta? → Revisa → Publicar. Las
+ * El alta de evento por pasos (OL-300 y OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Sin cartel («No tengo
+ * cartel»): ¿Cómo se llama? → ¿Qué día es? → ¿A qué hora? → ¿Dónde es? (la hoja de siempre, `HojaDonde`) → ¿Cuánto cuesta? → Revisa →
+ * Publicar. Con cartel («Sube el cartel»): se sube y se lee en «Leyendo» (`useLeerCartel`), lo leído rellena las respuestas y solo se
+ * preguntan los pasos que falten (`cartelPorPasos.ts`); con todo leído se pasa directo a «Revisa». Las
  * respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el alta de siempre,
  * que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve, y el error sale
  * en «Revisa».
  */
-export default function AltaEvento({ accion, lugares, mios, ciudadContexto, salida, volverA }: Props) {
+export default function AltaEvento({ accion, lugares, mios, ciudadContexto, salida, volverA, usuarioId, cartelActivo, cupo }: Props) {
   const { r, paso, direccion, primero, cambiar, contestar, seguir, abrir, atras } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
+  // Con cartel: se sube y se lee en «Leyendo»; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»).
+  const cartel = useLeerCartel({ usuarioId, cupo, alLeer: (leido) => contestar(respuestasDelCartel(leido, r.quien)) });
   // Un lugar que se registra en la hoja «¿Dónde es?» aún no está en la lista que trajo el servidor: se agrega aquí.
   const [listaLugares, setListaLugares] = useState(lugares);
   const ubicacion = useEstoyAqui();
@@ -70,12 +83,12 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
   return (
     <PorPasos
       titulo={paso === "revisa" ? "Revisa" : "Publicar"}
-      paso={paso}
-      direccion={direccion}
+      paso={cartel.leyendo ? "leyendo" : paso}
+      direccion={cartel.leyendo ? null : direccion}
       avance={avance(paso)}
       salida={salida}
       onAtras={primero ? undefined : atrasDelPaso}
-      pregunta={PREGUNTA[paso]}
+      pregunta={cartel.leyendo ? undefined : PREGUNTA[paso]}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <input type="hidden" name="titulo" value={r.nombre} />
@@ -88,11 +101,12 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           <input type="hidden" name="quien" value={JSON.stringify(r.quien)} />
           <input type="hidden" name="descripcion" value={r.descripcion} />
           <input type="hidden" name="enlace" value={r.enlace} />
-          <input type="hidden" name="imagen" value="" />
+          <input type="hidden" name="imagen" value={cartel.subido?.url ?? ""} />
         </form>
       }
     >
-      {paso === "inicio" && <PasoInicio onSinCartel={seguir} />}
+      {cartel.leyendo && <PasoLeyendo foto={cartel.miniatura} />}
+      {!cartel.leyendo && paso === "inicio" && <PasoInicio cartelActivo={cartelActivo} cartel={cartel.cartel} pidiendo={cartel.pidiendo} onElegir={cartel.elegir} onPedir={cartel.pedirMas} onSinCartel={seguir} />}
       {paso === "nombre" && <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />}
       {paso === "dia" && <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />}
       {paso === "hora" && <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} />}
@@ -127,6 +141,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           zona={zona}
           lugar={lugar}
           mios={mios}
+          cartel={cartel.subido}
           errores={errores}
           general={resultado && !resultado.ok ? resultado.general : undefined}
           enviando={enviando}

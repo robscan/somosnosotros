@@ -4,36 +4,7 @@
    1. «Sube el cartel» · 2. Chips de una pregunta · 3. Opciones · 4. «Revisa»
    ========================================================================== */
 
-/* 1. El recuadro del cartel (tercera vuelta: chico, no media pantalla): punteado en el color de acción, la cámara en un círculo, el
-   título y lo que se lee; todo él es el enlace. */
-.subir {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: var(--espacio-2);
-  min-height: var(--alto-subir-cartel);
-  padding: var(--espacio-5);
-  border: 2px dashed var(--primario);
-  border-radius: var(--radio-grande);
-  background: var(--primario-suave);
-  color: var(--primario);
-  font-size: var(--letra-lg);
-  text-align: center;
-  text-decoration: none;
-}
-.subir > span {
-  display: grid;
-  place-items: center;
-  width: var(--boton-icono-grande);
-  height: var(--boton-icono-grande);
-  border-radius: 50%;
-  background: var(--primario);
-  color: var(--primario-texto);
-}
-.subir > small {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
+/* 1. El recuadro «Sube el cartel» y lo del cartel leído viven en `PasoCartel.module.css` (OL-302). */
 
 /* 2. Los chips de una pregunta (día, hora de inicio, hora de fin): pasan al renglón de abajo y, como son la respuesta y no un filtro,
    miden un toque a la vista y llevan la letra del texto (prototipo). Se agrandan desde su token, así su área de toque sigue exacta.

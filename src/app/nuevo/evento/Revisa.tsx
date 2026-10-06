@@ -12,6 +12,8 @@ import { COOPERACION_SOLIDARIA, type ErroresEvento } from "@/lib/eventos";
 import { formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { dondeResuelto, inicioDe, type Paso, type Respuestas } from "./pasos";
+import { CabezaCartel } from "./PasoCartel";
+import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
 
 type Props = {
@@ -20,6 +22,8 @@ type Props = {
   /** El lugar registrado elegido, si es en uno. */
   lugar: LugarResumen | undefined;
   mios: ArtistaResumen[];
+  /** El cartel que se subió, si se subió uno: va arriba, con «Leído del cartel» si de él salieron datos. */
+  cartel?: CartelSubido | null;
   errores: ErroresEvento;
   /** El error que no es de un dato («No se pudo publicar el evento completo»), encima del botón como en el alta de siempre. */
   general?: string;
@@ -35,18 +39,28 @@ type Props = {
  * «Revisa» (prototipo firmado, bitácora 323): el nombre como título y cada dato en su renglón sin etiqueta a la vista (OL-297: el icono y
  * el valor dicen qué es; la clave queda para el lector de pantalla). Tocar un renglón abre solo su pregunta y, al contestarla, se vuelve
  * aquí. Lo que falta lo dice el propio valor, con la línea de «por completar». Lo opcional es un enlace quieto que no compite con
- * «Publicar». Los errores del servidor salen junto a su dato, como en el alta de siempre.
+ * «Publicar». Los errores del servidor salen junto a su dato, como en el alta de siempre. Con cartel, la cabeza lleva su miniatura y el
+ * sello «Leído del cartel» (OL-302); los datos leídos y los contestados se ven iguales.
  */
-export default function Revisa({ r, zona, lugar, mios, errores, general, enviando, falta, formulario, onAbrir }: Props) {
+export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, enviando, falta, formulario, onAbrir }: Props) {
   const inicio = localAIso(inicioDe(r), zona);
   const cuando = inicio && r.fin !== null ? formatearCuando(inicio, r.fin ? localAIso(r.fin, zona) : null, new Date(), zona) : null;
   const cuanto = r.costo === "gratis" ? "Gratis" : r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" && r.precio ? `$${r.precio}` : null;
   const extras = errores.descripcion ?? errores.enlace ?? errores.imagen;
+  const titulo = (
+    <h2 className={styles.titulo} tabIndex={-1}>
+      {r.nombre}
+    </h2>
+  );
   return (
     <>
-      <h2 className={styles.titulo} tabIndex={-1}>
-        {r.nombre}
-      </h2>
+      {cartel ? (
+        <CabezaCartel foto={cartel.url} leido={cartel.leido}>
+          {titulo}
+        </CabezaCartel>
+      ) : (
+        titulo
+      )}
       {errores.titulo && (
         <p className={canon.error} role="alert">
           {errores.titulo}
