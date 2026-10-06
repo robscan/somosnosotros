@@ -6,14 +6,16 @@ import styles from "./Opcion.module.css";
  * La opción grande de una pregunta de un solo toque («¿Cuánto cuesta?» del alta por pasos; prototipo firmado de la bitácora 323):
  * icono, la respuesta con su detalle debajo y el chevron que dice que tocarla sigue adelante. Elegir es tocarla: no hay botón aparte.
  * Mientras una opción hace su trabajo (`ocupada`, que la respuesta dice «Guardando…»), todas se apagan con `disabled` y la ocupada no se atenúa.
+ * Sin `icono` y sin `detalle` es la otra puerta de una pantalla («No tengo cartel ›», bitácora 334): el texto a la izquierda y el chevron a la
+ * derecha. `className` es para quien la coloca (el aire que pide encima, `--aire-antes` de `PorPasos`).
  */
-export default function Opcion({ icono, titulo, detalle, onClick, disabled, ocupada }: { icono: ReactNode; titulo: string; detalle: string; onClick: () => void; disabled?: boolean; ocupada?: boolean }) {
+export default function Opcion({ icono, titulo, detalle, onClick, disabled, ocupada, className }: { icono?: ReactNode; titulo: string; detalle?: string; onClick: () => void; disabled?: boolean; ocupada?: boolean; className?: string }) {
   return (
-    <button type="button" className={styles.opcion} onClick={onClick} disabled={disabled} aria-busy={ocupada || undefined}>
+    <button type="button" className={[styles.opcion, icono ? "" : styles.sinIcono, className].filter(Boolean).join(" ")} onClick={onClick} disabled={disabled} aria-busy={ocupada || undefined}>
       {icono}
       <b>{titulo}</b>
-      <small>{detalle}</small>
-      <IconoChevronDerecha width={18} height={18} />
+      {detalle && <small>{detalle}</small>}
+      <IconoChevronDerecha width={18} height={18} className={styles.flecha} />
     </button>
   );
 }

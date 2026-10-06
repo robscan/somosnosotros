@@ -1,9 +1,9 @@
 "use client";
 
 import { claseBoton } from "@/components/ui/Boton";
-import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
+import { IconoCamara } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
-import { AVISAR_DESDE, cuandoSeRenueva, type EstadoCartel } from "./estadoCartel";
+import { AVISAR_DESDE, cuandoSeRenueva, lecturaAgotada, lecturasQueQuedan, type EstadoCartel } from "./estadoCartel";
 import type { Cupo } from "./acciones";
 
 /** Lo que dice el chip de la tarjeta sobre lo que hace ella misma (ui/Boton en una etiqueta: el control es el recuadro entero). */
@@ -18,28 +18,24 @@ const CHIP = `${claseBoton({ variante: "secundario", forma: "pildora", alto: "co
  * el del nombre (bitácora 093). Por eso tampoco va nada interactivo dentro: los chips lo dicen, pero quien
  * recibe el toque es la tarjeta.
  *
- * Sin cupo deja de ser la cámara y pasa a ser un botón con una sola salida, pedir más; ya pedida, no hace
- * nada, para que no se pueda pedir cuarenta veces. El formulario sigue debajo: llenar a mano nunca se bloquea.
+ * Sin cupo deja de ser la cámara y no hace nada: dice cuándo vuelven las lecturas (OL-307: ya no se piden más). El formulario sigue
+ * debajo: llenar a mano nunca se bloquea.
  *
  * El titular y el detalle van juntos en una región viva: si solo lo estuviera el detalle, un lector de
  * pantalla nunca oiría "Leí el cartel" ni "No pude…" (revisión de la bitácora 095).
  */
-export default function TarjetaCartel({ cartel, cupo, ocupado, pidiendo, errorCupo = false, onReintentarCupo, onElegir, onPedir }: { cartel: EstadoCartel; cupo: Cupo | null; ocupado: boolean; pidiendo: boolean; errorCupo?: boolean; onReintentarCupo?: () => void; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void; onPedir: () => void }) {
+export default function TarjetaCartel({ cartel, cupo, ocupado, errorCupo = false, onReintentarCupo, onElegir }: { cartel: EstadoCartel; cupo: Cupo | null; ocupado: boolean; errorCupo?: boolean; onReintentarCupo?: () => void; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   const estado = cartel?.estado;
-  const agotado = cupo ? !cupo.sinTope && cupo.usadas >= cupo.tope : estado === "sin_cupo" || estado === "pedida";
-  const pedida = agotado && (cupo ? cupo.pedida : estado === "pedida");
-  const sinCupo = agotado && !pedida;
-  const quedan = cupo && !cupo.sinTope ? Math.max(0, cupo.tope - cupo.usadas) : null;
+  const agotado = cupo ? lecturaAgotada(cupo) : estado === "sin_cupo";
+  const quedan = lecturasQueQuedan(cupo);
   const avisoCupo = quedan !== null && quedan > 0 && quedan <= AVISAR_DESDE ? `Te ${quedan === 1 ? "queda" : "quedan"} ${quedan} ${quedan === 1 ? "lectura" : "lecturas"} este mes.` : null;
 
-  const titular = sinCupo ? "Se acabaron tus lecturas del mes" : pedida ? "Ya pedimos más para ti" : estado === "leyendo" ? "Leyendo el cartel…" : estado === "leido" ? "Leí el cartel" : estado === "fallo" ? (cartel?.titulo ?? "No pude leer el cartel") : "Sube el cartel";
-  const detalle = sinCupo
+  const titular = agotado ? "Se acabaron tus lecturas del mes" : estado === "leyendo" ? "Leyendo el cartel…" : estado === "leido" ? "Leí el cartel" : estado === "fallo" ? (cartel?.titulo ?? "No pude leer el cartel") : "Sube el cartel";
+  const detalle = agotado
     ? (estado === "sin_cupo" && cartel?.mensaje ? cartel.mensaje : `Se renuevan ${cuandoSeRenueva()}.`)
-    : pedida
-      ? "Te escribimos en cuanto lo revisemos."
-      : estado === "leyendo"
-        ? "Tarda unos segundos. No cierres la pantalla."
-        : ((estado !== "sin_cupo" && estado !== "pedida" ? cartel?.mensaje : null) ?? avisoCupo ?? "Leemos el nombre, la fecha, el lugar y el precio.");
+    : estado === "leyendo"
+      ? "Tarda unos segundos. No cierres la pantalla."
+      : ((estado !== "sin_cupo" ? cartel?.mensaje : null) ?? avisoCupo ?? "Leemos el nombre, la fecha, el lugar y el precio.");
 
   const dentro = (
     <>
@@ -47,7 +43,7 @@ export default function TarjetaCartel({ cartel, cupo, ocupado, pidiendo, errorCu
         // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
         <img src={cartel.foto} alt="" className={canon.miniaturaCartel} />
       ) : (
-        <span className={canon.marcoCartel}>{pedida ? <IconoOk width={24} height={24} /> : <IconoCamara width={24} height={24} />}</span>
+        <span className={canon.marcoCartel}><IconoCamara width={24} height={24} /></span>
       )}
       <span className={canon.textoCartel} role="status">
         <b>{errorCupo ? "No pude confirmar tus lecturas" : titular}</b>
@@ -59,21 +55,14 @@ export default function TarjetaCartel({ cartel, cupo, ocupado, pidiendo, errorCu
             <span />
           </span>
         )}
-        {errorCupo ? <span className={CHIP}>Reintentar</span> : sinCupo ? <span className={CHIP}>{pidiendo ? "Pidiendo…" : "Pedir más"}</span> : !pedida && estado === "fallo" && <span className={CHIP}>Probar con otra foto</span>}
+        {errorCupo ? <span className={CHIP}>Reintentar</span> : !agotado && estado === "fallo" && <span className={CHIP}>Probar con otra foto</span>}
       </span>
     </>
   );
 
-  // Sin cupo la tarjeta ya no abre la cámara: es un botón. Ya pedida no hace nada.
+  // Sin cupo la tarjeta ya no abre la cámara ni hace nada: dice cuándo vuelven las lecturas.
   if (errorCupo) return <button type="button" aria-label="Reintentar consulta de lecturas" className={`${canon.cartel} ${canon.cartelSinCupo} ${canon.cartelFallo}`} onClick={onReintentarCupo} disabled={ocupado}>{dentro}</button>;
-  if (sinCupo) {
-    return (
-      <button type="button" aria-label="Pedir más lecturas" className={`${canon.cartel} ${canon.cartelSinCupo}`} onClick={onPedir} disabled={pidiendo || ocupado}>
-        {dentro}
-      </button>
-    );
-  }
-  if (pedida) return <div className={`${canon.cartel} ${canon.cartelPedida}`}>{dentro}</div>;
+  if (agotado) return <div className={`${canon.cartel} ${canon.cartelSinCupo} ${canon.cartelQuieto}`}>{dentro}</div>;
 
   const nombre = estado === "fallo" ? "Probar con otra foto" : estado === "leido" ? "Cambiar el cartel" : "Sube el cartel";
   return (

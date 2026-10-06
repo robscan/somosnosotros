@@ -1,10 +1,11 @@
 import type { FalloAlSubir } from "@/lib/subirFoto";
+import type { Cupo } from "./acciones";
 
 /**
  * En qué va la tarjeta del cartel (docs/rediseno/22). Sin esto, está en reposo pidiendo el primero.
  * Las transiciones viven aquí, sueltas del componente, para poder probarlas.
  */
-export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo" | "sin_cupo" | "pedida"; titulo?: string; mensaje?: string; foto?: string } | null;
+export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo" | "sin_cupo"; titulo?: string; mensaje?: string; foto?: string } | null;
 
 /**
  * La foto nueva no llegó a subirse.
@@ -55,8 +56,37 @@ export function mesDelCupo(ahora: Date = new Date()): string {
 /** Cuántas quedan; solo se dice cuando ya son pocas, porque quien tiene 17 no necesita saberlo. */
 export const AVISAR_DESDE = 3;
 
-/** El estado con el que llega la tarjeta: sin cupo pesa más que el reposo, y la petición ya hecha más todavía. */
-export function alLlegar(cupo: { usadas: number; tope: number; sinTope: boolean; pedida: boolean } | null): EstadoCartel {
-  if (!cupo || cupo.sinTope || cupo.usadas < cupo.tope) return null;
-  return cupo.pedida ? { estado: "pedida" } : { estado: "sin_cupo" };
+/** El estado con el que llega la tarjeta: sin cupo pesa más que el reposo. */
+export function alLlegar(cupo: Cupo | null): EstadoCartel {
+  return lecturaAgotada(cupo) ? { estado: "sin_cupo" } : null;
+}
+
+/** ¿Se acabaron las lecturas del mes? Sin saber el cupo (null) no se asume nada: lo decide el servidor al leer. */
+export function lecturaAgotada(cupo: Cupo | null): boolean {
+  return !!cupo && !cupo.sinTope && cupo.usadas >= cupo.tope;
+}
+
+/** Cuántas lecturas quedan este mes; null si no se sabe o si no hay tope. */
+export function lecturasQueQuedan(cupo: Cupo | null): number | null {
+  return cupo && !cupo.sinTope ? Math.max(0, cupo.tope - cupo.usadas) : null;
+}
+
+/**
+ * Lo que dice debajo de «Lectura automática» (la casilla del primer paso del alta por pasos y el renglón del perfil; OL-307, bitácora 335):
+ * cuántas quedan, cuándo vuelven si no queda ninguna, «Sin límite» para quien no tiene tope; null si no se sabe el cupo. Nunca la palabra «gratis».
+ */
+export function detalleDeLecturas(cupo: Cupo | null, ahora: Date = new Date()): string | null {
+  if (!cupo) return null;
+  if (cupo.sinTope) return "Sin límite";
+  const quedan = lecturasQueQuedan(cupo) ?? 0;
+  if (quedan === 0) return `Se renueva ${cuandoSeRenueva(ahora)}`;
+  return `${quedan === 1 ? "Queda" : "Quedan"} ${quedan} este mes`;
+}
+
+/**
+ * ¿Se lee este cartel? Solo con servicio de lectura, con la casilla marcada y con lecturas que quedan. El cartel se sube siempre; leerlo es
+ * lo que esto decide. Sin saber el cupo se intenta: si ya no hay, el servidor lo dice y el cartel queda guardado sin leer.
+ */
+export function seLee({ servicio, marcada, cupo }: { servicio: boolean; marcada: boolean; cupo: Cupo | null }): boolean {
+  return servicio && marcada && !lecturaAgotada(cupo);
 }

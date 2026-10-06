@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alLlegar, cuandoSeRenueva, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo } from "./estadoCartel";
+import { alLlegar, cuandoSeRenueva, detalleDeLecturas, falloAlLeer, falloAlSubir, falloDeCorte, lecturaAgotada, lecturasQueQuedan, leido, mesDelCupo, seLee } from "./estadoCartel";
 
 /**
  * Los estados de la tarjeta del cartel. Las tres primeras pruebas salen de la revisión de la bitácora 095:
@@ -48,18 +48,17 @@ describe("estado del cartel", () => {
 
 /** El cupo de lecturas del mes (docs/rediseno/23): con cuánto llega la tarjeta y cuándo vuelve a haber. */
 describe("cupo de lecturas", () => {
-  const cupo = (cambios = {}) => ({ usadas: 0, tope: 20, sinTope: false, pedida: false, ...cambios });
+  const cupo = (cambios = {}) => ({ usadas: 0, tope: 6, sinTope: false, ...cambios });
 
   it("con cupo, la tarjeta llega en reposo", () => {
     expect(alLlegar(cupo())).toBeNull();
-    expect(alLlegar(cupo({ usadas: 19 }))).toBeNull();
+    expect(alLlegar(cupo({ usadas: 5 }))).toBeNull();
     expect(alLlegar(null)).toBeNull();
   });
 
-  it("sin cupo pasa a su única salida, y si ya pidió no la vuelve a ofrecer", () => {
-    expect(alLlegar(cupo({ usadas: 20 }))).toEqual({ estado: "sin_cupo" });
-    expect(alLlegar(cupo({ usadas: 25 }))).toEqual({ estado: "sin_cupo" });
-    expect(alLlegar(cupo({ usadas: 20, pedida: true }))).toEqual({ estado: "pedida" });
+  it("sin cupo llega apagada y sin salida: ya no se piden más lecturas", () => {
+    expect(alLlegar(cupo({ usadas: 6 }))).toEqual({ estado: "sin_cupo" });
+    expect(alLlegar(cupo({ usadas: 9 }))).toEqual({ estado: "sin_cupo" });
   });
 
   it("la administración no se topa aunque haya leído de más", () => {
@@ -85,5 +84,52 @@ describe("cupo de lecturas", () => {
       if (previa === undefined) delete process.env.TZ;
       else process.env.TZ = previa;
     }
+  });
+});
+
+/** La lectura automática del alta por pasos y del perfil (OL-307, bitácora 335): seis al mes por cuenta, qué dice el contador y cuándo se lee. */
+describe("lectura automática", () => {
+  const cupo = (cambios = {}) => ({ usadas: 0, tope: 6, sinTope: false, ...cambios });
+
+  it("cuenta las que quedan de las seis, nunca menos de cero, y la administración no tiene cuenta", () => {
+    expect(lecturasQueQuedan(cupo())).toBe(6);
+    expect(lecturasQueQuedan(cupo({ usadas: 2 }))).toBe(4);
+    expect(lecturasQueQuedan(cupo({ usadas: 6 }))).toBe(0);
+    expect(lecturasQueQuedan(cupo({ usadas: 9 }))).toBe(0);
+    expect(lecturasQueQuedan(cupo({ usadas: 70, sinTope: true }))).toBeNull();
+    expect(lecturasQueQuedan(null)).toBeNull();
+  });
+
+  it("se agota con la sexta; sin saber el cupo no se asume que se agotó", () => {
+    expect(lecturaAgotada(cupo({ usadas: 5 }))).toBe(false);
+    expect(lecturaAgotada(cupo({ usadas: 6 }))).toBe(true);
+    expect(lecturaAgotada(cupo({ usadas: 70, sinTope: true }))).toBe(false);
+    expect(lecturaAgotada(null)).toBe(false);
+  });
+
+  it("dice «Quedan N este mes», «Queda 1», cuándo se renueva con ninguna y «Sin límite» sin tope; sin cupo, nada", () => {
+    const ahora = new Date("2026-10-06T18:00:00Z");
+    expect(detalleDeLecturas(cupo({ usadas: 2 }), ahora)).toBe("Quedan 4 este mes");
+    expect(detalleDeLecturas(cupo(), ahora)).toBe("Quedan 6 este mes");
+    expect(detalleDeLecturas(cupo({ usadas: 5 }), ahora)).toBe("Queda 1 este mes");
+    expect(detalleDeLecturas(cupo({ usadas: 6 }), ahora)).toBe("Se renueva el 1 de noviembre");
+    expect(detalleDeLecturas(cupo({ usadas: 70, sinTope: true }), ahora)).toBe("Sin límite");
+    expect(detalleDeLecturas(null, ahora)).toBeNull();
+    for (const q of [0, 1, 2, 5, 6]) expect(detalleDeLecturas(cupo({ usadas: 6 - q }), ahora)).not.toMatch(/gratis/i);
+  });
+
+  it("se lee solo con servicio, con la casilla marcada y con lecturas que quedan", () => {
+    const base = { servicio: true, marcada: true, cupo: cupo({ usadas: 2 }) };
+    expect(seLee(base)).toBe(true);
+    expect(seLee({ ...base, marcada: false })).toBe(false);
+    expect(seLee({ ...base, servicio: false })).toBe(false);
+    expect(seLee({ ...base, cupo: cupo({ usadas: 6 }) })).toBe(false);
+    expect(seLee({ ...base, cupo: cupo({ usadas: 5 }) })).toBe(true);
+  });
+
+  it("la administración lee siempre que marque la casilla, y sin saber el cupo se intenta: el servidor decide", () => {
+    expect(seLee({ servicio: true, marcada: true, cupo: cupo({ usadas: 70, sinTope: true }) })).toBe(true);
+    expect(seLee({ servicio: true, marcada: true, cupo: null })).toBe(true);
+    expect(seLee({ servicio: true, marcada: false, cupo: null })).toBe(false);
   });
 });

@@ -24,5 +24,5 @@ export function usePasosEvento(quienInicial: QuienItem[]) {
     }),
     [],
   );
-  return { r: estado.r, candidato: estado.candidato, paso: pasoActual(estado), direccion: estado.direccion, primero: estado.pila.length === 1, ...gestos };
+  return { r: estado.r, candidato: estado.candidato, paso: pasoActual(estado), direccion: estado.direccion, primero: estado.pila.length === 1, primeraPregunta: estado.pila.length === 2, ...gestos };
 }

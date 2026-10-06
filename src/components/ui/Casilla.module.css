@@ -1,0 +1,74 @@
+/* La casilla (ui/Casilla; bitácora 334): una rejilla con áreas, cuadro | nombre / detalle. Es un `<button role="checkbox">`: lleva el
+   reinicio del canon (sin borde ni fondo nativos) antes de dibujar el suyo. El cuadro es su `::before` (sin nodo de más) y la palomita,
+   si está marcada, el único `svg` hijo, en la misma área encima. Marcada, se tiñe del color de acción; apagada, se atenúa. */
+.casilla {
+  appearance: none;
+  display: grid;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr);
+  grid-template-areas:
+    "cuadro titulo"
+    "cuadro detalle";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.casilla::before {
+  content: "";
+  grid-area: cuadro;
+  box-sizing: border-box;
+  width: var(--columna-icono);
+  height: var(--columna-icono);
+  border: 2px solid var(--texto-suave);
+  border-radius: var(--radio-chico);
+}
+.casilla > svg {
+  grid-area: cuadro;
+  justify-self: center;
+  color: var(--primario-texto);
+}
+.casilla > b {
+  grid-area: titulo;
+  min-width: 0;
+  font-size: var(--letra-md);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.casilla > small {
+  grid-area: detalle;
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.3;
+}
+.casilla[aria-checked="true"] {
+  border-color: var(--primario);
+  background: var(--primario-suave);
+}
+.casilla[aria-checked="true"]::before {
+  border-color: var(--primario);
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.casilla:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+/* Última fila de un marco con borde propio: solo la raya punteada de arriba, y el fondo blanco aunque esté marcada. */
+.enMarco {
+  border: 0;
+  border-top: 1px dashed var(--primario);
+  border-radius: 0;
+}
+.enMarco[aria-checked="true"] {
+  background: var(--fondo);
+}

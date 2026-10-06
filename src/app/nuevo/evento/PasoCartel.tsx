@@ -1,79 +1,69 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Boton, { claseBoton } from "@/components/ui/Boton";
+import Casilla from "@/components/ui/Casilla";
 import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
-import { cuandoSeRenueva, type EstadoCartel } from "@/app/eventos/estadoCartel";
+import Opcion from "@/components/ui/Opcion";
 import styles from "./PasoCartel.module.css";
 
 /**
- * El camino con cartel del alta de evento por pasos (OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323): el primer
- * paso, «Leyendo» y la cabeza de «Revisa» con el cartel leído. Lo que sube y lee es `useLeerCartel`; aquí solo se pinta.
+ * El camino con cartel del alta de evento por pasos (OL-302 y OL-307; prototipos firmados `publicar-por-pasos.html`, bitácora 323, y
+ * `cartel-sin-lectura.html`, bitácora 334): el primer paso, la espera mientras se sube y se lee, la fila del cartel ya guardado sobre la
+ * primera pregunta y la cabeza de «Revisa» con el cartel. Lo que sube y lee es `useLeerCartel`; aquí solo se pinta.
  */
 
-/** Lo que dice el chip de un recuadro que es un botón: ui/Boton en una etiqueta, porque el control es el recuadro entero. */
-const CHIP = claseBoton({ variante: "secundario", forma: "pildora", alto: "control", ancho: "contenido" });
-
-/**
- * El recuadro del cartel: todo él es el control, y el campo de archivo, escondido, lo cubre (en el iPhone ofrece cámara o carrete). Sin
- * lecturas se vuelve un botón con una sola salida, pedir más; ya pedida, no hace nada; si algo falló, lo dice con su causa y se puede
- * probar con otra foto (los textos son los de la tarjeta del formulario de siempre, `TarjetaCartel`).
- */
-function Recuadro({ cartel, pidiendo, onElegir, onPedir }: { cartel: EstadoCartel; pidiendo: boolean; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void; onPedir: () => void }) {
-  const estado = cartel?.estado;
-  const agotado = estado === "sin_cupo";
-  const pedida = estado === "pedida";
-  const fallo = estado === "fallo";
-  const titular = agotado ? "Se acabaron tus lecturas del mes" : pedida ? "Ya pedimos más para ti" : fallo ? (cartel?.titulo ?? "No pude leer el cartel") : "Sube el cartel";
-  const detalle = agotado ? (cartel?.mensaje ?? `Se renuevan ${cuandoSeRenueva()}.`) : pedida ? "Te escribimos en cuanto lo revisemos." : fallo ? cartel?.mensaje : "Leemos el nombre, la fecha, el lugar y el precio";
-  // Todo el recuadro es una región viva: si algo cambia (no se pudo leer, se acabaron las lecturas), el lector de pantalla lo dice.
-  const dentro: ReactNode = (
-    <>
-      {pedida ? <IconoOk /> : <IconoCamara />}
-      <b>{titular}</b>
-      {detalle && <small>{detalle}</small>}
-      {agotado && <span className={CHIP}>{pidiendo ? "Pidiendo…" : "Pedir más lecturas"}</span>}
-      {fallo && <span className={CHIP}>Probar con otra foto</span>}
-    </>
-  );
-  if (agotado) {
-    return (
-      <button type="button" className={`${styles.subir} ${styles.apagado}`} onClick={onPedir} disabled={pidiendo} aria-label="Pedir más lecturas" aria-live="polite">
-        {dentro}
-      </button>
-    );
-  }
-  if (pedida) return <div className={`${styles.subir} ${styles.apagado} ${styles.quieto}`} aria-live="polite">{dentro}</div>;
-  return (
-    <label className={`${styles.subir} ${fallo ? styles.fallo : ""}`} aria-live="polite">
-      {dentro}
-      <input type="file" accept="image/*" onChange={onElegir} aria-label={fallo ? "Probar con otra foto" : "Sube el cartel"} />
-    </label>
-  );
-}
+/** Lo que dice la casilla «Lectura automática»: marcada, apagada (se acabaron las del mes) y qué la acompaña debajo. Sin servicio de lectura no hay casilla. */
+export type CasillaLectura = { marcada: boolean; agotada: boolean; detalle: string | null; onCambio: (marcada: boolean) => void };
 
 /**
- * Empieza con lo que se tiene: el recuadro del cartel y, del mismo ancho, «No tengo cartel». Sin lectura de cartel en el servidor
- * (`cartelActivo` apagado) no se ofrece el recuadro: solo queda seguir a mano.
+ * Empieza con lo que se tiene (igual en todos los casos: el cartel se sube siempre): un marco con el recuadro «Sube el cartel» —todo él es
+ * el control, y el campo de archivo, escondido, lo cubre (en el iPhone ofrece cámara o carrete)— y, como su última fila, la casilla
+ * «Lectura automática» si hay servicio de lectura; fuera del marco, con más aire, «No tengo cartel». Si el cartel no se pudo subir, lo dice
+ * debajo del marco (`error`) y el recuadro sigue igual para volver a intentarlo.
  */
-export function PasoInicio({ cartelActivo, cartel, pidiendo, onElegir, onPedir, onSinCartel }: { cartelActivo: boolean; cartel: EstadoCartel; pidiendo: boolean; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void; onPedir: () => void; onSinCartel: () => void }) {
+export function PasoInicio({ casilla, error, onElegir, onSinCartel }: { casilla: CasillaLectura | null; error: string | null; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void; onSinCartel: () => void }) {
   return (
     <>
-      {cartelActivo && <Recuadro cartel={cartel} pidiendo={pidiendo} onElegir={onElegir} onPedir={onPedir} />}
-      <Boton type="button" variante="secundario" onClick={onSinCartel}>
-        No tengo cartel
-      </Boton>
+      <div className={styles.marco}>
+        <label className={styles.subir}>
+          <IconoCamara />
+          <b>Sube el cartel</b>
+          <small>Será la portada del evento</small>
+          <input type="file" accept="image/*" onChange={onElegir} aria-label="Sube el cartel" />
+        </label>
+        {casilla && <Casilla enMarco titulo="Lectura automática" detalle={casilla.detalle} marcada={casilla.marcada && !casilla.agotada} disabled={casilla.agotada} onCambio={casilla.onCambio} />}
+      </div>
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      <Opcion titulo="No tengo cartel" onClick={onSinCartel} className={styles.otraPuerta} />
     </>
   );
 }
 
-/** «Leyendo»: el cartel elegido, chico y al centro, y qué pasa. Sin pie: dura lo que tarde la lectura. */
-export function PasoLeyendo({ foto }: { foto: string | null }) {
+/** La espera: el cartel elegido, chico y al centro, y qué pasa («Leyendo el cartel…» si se lee; «Subiendo el cartel…» si solo se guarda). Sin pie. */
+export function PasoEspera({ foto, leyendo }: { foto: string | null; leyendo: boolean }) {
   return (
     <div className={styles.leyendo}>
       {/* eslint-disable-next-line @next/next/no-img-element -- la foto recién elegida, del teléfono */}
       {foto && <img src={foto} alt="" />}
-      <p role="status">Leyendo el cartel…</p>
+      <p role="status">{leyendo ? "Leyendo el cartel…" : "Subiendo el cartel…"}</p>
+    </div>
+  );
+}
+
+/** La fila chica sobre la primera pregunta cuando el cartel quedó guardado sin leer: la miniatura y el sello «Cartel guardado» (con «no pude leerlo» si la lectura falló). */
+export function CartelGuardado({ foto, noPude }: { foto: string; noPude: boolean }) {
+  return (
+    <div className={styles.guardado}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+      <img src={foto} alt="" />
+      <span>
+        <IconoOk width={14} height={14} strokeWidth={2.4} />
+        {noPude ? "Cartel guardado · no pude leerlo" : "Cartel guardado"}
+      </span>
     </div>
   );
 }

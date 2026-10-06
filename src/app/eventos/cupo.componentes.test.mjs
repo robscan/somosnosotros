@@ -35,12 +35,6 @@ const mocks = {
       if(q.lectura === 'fallo') return {ok:false,mensaje:'Llena los datos a mano; la imagen se queda puesta.'};
       return {ok:true, valores:{titulo:'Leido',inicio:'',fin:'',gratis:true,precio:'',descripcion:'',enlace:'',lugar:'',direccion:''},lugarId:null,quien:[]};
     }
-    export async function pedirMasLecturas() {
-      const q = window.qa; q.peticiones++;
-      if(q.peticion === 'throw') throw Error('corte');
-      if(q.peticion === 'fallo') return {ok:false};
-      q.cupo.pedida = true; return {ok:true};
-    }
     export async function zonaDelPunto(){return 'America/Mexico_City'}
   `,
   "@/lib/subirFoto": `export async function subirFoto(){window.qa.subidas++;return window.qa.falloSubida ? {error:'No se pudo subir.',motivo:'subida'} : {url:'/nueva.png'}}`,
@@ -62,10 +56,10 @@ before(async () => {
       import {createRoot} from 'react-dom/client';
       import Form from './src/app/eventos/FormularioEvento';
       import './src/app/globals.css';
-      window.qa = {cupo:{usadas:17,tope:20,sinTope:false,pedida:false},consultas:0,lecturas:0,subidas:0,peticiones:0,lectura:'fallo',peticion:'fallo',pendientes:[],...window.qaInicial};
+      window.qa = {cupo:{usadas:17,tope:20,sinTope:false},consultas:0,lecturas:0,subidas:0,lectura:'fallo',pendientes:[],...window.qaInicial};
       const lugares = [];
       function App(){
-        const [cupo,setCupo] = useState({usadas:17,tope:20,sinTope:false,pedida:false});
+        const [cupo,setCupo] = useState({usadas:17,tope:20,sinTope:false});
         window.qa.props = setCupo;
         return <Form accion={async()=>{throw Error('Guardar no pertenece a este harness')}} lugares={lugares} modo="alta" usuarioId="test" cartelActivo cupo={cupo} evento={{titulo:'Mi evento manual',imagen:'/anterior.png'}}/>;
       }
@@ -165,7 +159,7 @@ test("exito toma el saldo del servidor, no resta uno localmente", { skip: !!base
   await captura(p, "despues-leido");
 });
 
-test("ultima lectura fallida bloquea camara; pedir mas no finge exito", { skip: !!baseline }, async t => {
+test("ultima lectura fallida bloquea camara y ya no ofrece pedir mas lecturas", { skip: !!baseline }, async t => {
   const p = await pantalla(t);
   await p.evaluate(() => { window.qa.despues = 20; });
   await subir(p);
@@ -174,17 +168,11 @@ test("ultima lectura fallida bloquea camara; pedir mas no finge exito", { skip: 
   await sinCamara(p);
   await conserva(p, "/nueva.png");
   await captura(p, "despues-agotado");
-  await p.getByRole("button", { name: /Pedir más/ }).click();
-  await texto(p, "No pude mandar la petición");
-  assert.equal(await p.getByText("Ya pedimos más para ti").count(), 0);
-  await p.evaluate(() => { window.qa.peticion = "throw"; });
-  await p.getByRole("button", { name: /Pedir más/ }).click();
-  await p.waitForFunction(() => window.qa.peticiones === 2);
-  await texto(p, "No pude mandar la petición");
-  await p.evaluate(() => { window.qa.peticion = "ok"; });
-  await p.getByRole("button", { name: /Pedir más/ }).click();
-  await texto(p, "Ya pedimos más para ti");
-  await sinCamara(p);
+  // OL-307: sin «Pedir más lecturas» (ni botón ni aviso de «Ya pedimos más»): la tarjeta solo dice cuándo vuelven.
+  assert.equal(await p.getByRole("button", { name: /Pedir más/ }).count(), 0);
+  assert.equal(await p.getByText(/Pedir más|Ya pedimos más/).count(), 0);
+  assert.equal(await p.getByRole("button", { name: /lecturas/ }).count(), 0);
+  await texto(p, "Se renuevan el 1 de");
 });
 
 test("corte tras consumo reconcilia; fallo de consulta permite reintentar sin inventar saldo", { skip: !!baseline }, async t => {
@@ -204,16 +192,16 @@ test("corte tras consumo reconcilia; fallo de consulta permite reintentar sin in
 
 test("focus y nuevas props cambian cupo sin reiniciar el formulario", { skip: !!baseline }, async t => {
   const p = await pantalla(t, 1280);
-  await focus(p, { cupo: { usadas: 20, tope: 20, sinTope: false, pedida: true } });
-  await texto(p, "Ya pedimos más para ti");
+  await focus(p, { cupo: { usadas: 20, tope: 20, sinTope: false } });
+  await texto(p, "Se acabaron tus lecturas");
   await sinCamara(p);
   await conserva(p);
-  await p.evaluate(() => { window.qa.cupo = { usadas: 17, tope: 20, sinTope: false, pedida: false }; window.qa.props({ ...window.qa.cupo }); });
+  await p.evaluate(() => { window.qa.cupo = { usadas: 17, tope: 20, sinTope: false }; window.qa.props({ ...window.qa.cupo }); });
   await texto(p, "Te quedan 3 lecturas");
   await conserva(p);
   await captura(p, "despues-desktop");
-  await p.evaluate(() => { window.qa.props({ usadas: 20, tope: 20, sinTope: false, pedida: false }); });
-  await texto(p, "Pedir más");
+  await p.evaluate(() => { window.qa.props({ usadas: 20, tope: 20, sinTope: false }); });
+  await texto(p, "Se acabaron tus lecturas");
   await sinCamara(p);
 });
 
@@ -221,13 +209,13 @@ test("respuesta vieja no pisa props nuevas ni una consulta mas reciente", { skip
   const p = await pantalla(t);
   await focus(p, { demorar: true });
   await p.waitForFunction(() => window.qa.pendientes.length === 1);
-  await p.evaluate(() => window.qa.props({ usadas: 20, tope: 20, sinTope: false, pedida: false }));
+  await p.evaluate(() => window.qa.props({ usadas: 20, tope: 20, sinTope: false }));
   await texto(p, "Se acabaron tus lecturas");
   await p.evaluate(() => window.qa.pendientes.shift()());
   await sinCamara(p);
-  await focus(p, { cupo: { usadas: 20, tope: 20, sinTope: false, pedida: true } });
+  await focus(p, { cupo: { usadas: 20, tope: 20, sinTope: false } });
   await p.waitForFunction(() => window.qa.pendientes.length === 1);
-  await focus(p, { demorar: false, cupo: { usadas: 17, tope: 20, sinTope: false, pedida: false } });
+  await focus(p, { demorar: false, cupo: { usadas: 17, tope: 20, sinTope: false } });
   await texto(p, "Te quedan 3 lecturas");
   await p.evaluate(() => window.qa.pendientes.shift()());
   await texto(p, "Te quedan 3 lecturas");
@@ -259,9 +247,9 @@ test("fallo de subida no consume y permite seleccionar el mismo archivo", { skip
 
 test("renovacion en Mexico aun con dispositivo Tokio, sin recargar", { skip: !!baseline }, async t => {
   const p = await pantalla(t, 390, new Date("2026-10-01T05:59:50Z"));
-  await focus(p, { cupo: { usadas: 20, tope: 20, sinTope: false, pedida: true } });
-  await texto(p, "Ya pedimos más para ti");
-  await p.evaluate(() => { window.qa.cupo = { usadas: 0, tope: 20, sinTope: false, pedida: false }; });
+  await focus(p, { cupo: { usadas: 20, tope: 20, sinTope: false } });
+  await texto(p, "Se acabaron tus lecturas");
+  await p.evaluate(() => { window.qa.cupo = { usadas: 0, tope: 20, sinTope: false }; });
   await p.clock.runFor(31_000);
   await p.getByLabel("Sube el cartel").waitFor();
   await conserva(p);
@@ -272,14 +260,14 @@ test("pageshow, visibilidad, cupo nulo y admin sin tope", { skip: !!baseline }, 
   await p.evaluate(() => { window.qa.errorCupo = true; window.dispatchEvent(new Event("pageshow")); });
   await texto(p, "No pude confirmar tus lecturas");
   await sinCamara(p);
-  await p.evaluate(() => { window.qa.errorCupo = false; window.qa.cupo = { usadas: 200, tope: 20, sinTope: true, pedida: true }; document.dispatchEvent(new Event("visibilitychange")); });
+  await p.evaluate(() => { window.qa.errorCupo = false; window.qa.cupo = { usadas: 200, tope: 20, sinTope: true }; document.dispatchEvent(new Event("visibilitychange")); });
   await p.getByLabel("Sube el cartel").waitFor();
-  assert.equal(await p.getByRole("status").filter({ hasText: /Te quedan|Pedir más/ }).count(), 0);
+  assert.equal(await p.getByRole("status").filter({ hasText: /Te quedan|Se acabaron/ }).count(), 0);
   await conserva(p);
 });
 
 test("al montar consulta datos nuevos sin que la prop inicial los reponga", { skip: !!baseline }, async t => {
-  const p = await pantalla(t, 390, undefined, { cupo: { usadas: 20, tope: 20, sinTope: false, pedida: false } });
+  const p = await pantalla(t, 390, undefined, { cupo: { usadas: 20, tope: 20, sinTope: false } });
   await texto(p, "Se acabaron tus lecturas");
   await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await sinCamara(p);
@@ -298,7 +286,7 @@ test("la reconciliacion conserva todos los valores manuales, incluso con error y
   await focus(p, { errorCupo: "throw" });
   await texto(p, "No pude confirmar tus lecturas");
   assert.deepEqual(await valores(), antes);
-  await p.evaluate(() => window.qa.props({ usadas: 20, tope: 20, sinTope: false, pedida: false }));
+  await p.evaluate(() => window.qa.props({ usadas: 20, tope: 20, sinTope: false }));
   await texto(p, "Se acabaron tus lecturas");
   assert.deepEqual(await valores(), antes);
   assert.equal(await p.locator('input[type="file"]:not([aria-label])').isDisabled(), false, "la imagen manual no consume lecturas");

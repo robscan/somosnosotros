@@ -22,11 +22,12 @@
 /* Lo del paso va en la columna de lectura, con el aire de los lados (`--gutter`), y la llena (`width: auto` en una columna flexible: un
    botón que pide «todo el ancho» con `width: 100%` sumaría además el aire y se saldría); la barra y el pie, de borde a borde. Entre una
    pieza y otra el aire es el de la columna (`gap`): el margen de abajo que traen las piezas del canon para un formulario apilado (un
-   campo, la lista de renglones) aquí se sumaría. Lo que se abre encima del paso, un diálogo fijo a la ventana (el texto largo,
+   campo, la lista de renglones) aquí se sumaría. Una pieza que pide más aire encima (la otra puerta de un paso, «No tengo cartel») lo dice
+   con `--aire-antes`, que es todo el margen de arriba que se permite. Lo que se abre encima del paso, un diálogo fijo a la ventana (el texto largo,
    «¿Dónde es?»), no lleva aire ni entra de lado. */
 .pasos > :not(header, footer, [role="dialog"]) {
   width: auto;
-  margin: 0 var(--gutter);
+  margin: var(--aire-antes, 0) var(--gutter) 0;
 }
 
 /* 2. La pregunta: el encabezado del paso, grande y condensado como el título de una ficha. */

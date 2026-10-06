@@ -25,6 +25,8 @@ type Props = {
   salida: { href: string; texto: string };
   /** Atrás del paso; sin él es el primero y la barra lleva la ✕. */
   onAtras?: () => void;
+  /** Lo que va encima de la pregunta (en el alta de evento, la fila chica del cartel ya guardado, solo en la primera pregunta). */
+  encima?: ReactNode;
   /** La única pregunta del paso, su encabezado. */
   pregunta?: string;
   /** Lo que no cambia de un paso a otro (el formulario escondido que publica): no entra de lado ni se vuelve a montar. */
@@ -42,7 +44,7 @@ type Props = {
  * que también avisa con `beforeunload`), que compara los formularios de esta pantalla con cómo se abrió. Lo usa el alta de evento y lo
  * usarán las de lugar y de artista.
  */
-export default function PorPasos({ titulo, paso, direccion, avance, salida, onAtras, pregunta, fijo, children }: Props) {
+export default function PorPasos({ titulo, paso, direccion, avance, salida, onAtras, encima, pregunta, fijo, children }: Props) {
   const pantalla = useRef<HTMLElement>(null);
   const hojaSalir = useSalirSinPublicar(pantalla);
   const anterior = useRef(paso);
@@ -64,6 +66,7 @@ export default function PorPasos({ titulo, paso, direccion, avance, salida, onAt
     <main ref={pantalla} className={styles.pasos} data-direccion={direccion ?? undefined}>
       <Barra titulo={titulo} paso={{ avance, salida: onAtras ? <AtrasDelPaso onAtras={onAtras} /> : <Cerrar href={salida.href} texto={salida.texto} relieve="plano" /> }} />
       <Fragment key={paso}>
+        {encima}
         {pregunta && (
           <h2 className={styles.pregunta} tabIndex={-1}>
             {pregunta}

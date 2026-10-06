@@ -278,7 +278,7 @@ export async function run({ as, check, expectError, query }) {
   const views = await query("select perfil_id from public.cuentas_vistas where perfil_id=any($1::uuid[])", [[OWNER, OTHER]]);
   check(views.rowCount === 1 && views.rows[0].perfil_id === OWNER, "marcar_visto solo escribe la identidad propia");
   check((await as("authenticated", OWNER, () => query("select * from public.mi_cupo_de_cartel()"))).rows[0].tope === 100
-    && (await as("authenticated", OTHER, () => query("select * from public.mi_cupo_de_cartel()"))).rows[0].tope === 20,
+    && (await as("authenticated", OTHER, () => query("select * from public.mi_cupo_de_cartel()"))).rows[0].tope === 6,
   "mi_cupo no devuelve la ampliacion ajena");
   const service = await as("service_role", null, () => query("select public.guardar_indicadores()"));
   check(service.rowCount === 1, "tarea de servicio conserva guardar_indicadores");

@@ -1,16 +1,26 @@
 /* ==========================================================================
-   El camino con cartel del alta de evento por pasos (OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Todo va como
-   hijo directo de la columna de `PorPasos`; aquí solo lo que es del cartel.
-   1. El recuadro «Sube el cartel» · 2. «Leyendo» · 3. La cabeza de «Revisa» con el cartel leído
+   El camino con cartel del alta de evento por pasos (OL-302 y OL-307; prototipos firmados `publicar-por-pasos.html`, bitácora 323, y
+   `cartel-sin-lectura.html`, bitácora 334). Todo va como hijo directo de la columna de `PorPasos`; aquí solo lo que es del cartel.
+   1. El marco con el recuadro «Sube el cartel» y la casilla · 2. La espera · 3. El cartel guardado · 4. La cabeza de «Revisa»
    ========================================================================== */
 
-/* 1. El recuadro (tercera vuelta del prototipo: chico, no media pantalla): punteado en el color de acción, la cámara en su círculo (el
-   propio icono, sin envoltorio), el título y lo que se lee. Es una etiqueta y todo él es el control: el campo de archivo, escondido, lo
-   cubre entero para que el toque caiga en él y el teléfono ofrezca cámara o carrete (la cámara metida en un campo pequeño no lo recibía,
-   bitácora 093). Con el cupo agotado es un botón («Pedir más lecturas»), ya pedida no hace nada; si algo falló, se tiñe de error y se
-   puede probar con otra foto. */
+/* 1. El marco (región común: el recuadro y la casilla de lectura son una sola cosa): punteado en el color de acción sobre su fondo suave. La
+   casilla (ui/Casilla `enMarco`) es su última fila, pegada, con su raya punteada. Los ángulos de los hijos los recorta `overflow`; por eso el aro
+   de foco va hacia adentro (`outline-offset` negativo), donde sí se ve. Sin casilla (sin servicio de lectura) el marco solo lleva el recuadro. */
+.marco {
+  display: grid;
+  border: 2px dashed var(--primario);
+  border-radius: var(--radio-grande);
+  background: var(--primario-suave);
+  overflow: hidden;
+}
+.marco :focus-visible {
+  outline-offset: calc(var(--espacio-1) * -1);
+}
+/* El recuadro: la cámara en su círculo (el propio icono, sin envoltorio), el título y para qué sirve. Es una etiqueta y todo él es el control: el
+   campo de archivo, escondido, lo cubre entero para que el toque caiga en él y el teléfono ofrezca cámara o carrete (la cámara metida en un campo
+   pequeño no lo recibía, bitácora 093). */
 .subir {
-  appearance: none;
   position: relative;
   display: grid;
   justify-items: center;
@@ -18,11 +28,7 @@
   gap: var(--espacio-2);
   min-height: var(--alto-subir-cartel);
   padding: var(--espacio-5);
-  border: 2px dashed var(--primario);
-  border-radius: var(--radio-grande);
-  background: var(--primario-suave);
   color: var(--primario);
-  font: inherit;
   font-size: var(--letra-lg);
   text-align: center;
   cursor: pointer;
@@ -38,7 +44,7 @@
 }
 .subir:focus-within {
   outline: 2px solid var(--primario);
-  outline-offset: 2px;
+  outline-offset: calc(var(--espacio-1) * -1);
 }
 .subir > svg {
   box-sizing: border-box;
@@ -53,33 +59,18 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Sin lecturas: baja de tono y deja de ser la cámara. Ya pedida, además, se queda quieta. */
-.apagado {
-  border-style: solid;
-  border-width: 1px;
-  border-color: var(--borde);
-  background: var(--fondo);
-  color: var(--texto);
-}
-.apagado > svg {
-  background: var(--fondo-miniatura);
-  color: var(--texto-suave);
-}
-.quieto {
-  cursor: default;
-}
-.fallo {
-  border-style: solid;
-  border-color: var(--error);
-  background: var(--error-suave);
-  color: var(--texto);
-}
-.fallo > small {
+/* Si el cartel no se pudo subir: lo dice debajo del marco, en el color de error. */
+.error {
   color: var(--error);
+  font-size: var(--letra-sm);
+}
+/* «No tengo cartel»: la otra puerta, fuera del marco y con más aire encima (`--aire-antes` de `PorPasos`): no es parte del cartel. */
+.otraPuerta {
+  --aire-antes: var(--espacio-4);
 }
 
-/* 2. «Leyendo»: el cartel elegido, chico y al centro, que late mientras se lee (quieto con «reducir movimiento»), y debajo qué pasa. Sin
-   pie: dura lo que tarde la lectura. */
+/* 2. La espera: el cartel elegido, chico y al centro, que late mientras se sube y se lee (quieto con «reducir movimiento»), y debajo qué pasa.
+   Sin pie: dura lo que tarde. */
 .leyendo {
   display: grid;
   justify-items: center;
@@ -107,7 +98,36 @@
   }
 }
 
-/* 3. «Revisa» con cartel: la miniatura a la izquierda y, a su derecha pegados a su base, el sello «Leído del cartel» y el nombre. */
+/* 3. El cartel guardado sin leer, sobre la primera pregunta: una fila chica, la miniatura y el sello gris. Confirma que la imagen llegó
+   sin estorbar; solo se ve en esa pregunta. */
+.guardado {
+  display: grid;
+  grid-template-columns: var(--ancho-cartel-guardado) auto;
+  justify-content: start;
+  column-gap: var(--espacio-3);
+  align-items: center;
+}
+.guardado > img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radio-chico);
+  background: var(--fondo-miniatura);
+  object-fit: cover;
+}
+.guardado > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  min-height: var(--espacio-6);
+  padding: 0 var(--espacio-3);
+  border-radius: var(--radio-pildora);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+}
+
+/* 4. «Revisa» con cartel: la miniatura a la izquierda y, a su derecha pegados a su base, el sello «Leído del cartel» y el nombre. */
 .cabeza {
   display: grid;
   grid-template-columns: var(--ancho-cartel-revisa) minmax(0, 1fr);
