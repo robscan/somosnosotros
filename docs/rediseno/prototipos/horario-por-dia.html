@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horario por día</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-310 (bitácora 338): el horario de un evento de varios días, igual cada día o ajustado día por día.
+   Mismo estilo que publicar-por-pasos.html (tokens de src/app/globals.css). Arriba, la tira del prototipo para elegir el caso. */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #ede6f8; --ok: #1f6f43; --ok-suave: #e4eee8; --error: #b3261e;
+  --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --alto-barra: 56px; --columna: 600px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --piso: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: "wdth" 85; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button, input, select { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h1, h2, h3 { font-variation-settings: "wdth" 75; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: 1.5rem; font-weight: 800; }
+small, .meta { font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.35; }
+svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul { list-style: none; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); }
+.tira label { display: flex; align-items: center; gap: 6px; min-height: var(--toque-min); font-size: var(--letra-xs); }
+.tira input { width: 20px; height: 20px; accent-color: var(--primario); }
+
+/* La app: barra, línea de avance, cuerpo que desplaza por dentro, pie. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; background: var(--fondo); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden; }
+.barra { display: grid; grid-template-columns: auto 1fr auto; column-gap: var(--espacio-3); align-items: center; min-height: var(--alto-barra); padding: 0 var(--espacio-3); border-bottom: 1px solid var(--borde); }
+.barra b { font-size: var(--letra-md); font-weight: 700; text-align: center; }
+.redondo { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.redondo svg { stroke-width: 2; }
+.avance { height: 3px; background: var(--fondo-suave); }
+.avance i { display: block; height: 100%; background: var(--primario); transition: width 0.2s ease-out; }
+.pagina { overflow-y: auto; display: grid; align-content: start; gap: var(--espacio-5); padding: var(--espacio-7) var(--espacio-5) calc(var(--espacio-6) + var(--piso)); }
+.pie { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-top: 1px solid var(--borde); background: var(--fondo); }
+.pie:empty { display: none; }
+.pregunta { font-size: 1.875rem; font-weight: 800; }
+
+/* ui/Boton */
+.btn { display: flex; width: 100%; min-height: var(--toque); align-items: center; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-md); font-weight: 700; }
+.btn.sec { background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); }
+.btn:disabled { background: var(--primario-suave); color: var(--primario-texto); cursor: default; opacity: 0.8; }
+.quieto { display: block; width: 100%; min-height: var(--toque-min); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; text-decoration: underline; }
+
+/* ui/Campo con icono + ui/Limpiar */
+.campo { position: relative; display: grid; }
+.campo > svg { position: absolute; left: 14px; top: 12px; color: var(--texto-suave); pointer-events: none; }
+.campo input { width: 100%; min-height: var(--toque); padding: 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: var(--letra-md); }
+.campo input:focus { border-color: var(--texto); outline: none; }
+.limpiar { position: absolute; right: 0; top: 0; width: var(--toque); height: var(--toque); display: grid; place-items: center; color: var(--texto-suave); }
+.limpiar svg { width: 18px; height: 18px; stroke-width: 2; }
+.campo input:placeholder-shown ~ .limpiar { display: none; }
+
+/* El recuadro del cartel: siempre se puede subir. Lo que cambia es la línea de abajo (si se lee o no) y la salida extra. */
+.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-2); width: 100%; min-height: 200px; padding: var(--espacio-5); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-lg); font-weight: 700; text-align: center; }
+.subir .marco { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+.subir small { color: var(--texto-suave); font-weight: 400; }
+.subir .lecturas { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.subir .lecturas svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.subir .lecturas.ok { color: var(--ok); }
+
+/* Región común (ley de región común): el recuadro y la casilla de lectura comparten un mismo marco punteado y un mismo fondo; la casilla
+   es la última fila de ese marco, pegada al recuadro sin aire (conectividad uniforme: lo que va junto se toca). «No tengo cartel» queda
+   fuera, con aire doble: es la otra puerta, no parte del cartel. */
+.con-cartel-grupo { display: grid; border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); overflow: hidden; }
+.con-cartel-grupo .subir { border: 0; border-radius: 0; background: none; min-height: 176px; }
+.con-cartel-grupo .casilla { border: 0; border-top: 1px dashed var(--primario); border-radius: 0; background: var(--fondo); }
+.con-cartel-grupo .casilla[aria-checked="true"] { background: var(--fondo); }
+/* «No tengo cartel»: la otra puerta, como una opción que avanza (ui/Opcion): texto a la izquierda y el ángulo a la derecha. */
+.otra-puerta { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--espacio-3); width: 100%; min-height: var(--toque); margin-top: var(--espacio-4); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.otra-puerta svg { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+/* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
+.casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+.casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
+/* La casilla del canon: nombre arriba (17 px, negrita) y debajo el contador (14 px), los dos a la izquierda. */
+.casilla .texto { display: grid; min-width: 0; }
+.casilla b { font-weight: 700; font-size: var(--letra-md); }
+.casilla small { font-size: var(--letra-xs); line-height: 1.3; }
+.casilla:disabled { opacity: 0.55; cursor: default; }
+
+/* La miniatura del cartel y «Leyendo». */
+.cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), #4a3a6b; color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
+.leyendo .cartel-mini { width: 168px; font-size: 1rem; padding: var(--espacio-3); }
+@media (prefers-reduced-motion: no-preference) { .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; } @keyframes late { to { transform: scale(1.03); } } }
+
+/* La pregunta con el cartel ya guardado: una fila chica arriba —miniatura y sello— que confirma sin estorbar. */
+.con-cartel { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; }
+.con-cartel .cartel-mini { width: 40px; padding: 4px; font-size: 0.4rem; border-radius: 6px; }
+.sello { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo-suave); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.sello.ok { background: var(--ok-suave); color: var(--ok); }
+.sello svg { width: 14px; height: 14px; stroke-width: 2.4; }
+
+/* Revisar: la cabeza con la miniatura; con lectura, el sello «Leído del cartel». */
+.cabeza-revisar { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--espacio-4); align-items: end; row-gap: var(--espacio-2); }
+.renglon { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.lista { display: grid; gap: var(--espacio-3); }
+
+.notas { padding-top: var(--espacio-2); border-top: 1px dashed var(--borde); font-size: var(--letra-sm); color: var(--texto-suave); }
+.notas summary { min-height: var(--toque-min); display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.notas li { margin: 0 0 var(--espacio-2) var(--espacio-5); list-style: disc; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+
+/* Chips de hora (ui/Chip) y grupos del paso, como en publicar-por-pasos.html. */
+.grupo { display: flex; flex-wrap: wrap; gap: var(--espacio-2); align-items: center; }
+.grupo > span:first-child { flex-basis: 100%; color: var(--texto-suave); font-size: var(--letra-sm); }
+.chip { min-height: var(--toque-min); padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-md); font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
+.resumen { color: var(--texto-suave); font-size: var(--letra-sm); }
+/* La lista de días (ui/Renglon sin clave): icono | día en negrita / horas | Cambiar. El día que difiere del horario común lleva su marca. */
+.dias { display: grid; gap: var(--espacio-3); }
+.renglon .horas { display: block; color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 400; }
+.renglon.pendiente .horas { color: var(--texto); }
+/* La hoja de un día: media pantalla, con sus dos grupos y «Listo». */
+.velo { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.32); }
+.hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: var(--espacio-4); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: 24px 24px 0 0; background: var(--fondo); box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1); }
+.hoja::before { content: ""; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: #d9d9d9; }
+.hoja h2 { font-size: var(--letra-xl); font-weight: 700; }
+.app { position: relative; }
+</style>
+
+</head>
+<body>
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <option value="igual">1 · Tres días, mismo horario (lo normal: exposición, taller)</option>
+    <option value="distinto">2 · Tres días con un día distinto (el sábado empieza antes)</option>
+  </select>
+  <label style="opacity:.8">Desmarca «Mismo horario todos los días» para ver la lista de días y tocar uno.</label>
+</div>
+<div class="app" id="app"></div>
+<script>
+const ic = (n) => ({
+  ok: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  cerrar: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  atras: '<svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  cal: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+})[n];
+const DIAS = [['vie 9 de oct', '2026-10-09'], ['sáb 10 de oct', '2026-10-10'], ['dom 11 de oct', '2026-10-11']];
+const HORAS = ['17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+const et = (h) => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${String(M).padStart(2, '0')} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
+const rango = (d) => d.fin ? `de ${et(d.inicio)} a ${et(d.fin)}` : `desde las ${et(d.inicio)}`;
+let caso = 'igual', e;
+function nuevo() {
+  const comun = { inicio: '20:00', fin: '21:00' };
+  e = { mismo: true, comun, porDia: DIAS.map(() => ({ ...comun })), hoja: null, paso: 'hora' };
+  if (caso === 'distinto') { e.mismo = false; e.porDia[1] = { inicio: '18:00', fin: '21:00' }; }
+}
+nuevo();
+
+function chips(grupo, valor, elegir, conSinFin) {
+  return `<div class="grupo" role="group"><span>${grupo}</span>${HORAS.map((h) => `<button class="chip" aria-pressed="${valor === h}" data-a="${elegir}" data-h="${h}">${et(h)}</button>`).join('')}${conSinFin ? `<button class="chip" aria-pressed="${valor === null}" data-a="${elegir}" data-h="">Sin hora de fin</button>` : ''}</div>`;
+}
+const difiere = (d) => d.inicio !== e.comun.inicio || d.fin !== e.comun.fin;
+
+function pintar() {
+  const resumen = e.mismo
+    ? `Del 9 al 11 de oct · cada día ${rango(e.comun)}`
+    : `Del 9 al 11 de oct · ${e.porDia.filter(difiere).length ? `${e.porDia.filter(difiere).length} día${e.porDia.filter(difiere).length > 1 ? 's' : ''} con otro horario` : 'cada día igual'}`;
+  const lista = e.mismo ? '' : `<div class="dias">${DIAS.map(([n], i) => `<button class="renglon ${difiere(e.porDia[i]) ? 'pendiente' : ''}" data-a="dia" data-i="${i}">${ic('cal')}<span><b>${n}</b><span class="horas">${rango(e.porDia[i])}</span></span><span class="accion">Cambiar</span></button>`).join('')}</div>`;
+  const hoja = e.hoja === null ? '' : `<div class="velo" data-a="cerrar"></div><div class="hoja" role="dialog" aria-label="${DIAS[e.hoja][0]}"><h2>${DIAS[e.hoja][0]}</h2>${chips('Empieza', e.porDia[e.hoja].inicio, 'ini-dia', false)}${chips('Termina', e.porDia[e.hoja].fin, 'fin-dia', true)}<button class="btn" data-a="cerrar">Listo</button></div>`;
+  document.getElementById('app').innerHTML = `
+    <div class="barra"><button class="redondo" data-a="nada" aria-label="Atrás">${ic('atras')}</button><b>Publicar</b><span class="redondo"></span></div>
+    <div class="avance"><i style="width:43%"></i></div>
+    <div class="pagina">
+      <h1 class="pregunta">¿A qué hora, cada día?</h1>
+      ${e.mismo ? chips('Empieza', e.comun.inicio, 'ini', false) + chips('Termina', e.comun.fin, 'fin', true) : ''}
+      <button class="casilla" role="checkbox" aria-checked="${e.mismo}" data-a="mismo"><span class="cuadro">${e.mismo ? ic('ok') : ''}</span><span class="texto"><b>Mismo horario todos los días</b><small>${e.mismo ? 'Del 9 al 11 de oct' : 'Toca un día para cambiar solo ese'}</small></span></button>
+      ${lista}
+      <p class="resumen">${resumen}</p>
+      <details class="notas"><summary>Notas del prototipo</summary><ul>
+        <li>En varios días (OL-309, ya en producción) se pregunta el horario y se aplica a cada día. Esta pieza añade la casilla «Mismo horario todos los días», marcada de entrada: no cuesta nada a quien tiene el caso normal (exposición, taller).</li>
+        <li>Al desmarcarla, los chips comunes se van y aparece un renglón por día (el canon ui/Renglon sin clave: icono, día en negrita, sus horas debajo, «Cambiar»). Todos arrancan con el horario común; el día que cambia queda marcado con la línea punteada del canon para verlo de un vistazo.</li>
+        <li>Tocar un día abre una hoja de media pantalla con «Empieza» y «Termina» solo de ese día y «Listo». La persona puede ir al segundo o al tercero y ajustar ahí; los demás siguen con el común.</li>
+        <li>Volver a marcar la casilla devuelve a todos el horario común (y lo dice el resumen). El resumen de abajo siempre dice qué quedó: «cada día de 8:00 a 9:00 p.m.» o «1 día con otro horario».</li>
+        <li>Lo que se guarda: con la casilla marcada, igual que hoy (inicio del primer día, fin del último). Con días distintos hace falta la tabla de sesiones (una fila por día con su inicio y fin): la ficha y la agenda las enseñan por día y la agenda muestra el evento cada día que tiene sesión. Es el mismo modelo del taller con sesiones del plan.</li>
+        <li>Elegir una hora en los chips comunes avanza solo (como hoy); con la casilla desmarcada, el pie dice «Siguiente» para avanzar cuando los días estén como se quieren.</li>
+      </ul></details>
+    </div>
+    <div class="pie">${e.mismo ? '' : '<button class="btn" data-a="nada">Siguiente</button>'}</div>
+    ${hoja}`;
+}
+document.getElementById('app').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, h = b.dataset.h === '' ? null : b.dataset.h;
+  if (a === 'mismo') { e.mismo = !e.mismo; if (e.mismo) e.porDia = DIAS.map(() => ({ ...e.comun })); }
+  if (a === 'ini') { e.comun.inicio = h; e.porDia = DIAS.map(() => ({ ...e.comun })); }
+  if (a === 'fin') { e.comun.fin = h; e.porDia = DIAS.map(() => ({ ...e.comun })); }
+  if (a === 'dia') e.hoja = Number(b.dataset.i);
+  if (a === 'ini-dia') e.porDia[e.hoja].inicio = h;
+  if (a === 'fin-dia') e.porDia[e.hoja].fin = h;
+  if (a === 'cerrar') e.hoja = null;
+  pintar();
+});
+document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); pintar(); });
+pintar();
+</script>
+</body>
+</html>
