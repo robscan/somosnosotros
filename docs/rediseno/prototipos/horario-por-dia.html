@@ -129,6 +129,8 @@ ul { list-style: none; }
 .chip { min-height: var(--toque-min); padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-md); font-weight: 600; }
 .chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
 .resumen { color: var(--texto-suave); font-size: var(--letra-sm); }
+/* La casilla aquí: el nombre puede partirse en dos renglones en pantallas angostas (no es un dato, es una frase) y, marcada, no lleva detalle: el resumen de abajo ya dice las fechas. */
+.casilla b { white-space: normal; }
 /* La lista de días (ui/Renglon sin clave): icono | día en negrita / horas | Cambiar. El día que difiere del horario común lleva su marca. */
 .dias { display: grid; gap: var(--espacio-3); }
 .renglon .horas { display: block; color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 400; }
@@ -189,7 +191,7 @@ function pintar() {
     <div class="pagina">
       <h1 class="pregunta">¿A qué hora, cada día?</h1>
       ${e.mismo ? chips('Empieza', e.comun.inicio, 'ini', false) + chips('Termina', e.comun.fin, 'fin', true) : ''}
-      <button class="casilla" role="checkbox" aria-checked="${e.mismo}" data-a="mismo"><span class="cuadro">${e.mismo ? ic('ok') : ''}</span><span class="texto"><b>Mismo horario todos los días</b><small>${e.mismo ? 'Del 9 al 11 de oct' : 'Toca un día para cambiar solo ese'}</small></span></button>
+      <button class="casilla" role="checkbox" aria-checked="${e.mismo}" data-a="mismo"><span class="cuadro">${e.mismo ? ic('ok') : ''}</span><span class="texto"><b>Mismo horario todos los días</b>${e.mismo ? '' : '<small>Toca un día para cambiar solo ese</small>'}</span></button>
       ${lista}
       <p class="resumen">${resumen}</p>
       <details class="notas"><summary>Notas del prototipo</summary><ul>
