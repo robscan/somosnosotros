@@ -81,7 +81,9 @@ ul { list-style: none; }
 .casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
 .casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
 .casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
-.casilla b { display: block; font-weight: 700; }
+.casilla b { font-weight: 700; }
+.casilla small { white-space: nowrap; }
+.casilla span:last-child { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--espacio-2); min-width: 0; }
 .casilla:disabled { opacity: 0.55; cursor: default; }
 
 /* La miniatura del cartel y «Leyendo». */
@@ -154,7 +156,7 @@ function casilla() {
   const marcada = e.auto && !agotada;
   return `<button class="casilla" role="checkbox" aria-checked="${marcada}" data-a="auto" ${agotada ? 'disabled' : ''}>
       <span class="cuadro">${marcada ? ic('ok') : ''}</span>
-      <span><b>Lectura automática</b><small>${agotada ? '0 de 6 este mes · se renueva el 1 de nov' : `Nombre, fecha, lugar y precio · quedan ${c.quedan} de 6 este mes`}</small></span>
+      <span><b>Lectura automática</b><small>${agotada ? 'Se renueva el 1 de nov' : `Te quedan ${c.quedan} este mes`}</small></span>
     </button>`;
 }
 const PANTALLAS = {
@@ -171,9 +173,9 @@ const PANTALLAS = {
       pie: '',
       notas: [
         'El recuadro dice «Sube el cartel» y para qué sirve (la imagen del evento), no lo que el sistema hará con él. Es igual en todos los casos.',
-        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no, y el contador va dentro («quedan 4 de 6 este mes»). Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
+        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no. Una sola línea: el nombre y, al lado, el contador («Te quedan 4 este mes»). No se enumera qué se lee (nombre, fecha, lugar, precio, artistas): así no se promete nada que el cartel pueda no traer o la lectura pueda fallar. Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
         'Marcada de entrada no cuesta toques (cartel completo sigue en 2). Desmarcarla es un toque solo para quien no quiere leer este cartel.',
-        'Con las 6 usadas (caso 2), la casilla queda apagada y lo dice en sus propias palabras («0 de 6 este mes · se renueva el 1 de nov»): es el estado de algo que la persona controla, no una excusa del sistema. Sin servicio de lectura (caso 3), la casilla no aparece.',
+        'Con las 6 usadas (caso 2), la casilla queda apagada y solo dice cuándo vuelve («Se renueva el 1 de nov»): es el estado de algo que la persona controla, no una excusa del sistema. Sin servicio de lectura (caso 3), la casilla no aparece.',
         'Hoy la segunda línea dice «Leemos el nombre, la fecha, el lugar y el precio» y, sin llave o sin cupo, el recuadro ni sale: eso es lo que se corrige.',
       ],
     };
