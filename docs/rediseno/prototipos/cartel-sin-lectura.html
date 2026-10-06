@@ -106,7 +106,8 @@ ul { list-style: none; }
 <div class="tira">
   <select id="caso" aria-label="Caso del prototipo">
     <option value="lee">1 · Hay lectura: se sube, se lee y se nota</option>
-    <option value="sinlectura">2 · Sin lectura (sin cupo, sin llave o sin créditos): se sube y se pregunta</option>
+    <option value="sinlectura">2 · Lecturas gratis agotadas: se sube y se pregunta (se dice una vez)</option>
+    <option value="sinservicio">4 · Sin servicio de lectura (sin llave): se sube y se pregunta, sin decir nada</option>
     <option value="falla">3 · Hay lectura pero falla: se sigue igual, sin excusas</option>
   </select>
   <label style="opacity:.8">La primera pantalla es la misma en los tres casos: eso es la propuesta.</label>
@@ -127,9 +128,10 @@ const ic = (n) => ({
 const MINI = (t) => `<div class="cartel-mini">${t ? 'ECOS DE PAPEL<br><span style="font-weight:400">jue 5 nov · 19:00</span>' : ''}</div>`;
 
 const CASOS = {
-  lee: { lee: true },
-  sinlectura: { lee: false },
-  falla: { lee: true, falla: true },
+  lee: { lee: true, quedan: 2 },
+  sinlectura: { lee: false, agotado: true },
+  sinservicio: { lee: false },
+  falla: { lee: true, falla: true, quedan: 2 },
 };
 let caso = 'lee', e;
 const nuevo = () => (e = { paso: 'inicio' });
@@ -159,13 +161,15 @@ const PANTALLAS = {
   nombre: () => {
     return {
       titulo: 'Publicar', avance: 1 / 6, atras: true,
-      cuerpo: `<div class="con-cartel">${MINI(true)}<span class="sello">${ic('ok')}Cartel guardado</span></div>
+      cuerpo: `<div class="con-cartel">${MINI(true)}<span class="sello">${ic('ok')}Cartel guardado${casoActual().agotado ? ' · lecturas gratis agotadas hasta el 1 de nov' : ''}</span></div>
         <h1 class="pregunta">¿Cómo se llama?</h1>
         <label class="campo">${ic('buscar')}<input id="q" placeholder="Nombre del evento" autocomplete="off"><button class="limpiar" type="button" aria-label="Borrar el texto">${ic('cerrar')}</button></label>`,
       pie: `<button class="btn" data-a="seguir">Siguiente</button>`,
       notas: [
         'Tras subir sin lectura (o si la lectura falló), se sigue directo a la primera pregunta, como si hubiera tocado «No tengo cartel» pero con el cartel ya guardado. Nunca se le pide que toque «No tengo cartel» cuando sí lo tiene (hoy pasa).',
-        'La fila de arriba —miniatura y «Cartel guardado»— solo sale en la primera pregunta, como confirmación de que la foto llegó. No dice por qué se pregunta: preguntar es lo normal; leer era el extra.',
+        'La fila de arriba —miniatura y «Cartel guardado»— solo sale en la primera pregunta, como confirmación de que la foto llegó. Preguntar es lo normal; leer era el extra.',
+        'Caso 2: si la persona ya tuvo lecturas y se le acabaron las gratis, se dice UNA vez, aquí, en seis palabras y sin botón («lecturas gratis agotadas hasta el 1 de nov»): así entiende el paquete gratuito sin que el recuadro de entrada lo cargue. Sin servicio de lectura (caso 4) no se dice nada: nunca hubo extra que echar de menos.',
+        'No hay «Pedir más lecturas»: el límite es el paquete gratuito. Subirlo para una cuenta sigue siendo posible desde la administración (el tope por cuenta ya existe en la base).',
         'De aquí en adelante son los pasos ya construidos: día, hora, dónde, cuánto. En el prototipo «Siguiente» salta a «Revisa».',
       ],
     };
@@ -175,7 +179,7 @@ const PANTALLAS = {
     const leido = c.lee && !c.falla;
     return {
       titulo: 'Revisa', avance: 5 / 6, atras: true,
-      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel</span>` : ''}<h1>Inauguración de Ecos de papel</h1></div></div>
+      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel · ${c.quedan} lecturas gratis más este mes</span>` : ''}<h1>Inauguración de Ecos de papel</h1></div></div>
         <div class="lista">
           <button class="renglon">${ic('reloj')}<b>jue 5 de nov · 19:00</b><span class="accion">Cambiar</span></button>
           <button class="renglon">${ic('pin')}<b>Teatro de la Paz</b><span class="accion">Cambiar</span></button>
@@ -184,6 +188,7 @@ const PANTALLAS = {
       pie: `<button class="btn" data-a="publicar">Publicar</button>`,
       notas: [
         'La cabeza lleva la miniatura siempre que haya cartel. El sello verde «Leído del cartel» solo cuando de él salieron datos; sin lectura, nada: la miniatura ya dice que la imagen va con el evento.',
+        'El contador va aquí, pegado al valor que acaba de recibir («Leído del cartel · 2 lecturas gratis más este mes»), y en el perfil. Nunca en la pantalla de entrada: ahí sería una condición antes de dar nada. Medido en producción (2026-10-06): 48 lecturas desde el 19 de septiembre, 9 personas; 40 son del founder y las otras 8 personas hicieron 1 cada una. Con el tope actual de 20 al mes nadie vería el contador; para que el paquete gratuito se entienda, el número tiene que ser alcanzable (decisión del founder: 3, 5…).',
         'Los datos se ven iguales hayan salido del cartel o de las preguntas.',
       ],
     };
