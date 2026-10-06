@@ -18,13 +18,14 @@ import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import BarraFicha from "@/components/ui/BarraFicha";
-import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
+import Ficha, { CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
+import { enlaceAltaEvento } from "@/lib/armazon";
 import { cartelDescargable } from "@/lib/cartelDescarga";
 import { configPublica } from "@/lib/config";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
@@ -46,7 +47,7 @@ import MetaSitio from "./MetaSitio";
 import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ accion?: string; error?: string }> };
 type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null; sesiones?: SesionGuardada[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
@@ -211,7 +212,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo, accion, error } = (await searchParams) ?? {};
+  const { accion, error } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
   // La dirección vieja (/eventos/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
@@ -219,7 +220,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // parámetros con los que haya llegado.
   if (id !== e.slug) {
     const p = new URLSearchParams();
-    if (nuevo) p.set("nuevo", nuevo);
     if (accion) p.set("accion", accion);
     if (error) p.set("error", error);
     const q = p.toString();
@@ -302,7 +302,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
   const portada = e.imagen ?? e.lugar?.portada ?? null;
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
-  const hayAvisos = nuevo === "1" || error === "borrar" || !e.visible || paso;
+  const hayAvisos = error === "borrar" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
   const hayCartel = e.visible && !paso && cartelDescargable(e.imagen, configPublica().supabaseUrl);
@@ -324,7 +324,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               </Link>
             </li>
             <li>
-              <Link href={`/nuevo?desde=${e.id}`} className={renglon.ajuste}>
+              <Link href={enlaceAltaEvento({ desde: e.id })} className={renglon.ajuste}>
                 <IconoCalendarioMas width={20} height={20} />
                 <b>Duplicar con otra fecha</b>
               </Link>
@@ -366,15 +366,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       {hayAvisos && (
         <div className={ficha.avisos}>
-          {nuevo === "1" && (
-            <div className={ficha.publicado} role="status">
-              <b>Publicado.</b>
-              Ya está en la agenda.
-              <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={BOTON_PUBLICADO}>
-                Compartir
-              </BotonCompartir>
-            </div>
-          )}
           {error === "borrar" && (
             <p className="aviso-error" role="alert">
               No se pudo borrar. ¿Sigues con sesión y es tu evento?

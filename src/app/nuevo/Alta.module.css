@@ -1,7 +1,8 @@
 /* ==========================================================================
    La pantalla de alta (docs/rediseno/50, P9; prototipo firmado): una tarea de tres filas sobre la rejilla de la plantilla `pagina` (`ui/Plantilla`):
    la barra interior, el formulario del tipo elegido —que se lleva lo que sobre— y la tira de tipos, que se queda al pie de la
-   ventana aunque el formulario sea corto. Los formularios que no están a la vista van escondidos (`hidden`) y no ocupan fila.
+   ventana aunque el formulario sea corto. Los formularios que no están a la vista van escondidos (`hidden`) y no ocupan fila. «Evento»
+   es un enlace al alta por pasos (OL-312) con la misma pinta que los botones.
    1. La rejilla · 2. La tira de tipos
    ========================================================================== */
 
@@ -39,6 +40,11 @@ main.alta > form {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   cursor: pointer;
+}
+a.tipo {
+  display: grid;
+  place-content: center;
+  text-decoration: none;
 }
 .tipo[aria-pressed="true"] {
   color: var(--texto);

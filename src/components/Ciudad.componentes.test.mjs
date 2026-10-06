@@ -441,7 +441,7 @@ test("lejos: alta por tipo sin coordenadas en URL; Artistas no ofrece alta por d
     const alta = page.getByRole("link", { name: /^Agregar un/ });
     const conAlta = seccion === "eventos" || seccion === "lugares";
     assert.equal(await alta.count(), conAlta ? 1 : 0);
-    if (conAlta) assert.equal(await alta.getAttribute("href"), `/nuevo?tipo=${seccion === "eventos" ? "evento" : "lugar"}`);
+    if (conAlta) assert.equal(await alta.getAttribute("href"), seccion === "eventos" ? "/nuevo/evento" : "/nuevo?tipo=lugar");
     if (seccion === "buscar") assert.equal(await page.getByRole("dialog").getAttribute("aria-label"), "Ciudades");
     assert.equal(await page.getByText("Estás aquí", { exact: true }).count(), 0);
   }

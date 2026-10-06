@@ -92,3 +92,27 @@ describe("proxy: 308 real desde la dirección con UUID", () => {
     expect(r.cookies.get("sb-token")?.value).toBe("nuevo");
   });
 });
+
+describe("proxy: /nuevo con un evento va al alta por pasos (OL-312)", () => {
+  it("308 absoluto a /nuevo/evento con lugar, artista, desde y ciudad, sin consultar ni pedir sesión", async () => {
+    for (const [ruta, destino] of [
+      ["/nuevo", "/nuevo/evento"],
+      ["/nuevo?tipo=evento&ciudad=queretaro", "/nuevo/evento?ciudad=queretaro"],
+      [`/nuevo?lugar=${UUID}&nombre=x`, `/nuevo/evento?lugar=${UUID}`],
+      [`/nuevo?artista=${UUID}`, `/nuevo/evento?artista=${UUID}`],
+      [`/nuevo?desde=${UUID}`, `/nuevo/evento?desde=${UUID}`],
+    ]) {
+      const r = await pedir(ruta);
+      expect(r.status, ruta).toBe(308);
+      expect(r.headers.get("location")).toBe(`https://somosnosotros.org${destino}`);
+    }
+    expect(consultas).toEqual([]);
+  });
+  it("un lugar o un artista se quedan en /nuevo, y /nuevo/evento pasa", async () => {
+    for (const ruta of ["/nuevo?tipo=lugar", "/nuevo?tipo=artista&ciudad=queretaro", "/nuevo/evento?lugar=x"]) {
+      const r = await pedir(ruta);
+      expect(r.status, ruta).toBe(200);
+      expect(r.headers.get("location")).toBeNull();
+    }
+  });
+});

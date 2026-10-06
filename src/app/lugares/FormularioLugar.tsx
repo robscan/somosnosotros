@@ -57,7 +57,7 @@ type Props = {
   ciudadContexto?: Ciudad | null;
   /** El campo del nombre toma el foco al abrir (el alta lo pide solo si es lo primero que se ve). */
   autoFocus?: boolean;
-  /** La pantalla de alta tiene tres formularios y solo se ve el del tipo elegido: los otros siguen ahí, escondidos, con lo escrito. */
+  /** La pantalla de alta tiene dos formularios (lugar y artista) y solo se ve el del tipo elegido: el otro sigue ahí, escondido, con lo escrito. */
   oculta?: boolean;
 };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -37,10 +37,6 @@ describe("fechas", () => {
     expect(diaPin("2026-09-26T01:00:00Z", AHORA)).toBe("Vie"); // viernes de esta semana
     expect(diaPin("2026-09-19T03:00:00Z", AHORA)).toBeNull(); // pasado
     expect(diaPin("2026-10-05T01:00:00Z", AHORA)).toBeNull(); // fuera de la semana
-  });
-  it("sugiere hoy 19:00 antes de las 18 y mañana después", () => {
-    expect(sugerirInicio(AHORA)).toBe("2026-09-19T19:00");
-    expect(sugerirInicio(new Date("2026-09-20T01:30:00Z"))).toBe("2026-09-20T19:00"); // 19:30 del 19 → mañana
   });
   it("escribe fechas de calendario", () => {
     expect(aFechaIcs("2026-09-21T01:00:00.000Z")).toBe("20260921T010000Z");
@@ -130,10 +126,7 @@ describe("fechas en la zona del evento", () => {
     expect(tramo("2026-09-19T17:00:00Z", medianoche, MADRID)).toBe("pasado");
     expect(inicioDelDia(AHORA, MADRID)).toBe("2026-09-18T22:00:00.000Z");
   });
-  it("sugiere, ofrece días y avisa si ya pasó con el reloj de la zona", () => {
-    // A las 18:00 de Madrid ya no se sugiere hoy; a las 10:00 de San Luis, sí.
-    expect(sugerirInicio(AHORA, MADRID)).toBe("2026-09-20T19:00");
-    expect(sugerirInicio(AHORA)).toBe("2026-09-19T19:00");
+  it("ofrece días y avisa si ya pasó con el reloj de la zona", () => {
     const medianoche = new Date("2026-09-19T22:30:00Z");
     expect(proximosDias(medianoche, 3, MADRID)).toEqual([
       { valor: "2026-09-20", etiqueta: "Hoy" },
@@ -196,23 +189,6 @@ describe("banco por zona", () => {
     expect(terminaDe("2026-09-21T01:00:00.000Z", null, sinZona)).toBe("2026-09-21T06:00:00.000Z");
     expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA, sinZona)).toBe(true);
     expect(localAIso("2026-09-20T19:00", sinZona)).toBe("2026-09-21T01:00:00.000Z");
-  });
-});
-
-describe("la hora sugerida sigue a la zona del sitio", () => {
-  // AHORA: 10:00 del sábado 19 en San Luis, 18:00 en Madrid (ya no se sugiere hoy allá).
-  it("la mueve a la zona nueva con el fin detrás, sin que el fin quede antes", () => {
-    const sugerida = sugerirInicio(AHORA);
-    expect(sugerida).toBe("2026-09-19T19:00");
-    expect(resugerirCuando({ inicio: sugerida, fin: "2026-09-19T21:00" }, sugerida, "Europe/Madrid", AHORA)).toEqual({ inicio: "2026-09-20T19:00", fin: "2026-09-20T21:00" });
-    expect(resugerirCuando({ inicio: sugerida, fin: "" }, sugerida, "Europe/Madrid", AHORA)).toEqual({ inicio: "2026-09-20T19:00", fin: "" });
-    // Un fin que pasa la medianoche conserva sus horas.
-    expect(resugerirCuando({ inicio: sugerida, fin: "2026-09-20T01:30" }, sugerida, "Europe/Madrid", AHORA)).toEqual({ inicio: "2026-09-20T19:00", fin: "2026-09-21T01:30" });
-  });
-  it("no toca lo que la persona ya cambió ni lo que no se mueve", () => {
-    expect(resugerirCuando({ inicio: "2026-09-25T20:00", fin: "2026-09-25T22:00" }, "2026-09-19T19:00", "Europe/Madrid", AHORA)).toBeNull();
-    expect(resugerirCuando({ inicio: "2026-09-19T19:00", fin: "" }, "2026-09-19T19:00", "America/Bogota", AHORA)).toBeNull();
-    expect(resugerirCuando({ inicio: "2026-09-19T19:00", fin: "" }, "", "Europe/Madrid", AHORA)).toBeNull();
   });
 });
 

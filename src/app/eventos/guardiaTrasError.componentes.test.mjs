@@ -1,5 +1,6 @@
-/** OL-296 (bitácora 324): si «Publicar» falla en el servidor, «¿Salir sin publicar?» sigue protegiendo lo escrito.
- *  Formulario de evento real dentro de la guardia real (`useSalirSinPublicar`), acción simulada y red bloqueada.
+/** OL-296 (bitácora 324): si guardar falla en el servidor, «¿Salir sin publicar?» sigue protegiendo lo escrito.
+ *  Desde OL-312 el formulario de evento solo edita (el alta por pasos lo prueba en `nuevo/evento/AltaEvento.componentes.test.mjs`); aquí,
+ *  el de editar dentro de la guardia real (`useSalirSinPublicar`), acción simulada y red bloqueada.
  *  Éxito (o a medio camino): la guardia queda fuera y no se pregunta nada. Error: la guardia vuelve (la hoja, y `beforeunload`).
  *  Las acciones reales de lugar y artista hacen el mismo gesto (`apartarGuardia` + `reponerGuardia`); se comprueban con la app compilada.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs node --test este-archivo   (o `npm run test:componentes`) */
@@ -55,7 +56,7 @@ before(async () => {
         const hoja = useSalirSinPublicar(pantalla);
         return (
           <main ref={pantalla}>
-            <Form accion={accion} lugares={[]} modo="alta" usuarioId="cuenta"
+            <Form accion={accion} lugares={[]} usuarioId="cuenta" revision="2026-10-01T10:00:00.123456+00:00"
               evento={{titulo:'',sitio_texto:'Sitio de prueba',sitio_reservado:false,inicio:'2026-11-01T20:00:00Z',fin:null,gratis:true,precio:null,zona:'America/Mexico_City'}}/>
             {hoja}
           </main>
@@ -114,7 +115,7 @@ const avisa = (p) => p.evaluate(() => !window.dispatchEvent(new Event("beforeunl
 /** true si Atrás o la ✕ se detienen en la guardia (se le entrega la salida y ella decide). */
 const guardia = (p) => p.evaluate(() => window.qa.pedirSalida(() => window.qa.salio++));
 
-test("sin publicar, la guardia protege (control)", async (t) => {
+test("sin guardar, la guardia protege (control)", async (t) => {
   const p = await pagina(t, "error");
   assert.equal(await guardia(p), true);
   assert.equal(await avisa(p), true);
@@ -122,7 +123,7 @@ test("sin publicar, la guardia protege (control)", async (t) => {
 
 test("el servidor devuelve un error: lo escrito sigue y la guardia sigue puesta (hoja y beforeunload)", async (t) => {
   const p = await pagina(t, "error");
-  await p.getByRole("button", { name: /^Publicar/ }).click();
+  await p.getByRole("button", { name: "Guardar cambios" }).click();
   await p.getByText(general, { exact: true }).waitFor();
   assert.equal(await p.evaluate(() => window.qa.envios), 1);
   assert.equal(await p.getByLabel("Nombre del evento").inputValue(), "Concierto de prueba");
@@ -139,30 +140,30 @@ test("el servidor devuelve un error: lo escrito sigue y la guardia sigue puesta 
   assert.equal(await avisa(p), false);
 });
 
-test("error y reintento con éxito: al volver a publicar, la guardia sale otra vez", async (t) => {
+test("error y reintento con éxito: al volver a guardar, la guardia sale otra vez", async (t) => {
   const p = await pagina(t, "error");
-  await p.getByRole("button", { name: /^Publicar/ }).click();
+  await p.getByRole("button", { name: "Guardar cambios" }).click();
   await p.getByText(general, { exact: true }).waitFor();
   assert.equal(await guardia(p), true);
   await p.getByRole("button", { name: "Seguir editando" }).click();
   await p.evaluate(() => (window.qa.resultado = "ok"));
-  await p.getByRole("button", { name: /^Publicar/ }).click();
+  await p.getByRole("button", { name: "Guardar cambios" }).click();
   await p.waitForFunction(() => window.qa.terminado === "/eventos/e1");
   assert.equal(await guardia(p), false);
   assert.equal(await avisa(p), false);
 });
 
-test("publica bien: no se pregunta nada al irse a la ficha", async (t) => {
+test("guarda bien: no se pregunta nada al volver a la ficha", async (t) => {
   const p = await pagina(t, "ok");
-  await p.getByRole("button", { name: /^Publicar/ }).click();
+  await p.getByRole("button", { name: "Guardar cambios" }).click();
   await p.waitForFunction(() => window.qa.terminado === "/eventos/e1");
   assert.equal(await guardia(p), false);
   assert.equal(await avisa(p), false);
 });
 
-test("mientras el servidor contesta (publicando) la guardia sigue fuera, como siempre", async (t) => {
+test("mientras el servidor contesta (guardando) la guardia sigue fuera, como siempre", async (t) => {
   const p = await pagina(t, "pendiente");
-  await p.getByRole("button", { name: /^Publicar/ }).click();
+  await p.getByRole("button", { name: "Guardar cambios" }).click();
   await p.waitForFunction(() => window.qa.envios === 1);
   assert.equal(await guardia(p), false);
   assert.equal(await avisa(p), false);

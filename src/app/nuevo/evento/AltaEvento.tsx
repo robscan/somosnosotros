@@ -16,6 +16,7 @@ import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { sesionesParaEnviar } from "@/lib/sesionesEvento";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
+import { sinPisar, type Arranque } from "./arranque";
 import { respuestasDelCartel } from "./cartelPorPasos";
 import { avance, eventoPublicado, faltaParaPublicar, finDe, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Respuestas, type Uso } from "./pasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
@@ -27,7 +28,7 @@ import { useLeerCartel } from "./useLeerCartel";
 import { usePasosEvento } from "./usePasosEvento";
 
 type Props = {
-  /** La acción de siempre del alta de evento (`crearEvento`): mismos campos, mismas validaciones. Con el campo `quedarse` no lleva a la ficha: devuelve lo creado. */
+  /** La acción del alta de evento (`crearEvento`): devuelve lo creado, sin salir de la pantalla. */
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
   /** Artistas ligados a mi cuenta: si es uno solo, Quién ya viene con él (como en el alta de siempre, decisión 12). */
@@ -42,6 +43,8 @@ type Props = {
   cartelActivo: boolean;
   /** Las lecturas de cartel que le quedan este mes al abrir la pantalla; null si no se supo o no aplica. */
   cupo: Cupo | null;
+  /** Lo que ya se sabe por dónde se entró (el lugar, el artista o el evento que se duplica; OL-312); null si se entra de cero. */
+  arranque: Arranque | null;
 };
 
 const FORMULARIO = "publicar-evento";
@@ -76,21 +79,26 @@ type Interno = Props & {
  * «Lectura automática» está marcada y quedan lecturas, se lee mientras la pantalla espera (`useLeerCartel`); lo leído rellena las
  * respuestas y solo se preguntan los pasos que falten (`cartelPorPasos.ts`); con todo leído se pasa directo a «Revisa». Sin lectura
  * (desmarcada, agotada, sin servicio) o si la lectura falla, el cartel queda guardado y se sigue a las preguntas, con una fila chica
- * «Cartel guardado» sobre la primera. Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el
- * alta de siempre, que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve,
- * y el error sale en «Revisa». Si publica, la pantalla no sale: se queda en «Publicado» (el formulario manda `quedarse`, y la acción
- * devuelve lo creado en vez de redirigir a la ficha). «Publicar otro» la vuelve a montar con otra `key`: respuestas, cartel, error y clave de
- * la operación empiezan de cero y la guardia de salida se arma de nuevo; los lugares que se guardaron en el camino se conservan aquí.
+ * «Cartel guardado» sobre la primera. Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que
+ * editar, que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve,
+ * y el error sale en «Revisa». Si publica, la pantalla no sale: se queda en «Publicado» (la acción devuelve lo creado, no redirige a
+ * la ficha). «Publicar otro» la vuelve a montar con otra `key`: respuestas, cartel, error y clave de
+ * la operación empiezan de cero, sin el arranque con que se abrió (el lugar, el artista o el evento duplicado), y la guardia de salida se arma
+ * de nuevo; los lugares que se guardaron en el camino se conservan aquí. Es la única alta de evento (OL-312): «Publicar aquí», «Publicar
+ * fecha» y «Duplicar» llegan con su `arranque`, y lo que traen no lo pisa la lectura del cartel (`sinPisar`).
  */
 export default function AltaEvento(props: Props) {
   const [vuelta, setVuelta] = useState(0);
   const [lugares, setLugares] = useState(props.lugares);
   const agregar = useCallback((nuevo: LugarResumen) => setLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo])), []);
-  return <AltaPorPasos key={vuelta} {...props} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
+  return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : null} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
 }
 
-function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, onOtro, onLugarNuevo }: Interno) {
-  const { r, candidato, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar, publicado } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
+function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, onOtro, onLugarNuevo }: Interno) {
+  const { r, candidato, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar, publicado } = usePasosEvento(
+    mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : [],
+    arranque,
+  );
   // Lo escrito en «¿Dónde es?» vive aquí y no en el paso: al volver de «¿Es aquí?» (Atrás, «Buscar otro») la lista sigue ahí.
   const [busqueda, setBusqueda] = useState("");
   // Con cartel: se sube siempre y se lee si toca; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»); sin
@@ -101,7 +109,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     cupo,
     alGuardar: seguir,
     alLeer: (leido) => {
-      const leidas = respuestasDelCartel(leido, r.quien);
+      const leidas = sinPisar(respuestasDelCartel(leido, r.quien), arranque);
       if (leidas.sitio?.modo === "otro") setBusqueda(leidas.sitio.otro.sitioTexto || leidas.sitio.otro.direccion || "");
       contestar(leidas);
     },
@@ -194,8 +202,6 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           <input type="hidden" name="descripcion" value={r.descripcion} />
           <input type="hidden" name="enlace" value={r.enlace} />
           <input type="hidden" name="imagen" value={cartel.subido?.url ?? ""} />
-          {/* Publicar no sale de la pantalla: la acción devuelve lo creado y el paso «Publicado» lo enseña. */}
-          <input type="hidden" name="quedarse" value="1" />
         </form>
       }
     >

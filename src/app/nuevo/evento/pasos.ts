@@ -156,6 +156,17 @@ function siguiente(e: Estado): Estado {
   return { ...e, pila: e.pila.slice(0, revisa + 1), direccion: "vuelve" };
 }
 
+/**
+ * El estado al abrir con lo que ya se sabe por dónde se entró (OL-312, `arranque.ts`): las respuestas puestas y, con `entrar` (duplicar un
+ * evento), ya en lo primero que falte, con el primer paso detrás; sin transición, porque es lo que se ve al llegar.
+ */
+export function estadoConArranque(quien: QuienItem[], arranque: { r: Partial<Respuestas>; entrar: boolean } | null): Estado {
+  const e = estadoInicial(quien);
+  if (!arranque) return e;
+  const conRespuestas = { ...e, r: { ...e.r, ...arranque.r } };
+  return arranque.entrar ? { ...siguiente(conRespuestas), direccion: null } : conRespuestas;
+}
+
 export function flujo(e: Estado, a: Accion): Estado {
   switch (a.tipo) {
     case "cambiar":

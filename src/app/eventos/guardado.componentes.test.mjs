@@ -34,7 +34,7 @@ before(async () => {
       window.qa={envios:[],resultado:{ok:false,errores:{},general:'No se pudo guardar. Intenta de nuevo.'}};
       async function accion(_,fd){window.qa.envios.push(Object.fromEntries(fd));return window.qa.resultado}
       function App(){const [revision,setRevision]=useState(${JSON.stringify(revision)});window.qa.revision=setRevision;
-        return <Form accion={accion} lugares={[]} modo="editar" usuarioId="cuenta" revision={revision}
+        return <Form accion={accion} lugares={[]} usuarioId="cuenta" revision={revision}
           evento={{id:${JSON.stringify(id)},titulo:'Evento de prueba',sitio_texto:'Sitio de prueba',sitio_reservado:false,
             inicio:'2026-11-01T20:00:00Z',fin:null,gratis:true,precio:null,zona:'America/Mexico_City'}}/>}
       createRoot(document.getElementById('root')).render(<App/>);

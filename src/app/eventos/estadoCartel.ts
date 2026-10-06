@@ -2,8 +2,9 @@ import type { FalloAlSubir } from "@/lib/subirFoto";
 import type { Cupo } from "./acciones";
 
 /**
- * En qué va la tarjeta del cartel (docs/rediseno/22). Sin esto, está en reposo pidiendo el primero.
- * Las transiciones viven aquí, sueltas del componente, para poder probarlas.
+ * Lo que pasa con un cartel que se sube y se lee (docs/rediseno/22 y 23): sus fallos, el cupo de lecturas del mes y qué dice la casilla
+ * «Lectura automática». Lo usan el primer paso del alta por pasos (`useLeerCartel`) y el renglón de lecturas del perfil. Vive aquí, suelto
+ * de los componentes, para poder probarlo.
  */
 export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo" | "sin_cupo"; titulo?: string; mensaje?: string; foto?: string } | null;
 
@@ -22,22 +23,12 @@ export function falloAlSubir(imagenDelEvento: string | null, error: string, moti
   return { estado: "fallo", titulo: "No pude subir el cartel", foto: imagenDelEvento ?? undefined, mensaje: imagenDelEvento ? `${causa} La imagen que ya tenías se queda.` : causa };
 }
 
-/** Se subió pero no se pudo leer: la foto nueva se queda como imagen del evento. */
-export function falloAlLeer(foto: string | undefined, mensaje: string): NonNullable<EstadoCartel> {
-  return { estado: "fallo", foto, mensaje };
-}
-
 /**
  * Se cortó a mitad: se cayó la señal, el servidor tardó de más o la función se agotó. La tarjeta no puede quedarse
  * en "Leyendo el cartel…" para siempre, así que cae aquí con lo que se pueda salvar.
  */
 export function falloDeCorte(actual: EstadoCartel, imagenDelEvento: string | null): NonNullable<EstadoCartel> {
   return { estado: "fallo", titulo: "Se cortó a la mitad", foto: actual?.foto ?? imagenDelEvento ?? undefined, mensaje: "Puede ser tu conexión." };
-}
-
-/** Leído: el titular ya dice "Leí el cartel", así que el mensaje solo dice qué revisar. */
-export function leido(foto: string, faltan: string[]): NonNullable<EstadoCartel> {
-  return { estado: "leido", foto, mensaje: faltan.length ? `Revisa ${faltan.join(", ")} y publica.` : "Revisa que todo esté bien y publica." };
 }
 
 /** "el 1 de octubre": cuándo vuelve a haber cupo, en la hora de la ciudad, como lo dice la base. */
@@ -51,14 +42,6 @@ export function cuandoSeRenueva(ahora: Date = new Date()): string {
 export function mesDelCupo(ahora: Date = new Date()): string {
   const partes = new Intl.DateTimeFormat("en-US", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit" }).formatToParts(ahora);
   return `${partes.find((p) => p.type === "year")!.value}-${partes.find((p) => p.type === "month")!.value}`;
-}
-
-/** Cuántas quedan; solo se dice cuando ya son pocas, porque quien tiene 17 no necesita saberlo. */
-export const AVISAR_DESDE = 3;
-
-/** El estado con el que llega la tarjeta: sin cupo pesa más que el reposo. */
-export function alLlegar(cupo: Cupo | null): EstadoCartel {
-  return lecturaAgotada(cupo) ? { estado: "sin_cupo" } : null;
 }
 
 /** ¿Se acabaron las lecturas del mes? Sin saber el cupo (null) no se asume nada: lo decide el servidor al leer. */
