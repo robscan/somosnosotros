@@ -166,6 +166,7 @@ ul { list-style: none; }
 .chip { min-height: 36px; padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; }
 .chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
 .app { position: relative; }
+.casilla b { white-space: normal; }
 </style>
 </head>
 <body>
@@ -338,8 +339,9 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (a === 'ir-ficha') { alert('Va a la ficha que ya existe.'); return; }
   if (a === 'seguir') { if (e.paso === 'nombre' && !e.q.trim()) return; siguiente(); return; }
   if (a === 'aqui') { pintar(); return; }
-  if (a === 'tipo') { e.tipo = b.dataset.v; siguiente(); return; }
-  if (a === 'hace') { e.hace = b.dataset.v; siguiente(); return; }
+  // Elegir contesta la pregunta y la quita del orden: se va directo a «Revisa».
+  if (a === 'tipo') { e.tipo = b.dataset.v; e.paso = 'revisa'; pintar(); return; }
+  if (a === 'hace') { e.hace = b.dataset.v; e.paso = 'revisa'; pintar(); return; }
   if (a === 'soyyo') { e.soyYo = !e.soyYo; pintar(); return; }
   if (a === 'atras') { atras(); return; }
   if (a === 'reiniciar') { nuevo(); pintar(); return; }
