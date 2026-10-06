@@ -142,8 +142,69 @@ function acabaConSuUltimoDia(inicio: Date, fin: Date, zona: string): boolean {
   return diaLocal(fin, zona) !== diaLocal(inicio, zona) && horaCorta(fin.toISOString(), zona) === "23:59";
 }
 
-/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. Un fin otro día a las 23:59 (sin hora de fin) va solo con su día. */
+/** "9:00 p.m." a partir de "HH:MM": la hora de pared del evento, igual en cualquier zona. */
+export function etiquetaHora(hora: string): string {
+  const [h, m] = hora.split(":").map(Number);
+  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(2000, 0, 1, h, m));
+}
+
+/**
+ * Dos horas de un mismo día en la letra de la app ("8:00" y "9:00 p.m."): el «p.m.» no se repite cuando las dos lo comparten, y sí cuando
+ * no ("11:00 a.m." y "2:00 p.m."). Con una sola, la hora completa. Quien las junta pone lo suyo en medio: «–» o «de … a …».
+ */
+export function horasDelDia(desde: string, hasta?: string): { desde: string; hasta?: string } {
+  const a = etiquetaHora(desde);
+  if (!hasta) return { desde: a };
+  const b = etiquetaHora(hasta);
+  const sufijo = (texto: string) => /^\d{1,2}:\d{2}(\s[\s\S]*)$/.exec(texto)?.[1] ?? "";
+  return { desde: sufijo(a) === sufijo(b) ? a.slice(0, a.length - sufijo(a).length) : a, hasta: b };
+}
+
+/** El mes en tres letras ("oct") de un día de calendario (YYYY-MM-DD): no depende de la zona. */
+function mesCorto(dia: string): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", month: "short" }).format(new Date(`${dia}T12:00:00Z`)).replace(/[.,]/g, "");
+}
+
+/** Un extremo del rango: "10" (cuando comparte el mes con el otro) o "10 de oct", con año si no es el de `hoy`. */
+function extremoDeRango(dia: string, hoy: string, conMes: boolean): string {
+  const numero = String(Number(dia.slice(8, 10)));
+  if (!conMes) return numero;
+  const anio = dia.slice(0, 4);
+  return `${numero} de ${mesCorto(dia)}${anio === hoy.slice(0, 4) ? "" : ` de ${anio}`}`;
+}
+
+/** "Del 10 al 12 de oct" (o "Del 30 de oct al 2 de nov"): un rango de días de calendario (YYYY-MM-DD), con el año solo si no es el de `hoy`. */
+export function rangoCorto(desde: string, hasta: string, hoy: string): string {
+  const mismoMes = desde.slice(0, 7) === hasta.slice(0, 7);
+  return `Del ${extremoDeRango(desde, hoy, !mismoMes)} al ${extremoDeRango(hasta, hoy, true)}`;
+}
+
+/**
+ * Un evento de varios días se lee como lo pregunta el alta (OL-309): el horario del primer día vale para todos, así que el texto dice los días
+ * y, aparte, las horas de cada día («Del 10 al 12 de oct» y «8:00–9:00 p.m.»); sin hora de fin puesta (acaba con su último día, ver
+ * `acabaConSuUltimoDia`), solo la de inicio. Null si no dura varios días, también cuando solo cruza la medianoche (empieza 10:00 p.m., termina
+ * 1:00 a.m. del día siguiente: su fin cae antes de la hora de inicio y es una noche, no dos días).
+ */
+export function cuandoVariosDias(inicio: string, fin: string | null | undefined, ahora: Date = new Date(), zona: string = ZONA_INICIAL): { dias: string; horas: string } | null {
+  if (!fin) return null;
+  const d = new Date(inicio);
+  const f = new Date(fin);
+  const diaInicio = diaLocal(d, zona);
+  const diaFin = diaLocal(f, zona);
+  const horaInicio = horaCorta(inicio, zona);
+  const horaFin = horaCorta(fin, zona);
+  if (diaFin <= diaInicio || (diaFin === sumarDias(diaInicio, 1) && horaFin <= horaInicio)) return null;
+  const h = horasDelDia(horaInicio, acabaConSuUltimoDia(d, f, zona) ? undefined : horaFin);
+  // Las horas no se parten: sus espacios no separan líneas y después de la raya va un «unidor de palabras» (U+2060, invisible), que evita el
+  // salto que los navegadores permiten tras ella. Un renglón angosto parte entre los días y las horas, nunca «8:00–» de «9:00 p.m.».
+  const horas = (h.hasta ? `${h.desde}–\u2060${h.hasta}` : h.desde).replace(/\s/g, "\u00a0");
+  return { dias: rangoCorto(diaInicio, diaFin, diaLocal(ahora, zona)), horas };
+}
+
+/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. Un evento de varios días dice sus días y su horario de cada día (`cuandoVariosDias`); uno que solo cruza la medianoche, "→ dom 21 sep · 01:00". */
 export function formatearCuando(inicio: string, fin?: string | null, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
+  const varios = cuandoVariosDias(inicio, fin, ahora, zona);
+  if (varios) return `${varios.dias} · ${varios.horas}`;
   const d = new Date(inicio);
   const dia = diaLocal(d, zona);
   const fecha = diaCorto(inicio, ahora, zona);
@@ -152,8 +213,7 @@ export function formatearCuando(inicio: string, fin?: string | null, ahora: Date
   if (fin) {
     const f = new Date(fin);
     const horaFin = horaCorta(fin, zona);
-    if (diaLocal(f, zona) === dia) texto += `–${horaFin}`;
-    else texto += acabaConSuUltimoDia(d, f, zona) ? ` → ${diaCortoDe(f, ahora, zona)}` : ` → ${diaCortoDe(f, ahora, zona)} · ${horaFin}`;
+    texto += diaLocal(f, zona) === dia ? `–${horaFin}` : ` → ${diaCortoDe(f, ahora, zona)} · ${horaFin}`;
   }
   return texto;
 }

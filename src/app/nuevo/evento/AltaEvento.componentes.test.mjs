@@ -426,6 +426,57 @@ test("varios días sigue preguntando a qué hora termina el último día: «Term
   assert.deepEqual({ inicio: d.inicio, fin: d.fin }, { inicio: "2026-10-09T19:00", fin: "2026-10-11T23:59" });
 });
 
+/** Hasta «¿A qué hora, cada día?» de un evento del viernes 9 al domingo 11 de octubre. */
+async function hastaVariosDias(p) {
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Festival de barrio");
+  await boton(p, "Siguiente").click();
+  await boton(p, "Dura varios días").click();
+  await p.locator('[data-fecha="2026-10-09"]').click();
+  await p.locator('[data-fecha="2026-10-11"]').click();
+  await p.getByRole("dialog").getByRole("button", { name: "Listo", exact: true }).click();
+}
+
+test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inicio, una línea dice el horario de cada día; sin hora de fin dice «desde»", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaVariosDias(p);
+  assert.equal(await pregunta(p), "¿A qué hora, cada día?");
+  const termina = p.getByRole("group", { name: "Termina", exact: true });
+  // Sin hora de inicio todavía no hay horario que resumir.
+  assert.equal(await p.locator("main small").filter({ hasText: /cada día/ }).count(), 0);
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
+  assert.match(await termina.locator("small").innerText(), /^Del 9 al 11 de oct · cada día desde las 8:00\s*p\.?\s?m\.?$/);
+  if (capturas) await foto(p, "cada-dia-1-hora");
+  // Un fin elegido avanza; al volver, la línea lo dice completo y «Revisa» lo enseña con días y horas.
+  await termina.getByRole("button", { name: /^9:00/ }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  const cuando = p.locator("main ul > li").first();
+  assert.match(await cuando.innerText(), /Del 9 al 11 de oct · 8:00–\u2060?9:00\s*p\.?\s?m\.?/);
+  if (capturas) await foto(p, "cada-dia-3-revisa-cuando");
+  await boton(p, "Atrás").click();
+  await boton(p, "Atrás").click();
+  await boton(p, "Atrás").click();
+  assert.equal(await pregunta(p), "¿A qué hora, cada día?");
+  assert.match(await termina.locator("small").innerText(), /^Del 9 al 11 de oct · cada día de 8:00 a 9:00\s*p\.?\s?m\.?$/);
+  if (capturas) await foto(p, "cada-dia-2-resumen");
+  // «Sin hora de fin»: acaba con su último día y «Revisa» solo dice la hora de inicio; lo guardado es el de siempre.
+  await termina.getByRole("button", { name: "Sin hora de fin" }).click();
+  assert.match(await p.locator("main ul > li").first().innerText(), /Del 9 al 11 de oct · 8:00\s*p\.?\s?m\.?\nCambiar/);
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ inicio: d.inicio, fin: d.fin }, { inicio: "2026-10-09T20:00", fin: "2026-10-11T23:59" });
+});
+
+test("un solo día sigue preguntando «¿A qué hora?» y sin línea de «cada día»", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaHora(p);
+  assert.equal(await pregunta(p), "¿A qué hora?");
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  assert.equal(await p.locator("main small").filter({ hasText: /cada día/ }).count(), 0);
+});
+
 test("«Tiene precio» abre el número, solo dígitos, y «Revisa» lo enseña con su signo", TOPE, async (t) => {
   const p = await pagina(t);
   await hastaHora(p);
@@ -497,6 +548,72 @@ test("el paso siguiente entra de lado y nada se mueve con «reducir movimiento»
   const sin = await pagina(t);
   await boton(sin, "No tengo cartel").click();
   assert.equal(await pasos(sin), 0);
+});
+
+test("«Revisa» entra de abajo para arriba, escalonada: la cabeza, cada renglón, «Agregar…» y el pie, con «reducir movimiento» ninguno", TOPE, async (t) => {
+  /** Lo que anima cada hijo de la columna y cada renglón: su animación de CSS y su retraso (en segundos). */
+  const entrada = (p) =>
+    p.evaluate(() => {
+      const de = (e) => {
+        const c = getComputedStyle(e);
+        return { animacion: c.animationName, retraso: parseFloat(c.animationDelay) };
+      };
+      const main = document.querySelector("main");
+      return {
+        cabeza: de(main.querySelector("h2")),
+        lista: de(main.querySelector("ul")),
+        renglones: [...main.querySelectorAll("ul > li")].map(de),
+        agregar: de([...main.querySelectorAll("button")].find((b) => /Agregar/.test(b.textContent))),
+        pie: de(main.querySelector("footer")),
+        nombres: document.getAnimations().map((a) => a.animationName ?? "").filter(Boolean),
+      };
+    });
+  const con = await pagina(t, { movimiento: "no-preference" });
+  await hastaRevisa(con);
+  assert.equal(await con.locator("main").getAttribute("data-direccion"), "entra");
+  const e = await entrada(con);
+  const sube = (x) => /sube/.test(x.animacion);
+  // La cabeza, los tres renglones, «Agregar…» y el pie suben, cada uno 50 ms después del anterior (el pie, siempre el sexto turno).
+  assert.ok([e.cabeza, ...e.renglones, e.agregar, e.pie].every(sube));
+  assert.deepEqual([e.cabeza, ...e.renglones, e.agregar, e.pie].map((x) => Math.round(x.retraso * 1000)), [0, 50, 100, 150, 200, 300]);
+  // La lista no se mueve de lado (entran sus renglones, no ella) y nada de «Revisa» entra de lado.
+  assert.equal(e.lista.animacion, "none");
+  const suben = (nombres) => nombres.filter((n) => /sube/.test(n)).length;
+  assert.equal(suben(e.nombres), 6);
+  assert.equal(e.nombres.filter((n) => /entra|vuelve/.test(n)).length, 0);
+  // Congelada a los 150 ms: la cabeza va a más de la mitad del camino, el segundo renglón empieza y el tercero y lo que sigue esperan.
+  await con.evaluate(() => document.getAnimations().forEach((a) => (a.pause(), (a.currentTime = 150))));
+  const alto = (sel) => con.evaluate((s) => Number(getComputedStyle(document.querySelector(s)).opacity), sel);
+  assert.ok((await alto("main h2")) > 0.4 && (await alto("main h2")) < 1);
+  assert.equal(await alto("main ul > li:nth-child(3)"), 0);
+  assert.equal(await alto("main footer"), 0);
+  if (capturas) await con.screenshot({ path: join(capturas, "revisa-1-a-150ms.png") });
+  await con.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+  if (capturas) await foto(con, "revisa-2-al-final");
+  // Al volver de «Cambiar» un dato no corre: «Revisa» regresa por el otro lado y nada sube.
+  await boton(con, "Cambiar cuánto").click();
+  await boton(con, /^Cooperación/).click();
+  await con.locator("main ul > li").filter({ hasText: "Cooperación solidaria" }).waitFor();
+  assert.equal(await con.locator("main").getAttribute("data-direccion"), "vuelve");
+  assert.equal(suben((await entrada(con)).nombres), 0);
+  const sin = await pagina(t);
+  await hastaRevisa(sin);
+  const quieto = await entrada(sin);
+  assert.equal(quieto.cabeza.animacion, "none");
+  assert.deepEqual(quieto.nombres, []);
+});
+
+test("con cartel entra la cabeza entera, la foto y el nombre juntos, como una pieza", TOPE, async (t) => {
+  const p = await pagina(t, { movimiento: "no-preference", qa: { lectura: LEIDO } });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  const e = await p.evaluate(() => {
+    const cabeza = document.querySelector("main > div:has(img)");
+    return { cabeza: getComputedStyle(cabeza).animationName, titulo: getComputedStyle(cabeza.querySelector("h2")).animationName, retrasos: [...document.querySelectorAll("main ul > li")].map((x) => parseFloat(getComputedStyle(x).animationDelay)) };
+  });
+  assert.match(e.cabeza, /sube/);
+  assert.equal(e.titulo, "none");
+  assert.deepEqual(e.retrasos.map((x) => Math.round(x * 1000)), [50, 100, 150, 200]);
 });
 
 /* ---- Con cartel (OL-302, bitácora 330; OL-307, bitácora 335: el cartel se sube siempre y la lectura es una casilla) ---- */

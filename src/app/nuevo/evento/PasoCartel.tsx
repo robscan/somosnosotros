@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Casilla from "@/components/ui/Casilla";
 import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
 import Opcion from "@/components/ui/Opcion";
@@ -68,10 +68,10 @@ export function CartelGuardado({ foto, noPude }: { foto: string; noPude: boolean
   );
 }
 
-/** La cabeza de «Revisa» con cartel: la miniatura, el sello «Leído del cartel» (si de él salieron datos) y el nombre (`children`). */
-export function CabezaCartel({ foto, leido, children }: { foto: string; leido: boolean; children: ReactNode }) {
+/** La cabeza de «Revisa» con cartel: la miniatura, el sello «Leído del cartel» (si de él salieron datos) y el nombre (`children`). `className` y `style` son de quien la pone (la entrada de «Revisa»). */
+export function CabezaCartel({ foto, leido, children, className, style }: { foto: string; leido: boolean; children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
-    <div className={styles.cabeza}>
+    <div className={className ? `${styles.cabeza} ${className}` : styles.cabeza} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
       <img src={foto} alt="" />
       {leido && (

@@ -17,7 +17,7 @@ import canon from "@/components/ui/FormularioCanon.module.css";
 import type { ArtistaResumen } from "@/lib/artistas";
 import { etiquetaHora } from "@/lib/calendario";
 import type { Ciudad } from "@/lib/ciudad";
-import { partirLocal } from "@/lib/cuandoEvento";
+import { partirLocal, resumenCadaDia } from "@/lib/cuandoEvento";
 import { LIMITES_EVENTO, type ErroresEvento } from "@/lib/eventos";
 import { diaLargo, diaLocal } from "@/lib/fechas";
 import { DURACIONES, HORAS_SUGERIDAS, diasElegidos, diasSugeridos, etiquetaDuracion, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
@@ -101,8 +101,10 @@ export function PasoDia({ dias, zona, onElegir }: { dias: Dias | null; zona: str
 /**
  * Primero cuándo empieza; al elegirlo aparece cuánto dura (1, 2 o 3 horas, «Otra hora» o «Sin hora de fin»), con el fin ya calculado
  * desde el inicio: puede caer en el día siguiente («empieza 10:00 p.m., dura 3 horas, termina 1:00 a.m.»). Elegir el fin avanza. En
- * un evento de varios días «cuánto dura» no tiene sentido (un festival no dura «2 horas»): ahí se sigue preguntando a qué hora termina
- * el último día, y «Sin hora de fin» es que acaba con él.
+ * un evento de varios días «cuánto dura» no tiene sentido (un festival no dura «2 horas»): la pregunta es «¿A qué hora, cada día?» (el
+ * horario del primer día vale para todos), «Termina» son horas del día y «Sin hora de fin» es que acaba con el último; debajo, una línea
+ * suave lo dice en palabras («Del 10 al 12 de oct · cada día de 8:00 a 9:00 p.m.»). Lo guardado es el mismo: el inicio del primer día y
+ * el fin del último. Las horas distintas por día piden sesiones (OL-310).
  */
 export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: string; onInicio: (hora: string) => void; onFin: (fin: string) => void }) {
   const [hoja, setHoja] = useState<"inicio" | "fin" | null>(null);
@@ -110,7 +112,8 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
   const idTermina = useId();
   const propia = r.hora && !(HORAS_SUGERIDAS as readonly string[]).includes(r.hora) ? r.hora : null;
   const sinFin = finConHora(r, "");
-  const varios = !!r.dias?.hasta;
+  const dias = r.dias?.hasta ? { desde: r.dias.desde, hasta: r.dias.hasta } : null;
+  const varios = !!dias;
   // Con un fin puesto en un evento de un día, se dice a qué hora termina y si ya es el día siguiente (la hora de «Otra hora» no se ve
   // en ningún chip).
   const fin = r.fin && r.dias && !varios ? partirLocal(r.fin) : null;
@@ -152,6 +155,7 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
               {fin.fecha > r.dias.desde && " del día siguiente"}
             </small>
           )}
+          {dias && <small>{resumenCadaDia(dias, r.hora, r.fin ?? "", diaLocal(new Date(), zona))}</small>}
         </div>
       )}
       {hoja === "inicio" && (

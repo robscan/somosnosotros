@@ -1,7 +1,7 @@
 /* ==========================================================================
    Los pasos del alta de evento (prototipo firmado `publicar-por-pasos.html`, bitácora 323). Todo va como hijo directo de la columna de
    `PorPasos`; aquí solo lo que es de estos pasos.
-   1. «Sube el cartel» · 2. Chips de una pregunta · 3. Opciones · 4. «Revisa» · 5. «¿Dónde es?»
+   1. «Sube el cartel» · 2. Chips de una pregunta · 3. Opciones · 4. «Revisa» y su entrada · 5. «¿Dónde es?»
    ========================================================================== */
 
 /* 1. El recuadro «Sube el cartel» y lo del cartel leído viven en `PasoCartel.module.css` (OL-302). */
@@ -65,6 +65,29 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 500;
+}
+
+/* La entrada de «Revisa» (OL-309; pedido del founder: «que entren de abajo para arriba, con move in, con ease gentle de Figma»). Al llegar —del
+   último paso o de leer el cartel— la cabeza (título o cartel), cada renglón, «Agregar…» y, al final, el pie suben desde abajo, uno tras otro
+   (`--orden` × 50 ms; el pie, siempre en el turno 6). Con el resorte «Gentle» de Figma de siempre (`--curva-resorte`, el mismo de la hoja de Lugares):
+   llega casi toda en los primeros 400 ms y se asienta sin pasarse. Solo con `data-direccion="entra"` de la columna (`PorPasos`): al volver de
+   «Cambiar» un dato no corre. Los hijos de la columna ya entran de lado con esa misma señal; `.sube.sube` y `.fija.fija` les ganan sin `!important`
+   (la lista no se mueve: entran sus renglones, no ella). Con «reducir movimiento», nada. `backwards` los tiene ocultos mientras esperan su turno. */
+@media (prefers-reduced-motion: no-preference) {
+  main[data-direccion="entra"] .sube.sube,
+  main[data-direccion="entra"] > .sube ~ footer {
+    animation: sube var(--duracion-resorte) var(--curva-resorte) backwards;
+    animation-delay: calc(var(--orden, 6) * 50ms);
+  }
+  main[data-direccion="entra"] > .fija.fija {
+    animation: none;
+  }
+}
+@keyframes sube {
+  from {
+    opacity: 0;
+    transform: translateY(var(--espacio-6));
+  }
 }
 
 /* 5. «¿Dónde es?» (OL-301): el aviso en letra suave (la ubicación que no se pudo leer, «Si el pin no está en su sitio…»), el aviso dentro de
