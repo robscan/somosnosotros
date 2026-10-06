@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LugarResumen } from "@/lib/lugares";
-import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas, diasElegidos } from "./pasos";
+import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finDe, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas, diasElegidos } from "./pasos";
 
 const ZONA = "America/Mexico_City";
 const pasar = (e: Estado, ...acciones: Accion[]) => acciones.reduce(flujo, e);
@@ -364,5 +364,58 @@ describe("diasElegidos: lo que devuelve la hoja del calendario como respuesta", 
   });
   it("un «último» anterior al primero no es un rango", () => {
     expect(diasElegidos("2026-10-10", "2026-10-08")).toEqual({ desde: "2026-10-10", hasta: null });
+  });
+});
+
+
+describe("horario por día (OL-311): sesiones, y de ahí el inicio y el fin del evento", () => {
+  /** Un festival del 9 al 11 de octubre, de 8:00 a 9:00 p.m., con la casilla marcada (sin sesiones). */
+  const festival = () =>
+    pasar(estadoInicial(), { tipo: "seguir" }, { tipo: "cambiar", cambios: { nombre: "Festival" } }, { tipo: "seguir" }, contestar({ dias: { desde: "2026-10-09", hasta: "2026-10-11" } }), { tipo: "cambiar", cambios: { hora: "20:00" } }, contestar({ fin: "2026-10-11T21:00" }));
+  const sesiones = [
+    { dia: "2026-10-09", hora: "20:00", fin: "21:00" },
+    { dia: "2026-10-10", hora: "18:00", fin: "21:00" },
+    { dia: "2026-10-11", hora: "19:00", fin: "" },
+  ];
+
+  it("sin sesiones (la casilla marcada) el inicio y el fin son los de siempre", () => {
+    const r = festival().r;
+    expect(r.sesiones).toBeNull();
+    expect({ inicio: inicioDe(r), fin: finDe(r) }).toEqual({ inicio: "2026-10-09T20:00", fin: "2026-10-11T21:00" });
+  });
+
+  it("con sesiones salen de la primera y la última: el inicio del primer día y el fin del último (sin hora de fin, el fin de ese día)", () => {
+    const r = { ...festival().r, sesiones };
+    expect({ inicio: inicioDe(r), fin: finDe(r) }).toEqual({ inicio: "2026-10-09T20:00", fin: "2026-10-11T23:59" });
+    const conFin = { ...r, sesiones: sesiones.map((h) => (h.dia === "2026-10-11" ? { ...h, fin: "22:30" } : h)) };
+    expect(finDe(conFin)).toBe("2026-10-11T22:30");
+    expect(inicioDe({ ...r, sesiones: [{ ...sesiones[0], hora: "12:00" }, ...sesiones.slice(1)] })).toBe("2026-10-09T12:00");
+  });
+
+  it("guardar el horario por día no pide nada más: la hora común sigue contestada y no se vuelve a preguntar", () => {
+    const e = flujo(festival(), { tipo: "cambiar", cambios: { sesiones } });
+    expect(faltan(e.r)).toEqual(["donde", "cuanto"]);
+    expect(e.r.hora).toBe("20:00");
+    expect(e.r.fin).toBe("2026-10-11T21:00");
+  });
+
+  it("elegir otros días borra el horario por día, con la hora y el fin (eran de otros días)", () => {
+    const e = pasar(festival(), { tipo: "cambiar", cambios: { sesiones } }, contestar({ dias: { desde: "2026-10-16", hasta: "2026-10-18" } }));
+    expect(e.r.sesiones).toBeNull();
+    expect(e.r.hora).toBeNull();
+    expect(e.r.fin).toBeNull();
+  });
+
+  it("volver a marcar la casilla (sesiones nulas) conserva el horario común", () => {
+    const e = pasar(festival(), { tipo: "cambiar", cambios: { sesiones } }, { tipo: "cambiar", cambios: { sesiones: null } });
+    expect(e.r.sesiones).toBeNull();
+    expect({ inicio: inicioDe(e.r), fin: finDe(e.r) }).toEqual({ inicio: "2026-10-09T20:00", fin: "2026-10-11T21:00" });
+  });
+
+  it("el evento publicado (la tarjeta) toma su inicio y su fin de las sesiones", () => {
+    const r = { ...festival().r, sesiones: [sesiones[0], sesiones[1], { ...sesiones[2], fin: "22:30" }], sitio: LUGAR, costo: "gratis" as const };
+    const e = eventoPublicado(r, { id: "0e0e0e0e-0000-4000-8000-000000000001", slug: null, creadoEn: "2026-10-07T16:00:00.000Z" }, { lugar: undefined, zona: ZONA, imagen: null });
+    expect(e.inicio).toBe("2026-10-10T02:00:00.000Z");
+    expect(e.fin).toBe("2026-10-12T04:30:00.000Z");
   });
 });

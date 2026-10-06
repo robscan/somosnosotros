@@ -28,6 +28,10 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* La hoja de un día (OL-311): sus dos grupos de chips, uno bajo el otro. */
+.enHoja {
+  margin-bottom: var(--espacio-4);
+}
 /* «Termina» aparece al elegir el inicio: cae en su sitio (doc 51: la animación introduce lo nuevo). */
 @media (prefers-reduced-motion: no-preference) {
   .aparece {
@@ -69,6 +73,11 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 500;
+}
+/* El día que se apartó del horario común (OL-311): sus horas en tinta y en negrita, para verlo de un vistazo entre los que siguen igual (en gris). */
+.distinto > b > small {
+  color: var(--texto);
+  font-weight: 700;
 }
 
 /* La entrada de «Revisa» (OL-309; pedido del founder: «que entren de abajo para arriba, con move in, con ease gentle de Figma»). Al llegar —del

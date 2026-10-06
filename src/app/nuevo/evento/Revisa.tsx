@@ -8,9 +8,9 @@ import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { COOPERACION_SOLIDARIA, type ErroresEvento } from "@/lib/eventos";
-import { cuandoVariosDias, formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
+import { HORARIOS_POR_DIA, cuandoVariosDias, diaLocal, formatearCuando, localAIso, rangoCorto, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
-import { NOMBRE_RESERVADO, dondeResuelto, inicioDe, nombreDelSitio, type Paso, type Respuestas } from "./pasos";
+import { NOMBRE_RESERVADO, dondeResuelto, finDe, inicioDe, nombreDelSitio, type Paso, type Respuestas } from "./pasos";
 import { CabezaCartel } from "./PasoCartel";
 import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
@@ -47,10 +47,12 @@ type Props = {
 export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, enviando, falta, formulario, onAbrir }: Props) {
   const inicio = localAIso(inicioDe(r), zona);
   const ahora = new Date();
-  const fin = r.fin ? localAIso(r.fin, zona) : null;
+  const finLocal = finDe(r);
+  const fin = finLocal ? localAIso(finLocal, zona) : null;
   // En varios días las horas van en su propio `span` sin saltos de línea: un renglón angosto parte entre los días y las horas, nunca dentro de ellas.
-  const varios = inicio && r.fin !== null ? cuandoVariosDias(inicio, fin, ahora, zona) : null;
-  const cuando = !inicio || r.fin === null ? null : varios ? (
+  // Con horario por día (OL-311) no hay un horario que decir: «horarios por día».
+  const varios = r.sesiones && r.dias?.hasta ? { dias: rangoCorto(r.dias.desde, r.dias.hasta, diaLocal(ahora, zona)), horas: HORARIOS_POR_DIA } : inicio && finLocal !== null ? cuandoVariosDias(inicio, fin, ahora, zona) : null;
+  const cuando = !inicio || finLocal === null ? null : varios ? (
     <>
       {varios.dias} · <span className={styles.hora}>{varios.horas}</span>
     </>
@@ -88,9 +90,9 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
           orden={1}
           valor={cuando}
           falta={r.dias ? "Falta la hora" : "Falta el día y la hora"}
-          error={errores.inicio ?? errores.fin}
+          error={errores.inicio ?? errores.fin ?? errores.sesiones}
           nota={inicio && yaPaso(inicioDe(r), new Date(), zona) ? "Esa hora ya pasó." : undefined}
-          onAbrir={() => onAbrir(r.dias && !cuando ? "hora" : "dia")}
+          onAbrir={() => onAbrir(r.dias && (!cuando || r.sesiones) ? "hora" : "dia")}
         />
         <Dato
           icono={<IconoPin width={20} height={20} />}

@@ -15,6 +15,8 @@ type Props = {
   evento: EventoAgenda;
   /** Tiene cartel (el que se subió en el primer paso): se ofrece descargarlo. */
   conCartel: boolean;
+  /** Con horario por día (OL-311): el texto de compartir dice «horarios por día» en vez de un solo horario. */
+  conSesiones?: boolean;
   /** «Publicar otro»: vuelve al primer paso con todo vacío. */
   onOtro: () => void;
 };
@@ -26,8 +28,8 @@ type Props = {
  * lo tiene y «Publicar otro», quieto, que no compite con compartir. Aquí iría, en punteado, la única sugerencia que la fase siguiente suma
  * (exposición o festival que el cartel también anuncia): todavía no hay modelo de datos para publicarla.
  */
-export default function Publicado({ evento, conCartel, onOtro }: Props) {
-  const { url, texto } = compartirEvento(evento, nombreSitio(evento));
+export default function Publicado({ evento, conCartel, conSesiones, onOtro }: Props) {
+  const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones);
   return (
     <>
       <div className={styles.final}>
