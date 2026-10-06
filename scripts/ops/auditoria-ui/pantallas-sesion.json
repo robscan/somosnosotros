@@ -1,7 +1,6 @@
 [
   { "id": "s01-inicio-sesion", "plantilla": "raíz", "url": "/", "completa": true },
   { "id": "s02-agenda-sesion", "plantilla": "raíz", "url": "/agenda", "completa": true },
-  { "id": "s03-alta-evento", "plantilla": "tarea", "url": "/nuevo?tipo=evento", "completa": true },
   { "id": "s04-ajustes", "plantilla": "tarea", "url": "/ajustes", "completa": true },
   { "id": "s05-perfil", "plantilla": "raíz", "url": "/perfil", "completa": true },
   { "id": "s06-ficha-evento-voy", "plantilla": "ficha", "url": "/eventos/lxs-colocaos-la-ultima-fogueada", "completa": true },

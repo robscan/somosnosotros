@@ -40,7 +40,6 @@ describe("horario por día al publicar (OL-311)", () => {
   function conSesiones(sesiones: string | null = porDia) {
     const fd = formulario();
     fd.set("fin", "2030-10-03T21:00");
-    fd.set("quedarse", "1");
     if (sesiones !== null) fd.set("sesiones", sesiones);
     return fd;
   }
@@ -90,26 +89,25 @@ describe("guardado completo del evento", () => {
     const fd = formulario();
     fd.set("gratis", "no");
     fd.set("cooperacion", "si");
-    await expect(crearEvento(null, fd)).rejects.toThrow("REDIRECT");
+    expect((await crearEvento(null, fd)).ok).toBe(true);
     expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.objectContaining({
       p_datos: expect.objectContaining({ precio: "Cooperación solidaria" }),
     }));
   });
   it("publica con una sola RPC, sin escrituras parciales separadas", async () => {
-    await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
+    expect((await crearEvento(null, formulario())).ok).toBe(true);
     expect(m.rpc).toHaveBeenCalledTimes(1);
     expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.objectContaining({
       p_evento: null, p_privado: null, p_datos: expect.objectContaining({ titulo: "Evento" }),
       p_quien: [expect.objectContaining({ nombre: "Trio de prueba" })],
     }));
     expect(m.after).toHaveBeenCalledTimes(1);
-    expect(m.redirect).toHaveBeenCalledWith(`/eventos/${ID}?nuevo=1`, "replace");
+    expect(m.redirect).not.toHaveBeenCalled();
   });
 
-  it("con `quedarse` (el alta por pasos) devuelve lo publicado en vez de redirigir, con el mismo guardado y los mismos avisos", async () => {
+  it("publicar devuelve lo publicado (el alta por pasos se queda en «Publicado»), sin redirigir, con el mismo guardado y los mismos avisos", async () => {
     m.maybeSingle.mockResolvedValue({ data: { slug: "evento-ab12" } });
     const fd = formulario();
-    fd.set("quedarse", "1");
     expect(await crearEvento(null, fd)).toEqual({ ok: true, id: ID, slug: "evento-ab12", href: "/eventos/evento-ab12", volver: "/eventos/evento-ab12" });
     expect(m.redirect).not.toHaveBeenCalled();
     expect(m.rpc).toHaveBeenCalledTimes(1);
@@ -117,18 +115,9 @@ describe("guardado completo del evento", () => {
     expect(m.invalidar).toHaveBeenCalledWith("/eventos/evento-ab12");
   });
 
-  it("con `quedarse` y sin slug todavía, la dirección cae al UUID como en la ficha", async () => {
+  it("sin slug todavía, la dirección cae al UUID como en la ficha", async () => {
     const fd = formulario();
-    fd.set("quedarse", "1");
     expect(await crearEvento(null, fd)).toEqual({ ok: true, id: ID, slug: null, href: `/eventos/${ID}`, volver: `/eventos/${ID}` });
-  });
-
-  it("`quedarse` no cambia los errores: un formulario incompleto sigue sin llamar a la base", async () => {
-    const fd = formulario();
-    fd.set("quedarse", "1");
-    fd.set("titulo", "");
-    expect((await crearEvento(null, fd)).ok).toBe(false);
-    expect(m.rpc).not.toHaveBeenCalled();
   });
 
   it("un fallo de cualquier parte no confirma, no avisa ni redirige", async () => {
@@ -179,9 +168,9 @@ describe("guardado completo del evento", () => {
 
   it("recuperar un alta confirmada drena la misma cola sin crear otro aviso", async () => {
     m.rpc.mockResolvedValue({ data: { id: ID, artistas: [], repetido: true }, error: null });
-    await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
+    expect((await crearEvento(null, formulario())).ok).toBe(true);
     expect(m.after).toHaveBeenCalledTimes(1);
-    expect(m.redirect).toHaveBeenCalledWith(`/eventos/${ID}?nuevo=1`, "replace");
+    expect(m.redirect).not.toHaveBeenCalled();
   });
 
   it("no guarda sin una clave valida de operacion", async () => {

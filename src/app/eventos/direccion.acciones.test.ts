@@ -48,7 +48,7 @@ describe("transporte de direccion del formulario al guardado", () => {
     expect(m.rpc).not.toHaveBeenCalled();
   });
   it("el alta entrega nombre, direccion y punto por separado a la RPC", async () => {
-    await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
+    expect((await crearEvento(null, formulario())).ok).toBe(true);
     expect(m.rpc).toHaveBeenCalledTimes(1);
     expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_evento: null, p_privado: null, p_datos: {
       sitio_texto: "Foro de prueba", sitio_direccion: "Calle Prueba 123", sitio_lat: 22.15, sitio_lng: -100.98,
@@ -83,7 +83,7 @@ const SIN_CIUDAD = "No pudimos saber en qué ciudad está. Intenta de nuevo.";
 describe("ciudad del evento en otro sitio", () => {
   it("el alta con un pin de otra ciudad guarda esa ciudad, no la inicial", async () => {
     const fd = formulario(); fd.set("ciudad", "Querétaro");
-    await expect(crearEvento(null, fd)).rejects.toThrow("REDIRECT");
+    expect((await crearEvento(null, fd)).ok).toBe(true);
     expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_datos: { ciudad: "Querétaro" } });
   });
   it("el alta con un pin y sin ciudad no se publica y lo dice en la dirección del sitio", async () => {
@@ -99,7 +99,7 @@ describe("ciudad del evento en otro sitio", () => {
   });
   it("un sitio escrito sin coordenadas no tiene de dónde deducir la ciudad: sigue en la inicial y se publica", async () => {
     const fd = formulario(); fd.set("ciudad", ""); fd.set("sitio_direccion", ""); fd.set("sitio_lat", ""); fd.set("sitio_lng", "");
-    await expect(crearEvento(null, fd)).rejects.toThrow("REDIRECT");
+    expect((await crearEvento(null, fd)).ok).toBe(true);
     expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_datos: { ciudad: "San Luis Potosí" } });
   });
   it("(edición) con el mismo pin y sin ciudad en el formulario conserva la del evento guardado", async () => {

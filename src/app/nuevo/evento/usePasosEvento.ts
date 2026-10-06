@@ -2,14 +2,16 @@
 
 import { useMemo, useReducer } from "react";
 import type { QuienItem } from "@/lib/artistas";
-import { estadoInicial, flujo, pasoActual, type Candidato, type Paso, type Respuestas, type UsoSitio } from "./pasos";
+import type { Arranque } from "./arranque";
+import { estadoConArranque, flujo, pasoActual, type Candidato, type Paso, type Respuestas, type UsoSitio } from "./pasos";
 
 /**
- * El estado del alta por pasos: las respuestas y el camino (`pasos.ts`, donde vive la regla). Devuelve el paso a la vista y los gestos
- * que lo mueven, estables entre pintados (los usan los efectos de quien los recibe, como el gesto de Atrás de la app de iPhone).
+ * El estado del alta por pasos: las respuestas y el camino (`pasos.ts`, donde vive la regla). Abre con lo que ya se sabe (`arranque`: el
+ * lugar, el artista o el evento que se duplica; OL-312). Devuelve el paso a la vista y los gestos que lo mueven, estables entre pintados (los
+ * usan los efectos de quien los recibe, como el gesto de Atrás de la app de iPhone).
  */
-export function usePasosEvento(quienInicial: QuienItem[]) {
-  const [estado, despachar] = useReducer(flujo, quienInicial, estadoInicial);
+export function usePasosEvento(quienInicial: QuienItem[], arranque: Arranque | null) {
+  const [estado, despachar] = useReducer(flujo, null, () => estadoConArranque(quienInicial, arranque));
   const gestos = useMemo(
     () => ({
       cambiar: (cambios: Partial<Respuestas>) => despachar({ tipo: "cambiar", cambios }),

@@ -192,7 +192,7 @@ export function altaLejosDeCiudades(actual: Ciudad, ciudades: readonly Ciudad[],
   if (filas.some((fila) => fila.estasAqui)) return null;
   return seccion === "lugares"
     ? { texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" }
-    : { texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" };
+    : { texto: "Agregar un evento donde estás", href: "/nuevo/evento" };
 }
 
 /** La consulta del permiso solo observa; hasta resolverla, no aparece un botón que luego desaparezca. */

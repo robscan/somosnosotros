@@ -21,6 +21,7 @@ import BarraFicha from "@/components/ui/BarraFicha";
 import { Chip } from "@/components/ui/Chip";
 import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
+import { enlaceAltaEvento } from "@/lib/armazon";
 import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoCalendario, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
@@ -285,7 +286,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const hrefPublicarNovedad = puedeEditar ? `${hrefArtista(a)}/novedades/nueva` : null;
   const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
-  const publicarFecha = `/nuevo?artista=${a.id}`;
+  const publicarFecha = enlaceAltaEvento({ artista: a.id });
   const hrefPublicarFecha = actual ? publicarFecha : `/entrar?siguiente=${encodeURIComponent(publicarFecha)}`;
   const qrSvg = await qrDeUrl(url);
   // Sin las fechas (diferidas) el aviso de borrar ya no dice cuántas tiene: el menú de administración sigue en el

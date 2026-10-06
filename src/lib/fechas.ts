@@ -261,25 +261,6 @@ export function tramo(inicio: string, ahora: Date = new Date(), zona: string = Z
   return dia <= sumarDias(hoy, 7) ? "semana" : "proximos";
 }
 
-/** Valor sugerido para el selector: hoy a las 19:00 si aún no pasa; si no, mañana a las 19:00 (en la zona del evento). */
-export function sugerirInicio(ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
-  const p = partes(ahora, zona);
-  const hoy = `${p.year}-${p.month}-${p.day}`;
-  return `${Number(p.hour) < 18 ? hoy : sumarDias(hoy, 1)}T19:00`;
-}
-
-/**
- * La hora sugerida en la zona nueva, si la persona no la tocó: hoy o mañana a las 19:00 de allá. El fin se mueve con la
- * misma duración, como al mover el inicio en el selector, para que nunca quede antes. Null si no hay nada que mover.
- */
-export function resugerirCuando(actual: { inicio: string; fin: string }, sugerida: string, zona: string = ZONA_INICIAL, ahora: Date = new Date()): { inicio: string; fin: string } | null {
-  if (!sugerida || actual.inicio !== sugerida) return null;
-  const inicio = sugerirInicio(ahora, zona);
-  if (inicio === sugerida) return null;
-  const horas = actual.fin ? (Date.parse(`${actual.fin}:00Z`) - Date.parse(`${sugerida}:00Z`)) / 3600000 : 0;
-  return { inicio, fin: horas > 0 ? sumarHoras(inicio, horas, zona) : actual.fin };
-}
-
 /** Texto de calendario (.ics) en UTC. */
 export function aFechaIcs(iso: string): string {
   return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");

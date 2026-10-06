@@ -14,9 +14,8 @@
     { "regla": "fuera-de-la-caja", "elemento": "div.mapboxgl-ctrl-bottom-left", "pantalla": "s17", "porque": "Permanente: el contenedor de los controles de Mapbox no tiene caja propia (como el de arriba a la izquierda)." },
     { "regla": "fuera-de-la-caja", "elemento": "a.mapboxgl-ctrl-logo", "pantalla": "s17", "porque": "Permanente: Mapbox pone su logotipo con un margen de −4 px; no se toca." },
     { "regla": "margen-negativo", "elemento": "a.mapboxgl-ctrl-logo", "pantalla": "s17", "porque": "Permanente: Mapbox pone su logotipo con un margen de −4 px; no se toca." },
-    { "regla": "teclado", "elemento": "botón «Evento»", "porque": "Permanente: la tira de tipos de /nuevo (Evento · Lugar · Artista) elige qué formulario se ve, no es una acción: con el teclado abierto queda bajo él y no le quita nada al campo (el botón de publicar va dentro del formulario). Si el founder la quiere sobre el teclado, basta `bottom: var(--abajo-visible)` en `.tira` de `nuevo/Alta.module.css` (OL-308, bitácora 336)." },
-    { "regla": "teclado", "elemento": "botón «Lugar»", "porque": "Permanente: la tira de tipos de /nuevo (Evento · Lugar · Artista) elige qué formulario se ve, no es una acción: con el teclado abierto queda bajo él y no le quita nada al campo (el botón de publicar va dentro del formulario). Si el founder la quiere sobre el teclado, basta `bottom: var(--abajo-visible)` en `.tira` de `nuevo/Alta.module.css` (OL-308, bitácora 336)." },
-    { "regla": "teclado", "elemento": "botón «Artista»", "porque": "Permanente: la tira de tipos de /nuevo (Evento · Lugar · Artista) elige qué formulario se ve, no es una acción: con el teclado abierto queda bajo él y no le quita nada al campo (el botón de publicar va dentro del formulario). Si el founder la quiere sobre el teclado, basta `bottom: var(--abajo-visible)` en `.tira` de `nuevo/Alta.module.css` (OL-308, bitácora 336)." }
+    { "regla": "teclado", "elemento": "botón «Lugar»", "porque": "Permanente: la tira de tipos de /nuevo (Evento · Lugar · Artista; «Evento» es un enlace al alta por pasos desde OL-312) elige qué formulario se ve, no es una acción: con el teclado abierto queda bajo él y no le quita nada al campo (el botón de publicar va dentro del formulario). Si el founder la quiere sobre el teclado, basta `bottom: var(--abajo-visible)` en `.tira` de `nuevo/Alta.module.css` (OL-308, bitácora 336)." },
+    { "regla": "teclado", "elemento": "botón «Artista»", "porque": "Permanente: la tira de tipos de /nuevo (Evento · Lugar · Artista; «Evento» es un enlace al alta por pasos desde OL-312) elige qué formulario se ve, no es una acción: con el teclado abierto queda bajo él y no le quita nada al campo (el botón de publicar va dentro del formulario). Si el founder la quiere sobre el teclado, basta `bottom: var(--abajo-visible)` en `.tira` de `nuevo/Alta.module.css` (OL-308, bitácora 336)." }
   ],
   "presupuestos": {
     "01-inicio": { "nodos": [295, 295, 297, 297], "profundidad": [11, 11, 11, 11] },
@@ -31,7 +30,6 @@
     "10-entrar": { "nodos": [21, 21, 51, 51], "profundidad": [7, 7, 7, 7] },
     "s01-inicio-sesion": { "nodos": [304, 304, 306, 306], "profundidad": [11, 11, 11, 11] },
     "s02-agenda-sesion": { "nodos": [263, 263, 265, 265], "profundidad": [10, 10, 10, 10] },
-    "s03-alta-evento": { "nodos": [48, 48, 82, 82], "profundidad": [9, 9, 9, 9] },
     "s04-ajustes": { "nodos": [93, 93, 125, 119], "profundidad": [9, 9, 9, 9] },
     "s05-perfil": { "nodos": [99, 99, 101, 101], "profundidad": [11, 11, 11, 11] },
     "s06-ficha-evento-voy": { "nodos": [69, 69, 102, 102], "profundidad": [8, 8, 8, 8] },

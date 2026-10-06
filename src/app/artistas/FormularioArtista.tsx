@@ -46,7 +46,7 @@ type Props = {
   ciudades: CiudadConArtistas[];
   /** El campo del nombre toma el foco al abrir (el alta lo pide solo si es lo primero que se ve). */
   autoFocus?: boolean;
-  /** La pantalla de alta tiene tres formularios y solo se ve el del tipo elegido: los otros siguen ahí, escondidos, con lo escrito. */
+  /** La pantalla de alta tiene dos formularios (lugar y artista) y solo se ve el del tipo elegido: el otro sigue ahí, escondido, con lo escrito. */
   oculta?: boolean;
 };
 /** Lo que trae la búsqueda por nombre: el artista con su ciudad (el mismo nombre en otra ciudad es otro artista). */

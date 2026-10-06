@@ -43,7 +43,7 @@ before(async () => {
       const punto = q.has('sinPunto') ? { sitio_lat: null, sitio_lng: null } : { sitio_lat: Number(q.get('lat')), sitio_lng: Number(q.get('lng')) };
       const contexto = q.has('contexto') ? { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.9764, lat: 22.1497 }, zoom: 13 } : null;
       createRoot(document.getElementById('root')).render(
-        <Form accion={accion} lugares={[]} modo="editar" usuarioId="cuenta" revision="2026-10-01T10:00:00.123456+00:00" ciudadContexto={contexto}
+        <Form accion={accion} lugares={[]} usuarioId="cuenta" revision="2026-10-01T10:00:00.123456+00:00" ciudadContexto={contexto}
           evento={{ id: '00000000-0000-4000-8000-0000000000f1', titulo: 'Evento de prueba', sitio_texto: 'Plaza de prueba', sitio_direccion: q.has('sinPunto') ? null : 'Calle Prueba 1',
             sitio_reservado: false, inicio: '2030-11-01T20:00:00Z', fin: null, gratis: true, precio: null, zona: 'America/Mexico_City', ciudad: q.get('ciudad'), ...punto }} />,
       );

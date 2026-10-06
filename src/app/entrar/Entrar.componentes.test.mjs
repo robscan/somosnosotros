@@ -163,7 +163,7 @@ const CASOS = [
   { nombre: "Seguir un lugar desde la lista de Lugares", camino: ["/lugares"], siguiente: "/lugares/7?accion=seguir", destino: "/lugares/7", atras: "/lugares" },
   { nombre: "Seguir un lugar desde su ficha", camino: ["/lugares", "/lugares/7"], siguiente: "/lugares/7?accion=seguir", destino: "/lugares/7", atras: "/lugares" },
   { nombre: "Seguir un artista desde su ficha", camino: ["/artistas", "/artistas/pimpolina"], siguiente: "/artistas/pimpolina?accion=seguir", destino: "/artistas/pimpolina", atras: "/artistas" },
-  { nombre: "el «+» para publicar", camino: [], siguiente: "/nuevo?tipo=evento", destino: "/nuevo", atras: "/agenda" },
+  { nombre: "el «+» para publicar", camino: [], siguiente: "/nuevo/evento", destino: "/nuevo/evento", atras: "/agenda" },
   { nombre: "Novedades (la campana)", camino: ["/novedades"], siguiente: "/novedades", destino: "/novedades", atras: "/agenda" },
   { nombre: "Perfil", camino: [], siguiente: "/perfil", destino: "/perfil", atras: "/agenda" },
 ];

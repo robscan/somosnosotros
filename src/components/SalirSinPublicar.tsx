@@ -14,8 +14,8 @@ function huellaDe(pantalla: HTMLElement): string {
 /**
  * Guardia de salida estándar de la pantalla de alta (pedido del founder, 2026-09-16): Atrás o la ✕ preguntan solo si lo escrito
  * cambió respecto a cómo se abrió. Se compara campo por campo, no si está vacío: un alta que llega con el lugar o el artista
- * puestos, o un duplicado, no pregunta hasta que se toca algo. Vale para los tres formularios de la pantalla (aunque solo se vea
- * uno, lo escrito en los otros también cuenta). `olvidar` corre al confirmar la salida (el borrador del alta de evento). También avisa con `beforeunload` si se recarga o se cierra con cambios. Devuelve
+ * puestos, o un duplicado, no pregunta hasta que se toca algo. Vale para todos los formularios de la pantalla (aunque solo se vea
+ * uno, lo escrito en los otros también cuenta). `olvidar` corre al confirmar la salida (lo que la pantalla guarde aparte). También avisa con `beforeunload` si se recarga o se cierra con cambios. Devuelve
  * la hoja «¿Salir sin publicar?» para pintarla dentro de la pantalla.
  */
 export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olvidar?: () => void) {

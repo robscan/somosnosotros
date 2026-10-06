@@ -26,7 +26,7 @@ import styles from "./AltaEvento.module.css";
 /**
  * Los tres pasos de «Dónde» del alta de evento (OL-301; prototipo firmado, bitácora 323): buscar el sitio con un solo campo (`PasoDonde`),
  * confirmar el pin en el mapa (`PasoMapa`) y, si no es un lugar del directorio, decir qué hacer con él (`PasoUso`). Sustituyen a la
- * hoja de siempre (`HojaDonde`), que sigue en el alta de siempre. La dirección es texto de confirmación, nunca un campo.
+ * hoja de siempre (`HojaDonde`), que sigue al editar un evento. La dirección es texto de confirmación, nunca un campo.
  */
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTerminar } from "@/components/ui/Atras";
 import HojaDonde from "@/components/HojaDonde";
 import Boton from "@/components/ui/Boton";
@@ -17,7 +17,7 @@ import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
 import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, REVELAR_OPCIONES, esCooperacion, extraerNumero, type Evento, type ModoSitio, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
-import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
+import { formatearCuando, isoALocal, localAIso, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
 import { faltaEnEvento } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
 import type { Ciudad } from "@/lib/ciudad";
@@ -25,14 +25,11 @@ import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
-import { cupoDeCartel, leerCartelAccion, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
-import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
+import { zonaDelPunto, type ResultadoEvento } from "./acciones";
 import SelectorCuando from "./SelectorCuando";
-import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
-import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
-import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel, type CampoFlyer } from "./gestosFlyer";
-import { sitioListo, textoDelSitio, valorDelSitio } from "./direccionEvento";
+import { crearGestosFlyer } from "./gestosFlyer";
+import { sitioListo, valorDelSitio } from "./direccionEvento";
 import CamposSitio from "./CamposSitio";
 import { useEstoyAqui } from "./useEstoyAqui";
 import { puedeConservarReservadoSinDireccion, sitioReservadoVencido } from "@/lib/retencionSitio";
@@ -43,85 +40,38 @@ import styles from "./FormularioEvento.module.css";
 
 type Abierta = "cuando" | "quien" | "cuanto" | null;
 
-/** Lo que se guarda del alta en el teléfono (ver borrador.ts: solo vuelve al regresar de registrar un lugar). */
-type Borrador = {
-  titulo: string;
-  inicio: string;
-  fin: string;
-  gratis: boolean;
-  cooperacion?: boolean;
-  precio: string;
-  descripcion: string;
-  enlace: string;
-  imagen: string | null;
-  modoSitio: ModoSitio;
-  lugarId: string;
-  otro: OtroSitio;
-  quien: QuienItem[];
-};
-function leerBorrador(): Borrador | null {
-  try {
-    const raw = localStorage.getItem(CLAVE_BORRADOR);
-    return raw ? (JSON.parse(raw) as Borrador) : null;
-  } catch {
-    return null;
-  }
-}
-type Cambio = (cambio: (actual: string) => string) => void;
-/**
- * Si la hora sigue siendo la sugerida (nadie la tocó), la vuelve a sugerir en la zona nueva y mueve el fin con la misma
- * duración (resugerirCuando). `cuando` es lo último que se pintó; cada cambio comprueba que no cambió entretanto.
- */
-function resugerir(sugerida: { current: string }, cuando: { current: { inicio: string; fin: string } }, setInicio: Cambio, setFin: Cambio, zona: string) {
-  const antes = cuando.current;
-  const nuevo = resugerirCuando(antes, sugerida.current, zona);
-  if (!nuevo) return;
-  sugerida.current = nuevo.inicio;
-  setInicio((actual) => (actual === antes.inicio ? nuevo.inicio : actual));
-  setFin((actual) => (actual === antes.fin ? nuevo.fin : actual));
-}
-
 type Props = {
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
-  lugarInicial?: string;
-  evento?: Partial<Evento>;
+  evento: Partial<Evento>;
   privado?: SitioPrivado | null;
   /** En otro sitio, la zona de su punto tal como la calcula el servidor al guardar (lib/zona). */
   zonaSitio?: string;
-  modo: "alta" | "editar" | "duplicar";
   usuarioId: string;
-  cartelActivo?: boolean;
-  /** Quién se presenta, ya resuelto: al editar o duplicar, o al venir de la ficha de un artista. */
+  /** Quién se presenta, ya resuelto. */
   quienInicial?: QuienItem[];
-  /** Artistas ligados a mi cuenta: si es uno solo, Quién ya viene resuelto con él (decisión 12). */
+  /** Artistas ligados a mi cuenta: Quién los marca «tú». */
   mios?: ArtistaResumen[];
   /** El administrador puede pegar la dirección de una imagen (eventos importados). */
   esAdmin?: boolean;
-  /** Adónde vuelve "Registrar un lugar nuevo" con el lugar elegido. */
+  /** A dónde dice volver la acción que crea un lugar desde la hoja «¿Dónde es?» (solo para que nunca redirija: no se sale de la pantalla). */
   volverA?: string;
-  /** Lecturas de cartel que le quedan este mes (docs/rediseno/23). Null si no hay sesión o no aplica. */
-  cupo?: Cupo | null;
   revision?: string;
-  /** Ciudad del chip de la Agenda desde la que se entró a publicar: una pista más para la búsqueda de dirección (OL-100). */
+  /** Ciudad desde la que se entró: una pista más para la búsqueda de dirección (OL-100). */
   ciudadContexto?: Ciudad | null;
-  /** La pantalla de alta tiene tres formularios y solo se ve el del tipo elegido: los otros siguen ahí, escondidos, con lo escrito. */
-  oculta?: boolean;
 };
 
 /**
- * Alta de evento con el canon (docs/rediseno/15, decisiones 1 a 3; docs/rediseno/22): arriba la tarjeta del cartel,
- * que al subirlo llena el formulario y es lo único que explica la pantalla; luego el nombre, y debajo los renglones
- * resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola salida: la lupa abre la hoja "Dónde es"),
- * Quién, Cuánto (gratis) y Más. La ayuda de qué falta va bajo el campo o renglón, no dentro del botón (decisión 3
- * ampliada por el founder, 2026-09-21, OL-100: "aplica como canon para todos los formularios").
+ * Editar un evento con el canon (docs/rediseno/15, decisiones 1 a 3; docs/rediseno/22): el nombre y, debajo, los renglones resueltos con
+ * el mismo dibujo: Cuándo, Dónde (una sola salida: la lupa abre la hoja "Dónde es"), Quién, Cuánto y Más (descripción, enlace y el cartel o
+ * una foto). La ayuda de qué falta va bajo el campo o renglón, no dentro del botón (decisión 3 ampliada por el founder, 2026-09-21, OL-100:
+ * "aplica como canon para todos los formularios"). Desde OL-312 solo edita: publicar y duplicar son del alta por pasos (`/nuevo/evento`).
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/nuevo", cupo = null, revision, ciudadContexto = null, oculta = false }: Props) {
+export default function FormularioEvento({ accion, lugares, evento, privado, zonaSitio = ZONA_INICIAL, usuarioId, quienInicial, mios = [], esAdmin = false, volverA = "/nuevo/evento", revision, ciudadContexto = null }: Props) {
   const [revisionInicial] = useState(revision);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
-  const esAlta = modo === "alta";
   // Guardado (al editar): la tarea termina sin quedarse en el historial; mientras vuelve, el botón sigue ocupado.
   const terminar = useTerminar();
   const terminado = resultado?.ok === true;
@@ -133,23 +83,23 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     if (resultado && !resultado.ok) reponerGuardia();
   }, [resultado]);
 
-  const modoInicial: ModoSitio = evento?.sitio_reservado ? "reservado" : evento?.sitio_texto ? "otro" : "lugar";
+  const modoInicial: ModoSitio = evento.sitio_reservado ? "reservado" : evento.sitio_texto ? "otro" : "lugar";
   const [modoSitio, setModoSitio] = useState<ModoSitio>(modoInicial);
-  const [lugarId, setLugarId] = useState(evento?.lugar_id ?? lugarInicial ?? (lugares.length === 1 ? lugares[0].id : ""));
-  // "Agregar lugar" (OL-173, docs/rediseno/43) registra en línea, sin salir de la pantalla de alta: el lugar nuevo
+  const [lugarId, setLugarId] = useState(evento.lugar_id ?? (lugares.length === 1 ? lugares[0].id : ""));
+  // "Agregar lugar" (OL-173, docs/rediseno/43) registra en línea, sin salir de la pantalla: el lugar nuevo
   // todavía no está en `lugares` (la trajo el primer pintado del servidor), así que esta lista propia lo recibe de
   // vuelta de la hoja y lo agrega, para que "Dónde" lo encuentre igual que a cualquier lugar ya registrado.
   const [listaLugares, setListaLugares] = useState<LugarResumen[]>(lugares);
   const [otro, setOtro] = useState<OtroSitio>(() => ({
     reservado: modoInicial === "reservado",
-    sitioTexto: evento?.sitio_texto ?? "",
-    direccion: evento?.sitio_direccion ?? "",
-    nombreLegacy: !!evento?.sitio_texto && !evento.sitio_direccion && !evento.sitio_reservado,
-    sitioPunto: evento?.sitio_lat != null && evento?.sitio_lng != null ? { lat: evento.sitio_lat, lng: evento.sitio_lng } : null,
+    sitioTexto: evento.sitio_texto ?? "",
+    direccion: evento.sitio_direccion ?? "",
+    nombreLegacy: !!evento.sitio_texto && !evento.sitio_direccion && !evento.sitio_reservado,
+    sitioPunto: evento.sitio_lat != null && evento.sitio_lng != null ? { lat: evento.sitio_lat, lng: evento.sitio_lng } : null,
     direccionPrivada: privado?.direccion ?? "",
     privadoPunto: privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : null,
     revelarHoras: (() => {
-      if (evento?.sitio_revelar_desde && evento?.inicio) {
+      if (evento.sitio_revelar_desde && evento.inicio) {
         const h = Math.round((new Date(evento.inicio).getTime() - new Date(evento.sitio_revelar_desde).getTime()) / 3600000);
         return REVELAR_OPCIONES.some((o) => o.horas === h) ? h : 24;
       }
@@ -158,23 +108,17 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     indicaciones: privado?.indicaciones ?? "",
     ciudad: (evento as { ciudad?: string } | undefined)?.ciudad ?? null,
   }));
-  const [titulo, setTitulo] = useState(evento?.titulo ?? "");
+  const [titulo, setTitulo] = useState(evento.titulo ?? "");
   // Las horas del selector son las del sitio del evento y se leen en su zona, la misma que usará el servidor al guardar
   // (zonaDelEvento): la del lugar elegido o, en otro sitio, la de su punto.
-  const zonaInicial = zonaSegura(modoInicial === "lugar" ? (lugares.find((l) => l.id === (evento?.lugar_id ?? lugarInicial))?.zona ?? evento?.zona) : zonaSitio);
-  const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio, zonaInicial) : sugerirInicio(new Date(), zonaInicial));
-  const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin, zonaInicial) : "");
+  const zonaInicial = zonaSegura(modoInicial === "lugar" ? (lugares.find((l) => l.id === evento.lugar_id)?.zona ?? evento.zona) : zonaSitio);
+  const [inicio, setInicio] = useState(isoALocal(evento.inicio, zonaInicial));
+  const [fin, setFin] = useState(isoALocal(evento.fin, zonaInicial));
   // En otro sitio, la zona sale del punto (el público o el reservado) con la misma cuenta del servidor; se pide cada vez
-  // que el punto cambia (hoja, borrador). Sin punto, la de la ciudad inicial, como al guardar.
+  // que el punto cambia (la hoja). Sin punto, la de la ciudad inicial, como al guardar.
   const puntoActivo = modoSitio === "reservado" ? otro.privadoPunto : modoSitio === "otro" ? otro.sitioPunto : null;
   const clavePunto = puntoActivo ? `${puntoActivo.lat},${puntoActivo.lng}` : "";
   const [zonaPin, setZonaPin] = useState(zonaSitio);
-  // Mientras nadie la toque, la hora sugerida sigue a la zona del sitio (resugerir), con el fin detrás.
-  const sugerida = useRef(modo === "editar" ? "" : inicio);
-  const cuando = useRef({ inicio, fin });
-  useEffect(() => {
-    cuando.current = { inicio, fin };
-  }, [inicio, fin]);
   const claveConZona = useRef(modoInicial === "lugar" ? "" : clavePunto);
   useEffect(() => {
     if (!clavePunto || clavePunto === claveConZona.current) return;
@@ -183,166 +127,41 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     let vigente = true;
     zonaDelPunto(lat, lng)
       .then((z) => {
-        if (!vigente) return;
-        setZonaPin(z);
-        resugerir(sugerida, cuando, setInicio, setFin, z);
+        if (vigente) setZonaPin(z);
       })
       .catch(() => {});
     return () => {
       vigente = false;
     };
   }, [clavePunto]);
-  const [gratis, setGratis] = useState(!evento?.precio);
-  const [cooperacion, setCooperacion] = useState(esCooperacion(evento?.precio));
+  const [gratis, setGratis] = useState(!evento.precio);
+  const [cooperacion, setCooperacion] = useState(esCooperacion(evento.precio));
   // Al editar, si el precio guardado es "$150", mostrar solo "150" en el campo.
-  const [precio, setPrecio] = useState(evento?.precio ? extraerNumero(evento.precio) : "");
-  const [descripcion, setDescripcion] = useState(evento?.descripcion ?? "");
-  const [enlace, setEnlace] = useState(evento?.enlace ?? "");
-  const [imagen, setImagen] = useState<string | null>(evento?.imagen ?? null);
+  const [precio, setPrecio] = useState(evento.precio ? extraerNumero(evento.precio) : "");
+  const [descripcion, setDescripcion] = useState(evento.descripcion ?? "");
+  const [enlace, setEnlace] = useState(evento.enlace ?? "");
+  const [imagen, setImagen] = useState<string | null>(evento.imagen ?? null);
   const [subiendo, setSubiendo] = useState(false);
-  const [leyendo, setLeyendo] = useState(false);
-  // Lo que cuenta la tarjeta del cartel: en qué va, qué decir y la foto que se subió. Sin tarjeta, está en reposo.
-  const [cartel, setCartel] = useState<EstadoCartel>(null);
-  const [cupoActual, setCupoActual] = useState(cupo);
-  const [errorCupo, setErrorCupo] = useState(false);
-  const [consultandoCupo, setConsultandoCupo] = useState(false);
-  const consultaCupo = useRef(0);
-  const cupoPropAnterior = useRef(cupo);
-  const operandoCartel = useRef(false);
-  const periodoCupo = useRef(mesDelCupo());
-  const actualizarCupo = useCallback(async () => {
-    const consulta = ++consultaCupo.current;
-    setConsultandoCupo(true);
-    // Una respuesta de otro mes nunca confirma el periodo nuevo.
-    const periodo = mesDelCupo();
-    try {
-      const actual = await cupoDeCartel();
-      if (consulta !== consultaCupo.current) return null;
-      if (!actual) throw new Error("Cupo no disponible");
-      periodoCupo.current = periodo;
-      setCupoActual(actual);
-      setErrorCupo(false);
-      return actual;
-    } catch {
-      if (consulta === consultaCupo.current) setErrorCupo(true);
-      return null;
-    } finally {
-      if (consulta === consultaCupo.current) setConsultandoCupo(false);
-    }
-  }, []);
-  useEffect(() => {
-    if (cupoPropAnterior.current === cupo) return;
-    cupoPropAnterior.current = cupo;
-    const consulta = ++consultaCupo.current;
-    const id = requestAnimationFrame(() => {
-      if (consulta !== consultaCupo.current) return;
-      setCupoActual(cupo);
-      setErrorCupo(false);
-      setConsultandoCupo(false);
-    });
-    return () => cancelAnimationFrame(id);
-  }, [cupo]);
-  useEffect(() => {
-    if (!cartelActivo || !esAlta) return;
-    const volver = () => {
-      if (document.visibilityState === "visible" && !operandoCartel.current) void actualizarCupo();
-    };
-    volver();
-    window.addEventListener("focus", volver);
-    window.addEventListener("pageshow", volver);
-    document.addEventListener("visibilitychange", volver);
-    const reloj = window.setInterval(() => {
-      if (mesDelCupo() !== periodoCupo.current) volver();
-    }, 30_000);
-    const invalidar = () => { ++consultaCupo.current; };
-    return () => {
-      invalidar();
-      window.removeEventListener("focus", volver);
-      window.removeEventListener("pageshow", volver);
-      document.removeEventListener("visibilitychange", volver);
-      window.clearInterval(reloj);
-    };
-  }, [actualizarCupo, cartelActivo, esAlta]);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
-  const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
-  const gestos = useRef(crearGestosFlyer(camposIniciales({
-    titulo: evento?.titulo,
-    inicio: evento?.inicio,
-    precioDefinido: evento?.precio !== undefined,
-    descripcion: evento?.descripcion,
-    enlace: evento?.enlace,
-    quienInicial,
-    donde: !!(lugarId || otro.sitioTexto || otro.reservado || otro.sitioPunto),
-    imagen: evento?.imagen,
-  })));
-  const imagenActual = useRef(imagen);
-  function ponerImagen(valor: string | null) {
-    imagenActual.current = valor;
-    setImagen(valor);
-  }
+  const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? []);
+  // Cuál es el último gesto en «Dónde» y en la imagen: una respuesta que tarda (la dirección de un pin, una subida) no pisa uno más nuevo.
+  const gestos = useRef(crearGestosFlyer());
   const [abierta, setAbierta] = useState<Abierta>(null);
-  const [masAbierto, setMasAbierto] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
+  const [masAbierto, setMasAbierto] = useState(!!(evento.descripcion || evento.enlace || evento.imagen));
   // La hoja «Dónde»: cerrada, o abierta (`ubicarme`: con el «Estoy aquí» del renglón, que lee la ubicación al abrir).
   const [hoja, setHoja] = useState<null | { ubicarme: boolean }>(null);
   // "Estoy aquí" en el pin de otro sitio: la persona en el mapa (punto azul) y el pin donde está.
   const { yo, ubicando, avisoUbicacion, estoyAqui } = useEstoyAqui({ tocar: () => gestos.current.tocar("donde"), vigente: (v) => gestos.current.vigente("donde", v) });
-
-  // Borrador (solo en el alta): vuelve tras el primer pintado únicamente si se dejó la señal al ir a registrar un lugar;
-  // si no, se olvida. Un lugar o artista que viene en la URL (?lugar=, ?artista=) manda sobre el borrador.
-  const guardarBorrador = useRef(false);
-  useEffect(() => {
-    if (!esAlta) return;
-    const id = requestAnimationFrame(() => {
-      const volviendo = vengoDeRegistrarLugar();
-      const b = volviendo ? leerBorrador() : null;
-      const lugarNuevo = volviendo ? tomarLugarNuevo() : null;
-      if (!volviendo) olvidarBorrador();
-      if (b && (b.titulo || b.lugarId || (b.otro && textoDelSitio(b.otro)) || b.quien.length)) {
-        (["titulo", "cuando", "cuanto", "descripcion", "enlace", "quien", "donde", "imagen"] as CampoFlyer[]).forEach(c => gestos.current.tocar(c));
-        setTitulo(b.titulo);
-        setInicio(b.inicio);
-        setFin(b.fin);
-        setGratis(b.gratis);
-        setCooperacion(!!b.cooperacion);
-        setPrecio(b.precio);
-        setDescripcion(b.descripcion);
-        setEnlace(b.enlace);
-        ponerImagen(b.imagen);
-        setModoSitio(lugarInicial ? "lugar" : b.modoSitio);
-        setLugarId(lugarInicial ?? b.lugarId);
-        if (b.otro) setOtro({ ...b.otro, nombreLegacy: b.otro.nombreLegacy ?? (!b.otro.reservado && !!b.otro.sitioTexto && !b.otro.direccion) });
-        if (!quienInicial?.length) setQuien(b.quien);
-        if (b.descripcion || b.enlace || b.imagen) setMasAbierto(true);
-      }
-      // Volviendo de registrar un lugar: ese lugar queda elegido (llega por el borrador, no por la URL).
-      if (lugarNuevo) {
-        gestos.current.tocar("donde");
-        setModoSitio("lugar");
-        setLugarId(lugarNuevo);
-      }
-      guardarBorrador.current = true;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [esAlta, lugarInicial, quienInicial]);
-  useEffect(() => {
-    if (!esAlta || !guardarBorrador.current) return;
-    try {
-      const vacio = !titulo && !lugarId && !textoDelSitio(otro) && !quien.length && !descripcion && !imagen;
-      if (vacio) localStorage.removeItem(CLAVE_BORRADOR);
-      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, cooperacion, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien } satisfies Borrador));
-    } catch {}
-  }, [esAlta, titulo, inicio, fin, gratis, cooperacion, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
 
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlace, errores.imagen, errorImagen);
 
   const lugar = listaLugares.find((l) => l.id === lugarId);
-  const ofrecerCartel = cartelActivo && esAlta;
-  const direccionRetirada = modo === "editar" && !privado && sitioReservadoVencido(evento);
-  const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : clavePunto ? zonaPin : direccionRetirada && modoSitio === "reservado" ? evento?.zona : ZONA_INICIAL);
+  const direccionRetirada = !privado && sitioReservadoVencido(evento);
+  const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento.zona) : clavePunto ? zonaPin : direccionRetirada && modoSitio === "reservado" ? evento.zona : ZONA_INICIAL);
   const inicioIso = localAIso(inicio, zona);
-  const conservarSinDireccion = modo === "editar" && puedeConservarReservadoSinDireccion(evento, {
+  const conservarSinDireccion = puedeConservarReservadoSinDireccion(evento, {
     sitio_reservado: modoSitio === "reservado", inicio: inicioIso ?? undefined, fin: fin ? localAIso(fin, zona) : null, zona,
   });
   const dondeResuelto = modoSitio === "lugar" ? !!lugar : sitioListo(otro) || (conservarSinDireccion && !!otro.sitioTexto.trim());
@@ -367,7 +186,6 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     setModoSitio("lugar");
     setLugarId(id);
     setHoja(null);
-    resugerir(sugerida, cuando, setInicio, setFin, zonaSegura((nuevo ?? listaLugares.find((l) => l.id === id))?.zona));
   }
   function cambiarOtro(o: OtroSitio, desdePin = false) {
     const version = gestos.current.tocar("donde");
@@ -407,121 +225,35 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     const version = gestos.current.tocar("imagen");
     const r = await subir(archivo);
     if (!gestos.current.vigente("imagen", version)) return;
-    if (!("error" in r)) ponerImagen(r.url);
+    if (!("error" in r)) setImagen(r.url);
     setErrorImagen("error" in r ? r.error : null);
-  }
-
-  /**
-   * Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica.
-   * Todo va dentro de un try: si la promesa se rompe (se cae la señal, el servidor tarda de más, la función se
-   * agota), la tarjeta no puede quedarse en "Leyendo el cartel…" para siempre (revisión de la bitácora 095).
-   */
-  async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
-    const archivo = e.target.files?.[0];
-    e.target.value = "";
-    // Solo "sin archivo" o "ya hay una lectura en curso" cancelan en silencio: son toques que no pasaron nada nuevo.
-    // "consultandoCupo", "errorCupo" y "cupoActual" viejo NO deben abortar aquí (bug del founder 2026-09-21: la
-    // segunda lectura seguida no respondía ni avisaba). Elegir la foto abre el selector del teléfono, que dispara
-    // un foco/visibilitychange al volver; eso puede dejar una consulta de cupo en vuelo justo cuando llega este
-    // evento. El propio try de abajo vuelve a confirmar el cupo con el servidor y siempre deja un estado visible
-    // (leído, sin cupo o fallo), así que no hace falta -ni conviene- adivinarlo aquí primero.
-    if (!archivo || operandoCartel.current) return;
-    operandoCartel.current = true;
-    const versionImagen = gestos.current.tocar("imagen");
-    setCartel({ estado: "leyendo" });
-    setLeyendo(true);
-    try {
-      // El selector pudo estar abierto mientras se consumía el cupo en otra pantalla.
-      const confirmado = await actualizarCupo();
-      if (!confirmado || alLlegar(confirmado)) {
-        setCartel({ estado: "fallo", titulo: "No se leyó otro cartel", foto: imagenActual.current ?? undefined, mensaje: imagenActual.current ? "La imagen que tenías se queda." : "Puedes seguir a mano." });
-        return;
-      }
-      const subida = await subir(archivo);
-      if ("error" in subida) {
-        setCartel(falloAlSubir(imagenActual.current, subida.error, subida.motivo));
-        return;
-      }
-      const url = subida.url;
-      setCartel({ estado: "leyendo", foto: url });
-      const r = await leerCartelAccion(url);
-      // La subida no reemplaza la imagen hasta saber que no fue rechazada por cupo.
-      if (r.ok || !("sinCupo" in r)) {
-        if (gestos.current.vigente("imagen", versionImagen)) ponerImagen(url);
-      }
-      const foto = imagenActual.current ?? undefined;
-      if (!r.ok) {
-        // Se acabó el cupo entre que se abrió la pantalla y ahora: la tarjeta pasa a su única salida.
-        setCartel("sinCupo" in r ? { estado: "sin_cupo", foto } : falloAlLeer(foto, r.mensaje));
-        return;
-      }
-      const v = r.valores;
-      if (v.titulo && gestos.current.puedeCompletar("titulo")) setTitulo(v.titulo);
-      if (gestos.current.puedeCompletar("cuando") && v.inicio) {
-        sugerida.current = "";
-        setInicio(v.inicio);
-        setFin(v.fin);
-      }
-      if (gestos.current.puedeCompletar("cuanto")) {
-        setGratis(v.gratis);
-        setCooperacion(false);
-        setPrecio(v.precio);
-      }
-      if (v.descripcion && gestos.current.puedeCompletar("descripcion")) setDescripcion(v.descripcion);
-      if (v.enlace && gestos.current.puedeCompletar("enlace")) setEnlace(v.enlace);
-      setQuien((actual) => quienTrasLeerCartel(r.quien, actual, gestos.current.puedeCompletar("quien")));
-      if (gestos.current.puedeCompletar("donde") && r.lugarId) {
-        setModoSitio("lugar");
-        setLugarId(r.lugarId);
-      } else if (gestos.current.puedeCompletar("donde") && (v.lugar || v.direccion)) {
-        setModoSitio("otro");
-        setOtro((o) => ({ ...o, sitioTexto: v.lugar.slice(0, LIMITES_EVENTO.sitio), direccion: v.direccion.slice(0, LIMITES_EVENTO.direccion), sitioPunto: null, ciudad: null, pinPendiente: !!v.direccion }));
-      }
-      const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean) as string[];
-      setCartel({ ...leido(url, faltan), foto });
-    } catch {
-      setCartel(falloDeCorte(null, imagenActual.current));
-    } finally {
-      // También una lectura fallida puede haber consumido: nunca restar en el cliente.
-      await actualizarCupo();
-      setLeyendo(false);
-      operandoCartel.current = false;
-    }
   }
 
   return (
     <>
       <form
         ref={formRef}
-        hidden={oculta}
         action={(fd) => {
           if (falta) return;
           operacion.current = operacionEvento(fd, operacion.current);
           fd.set("operacion", operacion.current.id);
-          // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
-          if (esAlta) olvidarBorrador();
+          // Si el servidor devuelve un error, lo escrito sigue en pantalla y la guardia vuelve.
           apartarGuardia();
           enviar(fd);
         }}
         noValidate
       >
-        {modo === "editar" && <input type="hidden" name="revision" value={revisionInicial ?? ""} />}
-        {modo === "duplicar" && <p className="subtitulo">Mismo evento, nueva fecha. Cambia lo que haga falta.</p>}
-        {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
-            (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
-        {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} onElegir={leerCartel} />}
-
-        {/* 2. El nombre, con el icono del canon (el prototipo firmado lo lleva en las tres altas) y su ✕. Vacío se marca como
-            faltante con el mismo peso que Cuándo/Dónde cuando dicen «Falta»: el borde discontinuo; qué falta lo dice una sola vez,
-            la nota bajo el botón (doc 50, H-29 y H-32). Sin autoFocus (founder, 2026-09-21, L2): el teclado ya no sale solo al
-            abrir y tapa la tarjeta del cartel. */}
+        <input type="hidden" name="revision" value={revisionInicial ?? ""} />
+        {/* 1. El nombre, con el icono del canon y su ✕. Vacío se marca como faltante con el mismo peso que Cuándo/Dónde cuando dicen
+            «Falta»: el borde discontinuo; qué falta lo dice una sola vez, la nota bajo el botón (doc 50, H-29 y H-32). Sin autoFocus
+            (founder, 2026-09-21, L2): el teclado no sale solo al abrir. */}
         <label className={`${canon.campo} ${faltaNombre && !errores.titulo ? canon.campoFalta : ""}`}>
           <IconoBuscar width={20} height={20} />
           <input
             name="titulo"
             type="text"
             value={titulo}
-            onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }}
+            onChange={(e) => setTitulo(e.target.value)}
             maxLength={LIMITES_EVENTO.titulo}
             placeholder="Nombre del evento"
             aria-label="Nombre del evento"
@@ -533,7 +265,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           <Limpiar visible={!!titulo} />
           <ContadorCaracteres valor={titulo} tope={LIMITES_EVENTO.titulo} error={errores.titulo} />
         </label>
-        {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
+        {subiendo && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
         {errores.titulo && (
           <p id="error-nombre-evento" className={canon.error} role="alert">
             {errores.titulo}
@@ -555,10 +287,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                   inicio={inicio}
                   fin={fin}
                   zona={zona}
-                  sugeridaActual={() => sugerida.current}
                   onCambio={(i, f) => {
-                    gestos.current.tocar("cuando");
-                    sugerida.current = "";
                     setInicio(i);
                     setFin(f);
                   }}
@@ -628,7 +357,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             </Boton>
             {abierta === "quien" && (
               <div className={renglon.cuerpo}>
-                <SelectorQuien valor={quien} onCambio={(q) => { gestos.current.tocar("quien"); setQuien(q); }} mios={mios} ciudadContexto={ciudadContexto?.nombre} />
+                <SelectorQuien valor={quien} onCambio={setQuien} mios={mios} ciudadContexto={ciudadContexto?.nombre} />
               </div>
             )}
           </li>
@@ -644,19 +373,19 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             {abierta === "cuanto" && (
               <div className={renglon.cuerpo}>
                 <div className={canon.chips}>
-                  <Chip activo={gratis} onClick={() => { gestos.current.tocar("cuanto"); setGratis(true); setCooperacion(false); }}>
+                  <Chip activo={gratis} onClick={() => { setGratis(true); setCooperacion(false); }}>
                     Gratis
                   </Chip>
-                  <Chip activo={cooperacion} onClick={() => { gestos.current.tocar("cuanto"); setGratis(false); setCooperacion(true); }}>
+                  <Chip activo={cooperacion} onClick={() => { setGratis(false); setCooperacion(true); }}>
                     {COOPERACION_SOLIDARIA}
                   </Chip>
-                  <Chip activo={!gratis && !cooperacion} onClick={() => { gestos.current.tocar("cuanto"); setGratis(false); setCooperacion(false); }}>
+                  <Chip activo={!gratis && !cooperacion} onClick={() => { setGratis(false); setCooperacion(false); }}>
                     Con costo
                   </Chip>
                 </div>
                 {!gratis && !cooperacion && (
                 <span className={limpiar.caja}>
-                  <input type="text" inputMode="numeric" pattern="[0-9]*" name="precio" value={precio} onChange={(e) => { gestos.current.tocar("cuanto"); setPrecio(e.target.value.replace(/\D/g, '')); }} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. 150" aria-label="Precio (solo números)" className={canon.entrada} autoComplete="off" autoFocus />
+                  <input type="text" inputMode="numeric" pattern="[0-9]*" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value.replace(/\D/g, ''))} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. 150" aria-label="Precio (solo números)" className={canon.entrada} autoComplete="off" autoFocus />
                   <Limpiar visible={!!precio} />
                   <ContadorCaracteres valor={precio} tope={LIMITES_EVENTO.precio} error={errores.precio} />
                 </span>
@@ -684,8 +413,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               {masAbierto ? "Listo" : "Agregar"}
             </Boton>
             <div className={renglon.cuerpo} hidden={!masAbierto}>
-              <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => { gestos.current.tocar("descripcion"); setDescripcion(e.target.value); }} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} mostrarContador />
-              <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => { gestos.current.tocar("enlace"); setEnlace(e.target.value); }} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
+              <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} mostrarContador />
+              <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => setEnlace(e.target.value)} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
               {imagen && (
                 // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
                 <img src={imagen} alt="" className={styles.imagen} />
@@ -699,7 +428,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                   {errorImagen ?? errores.imagen}
                 </p>
               )}
-              {esAdmin && <div onChangeCapture={() => gestos.current.tocar("imagen")}><CampoImagenUrl valor={imagen} onCambio={ponerImagen} /></div>}
+              {esAdmin && <div onChangeCapture={() => gestos.current.tocar("imagen")}><CampoImagenUrl valor={imagen} onCambio={setImagen} /></div>}
             </div>
           </li>
         </ul>
@@ -721,11 +450,11 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         {resultado && !resultado.ok && resultado.general && (
           <p className="aviso-error" role="alert">
             {resultado.general}
-            {resultado.conflicto && evento?.id && <> <a href={`/eventos/${evento.id}`} target="_blank" rel="noopener noreferrer">Ver versión actual en otra pestaña</a></>}
+            {resultado.conflicto && evento.id && <> <a href={`/eventos/${evento.id}`} target="_blank" rel="noopener noreferrer">Ver versión actual en otra pestaña</a></>}
           </p>
         )}
-        <BotonPublicar id="falta-evento" falta={falta} ocupado={enviando || terminado || subiendo || leyendo}>
-          {enviando || terminado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
+        <BotonPublicar id="falta-evento" falta={falta} ocupado={enviando || terminado || subiendo}>
+          {enviando || terminado ? "Guardando…" : "Guardar cambios"}
         </BotonPublicar>
       </form>
       {hoja && (

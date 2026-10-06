@@ -1,6 +1,6 @@
 /** OL-300 (bitácora 328), OL-301 (bitácora 329), OL-302 (bitácora 330) y OL-304 (bitácora 332): el alta de evento por pasos, sin cartel y con cartel, con el armazón
  *  real (`PorPasos`), la guardia real (`useSalirSinPublicar`), el hook real que sube y lee el cartel (`useLeerCartel`) y una acción simulada
- *  que guarda lo que recibe (y, con `window.qa.resultado = 'publica'`, contesta como `crearEvento` con `quedarse`: lo creado, sin redirigir). «¿Dónde es?», «¿Es aquí?» y «No está en el directorio» son los de verdad; el servicio de Mapbox lo simula
+ *  que guarda lo que recibe (y, con `window.qa.resultado = 'publica'`, contesta como `crearEvento`: lo creado, sin redirigir). «¿Dónde es?», «¿Es aquí?» y «No está en el directorio» son los de verdad; el servicio de Mapbox lo simula
  *  `page.route` (sugerencias, coordenadas y dirección de un punto) y el mapa es un doble con un botón que arrastra el pin (el real necesita
  *  WebGL y un token); Atrás y la ✕ de la barra preguntan a la guardia como `useVolver`. Del servidor y de Storage solo se simulan
  *  `leerCartelAccion` y `subirFoto`, y se gobiernan desde `window.qa` (el cupo con el que abre la pantalla va en `cupoAlAbrir`). Reloj fijo: miércoles 7 de
@@ -71,6 +71,7 @@ before(async () => {
       contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
       import AltaEvento from './src/app/nuevo/evento/AltaEvento';
+      import {arranqueDe, respuestasDeEvento} from './src/app/nuevo/evento/arranque';
       import {pedirSalida} from './src/lib/guardiaSalida';
       import './src/app/globals.css';
       // resultado: 'general' (falla el guardado) | 'enlace' (el servidor rechaza el enlace) | 'pendiente' (no contesta)
@@ -81,15 +82,19 @@ before(async () => {
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
         if (window.qa.resultado === 'enlace') return {ok:false, errores:{enlace:'Ese enlace no se ve bien.'}};
-        if (window.qa.resultado === 'publica' && fd.get('quedarse') === '1') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
+        if (window.qa.resultado === 'publica') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
         return {ok:false, errores:{}, general:${JSON.stringify(GENERAL)}};
       }
       const lugares = [
         {id:'${LUGAR}', nombre:'Teatro de la Paz', tipo:'foro', direccion:'Villerías 205', lat:22.15, lng:-100.97, portada:null, zona:'America/Mexico_City', privado:false},
         {id:'${OTRO_LUGAR}', nombre:'Centro de las Artes', tipo:'casa_de_cultura', direccion:'Calz. de Guadalupe 705', lat:22.1417, lng:-101.0021, portada:null, zona:'America/Mexico_City', privado:false},
       ];
+      // Por dónde se entró (OL-312), como lo arma la página con lo que trae la consulta: \`abrir.lugar\` (un id), \`abrir.artista\` ({id, nombre})
+      // o \`abrir.desde\` ({evento, quien}); la ✕ sale a \`abrir.salida\`.
+      const abrir = window.qa.abrir ?? {};
+      const arranque = arranqueDe({ desde: abrir.desde ? respuestasDeEvento(abrir.desde.evento, lugares, abrir.desde.quien) : null, lugar: lugares.find((l) => l.id === abrir.lugar) ?? null, artista: abrir.artista ?? null });
       createRoot(document.getElementById('root')).render(
-        <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={null} salida={{href:'/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} />
+        <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={null} salida={{href: abrir.salida ?? '/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} arranque={arranque} />
       );
     `,
     },
@@ -1659,9 +1664,9 @@ test("publicar no sale de la pantalla: «Evento publicado» con la tarjeta como 
   const p = await pagina(t);
   await hastaRevisa(p);
   await publicarYQuedarse(p);
-  // La acción recibió la señal de quedarse, además de los campos de siempre.
+  // La acción recibió los campos de siempre; ya no hace falta la señal de quedarse (OL-312: `crearEvento` siempre devuelve lo creado).
   const d = await enviado(p);
-  assert.equal(d.quedarse, "1");
+  assert.equal("quedarse" in d, false);
   assert.equal(d.titulo, "Lectura en voz alta");
   assert.equal(await pregunta(p), "Evento publicado");
   await p.getByText("Ya está en la agenda. Así lo ve la gente:").waitFor();
@@ -1830,4 +1835,99 @@ test("sin desbordes a 320 y 390 en «Publicado», sin cartel y con cartel y un t
       if (ancho === 320) await foto(p, `332-04-publicado-320-${conCartel ? "con" : "sin"}-cartel`);
     }
   }
+});
+
+/* ---------- OL-312 (bitácora 340): el alta por pasos es la única, y se entra con lo que ya se sabe ---------- */
+
+const ARTISTA = { id: "0a0a0a0a-0000-4000-8000-000000000009", nombre: "Lucía Montaño" };
+/** El evento que se duplica, como lo lee la página (`select` de `eventos`) y con quién se presentó. */
+const DUPLICADO = {
+  evento: { titulo: "Ecos de papel", lugar_id: LUGAR, precio: "$150", descripcion: "Lectura en voz alta con música.", enlace: "https://ejemplo.org/ecos", sitio_texto: null, sitio_direccion: null, sitio_lat: null, sitio_lng: null, sitio_reservado: false, ciudad: "San Luis Potosí" },
+  quien: [ARTISTA],
+};
+/** Hasta pasar la hora: 7:00 p.m. y dos horas. */
+async function horaYDuracion(p) {
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
+}
+
+test("«Publicar aquí» (`?lugar=`): «¿Dónde es?» no se pregunta, «Revisa» lleva el lugar y se publica por su id; en «Revisa» se cambia", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { abrir: { lugar: LUGAR, salida: `/lugares/${LUGAR}` } } });
+  // La ✕ del primer paso vuelve a la ficha del lugar, y salir sin haber tocado nada no pregunta: el lugar es como se abrió.
+  assert.equal(await p.getByRole("link", { name: "Cerrar (Volver)" }).getAttribute("href"), `/lugares/${LUGAR}`);
+  assert.equal(await avisa(p), false);
+  await hastaHora(p);
+  await horaYDuracion(p);
+  assert.equal(await pregunta(p), "¿Cuánto cuesta?");
+  const d = await publicarGratis(p);
+  assert.match((await renglones(p))[1], /Teatro de la Paz/);
+  assert.deepEqual({ modo_sitio: d.modo_sitio, lugar_id: d.lugar_id, sitio_texto: d.sitio_texto }, { modo_sitio: "lugar", lugar_id: LUGAR, sitio_texto: "" });
+  await boton(p, "Cambiar dónde").click();
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  assert.equal(await buscar(p).inputValue(), "Teatro de la Paz");
+});
+
+test("«Publicar otro» tras entrar por un lugar empieza de cero: esta vez «¿Dónde es?» sí se pregunta", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { abrir: { lugar: LUGAR } } });
+  await hastaHora(p);
+  await horaYDuracion(p);
+  await boton(p, /^Gratis/).click();
+  await publicarYQuedarse(p);
+  await boton(p, "Publicar otro").click();
+  await hastaHora(p, "Otra lectura");
+  await horaYDuracion(p);
+  assert.equal(await pregunta(p), "¿Dónde es?");
+});
+
+test("«Publicar fecha» (`?artista=`): Quién empieza con el artista, «Revisa» lo enseña y se publica con su id", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { abrir: { artista: ARTISTA, salida: `/artistas/${ARTISTA.id}` } } });
+  assert.equal(await p.getByRole("link", { name: "Cerrar (Volver)" }).getAttribute("href"), `/artistas/${ARTISTA.id}`);
+  await hastaHora(p);
+  await horaYDuracion(p);
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  await elegirTeatro(p);
+  const d = await publicarGratis(p);
+  const filas = await renglones(p);
+  assert.equal(filas.length, 4);
+  assert.match(filas[3], /Lucía Montaño/);
+  assert.deepEqual(JSON.parse(d.quien), [ARTISTA]);
+});
+
+test("lo que vino al abrir no lo pisa el cartel: con el lugar y el artista de las fichas, lo leído pone el día y la hora, no otro sitio ni otros artistas", TOPE, async (t) => {
+  const otroCartel = { ...LEIDO, lugarId: OTRO_LUGAR, valores: { ...LEIDO.valores, lugar: "Centro de las Artes" }, quien: [{ nombre: "Trío Bruma" }] };
+  const p = await pagina(t, { qa: { abrir: { lugar: LUGAR, artista: ARTISTA }, lectura: otroCartel } });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  const filas = await renglones(p);
+  assert.match(filas[0], /jue 5 de nov · 19:00/);
+  assert.match(filas[1], /Teatro de la Paz/);
+  assert.match(filas[3], /Lucía Montaño/);
+  assert.doesNotMatch(filas.join(" "), /Centro de las Artes|Trío Bruma/);
+});
+
+test("«Duplicar» (`?desde=`): entra en «¿Qué día es?» con el nombre, el lugar, el costo, quién, la descripción y el enlace del evento; sin cartel", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { abrir: { desde: DUPLICADO, salida: "/eventos/ecos-de-papel" } } });
+  assert.equal(await pregunta(p), "¿Qué día es?");
+  // Nada cambiado todavía: salir no pregunta. Atrás lleva al primer paso (para subir otro cartel); «No tengo cartel» vuelve aquí.
+  assert.equal(await avisa(p), false);
+  await boton(p, "Atrás").click();
+  assert.equal(await p.getByRole("link", { name: "Cerrar (Volver)" }).getAttribute("href"), "/eventos/ecos-de-papel");
+  await boton(p, "No tengo cartel").click();
+  assert.equal(await pregunta(p), "¿Qué día es?");
+  await boton(p, /^Este viernes/).click();
+  await horaYDuracion(p);
+  await p.getByRole("heading", { name: "Ecos de papel" }).waitFor();
+  const filas = await renglones(p);
+  assert.equal(filas.length, 4);
+  assert.match(filas[0], /vie 9 de oct · 19:00–21:00/);
+  assert.match(filas[1], /Teatro de la Paz/);
+  assert.match(filas[2], /\$150/);
+  assert.match(filas[3], /Lucía Montaño/);
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual(
+    { titulo: d.titulo, inicio: d.inicio, fin: d.fin, modo_sitio: d.modo_sitio, lugar_id: d.lugar_id, gratis: d.gratis, cooperacion: d.cooperacion, precio: d.precio, quien: JSON.parse(d.quien), descripcion: d.descripcion, enlace: d.enlace, imagen: d.imagen },
+    { titulo: "Ecos de papel", inicio: "2026-10-09T19:00", fin: "2026-10-09T21:00", modo_sitio: "lugar", lugar_id: LUGAR, gratis: "no", cooperacion: "no", precio: "150", quien: [ARTISTA], descripcion: "Lectura en voz alta con música.", enlace: "https://ejemplo.org/ecos", imagen: "" },
+  );
 });

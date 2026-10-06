@@ -1,5 +1,6 @@
 import { cache, Suspense } from "react";
 import Link from "next/link";
+import { enlaceAltaEvento } from "@/lib/armazon";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
 import { avisosParaListas } from "@/app/avisos/paraListas";
@@ -193,7 +194,7 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: 
   const redes = normalizarRedes(lugar.redes);
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
-  const publicarAqui = `/nuevo?lugar=${lugar.id}`;
+  const publicarAqui = enlaceAltaEvento({ lugar: lugar.id });
   const hrefPublicarAqui = actual ? publicarAqui : `/entrar?siguiente=${encodeURIComponent(publicarAqui)}`;
   const { calle, resto } = partesDeDireccion(lugar.direccion);
 

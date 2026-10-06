@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, RedirectType } from "next/navigation";
+import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { intentarDrenarAvisos } from "@/lib/avisosWorker";
@@ -21,8 +21,8 @@ import { zonaDePunto } from "@/lib/zona";
 import { sitioReservadoVencido } from "@/lib/retencionSitio";
 
 /**
- * Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). El alta por
- * pasos (`crearEvento` con `quedarse`) no sale: recibe lo publicado (`slug` y `href`, la dirección de la ficha) para enseñarlo en su final.
+ * Publicar devuelve lo publicado (`slug` y `href`, la dirección de la ficha): el alta por pasos no sale de su pantalla y lo enseña en su
+ * final, «Publicado» (OL-312: ya no hay otra alta que lleve a la ficha). Guardar devuelve a dónde volver (el formulario termina la tarea).
  */
 export type ResultadoEvento = { ok: true; id: string; volver: string; slug?: string | null; href?: string } | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
 
@@ -126,9 +126,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   // La transaccion ya encolo: tambien un reintento puede acelerar su drenaje.
   after(intentarDrenarAvisos);
   const href = hrefEvento({ id: data.id, slug: creado?.slug });
-  // El alta por pasos se queda en su pantalla (su paso «Publicado») y recibe lo creado; sin `quedarse`, a la ficha como siempre.
-  if (formData.get("quedarse") === "1") return { ok: true, id: data.id, slug: creado?.slug ?? null, href, volver: href };
-  redirect(`${href}?nuevo=1`, RedirectType.replace);
+  return { ok: true, id: data.id, slug: creado?.slug ?? null, href, volver: href };
 }
 
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {

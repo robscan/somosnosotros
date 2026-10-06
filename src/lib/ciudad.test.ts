@@ -154,7 +154,7 @@ describe("hoja de ciudades (OL-270)", () => {
     const ciudades = armarCiudades([{ ciudad: "Querétaro", ...qro.centro }], [{ ciudad: "Aguascalientes" }]);
     const aguascalientes = ciudades.find(c => c.slug === "aguascalientes")!;
     const soloDesconocida = ciudadesDeHoja(aguascalientes, ciudades, "eventos");
-    expect(altaLejosDeCiudades(aguascalientes, soloDesconocida, slp.centro, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" });
+    expect(altaLejosDeCiudades(aguascalientes, soloDesconocida, slp.centro, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo/evento" });
     expect(altaLejosDeCiudades(aguascalientes, ciudades, slp.centro, "eventos")).toBeNull();
   });
   it("filtra cada catálogo por contenido y siempre mantiene la actual vacía", () => {
@@ -199,7 +199,7 @@ describe("hoja de ciudades (OL-270)", () => {
     expect(filasDeCiudades(qro, catalogo, slp.centro, "artistas").every(f => f.distancia === null && !f.estasAqui)).toBe(true);
   });
   it("ofrece el alta correspondiente solo con un punto lejano; la URL no contiene ubicación", () => {
-    expect(altaLejosDeCiudades(slp, catalogo, lejos, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo?tipo=evento" });
+    expect(altaLejosDeCiudades(slp, catalogo, lejos, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo/evento" });
     expect(altaLejosDeCiudades(slp, catalogo, lejos, "lugares")).toEqual({ texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" });
     expect(altaLejosDeCiudades(slp, catalogo, lejos, "artistas")).toBeNull();
     expect(altaLejosDeCiudades(slp, catalogo, lejos, "buscar")).toBeNull();

@@ -11,8 +11,8 @@ type Vigencia = { tocar: () => number; vigente: (version: number) => boolean };
 
 /**
  * «Estoy aquí» de la hoja «¿Dónde es?» (`HojaDonde`): lee la ubicación del teléfono, la pone en el mapa (el punto azul) y le pasa el punto a
- * la hoja para que ponga ahí el pin; si no se puede, dice por qué. Lo comparten el alta y la edición de siempre (`FormularioEvento`, con
- * su vigencia de gestos del cartel) y el alta por pasos.
+ * la hoja para que ponga ahí el pin; si no se puede, dice por qué. Lo comparten editar (`FormularioEvento`, con su vigencia de gestos) y
+ * el alta por pasos.
  */
 export function useEstoyAqui(vigencia?: Vigencia) {
   const plataforma = usePlataforma();

@@ -76,13 +76,15 @@ export function tituloDeAlta(alta: Alta): string {
 
 /**
  * A dónde lleva el «+» y cómo se llama para quien no lo ve: a la pantalla de alta, con el tipo de la sección en que se
- * está (`altaDeRuta`). Con la ciudad que se está viendo (`?ciudad=`), el evento y el artista empiezan ahí (bitácoras 051, 053
- * y OL-100); el lugar se ubica por su dirección y no la lleva. Con el `nombre` de lo que se buscó y no se encontró (Buscar), el
- * alta abre con él ya puesto; y con el `punto` donde se sostuvo el dedo en el mapa de Lugares (seis decimales: a unos 10 cm), con el lugar
- * ya ubicado. Con o sin sesión lleva al alta: la sesión se pide después, con el valor por delante.
+ * está (`altaDeRuta`). Un evento va a su alta por pasos (`/nuevo/evento`, OL-312); un lugar o un artista, a `/nuevo` con su tipo. Con la
+ * ciudad que se está viendo (`?ciudad=`), el evento y el artista empiezan ahí (bitácoras 051, 053 y OL-100); el lugar se ubica por su
+ * dirección y no la lleva. Con el `nombre` de lo que se buscó y no se encontró (Buscar), el lugar o el artista abren con él ya puesto; y con
+ * el `punto` donde se sostuvo el dedo en el mapa de Lugares (seis decimales: a unos 10 cm), el lugar ya ubicado. Con o sin sesión lleva al
+ * alta: la sesión se pide después, con el valor por delante.
  */
 export function enlaceDeAlta(alta: Alta, ciudad: string | null, nombre: string | null = null, punto: Punto | null = null): { href: string; etiqueta: string } {
   const { etiqueta, conCiudad } = ALTAS[alta];
+  if (alta === "evento") return { href: enlaceAltaEvento({ ciudad }), etiqueta };
   const consulta = new URLSearchParams({ tipo: alta });
   if (conCiudad && ciudad) consulta.set("ciudad", ciudad);
   if (nombre) consulta.set("nombre", nombre);
@@ -91,6 +93,28 @@ export function enlaceDeAlta(alta: Alta, ciudad: string | null, nombre: string |
     consulta.set("lng", punto.lng.toFixed(6));
   }
   return { href: `/nuevo?${consulta}`, etiqueta };
+}
+
+/**
+ * Lo que puede llevar el alta de evento por pasos (OL-312): el lugar desde cuya ficha se publica («Publicar aquí»), el artista desde la suya
+ * («Publicar fecha»), el evento que se duplica (`desde`) y la ciudad que se veía.
+ */
+export type ConsultaAltaEvento = { lugar?: string | null; artista?: string | null; desde?: string | null; ciudad?: string | null };
+
+/** La dirección del alta de evento por pasos con lo que ya se sabe, en un orden fijo; lo vacío no va. */
+export function enlaceAltaEvento({ lugar, artista, desde, ciudad }: ConsultaAltaEvento = {}): string {
+  const consulta = new URLSearchParams();
+  for (const [clave, valor] of Object.entries({ lugar, artista, desde, ciudad })) if (valor) consulta.set(clave, valor);
+  return `/nuevo/evento${consulta.size ? `?${consulta}` : ""}`;
+}
+
+/**
+ * `/nuevo` ya no publica eventos (OL-312): sin tipo, con `tipo=evento` o con un evento ya armado (`lugar`, `artista`, `desde`, que antes
+ * abrían solo como evento), la dirección del alta por pasos con los mismos datos. null si es un lugar o un artista: esos siguen en `/nuevo`.
+ */
+export function redireccionDeNuevo({ tipo, ...consulta }: ConsultaAltaEvento & { tipo?: string | null }): string | null {
+  const armado = !!(consulta.desde || consulta.lugar || consulta.artista);
+  return armado || altaDeParametro(tipo ?? undefined) === "evento" ? enlaceAltaEvento(consulta) : null;
 }
 
 /**
