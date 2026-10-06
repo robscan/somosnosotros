@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, type ReactNode, type Ref } from "react";
 import { registrarVolverVisible } from "./Navegacion";
 import { useSalirSinPublicar } from "./SalirSinPublicar";
 import Barra from "./ui/Barra";
@@ -91,13 +91,14 @@ function AtrasDelPaso({ onAtras }: { onAtras: () => void }) {
 /**
  * El pie del paso, pegado abajo con su botón. Con el teclado del iPhone abierto se queda justo encima de él: la ventana de maquetación
  * sigue midiendo hasta el borde de la pantalla y el teclado tapa su parte de abajo, así que el pie sube lo que el teclado ocupa (el área
- * visible, `useAreaVisible`, como `ui/Hoja` y `ui/CampoLargo`). Lo que el botón dice (qué falta) se anuncia al cambiar.
+ * visible, `useAreaVisible`, como `ui/Hoja` y `ui/CampoLargo`). Lo que el botón dice (qué falta) se anuncia al cambiar. `ref` es para
+ * quien necesita medirlo (la hoja «¿Dónde es?», OL-303: la lista flotante no debe taparlo).
  */
-export function PiePaso({ children }: { children: ReactNode }) {
+export function PiePaso({ children, ref }: { children: ReactNode; ref?: Ref<HTMLElement> }) {
   const area = useAreaVisible();
   const teclado = area ? Math.max(0, area.ventana - area.top - area.height) : 0;
   return (
-    <footer className={styles.pie} style={teclado ? { bottom: teclado } : undefined} aria-live="polite">
+    <footer ref={ref} className={styles.pie} style={teclado ? { bottom: teclado } : undefined} aria-live="polite">
       {children}
     </footer>
   );
