@@ -1,7 +1,7 @@
 # 333 · Todo campo de texto queda a la vista con el teclado abierto
 
 **Pieza:** OL-305. **Rama:** `campos-sobre-el-teclado` (sobre `origin/main`). **Fecha:** 2026-10-05. **Operador:** Claude Fable 5.1.
-**Estado:** hecho y probado en el simulador de iPhone (iPhone 15 Pro, iOS 26.3, Safari, con el teclado en pantalla), en Chromium (componentes y `npm run medir`) y con la suite. Falta el iPhone real del founder (lista al final). Sin migraciones.
+**Estado (con la unión de OL-303):** hecho y probado en el simulador de iPhone (iPhone 15 Pro, iOS 26.3, Safari, con el teclado en pantalla), en Chromium (componentes y `npm run medir`) y con la suite. Falta el iPhone real del founder (lista al final). Sin migraciones.
 
 ## Qué se encargó
 
@@ -28,7 +28,7 @@ Hallazgos de iOS que condicionaron el diseño (todos medidos en el simulador, co
   2. Al enfocar (tras un cuadro) y cada vez que el área visible cambia (dos cuadros después, y uno solo para varios cambios seguidos: sin temporizador a ciegas), calcula la banda libre —el área visible, recortada por lo pegado `sticky`/`fixed` que comparte pantalla con el campo (la barra de arriba, el pie) y por la caja del ancestro que se desplaza (el cuerpo de una hoja)— y, si el campo no cabe entero, desplaza lo que se desplaza (la hoja o la página) lo justo para dejarlo en el centro de esa banda; si es más alto que la banda (un área de texto), su arranque arriba. Si ya se ve, no mueve nada. Suave al enfocar (respeta «reducir movimiento»), de golpe al corregir.
   3. Una capa fija sin desplazamiento propio (`ui/CampoLargo`, que ya sigue al área visible) no se toca.
   Al ser un solo oyente de documento, **ningún campo lleva nada de más** y una pantalla nueva no tiene que acordarse de él.
-- **`PorPasos.module.css`**: `padding-bottom: var(--teclado, 0px)` en la columna (hay por dónde desplazar) y el pie pasa a `position: static` con `html[data-teclado]`: en el flujo, tras el campo, queda sobre el teclado al fondo del recorrido (y en un paso corto, `margin-top: auto` ya lo deja ahí). `PiePaso` ya no usa `useAreaVisible` ni calcula `bottom`.
+- **`PorPasos.module.css`**: `padding-bottom: var(--teclado, 0px)` en la columna (hay por dónde desplazar) y el pie pasa a `position: static` con `html[data-teclado]` **solo dentro de la columna de los pasos** (`.pasos .pie`; ver «Unión con OL-303»): en el flujo, tras el campo, queda sobre el teclado al fondo del recorrido (y en un paso corto, `margin-top: auto` ya lo deja ahí). `PiePaso` ya no usa `useAreaVisible`; conserva `ref` (OL-303) y gana la prop opcional `abajo` (ver «Unión con OL-303»).
 - **`ui/Plantilla.module.css`**: `.pagina` y `.paginaContenido` suman `var(--teclado, 0px)` a su relleno de abajo: las altas y ediciones de siempre (`/nuevo`, Ajustes…) tienen por dónde subir el campo del fondo.
 - **`ui/Hoja.tsx`**: solo un comentario. Sus campos los atiende el mismo hook (desplaza el cuerpo de la hoja, que es lo que se desplaza); la hoja sigue al área visible con `useAreaVisible` como antes.
 - **`scripts/ops/auditoria-ui/medir-pantallas.mjs`**: la comprobación «teclado» (abajo) y dos pasos nuevos.
@@ -63,19 +63,38 @@ Capturas en `docs/rediseno/capturas-333/` (1179×2556, de `simctl io`, comprimid
 4. `despues-como-se-llama.png` (**después**): idéntica a la anterior (el hook no mueve nada si el campo ya se ve; el pie en el flujo cae en el mismo sitio gracias al aire de abajo): no hay regresión en el paso corto.
 5. `despues-cuanto-cuesta.png` (**después**): «¿Cuánto cuesta?» con el campo de precio («Ej. 150», icono de boleto, cursor) a la vista sobre el teclado numérico y «Falta el precio» encima de él. No capturé «antes» del precio (misma forma que el nombre; no tenía el fallo del mapa).
 
+## Unión con OL-303 (hoja «¿Dónde es?» con el pie «Listo»)
+
+Mientras trabajaba se unió en `main` OL-303 (PR #382): `HojaDonde` mueve su «Listo» a un `PiePaso` y le pasa `ref` para medirlo. Al unir `origin/main` chocaron `PorPasos.tsx` (mi `PiePaso` sin `ref` y sin `bottom`; el de main con las dos cosas) y `OPEN_LOOPS.md` (resuelto con `resolver_ol.py`: mi línea y la de OL-303 conservadas).
+
+**Cómo quedó el pie de la hoja.** La hoja vive en una capa fija sin la columna de `PorPasos`: allí el pie sigue **pegado** y sube con el teclado, así que mi regla de «pie al flujo con teclado» no le toca. Tres cambios mínimos, sin CSS duplicado:
+
+1. `PorPasos.module.css`: la regla es `html[data-teclado] .pasos .pie { position: static }` (antes `.pie`): solo dentro de la columna de los pasos.
+2. `PiePaso({ children, ref, abajo })`: repuse `ref` y añadí `abajo` (opcional): el `bottom` del pie pegado.
+3. `HojaDonde.tsx`: `<PiePaso ref={pieRef} abajo={bottomBarra}>`. `bottomBarra` es lo que la hoja ya calculaba para su barra «Agregar» (`altoTeclado(innerHeight, { height, offsetTop })`, con el desfase de `visualViewport`), así el pie y la barra suben juntos como antes de esta pieza. No usa `--teclado` (que es el alto del teclado sin el desfase) porque en una capa fija que no se desplaza el `offsetTop` sí cuenta.
+
+El hook no hace nada raro en la hoja: sus campos están en una capa fija sin desplazamiento propio, así que `useCampoVisible` solo publica `--teclado` y no desplaza.
+
+**Simulador (teclado real), hoja «¿Dónde es?» del formulario de siempre** (`/nuevo?tipo=evento` con la sesión del respaldo; el renglón «Falta el lugar» trae una lupa que abre la hoja):
+
+6. `hoja-donde-teclado.png`: la hoja abierta y el campo «Nombre o dirección» enfocado con el cursor, bajo la barra «‹ Atrás · ¿Dónde es?»; debajo, el mapa (con el aviso de token inventado) y el botón de ubicación; el pie «Falta el lugar» (apagado, violeta claro) **a la vista justo sobre el teclado**, con la franja de flechas de Safari entre los dos.
+7. `hoja-donde-teclado-texto.png`: con «San» escrito: la lista flotante bajo el campo («ACHE Galería · Valentín Gama 840…», otro renglón cortado), la barra «+ Agregar «San» como lugar» encima del pie y el pie «Falta el lugar» sobre el teclado. Es lo que hacía antes de la unión.
+
+**Números tras la unión:** `typecheck` limpio; `lint` 0 errores (el mismo aviso de antes); `npm test` 2138 pruebas (145 archivos); `HojaDonde.componentes.test.mjs` (8, con el teclado simulado de 336 px) y `PorPasos.componentes.test.mjs` (7): 15 en verde; suite de componentes completa: 395 pruebas, 0 fallos; `inventario` sin novedades; `npm run medir`: sin novedades (27 pantallas × 4 anchos; teclado: 7 campos en 7 pantallas, ninguno tapado).
+
 ## Decisiones y desviaciones del operador
 
 1. **El hook se monta en `Armazon`, no en cada contenedor.** El encargo proponía dárselo a `PorPasos`, a `ui/Hoja` y al formulario de siempre. Un solo oyente de documento en el armazón cubre los tres (y cualquier campo futuro) sin tocar los archivos de los otros operadores ni cada campo; `Hoja` solo ganó un comentario. Coste: los componentes que dependen de él (`PorPasos`, `plantilla.pagina`) lo suponen montado; la prueba de componentes lo monta como el armazón.
-2. **El pie de `PorPasos` deja de ser pegado mientras hay teclado** (en lugar de seguir pegado a `bottom: --teclado`). Es la única forma estable que encontré en Safari: pegado a `bottom` seguía tapando el campo y bailaba con `offsetTop` (ver arriba). Costo de producto: con el teclado abierto y un paso largo (solo «¿Es aquí?» con «Ponle nombre») el botón «Sí, es aquí» ya no está fijo a la vista, sino debajo del campo (se ve en la captura 2: está justo debajo); en pasos cortos queda exactamente donde estaba.
+2. **El pie de la columna de `PorPasos` deja de ser pegado mientras hay teclado** (en lugar de seguir pegado a `bottom: --teclado`); la hoja de OL-303 lo conserva pegado con `abajo`. Es la única forma estable que encontré en Safari: pegado a `bottom` seguía tapando el campo y bailaba con `offsetTop` (ver arriba). Costo de producto: con el teclado abierto y un paso largo (solo «¿Es aquí?» con «Ponle nombre») el botón «Sí, es aquí» ya no está fijo a la vista, sino debajo del campo (se ve en la captura 2: está justo debajo); en pasos cortos queda exactamente donde estaba.
 3. **`--teclado` = `innerHeight − visualViewport.height`**, no la fórmula de `useAreaVisible` (que resta `offsetTop`): ver «Qué pasaba».
 4. **Marco de las cajas = `pageTop − scrollY`**, nunca negativo (mientras iOS reacomoda, `pageTop` llega un cuadro tarde).
 5. **`scrollBy` a la ventana/ancestro, no `scrollIntoView`**: `scrollIntoView(center)` centra respecto a la ventana de maquetación, que en iOS con teclado queda fuera del área visible.
 6. **El cebo del teclado** (`#cebo-de-teclado`, `layout.tsx`) se excluye de la medición: no es un campo que nadie toque. Dos pantallas nuevas en la medición (`s16`, `s17`) con sus presupuestos y excepciones de Mapbox; `s15` no se tocó (el 14/48 sigue; hoy mide 9/43 y `medir` avisa que bajó: lo anota el gestor con `--aceptar` si quiere, no es de esta pieza).
 7. Para la prueba de componentes se usa `reducedMotion: "reduce"` (desplazamiento inmediato).
 
-## Para el gestor (archivos de otros operadores; no los toqué)
+## Para el gestor (archivos de otros operadores)
 
-- **`HojaDonde.tsx` (OL-303):** su `<Hoja>` hereda el hook sin cambios (desplaza el cuerpo de la hoja). Si su mapa/lista usa una capa propia con `position: fixed` y su propio desplazamiento, el hook la trata como cualquier ancestro que se desplaza. Probar en el iPhone el campo de búsqueda con el teclado y la hoja llena.
+- **`HojaDonde.tsx` (OL-303):** ya unido: una línea (`abajo={bottomBarra}`) en su `PiePaso`; ver «Unión con OL-303». Probar en el iPhone el campo de búsqueda con el teclado.
 - **`AltaEvento.tsx`, `pasos.ts`, `Revisa.tsx`, `acciones.ts` (OL-304):** no necesitan nada propio mientras sus campos vivan dentro de `PorPasos` (nombre, precio, descripción y enlace de «Lo opcional» ya los cubre). Si «Revisa» o un paso nuevo añade un campo fuera de `PorPasos`, basta con que su pantalla use `plantilla.pagina` o sume `var(--teclado, 0px)` a su relleno de abajo.
 - Si al unir cambia el orden de `PorPasos` (pie antes que el último campo), conviene repetir `PorPasos.componentes.test.mjs`.
 
