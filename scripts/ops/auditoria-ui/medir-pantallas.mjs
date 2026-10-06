@@ -2,7 +2,8 @@
 // abre cada pantalla de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px en Chromium y comprueba lo que dice
 // `medidas.aceptadas.json`: nodos y profundidad dentro del presupuesto y, salvo excepción declarada con su porqué, ningún hijo fuera de
 // la caja de su padre, ningún desplazamiento horizontal, ningún control con toque real menor de 44, ningún accionable tapado por un
-// elemento fijo y ningún margen negativo. Sin llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador y
+// elemento fijo y ningún margen negativo. Además, la comprobación «teclado» (OL-305): con la ventana a 390×508 —el iPhone con su teclado—,
+// cada campo de texto visible de cada pantalla se enfoca y debe quedar entero dentro de la ventana y sin nada pegado encima. Sin llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador y
 // el reloj está fijo (`reloj-fijo.cjs`), así que salen los mismos números cualquier día y a cualquier hora.
 //   npm run medir                     la prueba entera (compila la app en `.next`, así que no la corras con `next dev` abierto)
 //   npm run medir -- --aceptar        anota los presupuestos de hoy (las excepciones se escriben a mano, con su porqué)
@@ -54,6 +55,28 @@ const PASOS = {
     await page.waitForFunction(() => document.querySelector("[data-hoja]").dataset.hoja === "llena");
     await aquietar(page);
   },
+};
+
+// Las pantallas que piden un gesto antes de enseñar sus campos: el alta de evento por pasos, en «¿Cómo se llama?» y en «¿Es aquí?» con
+// «Ponle nombre» abierto (sin Mapbox la dirección del punto no llega, así que el nombre se pide de entrada). Con «Estoy aquí» y una ubicación fija.
+PASOS["evento-nombre"] = async (page) => {
+  await page.getByRole("button", { name: "No tengo cartel" }).click();
+  await page.getByRole("textbox", { name: "Nombre del evento" }).waitFor();
+  await aquietar(page);
+};
+PASOS["evento-es-aqui"] = async (page) => {
+  const ctx = page.context();
+  await ctx.grantPermissions(["geolocation"]);
+  await ctx.setGeolocation({ latitude: 22.1533, longitude: -100.9811 });
+  await page.getByRole("button", { name: "No tengo cartel" }).click();
+  await page.getByRole("textbox", { name: "Nombre del evento" }).fill("Ecos de papel");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: /^Este viernes/ }).click();
+  await page.getByRole("button", { name: /^7:00 p\.m\./ }).click();
+  await page.getByRole("button", { name: "Sin hora de fin" }).click();
+  await page.getByRole("button", { name: /Estoy aquí/ }).click();
+  await page.getByRole("heading", { name: "¿Es aquí?" }).waitFor();
+  await aquietar(page);
 };
 
 // ---------- procesos ----------
@@ -117,8 +140,8 @@ async function aquietar(page) {
   });
   if (pendiente) throw new Error("la pantalla no se aquietó (React, el mapa o una animación seguían pendientes)");
 }
-async function medirPantalla(browser, medirJs, base, p, i) {
-  const [ancho, alto] = [ANCHOS[i], ALTOS[i]];
+/** Abre la pantalla a un tamaño: contexto de Chromium con el reloj, la sesión, las imágenes y el mapa contestados, y los pasos que pide. */
+async function abrir(browser, base, p, ancho, alto) {
   const ctx = await browser.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: 1, locale: "es-MX", timezoneId: "America/Mexico_City", ...dispositivo(ancho) });
   try {
     await ctx.clock.setFixedTime(new Date(AHORA));
@@ -133,9 +156,90 @@ async function medirPantalla(browser, medirJs, base, p, i) {
     await page.goto(base + p.url, { waitUntil: "load", timeout: 45000 });
     await aquietar(page);
     if (p.paso) await PASOS[p.paso](page, ancho, alto);
+    return { ctx, page, errores };
+  } catch (e) {
+    await ctx.close();
+    throw e;
+  }
+}
+async function medirPantalla(browser, medirJs, base, p, i) {
+  const { ctx, page, errores } = await abrir(browser, base, p, ANCHOS[i], ALTOS[i]);
+  try {
     const fuentes = await page.evaluate(() => [...document.fonts].map((f) => `${f.family} ${f.status}`));
     if (!fuentes.some((f) => /Bricolage.* loaded$/i.test(f))) throw new Error(`no cargó la fuente de la app, las medidas no valen (fuentes: ${fuentes.join(", ") || "ninguna"})`);
     return { ...(await page.evaluate(medirJs)), errores };
+  } finally {
+    await ctx.close();
+  }
+}
+
+// ---------- el teclado ----------
+// El iPhone con su teclado abierto deja 844 − 336 = 508 px de alto (390×508). Chromium no puede sacar el teclado de iOS ni imitar cómo Safari
+// desplaza la vista, así que esta comprobación cubre el caso «el campo enfocado no queda tapado por lo pegado ni fuera de la ventana» con la
+// ventana ya reducida; lo que no cubre (que la página tenga por dónde desplazar, el `offsetTop` de Safari) lo prueba el simulador de iPhone
+// (bitácora 333) y `PorPasos.componentes.test.mjs`, que simula `visualViewport`. Campos: texto, búsqueda, número, correo, enlace y teléfono.
+const ANCHO_TECLADO = 390;
+const ALTO_TECLADO = 508;
+const SELECTOR_CAMPOS = 'input:is(:not([type]), [type="text"], [type="search"], [type="number"], [type="email"], [type="url"], [type="tel"]), textarea';
+/**
+ * Corre en la página, una vez: `window.__campos()` da los campos de texto visibles, en el orden del documento. No cuentan los que nadie puede
+ * tocar: el cebo del teclado (`layout.tsx`: de 1 px, `aria-hidden` y fuera del orden de tabulación), los deshabilitados y los de solo lectura.
+ */
+const instalarCampos = (selector) => {
+  window.__campos = () =>
+    [...document.querySelectorAll(selector)].filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 2 && r.height > 2 && getComputedStyle(el).visibility !== "hidden" && !el.disabled && !el.readOnly && el.getAttribute("aria-hidden") !== "true" && !el.closest("[inert], [hidden], [aria-hidden=true]");
+    });
+};
+/** Corre en la página: el nombre con el que se anuncia cada campo visible. */
+const nombresDeCampos = () => window.__campos().map((el, i) => el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.name || el.id || `campo ${i + 1}`);
+/** Corre en la página, con el campo `i` ya enfocado y asentado: dónde quedó y qué hay encima de su centro. */
+const dondeQuedo = (i) => {
+  const el = window.__campos()[i];
+  const r = el.getBoundingClientRect();
+  const encima = document.elementFromPoint(Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1), Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1));
+  const tapa = encima && !(encima === el || el.contains(encima) || encima.contains(el)) ? encima : null;
+  const clase = tapa && typeof tapa.className === "string" && tapa.className ? `.${tapa.className.split(" ")[0]}` : "";
+  return { activo: document.activeElement === el, top: Math.round(r.top), bottom: Math.round(r.bottom), alto: innerHeight, tapa: tapa ? `${tapa.tagName.toLowerCase()}${clase} «${(tapa.textContent || "").trim().slice(0, 40)}»` : null };
+};
+/** Espera a que el desplazamiento se asiente: la página sin moverse durante 12 cuadros seguidos (el de `useCampoVisible` es suave y llega tras dos cuadros). */
+const asentar = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((ok) => {
+        let antes = -1;
+        let quieto = 0;
+        let cuadros = 0;
+        (function paso() {
+          quieto = window.scrollY === antes ? quieto + 1 : 0;
+          antes = window.scrollY;
+          if (quieto >= 12 || ++cuadros > 120) return ok();
+          requestAnimationFrame(paso);
+        })();
+      }),
+  );
+async function medirTeclado(browser, base, p) {
+  const { ctx, page } = await abrir(browser, base, p, ANCHO_TECLADO, ALTO_TECLADO);
+  const hallazgos = [];
+  try {
+    await page.evaluate(instalarCampos, SELECTOR_CAMPOS);
+    const nombres = await page.evaluate(nombresDeCampos);
+    for (const [i, nombre] of nombres.entries()) {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      // Se suelta el foco antes (un campo con `autoFocus` ya lo tiene al llegar) y se enfoca sin desplazar: Chromium lleva solo el campo al
+      // centro de la ventana, pero Safari del iPhone con el teclado no siempre lo hace, así que lo que se mide es lo que logra `useCampoVisible`.
+      await page.evaluate((i) => {
+        document.activeElement?.blur();
+        window.__campos()[i].focus({ preventScroll: true });
+      }, i);
+      await asentar(page);
+      const d = await page.evaluate(dondeQuedo, i);
+      if (!d.activo) continue; // un campo que no se deja enfocar (se quita al enfocar) no tiene teclado que lo tape
+      if (d.top < 0 || d.bottom > d.alto) hallazgos.push({ que: nombre, detalle: `fuera de la ventana de ${d.alto} px: va de ${d.top} a ${d.bottom}` });
+      else if (d.tapa) hallazgos.push({ que: nombre, detalle: `queda bajo ${d.tapa} (va de ${d.top} a ${d.bottom} en ${d.alto} px)` });
+    }
+    return { campos: nombres.length, hallazgos };
   } finally {
     await ctx.close();
   }
@@ -206,6 +310,23 @@ try {
     }),
   );
 
+  // El teclado: cada campo de texto visible de cada pantalla, con la ventana a 390×508 (ver `medirTeclado`).
+  const conTeclado = new Map();
+  const colaTeclado = [...pantallas];
+  await Promise.all(
+    Array.from({ length: Math.min(Number(process.env.MEDIR_HILOS) || 4, os.availableParallelism()) }, async () => {
+      for (let p = colaTeclado.shift(); p; p = colaTeclado.shift()) {
+        try {
+          const m = await medirTeclado(browser, base, p);
+          conTeclado.set(p.id, m.campos);
+          for (const h of m.hallazgos) if (!permitido("teclado", p.id, ANCHO_TECLADO, h.que)) fallos.push({ regla: "teclado", pantalla: p.id, ancho: ANCHO_TECLADO, ...h });
+        } catch (e) {
+          fallos.push({ pantalla: p.id, ancho: ANCHO_TECLADO, regla: "carga", que: p.url, detalle: `teclado: ${String(e.message).split("\n")[0]}` });
+        }
+      }
+    }),
+  );
+
   // ---------- el resultado ----------
   const limpio = (s) => String(s).replace(/-module__[\w-]{5,8}__/g, "/");
   const cifras = (p, campo) => ANCHOS.map((_, i) => medidas.get(`${p.id}@${i}`)?.[campo] ?? "—");
@@ -231,6 +352,8 @@ try {
     }
     process.exitCode = 1;
   }
+  const conCampos = pantallas.filter((p) => conTeclado.get(p.id) > 0);
+  console.log(`\nteclado (${ANCHO_TECLADO}×${ALTO_TECLADO}): ${[...conTeclado.values()].reduce((a, b) => a + b, 0)} campos de texto en ${conCampos.length} pantallas (${conCampos.map((p) => `${p.id} ${conTeclado.get(p.id)}`).join(", ")})`);
   console.log(`\nmedidas: ${pantallas.length} pantallas × ${ANCHOS.length} anchos en ${Math.round((Date.now() - inicio) / 1000)} s, ${problemas.length ? "CON FALLOS" : aceptar ? "presupuestos anotados" : "sin novedades"}`);
 } catch (e) {
   console.error(e.message);

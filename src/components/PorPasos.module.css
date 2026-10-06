@@ -14,6 +14,9 @@
   gap: var(--espacio-5);
   min-height: calc(100dvh - var(--barra-flujo, 0px));
   overflow-x: clip;
+  /* Con el teclado abierto, el aire de abajo es lo que el teclado tapa (`--teclado`, de `ui/useCampoVisible`): así hay por dónde desplazar
+     el campo enfocado hasta quedar sobre él, y sobre el pie, aunque el paso llene la pantalla. */
+  padding-bottom: var(--teclado, 0px);
   background: var(--fondo);
 }
 /* Lo del paso va en la columna de lectura, con el aire de los lados (`--gutter`), y la llena (`width: auto` en una columna flexible: un
@@ -33,7 +36,9 @@
 }
 
 /* 3. El pie: al fondo de la pantalla y pegado abajo al desplazar, con la raya arriba y la zona segura del iPhone debajo. Con el teclado
-   abierto, `PiePaso` le pone su `bottom`. */
+   abierto deja de estar pegado (`ui/useCampoVisible` pone `data-teclado` en <html>): en el iPhone lo pegado se mide contra una ventana
+   que el teclado no encoge y, además, tapaba el campo enfocado cuando este queda justo encima de él. En el flujo, tras el campo, el relleno
+   de la columna (`--teclado`) lo deja sobre el teclado al fondo del recorrido, y en un paso corto (`margin-top: auto`) ya está ahí. */
 .pie {
   position: sticky;
   bottom: 0;
@@ -44,6 +49,9 @@
   padding: var(--espacio-3) var(--gutter) calc(var(--espacio-4) + var(--piso));
   border-top: 1px solid var(--borde);
   background: var(--fondo);
+}
+:global(html[data-teclado]) .pie {
+  position: static;
 }
 
 /* 4. El paso siguiente entra por la derecha y el anterior por la izquierda, en el tiempo y la curva de todo lo que se mueve (doc 51:

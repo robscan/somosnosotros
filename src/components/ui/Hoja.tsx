@@ -24,6 +24,7 @@ type Props = {
  * Se pinta al final del body (portal): así ninguna cabecera pegajosa ni barra fija la tapa, abra desde donde abra.
  * Con el teclado abierto sigue al área visible (visual viewport): en el iPhone, `position: fixed` mide contra la
  * ventana entera y la hoja quedaba bajo el teclado (pedido del founder, 2026-09-15).
+ * Sus campos los mantiene a la vista `ui/useCampoVisible` (desplaza el cuerpo de la hoja, que es lo que se desplaza).
  * Mientras hay una hoja abierta la página de atrás no se desplaza, y arrastrar la hoja con el teclado arriba lo guarda,
  * como en las búsquedas del iPhone. Sin eso, en la hoja Ciudad (su lista crece al llegar los resultados, con el teclado
  * ya arriba) el arrastre movía la página y la hoja quedaba recortada (medido en el simulador, 2026-09-16).

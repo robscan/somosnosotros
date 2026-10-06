@@ -7,7 +7,6 @@ import Barra from "./ui/Barra";
 import BotonIcono from "./ui/BotonIcono";
 import Cerrar from "./ui/Cerrar";
 import { IconoChevronIzquierda } from "./ui/Iconos";
-import useAreaVisible from "./ui/useAreaVisible";
 import styles from "./PorPasos.module.css";
 
 /** Hacia dónde se movió el paso: el siguiente entra por la derecha y el anterior (Atrás, o la vuelta a «Revisa») por la izquierda. */
@@ -89,15 +88,12 @@ function AtrasDelPaso({ onAtras }: { onAtras: () => void }) {
 }
 
 /**
- * El pie del paso, pegado abajo con su botón. Con el teclado del iPhone abierto se queda justo encima de él: la ventana de maquetación
- * sigue midiendo hasta el borde de la pantalla y el teclado tapa su parte de abajo, así que el pie sube lo que el teclado ocupa (el área
- * visible, `useAreaVisible`, como `ui/Hoja` y `ui/CampoLargo`). Lo que el botón dice (qué falta) se anuncia al cambiar.
+ * El pie del paso, pegado abajo con su botón. Con el teclado del iPhone abierto deja de estar pegado y queda en el flujo, tras el campo,
+ * sobre el teclado (ver `.pie` en el CSS y `ui/useCampoVisible`). Lo que el botón dice (qué falta) se anuncia al cambiar.
  */
 export function PiePaso({ children }: { children: ReactNode }) {
-  const area = useAreaVisible();
-  const teclado = area ? Math.max(0, area.ventana - area.top - area.height) : 0;
   return (
-    <footer className={styles.pie} style={teclado ? { bottom: teclado } : undefined} aria-live="polite">
+    <footer className={styles.pie} aria-live="polite">
       {children}
     </footer>
   );
