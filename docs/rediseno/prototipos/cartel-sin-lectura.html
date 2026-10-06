@@ -76,13 +76,13 @@ ul { list-style: none; }
 .subir .lecturas.ok { color: var(--ok); }
 
 /* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
-.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla { display: grid; grid-template-columns: 24px auto minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
 .casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
 .casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
 .casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
 .casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
-.casilla b { font-weight: 700; }
-.casilla small { white-space: nowrap; font-size: var(--letra-xs); }
+.casilla b { font-weight: 700; white-space: nowrap; }
+.casilla small { justify-self: end; text-align: right; font-size: var(--letra-2xs); line-height: 1.2; }
 .casilla:disabled { opacity: 0.55; cursor: default; }
 
 /* La miniatura del cartel y «Leyendo». */
@@ -155,7 +155,7 @@ function casilla() {
   const marcada = e.auto && !agotada;
   return `<button class="casilla" role="checkbox" aria-checked="${marcada}" data-a="auto" ${agotada ? 'disabled' : ''}>
       <span class="cuadro">${marcada ? ic('ok') : ''}</span>
-      <b>Lectura automática</b><small>${agotada ? 'Se renueva el 1 de nov' : `Te quedan ${c.quedan} este mes`}</small>
+      <b>Lectura automática</b><small>${agotada ? 'Se renueva el 1 de nov' : `Quedan ${c.quedan} este mes`}</small>
     </button>`;
 }
 const PANTALLAS = {
@@ -172,7 +172,7 @@ const PANTALLAS = {
       pie: '',
       notas: [
         'El recuadro dice «Sube el cartel» y para qué sirve (la imagen del evento), no lo que el sistema hará con él. Es igual en todos los casos.',
-        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no. Una sola línea: el nombre y, al lado, el contador («Te quedan 4 este mes»). No se enumera qué se lee (nombre, fecha, lugar, precio, artistas): así no se promete nada que el cartel pueda no traer o la lectura pueda fallar. Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
+        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no. Una sola línea: el nombre y, a la derecha, el contador («Quedan 4 este mes»; «Te quedan 4 este mes» no cabe en una línea a 375 px con el nombre en negrita, por eso va sin el «Te»). No se enumera qué se lee (nombre, fecha, lugar, precio, artistas): así no se promete nada que el cartel pueda no traer o la lectura pueda fallar. Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
         'Marcada de entrada no cuesta toques (cartel completo sigue en 2). Desmarcarla es un toque solo para quien no quiere leer este cartel.',
         'Con las 6 usadas (caso 2), la casilla queda apagada y solo dice cuándo vuelve («Se renueva el 1 de nov»): es el estado de algo que la persona controla, no una excusa del sistema. Sin servicio de lectura (caso 3), la casilla no aparece.',
         'Hoy la segunda línea dice «Leemos el nombre, la fecha, el lugar y el precio» y, sin llave o sin cupo, el recuadro ni sale: eso es lo que se corrige.',
