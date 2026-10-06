@@ -80,6 +80,15 @@ describe("acciones de cupo, sin base ni IA", () => {
     expect(await leerCartelAccion(foto)).toMatchObject({ ok: true, valores: { titulo: "Cartel", gratis: true }, lugarId: null, quien: [] });
   });
 
+  it("dice qué se leyó del cartel y qué es relleno: la hora (las 19:00) y el precio («gratis»)", async () => {
+    m.modelo.mockResolvedValue({ titulo: "Cartel", fecha: "2026-11-05", hora: "20:30", gratis: true, precio: null, artistas: [] });
+    expect(await leerCartelAccion(foto)).toMatchObject({ ok: true, valores: { inicio: "2026-11-05T20:30", gratis: true }, horaLeida: true, costoLeido: true });
+    m.modelo.mockResolvedValue({ titulo: "Cartel", fecha: "2026-11-05", hora: null, gratis: null, precio: null, artistas: [] });
+    expect(await leerCartelAccion(foto)).toMatchObject({ ok: true, valores: { inicio: "2026-11-05T19:00", gratis: true }, horaLeida: false, costoLeido: false });
+    m.modelo.mockResolvedValue({ titulo: "Cartel", fecha: "2026-11-05", hora: "20:30", gratis: false, precio: "$150", artistas: [] });
+    expect(await leerCartelAccion(foto)).toMatchObject({ ok: true, valores: { precio: "150", gratis: false }, costoLeido: true });
+  });
+
   it.each([null, { code: "23505" }])("pedir mas confirma alta o peticion ya existente: %j", async (error) => {
     m.insertar.mockResolvedValue({ error });
     expect(await pedirMasLecturas()).toEqual({ ok: true });

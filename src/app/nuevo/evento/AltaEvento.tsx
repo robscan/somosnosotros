@@ -3,7 +3,7 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import PorPasos from "@/components/PorPasos";
 import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
-import type { ResultadoEvento } from "@/app/eventos/acciones";
+import type { Cupo, ResultadoEvento } from "@/app/eventos/acciones";
 import CamposSitio from "@/app/eventos/CamposSitio";
 import { operacionEvento } from "@/app/eventos/operacionEvento";
 import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
@@ -15,10 +15,13 @@ import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
+import { respuestasDelCartel } from "./cartelPorPasos";
 import { avance, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Paso, type Uso } from "./pasos";
+import { PasoInicio, PasoLeyendo } from "./PasoCartel";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
-import { PasoCuanto, PasoDia, PasoHora, PasoInicio, PasoMas, PasoNombre } from "./PasosEvento";
+import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
 import Revisa from "./Revisa";
+import { useLeerCartel } from "./useLeerCartel";
 import { usePasosEvento } from "./usePasosEvento";
 
 type Props = {
@@ -31,6 +34,12 @@ type Props = {
   ciudadContexto: Ciudad | null;
   /** A dónde sale la ✕ si no hay pantalla anterior. */
   salida: { href: string; texto: string };
+  /** Quien publica: la carpeta de Storage donde sube el cartel. */
+  usuarioId: string;
+  /** Si el servidor puede leer carteles; apagado, el primer paso solo ofrece «No tengo cartel». */
+  cartelActivo: boolean;
+  /** Las lecturas de cartel que le quedan este mes al abrir la pantalla; null si no se supo o no aplica. */
+  cupo: Cupo | null;
 };
 
 const FORMULARIO = "publicar-evento";
@@ -49,21 +58,34 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
 };
 
 /**
- * El alta de evento por pasos, camino «No tengo cartel» (OL-300; prototipo firmado `publicar-por-pasos.html`, bitácora 323): ¿Cómo se
- * llama? → ¿Qué día es? → ¿A qué hora? → ¿Dónde es? (con «¿Es aquí?» y «No está en el directorio» si el sitio no es del directorio,
- * OL-301) → ¿Cuánto cuesta? → Revisa → Publicar. Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el alta de siempre,
- * que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve, y el error sale
- * en «Revisa».
+ * El alta de evento por pasos (OL-300, OL-301 y OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Sin cartel («No tengo
+ * cartel»): ¿Cómo se llama? → ¿Qué día es? → ¿A qué hora? → ¿Dónde es? (con «¿Es aquí?» y «No está en el directorio» si el sitio no es
+ * del directorio) → ¿Cuánto cuesta? → Revisa → Publicar. Con cartel («Sube el cartel»): se sube y se lee en «Leyendo» (`useLeerCartel`),
+ * lo leído rellena las respuestas y solo se preguntan los pasos que falten (`cartelPorPasos.ts`); con todo leído se pasa directo a
+ * «Revisa». Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el
+ * alta de siempre, que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve,
+ * y el error sale en «Revisa».
  */
-export default function AltaEvento({ accion, lugares, mios, ciudadContexto, salida }: Props) {
+export default function AltaEvento({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo }: Props) {
   const { r, candidato, paso, direccion, primero, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
+  // Lo escrito en «¿Dónde es?» vive aquí y no en el paso: al volver de «¿Es aquí?» (Atrás, «Buscar otro») la lista sigue ahí.
+  const [busqueda, setBusqueda] = useState("");
+  // Con cartel: se sube y se lee en «Leyendo»; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»).
+  // Si el cartel nombra un sitio que no es del directorio, «¿Dónde es?» abre con ese nombre ya escrito en el campo.
+  const cartel = useLeerCartel({
+    usuarioId,
+    cupo,
+    alLeer: (leido) => {
+      const leidas = respuestasDelCartel(leido, r.quien);
+      if (leidas.sitio?.modo === "otro") setBusqueda(leidas.sitio.otro.sitioTexto || leidas.sitio.otro.direccion || "");
+      contestar(leidas);
+    },
+  });
   const ubicacion = useEstoyAqui();
   // Un lugar que se guarda desde «No está en el directorio» aún no está en la lista que trajo el servidor: se agrega aquí.
   const [listaLugares, setListaLugares] = useState(lugares);
   const [guardando, setGuardando] = useState(false);
   const [errorLugar, setErrorLugar] = useState<string | null>(null);
-  // Lo escrito en «¿Dónde es?» vive aquí y no en el paso: al volver de «¿Es aquí?» (Atrás, «Buscar otro») la lista sigue ahí.
-  const [busqueda, setBusqueda] = useState("");
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   useEffect(() => {
@@ -118,12 +140,12 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
   return (
     <PorPasos
       titulo={paso === "revisa" ? "Revisa" : "Publicar"}
-      paso={paso}
-      direccion={direccion}
+      paso={cartel.leyendo ? "leyendo" : paso}
+      direccion={cartel.leyendo ? null : direccion}
       avance={avance(paso)}
       salida={salida}
       onAtras={primero ? undefined : atrasDelPaso}
-      pregunta={PREGUNTA[paso]}
+      pregunta={cartel.leyendo ? undefined : PREGUNTA[paso]}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <input type="hidden" name="titulo" value={r.nombre} />
@@ -136,11 +158,12 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           <input type="hidden" name="quien" value={JSON.stringify(r.quien)} />
           <input type="hidden" name="descripcion" value={r.descripcion} />
           <input type="hidden" name="enlace" value={r.enlace} />
-          <input type="hidden" name="imagen" value="" />
+          <input type="hidden" name="imagen" value={cartel.subido?.url ?? ""} />
         </form>
       }
     >
-      {paso === "inicio" && <PasoInicio onSinCartel={seguir} />}
+      {cartel.leyendo && <PasoLeyendo foto={cartel.miniatura} />}
+      {!cartel.leyendo && paso === "inicio" && <PasoInicio cartelActivo={cartelActivo} cartel={cartel.cartel} pidiendo={cartel.pidiendo} onElegir={cartel.elegir} onPedir={cartel.pedirMas} onSinCartel={seguir} />}
       {paso === "nombre" && <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />}
       {paso === "dia" && <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />}
       {paso === "hora" && <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} />}
@@ -176,6 +199,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           zona={zona}
           lugar={lugar}
           mios={mios}
+          cartel={cartel.subido}
           errores={errores}
           general={resultado && !resultado.ok ? resultado.general : undefined}
           enviando={enviando}
