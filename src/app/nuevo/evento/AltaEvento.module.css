@@ -1,0 +1,90 @@
+/* ==========================================================================
+   Los pasos del alta de evento (prototipo firmado `publicar-por-pasos.html`, bitácora 323). Todo va como hijo directo de la columna de
+   `PorPasos`; aquí solo lo que es de estos pasos.
+   1. «Sube el cartel» · 2. Chips de una pregunta · 3. Opciones · 4. «Revisa»
+   ========================================================================== */
+
+/* 1. El recuadro del cartel (tercera vuelta: chico, no media pantalla): punteado en el color de acción, la cámara en un círculo, el
+   título y lo que se lee; todo él es el enlace. */
+.subir {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--espacio-2);
+  min-height: var(--alto-subir-cartel);
+  padding: var(--espacio-5);
+  border: 2px dashed var(--primario);
+  border-radius: var(--radio-grande);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-lg);
+  text-align: center;
+  text-decoration: none;
+}
+.subir > span {
+  display: grid;
+  place-items: center;
+  width: var(--boton-icono-grande);
+  height: var(--boton-icono-grande);
+  border-radius: 50%;
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.subir > small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
+/* 2. Los chips de una pregunta (día, hora de inicio, hora de fin): pasan al renglón de abajo y, como son la respuesta y no un filtro,
+   miden un toque a la vista y llevan la letra del texto (prototipo). Se agrandan desde su token, así su área de toque sigue exacta.
+   Con rótulo («Empieza», «Termina»), el rótulo va solo en su renglón. */
+.grupo {
+  --alto-chip: var(--toque-min);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+.grupo > button {
+  font-size: var(--letra-md);
+}
+.grupo > span:first-child {
+  flex-basis: 100%;
+  color: var(--texto-suave);
+}
+/* Lo que se calcula de la respuesta («Termina 1:00 a.m. del día siguiente»), en letra suave y en su propio renglón. */
+.grupo > small {
+  flex-basis: 100%;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* «Termina» aparece al elegir el inicio: cae en su sitio (doc 51: la animación introduce lo nuevo). */
+@media (prefers-reduced-motion: no-preference) {
+  .aparece {
+    animation: cae var(--duracion) var(--curva);
+  }
+}
+@keyframes cae {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--espacio-3) * -1));
+  }
+}
+
+/* 3. Las opciones grandes de «¿Cuánto cuesta?» (ui/Opcion), una debajo de otra. */
+.opciones {
+  display: grid;
+  gap: var(--espacio-3);
+}
+
+/* 4. «Revisa»: el nombre del evento como título, y cada renglón se toca entero: su «Cambiar» lo cubre (el renglón sin clave ya es
+   `position: relative`). */
+.titulo {
+  font-size: var(--letra-2xl);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.dato > button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}

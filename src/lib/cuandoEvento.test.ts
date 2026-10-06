@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sumarHoras } from "./fechas";
 import { conDias, conHoraFin, conHoraInicio, finDelDia, horasEntre, partirLocal, terminaOtroDia } from "./cuandoEvento";
 
 const ZONA = "America/Mexico_City";
@@ -38,9 +39,9 @@ describe("conDias: rango de días (OL-298)", () => {
   it("un solo día sin hora de fin sigue sin ella", () => {
     expect(conDias(sinFin, "2026-11-20", null)).toEqual({ inicio: "2026-11-20T19:00", fin: "" });
   });
-  it("un evento que cruzaba la medianoche y se elige «un solo día» queda sin hora de fin (su 2:00 ya no es posterior)", () => {
+  it("un evento que cruzaba la medianoche y cambia de día sigue cruzándola: termina al día siguiente a la misma hora (OL-300)", () => {
     const cruza = { inicio: "2026-11-14T22:00", fin: "2026-11-15T02:00" };
-    expect(conDias(cruza, "2026-11-20", null)).toEqual({ inicio: "2026-11-20T22:00", fin: "" });
+    expect(conDias(cruza, "2026-11-20", null)).toEqual({ inicio: "2026-11-20T22:00", fin: "2026-11-21T02:00" });
   });
   it("y si lo que se confirma es su mismo rango de dos días, no cambia", () => {
     const cruza = { inicio: "2026-11-14T22:00", fin: "2026-11-15T02:00" };
@@ -94,9 +95,25 @@ describe("conHoraFin", () => {
   it("el fin cae en el día del inicio", () => {
     expect(conHoraFin(sinFin, "21:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-14T21:00" });
   });
-  it("un fin igual o anterior al inicio, el mismo día, no se acepta: queda como estaba", () => {
+  it("un fin anterior al inicio, en un evento de un solo día, es la madrugada del día siguiente (OL-300); la misma hora no se acepta", () => {
+    expect(conHoraFin(sinFin, "18:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-15T18:00" });
     expect(conHoraFin(sinFin, "19:00")).toBe(sinFin);
-    expect(conHoraFin(sinFin, "18:00")).toBe(sinFin);
+  });
+  it("«Otra hora» 01:00 con inicio 22:00 cae el día siguiente; la duración de 3 horas desde 22:00 llega a la misma hora", () => {
+    const noche = { inicio: "2026-11-14T22:00", fin: "" };
+    expect(conHoraFin(noche, "01:00")).toEqual({ inicio: "2026-11-14T22:00", fin: "2026-11-15T01:00" });
+    expect(sumarHoras("2026-11-14T22:00", 3, ZONA)).toBe("2026-11-15T01:00");
+    // En el último día del mes, el día siguiente es el 1.º.
+    expect(conHoraFin({ inicio: "2026-11-30T22:00", fin: "" }, "01:00").fin).toBe("2026-12-01T01:00");
+  });
+  it("una hora posterior al inicio sigue cayendo el mismo día: 1 hora desde 19:00 termina a las 20:00", () => {
+    expect(conHoraFin(sinFin, "20:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-14T20:00" });
+    expect(sumarHoras("2026-11-14T19:00", 1, ZONA)).toBe("2026-11-14T20:00");
+  });
+  it("varios días + «Sin hora de fin» sigue acabando con su último día, y una hora anterior al inicio cae en el último día, no un día después", () => {
+    const largo = { inicio: "2026-11-14T19:00", fin: "2026-11-16T21:00" };
+    expect(conHoraFin(largo, "")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-16T23:59" });
+    expect(conHoraFin({ inicio: "2026-11-14T19:00", fin: "2026-11-16T23:59" }, "01:00").fin).toBe("2026-11-16T01:00");
   });
   it("en un evento de varios días la hora cae en su último día, aunque sea anterior a la de inicio", () => {
     const largo = { inicio: "2026-11-14T19:00", fin: "2026-11-16T23:59" };

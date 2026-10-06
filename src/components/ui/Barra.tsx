@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from "react";
 import Atras from "./Atras";
 import Cerrar from "./Cerrar";
 import Logotipo from "./Logotipo";
@@ -9,12 +10,22 @@ type Props =
       /** Pantalla interior (Ajustes, una edición): regreso a la izquierda y logotipo al centro. */
       volver: Destino;
       cerrar?: undefined;
+      paso?: undefined;
     }
   | {
       /** Formulario de alta: sin regreso; una ✕ a la derecha que vuelve igual que Atrás (founder, 2026-09-16), y el título en medio. */
       cerrar: Destino;
       titulo: string;
       volver?: undefined;
+      paso?: undefined;
+    }
+  | {
+      /** Alta por pasos (`PorPasos`, prototipo firmado de la bitácora 323): a la izquierda la salida del paso (la ✕ en el primero, Atrás
+       *  en los demás), el título en medio y, pisando el borde de abajo, la línea de avance (`avance`, de 0 a 1). */
+      paso: { salida: ReactNode; avance: number };
+      titulo: string;
+      volver?: undefined;
+      cerrar?: undefined;
     };
 
 /**
@@ -23,9 +34,21 @@ type Props =
  * pantalla al centro (el único encabezado de la página) y ✕ a la derecha (canon del prototipo firmado). Las raíces no la llevan: su
  * barra es la de la app (`BarraApp`, en el layout); las fichas, la suya (`BarraFicha`). Una tarea con regreso la conserva desde 792,
  * pero sin el logotipo, que ya trae la barra de la app: le quedan su Atrás.
- * Va como hija directa de la plantilla `pagina` (o `paginaContenido`, de `ui/Plantilla`), que le da las tres columnas de la rejilla.
+ * Va como hija directa de la plantilla `pagina` (o `paginaContenido`, de `ui/Plantilla`), que le da las tres columnas de la rejilla, o de
+ * la columna de `PorPasos`, donde ocupa todo el ancho.
  */
 export default function Barra(props: Props) {
+  if (props.paso) {
+    // El título se enfoca al volver a un paso sin pregunta propia (el primero): por eso `tabIndex`.
+    return (
+      <header className={`${styles.barra} ${styles.interior} ${styles.pasos}`} style={{ "--avance": props.paso.avance } as CSSProperties}>
+        {props.paso.salida}
+        <h1 className={styles.titulo} tabIndex={-1}>
+          {props.titulo}
+        </h1>
+      </header>
+    );
+  }
   if (props.cerrar) {
     return (
       <header className={`${styles.barra} ${styles.interior} ${styles.alta}`}>

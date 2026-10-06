@@ -19,16 +19,12 @@ import { unirNombres } from "@/lib/artistas";
 import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, REVELAR_OPCIONES, esCooperacion, extraerNumero, type Evento, type ModoSitio, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
 import { faltaEnEvento } from "@/lib/formulario";
-import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
-import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
+import type { Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
-import { leerUbicacion } from "@/lib/ubicacion";
-import { esteAparatoInicial } from "@/lib/plataforma";
-import { usePlataforma } from "@/lib/useAvisosTelefono";
 import { cupoDeCartel, leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import SelectorCuando from "./SelectorCuando";
@@ -36,7 +32,9 @@ import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
 import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel, type CampoFlyer } from "./gestosFlyer";
-import { sitioListo, textoDelSitio } from "./direccionEvento";
+import { sitioListo, textoDelSitio, valorDelSitio } from "./direccionEvento";
+import CamposSitio from "./CamposSitio";
+import { useEstoyAqui } from "./useEstoyAqui";
 import { puedeConservarReservadoSinDireccion, sitioReservadoVencido } from "@/lib/retencionSitio";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -119,7 +117,6 @@ type Props = {
  * ampliada por el founder, 2026-09-21, OL-100: "aplica como canon para todos los formularios").
  */
 export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/nuevo", cupo = null, revision, ciudadContexto = null, oculta = false }: Props) {
-  const plataforma = usePlataforma();
   const [revisionInicial] = useState(revision);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
@@ -171,8 +168,6 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   // que el punto cambia (hoja, borrador). Sin punto, la de la ciudad inicial, como al guardar.
   const puntoActivo = modoSitio === "reservado" ? otro.privadoPunto : modoSitio === "otro" ? otro.sitioPunto : null;
   const clavePunto = puntoActivo ? `${puntoActivo.lat},${puntoActivo.lng}` : "";
-  // La ciudad del sitio es la del pin: la de Mapbox o, sin ella, la de contexto si el pin cae cerca; sin ninguna, el servidor no publica (OL-299).
-  const ciudadSitio = puntoActivo ? ciudadParaPunto(puntoActivo, otro.ciudad, ciudadContexto) : otro.ciudad;
   const [zonaPin, setZonaPin] = useState(zonaSitio);
   // Mientras nadie la toque, la hora sugerida sigue a la zona del sitio (resugerir), con el fin detrás.
   const sugerida = useRef(modo === "editar" ? "" : inicio);
@@ -291,25 +286,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   // La hoja «Dónde»: cerrada, o abierta (`ubicarme`: con el «Estoy aquí» del renglón, que lee la ubicación al abrir).
   const [hoja, setHoja] = useState<null | { ubicarme: boolean }>(null);
   // "Estoy aquí" en el pin de otro sitio: la persona en el mapa (punto azul) y el pin donde está.
-  const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
-  const [ubicando, setUbicando] = useState(false);
-  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
-  async function estoyAqui(poner: (p: Punto) => void) {
-    const version = gestos.current.tocar("donde");
-    setUbicando(true);
-    setAvisoUbicacion(null);
-    try {
-      const p = await leerUbicacion(true);
-      if (!gestos.current.vigente("donde", version)) return;
-      setYo((y) => ({ ...p, vez: (y?.vez ?? 0) + 1 }));
-      poner(p);
-    } catch (e) {
-      if (!gestos.current.vigente("donde", version)) return;
-      setAvisoUbicacion(e === "sin-soporte" ? `${esteAparatoInicial(plataforma)} no da su ubicación. Toca el mapa donde es.` : "No se pudo leer tu ubicación. Toca el mapa donde es.");
-    } finally {
-      setUbicando(false);
-    }
-  }
+  const { yo, ubicando, avisoUbicacion, estoyAqui } = useEstoyAqui({ tocar: () => gestos.current.tocar("donde"), vigente: (v) => gestos.current.vigente("donde", v) });
 
   // Borrador (solo en el alta): vuelve tras el primer pintado únicamente si se dejó la señal al ir a registrar un lugar;
   // si no, se olvida. Un lugar o artista que viene en la URL (?lugar=, ?artista=) manda sobre el borrador.
@@ -379,7 +356,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   // Lo único que dice qué falta es la nota bajo el botón; cada renglón dice su estado con su valor «Falta» y su borde discontinuo.
   const falta = faltaEnEvento({ nombre: titulo, donde: dondeResuelto ? "listo" : dondeConfirmar ? "por-confirmar" : "falta" });
 
-  const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${textoDelSitio(otro)} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
+  const valorDonde = valorDelSitio(modoSitio, lugar, otro);
   const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta la fecha";
   const valorCuanto = gratis ? "Gratis" : cooperacion ? COOPERACION_SOLIDARIA : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
@@ -753,19 +730,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         </ul>
 
         {/* Todo viaja escondido: la hoja vive fuera del formulario y los renglones cerrados no tienen campos. */}
-        <input type="hidden" name="modo_sitio" value={modoSitio} />
-        <input type="hidden" name="lugar_id" value={modoSitio === "lugar" ? lugarId : ""} />
-        <input type="hidden" name="sitio_texto" value={modoSitio === "lugar" ? "" : otro.sitioTexto} />
-        <input type="hidden" name="sitio_direccion" value={modoSitio === "otro" ? otro.direccion ?? "" : ""} />
-        <input type="hidden" name="sitio_pin_pendiente" value={modoSitio !== "lugar" && otro.pinPendiente ? "si" : "no"} />
-        <input type="hidden" name="sitio_lat" value={modoSitio === "otro" && otro.sitioPunto ? otro.sitioPunto.lat : ""} />
-        <input type="hidden" name="sitio_lng" value={modoSitio === "otro" && otro.sitioPunto ? otro.sitioPunto.lng : ""} />
-        <input type="hidden" name="direccion_privada" value={modoSitio === "reservado" ? otro.direccionPrivada : ""} />
-        <input type="hidden" name="privado_lat" value={modoSitio === "reservado" && otro.privadoPunto ? otro.privadoPunto.lat : ""} />
-        <input type="hidden" name="privado_lng" value={modoSitio === "reservado" && otro.privadoPunto ? otro.privadoPunto.lng : ""} />
-        <input type="hidden" name="revelar_horas" value={otro.revelarHoras} />
-        <input type="hidden" name="indicaciones" value={modoSitio === "reservado" ? otro.indicaciones : ""} />
-        <input type="hidden" name="ciudad" value={modoSitio === "lugar" ? "" : (ciudadSitio ?? "")} />
+        <CamposSitio modo={modoSitio} lugarId={lugarId} otro={otro} ciudadContexto={ciudadContexto} />
         {abierta !== "cuando" && (
           <>
             <input type="hidden" name="inicio" value={inicio} />

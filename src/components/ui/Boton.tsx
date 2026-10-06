@@ -4,7 +4,9 @@ import EnCamino from "./EnCamino";
 import styles from "./Boton.module.css";
 
 type Opciones = {
-  variante?: "primario" | "secundario" | "texto" | "peligro";
+  /** `quieto`: la salida secundaria que no compite con la principal (el «enlace quieto» del alta por pasos: «Dura varios días»,
+   *  «Agregar artistas, descripción o enlace»), en gris y subrayada. */
+  variante?: "primario" | "secundario" | "texto" | "peligro" | "quieto";
   /** `recta` (la de los campos) o `pildora` (la de los chips y los botones de las barras). */
   forma?: "recta" | "pildora";
   /** `toque` (48, el del pulgar) o `control` (44, el mínimo: barras, cabeceras y renglones). */

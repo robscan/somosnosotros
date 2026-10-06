@@ -36,6 +36,24 @@
   grid-column: 3;
   justify-self: end;
 }
+/* Por pasos: la salida a la izquierda y el título en la columna del centro (cada uno cae solo en la suya). La línea de avance pisa el
+   borde de abajo de lado a lado: el riel en el gris suave y, encima, lo recorrido en el color de acción, que crece con cada paso
+   (`--avance`, de 0 a 1) en el tiempo y la curva de todo lo que se mueve. Son dibujo: no reciben toques. */
+.pasos::before,
+.pasos::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: var(--alto-avance);
+  background: var(--fondo-suave);
+  pointer-events: none;
+}
+.pasos::after {
+  background: var(--primario);
+  transform: scaleX(var(--avance));
+  transform-origin: left;
+  transition: transform var(--duracion) var(--curva);
+}
 .titulo {
   min-width: 0;
   overflow: hidden;
