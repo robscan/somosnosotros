@@ -44,7 +44,12 @@ before(async () => {
       const q = new URLSearchParams(location.search);
       // ?sin=1: el armazón sin el mecanismo (el control negativo); ?hoja=1: una hoja con un campo al fondo de su cuerpo; ?corto=1: un paso corto
       // («¿Cómo se llama?»: el campo y el pie, sin nada más).
-      function Armazon({children}) { if (!q.has('sin')) useCampoVisible(); return children; }
+      function Armazon({children}) {
+        // ?sinCapacitor=1: los eventos del plugin no llegan al hook (el control negativo de la app de la tienda).
+        if (q.has('sinCapacitor')) for (const n of ['keyboardWillShow','keyboardDidShow','keyboardWillHide','keyboardDidHide']) window.addEventListener(n, (e) => e.stopImmediatePropagation(), true);
+        if (!q.has('sin')) useCampoVisible();
+        return children;
+      }
       function Paso() {
         return (
           <PorPasos titulo="Publicar" paso="a" direccion={null} avance={0.5} salida={{href:'/', texto:'Salir'}} pregunta="¿Es aquí?">
@@ -227,6 +232,119 @@ test("con la vista desplazada por iOS (offsetTop), el pie sigue el borde de abaj
   assert.equal(c.teclado, `${TECLADO}px`, "el aire de la columna no depende del desplazamiento de la vista");
   assert.equal(c.abajoVisible, `${TECLADO - DESPLAZADA}px`);
   assert.ok(Math.abs(c.pie.bottom - (c.visible + DESPLAZADA)) <= 1, `el pie termina en ${c.pie.bottom} y lo que se ve en ${c.visible + DESPLAZADA}`);
+});
+
+/** Como el plugin `@capacitor/keyboard` en la app de la tienda (modo `body`, bitácora 336): `window.innerHeight` y `visualViewport.height` NO cambian; el plugin
+ *  manda en `window` un `Event` con `keyboardHeight` puesto en el propio evento (`createEvent` de `native-bridge.js`: no hay `detail`) y, tras la
+ *  animación, fija a mano el alto del `<body>` (ventana − teclado). Al esconderse manda el evento sin altura y quita el alto del `<body>`. */
+const capacitor = {
+  mostrar: (p, px) =>
+    p.evaluate((alto) => {
+      for (const nombre of ["keyboardWillShow", "keyboardDidShow"]) {
+        const ev = document.createEvent("Events");
+        ev.initEvent(nombre, false, false);
+        ev.keyboardHeight = alto;
+        window.dispatchEvent(ev);
+      }
+      document.body.style.height = `${window.innerHeight - alto}px`;
+    }, px),
+  esconder: (p) =>
+    p.evaluate(() => {
+      for (const nombre of ["keyboardWillHide", "keyboardDidHide"]) {
+        const ev = document.createEvent("Events");
+        ev.initEvent(nombre, false, false);
+        window.dispatchEvent(ev);
+      }
+      document.body.style.height = "";
+    }),
+};
+const asentarCuadros = (p) => p.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))))));
+
+test("app de la tienda (Capacitor, el visualViewport no cambia): el teclado sale de los eventos del plugin, el pie queda sobre él y el campo se ve", async (t) => {
+  const p = await pagina(t, "?opcional=1");
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  await capacitor.mostrar(p, TECLADO);
+  await asentarCuadros(p);
+  const c = await cajas(p, "Nombre del lugar");
+  const sinCambio = await p.evaluate(() => ({ alto: window.innerHeight, area: window.visualViewport.height }));
+  assert.deepEqual(sinCambio, { alto: VENTANA, area: VENTANA }, "la ventana y el área visible siguen enteras, como en el modo body del plugin");
+  assert.equal(c.teclado, `${TECLADO}px`, "--teclado sale de keyboardHeight");
+  assert.equal(c.abajoVisible, `${TECLADO}px`, "--abajo-visible también");
+  assert.equal(c.atributo, true);
+  assert.equal(c.pie.posicion, "fixed");
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y el teclado empieza en ${c.visible}`);
+  assert.ok(c.campo.bottom <= c.pie.top, `el campo (abajo en ${c.campo.bottom}) no queda bajo el pie (arriba en ${c.pie.top})`);
+  assert.ok(c.campo.top >= c.barraBottom - 1 && c.campo.bottom <= c.visible, `el campo se ve (va de ${c.campo.top} a ${c.campo.bottom}, hasta el teclado ${c.visible})`);
+});
+
+test("app de la tienda: con un paso largo (el campo abajo del mapa) la página se desplaza sola y el campo queda sobre el pie", async (t) => {
+  const p = await pagina(t);
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  await capacitor.mostrar(p, TECLADO);
+  await asentarCuadros(p);
+  const c = await cajas(p, "Nombre del lugar");
+  assert.ok(c.campo.bottom <= c.pie.top && c.campo.top >= c.barraBottom - 1, `el campo se ve entre la barra y el pie (va de ${c.campo.top} a ${c.campo.bottom}; pie en ${c.pie.top})`);
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y el teclado empieza en ${c.visible}`);
+});
+
+test("app de la tienda: si los eventos llegan antes que el foco o después, y al esconderse el teclado todo vuelve", async (t) => {
+  const p = await pagina(t, "?opcional=1");
+  await capacitor.mostrar(p, TECLADO); // el teclado «llega» y recién después se enfoca el campo
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  await asentarCuadros(p);
+  let c = await cajas(p, "Nombre del lugar");
+  assert.equal(c.teclado, `${TECLADO}px`);
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1 && c.campo.bottom <= c.pie.top, `pie en ${c.pie.top}-${c.pie.bottom}, campo hasta ${c.campo.bottom}, teclado desde ${c.visible}`);
+  await capacitor.esconder(p);
+  await p.evaluate(() => document.activeElement.blur());
+  await p.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue("--teclado").trim() === "0px");
+  await asentarCuadros(p);
+  c = await cajas(p, "Nombre del lugar");
+  assert.equal(c.atributo, false);
+  assert.equal(c.abajoVisible, "0px");
+  assert.equal(c.pie.posicion, "sticky");
+  assert.ok(Math.abs(c.pie.bottom - VENTANA) <= 1, `el pie vuelve al borde de la ventana (abajo ${c.pie.bottom})`);
+});
+
+test("control negativo de la app de la tienda: sin oír los eventos del plugin el pie queda bajo el teclado", async (t) => {
+  const p = await pagina(t, "?opcional=1&sinCapacitor=1");
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  await capacitor.mostrar(p, TECLADO);
+  await asentarCuadros(p);
+  const c = await cajas(p, "Nombre del lugar");
+  assert.ok(c.pie.bottom > c.visible, `sin los eventos el pie debía quedar bajo el teclado (abajo ${c.pie.bottom}, teclado desde ${c.visible})`);
+});
+
+test("Android (interactive-widget=resizes-content): con la ventana encogida por el teclado no se suma aire dos veces y el pie queda sobre él", async (t) => {
+  const p = await pagina(t, "?opcional=1");
+  // Chrome en Android con `resizes-content`: la ventana de maquetación y el área visible se encogen juntas (`innerHeight` = `visualViewport.height`).
+  await p.setViewportSize({ width: 390, height: VENTANA - TECLADO });
+  await p.evaluate((alto) => {
+    window.visualViewport.height = alto;
+  }, VENTANA - TECLADO);
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  await asentarCuadros(p);
+  const c = await p.evaluate(() => {
+    const r = (el) => el.getBoundingClientRect();
+    const pie = document.querySelector("footer");
+    const campo = document.querySelector('input[aria-label="Nombre del lugar"]');
+    return {
+      teclado: getComputedStyle(document.documentElement).getPropertyValue("--teclado").trim(),
+      atributo: document.documentElement.hasAttribute("data-teclado"),
+      relleno: parseFloat(getComputedStyle(document.querySelector("main")).paddingBottom),
+      posicion: getComputedStyle(pie).position,
+      pieBottom: r(pie).bottom,
+      campoBottom: r(campo).bottom,
+      pieTop: r(pie).top,
+      alto: window.innerHeight,
+    };
+  });
+  assert.equal(c.teclado, "0px", "la ventana ya está encogida: no hay teclado que sumar");
+  assert.equal(c.atributo, false);
+  assert.equal(c.relleno, 0, "sin aire de más abajo");
+  assert.equal(c.posicion, "sticky");
+  assert.ok(Math.abs(c.pieBottom - c.alto) <= 1, `el pie termina en ${c.pieBottom} y la ventana encogida en ${c.alto}`);
+  assert.ok(c.campoBottom <= c.pieTop, `el campo (abajo en ${c.campoBottom}) no queda bajo el pie (arriba en ${c.pieTop})`);
 });
 
 test("al cerrar el teclado todo vuelve: --teclado a 0, el pie pegado y sin aire de más", async (t) => {

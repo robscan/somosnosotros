@@ -62,6 +62,8 @@
   right: 0;
   bottom: var(--abajo-visible, 0px);
   left: 0;
+  /* El teclado cubre la zona segura de abajo (el indicador de inicio): ahí ya no hace falta su aire. */
+  padding-bottom: var(--espacio-4);
 }
 
 /* 4. El paso siguiente entra por la derecha y el anterior por la izquierda, en el tiempo y la curva de todo lo que se mueve (doc 51:

@@ -9,6 +9,8 @@ const AIRE = 12;
 const ESCRIBIBLE = 'input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="button"], [type="submit"], [type="hidden"]), textarea, select, [contenteditable="true"]';
 /** Cuánto se espera, tras soltar un campo, a ver si el foco entra en otro: al pasar de uno a otro el foco sale un instante antes de entrar. */
 const ESPERA_SOLTAR_MS = 100;
+/** Los eventos que el plugin `@capacitor/keyboard` manda a `window` dentro de la app de la tienda (compatibles con `cordova-plugin-ionic-keyboard`). */
+const EVENTOS_DE_CAPACITOR = ["keyboardWillShow", "keyboardDidShow", "keyboardWillHide", "keyboardDidHide"] as const;
 
 /**
  * Todo campo de texto queda dentro del área visible al enfocarse (regla del founder, 2026-10-05: «en cada input text asegúrate de que no sea
@@ -17,10 +19,20 @@ const ESPERA_SOLTAR_MS = 100;
  *
  * Qué pasa en el iPhone (medido en el simulador, bitácora 333): con el teclado abierto la ventana de maquetación no se encoge, solo el área
  * visible (`visualViewport`). Safari desplaza por su cuenta un campo que no cabe, pero no siempre: si la página no tiene más recorrido que
- * la ventana no la mueve y el teclado tapa el campo; y lo pegado abajo (el pie de los pasos) puede quedar justo encima del campo. Por eso
- * este hook hace dos cosas:
+ * la ventana no la mueve y el teclado tapa el campo; y lo pegado abajo (el pie de los pasos) puede quedar justo encima del campo.
+ *
+ * **La app de la tienda (Capacitor, `apps/ios`; bitácora 336) es otro caso.** Su WKWebView lleva `plugins.Keyboard.resize: "body"`
+ * (OL-205): el plugin quita sus propios oyentes del WebView, deja el `contentInset` de la vista en cero (iOS no desplaza nada para revelar el
+ * campo) y solo encoge a mano el alto del `<body>`; ni `window.innerHeight` ni `visualViewport.height` cambian ("Relative units are not
+ * affected, because the viewport does not change", documentación de `@capacitor/keyboard`). Ahí la medida del `visualViewport` vale 0 y
+ * lo pegado con `bottom: 0` queda bajo el teclado. Lo único que dice cuánto mide es el plugin, con eventos en `window`
+ * (`keyboardWillShow` y `keyboardDidShow` traen `keyboardHeight` en px puesto directamente en el evento, no en `detail`;
+ * `keyboardWillHide` y `keyboardDidHide` no traen nada: 0). Por eso este hook los escucha también y toma como medida **la mayor entre la del
+ * `visualViewport` y la de Capacitor**: en Safari y en la web instalada Capacitor no existe (0) y en la app el `visualViewport` no se mueve (0).
+ *
+ * Con esa medida, este hook hace dos cosas:
  * 1. Publica en `<html>`, mientras haya un campo enfocado (y 0 sin él), dos medidas del teclado y `data-teclado`:
- *    - `--teclado`: lo que el teclado le quita a la ventana, su alto. No cambia aunque Safari mueva la vista. Las pantallas lo suman a su relleno
+ *    - `--teclado`: lo que el teclado le quita a la ventana, su alto (la mayor de las dos medidas). No cambia aunque Safari mueva la vista. Las pantallas lo suman a su relleno
  *      de abajo (`plantilla.pagina`, `PorPasos`) para que haya por dónde desplazar el campo hasta quedar sobre el teclado.
  *    - `--abajo-visible`: a cuánto del borde de abajo de la ventana de maquetación termina lo que se ve (el alto del teclado menos el desfase
  *      del área visible). Es el `bottom` de todo lo que va pegado sobre el teclado: el pie con las acciones (`PiePaso`, en la columna de los
@@ -34,21 +46,32 @@ export default function useCampoVisible() {
     const raiz = document.documentElement;
     const vv = window.visualViewport;
     let campo: HTMLElement | null = null;
+    /** El alto del teclado que dijo Capacitor en su último evento (0 en Safari, en la web instalada y con el teclado cerrado). */
+    let deCapacitor = 0;
 
-    /** El alto del teclado: lo que le falta al área visible para llegar a la ventana. Es el mismo aunque Safari desplace la vista (a diferencia de `offsetTop`). */
+    /**
+     * Las dos medidas del teclado, con la mayor entre el `visualViewport` y Capacitor (ver arriba).
+     * `teclado`: lo que le falta al área visible para llegar a la ventana; es el mismo aunque Safari desplace la vista (a diferencia de `offsetTop`).
+     * `abajoVisible`: lo mismo menos el desfase del área visible: lo pegado sobre el teclado sí sigue al área visible, y si la vista está
+     * desplazada su borde de abajo queda `desfase` px más abajo que el alto del teclado. Solo cambia la posición de lo pegado, nunca el largo
+     * de la página, así que no hace saltar el desplazamiento.
+     */
+    const medir = () => {
+      if (!campo) return { teclado: 0, abajoVisible: 0 };
+      const delArea = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+      const delAreaConDesfase = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - desfaseVisible(vv))) : 0;
+      return { teclado: Math.max(delArea, deCapacitor), abajoVisible: Math.max(delAreaConDesfase, deCapacitor) };
+    };
     const publicar = () => {
-      const tapado = campo && vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
-      // Lo pegado sobre el teclado sí sigue al área visible: si la vista está desplazada, su borde de abajo queda `desfase` px más abajo que el
-      // alto del teclado. Solo cambia la posición de lo pegado, nunca el largo de la página, así que no hace saltar el desplazamiento.
-      const hastaElBorde = campo && vv ? Math.max(0, Math.round(window.innerHeight - vv.height - desfaseVisible(vv))) : 0;
-      raiz.style.setProperty("--teclado", `${tapado}px`);
-      raiz.style.setProperty("--abajo-visible", `${hastaElBorde}px`);
-      raiz.toggleAttribute("data-teclado", tapado > 0);
+      const { teclado, abajoVisible } = medir();
+      raiz.style.setProperty("--teclado", `${teclado}px`);
+      raiz.style.setProperty("--abajo-visible", `${abajoVisible}px`);
+      raiz.toggleAttribute("data-teclado", teclado > 0);
     };
 
     const asegurar = (suave: boolean) => {
       if (!campo?.isConnected || campo !== document.activeElement) return;
-      const libre = bandaLibre(campo, vv);
+      const libre = bandaLibre(campo, vv, medir().abajoVisible);
       const caja = campo.getBoundingClientRect();
       if (caja.top >= libre.arriba && caja.bottom <= libre.abajo) return;
       // Al centro de lo libre; si es más alto que eso (un área de texto), su arranque arriba, que es donde se escribe.
@@ -88,10 +111,18 @@ export default function useCampoVisible() {
       );
     };
 
+    // La app de la tienda: los eventos del plugin de teclado de Capacitor llegan a `window` con `keyboardHeight` en el propio evento.
+    const alTecladoDeCapacitor = (e: Event) => {
+      const alto = (e as Event & { keyboardHeight?: number }).keyboardHeight;
+      deCapacitor = typeof alto === "number" && alto > 0 ? Math.round(alto) : 0;
+      alCambiarElArea();
+    };
+
     document.addEventListener("focusin", alEnfocar);
     document.addEventListener("focusout", alSoltar);
     vv?.addEventListener("resize", alCambiarElArea);
     vv?.addEventListener("scroll", alCambiarElArea);
+    for (const evento of EVENTOS_DE_CAPACITOR) window.addEventListener(evento, alTecladoDeCapacitor);
     // El campo que ya está enfocado al montar (un `autoFocus` que se hidrató antes que este efecto).
     enfocado(document.activeElement);
     return () => {
@@ -99,6 +130,7 @@ export default function useCampoVisible() {
       document.removeEventListener("focusout", alSoltar);
       vv?.removeEventListener("resize", alCambiarElArea);
       vv?.removeEventListener("scroll", alCambiarElArea);
+      for (const evento of EVENTOS_DE_CAPACITOR) window.removeEventListener(evento, alTecladoDeCapacitor);
       raiz.style.removeProperty("--teclado");
       raiz.style.removeProperty("--abajo-visible");
       raiz.removeAttribute("data-teclado");
@@ -120,10 +152,11 @@ function desfaseVisible(vv: VisualViewport) {
  * lo tapa —hermanos suyos o de algún ancestro, con `position: sticky` o `fixed`: la barra de arriba, un pie— y por la caja de lo que se
  * desplaza si es más chica (el cuerpo de una hoja).
  */
-function bandaLibre(campo: HTMLElement, vv: VisualViewport | null) {
+function bandaLibre(campo: HTMLElement, vv: VisualViewport | null, abajoVisible: number) {
   const desfase = vv ? desfaseVisible(vv) : 0;
   let arriba = desfase;
-  let abajo = vv ? desfase + vv.height : window.innerHeight;
+  // Hasta dónde llega lo que se ve: la ventana menos el teclado (la mayor medida, también la de Capacitor, que no mueve el `visualViewport`).
+  let abajo = window.innerHeight - abajoVisible;
   const contenedor = desplazable(campo);
   if (contenedor) {
     const c = contenedor.getBoundingClientRect();

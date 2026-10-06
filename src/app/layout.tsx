@@ -48,6 +48,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Android (Chrome y la web instalada desde Chrome; no hay app Android, OL-308): con el teclado abierto, Chrome encoge por omisión solo el
+  // área visible (`resizes-visual`, desde Chrome 108, como Safari de iPhone). Con `resizes-content` encoge la ventana de maquetación: lo pegado
+  // abajo (el pie de los pasos) queda sobre el teclado sin más, y `ui/useCampoVisible` no suma aire dos veces (`--teclado` queda en 0).
+  // Safari de iPhone y la app de la tienda lo ignoran. Referencia: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/viewport#interactive-widget
+  interactiveWidget: "resizes-content",
   themeColor: "#ffffff",
   colorScheme: "light",
 };

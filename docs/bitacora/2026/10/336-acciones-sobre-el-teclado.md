@@ -1,7 +1,7 @@
 # 336 · Las acciones quedan sobre el teclado: el pie de los pasos va anclado justo encima de él
 
 **Pieza:** OL-308. **Rama:** `acciones-sobre-el-teclado` (sobre `origin/main` `82ec432f`). **Fecha:** 2026-10-06. **Operador:** Claude Fable 5.1.
-**Estado:** hecho y probado en el simulador de iPhone (iPhone 15 Pro, iOS 26.3, **Safari y app instalada**, con el teclado en pantalla), en Chromium (componentes y `npm run medir`) y con la suite. **Una cosa no pude reproducir** (el fallo exacto del founder; ver «Qué pasaba»): falta su iPhone (lista al final). Sin migraciones.
+**Estado:** hecho y probado en el simulador de iPhone (iPhone 15 Pro, iOS 26.3) con el teclado en pantalla en **tres entornos: Safari, la web instalada y la app de la tienda (Capacitor, la compilada de `apps/ios`)**; en esta última **sí reproduje el fallo del founder** y lo arreglé. También en Chromium (componentes y `npm run medir`) y con la suite. Android: solo prueba de componentes y del HTML, falta un teléfono Android. Falta el iPhone del founder (lista al final). Sin migraciones.
 
 ## Qué se encargó
 
@@ -9,12 +9,12 @@ El founder vio en producción (2026-10-06, app instalada en su iPhone): en «¿C
 
 ## Qué pasaba
 
-OL-305 puso el pie de la columna de los pasos en el flujo con el teclado abierto (`position: static`). Hipótesis del encargo: en Safari parecía funcionar porque Safari desplaza la página al enfocar, y en la app instalada no. **No se reproduce en el simulador**: con el código de `main`, «¿Cómo se llama?» tiene el pie entero y encima del teclado **tanto en Safari como en la app instalada** (capturas `antes-*`). En un paso corto el pie en el flujo cae justo en el borde del área visible. Lo que sí medí, y es lo que condiciona el arreglo:
+OL-305 puso el pie de la columna de los pasos en el flujo con el teclado abierto (`position: static`). Hipótesis del encargo: «en Safari parecía funcionar porque Safari desplaza la página al enfocar, y en la app instalada no». **No era eso**: con el código de `main`, «¿Cómo se llama?» tiene el pie entero y encima del teclado **tanto en Safari como en la web instalada** del simulador (capturas `antes-*`). **La captura del founder es de la app de la tienda** (TestFlight: Capacitor, `apps/ios/capacitor.config.ts`, un WKWebView que carga `https://somosnosotros.org` con `plugins.Keyboard.resize: KeyboardResize.Body`, OL-205) y ahí sí se reproduce (`tienda-antes-nombre.png`: el pie queda bajo las teclas, se ve su sombra violeta). Ver «La app de la tienda». Lo que sí medí en Safari, y condiciona el arreglo:
 
 - **El pie en el flujo solo está bien por casualidad.** Si el paso tiene recorrido (el campo queda abajo y iOS desplaza la página para verlo), el pie se va con el contenido y queda a media pantalla, con un hueco debajo; y cualquier causa que deje el borde de abajo del flujo más bajo que el teclado lo deja bajo él. No hay nada que lo ancle a lo que se ve.
 - **Safari cambia `window.innerHeight` mientras desplaza** (695 → 463 al llevar «Enlace» a la vista, con `scrollY` en 232) y la ventana de Safari tiene su propia píldora «localhost» sobre el teclado: el área visible termina donde empieza la píldora. Por eso `--teclado` no es «336 px»: es lo que le falta al área visible para llegar a la ventana (310 con el teclado numérico, 337 con el de letras, 105 en el estado del campo de abajo). La prueba y el CSS solo usan esa resta, nunca un número fijo.
 
-No supe explicar por qué el pie del founder queda bajo el teclado en su iPhone. El arreglo hace que no dependa de nada de eso: el pie se ancla al borde de abajo del área visible.
+El pie se ancla al borde de abajo de lo que se ve (con la medida que corresponda a cada entorno) y no depende de dónde caiga el flujo.
 
 ## Lo que hay
 
@@ -24,6 +24,38 @@ No supe explicar por qué el pie del founder queda bajo el teclado en su iPhone.
 - **Por qué `fixed` y no `sticky`** (lo primero que probé, solo con CSS): el pie `sticky` con `bottom: var(--abajo-visible)` pasó en «¿Cómo se llama?» y en «¿Cuánto cuesta?», pero **falló en el simulador en «¿Quieres agregar algo?»** (el campo «Enlace» al fondo): `sticky` solo sube un pie que está más abajo del borde; como Safari desplazó la página para ver el campo, el pie quedó a media pantalla con el campo asomando bajo él, y poco después con el pie fuera de la vista arriba (capturas `intento-sticky-*`). `fixed` + relleno lo resuelve en los dos entornos.
 - **Canon** en `docs/diseno/LINEA_GRAFICA.md` («El armazón», junto a la regla del campo): «Cuando hay acciones en pantalla y el teclado está abierto, el pie con las acciones queda pegado justo encima del teclado; la medición lo comprueba» (founder, 2026-10-06), con el mecanismo y lo que exige a una pantalla nueva (usar `PiePaso`); y la regla del campo ahora cita `--abajo-visible`.
 
+## La app de la tienda (Capacitor)
+
+**Causa.** En modo `body` el plugin `@capacitor/keyboard` (8.0.5, leído en `apps/ios/node_modules/@capacitor/keyboard/ios/Sources/KeyboardPlugin/Keyboard.m`) quita sus propios oyentes del WebView (`UIKeyboardWillChangeFrame…`), deja el `contentInset` de la vista en cero (`resetScrollView`: iOS no desplaza nada para revelar el campo) y solo fija a mano el alto del `<body>` (ventana − teclado, tras la animación). Ni `window.innerHeight` ni `visualViewport.height` cambian (el propio README del plugin: «Relative units are not affected, because the viewport does not change»). Con eso `--teclado` y `--abajo-visible` valían 0, el pie `fixed; bottom: 0` se medía contra la ventana entera y quedaba bajo el teclado, igual que el pie «al fondo del recorrido» de OL-305.
+
+**Qué manda el plugin.** `keyboardWillShow` y `keyboardDidShow` (con `keyboardHeight` en px) y `keyboardWillHide` y `keyboardDidHide` (sin altura), también como eventos de `window` por compatibilidad con `cordova-plugin-ionic-keyboard`. Los dispara `triggerWindowJSEvent`, que en el JavaScript del puente (`native-bridge.js`, `createEvent`) hace `document.createEvent('Events')` y copia cada propiedad del dato **directamente en el evento**: `keyboardHeight` es una propiedad del `Event`, no está en `detail`. (La altura es el alto del marco del teclado de UIKit: en el simulador, 336 con el teclado de letras; sin la barra de flechas de iOS, que el plugin quita.)
+
+**Lo que cambia (`ui/useCampoVisible`).**
+- Escucha los cuatro eventos en `window` y guarda `keyboardHeight` (0 si no trae).
+- **La medida del teclado es la mayor entre la del `visualViewport` y la de Capacitor**, y con ella publica `--teclado` y `--abajo-visible` igual que antes. En Safari y en la web instalada Capacitor no existe (0); en la app el `visualViewport` no se mueve (0). El comentario del hook explica por qué hacen falta.
+- La banda libre de `asegurar` ya no sale de `visualViewport.height` sino de `window.innerHeight − abajoVisible` (es lo mismo con el `visualViewport`, y vale también para Capacitor); `asegurar` corre también al llegar cada evento (dos cuadros después, como con el `resize`).
+- **El `<body>` no hace scroll interno**: en el CSS de la web `html, body { height: 100% }` y ninguno trae `overflow`, así que con el alto fijado a mano por el plugin el contenido desborda el `<body>` y el que se desplaza sigue siendo la ventana. `bandaLibre` y `desplazable` no encuentran ningún contenedor propio (correcto) y el hook desplaza con `window.scrollBy`; el relleno de la columna da el recorrido que iOS no da (en modo `body` nadie desplaza solo). Se ve en las capturas de la app.
+- Un detalle de la app: con el teclado abierto el pie de los pasos deja de sumar la zona segura de abajo a su relleno (el teclado la cubre): `padding-bottom: var(--espacio-4)` solo con `data-teclado`.
+
+**Evidencia en el simulador, con la app de verdad.** Compilada con `xcodebuild` desde `apps/ios/ios/App` (`-scheme App -destination id=<UDID> CODE_SIGNING_ALLOWED=NO`, sin firmar, tras `npx cap sync ios`) e instalada con `simctl`. Solo en mi copia local cambié `server.url` a `http://localhost:3100/nuevo/evento` con `server.cleartext: true` (con una redirección en la entrada la página quedó en blanco; con la sesión iniciada entra directo); **`capacitor.config.ts` se revirtió** (sin diff) y también el `Package.resolved` que toca `xcodebuild`. Entré dentro de la app con `ana@example.com` y un código cualquiera (el respaldo local los acepta). Capturas (1179×2556):
+
+12. `tienda-antes-nombre.png` (**antes**, el código de `main` compilado aparte, en la app): «¿Cómo se llama?» con el campo; **no se ve el pie**: bajo las teclas, abajo, asoma su sombra violeta. Es el fallo del founder.
+13. `tienda-despues-nombre.png` (**después**): la misma pantalla: «Falta el nombre» **entero justo encima del teclado**, sin barra de flechas y con el relleno de abajo compacto.
+14. `tienda-despues-precio.png`: «¿Cuánto cuesta?» con «15» y el teclado numérico: «Siguiente» entero sobre él.
+15. `tienda-despues-opcional.png`: «¿Quieres agregar algo?» con «Enlace» enfocado (la página se desplazó sola): el campo entero, «Listo» entero debajo y el teclado.
+
+Limpieza: la app se desinstaló del simulador (no estaba antes), el simulador quedó apagado y el servidor de `main` y su copia se borraron.
+
+**Prueba de componentes.** `PorPasos.componentes.test.mjs` simula al plugin: `visualViewport` sin cambios, `Event` con `keyboardHeight` puesto en el propio evento (`document.createEvent('Events')`, como el puente) y el alto del `<body>` fijado a mano; comprueba `--teclado` = 336 px, `--abajo-visible` = 336 px, el pie `fixed` con su borde de abajo en 508, el campo sobre él y entre la barra y el teclado (paso corto y paso largo), que los eventos lleguen antes o después del foco, la vuelta a 0 con `keyboardWillHide`/`DidHide`, y un **control negativo** (sin oír los eventos el pie queda bajo el teclado: lo mismo que la captura 12).
+
+## Android
+
+No hay app Android: la gente usa Chrome o la web instalada desde Chrome. Desde Chrome 108 el valor por omisión de `interactive-widget` es `resizes-visual`: encoge solo el área visible (se porta como Safari de iPhone). Con **`interactive-widget=resizes-content`** Chrome encoge la ventana de maquetación con el teclado. `src/app/layout.tsx` lo añade al `viewport` exportado (`interactiveWidget: "resizes-content"`; Safari de iPhone y la app de la tienda lo ignoran, así que nada cambia ahí). Referencia: la documentación de MDN del meta `viewport`, `interactive-widget` (<https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/viewport#interactive-widget>) y la nota de Chrome 108 sobre `resizes-visual` por omisión.
+
+Con la ventana encogida el mecanismo no suma aire dos veces: `window.innerHeight` y `visualViewport.height` bajan juntos, así que `--teclado` y `--abajo-visible` valen 0, `data-teclado` no se pone, la columna no gana relleno y el pie sigue `sticky; bottom: 0` (el borde de abajo de la ventana ya encogida, o sea sobre el teclado). Es lo que prueba `PorPasos.componentes.test.mjs` («Android…»: ventana de 390×508, `--teclado` 0, relleno 0, pie `sticky` con su borde de abajo en 508 y el campo sobre él) y lo que mide la manera «ventana» de `npm run medir` (390×508). Que el meta salga en el HTML: `npm run medir` ahora comprueba `interactive-widget=resizes-content` en el `<meta name="viewport">` del HTML servido (sin él, falla con la regla `viewport`), y `src/app/layout.viewport.test.ts` (2 pruebas) guarda la línea del layout.
+
+**No hay emulador de Android en esta Mac: lo de Android no se probó en un teléfono.** Para probar en uno (Chrome y la web instalada desde Chrome): `/nuevo/evento` → «No tengo cartel» → «¿Cómo se llama?»: ¿el pie con «Siguiente» queda justo encima del teclado y el campo a la vista? Repetir en «¿Cuánto cuesta?» → «Tiene precio» y en «Revisa» → «Agregar artistas, descripción o enlace» (tocar «Enlace»); y la hoja «¿Dónde es?» con su barra «Agregar». Ver también que al abrir el teclado no se mueva la barra de arriba.
+
 ## Medición («teclado» ampliada en `npm run medir`)
 
 Además de cada campo de texto (que queda entero dentro del área visible y sin nada pegado encima), **con el campo enfocado se comprueba cada botón de abajo**: los de un `footer` y los de lo pegado (`sticky`) o fijo (`fixed`) cuyo centro cae en la mitad de abajo del área visible. Cada uno debe quedar entero dentro del área visible de 508 px y sin nada encima en su centro; un botón fuera es un fallo con el nombre de la pantalla y el texto del botón. **De dos maneras:**
@@ -31,7 +63,7 @@ Además de cada campo de texto (que queda entero dentro del área visible y sin 
 1. **`ventana`**: la ventana de Chromium a 390×508 (como en OL-305).
 2. **`area`** (nueva): la ventana a **390×844 con un `visualViewport` simulado** (el mismo truco de `PorPasos.componentes.test.mjs`) que se encoge 336 px al enfocar. Con él **sí actúa el mecanismo** (`--teclado`, `--abajo-visible`, el pie `fixed`, el relleno); en la ventana reducida no actuaría, porque `innerHeight − visualViewport.height` vale 0. Por eso **no puse `--teclado` a mano en `<html>`**: simular el `visualViewport` es más fiel (corre el hook de verdad) y no suma el aire dos veces.
 
-Resultado final: **27 pantallas × 4 anchos, 112 s, sin novedades.** Teclado: 7 campos en 7 pantallas (`10-entrar`, `s03-alta-evento`, `s07-alta-lugar`, `s10-buscar`, `s11-alta-artista`, `s16-alta-evento-nombre`, `s17-alta-evento-es-aqui`), ninguno tapado. Botones de abajo comprobados: «Falta el nombre» (`s16`), «Falta el nombre» y «Buscar otro» (`s17`) y la tira de tipos «Evento / Lugar / Artista» (`s03`, `s07`, `s11`); `10-entrar` y `s10-buscar` no tienen botones de abajo.
+Resultado final: **27 pantallas × 4 anchos, 221 s (la máquina estaba ocupada; sin carga fueron 112 s), sin novedades**, con la comprobación del meta de Android incluida. Teclado: 7 campos en 7 pantallas (`10-entrar`, `s03-alta-evento`, `s07-alta-lugar`, `s10-buscar`, `s11-alta-artista`, `s16-alta-evento-nombre`, `s17-alta-evento-es-aqui`), ninguno tapado. Botones de abajo comprobados: «Falta el nombre» (`s16`), «Falta el nombre» y «Buscar otro» (`s17`) y la tira de tipos «Evento / Lugar / Artista» (`s03`, `s07`, `s11`); `10-entrar` y `s10-buscar` no tienen botones de abajo.
 
 **Hallazgo real de otra pantalla (anotado, no arreglado):** la **tira de tipos de `/nuevo`** (`nuevo/Alta.module.css`, `.tira`: Evento · Lugar · Artista, `sticky` abajo) **queda bajo el teclado** en el modo `area` (va de 789 a 844 en un área de 508): nueve hallazgos al principio (los tres botones en `s03`, `s07`, `s11`). Es un selector de qué formulario se ve, no una acción, y el botón de publicar va dentro del formulario, así que la dejé como **excepción permanente con su porqué** en `medidas.aceptadas.json` (tres entradas, «botón «Evento»», «Lugar», «Artista»). **Decisión para el gestor/founder:** si la quiere sobre el teclado como el pie de los pasos, basta `bottom: var(--abajo-visible)` en `.tira` (una línea; reduce 64 px el área del formulario con el teclado).
 
@@ -39,9 +71,9 @@ Resultado final: **27 pantallas × 4 anchos, 112 s, sin novedades.** Teclado: 7 
 
 ## Pruebas
 
-- `npm run typecheck`: limpio. `npm run lint`: 0 errores y 1 aviso que ya estaba (`VisorImagen.componentes.test.mjs`). `npm test`: **2168 pruebas, 147 archivos, 0 fallos**. `npm run inventario`: sin novedades.
-- Componentes (`PLAYWRIGHT_MODULE=… node --test "src/**/*.componentes.test.mjs"`): **421 pruebas, 0 fallos.**
-- `PorPasos.componentes.test.mjs` (10 pruebas, `visualViewport` simulado de 508 de alto con `pageTop` y desvío propios): sin campo enfocado no hay `--teclado` ni `--abajo-visible` y el pie sigue `sticky`; con el teclado el pie es `fixed`, su borde de abajo queda **en el borde del área visible** (arriba, a medias y al fondo del recorrido), el campo queda sobre el pie y la columna suma teclado + alto del pie + 12; en un paso corto («¿Cómo se llama?») el pie queda sobre el teclado; **un paso con poco recorrido y el campo al fondo (como «¿Quieres agregar algo?»), con Safari moviendo la página por su cuenta, no deja el campo bajo el pie**; con la vista desplazada por iOS (`offsetTop` de 100) el pie sigue el borde de lo que se ve y no el de la ventana; al cerrar el teclado todo vuelve; teclado tardío; control negativo sin el hook; hoja con campo al fondo. **Control negativo del pie:** con la regla `static` de OL-305 fallan tres (el campo/pie en teclado, el pie en el borde, el pie con la vista desplazada).
+- `npm run typecheck`: limpio. `npm run lint`: 0 errores y 1 aviso que ya estaba (`VisorImagen.componentes.test.mjs`). `npm test`: **2170 pruebas, 148 archivos, 0 fallos** (con `layout.viewport.test.ts`). `npm run inventario`: sin novedades.
+- Componentes (`PLAYWRIGHT_MODULE=… node --test "src/**/*.componentes.test.mjs"`): **426 pruebas, 0 fallos.**
+- `PorPasos.componentes.test.mjs` (15 pruebas: las 10 de antes, cuatro de la app de la tienda y una de Android, `visualViewport` simulado de 508 de alto con `pageTop` y desvío propios): sin campo enfocado no hay `--teclado` ni `--abajo-visible` y el pie sigue `sticky`; con el teclado el pie es `fixed`, su borde de abajo queda **en el borde del área visible** (arriba, a medias y al fondo del recorrido), el campo queda sobre el pie y la columna suma teclado + alto del pie + 12; en un paso corto («¿Cómo se llama?») el pie queda sobre el teclado; **un paso con poco recorrido y el campo al fondo (como «¿Quieres agregar algo?»), con Safari moviendo la página por su cuenta, no deja el campo bajo el pie**; con la vista desplazada por iOS (`offsetTop` de 100) el pie sigue el borde de lo que se ve y no el de la ventana; al cerrar el teclado todo vuelve; teclado tardío; control negativo sin el hook; hoja con campo al fondo. **Control negativo del pie:** con la regla `static` de OL-305 fallan tres (el campo/pie en teclado, el pie en el borde, el pie con la vista desplazada).
 - `HojaDonde.componentes.test.mjs`: **las mismas 8 pruebas, sin cambios de comportamiento** (incluida «con el teclado abierto el pie sube con él…»). Dos cambios de armazón de prueba: el montaje de la hoja ahora va dentro de un `Armazon` de prueba que corre `useCampoVisible` (como en la app, donde el hook vive en `Armazon`), y su `visualViewport` simulado gana `pageTop`.
 
 ## Simulador de iPhone (teclado real)
@@ -64,19 +96,24 @@ Capturas en `docs/rediseno/capturas-336/` (1179×2556, de `simctl io`, comprimid
 
 ## Decisiones y desviaciones del operador
 
-1. **No reproduje el fallo del founder** ni en Safari ni en la app instalada del simulador con el código de `main`; arreglé la causa estructural (nada ancla el pie al área visible). **Hace falta su iPhone** para confirmarlo (abajo).
+1. **La causa estaba en la app de la tienda, no en Safari ni en la web instalada** (aviso del gestor, 2026-10-06): se reprodujo y se arregló en el simulador con la app compilada (ver «La app de la tienda»). El plugin de teclado en modo `body` no mueve el `visualViewport`: el hook toma también la medida del plugin.
 2. **`fixed` con relleno medido, no `sticky`** (ver «Lo que hay»): el encargo hablaba de «anclar con `bottom`»; `sticky` no basta.
 3. **Una variable nueva, `--abajo-visible`**, además de `--teclado` (el encargo decía «una sola fuente»: las dos miden lo mismo con y sin desfase; el relleno necesita la que no cambia y lo pegado la que sigue al área visible). Ambas las publica el mismo hook y están documentadas en él.
 4. **El pie sale del flujo con el teclado** (la columna conserva su altura con el relleno `--teclado + --alto-pie + 12 px`, así no salta).
 5. **La medición corre de dos maneras** (ventana reducida y `visualViewport` simulado) y no pone `--teclado` a mano. `medir` pasa de ~91 a 112 s.
 6. **La tira de tipos de `/nuevo` queda bajo el teclado**: excepción permanente documentada; decide el founder si sube.
 7. `HojaDonde.componentes.test.mjs`: el montaje de prueba corre `useCampoVisible` y el `visualViewport` simulado trae `pageTop`; las 8 pruebas no cambian de comportamiento.
-8. La línea de OL-305 en `OPEN_LOOPS.md` dice que el pie queda en el flujo y que la hoja usa `abajo`; no la toqué (regla del encargo): queda reemplazado por esta pieza.
+8. `apps/ios/capacitor.config.ts` se cambió solo en mi copia local para la prueba y se revirtió; el plugin se leyó en `apps/ios/node_modules` (no versionado: `npm ci` en `apps/ios`).
+9. Android: `interactiveWidget: "resizes-content"` en el viewport (encargo del gestor, 2026-10-06); sin teléfono Android para probarlo.
+10. `HojaDonde`: su barra «Agregar» y su hoja siguen con `bottomBarra` (de `visualViewport`), que en la app de la tienda vale 0: **quedarían bajo el teclado ahí** (ya era así, OL-303/OL-182). No lo toqué; si se quiere, `bottomBarra` puede leer `--abajo-visible`. Pendiente para el gestor.
+11. La línea de OL-305 en `OPEN_LOOPS.md` dice que el pie queda en el flujo y que la hoja usa `abajo`; no la toqué (regla del encargo): queda reemplazado por esta pieza.
 
 ## Para probar en el iPhone
 
-1. App instalada: `/nuevo/evento` → «No tengo cartel» → «¿Cómo se llama?»: ¿el pie con «Siguiente» queda **entero justo encima del teclado**, sin esconder el teclado? Repetir en «¿Cuánto cuesta?» → «Tiene precio» y en «Revisa» → «Agregar artistas, descripción o enlace» (tocar «Enlace»: el campo y «Listo» a la vez sobre el teclado).
+1. **App de la tienda (TestFlight, tras publicar)**, la que importa: `/nuevo/evento` → «No tengo cartel» → «¿Cómo se llama?»: ¿el pie con «Siguiente» queda **entero justo encima del teclado**? Repetir en «¿Cuánto cuesta?» → «Tiene precio» y en «Revisa» → «Agregar artistas, descripción o enlace» (tocar «Enlace»: el campo y «Listo» a la vez sobre el teclado); y la hoja «¿Dónde es?» (su barra «Agregar», ver decisión 10).
+1b. Web instalada: `/nuevo/evento` → «No tengo cartel» → «¿Cómo se llama?»: ¿el pie con «Siguiente» queda **entero justo encima del teclado**, sin esconder el teclado? Repetir en «¿Cuánto cuesta?» → «Tiene precio» y en «Revisa» → «Agregar artistas, descripción o enlace» (tocar «Enlace»: el campo y «Listo» a la vez sobre el teclado).
 2. Lo mismo en Safari.
+2b. Android (Chrome y la web instalada desde Chrome): ver «Android».
 3. «¿Es aquí?» → «Ponle nombre»: la caja y «Sí, es aquí» sobre el teclado.
 4. La hoja «¿Dónde es?» con el teclado: sin cambios.
 5. `/nuevo` (el formulario de siempre): la tira Evento · Lugar · Artista queda bajo el teclado; decir si la quiere sobre él.

@@ -376,6 +376,15 @@ try {
     }),
   );
 
+  // Android (OL-308): el HTML trae `interactive-widget=resizes-content` en el viewport, para que Chrome encoja la ventana con el teclado.
+  try {
+    const html = await (await fetch(`${base}/`)).text();
+    const viewport = html.match(/<meta[^>]*name="viewport"[^>]*>/)?.[0] ?? "";
+    if (!/interactive-widget=resizes-content/.test(viewport)) fallos.push({ regla: "viewport", pantalla: "layout", ancho: 0, que: "meta viewport", detalle: `falta interactive-widget=resizes-content (Android): ${viewport || "sin meta viewport"}` });
+  } catch (e) {
+    fallos.push({ regla: "carga", pantalla: "layout", ancho: 0, que: "/", detalle: `viewport: ${String(e.message).split("\n")[0]}` });
+  }
+
   // El teclado: cada campo de texto visible de cada pantalla y los botones de abajo, de las dos maneras (ver `medirTeclado`).
   const conTeclado = new Map();
   const botonesDeAbajo = new Map();
