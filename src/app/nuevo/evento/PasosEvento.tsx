@@ -134,6 +134,8 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
   // Con un fin puesto en un evento de un día, se dice a qué hora termina y si ya es el día siguiente (la hora de «Otra hora» no se ve
   // en ningún chip).
   const fin = r.fin && r.dias && !varios ? partirLocal(r.fin) : null;
+  // Un fin que no es ninguno de los sugeridos ni «Sin hora de fin» vino de la hoja: el chip «Otra hora» queda marcado (como en «Empieza»).
+  const sugeridos = finesSugeridos(r, zona);
   return (
     <>
       <div className={styles.grupo} role="group" aria-labelledby={idEmpieza}>
@@ -153,12 +155,14 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
       {r.hora && (
         <div className={`${styles.grupo} ${styles.aparece}`} role="group" aria-labelledby={idTermina}>
           <span id={idTermina}>{varios ? "Termina" : "¿Cuánto dura?"}</span>
-          {finesSugeridos(r, zona).map((sugerido, i) => (
+          {sugeridos.map((sugerido, i) => (
             <Chip key={sugerido} activo={r.fin === sugerido} onClick={() => onFin(sugerido)}>
               {varios ? etiquetaHora(partirLocal(sugerido).hora) : etiquetaDuracion(DURACIONES[i])}
             </Chip>
           ))}
-          <Chip onClick={() => setHoja("fin")}>Otra hora</Chip>
+          <Chip activo={!!r.fin && r.fin !== sinFin && !sugeridos.includes(r.fin)} onClick={() => setHoja("fin")}>
+            Otra hora
+          </Chip>
           <Chip activo={r.fin === sinFin} onClick={() => onFin(sinFin)}>
             Sin hora de fin
           </Chip>
