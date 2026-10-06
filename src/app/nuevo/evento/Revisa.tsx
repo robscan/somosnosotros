@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { PiePaso } from "@/components/PorPasos";
-import { valorDelSitio } from "@/app/eventos/direccionEvento";
 import Boton from "@/components/ui/Boton";
 import { IconoBoleto, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -11,7 +10,7 @@ import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { COOPERACION_SOLIDARIA, type ErroresEvento } from "@/lib/eventos";
 import { formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
-import { dondeResuelto, inicioDe, type Paso, type Respuestas } from "./pasos";
+import { NOMBRE_RESERVADO, dondeResuelto, inicioDe, nombreDelSitio, type Paso, type Respuestas } from "./pasos";
 import { CabezaCartel } from "./PasoCartel";
 import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
@@ -79,7 +78,8 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
         <Dato
           icono={<IconoPin width={20} height={20} />}
           clave="Dónde"
-          valor={dondeResuelto(r.sitio) ? valorDelSitio(r.sitio.modo, lugar, r.sitio.otro) : null}
+          valor={dondeResuelto(r.sitio) ? nombreDelSitio(r.sitio, lugar) : null}
+          detalle={r.sitio.modo === "reservado" && nombreDelSitio(r.sitio, lugar) !== NOMBRE_RESERVADO ? "Sitio reservado" : undefined}
           falta="Falta el lugar"
           error={errores.lugar_id ?? errores.sitio_texto ?? errores.sitio_direccion ?? errores.direccion_privada}
           onAbrir={() => onAbrir("donde")}
@@ -116,14 +116,18 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   );
 }
 
-/** Un dato de «Revisa»: el renglón resuelto sin clave a la vista (`ui/Renglon`); todo él abre su pregunta («Cambiar», o «Poner» si falta). */
-function Dato({ icono, clave, valor, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; valor: string | null; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
+/** Un dato de «Revisa»: el renglón resuelto sin clave a la vista (`ui/Renglon`); todo él abre su pregunta («Cambiar», o «Poner» si falta).
+ *  `detalle` va en letra suave bajo el valor («Sitio reservado»). */
+function Dato({ icono, clave, valor, detalle, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; valor: string | null; detalle?: string; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
   const accion = valor ? "Cambiar" : "Poner";
   return (
     <li className={`${renglon.resuelto} ${renglon.sinClave} ${valor ? "" : renglon.pendiente} ${styles.dato}`}>
       {icono}
       <small>{clave}</small>
-      <b className={valor ? undefined : renglon.falta}>{valor ?? falta}</b>
+      <b className={valor ? undefined : renglon.falta}>
+        {valor ?? falta}
+        {valor && detalle && <small>{detalle}</small>}
+      </b>
       <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={onAbrir} aria-label={`${accion} ${clave.toLowerCase()}`}>
         {accion}
       </Boton>

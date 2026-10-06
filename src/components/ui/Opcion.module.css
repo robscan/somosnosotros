@@ -42,3 +42,9 @@
   grid-area: flecha;
   color: var(--texto-suave);
 }
+.opcion:disabled {
+  cursor: default;
+}
+.opcion:disabled:not([aria-busy="true"]) {
+  opacity: 0.55;
+}

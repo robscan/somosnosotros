@@ -30,5 +30,5 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
     cargarMisArtistas(actual.perfil.id),
     cartelActivo ? cupoDeCartel() : null,
   ]);
-  return <AltaEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} mios={mios} ciudadContexto={ciudadDesdeSlug(ciudad, ciudades)} salida={{ href: "/", texto: "Volver" }} volverA={aqui} usuarioId={actual.perfil.id} cartelActivo={cartelActivo} cupo={cupo} />;
+  return <AltaEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} mios={mios} ciudadContexto={ciudadDesdeSlug(ciudad, ciudades)} salida={{ href: "/", texto: "Volver" }} usuarioId={actual.perfil.id} cartelActivo={cartelActivo} cupo={cupo} />;
 }

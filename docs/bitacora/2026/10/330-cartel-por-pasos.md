@@ -88,7 +88,7 @@ Plana, sin envoltorios que no hagan trabajo ni `:has()` ni medidas por pantalla.
 
 ## Lo que falta / para las piezas siguientes
 
-- **«Dónde»** (pieza 4): confirmar en el mapa el sitio por confirmar de un cartel (hoy abre la hoja de siempre con lo leído de partida) y las tres opciones del sitio.
+- **«Dónde»**: la pieza 4 (OL-301, bitácora [329](329-donde-por-pasos.md)) ya se unió; ver «Unión con la pieza 4».
 - **«Publicado»** (pieza 5), y llevar `/nuevo` a este flujo (el «+») cuando la serie termine.
 - Cartel de festival con programa y de taller con sesiones (necesitan modelo de datos); sale un solo evento del primero que lee el lector.
 - El alta de siempre sigue en producción hasta la pieza 6.
@@ -102,3 +102,10 @@ Plana, sin envoltorios que no hagan trabajo ni `:has()` ni medidas por pantalla.
 4. Al volver de la cámara del teléfono, ¿el recuadro y «Leyendo» responden bien (el selector dispara un cambio de foco)?
 5. Sin conexión (modo avión) tras elegir la foto: ¿sale el mensaje del recuadro y «No tengo cartel» sigue?
 6. Con la cuenta sin lecturas (la 20 del mes): ¿el recuadro lo dice y «Pedir más lecturas» responde?
+
+## Unión con la pieza 4 (OL-301)
+
+Tras unir `origin/main` (con «¿Dónde es?» por pasos: `PasoDonde`, `PasoMapa`, `PasoUso`, `crearLugarDesdeEvento`, `candidato`/`elegir`/`confirmar`/`usar`), la rama conserva las dos cosas. `HojaDonde` y la prop `volverA` de `AltaEvento` ya no existen: quitadas de mi lado (en main la constante interna es `VOLVER_A`).
+
+- **«Dónde» con un sitio leído del cartel que no está en el directorio:** `AltaEvento` pone `busqueda` (el texto del campo de «¿Dónde es?») con el nombre del sitio leído (o su dirección, si el cartel no trae nombre) en cuanto termina la lectura (`alLeer`). «¿Dónde es?» abre con ese texto en el campo y la lista ya buscando; el sitio sigue en `r.sitio` como «otro» con `pinPendiente`, así que el paso se pregunta igual y la persona lo confirma en el mapa. Prueba: «un sitio que el cartel nombra y no está en el directorio…» (el campo trae el nombre).
+- **Pruebas de componentes de `AltaEvento`:** 49 (las 31 anteriores y las 18 de la pieza 4), 0 fallos. Mi doble de `HojaDonde` se quitó; las pruebas del camino con cartel eligen el lugar con `elegirTeatro` (la lista real de «¿Dónde es?»). `npm test` 2135; lint y typecheck sin cambios.

@@ -90,6 +90,7 @@
   --alto-subir-cartel: 200px; /* el recuadro «Sube el cartel» al empezar a publicar un evento (bitácora 323, tercera vuelta) */
   --ancho-cartel-leyendo: 168px; /* el cartel chico y al centro mientras se lee (bitácora 323, prototipo) */
   --ancho-cartel-revisa: 96px; /* la miniatura del cartel leído en la cabeza de «Revisa» (bitácora 323, prototipo) */
+  --alto-mapa-paso: 240px; /* lo mínimo del mapa de «¿Es aquí?» al publicar un evento: crece con la pantalla (OL-301, bitácora 329) */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
 
   /* Zonas seguras. `--tope` es el alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone,
