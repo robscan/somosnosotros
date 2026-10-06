@@ -76,14 +76,13 @@ ul { list-style: none; }
 .subir .lecturas.ok { color: var(--ok); }
 
 /* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
-.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
 .casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
 .casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
 .casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
 .casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
 .casilla b { font-weight: 700; }
-.casilla small { white-space: nowrap; }
-.casilla span:last-child { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--espacio-2); min-width: 0; }
+.casilla small { white-space: nowrap; font-size: var(--letra-xs); }
 .casilla:disabled { opacity: 0.55; cursor: default; }
 
 /* La miniatura del cartel y «Leyendo». */
@@ -156,7 +155,7 @@ function casilla() {
   const marcada = e.auto && !agotada;
   return `<button class="casilla" role="checkbox" aria-checked="${marcada}" data-a="auto" ${agotada ? 'disabled' : ''}>
       <span class="cuadro">${marcada ? ic('ok') : ''}</span>
-      <span><b>Lectura automática</b><small>${agotada ? 'Se renueva el 1 de nov' : `Te quedan ${c.quedan} este mes`}</small></span>
+      <b>Lectura automática</b><small>${agotada ? 'Se renueva el 1 de nov' : `Te quedan ${c.quedan} este mes`}</small>
     </button>`;
 }
 const PANTALLAS = {
