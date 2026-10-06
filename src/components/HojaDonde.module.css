@@ -2,8 +2,8 @@
    evento y «¿Dónde está?» del alta de lugar, una sola pantalla completa. El mapa llena todo el hueco entre el campo y el pie;
    sobre él flotan el resumen del pin, la lista de sugerencias (ui/ListaFlotante, en su propio portal) y, solo en el evento, el
    panel «Agregar lugar» y la barra de acciones. Mismo patrón de capa fija que CampoLargo.module.css (`.capa`/`.cabecera`),
-   con «‹ Atrás» además de «Listo» (docs/rediseno/39-texto-largo.md más el pedido explícito del founder de una vuelta atrás
-   real, doc 43). */
+   con «‹ Atrás» (docs/rediseno/39-texto-largo.md más el pedido explícito del founder de una vuelta atrás real, doc 43). Abajo, el
+   pie con «Listo» (`PiePaso`, de PorPasos; OL-303, founder 2026-10-05: el botón de confirmar va abajo, no arriba). */
 .capa {
   position: fixed;
   inset: 0;
@@ -11,7 +11,8 @@
      que pintarse ENCIMA de la pantalla completa, no debajo (a diferencia de CampoLargo, que no usa ninguna lista
      flotante y por eso puede ir en `--z-encima` + 1). Por encima de ui/Hoja (`--z-hoja`) y de Cartel (`--z-capa`): nada
      de eso convive con esta pantalla a la vez. Dentro, cada pieza usa la banda de la escala que le toca, en el orden de
-     siempre: campo, resumen y aviso, barra de acciones, hoja «Agregar lugar», «Estoy aquí». */
+     siempre: campo, resumen y aviso, barra de acciones, hoja «Agregar lugar», «Estoy aquí». El pie (`--z-pegajoso`) va debajo del
+   cuerpo, fuera de él: el mapa termina donde empieza, así que ni «Estoy aquí» ni la marca de Mapbox quedan bajo el pie. */
   z-index: calc(var(--z-capa) + 1);
   display: flex;
   flex-direction: column;
@@ -20,7 +21,7 @@
 .cabecera {
   flex: none;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   column-gap: var(--espacio-3);
   min-height: var(--alto-barra);
@@ -36,8 +37,8 @@
   font-size: var(--letra-lg);
   font-weight: 700;
 }
-.atras,
-.listo {
+.atras {
+  justify-self: start;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -49,11 +50,6 @@
   font-size: var(--letra-md);
   font-weight: 700;
   cursor: pointer;
-}
-.listo:disabled {
-  color: var(--texto-suave);
-  opacity: 0.6;
-  cursor: default;
 }
 
 .cuerpo {
@@ -229,37 +225,24 @@
   vertical-align: middle;
 }
 
-/* Barra de acciones, variante B: pegada sobre el teclado (JS mueve `bottom`) o al pie sin él. */
+/* «Agregar «X» como lugar», encima del pie y sobre el mapa: pegado sobre el teclado (JS mueve `bottom`) o al fondo del mapa sin
+   él. El contenedor solo da el aire de alrededor y deja pasar los toques al mapa; el botón es el secundario flotante de ui/Boton. */
 .barraAcciones {
   position: absolute;
   left: 0;
   right: 0;
   z-index: var(--z-barra);
-  display: flex;
-  gap: var(--espacio-2);
-  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-3) + var(--piso));
-  background: var(--fondo);
-  box-shadow: var(--sombra-panel);
+  padding: var(--espacio-2) var(--gutter) var(--espacio-3);
+  pointer-events: none;
   transition: bottom 120ms ease;
 }
-.accionAgregar {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-2);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  cursor: pointer;
+.barraAcciones > * {
+  pointer-events: auto;
 }
-.accionAgregar > span {
+.barraAcciones svg {
+  flex: none;
+}
+.textoAgregar {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
