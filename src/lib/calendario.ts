@@ -172,8 +172,11 @@ export function horasDeFin(despuesDe?: string, paso = 15): string[] {
  *  siempre un instante: no se puede tener un día de fin sin hora (OL-298). En el selector se lee «Sin hora de fin». */
 export const FIN_DEL_DIA = "23:59";
 
-// `etiquetaHora` ("9:00 p.m.") vive con las demás fechas; aquí se reexporta para quien la importaba de este módulo.
-export { etiquetaHora } from "./fechas";
+/** "9:00 p.m." a partir de "HH:MM". */
+export function etiquetaHora(hora: string): string {
+  const [h, m] = hora.split(":").map(Number);
+  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(2000, 0, 1, h, m));
+}
 
 /** Lo que van marcando los toques de la hoja de días: el primero es el inicio; uno posterior, el fin (`hasta`).
  *  `hasta` null es «esperando el fin» (se tocó un inicio y falta saber si dura más); `hasta` igual a `desde` es un solo día

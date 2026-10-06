@@ -10,10 +10,10 @@ describe("kpiCuando (el número de fecha de una ficha de evento)", () => {
   });
   it("si dura varios días, el día dice hasta cuándo y la hora es el horario de cada día", () => {
     // 2 oct 19:00 a 4 oct 22:00 (hora de la ciudad).
-    expect(kpiCuando("2026-10-03T01:00:00Z", "2026-10-05T04:00:00Z", "America/Mexico_City")).toEqual({ dia: "Del 2 al 4 de oct", hora: "7:00–\u206010:00\u00a0p.m." });
+    expect(kpiCuando("2026-10-03T01:00:00Z", "2026-10-05T04:00:00Z", "America/Mexico_City")).toEqual({ dia: "Del 2 al 4 de oct", hora: "19:00–22:00" });
   });
   it("sin hora de fin (acaba con su último día), la hora es solo la de inicio", () => {
-    expect(kpiCuando("2026-10-11T02:00:00Z", "2026-10-13T05:59:00Z", "America/Mexico_City", new Date("2026-10-06T16:00:00Z"))).toEqual({ dia: "Del 10 al 12 de oct", hora: "8:00\u00a0p.m." });
+    expect(kpiCuando("2026-10-11T02:00:00Z", "2026-10-13T05:59:00Z", "America/Mexico_City", new Date("2026-10-06T16:00:00Z"))).toEqual({ dia: "Del 10 al 12 de oct", hora: "20:00" });
   });
   it("una noche que cruza la medianoche conserva su día y el del fin", () => {
     expect(kpiCuando("2026-10-03T04:00:00Z", "2026-10-03T07:00:00Z", "America/Mexico_City")).toEqual({ dia: "vie 2 oct – sáb 3 oct", hora: "22:00" });

@@ -452,7 +452,7 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   await elegirTeatro(p);
   await boton(p, /^Gratis/).click();
   const cuando = p.locator("main ul > li").first();
-  assert.match(await cuando.innerText(), /Del 9 al 11 de oct · 8:00–\u2060?9:00\s*p\.?\s?m\.?/);
+  assert.match(await cuando.innerText(), /Del 9 al 11 de oct · 20:00–21:00/);
   if (capturas) await foto(p, "cada-dia-3-revisa-cuando");
   await boton(p, "Atrás").click();
   await boton(p, "Atrás").click();
@@ -462,7 +462,7 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   if (capturas) await foto(p, "cada-dia-2-resumen");
   // «Sin hora de fin»: acaba con su último día y «Revisa» solo dice la hora de inicio; lo guardado es el de siempre.
   await termina.getByRole("button", { name: "Sin hora de fin" }).click();
-  assert.match(await p.locator("main ul > li").first().innerText(), /Del 9 al 11 de oct · 8:00\s*p\.?\s?m\.?\nCambiar/);
+  assert.match(await p.locator("main ul > li").first().innerText(), /Del 9 al 11 de oct · 20:00\nCambiar/);
   await boton(p, "Publicar").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
   const d = await enviado(p);
@@ -476,6 +476,27 @@ test("un solo día sigue preguntando «¿A qué hora?» y sin línea de «cada d
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
   assert.equal(await p.locator("main small").filter({ hasText: /cada día/ }).count(), 0);
 });
+
+for (const ancho of [320, 390]) {
+  test(`varios días en «Revisa» a ${ancho}: las horas no se parten (CSS, no la cadena), el renglón parte entre los días y las horas y nada desborda`, TOPE, async (t) => {
+    const p = await pagina(t, { ancho });
+    await hastaVariosDias(p);
+    await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
+    await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
+    await elegirTeatro(p);
+    await boton(p, /^Gratis/).click();
+    const hora = p.locator("main ul > li").first().locator("b span");
+    assert.equal(await hora.innerText(), "20:00–21:00");
+    // Una sola caja de línea: el span no se parte, aunque el renglón pase a dos líneas.
+    assert.equal(await hora.evaluate((e) => e.getClientRects().length), 1);
+    assert.equal(await hora.evaluate((e) => getComputedStyle(e).whiteSpace), "nowrap");
+    // La cadena no lleva espacios no separables ni unidores: lo que viaja a compartir y a los avisos es texto limpio.
+    assert.doesNotMatch(await p.locator("main ul > li").first().innerText(), /[\u00a0\u202f\u2060]/);
+    const d = await desborda(p);
+    assert.equal(d.scroll <= 0, true);
+    assert.deepEqual(d.fuera, []);
+  });
+}
 
 test("«Tiene precio» abre el número, solo dígitos, y «Revisa» lo enseña con su signo", TOPE, async (t) => {
   const p = await pagina(t);

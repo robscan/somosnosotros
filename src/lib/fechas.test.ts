@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, cuandoVariosDias, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, horasDelDia, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, cuandoVariosDias, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -222,30 +222,32 @@ describe("un evento de varios días dice sus días y su horario de cada día, si
   const finDelDia = "2026-09-29T05:59:00Z";
 
   it("varios días con 23:59 (sin hora de fin): los días y solo la hora de inicio", () => {
-    expect(formatearCuando(inicio, finDelDia, AHORA)).toBe("Del 26 al 28 de sep · 7:00\u00a0p.m.");
+    expect(formatearCuando(inicio, finDelDia, AHORA)).toBe("Del 26 al 28 de sep · 19:00");
     expect(formatearLargo(inicio, AHORA, finDelDia)).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre");
     expect(fraseCuando("2026-09-26T19:00", "2026-09-28T23:59", AHORA)).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre");
   });
-  it("varios días con hora de fin: el horario de cada día, con el «p.m.» una sola vez cuando lo comparten", () => {
-    expect(formatearCuando(inicio, "2026-09-29T03:00:00Z", AHORA)).toBe("Del 26 al 28 de sep · 7:00–\u20609:00\u00a0p.m.");
-    expect(formatearCuando(inicio, "2026-09-29T05:58:00Z", AHORA)).toBe("Del 26 al 28 de sep · 7:00–\u206011:58\u00a0p.m.");
+  it("varios días con hora de fin: el horario de cada día, en 24 h como todo el texto de la app", () => {
+    expect(formatearCuando(inicio, "2026-09-29T03:00:00Z", AHORA)).toBe("Del 26 al 28 de sep · 19:00–21:00");
+    expect(formatearCuando(inicio, "2026-09-29T05:58:00Z", AHORA)).toBe("Del 26 al 28 de sep · 19:00–23:58");
     expect(formatearLargo(inicio, AHORA, "2026-09-29T03:00:00Z")).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre · 21:00");
   });
-  it("si el horario cambia de a.m. a p.m., cada hora lleva el suyo", () => {
-    // Del 10 al 12 de oct, de 11:00 a.m. a 2:00 p.m. (hora de la ciudad).
-    expect(formatearCuando("2026-10-10T17:00:00Z", "2026-10-12T20:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 11:00\u00a0a.m.–\u20602:00\u00a0p.m.");
+  it("el ejemplo del alta: del 10 al 12 de oct de 20:00 a 21:00", () => {
+    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 20:00–21:00");
+    expect(cuandoVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toEqual({ dias: "Del 10 al 12 de oct", horas: "20:00–21:00" });
   });
-  it("las horas de un renglón no se parten: sus espacios no separan líneas, solo el que las separa de los días", () => {
-    const { dias, horas } = cuandoVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA) ?? { dias: "", horas: "" };
-    expect(dias).toContain(" ");
-    expect(horas).not.toMatch(/ /);
+  it("de la mañana a la tarde, las dos horas en 24 h", () => {
+    expect(formatearCuando("2026-10-10T17:00:00Z", "2026-10-12T20:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 11:00–14:00");
   });
-  it("el ejemplo del alta: del 10 al 12 de oct de 8:00 a 9:00 p.m.", () => {
-    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 8:00–\u20609:00\u00a0p.m.");
-    expect(cuandoVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toEqual({ dias: "Del 10 al 12 de oct", horas: "8:00–\u20609:00\u00a0p.m." });
+  it("la cadena es limpia: sin espacios no separables ni unidores de palabra (viaja a compartir, avisos y correos)", () => {
+    const textos = [
+      formatearCuando("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA),
+      formatearCuando(inicio, finDelDia, AHORA),
+      cuandoVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)?.horas ?? "",
+    ];
+    for (const t of textos) expect(t).not.toMatch(/[\u00a0\u202f\u2060]/);
   });
   it("dos días seguidos también son varios días; un día con fin posterior a la hora de inicio, no", () => {
-    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-12T03:00:00Z", AHORA)).toBe("Del 10 al 11 de oct · 8:00–\u20609:00\u00a0p.m.");
+    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-12T03:00:00Z", AHORA)).toBe("Del 10 al 11 de oct · 20:00–21:00");
     expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-11T04:00:00Z", AHORA)).toBe("sáb 10 de oct · 20:00–22:00");
   });
   it("una noche que cruza la medianoche no es un evento de varios días: se lee como siempre", () => {
@@ -259,10 +261,10 @@ describe("un evento de varios días dice sus días y su horario de cada día, si
   });
   it("respeta la zona del evento: las 23:59 de la ciudad no son las 23:59 de Madrid", () => {
     // Las 23:59 de Madrid (21:59Z) se esconden allá; el mismo instante visto con la zona de la ciudad (15:59) lleva su hora.
-    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA, "Europe/Madrid")).toBe("Del 26 al 28 de sep · 7:00\u00a0p.m.");
-    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA)).toBe("Del 26 al 28 de sep · 11:00\u00a0a.m.–\u20603:59\u00a0p.m.");
+    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA, "Europe/Madrid")).toBe("Del 26 al 28 de sep · 19:00");
+    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA)).toBe("Del 26 al 28 de sep · 11:00–15:59");
     // Y las 23:59 de la ciudad, vistas desde Madrid (07:59 del día siguiente), también llevan su hora.
-    expect(formatearCuando(inicio, finDelDia, AHORA, "Europe/Madrid")).toBe("Del 27 al 29 de sep · 3:00–\u20607:59\u00a0a.m.");
+    expect(formatearCuando(inicio, finDelDia, AHORA, "Europe/Madrid")).toBe("Del 27 al 29 de sep · 03:00–07:59");
   });
   it("sin fin no hay varios días", () => {
     expect(cuandoVariosDias(inicio, null, AHORA)).toBeNull();
@@ -281,15 +283,5 @@ describe("rangoCorto: «Del 10 al 12 de oct»", () => {
   it("el año solo se escribe si no es el actual", () => {
     expect(rangoCorto("2027-02-10", "2027-02-12", HOY)).toBe("Del 10 al 12 de feb de 2027");
     expect(rangoCorto("2026-12-30", "2027-01-02", HOY)).toBe("Del 30 de dic al 2 de ene de 2027");
-  });
-});
-
-describe("horasDelDia: dos horas de un mismo día", () => {
-  it("sin hora de fin, solo la de inicio", () => {
-    expect(horasDelDia("20:00")).toEqual({ desde: "8:00 p.m." });
-  });
-  it("con el mismo «p.m.», se dice una vez; con distinto, cada una el suyo", () => {
-    expect(horasDelDia("20:00", "21:00")).toEqual({ desde: "8:00", hasta: "9:00 p.m." });
-    expect(horasDelDia("11:00", "14:00")).toEqual({ desde: "11:00 a.m.", hasta: "2:00 p.m." });
   });
 });

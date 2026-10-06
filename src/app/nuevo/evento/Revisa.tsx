@@ -8,7 +8,7 @@ import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { COOPERACION_SOLIDARIA, type ErroresEvento } from "@/lib/eventos";
-import { formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
+import { cuandoVariosDias, formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { NOMBRE_RESERVADO, dondeResuelto, inicioDe, nombreDelSitio, type Paso, type Respuestas } from "./pasos";
 import { CabezaCartel } from "./PasoCartel";
@@ -46,7 +46,17 @@ type Props = {
  */
 export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, enviando, falta, formulario, onAbrir }: Props) {
   const inicio = localAIso(inicioDe(r), zona);
-  const cuando = inicio && r.fin !== null ? formatearCuando(inicio, r.fin ? localAIso(r.fin, zona) : null, new Date(), zona) : null;
+  const ahora = new Date();
+  const fin = r.fin ? localAIso(r.fin, zona) : null;
+  // En varios días las horas van en su propio `span` sin saltos de línea: un renglón angosto parte entre los días y las horas, nunca dentro de ellas.
+  const varios = inicio && r.fin !== null ? cuandoVariosDias(inicio, fin, ahora, zona) : null;
+  const cuando = !inicio || r.fin === null ? null : varios ? (
+    <>
+      {varios.dias} · <span className={styles.hora}>{varios.horas}</span>
+    </>
+  ) : (
+    formatearCuando(inicio, fin, ahora, zona)
+  );
   const cuanto = r.costo === "gratis" ? "Gratis" : r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" && r.precio ? `$${r.precio}` : null;
   const extras = errores.descripcion ?? errores.enlace ?? errores.imagen;
   // Con cartel entra la cabeza entera (la foto, el sello y el nombre, como una pieza); sin él, el nombre.
@@ -127,7 +137,7 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
 
 /** Un dato de «Revisa»: el renglón resuelto sin clave a la vista (`ui/Renglon`); todo él abre su pregunta («Cambiar», o «Poner» si falta).
  *  `detalle` va en letra suave bajo el valor («Sitio reservado»); `orden` es su turno en la entrada. */
-function Dato({ icono, clave, orden, valor, detalle, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; orden: number; valor: string | null; detalle?: string; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
+function Dato({ icono, clave, orden, valor, detalle, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; orden: number; valor: ReactNode; detalle?: string; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
   const accion = valor ? "Cambiar" : "Poner";
   return (
     <li className={`${renglon.resuelto} ${renglon.sinClave} ${valor ? "" : renglon.pendiente} ${styles.dato} ${styles.sube}`} style={turno(orden)}>
