@@ -75,6 +75,15 @@ ul { list-style: none; }
 .subir .lecturas svg { width: 14px; height: 14px; stroke-width: 2.4; }
 .subir .lecturas.ok { color: var(--ok); }
 
+/* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
+.casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+.casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
+.casilla b { display: block; font-weight: 700; }
+.casilla:disabled { opacity: 0.55; cursor: default; }
+
 /* La miniatura del cartel y «Leyendo». */
 .cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), #4a3a6b; color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
 .leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
@@ -105,12 +114,12 @@ ul { list-style: none; }
 <body>
 <div class="tira">
   <select id="caso" aria-label="Caso del prototipo">
-    <option value="lee">1 · Hay lectura: se sube, se lee y se nota</option>
-    <option value="sinlectura">2 · Lecturas gratis agotadas: se sube y se pregunta (se dice una vez)</option>
-    <option value="sinservicio">4 · Sin servicio de lectura (sin llave): se sube y se pregunta, sin decir nada</option>
-    <option value="falla">3 · Hay lectura pero falla: se sigue igual, sin excusas</option>
+    <option value="lee">1 · Lectura automática disponible (quedan 4 de 6)</option>
+    <option value="sinlectura">2 · Las 6 del mes ya se usaron</option>
+    <option value="sinservicio">3 · Sin servicio de lectura (sin llave): no se ofrece</option>
+    <option value="falla">4 · Lectura automática que falla</option>
   </select>
-  <label style="opacity:.8">La primera pantalla es la misma en los tres casos: eso es la propuesta.</label>
+  <label style="opacity:.8">En el caso 1 puedes desmarcar la casilla antes de subir: la persona decide qué cartel se lee.</label>
 </div>
 <div class="app" id="app"></div>
 <script>
@@ -128,16 +137,26 @@ const ic = (n) => ({
 const MINI = (t) => `<div class="cartel-mini">${t ? 'ECOS DE PAPEL<br><span style="font-weight:400">jue 5 nov · 19:00</span>' : ''}</div>`;
 
 const CASOS = {
-  lee: { lee: true, quedan: 2 },
-  sinlectura: { lee: false, agotado: true },
+  lee: { lee: true, quedan: 4 },
+  sinlectura: { lee: true, quedan: 0 },
   sinservicio: { lee: false },
-  falla: { lee: true, falla: true, quedan: 2 },
+  falla: { lee: true, falla: true, quedan: 4 },
 };
 let caso = 'lee', e;
-const nuevo = () => (e = { paso: 'inicio' });
+const nuevo = () => (e = { paso: 'inicio', auto: true });
 nuevo();
 const casoActual = () => CASOS[caso];
 
+function casilla() {
+  const c = casoActual();
+  if (!c.lee) return '';
+  const agotada = c.quedan === 0;
+  const marcada = e.auto && !agotada;
+  return `<button class="casilla" role="checkbox" aria-checked="${marcada}" data-a="auto" ${agotada ? 'disabled' : ''}>
+      <span class="cuadro">${marcada ? ic('ok') : ''}</span>
+      <span><b>Lectura automática</b><small>${agotada ? '0 de 6 este mes · se renueva el 1 de nov' : `Nombre, fecha, lugar y precio · quedan ${c.quedan} de 6 este mes`}</small></span>
+    </button>`;
+}
 const PANTALLAS = {
   inicio: () => {
     return {
@@ -147,12 +166,14 @@ const PANTALLAS = {
           <span>Sube el cartel</span>
           <small>Será la imagen del evento</small>
         </button>
+        ${casilla()}
         <button class="btn sec" data-a="sin">No tengo cartel</button>`,
       pie: '',
       notas: [
-        'La primera pantalla es la misma haya o no lectura: el recuadro dice «Sube el cartel» y para qué sirve el cartel (la imagen del evento), no lo que el sistema hará con él. Ninguna promesa, ninguna excusa.',
-        'La lectura es un valor agregado: si hay con qué, pasa y se nota después («Leyendo…», «Leído del cartel»); si no, no se menciona. El sistema nunca queda a deber algo que no ofreció.',
-        'Cupo, «Pedir más lecturas» y cuántas quedan salen de este flujo: son cosas de la cuenta y viven en el perfil/ajustes (y, cuando haya cuentas de pago, en su pantalla de créditos).',
+        'El recuadro dice «Sube el cartel» y para qué sirve (la imagen del evento), no lo que el sistema hará con él. Es igual en todos los casos.',
+        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no, y el contador va dentro («quedan 4 de 6 este mes»). Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
+        'Marcada de entrada no cuesta toques (cartel completo sigue en 2). Desmarcarla es un toque solo para quien no quiere leer este cartel.',
+        'Con las 6 usadas (caso 2), la casilla queda apagada y lo dice en sus propias palabras («0 de 6 este mes · se renueva el 1 de nov»): es el estado de algo que la persona controla, no una excusa del sistema. Sin servicio de lectura (caso 3), la casilla no aparece.',
         'Hoy la segunda línea dice «Leemos el nombre, la fecha, el lugar y el precio» y, sin llave o sin cupo, el recuadro ni sale: eso es lo que se corrige.',
       ],
     };
@@ -161,25 +182,25 @@ const PANTALLAS = {
   nombre: () => {
     return {
       titulo: 'Publicar', avance: 1 / 6, atras: true,
-      cuerpo: `<div class="con-cartel">${MINI(true)}<span class="sello">${ic('ok')}Cartel guardado${casoActual().agotado ? ' · lecturas gratis agotadas hasta el 1 de nov' : ''}</span></div>
+      cuerpo: `<div class="con-cartel">${MINI(true)}<span class="sello">${ic('ok')}Cartel guardado${casoActual().falla && e.auto ? ' · no pude leerlo' : ''}</span></div>
         <h1 class="pregunta">¿Cómo se llama?</h1>
         <label class="campo">${ic('buscar')}<input id="q" placeholder="Nombre del evento" autocomplete="off"><button class="limpiar" type="button" aria-label="Borrar el texto">${ic('cerrar')}</button></label>`,
       pie: `<button class="btn" data-a="seguir">Siguiente</button>`,
       notas: [
         'Tras subir sin lectura (o si la lectura falló), se sigue directo a la primera pregunta, como si hubiera tocado «No tengo cartel» pero con el cartel ya guardado. Nunca se le pide que toque «No tengo cartel» cuando sí lo tiene (hoy pasa).',
         'La fila de arriba —miniatura y «Cartel guardado»— solo sale en la primera pregunta, como confirmación de que la foto llegó. Preguntar es lo normal; leer era el extra.',
-        'Caso 2: si la persona ya tuvo lecturas y se le acabaron las gratis, se dice UNA vez, aquí, en seis palabras y sin botón («lecturas gratis agotadas hasta el 1 de nov»): así entiende el paquete gratuito sin que el recuadro de entrada lo cargue. Sin servicio de lectura (caso 4) no se dice nada: nunca hubo extra que echar de menos.',
-        'No hay «Pedir más lecturas»: el límite es el paquete gratuito. Subirlo para una cuenta sigue siendo posible desde la administración (el tope por cuenta ya existe en la base).',
+        'Si la lectura automática falló (caso 4), se dice aquí una vez, en tres palabras y sin botón («no pude leerlo»); la lectura fallida no se descuenta. Sin lectura (casilla desmarcada, sin cupo o sin servicio) no se dice nada: la persona ya sabía que iba a llenarlo.',
+        'No hay «Pedir más lecturas»: 6 al mes es el paquete. Subirlo para una cuenta sigue siendo posible desde la administración (el tope por cuenta ya existe en la base).',
         'De aquí en adelante son los pasos ya construidos: día, hora, dónde, cuánto. En el prototipo «Siguiente» salta a «Revisa».',
       ],
     };
   },
   revisa: () => {
     const c = casoActual();
-    const leido = c.lee && !c.falla;
+    const leido = c.lee && !c.falla && e.auto && c.quedan > 0;
     return {
       titulo: 'Revisa', avance: 5 / 6, atras: true,
-      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel · ${c.quedan} lecturas gratis más este mes</span>` : ''}<h1>Inauguración de Ecos de papel</h1></div></div>
+      cuerpo: `<div class="cabeza-revisar">${MINI(true)}<div>${leido ? `<span class="sello ok">${ic('ok')}Leído del cartel</span>` : ''}<h1>Inauguración de Ecos de papel</h1></div></div>
         <div class="lista">
           <button class="renglon">${ic('reloj')}<b>jue 5 de nov · 19:00</b><span class="accion">Cambiar</span></button>
           <button class="renglon">${ic('pin')}<b>Teatro de la Paz</b><span class="accion">Cambiar</span></button>
@@ -188,7 +209,7 @@ const PANTALLAS = {
       pie: `<button class="btn" data-a="publicar">Publicar</button>`,
       notas: [
         'La cabeza lleva la miniatura siempre que haya cartel. El sello verde «Leído del cartel» solo cuando de él salieron datos; sin lectura, nada: la miniatura ya dice que la imagen va con el evento.',
-        'El contador va aquí, pegado al valor que acaba de recibir («Leído del cartel · 2 lecturas gratis más este mes»), y en el perfil. Nunca en la pantalla de entrada: ahí sería una condición antes de dar nada. Medido en producción (2026-10-06): 48 lecturas desde el 19 de septiembre, 9 personas; 40 son del founder y las otras 8 personas hicieron 1 cada una. Con el tope actual de 20 al mes nadie vería el contador; para que el paquete gratuito se entienda, el número tiene que ser alcanzable (decisión del founder: 3, 5…).',
+        'El contador vive en la casilla de la primera pantalla y en el perfil; aquí solo el sello. Medido en producción (2026-10-06): 48 lecturas desde el 19 de septiembre, 9 personas; 40 son del founder y las otras 8 personas hicieron 1 cada una. Con 6 al mes, hoy nadie salvo el founder se acercaría al límite.',
         'Los datos se ven iguales hayan salido del cartel o de las preguntas.',
       ],
     };
@@ -215,7 +236,8 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (!b) return;
   const a = b.dataset.a;
   const c = casoActual();
-  if (a === 'subir') { if (c.lee) { ir('leyendo'); setTimeout(() => ir(c.falla ? 'nombre' : 'revisa'), 1400); } else ir('nombre'); }
+  if (a === 'auto') { e.auto = !e.auto; pintar(); }
+  if (a === 'subir') { if (c.lee && e.auto && c.quedan > 0) { ir('leyendo'); setTimeout(() => ir(c.falla ? 'nombre' : 'revisa'), 1400); } else ir('nombre'); }
   if (a === 'sin') ir('nombre');
   if (a === 'seguir') ir('revisa');
   if (a === 'atras') ir(e.paso === 'revisa' ? 'nombre' : 'inicio');
