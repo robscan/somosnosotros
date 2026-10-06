@@ -36,7 +36,8 @@
 }
 
 /* 3. El pie: al fondo de la pantalla y pegado abajo al desplazar, con la raya arriba y la zona segura del iPhone debajo. Con el teclado
-   abierto deja de estar pegado (`ui/useCampoVisible` pone `data-teclado` en <html>): en el iPhone lo pegado se mide contra una ventana
+   abierto, en la columna de los pasos, deja de estar pegado (`ui/useCampoVisible` pone `data-teclado` en <html>; la hoja «¿Dónde es?», que vive en
+   una capa fija, lo mantiene pegado con su propio `bottom`, ver `PiePaso`): en el iPhone lo pegado se mide contra una ventana
    que el teclado no encoge y, además, tapaba el campo enfocado cuando este queda justo encima de él. En el flujo, tras el campo, el relleno
    de la columna (`--teclado`) lo deja sobre el teclado al fondo del recorrido, y en un paso corto (`margin-top: auto`) ya está ahí. */
 .pie {
@@ -50,7 +51,7 @@
   border-top: 1px solid var(--borde);
   background: var(--fondo);
 }
-:global(html[data-teclado]) .pie {
+:global(html[data-teclado]) .pasos .pie {
   position: static;
 }
 

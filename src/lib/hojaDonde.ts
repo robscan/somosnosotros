@@ -78,6 +78,17 @@ export function puedeListo(para: ParaQue, borrador: Pick<Borrador, "origen" | "n
   return !panelAgregar && (borrador.origen === "lugar" || borrador.nombre.trim().length > 0);
 }
 
+/**
+ * Lo que dice el botón del pie de la hoja (OL-303; canon: el botón dice qué falta): «Listo» cuando se puede confirmar y, si no,
+ * lo que falta -el lugar (en un lugar, la ubicación) o, con el pin ya puesto, el nombre del sitio de un evento-. Con el panel
+ * «Agregar lugar» abierto no hay pie (ese panel trae su propio botón), así que aquí no hace falta mirarlo.
+ */
+export function textoListo(para: ParaQue, borrador: Pick<Borrador, "origen" | "nombre" | "punto"> | null): string {
+  if (puedeListo(para, borrador, false)) return "Listo";
+  if (!borrador?.punto) return para === "evento" ? "Falta el lugar" : "Falta la ubicación";
+  return "Falta el nombre del lugar";
+}
+
 /* ---------------------------------------------------------------------------------------------------------------
    2. Lo del evento
    --------------------------------------------------------------------------------------------------------------- */
