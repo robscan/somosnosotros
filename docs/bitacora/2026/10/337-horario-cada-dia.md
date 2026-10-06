@@ -1,0 +1,84 @@
+# 337 · Horario de cada día en un evento de varios días, y «Revisa» que entra de abajo
+
+**Pieza:** OL-309. **Rama:** `horario-cada-dia` (sobre `origin/un-solo-dia` = `origin/main` `82ec432f` + un commit chico del gestor, `diasElegidos` en `pasos.ts`). **Fecha:** 2026-10-06. **Operador:** Claude Fable 5.1.
+**Estado:** hecho y probado en Chrome (headless) con los componentes reales y en la app compilada contra el respaldo local; falta el iPhone real (lista al final). Sin migraciones, sin cambios en acciones del servidor, sin cambios en lo que se guarda.
+
+## Qué se encargó
+
+La decisión del founder del 2026-10-06, con datos: probó «Dura varios días», vio «Termina» con horas y preguntó si no debería pedirse la hora por día. En producción no hay ningún evento de varios días con horas (274 visibles, 239 sin hora de fin). Lo decidido: en varios días se pregunta el horario **del primer día y se aplica al resto**, y solo si la persona lo pide aparecen los demás días para ajustar cada uno (eso exige el modelo de sesiones y es otra pieza, OL-310). Aquí se construye la primera parte, más lo que va con ella:
+
+1. El paso de la hora en varios días dice «¿A qué hora, cada día?» y, debajo, una línea suave con el horario de cada día.
+2. Lo guardado no cambia (inicio = primer día + hora de inicio; fin = último día + hora de fin o `FIN_DEL_DIA`), pero la ficha, la agenda, el texto de compartir y «Revisa» deben leerlo como «cada día».
+3. «Revisa» entra de abajo para arriba, escalonada, con el «ease gentle» de Figma (pedido aparte del founder).
+
+## Qué hay
+
+- **El paso** (`PasosEvento.tsx` `PasoHora`, `AltaEvento.tsx`): con `dias.hasta` la pregunta es **«¿A qué hora, cada día?»** (`preguntaDe`); «Empieza» y «Termina» con los chips de siempre («Termina» son horas del día, no duraciones) y, dentro del grupo «Termina» como su última línea, la línea suave **«Del 10 al 12 de oct · cada día de 8:00 a 9:00 p.m.»**, o **«… · cada día desde las 8:00 p.m.»** sin hora de fin (la una dice «desde la 1:00 p.m.»). Aparece en cuanto hay hora de inicio; al elegir el fin se avanza (como antes), y al volver con Atrás dice el horario completo. Un solo día no cambia nada: «¿A qué hora?» y «¿Cuánto dura?».
+- **El texto** (`lib/fechas.ts`, `lib/cuandoEvento.ts`, nuevos y probados): `rangoCorto` («Del 10 al 12 de oct»; de un mes a otro «Del 30 de oct al 2 de nov»; con año solo si no es el actual), `cuandoVariosDias` (los días y las horas de cada día de un evento guardado, en 24 h) y, en `cuandoEvento.ts`, `horasDelDia` («8:00» y «9:00 p.m.»: el «p.m.» una sola vez si lo comparten, y cada hora el suyo si no) y `resumenCadaDia` (la línea del paso). **Formato de hora:** la línea del paso va en 12 h, igual que los chips que tiene encima (`etiquetaHora`); lo que se lee fuera del paso (`cuandoVariosDias`) va en 24 h, como el resto de la app. Todas las cadenas son texto limpio: ningún espacio no separable ni unidor de palabra.
+- **Cómo se leen los eventos guardados** (`formatearCuando` y `kpiCuando`, `RenglonEvento`): un evento de varios días dice **«Del 10 al 12 de oct · 20:00–21:00»** (con hora de fin) o **«Del 10 al 12 de oct · 20:00»** (sin ella: un fin en `FIN_DEL_DIA` no se enseña). Lo usan:
+  - «Revisa» del alta por pasos y el renglón «Cuándo» del formulario de siempre (`valorCuando`), sin tocarlos: ya llamaban a `formatearCuando`.
+  - El texto de **compartir** (`compartirEvento`), los **avisos push y correos** (`avisos.ts`: «Nuevo en …», «Cambió …», recordatorios) y el panel de administración (`panel.ts`): todos llaman a `formatearCuando` con `fin`.
+  - La **ficha** (`kpiCuando`): el número de fecha lleva «Del 10 al 12 de oct» y, en su línea de arriba, el horario de cada día («20:00–21:00»).
+  - El **renglón de agenda** (`RenglonEvento`): un evento de varios días lleva el icono de calendario y «Del 10 al 12 de oct · 20:00–21:00» donde antes decía solo la hora de inicio.
+  - Los que llaman con `fin` nulo (inicio, lugares, artistas, destacados, eventos de la semana) no cambian: dicen cuándo empieza.
+- **La entrada de «Revisa»** (`Revisa.tsx`, `AltaEvento.module.css`, `PasoCartel.tsx`): la cabeza (el nombre, o el cartel entero con su sello y su nombre), cada renglón, «Agregar artistas, descripción o enlace» y el pie suben desde abajo, de arriba hacia abajo y uno tras otro.
+
+## Cómo funciona la entrada de «Revisa»
+
+- **Solo al llegar.** Cuelga de la misma señal que ya usa `PorPasos`: `data-direccion="entra"` en la columna. Se llega con «entra» desde el último paso o tras leer un cartel; al volver de «Cambiar» un dato la dirección es «vuelve» y mi animación no corre (comprobado: ninguna animación `sube` al volver). Un error al publicar no la repite por construcción (el contenido del paso lleva `key` del paso y «Revisa» no se vuelve a montar); no tiene prueba propia.
+- **Escalonada con una variable por elemento.** `--orden` en cada pieza (la cabeza 0, los renglones 1 a 3, o 4 si hay «Quién»; «Agregar…» el siguiente) y `animation-delay: calc(var(--orden) * 50ms)`. El pie, que está en `PorPasos` y no admite estilo desde aquí, toma siempre el turno 6 con la regla `.sube ~ footer` (si no hay «Quién», queda un hueco de 50 ms: no se nota). `backwards` los tiene ocultos mientras esperan su turno.
+- **Sin envoltorios nuevos y sin librerías.** `@keyframes sube` (`translateY(var(--espacio-6))`, o sea 24 px, y opacidad 0 → 1) más dos clases, `sube` (lo que entra) y `fija` (la lista, que no se mueve); la cabeza con cartel recibe `className` y `style` (`CabezaCartel` los acepta ahora).
+- **Los hijos de la columna ya entraban de lado** con esa misma señal (`PorPasos.module.css`, que no se toca: otro operador trabaja en él). Para ganarle sin `!important`, mi regla de los hijos directos tiene la forma de la del armazón con `main` delante (`main[data-direccion="entra"] > .sube:not([role="dialog"])`: especificidad (0,3,1) contra el (0,3,0) de la suya), y la lista de renglones queda con `animation: none` (entran sus renglones, no ella). Así, en «Revisa» no entra nada de lado: lo comprobé con las animaciones vivas (6 `sube`, ninguna `entra`).
+- **Reducir movimiento.** Todo va dentro de `@media (prefers-reduced-motion: no-preference)`: con «reducir movimiento» no hay ninguna animación (comprobado con `getAnimations()` vacío).
+
+### La curva, y por qué no la que pedía el encargo
+
+El encargo pedía `cubic-bezier(0.2, 0.8, 0.2, 1)` y unos 400 ms como aproximación del «gentle» de Figma. **No las usé**: la app ya tiene el «Gentle» de Figma de verdad como token (`--curva-resorte` y `--duracion-resorte` de `globals.css`: rigidez 100, amortiguación 15, masa 1; se asienta en unos 0,8 s, lo escribe con `linear()` y trae su `cubic-bezier` de respaldo) y lo usan la hoja de Lugares y los chips. Es exactamente lo que el founder nombró («ease gentle de Figma»), es de todos y no suma números sueltos. La diferencia a la vista es poca: el resorte es casi todo movimiento en los primeros 400 ms (a los 350 ms ya va al 99 %) y rebasa un 2,8 %, o sea menos de un píxel sobre 24. Si el founder prefiere la curva del encargo, es cambiar dos variables en una regla.
+
+## Maquetación
+
+Plana: ningún `div` nuevo, ningún `:has()`, ninguna medida por pantalla; ningún píxel, color ni `z-index` nuevo (`inventario` sin novedades: 342 medidas en duro, 2 bloques duplicados). La línea del paso es un `<small>` hijo del grupo «Termina» (el mismo lugar y estilo que ya tenía «Termina 1:00 a.m. del día siguiente»). Los textos nuevos de las listas no cambian la rejilla: el renglón del agenda sigue cortando con puntos suspensivos.
+
+## Decisiones del operador (no están en el encargo)
+
+1. **La premisa del encargo no coincide con el código.** El encargo dice que hoy `formatearCuando` enseña «Del 6 al 30 de nov» sin horas. No: ese texto es el de la hoja de días (`textoDias`) y el del prototipo. Hasta hoy `formatearCuando` decía «sáb 26 de sep · 19:00 → lun 28 de sep · 21:00»; la ficha, «vie 2 oct – dom 4 oct» con la hora de inicio sola, en 24 h; el renglón de agenda, solo la hora de inicio. Hice lo pedido (que digan «Del 10 al 12 de oct · 20:00–21:00»), con esos tres puntos de partida.
+2. **Sin casilla «Mismo horario todos los días».** La puse con `ui/Casilla` (marcada y apagada, con «Cada día a la misma hora») y la miré en captura a 390: es un control que no se puede tocar, atenuado, y repite lo que dice la línea de arriba. Se ve raro, así que **no la dejé** (como permitía el encargo). Cuando exista OL-310 llega con su sentido: marcada de entrada y, si se desmarca, aparecen los demás días.
+3. **Horas en 24 h fuera del paso, en 12 h dentro.** Corrección del gestor (el «8:00 p.m.» del encargo era un ejemplo mal puesto): la app entera va en 24 h, así que «Revisa», la ficha, el renglón de agenda, el texto de compartir, los avisos y los correos dicen «20:00–21:00». La línea resumen del paso va en 12 h, igual que los chips de `etiquetaHora` que tiene encima.
+4. **Un evento de varios días en la agenda sigue en su día de inicio.** Se agrupa por su primer día, como antes; lo que cambió es que su renglón dice sus días y su horario. No se repite en cada día.
+5. **Una noche no es un evento de varios días.** Empieza 10:00 p.m., termina 1:00 a.m. del día siguiente: su fin cae al día siguiente **antes de la hora de inicio**. `cuandoVariosDias` solo cuenta como varios días un fin que cae después de la hora de inicio del día siguiente o un día más tarde; una noche se lee «vie 9 de oct · 22:00 → sáb 10 de oct · 01:00», como siempre. Límite conocido: un evento de **dos** días (hasta = desde + 1) cuya hora de fin del último día sea la de inicio o anterior (por ejemplo, «cada día de 10 p.m. a 1 a.m.») se guarda igual que una noche y así se lee. Con una sola fila de datos no se pueden distinguir; con sesiones (OL-310) deja de ser ambiguo.
+6. **Las horas del renglón no se parten, por CSS y no en la cadena.** Una primera versión metía espacios no separables y un unidor de palabras (U+2060) en el texto; se retiró por indicación del gestor, porque esas cadenas viajan a compartir, avisos push y correos. Ahora la cadena es limpia (hay pruebas que lo comprueban en `formatearCuando`, `cuandoVariosDias` y el texto de compartir) y, donde se pinta, las horas van en un `<span>` con `white-space: nowrap` (`.hora` en `AltaEvento.module.css`, solo en «Revisa»): el renglón se parte entre los días y las horas, nunca dentro de ellas. El renglón de agenda y la ficha no lo necesitan: el primero corta con puntos suspensivos y la segunda lleva las horas en su propia línea corta. Comprobado a 320 y 390 sin desbordes.
+7. **El pie entra siempre en el turno 6**, aunque no haya «Quién» (queda un hueco de 50 ms); no puedo ponerle `--orden` desde aquí sin editar `PorPasos.tsx`, que es de otra pieza.
+8. **Con cartel entra la cabeza entera como una pieza** (la foto, el sello y el nombre juntos), no cada uno por su lado.
+9. **`formatearLargo` y `fraseCuando` no cambian** («sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre»): los llaman el resumen de `SelectorCuando` y la etiqueta al compartir por redes (con fin nulo), fuera de lo pedido.
+
+## Pruebas
+
+- **Unitarias**: `fechas.test.ts` (44), con `formatearCuando` en varios días con y sin hora de fin en 24 h, de la mañana a la tarde, dos días seguidos, una noche que cruza la medianoche, la zona del evento y el año, la cadena sin caracteres invisibles, y pruebas propias de `rangoCorto` y `cuandoVariosDias`; `cuandoEvento.test.ts` (33, con 5 de `resumenCadaDia` en 12 h y 2 de `horasDelDia`); `ficha.test.ts` (14: la ficha de varios días con y sin hora de fin y una noche); `eventos.test.ts` (64: el texto de compartir de un evento de varios días, en 24 h y sin caracteres invisibles). `pasos.test.ts` no cambia: la regla nueva vive en `cuandoEvento.ts`.
+- **De componentes** (`AltaEvento.componentes.test.mjs`, 6 nuevas): la pregunta «¿A qué hora, cada día?», sin línea antes del inicio, «desde las 8:00 p.m.» con el inicio, «de 8:00 a 9:00 p.m.» al volver, «Revisa» con «Del 9 al 11 de oct · 20:00–21:00» y, con «Sin hora de fin», solo «20:00» (y la acción recibe `2026-10-09T20:00` y `2026-10-11T23:59`: lo guardado es el de siempre); un solo día sigue en «¿A qué hora?» sin línea de «cada día»; la entrada de «Revisa» (animaciones `sube` con retrasos 0, 50, 100, 150, 200 y 300 ms, la lista sin animación, ninguna de lado, congelada a los 150 ms la cabeza va a la mitad del camino y lo demás espera, al volver de «Cambiar» no corre y con «reducir movimiento» no hay ninguna); con cartel la cabeza entra como una pieza y su nombre no se anima aparte; y, a 320 y a 390, «Revisa» de varios días: las horas son un `span` de una sola caja de línea con `nowrap`, la cadena no tiene caracteres invisibles y nada desborda.
+- `npm run lint` (0 errores; el aviso de `VisorImagen.componentes.test.mjs` ya estaba), `npm run typecheck`, `npm test` (**147 archivos, 2190 pruebas**), `npm run test:componentes` (Chrome de la Mac, **424 pruebas, 0 fallos**, 172 s), `npm run inventario` (**sin novedades: 342 medidas en duro y 2 bloques duplicados**), `npm run medir` (**27 pantallas × 4 anchos, sin novedades**; `s15` mide 17/17/51/51 sin llave de lectura, igual que antes de la pieza). Además, con la app compilada a 320, la ficha de los dos eventos de varios días y la agenda: desborde horizontal 0.
+
+## Capturas (`docs/rediseno/capturas-337/`)
+
+390×844 a 2×. Las cinco primeras, con el harness de componentes (los componentes y el CSS reales, Bricolage de la compilación, reloj fijo del miércoles 7 de octubre de 2026); las tres últimas, con la app compilada (`next build && next start`) contra el respaldo local con dos eventos de varios días añadidos al arrancar (en un archivo fuera del repo), el mismo reloj, Bricolage cargada (se comprueba). Todas abiertas y revisadas.
+
+1. `390-01-hora-cada-dia-desde`: «¿A qué hora, cada día?» tras elegir 8:00 p.m. (la línea del paso va en 12 h, como los chips); los chips de «Empieza» con el 8:00 marcado, «Termina» con 9:00, 10:00 y 11:00 p.m., «Otra hora» y «Sin hora de fin», y debajo, en gris, «Del 9 al 11 de oct · cada día desde las 8:00 p.m.».
+2. `390-02-hora-cada-dia-resumen`: lo mismo tras volver con Atrás con el fin de 9:00 p.m. marcado: «Del 9 al 11 de oct · cada día de 8:00 a 9:00 p.m.».
+3. `390-03-revisa-a-150ms`: «Revisa» congelada a los 150 ms de entrar: el título («Lectura en voz alta») a medio camino y gris, el renglón de «Cuándo» tenue, el de «Dónde» casi invisible y nada más (los demás esperan su turno).
+4. `390-04-revisa-al-final`: la misma al terminar: título, tres renglones, «Agregar artistas, descripción o enlace» y «Publicar», en su sitio.
+5. `390-05-revisa-varios-dias`: «Revisa» de un evento del 9 al 11 de octubre: el renglón de «Cuándo» dice «Del 9 al 11 de oct · 20:00–21:00», en una sola línea.
+6. `390-06-ficha-con-hora-de-fin`: la ficha de «Feria del Libro de Barrio»: la fecha arriba a la izquierda dice «20:00–21:00» y su valor «Del 10 al 12 de oct» (en dos renglones dentro de su tarjeta, como las demás).
+7. `390-07-ficha-sin-hora-de-fin`: «Festival de las Linternas» (acaba con su último día): «19:00» y «Del 10 al 12 de oct»; no aparece ninguna hora de fin.
+8. `390-08-agenda-renglon`: la agenda en «sáb 10 de oct · 3»: «Delirium Pollum…» con su reloj y «18:00»; «Festival de las Linternas» con el calendario y «Del 10 al 12 de oct · 19:00»; «Feria del Libro de Barrio» con «Del 10 al 12 de oct · 20:00–21:00». Cada uno en un solo renglón.
+
+## Para probar en el iPhone
+
+1. `/nuevo/evento` → «No tengo cartel» → nombre → «Dura varios días» → un rango: ¿la pregunta dice «¿A qué hora, cada día?» y la línea gris dice lo que se espera con cada hora que se toca? Con «Sin hora de fin», ¿dice «desde las …»?
+2. En «Revisa», ¿el renglón de «Cuándo» se lee bien («Del 10 al 12 de oct · 20:00–21:00») y no parte las horas en un teléfono angosto? Publicar y mirar la ficha y la agenda: ¿dicen lo mismo?
+3. Llegar a «Revisa» desde el último paso: ¿los elementos suben de abajo para arriba, uno tras otro, y se asientan sin pasarse? ¿Se siente suave o larga? Tocar «Cambiar» en un renglón y volver: ¿no vuelve a subir nada? Con «Reducir movimiento» activado en Ajustes de accesibilidad: ¿todo aparece quieto?
+4. Con cartel leído (llega directo a «Revisa»): ¿entra la cabeza con el cartel como una pieza?
+
+## Qué queda para OL-310
+
+- **Horas distintas por día** (la casilla «Mismo horario todos los días», desmarcable): pide el modelo de sesiones. Con él, la casilla se pone marcada de entrada (con su detalle, sin la forma apagada que probé aquí) y, desmarcada, aparecen los demás días para ajustar cada uno.
+- La **ambigüedad de dos días con fin en la hora de inicio o antes** (decisión 5) desaparece con sesiones.
+- Los chips y la línea del paso van en 12 h y todo lo demás en 24 h: si el founder quiere uniformarlo, es una decisión para toda la app (decisión 3).

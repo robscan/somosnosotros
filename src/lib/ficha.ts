@@ -1,4 +1,4 @@
-import { diaLocal, fechaCortaChip, horaCorta, ZONA_INICIAL } from "./fechas";
+import { cuandoVariosDias, diaLocal, fechaCortaChip, horaCorta, ZONA_INICIAL } from "./fechas";
 
 /**
  * Los textos de los tres números de una ficha (docs/rediseno/50, P6; `ui/Kpi`): el día y la hora de un evento, la distancia a un
@@ -7,9 +7,12 @@ import { diaLocal, fechaCortaChip, horaCorta, ZONA_INICIAL } from "./fechas";
 
 /**
  * Cuándo es un evento: el día («vie 2 oct») y, aparte, la hora en que empieza («19:00»), porque el número no lleva la palabra
- * «Fecha»: el día ya dice que lo es. Si termina otro día, el día dice hasta cuándo («vie 2 oct – dom 4 oct»).
+ * «Fecha»: el día ya dice que lo es. Si dura varios días, los días dicen hasta cuándo y la hora es el horario de cada día
+ * («Del 2 al 4 de oct» y «8:00–9:00 p.m.», OL-309); si solo cruza la medianoche, «vie 2 oct – sáb 3 oct».
  */
-export function kpiCuando(inicio: string, fin: string | null, zona: string = ZONA_INICIAL): { dia: string; hora: string } {
+export function kpiCuando(inicio: string, fin: string | null, zona: string = ZONA_INICIAL, ahora: Date = new Date()): { dia: string; hora: string } {
+  const varios = cuandoVariosDias(inicio, fin, ahora, zona);
+  if (varios) return { dia: varios.dias, hora: varios.horas };
   const dia = fechaCortaChip(inicio, zona);
   const otroDia = fin !== null && diaLocal(new Date(fin), zona) !== diaLocal(new Date(inicio), zona);
   return { dia: otroDia ? `${dia} – ${fechaCortaChip(fin, zona)}` : dia, hora: horaCorta(inicio, zona) };

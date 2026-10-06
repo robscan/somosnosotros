@@ -274,6 +274,12 @@ describe("compartirEvento", () => {
     expect(texto).toMatch(/^Noche de jazz\n.+ · Teatro de la Paz$/);
     expect(texto).not.toContain(url);
   });
+  it("un evento de varios días comparte sus días y su horario de cada día, en 24 h y con la cadena limpia (sin espacios no separables ni unidores)", () => {
+    // Del 10 al 12 de oct, de 20:00 a 21:00 en la ciudad (UTC-6).
+    const { texto } = compartirEvento({ ...e, inicio: "2035-10-11T02:00:00Z", fin: "2035-10-13T03:00:00Z" }, "Teatro de la Paz");
+    expect(texto).toBe("Noche de jazz\nDel 10 al 12 de oct de 2035 · 20:00–21:00 · Teatro de la Paz");
+    expect(texto).not.toMatch(/[\u00a0\u202f\u2060]/);
+  });
   it("sin slug todavía, la dirección cae al UUID; sin sitio, el cuándo va solo", () => {
     const { url, texto } = compartirEvento({ ...e, slug: null }, null);
     expect(url).toBe(`https://somosnosotros.org/eventos/${e.id}`);

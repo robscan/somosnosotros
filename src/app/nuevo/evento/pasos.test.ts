@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LugarResumen } from "@/lib/lugares";
-import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas } from "./pasos";
+import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas, diasElegidos } from "./pasos";
 
 const ZONA = "America/Mexico_City";
 const pasar = (e: Estado, ...acciones: Accion[]) => acciones.reduce(flujo, e);
@@ -353,3 +353,16 @@ describe("el final: «Publicado» (OL-304)", () => {
   });
 });
 
+
+describe("diasElegidos: lo que devuelve la hoja del calendario como respuesta", () => {
+  it("un solo día («Listo, un solo día» devuelve el mismo día como último) se guarda sin hasta", () => {
+    expect(diasElegidos("2026-10-10", "2026-10-10")).toEqual({ desde: "2026-10-10", hasta: null });
+    expect(diasElegidos("2026-10-10", null)).toEqual({ desde: "2026-10-10", hasta: null });
+  });
+  it("un rango de días conserva el último", () => {
+    expect(diasElegidos("2026-10-10", "2026-10-12")).toEqual({ desde: "2026-10-10", hasta: "2026-10-12" });
+  });
+  it("un «último» anterior al primero no es un rango", () => {
+    expect(diasElegidos("2026-10-10", "2026-10-08")).toEqual({ desde: "2026-10-10", hasta: null });
+  });
+});

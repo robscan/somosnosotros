@@ -1,5 +1,5 @@
-import { FIN_DEL_DIA, sumarDiasIso } from "./calendario";
-import { combinarFechaHora, localAIso, sumarHoras } from "./fechas";
+import { FIN_DEL_DIA, etiquetaHora, sumarDiasIso } from "./calendario";
+import { combinarFechaHora, localAIso, rangoCorto, sumarHoras } from "./fechas";
 
 /**
  * Qué quedan siendo el inicio y el fin de un evento cuando la persona toca algo en las hojas de día y de hora del alta y la
@@ -77,4 +77,31 @@ export function conHoraFin(actual: InicioFin, hora: string): InicioFin {
   if (ultimo === ini.fecha && ini.hora && hora === ini.hora) return actual;
   if (ultimo === ini.fecha && ini.hora && hora < ini.hora) return { inicio: actual.inicio, fin: combinarFechaHora(sumarDiasIso(ini.fecha, 1), hora) };
   return { inicio: actual.inicio, fin: combinarFechaHora(ultimo, hora) };
+}
+
+/**
+ * Dos horas de un mismo día en la letra de los chips del alta («8:00» y «9:00 p.m.»): el «p.m.» no se repite cuando las dos lo comparten, y
+ * sí cuando no («11:00 a.m.» y «2:00 p.m.»). Con una sola, la hora completa.
+ */
+export function horasDelDia(desde: string, hasta?: string): { desde: string; hasta?: string } {
+  const a = etiquetaHora(desde);
+  if (!hasta) return { desde: a };
+  const b = etiquetaHora(hasta);
+  const sufijo = (texto: string) => /^\d{1,2}:\d{2}(\s[\s\S]*)$/.exec(texto)?.[1] ?? "";
+  return { desde: sufijo(a) === sufijo(b) ? a.slice(0, a.length - sufijo(a).length) : a, hasta: b };
+}
+
+/**
+ * La línea del paso «¿A qué hora, cada día?» del alta (OL-309): el horario del primer día se aplica a todos, así que se dice así
+ * («Del 10 al 12 de oct · cada día de 8:00 a 9:00 p.m.»). Va en 12 h, como los chips que tiene encima; lo que se lee fuera del paso
+ * (`cuandoVariosDias`) va en 24 h, como el resto de la app. Sin hora de fin puesta (`fin` vacío o `FIN_DEL_DIA`: el evento acaba con su
+ * último día) solo dice desde cuándo («… · cada día desde las 8:00 p.m.»). `hoy` es YYYY-MM-DD en la zona del evento: el año solo se
+ * escribe si no es el actual.
+ */
+export function resumenCadaDia(dias: { desde: string; hasta: string }, hora: string, fin: string, hoy: string): string {
+  const horaFin = partirLocal(fin).hora;
+  const rango = rangoCorto(dias.desde, dias.hasta, hoy);
+  const h = horasDelDia(hora, !horaFin || horaFin === FIN_DEL_DIA ? undefined : horaFin);
+  if (h.hasta) return `${rango} · cada día de ${h.desde} a ${h.hasta}`;
+  return `${rango} · cada día desde ${Number(hora.slice(0, 2)) % 12 === 1 ? "la" : "las"} ${h.desde}`;
 }

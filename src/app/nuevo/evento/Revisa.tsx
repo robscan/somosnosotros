@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { PiePaso } from "@/components/PorPasos";
 import Boton from "@/components/ui/Boton";
 import { IconoBoleto, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
@@ -8,12 +8,15 @@ import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { COOPERACION_SOLIDARIA, type ErroresEvento } from "@/lib/eventos";
-import { formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
+import { cuandoVariosDias, formatearCuando, localAIso, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { NOMBRE_RESERVADO, dondeResuelto, inicioDe, nombreDelSitio, type Paso, type Respuestas } from "./pasos";
 import { CabezaCartel } from "./PasoCartel";
 import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
+
+/** El turno de un elemento en la entrada de «Revisa» (`.sube` en el CSS): 0 es el primero y cada uno entra 50 ms después del anterior. */
+const turno = (orden: number) => ({ "--orden": orden }) as CSSProperties;
 
 type Props = {
   r: Respuestas;
@@ -43,18 +46,31 @@ type Props = {
  */
 export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, enviando, falta, formulario, onAbrir }: Props) {
   const inicio = localAIso(inicioDe(r), zona);
-  const cuando = inicio && r.fin !== null ? formatearCuando(inicio, r.fin ? localAIso(r.fin, zona) : null, new Date(), zona) : null;
+  const ahora = new Date();
+  const fin = r.fin ? localAIso(r.fin, zona) : null;
+  // En varios días las horas van en su propio `span` sin saltos de línea: un renglón angosto parte entre los días y las horas, nunca dentro de ellas.
+  const varios = inicio && r.fin !== null ? cuandoVariosDias(inicio, fin, ahora, zona) : null;
+  const cuando = !inicio || r.fin === null ? null : varios ? (
+    <>
+      {varios.dias} · <span className={styles.hora}>{varios.horas}</span>
+    </>
+  ) : (
+    formatearCuando(inicio, fin, ahora, zona)
+  );
   const cuanto = r.costo === "gratis" ? "Gratis" : r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" && r.precio ? `$${r.precio}` : null;
   const extras = errores.descripcion ?? errores.enlace ?? errores.imagen;
+  // Con cartel entra la cabeza entera (la foto, el sello y el nombre, como una pieza); sin él, el nombre.
   const titulo = (
-    <h2 className={styles.titulo} tabIndex={-1}>
+    <h2 className={cartel ? styles.titulo : `${styles.titulo} ${styles.sube}`} style={cartel ? undefined : turno(0)} tabIndex={-1}>
       {r.nombre}
     </h2>
   );
+  // Los renglones entran del 1 al último; «Agregar…» tras ellos (Quién solo está si hay artistas).
+  const renglones = r.quien.length > 0 ? 4 : 3;
   return (
     <>
       {cartel ? (
-        <CabezaCartel foto={cartel.url} leido={cartel.leido}>
+        <CabezaCartel foto={cartel.url} leido={cartel.leido} className={styles.sube} style={turno(0)}>
           {titulo}
         </CabezaCartel>
       ) : (
@@ -65,10 +81,11 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
           {errores.titulo}
         </p>
       )}
-      <ul className={renglon.renglones}>
+      <ul className={`${renglon.renglones} ${styles.fija}`}>
         <Dato
           icono={<IconoReloj width={20} height={20} />}
           clave="Cuándo"
+          orden={1}
           valor={cuando}
           falta={r.dias ? "Falta la hora" : "Falta el día y la hora"}
           error={errores.inicio ?? errores.fin}
@@ -78,23 +95,25 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
         <Dato
           icono={<IconoPin width={20} height={20} />}
           clave="Dónde"
+          orden={2}
           valor={dondeResuelto(r.sitio) ? nombreDelSitio(r.sitio, lugar) : null}
           detalle={r.sitio.modo === "reservado" && nombreDelSitio(r.sitio, lugar) !== NOMBRE_RESERVADO ? "Sitio reservado" : undefined}
           falta="Falta el lugar"
           error={errores.lugar_id ?? errores.sitio_texto ?? errores.sitio_direccion ?? errores.direccion_privada}
           onAbrir={() => onAbrir("donde")}
         />
-        <Dato icono={<IconoBoleto width={20} height={20} />} clave="Cuánto" valor={cuanto} falta="Falta el precio" error={errores.precio} onAbrir={() => onAbrir("cuanto")} />
+        <Dato icono={<IconoBoleto width={20} height={20} />} clave="Cuánto" orden={3} valor={cuanto} falta="Falta el precio" error={errores.precio} onAbrir={() => onAbrir("cuanto")} />
         {r.quien.length > 0 && (
           <Dato
             icono={<IconoPersonas width={20} height={20} />}
             clave="Quién"
+            orden={4}
             valor={unirNombres(r.quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre)))}
             onAbrir={() => onAbrir("mas")}
           />
         )}
       </ul>
-      <Boton type="button" variante="quieto" onClick={() => onAbrir("mas")}>
+      <Boton type="button" variante="quieto" className={styles.sube} style={turno(renglones + 1)} onClick={() => onAbrir("mas")}>
         Agregar artistas, descripción o enlace
       </Boton>
       {extras && (
@@ -117,11 +136,11 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
 }
 
 /** Un dato de «Revisa»: el renglón resuelto sin clave a la vista (`ui/Renglon`); todo él abre su pregunta («Cambiar», o «Poner» si falta).
- *  `detalle` va en letra suave bajo el valor («Sitio reservado»). */
-function Dato({ icono, clave, valor, detalle, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; valor: string | null; detalle?: string; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
+ *  `detalle` va en letra suave bajo el valor («Sitio reservado»); `orden` es su turno en la entrada. */
+function Dato({ icono, clave, orden, valor, detalle, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; orden: number; valor: ReactNode; detalle?: string; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
   const accion = valor ? "Cambiar" : "Poner";
   return (
-    <li className={`${renglon.resuelto} ${renglon.sinClave} ${valor ? "" : renglon.pendiente} ${styles.dato}`}>
+    <li className={`${renglon.resuelto} ${renglon.sinClave} ${valor ? "" : renglon.pendiente} ${styles.dato} ${styles.sube}`} style={turno(orden)}>
       {icono}
       <small>{clave}</small>
       <b className={valor ? undefined : renglon.falta}>

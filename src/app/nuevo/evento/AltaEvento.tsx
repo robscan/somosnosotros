@@ -16,7 +16,7 @@ import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { respuestasDelCartel } from "./cartelPorPasos";
-import { avance, eventoPublicado, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Uso } from "./pasos";
+import { avance, eventoPublicado, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Respuestas, type Uso } from "./pasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
@@ -57,6 +57,9 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
   cuanto: "¿Cuánto cuesta?",
   mas: "¿Quieres agregar algo?",
 };
+
+/** La pregunta de cada paso; con varios días la de la hora cambia: el horario del primer día vale para todos. */
+const preguntaDe = (paso: Paso, r: Respuestas): string | undefined => (paso === "hora" && r.dias?.hasta ? "¿A qué hora, cada día?" : PREGUNTA[paso]);
 
 type Interno = Props & {
   /** «Publicar otro»: el alta empieza de cero. */
@@ -174,7 +177,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       salida={salida}
       onAtras={primero ? undefined : atrasDelPaso}
       encima={!cartel.espera && primeraPregunta && PREGUNTA[paso] && cartel.subido && !cartel.subido.leido ? <CartelGuardado foto={cartel.subido.url} noPude={cartel.subido.noPude} /> : undefined}
-      pregunta={cartel.espera ? undefined : PREGUNTA[paso]}
+      pregunta={cartel.espera ? undefined : preguntaDe(paso, r)}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <input type="hidden" name="titulo" value={r.nombre} />

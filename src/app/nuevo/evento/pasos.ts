@@ -27,6 +27,13 @@ export type Costo = "gratis" | "cooperacion" | "precio";
 export type Sitio = { modo: ModoSitio; lugarId: string; otro: OtroSitio };
 export type Dias = { desde: string; hasta: string | null };
 
+/**
+ * Los días que vienen de la hoja del calendario (`ui/SelectorDia`), como respuesta: un solo día se guarda sin `hasta` (la hoja ya manda
+ * `null` para «Listo, un solo día»; aquí queda asegurado el contrato de `Dias`), porque el paso de la hora toma cualquier `hasta` por
+ * «varios días» y preguntaría a qué hora termina en vez de cuánto dura.
+ */
+export const diasElegidos = (desde: string, hasta: string | null): Dias => ({ desde, hasta: hasta && hasta > desde ? hasta : null });
+
 export type Respuestas = {
   nombre: string;
   /** El día de inicio (YYYY-MM-DD) y, si dura varios, el último. */
