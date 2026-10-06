@@ -1,6 +1,6 @@
-/** OL-300 (bitácora 328), OL-301 (bitácora 329) y OL-302 (bitácora 330): el alta de evento por pasos, sin cartel y con cartel, con el armazón
+/** OL-300 (bitácora 328), OL-301 (bitácora 329), OL-302 (bitácora 330) y OL-304 (bitácora 332): el alta de evento por pasos, sin cartel y con cartel, con el armazón
  *  real (`PorPasos`), la guardia real (`useSalirSinPublicar`), el hook real que sube y lee el cartel (`useLeerCartel`) y una acción simulada
- *  que guarda lo que recibe. «¿Dónde es?», «¿Es aquí?» y «No está en el directorio» son los de verdad; el servicio de Mapbox lo simula
+ *  que guarda lo que recibe (y, con `window.qa.resultado = 'publica'`, contesta como `crearEvento` con `quedarse`: lo creado, sin redirigir). «¿Dónde es?», «¿Es aquí?» y «No está en el directorio» son los de verdad; el servicio de Mapbox lo simula
  *  `page.route` (sugerencias, coordenadas y dirección de un punto) y el mapa es un doble con un botón que arrastra el pin (el real necesita
  *  WebGL y un token); Atrás y la ✕ de la barra preguntan a la guardia como `useVolver`. Del servidor y de Storage solo se simulan
  *  `cupoDeCartel`, `leerCartelAccion`, `pedirMasLecturas` y `subirFoto`, y se gobiernan desde `window.qa`. Reloj fijo: miércoles 7 de
@@ -22,6 +22,8 @@ const GENERAL = "No se pudo publicar el evento completo. Intenta de nuevo.";
 const TOPE = { timeout: 30000 };
 /** Con `CAPTURAS=<carpeta>` las pruebas de la duración (bitácora 328) y del cartel (bitácora 330) guardan sus capturas a 390×844. */
 const capturas = process.env.CAPTURAS;
+/** Un PNG de 1×1: lo que entrega la ruta de descarga simulada. */
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 /** Un cartel de mentira, vertical (4:5): lo que «sube» la persona y lo que Storage devuelve. */
 const CARTEL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect width="400" height="500" fill="#4a3a6b"/><rect x="30" y="30" width="340" height="440" fill="none" stroke="#e8dff5" stroke-width="3"/><text x="200" y="230" fill="#fff" font-family="Arial" font-size="42" font-weight="800" text-anchor="middle">ECOS DE</text><text x="200" y="285" fill="#fff" font-family="Arial" font-size="42" font-weight="800" text-anchor="middle">PAPEL</text><text x="200" y="360" fill="#e8dff5" font-family="Arial" font-size="22" text-anchor="middle">Jueves 5 de noviembre · 19:00</text></svg>';
 let dir, server, browser, origin;
@@ -50,6 +52,9 @@ const mocks = {
   "./Navegacion": "export const registrarVolverVisible=()=>()=>{}",
   "@/app/eventos/SelectorQuien": "export default function C(){return null}",
   "@/lib/useAvisosTelefono": "export function usePlataforma(){return null}",
+  // La imagen de las listas (`ui/Imagen`) es `next/image` con su optimizador, que fuera de Next no corre; aquí es la etiqueta `img` a secas
+  // (el optimizador y su respaldo ya los prueba `Imagen.componentes.test.mjs`).
+  "./Imagen": "import React from 'react';export default function Imagen({src,alt,className,width,height,loading}){return React.createElement('img',{src,alt,className,width,height,loading})}",
   // La barra trae el logotipo de las pantallas interiores (con `next/image` y el enrutador), que fuera de Next no carga ni se usa aquí.
   "./Logotipo": "export default function Logotipo(){return null}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link({prefetch,replace,...p}){return React.createElement('a',p)}",
@@ -78,6 +83,7 @@ before(async () => {
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
         if (window.qa.resultado === 'enlace') return {ok:false, errores:{enlace:'Ese enlace no se ve bien.'}};
+        if (window.qa.resultado === 'publica' && fd.get('quedarse') === '1') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
         return {ok:false, errores:{}, general:${JSON.stringify(GENERAL)}};
       }
       const lugares = [
@@ -104,6 +110,8 @@ before(async () => {
   const assets = new Map([
     ["/", ["text/html", `<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>${fuente ? "@font-face{font-family:Bricolage;src:url(/bricolage.woff2) format('woff2');font-weight:200 800;font-stretch:75% 100%}:root{--fuente-bricolage:Bricolage}" : ":root{--fuente-bricolage:Arial}"}</style><div id="root"></div><script src="/app.js"></script>`]],
     ["/cartel.svg", ["image/svg+xml", CARTEL]],
+    // La imagen de relleno de las listas (el símbolo SN): lo que enseña la tarjeta de «Publicado» de un evento sin cartel en un lugar sin foto.
+    ["/sin-foto.png", ["image/png", await readFile(join(root, "public/sin-foto.png"))]],
     ...(fuente ? [["/bricolage.woff2", ["font/woff2", fuente]]] : []),
     ["/app.js", ["text/javascript", await readFile(join(dir, "app.js"))]],
     ["/app.css", ["text/css", await readFile(join(dir, "app.css"))]],
@@ -144,7 +152,15 @@ async function pagina(t, { movimiento = "reduce", ancho = 390, qa = {}, geolocat
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
   await p.addInitScript((inicial) => (window.qaInicial = inicial), qa);
+  // La hoja de compartir del teléfono: guarda lo que recibe (el texto de «Compartir» y el archivo de «Descargar el cartel»).
+  await p.addInitScript(() => {
+    window.compartidos = [];
+    Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
+    Object.defineProperty(navigator, "share", { configurable: true, value: async (d) => void window.compartidos.push({ titulo: d.title, texto: d.text, url: d.url, archivo: d.files?.[0] && { nombre: d.files[0].name, tipo: d.files[0].type, bytes: d.files[0].size } }) });
+  });
   await p.route("**/*", (r) => (new URL(r.request().url()).origin === origin ? r.continue() : r.abort()));
+  // La ruta de descarga del cartel: un PNG con su nombre, como la real.
+  await p.route(`${origin}/api/cartel/**`, (r) => r.fulfill({ status: 200, contentType: "image/png", headers: { "Content-Disposition": 'attachment; filename="cartel-prueba.png"' }, body: PNG }));
   // Mapbox simulado; `p.mapbox` cuenta lo que se le pidió (el rebote de la búsqueda se prueba con él).
   p.mapbox = { sugerir: [], recuperar: [], inversa: [] };
   await p.route("https://api.mapbox.com/**", (r) => {
@@ -1138,4 +1154,191 @@ test("niveles del DOM bajo `main` en los tres pasos de «Dónde» (el DOM llano 
   assert.deepEqual(mapa.hijos, ["header", "h2", "div", "div", "small", "footer", "form"]);
   assert.deepEqual(uso.hijos, ["header", "h2", "div", "form"]);
   for (const paso of [donde, mapa, uso]) assert.ok(paso.hondo <= 6, `hondo ${paso.hondo}`);
+});
+
+/* ---- «Publicado» (OL-304, bitácora 332) ---- */
+
+/** Publica el recorrido corto con el servidor simulado contestando como `crearEvento` con `quedarse`, y espera la pantalla final. */
+async function publicarYQuedarse(p) {
+  await p.evaluate(() => (window.qa.resultado = "publica"));
+  await boton(p, "Publicar").click();
+  await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
+}
+const tarjeta = (p) => p.locator("main ul > li a");
+
+test("publicar no sale de la pantalla: «Evento publicado» con la tarjeta como quedó, «Compartir» y «Publicar otro», sin «Descargar el cartel» porque no hay cartel", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaRevisa(p);
+  await publicarYQuedarse(p);
+  // La acción recibió la señal de quedarse, además de los campos de siempre.
+  const d = await enviado(p);
+  assert.equal(d.quedarse, "1");
+  assert.equal(d.titulo, "Lectura en voz alta");
+  assert.equal(await pregunta(p), "Evento publicado");
+  await p.getByText("Ya está en la agenda. Así lo ve la gente:").waitFor();
+  // La tarjeta es el renglón de las listas con lo publicado, y abre la ficha por su dirección (el slug que devolvió el servidor).
+  assert.equal(await tarjeta(p).getAttribute("href"), "/eventos/lectura-en-voz-alta-ab11");
+  const texto = await tarjeta(p).innerText();
+  assert.match(texto, /Lectura en voz alta/);
+  assert.match(texto, /vie 9 de oct · 19:00/);
+  assert.match(texto, /Teatro de la Paz/);
+  // Pie: Compartir, «Publicar otro» y nada de descargar (no hay cartel).
+  await boton(p, "Compartir").waitFor();
+  await boton(p, "Publicar otro").waitFor();
+  assert.equal(await p.getByRole("link", { name: /Descargar el cartel/ }).count(), 0);
+  // El foco va al encabezado; la línea de avance está completa; no hay Atrás, solo la ✕.
+  assert.equal(await p.evaluate(() => document.activeElement?.textContent), "Evento publicado");
+  assert.equal(await p.locator("header").evaluate((e) => e.style.getPropertyValue("--avance")), "1");
+  assert.equal(await boton(p, "Atrás").count(), 0);
+  await p.getByRole("link", { name: "Cerrar (Volver)" }).waitFor();
+  await foto(p, "332-01-publicado-sin-cartel");
+  // La guardia ya no pregunta: ni al recargar, ni con la ✕.
+  assert.equal(await avisa(p), false);
+  await p.getByRole("link", { name: "Cerrar (Volver)" }).click();
+  assert.equal(await p.evaluate(() => window.qa.salio), 1);
+  assert.equal(await p.getByText("¿Salir sin publicar?").count(), 0);
+});
+
+test("«Compartir» manda el mismo texto y la misma dirección que la ficha: título, cuándo y dónde, y el enlace aparte", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaRevisa(p);
+  await publicarYQuedarse(p);
+  await boton(p, "Compartir").click();
+  await p.waitForFunction(() => window.compartidos.length === 1);
+  const [c] = await p.evaluate(() => window.compartidos);
+  assert.equal(c.titulo, "Lectura en voz alta");
+  assert.equal(c.url, "https://somosnosotros.org/eventos/lectura-en-voz-alta-ab11");
+  assert.match(c.texto, /^Lectura en voz alta\nvie 9 de oct · 19:00–21:00 · Teatro de la Paz$/);
+});
+
+test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» entrega el archivo a la hoja de compartir; «Cartel descargado» al terminar", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO } });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  await p.evaluate(() => (window.qa.resultado = "publica"));
+  await boton(p, "Publicar").click();
+  await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
+  assert.equal((await enviado(p)).imagen, "/cartel.svg");
+  const miniatura = tarjeta(p).locator("img");
+  assert.equal(await miniatura.getAttribute("src"), "/cartel.svg");
+  assert.equal(await miniatura.evaluate((e) => e.naturalWidth > 0), true);
+  assert.match(await tarjeta(p).innerText(), /jue 5 de nov · 19:00/);
+  const descargar = p.getByRole("link", { name: "Descargar el cartel" });
+  assert.equal(await descargar.getAttribute("href"), "/api/cartel/0e0e0e0e-0000-4000-8000-000000000001");
+  await foto(p, "332-02-publicado-con-cartel");
+  await descargar.click();
+  await p.getByText("Cartel descargado").waitFor();
+  const [c] = await p.evaluate(() => window.compartidos);
+  assert.deepEqual(c.archivo, { nombre: "cartel-prueba.png", tipo: "image/png", bytes: PNG.length });
+  await foto(p, "332-03-cartel-descargado");
+});
+
+test("«Publicar otro» empieza de cero: el primer paso, nada escrito, otra clave de operación y la guardia armada de nuevo", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaRevisa(p);
+  await publicarYQuedarse(p);
+  const primera = (await enviado(p)).operacion;
+  await boton(p, "Publicar otro").click();
+  // El primer paso, con su recuadro y «No tengo cartel»; la ✕ de la barra, sin Atrás.
+  await p.getByText("Leemos el nombre, la fecha, el lugar y el precio").waitFor();
+  assert.equal(await boton(p, "Atrás").count(), 0);
+  assert.equal(await p.locator("header").evaluate((e) => e.style.getPropertyValue("--avance")), "0");
+  // Nada escrito (nada avisa) y, en cuanto se escribe algo, la guardia vuelve a preguntar.
+  await boton(p, "No tengo cartel").click();
+  assert.equal(await p.getByLabel("Nombre del evento").inputValue(), "");
+  assert.equal(await avisa(p), false);
+  await p.getByLabel("Nombre del evento").fill("Segundo evento");
+  assert.equal(await avisa(p), true);
+  assert.equal(await p.evaluate(() => window.qa.pedirSalida(() => window.qa.salio++)), true);
+  await p.getByText("¿Salir sin publicar?").waitFor();
+  await boton(p, "Seguir editando").click();
+  // Se publica otro y el servidor no lo toma por el primero.
+  await boton(p, "Siguiente").click();
+  await boton(p, /^Este viernes/).click();
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "Sin hora de fin" }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await p.getByRole("heading", { name: "Segundo evento" }).waitFor();
+  await publicarYQuedarse(p);
+  const segunda = await enviado(p);
+  assert.equal(segunda.titulo, "Segundo evento");
+  assert.notEqual(segunda.operacion, primera);
+  assert.equal(await tarjeta(p).getAttribute("href"), "/eventos/lectura-en-voz-alta-ab12");
+  assert.match(await tarjeta(p).innerText(), /Segundo evento/);
+});
+
+test("un lugar guardado desde «No está en el directorio» sigue en la lista al publicar otro evento", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaDonde(p);
+  await elegirDelMapa(p, "jardin", /Jardín de San Juan de Dios/);
+  await boton(p, "Sí, es aquí").click();
+  await boton(p, /^Guardarlo como lugar/).click();
+  await boton(p, /^Gratis/).click();
+  await p.getByRole("heading", { name: "Lectura en voz alta" }).waitFor();
+  await publicarYQuedarse(p);
+  await boton(p, "Publicar otro").click();
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Otro");
+  await boton(p, "Siguiente").click();
+  await boton(p, /^Este viernes/).click();
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
+  await buscar(p).fill("jardin");
+  // Ya es del directorio (con su nombre), no un resultado del mapa.
+  await p.getByRole("option", { name: /Jardín de San Juan de Dios/ }).first().waitFor();
+  const lista = await opciones(p);
+  assert.equal(lista[0].nombre, "Jardín de San Juan de Dios");
+  assert.doesNotMatch(lista[0].detalle ?? "", /Del mapa/);
+});
+
+test("«Evento publicado» entra con el sello que crece, y con «reducir movimiento» no se anima", TOPE, async (t) => {
+  // Solo las animaciones de CSS con nombre (las transiciones de color de un botón no cuentan).
+  const animaciones = (p) => p.evaluate(() => document.getAnimations().map((a) => a.animationName ?? "").filter(Boolean));
+  const con = await pagina(t, { movimiento: "no-preference" });
+  await hastaRevisa(con);
+  await publicarYQuedarse(con);
+  assert.equal(await con.locator("main").getAttribute("data-direccion"), "entra");
+  assert.ok((await animaciones(con)).some((n) => /sella/.test(n)));
+  assert.ok((await animaciones(con)).some((n) => /entra/.test(n)));
+  const sin = await pagina(t);
+  await hastaRevisa(sin);
+  await publicarYQuedarse(sin);
+  assert.deepEqual(await animaciones(sin), []);
+});
+
+test("un error al publicar no cambia nada: «Revisa» con su aviso, y no se llega a «Publicado»", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  await p.getByText(GENERAL, { exact: true }).waitFor();
+  assert.equal(await p.getByRole("heading", { name: "Evento publicado" }).count(), 0);
+  assert.equal(await avisa(p), true);
+});
+
+test("sin desbordes a 320 y 390 en «Publicado», sin cartel y con cartel y un título largo; el pie va pegado abajo y sin toques menores de 44", TOPE, async (t) => {
+  const LARGO = "Festival internacional de música de cámara y poesía en voz alta del barrio de San Miguelito";
+  for (const ancho of [320, 390]) {
+    for (const conCartel of [false, true]) {
+      const p = await pagina(t, { ancho, qa: conCartel ? { lectura: { ...LEIDO, valores: { ...LEIDO.valores, titulo: LARGO } } } : {} });
+      if (conCartel) {
+        await subir(p);
+        await p.getByText("Leído del cartel").waitFor();
+        await p.evaluate(() => (window.qa.resultado = "publica"));
+        await boton(p, "Publicar").click();
+        await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
+      } else {
+        await hastaRevisa(p);
+        await publicarYQuedarse(p);
+      }
+      assert.deepEqual(await desborda(p), { scroll: 0, fuera: [] }, `a ${ancho} ${conCartel ? "con" : "sin"} cartel`);
+      const medidas = await p.evaluate(() => {
+        const pie = document.querySelector("main footer").getBoundingClientRect();
+        const chicos = [...document.querySelectorAll("main footer a, main footer button")].filter((e) => e.getBoundingClientRect().height < 44).map((e) => e.textContent);
+        return { pieAbajo: Math.round(window.innerHeight - pie.bottom), chicos };
+      });
+      assert.deepEqual(medidas, { pieAbajo: 0, chicos: [] }, `pie a ${ancho}`);
+      if (ancho === 320) await foto(p, `332-04-publicado-320-${conCartel ? "con" : "sin"}-cartel`);
+    }
+  }
 });

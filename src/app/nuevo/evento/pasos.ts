@@ -1,10 +1,11 @@
 import { sitioListo } from "@/app/eventos/direccionEvento";
+import type { EventoAgenda } from "@/lib/agenda";
 import type { QuienItem } from "@/lib/artistas";
 import { esNegocio } from "@/lib/buscarLugares";
 import { FIN_DEL_DIA, sumarDiasIso } from "@/lib/calendario";
 import { conHoraFin } from "@/lib/cuandoEvento";
-import { LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
-import { combinarFechaHora, sumarHoras } from "@/lib/fechas";
+import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
+import { combinarFechaHora, localAIso, sumarHoras } from "@/lib/fechas";
 import { queFalta } from "@/lib/formulario";
 import { distanciaKm, type Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
@@ -17,7 +18,7 @@ import type { LugarResumen } from "@/lib/lugares";
  * «Dónde» son tres pasos (OL-301): `donde` (buscar el sitio), `mapa` («¿Es aquí?», solo si no es un lugar del directorio) y `uso`
  * («No está en el directorio»: qué hacer con ese sitio). Un lugar del directorio ya tiene su punto confirmado y salta los otros dos.
  */
-export type Paso = "inicio" | "nombre" | "dia" | "hora" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas";
+export type Paso = "inicio" | "nombre" | "dia" | "hora" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas" | "publicado";
 
 /** El camino sin cartel, de principio a fin: también da la línea de avance. */
 const ORDEN: readonly Paso[] = ["inicio", "nombre", "dia", "hora", "donde", "cuanto", "revisa"];
@@ -87,7 +88,9 @@ export type Accion =
   /** «Sí, es aquí» con un sitio que no es del directorio (con el pin donde quedó): a decir qué hacer con él. */
   | { tipo: "confirmar"; candidato: Candidato }
   /** Lo que se hace con el sitio: se vuelve su respuesta y sigue lo que falte. */
-  | { tipo: "usar"; uso: UsoSitio };
+  | { tipo: "usar"; uso: UsoSitio }
+  /** El servidor publicó el evento: al final, sin camino de vuelta. */
+  | { tipo: "publicado" };
 
 export const OTRO_VACIO: OtroSitio = { reservado: false, sitioTexto: "", direccion: "", sitioPunto: null, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: null };
 
@@ -115,7 +118,7 @@ export function faltan(r: Respuestas): Paso[] {
   return p;
 }
 
-const FALTA: Record<Exclude<Paso, "inicio" | "mapa" | "uso" | "revisa" | "mas">, string> = { nombre: "el nombre", dia: "el día", hora: "la hora", donde: "el lugar", cuanto: "el precio" };
+const FALTA: Record<Exclude<Paso, "inicio" | "mapa" | "uso" | "revisa" | "mas" | "publicado">, string> = { nombre: "el nombre", dia: "el día", hora: "la hora", donde: "el lugar", cuanto: "el precio" };
 
 /** Lo que dice el botón de «Revisa» mientras algo falte («Falta el día y la hora»); null si ya se puede publicar. Sin punto: es un botón. */
 export function faltaParaPublicar(r: Respuestas): string | null {
@@ -159,6 +162,9 @@ export function flujo(e: Estado, a: Accion): Estado {
       return apilar({ ...e, candidato: a.candidato }, "uso");
     case "usar":
       return e.candidato ? siguiente({ ...e, r: { ...e.r, sitio: sitioDeCandidato(e.candidato, a.uso, e.r.sitio.otro) } }) : e;
+    case "publicado":
+      // La pila queda solo con el final: Atrás no tiene a dónde volver (en la barra va la ✕, no el Atrás).
+      return { ...e, pila: ["publicado"], direccion: "entra" };
   }
 }
 
@@ -214,6 +220,7 @@ export function lugarAlLado(lugares: readonly LugarResumen[], punto: Punto): { l
 
 /** Lo recorrido, de 0 a 1 (lo opcional cuenta como «Revisa»; confirmar el sitio en el mapa y decidir qué hacer con él, como «Dónde»). */
 export function avance(paso: Paso): number {
+  if (paso === "publicado") return 1;
   return ORDEN.indexOf(paso === "mas" ? "revisa" : paso === "mapa" || paso === "uso" ? "donde" : paso) / ORDEN.length;
 }
 
@@ -272,3 +279,34 @@ export function finConHora(r: Respuestas, hora: string): string {
   const varios = !!r.dias.hasta && r.dias.hasta > r.dias.desde;
   return conHoraFin({ inicio, fin: varios ? combinarFechaHora(ultimoDia(r.dias), FIN_DEL_DIA) : "" }, hora).fin;
 }
+
+/** Lo que el servidor devolvió al publicar: lo único que no sale de las respuestas. */
+export type Creado = { id: string; slug: string | null; creadoEn: string };
+
+/**
+ * El evento como quedó, con la forma que tiene en las listas (`EventoAgenda`): lo que pinta la tarjeta de «Publicado» es lo que verá la
+ * gente en la agenda. Sale de las respuestas con las mismas reglas con que el servidor guarda (el precio, el sitio) y de lo que él
+ * devolvió. `lugar` es el lugar del directorio si es en uno; `zona`, la de las horas (la misma con que se leyeron); `imagen`, el cartel.
+ */
+export function eventoPublicado(r: Respuestas, creado: Creado, { lugar, zona, imagen }: { lugar: Pick<LugarResumen, "nombre" | "portada"> | undefined; zona: string; imagen: string | null }): EventoAgenda {
+  const { modo, lugarId, otro } = r.sitio;
+  return {
+    id: creado.id,
+    slug: creado.slug,
+    titulo: r.nombre.trim().slice(0, LIMITES_EVENTO.titulo),
+    inicio: localAIso(inicioDe(r), zona) ?? "",
+    fin: r.fin ? localAIso(r.fin, zona) : null,
+    zona,
+    imagen,
+    precio: r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" ? `$${r.precio}` : null,
+    lugar_id: modo === "lugar" ? lugarId : null,
+    sitio_texto: modo === "lugar" ? null : otro.sitioTexto.slice(0, LIMITES_EVENTO.sitio),
+    // La dirección de un sitio reservado nunca sale: es lo que se reserva.
+    sitio_direccion: modo === "otro" ? otro.direccion || null : null,
+    sitio_reservado: modo === "reservado",
+    lugar: modo === "lugar" && lugar ? { nombre: lugar.nombre, portada: lugar.portada } : null,
+    creado_en: creado.creadoEn,
+    van: null,
+  };
+}
+

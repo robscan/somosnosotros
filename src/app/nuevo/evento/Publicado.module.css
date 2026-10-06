@@ -1,0 +1,60 @@
+/* ==========================================================================
+   «Publicado», el final del alta de evento por pasos (OL-304; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Va como hijo
+   directo de la columna de `PorPasos`, que ya le da el aire de los lados y la entrada de lado.
+   1. La confirmación · 2. La tarjeta
+   ========================================================================== */
+
+/* 1. El sello, el título y su frase van juntos y centrados (un solo bloque: entre ellos hay menos aire que entre pantalla y pantalla).
+   El sello es verde (`--ok`: lo ya hecho, como el «Vas» de una ficha) y crece al llegar; con «reducir movimiento» no se anima. */
+.final {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-4);
+  text-align: center;
+}
+.sello {
+  display: grid;
+  place-items: center;
+  width: var(--sello);
+  height: var(--sello);
+  border-radius: 50%;
+  background: var(--ok);
+  color: var(--primario-texto);
+}
+.sello > svg {
+  width: 50%;
+  height: 50%;
+  stroke-width: 2.6;
+}
+.final > h2 {
+  font-size: var(--letra-3xl);
+  font-weight: 800;
+}
+.final > p {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sello {
+    animation: sella var(--duracion) var(--curva);
+  }
+}
+@keyframes sella {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+/* 2. La tarjeta del evento: el renglón de las listas (`RenglonEvento`) dentro de una caja con borde, sin la raya de abajo con que cierra
+   cada fila de una lista. */
+.tarjeta {
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+}
+.tarjeta > li {
+  border-bottom: 0;
+}
