@@ -46,6 +46,7 @@ before(async () => {
       contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
       import HojaDonde from './src/components/HojaDonde';
+      import useCampoVisible from './src/components/ui/useCampoVisible';
       import './src/app/globals.css';
       const q = new URLSearchParams(location.search);
       window.qa = {cerro:0, lugar:[], otro:[], listo:[]};
@@ -56,11 +57,13 @@ before(async () => {
       const otro = {reservado:false, sitioTexto:'', direccion:'', sitioPunto:null, direccionPrivada:'', privadoPunto:null, revelarHoras:24, indicaciones:'', ciudad:null};
       const comun = {lugares, yo:null, ubicando:false, avisoUbicacion:null, onEstoyAqui:()=>{}, onCerrar:()=>{window.qa.cerro++}};
       const lugarPara = q.get('para') === 'lugar';
+      // El armazón real monta useCampoVisible una vez (OL-305/OL-308): publica --abajo-visible, el bottom del pie sobre el teclado.
+      function Armazon({children}) { useCampoVisible(); return children; }
       createRoot(document.getElementById('root')).render(
-        lugarPara
+        <Armazon>{lugarPara
           ? <HojaDonde {...comun} para="lugar" nombreForm="" conFoco={q.has('foco')} punto={q.has('punto') ? {lat:22.1533, lng:-100.9811} : null} direccion={q.has('punto') ? 'Av. Universidad 300' : ''} ciudad="" onListo={(v)=>window.qa.listo.push(v)} />
           : <HojaDonde {...comun} para="evento" modoSitio={q.has('registrado') ? 'lugar' : 'otro'} lugarId={q.has('registrado') ? lugares[0].id : ''} otro={otro} volverA="/nuevo/evento"
-              onLugar={(id)=>window.qa.lugar.push(id)} onOtro={(o)=>window.qa.otro.push(o)} onGesto={()=>{}} />
+              onLugar={(id)=>window.qa.lugar.push(id)} onOtro={(o)=>window.qa.otro.push(o)} onGesto={()=>{}} />}</Armazon>
       );
     `,
     },
@@ -106,6 +109,7 @@ async function hoja(t, consulta = "", ancho = 390) {
     const vv = {
       height: window.innerHeight,
       offsetTop: 0,
+      get pageTop() { return window.scrollY + this.offsetTop; },
       addEventListener: (n, f) => oyentes[n]?.push(f),
       removeEventListener: (n, f) => { if (oyentes[n]) oyentes[n] = oyentes[n].filter((x) => x !== f); },
     };
@@ -249,6 +253,50 @@ test("con el teclado abierto el pie sube con él, «Agregar» sigue encima y la 
   await foto(p, "pie-4-con-teclado");
   // Y al bajar el teclado, todo vuelve al borde.
   await p.teclado(0);
+  const g = await caja(pie(p));
+  assert.equal(Math.round(g.y + g.height), ALTO);
+});
+
+test("app de la tienda (Capacitor: el visualViewport no cambia, el teclado llega por los eventos del plugin): el pie, «Agregar» y «Estoy aquí» quedan sobre el teclado", TOPE, async (t) => {
+  const p = await hoja(t);
+  await p.getByLabel("Buscar el lugar").fill("teatro");
+  await lista(p).waitFor();
+  const antes = await caja(p.getByRole("button", { name: "Estoy aquí" }));
+  await p.evaluate(() => document.documentElement.style.setProperty("--piso", "34px")); // la zona segura de abajo de un iPhone
+  // Como `@capacitor/keyboard` en modo body: `keyboardHeight` puesto en el propio evento (sin `detail`) y el `<body>` encogido a mano.
+  await p.evaluate((alto) => {
+    for (const nombre of ["keyboardWillShow", "keyboardDidShow"]) {
+      const ev = document.createEvent("Events");
+      ev.initEvent(nombre, false, false);
+      ev.keyboardHeight = alto;
+      window.dispatchEvent(ev);
+    }
+    document.body.style.height = `${window.innerHeight - alto}px`;
+  }, TECLADO);
+  await p.waitForTimeout(250);
+  assert.equal(await p.evaluate(() => window.visualViewport.height), ALTO, "el área visible no cambió");
+  const f = await caja(pie(p));
+  assert.equal(Math.round(f.y + f.height), ALTO - TECLADO, "el pie queda justo encima del teclado");
+  const b = await caja(listo(p));
+  assert.ok(ALTO - TECLADO - (b.y + b.height) <= 17, `el botón «Listo» queda a ${ALTO - TECLADO - (b.y + b.height)} px del teclado: sin hueco de zona segura`);
+  const a = await caja(agregar(p));
+  assert.ok(a.y + a.height <= f.y, `«Agregar» (abajo en ${a.y + a.height}) queda sobre el pie (arriba en ${f.y})`);
+  const campo = await caja(p.getByLabel("Buscar el lugar"));
+  const l = await caja(lista(p));
+  assert.ok(l.y >= campo.y + campo.height && l.y + l.height <= a.y, "la lista abre bajo el campo y no tapa «Agregar»");
+  const aqui = await caja(p.getByRole("button", { name: "Estoy aquí" }));
+  assert.ok(aqui.y + aqui.height <= ALTO - TECLADO, `«Estoy aquí» (abajo en ${aqui.y + aqui.height}) queda sobre el teclado (desde ${ALTO - TECLADO})`);
+  assert.ok(aqui.y < antes.y, "«Estoy aquí» subió con el teclado");
+  // Al esconderse, todo vuelve al borde.
+  await p.evaluate(() => {
+    for (const nombre of ["keyboardWillHide", "keyboardDidHide"]) {
+      const ev = document.createEvent("Events");
+      ev.initEvent(nombre, false, false);
+      window.dispatchEvent(ev);
+    }
+    document.body.style.height = "";
+  });
+  await p.waitForTimeout(250);
   const g = await caja(pie(p));
   assert.equal(Math.round(g.y + g.height), ALTO);
 });

@@ -14,10 +14,13 @@
   gap: var(--espacio-5);
   min-height: calc(100dvh - var(--barra-flujo, 0px));
   overflow-x: clip;
-  /* Con el teclado abierto, el aire de abajo es lo que el teclado tapa (`--teclado`, de `ui/useCampoVisible`): así hay por dónde desplazar
-     el campo enfocado hasta quedar sobre él, y sobre el pie, aunque el paso llene la pantalla. */
-  padding-bottom: var(--teclado, 0px);
   background: var(--fondo);
+}
+/* Con el teclado abierto el pie sale del flujo y se ancla sobre el teclado (ver el punto 3): el aire de abajo es lo que el teclado tapa
+   (`--teclado`, de `ui/useCampoVisible`) más lo que mide el pie (`--alto-pie`, de `PiePaso`) y un poco de aire, así hay por dónde desplazar el
+   campo enfocado hasta quedar sobre el teclado y sobre el pie, aunque el paso llene la pantalla. */
+:global(html[data-teclado]) .pasos {
+  padding-bottom: calc(var(--teclado, 0px) + var(--alto-pie, 0px) + var(--espacio-3));
 }
 /* Lo del paso va en la columna de lectura, con el aire de los lados (`--gutter`), y la llena (`width: auto` en una columna flexible: un
    botón que pide «todo el ancho» con `width: 100%` sumaría además el aire y se saldría); la barra y el pie, de borde a borde. Entre una
@@ -37,13 +40,15 @@
 }
 
 /* 3. El pie: al fondo de la pantalla y pegado abajo al desplazar, con la raya arriba y la zona segura del iPhone debajo. Con el teclado
-   abierto, en la columna de los pasos, deja de estar pegado (`ui/useCampoVisible` pone `data-teclado` en <html>; la hoja «¿Dónde es?», que vive en
-   una capa fija, lo mantiene pegado con su propio `bottom`, ver `PiePaso`): en el iPhone lo pegado se mide contra una ventana
-   que el teclado no encoge y, además, tapaba el campo enfocado cuando este queda justo encima de él. En el flujo, tras el campo, el relleno
-   de la columna (`--teclado`) lo deja sobre el teclado al fondo del recorrido, y en un paso corto (`margin-top: auto`) ya está ahí. */
+   abierto, en la columna de los pasos, se ancla (`position: fixed`) justo sobre él: su `bottom` es `--abajo-visible` (de `ui/useCampoVisible`:
+   hasta dónde llega lo que se ve), así las acciones nunca quedan bajo el teclado (regla del founder, 2026-10-06). Pegado (`sticky`) no basta:
+   solo sube un pie que está más abajo del borde y, si Safari desplaza la página para ver el campo, el pie queda a media pantalla con un hueco
+   debajo (medido en el simulador, bitácora 336). La hoja «¿Dónde es?», que vive en una capa fija sin desplazamiento, sigue con `sticky` y el mismo
+   `bottom`. El campo enfocado no queda tapado por el pie: el relleno de la columna deja por dónde desplazarlo y el hook cuenta el pie como parte
+   de lo pegado. */
 .pie {
   position: sticky;
-  bottom: 0;
+  bottom: var(--abajo-visible, 0px);
   z-index: var(--z-pegajoso);
   display: grid;
   gap: var(--espacio-2);
@@ -53,7 +58,16 @@
   background: var(--fondo);
 }
 :global(html[data-teclado]) .pasos .pie {
-  position: static;
+  position: fixed;
+  right: 0;
+  bottom: var(--abajo-visible, 0px);
+  left: 0;
+}
+/* El teclado cubre la zona segura de abajo (el indicador de inicio): ahí ya no hace falta su aire (`--piso`). Sin esto queda un hueco blanco
+   de esa altura entre el pie y el teclado (50 px en un iPhone con la app de la tienda, medido en el simulador, bitácora 336). Vale para el pie
+   de los pasos y para el de la hoja «¿Dónde es?». */
+:global(html[data-teclado]) .pie {
+  padding-bottom: var(--espacio-4);
 }
 
 /* 4. El paso siguiente entra por la derecha y el anterior por la izquierda, en el tiempo y la curva de todo lo que se mueve (doc 51:
