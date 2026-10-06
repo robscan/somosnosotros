@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Limpiar from "@/components/ui/Limpiar";
@@ -31,12 +31,14 @@ import {
   puedeListo,
   resultadosDondeEsta,
   textoInicialBusqueda,
+  textoListo,
   type Borrador,
   type ParaQue,
 } from "@/lib/hojaDonde";
 import { hrefLugar, type LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import MapaDondeEs from "./MapaDondeEs";
+import { PiePaso } from "./PorPasos";
 import styles from "./HojaDonde.module.css";
 
 /** Lo que las dos hojas piden igual. */
@@ -87,7 +89,20 @@ type ParaLugar = {
 type Props = Comun & (ParaEvento | ParaLugar);
 
 const TITULO: Record<ParaQue, string> = { evento: "¿Dónde es?", lugar: "¿Dónde está?" };
-const ALTO_BARRA_ACCIONES = 56; // min-height de .barraAcciones en HojaDonde.module.css
+
+/** El alto real de un elemento (con su relleno): el pie de abajo y la barra «Agregar» cambian con la zona segura y con el texto, y la
+ *  lista flotante y «Estoy aquí» tienen que quedar encima de ellos. Sin el elemento a la vista (`activo` falso), 0. */
+function useAlto(ref: RefObject<HTMLElement | null>, activo: boolean): number {
+  const [alto, setAlto] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!activo || !el) return;
+    const ro = new ResizeObserver(() => setAlto(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, activo]);
+  return activo ? alto : 0;
+}
 
 /**
  * La hoja «Dónde» a pantalla completa, la misma para fijar el sitio de un evento («¿Dónde es?», OL-173, docs/rediseno/43; lugar
@@ -96,7 +111,9 @@ const ALTO_BARRA_ACCIONES = 56; // min-height de .barraAcciones en HojaDonde.mod
  * marcados «Privado»). Escribir abre una lista flotante (nunca tapa nada, y nunca tapa la barra de acciones: `reservaAbajo`,
  * OL-182); tocar un pin, un punto de interés del mapa o cualquier punto vacío mueve el pin; arrastrarlo hace reverse
  * geocoding; «Estoy aquí» lo pone donde está la persona. «Listo» confirma y vuelve al formulario; «Atrás» no cambia nada
- * (todo vive en el estado local de esta hoja, no se avisa al padre hasta «Listo»). Nunca inventa una ubicación (OL-182).
+ * (todo vive en el estado local de esta hoja, no se avisa al padre hasta «Listo»). «Listo» vive en el pie, pegado abajo como el de
+ * los pasos del alta (`PiePaso`; OL-303, founder 2026-10-05: el botón de confirmar va abajo, no arriba): dice «Falta el lugar» y está
+ * apagado mientras no haya sitio (`textoListo`), y sube con el teclado. Nunca inventa una ubicación (OL-182).
  *
  * Solo cambian tres cosas (`ParaQue`, lib/hojaDonde): en un evento tocar un lugar registrado lo elige, el sitio lleva nombre
  * y se puede registrar un lugar nuevo ahí mismo; en un lugar, tocarlo solo avisa «ya existe» y lleva a su ficha (founder,
@@ -158,14 +175,12 @@ export default function HojaDonde(props: Props) {
   const [buscandoDireccion, setBuscandoDireccion] = useState(false);
   const [errorBusquedaDireccion, setErrorBusquedaDireccion] = useState<string | null>(null);
   const [cerradaDireccionParaTexto, setCerradaDireccionParaTexto] = useState<string | null>(null);
-  // Alto real de la hoja «Agregar lugar» (con ResizeObserver: cambia con el contenido -el aviso de error, la propia expansión
-  // al abrir las sugerencias de dirección-), para que «Estoy aquí» quede siempre encima de ella y el mapa reciba el
-  // `paddingInferior` exacto que le hace falta para no tapar el pin (OL-182).
-  const [altoHoja, setAltoHoja] = useState(0);
   const campoRef = useRef<HTMLDivElement>(null);
   // La barra de acciones vive fuera del campo y de la lista flotante: sin esto, su propio «tocar fuera» (gestor, revisión de
   // OL-179, bitácora 214) la cerraba con el mousedown del propio botón «Agregar», antes de que le llegara el click.
   const barraRef = useRef<HTMLDivElement>(null);
+  // El pie con «Listo»: se mide para que la lista flotante no lo tape (`reservaAbajo`).
+  const pieRef = useRef<HTMLElement>(null);
   const hojaRef = useRef<HTMLDivElement>(null);
   const campoDireccionRef = useRef<HTMLDivElement>(null);
   const campoDireccionWrapRef = useRef<HTMLLabelElement>(null);
@@ -283,6 +298,14 @@ export default function HojaDonde(props: Props) {
   const modo = modoDePantalla(q, panelAgregar, combinados.length > 0);
   const listaAbierta = (modo === "resultados" || modo === "no-encontrado") && !listaCerradaActual;
   const barraVisible = !!evento && listaAbierta;
+  // «Agregar lugar» abierto trae su propio botón (Guardar): en ese modo el pie no se muestra.
+  const pieVisible = !panelAgregar;
+  const altoPie = useAlto(pieRef, pieVisible);
+  // Alto real de la hoja «Agregar lugar», con su relleno (cambia con el contenido -el aviso de error, la propia expansión al abrir
+  // las sugerencias de dirección-): «Estoy aquí» queda siempre encima de ella y el mapa recibe el `paddingInferior` exacto que le
+  // hace falta para no tapar el pin (OL-182).
+  const altoHoja = useAlto(hojaRef, panelAgregar);
+  const altoBarra = useAlto(barraRef, barraVisible);
 
   const textoDireccionAgregar = qDireccionAgregar.trim();
   const conTextoLargoDireccion = textoDireccionAgregar.length >= 3;
@@ -578,20 +601,6 @@ export default function HojaDonde(props: Props) {
       vv.removeEventListener("scroll", medir);
     };
   }, []);
-  // Alto real de la hoja «Agregar lugar» (ResizeObserver: cambia con el error, o al expandirse para dejarle sitio a las
-  // sugerencias de dirección) -para que el mapa reciba el `paddingInferior` justo y «Estoy aquí» quede siempre encima, nunca
-  // debajo (OL-182, doc 43 segunda versión).
-  useEffect(() => {
-    // Sin la hoja abierta no hay nada que medir; el valor viejo de `altoHoja` no se usa en ningún lado mientras `panelAgregar` es
-    // falso (estoyAquiBottom y el padding del mapa lo comprueban), así que no hace falta resetearlo aquí -evita un setState
-    // síncrono dentro del cuerpo del efecto.
-    if (!panelAgregar) return;
-    const el = hojaRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entradas) => setAltoHoja(entradas[0]?.contentRect.height ?? 0));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [panelAgregar]);
 
   // Cuando las sugerencias de dirección necesitan abrir y no hay sitio abajo del campo (pegado sobre el teclado), la propia hoja
   // se estira hacia arriba (clase .expandida, CSS) y se desplaza por dentro para que el campo «Dirección» quede arriba del todo:
@@ -611,9 +620,10 @@ export default function HojaDonde(props: Props) {
   // caso, un tope defensivo con `min()` -nunca más de calc(100% - 64px) del propio `.mapaLleno`- para que tampoco se monte ahí si
   // la hoja compacta creciera de más por un error largo.
   const estoyAquiOculto = listaDireccionAbierta;
-  const estoyAquiBottomPx = bottomBarra + (panelAgregar ? altoHoja : barraVisible ? ALTO_BARRA_ACCIONES : 0) + 16;
+  const estoyAquiBottomPx = bottomBarra + (panelAgregar ? altoHoja : barraVisible ? altoBarra : 0) + 16;
   const estoyAquiBottom = estoyAquiBottomPx > 16 ? `min(${estoyAquiBottomPx}px, calc(100% - 64px))` : `${estoyAquiBottomPx}px`;
 
+  const puedeConfirmar = puedeListo(props.para, borrador, panelAgregar);
   const textoAgregar = q.trim() ? `Agregar «${q.trim()}» como lugar` : "Agregar lugar";
 
   return (
@@ -624,9 +634,6 @@ export default function HojaDonde(props: Props) {
           Atrás
         </button>
         <h2>{TITULO[props.para]}</h2>
-        <button type="button" className={styles.listo} onClick={listo} disabled={!puedeListo(props.para, borrador, panelAgregar)}>
-          Listo
-        </button>
       </div>
       <div className={styles.cuerpo}>
         <div className={styles.campo} ref={campoRef}>
@@ -716,7 +723,7 @@ export default function HojaDonde(props: Props) {
             dentro={[barraRef]}
             id="lista-donde"
             etiqueta="Lugares y direcciones"
-            reservaAbajo={barraVisible ? ALTO_BARRA_ACCIONES + 8 : undefined}
+            reservaAbajo={altoPie + altoBarra}
           >
             {modo === "resultados" &&
               combinados.map((r) =>
@@ -848,16 +855,24 @@ export default function HojaDonde(props: Props) {
           )}
           {barraVisible && (
             // Un solo botón (founder, 2026-09-24: «en el paso anterior solo mostremos un botón de agregar»): el mapa ya se puede
-            // tocar siempre, sin un botón aparte para «buscar sin agregar» (el aviso lo dice).
+            // tocar siempre, sin un botón aparte para «buscar sin agregar» (el aviso lo dice). Secundario y flotante: encima del
+            // pie, sobre el mapa (OL-303), sin una franja propia que lo tape más de lo necesario.
             <div ref={barraRef} className={styles.barraAcciones} style={{ bottom: bottomBarra }}>
-              <button type="button" className={styles.accionAgregar} onClick={abrirAgregar}>
+              <Boton type="button" variante="secundario" forma="pildora" flotante onClick={abrirAgregar}>
                 <IconoMas width={18} height={18} />
-                <span>{textoAgregar}</span>
-              </button>
+                <span className={styles.textoAgregar}>{textoAgregar}</span>
+              </Boton>
             </div>
           )}
         </div>
       </div>
+      {pieVisible && (
+        <PiePaso ref={pieRef}>
+          <Boton type="button" aria-disabled={puedeConfirmar ? undefined : true} onClick={puedeConfirmar ? listo : undefined}>
+            {textoListo(props.para, borrador)}
+          </Boton>
+        </PiePaso>
+      )}
     </div>
   );
 }

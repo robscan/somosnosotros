@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { altoTeclado, combinarResultados, modoDePantalla, type LugarSugerido } from "@/lib/buscarLugares";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import type { LugarResumen } from "@/lib/lugares";
-import { coincidenciaClara, contextoDondeEsta, decidirGuardado, direccionAGuardar, lugarCercano, necesitaConfirmarDireccion, puedeGuardarLugar, puedeListo, resultadosDondeEsta, textoInicialBusqueda } from "./hojaDonde";
+import { coincidenciaClara, contextoDondeEsta, decidirGuardado, direccionAGuardar, lugarCercano, necesitaConfirmarDireccion, puedeGuardarLugar, puedeListo, resultadosDondeEsta, textoInicialBusqueda, textoListo } from "./hojaDonde";
 
 function lugar(id: string, nombre: string, lat = 22.15, lng = -100.97): LugarResumen {
   return { id, nombre, tipo: "museo", direccion: "Calle 1", lat, lng, portada: null };
@@ -368,5 +368,26 @@ describe("puedeListo: una sola hoja para el evento y para el lugar", () => {
   it("con «Agregar lugar» abierto, el evento espera a su propio botón; el lugar no tiene ese panel", () => {
     expect(puedeListo("evento", { origen: "lugar", nombre: "Teatro de la Paz", punto }, true)).toBe(false);
     expect(puedeListo("evento", { ...pinSuelto, nombre: "Patio" }, true)).toBe(false);
+  });
+});
+
+// El botón del pie dice «Listo» o qué falta (OL-303); apagado exactamente cuando `puedeListo` no deja confirmar.
+describe("textoListo: el botón del pie dice qué falta", () => {
+  const punto = { lat: 22.15, lng: -100.97 };
+  const pinSuelto = { origen: "manual" as const, nombre: "", punto };
+
+  it("sin pin, un evento dice que falta el lugar y un lugar, que falta la ubicación", () => {
+    expect(textoListo("evento", null)).toBe("Falta el lugar");
+    expect(textoListo("evento", { origen: "manual", nombre: "Patio", punto: null })).toBe("Falta el lugar");
+    expect(textoListo("lugar", null)).toBe("Falta la ubicación");
+  });
+  it("con el pin pero sin nombre, un evento dice que falta el nombre del lugar", () => {
+    expect(textoListo("evento", pinSuelto)).toBe("Falta el nombre del lugar");
+    expect(textoListo("evento", { ...pinSuelto, nombre: "   " })).toBe("Falta el nombre del lugar");
+  });
+  it("con lo necesario dice «Listo»: un lugar basta con el punto; un evento, con el nombre o un lugar registrado", () => {
+    expect(textoListo("lugar", pinSuelto)).toBe("Listo");
+    expect(textoListo("evento", { ...pinSuelto, nombre: "Patio" })).toBe("Listo");
+    expect(textoListo("evento", { origen: "lugar", nombre: "Teatro de la Paz", punto })).toBe("Listo");
   });
 });
