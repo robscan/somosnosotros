@@ -663,7 +663,8 @@ for (const ancho of [320, 390]) {
   test(`horario por día a ${ancho}: la lista, la hoja de un día y el nombre largo de la casilla no desbordan`, TOPE, async (t) => {
     const p = await pagina(t, { ancho });
     await hastaCasilla(p);
-    // El nombre de la casilla puede partirse en dos renglones en una pantalla angosta; nada se sale.
+    // El nombre de la casilla puede partirse en dos renglones en una pantalla angosta (no lleva «nowrap»); nada se sale.
+    assert.equal(await mismoHorario(p).locator("b").evaluate((e) => getComputedStyle(e).whiteSpace), "normal");
     assert.deepEqual((await desborda(p)).fuera, []);
     await mismoHorario(p).click();
     const d = await desborda(p);
