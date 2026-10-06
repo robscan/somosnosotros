@@ -91,6 +91,9 @@ export function horasDelDia(desde: string, hasta?: string): { desde: string; has
   return { desde: sufijo(a) === sufijo(b) ? a.slice(0, a.length - sufijo(a).length) : a, hasta: b };
 }
 
+/** «las» o «la» antes de una hora de inicio («desde las 8:00 p.m.», «desde la 1:00 p.m.»). */
+export const desdeLas = (hora: string): string => (Number(hora.slice(0, 2)) % 12 === 1 ? "la" : "las");
+
 /**
  * La línea del paso «¿A qué hora, cada día?» del alta (OL-309): el horario del primer día se aplica a todos, así que se dice así
  * («Del 10 al 12 de oct · cada día de 8:00 a 9:00 p.m.»). Va en 12 h, como los chips que tiene encima; lo que se lee fuera del paso
@@ -103,5 +106,5 @@ export function resumenCadaDia(dias: { desde: string; hasta: string }, hora: str
   const rango = rangoCorto(dias.desde, dias.hasta, hoy);
   const h = horasDelDia(hora, !horaFin || horaFin === FIN_DEL_DIA ? undefined : horaFin);
   if (h.hasta) return `${rango} · cada día de ${h.desde} a ${h.hasta}`;
-  return `${rango} · cada día desde ${Number(hora.slice(0, 2)) % 12 === 1 ? "la" : "las"} ${h.desde}`;
+  return `${rango} · cada día desde ${desdeLas(hora)} ${h.desde}`;
 }

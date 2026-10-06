@@ -16,24 +16,20 @@ function finPorDefecto(inicio: string): string {
   return new Date(new Date(inicio).getTime() + 2 * 3600000).toISOString();
 }
 
-/**
- * El archivo .ics de un evento. Lleva una alerta 1 hora antes: sin ella el iPhone lo agregaba con "Alerta: Ninguna" y
- * el calendario no recordaba nada (fricción K2, decisión 13 de docs/rediseno/17). Sin hora de fin, dura 2 horas.
- */
-export function archivoIcs(e: EventoCalendario, ahora: Date = new Date()): string {
-  const fin = e.fin ?? finPorDefecto(e.inicio);
+/** Un día de un evento con horario por día (`eventos_sesiones`, OL-311): sin hora de fin dura 2 horas, como un evento sin fin. */
+export type SesionCalendario = { inicio: string; fin: string | null };
+
+/** Un evento del archivo, con su alerta 1 hora antes. */
+function eventoIcs(e: EventoCalendario, uid: string, inicio: string, fin: string, ahora: Date): string[] {
   const url = `${ORIGEN}${hrefEvento(e)}`;
-  const lineas = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//somosnosotros//ES",
+  return [
     "BEGIN:VEVENT",
-    `UID:${e.id}@somosnosotros.org`,
+    `UID:${uid}@somosnosotros.org`,
     `DTSTAMP:${aFechaIcs(ahora.toISOString())}`,
-    `DTSTART:${aFechaIcs(e.inicio)}`,
+    `DTSTART:${aFechaIcs(inicio)}`,
     `DTEND:${aFechaIcs(fin)}`,
     `SUMMARY:${escaparIcs(e.titulo)}`,
-    e.lugar ? `LOCATION:${escaparIcs(e.lugar)}` : null,
+    ...(e.lugar ? [`LOCATION:${escaparIcs(e.lugar)}`] : []),
     `DESCRIPTION:${escaparIcs(`${e.descripcion ?? ""}\n${url}`.trim())}`,
     `URL:${url}`,
     "BEGIN:VALARM",
@@ -42,9 +38,20 @@ export function archivoIcs(e: EventoCalendario, ahora: Date = new Date()): strin
     "TRIGGER:-PT1H",
     "END:VALARM",
     "END:VEVENT",
-    "END:VCALENDAR",
-  ].filter((l): l is string => l !== null);
-  return lineas.join("\r\n") + "\r\n";
+  ];
+}
+
+/**
+ * El archivo .ics de un evento. Lleva una alerta 1 hora antes: sin ella el iPhone lo agregaba con "Alerta: Ninguna" y
+ * el calendario no recordaba nada (fricción K2, decisión 13 de docs/rediseno/17). Sin hora de fin, dura 2 horas. Con horario por día
+ * (`sesiones`, OL-311) lleva un evento por día, cada uno con su hora y su alerta, y el evento de una sola pieza (inicio y fin del evento
+ * entero) no va: sería uno encima de los otros.
+ */
+export function archivoIcs(e: EventoCalendario, ahora: Date = new Date(), sesiones: readonly SesionCalendario[] = []): string {
+  const eventos = sesiones.length
+    ? sesiones.flatMap((s, i) => eventoIcs(e, `${e.id}-${i + 1}`, s.inicio, s.fin ?? finPorDefecto(s.inicio), ahora))
+    : eventoIcs(e, e.id, e.inicio, e.fin ?? finPorDefecto(e.inicio), ahora);
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//somosnosotros//ES", ...eventos, "END:VCALENDAR"].join("\r\n") + "\r\n";
 }
 
 /** Nombre del archivo con el evento ("noche-de-son-en-el-patio.ics"), en ASCII para cualquier navegador. */

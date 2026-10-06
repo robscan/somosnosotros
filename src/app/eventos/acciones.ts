@@ -13,6 +13,7 @@ import { cartelAFormulario, ciudadDelSitio, hrefEvento, validarEvento, type Camb
 import { zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
+import { validarSesiones, type SesionEvento } from "@/lib/sesionesEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
@@ -89,16 +90,18 @@ type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
 type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento; repetido?: boolean };
 
-async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
+/** Con `sesiones` (un evento de varios días con horario por día, OL-311) se guarda con la función que las escribe en la misma transacción; sin ellas, como siempre. */
+async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null, sesiones: SesionEvento[] | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
   if (typeof operacion !== "string" || !esUuid(operacion)) return { data: null, conflicto: false };
-  const { data, error } = await supabase.rpc("guardar_evento_con_avisos", {
+  const argumentos = {
     p_evento: id,
     p_datos: filaEvento(datos, ciudad),
     p_privado: datos.privado,
     p_quien: quien.map((item) => ({ ...item, tipo: deducirTipoArtista(item.nombre) ?? "solista" })),
     p_revision: revision,
     p_operacion: operacion,
-  });
+  };
+  const { data, error } = sesiones ? await supabase.rpc("guardar_evento_con_sesiones", { ...argumentos, p_sesiones: sesiones }) : await supabase.rpc("guardar_evento_con_avisos", argumentos);
   return { data: error || !data ? null : data as GuardadoCompleto, conflicto: error?.code === "40001" };
 }
 
@@ -108,10 +111,13 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const entrada = leer(formData);
   const [lugar, esAdmin] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id)]);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
+  // Horario por día (OL-311): solo si la casilla «Mismo horario todos los días» vino desmarcada; sin el campo, el evento es como siempre.
+  const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);
+  if (errorSesiones) errores.sesiones = errorSesiones;
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   if (ciudad === null) return sinCiudad(datos);
-  const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"));
+  const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones);
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   // La función guarda_evento_con_avisos no devuelve el slug (lo pone el disparador); una lectura de sobra para
   // no publicar con la dirección vieja desde el primer instante.

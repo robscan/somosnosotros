@@ -30,6 +30,61 @@ beforeEach(() => {
   m.redirect.mockImplementation(() => { throw new Error("REDIRECT"); });
 });
 
+describe("horario por día al publicar (OL-311)", () => {
+  // Zona de las pruebas: sin punto, la de la ciudad inicial (UTC−6). Del 1 al 3 de octubre de 2030: de 19:00 a 21:00, y el segundo día desde las 17:00.
+  const porDia = JSON.stringify([
+    { inicio: "2030-10-01T19:00", fin: "2030-10-01T21:00" },
+    { inicio: "2030-10-02T17:00", fin: "" },
+    { inicio: "2030-10-03T19:00", fin: "2030-10-03T21:00" },
+  ]);
+  function conSesiones(sesiones: string | null = porDia) {
+    const fd = formulario();
+    fd.set("fin", "2030-10-03T21:00");
+    fd.set("quedarse", "1");
+    if (sesiones !== null) fd.set("sesiones", sesiones);
+    return fd;
+  }
+
+  it("con sesiones guarda con la función que las escribe en la misma transacción, en instantes y con el fin nulo si no hay", async () => {
+    expect((await crearEvento(null, conSesiones())).ok).toBe(true);
+    expect(m.rpc).toHaveBeenCalledTimes(1);
+    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_sesiones", expect.objectContaining({
+      p_evento: null,
+      p_datos: expect.objectContaining({ inicio: "2030-10-02T01:00:00.000Z", fin: "2030-10-04T03:00:00.000Z" }),
+      p_sesiones: [
+        { inicio: "2030-10-02T01:00:00.000Z", fin: "2030-10-02T03:00:00.000Z" },
+        { inicio: "2030-10-02T23:00:00.000Z", fin: null },
+        { inicio: "2030-10-04T01:00:00.000Z", fin: "2030-10-04T03:00:00.000Z" },
+      ],
+    }));
+    // Las sesiones no se cuelan en la fila del evento.
+    expect(m.rpc.mock.calls[0][1].p_datos).not.toHaveProperty("sesiones");
+    expect(m.after).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin el campo (la casilla marcada) guarda como siempre, con la función de siempre", async () => {
+    expect((await crearEvento(null, conSesiones(null))).ok).toBe(true);
+    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.not.objectContaining({ p_sesiones: expect.anything() }));
+    expect(m.rpc.mock.calls[0][1]).not.toHaveProperty("p_sesiones");
+  });
+
+  it("un horario por día que no cuadra con el evento no llega a la base: el error sale junto al cuándo", async () => {
+    const resultado = await crearEvento(null, conSesiones(JSON.stringify([{ inicio: "2030-10-01T18:00", fin: "" }, { inicio: "2030-10-03T19:00", fin: "" }])));
+    expect(resultado).toMatchObject({ ok: false, errores: { sesiones: expect.stringContaining("no coinciden") } });
+    expect(m.rpc).not.toHaveBeenCalled();
+    expect((await crearEvento(null, conSesiones("no es json"))).ok).toBe(false);
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+
+  it("si la base rechaza algo, no confirma ni avisa ni redirige (todo se revierte junto con el evento)", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { code: "22023" } });
+    const resultado = await crearEvento(null, conSesiones());
+    expect(resultado).toMatchObject({ ok: false, general: expect.stringContaining("No se pudo publicar") });
+    expect(m.after).not.toHaveBeenCalled();
+    expect(m.redirect).not.toHaveBeenCalled();
+  });
+});
+
 describe("guardado completo del evento", () => {
   it("cooperación solidaria llega a la RPC como precio, sin cifra", async () => {
     const fd = formulario();

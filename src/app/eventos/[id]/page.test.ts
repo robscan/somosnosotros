@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
 import Heroe from "@/components/ui/Heroe";
+import { Kpi } from "@/components/ui/Kpi";
+import BotonCalendario from "@/components/BotonCalendario";
 import Asistencia from "./Asistencia";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
@@ -258,5 +260,64 @@ describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", (
     await con({ data: null, error: { message: "secreto-remoto" } }, async () => {
       expect(await metadatos()).toEqual({});
     });
+  });
+});
+
+
+describe("horario por día en la ficha (OL-311)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+
+  // Del 1 al 3 de enero de 2099: el jueves de 20:00 a 21:00, el viernes desde las 18:00 y el sábado de 20:00 a 21:00 (UTC−6).
+  const EVENTO_POR_DIA = { ...EVENTO, inicio: "2099-01-02T02:00:00Z", fin: "2099-01-04T03:00:00Z" };
+  const SESIONES = [
+    { inicio: "2099-01-04T02:00:00Z", fin: "2099-01-04T03:00:00Z" },
+    { inicio: "2099-01-02T02:00:00Z", fin: "2099-01-02T03:00:00Z" },
+    { inicio: "2099-01-03T00:00:00Z", fin: null },
+  ];
+  const ficha = async (evento: unknown) => {
+    vi.mocked(clienteServidor).mockResolvedValue(clienteFalso({ eventos: { data: evento }, asistencias: { data: [] } }, { van_por_evento: { data: [] } }) as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: EVENTO.slug }), searchParams: Promise.resolve({}) }))];
+  };
+  /** El texto plano de un elemento: lo que lleva dentro, en orden. */
+  const textoDe = (hijos: unknown): string => (Array.isArray(hijos) ? hijos.map(textoDe).join("") : typeof hijos === "string" || typeof hijos === "number" ? String(hijos) : "");
+
+  it("el número de la fecha dice los días y «Horarios por día», y debajo va la lista de días con sus horas en 24 h", async () => {
+    const elementos = await ficha({ ...EVENTO_POR_DIA, sesiones: SESIONES });
+    const cuando = elementos.find((e) => e.type === Kpi && e.props.icono !== undefined && typeof e.props.valor === "string" && e.props.etiqueta === "Horarios por día");
+    expect(cuando?.props.valor).toMatch(/^Del 1 al 3 de ene de 2099$/);
+    const seccion = elementos.find((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día");
+    expect(seccion).toBeTruthy();
+    const filas = [...recorrer(seccion!.props.children)].filter((e) => e.type === "li").map((li) => [...recorrer(li.props.children)].filter((x) => x.type === "b" || x.type === "small").map((x) => textoDe(x.props.children)));
+    expect(filas).toEqual([
+      ["jue 1 de ene de 2099", "20:00–21:00"],
+      ["vie 2 de ene de 2099", "18:00"],
+      ["sáb 3 de ene de 2099", "20:00–21:00"],
+    ]);
+  });
+
+  it("«A mi calendario» lleva el primer día y los demás en las notas; el texto de compartir dice «horarios por día»", async () => {
+    const elementos = await ficha({ ...EVENTO_POR_DIA, sesiones: SESIONES });
+    const calendario = elementos.find((e) => e.type === BotonCalendario);
+    const datos = calendario?.props.datos as { inicio: string; fin: string; notas: string | null };
+    expect(datos.inicio).toBe("2099-01-02T02:00:00Z");
+    expect(datos.fin).toBe("2099-01-02T03:00:00Z");
+    expect(datos.notas).toBe("jue 1 de ene de 2099 · 20:00–21:00\nvie 2 de ene de 2099 · 18:00\nsáb 3 de ene de 2099 · 20:00–21:00");
+    const compartir = elementos.find((e) => e.props.texto && String(e.props.texto).includes("Foro de prueba"));
+    expect(compartir?.props.texto).toContain("Del 1 al 3 de ene de 2099 · horarios por día");
+  });
+
+  it("sin sesiones la ficha es la de siempre: ni lista ni «Horarios por día»", async () => {
+    const elementos = await ficha({ ...EVENTO_POR_DIA, sesiones: [] });
+    expect(elementos.some((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día")).toBe(false);
+    expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Horarios por día")).toBe(false);
+    const sinCampo = await ficha(EVENTO_POR_DIA);
+    expect(sinCampo.some((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día")).toBe(false);
+  });
+
+  it("si el evento se editó por el formulario y sus horas ya no coinciden con las sesiones, se lee con su inicio y su fin", async () => {
+    const elementos = await ficha({ ...EVENTO_POR_DIA, inicio: "2099-01-02T01:00:00Z", sesiones: SESIONES });
+    expect(elementos.some((e) => e.type === "section" && e.props["aria-label"] === "Horarios por día")).toBe(false);
+    expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Horarios por día")).toBe(false);
   });
 });

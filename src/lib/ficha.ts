@@ -1,4 +1,4 @@
-import { cuandoVariosDias, diaLocal, fechaCortaChip, horaCorta, ZONA_INICIAL } from "./fechas";
+import { cuandoVariosDias, diaLocal, fechaCortaChip, horaCorta, rangoCorto, ZONA_INICIAL } from "./fechas";
 
 /**
  * Los textos de los tres números de una ficha (docs/rediseno/50, P6; `ui/Kpi`): el día y la hora de un evento, la distancia a un
@@ -16,6 +16,14 @@ export function kpiCuando(inicio: string, fin: string | null, zona: string = ZON
   const dia = fechaCortaChip(inicio, zona);
   const otroDia = fin !== null && diaLocal(new Date(fin), zona) !== diaLocal(new Date(inicio), zona);
   return { dia: otroDia ? `${dia} – ${fechaCortaChip(fin, zona)}` : dia, hora: horaCorta(inicio, zona) };
+}
+
+/**
+ * Cuándo es un evento con horario por día (OL-311): los días dicen hasta cuándo y, donde va la hora, «Horarios por día»; las horas de cada
+ * día van en la lista de debajo (`listaDeSesiones`).
+ */
+export function kpiCuandoPorDia(inicio: string, fin: string, zona: string = ZONA_INICIAL, ahora: Date = new Date()): { dia: string; hora: string } {
+  return { dia: rangoCorto(diaLocal(new Date(inicio), zona), diaLocal(new Date(fin), zona), diaLocal(ahora, zona)), hora: "Horarios por día" };
 }
 
 /** La distancia en línea recta a un lugar: «550 m» hasta el kilómetro, después «1,4 km» y, de 10 en adelante, sin decimales. */

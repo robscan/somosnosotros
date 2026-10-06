@@ -33,11 +33,12 @@ import { jsonLdMigajas } from "@/lib/estructurados";
 import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { compartirEvento, direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar } from "@/lib/eventos";
-import { kpiCuando } from "@/lib/ficha";
+import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { eventoPaso, formatearLargo } from "@/lib/fechas";
+import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -46,7 +47,7 @@ import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
-type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
+type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null; sesiones?: SesionGuardada[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
@@ -60,7 +61,7 @@ async function cargarEvento(idOSlug: string): Promise<EventoConLugar | null> {
     console.warn("[ficha] cliente no disponible: evento");
     throw new Error(ERROR_FICHA);
   }
-  const columnas = "*, lugar:lugares(id, slug, nombre, direccion, ciudad, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)";
+  const columnas = "*, lugar:lugares(id, slug, nombre, direccion, ciudad, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre), sesiones:eventos_sesiones(inicio, fin)";
   const data = await leerFicha<EventoConLugar & { lugar: unknown; autor: unknown }>(
     "evento",
     () => supabase.from("eventos").select(columnas).eq("slug", idOSlug).maybeSingle(),
@@ -244,11 +245,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
-  const { url, texto } = compartirEvento(e, sitio);
+  // Con horario por día (OL-311) cada día lleva sus horas; si se editó el evento por el formulario de siempre y ya no coinciden, se ignoran.
+  const sesiones = sesionesVigentes(e, e.sesiones);
+  const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0);
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
   // .ics (`donde` en .../calendario/route.ts) para que la hoja nativa del sistema muestre algo útil para llegar.
   const lugarCalendario = e.lugar ? [e.lugar.nombre, e.lugar.direccion].filter(Boolean).join(", ") : sitio;
-  const datosCalendario = datosEventoNativo({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, fin: e.fin, descripcion: e.descripcion, lugar: lugarCalendario });
+  // La hoja nativa del iPhone agrega un solo evento: con horario por día, el primer día y todos los días en las notas (el .ics de la web lleva uno por día).
+  const datosCalendario = datosEventoNativo(conPrimerDia({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, fin: e.fin, descripcion: e.descripcion, lugar: lugarCalendario }, sesiones, e.zona));
   const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
   const comoLlegar = enlaceComoLlegar(argsSitio);
   const puntoMapa = puntoComoLlegar(argsSitio);
@@ -297,7 +301,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const migajas = e.visible && !paso ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Agenda", url: "/" }, { nombre: e.titulo, url: hrefEvento(e) }]) : null;
 
   const portada = e.imagen ?? e.lugar?.portada ?? null;
-  const cuando = kpiCuando(e.inicio, e.fin, e.zona);
+  const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
   const hayAvisos = nuevo === "1" || error === "borrar" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
@@ -443,6 +447,22 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             />
           )}
         </div>
+
+        {/* Con horario por día (OL-311): cada día con sus horas, en 24 h, bajo los accionables y sin tarjeta propia. */}
+        {sesiones.length > 0 && (
+          <section className={ficha.bloque} aria-label="Horarios por día">
+            <h2>Horarios</h2>
+            <ul>
+              {listaDeSesiones(sesiones, e.zona).map(({ dia, horas }) => (
+                <li key={dia} className={renglon.dato}>
+                  <IconoCalendario width={20} height={20} />
+                  <b>{dia}</b>
+                  <small>{horas}</small>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {hayDonde && (
           <section className={ficha.tarjeta}>
