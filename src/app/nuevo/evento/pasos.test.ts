@@ -229,13 +229,20 @@ describe("«Dónde» en tres pasos: buscar, confirmar en el mapa y qué hacer co
     expect(atras.candidato).toEqual(movido);
   });
 
-  it("«Usarlo solo en este evento» deja el sitio como «otro» con su nombre, su dirección y su punto; «Guardarlo como lugar» lo deja igual y anota que se quiso guardar", () => {
+  it("«Usarlo solo en este evento» deja el sitio como «otro» con su nombre, su dirección y su punto", () => {
     const otro = sitioDeCandidato(JARDIN, "evento", OTRO_VACIO);
     expect(otro).toMatchObject({ modo: "otro", lugarId: "", otro: { reservado: false, sitioTexto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico", sitioPunto: JARDIN.punto, ciudad: "San Luis Potosí", pinPendiente: false, direccionPrivada: "", privadoPunto: null } });
-    expect(otro.guardar).toBeUndefined();
-    const lugar = sitioDeCandidato(JARDIN, "lugar", OTRO_VACIO);
-    expect(lugar.guardar).toBe(true);
-    expect({ ...lugar, guardar: undefined }).toEqual({ ...otro, guardar: undefined });
+  });
+
+  it("«Guardarlo como lugar» creado: el sitio pasa a ser ese lugar (modo «lugar» con su id, sin sitio «otro») y sigue «¿Cuánto cuesta?»", () => {
+    const creado: LugarResumen = { id: "0b0b0b0b-0000-4000-8000-0000000000aa", nombre: JARDIN.nombre, tipo: "plaza", direccion: JARDIN.direccion, lat: JARDIN.punto.lat, lng: JARDIN.punto.lng, portada: null };
+    const uso = pasar(enDonde(), { tipo: "elegir", candidato: JARDIN }, { tipo: "confirmar", candidato: JARDIN });
+    expect(faltan(uso.r)).toContain("donde");
+    const e = flujo(uso, contestar({ sitio: sitioDeLugar(creado, uso.r.sitio.otro) }));
+    expect(pasoActual(e)).toBe("cuanto");
+    expect(e.r.sitio).toEqual({ modo: "lugar", lugarId: creado.id, otro: OTRO_VACIO });
+    expect(faltan(e.r)).not.toContain("donde");
+    expect(nombreDelSitio(e.r.sitio, creado)).toBe("Jardín de San Juan de Dios");
   });
 
   it("un sitio reservado guarda la dirección y el punto como privados y deja los públicos vacíos; conserva «cuántas horas antes» e indicaciones", () => {

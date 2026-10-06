@@ -2,7 +2,7 @@
 
 import { useMemo, useReducer } from "react";
 import type { QuienItem } from "@/lib/artistas";
-import { estadoInicial, flujo, pasoActual, type Candidato, type Paso, type Respuestas, type Uso } from "./pasos";
+import { estadoInicial, flujo, pasoActual, type Candidato, type Paso, type Respuestas, type UsoSitio } from "./pasos";
 
 /**
  * El estado del alta por pasos: las respuestas y el camino (`pasos.ts`, donde vive la regla). Devuelve el paso a la vista y los gestos
@@ -19,7 +19,7 @@ export function usePasosEvento(quienInicial: QuienItem[]) {
       atras: (desde: Paso) => despachar({ tipo: "atras", desde }),
       elegir: (candidato: Candidato) => despachar({ tipo: "elegir", candidato }),
       confirmar: (candidato: Candidato) => despachar({ tipo: "confirmar", candidato }),
-      usar: (uso: Uso) => despachar({ tipo: "usar", uso }),
+      usar: (uso: UsoSitio) => despachar({ tipo: "usar", uso }),
     }),
     [],
   );

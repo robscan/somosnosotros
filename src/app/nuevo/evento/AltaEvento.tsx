@@ -2,18 +2,20 @@
 
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import PorPasos from "@/components/PorPasos";
+import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
 import type { ResultadoEvento } from "@/app/eventos/acciones";
 import CamposSitio from "@/app/eventos/CamposSitio";
 import { operacionEvento } from "@/app/eventos/operacionEvento";
 import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
 import type { ArtistaResumen } from "@/lib/artistas";
-import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
+import { deducirTipo } from "@/lib/buscarLugares";
+import { CIUDAD_INICIAL, ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { zonaSegura } from "@/lib/fechas";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
-import { avance, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Paso } from "./pasos";
+import { avance, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Paso, type Uso } from "./pasos";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoInicio, PasoMas, PasoNombre } from "./PasosEvento";
 import Revisa from "./Revisa";
@@ -32,6 +34,9 @@ type Props = {
 };
 
 const FORMULARIO = "publicar-evento";
+/** La acción que crea un lugar pide a dónde volver solo para que nunca redirija: aquí no se sale de la pantalla. */
+const VOLVER_A = "/nuevo/evento";
+const NO_SE_GUARDO = "No se pudo guardar el lugar. Puedes usarlo solo en este evento.";
 const PREGUNTA: Partial<Record<Paso, string>> = {
   nombre: "¿Cómo se llama?",
   dia: "¿Qué día es?",
@@ -53,6 +58,10 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
 export default function AltaEvento({ accion, lugares, mios, ciudadContexto, salida }: Props) {
   const { r, candidato, paso, direccion, primero, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
   const ubicacion = useEstoyAqui();
+  // Un lugar que se guarda desde «No está en el directorio» aún no está en la lista que trajo el servidor: se agrega aquí.
+  const [listaLugares, setListaLugares] = useState(lugares);
+  const [guardando, setGuardando] = useState(false);
+  const [errorLugar, setErrorLugar] = useState<string | null>(null);
   // Lo escrito en «¿Dónde es?» vive aquí y no en el paso: al volver de «¿Es aquí?» (Atrás, «Buscar otro») la lista sigue ahí.
   const [busqueda, setBusqueda] = useState("");
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
@@ -61,9 +70,32 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
     if (resultado && !resultado.ok) reponerGuardia();
   }, [resultado]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
-  const lugar = r.sitio.modo === "lugar" ? lugares.find((l) => l.id === r.sitio.lugarId) : undefined;
+  const lugar = r.sitio.modo === "lugar" ? listaLugares.find((l) => l.id === r.sitio.lugarId) : undefined;
   // Un lugar del directorio ya tiene su punto confirmado: contesta sin pasar por el mapa.
   const elegirLugar = (l: LugarResumen) => contestar({ sitio: sitioDeLugar(l, r.sitio.otro) });
+  // «Guardarlo como lugar»: crea el lugar con la acción de la hoja de siempre (si ya existe uno igual cerca, usa ese) y el sitio pasa a ser ese lugar.
+  async function guardarLugar(c: Candidato) {
+    if (guardando) return;
+    setGuardando(true);
+    setErrorLugar(null);
+    try {
+      const nombre = c.nombre.trim();
+      const direccion = c.direccion.trim();
+      const creado = await crearLugarDesdeEvento({ nombre, direccion, lat: c.punto.lat, lng: c.punto.lng, ciudad: ciudadParaPunto(c.punto, c.ciudad, ciudadContexto) ?? "", volverA: VOLVER_A, privado: false });
+      if (!creado.ok) {
+        setErrorLugar(NO_SE_GUARDO);
+        return;
+      }
+      const nuevo = listaLugares.find((l) => l.id === creado.id) ?? { id: creado.id, nombre, tipo: deducirTipo(nombre, c.categorias) ?? "otro", direccion, lat: c.punto.lat, lng: c.punto.lng, portada: null };
+      setListaLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo]));
+      contestar({ sitio: sitioDeLugar(nuevo, r.sitio.otro) });
+    } catch {
+      setErrorLugar(NO_SE_GUARDO);
+    } finally {
+      setGuardando(false);
+    }
+  }
+  const usarSitio = (uso: Uso) => (uso === "lugar" ? (candidato ? void guardarLugar(candidato) : undefined) : (setErrorLugar(null), usar(uso)));
   // Cambiar el sitio desde «Revisa» vuelve a «¿Dónde es?» con lo elegido puesto.
   const abrirPaso = (p: Paso) => {
     if (p === "donde") setBusqueda(nombreDelSitio(r.sitio, lugar));
@@ -116,7 +148,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
         <PasoDonde
           q={busqueda}
           onBuscar={setBusqueda}
-          lugares={lugares}
+          lugares={listaLugares}
           contexto={contextoDondeEsta(null, busqueda, ciudadContexto, ubicacion.yo, ubicacionCercanaFresca())}
           ubicando={ubicacion.ubicando}
           avisoUbicacion={ubicacion.avisoUbicacion}
@@ -128,7 +160,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
       {paso === "mapa" && candidato && (
         <PasoMapa
           candidato={candidato}
-          lugares={lugares}
+          lugares={listaLugares}
           ciudad={ciudadContexto ?? CIUDAD_INICIAL}
           yo={ubicacion.yo}
           onLugar={elegirLugar}
@@ -136,7 +168,7 @@ export default function AltaEvento({ accion, lugares, mios, ciudadContexto, sali
           onOtro={atrasDelPaso}
         />
       )}
-      {paso === "uso" && candidato && <PasoUso candidato={candidato} onUsar={usar} />}
+      {paso === "uso" && candidato && <PasoUso candidato={candidato} guardando={guardando} error={errorLugar} onUsar={usarSitio} />}
       {paso === "cuanto" && <PasoCuanto precio={r.precio} onCosto={(costo) => contestar({ costo })} onPrecio={(precio) => cambiar({ precio })} />}
       {paso === "revisa" && (
         <Revisa

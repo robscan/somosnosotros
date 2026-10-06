@@ -23,11 +23,7 @@ export type Paso = "inicio" | "nombre" | "dia" | "hora" | "donde" | "mapa" | "us
 const ORDEN: readonly Paso[] = ["inicio", "nombre", "dia", "hora", "donde", "cuanto", "revisa"];
 
 export type Costo = "gratis" | "cooperacion" | "precio";
-/**
- * `guardar`: se eligió «Guardarlo como lugar». En esta fase solo queda dicho: el sitio se publica como «otro» con su nombre y su punto
- * (hoy el lugar se crea al elegirlo en la hoja de siempre, con una acción aparte; falta hacer lo mismo aquí al publicar).
- */
-export type Sitio = { modo: ModoSitio; lugarId: string; otro: OtroSitio; guardar?: true };
+export type Sitio = { modo: ModoSitio; lugarId: string; otro: OtroSitio };
 export type Dias = { desde: string; hasta: string | null };
 
 export type Respuestas = {
@@ -60,8 +56,10 @@ export type Candidato = {
   origen: "aqui" | "busqueda";
 };
 
-/** Qué hacer con un sitio que no está en el directorio. */
+/** Qué hacer con un sitio que no está en el directorio. «Lugar» se resuelve fuera del reductor: crear el lugar es una acción del servidor. */
 export type Uso = "evento" | "lugar" | "reservado";
+/** Lo que el reductor resuelve solo, con lo que ya sabe el candidato. */
+export type UsoSitio = Exclude<Uso, "lugar">;
 
 export type Estado = {
   r: Respuestas;
@@ -89,7 +87,7 @@ export type Accion =
   /** «Sí, es aquí» con un sitio que no es del directorio (con el pin donde quedó): a decir qué hacer con él. */
   | { tipo: "confirmar"; candidato: Candidato }
   /** Lo que se hace con el sitio: se vuelve su respuesta y sigue lo que falte. */
-  | { tipo: "usar"; uso: Uso };
+  | { tipo: "usar"; uso: UsoSitio };
 
 export const OTRO_VACIO: OtroSitio = { reservado: false, sitioTexto: "", direccion: "", sitioPunto: null, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: null };
 
@@ -184,15 +182,15 @@ export const tituloDe = (c: Pick<Candidato, "nombre" | "direccion">): string => 
 /** El nombre que sale con un sitio reservado cuando el mapa no dio ninguno: nunca la dirección, que es lo que se reserva. */
 export const NOMBRE_RESERVADO = "Sitio reservado";
 
-/** Un sitio que no es del directorio, según lo que se hace con él: el mismo punto, público o con la dirección reservada. */
-export function sitioDeCandidato(c: Candidato, uso: Uso, otro: OtroSitio): Sitio {
+/** Un sitio que no es del directorio, según lo que se hace con él: el mismo punto, público o con la dirección reservada (guardarlo como lugar crea el lugar y luego es `sitioDeLugar`). */
+export function sitioDeCandidato(c: Candidato, uso: UsoSitio, otro: OtroSitio): Sitio {
   const nombre = tituloDe(c).slice(0, LIMITES_EVENTO.sitio);
   const direccion = c.direccion.trim().slice(0, LIMITES_EVENTO.direccion);
   if (uso === "reservado") {
     const visible = c.nombre.trim().slice(0, LIMITES_EVENTO.sitio) || NOMBRE_RESERVADO;
     return { modo: "reservado", lugarId: "", otro: { ...base(otro), reservado: true, sitioTexto: visible, direccionPrivada: direccion || visible, privadoPunto: c.punto, pinPendiente: false, ciudad: c.ciudad } };
   }
-  return { modo: "otro", lugarId: "", otro: { ...base(otro), sitioTexto: nombre, direccion, sitioPunto: c.punto, pinPendiente: false, ciudad: c.ciudad }, ...(uso === "lugar" ? { guardar: true as const } : {}) };
+  return { modo: "otro", lugarId: "", otro: { ...base(otro), sitioTexto: nombre, direccion, sitioPunto: c.punto, pinPendiente: false, ciudad: c.ciudad } };
 }
 
 /** «Guardarlo como lugar» pide un nombre (la dirección no nombra un lugar) y que no sea un negocio (bar, café, restaurante). */

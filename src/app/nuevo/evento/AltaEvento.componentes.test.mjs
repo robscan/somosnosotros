@@ -25,6 +25,9 @@ const mocks = {
   // El mapa de «¿Es aquí?»: dice dónde está el pin y su botón lo arrastra a otro punto (como `onArrastre` del real).
   "@/components/MapaDondeEs":
     "import React from 'react';const h=React.createElement;export default function M(p){return h('div',{role:'region','aria-label':'Mapa de prueba','data-pin':p.seleccion?p.seleccion.lat+','+p.seleccion.lng:'',style:{position:'relative',height:'100%',background:'var(--fondo-mapa)'}},h('svg',{viewBox:'0 0 24 24',width:44,height:44,fill:'currentColor',fillRule:'evenodd',style:{position:'absolute',left:'calc(50% - 22px)',top:'calc(50% - 44px)',color:'var(--primario)'}},h('path',{d:'M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12zm0-9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z'})),h('button',{type:'button',style:{position:'absolute',left:0,top:0,width:44,height:44,opacity:0},onClick:()=>p.onArrastre({lat:22.1533,lng:-100.9811})},'Arrastrar el pin'))}",
+  // La acción que crea el lugar (la de la hoja de siempre): guarda lo que recibe; `window.qa.lugar` dice qué contesta.
+  "@/app/lugares/acciones":
+    "export async function crearLugarDesdeEvento(d){window.qa.lugares.push(d);if(window.qa.lugar==='falla')return {ok:false,error:'Sin conexión'};if(window.qa.lugar==='lanza')throw new Error('red');if(window.qa.lugar==='lento')return new Promise(()=>{});if(window.qa.lugar==='existe')return {ok:true,id:'0b0b0b0b-0000-4000-8000-000000000001',reutilizado:true};return {ok:true,id:'0b0b0b0b-0000-4000-8000-0000000000aa',reutilizado:false}}",
   "./Atras":
     "import React from 'react';import {pedirSalida} from './src/lib/guardiaSalida';export function useVolver(){return (e)=>{e.preventDefault();const ir=()=>window.qa.salio++;if(!pedirSalida(ir))ir();}}export function useTerminar(){return ()=>{}}export default function Atras(){return null}export function AtrasIcono(){return null}",
   "./Navegacion": "export const registrarVolverVisible=()=>()=>{}",
@@ -51,7 +54,7 @@ before(async () => {
       import {pedirSalida} from './src/lib/guardiaSalida';
       import './src/app/globals.css';
       // resultado: 'general' (falla el guardado) | 'enlace' (el servidor rechaza el enlace) | 'pendiente' (no contesta)
-      window.qa = {envios:[], resultado:'general', salio:0, pedirSalida};
+      window.qa = {envios:[], lugares:[], lugar:'creado', resultado:'general', salio:0, pedirSalida};
       async function accion(_, fd){
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
@@ -619,14 +622,73 @@ test("un bar, café o restaurante según el mapa no ofrece «Guardarlo como luga
   await foto(p, "uso-2-dos");
 });
 
-test("«Guardarlo como lugar» por ahora publica el sitio como «otro» con su nombre y su punto (el lugar no se crea todavía)", TOPE, async (t) => {
+test("«Guardarlo como lugar» crea el lugar con lo del sitio, y «Revisa» lo muestra por su nombre; se publica por su id, no como «otro»", TOPE, async (t) => {
   const p = await pagina(t);
   await hastaDonde(p);
   await elegirDelMapa(p, "jardin", /Jardín de San Juan de Dios/);
   await boton(p, "Sí, es aquí").click();
   await boton(p, /^Guardarlo como lugar/).click();
+  await enPaso(p, "¿Cuánto cuesta?");
+  const llamadas = await p.evaluate(() => window.qa.lugares);
+  assert.deepEqual(llamadas, [{ nombre: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí, México", lat: 22.1511, lng: -100.9772, ciudad: "San Luis Potosí", volverA: "/nuevo/evento", privado: false }]);
   const d = await publicarGratis(p);
-  assert.deepEqual({ modo_sitio: d.modo_sitio, lugar_id: d.lugar_id, sitio_texto: d.sitio_texto, sitio_lat: d.sitio_lat }, { modo_sitio: "otro", lugar_id: "", sitio_texto: "Jardín de San Juan de Dios", sitio_lat: "22.1511" });
+  assert.deepEqual({ modo_sitio: d.modo_sitio, lugar_id: d.lugar_id, sitio_texto: d.sitio_texto, sitio_lat: d.sitio_lat, ciudad: d.ciudad }, { modo_sitio: "lugar", lugar_id: "0b0b0b0b-0000-4000-8000-0000000000aa", sitio_texto: "", sitio_lat: "", ciudad: "" });
+  await p.locator("main ul > li").filter({ hasText: "Jardín de San Juan de Dios" }).waitFor();
+  // «Cambiar» lo encuentra en la lista: el campo abre con su nombre y el directorio de la prueba ya lo trae.
+  await boton(p, "Cambiar dónde").click();
+  assert.equal(await buscar(p).inputValue(), "Jardín de San Juan de Dios");
+  await p.getByRole("option", { name: /Lugar del directorio · Calle Madero 1/ }).waitFor();
+});
+
+test("«Guardarlo como lugar» con un lugar que ya existía usa ese lugar", TOPE, async (t) => {
+  const p = await pagina(t);
+  await p.evaluate(() => (window.qa.lugar = "existe"));
+  await hastaDonde(p);
+  await elegirDelMapa(p, "jardin", /Jardín de San Juan de Dios/);
+  await boton(p, "Sí, es aquí").click();
+  await boton(p, /^Guardarlo como lugar/).click();
+  await enPaso(p, "¿Cuánto cuesta?");
+  const d = await publicarGratis(p);
+  assert.deepEqual({ modo_sitio: d.modo_sitio, lugar_id: d.lugar_id }, { modo_sitio: "lugar", lugar_id: LUGAR });
+  await p.locator("main ul > li").filter({ hasText: "Teatro de la Paz" }).waitFor();
+});
+
+test("mientras se guarda el lugar la opción dice «Guardando…» y las demás se apagan", TOPE, async (t) => {
+  const p = await pagina(t);
+  await p.evaluate(() => (window.qa.lugar = "lento"));
+  await hastaDonde(p);
+  await elegirDelMapa(p, "jardin", /Jardín de San Juan de Dios/);
+  await boton(p, "Sí, es aquí").click();
+  await boton(p, /^Guardarlo como lugar/).click();
+  const guardando = boton(p, /^Guardando…/);
+  await guardando.waitFor();
+  assert.equal(await guardando.isDisabled(), true);
+  assert.equal(await boton(p, /^Usarlo solo en este evento/).isDisabled(), true);
+  assert.equal(await boton(p, /^Es un sitio reservado/).isDisabled(), true);
+  assert.equal(await pregunta(p), "No está en el directorio");
+  await foto(p, "uso-3-guardando");
+});
+
+test("si no se pudo guardar el lugar (la acción responde que no, o se cae la red) sale un aviso llano y las opciones siguen tocables", TOPE, async (t) => {
+  for (const falla of ["falla", "lanza"]) {
+    const p = await pagina(t);
+    await p.evaluate((f) => (window.qa.lugar = f), falla);
+    await hastaDonde(p);
+    await elegirDelMapa(p, "jardin", /Jardín de San Juan de Dios/);
+    await boton(p, "Sí, es aquí").click();
+    await boton(p, /^Guardarlo como lugar/).click();
+    const aviso = p.getByRole("alert").filter({ hasText: "No se pudo guardar el lugar. Puedes usarlo solo en este evento." });
+    await aviso.waitFor();
+    assert.equal(await pregunta(p), "No está en el directorio");
+    assert.equal(await boton(p, /^Guardarlo como lugar/).isDisabled(), false);
+    assert.equal(await boton(p, /^Usarlo solo en este evento/).isDisabled(), false);
+    if (falla === "falla") await foto(p, "uso-4-no-se-guardo");
+    // Sigue pudiendo usarlo solo en este evento.
+    await boton(p, /^Usarlo solo en este evento/).click();
+    assert.equal(await aviso.count(), 0);
+    const d = await publicarGratis(p);
+    assert.deepEqual({ modo_sitio: d.modo_sitio, sitio_texto: d.sitio_texto }, { modo_sitio: "otro", sitio_texto: "Jardín de San Juan de Dios" });
+  }
 });
 
 test("un sitio reservado: «Revisa» dice su nombre y «Sitio reservado», y la acción recibe la dirección y el punto como privados", TOPE, async (t) => {
