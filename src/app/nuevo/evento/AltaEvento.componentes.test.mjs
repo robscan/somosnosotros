@@ -265,14 +265,15 @@ test("«Otra hora» ofrece las 24 horas y rotula las del día siguiente; 1:00 a.
   await grupo.getByRole("button", { name: "Otra hora" }).click();
   const hoja = p.getByRole("dialog");
   const horas = await hoja.locator("[role=group] button").allInnerTexts();
-  assert.equal(horas.length, 96);
-  // Primero lo que sigue esa misma noche, sin rótulo; después la madrugada, hasta la misma hora del día siguiente.
+  assert.equal(horas.length, 95);
+  // Primero lo que sigue esa misma noche, sin rótulo; después la madrugada, hasta un cuarto antes de la hora del inicio.
   assert.match(horas[0], /^10:15\s*p/);
   assert.doesNotMatch(horas[0], /día siguiente/);
   assert.match(horas[7], /^12:00\s*a/);
   assert.match(horas[7], /día siguiente/);
-  assert.match(horas.at(-1), /^10:00\s*p[\s\S]*día siguiente/);
-  assert.equal(horas.filter((h) => /día siguiente/.test(h)).length, 89);
+  // La misma hora del inicio no se ofrece (serían 24 horas): la lista acaba a las 9:45 p.m. del día siguiente.
+  assert.match(horas.at(-1), /^9:45\s*p[\s\S]*día siguiente/);
+  assert.equal(horas.filter((h) => /día siguiente/.test(h)).length, 88);
   if (capturas) await p.screenshot({ path: join(capturas, "dur-3-hoja-otra-hora.png") });
   await hoja.getByRole("button", { name: /^1:00\s*a[\s\S]*día siguiente/ }).click();
   assert.equal(await pregunta(p), "¿Dónde es?");

@@ -39,16 +39,16 @@ export function finDelDia({ fin }: InicioFin): boolean {
 /**
  * Se eligieron día(s) en el calendario. Con un rango (`hasta` posterior a `desde`) el evento termina el último día, a la hora
  * de fin que ya tenía o, si no tenía, al acabar ese día. Con un solo día el evento termina ese mismo día a la hora de fin que
- * ya tenía (como siempre: mover el día mueve el fin con él), si sigue siendo posterior al inicio; si no (un evento que cruzaba
- * la medianoche, o que acababa con su último día), queda sin hora de fin: quien eligió «un solo día» no pidió que el fin
- * quedara dos días después.
+ * ya tenía (como siempre: mover el día mueve el fin con él); si cruzaba la medianoche, sigue cruzándola (termina al día
+ * siguiente a la misma hora); si acababa con su último día (sin hora propia), queda sin hora de fin.
  */
 export function conDias(actual: InicioFin, desde: string, hasta: string | null): InicioFin {
   const hora = partirLocal(actual.inicio).hora || HORA_INICIAL;
   const inicio = combinarFechaHora(desde, hora);
   if (hasta && hasta > desde) return { inicio, fin: combinarFechaHora(hasta, actual.fin ? partirLocal(actual.fin).hora : FIN_DEL_DIA) };
   const horaFin = partirLocal(actual.fin).hora;
-  return { inicio, fin: inicio && horaFin && horaFin !== FIN_DEL_DIA && horaFin > hora ? combinarFechaHora(desde, horaFin) : "" };
+  if (!inicio || !horaFin || horaFin === FIN_DEL_DIA || horaFin === hora) return { inicio, fin: "" };
+  return { inicio, fin: combinarFechaHora(horaFin > hora ? desde : sumarDiasIso(desde, 1), horaFin) };
 }
 
 /**
@@ -65,15 +65,16 @@ export function conHoraInicio(actual: InicioFin, hora: string, zona: string): In
 
 /**
  * Se eligió la hora de fin; `""` es «Sin hora de fin». El fin cae en el último día del evento (el del inicio, si no dura varios).
- * En un evento de un solo día, una hora igual o anterior a la del inicio es la madrugada del día siguiente («empieza 10:00 p.m.,
+ * En un evento de un solo día, una hora anterior a la del inicio es la madrugada del día siguiente («empieza 10:00 p.m.,
  * termina 1:00 a.m.»): el fin cae un día después, no se rechaza (founder, 2026-10-05: en producción, 2 de 36 eventos con fin
- * terminan al día siguiente). «Sin hora de fin» en un evento de varios días lo deja acabando con su último día; en uno de un
- * solo día, sin fin.
+ * terminan al día siguiente). La misma hora del inicio no se acepta (serían 24 horas): el evento queda como estaba. «Sin hora
+ * de fin» en un evento de varios días lo deja acabando con su último día; en uno de un solo día, sin fin.
  */
 export function conHoraFin(actual: InicioFin, hora: string): InicioFin {
   const ini = partirLocal(actual.inicio);
   const ultimo = terminaOtroDia(actual) ? partirLocal(actual.fin).fecha : ini.fecha;
   if (!hora) return { inicio: actual.inicio, fin: ultimo > ini.fecha ? combinarFechaHora(ultimo, FIN_DEL_DIA) : "" };
-  if (ultimo === ini.fecha && ini.hora && hora <= ini.hora) return { inicio: actual.inicio, fin: combinarFechaHora(sumarDiasIso(ini.fecha, 1), hora) };
+  if (ultimo === ini.fecha && ini.hora && hora === ini.hora) return actual;
+  if (ultimo === ini.fecha && ini.hora && hora < ini.hora) return { inicio: actual.inicio, fin: combinarFechaHora(sumarDiasIso(ini.fecha, 1), hora) };
   return { inicio: actual.inicio, fin: combinarFechaHora(ultimo, hora) };
 }

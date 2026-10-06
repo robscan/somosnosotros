@@ -17,8 +17,8 @@ type Props = {
   /** Solo se ofrecen las horas posteriores a esta ("HH:MM"): la hora de fin de un evento que empieza y termina el mismo día. */
   despuesDe?: string;
   /** La hora de inicio ("HH:MM") de un evento de un solo día: se ofrecen las 24 horas, primero las posteriores a ella y después, con
-   *  «día siguiente» en letra suave, las que ya no lo son (la madrugada: «empieza 10:00 p.m., termina 1:00 a.m.»). Sin ella, esta
-   *  prop no hace nada; con `despuesDe`, manda `despuesDe`. */
+   *  «día siguiente» en letra suave, las anteriores (la madrugada: «empieza 10:00 p.m., termina 1:00 a.m.»); la misma hora no se
+   *  ofrece (serían 24 horas). Sin ella, esta prop no hace nada; con `despuesDe`, manda `despuesDe`. */
   diaSiguienteDe?: string;
   /** Ofrece «Sin hora de fin» (la hoja de «Termina»); elegirla da "". */
   sinHoraDeFin?: boolean;
@@ -41,7 +41,7 @@ export default function SelectorHora({ titulo, hora, sugerida, despuesDe, diaSig
   const sugeridaPaso = sugerida ? pasoMasCercano(sugerida.slice(11, 16) || sugerida) : undefined;
   const todas = pasosHora(15);
   const posteriores = diaSiguienteDe && despuesDe === undefined ? todas.filter((h) => h > diaSiguienteDe) : todas;
-  const siguientes = diaSiguienteDe && despuesDe === undefined ? todas.filter((h) => h <= diaSiguienteDe) : [];
+  const siguientes = diaSiguienteDe && despuesDe === undefined ? todas.filter((h) => h < diaSiguienteDe) : [];
   const horas = despuesDe === undefined ? [...posteriores, ...siguientes] : horasDeFin(despuesDe);
 
   // Al abrir con hora ya elegida (o sugerida), esa fila queda en el centro de la lista. Se mueve la lista misma, no la

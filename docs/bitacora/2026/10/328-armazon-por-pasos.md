@@ -194,3 +194,5 @@ Hallazgo fuera de esta pieza: en «¿A qué hora?», al elegir un chip los demá
 - `dur-3-hoja-otra-hora.png`: la hoja «Termina (empieza 10:00 p.m.)» sobre la pantalla atenuada. Las dos primeras filas son 10:15 a 11:30 p.m. sin rótulo; desde la 12:00 a.m. cada chip lleva la hora y, debajo, «día siguiente» en letra chica y suave; la última fila visible asoma cortada, avisando que se desplaza.
 
 **Pendiente que no es de esta pieza:** al elegir un chip activo el canon pone negrita y el chip se ensancha (ya anotado arriba); se ve de nuevo en «Empieza».
+
+Revisión del gestor sobre esa entrega (dos ajustes, mismos archivos): la misma hora del inicio ya no se ofrece ni se acepta como «día siguiente» (serían 24 horas: `conHoraFin` la deja como estaba y la hoja termina un cuarto antes de la hora de inicio), y al cambiar de día un evento que cruzaba la medianoche sigue cruzándola (`conDias` lo manda al día siguiente a la misma hora, en vez de dejarlo sin fin). Pruebas: `cuandoEvento` 28, `pasos` 22, componentes 26/26, `npm test` entero en verde.
