@@ -8,10 +8,11 @@ import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoCandado, IconoChevronIzquierda, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import Palanca from "@/components/ui/Palanca";
+import { useAbajoVisible } from "@/components/ui/useCampoVisible";
 import renglon from "@/components/ui/Renglon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
-import { altoTeclado, combinarResultados, consultarMapa, deducirTipo, lugaresPorTexto, modoDePantalla, puntoValido, recuperarLugar, sugerirLugares, type LugarSugerido, type ResultadoBusqueda } from "@/lib/buscarLugares";
+import { combinarResultados, consultarMapa, deducirTipo, lugaresPorTexto, modoDePantalla, puntoValido, recuperarLugar, sugerirLugares, type LugarSugerido, type ResultadoBusqueda } from "@/lib/buscarLugares";
 import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarConContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
@@ -584,23 +585,9 @@ export default function HojaDonde(props: Props) {
   const verResumen = evento ? modo === "inicial" && !!borrador : !listaAbierta && !!(borrador?.punto || avisoExiste);
   const conPin = evento ? !!borrador : !!borrador?.punto;
 
-  // La barra sobre el teclado (variante B, doc 43 punto 5): `visualViewport` mide el área visible de verdad en iOS; sin él
-  // (navegador que no lo da), se queda al pie -`altoTeclado` devuelve 0 en los dos casos sin teclado.
-  const [bottomBarra, setBottomBarra] = useState(0);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    function medir() {
-      setBottomBarra(altoTeclado(window.innerHeight, vv ? { height: vv.height, offsetTop: vv.offsetTop } : null));
-    }
-    medir();
-    if (!vv) return;
-    vv.addEventListener("resize", medir);
-    vv.addEventListener("scroll", medir);
-    return () => {
-      vv.removeEventListener("resize", medir);
-      vv.removeEventListener("scroll", medir);
-    };
-  }, []);
+  // La barra sobre el teclado (variante B, doc 43 punto 5): sale de la misma medida que publica `ui/useCampoVisible` en `--abajo-visible` (la
+  // mayor entre `visualViewport` y los eventos de teclado de Capacitor: en la app de la tienda el `visualViewport` no se mueve); sin teclado, 0.
+  const bottomBarra = useAbajoVisible();
 
   // Cuando las sugerencias de dirección necesitan abrir y no hay sitio abajo del campo (pegado sobre el teclado), la propia hoja
   // se estira hacia arriba (clase .expandida, CSS) y se desplaza por dentro para que el campo «Dirección» quede arriba del todo:

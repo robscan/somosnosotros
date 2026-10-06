@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import estilos from "./ListaFlotante.module.css";
+import { leerAbajoVisible } from "./useCampoVisible";
 
 type Rect = { left: number; top: number; bottom: number; width: number };
 export type PosicionFlotante = { left: number; top?: number; bottom?: number; width: number; maxHeight: number };
@@ -102,7 +103,9 @@ export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, 
       if (!el) return;
       const r = el.getBoundingClientRect();
       const vv = window.visualViewport;
-      const altoVisible = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      // Lo que se ve: el área visible y, en la app de la tienda (donde el `visualViewport` no se mueve), la ventana menos el teclado que
+      // dice `useCampoVisible` (OL-308).
+      const altoVisible = Math.min(vv ? vv.offsetTop + vv.height : window.innerHeight, window.innerHeight - leerAbajoVisible());
       const offsetTop = vv?.offsetTop ?? 0;
       const p = calcularPosicion(r, altoVisible, offsetTop, window.innerHeight, reservaAbajoRef.current);
       setPosicion((actual) => (actual && actual.left === p.left && actual.top === p.top && actual.bottom === p.bottom && actual.width === p.width && actual.maxHeight === p.maxHeight ? actual : p));

@@ -257,6 +257,47 @@ test("con el teclado abierto el pie sube con él, «Agregar» sigue encima y la 
   assert.equal(Math.round(g.y + g.height), ALTO);
 });
 
+test("app de la tienda (Capacitor: el visualViewport no cambia, el teclado llega por los eventos del plugin): el pie, «Agregar» y «Estoy aquí» quedan sobre el teclado", TOPE, async (t) => {
+  const p = await hoja(t);
+  await p.getByLabel("Buscar el lugar").fill("teatro");
+  await lista(p).waitFor();
+  const antes = await caja(p.getByRole("button", { name: "Estoy aquí" }));
+  // Como `@capacitor/keyboard` en modo body: `keyboardHeight` puesto en el propio evento (sin `detail`) y el `<body>` encogido a mano.
+  await p.evaluate((alto) => {
+    for (const nombre of ["keyboardWillShow", "keyboardDidShow"]) {
+      const ev = document.createEvent("Events");
+      ev.initEvent(nombre, false, false);
+      ev.keyboardHeight = alto;
+      window.dispatchEvent(ev);
+    }
+    document.body.style.height = `${window.innerHeight - alto}px`;
+  }, TECLADO);
+  await p.waitForTimeout(250);
+  assert.equal(await p.evaluate(() => window.visualViewport.height), ALTO, "el área visible no cambió");
+  const f = await caja(pie(p));
+  assert.equal(Math.round(f.y + f.height), ALTO - TECLADO, "el pie queda justo encima del teclado");
+  const a = await caja(agregar(p));
+  assert.ok(a.y + a.height <= f.y, `«Agregar» (abajo en ${a.y + a.height}) queda sobre el pie (arriba en ${f.y})`);
+  const campo = await caja(p.getByLabel("Buscar el lugar"));
+  const l = await caja(lista(p));
+  assert.ok(l.y >= campo.y + campo.height && l.y + l.height <= a.y, "la lista abre bajo el campo y no tapa «Agregar»");
+  const aqui = await caja(p.getByRole("button", { name: "Estoy aquí" }));
+  assert.ok(aqui.y + aqui.height <= ALTO - TECLADO, `«Estoy aquí» (abajo en ${aqui.y + aqui.height}) queda sobre el teclado (desde ${ALTO - TECLADO})`);
+  assert.ok(aqui.y < antes.y, "«Estoy aquí» subió con el teclado");
+  // Al esconderse, todo vuelve al borde.
+  await p.evaluate(() => {
+    for (const nombre of ["keyboardWillHide", "keyboardDidHide"]) {
+      const ev = document.createEvent("Events");
+      ev.initEvent(nombre, false, false);
+      window.dispatchEvent(ev);
+    }
+    document.body.style.height = "";
+  });
+  await p.waitForTimeout(250);
+  const g = await caja(pie(p));
+  assert.equal(Math.round(g.y + g.height), ALTO);
+});
+
 test("«Agregar» abre su hoja, que trae su propio botón: el pie se va", TOPE, async (t) => {
   const p = await hoja(t);
   await p.getByLabel("Buscar el lugar").fill("teatro");

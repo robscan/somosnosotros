@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { sinMovimiento } from "@/lib/movimiento";
 
 /** Aire que queda entre el campo y lo que lo rodea (el teclado, el pie pegado, la barra de arriba). */
@@ -11,6 +11,34 @@ const ESCRIBIBLE = 'input:not([type="checkbox"], [type="radio"], [type="range"],
 const ESPERA_SOLTAR_MS = 100;
 /** Los eventos que el plugin `@capacitor/keyboard` manda a `window` dentro de la app de la tienda (compatibles con `cordova-plugin-ionic-keyboard`). */
 const EVENTOS_DE_CAPACITOR = ["keyboardWillShow", "keyboardDidShow", "keyboardWillHide", "keyboardDidHide"] as const;
+
+/**
+ * La medida `--abajo-visible` (px), para quien necesita el número en JavaScript y no solo en CSS (la barra «Agregar» y «Estoy aquí» de
+ * `HojaDonde`, que se colocan con `style.bottom`): `useCampoVisible` la publica aquí cada vez que la publica en `<html>`. Así hay una sola
+ * lógica del teclado —`visualViewport` y los eventos de Capacitor— y nadie la repite.
+ */
+let abajoVisibleActual = 0;
+const oyentesDeAbajoVisible = new Set<() => void>();
+function fijarAbajoVisible(px: number) {
+  if (px === abajoVisibleActual) return;
+  abajoVisibleActual = px;
+  oyentesDeAbajoVisible.forEach((avisar) => avisar());
+}
+/** El mismo número, leído en el momento (para quien lo consulta en un bucle de cuadros, como `ui/ListaFlotante`). */
+export function leerAbajoVisible(): number {
+  return abajoVisibleActual;
+}
+/** A cuántos px del borde de abajo de la ventana termina lo que se ve (0 sin teclado): lo mismo que `--abajo-visible`. */
+export function useAbajoVisible(): number {
+  return useSyncExternalStore(
+    (avisar) => {
+      oyentesDeAbajoVisible.add(avisar);
+      return () => void oyentesDeAbajoVisible.delete(avisar);
+    },
+    () => abajoVisibleActual,
+    () => 0,
+  );
+}
 
 /**
  * Todo campo de texto queda dentro del área visible al enfocarse (regla del founder, 2026-10-05: «en cada input text asegúrate de que no sea
@@ -67,6 +95,7 @@ export default function useCampoVisible() {
       raiz.style.setProperty("--teclado", `${teclado}px`);
       raiz.style.setProperty("--abajo-visible", `${abajoVisible}px`);
       raiz.toggleAttribute("data-teclado", teclado > 0);
+      fijarAbajoVisible(abajoVisible);
     };
 
     const asegurar = (suave: boolean) => {
@@ -134,6 +163,7 @@ export default function useCampoVisible() {
       raiz.style.removeProperty("--teclado");
       raiz.style.removeProperty("--abajo-visible");
       raiz.removeAttribute("data-teclado");
+      fijarAbajoVisible(0);
     };
   }, []);
 }
