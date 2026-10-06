@@ -19,9 +19,12 @@ const ESPERA_SOLTAR_MS = 100;
  * visible (`visualViewport`). Safari desplaza por su cuenta un campo que no cabe, pero no siempre: si la página no tiene más recorrido que
  * la ventana no la mueve y el teclado tapa el campo; y lo pegado abajo (el pie de los pasos) puede quedar justo encima del campo. Por eso
  * este hook hace dos cosas:
- * 1. Publica `--teclado` en `<html>` —lo que el teclado le quita a la ventana: su alto— y `data-teclado` mientras haya un campo enfocado. Las
- *    pantallas suman `--teclado` a su relleno de abajo (`plantilla.pagina`, `PorPasos`) para que haya por dónde desplazar, y el pie de los
- *    pasos deja de estar pegado (`PorPasos.module.css`): en el flujo, tras el campo, queda sobre el teclado al fondo del recorrido.
+ * 1. Publica en `<html>`, mientras haya un campo enfocado (y 0 sin él), dos medidas del teclado y `data-teclado`:
+ *    - `--teclado`: lo que el teclado le quita a la ventana, su alto. No cambia aunque Safari mueva la vista. Las pantallas lo suman a su relleno
+ *      de abajo (`plantilla.pagina`, `PorPasos`) para que haya por dónde desplazar el campo hasta quedar sobre el teclado.
+ *    - `--abajo-visible`: a cuánto del borde de abajo de la ventana de maquetación termina lo que se ve (el alto del teclado menos el desfase
+ *      del área visible). Es el `bottom` de todo lo que va pegado sobre el teclado: el pie con las acciones (`PiePaso`, en la columna de los
+ *      pasos y en la capa fija de «¿Dónde es?»). Regla del founder, 2026-10-06: con el teclado abierto, las acciones quedan sobre él.
  * 2. Al enfocar un campo, y cada vez que el área visible cambia (el teclado tarda en asentarse y no se espera con un temporizador a ciegas),
  *    desplaza lo que se desplaza —la hoja o la página— lo justo para que el campo quede en el centro de lo que sí se ve: entre la barra de
  *    arriba y el teclado. Si ya se ve entero no se mueve nada.
@@ -35,7 +38,11 @@ export default function useCampoVisible() {
     /** El alto del teclado: lo que le falta al área visible para llegar a la ventana. Es el mismo aunque Safari desplace la vista (a diferencia de `offsetTop`). */
     const publicar = () => {
       const tapado = campo && vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+      // Lo pegado sobre el teclado sí sigue al área visible: si la vista está desplazada, su borde de abajo queda `desfase` px más abajo que el
+      // alto del teclado. Solo cambia la posición de lo pegado, nunca el largo de la página, así que no hace saltar el desplazamiento.
+      const hastaElBorde = campo && vv ? Math.max(0, Math.round(window.innerHeight - vv.height - desfaseVisible(vv))) : 0;
       raiz.style.setProperty("--teclado", `${tapado}px`);
+      raiz.style.setProperty("--abajo-visible", `${hastaElBorde}px`);
       raiz.toggleAttribute("data-teclado", tapado > 0);
     };
 
@@ -93,9 +100,19 @@ export default function useCampoVisible() {
       vv?.removeEventListener("resize", alCambiarElArea);
       vv?.removeEventListener("scroll", alCambiarElArea);
       raiz.style.removeProperty("--teclado");
+      raiz.style.removeProperty("--abajo-visible");
       raiz.removeAttribute("data-teclado");
     };
   }, []);
+}
+
+/**
+ * Dónde empieza el área visible en el marco de `getBoundingClientRect`: `pageTop - scrollY`. No es `offsetTop`: en Safari del iPhone, con el
+ * teclado y la página desplazada, `offsetTop` no coincide con el marco de las cajas (medido en el simulador); `pageTop - scrollY` da 0 allí y da
+ * el `offsetTop` donde la vista se amplió con los dedos. Mientras la vista se reacomoda `pageTop` puede ir un cuadro atrás: nunca negativo.
+ */
+function desfaseVisible(vv: VisualViewport) {
+  return Math.max(0, vv.pageTop - window.scrollY);
 }
 
 /**
@@ -104,10 +121,7 @@ export default function useCampoVisible() {
  * desplaza si es más chica (el cuerpo de una hoja).
  */
 function bandaLibre(campo: HTMLElement, vv: VisualViewport | null) {
-  // Dónde empieza el área visible en ese marco: `pageTop - scrollY`. No es `offsetTop`: en Safari del iPhone, con el teclado y la página
-  // desplazada, `offsetTop` no coincide con el marco de las cajas (medido en el simulador); `pageTop - scrollY` da 0 allí y da el
-  // `offsetTop` donde la vista se amplió con los dedos. Mientras la vista se reacomoda `pageTop` puede ir un cuadro atrás: nunca negativo.
-  const desfase = vv ? Math.max(0, vv.pageTop - window.scrollY) : 0;
+  const desfase = vv ? desfaseVisible(vv) : 0;
   let arriba = desfase;
   let abajo = vv ? desfase + vv.height : window.innerHeight;
   const contenedor = desplazable(campo);

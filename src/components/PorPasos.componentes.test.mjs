@@ -1,5 +1,5 @@
-/** OL-305 (bitácora 333): todo campo de texto queda dentro del área visible al enfocarse, con el teclado abierto (`ui/useCampoVisible`, montado
- *  en el armazón). Se monta el armazón real de los pasos (`PorPasos` + `PiePaso`) con un paso largo (un bloque alto hace de mapa) y un campo
+/** OL-305 (bitácora 333) y OL-308 (bitácora 336): con el teclado abierto, todo campo de texto queda dentro del área visible y el pie con las
+ *  acciones queda pegado justo encima del teclado (`ui/useCampoVisible`, montado en el armazón). Se monta el armazón real de los pasos (`PorPasos` + `PiePaso`) con un paso largo (un bloque alto hace de mapa) y un campo
  *  al fondo, justo sobre el pie, y se simula el teclado del iPhone con un `window.visualViewport` propio: un EventTarget con `height` (la
  *  ventana menos el teclado, 844 − 336 = 508), `offsetTop` y `pageTop` (el desplazamiento de la página); `resize` lo dispara la prueba. Lo
  *  que no cubre (Safari de verdad desplazando por su cuenta, su `offsetTop` desfasado) lo cubre el simulador de iPhone (bitácora 333).
@@ -42,12 +42,14 @@ before(async () => {
       import useCampoVisible from './src/components/ui/useCampoVisible';
       import './src/app/globals.css';
       const q = new URLSearchParams(location.search);
-      // ?sin=1: el armazón sin el mecanismo (el control negativo); ?hoja=1: una hoja con un campo al fondo de su cuerpo.
+      // ?sin=1: el armazón sin el mecanismo (el control negativo); ?hoja=1: una hoja con un campo al fondo de su cuerpo; ?corto=1: un paso corto
+      // («¿Cómo se llama?»: el campo y el pie, sin nada más).
       function Armazon({children}) { if (!q.has('sin')) useCampoVisible(); return children; }
       function Paso() {
         return (
           <PorPasos titulo="Publicar" paso="a" direccion={null} avance={0.5} salida={{href:'/', texto:'Salir'}} pregunta="¿Es aquí?">
-            <div style={{height: 540, background: 'var(--fondo-mapa)'}} role="img" aria-label="Mapa de prueba" />
+            {!q.has('corto') && !q.has('opcional') && <div style={{height: 540, background: 'var(--fondo-mapa)'}} role="img" aria-label="Mapa de prueba" />}
+            {q.has('opcional') && <><label className="campo"><input type="text" aria-label="Artista" /></label><div style={{height: 56, background: 'var(--fondo-mapa)'}} role="img" aria-label="Descripción" /></>}
             <label className="campo"><input type="text" aria-label="Nombre del lugar" /></label>
             <PiePaso><button type="button">Sí, es aquí</button></PiePaso>
           </PorPasos>
@@ -107,11 +109,15 @@ async function pagina(t, consulta = "") {
       offsetTop: { value: 0 },
       offsetLeft: { value: 0 },
       scale: { value: 1 },
-      pageTop: { get: () => window.scrollY },
+      pageTop: { configurable: true, get: () => window.scrollY },
       pageLeft: { value: 0 },
     });
     Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
-    window.teclado = (px) => {
+    // `desvio`: lo que iOS desplaza la vista dentro de la ventana de maquetación (`pageTop - scrollY`); el área visible va de ahí a ahí + height.
+    let desvio = 0;
+    Object.defineProperty(vv, "pageTop", { get: () => window.scrollY + desvio });
+    window.teclado = (px, desplazada = 0) => {
+      desvio = desplazada;
       vv.height = window.innerHeight - px;
       vv.dispatchEvent(new Event("resize"));
     };
@@ -126,9 +132,9 @@ async function pagina(t, consulta = "") {
   return p;
 }
 /** Abre el teclado como el iPhone: enfoca el campo y, cuando el teclado ya subió, encoge el área visible. Espera unos cuadros a que todo se asiente. */
-async function abrirTeclado(p, nombre) {
+async function abrirTeclado(p, nombre, desplazada = 0) {
   await p.getByRole("textbox", { name: nombre }).focus();
-  await p.evaluate((px) => window.teclado(px), TECLADO);
+  await p.evaluate(([px, d]) => window.teclado(px, d), [TECLADO, desplazada]);
   await p.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))))));
 }
 /** Dónde está cada cosa respecto al área visible (844 − teclado de alto, desde 0): el campo, el pie y la barra de arriba. */
@@ -143,9 +149,11 @@ const cajas = (p, nombre) =>
       return {
         campo: { top: campo.top, bottom: campo.bottom },
         visible: ventana - teclado,
-        pie: pie ? { top: r(pie).top, bottom: r(pie).bottom, posicion: getComputedStyle(pie).position } : null,
+        pie: pie ? { top: r(pie).top, bottom: r(pie).bottom, alto: r(pie).height, posicion: getComputedStyle(pie).position } : null,
+        altoPie: getComputedStyle(document.documentElement).getPropertyValue("--alto-pie").trim(),
         barraBottom: barra ? r(barra).bottom : 0,
         teclado: raiz.getPropertyValue("--teclado").trim(),
+        abajoVisible: raiz.getPropertyValue("--abajo-visible").trim(),
         atributo: document.documentElement.hasAttribute("data-teclado"),
         relleno: parseFloat(getComputedStyle(document.querySelector("main")).paddingBottom),
         recorrido: document.documentElement.scrollHeight - window.innerHeight,
@@ -168,20 +176,57 @@ test("con el teclado abierto, la columna gana el aire del teclado y el campo que
   await abrirTeclado(p, "Nombre del lugar");
   const c = await cajas(p, "Nombre del lugar");
   assert.equal(c.teclado, `${TECLADO}px`);
+  assert.equal(c.abajoVisible, `${TECLADO}px`, "lo pegado sobre el teclado sube justo su alto");
   assert.equal(c.atributo, true);
-  assert.equal(c.relleno, TECLADO, "el relleno de abajo es lo que tapa el teclado");
-  assert.equal(c.pie.posicion, "static", "el pie sale de lo pegado: queda tras el campo, en el flujo");
+  assert.ok(Math.abs(parseFloat(c.altoPie) - c.pie.alto) <= 0.5, `el pie publica su alto (${c.altoPie}, mide ${c.pie.alto})`);
+  assert.ok(Math.abs(c.relleno - (TECLADO + c.pie.alto + 12)) <= 0.5, `el relleno de abajo (${c.relleno}) es lo que tapa el teclado más lo que mide el pie, que ya no ocupa lugar en el flujo, más 12 de aire`);
+  assert.equal(c.pie.posicion, "fixed", "el pie se ancla sobre el teclado: nunca baja del área visible");
   assert.ok(c.campo.top >= c.barraBottom, `el campo no queda bajo la barra (arriba ${c.campo.top}, barra ${c.barraBottom})`);
   assert.ok(c.campo.bottom <= c.visible, `el campo cabe sobre el teclado (abajo ${c.campo.bottom}, área visible ${c.visible})`);
-  assert.ok(c.campo.bottom <= c.pie.top, "el campo no queda bajo el pie");
+  assert.ok(c.campo.bottom <= c.pie.top, `el campo (abajo en ${c.campo.bottom}) no queda bajo el pie (arriba en ${c.pie.top})`);
 });
 
-test("el pie, en el flujo, queda sobre el teclado al fondo del recorrido: «Sí, es aquí» sigue al alcance", async (t) => {
+test("el pie queda con su borde de abajo en el borde del área visible, sobre el teclado, arriba, a medias y al fondo del recorrido", async (t) => {
   const p = await pagina(t);
   await abrirTeclado(p, "Nombre del lugar");
-  await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  for (const y of [0, 200, 100000]) {
+    await p.evaluate((n) => window.scrollTo(0, n), y);
+    const c = await cajas(p, "Nombre del lugar");
+    assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `con la página en ${y} el pie termina en ${c.pie.bottom} y el área visible en ${c.visible}`);
+  }
+});
+
+test("en un paso corto («¿Cómo se llama?») el pie queda pegado sobre el teclado y el campo a la vista", async (t) => {
+  const p = await pagina(t, "?corto=1");
+  await abrirTeclado(p, "Nombre del lugar");
   const c = await cajas(p, "Nombre del lugar");
-  assert.ok(c.pie.bottom <= c.visible + 1, `el pie cabe sobre el teclado (abajo ${c.pie.bottom}, área visible ${c.visible})`);
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y el área visible en ${c.visible}`);
+  assert.ok(c.campo.top >= c.barraBottom && c.campo.bottom <= c.pie.top, `el campo se ve entre la barra y el pie (va de ${c.campo.top} a ${c.campo.bottom}; pie en ${c.pie.top})`);
+});
+
+test("un paso con poco recorrido y el campo al fondo («¿Quieres agregar algo?»): si Safari ya movió la página lo justo para ver el campo, el pie pegado no lo tapa", async (t) => {
+  const p = await pagina(t, "?opcional=1");
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  // Como en el iPhone: el teclado sube y Safari desplaza la página por su cuenta, sin contar con el pie pegado.
+  await p.evaluate(([px, y]) => {
+    window.scrollTo(0, y);
+    window.teclado(px);
+  }, [TECLADO, 56]);
+  await p.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))))));
+  const c = await cajas(p, "Nombre del lugar");
+  assert.ok(c.campo.bottom <= c.pie.top, `el campo (abajo en ${c.campo.bottom}) no queda bajo el pie (arriba en ${c.pie.top})`);
+  assert.ok(c.campo.bottom <= c.visible && c.campo.top >= c.barraBottom - 1, `el campo se ve (va de ${c.campo.top} a ${c.campo.bottom}, área visible ${c.visible})`);
+});
+
+test("con la vista desplazada por iOS (offsetTop), el pie sigue el borde de abajo de lo que se ve y no el de la ventana", async (t) => {
+  const p = await pagina(t);
+  const DESPLAZADA = 100;
+  await abrirTeclado(p, "Nombre del lugar", DESPLAZADA);
+  await p.evaluate(() => window.scrollTo(0, 0));
+  const c = await cajas(p, "Nombre del lugar");
+  assert.equal(c.teclado, `${TECLADO}px`, "el aire de la columna no depende del desplazamiento de la vista");
+  assert.equal(c.abajoVisible, `${TECLADO - DESPLAZADA}px`);
+  assert.ok(Math.abs(c.pie.bottom - (c.visible + DESPLAZADA)) <= 1, `el pie termina en ${c.pie.bottom} y lo que se ve en ${c.visible + DESPLAZADA}`);
 });
 
 test("al cerrar el teclado todo vuelve: --teclado a 0, el pie pegado y sin aire de más", async (t) => {
@@ -196,7 +241,9 @@ test("al cerrar el teclado todo vuelve: --teclado a 0, el pie pegado y sin aire 
   const c = await cajas(p, "Nombre del lugar");
   assert.equal(c.atributo, false);
   assert.equal(c.relleno, 0);
+  assert.equal(c.abajoVisible, "0px");
   assert.equal(c.pie.posicion, "sticky");
+  assert.ok(Math.abs(c.pie.bottom - VENTANA) <= 1, `el pie vuelve al borde de la ventana (abajo ${c.pie.bottom})`);
 });
 
 test("si el teclado llega después del foco (tarda en asentarse), el resize del área visible lo corrige", async (t) => {

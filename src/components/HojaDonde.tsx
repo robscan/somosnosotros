@@ -867,7 +867,7 @@ export default function HojaDonde(props: Props) {
         </div>
       </div>
       {pieVisible && (
-        <PiePaso ref={pieRef} abajo={bottomBarra}>
+        <PiePaso ref={pieRef}>
           <Boton type="button" aria-disabled={puedeConfirmar ? undefined : true} onClick={puedeConfirmar ? listo : undefined}>
             {textoListo(props.para, borrador)}
           </Boton>

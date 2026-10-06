@@ -46,6 +46,7 @@ before(async () => {
       contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
       import HojaDonde from './src/components/HojaDonde';
+      import useCampoVisible from './src/components/ui/useCampoVisible';
       import './src/app/globals.css';
       const q = new URLSearchParams(location.search);
       window.qa = {cerro:0, lugar:[], otro:[], listo:[]};
@@ -56,11 +57,13 @@ before(async () => {
       const otro = {reservado:false, sitioTexto:'', direccion:'', sitioPunto:null, direccionPrivada:'', privadoPunto:null, revelarHoras:24, indicaciones:'', ciudad:null};
       const comun = {lugares, yo:null, ubicando:false, avisoUbicacion:null, onEstoyAqui:()=>{}, onCerrar:()=>{window.qa.cerro++}};
       const lugarPara = q.get('para') === 'lugar';
+      // El armazón real monta useCampoVisible una vez (OL-305/OL-308): publica --abajo-visible, el bottom del pie sobre el teclado.
+      function Armazon({children}) { useCampoVisible(); return children; }
       createRoot(document.getElementById('root')).render(
-        lugarPara
+        <Armazon>{lugarPara
           ? <HojaDonde {...comun} para="lugar" nombreForm="" conFoco={q.has('foco')} punto={q.has('punto') ? {lat:22.1533, lng:-100.9811} : null} direccion={q.has('punto') ? 'Av. Universidad 300' : ''} ciudad="" onListo={(v)=>window.qa.listo.push(v)} />
           : <HojaDonde {...comun} para="evento" modoSitio={q.has('registrado') ? 'lugar' : 'otro'} lugarId={q.has('registrado') ? lugares[0].id : ''} otro={otro} volverA="/nuevo/evento"
-              onLugar={(id)=>window.qa.lugar.push(id)} onOtro={(o)=>window.qa.otro.push(o)} onGesto={()=>{}} />
+              onLugar={(id)=>window.qa.lugar.push(id)} onOtro={(o)=>window.qa.otro.push(o)} onGesto={()=>{}} />}</Armazon>
       );
     `,
     },
@@ -106,6 +109,7 @@ async function hoja(t, consulta = "", ancho = 390) {
     const vv = {
       height: window.innerHeight,
       offsetTop: 0,
+      get pageTop() { return window.scrollY + this.offsetTop; },
       addEventListener: (n, f) => oyentes[n]?.push(f),
       removeEventListener: (n, f) => { if (oyentes[n]) oyentes[n] = oyentes[n].filter((x) => x !== f); },
     };
