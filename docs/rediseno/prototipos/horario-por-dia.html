@@ -132,7 +132,8 @@ ul { list-style: none; }
 /* La lista de días (ui/Renglon sin clave): icono | día en negrita / horas | Cambiar. El día que difiere del horario común lleva su marca. */
 .dias { display: grid; gap: var(--espacio-3); }
 .renglon .horas { display: block; color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 400; }
-.renglon.pendiente .horas { color: var(--texto); }
+/* El día que se apartó del horario común: sus horas en tinta y negrita, para verlo de un vistazo entre los que siguen igual (en gris). */
+.renglon.distinto .horas { color: var(--texto); font-weight: 600; }
 /* La hoja de un día: media pantalla, con sus dos grupos y «Listo». */
 .velo { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.32); }
 .hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: var(--espacio-4); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: 24px 24px 0 0; background: var(--fondo); box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1); }
@@ -180,7 +181,7 @@ function pintar() {
   const resumen = e.mismo
     ? `Del 9 al 11 de oct · cada día ${rango(e.comun)}`
     : `Del 9 al 11 de oct · ${e.porDia.filter(difiere).length ? `${e.porDia.filter(difiere).length} día${e.porDia.filter(difiere).length > 1 ? 's' : ''} con otro horario` : 'cada día igual'}`;
-  const lista = e.mismo ? '' : `<div class="dias">${DIAS.map(([n], i) => `<button class="renglon ${difiere(e.porDia[i]) ? 'pendiente' : ''}" data-a="dia" data-i="${i}">${ic('cal')}<span><b>${n}</b><span class="horas">${rango(e.porDia[i])}</span></span><span class="accion">Cambiar</span></button>`).join('')}</div>`;
+  const lista = e.mismo ? '' : `<div class="dias">${DIAS.map(([n], i) => `<button class="renglon ${difiere(e.porDia[i]) ? 'distinto' : ''}" data-a="dia" data-i="${i}">${ic('cal')}<span><b>${n}</b><span class="horas">${rango(e.porDia[i])}</span></span><span class="accion">Cambiar</span></button>`).join('')}</div>`;
   const hoja = e.hoja === null ? '' : `<div class="velo" data-a="cerrar"></div><div class="hoja" role="dialog" aria-label="${DIAS[e.hoja][0]}"><h2>${DIAS[e.hoja][0]}</h2>${chips('Empieza', e.porDia[e.hoja].inicio, 'ini-dia', false)}${chips('Termina', e.porDia[e.hoja].fin, 'fin-dia', true)}<button class="btn" data-a="cerrar">Listo</button></div>`;
   document.getElementById('app').innerHTML = `
     <div class="barra"><button class="redondo" data-a="nada" aria-label="Atrás">${ic('atras')}</button><b>Publicar</b><span class="redondo"></span></div>
@@ -193,7 +194,7 @@ function pintar() {
       <p class="resumen">${resumen}</p>
       <details class="notas"><summary>Notas del prototipo</summary><ul>
         <li>En varios días (OL-309, ya en producción) se pregunta el horario y se aplica a cada día. Esta pieza añade la casilla «Mismo horario todos los días», marcada de entrada: no cuesta nada a quien tiene el caso normal (exposición, taller).</li>
-        <li>Al desmarcarla, los chips comunes se van y aparece un renglón por día (el canon ui/Renglon sin clave: icono, día en negrita, sus horas debajo, «Cambiar»). Todos arrancan con el horario común; el día que cambia queda marcado con la línea punteada del canon para verlo de un vistazo.</li>
+        <li>Al desmarcarla, los chips comunes se van y aparece un renglón por día (el canon ui/Renglon sin clave: icono, día en negrita, sus horas debajo, «Cambiar»). Todos arrancan con el horario común; el día que cambia lleva sus horas en tinta y negrita (los que siguen igual, en gris) para verlo de un vistazo.</li>
         <li>Tocar un día abre una hoja de media pantalla con «Empieza» y «Termina» solo de ese día y «Listo». La persona puede ir al segundo o al tercero y ajustar ahí; los demás siguen con el común.</li>
         <li>Volver a marcar la casilla devuelve a todos el horario común (y lo dice el resumen). El resumen de abajo siempre dice qué quedó: «cada día de 8:00 a 9:00 p.m.» o «1 día con otro horario».</li>
         <li>Lo que se guarda: con la casilla marcada, igual que hoy (inicio del primer día, fin del último). Con días distintos hace falta la tabla de sesiones (una fila por día con su inicio y fin): la ficha y la agenda las enseñan por día y la agenda muestra el evento cada día que tiene sesión. Es el mismo modelo del taller con sesiones del plan.</li>
