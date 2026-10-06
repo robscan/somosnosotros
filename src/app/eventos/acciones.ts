@@ -13,6 +13,7 @@ import { cartelAFormulario, ciudadDelSitio, hrefEvento, validarEvento, type Camb
 import { zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
@@ -162,9 +163,23 @@ export type ResultadoCartel =
   | { ok: false; mensaje: string }
   | { ok: false; sinCupo: true };
 
+/**
+ * La lectura falló por el modelo o por un corte: no se descuenta (OL-307, bitácora 335). Solo el servidor puede devolverla, con su llave de
+ * servicio: una función que llamara cualquier cuenta devolvería también las buenas. La base pone el fusible (tantas devoluciones al mes
+ * como el tope) para que una imagen que el modelo no sabe leer, repetida, no sea gratis sin límite. Sin llave de servicio o si la
+ * devolución falla, la lectura queda descontada: el cupo nunca se queda corto de más.
+ */
+async function devolverLectura(perfilId: string) {
+  try {
+    await clienteAdmin()?.rpc("devolver_lectura_de_cartel", { p_perfil: perfilId });
+  } catch {
+    // sin devolución: la fallida cuenta
+  }
+}
+
 /** Lee el cartel ya subido a Storage y devuelve los valores para llenar el formulario. */
 export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCartel> {
-  const { supabase } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
+  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const { supabaseUrl } = configPublica();
   if (!supabaseUrl || !urlImagen.startsWith(`${supabaseUrl}/storage/v1/object/public/fotos/`)) return { ok: false, mensaje: "La imagen no es de aquí." };
   // El cupo se aparta aquí, antes de llamar al modelo, y en un solo paso: en el cliente se saltaría en diez
@@ -172,9 +187,18 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
   const { data: apartada, error: eCupo } = await supabase.rpc("apartar_lectura_de_cartel");
   if (eCupo) return { ok: false, mensaje: "No pude apartar la lectura. Intenta de nuevo." };
   if (!apartada) return { ok: false, sinCupo: true };
-  const lectura = await leerCartel(urlImagen);
-  // El titular ("No pude leer el cartel") lo pone la tarjeta; aquí solo va lo que toca hacer.
-  if (!lectura) return { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." };
+  let lectura;
+  try {
+    lectura = await leerCartel(urlImagen);
+  } catch (e) {
+    await devolverLectura(user.id);
+    throw e;
+  }
+  // El titular ("No pude leer el cartel") lo pone la tarjeta; aquí solo va lo que toca hacer. Una lectura que falla no se descuenta.
+  if (!lectura) {
+    await devolverLectura(user.id);
+    return { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." };
+  }
   const valores = cartelAFormulario(lectura);
   let lugarId: string | null = null;
   if (valores.lugar) {
@@ -236,24 +260,14 @@ export async function borrarEvento(id: string, lugarId: string | null) {
   redirect("/borrado?que=evento");
 }
 
-export type Cupo = { usadas: number; tope: number; sinTope: boolean; pedida: boolean };
+export type Cupo = { usadas: number; tope: number; sinTope: boolean };
 
 /** Lo que le queda a quien mira, para que la tarjeta avise antes de que se acabe (docs/rediseno/23). */
 export async function cupoDeCartel(): Promise<Cupo | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
-  // Todo sale de la misma función definer: nadie puede leer sus propias filas de `reportes`, y abrirlas sería peor.
   const { data, error } = await supabase.rpc("mi_cupo_de_cartel").maybeSingle();
-  const d = data as { usadas: number; tope: number; sin_tope: boolean; pedida: boolean } | null;
+  const d = data as { usadas: number; tope: number; sin_tope: boolean } | null;
   if (error || !d) return null;
-  return { usadas: d.usadas, tope: d.tope, sinTope: d.sin_tope, pedida: d.pedida };
-}
-
-/** "Pedir más": una petición sin atender por cuenta, que llega a lo pendiente del panel. Sin correos. */
-export async function pedirMasLecturas(): Promise<{ ok: boolean }> {
-  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
-  const { error } = await supabase.from("reportes").insert({ tipo: "perfil", objeto_id: user.id, motivo: "mas_lecturas", creado_por: user.id });
-  // Si ya había una sin atender, el índice único la rechaza: para quien pide, es lo mismo que si se hubiera mandado.
-  if (error && error.code !== "23505") return { ok: false };
-  return { ok: true };
+  return { usadas: d.usadas, tope: d.tope, sinTope: d.sin_tope };
 }

@@ -4,6 +4,8 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
 import { IconoAyuda, IconoBloquear, IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
+import { cupoDeCartel } from "@/app/eventos/acciones";
+import { lecturaDeCartelActiva } from "@/lib/cartel";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
@@ -16,6 +18,7 @@ import { contarPendientes } from "@/app/admin/consultas";
 import AvisoSalidaAjuste from "./AvisoSalidaAjuste";
 import BotonSalir from "./BotonSalir";
 import InstalarApp from "./InstalarApp";
+import RenglonLecturas from "./RenglonLecturas";
 import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./ajustes.module.css";
 
@@ -33,7 +36,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
   const { perfil } = actual;
   const correo = actual.correo ? enmascararCorreo(actual.correo) : "tu correo";
   // Administración dice lo pendiente (docs/rediseno/19, decisión 12).
-  const pendientes = perfil.rol === "admin" ? await contarPendientes() : null;
+  const [pendientes, cupo] = await Promise.all([perfil.rol === "admin" ? contarPendientes() : null, lecturaDeCartelActiva() ? cupoDeCartel() : null]);
   return (
     <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/perfil", texto: "Mi perfil" }} />
@@ -69,6 +72,8 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
             <b>Entras con {correo}</b>
             <small>Sin contraseña: cada vez te mandamos un código</small>
           </li>
+          {/* Lo que queda de la lectura automática de carteles este mes (OL-307); sin servicio de lectura, no hay renglón. */}
+          <RenglonLecturas cupo={cupo} />
           <li>
             <Link href="/ajustes/bloqueados" className={renglon.ajuste}>
               <IconoBloquear width={20} height={20} />

@@ -88,8 +88,9 @@
   --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
   --alto-modos: 56px; /* la tira de tipos de la pantalla de alta (Evento · Lugar · Artista), sin el área segura */
   --alto-avance: 3px; /* la línea de avance de un alta por pasos, bajo su barra (`ui/Barra`, prototipo de la bitácora 323) */
-  --alto-subir-cartel: 200px; /* el recuadro «Sube el cartel» al empezar a publicar un evento (bitácora 323, tercera vuelta) */
+  --alto-subir-cartel: 176px; /* el recuadro «Sube el cartel» dentro de su marco, al empezar a publicar un evento (bitácoras 323 y 334) */
   --ancho-cartel-leyendo: 168px; /* el cartel chico y al centro mientras se lee (bitácora 323, prototipo) */
+  --ancho-cartel-guardado: 40px; /* la miniatura de la fila «Cartel guardado» sobre la primera pregunta (bitácora 334) */
   --ancho-cartel-revisa: 96px; /* la miniatura del cartel leído en la cabeza de «Revisa» (bitácora 323, prototipo) */
   --alto-mapa-paso: 240px; /* lo mínimo del mapa de «¿Es aquí?» al publicar un evento: crece con la pantalla (OL-301, bitácora 329) */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */

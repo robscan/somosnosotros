@@ -33,17 +33,17 @@ ok((await uno(`select rol from public.perfiles where id = '${F}'`))?.rol === "ad
 // ---------- el tope base y el cupo ----------
 await como("authenticated", U1);
 let cupo = await uno("select * from public.mi_cupo_de_cartel()");
-ok(cupo?.tope === 20, "el tope base son 20 al mes", cupo);
+ok(cupo?.tope === 6, "el tope base son 6 al mes", cupo);
 ok(cupo?.usadas === 0 && cupo?.sin_tope === false, "una cuenta nueva empieza en 0 y con tope", cupo);
 
-// Se gastan 19 y todavía se puede.
-for (let i = 0; i < 19; i++) await uno("select public.apartar_lectura_de_cartel() as v");
+// Se gastan 5 y todavía se puede.
+for (let i = 0; i < 5; i++) await uno("select public.apartar_lectura_de_cartel() as v");
 cupo = await uno("select * from public.mi_cupo_de_cartel()");
-ok(cupo?.usadas === 19, "las lecturas se cuentan", cupo);
-ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === true, "la número 20 todavía entra");
-ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === false, "la número 21 ya no");
+ok(cupo?.usadas === 5, "las lecturas se cuentan", cupo);
+ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === true, "la número 6 todavía entra");
+ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === false, "la número 7 ya no");
 cupo = await uno("select * from public.mi_cupo_de_cartel()");
-ok(cupo?.usadas === 20, "la que se rechaza no se anota", cupo);
+ok(cupo?.usadas === 6, "la que se rechaza no se anota", cupo);
 
 // ---------- se renueva el día 1 ----------
 await como(null);
@@ -114,6 +114,40 @@ ok(typeof resumen?.j?.ahora?.activas === "number", "los indicadores siguen respo
 // ---------- y una cuenta normal no ve el panel ----------
 await como("authenticated", U3);
 ok((await filas("select * from public.panel_pendientes()")).length === 0, "una cuenta normal no ve lo pendiente");
+
+// ---------- una lectura que falla no se descuenta (OL-307) ----------
+// Solo el servidor, con su llave de servicio, la devuelve: si cualquier cuenta pudiera, devolvería también las buenas y el tope sería de adorno.
+const lecturaApartada = async (quien) => { await como("authenticated", quien); return (await uno("select public.apartar_lectura_de_cartel() as v"))?.v; };
+const devuelta = async (quien) => { await como("service_role"); return (await uno("select public.devolver_lectura_de_cartel($1) as v", [quien]))?.v; };
+const quedanDe = async (quien) => { await como("authenticated", quien); return (await uno("select * from public.mi_cupo_de_cartel()"))?.usadas; };
+for (let i = 0; i < 3; i++) await lecturaApartada(U3);
+ok((await quedanDe(U3)) === 3, "tres lecturas apartadas");
+await como("authenticated", U3);
+ok(await falla("select public.devolver_lectura_de_cartel($1)", [U3]), "una cuenta normal no puede devolverse una lectura");
+await como("anon");
+ok(await falla("select public.devolver_lectura_de_cartel($1)", [U3]), "ni sin sesión");
+ok((await quedanDe(U3)) === 3, "sin devolución, el cupo sigue igual");
+ok((await devuelta(U3)) === true, "el servidor devuelve la lectura que falló");
+ok((await quedanDe(U3)) === 2, "la lectura devuelta ya no cuenta");
+await como(null);
+ok((await filas("select 1 from public.lecturas_cartel where perfil_id = $1 and devuelta", [U3])).length === 1 && (await filas("select 1 from public.lecturas_cartel where perfil_id = $1", [U3])).length === 3, "la fila no se borra: queda marcada como devuelta");
+// El fusible: tantas devoluciones al mes como el tope (6). Seis fallidas salen gratis; la séptima cuenta como cualquier otra.
+for (let i = 0; i < 5; i++) {
+  ok((await lecturaApartada(U3)) === true, `la lectura ${i + 2} que falla se aparta`);
+  ok((await devuelta(U3)) === true, `y se devuelve (${i + 2} de 6)`);
+}
+ok((await quedanDe(U3)) === 2, "seis devueltas: el cupo sigue en dos");
+ok((await lecturaApartada(U3)) === true, "la séptima lectura que falla se aparta");
+ok((await devuelta(U3)) === false, "y esa ya no se devuelve: el fusible está agotado");
+ok((await quedanDe(U3)) === 3, "esa fallida cuenta como cualquier otra");
+// Sin nada que devolver (otra cuenta sin lecturas), no pasa nada.
+ok((await devuelta(U2)) === false, "una cuenta sin lecturas no tiene qué devolver");
+// El mes que viene el fusible vuelve: las devoluciones de antes del día 1 no cuentan.
+await como(null);
+await db.query("update public.lecturas_cartel set creado_en = public.inicio_del_mes() - interval '1 day' where perfil_id = $1", [U3]);
+ok((await quedanDe(U3)) === 0, "con el mes nuevo, ni lecturas ni devoluciones del mes pasado cuentan");
+await lecturaApartada(U3);
+ok((await devuelta(U3)) === true, "y se vuelve a poder devolver");
 
 
   await como(null, null);

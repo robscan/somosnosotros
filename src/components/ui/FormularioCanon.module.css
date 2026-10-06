@@ -120,7 +120,7 @@
   border-color: var(--borde);
   background: var(--fondo);
 }
-/* Sin cupo: baja de tono y deja de ser la cámara; ya pedida, se queda quieta. */
+/* Sin cupo: baja de tono, deja de ser la cámara y no hace nada (OL-307: ya no se piden más lecturas). */
 .cartelSinCupo {
   border-color: var(--borde);
   background: var(--fondo);
@@ -132,17 +132,9 @@
   background: var(--fondo-miniatura);
   color: var(--texto-suave);
 }
-.cartelPedida {
-  /* No hace nada: ni mano ni recuadro de botón. */
+.cartelQuieto {
+  /* Ni mano ni recuadro de botón. */
   cursor: default;
-  border-style: dashed;
-  border-color: var(--borde);
-  background: var(--fondo);
-  text-align: left;
-}
-.cartelPedida > .marcoCartel {
-  background: var(--fondo-miniatura);
-  color: var(--primario);
 }
 .cartelFallo {
   border-color: var(--error);

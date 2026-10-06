@@ -25,7 +25,7 @@ import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
-import { cupoDeCartel, leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
+import { cupoDeCartel, leerCartelAccion, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
@@ -263,7 +263,6 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       window.clearInterval(reloj);
     };
   }, [actualizarCupo, cartelActivo, esAlta]);
-  const [pidiendo, setPidiendo] = useState(false);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
   const gestos = useRef(crearGestosFlyer(camposIniciales({
@@ -413,30 +412,6 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   }
 
   /**
-   * "Pedir más": una sola por cuenta. Solo se da por pedida si el servidor lo confirma; si falla o se cae la señal,
-   * la tarjeta se queda donde estaba y lo dice ahí mismo, que es donde la persona está mirando.
-   */
-  async function pedirMas() {
-    if (operandoCartel.current) return;
-    operandoCartel.current = true;
-    setPidiendo(true);
-    try {
-      const r = await pedirMasLecturas();
-      if (!r.ok) {
-        setCartel((a) => ({ ...(a ?? { estado: "sin_cupo" }), estado: "sin_cupo", mensaje: "No pude mandar la petición. Puede ser tu conexión." }));
-        return;
-      }
-      setCartel((a) => ({ estado: "pedida", foto: a?.foto }));
-      setCupoActual((a) => a ? { ...a, pedida: true } : a);
-    } catch {
-      setCartel((a) => ({ ...(a ?? { estado: "sin_cupo" }), estado: "sin_cupo", mensaje: "No pude mandar la petición. Puede ser tu conexión." }));
-    } finally {
-      setPidiendo(false);
-      operandoCartel.current = false;
-    }
-  }
-
-  /**
    * Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica.
    * Todo va dentro de un try: si la promesa se rompe (se cae la señal, el servidor tarda de más, la función se
    * agota), la tarjeta no puede quedarse en "Leyendo el cartel…" para siempre (revisión de la bitácora 095).
@@ -534,7 +509,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         {modo === "duplicar" && <p className="subtitulo">Mismo evento, nueva fecha. Cambia lo que haga falta.</p>}
         {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
-        {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
+        {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} onElegir={leerCartel} />}
 
         {/* 2. El nombre, con el icono del canon (el prototipo firmado lo lleva en las tres altas) y su ✕. Vacío se marca como
             faltante con el mismo peso que Cuándo/Dónde cuando dicen «Falta»: el borde discontinuo; qué falta lo dice una sola vez,

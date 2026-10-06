@@ -3,7 +3,7 @@
  *  que guarda lo que recibe (y, con `window.qa.resultado = 'publica'`, contesta como `crearEvento` con `quedarse`: lo creado, sin redirigir). «¿Dónde es?», «¿Es aquí?» y «No está en el directorio» son los de verdad; el servicio de Mapbox lo simula
  *  `page.route` (sugerencias, coordenadas y dirección de un punto) y el mapa es un doble con un botón que arrastra el pin (el real necesita
  *  WebGL y un token); Atrás y la ✕ de la barra preguntan a la guardia como `useVolver`. Del servidor y de Storage solo se simulan
- *  `cupoDeCartel`, `leerCartelAccion`, `pedirMasLecturas` y `subirFoto`, y se gobiernan desde `window.qa`. Reloj fijo: miércoles 7 de
+ *  `leerCartelAccion` y `subirFoto`, y se gobiernan desde `window.qa` (el cupo con el que abre la pantalla va en `cupoAlAbrir`). Reloj fijo: miércoles 7 de
  *  octubre de 2026, así «Este viernes» es el 9.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs node --test este-archivo   (o `npm run test:componentes`) */
 import { after, before, test } from "node:test";
@@ -29,7 +29,6 @@ const CARTEL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><r
 let dir, server, browser, origin;
 const mocks = {
   "@/app/eventos/acciones": `
-    export async function cupoDeCartel(){const q=window.qa;q.consultas++;if(q.errorCupo)throw Error('corte');return q.cupo&&structuredClone(q.cupo)}
     export async function leerCartelAccion(url){
       const q=window.qa;q.lecturas.push(url);
       if(q.espera)await new Promise((r)=>{q.liberar=r});
@@ -38,9 +37,8 @@ const mocks = {
       if(q.lectura==='sinCupo')return {ok:false,sinCupo:true};
       return structuredClone(q.lectura);
     }
-    export async function pedirMasLecturas(){const q=window.qa;q.peticiones++;if(q.peticion==='throw')throw Error('corte');return {ok:q.peticion!=='fallo'}}
   `,
-  "@/lib/subirFoto": "export async function subirFoto(carpeta,usuario,prefijo,archivo){const q=window.qa;q.subidas.push({carpeta,usuario,prefijo,archivo:archivo.name});if(q.subida==='throw')throw Error('corte');return q.subida==='error'?{error:'No se pudo subir la imagen. Intenta con otra.',motivo:'subida'}:{url:'/cartel.svg'}}",
+  "@/lib/subirFoto": "export async function subirFoto(carpeta,usuario,prefijo,archivo){const q=window.qa;q.subidas.push({carpeta,usuario,prefijo,archivo:archivo.name});if(q.esperaSubida)await new Promise((r)=>{q.liberarSubida=r});if(q.subida==='throw')throw Error('corte');return q.subida==='error'?{error:'No se pudo subir la imagen. Intenta con otra.',motivo:'subida'}:{url:'/cartel.svg'}}",
   // El mapa de «¿Es aquí?»: dice dónde está el pin y su botón lo arrastra a otro punto (como `onArrastre` del real).
   "@/components/MapaDondeEs":
     "import React from 'react';const h=React.createElement;export default function M(p){return h('div',{role:'region','aria-label':'Mapa de prueba','data-pin':p.seleccion?p.seleccion.lat+','+p.seleccion.lng:'',style:{position:'relative',height:'100%',background:'var(--fondo-mapa)'}},h('svg',{viewBox:'0 0 24 24',width:44,height:44,fill:'currentColor',fillRule:'evenodd',style:{position:'absolute',left:'calc(50% - 22px)',top:'calc(50% - 44px)',color:'var(--primario)'}},h('path',{d:'M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12zm0-9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z'})),h('button',{type:'button',style:{position:'absolute',left:0,top:0,width:44,height:44,opacity:0},onClick:()=>p.onArrastre({lat:22.1533,lng:-100.9811})},'Arrastrar el pin'))}",
@@ -78,7 +76,7 @@ before(async () => {
       // resultado: 'general' (falla el guardado) | 'enlace' (el servidor rechaza el enlace) | 'pendiente' (no contesta)
       // Lo que simulan el servidor y Storage (ver los dobles de arriba): el cupo con el que abre la pantalla, si hay lectura de cartel,
       // qué contesta la lectura ('fallo' | 'sinCupo' | 'throw' | un objeto con el resultado), si «espera» a que el test la libere.
-      window.qa = {envios:[], lugares:[], lugar:'creado', resultado:'general', salio:0, pedirSalida, cupo:{usadas:1,tope:20,sinTope:false,pedida:false}, cupoAlAbrir:{usadas:1,tope:20,sinTope:false,pedida:false}, cartelActivo:true, consultas:0, lecturas:[], subidas:[], peticiones:0, lectura:null, subida:'ok', espera:false, errorCupo:false, ...window.qaInicial};
+      window.qa = {envios:[], lugares:[], lugar:'creado', resultado:'general', salio:0, pedirSalida, cupoAlAbrir:{usadas:1,tope:6,sinTope:false}, cartelActivo:true, lecturas:[], subidas:[], lectura:null, subida:'ok', espera:false, esperaSubida:false, ...window.qaInicial};
       async function accion(_, fd){
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
@@ -501,16 +499,20 @@ test("el paso siguiente entra de lado y nada se mueve con «reducir movimiento»
   assert.equal(await pasos(sin), 0);
 });
 
-/* ---- Con cartel (OL-302, bitácora 330) ---- */
+/* ---- Con cartel (OL-302, bitácora 330; OL-307, bitácora 335: el cartel se sube siempre y la lectura es una casilla) ---- */
 
 /** Lo que devuelve `leerCartelAccion` cuando el cartel se lee completo (caso «legible» del prototipo): nombre, día y hora, un lugar del
  *  directorio, gratis y un artista. */
 const LEIDO = { ok: true, valores: { titulo: "Inauguración de Ecos de papel", inicio: "2026-11-05T19:00", fin: "", gratis: true, precio: "", descripcion: "", enlace: "", lugar: "Teatro de la Paz", direccion: "" }, lugarId: LUGAR, quien: [{ nombre: "Lucía Montaño" }], horaLeida: true, costoLeido: true };
 /** Lo mismo con lo que el cartel no trae: sin lugar del directorio ni precio (caso «medias»). */
 const MEDIAS = { ...LEIDO, valores: { ...LEIDO.valores, titulo: "Noche de son huasteco", inicio: "2026-11-14T20:00", gratis: false, lugar: "" }, lugarId: null, quien: [{ nombre: "Trío Bruma" }], costoLeido: false };
-const CUPO_AGOTADO = { usadas: 20, tope: 20, sinTope: false, pedida: false };
+/** Las seis del mes ya usadas: la casilla queda apagada. */
+const CUPO_AGOTADO = { usadas: 6, tope: 6, sinTope: false };
 const subir = (p, nombre = "cartel.svg") => p.locator("input[type=file]").setInputFiles({ name: nombre, mimeType: "image/svg+xml", buffer: Buffer.from(CARTEL) });
 const renglones = (p) => p.locator("main ul > li").allInnerTexts();
+const casilla = (p) => p.getByRole("checkbox", { name: /Lectura automática/ });
+/** La fila chica sobre la primera pregunta: miniatura y sello. */
+const guardado = (p) => p.locator("main div").filter({ has: p.locator("img"), hasText: /Cartel guardado/ });
 const foto = async (p, nombre) => {
   if (!capturas) return;
   await p.mouse.move(0, 0);
@@ -531,22 +533,57 @@ const desborda = (p) =>
     return { scroll: document.documentElement.scrollWidth - ancho, fuera: fuera.map((e) => e.tagName + "." + e.className) };
   });
 
-test("el primer paso: el recuadro «Sube el cartel» (campo de imagen escondido que cubre todo el recuadro) y «No tengo cartel», del mismo ancho", TOPE, async (t) => {
+test("el primer paso: un marco con el recuadro «Sube el cartel» y la casilla «Lectura automática» marcada; «No tengo cartel» fuera, con más aire", TOPE, async (t) => {
   const p = await pagina(t);
   const campo = p.locator("input[type=file]");
   assert.equal(await campo.getAttribute("accept"), "image/*");
   // El campo cubre el recuadro entero: el toque cae en él y el teléfono ofrece cámara o carrete.
   const recuadro = await campo.locator("xpath=..").boundingBox();
   const caja = await campo.boundingBox();
-  assert.ok(Math.abs(caja.width - recuadro.width) <= 4 && Math.abs(caja.height - recuadro.height) <= 4, "el campo cubre el recuadro (menos su borde de 2 px)");
+  assert.ok(Math.abs(caja.width - recuadro.width) <= 1 && Math.abs(caja.height - recuadro.height) <= 1, "el campo cubre el recuadro");
   assert.equal(await campo.evaluate((e) => getComputedStyle(e).opacity), "0");
-  await p.getByText("Leemos el nombre, la fecha, el lugar y el precio").waitFor();
-  const sinCartel = await boton(p, "No tengo cartel").boundingBox();
-  assert.equal(Math.round(sinCartel.width), Math.round(recuadro.width));
-  await foto(p, "330-01-inicio");
+  // Lo que dice el recuadro: para qué sirve el cartel, no lo que el sistema hará con él.
+  await p.getByText("Será la portada del evento").waitFor();
+  assert.equal(await p.getByText(/Leemos el nombre/).count(), 0);
+  // La casilla: marcada de entrada, con el nombre arriba y «Quedan 5 este mes» debajo (1 de 6 usadas), los dos a la izquierda.
+  const c = casilla(p);
+  assert.equal(await c.getAttribute("aria-checked"), "true");
+  assert.equal(await c.isDisabled(), false);
+  assert.equal(await c.locator("b").innerText(), "Lectura automática");
+  assert.equal(await c.locator("small").innerText(), "Quedan 5 este mes");
+  const [nombre, detalle, caja2] = await Promise.all([c.locator("b").boundingBox(), c.locator("small").boundingBox(), c.boundingBox()]);
+  assert.ok(detalle.y >= nombre.y + nombre.height - 2, "el contador va debajo del nombre");
+  assert.ok(Math.abs(detalle.x - nombre.x) <= 1, "los dos a la izquierda, alineados");
+  assert.equal(await c.locator("b").evaluate((e) => getComputedStyle(e).fontSize), "17px");
+  assert.equal(await c.locator("small").evaluate((e) => getComputedStyle(e).fontSize), "14px");
+  assert.equal(await c.locator("b").evaluate((e) => getComputedStyle(e).fontWeight), "700");
+  // Región común: la casilla es la última fila del mismo marco del recuadro, pegada debajo y con su raya punteada.
+  const marco = await c.locator("xpath=..").boundingBox();
+  assert.ok(Math.abs(caja2.y - (recuadro.y + recuadro.height)) <= 1, "la casilla se toca con el recuadro");
+  assert.ok(caja2.y + caja2.height <= marco.y + marco.height, "dentro del marco");
+  assert.equal(await c.evaluate((e) => getComputedStyle(e).borderTopStyle), "dashed");
+  assert.equal(await campo.locator("xpath=../..").evaluate((e) => getComputedStyle(e).borderTopStyle), "dashed");
+  // «No tengo cartel»: una opción que avanza (texto a la izquierda, chevron a la derecha), fuera del marco y con más aire que entre las demás piezas.
+  const otra = boton(p, "No tengo cartel");
+  const o = await otra.boundingBox();
+  assert.ok(o.y - (marco.y + marco.height) >= 35, `con más aire que el de la columna (20): ${o.y - (marco.y + marco.height)}`);
+  assert.equal(await otra.locator("svg").count(), 1);
+  const chevron = await otra.locator("svg").boundingBox();
+  assert.ok(chevron.x > o.x + o.width / 2, "el chevron a la derecha");
+  assert.equal(await otra.locator("b").evaluate((e) => getComputedStyle(e).textAlign), "left");
+  assert.equal(Math.round(o.width), Math.round(marco.width));
+  await foto(p, "335-01-inicio-casilla-marcada");
 });
 
-test("con todo leído: subir → «Leyendo» (el cartel chico y el aviso, sin pie) → directo a «Revisa» con «Leído del cartel» y sus cuatro renglones; publicar manda la imagen", TOPE, async (t) => {
+test("la casilla se desmarca y se vuelve a marcar con un toque", TOPE, async (t) => {
+  const p = await pagina(t);
+  await casilla(p).click();
+  assert.equal(await casilla(p).getAttribute("aria-checked"), "false");
+  await casilla(p).click();
+  assert.equal(await casilla(p).getAttribute("aria-checked"), "true");
+});
+
+test("con la casilla marcada: subir → «Leyendo» (el cartel chico y el aviso, sin pie) → directo a «Revisa» con «Leído del cartel» y sus cuatro renglones; publicar manda la imagen", TOPE, async (t) => {
   const p = await pagina(t, { qa: { lectura: LEIDO, espera: true } });
   await subir(p);
   await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).waitFor();
@@ -558,7 +595,7 @@ test("con todo leído: subir → «Leyendo» (el cartel chico y el aviso, sin pi
   assert.equal(Math.round((await miniatura.boundingBox()).width), 168);
   assert.equal(await p.locator("main footer").count(), 0);
   assert.equal(await p.locator("main h2").count(), 0);
-  await foto(p, "330-02-leyendo");
+  await foto(p, "335-06-leyendo");
   await p.evaluate(() => window.qa.liberar());
   await p.getByText("Leído del cartel").waitFor();
   // Los cuatro renglones, los leídos como cualquier otro; no se preguntó nada.
@@ -571,7 +608,7 @@ test("con todo leído: subir → «Leyendo» (el cartel chico y el aviso, sin pi
   assert.equal(await pregunta(p), "Inauguración de Ecos de papel");
   assert.equal(await p.locator("main img").getAttribute("src"), "/cartel.svg");
   assert.equal(await p.locator("main img").evaluate((e) => e.naturalWidth > 0), true);
-  await foto(p, "330-03-revisa-leido");
+  await foto(p, "335-07-revisa-leido");
   await boton(p, "Publicar").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
   const d = await enviado(p);
@@ -581,10 +618,11 @@ test("con todo leído: subir → «Leyendo» (el cartel chico y el aviso, sin pi
   );
 });
 
-test("a medias: se preguntan solo dónde y cuánto, y «Revisa» deja el sello; lo que se contesta se ve igual que lo leído", TOPE, async (t) => {
+test("a medias: se preguntan solo dónde y cuánto, sin la fila «Cartel guardado», y «Revisa» deja el sello; lo que se contesta se ve igual que lo leído", TOPE, async (t) => {
   const p = await pagina(t, { qa: { lectura: MEDIAS } });
   await subir(p);
   assert.equal(await pregunta(p), "¿Dónde es?");
+  assert.equal(await guardado(p).count(), 0);
   await elegirTeatro(p);
   assert.equal(await pregunta(p), "¿Cuánto cuesta?");
   await boton(p, /^Cooperación/).click();
@@ -601,9 +639,9 @@ test("la única pregunta que falta (el precio) sale sola; Atrás vuelve al recua
   const p = await pagina(t, { qa: { lectura: { ...LEIDO, valores: { ...LEIDO.valores, gratis: false }, costoLeido: false } } });
   await subir(p);
   assert.equal(await pregunta(p), "¿Cuánto cuesta?");
-  await foto(p, "330-04-medias-cuanto");
+  await foto(p, "335-08-medias-cuanto");
   await boton(p, "Atrás").click();
-  await p.getByText("Leemos el nombre, la fecha, el lugar y el precio").waitFor();
+  await p.getByText("Será la portada del evento").waitFor();
   await subir(p);
   await boton(p, /^Gratis/).click();
   await p.getByText("Leído del cartel").waitFor();
@@ -630,58 +668,42 @@ test("un sitio que el cartel nombra y no está en el directorio se pregunta igua
   assert.equal(await buscar(p).inputValue(), "Jardín de San Juan de Dios");
 });
 
-test("sin lecturas al abrir: el recuadro lo dice con su fecha y ofrece pedir más; «No tengo cartel» sigue", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { cupoAlAbrir: CUPO_AGOTADO } });
-  assert.equal(await p.locator("input[type=file]").count(), 0);
-  await p.getByText("Se acabaron tus lecturas del mes").waitFor();
-  await p.getByText(/^Se renuevan el 1 de /).waitFor();
-  await foto(p, "330-05-sin-cupo");
-  await boton(p, "Pedir más lecturas").click();
-  await p.getByText("Ya pedimos más para ti").waitFor();
-  assert.equal(await p.evaluate(() => window.qa.peticiones), 1);
-  assert.equal(await boton(p, "Pedir más lecturas").count(), 0);
-  await boton(p, "No tengo cartel").click();
+test("con la casilla desmarcada el cartel se sube y no se lee: «Subiendo», y directo a «¿Cómo se llama?» con «Cartel guardado» solo en esa primera pregunta; la imagen viaja al publicar", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, esperaSubida: true } });
+  await casilla(p).click();
+  await subir(p);
+  await p.getByRole("status").filter({ hasText: "Subiendo el cartel…" }).waitFor();
+  assert.equal(await p.getByText("Leyendo el cartel…").count(), 0);
+  await p.waitForFunction(() => window.qa.subidas.length === 1);
+  await p.evaluate(() => window.qa.liberarSubida());
+  await p.getByRole("heading", { name: "¿Cómo se llama?" }).waitFor();
   assert.equal(await pregunta(p), "¿Cómo se llama?");
-  assert.equal(await p.evaluate(() => window.qa.subidas.length), 0);
-});
-
-test("pedir más sin conexión lo dice en el recuadro y se puede volver a intentar", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { cupoAlAbrir: CUPO_AGOTADO, peticion: "fallo" } });
-  await boton(p, "Pedir más lecturas").click();
-  await p.getByText("No pude mandar la petición. Puede ser tu conexión.").waitFor();
-  await p.evaluate(() => (window.qa.peticion = "ok"));
-  await boton(p, "Pedir más lecturas").click();
-  await p.getByText("Ya pedimos más para ti").waitFor();
-});
-
-test("si el cupo se acabó mientras tanto, no se sube nada: el recuadro lo dice", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { cupo: CUPO_AGOTADO } });
-  await subir(p);
-  await p.getByText("Se acabaron tus lecturas del mes").waitFor();
-  assert.deepEqual(await p.evaluate(() => ({ subidas: window.qa.subidas.length, lecturas: window.qa.lecturas.length })), { subidas: 0, lecturas: 0 });
-  await boton(p, "No tengo cartel").click();
-  assert.equal(await pregunta(p), "¿Cómo se llama?");
-});
-
-test("si el servidor rechaza la lectura por cupo, la foto no se queda y «No tengo cartel» publica sin imagen", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { lectura: "sinCupo" } });
-  await subir(p);
-  await p.getByText("Se acabaron tus lecturas del mes").waitFor();
-  await hastaRevisa(p);
-  assert.equal(await p.locator("main img").count(), 0);
-  await boton(p, "Publicar").click();
-  await p.waitForFunction(() => window.qa.envios.length === 1);
-  assert.equal((await enviado(p)).imagen, "");
-});
-
-test("si no se pudo leer, el recuadro lo dice con su causa; «No tengo cartel» sigue y la imagen se queda, sin sello", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { lectura: "fallo" } });
-  await subir(p);
-  await p.getByText("No pude leer el cartel", { exact: true }).waitFor();
-  await p.getByText("Llena los datos a mano; la imagen se queda puesta.").waitFor();
-  await p.getByText("Probar con otra foto").first().waitFor();
-  await foto(p, "330-06-fallo-al-leer");
-  await hastaRevisa(p);
+  // No hubo lectura: ni se pidió ni se gastó nada.
+  assert.equal(await p.evaluate(() => window.qa.lecturas.length), 0);
+  // La fila chica arriba de la primera pregunta: la miniatura de 40 de ancho y el sello gris, sin «no pude leerlo».
+  const fila = guardado(p);
+  assert.equal(await fila.count(), 1);
+  assert.equal(await fila.innerText(), "Cartel guardado");
+  assert.equal(await fila.locator("img").getAttribute("src"), "/cartel.svg");
+  assert.equal(Math.round((await fila.locator("img").boundingBox()).width), 40);
+  const [f, h] = await Promise.all([fila.boundingBox(), p.locator("main h2").first().boundingBox()]);
+  assert.ok(f.y + f.height <= h.y, "la fila va encima de la pregunta");
+  await foto(p, "335-04-cartel-guardado");
+  // Solo en la primera pregunta, y se queda al volver a ella.
+  await p.getByLabel("Nombre del evento").fill("Lectura en voz alta");
+  await boton(p, "Siguiente").click();
+  assert.equal(await pregunta(p), "¿Qué día es?");
+  assert.equal(await guardado(p).count(), 0);
+  await boton(p, "Atrás").click();
+  assert.equal(await guardado(p).count(), 1);
+  await boton(p, "Siguiente").click();
+  await boton(p, /^Este viernes/).click();
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await p.getByRole("heading", { name: "Lectura en voz alta" }).waitFor();
+  // «Revisa»: la miniatura del cartel guardado y ningún sello «Leído del cartel».
   assert.equal(await p.locator("main img").getAttribute("src"), "/cartel.svg");
   assert.equal(await p.getByText("Leído del cartel").count(), 0);
   await boton(p, "Publicar").click();
@@ -689,34 +711,159 @@ test("si no se pudo leer, el recuadro lo dice con su causa; «No tengo cartel» 
   assert.equal((await enviado(p)).imagen, "/cartel.svg");
 });
 
-test("«Probar con otra foto» después de un fallo lee de nuevo y sigue por el camino con cartel", TOPE, async (t) => {
+test("con las seis del mes usadas la casilla queda apagada con «Se renueva el 1 de …»; el recuadro es el mismo y subir sigue a las preguntas sin leer", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { cupoAlAbrir: CUPO_AGOTADO, lectura: LEIDO } });
+  const c = casilla(p);
+  assert.equal(await c.isDisabled(), true);
+  assert.equal(await c.getAttribute("aria-checked"), "false");
+  assert.match(await c.locator("small").innerText(), /^Se renueva el 1 de [a-zé]+$/);
+  assert.ok(Number(await c.evaluate((e) => getComputedStyle(e).opacity)) < 1, "atenuada");
+  // El recuadro no cambia: ni «Se acabaron tus lecturas», ni «Pedir más», ni «Probar con otra foto».
+  await p.getByText("Sube el cartel", { exact: true }).waitFor();
+  await p.getByText("Será la portada del evento").waitFor();
+  assert.equal(await p.getByText(/Se acabaron|Pedir más|Probar con otra foto/).count(), 0);
+  await foto(p, "335-02-casilla-apagada");
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  assert.equal(await guardado(p).innerText(), "Cartel guardado");
+  assert.deepEqual(await p.evaluate(() => ({ subidas: window.qa.subidas.length, lecturas: window.qa.lecturas.length })), { subidas: 1, lecturas: 0 });
+});
+
+test("con una sola lectura que queda lo dice en singular, y la administración (sin tope) ve «Sin límite» y puede leer", TOPE, async (t) => {
+  const una = await pagina(t, { qa: { cupoAlAbrir: { usadas: 5, tope: 6, sinTope: false } } });
+  assert.equal(await casilla(una).locator("small").innerText(), "Queda 1 este mes");
+  const admin = await pagina(t, { qa: { cupoAlAbrir: { usadas: 40, tope: 6, sinTope: true }, lectura: LEIDO } });
+  assert.equal(await casilla(admin).locator("small").innerText(), "Sin límite");
+  assert.equal(await casilla(admin).isDisabled(), false);
+  assert.equal(await casilla(admin).getAttribute("aria-checked"), "true");
+  await subir(admin);
+  await admin.getByText("Leído del cartel").waitFor();
+});
+
+test("sin saber el cupo la casilla va marcada y sin contador; el servidor decide al leer", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { cupoAlAbrir: null, lectura: LEIDO } });
+  assert.equal(await casilla(p).getAttribute("aria-checked"), "true");
+  assert.equal(await casilla(p).locator("small").count(), 0);
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+});
+
+test("cada lectura buena resta una al contador al volver al primer paso", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: { ...LEIDO, valores: { ...LEIDO.valores, gratis: false }, costoLeido: false } } });
+  assert.equal(await casilla(p).locator("small").innerText(), "Quedan 5 este mes");
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Cuánto cuesta?");
+  await boton(p, "Atrás").click();
+  assert.equal(await casilla(p).locator("small").innerText(), "Quedan 4 este mes");
+});
+
+test("si el servidor dice que ya no hay cupo (se gastó en otra pantalla), el cartel queda guardado y se sigue a las preguntas, sin decir que falló; la casilla se apaga", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: "sinCupo" } });
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  assert.equal(await guardado(p).innerText(), "Cartel guardado");
+  await boton(p, "Atrás").click();
+  assert.equal(await casilla(p).isDisabled(), true);
+  assert.match(await casilla(p).locator("small").innerText(), /^Se renueva el 1 de /);
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Lectura en voz alta");
+  await boton(p, "Siguiente").click();
+  await boton(p, /^Este viernes/).click();
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  assert.equal((await enviado(p)).imagen, "/cartel.svg");
+});
+
+test("si la lectura falla: el cartel queda guardado, se sigue directo a «¿Cómo se llama?» con «Cartel guardado · no pude leerlo», y la imagen viaja al publicar, sin sello", TOPE, async (t) => {
   const p = await pagina(t, { qa: { lectura: "fallo" } });
   await subir(p);
-  await p.getByText("No pude leer el cartel", { exact: true }).waitFor();
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  assert.equal(await guardado(p).innerText(), "Cartel guardado · no pude leerlo");
+  // Nada de «Probar con otra foto»: la pantalla no vuelve al recuadro.
+  assert.equal(await p.getByText(/Probar con otra foto|No pude leer el cartel/).count(), 0);
+  await foto(p, "335-05-no-pude-leerlo");
+  await p.getByLabel("Nombre del evento").fill("Lectura en voz alta");
+  await boton(p, "Siguiente").click();
+  assert.equal(await guardado(p).count(), 0);
+  await boton(p, /^Este viernes/).click();
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await p.getByRole("heading", { name: "Lectura en voz alta" }).waitFor();
+  assert.equal(await p.locator("main img").getAttribute("src"), "/cartel.svg");
+  assert.equal(await p.getByText("Leído del cartel").count(), 0);
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  assert.equal((await enviado(p)).imagen, "/cartel.svg");
+});
+
+test("Atrás desde la primera pregunta vuelve al primer paso; otro cartel, esta vez bien leído, sigue por el camino con cartel", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: "fallo" } });
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  await boton(p, "Atrás").click();
+  await p.getByText("Será la portada del evento").waitFor();
   await p.evaluate((leido) => (window.qa.lectura = leido), LEIDO);
   await subir(p, "otra.svg");
   await p.getByText("Leído del cartel").waitFor();
   assert.equal((await renglones(p)).length, 4);
 });
 
-test("si no se pudo subir, lo dice con su causa y no llega a leer; si se corta a mitad, tampoco se queda leyendo para siempre", TOPE, async (t) => {
+test("si no se pudo subir: lo dice con su causa bajo el marco, el recuadro sigue igual y no se lee; «No tengo cartel» sigue", TOPE, async (t) => {
   const p = await pagina(t, { qa: { subida: "error", lectura: LEIDO } });
   await subir(p);
-  await p.getByText("No pude subir el cartel").waitFor();
+  await p.getByRole("alert").filter({ hasText: "No pude subir el cartel. Puede ser tu conexión." }).waitFor();
   assert.equal(await p.evaluate(() => window.qa.lecturas.length), 0);
+  await p.getByText("Será la portada del evento").waitFor();
+  assert.equal(await casilla(p).getAttribute("aria-checked"), "true");
+  await foto(p, "335-09-no-se-pudo-subir");
+  // Se puede volver a intentar con el mismo recuadro, y el aviso se va al empezar.
   await p.evaluate(() => (window.qa.subida = "ok"));
-  await p.evaluate(() => (window.qa.lectura = "throw"));
   await subir(p);
-  await p.getByText("Se cortó a la mitad").waitFor();
-  assert.equal(await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).count(), 0);
-  await boton(p, "No tengo cartel").click();
-  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  await p.getByText("Leído del cartel").waitFor();
+  assert.equal(await p.getByRole("alert").count(), 0);
 });
 
-test("sin lectura de carteles en el servidor no se ofrece el recuadro: solo «No tengo cartel»", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { cartelActivo: false } });
-  assert.equal(await p.locator("input[type=file]").count(), 0);
+test("si se corta a mitad: antes de subir lo dice y no guarda nada; con el cartel ya subido y la lectura cortada, queda guardado y se sigue («no pude leerlo»)", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { subida: "throw", lectura: LEIDO } });
+  await subir(p);
+  await p.getByRole("alert").filter({ hasText: "Se cortó a la mitad. Puede ser tu conexión." }).waitFor();
+  assert.equal(await p.getByRole("status").filter({ hasText: /Leyendo|Subiendo/ }).count(), 0);
+  assert.equal(await p.evaluate(() => window.qa.lecturas.length), 0);
+  await p.evaluate(() => { window.qa.subida = "ok"; window.qa.lectura = "throw"; });
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  assert.equal(await guardado(p).innerText(), "Cartel guardado · no pude leerlo");
+});
+
+test("sin servicio de lectura el marco solo lleva el recuadro, sin casilla; el cartel se sube y se sigue a las preguntas", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { cartelActivo: false, cupoAlAbrir: null, lectura: LEIDO } });
+  await p.getByText("Será la portada del evento").waitFor();
+  assert.equal(await p.getByRole("checkbox").count(), 0);
+  assert.equal(await p.getByText(/Lectura automática|Quedan|Se renueva/).count(), 0);
+  const marco = await p.locator("input[type=file]").locator("xpath=../..").boundingBox();
+  const recuadro = await p.locator("input[type=file]").locator("xpath=..").boundingBox();
+  assert.ok(Math.abs(marco.height - recuadro.height) <= 4 + 0.5, "el marco solo envuelve el recuadro");
   await boton(p, "No tengo cartel").waitFor();
+  await foto(p, "335-03-sin-servicio");
+  await subir(p);
+  await p.getByRole("heading", { name: "¿Cómo se llama?" }).waitFor();
+  assert.equal(await guardado(p).innerText(), "Cartel guardado");
+  assert.equal(await p.evaluate(() => window.qa.lecturas.length), 0);
+});
+
+test("«No tengo cartel» sigue: sin cartel, sin fila de cartel y sin imagen al publicar", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaRevisa(p);
+  assert.equal(await p.locator("main img").count(), 0);
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  assert.equal((await enviado(p)).imagen, "");
 });
 
 test("«Leyendo» no tiene Atrás; con lo leído, salir sin publicar avisa y Atrás desde «Revisa» salta «Leyendo» y vuelve al primer paso", TOPE, async (t) => {
@@ -728,7 +875,7 @@ test("«Leyendo» no tiene Atrás; con lo leído, salir sin publicar avisa y Atr
   await p.getByText("Leído del cartel").waitFor();
   assert.equal(await avisa(p), true);
   await boton(p, "Atrás").click();
-  await p.getByText("Leemos el nombre, la fecha, el lugar y el precio").waitFor();
+  await p.getByText("Será la portada del evento").waitFor();
 });
 
 test("el cartel chico late, y con «reducir movimiento» se queda quieto", TOPE, async (t) => {
@@ -743,27 +890,35 @@ test("el cartel chico late, y con «reducir movimiento» se queda quieto", TOPE,
   assert.equal(await anima(sin), "none");
 });
 
-for (const ancho of [320, 390]) {
-  test(`sin desbordes a ${ancho}: el recuadro, «Leyendo», «Revisa» con cartel, sin lecturas, con fallo y con el nombre del tope`, TOPE, async (t) => {
-    const limpio = { scroll: 0, fuera: [] };
-    const p = await pagina(t, { ancho, qa: { lectura: LEIDO, espera: true } });
-    assert.deepEqual(await desborda(p), limpio, "recuadro");
+/** Las pantallas del camino con cartel, por ancho: cada una con su preparación; las usan la prueba de desbordes y la de `npm run medir`. */
+const PANTALLAS_CARTEL = [
+  ["primer paso con la casilla marcada", {}, null],
+  ["primer paso con la casilla apagada", { cupoAlAbrir: CUPO_AGOTADO }, null],
+  ["primer paso sin servicio de lectura", { cartelActivo: false, cupoAlAbrir: null }, null],
+  ["primer paso con el aviso de que no se pudo subir", { subida: "error" }, async (p) => p.getByRole("alert").waitFor()],
+  ["espera con el cartel", { lectura: LEIDO, espera: true }, async (p) => p.locator("main img").waitFor()],
+  ["«¿Cómo se llama?» con «Cartel guardado»", { cupoAlAbrir: CUPO_AGOTADO }, async (p) => p.getByText("Cartel guardado").waitFor()],
+  ["«¿Cómo se llama?» con «no pude leerlo»", { lectura: "fallo" }, async (p) => p.getByText("no pude leerlo").waitFor()],
+  ["«Revisa» con cartel leído", { lectura: LEIDO }, async (p) => p.getByText("Leído del cartel").waitFor()],
+  ["«Revisa» con un nombre del tope", { lectura: { ...LEIDO, valores: { ...LEIDO.valores, titulo: "Festival ".repeat(13).trim().slice(0, 120) } } }, async (p) => p.getByText("Leído del cartel").waitFor()],
+];
+/** Lleva la pantalla `[nombre, qa, esperar]` a su estado: las que traen «esperar» suben un cartel primero y esperan a verlo. */
+async function aPantalla(t, ancho, [, qa, esperar]) {
+  const p = await pagina(t, { ancho, qa });
+  if (esperar) {
     await subir(p);
-    await p.locator("main img").waitFor();
-    assert.deepEqual(await desborda(p), limpio, "leyendo");
-    await p.evaluate(() => window.qa.liberar());
-    await p.getByText("Leído del cartel").waitFor();
-    assert.deepEqual(await desborda(p), limpio, "revisa");
-    const sinCupo = await pagina(t, { ancho, qa: { cupoAlAbrir: CUPO_AGOTADO } });
-    assert.deepEqual(await desborda(sinCupo), limpio, "sin lecturas");
-    const fallo = await pagina(t, { ancho, qa: { lectura: "fallo" } });
-    await subir(fallo);
-    await fallo.getByText("No pude leer el cartel", { exact: true }).waitFor();
-    assert.deepEqual(await desborda(fallo), limpio, "fallo");
-    const largo = await pagina(t, { ancho, qa: { lectura: { ...LEIDO, valores: { ...LEIDO.valores, titulo: "Festival ".repeat(13).trim().slice(0, 120) } } } });
-    await subir(largo);
-    await largo.getByText("Leído del cartel").waitFor();
-    assert.deepEqual(await desborda(largo), limpio, "revisa con nombre largo");
+    await esperar(p);
+  }
+  return p;
+}
+
+for (const ancho of [320, 390]) {
+  test(`sin desbordes a ${ancho}: el primer paso en sus tres formas, la espera, «¿Cómo se llama?» con el cartel guardado y «Revisa» con cartel`, TOPE, async (t) => {
+    const limpio = { scroll: 0, fuera: [] };
+    for (const pantalla of PANTALLAS_CARTEL) {
+      const p = await aPantalla(t, ancho, pantalla);
+      assert.deepEqual(await desborda(p), limpio, pantalla[0]);
+    }
   });
 }
 
@@ -776,20 +931,10 @@ test("con cartel, ninguna pantalla tiene toques menores de 44, controles tapados
   };
   const limpio = { toques: [], tapados: [], desbordes: [], fuera: [], negativos: [], scroll: false };
   for (const ancho of [320, 390]) {
-    const p = await pagina(t, { ancho, qa: { lectura: LEIDO, espera: true } });
-    assert.deepEqual(await medidas(p), limpio, `recuadro a ${ancho}`);
-    await subir(p);
-    await p.locator("main img").waitFor();
-    assert.deepEqual(await medidas(p), limpio, `leyendo a ${ancho}`);
-    await p.evaluate(() => window.qa.liberar());
-    await p.getByText("Leído del cartel").waitFor();
-    assert.deepEqual(await medidas(p), limpio, `revisa a ${ancho}`);
-    const sinCupo = await pagina(t, { ancho, qa: { cupoAlAbrir: CUPO_AGOTADO } });
-    assert.deepEqual(await medidas(sinCupo), limpio, `sin lecturas a ${ancho}`);
-    const fallo = await pagina(t, { ancho, qa: { lectura: "fallo" } });
-    await subir(fallo);
-    await fallo.getByText("No pude leer el cartel", { exact: true }).waitFor();
-    assert.deepEqual(await medidas(fallo), limpio, `fallo a ${ancho}`);
+    for (const pantalla of PANTALLAS_CARTEL) {
+      const p = await aPantalla(t, ancho, pantalla);
+      assert.deepEqual(await medidas(p), limpio, `${pantalla[0]} a ${ancho}`);
+    }
   }
 });
 
@@ -1240,7 +1385,7 @@ test("«Publicar otro» empieza de cero: el primer paso, nada escrito, otra clav
   const primera = (await enviado(p)).operacion;
   await boton(p, "Publicar otro").click();
   // El primer paso, con su recuadro y «No tengo cartel»; la ✕ de la barra, sin Atrás.
-  await p.getByText("Leemos el nombre, la fecha, el lugar y el precio").waitFor();
+  await p.getByText("Será la portada del evento").waitFor();
   assert.equal(await boton(p, "Atrás").count(), 0);
   assert.equal(await p.locator("header").evaluate((e) => e.style.getPropertyValue("--avance")), "0");
   // Nada escrito (nada avisa) y, en cuanto se escribe algo, la guardia vuelve a preguntar.

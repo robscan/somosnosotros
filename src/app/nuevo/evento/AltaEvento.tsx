@@ -17,7 +17,7 @@ import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { respuestasDelCartel } from "./cartelPorPasos";
 import { avance, eventoPublicado, faltaParaPublicar, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Uso } from "./pasos";
-import { PasoInicio, PasoLeyendo } from "./PasoCartel";
+import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
 import Publicado from "./Publicado";
@@ -37,7 +37,7 @@ type Props = {
   salida: { href: string; texto: string };
   /** Quien publica: la carpeta de Storage donde sube el cartel. */
   usuarioId: string;
-  /** Si el servidor puede leer carteles; apagado, el primer paso solo ofrece «No tengo cartel». */
+  /** Si el servidor puede leer carteles (hay llave de la IA); apagado, el cartel se sube igual pero sin la casilla «Lectura automática». */
   cartelActivo: boolean;
   /** Las lecturas de cartel que le quedan este mes al abrir la pantalla; null si no se supo o no aplica. */
   cupo: Cupo | null;
@@ -68,9 +68,11 @@ type Interno = Props & {
 /**
  * El alta de evento por pasos (OL-300, OL-301, OL-302 y OL-304; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Sin cartel («No tengo
  * cartel»): ¿Cómo se llama? → ¿Qué día es? → ¿A qué hora? → ¿Dónde es? (con «¿Es aquí?» y «No está en el directorio» si el sitio no es
- * del directorio) → ¿Cuánto cuesta? → Revisa → Publicar. Con cartel («Sube el cartel»): se sube y se lee en «Leyendo» (`useLeerCartel`),
- * lo leído rellena las respuestas y solo se preguntan los pasos que falten (`cartelPorPasos.ts`); con todo leído se pasa directo a
- * «Revisa». Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el
+ * del directorio) → ¿Cuánto cuesta? → Revisa → Publicar. Con cartel («Sube el cartel»; OL-307: se sube siempre): se sube y, si la casilla
+ * «Lectura automática» está marcada y quedan lecturas, se lee mientras la pantalla espera (`useLeerCartel`); lo leído rellena las
+ * respuestas y solo se preguntan los pasos que falten (`cartelPorPasos.ts`); con todo leído se pasa directo a «Revisa». Sin lectura
+ * (desmarcada, agotada, sin servicio) o si la lectura falla, el cartel queda guardado y se sigue a las preguntas, con una fila chica
+ * «Cartel guardado» sobre la primera. Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que el
  * alta de siempre, que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve,
  * y el error sale en «Revisa». Si publica, la pantalla no sale: se queda en «Publicado» (el formulario manda `quedarse`, y la acción
  * devuelve lo creado en vez de redirigir a la ficha). «Publicar otro» la vuelve a montar con otra `key`: respuestas, cartel, error y clave de
@@ -84,14 +86,16 @@ export default function AltaEvento(props: Props) {
 }
 
 function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, onOtro, onLugarNuevo }: Interno) {
-  const { r, candidato, paso, direccion, primero, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar, publicado } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
+  const { r, candidato, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, abrir, atras, elegir, confirmar, usar, publicado } = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []);
   // Lo escrito en «¿Dónde es?» vive aquí y no en el paso: al volver de «¿Es aquí?» (Atrás, «Buscar otro») la lista sigue ahí.
   const [busqueda, setBusqueda] = useState("");
-  // Con cartel: se sube y se lee en «Leyendo»; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»).
-  // Si el cartel nombra un sitio que no es del directorio, «¿Dónde es?» abre con ese nombre ya escrito en el campo.
+  // Con cartel: se sube siempre y se lee si toca; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»); sin
+  // lectura, sigue la primera pregunta. Si el cartel nombra un sitio que no es del directorio, «¿Dónde es?» abre con ese nombre ya escrito.
   const cartel = useLeerCartel({
     usuarioId,
+    servicio: cartelActivo,
     cupo,
+    alGuardar: seguir,
     alLeer: (leido) => {
       const leidas = respuestasDelCartel(leido, r.quien);
       if (leidas.sitio?.modo === "otro") setBusqueda(leidas.sitio.otro.sitioTexto || leidas.sitio.otro.direccion || "");
@@ -164,12 +168,13 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
   return (
     <PorPasos
       titulo={paso === "revisa" ? "Revisa" : "Publicar"}
-      paso={cartel.leyendo ? "leyendo" : paso}
-      direccion={cartel.leyendo ? null : direccion}
+      paso={cartel.espera ? "espera" : paso}
+      direccion={cartel.espera ? null : direccion}
       avance={avance(paso)}
       salida={salida}
       onAtras={primero ? undefined : atrasDelPaso}
-      pregunta={cartel.leyendo ? undefined : PREGUNTA[paso]}
+      encima={!cartel.espera && primeraPregunta && PREGUNTA[paso] && cartel.subido && !cartel.subido.leido ? <CartelGuardado foto={cartel.subido.url} noPude={cartel.subido.noPude} /> : undefined}
+      pregunta={cartel.espera ? undefined : PREGUNTA[paso]}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <input type="hidden" name="titulo" value={r.nombre} />
@@ -188,8 +193,8 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         </form>
       }
     >
-      {cartel.leyendo && <PasoLeyendo foto={cartel.miniatura} />}
-      {!cartel.leyendo && paso === "inicio" && <PasoInicio cartelActivo={cartelActivo} cartel={cartel.cartel} pidiendo={cartel.pidiendo} onElegir={cartel.elegir} onPedir={cartel.pedirMas} onSinCartel={seguir} />}
+      {cartel.espera && <PasoEspera foto={cartel.miniatura} leyendo={cartel.espera === "leyendo"} />}
+      {!cartel.espera && paso === "inicio" && <PasoInicio casilla={cartel.casilla} error={cartel.error} onElegir={cartel.elegir} onSinCartel={seguir} />}
       {paso === "nombre" && <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />}
       {paso === "dia" && <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />}
       {paso === "hora" && <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} />}

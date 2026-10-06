@@ -1,7 +1,7 @@
 // Banco de pruebas de la migración del tope de lecturas de cartel (docs/rediseno/23, OL-067), sin red ni producción.
-// Aplica todas las migraciones y comprueba: que el cupo del mes se gasta y se acaba a las 20; que una lectura del mes
-// pasado no cuenta (se renueva el día 1, en la hora de la ciudad); que las fallidas también gastan, porque cuestan lo
-// mismo; que la administración no se topa nunca; que "dar más" sube a 100 y solo lo puede hacer la administración;
+// Aplica todas las migraciones y comprueba: que el cupo del mes se gasta y se acaba a las 6; que una lectura del mes
+// pasado no cuenta (se renueva el día 1, en la hora de la ciudad); que las fallidas ya no gastan (OL-307: se devuelven; lo
+// prueba supabase/tests/pg/lecturas.test.mjs); que la administración no se topa nunca; que "dar más" sube a 100 y solo lo puede hacer la administración;
 // que una cuenta normal no puede cambiarse el tope ni insertar lecturas ni leer las de nadie; que la petición de más
 // capacidad tiene que apuntar al propio perfil y solo puede haber una sin atender; y que el panel ve cuántas leyó y
 // cuántas publicó esa cuenta este mes. Cada guarda, con su control negativo.
@@ -107,17 +107,17 @@ ok((await uno(`select rol from public.perfiles where id = '${F}'`))?.rol === "ad
 // ---------- el tope base y el cupo ----------
 await como("authenticated", U1);
 let cupo = await uno("select * from public.mi_cupo_de_cartel()");
-ok(cupo?.tope === 20, "el tope base son 20 al mes", cupo);
+ok(cupo?.tope === 6, "el tope base son 6 al mes", cupo);
 ok(cupo?.usadas === 0 && cupo?.sin_tope === false, "una cuenta nueva empieza en 0 y con tope", cupo);
 
-// Se gastan 19 y todavía se puede.
-for (let i = 0; i < 19; i++) await uno("select public.apartar_lectura_de_cartel() as v");
+// Se gastan 5 y todavía se puede.
+for (let i = 0; i < 5; i++) await uno("select public.apartar_lectura_de_cartel() as v");
 cupo = await uno("select * from public.mi_cupo_de_cartel()");
-ok(cupo?.usadas === 19, "las lecturas se cuentan", cupo);
-ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === true, "la número 20 todavía entra");
-ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === false, "la número 21 ya no");
+ok(cupo?.usadas === 5, "las lecturas se cuentan", cupo);
+ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === true, "la número 6 todavía entra");
+ok((await uno("select public.apartar_lectura_de_cartel() as v"))?.v === false, "la número 7 ya no");
 cupo = await uno("select * from public.mi_cupo_de_cartel()");
-ok(cupo?.usadas === 20, "la que se rechaza no se anota", cupo);
+ok(cupo?.usadas === 6, "la que se rechaza no se anota", cupo);
 
 // ---------- se renueva el día 1 ----------
 await como(null);
@@ -150,7 +150,7 @@ cupo = await uno("select * from public.mi_cupo_de_cartel()");
 ok(cupo?.tope === 100, "dar más sube esa cuenta a 100", cupo);
 
 // ---------- dos toques a la vez no pasan los dos ----------
-// Sin cerrojo, dos transacciones leen 19 y las dos pasan: el mes acaba en 21. Con transacciones preparadas se deja
+// Sin cerrojo, dos transacciones leen 5 y las dos pasan: el mes acaba en 7. Con transacciones preparadas se deja
 // una a medias y se prueba otra; `lock_timeout` evita que la segunda se quede colgada esperando, que es lo que debe
 // hacer ahora. PGlite tiene una sola conexión, así que esto es lo más cerca de dos dedos a la vez.
 await como(null);
@@ -160,7 +160,7 @@ if (preparadas) {
   await db.exec("rollback");
   await como(null);
   await db.query("select set_config('request.jwt.claim.sub', $1, false)", [U3]);
-  await db.exec(`insert into public.lecturas_cartel (perfil_id) select '${U3}' from generate_series(1, 19)`);
+  await db.exec(`insert into public.lecturas_cartel (perfil_id) select '${U3}' from generate_series(1, 5)`);
   await como("authenticated", U3);
   let bloqueada = null;
   const puedeprepararse = (await falla("begin; select public.apartar_lectura_de_cartel(); prepare transaction 'a'")) === null;
@@ -172,7 +172,7 @@ if (preparadas) {
     ok(!!bloqueada, "la segunda a la vez espera el cerrojo en vez de pasar", bloqueada);
     await como("authenticated", U3);
     const usadas = (await uno("select * from public.mi_cupo_de_cartel()"))?.usadas;
-    ok(usadas === 20, "el mes acaba en 20, no en 21", usadas);
+    ok(usadas === 6, "el mes acaba en 6, no en 7", usadas);
   } else {
     await falla("rollback");
     // PGlite trae max_prepared_transactions = 0 y es de arranque: no se puede cambiar en caliente. Sin dos
