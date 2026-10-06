@@ -89,11 +89,10 @@ ul { list-style: none; }
 .casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
 .casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
 .casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
-/* Nombre y contador en una línea si caben; si no, el contador baja a su propio renglón (flex con salto), sin medidas por pantalla.
-   El principal siempre más grande que el secundario (17 px en negrita contra 14 px). */
-.casilla .texto { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--espacio-3); row-gap: 2px; min-width: 0; }
-.casilla b { font-weight: 700; font-size: var(--letra-md); white-space: nowrap; }
-.casilla small { margin-left: auto; white-space: nowrap; font-size: var(--letra-xs); line-height: 1.2; }
+/* La casilla del canon: nombre arriba (17 px, negrita) y debajo el contador (14 px), los dos a la izquierda. */
+.casilla .texto { display: grid; min-width: 0; }
+.casilla b { font-weight: 700; font-size: var(--letra-md); }
+.casilla small { font-size: var(--letra-xs); line-height: 1.3; }
 .casilla:disabled { opacity: 0.55; cursor: default; }
 
 /* La miniatura del cartel y «Leyendo». */
@@ -186,7 +185,7 @@ const PANTALLAS = {
       notas: [
         'El recuadro dice «Sube el cartel» y para qué sirve (la portada del evento), no lo que el sistema hará con él. Es igual en todos los casos.',
         'Dos grupos (región común): el marco punteado reúne todo lo del cartel —el recuadro y, pegada debajo como su última fila, la casilla de lectura (conectividad uniforme: se tocan, comparten borde)—; «No tengo cartel» va fuera del marco y con más aire, porque es la otra puerta, no una opción del cartel.',
-        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no. El nombre (17 px, negrita) y, a la derecha, el contador (14 px): en una línea si caben; si la pantalla es angosta, el contador baja a su propio renglón debajo del nombre (regla del founder, 2026-10-06), sin medidas por pantalla. No se enumera qué se lee (nombre, fecha, lugar, precio, artistas): así no se promete nada que el cartel pueda no traer o la lectura pueda fallar. Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
+        'La lectura automática es una casilla aparte, marcada de entrada: la persona decide qué cartel se lee y cuál no. La casilla del canon (la de «Con creador de cartel» del prototipo firmado): nombre arriba (17 px, negrita) y el contador debajo (14 px), los dos a la izquierda. No se enumera qué se lee (nombre, fecha, lugar, precio, artistas): así no se promete nada que el cartel pueda no traer o la lectura pueda fallar. Decisión del founder (2026-10-06): 6 lecturas al mes por cuenta; nunca se dice «gratis»; sin «Pedir más».',
         'Marcada de entrada no cuesta toques (cartel completo sigue en 2). Desmarcarla es un toque solo para quien no quiere leer este cartel.',
         'Con las 6 usadas (caso 2), la casilla queda apagada y solo dice cuándo vuelve («Se renueva el 1 de nov»): es el estado de algo que la persona controla, no una excusa del sistema. Sin servicio de lectura (caso 3), la casilla no aparece.',
         'Hoy la segunda línea dice «Leemos el nombre, la fecha, el lugar y el precio» y, sin llave o sin cupo, el recuadro ni sale: eso es lo que se corrige.',
