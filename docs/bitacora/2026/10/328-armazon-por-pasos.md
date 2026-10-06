@@ -165,3 +165,32 @@ Contra el respaldo local (`respaldo-local/server.mjs`, puerto 8842) y `next buil
 - `sim-11-salir`: con un nombre escrito, Atrás hasta el primer paso y ✕ → hoja «¿Salir sin publicar? Se borra lo que escribiste.» con «Seguir editando» y «Salir y borrar».
 
 Hallazgo fuera de esta pieza: en «¿A qué hora?», al elegir un chip los demás se reacomodan (12:00 p.m. baja de renglón) porque `ui/Chip .activo` pone `font-weight: 600` y el chip se ensancha. Viene del canon de chips, no del armazón; se anota para una pieza chica (reservar el ancho de la negrita).
+
+## Duración en vez de hora de fin (vuelta del founder, 2026-10-05)
+
+**Por qué.** Medido en producción el 2026-10-05, 36 eventos con hora de fin: 9 duran 2 h, 6 duran 3 h, 5 duran 1 h, 12 duran de 7 a 9 h (jornadas de museo) y 2 terminan al día siguiente. Quien organiza piensa «dura tres horas», no «termina a la 1:00 a.m.»; y «empieza 10:00 p.m., termina 1:00 a.m.» se rechazaba en silencio (`conHoraFin` devolvía el evento sin cambios cuando la hora no era posterior al inicio).
+
+**Qué cambió.**
+- El grupo del paso «¿A qué hora?» ahora pregunta **«¿Cuánto dura?»** con los chips **«1 hora», «2 horas», «3 horas», «Otra hora» y «Sin hora de fin»**, en ese orden. Elegir una duración avanza igual que antes elegir el fin. El fin sale de `finesSugeridos` (que ya sumaba 1, 2 y 3 horas con `sumarHoras`, en la zona del evento); ahora `DURACIONES` y `etiquetaDuracion` viven en `pasos.ts` y dan el rótulo.
+- Si el fin cae al día siguiente, se calcula así: 22:00 + 3 h = 1:00 a.m. del día siguiente. Al volver al paso (Atrás, o desde «Revisa»), debajo del grupo, en letra suave y dentro del mismo grupo (un `<small>` hijo del grupo, sin envoltorio nuevo), se lee **«Termina 1:00 a.m. del día siguiente»** o **«Termina 10:00 p.m.»**. Es también la única pista de lo elegido con «Otra hora», que no tiene chip.
+- `conHoraFin` (`lib/cuandoEvento.ts`): en un evento de un solo día, una hora **menor o igual** que la de inicio cae en la madrugada del día siguiente (`sumarDiasIso`, ya existía en `lib/calendario.ts`). En varios días la hora sigue cayendo en el último día.
+- `ui/SelectorHora` tiene una prop nueva, `diaSiguienteDe` (la hora de inicio): ofrece las 24 horas, primero las posteriores al inicio y después, con **«día siguiente»** en letra suave debajo de la hora, las demás (las rotuladas van desde la 12:00 a.m. hasta la hora de inicio inclusive: 89 con inicio a las 10:00 p.m.). La prop `despuesDe` no cambió: `SelectorCuando` (el formulario de siempre) sigue ofreciendo solo las horas posteriores y su prueba de componentes sigue en verde sin tocarla.
+
+**Decisiones mías, a la vista del gestor.**
+1. **Varios días no cambia de rótulo:** con «Dura varios días» el grupo sigue llamándose «Termina» y sus chips siguen siendo horas del último día; «Sin hora de fin» sigue siendo «acaba con su último día». Un festival de tres días no «dura 2 horas», y el founder pidió conservar lo que hiciera falta para ese caso. Si prefiere las duraciones también ahí, es cambiar un ternario en `PasoHora`.
+2. **Igual al inicio también cuenta como día siguiente** (el texto del encargo dice «menor o igual»): 10:00 p.m. + «Otra hora» 10:00 p.m. es 24 horas. La hoja lo ofrece al final de la lista con «día siguiente».
+3. `conHoraFin` cambió para todos sus usuarios; en `SelectorCuando` no se nota porque su hoja nunca ofrece una hora que no sea posterior al inicio, y la prueba de «un fin igual o anterior no se acepta» pasó a decir lo contrario (con el caso nuevo).
+
+**Pruebas.**
+- `src/lib/cuandoEvento.test.ts`: 28 pruebas (cuatro nuevas): «Otra hora» 01:00 con inicio 22:00 cae el día siguiente (también el 30 de noviembre → 1 de diciembre); 22:00 + 3 h = 01:00 del día siguiente; 1 hora desde 19:00 termina a las 20:00 del mismo día; varios días + «Sin hora de fin» acaba con su último día y una hora anterior al inicio cae en el último día.
+- `src/app/nuevo/evento/pasos.test.ts`: 22 pruebas (`DURACIONES` y sus rótulos; 22:00 + 3 h y 19:00 + 1 h; `finConHora` ya no rechaza la madrugada, también en el cambio de mes).
+- `AltaEvento.componentes.test.mjs`: 12 pruebas (cuatro nuevas y tres ajustadas al grupo nuevo): rótulo y los cinco chips en orden y sin «Termina» antes de elegir; elegir 3 horas desde las 10:00 p.m. avanza, y al volver dice «Termina 1:00 a.m. del día siguiente» con «3 horas» presionado; 1 hora desde las 7:00 p.m. dice «Termina 8:00 p.m.»; la hoja de «Otra hora» trae 96 horas, 89 rotuladas, y elegir 1:00 a.m. publica `inicio 2026-10-09T22:00`, `fin 2026-10-10T01:00`; varios días mantiene «Termina» y publica `fin 2026-10-11T23:59`.
+- Con `SelectorCuando.componentes.test.mjs`: 26 de 26 en verde (12 + 14). `npm test`: 144 archivos, 2103 pruebas en verde. `npm run typecheck` limpio; `npm run lint`: 0 errores y 1 aviso que ya estaba (`VisorImagen.componentes.test.mjs`); `npm run inventario`: sin novedades.
+- `npm run medir`: 25 pantallas × 4 anchos, sin novedades. `s15-alta-evento-pasos` sigue en **14/14/48/48 nodos y profundidad 6**: esa medición abre el primer paso, así que no cambia con esta pieza; el presupuesto no se tocó. Aparte, la hoja de «Otra hora» se miró también a 320 × 568 (no se guarda captura): «día siguiente» cabe en cada chip de la rejilla de tres columnas.
+
+**Capturas** (390 × 844, Chrome de la Mac, reloj fijo del miércoles 7 de octubre, `docs/rediseno/capturas-328/`; cada una abierta y mirada entera):
+- `dur-1-cuanto-dura.png`: tras elegir «7:00 p.m.» (violeta) aparece, bajo «Empieza», el rótulo «¿Cuánto dura?» en gris y dos renglones de chips blancos: «1 hora», «2 horas», «3 horas» y debajo «Otra hora», «Sin hora de fin». Ninguna duración elegida, ninguna línea de «Termina».
+- `dur-2-madrugada.png`: «10:00 p.m.» elegido en «Empieza» y «3 horas» en violeta; debajo de los chips, en gris y más chico, «Termina 1:00 a.m. del día siguiente».
+- `dur-3-hoja-otra-hora.png`: la hoja «Termina (empieza 10:00 p.m.)» sobre la pantalla atenuada. Las dos primeras filas son 10:15 a 11:30 p.m. sin rótulo; desde la 12:00 a.m. cada chip lleva la hora y, debajo, «día siguiente» en letra chica y suave; la última fila visible asoma cortada, avisando que se desplaza.
+
+**Pendiente que no es de esta pieza:** al elegir un chip activo el canon pone negrita y el chip se ensancha (ya anotado arriba); se ve de nuevo en «Empieza».

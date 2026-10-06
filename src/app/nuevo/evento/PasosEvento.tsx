@@ -21,7 +21,7 @@ import type { Ciudad } from "@/lib/ciudad";
 import { partirLocal } from "@/lib/cuandoEvento";
 import { LIMITES_EVENTO, type ErroresEvento } from "@/lib/eventos";
 import { diaLargo, diaLocal } from "@/lib/fechas";
-import { HORAS_SUGERIDAS, diasSugeridos, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
+import { DURACIONES, HORAS_SUGERIDAS, diasSugeridos, etiquetaDuracion, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
 import styles from "./AltaEvento.module.css";
 
 /**
@@ -118,7 +118,12 @@ export function PasoDia({ dias, zona, onElegir }: { dias: Dias | null; zona: str
   );
 }
 
-/** Primero cuándo empieza; al elegirlo aparece cuándo termina, ya calculado. Elegir el fin avanza. */
+/**
+ * Primero cuándo empieza; al elegirlo aparece cuánto dura (1, 2 o 3 horas, «Otra hora» o «Sin hora de fin»), con el fin ya calculado
+ * desde el inicio: puede caer en el día siguiente («empieza 10:00 p.m., dura 3 horas, termina 1:00 a.m.»). Elegir el fin avanza. En
+ * un evento de varios días «cuánto dura» no tiene sentido (un festival no dura «2 horas»): ahí se sigue preguntando a qué hora termina
+ * el último día, y «Sin hora de fin» es que acaba con él.
+ */
 export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: string; onInicio: (hora: string) => void; onFin: (fin: string) => void }) {
   const [hoja, setHoja] = useState<"inicio" | "fin" | null>(null);
   const idEmpieza = useId();
@@ -126,6 +131,9 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
   const propia = r.hora && !(HORAS_SUGERIDAS as readonly string[]).includes(r.hora) ? r.hora : null;
   const sinFin = finConHora(r, "");
   const varios = !!r.dias?.hasta;
+  // Con un fin puesto en un evento de un día, se dice a qué hora termina y si ya es el día siguiente (la hora de «Otra hora» no se ve
+  // en ningún chip).
+  const fin = r.fin && r.dias && !varios ? partirLocal(r.fin) : null;
   return (
     <>
       <div className={styles.grupo} role="group" aria-labelledby={idEmpieza}>
@@ -144,16 +152,22 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
       </div>
       {r.hora && (
         <div className={`${styles.grupo} ${styles.aparece}`} role="group" aria-labelledby={idTermina}>
-          <span id={idTermina}>Termina</span>
-          {finesSugeridos(r, zona).map((fin) => (
-            <Chip key={fin} activo={r.fin === fin} onClick={() => onFin(fin)}>
-              {etiquetaHora(partirLocal(fin).hora)}
+          <span id={idTermina}>{varios ? "Termina" : "¿Cuánto dura?"}</span>
+          {finesSugeridos(r, zona).map((sugerido, i) => (
+            <Chip key={sugerido} activo={r.fin === sugerido} onClick={() => onFin(sugerido)}>
+              {varios ? etiquetaHora(partirLocal(sugerido).hora) : etiquetaDuracion(DURACIONES[i])}
             </Chip>
           ))}
           <Chip onClick={() => setHoja("fin")}>Otra hora</Chip>
           <Chip activo={r.fin === sinFin} onClick={() => onFin(sinFin)}>
             Sin hora de fin
           </Chip>
+          {fin && r.dias && (
+            <small>
+              Termina {etiquetaHora(fin.hora)}
+              {fin.fecha > r.dias.desde && " del día siguiente"}
+            </small>
+          )}
         </div>
       )}
       {hoja === "inicio" && (
@@ -167,7 +181,7 @@ export function PasoHora({ r, zona, onInicio, onFin }: { r: Respuestas; zona: st
           onCerrar={() => setHoja(null)}
         />
       )}
-      {hoja === "fin" && r.hora && <SelectorHora titulo={`Termina (empieza ${etiquetaHora(r.hora)})`} hora="" despuesDe={varios ? undefined : r.hora} onElegir={(hora) => onFin(finConHora(r, hora))} onCerrar={() => setHoja(null)} />}
+      {hoja === "fin" && r.hora && <SelectorHora titulo={`Termina (empieza ${etiquetaHora(r.hora)})`} hora="" diaSiguienteDe={varios ? undefined : r.hora} onElegir={(hora) => onFin(finConHora(r, hora))} onCerrar={() => setHoja(null)} />}
     </>
   );
 }

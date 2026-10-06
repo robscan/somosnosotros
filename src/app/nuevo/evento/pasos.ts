@@ -149,8 +149,12 @@ export function diasSugeridos(hoy: string): { etiqueta: string; dia: string }[] 
  */
 export const HORAS_SUGERIDAS = ["19:00", "20:00", "17:00", "12:00"] as const;
 
-/** El fin a una, dos y tres horas del inicio (prototipo firmado). */
-const DURACIONES = [1, 2, 3] as const;
+/** Las duraciones que se ofrecen (prototipo firmado): una, dos y tres horas. En producción (36 eventos con hora de fin, 2026-10-05):
+ *  9 duran 2 h, 6 duran 3 h y 5 duran 1 h; otros 12 duran de 7 a 9 h (jornadas de museo) y 2 terminan al día siguiente. */
+export const DURACIONES = [1, 2, 3] as const;
+
+/** «1 hora», «2 horas». */
+export const etiquetaDuracion = (horas: number): string => `${horas} ${horas === 1 ? "hora" : "horas"}`;
 
 /** «YYYY-MM-DDTHH:MM» del inicio; "" sin día o sin hora. */
 export const inicioDe = (r: Respuestas): string => (r.dias && r.hora ? combinarFechaHora(r.dias.desde, r.hora) : "");
@@ -159,8 +163,8 @@ export const inicioDe = (r: Respuestas): string => (r.dias && r.hora ? combinarF
 const ultimoDia = (dias: Dias): string => dias.hasta ?? dias.desde;
 
 /**
- * Los fines que se sugieren: el último día a la hora de inicio, más una, dos y tres horas, en la zona del evento (un fin que pasa de
- * la medianoche cae en el día siguiente). Vacío sin día o sin hora.
+ * Los fines que se sugieren, uno por cada duración de `DURACIONES` y en su orden: el último día a la hora de inicio, más una, dos y
+ * tres horas, en la zona del evento (un fin que pasa de la medianoche cae en el día siguiente). Vacío sin día o sin hora.
  */
 export function finesSugeridos(r: Respuestas, zona: string): string[] {
   if (!r.dias || !r.hora) return [];
@@ -169,8 +173,9 @@ export function finesSugeridos(r: Respuestas, zona: string): string[] {
 }
 
 /**
- * El fin con una hora elegida en la lista («Otra hora»), o sin hora de fin (`""`), con la regla de siempre (`conHoraFin`): cae en el
- * último día; sin hora, un evento de varios días acaba con su último día y uno de un día queda sin fin.
+ * El fin con una hora elegida en la lista («Otra hora»), o sin hora de fin (`""`), con la regla de `conHoraFin`: cae en el último
+ * día; en uno de un día, una hora que no es posterior al inicio es la madrugada del día siguiente; sin hora, un evento de varios días
+ * acaba con su último día y uno de un día queda sin fin.
  */
 export function finConHora(r: Respuestas, hora: string): string {
   if (!r.dias || !r.hora) return "";

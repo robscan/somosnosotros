@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OTRO_VACIO, avance, diasSugeridos, estadoInicial, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, pasoActual, type Accion, type Estado, type Respuestas } from "./pasos";
+import { DURACIONES, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, faltaParaPublicar, faltan, finConHora, finesSugeridos, flujo, inicioDe, pasoActual, type Accion, type Estado, type Respuestas } from "./pasos";
 
 const ZONA = "America/Mexico_City";
 const pasar = (e: Estado, ...acciones: Accion[]) => acciones.reduce(flujo, e);
@@ -141,7 +141,7 @@ describe("los días que se sugieren, en la zona del evento", () => {
   });
 });
 
-describe("el fin a una, dos y tres horas", () => {
+describe("la duración: el fin a una, dos y tres horas", () => {
   const conHora = (hora: string, hasta: string | null = null): Respuestas => ({ ...estadoInicial().r, dias: { desde: "2026-10-09", hasta }, hora });
 
   it("19:00 termina a las 20:00, 21:00 o 22:00 del mismo día", () => {
@@ -157,6 +157,14 @@ describe("el fin a una, dos y tres horas", () => {
     // En Madrid, el 29 de marzo de 2026 a las 2:00 se adelanta el reloj a las 3:00: una hora después de la 1:30 son las 3:30.
     expect(finesSugeridos({ ...conHora("01:30"), dias: { desde: "2026-03-29", hasta: null } }, "Europe/Madrid")[0]).toBe("2026-03-29T03:30");
   });
+  it("cada fin sugerido es una duración de DURACIONES, en su orden (1, 2 y 3 horas), con su rótulo", () => {
+    expect([...DURACIONES]).toEqual([1, 2, 3]);
+    expect(DURACIONES.map(etiquetaDuracion)).toEqual(["1 hora", "2 horas", "3 horas"]);
+    // 22:00 + 3 h = 01:00 del día siguiente.
+    expect(finesSugeridos(conHora("22:00"), ZONA)[DURACIONES.indexOf(3)]).toBe("2026-10-10T01:00");
+    // 19:00 + 1 h = 20:00 del mismo día.
+    expect(finesSugeridos(conHora("19:00"), ZONA)[DURACIONES.indexOf(1)]).toBe("2026-10-09T20:00");
+  });
   it("sin día o sin hora no hay sugerencias", () => {
     expect(finesSugeridos(estadoInicial().r, ZONA)).toEqual([]);
   });
@@ -167,7 +175,10 @@ describe("el fin a una, dos y tres horas", () => {
     // Varios días sin hora de fin: acaba con su último día.
     expect(finConHora(conHora("19:00", "2026-10-11"), "")).toBe("2026-10-11T23:59");
     expect(finConHora(conHora("19:00", "2026-10-11"), "18:00")).toBe("2026-10-11T18:00");
-    // Un fin de un día que no es posterior al inicio no se acepta.
-    expect(finConHora(conHora("19:00"), "18:00")).toBe("");
+    // Un fin de un día que no es posterior al inicio es la madrugada del día siguiente (ya no se rechaza en silencio).
+    expect(finConHora(conHora("19:00"), "18:00")).toBe("2026-10-10T18:00");
+    expect(finConHora(conHora("22:00"), "01:00")).toBe("2026-10-10T01:00");
+    // En el cambio de mes cae en el día 1.
+    expect(finConHora({ ...conHora("22:00"), dias: { desde: "2026-10-31", hasta: null } }, "01:00")).toBe("2026-11-01T01:00");
   });
 });

@@ -51,6 +51,12 @@
   flex-basis: 100%;
   color: var(--texto-suave);
 }
+/* Lo que se calcula de la respuesta («Termina 1:00 a.m. del día siguiente»), en letra suave y en su propio renglón. */
+.grupo > small {
+  flex-basis: 100%;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 /* «Termina» aparece al elegir el inicio: cae en su sitio (doc 51: la animación introduce lo nuevo). */
 @media (prefers-reduced-motion: no-preference) {
   .aparece {

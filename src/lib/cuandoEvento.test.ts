@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sumarHoras } from "./fechas";
 import { conDias, conHoraFin, conHoraInicio, finDelDia, horasEntre, partirLocal, terminaOtroDia } from "./cuandoEvento";
 
 const ZONA = "America/Mexico_City";
@@ -94,9 +95,25 @@ describe("conHoraFin", () => {
   it("el fin cae en el día del inicio", () => {
     expect(conHoraFin(sinFin, "21:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-14T21:00" });
   });
-  it("un fin igual o anterior al inicio, el mismo día, no se acepta: queda como estaba", () => {
-    expect(conHoraFin(sinFin, "19:00")).toBe(sinFin);
-    expect(conHoraFin(sinFin, "18:00")).toBe(sinFin);
+  it("un fin igual o anterior al inicio, en un evento de un solo día, es la madrugada del día siguiente (OL-300)", () => {
+    expect(conHoraFin(sinFin, "18:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-15T18:00" });
+    expect(conHoraFin(sinFin, "19:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-15T19:00" });
+  });
+  it("«Otra hora» 01:00 con inicio 22:00 cae el día siguiente; la duración de 3 horas desde 22:00 llega a la misma hora", () => {
+    const noche = { inicio: "2026-11-14T22:00", fin: "" };
+    expect(conHoraFin(noche, "01:00")).toEqual({ inicio: "2026-11-14T22:00", fin: "2026-11-15T01:00" });
+    expect(sumarHoras("2026-11-14T22:00", 3, ZONA)).toBe("2026-11-15T01:00");
+    // En el último día del mes, el día siguiente es el 1.º.
+    expect(conHoraFin({ inicio: "2026-11-30T22:00", fin: "" }, "01:00").fin).toBe("2026-12-01T01:00");
+  });
+  it("una hora posterior al inicio sigue cayendo el mismo día: 1 hora desde 19:00 termina a las 20:00", () => {
+    expect(conHoraFin(sinFin, "20:00")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-14T20:00" });
+    expect(sumarHoras("2026-11-14T19:00", 1, ZONA)).toBe("2026-11-14T20:00");
+  });
+  it("varios días + «Sin hora de fin» sigue acabando con su último día, y una hora anterior al inicio cae en el último día, no un día después", () => {
+    const largo = { inicio: "2026-11-14T19:00", fin: "2026-11-16T21:00" };
+    expect(conHoraFin(largo, "")).toEqual({ inicio: "2026-11-14T19:00", fin: "2026-11-16T23:59" });
+    expect(conHoraFin({ inicio: "2026-11-14T19:00", fin: "2026-11-16T23:59" }, "01:00").fin).toBe("2026-11-16T01:00");
   });
   it("en un evento de varios días la hora cae en su último día, aunque sea anterior a la de inicio", () => {
     const largo = { inicio: "2026-11-14T19:00", fin: "2026-11-16T23:59" };

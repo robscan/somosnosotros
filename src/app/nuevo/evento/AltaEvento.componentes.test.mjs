@@ -16,6 +16,8 @@ const root = fileURLToPath(new URL("../../../../", import.meta.url));
 const LUGAR = "0b0b0b0b-0000-4000-8000-000000000001";
 const GENERAL = "No se pudo publicar el evento completo. Intenta de nuevo.";
 const TOPE = { timeout: 30000 };
+/** Con `CAPTURAS=<carpeta>` el test de la duración guarda sus capturas a 390×844 (bitácora 328). */
+const capturas = process.env.CAPTURAS;
 let dir, server, browser, origin;
 const mocks = {
   "@/components/HojaDonde":
@@ -118,7 +120,7 @@ async function hastaHora(p, nombre = "Lectura en voz alta") {
 async function hastaRevisa(p) {
   await hastaHora(p);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
-  await p.getByRole("group", { name: "Termina" }).getByRole("button", { name: /^9:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
   await boton(p, "Elegir el primero").click();
   await boton(p, /^Gratis/).click();
   await p.getByRole("heading", { name: "Lectura en voz alta" }).waitFor();
@@ -210,11 +212,110 @@ test("el botón del pie dice qué falta y no avanza hasta tenerlo; Intro hace lo
   assert.equal(await p.evaluate(() => document.activeElement?.textContent), "¿Qué día es?");
 });
 
+/** Empieza a las 10:00 p.m. con la hoja de «Otra hora» (no es una hora sugerida) y deja a la vista el grupo «¿Cuánto dura?». */
+async function hastaCuantoDura(p) {
+  await hastaHora(p);
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: "Otra hora" }).click();
+  await p.getByRole("dialog").getByRole("button", { name: /^10:00\s*p/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).waitFor();
+  return p.getByRole("group", { name: "¿Cuánto dura?" });
+}
+
+test("«¿Cuánto dura?»: el grupo trae 1, 2 y 3 horas, «Otra hora» y «Sin hora de fin», en ese orden, y no dice nada del fin hasta elegir", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaHora(p);
+  // Sin hora de inicio todavía no se pregunta cuánto dura.
+  assert.equal(await p.getByRole("group", { name: "¿Cuánto dura?" }).count(), 0);
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  const grupo = p.getByRole("group", { name: "¿Cuánto dura?" });
+  assert.equal(await p.getByRole("group", { name: "Termina", exact: true }).count(), 0);
+  assert.deepEqual(await grupo.getByRole("button").allInnerTexts(), ["1 hora", "2 horas", "3 horas", "Otra hora", "Sin hora de fin"]);
+  assert.equal(await grupo.getByText(/^Termina/).count(), 0);
+  if (capturas) {
+    await p.mouse.move(0, 0);
+    await p.waitForTimeout(400); // que acabe la transición del color del chip elegido
+    await p.screenshot({ path: join(capturas, "dur-1-cuanto-dura.png") });
+  }
+});
+
+test("elegir una duración avanza, y al volver dice a qué hora termina: 22:00 + 3 horas es 1:00 a.m. del día siguiente", TOPE, async (t) => {
+  const p = await pagina(t);
+  const grupo = await hastaCuantoDura(p);
+  await grupo.getByRole("button", { name: "3 horas" }).click();
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  // «¿Dónde es?» es una hoja (el doble trae su «Atrás de la hoja»): cerrarla vuelve al paso anterior.
+  await boton(p, "Atrás de la hoja").click();
+  assert.equal(await pregunta(p), "¿A qué hora?");
+  assert.equal(await grupo.getByRole("button", { name: "3 horas" }).getAttribute("aria-pressed"), "true");
+  assert.match(await grupo.locator("small").innerText(), /^Termina 1:00\s*a\.?\s?m\.? del día siguiente$/);
+  if (capturas) {
+    await p.waitForTimeout(400);
+    await p.screenshot({ path: join(capturas, "dur-2-madrugada.png") });
+  }
+  // Una hora desde las 7:00 p.m. termina ese mismo día, sin «del día siguiente».
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  await grupo.getByRole("button", { name: "1 hora" }).click();
+  await boton(p, "Atrás de la hoja").click();
+  assert.match(await grupo.locator("small").innerText(), /^Termina 8:00\s*p\.?\s?m\.?$/);
+});
+
+test("«Otra hora» ofrece las 24 horas y rotula las del día siguiente; 1:00 a.m. con inicio a las 10:00 p.m. queda el día siguiente", TOPE, async (t) => {
+  const p = await pagina(t);
+  const grupo = await hastaCuantoDura(p);
+  await grupo.getByRole("button", { name: "Otra hora" }).click();
+  const hoja = p.getByRole("dialog");
+  const horas = await hoja.locator("[role=group] button").allInnerTexts();
+  assert.equal(horas.length, 96);
+  // Primero lo que sigue esa misma noche, sin rótulo; después la madrugada, hasta la misma hora del día siguiente.
+  assert.match(horas[0], /^10:15\s*p/);
+  assert.doesNotMatch(horas[0], /día siguiente/);
+  assert.match(horas[7], /^12:00\s*a/);
+  assert.match(horas[7], /día siguiente/);
+  assert.match(horas.at(-1), /^10:00\s*p[\s\S]*día siguiente/);
+  assert.equal(horas.filter((h) => /día siguiente/.test(h)).length, 89);
+  if (capturas) await p.screenshot({ path: join(capturas, "dur-3-hoja-otra-hora.png") });
+  await hoja.getByRole("button", { name: /^1:00\s*a[\s\S]*día siguiente/ }).click();
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  await boton(p, "Elegir el primero").click();
+  await boton(p, /^Gratis/).click();
+  await p.locator("main ul > li").first().waitFor();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ inicio: d.inicio, fin: d.fin }, { inicio: "2026-10-09T22:00", fin: "2026-10-10T01:00" });
+});
+
+test("varios días sigue preguntando a qué hora termina el último día: «Termina», sin duraciones, y «Sin hora de fin» acaba con su último día", TOPE, async (t) => {
+  const p = await pagina(t);
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Festival");
+  await boton(p, "Siguiente").click();
+  await boton(p, "Dura varios días").click();
+  await p.locator('[data-fecha="2026-10-09"]').click();
+  await p.locator('[data-fecha="2026-10-11"]').click();
+  await p.getByRole("dialog").getByRole("button", { name: "Listo", exact: true }).click();
+  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
+  const grupo = p.getByRole("group", { name: "Termina", exact: true });
+  assert.equal(await p.getByRole("group", { name: "¿Cuánto dura?" }).count(), 0);
+  const textos = await grupo.getByRole("button").allInnerTexts();
+  assert.equal(textos.length, 5);
+  assert.match(textos[0], /^8:00\s*p/); // el último día, una hora después del inicio
+  assert.deepEqual(textos.slice(3), ["Otra hora", "Sin hora de fin"]);
+  await grupo.getByRole("button", { name: "Sin hora de fin" }).click();
+  await boton(p, "Elegir el primero").click();
+  await boton(p, /^Gratis/).click();
+  await p.locator("main ul > li").first().waitFor();
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ inicio: d.inicio, fin: d.fin }, { inicio: "2026-10-09T19:00", fin: "2026-10-11T23:59" });
+});
+
 test("«Tiene precio» abre el número, solo dígitos, y «Revisa» lo enseña con su signo", TOPE, async (t) => {
   const p = await pagina(t);
   await hastaHora(p);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
-  await p.getByRole("group", { name: "Termina" }).getByRole("button", { name: "Sin hora de fin" }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "Sin hora de fin" }).click();
   await boton(p, "Elegir el primero").click();
   await boton(p, /^Tiene precio/).click();
   const precio = p.getByLabel("Precio (solo números)");
@@ -242,9 +343,9 @@ test("tocar un dato en «Revisa» abre solo su pregunta y, al contestarla, vuelv
   assert.equal(await pregunta(p), "¿Qué día es?");
   await boton(p, /^Este sábado/).click();
   assert.equal(await pregunta(p), "¿A qué hora?");
-  assert.equal(await p.getByRole("group", { name: "Termina" }).count(), 0);
+  assert.equal(await p.getByRole("group", { name: "¿Cuánto dura?" }).count(), 0);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^12:00/ }).click();
-  await p.getByRole("group", { name: "Termina" }).getByRole("button", { name: /^3:00/ }).click();
+  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "3 horas" }).click();
   await p.locator("main ul > li").filter({ hasText: "sáb 10 de oct · 12:00–15:00" }).waitFor();
   // Dónde: la hoja abierta como paso; su Atrás vuelve a «Revisa» sin cambiar nada.
   await boton(p, "Cambiar dónde").click();

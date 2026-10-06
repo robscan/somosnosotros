@@ -22,6 +22,21 @@
 .sinFin {
   grid-column: 1 / -1;
 }
+/* Las horas que caen en el día siguiente: la hora y, debajo, «día siguiente» en letra suave (la elegida lo hereda del chip activo). */
+.horas > .siguiente {
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  line-height: 1.2;
+}
+.siguiente small {
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 400;
+}
+.siguiente[aria-pressed="true"] small {
+  color: inherit;
+}
 .sugerida {
   font-weight: 700;
 }
