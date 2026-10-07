@@ -125,7 +125,8 @@ const eventos = [
   evento({ id: E.cine3, slug: "funcion-cortometrajes-potosinos", titulo: "Función: cortometrajes potosinos", dias: 11, hora: "17:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine4, slug: "funcion-de-clausura", titulo: "Función de clausura", dias: 12, hora: "19:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine, borrador: true }),
   // OL-320: un taller con horario por día (tres sesiones, cada una con su hora): la agenda lo pone en los tres días. Empieza con su primera sesión y termina con la última.
-  { ...evento({ id: E.tallerLinoleo, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
+  // OL-322: es un taller (`clase`), así cada día dice «Sesión n de 3».
+  { ...evento({ id: E.tallerLinoleo, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, clase: "taller", descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
 ];
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];

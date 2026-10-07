@@ -6,6 +6,8 @@ import type { Asistencia } from "@/lib/deslizar";
 import { claveDe } from "@/lib/ocurrencias";
 import RenglonEvento from "./RenglonEvento";
 import type { EstadoBotonRenglon } from "./ui/BotonRenglon";
+import { IconoChevronDerecha, IconoEtiqueta } from "./ui/Iconos";
+import renglon from "./ui/Renglon.module.css";
 import styles from "./BloqueFestival.module.css";
 
 type Props = {
@@ -22,14 +24,17 @@ type Props = {
 /**
  * Un festival en la agenda de un día (OL-322; doc 55 §3, decisión 4; prototipo caso 7): un bloque con su nombre, «Programa registrado: N
  * actividades · hoy M» y, debajo, sus actos de ese día. Es un renglón más de la lista del día (`<li>` dentro de la del grupo) y sus actos son
- * los renglones de siempre: lo único propio es la raya de color a la izquierda que los junta y la cabecera.
+ * los renglones de siempre. La cabecera es el renglón de dato de la ficha («Parte de Festival X», el mismo icono de etiqueta y su chevron hacia la
+ * ficha del festival); lo único propio es la raya de color a la izquierda que los junta.
  */
 export default function BloqueFestival({ marco, actos, esHoy, estado, boton }: Props) {
   return (
     <li className={styles.bloque}>
-      <Link href={hrefEvento(marco)} className={styles.cabeza}>
+      <Link href={hrefEvento(marco)} className={`${renglon.dato} ${styles.cabeza}`}>
+        <IconoEtiqueta width={20} height={20} />
         <b>{marco.titulo}</b>
         <small>{textoBloque(Math.max(marco.programa?.registrados ?? 0, actos.length), actos.length, esHoy)}</small>
+        <IconoChevronDerecha />
       </Link>
       <ul>
         {actos.map((a) => (
