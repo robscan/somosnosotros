@@ -6,10 +6,14 @@ vi.mock("@vercel/analytics", () => ({ track: (...a: unknown[]) => track(...a) })
 import { claseMedida, contextoGoogle, datosAsistencia, medicionActivaEnCliente, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, validarMedicion } from "./medir";
 import { limpiarUrlEvento, limpiarUrlGoogle } from "./limpiarUrlAnalitica";
 
-/** Una ventana mínima: dirección, `gtag` y la marca de admin (o no). */
-function ponerVentana({ href = "https://somosnosotros.org/eventos/fiesta", admin = false, gtag }: { href?: string; admin?: boolean; gtag?: (...a: unknown[]) => void } = {}) {
+/** La marca del rol que pinta `MarcaAdmin`: «admin», «otro» o ninguna (aún sin resolver). */
+const marca = (rol: "admin" | "otro" | null) =>
+  vi.stubGlobal("document", { querySelector: (sel: string) => (rol && sel === "[data-medir-rol]" ? { getAttribute: (a: string) => (a === "data-medir-rol" ? rol : null) } : null) });
+
+/** Una ventana mínima: dirección, `gtag` y la marca del rol (por omisión, resuelto y no admin). */
+function ponerVentana({ href = "https://somosnosotros.org/eventos/fiesta", admin = false, rol, gtag }: { href?: string; admin?: boolean; rol?: "admin" | "otro" | null; gtag?: (...a: unknown[]) => void } = {}) {
   vi.stubGlobal("window", { location: { href }, gtag });
-  vi.stubGlobal("document", { querySelector: (sel: string) => (admin && sel === "[data-medir-admin]" ? {} : null) });
+  marca(rol !== undefined ? rol : admin ? "admin" : "otro");
 }
 
 const red = vi.fn();
@@ -138,6 +142,13 @@ describe("medirCliente", () => {
     medirCliente("asistencia", { estado: "voy", cambio: "puesto" });
     expect(track).not.toHaveBeenCalled();
     expect(gtag).not.toHaveBeenCalled();
+    expect(red).not.toHaveBeenCalled();
+  });
+  it("F10: mientras el rol no se sepa (la marca aún no llegó) no manda nada", () => {
+    const gtag = vi.fn();
+    ponerVentana({ gtag, rol: null });
+    medirCliente("asistencia", { estado: "voy", cambio: "puesto" });
+    expect(track).not.toHaveBeenCalled();
     expect(red).not.toHaveBeenCalled();
   });
   it("lo que no está en la lista no sale", () => {

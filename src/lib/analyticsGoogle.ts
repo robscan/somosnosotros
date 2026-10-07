@@ -1,5 +1,5 @@
 import { limpiarUrlGoogle } from "@/lib/limpiarUrlAnalitica";
-import { contextoGoogle, esAdminEnPantalla } from "@/lib/medir";
+import { contextoGoogle, sinMedirEnPantalla } from "@/lib/medir";
 
 /**
  * Google Analytics 4 sin cookies ni identificación (OL-325). Solo `gtag.js`, sin Tag Manager: nada que editar fuera del repo.
@@ -63,11 +63,12 @@ export function iniciarGoogle(ventana: Ventana, id: string): boolean {
 
 /**
  * Una vista de página: la ubicación limpia pasa a ser la de todo lo que se mande desde aquí (incluso lo automático de `gtag.js`) y, si
- * la ruta se puede medir, va `page_view`. Las rutas privadas (la limpieza devuelve null) no mandan vista. Nunca para la administración.
+ * la ruta se puede medir, va `page_view`. Las rutas privadas (la limpieza devuelve null) no mandan vista. Nunca para la administración
+ * ni mientras el rol no se sepa.
  */
 export function vistaGoogle(ventana: Ventana): boolean {
   try {
-    if (esAdminEnPantalla() || typeof ventana.gtag !== "function") return false;
+    if (sinMedirEnPantalla() || typeof ventana.gtag !== "function") return false;
     const href = ventana.location.href;
     const contexto = contextoGoogle(href);
     ventana.gtag("set", contexto);

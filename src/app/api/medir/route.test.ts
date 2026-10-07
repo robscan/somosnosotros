@@ -35,5 +35,19 @@ describe("POST /api/medir (OL-325)", () => {
   });
   it("un cuerpo enorme: 413", async () => {
     expect((await pedir({ nombre: "app_instalada", datos: {}, relleno: "x".repeat(600) })).status).toBe(413);
+    // F12: un megabyte sin Content-Length (en trozos) se corta sin leerlo entero, y uno que lo declara ni se empieza a leer.
+    let trozos = 0;
+    const grande = new ReadableStream<Uint8Array>({
+      pull(c) {
+        if (++trozos > 1024) return c.close();
+        c.enqueue(new Uint8Array(1024).fill(120));
+      },
+    });
+    const sinLargo = new Request("https://somosnosotros.org/api/medir", { method: "POST", headers: { "sec-fetch-site": "same-origin" }, body: grande, duplex: "half" } as RequestInit);
+    expect((await POST(sinLargo)).status).toBe(413);
+    expect(trozos).toBeLessThan(5);
+    const conLargo = new Request("https://somosnosotros.org/api/medir", { method: "POST", headers: { "sec-fetch-site": "same-origin", "content-length": "1048576" }, body: "{}" });
+    expect((await POST(conLargo)).status).toBe(413);
+    expect(tareas).toHaveLength(0);
   });
 });

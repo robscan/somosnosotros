@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { validarMedicion } from "@/lib/medir";
+import { leerCuerpoAcotado } from "@/lib/cuerpoAcotado";
 import { enviarAGoogle } from "@/lib/medirGoogleServidor";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,8 @@ export async function POST(request: Request) {
   try {
     const sitio = request.headers.get("sec-fetch-site");
     if (sitio && sitio !== "same-origin") return new Response(null, { status: 403 });
-    const texto = await request.text();
-    if (texto.length > MAX_CUERPO) return new Response(null, { status: 413 });
+    const texto = await leerCuerpoAcotado(request, MAX_CUERPO);
+    if (texto === null) return new Response(null, { status: 413 });
     const entrada = JSON.parse(texto) as { nombre?: unknown; datos?: unknown };
     const datos = typeof entrada?.nombre === "string" ? validarMedicion(entrada.nombre, entrada.datos ?? {}) : null;
     if (!datos) return new Response(null, { status: 400 });

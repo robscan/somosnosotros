@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect } from "react";
 import { idGoogleValido, iniciarGoogle, vistaGoogle } from "@/lib/analyticsGoogle";
-import { esAdminEnPantalla } from "@/lib/medir";
+import { sinMedirEnPantalla } from "@/lib/medir";
 
 /** Corre `hacer` cuando la página terminó de llegar (con ella, la marca de admin del layout, que llega en streaming). */
 function alCargar(hacer: () => void): () => void {
@@ -29,7 +29,7 @@ export default function AnalyticsGoogle({ id, produccion }: { id: string | null 
   useEffect(() => {
     if (!produccion || !idGoogleValido(id)) return;
     return alCargar(() => {
-      if (esAdminEnPantalla()) return;
+      if (sinMedirEnPantalla()) return;
       iniciarGoogle(window, id);
       vistaGoogle(window);
     });

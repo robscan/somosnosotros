@@ -63,12 +63,14 @@ describe("iniciarGoogle: consentimiento denegado antes que la configuración", (
 });
 
 describe("vistaGoogle: vistas a mano con la URL limpia", () => {
-  const sinAdmin = () => vi.stubGlobal("document", { querySelector: () => null });
+  const conRol = (rol: "admin" | "otro" | null) =>
+    vi.stubGlobal("document", { querySelector: (sel: string) => (rol && sel === "[data-medir-rol]" ? { getAttribute: () => rol } : null) });
+  const sinAdmin = () => conRol("otro");
   it("manda page_view con la ruta limpia", () => {
     sinAdmin();
     const gtag = vi.fn();
-    expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/agenda?q=rosa&cuando=hoy" } })).toBe(true);
-    expect(gtag).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/agenda?cuando=hoy", page_title: "/agenda", page_referrer: "" });
+    expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/agenda?q=rosa&filtro=hoy" } })).toBe(true);
+    expect(gtag).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/agenda?filtro=hoy", page_title: "/agenda", page_referrer: "" });
   });
   it("una ruta privada no manda vista, pero lo que siga saliendo de ahí lleva solo su primer tramo", () => {
     sinAdmin();
@@ -78,7 +80,13 @@ describe("vistaGoogle: vistas a mano con la URL limpia", () => {
     expect(gtag).not.toHaveBeenCalledWith("event", "page_view", expect.anything());
   });
   it("para la administración no manda nada", () => {
-    vi.stubGlobal("document", { querySelector: () => ({}) });
+    conRol("admin");
+    const gtag = vi.fn();
+    expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/" } })).toBe(false);
+    expect(gtag).not.toHaveBeenCalled();
+  });
+  it("F10: mientras el rol no se sepa no manda vista", () => {
+    conRol(null);
     const gtag = vi.fn();
     expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/" } })).toBe(false);
     expect(gtag).not.toHaveBeenCalled();

@@ -120,16 +120,26 @@ export function medicionActivaEnCliente(): boolean {
 }
 
 /**
- * ¿Mira la administración? El layout pinta `<i hidden data-medir-admin>` solo para quien es admin (`MarcaAdmin`, en el servidor, con el
- * mismo dato que ya decide el acceso a Administración); sin él, nadie lo es. No expone nada más: ni quién es ni su id.
+ * ¿Quién mira, para medir o no? El layout pinta `<i hidden data-medir-rol="admin">` o `"otro"` cuando el servidor resolvió la sesión
+ * (`MarcaAdmin`, con el mismo dato que ya decide el acceso a Administración). No expone nada más: ni quién es ni su id.
  */
-export const MARCA_ADMIN = "data-medir-admin";
-export function esAdminEnPantalla(): boolean {
+export const MARCA_ROL = "data-medir-rol";
+export function rolEnPantalla(): "admin" | "otro" | null {
   try {
-    return typeof document !== "undefined" && document.querySelector(`[${MARCA_ADMIN}]`) !== null;
+    if (typeof document === "undefined") return null;
+    const valor = document.querySelector(`[${MARCA_ROL}]`)?.getAttribute(MARCA_ROL);
+    return valor === "admin" || valor === "otro" ? valor : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/**
+ * ¿No se mide aquí? Mientras el rol no se sepa (la marca llega en streaming, tras leer la sesión) no se mide nada; con «admin», nunca
+ * (OL-325, F10 de OL-327). Solo «otro» deja medir.
+ */
+export function sinMedirEnPantalla(): boolean {
+  return rolEnPantalla() !== "otro";
 }
 
 type Gtag = (...args: unknown[]) => void;
@@ -164,12 +174,12 @@ export function medirCliente<N extends NombreEvento>(nombre: N, ...args: ArgsDe<
       depurar("fuera de la lista, no se manda:", nombre, args[0]);
       return;
     }
-    const admin = esAdminEnPantalla();
+    const sinMedir = sinMedirEnPantalla();
     if (!medicionActivaEnCliente()) {
-      depurar(nombre, datos, admin ? "(admin: no se mandaría)" : "(fuera de producción: no se manda)");
+      depurar(nombre, datos, sinMedir ? "(admin o rol aún sin resolver: no se mandaría)" : "(fuera de producción: no se manda)");
       return;
     }
-    if (admin) return;
+    if (sinMedir) return;
     try {
       track(nombre, datos);
     } catch {
