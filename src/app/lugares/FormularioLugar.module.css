@@ -1,18 +1,9 @@
 /* ==========================================================================
-   Alta de lugar: lo propio, fuera del canon (ui/FormularioCanon.module.css):
-   1. El aviso de la lista flotante (ui/ListaFlotante) · 2. Más: portada e interruptor del administrador · 3. Parecidos
+   Editar un lugar: lo propio, fuera del canon (ui/FormularioCanon.module.css). El alta es por pasos (`/nuevo/lugar`, OL-315).
+   1. Más: portada e interruptor del administrador
    ========================================================================== */
 
-/* 1. "Buscando…" o "Trayendo la ubicación…", dentro de la lista flotante (ui/ListaFlotante): no es una opción,
-   solo texto (mismo patrón que HojaDonde.module.css). Las sugerencias y "ya existe" flotan sobre el layout, sin
-   empujar Dónde, Tipo, Más ni el botón, mientras el campo del nombre tiene el foco (founder, producción,
-   2026-09-21; revisión del gestor, 2026-09-21: el panel solo vive con el foco puesto). */
-.avisoFlotante {
-  padding: var(--espacio-3);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-/* 2. Más: foto de portada e interruptor del administrador. */
+/* 1. Más: foto de portada e interruptor del administrador. */
 .portada {
   display: block;
   width: 100%;
@@ -44,16 +35,4 @@
   grid-area: nota;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
-}
-
-/* 3. Parecidos ("¿Es este?"). */
-.parecidos {
-  margin-bottom: var(--espacio-4);
-  padding: var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
-}
-.parecidos ul {
-  margin: var(--espacio-2) 0 var(--espacio-3) var(--espacio-4);
 }

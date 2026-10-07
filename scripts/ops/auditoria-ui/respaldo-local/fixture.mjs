@@ -148,7 +148,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [], lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -158,6 +158,7 @@ export const FK = {
   artistas: { perfiles: "creado_por" },
   eventos_artistas: { eventos: "evento_id", artistas: "artista_id" },
   eventos_sesiones: { eventos: "evento_id" },
+  lugares_horarios: { lugares: "lugar_id" },
   asistencias: { eventos: "evento_id", perfiles: "usuario_id" },
   seguimientos: { lugares: "lugar_id", artistas: "artista_id", perfiles: "usuario_id" },
   artistas_cuentas: { artistas: "artista_id", perfiles: "perfil_id" },
@@ -204,6 +205,9 @@ export const rpcs = {
   artistas_con_nombre: ({ p_nombre }) => artistas.filter((a) => a.nombre.toLowerCase().includes(String(p_nombre || "").toLowerCase())).map(resumenArtista),
   lugares_con_nombre: ({ p_nombre }) => lugares.filter((l) => l.nombre.toLowerCase().includes(String(p_nombre || "").toLowerCase())).map((l) => ({ id: l.id, slug: l.slug, nombre: l.nombre, tipo: l.tipo, direccion: l.direccion, lat: l.lat, lng: l.lng, portada: l.portada, zona: l.zona, privado: false })),
   lugares_parecidos: () => [],
+  // OL-315: el alta de lugar con horario contesta lo creado (sin guardarlo: las escrituras no cambian el fixture); el horario se reemplaza sin más.
+  crear_lugar_con_horario: ({ p_datos }) => ({ id: crypto.randomUUID(), slug: String(p_datos?.nombre ?? "lugar").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") }),
+  guardar_horario_lugar: () => null,
   subcategorias_de: () => [],
   mi_cupo_de_cartel: () => [],
 };

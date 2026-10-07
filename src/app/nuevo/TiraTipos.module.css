@@ -1,9 +1,9 @@
 /* ==========================================================================
-   La tira de tipos de las altas (docs/rediseno/50, P9; prototipo firmado): Evento · Lugar · Artista. La comparten `/nuevo` (`Alta`) y el
-   primer paso del alta de evento (`AltaEvento`, OL-313). Es un `footer`, hijo directo de la pantalla: en la columna de los pasos
-   (`PorPasos`) así no recibe el aire de los lados ni entra de lado, y `margin-top: auto` la lleva al fondo aunque el paso sea corto; en la
-   rejilla de `/nuevo` ese margen no hace nada (la fila ya es la última).
-   1. La tira · 2. El tipo
+   La tira de tipos de las altas (docs/rediseno/50, P9; prototipo firmado): Evento · Lugar · Artista. La comparten `/nuevo` (`Alta`, el
+   artista), el primer paso del alta de evento (`AltaEvento`, OL-313) y el del alta de lugar (`AltaLugar`, OL-315, dentro de su pie). Sola es
+   un `footer`, hijo directo de la pantalla: en la columna de los pasos (`PorPasos`) así no recibe el aire de los lados ni entra de lado, y
+   `margin-top: auto` la lleva al fondo aunque el paso sea corto; en la rejilla de `/nuevo` ese margen no hace nada (la fila ya es la última).
+   1. La tira · 2. El tipo · 3. Dentro del pie de un paso
    ========================================================================== */
 
 /* 1. De borde a borde y pegada abajo (sobre la zona segura del iPhone). */
@@ -22,34 +22,23 @@
   border-top: 1px solid var(--borde);
 }
 
-/* 2. El elegido va más oscuro y con un punto debajo. Cada uno mide el alto de la tira y al menos 64 de ancho: el pulgar los alcanza. Un
-   enlace o un texto se centra como el botón. */
+/* 2. El elegido (la pantalla en que se está) va más oscuro y con un punto debajo. Cada uno mide el alto de la tira y al menos 64 de ancho: el
+   pulgar los alcanza. Los demás son enlaces, con el texto al centro. */
 .tipo {
+  display: grid;
+  place-content: center;
   min-width: 64px;
-  border: 0;
-  background: none;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  cursor: pointer;
-}
-a.tipo,
-span.tipo {
-  display: grid;
-  place-content: center;
   text-decoration: none;
 }
-span.tipo {
-  cursor: default;
-}
-.tipo[aria-pressed="true"],
 .tipo[aria-current="page"] {
   color: var(--texto);
   font-weight: 800;
 }
-.tipo[aria-pressed="true"]::after,
 .tipo[aria-current="page"]::after {
   content: "";
   display: block;
@@ -58,4 +47,13 @@ span.tipo {
   margin: 2px auto 0;
   border-radius: 50%;
   background: var(--texto);
+}
+
+/* 3. Dentro del pie de un paso (el primer paso del alta de lugar, OL-315; prototipo firmado): una fila más del pie, bajo «Siguiente», con su
+   raya arriba. Ni pegada ni con la zona segura propias: las pone el pie, que con el teclado abierto se ancla sobre él y se la lleva consigo. */
+.enPie {
+  position: static;
+  height: var(--alto-modos);
+  margin-top: 0;
+  padding-bottom: 0;
 }

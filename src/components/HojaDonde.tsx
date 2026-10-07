@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoCandado, IconoChevronIzquierda, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import Palanca from "@/components/ui/Palanca";
+import useAlto from "@/components/ui/useAlto";
 import { useAbajoVisible } from "@/components/ui/useCampoVisible";
 import renglon from "@/components/ui/Renglon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
@@ -90,20 +91,6 @@ type ParaLugar = {
 type Props = Comun & (ParaEvento | ParaLugar);
 
 const TITULO: Record<ParaQue, string> = { evento: "¿Dónde es?", lugar: "¿Dónde está?" };
-
-/** El alto real de un elemento (con su relleno): el pie de abajo y la barra «Agregar» cambian con la zona segura y con el texto, y la
- *  lista flotante y «Estoy aquí» tienen que quedar encima de ellos. Sin el elemento a la vista (`activo` falso), 0. */
-function useAlto(ref: RefObject<HTMLElement | null>, activo: boolean): number {
-  const [alto, setAlto] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!activo || !el) return;
-    const ro = new ResizeObserver(() => setAlto(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ref, activo]);
-  return activo ? alto : 0;
-}
 
 /**
  * La hoja «Dónde» a pantalla completa, la misma para fijar el sitio de un evento («¿Dónde es?», OL-173, docs/rediseno/43; lugar

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Hoja from "@/components/ui/Hoja";
 import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoPin } from "@/components/ui/Iconos";
-import { CIUDAD_INICIAL, type CiudadConArtistas } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarCiudades, type CiudadEncontrada } from "@/lib/geocodificar";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -12,11 +12,16 @@ import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaCiudad.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 
+/** Una ciudad de la lista de entrada, con cuántos artistas o lugares tiene (la que no tiene el dato, como si fueran cero). */
+type CiudadConCuenta = Ciudad & { artistas?: number; lugares?: number };
+
 type Props = {
   /** La ciudad que tiene el renglón ahora. */
   ciudad: string;
-  /** Las ciudades que ya tienen artistas, con cuántos (las mismas de la hoja del chip de Artistas). */
-  ciudades: CiudadConArtistas[];
+  /** Las ciudades que ya tienen artistas (las mismas de la hoja del chip de Artistas) o, en el alta de lugar, lugares, con cuántos. */
+  ciudades: readonly CiudadConCuenta[];
+  /** De qué es la cuenta de cada ciudad: artistas (de entrada) o lugares (el alta de lugar por pasos, OL-315). */
+  que?: "artistas" | "lugares";
   onElegir: (ciudad: string) => void;
   onCerrar: () => void;
 };
@@ -24,12 +29,20 @@ type Props = {
 type Busqueda = { texto: string; ciudades: CiudadEncontrada[] } | { texto: string; error: true };
 
 /**
- * Hoja "Ciudad" del alta y la edición de artista (pedido del founder, 2026-09-16, noche). Un artista no tiene punto del
+ * Hoja "Ciudad" del alta y la edición de artista (pedido del founder, 2026-09-16, noche) y, cuando ni el mapa ni la ciudad de contexto
+ * la dan, del alta de lugar por pasos (OL-315: nunca San Luis Potosí en silencio). Un artista no tiene punto del
  * que deducir su ciudad y su ubicación no se pide al teléfono (DEFINICION: la ubicación solo ordena por cercanía): se
  * busca por nombre. Sin escribir, las ciudades que ya tienen artistas; al escribir, las de Mapbox de cualquier país,
  * primero las cercanas a la ciudad que se ve (el contexto ordena, no limita). Un toque elige y cierra.
  */
-export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Props) {
+/** «1 artista», «12 lugares», «Sin artistas todavía». */
+function cuenta(c: CiudadConCuenta, que: "artistas" | "lugares"): string {
+  const n = c[que] ?? 0;
+  const [una, varias] = que === "artistas" ? ["artista", "artistas"] : ["lugar", "lugares"];
+  return n === 1 ? `1 ${una}` : n ? `${n} ${varias}` : `Sin ${varias} todavía`;
+}
+
+export default function HojaCiudad({ ciudad, ciudades, que = "artistas", onElegir, onCerrar }: Props) {
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState<Busqueda | null>(null);
   const texto = q.trim();
@@ -74,13 +87,13 @@ export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Pro
       </label>
 
       {!buscando && (
-        <ul className={renglon.tarjeta} role="listbox" aria-label="Ciudades con artistas">
+        <ul className={renglon.tarjeta} role="listbox" aria-label={`Ciudades con ${que}`}>
           {ciudades.map((c) => (
             <li key={c.slug}>
               <button type="button" className={sug.renglon} onClick={() => elegir(c.nombre)} role="option" aria-selected={c.nombre === ciudad}>
                 <IconoPin width={20} height={20} />
                 <b>{c.nombre}</b>
-                <small>{c.artistas === 1 ? "1 artista" : c.artistas ? `${c.artistas} artistas` : "Sin artistas todavía"}</small>
+                <small>{cuenta(c, que)}</small>
               </button>
             </li>
           ))}

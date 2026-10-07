@@ -281,8 +281,8 @@ const USOS: Record<Uso, { icono: ReactNode; titulo: string; detalle: string }> =
 };
 
 /**
- * No está en el directorio. Tres opciones grandes y elegir avanza; «Guardarlo como lugar» no se ofrece si el mapa dice que es un negocio
- * (bar, café, restaurante: no entran al directorio) ni si el sitio no tiene nombre (una dirección no nombra un lugar). Guardarlo crea el
+ * No está en el directorio. Tres opciones grandes y elegir avanza; «Guardarlo como lugar» no se ofrece si el sitio no tiene nombre (una
+ * dirección no nombra un lugar). Un negocio sí se guarda (decisión del founder, 2026-10-06): un café queda como «Café, bar o restaurante». Guardarlo crea el
  * lugar de verdad: mientras responde la opción dice «Guardando…» y las demás se apagan; si falla, un aviso llano debajo y todo sigue tocable.
  */
 export function PasoUso({ candidato, guardando, error, onUsar }: { candidato: Candidato; guardando: boolean; error: string | null; onUsar: (uso: Uso) => void }) {

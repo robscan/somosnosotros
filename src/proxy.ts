@@ -17,14 +17,15 @@ import { destinoConSlug, rutaConUuid } from "@/lib/redireccionSlug";
  *
  * Y `/nuevo` con un evento (sin tipo, `tipo=evento`, o con `lugar`, `artista` o `desde`) responde un 308 de verdad hacia el alta por
  * pasos, `/nuevo/evento`, con esos datos (OL-312, `redireccionDeNuevo`): desde la página, con la transmisión ya empezada por `loading.tsx`,
- * el código saldría 200 con una redirección en el HTML. Sin consulta ni sesión: la pide la pantalla a la que se llega. La página repite
- * la misma redirección como respaldo.
+ * el código saldría 200 con una redirección en el HTML. Lo mismo `/nuevo?tipo=lugar`, que va al alta de lugar por pasos, `/nuevo/lugar`, con
+ * la ciudad, el nombre y el punto (OL-315). Sin consulta ni sesión: la pide la pantalla a la que se llega. La página repite la misma
+ * redirección como respaldo.
  */
 export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/nuevo") {
     const q = request.nextUrl.searchParams;
-    const evento = redireccionDeNuevo({ tipo: q.get("tipo"), lugar: q.get("lugar"), artista: q.get("artista"), desde: q.get("desde"), ciudad: q.get("ciudad") });
-    if (evento) return NextResponse.redirect(new URL(evento, request.nextUrl), 308);
+    const alta = redireccionDeNuevo({ tipo: q.get("tipo"), lugar: q.get("lugar"), artista: q.get("artista"), desde: q.get("desde"), ciudad: q.get("ciudad"), nombre: q.get("nombre"), lat: q.get("lat"), lng: q.get("lng") });
+    if (alta) return NextResponse.redirect(new URL(alta, request.nextUrl), 308);
   }
   const { supabaseUrl, supabaseAnonKey } = configPublica();
   let respuesta = NextResponse.next({ request });

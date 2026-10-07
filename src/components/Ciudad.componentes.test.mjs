@@ -386,7 +386,7 @@ test("búsqueda sin coincidencias ofrece una sola alta de lugar en Eventos, Luga
     const alta = page.getByRole("dialog").getByRole("link");
     assert.equal(await alta.count(), 1, "no duplica el alta lejana");
     assert.equal(await alta.innerText(), "Agregar un lugar");
-    assert.equal(await alta.getAttribute("href"), "/nuevo?tipo=lugar");
+    assert.equal(await alta.getAttribute("href"), "/nuevo/lugar");
     await page.evaluate(() => {
       Object.defineProperty(visualViewport, "height", { configurable: true, value: 508 });
       visualViewport.dispatchEvent(new Event("resize"));
@@ -441,7 +441,7 @@ test("lejos: alta por tipo sin coordenadas en URL; Artistas no ofrece alta por d
     const alta = page.getByRole("link", { name: /^Agregar un/ });
     const conAlta = seccion === "eventos" || seccion === "lugares";
     assert.equal(await alta.count(), conAlta ? 1 : 0);
-    if (conAlta) assert.equal(await alta.getAttribute("href"), seccion === "eventos" ? "/nuevo/evento" : "/nuevo?tipo=lugar");
+    if (conAlta) assert.equal(await alta.getAttribute("href"), seccion === "eventos" ? "/nuevo/evento" : "/nuevo/lugar");
     if (seccion === "buscar") assert.equal(await page.getByRole("dialog").getAttribute("aria-label"), "Ciudades");
     assert.equal(await page.getByText("Estás aquí", { exact: true }).count(), 0);
   }

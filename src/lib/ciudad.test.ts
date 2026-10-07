@@ -200,7 +200,7 @@ describe("hoja de ciudades (OL-270)", () => {
   });
   it("ofrece el alta correspondiente solo con un punto lejano; la URL no contiene ubicación", () => {
     expect(altaLejosDeCiudades(slp, catalogo, lejos, "eventos")).toEqual({ texto: "Agregar un evento donde estás", href: "/nuevo/evento" });
-    expect(altaLejosDeCiudades(slp, catalogo, lejos, "lugares")).toEqual({ texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" });
+    expect(altaLejosDeCiudades(slp, catalogo, lejos, "lugares")).toEqual({ texto: "Agregar un lugar donde estás", href: "/nuevo/lugar" });
     expect(altaLejosDeCiudades(slp, catalogo, lejos, "artistas")).toBeNull();
     expect(altaLejosDeCiudades(slp, catalogo, lejos, "buscar")).toBeNull();
     expect(altaLejosDeCiudades(slp, catalogo, slp.centro, "eventos")).toBeNull();

@@ -130,7 +130,7 @@ test("sostener en un punto vacío saca el anillo y luego la marca con la tarjeta
   await page.waitForSelector("[role=group][aria-label='Lugar nuevo']", { timeout: 2000 });
   assert.equal(await anillos(), 0, "el anillo se va cuando llega la tarjeta");
   assert.equal(await page.locator("[role=group][aria-label='Lugar nuevo'] b").innerText(), "Lugar nuevo");
-  const esperado = await page.evaluate(() => { const p = window.qa.mapas[0].unproject([100, 120]); return `/nuevo?tipo=lugar&lat=${p.lat.toFixed(6)}&lng=${p.lng.toFixed(6)}`; });
+  const esperado = await page.evaluate(() => { const p = window.qa.mapas[0].unproject([100, 120]); return `/nuevo/lugar?lat=${p.lat.toFixed(6)}&lng=${p.lng.toFixed(6)}`; });
   assert.equal(await page.getByRole("link", { name: "Registrar lugar" }).getAttribute("href"), esperado, "el enlace lleva el punto del dedo, sin nombre");
   await espera(700);
   await toque("touchEnd", []);

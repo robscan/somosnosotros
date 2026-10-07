@@ -81,6 +81,28 @@ PASOS["evento-es-aqui"] = async (page) => {
   await aquietar(page);
 };
 
+// El alta de lugar por pasos (OL-315), en «Revisa» y con la hoja del horario abierta en dos franjas: el nombre (que dice su tipo), «Siguiente»,
+// «¿Dónde está?» con «Estoy aquí» (una ubicación fija; sin Mapbox no hay dirección y el renglón dice «Pin en el mapa») y «Listo».
+PASOS["lugar-revisa"] = async (page) => {
+  const ctx = page.context();
+  await ctx.grantPermissions(["geolocation"]);
+  await ctx.setGeolocation({ latitude: 22.1533, longitude: -100.9811 });
+  await page.getByLabel("Nombre del lugar").fill("Foro del Carmen");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("heading", { name: "¿Dónde está?" }).waitFor();
+  await page.getByRole("button", { name: /Estoy aquí/ }).click();
+  await page.getByRole("button", { name: "Listo" }).click();
+  await page.getByRole("heading", { name: "Foro del Carmen" }).waitFor();
+  await aquietar(page);
+};
+PASOS["lugar-horario"] = async (page, ancho, alto) => {
+  await PASOS["lugar-revisa"](page, ancho, alto);
+  await page.getByRole("button", { name: "Agregar horario" }).click();
+  const hoja = page.getByRole("dialog", { name: "Horario" });
+  await hoja.getByRole("button", { name: "Agregar otro horario" }).click();
+  await aquietar(page);
+};
+
 // ---------- procesos ----------
 const hijos = [];
 process.on("exit", () => hijos.forEach((h) => h.exitCode === null && h.kill()));
@@ -194,8 +216,11 @@ const SELECTOR_CAMPOS = 'input:is(:not([type]), [type="text"], [type="search"], 
 /** Corre en la página antes de que cargue: un `visualViewport` propio que `window.__teclado(px)` encoge (y avisa con `resize`). */
 const simularVisualViewport = () => {
   const vv = new EventTarget();
+  // El alto se lee al pedirlo (la ventana menos lo que tapa el teclado): fijado al instalar el script, antes de que la ventana tenga su alto,
+  // `ui/Hoja` creía que el área visible medía otra cosa y se colocaba fuera de la vista (s19, OL-315).
+  let tapado = 0;
   Object.defineProperties(vv, {
-    height: { value: window.innerHeight, writable: true },
+    height: { get: () => window.innerHeight - tapado },
     width: { value: window.innerWidth },
     offsetTop: { value: 0 },
     offsetLeft: { value: 0 },
@@ -205,7 +230,7 @@ const simularVisualViewport = () => {
   });
   Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
   window.__teclado = (px) => {
-    vv.height = window.innerHeight - px;
+    tapado = px;
     vv.dispatchEvent(new Event("resize"));
   };
 };

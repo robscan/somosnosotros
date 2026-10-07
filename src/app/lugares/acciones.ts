@@ -6,6 +6,7 @@ import { after } from "next/server";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { deducirTipo } from "@/lib/buscarLugares";
 import { esUuid } from "@/lib/formulario";
+import { horarioDesdeJson } from "@/lib/horarioLugar";
 import { rutaSegura } from "@/lib/rutas";
 import { hrefLugar, validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import type { MotivoReclamo } from "@/lib/reportes";
@@ -13,9 +14,10 @@ import { esAdminDeSesion } from "@/lib/supabase/servidor";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { zonaDePunto } from "@/lib/zona";
 
-/** Publicar lleva a la ficha nueva reemplazando el alta; guardar, o publicar desde el alta de evento, devuelve a dónde volver. */
+/** Publicar lleva a la ficha nueva reemplazando el alta; guardar, publicar desde el alta de evento o desde el alta por pasos (que se queda en
+ *  «Publicado»), devuelve lo creado y a dónde volver. */
 export type ResultadoLugar =
-  | { ok: true; id: string; volver: string }
+  | { ok: true; id: string; slug?: string | null; volver: string }
   | { ok: false; errores: ErroresLugar; general?: string; parecidos?: LugarResumen[] };
 
 
@@ -42,11 +44,18 @@ function privadoPermitido(pedido: boolean): boolean {
   return pedido;
 }
 
-/** Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". */
+/**
+ * Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". Con horario (el
+ * campo `horario` del alta por pasos, OL-315), el lugar y sus franjas se guardan en la misma transacción (`crear_lugar_con_horario`): si el
+ * horario no se puede guardar, el lugar tampoco queda; sin él, como siempre. Con `quedarse` (el alta por pasos, que termina en «Publicado»)
+ * devuelve lo creado en vez de ir a la ficha.
+ */
 export async function crearLugar(_previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("lugar", null).href);
   const esAdmin = await esAdminDeSesion(supabase, user.id);
   const { datos, errores } = validarLugar(leer(formData), { esAdmin });
+  const horario = horarioDesdeJson(formData.get("horario"));
+  if (horario.error) errores.horario = horario.error;
   if (Object.keys(errores).length) return { ok: false, errores };
 
   if (formData.get("confirmado") !== "1") {
@@ -54,14 +63,18 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
     if (parecidos && parecidos.length > 0) return { ok: false, errores: {}, parecidos: parecidos as LugarResumen[] };
   }
 
-  const { data, error } = await supabase
-    .from("lugares")
-    .insert({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
-    .select("id, slug")
-    .single();
+  const fila = { ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null };
+  const { data, error } = horario.franjas?.length
+    ? await supabase.rpc("crear_lugar_con_horario", { p_datos: fila, p_franjas: horario.franjas }).then((r) => ({ data: r.data as { id: string; slug: string | null } | null, error: r.error }))
+    : await supabase
+        .from("lugares")
+        .insert({ ...fila, creado_por: user.id })
+        .select("id, slug")
+        .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
 
   revalidatePath("/");
+  if (formData.get("quedarse") === "1") return { ok: true, id: data.id, slug: data.slug, volver: hrefLugar(data) };
   // Si se vino del alta de evento, el formulario vuelve a ella con el lugar ya elegido; si no, a la ficha recién publicada.
   const siguiente = rutaSegura(formData.get("siguiente") as string | null, "");
   if (siguiente) return { ok: true, id: data.id, volver: siguiente };
@@ -76,8 +89,8 @@ export type ResultadoLugarDesdeEvento = { ok: true; id: string; reutilizado: boo
  * docs/DEFINICION.md)-, así que si ya hay un lugar parecido no se duplica: se usa el que ya existe
  * (`reutilizado: true`) en vez de fallar o preguntar de nuevo, porque la pantalla de agregar no tiene espacio para
  * el "¿es este?" completo del alta de lugar (`/nuevo`). El tipo no lo pide el panel corto (docs/rediseno/43: solo nombre,
- * dirección y el interruptor): se deduce del nombre, igual que hace `FormularioLugar` cuando nadie lo elige a
- * mano; sin pista, "otro". `siguiente` se manda solo para que `crearLugar` NO redirija (aquí se usa el resultado
+ * dirección y el interruptor): se deduce del nombre y de lo que dice el mapa que es (`categorias`: un café queda como «Café, bar o
+ * restaurante», OL-315); sin pista, "otro". `siguiente` se manda solo para que `crearLugar` NO redirija (aquí se usa el resultado
  * en línea, sin navegar).
  *
  * `privado` (founder, 2026-09-24, OL-179): con él, el lugar se crea con `privado = true` -pero `lugares_parecidos`
@@ -88,10 +101,10 @@ export type ResultadoLugarDesdeEvento = { ok: true; id: string; reutilizado: boo
  * de tratarlo como privado. El EVENTO que llama a esta acción decide por su cuenta cómo guardarse (reservado o
  * no; ver `HojaDonde.tsx`) — esta función solo registra o reutiliza el lugar, nunca el evento.
  */
-export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: string; lat: number; lng: number; ciudad: string; volverA: string; privado: boolean }): Promise<ResultadoLugarDesdeEvento> {
+export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: string; lat: number; lng: number; ciudad: string; volverA: string; privado: boolean; categorias?: string[] }): Promise<ResultadoLugarDesdeEvento> {
   const fd = new FormData();
   fd.set("nombre", datos.nombre);
-  fd.set("tipo", deducirTipo(datos.nombre) ?? "otro");
+  fd.set("tipo", deducirTipo(datos.nombre, datos.categorias) ?? "otro");
   fd.set("direccion", datos.direccion);
   fd.set("lat", String(datos.lat));
   fd.set("lng", String(datos.lng));
@@ -104,10 +117,14 @@ export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: 
   return { ok: false, error: r.general ?? Object.values(r.errores)[0] ?? "No se pudo guardar el lugar. Intenta de nuevo." };
 }
 
+/** Guardar los cambios de un lugar. Con el campo `horario` (el renglón «Horario» de editar, OL-315), después se reemplaza su horario; sin él, el
+ *  horario no se toca. */
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
   const { supabase, user } = await sesionOEntrar(`/lugares/${id}/editar`);
   const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("lugares").select("portada, ciudad, lat, lng").eq("id", id).maybeSingle()]);
   const { datos, errores } = validarLugar(leer(formData), { esAdmin, portadaActual: existente?.portada ?? null, actual: existente });
+  const horario = horarioDesdeJson(formData.get("horario"));
+  if (horario.error) errores.horario = horario.error;
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase
@@ -117,6 +134,11 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
     .select("id, slug")
     .maybeSingle();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu lugar?" };
+  // El lugar ya quedó; si el horario falla, se dice y volver a guardar lo repite (guardar el lugar otra vez no cambia nada).
+  if (horario.franjas) {
+    const { error: errorHorario } = await supabase.rpc("guardar_horario_lugar", { p_lugar: id, p_franjas: horario.franjas });
+    if (errorHorario) return { ok: false, errores: { horario: "No se pudo guardar el horario. Intenta de nuevo." } };
+  }
 
   revalidar(id, data.slug);
   revalidatePath("/");

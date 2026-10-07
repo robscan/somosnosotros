@@ -16,7 +16,7 @@ import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
 
 /** El turno de un elemento en la entrada de «Revisa» (`.sube` en el CSS): 0 es el primero y cada uno entra 50 ms después del anterior. */
-const turno = (orden: number) => ({ "--orden": orden }) as CSSProperties;
+export const turno = (orden: number) => ({ "--orden": orden }) as CSSProperties;
 
 type Props = {
   r: Respuestas;
@@ -138,11 +138,13 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
 }
 
 /** Un dato de «Revisa»: el renglón resuelto sin clave a la vista (`ui/Renglon`); todo él abre su pregunta («Cambiar», o «Poner» si falta).
- *  `detalle` va en letra suave bajo el valor («Sitio reservado»); `orden` es su turno en la entrada. */
-function Dato({ icono, clave, orden, valor, detalle, falta, error, nota, onAbrir }: { icono: ReactNode; clave: string; orden: number; valor: ReactNode; detalle?: string; falta?: string; error?: string; nota?: string; onAbrir: () => void }) {
-  const accion = valor ? "Cambiar" : "Poner";
+ *  `detalle` va en letra suave bajo el valor («Sitio reservado»); `orden` es su turno en la entrada. Lo usa también «Revisa» del alta de lugar
+ *  (OL-315): un dato `opcional` sin valor es el renglón punteado fino que dice «Agregar» (el horario, la foto), no uno por completar. */
+export function Dato({ icono, clave, orden, valor, detalle, falta, opcional, error, nota, onAbrir }: { icono: ReactNode; clave: string; orden: number; valor: ReactNode; detalle?: string; falta?: string; opcional?: boolean; error?: string; nota?: string; onAbrir: () => void }) {
+  const accion = valor ? "Cambiar" : opcional ? "Agregar" : "Poner";
+  const estado = valor ? "" : opcional ? renglon.opcional : renglon.pendiente;
   return (
-    <li className={`${renglon.resuelto} ${renglon.sinClave} ${valor ? "" : renglon.pendiente} ${styles.dato} ${styles.sube}`} style={turno(orden)}>
+    <li className={`${renglon.resuelto} ${renglon.sinClave} ${estado} ${styles.dato} ${styles.sube}`} style={turno(orden)}>
       {icono}
       <small>{clave}</small>
       <b className={valor ? undefined : renglon.falta}>

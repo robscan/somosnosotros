@@ -29,7 +29,8 @@ export function motivoEntrar(siguiente: string): Motivo {
   if (accion === "mio" && seccion === "artistas") return { tipo: "mio", titulo: "Entra para decir que eres tú", origen };
   if (seccion === "nuevo") {
     // El alta de evento por pasos (`/nuevo/evento`, OL-312) vuelve a la ficha desde la que se quiso publicar («Publicar aquí», «Publicar
-    // fecha»); sin ella, al inicio. `/nuevo?tipo=`: cada tipo vuelve a su sección; un evento (o lo que no dice tipo), al inicio.
+    // fecha»); sin ella, al inicio. El de lugar (`/nuevo/lugar`, OL-315) y `/nuevo?tipo=`: cada tipo vuelve a su sección; un evento (o lo que
+    // no dice tipo), al inicio.
     if (id === "evento") {
       const lugar = url.searchParams.get("lugar");
       const artista = url.searchParams.get("artista");
@@ -37,7 +38,7 @@ export function motivoEntrar(siguiente: string): Motivo {
       return { tipo: "publicar", titulo: "Entra para publicar", origen: ficha };
     }
     const tipo = url.searchParams.get("tipo");
-    if (tipo === "lugar") return { tipo: "registrar", titulo: "Entra para registrar un lugar", origen: "/lugares" };
+    if (id === "lugar" || tipo === "lugar") return { tipo: "registrar", titulo: "Entra para registrar un lugar", origen: "/lugares" };
     if (tipo === "artista") return { tipo: "registrar", titulo: "Entra para registrar artista", origen: "/artistas" };
     return { tipo: "publicar", titulo: "Entra para publicar", origen: "/" };
   }

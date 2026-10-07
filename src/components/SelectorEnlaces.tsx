@@ -12,7 +12,8 @@ import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./SelectorEnlaces.module.css";
 
-type Props = { inicial: Enlace[]; error?: string };
+/** `onCambio`: para quien guarda los enlaces fuera (el alta de lugar por pasos los lleva de un paso a otro, OL-315); el campo oculto sigue igual. */
+type Props = { inicial: Enlace[]; error?: string; onCambio?: (enlaces: Enlace[]) => void };
 
 /** Un arrastre en curso: `indice` es el puesto de donde partió el renglón levantado (no cambia mientras se
  * arrastra); `objetivo` es a qué puesto apunta ahora mismo (mismo número que usa `indiceDestino`). */
@@ -33,8 +34,21 @@ type Arrastre = { indice: number; objetivo: number; inicioY: number; desplazamie
  * un `aria-live` anuncia el nuevo puesto. Con un solo enlace no hay nada que reordenar: el agarre no se
  * muestra (decisión de esta pieza, más simple que mostrarlo apagado).
  */
-export default function SelectorEnlaces({ inicial, error }: Props) {
+export default function SelectorEnlaces({ inicial, error, onCambio }: Props) {
   const [enlaces, setEnlaces] = useState<Enlace[]>(inicial);
+  const avisar = useRef(onCambio);
+  useEffect(() => {
+    avisar.current = onCambio;
+  });
+  // Lo que cambia se avisa al momento; lo de entrada no (ya lo tiene quien lo dio).
+  const primera = useRef(true);
+  useEffect(() => {
+    if (primera.current) {
+      primera.current = false;
+      return;
+    }
+    avisar.current?.(enlaces);
+  }, [enlaces]);
   const [texto, setTexto] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
   const [arrastre, setArrastre] = useState<Arrastre | null>(null);

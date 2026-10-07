@@ -15,20 +15,24 @@ const TIPOS: { tipo: TipoDeAlta; etiqueta: string }[] = [
 ];
 
 type Props = {
-  /** El tipo de la pantalla en que se está: va marcado. */
+  /** El tipo de la pantalla en que se está: va marcado y no lleva a ningún lado. */
   actual: TipoDeAlta;
-  /** Qué hace cada tipo al tocarlo: una dirección (un enlace, que reemplaza la entrada y pasa por la guardia de salida si hay algo escrito), una función (un botón, que cambia de formulario sin salir) o nada (es esta pantalla). */
-  destinos: Partial<Record<TipoDeAlta, string | (() => void)>>;
+  /** A dónde lleva cada uno de los otros tipos: un enlace que reemplaza la entrada y, si hay algo escrito, pasa por la guardia de salida. */
+  destinos: Partial<Record<TipoDeAlta, string>>;
+  /** Dentro del pie de un paso (el primer paso del alta de lugar, OL-315): una fila más del pie, que ya pone la zona segura y el anclaje sobre el teclado. */
+  enPie?: boolean;
 };
 
 /**
- * La tira de tipos de las altas (docs/rediseno/50, P9; prototipo firmado): Evento · Lugar · Artista, de borde a borde y pegada abajo sobre la
- * zona segura del iPhone. La usan `/nuevo` (lugar y artista; «Evento» lleva al alta por pasos, OL-312) y el primer paso del alta de evento
- * (OL-313; «Lugar» y «Artista» llevan a `/nuevo`). Cambiar de tipo no apila historial (`replace`), y si hay algo escrito, antes pregunta
- * «¿Salir sin publicar?» (`pedirSalida`). El tipo actual va con `aria-pressed` si es un botón y con `aria-current` si no lleva a ningún lado.
+ * La tira de tipos de las altas (docs/rediseno/50, P9; prototipo firmado): Evento · Lugar · Artista. La usan el primer paso del alta de
+ * evento (OL-313), el del alta de lugar (OL-315, dentro del pie del paso, bajo «Siguiente», como en el prototipo `lugar-artista-por-pasos.html`)
+ * y `/nuevo`, que queda para el artista. Sola es de borde a borde y pegada abajo, sobre la zona segura del iPhone. El tipo de la pantalla va
+ * marcado (`aria-current`); los otros son enlaces que no apilan historial (`replace`) y, si hay algo escrito, antes preguntan «¿Salir sin
+ * publicar?» (`pedirSalida`).
  */
-export default function TiraTipos({ actual, destinos }: Props) {
+export default function TiraTipos({ actual, destinos, enPie = false }: Props) {
   const router = useRouter();
+  const Caja = enPie ? "div" : "footer";
 
   function ir(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
@@ -37,20 +41,14 @@ export default function TiraTipos({ actual, destinos }: Props) {
   }
 
   return (
-    <footer className={styles.tira} role="group" aria-label="Qué publicar">
+    <Caja className={enPie ? `${styles.tira} ${styles.enPie}` : styles.tira} role="group" aria-label="Qué publicar">
       {TIPOS.map(({ tipo, etiqueta }) => {
         const destino = destinos[tipo];
-        if (typeof destino === "string")
+        if (destino && tipo !== actual)
           return (
             <Link key={tipo} href={destino} replace prefetch={false} className={styles.tipo} onClick={(e) => ir(e, destino)}>
               {etiqueta}
             </Link>
-          );
-        if (destino)
-          return (
-            <button key={tipo} type="button" className={styles.tipo} aria-pressed={actual === tipo} onClick={destino}>
-              {etiqueta}
-            </button>
           );
         return (
           <span key={tipo} className={styles.tipo} aria-current={actual === tipo ? "page" : undefined}>
@@ -58,6 +56,6 @@ export default function TiraTipos({ actual, destinos }: Props) {
           </span>
         );
       })}
-    </footer>
+    </Caja>
   );
 }

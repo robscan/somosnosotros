@@ -15,7 +15,7 @@ import Seguir from "@/components/Seguir";
 import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import { EsqueletoKpi, EsqueletoRenglones } from "@/components/ui/Esqueleto";
-import { IconoCalendario, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import { CIRCULO } from "@/components/ui/Ficha";
@@ -28,11 +28,13 @@ import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
+import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
-import { etiquetaTipo, hrefLugar, partesDeDireccion, type Lugar } from "@/lib/lugares";
+import { compartirLugar, hrefLugar, partesDeDireccion, type Lugar } from "@/lib/lugares";
 import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
+import TextoHorario from "../TextoHorario";
 import EsMiEspacio from "./EsMiEspacio";
 import KpiDistancia from "./KpiDistancia";
 
@@ -53,6 +55,8 @@ export type FichaLugar = {
   /** Borrar es del autor y del administrador (la política de la base lo exige). */
   puedeBorrar: boolean;
   destacable: Awaited<ReturnType<typeof cargarDestacado>> | null;
+  /** Su horario en franjas (OL-315); vacío si no lo dijo o si no se pudo leer (la ficha no depende de él). */
+  horario: Franja[];
 };
 
 /** El correo de quien mira, enmascarado, para las confirmaciones (la de «¿Es tu espacio?» y la de los avisos de Seguir). */
@@ -89,9 +93,10 @@ export async function cargarFicha(idOSlug: string): Promise<FichaLugar | null> {
   const [lugar, actual] = await Promise.all([cargarLugar(idOSlug), usuarioActual()]);
   if (!lugar) return null;
   const supabase = await clienteServidor();
-  const [mio, lig] = await Promise.all([
+  const [mio, lig, horas] = await Promise.all([
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", lugar.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", lugar.id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
+    supabase?.from("lugares_horarios").select("dias, abre, cierra").eq("lugar_id", lugar.id).order("creado_en") ?? Promise.resolve({ data: [] }),
   ]);
   const ligados = (lig.data ?? []) as { perfil_id: string }[];
   const esAdmin = actual?.perfil.rol === "admin";
@@ -105,6 +110,7 @@ export async function cargarFicha(idOSlug: string): Promise<FichaLugar | null> {
     puedeEditar: esAdmin || esAutor || estaLigado,
     puedeBorrar: esAdmin || esAutor,
     destacable: esAdmin && puedeDestacarse(lugar) ? await cargarDestacado("lugar", lugar.id) : null,
+    horario: ((horas.data ?? []) as { dias: number[]; abre: string; cierra: string }[]).map(franjaDeFila),
   };
 }
 
@@ -190,9 +196,9 @@ function EsqueletoSeccionEventos() {
  * barra y su héroe) y dentro de la hoja de Lugares (`FichaHoja`, que pone su cabecera y su héroe). No incluye la pastilla de Seguir
  * (`SeguirLugar`) ni el menú «···» (`OpcionesLugar`): cada sitio los coloca a su manera.
  */
-export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: FichaLugar }) {
+export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario } }: { f: FichaLugar }) {
   const redes = normalizarRedes(lugar.redes);
-  const url = `${ORIGEN}${hrefLugar(lugar)}`;
+  const compartir = compartirLugar(lugar);
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
   const publicarAqui = enlaceAltaEvento({ lugar: lugar.id });
   const hrefPublicarAqui = actual ? publicarAqui : `/entrar?siguiente=${encodeURIComponent(publicarAqui)}`;
@@ -225,7 +231,7 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: 
         {/* Compartir no sirve en un lugar privado: el enlace no le abre a nadie más que a su autor y a la administración
             (founder, 2026-09-24, OL-179: «esconde si no sirve botón de compartir»). Cómo llegar se queda. */}
         {!lugar.privado && (
-          <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
+          <BotonCompartir titulo={lugar.nombre} texto={compartir.texto} url={compartir.url} className={ficha.accion}>
             <span className={CIRCULO}>
               <IconoCompartir />
             </span>
@@ -257,6 +263,15 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: 
           {resto && <small>{resto}</small>}
           <IconoChevronDerecha />
         </a>
+        {/* El horario, estructurado por el sistema (OL-315): los días arriba y las horas debajo, y los que cierra. */}
+        {horario.length > 0 && (
+          <div className={renglon.dato}>
+            <IconoReloj width={20} height={20} />
+            <b>
+              <TextoHorario franjas={horario} />
+            </b>
+          </div>
+        )}
       </section>
 
       {lugar.descripcion && (

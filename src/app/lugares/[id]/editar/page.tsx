@@ -3,6 +3,7 @@ import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { ciudadPorNombre } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { esUuid } from "@/lib/formulario";
+import { franjaDeFila } from "@/lib/horarioLugar";
 import { hrefLugar, type Lugar, type LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioLugar from "../../FormularioLugar";
@@ -32,8 +33,11 @@ export default async function EditarLugar({ params }: { params: Promise<{ id: st
   const { data: liga } = (await supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", lugar.id).eq("perfil_id", actual.perfil.id).maybeSingle()) ?? { data: null };
   // Edita el autor, la cuenta ligada ("¿Es tu espacio?") o el administrador.
   if (actual.perfil.rol !== "admin" && lugar.creado_por !== actual.perfil.id && !liga) redirect(hrefLugar(lugar));
-  // Pines de "¿Dónde está?" (OL-211): FormularioLugar quita el propio lugar de esta lista antes de avisar "ya existe".
-  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre")) ?? { data: [] };
+  // Pines de "¿Dónde está?" (OL-211): FormularioLugar quita el propio lugar de esta lista antes de avisar "ya existe". Y su horario (OL-315).
+  const [{ data: lugares }, { data: horario }] = await Promise.all([
+    supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre") ?? { data: [] },
+    supabase?.from("lugares_horarios").select("dias, abre, cierra").eq("lugar_id", lugar.id).order("creado_en") ?? { data: [] },
+  ]);
   // La ciudad del propio lugar (no un chip de entrada: aquí no se llega desde ningún filtro de ciudad) — en la
   // práctica no cambia nada (el pin ya puesto siempre manda en la cascada de "¿Dónde está?"), pero mantiene el
   // mismo contrato que el alta (corrección del gestor, revisión sobre el PR #249).
@@ -42,7 +46,7 @@ export default async function EditarLugar({ params }: { params: Promise<{ id: st
     <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefLugar(lugar), texto: "Volver al lugar" }} />
       <h1 className="titulo">Editar lugar</h1>
-      <FormularioLugar accion={actualizarLugar.bind(null, lugar.id)} lugar={lugar} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} lugares={(lugares ?? []) as LugarResumen[]} ciudadContexto={ciudadContexto} />
+      <FormularioLugar accion={actualizarLugar.bind(null, lugar.id)} lugar={lugar} horario={((horario ?? []) as { dias: number[]; abre: string; cierra: string }[]).map(franjaDeFila)} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} lugares={(lugares ?? []) as LugarResumen[]} ciudadContexto={ciudadContexto} />
     </main>
   );
 }

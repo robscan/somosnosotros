@@ -1,0 +1,50 @@
+/* ==========================================================================
+   Lo propio del alta de lugar por pasos (OL-315; prototipo firmado `lugar-artista-por-pasos.html`). Lo que comparte con el alta de evento (el
+   mapa del paso, la tarjeta que confirma, las opciones, «Revisa» y «Publicado») viene de sus módulos; todo va como hijo directo de la columna
+   de `PorPasos`.
+   1. «Ya tiene ficha» · 2. «¿Es este?» · 3. Parecidos · 4. La sugerencia de «Publicado» (la foto usa la de editar)
+   ========================================================================== */
+
+/* 1. En la lista del nombre, un lugar que ya tiene ficha va con el nombre en el color de acción: es un enlace, a su ficha. */
+.conFicha > b {
+  color: var(--primario);
+}
+
+/* 2. «¿Es este?» en el mapa (la tarjeta que confirma, del alta de evento; prototipo firmado): su enlace a la ficha, en el color de acción. */
+.irFicha {
+  color: var(--primario);
+  font-weight: 700;
+}
+
+/* 3. «¿Es este?» del servidor al publicar: un lugar con ese nombre a menos de 150 m (el del formulario de siempre). */
+.parecidos {
+  display: grid;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+.parecidos ul {
+  display: grid;
+  gap: var(--espacio-1);
+  padding-left: var(--espacio-4);
+}
+
+/* 4. La única sugerencia de «Publicado», en punteado: la pregunta, su frase y el botón que abre el alta de evento con el lugar puesto. */
+.sugerencia {
+  display: grid;
+  gap: var(--espacio-2);
+  padding: var(--espacio-4);
+  border: 1px dashed var(--texto-suave);
+  border-radius: var(--radio-grande);
+}
+.sugerencia > h3 {
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.sugerencia > p {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

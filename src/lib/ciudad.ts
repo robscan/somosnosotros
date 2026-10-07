@@ -4,6 +4,7 @@
  * cualquiera puede registrar fuera de San Luis Potosí. La plataforma crece de forma orgánica.
  * San Luis Potosí es la inicial: existe aunque no tenga nada, y es a la que cae todo lo que no dice ciudad.
  */
+import { enlaceAltaEvento, enlaceAltaLugar } from "./armazon";
 import { ZONA_INICIAL } from "./fechas";
 import { distanciaKm, type Punto } from "./geo";
 
@@ -191,8 +192,8 @@ export function altaLejosDeCiudades(actual: Ciudad, ciudades: readonly Ciudad[],
   const filas = filasDeCiudades(actual, ciudades, punto, seccion);
   if (filas.some((fila) => fila.estasAqui)) return null;
   return seccion === "lugares"
-    ? { texto: "Agregar un lugar donde estás", href: "/nuevo?tipo=lugar" }
-    : { texto: "Agregar un evento donde estás", href: "/nuevo/evento" };
+    ? { texto: "Agregar un lugar donde estás", href: enlaceAltaLugar() }
+    : { texto: "Agregar un evento donde estás", href: enlaceAltaEvento() };
 }
 
 /** La consulta del permiso solo observa; hasta resolverla, no aparece un botón que luego desaparezca. */

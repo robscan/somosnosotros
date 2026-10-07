@@ -28,6 +28,7 @@ vi.mock("@/lib/ciudades", () => ({ cargarCiudades: vi.fn(async () => []), cargar
 vi.mock("@/lib/cartel", () => ({ lecturaDeCartelActiva: () => false }));
 vi.mock("./Alta", () => ({ default: function Alta() { return null; } }));
 vi.mock("./evento/AltaEvento", () => ({ default: function AltaEvento() { return null; } }));
+vi.mock("./lugar/AltaLugar", () => ({ default: function AltaLugar() { return null; } }));
 
 /** Una consulta de Supabase encadenable de prueba: el resultado de cada tabla es fijo. */
 function clienteFalso() {
@@ -75,18 +76,24 @@ describe("/nuevo con un evento", () => {
     }
     expect(m.usuarioActual).not.toHaveBeenCalled();
   });
-  it("un lugar o un artista se quedan: sin sesión, a Entrar con la misma dirección", async () => {
+  it("un lugar se va, permanente y antes de mirar la sesión, a /nuevo/lugar con la ciudad, el nombre y el punto (OL-315)", async () => {
+    const { default: Nuevo } = await import("./page");
+    await expect(Nuevo(consulta({ tipo: "lugar" }))).rejects.toThrow("PERMANENT_REDIRECT:/nuevo/lugar");
+    await expect(Nuevo(consulta({ tipo: "lugar", ciudad: "queretaro", nombre: "Foro", lat: "22.15", lng: "-100.97" }))).rejects.toThrow("PERMANENT_REDIRECT:/nuevo/lugar?ciudad=queretaro&nombre=Foro&lat=22.15&lng=-100.97");
+    expect(m.usuarioActual).not.toHaveBeenCalled();
+  });
+  it("un artista se queda: sin sesión, a Entrar con la misma dirección", async () => {
     const { default: Nuevo } = await import("./page");
     m.usuarioActual.mockResolvedValue(null);
-    await expect(Nuevo(consulta({ tipo: "lugar", nombre: "Foro" }))).rejects.toThrow(`REDIRECT:/entrar?siguiente=${encodeURIComponent("/nuevo?tipo=lugar&nombre=Foro")}`);
+    await expect(Nuevo(consulta({ tipo: "artista", nombre: "Trio" }))).rejects.toThrow(`REDIRECT:/entrar?siguiente=${encodeURIComponent("/nuevo?tipo=artista&nombre=Trio")}`);
     expect(m.permanentRedirect).not.toHaveBeenCalled();
   });
-  it("con sesión, la pantalla de lugar y artista, con «Evento» hacia el alta por pasos y la ciudad que se veía", async () => {
+  it("con sesión, la pantalla del artista, con «Evento» y «Lugar» hacia sus altas por pasos y la ciudad que se veía", async () => {
     const { default: Nuevo } = await import("./page");
     const el = (await Nuevo(consulta({ tipo: "artista", ciudad: "queretaro" }))) as ReactElement<Props>;
-    expect(el.props.tipoInicial).toBe("artista");
     expect(el.props.evento).toBe("/nuevo/evento?ciudad=queretaro");
-    expect(Object.keys(el.props.salidas)).toEqual(["lugar", "artista"]);
+    expect(el.props.lugar).toBe("/nuevo/lugar?ciudad=queretaro");
+    expect(el.props.salida.texto).toBe("Artistas");
   });
 });
 
@@ -130,5 +137,28 @@ describe("/nuevo/evento", () => {
       entrar: true,
     });
     expect(el.props.salida.href).toBe("/eventos/ecos-de-papel");
+  });
+});
+
+describe("/nuevo/lugar (OL-315)", () => {
+  it("sin sesión, a Entrar con la misma dirección completa", async () => {
+    const { default: NuevoLugar } = await import("./lugar/page");
+    m.usuarioActual.mockResolvedValue(null);
+    await expect(NuevoLugar(consulta({ ciudad: "queretaro", nombre: "Foro", lat: "22.15", lng: "-100.97" }))).rejects.toThrow(`REDIRECT:/entrar?siguiente=${encodeURIComponent("/nuevo/lugar?ciudad=queretaro&nombre=Foro&lat=22.15&lng=-100.97")}`);
+  });
+  it("con sesión: los lugares del directorio, el nombre y el punto de entrada, y la ciudad de la dirección tal cual para la tira", async () => {
+    const { default: NuevoLugar } = await import("./lugar/page");
+    const el = (await NuevoLugar(consulta({ ciudad: "queretaro", nombre: "  Foro del Carmen ", lat: "22.15", lng: "-100.97" }))) as ReactElement<Props>;
+    expect(el.props.lugares).toEqual([TEATRO]);
+    expect(el.props.arranque).toEqual({ nombre: "Foro del Carmen", punto: { lat: 22.15, lng: -100.97 } });
+    expect(el.props.conCiudad).toBe("queretaro");
+    expect(el.props.esAdmin).toBe(false);
+  });
+  it("lo ilegible se ignora: sin punto ni nombre, y sin `?ciudad=` la búsqueda se acerca a San Luis Potosí", async () => {
+    const { default: NuevoLugar } = await import("./lugar/page");
+    const el = (await NuevoLugar(consulta({ lat: "x", lng: "999" }))) as ReactElement<Props>;
+    expect(el.props.arranque).toEqual({ nombre: "", punto: null });
+    expect(el.props.conCiudad).toBeNull();
+    expect(el.props.ciudadContexto.slug).toBe("san-luis-potosi");
   });
 });
