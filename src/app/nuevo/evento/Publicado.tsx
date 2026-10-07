@@ -46,7 +46,7 @@ export default function Publicado({ evento, conCartel, conSesiones, onOtro }: Pr
         <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton()}>
           Compartir
         </BotonCompartir>
-        {conCartel && <BotonDescargarCartel id={evento.id} className={claseBoton({ variante: "secundario" })} icono={<IconoDescarga width={20} height={20} />} precargar />}
+        {conCartel && <BotonDescargarCartel id={evento.id} className={claseBoton({ variante: "secundario" })} icono={<IconoDescarga width={20} height={20} />} iconoListo={<IconoOk width={20} height={20} />} precargar />}
         <Boton type="button" variante="quieto" onClick={onOtro}>
           Publicar otro
         </Boton>

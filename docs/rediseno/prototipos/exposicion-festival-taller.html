@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exposición, taller y festival</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-314 (bitácora 342): el alta de lugar y de artista por pasos (doc 54), con el mismo armazón del evento.
+   Mismo estilo que publicar-por-pasos.html (tokens de src/app/globals.css). Arriba, la tira del prototipo para elegir el caso. */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #ede6f8; --ok: #1f6f43; --ok-suave: #e4eee8; --error: #b3261e;
+  --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --alto-barra: 56px; --columna: 600px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --piso: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: "wdth" 85; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button, input, select { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h1, h2, h3 { font-variation-settings: "wdth" 75; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: 1.5rem; font-weight: 800; }
+small, .meta { font-size: var(--letra-sm); color: var(--texto-suave); line-height: 1.35; }
+svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul { list-style: none; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); }
+.tira label { display: flex; align-items: center; gap: 6px; min-height: var(--toque-min); font-size: var(--letra-xs); }
+.tira input { width: 20px; height: 20px; accent-color: var(--primario); }
+
+/* La app: barra, línea de avance, cuerpo que desplaza por dentro, pie. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; background: var(--fondo); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden; }
+.barra { display: grid; grid-template-columns: auto 1fr auto; column-gap: var(--espacio-3); align-items: center; min-height: var(--alto-barra); padding: 0 var(--espacio-3); border-bottom: 1px solid var(--borde); }
+.barra b { font-size: var(--letra-md); font-weight: 700; text-align: center; }
+.redondo { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.redondo svg { stroke-width: 2; }
+.avance { height: 3px; background: var(--fondo-suave); }
+.avance i { display: block; height: 100%; background: var(--primario); transition: width 0.2s ease-out; }
+.pagina { overflow-y: auto; display: grid; align-content: start; gap: var(--espacio-5); padding: var(--espacio-7) var(--espacio-5) calc(var(--espacio-6) + var(--piso)); }
+.pie { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-top: 1px solid var(--borde); background: var(--fondo); }
+.pie:empty { display: none; }
+.pregunta { font-size: 1.875rem; font-weight: 800; }
+
+/* ui/Boton */
+.btn { display: flex; width: 100%; min-height: var(--toque); align-items: center; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-md); font-weight: 700; }
+.btn.sec { background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); }
+.btn:disabled { background: var(--primario-suave); color: var(--primario-texto); cursor: default; opacity: 0.8; }
+.quieto { display: block; width: 100%; min-height: var(--toque-min); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; text-decoration: underline; }
+
+/* ui/Campo con icono + ui/Limpiar */
+.campo { position: relative; display: grid; }
+.campo > svg { position: absolute; left: 14px; top: 12px; color: var(--texto-suave); pointer-events: none; }
+.campo input { width: 100%; min-height: var(--toque); padding: 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: var(--letra-md); }
+.campo input:focus { border-color: var(--texto); outline: none; }
+.limpiar { position: absolute; right: 0; top: 0; width: var(--toque); height: var(--toque); display: grid; place-items: center; color: var(--texto-suave); }
+.limpiar svg { width: 18px; height: 18px; stroke-width: 2; }
+.campo input:placeholder-shown ~ .limpiar { display: none; }
+
+/* El recuadro del cartel: siempre se puede subir. Lo que cambia es la línea de abajo (si se lee o no) y la salida extra. */
+.subir { display: grid; justify-items: center; align-content: center; gap: var(--espacio-2); width: 100%; min-height: 200px; padding: var(--espacio-5); border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-lg); font-weight: 700; text-align: center; }
+.subir .marco { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+.subir small { color: var(--texto-suave); font-weight: 400; }
+.subir .lecturas { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.subir .lecturas svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.subir .lecturas.ok { color: var(--ok); }
+
+/* Región común (ley de región común): el recuadro y la casilla de lectura comparten un mismo marco punteado y un mismo fondo; la casilla
+   es la última fila de ese marco, pegada al recuadro sin aire (conectividad uniforme: lo que va junto se toca). «No tengo cartel» queda
+   fuera, con aire doble: es la otra puerta, no parte del cartel. */
+.con-cartel-grupo { display: grid; border: 1.5px dashed var(--primario); border-radius: var(--radio-grande); background: var(--primario-suave); overflow: hidden; }
+.con-cartel-grupo .subir { border: 0; border-radius: 0; background: none; min-height: 176px; }
+.con-cartel-grupo .casilla { border: 0; border-top: 1px dashed var(--primario); border-radius: 0; background: var(--fondo); }
+.con-cartel-grupo .casilla[aria-checked="true"] { background: var(--fondo); }
+/* «No tengo cartel»: la otra puerta, como una opción que avanza (ui/Opcion): texto a la izquierda y el ángulo a la derecha. */
+.otra-puerta { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--espacio-3); width: 100%; min-height: var(--toque); margin-top: var(--espacio-4); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.otra-puerta svg { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+/* La casilla (prototipo firmado, la de «Con creador de cartel»): la persona decide si este cartel se lee; el contador va dentro. */
+.casilla { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: var(--toque); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio); text-align: left; }
+.casilla .cuadro { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--texto-suave); border-radius: 4px; }
+.casilla[aria-checked="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.casilla[aria-checked="true"] .cuadro { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+.casilla .cuadro svg { width: 16px; height: 16px; stroke-width: 3; }
+/* La casilla del canon: nombre arriba (17 px, negrita) y debajo el contador (14 px), los dos a la izquierda. */
+.casilla .texto { display: grid; min-width: 0; }
+.casilla b { font-weight: 700; font-size: var(--letra-md); }
+.casilla small { font-size: var(--letra-xs); line-height: 1.3; }
+.casilla:disabled { opacity: 0.55; cursor: default; }
+
+/* La miniatura del cartel y «Leyendo». */
+.cartel-mini { display: grid; align-content: end; width: 96px; aspect-ratio: 4 / 5; padding: var(--espacio-2); border-radius: var(--radio); background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), #4a3a6b; color: var(--primario-texto); font-size: 0.625rem; font-weight: 800; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.leyendo { display: grid; justify-items: center; gap: var(--espacio-4); padding-top: var(--espacio-6); }
+.leyendo .cartel-mini { width: 168px; font-size: 1rem; padding: var(--espacio-3); }
+@media (prefers-reduced-motion: no-preference) { .leyendo .cartel-mini { animation: late 0.9s ease-in-out infinite alternate; } @keyframes late { to { transform: scale(1.03); } } }
+
+/* La pregunta con el cartel ya guardado: una fila chica arriba —miniatura y sello— que confirma sin estorbar. */
+.con-cartel { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: var(--espacio-3); align-items: center; }
+.con-cartel .cartel-mini { width: 40px; padding: 4px; font-size: 0.4rem; border-radius: 6px; }
+.sello { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--radio-pildora); background: var(--fondo-suave); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.sello.ok { background: var(--ok-suave); color: var(--ok); }
+.sello svg { width: 14px; height: 14px; stroke-width: 2.4; }
+
+/* Revisar: la cabeza con la miniatura; con lectura, el sello «Leído del cartel». */
+.cabeza-revisar { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--espacio-4); align-items: end; row-gap: var(--espacio-2); }
+.renglon { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.lista { display: grid; gap: var(--espacio-3); }
+
+.notas { padding-top: var(--espacio-2); border-top: 1px dashed var(--borde); font-size: var(--letra-sm); color: var(--texto-suave); }
+.notas summary { min-height: var(--toque-min); display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.notas li { margin: 0 0 var(--espacio-2) var(--espacio-5); list-style: disc; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+
+/* Lo propio de este prototipo: lista flotante bajo el campo, opciones grandes, mapa doble, tarjeta de confirmación, renglones de Revisa,
+   el final con sello y la sugerencia en punteado, y la pantalla de elegir qué publicar. */
+.lista-flotante { display: grid; margin-top: calc(var(--espacio-3) * -1); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: 0 6px 20px rgba(0,0,0,.12); overflow: hidden; }
+.lista-flotante button { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-4); border-bottom: 1px solid var(--borde); text-align: left; }
+.lista-flotante button:last-child { border-bottom: 0; }
+.lista-flotante button > svg { color: var(--texto-suave); }
+.lista-flotante b { display: block; font-weight: 700; }
+.lista-flotante small { display: block; }
+.lista-flotante .ficha b { color: var(--primario); }
+.opciones { display: grid; gap: var(--espacio-3); }
+.opcion { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; column-gap: var(--espacio-3); align-items: center; min-height: 64px; padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); text-align: left; font-size: var(--letra-lg); font-weight: 700; }
+.opcion > svg:first-child { color: var(--primario); }
+.opcion > svg:last-child { width: 18px; height: 18px; color: var(--texto-suave); stroke-width: 2; }
+.opcion small { display: block; font-weight: 400; }
+.opciones.compactas .opcion { min-height: var(--toque); font-size: var(--letra-md); }
+.mapa-paso { aspect-ratio: 4 / 3; max-height: 38vh; display: grid; place-items: center; border-radius: var(--radio-grande); background: #eef0ec; color: var(--primario); }
+.mapa-paso svg { width: 44px; height: 44px; fill: currentColor; stroke: none; }
+.confirma { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3); border-radius: var(--radio); background: var(--fondo-suave); }
+.confirma > svg { color: var(--ok); }
+.confirma b { display: block; }
+.confirma small { display: block; }
+.aviso { color: var(--texto-suave); font-size: var(--letra-sm); }
+.aviso.alerta { color: var(--error); }
+.lista { display: grid; gap: var(--espacio-3); }
+.renglon { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; }
+.renglon > svg { color: var(--texto-suave); }
+.renglon b { display: block; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.renglon .accion { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.renglon.pendiente { border-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0.5' y='0.5' width='100%25' height='100%25' rx='8' fill='none' stroke='%235c5c5c' stroke-width='1' stroke-dasharray='4 5'/%3E%3C/svg%3E"); }
+.renglon.opcional { border-style: dashed; border-color: var(--borde); }
+.final { display: grid; justify-items: center; gap: var(--espacio-3); text-align: center; padding-top: var(--espacio-4); }
+.sello-ok { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--ok); color: #fff; }
+.sello-ok svg { width: 44px; height: 44px; stroke-width: 2.6; }
+.tarjeta { display: grid; grid-template-columns: 56px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.tarjeta .mini { width: 56px; height: 56px; border-radius: var(--radio); background: var(--primario-suave); display: grid; place-items: center; color: var(--primario); }
+.tarjeta.redonda .mini { border-radius: 50%; }
+.tarjeta b { display: block; }
+.sugerencia { display: grid; gap: var(--espacio-2); padding: var(--espacio-4); border: 1.5px dashed var(--texto-suave); border-radius: var(--radio-grande); }
+.sugerencia h2 { font-size: var(--letra-lg); font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
+.chip { min-height: 36px; padding: 0 var(--espacio-4); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
+.app { position: relative; }
+.casilla b { white-space: normal; }
+.grupo { display: grid; gap: var(--espacio-2); }
+.grupo > span { color: var(--texto-suave); font-size: var(--letra-sm); }
+.velo { position: absolute; inset: 0; background: rgba(0,0,0,.32); }
+.hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: var(--espacio-4); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: 24px 24px 0 0; background: var(--fondo); box-shadow: 0 -2px 16px rgba(0,0,0,.1); }
+.hoja::before { content: ""; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: #d9d9d9; }
+.hoja h2 { font-size: var(--letra-xl); font-weight: 700; }
+.hoja { max-height: calc(100% - 48px); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.hoja-cuerpo { display: grid; gap: var(--espacio-4); overflow-y: auto; min-height: 0; }
+.franja.abierta { display: grid; gap: var(--espacio-3); padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); }
+.franja:not(.abierta) { display: grid; grid-template-columns: minmax(0,1fr) var(--toque); align-items: center; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+.franja-texto { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; min-height: var(--toque); padding: 0 14px; text-align: left; }
+.franja-texto > svg { color: var(--texto-suave); }
+.franja-texto > span { display: grid; min-width: 0; }
+.franja-texto b { font-weight: 600; }
+.franja-texto small { color: var(--texto-suave); font-size: var(--letra-sm); }
+.quitar { display: grid; place-items: center; width: var(--toque); height: var(--toque); color: var(--texto-suave); }
+.quitar svg { width: 18px; height: 18px; stroke-width: 2; }
+.enlace { justify-self: start; color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.opcion.compacta { min-height: var(--toque); font-size: var(--letra-md); }
+.opcion.compacta small { font-size: var(--letra-sm); color: var(--texto-suave); }
+.suave { color: var(--texto-suave); font-weight: 400; }
+.junto { white-space: nowrap; }
+.horario { display: grid; gap: var(--espacio-2); min-width: 0; }
+.horario > span { display: grid; }
+.horario b { font-weight: 600; line-height: 1.25; }
+.horario small { font-size: var(--letra-sm); line-height: 1.3; }
+/* La tira de tipos al pie del primer paso (la de hoy en /nuevo): Evento · Lugar · Artista en mayúsculas chicas, el actual con su punto. Solo en el primer paso. */
+.tira-tipos { display: grid; grid-template-columns: repeat(3, 1fr); min-height: var(--toque); padding-bottom: var(--piso); border-top: 1px solid var(--borde); background: var(--fondo); }
+.tira-tipos a, .tira-tipos b { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: var(--toque); font-size: var(--letra-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-suave); text-decoration: none; }
+.tira-tipos b { color: var(--texto); }
+.tira-tipos b::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--texto); }
+</style>
+<style>
+/* Lo propio de este prototipo (doc 55): calendario de días, bloques de inicio y agenda, programa del festival, hoja de la clase. */
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal small { text-align: center; color: var(--texto-suave); font-size: var(--letra-xs); }
+.cal button { min-height: 40px; border-radius: var(--radio); border: 1px solid transparent; font-weight: 600; }
+.cal button[aria-pressed="true"] { background: var(--primario); color: var(--primario-texto); }
+.cal button.entre { background: var(--primario-suave, #ede7fb); }
+.cal button:disabled { color: var(--texto-suave); opacity: .45; }
+.cal-cabeza { display: grid; grid-template-columns: 1fr auto; align-items: center; font-weight: 700; }
+.fechas { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-3); }
+.fechas .campo input { padding-left: 44px; }
+.hoja h2 + .aviso { margin-top: -8px; }
+.bloque { display: grid; gap: var(--espacio-2); }
+.bloque > h2, .seccion > h2 { font-size: var(--letra-lg); font-weight: 800; }
+.seccion { display: grid; gap: var(--espacio-3); }
+.seccion .nota { color: var(--texto-suave); font-size: var(--letra-sm); }
+.tarjeta small.dato { display: block; color: var(--texto-suave); font-size: var(--letra-sm); }
+.tarjeta .sesion { display: inline-block; margin-top: 2px; padding: 1px 8px; border-radius: var(--radio-pildora); background: var(--fondo-suave); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 700; }
+.festival { display: grid; gap: var(--espacio-2); padding: var(--espacio-3); border: 1px solid var(--borde); border-left: 4px solid var(--primario); border-radius: var(--radio); }
+.festival > b { font-size: var(--letra-md); }
+.festival > small { color: var(--texto-suave); }
+.festival .acto { display: grid; grid-template-columns: 56px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-2) 0; border-top: 1px solid var(--borde); text-align: left; }
+.festival .acto b { display: block; font-weight: 600; }
+.festival .acto small { color: var(--texto-suave); font-size: var(--letra-sm); }
+.carril { display: grid; gap: var(--espacio-2); }
+.carril > .cabeza { display: grid; grid-template-columns: 1fr auto; align-items: baseline; }
+.carril > .cabeza b { font-size: var(--letra-lg); font-weight: 800; }
+.carril > .cabeza a { color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.carril .fila { display: grid; grid-auto-flow: column; grid-auto-columns: 220px; gap: var(--espacio-3); overflow-x: auto; padding-bottom: 4px; }
+.carril .fila .tarjeta { grid-template-columns: 1fr; grid-template-rows: 100px auto; row-gap: var(--espacio-2); }
+.carril .fila .tarjeta .mini { width: 100%; height: 100px; }
+.programa { display: grid; gap: var(--espacio-2); }
+.programa h3 { font-size: var(--letra-sm); color: var(--texto-suave); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: var(--espacio-2); }
+.renglon.programa-acto { grid-template-columns: 24px minmax(0,1fr) auto; }
+.renglon .quitar-marca { color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--espacio-2); }
+.kpis > div { display: grid; gap: 2px; padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); }
+.kpis small { color: var(--texto-suave); font-size: var(--letra-xs); text-transform: uppercase; letter-spacing: .04em; }
+.kpis b { font-size: var(--letra-md); }
+.acciones-ficha { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--espacio-2); }
+.acciones-ficha .btn { min-height: var(--toque); font-size: var(--letra-xs); padding-inline: 6px; gap: 4px; white-space: nowrap; }
+.filtros { display: grid; gap: var(--espacio-2); }
+.filtros .grupo-f { display: grid; gap: var(--espacio-2); }
+.filtros .grupo-f > span { color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
+.opcion .clase-desc { display: block; font-weight: 400; color: var(--texto-suave); font-size: var(--letra-sm); }
+.estelar { position: relative; height: 180px; border-radius: var(--radio-grande); background: linear-gradient(160deg, #2a1f4d, #5b3fc9); color: #fff; display: grid; align-content: end; padding: var(--espacio-4); }
+.estelar b { font-size: var(--letra-xl); }
+.estelar small { opacity: .85; }
+</style>
+</head>
+<body>
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <option value="expo-cartel" selected>1 · Exposición leída del cartel (inauguración + visita)</option>
+    <option value="expo-titulo">2 · Exposición sin cartel: «¿Cuándo se puede visitar?»</option>
+    <option value="taller">3 · Taller de varias sesiones: «¿Qué días son las sesiones?»</option>
+    <option value="festival">4 · El cartel trae 3 eventos de un festival (programa)</option>
+    <option value="clase">5 · Cambiar cómo ocurre (hoja de la clase)</option>
+    <option value="inicio">6 · Inicio: «Para visitar», sesión n de N, festival como bloque</option>
+    <option value="agenda">7 · Agenda del día: bloque de festival, «Para visitar hoy», filtros «Qué»</option>
+    <option value="fichas">8 · Fichas: exposición y festival</option>
+  </select>
+  <label style="opacity:.8">Doc 55 · El sistema propone cómo ocurre; la persona lo confirma en «Revisa».</label>
+</div>
+<div class="app" id="app"></div>
+<script>
+const ic = (n) => ({
+  ok: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  cerrar: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  atras: '<svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  etiqueta: '<svg viewBox="0 0 24 24"><path d="M20 12 12 20 4 12V4h8z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>',
+  personas: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c0-3.3 3-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.5c3 0 5.5 1.9 5.5 4.5"/></svg>',
+  mas: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  calendario: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  boleto: '<svg viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2v-3a2 2 0 0 0 0-4z"/></svg>',
+  imagen: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m4 17 5-5 4 4 3-3 4 4"/><circle cx="16" cy="9.5" r="1.5"/></svg>',
+  estrella: '<svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.5 6 .7-4.4 4.1 1.2 5.9L12 16.8l-5.4 2.9 1.2-5.9L3.4 9.7l6-.7z"/></svg>',
+  compartir: '<svg viewBox="0 0 24 24"><path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v6h14v-6"/></svg>',
+  filtro: '<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
+})[n];
+const DIAS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+const et = (h) => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${String(M).padStart(2, '0')} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
+const dias = (n) => `${n} nov`;
+const SEM = ['dom','lun','mar','mié','jue','vie','sáb'];
+const diaSemana = (d) => SEM[new Date(2026, 10, d).getDay()];
+const fecha = (d) => `${diaSemana(d)} ${d} nov`;
+const CLASES = {
+  puntual: { nombre: 'Evento', desc: 'Pasa un día a una hora.' },
+  exposicion: { nombre: 'Exposición', desc: 'Se puede visitar varios días, en un horario.' },
+  taller: { nombre: 'Taller o curso', desc: 'Varias sesiones, una inscripción.' },
+  festival: { nombre: 'Festival', desc: 'Agrupa varios eventos.' },
+};
+const HORARIO_LUGAR = 'Ma–Do · 10:00 a.m.–6:00 p.m. · Cierra Lu';
+
+const CASOS = {
+  'expo-cartel': { clase: 'exposicion', titulo: 'Ecos de papel', lugar: 'Museo Francisco Cossío', lugarHorario: true, desde: 6, hasta: 30, inaug: { dia: 5, hora: '19:00' }, artistas: 'Mariana Ruvalcaba', cartel: true, pasoInicial: 'revisa' },
+  'expo-titulo': { clase: 'exposicion', titulo: 'Exposición Ecos de papel', lugar: 'Museo Francisco Cossío', lugarHorario: true, desde: null, hasta: null, inaug: null, artistas: null, cartel: false, pasoInicial: 'visita' },
+  'taller': { clase: 'taller', titulo: 'Taller de grabado', lugar: 'Casa de Cultura del Barrio de San Miguelito', lugarHorario: false, sesiones: [], hora: '10:00', misma: true, cartel: false, pasoInicial: 'sesiones' },
+  'festival': { clase: 'festival', titulo: 'Festival de Cine UASLP', lugar: 'Centro Cultural Universitario Bicentenario', cartel: true, pasoInicial: 'programa',
+    actos: [
+      { titulo: 'Inauguración: «La luz que queda»', dia: 12, hora: '19:00', lugar: 'CC200 · Sala 1', marcado: true },
+      { titulo: 'Charla con la directora', dia: 13, hora: '18:00', lugar: 'CC200 · Foro', marcado: true },
+      { titulo: 'Función: cortometrajes potosinos', dia: 14, hora: '17:00', lugar: 'Cineteca Alameda', marcado: true },
+    ] },
+  'clase': { clase: 'puntual', titulo: 'Taller de grabado', lugar: 'Casa de Cultura del Barrio de San Miguelito', lugarHorario: false, dia: 8, hora: '10:00', cartel: false, pasoInicial: 'revisa', hojaClase: true },
+  'inicio': { pantalla: 'inicio' },
+  'agenda': { pantalla: 'agenda' },
+  'fichas': { pantalla: 'fichas' },
+};
+let caso = 'expo-cartel';
+let e;
+const c = () => CASOS[caso];
+function nuevo() {
+  const k = c();
+  e = { paso: k.pasoInicial ?? k.pantalla, clase: k.clase, desde: k.desde ?? null, hasta: k.hasta ?? null, usaLugar: !!k.lugarHorario, inaug: k.inaug ?? null, sesiones: k.sesiones ? [...k.sesiones] : null, hora: k.hora ?? '10:00', misma: k.misma ?? true, actos: k.actos ? k.actos.map((a) => ({ ...a })) : null, hoja: k.hojaClase ? 'clase' : null, ficha: 'exposicion', filtroQue: 'todo', eligiendo: 'desde', publicado: false, corrige: null };
+}
+nuevo();
+
+// ---- piezas ----
+const renglon = (icono, texto, accion, opcional = false, a = '') => `<button class="renglon ${opcional ? 'opcional' : ''}" ${a ? `data-a="${a}"` : ''}>${ic(icono)}<b>${texto}</b><span class="accion">${accion}</span></button>`;
+function calendario({ marcados = [], entre = null, onA }) {
+  // Noviembre de 2026: empieza en domingo; la rejilla va de lunes a domingo.
+  const primero = new Date(2026, 10, 1).getDay(); // 0 = domingo
+  const hueco = (primero + 6) % 7;
+  let celdas = DIAS.map((d) => `<small>${d}</small>`).join('');
+  for (let i = 0; i < hueco; i++) celdas += '<span></span>';
+  for (let d = 1; d <= 30; d++) {
+    const marcado = marcados.includes(d);
+    const enRango = entre && entre[0] && entre[1] && d > entre[0] && d < entre[1];
+    celdas += `<button class="${enRango ? 'entre' : ''}" aria-pressed="${marcado}" data-a="${onA}" data-v="${d}" ${d < 5 ? 'disabled' : ''}>${d}</button>`;
+  }
+  return `<div class="cal-cabeza"><span>Noviembre 2026</span><span class="accion" style="color:var(--primario);font-size:var(--letra-sm)">Diciembre ›</span></div><div class="cal">${celdas}</div>`;
+}
+const casilla = (marcada, nombre, detalle, a) => `<button class="casilla" role="checkbox" aria-checked="${marcada}" data-a="${a}"><span class="cuadro">${marcada ? ic('ok') : ''}</span><span class="texto"><b>${nombre}</b>${detalle ? `<small>${detalle}</small>` : ''}</span></button>`;
+function textoVisita() { return e.desde && e.hasta ? `Del ${fecha(e.desde)} al ${fecha(e.hasta)}` : e.desde ? `Desde el ${fecha(e.desde)} · falta hasta cuándo` : 'Falta cuándo se puede visitar'; }
+function textoSesiones() { const s = [...(e.sesiones ?? [])].sort((a, b) => a - b); if (!s.length) return 'Faltan las sesiones'; return `${s.length} ${s.length === 1 ? 'sesión' : 'sesiones'} · ${s.map((d) => `${diaSemana(d)} ${d}`).join(', ')} nov · ${et(e.hora)}`; }
+function hojaClase() {
+  return `<div class="velo" data-a="cerrar-hoja"></div><div class="hoja" role="dialog" aria-label="Cómo ocurre">
+    <h2>¿Cómo ocurre?</h2>
+    <small class="aviso">Cambia solo el paso de cuándo; nombre, dónde y quién se conservan.</small>
+    <div class="opciones compactas">${Object.entries(CLASES).map(([k, v]) => `<button class="opcion" data-a="clase" data-v="${k}" aria-pressed="${e.clase === k}">${ic('etiqueta')}<span>${v.nombre}<small class="clase-desc">${v.desc}</small></span>${e.clase === k ? ic('ok') : ic('chevron')}</button>`).join('')}</div>
+  </div>`;
+}
+function hojaCorrige() {
+  const a = e.actos[e.corrige];
+  return `<div class="velo" data-a="cerrar-hoja"></div><div class="hoja" role="dialog" aria-label="Corregir">
+    <h2>${a.titulo}</h2>
+    <div class="lista">${renglon('calendario', `${fecha(a.dia)} · ${et(a.hora)}`, 'Cambiar')}${renglon('pin', a.lugar, 'Cambiar')}${renglon('personas', 'Quién · sin leer', 'Agregar', true)}</div>
+    <button class="btn" data-a="cerrar-hoja">Listo</button>
+  </div>`;
+}
+
+// ---- pantallas del alta ----
+const PANTALLAS = {
+  visita: () => ({
+    titulo: 'Publicar', avance: 0.4, atras: true,
+    cuerpo: `<h1 class="pregunta">¿Cuándo se puede visitar?</h1>
+      <div class="chips"><button class="chip" aria-pressed="${e.eligiendo === 'desde'}" data-a="eligiendo" data-v="desde">Desde${e.desde ? ` · ${e.desde} nov` : ''}</button><button class="chip" aria-pressed="${e.eligiendo === 'hasta'}" data-a="eligiendo" data-v="hasta">Hasta${e.hasta ? ` · ${e.hasta} nov` : ''}</button></div>
+      ${calendario({ marcados: [e.desde, e.hasta].filter(Boolean), entre: [e.desde, e.hasta], onA: 'dia-visita' })}
+      ${c().lugarHorario ? casilla(e.usaLugar, 'Horario del lugar', HORARIO_LUGAR, 'usa-lugar') : '<small class="aviso">El lugar no tiene horario: podrás ponerlo en «Revisa» o publicar con «Horario por confirmar».</small>'}
+      ${!e.usaLugar && c().lugarHorario ? `<button class="renglon opcional" data-a="nada">${ic('reloj')}<b>Horario propio</b><span class="accion">Agregar</span></button>` : ''}`,
+    pie: `<button class="btn" data-a="seguir" ${e.desde && e.hasta ? '' : 'disabled'}>${e.desde && e.hasta ? 'Siguiente' : e.desde ? 'Falta hasta cuándo' : 'Falta desde cuándo'}</button>`,
+    notas: ['Sustituye a «¿Qué día es?» y «¿A qué hora?» cuando la clase es exposición (la propuso el título «Exposición…» o el cartel). Dos toques en el calendario: Desde y Hasta (inclusivo); los días entre medio se pintan.', 'La casilla «Horario del lugar» sale marcada si el lugar lo tiene (OL-315) y enseña su resumen estructurado; al desmarcarla, el renglón «Horario propio» abre la hoja de franjas de OL-315 (misma pieza).', 'Sin horario en ninguno de los dos, se publica igual y la ficha dice «Horario por confirmar»: no se inventa (modelo OL-272).'],
+  }),
+  sesiones: () => ({
+    titulo: 'Publicar', avance: 0.4, atras: true,
+    cuerpo: `<h1 class="pregunta">¿Qué días son las sesiones?</h1>
+      ${calendario({ marcados: e.sesiones, onA: 'dia-sesion' })}
+      <p class="aviso">${e.sesiones.length ? textoSesiones() : 'Toca cada día con sesión.'}</p>
+      <div class="grupo"><span>¿A qué hora?</span><div class="chips">${['10:00','11:00','16:00','17:00','18:00'].map((h) => `<button class="chip" aria-pressed="${e.hora === h}" data-a="hora" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
+      ${casilla(e.misma, 'Misma hora todas las sesiones', e.misma ? '' : 'Cada sesión con su hora, en «Revisa»', 'misma')}`,
+    pie: `<button class="btn" data-a="seguir" ${e.sesiones.length ? '' : 'disabled'}>${e.sesiones.length ? 'Siguiente' : 'Faltan las sesiones'}</button>`,
+    notas: ['Sustituye a «¿Qué día es?» cuando la clase es taller o curso. Un toque por día (el cartel los trae marcados si los lee). Se publica UN taller: «Voy» es al taller entero (prototipo aceptado el 2026-10-05, H7).', 'La hora y la casilla «Misma hora todas las sesiones» son las de OL-310/311; al desmarcar, cada sesión con su hoja (ya construido).', 'En la agenda cada sesión sale como ocurrencia (OL-320) con «Sesión n de N».'],
+  }),
+  programa: () => ({
+    titulo: 'Publicar', avance: 0.6, atras: true,
+    cuerpo: `<h1 class="pregunta">El cartel trae ${e.actos.length} eventos</h1>
+      <p class="aviso">Se publican juntos como el programa de <b>${c().titulo}</b>. Toca uno para corregirlo; desmarca el que no quieras publicar aún.</p>
+      <div class="lista">${e.actos.map((a, i) => `<div class="renglon programa-acto" role="checkbox" aria-checked="${a.marcado}"><button class="cuadro" style="display:grid;place-items:center;width:24px;height:24px;border:2px solid ${a.marcado ? 'var(--primario)' : 'var(--texto-suave)'};border-radius:4px;background:${a.marcado ? 'var(--primario)' : 'transparent'};color:#fff" data-a="marcar" data-v="${i}" aria-label="Incluir">${a.marcado ? ic('ok') : ''}</button><b style="cursor:pointer" data-a="corrige" data-v="${i}">${a.titulo}<small style="display:block;font-weight:400;color:var(--texto-suave)">${fecha(a.dia)} · ${et(a.hora)} · ${a.lugar}</small></b><span class="accion" data-a="corrige" data-v="${i}">Corregir</span></div>`).join('')}</div>
+      ${e.hoja === 'corrige' ? hojaCorrige() : ''}`,
+    pie: `<button class="btn" data-a="seguir">Revisar el festival</button>`,
+    notas: ['H6, aceptado el 2026-10-05: un cartel con varios eventos se publica de una vez; cada renglón es un acto con su fecha, hora y sede. Nuevo respecto al prototipo anterior: tocar un renglón abre su hoja para corregir el dato antes de publicar (lo que faltaba, bitácora 314).', 'Los desmarcados quedan como borrador, recuperables desde la ficha del festival («Programa registrado: 2 actividades · 1 borrador»).', 'Se publica en una sola operación atómica: el marco y sus actos, o nada.'],
+  }),
+  revisa: () => {
+    const k = c(); const esExpo = e.clase === 'exposicion'; const esTaller = e.clase === 'taller'; const esFest = e.clase === 'festival';
+    const marcados = esFest ? e.actos.filter((a) => a.marcado) : [];
+    const cuando = esExpo ? renglon('calendario', textoVisita(), 'Cambiar', !(e.desde && e.hasta), 'ir-visita')
+      : esTaller ? renglon('calendario', textoSesiones(), 'Cambiar', !e.sesiones?.length, 'ir-sesiones')
+      : esFest ? renglon('calendario', `${marcados.length ? `Del ${fecha(Math.min(...marcados.map((a) => a.dia)))} al ${fecha(Math.max(...marcados.map((a) => a.dia)))} · Programa registrado: ${marcados.length} actividades` : 'Sin actividades'}`, 'Cambiar', false, 'ir-programa')
+      : renglon('calendario', `${fecha(k.dia)} · ${et(k.hora)}`, 'Cambiar');
+    const horario = esExpo ? (e.usaLugar ? renglon('reloj', `Horario del lugar · ${HORARIO_LUGAR}`, 'Cambiar') : renglon('reloj', 'Horario · por confirmar', 'Agregar', true)) : '';
+    const inaug = esExpo ? (e.inaug ? renglon('estrella', `Inauguración · ${fecha(e.inaug.dia)} · ${et(e.inaug.hora)}`, 'Cambiar') : renglon('estrella', 'Inauguración', 'Agregar', true)) : '';
+    const padre = (!esFest) ? renglon('etiqueta', 'Parte de un festival', 'Agregar', true, 'nada') : '';
+    const falta = esExpo ? !(e.desde && e.hasta) : esTaller ? !e.sesiones?.length : esFest ? !marcados.length : false;
+    return {
+      titulo: 'Revisa', avance: 0.85, atras: true,
+      cuerpo: `<h1>${k.titulo}</h1>
+        ${k.cartel ? `<div class="tarjeta"><span class="mini" style="background:#2a1f4d"></span><span><b>Cartel</b><small class="dato">${esFest ? '3 eventos leídos' : 'Leído · fechas tomadas del cartel'}</small></span></div>` : ''}
+        <div class="lista">
+          ${renglon('etiqueta', CLASES[e.clase].nombre, 'Cambiar', false, 'abrir-clase')}
+          ${cuando}
+          ${horario}
+          ${inaug}
+          ${esFest ? '' : renglon('pin', k.lugar, 'Cambiar')}
+          ${esFest ? renglon('pin', 'Sedes: CC200 y Cineteca Alameda (por acto)', 'Ver programa', false, 'ir-programa') : ''}
+          ${renglon('personas', k.artistas ?? 'Quién', k.artistas ? 'Cambiar' : 'Agregar', !k.artistas)}
+          ${renglon('boleto', 'Precio', 'Agregar', true)}
+          ${padre}
+        </div>
+        ${e.hoja === 'clase' ? hojaClase() : ''}`,
+      pie: `<button class="btn" data-a="publicar" ${falta ? 'disabled' : ''}>${falta ? (esExpo ? 'Falta cuándo se puede visitar' : esTaller ? 'Faltan las sesiones' : 'Falta una actividad') : esFest ? `Publicar el festival y ${marcados.length} eventos` : esExpo ? 'Publicar exposición' : esTaller ? 'Publicar taller' : 'Publicar evento'}</button>`,
+      notas: ['«Revisa» es el centro: la clase propuesta (del cartel o del título) va en su renglón con icono de etiqueta y «Cambiar» abre la hoja «¿Cómo ocurre?» (caso 5). Cambiarla cambia solo el paso del tiempo.', 'Exposición: visita, horario (del lugar o propio) e inauguración opcional como acto ligado. Taller: sus sesiones. Festival: su programa registrado y las sedes por acto.', 'Todo evento que no es festival tiene «Parte de un festival · Agregar» en punteado: busca un marco por nombre (la persona lo elige; nunca por parecido) o crea uno con solo el nombre. Un marco ajeno queda como propuesta pendiente.', 'El botón dice qué falta, como en todas las altas.'],
+    };
+  },
+  publicado: () => {
+    const k = c(); const esExpo = e.clase === 'exposicion'; const esTaller = e.clase === 'taller'; const esFest = e.clase === 'festival';
+    const marcados = esFest ? e.actos.filter((a) => a.marcado) : [];
+    const sub = esExpo ? `Hasta el ${fecha(e.hasta)} · ${k.lugar}` : esTaller ? `${textoSesiones()}` : esFest ? `Programa registrado: ${marcados.length} actividades${marcados.length < e.actos.length ? ` · ${e.actos.length - marcados.length} borrador` : ''}` : '';
+    return {
+      titulo: 'Publicar', avance: 1, final: true,
+      cuerpo: `<div class="final"><span class="sello-ok">${ic('ok')}</span><h1>${esExpo ? 'Exposición publicada' : esTaller ? 'Taller publicado' : 'Festival publicado'}</h1><p class="aviso">Ya está en la agenda. Así lo ve la gente:</p></div>
+        <div class="tarjeta"><span class="mini" style="background:#2a1f4d"></span><span><b>${k.titulo}</b><small class="dato">${sub}</small>${esTaller ? '<span class="sesion">Sesión 1 de ' + e.sesiones.length + '</span>' : ''}</span></div>
+        ${esExpo && !e.inaug ? `<div class="sugerencia"><h2>¿Tiene inauguración?</h2><p class="aviso">Publica la apertura como evento, ligado a la exposición.</p><button class="btn" data-a="nada">Agregar inauguración</button></div>` : ''}
+        ${esFest ? `<div class="sugerencia"><h2>¿Falta algo del programa?</h2><p class="aviso">Puedes agregar actividades después; la ficha dice cuántas lleva.</p><button class="btn" data-a="nada">Agregar otra actividad</button></div>` : ''}`,
+      pie: `<button class="btn" data-a="nada">Compartir</button><button class="quieto" data-a="reiniciar">Publicar otro</button>`,
+      notas: ['El final del canon: sello, el elemento como quedó y UNA sugerencia en punteado. Exposición sin inauguración: «Agregar inauguración». Festival: «Agregar otra actividad» (programa parcial dicho).', 'La tarjeta del taller lleva «Sesión 1 de 4»: la misma que se verá en la agenda por cada sesión.'],
+    };
+  },
+};
+
+// ---- pantallas de consulta ----
+const CONSULTA = {
+  inicio: () => ({
+    titulo: 'Inicio',
+    cuerpo: `
+      <div class="estelar"><small>Hoy · 7:00 p.m. · Teatro de la Paz</small><b>Concierto de la Orquesta Sinfónica</b></div>
+      <div class="carril"><div class="cabeza"><b>Esta semana</b><a>Ver la agenda</a></div><div class="fila">
+        <div class="tarjeta"><span class="mini" style="background:#5b3fc9"></span><span><b>Taller de grabado</b><small class="dato">sáb 8 nov · 10:00 a.m. · Casa de Cultura San Miguelito</small><span class="sesion">Sesión 1 de 4</span></span></div>
+        <div class="tarjeta"><span class="mini" style="background:#1f4d3a"></span><span><b>Festival de Cine UASLP</b><small class="dato">Del 12 al 14 nov · 3 actividades esta semana</small></span></div>
+        <div class="tarjeta"><span class="mini" style="background:#7a3b2e"></span><span><b>Lectura en voz alta</b><small class="dato">jue 6 nov · 6:00 p.m. · Café del Jardín</small></span></div>
+      </div></div>
+      <div class="carril"><div class="cabeza"><b>Para visitar</b><a>Ver todas</a></div><div class="fila">
+        <div class="tarjeta"><span class="mini" style="background:#2a1f4d"></span><span><b>Ecos de papel</b><small class="dato">Hasta el dom 30 nov · Museo Francisco Cossío</small></span></div>
+        <div class="tarjeta"><span class="mini" style="background:#3b5b7a"></span><span><b>Grabado potosino 1950–1980</b><small class="dato">Hasta el 14 dic · Museo Federico Silva</small></span></div>
+        <div class="tarjeta"><span class="mini" style="background:#6b6b3b"></span><span><b>Fotovisión 2026</b><small class="dato">Hasta el 20 dic · Centro de las Artes · Horario por confirmar</small></span></div>
+      </div></div>
+      <div class="carril"><div class="cabeza"><b>Nuevos</b><a>Ver más</a></div><div class="fila"><div class="tarjeta"><span class="mini" style="background:#444"></span><span><b>Noche de danza</b><small class="dato">vie 21 nov · 8:00 p.m.</small></span></div></div></div>`,
+    notas: ['Inicio no cambia de forma: los carriles de siempre más UN carril propio «Para visitar» con las exposiciones vigentes, ordenadas por la que cierra antes. No se repiten cada día en «Esta semana»: una exposición no es algo que pasa hoy a una hora.', 'El taller sale por sesión (OL-320) con «Sesión 1 de 4»; el festival sale UNA vez como marco («3 actividades esta semana»), no sus actos sueltos.', 'Sin horario conocido la tarjeta lo dice: «Horario por confirmar», y no cuenta como «visitable hoy».'],
+  }),
+  agenda: () => ({
+    titulo: 'Agenda',
+    cuerpo: `
+      <div class="kpis"><div><small>Hoy</small><b>5 eventos</b></div><div><small>Para visitar</small><b>3</b></div><div><small>Esta semana</small><b>14</b></div></div>
+      <div class="seccion"><h2>Viernes 13 de noviembre</h2>
+        <div class="tarjeta"><span class="mini" style="background:#5b3fc9"></span><span><b>Taller de grabado</b><small class="dato">10:00 a.m. · Casa de Cultura San Miguelito</small><span class="sesion">Sesión 2 de 4</span></span></div>
+        <div class="festival"><b>Festival de Cine UASLP</b><small>Programa registrado: 3 actividades · hoy 2</small>
+          <button class="acto"><span class="mini" style="width:56px;height:40px;border-radius:8px;background:#1f4d3a;display:block"></span><span><b>Charla con la directora</b><small>6:00 p.m. · CC200 · Foro</small></span></button>
+          <button class="acto"><span class="mini" style="width:56px;height:40px;border-radius:8px;background:#1f4d3a;display:block"></span><span><b>Función: «La luz que queda»</b><small>8:00 p.m. · CC200 · Sala 1</small></span></button>
+        </div>
+        <div class="tarjeta"><span class="mini" style="background:#7a3b2e"></span><span><b>Noche de jazz</b><small class="dato">9:00 p.m. · Foro Alicia</small></span></div>
+      </div>
+      <div class="seccion"><h2>Para visitar hoy</h2><p class="nota">Exposiciones abiertas este viernes.</p>
+        <div class="tarjeta"><span class="mini" style="background:#2a1f4d"></span><span><b>Ecos de papel</b><small class="dato">Abre 10:00 a.m.–6:00 p.m. · Museo Francisco Cossío · hasta el 30 nov</small></span></div>
+        <div class="tarjeta"><span class="mini" style="background:#3b5b7a"></span><span><b>Grabado potosino 1950–1980</b><small class="dato">Abre 10:00 a.m.–7:00 p.m. · Museo Federico Silva · hasta el 14 dic</small></span></div>
+      </div>
+      ${e.hoja === 'filtros' ? `<div class="velo" data-a="cerrar-hoja"></div><div class="hoja" role="dialog" aria-label="Filtros"><h2>Filtros</h2><div class="filtros">
+        <div class="grupo-f"><span>Qué</span><div class="chips">${[['todo','Todo'],['evento','Eventos'],['exposicion','Exposiciones'],['taller','Talleres'],['festival','Festivales']].map(([k, v]) => `<button class="chip" aria-pressed="${e.filtroQue === k}" data-a="filtro-que" data-v="${k}">${v}</button>`).join('')}</div></div>
+        <div class="grupo-f"><span>Costo</span><div class="chips"><button class="chip" aria-pressed="true">Todo</button><button class="chip">Sin costo</button><button class="chip">Cooperación</button><button class="chip">Con costo</button></div></div>
+        <div class="grupo-f"><span>Disciplina</span><div class="chips"><button class="chip" aria-pressed="true">Todas</button><button class="chip">Música</button><button class="chip">Teatro</button><button class="chip">Artes visuales</button><button class="chip">Cine</button></div></div>
+      </div><button class="btn" data-a="cerrar-hoja">Ver ${e.filtroQue === 'exposicion' ? '3 exposiciones' : e.filtroQue === 'festival' ? '1 festival' : e.filtroQue === 'taller' ? '1 taller' : '14 eventos'}</button></div>` : ''}`,
+    pie: `<button class="btn sec" data-a="abrir-filtros" style="display:grid;grid-template-columns:auto auto;gap:8px;justify-content:center;align-items:center">${ic('filtro')} Filtros${e.filtroQue !== 'todo' ? ' · 1' : ''}</button>`,
+    notas: ['Agenda del día: cada sesión del taller es una tarjeta («Sesión 2 de 4»); el festival es UN bloque con sus actos de ese día debajo, cada uno tocable a su ficha; el marco no sale en días sin actos.', 'Al final del día, «Para visitar hoy»: las exposiciones abiertas ese día según su horario (del lugar o propio) con «Abre 10:00 a.m.–6:00 p.m.». Sin horario no entran aquí (no se promete «visitable hoy»); viven en «Para visitar» de inicio con «Horario por confirmar».', 'Los números cuentan ocurrencias (sesiones y actos; el marco no suma) y las exposiciones aparte.', 'Filtros: grupo nuevo «Qué» (una sola elección) junto a los de siempre. Un filtro por artista o lugar elige actos y los agrupa bajo su festival.'],
+  }),
+  fichas: () => ({
+    titulo: e.ficha === 'exposicion' ? 'Exposición' : 'Festival',
+    cuerpo: e.ficha === 'exposicion' ? `
+      <div class="chips"><button class="chip" aria-pressed="true" data-a="ficha" data-v="exposicion">Ficha de exposición</button><button class="chip" data-a="ficha" data-v="festival">Ficha de festival</button></div>
+      <div class="estelar" style="height:150px"><small>Exposición · Mariana Ruvalcaba</small><b>Ecos de papel</b></div>
+      <div class="kpis"><div><small>Hasta</small><b>dom 30 nov</b></div><div><small>Hoy</small><b>10:00 a.m.–6:00 p.m.</b></div><div><small>Costo</small><b>Entrada libre</b></div></div>
+      <div class="acciones-ficha"><button class="btn" style="background:#fff;color:var(--texto);border:1px solid var(--borde)">${ic('estrella')} Me interesa</button><button class="btn" style="background:#fff;color:var(--texto);border:1px solid var(--borde)">Cómo llegar</button><button class="btn" style="background:#fff;color:var(--texto);border:1px solid var(--borde)">${ic('compartir')} Compartir</button></div>
+      <div class="lista">${renglon('pin', 'Museo Francisco Cossío · Ma–Do 10:00 a.m.–6:00 p.m. · Cierra Lu', 'Ver')}${renglon('estrella', 'Inauguración · jue 5 nov · 7:00 p.m.', 'Ver')}${renglon('personas', 'Mariana Ruvalcaba · Artes visuales', 'Ver')}</div>`
+    : `
+      <div class="chips"><button class="chip" data-a="ficha" data-v="exposicion">Ficha de exposición</button><button class="chip" aria-pressed="true" data-a="ficha" data-v="festival">Ficha de festival</button></div>
+      <div class="estelar" style="height:150px;background:linear-gradient(160deg,#143324,#1f8a5a)"><small>Festival · Del 12 al 14 nov</small><b>Festival de Cine UASLP</b></div>
+      <div class="kpis"><div><small>Programa</small><b>3 actividades</b></div><div><small>Sedes</small><b>2</b></div><div><small>Siguiente</small><b>jue 12 · 7 p.m.</b></div></div>
+      <div class="acciones-ficha"><button class="btn" style="background:#fff;color:var(--texto);border:1px solid var(--borde)">${ic('estrella')} Me interesa</button><button class="btn" style="background:#fff;color:var(--texto);border:1px solid var(--borde)">${ic('compartir')} Compartir</button><button class="btn" style="background:#fff;color:var(--texto);border:1px solid var(--borde)">${ic('mas')} Actividad</button></div>
+      <div class="programa"><h2 style="font-size:var(--letra-lg);font-weight:800">Programa</h2>
+        <h3>Jueves 12</h3><button class="renglon">${ic('calendario')}<b>Inauguración: «La luz que queda»<small style="display:block;font-weight:400;color:var(--texto-suave)">7:00 p.m. · CC200 · Sala 1</small></b><span class="accion">Voy</span></button>
+        <h3>Viernes 13</h3><button class="renglon">${ic('calendario')}<b>Charla con la directora<small style="display:block;font-weight:400;color:var(--texto-suave)">6:00 p.m. · CC200 · Foro</small></b><span class="accion">Voy</span></button>
+        <h3>Sábado 14</h3><button class="renglon">${ic('calendario')}<b>Función: cortometrajes potosinos<small style="display:block;font-weight:400;color:var(--texto-suave)">5:00 p.m. · Cineteca Alameda</small></b><span class="accion">Voy</span></button>
+        <p class="aviso">Programa registrado: 3 actividades. Quien administra el festival puede agregar más.</p>
+      </div>`,
+    notas: ['Ficha de exposición: «Hasta…», el horario de HOY (del lugar o propio; «Horario por confirmar» si no hay), «Me interesa» en vez de «Voy» (no se inventa un día de asistencia), la inauguración ligada y quién expone.', 'Ficha de festival: el marco con «Programa» por día; cada acto es un evento de verdad con su «Voy» y su ficha («Parte de Festival de Cine UASLP»). «Me interesa» en el marco. «Programa registrado: N» dice lo parcial.', 'La ficha del taller ya existe (OL-311): lista de sesiones con «Sesión n de N» y «Voy» al taller entero.'],
+  }),
+};
+
+function pintar() {
+  const esConsulta = !!c().pantalla;
+  const p = esConsulta ? CONSULTA[e.paso]() : PANTALLAS[e.paso]();
+  const barra = esConsulta
+    ? `<div class="barra"><span class="redondo"></span><b>${p.titulo}</b><span class="redondo"></span></div>`
+    : `<div class="barra">${p.final ? '<span class="redondo"></span>' : p.atras ? `<button class="redondo" data-a="atras" aria-label="Atrás">${ic('atras')}</button>` : `<button class="redondo" data-a="reiniciar" aria-label="Cerrar">${ic('cerrar')}</button>`}<b>${p.titulo}</b>${p.final ? `<button class="redondo" data-a="reiniciar" aria-label="Cerrar">${ic('cerrar')}</button>` : '<span class="redondo"></span>'}</div><div class="avance"><i style="width:${Math.round((p.avance ?? 0) * 100)}%"></i></div>`;
+  document.getElementById('app').innerHTML = `${barra}
+    <div class="pagina">${p.cuerpo}<details class="notas"><summary>Notas del prototipo</summary><ul>${p.notas.map((n) => `<li>${n}</li>`).join('')}</ul></details></div>
+    ${p.pie ? `<div class="pie">${p.pie}</div>` : ''}`;
+}
+document.getElementById('app').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a; const v = b.dataset.v;
+  if (a === 'nada') { alert('En el prototipo esta salida no abre nada; en la app abre su hoja o su paso.'); return; }
+  if (a === 'reiniciar') { nuevo(); pintar(); return; }
+  if (a === 'atras') { e.paso = e.paso === 'revisa' ? (c().pasoInicial === 'revisa' ? 'revisa' : c().pasoInicial) : 'revisa'; pintar(); return; }
+  if (a === 'seguir') { e.paso = 'revisa'; pintar(); return; }
+  if (a === 'publicar') { e.paso = 'publicado'; pintar(); return; }
+  if (a === 'eligiendo') { e.eligiendo = v; pintar(); return; }
+  if (a === 'dia-visita') { const d = Number(v); if (e.eligiendo === 'desde') { e.desde = d; if (e.hasta && e.hasta < d) e.hasta = null; e.eligiendo = 'hasta'; } else { if (e.desde && d < e.desde) { e.desde = d; } else e.hasta = d; } pintar(); return; }
+  if (a === 'usa-lugar') { e.usaLugar = !e.usaLugar; pintar(); return; }
+  if (a === 'dia-sesion') { const d = Number(v); e.sesiones = e.sesiones.includes(d) ? e.sesiones.filter((x) => x !== d) : [...e.sesiones, d]; pintar(); return; }
+  if (a === 'hora') { e.hora = v; pintar(); return; }
+  if (a === 'misma') { e.misma = !e.misma; pintar(); return; }
+  if (a === 'marcar') { e.actos[Number(v)].marcado = !e.actos[Number(v)].marcado; pintar(); return; }
+  if (a === 'corrige') { e.corrige = Number(v); e.hoja = 'corrige'; pintar(); return; }
+  if (a === 'abrir-clase') { e.hoja = 'clase'; pintar(); return; }
+  if (a === 'cerrar-hoja') { e.hoja = null; pintar(); return; }
+  if (a === 'clase') {
+    // Cambiar la clase cambia solo el paso del tiempo: lo demás se conserva.
+    e.clase = v; e.hoja = null;
+    if (v === 'exposicion') { e.desde ??= null; e.hasta ??= null; e.paso = (e.desde && e.hasta) ? 'revisa' : 'visita'; }
+    else if (v === 'taller') { e.sesiones ??= []; e.paso = e.sesiones.length ? 'revisa' : 'sesiones'; }
+    else if (v === 'festival') { e.actos ??= []; e.paso = 'revisa'; }
+    else e.paso = 'revisa';
+    pintar(); return;
+  }
+  if (a === 'ir-visita') { e.paso = 'visita'; pintar(); return; }
+  if (a === 'ir-sesiones') { e.paso = 'sesiones'; pintar(); return; }
+  if (a === 'ir-programa') { e.paso = 'programa'; pintar(); return; }
+  if (a === 'abrir-filtros') { e.hoja = 'filtros'; pintar(); return; }
+  if (a === 'filtro-que') { e.filtroQue = v; pintar(); return; }
+  if (a === 'ficha') { e.ficha = v; pintar(); return; }
+});
+document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); pintar(); });
+pintar();
+</script>
+</body>
+</html>
