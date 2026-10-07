@@ -20,7 +20,7 @@ El founder (2026-10-06) quiere subir hoy a una pista de prueba de Google Play el
 
 ## Decisiones del operador
 
-1. **Nombre bajo el icono: `SMSNSTRS`.** El `short_name` del manifiesto web («Somos Nosotros», 14 caracteres) no cabe en el límite de 12 de Bubblewrap; se usa la marca ya aprobada el 2026-09-15. **El founder debe confirmarlo** (se ve en el cajón de apps y en el inicio del teléfono; el nombre de la ficha en Play sigue siendo «Somos Nosotros»). Cambiarlo es editar `launcherName` y recompilar con `appVersionCode` 2.
+1. **Nombre bajo el icono: `SMSNSTRS`.** El `short_name` del manifiesto web («Somos Nosotros», 14 caracteres) no cabe en el límite de 12 de Bubblewrap; se usa la marca ya aprobada el 2026-09-15. **Confirmado por el founder el 2026-10-06** («está bien ese nombre bajo el icono»; se ve en el cajón de apps y en el inicio del teléfono; el nombre de la ficha en Play sigue siendo «Somos Nosotros»). Si algún día cambia, es editar `launcherName` y recompilar con `appVersionCode` 2.
 2. **Barra de estado y de navegación blancas también en modo oscuro.** Los valores por omisión de Bubblewrap pintan la barra de navegación de negro y el modo oscuro de la barra de estado también; la app es de tema claro, así que `themeColorDark`, `navigationColor` y `navigationColorDark` van en `#ffffff` (los mismos de `src/app/manifest.ts`). Sin esto, la barra de abajo saldría negra bajo una web blanca.
 3. **Dos huellas en assetlinks.** La llave de Google (la que Android ve en lo que baja de Play) aparece en Play Console tras la primera subida; el 2026-10-06 el coordinador pasó la huella `D6:F9:F9:04:10:B8:E0:A1:8E:F2:B9:08:83:22:83:89:72:88:4E:6E:3D:78:12:5C:19:DD:73:71:07:3B:2C:8F` y quedó en `HUELLA_FIRMA_GOOGLE`, junto a la de subida (que se queda: cubre el APK instalado a mano con `adb`). Mientras la web con este PR no esté en producción, la app instalada desde Play abre con la barra de direcciones de Chrome (respaldo `customtabs`); con el PR desplegado debe abrirse a pantalla completa.
 4. **Avisos activados** (`enableNotifications`): la TWA delega los avisos push web de Chrome; añade el permiso `POST_NOTIFICATIONS` (visible en el APK con `aapt2 dump badging`, junto a un permiso propio de recepción interna). Hay que declararlo coherente en la ficha de Play (Data safety).
@@ -55,14 +55,14 @@ HTTP/1.1 200 OK … content-type: application/json … cache-control: public, ma
 
 Completo: `npm run lint` (0 errores; 1 aviso previo en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (152 archivos, 2 258 pruebas), `npm run inventario` («sin novedades») y `npm run medir` («26 pantallas × 4 anchos, sin novedades») en verde.
 
-No verificado: que la app se vea y se abra bien en Android, que el nombre `SMSNSTRS` luzca bien bajo el icono, y que Chrome la verifique a pantalla completa (necesita la web con este PR en producción; la huella de Google ya está).
+No verificado: que la app se vea y se abra bien en Android y que Chrome la verifique a pantalla completa (necesita la web con este PR en producción; la huella de Google ya está).
 
 ## Qué sigue (founder / Play Console)
 
 1. ~~Subir el `.aab` a una pista de prueba~~: hecho (prueba interna, enlace para unirse: https://play.google.com/apps/internaltest/4701524694821002071).
 2. **Unir este PR y desplegar**, para que `https://somosnosotros.org/.well-known/assetlinks.json` exista con las dos huellas; hasta entonces la app abre con barra de Chrome.
 3. ~~Huella de la llave de firma de Google~~: hecha, ya en la ruta junto a la de subida. Tras desplegar, comprobar con `curl` que salen las dos.
-4. **Confirmar `SMSNSTRS`** como nombre bajo el icono.
+4. ~~Confirmar `SMSNSTRS` como nombre bajo el icono~~: confirmado por el founder el 2026-10-06.
 5. **Prueba cerrada de 12 personas durante 14 días seguidos** (cuenta personal: regla de Google, doc 47 §10) antes de pedir producción. Reunirlas cuanto antes.
 6. En la ficha de Play: Data safety, clasificación de contenido, política de privacidad y borrado de cuenta por enlace web (OL-198), y revisar que `POST_NOTIFICATIONS` sea coherente con lo declarado.
 7. Probar en el celular Android de pruebas que le llega al founder (memoria «Android pendiente»): arranque a pantalla completa, aviso push, entrar con Google (abre pestaña de Chrome), canon del teclado y alta por pasos. Esa prueba sí produce las capturas que esta pieza no pudo.
