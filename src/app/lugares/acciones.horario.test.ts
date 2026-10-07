@@ -6,7 +6,7 @@ import { actualizarLugar, crearLugar, crearLugarDesdeEvento } from "./acciones";
  * que viaja en `horario` y se guarda con el lugar en la misma transacción (`crear_lugar_con_horario`); editar lo reemplaza
  * (`guardar_horario_lugar`). Sin el campo, todo como siempre. Y un negocio que se guarda desde el alta de evento queda con su tipo.
  */
-const m = vi.hoisted(() => ({ sesion: vi.fn(), rpc: vi.fn(), insert: vi.fn(), update: vi.fn(), rol: vi.fn(), existente: vi.fn(), redirect: vi.fn() }));
+const m = vi.hoisted(() => ({ sesion: vi.fn(), rpc: vi.fn(), insert: vi.fn(), update: vi.fn(), rol: vi.fn(), existente: vi.fn(), filtro: vi.fn(), redirect: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect, RedirectType: { replace: "replace" } }));
 vi.mock("@/lib/supabase/sesion", () => ({ sesionOEntrar: m.sesion }));
@@ -23,12 +23,14 @@ beforeEach(() => {
   m.redirect.mockImplementation((url: string) => {
     throw new Error(`REDIRECT:${url}`);
   });
+  const consulta = { eq: m.filtro, maybeSingle: m.existente };
+  m.filtro.mockReturnValue(consulta);
   m.sesion.mockResolvedValue({
     supabase: {
       rpc: m.rpc,
       from: vi.fn((tabla: string) => {
         if (tabla === "perfiles") return { select: () => ({ eq: () => ({ maybeSingle: m.rol }) }) };
-        if (tabla === "lugares") return { insert: m.insert, update: m.update, select: () => ({ eq: () => ({ maybeSingle: m.existente }) }) };
+        if (tabla === "lugares") return { insert: m.insert, update: m.update, select: () => consulta };
         throw new Error(`tabla inesperada: ${tabla}`);
       }),
     },
@@ -114,5 +116,44 @@ describe("crearLugarDesdeEvento y los negocios (OL-315)", () => {
   it("un café que se guarda desde el alta de evento queda como «Café, bar o restaurante» por lo que dice el mapa", async () => {
     await crearLugarDesdeEvento({ nombre: "Tacuba", direccion: "Calle 1", lat: 22.15, lng: -100.97, ciudad: "San Luis Potosí", volverA: "/nuevo/evento", privado: false, categorias: ["cafe"] });
     expect(m.insert.mock.calls[0][0]).toMatchObject({ nombre: "Tacuba", tipo: "cafe_bar" });
+  });
+});
+
+const OPERACION = "00000000-0000-4000-8000-0000000000f3";
+describe("reintentos del alta de lugar (OL-330)", () => {
+  it("usa una operación estable también sin horario", async () => {
+    m.existente.mockResolvedValue({ data: null, error: null });
+    await crearLugar(null, formulario({ quedarse: "1", operacion: OPERACION }));
+    expect(m.filtro).toHaveBeenCalledWith("operacion_guardado", OPERACION);
+    expect(m.filtro).toHaveBeenCalledWith("creado_por", USUARIO);
+    expect(llamadas("crear_lugar_con_horario")[0]).toMatchObject({ p_datos: { operacion_guardado: OPERACION }, p_franjas: [] });
+    expect(m.insert).not.toHaveBeenCalled();
+  });
+  it("recupera la respuesta perdida sin preguntar por el lugar que acaba de guardar", async () => {
+    m.existente.mockResolvedValue({ data: { id: LUGAR_ID, slug: "cafe-del-jardin" }, error: null });
+    const r = await crearLugar(null, formulario({ quedarse: "1", operacion: OPERACION, horario: JSON.stringify(HORARIO) }));
+    expect(r).toMatchObject({ ok: true, id: LUGAR_ID });
+    expect(m.rpc).not.toHaveBeenCalled();
+    expect(m.insert).not.toHaveBeenCalled();
+  });
+  it("la comprobación de parecidos sigue antes de una operación nueva", async () => {
+    m.existente.mockResolvedValue({ data: null, error: null });
+    m.rpc.mockResolvedValue({ data: [{ id: LUGAR_ID, nombre: "Café existente" }], error: null });
+    const r = await crearLugar(null, formulario({ quedarse: "1", operacion: OPERACION }));
+    expect(r.ok).toBe(false);
+    expect(llamadas("crear_lugar_con_horario")).toHaveLength(0);
+  });
+  it("un fallo al recuperar la operación no intenta escribir otra vez", async () => {
+    m.existente.mockResolvedValue({ data: null, error: { message: "base no disponible" } });
+    const r = await crearLugar(null, formulario({ quedarse: "1", operacion: OPERACION }));
+    expect(r).toMatchObject({ ok: false, general: "No se pudo guardar el lugar. Intenta de nuevo." });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+  it("rechaza una clave inválida antes de consultar o escribir", async () => {
+    const r = await crearLugar(null, formulario({ operacion: "no-es-uuid" }));
+    expect(r.ok).toBe(false);
+    expect(m.filtro).not.toHaveBeenCalled();
+    expect(m.rpc).not.toHaveBeenCalled();
+    expect(m.insert).not.toHaveBeenCalled();
   });
 });

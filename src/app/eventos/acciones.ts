@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { rutaSegura } from "@/lib/rutas";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { enlaceDeAlta } from "@/lib/armazon";
@@ -308,12 +309,19 @@ async function publicarPrograma(supabase: Cliente, formData: FormData, esAdmin: 
  * (OL-328: `no_publicable`), la ficha lo dice en vez de volver como si nada.
  */
 export async function publicarBorrador(id: string, volver: string) {
-  const { supabase } = await sesionOEntrar(volver);
+  const regreso = rutaSegura(volver, esUuid(id) ? `/eventos/${id}` : "/eventos");
+  const { supabase } = await sesionOEntrar(regreso);
+  const conError = (codigo: string) => {
+    const url = new URL(regreso, "https://somosnosotros.org");
+    url.searchParams.set("error", codigo);
+    return `${url.pathname}${url.search}${url.hash}`;
+  };
+  if (!esUuid(id)) redirect(conError("publicar"));
   const { error } = await supabase.rpc("publicar_borrador_de_programa", { p_evento: id });
-  revalidatePath(volver);
+  revalidatePath(regreso.split(/[?#]/)[0]);
   revalidatePath(`/eventos/${id}`);
   revalidatePath("/");
-  redirect(error?.message === "no_publicable" ? `${volver}?error=no_publicable` : volver);
+  redirect(error ? conError(error.message === "no_publicable" ? "no_publicable" : "publicar") : regreso);
 }
 
 export async function cambiarVisibleEvento(id: string, lugarId: string | null, visible: boolean) {

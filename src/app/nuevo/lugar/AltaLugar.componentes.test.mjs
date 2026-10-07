@@ -494,3 +494,33 @@ test("la guardia: sin nada escrito la ✕ sale sin preguntar; con el nombre escr
   await q.getByRole("heading", { name: "¿Salir sin publicar?" }).waitFor();
   assert.equal(await q.evaluate(() => window.qa.salio), 0);
 });
+
+test('reintentar conserva la operación; cambiar datos y publicar otro la renuevan', TOPE, async (t) => {
+  const p = await pagina(t, { qa: { resultado: 'general' } });
+  await hastaRevisa(p);
+  await boton(p, 'Publicar lugar').click();
+  await p.getByRole('alert').filter({ hasText: GENERAL }).waitFor();
+  const primera = (await enviado(p)).operacion;
+  assert.match(primera, /^[0-9a-f-]{36}$/);
+  await boton(p, 'Publicar lugar').click();
+  await p.waitForFunction(() => window.qa.envios.length === 2);
+  assert.equal((await enviado(p)).operacion, primera);
+  await boton(p, 'Agregar foto, descripción o redes').click();
+  await enPaso(p, '¿Quieres agregar algo?');
+  await p.getByRole('button', { name: 'Descripción corta' }).click();
+  await p.locator('textarea').fill('Nueva descripción del lugar');
+  await p.getByRole('dialog', { name: 'Descripción corta' }).getByRole('button', { name: 'Listo' }).click();
+  await boton(p, 'Listo').click();
+  await p.getByRole('heading', { name: 'Casa del Poeta Ramón López Velarde' }).waitFor();
+  await p.evaluate(() => window.qa.resultado = 'publica');
+  await boton(p, 'Publicar lugar').click();
+  await p.getByRole('heading', { name: 'Lugar publicado' }).waitFor();
+  assert.notEqual((await enviado(p)).operacion, primera);
+  await foto(p, 'ol330-lugar-publicado-390');
+  const anterior = (await enviado(p)).operacion;
+  await boton(p, 'Publicar otro').click();
+  await hastaRevisa(p);
+  await boton(p, 'Publicar lugar').click();
+  await p.waitForFunction(() => window.qa.envios.length === 4);
+  assert.notEqual((await enviado(p)).operacion, anterior);
+});

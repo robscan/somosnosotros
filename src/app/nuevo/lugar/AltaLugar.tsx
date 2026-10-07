@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useReducer, useState } from "react";
+import { useActionState, useCallback, useEffect, useReducer, useRef, useState } from "react";
 import PorPasos from "@/components/PorPasos";
 import HojaCiudad from "@/app/artistas/HojaCiudad";
 import { HojaHorario } from "@/app/lugares/Horario";
 import type { ResultadoLugar } from "@/app/lugares/acciones";
 import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
+import { operacionEvento as operacionDeAlta } from "@/app/eventos/operacionEvento";
 import { enlaceAltaDeTipo, enlaceAltaEvento } from "@/lib/armazon";
 import { ciudadParaPunto, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
@@ -72,6 +73,7 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
   const [hoja, setHoja] = useState<"horario" | "ciudad" | null>(null);
   const [confirmado, setConfirmado] = useState(false);
   const [creado, setCreado] = useState<Creado | null>(null);
+  const operacion = useRef<ReturnType<typeof operacionDeAlta> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(async (previo, datos) => {
     const hecho = await accion(previo, datos);
     if (hecho.ok) {
@@ -94,6 +96,8 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
 
   function publicar(fd: FormData) {
     if (falta) return;
+    operacion.current = operacionDeAlta(fd, operacion.current);
+    fd.set("operacion", operacion.current.id);
     apartarGuardia();
     enviar(fd);
   }
