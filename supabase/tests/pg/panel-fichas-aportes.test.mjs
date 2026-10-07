@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 // OL-326 · panel_fichas() y panel_aportes(): las fichas con una cuenta ligada por cualquier vía y los dos aportes nuevos.
 // Se mide por diferencia contra lo que ya hubiera en la base (otras pruebas comparten la misma): cada caso suma lo suyo.
@@ -137,6 +138,14 @@ export async function run({ as, check, expectError, query }) {
     check(da("primeras_antes") === 1, "primera vez: u3, la semana anterior", a);
     check(da("han_publicado") === 4, "primera vez: u1, u2, u3 y quien dio de alta una ficha (u6) han publicado alguna vez (la administración y la ascendida, no)", a);
     check(!JSON.stringify(a).includes("@") && ![...Object.values(u), admin].some((x) => JSON.stringify(a).includes(x)), "aportes: ningún id ni correo sale en la respuesta");
+
+    // La consulta de lectura que se le da al gestor (scripts/ops/panel-fichas-lectura.sql) da los mismos números que las dos funciones.
+    const lectura = Object.fromEntries((await query(readFileSync(new URL("../../../scripts/ops/panel-fichas-lectura.sql", import.meta.url), "utf8"))).rows.map((r) => [r.dato, Number(r.valor)]));
+    check(lectura["artistas con cuenta ligada"] === f.artistas && lectura["lugares con cuenta ligada"] === f.lugares, "consulta de lectura: mismas fichas vinculadas que panel_fichas()", { lectura, f });
+    check(lectura["vía solicitud"] === f.vias.solicitud && lectura["vía correo ligado"] === f.vias.correo && lectura["vía alta (Soy yo)"] === f.vias.alta && lectura["vía otra"] === f.vias.otra, "consulta de lectura: mismas vías", lectura);
+    check(lectura["artistas visibles"] === f.artistas_visibles && lectura["artistas visibles con foto"] === f.artistas_con_foto, "consulta de lectura: mismos artistas con foto", lectura);
+    check(lectura["Voy y Me interesa, últimos 7 días"] === a.gestos_ahora && lectura["Voy y Me interesa, 7 días anteriores"] === a.gestos_antes, "consulta de lectura: mismos Voy / Me interesa", lectura);
+    check(lectura["primera publicación, últimos 7 días"] === a.primeras_ahora && lectura["primera publicación, 7 días anteriores"] === a.primeras_antes && lectura["cuentas que han publicado alguna vez"] === a.han_publicado, "consulta de lectura: mismas primeras publicaciones", lectura);
   } finally {
     await query("delete from public.reportes where objeto_id = any($1::uuid[])", [[...artistas, ...lugares]]);
     await query("delete from public.contactos_importados where artista_id = any($1::uuid[])", [artistas]);
