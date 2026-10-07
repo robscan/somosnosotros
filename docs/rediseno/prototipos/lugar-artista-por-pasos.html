@@ -222,6 +222,17 @@ const textoHorario = (h) => h ? `${rangoDias(h.dias)} · ${et(h.abre)}–${et(h.
 function rangoDias(ds) { const idx = ds.map((d) => DIAS.indexOf(d)).sort((a, b) => a - b); if (!idx.length) return ''; const seguidos = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1); return seguidos && idx.length > 2 ? `${DIAS[idx[0]]}–${DIAS[idx[idx.length - 1]]}` : idx.map((i) => DIAS[i]).join(', '); }
 const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Plaza, jardín o parque','Otro'];
 const DISCIPLINAS = ['Música','Teatro','Danza','Artes visuales','Letras','Cine','Artes circenses','Otro'];
+// Subcategorías ya usadas en el directorio (producción, 2026-10-06: 501 de 647 artistas tienen una), las más usadas primero.
+const SUBCATEGORIAS = {
+  'Música': ['Rock, metal y alternativo','Pop, urbano y electrónica','Regional, tropical y versátil','Tradicional, folclore y canto nuevo','Música académica y clásica','Jazz, blues y soul'],
+  'Artes visuales': ['Pintura','Fotografía','Multidisciplina','Gráfica','Escultura','Ilustración'],
+  'Teatro': ['Compañía de teatro','Títeres','Clown','Teatro de calle'],
+  'Danza': ['Compañía de danza','Folclórica','Contemporánea','Urbana'],
+  'Letras': ['Poesía','Narrativa','Cuentacuentos'],
+  'Cine': ['Dirección','Documental','Animación'],
+  'Artes circenses': ['Malabares','Acrobacia','Clown'],
+  'Otro': [],
+};
 let caso = 'lugar-sug', e;
 const CASOS = {
   'lugar-sug': { que: 'lugar', q: 'Casa del Poeta', sug: { nombre: 'Casa del Poeta Ramón López Velarde', direccion: 'Vallejo 150, Centro, San Luis Potosí', tipo: 'Museo' } },
@@ -234,12 +245,12 @@ const CASOS = {
 };
 function nuevo() {
   const c = CASOS[caso];
-  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, soyYo: false, escrito: false, horario: null, hoja: null, dias: ['Ma','Mi','Ju','Vi','Sá','Do'], abre: '10:00', cierra: '18:00' };
+  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, sub: null, subPreguntada: false, soyYo: false, escrito: false, horario: null, hoja: null, dias: ['Ma','Mi','Ju','Vi','Sá','Do'], abre: '10:00', cierra: '18:00' };
 }
 nuevo();
 const c = () => CASOS[caso];
 const pasosLugar = () => ['nombre', 'mapa', ...(e.tipo ? [] : ['tipo']), 'revisa', 'publicado'];
-const pasosArtista = () => ['nombre', ...(e.hace ? [] : ['hace']), 'revisa', 'publicado'];
+const pasosArtista = () => ['nombre', ...(e.hace && e.subPreguntada ? [] : ['hace']), 'revisa', 'publicado'];
 const orden = () => (e.que === 'lugar' ? pasosLugar() : pasosArtista());
 const avance = () => { const o = orden(); const i = o.indexOf(e.paso); return i < 0 ? 0 : i / (o.length - 1); };
 function siguiente() { const o = orden(); const i = o.indexOf(e.paso); if (i >= 0 && i < o.length - 1) e.paso = o[i + 1]; pintar(); }
@@ -289,12 +300,26 @@ const PANTALLAS = {
     pie: '',
     notas: ['Solo si el nombre no lo dijo (caso 2). Nueve opciones, una se toca y avanza. Hoy, sin pista, el lugar se publica como «Otro» sin preguntar.'],
   }),
-  hace: () => ({
-    titulo: 'Registrar artista', avance: avance(), atras: true,
-    cuerpo: `<h1 class="pregunta">¿Qué hace?</h1><div class="opciones compactas">${DISCIPLINAS.map((d) => `<button class="opcion" data-a="hace" data-v="${d}">${ic('musica')}<span>${d}</span>${ic('chevron')}</button>`).join('')}</div>`,
-    pie: '',
-    notas: ['Solo si el nombre no lo dijo (caso 6). Ocho opciones, una se toca y avanza. La subcategoría («Fotografía», «Clown») deja de ser un paso: queda en «Revisa» como opcional. Hoy, sin pista, el artista sale como «Música».'],
-  }),
+  hace: () => {
+    if (!e.hace) return {
+      titulo: 'Registrar artista', avance: avance(), atras: true,
+      cuerpo: `<h1 class="pregunta">¿Qué hace?</h1><div class="opciones compactas">${DISCIPLINAS.map((d) => `<button class="opcion" data-a="hace" data-v="${d}">${ic('musica')}<span>${d}</span>${ic('chevron')}</button>`).join('')}</div>`,
+      pie: '',
+      notas: ['Solo si el nombre no lo dijo (caso 6). Ocho opciones, una se toca y sigue la subcategoría de esa disciplina en esta misma pantalla. Hoy, sin pista, el artista sale como «Música».'],
+    };
+    const subs = SUBCATEGORIAS[e.hace] ?? [];
+    return {
+      titulo: 'Registrar artista', avance: avance(), atras: true,
+      cuerpo: `<h1 class="pregunta">¿Qué tipo de ${e.hace.toLowerCase()}?</h1>
+        <p class="aviso">${e.hace} · así se verá en el directorio y en sus filtros.</p>
+        <div class="chips">${subs.map((s) => `<button class="chip" data-a="sub" data-v="${s}">${s}</button>`).join('')}<button class="chip" data-a="sub-otra">Otra…</button></div>`,
+      pie: `<button class="quieto" data-a="sub-sin">Seguir sin especificar</button>`,
+      notas: [
+        'La subcategoría se pregunta justo después de la disciplina, en la misma pantalla, con el nombre propio de la disciplina («¿Qué tipo de música?», decisión 11 del doc 15): es el momento con contexto y cuesta un toque. Las opciones son las subcategorías ya usadas en el directorio, las más usadas primero (producción: 501 de 647 artistas tienen una; música: 6 familias que reúnen a 298), más «Otra…» (texto libre que evita duplicados parecidos, OL-101).',
+        'Si la disciplina vino del nombre (caso 5), este paso arranca directo en la subcategoría. Es opcional: «Seguir sin especificar» va al pie, quieto; pero no se esconde en «Revisa», porque la subcategoría es lo que la tarjeta del artista enseña («Son huasteco · Grupo») y lo que afina los filtros.',
+      ],
+    };
+  },
   revisa: () => {
     const k = c(); const esLugar = e.que === 'lugar';
     const renglones = esLugar
@@ -302,7 +327,7 @@ const PANTALLAS = {
          <button class="renglon">${ic('etiqueta')}<b>${e.tipo ?? 'Otro'}</b><span class="accion">Cambiar</span></button>
          <button class="renglon ${e.horario ? '' : 'opcional'}" data-a="horario">${ic('reloj')}<b>${e.horario ? textoHorario(e.horario) : 'Horario'}</b><span class="accion">${e.horario ? 'Cambiar' : 'Agregar'}</span></button>
          <button class="renglon opcional">${ic('mas')}<b>Foto, descripción o redes</b><span class="accion">Agregar</span></button>`
-      : `<button class="renglon">${ic('musica')}<b>${e.hace ?? 'Teatro'}</b><span class="accion">Cambiar</span></button>
+      : `<button class="renglon">${ic('musica')}<b>${e.hace ?? 'Teatro'}${e.sub ? ` · ${e.sub}` : ''}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic(k.tipo === 'Solista' ? 'persona' : 'personas')}<b>${k.tipo}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic('ciudad')}<b>San Luis Potosí</b><span class="accion">Cambiar</span></button>
          <button class="casilla" role="checkbox" aria-checked="${e.soyYo}" data-a="soyyo"><span class="cuadro">${e.soyYo ? ic('ok') : ''}</span><span class="texto"><b>${k.tipo === 'Solista' ? 'Soy yo' : 'Es mi grupo'}</b><small>Podrás editar la ficha y publicar sus fechas</small></span></button>
@@ -319,7 +344,7 @@ const PANTALLAS = {
     return {
       titulo: '', avance: 1, final: true,
       cuerpo: `<div class="final"><span class="sello-ok">${ic('ok')}</span><h1>${esLugar ? 'Lugar publicado' : 'Artista publicado'}</h1><p class="meta">Ya está en el directorio. Así lo ve la gente:</p></div>
-        <div class="tarjeta ${esLugar ? '' : 'redonda'}"><div class="mini">${ic(esLugar ? 'casa' : 'persona')}</div><div><b>${nombre}</b><small>${esLugar ? `${e.tipo ?? 'Otro'} · Centro` : `${e.hace ?? 'Teatro'} · ${k.tipo}`}</small></div></div>
+        <div class="tarjeta ${esLugar ? '' : 'redonda'}"><div class="mini">${ic(esLugar ? 'casa' : 'persona')}</div><div><b>${nombre}</b><small>${esLugar ? `${e.tipo ?? 'Otro'} · Centro` : `${e.sub ?? e.hace ?? 'Teatro'} · ${k.tipo}`}</small></div></div>
         ${esLugar ? `<section class="sugerencia"><h2>¿Hay algo próximo en ${nombre.split(' ')[0]}…?</h2><small>Publica su primer evento con el lugar ya puesto.</small><button class="btn" data-a="nada">Publicar un evento aquí</button></section>` : `<section class="sugerencia"><h2>Agrega una foto</h2><small>Las fichas sin foto no salen en destacados.</small><button class="btn" data-a="nada">${ic('camara')}Agregar foto</button></section>`}`,
       pie: `<button class="btn sec" data-a="nada">Compartir</button><button class="quieto" data-a="reiniciar">Publicar otro</button>`,
       notas: ['El final del canon: sello, el elemento como quedó y UNA sugerencia en punteado. Lugar: «Publicar un evento aquí» (abre el alta de evento con el lugar puesto). Artista: «Agrega una foto» (las fichas sin foto no salen en destacados: es la que más le sirve).'],
@@ -358,7 +383,10 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (a === 'aqui') { pintar(); return; }
   // Elegir contesta la pregunta y la quita del orden: se va directo a «Revisa».
   if (a === 'tipo') { e.tipo = b.dataset.v; e.paso = 'revisa'; pintar(); return; }
-  if (a === 'hace') { e.hace = b.dataset.v; e.paso = 'revisa'; pintar(); return; }
+  if (a === 'hace') { e.hace = b.dataset.v; e.subPreguntada = false; pintar(); return; }
+  if (a === 'sub') { e.sub = b.dataset.v; e.subPreguntada = true; e.paso = 'revisa'; pintar(); return; }
+  if (a === 'sub-otra') { const s = prompt('¿Qué tipo? (texto libre; evita duplicados parecidos)'); if (s) { e.sub = s; } e.subPreguntada = true; e.paso = 'revisa'; pintar(); return; }
+  if (a === 'sub-sin') { e.subPreguntada = true; e.paso = 'revisa'; pintar(); return; }
   if (a === 'soyyo') { e.soyYo = !e.soyYo; pintar(); return; }
   if (a === 'horario') { e.hoja = 'horario'; pintar(); return; }
   if (a === 'cerrar-hoja') { e.hoja = null; pintar(); return; }
