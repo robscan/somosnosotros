@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { cargarMisArtistas, cargarQuien } from "@/app/artistas/consultas";
 import { crearEvento, cupoDeCartel } from "@/app/eventos/acciones";
+import { descartarSugerencia, ligarExposicionSugerida, publicarExposicionSugerida, relacionarFestivalSugerido, sugerenciaAlPublicar } from "@/app/eventos/sugerencias";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import { lecturaDeCartelActiva } from "@/lib/cartel";
 import { cargarCiudades } from "@/lib/ciudades";
@@ -75,6 +76,7 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
       cupo={cupo}
       arranque={arranque}
       contexto={contexto}
+      sugerencias={{ buscar: sugerenciaAlPublicar, publicarExposicion: publicarExposicionSugerida, ligarExposicion: ligarExposicionSugerida, relacionarFestival: relacionarFestivalSugerido, descartar: descartarSugerencia }}
     />
   );
 }

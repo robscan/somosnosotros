@@ -47,6 +47,11 @@ const Lectura = z.object({
     )
     .nullable()
     .describe("Solo para un festival: cada evento del programa que trae el cartel; null si no trae un programa"),
+  // OL-323: el festival del que este evento forma parte, para reconocer a los otros actos que se publiquen por separado (H4).
+  festival: z
+    .string()
+    .nullable()
+    .describe("Si el cartel dice que este evento forma parte de un festival, su nombre con la edición tal como aparece (ej. 'Festival de Cine UASLP 2026', '9º Festival Internacional de Danza'); null si no lo dice o si solo lo menciona como premio, antecedente o patrocinio"),
 });
 
 /**

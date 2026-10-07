@@ -113,6 +113,9 @@ const PALABRAS_DE_CLASE: readonly { patron: RegExp; clase: Exclude<Clase, "puntu
  */
 export function claseSugerida(titulo: string): Exclude<Clase, "puntual"> | null {
   const texto = titulo.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  // «Inauguración de la exposición …», «Inauguración del Festival …»: es la apertura, un evento de un día a una hora; la exposición se sugiere
+  // al publicar (OL-323, H1/H2; prototipo aceptado `eventos-superficies.html`, caso h1) y el festival se relaciona aparte.
+  if (/\b(inauguracion|inauguraciones|inaugura|inauguran|inauguramos)\b/.test(texto)) return null;
   let mejor: { en: number; clase: Exclude<Clase, "puntual"> } | null = null;
   for (const { patron, clase } of PALABRAS_DE_CLASE) {
     const m = patron.exec(texto);
@@ -496,6 +499,8 @@ export type LecturaCartel = {
   sesiones?: string[] | null;
   /** Un festival: cada evento de su programa, con su fecha, su hora y su sede. */
   actos?: { titulo: string | null; fecha: string | null; hora: string | null; lugar: string | null }[] | null;
+  /** El festival del que forma parte, con su edición, si el cartel lo dice (OL-323: lo usa la sugerencia del segundo acto). */
+  festival?: string | null;
 };
 
 /** Un acto del programa leído del cartel, ya limpio: título, día (YYYY-MM-DD), hora ("HH:MM" o "" si no la dice) y sede ("" si no la dice). */
@@ -533,7 +538,7 @@ export function enlaceDesdeCartel(v: string | null): string {
 }
 
 /** Convierte la lectura del cartel en valores del formulario. Lo que falta se deja vacío para que la persona lo complete. */
-export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string; artistas: string[]; forma?: ReturnType<typeof formaDelCartel> } {
+export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string; artistas: string[]; forma?: ReturnType<typeof formaDelCartel>; festival?: string } {
   const fechaOk = l.fecha && /^\d{4}-\d{2}-\d{2}$/.test(l.fecha) ? l.fecha : "";
   const horaOk = l.hora && /^\d{2}:\d{2}$/.test(l.hora) ? l.hora : "";
   const horaFinOk = l.hora_fin && /^\d{2}:\d{2}$/.test(l.hora_fin) ? l.hora_fin : "";
@@ -549,5 +554,6 @@ export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: s
     direccion: (l.direccion ?? "").trim(),
     artistas: (l.artistas ?? []).map((a) => a.trim().replace(/\s+/g, " ").slice(0, 80)).filter(Boolean).slice(0, 6),
     forma: formaDelCartel(l),
+    festival: (l.festival ?? "").trim().slice(0, 160),
   };
 }
