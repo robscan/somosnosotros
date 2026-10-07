@@ -75,11 +75,20 @@ const E = {
   // OL-319: dos eventos de Ana, ocultos (no salen en ninguna lista ni cuenta), para medir y probar editar un evento por pasos.
   taller: "bbbb0001-0000-4000-8000-000000000014",
   linternas: "bbbb0001-0000-4000-8000-000000000015",
+  // OL-321: una exposición con su inauguración y un festival con su programa (tres actos y un borrador), de Ana y ocultos como los de OL-319.
+  ecos: "bbbb0001-0000-4000-8000-000000000016",
+  ecosInaug: "bbbb0001-0000-4000-8000-000000000017",
+  cine: "bbbb0001-0000-4000-8000-000000000018",
+  cine1: "bbbb0001-0000-4000-8000-000000000019",
+  cine2: "bbbb0001-0000-4000-8000-000000000020",
+  cine3: "bbbb0001-0000-4000-8000-000000000021",
+  cine4: "bbbb0001-0000-4000-8000-000000000022",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
+    clase, evento_padre_id, inaugura_id, borrador,
     id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
     sitio_texto: sitio?.texto ?? null, sitio_direccion: sitio?.direccion ?? null, sitio_lat: sitio?.lat ?? null, sitio_lng: sitio?.lng ?? null, sitio_reservado: false, sitio_revelar_desde: null,
     lugar_id, zona: ZONA, ciudad: CIUDAD, creado_en: hace(creadoHace),
@@ -104,7 +113,18 @@ const eventos = [
   // OL-319 (editar por pasos): de Ana y ocultos. Uno de un día con cartel; otro de tres días (del viernes al domingo) con horario por día.
   evento({ id: E.taller, slug: "taller-de-grabado-en-el-barrio", titulo: "Taller de grabado en el barrio", dias: 2, hora: "17:00", lugar_id: L.miguelito, precio: "$80", creadoHace: 3, descripcion: "Grabado en linóleo para principiantes. Trae ropa que se pueda manchar.", imagen: imagenes.eventos["oca"] ?? null, autor: ANA, visible: false }),
   evento({ id: E.linternas, slug: "festival-de-las-linternas", titulo: "Festival de las Linternas", dias: 2, hora: "20:00", dur: 49, sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 3, imagen: null, autor: ANA, visible: false }),
+  // OL-321. La exposición: del día −3 (00:00) al día +20 (23:59), en el MUNI (que tiene horario: Ma–Do de 10:00 a 18:00; un lugar que `medir` no mide, así su ficha no cambia).
+  { ...evento({ id: E.ecos, slug: "ecos-de-papel", titulo: "Ecos de papel", dias: -3, hora: "00:00", lugar_id: L.muni, creadoHace: 4, descripcion: "Grabado y papel hecho a mano de Mariana Ruvalcaba.", imagen: imagenes.eventos["desierto-observacion-y-espacio"] ?? null, autor: ANA, visible: false, clase: "exposicion", inaugura_id: E.ecosInaug }), fin: iso(fecha(20, "23:59")), termina: iso(fecha(20, "23:59")) },
+  evento({ id: E.ecosInaug, slug: "inauguracion-ecos-de-papel", titulo: "Inauguración: Ecos de papel", dias: -4, hora: "19:00", lugar_id: L.muni, creadoHace: 4, autor: ANA, visible: false }),
+  // El festival: el marco y su programa (del día 9 al 11), con un acto como borrador.
+  { ...evento({ id: E.cine, slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, imagen: imagenes.eventos["leonora-in-the-morning-light"] ?? null, autor: ANA, visible: false, clase: "festival" }), fin: iso(fecha(12, "00:00")), termina: iso(fecha(12, "00:00")) },
+  evento({ id: E.cine1, slug: "inauguracion-la-luz-que-queda", titulo: "Inauguración: «La luz que queda»", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
+  evento({ id: E.cine2, slug: "charla-con-la-directora", titulo: "Charla con la directora", dias: 10, hora: "18:00", dur: 1, lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
+  evento({ id: E.cine3, slug: "funcion-cortometrajes-potosinos", titulo: "Función: cortometrajes potosinos", dias: 11, hora: "17:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
+  evento({ id: E.cine4, slug: "funcion-de-clausura", titulo: "Función de clausura", dias: 12, hora: "19:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine, borrador: true }),
 ];
+/** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
+const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];
 /** El horario por día del Festival de las Linternas: viernes y domingo de 20:00 a 21:00, el sábado de 18:00 a 21:00. */
 const eventos_sesiones = [0, 1, 2].map((d) => ({ id: `bbbb0002-0000-4000-8000-00000000000${d + 1}`, evento_id: E.linternas, fecha: fecha(2 + d, "20:00").slice(0, 10), inicio: iso(fecha(2 + d, d === 1 ? "18:00" : "20:00")), fin: iso(fecha(2 + d, "21:00")) }));
 
@@ -158,7 +178,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones, lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones, lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -169,6 +189,7 @@ export const FK = {
   eventos_artistas: { eventos: "evento_id", artistas: "artista_id" },
   eventos_sesiones: { eventos: "evento_id" },
   lugares_horarios: { lugares: "lugar_id" },
+  eventos_horarios: { eventos: "evento_id" },
   asistencias: { eventos: "evento_id", perfiles: "usuario_id" },
   seguimientos: { lugares: "lugar_id", artistas: "artista_id", perfiles: "usuario_id" },
   artistas_cuentas: { artistas: "artista_id", perfiles: "perfil_id" },
@@ -224,6 +245,10 @@ export const rpcs = {
   mi_cupo_de_cartel: () => [],
   // OL-319: editar un evento por pasos contesta lo guardado (sin guardarlo: las escrituras no cambian el fixture).
   editar_evento_con_sesiones: ({ p_evento }) => ({ id: p_evento, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null }),
+  // OL-321: guardar con la clase y publicar un programa contestan lo creado (sin guardarlo).
+  guardar_evento_con_clase: ({ p_evento, p_operacion }) => ({ id: p_evento ?? p_operacion, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null, padre: null, inauguracion: null }),
+  publicar_programa: ({ p_actos, p_operacion }) => ({ id: p_operacion, actos: (p_actos ?? []).filter((a) => a.publicar).map((a) => a.operacion), borradores: (p_actos ?? []).filter((a) => !a.publicar).map((a) => a.operacion) }),
+  publicar_borrador_de_programa: ({ p_evento }) => ({ id: p_evento, padre: null }),
 };
 
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------

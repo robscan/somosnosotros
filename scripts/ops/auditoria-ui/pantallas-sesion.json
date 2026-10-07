@@ -18,5 +18,10 @@
   { "id": "s18-alta-lugar-revisa", "plantilla": "tarea", "url": "/nuevo/lugar", "paso": "lugar-revisa" },
   { "id": "s19-alta-lugar-horario", "plantilla": "tarea", "url": "/nuevo/lugar", "paso": "lugar-horario" },
   { "id": "s20-alta-artista-revisa", "plantilla": "tarea", "url": "/nuevo/artista", "paso": "artista-revisa" },
-  { "id": "s21-editar-evento", "plantilla": "tarea", "url": "/eventos/taller-de-grabado-en-el-barrio/editar" }
+  { "id": "s21-editar-evento", "plantilla": "tarea", "url": "/eventos/taller-de-grabado-en-el-barrio/editar" },
+  { "id": "s22-alta-exposicion-visita", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-visita" },
+  { "id": "s23-alta-taller-sesiones", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-sesiones" },
+  { "id": "s24-ficha-exposicion", "plantilla": "ficha", "url": "/eventos/ecos-de-papel" },
+  { "id": "s25-ficha-festival", "plantilla": "ficha", "url": "/eventos/festival-de-cine-de-invierno" },
+  { "id": "s26-editar-exposicion", "plantilla": "tarea", "url": "/eventos/ecos-de-papel/editar" }
 ]

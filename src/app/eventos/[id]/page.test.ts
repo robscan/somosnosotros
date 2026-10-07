@@ -351,3 +351,33 @@ describe("las acciones del evento siguen en su ficha al editar por pasos (OL-319
     expect(enlaces(elementos).some((h) => h.endsWith("/editar") || h.includes("desde="))).toBe(false);
   });
 });
+
+describe("la ficha según cómo ocurre (OL-321)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  const abrir = async (evento: Record<string, unknown>, tablas: Record<string, unknown> = {}) => {
+    const cliente = clienteFalso({ eventos: { data: evento }, asistencias: { data: [] }, ...tablas }, { van_por_evento: { data: [] } });
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+  };
+
+  it("una exposición: «Hasta» y el horario en vez de «Van», su horario en un bloque y solo «Me interesa»", async () => {
+    const expo = { ...EVENTO, clase: "exposicion", inicio: "2099-01-01T06:00:00Z", fin: "2099-02-01T05:59:00Z" };
+    const elementos = await abrir(expo, { eventos_horarios: { data: [{ dias: [1, 2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00" }] } });
+    const kpis = elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta);
+    expect(kpis).toEqual(["Hasta", "Abre", "Costo"]);
+    expect(elementos.filter((e) => e.type === Suspense).length).toBe(2);
+    expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
+    expect(elementos.some((e) => e.props?.["aria-label"] === "Horario")).toBe(true);
+  });
+
+  it("un festival: su programa y «Me interesa» en el marco; un evento suelto sigue con «Voy»", async () => {
+    const festival = { ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-01-04T06:00:00Z" };
+    const elementos = await abrir(festival);
+    expect(elementos.some((e) => e.props?.["aria-label"] === "Programa")).toBe(true);
+    expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
+    expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["0 actividades", "Costo", "Sedes"]);
+    const suelto = await abrir(EVENTO);
+    expect(suelto.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
+  });
+});

@@ -291,7 +291,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
   const ahora = new Date();
   const hoy = diaLocal(ahora, e.zona);
-  const actosVisibles = ligados.actos.filter((a) => a.visible !== false);
+  // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
+  const actosVisibles = ligados.actos.filter((a) => !a.borrador);
   const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
   const rangoFestival = e.fin ? rangoCorto(diaLocal(new Date(e.inicio), e.zona), diaLocal(new Date(e.fin), e.zona), hoy) : null;
   const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, textoProgramaRegistrado(actosVisibles.length)].filter(Boolean).join(" · ") : null;
