@@ -346,7 +346,7 @@ export function indicadoresAportes(a: Aportes): Indicador[] {
     },
     {
       clave: "primeras",
-      nombre: "Publican por primera vez",
+      nombre: "Primera publicación",
       valor: a.primeras_ahora,
       base: `de ${a.han_publicado} ${a.han_publicado === 1 ? "cuenta que ha publicado" : "cuentas que han publicado"} alguna vez`,
       cambio: textoCambio(a.primeras_ahora, a.primeras_antes),
@@ -392,7 +392,7 @@ export function indicadoresFichas(f: FichasVinculadas): Indicador[] {
       clave: "foto",
       nombre: "Artistas con foto",
       valor: f.artistas_con_foto,
-      base: `de ${f.artistas_visibles} ${f.artistas_visibles === 1 ? "artista visible" : "artistas visibles"} · ${conFoto} %`,
+      base: `de ${f.artistas_visibles} ${f.artistas_visibles === 1 ? "artista visible" : "artistas visibles"} · ${conFoto}\u00a0%`,
       cambio: null,
       serie: null,
       que: "Fichas de artista visibles que ya tienen foto. Sin foto, una ficha no entra en la tira de artistas destacados.",

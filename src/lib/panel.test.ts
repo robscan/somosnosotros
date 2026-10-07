@@ -363,14 +363,14 @@ describe("fichas vinculadas (OL-326): cuentan por cualquier vía, no solo las so
   it("artistas con foto: el número, el porcentaje y los que faltan, sin flecha de cambio", () => {
     const foto = indicadoresFichas(fichas())[1];
     expect(foto.nombre).toBe("Artistas con foto");
-    expect([foto.valor, foto.base, foto.cambio, foto.serie]).toEqual([56, "de 560 artistas visibles · 10 %", null, null]);
+    expect([foto.valor, foto.base, foto.cambio, foto.serie]).toEqual([56, "de 560 artistas visibles · 10\u00a0%", null, null]);
     expect(foto.partes).toEqual(["504 sin foto"]);
     expect(foto.enlace.href).toBe("/admin/artistas?filtro=sin_foto");
-    expect(indicadoresFichas(fichas({ artistas_visibles: 1, artistas_con_foto: 1 }))[1].base).toBe("de 1 artista visible · 100 %");
+    expect(indicadoresFichas(fichas({ artistas_visibles: 1, artistas_con_foto: 1 }))[1].base).toBe("de 1 artista visible · 100\u00a0%");
     const todas = indicadoresFichas(fichas({ artistas_visibles: 3, artistas_con_foto: 3 }))[1];
     expect(todas.partes).toEqual([]);
     expect(todas.vacio).toBe("Todas las fichas de artista visibles tienen foto");
-    expect(indicadoresFichas(fichas({ artistas_visibles: 0, artistas_con_foto: 0 }))[1].base).toBe("de 0 artistas visibles · 0 %");
+    expect(indicadoresFichas(fichas({ artistas_visibles: 0, artistas_con_foto: 0 }))[1].base).toBe("de 0 artistas visibles · 0\u00a0%");
   });
   it("la nota del grupo dice si hay comparación", () => {
     expect(notaFichas(indicadoresFichas(fichas()))).toBe("Comparado con hace una semana");
@@ -391,7 +391,7 @@ describe("aportes de la semana (OL-326): Voy / Me interesa y primera vez que pub
     const [g, p] = indicadoresAportes(aportes());
     expect([g.nombre, g.valor, g.base, g.cambio, g.serie]).toEqual(["Voy y Me interesa", 7, "de 4 personas", "▲ 4 más", null]);
     expect(g.partes).toEqual(["5 Voy", "2 Me interesa", "3 en los 7 días anteriores"]);
-    expect([p.nombre, p.valor, p.base, p.cambio, p.serie]).toEqual(["Publican por primera vez", 2, "de 9 cuentas que han publicado alguna vez", "▲ 1 más", null]);
+    expect([p.nombre, p.valor, p.base, p.cambio, p.serie]).toEqual(["Primera publicación", 2, "de 9 cuentas que han publicado alguna vez", "▲ 1 más", null]);
     expect(p.partes).toEqual(["2 cuentas publicaron por primera vez esta semana", "1 lo hizo la semana anterior"]);
   });
   it("baja, igual y vacío se dicen con las mismas palabras que los demás indicadores", () => {
