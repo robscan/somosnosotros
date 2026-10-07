@@ -17,5 +17,6 @@
   { "id": "s17-alta-evento-es-aqui", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-es-aqui" },
   { "id": "s18-alta-lugar-revisa", "plantilla": "tarea", "url": "/nuevo/lugar", "paso": "lugar-revisa" },
   { "id": "s19-alta-lugar-horario", "plantilla": "tarea", "url": "/nuevo/lugar", "paso": "lugar-horario" },
-  { "id": "s20-alta-artista-revisa", "plantilla": "tarea", "url": "/nuevo/artista", "paso": "artista-revisa" }
+  { "id": "s20-alta-artista-revisa", "plantilla": "tarea", "url": "/nuevo/artista", "paso": "artista-revisa" },
+  { "id": "s21-editar-evento", "plantilla": "tarea", "url": "/eventos/taller-de-grabado-en-el-barrio/editar" }
 ]

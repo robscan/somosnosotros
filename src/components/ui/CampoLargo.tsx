@@ -31,7 +31,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mostrarContador, ...resto }: Props) {
   const { value, defaultValue, onChange, placeholder, name, ...campos } = resto;
   const [abierto, setAbierto] = useState(false);
-  // Controlado (FormularioEvento: value+onChange), el valor de fuera manda siempre; sin controlar (Lugar,
+  // Controlado (lo opcional de los pasos del evento: value+onChange), el valor de fuera manda siempre; sin controlar (Lugar,
   // Artista: defaultValue), este componente lleva su propio estado desde el valor inicial.
   const controlado = typeof value === "string";
   const [interno, setInterno] = useState(() => (typeof defaultValue === "string" ? defaultValue : ""));

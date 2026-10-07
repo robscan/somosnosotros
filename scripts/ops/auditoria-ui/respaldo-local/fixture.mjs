@@ -72,14 +72,19 @@ const E = {
   leonora: "bbbb0001-0000-4000-8000-000000000011",
   oca: "bbbb0001-0000-4000-8000-000000000012",
   desierto: "bbbb0001-0000-4000-8000-000000000013",
+  // OL-319: dos eventos de Ana, ocultos (no salen en ninguna lista ni cuenta), para medir y probar editar un evento por pasos.
+  taller: "bbbb0001-0000-4000-8000-000000000014",
+  linternas: "bbbb0001-0000-4000-8000-000000000015",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
-    id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: MARCOS, visible: true,
+    id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
     sitio_texto: sitio?.texto ?? null, sitio_direccion: sitio?.direccion ?? null, sitio_lat: sitio?.lat ?? null, sitio_lng: sitio?.lng ?? null, sitio_reservado: false, sitio_revelar_desde: null,
     lugar_id, zona: ZONA, ciudad: CIUDAD, creado_en: hace(creadoHace),
+    // La versión que editar manda de vuelta (OL-319): sin ella, «Guardar cambios» pide volver a abrir el evento.
+    actualizado_en: hace(creadoHace),
   };
 }
 const eventos = [
@@ -96,7 +101,12 @@ const eventos = [
   evento({ id: E.leonora, slug: "leonora-in-the-morning-light", titulo: "Leonora in the morning light", dias: 9, hora: "17:00", lugar_id: L.ccub, creadoHace: 2, descripcion: "Película de Thor Klein y Lena Vurma. Con presencia de las productoras. Clasificación B15." }),
   evento({ id: E.oca, slug: "oca", titulo: "OCA", dias: 10, hora: "19:00", lugar_id: L.mascara, creadoHace: 5 }),
   evento({ id: E.desierto, slug: "desierto-observacion-y-espacio", titulo: "DESIERTO: Observación y Espacio", dias: 11, hora: "20:00", lugar_id: L.aether, creadoHace: 1, descripcion: "Inauguración de la exposición de escultura, en presencia del artista." }),
+  // OL-319 (editar por pasos): de Ana y ocultos. Uno de un día con cartel; otro de tres días (del viernes al domingo) con horario por día.
+  evento({ id: E.taller, slug: "taller-de-grabado-en-el-barrio", titulo: "Taller de grabado en el barrio", dias: 2, hora: "17:00", lugar_id: L.miguelito, precio: "$80", creadoHace: 3, descripcion: "Grabado en linóleo para principiantes. Trae ropa que se pueda manchar.", imagen: imagenes.eventos["oca"] ?? null, autor: ANA, visible: false }),
+  evento({ id: E.linternas, slug: "festival-de-las-linternas", titulo: "Festival de las Linternas", dias: 2, hora: "20:00", dur: 49, sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 3, imagen: null, autor: ANA, visible: false }),
 ];
+/** El horario por día del Festival de las Linternas: viernes y domingo de 20:00 a 21:00, el sábado de 18:00 a 21:00. */
+const eventos_sesiones = [0, 1, 2].map((d) => ({ id: `bbbb0002-0000-4000-8000-00000000000${d + 1}`, evento_id: E.linternas, fecha: fecha(2 + d, "20:00").slice(0, 10), inicio: iso(fecha(2 + d, d === 1 ? "18:00" : "20:00")), fin: iso(fecha(2 + d, "21:00")) }));
 
 // ---------- artistas ----------
 const A = {
@@ -148,7 +158,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [], lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones, lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -212,6 +222,8 @@ export const rpcs = {
   // OL-316: las subcategorías ya usadas en una disciplina, las más usadas primero (como `subcategorias_de`), de los artistas del respaldo.
   subcategorias_de: ({ p_disciplina }) => Object.entries(artistas.filter((a) => a.visible && a.disciplina === p_disciplina && a.detalle).reduce((m, a) => ((m[a.detalle] = (m[a.detalle] || 0) + 1), m), {})).map(([detalle, n]) => ({ detalle, artistas: n })).sort((x, y) => y.artistas - x.artistas || x.detalle.localeCompare(y.detalle)),
   mi_cupo_de_cartel: () => [],
+  // OL-319: editar un evento por pasos contesta lo guardado (sin guardarlo: las escrituras no cambian el fixture).
+  editar_evento_con_sesiones: ({ p_evento }) => ({ id: p_evento, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null }),
 };
 
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------

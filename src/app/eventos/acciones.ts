@@ -90,7 +90,14 @@ type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
 type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento; repetido?: boolean };
 
-/** Con `sesiones` (un evento de varios días con horario por día, OL-311) se guarda con la función que las escribe en la misma transacción; sin ellas, como siempre. */
+/** La función de la base que guarda: al publicar, con `sesiones` (un evento de varios días con horario por día, OL-311) la que las escribe en
+ *  la misma transacción y, sin ellas, la de siempre; al editar (OL-319), siempre `editar_evento_con_sesiones`, que con sesiones las reemplaza y
+ *  sin ellas deja el evento sin horario por día (la casilla «Mismo horario todos los días» marcada otra vez), también en la misma transacción. */
+function funcionDeGuardado(id: string | null, sesiones: SesionEvento[] | null): "editar_evento_con_sesiones" | "guardar_evento_con_sesiones" | "guardar_evento_con_avisos" {
+  if (id) return "editar_evento_con_sesiones";
+  return sesiones ? "guardar_evento_con_sesiones" : "guardar_evento_con_avisos";
+}
+
 async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null, sesiones: SesionEvento[] | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
   if (typeof operacion !== "string" || !esUuid(operacion)) return { data: null, conflicto: false };
   const argumentos = {
@@ -101,7 +108,8 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
     p_revision: revision,
     p_operacion: operacion,
   };
-  const { data, error } = sesiones ? await supabase.rpc("guardar_evento_con_sesiones", { ...argumentos, p_sesiones: sesiones }) : await supabase.rpc("guardar_evento_con_avisos", argumentos);
+  const funcion = funcionDeGuardado(id, sesiones);
+  const { data, error } = await supabase.rpc(funcion, funcion === "guardar_evento_con_avisos" ? argumentos : { ...argumentos, p_sesiones: sesiones });
   return { data: error || !data ? null : data as GuardadoCompleto, conflicto: error?.code === "40001" };
 }
 
@@ -136,6 +144,9 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const sinPuntoTrasRetencion = sitioReservadoVencido(existente) && entrada.modo_sitio === "reservado" && !entrada.privado_lat && !entrada.privado_lng;
   const zona = sinPuntoTrasRetencion ? zonaSegura(existente?.zona) : zonaDelEvento(entrada, lugar);
   const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente });
+  // Horario por día (OL-319): con la casilla «Mismo horario todos los días» desmarcada llega una sesión por día; sin el campo, el evento queda sin ellas.
+  const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);
+  if (errorSesiones) errores.sesiones = errorSesiones;
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar, existente);
   if (ciudad === null) return sinCiudad(datos);
@@ -143,7 +154,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   if (typeof revision !== "string" || !revision.trim() || !Number.isFinite(Date.parse(revision))) {
     return { ok: false, errores: {}, general: "Vuelve a abrir el evento para cargar su versión actual. Tus cambios no se guardaron." };
   }
-  const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision);
+  const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision, sesiones);
   if (conflicto) return { ok: false, errores: {}, conflicto: true, general: "El evento cambió mientras lo editabas. Tus cambios siguen aquí, pero no se guardaron. Revisa la versión actual antes de volver a editar." };
   if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
   revalidar(id, datos.lugar_id, [...data.artistas, ...data.artistas_anteriores]);

@@ -127,13 +127,17 @@
   font-weight: 700;
 }
 
-/* 4. «Revisa» con cartel: la miniatura a la izquierda y, a su derecha pegados a su base, el sello «Leído del cartel» y el nombre. */
+/* 4. «Revisa» con cartel: la miniatura a la izquierda y, a su derecha pegados a su base, el sello «Leído del cartel» y el nombre. Al editar
+   (OL-319), bajo el nombre, «Cambiar nombre» (`.cambiarNombre` de «Revisa») y «Cambiar cartel», uno sobre otro y alineados con la letra.
+   Lo que no está no ocupa: su fila queda sin alto. */
 .cabeza {
   display: grid;
   grid-template-columns: var(--ancho-cartel-revisa) minmax(0, 1fr);
   grid-template-areas:
     "foto sello"
-    "foto titulo";
+    "foto titulo"
+    "foto nombre"
+    "foto cartel";
   column-gap: var(--espacio-4);
   align-items: end;
 }
@@ -147,6 +151,12 @@
 }
 .cabeza > h2 {
   grid-area: titulo;
+}
+/* «Cambiar cartel»: sin el relleno de los lados, para alinearse con el nombre (el toque conserva su alto y el ancho de las palabras). */
+.cabeza > .cambiarCartel {
+  grid-area: cartel;
+  justify-self: start;
+  padding-inline: 0;
 }
 .sello {
   grid-area: sello;

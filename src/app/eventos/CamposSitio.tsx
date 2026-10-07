@@ -3,7 +3,7 @@ import type { ModoSitio, OtroSitio } from "@/lib/eventos";
 
 /**
  * Dónde es, tal como lo leen `crearEvento` y `actualizarEvento`: campos escondidos (la hoja «¿Dónde es?» vive fuera del formulario).
- * Lo comparten editar (`FormularioEvento`) y el alta por pasos (`/nuevo/evento`, OL-300).
+ * Lo pintan los flujos por pasos de evento, el alta (`/nuevo/evento`, OL-300) y editar (OL-319), dentro de `CamposEvento`.
  * La ciudad del sitio es la del pin: la de Mapbox o, sin ella, la de contexto si el pin cae cerca; sin ninguna, el servidor no publica (OL-299).
  */
 export default function CamposSitio({ modo, lugarId, otro, ciudadContexto = null }: { modo: ModoSitio; lugarId: string; otro: OtroSitio; ciudadContexto?: Ciudad | null }) {

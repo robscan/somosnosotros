@@ -321,3 +321,33 @@ describe("horario por día en la ficha (OL-311)", () => {
     expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Por día")).toBe(false);
   });
 });
+
+describe("las acciones del evento siguen en su ficha al editar por pasos (OL-319)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+
+  const ficha = async (rol: "usuario" | "admin", id: string) => {
+    vi.mocked(clienteServidor).mockResolvedValue(clienteFalso({ eventos: { data: EVENTO }, asistencias: { data: [] } }, { van_por_evento: { data: [] } }) as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    vi.mocked(usuarioActual).mockResolvedValue({ correo: "prueba@example.com", perfil: { id, nombre: "Prueba", rol, foto: null, colonia: null, bio: null } });
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: EVENTO.slug }), searchParams: Promise.resolve({}) }))];
+  };
+  const enlaces = (elementos: { props: Record<string, unknown> }[]) => elementos.map((e) => e.props.href).filter((h): h is string => typeof h === "string");
+
+  it("su autora tiene «Editar» (la misma ruta, que ahora abre el flujo por pasos), «Duplicar con otra fecha» y «Borrar el evento», que confirma", async () => {
+    const { default: Borrar } = await import("@/components/Borrar");
+    const elementos = await ficha("usuario", "autor-1");
+    expect(enlaces(elementos)).toEqual(expect.arrayContaining(["/eventos/evento-de-prueba/editar", "/nuevo/evento?desde=evento-1"]));
+    expect(elementos.find((e) => e.type === Borrar)?.props).toMatchObject({ que: "el evento", fila: true });
+  });
+
+  it("la administración además oculta o vuelve a mostrar el evento", async () => {
+    const elementos = await ficha("admin", "admin-1");
+    expect(enlaces(elementos)).toContain("/eventos/evento-de-prueba/editar");
+    expect(elementos.some((e) => e.type === "b" && e.props.children === "Ocultar de la agenda")).toBe(true);
+  });
+
+  it("quien no es su autora ni la administración no ve ninguna de las tres", async () => {
+    const elementos = await ficha("usuario", "lectora");
+    expect(enlaces(elementos).some((h) => h.endsWith("/editar") || h.includes("desde="))).toBe(false);
+  });
+});

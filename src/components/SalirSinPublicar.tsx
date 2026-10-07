@@ -11,14 +11,21 @@ function huellaDe(pantalla: HTMLElement): string {
   return [...pantalla.querySelectorAll("form")].map((form) => [...new FormData(form).entries()].map(([k, v]) => `${k}=${typeof v === "string" ? v : v.name}`).join("&")).join("|");
 }
 
+/** Lo que dice la hoja: al publicar algo nuevo se borra lo escrito; al editar algo publicado (OL-319) se pierden los cambios. */
+export type Guardar = "publicar" | "guardar";
+const TEXTOS: Record<Guardar, { titulo: string; detalle: string; salir: string }> = {
+  publicar: { titulo: "¿Salir sin publicar?", detalle: "Se borra lo que escribiste.", salir: "Salir y borrar" },
+  guardar: { titulo: "¿Salir sin guardar?", detalle: "Se pierden los cambios que hiciste.", salir: "Salir sin guardar" },
+};
+
 /**
  * Guardia de salida estándar de la pantalla de alta (pedido del founder, 2026-09-16): Atrás o la ✕ preguntan solo si lo escrito
  * cambió respecto a cómo se abrió. Se compara campo por campo, no si está vacío: un alta que llega con el lugar o el artista
  * puestos, o un duplicado, no pregunta hasta que se toca algo. Vale para todos los formularios de la pantalla (aunque solo se vea
  * uno, lo escrito en los otros también cuenta). `olvidar` corre al confirmar la salida (lo que la pantalla guarde aparte). También avisa con `beforeunload` si se recarga o se cierra con cambios. Devuelve
- * la hoja «¿Salir sin publicar?» para pintarla dentro de la pantalla.
+ * la hoja «¿Salir sin publicar?» (o «¿Salir sin guardar?» al editar, `que`) para pintarla dentro de la pantalla.
  */
-export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olvidar?: () => void) {
+export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olvidar?: () => void, que: Guardar = "publicar") {
   const inicial = useRef<string | null>(null);
   const [salida, setSalida] = useState<(() => void) | null>(null);
   useLayoutEffect(() => {
@@ -50,18 +57,19 @@ export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olv
     quitarGuardia();
     salida();
   };
+  const textos = TEXTOS[que];
   return (
-    <Hoja etiqueta="Salir sin publicar" onCerrar={seguir}>
+    <Hoja etiqueta={textos.titulo.slice(1, -1)} onCerrar={seguir}>
       <div className={styles.salida}>
         <div className={styles.encabezado}>
-          <h3>¿Salir sin publicar?</h3>
-          <p>Se borra lo que escribiste.</p>
+          <h3>{textos.titulo}</h3>
+          <p>{textos.detalle}</p>
         </div>
         <Boton type="button" onClick={seguir}>
           Seguir editando
         </Boton>
         <Boton type="button" variante="peligro" onClick={salir}>
-          Salir y borrar
+          {textos.salir}
         </Boton>
       </div>
     </Hoja>

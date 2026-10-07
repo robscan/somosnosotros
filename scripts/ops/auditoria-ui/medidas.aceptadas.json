@@ -44,6 +44,7 @@
     "s17-alta-evento-es-aqui": { "nodos": [42, 42, 76, 76], "profundidad": [11, 11, 11, 11] },
     "s18-alta-lugar-revisa": { "nodos": [32, 32, 66, 66], "profundidad": [6, 6, 6, 6] },
     "s19-alta-lugar-horario": { "nodos": [91, 91, 125, 125], "profundidad": [8, 8, 8, 8] },
-    "s20-alta-artista-revisa": { "nodos": [36, 36, 70, 70], "profundidad": [7, 7, 7, 7] }
+    "s20-alta-artista-revisa": { "nodos": [36, 36, 70, 70], "profundidad": [7, 7, 7, 7] },
+    "s21-editar-evento": { "nodos": [33, 33, 67, 67], "profundidad": [7, 7, 7, 7] }
   }
 }

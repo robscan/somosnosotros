@@ -113,9 +113,32 @@ export function estadoInicial(quien: QuienItem[] = []): Estado {
   };
 }
 
+/**
+ * Editar un evento (OL-319): no se vuelven a recorrer los pasos; se entra directo en «Revisa» con todo puesto, y cada renglón abre su pregunta,
+ * que al contestarse vuelve aquí (lo mismo que «Cambiar» dentro del alta). Sin transición: es lo que se ve al llegar.
+ */
+export const estadoAlEditar = (r: Respuestas): Estado => ({ r, candidato: null, pila: ["revisa"], direccion: null });
+
 export const pasoActual = (e: Estado): Paso => e.pila[e.pila.length - 1];
 
-export const dondeResuelto = ({ modo, lugarId, otro }: Sitio): boolean => (modo === "lugar" ? !!lugarId : sitioListo(otro));
+const PREGUNTA: Partial<Record<Paso, string>> = {
+  nombre: "¿Cómo se llama?",
+  dia: "¿Qué día es?",
+  hora: "¿A qué hora?",
+  donde: "¿Dónde es?",
+  mapa: "¿Es aquí?",
+  uso: "No está en el directorio",
+  cuanto: "¿Cuánto cuesta?",
+  mas: "¿Quieres agregar algo?",
+};
+
+/** La pregunta de cada paso; con varios días la de la hora cambia: el horario del primer día vale para todos. Sin pregunta, undefined. */
+export const preguntaDe = (paso: Paso, r: Pick<Respuestas, "dias">): string | undefined => (paso === "hora" && r.dias?.hasta ? "¿A qué hora, cada día?" : PREGUNTA[paso]);
+
+/** ¿El sitio ya está contestado? Un sitio reservado sin su dirección exacta porque se retiró por privacidad (al editar un evento que ya pasó)
+ *  cuenta como contestado con su nombre: no hay dirección que pedir para conservarlo. */
+export const dondeResuelto = ({ modo, lugarId, otro }: Sitio): boolean =>
+  modo === "lugar" ? !!lugarId : sitioListo(otro) || (modo === "reservado" && !!otro.direccionRetirada && !!otro.sitioTexto.trim());
 
 /** Lo que falta para publicar, en el orden en que se pregunta. */
 export function faltan(r: Respuestas): Paso[] {

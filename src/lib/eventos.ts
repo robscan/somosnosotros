@@ -27,6 +27,9 @@ export type OtroSitio = {
   indicaciones: string;
   /** La ciudad del pin, deducida por Mapbox al ponerlo (null hasta entonces). */
   ciudad: string | null;
+  /** Al editar (OL-319): un sitio reservado cuyo evento terminó hace más de siete días ya no tiene su dirección exacta (se borró por
+   *  privacidad, `retencionSitio`); se conserva así mientras no se cambie el sitio, y el servidor decide si todavía vale sin ella. */
+  direccionRetirada?: boolean;
 };
 
 /** Cuánto antes del inicio se revela un sitio reservado a las personas con sesión. */
