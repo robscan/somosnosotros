@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const track = vi.fn();
 vi.mock("@vercel/analytics", () => ({ track: (...a: unknown[]) => track(...a) }));
 
-import { claseMedida, contextoGoogle, datosAsistencia, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, validarMedicion } from "./medir";
+import { claseMedida, contextoGoogle, datosAsistencia, medicionActivaEnCliente, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, validarMedicion } from "./medir";
 import { limpiarUrlEvento, limpiarUrlGoogle } from "./limpiarUrlAnalitica";
 
 /** Una ventana mínima: dirección, `gtag` y la marca de admin (o no). */
@@ -160,6 +160,24 @@ describe("medirCliente", () => {
     expect(() => medirCliente("reporte", { que: "evento" })).not.toThrow();
     vi.stubGlobal("fetch", undefined);
     expect(() => medirCliente("reporte", { que: "evento" })).not.toThrow();
+  });
+  it("si leer el entorno lanza (sin `process` en el navegador, como en un paquete de esbuild), no se mide y no lanza", () => {
+    const original = Object.getOwnPropertyDescriptor(process, "env")!;
+    Object.defineProperty(process, "env", {
+      configurable: true,
+      get() {
+        throw new ReferenceError("process is not defined");
+      },
+    });
+    try {
+      expect(medicionActivaEnCliente()).toBe(false);
+      ponerVentana({ gtag: vi.fn() });
+      expect(() => medirCliente("entrar", { paso: "listo", metodo: "correo" })).not.toThrow();
+    } finally {
+      Object.defineProperty(process, "env", original);
+    }
+    expect(track).not.toHaveBeenCalled();
+    expect(red).not.toHaveBeenCalled();
   });
   it("sin Google cargado manda solo a Vercel", () => {
     ponerVentana();

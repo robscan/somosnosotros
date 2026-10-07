@@ -31,15 +31,20 @@ type Fase = "elegir" | "correo" | "codigo" | "entrando";
  * cuenta recién entrada, sin esperar a nadie, y solo si no es administración se mide. Fuera de producción no se pregunta nada.
  */
 function medirEntradaLista(supabase: NonNullable<ReturnType<typeof clienteNavegador>>) {
-  if (!medicionActivaEnCliente()) return medirCliente("entrar", { paso: "listo", metodo: "correo" }); // solo la consola de depurar
-  void (async () => {
-    try {
-      const { data } = await supabase.rpc("mi_perfil");
-      if ((data as { rol?: string } | null)?.rol !== "admin") medirCliente("entrar", { paso: "listo", metodo: "correo" });
-    } catch {
-      // sin respuesta: no se mide
-    }
-  })();
+  // Medir nunca puede cortar la entrada: si algo de aquí lanzara, `entrarConCodigo` no llegaría a llevar a la persona a donde iba.
+  try {
+    if (!medicionActivaEnCliente()) return medirCliente("entrar", { paso: "listo", metodo: "correo" }); // solo la consola de depurar
+    void (async () => {
+      try {
+        const { data } = await supabase.rpc("mi_perfil");
+        if ((data as { rol?: string } | null)?.rol !== "admin") medirCliente("entrar", { paso: "listo", metodo: "correo" });
+      } catch {
+        // sin respuesta: no se mide
+      }
+    })();
+  } catch {
+    // no se mide
+  }
 }
 
 /** Segundos antes de poder pedir otro código. */

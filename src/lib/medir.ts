@@ -106,9 +106,17 @@ function depurar(...partes: unknown[]) {
   }
 }
 
-/** Solo se manda en producción (Vercel pone `NEXT_PUBLIC_VERCEL_ENV`); en vista previa y local, nunca. */
+/**
+ * Solo se manda en producción (Vercel pone `NEXT_PUBLIC_VERCEL_ENV`); en vista previa y local, nunca. Next sustituye la variable al
+ * compilar; donde no lo hace (un paquete armado con otra herramienta, como las pruebas de componentes con esbuild) `process` no existe
+ * en el navegador y leerlo lanzaría: entonces no se mide. Nunca lanza.
+ */
 export function medicionActivaEnCliente(): boolean {
-  return process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+  try {
+    return process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+  } catch {
+    return false;
+  }
 }
 
 /**
