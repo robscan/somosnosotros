@@ -55,6 +55,8 @@ const mocks = {
   "./Imagen": "import React from 'react';export default function Imagen({src,alt,className,width,height,loading}){return React.createElement('img',{src,alt,className,width,height,loading})}",
   // La barra trae el logotipo de las pantallas interiores (con `next/image` y el enrutador), que fuera de Next no carga ni se usa aquí.
   "./Logotipo": "export default function Logotipo(){return null}",
+  // La tira de tipos reemplaza la entrada con el enrutador de Next; aquí solo anota a dónde.
+  "next/navigation": "export function useRouter(){return {replace:(href)=>window.qa.reemplazos.push(href)}}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link({prefetch,replace,...p}){return React.createElement('a',p)}",
 };
 
@@ -77,7 +79,7 @@ before(async () => {
       // resultado: 'general' (falla el guardado) | 'enlace' (el servidor rechaza el enlace) | 'pendiente' (no contesta)
       // Lo que simulan el servidor y Storage (ver los dobles de arriba): el cupo con el que abre la pantalla, si hay lectura de cartel,
       // qué contesta la lectura ('fallo' | 'sinCupo' | 'throw' | un objeto con el resultado), si «espera» a que el test la libere.
-      window.qa = {envios:[], lugares:[], lugar:'creado', resultado:'general', salio:0, pedirSalida, cupoAlAbrir:{usadas:1,tope:6,sinTope:false}, cartelActivo:true, lecturas:[], subidas:[], lectura:null, subida:'ok', espera:false, esperaSubida:false, ...window.qaInicial};
+      window.qa = {envios:[], lugares:[], lugar:'creado', resultado:'general', salio:0, pedirSalida, cupoAlAbrir:{usadas:1,tope:6,sinTope:false}, cartelActivo:true, lecturas:[], reemplazos:[], subidas:[], lectura:null, subida:'ok', espera:false, esperaSubida:false, ...window.qaInicial};
       async function accion(_, fd){
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
@@ -94,7 +96,7 @@ before(async () => {
       const abrir = window.qa.abrir ?? {};
       const arranque = arranqueDe({ desde: abrir.desde ? respuestasDeEvento(abrir.desde.evento, lugares, abrir.desde.quien) : null, lugar: lugares.find((l) => l.id === abrir.lugar) ?? null, artista: abrir.artista ?? null });
       createRoot(document.getElementById('root')).render(
-        <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={null} salida={{href: abrir.salida ?? '/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} arranque={arranque} />
+        <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={window.qa.ciudad ?? null} salida={{href: abrir.salida ?? '/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} arranque={arranque} />
       );
     `,
     },
@@ -767,6 +769,64 @@ test("la ✕ sale sin preguntar si nada cambió y pregunta «¿Salir sin publica
   assert.equal(await p.evaluate(() => window.qa.salio), 1);
   await boton(p, "Salir y borrar").click();
   assert.equal(await p.evaluate(() => window.qa.salio), 2);
+});
+
+test("la tira de tipos (OL-313) está solo en el primer paso: Evento marcado, Lugar y Artista enlaces a /nuevo, sin la ciudad si el flujo no la trae", TOPE, async (t) => {
+  const p = await pagina(t);
+  const tira = p.getByRole("group", { name: "Qué publicar" });
+  assert.deepEqual(await tira.locator("a, button, span").evaluateAll((e) => e.map((x) => x.textContent)), ["Evento", "Lugar", "Artista"]);
+  // Evento es esta pantalla: marcada, y no es un enlace ni un botón.
+  assert.equal(await tira.getByText("Evento", { exact: true }).getAttribute("aria-current"), "page");
+  assert.equal(await tira.getByRole("link", { name: "Evento" }).count(), 0);
+  assert.equal(await tira.getByRole("button").count(), 0);
+  assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo?tipo=lugar");
+  assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo?tipo=artista");
+  assert.equal(await tira.getByRole("link").count(), 2);
+  // Es el pie de la pantalla: de borde a borde y pegada abajo.
+  const caja = await tira.boundingBox();
+  assert.equal(Math.round(caja.x), 0);
+  assert.equal(Math.round(caja.width), 390);
+  assert.equal(Math.round(caja.y + caja.height), 844);
+  // El recuadro del cartel y «No tengo cartel» siguen en su sitio, encima de la tira.
+  assert.ok((await p.getByText("Sube el cartel", { exact: true }).boundingBox()).y < caja.y);
+  assert.ok((await boton(p, "No tengo cartel").boundingBox()).y + 40 < caja.y);
+  if (capturas) await foto(p, "tira-1-primer-paso");
+  // Nada escrito: la guardia deja pasar sin preguntar y la entrada se reemplaza (no se apila) con el enrutador.
+  await tira.getByRole("link", { name: "Lugar" }).click();
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=lugar"]);
+  assert.equal(await p.getByText("¿Salir sin publicar?").count(), 0);
+  await tira.getByRole("link", { name: "Artista" }).click();
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=lugar", "/nuevo?tipo=artista"]);
+});
+
+test("la tira de tipos lleva la ciudad que se veía en Lugar y en Artista", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { ciudad: { slug: "queretaro", nombre: "Querétaro", centro: { lng: -100.39, lat: 20.59 }, zoom: 12 } } });
+  const tira = p.getByRole("group", { name: "Qué publicar" });
+  assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo?tipo=lugar&ciudad=queretaro");
+  assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo?tipo=artista&ciudad=queretaro");
+});
+
+test("la tira de tipos no sale en cuanto se avanza («No tengo cartel»), vuelve con Atrás al primer paso (y ahí pregunta si hay algo escrito) y tampoco sale mientras se lee un cartel", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { espera: true } });
+  const tira = p.getByRole("group", { name: "Qué publicar" });
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").waitFor();
+  assert.equal(await tira.count(), 0);
+  await boton(p, "Atrás").click();
+  await tira.waitFor();
+  // Con algo escrito (se vuelve al primer paso con Atrás), cambiar de tipo pregunta primero y no se va hasta confirmar.
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Lectura");
+  await boton(p, "Atrás").click();
+  await tira.getByRole("link", { name: "Lugar" }).click();
+  await p.getByText("¿Salir sin publicar?").waitFor();
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), []);
+  await boton(p, "Salir y borrar").click();
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=lugar"]);
+  // Subir un cartel: la espera («Leyendo el cartel…») no lleva la tira.
+  await subir(p);
+  await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).waitFor();
+  assert.equal(await tira.count(), 0);
 });
 
 test("el paso siguiente entra de lado y nada se mueve con «reducir movimiento»", TOPE, async (t) => {
