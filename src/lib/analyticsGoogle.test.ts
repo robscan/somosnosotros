@@ -69,8 +69,18 @@ describe("vistaGoogle: vistas a mano con la URL limpia", () => {
   it("manda page_view con la ruta limpia", () => {
     sinAdmin();
     const gtag = vi.fn();
-    expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/agenda?q=rosa&filtro=hoy" } })).toBe(true);
-    expect(gtag).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/agenda?filtro=hoy", page_title: "/agenda", page_referrer: "" });
+    expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/agenda?q=rosa&filtro=siguiendo" } })).toBe(true);
+    expect(gtag).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/agenda?filtro=siguiendo", page_title: "/agenda", page_referrer: "" });
+  });
+  it("F13: ni el id de una persona ni un valor libre de un filtro llegan a Google", () => {
+    sinAdmin();
+    const persona = vi.fn();
+    expect(vistaGoogle({ gtag: persona, location: { href: "https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001" } })).toBe(true);
+    expect(persona).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/personas", page_title: "/personas", page_referrer: "" });
+    const libre = vi.fn();
+    expect(vistaGoogle({ gtag: libre, location: { href: "https://somosnosotros.org/agenda?tipo=correo%40local.test" } })).toBe(true);
+    expect(libre).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/agenda", page_title: "/agenda", page_referrer: "" });
+    expect(JSON.stringify([...persona.mock.calls, ...libre.mock.calls])).not.toMatch(/0000-0000|correo|local\.test/);
   });
   it("una ruta privada no manda vista, pero lo que siga saliendo de ahí lleva solo su primer tramo", () => {
     sinAdmin();

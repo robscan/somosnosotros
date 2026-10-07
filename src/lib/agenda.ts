@@ -165,6 +165,8 @@ const cuesta = (e: Pick<EventoAgenda, "precio">, cuanto: readonly Cuanto[] = [])
  * exposiciones, talleres o festivales; sin él, o «todo», lo de siempre).
  */
 export type FiltrosAgenda = { cuando: Cuando | null; cuanto: Cuanto[]; siguiendo: boolean; que?: Que };
+/** Los valores que acepta `?filtro=` en Agenda (hoy uno: solo lo que sigue); lo demás se ignora. */
+export const FILTROS_DE_URL = ["siguiendo"] as const;
 export const SIN_FILTROS: FiltrosAgenda = { cuando: null, cuanto: [], siguiendo: false };
 
 /** El «Qué» puesto, «todo» si no hay. */
@@ -192,7 +194,7 @@ export function hrefAgenda(f: FiltrosAgenda, ciudad?: string | null, nuevos = fa
     if (f.cuando.hasta !== f.cuando.desde) p.set("hasta", f.cuando.hasta);
   }
   if (f.cuanto.length > 0) p.set("cuanto", f.cuanto.join(","));
-  if (f.siguiendo) p.set("filtro", "siguiendo");
+  if (f.siguiendo) p.set("filtro", FILTROS_DE_URL[0]);
   if (queDeFiltros(f) !== "todo") p.set("que", queDeFiltros(f));
   const consulta = p.toString();
   return consulta ? `/agenda?${consulta}` : "/agenda";
@@ -206,7 +208,7 @@ export function filtrosRecordados(f: Partial<FiltrosAgenda> | undefined): Filtro
 /** Los filtros que llegan en la URL de Agenda; lo que no se reconoce (un enlace viejo, `?filtro=cercanos`) se ignora. */
 export function filtrosDeUrl(p: { desde?: string; hasta?: string; cuanto?: string; filtro?: string; que?: string }): FiltrosAgenda {
   const cuantos = (p.cuanto ?? "").split(",");
-  return ponerQue({ cuando: cuandoDeUrl(p.desde, p.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => cuantos.includes(c)), siguiendo: p.filtro === "siguiendo" }, p.que);
+  return ponerQue({ cuando: cuandoDeUrl(p.desde, p.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => cuantos.includes(c)), siguiendo: p.filtro === FILTROS_DE_URL[0] }, p.que);
 }
 
 /** Los filtros con ese «Qué» (lo que no se reconoce es «todo»): con «todo», sin la propiedad, así los filtros de siempre quedan como estaban. */
