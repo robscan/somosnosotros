@@ -355,7 +355,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const portada = e.imagen ?? e.lugar?.portada ?? null;
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
   const kpiExpo = clase === "exposicion" ? kpisDeExposicion(e, horario.franjas, ahora) : null;
-  const hayAvisos = error === "borrar" || error === "no_publicable" || !e.visible || paso;
+  const hayAvisos = error === "borrar" || error === "publicar" || error === "no_publicable" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
   const hayCartel = e.visible && !paso && cartelDescargable(e.imagen, configPublica().supabaseUrl);
@@ -428,6 +428,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       {hayAvisos && (
         <div className={ficha.avisos}>
+          {error === "publicar" && (
+            <p className="aviso-error" role="alert">No se pudo publicar la actividad. Intenta de nuevo.</p>
+          )}
           {error === "borrar" && (
             <p className="aviso-error" role="alert">
               No se pudo borrar. ¿Sigues con sesión y es tu evento?

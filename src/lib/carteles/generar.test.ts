@@ -1,6 +1,9 @@
 import sharp from "sharp";
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { traerImagen } from "./generar";
+import { AHORA_CASOS, CASOS } from "./casos";
+import { generarCartel, traerImagen } from "./generar";
+import { CATALOGO } from "./plantillas";
+import { FORMATOS } from "./tokens";
 
 /** OL-329: la imagen que trae el generador solo es del Storage propio y solo pasa si sus bytes son JPEG, PNG o WebP razonables. */
 
@@ -56,5 +59,114 @@ describe("traerImagen", () => {
   it("una respuesta que no es 200 devuelve null", async () => {
     const traer = vi.fn(async () => new Response("no", { status: 404 })) as unknown as typeof fetch;
     expect(await traerImagen(unica("jpg"), { traer, supabaseUrl: SUPABASE })).toBeNull();
+  });
+});
+
+/** OL-334 (F07 residual de OL-327): la descarga lleva su propio plazo; al vencer, la imagen se descarta y el cartel sale sin foto. */
+describe("traerImagen: plazo de descarga", () => {
+  it("pide la imagen con un AbortSignal que se aborta al vencer el plazo", async () => {
+    let senal: AbortSignal | undefined;
+    const traer = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      senal = init?.signal ?? undefined;
+      return new Response(new Uint8Array(jpeg), { status: 200 });
+    }) as unknown as typeof fetch;
+    expect(await traerImagen(unica("jpg"), { traer, supabaseUrl: SUPABASE })).not.toBeNull();
+    expect(senal).toBeInstanceOf(AbortSignal);
+    expect(senal!.aborted).toBe(false); // se bajó a tiempo: no se aborta
+    // Y si no responde, la señal sí se aborta.
+    let senalColgada: AbortSignal | undefined;
+    const colgado = vi.fn((_url: unknown, init?: RequestInit) => {
+      senalColgada = init?.signal ?? undefined;
+      return new Promise<Response>(() => {});
+    }) as unknown as typeof fetch;
+    await traerImagen(unica("jpg"), { traer: colgado, supabaseUrl: SUPABASE, plazoMs: 30 });
+    expect(senalColgada!.aborted).toBe(true);
+  });
+  it("un fetch que no responde dentro del plazo se descarta (aunque no atienda la señal) y no lanza", async () => {
+    const colgado = vi.fn(() => new Promise<Response>(() => {})) as unknown as typeof fetch;
+    const t0 = performance.now();
+    expect(await traerImagen(unica("jpg"), { traer: colgado, supabaseUrl: SUPABASE, plazoMs: 40 })).toBeNull();
+    expect(performance.now() - t0).toBeLessThan(1500);
+  });
+  it("un cuerpo que empieza y se queda a medias también vence", async () => {
+    const cuerpo = new ReadableStream<Uint8Array>({ start(c) { c.enqueue(new Uint8Array(jpeg.subarray(0, 10))); } }); // nunca cierra
+    const traer = vi.fn(async () => new Response(cuerpo, { status: 200 })) as unknown as typeof fetch;
+    const t0 = performance.now();
+    expect(await traerImagen(unica("jpg"), { traer, supabaseUrl: SUPABASE, plazoMs: 40 })).toBeNull();
+    expect(performance.now() - t0).toBeLessThan(1500);
+  });
+  it("rechaza el exceso de bytes aunque la cancelación del cuerpo nunca termine", async () => {
+    const cancelar = vi.fn(() => new Promise<void>(() => {}));
+    const cuerpo = new ReadableStream<Uint8Array>({
+      start(c) { c.enqueue(new Uint8Array(7 * 1024 * 1024)); },
+      cancel: cancelar,
+    });
+    const traer = vi.fn(async () => new Response(cuerpo)) as unknown as typeof fetch;
+    expect(await traerImagen(unica("jpg"), { traer, supabaseUrl: SUPABASE, plazoMs: 40 })).toBeNull();
+    expect(cancelar).toHaveBeenCalledOnce();
+  }, 1500);
+  it("cancela sin leer una respuesta que declara más bytes que el límite", async () => {
+    const cancelar = vi.fn(() => new Promise<void>(() => {}));
+    const cuerpo = new ReadableStream<Uint8Array>({ cancel: cancelar });
+    const traer = vi.fn(async () => new Response(cuerpo, { headers: { "Content-Length": String(7 * 1024 * 1024) } })) as unknown as typeof fetch;
+    expect(await traerImagen(unica("jpg"), { traer, supabaseUrl: SUPABASE, plazoMs: 40 })).toBeNull();
+    expect(cancelar).toHaveBeenCalledOnce();
+  }, 1500);
+  it("un fetch que rechaza (red caída, señal abortada) devuelve null", async () => {
+    const traer = vi.fn(async () => { throw new Error("red caída"); }) as unknown as typeof fetch;
+    expect(await traerImagen(unica("jpg"), { traer, supabaseUrl: SUPABASE })).toBeNull();
+  });
+  it("lo que no llegó a tiempo no se guarda en la memoria: la siguiente petición lo vuelve a pedir", async () => {
+    const url = unica("jpg");
+    const colgado = vi.fn(() => new Promise<Response>(() => {})) as unknown as typeof fetch;
+    expect(await traerImagen(url, { traer: colgado, supabaseUrl: SUPABASE, plazoMs: 20 })).toBeNull();
+    expect(await traerImagen(url, { traer: respuesta(jpeg, "image/jpeg"), supabaseUrl: SUPABASE })).not.toBeNull();
+  });
+});
+
+describe("generarCartel: el plazo de descarga cabe en el tiempo total y el cartel sale igual al de sin foto", () => {
+  const evento = CASOS.corto;
+  const datos = (imagenes: string[]) => ({ evento, gestiona: true, perfilId: "p", imagenes, memoria: null, datosEleccion: {} as never });
+  const plantilla = CATALOGO[0];
+  const formato = FORMATOS["4x5"];
+  const base = { ahora: AHORA_CASOS, ancho: 270 };
+
+  it("si la imagen no responde dentro del plazo, el cartel es idéntico al de sin foto", async () => {
+    const colgado = vi.fn(() => new Promise<Response>(() => {})) as unknown as typeof fetch;
+    const t0 = performance.now();
+    const [conColgada, sinFoto] = await Promise.all([
+      generarCartel(datos([unica("jpg")]), plantilla, formato, { ...base, descarga: { traer: colgado, supabaseUrl: SUPABASE, plazoMs: 40 } }),
+      generarCartel(datos([]), plantilla, formato, base),
+    ]);
+    expect(conColgada.imagen.equals(sinFoto.imagen)).toBe(true);
+    expect(performance.now() - t0).toBeLessThan(4000);
+  });
+  it("con una imagen sana, el cartel sí lleva foto (la prueba de arriba no es vacía)", async () => {
+    const foto = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#cc3322" } }).jpeg().toBuffer();
+    const [con, sin] = await Promise.all([
+      generarCartel(datos([unica("jpg")]), plantilla, formato, { ...base, descarga: { traer: respuesta(foto, "image/jpeg"), supabaseUrl: SUPABASE } }),
+      generarCartel(datos([]), plantilla, formato, base),
+    ]);
+    expect(con.imagen.equals(sin.imagen)).toBe(false);
+  });
+  it("la primera imagen colgada no impide que la segunda, sana, se use dentro del tiempo total", async () => {
+    const foto = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#2255cc" } }).jpeg().toBuffer();
+    const colgada = unica("jpg");
+    const sana = unica("jpg");
+    const traer = vi.fn((url: unknown) => (String(url) === colgada ? new Promise<Response>(() => {}) : Promise.resolve(new Response(new Uint8Array(foto), { status: 200 })))) as unknown as typeof fetch;
+    const [con, sin] = await Promise.all([
+      generarCartel(datos([colgada, sana]), plantilla, formato, { ...base, descarga: { traer, supabaseUrl: SUPABASE, plazoMs: 40 } }),
+      generarCartel(datos([]), plantilla, formato, base),
+    ]);
+    expect(con.imagen.equals(sin.imagen)).toBe(false);
+  });
+  it("el tiempo total abarca la descarga: sin presupuesto no se pide ninguna imagen y sale sin foto", async () => {
+    const traer = vi.fn(async () => new Response("x", { status: 200 })) as unknown as typeof fetch;
+    const [agotado, sinFoto] = await Promise.all([
+      generarCartel(datos([unica("jpg")]), plantilla, formato, { ...base, descarga: { traer, supabaseUrl: SUPABASE, tiempoMaxFotoMs: 0 } }),
+      generarCartel(datos([]), plantilla, formato, base),
+    ]);
+    expect(traer).not.toHaveBeenCalled();
+    expect(agotado.imagen.equals(sinFoto.imagen)).toBe(true);
   });
 });

@@ -58,14 +58,27 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   if (horario.error) errores.horario = horario.error;
   if (Object.keys(errores).length) return { ok: false, errores };
 
-  if (formData.get("confirmado") !== "1") {
+  const operacion = formData.get("operacion");
+  if (operacion !== null && (typeof operacion !== "string" || !esUuid(operacion))) {
+    return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
+  }
+  // Recuperar una respuesta perdida antes de consultar lugares parecidos.
+  let guardado: { id: string; slug: string | null } | null = null;
+  if (operacion) {
+    const previo = await supabase.from("lugares").select("id, slug")
+      .eq("operacion_guardado", operacion).eq("creado_por", user.id).maybeSingle();
+    if (previo.error) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
+    guardado = previo.data;
+  }
+
+  if (!guardado && formData.get("confirmado") !== "1") {
     const { data: parecidos } = await supabase.rpc("lugares_parecidos", { p_nombre: datos.nombre, p_lat: datos.lat, p_lng: datos.lng });
     if (parecidos && parecidos.length > 0) return { ok: false, errores: {}, parecidos: parecidos as LugarResumen[] };
   }
 
   const fila = { ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null };
-  const { data, error } = horario.franjas?.length
-    ? await supabase.rpc("crear_lugar_con_horario", { p_datos: fila, p_franjas: horario.franjas }).then((r) => ({ data: r.data as { id: string; slug: string | null } | null, error: r.error }))
+  const { data, error } = guardado ? { data: guardado, error: null } : horario.franjas?.length || operacion
+    ? await supabase.rpc("crear_lugar_con_horario", { p_datos: { ...fila, ...(operacion ? { operacion_guardado: operacion } : {}) }, p_franjas: horario.franjas ?? [] }).then((r) => ({ data: r.data as { id: string; slug: string | null } | null, error: r.error }))
     : await supabase
         .from("lugares")
         .insert({ ...fila, creado_por: user.id })

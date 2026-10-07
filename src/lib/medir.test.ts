@@ -233,7 +233,7 @@ describe("la página que acompaña a cada envío", () => {
     expect(limpiarUrlGoogle("https://somosnosotros.org/personas/0b3c2a1e-0000-4000-8000-000000000000")).toBe("https://somosnosotros.org/personas");
   });
   it("las vistas de Google: sin q ni nombre; lo privado no se manda", () => {
-    expect(limpiarUrlGoogle("https://somosnosotros.org/buscar?q=teatro&tipo=lugares")).toBe("https://somosnosotros.org/buscar?tipo=lugares");
+    expect(limpiarUrlGoogle("https://somosnosotros.org/lugares?q=teatro&tipo=museo")).toBe("https://somosnosotros.org/lugares?tipo=museo");
     expect(limpiarUrlGoogle("https://somosnosotros.org/nuevo/lugar?nombre=Casa%20de%20Rosa")).toBe("https://somosnosotros.org/nuevo/lugar");
     expect(limpiarUrlGoogle("https://somosnosotros.org/admin")).toBeNull();
     expect(limpiarUrlGoogle("https://somosnosotros.org/entrar?siguiente=/")).toBeNull();

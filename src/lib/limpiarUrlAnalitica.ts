@@ -1,9 +1,19 @@
+import { QUES } from "./agendaPorClase";
+import { CUANTOS, FILTROS_DE_URL } from "./agenda";
+import { TIPOS_DE_ALTA } from "./armazon";
+import { DISCIPLINAS } from "./artistas";
+import { TIPOS } from "./lugares";
+
 /**
- * Limpia la URL antes de enviarla a Vercel Analytics.
- * - De la consulta (`?…`) solo se quedan los parámetros de una LISTA BLANCA corta e inocua (`PARAMETROS_PUBLICOS`): todo lo demás se
- *   quita —búsqueda, ciudad, el nombre que se escribió, la posición del mapa (`lat`, `lng`), ids (`lugar`, `artista`, `desde`), tokens—,
- *   también lo que se añada mañana (OL-325, hallazgo F03 de OL-327: antes era una lista negra y dejaba pasar `lat` y `lng`).
- * - Evita rastrear rutas privadas: admin, perfil, ajustes y enlacescon token.
+ * Limpia la URL antes de enviarla a Vercel Analytics y a Google Analytics: UNA sola limpieza para las dos (OL-334, hallazgo F13 de OL-327;
+ * antes Google reducía `/personas/<id>` y Vercel no).
+ * - De la consulta (`?…`) solo se quedan los parámetros de una LISTA BLANCA corta e inocua (`OPCIONES_PUBLICAS`) Y solo con un valor de la
+ *   lista cerrada de ese filtro: todo lo demás se quita —búsqueda, ciudad, el nombre que se escribió, la posición del mapa (`lat`, `lng`),
+ *   ids (`lugar`, `artista`, `desde`), tokens—, también lo que se añada mañana (OL-325, F03 de OL-327: antes era una lista negra y dejaba
+ *   pasar `lat` y `lng`) y también un valor libre en un parámetro permitido, como `?tipo=correo%40local.test` (OL-334: la lista blanca
+ *   limitaba los nombres, no los valores).
+ * - La ficha de una persona (`/personas/<id>`) queda en `/personas`: el id nunca sale.
+ * - Evita rastrear rutas privadas: admin, perfil, ajustes y enlaces con token.
  * - Solo se envían rutas públicas sin identificación personal.
  * - Devuelve la URL ABSOLUTA (con esquema y dominio): Vercel Analytics rechaza URLs relativas.
  *
@@ -11,11 +21,37 @@
  */
 
 /**
- * Los únicos parámetros que se conservan: filtros de las listas con opciones fijas (tipo de lugar, qué, filtro y costo de la agenda,
- * disciplina de artistas). Ninguno lleva texto escrito, posición ni ids. `ciudad` no está (OL-111 ya la quitaba): dice dónde está la
- * persona. Añadir uno aquí es decidir que es inocuo.
+ * Los únicos parámetros que se conservan y, de cada uno, los únicos valores que se conservan: las listas cerradas de los filtros reales
+ * (se importan de donde viven, no se copian). Ninguno lleva texto escrito, posición ni ids. `ciudad` no está (OL-111 ya la quitaba):
+ * dice dónde está la persona. Añadir uno aquí es decidir que es inocuo. Un `Map`, no un objeto: así `constructor` o `__proto__` no
+ * entran como nombre.
  */
-const PARAMETROS_PUBLICOS = new Set(["tipo", "que", "filtro", "cuanto", "hace", "disciplina"]);
+const OPCIONES_PUBLICAS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  // Lugares (`?tipo=museo`) y el tipo de alta (`/nuevo?tipo=artista`).
+  ["tipo", new Set<string>([...TIPOS.map((t) => t.valor), ...TIPOS_DE_ALTA])],
+  // Agenda: eventos, exposiciones, talleres, festivales. En /artistas `que` es una subcategoría escrita por la gente: no es de la lista y no sale.
+  ["que", new Set<string>(QUES.map((q) => q.clave))],
+  ["filtro", new Set<string>(FILTROS_DE_URL)],
+  // Agenda: varias clases de costo juntas, separadas por coma (`?cuanto=gratis,cooperacion`); se valida cada una.
+  ["cuanto", new Set<string>(CUANTOS.map((c) => c.clave))],
+  // Artistas: la disciplina (`?hace=musica`).
+  ["hace", new Set<string>(DISCIPLINAS.map((d) => d.valor))],
+  ["disciplina", new Set<string>(DISCIPLINAS.map((d) => d.valor))],
+]);
+
+/** Los parámetros cuyo valor es una lista separada por comas. */
+const PARAMETROS_CON_LISTA: ReadonlySet<string> = new Set(["cuanto"]);
+
+/** El valor que se conserva de un parámetro, o null si no está en su lista cerrada (en una lista con comas, solo sus elementos válidos). */
+function valorPublico(nombre: string, valor: string): string | null {
+  const opciones = OPCIONES_PUBLICAS.get(nombre);
+  if (!opciones) return null;
+  if (PARAMETROS_CON_LISTA.has(nombre)) {
+    const validos = valor.split(",").filter((v) => opciones.has(v));
+    return validos.length > 0 ? validos.join(",") : null;
+  }
+  return opciones.has(valor) ? valor : null;
+}
 
 /**
  * Prefijos de ruta que son privadas y no se tracean.
@@ -29,6 +65,11 @@ const RUTAS_PRIVADAS_PREFIJOS = [
   "/reclamar",   // Reclamaciones de fichas
   "/entrar",     // Entrada/autenticación
 ];
+
+/** La ficha de una persona lleva su id en la ruta: para medir queda solo «/personas» (también con la barra codificada o en mayúsculas). */
+function rutaSinId(pathname: string): string {
+  return /^\/personas(\/|%2f|$)/i.test(pathname) ? "/personas" : pathname;
+}
 
 /**
  * @param url - La URL completa o relativa con pathname y search.
@@ -47,31 +88,19 @@ export function limpiarUrlAnalitica(url: string): string | null {
       }
     }
 
-    // 2. De la query string, solo la lista blanca
-    const params = urlObj.searchParams;
-    const keysToDelete = Array.from(new Set(params.keys())).filter((key) => !PARAMETROS_PUBLICOS.has(key));
-    keysToDelete.forEach((key) => params.delete(key));
+    // 2. De la query string, solo la lista blanca y solo con un valor de su lista cerrada
+    const limpios = new URLSearchParams();
+    for (const [nombre, valor] of urlObj.searchParams) {
+      const conservado = valorPublico(nombre, valor);
+      if (conservado !== null) limpios.append(nombre, conservado);
+    }
 
-    // 3. Construir la URL limpia absoluta (conserva el origen real de la entrada)
-    const cleaned = urlObj.origin + pathname + (params.toString() ? `?${params.toString()}` : "");
-    return cleaned;
+    // 3. Construir la URL limpia absoluta (conserva el origen real de la entrada); sin el id de la persona
+    const consulta = limpios.toString();
+    return urlObj.origin + rutaSinId(pathname) + (consulta ? `?${consulta}` : "");
   } catch {
     // Si algo falla en el parsing, no tracear por seguridad
     return null;
-  }
-}
-
-/**
- * La ruta de una persona (`/personas/<id>`) lleva su id: para Google Analytics y para los eventos queda solo «/personas» (OL-325; la
- * lista cerrada no deja mandar ids de personas). Las vistas de Vercel siguen como las dejó OL-111.
- */
-function sinIdDePersona(url: string): string {
-  try {
-    const u = new URL(url);
-    if (u.pathname.startsWith("/personas/")) return `${u.origin}/personas`;
-    return url;
-  } catch {
-    return url;
   }
 }
 
@@ -81,7 +110,7 @@ function sinIdDePersona(url: string): string {
  */
 export function limpiarUrlEvento(url: string): string {
   const limpia = limpiarUrlAnalitica(url);
-  if (limpia !== null) return sinIdDePersona(limpia);
+  if (limpia !== null) return limpia;
   try {
     const u = url.startsWith("/") ? new URL(url, "https://somosnosotros.org") : new URL(url);
     const tramo = u.pathname.split("/")[1] ?? "";
@@ -91,8 +120,7 @@ export function limpiarUrlEvento(url: string): string {
   }
 }
 
-/** Una vista de página para Google Analytics (OL-325): la limpieza de Vercel, sin el id de las personas; null si no se manda. */
+/** Una vista de página para Google Analytics (OL-325): la MISMA limpieza que Vercel (OL-334: una sola regla); null si no se manda. */
 export function limpiarUrlGoogle(url: string): string | null {
-  const limpia = limpiarUrlAnalitica(url);
-  return limpia === null ? null : sinIdDePersona(limpia);
+  return limpiarUrlAnalitica(url);
 }
