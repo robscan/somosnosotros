@@ -59,7 +59,7 @@ Construir el alta de lugar del prototipo firmado `docs/rediseno/prototipos/lugar
 10. **Alta atómica con horario:** con franjas, `crear_lugar_con_horario` (lugar y horario en una transacción); sin franjas, el insert de siempre, para que el camino del alta de evento (`crearLugarDesdeEvento`) no cambie. Editar: guarda el lugar y luego reemplaza el horario; si eso falla, lo dice en su renglón y volver a guardar lo repite.
 11. **El horario no viaja al editar si no se tocó:** guardar la descripción no reescribe el horario (ni depende de la migración).
 12. **Editar:** el nombre lleva un lápiz en vez de la lupa (ya no busca), y lo exclusivo del alta salió del formulario.
-13. **Chips del horario de un toque a la vista** (la clase `grupo` del alta de evento, reutilizada) y los días de al menos 44 de ancho: con los de 36 del prototipo `npm run medir` marcaba toques de 40×36.
+13. **Chips del horario de un toque a la vista.** «Abre» y «Cierra» usan la clase `grupo` del alta de evento (con los de 36 del prototipo `npm run medir` marcaba toques de 40×36). Los días, tras la revisión del gestor, son toques redondos de 44 × 44 sin relleno a los lados, en una rejilla de columnas de un toque que se reparten el ancho: los siete caben en una fila a 390 (como en el prototipo) y a 320 pasan cinco y dos, sin medidas por pantalla.
 14. **«¿Es este?» del mapa usa la tarjeta de confirmación del evento con su palomita**, como el prototipo (`ic('ok')`).
 15. **`ui/Opcion` gana `compacta`** (una línea, del alto de un toque) para los diez tipos; `ui/useAlto` sale de `HojaDonde` para que el pie del primer paso reserve su alto a la lista flotante; `SelectorEnlaces` gana `onCambio` (opcional) para llevar las redes de un paso a otro. Ninguno cambia lo que ya existía.
 16. **El simulador de `visualViewport` de `npm run medir`** lee su alto al pedirlo: fijado al instalarse, `ui/Hoja` se colocaba fuera de la vista en el modo «area» (pantalla s19).
@@ -86,12 +86,12 @@ Del simulador iPhone 15 Pro (iOS 26.3, Safari, 393×852 a 3×, teclado en pantal
 - `05-mapa-estoy-aqui.png`: tras «Estoy aquí» (ubicación simulada): «Estoy aquí» se fue, la tarjeta con la palomita dice «Casa · Pin en el mapa» (sin Mapbox no hay dirección), «Si el pin no está en su sitio, arrástralo.» y «Listo» encendido.
 - `06-tipo.png`: «¿Qué tipo de lugar es?» con los diez tipos con el icono de etiqueta y su chevron, entre ellos «Café, bar o restaurante» antes de «Plaza, jardín o parque»; el texto centrado con el icono.
 - `07-revisa-horario-dos-franjas.png`: «Revisa» con «Casa» de título; «Pin en el mapa · Cambiar», «Galería · Cambiar», el horario «Ma–Vi / 10:00 a.m.–6:00 p.m.», «Sá, Do / 11:00 a.m.–2:00 p.m.», «Cierra Lu» con «Cambiar», y «Foto, descripción o redes · Agregar» punteado; «Publicar lugar».
-- `08-hoja-horario-dos-franjas-390.png`: la hoja «¿Qué días abre?» con la franja Ma–Vi encogida (reloj, días, horas y ✕) y la nueva abierta con Sá y Do marcados, 11:00 a.m. y 2:00 p.m.; «Listo» en el pie de la hoja, a la vista.
+- `08-hoja-horario-dos-franjas-390.png`: la hoja «¿Qué días abre?» con la franja Ma–Vi encogida (reloj, días, horas y ✕) y la nueva abierta: los siete días en una sola fila, redondos de 44 × 44, con Sá y Do marcados; 11:00 a.m. y 2:00 p.m.; «Listo» en el pie de la hoja, a la vista.
 - `11-publicado.png`: el sello verde, «Lugar publicado», «Ya está en el directorio. Así lo ve la gente:», el renglón de «Casa · Galería · Sin dirección» con el símbolo SN, la sugerencia punteada «¿Hay algo próximo en Casa? · Publicar un evento aquí», «Compartir» y «Publicar otro».
 
 Del Chrome de la Mac (headless, 2×, con la letra de la app), con la misma app compilada:
 
-- `09-hoja-horario-dos-franjas-320-chrome.png` y `-390-chrome.png`: la misma hoja a 320 y 390; a 320 los días van en dos renglones, los chips miden un toque, «Agregar otro horario» asoma y «Listo» queda abajo, a la vista; sin desplazamiento a lo ancho.
+- `09-hoja-horario-dos-franjas-320-chrome.png` y `-390-chrome.png`: la misma hoja a 320 y 390. A 390 los siete días en una fila; a 320 cinco y dos (Sá y Do debajo de Lu y Ma). Los chips de hora miden un toque; «Listo» queda abajo, a la vista; sin desplazamiento a lo ancho.
 - `10-revisa-horario-320-chrome.png` y `-390-chrome.png`: «Revisa» con el horario de dos grupos y «Cierra Lu»; a 320 «Foto, descripción o redes» va en dos renglones sin empujar «Agregar».
 
 ## Qué probar en el iPhone

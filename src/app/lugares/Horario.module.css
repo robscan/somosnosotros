@@ -45,11 +45,23 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
 }
-/* Los grupos de chips son los del alta de evento (`grupo` de `AltaEvento.module.css`: la respuesta, de un toque a la vista). Los días miden al
-   menos un toque de ancho, así «Lu» se toca igual que «10:00 a.m.». */
+/* «Abre» y «Cierra» son los grupos de chips del alta de evento (`grupo` de `AltaEvento.module.css`: la respuesta, de un toque a la vista). Los
+   días son siete toques redondos de 44 × 44 (sin relleno a los lados, el texto al centro) en una rejilla de columnas de un toque que se reparten
+   el ancho: caben los siete en una fila a 390 y, donde no caben (320), pasan al renglón de abajo, sin medidas por pantalla. Entre renglones, el
+   aire de siempre. */
+.dias {
+  --alto-chip: var(--toque-min);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--toque-min));
+  justify-content: space-between;
+  row-gap: var(--espacio-2);
+  width: 100%;
+}
 .dias > button {
   justify-content: center;
-  min-width: var(--toque-min);
+  width: var(--toque-min);
+  padding-inline: 0;
+  font-size: var(--letra-md);
 }
 
 /* 4. La franja puesta: un renglón que se toca entero para volver a abrirla (icono | días / horas) y su ✕ a la derecha. */

@@ -321,6 +321,10 @@ for (const ancho of [390, 320]) {
     // Los días marcados de la franja abierta, como se ven (el nombre entero es para el lector de pantalla).
     const dias = () => hoja.getByRole("group", { name: "Días" }).getByRole("button").evaluateAll((b) => b.filter((x) => x.getAttribute("aria-pressed") === "true").map((x) => x.querySelector("[aria-hidden]").textContent));
     assert.deepEqual(await dias(), ["Ma", "Mi", "Ju", "Vi", "Sá", "Do"]);
+    // Los días son toques redondos de 44 × 44; a 390 caben los siete en una fila, a 320 pasan al renglón de abajo.
+    const cajas = await hoja.getByRole("group", { name: "Días" }).getByRole("button").evaluateAll((b) => b.map((x) => { const c = x.getBoundingClientRect(); return [Math.round(c.width), Math.round(c.height), Math.round(c.top)]; }));
+    assert.ok(cajas.every(([w, h]) => w === 44 && h === 44), JSON.stringify(cajas));
+    assert.equal(new Set(cajas.map(([, , top]) => top)).size, ancho === 390 ? 1 : 2);
     // Lu–Vi de 10 a 2 y de 4 a 8 (cierre a comer), y el sábado de 4 a 8: tres franjas.
     await hoja.getByRole("button", { name: "lunes" }).click();
     await hoja.getByRole("button", { name: "sábado" }).click();

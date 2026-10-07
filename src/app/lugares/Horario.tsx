@@ -129,7 +129,7 @@ function FranjaAbierta({ franja, quitable, onCambio, onOtra, onQuitar }: { franj
   const cierrePropio = !cierres.includes(franja.cierra);
   return (
     <div className={styles.franja}>
-      <div className={`${pasos.grupo} ${styles.dias}`} role="group" aria-label="Días">
+      <div className={styles.dias} role="group" aria-label="Días">
         {DIAS.map(({ dia, corto, nombre }) => (
           <Chip key={dia} activo={dias.includes(dia)} onClick={() => onCambio({ ...franja, dias: dias.includes(dia) ? dias.filter((d) => d !== dia) : [...dias, dia] })}>
             <span aria-hidden="true">{corto}</span>
