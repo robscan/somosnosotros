@@ -1,16 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useRef, useState, type ComponentProps } from "react";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import Barra from "@/components/ui/Barra";
 import { tituloDeAlta } from "@/lib/armazon";
-import { pedirSalida } from "@/lib/guardiaSalida";
 import FormularioLugar from "@/app/lugares/FormularioLugar";
 import FormularioArtista from "@/app/artistas/FormularioArtista";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./Alta.module.css";
+import TiraTipos from "./TiraTipos";
 
 /** Lo que se registra en esta pantalla; un evento se publica en su alta por pasos (`/nuevo/evento`). */
 type Tipo = "lugar" | "artista";
@@ -27,11 +25,6 @@ type Props = {
   artista: ComponentProps<typeof FormularioArtista>;
 };
 
-const TIPOS: { alta: Tipo; etiqueta: string }[] = [
-  { alta: "lugar", etiqueta: "Lugar" },
-  { alta: "artista", etiqueta: "Artista" },
-];
-
 /**
  * La pantalla de alta de lugar y de artista (docs/rediseno/50, P9; prototipo firmado): una tarea con su barra (el título del tipo y la ✕),
  * el formulario del tipo elegido y, abajo, la tira de tipos (Evento · Lugar · Artista). Lugar y Artista cambian de formulario sin salir de
@@ -44,17 +37,10 @@ export default function Alta({ tipoInicial, evento, salidas, lugar, artista }: P
   const [tipo, setTipo] = useState(tipoInicial);
   const pantalla = useRef<HTMLElement>(null);
   const hojaSalir = useSalirSinPublicar(pantalla);
-  const router = useRouter();
 
   function elegir(nuevo: Tipo) {
     setTipo(nuevo);
     window.scrollTo({ top: 0 });
-  }
-
-  function aEvento(e: React.MouseEvent<HTMLAnchorElement>) {
-    // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (pedirSalida(() => router.replace(evento))) e.preventDefault();
   }
 
   return (
@@ -62,16 +48,7 @@ export default function Alta({ tipoInicial, evento, salidas, lugar, artista }: P
       <Barra cerrar={salidas[tipo]} titulo={tituloDeAlta(tipo)} />
       <FormularioLugar {...lugar} oculta={tipo !== "lugar"} autoFocus={tipoInicial === "lugar"} />
       <FormularioArtista {...artista} oculta={tipo !== "artista"} autoFocus={tipoInicial === "artista"} />
-      <div className={styles.tira} role="group" aria-label="Qué publicar">
-        <Link href={evento} replace prefetch={false} className={styles.tipo} onClick={aEvento}>
-          Evento
-        </Link>
-        {TIPOS.map(({ alta, etiqueta }) => (
-          <button key={alta} type="button" className={styles.tipo} aria-pressed={tipo === alta} onClick={() => elegir(alta)}>
-            {etiqueta}
-          </button>
-        ))}
-      </div>
+      <TiraTipos actual={tipo} destinos={{ evento, lugar: () => elegir("lugar"), artista: () => elegir("artista") }} />
       {hojaSalir}
     </main>
   );

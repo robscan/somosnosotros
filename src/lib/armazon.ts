@@ -109,6 +109,16 @@ export function enlaceAltaEvento({ lugar, artista, desde, ciudad }: ConsultaAlta
 }
 
 /**
+ * A dónde llevan «Lugar» y «Artista» en la tira del primer paso del alta de evento (OL-313): `/nuevo` con su tipo y la ciudad que se veía.
+ * El lugar también la lleva (a diferencia del «+» de Lugares, que se ubica por su punto): su alta la usa para acercar la búsqueda de dirección.
+ */
+export function enlaceAltaDeTipo(tipo: "lugar" | "artista", ciudad: string | null): string {
+  const consulta = new URLSearchParams({ tipo });
+  if (ciudad) consulta.set("ciudad", ciudad);
+  return `/nuevo?${consulta}`;
+}
+
+/**
  * `/nuevo` ya no publica eventos (OL-312): sin tipo, con `tipo=evento` o con un evento ya armado (`lugar`, `artista`, `desde`, que antes
  * abrían solo como evento), la dirección del alta por pasos con los mismos datos. null si es un lugar o un artista: esos siguen en `/nuevo`.
  */
