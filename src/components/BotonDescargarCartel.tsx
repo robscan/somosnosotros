@@ -19,6 +19,8 @@ type Props = {
   corto?: boolean;
   /** Pide el cartel al montarse, para que el toque ya lo tenga y la descarga o el guardado salgan al instante. */
   precargar?: boolean;
+  /** Otra dirección de la imagen: el cartel generado por el creador (OL-324, `/api/cartel-nuevo/…&descarga=1`). Sin ella, el cartel subido. */
+  href?: string;
 };
 
 /** El nombre que trae la respuesta (`Content-Disposition`), o uno genérico. */
@@ -64,16 +66,20 @@ const hayFotosEnServidor = () => false;
  * La imagen vive en otro origen, así que se pide a `/api/cartel/[id]`, que la entrega como archivo. Es un enlace de verdad (mejora
  * progresiva, como `BotonCalendario`): sin JavaScript descarga igual.
  */
-export default function BotonDescargarCartel({ id, className, icono, corto = false, precargar = false }: Props) {
+export default function BotonDescargarCartel({ id, className, icono, corto = false, precargar = false, href: otra }: Props) {
   const conFotos = useSyncExternalStore(sinSuscripcion, hayFotos, hayFotosEnServidor);
   const destino = destinoDelCartel({ conFotos });
   const dice = textosDelCartel(destino, corto);
-  const href = `/api/cartel/${encodeURIComponent(id)}`;
+  const href = otra ?? `/api/cartel/${encodeURIComponent(id)}`;
   const [estado, setEstado] = useState<Estado>("reposo");
   const aviso = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // El cartel que ya se trajo (o se está trayendo): una sola petición aunque se toque dos veces.
   const traido = useRef<Promise<Cartel> | null>(null);
   useEffect(() => () => clearTimeout(aviso.current), []);
+  // Otra imagen (en el creador, otro diseño o formato): lo traído antes ya no vale.
+  useEffect(() => {
+    traido.current = null;
+  }, [href]);
 
   const traer = useCallback((): Promise<Cartel> => {
     traido.current ??= fetch(href).then(async (r) => {

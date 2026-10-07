@@ -20,7 +20,7 @@ import Reportar from "@/components/Reportar";
 import BarraFicha from "@/components/ui/BarraFicha";
 import Ficha, { CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
-import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoCartel, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -306,6 +306,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
   const hayCartel = e.visible && !paso && cartelDescargable(e.imagen, configPublica().supabaseUrl);
+  // «Crear cartel» (OL-324) para quien lo gestiona, en el sitio de «Cartel» cuando el evento no tiene uno (más de la mitad, doc 52 §2); con
+  // cartel, sigue en el menú de ajustes.
+  const crearCartel = puedeEditar && !paso && !hayCartel;
 
   return (
     <Ficha portada={portada}>
@@ -327,6 +330,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <Link href={enlaceAltaEvento({ desde: e.id })} className={renglon.ajuste}>
                 <IconoCalendarioMas width={20} height={20} />
                 <b>Duplicar con otra fecha</b>
+              </Link>
+            </li>
+            <li>
+              <Link href={`${hrefEvento(e)}/cartel`} className={renglon.ajuste}>
+                <IconoCartel width={20} height={20} />
+                <b>Crear cartel</b>
               </Link>
             </li>
           </>
@@ -434,6 +443,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               }
               corto
             />
+          )}
+          {crearCartel && (
+            <Link href={`${hrefEvento(e)}/cartel`} className={ficha.accion}>
+              <span className={CIRCULO}>
+                <IconoCartel />
+              </span>
+              Crear cartel
+            </Link>
           )}
         </div>
 

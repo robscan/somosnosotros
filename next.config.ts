@@ -35,6 +35,12 @@ const nextConfig: NextConfig = {
   // se reutiliza en el teléfono sin esperar al servidor; publicar, Voy y Seguir la invalidan (revalidatePath).
   experimental: { staleTimes: { dynamic: 60 } },
   htmlLimitedBots: BOTS_SIN_STREAMING,
+  // El creador de cartel (OL-324) lee las letras con `fs` desde `process.cwd()`: el rastreo de archivos no las ve solo. Van con la ruta que
+  // dibuja y con la página (su acción «Usar como cartel» también dibuja).
+  outputFileTracingIncludes: {
+    "/api/cartel-nuevo/[id]": ["./src/lib/carteles/fuentes/*.ttf"],
+    "/eventos/[id]/cartel": ["./src/lib/carteles/fuentes/*.ttf"],
+  },
   /**
    * Segunda vuelta de Inicio (OL-156): la app abre siempre en Inicio y Agenda pasa a `/agenda`. "/inicio" ya no
    * existe (redirige 308 a "/"). Un enlace viejo que pedía la Agenda en la raíz con un filtro (`/?filtro=…`) tampoco

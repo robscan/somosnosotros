@@ -407,6 +407,15 @@ export const IconoDestello = (p: P) => (
     <path d="M12 3.5c.7 4.6 3.4 7.3 8 8-4.6.7-7.3 3.4-8 8-.7-4.6-3.4-7.3-8-8 4.6-.7 7.3-3.4 8-8z" />
   </svg>
 );
+/** Cartel: una hoja de pie con su foto (un sol y un monte) y dos renglones de texto (crear cartel, OL-324). */
+export const IconoCartel = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="5" y="2.5" width="14" height="19" rx="2" />
+    <path d="M5 12.5l4-4 3 3 2-2 5 5" />
+    <circle cx="15" cy="6.5" r="1.3" />
+    <path d="M8.5 16.5h7M8.5 19h4.5" />
+  </svg>
+);
 /** Descargar: flecha hacia una bandeja (guardar el QR o el letrero, OL-159). */
 export const IconoDescarga = (p: P) => (
   <svg {...base(p)}>

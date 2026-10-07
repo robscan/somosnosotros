@@ -1,7 +1,7 @@
 import { nombresVisibles } from "../datos";
 import { ajustarRenglon } from "../medir";
 import { MARGEN, PICADO, zonaDeTexto } from "../tokens";
-import { Capa, columna, dato, diaYMes, etiqueta, fila, Foto, Lienzo, pie, renglones, subtitulo, texto, type Bloque } from "./piezas";
+import { Capa, columna, dato, diaYMes, etiqueta, Foto, Lienzo, pie, renglones, subtitulo, texto, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
