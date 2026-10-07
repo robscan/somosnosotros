@@ -2,6 +2,7 @@
    El creador de cartel (OL-324). Va dentro de la columna de `PorPasos`, que ya le da el aire de los lados, la entrada de lado y el pie
    anclado sobre el teclado. Hijos directos de la columna, sin envoltorios de más.
    1. Las cuatro opciones · 2. La vista previa · 3. «Acortar título» (encima de la vista previa: el campo nunca queda bajo el pie) · 4. La confirmación
+   5. La foto propia (OL-337), arriba de las opciones
    ========================================================================== */
 
 /* 1. Cuatro miniaturas grandes en rejilla de dos por dos (a 320 cada una mide ~136 px de ancho: se lee el título del cartel). Cada una es un
@@ -74,5 +75,46 @@
 }
 .encabezado > p {
   color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
+/* 5. La foto propia (OL-337). Sin ella, «Usar otra foto»: el enlace quieto del paso (centrado, como «Ver otros diseños») con la cámara delante;
+   la etiqueta lleva escondido el campo de archivo (`canon.salida`, como la cámara del perfil): tocarla abre la cámara o el carrete. Con ella, un
+   renglón: la miniatura, «Tu foto» y «Quitar la foto» al final. El aviso, corto y en el color de error. */
+.ponerFoto {
+  cursor: pointer;
+}
+.ponerFoto:focus-within {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+.ponerFoto[aria-busy] {
+  cursor: progress;
+}
+.fotoPuesta {
+  display: grid;
+  grid-template-areas: "mini texto quitar";
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+.fotoPuesta > img {
+  grid-area: mini;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
+  object-fit: cover;
+}
+.fotoPuesta > span {
+  grid-area: texto;
+  font-size: var(--letra-sm);
+}
+.fotoPuesta > button {
+  grid-area: quitar;
+}
+.avisoFoto {
+  color: var(--error);
   font-size: var(--letra-sm);
 }

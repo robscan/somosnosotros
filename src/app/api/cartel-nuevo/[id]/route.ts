@@ -1,4 +1,4 @@
-import { cargarParaCartel } from "@/lib/carteles/cargar";
+import { cargarParaCartel, imagenesDelCartel } from "@/lib/carteles/cargar";
 import { generarCartel } from "@/lib/carteles/generar";
 import { parametrosCartel } from "@/lib/carteles/parametros";
 import { plantillaPorId } from "@/lib/carteles/plantillas";
@@ -10,11 +10,13 @@ export const runtime = "nodejs";
 const NO_HAY = () => new Response("No encontrado", { status: 404 });
 
 /**
- * GET /api/cartel-nuevo/[id]?plantilla=&formato=4x5|9x16&ancho=&titulo=&descarga=1 — el cartel generado de un evento (OL-324). Solo para quien
+ * GET /api/cartel-nuevo/[id]?plantilla=&formato=4x5|9x16&ancho=&titulo=&foto=&sinfoto=1&descarga=1 — el cartel generado de un evento (OL-324). Solo para quien
  * lo gestiona (autor o administración): sin sesión o ajeno, 404. Sale en JPEG del ancho pedido (las miniaturas a 360, la vista previa a 720,
  * la descarga a 1080). Con `descarga=1` va como archivo y queda anotado en `carteles_generados` (memoria del lugar; el tope que decida el
  * founder contará esas filas); sin él, la caché del teléfono lo guarda un día (la pantalla pone `v`, que cambia si cambia el evento).
  * `Server-Timing` dice cuánto tardó cada parte, para medirlo en la vista previa de Vercel.
+ * `foto=` pone primero la foto propia que subió quien mira (OL-337; si no es de su carpeta del Storage se ignora) y `sinfoto=1` dibuja la versión
+ * sin foto (la opción tipográfica de cada tanda).
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,7 +28,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!datos?.gestiona) return NO_HAY();
   let r: Awaited<ReturnType<typeof generarCartel>>;
   try {
-    r = await generarCartel(datos, plantilla, p.formato, { titulo: p.titulo, ancho: p.ancho });
+    r = await generarCartel(imagenesDelCartel(datos, p), plantilla, p.formato, { titulo: p.titulo, ancho: p.ancho });
   } catch (e) {
     console.error("cartel-nuevo:", e instanceof Error ? e.message : e);
     return new Response("No se pudo dibujar el cartel", { status: 500 });
