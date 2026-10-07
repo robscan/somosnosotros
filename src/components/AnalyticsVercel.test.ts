@@ -13,6 +13,7 @@ vi.mock("@vercel/analytics/next", () => ({
 }));
 
 import AnalyticsVercel from "./AnalyticsVercel";
+import { limpiarUrlGoogle } from "@/lib/limpiarUrlAnalitica";
 
 /** La marca del rol que pinta `MarcaAdmin`: «admin», «otro» o ninguna (aún sin resolver). */
 const marca = (rol: "admin" | "otro" | null) =>
@@ -46,5 +47,35 @@ describe("AnalyticsVercel (OL-111, OL-325)", () => {
   it("rol «otro»: una acción en una ruta privada lleva solo su primer tramo", () => {
     pagina(false);
     expect(antes({ type: "event", url: "https://somosnosotros.org/entrar?siguiente=%2Fnuevo%2Flugar%3Fnombre%3DCasa" })).toEqual({ type: "event", url: "https://somosnosotros.org/entrar" });
+  });
+  it("F13: la ficha de una persona va a Vercel como /personas, sin su id", () => {
+    pagina(false);
+    expect(antes({ type: "pageview", url: "https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/personas" });
+    expect(antes({ type: "event", url: "https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001" })).toEqual({ type: "event", url: "https://somosnosotros.org/personas" });
+  });
+  it("F13: un valor libre en un filtro permitido no sale a Vercel; uno de su lista sí", () => {
+    pagina(false);
+    expect(antes({ type: "pageview", url: "https://somosnosotros.org/agenda?tipo=correo%40local.test" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/agenda" });
+    expect(antes({ type: "pageview", url: "https://somosnosotros.org/lugares?tipo=museo" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/lugares?tipo=museo" });
+    expect(antes({ type: "pageview", url: "https://somosnosotros.org/agenda?cuanto=gratis,cooperacion&que=talleres&filtro=siguiendo" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/agenda?cuanto=gratis%2Ccooperacion&que=talleres&filtro=siguiendo" });
+  });
+  it("F13: Vercel y Google ven exactamente la misma URL", () => {
+    pagina(false);
+    const urls = [
+      "https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001",
+      "https://somosnosotros.org/agenda?tipo=correo%40local.test",
+      "https://somosnosotros.org/agenda?cuanto=gratis&q=rosa&lat=22.1&lng=-100.9",
+      "https://somosnosotros.org/artistas?hace=musica&que=Los%20Vecinos",
+      "https://somosnosotros.org/lugares?tipo=museo&tipo=otro@x.mx",
+      "https://somosnosotros.org/nuevo/lugar?nombre=Casa&lat=22.151123&lng=-100.977456",
+      "https://somosnosotros.org/lugares/casa-de-la-cultura",
+      "https://somosnosotros.org/perfil",
+      "https://somosnosotros.org/entrar?siguiente=/",
+      "https://somosnosotros.org/",
+    ];
+    for (const url of urls) {
+      const enVercel = antes({ type: "pageview", url });
+      expect(enVercel === null ? null : enVercel.url).toBe(limpiarUrlGoogle(url));
+    }
   });
 });

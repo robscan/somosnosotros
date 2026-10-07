@@ -17,8 +17,13 @@ export const TOPE_BYTES = 6 * 1024 * 1024;
  * Sharp aplica el mismo límite al abrirla.
  */
 export const LIMITE_PIXELES = 12_000_000;
-/** Tiempo máximo para preparar la foto del cartel (análisis de color y reducción); si se pasa, el cartel sale sin foto. */
+/**
+ * Tiempo máximo para tener lista la foto del cartel: bajarla del Storage Y prepararla (análisis de color y reducción); si se pasa, el cartel sale
+ * sin foto. Desde OL-334 abarca la descarga: antes solo contaba la preparación y una descarga colgada no tenía plazo (F07 residual de OL-327).
+ */
 export const TIEMPO_MAX_FOTO_MS = 8000;
+/** Plazo de la descarga de UNA imagen (OL-334): al vencer, se corta, se descarta y se sigue con la siguiente o sin foto. Siempre dentro de los 8 s totales. */
+export const PLAZO_DESCARGA_MS = 4000;
 
 export type FormatoAdmitido = "jpeg" | "png" | "webp";
 

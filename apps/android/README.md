@@ -42,7 +42,7 @@ npx @bubblewrap/cli update --skipVersionUpgrade --manifest=twa-manifest.json --d
 BUBBLEWRAP_KEYSTORE_PASSWORD=… BUBBLEWRAP_KEY_PASSWORD=… npx @bubblewrap/cli build --manifest=twa-manifest.json --directory=.
 ```
 
-Las dos contraseñas son la misma y están en `/Users/apple-1/somosnosotros-privado/android/LEEME.txt` (nunca en el
+Las dos contraseñas son la misma y están en `LEEME.txt` del directorio privado de firma indicado en `twa-manifest.json` (nunca en el
 repo, ni en un chat, ni en una bitácora). Léelas a las variables de entorno en el mismo comando, sin imprimirlas.
 
 **Para cada subida nueva a Play**, sube `appVersionCode` (y `appVersion` si cambia el nombre visible) editando
@@ -57,7 +57,7 @@ $ANDROID_SDK/build-tools/36.1.0/apksigner verify --print-certs app-release-signe
 
 ## La llave
 
-- **Llave de subida** (`subida.keystore`, alias `subida`): `/Users/apple-1/somosnosotros-privado/android/`, fuera del
+- **Llave de subida** (`subida.keystore`, alias `subida`): el directorio privado de firma indicado en `twa-manifest.json`, fuera del
   repo, con su contraseña y su huella en `LEEME.txt`. Con Play App Signing, Google re-firma con SU llave lo que
   llega a los teléfonos; la nuestra solo identifica nuestras subidas. Si se pierde, Play permite pedir un
   restablecimiento de la llave de subida (con tiempo de espera); no es el fin de la app, pero conviene respaldarla.
