@@ -90,6 +90,13 @@ describe("el creador de cartel (OL-336)", () => {
   it("la tanda de la pantalla (0, 1, 2) se mide como primera, segunda o tercera", () => {
     expect([0, 1, 2, 7].map(tandaMedida)).toEqual(["primera", "segunda", "tercera", "primera"]);
   });
+  it("la foto propia (OL-337): puesta y quitada, sin datos; nunca el archivo, su nombre, su dirección ni el evento", () => {
+    expect(validarMedicion("cartel_foto_puesta")).toEqual({});
+    expect(validarMedicion("cartel_foto_quitada")).toEqual({});
+    expect(validarMedicion("cartel_foto_puesta", { archivo: "IMG_0412.HEIC" })).toBeNull();
+    expect(validarMedicion("cartel_foto_puesta", { foto: "https://x.supabase.co/storage/v1/object/public/fotos/lugares/u/cartel-foto-1.jpg" })).toBeNull();
+    expect(validarMedicion("cartel_foto_quitada", { evento: "oca" })).toBeNull();
+  });
 });
 
 describe("claseMedida", () => {

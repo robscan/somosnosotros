@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import BotonDescargarCartel from "@/components/BotonDescargarCartel";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import PorPasos, { PiePaso, type Direccion } from "@/components/PorPasos";
@@ -10,27 +10,38 @@ import Campo from "@/components/ui/Campo";
 import { Chip, Chips } from "@/components/ui/Chip";
 import Hoja from "@/components/ui/Hoja";
 import { IconoDescarga } from "@/components/ui/Iconos";
+import { PREFIJO_FOTO_PROPIA } from "@/lib/carteles/fotoPropia";
+import { reponerRecordado, type Paso, type Recordado } from "@/lib/carteles/memoria";
 import type { OrigenCreador } from "@/lib/carteles/origen";
 import { hrefCartel } from "@/lib/carteles/parametros";
 import { FORMATOS, type IdFormato } from "@/lib/carteles/tokens";
 import { formatoMedido, medirCliente, plantillaMedida, rolEnPantalla, tandaMedida } from "@/lib/medir";
-import { usarComoCartel } from "./acciones";
+import { subirFoto } from "@/lib/subirFoto";
+import { comprobarFotoPropia, usarComoCartel } from "./acciones";
+import FotoDelCartel from "./FotoDelCartel";
 import styles from "./CreadorCartel.module.css";
 
-export type Opcion = { id: string; nombre: string; cortaTitulo: boolean };
+/** Una opción de la tanda. `sinFoto`: se dibuja sin foto aunque haya imagen (la tipográfica de la tanda, OL-337). */
+export type Opcion = { id: string; nombre: string; sinFoto: boolean; cortaTitulo: boolean };
 
 type Props = {
   evento: { slug: string; titulo: string; href: string };
   /** Las tandas de cuatro, en orden: la primera es la que se ofrece; «Ver otras» pasa a la siguiente. */
   tandas: Opcion[][];
+  /** Las mismas con una foto propia puesta (OL-337): distintas solo si el evento no tenía ninguna imagen. */
+  tandasConFoto: Opcion[][];
+  /** El evento ya tiene alguna imagen (cambia el texto de la acción de la foto). */
+  conImagen: boolean;
+  /** Quien mira: la foto propia sube a su carpeta del Storage. */
+  usuarioId: string;
+  /** Esa carpeta, para reponer de la memoria solo una foto suya. */
+  carpeta: string | null;
   /** La versión del evento, para que la caché del teléfono no dé un cartel viejo. */
   v: string;
   /** Desde dónde se abrió (`?origen=`), para medirlo (OL-336). */
   origen: OrigenCreador | "otro";
 };
 
-type Paso = "elegir" | "ver";
-type Recordado = { paso: Paso; tanda: number; plantilla: string | null; formato: IdFormato; titulo: string };
 
 /** Lo escrito en «Acortar título» llega a la imagen cuando la persona deja de teclear un momento (no una imagen por letra). */
 const ESPERA_TITULO_MS = 700;
@@ -69,8 +80,13 @@ function useMedirApertura(origen: Props["origen"]) {
  * «Publicado», que se reemplazó al abrir el creador, o un enlace), el creador se reemplaza por la ficha. Así el Atrás de la ficha lleva a donde
  * estaba la persona antes de entrar al creador (o adonde mandaba el alta), nunca otra vez al creador. Se mide cada paso (`medirCliente`), sin
  * texto escrito ni ids.
+ *
+ * Foto propia (OL-337): «Usar otra foto» sube una foto como el cartel del alta (`subirFoto`, a la carpeta de quien mira), el servidor comprueba
+ * que sirve (`comprobarFotoPropia`) y pasa a ser la primera imagen de los diseños: las cuatro miniaturas, la vista previa, la descarga y «Usar
+ * como cartel» la llevan en `?foto=`. Una de las cuatro de cada tanda va siempre sin foto (`Opcion.sinFoto`). La foto se recuerda con lo demás
+ * y sobrevive a «Ver otros diseños», al formato y al título; «Quitar la foto» vuelve al orden de siempre.
  */
-export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
+export default function CreadorCartel({ evento, tandas: tandasSinFoto, tandasConFoto, conImagen, usuarioId, carpeta, v, origen }: Props) {
   const volverA = useVolverA();
   const terminar = useTerminar();
   const [paso, setPaso] = useState<Paso>("elegir");
@@ -84,15 +100,22 @@ export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usando, empezar] = useTransition();
+  const [foto, setFoto] = useState<string | null>(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [errorFoto, setErrorFoto] = useState<string | null>(null);
+  // Una subida a la vez: el toque que llega mientras sube no hace nada nuevo.
+  const subiendo = useRef(false);
 
-  useMemoriaPantalla<Recordado>(null, { paso, tanda, plantilla, formato, titulo }, (r) => {
-    setPaso(r.paso === "ver" && r.plantilla ? "ver" : "elegir");
-    setTanda(r.tanda < tandas.length ? r.tanda : 0);
+  useMemoriaPantalla<Recordado>(null, { paso, tanda, plantilla, formato, titulo, foto }, (guardado) => {
+    const r = reponerRecordado(guardado, { tandas: tandasSinFoto.length, tandasConFoto: tandasConFoto.length, carpeta });
+    setPaso(r.paso);
+    setTanda(r.tanda);
     setPlantilla(r.plantilla);
-    setFormato(r.formato === "9x16" ? "9x16" : "4x5");
-    setTitulo(r.titulo ?? "");
-    setTituloDibujado(r.titulo ?? "");
+    setFormato(r.formato);
+    setTitulo(r.titulo);
+    setTituloDibujado(r.titulo);
     setAcortando(!!r.titulo);
+    setFoto(r.foto);
   });
 
   useEffect(() => {
@@ -103,9 +126,12 @@ export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
   const aLaFicha = useCallback(() => volverA(evento.href), [volverA, evento.href]);
   const salida = { href: evento.href, texto: "Volver al evento", alSalir: aLaFicha };
 
+  const tandas = foto ? tandasConFoto : tandasSinFoto;
   const opciones = tandas[tanda] ?? [];
   const elegida = tandas.flat().find((o) => o.id === plantilla) ?? null;
   const propio = tituloDibujado || null;
+  /** Con qué foto se dibuja una opción: ninguna si es la tipográfica; si no, la propia (si la hay) delante de las de siempre. */
+  const conFoto = (o: Opcion) => ({ foto, sinFoto: o.sinFoto });
 
   const elegir = (id: string) => {
     const medida = plantillaMedida(id);
@@ -124,6 +150,35 @@ export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
   const ninguno = () => {
     medirCliente("cartel_ninguno", { tanda: tandaMedida(tanda) });
     aLaFicha();
+  };
+  // «Usar otra foto»: sube, el servidor comprueba que sirve y entonces entra a los diseños. Si no, un aviso corto y todo sigue igual.
+  const ponerFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = ""; // la misma foto se puede volver a elegir
+    if (!archivo || subiendo.current) return;
+    subiendo.current = true;
+    setErrorFoto(null);
+    setSubiendoFoto(true);
+    try {
+      const subida = await subirFoto("lugares", usuarioId, PREFIJO_FOTO_PROPIA, archivo, "foto");
+      if ("error" in subida) return setErrorFoto(subida.error);
+      const r = await comprobarFotoPropia(evento.slug, subida.url);
+      if (!r.ok) return setErrorFoto(r.mensaje);
+      medirCliente("cartel_foto_puesta");
+      setFoto(subida.url);
+      setTanda((t) => (t < tandasConFoto.length ? t : 0));
+    } catch {
+      setErrorFoto("No se pudo subir la foto. Intenta de nuevo.");
+    } finally {
+      subiendo.current = false;
+      setSubiendoFoto(false);
+    }
+  };
+  const quitarFoto = () => {
+    medirCliente("cartel_foto_quitada");
+    setFoto(null);
+    setErrorFoto(null);
+    setTanda((t) => (t < tandasSinFoto.length ? t : 0));
   };
   const cambiarFormato = (nuevo: IdFormato) => {
     if (nuevo === formato) return;
@@ -147,7 +202,7 @@ export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
     empezar(async () => {
       if (!elegida) return;
       setError(null);
-      const r = await usarComoCartel(evento.slug, elegida.id, formato, propio);
+      const r = await usarComoCartel(evento.slug, elegida.id, formato, propio, conFoto(elegida));
       if (r.ok) {
         medirConPlantilla("cartel_usado");
         // A la ficha sin dejar el creador en el historial (con el historial si se vino de ella, y se relee para ver el cartel nuevo).
@@ -161,12 +216,13 @@ export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
   if (paso === "elegir" || !elegida) {
     return (
       <PorPasos titulo="Crear cartel" paso={`elegir-${tanda}`} direccion={direccion} avance={0.5} salida={salida} pregunta="¿Cuál te gusta?">
+        <FotoDelCartel foto={foto} conImagen={conImagen} subiendo={subiendoFoto} error={errorFoto} onElegir={ponerFoto} onQuitar={quitarFoto} />
         <ul className={styles.opciones} aria-label="Diseños">
           {opciones.map((o) => (
             <li key={o.id}>
-              <button type="button" className={styles.opcion} onClick={() => elegir(o.id)} aria-label={o.nombre}>
+              <button type="button" className={styles.opcion} onClick={() => elegir(o.id)} aria-label={o.sinFoto ? `${o.nombre}, sin foto` : o.nombre}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor ya a su tamaño (360 de ancho) */}
-                <img src={hrefCartel(evento.slug, { plantilla: o.id, formato: "4x5", ancho: 360, titulo: propio, v })} alt="" width={360} height={450} />
+                <img src={hrefCartel(evento.slug, { plantilla: o.id, formato: "4x5", ancho: 360, titulo: propio, ...conFoto(o), v })} alt="" width={360} height={450} />
               </button>
             </li>
           ))}
@@ -206,14 +262,14 @@ export default function CreadorCartel({ evento, tandas, v, origen }: Props) {
         </div>
       )}
       {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho */}
-      <img key={`${elegida.id}-${formato}-${propio}`} className={styles.vista} data-formato={formato} src={hrefCartel(evento.slug, { plantilla: elegida.id, formato, ancho: 720, titulo: propio, v })} alt={`Vista previa del cartel: ${elegida.nombre}`} width={720} height={formato === "9x16" ? 1280 : 900} />
+      <img key={`${elegida.id}-${formato}-${propio}-${foto}`} className={styles.vista} data-formato={formato} src={hrefCartel(evento.slug, { plantilla: elegida.id, formato, ancho: 720, titulo: propio, ...conFoto(elegida), v })} alt={`Vista previa del cartel: ${elegida.nombre}`} width={720} height={formato === "9x16" ? 1280 : 900} />
       {error && (
         <p className="aviso-error" role="alert">
           {error}
         </p>
       )}
       <PiePaso>
-        <BotonDescargarCartel id={evento.slug} href={hrefCartel(evento.slug, { plantilla: elegida.id, formato, titulo: propio, descarga: true })} className={claseBoton()} icono={<IconoDescarga width={20} height={20} />} alGuardar={() => medirConPlantilla("cartel_descargado")} />
+        <BotonDescargarCartel id={evento.slug} href={hrefCartel(evento.slug, { plantilla: elegida.id, formato, titulo: propio, ...conFoto(elegida), descarga: true })} className={claseBoton()} icono={<IconoDescarga width={20} height={20} />} alGuardar={() => medirConPlantilla("cartel_descargado")} />
         <Boton type="button" variante="secundario" onClick={() => setConfirmando(true)} aria-busy={usando || undefined} disabled={usando}>
           {usando ? "Poniendo el cartel…" : "Usar como cartel del evento"}
         </Boton>
