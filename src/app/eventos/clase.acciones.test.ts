@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { actualizarEvento, crearEvento, operacionDerivada } from "./acciones";
+import { actualizarEvento, crearEvento, operacionDerivada, publicarBorrador } from "./acciones";
 
 // OL-321 (bitácora 350): cómo ocurre un evento al guardar. Lo que no es un evento suelto viaja con `guardar_evento_con_clase` (la clase, el
 // horario propio, la inauguración y el festival, en la misma transacción); un festival nuevo, con `publicar_programa`.
@@ -129,5 +129,26 @@ describe("un festival con su programa (H6)", () => {
     const fd = formulario({ clase: "festival", titulo: "Festival de Cine", actos: JSON.stringify([acto("Charla", "2030-11-13T18:00", false)]) });
     expect(await crearEvento(null, fd)).toMatchObject({ ok: false, general: expect.stringContaining("Falta una actividad") });
     expect(m.rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("publicar un borrador del programa (OL-328)", () => {
+  it("publicado, vuelve a la ficha del festival", async () => {
+    m.rpc.mockResolvedValue({ data: { id: ID, padre: FESTIVAL }, error: null });
+    await expect(publicarBorrador(ID, "/eventos/festival-de-cine")).rejects.toThrow("REDIRECT");
+    expect(m.rpc).toHaveBeenCalledWith("publicar_borrador_de_programa", { p_evento: ID });
+    expect(m.redirect).toHaveBeenCalledWith("/eventos/festival-de-cine");
+  });
+
+  it("si la administración lo retiró, la ficha lo dice", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "no_publicable" } });
+    await expect(publicarBorrador(ID, "/eventos/festival-de-cine")).rejects.toThrow("REDIRECT");
+    expect(m.redirect).toHaveBeenCalledWith("/eventos/festival-de-cine?error=no_publicable");
+  });
+
+  it("otro rechazo (no es suyo) vuelve sin aviso, como antes", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "sin_permiso" } });
+    await expect(publicarBorrador(ID, "/eventos/festival-de-cine")).rejects.toThrow("REDIRECT");
+    expect(m.redirect).toHaveBeenCalledWith("/eventos/festival-de-cine");
   });
 });
