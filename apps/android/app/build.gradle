@@ -55,7 +55,7 @@ android {
     namespace "org.somosnosotros.app"
     defaultConfig {
         applicationId "org.somosnosotros.app"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 36
         versionCode 1
         versionName "1.0"

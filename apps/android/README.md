@@ -14,7 +14,9 @@ escrita en Kotlin ni en Java: la sesión, los avisos push y las capacidades del 
   `appVersion` «1.0», respaldo en pestaña personalizada (`customtabs`) y la ruta de la llave de subida.
 - El resto (`app/`, `build.gradle`, `gradle/`, `gradlew`, `store_icon.png`, `manifest-checksum.txt`) lo genera
   Bubblewrap desde el manifiesto: no se edita a mano. `targetSdkVersion` 36 (Android 16), el que Google Play exige
-  desde el 2026-08-31 a apps y actualizaciones nuevas.
+  desde el 2026-08-31 a apps y actualizaciones nuevas. `minSdkVersion` **24** (Android 7.0): la protección automática de Play
+  (Play Protect) exige 24 o más; con 21 (el valor por omisión de Bubblewrap) Play Console rechazó el `.aab` el
+  2026-10-06.
 - `.gitignore` — deja fuera `*.keystore`, `*.jks`, `*.aab`, `*.apk`, `build/`, `.gradle/`, `local.properties`.
   **El repo es público: ninguna llave ni binario entra.**
 - La web sirve [`/.well-known/assetlinks.json`](../../src/app/.well-known/assetlinks.json/route.ts), el archivo que

@@ -29,5 +29,5 @@
   "orientation": "default",
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "minSdkVersion": 21
+  "minSdkVersion": 24
 }

@@ -1,7 +1,7 @@
 # 345 · Envoltorio de Android: proyecto, .aab firmado y assetlinks
 
 **Pieza:** OL-192 (retomada). **Rama:** `android-aab` (sobre `origin/main`). **Fecha:** 2026-10-06. **Operador:** Claude Sonnet 5.5 (agente del gestor IV).
-**Estado:** `.aab` compilado y firmado con la llave de subida, firma verificada; ruta de assetlinks lista y probada con `next start`. No se probó la app en un emulador ni en un teléfono (no hay ninguno en la Mac). Sin migraciones ni variables de entorno nuevas.
+**Estado:** (corregido el mismo día por el rechazo de Play: `minSdkVersion` 24) `.aab` compilado y firmado con la llave de subida, firma verificada; ruta de assetlinks lista y probada con `next start`. No se probó la app en un emulador ni en un teléfono (no hay ninguno en la Mac). Sin migraciones ni variables de entorno nuevas.
 
 ## Qué se encargó
 
@@ -9,13 +9,13 @@ El founder (2026-10-06) quiere subir hoy a una pista de prueba de Google Play el
 
 ## Qué hay
 
-- **`apps/android/twa-manifest.json`** escrito a mano (la fuente) y el proyecto Gradle que Bubblewrap 10.8.2 generó desde él con `update --skipVersionUpgrade` (no pregunta nada): `app/`, `build.gradle`, `gradle/`, `gradlew`, `store_icon.png`, `manifest-checksum.txt`. `targetSdkVersion` y `compileSdkVersion` 36, `minSdkVersion` 21.
+- **`apps/android/twa-manifest.json`** escrito a mano (la fuente) y el proyecto Gradle que Bubblewrap 10.8.2 generó desde él con `update --skipVersionUpgrade` (no pregunta nada): `app/`, `build.gradle`, `gradle/`, `gradlew`, `store_icon.png`, `manifest-checksum.txt`. `targetSdkVersion` y `compileSdkVersion` 36, `minSdkVersion` 24 (ver «Corrección»).
 - **`apps/android/.gitignore`**: `*.keystore`, `*.jks`, `*.aab`, `*.apk`, `*.idsig`, `build/`, `.gradle/`, `local.properties`, `app/build/`. Con `git status --ignored` se comprobó que el `.aab`, los `.apk`, `app/build/`, `build/` y `.gradle/` quedan ignorados y que ningún binario ni llave está añadido.
 - **`src/app/.well-known/assetlinks.json/route.ts`** y su prueba: responde `application/json` (sin `charset`, como la de Apple) con la relación `delegate_permission/common.handle_all_urls` para `org.somosnosotros.app` y la lista de huellas. Hoy lleva la de la llave de subida; `HUELLA_FIRMA_GOOGLE` es una constante en `null`, con comentario, esperando la de Google.
 - **`apps/android/README.md`**: qué es, herramientas, cómo se regenera y se compila (sin contraseñas), dónde vive la llave, qué hacer tras la primera subida y la regla de Google para cuentas personales.
 - **Binarios fuera del repo**, con permisos 600, en `/Users/apple-1/somosnosotros-privado/android/salida/`:
-  - `somosnosotros-1.0-vc1.aab`: 1 304 759 bytes, SHA-256 `b851ce9daec81993a8f6a642814a1e744d0adfc79d6b31fa15dbaa9f3eb932e1`.
-  - `somosnosotros-1.0-vc1.apk`: 1 184 194 bytes (para instalar a mano con `adb`).
+  - `somosnosotros-1.0-vc1.aab`: 1 229 569 bytes, SHA-256 `33ac7472cc65ce73d63f5fcf062adcfe8bbf32fef701206d37102f17f6c7e74a` (versión con minSdk 24; la primera, de 1 304 759 bytes y minSdk 21, fue rechazada por Play).
+  - `somosnosotros-1.0-vc1.apk`: 1 134 321 bytes (para instalar a mano con `adb`).
   - Los originales de Bubblewrap siguen en `apps/android/` (`app-release-bundle.aab`, `app-release-signed.apk`), ignorados por git; esa carpeta es de un árbol de trabajo que se puede limpiar, la de `somosnosotros-privado` no.
 
 ## Decisiones del operador
@@ -29,9 +29,15 @@ El founder (2026-10-06) quiere subir hoy a una pista de prueba de Google Play el
 7. **Contraseña**: leída a variables de entorno dentro de un script del scratchpad, nunca impresa. Se comprobó (con búsqueda literal) que no aparece en ningún archivo de `apps/android/` ni dentro del `.aab`, y el registro de la compilación se pasó por un reemplazo por si algún comando la repetía.
 8. **Emulador: no hay y no se instaló.** `avdmanager` no encontró ninguno y el SDK no trae `emulator` ni imágenes de sistema (bajarlos son varios GB; la instrucción del founder del 2026-09-25 fue no descargar más sin un teléfono, y esta tarea solo pedía probar si ya había). Por eso no hay carpeta `docs/rediseno/capturas-345/` ni captura alguna.
 
+## Corrección: Play rechazó el primer `.aab` (minSdk 21)
+
+Al subirlo a prueba interna, Play Console lo rechazó: «La protección automática de Play requiere una versión mínima del SDK de 24 o una versión posterior. El paquete de aplicación subido tiene una versión mínima del SDK de 21.» El 21 venía del valor por omisión de Bubblewrap que dejé en `twa-manifest.json`. Se cambió `minSdkVersion` a **24** (Android 7.0), se regeneró con `update --skipVersionUpgrade` (`app/build.gradle` quedó en `minSdkVersion 24`, `versionCode` 1: el archivo rechazado no quedó en ninguna versión de Play) y se recompiló y firmó igual que antes. Los archivos viejos de `salida/` se sustituyeron (mismos nombres).
+
+Verificado en el nuevo: `apkanalyzer manifest min-sdk` del APK da 24 y `target-sdk` 36; para el `.aab` se armó el módulo base como APK, se convirtió con `aapt2 convert` y `aapt2 dump xmltree` muestra `uses-sdk minSdkVersion=24 targetSdkVersion=36`. `keytool -printcert -jarfile` sobre el `.aab` da la huella de la llave de subida `BC:BE:…:40:50`; `jarsigner` «jar verified»; `apksigner verify` verifica el APK con v2 y v3. Ya no con v1: con minSdk 24 el APK no lleva firma v1, es lo esperado (v2 existe desde Android 7.0). El mismo script de la contraseña de antes: no aparece en `apps/android/` ni en el `.aab`.
+
 ## Verificación
 
-Compilación: `npx @bubblewrap/cli build` terminó con código 0 (APK y AAB). Firma, con herramientas del JDK y del SDK:
+Primera compilación (minSdk 21; la corrección de arriba repite lo que cambió con minSdk 24): `npx @bubblewrap/cli build` terminó con código 0 (APK y AAB). Firma, con herramientas del JDK y del SDK:
 
 - `keytool -printcert -jarfile` sobre el `.aab`: propietario `CN=Somos Nosotros, OU=somosnosotros, O=somosnosotros, L=San Luis Potosi, ST=SLP, C=MX`, válido hasta 2054-02-10, SHA-256 `BC:BE:8F:FB:71:A6:B0:B9:0A:07:3A:F4:13:AB:45:64:1F:A4:A5:9E:9F:6F:51:6C:B0:3E:82:5E:D7:6E:40:50`, **idéntica** a la del `LEEME.txt` y a la que `keytool -list` da del keystore (y a la de `apksigner verify --print-certs` sobre el APK).
 - `jarsigner -verify` sobre el `.aab`: «jar verified», `SHA256withRSA` de 2048 bits. Avisa que la cadena no es de una autoridad conocida, que es autofirmado y sin sello de tiempo: es lo normal en una llave de subida (Play la reconoce por huella, no por cadena).
