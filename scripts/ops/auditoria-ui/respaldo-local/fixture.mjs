@@ -72,6 +72,7 @@ const E = {
   leonora: "bbbb0001-0000-4000-8000-000000000011",
   oca: "bbbb0001-0000-4000-8000-000000000012",
   desierto: "bbbb0001-0000-4000-8000-000000000013",
+  taller: "bbbb0001-0000-4000-8000-000000000014",
 };
 function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen }) {
   const inicio = iso(fecha(dias, hora));
@@ -96,7 +97,16 @@ const eventos = [
   evento({ id: E.leonora, slug: "leonora-in-the-morning-light", titulo: "Leonora in the morning light", dias: 9, hora: "17:00", lugar_id: L.ccub, creadoHace: 2, descripcion: "Película de Thor Klein y Lena Vurma. Con presencia de las productoras. Clasificación B15." }),
   evento({ id: E.oca, slug: "oca", titulo: "OCA", dias: 10, hora: "19:00", lugar_id: L.mascara, creadoHace: 5 }),
   evento({ id: E.desierto, slug: "desierto-observacion-y-espacio", titulo: "DESIERTO: Observación y Espacio", dias: 11, hora: "20:00", lugar_id: L.aether, creadoHace: 1, descripcion: "Inauguración de la exposición de escultura, en presencia del artista." }),
+  // OL-320: un taller con horario por día (tres sesiones, cada una con su hora): la agenda lo pone en los tres días. Empieza con su primera sesión y termina con la última.
+  { ...evento({ id: E.taller, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
 ];
+
+// Su horario por día: una fila por sesión, cada una con su hora (`fin` posterior al inicio y el mismo día).
+const sesiones = [
+  { dias: 2, hora: "17:00", fin: "19:00" },
+  { dias: 4, hora: "18:00", fin: "20:00" },
+  { dias: 6, hora: "17:00", fin: "19:00" },
+].map((d, i) => ({ id: `bbbb0002-0000-4000-8000-00000000000${i + 1}`, evento_id: E.taller, fecha: fecha(d.dias, d.hora).slice(0, 10), inicio: iso(fecha(d.dias, d.hora)), fin: iso(fecha(d.dias, d.fin)) }));
 
 // ---------- artistas ----------
 const A = {
@@ -148,7 +158,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [], lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: sesiones, lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */

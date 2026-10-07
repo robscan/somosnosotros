@@ -7,6 +7,7 @@ import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { ZONA_INICIAL } from "@/lib/fechas";
 import { marcarNuevosVisto } from "@/lib/nuevosVisto";
+import { claveDe } from "@/lib/ocurrencias";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
@@ -56,6 +57,9 @@ type Recordado = { filtros: FiltrosAgenda; mostrados: number; visita?: string | 
  * ciudad, Cuándo y Filtros) y, debajo, las pestañas Todos · Nuevos, todo en `ui/Cabecera`. Cada día es un grupo con su título
  * pegado (`ui/Grupo`); vacíos por causa. Buscar es la lupa de la barra de la app (`app/buscar`), no un campo de esta pantalla.
  * Nuevos es lo publicado desde la última visita (`AgendaNuevos`). Decisiones en docs/rediseno/02, 23 y 50.
+ *
+ * Todos pone cada evento en cada día en que pasa algo, con su hora de ese día (OL-320, `lib/ocurrencias`): un taller de tres sábados sale
+ * en los tres, con «Día 2 de 3»; el día que ya pasó no sale. El grupo de cada día cuenta renglones de ese día.
  */
 export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, conSesion, filtrosIniciales }: Props) {
   const [guardados, setFiltros] = useState(filtrosIniciales);
@@ -197,7 +201,7 @@ function AgendaLista({
         {agruparPorDia(lista.slice(0, mostrados), ahora, filtros.cuando?.desde).map((g) => (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
+              <RenglonEvento key={claveDe(e)} evento={e} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
             ))}
           </Grupo>
         ))}

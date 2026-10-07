@@ -256,36 +256,49 @@ export type DiasActivos = Map<string, number>;
  * `fin`, ocupa cada día de calendario entre el de inicio y el de fin (inclusive), en la zona del propio evento —
  * un evento de varios días cuenta en cada día que ocupa, igual que hace la Agenda al decidir cuándo se oculta.
  */
-type EventoConRango = { inicio: string; fin: string | null; zona: string };
+type EventoConRango = {
+  inicio: string;
+  fin: string | null;
+  zona: string;
+  /** Su horario por día (`eventos_sesiones`, OL-311), ya vigente: cada sesión ocupa solo su día, no los que quedan entre una y otra (OL-320). */
+  sesiones?: readonly { inicio: string }[];
+};
 
-/** El día de inicio y el de fin (YYYY-MM-DD, en la zona del propio evento) que ocupa un evento en el calendario:
- *  sin `fin`, los dos son el día de inicio (mismo criterio que `terminaDe` en `fechas.ts` — sin fin explícito,
- *  nunca dura más de ese día). Un `fin` corrupto (antes del inicio, dato roto) se acota a `inicio`, para no
- *  perder ni el día de inicio. */
-function rangoDelEvento(e: EventoConRango): { inicio: string; fin: string } {
+/** Los días (YYYY-MM-DD, en la zona del propio evento) que ocupa un evento, como tramos de calendario. Con horario por día, un tramo de un
+ *  solo día por sesión: un taller de tres sábados ocupa esos tres días y no los de en medio. Sin él, uno solo: del día de inicio al de fin;
+ *  sin `fin`, los dos son el día de inicio (mismo criterio que `terminaDe` en `fechas.ts` — sin fin explícito, nunca dura más de ese día).
+ *  Un `fin` corrupto (antes del inicio, dato roto) se acota a `inicio`, para no perder ni el día de inicio. */
+function tramosDelEvento(e: EventoConRango): { inicio: string; fin: string }[] {
+  if (e.sesiones && e.sesiones.length > 0) {
+    return e.sesiones.map((s) => {
+      const dia = diaLocal(new Date(s.inicio), e.zona);
+      return { inicio: dia, fin: dia };
+    });
+  }
   const inicio = diaLocal(new Date(e.inicio), e.zona);
   const finCalculado = e.fin ? diaLocal(new Date(e.fin), e.zona) : inicio;
-  return { inicio, fin: finCalculado < inicio ? inicio : finCalculado };
+  return [{ inicio, fin: finCalculado < inicio ? inicio : finCalculado }];
 }
 
 /** ¿Ocupa este evento algún día entre `desde` y `hasta` (YYYY-MM-DD, ambos incluidos; un día es `desde` = `hasta`)? Un
  *  evento de varios días cuenta en cada día que ocupa, desde su día de inicio hasta el de fin (inclusive), aunque empiece
- *  antes del rango o termine después — la misma regla que `diasActivosCalendario`, para un evento solo: Agenda la usa
- *  (`filtrarAgenda`) al filtrar por Cuándo, para que nunca desentone con lo que el calendario ya marcó como disponible. */
+ *  antes del rango o termine después — o, con horario por día, solo en los días de sus sesiones —; la misma regla que
+ *  `diasActivosCalendario`, para un evento solo: Agenda la usa (`filtrarAgenda`) al filtrar por Cuándo, para que nunca desentone con lo que
+ *  el calendario ya marcó como disponible. */
 export function ocupaRango(e: EventoConRango, desde: string, hasta: string): boolean {
-  const { inicio, fin } = rangoDelEvento(e);
-  return inicio <= hasta && fin >= desde;
+  return tramosDelEvento(e).some((t) => t.inicio <= hasta && t.fin >= desde);
 }
 
 export function diasActivosCalendario(eventos: EventoConRango[]): DiasActivos {
   const dias: DiasActivos = new Map();
   for (const e of eventos) {
-    const { inicio, fin } = rangoDelEvento(e);
-    let d = inicio;
-    // Tope de sobra (367 días) para nunca colgarse con un dato corrupto (un `fin` absurdo o anterior al inicio).
-    for (let i = 0; d <= fin && i < 367; i++) {
-      dias.set(d, (dias.get(d) ?? 0) + 1);
-      d = sumarDiasIso(d, 1);
+    for (const { inicio, fin } of tramosDelEvento(e)) {
+      let d = inicio;
+      // Tope de sobra (367 días) para nunca colgarse con un dato corrupto (un `fin` absurdo o anterior al inicio).
+      for (let i = 0; d <= fin && i < 367; i++) {
+        dias.set(d, (dias.get(d) ?? 0) + 1);
+        d = sumarDiasIso(d, 1);
+      }
     }
   }
   return dias;
