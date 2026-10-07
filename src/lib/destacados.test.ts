@@ -23,6 +23,28 @@ describe("enOrden", () => {
   });
 });
 
+describe("el día de un evento con varios días en la tarjeta (OL-320)", () => {
+  const ocurrencia = { clave: "e1:2026-09-18", dia: "2026-09-18", parte: { n: 2, de: 3 } };
+  it("la tarjeta de un día lleva su llave y «Día 2 de 3»; la de un evento sin días, nada de eso", () => {
+    expect(tarjetaEvento(evento({ ocurrencia }), AHORA)).toMatchObject({ id: "e1", clave: "e1:2026-09-18", parte: "Día 2 de 3" });
+    const sola = tarjetaEvento(evento({ ocurrencia: { clave: "e1:2026-09-18", dia: "2026-09-18", parte: null } }), AHORA);
+    expect(sola).toMatchObject({ clave: "e1:2026-09-18" });
+    expect(sola).not.toHaveProperty("parte");
+    expect(tarjetaEvento(evento(), AHORA)).not.toHaveProperty("clave");
+    expect(tarjetaEvento(evento(), AHORA)).not.toHaveProperty("parte");
+  });
+  it("la tarjeta dice la fecha y la hora de inicio de ese día", () => {
+    const t = tarjetaEvento(evento({ inicio: "2026-09-20T00:00:00Z", fin: "2026-09-20T02:00:00Z", ocurrencia }), AHORA);
+    expect(t.detalle).toBe("sáb 19 de sep · 18:00");
+  });
+  it("el sello dice cuál día es: «Hoy · Día 2 de 3», o «Día 2 de 3» sin ser hoy; Te interesa sigue ganando y «N van» cede", () => {
+    expect(selloDeTarjeta({ hoy: true, van: 5, parte: "Día 2 de 3" })).toEqual({ texto: "Hoy · Día 2 de 3", tuyo: false, hoy: true });
+    expect(selloDeTarjeta({ hoy: false, van: 5, parte: "Día 2 de 3" })).toEqual({ texto: "Día 2 de 3", tuyo: false, hoy: false });
+    expect(selloDeTarjeta({ hoy: false, van: 5, parte: "Día 2 de 3" }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
+    expect(selloDeTarjeta({ van: 5 })).toEqual({ texto: "5 van", tuyo: false, hoy: false });
+  });
+});
+
 describe("ordenarTarjetasPorFoto", () => {
   it("pone la foto real antes de la que no tiene y conserva el orden dentro de cada grupo", () => {
     const tarjetas = ["sin-primero", "foto-primera", "sin-segundo", "foto-segunda"].map((id) => ({ id, href: `/${id}`, foto: id.startsWith("sin") ? null : `/${id}.jpg`, titulo: id, detalle: "", van: 0 }));
