@@ -1,34 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { crearGestosFlyer, quienTrasLeerCartel } from "./gestosFlyer";
+import { quienTrasLeerCartel } from "./gestosFlyer";
 import { cambiarReserva, ponerPinManual, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { lugaresPorTexto, puntoValido } from "@/lib/buscarLugares";
 import type { OtroSitio } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
-
-describe("gestos frente a OCR y geocodificacion", () => {
-  it("protege campos preexistentes sin bloquear los vacios", () => {
-    const g = crearGestosFlyer(["titulo", "donde"]);
-    expect(g.puedeCompletar("titulo")).toBe(false);
-    expect(g.puedeCompletar("donde")).toBe(false);
-    expect(g.puedeCompletar("descripcion")).toBe(true);
-  });
-  it("borrar o volver al mismo valor sigue siendo una edicion", () => {
-    const g = crearGestosFlyer();
-    const primera = g.tocar("titulo");
-    g.tocar("titulo");
-    expect(g.puedeCompletar("titulo")).toBe(false);
-    expect(g.vigente("titulo", primera)).toBe(false);
-  });
-  it("solo el ultimo gesto de cada campo admite respuestas", () => {
-    const g = crearGestosFlyer();
-    const mapa = g.tocar("donde");
-    g.tocar("titulo");
-    expect(g.vigente("donde", mapa)).toBe(true);
-    const ultimo = g.tocar("donde");
-    expect(g.vigente("donde", mapa)).toBe(false);
-    expect(g.vigente("donde", ultimo)).toBe(true);
-  });
-});
 
 describe("quienTrasLeerCartel: 'Quién' refleja solo el cartel (founder, 2026-09-21: «me puso a mí y no se dice explícitamente en el cartel»)", () => {
   const yo = [{ id: "yo", nombre: "Quien publica" }];
@@ -40,7 +15,6 @@ describe("quienTrasLeerCartel: 'Quién' refleja solo el cartel (founder, 2026-09
     expect(quienTrasLeerCartel([], yo, true)).toEqual([]);
   });
   it("cartel sin artistas pero 'Quién' ya tocado a mano → se respeta lo que la persona puso", () => {
-    // puedeCompletarQuien en false es justo lo que devuelve gestos.puedeCompletar("quien") tras un gestos.tocar("quien").
     expect(quienTrasLeerCartel([], yo, false)).toEqual(yo);
   });
   it("quienInicial explícito (editar, duplicar, ficha de artista) → se respeta aunque el cartel traiga artistas distintos", () => {

@@ -41,14 +41,42 @@ function eventoIcs(e: EventoCalendario, uid: string, inicio: string, fin: string
   ];
 }
 
+/** Los días de visita de una exposición (YYYY-MM-DD, el de cierre incluido), para su archivo de calendario. */
+export type PeriodoCalendario = { desde: string; hasta: string };
+
+/**
+ * Una exposición en el archivo (OL-322; doc 55 §3, «el .ics marca el periodo»): todo el día, de su primer día de visita al de cierre. En un
+ * evento de todo el día el fin es el día siguiente al último (RFC 5545: `DTEND` no se incluye). Sin alerta: no hay una hora a la que avisar.
+ */
+function periodoIcs(e: EventoCalendario, { desde, hasta }: PeriodoCalendario, ahora: Date): string[] {
+  const url = `${ORIGEN}${hrefEvento(e)}`;
+  const dia = (d: string) => d.replace(/-/g, "");
+  return [
+    "BEGIN:VEVENT",
+    `UID:${e.id}@somosnosotros.org`,
+    `DTSTAMP:${aFechaIcs(ahora.toISOString())}`,
+    `DTSTART;VALUE=DATE:${dia(desde)}`,
+    `DTEND;VALUE=DATE:${dia(sumarDiasIso(hasta, 1))}`,
+    `SUMMARY:${escaparIcs(e.titulo)}`,
+    ...(e.lugar ? [`LOCATION:${escaparIcs(e.lugar)}`] : []),
+    `DESCRIPTION:${escaparIcs(`${e.descripcion ?? ""}\n${url}`.trim())}`,
+    `URL:${url}`,
+    "TRANSP:TRANSPARENT",
+    "END:VEVENT",
+  ];
+}
+
 /**
  * El archivo .ics de un evento. Lleva una alerta 1 hora antes: sin ella el iPhone lo agregaba con "Alerta: Ninguna" y
  * el calendario no recordaba nada (fricción K2, decisión 13 de docs/rediseno/17). Sin hora de fin, dura 2 horas. Con horario por día
  * (`sesiones`, OL-311) lleva un evento por día, cada uno con su hora y su alerta, y el evento de una sola pieza (inicio y fin del evento
- * entero) no va: sería uno encima de los otros.
+ * entero) no va: sería uno encima de los otros. Con `periodo` (una exposición, OL-322) es un solo evento de todo el día, del primer día de visita al
+ * de cierre.
  */
-export function archivoIcs(e: EventoCalendario, ahora: Date = new Date(), sesiones: readonly SesionCalendario[] = []): string {
-  const eventos = sesiones.length
+export function archivoIcs(e: EventoCalendario, ahora: Date = new Date(), sesiones: readonly SesionCalendario[] = [], periodo: PeriodoCalendario | null = null): string {
+  const eventos = periodo
+    ? periodoIcs(e, periodo, ahora)
+    : sesiones.length
     ? sesiones.flatMap((s, i) => eventoIcs(e, `${e.id}-${i + 1}`, s.inicio, s.fin ?? finPorDefecto(s.inicio), ahora))
     : eventoIcs(e, e.id, e.inicio, e.fin ?? finPorDefecto(e.inicio), ahora);
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//somosnosotros//ES", ...eventos, "END:VCALENDAR"].join("\r\n") + "\r\n";

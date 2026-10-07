@@ -13,7 +13,7 @@ import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./agenda.module.css";
 import type { Metadata } from "next";
 
-type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; desde?: string; hasta?: string; cuanto?: string };
+type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; desde?: string; hasta?: string; cuanto?: string; que?: string };
 
 /**
  * Agenda (OL-156, segunda vuelta): pasa de la raíz a `/agenda` — la app abre siempre en Inicio, `/` (docs/rediseno/41).
@@ -44,7 +44,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * que no esperan nada.
  */
 async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { cuenta, ciudad: slug, filtro, desde, hasta, cuanto } = await searchParams;
+  const { cuenta, ciudad: slug, filtro, desde, hasta, cuanto, que } = await searchParams;
   // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16); junto con la
   // sesión son rápidas y no llevan la consulta pesada de eventos, así que se esperan aquí. `cargarAgenda` (eventos,
   // quién sigue qué, qué decidió la persona) no se espera: se pasa como promesa y se difiere dentro de `AgendaInicio`
@@ -69,7 +69,7 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
         key={ciudad.slug}
         // Con lo que llega en la URL abre la pantalla (Cuándo o Filtros elegidos desde Inicio, un «solo lo que sigo»); lo que
         // no se reconoce, como un enlace viejo con `?filtro=cercanos`, se ignora.
-        filtrosIniciales={filtrosDeUrl({ desde, hasta, cuanto, filtro })}
+        filtrosIniciales={filtrosDeUrl({ desde, hasta, cuanto, filtro, que })}
         agenda={agenda}
         ciudad={ciudad}
         ciudades={ciudades}
