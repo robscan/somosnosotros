@@ -1,6 +1,6 @@
-/** Alta de artista y su disciplina (OL-299, bitácora 327): sin pista en el nombre, «Qué hace» queda por elegir y es obligatorio
- *  (renglón pendiente, botón apagado con su nota); elegir un chip lo resuelve y basta; con pista, todo sigue como siempre.
- *  El componente real con los estilos reales, la acción simulada y sin red.
+/** Editar un artista (OL-316, bitácora 346): el alta es por pasos (`/nuevo/artista`, con sus pruebas en `AltaArtista.componentes.test.mjs`) y
+ *  este formulario solo edita. Lo que trae la ficha llega resuelto; una ficha por completar (creada con solo el nombre desde un evento) se
+ *  guarda tal cual; no hay «Soy yo» (eso es del alta). El componente real con los estilos reales, la acción simulada y sin red.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`; sí con `npm run test:componentes`).
  * ARTISTA_SCREENSHOTS=/carpeta guarda las capturas de cada estado. */
@@ -39,7 +39,9 @@ before(async () => {
       import './src/app/globals.css';
       window.qa = { envios: [] };
       async function accion(_, fd) { window.qa.envios.push(Object.fromEntries(fd)); return { ok: false, errores: {}, general: 'No se pudo guardar. Intenta de nuevo.' }; }
-      createRoot(document.getElementById('root')).render(<Formulario accion={accion} usuarioId="cuenta" ciudadInicial="San Luis Potosí" ciudades={[]} />);
+      const base = { id: 'a1', slug: 'pimpolina', nombre: 'Pimpolina', disciplina: 'teatro', detalle: 'Clown', tipo: 'solista', foto: null, portada: null, descripcion: 'Clown y pantomima', ciudad: 'San Luis Potosí', redes: [], creado_por: 'cuenta', visible: true, origen: null };
+      const artista = new URLSearchParams(location.search).has('por-completar') ? { ...base, nombre: 'Los Vecinos', disciplina: 'por_completar', detalle: null, tipo: 'grupo', descripcion: null } : base;
+      createRoot(document.getElementById('root')).render(<Formulario accion={accion} artista={artista} usuarioId="cuenta" ciudadInicial={artista.ciudad} ciudades={[]} />);
     `,
     },
     plugins: [{
@@ -71,7 +73,7 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(t, ancho) {
+async function abrir(t, ancho, consulta = "") {
   const context = await browser.newContext({ viewport: { width: ancho, height: 844 }, reducedMotion: "reduce", locale: "es-MX" });
   t.after(() => context.close());
   const p = await context.newPage();
@@ -80,16 +82,16 @@ async function abrir(t, ancho) {
   p.on("pageerror", (e) => errores.push(e.message));
   t.after(() => assert.deepEqual(errores, []));
   await p.route("**/*", (r) => (new URL(r.request().url()).origin === origin ? r.continue() : r.abort()));
-  await p.goto(origin);
+  await p.goto(`${origin}/${consulta}`);
   // El ancho propio de un input (20 caracteres) depende de la letra del sistema: en la CI de Linux pasaba de la tarjeta a 320. Aquí se ensancha a propósito.
   await p.evaluate(() => { document.querySelector('input[name=nombre]').size = 30; });
   const guardar = async (nombre) => capturas && p.screenshot({ path: join(capturas, `${nombre}-${ancho}.png`), fullPage: true });
   return { p, guardar };
 }
 
-/** El renglón «Qué hace» (su clave queda a la vista solo para el lector de pantalla). */
-const queHace = (p) => p.locator("li", { has: p.locator("small", { hasText: "Qué hace" }) });
-const publicar = (p) => p.getByRole("button", { name: "Publicar artista" });
+/** El renglón con esa clave (que queda a la vista solo para el lector de pantalla). */
+const renglon = (p, clave) => p.locator("li", { has: p.locator("small", { hasText: clave }) });
+const guardarCambios = (p) => p.getByRole("button", { name: "Guardar cambios" });
 /** Nada se sale de lado: devuelve null si todo cabe y, si no, qué mide la página y qué elementos pasan del borde (para que un fallo diga dónde). */
 const desborde = (p) =>
   p.evaluate(() => {
@@ -100,66 +102,38 @@ const desborde = (p) =>
   });
 
 for (const ancho of [390, 320]) {
-  test(`Sin pista en el nombre: la disciplina queda por elegir, es obligatoria y elegir un chip basta, ${ancho}`, async (t) => {
+  test(`Editar: lo de la ficha llega resuelto, sin «Soy yo» (es del alta), y se guarda lo cambiado, ${ancho}`, async (t) => {
     const { p, guardar } = await abrir(t, ancho);
-    // Con el formulario vacío, falta el nombre y la disciplina; el renglón ya está por completar.
-    assert.equal(await publicar(p).getAttribute("aria-disabled"), "true");
-    await p.getByText("Falta el nombre y la disciplina.", { exact: true }).waitFor();
-    await p.getByLabel("Nombre de artista o grupo").fill("Ana Ruiz");
-    await p.getByText("Falta la disciplina.", { exact: true }).waitFor();
-    const renglon = queHace(p);
-    assert.equal(await renglon.locator("b").innerText(), "Falta la disciplina");
-    assert.match(await renglon.getAttribute("class"), /pendiente/);
-    assert.equal(await renglon.getByRole("button", { name: "Elegir" }).count(), 1);
-    assert.equal(await publicar(p).getAttribute("aria-disabled"), "true");
-    await publicar(p).click({ force: true });
-    assert.equal(await p.evaluate(() => window.qa.envios.length), 0, "apagado, no envía nada");
+    assert.equal(await p.getByLabel("Nombre de artista o grupo").inputValue(), "Pimpolina");
+    assert.equal(await renglon(p, "Qué hace").locator("b").innerText(), "Teatro · Clown");
+    assert.equal(await renglon(p, "Es").locator("b").innerText(), "Solista");
+    assert.equal(await renglon(p, "Ciudad").locator("b").innerText(), "San Luis Potosí");
+    assert.equal(await p.getByText(/Soy yo/).count(), 0);
+    assert.equal(await guardarCambios(p).getAttribute("aria-disabled"), null);
     assert.equal(await desborde(p), null);
-    await guardar("sin-pista-falta-la-disciplina");
-
-    // Elegir la disciplina resuelve el renglón y habilita el botón: la subcategoría no se pide.
-    await renglon.getByRole("button", { name: "Elegir" }).click();
-    await p.getByRole("button", { name: "Artes visuales", exact: true }).click();
-    assert.doesNotMatch(await renglon.getAttribute("class"), /pendiente/);
-    assert.equal(await renglon.locator("b").innerText(), "Artes visuales");
-    assert.equal(await publicar(p).getAttribute("aria-disabled"), null);
-    assert.equal(await p.getByText("Falta la disciplina.", { exact: true }).count(), 0);
-    assert.equal(await desborde(p), null);
-    await guardar("disciplina-elegida");
-    await publicar(p).click();
+    await guardar("editar");
+    await renglon(p, "Es").getByRole("button", { name: "Cambiar" }).click();
+    await p.getByRole("button", { name: "Grupo", exact: true }).click();
+    assert.equal(await renglon(p, "Es").locator("b").innerText(), "Grupo");
+    await guardarCambios(p).click();
     await p.waitForFunction(() => window.qa.envios.length === 1);
     const envio = await p.evaluate(() => window.qa.envios[0]);
-    assert.equal(envio.nombre, "Ana Ruiz");
-    assert.equal(envio.disciplina, "artes_visuales");
-    assert.equal(envio.detalle, "");
-  });
-
-  test(`Con pista en el nombre todo sigue como hoy: la disciplina sale sola y publicar está listo, ${ancho}`, async (t) => {
-    const { p, guardar } = await abrir(t, ancho);
-    await p.getByLabel("Nombre de artista o grupo").fill("Ballet Folclórico Universitario");
-    const renglon = queHace(p);
-    assert.equal(await renglon.locator("b").innerText(), "Danza");
-    assert.doesNotMatch(await renglon.getAttribute("class"), /pendiente/);
-    assert.equal(await renglon.getByRole("button", { name: "Cambiar" }).count(), 1);
-    assert.equal(await publicar(p).getAttribute("aria-disabled"), null);
-    assert.equal(await desborde(p), null);
-    await guardar("con-pista");
-    await publicar(p).click();
-    await p.waitForFunction(() => window.qa.envios.length === 1);
-    assert.equal(await p.evaluate(() => window.qa.envios[0].disciplina), "danza");
-  });
-
-  test(`Cambiar el nombre a uno sin pista devuelve el renglón a por completar; lo elegido a mano se queda, ${ancho}`, async (t) => {
-    const { p } = await abrir(t, ancho);
-    const nombre = p.getByLabel("Nombre de artista o grupo");
-    await nombre.fill("Cineclub Alameda");
-    assert.equal(await queHace(p).locator("b").innerText(), "Cine");
-    await nombre.fill("Ana Ruiz");
-    assert.equal(await queHace(p).locator("b").innerText(), "Falta la disciplina");
-    await queHace(p).getByRole("button", { name: "Elegir" }).click();
-    await p.getByRole("button", { name: "Teatro", exact: true }).click();
-    await nombre.fill("Ana Ruiz Pérez");
-    assert.equal(await queHace(p).locator("b").innerText(), "Teatro");
-    assert.equal(await publicar(p).getAttribute("aria-disabled"), null);
+    assert.deepEqual([envio.nombre, envio.disciplina, envio.detalle, envio.tipo, envio.ciudad, envio.descripcion], ["Pimpolina", "teatro", "Clown", "grupo", "San Luis Potosí", "Clown y pantomima"]);
+    assert.equal(envio.soy, undefined);
+    await p.getByText("No se pudo guardar. Intenta de nuevo.").waitFor();
   });
 }
+
+test("Editar una ficha por completar: el nombre no la deduce ni la exige; se guarda tal cual o con la disciplina que se elija", async (t) => {
+  const { p } = await abrir(t, 390, "?por-completar");
+  const hace = renglon(p, "Qué hace");
+  assert.equal(await hace.locator("b").innerText(), "Disciplina");
+  assert.doesNotMatch(await hace.getAttribute("class"), /pendiente/);
+  assert.equal(await guardarCambios(p).getAttribute("aria-disabled"), null);
+  await guardarCambios(p).click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  assert.equal(await p.evaluate(() => window.qa.envios[0].disciplina), "");
+  await hace.getByRole("button", { name: "Elegir" }).click();
+  await p.getByRole("button", { name: "Música", exact: true }).click();
+  assert.match(await hace.locator("b").innerText(), /^Música/);
+});

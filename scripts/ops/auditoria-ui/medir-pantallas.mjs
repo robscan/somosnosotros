@@ -103,6 +103,17 @@ PASOS["lugar-horario"] = async (page, ancho, alto) => {
   await aquietar(page);
 };
 
+// El alta de artista por pasos (OL-316), en «Revisa»: un nombre sin pista, «¿Qué hace?» → Teatro y «Seguir sin especificar»; el renglón de
+// solista o grupo queda por completar (nunca «Solista» por omisión) y la casilla «Soy yo / es mi grupo» a la vista.
+PASOS["artista-revisa"] = async (page) => {
+  await page.getByLabel("Nombre de artista o grupo").fill("Mariana Ruvalcaba");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: "Teatro" }).click();
+  await page.getByRole("button", { name: "Seguir sin especificar" }).click();
+  await page.getByRole("heading", { name: "Mariana Ruvalcaba" }).waitFor();
+  await aquietar(page);
+};
+
 // ---------- procesos ----------
 const hijos = [];
 process.on("exit", () => hijos.forEach((h) => h.exitCode === null && h.kill()));

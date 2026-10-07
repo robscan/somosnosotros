@@ -88,7 +88,7 @@ type Interno = Props & {
  * la operación empiezan de cero, sin el arranque con que se abrió (el lugar, el artista o el evento duplicado), y la guardia de salida se arma
  * de nuevo; los lugares que se guardaron en el camino se conservan aquí. Es la única alta de evento (OL-312): «Publicar aquí», «Publicar
  * fecha» y «Duplicar» llegan con su `arranque`, y lo que traen no lo pisa la lectura del cartel (`sinPisar`). Solo el primer paso lleva, abajo, la tira
- * de tipos de `/nuevo` (OL-313): la salida a registrar un lugar o un artista, que la alta única había quitado.
+ * de tipos (OL-313): la salida a registrar un lugar o un artista (sus altas por pasos), que la alta única había quitado.
  */
 export default function AltaEvento(props: Props) {
   const [vuelta, setVuelta] = useState(0);
@@ -212,7 +212,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       {!cartel.espera && paso === "inicio" && (
         <>
           <PasoInicio casilla={cartel.casilla} error={cartel.error} onElegir={cartel.elegir} onSinCartel={seguir} />
-          {/* Solo en el primer paso, donde aún no hay nada escrito: la salida a registrar un lugar o un artista (la tira de `/nuevo`). */}
+          {/* Solo en el primer paso, donde aún no hay nada escrito: la salida a registrar un lugar o un artista (sus altas por pasos). */}
           <TiraTipos actual="evento" destinos={{ lugar: enlaceAltaDeTipo("lugar", ciudadContexto?.slug ?? null), artista: enlaceAltaDeTipo("artista", ciudadContexto?.slug ?? null) }} />
         </>
       )}

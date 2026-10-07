@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { faltaEnArtista } from "./formulario";
-import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, etiquetaArtista, filtroDesdeUrl, hrefArtistas, hrefLetreroArtista, nombreArchivoQr, pasoQueHace, preguntaSubcategoria, quienDesdeJson, subcategoriaParecida, textoLetrero, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, compartirArtista, conArtistasLigados, deducirDisciplina, deducirSubcategoria, conProximaFecha, deducirTipoArtista, etiquetaArtista, filtroDesdeUrl, hrefArtistas, hrefLetreroArtista, nombreArchivoQr, pasoQueHace, preguntaSubcategoria, quienDesdeJson, subcategoriaParecida, textoLetrero, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirDisciplina", () => {
   it("lee la disciplina del nombre", () => {
@@ -268,5 +268,31 @@ describe("validarArtista", () => {
       const { errores } = validarArtista({ nombre: "Los Vecinos", foto }, { esAdmin: false, fotoActual: foto });
       expect(errores.foto).toBeUndefined();
     });
+  });
+});
+
+describe("deducirSubcategoria (OL-316): la subcategoría que el nombre ya dice, entre las ya usadas", () => {
+  const TEATRO = [
+    { detalle: "Compañía de teatro", artistas: 12 },
+    { detalle: "Teatro", artistas: 6 },
+    { detalle: "Títeres", artistas: 5 },
+    { detalle: "Clown", artistas: 2 },
+  ];
+  it("escrita entera en el nombre, sin acentos ni mayúsculas; la más usada primero", () => {
+    expect(deducirSubcategoria("Compañía de Teatro La Rendija", "teatro", TEATRO)).toBe("Compañía de teatro");
+    expect(deducirSubcategoria("los titeres de ana", "teatro", TEATRO)).toBe("Títeres");
+  });
+  it("no la parte de una palabra, ni la que es el nombre de la disciplina, ni una de menos de 4 letras", () => {
+    expect(deducirSubcategoria("Clownesca", "teatro", TEATRO)).toBeNull();
+    expect(deducirSubcategoria("Teatro Rodante", "teatro", TEATRO)).toBeNull();
+    expect(deducirSubcategoria("Son de Rap", "musica", [{ detalle: "Rap", artistas: 9 }])).toBeNull();
+    expect(deducirSubcategoria("Ana Ruiz", "teatro", TEATRO)).toBeNull();
+  });
+});
+
+describe("compartirArtista (OL-316): lo mismo en la ficha y en «Publicado»", () => {
+  it("la dirección de la ficha y «Nombre · Qué hace · Solista»", () => {
+    expect(compartirArtista({ id: "a1", slug: "pimpolina", nombre: "Pimpolina", disciplina: "teatro", detalle: "clown", tipo: "solista" })).toEqual({ url: "https://somosnosotros.org/artistas/pimpolina", texto: "Pimpolina · Clown · Solista" });
+    expect(compartirArtista({ id: "a2", slug: "", nombre: "Los Vecinos", disciplina: "musica", detalle: null, tipo: "grupo" }).url).toBe("https://somosnosotros.org/artistas/a2");
   });
 });

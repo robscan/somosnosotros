@@ -35,7 +35,7 @@
     "s08-editar-perfil": { "nodos": [40, 40, 72, 72], "profundidad": [8, 8, 8, 8] },
     "s09-novedades": { "nodos": [45, 45, 77, 73], "profundidad": [8, 8, 8, 8] },
     "s10-buscar": { "nodos": [23, 23, 57, 57], "profundidad": [8, 8, 8, 8] },
-    "s11-alta-artista": { "nodos": [60, 60, 94, 94], "profundidad": [9, 9, 9, 9] },
+    "s11-alta-artista": { "nodos": [18, 18, 52, 52], "profundidad": [6, 6, 6, 6] },
     "s12-lugares-hoja-llena": { "nodos": [188, 188, 186, 186], "profundidad": [13, 13, 13, 13] },
     "s13-lugares-ficha-en-hoja": { "nodos": [167, 167, 165, 165], "profundidad": [14, 14, 14, 14] },
     "s14-agenda-nuevos": { "nodos": [180, 180, 182, 182], "profundidad": [10, 10, 10, 10] },
@@ -43,6 +43,7 @@
     "s16-alta-evento-nombre": { "nodos": [14, 14, 48, 48], "profundidad": [6, 6, 6, 6] },
     "s17-alta-evento-es-aqui": { "nodos": [42, 42, 76, 76], "profundidad": [11, 11, 11, 11] },
     "s18-alta-lugar-revisa": { "nodos": [32, 32, 66, 66], "profundidad": [6, 6, 6, 6] },
-    "s19-alta-lugar-horario": { "nodos": [91, 91, 125, 125], "profundidad": [8, 8, 8, 8] }
+    "s19-alta-lugar-horario": { "nodos": [91, 91, 125, 125], "profundidad": [8, 8, 8, 8] },
+    "s20-alta-artista-revisa": { "nodos": [36, 36, 70, 70], "profundidad": [7, 7, 7, 7] }
   }
 }

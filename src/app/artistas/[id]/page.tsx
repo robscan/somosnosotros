@@ -30,7 +30,7 @@ import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { EventoAgenda } from "@/lib/agenda";
-import { etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, type Artista } from "@/lib/artistas";
+import { compartirArtista, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
@@ -284,8 +284,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && !a.portada && redes.length === 0);
   // Novedades, fase 1 (doc 44, OL-175): "Publicar" solo para quien gestiona la ficha (mismo criterio que Editar).
   const hrefPublicarNovedad = puedeEditar ? `${hrefArtista(a)}/novedades/nueva` : null;
-  const url = `${ORIGEN}${hrefArtista(a)}`;
-  const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
+  const { url, texto: textoCompartir } = compartirArtista(a);
   const publicarFecha = enlaceAltaEvento({ artista: a.id });
   const hrefPublicarFecha = actual ? publicarFecha : `/entrar?siguiente=${encodeURIComponent(publicarFecha)}`;
   const qrSvg = await qrDeUrl(url);

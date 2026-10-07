@@ -189,7 +189,7 @@ test("primer paso: «¿Cómo se llama?» con la ✕ del campo, el pie que dice q
   assert.equal(await tira.locator("[aria-current=page]").textContent(), "Lugar");
   assert.deepEqual(await tira.getByRole("link").evaluateAll((a) => a.map((x) => [x.textContent, x.getAttribute("href")])), [
     ["Evento", "/nuevo/evento?ciudad=queretaro"],
-    ["Artista", "/nuevo?tipo=artista&ciudad=queretaro"],
+    ["Artista", "/nuevo/artista?ciudad=queretaro"],
   ]);
   // La tira va dentro del pie, bajo el botón, y el pie al fondo de la pantalla.
   const pie = await p.locator("main > footer").boundingBox();

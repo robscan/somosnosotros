@@ -10,13 +10,12 @@ import BotonPublicar from "@/components/ui/BotonPublicar";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
-import { IconoCamara, IconoEncuadrar, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
+import { IconoCamara, IconoEncuadrar, IconoLapiz, IconoMas, IconoNota, IconoOk, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import ListaFlotante from "@/components/ui/ListaFlotante";
-import Palanca from "@/components/ui/Palanca";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
-import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, pasoQueHace, preguntaSubcategoria, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
+import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, pasoQueHace, preguntaSubcategoria, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
 import { faltaEnArtista } from "@/lib/formulario";
@@ -33,37 +32,29 @@ import estilos from "./FormularioArtista.module.css";
 
 type Props = {
   accion: (previo: ResultadoArtista | null, formData: FormData) => Promise<ResultadoArtista>;
-  /** Sin artista = alta. Con artista = edición (todo resuelto de entrada). */
-  artista?: Artista;
+  /** El artista que se edita (todo resuelto de entrada). El alta es por pasos (`/nuevo/artista`, OL-316). */
+  artista: Artista;
   usuarioId: string;
-  /** Viene de la búsqueda de la lista ("Registrar a «…»"). */
-  nombreInicial?: string;
   /** El administrador puede pegar la dirección de una foto (fichas importadas). */
   esAdmin?: boolean;
-  /** De entrada: en el alta, la que la persona tenía elegida en Artistas; al editar, la del artista. */
+  /** La ciudad del artista. */
   ciudadInicial: string;
   /** Las ciudades que ya tienen artistas: las primeras opciones de la hoja Ciudad. */
   ciudades: CiudadConArtistas[];
-  /** El campo del nombre toma el foco al abrir (el alta lo pide solo si es lo primero que se ve). */
-  autoFocus?: boolean;
-  /** La pantalla de alta tiene dos formularios (lugar y artista) y solo se ve el del tipo elegido: el otro sigue ahí, escondido, con lo escrito. */
-  oculta?: boolean;
 };
 /** Lo que trae la búsqueda por nombre: el artista con su ciudad (el mismo nombre en otra ciudad es otro artista). */
 type Candidato = ArtistaResumen & { ciudad: string };
 
 type Abierta = "hace" | "es" | "ciudad" | null;
 /**
- * Alta de artista con el canon (docs/rediseno/15, decisiones 4 y 5): un campo arriba con la estrella y, debajo,
- * renglones resueltos: Qué hace y Es deducidos del nombre (chips al abrir), Ciudad (la elegida en Artistas; se busca
- * en una hoja, pedido del founder del 2026-09-16, noche), Foto con la cámara como acción,
- * Soy yo / es mi grupo con interruptor y Más (redes, descripción). Si el nombre ya existe, se dice con enlace, en un
- * aviso que flota sobre el layout sin empujar los renglones de abajo (founder, producción, 2026-09-21). El botón
- * dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta (founder, 2026-09-21: canon
- * ampliado para todos los formularios, docs/rediseno/26).
+ * Editar un artista con el canon (docs/rediseno/15, decisiones 4 y 5): un campo arriba con el lápiz y, debajo, renglones resueltos: Qué
+ * hace (la disciplina y su subcategoría, chips al abrir), Es, Ciudad (se busca en una hoja, pedido del founder del 2026-09-16, noche), Foto
+ * y Portada con la cámara como acción y Más (redes, descripción). Si el nombre nuevo ya es de otra ficha, se dice con enlace, en un aviso
+ * que flota sobre el layout sin empujar los renglones de abajo (founder, producción, 2026-09-21). El botón dice solo su acción; la ayuda de
+ * qué falta va bajo el campo o el renglón que falta (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26). El
+ * alta es por pasos (`/nuevo/artista`, OL-316): este formulario solo edita, como `FormularioLugar` tras OL-315.
  */
-export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudadInicial, ciudades, autoFocus = false, oculta = false }: Props) {
-  const esAlta = !artista;
+export default function FormularioArtista({ accion, artista, usuarioId, esAdmin = false, ciudadInicial, ciudades }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(accion, null);
   // Guardado (al editar): la tarea termina sin quedarse en el historial; mientras vuelve, el botón sigue ocupado.
   const terminar = useTerminar();
@@ -78,25 +69,24 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const existenteServidor = resultado && !resultado.ok ? resultado.existente : undefined;
 
-  const [nombre, setNombre] = useState(artista?.nombre ?? nombreInicial ?? "");
-  const [disciplinaElegida, setDisciplinaElegida] = useState<Disciplina | "">(artista?.disciplina && artista.disciplina !== "por_completar" ? artista.disciplina : "");
-  const [detalle, setDetalle] = useState(artista?.detalle ?? "");
-  const [tipoElegido, setTipoElegido] = useState<TipoArtista | "">(artista?.tipo ?? "");
+  const [nombre, setNombre] = useState(artista.nombre);
+  const [disciplinaElegida, setDisciplinaElegida] = useState<Disciplina | "">(artista.disciplina !== "por_completar" ? artista.disciplina : "");
+  const [detalle, setDetalle] = useState(artista.detalle ?? "");
+  const [tipo, setTipo] = useState<TipoArtista>(artista.tipo);
   const [ciudad, setCiudad] = useState(ciudadInicial);
-  const [soy, setSoy] = useState(false);
-  const [foto, setFoto] = useState<string | null>(artista?.foto ?? null);
-  const [portada, setPortada] = useState<string | null>(artista?.portada ?? null);
+  const [foto, setFoto] = useState<string | null>(artista.foto);
+  const [portada, setPortada] = useState<string | null>(artista.portada);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<Abierta>(null);
-  const [masAbierto, setMasAbierto] = useState(!esAlta);
+  const [masAbierto, setMasAbierto] = useState(true);
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   // Subcategorías ya usadas por disciplina (OL-101): una caché por disciplina, para no repetir la consulta.
   const [subcategoriasPorDisciplina, setSubcategoriasPorDisciplina] = useState<Record<string, Subcategoria[]>>({});
   // "Otra…" abre el texto libre aunque ya haya chips de subcategoría; sin subcategorías conocidas, va directo al texto.
   // Al editar una ficha que ya trae detalle, empieza abierto: es lo que ya se ve al llegar, se elija o no un chip después.
-  const [otraAbierta, setOtraAbierta] = useState(!esAlta && !!artista?.detalle);
+  const [otraAbierta, setOtraAbierta] = useState(!!artista.detalle);
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces);
@@ -107,11 +97,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const campoNombreRef = useRef<HTMLElement>(null);
   const [enfocadoNombre, setEnfocadoNombre] = useState(false);
 
-  // Lo deducido del nombre manda hasta que la persona lo cambie a mano (decisión 4). Sin pista en el nombre no se adivina:
-  // en el alta, la disciplina queda por elegir y es obligatoria (OL-299); al editar, una ficha por completar sigue así.
-  const disciplina: Disciplina | "" = disciplinaElegida || deducirDisciplina(nombre) || "";
-  const sinDisciplina = esAlta && !disciplina;
-  const tipo: TipoArtista = tipoElegido || deducirTipoArtista(nombre) || "solista";
+  // Lo de la ficha; una ficha por completar (creada con solo el nombre desde el alta de un evento) sigue así hasta que se elija.
+  const disciplina: Disciplina | "" = disciplinaElegida;
   const subcategorias = disciplina ? (subcategoriasPorDisciplina[disciplina] ?? []) : [];
 
   // Subcategorías ya usadas en la disciplina elegida (OL-101): para sugerir en vez de duplicar
@@ -139,10 +126,10 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       const supabase = clienteNavegador();
       if (!supabase) return;
       const { data } = await supabase.rpc("artistas_con_nombre", { p_nombre: q });
-      setCandidatos(((data ?? []) as Candidato[]).filter((a) => a.id !== artista?.id));
+      setCandidatos(((data ?? []) as Candidato[]).filter((a) => a.id !== artista.id));
     }, 300);
     return () => clearTimeout(t);
-  }, [nombre, artista?.id]);
+  }, [nombre, artista.id]);
 
   /** Foto (el avatar) y portada (la imagen ancha de la cabecera) se suben igual; solo cambia dónde se guarda. */
   async function subirImagen(e: React.ChangeEvent<HTMLInputElement>, cual: "foto" | "portada") {
@@ -163,15 +150,14 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const existente = artistaIgual(candidatos.filter((a) => a.ciudad === ciudad), nombre);
   const repetido = existente ?? (coincide(existenteServidor) ? existenteServidor : null);
   // Lo único que dice qué falta es la nota bajo el botón (doc 50, H-29 y H-32).
-  const falta = faltaEnArtista({ nombre, conDisciplina: !sinDisciplina, repetido: !!repetido });
-  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : sinDisciplina ? "Falta la disciplina" : "Disciplina";
+  const falta = faltaEnArtista({ nombre, conDisciplina: true, repetido: !!repetido });
+  const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Disciplina";
   const avisoRepetidoAbierto = enfocadoNombre && !!repetido;
 
   return (
     <>
     <form
       ref={formRef}
-      hidden={oculta}
       action={(fd) => {
         if (falta) return;
         apartarGuardia();
@@ -179,9 +165,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       }}
       noValidate
     >
-      {/* 1. El nombre: con él basta. */}
+      {/* 1. El nombre. */}
       <label className={canon.campo} ref={campoNombreRef as React.RefObject<HTMLLabelElement>}>
-        <IconoEstrella width={20} height={20} />
+        <IconoLapiz width={20} height={20} />
         <input
           name="nombre"
           type="text"
@@ -195,7 +181,6 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           aria-invalid={!!errores.nombre}
           autoComplete="off"
           autoCapitalize="words"
-          autoFocus={autoFocus}
           required
           role="combobox"
           aria-expanded={avisoRepetidoAbierto}
@@ -236,8 +221,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       </ListaFlotante>
 
       <ul className={renglon.renglones}>
-        {/* 2. Qué hace: deducido del nombre; sin pista, por elegir y obligatorio (pendiente); chips y "en una palabra" al abrir. */}
-        <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "hace" ? renglon.abierto : sinDisciplina ? renglon.pendiente : ""}`}>
+        {/* 2. Qué hace: la disciplina y su subcategoría; chips y "en una palabra" al abrir. */}
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "hace" ? renglon.abierto : ""}`}>
           <IconoNota width={20} height={20} />
           <small>Qué hace</small>
           <b className={disciplina ? undefined : renglon.falta}>{valorHace}</b>
@@ -356,7 +341,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
         </li>
 
-        {/* 3. Es: deducido del nombre ("Los", "Trío", "Colectivo"); chips al abrir. */}
+        {/* 3. Es: solista, grupo o colectivo; chips al abrir. */}
         <li className={`${renglon.resuelto} ${renglon.sinClave} ${abierta === "es" ? renglon.abierto : ""}`}>
           <IconoPersonas width={20} height={20} />
           <small>Es</small>
@@ -372,7 +357,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
                     key={t.valor}
                     activo={tipo === t.valor}
                     onClick={() => {
-                      setTipoElegido(t.valor);
+                      setTipo(t.valor);
                       setAbierta(null);
                     }}
                   >
@@ -455,17 +440,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
         </li>
 
-        {/* 7. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
-        {esAlta && (
-          <li className={`${renglon.resuelto} ${renglon.sinClave}`}>
-            <IconoPersona width={20} height={20} />
-            <small>Soy yo / es mi grupo</small>
-            <b className={soy ? undefined : renglon.falta}>{soy ? "Es mi ficha: podrás editar y publicar sus fechas" : "Soy yo / es mi grupo"}</b>
-            <Palanca encendida={soy} aria-label="Soy yo / es mi grupo" onClick={() => setSoy((s) => !s)} />
-          </li>
-        )}
-
-        {/* 8. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
+        {/* 7. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
         <li className={`${renglon.resuelto} ${renglon.sinClave} ${masAbierto ? renglon.abierto : renglon.opcional}`}>
           <IconoMas width={20} height={20} />
           <small>Más</small>
@@ -474,8 +449,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
             {masAbierto ? "Listo" : "Agregar"}
           </Boton>
           <div className={renglon.cuerpo} hidden={!masAbierto}>
-            <SelectorEnlaces inicial={normalizarRedes(artista?.redes)} error={errores.enlaces} />
-            <Campo etiqueta="Descripción" name="descripcion" multilinea defaultValue={artista?.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} mostrarContador />
+            <SelectorEnlaces inicial={normalizarRedes(artista.redes)} error={errores.enlaces} />
+            <Campo etiqueta="Descripción" name="descripcion" multilinea defaultValue={artista.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} mostrarContador />
             {esAdmin && <CampoImagenUrl etiqueta="O pega la dirección de la foto" valor={foto} onCambio={setFoto} />}
             {esAdmin && <CampoImagenUrl etiqueta="O pega la dirección de la portada" valor={portada} onCambio={setPortada} />}
           </div>
@@ -486,7 +461,6 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <input type="hidden" name="tipo" value={tipo} />
       <input type="hidden" name="foto" value={foto ?? ""} />
       <input type="hidden" name="portada" value={portada ?? ""} />
-      <input type="hidden" name="soy" value={soy ? "1" : ""} />
       {/* El campo de texto de detalle solo está en el DOM cuando se ve (renglón abierto, sin subcategorías
           conocidas o en "Otra…"); en cualquier otro momento, este oculto lleva el valor al enviar. */}
       {!(abierta === "hace" && (subcategorias.length === 0 || otraAbierta)) && <input type="hidden" name="detalle" value={detalle} />}
@@ -498,7 +472,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </p>
       )}
       <BotonPublicar id="falta-artista" falta={falta} ocupado={enviando || terminado || subiendo}>
-        {enviando || terminado ? "Guardando…" : artista ? "Guardar cambios" : "Publicar artista"}
+        {enviando || terminado ? "Guardando…" : "Guardar cambios"}
       </BotonPublicar>
     </form>
     {abierta === "ciudad" && <HojaCiudad ciudad={ciudad} ciudades={ciudades} onElegir={setCiudad} onCerrar={() => setAbierta(null)} />}

@@ -785,7 +785,7 @@ test("la tira de tipos (OL-313) está solo en el primer paso: Evento marcado, Lu
   assert.equal(await tira.getByRole("link", { name: "Evento" }).count(), 0);
   assert.equal(await tira.getByRole("button").count(), 0);
   assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo/lugar");
-  assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo?tipo=artista");
+  assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo/artista");
   assert.equal(await tira.getByRole("link").count(), 2);
   // Es el pie de la pantalla: de borde a borde y pegada abajo.
   const caja = await tira.boundingBox();
@@ -801,14 +801,14 @@ test("la tira de tipos (OL-313) está solo en el primer paso: Evento marcado, Lu
   assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo/lugar"]);
   assert.equal(await p.getByText("¿Salir sin publicar?").count(), 0);
   await tira.getByRole("link", { name: "Artista" }).click();
-  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo/lugar", "/nuevo?tipo=artista"]);
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo/lugar", "/nuevo/artista"]);
 });
 
 test("la tira de tipos lleva la ciudad que se veía en Lugar y en Artista", TOPE, async (t) => {
   const p = await pagina(t, { qa: { ciudad: { slug: "queretaro", nombre: "Querétaro", centro: { lng: -100.39, lat: 20.59 }, zoom: 12 } } });
   const tira = p.getByRole("group", { name: "Qué publicar" });
   assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo/lugar?ciudad=queretaro");
-  assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo?tipo=artista&ciudad=queretaro");
+  assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo/artista?ciudad=queretaro");
 });
 
 test("la tira de tipos no sale en cuanto se avanza («No tengo cartel»), vuelve con Atrás al primer paso (y ahí pregunta si hay algo escrito) y tampoco sale mientras se lee un cartel", TOPE, async (t) => {
