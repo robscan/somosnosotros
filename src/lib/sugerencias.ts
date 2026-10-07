@@ -224,6 +224,8 @@ export type Anotadas = {
   mencion_festival?: string;
   exposicion?: { estado: "descartada" | "aceptada" };
   festival?: { estado: "descartada" | "aceptada"; clave?: string | null };
+  /** OL-341: «Este festival ya está publicado» / «Ya hay un evento igual», aceptada o descartada. */
+  parecido?: { estado: "descartada" | "aceptada" };
 };
 export const anotadasDe = (v: unknown): Anotadas => (v && typeof v === "object" && !Array.isArray(v) ? (v as Anotadas) : {});
 
@@ -261,7 +263,14 @@ export type Sugerencia =
   /** H4: dos actos distintos nombran el mismo festival y edición; se crea el festival y se relacionan. */
   | { tipo: "festival"; modo: "relacionar"; mencion: string; clave: string; otro: { id: string; titulo: string; dia: string; lugar: string | null } }
   /** H5: el festival propio ya existe; se relaciona este acto (y, si lo hay, el otro que lo nombra). */
-  | { tipo: "festival"; modo: "marco"; mencion: string; clave: string; marco: { id: string; slug: string | null; titulo: string; actos: number }; otro: { id: string; titulo: string; dia: string; lugar: string | null } | null };
+  | { tipo: "festival"; modo: "marco"; mencion: string; clave: string; marco: { id: string; slug: string | null; titulo: string; actos: number }; otro: { id: string; titulo: string; dia: string; lugar: string | null } | null }
+  /**
+   * OL-341 (a): ese día ya está publicado un festival con un título muy parecido; se liga este evento como acto, con `titulo` (el que escribió
+   * la persona o, si es el mismo del festival, «<artista> en <festival>»; `editable`: se enseña en un campo para cambiarlo).
+   */
+  | { tipo: "parecido"; modo: "festival"; titulo: string; editable: boolean; marco: { id: string; slug: string | null; titulo: string; desde: string; hasta: string; lugar: string | null; actos: number } }
+  /** OL-341 (b): otra cuenta publicó ese día un evento suelto igual; se vuelve el marco de un festival con los dos como actos. */
+  | { tipo: "parecido"; modo: "evento"; titulo: string; editable: boolean; existente: { id: string; titulo: string; dia: string; lugar: string | null } };
 
 /**
  * H1 / H2: la exposición que abre esta inauguración. Solo para un evento puntual que es una apertura y nombra una muestra con nombre propio,
@@ -314,5 +323,8 @@ export function sugerenciaDeFestival(e: Publicado, pistas: Pistas, otros: readon
   return { tipo: "festival", modo: "relacionar", mencion: m.texto, clave: m.clave, otro: resumen };
 }
 
-/** La única sugerencia que sale: la del periodo visitable gana a la del festival (modelo §10: «priorizar el periodo visitable»). */
+/**
+ * La única sugerencia que sale: la del periodo visitable gana a la del festival (modelo §10: «priorizar el periodo visitable»). La del evento
+ * igual (OL-341) va antes que las dos y la decide el servidor por su cuenta: si el evento ya está publicado, lo primero es no tenerlo dos veces.
+ */
 export const unaSugerencia = (exposicion: Sugerencia | null, festival: Sugerencia | null): Sugerencia | null => exposicion ?? festival;

@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { intentarDrenarAvisos } from "@/lib/avisosWorker";
 import { periodoDeVisita } from "@/lib/claseEvento";
 import { esClase } from "@/lib/eventos";
+import { sumarDiasIso } from "@/lib/calendario";
 import { diaLocal, localAIso, zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { horarioDesdeJson } from "@/lib/horarioLugar";
@@ -25,6 +26,7 @@ import {
   type Publicado,
   type Sugerencia,
 } from "@/lib/sugerencias";
+import { diasDe, sugerenciaDeParecido, tituloDistintivo, type Candidato } from "@/lib/sugerenciasParecido";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { enlaceDeAlta } from "@/lib/armazon";
 
@@ -58,6 +60,51 @@ type FilaEvento = {
 
 const nombreDelSitio = (e: Pick<FilaEvento, "lugar" | "sitio_texto">): string | null => e.lugar?.nombre ?? e.sitio_texto ?? null;
 
+type Cliente = Awaited<ReturnType<typeof sesionOEntrar>>["supabase"];
+
+/**
+ * OL-341: el evento igual que ya está publicado ese día (`lib/sugerenciasParecido.ts`), con las lecturas de siempre: los eventos visibles, sin
+ * borradores ni actos, puntuales o festivales, que tocan el día del evento en su zona (cualquier cuenta: lo que cualquiera ve en la agenda).
+ * El primer artista de Quién solo se pide si hace falta proponer el título («<artista> en <festival>»); el programa, solo para un festival.
+ */
+async function buscarParecido(supabase: Cliente, yo: string, e: Publicado, zona: string): Promise<Sugerencia | null> {
+  const desde = localAIso(`${e.dia}T00:00`, zona);
+  const hasta = localAIso(`${sumarDiasIso(e.dia, 1)}T00:00`, zona);
+  if (!desde || !hasta) return null;
+  const { data } = await supabase
+    .from("eventos")
+    .select("id, slug, titulo, clase, inicio, fin, zona, creado_por, evento_padre_id, lugar_id, sitio_texto, lugar:lugares(nombre)")
+    .eq("visible", true)
+    .eq("borrador", false)
+    .in("clase", ["puntual", "festival"])
+    .is("evento_padre_id", null)
+    .neq("id", e.id)
+    .lt("inicio", hasta)
+    .gte("termina", desde)
+    .limit(100);
+  const candidatos: Candidato[] = ((data ?? []) as unknown as FilaEvento[]).map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    titulo: c.titulo,
+    clase: c.clase ?? "puntual",
+    ...diasDe({ inicio: c.inicio, fin: c.fin, zona: zonaSegura(c.zona) }),
+    propio: c.creado_por === yo,
+    padre: c.evento_padre_id ?? null,
+    lugar: nombreDelSitio(c),
+  }));
+  let s = sugerenciaDeParecido(e, candidatos, null);
+  if (s?.tipo === "parecido" && s.editable) {
+    const { data: quien } = await supabase.from("eventos_artistas").select("orden, artista:artistas(nombre)").eq("evento_id", e.id).order("orden").limit(1);
+    const artista = ((quien ?? []) as unknown as { artista: { nombre: string } | null }[])[0]?.artista?.nombre ?? null;
+    if (artista) s = sugerenciaDeParecido(e, candidatos, artista);
+  }
+  if (s?.tipo === "parecido" && s.modo === "festival") {
+    const { count } = await supabase.from("eventos").select("id", { count: "exact", head: true }).eq("evento_padre_id", s.marco.id).eq("visible", true);
+    s.marco.actos = count ?? 0;
+  }
+  return s;
+}
+
 /**
  * La sugerencia para el evento recién publicado, o null. `pistas` es lo que la pantalla sabe del cartel (la visita, si es una apertura de una
  * muestra, el festival que nombra); el título lo vuelve a leer aquí. Sin la migración de OL-321/OL-323, o si algo falla, no hay sugerencia: el
@@ -90,6 +137,13 @@ export async function sugerenciaAlPublicar(id: string, pistasCrudas: unknown): P
       inaugura: !!inaugura?.length,
       anotadas: anotadasDe(fila.sugerencias),
     };
+
+    // OL-341: un evento igual ya publicado ese día (un festival, o el evento suelto de otra cuenta). Antes que lo demás: si ya está publicado,
+    // lo primero es no tenerlo dos veces. Un título genérico («Concierto», «Taller de cerámica») no consulta nada.
+    if (publicado.clase === "puntual" && !publicado.padre && !publicado.anotadas.parecido && tituloDistintivo(fila.titulo)) {
+      const parecido = await buscarParecido(supabase, user.id, publicado, zona);
+      if (parecido) return parecido;
+    }
 
     // H1 / H2: solo si es una apertura que nombra una muestra (lo demás no necesita consultar nada).
     let exposicion: Sugerencia | null = null;
@@ -221,12 +275,33 @@ export async function relacionarFestivalSugerido(id: string, datos: { otro: stri
 }
 
 /**
+ * OL-341, «Sí»: (a) el evento `id` entra como acto del festival que ya estaba publicado (`con`), o (b) el evento igual de otra cuenta (`con`) se
+ * vuelve el marco de un festival —con su título, sus fechas, su sitio y su autor— y los dos quedan como actos. `titulo` es el nombre con que
+ * entra el evento nuevo. Una sola operación de la base cada una (escriben en una fila ajena: funciones acotadas que vuelven a comprobar que el
+ * título y el día coinciden); (b) es reintentable con `operacion`, la clave del festival que nace.
+ */
+export async function unirParecidoSugerido(id: string, datos: { modo: "festival" | "evento"; con: string; titulo: string }, operacion: string): Promise<ResultadoSugerencia & { actos?: number }> {
+  const { supabase } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
+  const titulo = (datos.titulo ?? "").trim().slice(0, 120);
+  if (!titulo) return { ok: false, error: "Escribe el nombre de tu participación." };
+  if (!esUuid(id) || !esUuid(datos.con) || (datos.modo !== "festival" && datos.modo !== "evento") || (datos.modo === "evento" && !esUuid(operacion))) return { ok: false, error: "No se pudo unir al festival. Intenta de nuevo." };
+  const { data, error } =
+    datos.modo === "festival"
+      ? await supabase.rpc("unir_a_festival_parecido", { p_evento: id, p_festival: datos.con, p_titulo: titulo })
+      : await supabase.rpc("festival_de_dos_parecidos", { p_existente: datos.con, p_nuevo: id, p_titulo: titulo, p_operacion: operacion });
+  const hecho = data as { id: string; slug: string | null; actos: number } | null;
+  if (error || !hecho) return { ok: false, error: error?.code === "23514" ? "Ese evento ya cambió y no coincide con el tuyo." : "No se pudo unir al festival. Intenta de nuevo." };
+  revalidar([id, datos.con, hecho.id], null);
+  return { ok: true, creado: { id: hecho.id, href: href(hecho.id, hecho.slug) }, actos: hecho.actos };
+}
+
+/**
  * Ignorar no es confirmar (modelo §10): la sugerencia que se dejó sin tocar se anota como descartada para ese evento y no vuelve a salir; la de
  * un festival guarda su clave, así un tercer acto no vuelve a ofrecer la misma agrupación. Sigue disponible desde editar («Parte de un
  * festival», «Inauguración»). Sin respuesta que esperar: si falla, a lo más se volvería a ofrecer.
  */
-export async function descartarSugerencia(id: string, tipo: "exposicion" | "festival", clave: string | null = null): Promise<void> {
-  if (!esUuid(id) || (tipo !== "exposicion" && tipo !== "festival")) return;
+export async function descartarSugerencia(id: string, tipo: "exposicion" | "festival" | "parecido", clave: string | null = null): Promise<void> {
+  if (!esUuid(id) || (tipo !== "exposicion" && tipo !== "festival" && tipo !== "parecido")) return;
   const { supabase } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const { error } = await supabase.rpc("anotar_sugerencia", { p_evento: id, p_tipo: tipo, p_estado: "descartada", p_clave: typeof clave === "string" ? clave.slice(0, 200) : null });
   if (error) console.error("descartarSugerencia:", error.message);

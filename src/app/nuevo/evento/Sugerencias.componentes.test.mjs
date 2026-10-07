@@ -85,6 +85,7 @@ before(async () => {
         publicarExposicion: contesta('exposicion'),
         ligarExposicion: contesta('ligar'),
         relacionarFestival: contesta('festival', {actos: 2}),
+        unirParecido: async (...args) => { window.qa.aceptadas.push({que:'parecido', args}); if (window.qa.falla) return {ok:false, error:'No se pudo unir al festival. Intenta de nuevo.'}; return {ok:true, creado:{id:'0f0f0f0f-0000-4000-8000-0000000000e1', href:'/eventos/electric-universe-festival'}, actos: args[1].modo === 'evento' ? 2 : 3}; },
         descartar: async (id, tipo, clave) => { window.qa.descartes.push({id, tipo, clave}); },
       };
       async function accion(_, fd){
@@ -441,4 +442,99 @@ test("a 320 la sugerencia y la tarjeta de lo creado caben sin desbordes", TOPE, 
     assert.deepEqual(await desborda(p), { scroll: 0, fuera: [] });
     if (s === H1) await foto352(p, "10-h1-exposicion-publicada-320");
   }
+});
+
+// ---------------------------------------------------------------- OL-341: el evento igual ya publicado (bitácora 370)
+
+const CAPTURAS_370 = process.env.CAPTURAS_370;
+const foto370 = async (p, nombre) => {
+  if (!CAPTURAS_370) return;
+  await p.evaluate(() => document.fonts.ready);
+  await p.evaluate(() => {
+    const s = [...document.querySelectorAll("main section")].at(-1);
+    if (s) window.scrollTo({ top: Math.max(0, s.getBoundingClientRect().bottom + window.scrollY - (window.innerHeight - 260)) });
+  });
+  await p.waitForTimeout(450);
+  await p.screenshot({ path: join(CAPTURAS_370, `${nombre}.png`) });
+};
+/** (b): otra cuenta publicó «Electric Universe Festival» ese día; el título es el mismo, así que se propone el nombre de la participación. */
+const PARECIDO_EVENTO = { tipo: "parecido", modo: "evento", titulo: "DJ Nova en Electric Universe Festival", editable: true, existente: { id: "0e0e0e0e-0000-4000-8000-0000000000c1", titulo: "Electric Universe Festival", dia: "2026-10-09", lugar: "Teatro de la Paz" } };
+/** (a): el festival ya está publicado y el título de la persona es otro (sin campo). */
+const PARECIDO_FESTIVAL = { tipo: "parecido", modo: "festival", titulo: "Lectura en voz alta", editable: false, marco: { id: "0f0f0f0f-0000-4000-8000-0000000000e1", slug: "electric-universe-festival", titulo: "Electric Universe Festival", desde: "2026-10-09", hasta: "2026-10-10", lugar: "Teatro de la Paz", actos: 2 } };
+
+test("OL-341 (b): «Ya hay un evento igual» con el nombre de la participación ya escrito; «Sí» lo manda (editado) y la tarjeta del evento lo dice", TOPE, async (t) => {
+  const p = await pagina(t, { qa: conClase({ resultado: "publica", sugerencia: PARECIDO_EVENTO }) });
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  const sug = p.getByRole("region", { name: "Electric Universe Festival" });
+  await sug.waitFor();
+  assert.match(await sug.innerText(), /Ya hay un evento igual\nElectric Universe Festival\nvie 9 de oct\nTeatro de la Paz\nPublicado por otra persona\n+¿Es el mismo\?\n+Tu participación/);
+  const campo = sug.getByLabel("Tu participación");
+  assert.equal(await campo.inputValue(), "DJ Nova en Electric Universe Festival");
+  // Una sola sugerencia: «Compartir» pasa a secundario y la otra caja (crear cartel) va en una línea quieta.
+  assert.match(await claseCompartir(p), /secundario/);
+  await foto370(p, "01-b-ya-hay-un-evento-igual-390");
+  // Vacío, el botón dice qué falta; la ✕ lo vacía.
+  await sug.getByRole("button", { name: "Borrar lo escrito" }).click();
+  assert.equal(await sug.getByRole("button", { name: "Falta el nombre" }).isDisabled(), true);
+  await campo.fill("DJ Nova · Electric Universe Festival");
+  await sug.getByRole("button", { name: "Sí, es mi participación en él" }).click();
+  await sug.getByText("Ya son parte del festival").waitFor();
+  assert.match(await sug.innerText(), /Programa registrado: 2 actividades\nElectric Universe Festival\nvie 9 de oct · Teatro de la Paz\nDJ Nova · Electric Universe Festival/);
+  assert.equal(await sug.getByRole("link", { name: "Ver el festival" }).getAttribute("href"), "/eventos/electric-universe-festival");
+  const [a] = await aceptadas(p);
+  assert.equal(a.que, "parecido");
+  assert.deepEqual(a.args[1], { modo: "evento", con: PARECIDO_EVENTO.existente.id, titulo: "DJ Nova · Electric Universe Festival" });
+  // La tarjeta del evento (lo que ve la gente) ya dice el nombre con que quedó.
+  await p.locator("main ul").first().getByText("DJ Nova · Electric Universe Festival").waitFor();
+  assert.doesNotMatch(await claseCompartir(p), /secundario/);
+  await foto370(p, "02-b-ya-son-parte-del-festival-390");
+});
+
+test("OL-341 (a): «Este festival ya está publicado» con su programa y el acto como entrará; «Sí, publicar como parte de él» lo liga", TOPE, async (t) => {
+  const p = await pagina(t, { qa: conClase({ resultado: "publica", sugerencia: PARECIDO_FESTIVAL }) });
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  const sug = p.getByRole("region", { name: "Electric Universe Festival" });
+  await sug.waitFor();
+  assert.match(await sug.innerText(), /Este festival ya está publicado\nElectric Universe Festival\nDel 9 al 10 de oct · festival\nTeatro de la Paz\nPrograma registrado: 2 actividades\n+¿Es tu participación\?\n+Lectura en voz alta\nvie 9 de oct · Teatro de la Paz · recién publicado/);
+  assert.equal(await sug.getByLabel("Tu participación").count(), 0);
+  await foto370(p, "03-a-este-festival-ya-esta-publicado-390");
+  await sug.getByRole("button", { name: "Sí, publicar como parte de él" }).click();
+  await sug.getByText("Ya es parte del festival").waitFor();
+  assert.match(await sug.innerText(), /Programa registrado: 3 actividades/);
+  assert.deepEqual((await aceptadas(p))[0].args[1], { modo: "festival", con: PARECIDO_FESTIVAL.marco.id, titulo: "Lectura en voz alta" });
+});
+
+test("OL-341: «No, es otro evento» la quita y la anota (una vez); el error de «Sí» se dice en la sugerencia y se reintenta con la misma clave", TOPE, async (t) => {
+  const p = await pagina(t, { qa: conClase({ resultado: "publica", sugerencia: PARECIDO_EVENTO, falla: true }) });
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  const sug = p.getByRole("region", { name: "Electric Universe Festival" });
+  await sug.getByRole("button", { name: "Sí, es mi participación en él" }).click();
+  await sug.getByRole("alert").filter({ hasText: "No se pudo unir al festival. Intenta de nuevo." }).waitFor();
+  await p.evaluate(() => (window.qa.falla = false));
+  await sug.getByRole("button", { name: "Sí, es mi participación en él" }).click();
+  await sug.getByText("Ya son parte del festival").waitFor();
+  const [primera, segunda] = await aceptadas(p);
+  assert.equal(primera.args[2], segunda.args[2], "la misma clave de operación: un reintento no crea dos festivales");
+  // Otra vuelta: «No, es otro evento».
+  await boton(p, "Publicar otro").click();
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  await p.getByRole("region", { name: "Electric Universe Festival" }).getByRole("button", { name: "No, es otro evento" }).click();
+  await p.getByRole("region", { name: "Electric Universe Festival" }).waitFor({ state: "detached" });
+  assert.deepEqual(await descartes(p), [{ id: "0e0e0e0e-0000-4000-8000-000000000002", tipo: "parecido", clave: null }]);
+  await boton(p, "Publicar otro").click();
+  await p.waitForTimeout(50);
+  assert.equal((await descartes(p)).length, 1);
+});
+
+test("OL-341 a 320: la sugerencia con el campo no se sale de la pantalla", TOPE, async (t) => {
+  const p = await pagina(t, { ancho: 320, qa: conClase({ resultado: "publica", sugerencia: PARECIDO_EVENTO }) });
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  await p.getByRole("region", { name: "Electric Universe Festival" }).getByLabel("Tu participación").waitFor();
+  assert.deepEqual(await desborda(p), { scroll: 0, fuera: [] });
+  await foto370(p, "04-b-ya-hay-un-evento-igual-320");
 });

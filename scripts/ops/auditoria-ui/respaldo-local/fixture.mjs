@@ -24,7 +24,8 @@ const hace = (dias) => new Date(Date.now() - dias * 86400e3).toISOString();
 
 // ---------- personas ----------
 export const ANA = "11111111-1111-4111-8111-111111111111";
-const MARCOS = "22222222-2222-4222-8222-222222222222";
+// OL-341: la segunda cuenta con sesión (el caso de dos cuentas que publican el mismo evento): su cookie es `cookieDe(MARCOS)`.
+export const MARCOS = "22222222-2222-4222-8222-222222222222";
 const perfiles = [
   { id: ANA, nombre: "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) },
   { id: MARCOS, nombre: "Marcos Ledesma", foto: null, colonia: "Centro", bio: null, rol: "usuario", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: null },
@@ -237,8 +238,8 @@ export const rpcs = {
     for (const a of t.artistas.filter(a => a.visible)) grupos.set(a.ciudad, (grupos.get(a.ciudad) ?? 0) + 1);
     return [...grupos].map(([ciudad, artistas]) => ({ ciudad, artistas }));
   },
-  // Respaldo sintético de la cuenta autenticada. Los permisos reales se prueban en PostgreSQL.
-  mi_perfil: (_args, t) => t.perfiles.find(p => p.id === ANA) ?? null,
+  // Respaldo sintético de la cuenta autenticada (la del token: Ana o, con su cookie, Marcos). Los permisos reales se prueban en PostgreSQL.
+  mi_perfil: (_args, t, { sub } = {}) => t.perfiles.find(p => p.id === (sub ?? ANA)) ?? null,
 
   van_por_evento: ({ ids }) => (ids || []).map((id) => ({ evento_id: id, n: van(id) })).filter((x) => x.n > 0),
   tira_destacados: ({ p_tipo }) => (p_tipo === "eventos" ? destacados.map((d) => ({ id: d.evento_id, motivo: "elegido", hasta: null, van: van(d.evento_id) })) : []),
@@ -263,8 +264,8 @@ export const rpcs = {
   publicar_borrador_de_programa: ({ p_evento }) => ({ id: p_evento, padre: null }),
   // OL-323: publicar un evento lo deja en memoria (como las asistencias: el fixture no cambia y otro arranque empieza limpio), para que «Publicado»
   // encuentre su sugerencia; aceptar o descartar una sugerencia también queda en memoria.
-  guardar_evento_con_avisos: ({ p_evento, p_datos, p_operacion }, t) => enMemoria(t, p_evento, p_datos, p_operacion),
-  guardar_evento_con_sesiones: ({ p_evento, p_datos, p_operacion }, t) => enMemoria(t, p_evento, p_datos, p_operacion),
+  guardar_evento_con_avisos: ({ p_evento, p_datos, p_operacion, p_quien }, t, { sub } = {}) => enMemoria(t, p_evento, p_datos, p_operacion, sub, p_quien),
+  guardar_evento_con_sesiones: ({ p_evento, p_datos, p_operacion, p_quien }, t, { sub } = {}) => enMemoria(t, p_evento, p_datos, p_operacion, sub, p_quien),
   publicar_exposicion_de_inauguracion: ({ p_inauguracion, p_titulo, p_inicio, p_fin, p_operacion }, t) => {
     const i = t.eventos.find((e) => e.id === p_inauguracion);
     const r = enMemoria(t, null, { ...i, titulo: p_titulo, inicio: p_inicio, fin: p_fin, precio: null, descripcion: null }, p_operacion);
@@ -286,6 +287,29 @@ export const rpcs = {
     for (const a of actos) Object.assign(a, { evento_padre_id: id, sugerencias: { ...a.sugerencias, festival: { estado: "aceptada" } } });
     return { id, slug: marco.slug, titulo: marco.titulo, actos: t.eventos.filter((e) => e.evento_padre_id === id && e.visible).length };
   },
+  // OL-341 (a): el evento entra como acto del festival que ya estaba publicado, con el nombre de la participación (sin las comprobaciones de la
+  // base: esas se prueban en `supabase/tests/pg/festival-parecido.test.mjs`).
+  unir_a_festival_parecido: ({ p_evento, p_festival, p_titulo }, t) => {
+    const e = t.eventos.find((x) => x.id === p_evento);
+    const f = t.eventos.find((x) => x.id === p_festival);
+    if (!e || !f) return null;
+    Object.assign(e, { evento_padre_id: f.id, titulo: p_titulo?.trim() || e.titulo, sugerencias: { ...e.sugerencias, parecido: { estado: "aceptada" } } });
+    return { id: f.id, slug: f.slug, titulo: f.titulo, actos: t.eventos.filter((x) => x.evento_padre_id === f.id && x.visible).length };
+  },
+  // OL-341 (b): el evento igual de otra cuenta se vuelve el marco de un festival (su título, sus fechas, su sitio y su autor) y los dos, sus actos.
+  festival_de_dos_parecidos: ({ p_existente, p_nuevo, p_titulo, p_operacion }, t) => {
+    const x = t.eventos.find((e) => e.id === p_existente);
+    const n = t.eventos.find((e) => e.id === p_nuevo);
+    if (!x || !n) return null;
+    if (!t.eventos.some((e) => e.id === p_operacion)) {
+      enMemoria(t, null, { ...x, descripcion: null, precio: null }, p_operacion, x.creado_por);
+      Object.assign(t.eventos.find((e) => e.id === p_operacion), { clase: "festival", fin: x.fin, termina: x.termina });
+    }
+    x.evento_padre_id = p_operacion;
+    Object.assign(n, { evento_padre_id: p_operacion, titulo: p_titulo?.trim() || n.titulo, sugerencias: { ...n.sugerencias, parecido: { estado: "aceptada" } } });
+    const marco = t.eventos.find((e) => e.id === p_operacion);
+    return { id: marco.id, slug: marco.slug, titulo: marco.titulo, actos: t.eventos.filter((e) => e.evento_padre_id === marco.id && e.visible).length };
+  },
   anotar_sugerencia: ({ p_evento, p_tipo, p_estado, p_clave }, t) => {
     const e = t.eventos.find((x) => x.id === p_evento);
     if (e && e.sugerencias?.[p_tipo]?.estado !== "aceptada") e.sugerencias = { ...e.sugerencias, [p_tipo]: { estado: p_estado, ...(p_clave ? { clave: p_clave } : {}) } };
@@ -293,8 +317,11 @@ export const rpcs = {
   },
 };
 
-/** Un evento que se publica desde la app (OL-323): a la memoria, con lo que guarda la base (la clave de la operación como id, su slug, Ana). */
-function enMemoria(t, p_evento, p_datos, p_operacion) {
+/**
+ * Un evento que se publica desde la app (OL-323): a la memoria, con lo que guarda la base (la clave de la operación como id, su slug y la cuenta
+ * del token: Ana o Marcos). Quién (OL-341): los artistas que ya existen se ligan por su id y uno nuevo se crea en memoria con su nombre.
+ */
+function enMemoria(t, p_evento, p_datos, p_operacion, autor = ANA, quien = []) {
   const vacio = { artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null };
   if (p_evento) return { id: p_evento, ...vacio };
   if (t.eventos.some((e) => e.id === p_operacion)) return { id: p_operacion, ...vacio, repetido: true };
@@ -304,8 +331,16 @@ function enMemoria(t, p_evento, p_datos, p_operacion) {
   t.eventos.push({
     clase: "puntual", evento_padre_id: null, inaugura_id: null, borrador: false, retirado_por_admin: false, sugerencias: {},
     id: p_operacion, slug, titulo: d.titulo, inicio: d.inicio, fin: d.fin ?? null, termina, descripcion: d.descripcion ?? null, imagen: d.imagen ?? null, precio: d.precio ?? null, enlace: d.enlace ?? null,
-    creado_por: ANA, visible: true, sitio_texto: d.sitio_texto ?? null, sitio_direccion: d.sitio_direccion ?? null, sitio_lat: d.sitio_lat ?? null, sitio_lng: d.sitio_lng ?? null,
+    creado_por: autor ?? ANA, visible: true, sitio_texto: d.sitio_texto ?? null, sitio_direccion: d.sitio_direccion ?? null, sitio_lat: d.sitio_lat ?? null, sitio_lng: d.sitio_lng ?? null,
     sitio_reservado: !!d.sitio_reservado, sitio_revelar_desde: null, lugar_id: d.lugar_id ?? null, zona: d.zona ?? ZONA, ciudad: d.ciudad ?? CIUDAD, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
+  });
+  (Array.isArray(quien) ? quien : []).forEach((q, orden) => {
+    let artista = t.artistas.find((a) => a.id === q.id);
+    if (!artista && q.nombre) {
+      artista = { ...t.artistas[0], id: crypto.randomUUID(), slug: String(q.nombre).toLowerCase().replace(/[^a-z0-9]+/g, "-"), nombre: q.nombre, nombre_orden: String(q.nombre).toLowerCase(), foto: null, portada: null, descripcion: null, redes: [], creado_por: autor ?? ANA };
+      t.artistas.push(artista);
+    }
+    if (artista) t.eventos_artistas.push({ evento_id: p_operacion, artista_id: artista.id, orden: orden + 1 });
   });
   return { id: p_operacion, ...vacio };
 }
@@ -313,8 +348,26 @@ function enMemoria(t, p_evento, p_datos, p_operacion) {
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const ahora = Math.floor(Date.now() / 1000);
-const claims = { iss: "http://127.0.0.1:8823/auth/v1", sub: ANA, aud: "authenticated", exp: ahora + 365 * 86400, iat: ahora, email: "ana@example.com", phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, role: "authenticated", aal: "aal1", amr: [{ method: "otp", timestamp: ahora }], session_id: "33333333-3333-4333-8333-333333333333", is_anonymous: false };
-const jwt = `${b64({ alg: "HS256", typ: "JWT" })}.${b64(claims)}.ZmlybWFfZGVfcHJ1ZWJh`;
-export const usuario = { id: ANA, aud: "authenticated", role: "authenticated", email: "ana@example.com", email_confirmed_at: hace(30), phone: "", confirmed_at: hace(30), last_sign_in_at: hace(0), app_metadata: claims.app_metadata, user_metadata: {}, identities: [], created_at: hace(30), updated_at: hace(0), is_anonymous: false };
-export const sesion = { access_token: jwt, token_type: "bearer", expires_in: 365 * 86400, expires_at: claims.exp, refresh_token: "refresco-de-prueba", user: usuario };
-export const cookie = `base64-${Buffer.from(JSON.stringify(sesion)).toString("base64url")}`;
+const CORREOS = { [ANA]: "ana@example.com", [MARCOS]: "marcos@example.com" };
+/** La sesión inventada de una cuenta del respaldo (Ana por omisión; Marcos para el caso de dos cuentas, OL-341). */
+export function sesionDe(sub = ANA) {
+  const claims = { iss: "http://127.0.0.1:8823/auth/v1", sub, aud: "authenticated", exp: ahora + 365 * 86400, iat: ahora, email: CORREOS[sub], phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, role: "authenticated", aal: "aal1", amr: [{ method: "otp", timestamp: ahora }], session_id: sub === ANA ? "33333333-3333-4333-8333-333333333333" : "44444444-4444-4444-8444-444444444444", is_anonymous: false };
+  const jwt = `${b64({ alg: "HS256", typ: "JWT" })}.${b64(claims)}.ZmlybWFfZGVfcHJ1ZWJh`;
+  const usuario = { id: sub, aud: "authenticated", role: "authenticated", email: CORREOS[sub], email_confirmed_at: hace(30), phone: "", confirmed_at: hace(30), last_sign_in_at: hace(0), app_metadata: claims.app_metadata, user_metadata: {}, identities: [], created_at: hace(30), updated_at: hace(0), is_anonymous: false };
+  return { access_token: jwt, token_type: "bearer", expires_in: 365 * 86400, expires_at: claims.exp, refresh_token: `refresco-de-prueba-${sub.slice(0, 4)}`, user: usuario };
+}
+/** La cookie `sb-127-auth-token` de una cuenta del respaldo. */
+export const cookieDe = (sub = ANA) => `base64-${Buffer.from(JSON.stringify(sesionDe(sub))).toString("base64url")}`;
+/** La cuenta de un token (`Authorization: Bearer …` o el refresco), o Ana si no se lee. */
+export function subDe(token) {
+  if (String(token ?? "").startsWith("refresco-de-prueba-")) return Object.keys(CORREOS).find((id) => id.startsWith(String(token).slice(19))) ?? ANA;
+  try {
+    const sub = JSON.parse(Buffer.from(String(token).split(".")[1], "base64url").toString()).sub;
+    return CORREOS[sub] ? sub : ANA;
+  } catch {
+    return ANA;
+  }
+}
+export const sesion = sesionDe(ANA);
+export const usuario = sesion.user;
+export const cookie = cookieDe(ANA);

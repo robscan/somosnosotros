@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { crearEvento } from "./acciones";
-import { descartarSugerencia, ligarExposicionSugerida, publicarExposicionSugerida, relacionarFestivalSugerido, sugerenciaAlPublicar } from "./sugerencias";
+import { descartarSugerencia, ligarExposicionSugerida, publicarExposicionSugerida, relacionarFestivalSugerido, sugerenciaAlPublicar, unirParecidoSugerido } from "./sugerencias";
 
 // OL-323 (bitácora 352): las acciones de las sugerencias al publicar. La base está simulada: cada `from(tabla)` contesta, en orden, lo que la
 // prueba puso para esa tabla; las funciones de la base se prueban de verdad en `supabase/tests/pg/sugerencias-al-publicar.test.mjs`.
@@ -75,12 +75,54 @@ describe("sugerenciaAlPublicar", () => {
   });
 
   it("H4: el otro acto propio y reciente que nombra el mismo festival (por lo que anotó su cartel); busca solo lo propio, visible y de los últimos 60 días", async () => {
-    responder("eventos", { ...INAUGURACION, titulo: "Taller de gráfica en vivo", inicio: "2030-11-08T17:00:00Z" }, []);
+    // fila, quién inaugura, el evento igual (OL-341: nada ese día), los actos recientes y los festivales propios.
+    responder("eventos", { ...INAUGURACION, titulo: "Taller de gráfica en vivo", inicio: "2030-11-08T17:00:00Z" }, [], []);
     responder("eventos", [{ id: OTRO, titulo: "Concierto de Trío Bruma", inicio: "2030-11-08T00:00:00Z", zona: "America/Mexico_City", lugar_id: null, sitio_texto: "Centro de las Artes", evento_padre_id: null, sugerencias: { mencion_festival: "Festival Umbral 2030" }, lugar: null }], []);
     const s = await sugerenciaAlPublicar(ID, { visita: null, apertura: false, muestra: false, festival: "Festival Umbral 2030" });
     expect(s).toEqual({ tipo: "festival", modo: "relacionar", mencion: "Festival Umbral 2030", clave: "festival umbral|2030", otro: { id: OTRO, titulo: "Concierto de Trío Bruma", dia: "2030-11-07", lugar: "Centro de las Artes" } });
     const recientes = m.consultas.find((c) => c.llamadas.some(([n, a]) => n === "gte" && a[0] === "creado_en"))!;
     expect(recientes.llamadas).toEqual(expect.arrayContaining([["eq", ["creado_por", YO]], ["eq", ["visible", true]], ["eq", ["borrador", false]], ["neq", ["id", ID]]]));
+  });
+
+  // OL-341 (bitácora 370): el caso Electric Universe. Lo que se lee es lo que cualquiera ve en la agenda (visible, sin borradores ni actos, del
+  // día del evento en su zona); la regla misma se prueba en `lib/sugerenciasParecido.test.ts`.
+  const ELECTRIC = { ...INAUGURACION, titulo: "Electric Universe Festival", inicio: "2030-11-09T02:00:00Z", lugar_id: null, sitio_texto: "Foro Aleph", lugar: null };
+  const AJENO = { id: OTRO, slug: "electric-universe-festival", titulo: "ELECTRIC UNIVERSE FESTIVAL", clase: "puntual", inicio: "2030-11-09T03:00:00Z", fin: null, zona: "America/Mexico_City", creado_por: "00000000-0000-4000-8000-0000000000a2", evento_padre_id: null, lugar_id: null, sitio_texto: "Foro Aleph", lugar: null };
+
+  it("OL-341 (b): el evento igual de otra cuenta ese día; con el mismo título, «<artista> en <festival>» con el primer artista de Quién", async () => {
+    responder("eventos", ELECTRIC, [], [AJENO]);
+    responder("eventos_artistas", [{ orden: 0, artista: { nombre: "DJ Nova" } }]);
+    const s = await sugerenciaAlPublicar(ID, null);
+    expect(s).toEqual({ tipo: "parecido", modo: "evento", titulo: "DJ Nova en ELECTRIC UNIVERSE FESTIVAL", editable: true, existente: { id: OTRO, titulo: "ELECTRIC UNIVERSE FESTIVAL", dia: "2030-11-08", lugar: "Foro Aleph" } });
+    const busqueda = m.consultas.find((c) => c.llamadas.some(([n, a]) => n === "gte" && a[0] === "termina"))!;
+    expect(busqueda.llamadas).toEqual(
+      expect.arrayContaining([
+        ["eq", ["visible", true]],
+        ["eq", ["borrador", false]],
+        ["in", ["clase", ["puntual", "festival"]]],
+        ["is", ["evento_padre_id", null]],
+        ["neq", ["id", ID]],
+        // El 8 de noviembre en San Luis (UTC−6): de las 06:00 UTC del 8 a las 06:00 UTC del 9.
+        ["lt", ["inicio", "2030-11-09T06:00:00.000Z"]],
+        ["gte", ["termina", "2030-11-08T06:00:00.000Z"]],
+      ]),
+    );
+    expect(busqueda.llamadas.some(([n, a]) => n === "eq" && a[0] === "creado_por")).toBe(false);
+  });
+
+  it("OL-341 (a): el festival publicado que cubre ese día, con su programa registrado", async () => {
+    responder("eventos", { ...ELECTRIC, titulo: "DJ Nova en Electric Universe Festival" }, [], [{ ...AJENO, clase: "festival", titulo: "Electric Universe Festival", inicio: "2030-11-08T20:00:00Z", fin: "2030-11-10T06:00:00Z" }]);
+    m.respuestas.eventos.push({ data: null, error: null, count: 2 } as never);
+    const s = await sugerenciaAlPublicar(ID, null);
+    expect(s).toMatchObject({ tipo: "parecido", modo: "festival", titulo: "DJ Nova en Electric Universe Festival", editable: false, marco: { id: OTRO, titulo: "Electric Universe Festival", desde: "2030-11-08", hasta: "2030-11-09", actos: 2 } });
+    // Sin el mismo título no hace falta el artista.
+    expect(m.consultas.some((c) => c.tabla === "eventos_artistas")).toBe(false);
+  });
+
+  it("OL-341: un título genérico no busca nada; sin nada igual, siguen las de OL-323", async () => {
+    responder("eventos", { ...ELECTRIC, titulo: "Concierto" }, []);
+    expect(await sugerenciaAlPublicar(ID, null)).toBeNull();
+    expect(m.consultas.filter((c) => c.tabla === "eventos")).toHaveLength(2);
   });
 
   it("si algo falla, no hay sugerencia (el final se ve igual)", async () => {
@@ -120,6 +162,23 @@ describe("aceptar y descartar", () => {
     expect(m.rpc).toHaveBeenLastCalledWith("relacionar_en_festival", { p_eventos: [ID, OTRO], p_marco: null, p_titulo: "Festival Umbral 2030", p_operacion: OP });
     await relacionarFestivalSugerido(ID, { otro: null, marco: OTRO, titulo: "Festival Umbral 2030" }, OP);
     expect(m.rpc).toHaveBeenLastCalledWith("relacionar_en_festival", { p_eventos: [ID], p_marco: OTRO, p_titulo: null, p_operacion: null });
+  });
+
+  it("OL-341: «Sí» liga el evento al festival (a) o convierte el evento igual en festival con los dos (b), con el nombre de la participación", async () => {
+    m.rpc.mockResolvedValue({ data: { id: OTRO, slug: "electric-universe-festival", actos: 3 }, error: null });
+    expect(await unirParecidoSugerido(ID, { modo: "festival", con: OTRO, titulo: " DJ Nova en Electric Universe Festival " }, OP)).toEqual({ ok: true, creado: { id: OTRO, href: "/eventos/electric-universe-festival" }, actos: 3 });
+    expect(m.rpc).toHaveBeenLastCalledWith("unir_a_festival_parecido", { p_evento: ID, p_festival: OTRO, p_titulo: "DJ Nova en Electric Universe Festival" });
+    m.rpc.mockResolvedValue({ data: { id: OP, slug: "electric-universe-festival-op", actos: 2 }, error: null });
+    expect(await unirParecidoSugerido(ID, { modo: "evento", con: OTRO, titulo: "DJ Nova en Electric Universe Festival" }, OP)).toMatchObject({ ok: true, actos: 2 });
+    expect(m.rpc).toHaveBeenLastCalledWith("festival_de_dos_parecidos", { p_existente: OTRO, p_nuevo: ID, p_titulo: "DJ Nova en Electric Universe Festival", p_operacion: OP });
+  });
+
+  it("OL-341: sin nombre no llega a la base; si la base ya no lo ve igual, se dice", async () => {
+    expect(await unirParecidoSugerido(ID, { modo: "festival", con: OTRO, titulo: "  " }, OP)).toEqual({ ok: false, error: "Escribe el nombre de tu participación." });
+    expect(await unirParecidoSugerido(ID, { modo: "evento", con: OTRO, titulo: "X" }, "no-es-id")).toMatchObject({ ok: false });
+    expect(m.rpc).not.toHaveBeenCalled();
+    m.rpc.mockResolvedValue({ data: null, error: { code: "23514" } });
+    expect(await unirParecidoSugerido(ID, { modo: "evento", con: OTRO, titulo: "X" }, OP)).toEqual({ ok: false, error: "Ese evento ya cambió y no coincide con el tuyo." });
   });
 
   it("descartar anota la sugerencia con su clave", async () => {
