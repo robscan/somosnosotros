@@ -92,21 +92,26 @@ describe("datosAsistencia y fichaDeEnlace", () => {
 });
 
 describe("medirCliente", () => {
-  it("en producción manda a Vercel y a Google el mismo nombre y los mismos datos", () => {
+  it("en producción manda a Vercel y a Google (solo por el servidor) el mismo nombre y los mismos datos", () => {
     const gtag = vi.fn();
     ponerVentana({ gtag, href: "https://somosnosotros.org/buscar?q=rosa%20perez" });
     medirCliente("busqueda", { resultados: "si" });
     expect(track).toHaveBeenCalledWith("busqueda", { resultados: "si" });
-    const evento = gtag.mock.calls.find((c) => c[0] === "event");
-    expect(evento?.[1]).toBe("busqueda");
-    expect(evento?.[2]).toMatchObject({ resultados: "si", page_location: "https://somosnosotros.org/buscar", page_title: "/buscar", page_referrer: "" });
-    expect(JSON.stringify(gtag.mock.calls)).not.toContain("rosa");
-    // Y el mismo evento al servidor, para el Measurement Protocol: solo nombre y datos.
+    // A Google, una sola vez: por el servidor (Measurement Protocol), solo nombre y datos.
     expect(red).toHaveBeenCalledTimes(1);
     const [url, opciones] = red.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/medir");
     expect(opciones).toMatchObject({ method: "POST", keepalive: true });
     expect(JSON.parse(String(opciones.body))).toEqual({ nombre: "busqueda", datos: { resultados: "si" } });
+    expect(String(opciones.body)).not.toContain("rosa");
+  });
+  it("las acciones no salen por gtag en el navegador (sin doble conteo): gtag queda para las vistas", () => {
+    const gtag = vi.fn();
+    ponerVentana({ gtag });
+    medirCliente("asistencia", { estado: "voy", cambio: "puesto" });
+    medirCliente("evento_creado", { cartel: "si", clase: "taller" });
+    expect(gtag).not.toHaveBeenCalled();
+    expect(red).toHaveBeenCalledTimes(2);
   });
   it("fuera de producción no manda nada", () => {
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");

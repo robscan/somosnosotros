@@ -144,9 +144,10 @@ export function contextoGoogle(href: string): { page_location: string; page_titl
 
 /**
  * Mide una acción desde el teléfono: a Vercel Analytics (`track`) y, si Google está preparado (`gtag`, que solo existe con
- * `NEXT_PUBLIC_GA_ID`, en producción y fuera de la administración), a Google Analytics dos veces con el mismo nombre y los mismos datos:
- * por el navegador (`gtag('event', …)`, consentimiento denegado) y por el servidor (`POST /api/medir` → Measurement Protocol). Solo en
- * producción y nunca para la administración. No lanza nunca y no espera a nadie: quien llama sigue con lo suyo.
+ * `NEXT_PUBLIC_GA_ID`, en producción y fuera de la administración), a Google Analytics SOLO por el servidor (`POST /api/medir` →
+ * Measurement Protocol), con el mismo nombre y los mismos datos. En el navegador `gtag` queda solo para las vistas de página (decisión
+ * del gestor: una acción, un envío a Google; sin doble conteo). Solo en producción y nunca para la administración. No lanza nunca y no
+ * espera a nadie: quien llama sigue con lo suyo.
  */
 export function medirCliente<N extends NombreEvento>(nombre: N, ...args: ArgsDe<N>): void {
   try {
@@ -169,15 +170,13 @@ export function medirCliente<N extends NombreEvento>(nombre: N, ...args: ArgsDe<
     try {
       const gtag = typeof window !== "undefined" ? ((window as unknown as { gtag?: Gtag }).gtag ?? null) : null;
       if (typeof gtag === "function") {
-        const contexto = contextoGoogle(window.location.href);
-        gtag("set", contexto);
-        gtag("event", nombre, { ...datos, ...contexto });
-        // Y el mismo evento, completo, desde el servidor (Measurement Protocol; `src/app/api/medir`): con el consentimiento denegado,
-        // Google usa lo del navegador solo para su modelado. `keepalive`: sale aunque la persona cambie de pantalla; nadie lo espera.
+        // A Google solo desde el servidor (Measurement Protocol; `src/app/api/medir`): con el consentimiento denegado, Google usaría lo
+        // del navegador solo para su modelado, y mandarlo por los dos lados lo contaría dos veces. `keepalive`: sale aunque la persona
+        // cambie de pantalla; nadie lo espera.
         void fetch("/api/medir", { method: "POST", keepalive: true, headers: { "content-type": "application/json" }, body: JSON.stringify({ nombre, datos }) }).catch(() => {});
       }
     } catch {
-      // Google no está o falló: sigue
+      // sin red o sin `fetch`: sigue
     }
   } catch {
     // medir nunca rompe la acción
