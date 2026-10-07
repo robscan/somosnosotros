@@ -1,27 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
+import { destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel, type VentanaConFotos } from "@/lib/guardarCartel";
 
-type Textos = { reposo: string; preparando: string; listo: string; fallo: string };
-const TEXTOS: Textos = { reposo: "Descargar el cartel", preparando: "Preparando…", listo: "Cartel descargado", fallo: "No se pudo descargar" };
-/** Cuánto se queda «Cartel descargado» (o el aviso de fallo) antes de volver al texto de siempre. */
+/** Cuánto se queda el aviso («Guardado en Fotos», «No se pudo guardar») antes de volver al texto de siempre. */
 const AVISO_MS = 4000;
 
 type Cartel = { blob: Blob; nombre: string };
+type Estado = "reposo" | "preparando" | "listo" | "fallo";
 
 type Props = {
   /** El evento: su slug o su UUID, como los entiende `/api/cartel/[id]`. */
   id: string;
-  /** El título del evento, para la hoja de compartir. */
-  titulo: string;
   className: string;
   /** Lo que va antes del texto (el icono; en la ficha, dentro de su círculo). */
   icono?: ReactNode;
-  /** Lo que dice en cada momento; lo que no se da queda como en `TEXTOS`. */
-  textos?: Partial<Textos>;
-  /** Lo que lee el lector de pantalla cuando el texto es corto («Cartel»). */
-  etiqueta?: string;
-  /** Pide el cartel al montarse, para que el toque ya lo tenga: la hoja de compartir del iPhone solo se abre si el toque la pide al instante. */
+  /** Letrero corto («Cartel», «En Fotos») para la ficha, donde va bajo un círculo como las demás acciones; el nombre completo queda en `aria-label`. */
+  corto?: boolean;
+  /** Pide el cartel al montarse, para que el toque ya lo tenga y la descarga o el guardado salgan al instante. */
   precargar?: boolean;
 };
 
@@ -42,17 +38,38 @@ function guardar({ blob, nombre }: Cartel) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** La imagen en base64 sin el prefijo `data:…;base64,`: así viaja por el puente de Capacitor hacia `FotosPlugin`. */
+function aBase64(blob: Blob): Promise<string> {
+  return new Promise((resolver, rechazar) => {
+    const lector = new FileReader();
+    lector.onload = () => resolver(String(lector.result).split(",")[1] ?? "");
+    lector.onerror = () => rechazar(lector.error);
+    lector.readAsDataURL(blob);
+  });
+}
+
+/** La app trae (o no) el plugin de Fotos: no cambia mientras la página vive, así que no hay a qué suscribirse; en el servidor, no. */
+const sinSuscripcion = () => () => {};
+const hayFotos = () => fotosDelSistema(window as unknown as VentanaConFotos) !== null;
+const hayFotosEnServidor = () => false;
+
 /**
- * «Descargar el cartel» (OL-304; pedido del founder: «ofrece opción de descargar cartel de eventos. Al final del flujo y en la ficha
- * del evento»): sirve para llevarlo a WhatsApp o a Instagram. Donde el navegador puede compartir archivos (el iPhone) abre la hoja del
- * sistema con la imagen, que ofrece «Guardar imagen», WhatsApp e Instagram; donde no, la descarga de siempre. La imagen vive en otro
- * origen, así que se pide a `/api/cartel/[id]`, que la entrega como archivo. Mientras se trae dice «Preparando…»; al terminar, «Cartel
- * descargado» unos segundos. Es un enlace de verdad (mejora progresiva, como `BotonCalendario`): sin JavaScript descarga igual.
+ * «Descargar el cartel» (OL-304; pedido del founder: «ofrece opción de descargar cartel de eventos. Al final del flujo y en la ficha del
+ * evento») y «Guardar en Fotos» (OL-317; «agrega la opción de guardar en Fotos del celular»). Una sola pieza con dos comportamientos
+ * según el entorno (`lib/guardarCartel`):
+ * - **En la app de iPhone** (Capacitor con `FotosPlugin`): «Guardar en Fotos», un toque y la imagen queda en Fotos («Guardado en Fotos»).
+ *   Si falla o la persona negó el permiso: «No se pudo guardar» (no cae en la descarga: dentro de la app un `blob:` descargable no tiene a dónde ir).
+ * - **En la web** (Safari, la web instalada, cualquier navegador; y la app con una compilación vieja, sin el plugin): «Descargar el
+ *   cartel» descarga el archivo de verdad, sin hoja de compartir (decisión del founder, 2026-10-06: «en web que se descargue como promete»).
+ * La imagen vive en otro origen, así que se pide a `/api/cartel/[id]`, que la entrega como archivo. Es un enlace de verdad (mejora
+ * progresiva, como `BotonCalendario`): sin JavaScript descarga igual.
  */
-export default function BotonDescargarCartel({ id, titulo, className, icono, textos, etiqueta, precargar = false }: Props) {
-  const dice = { ...TEXTOS, ...textos };
+export default function BotonDescargarCartel({ id, className, icono, corto = false, precargar = false }: Props) {
+  const conFotos = useSyncExternalStore(sinSuscripcion, hayFotos, hayFotosEnServidor);
+  const destino = destinoDelCartel({ conFotos });
+  const dice = textosDelCartel(destino, corto);
   const href = `/api/cartel/${encodeURIComponent(id)}`;
-  const [estado, setEstado] = useState<"reposo" | "preparando" | "listo" | "fallo">("reposo");
+  const [estado, setEstado] = useState<Estado>("reposo");
   const aviso = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // El cartel que ya se trajo (o se está trayendo): una sola petición aunque se toque dos veces.
   const traido = useRef<Promise<Cartel> | null>(null);
@@ -95,26 +112,22 @@ export default function BotonDescargarCartel({ id, titulo, className, icono, tex
       avisar("fallo");
       return;
     }
-    const archivo = new File([cartel.blob], cartel.nombre, { type: cartel.blob.type });
-    if (typeof navigator.share === "function" && navigator.canShare?.({ files: [archivo] })) {
+    const fotos = fotosDelSistema(window as unknown as VentanaConFotos);
+    if (fotos) {
       try {
-        await navigator.share({ files: [archivo], title: titulo });
-        avisar("listo");
+        await fotos.guardarFoto({ datos: await aBase64(cartel.blob), tipo: cartel.blob.type });
+      } catch {
+        avisar("fallo");
         return;
-      } catch (e) {
-        // Cerrar la hoja sin elegir nada no es un fallo ni una descarga; cualquier otra cosa cae en la descarga de siempre.
-        if (e instanceof DOMException && e.name === "AbortError") {
-          setEstado("reposo");
-          return;
-        }
       }
+    } else {
+      guardar(cartel);
     }
-    guardar(cartel);
     avisar("listo");
   }
 
   return (
-    <a href={href} download className={className} onClick={alTocar} aria-label={estado === "reposo" ? etiqueta : undefined} aria-busy={estado === "preparando" || undefined} aria-live="polite">
+    <a href={href} download className={className} onClick={alTocar} aria-label={corto && estado === "reposo" ? etiquetaDelCartel(destino) : undefined} aria-busy={estado === "preparando" || undefined} aria-live="polite">
       {icono}
       {dice[estado]}
     </a>

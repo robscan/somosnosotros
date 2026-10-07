@@ -147,7 +147,7 @@ const SITIOS = {
 const CONTEXTO = { place: { name: "San Luis Potosí" }, country: { name: "México", country_code: "mx" } };
 const DIRECCIONES = { "22.1533": "Av. Universidad 300, Lomas, San Luis Potosí, México", "22.16": "Av. Carranza 100, Centro, San Luis Potosí, México", "22.1504": "Villerías 207, Centro, San Luis Potosí, México" };
 
-async function pagina(t, { movimiento = "reduce", ancho = 390, qa = {}, geolocation = { latitude: 22.1504, longitude: -100.97 } } = {}) {
+async function pagina(t, { movimiento = "reduce", ancho = 390, qa = {}, fotos = false, geolocation = { latitude: 22.1504, longitude: -100.97 } } = {}) {
   const context = await browser.newContext({ viewport: { width: ancho, height: 844 }, reducedMotion: movimiento, timezoneId: "America/Mexico_City", deviceScaleFactor: capturas ? 2 : 1, locale: "es-MX", geolocation, permissions: ["geolocation"] });
   t.after(() => context.close());
   await context.clock.setFixedTime(new Date("2026-10-07T16:00:00Z"));
@@ -157,7 +157,12 @@ async function pagina(t, { movimiento = "reduce", ancho = 390, qa = {}, geolocat
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
   await p.addInitScript((inicial) => (window.qaInicial = inicial), qa);
-  // La hoja de compartir del teléfono: guarda lo que recibe (el texto de «Compartir» y el archivo de «Descargar el cartel»).
+  // La app de iPhone (OL-317): Capacitor con `FotosPlugin`; lo que recibe queda en `window.guardadasEnFotos`.
+  await p.addInitScript((enLaApp) => {
+    window.guardadasEnFotos = [];
+    if (enLaApp) window.Capacitor = { Plugins: { Fotos: { guardarFoto: async (d) => void window.guardadasEnFotos.push({ tipo: d.tipo, bytes: atob(d.datos).length }) } } };
+  }, fotos);
+  // La hoja de compartir del teléfono: guarda lo que recibe (el texto de «Compartir» y el botón de descargar ya no abre la hoja).
   await p.addInitScript(() => {
     window.compartidos = [];
     Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
@@ -1768,7 +1773,7 @@ test("«Compartir» manda el mismo texto y la misma dirección que la ficha: tí
   assert.match(c.texto, /^Lectura en voz alta\nvie 9 de oct · 19:00–21:00 · Teatro de la Paz$/);
 });
 
-test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» entrega el archivo a la hoja de compartir; «Cartel descargado» al terminar", TOPE, async (t) => {
+test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descarga el archivo (sin hoja de compartir) y dice «Cartel descargado»", TOPE, async (t) => {
   const p = await pagina(t, { qa: { lectura: LEIDO } });
   await subir(p);
   await p.getByText("Leído del cartel").waitFor();
@@ -1782,12 +1787,33 @@ test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» entreg
   assert.match(await tarjeta(p).innerText(), /jue 5 de nov · 19:00/);
   const descargar = p.getByRole("link", { name: "Descargar el cartel" });
   assert.equal(await descargar.getAttribute("href"), "/api/cartel/0e0e0e0e-0000-4000-8000-000000000001");
-  await foto(p, "332-02-publicado-con-cartel");
-  await descargar.click();
+  await foto(p, "344-02-publicado-web-descargar-el-cartel");
+  const [archivo] = await Promise.all([p.waitForEvent("download"), descargar.click()]);
   await p.getByText("Cartel descargado").waitFor();
-  const [c] = await p.evaluate(() => window.compartidos);
-  assert.deepEqual(c.archivo, { nombre: "cartel-prueba.png", tipo: "image/png", bytes: PNG.length });
-  await foto(p, "332-03-cartel-descargado");
+  assert.equal(archivo.suggestedFilename(), "cartel-prueba.png");
+  // Descargar no es compartir: la hoja del sistema no se abrió.
+  assert.deepEqual(await p.evaluate(() => window.compartidos), []);
+  await foto(p, "344-03-publicado-web-cartel-descargado");
+});
+
+test("en la app de iPhone (con el plugin de Fotos), «Publicado» ofrece «Guardar en Fotos» y un toque manda el cartel a Fotos, sin hoja ni descarga (OL-317)", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO }, fotos: true });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  await p.evaluate(() => (window.qa.resultado = "publica"));
+  await boton(p, "Publicar").click();
+  await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
+  const guardar = p.getByRole("link", { name: "Guardar en Fotos" });
+  assert.equal(await p.getByRole("link", { name: "Descargar el cartel" }).count(), 0);
+  await foto(p, "344-04-publicado-app-guardar-en-fotos");
+  let descargas = 0;
+  p.on("download", () => descargas++);
+  await guardar.click();
+  await p.getByText("Guardado en Fotos").waitFor();
+  assert.deepEqual(await p.evaluate(() => window.guardadasEnFotos), [{ tipo: "image/png", bytes: PNG.length }]);
+  assert.deepEqual(await p.evaluate(() => window.compartidos), []);
+  assert.equal(descargas, 0);
+  await foto(p, "344-05-publicado-app-guardado-en-fotos");
 });
 
 test("«Publicar otro» empieza de cero: el primer paso, nada escrito, otra clave de operación y la guardia armada de nuevo", TOPE, async (t) => {

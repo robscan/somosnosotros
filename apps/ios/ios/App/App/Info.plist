@@ -30,6 +30,8 @@
 	<string>Somos Nosotros pide tu cámara solo cuando eliges tomar una foto para tu perfil, un lugar, una ficha de artista o un evento.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Somos Nosotros pide tu ubicación para ordenar lugares y eventos por cercanía. Nunca se guarda.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Para guardar el cartel del evento en tus fotos</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
