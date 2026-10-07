@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { deducirTipo, esNegocio, interpretarRecuperado, interpretarSugerencias, recuperarLugar, sugerirLugares, urlSugerir } from "./buscarLugares";
+import { deducirTipo, interpretarRecuperado, interpretarSugerencias, recuperarLugar, sugerirLugares, urlSugerir } from "./buscarLugares";
 
 describe("buscarLugares", () => {
   it("arma la URL de sugerencias con sesión, cercanía y tipos poi+address, de cualquier país", () => {
@@ -96,29 +96,30 @@ describe("interpretarSugerencias · direcciones", () => {
   });
 });
 
-describe("esNegocio", () => {
-  it("un bar, un café, un restaurante o un antro, por la categoría del mapa o por su nombre, es un negocio", () => {
-    expect(esNegocio("La Cantina", ["bar"])).toBe(true);
-    expect(esNegocio("Café Tacuba", ["coffee_shop"])).toBe(true);
-    expect(esNegocio("Tacuba", ["cafe"])).toBe(true);
-    expect(esNegocio("Casa Luna", ["restaurant"])).toBe(true);
-    expect(esNegocio("Casa Luna", ["fast_food"])).toBe(true);
-    expect(esNegocio("Fuego", ["night_club"])).toBe(true);
-    expect(esNegocio("Cantina Don Beto")).toBe(true);
-    expect(esNegocio("Cafetería Central")).toBe(true);
+describe("deducirTipo · café, bar o restaurante (los negocios entran al directorio, 2026-10-06)", () => {
+  it("un bar, un café, un restaurante o un antro, por la categoría del mapa o por su nombre, es «Café, bar o restaurante»", () => {
+    expect(deducirTipo("La Cantina", ["bar"])).toBe("cafe_bar");
+    expect(deducirTipo("Café Tacuba", ["coffee_shop"])).toBe("cafe_bar");
+    expect(deducirTipo("Tacuba", ["cafe"])).toBe("cafe_bar");
+    expect(deducirTipo("Casa Luna", ["restaurant"])).toBe("cafe_bar");
+    expect(deducirTipo("Casa Luna", ["fast_food"])).toBe("cafe_bar");
+    expect(deducirTipo("Fuego", ["night_club"])).toBe("cafe_bar");
+    expect(deducirTipo("Cantina Don Beto")).toBe("cafe_bar");
+    expect(deducirTipo("Cafetería Central")).toBe("cafe_bar");
   });
-  it("un espacio cultural no lo es, aunque el mapa lo junte con un café", () => {
-    expect(esNegocio("Museo Federico Silva", ["museum"])).toBe(false);
-    expect(esNegocio("Teatro de la Paz", ["theatre", "cafe"])).toBe(false);
-    expect(esNegocio("Centro de las Artes")).toBe(false);
-    expect(esNegocio("Jardín de San Juan de Dios", ["park"])).toBe(false);
-    expect(esNegocio("Galería Ángel", ["art_gallery", "bar"])).toBe(false);
+  it("un espacio cultural sigue con su tipo aunque el mapa lo junte con un café", () => {
+    expect(deducirTipo("Museo Federico Silva", ["museum"])).toBe("museo");
+    expect(deducirTipo("Teatro de la Paz", ["theatre", "cafe"])).toBe("foro");
+    expect(deducirTipo("Galería Ángel", ["art_gallery", "bar"])).toBe("galeria");
+    expect(deducirTipo("Jardín de San Juan de Dios", ["park"])).toBe("plaza");
   });
-  it("«plaza, jardín o parque» en el nombre no salva a un café", () => {
-    expect(esNegocio("Café del Jardín", ["cafe"])).toBe(true);
+  it("«plaza, jardín o parque» en el nombre no hace plaza a un café", () => {
+    expect(deducirTipo("Café del Jardín", ["cafe"])).toBe("cafe_bar");
+    expect(deducirTipo("Café del Jardín")).toBe("cafe_bar");
   });
-  it("una dirección sin nombre ni categorías no es un negocio", () => {
-    expect(esNegocio("")).toBe(false);
-    expect(esNegocio("", [])).toBe(false);
+  it("una tienda, un hotel o un banco no son café, bar o restaurante: sin pista", () => {
+    expect(deducirTipo("Casa Luna", ["hotel"])).toBeNull();
+    expect(deducirTipo("Casa Luna", ["shop"])).toBeNull();
+    expect(deducirTipo("Barra de Abogados")).toBeNull();
   });
 });

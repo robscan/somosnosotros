@@ -1,8 +1,7 @@
 /* ==========================================================================
-   La pantalla de alta (docs/rediseno/50, P9; prototipo firmado): una tarea de tres filas sobre la rejilla de la plantilla `pagina` (`ui/Plantilla`):
-   la barra interior, el formulario del tipo elegido —que se lleva lo que sobre— y la tira de tipos (`TiraTipos`, compartida con el primer paso
-   del alta de evento), que se queda al pie de la ventana aunque el formulario sea corto. Los formularios que no están a la vista van
-   escondidos (`hidden`) y no ocupan fila.
+   La pantalla de alta de artista (docs/rediseno/50, P9; prototipo firmado): una tarea de tres filas sobre la rejilla de la plantilla `pagina`
+   (`ui/Plantilla`): la barra interior, el formulario —que se lleva lo que sobre— y la tira de tipos (`TiraTipos`, compartida con el primer paso
+   del alta de evento y del de lugar), que se queda al pie de la ventana aunque el formulario sea corto.
    1. La rejilla
    ========================================================================== */
 

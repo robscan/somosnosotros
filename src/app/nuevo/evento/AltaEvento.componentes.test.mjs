@@ -784,7 +784,7 @@ test("la tira de tipos (OL-313) está solo en el primer paso: Evento marcado, Lu
   assert.equal(await tira.getByText("Evento", { exact: true }).getAttribute("aria-current"), "page");
   assert.equal(await tira.getByRole("link", { name: "Evento" }).count(), 0);
   assert.equal(await tira.getByRole("button").count(), 0);
-  assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo?tipo=lugar");
+  assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo/lugar");
   assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo?tipo=artista");
   assert.equal(await tira.getByRole("link").count(), 2);
   // Es el pie de la pantalla: de borde a borde y pegada abajo.
@@ -798,16 +798,16 @@ test("la tira de tipos (OL-313) está solo en el primer paso: Evento marcado, Lu
   if (capturas) await foto(p, "tira-1-primer-paso");
   // Nada escrito: la guardia deja pasar sin preguntar y la entrada se reemplaza (no se apila) con el enrutador.
   await tira.getByRole("link", { name: "Lugar" }).click();
-  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=lugar"]);
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo/lugar"]);
   assert.equal(await p.getByText("¿Salir sin publicar?").count(), 0);
   await tira.getByRole("link", { name: "Artista" }).click();
-  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=lugar", "/nuevo?tipo=artista"]);
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo/lugar", "/nuevo?tipo=artista"]);
 });
 
 test("la tira de tipos lleva la ciudad que se veía en Lugar y en Artista", TOPE, async (t) => {
   const p = await pagina(t, { qa: { ciudad: { slug: "queretaro", nombre: "Querétaro", centro: { lng: -100.39, lat: 20.59 }, zoom: 12 } } });
   const tira = p.getByRole("group", { name: "Qué publicar" });
-  assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo?tipo=lugar&ciudad=queretaro");
+  assert.equal(await tira.getByRole("link", { name: "Lugar" }).getAttribute("href"), "/nuevo/lugar?ciudad=queretaro");
   assert.equal(await tira.getByRole("link", { name: "Artista" }).getAttribute("href"), "/nuevo?tipo=artista&ciudad=queretaro");
 });
 
@@ -827,7 +827,7 @@ test("la tira de tipos no sale en cuanto se avanza («No tengo cartel»), vuelve
   await p.getByText("¿Salir sin publicar?").waitFor();
   assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), []);
   await boton(p, "Salir y borrar").click();
-  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=lugar"]);
+  assert.deepEqual(await p.evaluate(() => window.qa.reemplazos), ["/nuevo/lugar"]);
   // Subir un cartel: la espera («Leyendo el cartel…») no lleva la tira.
   await subir(p);
   await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).waitFor();
@@ -1498,17 +1498,20 @@ test("una dirección sin nombre: la tarjeta la muestra como título, «Ponle nom
   assert.equal(await boton(p, "Ponle nombre").count(), 0);
 });
 
-test("un bar, café o restaurante según el mapa no ofrece «Guardarlo como lugar»", TOPE, async (t) => {
+test("un bar, café o restaurante según el mapa también ofrece «Guardarlo como lugar» (los negocios entran al directorio, OL-315) y se guarda con lo que dice el mapa", TOPE, async (t) => {
   const p = await pagina(t);
   await hastaDonde(p);
   await elegirDelMapa(p, "cantina", /La Cantina/);
   await boton(p, "Sí, es aquí").click();
   const grupo = p.getByRole("group", { name: "Qué hacer con este sitio" });
   const textos = await grupo.getByRole("button").allInnerTexts();
-  assert.equal(textos.length, 2);
+  assert.equal(textos.length, 3);
   assert.match(textos[0], /^Usarlo solo en este evento/);
-  assert.match(textos[1], /^Es un sitio reservado/);
-  await foto(p, "uso-2-dos");
+  assert.match(textos[1], /^Guardarlo como lugar/);
+  assert.match(textos[2], /^Es un sitio reservado/);
+  await boton(p, /^Guardarlo como lugar/).click();
+  await enPaso(p, "¿Cuánto cuesta?");
+  assert.deepEqual((await p.evaluate(() => window.qa.lugares))[0].categorias, ["bar"]);
 });
 
 test("«Guardarlo como lugar» crea el lugar con lo del sitio, y «Revisa» lo muestra por su nombre; se publica por su id, no como «otro»", TOPE, async (t) => {
@@ -1519,7 +1522,7 @@ test("«Guardarlo como lugar» crea el lugar con lo del sitio, y «Revisa» lo m
   await boton(p, /^Guardarlo como lugar/).click();
   await enPaso(p, "¿Cuánto cuesta?");
   const llamadas = await p.evaluate(() => window.qa.lugares);
-  assert.deepEqual(llamadas, [{ nombre: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí, México", lat: 22.1511, lng: -100.9772, ciudad: "San Luis Potosí", volverA: "/nuevo/evento", privado: false }]);
+  assert.deepEqual(llamadas, [{ nombre: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí, México", lat: 22.1511, lng: -100.9772, ciudad: "San Luis Potosí", volverA: "/nuevo/evento", privado: false, categorias: ["park"] }]);
   const d = await publicarGratis(p);
   assert.deepEqual({ modo_sitio: d.modo_sitio, lugar_id: d.lugar_id, sitio_texto: d.sitio_texto, sitio_lat: d.sitio_lat, ciudad: d.ciudad }, { modo_sitio: "lugar", lugar_id: "0b0b0b0b-0000-4000-8000-0000000000aa", sitio_texto: "", sitio_lat: "", ciudad: "" });
   await p.locator("main ul > li").filter({ hasText: "Jardín de San Juan de Dios" }).waitFor();

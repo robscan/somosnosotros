@@ -1,7 +1,6 @@
 import { sitioListo } from "@/app/eventos/direccionEvento";
 import type { EventoAgenda } from "@/lib/agenda";
 import type { QuienItem } from "@/lib/artistas";
-import { esNegocio } from "@/lib/buscarLugares";
 import { FIN_DEL_DIA, sumarDiasIso } from "@/lib/calendario";
 import { conHoraFin } from "@/lib/cuandoEvento";
 import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
@@ -62,7 +61,7 @@ export type Candidato = {
   direccion: string;
   punto: Punto;
   ciudad: string | null;
-  /** Lo que dice el mapa que es (`poi_category`), para saber si es un negocio. */
+  /** Lo que dice el mapa que es (`poi_category`): de ahí sale el tipo del lugar si se guarda (`deducirTipo`). */
   categorias: string[];
   /** «Estoy aquí» no trae dirección: el mapa se la pide al punto. */
   origen: "aqui" | "busqueda";
@@ -222,8 +221,9 @@ export function sitioDeCandidato(c: Candidato, uso: UsoSitio, otro: OtroSitio): 
   return { modo: "otro", lugarId: "", otro: { ...base(otro), sitioTexto: nombre, direccion, sitioPunto: c.punto, pinPendiente: false, ciudad: c.ciudad } };
 }
 
-/** «Guardarlo como lugar» pide un nombre (la dirección no nombra un lugar) y que no sea un negocio (bar, café, restaurante). */
-export const puedeGuardarComoLugar = (c: Candidato): boolean => !!c.nombre.trim() && !esNegocio(c.nombre, c.categorias);
+/** «Guardarlo como lugar» pide un nombre: la dirección no nombra un lugar. Un negocio también se guarda (decisión del founder, 2026-10-06: los
+ *  cafés, bares y restaurantes entran al directorio con su tipo). */
+export const puedeGuardarComoLugar = (c: Candidato): boolean => !!c.nombre.trim();
 
 /** Las opciones del paso «No está en el directorio», en su orden. */
 export const usosDisponibles = (c: Candidato): Uso[] => (puedeGuardarComoLugar(c) ? ["evento", "lugar", "reservado"] : ["evento", "reservado"]);
@@ -231,12 +231,13 @@ export const usosDisponibles = (c: Candidato): Uso[] => (puedeGuardarComoLugar(c
 /** Hasta dónde un lugar del directorio cuenta como «el mismo sitio» que el pin (en metros). */
 export const RADIO_MISMO_SITIO_M = 50;
 
-/** El lugar del directorio que cae a menos de `RADIO_MISMO_SITIO_M` del punto (el más cercano), con la distancia en metros. */
-export function lugarAlLado(lugares: readonly LugarResumen[], punto: Punto): { lugar: LugarResumen; metros: number } | null {
+/** El lugar del directorio que cae a menos de `radio` metros del punto (el más cercano), con la distancia en metros. De entrada,
+ *  `RADIO_MISMO_SITIO_M` (el sitio de un evento); el alta de lugar pregunta «¿Es este?» a 150 m, como el servidor. */
+export function lugarAlLado(lugares: readonly LugarResumen[], punto: Punto, radio = RADIO_MISMO_SITIO_M): { lugar: LugarResumen; metros: number } | null {
   let mejor: { lugar: LugarResumen; metros: number } | null = null;
   for (const lugar of lugares) {
     const metros = distanciaKm(punto, { lat: lugar.lat, lng: lugar.lng }) * 1000;
-    if (metros < RADIO_MISMO_SITIO_M && (!mejor || metros < mejor.metros)) mejor = { lugar, metros };
+    if (metros < radio && (!mejor || metros < mejor.metros)) mejor = { lugar, metros };
   }
   return mejor && { ...mejor, metros: Math.round(mejor.metros) };
 }

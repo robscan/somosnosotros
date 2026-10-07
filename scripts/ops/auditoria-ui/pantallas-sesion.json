@@ -4,7 +4,7 @@
   { "id": "s04-ajustes", "plantilla": "tarea", "url": "/ajustes", "completa": true },
   { "id": "s05-perfil", "plantilla": "raíz", "url": "/perfil", "completa": true },
   { "id": "s06-ficha-evento-voy", "plantilla": "ficha", "url": "/eventos/lxs-colocaos-la-ultima-fogueada", "completa": true },
-  { "id": "s07-alta-lugar", "plantilla": "tarea", "url": "/nuevo?tipo=lugar", "completa": true },
+  { "id": "s07-alta-lugar", "plantilla": "tarea", "url": "/nuevo/lugar", "completa": true },
   { "id": "s08-editar-perfil", "plantilla": "tarea", "url": "/ajustes/editar" },
   { "id": "s09-novedades", "plantilla": "tarea", "url": "/novedades" },
   { "id": "s10-buscar", "plantilla": "tarea", "url": "/buscar" },
@@ -14,5 +14,7 @@
   { "id": "s14-agenda-nuevos", "plantilla": "raíz", "url": "/agenda?ver=nuevos", "completa": true },
   { "id": "s15-alta-evento-pasos", "plantilla": "tarea", "url": "/nuevo/evento" },
   { "id": "s16-alta-evento-nombre", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-nombre" },
-  { "id": "s17-alta-evento-es-aqui", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-es-aqui" }
+  { "id": "s17-alta-evento-es-aqui", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-es-aqui" },
+  { "id": "s18-alta-lugar-revisa", "plantilla": "tarea", "url": "/nuevo/lugar", "paso": "lugar-revisa" },
+  { "id": "s19-alta-lugar-horario", "plantilla": "tarea", "url": "/nuevo/lugar", "paso": "lugar-horario" }
 ]

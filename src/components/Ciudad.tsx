@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { enlaceAltaLugar } from "@/lib/armazon";
 import { altaLejosDeCiudades, ciudadInicialCercana, ciudadesDeHoja, filasDeCiudades, guardarEleccionCiudad, hrefConCiudad, leerEleccionCiudad, ofrecerUbicacionCiudades, type Ciudad, type CiudadConArtistas, type CiudadConDatos, type SeccionCiudades } from "@/lib/ciudad";
 import type { Punto } from "@/lib/geo";
 import { normalizarNombre } from "@/lib/lugares";
@@ -179,7 +180,7 @@ function HojaCiudades({ ciudad, ciudades, seccion, punto, onCerrar, onElegir }: 
           </button>
         </li>)}
       </ul> : <p className={hoja.nota}>{buscado ? `Nada con «${texto.trim()}».` : "Aún no hay ciudades."}</p>}
-      {sinCoincidencias ? <Boton href="/nuevo?tipo=lugar" onClick={onCerrar}>Agregar un lugar</Boton> : !enBusqueda && alta && <Boton href={alta.href} onClick={onCerrar}>{alta.texto}</Boton>}
+      {sinCoincidencias ? <Boton href={enlaceAltaLugar()} onClick={onCerrar}>Agregar un lugar</Boton> : !enBusqueda && alta && <Boton href={alta.href} onClick={onCerrar}>{alta.texto}</Boton>}
     </div>
   </Hoja>;
 }

@@ -112,12 +112,26 @@ export async function recuperarLugar(mapboxId: string, token: string, sesion: st
   return interpretarRecuperado((await res.json()) as RespuestaRecuperar);
 }
 
-/** Deduce el tipo desde las categorías de Mapbox o desde palabras del nombre. Null si no hay pista. */
+/** Las categorías de Mapbox (`poi_category`, ids en inglés) y las palabras de un nombre que dicen «café, bar o restaurante». */
+const CATEGORIAS_CAFE_BAR = new Set(["night_club", "nightclub", "sports_bar", "wine_bar", "fast_food", "food_and_drink"]);
+const PALABRAS_CATEGORIA_CAFE_BAR = new Set(["bar", "pub", "cafe", "coffee", "restaurant", "food", "brewery", "winery", "bakery", "lounge"]);
+const NOMBRE_CAFE_BAR = /\b(bar|cantina|cafe|cafeteria|restaurante|restaurant|taqueria|antro|pulqueria|cerveceria|discoteca)\b/;
+const esCategoriaCafeBar = (categoria: string): boolean => {
+  const id = categoria.toLowerCase();
+  return CATEGORIAS_CAFE_BAR.has(id) || id.split(/[^a-z]+/).some((p) => PALABRAS_CATEGORIA_CAFE_BAR.has(p));
+};
+
+/**
+ * Deduce el tipo desde las categorías de Mapbox o desde palabras del nombre. Null si no hay pista. Lo cultural va primero: «Teatro de la Paz»
+ * es foro aunque el mapa le cuente una cafetería. Un café, un bar o un restaurante es «Café, bar o restaurante»: los negocios entran al
+ * directorio con su tipo (decisión del founder, 2026-10-06; antes `esNegocio` les negaba «Guardarlo como lugar»). La plaza va al final: «Café
+ * del Jardín» es un café y «Museo del Jardín», un museo.
+ */
 export function deducirTipo(nombre: string, categorias: string[] = []): Tipo | null {
   const c = categorias.join(" ").toLowerCase();
   const n = nombre
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
   if (/\b(biblioteca|library)\b/.test(n) || /library/.test(c)) return "biblioteca";
   if (/\b(museo|museum)\b/.test(n) || /museum/.test(c)) return "museo";
@@ -127,29 +141,10 @@ export function deducirTipo(nombre: string, categorias: string[] = []): Tipo | n
   if (/\b(casa de (la )?cultura|centro cultural|centro de las artes|centro de artes)\b/.test(n) || /cultural|community center|arts cent/.test(c)) return "casa_de_cultura";
   if (/\b(teatro|foro|auditorio|theater|theatre)\b/.test(n) || /theat|concert|music venue|performing/.test(c)) return "foro";
   if (/\b(colectivo|taller|cooperativa)\b/.test(n)) return "colectivo";
+  if (NOMBRE_CAFE_BAR.test(n) || categorias.some(esCategoriaCafeBar)) return "cafe_bar";
   // Al final: «Teatro del Parque» es foro y «Museo del Jardín» es museo; solo el sitio al aire libre cae aquí.
   if (/\b(plaza|jardin|parque|alameda)\b/.test(n) || /\b(park|garden)\b/.test(c)) return "plaza";
   return null;
-}
-
-/** Las categorías de Mapbox (`poi_category`, ids en inglés) y las palabras de un nombre que son de un negocio. */
-const CATEGORIAS_NEGOCIO = new Set(["night_club", "nightclub", "sports_bar", "wine_bar", "fast_food", "food_and_drink"]);
-const PALABRAS_CATEGORIA_NEGOCIO = new Set(["bar", "pub", "cafe", "coffee", "restaurant", "food", "brewery", "winery", "bakery", "lounge", "casino", "shop", "store", "shopping", "hotel", "lodging", "bank"]);
-const NOMBRE_DE_NEGOCIO = /\b(bar|cantina|cafe|cafeteria|restaurante|restaurant|taqueria|antro|pulqueria|cerveceria|discoteca|hotel)\b/;
-
-/**
- * ¿Lo que dice el mapa de este sitio es un negocio (bar, café, restaurante, tienda)? Un lugar del directorio es un espacio cultural, no
- * un negocio (docs/DEFINICION.md, regla del founder): a un sitio así no se le ofrece «Guardarlo como lugar», aunque sí puede ser el
- * sitio de un evento. Un nombre que se dice cultural (un museo, una galería, un teatro: `deducirTipo`) no cuenta aunque el mapa lo
- * ponga junto a un café; «plaza, jardín o parque» no basta («Café del Jardín» es un café).
- */
-export function esNegocio(nombre: string, categorias: readonly string[] = []): boolean {
-  const tipo = deducirTipo(nombre, [...categorias]);
-  if (tipo && tipo !== "plaza") return false;
-  const ids = categorias.map((c) => c.toLowerCase());
-  const deCategoria = ids.some((id) => CATEGORIAS_NEGOCIO.has(id) || id.split(/[^a-z]+/).some((p) => PALABRAS_CATEGORIA_NEGOCIO.has(p)));
-  const sinAcentos = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  return deCategoria || NOMBRE_DE_NEGOCIO.test(sinAcentos);
 }
 
 /**

@@ -48,6 +48,15 @@
   grid-template-areas: "titulo flecha";
   min-height: var(--toque);
 }
+/* Compacta: una lista larga de respuestas de una línea (los diez tipos de lugar), sin detalle, del alto de un toque y con la letra del texto. */
+.compacta {
+  grid-template-areas: "icono titulo flecha";
+  min-height: var(--toque);
+  padding-block: var(--espacio-2);
+}
+.compacta > b {
+  font-size: var(--letra-md);
+}
 .opcion:disabled {
   cursor: default;
 }

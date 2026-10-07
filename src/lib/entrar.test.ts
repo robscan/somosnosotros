@@ -16,6 +16,8 @@ describe("motivoEntrar", () => {
     expect(motivoEntrar("/nuevo?lugar=abc")).toEqual({ tipo: "publicar", titulo: "Entra para publicar", origen: "/" });
     expect(motivoEntrar("/nuevo?tipo=artista&ciudad=queretaro")).toEqual({ tipo: "registrar", titulo: "Entra para registrar artista", origen: "/artistas" });
     expect(motivoEntrar("/nuevo?tipo=lugar").titulo).toBe("Entra para registrar un lugar");
+    // El alta de lugar por pasos (OL-315): vuelve a Lugares.
+    expect(motivoEntrar("/nuevo/lugar?ciudad=queretaro&nombre=Foro")).toEqual({ tipo: "registrar", titulo: "Entra para registrar un lugar", origen: "/lugares" });
     // El alta de evento por pasos (OL-312): vuelve a la ficha desde la que se quiso publicar; sin ella, o con un id que no es id, al inicio.
     expect(motivoEntrar("/nuevo/evento?ciudad=queretaro")).toEqual({ tipo: "publicar", titulo: "Entra para publicar", origen: "/" });
     expect(motivoEntrar(`/nuevo/evento?lugar=${ID}`)).toEqual({ tipo: "publicar", titulo: "Entra para publicar", origen: `/lugares/${ID}` });

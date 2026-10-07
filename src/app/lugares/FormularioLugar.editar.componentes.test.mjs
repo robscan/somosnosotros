@@ -55,7 +55,8 @@ before(async () => {
         descripcion: 'Descripción de siempre', redes: [], portada: null, privado: false, visible: true, creado_por: 'cuenta', origen: null, zona: 'America/Mexico_City',
         ciudad: q.has('ciudadVacia') ? '' : 'Querétaro' };
       const contexto = q.has('sinContexto') ? null : { slug: 'queretaro', nombre: 'Querétaro', centro: { lng: -100.39, lat: 20.59 }, zoom: 13 };
-      createRoot(document.getElementById('root')).render(<Formulario accion={accion} usuarioId="cuenta" lugar={lugar} lugares={[]} ciudadContexto={contexto} />);
+      const horario = q.has('conHorario') ? [{ dias: [2, 3, 4, 5, 6, 7], abre: '10:00', cierra: '18:00' }] : [];
+      createRoot(document.getElementById('root')).render(<Formulario accion={accion} usuarioId="cuenta" lugar={lugar} horario={horario} lugares={[]} ciudadContexto={contexto} />);
     `,
     },
     plugins: [{
@@ -160,4 +161,33 @@ test("(d) un lugar antiguo con la ciudad guardada vacía: se envía vacía sin r
   const envio = await enviar(p);
   assert.equal(envio.ciudad, "");
   assert.equal(envio.lat, "20.5888");
+});
+
+/** OL-315: el renglón «Horario» de editar, con la hoja del alta por pasos. */
+test("editar sin tocar el horario no lo manda (no lo cambia); con uno guardado, el renglón lo dice estructurado", async (t) => {
+  const p = await abrir(t, "sinContexto=1&conHorario=1");
+  const renglon = p.locator("li").filter({ has: p.getByRole("button", { name: "Cambiar el horario" }) });
+  assert.match((await renglon.innerText()).replace(/\s+/g, " "), /Ma–Do 10:00 a\.m\.–6:00 p\.m\. Cierra Lu/);
+  const envio = await enviar(p);
+  assert.equal("horario" in envio, false);
+});
+
+test("«Agregar el horario» abre la hoja con Ma–Do de 10 a 6; dos franjas y «Listo» lo mandan al guardar, ya estructurado en el renglón", async (t) => {
+  const p = await abrir(t, "sinContexto=1");
+  await p.getByRole("button", { name: "Agregar el horario" }).click();
+  const hoja = p.getByRole("dialog", { name: "Horario" });
+  await hoja.getByRole("button", { name: "domingo" }).click();
+  await hoja.getByRole("button", { name: "Agregar otro horario" }).click();
+  // La franja nueva llega con los días que faltaban (lunes y domingo); se queda solo el domingo, de 11 a 2.
+  await hoja.getByRole("button", { name: "lunes" }).click();
+  await hoja.getByRole("group", { name: "Abre" }).getByRole("button", { name: /^11:00/ }).click();
+  await hoja.getByRole("group", { name: "Cierra" }).getByRole("button", { name: /^2:00/ }).click();
+  await hoja.getByRole("button", { name: "Listo" }).click();
+  const renglon = p.locator("li").filter({ has: p.getByRole("button", { name: "Cambiar el horario" }) });
+  assert.match((await renglon.innerText()).replace(/\s+/g, " "), /Ma–Sá 10:00 a\.m\.–6:00 p\.m\. Do 11:00 a\.m\.–2:00 p\.m\. Cierra Lu/);
+  const envio = await enviar(p);
+  assert.deepEqual(JSON.parse(envio.horario), [
+    { dias: [2, 3, 4, 5, 6], abre: "10:00", cierra: "18:00" },
+    { dias: [7], abre: "11:00", cierra: "14:00" },
+  ]);
 });

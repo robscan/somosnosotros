@@ -146,7 +146,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     try {
       const nombre = c.nombre.trim();
       const direccion = c.direccion.trim();
-      const lugarCreado = await crearLugarDesdeEvento({ nombre, direccion, lat: c.punto.lat, lng: c.punto.lng, ciudad: ciudadParaPunto(c.punto, c.ciudad, ciudadContexto) ?? "", volverA: VOLVER_A, privado: false });
+      const lugarCreado = await crearLugarDesdeEvento({ nombre, direccion, lat: c.punto.lat, lng: c.punto.lng, ciudad: ciudadParaPunto(c.punto, c.ciudad, ciudadContexto) ?? "", volverA: VOLVER_A, privado: false, categorias: c.categorias });
       if (!lugarCreado.ok) {
         setErrorLugar(NO_SE_GUARDO);
         return;

@@ -32,6 +32,19 @@ describe("Plaza, jardín o parque", () => {
   });
 });
 
+describe("Café, bar o restaurante (OL-315)", () => {
+  it("va antes de la plaza, con su etiqueta, y valida y se cuenta como cualquier tipo", () => {
+    const valores = TIPOS.map((t) => t.valor);
+    expect(valores.indexOf("cafe_bar")).toBe(valores.indexOf("plaza") - 1);
+    expect(etiquetaTipo("cafe_bar")).toBe("Café, bar o restaurante");
+    const base = { nombre: "Café del Jardín", tipo: "cafe_bar", direccion: "Jardín Guerrero 12", lat: "22.15", lng: "-100.97", descripcion: "", portada: "", detalle: "", ciudad: "San Luis Potosí" };
+    const { datos, errores } = validarLugar(base);
+    expect(errores).toEqual({});
+    expect(datos.tipo).toBe("cafe_bar");
+    expect(tiposPresentes([{ tipo: "otro" }, { tipo: "cafe_bar" }, { tipo: "museo" }]).map((t) => t.etiqueta)).toEqual(["Museo", "Café, bar o restaurante", "Otro"]);
+  });
+});
+
 describe("validarLugar", () => {
   const base = { nombre: "Foro X", tipo: "foro", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "", ciudad: "San Luis Potosí" };
   it("acepta un lugar mínimo y limpia", () => {

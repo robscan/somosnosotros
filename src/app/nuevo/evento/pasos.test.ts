@@ -261,12 +261,13 @@ describe("«Dónde» en tres pasos: buscar, confirmar en el mapa y qué hacer co
     expect(nombreDelSitio(reservado, undefined)).toBe(NOMBRE_RESERVADO);
   });
 
-  it("un negocio (bar, café, restaurante) no ofrece «Guardarlo como lugar»; tampoco una dirección sin nombre", () => {
+  it("todo sitio con nombre ofrece «Guardarlo como lugar», también un negocio (los negocios entran al directorio, 2026-10-06); una dirección sin nombre, no", () => {
     expect(usosDisponibles(JARDIN)).toEqual(["evento", "lugar", "reservado"]);
-    expect(usosDisponibles(BAR)).toEqual(["evento", "reservado"]);
-    expect(puedeGuardarComoLugar(BAR)).toBe(false);
+    expect(usosDisponibles(BAR)).toEqual(["evento", "lugar", "reservado"]);
+    expect(puedeGuardarComoLugar(BAR)).toBe(true);
     expect(usosDisponibles(SOLO_DIRECCION)).toEqual(["evento", "reservado"]);
-    expect(usosDisponibles({ ...JARDIN, nombre: "Café del Jardín", categorias: ["cafe"] })).toEqual(["evento", "reservado"]);
+    expect(puedeGuardarComoLugar({ ...JARDIN, nombre: "   " })).toBe(false);
+    expect(usosDisponibles({ ...JARDIN, nombre: "Café del Jardín", categorias: ["cafe"] })).toEqual(["evento", "lugar", "reservado"]);
     expect(usosDisponibles({ ...JARDIN, nombre: "Museo Federico Silva", categorias: ["museum"] })).toEqual(["evento", "lugar", "reservado"]);
   });
 
@@ -281,6 +282,9 @@ describe("«Dónde» en tres pasos: buscar, confirmar en el mapa y qué hacer co
     expect(lugarAlLado([LUGAR_DIR], { lat: 22.151, lng: -100.97 })).toBeNull();
     const otro = { ...LUGAR_DIR, id: "otro", lat: 22.15001 };
     expect(lugarAlLado([LUGAR_DIR, otro], { lat: 22.1504, lng: -100.97 })?.lugar.id).toBe("otro");
+    // Con otro radio (el «¿Es este?» del alta de lugar, a 150 m): 111 m ya cuentan; 0.0015° (unos 167 m), no.
+    expect(lugarAlLado([LUGAR_DIR], { lat: 22.151, lng: -100.97 }, 150)?.metros).toBe(111);
+    expect(lugarAlLado([LUGAR_DIR], { lat: 22.1515, lng: -100.97 }, 150)).toBeNull();
   });
 
   it("la línea de avance no cuenta el mapa ni «No está en el directorio» como pasos aparte", () => {

@@ -17,6 +17,8 @@ export const TIPOS = [
   { valor: "escuela", etiqueta: "Escuela" },
   { valor: "colectivo", etiqueta: "Colectivo" },
   { valor: "biblioteca", etiqueta: "Biblioteca" },
+  // Los negocios entran al directorio con su tipo (decisión del founder, 2026-10-06; OL-314, bitácora 342).
+  { valor: "cafe_bar", etiqueta: "Café, bar o restaurante" },
   { valor: "plaza", etiqueta: "Plaza, jardín o parque" },
   { valor: "otro", etiqueta: "Otro" },
 ] as const;
@@ -50,6 +52,11 @@ export type LugarResumen = {
  */
 export function hrefLugar(l: { id: string; slug?: string | null }): string {
   return `/lugares/${l.slug || l.id}`;
+}
+
+/** Lo que se comparte de un lugar: su dirección en el sitio y «Nombre · Tipo · dirección». El mismo en la ficha y en «Publicado» (OL-315). */
+export function compartirLugar(l: { id: string; slug?: string | null; nombre: string; tipo: string; direccion: string | null }): { url: string; texto: string } {
+  return { url: `https://somosnosotros.org${hrefLugar(l)}`, texto: `${l.nombre} · ${etiquetaTipo(l.tipo)}${l.direccion ? ` · ${l.direccion}` : ""}` };
 }
 
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
@@ -295,7 +302,7 @@ export type DatosLugar = {
   /** Deducida por Mapbox al ubicar el lugar (o la de contexto si el punto cae cerca de su centro); vacía, no se publica. */
   ciudad: string;
 };
-export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle" | "ciudad", string>>;
+export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle" | "ciudad" | "horario", string>>;
 
 
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `portadaActual` es la
