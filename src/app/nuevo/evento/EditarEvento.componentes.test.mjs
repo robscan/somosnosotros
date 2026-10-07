@@ -164,7 +164,8 @@ async function pagina(t, { ancho = 390, qa = {} } = {}) {
 }
 const boton = (p, nombre) => p.getByRole("button", { name: nombre });
 const pregunta = (p) => p.locator("main h2").first().textContent();
-const renglones = (p) => p.locator("main ul > li").allInnerTexts();
+/** Los datos de «Revisa» sin los renglones de cómo ocurre (OL-321: «Evento · Cambiar» arriba y «Parte de un festival · Agregar»), que prueba `ClasesEvento`. */
+const renglones = async (p) => (await p.locator("main ul > li").allInnerTexts()).filter((t) => !/^cómo ocurre\n|^festival\n/i.test(t));
 const enviado = (p) => p.evaluate(() => window.qa.envios.at(-1));
 const avisa = (p) => p.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })));
 const casilla = (p) => p.getByRole("checkbox", { name: /Lectura automática/ });

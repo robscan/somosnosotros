@@ -257,10 +257,13 @@ test("recorrido completo sin cartel: la acción recibe los campos de siempre, y 
   const p = await pagina(t);
   await hastaRevisa(p);
   const renglones = await p.locator("main ul > li").allInnerTexts();
-  assert.equal(renglones.length, 3);
-  assert.match(renglones[0], /vie 9 de oct · 19:00–21:00/);
-  assert.match(renglones[1], /Teatro de la Paz/);
-  assert.match(renglones[2], /Gratis/);
+  // OL-321: arriba, cómo ocurre («Evento», propuesto por el título); abajo, «Parte de un festival», opcional.
+  assert.equal(renglones.length, 5);
+  assert.match(renglones[0], /Evento\nCambiar/);
+  assert.match(renglones[1], /vie 9 de oct · 19:00–21:00/);
+  assert.match(renglones[2], /Teatro de la Paz/);
+  assert.match(renglones[3], /Gratis/);
+  assert.match(renglones[4], /Parte de un festival\nAgregar/);
   // Sin etiqueta a la vista, pero con su nombre accesible: «Cambiar cuándo».
   await boton(p, "Cambiar cuándo").waitFor();
   await boton(p, "Publicar").click();
@@ -327,12 +330,12 @@ test("el botón del pie dice qué falta y no avanza hasta tenerlo; Intro hace lo
   // Apagado con `aria-disabled` (se alcanza y se lee): el toque llega y no hace nada.
   await falta.click({ force: true });
   assert.equal(await pregunta(p), "¿Cómo se llama?");
-  await campo.fill("Taller");
+  await campo.fill("Grabado");
   await boton(p, "Siguiente").waitFor();
   await boton(p, "Borrar lo escrito").click();
   await boton(p, "Falta el nombre").waitFor();
   assert.equal(await campo.inputValue(), "");
-  await campo.fill("Taller de grabado");
+  await campo.fill("Grabado en vivo");
   await campo.press("Enter");
   assert.equal(await pregunta(p), "¿Qué día es?");
   // El foco va a la pregunta del paso nuevo: el lector dice dónde se está.
@@ -415,7 +418,7 @@ test("«Otra hora» ofrece las 24 horas y rotula las del día siguiente; 1:00 a.
 test("varios días sigue preguntando a qué hora termina el último día: «Termina», sin duraciones, y «Sin hora de fin» acaba con su último día", TOPE, async (t) => {
   const p = await pagina(t);
   await boton(p, "No tengo cartel").click();
-  await p.getByLabel("Nombre del evento").fill("Festival");
+  await p.getByLabel("Nombre del evento").fill("Fiesta");
   await boton(p, "Siguiente").click();
   await boton(p, "Dura varios días").click();
   await p.locator('[data-fecha="2026-10-09"]').click();
@@ -441,7 +444,7 @@ test("varios días sigue preguntando a qué hora termina el último día: «Term
 /** Hasta «¿A qué hora, cada día?» de un evento del viernes 9 al domingo 11 de octubre. */
 async function hastaVariosDias(p) {
   await boton(p, "No tengo cartel").click();
-  await p.getByLabel("Nombre del evento").fill("Festival de barrio");
+  await p.getByLabel("Nombre del evento").fill("Fiesta de barrio");
   await boton(p, "Siguiente").click();
   await boton(p, "Dura varios días").click();
   await p.locator('[data-fecha="2026-10-09"]').click();
@@ -464,7 +467,7 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   await termina.getByRole("button", { name: /^9:00/ }).click();
   await elegirTeatro(p);
   await boton(p, /^Gratis/).click();
-  const cuando = p.locator("main ul > li").first();
+  const cuando = p.locator("main ul > li").nth(1);
   assert.match(await cuando.innerText(), /Del 9 al 11 de oct · 20:00–21:00/);
   if (capturas) await foto(p, "cada-dia-3-revisa-cuando");
   await boton(p, "Atrás").click();
@@ -475,7 +478,7 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   if (capturas) await foto(p, "cada-dia-2-resumen");
   // «Sin hora de fin»: acaba con su último día y «Revisa» solo dice la hora de inicio; lo guardado es el de siempre.
   await termina.getByRole("button", { name: "Sin hora de fin" }).click();
-  assert.match(await p.locator("main ul > li").first().innerText(), /Del 9 al 11 de oct · 20:00\nCambiar/);
+  assert.match(await p.locator("main ul > li").nth(1).innerText(), /Del 9 al 11 de oct · 20:00\nCambiar/);
   await boton(p, "Publicar").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
   const d = await enviado(p);
@@ -572,7 +575,7 @@ test("horario por día: desmarcar pone un renglón por día; la hoja de un día 
   assert.equal(await pregunta(p), "¿Dónde es?");
   await elegirTeatro(p);
   await boton(p, /^Gratis/).click();
-  const cuando = p.locator("main ul > li").first();
+  const cuando = p.locator("main ul > li").nth(1);
   assert.match(await cuando.innerText(), /Del 9 al 11 de oct · horarios por día/);
   if (capturas) await foto(p, "dia-5-revisa-horarios-por-dia");
   // «Cambiar» vuelve al paso con la lista abierta (la casilla sigue desmarcada y el sábado, distinto).
@@ -703,13 +706,13 @@ for (const ancho of [320, 390]) {
     await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
     await elegirTeatro(p);
     await boton(p, /^Gratis/).click();
-    const hora = p.locator("main ul > li").first().locator("b span");
+    const hora = p.locator("main ul > li").nth(1).locator("b span");
     assert.equal(await hora.innerText(), "20:00–21:00");
     // Una sola caja de línea: el span no se parte, aunque el renglón pase a dos líneas.
     assert.equal(await hora.evaluate((e) => e.getClientRects().length), 1);
     assert.equal(await hora.evaluate((e) => getComputedStyle(e).whiteSpace), "nowrap");
     // La cadena no lleva espacios no separables ni unidores: lo que viaja a compartir y a los avisos es texto limpio.
-    assert.doesNotMatch(await p.locator("main ul > li").first().innerText(), /[\u00a0\u202f\u2060]/);
+    assert.doesNotMatch(await p.locator("main ul > li").nth(1).innerText(), /[\u00a0\u202f\u2060]/);
     const d = await desborda(p);
     assert.equal(d.scroll <= 0, true);
     assert.deepEqual(d.fuera, []);
@@ -860,7 +863,7 @@ test("«Revisa» entra de abajo para arriba, escalonada: la cabeza, cada rengló
         cabeza: de(main.querySelector("h2")),
         lista: de(main.querySelector("ul")),
         renglones: [...main.querySelectorAll("ul > li")].map(de),
-        agregar: de([...main.querySelectorAll("button")].find((b) => /Agregar/.test(b.textContent))),
+        agregar: de([...main.querySelectorAll("button")].find((b) => /Agregar artistas/.test(b.textContent))),
         pie: de(main.querySelector("footer")),
         nombres: document.getAnimations().map((a) => a.animationName ?? "").filter(Boolean),
       };
@@ -870,13 +873,13 @@ test("«Revisa» entra de abajo para arriba, escalonada: la cabeza, cada rengló
   assert.equal(await con.locator("main").getAttribute("data-direccion"), "entra");
   const e = await entrada(con);
   const sube = (x) => /sube/.test(x.animacion);
-  // La cabeza, los tres renglones, «Agregar…» y el pie suben, cada uno 50 ms después del anterior (el pie, siempre el sexto turno).
+  // La cabeza, los cinco renglones (con «Evento» y «Parte de un festival», OL-321), «Agregar…» y el pie suben, cada uno 50 ms después del anterior (el pie, siempre el sexto turno).
   assert.ok([e.cabeza, ...e.renglones, e.agregar, e.pie].every(sube));
-  assert.deepEqual([e.cabeza, ...e.renglones, e.agregar, e.pie].map((x) => Math.round(x.retraso * 1000)), [0, 50, 100, 150, 200, 300]);
+  assert.deepEqual([e.cabeza, ...e.renglones, e.agregar, e.pie].map((x) => Math.round(x.retraso * 1000)), [0, 50, 100, 150, 200, 250, 300, 300]);
   // La lista no se mueve de lado (entran sus renglones, no ella) y nada de «Revisa» entra de lado.
   assert.equal(e.lista.animacion, "none");
   const suben = (nombres) => nombres.filter((n) => /sube/.test(n)).length;
-  assert.equal(suben(e.nombres), 6);
+  assert.equal(suben(e.nombres), 8);
   assert.equal(e.nombres.filter((n) => /entra|vuelve/.test(n)).length, 0);
   // Congelada a los 150 ms: la cabeza va a más de la mitad del camino, el segundo renglón empieza y el tercero y lo que sigue esperan.
   await con.evaluate(() => document.getAnimations().forEach((a) => (a.pause(), (a.currentTime = 150))));
@@ -910,7 +913,7 @@ test("con cartel entra la cabeza entera, la foto y el nombre juntos, como una pi
   });
   assert.match(e.cabeza, /sube/);
   assert.equal(e.titulo, "none");
-  assert.deepEqual(e.retrasos.map((x) => Math.round(x * 1000)), [50, 100, 150, 200]);
+  assert.deepEqual(e.retrasos.map((x) => Math.round(x * 1000)), [50, 100, 150, 200, 250, 300]);
 });
 
 /* ---- Con cartel (OL-302, bitácora 330; OL-307, bitácora 335: el cartel se sube siempre y la lectura es una casilla) ---- */
@@ -923,7 +926,8 @@ const MEDIAS = { ...LEIDO, valores: { ...LEIDO.valores, titulo: "Noche de son hu
 /** Las seis del mes ya usadas: la casilla queda apagada. */
 const CUPO_AGOTADO = { usadas: 6, tope: 6, sinTope: false };
 const subir = (p, nombre = "cartel.svg") => p.locator("input[type=file]").setInputFiles({ name: nombre, mimeType: "image/svg+xml", buffer: Buffer.from(CARTEL) });
-const renglones = (p) => p.locator("main ul > li").allInnerTexts();
+/** Los datos de «Revisa» sin los renglones de cómo ocurre (OL-321: «Evento · Cambiar» arriba y «Parte de un festival · Agregar» abajo), que prueban las suyas. */
+const renglones = async (p) => (await p.locator("main ul > li").allInnerTexts()).filter((t) => !/^cómo ocurre\n|^festival\n/i.test(t));
 const casilla = (p) => p.getByRole("checkbox", { name: /Lectura automática/ });
 /** La fila chica sobre la primera pregunta: miniatura y sello. */
 const guardado = (p) => p.locator("main div").filter({ has: p.locator("img"), hasText: /Cartel guardado/ });
@@ -1314,7 +1318,7 @@ const PANTALLAS_CARTEL = [
   ["«¿Cómo se llama?» con «Cartel guardado»", { cupoAlAbrir: CUPO_AGOTADO }, async (p) => p.getByText("Cartel guardado").waitFor()],
   ["«¿Cómo se llama?» con «no pude leerlo»", { lectura: "fallo" }, async (p) => p.getByText("no pude leerlo").waitFor()],
   ["«Revisa» con cartel leído", { lectura: LEIDO }, async (p) => p.getByText("Leído del cartel").waitFor()],
-  ["«Revisa» con un nombre del tope", { lectura: { ...LEIDO, valores: { ...LEIDO.valores, titulo: "Festival ".repeat(13).trim().slice(0, 120) } } }, async (p) => p.getByText("Leído del cartel").waitFor()],
+  ["«Revisa» con un nombre del tope", { lectura: { ...LEIDO, valores: { ...LEIDO.valores, titulo: "Fiestas ".repeat(13).trim().slice(0, 120) } } }, async (p) => p.getByText("Leído del cartel").waitFor()],
 ];
 /** Lleva la pantalla `[nombre, qa, esperar]` a su estado: las que traen «esperar» suben un cartel primero y esperan a verlo. */
 async function aPantalla(t, ancho, [, qa, esperar]) {
@@ -1900,7 +1904,7 @@ test("un error al publicar no cambia nada: «Revisa» con su aviso, y no se lleg
 });
 
 test("sin desbordes a 320 y 390 en «Publicado», sin cartel y con cartel y un título largo; el pie va pegado abajo y sin toques menores de 44", TOPE, async (t) => {
-  const LARGO = "Festival internacional de música de cámara y poesía en voz alta del barrio de San Miguelito";
+  const LARGO = "Noche internacional de música de cámara y poesía en voz alta del barrio de San Miguelito";
   for (const ancho of [320, 390]) {
     for (const conCartel of [false, true]) {
       const p = await pagina(t, { ancho, qa: conCartel ? { lectura: { ...LEIDO, valores: { ...LEIDO.valores, titulo: LARGO } } } : {} });

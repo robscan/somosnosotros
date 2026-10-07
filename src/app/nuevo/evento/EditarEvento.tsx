@@ -13,7 +13,7 @@ import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import type { LugarResumen } from "@/lib/lugares";
 import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel } from "./cartelPorPasos";
-import { sedesDelPrograma } from "./AltaEvento";
+import { sedesDelPrograma } from "./clasePorPasos";
 import type { ContextoClase } from "./contextoClase";
 import { faltaParaPublicar, preguntaDe, type Respuestas } from "./pasos";
 import { PasoEspera, PasoInicio } from "./PasoCartel";

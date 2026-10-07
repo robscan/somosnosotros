@@ -538,9 +538,4 @@ export function HojaFestival({ padre, festivales, zona, onElegir, onCerrar }: { 
 /** El texto del renglón «Parte de un festival» con uno puesto. */
 export const nombreDePadre = (p: Padre): string => ("id" in p ? p.titulo : p.nuevo);
 
-/** «Revisa» de un taller: sus sesiones en una línea («3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 a.m.»); null sin sesiones o sin hora. */
-export const textoSesiones = (r: Respuestas, hoy: string): string | null => {
-  const horarios = horariosDelTaller(r);
-  return horarios.length ? resumenTaller(horarios, hoy) : null;
-};
 

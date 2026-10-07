@@ -12,14 +12,12 @@ import { zonaSegura } from "@/lib/fechas";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
-import { textoVisita } from "@/lib/claseEvento";
-import { diaLocal } from "@/lib/fechas";
 import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel } from "./cartelPorPasos";
 import type { ContextoClase } from "./contextoClase";
-import { actosMarcados, avance, eventoPublicado, faltaParaPublicar, nombreDelSitio, preguntaDe, resumenPrograma, sesionesDe, type Creado, type Respuestas } from "./pasos";
-import { textoSesiones } from "./PasosClase";
+import { avance, eventoPublicado, faltaParaPublicar, preguntaDe, sesionesDe, type Creado } from "./pasos";
+import { cuandoDeClase, sedesDelPrograma } from "./clasePorPasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import Preguntas from "./Preguntas";
 import Publicado from "./Publicado";
@@ -80,25 +78,6 @@ export default function AltaEvento(props: Props) {
   const [lugares, setLugares] = useState(props.lugares);
   const agregar = useCallback((nuevo: LugarResumen) => setLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo])), []);
   return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : null} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
-}
-
-/** Las sedes de un festival en una línea: los nombres de las sedes de sus actos marcados, sin repetir («CC200 y Cineteca Alameda»). */
-export function sedesDelPrograma(r: Pick<Respuestas, "actos">, lugares: readonly LugarResumen[]): string {
-  const nombres = [...new Set(actosMarcados(r).map((a) => nombreDelSitio(a.sitio, a.sitio.modo === "lugar" ? lugares.find((l) => l.id === a.sitio.lugarId) : undefined)).filter(Boolean))];
-  return new Intl.ListFormat("es", { type: "conjunction" }).format(nombres);
-}
-
-/** La línea de cuándo de lo que no es un evento de un día, para «Publicado» y para compartir (OL-321); undefined en un evento. */
-export function cuandoDeClase(r: Respuestas, zona: string, borradores = 0): string | undefined {
-  const ahora = new Date();
-  const hoy = diaLocal(ahora, zona);
-  if (r.clase === "exposicion" && r.visita?.desde && r.visita.hasta) return textoVisita({ desde: r.visita.desde, hasta: r.visita.hasta }, hoy, ahora, zona);
-  if (r.clase === "taller") return textoSesiones(r, hoy) ?? undefined;
-  if (r.clase === "festival") {
-    const programa = resumenPrograma(r, hoy);
-    return programa ? `${programa}${borradores ? ` · ${borradores} ${borradores === 1 ? "borrador" : "borradores"}` : ""}` : undefined;
-  }
-  return undefined;
 }
 
 function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, onOtro, onLugarNuevo }: Interno) {

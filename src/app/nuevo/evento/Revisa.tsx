@@ -16,7 +16,8 @@ import { HORARIOS_POR_DIA, cuandoVariosDias, diaConMesDe, diaLocal, formatearCua
 import type { LugarResumen } from "@/lib/lugares";
 import type { FestivalElegible } from "./contextoClase";
 import { NOMBRE_RESERVADO, actosMarcados, dondeResuelto, finDe, inicioDe, nombreDelSitio, resumenPrograma, type Paso, type Respuestas } from "./pasos";
-import { HojaClase, HojaFestival, HojaInauguracion, nombreDePadre, textoSesiones } from "./PasosClase";
+import { textoSesiones } from "./clasePorPasos";
+import { HojaClase, HojaFestival, HojaInauguracion, nombreDePadre } from "./PasosClase";
 import { CabezaCartel } from "./PasoCartel";
 import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
