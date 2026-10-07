@@ -3,6 +3,7 @@
 import { buscarEventos, type EventoAgenda, type EventoBuscable } from "@/lib/agenda";
 import type { ArtistaLista } from "@/lib/artistas";
 import { CLASES_NOMBRADAS, LIMITE_BUSQUEDA_UNIFICADA, ordenarPorCiudad, SIN_RESULTADOS_BUSQUEDA, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
+import { conSedes } from "@/lib/cargarSedes";
 import { tarjetaArtista, tarjetaConClase, tarjetaEvento, tarjetaLugar } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
@@ -94,7 +95,9 @@ export async function buscarUnificado(q: string, ciudades: string[]): Promise<Re
     artistas.order("nombre_orden").limit(CANDIDATOS),
   ]);
   const proximos = ((e.data ?? []) as unknown as FilaEvento[]).map(buscable);
-  const eventos = (await conPrograma(supabase, buscarEventos(proximos, texto))).map((p) => encontradoDeEvento(p, ahora));
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339), y se halla por cualquiera de ellas; su programa (OL-338) se cuenta después.
+  const conSusSedes = await conSedes(supabase, proximos);
+  const eventos = (await conPrograma(supabase, buscarEventos(conSusSedes, texto))).map((p) => encontradoDeEvento(p, ahora));
   const lugaresHallados = ((l.data ?? []) as unknown as FilaLugar[]).map((fila) => encontradoDeLugar(fila, ahora));
   const artistasHallados = ((a.data ?? []) as unknown as FilaArtista[]).map((fila) => encontradoDeArtista(fila, ahora));
   const cortar = (lista: Encontrado[]) => ordenarPorCiudad(lista, orden).slice(0, LIMITE_BUSQUEDA_UNIFICADA);

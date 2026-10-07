@@ -29,7 +29,7 @@ export type EventoCartel = {
   clase: Clase;
   /** Con horario por día (OL-311): cada día con su hora; el cartel no puede decirlas todas. */
   conSesiones: boolean;
-  /** El nombre del sitio como lo dice la agenda (`sitioEnLista`): el lugar, «otro sitio» o «Sitio reservado». */
+  /** El nombre del sitio como lo dice la agenda (`sitioEnLista`): el lugar, «otro sitio», «Sitio reservado» o, en un festival, «Varias sedes» (OL-339). */
   sitio: string | null;
   /** El tipo del lugar (`lugares.tipo`), para la afinidad; null en «otro sitio». */
   tipoLugar: string | null;

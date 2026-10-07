@@ -8,6 +8,7 @@ import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugare
 import { textoActividadesSemana } from "./agendaPorClase";
 import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
+import { textoActosEnSede } from "./sedesFestival";
 
 /**
  * Destacados (docs/rediseno/20, firmado por el founder el 2026-09-16): arriba de la Agenda, de Lugares y de Artistas, lo
@@ -108,12 +109,16 @@ export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "program
   return null;
 }
 
-/** La segunda línea de la tarjeta: el sitio; el de una exposición sin horario lo dice («Aether · Horario por confirmar») y el marco de un festival
- *  dice su programa en vez del sitio de su primer acto (un festival suele tener varias sedes). */
+/** La segunda línea de la tarjeta: el sitio; el de una exposición sin horario lo dice («Aether · Horario por confirmar»). El marco de un festival
+ *  dice sus sedes, derivadas de sus actos, y cuántas actividades tiene en corto para que quepa en la tarjeta («Varias sedes · 4 actividades»,
+ *  «… · 3 actividades esta semana», OL-339); si no se pudieron leer, solo su programa (lo capturado en el marco no es por fuerza donde pasa). */
 function sitioDeTarjeta(e: EventoAgenda): string {
   const nota = notaDeClase(e);
   if (!nota) return sitioEnLista(e);
-  return e.clase === "festival" ? nota : `${sitioEnLista(e)} · ${nota}`;
+  if (e.clase !== "festival") return `${sitioEnLista(e)} · ${nota}`;
+  if (!e.sedes?.length) return nota;
+  const corta = e.programa?.estaSemana ? nota : textoActosEnSede(e.programa?.registrados ?? 0);
+  return `${sitioEnLista(e)} · ${corta}`;
 }
 
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {

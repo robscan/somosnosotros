@@ -1,4 +1,5 @@
 import "server-only";
+import { cargarSedes } from "../cargarSedes";
 import { cartelDescargable } from "../cartelDescarga";
 import { configPublica } from "../config";
 import { esClase, sitioEnLista } from "../eventos";
@@ -57,10 +58,12 @@ export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: strin
   const porSlug = await supabase.from("eventos").select(COLUMNAS).eq("slug", idOSlug).maybeSingle<Fila>();
   const fila = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("eventos").select(COLUMNAS).eq("id", idOSlug).maybeSingle<Fila>()).data : null);
   if (!fila) return null;
-  const [{ data: rol }, { data: ligados }, memoria] = await Promise.all([
+  const [{ data: rol }, { data: ligados }, memoria, sedes] = await Promise.all([
     supabase.from("perfiles").select("rol").eq("id", perfilId).maybeSingle<{ rol: string }>(),
     supabase.from("eventos_artistas").select("orden, artista:artistas(nombre, disciplina, detalle, foto, portada)").eq("evento_id", fila.id).order("orden").limit(50),
     cargarMemoria(supabase, fila.id, fila.lugar_id),
+    // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única.
+    fila.clase === "festival" ? cargarSedes(supabase, [fila.id]).then((m) => m?.get(fila.id)) : undefined,
   ]);
   const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
   const artistas = ((ligados ?? []) as { artista: ArtistaFila | ArtistaFila[] | null }[]).map((f) => (Array.isArray(f.artista) ? f.artista[0] : f.artista)).filter((a): a is ArtistaFila => !!a);
@@ -75,7 +78,7 @@ export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: strin
     // Una clase que no se reconoce (o una fila sin ella) es un evento, como en la ficha.
     clase: esClase(fila.clase) ? fila.clase : "puntual",
     conSesiones: (fila.sesiones ?? []).length > 0,
-    sitio: sitioEnLista({ lugar, sitio_texto: fila.sitio_texto, sitio_direccion: fila.sitio_direccion, sitio_reservado: fila.sitio_reservado }),
+    sitio: sitioEnLista({ lugar, sitio_texto: fila.sitio_texto, sitio_direccion: fila.sitio_direccion, sitio_reservado: fila.sitio_reservado, sedes }),
     tipoLugar: lugar?.tipo ?? null,
     lugarId: fila.lugar_id,
     artistas: artistas.map(({ nombre, disciplina, detalle }) => ({ nombre, disciplina, detalle })),

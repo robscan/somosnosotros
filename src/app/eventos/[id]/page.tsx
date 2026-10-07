@@ -1,4 +1,4 @@
-import { cache, Suspense } from "react";
+import { cache, Suspense, type ReactNode } from "react";
 import { sitioReservadoVencido } from "@/lib/retencionSitio";
 import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
@@ -22,6 +22,7 @@ import Ficha, { CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoCartel, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoEstrella, IconoEtiqueta, IconoLapiz, IconoOjo, IconoOjoTachado, IconoOk, IconoPersonas, IconoPin, IconoPincel, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import EventosPorDia from "@/components/EventosPorDia";
+import Salto from "@/components/ui/Salto";
 import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
@@ -48,6 +49,8 @@ import { SIN_FOTO } from "@/lib/imagen";
 import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { hrefCreador } from "@/lib/carteles/origen";
+import { cargarSedes } from "@/lib/cargarSedes";
+import { sedesDeFestival, textoActosEnSede, VARIAS_SEDES, type Sede } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -193,7 +196,7 @@ async function QuienVaDiferido({ eventoId, miId, conSesion, consultaTrasFin }: {
  *  festival (sus actos visibles y, para su autor, sus borradores), el festival de un acto y la exposición que inaugura. Cada consulta falla
  *  sola sin tumbar la ficha (sin la migración, nada de esto existe y la ficha es la de siempre). */
 type Ligado = { id: string; slug: string | null; titulo: string; inicio: string; fin: string | null; zona: string };
-type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean };
+type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean; sitio_lat?: number | null; sitio_lng?: number | null };
 async function cargarLigados(e: EventoConLugar) {
   const supabase = await clienteServidor();
   const vacio = { horarioPropio: [] as Franja[], horarioLugar: [] as Franja[], inauguracion: null as Ligado | null, actos: [] as Acto[], padre: null as Ligado | null, inaugura: null as Ligado | null };
@@ -208,7 +211,7 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "festival"
       ? supabase
           .from("eventos")
-          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, visible, borrador, retirado_por_admin, lugar:lugares(nombre, portada)")
+          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, creado_en, visible, borrador, retirado_por_admin, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng)")
           .eq("evento_padre_id", e.id)
           .order("inicio")
           .limit(100)
@@ -218,6 +221,24 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "puntual" || !e.clase ? supabase.from("eventos").select(columnas).eq("inaugura_id", e.id).limit(1).maybeSingle().then(uno, () => null) : null,
   ]);
   return { horarioPropio, horarioLugar, inauguracion, actos, padre, inaugura };
+}
+
+/** Una sede de un festival (OL-339) en el renglón de dato de la ficha: el pin, su nombre y su meta; la del directorio lleva a su ficha. */
+function RenglonSede({ sede, children }: { sede: Sede; children: ReactNode }) {
+  const contenido = (
+    <>
+      {sede.reservado ? <IconoCandado width={20} height={20} /> : <IconoPin width={20} height={20} />}
+      <b>{sede.nombre}</b>
+      {children}
+    </>
+  );
+  if (!sede.lugar) return <div className={renglon.dato}>{contenido}</div>;
+  return (
+    <Link href={hrefLugar(sede.lugar)} className={renglon.dato}>
+      {contenido}
+      <IconoChevronDerecha />
+    </Link>
+  );
 }
 
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
@@ -238,7 +259,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14).
   if (!e || eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { title: "Evento · Somos Nosotros" };
   const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);
-  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única.
+  const supabase = e.clase === "festival" ? await clienteServidor() : null;
+  const sedes = supabase ? (await cargarSedes(supabase, [e.id]))?.get(e.id) : undefined;
+  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
   const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
   return {
     title: `${e.titulo} · Somos Nosotros`,
@@ -281,7 +305,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // difiere en `<Suspense>` (OL-161, bitácora 196) — la cabecera (foto, nombre, cuándo, dónde) no la espera. Solo mi
   // estado, para las pastillas, que sí se pintan al instante, se pide aquí (una fila, no la lista entera).
   const miEstado = await cargarMiEstado(e.id, actual?.perfil.id ?? null);
-  const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   // Con horario por día (OL-311) cada día lleva sus horas; si se editó el evento por el formulario de siempre y ya no coinciden, se ignoran.
@@ -295,17 +318,26 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
   const actosVisibles = ligados.actos.filter((a) => !a.borrador);
   const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
+  // Las sedes de un festival (OL-339): las de sus actos publicados (lo que ve cualquiera), sin repetir y en el orden de su primer acto; sin actos que
+  // digan dónde, lo capturado en el festival (`sedesDeFestival`). Se calculan al leer: cambian en cuanto un acto cambia de lugar.
+  const sedesFestival = clase === "festival" ? sedesDeFestival(actosVisibles.filter((a) => a.visible !== false && !a.retirado_por_admin), e) : [];
+  // Las que salen de sus actos (la de respaldo se pinta como la de cualquier evento): con varias, mapa con todos los pines y su lista; con una, esa.
+  const sedes = sedesFestival.some((s) => s.actos > 0) ? sedesFestival : [];
+  const sedeUnica = sedes.length === 1 ? sedes[0] : null;
+  const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes });
   const rangoFestival = clase === "festival" ? rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora) : null;
   const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, textoProgramaRegistrado(actosVisibles.length)].filter(Boolean).join(" · ") : null;
   const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0, cuandoClase);
   const decididasActos = clase === "festival" ? await decididasDe(actual?.perfil.id ?? null, actosVisibles.map((a) => a.id)) : null;
-  const sedes = new Set(actosVisibles.map((a) => a.lugar?.nombre ?? a.sitio_texto ?? "")).size;
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
   // .ics (`donde` en .../calendario/route.ts) para que la hoja nativa del sistema muestre algo útil para llegar.
-  const lugarCalendario = e.lugar ? [e.lugar.nombre, e.lugar.direccion].filter(Boolean).join(", ") : sitio;
+  const lugarCalendario = sedes.length > 1 ? VARIAS_SEDES : sedeUnica ? [sedeUnica.nombre, sedeUnica.direccion].filter(Boolean).join(", ") : e.lugar ? [e.lugar.nombre, e.lugar.direccion].filter(Boolean).join(", ") : sitio;
   // La hoja nativa del iPhone agrega un solo evento: con horario por día, el primer día y todos los días en las notas (el .ics de la web lleva uno por día).
   const datosCalendario = datosEventoNativo(conPrimerDia({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, fin: e.fin, descripcion: e.descripcion, lugar: lugarCalendario }, sesiones, e.zona));
-  const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
+  // El punto del mapa y de «Cómo llegar»: el del evento; el de la única sede de un festival; ninguno con varias (cada sede lleva a su ficha).
+  const argsSitio = sedes.length
+    ? { lugar: sedeUnica?.punto ?? null, sitioReservado: false, sitioLat: null, sitioLng: null, privado: null }
+    : { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
   const comoLlegar = enlaceComoLlegar(argsSitio);
   const puntoMapa = puntoComoLlegar(argsSitio);
   // Solo la coordenada, para la distancia del renglón del sitio: `puntoMapa` puede ser el lugar entero y no tiene por qué viajar al teléfono.
@@ -464,7 +496,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <Kpis>
             <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
             <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
-            <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedes} />
+            <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedesFestival.length} />
           </Kpis>
         ) : (
           <Kpis>
@@ -494,7 +526,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             </span>
             A mi calendario
           </BotonCalendario>
-          {comoLlegar ? (
+          {/* Un festival con varias sedes no tiene un destino: baja a la lista de sedes, cada una con su ficha (y su «Cómo llegar»). */}
+          {sedes.length > 1 ? (
+            <Salto destino="donde" className={ficha.accion}>
+              <span className={CIRCULO}>
+                <IconoRuta />
+              </span>
+              Cómo llegar
+            </Salto>
+          ) : comoLlegar ? (
             <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
               <span className={CIRCULO}>
                 <IconoRuta />
@@ -647,7 +687,23 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </section>
         )}
 
-        {hayDonde && (
+        {/* Un festival con sedes en sus actos (OL-339): con varias, el mapa con todos los pines y la lista de sedes, cada una con cuántas actividades
+            tiene ahí; con una, como cualquier evento. Las del directorio llevan a su ficha. */}
+        {sedes.length > 0 && (
+          <section className={ficha.tarjeta} id="donde" aria-label="Dónde">
+            <h2>Dónde</h2>
+            <MapaFicha punto={puntoMapa} puntos={sedes.length > 1 ? sedes.flatMap((s) => (s.punto ? [s.punto] : [])) : undefined} href={comoLlegar} alt={sedes.length > 1 ? `las sedes de ${e.titulo}` : sitio} />
+            <ul>
+              {sedes.map((s) => (
+                <li key={s.clave}>
+                  <RenglonSede sede={s}>{sedeUnica ? <MetaSitio direccion={s.direccion} punto={puntoDistancia} /> : <small>{textoActosEnSede(s.actos)}</small>}</RenglonSede>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {hayDonde && !sedes.length && (
           <section className={ficha.tarjeta}>
             <h2>Dónde</h2>
             <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
