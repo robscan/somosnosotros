@@ -192,7 +192,7 @@ async function QuienVaDiferido({ eventoId, miId, conSesion, consultaTrasFin }: {
  *  festival (sus actos visibles y, para su autor, sus borradores), el festival de un acto y la exposición que inaugura. Cada consulta falla
  *  sola sin tumbar la ficha (sin la migración, nada de esto existe y la ficha es la de siempre). */
 type Ligado = { id: string; slug: string | null; titulo: string; inicio: string; fin: string | null; zona: string };
-type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean };
+type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean };
 async function cargarLigados(e: EventoConLugar) {
   const supabase = await clienteServidor();
   const vacio = { horarioPropio: [] as Franja[], horarioLugar: [] as Franja[], inauguracion: null as Ligado | null, actos: [] as Acto[], padre: null as Ligado | null, inaugura: null as Ligado | null };
@@ -207,7 +207,7 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "festival"
       ? supabase
           .from("eventos")
-          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, visible, borrador, lugar:lugares(nombre, portada)")
+          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, visible, borrador, retirado_por_admin, lugar:lugares(nombre, portada)")
           .eq("evento_padre_id", e.id)
           .order("inicio")
           .limit(100)
@@ -354,7 +354,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const portada = e.imagen ?? e.lugar?.portada ?? null;
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
   const kpiExpo = clase === "exposicion" ? kpisDeExposicion(e, horario.franjas, ahora) : null;
-  const hayAvisos = error === "borrar" || !e.visible || paso;
+  const hayAvisos = error === "borrar" || error === "no_publicable" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
   const hayCartel = e.visible && !paso && cartelDescargable(e.imagen, configPublica().supabaseUrl);
@@ -430,6 +430,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           {error === "borrar" && (
             <p className="aviso-error" role="alert">
               No se pudo borrar. ¿Sigues con sesión y es tu evento?
+            </p>
+          )}
+          {error === "no_publicable" && (
+            <p className="aviso-error" role="alert">
+              La administración retiró esta actividad.
             </p>
           )}
           {(!e.visible || paso) && (
@@ -586,12 +591,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                   <li key={b.id} className={renglon.dato}>
                     <IconoCalendario width={20} height={20} />
                     <b>{b.titulo}</b>
-                    <small>{formatearLargo(b.inicio, ahora, null, b.zona)} · borrador</small>
-                    <form action={publicarBorrador.bind(null, b.id, hrefEvento(e))}>
-                      <button type="submit" className={styles.publicarBorrador}>
-                        Publicar
-                      </button>
-                    </form>
+                    <small>{formatearLargo(b.inicio, ahora, null, b.zona)} · {b.retirado_por_admin ? "retirado por la administración" : "borrador"}</small>
+                    {/* Lo que la administración retiró no se publica (OL-328): la base lo rechaza y aquí no se ofrece. */}
+                    {!b.retirado_por_admin && (
+                      <form action={publicarBorrador.bind(null, b.id, hrefEvento(e))}>
+                        <button type="submit" className={styles.publicarBorrador}>
+                          Publicar
+                        </button>
+                      </form>
+                    )}
                   </li>
                 ))}
               </ul>

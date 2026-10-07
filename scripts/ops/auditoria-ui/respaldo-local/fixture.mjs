@@ -90,7 +90,7 @@ function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio 
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
-    clase, evento_padre_id, inaugura_id, borrador,
+    clase, evento_padre_id, inaugura_id, borrador, retirado_por_admin: false,
     id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
     sitio_texto: sitio?.texto ?? null, sitio_direccion: sitio?.direccion ?? null, sitio_lat: sitio?.lat ?? null, sitio_lng: sitio?.lng ?? null, sitio_reservado: false, sitio_revelar_desde: null,
     lugar_id, zona: ZONA, ciudad: CIUDAD, creado_en: hace(creadoHace),
@@ -302,7 +302,7 @@ function enMemoria(t, p_evento, p_datos, p_operacion) {
   const slug = `${String(d.titulo ?? "evento").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)}-${String(p_operacion).slice(0, 4)}`;
   const termina = d.fin ?? masHoras(d.inicio, 4);
   t.eventos.push({
-    clase: "puntual", evento_padre_id: null, inaugura_id: null, borrador: false, sugerencias: {},
+    clase: "puntual", evento_padre_id: null, inaugura_id: null, borrador: false, retirado_por_admin: false, sugerencias: {},
     id: p_operacion, slug, titulo: d.titulo, inicio: d.inicio, fin: d.fin ?? null, termina, descripcion: d.descripcion ?? null, imagen: d.imagen ?? null, precio: d.precio ?? null, enlace: d.enlace ?? null,
     creado_por: ANA, visible: true, sitio_texto: d.sitio_texto ?? null, sitio_direccion: d.sitio_direccion ?? null, sitio_lat: d.sitio_lat ?? null, sitio_lng: d.sitio_lng ?? null,
     sitio_reservado: !!d.sitio_reservado, sitio_revelar_desde: null, lugar_id: d.lugar_id ?? null, zona: d.zona ?? ZONA, ciudad: d.ciudad ?? CIUDAD, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),

@@ -4,6 +4,7 @@ import path from "node:path";
 import satori from "satori";
 import sharp from "sharp";
 import type { TextosCartel } from "./datos";
+import { ENTRADA_SEGURA, imagenAdmitida } from "./imagenSegura";
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
@@ -33,7 +34,7 @@ const LADO_FOTO = 1400;
 
 /** El tono que manda en la foto (sharp `stats().dominant`), para la paleta. */
 export async function tonoDominante(imagen: Buffer): Promise<Rgb> {
-  const { dominant } = await sharp(imagen).stats();
+  const { dominant } = await sharp(imagen, ENTRADA_SEGURA).stats();
   return dominant;
 }
 
@@ -42,7 +43,7 @@ export async function tonoDominante(imagen: Buffer): Promise<Rgb> {
  * (zine) va del negro al acento de la paleta; el sepia (deco), entonado hacia el dorado del acento.
  */
 export async function prepararFoto(imagen: Buffer, plantilla: Pick<Plantilla, "tratamiento">, paleta: Paleta): Promise<string> {
-  const reducida = sharp(imagen).rotate().resize(LADO_FOTO, LADO_FOTO, { fit: "inside", withoutEnlargement: true });
+  const reducida = sharp(imagen, ENTRADA_SEGURA).rotate().resize(LADO_FOTO, LADO_FOTO, { fit: "inside", withoutEnlargement: true });
   let jpeg: Buffer;
   if (plantilla.tratamiento === "natural") {
     jpeg = await reducida.jpeg({ quality: 85 }).toBuffer();
@@ -65,7 +66,7 @@ export type Pedido = {
   plantilla: Plantilla;
   formato: Formato;
   textos: TextosCartel;
-  /** La imagen original (bytes), o null para la versión sin foto. */
+  /** La imagen original (bytes), o null para la versión sin foto. Si no es un JPEG, PNG o WebP admitido (`imagenSegura.ts`), también sale sin foto. */
   imagen: Buffer | null;
   sello?: boolean;
   /** Semilla para variar la paleta sin foto (el id del evento). */
@@ -97,7 +98,9 @@ export async function dibujarCartel(p: Pedido): Promise<Resultado> {
   const t0 = performance.now();
   let foto: string | null = null;
   let dominante: Rgb | null = null;
-  if (p.imagen) {
+  // Defensa en profundidad (OL-329): aunque quien llama ya la validó, aquí se comprueba otra vez que los bytes sean un JPEG, PNG o WebP
+  // razonable; cualquier otra cosa (SVG incluido) se descarta y el cartel sale sin foto.
+  if (p.imagen && (await imagenAdmitida(p.imagen))) {
     try {
       dominante = await tonoDominante(p.imagen);
       foto = await prepararFoto(p.imagen, p.plantilla, elegirPaleta(p.plantilla.paletas, dominante));

@@ -26,7 +26,7 @@ const GROUPS = [
     "apartar_lectura_de_cartel()", "borrar_mi_cuenta()",
     "cambiar_destacado(text,uuid,text,timestamp with time zone,timestamp with time zone)",
     "cambiar_rol(uuid,text)", "dar_mas_lecturas(uuid)", "marcar_visto()", "mi_cupo_de_cartel()",
-    "panel_comunidad()", "panel_correo(uuid)", "panel_persona(uuid)",
+    "panel_aportes()", "panel_comunidad()", "panel_correo(uuid)", "panel_fichas()", "panel_persona(uuid)",
     "panel_personas_conteos()", "panel_personas(text,text,integer,integer)", "panel_resumen()",
   ]],
   ["internal", false, [
@@ -93,7 +93,7 @@ export async function run({ as, check, expectError, query }) {
     ["apartar_lectura_de_cartel()"], ["borrar_mi_cuenta()"],
     ["cambiar_destacado('eventos',$1,'elegido')", [evento.id]], ["cambiar_rol($1,'admin')", [OWNER]],
     ["dar_mas_lecturas($1)", [OWNER]], ["inicio_del_mes()"], ["marcar_visto()"], ["mi_cupo_de_cartel()"],
-    ["panel_artistas()"], ["panel_comunidad()"], ["panel_correo($1)", [OWNER]],
+    ["panel_aportes()"], ["panel_artistas()"], ["panel_comunidad()"], ["panel_correo($1)", [OWNER]], ["panel_fichas()"],
     ["panel_destacados('eventos')"], ["panel_eventos()"], ["panel_fichas_conteos('eventos')"],
     ["panel_lugares()"], ["panel_pendientes()"], ["panel_persona($1)", [OWNER]],
     ["panel_personas_conteos()"], ["panel_personas()"], ["panel_resumen()"],
@@ -123,7 +123,7 @@ export async function run({ as, check, expectError, query }) {
       const r = await as("authenticated", subject, () => query(`select public.${call} as r`, call.includes("$1") ? [OWNER] : []));
       check(r.rows[0].r === null, `${subject}: ${call} no filtra datos ni siquiera del propio perfil`);
     }
-    for (const call of ["panel_resumen()", "panel_comunidad()", "dar_mas_lecturas($1)", "cambiar_destacado('eventos',$1,'elegido')"]) {
+    for (const call of ["panel_resumen()", "panel_comunidad()", "panel_fichas()", "panel_aportes()", "dar_mas_lecturas($1)", "cambiar_destacado('eventos',$1,'elegido')"]) {
       await as("authenticated", subject, () => expectError(() => query(`select public.${call}`, call.includes("$1") ? [evento.id] : []),
         "42501", `${subject}: operacion administrativa denegada ${call}`));
     }
@@ -299,5 +299,5 @@ export async function run({ as, check, expectError, query }) {
     && (await query("select creado_por from public.lugares where id=$1", [authored])).rows[0].creado_por === null
     && (await query("select id from auth.users where id=$1", [OWNER])).rowCount === 1,
   "borrar_mi_cuenta solo borra la propia y conserva fichas sin autor");
-  console.log(`Security Advisor: matriz de 51 firmas y contratos negativos/positivos (${Date.now() - start} ms)`);
+  console.log(`Security Advisor: matriz de 53 firmas y contratos negativos/positivos (${Date.now() - start} ms)`);
 }

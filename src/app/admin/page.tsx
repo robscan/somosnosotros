@@ -4,9 +4,9 @@ import Barra from "@/components/ui/Barra";
 import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin, IconoPincel } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import { diaLocal } from "@/lib/fechas";
-import { cuandoPaso, indicadores, notaSemana, renglonesGestionar } from "@/lib/panel";
+import { cuandoPaso, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana, renglonesGestionar } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import { cargarComunidad, cargarResumen } from "./consultas";
+import { cargarAportes, cargarComunidad, cargarResumen, cargarVinculadas } from "./consultas";
 import ComunidadComoVa from "./ComunidadComoVa";
 import CapoComoVa from "./CapoComoVa";
 import { cargarCapo } from "./capo-consultas";
@@ -35,9 +35,11 @@ export default async function Admin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const [{ resumen, pendientes, errorPendientes }, comunidad, capo] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo()]);
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas()]);
   const ahora = new Date();
-  const lista = resumen ? indicadores(resumen, diaLocal(ahora)) : [];
+  // Los dos aportes nuevos (Voy / Me interesa y primeras publicaciones) vienen de su propia función: si falla, solo faltan ellos.
+  const lista = resumen ? [...indicadores(resumen, diaLocal(ahora)), ...(aportes ? indicadoresAportes(aportes) : [])] : [];
+  const fichas = vinculadas ? indicadoresFichas(vinculadas) : [];
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
   return (
     <main className={plantilla.paginaContenido}>
@@ -48,9 +50,13 @@ export default async function Admin() {
 
       <h2 className={resumen ? `${styles.grupo} ${styles.conNota}` : styles.grupo}>Últimos 7 días</h2>
       {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} /> : <Reintentar texto="No pudimos leer los indicadores." />}
+      {resumen && !aportes && <Reintentar texto="No pudimos leer Voy y Me interesa ni las primeras publicaciones." />}
 
       <h2 className={styles.grupo}>Cómo va la comunidad</h2>
       {comunidad ? <ComunidadComoVa comunidad={comunidad} /> : <Reintentar texto="No pudimos leer el embudo de la comunidad." />}
+
+      <h2 className={vinculadas ? `${styles.grupo} ${styles.conNota}` : styles.grupo}>Fichas</h2>
+      {vinculadas ? <Indicadores lista={fichas} nota={notaFichas(fichas)} desglose="desglose-fichas" /> : <Reintentar texto="No pudimos leer las fichas vinculadas." />}
 
       <h2 className={styles.grupo}>Invitaciones CAPO</h2>
       {capo ? <CapoComoVa metricas={capo} /> : <Reintentar texto="No pudimos leer los resultados de las invitaciones CAPO." />}

@@ -102,6 +102,32 @@ describe("miniatura", () => {
   });
 });
 
+/** OL-329: lo que no es un JPEG, PNG o WebP razonable no se decodifica y el cartel sale igual que sin foto. */
+describe("imágenes que no se admiten", () => {
+  const SVG = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#f80808"/></svg>`);
+  const textos = armarTextos(CASOS.corto, null, AHORA_CASOS);
+  const dibujar = (imagen: Buffer | null) => dibujarCartel({ plantilla: CATALOGO[0], formato: FORMATOS["4x5"], textos, imagen, semilla: 1 });
+
+  it("un SVG sale como el cartel sin foto", async () => {
+    const [con, sin] = await Promise.all([dibujar(SVG), dibujar(null)]);
+    expect(con.imagen.equals(sin.imagen)).toBe(true);
+  });
+  it("un cuerpo que no es un PNG (aunque lo hayan llamado image/png) sale como el cartel sin foto", async () => {
+    const [con, sin] = await Promise.all([dibujar(Buffer.from("<html>no soy un PNG, ni de lejos</html>")), dibujar(null)]);
+    expect(con.imagen.equals(sin.imagen)).toBe(true);
+  });
+  it("una imagen válida pero con demasiados píxeles sale como el cartel sin foto", async () => {
+    const lado = 6500; // 42 megapíxeles, por encima del tope de 40
+    const grande = await sharp({ create: { width: lado, height: lado, channels: 3, background: "#000" } }).png({ compressionLevel: 9 }).toBuffer();
+    const [con, sin] = await Promise.all([dibujar(grande), dibujar(null)]);
+    expect(con.imagen.equals(sin.imagen)).toBe(true);
+  });
+  it("un JPEG válido sí lleva foto (el cartel cambia)", async () => {
+    const [con, sin] = await Promise.all([dibujar(foto), dibujar(null)]);
+    expect(con.imagen.equals(sin.imagen)).toBe(false);
+  });
+});
+
 describe("medidas", () => {
   it("anota tiempo y peso por formato (se leen en la salida de la prueba)", () => {
     const resumen = new Map<string, { ms: number[]; kb: number[] }>();
