@@ -321,3 +321,63 @@ describe("horario por día en la ficha (OL-311)", () => {
     expect(elementos.some((e) => e.type === Kpi && e.props.etiqueta === "Por día")).toBe(false);
   });
 });
+
+describe("las acciones del evento siguen en su ficha al editar por pasos (OL-319)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+
+  const ficha = async (rol: "usuario" | "admin", id: string) => {
+    vi.mocked(clienteServidor).mockResolvedValue(clienteFalso({ eventos: { data: EVENTO }, asistencias: { data: [] } }, { van_por_evento: { data: [] } }) as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    vi.mocked(usuarioActual).mockResolvedValue({ correo: "prueba@example.com", perfil: { id, nombre: "Prueba", rol, foto: null, colonia: null, bio: null } });
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: EVENTO.slug }), searchParams: Promise.resolve({}) }))];
+  };
+  const enlaces = (elementos: { props: Record<string, unknown> }[]) => elementos.map((e) => e.props.href).filter((h): h is string => typeof h === "string");
+
+  it("su autora tiene «Editar» (la misma ruta, que ahora abre el flujo por pasos), «Duplicar con otra fecha» y «Borrar el evento», que confirma", async () => {
+    const { default: Borrar } = await import("@/components/Borrar");
+    const elementos = await ficha("usuario", "autor-1");
+    expect(enlaces(elementos)).toEqual(expect.arrayContaining(["/eventos/evento-de-prueba/editar", "/nuevo/evento?desde=evento-1"]));
+    expect(elementos.find((e) => e.type === Borrar)?.props).toMatchObject({ que: "el evento", fila: true });
+  });
+
+  it("la administración además oculta o vuelve a mostrar el evento", async () => {
+    const elementos = await ficha("admin", "admin-1");
+    expect(enlaces(elementos)).toContain("/eventos/evento-de-prueba/editar");
+    expect(elementos.some((e) => e.type === "b" && e.props.children === "Ocultar de la agenda")).toBe(true);
+  });
+
+  it("quien no es su autora ni la administración no ve ninguna de las tres", async () => {
+    const elementos = await ficha("usuario", "lectora");
+    expect(enlaces(elementos).some((h) => h.endsWith("/editar") || h.includes("desde="))).toBe(false);
+  });
+});
+
+describe("la ficha según cómo ocurre (OL-321)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  const abrir = async (evento: Record<string, unknown>, tablas: Record<string, unknown> = {}) => {
+    const cliente = clienteFalso({ eventos: { data: evento }, asistencias: { data: [] }, ...tablas }, { van_por_evento: { data: [] } });
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+  };
+
+  it("una exposición: «Hasta» y el horario en vez de «Van», su horario en un bloque y solo «Me interesa»", async () => {
+    const expo = { ...EVENTO, clase: "exposicion", inicio: "2099-01-01T06:00:00Z", fin: "2099-02-01T05:59:00Z" };
+    const elementos = await abrir(expo, { eventos_horarios: { data: [{ dias: [1, 2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00" }] } });
+    const kpis = elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta);
+    expect(kpis).toEqual(["Hasta", "Abre", "Costo"]);
+    expect(elementos.filter((e) => e.type === Suspense).length).toBe(1);
+    expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
+    expect(elementos.some((e) => e.props?.["aria-label"] === "Horario")).toBe(true);
+  });
+
+  it("un festival: su programa y «Me interesa» en el marco; un evento suelto sigue con «Voy»", async () => {
+    const festival = { ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-01-04T06:00:00Z" };
+    const elementos = await abrir(festival);
+    expect(elementos.some((e) => e.props?.["aria-label"] === "Programa")).toBe(true);
+    expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
+    expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["Actos", "Costo", "Sedes"]);
+    const suelto = await abrir(EVENTO);
+    expect(suelto.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
+  });
+});

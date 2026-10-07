@@ -92,8 +92,8 @@ export type SesionGuardada = { inicio: string; fin: string | null };
 
 /**
  * Las sesiones de un evento, si todavía le corresponden: la primera empieza cuando empieza el evento y la última cae en el día en que
- * termina. Si se editó el evento por el formulario de siempre (que no toca las sesiones) y sus horas ya no coinciden, se ignoran y el
- * evento se lee con su inicio y su fin, como cualquier otro. Ordenadas por inicio; vacías si no hay dos o más.
+ * termina. Si sus horas ya no coinciden con las del evento (se editó por el formulario de antes, que no tocaba las sesiones; editar por
+ * pasos las reescribe o las borra en la misma transacción, OL-319), se ignoran y el evento se lee con su inicio y su fin, como cualquier otro. Ordenadas por inicio; vacías si no hay dos o más.
  */
 export function sesionesVigentes(evento: { inicio: string; fin: string | null; zona: string }, sesiones: readonly SesionGuardada[] | null | undefined): SesionGuardada[] {
   if (!evento.fin || !sesiones || sesiones.length < 2) return [];

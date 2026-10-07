@@ -72,15 +72,30 @@ const E = {
   leonora: "bbbb0001-0000-4000-8000-000000000011",
   oca: "bbbb0001-0000-4000-8000-000000000012",
   desierto: "bbbb0001-0000-4000-8000-000000000013",
+  // OL-319: dos eventos de Ana, ocultos (no salen en ninguna lista ni cuenta), para medir y probar editar un evento por pasos.
   taller: "bbbb0001-0000-4000-8000-000000000014",
+  linternas: "bbbb0001-0000-4000-8000-000000000015",
+  // OL-321: una exposición con su inauguración y un festival con su programa (tres actos y un borrador), de Ana y ocultos como los de OL-319.
+  ecos: "bbbb0001-0000-4000-8000-000000000016",
+  ecosInaug: "bbbb0001-0000-4000-8000-000000000017",
+  cine: "bbbb0001-0000-4000-8000-000000000018",
+  cine1: "bbbb0001-0000-4000-8000-000000000019",
+  cine2: "bbbb0001-0000-4000-8000-000000000020",
+  cine3: "bbbb0001-0000-4000-8000-000000000021",
+  cine4: "bbbb0001-0000-4000-8000-000000000022",
+  // OL-320 (con OL-319 ya usaba «taller»; al apilar OL-322 este taller visible toma su propia clave).
+  tallerLinoleo: "bbbb0001-0000-4000-8000-000000000023",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
-    id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: MARCOS, visible: true,
+    clase, evento_padre_id, inaugura_id, borrador,
+    id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
     sitio_texto: sitio?.texto ?? null, sitio_direccion: sitio?.direccion ?? null, sitio_lat: sitio?.lat ?? null, sitio_lng: sitio?.lng ?? null, sitio_reservado: false, sitio_revelar_desde: null,
     lugar_id, zona: ZONA, ciudad: CIUDAD, creado_en: hace(creadoHace),
+    // La versión que editar manda de vuelta (OL-319): sin ella, «Guardar cambios» pide volver a abrir el evento.
+    actualizado_en: hace(creadoHace),
   };
 }
 const eventos = [
@@ -97,16 +112,33 @@ const eventos = [
   evento({ id: E.leonora, slug: "leonora-in-the-morning-light", titulo: "Leonora in the morning light", dias: 9, hora: "17:00", lugar_id: L.ccub, creadoHace: 2, descripcion: "Película de Thor Klein y Lena Vurma. Con presencia de las productoras. Clasificación B15." }),
   evento({ id: E.oca, slug: "oca", titulo: "OCA", dias: 10, hora: "19:00", lugar_id: L.mascara, creadoHace: 5 }),
   evento({ id: E.desierto, slug: "desierto-observacion-y-espacio", titulo: "DESIERTO: Observación y Espacio", dias: 11, hora: "20:00", lugar_id: L.aether, creadoHace: 1, descripcion: "Inauguración de la exposición de escultura, en presencia del artista." }),
+  // OL-319 (editar por pasos): de Ana y ocultos. Uno de un día con cartel; otro de tres días (del viernes al domingo) con horario por día.
+  evento({ id: E.taller, slug: "taller-de-grabado-en-el-barrio", titulo: "Taller de grabado en el barrio", dias: 2, hora: "17:00", lugar_id: L.miguelito, precio: "$80", creadoHace: 3, descripcion: "Grabado en linóleo para principiantes. Trae ropa que se pueda manchar.", imagen: imagenes.eventos["oca"] ?? null, autor: ANA, visible: false }),
+  evento({ id: E.linternas, slug: "festival-de-las-linternas", titulo: "Festival de las Linternas", dias: 2, hora: "20:00", dur: 49, sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 3, imagen: null, autor: ANA, visible: false }),
+  // OL-321. La exposición: del día −3 (00:00) al día +20 (23:59), en el MUNI (que tiene horario: Ma–Do de 10:00 a 18:00; un lugar que `medir` no mide, así su ficha no cambia).
+  { ...evento({ id: E.ecos, slug: "ecos-de-papel", titulo: "Ecos de papel", dias: -3, hora: "00:00", lugar_id: L.muni, creadoHace: 4, descripcion: "Grabado y papel hecho a mano de Mariana Ruvalcaba.", imagen: imagenes.eventos["desierto-observacion-y-espacio"] ?? null, autor: ANA, visible: false, clase: "exposicion", inaugura_id: E.ecosInaug }), fin: iso(fecha(20, "23:59")), termina: iso(fecha(20, "23:59")) },
+  evento({ id: E.ecosInaug, slug: "inauguracion-ecos-de-papel", titulo: "Inauguración: Ecos de papel", dias: -4, hora: "19:00", lugar_id: L.muni, creadoHace: 4, autor: ANA, visible: false }),
+  // El festival: el marco y su programa (del día 9 al 11), con un acto como borrador.
+  { ...evento({ id: E.cine, slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, imagen: imagenes.eventos["leonora-in-the-morning-light"] ?? null, autor: ANA, visible: false, clase: "festival" }), fin: iso(fecha(12, "00:00")), termina: iso(fecha(12, "00:00")) },
+  evento({ id: E.cine1, slug: "inauguracion-la-luz-que-queda", titulo: "Inauguración: «La luz que queda»", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
+  evento({ id: E.cine2, slug: "charla-con-la-directora", titulo: "Charla con la directora", dias: 10, hora: "18:00", dur: 1, lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
+  evento({ id: E.cine3, slug: "funcion-cortometrajes-potosinos", titulo: "Función: cortometrajes potosinos", dias: 11, hora: "17:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
+  evento({ id: E.cine4, slug: "funcion-de-clausura", titulo: "Función de clausura", dias: 12, hora: "19:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine, borrador: true }),
   // OL-320: un taller con horario por día (tres sesiones, cada una con su hora): la agenda lo pone en los tres días. Empieza con su primera sesión y termina con la última.
-  { ...evento({ id: E.taller, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
+  // OL-322: es un taller (`clase`), así cada día dice «Sesión n de 3».
+  { ...evento({ id: E.tallerLinoleo, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, clase: "taller", descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
 ];
+/** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
+const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];
+/** El horario por día del Festival de las Linternas: viernes y domingo de 20:00 a 21:00, el sábado de 18:00 a 21:00. */
+const eventos_sesiones = [0, 1, 2].map((d) => ({ id: `bbbb0002-0000-4000-8000-00000000000${d + 1}`, evento_id: E.linternas, fecha: fecha(2 + d, "20:00").slice(0, 10), inicio: iso(fecha(2 + d, d === 1 ? "18:00" : "20:00")), fin: iso(fecha(2 + d, "21:00")) }));
 
 // Su horario por día: una fila por sesión, cada una con su hora (`fin` posterior al inicio y el mismo día).
 const sesiones = [
   { dias: 2, hora: "17:00", fin: "19:00" },
   { dias: 4, hora: "18:00", fin: "20:00" },
   { dias: 6, hora: "17:00", fin: "19:00" },
-].map((d, i) => ({ id: `bbbb0002-0000-4000-8000-00000000000${i + 1}`, evento_id: E.taller, fecha: fecha(d.dias, d.hora).slice(0, 10), inicio: iso(fecha(d.dias, d.hora)), fin: iso(fecha(d.dias, d.fin)) }));
+].map((d, i) => ({ id: `bbbb0002-0000-4000-8000-00000000000${i + 4}`, evento_id: E.tallerLinoleo, fecha: fecha(d.dias, d.hora).slice(0, 10), inicio: iso(fecha(d.dias, d.hora)), fin: iso(fecha(d.dias, d.fin)) }));
 
 // ---------- artistas ----------
 const A = {
@@ -158,7 +190,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: sesiones, lugares_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -169,6 +201,7 @@ export const FK = {
   eventos_artistas: { eventos: "evento_id", artistas: "artista_id" },
   eventos_sesiones: { eventos: "evento_id" },
   lugares_horarios: { lugares: "lugar_id" },
+  eventos_horarios: { eventos: "evento_id" },
   asistencias: { eventos: "evento_id", perfiles: "usuario_id" },
   seguimientos: { lugares: "lugar_id", artistas: "artista_id", perfiles: "usuario_id" },
   artistas_cuentas: { artistas: "artista_id", perfiles: "perfil_id" },
@@ -222,7 +255,60 @@ export const rpcs = {
   // OL-316: las subcategorías ya usadas en una disciplina, las más usadas primero (como `subcategorias_de`), de los artistas del respaldo.
   subcategorias_de: ({ p_disciplina }) => Object.entries(artistas.filter((a) => a.visible && a.disciplina === p_disciplina && a.detalle).reduce((m, a) => ((m[a.detalle] = (m[a.detalle] || 0) + 1), m), {})).map(([detalle, n]) => ({ detalle, artistas: n })).sort((x, y) => y.artistas - x.artistas || x.detalle.localeCompare(y.detalle)),
   mi_cupo_de_cartel: () => [],
+  // OL-319: editar un evento por pasos contesta lo guardado (sin guardarlo: las escrituras no cambian el fixture).
+  editar_evento_con_sesiones: ({ p_evento }) => ({ id: p_evento, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null }),
+  // OL-321: guardar con la clase y publicar un programa contestan lo creado (sin guardarlo).
+  guardar_evento_con_clase: ({ p_evento, p_operacion }) => ({ id: p_evento ?? p_operacion, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null, padre: null, inauguracion: null }),
+  publicar_programa: ({ p_actos, p_operacion }) => ({ id: p_operacion, actos: (p_actos ?? []).filter((a) => a.publicar).map((a) => a.operacion), borradores: (p_actos ?? []).filter((a) => !a.publicar).map((a) => a.operacion) }),
+  publicar_borrador_de_programa: ({ p_evento }) => ({ id: p_evento, padre: null }),
+  // OL-323: publicar un evento lo deja en memoria (como las asistencias: el fixture no cambia y otro arranque empieza limpio), para que «Publicado»
+  // encuentre su sugerencia; aceptar o descartar una sugerencia también queda en memoria.
+  guardar_evento_con_avisos: ({ p_evento, p_datos, p_operacion }, t) => enMemoria(t, p_evento, p_datos, p_operacion),
+  guardar_evento_con_sesiones: ({ p_evento, p_datos, p_operacion }, t) => enMemoria(t, p_evento, p_datos, p_operacion),
+  publicar_exposicion_de_inauguracion: ({ p_inauguracion, p_titulo, p_inicio, p_fin, p_operacion }, t) => {
+    const i = t.eventos.find((e) => e.id === p_inauguracion);
+    const r = enMemoria(t, null, { ...i, titulo: p_titulo, inicio: p_inicio, fin: p_fin, precio: null, descripcion: null }, p_operacion);
+    Object.assign(t.eventos.find((e) => e.id === r.id), { clase: "exposicion", inaugura_id: p_inauguracion, termina: p_fin });
+    if (i) i.sugerencias = { ...i.sugerencias, exposicion: { estado: "aceptada" } };
+    return { id: r.id, slug: t.eventos.find((e) => e.id === r.id).slug };
+  },
+  ligar_inauguracion: ({ p_exposicion, p_inauguracion }, t) => {
+    const x = t.eventos.find((e) => e.id === p_exposicion);
+    if (x) x.inaugura_id = p_inauguracion;
+    return { id: p_exposicion, slug: x?.slug ?? null };
+  },
+  relacionar_en_festival: ({ p_eventos = [], p_marco, p_titulo, p_operacion }, t) => {
+    const actos = t.eventos.filter((e) => p_eventos.includes(e.id)).sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const id = p_marco ?? p_operacion;
+    if (!t.eventos.some((e) => e.id === id)) enMemoria(t, null, { ...actos[0], titulo: p_titulo, inicio: actos[0].inicio, fin: actos.at(-1).termina }, id);
+    const marco = t.eventos.find((e) => e.id === id);
+    marco.clase = "festival";
+    for (const a of actos) Object.assign(a, { evento_padre_id: id, sugerencias: { ...a.sugerencias, festival: { estado: "aceptada" } } });
+    return { id, slug: marco.slug, titulo: marco.titulo, actos: t.eventos.filter((e) => e.evento_padre_id === id && e.visible).length };
+  },
+  anotar_sugerencia: ({ p_evento, p_tipo, p_estado, p_clave }, t) => {
+    const e = t.eventos.find((x) => x.id === p_evento);
+    if (e && e.sugerencias?.[p_tipo]?.estado !== "aceptada") e.sugerencias = { ...e.sugerencias, [p_tipo]: { estado: p_estado, ...(p_clave ? { clave: p_clave } : {}) } };
+    return null;
+  },
 };
+
+/** Un evento que se publica desde la app (OL-323): a la memoria, con lo que guarda la base (la clave de la operación como id, su slug, Ana). */
+function enMemoria(t, p_evento, p_datos, p_operacion) {
+  const vacio = { artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null };
+  if (p_evento) return { id: p_evento, ...vacio };
+  if (t.eventos.some((e) => e.id === p_operacion)) return { id: p_operacion, ...vacio, repetido: true };
+  const d = p_datos ?? {};
+  const slug = `${String(d.titulo ?? "evento").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)}-${String(p_operacion).slice(0, 4)}`;
+  const termina = d.fin ?? masHoras(d.inicio, 4);
+  t.eventos.push({
+    clase: "puntual", evento_padre_id: null, inaugura_id: null, borrador: false, sugerencias: {},
+    id: p_operacion, slug, titulo: d.titulo, inicio: d.inicio, fin: d.fin ?? null, termina, descripcion: d.descripcion ?? null, imagen: d.imagen ?? null, precio: d.precio ?? null, enlace: d.enlace ?? null,
+    creado_por: ANA, visible: true, sitio_texto: d.sitio_texto ?? null, sitio_direccion: d.sitio_direccion ?? null, sitio_lat: d.sitio_lat ?? null, sitio_lng: d.sitio_lng ?? null,
+    sitio_reservado: !!d.sitio_reservado, sitio_revelar_desde: null, lugar_id: d.lugar_id ?? null, zona: d.zona ?? ZONA, ciudad: d.ciudad ?? CIUDAD, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
+  });
+  return { id: p_operacion, ...vacio };
+}
 
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const track = vi.fn();
 vi.mock("@vercel/analytics", () => ({ track: (...a: unknown[]) => track(...a) }));
 
-import { contextoGoogle, datosAsistencia, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, validarMedicion } from "./medir";
+import { claseMedida, contextoGoogle, datosAsistencia, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, validarMedicion } from "./medir";
 import { limpiarUrlEvento, limpiarUrlGoogle } from "./limpiarUrlAnalitica";
 
 /** Una ventana mínima: dirección, `gtag` y la marca de admin (o no). */
@@ -64,6 +64,17 @@ describe("la lista cerrada (OL-325)", () => {
   });
 });
 
+describe("claseMedida", () => {
+  it("la clase del alta si es de la lista; si no, puntual (como el servidor)", () => {
+    expect(claseMedida("exposicion")).toBe("exposicion");
+    expect(claseMedida("taller")).toBe("taller");
+    expect(claseMedida(null)).toBe("puntual");
+    expect(claseMedida("concierto")).toBe("puntual");
+    expect(validarMedicion("evento_creado", { cartel: "si", clase: claseMedida("festival") })).toEqual({ cartel: "si", clase: "festival" });
+    expect(validarMedicion("evento_creado", { cartel: "si" })).toBeNull();
+  });
+});
+
 describe("datosAsistencia y fichaDeEnlace", () => {
   it("puesto, quitado o nada", () => {
     expect(datosAsistencia("voy", null)).toEqual({ estado: "voy", cambio: "puesto" });
@@ -101,7 +112,7 @@ describe("medirCliente", () => {
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
     const gtag = vi.fn();
     ponerVentana({ gtag });
-    medirCliente("evento_creado", { cartel: "no" });
+    medirCliente("evento_creado", { cartel: "no", clase: "puntual" });
     expect(track).not.toHaveBeenCalled();
     expect(gtag).not.toHaveBeenCalled();
     expect(red).not.toHaveBeenCalled();
@@ -111,8 +122,8 @@ describe("medirCliente", () => {
     vi.stubEnv("NEXT_PUBLIC_MEDIR_DEPURAR", "1");
     const consola = vi.spyOn(console, "info").mockImplementation(() => {});
     ponerVentana();
-    medirCliente("evento_creado", { cartel: "si" });
-    expect(consola).toHaveBeenCalledWith("[medir]", "evento_creado", { cartel: "si" }, "(fuera de producción: no se manda)");
+    medirCliente("evento_creado", { cartel: "si", clase: "festival" });
+    expect(consola).toHaveBeenCalledWith("[medir]", "evento_creado", { cartel: "si", clase: "festival" }, "(fuera de producción: no se manda)");
     expect(track).not.toHaveBeenCalled();
     consola.mockRestore();
   });

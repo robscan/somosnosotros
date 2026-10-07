@@ -1,5 +1,6 @@
 import { esUuid } from "@/lib/formulario";
 import { archivoIcs, nombreArchivoIcs } from "@/lib/calendario";
+import { visitaDeEvento } from "@/lib/claseEvento";
 import { eventoPaso } from "@/lib/fechas";
 import { nombreSitio } from "@/lib/eventos";
 import { sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
@@ -11,7 +12,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const supabase = await clienteServidor();
   if (!supabase) return new Response("No encontrado", { status: 404 });
-  const columnas = "id, slug, titulo, inicio, fin, zona, descripcion, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre, direccion), sesiones:eventos_sesiones(inicio, fin)";
+  const columnas = "id, slug, titulo, inicio, fin, zona, clase, descripcion, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre, direccion), sesiones:eventos_sesiones(inicio, fin)";
   const porSlug = await supabase.from("eventos").select(columnas).eq("slug", id).maybeSingle();
   const { data } = porSlug.data ? porSlug : esUuid(id) ? await supabase.from("eventos").select(columnas).eq("id", id).maybeSingle() : { data: null };
   // Un evento que ya pasó se oculta: tampoco se entrega su archivo de calendario.
@@ -20,7 +21,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const donde = lugar ? [lugar.nombre, lugar.direccion].filter(Boolean).join(", ") : nombreSitio({ ...data, lugar: null });
   // Un evento con horario por día (OL-311) lleva un evento de calendario por día.
   const sesiones = sesionesVigentes(data, data.sesiones as SesionGuardada[] | null);
-  const ics = archivoIcs({ id: data.id, slug: data.slug, titulo: data.titulo, inicio: data.inicio, fin: data.fin, descripcion: data.descripcion, lugar: donde }, new Date(), sesiones);
+  // Una exposición marca su periodo, todo el día (OL-322): no es un rato del primer día.
+  const periodo = data.clase === "exposicion" ? visitaDeEvento(data.inicio, data.fin, data.zona) : null;
+  const ics = archivoIcs({ id: data.id, slug: data.slug, titulo: data.titulo, inicio: data.inicio, fin: data.fin, descripcion: data.descripcion, lugar: donde }, new Date(), sesiones, periodo);
   return new Response(ics, {
     headers: { "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": `attachment; filename="${nombreArchivoIcs(data.titulo)}"`, "Cache-Control": "no-store" },
   });

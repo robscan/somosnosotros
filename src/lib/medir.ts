@@ -14,8 +14,8 @@ import { limpiarUrlEvento } from "@/lib/limpiarUrlAnalitica";
 export const EVENTOS = {
   /** Entrar a la cuenta: se pidió (código por correo o salida a Apple/Google), quedó dentro o no se pudo. */
   entrar: { paso: ["pedido", "listo", "fallo"], metodo: ["correo", "apple", "google"] },
-  /** Se publicó un evento (el alta por pasos). */
-  evento_creado: { cartel: ["si", "no"] },
+  /** Se publicó un evento (el alta por pasos): con cartel o sin él, y cómo ocurre (`eventos.clase`, OL-321). */
+  evento_creado: { cartel: ["si", "no"], clase: ["puntual", "exposicion", "taller", "festival"] },
   /** La lectura automática del cartel: leyó o no pudo (sin cupo no es una lectura y no se mide). */
   cartel_leido: { resultado: ["ok", "fallo"] },
   /** Se registró un lugar: desde su alta o desde «¿Dónde es?» al publicar un evento (uno que ya existía no cuenta). */
@@ -79,6 +79,12 @@ export function datosAsistencia(nuevo: "voy" | "me_interesa" | null, previo: "vo
   if (nuevo) return { estado: nuevo, cambio: "puesto" };
   if (previo) return { estado: previo, cambio: "quitado" };
   return null;
+}
+
+/** La clase de un evento para medirla: la del alta si es una de la lista; si no (una pantalla sin el campo), «puntual», como el servidor. */
+export function claseMedida(valor: unknown): DatosDe<"evento_creado">["clase"] {
+  const opciones: readonly string[] = EVENTOS.evento_creado.clase;
+  return typeof valor === "string" && opciones.includes(valor) ? (valor as DatosDe<"evento_creado">["clase"]) : "puntual";
 }
 
 /** Qué ficha se comparte, por su dirección (`/eventos/…`, `/lugares/…`, `/artistas/…`); otra cosa (la app, una persona) no se mide. */

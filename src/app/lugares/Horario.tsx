@@ -15,7 +15,8 @@ import styles from "./Horario.module.css";
 
 /**
  * La hoja del horario de un lugar (OL-315; prototipo firmado `lugar-artista-por-pasos.html`, decisiones 2 a 4 de la bitácora 342). La
- * comparten el alta por pasos («Revisa») y editar (`FormularioLugar`); lo que se lee lo pinta `TextoHorario`, también en la ficha.
+ * comparten el alta por pasos («Revisa») y editar (`FormularioLugar`), y el horario propio de una exposición (OL-321: la misma pieza, con su
+ * pregunta); lo que se lee lo pinta `TextoHorario`, también en la ficha.
  */
 
 /** Una franja nueva cuando ya no queda ninguna: sin días, con las horas de entrada. */
@@ -28,6 +29,8 @@ type Props = {
   onListo: (franjas: Franja[]) => void;
   /** La ✕ o tocar fuera: nada cambia. */
   onCerrar: () => void;
+  /** La pregunta de la hoja: «¿Qué días abre?» (un lugar) o la de quien la usa (el horario propio de una exposición, OL-321). */
+  titulo?: string;
 };
 
 /**
@@ -37,7 +40,7 @@ type Props = {
  * tocarlo la vuelve a abrir. Sin tope: se acepta cualquier combinación y la estructura la pone el sistema (ley de Postel). «Listo» va en el
  * pie de la hoja, siempre a la vista: solo se desplaza el cuerpo.
  */
-export function HojaHorario({ franjas, onListo, onCerrar }: Props) {
+export function HojaHorario({ franjas, onListo, onCerrar, titulo = "¿Qué días abre?" }: Props) {
   const [lista, setLista] = useState<Franja[]>(() => (franjas.length ? franjas.map((f) => ({ ...f })) : [{ ...FRANJA_DE_ENTRADA }]));
   const [abierta, setAbierta] = useState(0);
   const [otra, setOtra] = useState<"abre" | "cierra" | null>(null);
@@ -59,7 +62,7 @@ export function HojaHorario({ franjas, onListo, onCerrar }: Props) {
     <>
       <Hoja
         etiqueta="Horario"
-        titulo="¿Qué días abre?"
+        titulo={titulo}
         onCerrar={onCerrar}
         pie={
           <Boton type="button" onClick={() => onListo(conDias(lista))}>

@@ -14,7 +14,7 @@ El founder (2026-10-07): «Reabre el proyecto de Tags pendiente, luego implemén
   | Evento | Datos |
   | --- | --- |
   | `entrar` | `paso`: pedido / listo / fallo · `metodo`: correo / apple / google |
-  | `evento_creado` | `cartel`: si / no (sin `clase`: `eventos.clase` no existe en `main`) |
+  | `evento_creado` | `cartel`: si / no · `clase`: puntual / exposicion / taller / festival (`eventos.clase` llegó a `main` con OL-321 mientras se hacía esta pieza; se lee del campo `clase` del alta y, si falta, «puntual», como el servidor) |
   | `cartel_leido` | `resultado`: ok / fallo |
   | `lugar_creado` | `desde`: alta / evento |
   | `artista_creado` | `soy`: si / no |
@@ -55,9 +55,9 @@ Comprobado: en una compilación local de producción (identificador y secreto in
 | --- | --- | --- |
 | Entrar con correo | `FormularioEntrar`: código pedido, código o envío fallido, código bueno | listo: solo si no es admin |
 | Entrar con Apple o Google | pedido: al tocar el botón (`FormularioEntrar`); listo y fallo: `/auth/[proveedor]/fin` con `medirServidor` | listo y fallo solo llegan a Vercel; cancelar no cuenta |
-| Publicar evento | `AltaEvento` al volver bien `crearEvento` | `cartel` según el campo `imagen` |
+| Publicar evento | `AltaEvento` al volver bien `crearEvento` | `cartel` según el campo `imagen`; `clase` según el campo `clase` |
 | Leer el cartel | `useLeerCartel`: leído, no pudo, se cortó leyendo | sin cupo no se mide |
-| Lugar creado | `AltaLugar`; «Guardarlo como lugar» de `AltaEvento`; `HojaDonde` | uno que ya existía (`reutilizado`) no cuenta |
+| Lugar creado | `AltaLugar`; «Guardarlo como lugar» del alta de evento (`useSitioPorPasos`, adonde lo llevó `main`); `HojaDonde` | uno que ya existía (`reutilizado`) no cuenta |
 | Artista creado | `AltaArtista` | `soy` según la casilla |
 | Voy / Me interesa | `Asistencia` (ficha) y `useAsistenciaEnLista` (listas) | solo si se guardó |
 | Seguir | `Seguir` (ficha) y `useSeguirEnLista` | solo si se guardó |
@@ -115,7 +115,7 @@ Compilación local de producción en el árbol, sin `.env` (`NEXT_PUBLIC_VERCEL_
 
 - Segunda vuelta: `src/lib/medirGoogleServidor.test.ts` (6: el cuerpo exacto y sin `user_id`; la dirección con identificador y secreto, `POST` y tiempo de espera; el `client_id` cambia en cada envío y 200 seguidos no se repiten; nada fuera de producción, sin secreto o con identificador raro; un fallo de red, un tiempo agotado o un 500 no lanzan), `src/app/api/medir/route.test.ts` (4: 204 y a Google después; lo de fuera de la lista, 400 y nada; otra página, 403; cuerpo enorme, 413) y, ampliadas, `medir.test.ts` (va a `/api/medir` con `keepalive`, solo nombre y datos; nada fuera de producción, para admin o sin Google; un `fetch` que falla o no existe no lanza) y `medirServidor.test.ts` (6: también a Google; si Vercel falla, Google sale igual; nada para admin).
 - Nuevas: `src/lib/medir.test.ts` (19: la lista cerrada y sus rechazos —nombre fuera, opción fuera, de más, de menos, más de 2, no objeto—, producción / vista previa / depurar, admin, nunca lanza aunque `track` y `gtag` fallen, sin `q` ni texto en lo que va a Google, limpieza de las acciones y de las vistas de GA), `src/lib/analyticsGoogle.test.ts` (10: `AnalyticsGoogle` no se monta sin identificador, fuera de producción ni con un identificador raro; carga `gtag.js` sin Tag Manager; la cola con el consentimiento denegado antes de `config` y nunca `update`; vistas limpias, nada en rutas privadas ni para admin; nunca lanza), `src/lib/medirServidor.test.ts` (5: después de la respuesta, sin cookies ni referente, nada fuera de producción ni para admin, nada fuera de la lista, nunca lanza).
-- `npm run lint` (0 errores; el aviso de `VisorImagen.componentes.test.mjs` ya estaba), `npm run typecheck`, `npm test` (163 archivos, 2421 pruebas con la segunda vuelta, sobre `main` `d71363a1`), `npm run inventario` (sin novedades) y `npm run medir` (29 pantallas × 4 anchos, sin novedades; una primera corrida tras reinstalar `node_modules` no pudo arrancar `next start` y la segunda pasó) en verde.
+- `npm run lint` (0 errores; el aviso de `VisorImagen.componentes.test.mjs` ya estaba), `npm run typecheck`, `npm test` (2586 pruebas con la segunda vuelta, tras unir `main` `f2f7e8c6`), `npm run inventario` (sin novedades) y `npm run medir` (35 pantallas × 4 anchos, sin novedades; una primera corrida tras reinstalar `node_modules` no pudo arrancar `next start` y la segunda pasó) en verde.
 
 ## Capturas (`docs/rediseno/capturas-354/`)
 

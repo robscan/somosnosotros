@@ -28,6 +28,8 @@ type Props = {
   /** Correo enmascarado, para la confirmación. */
   correo: string;
   llavePush: string;
+  /** Una exposición o un festival (OL-321): solo «Me interesa»; no hay un día al que decir «Voy» (doc 55 §3). */
+  soloInteres?: boolean;
 };
 
 /**
@@ -39,7 +41,7 @@ type Props = {
  * listas (bitácora 085). Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar solo
  * actúa si su toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas), como en las demás fichas.
  */
-export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush }: Props) {
+export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush, soloInteres = false }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
   const [hoja, setHoja] = useState(false);
@@ -98,10 +100,12 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
               <IconoEstrella width={20} height={20} fill={interesa ? "currentColor" : "none"} />
               {interesa ? "Te interesa" : "Me interesa"}
             </Boton>
-            <Boton type="button" ancho="contenido" flotante aria-pressed={voy} aria-busy={pendiente} onClick={() => cambiar(voy ? null : "voy")}>
-              <IconoOk width={20} height={20} />
-              {voy ? "Vas" : "Voy"}
-            </Boton>
+            {!soloInteres && (
+              <Boton type="button" ancho="contenido" flotante aria-pressed={voy} aria-busy={pendiente} onClick={() => cambiar(voy ? null : "voy")}>
+                <IconoOk width={20} height={20} />
+                {voy ? "Vas" : "Voy"}
+              </Boton>
+            )}
           </>
         ) : (
           <>
@@ -109,10 +113,12 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
               <IconoEstrella width={20} height={20} />
               Me interesa
             </Boton>
-            <Boton href={entrar("voy")} ancho="contenido" flotante onClick={() => anotarIntencion(ruta)}>
-              <IconoOk width={20} height={20} />
-              Voy
-            </Boton>
+            {!soloInteres && (
+              <Boton href={entrar("voy")} ancho="contenido" flotante onClick={() => anotarIntencion(ruta)}>
+                <IconoOk width={20} height={20} />
+                Voy
+              </Boton>
+            )}
           </>
         )}
       </div>

@@ -48,3 +48,20 @@
 .resumenVan[aria-expanded="true"] > svg:last-child {
   transform: rotate(180deg);
 }
+
+/* 3. Cómo ocurre (OL-321): la línea de una exposición bajo sus números («Hasta el dom 30 de nov · Abre hoy 10:00 a.m.–6:00 p.m.») y el
+   «Publicar» de un borrador del programa, un botón de texto en el color de acción, del alto de un toque. */
+.linea {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.publicarBorrador {
+  min-height: var(--toque-min);
+  border: 0;
+  background: none;
+  color: var(--primario);
+  font: inherit;
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}

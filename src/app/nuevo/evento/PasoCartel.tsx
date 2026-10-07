@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import Boton from "@/components/ui/Boton";
 import Casilla from "@/components/ui/Casilla";
 import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
 import Opcion from "@/components/ui/Opcion";
@@ -19,9 +20,11 @@ export type CasillaLectura = { marcada: boolean; agotada: boolean; detalle: stri
  * Empieza con lo que se tiene (igual en todos los casos: el cartel se sube siempre): un marco con el recuadro «Sube el cartel» —todo él es
  * el control, y el campo de archivo, escondido, lo cubre (en el iPhone ofrece cámara o carrete)— y, como su última fila, la casilla
  * «Lectura automática» si hay servicio de lectura; fuera del marco, con más aire, «No tengo cartel». Si el cartel no se pudo subir, lo dice
- * debajo del marco (`error`) y el recuadro sigue igual para volver a intentarlo.
+ * debajo del marco (`error`) y el recuadro sigue igual para volver a intentarlo. Al editar (OL-319) la otra salida no es «No tengo cartel» sino
+ * «Quitar el cartel» si el evento tiene uno (`sinCartel`), y ninguna si no lo tiene (Atrás vuelve a «Revisa»); debajo va lo que quien edita
+ * agregue (`children`: la dirección de una imagen, para la administración).
  */
-export function PasoInicio({ casilla, error, onElegir, onSinCartel }: { casilla: CasillaLectura | null; error: string | null; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void; onSinCartel: () => void }) {
+export function PasoInicio({ casilla, error, onElegir, onSinCartel, sinCartel = "No tengo cartel", children }: { casilla: CasillaLectura | null; error: string | null; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void; onSinCartel: () => void; sinCartel?: string | null; children?: ReactNode }) {
   return (
     <>
       <div className={styles.marco}>
@@ -38,7 +41,8 @@ export function PasoInicio({ casilla, error, onElegir, onSinCartel }: { casilla:
           {error}
         </p>
       )}
-      <Opcion titulo="No tengo cartel" onClick={onSinCartel} className={styles.otraPuerta} />
+      {sinCartel && <Opcion titulo={sinCartel} onClick={onSinCartel} className={styles.otraPuerta} />}
+      {children}
     </>
   );
 }
@@ -68,8 +72,9 @@ export function CartelGuardado({ foto, noPude }: { foto: string; noPude: boolean
   );
 }
 
-/** La cabeza de «Revisa» con cartel: la miniatura, el sello «Leído del cartel» (si de él salieron datos) y el nombre (`children`). `className` y `style` son de quien la pone (la entrada de «Revisa»). */
-export function CabezaCartel({ foto, leido, children, className, style }: { foto: string; leido: boolean; children: ReactNode; className?: string; style?: CSSProperties }) {
+/** La cabeza de «Revisa» con cartel: la miniatura, el sello «Leído del cartel» (si de él salieron datos), el nombre (`children`) y, al editar
+ *  (OL-319), «Cambiar cartel» bajo el nombre (`onCambiar`). `className` y `style` son de quien la pone (la entrada de «Revisa»). */
+export function CabezaCartel({ foto, leido, children, onCambiar, className, style }: { foto: string; leido: boolean; children: ReactNode; onCambiar?: () => void; className?: string; style?: CSSProperties }) {
   return (
     <div className={className ? `${styles.cabeza} ${className}` : styles.cabeza} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
@@ -81,6 +86,11 @@ export function CabezaCartel({ foto, leido, children, className, style }: { foto
         </span>
       )}
       {children}
+      {onCambiar && (
+        <Boton type="button" variante="texto" alto="control" ancho="contenido" className={styles.cambiarCartel} onClick={onCambiar}>
+          Cambiar cartel
+        </Boton>
+      )}
     </div>
   );
 }
