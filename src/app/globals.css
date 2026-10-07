@@ -78,6 +78,7 @@
   --boton-icono: 48px; /* botón redondo de icono en listas, tarjetas y mapa */
   --boton-icono-grande: 56px; /* botón redondo de icono de las acciones de una ficha */
   --sello: 88px; /* el círculo de la palomita de «Publicado», el final de un alta por pasos */
+  --sello-chico: 28px; /* el mismo sello en un aviso flotante de confirmación (ui/Confirmacion, OL-318) */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
   --columna-icono: 24px; /* la columna del icono en un renglón: icono | texto | acción */
   --alto-chip: 36px; /* alto que se ve de un chip que se toca; su ::before lo lleva a --toque-min */

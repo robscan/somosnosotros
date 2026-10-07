@@ -1773,7 +1773,21 @@ test("«Compartir» manda el mismo texto y la misma dirección que la ficha: tí
   assert.match(c.texto, /^Lectura en voz alta\nvie 9 de oct · 19:00–21:00 · Teatro de la Paz$/);
 });
 
-test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descarga el archivo (sin hoja de compartir) y dice «Cartel descargado»", TOPE, async (t) => {
+/** El aviso flotante de confirmación (OL-318, `ui/Confirmacion`): un `status` con ese texto (el botón dice lo mismo en su letrero, por eso no se busca por texto suelto). */
+const avisoDe = (p, texto) => p.getByRole("status").filter({ hasText: texto });
+/** Con `CAPTURAS`: la secuencia del aviso, sin reloj falso (corre en tiempo real). Se llama en cuanto sale el aviso: saca el aviso asentado (la foto de `foto` espera 450 ms: la entrada, de 200 ms, ya terminó);
+ *  devuelve lo que saca la segunda, a punto de irse (~1,8 s de los 2,5 s), para llamarlo al final de la prueba. La entrada a medio camino se ve en la escena de la ficha (`BotonDescargarCartel.componentes.test.mjs`). Sin `CAPTURAS` no hace nada. */
+const secuenciaDelAviso = async (p, nombre) => {
+  if (!capturas) return async () => {};
+  const t0 = Date.now();
+  await foto(p, `${nombre}-1-asentado`);
+  return async () => {
+    await p.waitForTimeout(Math.max(0, 1750 - (Date.now() - t0)));
+    await p.screenshot({ path: join(capturas, `${nombre}-2-a-punto-de-irse.png`) });
+  };
+};
+
+test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descarga el archivo (sin hoja de compartir), avisa «Cartel descargado» y no vuelve a descargar con toques repetidos", TOPE, async (t) => {
   const p = await pagina(t, { qa: { lectura: LEIDO } });
   await subir(p);
   await p.getByText("Leído del cartel").waitFor();
@@ -1788,15 +1802,24 @@ test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descar
   const descargar = p.getByRole("link", { name: "Descargar el cartel" });
   assert.equal(await descargar.getAttribute("href"), "/api/cartel/0e0e0e0e-0000-4000-8000-000000000001");
   await foto(p, "344-02-publicado-web-descargar-el-cartel");
+  let archivos = 0;
+  p.on("download", () => archivos++);
   const [archivo] = await Promise.all([p.waitForEvent("download"), descargar.click()]);
-  await p.getByText("Cartel descargado").waitFor();
+  await avisoDe(p, "Cartel descargado").waitFor();
+  const cierre = await secuenciaDelAviso(p, "347-02-publicado-web");
   assert.equal(archivo.suggestedFilename(), "cartel-prueba.png");
+  // El botón confirma también en sí mismo (palomita) y no responde a más toques mientras avisa: tres toques seguidos no bajan otro archivo.
+  const listo = p.getByRole("link", { name: "Cartel descargado" });
+  assert.equal(await listo.getAttribute("aria-disabled"), "true");
+  for (let i = 0; i < 3; i++) await listo.click({ force: true });
+  await p.waitForTimeout(300);
+  assert.equal(archivos, 1);
   // Descargar no es compartir: la hoja del sistema no se abrió.
   assert.deepEqual(await p.evaluate(() => window.compartidos), []);
-  await foto(p, "344-03-publicado-web-cartel-descargado");
+  await cierre();
 });
 
-test("en la app de iPhone (con el plugin de Fotos), «Publicado» ofrece «Guardar en Fotos» y un toque manda el cartel a Fotos, sin hoja ni descarga (OL-317)", TOPE, async (t) => {
+test("en la app de iPhone (con el plugin de Fotos), «Publicado» ofrece «Guardar en Fotos» y un toque manda el cartel a Fotos, sin hoja ni descarga; avisa «Cartel guardado en Fotos» y los toques repetidos no guardan otra vez (OL-317, OL-318)", TOPE, async (t) => {
   const p = await pagina(t, { qa: { lectura: LEIDO }, fotos: true });
   await subir(p);
   await p.getByText("Leído del cartel").waitFor();
@@ -1809,11 +1832,15 @@ test("en la app de iPhone (con el plugin de Fotos), «Publicado» ofrece «Guard
   let descargas = 0;
   p.on("download", () => descargas++);
   await guardar.click();
-  await p.getByText("Guardado en Fotos").waitFor();
+  await avisoDe(p, "Cartel guardado en Fotos").waitFor();
+  const cierre = await secuenciaDelAviso(p, "347-04-publicado-app");
+  const listo = p.getByRole("link", { name: "Guardado en Fotos" });
+  for (let i = 0; i < 3; i++) await listo.click({ force: true });
+  await p.waitForTimeout(300);
   assert.deepEqual(await p.evaluate(() => window.guardadasEnFotos), [{ tipo: "image/png", bytes: PNG.length }]);
   assert.deepEqual(await p.evaluate(() => window.compartidos), []);
   assert.equal(descargas, 0);
-  await foto(p, "344-05-publicado-app-guardado-en-fotos");
+  await cierre();
 });
 
 test("«Publicar otro» empieza de cero: el primer paso, nada escrito, otra clave de operación y la guardia armada de nuevo", TOPE, async (t) => {

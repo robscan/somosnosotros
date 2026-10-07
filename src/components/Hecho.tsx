@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import useSobreLaPastilla from "./ui/useSobreLaPastilla";
 import styles from "./Hecho.module.css";
 
 type Props = {
@@ -21,16 +22,10 @@ type Props = {
  */
 export default function Hecho({ texto, onDeshacer, onCerrar, etiqueta = "Deshacer", fallo = false }: Props) {
   const cerrar = useRef(onCerrar);
-  const aviso = useRef<HTMLParagraphElement>(null);
+  const aviso = useSobreLaPastilla<HTMLParagraphElement>();
   useEffect(() => {
     cerrar.current = onCerrar;
   });
-  useLayoutEffect(() => {
-    const pastilla = document.querySelector("[data-flotantes]");
-    if (!pastilla || getComputedStyle(pastilla).visibility === "hidden") return;
-    const { top } = pastilla.getBoundingClientRect();
-    if (top < window.innerHeight) aviso.current!.style.bottom = `calc(${window.innerHeight - top}px + var(--espacio-3))`;
-  }, []);
   useEffect(() => {
     const t = setTimeout(() => cerrar.current(), 7000);
     return () => clearTimeout(t);

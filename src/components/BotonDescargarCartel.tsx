@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
-import { destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel, type VentanaConFotos } from "@/lib/guardarCartel";
-
-/** Cuánto se queda el aviso («Guardado en Fotos», «No se pudo guardar») antes de volver al texto de siempre. */
-const AVISO_MS = 4000;
+import { CONFIRMACION_MS, useConfirmacion } from "@/components/ui/Confirmacion";
+import { IconoOk } from "@/components/ui/Iconos";
+import { avisoDelCartel, destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel, type VentanaConFotos } from "@/lib/guardarCartel";
 
 type Cartel = { blob: Blob; nombre: string };
 type Estado = "reposo" | "preparando" | "listo" | "fallo";
@@ -15,6 +14,8 @@ type Props = {
   className: string;
   /** Lo que va antes del texto (el icono; en la ficha, dentro de su círculo). */
   icono?: ReactNode;
+  /** El icono mientras confirma («listo»): la palomita, en el mismo sitio y con el mismo envoltorio que `icono` (en la ficha, dentro de su círculo). Por defecto, una palomita sola. */
+  iconoListo?: ReactNode;
   /** Letrero corto («Cartel», «En Fotos») para la ficha, donde va bajo un círculo como las demás acciones; el nombre completo queda en `aria-label`. */
   corto?: boolean;
   /** Pide el cartel al montarse, para que el toque ya lo tenga y la descarga o el guardado salgan al instante. */
@@ -63,8 +64,12 @@ const hayFotosEnServidor = () => false;
  *   cartel» descarga el archivo de verdad, sin hoja de compartir (decisión del founder, 2026-10-06: «en web que se descargue como promete»).
  * La imagen vive en otro origen, así que se pide a `/api/cartel/[id]`, que la entrega como archivo. Es un enlace de verdad (mejora
  * progresiva, como `BotonCalendario`): sin JavaScript descarga igual.
+ *
+ * Confirma sin dejar dudas (OL-318; pedido del founder tras probar la 1.0 (5): «cambia el letrero del botón pero no es claro y terminé guardando
+ * 3 veces el cartel»): al terminar sale el aviso flotante de `ui/Confirmacion` («Cartel guardado en Fotos», «Cartel descargado», o el fallo con su ✕),
+ * y el botón, esos mismos 2,5 s, muestra la palomita y no responde a más toques (`aria-disabled`, no `disabled`: el estilo no se apaga).
  */
-export default function BotonDescargarCartel({ id, className, icono, corto = false, precargar = false }: Props) {
+export default function BotonDescargarCartel({ id, className, icono, iconoListo, corto = false, precargar = false }: Props) {
   const conFotos = useSyncExternalStore(sinSuscripcion, hayFotos, hayFotosEnServidor);
   const destino = destinoDelCartel({ conFotos });
   const dice = textosDelCartel(destino, corto);
@@ -92,17 +97,22 @@ export default function BotonDescargarCartel({ id, className, icono, corto = fal
     if (precargar) traer().catch(() => {});
   }, [precargar, traer]);
 
+  // El aviso flotante (OL-318): confirma con su palomita, su texto llano y, donde se puede, una vibración; el botón, durante el mismo tiempo, dice
+  // «listo» con la suya y no responde a más toques, para que nadie guarde tres veces.
+  const { avisar: confirmar, nodo } = useConfirmacion();
   const avisar = (nuevo: "listo" | "fallo") => {
     setEstado(nuevo);
+    confirmar(avisoDelCartel(destino, nuevo === "fallo"));
     clearTimeout(aviso.current);
-    aviso.current = setTimeout(() => setEstado("reposo"), AVISO_MS);
+    aviso.current = setTimeout(() => setEstado("reposo"), CONFIRMACION_MS);
   };
 
   async function alTocar(ev: MouseEvent<HTMLAnchorElement>) {
     // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
     if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
     ev.preventDefault();
-    if (estado === "preparando") return;
+    // Ya se hizo (o se está haciendo): un toque más no pide ni guarda otra vez. Sigue siendo un enlace (sin `disabled`: no apaga el estilo).
+    if (estado === "preparando" || estado === "listo") return;
     clearTimeout(aviso.current);
     setEstado("preparando");
     let cartel: Cartel;
@@ -127,9 +137,20 @@ export default function BotonDescargarCartel({ id, className, icono, corto = fal
   }
 
   return (
-    <a href={href} download className={className} onClick={alTocar} aria-label={corto && estado === "reposo" ? etiquetaDelCartel(destino) : undefined} aria-busy={estado === "preparando" || undefined} aria-live="polite">
-      {icono}
-      {dice[estado]}
-    </a>
+    <>
+      <a
+        href={href}
+        download
+        className={className}
+        onClick={alTocar}
+        aria-label={corto && estado === "reposo" ? etiquetaDelCartel(destino) : undefined}
+        aria-busy={estado === "preparando" || undefined}
+        aria-disabled={estado === "listo" || undefined}
+      >
+        {estado === "listo" && icono ? (iconoListo ?? <IconoOk width={20} height={20} />) : icono}
+        {dice[estado]}
+      </a>
+      {nodo}
+    </>
   );
 }
