@@ -23,6 +23,11 @@ se duplica aquí.
     un `SFSafariViewController` (compartía las cookies de Safari, no las de la app); la segunda usaba un esquema
     propio `somosnosotros://` (corrección de seguridad, OL-194: cualquier app puede registrar el mismo esquema y
     quedarse con la sesión de otra persona). Ver el comentario del archivo.
+  - `ios/App/App/FotosPlugin.swift` — «Guardar en Fotos» el cartel del evento (OL-317, bitácora 344): `guardarFoto` agrega
+    una imagen a Fotos con `PHPhotoLibrary` (permiso de solo agregar, `NSPhotoLibraryAddUsageDescription` en Info.plist).
+    Nativo puro, sin paquete de npm, como `CalendarioPlugin`; la web lo detecta en `window.Capacitor.Plugins.Fotos`
+    (`src/lib/guardarCartel.ts`) y sin él descarga el archivo. Se descartó `@capacitor-community/media` (SDWebImage y
+    lectura de álbumes para una sola escritura).
   - `ios/App/App/MainViewController.swift` — registra ese plugin y muestra `www/index.html` cuando no hay red.
   - `ios/App/App/App.entitlements` — `applinks:somosnosotros.org` y `webcredentials:somosnosotros.org` (enlaces
     universales para las fichas — eventos, lugares, artistas — y el llavero de iOS; entrar con Apple/Google ya no

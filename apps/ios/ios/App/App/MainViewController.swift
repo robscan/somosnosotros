@@ -30,6 +30,7 @@ import UserNotifications
  * eventos JS `pushNotificationActionPerformed` (que dejan de dispararse, sin que nada los use).
  * OL-214 (bitácora 243): `CalendarioPlugin` (ver ese archivo) se registra igual que los dos de arriba — nativo
  * puro, sin paquete de npm.
+ * OL-317 (bitácora 344): `FotosPlugin` («Guardar en Fotos» el cartel del evento) se registra igual.
  */
 class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
     private let monitorDeRed = NWPathMonitor()
@@ -42,6 +43,7 @@ class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
         bridge?.registerPluginInstance(EntornoApnsPlugin())
         bridge?.notificationRouter.pushNotificationHandler = self
         bridge?.registerPluginInstance(CalendarioPlugin())
+        bridge?.registerPluginInstance(FotosPlugin())
         webView?.allowsBackForwardNavigationGestures = true
         observarRed()
     }
