@@ -1,3 +1,4 @@
+import type { Clase } from "./eventos";
 import { MAX_DIAS_SESIONES, type SesionGuardada } from "./sesionesEvento";
 import { FIN_DEL_DIA, sumarDiasIso } from "./calendario";
 import { diaLocal, esDeVariosDias, isoALocal, localAIso, terminaDe } from "./fechas";
@@ -15,6 +16,10 @@ import { diaLocal, esDeVariosDias, isoALocal, localAIso, terminaDe } from "./fec
  *   con la hora de inicio y, si lo tiene, la de fin del último día; sin hora de fin, termina con su día. De más de `MAX_DIAS_SESIONES` días
  *   (una exposición de temporada) no se reparte: sigue siendo una sola, como hasta ahora, en su día de inicio (la pieza de exposiciones
  *   y festivales decide cómo se agenda lo largo).
+ *
+ * Por clase (OL-322, doc 55 §3): una **exposición** y el **marco de un festival** no son algo que pase un día a una hora y no tienen ocurrencias. La
+ * exposición vive en «Para visitar» (`lib/agendaPorClase`); el marco sale una vez en los carriles y, en la agenda del día, como el bloque que
+ * agrupa sus actos de ese día. Sus actos (eventos con `evento_padre_id`) y las sesiones de un taller sí se reparten como cualquier otro.
  */
 
 /** Qué día es de su evento: «Día 2 de 3». Los de un evento de un solo día no lo llevan. */
@@ -30,15 +35,19 @@ export type DatosOcurrencia = {
   parte: Parte | null;
 };
 
-type Evento = { id: string; inicio: string; fin: string | null; zona: string; sesiones?: readonly SesionGuardada[] };
+type Evento = { id: string; inicio: string; fin: string | null; zona: string; sesiones?: readonly SesionGuardada[]; clase?: Clase | null };
 /** El evento tal cual, visto un día: su `inicio` y su `fin` son los de ese día y ya no lleva `sesiones`. */
 export type ConOcurrencia<T> = Omit<T, "sesiones"> & { ocurrencia?: DatosOcurrencia };
 
 /** La llave de un renglón o una tarjeta: la de su día si es una ocurrencia, y el `id` si es el evento entero. */
 export const claveDe = (e: { id: string; ocurrencia?: Pick<DatosOcurrencia, "clave"> }): string => e.ocurrencia?.clave ?? e.id;
 
-/** «Día 2 de 3», o null si es un evento de un solo día. */
-export const textoParte = (e: { ocurrencia?: Pick<DatosOcurrencia, "parte"> }): string | null => (e.ocurrencia?.parte ? `Día ${e.ocurrencia.parte.n} de ${e.ocurrencia.parte.de}` : null);
+/** «Día 2 de 3» o, en un taller, «Sesión 2 de 4» (OL-322); null si es un evento de un solo día. */
+export const textoParte = (e: { ocurrencia?: Pick<DatosOcurrencia, "parte">; clase?: Clase | null }): string | null =>
+  e.ocurrencia?.parte ? `${e.clase === "taller" ? "Sesión" : "Día"} ${e.ocurrencia.parte.n} de ${e.ocurrencia.parte.de}` : null;
+
+/** ¿Tiene ocurrencias? Una exposición y el marco de un festival no (OL-322): no pasan un día a una hora. */
+export const sinOcurrencias = (e: { clase?: Clase | null }): boolean => e.clase === "exposicion" || e.clase === "festival";
 
 /** El evento sin su horario por día: cada día de los que se reparte ya lleva el suyo. */
 function sinSesiones<T extends Evento>(e: T): Omit<T, "sesiones"> {
@@ -83,6 +92,7 @@ function porDia<T extends Evento>(e: T, fin: string): ConOcurrencia<T>[] | null 
  * da uno solo: él mismo. `sesiones` son las vigentes (`sesionesVigentes`): las que ya no coinciden con el evento no se pasan aquí.
  */
 export function ocurrenciasDe<T extends Evento>(e: T): ConOcurrencia<T>[] {
+  if (sinOcurrencias(e)) return [];
   const sesiones = e.sesiones && e.sesiones.length >= 2 ? [...e.sesiones].sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio)) : [];
   if (sesiones.length > 0) {
     const resto = sinSesiones(e);

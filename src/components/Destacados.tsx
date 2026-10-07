@@ -41,7 +41,7 @@ import styles from "./Destacados.module.css";
  * `estado(id)` que ya expone `useAsistenciaEnLista` — el mismo hook que le da `boton` — sin tocar ese hook ni el tipo `Tarjeta`.
  * Sin `estadoDe` (lugares, artistas) no aparece nada.
  */
-export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string } }) {
+export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon | null; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string } }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -122,6 +122,8 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
       <ul ref={recordar} className={`${styles.carril} ${styles[forma]}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
         {ordenadas.map((t) => {
           const sello = selloDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
+          // Sin botón si quien llama no lo da para esa tarjeta (una exposición o un festival: «Me interesa», en su ficha; OL-322).
+          const estadoBoton = boton?.(t) ?? null;
           // La redonda de un lugar o un artista sin foto lleva el símbolo SN ya generado; las demás, el nombre grande sobre fondo suave (H-03).
           const foto = t.foto ?? (tamano === "chica" ? SIN_FOTO : null);
           return (
@@ -140,7 +142,7 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
                   </Chip>
                 )}
               </Link>
-              {boton && <BotonRenglon {...boton(t)} sobreFoto />}
+              {estadoBoton && <BotonRenglon {...estadoBoton} sobreFoto />}
             </li>
           );
         })}

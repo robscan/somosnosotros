@@ -102,3 +102,42 @@ describe("señal preventiva de capacidad", () => {
     if (n >= 270) expect(traza).toHaveBeenCalledWith("[agenda] capacidad: lectura al 90% del tope");
   });
 });
+
+describe("por clase (OL-322): la clase, el horario de cada exposición y el programa de cada festival", () => {
+  const expo = { ...fila, id: "expo", clase: "exposicion", lugar_id: "muni", fin: "2026-10-31T05:59:00Z" };
+  const propia = { ...expo, id: "propia" };
+  const marco = { ...fila, id: "marco", clase: "festival" };
+  const actos = [1, 2].map((n) => ({ ...fila, id: `acto${n}`, evento_padre_id: "marco" }));
+  const horarios = {
+    lugares_horarios: { data: [{ lugar_id: "muni", dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00" }] },
+    eventos_horarios: { data: [{ evento_id: "propia", dias: [6, 7], abre: "11:00:00", cierra: "15:00:00" }] },
+  };
+  it("pide la clase y el festival en la misma consulta; el horario que vale (propio, o el del lugar) y cuántos actos tiene cada marco", async () => {
+    const b = banco({ eventos: { data: [expo, propia, marco, ...actos] }, ...horarios });
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);
+    const select = (b.from.mock.results[0].value as { select: { mock: { calls: string[][] } } }).select.mock.calls[0][0];
+    expect(select).toContain("clase, evento_padre_id");
+    expect(r.eventos.find((e) => e.id === "expo")?.horario).toEqual([{ dias: [2, 3, 4, 5, 6, 7], abre: "10:00", cierra: "18:00" }]);
+    expect(r.eventos.find((e) => e.id === "propia")?.horario).toEqual([{ dias: [6, 7], abre: "11:00", cierra: "15:00" }]);
+    // El doble devuelve las mismas filas a la consulta del programa: cuenta las que apuntan al marco.
+    expect(r.eventos.find((e) => e.id === "marco")?.programa).toEqual({ registrados: 2 });
+    expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("programa");
+    expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("horario");
+  });
+  it("sin exposiciones ni festivales no pide nada más", async () => {
+    const b = banco();
+    await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);
+    expect(b.from).not.toHaveBeenCalledWith("eventos_horarios");
+    expect(b.from).not.toHaveBeenCalledWith("lugares_horarios");
+    expect(b.from).toHaveBeenCalledTimes(1);
+  });
+  it("sin poder leer el horario, la exposición no dice nada de él (no «Horario por confirmar») y la agenda sigue", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [expo] }, ...horarios, lugares_horarios: fallo }).cliente);
+    expect(r.eventos[0]).not.toHaveProperty("horario");
+  });
+  it("una exposición sin horario propio ni del lugar: horario vacío («Horario por confirmar»)", async () => {
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [{ ...expo, lugar_id: null }] }, eventos_horarios: { data: [] } }).cliente);
+    expect(r.eventos[0].horario).toEqual([]);
+  });
+});

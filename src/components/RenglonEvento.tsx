@@ -1,5 +1,6 @@
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
+import { cuandoDeTarjeta } from "@/lib/destacados";
 import { hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { cuandoPorDia, cuandoVariosDias, diaCorto, horaCorta } from "@/lib/fechas";
 import { textoParte } from "@/lib/ocurrencias";
@@ -23,8 +24,13 @@ type Props = {
    */
   conDia?: boolean;
   /** La línea de cuándo de algo que no es un evento de un día (OL-321: «Hasta el dom 30 de nov», «3 sesiones · …», el programa de un festival);
-   *  sin ella, la de siempre. La agenda todavía no la pasa (OL-322); la usa «Publicado». */
+   *  sin ella, la de siempre, que ya sabe la de una exposición y la del marco de un festival (OL-322, `cuandoDeTarjeta`). La usan «Publicado» y,
+   *  en «Para visitar hoy», «Abre 10:00 a.m.–6:00 p.m.» (con `horas`: lleva el reloj, no el calendario). */
   cuando?: string;
+  /** El cuándo son las horas de un día («Abre 10:00 a.m.–6:00 p.m.»): con el icono del reloj. */
+  horas?: boolean;
+  /** Lo que va tras el cuándo, antes del precio: «hasta el 30 de nov» en «Para visitar hoy», «Abre hoy …» en la lista de exposiciones. */
+  nota?: string | null;
 };
 
 /**
@@ -46,15 +52,17 @@ function cuandoDeVarios(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "sesio
  * El renglón de un día de un evento con varios (OL-320, `lib/ocurrencias`) dice la hora de ese día y, tras ella, cuál es: «20:00 · Día 2 de 3». El
  * evento entero con horario por día (la pestaña Nuevos, donde sale una sola vez) dice sus días y «horarios por día», como su ficha.
  */
-export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false, cuando }: Props) {
+export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false, cuando: dado, horas = false, nota = null }: Props) {
+  // Una exposición dice hasta cuándo se visita y el marco de un festival sus días y su programa, nunca «Del … al … · 00:00» (OL-322).
+  const cuando = dado ?? (e.clase === "exposicion" || e.clase === "festival" ? cuandoDeTarjeta(e) : undefined);
   // Un evento de varios días dice sus días y su horario de cada día; la lista lo ubica en el día en que empieza.
   const varios = cuandoDeVarios(e);
-  const ademas = [textoParte(e), e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
+  const ademas = [nota, textoParte(e), e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
     <Renglon href={hrefEvento(e)} foto={e.imagen ?? e.lugar?.portada ?? null} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>
         {estado === "me_interesa" && <Chip variante="estado">Te interesa</Chip>}
-        {conDia || varios || cuando ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
+        {!horas && (conDia || varios || cuando) ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
         <b>
           {cuando ?? varios ?? `${conDia ? `${diaCorto(e.inicio, new Date(), e.zona)} · ` : ""}${horaCorta(e.inicio, e.zona)}`}
         </b>

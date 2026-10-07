@@ -1,7 +1,9 @@
+import { abiertasEseDia, entraEnQue, esExposicion, plegarActos, porCierre, queDe, visitaEnRango, type Que } from "./agendaPorClase";
 import { ocupaRango } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeUrl, type Cuando } from "./cuando";
-import type { EventoResumen } from "./eventos";
+import type { Clase, EventoResumen } from "./eventos";
+import type { Franja } from "./horarioLugar";
 import { claseDeCosto, nombreSitio, type ClaseDeCosto } from "./eventos";
 import { diaCorto, diaLocal, localAIso, ZONA_INICIAL } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
@@ -17,6 +19,16 @@ export type EventoAgenda = EventoResumen & {
   sesiones?: SesionGuardada[];
   /** Solo en lo que sale de repartir un evento en sus días (OL-320): el evento visto ese día, con el `inicio` y el `fin` de ese día. */
   ocurrencia?: DatosOcurrencia;
+  /** Cómo ocurre (OL-321): sin ella, como hasta ahora, un evento (`puntual`). La agenda la usa para ponerlo donde va (OL-322, `lib/agendaPorClase`). */
+  clase?: Clase;
+  /** El festival del que es parte (un acto de su programa), si lo es. */
+  evento_padre_id?: string | null;
+  /** Solo en una exposición: el horario que vale (el suyo o, sin él, el de su lugar; `horarioEfectivo`). Vacío es «Horario por confirmar»; sin la
+   *  propiedad, no se cargó y no se dice nada del horario. */
+  horario?: Franja[];
+  /** Solo en el marco de un festival: cuántos actos tiene publicados (`registrados`, «Programa registrado: N») y, en el carril «Esta semana», cuántos
+   *  caen en la semana. */
+  programa?: { registrados: number; estaSemana?: number };
 };
 
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };
@@ -148,12 +160,18 @@ export const CUANTOS: { clave: Cuanto; etiqueta: string }[] = [
 ];
 const cuesta = (e: Pick<EventoAgenda, "precio">, cuanto: readonly Cuanto[] = []) => cuanto.length === 0 || cuanto.includes(claseDeCosto(e.precio));
 
-/** Lo que la persona puso en la fila de contexto de Agenda (y de Inicio): Cuándo, Cuánto y si solo lo que sigue. */
-export type FiltrosAgenda = { cuando: Cuando | null; cuanto: Cuanto[]; siguiendo: boolean };
+/**
+ * Lo que la persona puso en la fila de contexto de Agenda (y de Inicio): Cuándo, Cuánto, si solo lo que sigue y «Qué» (OL-322: eventos,
+ * exposiciones, talleres o festivales; sin él, o «todo», lo de siempre).
+ */
+export type FiltrosAgenda = { cuando: Cuando | null; cuanto: Cuanto[]; siguiendo: boolean; que?: Que };
 export const SIN_FILTROS: FiltrosAgenda = { cuando: null, cuanto: [], siguiendo: false };
 
+/** El «Qué» puesto, «todo» si no hay. */
+export const queDeFiltros = (f: Pick<FiltrosAgenda, "que">): Que => f.que ?? "todo";
+
 /** Cuántos filtros de la hoja Filtros hay puestos (Cuándo no cuenta: tiene su propio chip). */
-export const filtrosPuestos = (f: FiltrosAgenda) => f.cuanto.length + (f.siguiendo ? 1 : 0);
+export const filtrosPuestos = (f: FiltrosAgenda) => f.cuanto.length + (f.siguiendo ? 1 : 0) + (queDeFiltros(f) === "todo" ? 0 : 1);
 
 /** ¿Hay algo puesto en la fila de contexto, Cuándo incluido? Decide qué vacío se enseña y si mirar Nuevos cuenta como haberlo visto todo. */
 export const conFiltros = (f: FiltrosAgenda) => !!f.cuando || filtrosPuestos(f) > 0;
@@ -175,19 +193,27 @@ export function hrefAgenda(f: FiltrosAgenda, ciudad?: string | null, nuevos = fa
   }
   if (f.cuanto.length > 0) p.set("cuanto", f.cuanto.join(","));
   if (f.siguiendo) p.set("filtro", "siguiendo");
+  if (queDeFiltros(f) !== "todo") p.set("que", queDeFiltros(f));
   const consulta = p.toString();
   return consulta ? `/agenda?${consulta}` : "/agenda";
 }
 
 /** Los filtros que guardó la memoria de pantalla, sin fiarse de su forma: una versión anterior de la pantalla guardaba otra. */
 export function filtrosRecordados(f: Partial<FiltrosAgenda> | undefined): FiltrosAgenda {
-  return { cuando: cuandoDeUrl(f?.cuando?.desde, f?.cuando?.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => f?.cuanto?.includes(c)), siguiendo: f?.siguiendo === true };
+  return ponerQue({ cuando: cuandoDeUrl(f?.cuando?.desde, f?.cuando?.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => f?.cuanto?.includes(c)), siguiendo: f?.siguiendo === true }, f?.que);
 }
 
 /** Los filtros que llegan en la URL de Agenda; lo que no se reconoce (un enlace viejo, `?filtro=cercanos`) se ignora. */
-export function filtrosDeUrl(p: { desde?: string; hasta?: string; cuanto?: string; filtro?: string }): FiltrosAgenda {
+export function filtrosDeUrl(p: { desde?: string; hasta?: string; cuanto?: string; filtro?: string; que?: string }): FiltrosAgenda {
   const cuantos = (p.cuanto ?? "").split(",");
-  return { cuando: cuandoDeUrl(p.desde, p.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => cuantos.includes(c)), siguiendo: p.filtro === "siguiendo" };
+  return ponerQue({ cuando: cuandoDeUrl(p.desde, p.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => cuantos.includes(c)), siguiendo: p.filtro === "siguiendo" }, p.que);
+}
+
+/** Los filtros con ese «Qué» (lo que no se reconoce es «todo»): con «todo», sin la propiedad, así los filtros de siempre quedan como estaban. */
+export function ponerQue(f: FiltrosAgenda, que: unknown): FiltrosAgenda {
+  const elegido = queDe(que);
+  const resto: FiltrosAgenda = { cuando: f.cuando, cuanto: f.cuanto, siguiendo: f.siguiendo };
+  return elegido === "todo" ? resto : { ...resto, que: elegido };
 }
 
 /** Lo que decide qué eventos entran a la lista de Agenda (y a «Tus favoritos» de Inicio). */
@@ -216,12 +242,16 @@ export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: Context
   // un día como "disponible" (por un evento que lo ocupa sin empezar ahí) y, al elegirlo, la lista salía vacía —
   // confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247.
   let lista = eventos.filter((e) => (!ctx.cuando || ocupaRango(e, ctx.cuando.desde, ctx.cuando.hasta)) && cuesta(e, ctx.cuanto)).sort(compararEventos);
-  if (ctx.siguiendo) {
-    const lugares = new Set(ctx.seguidos ?? []);
-    const porArtista = new Set(ctx.eventosSeguidos ?? []);
-    lista = lista.filter((e) => (e.lugar_id && lugares.has(e.lugar_id)) || porArtista.has(e.id));
-  }
-  return ctx.nuevosDesde === undefined ? lista : eventosNuevos(lista, ctx.nuevosDesde).slice(0, LIMITE_NUEVOS);
+  if (ctx.siguiendo) lista = lista.filter(loSigue(ctx));
+  // En Nuevos un festival nuevo sale como su marco y no con sus actos (OL-322): se pliegan después de saber qué es nuevo y antes del tope.
+  return ctx.nuevosDesde === undefined ? lista : plegarActos(eventosNuevos(lista, ctx.nuevosDesde)).slice(0, LIMITE_NUEVOS);
+}
+
+/** «Solo lo que sigo»: los eventos de sus lugares y aquellos en los que se presenta un artista que sigue. */
+function loSigue(ctx: Pick<ContextoFiltro, "seguidos" | "eventosSeguidos">) {
+  const lugares = new Set(ctx.seguidos ?? []);
+  const porArtista = new Set(ctx.eventosSeguidos ?? []);
+  return (e: Pick<EventoAgenda, "id" | "lugar_id">) => (!!e.lugar_id && lugares.has(e.lugar_id)) || porArtista.has(e.id);
 }
 
 /** Un evento y los nombres de los artistas que se presentan: el buscador único (`app/accionesBuscar.ts`) busca también por ellos. */
@@ -249,8 +279,68 @@ export function buscarEventos<T extends Pick<EventoBuscable, "titulo" | "lugar" 
  * Todos lista cada día en que pasa algo (OL-320, `lib/ocurrencias`): un evento con horario por día, o de varios días, sale en cada uno, con su
  * hora de ese día, y el que ya pasó no sale; el número de «Ver N eventos» cuenta esos renglones. Nuevos, en cambio, lista eventos (cada uno
  * una vez, por cuándo se publicó), aunque el filtro de Cuándo sí mira los días que ocupa cada uno.
+ *
+ * Por clase (OL-322): en Todos, una exposición no es un renglón (está en «Para visitar»: `paraVisitarEnAgenda` y `exposicionesEnAgenda`) y el
+ * marco de un festival tampoco (es la cabecera del bloque de sus actos, `componerDia`); las sesiones de un taller y los actos sí. En Nuevos, la
+ * exposición y el marco son un evento más y los actos de un festival nuevo se pliegan en él. «Qué» elige la clase (`entraEnQue`).
  */
 export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, nuevosDesde?: number, ahora: Date = new Date()): EventoAgenda[] {
-  const eventos = nuevosDesde === undefined ? ocurrenciasDeLista(agenda.eventos, ahora) : agenda.eventos;
+  const que = queDeFiltros(filtros);
+  const eventos = (nuevosDesde === undefined ? ocurrenciasDeLista(agenda.eventos, ahora) : agenda.eventos).filter((e) => entraEnQue(e, que));
   return filtrarAgenda(eventos, { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, nuevosDesde });
+}
+
+type DatosAgenda = Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">;
+
+/** Las exposiciones que dejan pasar Cuánto y «Solo lo que sigo» (Cuándo y el horario los mira quien llama). */
+function exposicionesFiltradas(agenda: DatosAgenda, filtros: FiltrosAgenda): EventoAgenda[] {
+  const sigue = loSigue(agenda);
+  return agenda.eventos.filter((e) => esExposicion(e) && cuesta(e, filtros.cuanto) && (!filtros.siguiendo || sigue(e)));
+}
+
+/**
+ * «Para visitar hoy» (OL-322; doc 55 §3): en Todos y con «Qué» en Todo, las exposiciones abiertas un día según su horario, la que cierra antes
+ * primero. El día es el primero de lo que se ve: hoy, o el primero que se eligió con Cuándo. Sin horario no entran (no se promete «visitable
+ * hoy»). Null en Nuevos o con otro «Qué»: ahí no hay sección.
+ */
+export function paraVisitarEnAgenda(agenda: DatosAgenda, filtros: FiltrosAgenda, hoy: string, nuevosDesde?: number): { dia: string; exposiciones: EventoAgenda[] } | null {
+  if (nuevosDesde !== undefined || queDeFiltros(filtros) !== "todo") return null;
+  const dia = filtros.cuando && filtros.cuando.desde > hoy ? filtros.cuando.desde : hoy;
+  return { dia, exposiciones: abiertasEseDia(exposicionesFiltradas(agenda, filtros), dia) };
+}
+
+/**
+ * Con «Qué» en Exposiciones, en Todos: «Para visitar», todas las que no han cerrado (con Cuándo, las que se pueden visitar algún día de esas
+ * fechas), con horario o sin él, la que cierra antes primero. Las que ya cerraron las quita la base (`termina`).
+ */
+export function exposicionesEnAgenda(agenda: DatosAgenda, filtros: FiltrosAgenda): EventoAgenda[] {
+  return exposicionesFiltradas(agenda, filtros)
+    .filter((e) => !filtros.cuando || visitaEnRango(e, filtros.cuando.desde, filtros.cuando.hasta))
+    .toSorted(porCierre);
+}
+
+/**
+ * Lo que Agenda enseña con esos filtros, contado (el botón «Ver N» de cada hoja): los renglones (las sesiones y los actos cuentan, el marco no) y,
+ * aparte, las exposiciones para visitar (doc 55 §3: «y 4 para visitar»). Con «Qué» en Exposiciones, en Todos, todo son exposiciones.
+ */
+export function contarAgenda(agenda: DatosAgenda, filtros: FiltrosAgenda, hoy: string, nuevosDesde?: number, ahora: Date = new Date()): { renglones: number; visitar: number } {
+  if (nuevosDesde === undefined && queDeFiltros(filtros) === "exposiciones") return { renglones: 0, visitar: exposicionesEnAgenda(agenda, filtros).length };
+  return { renglones: listarAgenda(agenda, filtros, nuevosDesde, ahora).length, visitar: paraVisitarEnAgenda(agenda, filtros, hoy, nuevosDesde)?.exposiciones.length ?? 0 };
+}
+
+const nEventos = (n: number) => `${n} ${n === 1 ? "evento" : "eventos"}`;
+
+/**
+ * Lo que dice el botón de una hoja: «Ver 14 eventos», «Ver 14 eventos y 3 para visitar», «Ver 3 para visitar», «Ver 2 exposiciones» o «Sin
+ * eventos»; sin saber todavía cuántos, «Ver eventos». Las sesiones y los actos son eventos (doc 55 §3: «12 eventos esta semana»).
+ */
+export function textoVer(cuenta: { renglones: number; visitar: number } | null, que: Que = "todo"): string {
+  if (!cuenta) return "Ver eventos";
+  const { renglones, visitar } = cuenta;
+  if (que === "exposiciones") {
+    const n = renglones + visitar;
+    return n === 0 ? "Sin exposiciones" : `Ver ${n} ${n === 1 ? "exposición" : "exposiciones"}`;
+  }
+  if (renglones === 0) return visitar === 0 ? "Sin eventos" : `Ver ${visitar} para visitar`;
+  return visitar === 0 ? `Ver ${nEventos(renglones)}` : `Ver ${nEventos(renglones)} y ${visitar} para visitar`;
 }

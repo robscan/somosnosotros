@@ -1,0 +1,31 @@
+/* Un festival en la agenda de un día (BloqueFestival, OL-322; prototipo del doc 55, caso 7): la cabecera con su nombre y su programa y, debajo,
+   sus actos con el renglón de siempre. Lo que los junta es la raya del color de acción a la izquierda; los renglones conservan su aire y su raya
+   de abajo. */
+.bloque {
+  display: grid;
+  margin-block: var(--espacio-2);
+  padding-left: var(--espacio-3);
+  border-left: var(--espacio-1) solid var(--primario);
+}
+.cabeza {
+  display: grid;
+  gap: var(--espacio-1);
+  padding-block: var(--espacio-2);
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  text-decoration: none;
+}
+.cabeza > b {
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-titulo);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
+}
+.cabeza > small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.bloque > ul {
+  list-style: none;
+}

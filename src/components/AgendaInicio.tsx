@@ -2,7 +2,9 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
-import { agruparPorDia, agruparPorPublicacion, conFiltros, corteNuevos, filtrosRecordados, listarAgenda, sinSeguirSinSesion, type FiltrosAgenda } from "@/lib/agenda";
+import { agruparPorDia, agruparPorPublicacion, conFiltros, corteNuevos, exposicionesEnAgenda, filtrosRecordados, listarAgenda, paraVisitarEnAgenda, queDeFiltros, sinSeguirSinSesion, type EventoAgenda, type FiltrosAgenda } from "@/lib/agenda";
+import { componerDia, marcosDe, notaDeVisita, rangosDeVisita, textoAbre, textoHastaEl, tituloParaVisitar } from "@/lib/agendaPorClase";
+import { soloInteres } from "@/lib/claseEvento";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { ZONA_INICIAL } from "@/lib/fechas";
@@ -19,6 +21,7 @@ import Grupo from "./ui/Grupo";
 import { Pestana, Pestanas } from "./ui/Pestanas";
 import RenglonEvento from "./RenglonEvento";
 import Cabecera from "./ui/Cabecera";
+import BloqueFestival from "./BloqueFestival";
 import { useAsistenciaEnLista } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
@@ -59,7 +62,11 @@ type Recordado = { filtros: FiltrosAgenda; mostrados: number; visita?: string | 
  * Nuevos es lo publicado desde la última visita (`AgendaNuevos`). Decisiones en docs/rediseno/02, 23 y 50.
  *
  * Todos pone cada evento en cada día en que pasa algo, con su hora de ese día (OL-320, `lib/ocurrencias`): un taller de tres sábados sale
- * en los tres, con «Día 2 de 3»; el día que ya pasó no sale. El grupo de cada día cuenta renglones de ese día.
+ * en los tres, con «Sesión 2 de 3»; el día que ya pasó no sale. El grupo de cada día cuenta renglones de ese día.
+ *
+ * Por clase (OL-322, doc 55 §3): un festival es un bloque con sus actos del día (`BloqueFestival`; el marco no cuenta como renglón); las
+ * exposiciones van aparte, en «Para visitar hoy» tras los renglones de hoy (o del primer día elegido con Cuándo), solo las que abren ese día
+ * según su horario; con «Qué» en Exposiciones, la lista es «Para visitar» entera.
  */
 export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, conSesion, filtrosIniciales }: Props) {
   const [guardados, setFiltros] = useState(filtrosIniciales);
@@ -130,7 +137,7 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZON
       {antes}
       <Suspense fallback={cargando}>
         {!nuevos ? (
-          <AgendaLista agenda={agenda} filtros={filtros} ciudad={ciudad} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
+          <AgendaLista agenda={agenda} filtros={filtros} ciudad={ciudad} hoy={hoy} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
         ) : nuevosDesde === undefined ? (
           cargando
         ) : (
@@ -150,6 +157,7 @@ function AgendaLista({
   agenda,
   filtros,
   ciudad,
+  hoy,
   avisos,
   mostrados,
   onMostrados,
@@ -157,6 +165,7 @@ function AgendaLista({
   agenda: Promise<Agenda>;
   filtros: FiltrosAgenda;
   ciudad: Ciudad;
+  hoy: string;
   avisos: AvisosLista | null;
   mostrados: number;
   onMostrados: (actualizar: (m: number) => number) => void;
@@ -168,25 +177,59 @@ function AgendaLista({
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
 
   const lista = listarAgenda(datos, filtros);
+  const que = queDeFiltros(filtros);
+  const visitar = paraVisitarEnAgenda(datos, filtros, hoy);
+  const marcos = marcosDe(datos.eventos);
+  // Ni una exposición ni el marco de un festival llevan «Voy» en la lista (doc 55 §5, punto 2: «Me interesa», en su ficha).
+  const botonDe = (e: EventoAgenda) => (soloInteres(e.clase) ? undefined : asistencia.boton(e));
 
   // Carga progresiva de la lista agrupada por día (OL-158): el total cambia con los filtros o la ciudad;
   // cuando cambia, la tanda se acota de nuevo (nunca menos que la primera, nunca más que lo que hay) en vez de quedarse
-  // con un número que ya no aplica.
+  // con un número que ya no aplica. Nunca por debajo de la primera tanda aunque no haya renglones (OL-322: con «Qué» en Exposiciones la lista
+  // de renglones queda vacía; al quitarlo, la agenda se pintaba un instante sin sus días y con «Para visitar hoy» arriba).
   const total = lista.length;
   const totalAnteriorRef = useRef(total);
   useEffect(() => {
     if (totalAnteriorRef.current !== total) {
       totalAnteriorRef.current = total;
-      onMostrados((m) => tandaAcotada(total, m).mostrados);
+      onMostrados((m) => Math.max(tandaAcotada(total, m).mostrados, TANDA_INICIAL));
     }
   }, [total, onMostrados]);
   const hayMasEventos = mostrados < total;
   const centinelaRef = useCentinela(hayMasEventos, () => onMostrados((m) => siguienteTanda(total, m).mostrados));
 
+  /** «Para visitar hoy» (o el día que se eligió): las exposiciones abiertas ese día, con sus horas y hasta cuándo. */
+  function seccionParaVisitar() {
+    if (!visitar || visitar.exposiciones.length === 0) return null;
+    return (
+      <Grupo key="para-visitar" titulo={tituloParaVisitar(visitar.dia, hoy, ahora, visitar.exposiciones[0].zona)} cuenta={visitar.exposiciones.length}>
+        {visitar.exposiciones.map((e) => (
+          <RenglonEvento key={e.id} evento={e} cuando={textoAbre(rangosDeVisita(e, visitar.dia))} horas nota={textoHastaEl(e, ahora)} estado={asistencia.estado(e.id)} />
+        ))}
+      </Grupo>
+    );
+  }
+
   function cuerpo() {
     if (filtros.siguiendo && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {
       return <Vacio titulo="Siguiendo" texto="Todavía no sigues lugares ni artistas. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
     }
+    if (que === "exposiciones") {
+      // «Qué» en Exposiciones: «Para visitar» entera, la que cierra antes primero, con lo que dice de hoy (o del primer día elegido).
+      const exposiciones = exposicionesEnAgenda(datos, filtros);
+      const dia = filtros.cuando && filtros.cuando.desde > hoy ? filtros.cuando.desde : hoy;
+      if (exposiciones.length === 0) {
+        return <Vacio titulo="Para visitar" texto={filtros.cuando || filtros.cuanto.length > 0 || filtros.siguiendo ? "No hay exposiciones con lo que elegiste. Cambia o quita algún filtro para ver más." : `Aún no hay exposiciones para visitar en ${ciudad.nombre}.`} />;
+      }
+      return (
+        <Grupo titulo="Para visitar" cuenta={exposiciones.length}>
+          {exposiciones.map((e) => (
+            <RenglonEvento key={e.id} evento={e} nota={notaDeVisita(e, dia, hoy)} estado={asistencia.estado(e.id)} />
+          ))}
+        </Grupo>
+      );
+    }
+    if (total === 0 && visitar?.exposiciones.length) return seccionParaVisitar();
     if (total === 0) {
       // Vacío por causa: dice qué se puso, y la salida.
       return (
@@ -196,15 +239,24 @@ function AgendaLista({
         />
       );
     }
+    // «Para visitar» va tras el grupo de su día; si ese día no tiene renglones, antes del primer día que sigue.
+    const grupos = agruparPorDia(lista.slice(0, mostrados), ahora, filtros.cuando?.desde);
+    const despues = visitar ? grupos.findLastIndex((g) => g.clave <= visitar.dia) : -1;
     return (
       <>
-        {agruparPorDia(lista.slice(0, mostrados), ahora, filtros.cuando?.desde).map((g) => (
+        {despues === -1 && seccionParaVisitar()}
+        {grupos.flatMap((g, i) => [
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
-            {g.eventos.map((e) => (
-              <RenglonEvento key={claveDe(e)} evento={e} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
-            ))}
-          </Grupo>
-        ))}
+            {componerDia(g.eventos, marcos).map((p) =>
+              p.tipo === "festival" ? (
+                <BloqueFestival key={`${p.marco.id}:${g.clave}`} marco={p.marco} actos={p.actos} esHoy={g.clave === hoy} estado={asistencia.estado} boton={asistencia.boton} />
+              ) : (
+                <RenglonEvento key={claveDe(p.evento)} evento={p.evento} estado={asistencia.estado(p.evento.id)} boton={botonDe(p.evento)} />
+              ),
+            )}
+          </Grupo>,
+          ...(i === despues ? [seccionParaVisitar()] : []),
+        ])}
         <CargarMas hayMas={hayMasEventos} centinelaRef={centinelaRef} onVerMas={() => onMostrados((m) => siguienteTanda(total, m).mostrados)} />
       </>
     );
@@ -246,7 +298,7 @@ function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Prom
         agruparPorPublicacion(lista, ahora).map((g) => (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} conDia estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
+              <RenglonEvento key={e.id} evento={e} conDia estado={asistencia.estado(e.id)} boton={soloInteres(e.clase) ? undefined : asistencia.boton(e)} />
             ))}
           </Grupo>
         ))
