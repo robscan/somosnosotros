@@ -311,7 +311,8 @@ test("«Otro» pregunta qué es (opcional), con su ✕ y su tope, y «Revisa» l
   assert.deepEqual([(await enviado(p)).tipo, (await enviado(p)).detalle], ["otro", "taller de cerámica"]);
 });
 
-for (const ancho of [390, 320]) {
+// A 1280 el flujo es el mismo que en el teléfono: la hoja es un diálogo al centro (`ui/Hoja`), con lo mismo dentro.
+for (const ancho of [390, 320, 1280]) {
   test(`horario a ${ancho}: la hoja abre con Ma–Do de 10 a 6; «Agregar otro horario» trae los días que faltan; la franja puesta se encoge; «Listo» siempre a la vista; «Revisa» lo enseña estructurado y se publica`, TOPE, async (t) => {
     const p = await pagina(t, { ancho });
     await hastaRevisa(p);
@@ -324,7 +325,7 @@ for (const ancho of [390, 320]) {
     // Los días son toques redondos de 44 × 44; a 390 caben los siete en una fila, a 320 pasan al renglón de abajo.
     const cajas = await hoja.getByRole("group", { name: "Días" }).getByRole("button").evaluateAll((b) => b.map((x) => { const c = x.getBoundingClientRect(); return [Math.round(c.width), Math.round(c.height), Math.round(c.top)]; }));
     assert.ok(cajas.every(([w, h]) => w === 44 && h === 44), JSON.stringify(cajas));
-    assert.equal(new Set(cajas.map(([, , top]) => top)).size, ancho === 390 ? 1 : 2);
+    assert.equal(new Set(cajas.map(([, , top]) => top)).size, ancho >= 390 ? 1 : 2);
     // Lu–Vi de 10 a 2 y de 4 a 8 (cierre a comer), y el sábado de 4 a 8: tres franjas.
     await hoja.getByRole("button", { name: "lunes" }).click();
     await hoja.getByRole("button", { name: "sábado" }).click();

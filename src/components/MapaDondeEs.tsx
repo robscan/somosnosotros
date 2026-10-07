@@ -7,6 +7,7 @@ import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarResumen } from "@/lib/lugares";
 import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
+import { seguirMapa } from "./quitarMapa";
 import styles from "./Mapa.module.css";
 
 type Punto = { lat: number; lng: number };
@@ -127,6 +128,8 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
     if (!mapboxToken || !nodo) return;
     let cancelado = false;
     let mapa: MapaGL | undefined;
+    // Con qué se quita al desmontar (`seguirMapa`: sin el error de la telemetría de Mapbox).
+    let quitar: (() => void) | undefined;
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       mapboxgl.accessToken = mapboxToken;
@@ -142,6 +145,7 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
         logoPosition: "bottom-left",
       });
       mapaRef.current = mapa;
+      quitar = seguirMapa(mapa);
       mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-right");
       // Tema claro siempre (docs/DEFINICION.md, `Mapa.tsx`): si el estilo se basa en Mapbox Standard, se fuerza el preset de día.
       mapa.on("style.load", () => {
@@ -173,7 +177,7 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
     });
     return () => {
       cancelado = true;
-      mapa?.remove();
+      quitar?.();
       mapaRef.current = null;
     };
     // El mapa se crea una sola vez; los cambios llegan por los efectos de abajo.

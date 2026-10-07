@@ -11,6 +11,7 @@ import { hrefLugar, type LugarLista } from "@/lib/lugares";
 import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa, type PuntoEnPantalla } from "@/lib/mapa";
 import { sinMovimiento } from "@/lib/movimiento";
 import { prioridadPin, propiedadesPin, rangosDeDias, RADIO_MEDIANO, TAMANO_DIA, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
+import { seguirMapa } from "./quitarMapa";
 import styles from "./Mapa.module.css";
 import PulsacionEnMapa from "./PulsacionEnMapa";
 import { useFueraDeVista } from "./useFueraDeVista";
@@ -301,6 +302,8 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
     if (!mapboxToken || !nodo) return;
     let cancelado = false;
     let mapa: MapaGL | undefined;
+    // Con qué se quita al desmontar (`seguirMapa`: sin el error de la telemetría de Mapbox).
+    let quitar: (() => void) | undefined;
 
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
@@ -316,6 +319,7 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
         logoPosition: "top-left", // abajo va la hoja de Lugares
       });
       mapaRef.current = mapa;
+      quitar = seguirMapa(mapa);
       mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-left");
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
@@ -345,7 +349,7 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
 
     return () => {
       cancelado = true;
-      mapa?.remove();
+      quitar?.();
       mapaRef.current = null;
     };
     // El mapa se crea una sola vez; los cambios llegan por los efectos de abajo.
