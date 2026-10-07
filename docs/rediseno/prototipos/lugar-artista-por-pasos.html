@@ -179,13 +179,20 @@ ul { list-style: none; }
 .franja:not(.abierta) { display: grid; grid-template-columns: minmax(0,1fr) var(--toque); align-items: center; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
 .franja-texto { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; min-height: var(--toque); padding: 0 14px; text-align: left; }
 .franja-texto > svg { color: var(--texto-suave); }
+.franja-texto > span { display: grid; min-width: 0; }
 .franja-texto b { font-weight: 600; }
+.franja-texto small { color: var(--texto-suave); font-size: var(--letra-sm); }
 .quitar { display: grid; place-items: center; width: var(--toque); height: var(--toque); color: var(--texto-suave); }
 .quitar svg { width: 18px; height: 18px; stroke-width: 2; }
 .enlace { justify-self: start; color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
 .opcion.compacta { min-height: var(--toque); font-size: var(--letra-md); }
 .opcion.compacta small { font-size: var(--letra-sm); color: var(--texto-suave); }
 .suave { color: var(--texto-suave); font-weight: 400; }
+.junto { white-space: nowrap; }
+.horario { display: grid; gap: var(--espacio-2); min-width: 0; }
+.horario > span { display: grid; }
+.horario b { font-weight: 600; line-height: 1.25; }
+.horario small { font-size: var(--letra-sm); line-height: 1.3; }
 /* La tira de tipos al pie del primer paso (la de hoy en /nuevo): Evento · Lugar · Artista en mayúsculas chicas, el actual con su punto. Solo en el primer paso. */
 .tira-tipos { display: grid; grid-template-columns: repeat(3, 1fr); min-height: var(--toque); padding-bottom: var(--piso); border-top: 1px solid var(--borde); background: var(--fondo); }
 .tira-tipos a, .tira-tipos b { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: var(--toque); font-size: var(--letra-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-suave); text-decoration: none; }
@@ -231,12 +238,32 @@ const DIAS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 const HORAS_ABRE = ['09:00','10:00','11:00','12:00','16:00'];
 const HORAS_CIERRA = ['14:00','17:00','18:00','19:00','20:00','21:00'];
 const et = (h) => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${String(M).padStart(2, '0')} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
-const textoFranja = (f) => `${rangoDias(f.dias)} · ${et(f.abre)}–${et(f.cierra)}`;
+const aMin = (h) => { const [H, M] = h.split(':').map(Number); return H * 60 + M; };
+const textoRango = (r) => `<span class="junto">${et(r.abre)}–${et(r.cierra)}</span>`;
+// Lo que se enseña siempre sale de aquí, nunca de las franjas tal como se capturaron.
+function estructurar(franjas) {
+  const porDia = DIAS.map((d) => {
+    const rangos = franjas.filter((f) => f.dias.includes(d)).map((f) => ({ abre: f.abre, cierra: f.cierra })).sort((a, b) => aMin(a.abre) - aMin(b.abre));
+    const unidos = [];
+    for (const r of rangos) { const u = unidos[unidos.length - 1]; if (u && aMin(r.abre) <= aMin(u.cierra)) { if (aMin(r.cierra) > aMin(u.cierra)) u.cierra = r.cierra; } else unidos.push({ ...r }); }
+    return { dia: d, rangos: unidos };
+  });
+  const grupos = [];
+  for (const { dia, rangos } of porDia) {
+    if (!rangos.length) continue;
+    const clave = rangos.map(textoRango).join(' y ');
+    const g = grupos.find((x) => x.clave === clave);
+    if (g) g.dias.push(dia); else grupos.push({ clave, dias: [dia], rangos });
+  }
+  return { grupos, cierra: porDia.filter((x) => !x.rangos.length).map((x) => x.dia) };
+}
+const textoFranja = (f) => f.dias.length ? `${rangoDias(f.dias)} · ${textoRango(f)}` : 'Sin días';
 const diasLibres = (franjas) => DIAS.filter((d) => !franjas.some((f) => f.dias.includes(d)));
+// En «Revisa»: un bloque por grupo de días, los días arriba y las horas debajo (canon del renglón resuelto).
 function textoHorario(franjas) {
   if (!franjas?.length) return '';
-  const cierra = diasLibres(franjas);
-  return franjas.map(textoFranja).join('<br>') + (cierra.length && cierra.length < 7 ? `<br><span class="suave">Cierra ${rangoDias(cierra)}</span>` : '');
+  const { grupos, cierra } = estructurar(franjas);
+  return `<span class="horario">${grupos.map((g) => `<span><b>${rangoDias(g.dias)}</b><small>${g.clave}</small></span>`).join('')}${cierra.length && cierra.length < 7 ? `<small class="suave">Cierra ${rangoDias(cierra)}</small>` : ''}</span>`;
 }
 function rangoDias(ds) { const idx = ds.map((d) => DIAS.indexOf(d)).sort((a, b) => a - b); if (!idx.length) return ''; const seguidos = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1); return seguidos && idx.length > 2 ? `${DIAS[idx[0]]}–${DIAS[idx[idx.length - 1]]}` : idx.map((i) => DIAS[i]).join(', '); }
 const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Café, bar o restaurante','Plaza, jardín o parque','Otro'];
@@ -321,7 +348,7 @@ const PANTALLAS = {
   hace: () => {
     if (!e.hace) return {
       titulo: 'Registrar artista', avance: avance(), atras: true,
-      cuerpo: `<h1 class="pregunta">¿Qué hace?</h1><div class="opciones compactas">${DISCIPLINAS.map((d) => `<button class="opcion" data-a="hace" data-v="${d}">${ic('musica')}<span>${d}</span>${ic('chevron')}</button>`).join('')}</div>`,
+      cuerpo: `<h1 class="pregunta">¿Qué hace?</h1><div class="opciones compactas">${DISCIPLINAS.map((d) => `<button class="opcion" data-a="hace" data-v="${d}">${ic('etiqueta')}<span>${d}</span>${ic('chevron')}</button>`).join('')}</div>`,
       pie: '',
       notas: ['Solo si el nombre no lo dijo (caso 6). Ocho opciones, una se toca y sigue la subcategoría de esa disciplina en esta misma pantalla. Hoy, sin pista, el artista sale como «Música».'],
     };
@@ -343,9 +370,9 @@ const PANTALLAS = {
     const renglones = esLugar
       ? `<button class="renglon">${ic('pin')}<b>${k.sug ? k.sug.direccion : 'Calle Inventada 12, Centro, San Luis Potosí'}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic('etiqueta')}<b>${e.tipo ?? 'Otro'}</b><span class="accion">Cambiar</span></button>
-         <button class="renglon ${e.horario ? '' : 'opcional'}" data-a="horario">${ic('reloj')}<b>${e.horario ? textoHorario(e.horario) : 'Horario'}</b><span class="accion">${e.horario ? 'Cambiar' : 'Agregar'}</span></button>
+         <button class="renglon ${e.horario ? '' : 'opcional'}" data-a="horario">${ic('reloj')}${e.horario ? textoHorario(e.horario) : '<b>Horario</b>'}<span class="accion">${e.horario ? 'Cambiar' : 'Agregar'}</span></button>
          <button class="renglon opcional">${ic('mas')}<b>Foto, descripción o redes</b><span class="accion">Agregar</span></button>`
-      : `<button class="renglon">${ic('musica')}<b>${e.hace ?? 'Teatro'}${e.sub ? ` · ${e.sub}` : ''}</b><span class="accion">Cambiar</span></button>
+      : `<button class="renglon">${ic('etiqueta')}<b>${e.hace ?? 'Teatro'}${e.sub ? ` · ${e.sub}` : ''}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic(k.tipo === 'Solista' ? 'persona' : 'personas')}<b>${k.tipo}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic('ciudad')}<b>San Luis Potosí</b><span class="accion">Cambiar</span></button>
          <button class="casilla" role="checkbox" aria-checked="${e.soyYo}" data-a="soyyo"><span class="cuadro">${e.soyYo ? ic('ok') : ''}</span><span class="texto"><b>${k.tipo === 'Solista' ? 'Soy yo' : 'Es mi grupo'}</b><small>Podrás editar la ficha y publicar sus fechas</small></span></button>
@@ -354,7 +381,7 @@ const PANTALLAS = {
       titulo: 'Revisa', avance: avance(), atras: true,
       cuerpo: `<h1>${c().sug?.nombre ?? c().q}</h1><div class="lista">${renglones}</div>${e.hoja === 'horario' ? hojaHorario() : ''}`,
       pie: `<button class="btn" data-a="seguir">${esLugar ? 'Publicar lugar' : 'Publicar artista'}</button>`,
-      notas: ['Lugar · Horario (acordado con el founder): opcional en «Revisa» («Horario · Agregar»), abre una hoja con los días de la semana (chips, de Ma a Do marcados de entrada) y las horas en que abre y cierra. Debajo, «Agregar otro horario» (propuesta del founder, 2026-10-06): repite los mismos selectores para otro grupo de días (Lu–Vi uno, Sá–Do otro). La franja nueva llega con los días que aún no tienen horario ya marcados; si no queda ninguno, llega vacía y sirve para una segunda hora de los mismos días (cierran a comer). Las franjas ya puestas se encogen a un renglón con ✕; tocarlo lo vuelve a abrir. Los días sin franja son los que cierra, y «Revisa» lo dice. Sirve a las exposiciones: una exposición en ese lugar toma este horario de entrada, día por día.', 'Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: la casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
+      notas: ['Lugar · Horario (acordado con el founder): opcional en «Revisa» («Horario · Agregar»), abre una hoja con los días de la semana (chips, de Ma a Do marcados de entrada) y las horas en que abre y cierra. Debajo, «Agregar otro horario» (propuesta del founder, 2026-10-06): repite los mismos selectores para otro grupo de días (Lu–Vi uno, Sá–Do otro). Se agregan tantos horarios como haga falta y la persona los administra como quiera (ley de Postel: se acepta cualquier combinación). La franja nueva llega con los días que aún no tienen horario ya marcados, sin explicar para qué sirve; si no queda ninguno, vacía. Las franjas puestas se encogen a un renglón (días arriba, horas debajo) con ✕; tocarlo lo vuelve a abrir. Lo que se enseña lo estructura el sistema: ordena por día, une horas que se encimen y agrupa los días con las mismas horas («Lu–Vi · 10–2 y 4–8», «Sá · 10–2», «Cierra Do»). Los días sin franja son los que cierra. Sirve a las exposiciones: una exposición en ese lugar toma este horario de entrada, día por día.', 'Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: el renglón de la disciplina lleva el icono de etiqueta (clasificación), el mismo que el tipo del lugar: no solo hablamos de música. La casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
     };
   },
   publicado: () => {
@@ -373,7 +400,7 @@ const PANTALLAS = {
 function hojaHorario() {
   const franjas = e.franjas.map((f, i) => {
     if (i !== e.franjaAbierta) {
-      return `<div class="franja"><button class="franja-texto" data-a="franja-abrir" data-v="${i}">${ic('reloj')}<b>${textoFranja(f)}</b></button><button class="quitar" data-a="franja-quitar" data-v="${i}" aria-label="Quitar este horario">${ic('cerrar')}</button></div>`;
+      return `<div class="franja"><button class="franja-texto" data-a="franja-abrir" data-v="${i}">${ic('reloj')}<span><b>${f.dias.length ? rangoDias(f.dias) : 'Sin días'}</b><small>${textoRango(f)}</small></span></button><button class="quitar" data-a="franja-quitar" data-v="${i}" aria-label="Quitar este horario">${ic('cerrar')}</button></div>`;
     }
     return `<div class="franja abierta">
       <div class="chips">${DIAS.map((d) => `<button class="chip" aria-pressed="${f.dias.includes(d)}" data-a="dia" data-v="${d}">${d}</button>`).join('')}</div>
@@ -383,11 +410,10 @@ function hojaHorario() {
     </div>`;
   }).join('');
   const abierta = e.franjas[e.franjaAbierta];
-  const libres = diasLibres(e.franjas);
   return `<div class="velo" data-a="cerrar-hoja"></div><div class="hoja" role="dialog" aria-label="Horario">
     <h2>¿Qué días abre?</h2>
     <div class="hoja-cuerpo">${franjas}
-    ${abierta?.dias.length ? `<button class="opcion compacta" data-a="franja-nueva">${ic('mas')}<span>Agregar otro horario${libres.length ? `<small>Para ${rangoDias(libres)}</small>` : '<small>Para otra hora de los mismos días</small>'}</span></button>` : ''}</div>
+    ${abierta?.dias.length ? `<button class="opcion compacta" data-a="franja-nueva">${ic('mas')}<span>Agregar otro horario</span></button>` : ''}</div>
     <button class="btn" data-a="horario-listo">Listo</button>
   </div>`;
 }
