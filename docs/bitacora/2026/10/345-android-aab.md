@@ -1,0 +1,62 @@
+# 345 · Envoltorio de Android: proyecto, .aab firmado y assetlinks
+
+**Pieza:** OL-192 (retomada). **Rama:** `android-aab` (sobre `origin/main`). **Fecha:** 2026-10-06. **Operador:** Claude Sonnet 5.5 (agente del gestor IV).
+**Estado:** `.aab` compilado y firmado con la llave de subida, firma verificada; ruta de assetlinks lista y probada con `next start`. No se probó la app en un emulador ni en un teléfono (no hay ninguno en la Mac). Sin migraciones ni variables de entorno nuevas.
+
+## Qué se encargó
+
+El founder (2026-10-06) quiere subir hoy a una pista de prueba de Google Play el `.aab` de Android (versionCode 1). La app ya está dada de alta en Play Console: «Somos Nosotros», paquete `org.somosnosotros.app`, Play App Signing aceptado (Google re-firma con su llave; la nuestra es solo la de subida). La pieza se había detenido el 2026-09-25 antes de generar el proyecto ([bitácora 227](../09/227-app-android-twa.md), copiada a esta rama para que la historia quede en `main`, porque la rama vieja `app-android-twa` no se une).
+
+## Qué hay
+
+- **`apps/android/twa-manifest.json`** escrito a mano (la fuente) y el proyecto Gradle que Bubblewrap 10.8.2 generó desde él con `update --skipVersionUpgrade` (no pregunta nada): `app/`, `build.gradle`, `gradle/`, `gradlew`, `store_icon.png`, `manifest-checksum.txt`. `targetSdkVersion` y `compileSdkVersion` 36, `minSdkVersion` 21.
+- **`apps/android/.gitignore`**: `*.keystore`, `*.jks`, `*.aab`, `*.apk`, `*.idsig`, `build/`, `.gradle/`, `local.properties`, `app/build/`. Con `git status --ignored` se comprobó que el `.aab`, los `.apk`, `app/build/`, `build/` y `.gradle/` quedan ignorados y que ningún binario ni llave está añadido.
+- **`src/app/.well-known/assetlinks.json/route.ts`** y su prueba: responde `application/json` (sin `charset`, como la de Apple) con la relación `delegate_permission/common.handle_all_urls` para `org.somosnosotros.app` y la lista de huellas. Hoy lleva la de la llave de subida; `HUELLA_FIRMA_GOOGLE` es una constante en `null`, con comentario, esperando la de Google.
+- **`apps/android/README.md`**: qué es, herramientas, cómo se regenera y se compila (sin contraseñas), dónde vive la llave, qué hacer tras la primera subida y la regla de Google para cuentas personales.
+- **Binarios fuera del repo**, con permisos 600, en `/Users/apple-1/somosnosotros-privado/android/salida/`:
+  - `somosnosotros-1.0-vc1.aab`: 1 304 759 bytes, SHA-256 `b851ce9daec81993a8f6a642814a1e744d0adfc79d6b31fa15dbaa9f3eb932e1`.
+  - `somosnosotros-1.0-vc1.apk`: 1 184 194 bytes (para instalar a mano con `adb`).
+  - Los originales de Bubblewrap siguen en `apps/android/` (`app-release-bundle.aab`, `app-release-signed.apk`), ignorados por git; esa carpeta es de un árbol de trabajo que se puede limpiar, la de `somosnosotros-privado` no.
+
+## Decisiones del operador
+
+1. **Nombre bajo el icono: `SMSNSTRS`.** El `short_name` del manifiesto web («Somos Nosotros», 14 caracteres) no cabe en el límite de 12 de Bubblewrap; se usa la marca ya aprobada el 2026-09-15. **El founder debe confirmarlo** (se ve en el cajón de apps y en el inicio del teléfono; el nombre de la ficha en Play sigue siendo «Somos Nosotros»). Cambiarlo es editar `launcherName` y recompilar con `appVersionCode` 2.
+2. **Barra de estado y de navegación blancas también en modo oscuro.** Los valores por omisión de Bubblewrap pintan la barra de navegación de negro y el modo oscuro de la barra de estado también; la app es de tema claro, así que `themeColorDark`, `navigationColor` y `navigationColorDark` van en `#ffffff` (los mismos de `src/app/manifest.ts`). Sin esto, la barra de abajo saldría negra bajo una web blanca.
+3. **Dos huellas, no una, en assetlinks, pero hoy una.** La llave de Google (la que Android ve en lo que baja de Play) todavía no existe para nosotros: Play Console la enseña tras la primera subida. Hasta pegarla en `HUELLA_FIRMA_GOOGLE`, la app instalada desde Play **abre la web con la barra de direcciones de Chrome** (el respaldo `customtabs`), no a pantalla completa. No es un fallo del `.aab`; es el orden de las cosas. Un APK instalado a mano con `adb` va firmado con la llave de subida y sí quedaría verificado en cuanto este PR esté en producción.
+4. **Avisos activados** (`enableNotifications`): la TWA delega los avisos push web de Chrome; añade el permiso `POST_NOTIFICATIONS` (visible en el APK con `aapt2 dump badging`, junto a un permiso propio de recepción interna). Hay que declararlo coherente en la ficha de Play (Data safety).
+5. **Respaldo `customtabs`, no `webview`**: si Chrome no puede verificar el sitio, abre una pestaña de Chrome (Google bloquea el inicio de sesión dentro de un `webview` embebido, no en una pestaña de Chrome; doc 47 §3).
+6. **Bubblewrap en esta Mac necesitó tres ajustes que no están en el repo**, anotados en el README para quien repita: (a) `build-tools;36.1.0` (Bubblewrap fija esa versión; el SDK solo traía la 36.0.0), instalado con `sdkmanager`; (b) un enlace `bin → cmdline-tools/latest/bin` dentro del SDK, porque Bubblewrap valida que exista `<sdk>/bin` o `<sdk>/tools` y el SDK de Homebrew deja `sdkmanager` en `cmdline-tools/latest/bin`; (c) `jdkPath` de `~/.bubblewrap/config.json` apuntando a `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk`, porque Bubblewrap le añade `/Contents/Home` (con la ruta anterior, Gradle fallaba con «JAVA_HOME is set to an invalid directory»). Nada se instaló global.
+7. **Contraseña**: leída a variables de entorno dentro de un script del scratchpad, nunca impresa. Se comprobó (con búsqueda literal) que no aparece en ningún archivo de `apps/android/` ni dentro del `.aab`, y el registro de la compilación se pasó por un reemplazo por si algún comando la repetía.
+8. **Emulador: no hay y no se instaló.** `avdmanager` no encontró ninguno y el SDK no trae `emulator` ni imágenes de sistema (bajarlos son varios GB; la instrucción del founder del 2026-09-25 fue no descargar más sin un teléfono, y esta tarea solo pedía probar si ya había). Por eso no hay carpeta `docs/rediseno/capturas-345/` ni captura alguna.
+
+## Verificación
+
+Compilación: `npx @bubblewrap/cli build` terminó con código 0 (APK y AAB). Firma, con herramientas del JDK y del SDK:
+
+- `keytool -printcert -jarfile` sobre el `.aab`: propietario `CN=Somos Nosotros, OU=somosnosotros, O=somosnosotros, L=San Luis Potosi, ST=SLP, C=MX`, válido hasta 2054-02-10, SHA-256 `BC:BE:8F:FB:71:A6:B0:B9:0A:07:3A:F4:13:AB:45:64:1F:A4:A5:9E:9F:6F:51:6C:B0:3E:82:5E:D7:6E:40:50`, **idéntica** a la del `LEEME.txt` y a la que `keytool -list` da del keystore (y a la de `apksigner verify --print-certs` sobre el APK).
+- `jarsigner -verify` sobre el `.aab`: «jar verified», `SHA256withRSA` de 2048 bits. Avisa que la cadena no es de una autoridad conocida, que es autofirmado y sin sello de tiempo: es lo normal en una llave de subida (Play la reconoce por huella, no por cadena).
+- `apksigner verify` sobre el APK: verificado con esquemas v1, v2 y v3. Avisa de entradas `META-INF/*.version` sin proteger: son metadatos de las bibliotecas de AndroidX, sin efecto en la instalación.
+- `aapt2 dump badging` sobre el APK: paquete `org.somosnosotros.app`, `versionCode` 1, `versionName` «1.0», `targetSdkVersion` 36, etiqueta «Somos Nosotros», actividad de arranque con etiqueta `SMSNSTRS`.
+- El `.aab` trae `BundleConfig.pb`, `base/manifest/AndroidManifest.xml`, `base/dex/classes.dex` y `base/resources.pb`.
+
+Web: `npx vitest run src/app/.well-known` (assetlinks 4 pruebas: tipo exacto sin redirección; paquete y relación; huella con el formato SHA-256 sin repetirse; el paquete coincide con `twa-manifest.json`; más las 3 de Apple, que no cambian). `next build` verde y, con `next start -p 3103`:
+
+```
+curl -si http://localhost:3103/.well-known/assetlinks.json
+HTTP/1.1 200 OK … content-type: application/json … cache-control: public, max-age=3600
+[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"org.somosnosotros.app","sha256_cert_fingerprints":["BC:BE:8F:…:40:50"]}}]
+```
+
+Completo: `npm run lint` (0 errores; 1 aviso previo en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (152 archivos, 2 258 pruebas), `npm run inventario` («sin novedades») y `npm run medir` («26 pantallas × 4 anchos, sin novedades») en verde.
+
+No verificado: que la app se vea y se abra bien en Android, que el nombre `SMSNSTRS` luzca bien bajo el icono, y que Chrome la verifique a pantalla completa (necesita la web con este PR en producción y la huella de Google).
+
+## Qué sigue (founder / Play Console)
+
+1. **Subir** `/Users/apple-1/somosnosotros-privado/android/salida/somosnosotros-1.0-vc1.aab` a una pista de prueba (la sesión que sube desde el Chrome del founder). Si Play pide la firma de la app, ya está aceptado Play App Signing.
+2. **Unir este PR y desplegar**, para que `https://somosnosotros.org/.well-known/assetlinks.json` exista antes de que alguien instale la app (sin él, abre con barra de Chrome aunque la huella de Google ya esté).
+3. **Tras la primera subida, copiar de Play Console la huella de la llave de firma de Google** (Prueba y lanza → Configuración → Integridad de la app → Firma de apps → Certificado de la clave de firma de la app), pegarla en `HUELLA_FIRMA_GOOGLE` de la ruta (queda junto a la de subida) y publicar la web. Pieza chica; lo hace un operador cuando el founder pase la huella (es pública).
+4. **Confirmar `SMSNSTRS`** como nombre bajo el icono.
+5. **Prueba cerrada de 12 personas durante 14 días seguidos** (cuenta personal: regla de Google, doc 47 §10) antes de pedir producción. Reunirlas cuanto antes.
+6. En la ficha de Play: Data safety, clasificación de contenido, política de privacidad y borrado de cuenta por enlace web (OL-198), y revisar que `POST_NOTIFICATIONS` sea coherente con lo declarado.
+7. Probar en el celular Android de pruebas que le llega al founder (memoria «Android pendiente»): arranque a pantalla completa, aviso push, entrar con Google (abre pestaña de Chrome), canon del teclado y alta por pasos. Esa prueba sí produce las capturas que esta pieza no pudo.
