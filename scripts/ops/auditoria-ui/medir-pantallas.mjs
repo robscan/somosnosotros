@@ -95,6 +95,21 @@ PASOS["lugar-revisa"] = async (page) => {
   await page.getByRole("heading", { name: "Foro del Carmen" }).waitFor();
   await aquietar(page);
 };
+// OL-321: el paso del tiempo de una exposición y de un taller, propuestos por el título (sin días elegidos: lo que se ve al llegar).
+PASOS["evento-visita"] = async (page) => {
+  await page.getByRole("button", { name: "No tengo cartel" }).click();
+  await page.getByRole("textbox", { name: "Nombre del evento" }).fill("Exposición Ecos de papel");
+  await page.getByRole("button", { name: "Siguiente", exact: true }).click();
+  await page.getByRole("heading", { name: "¿Cuándo se puede visitar?" }).waitFor();
+  await aquietar(page);
+};
+PASOS["evento-sesiones"] = async (page) => {
+  await page.getByRole("button", { name: "No tengo cartel" }).click();
+  await page.getByRole("textbox", { name: "Nombre del evento" }).fill("Taller de grabado");
+  await page.getByRole("button", { name: "Siguiente", exact: true }).click();
+  await page.getByRole("heading", { name: "¿Qué días son las sesiones?" }).waitFor();
+  await aquietar(page);
+};
 PASOS["lugar-horario"] = async (page, ancho, alto) => {
   await PASOS["lugar-revisa"](page, ancho, alto);
   await page.getByRole("button", { name: "Agregar horario" }).click();

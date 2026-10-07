@@ -52,7 +52,7 @@ type Props = {
 /**
  * Editar un lugar, el canon de formulario (docs/rediseno/13, decisiones 8 a 12): el nombre arriba y debajo los renglones resueltos: Dónde (la
  * hoja del mapa), Tipo (chips al abrir; con Otro, qué es), Horario (la hoja de franjas del alta por pasos, OL-315) y Más (descripción, redes,
- * foto). El alta es ahora por pasos (`/nuevo/lugar`, OL-315): este formulario solo edita, como `FormularioEvento` tras OL-312. El horario solo
+ * foto). El alta es ahora por pasos (`/nuevo/lugar`, OL-315): este formulario solo edita (el de evento se retiró en OL-319: editar un evento también es por pasos). El horario solo
  * viaja si se tocó: guardar lo demás no lo cambia.
  */
 export default function FormularioLugar({ accion, lugar, horario: horarioInicial, usuarioId, esAdmin = false, lugares, ciudadContexto }: Props) {

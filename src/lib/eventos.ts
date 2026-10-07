@@ -27,6 +27,9 @@ export type OtroSitio = {
   indicaciones: string;
   /** La ciudad del pin, deducida por Mapbox al ponerlo (null hasta entonces). */
   ciudad: string | null;
+  /** Al editar (OL-319): un sitio reservado cuyo evento terminó hace más de siete días ya no tiene su dirección exacta (se borró por
+   *  privacidad, `retencionSitio`); se conserva así mientras no se cambie el sitio, y el servidor decide si todavía vale sin ella. */
+  direccionRetirada?: boolean;
 };
 
 /** Cuánto antes del inicio se revela un sitio reservado a las personas con sesión. */
@@ -62,7 +65,68 @@ export type Evento = {
   zona: string;
   /** La ciudad del evento (migración 0029: cualquier país); la del lugar, o la del pin en "otro sitio". */
   ciudad: string;
+  /** Cómo ocurre (OL-321, migración `20261006160000_eventos_clase`); opcional: una consulta vieja o una base sin la migración no lo trae, y
+   *  sin él es `puntual`, como todo lo de antes. */
+  clase?: Clase;
+  /** El festival del que es un acto (doc 42). */
+  evento_padre_id?: string | null;
+  /** El acto puntual que inaugura esta exposición. */
+  inaugura_id?: string | null;
+  /** Un acto registrado en un programa sin publicar: oculto hasta que su autor lo publica. */
+  borrador?: boolean;
 };
+
+/**
+ * Cómo ocurre una actividad (doc 55 §1; modelo de OL-272: una identidad por actividad y su forma de ocurrir aparte): un evento que pasa un día a
+ * una hora, una exposición que se visita varios días en un horario, un taller o curso de varias sesiones o un festival que agrupa varios eventos.
+ */
+export type Clase = "puntual" | "exposicion" | "taller" | "festival";
+
+/** Las cuatro formas, en el orden de la hoja «¿Cómo ocurre?», con su nombre y su frase llana (doc 55 §2; prototipo caso 5). */
+export const CLASES: readonly { clase: Clase; nombre: string; frase: string }[] = [
+  { clase: "puntual", nombre: "Evento", frase: "Pasa un día a una hora." },
+  { clase: "exposicion", nombre: "Exposición", frase: "Se puede visitar varios días, en un horario." },
+  { clase: "taller", nombre: "Taller o curso", frase: "Varias sesiones, una inscripción." },
+  { clase: "festival", nombre: "Festival", frase: "Agrupa varios eventos." },
+];
+
+/** El nombre de una clase («Exposición»); una que no se reconoce es un evento. */
+export const nombreDeClase = (clase: Clase | null | undefined): string => (CLASES.find((c) => c.clase === clase) ?? CLASES[0]).nombre;
+
+/** ¿Es una de las cuatro? Lo que llega de un formulario, de la base o del lector de carteles. */
+export const esClase = (v: unknown): v is Clase => typeof v === "string" && CLASES.some((c) => c.clase === v);
+
+/**
+ * Las palabras del título que proponen la clase (doc 55 §2), sin acentos ni mayúsculas y como palabras enteras. «Muestra de cine» va antes que
+ * «muestra»: es un festival, no una exposición. Si hay varias, gana la primera que aparece en el título («Taller en el Festival X» es un taller).
+ */
+const PALABRAS_DE_CLASE: readonly { patron: RegExp; clase: Exclude<Clase, "puntual"> }[] = [
+  { patron: /\bmuestras? de cine\b/, clase: "festival" },
+  { patron: /\b(festival|festivales|encuentro|encuentros|jornadas?)\b/, clase: "festival" },
+  { patron: /\b(exposicion|exposiciones|expo|muestra|muestras)\b/, clase: "exposicion" },
+  { patron: /\b(taller|talleres|curso|cursos|laboratorio|laboratorios|diplomado|diplomados)\b/, clase: "taller" },
+];
+
+/**
+ * La clase que proponen las palabras del título, o null si ninguna lo dice (entonces es un evento). No decide: «Revisa» la enseña con su
+ * «Cambiar» y la persona la confirma (nada se publica sin leerse).
+ */
+export function claseSugerida(titulo: string): Exclude<Clase, "puntual"> | null {
+  const texto = titulo.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  // «Inauguración de la exposición …», «Inauguración del Festival …»: es la apertura, un evento de un día a una hora; la exposición se sugiere
+  // al publicar (OL-323, H1/H2; prototipo aceptado `eventos-superficies.html`, caso h1) y el festival se relaciona aparte.
+  if (/\b(inauguracion|inauguraciones|inaugura|inauguran|inauguramos)\b/.test(texto)) return null;
+  let mejor: { en: number; clase: Exclude<Clase, "puntual"> } | null = null;
+  for (const { patron, clase } of PALABRAS_DE_CLASE) {
+    const m = patron.exec(texto);
+    // «Master Class · 9° Festival de Cine UASLP», «Concierto de clausura del Festival Umbral 2026»: el título nombra un acto del festival, no el
+    // festival (OL-323: ese acto se relaciona con su festival en «Publicado», H4/H5). Antes del festival solo puede ir su edición («9°», «XXIII»,
+    // «Noveno», «Gran»).
+    if (m && clase === "festival" && /\p{L}/u.test(texto.slice(0, m.index).replace(/(^|\s)(\d{1,2}\s*[º°ªoa]?\.?|[ivxl]{1,7}|primer|segundo|tercer|cuarto|quinto|sexto|septimo|octavo|noveno|decimo|gran|el|la|los|las)\s*$/, ""))) continue;
+    if (m && (!mejor || m.index < mejor.en)) mejor = { en: m.index, clase };
+  }
+  return mejor?.clase ?? null;
+}
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
 /**
@@ -127,7 +191,7 @@ export type DatosEvento = {
   zona: string;
 };
 export type ErroresEvento = Partial<
-  Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "sesiones" | "descripcion" | "imagen" | "precio" | "enlace", string>
+  Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "sesiones" | "horario" | "descripcion" | "imagen" | "precio" | "enlace", string>
 >;
 
 /**
@@ -408,11 +472,12 @@ export function textoCompartir(titulo: string, cuando: string, lugar: string | n
 /**
  * Lo que se comparte de un evento, igual en la ficha y en el final del alta por pasos: la dirección pública con el dominio de siempre y el
  * texto sin el enlace al final (la hoja de compartir lo manda aparte en `url`). `sitio` es el nombre del sitio, como lo dice `nombreSitio`.
- * Con horario por día (`conSesiones`, OL-311) el cuándo es «Del 9 al 11 de oct · horarios por día»: no hay un solo horario que decir.
+ * Con horario por día (`conSesiones`, OL-311) el cuándo es «Del 9 al 11 de oct · horarios por día»: no hay un solo horario que decir. Una
+ * exposición, un taller o un festival (OL-321) traen su propia línea (`cuandoClase`: «Hasta el dom 30 de nov», «3 sesiones · …», el programa).
  */
-export function compartirEvento(e: Pick<EventoResumen, "titulo" | "inicio" | "fin" | "zona"> & { id: string; slug?: string | null }, sitio: string | null, conSesiones = false): { url: string; texto: string } {
+export function compartirEvento(e: Pick<EventoResumen, "titulo" | "inicio" | "fin" | "zona"> & { id: string; slug?: string | null }, sitio: string | null, conSesiones = false, cuandoClase?: string | null): { url: string; texto: string } {
   const url = `https://somosnosotros.org${hrefEvento(e)}`;
-  const cuando = conSesiones && e.fin ? cuandoPorDia(e.inicio, e.fin, e.zona) : formatearCuando(e.inicio, e.fin, new Date(), e.zona);
+  const cuando = cuandoClase ? cuandoClase : conSesiones && e.fin ? cuandoPorDia(e.inicio, e.fin, e.zona) : formatearCuando(e.inicio, e.fin, new Date(), e.zona);
   return { url, texto: textoCompartir(e.titulo, cuando, sitio, url).replace(`\n${url}`, "") };
 }
 
@@ -430,7 +495,42 @@ export type LecturaCartel = {
   enlace: string | null;
   /** Nombres de quienes se presentan, tal como aparecen en el cartel. */
   artistas: string[] | null;
+  /** Cómo ocurre, si el cartel lo dice (OL-321): «Exposición», «Taller», «Festival»… Opcionales: un lector viejo no los trae. */
+  clase?: Clase | null;
+  /** Una exposición: del primer al último día de visita (YYYY-MM-DD). */
+  visita?: { desde: string | null; hasta: string | null } | null;
+  /** Un taller o curso: los días de sus sesiones (YYYY-MM-DD). */
+  sesiones?: string[] | null;
+  /** Un festival: cada evento de su programa, con su fecha, su hora y su sede. */
+  actos?: { titulo: string | null; fecha: string | null; hora: string | null; lugar: string | null }[] | null;
+  /** El festival del que forma parte, con su edición, si el cartel lo dice (OL-323: lo usa la sugerencia del segundo acto). */
+  festival?: string | null;
 };
+
+/** Un acto del programa leído del cartel, ya limpio: título, día (YYYY-MM-DD), hora ("HH:MM" o "" si no la dice) y sede ("" si no la dice). */
+export type ActoLeido = { titulo: string; fecha: string; hora: string; lugar: string; /** El lugar del directorio que se llama como su sede (lo cruza el servidor). */ lugarId?: string | null };
+
+const ES_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const ES_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+/** Cuántos actos se toman de un cartel: más no caben en un cartel legible, y el programa se publica de una vez. */
+export const TOPE_ACTOS = 12;
+
+/**
+ * La forma de ocurrir que trae el cartel, limpia y tolerante (cualquier parte puede faltar o venir mal): la clase si es una de las cuatro; la
+ * visita solo con su primer día (y el último, si es posterior); las sesiones como días válidos, sin repetir y en orden (hasta 31); los actos
+ * con título y día válidos, en orden de día y hora (hasta `TOPE_ACTOS`).
+ */
+export function formaDelCartel(l: Pick<LecturaCartel, "clase" | "visita" | "sesiones" | "actos">): { clase: Clase | null; visita: { desde: string; hasta: string | null } | null; sesiones: string[]; actos: ActoLeido[] } {
+  const desde = l.visita?.desde && ES_FECHA.test(l.visita.desde) ? l.visita.desde : null;
+  const hasta = desde && l.visita?.hasta && ES_FECHA.test(l.visita.hasta) && l.visita.hasta >= desde ? l.visita.hasta : null;
+  const sesiones = [...new Set((l.sesiones ?? []).filter((d): d is string => typeof d === "string" && ES_FECHA.test(d)))].sort().slice(0, 31);
+  const actos = (l.actos ?? [])
+    .map((a) => ({ titulo: (a?.titulo ?? "").trim().slice(0, LIMITES_EVENTO.titulo), fecha: a?.fecha && ES_FECHA.test(a.fecha) ? a.fecha : "", hora: a?.hora && ES_HORA.test(a.hora) ? a.hora : "", lugar: (a?.lugar ?? "").trim().slice(0, LIMITES_EVENTO.sitio) }))
+    .filter((a) => a.titulo && a.fecha)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
+    .slice(0, TOPE_ACTOS);
+  return { clase: esClase(l.clase) ? l.clase : null, visita: desde ? { desde, hasta } : null, sesiones, actos };
+}
 
 /** "@usuario" → Instagram; enlace o dominio → tal cual; teléfono u otra cosa → nada (ya va en la descripción). */
 export function enlaceDesdeCartel(v: string | null): string {
@@ -442,7 +542,7 @@ export function enlaceDesdeCartel(v: string | null): string {
 }
 
 /** Convierte la lectura del cartel en valores del formulario. Lo que falta se deja vacío para que la persona lo complete. */
-export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string; artistas: string[] } {
+export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string; artistas: string[]; forma?: ReturnType<typeof formaDelCartel>; festival?: string } {
   const fechaOk = l.fecha && /^\d{4}-\d{2}-\d{2}$/.test(l.fecha) ? l.fecha : "";
   const horaOk = l.hora && /^\d{2}:\d{2}$/.test(l.hora) ? l.hora : "";
   const horaFinOk = l.hora_fin && /^\d{2}:\d{2}$/.test(l.hora_fin) ? l.hora_fin : "";
@@ -457,5 +557,7 @@ export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: s
     lugar: (l.lugar ?? "").trim(),
     direccion: (l.direccion ?? "").trim(),
     artistas: (l.artistas ?? []).map((a) => a.trim().replace(/\s+/g, " ").slice(0, 80)).filter(Boolean).slice(0, 6),
+    forma: formaDelCartel(l),
+    festival: (l.festival ?? "").trim().slice(0, 160),
   };
 }

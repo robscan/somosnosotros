@@ -3,8 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
 import { hrefEvento, sitioEnLista } from "./eventos";
-import { diaCorto, formatearCuando, ZONA_INICIAL } from "./fechas";
+import { diaCorto, diaLocal, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
+import { textoActividadesSemana } from "./agendaPorClase";
+import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
+import { textoParte } from "./ocurrencias";
 
 /**
  * Destacados (docs/rediseno/20, firmado por el founder el 2026-09-16): arriba de la Agenda, de Lugares y de Artistas, lo
@@ -27,8 +30,10 @@ export type Decidido = { estado: EstadoDestacado; plazo: string | null; creado: 
 export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: null };
 /** Una tarjeta de la tira, lista para pintarse. `foto` es null cuando no tiene (quien la pinta pone su relleno o no lleva imagen);
  *  `cuando` dice que `detalle` es un día y una hora (se pinta en violeta) y no un tipo o una disciplina; `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde); `hoy` (empieza hoy) y `van` los pone solo
- *  `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null };
+ *  `tarjetaEvento`: lugares y artistas no tienen qué decir así. `clave` y `parte` solo los lleva la tarjeta de un día de un evento con varios (OL-320,
+ *  `lib/ocurrencias`): la llave de ese día, para que el mismo evento pueda salir dos veces en una tira, y «Día 2 de 3» («Sesión 2 de 4» en un taller).
+ *  `sinVoy`: una exposición o el marco de un festival (OL-322), que no llevan el botón «Voy» de la tarjeta. */
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -49,11 +54,13 @@ export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
  * carril que lo agrupa lo dice. `tuyo` es lo que la persona ya decidió (un estado); lo demás, un dato del evento (un sello); `hoy` marca
  * el tratamiento de «Hoy», también para «Nuevo video/audio» de artistas (OL-275), en el color de acción.
  */
-export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van" | "novedad">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
+export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van" | "novedad" | "parte">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
   if (interesa) return { texto: "Te interesa", tuyo: true, hoy: false };
   const nuevo = selloNovedadArtista(t.novedad);
   if (nuevo) return { texto: nuevo, tuyo: false, hoy: true };
-  if (t.hoy) return { texto: "Hoy", tuyo: false, hoy: true };
+  // El día de un evento con varios dice cuál es («Hoy · Día 2 de 3»): sin eso, tres tarjetas del mismo evento parecerían repetidas.
+  if (t.hoy) return { texto: t.parte ? `Hoy · ${t.parte}` : "Hoy", tuyo: false, hoy: true };
+  if (t.parte) return { texto: t.parte, tuyo: false, hoy: false };
   if (t.van !== null && t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
   return null;
 }
@@ -77,8 +84,41 @@ export function enOrden<T extends { id: string }>(tira: { id: string }[], fichas
 
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
+/**
+ * La línea de cuándo de la tarjeta de un evento: su día y su hora y, por clase (OL-322, doc 55 §3), la de una exposición («Hasta el dom 30 de nov»)
+ * o los días del marco de un festival («Del 12 al 14 de nov»). Lo demás de su clase lo dice `notaDeClase`.
+ */
+export function cuandoDeTarjeta(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase">, ahora = new Date()): string {
+  if (e.clase === "exposicion") return textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), diaLocal(ahora, e.zona), ahora, e.zona);
+  if (e.clase === "festival") return rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora);
+  return minuscula(formatearCuando(e.inicio, null, ahora, e.zona));
+}
+
+/**
+ * Lo que su clase añade al cuándo (OL-322): «Horario por confirmar» en una exposición que se sabe sin horario; en el marco de un festival, «3
+ * actividades esta semana» (el carril «Esta semana») o «Programa registrado: 4 actividades». Null en lo demás. Va aparte del cuándo para que no
+ * se corte con él: en la tarjeta, en la línea del sitio; en el renglón, tras el cuándo.
+ */
+export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "programa">): string | null {
+  if (e.clase === "exposicion") return e.horario && !e.horario.some((f) => f.dias.length) ? "Horario por confirmar" : null;
+  if (e.clase === "festival") return e.programa?.estaSemana ? textoActividadesSemana(e.programa.estaSemana) : e.programa?.registrados ? textoProgramaRegistrado(e.programa.registrados) : null;
+  return null;
+}
+
+/** La segunda línea de la tarjeta: el sitio; el de una exposición sin horario lo dice («Aether · Horario por confirmar») y el marco de un festival
+ *  dice su programa en vez del sitio de su primer acto (un festival suele tener varias sedes). */
+function sitioDeTarjeta(e: EventoAgenda): string {
+  const nota = notaDeClase(e);
+  if (!nota) return sitioEnLista(e);
+  return e.clase === "festival" ? nota : `${sitioEnLista(e)} · ${nota}`;
+}
+
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {
-  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? null, titulo: e.titulo, detalle: minuscula(formatearCuando(e.inicio, null, ahora, e.zona)), sitio: sitioEnLista(e), van: e.van, cuando: true, hoy: diaCorto(e.inicio, ahora, e.zona) === "Hoy", inicio: e.inicio, fin: e.fin, zona: e.zona };
+  const parte = textoParte(e);
+  // Una exposición no «es hoy» aunque se pueda visitar hoy: su rótulo no lo dice (no es algo que pase hoy a una hora). Ni ella ni el marco de un
+  // festival llevan «Voy» (doc 55 §5, punto 2: «Me interesa», que se cambia en su ficha).
+  const hoy = e.clase !== "exposicion" && diaCorto(e.inicio, ahora, e.zona) === "Hoy";
+  return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? null, titulo: e.titulo, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {

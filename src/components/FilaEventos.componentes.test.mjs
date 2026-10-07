@@ -230,17 +230,17 @@ test("Filtros: lo gratis y lo que sigo se cuentan, y lo puesto sale como chip co
 test("Filtros: «Solo lo que sigo» solo se ofrece con sesión; sin ella queda Cuánto, sin título ni raya de más, y todo lo demás sigue igual", async () => {
   const con = await abrir();
   await con.page.getByRole("button", { name: "Filtros" }).click();
-  assert.deepEqual(await hoja(con.page, "Filtros").locator("section h4").allTextContents(), ["Cuánto", "Siguiendo"], "con sesión: los dos bloques");
+  assert.deepEqual(await hoja(con.page, "Filtros").locator("section h4").allTextContents(), ["Qué", "Cuánto", "Siguiendo"], "con sesión: los tres bloques (OL-322: «Qué» arriba)");
   assert.equal(await hoja(con.page, "Filtros").getByRole("switch", { name: "Solo lo que sigo" }).count(), 1);
   await con.context.close();
 
   const sin = await abrir("/?sinSesion=1");
   await sin.page.getByRole("button", { name: "Filtros" }).click();
   const dialogo = hoja(sin.page, "Filtros");
-  assert.deepEqual(await dialogo.locator("section h4").allTextContents(), ["Cuánto"], "sin sesión: ni el título «Siguiendo» ni su fila");
+  assert.deepEqual(await dialogo.locator("section h4").allTextContents(), ["Qué", "Cuánto"], "sin sesión: ni el título «Siguiendo» ni su fila");
   assert.equal(await dialogo.getByText("Solo lo que sigo").count(), 0);
   assert.equal(await dialogo.getByRole("switch").count(), 0);
-  assert.equal(await dialogo.locator("section").count(), 1, "un solo bloque: no sobra ninguna raya entre bloques");
+  assert.equal(await dialogo.locator("section").count(), 2, "Qué y Cuánto: no sobra ninguna raya entre bloques");
   await dialogo.getByRole("button", { name: "Gratis", exact: true }).click();
   assert.equal(await aplicar(sin.page, "Filtros").innerText(), "Ver 3 eventos", "la cuenta no se ve afectada");
   await aplicar(sin.page, "Filtros").click();

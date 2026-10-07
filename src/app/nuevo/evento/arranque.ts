@@ -66,10 +66,11 @@ export function respuestasDeEvento(e: EventoBase, lugares: readonly LugarResumen
  * El arranque según por dónde se entró; null si se entra de cero. El evento que se duplica manda; si no, el lugar pone el sitio y el artista,
  * Quién (pueden ir los dos). Un lugar que no está entre los del directorio que se pueden elegir no contesta nada.
  */
-export function arranqueDe({ desde, lugar, artista }: { desde?: Partial<Respuestas> | null; lugar?: LugarResumen | null; artista?: QuienItem | null }): Arranque | null {
+export function arranqueDe({ desde, lugar, artista, festival }: { desde?: Partial<Respuestas> | null; lugar?: LugarResumen | null; artista?: QuienItem | null; festival?: { id: string; titulo: string } | null }): Arranque | null {
   if (desde) return { r: desde, entrar: true };
-  if (!lugar && !artista) return null;
-  return { r: { ...(lugar ? { sitio: sitioDeLugar(lugar, OTRO_VACIO) } : {}), ...(artista ? { quien: [artista] } : {}) }, entrar: false };
+  if (!lugar && !artista && !festival) return null;
+  // «Agregar otra actividad» de un festival (OL-321): «Parte de un festival» ya puesto con ese festival.
+  return { r: { ...(lugar ? { sitio: sitioDeLugar(lugar, OTRO_VACIO) } : {}), ...(artista ? { quien: [artista] } : {}), ...(festival ? { padre: { id: festival.id, titulo: festival.titulo } } : {}) }, entrar: false };
 }
 
 /** ¿La respuesta trae algo? Una lista vacía o un texto vacío no cuentan. */

@@ -20,7 +20,14 @@ import Reportar from "@/components/Reportar";
 import BarraFicha from "@/components/ui/BarraFicha";
 import Ficha, { CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
-import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoCartel, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoCartel, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoEstrella, IconoEtiqueta, IconoLapiz, IconoOjo, IconoOjoTachado, IconoOk, IconoPersonas, IconoPin, IconoPincel, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
+import EventosPorDia from "@/components/EventosPorDia";
+import TextoHorario from "@/app/lugares/TextoHorario";
+import { avisosParaListas } from "@/app/avisos/paraListas";
+import { decididasDe } from "@/app/eventos/decididas";
+import type { EventoAgenda } from "@/lib/agenda";
+import { horarioEfectivo, kpisDeExposicion, lineaDeExposicion, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -38,10 +45,10 @@ import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
-import { eventoPaso, formatearLargo } from "@/lib/fechas";
+import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
+import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
 import MetaSitio from "./MetaSitio";
 import QuienVa from "./QuienVa";
@@ -181,6 +188,37 @@ async function QuienVaDiferido({ eventoId, miId, conSesion, consultaTrasFin }: {
   return <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={conSesion} />;
 }
 
+/** Lo ligado a un evento por su clase (OL-321): el horario de una exposición (propio y el de su lugar) y su inauguración, el programa de un
+ *  festival (sus actos visibles y, para su autor, sus borradores), el festival de un acto y la exposición que inaugura. Cada consulta falla
+ *  sola sin tumbar la ficha (sin la migración, nada de esto existe y la ficha es la de siempre). */
+type Ligado = { id: string; slug: string | null; titulo: string; inicio: string; fin: string | null; zona: string };
+type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean };
+async function cargarLigados(e: EventoConLugar) {
+  const supabase = await clienteServidor();
+  const vacio = { horarioPropio: [] as Franja[], horarioLugar: [] as Franja[], inauguracion: null as Ligado | null, actos: [] as Acto[], padre: null as Ligado | null, inaugura: null as Ligado | null };
+  if (!supabase) return vacio;
+  const filas = (r: { data: unknown }) => (Array.isArray(r.data) ? (r.data as { dias: number[]; abre: string; cierra: string }[]).map(franjaDeFila) : []);
+  const uno = (r: { data: unknown }) => (r.data as Ligado | null) ?? null;
+  const columnas = "id, slug, titulo, inicio, fin, zona";
+  const [horarioPropio, horarioLugar, inauguracion, actos, padre, inaugura] = await Promise.all([
+    e.clase === "exposicion" ? supabase.from("eventos_horarios").select("dias, abre, cierra").eq("evento_id", e.id).order("creado_en").then(filas) : [],
+    e.clase === "exposicion" && e.lugar_id ? supabase.from("lugares_horarios").select("dias, abre, cierra").eq("lugar_id", e.lugar_id).order("creado_en").then(filas) : [],
+    e.inaugura_id ? supabase.from("eventos").select(columnas).eq("id", e.inaugura_id).maybeSingle().then(uno) : null,
+    e.clase === "festival"
+      ? supabase
+          .from("eventos")
+          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, visible, borrador, lugar:lugares(nombre, portada)")
+          .eq("evento_padre_id", e.id)
+          .order("inicio")
+          .limit(100)
+          .then((r) => (Array.isArray(r.data) ? (r.data as unknown as (Acto & { lugar: Acto["lugar"] | Acto["lugar"][] })[]).map((a) => ({ ...a, lugar: Array.isArray(a.lugar) ? (a.lugar[0] ?? null) : a.lugar, van: null })) : []))
+      : [],
+    e.evento_padre_id ? supabase.from("eventos").select(columnas).eq("id", e.evento_padre_id).maybeSingle().then(uno) : null,
+    e.clase === "puntual" || !e.clase ? supabase.from("eventos").select(columnas).eq("inaugura_id", e.id).limit(1).maybeSingle().then(uno, () => null) : null,
+  ]);
+  return { horarioPropio, horarioLugar, inauguracion, actos, padre, inaugura };
+}
+
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
 async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
   const supabase = await clienteServidor();
@@ -247,7 +285,20 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   // Con horario por día (OL-311) cada día lleva sus horas; si se editó el evento por el formulario de siempre y ya no coinciden, se ignoran.
   const sesiones = sesionesVigentes(e, e.sesiones);
-  const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0);
+  // Cómo ocurre (OL-321; doc 55 §3): lo ligado por su clase, la línea de cuándo de una exposición y de un festival, y «Me interesa» sin «Voy».
+  const clase = e.clase ?? "puntual";
+  const ligados = await cargarLigados(e);
+  const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
+  const ahora = new Date();
+  const hoy = diaLocal(ahora, e.zona);
+  // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
+  const actosVisibles = ligados.actos.filter((a) => !a.borrador);
+  const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
+  const rangoFestival = clase === "festival" ? rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora) : null;
+  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, textoProgramaRegistrado(actosVisibles.length)].filter(Boolean).join(" · ") : null;
+  const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0, cuandoClase);
+  const decididasActos = clase === "festival" ? await decididasDe(actual?.perfil.id ?? null, actosVisibles.map((a) => a.id)) : null;
+  const sedes = new Set(actosVisibles.map((a) => a.lugar?.nombre ?? a.sitio_texto ?? "")).size;
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
   // .ics (`donde` en .../calendario/route.ts) para que la hoja nativa del sistema muestre algo útil para llegar.
   const lugarCalendario = e.lugar ? [e.lugar.nombre, e.lugar.direccion].filter(Boolean).join(", ") : sitio;
@@ -302,6 +353,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
   const portada = e.imagen ?? e.lugar?.portada ?? null;
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
+  const kpiExpo = clase === "exposicion" ? kpisDeExposicion(e, horario.franjas, ahora) : null;
   const hayAvisos = error === "borrar" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
@@ -391,13 +443,31 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       )}
 
       <div className={ficha.cuerpo} data-cuerpo>
-        <Kpis>
-          <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cuando.hora} valor={cuando.dia} />
-          <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
-          <Suspense fallback={<EsqueletoKpi />}>
-            <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
-          </Suspense>
-        </Kpis>
+        {/* Una exposición: hasta cuándo, el horario de hoy y el costo (sin «Van»: no se va un día). Un festival: su periodo con cuántas actividades
+            tiene, el costo y sus sedes. Lo demás, como siempre. */}
+        {kpiExpo ? (
+          <Kpis>
+            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Hasta" valor={kpiExpo.hasta} />
+            <Kpi icono={<IconoReloj width={16} height={16} />} etiqueta={kpiExpo.hoy.etiqueta} valor={kpiExpo.hoy.valor} />
+            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+          </Kpis>
+        ) : clase === "festival" ? (
+          <Kpis>
+            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
+            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+            <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedes} />
+          </Kpis>
+        ) : (
+          <Kpis>
+            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cuando.hora} valor={cuando.dia} />
+            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+            <Suspense fallback={<EsqueletoKpi />}>
+              <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
+            </Suspense>
+          </Kpis>
+        )}
+        {kpiExpo && <p className={styles.linea}>{lineaDeExposicion(e, horario.franjas, ahora)}</p>}
+        {clase === "festival" && cuandoClase && <p className={styles.linea}>{cuandoClase}</p>}
 
         {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
         <div className={ficha.acciones}>
@@ -441,6 +511,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                   <IconoDescarga />
                 </span>
               }
+              iconoListo={
+                <span className={CIRCULO}>
+                  <IconoOk />
+                </span>
+              }
               corto
             />
           )}
@@ -454,18 +529,107 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           )}
         </div>
 
-        {/* Con horario por día (OL-311): cada día con sus horas, en 24 h, bajo los accionables y sin tarjeta propia. */}
+        {/* Con horario por día (OL-311): cada día con sus horas, en 24 h, bajo los accionables y sin tarjeta propia. Un taller (OL-321): sus
+            sesiones, «Sesión n de N». */}
         {sesiones.length > 0 && (
-          <section className={ficha.bloque} aria-label="Horarios por día">
-            <h2>Horarios</h2>
+          <section className={ficha.bloque} aria-label={clase === "taller" ? "Sesiones" : "Horarios por día"}>
+            <h2>{clase === "taller" ? "Sesiones" : "Horarios"}</h2>
             <ul>
-              {listaDeSesiones(sesiones, e.zona).map(({ dia, horas }) => (
+              {listaDeSesiones(sesiones, e.zona).map(({ dia, horas }, i) => (
                 <li key={dia} className={renglon.dato}>
                   <IconoCalendario width={20} height={20} />
-                  <b>{dia}</b>
+                  <b>{clase === "taller" ? `Sesión ${i + 1} de ${sesiones.length} · ${dia}` : dia}</b>
                   <small>{horas}</small>
                 </li>
               ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Una exposición (OL-321): su horario (el propio o el de su lugar, estructurado por el sistema) o «Horario por confirmar», y su inauguración. */}
+        {clase === "exposicion" && (
+          <section className={ficha.bloque} aria-label="Horario">
+            <h2>Horario</h2>
+            <ul>
+              <li className={renglon.dato}>
+                <IconoReloj width={20} height={20} />
+                <b>{horario.franjas.length ? <TextoHorario franjas={horario.franjas} /> : "Horario por confirmar"}</b>
+                <small>{horario.origen === "lugar" ? "Horario del lugar" : horario.origen === "propio" ? "Horario de la exposición" : "Pregunta en el lugar antes de ir."}</small>
+              </li>
+              {ligados.inauguracion && (
+                <li>
+                  <Link href={hrefEvento(ligados.inauguracion)} className={renglon.dato}>
+                    <IconoEstrella width={20} height={20} />
+                    <b>Inauguración</b>
+                    <small>{formatearLargo(ligados.inauguracion.inicio, ahora, null, ligados.inauguracion.zona)}</small>
+                    <IconoChevronDerecha />
+                  </Link>
+                </li>
+              )}
+            </ul>
+          </section>
+        )}
+
+        {/* Un festival (OL-321): su programa por día, cada acto con su ficha y su «Voy»; lo registrado se dice («Programa registrado: N»). Su autor
+            ve también sus borradores, con «Publicar». */}
+        {clase === "festival" && (
+          <section className={ficha.bloque} aria-label="Programa">
+            <h2>Programa</h2>
+            {actosVisibles.length ? <EventosPorDia eventos={actosVisibles} decididas={decididasActos} avisos={avisosParaListas(actual)} /> : <p className={ficha.vacio}>Todavía no hay actividades publicadas.</p>}
+            <p className={ficha.vacio}>
+              {textoProgramaRegistrado(actosVisibles.length)}
+              {borradores.length ? ` · ${borradores.length} ${borradores.length === 1 ? "borrador" : "borradores"}` : ""}
+            </p>
+            {borradores.length > 0 && (
+              <ul aria-label="Borradores">
+                {borradores.map((b) => (
+                  <li key={b.id} className={renglon.dato}>
+                    <IconoCalendario width={20} height={20} />
+                    <b>{b.titulo}</b>
+                    <small>{formatearLargo(b.inicio, ahora, null, b.zona)} · borrador</small>
+                    <form action={publicarBorrador.bind(null, b.id, hrefEvento(e))}>
+                      <button type="submit" className={styles.publicarBorrador}>
+                        Publicar
+                      </button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {puedeEditar && (
+              <Link href={enlaceAltaEvento({ festival: e.id })} className={renglon.dato}>
+                <IconoCalendarioMas width={20} height={20} />
+                <b>Agregar otra actividad</b>
+                <IconoChevronDerecha />
+              </Link>
+            )}
+          </section>
+        )}
+
+        {/* El festival del que es parte, y la exposición que inaugura (OL-321): enlaces a su ficha. */}
+        {(ligados.padre || ligados.inaugura) && (
+          <section className={ficha.bloque} aria-label="Parte de">
+            <ul>
+              {ligados.padre && (
+                <li>
+                  <Link href={hrefEvento(ligados.padre)} className={renglon.dato}>
+                    <IconoEtiqueta width={20} height={20} />
+                    <b>Parte de {ligados.padre.titulo}</b>
+                    <small>Festival</small>
+                    <IconoChevronDerecha />
+                  </Link>
+                </li>
+              )}
+              {ligados.inaugura && (
+                <li>
+                  <Link href={hrefEvento(ligados.inaugura)} className={renglon.dato}>
+                    <IconoEstrella width={20} height={20} />
+                    <b>Inaugura {ligados.inaugura.titulo}</b>
+                    <small>Exposición</small>
+                    <IconoChevronDerecha />
+                  </Link>
+                </li>
+              )}
             </ul>
           </section>
         )}
@@ -524,9 +688,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </section>
         )}
 
-        <Suspense fallback={<EsqueletoQuienVa />}>
-          <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} consultaTrasFin={consultaTrasFin} />
-        </Suspense>
+        {/* Una exposición o un festival no tienen «Voy» (OL-321): tampoco «Quién va». */}
+        {!soloInteres(clase) && (
+          <Suspense fallback={<EsqueletoQuienVa />}>
+            <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} consultaTrasFin={consultaTrasFin} />
+          </Suspense>
+        )}
 
         <p className={ficha.pie}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}</p>
       </div>
@@ -542,6 +709,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
           correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
           llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+          soloInteres={soloInteres(clase)}
         />
       )}
     </Ficha>

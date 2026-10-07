@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, esDeVariosDias, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -280,5 +280,21 @@ describe("el día de una sesión y el cuándo con horario por día (OL-311)", ()
     const texto = cuandoPorDia("2026-10-10T02:00:00Z", "2026-10-12T03:00:00Z", "America/Mexico_City", ahora);
     expect(texto).toBe("Del 9 al 11 de oct · horarios por día");
     expect(texto).not.toMatch(/[\u00a0\u202f\u2060]/);
+  });
+});
+
+describe("esDeVariosDias (OL-320)", () => {
+  it("un fin otro día después de la hora de inicio, o dos días más tarde, es de varios días", () => {
+    expect(esDeVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", "America/Mexico_City")).toBe(true);
+    expect(esDeVariosDias("2026-10-10T16:00:00Z", "2026-10-11T18:00:00Z", "America/Mexico_City")).toBe(true);
+  });
+  it("sin fin, o el mismo día, no", () => {
+    expect(esDeVariosDias("2026-10-10T16:00:00Z", null, "America/Mexico_City")).toBe(false);
+    expect(esDeVariosDias("2026-10-10T16:00:00Z", "2026-10-10T18:00:00Z", "America/Mexico_City")).toBe(false);
+  });
+  it("una noche que cruza la medianoche es una noche, no dos días (hasta la misma hora del día siguiente); más tarde que eso ya son dos días", () => {
+    expect(esDeVariosDias("2026-10-11T04:00:00Z", "2026-10-11T07:00:00Z", "America/Mexico_City")).toBe(false); // 22:00 → 01:00
+    expect(esDeVariosDias("2026-10-11T04:00:00Z", "2026-10-12T04:00:00Z", "America/Mexico_City")).toBe(false); // 22:00 → 22:00 del día siguiente: todavía una noche
+    expect(esDeVariosDias("2026-10-11T04:00:00Z", "2026-10-12T05:00:00Z", "America/Mexico_City")).toBe(true); // 22:00 → 23:00 del día siguiente
   });
 });

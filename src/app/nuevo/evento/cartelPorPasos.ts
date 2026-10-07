@@ -2,7 +2,8 @@ import type { ResultadoCartel } from "@/app/eventos/acciones";
 import { quienTrasLeerCartel } from "@/app/eventos/gestosFlyer";
 import type { QuienItem } from "@/lib/artistas";
 import { LIMITES_EVENTO } from "@/lib/eventos";
-import { OTRO_VACIO, estadoInicial, faltan, finConHora, type Paso, type Respuestas } from "./pasos";
+import { esApertura } from "@/lib/sugerencias";
+import { OTRO_VACIO, estadoInicial, faltan, finConHora, type Acto, type Paso, type Respuestas, type Sitio } from "./pasos";
 
 /**
  * El camino con cartel del alta por pasos (OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323), sin DOM: lo que lee
@@ -32,7 +33,9 @@ export function respuestasDelCartel(leido: Leido, quienActual: QuienItem[] = [])
   const r: Partial<Respuestas> = { quien: quienTrasLeerCartel(leido.quien, quienActual, true) };
   if (v.titulo) r.nombre = v.titulo;
   const [fecha, hora] = v.inicio.split("T");
-  if (fecha) {
+  const forma = formaLeida(leido);
+  if (forma) Object.assign(r, forma);
+  if (fecha && !forma?.clase) {
     r.dias = { desde: fecha, hasta: null };
     if (leido.horaLeida) {
       r.hora = hora;
@@ -48,11 +51,65 @@ export function respuestasDelCartel(leido: Leido, quienActual: QuienItem[] = [])
   }
   if (v.descripcion) r.descripcion = v.descripcion;
   if (v.enlace) r.enlace = v.enlace;
-  if (leido.lugarId) r.sitio = { modo: "lugar", lugarId: leido.lugarId, otro: OTRO_VACIO };
-  else if (v.lugar || v.direccion) {
-    r.sitio = { modo: "otro", lugarId: "", otro: { ...OTRO_VACIO, sitioTexto: v.lugar.slice(0, LIMITES_EVENTO.sitio), direccion: v.direccion.slice(0, LIMITES_EVENTO.direccion), pinPendiente: true } };
-  }
+  const sitio = sitioLeido(leido);
+  if (sitio) r.sitio = sitio;
   return r;
+}
+
+/** El sitio que dice el cartel: un lugar del directorio que el lector cruzó por nombre o, si no, por confirmar con lo leído. */
+function sitioLeido(leido: Leido): Sitio | undefined {
+  const { valores: v } = leido;
+  if (leido.lugarId) return { modo: "lugar", lugarId: leido.lugarId, otro: OTRO_VACIO };
+  if (v.lugar || v.direccion) return { modo: "otro", lugarId: "", otro: { ...OTRO_VACIO, sitioTexto: v.lugar.slice(0, LIMITES_EVENTO.sitio), direccion: v.direccion.slice(0, LIMITES_EVENTO.direccion), pinPendiente: true } };
+  return undefined;
+}
+
+/**
+ * La forma de ocurrir que trae el cartel (OL-321; doc 55 §2), como respuestas: la clase la propone el cartel (y entonces el título ya no la
+ * cambia); null si el cartel no dice nada distinto de un evento, y entonces lo leído es un día y una hora, como siempre.
+ *
+ * - **Exposición**: su visita (del primer día al de cierre) y, si el cartel trae además una fecha con hora, es su inauguración (H1: «Inauguración
+ *   jue 5 · 19:00 · visita del 6 al 30»): los dos renglones llegan llenos.
+ * - **Taller**: los días de sus sesiones (sin ellos, el de la fecha) y su hora si la trae; sin hora de fin, «Sin hora de fin».
+ * - **Festival** (el cartel trae dos o más eventos, H6): cada uno como acto marcado, con su día, su hora y su sede (la del directorio que se llama
+ *   igual o, sin ella, la del cartel; por confirmar si no se cruzó con ninguna).
+ */
+function formaLeida(leido: Leido): Partial<Respuestas> | null {
+  const { valores: v } = leido;
+  const forma = v.forma;
+  if (!forma) return null;
+  const [fecha, hora] = v.inicio.split("T");
+  const horaLeida = leido.horaLeida ? hora : "";
+  const clase = forma.actos.length >= 2 ? "festival" : forma.clase;
+  if (clase === "exposicion") {
+    // El cartel de una inauguración («Inauguración de Ecos de papel»): se publica la apertura, un evento de un día a una hora, y la exposición
+    // con su periodo se sugiere en «Publicado» (OL-323, H1; prototipo aceptado `eventos-superficies.html`, caso h1).
+    if (esApertura(v.titulo)) return { claseFijada: true };
+    const visita = forma.visita ?? (fecha ? { desde: fecha, hasta: null } : null);
+    const inauguracion = forma.visita && fecha && horaLeida && fecha <= forma.visita.desde ? { dia: fecha, hora: horaLeida } : null;
+    return { clase, claseFijada: true, visita, inauguracion };
+  }
+  if (clase === "taller") {
+    const dias = forma.sesiones.length ? forma.sesiones : fecha ? [fecha] : [];
+    const finTaller = horaLeida && v.fin ? v.fin.split("T")[1] : "";
+    return { clase, claseFijada: true, sesionesDias: dias, ...(horaLeida ? { hora: horaLeida, fin: finTaller > horaLeida ? finTaller : "" } : {}) };
+  }
+  if (clase === "festival") {
+    const general = sitioLeido(leido);
+    const actos: Acto[] = forma.actos.map((a, i) => ({
+      clave: `leido-${i}`,
+      titulo: a.titulo,
+      dia: a.fecha,
+      hora: a.hora,
+      sedeLeida: a.lugar || v.lugar,
+      sitio: a.lugarId ? { modo: "lugar", lugarId: a.lugarId, otro: OTRO_VACIO } : a.lugar ? { modo: "otro", lugarId: "", otro: { ...OTRO_VACIO, sitioTexto: a.lugar, pinPendiente: true } } : (general ?? { modo: "lugar", lugarId: "", otro: OTRO_VACIO }),
+      quien: [],
+      marcado: true,
+      leido: true,
+    }));
+    return { clase, claseFijada: true, actos };
+  }
+  return clase === "puntual" ? { claseFijada: true } : null;
 }
 
 /** Los pasos que quedan por preguntar tras leer el cartel, en el orden de siempre (nombre, día, hora, dónde, cuánto); vacío si todo se leyó. */

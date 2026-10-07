@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { CUANTOS, eventosNuevos, filtrosPuestos, listarAgenda, type Cuanto, type FiltrosAgenda } from "@/lib/agenda";
+import { contarAgenda, CUANTOS, eventosNuevos, filtrosPuestos, ponerQue, queDeFiltros, textoVer, type Cuanto, type FiltrosAgenda } from "@/lib/agenda";
+import { QUES, sinPuntoEnCalendario, type Que } from "@/lib/agendaPorClase";
 import { diasActivosCalendario } from "@/lib/calendario";
 import type { Agenda } from "@/lib/cargarAgenda";
 import type { Ciudad, CiudadConDatos } from "@/lib/ciudad";
@@ -35,8 +36,11 @@ type Props = {
   nuevosDesde?: number;
 };
 
-/** «Ver 14 eventos», «Ver 1 evento», «Sin eventos»; sin saber todavía cuántos, «Ver eventos». */
-const cuantosEventos = (n: number | null) => (n === null ? "Ver eventos" : n === 0 ? "Sin eventos" : n === 1 ? "Ver 1 evento" : `Ver ${n} eventos`);
+/** Lo que dice el botón de cada hoja con lo elegido (`textoVer`: «Ver 14 eventos», «Ver 14 eventos y 3 para visitar»…) y si no hay nada que ver. */
+function resultado(agenda: Agenda | null, filtros: FiltrosAgenda, hoy: string, nuevosDesde?: number) {
+  const cuenta = agenda ? contarAgenda(agenda, filtros, hoy, nuevosDesde) : null;
+  return { texto: textoVer(cuenta, queDeFiltros(filtros)), vacio: cuenta !== null && cuenta.renglones + cuenta.visitar === 0 };
+}
 
 /**
  * La fila de contexto de las pantallas de eventos (Inicio y Agenda; docs/rediseno/50, P5): la ciudad, Cuándo y Filtros, y
@@ -61,6 +65,7 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
     onCambiar(nuevo);
   }
   const quitarCuanto = (clave: Cuanto) => onCambiar({ ...valor, cuanto: valor.cuanto.filter((c) => c !== clave) });
+  const que = queDeFiltros(valor);
 
   return (
     <>
@@ -81,8 +86,13 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
           Solo lo que sigo
         </Chip>
       )}
+      {que !== "todo" && (
+        <Chip variante="quitar" onClick={() => onCambiar(ponerQue(valor, "todo"))}>
+          {QUES.find((q) => q.clave === que)?.etiqueta ?? que}
+        </Chip>
+      )}
       {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} nuevosDesde={nuevosDesde} onAplicar={aplicar} onCerrar={cerrar} />}
-      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} conSesion={conSesion} nuevosDesde={nuevosDesde} onAplicar={aplicar} onCerrar={cerrar} />}
+      {hoja === "filtros" && <HojaDeFiltros valor={valor} hoy={hoy} agenda={cargada} conSesion={conSesion} nuevosDesde={nuevosDesde} onAplicar={aplicar} onCerrar={cerrar} />}
     </>
   );
 }
@@ -98,15 +108,16 @@ function HojaCuando({ valor, hoy, zona, agenda, nuevosDesde, onAplicar, onCerrar
   const [borrador, setBorrador] = useState<Cuando | null>(valor.cuando);
   // El calendario se ve mientras se elige con él: al abrir con un valor que no es un atajo, ya viene abierto.
   const [eligiendo, setEligiendo] = useState(() => !!valor.cuando && !atajos.some((a) => mismoCuando(a.cuando, valor.cuando)));
-  const dias = useMemo(() => (agenda ? diasActivosCalendario(nuevosDesde === undefined ? agenda.eventos : eventosNuevos(agenda.eventos, nuevosDesde)) : undefined), [agenda, nuevosDesde]);
-  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }, nuevosDesde).length : null;
+  // Los puntos son los días con renglones: una sesión o un acto sí, una exposición o el marco de un festival no (no son una fecha; OL-322).
+  const dias = useMemo(() => (agenda ? diasActivosCalendario((nuevosDesde === undefined ? agenda.eventos : eventosNuevos(agenda.eventos, nuevosDesde)).filter((e) => !sinPuntoEnCalendario(e))) : undefined), [agenda, nuevosDesde]);
+  const n = resultado(agenda, { ...valor, cuando: borrador }, hoy, nuevosDesde);
   const elegir = (cuando: Cuando | null) => {
     setBorrador(cuando);
     setEligiendo(false);
   };
 
   return (
-    <HojaFiltros titulo="Cuándo" resultado={cuantosEventos(n)} sinResultados={n === 0} onLimpiar={() => elegir(null)} onVer={() => onAplicar({ ...valor, cuando: borrador })} onCerrar={onCerrar}>
+    <HojaFiltros titulo="Cuándo" resultado={n.texto} sinResultados={n.vacio} onLimpiar={() => elegir(null)} onVer={() => onAplicar({ ...valor, cuando: borrador })} onCerrar={onCerrar}>
       <Chips ariaLabel="Cuándo" envuelve>
         {atajos.map((a) => (
           <Chip key={a.etiqueta} activo={!eligiendo && mismoCuando(a.cuando, borrador)} onClick={() => elegir(a.cuando)}>
@@ -131,14 +142,28 @@ function HojaCuando({ valor, hoy, zona, agenda, nuevosDesde, onAplicar, onCerrar
   );
 }
 
-/** Filtros: cuánto cuesta (uno, otro o los dos) y, con sesión, si solo lo que sigue la persona. */
-function HojaDeFiltros({ valor, agenda, conSesion, nuevosDesde, onAplicar, onCerrar }: PropsHoja & { conSesion: boolean }) {
-  const [borrador, setBorrador] = useState({ cuanto: valor.cuanto, siguiendo: valor.siguiendo });
-  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }, nuevosDesde).length : null;
+/**
+ * Filtros: qué (OL-322: todo, eventos, exposiciones, talleres o festivales; una sola elección), cuánto cuesta (uno, otro o los dos) y, con
+ * sesión, si solo lo que sigue la persona.
+ */
+function HojaDeFiltros({ valor, hoy, agenda, conSesion, nuevosDesde, onAplicar, onCerrar }: PropsHoja & { hoy: string; conSesion: boolean }) {
+  const [borrador, setBorrador] = useState<{ cuanto: Cuanto[]; siguiendo: boolean; que: Que }>({ cuanto: valor.cuanto, siguiendo: valor.siguiendo, que: queDeFiltros(valor) });
+  // «Todo» no se guarda en los filtros (sin la propiedad): así un filtro de siempre queda igual que antes.
+  const elegido = (b: typeof borrador): FiltrosAgenda => ponerQue({ ...valor, cuanto: b.cuanto, siguiendo: b.siguiendo }, b.que);
+  const n = resultado(agenda, elegido(borrador), hoy, nuevosDesde);
   const alternar = (clave: Cuanto) => setBorrador((b) => ({ ...b, cuanto: b.cuanto.includes(clave) ? b.cuanto.filter((c) => c !== clave) : [...b.cuanto, clave] }));
 
   return (
-    <HojaFiltros titulo="Filtros" resultado={cuantosEventos(n)} sinResultados={n === 0} onLimpiar={() => setBorrador({ cuanto: [], siguiendo: false })} onVer={() => onAplicar({ ...valor, ...borrador })} onCerrar={onCerrar}>
+    <HojaFiltros titulo="Filtros" resultado={n.texto} sinResultados={n.vacio} onLimpiar={() => setBorrador({ cuanto: [], siguiendo: false, que: "todo" })} onVer={() => onAplicar(elegido(borrador))} onCerrar={onCerrar}>
+      <BloqueFiltro rotulo="Qué">
+        <Chips ariaLabel="Qué" envuelve>
+          {QUES.map((q) => (
+            <Chip key={q.clave} activo={borrador.que === q.clave} onClick={() => setBorrador((b) => ({ ...b, que: q.clave }))}>
+              {q.etiqueta}
+            </Chip>
+          ))}
+        </Chips>
+      </BloqueFiltro>
       <BloqueFiltro rotulo="Cuánto">
         <Chips ariaLabel="Cuánto cuesta" envuelve>
           {CUANTOS.map((c) => (

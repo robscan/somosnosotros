@@ -42,6 +42,10 @@
   grid-area: flecha;
   color: var(--texto-suave);
 }
+/* La respuesta ya puesta: su palomita en tinta, donde iba el chevron. */
+.elegida {
+  color: var(--primario);
+}
 /* Sin icono ni detalle (la otra puerta de una pantalla): el texto y el chevron, del alto de un toque. */
 .sinIcono {
   grid-template-columns: minmax(0, 1fr) auto;

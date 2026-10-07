@@ -76,3 +76,110 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+
+/* 4. La sugerencia al publicar un evento (OL-323; prototipo aceptado `eventos-superficies.html`, casos h1, h2 y h4; bitácora 314: «la ficha
+   en punteado sustituye a la tarjeta de sugerencia»): la ficha de lo que se crearía, en punteado mientras no existe (la misma línea gris de la
+   sugerencia de arriba: el founder eligió el gris para lo que falta el 2026-10-05) y, ya creada, con borde lleno como la tarjeta del evento.
+   Uno bajo otro: la etiqueta, el nombre, los datos (icono y texto), los actos de un festival y los botones. */
+.ficha {
+  display: grid;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+}
+.porCrear {
+  border: 1px dashed var(--texto-suave);
+}
+.creada {
+  border: 1px solid var(--borde);
+}
+.etiqueta {
+  justify-self: start;
+}
+.ficha .hecha {
+  gap: var(--espacio-1);
+  background: var(--ok-suave);
+  color: var(--ok);
+}
+.ficha > h3 {
+  font-size: var(--letra-xl);
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.datos {
+  display: grid;
+  gap: var(--espacio-2);
+}
+.datos > li {
+  display: grid;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr);
+  column-gap: var(--espacio-2);
+  align-items: start;
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.datos > li > svg {
+  color: var(--texto-suave);
+}
+.falta {
+  color: var(--texto-suave);
+}
+.error {
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+
+/* Los actos de un festival, unidos por una línea (conectividad): un punto por acto; el recién publicado, hueco. */
+.actos {
+  display: grid;
+}
+.actos > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr);
+  grid-template-areas:
+    "punto titulo"
+    ". detalle";
+  column-gap: var(--espacio-2);
+  padding-bottom: var(--espacio-3);
+}
+.actos > li:last-child {
+  padding-bottom: 0;
+}
+.actos > li::before {
+  content: "";
+  grid-area: punto;
+  justify-self: center;
+  align-self: center;
+  width: var(--espacio-3);
+  height: var(--espacio-3);
+  border-radius: 50%;
+  background: var(--primario);
+}
+.actos > .actoNuevo::before {
+  background: var(--fondo);
+  box-shadow: inset 0 0 0 2px var(--primario);
+}
+.actos > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: var(--espacio-4);
+  bottom: calc(var(--espacio-1) * -1);
+  left: calc(var(--columna-icono) / 2 - 1px);
+  width: 2px;
+  background: var(--primario);
+  opacity: 0.35;
+}
+.actos > li > b {
+  grid-area: titulo;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.actos > li > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

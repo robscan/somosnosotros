@@ -27,6 +27,8 @@ type Props = {
   slotTusPlanes: React.ReactNode;
   slotEstelar: React.ReactNode;
   slotEstaSemana: React.ReactNode;
+  /** Las exposiciones vigentes (OL-322), después de «Esta semana». */
+  slotParaVisitar: React.ReactNode;
   slotNuevos: React.ReactNode;
   slotLugaresSemana: React.ReactNode;
   slotArtistasSemana: React.ReactNode;
@@ -35,8 +37,8 @@ type Props = {
 };
 
 /**
- * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Tus planes, Destacados, Esta semana,
- * Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares con eventos esta semana, Artistas destacadxs y Artistas con eventos esta semana, cada uno con su título a la izquierda y, a la derecha, el
+ * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Tus planes, Destacados, Esta semana, Para visitar
+ * (las exposiciones, OL-322), Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares con eventos esta semana, Artistas destacadxs y Artistas con eventos esta semana, cada uno con su título a la izquierda y, a la derecha, el
  * enlace que dice a dónde lleva — bajo la fila de contexto de las pantallas de eventos (`FilaEventos`: ciudad, Cuándo y
  * Filtros). Cuándo y Filtros no filtran a Inicio: al aplicarlos llevan a Agenda con eso puesto. Carga progresiva (pedido
  * del founder tras probar en producción): esta pantalla ya no espera ninguna consulta antes de pintar; cada carril llega
@@ -50,7 +52,7 @@ type Props = {
  * crear cuenta en inicio»): y la barra tampoco lleva «Entrar» (founder, 2026-09-29): el acceso se ofrece al entrar a Perfil y al
  * seguir o marcar «Voy», sin bloquear nada delante del contenido de eventos, lugares y artistas.
  */
-export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotTusPlanes, slotEstelar, slotEstaSemana, slotNuevos, slotLugaresSemana, slotArtistasSemana, slotArtistasDestacados, slotMasAdelante }: Props) {
+export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotTusPlanes, slotEstelar, slotEstaSemana, slotParaVisitar, slotNuevos, slotLugaresSemana, slotArtistasSemana, slotArtistasDestacados, slotMasAdelante }: Props) {
   const router = useRouter();
   const esCiudadInicial = ciudad.slug === CIUDAD_INICIAL.slug;
 
@@ -78,6 +80,7 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotEstelar}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotParaVisitar}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
         <Suspense fallback={null}>{slotMasAdelante}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>

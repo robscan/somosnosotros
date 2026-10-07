@@ -19,6 +19,9 @@ type Opciones = {
   alLeer: (leido: Leido) => void;
   /** El cartel quedó guardado sin leer (la casilla desmarcada, sin lecturas, sin servicio o una lectura que falló): sigue la primera pregunta. */
   alGuardar: () => void;
+  /** Al editar (OL-319): el cartel que ya tiene el evento (no se vuelve a leer) y la casilla «Lectura automática» desmarcada de entrada. */
+  inicial?: string | null;
+  marcada?: boolean;
 };
 
 /**
@@ -29,19 +32,20 @@ type Opciones = {
  * con el recuadro igual para intentarlo otra vez. Nunca lanza ni se queda esperando: si se cae la señal a mitad (bitácora 095), cae en eso mismo.
  * `espera` es lo que dice la pantalla de espera (null en reposo): «leyendo» o «subiendo».
  */
-export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar }: Opciones) {
+export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, inicial = null, marcada: marcadaDeEntrada = true }: Opciones) {
   const [espera, setEspera] = useState<"subiendo" | "leyendo" | null>(null);
   const [miniatura, setMiniatura] = useState<string | null>(null);
-  const [subido, setSubido] = useState<CartelSubido | null>(null);
+  const [subido, setSubido] = useState<CartelSubido | null>(() => (inicial ? { url: inicial, leido: false, noPude: false } : null));
   const [error, setError] = useState<string | null>(null);
-  // La casilla «Lectura automática» arranca marcada: leer es lo normal, y desmarcarla es solo para el cartel que no se quiere leer.
-  const [marcada, setMarcada] = useState(true);
+  // En el alta la casilla «Lectura automática» arranca marcada: leer es lo normal, y desmarcarla es solo para el cartel que no se quiere leer.
+  // Al editar arranca desmarcada: lo que ya está puesto no se pisa sin pedirlo.
+  const [marcada, setMarcada] = useState(marcadaDeEntrada);
   // El cupo con el que se abrió, al día con lo que se lee aquí (cada lectura buena resta una; un «ya no hay» del servidor lo agota).
   const [cupoActual, setCupoActual] = useState(cupo);
   // Una subida o lectura a la vez; el toque que llega mientras tanto no hace nada nuevo.
   const ocupado = useRef(false);
   // Lo último que se subió y los últimos gestos, para que una promesa que tarda no use los de hace rato.
-  const imagen = useRef<string | null>(null);
+  const imagen = useRef<string | null>(inicial);
   const gestos = useRef({ alLeer, alGuardar });
   useEffect(() => {
     gestos.current = { alLeer, alGuardar };
@@ -109,5 +113,12 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar }: 
   const agotada = lecturaAgotada(cupoActual);
   const casilla = servicio ? { marcada, agotada, detalle: detalleDeLecturas(cupoActual), onCambio: setMarcada } : null;
 
-  return { espera, miniatura, subido, error, casilla, elegir };
+  // Al editar: quitar el cartel, o poner la dirección de una imagen que ya está en otro sitio (solo la administración); ninguna de las dos lee.
+  const quitar = useCallback(() => {
+    setError(null);
+    setSubido(null);
+  }, []);
+  const poner = useCallback((url: string | null) => setSubido(url ? { url, leido: false, noPude: false } : null), []);
+
+  return { espera, miniatura, subido, error, casilla, elegir, quitar, poner };
 }
