@@ -1,0 +1,54 @@
+/* ==========================================================================
+   Lo propio del alta de artista por pasos (OL-316; prototipo firmado `lugar-artista-por-pasos.html`, casos 5 a 7). Lo que comparte con el
+   alta de evento y el de lugar (las opciones, «Revisa» y «Publicado», con su sugerencia) viene de sus módulos, y «Ya tiene ficha» de
+   `ui/Sugerencia`; todo va como hijo directo de la columna de `PorPasos`.
+   1. La casilla de «Revisa» · 2. Foto y portada · 3. «Agregar foto» en «Publicado»
+   ========================================================================== */
+
+/* 1. «Soy yo» / «Es mi grupo» va entre los renglones de «Revisa», en su propio renglón de la lista: la casilla ya es la caja. */
+.soy {
+  display: grid;
+}
+
+/* 2. Foto y portada, como en la ficha: la foto redonda (el avatar de la ficha) y la portada 3:2 (la cabecera), en miniatura del mismo alto.
+   Una rejilla con áreas por imagen, en una fila: la vista, el botón que la sube y la ✕ que la quita. Sin imagen, la vista lleva su icono
+   sobre el fondo de las miniaturas. */
+.imagen {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "vista subir quitar";
+  column-gap: var(--espacio-3);
+  align-items: center;
+}
+.imagen > :first-child {
+  grid-area: vista;
+  display: grid;
+  place-items: center;
+  height: var(--avatar-ficha);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.imagen.portada > :first-child {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radio);
+}
+.imagen > label {
+  grid-area: subir;
+}
+.imagen > button {
+  grid-area: quitar;
+}
+
+/* 3. «Agregar foto», la sugerencia de «Publicado» sin foto: una etiqueta con la pinta del botón y el campo de archivo escondido dentro
+   (`canon.salida`, como la cámara del formulario de siempre); tocarla abre la cámara o el carrete del teléfono. Mientras sube, apagada. */
+.agregarFoto {
+  gap: var(--espacio-2);
+  cursor: pointer;
+}
+.agregarFoto[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
+}

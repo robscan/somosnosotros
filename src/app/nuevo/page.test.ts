@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
 
 /**
- * OL-312 (bitácora 340): `/nuevo` ya no publica eventos y `/nuevo/evento` es la única alta de evento. Se llama a la función de cada página
- * con la consulta y datos de prueba (sin pintar nada): `/nuevo` con un evento redirige, permanente y antes de pedir sesión, a `/nuevo/evento`
- * con los mismos datos; y `/nuevo/evento` arma con la consulta su arranque (`?lugar=`, `?artista=`, `?desde=`) y a dónde sale la ✕.
+ * OL-312 (bitácora 340), OL-315 (343) y OL-316 (346): `/nuevo` ya no es una pantalla (el proxy responde 308 al alta por pasos de cada tipo;
+ * lo prueban `proxy.test.ts` y `lib/armazon.test.ts`). Se llama a la función de cada alta por pasos con la consulta y datos de prueba (sin
+ * pintar nada): sin sesión, a Entrar con la misma dirección; con ella, lo que arma con la consulta (`/nuevo/evento`: su arranque y a dónde
+ * sale la ✕; `/nuevo/lugar`: el nombre y el punto de entrada; `/nuevo/artista`: el nombre, la ciudad y las subcategorías).
  */
 
 const m = vi.hoisted(() => ({
@@ -17,22 +18,25 @@ const m = vi.hoisted(() => ({
   usuarioActual: vi.fn(),
   tablas: {} as Record<string, unknown>,
   quien: [] as { id: string; nombre: string }[],
+  subcategorias: {} as Record<string, { detalle: string; artistas: number }[]>,
+  ciudadesArtistas: [] as unknown[],
 }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect, permanentRedirect: m.permanentRedirect }));
 vi.mock("@/lib/supabase/servidor", () => ({ usuarioActual: m.usuarioActual, clienteServidor: async () => clienteFalso() }));
-vi.mock("@/app/artistas/acciones", () => ({ crearArtista: vi.fn() }));
+vi.mock("@/app/artistas/acciones", () => ({ crearArtista: vi.fn(), actualizarArtista: vi.fn() }));
 vi.mock("@/app/lugares/acciones", () => ({ crearLugar: vi.fn() }));
 vi.mock("@/app/eventos/acciones", () => ({ crearEvento: vi.fn(), cupoDeCartel: vi.fn(async () => null) }));
 vi.mock("@/app/artistas/consultas", () => ({ cargarMisArtistas: vi.fn(async () => []), cargarQuien: vi.fn(async () => m.quien) }));
-vi.mock("@/lib/ciudades", () => ({ cargarCiudades: vi.fn(async () => []), cargarCiudadesDeArtistas: vi.fn(async () => []) }));
+vi.mock("@/lib/ciudades", () => ({ cargarCiudades: vi.fn(async () => []), cargarCiudadesDeArtistas: vi.fn(async () => m.ciudadesArtistas) }));
 vi.mock("@/lib/cartel", () => ({ lecturaDeCartelActiva: () => false }));
-vi.mock("./Alta", () => ({ default: function Alta() { return null; } }));
+vi.mock("./artista/AltaArtista", () => ({ default: function AltaArtista() { return null; } }));
 vi.mock("./evento/AltaEvento", () => ({ default: function AltaEvento() { return null; } }));
 vi.mock("./lugar/AltaLugar", () => ({ default: function AltaLugar() { return null; } }));
 
 /** Una consulta de Supabase encadenable de prueba: el resultado de cada tabla es fijo. */
 function clienteFalso() {
   return {
+    rpc: async (nombre: string, args: { p_disciplina?: string }) => ({ data: nombre === "subcategorias_de" ? (m.subcategorias[args.p_disciplina ?? ""] ?? []) : null }),
     from: (tabla: string) => {
       const resultado = Promise.resolve(m.tablas[tabla] ?? { data: null });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,41 +64,8 @@ beforeEach(() => {
   m.usuarioActual.mockResolvedValue(SESION);
   m.tablas = { lugares: { data: [TEATRO] } };
   m.quien = [];
-});
-
-describe("/nuevo con un evento", () => {
-  it("se va, permanente y antes de mirar la sesión, a /nuevo/evento con lugar, artista, desde y ciudad", async () => {
-    const { default: Nuevo } = await import("./page");
-    for (const [q, destino] of [
-      [{}, "/nuevo/evento"],
-      [{ tipo: "evento", ciudad: "queretaro" }, "/nuevo/evento?ciudad=queretaro"],
-      [{ lugar: LUGAR, nombre: "x", lat: "22", lng: "-100" }, `/nuevo/evento?lugar=${LUGAR}`],
-      [{ artista: ARTISTA }, `/nuevo/evento?artista=${ARTISTA}`],
-      [{ desde: EVENTO, ciudad: "queretaro" }, `/nuevo/evento?desde=${EVENTO}&ciudad=queretaro`],
-    ] as const) {
-      await expect(Nuevo(consulta(q))).rejects.toThrow(`PERMANENT_REDIRECT:${destino}`);
-    }
-    expect(m.usuarioActual).not.toHaveBeenCalled();
-  });
-  it("un lugar se va, permanente y antes de mirar la sesión, a /nuevo/lugar con la ciudad, el nombre y el punto (OL-315)", async () => {
-    const { default: Nuevo } = await import("./page");
-    await expect(Nuevo(consulta({ tipo: "lugar" }))).rejects.toThrow("PERMANENT_REDIRECT:/nuevo/lugar");
-    await expect(Nuevo(consulta({ tipo: "lugar", ciudad: "queretaro", nombre: "Foro", lat: "22.15", lng: "-100.97" }))).rejects.toThrow("PERMANENT_REDIRECT:/nuevo/lugar?ciudad=queretaro&nombre=Foro&lat=22.15&lng=-100.97");
-    expect(m.usuarioActual).not.toHaveBeenCalled();
-  });
-  it("un artista se queda: sin sesión, a Entrar con la misma dirección", async () => {
-    const { default: Nuevo } = await import("./page");
-    m.usuarioActual.mockResolvedValue(null);
-    await expect(Nuevo(consulta({ tipo: "artista", nombre: "Trio" }))).rejects.toThrow(`REDIRECT:/entrar?siguiente=${encodeURIComponent("/nuevo?tipo=artista&nombre=Trio")}`);
-    expect(m.permanentRedirect).not.toHaveBeenCalled();
-  });
-  it("con sesión, la pantalla del artista, con «Evento» y «Lugar» hacia sus altas por pasos y la ciudad que se veía", async () => {
-    const { default: Nuevo } = await import("./page");
-    const el = (await Nuevo(consulta({ tipo: "artista", ciudad: "queretaro" }))) as ReactElement<Props>;
-    expect(el.props.evento).toBe("/nuevo/evento?ciudad=queretaro");
-    expect(el.props.lugar).toBe("/nuevo/lugar?ciudad=queretaro");
-    expect(el.props.salida.texto).toBe("Artistas");
-  });
+  m.subcategorias = {};
+  m.ciudadesArtistas = [];
 });
 
 describe("/nuevo/evento", () => {
@@ -160,5 +131,33 @@ describe("/nuevo/lugar (OL-315)", () => {
     expect(el.props.arranque).toEqual({ nombre: "", punto: null });
     expect(el.props.conCiudad).toBeNull();
     expect(el.props.ciudadContexto.slug).toBe("san-luis-potosi");
+  });
+});
+
+describe("/nuevo/artista (OL-316)", () => {
+  it("sin sesión, a Entrar con la misma dirección completa", async () => {
+    const { default: NuevoArtista } = await import("./artista/page");
+    m.usuarioActual.mockResolvedValue(null);
+    await expect(NuevoArtista(consulta({ ciudad: "queretaro", nombre: "Trio" }))).rejects.toThrow(`REDIRECT:/entrar?siguiente=${encodeURIComponent("/nuevo/artista?ciudad=queretaro&nombre=Trio")}`);
+  });
+  it("con sesión: el nombre de entrada, la ciudad de Artistas (la de la dirección o la inicial) y la ✕ a Artistas en esa ciudad", async () => {
+    const { default: NuevoArtista } = await import("./artista/page");
+    m.ciudadesArtistas = [{ slug: "queretaro", nombre: "Querétaro", centro: { lng: -100.39, lat: 20.59 }, zoom: 13, artistas: 3 }];
+    const el = (await NuevoArtista(consulta({ ciudad: "queretaro", nombre: "  Trío Xochitl " }))) as ReactElement<Props>;
+    expect(el.props.arranque).toEqual({ nombre: "Trío Xochitl", ciudad: "Querétaro" });
+    expect(el.props.conCiudad).toBe("queretaro");
+    expect(el.props.salida).toEqual({ href: "/artistas?ciudad=queretaro", texto: "Artistas" });
+    const sin = (await NuevoArtista(consulta({}))) as ReactElement<Props>;
+    expect(sin.props.arranque).toEqual({ nombre: "", ciudad: "San Luis Potosí" });
+    expect(sin.props.conCiudad).toBeNull();
+    expect(sin.props.salida.href).toBe("/artistas");
+  });
+  it("trae de una vez las subcategorías ya usadas de cada disciplina, tal como las ordena la base", async () => {
+    const { default: NuevoArtista } = await import("./artista/page");
+    m.subcategorias = { teatro: [{ detalle: "Compañía de teatro", artistas: 12 }, { detalle: "Títeres", artistas: 4 }] };
+    const el = (await NuevoArtista(consulta({}))) as ReactElement<Props>;
+    expect(Object.keys(el.props.subcategorias).sort()).toEqual(["artes_visuales", "cine", "circo", "danza", "letras", "musica", "otro", "teatro"]);
+    expect(el.props.subcategorias.teatro).toEqual(m.subcategorias.teatro);
+    expect(el.props.subcategorias.musica).toEqual([]);
   });
 });

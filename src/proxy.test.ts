@@ -93,7 +93,7 @@ describe("proxy: 308 real desde la dirección con UUID", () => {
   });
 });
 
-describe("proxy: /nuevo con un evento va al alta por pasos (OL-312)", () => {
+describe("proxy: /nuevo va al alta por pasos de su tipo (OL-312, OL-315, OL-316)", () => {
   it("308 absoluto a /nuevo/evento con lugar, artista, desde y ciudad, sin consultar ni pedir sesión", async () => {
     for (const [ruta, destino] of [
       ["/nuevo", "/nuevo/evento"],
@@ -120,8 +120,20 @@ describe("proxy: /nuevo con un evento va al alta por pasos (OL-312)", () => {
     }
     expect(consultas).toEqual([]);
   });
-  it("un artista se queda en /nuevo, y /nuevo/evento y /nuevo/lugar pasan", async () => {
-    for (const ruta of ["/nuevo?tipo=artista&ciudad=queretaro", "/nuevo/evento?lugar=x", "/nuevo/lugar?ciudad=queretaro"]) {
+  it("/nuevo?tipo=artista responde 308 absoluto a /nuevo/artista con la ciudad y el nombre (OL-316): /nuevo ya no es una pantalla", async () => {
+    for (const [ruta, destino] of [
+      ["/nuevo?tipo=artista", "/nuevo/artista"],
+      ["/nuevo?tipo=artista&ciudad=queretaro", "/nuevo/artista?ciudad=queretaro"],
+      ["/nuevo?tipo=artista&nombre=Los%20Vecinos&lat=22&lng=-100", "/nuevo/artista?nombre=Los+Vecinos"],
+    ]) {
+      const r = await pedir(ruta);
+      expect(r.status, ruta).toBe(308);
+      expect(r.headers.get("location")).toBe(`https://somosnosotros.org${destino}`);
+    }
+    expect(consultas).toEqual([]);
+  });
+  it("/nuevo/evento, /nuevo/lugar y /nuevo/artista pasan", async () => {
+    for (const ruta of ["/nuevo/evento?lugar=x", "/nuevo/lugar?ciudad=queretaro", "/nuevo/artista?ciudad=queretaro"]) {
       const r = await pedir(ruta);
       expect(r.status, ruta).toBe(200);
       expect(r.headers.get("location")).toBeNull();

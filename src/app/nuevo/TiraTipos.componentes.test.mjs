@@ -1,6 +1,6 @@
-/** OL-313 (bitácora 341) y OL-315 (bitácora 343): la tira de tipos de las altas (Evento · Lugar · Artista) con sus estilos reales: el tipo de
- *  la pantalla va marcado y los otros son enlaces. En el primer paso del alta de evento, sola y pegada abajo; en `/nuevo` (el artista), igual;
- *  en el primer paso del alta de lugar, dentro del pie del paso (`enPie`). La guardia de salida es la real (`pedirSalida`); el enrutador de
+/** OL-313 (bitácora 341), OL-315 (343) y OL-316 (346): la tira de tipos de las altas (Evento · Lugar · Artista) con sus estilos reales: el
+ *  tipo de la pantalla va marcado y los otros son enlaces a las otras altas por pasos. En el primer paso del alta de evento, sola y pegada
+ *  abajo; en el primer paso del alta de lugar y del de artista, dentro del pie del paso (`enPie`). La guardia de salida es la real (`pedirSalida`); el enrutador de
  *  Next lo simula `window.qa.reemplazos`.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`; sí con `npm run test:componentes`). */
@@ -37,14 +37,14 @@ before(async () => {
       import './src/app/globals.css';
       window.qa = { reemplazos: [], pedirSalida };
       const q = new URLSearchParams(location.search);
-      // «alta»: la tira de /nuevo; si no, la del primer paso del alta de evento. «sucio»: hay algo escrito (la guardia pregunta).
+      // «sucio»: hay algo escrito (la guardia pregunta).
       // La pantalla real siempre pone su guardia (\`useSalirSinPublicar\`): limpia, deja seguir; sucia, pregunta y guarda cómo seguir.
       ponerGuardia((continuar) => (q.has('sucio') ? void (window.qa.pregunto = continuar) : continuar()));
-      // «alta»: la de /nuevo, el artista; «pie»: dentro del pie del primer paso del alta de lugar (un footer con su relleno, como \`PiePaso\`).
-      const alta = <main style={{minHeight:'100dvh',display:'grid',gridTemplateRows:'1fr auto'}}><p>artista</p><TiraTipos actual="artista" destinos={{ evento: '/nuevo/evento?ciudad=queretaro', lugar: '/nuevo/lugar?ciudad=queretaro' }} /></main>;
-      const pie = <main style={{minHeight:'100dvh',display:'flex',flexDirection:'column'}}><footer style={{marginTop:'auto',display:'grid',gap:8,padding:'12px 20px 16px'}}><button type="button">Siguiente</button><TiraTipos actual="lugar" enPie destinos={{ evento: '/nuevo/evento', artista: '/nuevo?tipo=artista' }} /></footer></main>;
+      // «alta»: dentro del pie del primer paso del alta de artista; «pie»: del alta de lugar (un footer con su relleno, como \`PiePaso\`); si no, sola, la del primer paso del alta de evento.
+      const alta = <main style={{minHeight:'100dvh',display:'flex',flexDirection:'column'}}><footer style={{marginTop:'auto',display:'grid',gap:8,padding:'12px 20px 16px'}}><button type="button">Siguiente</button><TiraTipos actual="artista" enPie destinos={{ evento: '/nuevo/evento?ciudad=queretaro', lugar: '/nuevo/lugar?ciudad=queretaro' }} /></footer></main>;
+      const pie = <main style={{minHeight:'100dvh',display:'flex',flexDirection:'column'}}><footer style={{marginTop:'auto',display:'grid',gap:8,padding:'12px 20px 16px'}}><button type="button">Siguiente</button><TiraTipos actual="lugar" enPie destinos={{ evento: '/nuevo/evento', artista: '/nuevo/artista' }} /></footer></main>;
       createRoot(document.getElementById('root')).render(
-        q.has('alta') ? alta : q.has('pie') ? pie : <main style={{minHeight:'100dvh',display:'flex',flexDirection:'column'}}><TiraTipos actual="evento" destinos={{ lugar: '/nuevo/lugar', artista: '/nuevo?tipo=artista' }} /></main>,
+        q.has('alta') ? alta : q.has('pie') ? pie : <main style={{minHeight:'100dvh',display:'flex',flexDirection:'column'}}><TiraTipos actual="evento" destinos={{ lugar: '/nuevo/lugar', artista: '/nuevo/artista' }} /></main>,
       );
     `,
     },
@@ -97,7 +97,7 @@ test("en el primer paso: Evento es la pantalla (aria-current, ni enlace ni botó
   assert.equal(await tira(p).getByRole("button").count(), 0);
   assert.deepEqual(await tira(p).getByRole("link").evaluateAll((a) => a.map((x) => [x.textContent, x.getAttribute("href")])), [
     ["Lugar", "/nuevo/lugar"],
-    ["Artista", "/nuevo?tipo=artista"],
+    ["Artista", "/nuevo/artista"],
   ]);
   const caja = await tira(p).boundingBox();
   assert.equal(Math.round(caja.height), 56);
@@ -117,10 +117,10 @@ test("sin nada escrito, tocar Lugar o Artista reemplaza la entrada sin preguntar
   await tira(sucia).getByRole("link", { name: "Artista" }).click();
   assert.deepEqual(await sucia.evaluate(() => window.qa.reemplazos), []);
   await sucia.evaluate(() => window.qa.pregunto());
-  assert.deepEqual(await sucia.evaluate(() => window.qa.reemplazos), ["/nuevo?tipo=artista"]);
+  assert.deepEqual(await sucia.evaluate(() => window.qa.reemplazos), ["/nuevo/artista"]);
 });
 
-test("en /nuevo (el artista): Evento y Lugar son enlaces a sus altas por pasos y Artista es la pantalla, con su punto", async (t) => {
+test("en el alta de artista (OL-316): Evento y Lugar son enlaces a sus altas por pasos y Artista es la pantalla, con su punto", async (t) => {
   const p = await pagina(t, "?alta");
   assert.deepEqual(await tira(p).getByRole("link").evaluateAll((a) => a.map((x) => [x.textContent, x.getAttribute("href")])), [
     ["Evento", "/nuevo/evento?ciudad=queretaro"],

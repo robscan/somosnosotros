@@ -8,7 +8,6 @@ import { IconoOk } from "@/components/ui/Iconos";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import { compartirLugar, type LugarResumen } from "@/lib/lugares";
 import publicado from "../evento/Publicado.module.css";
-import styles from "./AltaLugar.module.css";
 
 type Props = {
   /** El lugar como quedó, armado con lo publicado: lo que pinta la tarjeta es lo que verá la gente en Lugares. */
@@ -37,7 +36,7 @@ export default function Publicado({ lugar, onOtro }: Props) {
       <ul className={publicado.tarjeta}>
         <RenglonLugar lugar={lugar} />
       </ul>
-      <section className={styles.sugerencia} aria-labelledby="sugerencia-lugar">
+      <section className={publicado.sugerencia} aria-labelledby="sugerencia-lugar">
         <h3 id="sugerencia-lugar">¿Hay algo próximo en {lugar.nombre}?</h3>
         <p>Publica su primer evento con el lugar ya puesto.</p>
         <Boton href={enlaceAltaEvento({ lugar: lugar.id })} prefetch={false}>

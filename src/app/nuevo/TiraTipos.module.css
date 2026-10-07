@@ -1,8 +1,8 @@
 /* ==========================================================================
-   La tira de tipos de las altas (docs/rediseno/50, P9; prototipo firmado): Evento · Lugar · Artista. La comparten `/nuevo` (`Alta`, el
-   artista), el primer paso del alta de evento (`AltaEvento`, OL-313) y el del alta de lugar (`AltaLugar`, OL-315, dentro de su pie). Sola es
-   un `footer`, hijo directo de la pantalla: en la columna de los pasos (`PorPasos`) así no recibe el aire de los lados ni entra de lado, y
-   `margin-top: auto` la lleva al fondo aunque el paso sea corto; en la rejilla de `/nuevo` ese margen no hace nada (la fila ya es la última).
+   La tira de tipos de las altas (docs/rediseno/50, P9; prototipo firmado): Evento · Lugar · Artista. La comparten el primer paso del alta de
+   evento (`AltaEvento`, OL-313), el del alta de lugar (`AltaLugar`, OL-315) y el del alta de artista (`AltaArtista`, OL-316), estos dos
+   dentro de su pie. Sola es un `footer`, hijo directo de la columna de los pasos (`PorPasos`): así no recibe el aire de los lados ni entra
+   de lado, y `margin-top: auto` la lleva al fondo aunque el paso sea corto.
    1. La tira · 2. El tipo · 3. Dentro del pie de un paso
    ========================================================================== */
 
@@ -49,7 +49,7 @@
   background: var(--texto);
 }
 
-/* 3. Dentro del pie de un paso (el primer paso del alta de lugar, OL-315; prototipo firmado): una fila más del pie, bajo «Siguiente», con su
+/* 3. Dentro del pie de un paso (el primer paso del alta de lugar y del de artista, OL-315 y OL-316; prototipo firmado): una fila más del pie, bajo «Siguiente», con su
    raya arriba. Ni pegada ni con la zona segura propias: las pone el pie, que con el teclado abierto se ancla sobre él y se la lleva consigo. */
 .enPie {
   position: static;

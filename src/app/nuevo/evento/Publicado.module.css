@@ -1,7 +1,7 @@
 /* ==========================================================================
    «Publicado», el final del alta de evento por pasos (OL-304; prototipo firmado `publicar-por-pasos.html`, bitácora 323). Va como hijo
    directo de la columna de `PorPasos`, que ya le da el aire de los lados y la entrada de lado.
-   1. La confirmación · 2. La tarjeta
+   1. La confirmación · 2. La tarjeta · 3. La sugerencia (la del alta de lugar y la del alta de artista)
    ========================================================================== */
 
 /* 1. El sello, el título y su frase van juntos y centrados (un solo bloque: entre ellos hay menos aire que entre pantalla y pantalla).
@@ -57,4 +57,22 @@
 }
 .tarjeta > li {
   border-bottom: 0;
+}
+
+/* 3. La única sugerencia del «Publicado» del alta de lugar y del de artista (OL-315, OL-316), en punteado: la pregunta, su frase y el botón. */
+.sugerencia {
+  display: grid;
+  gap: var(--espacio-2);
+  padding: var(--espacio-4);
+  border: 1px dashed var(--texto-suave);
+  border-radius: var(--radio-grande);
+}
+.sugerencia > h3 {
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.sugerencia > p {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }

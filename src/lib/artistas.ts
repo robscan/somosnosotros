@@ -219,6 +219,33 @@ export function pasoQueHace(disciplinaElegida: Disciplina | ""): PasoQueHace {
   return disciplinaElegida ? 2 : 1;
 }
 
+/**
+ * Cuántas subcategorías ya usadas se ofrecen como chips en «¿Qué tipo de …?» del alta por pasos (OL-316; prototipo firmado
+ * `lugar-artista-por-pasos.html`, decisión 5 del acta, bitácora 342): las más usadas, que caben en una pantalla de 320 sin empujar el pie.
+ * Las demás (hasta las 40 de `subcategorias_de`) siguen sirviendo a «Otra…» para sugerir una parecida antes de crear otra.
+ */
+export const SUBCATEGORIAS_A_LA_VISTA = 8;
+
+/**
+ * La subcategoría que el nombre ya dice, entre las ya usadas en su disciplina (OL-316): «Compañía de Teatro La Rendija» es «Compañía de
+ * teatro», «Los Títeres de Ana» es «Títeres». Solo una subcategoría escrita entera como palabras del nombre (de 4 letras o más) y que no es el
+ * nombre de la disciplina misma («Teatro» en teatro no dice nada nuevo); la primera, que es la más usada. Sin coincidencia, null: no se adivina.
+ */
+export function deducirSubcategoria(nombre: string, disciplina: Disciplina, subcategorias: readonly Subcategoria[]): string | null {
+  const n = ` ${normalizarNombre(nombre)} `;
+  const propia = normalizarNombre(etiquetaDisciplina(disciplina));
+  for (const s of subcategorias) {
+    const clave = normalizarNombre(s.detalle);
+    if (clave.length >= 4 && clave !== propia && n.includes(` ${clave} `)) return s.detalle;
+  }
+  return null;
+}
+
+/** Lo que se comparte de un artista: su dirección en el sitio y «Nombre · Qué hace · Solista». El mismo en la ficha y en «Publicado» (OL-316). */
+export function compartirArtista(a: Pick<ArtistaResumen, "id" | "slug" | "nombre" | "disciplina" | "detalle" | "tipo">): { url: string; texto: string } {
+  return { url: `https://somosnosotros.org${hrefArtista(a)}`, texto: `${a.nombre} · ${etiquetaArtista(a)}` };
+}
+
 /** Al tocar un chip de disciplina en el paso 1: la elige y suelta cualquier subcategoría de una anterior. */
 export function alElegirDisciplina(d: Disciplina): { disciplinaElegida: Disciplina; detalle: string; otraAbierta: boolean } {
   return { disciplinaElegida: d, detalle: "", otraAbierta: false };

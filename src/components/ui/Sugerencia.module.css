@@ -59,3 +59,8 @@
   color: var(--primario);
   font-weight: 600;
 }
+/* Lo que ya tiene ficha en el directorio (el primer paso del alta de lugar y del de artista, OL-315 y OL-316): el nombre en el color de
+   acción, porque es un enlace a esa ficha y no algo que se elige. */
+.conFicha > b {
+  color: var(--primario);
+}
