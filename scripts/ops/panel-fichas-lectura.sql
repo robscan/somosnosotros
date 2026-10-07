@@ -23,7 +23,7 @@ gestos as (
 ),
 publicaciones as (
   select l.creado_por as perfil, l.creado_en from public.lugares l where l.creado_por is not null
-  union all select e.creado_por, e.creado_en from public.eventos e where e.creado_por is not null
+  union all select e.creado_por, e.creado_en from public.eventos e where e.creado_por is not null and not e.borrador
   union all select a.creado_por, a.creado_en from public.artistas a where a.creado_por is not null
 ),
 primeras as (

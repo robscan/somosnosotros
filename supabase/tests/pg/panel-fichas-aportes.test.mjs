@@ -127,6 +127,10 @@ export async function run({ as, check, expectError, query }) {
     await publica(u.u3, 10);
     await publica(admin, 1); // la administración no cuenta
     await publica(u.asc, 0.5); // ya administradora: no cuenta
+    // Un acto de festival sin publicar (borrador, oculto): quien solo registró eso todavía no publicó nada.
+    const festival = randomUUID(), borrador = randomUUID(); eventos.push(festival, borrador);
+    await query(`insert into public.eventos(id,lugar_id,titulo,inicio,fin,clase,creado_por,creado_en) values ($1,$2,$3,now() + interval '6 days',now() + interval '8 days','festival',$4,${dias(30)})`, [festival, lugar, `Festival ${festival}`, admin]);
+    await query(`insert into public.eventos(id,lugar_id,titulo,inicio,evento_padre_id,borrador,visible,creado_por,creado_en) values ($1,$2,$3,now() + interval '7 days',$4,true,false,$5,${dias(1)})`, [borrador, lugar, `Borrador ${borrador}`, festival, u.u5]);
 
     const a = await aportes();
     const da = (campo) => a[campo] - antesA[campo];
@@ -134,7 +138,7 @@ export async function run({ as, check, expectError, query }) {
     check(da("voy") === 3 && da("me_interesa") === 1, "aportes: tres Voy y un Me interesa", a);
     check(da("personas") === 3, "aportes: tres personas distintas", a);
     check(da("gestos_antes") === 1, "aportes: uno la semana anterior; lo de hace 20 días queda fuera", a);
-    check(da("primeras_ahora") === 1, "primera vez: solo u1 publicó por primera vez esta semana", a);
+    check(da("primeras_ahora") === 1, "primera vez: solo u1 publicó por primera vez esta semana (el borrador de u5 no cuenta)", a);
     check(da("primeras_antes") === 1, "primera vez: u3, la semana anterior", a);
     check(da("han_publicado") === 4, "primera vez: u1, u2, u3 y quien dio de alta una ficha (u6) han publicado alguna vez (la administración y la ascendida, no)", a);
     check(!JSON.stringify(a).includes("@") && ![...Object.values(u), admin].some((x) => JSON.stringify(a).includes(x)), "aportes: ningún id ni correo sale en la respuesta");

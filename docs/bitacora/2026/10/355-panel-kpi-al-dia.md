@@ -21,13 +21,13 @@ La cifra que ya no se alimenta era **«Solicitaron su ficha»** del bloque *Invi
 
 ## Auditoría de cada número del panel
 
-«¿Vivo?» se comprobó contra los flujos de hoy: alta por pasos de evento, lugar y artista (OL-312 a 316), correo ligado, «Soy yo», sesiones por día (OL-311), horario de lugar (OL-315), cartel con tope (OL-307). La clase de evento (`clase`) **no está en main**: no hay nada que medir por clase.
+«¿Vivo?» se comprobó contra los flujos de hoy: alta por pasos de evento, lugar y artista (OL-312 a 316), correo ligado, «Soy yo», sesiones por día (OL-311), horario de lugar (OL-315), cartel con tope (OL-307). La clase de evento (`clase`, OL-321) **entró a main mientras trabajaba** (se mezcló al final): la migración dice que agenda y panel siguen leyendo `inicio`, `fin` y `termina`, y los actos sin publicar (`borrador`) quedan ocultos (`visible = false`), así que ningún KPI de eventos los cuenta.
 
 | KPI | Fuente | ¿Vivo? | Qué pasa |
 |---|---|---|---|
 | Personas activas | `indicadores_ahora()`: `cuentas_vistas`, `novedades_vistas_en`, `last_sign_in_at`, `asistencias`, `seguimientos`, `lugares`/`eventos`/`artistas.creado_por`, `reportes` (menos `mas_lecturas`), con `rol_en` | Vivo | Quien hace cualquier cosa abre la app (`cuentas_vistas`), así que las acciones nuevas (novedades, obra colectiva, lectura de cartel) quedan cubiertas por «abrió la app». |
 | Coincidencias | `eventos` próximos de 7 días + `asistencias` estado `voy` | Vivo | Las sesiones no cambian `inicio`/`fin` del evento: sigue midiendo igual. |
-| Agenda de la semana / lugares con fecha | `eventos` (`visible`, `termina`, `inicio`), `lugares` visibles no privados | Vivo | Los negocios entran desde OL-315 (`cafe_bar`): suben «lugares», es lo esperado. |
+| Agenda de la semana / lugares con fecha | `eventos` (`visible`, `termina`, `inicio`), `lugares` visibles no privados | Vivo | Los negocios entran desde OL-315 (`cafe_bar`): suben «lugares», es lo esperado. **Observación (OL-321):** el marco de un festival y cada uno de sus actos son eventos distintos y los dos cuentan; una exposición vigente cuenta en la agenda de la semana mientras dure. No se cambió: ver «Decisiones por confirmar». |
 | Publica la comunidad | `eventos` próximos con `creado_por` no administradora (`rol_en`) | Vivo | |
 | Cómo va la comunidad (embudo) | `panel_comunidad()`: cuentas nuevas de 30 días, hicieron algo en su primera semana, siguen volviendo | Vivo | |
 | Gestionar · Personas (nuevas, nunca entraron, correo con problema) | `perfiles`, `auth.users.last_sign_in_at`, `avisos_correo_motivo` | Vivo | |
@@ -48,7 +48,7 @@ La cifra que ya no se alimenta era **«Solicitaron su ficha»** del bloque *Invi
 
 **Nuevos (tres, todos «por confirmar» por el founder; cada uno sale de datos que ya existen y son agregados)**
 1. **Voy y Me interesa** (Últimos 7 días): veces que alguien dijo Voy o Me interesa en 7 días, sin administradores (rol de entonces), contra los 7 anteriores, con el desglose Voy / Me interesa. Sirve a que la gente se conozca: es la demanda detrás de «Coincidencias».
-2. **Primera publicación** (Últimos 7 días): cuentas cuya primera publicación (evento, lugar o artista) cayó esta semana, contra la anterior. Sirve a registrar eventos y lugares: cuánta gente nueva pasa de mirar a publicar.
+2. **Primera publicación** (Últimos 7 días): cuentas cuya primera publicación (evento, lugar o artista; un acto de festival sin publicar no cuenta) cayó esta semana, contra la anterior. Sirve a registrar eventos y lugares: cuánta gente nueva pasa de mirar a publicar.
 3. **Artistas con foto** (grupo «Fichas»): artistas visibles con foto y su porcentaje; enlaza a «Sin foto». Sin foto una ficha no entra en la tira de artistas destacados (`tira_destacados` pide foto). Sin flecha de cambio: no hay fecha de cuándo se puso una foto.
 
 Layout: el mismo componente de indicadores del panel (mismos tamaños, flecha «▲ 3 más», sin verde ni rojo). «Últimos 7 días» pasa a 6 indicadores (3 filas) y «Fichas» es un grupo aparte de 2. La pieza `ui/Kpi` del brief es la de las fichas públicas (Costo, Van…); el panel nunca la usó (usa `.indicador` de `admin.module.css`), así que no se tocó.
@@ -64,7 +64,7 @@ La **vía se deduce**, no se guarda: reporte `es_mio` previo de esa cuenta sobre
 ## Pruebas
 
 - `src/lib/panel.test.ts`: 38 pruebas (11 nuevas): textos, singular y plural, desglose por vía, cambio semanal (más, igual), sin vínculos (sin tendencia inventada), foto con y sin faltantes, nota del grupo, lectura de respuestas incompletas.
-- `supabase/tests/pg/panel-fichas-aportes.test.mjs` (36 comprobaciones): un caso por cada vía (solicitud con reporte previo, correo con mayúsculas distintas, alta, administración) para artistas y lugares; la segunda cuenta de una ficha no la cuenta otra vez; una solicitud sin atender no cuenta como vínculo; serie de 12 semanas con fechas fijas; foto (con foto, vacía, oculta); Voy / Me interesa y primeras publicaciones con rol de entonces (cuenta ascendida hace un día: lo anterior cuenta, lo posterior no) y con la administración fuera; guardas (anon, usuario, sin identidad), flags de las funciones y que no salgan ids ni correos; y que la consulta de lectura del gestor dé lo mismo que las funciones. **Control negativo:** quitando la guarda de administración de las dos funciones, 4 comprobaciones fallan; restaurada, pasan. `security-advisor.test.mjs` suma las dos firmas (53) y las denegaciones.
+- `supabase/tests/pg/panel-fichas-aportes.test.mjs` (36 comprobaciones): un caso por cada vía (solicitud con reporte previo, correo con mayúsculas distintas, alta, administración) para artistas y lugares; la segunda cuenta de una ficha no la cuenta otra vez; una solicitud sin atender no cuenta como vínculo; serie de 12 semanas con fechas fijas; foto (con foto, vacía, oculta); Voy / Me interesa y primeras publicaciones con rol de entonces (cuenta ascendida hace un día: lo anterior cuenta, lo posterior no) con la administración fuera y con un acto de festival sin publicar que no cuenta (control negativo: sin `not e.borrador`, 3 fallan); guardas (anon, usuario, sin identidad), flags de las funciones y que no salgan ids ni correos; y que la consulta de lectura del gestor dé lo mismo que las funciones. **Control negativo:** quitando la guarda de administración de las dos funciones, 4 comprobaciones fallan; restaurada, pasan. `security-advisor.test.mjs` suma las dos firmas (53) y las denegaciones.
 - Verificación: `npm run lint` (0 errores; 1 aviso previo en `VisorImagen.componentes.test.mjs`) · `npm run typecheck` · `npm test` 2387 · `npm run inventario` sin novedades · `npm run medir` 29 pantallas × 4 anchos sin novedades (`/admin` no está en esa lista) · `npm run test:db` 83 migraciones, 1673 pruebas, 0 fallaron.
 
 ## Capturas (390×844 y 320, `docs/rediseno/capturas-355/`)
@@ -81,13 +81,14 @@ App compilada (`next build && next start -p 3111`) contra un respaldo local con 
 1. **Los tres KPI nuevos** (Voy y Me interesa, Primera publicación, Artistas con foto): ¿se quedan, se quita alguno, o se cambia por otro?
 2. **Guardar la vía exacta.** Hoy se deduce y es una inferencia (una ficha ligada por la administración sin solicitud y cuyo correo no coincide cae en «otra vía»). Guardarla exacta pide una columna `via` en `artistas_cuentas` y `lugares_cuentas` y tocar los tres sitios que insertan (`crearArtista`, `reclamar_si_correo_coincide`, «Pasarle la ficha»). Requiere su decisión.
 3. **Lugares.** Al dar de alta un lugar no se liga la cuenta (la autoría ya da el mando), así que «lugares vinculados» solo crece por solicitud aprobada o por la administración. ¿Debe contar también el lugar que publicó una cuenta que no es de administración? Hoy no.
-4. **Cuentas de administración.** «Fichas vinculadas» cuenta una ficha ligada a una cuenta de administración igual que a cualquier otra (igual que «llevados por su gente» y que la lista «Llevados»). Si prefiere no contarlas, hay que cambiar también esa lista.
+4. **Festivales en «Agenda de la semana».** Con `clase`, el marco de un festival y cada acto cuentan como eventos; ¿el panel debe contar solo los actos (o solo el marco)? Hoy cuenta todo, como cualquier evento visible.
+5. **Cuentas de administración.** «Fichas vinculadas» cuenta una ficha ligada a una cuenta de administración igual que a cualquier otra (igual que «llevados por su gente» y que la lista «Llevados»). Si prefiere no contarlas, hay que cambiar también esa lista.
 
 ## Quedó fuera (límite de tres nuevos o requiere guardar datos nuevos)
 
 - **Lugares con horario** (OL-315): candidato natural, un conteo de `lugares_horarios`; fuera por el tope de tres.
 - **Eventos publicados por pasos y cuántos con cartel leído:** no se puede medir sin guardar un dato nuevo por evento (el alta por pasos no deja marca y `lecturas_cartel` solo guarda quién y cuándo, sin ligar el evento). **Requiere decisión del founder.**
-- **Eventos por clase** (puntual, exposición, taller, festival): `clase` no está en main.
+- **Eventos por clase** (puntual, exposición, taller, festival): `clase` ya está en main, así que sería un conteo sencillo de `eventos.clase` entre los próximos; fuera por el tope de tres.
 - Las lecturas de cartel por semana (conteo de `lecturas_cartel`) se pueden sumar cuando se quiera; sirven más al costo que a «que la gente se conozca».
 
 ## Para el gestor
