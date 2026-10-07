@@ -303,14 +303,17 @@ async function publicarPrograma(supabase: Cliente, formData: FormData, esAdmin: 
   return { ok: true, id: hecho.id, slug: creado?.slug ?? null, href, volver: href, programa: { actos: hecho.actos.length, borradores: hecho.borradores.length } };
 }
 
-/** Publicar un borrador del programa desde la ficha del festival (solo su autor; la base lo comprueba). */
+/**
+ * Publicar un borrador del programa desde la ficha del festival (solo su autor; la base lo comprueba). Si la administración lo retiró
+ * (OL-328: `no_publicable`), la ficha lo dice en vez de volver como si nada.
+ */
 export async function publicarBorrador(id: string, volver: string) {
   const { supabase } = await sesionOEntrar(volver);
-  await supabase.rpc("publicar_borrador_de_programa", { p_evento: id });
+  const { error } = await supabase.rpc("publicar_borrador_de_programa", { p_evento: id });
   revalidatePath(volver);
   revalidatePath(`/eventos/${id}`);
   revalidatePath("/");
-  redirect(volver);
+  redirect(error?.message === "no_publicable" ? `${volver}?error=no_publicable` : volver);
 }
 
 export async function cambiarVisibleEvento(id: string, lugarId: string | null, visible: boolean) {
