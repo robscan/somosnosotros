@@ -1,6 +1,6 @@
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
-import { cuandoDeTarjeta } from "@/lib/destacados";
+import { cuandoDeTarjeta, notaDeClase } from "@/lib/destacados";
 import { hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { cuandoPorDia, cuandoVariosDias, diaCorto, horaCorta } from "@/lib/fechas";
 import { textoParte } from "@/lib/ocurrencias";
@@ -29,7 +29,8 @@ type Props = {
   cuando?: string;
   /** El cuándo son las horas de un día («Abre 10:00 a.m.–6:00 p.m.»): con el icono del reloj. */
   horas?: boolean;
-  /** Lo que va tras el cuándo, antes del precio: «hasta el 30 de nov» en «Para visitar hoy», «Abre hoy …» en la lista de exposiciones. */
+  /** Lo que va tras el cuándo, antes del precio: «hasta el 30 de nov» en «Para visitar hoy», «Abre hoy …» en la lista de exposiciones; sin ella,
+   *  lo que añade su clase («Horario por confirmar», el programa de un festival: `notaDeClase`). */
   nota?: string | null;
 };
 
@@ -57,7 +58,7 @@ export default function RenglonEvento({ evento: e, sinSitio = false, estado = nu
   const cuando = dado ?? (e.clase === "exposicion" || e.clase === "festival" ? cuandoDeTarjeta(e) : undefined);
   // Un evento de varios días dice sus días y su horario de cada día; la lista lo ubica en el día en que empieza.
   const varios = cuandoDeVarios(e);
-  const ademas = [nota, textoParte(e), e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
+  const ademas = [nota ?? notaDeClase(e), textoParte(e), e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
     <Renglon href={hrefEvento(e)} foto={e.imagen ?? e.lugar?.portada ?? null} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>

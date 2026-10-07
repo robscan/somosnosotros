@@ -156,7 +156,7 @@ test("Filtros: «Qué» elige una sola cosa, el botón dice lo que se verá y ap
   assert.equal(await aplicar(page, "Filtros").innerText(), "Ver 2 exposiciones");
   await aplicar(page, "Filtros").click();
   assert.deepEqual(await titulos(page), ["Para visitar· 2"]);
-  assert.match(await grupo(page, "Para visitar").innerText(), /Ecos de papel\s+Hasta el sáb 31 de oct\s+· Abre hoy 10:00 a\.m\.–6:00 p\.m\.[\s\S]*Fotovisión\s+Hasta el dom 20 de dic · Horario por confirmar\s+Foro/);
+  assert.match(await grupo(page, "Para visitar").innerText(), /Ecos de papel\s+Hasta el sáb 31 de oct\s+· Abre hoy 10:00 a\.m\.–6:00 p\.m\.[\s\S]*Fotovisión\s+Hasta el dom 20 de dic\s+· Horario por confirmar\s+Foro/);
   assert.equal(await page.evaluate(() => history.length), largo, "filtrar no es navegar");
   // El chip para quitarlo y, con él, la agenda de siempre.
   await page.getByRole("button", { name: "Exposiciones" }).click();

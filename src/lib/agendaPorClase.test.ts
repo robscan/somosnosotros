@@ -3,7 +3,7 @@ import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtr
 import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
-import { cuandoDeTarjeta, tarjetaEvento } from "./destacados";
+import { cuandoDeTarjeta, notaDeClase, tarjetaEvento } from "./destacados";
 import { calcularCarrilesAgenda, carrilEstaSemana, carrilMasAdelante, carrilNuevos, carrilParaVisitar } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
 
@@ -204,12 +204,17 @@ describe("Inicio por clase", () => {
   });
   it("la tarjeta: «Hasta el …» y «Horario por confirmar»; el marco con su periodo y su programa; sin «Voy»", () => {
     expect(cuandoDeTarjeta(ecos, ahora)).toBe("Hasta el sáb 31 de oct");
-    expect(cuandoDeTarjeta(grabado, ahora)).toBe("Hasta el mar 20 de oct · Horario por confirmar");
-    expect(cuandoDeTarjeta(sinLeer, ahora)).toBe("Hasta el vie 9 de oct");
+    expect(cuandoDeTarjeta(grabado, ahora)).toBe("Hasta el mar 20 de oct");
+    expect(notaDeClase(grabado)).toBe("Horario por confirmar");
+    expect(notaDeClase(ecos)).toBeNull();
+    expect(notaDeClase(sinLeer)).toBeNull(); // sin poder leer su horario no se dice nada
     expect(cuandoDeTarjeta(futura, ahora)).toBe("Del 12 de oct al 30 de nov");
-    expect(cuandoDeTarjeta({ ...cine, programa: { registrados: 4, estaSemana: 3 } }, ahora)).toBe("Del 9 al 20 de oct · 3 actividades esta semana");
-    expect(cuandoDeTarjeta(cine, ahora)).toBe("Del 9 al 20 de oct · Programa registrado: 4 actividades");
-    expect(tarjetaEvento(ecos, ahora)).toMatchObject({ sinVoy: true, hoy: false, detalle: "Hasta el sáb 31 de oct" });
+    expect(cuandoDeTarjeta(cine, ahora)).toBe("Del 9 al 20 de oct");
+    expect(notaDeClase({ ...cine, programa: { registrados: 4, estaSemana: 3 } })).toBe("3 actividades esta semana");
+    expect(notaDeClase(cine)).toBe("Programa registrado: 4 actividades");
+    expect(tarjetaEvento(ecos, ahora)).toMatchObject({ sinVoy: true, hoy: false, detalle: "Hasta el sáb 31 de oct", sitio: "Foro" });
+    expect(tarjetaEvento(grabado, ahora).sitio).toBe("Foro · Horario por confirmar");
+    expect(tarjetaEvento(cine, ahora).sitio).toBe("Programa registrado: 4 actividades");
     expect(tarjetaEvento(cine, ahora).sinVoy).toBe(true);
     expect(tarjetaEvento(concierto, ahora).sinVoy).toBeUndefined();
     expect(tarjetaEvento(ocurrenciasDe(taller)[1], ahora).parte).toBe("Sesión 2 de 3");
