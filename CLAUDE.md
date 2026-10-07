@@ -2,7 +2,7 @@
 
 Directorio de centros culturales y agenda de eventos para que la gente local se conozca. Empezó en San Luis Potosí y no se limita a ella: el catálogo se abrirá a más ciudades. Español. Web móvil (PWA), tema claro. Dominio somosnosotros.org. Repo `robscan/somosnosotros` (PÚBLICO: ningún secreto en git; tokens y llaves solo en Vercel y Supabase).
 
-Decisión del founder (2026-10-05): «elimina la leyenda sin fines de lucro. Podríamos introducir un creador de flyers en el futuro. Solo por protección elimina eso. Además deja de decir que solo es directorio de San Luis. Abriremos el catálogo a más ciudades pronto.» Sustituye a «sin fines de lucro» y a «empieza en San Luis Potosí» como descripción del proyecto (OL-290, bitácora 318). Ningún texto afirma nada sobre la naturaleza legal o comercial del proyecto; la regla «los negocios no entran al directorio» no cambia.
+Decisión del founder (2026-10-05): «elimina la leyenda sin fines de lucro. Podríamos introducir un creador de flyers en el futuro. Solo por protección elimina eso. Además deja de decir que solo es directorio de San Luis. Abriremos el catálogo a más ciudades pronto.» Sustituye a «sin fines de lucro» y a «empieza en San Luis Potosí» como descripción del proyecto (OL-290, bitácora 318). Ningún texto afirma nada sobre la naturaleza legal o comercial del proyecto. Desde el 2026-10-06 los negocios SÍ entran al directorio (cafés, bares y foros comerciales, con su tipo): el founder lo decidió al pensar la filosofía de cobro (membresías para crear flyers) y porque «es elitista segregar a los negocios que se consideran foros artísticos».
 
 ## Lee primero
 1. `docs/ops/OPEN_LOOPS.md` — estado del proyecto (única fuente de verdad).

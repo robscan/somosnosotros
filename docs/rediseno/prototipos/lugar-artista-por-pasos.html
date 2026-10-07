@@ -173,6 +173,19 @@ ul { list-style: none; }
 .hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: var(--espacio-4); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: 24px 24px 0 0; background: var(--fondo); box-shadow: 0 -2px 16px rgba(0,0,0,.1); }
 .hoja::before { content: ""; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: #d9d9d9; }
 .hoja h2 { font-size: var(--letra-xl); font-weight: 700; }
+.hoja { max-height: calc(100% - 48px); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.hoja-cuerpo { display: grid; gap: var(--espacio-4); overflow-y: auto; min-height: 0; }
+.franja.abierta { display: grid; gap: var(--espacio-3); padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); }
+.franja:not(.abierta) { display: grid; grid-template-columns: minmax(0,1fr) var(--toque); align-items: center; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+.franja-texto { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: var(--espacio-3); align-items: center; min-height: var(--toque); padding: 0 14px; text-align: left; }
+.franja-texto > svg { color: var(--texto-suave); }
+.franja-texto b { font-weight: 600; }
+.quitar { display: grid; place-items: center; width: var(--toque); height: var(--toque); color: var(--texto-suave); }
+.quitar svg { width: 18px; height: 18px; stroke-width: 2; }
+.enlace { justify-self: start; color: var(--primario); font-size: var(--letra-sm); font-weight: 700; }
+.opcion.compacta { min-height: var(--toque); font-size: var(--letra-md); }
+.opcion.compacta small { font-size: var(--letra-sm); color: var(--texto-suave); }
+.suave { color: var(--texto-suave); font-weight: 400; }
 /* La tira de tipos al pie del primer paso (la de hoy en /nuevo): Evento · Lugar · Artista en mayúsculas chicas, el actual con su punto. Solo en el primer paso. */
 .tira-tipos { display: grid; grid-template-columns: repeat(3, 1fr); min-height: var(--toque); padding-bottom: var(--piso); border-top: 1px solid var(--borde); background: var(--fondo); }
 .tira-tipos a, .tira-tipos b { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: var(--toque); font-size: var(--letra-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-suave); text-decoration: none; }
@@ -186,7 +199,7 @@ ul { list-style: none; }
     <option value="lugar-sug" selected>1 · Lugar con sugerencia del mapa (nombre resuelve dirección, punto y tipo)</option>
     <option value="lugar-sin">2 · Lugar sin sugerencia (dónde está y qué tipo es, preguntados)</option>
     <option value="lugar-ficha">3 · Lugar que ya tiene ficha</option>
-    <option value="lugar-negocio">4 · Lugar que es un negocio (café)</option>
+    <option value="lugar-negocio">4 · Lugar que es un negocio (café): entra con su tipo</option>
     <option value="artista-pista">5 · Artista con pista en el nombre («Compañía de Teatro…»)</option>
     <option value="artista-sin">6 · Artista sin pista (se pregunta qué hace)</option>
     <option value="artista-ficha">7 · Artista que ya tiene ficha</option>
@@ -218,9 +231,15 @@ const DIAS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 const HORAS_ABRE = ['09:00','10:00','11:00','12:00','16:00'];
 const HORAS_CIERRA = ['14:00','17:00','18:00','19:00','20:00','21:00'];
 const et = (h) => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${String(M).padStart(2, '0')} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
-const textoHorario = (h) => h ? `${rangoDias(h.dias)} · ${et(h.abre)}–${et(h.cierra)}` : '';
+const textoFranja = (f) => `${rangoDias(f.dias)} · ${et(f.abre)}–${et(f.cierra)}`;
+const diasLibres = (franjas) => DIAS.filter((d) => !franjas.some((f) => f.dias.includes(d)));
+function textoHorario(franjas) {
+  if (!franjas?.length) return '';
+  const cierra = diasLibres(franjas);
+  return franjas.map(textoFranja).join('<br>') + (cierra.length && cierra.length < 7 ? `<br><span class="suave">Cierra ${rangoDias(cierra)}</span>` : '');
+}
 function rangoDias(ds) { const idx = ds.map((d) => DIAS.indexOf(d)).sort((a, b) => a - b); if (!idx.length) return ''; const seguidos = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1); return seguidos && idx.length > 2 ? `${DIAS[idx[0]]}–${DIAS[idx[idx.length - 1]]}` : idx.map((i) => DIAS[i]).join(', '); }
-const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Plaza, jardín o parque','Otro'];
+const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Café, bar o restaurante','Plaza, jardín o parque','Otro'];
 const DISCIPLINAS = ['Música','Teatro','Danza','Artes visuales','Letras','Cine','Artes circenses','Otro'];
 // Subcategorías ya usadas en el directorio (producción, 2026-10-06: 501 de 647 artistas tienen una), las más usadas primero.
 const SUBCATEGORIAS = {
@@ -238,14 +257,14 @@ const CASOS = {
   'lugar-sug': { que: 'lugar', q: 'Casa del Poeta', sug: { nombre: 'Casa del Poeta Ramón López Velarde', direccion: 'Vallejo 150, Centro, San Luis Potosí', tipo: 'Museo' } },
   'lugar-sin': { que: 'lugar', q: 'Taller La Grieta', sug: null },
   'lugar-ficha': { que: 'lugar', q: 'ACHE Gal', ficha: 'ACHE Galería' },
-  'lugar-negocio': { que: 'lugar', q: 'Café del Jardín', sug: { nombre: 'Café del Jardín', direccion: 'Jardín Guerrero 12, Centro, San Luis Potosí', tipo: null, negocio: true } },
+  'lugar-negocio': { que: 'lugar', q: 'Café del Jardín', sug: { nombre: 'Café del Jardín', direccion: 'Jardín Guerrero 12, Centro, San Luis Potosí', tipo: 'Café, bar o restaurante', negocio: true } },
   'artista-pista': { que: 'artista', q: 'Compañía de Teatro La Rendija', hace: 'Teatro', tipo: 'Grupo' },
   'artista-sin': { que: 'artista', q: 'Mariana Ruvalcaba', hace: null, tipo: 'Solista' },
   'artista-ficha': { que: 'artista', q: 'Trío Bru', ficha: 'Trío Bruma' },
 };
 function nuevo() {
   const c = CASOS[caso];
-  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, sub: null, subPreguntada: false, soyYo: false, escrito: false, horario: null, hoja: null, dias: ['Ma','Mi','Ju','Vi','Sá','Do'], abre: '10:00', cierra: '18:00' };
+  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, sub: null, subPreguntada: false, soyYo: false, escrito: false, horario: null, hoja: null, franjas: [{ dias: ['Ma','Mi','Ju','Vi','Sá','Do'], abre: '10:00', cierra: '18:00' }], franjaAbierta: 0 };
 }
 nuevo();
 const c = () => CASOS[caso];
@@ -285,12 +304,11 @@ const PANTALLAS = {
         ${con ? '' : campo('Dirección o referencia', '') + `<button class="opcion" data-a="aqui">${ic('pin')}<span>Estoy aquí<small>Usa la ubicación del teléfono</small></span>${ic('chevron')}</button>`}
         <div class="mapa-paso">${ic('pinlleno')}</div>
         ${con ? `<p class="confirma">${ic('ok')}<span><b>${k.sug.nombre}</b><small>${k.sug.direccion}</small></span></p><small class="aviso">Si el pin no está en su sitio, arrástralo.</small>` : `<small class="aviso">Toca el mapa o arrastra el pin hasta la entrada del lugar.</small>`}
-        ${k.sug?.negocio ? `<p class="aviso alerta">Los bares, cafés y restaurantes no entran al directorio aunque tengan programa cultural. Si es un espacio cultural con otro nombre, cámbialo arriba.</p>` : ''}
         ${caso === 'lugar-sin' ? `<p class="confirma">${ic('ok')}<span><b>¿Es este?</b><small>A 40 m hay un lugar con ficha: Taller La Grieta. <u>Ir a su ficha</u></small></span></p>` : ''}`,
-      pie: k.sug?.negocio ? `<button class="btn" disabled>No entra al directorio</button>` : `<button class="btn" data-a="seguir">${con ? 'Sí, es aquí' : 'Listo'}</button>${con ? '<button class="quieto" data-a="atras">Buscar otro</button>' : ''}`,
+      pie: `<button class="btn" data-a="seguir">${con ? 'Sí, es aquí' : 'Listo'}</button>${con ? '<button class="quieto" data-a="atras">Buscar otro</button>' : ''}`,
       notas: [
         'Confirmar en el mapa sale SIEMPRE en el lugar (decisión recomendada del doc 54): el punto se queda en el directorio y lo usarán todos sus eventos. Con sugerencia es «¿Es aquí?» (tarjeta de confirmación, sin campos); sin sugerencia es «¿Dónde está?» (dirección, «Estoy aquí» o mover el pin).',
-        'Aquí mismo va «¿Es este?» si hay un lugar con ficha a menos de 150 m (caso 2), y el aviso de que los negocios no entran (caso 4), con el botón apagado y claro: «No entra al directorio».',
+        'Aquí mismo va «¿Es este?» si hay un lugar con ficha a menos de 150 m (caso 2). Los negocios SÍ entran (decisión del founder, 2026-10-06: «es elitista segregar a los negocios que se consideran foros artísticos»; con la nueva filosofía de cobro serían quienes paguen membresías para crear flyers): un café, bar o restaurante se registra como cualquier lugar, con su tipo deducido del mapa («Café, bar o restaurante», caso 4). Deja de existir el aviso «No entra al directorio».',
       ],
     };
   },
@@ -336,7 +354,7 @@ const PANTALLAS = {
       titulo: 'Revisa', avance: avance(), atras: true,
       cuerpo: `<h1>${c().sug?.nombre ?? c().q}</h1><div class="lista">${renglones}</div>${e.hoja === 'horario' ? hojaHorario() : ''}`,
       pie: `<button class="btn" data-a="seguir">${esLugar ? 'Publicar lugar' : 'Publicar artista'}</button>`,
-      notas: ['Lugar · Horario (acordado con el founder): el horario en que abre el lugar, opcional en «Revisa» («Horario · Agregar»), abre una hoja con los días de la semana (chips, de Ma a Do marcados de entrada) y las horas en que abre y cierra (chips de hora, «Otra hora» para las demás). Sirve a las exposiciones: una exposición en ese lugar toma su horario de entrada, y la ficha del lugar lo enseña.', 'Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: la casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
+      notas: ['Lugar · Horario (acordado con el founder): opcional en «Revisa» («Horario · Agregar»), abre una hoja con los días de la semana (chips, de Ma a Do marcados de entrada) y las horas en que abre y cierra. Debajo, «Agregar otro horario» (propuesta del founder, 2026-10-06): repite los mismos selectores para otro grupo de días (Lu–Vi uno, Sá–Do otro). La franja nueva llega con los días que aún no tienen horario ya marcados; si no queda ninguno, llega vacía y sirve para una segunda hora de los mismos días (cierran a comer). Las franjas ya puestas se encogen a un renglón con ✕; tocarlo lo vuelve a abrir. Los días sin franja son los que cierra, y «Revisa» lo dice. Sirve a las exposiciones: una exposición en ese lugar toma este horario de entrada, día por día.', 'Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: la casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
     };
   },
   publicado: () => {
@@ -353,12 +371,23 @@ const PANTALLAS = {
 };
 
 function hojaHorario() {
+  const franjas = e.franjas.map((f, i) => {
+    if (i !== e.franjaAbierta) {
+      return `<div class="franja"><button class="franja-texto" data-a="franja-abrir" data-v="${i}">${ic('reloj')}<b>${textoFranja(f)}</b></button><button class="quitar" data-a="franja-quitar" data-v="${i}" aria-label="Quitar este horario">${ic('cerrar')}</button></div>`;
+    }
+    return `<div class="franja abierta">
+      <div class="chips">${DIAS.map((d) => `<button class="chip" aria-pressed="${f.dias.includes(d)}" data-a="dia" data-v="${d}">${d}</button>`).join('')}</div>
+      <div class="grupo"><span>Abre</span><div class="chips">${HORAS_ABRE.map((h) => `<button class="chip" aria-pressed="${f.abre === h}" data-a="abre" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
+      <div class="grupo"><span>Cierra</span><div class="chips">${HORAS_CIERRA.map((h) => `<button class="chip" aria-pressed="${f.cierra === h}" data-a="cierra" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
+      ${e.franjas.length > 1 ? `<button class="enlace" data-a="franja-quitar" data-v="${i}">Quitar este horario</button>` : ''}
+    </div>`;
+  }).join('');
+  const abierta = e.franjas[e.franjaAbierta];
+  const libres = diasLibres(e.franjas);
   return `<div class="velo" data-a="cerrar-hoja"></div><div class="hoja" role="dialog" aria-label="Horario">
     <h2>¿Qué días abre?</h2>
-    <div class="chips">${DIAS.map((d) => `<button class="chip" aria-pressed="${e.dias.includes(d)}" data-a="dia" data-v="${d}">${d}</button>`).join('')}</div>
-    <div class="grupo"><span>Abre</span><div class="chips">${HORAS_ABRE.map((h) => `<button class="chip" aria-pressed="${e.abre === h}" data-a="abre" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
-    <div class="grupo"><span>Cierra</span><div class="chips">${HORAS_CIERRA.map((h) => `<button class="chip" aria-pressed="${e.cierra === h}" data-a="cierra" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
-    <small class="aviso">Mismo horario esos días. Si cambia por día, se ajusta después desde la ficha.</small>
+    <div class="hoja-cuerpo">${franjas}
+    ${abierta?.dias.length ? `<button class="opcion compacta" data-a="franja-nueva">${ic('mas')}<span>Agregar otro horario${libres.length ? `<small>Para ${rangoDias(libres)}</small>` : '<small>Para otra hora de los mismos días</small>'}</span></button>` : ''}</div>
     <button class="btn" data-a="horario-listo">Listo</button>
   </div>`;
 }
@@ -390,10 +419,15 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (a === 'soyyo') { e.soyYo = !e.soyYo; pintar(); return; }
   if (a === 'horario') { e.hoja = 'horario'; pintar(); return; }
   if (a === 'cerrar-hoja') { e.hoja = null; pintar(); return; }
-  if (a === 'dia') { const d = b.dataset.v; e.dias = e.dias.includes(d) ? e.dias.filter((x) => x !== d) : [...e.dias, d]; pintar(); return; }
-  if (a === 'abre') { e.abre = b.dataset.v; pintar(); return; }
-  if (a === 'cierra') { e.cierra = b.dataset.v; pintar(); return; }
-  if (a === 'horario-listo') { e.horario = e.dias.length ? { dias: e.dias, abre: e.abre, cierra: e.cierra } : null; e.hoja = null; pintar(); return; }
+  const f = e.franjas[e.franjaAbierta];
+  if (a === 'dia') { const d = b.dataset.v; f.dias = f.dias.includes(d) ? f.dias.filter((x) => x !== d) : [...f.dias, d]; pintar(); return; }
+  if (a === 'abre') { f.abre = b.dataset.v; pintar(); return; }
+  if (a === 'cierra') { f.cierra = b.dataset.v; pintar(); return; }
+  // La franja nueva llega con los días que aún no tienen horario marcados (Lu–Vi puesto → Sá y Do); si no queda ninguno, vacía (segunda hora de los mismos días).
+  if (a === 'franja-nueva') { e.franjas.push({ dias: diasLibres(e.franjas), abre: f.abre, cierra: f.cierra }); e.franjaAbierta = e.franjas.length - 1; pintar(); return; }
+  if (a === 'franja-abrir') { e.franjaAbierta = Number(b.dataset.v); pintar(); return; }
+  if (a === 'franja-quitar') { e.franjas.splice(Number(b.dataset.v), 1); if (!e.franjas.length) e.franjas.push({ dias: [], abre: '10:00', cierra: '18:00' }); e.franjaAbierta = Math.min(e.franjaAbierta, e.franjas.length - 1); pintar(); return; }
+  if (a === 'horario-listo') { const con = e.franjas.filter((x) => x.dias.length); e.horario = con.length ? con : null; e.franjas = con.length ? con : e.franjas; e.franjaAbierta = 0; e.hoja = null; pintar(); return; }
   if (a === 'atras') { atras(); return; }
   if (a === 'reiniciar') { nuevo(); pintar(); return; }
 });
