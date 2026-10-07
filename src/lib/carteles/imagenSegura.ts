@@ -11,8 +11,14 @@ import sharp from "sharp";
 
 /** Tope de una imagen que se trae (el bucket admite 5 MB). */
 export const TOPE_BYTES = 6 * 1024 * 1024;
-/** Tope de píxeles al decodificar (40 megapíxeles: una foto de 8000 × 5000 cabe; una bomba de descompresión no). Sharp aplica el mismo límite al abrirla. */
-export const LIMITE_PIXELES = 40_000_000;
+/**
+ * Tope de píxeles al decodificar: 12 megapíxeles. El teléfono reduce toda foto que sube a 1600 px de lado (≈ 2,6 Mpx) y el cartel sale a 1080 de
+ * ancho, así que sobra; lo de arriba es una bomba de descompresión (F07 de Codex: un PNG de 122 KB y 37,7 Mpx llegó a 212 MB de RSS en una petición).
+ * Sharp aplica el mismo límite al abrirla.
+ */
+export const LIMITE_PIXELES = 12_000_000;
+/** Tiempo máximo para preparar la foto del cartel (análisis de color y reducción); si se pasa, el cartel sale sin foto. */
+export const TIEMPO_MAX_FOTO_MS = 8000;
 
 export type FormatoAdmitido = "jpeg" | "png" | "webp";
 
@@ -42,5 +48,5 @@ export async function imagenAdmitida(bytes: Buffer): Promise<boolean> {
   }
 }
 
-/** La opción de sharp que pone el tope de píxeles; todo `sharp(imagenDeFuera)` la lleva. */
-export const ENTRADA_SEGURA = { limitInputPixels: LIMITE_PIXELES } as const;
+/** La opción de sharp que pone el tope de píxeles; todo `sharp(imagenDeFuera)` la lleva. `sequentialRead` lee por franjas en vez de cargar la imagen entera. */
+export const ENTRADA_SEGURA = { limitInputPixels: LIMITE_PIXELES, sequentialRead: true } as const;

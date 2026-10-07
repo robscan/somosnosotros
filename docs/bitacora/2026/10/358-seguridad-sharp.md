@@ -17,7 +17,7 @@
 **2. Validar el formato real antes de decodificar** (`src/lib/carteles/imagenSegura.ts`, nuevo):
 
 - Se admite solo lo que el bucket `fotos` deja subir y sharp lee sin más: **JPEG, PNG y WebP**, reconocidos por sus **bytes mágicos** (no por `Content-Type` ni extensión). El bucket también admite HEIC, pero la sharp de prebuilds no lo decodifica: cae a «sin foto», como antes. GIF, AVIF, TIFF y **SVG** se rechazan.
-- Tope de peso: 6 MB (el bucket admite 5; es el tope que ya traía `generar.ts`). Tope de píxeles: 40 megapíxeles (una foto de 8000 × 5000 cabe; una bomba de descompresión no), con `sharp(buffer, { limitInputPixels })` en todo lo que viene de fuera y con comprobación del ancho × alto de `metadata()`.
+- Tope de peso: 6 MB (el bucket admite 5; es el tope que ya traía `generar.ts`). Tope de píxeles: **12 megapíxeles** (ver «Seguimiento F07»: el teléfono reduce toda foto que sube a 1600 px de lado y el cartel sale a 1080 de ancho; lo de arriba es una bomba de descompresión), con `sharp(buffer, { limitInputPixels })` en todo lo que viene de fuera y con comprobación del ancho × alto de `metadata()`.
 - Además, el formato que lee sharp debe coincidir con el que dicen los bytes (un archivo con encabezado de PNG que sharp tomara por otra cosa se rechaza). `imagenAdmitida` solo lee la cabecera; no decodifica los píxeles.
 
 **3. Dónde se aplica.**
@@ -25,15 +25,33 @@
 - `generar.ts`, `traerImagen` (ahora exportada, con `traer` y `supabaseUrl` inyectables para probarla): pide **solo** URLs del Storage propio con `cartelDescargable` (el mismo filtro de `imagenesPorOrden`, repetido aquí porque esta función es la que sale a la red; `next.config.ts` ya solo permite ese host y esa ruta para imágenes), sin redirecciones, **corta la descarga** al pasar el tope (antes bajaba el cuerpo entero a memoria y medía después) y descarta lo que no pasa `imagenAdmitida`. El `Content-Type` ya no se exige ni se fía. Si una imagen se descarta, el generador prueba la siguiente de la lista y, si ninguna sirve, el cartel sale sin foto (plantillas tipográficas). Lo que se guarda en la memoria del proceso ya está validado.
 - `dibujar.ts`: defensa en profundidad. `dibujarCartel` vuelve a llamar a `imagenAdmitida` con lo que reciba (quien lo llame mañana sin pasar por `generar.ts` queda cubierto) y `tonoDominante` y `prepararFoto` abren con `limitInputPixels`. El SVG que arma satori **sí** se rasteriza (es nuestro): la validación es del material de entrada, no de la salida.
 
-## Pruebas (18 nuevas)
+## Pruebas (18 nuevas, y 2 más en el seguimiento F07)
 
-- `imagenSegura.test.ts` (7): bytes mágicos de JPEG, PNG y WebP; no reconoce SVG, GIF, AVIF, texto ni cuerpos cortos; admite los tres formatos válidos; rechaza el SVG, un cuerpo que no es un PNG (también con encabezado de PNG y basura detrás), un JPEG que pasa del tope de peso y un PNG de 42 megapíxeles que pesa poco (bomba de descompresión).
+- `imagenSegura.test.ts` (7): bytes mágicos de JPEG, PNG y WebP; no reconoce SVG, GIF, AVIF, texto ni cuerpos cortos; admite los tres formatos válidos; rechaza el SVG, un cuerpo que no es un PNG (también con encabezado de PNG y basura detrás), un JPEG que pasa del tope de peso y un PNG de más de 12 megapíxeles que pesa poco (bomba de descompresión).
 - `generar.test.ts` (7): JPEG, PNG y WebP válidos del Storage propio pasan; un SVG se rechaza aunque venga como `image/png` o `image/svg+xml`; un cuerpo que dice `image/png` y no lo es se rechaza; un JPEG con `Content-Type` equivocado pasa (cuentan los bytes); lo que pasa del tope de peso se rechaza; una URL de otro host, la IP de metadatos de la nube y otro bucket del propio proyecto se rechazan **sin pedirse** (el `fetch` falso no se llama); una respuesta 404 da null.
 - `dibujar.test.ts` (4): un SVG, un falso PNG y una imagen válida con demasiados píxeles salen **byte a byte iguales** al cartel sin foto; un JPEG válido sí cambia el cartel. La matriz de dibujo de OL-324 (12 plantillas × 2 formatos × con y sin foto × casos) sigue en verde: 391 pruebas.
 
 `npm run lint` (una advertencia que ya estaba, en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (172 archivos, 2996 pruebas), `npm run inventario` («sin novedades») y `npm run medir` (35 pantallas × 4 anchos, «sin novedades») en verde.
 
 **Paquete de la función en Vercel.** `.next/server/app/api/cartel-nuevo/[id]/route.js.nft.json`: 301 archivos, **35,3 MB** rastreados con sharp 0.35.5 (OL-324 anotó ~33 MB con la 0.35.4; la diferencia cabe en la otra versión de las bibliotecas nativas), lejos del tope de 250 MB.
+
+## Seguimiento F07 (Codex, 2026-10-07): memoria y tiempo
+
+Codex midió con #420 abierto que un PNG de 122 019 bytes y 37,7 Mpx (`.buzon/tmp-codex/imagen-6144.png`) cabía en el tope de 40 Mpx y que `sharp(...).stats()` llegó a 212 MB de RSS en una sola petición. Cambios, en la misma rama:
+
+- **(a) Tope de 12 Mpx** (`LIMITE_PIXELES`): sobra para el uso real (el teléfono reduce a 1600 px de lado, ≈ 2,6 Mpx, y el cartel sale a 1080). `ENTRADA_SEGURA` suma `sequentialRead` (lee por franjas).
+- **(b) Redimensionar antes de analizar:** `tonoDominante` reduce a 64 px (con giro EXIF) y solo entonces llama a `stats()`, que no obedece a `resize()` (analiza la entrada entera). El consumo del análisis ya no depende del tamaño de la foto.
+- **(c) Tiempo máximo de 8 s** (`TIEMPO_MAX_FOTO_MS`) para preparar la foto: `dibujarCartel` corre el análisis y la reducción en una carrera contra el reloj (y la reducción lleva además `timeout` de sharp); si se pasa, el cartel sale sin foto. Lo que dibuja satori no entra en la cuenta (es nuestro y tarda milisegundos).
+
+**Medido** (misma Mac, un proceso por caso con `process.resourceUsage().maxRSS`; la base de ~145 MB es el propio proceso de vite-node):
+
+| Caso | Antes | Después |
+| --- | --- | --- |
+| PNG de Codex (37,7 Mpx), análisis de color | 147 → 292 MB (+145 MB), 186 ms | se rechaza en la cabecera: `dibujarCartel` entero (cartel sin foto) 147 → 205 MB, la foto cuesta 1 ms |
+| PNG de 11 Mpx dentro del tope, solo el análisis de color | 143 → 191 MB (+48 MB), 65 ms | 146 → 162 MB (+16 MB), 18 ms |
+| PNG de 11 Mpx, cartel entero | — | 145 → 265 MB, 224 ms (foto 47 ms) |
+
+Pruebas nuevas: una foto de ~11 Mpx dentro del tope lleva foto y su color sale de la miniatura; con `tiempoMaxFotoMs: 0` el cartel sale byte a byte igual al de sin foto; la de «demasiados píxeles» usa ahora 12,25 Mpx. Carteles: 6 archivos, 456 pruebas en verde.
 
 ## Decisiones del operador
 

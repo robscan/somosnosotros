@@ -4,7 +4,7 @@ import path from "node:path";
 import satori from "satori";
 import sharp from "sharp";
 import type { TextosCartel } from "./datos";
-import { ENTRADA_SEGURA, imagenAdmitida } from "./imagenSegura";
+import { ENTRADA_SEGURA, imagenAdmitida, TIEMPO_MAX_FOTO_MS } from "./imagenSegura";
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
@@ -32,9 +32,16 @@ function cargarFuentes(): FuenteSatori[] {
 /** El lado mayor de la foto ya preparada: el lienzo mide 1080 de ancho, con eso alcanza para cualquier recorte. */
 const LADO_FOTO = 1400;
 
-/** El tono que manda en la foto (sharp `stats().dominant`), para la paleta. */
+/** El lado de la miniatura con la que se analiza el color: el consumo no depende del tamaño de la foto (F07 de Codex, OL-329). */
+const LADO_ANALISIS = 64;
+
+/**
+ * El tono que manda en la foto (sharp `stats().dominant`), para la paleta. Se saca de una miniatura de 64 px: `stats()` no obedece a `resize()`
+ * (analiza la entrada entera), así que primero se reduce y luego se analiza. Con un JPEG la reducción se hace al decodificar.
+ */
 export async function tonoDominante(imagen: Buffer): Promise<Rgb> {
-  const { dominant } = await sharp(imagen, ENTRADA_SEGURA).stats();
+  const miniatura = await sharp(imagen, ENTRADA_SEGURA).rotate().resize(LADO_ANALISIS, LADO_ANALISIS, { fit: "inside" }).png().toBuffer();
+  const { dominant } = await sharp(miniatura).stats();
   return dominant;
 }
 
@@ -43,7 +50,7 @@ export async function tonoDominante(imagen: Buffer): Promise<Rgb> {
  * (zine) va del negro al acento de la paleta; el sepia (deco), entonado hacia el dorado del acento.
  */
 export async function prepararFoto(imagen: Buffer, plantilla: Pick<Plantilla, "tratamiento">, paleta: Paleta): Promise<string> {
-  const reducida = sharp(imagen, ENTRADA_SEGURA).rotate().resize(LADO_FOTO, LADO_FOTO, { fit: "inside", withoutEnlargement: true });
+  const reducida = sharp(imagen, ENTRADA_SEGURA).timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 }).rotate().resize(LADO_FOTO, LADO_FOTO, { fit: "inside", withoutEnlargement: true });
   let jpeg: Buffer;
   if (plantilla.tratamiento === "natural") {
     jpeg = await reducida.jpeg({ quality: 85 }).toBuffer();
@@ -71,6 +78,8 @@ export type Pedido = {
   sello?: boolean;
   /** Semilla para variar la paleta sin foto (el id del evento). */
   semilla?: number;
+  /** Para las pruebas: el tiempo máximo (ms) de preparar la foto; por defecto 8 s. Pasado, el cartel sale sin foto. */
+  tiempoMaxFotoMs?: number;
   /** El ancho de salida (miniatura); sin él, el del lienzo. */
   ancho?: number;
   /** Para las pruebas: devuelve los nodos de texto con su caja. */
@@ -101,12 +110,21 @@ export async function dibujarCartel(p: Pedido): Promise<Resultado> {
   // Defensa en profundidad (OL-329): aunque quien llama ya la validó, aquí se comprueba otra vez que los bytes sean un JPEG, PNG o WebP
   // razonable; cualquier otra cosa (SVG incluido) se descarta y el cartel sale sin foto.
   if (p.imagen && (await imagenAdmitida(p.imagen))) {
+    // Con tope de tiempo (F07): sharp no se puede cancelar desde aquí, pero el cartel no espera más y sale sin foto.
+    let reloj: ReturnType<typeof setTimeout> | undefined;
+    const preparar = (async () => {
+      const tono = await tonoDominante(p.imagen!);
+      return { tono, foto: await prepararFoto(p.imagen!, p.plantilla, elegirPaleta(p.plantilla.paletas, tono)) };
+    })();
+    preparar.catch(() => {}); // si pierde la carrera, que su fallo no quede sin atender
     try {
-      dominante = await tonoDominante(p.imagen);
-      foto = await prepararFoto(p.imagen, p.plantilla, elegirPaleta(p.plantilla.paletas, dominante));
+      const listo = await Promise.race([preparar, new Promise<null>((resolver) => { reloj = setTimeout(() => resolver(null), p.tiempoMaxFotoMs ?? TIEMPO_MAX_FOTO_MS); })]);
+      if (listo) ({ tono: dominante, foto } = listo);
     } catch {
       foto = null;
       dominante = null;
+    } finally {
+      clearTimeout(reloj);
     }
   }
   const paleta = elegirPaleta(p.plantilla.paletas, dominante, p.semilla ?? 0);
