@@ -422,19 +422,17 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <small>sin dirección</small>
             </span>
           )}
-          {/* Para llevar el cartel a WhatsApp o Instagram (OL-304, pedido del founder): la hoja de compartir con la imagen, o la descarga. */}
+          {/* Para llevar el cartel a Fotos, WhatsApp o Instagram (OL-304, OL-317): en la app, un toque a Fotos; en la web, la descarga del archivo. */}
           {hayCartel && (
             <BotonDescargarCartel
               id={e.slug}
-              titulo={e.titulo}
               className={ficha.accion}
               icono={
                 <span className={CIRCULO}>
                   <IconoDescarga />
                 </span>
               }
-              textos={{ reposo: "Cartel", listo: "Descargado", fallo: "No se pudo" }}
-              etiqueta="Descargar el cartel"
+              corto
             />
           )}
         </div>
