@@ -1,0 +1,10 @@
+# Llaves y binarios: nunca al repo (es público). La llave de subida vive en somosnosotros-privado/android/.
+*.keystore
+*.jks
+*.aab
+*.apk
+*.idsig
+build/
+.gradle/
+local.properties
+app/build/
