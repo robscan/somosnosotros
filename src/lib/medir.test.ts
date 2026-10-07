@@ -249,3 +249,13 @@ describe("la página que acompaña a cada envío", () => {
     expect(contextoGoogle("https://somosnosotros.org/lugares/teatro?ciudad=slp")).toEqual({ page_location: "https://somosnosotros.org/lugares/teatro", page_title: "/lugares/teatro", page_referrer: "" });
   });
 });
+
+describe("el evento igual al publicar (OL-341)", () => {
+  it("visto, sí y no, con el caso (festival o evento suelto); nunca un id ni un título", () => {
+    expect(validarMedicion("festival_parecido_visto", { caso: "festival" })).toEqual({ caso: "festival" });
+    expect(validarMedicion("festival_parecido_si", { caso: "evento" })).toEqual({ caso: "evento" });
+    expect(validarMedicion("festival_parecido_no", { caso: "evento" })).toEqual({ caso: "evento" });
+    expect(validarMedicion("festival_parecido_si", { caso: "evento", id: "00000000-0000-4000-8000-000000000001" })).toBeNull();
+    expect(validarMedicion("festival_parecido_no", { caso: "Electric Universe Festival" })).toBeNull();
+  });
+});

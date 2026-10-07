@@ -237,7 +237,10 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
 /**
  * «Publicado» con la sugerencia de OL-323 debajo de la tarjeta (a un evento o un taller; la exposición y el festival traen la suya de OL-321).
  */
-function AlPublicar({ r, creado, evento, conCartel, zona, sugerencia, onPeriodo, onOtro }: { r: ReturnType<typeof usePasosEvento>["r"]; creado: Creado & { borradores: number }; evento: ReturnType<typeof eventoPublicado>; conCartel: boolean; zona: string; sugerencia: ReturnType<typeof useSugerencia> | null; onPeriodo: () => void; onOtro: () => void }) {
+function AlPublicar({ r, creado, evento: publicado, conCartel, zona, sugerencia, onPeriodo, onOtro }: { r: ReturnType<typeof usePasosEvento>["r"]; creado: Creado & { borradores: number }; evento: ReturnType<typeof eventoPublicado>; conCartel: boolean; zona: string; sugerencia: ReturnType<typeof useSugerencia> | null; onPeriodo: () => void; onOtro: () => void }) {
+  // OL-341: si entró a un festival con otro nombre («<artista> en <festival>»), la tarjeta y compartir dicen el nombre con que quedó.
+  const hecha = sugerencia?.estado.fase === "hecha" ? sugerencia.estado : null;
+  const evento = hecha?.titulo ? { ...publicado, titulo: hecha.titulo } : publicado;
   return (
     <Publicado
       evento={evento}
@@ -252,7 +255,7 @@ function AlPublicar({ r, creado, evento, conCartel, zona, sugerencia, onPeriodo,
             estado={sugerencia.estado}
             evento={{ titulo: evento.titulo, dia: evento.inicio ? diaLocal(new Date(evento.inicio), zona) : "", lugar: nombreSitio(evento) }}
             zona={zona}
-            onAceptar={() => void sugerencia.aceptar()}
+            onAceptar={(titulo) => void sugerencia.aceptar(undefined, titulo)}
             onPeriodo={onPeriodo}
             onAhoraNo={sugerencia.ahoraNo}
           />

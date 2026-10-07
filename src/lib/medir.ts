@@ -65,6 +65,13 @@ export const EVENTOS = {
   cartel_foto_puesta: {},
   /** «Quitar la foto»: los diseños vuelven a las imágenes de siempre. */
   cartel_foto_quitada: {},
+  /**
+   * «Este festival ya está publicado» / «Ya hay un evento igual» (OL-341) al publicar un evento: se vio, se dijo «Sí» (ya ligado) o «No, es otro
+   * evento». `caso`: si lo que ya estaba es un festival (a) o un evento suelto de otra cuenta (b). Sin ids ni títulos.
+   */
+  festival_parecido_visto: { caso: ["festival", "evento"] },
+  festival_parecido_si: { caso: ["festival", "evento"] },
+  festival_parecido_no: { caso: ["festival", "evento"] },
   /** La app quedó instalada (el aviso `appinstalled`: Chrome, Edge y Android; Safari de iPhone nunca lo da). */
   app_instalada: {},
   /** Una pantalla no cargó (la de «Algo falló»). */

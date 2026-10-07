@@ -1,7 +1,7 @@
 // Respaldo local 100 % inventado: imita Auth y PostgREST de Supabase sobre el fixture (nunca toca producción).
 // node server.mjs [puerto]  →  http://127.0.0.1:8823
 import http from "node:http";
-import { tablas, rpcs, usuario, sesion, FK } from "./fixture.mjs";
+import { tablas, rpcs, sesionDe, subDe, FK } from "./fixture.mjs";
 
 const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8823);
 const CORS = {
@@ -250,12 +250,17 @@ const servidor = http.createServer(async (req, res) => {
   registro.push(`${req.method} ${req.url}`);
   if (req.method === "OPTIONS") return responder(res, 204);
   if (ruta === "/__registro") return responder(res, 200, registro.slice(-200));
+  // La cuenta de quien pide (OL-341): la del token de la sesión (Ana por omisión; Marcos con `cookieDe(MARCOS)`).
+  const sub = subDe(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
   // Auth
-  if (ruta === "/auth/v1/user") return responder(res, 200, usuario);
-  if (ruta === "/auth/v1/token") return responder(res, 200, sesion);
+  if (ruta === "/auth/v1/user") return responder(res, 200, sesionDe(sub).user);
+  if (ruta === "/auth/v1/token") {
+    const cuerpo = await leerCuerpo(req);
+    return responder(res, 200, sesionDe(cuerpo?.refresh_token ? subDe(cuerpo.refresh_token) : sub));
+  }
   if (ruta === "/auth/v1/logout") return responder(res, 204);
   // La vuelta de un enlace mágico (verifyOtp): da la sesión, como la base de verdad (para probar /auth/app-regreso).
-  if (ruta === "/auth/v1/verify") return responder(res, 200, sesion);
+  if (ruta === "/auth/v1/verify") return responder(res, 200, sesionDe(sub));
   // Con `PROVEEDORES=1`, Entrar enseña «Continuar con Apple» y «con Google» (para probar la vuelta de un proveedor); sin él, no (lo que mide `npm run medir`).
   if (ruta === "/auth/v1/settings") return responder(res, 200, process.env.PROVEEDORES ? { external: { apple: true, google: true } } : {});
   if (ruta.startsWith("/auth/v1/.well-known")) return responder(res, 200, { keys: [] });
@@ -265,7 +270,7 @@ const servidor = http.createServer(async (req, res) => {
   if (rpc) {
     const args = (await leerCuerpo(req)) || Object.fromEntries(url.searchParams);
     const fn = rpcs[rpc[1]];
-    const datos = fn ? fn(args, tablas) : [];
+    const datos = fn ? fn(args, tablas, { sub }) : [];
     if (quiereObjeto(req)) return Array.isArray(datos) ? (datos.length === 1 ? responder(res, 200, datos[0]) : responder(res, 406, { code: "PGRST116", message: `${datos.length} filas` })) : responder(res, 200, datos);
     return responder(res, 200, datos);
   }

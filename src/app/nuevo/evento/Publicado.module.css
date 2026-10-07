@@ -183,3 +183,8 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+
+/* OL-341: la pregunta del evento igual («¿Es tu participación?», «¿Es el mismo?»), en negrita entre los datos y lo que se contesta. */
+.ficha > .pregunta {
+  font-weight: 700;
+}
