@@ -98,7 +98,7 @@ Compilación local de producción en el árbol, sin `.env` (`NEXT_PUBLIC_VERCEL_
 ## Pruebas
 
 - Nuevas: `src/lib/medir.test.ts` (19: la lista cerrada y sus rechazos —nombre fuera, opción fuera, de más, de menos, más de 2, no objeto—, producción / vista previa / depurar, admin, nunca lanza aunque `track` y `gtag` fallen, sin `q` ni texto en lo que va a Google, limpieza de las acciones y de las vistas de GA), `src/lib/analyticsGoogle.test.ts` (10: `AnalyticsGoogle` no se monta sin identificador, fuera de producción ni con un identificador raro; carga `gtag.js` sin Tag Manager; la cola con el consentimiento denegado antes de `config` y nunca `update`; vistas limpias, nada en rutas privadas ni para admin; nunca lanza), `src/lib/medirServidor.test.ts` (5: después de la respuesta, sin cookies ni referente, nada fuera de producción ni para admin, nada fuera de la lista, nunca lanza).
-- `npm run lint` (0 errores; el aviso de `VisorImagen.componentes.test.mjs` ya estaba), `npm run typecheck`, `npm test` (160 archivos, 2362 pruebas), `npm run inventario` (sin novedades) y `npm run medir` (29 pantallas × 4 anchos, sin novedades) en verde.
+- `npm run lint` (0 errores; el aviso de `VisorImagen.componentes.test.mjs` ya estaba), `npm run typecheck`, `npm test` (161 archivos, 2410 pruebas, tras unir `main` `d71363a1`), `npm run inventario` (sin novedades) y `npm run medir` (29 pantallas × 4 anchos, sin novedades; una primera corrida tras reinstalar `node_modules` no pudo arrancar `next start` y la segunda pasó) en verde.
 
 ## Capturas (`docs/rediseno/capturas-354/`)
 
