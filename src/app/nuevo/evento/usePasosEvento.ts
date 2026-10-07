@@ -19,6 +19,7 @@ export function usePasosEvento(quienInicial: QuienItem[], arranque: Arranque | n
       contestar: (cambios: Partial<Respuestas>) => despachar({ tipo: "contestar", cambios }),
       seguir: () => despachar({ tipo: "seguir" }),
       abrir: (paso: Paso) => despachar({ tipo: "abrir", paso }),
+      sedeDeActo: (clave: string) => despachar({ tipo: "sedeDeActo", clave }),
       atras: (desde: Paso) => despachar({ tipo: "atras", desde }),
       elegir: (candidato: Candidato) => despachar({ tipo: "elegir", candidato }),
       confirmar: (candidato: Candidato) => despachar({ tipo: "confirmar", candidato }),
@@ -27,5 +28,5 @@ export function usePasosEvento(quienInicial: QuienItem[], arranque: Arranque | n
     }),
     [],
   );
-  return { r: estado.r, candidato: estado.candidato, paso: pasoActual(estado), direccion: estado.direccion, primero: estado.pila.length === 1, primeraPregunta: estado.pila.length === 2, ...gestos };
+  return { r: estado.r, candidato: estado.candidato, sedeDe: estado.sedeDe, paso: pasoActual(estado), direccion: estado.direccion, primero: estado.pila.length === 1, primeraPregunta: estado.pila.length === 2, ...gestos };
 }

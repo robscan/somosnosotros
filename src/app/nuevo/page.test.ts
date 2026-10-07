@@ -41,7 +41,7 @@ function clienteFalso() {
       const resultado = Promise.resolve(m.tablas[tabla] ?? { data: null });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const consulta: any = {};
-      for (const metodo of ["select", "eq", "order", "limit"]) consulta[metodo] = () => consulta;
+      for (const metodo of ["select", "eq", "gte", "order", "limit"]) consulta[metodo] = () => consulta;
       consulta.maybeSingle = () => resultado;
       consulta.then = (bien: (v: unknown) => void, mal: (e: unknown) => void) => resultado.then(bien, mal);
       return consulta;
@@ -108,6 +108,18 @@ describe("/nuevo/evento", () => {
       entrar: true,
     });
     expect(el.props.salida.href).toBe("/eventos/ecos-de-papel");
+  });
+  it("`?festival=` (OL-321): «Parte de un festival» con uno que se puede elegir y la ✕ a su ficha; uno que no está entre ellos no contesta nada", async () => {
+    const { default: NuevoEvento } = await import("./evento/page");
+    const FESTIVAL = "0f0f0f0f-0000-4000-8000-000000000001";
+    m.tablas.eventos = { data: [{ id: FESTIVAL, titulo: "Festival de Cine", inicio: "2026-11-12T01:00:00Z", fin: "2026-11-15T06:00:00Z", zona: "America/Mexico_City" }] };
+    m.tablas.lugares_horarios = { data: [{ lugar_id: LUGAR, dias: [2, 3], abre: "10:00:00", cierra: "18:00:00" }] };
+    const el = (await NuevoEvento(consulta({ festival: FESTIVAL }))) as ReactElement<Props>;
+    expect(el.props.arranque).toEqual({ r: { padre: { id: FESTIVAL, titulo: "Festival de Cine" } }, entrar: false });
+    expect(el.props.salida.href).toBe(`/eventos/${FESTIVAL}`);
+    expect(el.props.contexto.horarios).toEqual({ [LUGAR]: [{ dias: [2, 3], abre: "10:00", cierra: "18:00" }] });
+    const ajeno = (await NuevoEvento(consulta({ festival: "0f0f0f0f-0000-4000-8000-0000000000ff" }))) as ReactElement<Props>;
+    expect(ajeno.props.arranque).toBeNull();
   });
 });
 

@@ -32,6 +32,9 @@ type Props = {
   sinSemanasPasadas?: boolean;
   /** Tocar otra vez el día ya elegido lo quita (lo dice el nombre accesible de ese día). */
   permiteQuitar: boolean;
+  /** Días sueltos elegidos, cada uno en su círculo lleno y sin banda entre ellos (las sesiones de un taller, OL-321); con ellos no cuentan
+   *  `desde` ni `hasta` para marcar, solo para el mes con que se abre. */
+  sueltos?: readonly string[];
   /** Un toque en un día que se puede elegir. Qué se hace con él (un día, un rango, quitarlo) lo decide quien la usa. */
   onElegir: (dia: string) => void;
 };
@@ -42,7 +45,7 @@ type Props = {
  * punto en los que tienen eventos. Un día elegido va en círculo lleno; con un rango, los dos extremos van llenos y los
  * de en medio en el tono suave. Teclado de rejilla: flechas entre días (y meses), Enter o espacio para elegir.
  */
-export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, pasadoPermitido, sinSemanasPasadas = false, permiteQuitar, onElegir }: Props) {
+export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, pasadoPermitido, sinSemanasPasadas = false, permiteQuitar, sueltos, onElegir }: Props) {
   const limite = min && min > hoy ? min : hoy;
   const [anio, setAnio] = useState(() => mesInicial(desde, limite).anio);
   const [mes, setMes] = useState(() => mesInicial(desde, limite).mes);
@@ -135,8 +138,8 @@ export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, 
             {semana.map((d) => {
               // Un día ya pasado dice "ya pasó" en su nombre accesible, no "sin eventos" (`etiquetaDia` decide el orden).
               const conEventos = diasActivos ? (diasActivos.get(d.fecha) ?? 0) : undefined;
-              const extremo = d.delMes && (d.fecha === desde || d.fecha === hasta);
-              const enRango = d.delMes && d.fecha > desde && d.fecha < hasta;
+              const extremo = d.delMes && (sueltos ? sueltos.includes(d.fecha) : d.fecha === desde || d.fecha === hasta);
+              const enRango = d.delMes && !sueltos && d.fecha > desde && d.fecha < hasta;
               return (
                 <button
                   type="button"
@@ -149,7 +152,7 @@ export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, 
                   aria-selected={d.delMes ? extremo || enRango : undefined}
                   aria-disabled={apagado(d) || undefined}
                   aria-hidden={d.delMes ? undefined : true}
-                  aria-label={d.delMes ? etiquetaDia(diaLargo(d.fecha, ahora, zona), d, { conEventos, elegido: desde === hasta && d.fecha === desde, permiteQuitar }) : undefined}
+                  aria-label={d.delMes ? etiquetaDia(diaLargo(d.fecha, ahora, zona), d, { conEventos, elegido: sueltos ? sueltos.includes(d.fecha) : desde === hasta && d.fecha === desde, permiteQuitar }) : undefined}
                   onClick={() => elegirDia(d)}
                   onKeyDown={(e) => alTecladoDia(e, d)}
                 >

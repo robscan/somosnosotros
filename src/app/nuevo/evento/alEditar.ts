@@ -1,7 +1,9 @@
 import type { QuienItem } from "@/lib/artistas";
 import { sumarDiasIso } from "@/lib/calendario";
 import { partirLocal } from "@/lib/cuandoEvento";
-import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
+import { visitaDeEvento } from "@/lib/claseEvento";
+import { LIMITES_EVENTO, REVELAR_OPCIONES, esClase, type Evento, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
+import type { Franja } from "@/lib/horarioLugar";
 import { diaLocal, isoALocal } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { sitioReservadoVencido } from "@/lib/retencionSitio";
@@ -17,7 +19,11 @@ import { OTRO_VACIO, estadoInicial, type Dias, type Respuestas, type Sitio } fro
 export type EventoAEditar = Pick<
   Evento,
   "titulo" | "inicio" | "fin" | "lugar_id" | "precio" | "descripcion" | "enlace" | "imagen" | "sitio_texto" | "sitio_direccion" | "sitio_lat" | "sitio_lng" | "sitio_reservado" | "sitio_revelar_desde" | "zona"
-> & { ciudad?: string | null };
+> & { ciudad?: string | null; clase?: Evento["clase"]; evento_padre_id?: string | null; inaugura_id?: string | null };
+
+/** Lo que se lee aparte para editar cómo ocurre (OL-321): el horario propio de una exposición, su inauguración, el festival del que es parte y,
+ *  si es un festival, cuántas actividades tiene registradas. */
+export type ClaseAEditar = { horario?: Franja[] | null; inauguracion?: { inicio: string } | null; padre?: { id: string; titulo: string } | null; actos?: number };
 
 type Cuando = Pick<Respuestas, "dias" | "hora" | "fin">;
 
@@ -100,10 +106,26 @@ export function sitioAlEditar(evento: EventoAEditar, privado: SitioPrivado | nul
   return { modo: "lugar", lugarId, otro };
 }
 
-/** Todo el evento como respuestas: nombre, cuándo (con su horario por día), dónde, cuánto (un precio sin número se pregunta), quién, descripción y enlace. */
-export function respuestasAlEditar({ evento, privado, lugares, quien, sesiones, zona }: { evento: EventoAEditar; privado: SitioPrivado | null; lugares: readonly LugarResumen[]; quien: QuienItem[]; sesiones?: readonly SesionGuardada[] | null; zona: string }): Respuestas {
+/**
+ * Las sesiones de un taller como respuestas (OL-321): sus días (sueltos) y, si todas tienen la misma hora, esa hora con la casilla «Misma hora
+ * todas las sesiones» marcada; si no, cada una con la suya. Sin sesiones guardadas, un taller de un solo día.
+ */
+export function tallerAlEditar(evento: { inicio: string; fin: string | null; zona: string }, sesiones: readonly SesionGuardada[] | null | undefined, zona: string): Pick<Respuestas, "sesionesDias" | "hora" | "fin" | "sesiones"> {
+  const vigentes = sesionesVigentes(evento, sesiones);
+  const horarios: HorarioDia[] = vigentes.length
+    ? vigentes.map((s) => ({ dia: diaLocal(new Date(s.inicio), zona), hora: partirLocal(isoALocal(s.inicio, zona)).hora, fin: s.fin ? partirLocal(isoALocal(s.fin, zona)).hora : "" }))
+    : [{ dia: diaLocal(new Date(evento.inicio), zona), hora: partirLocal(isoALocal(evento.inicio, zona)).hora, fin: evento.fin && diaLocal(new Date(evento.fin), zona) === diaLocal(new Date(evento.inicio), zona) ? partirLocal(isoALocal(evento.fin, zona)).hora : "" }];
+  const [primera] = horarios;
+  const iguales = horarios.every((h) => h.hora === primera.hora && h.fin === primera.fin);
+  return { sesionesDias: horarios.map((h) => h.dia), hora: primera.hora, fin: primera.fin, sesiones: iguales ? null : horarios };
+}
+
+/** Todo el evento como respuestas: nombre, cuándo (con su horario por día), dónde, cuánto (un precio sin número se pregunta), quién, descripción y enlace.
+ *  Con su clase (OL-321), ya confirmada: el paso del tiempo de la suya (la visita, las sesiones), el horario propio, la inauguración y el festival. */
+export function respuestasAlEditar({ evento, privado, lugares, quien, sesiones, zona, clase: extra = {} }: { evento: EventoAEditar; privado: SitioPrivado | null; lugares: readonly LugarResumen[]; quien: QuienItem[]; sesiones?: readonly SesionGuardada[] | null; zona: string; clase?: ClaseAEditar }): Respuestas {
   const cuando = cuandoDeEvento(evento.inicio, evento.fin, zona);
-  return {
+  const clase = esClase(evento.clase) ? evento.clase : "puntual";
+  const base: Respuestas = {
     ...estadoInicial().r,
     nombre: evento.titulo.slice(0, LIMITES_EVENTO.titulo),
     ...cuando,
@@ -113,5 +135,15 @@ export function respuestasAlEditar({ evento, privado, lugares, quien, sesiones, 
     quien,
     descripcion: evento.descripcion ?? "",
     enlace: evento.enlace ?? "",
+    clase,
+    claseFijada: true,
+    padre: extra.padre ?? null,
   };
+  if (clase === "exposicion") {
+    const inaug = extra.inauguracion ? partirLocal(isoALocal(extra.inauguracion.inicio, zona)) : null;
+    return { ...base, dias: null, hora: null, fin: null, sesiones: null, visita: visitaDeEvento(evento.inicio, evento.fin, zona), horario: extra.horario?.length ? extra.horario : null, inauguracion: inaug?.fecha ? { dia: inaug.fecha, hora: inaug.hora } : null };
+  }
+  if (clase === "taller") return { ...base, dias: null, ...tallerAlEditar({ inicio: evento.inicio, fin: evento.fin, zona }, sesiones, zona) };
+  if (clase === "festival") return { ...base, sesiones: null, padre: null, programaGuardado: extra.actos ?? 0 };
+  return base;
 }

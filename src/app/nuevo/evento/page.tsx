@@ -12,10 +12,11 @@ import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { arranqueDe, respuestasDeEvento, type EventoBase } from "./arranque";
 import AltaEvento from "./AltaEvento";
+import { cargarContextoClase } from "./contextoClase";
 
 export const metadata: Metadata = { title: "Publicar un evento · Somos Nosotros", robots: { index: false, follow: false } };
 
-type Consulta = { lugar?: string; artista?: string; desde?: string; ciudad?: string };
+type Consulta = { lugar?: string; artista?: string; desde?: string; ciudad?: string; festival?: string };
 
 /**
  * Publicar un evento por pasos (OL-300, bitácora 328; prototipo firmado `publicar-por-pasos.html`, bitácora 323): la única alta de evento
@@ -28,15 +29,17 @@ type Consulta = { lugar?: string; artista?: string; desde?: string; ciudad?: str
  *   Las respuestas empiezan con su nombre, sitio, costo, quién, descripción y enlace; el día y la hora se preguntan y el cartel no se copia.
  *   Entra ya en «¿Qué día es?». La ✕ vuelve al evento.
  * - `ciudad`: la ciudad desde la que se entra, una pista más para buscar el sitio.
+ * - `festival`: «Agregar otra actividad» de un festival (OL-321): «Parte de un festival» ya puesto con él, si es uno que se puede elegir
+ *   (propio o, para la administración, cualquiera). La ✕ vuelve a su ficha.
  */
 export default async function NuevoEventoPorPasos({ searchParams }: { searchParams: Promise<Consulta> }) {
-  const { lugar, artista, desde, ciudad } = await searchParams;
+  const { lugar, artista, desde, ciudad, festival } = await searchParams;
   const actual = await usuarioActual();
-  if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(enlaceAltaEvento({ lugar, artista, desde, ciudad }))}`);
+  if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(enlaceAltaEvento({ lugar, artista, desde, ciudad, festival }))}`);
   const supabase = await clienteServidor();
   // Los privados de la cuenta entran por la política de lectura y «¿Dónde es?» los marca «Privado».
   const cartelActivo = lecturaDeCartelActiva();
-  const [ciudades, { data: lugares }, mios, cupo, base, quienBase, delArtista] = await Promise.all([
+  const [ciudades, { data: lugares }, mios, cupo, base, quienBase, delArtista, contexto] = await Promise.all([
     cargarCiudades(),
     supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre") ?? { data: [] },
     cargarMisArtistas(actual.perfil.id),
@@ -46,16 +49,20 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
       : null,
     desde && esUuid(desde) ? cargarQuien(desde) : [],
     artista && esUuid(artista) && supabase ? supabase.from("artistas").select("id, nombre").eq("id", artista).maybeSingle().then(({ data }) => data as { id: string; nombre: string } | null) : null,
+    cargarContextoClase(supabase, { id: actual.perfil.id, admin: actual.perfil.rol === "admin" }),
   ]);
+  // El festival se toma solo de los que se pueden elegir: nunca uno ajeno por la dirección.
+  const delFestival = festival && esUuid(festival) ? (contexto.festivales.find((f) => f.id === festival) ?? null) : null;
   const registrados = (lugares ?? []) as LugarResumen[];
   const delLugar = lugar && esUuid(lugar) ? (registrados.find((l) => l.id === lugar) ?? null) : null;
   const arranque = arranqueDe({
     desde: base ? respuestasDeEvento(base, registrados, quienBase.map((q) => ({ id: q.id, nombre: q.nombre }))) : null,
     lugar: delLugar,
     artista: delArtista,
+    festival: delFestival,
   });
   // La ✕ vuelve a la ficha desde la que se entró (el evento que se duplica, el lugar o el artista); sin ninguna, al inicio.
-  const salida = base ? hrefEvento(base) : delLugar ? `/lugares/${delLugar.id}` : delArtista ? `/artistas/${delArtista.id}` : "/";
+  const salida = base ? hrefEvento(base) : delFestival ? `/eventos/${delFestival.id}` : delLugar ? `/lugares/${delLugar.id}` : delArtista ? `/artistas/${delArtista.id}` : "/";
   return (
     <AltaEvento
       accion={crearEvento}
@@ -67,6 +74,7 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
       cartelActivo={cartelActivo}
       cupo={cupo}
       arranque={arranque}
+      contexto={contexto}
     />
   );
 }

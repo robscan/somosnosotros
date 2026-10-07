@@ -4,11 +4,14 @@ import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
 import type { ArtistaResumen } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import type { ErroresEvento } from "@/lib/eventos";
+import type { Franja } from "@/lib/horarioLugar";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
+import { PasoPrograma, PasoSesiones, PasoVisita } from "./PasosClase";
+import { nombreDelSitio } from "./pasos";
 import type { usePasosEvento } from "./usePasosEvento";
 import type { useSitioPorPasos } from "./useSitioPorPasos";
 
@@ -22,6 +25,8 @@ type Props = {
   mios: ArtistaResumen[];
   ciudadContexto: Ciudad | null;
   errores: ErroresEvento;
+  /** El horario de cada lugar del directorio (OL-321): la casilla «Horario del lugar» de una exposición. */
+  horarios?: Record<string, Franja[]>;
 };
 
 /**
@@ -30,8 +35,8 @@ type Props = {
  * (`EditarEvento`, OL-319): en el alta se recorren; al editar, cada una se abre desde «Revisa» y vuelve a ella. Pinta solo la del paso a la
  * vista; los demás pasos (el cartel, «Revisa», «Publicado») los pinta cada pantalla.
  */
-export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios, ciudadContexto, errores }: Props) {
-  const { r, candidato, paso, cambiar, contestar, seguir, elegir, confirmar, atras } = pasos;
+export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios, ciudadContexto, errores, horarios = {} }: Props) {
+  const { r, candidato, paso, cambiar, contestar, seguir, elegir, confirmar, atras, sedeDeActo } = pasos;
   switch (paso) {
     case "nombre":
       return <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />;
@@ -39,6 +44,29 @@ export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios
       return <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />;
     case "hora":
       return <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} onCambiar={cambiar} onSeguir={seguir} />;
+    // Cómo ocurre (OL-321): el paso del tiempo de una exposición, de un taller y de un festival.
+    case "visita":
+      return <PasoVisita visita={r.visita} zona={zona} horarioLugar={sitio.lugar ? (horarios[sitio.lugar.id] ?? []) : []} horario={r.horario} onVisita={(visita) => cambiar({ visita })} onHorario={(horario) => cambiar({ horario })} onSeguir={seguir} />;
+    case "sesiones":
+      return <PasoSesiones r={r} zona={zona} onCambiar={cambiar} onSeguir={seguir} />;
+    case "programa":
+      return (
+        <PasoPrograma
+          r={r}
+          zona={zona}
+          lugares={lugares}
+          mios={mios}
+          ciudadContexto={ciudadContexto}
+          onCambiar={cambiar}
+          onSede={(acto) => {
+            // «¿Dónde es?» abre con lo que se sabe de esa sede: la elegida, o lo que dijo el cartel.
+            const lugar = acto.sitio.modo === "lugar" ? lugares.find((l) => l.id === acto.sitio.lugarId) : undefined;
+            sitio.setBusqueda(nombreDelSitio(acto.sitio, lugar) || acto.sedeLeida);
+            sedeDeActo(acto.clave);
+          }}
+          onSeguir={seguir}
+        />
+      );
     case "donde":
       return (
         <PasoDonde

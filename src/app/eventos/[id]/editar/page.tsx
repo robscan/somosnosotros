@@ -3,6 +3,10 @@ import { cargarMisArtistas, cargarQuien } from "@/app/artistas/consultas";
 import { cupoDeCartel } from "@/app/eventos/acciones";
 import EditarEvento from "@/app/nuevo/evento/EditarEvento";
 import { respuestasAlEditar } from "@/app/nuevo/evento/alEditar";
+import { cargarContextoClase } from "@/app/nuevo/evento/contextoClase";
+import { textoProgramaRegistrado } from "@/lib/claseEvento";
+import { diaLocal, rangoCorto } from "@/lib/fechas";
+import { franjaDeFila } from "@/lib/horarioLugar";
 import { lecturaDeCartelActiva } from "@/lib/cartel";
 import { esUuid } from "@/lib/formulario";
 import { hrefEvento, type Evento, type SitioPrivado } from "@/lib/eventos";
@@ -43,12 +47,19 @@ export default async function EditarEventoPagina({ params }: { params: Promise<{
   const supabase = await clienteServidor();
   // Los lugares privados de la cuenta entran por la política de lectura y «¿Dónde es?» los marca «Privado» (OL-179).
   const cartelActivo = lecturaDeCartelActiva();
-  const [{ data: lugares }, { data: privado }, quien, mios, cupo] = await Promise.all([
+  // Cómo ocurre (OL-321): el horario propio de una exposición, su inauguración, el festival del que es parte y las actividades de un festival.
+  // Sin la migración (o si falla) llegan vacías: el evento se edita como siempre.
+  const [{ data: lugares }, { data: privado }, quien, mios, cupo, contexto, horarioPropio, inauguracion, padre, actos] = await Promise.all([
     supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre") ?? { data: [] },
     evento.sitio_reservado && supabase ? supabase.from("eventos_sitio_privado").select("direccion, lat, lng, indicaciones, revelar_desde").eq("evento_id", evento.id).maybeSingle() : { data: null },
     cargarQuien(evento.id),
     cargarMisArtistas(actual.perfil.id),
     cartelActivo ? cupoDeCartel() : null,
+    cargarContextoClase(supabase, { id: actual.perfil.id, admin: actual.perfil.rol === "admin" }),
+    evento.clase === "exposicion" && supabase ? supabase.from("eventos_horarios").select("dias, abre, cierra").eq("evento_id", evento.id).order("creado_en").then(({ data }) => (data ?? []).map(franjaDeFila)) : [],
+    evento.inaugura_id && supabase ? supabase.from("eventos").select("inicio").eq("id", evento.inaugura_id).maybeSingle().then(({ data }) => data as { inicio: string } | null) : null,
+    evento.evento_padre_id && supabase ? supabase.from("eventos").select("id, titulo").eq("id", evento.evento_padre_id).maybeSingle().then(({ data }) => data as { id: string; titulo: string } | null) : null,
+    evento.clase === "festival" && supabase ? supabase.from("eventos").select("id", { count: "exact", head: true }).eq("evento_padre_id", evento.id).eq("visible", true).then(({ count }) => count ?? 0) : 0,
   ]);
   const registrados = (lugares ?? []) as LugarResumen[];
   const sitioPrivado = privado as SitioPrivado | null;
@@ -56,7 +67,12 @@ export default async function EditarEventoPagina({ params }: { params: Promise<{
   const zonaSitio = evento.sitio_reservado && !sitioPrivado ? evento.zona : zonaDelSitio(evento, sitioPrivado);
   const lugar = evento.lugar_id ? registrados.find((l) => l.id === evento.lugar_id) : undefined;
   const zona = zonaSegura(evento.sitio_texto || evento.sitio_reservado ? zonaSitio : (lugar?.zona ?? evento.zona));
-  const respuestas = respuestasAlEditar({ evento, privado: sitioPrivado, lugares: registrados, quien: quien.map((q) => ({ id: q.id, nombre: q.nombre })), sesiones: evento.sesiones, zona });
+  const respuestas = respuestasAlEditar({ evento, privado: sitioPrivado, lugares: registrados, quien: quien.map((q) => ({ id: q.id, nombre: q.nombre })), sesiones: evento.sesiones, zona, clase: { horario: horarioPropio, inauguracion, padre, actos } });
+  const hoy = diaLocal(new Date(), evento.zona);
+  const festivalGuardado =
+    evento.clase === "festival" && evento.fin
+      ? { actos, resumen: [rangoCorto(diaLocal(new Date(evento.inicio), evento.zona), diaLocal(new Date(evento.fin), evento.zona), hoy), textoProgramaRegistrado(actos)].join(" · ") }
+      : undefined;
   return (
     <EditarEvento
       accion={actualizarEvento.bind(null, evento.id)}
@@ -73,6 +89,8 @@ export default async function EditarEventoPagina({ params }: { params: Promise<{
       esAdmin={actual.perfil.rol === "admin"}
       cartelActivo={cartelActivo}
       cupo={cupo}
+      contexto={contexto}
+      festivalGuardado={festivalGuardado}
     />
   );
 }

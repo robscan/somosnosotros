@@ -93,12 +93,12 @@ export function enlaceDeAlta(alta: Alta, ciudad: string | null, nombre: string |
  * Lo que puede llevar el alta de evento por pasos (OL-312): el lugar desde cuya ficha se publica («Publicar aquí»), el artista desde la suya
  * («Publicar fecha»), el evento que se duplica (`desde`) y la ciudad que se veía.
  */
-export type ConsultaAltaEvento = { lugar?: string | null; artista?: string | null; desde?: string | null; ciudad?: string | null };
+export type ConsultaAltaEvento = { lugar?: string | null; artista?: string | null; desde?: string | null; ciudad?: string | null; /** Otra actividad de un festival (OL-321): «Parte de un festival» ya puesto. */ festival?: string | null };
 
 /** La dirección del alta de evento por pasos con lo que ya se sabe, en un orden fijo; lo vacío no va. */
-export function enlaceAltaEvento({ lugar, artista, desde, ciudad }: ConsultaAltaEvento = {}): string {
+export function enlaceAltaEvento({ lugar, artista, desde, ciudad, festival }: ConsultaAltaEvento = {}): string {
   const consulta = new URLSearchParams();
-  for (const [clave, valor] of Object.entries({ lugar, artista, desde, ciudad })) if (valor) consulta.set(clave, valor);
+  for (const [clave, valor] of Object.entries({ lugar, artista, desde, ciudad, festival })) if (valor) consulta.set(clave, valor);
   return `/nuevo/evento${consulta.size ? `?${consulta}` : ""}`;
 }
 

@@ -21,6 +21,9 @@ type Props = {
    * día ya lo dice su encabezado, así que ahí se queda como estaba.
    */
   conDia?: boolean;
+  /** La línea de cuándo de algo que no es un evento de un día (OL-321: «Hasta el dom 30 de nov», «3 sesiones · …», el programa de un festival);
+   *  sin ella, la de siempre. La agenda todavía no la pasa (OL-322); la usa «Publicado». */
+  cuando?: string;
 };
 
 /**
@@ -29,7 +32,7 @@ type Props = {
  * primera es cuándo —«19:00», con el día si hace falta; en un evento de varios días, «Del 10 al 12 de oct · 8:00–9:00 p.m.»— y, tras un punto, lo que no es gratis y cuántos van (sin «Gratis» en
  * todos); la segunda, el nombre del sitio, sin su dirección postal (esa vive en la ficha).
  */
-export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false }: Props) {
+export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false, cuando }: Props) {
   // Un evento de varios días dice sus días y su horario de cada día; la lista lo ubica en el día en que empieza.
   const varios = cuandoVariosDias(e.inicio, e.fin, new Date(), e.zona);
   const ademas = [e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
@@ -37,9 +40,9 @@ export default function RenglonEvento({ evento: e, sinSitio = false, estado = nu
     <Renglon href={hrefEvento(e)} foto={e.imagen ?? e.lugar?.portada ?? null} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>
         {estado === "me_interesa" && <Chip variante="estado">Te interesa</Chip>}
-        {conDia || varios ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
+        {conDia || varios || cuando ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
         <b>
-          {varios ? `${varios.dias} · ${varios.horas}` : `${conDia ? `${diaCorto(e.inicio, new Date(), e.zona)} · ` : ""}${horaCorta(e.inicio, e.zona)}`}
+          {cuando ?? (varios ? `${varios.dias} · ${varios.horas}` : `${conDia ? `${diaCorto(e.inicio, new Date(), e.zona)} · ` : ""}${horaCorta(e.inicio, e.zona)}`)}
         </b>
         {ademas && <span>· {ademas}</span>}
       </span>

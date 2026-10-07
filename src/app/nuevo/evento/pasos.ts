@@ -3,8 +3,10 @@ import type { EventoAgenda } from "@/lib/agenda";
 import type { QuienItem } from "@/lib/artistas";
 import { FIN_DEL_DIA, sumarDiasIso } from "@/lib/calendario";
 import { conHoraFin } from "@/lib/cuandoEvento";
-import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, type ModoSitio, type OtroSitio } from "@/lib/eventos";
-import { combinarFechaHora, localAIso, sumarHoras } from "@/lib/fechas";
+import { horariosDeTaller, periodoDeVisita, textoProgramaRegistrado } from "@/lib/claseEvento";
+import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, claseSugerida, type Clase, type ModoSitio, type OtroSitio } from "@/lib/eventos";
+import type { Franja } from "@/lib/horarioLugar";
+import { combinarFechaHora, localAIso, rangoCorto, sumarHoras } from "@/lib/fechas";
 import { queFalta } from "@/lib/formulario";
 import { inicioFinDeHorarios, type HorarioDia } from "@/lib/sesionesEvento";
 import { distanciaKm, type Punto } from "@/lib/geo";
@@ -18,7 +20,7 @@ import type { LugarResumen } from "@/lib/lugares";
  * «Dónde» son tres pasos (OL-301): `donde` (buscar el sitio), `mapa` («¿Es aquí?», solo si no es un lugar del directorio) y `uso`
  * («No está en el directorio»: qué hacer con ese sitio). Un lugar del directorio ya tiene su punto confirmado y salta los otros dos.
  */
-export type Paso = "inicio" | "nombre" | "dia" | "hora" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas" | "publicado";
+export type Paso = "inicio" | "nombre" | "dia" | "hora" | "visita" | "sesiones" | "programa" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas" | "publicado";
 
 /** El camino sin cartel, de principio a fin: también da la línea de avance. */
 const ORDEN: readonly Paso[] = ["inicio", "nombre", "dia", "hora", "donde", "cuanto", "revisa"];
@@ -34,8 +36,40 @@ export type Dias = { desde: string; hasta: string | null };
  */
 export const diasElegidos = (desde: string, hasta: string | null): Dias => ({ desde, hasta: hasta && hasta > desde ? hasta : null });
 
+/**
+ * Un evento del programa de un festival (OL-321, H6): lo que el cartel trae de cada uno o lo que se agrega a mano. Se publica marcado; desmarcado
+ * queda como borrador del festival. `sitio` es su sede (la del paso «Dónde» de siempre); `sedeLeida`, lo que el cartel dijo de ella, para
+ * empezar a buscarla. `leido`: vino del cartel.
+ */
+export type Acto = { clave: string; titulo: string; dia: string; hora: string; sitio: Sitio; sedeLeida: string; quien: QuienItem[]; marcado: boolean; leido: boolean };
+
+/** El festival del que el evento es parte: uno que ya existe (elegido por su nombre) o uno nuevo, con solo el nombre. */
+export type Padre = { id: string; titulo: string } | { nuevo: string };
+
+/** La inauguración de una exposición: un acto puntual aparte, su día y su hora (sin el horario de visita). */
+export type Inauguracion = { dia: string; hora: string };
+
 export type Respuestas = {
   nombre: string;
+  /** Cómo ocurre (OL-321; doc 55 §2): la proponen el cartel o el título y se confirma en «Revisa». Cambiarla cambia solo el paso del tiempo. */
+  clase: Clase;
+  /** La eligió la persona (en la hoja «¿Cómo ocurre?») o la dijo el cartel: el título ya no la cambia. */
+  claseFijada: boolean;
+  /** Exposición: el primer día de visita y el de cierre (inclusivo); `hasta` null mientras se elige. */
+  visita: { desde: string; hasta: string | null } | null;
+  /** Exposición: el horario propio en franjas; null es «Horario del lugar» (la casilla marcada) o, si el lugar no tiene, «por confirmar». */
+  horario: Franja[] | null;
+  /** Exposición: su inauguración, opcional. */
+  inauguracion: Inauguracion | null;
+  /** Taller o curso: los días de sus sesiones (YYYY-MM-DD); la hora es `hora` y `fin` y, con la casilla «Misma hora todas las sesiones»
+   *  desmarcada, cada sesión lleva la suya en `sesiones`. */
+  sesionesDias: string[];
+  /** Festival: su programa. */
+  actos: Acto[];
+  /** Editar un festival que ya existe: cuántas actividades tiene registradas (su programa se edita en la ficha de cada una). */
+  programaGuardado: number;
+  /** «Parte de un festival» (todo lo que no es festival). */
+  padre: Padre | null;
   /** El día de inicio (YYYY-MM-DD) y, si dura varios, el último. */
   dias: Dias | null;
   /** La hora de inicio, "HH:MM". */
@@ -74,6 +108,8 @@ export type UsoSitio = Exclude<Uso, "lugar">;
 
 export type Estado = {
   r: Respuestas;
+  /** El acto cuya sede se está eligiendo en «Dónde» (OL-321); null si «Dónde» es el del evento. */
+  sedeDe: string | null;
   /** El sitio que se confirma en `mapa` y se resuelve en `uso`. */
   candidato: Candidato | null;
   /** Los pasos por los que se llegó al actual (el último): Atrás quita uno. */
@@ -91,6 +127,8 @@ export type Accion =
   | { tipo: "seguir" }
   /** Desde «Revisa»: solo esa pregunta. */
   | { tipo: "abrir"; paso: Paso }
+  /** La sede de un acto del programa: el paso «Dónde» de siempre; al contestarlo se vuelve al programa con esa sede puesta. */
+  | { tipo: "sedeDeActo"; clave: string }
   /** Atrás desde `desde`; se ignora si ya no se está ahí. */
   | { tipo: "atras"; desde: Paso }
   /** Un resultado del mapa o «Estoy aquí»: a confirmarlo en el mapa. */
@@ -104,9 +142,34 @@ export type Accion =
 
 export const OTRO_VACIO: OtroSitio = { reservado: false, sitioTexto: "", direccion: "", sitioPunto: null, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: null };
 
+/** Todo sin contestar: un evento (la clase de entrada; el título o el cartel la proponen después). */
+export const RESPUESTAS_VACIAS: Respuestas = {
+  nombre: "",
+  clase: "puntual",
+  claseFijada: false,
+  dias: null,
+  hora: null,
+  fin: null,
+  sesiones: null,
+  visita: null,
+  horario: null,
+  inauguracion: null,
+  sesionesDias: [],
+  actos: [],
+  programaGuardado: 0,
+  padre: null,
+  sitio: { modo: "lugar", lugarId: "", otro: OTRO_VACIO },
+  costo: null,
+  precio: "",
+  quien: [],
+  descripcion: "",
+  enlace: "",
+};
+
 export function estadoInicial(quien: QuienItem[] = []): Estado {
   return {
-    r: { nombre: "", dias: null, hora: null, fin: null, sesiones: null, sitio: { modo: "lugar", lugarId: "", otro: OTRO_VACIO }, costo: null, precio: "", quien, descripcion: "", enlace: "" },
+    r: { ...RESPUESTAS_VACIAS, quien },
+    sedeDe: null,
     candidato: null,
     pila: ["inicio"],
     direccion: null,
@@ -117,7 +180,7 @@ export function estadoInicial(quien: QuienItem[] = []): Estado {
  * Editar un evento (OL-319): no se vuelven a recorrer los pasos; se entra directo en «Revisa» con todo puesto, y cada renglón abre su pregunta,
  * que al contestarse vuelve aquí (lo mismo que «Cambiar» dentro del alta). Sin transición: es lo que se ve al llegar.
  */
-export const estadoAlEditar = (r: Respuestas): Estado => ({ r, candidato: null, pila: ["revisa"], direccion: null });
+export const estadoAlEditar = (r: Respuestas): Estado => ({ r, sedeDe: null, candidato: null, pila: ["revisa"], direccion: null });
 
 export const pasoActual = (e: Estado): Paso => e.pila[e.pila.length - 1];
 
@@ -125,6 +188,8 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
   nombre: "¿Cómo se llama?",
   dia: "¿Qué día es?",
   hora: "¿A qué hora?",
+  visita: "¿Cuándo se puede visitar?",
+  sesiones: "¿Qué días son las sesiones?",
   donde: "¿Dónde es?",
   mapa: "¿Es aquí?",
   uso: "No está en el directorio",
@@ -132,30 +197,72 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
   mas: "¿Quieres agregar algo?",
 };
 
-/** La pregunta de cada paso; con varios días la de la hora cambia: el horario del primer día vale para todos. Sin pregunta, undefined. */
-export const preguntaDe = (paso: Paso, r: Pick<Respuestas, "dias">): string | undefined => (paso === "hora" && r.dias?.hasta ? "¿A qué hora, cada día?" : PREGUNTA[paso]);
+/**
+ * La pregunta de cada paso; con varios días la de la hora cambia: el horario del primer día vale para todos. El programa de un festival dice
+ * cuántos eventos trae el cartel (H6) o, armado a mano, pregunta por sus actividades. Sin pregunta, undefined.
+ */
+export function preguntaDe(paso: Paso, r: Pick<Respuestas, "dias"> & Partial<Pick<Respuestas, "actos">>): string | undefined {
+  if (paso === "hora" && r.dias?.hasta) return "¿A qué hora, cada día?";
+  if (paso === "programa") {
+    const leidos = (r.actos ?? []).filter((a) => a.leido).length;
+    return leidos ? `El cartel trae ${leidos} ${leidos === 1 ? "evento" : "eventos"}` : "¿Qué actividades tiene?";
+  }
+  return PREGUNTA[paso];
+}
 
 /** ¿El sitio ya está contestado? Un sitio reservado sin su dirección exacta porque se retiró por privacidad (al editar un evento que ya pasó)
  *  cuenta como contestado con su nombre: no hay dirección que pedir para conservarlo. */
 export const dondeResuelto = ({ modo, lugarId, otro }: Sitio): boolean =>
   modo === "lugar" ? !!lugarId : sitioListo(otro) || (modo === "reservado" && !!otro.direccionRetirada && !!otro.sitioTexto.trim());
 
-/** Lo que falta para publicar, en el orden en que se pregunta. */
+/** Un acto del programa que se puede publicar: con nombre, día, hora y sede. */
+export const actoListo = (a: Acto): boolean => !!a.titulo.trim() && !!a.dia && !!a.hora && dondeResuelto(a.sitio);
+
+/** Los actos que se publican: los marcados. */
+export const actosMarcados = (r: Pick<Respuestas, "actos">): Acto[] => r.actos.filter((a) => a.marcado);
+
+/**
+ * Lo que falta para publicar, en el orden en que se pregunta. El paso del tiempo depende de la clase (doc 55 §2): un evento pregunta el día y la
+ * hora; una exposición, cuándo se puede visitar; un taller, los días de sus sesiones y su hora; un festival, su programa (al menos un acto
+ * marcado, y todos los marcados completos). Un festival no pregunta dónde (cada acto tiene su sede); cuánto, sí: es el de sus actos (sin él, la
+ * ficha diría lo que nadie dijo).
+ */
 export function faltan(r: Respuestas): Paso[] {
   const p: Paso[] = [];
   if (!r.nombre.trim()) p.push("nombre");
-  if (!r.dias) p.push("dia");
-  if (!r.hora || r.fin === null) p.push("hora");
-  if (!dondeResuelto(r.sitio)) p.push("donde");
+  if (r.clase === "exposicion") {
+    if (!r.visita?.desde || !r.visita.hasta) p.push("visita");
+  } else if (r.clase === "taller") {
+    if (!r.sesionesDias.length || !r.hora) p.push("sesiones");
+  } else if (r.clase === "festival") {
+    const marcados = actosMarcados(r);
+    if (!r.programaGuardado && (!marcados.length || !marcados.every(actoListo))) p.push("programa");
+  } else {
+    if (!r.dias) p.push("dia");
+    if (!r.hora || r.fin === null) p.push("hora");
+  }
+  if (r.clase !== "festival" && !dondeResuelto(r.sitio)) p.push("donde");
   if (!r.costo || (r.costo === "precio" && !r.precio)) p.push("cuanto");
   return p;
 }
 
-const FALTA: Record<Exclude<Paso, "inicio" | "mapa" | "uso" | "revisa" | "mas" | "publicado">, string> = { nombre: "el nombre", dia: "el día", hora: "la hora", donde: "el lugar", cuanto: "el precio" };
+const FALTA: Record<Exclude<Paso, "inicio" | "mapa" | "uso" | "revisa" | "mas" | "publicado">, string> = {
+  nombre: "el nombre",
+  dia: "el día",
+  hora: "la hora",
+  visita: "cuándo se puede visitar",
+  sesiones: "las sesiones",
+  programa: "una actividad",
+  donde: "el lugar",
+  cuanto: "el precio",
+};
 
-/** Lo que dice el botón de «Revisa» mientras algo falte («Falta el día y la hora»); null si ya se puede publicar. Sin punto: es un botón. */
+/** Lo que dice el botón de «Revisa» mientras algo falte («Falta el día y la hora», «Faltan las sesiones»); null si ya se puede publicar. Sin punto: es un botón. */
 export function faltaParaPublicar(r: Respuestas): string | null {
-  const frase = queFalta(faltan(r).map((p) => FALTA[p as keyof typeof FALTA]));
+  // Un programa con actos marcados pero incompletos no pide «una actividad»: pide completar la que falta.
+  const partes = faltan(r).map((p) => (p === "programa" && actosMarcados(r).length ? "completar una actividad" : FALTA[p as keyof typeof FALTA]));
+  if (partes.length === 1 && partes[0] === "las sesiones") return "Faltan las sesiones";
+  const frase = queFalta(partes);
   return frase && frase.slice(0, -1);
 }
 
@@ -165,13 +272,40 @@ export function faltaParaPublicar(r: Respuestas): string | null {
  * de otros días.
  */
 function con(r: Respuestas, cambios: Partial<Respuestas>): Respuestas {
-  return { ...r, ...(cambios.dias !== undefined ? { hora: null, fin: null, sesiones: null } : {}), ...cambios };
+  const nuevo = { ...r, ...(cambios.dias !== undefined ? { hora: null, fin: null, sesiones: null } : {}), ...cambios };
+  // El título propone la clase mientras nadie la haya elegido (ni la persona ni el cartel): «Exposición…», «Taller de…», «Festival…».
+  if (cambios.nombre !== undefined && cambios.clase === undefined && !nuevo.claseFijada) nuevo.clase = claseSugerida(nuevo.nombre) ?? "puntual";
+  return nuevo.clase !== r.clase ? conClase(nuevo, r) : nuevo;
+}
+
+/**
+ * Cambiar la clase cambia solo el paso del tiempo (doc 55 §2): nombre, dónde, quién, precio y cartel se conservan, y lo que ya se dijo del tiempo
+ * sirve de partida: los días de un evento son los de visita de una exposición o los de las sesiones de un taller. El horario por día de un evento
+ * de varios días no vale para las sesiones sueltas de un taller (ni al revés): se vuelve al horario común.
+ */
+function conClase(r: Respuestas, antes: Respuestas): Respuestas {
+  const dias = r.dias;
+  const desdeDias = dias ? (dias.hasta ? diasEntre(dias.desde, dias.hasta) : [dias.desde]) : [];
+  return {
+    ...r,
+    sesiones: null,
+    visita: r.clase === "exposicion" && !r.visita && dias ? { desde: dias.desde, hasta: dias.hasta } : r.visita,
+    sesionesDias: r.clase === "taller" && !r.sesionesDias.length ? ((r.sesiones ?? antes.sesiones)?.map((h) => h.dia) ?? desdeDias) : r.sesionesDias,
+  };
+}
+
+/** Cada día de un rango (YYYY-MM-DD), hasta 31. */
+function diasEntre(desde: string, hasta: string): string[] {
+  const dias: string[] = [];
+  for (let d = desde; d <= hasta && dias.length < 31; d = sumarDiasIso(d, 1)) dias.push(d);
+  return dias;
 }
 
 const apilar = (e: Estado, paso: Paso): Estado => ({ ...e, pila: [...e.pila, paso], direccion: "entra" });
 
 /** A lo primero que falte; sin nada pendiente, a «Revisa»: si ya se estuvo ahí (se abrió una pregunta desde ella), se regresa. */
 function siguiente(e: Estado): Estado {
+  if (e.sedeDe !== null) return alPrograma(e);
   const paso = faltan(e.r)[0];
   const revisa = e.pila.indexOf("revisa");
   if (paso || revisa < 0) return apilar(e, paso ?? "revisa");
@@ -189,24 +323,50 @@ export function estadoConArranque(quien: QuienItem[], arranque: { r: Partial<Res
   return arranque.entrar ? { ...siguiente(conRespuestas), direccion: null } : conRespuestas;
 }
 
+/**
+ * La sede de un acto ya elegida (o se dejó de elegir): de vuelta al programa, donde se abrió, con la sede puesta en ese acto. Lo que se contesta en
+ * «Dónde» mientras se elige una sede es de ese acto, no del evento.
+ */
+function alPrograma(e: Estado, sitio?: Sitio): Estado {
+  const programa = e.pila.lastIndexOf("programa");
+  const actos = sitio ? e.r.actos.map((x) => (x.clave === e.sedeDe ? { ...x, sitio } : x)) : e.r.actos;
+  return { ...e, r: { ...e.r, actos }, sedeDe: null, candidato: null, pila: programa >= 0 ? e.pila.slice(0, programa + 1) : e.pila, direccion: "vuelve" };
+}
+
 export function flujo(e: Estado, a: Accion): Estado {
   switch (a.tipo) {
     case "cambiar":
       return { ...e, r: con(e.r, a.cambios) };
-    case "contestar":
+    case "contestar": {
+      // La sede de un acto: va a ese acto (lo demás del cambio, si lo hubiera, sí es del evento).
+      if (e.sedeDe !== null && a.cambios.sitio) {
+        const { sitio, ...resto } = a.cambios;
+        return alPrograma({ ...e, r: con(e.r, resto) }, sitio);
+      }
+      // El cartel trae varios eventos (H6): primero «El cartel trae N eventos», para revisarlos antes de «Revisa», aunque todos estén completos.
+      if (a.cambios.clase === "festival" && a.cambios.actos?.some((x) => x.leido)) return apilar({ ...e, r: con(e.r, a.cambios) }, "programa");
       return siguiente({ ...e, r: con(e.r, a.cambios) });
+    }
+    case "sedeDeActo":
+      return apilar({ ...e, sedeDe: a.clave }, "donde");
     case "seguir":
       return siguiente(e);
     case "abrir":
       return apilar(e, a.paso);
-    case "atras":
-      return pasoActual(e) === a.desde && e.pila.length > 1 ? { ...e, pila: e.pila.slice(0, -1), direccion: "vuelve" } : e;
+    case "atras": {
+      if (pasoActual(e) !== a.desde || e.pila.length <= 1) return e;
+      const pila = e.pila.slice(0, -1);
+      // Atrás desde «¿Dónde es?» de una sede: de vuelta al programa sin cambiar nada.
+      return { ...e, pila, sedeDe: e.sedeDe !== null && pila[pila.length - 1] === "programa" ? null : e.sedeDe, direccion: "vuelve" };
+    }
     case "elegir":
       return apilar({ ...e, candidato: a.candidato }, "mapa");
     case "confirmar":
       return apilar({ ...e, candidato: a.candidato }, "uso");
     case "usar":
-      return e.candidato ? siguiente({ ...e, r: { ...e.r, sitio: sitioDeCandidato(e.candidato, a.uso, e.r.sitio.otro) } }) : e;
+      if (!e.candidato) return e;
+      if (e.sedeDe !== null) return alPrograma(e, sitioDeCandidato(e.candidato, a.uso, OTRO_VACIO));
+      return siguiente({ ...e, r: { ...e.r, sitio: sitioDeCandidato(e.candidato, a.uso, e.r.sitio.otro) } });
     case "publicado":
       // La pila queda solo con el final: Atrás no tiene a dónde volver (en la barra va la ✕, no el Atrás).
       return { ...e, pila: ["publicado"], direccion: "entra" };
@@ -268,7 +428,9 @@ export function lugarAlLado(lugares: readonly LugarResumen[], punto: Punto, radi
 /** Lo recorrido, de 0 a 1 (lo opcional cuenta como «Revisa»; confirmar el sitio en el mapa y decidir qué hacer con él, como «Dónde»). */
 export function avance(paso: Paso): number {
   if (paso === "publicado") return 1;
-  return ORDEN.indexOf(paso === "mas" ? "revisa" : paso === "mapa" || paso === "uso" ? "donde" : paso) / ORDEN.length;
+  // El paso del tiempo de cada clase ocupa el lugar del día: lo sustituye (doc 55 §2).
+  const comoDia = paso === "visita" || paso === "sesiones" || paso === "programa";
+  return ORDEN.indexOf(paso === "mas" ? "revisa" : paso === "mapa" || paso === "uso" ? "donde" : comoDia ? "dia" : paso) / ORDEN.length;
 }
 
 /**
@@ -299,11 +461,65 @@ export const DURACIONES = [1, 2, 3] as const;
 /** «1 hora», «2 horas». */
 export const etiquetaDuracion = (horas: number): string => `${horas} ${horas === 1 ? "hora" : "horas"}`;
 
-/** «YYYY-MM-DDTHH:MM» del inicio; "" sin día o sin hora. Con horario por día, la hora del primer día. */
-export const inicioDe = (r: Respuestas): string => (r.sesiones ? inicioFinDeHorarios(r.sesiones).inicio : r.dias && r.hora ? combinarFechaHora(r.dias.desde, r.hora) : "");
+/**
+ * El horario de cada sesión de un taller: el de cada una si la casilla «Misma hora todas las sesiones» está desmarcada (`sesiones`); si no, la
+ * hora común en cada día. Vacío sin días o sin hora.
+ */
+export function horariosDelTaller(r: Respuestas): HorarioDia[] {
+  if (r.sesiones) return r.sesiones;
+  return r.hora ? horariosDeTaller(r.sesionesDias, r.hora, r.fin ?? "") : [];
+}
 
-/** El fin del evento como se guarda: `r.fin`, o con horario por día el de la última sesión (sin hora de fin, el fin de ese día). null: todavía no se contesta. */
-export const finDe = (r: Respuestas): string | null => (r.sesiones ? inicioFinDeHorarios(r.sesiones).fin : r.fin);
+/** Las sesiones que viajan al servidor: el horario por día de un evento de varios días, o las de un taller de dos o más sesiones (sus días son sueltos). */
+export function sesionesDe(r: Respuestas): HorarioDia[] | null {
+  if (r.clase === "taller") {
+    const horarios = horariosDelTaller(r);
+    return horarios.length >= 2 ? horarios : null;
+  }
+  return r.clase === "puntual" ? r.sesiones : null;
+}
+
+/** «YYYY-MM-DDTHH:MM» del inicio; "" sin día o sin hora. Con horario por día, la hora del primer día; una exposición, su primer día de visita;
+ *  un taller, su primera sesión; un festival, su primer acto marcado. */
+export function inicioDe(r: Respuestas): string {
+  if (r.clase === "exposicion") return r.visita?.desde && r.visita.hasta ? periodoDeVisita({ desde: r.visita.desde, hasta: r.visita.hasta }).inicio : "";
+  if (r.clase === "taller") {
+    const horarios = horariosDelTaller(r);
+    return horarios.length ? combinarFechaHora(horarios[0].dia, horarios[0].hora) : "";
+  }
+  // Un festival que ya existe (editar) conserva su periodo: lo recalcula la base con su programa.
+  if (r.clase === "festival" && actosMarcados(r).length) return actosMarcados(r).filter((a) => a.dia && a.hora).map((a) => combinarFechaHora(a.dia, a.hora)).sort()[0] ?? "";
+  return r.sesiones ? inicioFinDeHorarios(r.sesiones).inicio : r.dias && r.hora ? combinarFechaHora(r.dias.desde, r.hora) : "";
+}
+
+/**
+ * El fin del evento como se guarda: `r.fin`, o con horario por día el de la última sesión (sin hora de fin, el fin de ese día). Una exposición
+ * acaba con su día de cierre; un taller de una sesión, a su hora de fin (o sin ella), y uno de varias, con la última; un festival, con el día de
+ * su último acto marcado (la base lo vuelve a calcular). null: todavía no se contesta.
+ */
+export function finDe(r: Respuestas): string | null {
+  if (r.clase === "exposicion") return r.visita?.desde && r.visita.hasta ? periodoDeVisita({ desde: r.visita.desde, hasta: r.visita.hasta }).fin : null;
+  if (r.clase === "taller") {
+    const horarios = horariosDelTaller(r);
+    if (!horarios.length) return null;
+    if (horarios.length === 1) return horarios[0].fin ? combinarFechaHora(horarios[0].dia, horarios[0].fin) : "";
+    return inicioFinDeHorarios(horarios).fin;
+  }
+  if (r.clase === "festival" && actosMarcados(r).length) {
+    const ultimo = actosMarcados(r).map((a) => a.dia).filter(Boolean).sort().at(-1);
+    return ultimo ? combinarFechaHora(ultimo, FIN_DEL_DIA) : null;
+  }
+  return r.sesiones ? inicioFinDeHorarios(r.sesiones).fin : r.fin;
+}
+
+/** El programa como se dice en «Revisa» y en «Publicado»: «Del 12 al 14 de nov · Programa registrado: 3 actividades»; null sin actos marcados. */
+export function resumenPrograma(r: Pick<Respuestas, "actos">, hoy: string): string | null {
+  const marcados = actosMarcados(r);
+  const dias = marcados.map((a) => a.dia).filter(Boolean).sort();
+  if (!marcados.length) return null;
+  const cuando = !dias.length ? null : dias[0] === dias[dias.length - 1] ? null : rangoCorto(dias[0], dias[dias.length - 1], hoy);
+  return [cuando, textoProgramaRegistrado(marcados.length)].filter(Boolean).join(" · ");
+}
 
 /** El último día del evento: el de inicio si dura uno solo. */
 const ultimoDia = (dias: Dias): string => dias.hasta ?? dias.desde;

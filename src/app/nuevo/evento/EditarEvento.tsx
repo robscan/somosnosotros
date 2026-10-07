@@ -13,6 +13,8 @@ import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import type { LugarResumen } from "@/lib/lugares";
 import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel } from "./cartelPorPasos";
+import { sedesDelPrograma } from "./AltaEvento";
+import type { ContextoClase } from "./contextoClase";
 import { faltaParaPublicar, preguntaDe, type Respuestas } from "./pasos";
 import { PasoEspera, PasoInicio } from "./PasoCartel";
 import Preguntas from "./Preguntas";
@@ -47,6 +49,10 @@ type Props = {
   /** Si el servidor puede leer carteles; sin servicio el cartel nuevo se sube sin la casilla «Lectura automática». */
   cartelActivo: boolean;
   cupo: Cupo | null;
+  /** El horario de cada lugar y los festivales que se pueden elegir (OL-321). */
+  contexto?: ContextoClase;
+  /** Un festival que ya existe: su programa en una línea («Del 12 al 14 de nov · Programa registrado: 3 actividades»), que aquí solo se lee. */
+  festivalGuardado?: { actos: number; resumen: string };
 };
 
 const FORMULARIO = "editar-evento";
@@ -62,11 +68,12 @@ const FORMULARIO = "editar-evento";
  * «No tengo cartel»; la administración puede pegar la dirección de una imagen. El horario por día se ajusta igual que en el alta y se guarda en
  * la misma transacción que el evento (`editar_evento_con_sesiones`).
  */
-export default function EditarEvento({ accion, respuestas, imagen, revision, zonaEvento, zonaSitio, lugares: iniciales, mios, ciudadContexto, ficha, usuarioId, esAdmin, cartelActivo, cupo }: Props) {
+export default function EditarEvento({ accion, respuestas, imagen, revision, zonaEvento, zonaSitio, lugares: iniciales, mios, ciudadContexto, ficha, usuarioId, esAdmin, cartelActivo, cupo, contexto, festivalGuardado }: Props) {
   const [lugares, setLugares] = useState(iniciales);
   const agregar = useCallback((nuevo: LugarResumen) => setLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo])), []);
   const pasos = usePasosEvento([], null, respuestas);
-  const { r, paso, direccion, primero, contestar, seguir, atras, abrir } = pasos;
+  const { r, paso, direccion, primero, cambiar, contestar, seguir, atras, abrir } = pasos;
+  const horarios = contexto?.horarios ?? {};
   const sitio = useSitioPorPasos({ pasos, lugares, ciudadContexto, onLugarNuevo: agregar });
   // Un cartel nuevo se sube siempre; se lee solo si se marca la casilla. Lo leído cambia lo que el cartel dice (y se revisa en «Revisa», con su
   // sello); lo que no dice no se toca, y un cartel que no nombra artistas no le quita al evento los suyos.
@@ -138,7 +145,7 @@ export default function EditarEvento({ accion, respuestas, imagen, revision, zon
           {esAdmin && <CampoImagenUrl valor={cartel.subido?.url ?? null} onCambio={cartel.poner} />}
         </PasoInicio>
       )}
-      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} />
+      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} />
       {paso === "revisa" && (
         <Revisa
           r={r}
@@ -153,6 +160,12 @@ export default function EditarEvento({ accion, respuestas, imagen, revision, zon
           formulario={FORMULARIO}
           onAbrir={sitio.abrirPaso}
           editar={{ onCartel: () => abrir("inicio"), conflicto: resultado && !resultado.ok && resultado.conflicto ? ficha : undefined }}
+          onCambiar={cambiar}
+          onClase={(clase) => contestar({ clase, claseFijada: true })}
+          horarioLugar={sitio.lugar ? (horarios[sitio.lugar.id] ?? []) : []}
+          festivales={contexto?.festivales ?? []}
+          sedes={r.clase === "festival" && !festivalGuardado ? sedesDelPrograma(r, lugares) : undefined}
+          festivalGuardado={festivalGuardado}
         />
       )}
     </PorPasos>

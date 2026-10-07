@@ -12,10 +12,14 @@ import { zonaSegura } from "@/lib/fechas";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
+import { textoVisita } from "@/lib/claseEvento";
+import { diaLocal } from "@/lib/fechas";
 import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel } from "./cartelPorPasos";
-import { avance, eventoPublicado, faltaParaPublicar, preguntaDe, type Creado } from "./pasos";
+import type { ContextoClase } from "./contextoClase";
+import { actosMarcados, avance, eventoPublicado, faltaParaPublicar, nombreDelSitio, preguntaDe, resumenPrograma, sesionesDe, type Creado, type Respuestas } from "./pasos";
+import { textoSesiones } from "./PasosClase";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import Preguntas from "./Preguntas";
 import Publicado from "./Publicado";
@@ -42,6 +46,8 @@ type Props = {
   cupo: Cupo | null;
   /** Lo que ya se sabe por dónde se entró (el lugar, el artista o el evento que se duplica; OL-312); null si se entra de cero. */
   arranque: Arranque | null;
+  /** El horario de cada lugar y los festivales que se pueden elegir (OL-321); sin ellos, las salidas nuevas no tienen de dónde leer. */
+  contexto?: ContextoClase;
 };
 
 const FORMULARIO = "publicar-evento";
@@ -76,9 +82,29 @@ export default function AltaEvento(props: Props) {
   return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : null} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
 }
 
-function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, onOtro, onLugarNuevo }: Interno) {
+/** Las sedes de un festival en una línea: los nombres de las sedes de sus actos marcados, sin repetir («CC200 y Cineteca Alameda»). */
+export function sedesDelPrograma(r: Pick<Respuestas, "actos">, lugares: readonly LugarResumen[]): string {
+  const nombres = [...new Set(actosMarcados(r).map((a) => nombreDelSitio(a.sitio, a.sitio.modo === "lugar" ? lugares.find((l) => l.id === a.sitio.lugarId) : undefined)).filter(Boolean))];
+  return new Intl.ListFormat("es", { type: "conjunction" }).format(nombres);
+}
+
+/** La línea de cuándo de lo que no es un evento de un día, para «Publicado» y para compartir (OL-321); undefined en un evento. */
+export function cuandoDeClase(r: Respuestas, zona: string, borradores = 0): string | undefined {
+  const ahora = new Date();
+  const hoy = diaLocal(ahora, zona);
+  if (r.clase === "exposicion" && r.visita?.desde && r.visita.hasta) return textoVisita({ desde: r.visita.desde, hasta: r.visita.hasta }, hoy, ahora, zona);
+  if (r.clase === "taller") return textoSesiones(r, hoy) ?? undefined;
+  if (r.clase === "festival") {
+    const programa = resumenPrograma(r, hoy);
+    return programa ? `${programa}${borradores ? ` · ${borradores} ${borradores === 1 ? "borrador" : "borradores"}` : ""}` : undefined;
+  }
+  return undefined;
+}
+
+function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, onOtro, onLugarNuevo }: Interno) {
   const pasos = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : [], arranque);
-  const { r, paso, direccion, primero, primeraPregunta, contestar, seguir, atras, publicado } = pasos;
+  const { r, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, atras, publicado } = pasos;
+  const horarios = contexto?.horarios ?? {};
   const sitio = useSitioPorPasos({ pasos, lugares, ciudadContexto, onLugarNuevo });
   // Con cartel: se sube siempre y se lee si toca; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»); sin
   // lectura, sigue la primera pregunta. Si el cartel nombra un sitio que no es del directorio, «¿Dónde es?» abre con ese nombre ya escrito.
@@ -95,11 +121,11 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
   });
   const ubicacion = useEstoyAqui();
   // Lo que devolvió el servidor al publicar; con eso y las respuestas se arma la tarjeta de «Publicado».
-  const [creado, setCreado] = useState<Creado | null>(null);
+  const [creado, setCreado] = useState<(Creado & { borradores: number }) | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(async (previo, datos) => {
     const hecho = await accion(previo, datos);
     if (hecho.ok) {
-      setCreado({ id: hecho.id, slug: hecho.slug ?? null, creadoEn: new Date().toISOString() });
+      setCreado({ id: hecho.id, slug: hecho.slug ?? null, creadoEn: new Date().toISOString(), borradores: hecho.programa?.borradores ?? 0 });
       publicado();
     }
     return hecho;
@@ -147,7 +173,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           <TiraTipos actual="evento" destinos={{ lugar: enlaceAltaDeTipo("lugar", ciudadContexto?.slug ?? null), artista: enlaceAltaDeTipo("artista", ciudadContexto?.slug ?? null) }} />
         </>
       )}
-      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} />
+      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} />
       {paso === "revisa" && (
         <Revisa
           r={r}
@@ -161,9 +187,24 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           falta={falta}
           formulario={FORMULARIO}
           onAbrir={sitio.abrirPaso}
+          onCambiar={cambiar}
+          onClase={(clase) => contestar({ clase, claseFijada: true })}
+          horarioLugar={sitio.lugar ? (horarios[sitio.lugar.id] ?? []) : []}
+          festivales={contexto?.festivales ?? []}
+          sedes={r.clase === "festival" ? sedesDelPrograma(r, lugares) : undefined}
         />
       )}
-      {paso === "publicado" && creado && <Publicado evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} conSesiones={!!r.sesiones} onOtro={onOtro} />}
+      {paso === "publicado" && creado && (
+        <Publicado
+          evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })}
+          conCartel={!!cartel.subido}
+          conSesiones={!!sesionesDe(r)}
+          clase={r.clase}
+          cuando={cuandoDeClase(r, zona, creado.borradores)}
+          sinInauguracion={!r.inauguracion}
+          onOtro={onOtro}
+        />
+      )}
     </PorPasos>
   );
 }
