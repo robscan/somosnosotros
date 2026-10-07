@@ -11,7 +11,7 @@ import styles from "./LetreroCorreoLigado.module.css";
 
 type Props = {
   artista: ArtistaConMiCorreo;
-  /** `reclamarArtista`, inyectada (mismo patrón que `accion` en `FormularioEvento`): así el letrero se prueba y
+  /** `reclamarArtista`, inyectada (mismo patrón que `accion` en `EditarEvento`): así el letrero se prueba y
    * se captura sin sesión real ni Supabase. */
   reclamar: (artistaId: string, motivo: MotivoReclamo) => Promise<ResultadoReclamo>;
 };

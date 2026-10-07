@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -9,8 +10,9 @@ import { CIUDAD_INICIAL, SIN_CIUDAD } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
-import { cartelAFormulario, ciudadDelSitio, hrefEvento, validarEvento, type CambioEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
-import { zonaSegura } from "@/lib/fechas";
+import { cartelAFormulario, ciudadDelSitio, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { horarioDesdeJson, type Franja } from "@/lib/horarioLugar";
+import { localAIso, zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
 import { validarSesiones, type SesionEvento } from "@/lib/sesionesEvento";
@@ -24,7 +26,9 @@ import { sitioReservadoVencido } from "@/lib/retencionSitio";
  * Publicar devuelve lo publicado (`slug` y `href`, la dirección de la ficha): el alta por pasos no sale de su pantalla y lo enseña en su
  * final, «Publicado» (OL-312: ya no hay otra alta que lleve a la ficha). Guardar devuelve a dónde volver (el formulario termina la tarea).
  */
-export type ResultadoEvento = { ok: true; id: string; volver: string; slug?: string | null; href?: string } | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
+export type ResultadoEvento =
+  | { ok: true; id: string; volver: string; slug?: string | null; href?: string; /** Un festival publicado con su programa (OL-321): cuántos actos y borradores. */ programa?: { actos: number; borradores: number } }
+  | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
 
 
 function leer(formData: FormData) {
@@ -88,10 +92,67 @@ function revalidar(id: string, lugarId: string | null, artistas: string[] = [], 
 
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
-type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento; repetido?: boolean };
+type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento; repetido?: boolean; padre?: string | null; inauguracion?: string | null };
 
-/** Con `sesiones` (un evento de varios días con horario por día, OL-311) se guarda con la función que las escribe en la misma transacción; sin ellas, como siempre. */
-async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null, sesiones: SesionEvento[] | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
+/**
+ * Una clave de operación que sale de otra (UUID con la forma de la v5, de un SHA-1): la inauguración, el festival nuevo y cada acto de un programa
+ * tienen la suya, derivada de la de la pantalla, así un reintento con la misma clave no los publica dos veces.
+ */
+export async function operacionDerivada(base: string, de: string): Promise<string> {
+  const h = createHash("sha1").update(`${base}:${de}`).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-${((parseInt(h.slice(16, 18), 16) & 0x3f) | 0x80).toString(16)}${h.slice(18, 20)}-${h.slice(20, 32)}`;
+}
+
+/** Lo que llega del alta y de editar por pasos sobre cómo ocurre (OL-321): la clase, el horario propio, la inauguración y el festival. */
+type LecturaClase = { clase: Clase; horario: Franja[] | null; inauguracion: { dia: string; hora: string } | null; padre: string | null; padreNuevo: string | null; error?: string };
+
+const ES_DIA = /^\d{4}-\d{2}-\d{2}$/;
+const ES_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Sin el campo `clase` (una pantalla de antes) es un evento, como siempre. */
+function leerClase(formData: FormData): LecturaClase {
+  const crudo = formData.get("clase");
+  const clase: Clase = esClase(crudo) ? crudo : "puntual";
+  const { franjas, error } = formData.has("horario") ? horarioDesdeJson(formData.get("horario")) : { franjas: null };
+  let inauguracion: LecturaClase["inauguracion"] = null;
+  const textoInauguracion = formData.get("inauguracion");
+  if (typeof textoInauguracion === "string" && textoInauguracion.trim()) {
+    try {
+      const i = JSON.parse(textoInauguracion) as { dia?: unknown; hora?: unknown };
+      if (typeof i.dia === "string" && ES_DIA.test(i.dia) && typeof i.hora === "string" && ES_HORA.test(i.hora)) inauguracion = { dia: i.dia, hora: i.hora };
+    } catch {
+      // Ilegible: sin inauguración (la pantalla siempre la manda bien).
+    }
+  }
+  const padre = typeof formData.get("padre") === "string" && esUuid(String(formData.get("padre"))) ? String(formData.get("padre")) : null;
+  const nuevo = typeof formData.get("padre_nuevo") === "string" ? String(formData.get("padre_nuevo")).trim().slice(0, 120) : "";
+  return { clase, horario: franjas && franjas.length ? franjas : null, inauguracion: clase === "exposicion" ? inauguracion : null, padre: clase === "festival" ? null : padre, padreNuevo: clase === "festival" || padre ? null : nuevo || null, error };
+}
+
+/** ¿Hace falta la función con la clase? Para todo lo que no sea un evento suelto sin festival, o un evento que deja de ser otra cosa. */
+const conClase = (c: LecturaClase, antes?: { clase?: string | null; evento_padre_id?: string | null } | null): boolean =>
+  c.clase !== "puntual" || !!c.padre || !!c.padreNuevo || (!!antes && ((antes.clase ?? "puntual") !== "puntual" || !!antes.evento_padre_id));
+
+/** El `p_clase` de `guardar_evento_con_clase`, con las horas de la inauguración en la zona del evento y las claves derivadas de la operación. */
+async function argumentoClase(c: LecturaClase, zona: string, operacion: string) {
+  return {
+    clase: c.clase,
+    horario: c.clase === "exposicion" ? (c.horario ?? []) : null,
+    inauguracion: c.inauguracion ? { inicio: localAIso(`${c.inauguracion.dia}T${c.inauguracion.hora}`, zona), fin: null, operacion: await operacionDerivada(operacion, "inauguracion") } : null,
+    padre: c.padre,
+    padre_nuevo: c.padreNuevo ? { titulo: c.padreNuevo, operacion: await operacionDerivada(operacion, "festival") } : null,
+  };
+}
+
+/** La función de la base que guarda: al publicar, con `sesiones` (un evento de varios días con horario por día, OL-311) la que las escribe en
+ *  la misma transacción y, sin ellas, la de siempre; al editar (OL-319), siempre `editar_evento_con_sesiones`, que con sesiones las reemplaza y
+ *  sin ellas deja el evento sin horario por día (la casilla «Mismo horario todos los días» marcada otra vez), también en la misma transacción. */
+function funcionDeGuardado(id: string | null, sesiones: SesionEvento[] | null): "editar_evento_con_sesiones" | "guardar_evento_con_sesiones" | "guardar_evento_con_avisos" {
+  if (id) return "editar_evento_con_sesiones";
+  return sesiones ? "guardar_evento_con_sesiones" : "guardar_evento_con_avisos";
+}
+
+async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null, sesiones: SesionEvento[] | null = null, clase: LecturaClase | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
   if (typeof operacion !== "string" || !esUuid(operacion)) return { data: null, conflicto: false };
   const argumentos = {
     p_evento: id,
@@ -101,7 +162,13 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
     p_revision: revision,
     p_operacion: operacion,
   };
-  const { data, error } = sesiones ? await supabase.rpc("guardar_evento_con_sesiones", { ...argumentos, p_sesiones: sesiones }) : await supabase.rpc("guardar_evento_con_avisos", argumentos);
+  // Con la clase (OL-321): una sola función para el alta y editar, que envuelve a las de siempre en la misma transacción.
+  if (clase) {
+    const { data, error } = await supabase.rpc("guardar_evento_con_clase", { ...argumentos, p_sesiones: sesiones, p_clase: await argumentoClase(clase, datos.zona, operacion) });
+    return { data: error || !data ? null : (data as GuardadoCompleto), conflicto: error?.code === "40001" };
+  }
+  const funcion = funcionDeGuardado(id, sesiones);
+  const { data, error } = await supabase.rpc(funcion, funcion === "guardar_evento_con_avisos" ? argumentos : { ...argumentos, p_sesiones: sesiones });
   return { data: error || !data ? null : data as GuardadoCompleto, conflicto: error?.code === "40001" };
 }
 
@@ -109,16 +176,21 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const entrada = leer(formData);
+  const clase = leerClase(formData);
+  // Un festival se publica con su programa: el marco y sus actos en una sola operación (H6).
+  if (clase.clase === "festival") return publicarPrograma(supabase, formData, await esAdminDeSesion(supabase, user.id));
   const [lugar, esAdmin] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id)]);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
+  if (clase.error) errores.horario = clase.error;
   // Horario por día (OL-311): solo si la casilla «Mismo horario todos los días» vino desmarcada; sin el campo, el evento es como siempre.
   const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);
   if (errorSesiones) errores.sesiones = errorSesiones;
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   if (ciudad === null) return sinCiudad(datos);
-  const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones);
+  const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
+  if (data.padre) revalidatePath(`/eventos/${data.padre}`);
   // La función guarda_evento_con_avisos no devuelve el slug (lo pone el disparador); una lectura de sobra para
   // no publicar con la dirección vieja desde el primer instante.
   const { data: creado } = await supabase.from("eventos").select("slug").eq("id", data.id).maybeSingle();
@@ -132,10 +204,16 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
   const entrada = leer(formData);
-  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("imagen, inicio, fin, zona, sitio_reservado, ciudad, sitio_lat, sitio_lng").eq("id", id).maybeSingle()]);
+  // `*`: con la migración de OL-321 trae también la clase y el festival; sin ella, lo de siempre (la consulta no falla por una columna que no hay).
+  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("*").eq("id", id).maybeSingle()]);
+  const clase = leerClase(formData);
   const sinPuntoTrasRetencion = sitioReservadoVencido(existente) && entrada.modo_sitio === "reservado" && !entrada.privado_lat && !entrada.privado_lng;
   const zona = sinPuntoTrasRetencion ? zonaSegura(existente?.zona) : zonaDelEvento(entrada, lugar);
   const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente });
+  if (clase.error) errores.horario = clase.error;
+  // Horario por día (OL-319): con la casilla «Mismo horario todos los días» desmarcada llega una sesión por día; sin el campo, el evento queda sin ellas.
+  const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);
+  if (errorSesiones) errores.sesiones = errorSesiones;
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar, existente);
   if (ciudad === null) return sinCiudad(datos);
@@ -143,13 +221,81 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   if (typeof revision !== "string" || !revision.trim() || !Number.isFinite(Date.parse(revision))) {
     return { ok: false, errores: {}, general: "Vuelve a abrir el evento para cargar su versión actual. Tus cambios no se guardaron." };
   }
-  const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision);
+  const usarClase = formData.has("clase") && conClase(clase, existente as { clase?: string | null; evento_padre_id?: string | null } | null);
+  const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision, sesiones, usarClase ? clase : null);
   if (conflicto) return { ok: false, errores: {}, conflicto: true, general: "El evento cambió mientras lo editabas. Tus cambios siguen aquí, pero no se guardaron. Revisa la versión actual antes de volver a editar." };
   if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
   revalidar(id, datos.lugar_id, [...data.artistas, ...data.artistas_anteriores]);
   if (data.lugar_anterior && data.lugar_anterior !== datos.lugar_id) revalidatePath(`/lugares/${data.lugar_anterior}`);
+  if (data.padre) revalidatePath(`/eventos/${data.padre}`);
   after(intentarDrenarAvisos);
   return { ok: true, id, volver: `/eventos/${id}` };
+}
+
+/** Un acto del programa como lo manda la pantalla (`CamposEvento`, campo `actos`): su nombre, su inicio y su fin en la hora de su sede, los campos
+ *  de su sede (los mismos de `CamposSitio`), quién y si se publica. */
+type ActoEnviado = { titulo?: unknown; inicio?: unknown; fin?: unknown; sitio?: Record<string, unknown>; quien?: unknown; marcado?: unknown };
+
+/**
+ * Publicar un festival con su programa (OL-321, H6): cada acto se valida como cualquier alta (en la zona de su sede) y la base publica el marco y
+ * los actos marcados en una sola operación (los desmarcados quedan como borradores). El marco lleva el nombre, el cartel, el precio, la
+ * descripción, el enlace y quién del festival; el sitio y el periodo los toma de su programa. Un acto que no se puede publicar no deja nada a
+ * medias: el error dice cuál.
+ */
+async function publicarPrograma(supabase: Cliente, formData: FormData, esAdmin: boolean): Promise<ResultadoEvento> {
+  const marco = leer(formData);
+  const operacion = formData.get("operacion");
+  const titulo = typeof marco.titulo === "string" ? marco.titulo.trim() : "";
+  if (!titulo) return { ok: false, errores: { titulo: "Ponle nombre al festival." } };
+  if (typeof operacion !== "string" || !esUuid(operacion)) return { ok: false, errores: {}, general: "No se pudo publicar el festival. Intenta de nuevo." };
+  let enviados: ActoEnviado[] = [];
+  try {
+    const crudo = JSON.parse(String(formData.get("actos") ?? "[]"));
+    enviados = Array.isArray(crudo) ? crudo.slice(0, 40) : [];
+  } catch {
+    enviados = [];
+  }
+  if (!enviados.some((a) => a.marcado === true)) return { ok: false, errores: {}, general: "Falta una actividad para publicar el festival." };
+  const actos = [];
+  let primero: DatosEvento | null = null;
+  for (const [i, a] of enviados.entries()) {
+    const nombre = typeof a.titulo === "string" ? a.titulo : "";
+    const entrada = { ...marco, ...Object.fromEntries(Object.entries(a.sitio ?? {}).map(([k, v]) => [k, typeof v === "string" ? v : v == null ? null : String(v)])), titulo: nombre, inicio: typeof a.inicio === "string" ? a.inicio : "", fin: typeof a.fin === "string" ? a.fin : "", descripcion: "" } as Entrada;
+    const lugar = await lugarDelEvento(supabase, entrada);
+    const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
+    const error = Object.values(errores)[0];
+    if (error) return { ok: false, errores: {}, general: `Revisa «${nombre || "la actividad sin nombre"}»: ${error}` };
+    const ciudad = ciudadDe(datos, lugar);
+    if (ciudad === null) return { ok: false, errores: {}, general: `Revisa «${nombre}»: ${SIN_CIUDAD}` };
+    if (a.marcado === true && !primero) primero = datos;
+    const quien = quienDesdeJson(JSON.stringify(Array.isArray(a.quien) ? a.quien : []));
+    actos.push({ datos: filaEvento(datos, ciudad), privado: datos.privado, quien: quien.map((q) => ({ ...q, tipo: deducirTipoArtista(q.nombre) ?? "solista" })), publicar: a.marcado === true, operacion: await operacionDerivada(operacion, `acto:${i}`) });
+  }
+  const quienMarco = quienDesdeJson(formData.get("quien")).map((q) => ({ ...q, tipo: deducirTipoArtista(q.nombre) ?? "solista" }));
+  const descripcion = typeof marco.descripcion === "string" ? marco.descripcion.trim() : "";
+  const { data, error } = await supabase.rpc("publicar_programa", {
+    p_marco: { datos: { titulo: titulo.slice(0, 120), imagen: primero?.imagen ?? null, precio: primero?.precio ?? null, descripcion: descripcion || null, enlace: primero?.enlace ?? null }, quien: quienMarco },
+    p_actos: actos,
+    p_operacion: operacion,
+  });
+  const hecho = data as { id: string; actos: string[]; borradores: string[] } | null;
+  if (error || !hecho) return { ok: false, errores: {}, general: "No se pudo publicar el festival completo. Intenta de nuevo." };
+  const { data: creado } = await supabase.from("eventos").select("slug").eq("id", hecho.id).maybeSingle();
+  revalidar(hecho.id, null, [], creado?.slug);
+  for (const acto of hecho.actos) revalidatePath(`/eventos/${acto}`);
+  after(intentarDrenarAvisos);
+  const href = hrefEvento({ id: hecho.id, slug: creado?.slug });
+  return { ok: true, id: hecho.id, slug: creado?.slug ?? null, href, volver: href, programa: { actos: hecho.actos.length, borradores: hecho.borradores.length } };
+}
+
+/** Publicar un borrador del programa desde la ficha del festival (solo su autor; la base lo comprueba). */
+export async function publicarBorrador(id: string, volver: string) {
+  const { supabase } = await sesionOEntrar(volver);
+  await supabase.rpc("publicar_borrador_de_programa", { p_evento: id });
+  revalidatePath(volver);
+  revalidatePath(`/eventos/${id}`);
+  revalidatePath("/");
+  redirect(volver);
 }
 
 export async function cambiarVisibleEvento(id: string, lugarId: string | null, visible: boolean) {
@@ -204,12 +350,18 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
     return { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." };
   }
   const valores = cartelAFormulario(lectura);
-  let lugarId: string | null = null;
-  if (valores.lugar) {
-    const { data } = await supabase.rpc("lugares_con_nombre", { p_nombre: valores.lugar });
-    const lugares = (data ?? []) as LugarResumen[];
-    if (lugares.length === 1) lugarId = lugares[0].id;
-  }
+  // Un lugar del directorio que se llama como lo dice el cartel (uno solo: con dos, se pregunta); lo mismo con la sede de cada acto de un programa.
+  const sedes = new Map<string, string | null>();
+  const lugarConNombre = async (nombre: string): Promise<string | null> => {
+    if (!sedes.has(nombre)) {
+      const { data } = await supabase.rpc("lugares_con_nombre", { p_nombre: nombre });
+      const lugares = (data ?? []) as LugarResumen[];
+      sedes.set(nombre, lugares.length === 1 ? lugares[0].id : null);
+    }
+    return sedes.get(nombre) ?? null;
+  };
+  const lugarId = valores.lugar ? await lugarConNombre(valores.lugar) : null;
+  for (const acto of valores.forma?.actos ?? []) acto.lugarId = acto.lugar ? await lugarConNombre(acto.lugar) : lugarId;
   // Los nombres del cartel: registrados si se llaman igual; si no, por crear con solo el nombre.
   const quien: QuienItem[] = [];
   for (const nombre of valores.artistas) {

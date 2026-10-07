@@ -49,7 +49,7 @@ describe("qué se pregunta según lo que falta", () => {
   });
 
   it("lo ya contestado no se vuelve a preguntar: con el nombre y el día puestos, «Siguiente» lleva a lo primero que falta", () => {
-    const e = pasar(estadoInicial(), { tipo: "cambiar", cambios: { nombre: "Taller", dias: { desde: "2026-10-09", hasta: null } } }, { tipo: "seguir" });
+    const e = pasar(estadoInicial(), { tipo: "cambiar", cambios: { nombre: "Lectura", dias: { desde: "2026-10-09", hasta: null } } }, { tipo: "seguir" });
     expect(pasoActual(e)).toBe("hora");
   });
 
@@ -375,7 +375,7 @@ describe("diasElegidos: lo que devuelve la hoja del calendario como respuesta", 
 describe("horario por día (OL-311): sesiones, y de ahí el inicio y el fin del evento", () => {
   /** Un festival del 9 al 11 de octubre, de 8:00 a 9:00 p.m., con la casilla marcada (sin sesiones). */
   const festival = () =>
-    pasar(estadoInicial(), { tipo: "seguir" }, { tipo: "cambiar", cambios: { nombre: "Festival" } }, { tipo: "seguir" }, contestar({ dias: { desde: "2026-10-09", hasta: "2026-10-11" } }), { tipo: "cambiar", cambios: { hora: "20:00" } }, contestar({ fin: "2026-10-11T21:00" }));
+    pasar(estadoInicial(), { tipo: "seguir" }, { tipo: "cambiar", cambios: { nombre: "Fiesta del barrio" } }, { tipo: "seguir" }, contestar({ dias: { desde: "2026-10-09", hasta: "2026-10-11" } }), { tipo: "cambiar", cambios: { hora: "20:00" } }, contestar({ fin: "2026-10-11T21:00" }));
   const sesiones = [
     { dia: "2026-10-09", hora: "20:00", fin: "21:00" },
     { dia: "2026-10-10", hora: "18:00", fin: "21:00" },

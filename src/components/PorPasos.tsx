@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, type ReactNode, type Ref } from "react";
 import { registrarVolverVisible } from "./Navegacion";
-import { useSalirSinPublicar } from "./SalirSinPublicar";
+import { useSalirSinPublicar, type Guardar } from "./SalirSinPublicar";
 import Barra from "./ui/Barra";
 import BotonIcono from "./ui/BotonIcono";
 import Cerrar from "./ui/Cerrar";
@@ -33,6 +33,8 @@ type Props = {
   fijo?: ReactNode;
   /** Lo del paso, en orden: sus controles y, si lo lleva, su `PiePaso`. */
   children: ReactNode;
+  /** Qué pregunta la guardia de salida: «¿Salir sin publicar?» (un alta) o «¿Salir sin guardar?» (editar, OL-319). */
+  guardia?: Guardar;
 };
 
 /**
@@ -42,11 +44,11 @@ type Props = {
  * entradas del historial (en Safari del iPhone el atrás del navegador retrocede al documento anterior, y filtrar no es navegar): Atrás
  * vuelve al paso anterior con lo contestado intacto, y la ✕ sale de la tarea pasando por «¿Salir sin publicar?» (`useSalirSinPublicar`,
  * que también avisa con `beforeunload`), que compara los formularios de esta pantalla con cómo se abrió. Lo usa el alta de evento y lo
- * usarán las de lugar y de artista.
+ * usan también las de lugar y de artista, y editar un evento (OL-319), que entra directo en «Revisa» y cuya guardia dice «¿Salir sin guardar?».
  */
-export default function PorPasos({ titulo, paso, direccion, avance, salida, onAtras, encima, pregunta, fijo, children }: Props) {
+export default function PorPasos({ titulo, paso, direccion, avance, salida, onAtras, encima, pregunta, fijo, children, guardia = "publicar" }: Props) {
   const pantalla = useRef<HTMLElement>(null);
-  const hojaSalir = useSalirSinPublicar(pantalla);
+  const hojaSalir = useSalirSinPublicar(pantalla, undefined, guardia);
   const anterior = useRef(paso);
 
   // Al cambiar de paso: arriba, y el foco a lo que se contesta. Un campo con `autoFocus` ya lo tomó al montarse; si no, la pregunta

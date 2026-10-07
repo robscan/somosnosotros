@@ -84,6 +84,45 @@ describe("horario por día al publicar (OL-311)", () => {
   });
 });
 
+describe("horario por día al editar (OL-319)", () => {
+  const porDia = JSON.stringify([
+    { inicio: "2030-10-01T19:00", fin: "2030-10-01T21:00" },
+    { inicio: "2030-10-02T17:00", fin: "" },
+    { inicio: "2030-10-03T19:00", fin: "2030-10-03T21:00" },
+  ]);
+  function editado(sesiones: string | null) {
+    const fd = formulario();
+    fd.set("fin", "2030-10-03T21:00");
+    if (sesiones !== null) fd.set("sesiones", sesiones);
+    return fd;
+  }
+
+  it("con sesiones guarda el evento y las reemplaza con la función de editar, en la misma transacción y con su versión", async () => {
+    expect((await actualizarEvento(ID, null, editado(porDia))).ok).toBe(true);
+    expect(m.rpc).toHaveBeenCalledTimes(1);
+    expect(m.rpc).toHaveBeenCalledWith("editar_evento_con_sesiones", expect.objectContaining({
+      p_evento: ID,
+      p_revision: "2030-09-01T12:00:00Z",
+      p_sesiones: [
+        { inicio: "2030-10-02T01:00:00.000Z", fin: "2030-10-02T03:00:00.000Z" },
+        { inicio: "2030-10-02T23:00:00.000Z", fin: null },
+        { inicio: "2030-10-04T01:00:00.000Z", fin: "2030-10-04T03:00:00.000Z" },
+      ],
+    }));
+  });
+
+  it("sin el campo (la casilla marcada otra vez) manda las sesiones nulas: la base deja el evento sin horario por día", async () => {
+    expect((await actualizarEvento(ID, null, editado(null))).ok).toBe(true);
+    expect(m.rpc).toHaveBeenCalledWith("editar_evento_con_sesiones", expect.objectContaining({ p_evento: ID, p_sesiones: null }));
+  });
+
+  it("un horario por día que no cuadra no llega a la base: el error sale junto al cuándo", async () => {
+    const resultado = await actualizarEvento(ID, null, editado(JSON.stringify([{ inicio: "2030-10-01T18:00", fin: "" }, { inicio: "2030-10-03T19:00", fin: "" }])));
+    expect(resultado).toMatchObject({ ok: false, errores: { sesiones: expect.stringContaining("no coinciden") } });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+});
+
 describe("guardado completo del evento", () => {
   it("cooperación solidaria llega a la RPC como precio, sin cifra", async () => {
     const fd = formulario();
@@ -156,7 +195,7 @@ describe("guardado completo del evento", () => {
     expect(await actualizarEvento(ID, null, formulario())).toEqual(expect.objectContaining({ ok: false, general: expect.stringContaining("cambió mientras") }));
     expect(m.after).not.toHaveBeenCalled();
     expect(m.invalidar).not.toHaveBeenCalled();
-    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.objectContaining({ p_revision: "2030-09-01T12:00:00Z" }));
+    expect(m.rpc).toHaveBeenCalledWith("editar_evento_con_sesiones", expect.objectContaining({ p_revision: "2030-09-01T12:00:00Z" }));
   });
 
   it("una pantalla antigua sin revision no sobreescribe el evento", async () => {

@@ -1,0 +1,103 @@
+/* Los pasos de cómo ocurre un evento (OL-321; prototipo `exposicion-festival-taller.html`). Todo va como hijo directo de la columna de
+   `PorPasos`; aquí solo lo que es de estos pasos.
+   1. El calendario en el paso · 2. El programa de un festival · 3. Quién en la hoja de un acto */
+
+/* 1. El calendario de siempre (`ui/Calendario`) dentro del paso, sin hoja: sus tres piezas en una caja de la columna. */
+.calendario {
+  display: grid;
+}
+
+/* 2. El programa (caso 4): cada acto en su renglón, la casilla a la izquierda y el resto del renglón, que abre su hoja, a la derecha
+   (dos botones hermanos: nunca uno dentro de otro). La casilla dibuja su cuadro como la de `ui/Casilla`. */
+.programa {
+  display: grid;
+  gap: var(--espacio-2);
+}
+.acto {
+  display: grid;
+  grid-template-columns: var(--toque) minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.marca {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  border: 0;
+  background: none;
+  color: var(--primario-texto);
+  cursor: pointer;
+}
+.marca::before {
+  content: "";
+  grid-area: 1 / 1;
+  box-sizing: border-box;
+  width: var(--columna-icono);
+  height: var(--columna-icono);
+  border: 2px solid var(--texto-suave);
+  border-radius: var(--radio-chico);
+}
+.marca > svg {
+  grid-area: 1 / 1;
+}
+.marca[aria-checked="true"]::before {
+  border-color: var(--primario);
+  background: var(--primario);
+}
+.corregir {
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "titulo accion"
+    "detalle accion";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  min-height: var(--toque);
+  padding: var(--espacio-2) var(--espacio-3) var(--espacio-2) 0;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.corregir > b {
+  grid-area: titulo;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.corregir > small {
+  grid-area: detalle;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.corregir > span {
+  grid-area: accion;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
+/* Un acto marcado al que le falta algo: lo que falta en tinta, para verlo antes de publicar. */
+.corregir > .falta {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* 3. Quién, en la hoja de un acto: su rótulo con icono, como el de un grupo de chips. */
+.quien {
+  display: grid;
+  gap: var(--espacio-2);
+}
+.rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  color: var(--texto-suave);
+}

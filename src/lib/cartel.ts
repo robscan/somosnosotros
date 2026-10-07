@@ -23,6 +23,30 @@ const Lectura = z.object({
   descripcion: z.string().nullable().describe("Una o dos frases con lo que se anuncia (quiénes, qué); sin repetir título, fecha ni lugar"),
   enlace: z.string().nullable().describe("Enlace, usuario de redes o teléfono de contacto si aparece"),
   artistas: z.array(z.string()).nullable().describe("Nombres de los artistas, grupos o compañías que se presentan, tal como aparecen; null si no se nombra a nadie"),
+  // Cómo ocurre (OL-321, doc 55 §2): el cartel propone la clase y, si los trae, el periodo de visita, los días de las sesiones o el programa.
+  clase: z
+    .enum(["puntual", "exposicion", "taller", "festival"])
+    .nullable()
+    .describe("Cómo ocurre: 'exposicion' si se visita varios días (exposición, muestra), 'taller' si son varias sesiones con una inscripción (taller, curso, diplomado), 'festival' si el cartel anuncia varios eventos distintos de un mismo festival o encuentro, 'puntual' si es un solo evento; null si no se sabe"),
+  visita: z
+    .object({
+      desde: z.string().nullable().describe("Primer día en que se puede visitar, YYYY-MM-DD"),
+      hasta: z.string().nullable().describe("Último día en que se puede visitar (el cierre), YYYY-MM-DD"),
+    })
+    .nullable()
+    .describe("Solo para una exposición: del primer al último día de visita; null si no es exposición o no lo dice. La inauguración va en fecha y hora, no aquí"),
+  sesiones: z.array(z.string()).nullable().describe("Solo para un taller o curso: cada día con sesión, YYYY-MM-DD; null si no los dice"),
+  actos: z
+    .array(
+      z.object({
+        titulo: z.string().nullable().describe("Nombre de ese evento del programa"),
+        fecha: z.string().nullable().describe("Su día, YYYY-MM-DD"),
+        hora: z.string().nullable().describe("Su hora de inicio, HH:MM de 24 horas"),
+        lugar: z.string().nullable().describe("Su sede, si el cartel la dice"),
+      }),
+    )
+    .nullable()
+    .describe("Solo para un festival: cada evento del programa que trae el cartel; null si no trae un programa"),
 });
 
 /**
@@ -38,7 +62,7 @@ export async function leerCartel(urlImagen: string, ahora: Date = new Date()): P
       model: "claude-sonnet-5",
       max_tokens: 4096,
       output_config: { effort: "low", format: zodOutputFormat(Lectura) },
-      system: `Lees carteles de eventos culturales de ${CIUDAD_INICIAL.nombre}, México, y sacas los datos para publicarlos en una agenda. Hoy es ${hoy}. Si el cartel da el día sin año, usa la próxima fecha que caiga en ese día a partir de hoy. Si no aparece un dato, devuelve null: no lo inventes. Las horas van en formato de 24 horas.`,
+      system: `Lees carteles de eventos culturales de ${CIUDAD_INICIAL.nombre}, México, y sacas los datos para publicarlos en una agenda. Hoy es ${hoy}. Si el cartel da el día sin año, usa la próxima fecha que caiga en ese día a partir de hoy. Si no aparece un dato, devuelve null: no lo inventes. Las horas van en formato de 24 horas. Di también cómo ocurre: una exposición que se visita varios días (con su periodo de visita y, si la hay, su inauguración en fecha y hora), un taller o curso con varias sesiones (con sus días), un festival que anuncia varios eventos (con cada uno en actos) o un solo evento.`,
       messages: [
         {
           role: "user",
