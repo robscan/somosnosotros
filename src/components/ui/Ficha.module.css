@@ -258,7 +258,8 @@
   color: var(--texto-suave);
   font-weight: 500;
 }
-.bloque ul {
+.bloque ul,
+.tarjeta ul {
   list-style: none;
 }
 /* Los eventos de una ficha van por día, con el título del día en gris sobre su lista (`EventosPorDia`: el `h3` y su lista, hijos del

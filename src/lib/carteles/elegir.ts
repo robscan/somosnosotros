@@ -9,6 +9,8 @@ import type { Plantilla } from "./plantillas/tipos";
  * 3. La plantilla que se usó la última vez en ese lugar (memoria del lugar, `carteles_generados`) va primero.
  * 4. Se toman cuatro de familias distintas; «Ver otras» (`pagina` 1, 2…) trae las siguientes, también sin repetir familia en la misma tanda
  *    mientras se pueda.
+ * 5. Siempre una sin imagen (OL-337, founder 2026-10-07: «siempre incluir una opción sin imagen (cartel tipográfico)»): si hay imagen, una de las
+ *    cuatro de cada tanda se dibuja en su versión sin foto, donde la fecha o la letra es la imagen (`sinFotoDe`). Sin ninguna imagen ya lo son todas.
  * El color no se elige aquí: cada plantilla toma su paleta de la foto al dibujarse (`paleta.ts`).
  */
 
@@ -22,7 +24,12 @@ export type Datos = {
   memoria: string | null;
   /** Las plantillas que tendrían que cortar el título con «…» (las calcula quien llama dibujándolas sin satori). */
   recortan?: ReadonlySet<string>;
+  /** Lo mismo en su versión sin foto (la medida del texto puede cambiar: sin foto, el título tiene otra caja). Sin esto, vale `recortan`. */
+  recortanSinFoto?: ReadonlySet<string>;
 };
+
+/** Una opción de la tanda: la plantilla y si se dibuja sin foto aunque haya imagen (la tipográfica de la tanda). */
+export type Eleccion = { plantilla: Plantilla; sinFoto: boolean };
 
 export const POR_TANDA = 4;
 
@@ -63,9 +70,31 @@ function enTandas(ordenadas: Plantilla[]): Plantilla[][] {
   return tandas;
 }
 
+/**
+ * La que va sin foto en una tanda con imagen (OL-337): la de más afinidad en su versión sin foto (con lo que corta el título sin foto), sin
+ * contar la primera de la tanda, que es la que mejor encaja y conserva la foto (con una foto propia recién puesta, la persona la espera ahí).
+ * Empate: la que va antes. Solo si ninguna otra puede ir sin foto se usa la primera; las que necesitan foto nunca.
+ */
+export function sinFotoDe(tanda: readonly Plantilla[], d: Datos): Plantilla | null {
+  const sinFoto = { ...d, recortan: d.recortanSinFoto ?? d.recortan };
+  const pueden = tanda.filter((p) => !p.fotoNecesaria);
+  const candidatas = pueden.filter((p) => p !== tanda[0]);
+  let mejor: Plantilla | null = null;
+  for (const p of candidatas.length > 0 ? candidatas : pueden) if (!mejor || afinidad(p, sinFoto) > afinidad(mejor, sinFoto)) mejor = p;
+  return mejor;
+}
+
+/** Todas las tandas, cada una con su opción sin foto. Sin ninguna imagen, todas van sin foto. */
+export function tandasDe(catalogo: readonly Plantilla[], d: Datos): Eleccion[][] {
+  return enTandas(ordenar(catalogo, d)).map((tanda) => {
+    const tipografica = d.conImagen ? sinFotoDe(tanda, d) : null;
+    return tanda.map((plantilla) => ({ plantilla, sinFoto: !d.conImagen || plantilla === tipografica }));
+  });
+}
+
 /** Las cuatro de la tanda `pagina` (0 la primera); vuelve a empezar al acabarse. */
-export function elegir(catalogo: readonly Plantilla[], d: Datos, pagina = 0): Plantilla[] {
-  const tandas = enTandas(ordenar(catalogo, d));
+export function elegir(catalogo: readonly Plantilla[], d: Datos, pagina = 0): Eleccion[] {
+  const tandas = tandasDe(catalogo, d);
   if (tandas.length === 0) return [];
   return tandas[((pagina % tandas.length) + tandas.length) % tandas.length];
 }

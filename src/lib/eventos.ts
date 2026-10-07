@@ -5,6 +5,7 @@ import { cuandoPorDia, formatearCuando, localAIso, ZONA_INICIAL, zonaSegura } fr
 import { imagenPermitida } from "./imagenes";
 import { LIMITES_EVENTO } from "./limites";
 import { puedeConservarReservadoSinDireccion } from "./retencionSitio";
+import { nombreDeSedes } from "./sedesFestival";
 
 export { LIMITES_EVENTO } from "./limites";
 
@@ -153,6 +154,9 @@ export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "i
   slug?: string | null;
   sitio_direccion?: string | null;
   lugar: { nombre: string; portada: string | null } | null;
+  /** Solo en el marco de un festival con actos que dicen dónde (OL-339, `lib/sedesFestival`): sus sedes, derivadas de sus actos al leer. Con
+   *  ellas `nombreSitio` dice «Varias sedes» o el nombre de la única, en vez de lo capturado en el marco. */
+  sedes?: readonly { nombre: string }[];
 };
 
 /**
@@ -268,8 +272,13 @@ export function queCambio(antes: Comparable, despues: Comparable): CambioEvento 
   return cuando && donde ? "ambos" : cuando ? "cuando" : donde ? "donde" : null;
 }
 
-/** Nombre público del sitio para la agenda y la ficha. */
-export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado">): string {
+/**
+ * Nombre público del sitio para la agenda y la ficha. Un festival con sedes derivadas de sus actos (OL-339) dice «Varias sedes» o el nombre de la
+ * única: se resuelve aquí una vez para todas las pantallas que lo resumen (renglón, tarjeta, Buscar, compartir, .ics, cartel).
+ */
+export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado" | "sedes">): string {
+  const sedes = nombreDeSedes(e.sedes);
+  if (sedes) return sedes;
   if (e.lugar?.nombre) return e.lugar.nombre;
   if (e.sitio_reservado) return e.sitio_texto ? `${e.sitio_texto} · sitio reservado` : "Sitio reservado";
   const texto = [e.sitio_texto, e.sitio_direccion].filter(Boolean).join(" · ");
@@ -282,7 +291,7 @@ export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "si
  * «en otro sitio» y que en la lista partía el renglón en tres líneas. La dirección vive en la ficha del evento. Un evento
  * sin nombre de sitio pero con dirección la conserva: es lo único que dice dónde es.
  */
-export function sitioEnLista(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado">): string {
+export function sitioEnLista(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado" | "sedes">): string {
   return nombreSitio({ ...e, sitio_direccion: e.sitio_texto ? null : e.sitio_direccion });
 }
 

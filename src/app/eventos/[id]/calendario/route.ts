@@ -1,8 +1,10 @@
 import { esUuid } from "@/lib/formulario";
 import { archivoIcs, nombreArchivoIcs } from "@/lib/calendario";
+import { cargarSedes } from "@/lib/cargarSedes";
 import { visitaDeEvento } from "@/lib/claseEvento";
 import { eventoPaso } from "@/lib/fechas";
 import { nombreSitio } from "@/lib/eventos";
+import { VARIAS_SEDES } from "@/lib/sedesFestival";
 import { sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -18,7 +20,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // Un evento que ya pasó se oculta: tampoco se entrega su archivo de calendario.
   if (!data || eventoPaso(data.inicio, data.fin, new Date(), data.zona)) return new Response("No encontrado", { status: 404 });
   const lugar = (Array.isArray(data.lugar) ? data.lugar[0] : data.lugar) as { nombre: string; direccion: string | null } | null;
-  const donde = lugar ? [lugar.nombre, lugar.direccion].filter(Boolean).join(", ") : nombreSitio({ ...data, lugar: null });
+  // Un festival (OL-339): sus sedes, derivadas de sus actos; «Varias sedes» o la única con su dirección. Sin actos con sitio, lo capturado.
+  const sedes = data.clase === "festival" ? ((await cargarSedes(supabase, [data.id]))?.get(data.id) ?? []) : [];
+  const unica = sedes.length === 1 ? sedes[0] : null;
+  const donde = sedes.length > 1 ? VARIAS_SEDES : unica ? [unica.nombre, unica.direccion].filter(Boolean).join(", ") : lugar ? [lugar.nombre, lugar.direccion].filter(Boolean).join(", ") : nombreSitio({ ...data, lugar: null });
   // Un evento con horario por día (OL-311) lleva un evento de calendario por día.
   const sesiones = sesionesVigentes(data, data.sesiones as SesionGuardada[] | null);
   // Una exposición marca su periodo, todo el día (OL-322): no es un rato del primer día.

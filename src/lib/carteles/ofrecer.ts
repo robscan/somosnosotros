@@ -1,5 +1,5 @@
 import { armarTextos, type EventoCartel, type TextosCartel } from "./datos";
-import { cuantasTandas, elegir, type Datos } from "./elegir";
+import { tandasDe, type Datos, type Eleccion } from "./elegir";
 import { PALETAS } from "./paleta";
 import { CATALOGO, type Plantilla } from "./plantillas";
 import { FORMATOS, type IdFormato } from "./tokens";
@@ -15,11 +15,18 @@ export function cortaElTitulo(plantilla: Plantilla, textos: TextosCartel, format
   return plantilla.dibujar({ textos, formato: FORMATOS[formato], paleta: PALETAS[plantilla.paletas[0]], foto: conImagen ? "data:," : null, sello: true }).tituloRecortado;
 }
 
-export type Oferta = { opciones: Plantilla[]; tandas: number; textos: TextosCartel; recortan: Set<string> };
+/** Las tandas, en orden, con lo que corta el título con foto (`recortan`) y en la versión sin foto (`recortanSinFoto`, la tipográfica de cada tanda). */
+export type Oferta = { tandas: Eleccion[][]; textos: TextosCartel; recortan: Set<string>; recortanSinFoto: Set<string> };
 
-export function ofrecer(evento: EventoCartel, datos: Datos, { titulo = null, pagina = 0, formato = "4x5", ahora }: { titulo?: string | null; pagina?: number; formato?: IdFormato; ahora?: Date } = {}): Oferta {
+export function ofrecer(evento: EventoCartel, datos: Datos, { titulo = null, formato = "4x5", ahora }: { titulo?: string | null; formato?: IdFormato; ahora?: Date } = {}): Oferta {
   const textos = armarTextos(evento, titulo, ahora);
-  const recortan = new Set(CATALOGO.filter((p) => textos.tituloRecortado || cortaElTitulo(p, textos, formato, datos.conImagen)).map((p) => p.id));
-  const conRecortes = { ...datos, recortan };
-  return { opciones: elegir(CATALOGO, conRecortes, pagina), tandas: cuantasTandas(CATALOGO, conRecortes), textos, recortan };
+  const corta = (conImagen: boolean) => new Set(CATALOGO.filter((p) => textos.tituloRecortado || cortaElTitulo(p, textos, formato, conImagen)).map((p) => p.id));
+  const recortanSinFoto = corta(false);
+  const recortan = datos.conImagen ? corta(true) : recortanSinFoto;
+  return { tandas: tandasDe(CATALOGO, { ...datos, recortan, recortanSinFoto }), textos, recortan, recortanSinFoto };
+}
+
+/** ¿Corta el título esta opción? Según se dibuje con foto o sin ella. */
+export function cortaLaOpcion(o: Eleccion, oferta: Pick<Oferta, "recortan" | "recortanSinFoto">): boolean {
+  return (o.sinFoto ? oferta.recortanSinFoto : oferta.recortan).has(o.plantilla.id);
 }

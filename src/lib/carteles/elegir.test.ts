@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { afinidad, cuantasTandas, elegir, ordenar, type Datos } from "./elegir";
+import { afinidad, cuantasTandas, elegir as elegirConFoto, ordenar, sinFotoDe, tandasDe, type Datos } from "./elegir";
 import { plantillaMedida, PLANTILLAS_CARTEL } from "../medir";
 import { CATALOGO, plantillaPorId } from "./plantillas";
 
 const base: Datos = { conImagen: true, tipoLugar: null, disciplinas: [], artistas: 0, memoria: null };
 const familias = (ps: { familia: string }[]) => ps.map((p) => p.familia);
+/** Las plantillas de la tanda, sin decir cuál va sin foto (las pruebas de antes de OL-337). */
+const elegir = (...a: Parameters<typeof elegirConFoto>) => elegirConFoto(...a).map((e) => e.plantilla);
 
 describe("catálogo", () => {
   it("doce plantillas, seis familias de dos, ids únicos", () => {
@@ -66,5 +68,59 @@ describe("elegir", () => {
   it("es estable: los mismos datos dan las mismas cuatro", () => {
     const d = { ...base, tipoLugar: "casa_de_cultura", disciplinas: ["musica"] };
     expect(elegir(CATALOGO, d).map((p) => p.id)).toEqual(elegir(CATALOGO, d).map((p) => p.id));
+  });
+});
+
+describe("siempre una sin imagen (OL-337)", () => {
+  const casos: [string, Datos][] = [
+    ["con imagen", base],
+    ["museo con artes visuales", { ...base, tipoLugar: "museo", disciplinas: ["artes_visuales"] }],
+    ["foro con música y memoria", { ...base, tipoLugar: "foro", disciplinas: ["musica"], memoria: "cine-sangre" }],
+    ["plaza con danza, 6 artistas", { ...base, tipoLugar: "plaza", disciplinas: ["danza", "circo"], artistas: 6 }],
+    ["títulos que se cortan", { ...base, recortan: new Set(["galeria-marco", "deco-sol"]), recortanSinFoto: new Set(["tipo-franja"]) }],
+  ];
+  for (const [nombre, d] of casos) {
+    it(`${nombre}: en cada tanda exactamente una va sin foto, de las que pueden, y las familias siguen distintas mientras se pueda`, () => {
+      const tandas = tandasDe(CATALOGO, d);
+      expect(tandas).toHaveLength(cuantasTandas(CATALOGO, d));
+      for (const [i, tanda] of tandas.entries()) {
+        expect(tanda).toHaveLength(4);
+        // Doce plantillas de seis familias: las dos primeras tandas son de cuatro familias; la tercera lleva lo que queda (como antes de OL-337).
+        if (i < 2) expect(new Set(tanda.map((e) => e.plantilla.familia)).size).toBe(4);
+        const sinFoto = tanda.filter((e) => e.sinFoto);
+        expect(sinFoto).toHaveLength(1);
+        expect(sinFoto[0].plantilla.fotoNecesaria).toBe(false);
+      }
+      // «Ver otros diseños» trae las mismas tandas, vuelta incluida.
+      for (let i = 0; i <= tandas.length; i++) expect(elegirConFoto(CATALOGO, d, i)).toEqual(tandas[i % tandas.length]);
+    });
+  }
+  it("la primera de la tanda (la que mejor encaja) conserva su foto", () => {
+    for (const [, d] of casos) for (const tanda of tandasDe(CATALOGO, d)) expect(tanda[0].sinFoto).toBe(false);
+  });
+  it("la tipográfica es la de más afinidad entre las demás, medida sin foto", () => {
+    const d = { ...base, tipoLugar: "museo", disciplinas: ["artes_visuales"] };
+    const [primera] = tandasDe(CATALOGO, d);
+    const resto = primera.slice(1).map((e) => e.plantilla);
+    const mejor = Math.max(...resto.map((p) => afinidad(p, d)));
+    const elegida = primera.find((e) => e.sinFoto)!.plantilla;
+    expect(afinidad(elegida, d)).toBe(mejor);
+    expect(elegida).toBe(resto.find((p) => afinidad(p, d) === mejor)); // empate: la que va antes
+  });
+  it("cuenta lo que se corta sin foto: una que corta el título sin foto cede el lugar", () => {
+    const tanda = elegir(CATALOGO, base);
+    const sinCorte = sinFotoDe(tanda, base)!;
+    const conCorte = sinFotoDe(tanda, { ...base, recortanSinFoto: new Set([sinCorte.id]) })!;
+    expect(conCorte.id).not.toBe(sinCorte.id);
+  });
+  it("si solo la primera puede ir sin foto, va ella; si ninguna puede, ninguna", () => {
+    const sangre = plantillaPorId("cine-sangre")!;
+    const franja = plantillaPorId("tipo-franja")!;
+    expect(sinFotoDe([franja, sangre], base)).toBe(franja);
+    expect(sinFotoDe([sangre], base)).toBeNull();
+  });
+  it("sin ninguna imagen, todas van sin foto (y ninguna pide foto)", () => {
+    const sin = { ...base, conImagen: false };
+    for (const tanda of tandasDe(CATALOGO, sin)) for (const e of tanda) expect(e).toMatchObject({ sinFoto: true, plantilla: { fotoNecesaria: false } });
   });
 });

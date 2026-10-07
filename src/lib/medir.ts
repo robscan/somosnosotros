@@ -61,6 +61,10 @@ export const EVENTOS = {
   cartel_usado: { plantilla: PLANTILLAS_CARTEL, formato: FORMATOS_CARTEL },
   /** «No me gusta ninguno»: en qué tanda se dio por vencida la persona (nunca por qué). */
   cartel_ninguno: { tanda: TANDAS_CARTEL },
+  /** «Usar otra foto» (OL-337) puso una foto propia en los diseños (subió y sirve). Nunca el archivo, su nombre ni el evento. */
+  cartel_foto_puesta: {},
+  /** «Quitar la foto»: los diseños vuelven a las imágenes de siempre. */
+  cartel_foto_quitada: {},
   /**
    * «Este festival ya está publicado» / «Ya hay un evento igual» (OL-341) al publicar un evento: se vio, se dijo «Sí» (ya ligado) o «No, es otro
    * evento». `caso`: si lo que ya estaba es un festival (a) o un evento suelto de otra cuenta (b). Sin ids ni títulos.

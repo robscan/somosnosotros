@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { CONFIRMACION_MS, useConfirmacion } from "@/components/ui/Confirmacion";
 import { IconoOk } from "@/components/ui/Iconos";
+import { hrefCartelSubido } from "@/lib/cartelDescarga";
 import { avisoDelCartel, destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel, type VentanaConFotos } from "@/lib/guardarCartel";
 
 type Cartel = { blob: Blob; nombre: string };
@@ -11,6 +12,8 @@ type Estado = "reposo" | "preparando" | "listo" | "fallo";
 type Props = {
   /** El evento: su slug o su UUID, como los entiende `/api/cartel/[id]`. */
   id: string;
+  /** La imagen del cartel subido: versiona la dirección de la descarga (OL-338, `hrefCartelSubido`), así un cartel nuevo no baja el anterior. */
+  imagen?: string | null;
   className: string;
   /** Lo que va antes del texto (el icono; en la ficha, dentro de su círculo). */
   icono?: ReactNode;
@@ -73,11 +76,11 @@ const hayFotosEnServidor = () => false;
  * 3 veces el cartel»): al terminar sale el aviso flotante de `ui/Confirmacion` («Cartel guardado en Fotos», «Cartel descargado», o el fallo con su ✕),
  * y el botón, esos mismos 2,5 s, muestra la palomita y no responde a más toques (`aria-disabled`, no `disabled`: el estilo no se apaga).
  */
-export default function BotonDescargarCartel({ id, className, icono, iconoListo, corto = false, precargar = false, href: otra, alGuardar }: Props) {
+export default function BotonDescargarCartel({ id, imagen, className, icono, iconoListo, corto = false, precargar = false, href: otra, alGuardar }: Props) {
   const conFotos = useSyncExternalStore(sinSuscripcion, hayFotos, hayFotosEnServidor);
   const destino = destinoDelCartel({ conFotos });
   const dice = textosDelCartel(destino, corto);
-  const href = otra ?? `/api/cartel/${encodeURIComponent(id)}`;
+  const href = otra ?? hrefCartelSubido(id, imagen);
   const [estado, setEstado] = useState<Estado>("reposo");
   const aviso = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // El cartel que ya se trajo (o se está trayendo): una sola petición aunque se toque dos veces.
