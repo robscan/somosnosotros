@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { leerCartelAccion, type Cupo } from "@/app/eventos/acciones";
 import { detalleDeLecturas, falloAlSubir, falloDeCorte, lecturaAgotada, seLee } from "@/app/eventos/estadoCartel";
+import { medirCliente } from "@/lib/medir";
 import { subirFoto } from "@/lib/subirFoto";
 import type { Leido } from "./cartelPorPasos";
 
@@ -76,6 +77,7 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar }: 
         }
         const r = await leerCartelAccion(url);
         if (r.ok) {
+          medirCliente("cartel_leido", { resultado: "ok" });
           setSubido({ url, leido: true, noPude: false });
           setCupoActual((c) => (c && !c.sinTope ? { ...c, usadas: c.usadas + 1 } : c));
           gestos.current.alLeer(r);
@@ -83,12 +85,14 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar }: 
         }
         // Ya no había cupo en el servidor (se gastó en otra pantalla): el cartel queda guardado y se sigue, sin decir que falló. Fallo de la lectura: «no pude leerlo».
         const sinCupo = "sinCupo" in r;
+        if (!sinCupo) medirCliente("cartel_leido", { resultado: "fallo" });
         if (sinCupo) setCupoActual((c) => (c ? { ...c, usadas: Math.max(c.usadas, c.tope) } : c));
         setSubido({ url, leido: false, noPude: !sinCupo });
         gestos.current.alGuardar();
       } catch {
         // Se cortó a mitad. Si el cartel ya estaba subido se queda y se sigue; si no, no llegó a guardarse.
         if (url) {
+          if (leer) medirCliente("cartel_leido", { resultado: "fallo" }); // se cortó leyendo
           setSubido({ url, leido: false, noPude: true });
           gestos.current.alGuardar();
         } else {

@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { configPublica } from "@/lib/config";
 import { COOKIE_ENTRAR, decidirVuelta, esProveedor, leerCampos, leerIntento, nombreDeApple, nombrePorDefecto, urlAppError, urlAppTrasEntrar, urlEntrar } from "@/lib/entrarCon";
 import { clienteAdmin } from "@/lib/supabase/admin";
-import { clienteServidor } from "@/lib/supabase/servidor";
+import { medirServidor } from "@/lib/medirServidor";
+import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
 
 type Contexto = { params: Promise<{ proveedor: string }> };
 
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest, { params }: Contexto) {
   if (desenlace.tipo === "cancelado") return volver(urlEntrar(siguiente));
   if (desenlace.tipo === "fallo") {
     console.error(`entrar con ${proveedor}: ${desenlace.motivo}`);
+    await medirServidor("entrar", { paso: "fallo", metodo: proveedor });
     return volver(urlEntrar(siguiente, proveedor));
   }
 
@@ -39,8 +41,12 @@ export async function POST(request: NextRequest, { params }: Contexto) {
   const { data, error } = (await supabase?.auth.signInWithIdToken({ provider: proveedor, token: desenlace.token, nonce: desenlace.nonce })) ?? { data: null, error: null };
   if (!data?.user || !data.session) {
     console.error(`entrar con ${proveedor}: ${error?.message ?? "sin Supabase"}`);
+    await medirServidor("entrar", { paso: "fallo", metodo: proveedor });
     return volver(urlEntrar(siguiente, proveedor));
   }
+  // Medido aquí (OL-325): la vuelta de Apple o Google no pasa por una pantalla que lo mida. Se manda tras la respuesta y no a la administración.
+  const usuarioId = data.user.id;
+  await medirServidor("entrar", { paso: "listo", metodo: proveedor }, { esAdmin: () => (supabase ? esAdminDeSesion(supabase, usuarioId) : Promise.resolve(false)) });
   if (proveedor === "apple") await ponerNombreDeApple(data.user, data.session.access_token, campos.user);
   if (intento?.enApp === true) return volver(await urlVueltaAlApp(data.user, siguiente, request.nextUrl.origin));
   return volver(siguiente);

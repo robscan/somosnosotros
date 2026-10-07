@@ -7,6 +7,7 @@ import { IconoComputadora, IconoCorreo, IconoTelefono } from "@/components/ui/Ic
 import Palanca from "@/components/ui/Palanca";
 import { elegirAvisos } from "@/app/avisos/acciones";
 import { dondeSeActivan, dondeSeRegistra, enEste, type EstadoPush, type Plataforma } from "@/lib/plataforma";
+import { medirCliente } from "@/lib/medir";
 import { desuscribirPush, detalleNoSoportado, suscribirPush } from "@/lib/pushCliente";
 import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -64,6 +65,7 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
     const ok = await elegirAvisos({ correo: nuevo });
     setTrabajando(false);
     if (ok) {
+      if (nuevo) medirCliente("aviso_activado", { canal: "correo" });
       setCorreo(nuevo);
       router.refresh();
     } else setNota("No se pudo guardar. Intenta de nuevo.");
@@ -91,6 +93,7 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
         return;
       }
       if (await guardarSuscripcionPush(alta.sub)) {
+        medirCliente("aviso_activado", { canal: "telefono" });
         setEstado("encendido");
         router.refresh();
       } else setNota("No se pudo guardar. Intenta de nuevo.");

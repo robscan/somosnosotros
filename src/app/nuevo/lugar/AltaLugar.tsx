@@ -11,6 +11,7 @@ import { ciudadParaPunto, type Ciudad, type CiudadConDatos } from "@/lib/ciudad"
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
 import { horarioParaEnviar } from "@/lib/horarioLugar";
+import { medirCliente } from "@/lib/medir";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import TiraTipos from "../TiraTipos";
@@ -75,6 +76,7 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
     const hecho = await accion(previo, datos);
     if (hecho.ok) {
       setCreado({ id: hecho.id, slug: hecho.slug ?? null });
+      medirCliente("lugar_creado", { desde: "alta" });
       despachar({ tipo: "publicado" });
     }
     return hecho;

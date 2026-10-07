@@ -59,3 +59,39 @@ export function limpiarUrlAnalitica(url: string): string | null {
     return null;
   }
 }
+
+/**
+ * La ruta de una persona (`/personas/<id>`) lleva su id: para Google Analytics y para los eventos queda solo «/personas» (OL-325; la
+ * lista cerrada no deja mandar ids de personas). Las vistas de Vercel siguen como las dejó OL-111.
+ */
+function sinIdDePersona(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.pathname.startsWith("/personas/")) return `${u.origin}/personas`;
+    return url;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * La página desde la que se hizo una acción medida (OL-325): la misma limpieza que las vistas; en una ruta privada (Entrar, Perfil…),
+ * en vez de no mandar nada —la acción sí se mide— queda solo su primer tramo («/entrar», sin `?siguiente=`). Nunca null.
+ */
+export function limpiarUrlEvento(url: string): string {
+  const limpia = limpiarUrlAnalitica(url);
+  if (limpia !== null) return sinIdDePersona(limpia);
+  try {
+    const u = url.startsWith("/") ? new URL(url, "https://somosnosotros.org") : new URL(url);
+    const tramo = u.pathname.split("/")[1] ?? "";
+    return `${u.origin}/${tramo}`;
+  } catch {
+    return "https://somosnosotros.org/";
+  }
+}
+
+/** Una vista de página para Google Analytics (OL-325): la limpieza de Vercel, sin el id de las personas; null si no se manda. */
+export function limpiarUrlGoogle(url: string): string | null {
+  const limpia = limpiarUrlAnalitica(url);
+  return limpia === null ? null : sinIdDePersona(limpia);
+}

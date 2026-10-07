@@ -9,6 +9,7 @@ import type { TarjetaConFecha } from "@/lib/destacados";
 import { hrefEvento } from "@/lib/eventos";
 import { asistenciaTras, claveVoy, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
+import { datosAsistencia, medirCliente } from "@/lib/medir";
 import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import type { EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -96,6 +97,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
    * Si no se pudo guardar, quita lo mostrado y ofrece `reintentar`; si se guardó, `alGuardar`. Devuelve el número del toque.
    */
   function guardar(e: EventoLista, valor: Asistencia, reintentar: () => void, alGuardar?: () => void): number {
+    const previo = estado(e.id);
     const vez = tocar(toques.current, e.id);
     setElegidas((x) => elegir(x, e.id, valor, vez));
     iniciar(async () => {
@@ -106,6 +108,8 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       } catch {
         guardado = false;
       }
+      const medido = guardado ? datosAsistencia(valor, previo) : null;
+      if (medido) medirCliente("asistencia", medido);
       if (!esElUltimo(toques.current, e.id, vez)) return;
       setElegidas((x) => trasGuardar(x, e.id, vez, guardado));
       if (!guardado) {

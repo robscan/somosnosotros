@@ -14,6 +14,7 @@ import { CIUDAD_INICIAL, ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { zonaSegura } from "@/lib/fechas";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
+import { medirCliente } from "@/lib/medir";
 import type { LugarResumen } from "@/lib/lugares";
 import { sesionesParaEnviar } from "@/lib/sesionesEvento";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
@@ -126,6 +127,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     const hecho = await accion(previo, datos);
     if (hecho.ok) {
       setCreado({ id: hecho.id, slug: hecho.slug ?? null, creadoEn: new Date().toISOString() });
+      medirCliente("evento_creado", { cartel: datos.get("imagen") ? "si" : "no" });
       publicado();
     }
     return hecho;
@@ -151,6 +153,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         setErrorLugar(NO_SE_GUARDO);
         return;
       }
+      if (!lugarCreado.reutilizado) medirCliente("lugar_creado", { desde: "evento" });
       const nuevo = lugares.find((l) => l.id === lugarCreado.id) ?? { id: lugarCreado.id, nombre, tipo: deducirTipo(nombre, c.categorias) ?? "otro", direccion, lat: c.punto.lat, lng: c.punto.lng, portada: null };
       onLugarNuevo(nuevo);
       contestar({ sitio: sitioDeLugar(nuevo, r.sitio.otro) });

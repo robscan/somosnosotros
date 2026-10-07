@@ -10,6 +10,7 @@ import { LogoApple, LogoGoogle } from "@/components/ui/LogosEntrar";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
 import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/entrarCon";
 import { apuntarVuelta, desdeElReferente, haciaDonde, leerAntes, leerDesde } from "@/lib/historial";
+import { medicionActivaEnCliente, medirCliente } from "@/lib/medir";
 import { correoValido } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import Limpiar from "@/components/ui/Limpiar";
@@ -24,6 +25,22 @@ type Props = {
   largo: number;
 };
 type Fase = "elegir" | "correo" | "codigo" | "entrando";
+
+/**
+ * «Ya dentro» con el código (OL-325). La marca de admin del layout aún no llegó (llega al releer la pantalla): se pregunta el rol de la
+ * cuenta recién entrada, sin esperar a nadie, y solo si no es administración se mide. Fuera de producción no se pregunta nada.
+ */
+function medirEntradaLista(supabase: NonNullable<ReturnType<typeof clienteNavegador>>) {
+  if (!medicionActivaEnCliente()) return medirCliente("entrar", { paso: "listo", metodo: "correo" }); // solo la consola de depurar
+  void (async () => {
+    try {
+      const { data } = await supabase.rpc("mi_perfil");
+      if ((data as { rol?: string } | null)?.rol !== "admin") medirCliente("entrar", { paso: "listo", metodo: "correo" });
+    } catch {
+      // sin respuesta: no se mide
+    }
+  })();
+}
 
 /** Segundos antes de poder pedir otro código. */
 const ESPERA_REENVIO = 30;
@@ -72,11 +89,13 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
     const { error: e } = await supabase.auth.signInWithOtp({ email: limpio, options: { emailRedirectTo: urlCallback() } });
     setOcupado(false);
     if (e) {
+      medirCliente("entrar", { paso: "fallo", metodo: "correo" });
       setError(e.status === 429 ? "Demasiados intentos. Espera unos minutos." : /sending/i.test(e.message) ? "No pudimos mandarlo a ese correo. Revísalo o usa otro." : "No se pudo mandar el código. Intenta de nuevo.");
       return false;
     }
     setCorreo(limpio);
     setEspera(ESPERA_REENVIO);
+    medirCliente("entrar", { paso: "pedido", metodo: "correo" });
     return true;
   }
 
@@ -103,12 +122,14 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
     const { error: e } = await supabase.auth.verifyOtp({ email: correo, token: valor, type: "email" });
     enviando.current = false;
     if (e) {
+      medirCliente("entrar", { paso: "fallo", metodo: "correo" });
       setFase("codigo");
       setError("Ese código no es, o ya caducó. Pide otro.");
       setCodigo("");
       requestAnimationFrame(() => campoCodigo.current?.focus());
       return;
     }
+    medirEntradaLista(supabase);
     // La pantalla de origen aplica la intención (Voy, Seguir…) al cargar con sesión. Si se vino de ella, se vuelve con el
     // historial en vez de apilar otra copia (el primer Atrás no hacía nada); con sesión nueva, se relee.
     terminar(siguiente, { refrescar: true });
@@ -151,7 +172,8 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
   }, []);
 
   /** Al tocar el botón del proveedor, el apunte se refresca: uno viejo caduca a los 10 minutos. */
-  function refrescarApunte(e: React.MouseEvent<HTMLAnchorElement>) {
+  function refrescarApunte(e: React.MouseEvent<HTMLAnchorElement>, proveedor: Proveedor) {
+    medirCliente("entrar", { paso: "pedido", metodo: proveedor });
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // otra pestaña: su historial es suyo
     apunte();
   }
@@ -173,7 +195,7 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
               {proveedores.map((p, i) => (
                 // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
                 // Apple negro solo cuando va primero (en sus dispositivos); detrás de Google, su variante blanca, para que el primero siga siendo el que más pesa.
-                <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} onClick={refrescarApunte} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
+                <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} onClick={(e) => refrescarApunte(e, p)} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
                   {p === "apple" ? <LogoApple className={styles.logo} /> : <LogoGoogle className={styles.logo} />}
                   Continuar con {NOMBRE_PROVEEDOR[p]}
                 </a>

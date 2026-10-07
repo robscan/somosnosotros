@@ -12,6 +12,7 @@ import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toq
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "@/components/useCanalDeListas";
 import { hrefEvento } from "@/lib/eventos";
 import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
+import { datosAsistencia, medirCliente } from "@/lib/medir";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
 
 type Props = {
@@ -57,6 +58,7 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
   }, [conSesion, miEstado, cuenta, avisosPreguntado, ruta, tomarPregunta]);
 
   function cambiar(nuevo: EstadoAsistencia) {
+    const previo = estado;
     const vez = tocar(toques.current, eventoId);
     limpiar(de);
     iniciar(async () => {
@@ -71,6 +73,8 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
       // pantalla se vuelve a pedir fresca. El recuerdo de la visita (OL-222) ya no hace falta y, si se quedara, una
       // decisión vieja tomada en una lista podría ganarle a esta más nueva: se borra.
       if (guardado) borrarDecisionesVisita();
+      const medido = guardado ? datosAsistencia(nuevo, previo) : null;
+      if (medido) medirCliente("asistencia", medido);
       if (!esElUltimo(toques.current, eventoId, vez)) return;
       if (!guardado) {
         avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, eventoId, vez, () => cambiar(nuevo)) });

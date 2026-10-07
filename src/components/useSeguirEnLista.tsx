@@ -8,6 +8,7 @@ import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { corregirSeguidos, guardarDecisionSeguir, limpiarSeguidosResueltos } from "@/lib/decisionesVisita";
 import { claveSeguir, recortar, textoHecho, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
+import { medirCliente } from "@/lib/medir";
 import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import type { EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -91,6 +92,7 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
       } catch {
         guardado = false;
       }
+      if (guardado) medirCliente("seguir", { que, cambio: seguir ? "puesto" : "quitado" });
       if (!esElUltimo(toques.current, id, vez)) return;
       setElegidos((x) => trasGuardar(x, id, vez, guardado));
       if (!guardado) {

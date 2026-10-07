@@ -11,6 +11,7 @@ import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "./useCanalDeListas";
 import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
+import { medirCliente } from "@/lib/medir";
 
 type Props = {
   /** Lugar ("sus eventos") o artista ("sus fechas"): cambia el glifo de la pastilla y la hoja de avisos. */
@@ -75,6 +76,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       // pantalla se vuelve a pedir fresca. El recuerdo de la visita (OL-222) ya no hace falta y, si se quedara, una
       // decisión vieja tomada en una lista podría ganarle a esta más nueva: se borra.
       if (guardado) borrarDecisionesVisita();
+      if (guardado) medirCliente("seguir", { que, cambio: nuevo ? "puesto" : "quitado" });
       if (!esElUltimo(toques.current, ruta, vez)) return;
       if (!guardado) {
         avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, ruta, vez, () => cambiar(nuevo)) });

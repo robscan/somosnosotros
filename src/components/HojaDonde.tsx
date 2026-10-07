@@ -39,6 +39,7 @@ import {
 } from "@/lib/hojaDonde";
 import { hrefLugar, type LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
+import { medirCliente } from "@/lib/medir";
 import MapaDondeEs from "./MapaDondeEs";
 import { PiePaso } from "./PorPasos";
 import styles from "./HojaDonde.module.css";
@@ -496,6 +497,7 @@ export default function HojaDonde(props: Props) {
         setErrorAgregar(r.error);
         return;
       }
+      if (!r.reutilizado) medirCliente("lugar_creado", { desde: "evento" });
       const existente = lugares.find((l) => l.id === r.id);
       const tipo = deducirTipo(nombre) ?? "otro";
       const lugarResultante: LugarResumen = existente ?? { id: r.id, nombre, tipo, direccion, lat: punto.lat, lng: punto.lng, portada: null };

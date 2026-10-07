@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Atras from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { medirCliente } from "@/lib/medir";
 
 /**
  * Algo falló al cargar una pantalla. Se dice en español, se ofrece reintentar y volver a la agenda.
@@ -12,6 +13,7 @@ import plantilla from "@/components/ui/Plantilla.module.css";
 export default function Error({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {
     console.error("Pantalla con error:", error.digest ?? error.message);
+    medirCliente("error_pantalla"); // solo que pasó, sin el mensaje ni la pantalla (la limpia la medición)
   }, [error]);
   return (
     <main className={plantilla.pagina}>
