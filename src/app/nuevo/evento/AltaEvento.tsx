@@ -8,6 +8,7 @@ import CamposSitio from "@/app/eventos/CamposSitio";
 import { operacionEvento } from "@/app/eventos/operacionEvento";
 import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
 import type { ArtistaResumen } from "@/lib/artistas";
+import { enlaceAltaDeTipo } from "@/lib/armazon";
 import { deducirTipo } from "@/lib/buscarLugares";
 import { CIUDAD_INICIAL, ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { zonaSegura } from "@/lib/fechas";
@@ -16,6 +17,7 @@ import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { sesionesParaEnviar } from "@/lib/sesionesEvento";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
+import TiraTipos from "../TiraTipos";
 import { sinPisar, type Arranque } from "./arranque";
 import { respuestasDelCartel } from "./cartelPorPasos";
 import { avance, eventoPublicado, faltaParaPublicar, finDe, inicioDe, nombreDelSitio, sitioDeLugar, type Candidato, type Creado, type Paso, type Respuestas, type Uso } from "./pasos";
@@ -85,7 +87,8 @@ type Interno = Props & {
  * la ficha). «Publicar otro» la vuelve a montar con otra `key`: respuestas, cartel, error y clave de
  * la operación empiezan de cero, sin el arranque con que se abrió (el lugar, el artista o el evento duplicado), y la guardia de salida se arma
  * de nuevo; los lugares que se guardaron en el camino se conservan aquí. Es la única alta de evento (OL-312): «Publicar aquí», «Publicar
- * fecha» y «Duplicar» llegan con su `arranque`, y lo que traen no lo pisa la lectura del cartel (`sinPisar`).
+ * fecha» y «Duplicar» llegan con su `arranque`, y lo que traen no lo pisa la lectura del cartel (`sinPisar`). Solo el primer paso lleva, abajo, la tira
+ * de tipos de `/nuevo` (OL-313): la salida a registrar un lugar o un artista, que la alta única había quitado.
  */
 export default function AltaEvento(props: Props) {
   const [vuelta, setVuelta] = useState(0);
@@ -206,7 +209,13 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       }
     >
       {cartel.espera && <PasoEspera foto={cartel.miniatura} leyendo={cartel.espera === "leyendo"} />}
-      {!cartel.espera && paso === "inicio" && <PasoInicio casilla={cartel.casilla} error={cartel.error} onElegir={cartel.elegir} onSinCartel={seguir} />}
+      {!cartel.espera && paso === "inicio" && (
+        <>
+          <PasoInicio casilla={cartel.casilla} error={cartel.error} onElegir={cartel.elegir} onSinCartel={seguir} />
+          {/* Solo en el primer paso, donde aún no hay nada escrito: la salida a registrar un lugar o un artista (la tira de `/nuevo`). */}
+          <TiraTipos actual="evento" destinos={{ lugar: enlaceAltaDeTipo("lugar", ciudadContexto?.slug ?? null), artista: enlaceAltaDeTipo("artista", ciudadContexto?.slug ?? null) }} />
+        </>
+      )}
       {paso === "nombre" && <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />}
       {paso === "dia" && <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />}
       {paso === "hora" && <PasoHora r={r} zona={zona} onInicio={(hora) => cambiar({ hora, fin: null })} onFin={(fin) => contestar({ fin })} onCambiar={cambiar} onSeguir={seguir} />}

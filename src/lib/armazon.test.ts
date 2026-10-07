@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { puntoDeTexto } from "./geo";
-import { altaDeParametro, altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceAltaEvento, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, redireccionDeNuevo, tituloDeAlta, vistaDeRuta } from "./armazon";
+import { altaDeParametro, altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceAltaDeTipo, enlaceAltaEvento, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, redireccionDeNuevo, tituloDeAlta, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("las cinco secciones y la pantalla que confirma un borrado son raíz", () => {
@@ -101,6 +101,12 @@ describe("armazón: el alta de evento por pasos (OL-312)", () => {
     expect(enlaceAltaEvento({ lugar: ID })).toBe(`/nuevo/evento?lugar=${ID}`);
     expect(enlaceAltaEvento({ artista: ID, ciudad: "queretaro" })).toBe(`/nuevo/evento?artista=${ID}&ciudad=queretaro`);
     expect(enlaceAltaEvento({ ciudad: "queretaro", desde: ID, lugar: null, artista: "" })).toBe(`/nuevo/evento?desde=${ID}&ciudad=queretaro`);
+  });
+  it("la tira del primer paso lleva a /nuevo con su tipo y la ciudad, si la hay", () => {
+    expect(enlaceAltaDeTipo("lugar", null)).toBe("/nuevo?tipo=lugar");
+    expect(enlaceAltaDeTipo("artista", null)).toBe("/nuevo?tipo=artista");
+    expect(enlaceAltaDeTipo("lugar", "queretaro")).toBe("/nuevo?tipo=lugar&ciudad=queretaro");
+    expect(enlaceAltaDeTipo("artista", "queretaro")).toBe("/nuevo?tipo=artista&ciudad=queretaro");
   });
   it("/nuevo con un evento se va a /nuevo/evento con sus datos: sin tipo, tipo=evento, un tipo desconocido o un evento ya armado", () => {
     expect(redireccionDeNuevo({})).toBe("/nuevo/evento");
