@@ -1,18 +1,18 @@
 import type { AvisosLista } from "@/components/useSeguirEnLista";
 import type { Agenda } from "@/lib/cargarAgenda";
-import { tarjetaEvento } from "@/lib/destacados";
+import { tarjetaConClase, tarjetaEvento } from "@/lib/destacados";
 import { calcularCarrilesAgenda } from "@/lib/inicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 import CarrilNuevos from "./CarrilNuevos";
 
 /** «Nuevos» además necesita la ciudad: su última visita (la que decide qué es nuevo en este teléfono) es de esa ciudad. */
-type Parte = { parte: "estelar" | "estaSemana" | "paraVisitar" } | { parte: "nuevos"; ciudad: string };
+type Parte = { parte: "estelar" | "estaSemana" | "festivales" } | { parte: "nuevos"; ciudad: string };
 
 /**
  * Componente de servidor: espera la misma `cargarAgenda` que comparten los carriles "Seleccionados para ti"
  * (o "Destacados"), "Esta semana" y "Nuevos eventos" (OL-156, segunda vuelta; "Esta semana" y el criterio nuevo de
- * "Nuevos eventos", OL-219; "Para visitar", OL-322) — una consulta, no cuatro — y recalcula los carriles completos de
- * forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
+ * "Nuevos eventos", OL-219; "Festivales y exposiciones", OL-342, antes "Para visitar", OL-322) — una consulta, no cuatro —
+ * y recalcula los carriles completos de forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
  * Lo que ya está en «Tus planes» al cargar no sale en ninguno de los tres: ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
  */
@@ -25,12 +25,12 @@ export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref
     const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaEvento(e, ahora), creado_en: e.creado_en }));
     return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
   }
-  // «Para visitar» (OL-322): las exposiciones vigentes; su enlace lleva a la agenda con «Qué» en Exposiciones (ahí está la lista entera).
+  // «Festivales y exposiciones» (OL-342): cada tarjeta dice qué es en su rótulo («Festival», «Exposición»: `tarjetaConClase`).
   const datos =
     carril.parte === "estelar"
-      ? { titulo: carriles.titulo, eventos: carriles.estelar, tamano: "grande" as const, memoria: "inicio-estelar" }
-      : carril.parte === "paraVisitar"
-        ? { titulo: "Para visitar", eventos: carriles.paraVisitar, tamano: "mediana" as const, memoria: "inicio-para-visitar" }
-        : { titulo: "Esta semana", eventos: carriles.estaSemana, tamano: "mediana" as const, memoria: "inicio-esta-semana" };
-  return <CarrilEventosCliente {...comun} tarjetas={datos.eventos.map((e) => tarjetaEvento(e, ahora))} titulo={datos.titulo} tamano={datos.tamano} memoria={datos.memoria} />;
+      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaEvento(e, ahora)), tamano: "grande" as const, memoria: "inicio-estelar" }
+      : carril.parte === "festivales"
+        ? { titulo: "Festivales y exposiciones", tarjetas: carriles.festivales.map((e) => tarjetaConClase(e, ahora)), tamano: "mediana" as const, memoria: "inicio-festivales" }
+        : { titulo: "Esta semana", tarjetas: carriles.estaSemana.map((e) => tarjetaEvento(e, ahora)), tamano: "mediana" as const, memoria: "inicio-esta-semana" };
+  return <CarrilEventosCliente {...comun} tarjetas={datos.tarjetas} titulo={datos.titulo} tamano={datos.tamano} memoria={datos.memoria} />;
 }

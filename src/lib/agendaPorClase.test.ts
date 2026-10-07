@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtrosRecordados, hrefAgenda, listarAgenda, paraVisitarEnAgenda, SIN_FILTROS, textoVer, type EventoAgenda, type FiltrosAgenda } from "./agenda";
-import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
+import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
-import { cuandoDeTarjeta, notaDeClase, tarjetaEvento } from "./destacados";
-import { calcularCarrilesAgenda, carrilEstaSemana, carrilMasAdelante, carrilNuevos, carrilParaVisitar } from "./inicio";
+import { cuandoDeTarjeta, notaDeClase, selloDeTarjeta, tarjetaConClase, tarjetaEvento } from "./destacados";
+import { calcularCarrilesAgenda, carrilEstaSemana, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
 
 // Miércoles 7 de octubre de 2026, 12:00 en la ciudad (seis horas detrás de UTC, sin horario de verano).
@@ -31,6 +31,8 @@ const cine1 = evento("cine1", { evento_padre_id: "cine", inicio: a("2026-10-09",
 const cine2 = evento("cine2", { evento_padre_id: "cine", inicio: a("2026-10-10", "18:00"), lugar_id: "cineteca" });
 const cine3 = evento("cine3", { evento_padre_id: "cine", inicio: a("2026-10-10", "20:00") });
 const cine4 = evento("cine4", { evento_padre_id: "cine", inicio: a("2026-10-20", "19:00") });
+// Un festival de un día que viene, sin actos en la semana (OL-342): el sábado 31, de las 18:00 a la medianoche.
+const electric = evento("electric", { clase: "festival", titulo: "Electric Universe", inicio: a("2026-10-31", "18:00"), fin: a("2026-11-01", "00:00"), programa: { registrados: 3 } });
 const huerfano = evento("huerfano", { evento_padre_id: "otro", inicio: a("2026-10-10", "12:00") });
 // Un taller de tres sesiones y un evento de siempre.
 const SESIONES = [
@@ -187,14 +189,17 @@ describe("Inicio por clase", () => {
     // Los actos plegados quedan vistos: no salen sueltos en «Nuevos eventos».
     expect(vistos.has("cine2")).toBe(true);
   });
-  it("«Para visitar»: las vigentes, la que cierra antes primero, sin las que ya salieron en otro carril", () => {
-    expect(ids(carrilParaVisitar(TODOS, new Set(["grabado"]), ahora))).toEqual(["sin-leer", "ecos", "futura"]);
-    expect(carrilParaVisitar([concierto], new Set(), ahora)).toEqual([]);
+  it("«Festivales y exposiciones»: las exposiciones vigentes y el festival que viene, sin las que ya salieron en otro carril", () => {
+    expect(ids(carrilFestivales(TODOS, new Set(["grabado"]), ahora))).toEqual(["sin-leer", "ecos", "cine", "futura"]);
+    expect(carrilFestivales([concierto], new Set(), ahora)).toEqual([]);
   });
-  it("los carriles juntos: «Para visitar» entre «Esta semana» y «Nuevos eventos», sin repetir", () => {
+  it("los carriles juntos: «Festivales y exposiciones» entre «Esta semana» y «Nuevos eventos», sin repetir (el marco con actos en la semana ya salió)", () => {
     const carriles = calcularCarrilesAgenda(agenda(), ahora);
-    expect(ids(carriles.paraVisitar)).toEqual(["sin-leer", "grabado", "ecos", "futura"]);
+    expect(ids(carriles.festivales)).toEqual(["sin-leer", "grabado", "ecos", "futura"]);
+    expect(ids(carriles.estaSemana)).toContain("cine");
     expect(carriles.estaSemana.some((e) => e.clase === "exposicion")).toBe(false);
+    // Un festival sin actos en la semana no está en «Esta semana»: sale aquí, en su lugar por cercanía.
+    expect(ids(calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric] }), ahora).festivales)).toEqual(["sin-leer", "grabado", "ecos", "futura", "electric"]);
   });
   it("«Nuevos eventos» y «Más adelante»: un festival nuevo como su marco", () => {
     const tarde = (e: EventoAgenda, dias: number) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + dias * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
@@ -218,6 +223,59 @@ describe("Inicio por clase", () => {
     expect(tarjetaEvento(cine, ahora).sinVoy).toBe(true);
     expect(tarjetaEvento(concierto, ahora).sinVoy).toBeUndefined();
     expect(tarjetaEvento(ocurrenciasDe(taller)[1], ahora).parte).toBe("Sesión 2 de 3");
+  });
+});
+
+describe("«Festivales y exposiciones» (OL-342)", () => {
+  // Un festival en curso (del 5 al 7: su fin se guardó a las 00:00 del 8, el cierre del 7), uno de un día que viene (sáb 31, de 18:00 a las 00:00),
+  // uno que se sabe sin actos, uno que ya pasó y una exposición que es parte de un festival cargado.
+  const fiesta = evento("fiesta", { clase: "festival", titulo: "Fiesta del barrio", inicio: a("2026-10-05", "18:00"), fin: a("2026-10-08", "00:00"), programa: { registrados: 2 } });
+  const vacio = evento("vacio", { clase: "festival", inicio: a("2026-10-15", "18:00"), fin: a("2026-10-16", "00:00"), programa: { registrados: 0 } });
+  const pasado = evento("pasado", { clase: "festival", inicio: a("2026-10-02", "18:00"), fin: a("2026-10-06", "23:00"), programa: { registrados: 3 } });
+  const expoDelFestival = expo("expo-electric", "2026-10-03", "2026-10-30", { evento_padre_id: "electric" });
+  const LISTA = [ecos, grabado, futura, lejana, sinLeer, fiesta, electric, vacio, pasado, expoDelFestival, concierto, cine1];
+
+  it("lo que está en curso primero, lo que termina antes; luego lo que viene, por su inicio; festivales y exposiciones mezclados", () => {
+    expect(ids(carrilFestivales(LISTA, new Set(), ahora))).toEqual(["fiesta", "sin-leer", "grabado", "ecos", "futura", "electric"]);
+  });
+  it("un festival en curso va antes que una exposición que abre después", () => {
+    expect(ids(carrilFestivales([futura, fiesta], new Set(), ahora))).toEqual(["fiesta", "futura"]);
+  });
+  it("el acto de un festival cargado no sale suelto (lo dice su marco), aunque sea una exposición; sin el marco, sí", () => {
+    expect(ids(carrilFestivales(LISTA, new Set(), ahora))).not.toContain("expo-electric");
+    expect(ids(carrilFestivales([expoDelFestival], new Set(), ahora))).toEqual(["expo-electric"]);
+  });
+  it("ni un festival que ya pasó ni uno que se sabe sin actos; uno cuyo programa no se pudo contar, sí", () => {
+    expect(ids(festivalesVigentes([fiesta, electric, vacio, pasado], ahora))).toEqual(["fiesta", "electric"]);
+    expect(ids(festivalesVigentes([{ ...vacio, programa: undefined }], ahora))).toEqual(["vacio"]);
+  });
+  it("lo que sale queda visto para el carril que sigue; lo ya visto no sale", () => {
+    const vistos = new Set(["fiesta"]);
+    expect(ids(carrilFestivales(LISTA, vistos, ahora))[0]).toBe("sin-leer");
+    expect(vistos.has("electric")).toBe(true);
+    expect(vistos.has("lejana")).toBe(false);
+  });
+  it("los actos de un festival que salió aquí quedan vistos: no salen sueltos después en «Nuevos eventos»", () => {
+    const vistos = new Set<string>();
+    const lejano = (e: EventoAgenda) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + 20 * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
+    const lista = [lejano(cine), lejano(cine1), lejano(cine2), lejano(cine3), lejano(concierto)];
+    expect(ids(carrilFestivales(lista, vistos, ahora))).toEqual(["cine"]);
+    expect(["cine1", "cine2", "cine3"].every((id) => vistos.has(id))).toBe(true);
+    expect(vistos.has("concierto")).toBe(false);
+  });
+  it("con tope; sin nada, vacío (el carril no se pinta)", () => {
+    const muchos = Array.from({ length: TOPE_FESTIVALES + 5 }, (_, i) => evento(`f${i}`, { clase: "festival", inicio: a("2026-11-01", "18:00"), fin: a("2026-11-02", "00:00") }));
+    expect(carrilFestivales(muchos, new Set(), ahora)).toHaveLength(TOPE_FESTIVALES);
+    expect(carrilFestivales([concierto, cine1, taller], new Set(), ahora)).toEqual([]);
+  });
+  it("la tarjeta dice qué es («Festival», «Exposición») en su rótulo y su fecha propia", () => {
+    expect(tarjetaConClase(electric, ahora)).toMatchObject({ clase: "Festival", detalle: "sáb 31 de oct", sinVoy: true });
+    expect(tarjetaConClase(fiesta, ahora)).toMatchObject({ clase: "Festival", detalle: "Del 5 al 7 de oct" });
+    expect(tarjetaConClase(ecos, ahora)).toMatchObject({ clase: "Exposición", detalle: "Hasta el sáb 31 de oct" });
+    expect(tarjetaEvento(ecos, ahora).clase).toBeUndefined(); // los demás carriles no cambian
+    expect(selloDeTarjeta(tarjetaConClase(ecos, ahora))).toEqual({ texto: "Exposición", tuyo: false, hoy: false });
+    expect(selloDeTarjeta({ ...tarjetaConClase(electric, ahora), hoy: true })).toEqual({ texto: "Hoy · Festival", tuyo: false, hoy: true });
+    expect(selloDeTarjeta(tarjetaConClase(fiesta, ahora), true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
   });
 });
 
