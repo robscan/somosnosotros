@@ -13,8 +13,13 @@ import {
   haceUnaSemana,
   hrefLista,
   indicadores,
+  indicadoresAportes,
+  indicadoresFichas,
+  leerAportes,
+  leerFichas,
   leerLista,
   nombradoPor,
+  notaFichas,
   notaSemana,
   PAGINA_PANEL,
   quePide,
@@ -30,6 +35,8 @@ import {
   ultimaVez,
   vacioDe,
   type Ahora,
+  type Aportes,
+  type FichasVinculadas,
   type Foto,
   type Gestionar,
   type Pendiente,
@@ -308,5 +315,104 @@ describe("embudoComunidad", () => {
   it("sin cuentas nuevas, no divide entre cero", () => {
     const e = embudoComunidad({ registradas: 0, hicieron_algo: 0, vuelven_base: 0, vuelven: 0 });
     expect(e).toEqual({ registradas: 0, hicieronAlgo: { valor: 0, porcentaje: 0 }, vuelven: { valor: 0, porcentaje: null } });
+  });
+});
+
+
+// ---------- OL-326: fichas vinculadas por cualquier vía y los aportes de la semana ----------
+const aportes = (cambios: Partial<Aportes> = {}): Aportes => ({ gestos_ahora: 7, gestos_antes: 3, voy: 5, me_interesa: 2, personas: 4, primeras_ahora: 2, primeras_antes: 1, han_publicado: 9, ...cambios });
+const fichas = (cambios: Partial<FichasVinculadas> = {}): FichasVinculadas => ({
+  artistas: 12,
+  lugares: 2,
+  vias: { solicitud: 3, alta: 4, correo: 6, otra: 1 },
+  serie: [0, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 14],
+  artistas_por_reclamar: 500,
+  artistas_visibles: 560,
+  artistas_con_foto: 56,
+  ...cambios,
+});
+
+describe("fichas vinculadas (OL-326): cuentan por cualquier vía, no solo las solicitudes", () => {
+  it("suma artistas y lugares con cuenta ligada y dice cuántos llegaron por cada vía", () => {
+    const [v] = indicadoresFichas(fichas());
+    expect(v.nombre).toBe("Fichas vinculadas");
+    expect(v.valor).toBe(14);
+    expect(v.base).toBe("12 artistas · 2 lugares");
+    expect(v.partes).toEqual(["3 por solicitud aprobada", "6 por correo ligado", "4 al darse de alta con «Soy yo»", "1 por otra vía (p. ej. la ligó la administración)", "500 artistas del catálogo por reclamar"]);
+    expect(v.que).toMatch(/llegue como llegue/);
+    expect(v.enlace).toEqual({ texto: "Ver los artistas llevados", href: "/admin/artistas?filtro=llevados" });
+  });
+  it("compara con hace una semana, de la serie reconstruida de las fechas de los vínculos", () => {
+    const [v] = indicadoresFichas(fichas());
+    expect(v.cambio).toBe("▲ 3 más"); // 14 hoy contra 11 hace una semana
+    expect(v.serie).toHaveLength(12);
+    expect(indicadoresFichas(fichas({ serie: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 14] }))[0].cambio).toBe("Igual que hace una semana");
+  });
+  it("sin vínculos no inventa tendencia: base y desglose lo dicen", () => {
+    const [v] = indicadoresFichas(fichas({ artistas: 0, lugares: 0, vias: { solicitud: 0, alta: 0, correo: 0, otra: 0 }, serie: new Array(12).fill(0), artistas_por_reclamar: 0 }));
+    expect(v.valor).toBe(0);
+    expect(v.base).toBe("Ninguna aún");
+    expect(v.serie).toBeNull();
+    expect(v.partes).toEqual([]);
+    expect(v.vacio).toBe("Aún ninguna ficha tiene una cuenta vinculada");
+  });
+  it("un lugar o un artista solos usan el singular", () => {
+    expect(indicadoresFichas(fichas({ artistas: 1, lugares: 0 }))[0].base).toBe("1 artista");
+    expect(indicadoresFichas(fichas({ artistas: 0, lugares: 1 }))[0].base).toBe("1 lugar");
+  });
+  it("artistas con foto: el número, el porcentaje y los que faltan, sin flecha de cambio", () => {
+    const foto = indicadoresFichas(fichas())[1];
+    expect(foto.nombre).toBe("Artistas con foto");
+    expect([foto.valor, foto.base, foto.cambio, foto.serie]).toEqual([56, "de 560 artistas visibles · 10\u00a0%", null, null]);
+    expect(foto.partes).toEqual(["504 sin foto"]);
+    expect(foto.enlace.href).toBe("/admin/artistas?filtro=sin_foto");
+    expect(indicadoresFichas(fichas({ artistas_visibles: 1, artistas_con_foto: 1 }))[1].base).toBe("de 1 artista visible · 100\u00a0%");
+    const todas = indicadoresFichas(fichas({ artistas_visibles: 3, artistas_con_foto: 3 }))[1];
+    expect(todas.partes).toEqual([]);
+    expect(todas.vacio).toBe("Todas las fichas de artista visibles tienen foto");
+    expect(indicadoresFichas(fichas({ artistas_visibles: 0, artistas_con_foto: 0 }))[1].base).toBe("de 0 artistas visibles · 0\u00a0%");
+  });
+  it("la nota del grupo dice si hay comparación", () => {
+    expect(notaFichas(indicadoresFichas(fichas()))).toBe("Comparado con hace una semana");
+    expect(notaFichas(indicadoresFichas(fichas({ serie: [] })).slice(1))).toBe("Al día de hoy");
+  });
+  it("lee la respuesta de la base y rechaza la incompleta o de otra versión", () => {
+    expect(leerFichas(fichas())).toEqual(fichas());
+    expect(leerFichas(null)).toBeNull();
+    expect(leerFichas({ ...fichas(), vias: undefined })).toBeNull();
+    expect(leerFichas({ ...fichas(), artistas: "12" })).toBeNull();
+    expect(leerFichas({ ...fichas(), serie: [] })).toBeNull();
+    expect(leerFichas({ ...fichas(), serie: [1, -2, 3, 4] })).toBeNull();
+  });
+});
+
+describe("aportes de la semana (OL-326): Voy / Me interesa y primera vez que publican", () => {
+  it("cuenta lo de 7 días y lo compara con los 7 anteriores", () => {
+    const [g, p] = indicadoresAportes(aportes());
+    expect([g.nombre, g.valor, g.base, g.cambio, g.serie]).toEqual(["Voy y Me interesa", 7, "de 4 personas", "▲ 4 más", null]);
+    expect(g.partes).toEqual(["5 Voy", "2 Me interesa", "3 en los 7 días anteriores"]);
+    expect([p.nombre, p.valor, p.base, p.cambio, p.serie]).toEqual(["Primera publicación", 2, "de 9 cuentas que han publicado alguna vez", "▲ 1 más", null]);
+    expect(p.partes).toEqual(["2 cuentas publicaron por primera vez esta semana", "1 lo hizo la semana anterior"]);
+  });
+  it("baja, igual y vacío se dicen con las mismas palabras que los demás indicadores", () => {
+    const [g, p] = indicadoresAportes(aportes({ gestos_ahora: 1, gestos_antes: 5, voy: 1, me_interesa: 0, personas: 1, primeras_ahora: 0, primeras_antes: 0, han_publicado: 1 }));
+    expect(g.cambio).toBe("▼ 4 menos");
+    expect(g.base).toBe("de 1 persona");
+    expect(g.partes).toEqual(["1 Voy", "5 en los 7 días anteriores"]);
+    expect(p.cambio).toBe("Igual que hace una semana");
+    expect(p.base).toBe("de 1 cuenta que ha publicado alguna vez");
+    expect(p.partes).toEqual([]);
+    expect(p.vacio).toBe("Nadie publicó por primera vez en los últimos 7 días");
+  });
+  it("lee la respuesta de la base y rechaza la incompleta", () => {
+    expect(leerAportes(aportes())).toEqual(aportes());
+    expect(leerAportes(null)).toBeNull();
+    expect(leerAportes({ ...aportes(), voy: undefined })).toBeNull();
+    expect(leerAportes({ ...aportes(), personas: 1.5 })).toBeNull();
+  });
+  it("con los aportes la nota ya no dice «Primera semana»: tienen con qué compararse desde el primer día", () => {
+    const base = indicadores({ ahora: ahora(), historia: [], gestionar }, HOY);
+    expect(notaSemana(base)).toBe("Primera semana: aún sin comparación");
+    expect(notaSemana([...base, ...indicadoresAportes(aportes())])).toBe("Comparado con hace una semana");
   });
 });

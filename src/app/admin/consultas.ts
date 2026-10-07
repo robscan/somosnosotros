@@ -2,8 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decididoVigente, SECCION_DE, SIN_DECIDIR, TIPO_DE, type Decidido, type Destacado, type FilaDestacada, type TipoFicha } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
-import type { ArtistaFila, Comunidad, EventoFila, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
-import { PAGINA_PANEL } from "@/lib/panel";
+import type { Aportes, ArtistaFila, Comunidad, EventoFila, FichasVinculadas, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
+import { leerAportes, leerFichas, PAGINA_PANEL } from "@/lib/panel";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -24,6 +24,21 @@ export async function cargarComunidad(): Promise<Comunidad | null> {
   const supabase = (await clienteServidor())!;
   const { data, error } = await supabase.rpc("panel_comunidad");
   return error ? null : (data as Comunidad);
+}
+
+/** Voy / Me interesa y primeras publicaciones de los últimos 7 días (migración 20261007090000, OL-326). Aparte de `panel_resumen`: si
+ *  falla, o la respuesta no trae todos los números, esos dos indicadores no se pintan y el resto de la pantalla sigue. */
+export async function cargarAportes(): Promise<Aportes | null> {
+  const supabase = (await clienteServidor())!;
+  const { data, error } = await supabase.rpc("panel_aportes");
+  return error ? null : leerAportes(data);
+}
+
+/** Las fichas con una cuenta ligada, por cualquier vía, y los artistas con foto (migración 20261007090000, OL-326). Aparte, por lo mismo. */
+export async function cargarVinculadas(): Promise<FichasVinculadas | null> {
+  const supabase = (await clienteServidor())!;
+  const { data, error } = await supabase.rpc("panel_fichas");
+  return error ? null : leerFichas(data);
 }
 
 /** Cuántos reclamos y reportes esperan; null si no se pudo leer (entonces no se afirma "Nada pendiente"). */
