@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel } from "./guardarCartel";
+import { avisoDelCartel, destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel } from "./guardarCartel";
 
 const guardarFoto = async () => ({ guardado: true });
 
@@ -34,6 +34,18 @@ describe("destino y texto según el entorno", () => {
     const textos = textosDelCartel("descarga");
     expect(textos).toEqual({ reposo: "Descargar el cartel", preparando: "Preparando…", listo: "Cartel descargado", fallo: "No se pudo descargar" });
     expect(Object.values(textos).join(" ")).not.toMatch(/fotos/i);
+  });
+});
+
+describe("el aviso flotante (OL-318)", () => {
+  it("la app: «Cartel guardado en Fotos»; si falla, «No se pudo guardar» marcado como fallo", () => {
+    expect(avisoDelCartel("fotos", false)).toEqual({ texto: "Cartel guardado en Fotos", fallo: false });
+    expect(avisoDelCartel("fotos", true)).toEqual({ texto: "No se pudo guardar", fallo: true });
+  });
+  it("la web: «Cartel descargado»; si falla, «No se pudo descargar», y nunca promete «Fotos»", () => {
+    expect(avisoDelCartel("descarga", false)).toEqual({ texto: "Cartel descargado", fallo: false });
+    expect(avisoDelCartel("descarga", true)).toEqual({ texto: "No se pudo descargar", fallo: true });
+    expect(avisoDelCartel("descarga", false).texto + avisoDelCartel("descarga", true).texto).not.toMatch(/fotos/i);
   });
 });
 

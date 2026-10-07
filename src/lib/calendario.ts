@@ -41,14 +41,42 @@ function eventoIcs(e: EventoCalendario, uid: string, inicio: string, fin: string
   ];
 }
 
+/** Los días de visita de una exposición (YYYY-MM-DD, el de cierre incluido), para su archivo de calendario. */
+export type PeriodoCalendario = { desde: string; hasta: string };
+
+/**
+ * Una exposición en el archivo (OL-322; doc 55 §3, «el .ics marca el periodo»): todo el día, de su primer día de visita al de cierre. En un
+ * evento de todo el día el fin es el día siguiente al último (RFC 5545: `DTEND` no se incluye). Sin alerta: no hay una hora a la que avisar.
+ */
+function periodoIcs(e: EventoCalendario, { desde, hasta }: PeriodoCalendario, ahora: Date): string[] {
+  const url = `${ORIGEN}${hrefEvento(e)}`;
+  const dia = (d: string) => d.replace(/-/g, "");
+  return [
+    "BEGIN:VEVENT",
+    `UID:${e.id}@somosnosotros.org`,
+    `DTSTAMP:${aFechaIcs(ahora.toISOString())}`,
+    `DTSTART;VALUE=DATE:${dia(desde)}`,
+    `DTEND;VALUE=DATE:${dia(sumarDiasIso(hasta, 1))}`,
+    `SUMMARY:${escaparIcs(e.titulo)}`,
+    ...(e.lugar ? [`LOCATION:${escaparIcs(e.lugar)}`] : []),
+    `DESCRIPTION:${escaparIcs(`${e.descripcion ?? ""}\n${url}`.trim())}`,
+    `URL:${url}`,
+    "TRANSP:TRANSPARENT",
+    "END:VEVENT",
+  ];
+}
+
 /**
  * El archivo .ics de un evento. Lleva una alerta 1 hora antes: sin ella el iPhone lo agregaba con "Alerta: Ninguna" y
  * el calendario no recordaba nada (fricción K2, decisión 13 de docs/rediseno/17). Sin hora de fin, dura 2 horas. Con horario por día
  * (`sesiones`, OL-311) lleva un evento por día, cada uno con su hora y su alerta, y el evento de una sola pieza (inicio y fin del evento
- * entero) no va: sería uno encima de los otros.
+ * entero) no va: sería uno encima de los otros. Con `periodo` (una exposición, OL-322) es un solo evento de todo el día, del primer día de visita al
+ * de cierre.
  */
-export function archivoIcs(e: EventoCalendario, ahora: Date = new Date(), sesiones: readonly SesionCalendario[] = []): string {
-  const eventos = sesiones.length
+export function archivoIcs(e: EventoCalendario, ahora: Date = new Date(), sesiones: readonly SesionCalendario[] = [], periodo: PeriodoCalendario | null = null): string {
+  const eventos = periodo
+    ? periodoIcs(e, periodo, ahora)
+    : sesiones.length
     ? sesiones.flatMap((s, i) => eventoIcs(e, `${e.id}-${i + 1}`, s.inicio, s.fin ?? finPorDefecto(s.inicio), ahora))
     : eventoIcs(e, e.id, e.inicio, e.fin ?? finPorDefecto(e.inicio), ahora);
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//somosnosotros//ES", ...eventos, "END:VCALENDAR"].join("\r\n") + "\r\n";
@@ -256,36 +284,49 @@ export type DiasActivos = Map<string, number>;
  * `fin`, ocupa cada día de calendario entre el de inicio y el de fin (inclusive), en la zona del propio evento —
  * un evento de varios días cuenta en cada día que ocupa, igual que hace la Agenda al decidir cuándo se oculta.
  */
-type EventoConRango = { inicio: string; fin: string | null; zona: string };
+type EventoConRango = {
+  inicio: string;
+  fin: string | null;
+  zona: string;
+  /** Su horario por día (`eventos_sesiones`, OL-311), ya vigente: cada sesión ocupa solo su día, no los que quedan entre una y otra (OL-320). */
+  sesiones?: readonly { inicio: string }[];
+};
 
-/** El día de inicio y el de fin (YYYY-MM-DD, en la zona del propio evento) que ocupa un evento en el calendario:
- *  sin `fin`, los dos son el día de inicio (mismo criterio que `terminaDe` en `fechas.ts` — sin fin explícito,
- *  nunca dura más de ese día). Un `fin` corrupto (antes del inicio, dato roto) se acota a `inicio`, para no
- *  perder ni el día de inicio. */
-function rangoDelEvento(e: EventoConRango): { inicio: string; fin: string } {
+/** Los días (YYYY-MM-DD, en la zona del propio evento) que ocupa un evento, como tramos de calendario. Con horario por día, un tramo de un
+ *  solo día por sesión: un taller de tres sábados ocupa esos tres días y no los de en medio. Sin él, uno solo: del día de inicio al de fin;
+ *  sin `fin`, los dos son el día de inicio (mismo criterio que `terminaDe` en `fechas.ts` — sin fin explícito, nunca dura más de ese día).
+ *  Un `fin` corrupto (antes del inicio, dato roto) se acota a `inicio`, para no perder ni el día de inicio. */
+function tramosDelEvento(e: EventoConRango): { inicio: string; fin: string }[] {
+  if (e.sesiones && e.sesiones.length > 0) {
+    return e.sesiones.map((s) => {
+      const dia = diaLocal(new Date(s.inicio), e.zona);
+      return { inicio: dia, fin: dia };
+    });
+  }
   const inicio = diaLocal(new Date(e.inicio), e.zona);
   const finCalculado = e.fin ? diaLocal(new Date(e.fin), e.zona) : inicio;
-  return { inicio, fin: finCalculado < inicio ? inicio : finCalculado };
+  return [{ inicio, fin: finCalculado < inicio ? inicio : finCalculado }];
 }
 
 /** ¿Ocupa este evento algún día entre `desde` y `hasta` (YYYY-MM-DD, ambos incluidos; un día es `desde` = `hasta`)? Un
  *  evento de varios días cuenta en cada día que ocupa, desde su día de inicio hasta el de fin (inclusive), aunque empiece
- *  antes del rango o termine después — la misma regla que `diasActivosCalendario`, para un evento solo: Agenda la usa
- *  (`filtrarAgenda`) al filtrar por Cuándo, para que nunca desentone con lo que el calendario ya marcó como disponible. */
+ *  antes del rango o termine después — o, con horario por día, solo en los días de sus sesiones —; la misma regla que
+ *  `diasActivosCalendario`, para un evento solo: Agenda la usa (`filtrarAgenda`) al filtrar por Cuándo, para que nunca desentone con lo que
+ *  el calendario ya marcó como disponible. */
 export function ocupaRango(e: EventoConRango, desde: string, hasta: string): boolean {
-  const { inicio, fin } = rangoDelEvento(e);
-  return inicio <= hasta && fin >= desde;
+  return tramosDelEvento(e).some((t) => t.inicio <= hasta && t.fin >= desde);
 }
 
 export function diasActivosCalendario(eventos: EventoConRango[]): DiasActivos {
   const dias: DiasActivos = new Map();
   for (const e of eventos) {
-    const { inicio, fin } = rangoDelEvento(e);
-    let d = inicio;
-    // Tope de sobra (367 días) para nunca colgarse con un dato corrupto (un `fin` absurdo o anterior al inicio).
-    for (let i = 0; d <= fin && i < 367; i++) {
-      dias.set(d, (dias.get(d) ?? 0) + 1);
-      d = sumarDiasIso(d, 1);
+    for (const { inicio, fin } of tramosDelEvento(e)) {
+      let d = inicio;
+      // Tope de sobra (367 días) para nunca colgarse con un dato corrupto (un `fin` absurdo o anterior al inicio).
+      for (let i = 0; d <= fin && i < 367; i++) {
+        dias.set(d, (dias.get(d) ?? 0) + 1);
+        d = sumarDiasIso(d, 1);
+      }
     }
   }
   return dias;

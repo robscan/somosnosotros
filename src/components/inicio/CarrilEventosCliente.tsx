@@ -55,7 +55,7 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
   useCarrilResuelto(memoria, resuelto ? visibles.length : null);
   return (
     <>
-      <Destacados tarjetas={visibles} tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
+      <Destacados tarjetas={visibles} tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => (t.sinVoy ? null : asistencia.boton(t))} estadoDe={asistencia.estado} />
       {asistencia.extras}
     </>
   );

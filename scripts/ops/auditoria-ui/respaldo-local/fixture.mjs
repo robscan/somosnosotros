@@ -83,6 +83,8 @@ const E = {
   cine2: "bbbb0001-0000-4000-8000-000000000020",
   cine3: "bbbb0001-0000-4000-8000-000000000021",
   cine4: "bbbb0001-0000-4000-8000-000000000022",
+  // OL-320 (con OL-319 ya usaba «taller»; al apilar OL-322 este taller visible toma su propia clave).
+  tallerLinoleo: "bbbb0001-0000-4000-8000-000000000023",
 };
 function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false }) {
   const inicio = iso(fecha(dias, hora));
@@ -122,11 +124,21 @@ const eventos = [
   evento({ id: E.cine2, slug: "charla-con-la-directora", titulo: "Charla con la directora", dias: 10, hora: "18:00", dur: 1, lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine3, slug: "funcion-cortometrajes-potosinos", titulo: "Función: cortometrajes potosinos", dias: 11, hora: "17:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine4, slug: "funcion-de-clausura", titulo: "Función de clausura", dias: 12, hora: "19:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine, borrador: true }),
+  // OL-320: un taller con horario por día (tres sesiones, cada una con su hora): la agenda lo pone en los tres días. Empieza con su primera sesión y termina con la última.
+  // OL-322: es un taller (`clase`), así cada día dice «Sesión n de 3».
+  { ...evento({ id: E.tallerLinoleo, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, clase: "taller", descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
 ];
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];
 /** El horario por día del Festival de las Linternas: viernes y domingo de 20:00 a 21:00, el sábado de 18:00 a 21:00. */
 const eventos_sesiones = [0, 1, 2].map((d) => ({ id: `bbbb0002-0000-4000-8000-00000000000${d + 1}`, evento_id: E.linternas, fecha: fecha(2 + d, "20:00").slice(0, 10), inicio: iso(fecha(2 + d, d === 1 ? "18:00" : "20:00")), fin: iso(fecha(2 + d, "21:00")) }));
+
+// Su horario por día: una fila por sesión, cada una con su hora (`fin` posterior al inicio y el mismo día).
+const sesiones = [
+  { dias: 2, hora: "17:00", fin: "19:00" },
+  { dias: 4, hora: "18:00", fin: "20:00" },
+  { dias: 6, hora: "17:00", fin: "19:00" },
+].map((d, i) => ({ id: `bbbb0002-0000-4000-8000-00000000000${i + 4}`, evento_id: E.tallerLinoleo, fecha: fecha(d.dias, d.hora).slice(0, 10), inicio: iso(fecha(d.dias, d.hora)), fin: iso(fecha(d.dias, d.fin)) }));
 
 // ---------- artistas ----------
 const A = {
@@ -178,7 +190,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones, lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */

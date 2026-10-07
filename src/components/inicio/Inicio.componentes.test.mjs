@@ -1,4 +1,4 @@
-/** OL-274: visibilidad efectiva de carriles reales, marca local de Nuevos y vacío de Inicio. */
+/** OL-274: visibilidad efectiva de carriles reales, marca local de Nuevos y vacío de Inicio. OL-322: «Para visitar» después de «Esta semana». */
 import {before,after,test} from 'node:test';import assert from 'node:assert/strict';
 import {createServer} from 'node:http';import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {join} from 'node:path';import {fileURLToPath,pathToFileURL} from 'node:url';import {build} from 'esbuild';
@@ -26,14 +26,16 @@ before(async()=>{
  class LimiteError extends React.Component { state={error:false};static getDerivedStateFromError(){return{error:true}};render(){return this.state.error?<p role='alert'>No pudimos cargar el carril.</p>:this.props.children} }
  const ciudad={slug:'puebla',nombre:'Puebla',centro:{lat:19,lng:-98},zoom:13,lugares:0,eventos:0,zona:'America/Mexico_City',centroConocido:false};
  const tarjeta=(id)=>({id,href:'/eventos/'+id,foto:null,titulo:'Evento '+id,detalle:'vie 30 de oct · 18:00',sitio:'Foro',van:0,cuando:true,inicio:'2026-10-31T00:00:00Z',fin:null,zona:'America/Mexico_City',creado_en:'2026-10-06T00:00:00Z'});
- const una=[tarjeta('a')],tres=[...una,tarjeta('b'),tarjeta('c')];const comun={asistencias:null,avisos:null,tamano:'mediana',verTodos:{href:'/agenda?ciudad=puebla',etiqueta:'Ver la agenda'}};
+ const una=[tarjeta('a')],tres=[...una,tarjeta('b'),tarjeta('c')];
+ const expos=[{...tarjeta('ecos'),titulo:'Ecos de papel',detalle:'Hasta el sáb 31 de oct',sitio:'MUNI',sinVoy:true},{...tarjeta('foto'),titulo:'Fotovisión',detalle:'Hasta el sáb 20 de dic · Horario por confirmar',sitio:'Centro de las Artes',sinVoy:true}];const comun={asistencias:null,avisos:null,tamano:'mediana',verTodos:{href:'/agenda?ciudad=puebla',etiqueta:'Ver la agenda'}};
  function Probe(){const s=useEstadoCarriles();return <span data-probe data-eventos-listos={s.eventosResueltos} data-vacio={s.vacio}/>}
  function Ultimo(){if(modo==='cargando'||modo==='error')use(pendiente);return <><Entidad tarjetas={modo==='entidades'?una:[]} que='artista' seguidos={null} avisos={null} titulo='Artistas destacadxs' memoria='inicio-artistas-destacados' verTodosHref='/artistas?ciudad=puebla'/></>}
  const evento=(memoria,titulo,tarjetas)=> <Eventos {...comun} memoria={memoria} titulo={titulo} tarjetas={tarjetas}/>;
  createRoot(document.getElementById('root')).render(<LimiteError><Inicio ciudad={ciudad} ciudades={[ciudad]} hoy='2026-10-07' zona={ciudad.zona} agenda={Promise.resolve({})} conSesion={modo==='planes'}
  slotTusPlanes={<Eventos {...comun} memoria='inicio-tus-planes' titulo='Tus planes' tarjetas={una} asistencias={{a:'voy'}} tusPlanes/>}
  slotEstelar={<>{evento('inicio-estelar','Destacados',[])}<Probe/></>}
- slotEstaSemana={evento('inicio-esta-semana','Esta semana',modo==='semana'?una:[])}
+ slotEstaSemana={evento('inicio-esta-semana','Esta semana',modo==='semana'||modo==='visitar'?una:[])}
+ slotParaVisitar={evento('inicio-para-visitar','Para visitar',modo==='visitar'||modo==='solo-visitar'?expos:[])}
  slotNuevos={<Nuevos {...comun} ciudad='puebla' memoria='inicio-nuevos' titulo='Nuevos eventos' tarjetas={modo==='nuevos'?tres:[]}/>}
  slotMasAdelante={<Mas tarjetas={modo==='uno'?una:modo==='nuevos'?tres:[]} asistencias={null} avisos={null} verTodosHref='/agenda?ciudad=puebla'/>}
  slotLugaresSemana={<Entidad tarjetas={[]} que='lugar' seguidos={null} avisos={null} titulo='Lugares' memoria='inicio-lugares-semana' verTodosHref='/lugares'/>}
@@ -53,3 +55,5 @@ test('un artista o Tus planes evitan declarar vacío el Inicio',async t=>{for(co
 test('el vacío exacto de Agenda llega solo al resolver todos los carriles',async t=>{const p=await pagina(t,'cargando');await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);await p.evaluate(()=>window.liberar(null));await p.getByRole('heading',{name:'Próximos días',exact:true}).waitFor();assert.equal(await p.getByText('Aún no hay eventos próximos en Puebla. Si sabes de uno, publícalo.',{exact:true}).count(),1);});
 
 test('un fallo de un stream conserva la causa y nunca se convierte en vacío',async t=>{const p=await pagina(t,'error');await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);await p.evaluate(()=>window.fallar());await p.getByRole('alert').waitFor();assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);});
+test('«Para visitar» va después de «Esta semana», sin «Voy» en sus tarjetas; sin exposiciones no se pinta',async t=>{const p=await pagina(t,'visitar');await p.getByRole('heading',{name:'Para visitar',exact:true}).waitFor();const titulos=await p.locator('h2').allTextContents();assert.ok(titulos.indexOf('Para visitar')===titulos.indexOf('Esta semana')+1,titulos.join(' | '));const carril=p.locator('section',{has:p.getByRole('heading',{name:'Para visitar',exact:true})});assert.match(await carril.innerText(),/Hasta el sáb 31 de oct[\s\S]*Horario por confirmar/);assert.equal(await carril.getByRole('button',{name:/^Voy/}).count(),0,'una exposición no lleva «Voy»');assert.equal(await p.locator('section',{has:p.getByRole('heading',{name:'Esta semana',exact:true})}).getByRole('button',{name:/^Voy/}).count(),1);const q=await pagina(t,'semana');await q.getByRole('heading',{name:'Esta semana',exact:true}).waitFor();assert.equal(await q.getByRole('heading',{name:'Para visitar',exact:true}).count(),0);});
+test('solo con exposiciones Inicio no está vacío ni pinta Más adelante',async t=>{const p=await pagina(t,'solo-visitar');await p.getByRole('heading',{name:'Para visitar',exact:true}).waitFor();await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);assert.equal(await p.getByRole('heading',{name:'Más adelante',exact:true}).count(),0);});

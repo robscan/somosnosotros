@@ -20,7 +20,7 @@ import Reportar from "@/components/Reportar";
 import BarraFicha from "@/components/ui/BarraFicha";
 import Ficha, { CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
-import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoEstrella, IconoEtiqueta, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoEstrella, IconoEtiqueta, IconoLapiz, IconoOjo, IconoOjoTachado, IconoOk, IconoPersonas, IconoPin, IconoPincel, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import EventosPorDia from "@/components/EventosPorDia";
 import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
@@ -500,6 +500,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               icono={
                 <span className={CIRCULO}>
                   <IconoDescarga />
+                </span>
+              }
+              iconoListo={
+                <span className={CIRCULO}>
+                  <IconoOk />
                 </span>
               }
               corto
