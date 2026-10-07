@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelDescargable, extensionDeImagen, nombreDeCartel } from "./cartelDescarga";
+import { cartelDescargable, extensionDeImagen, hrefCartelSubido, nombreDeCartel } from "./cartelDescarga";
 
 const SUPABASE = "https://proyecto.supabase.co";
 const FOTOS = `${SUPABASE}/storage/v1/object/public/fotos/`;
@@ -39,5 +39,20 @@ describe("extensionDeImagen y nombreDeCartel", () => {
     expect(nombreDeCartel("lectura-en-voz-alta-ab12", "jpg")).toBe("cartel-lectura-en-voz-alta-ab12.jpg");
     expect(nombreDeCartel('mal"nombre/../x', "png")).toBe("cartel-mal-nombre-x.png");
     expect(nombreDeCartel(null, "jpg")).toBe("cartel.jpg");
+  });
+});
+
+describe("hrefCartelSubido (OL-338): la descarga cambia de dirección cuando cambia el cartel", () => {
+  const viejo = `${FOTOS}lugares/u/evento-0b2c.jpg`;
+  const nuevo = `${FOTOS}lugares/u/cartel-generado-7f3a.jpg`;
+  it("lleva la versión de su imagen: la misma imagen, la misma dirección; otra imagen, otra", () => {
+    expect(hrefCartelSubido("lectura-ab12", viejo)).toMatch(/^\/api\/cartel\/lectura-ab12\?v=[0-9a-f]{8}$/);
+    expect(hrefCartelSubido("lectura-ab12", viejo)).toBe(hrefCartelSubido("lectura-ab12", viejo));
+    expect(hrefCartelSubido("lectura-ab12", nuevo)).not.toBe(hrefCartelSubido("lectura-ab12", viejo));
+  });
+  it("sin imagen, la dirección de siempre; el id se escapa", () => {
+    expect(hrefCartelSubido("lectura-ab12")).toBe("/api/cartel/lectura-ab12");
+    expect(hrefCartelSubido("lectura-ab12", null)).toBe("/api/cartel/lectura-ab12");
+    expect(hrefCartelSubido("a/b", viejo).startsWith("/api/cartel/a%2Fb?v=")).toBe(true);
   });
 });

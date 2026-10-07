@@ -7,14 +7,14 @@ import { esUuid } from "../formulario";
 import type { ClienteServidor } from "../supabase/servidor";
 import type { EventoCartel } from "./datos";
 import type { Datos } from "./elegir";
+import { carpetaFotoPropia, esFotoPropia, MARCA_GENERADO } from "./fotoPropia";
 
 /**
  * Lo que el creador de cartel necesita de la base (OL-324): el evento con su lugar y sus artistas, quién puede hacerle un cartel, las imágenes
  * que se pueden usar y la memoria del lugar. Una sola carga para la pantalla, la ruta que dibuja y «Usar como cartel».
  */
 
-/** Las imágenes que sube el creador llevan esta marca en el nombre: una imagen así ya es un cartel hecho aquí y no vuelve a usarse como foto. */
-export const MARCA_GENERADO = "cartel-generado-";
+export { MARCA_GENERADO };
 
 export type ParaCartel = {
   evento: EventoCartel;
@@ -101,6 +101,17 @@ export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: strin
 export function imagenesPorOrden(imagenEvento: string | null, artistas: { foto: string | null; portada: string | null }[], portadaLugar: string | null, supabaseUrl = configPublica().supabaseUrl): string[] {
   const candidatas = [imagenEvento && !imagenEvento.includes(MARCA_GENERADO) ? imagenEvento : null, ...artistas.flatMap((a) => [a.portada, a.foto]), portadaLugar];
   return [...new Set(candidatas.filter((url): url is string => cartelDescargable(url, supabaseUrl)))];
+}
+
+/**
+ * Las imágenes con las que se dibuja una opción (OL-337): sin foto (`sinFoto`, la tipográfica de la tanda) ninguna; con una foto propia válida
+ * (`esFotoPropia`: del Storage propio, en la carpeta de quien mira) esa va primera y luego el orden de siempre; si no, el orden de siempre. Una
+ * foto que no es válida se ignora (el cartel sale como sin ella, nunca roto). Puro.
+ */
+export function imagenesDelCartel(datos: ParaCartel, { foto, sinFoto }: { foto: string | null; sinFoto: boolean }, supabaseUrl = configPublica().supabaseUrl): ParaCartel {
+  if (sinFoto) return { ...datos, imagenes: [] };
+  if (!esFotoPropia(foto, carpetaFotoPropia(datos.perfilId, supabaseUrl))) return datos;
+  return { ...datos, imagenes: [foto, ...datos.imagenes.filter((url) => url !== foto)], datosEleccion: { ...datos.datosEleccion, conImagen: true } };
 }
 
 /** La plantilla de la última vez: en el mismo lugar o, sin lugar, en el mismo evento. Solo ve las filas propias (RLS). */

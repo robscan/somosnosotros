@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
-import { buscarUnificado } from "@/app/accionesBuscar";
+import { buscarUnificado, vigentesDeRecientes } from "@/app/accionesBuscar";
 import ChipCiudad from "@/components/Ciudad";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import { prestarALaBarra } from "@/components/prestamoBarra";
@@ -12,11 +12,11 @@ import Cerrar from "@/components/ui/Cerrar";
 import Grupo from "@/components/ui/Grupo";
 import Renglon from "@/components/ui/Renglon";
 import { enlaceDeAlta, enlaceDeBusqueda } from "@/lib/armazon";
-import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
+import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, pedidoDeBusqueda, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
 import { CIUDAD_INICIAL, ciudadesPorCercania, raizConCiudad, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { normalizarNombre } from "@/lib/lugares";
 import { medirCliente } from "@/lib/medir";
-import { crudoDeRecientes, guardarReciente, leerRecientes, type Reciente } from "@/lib/recientesBusqueda";
+import { crudoDeRecientes, guardarReciente, guardarRecientesAlDia, leerRecientes, suscribirseRecientes, type Reciente } from "@/lib/recientesBusqueda";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./buscar.module.css";
 
@@ -29,7 +29,8 @@ const SALIDA: Record<GrupoBuscador, { raiz: string; texto: string }> = {
   artistas: { raiz: "/artistas", texto: "Artistas" },
 };
 
-type Respuesta = { texto: string; resultado: ResultadoBusqueda };
+/** Lo encontrado con un texto, y en qué edición del campo se pidió (OL-338, `pedidoDeBusqueda`): solo vale para esa. */
+type Respuesta = { texto: string; resultado: ResultadoBusqueda; edicion: number };
 /** Lo que Buscar recuerda al salir a una ficha y repone al volver (Atrás): lo escrito, el chip, lo desplegado y lo encontrado. */
 type Recordado = { texto: string; tipo: GrupoBuscador | null; abiertos: GrupoBuscador[]; respuesta: Respuesta | null };
 
@@ -46,19 +47,24 @@ type Props = {
   conSesion: boolean;
 };
 
-/** Un dato por línea bajo el nombre del renglón; cada uno se corta con puntos suspensivos al llegar al borde. */
-function Meta({ lineas }: { lineas: string[] }) {
-  return lineas.map((linea) => (
+/**
+ * Un dato por línea bajo el nombre del renglón; cada uno se corta con puntos suspensivos al llegar al borde. `sello` (OL-338) es lo que es un
+ * festival o una exposición en un grupo de resultados, al principio de la primera línea, en el sello de siempre (`Chip`, como la novedad de un
+ * artista en su renglón): «Festival» Del 16 al 18 de oct · …
+ */
+function Meta({ lineas, sello }: { lineas: string[]; sello?: string }) {
+  return lineas.map((linea, i) => (
     <span key={linea}>
+      {i === 0 && sello && <Chip variante="sello">{sello}</Chip>}
       <span>{linea}</span>
     </span>
   ));
 }
 
-const sinCambios = () => () => {};
-/** Los recientes de este aparato: en el servidor no hay ninguno y el teléfono los completa al hidratar (sin desajuste). */
+/** Los recientes de este aparato: en el servidor no hay ninguno y el teléfono los completa al hidratar (sin desajuste); se vuelven a leer cuando
+ *  cambian (al abrir uno y al ponerlos al día, OL-338). */
 function useRecientes(): Reciente[] {
-  const crudo = useSyncExternalStore(sinCambios, crudoDeRecientes, () => null);
+  const crudo = useSyncExternalStore(suscribirseRecientes, crudoDeRecientes, () => null);
   return useMemo(() => leerRecientes(crudo), [crudo]);
 }
 
@@ -81,6 +87,8 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
   const [tipo, setTipo] = useState<GrupoBuscador | null>(null);
   const [abiertos, setAbiertos] = useState<GrupoBuscador[]>([]);
   const [respuesta, setRespuesta] = useState<Respuesta | null>(null);
+  // Cuántas veces ha escrito la persona en el campo (OL-338): una respuesta de otra edición se vuelve a pedir aunque el texto sea el mismo.
+  const [edicion, setEdicion] = useState(0);
   const campo = useRef<HTMLInputElement>(null);
   const orden = useMemo(() => ciudadesPorCercania(ciudad, ciudades), [ciudad, ciudades]);
   const recientes = useRecientes();
@@ -105,44 +113,76 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
   // Buscar no se apila sobre Buscar: su lupa, en la barra de la app, enfoca el campo.
   useEffect(() => prestarALaBarra({ buscar: () => campo.current?.focus() }), []);
 
-  // Al volver de una ficha, sin robar el foco: lo escrito, lo elegido y lo que se encontró, tal como estaba.
+  // Al volver de una ficha, sin robar el foco: lo escrito, lo elegido y lo que se encontró, tal como estaba. Lo encontrado es de antes de salir
+  // (una portada pudo cambiar mientras tanto, OL-338): se ve tal cual y se vuelve a pedir en silencio (`edicion: -1`, de ninguna de esta visita).
   useMemoriaPantalla<Recordado>(null, { texto, tipo, abiertos, respuesta }, (r) => {
     if (consultaExplicita) return;
     setTexto(r.texto);
     setTipo(r.tipo);
     setAbiertos(r.abiertos);
-    setRespuesta(r.respuesta);
+    setRespuesta(r.respuesta ? { ...r.respuesta, edicion: -1 } : null);
     campo.current?.blur();
   });
 
-  // Poco después de la última letra se busca; lo que llega tarde, de un texto que ya cambió, se descarta.
+  // Poco después de la última letra se busca; lo que llega tarde, de un texto que ya cambió, se descarta. Lo que se ve de otra edición con el
+  // mismo texto (la memoria al volver, o borrar y escribir igual) se pide otra vez sin espera ni «Buscando…» y sin cerrar lo desplegado (OL-338).
   useEffect(() => {
-    if (!buscable || respuesta?.texto === consulta) return;
+    const pedido = buscable ? pedidoDeBusqueda(respuesta, consulta, edicion) : "nada";
+    if (pedido === "nada") return;
     let vigente = true;
-    const espera = window.setTimeout(() => {
-      void buscarUnificado(consulta, orden).then((resultado) => {
-        if (!vigente) return;
-        // Solo si trajo algo o nada (OL-325): nunca lo escrito.
-        medirCliente("busqueda", { resultados: resultado.eventos.length + resultado.lugares.length + resultado.artistas.length > 0 ? "si" : "no" });
-        setRespuesta({ texto: consulta, resultado });
-        setAbiertos([]);
-      });
-    }, ESPERA_MS);
+    const espera = window.setTimeout(
+      () => {
+        void buscarUnificado(consulta, orden).then((resultado) => {
+          if (!vigente) return;
+          if (pedido === "buscar") {
+            // Solo si trajo algo o nada (OL-325): nunca lo escrito. Poner al día lo que ya se veía no es otra búsqueda.
+            medirCliente("busqueda", { resultados: resultado.eventos.length + resultado.lugares.length + resultado.artistas.length > 0 ? "si" : "no" });
+            setAbiertos([]);
+          }
+          setRespuesta({ texto: consulta, resultado, edicion });
+        });
+      },
+      pedido === "buscar" ? ESPERA_MS : 0,
+    );
     return () => {
       vigente = false;
       window.clearTimeout(espera);
     };
-  }, [consulta, buscable, orden, respuesta]);
+  }, [consulta, buscable, orden, respuesta, edicion]);
+
+  // Los recientes son una foto de cuando se abrieron: al abrir Buscar se ponen al día con lo que hay hoy (OL-338: la portada nueva de un evento,
+  // su nombre, su fecha; el que ya no se ve sale de la lista). Si la consulta falla, se quedan como estaban.
+  useEffect(() => {
+    const pedidos = leerRecientes(crudoDeRecientes()).map(({ grupo, id }) => ({ grupo, id }));
+    if (!pedidos.length) return;
+    let vigente = true;
+    vigentesDeRecientes(pedidos)
+      .then((vigentes) => {
+        if (vigente && vigentes) guardarRecientesAlDia(vigentes, ciudad.nombre);
+      })
+      .catch(() => {});
+    return () => {
+      vigente = false;
+    };
+  }, [ciudad.nombre]);
+
+  /** Lo que escribe la persona: cada cambio es una edición nueva. */
+  function escribir(valor: string) {
+    setTexto(valor);
+    setEdicion((n) => n + 1);
+  }
 
   /** Un lugar, desde Lugares, vuelve al mapa con su ficha en la hoja; lo demás abre su ficha. */
   const hrefDe = (grupo: GrupoBuscador, e: Encontrado) => (grupo === "lugares" && desde === "lugares" ? hrefEnMapa(e) : e.href);
 
+  /** Un resultado. Un festival o una exposición dicen lo que son (OL-338): en su grupo, con el sello; con el tipo delante (el mejor resultado), en
+   *  el sitio del tipo («Festival · …»). */
   function renglon(grupo: GrupoBuscador, e: Encontrado, conTipo = false) {
     const meta = metaDe(e, ciudad.nombre);
     const href = hrefDe(grupo, e);
     return (
-      <Renglon key={`${grupo}-${e.id}`} href={href} foto={e.foto} redonda={grupo === "artistas"} titulo={e.titulo} onClick={() => guardarReciente({ grupo, id: e.id, href, foto: e.foto, titulo: e.titulo, meta })}>
-        <Meta lineas={conTipo ? metaConTipo(grupo, meta) : meta} />
+      <Renglon key={`${grupo}-${e.id}`} href={href} foto={e.foto} redonda={grupo === "artistas"} titulo={e.titulo} onClick={() => guardarReciente({ grupo, id: e.id, href, foto: e.foto, titulo: e.titulo, meta, ...(e.clase ? { clase: e.clase } : {}) })}>
+        {conTipo ? <Meta lineas={metaConTipo(grupo, meta, e.clase)} /> : <Meta lineas={meta} sello={e.clase} />}
       </Renglon>
     );
   }
@@ -157,7 +197,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
   return (
     <main className={`${plantilla.raizSinNav} ${styles.buscar}`}>
       <form role="search" className={styles.barra} onSubmit={alEnviar}>
-        <CampoBuscar inputRef={campo} valor={texto} onCambiar={setTexto} placeholder="Buscar evento, lugar o artista" ariaLabel="Buscar evento, lugar o artista" autoFocus borrar={false} />
+        <CampoBuscar inputRef={campo} valor={texto} onCambiar={escribir} placeholder="Buscar evento, lugar o artista" ariaLabel="Buscar evento, lugar o artista" autoFocus borrar={false} />
         <Cerrar href={raizConCiudad(salida.raiz, slugEnUrl ? `ciudad=${slugEnUrl}` : "")} texto={salida.texto} relieve="plano" />
       </form>
 
@@ -170,7 +210,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
             <Grupo titulo="Recientes">
               {recientes.map((r) => (
                 <Renglon key={`${r.grupo}-${r.id}`} href={r.href} foto={r.foto} redonda={r.grupo === "artistas"} titulo={r.titulo} onClick={() => guardarReciente(r)}>
-                  <Meta lineas={metaConTipo(r.grupo, r.meta)} />
+                  <Meta lineas={metaConTipo(r.grupo, r.meta, r.clase)} />
                 </Renglon>
               ))}
             </Grupo>

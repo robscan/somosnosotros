@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarVista, atajosDeLaSemana, hrefEnMapa, mejorResultado, metaConTipo, metaDe, ordenBusqueda, ordenarPorCiudad, SIN_RESULTADOS_BUSQUEDA, type Encontrado, type ResultadoBusqueda } from "./buscarUnificado";
+import { armarVista, atajosDeLaSemana, hrefEnMapa, mejorResultado, metaConTipo, metaDe, ordenBusqueda, ordenarPorCiudad, pedidoDeBusqueda, SIN_RESULTADOS_BUSQUEDA, type Encontrado, type ResultadoBusqueda } from "./buscarUnificado";
 import { ciudadesPorCercania, type Ciudad } from "./ciudad";
 
 const hallado = (id: string, titulo: string, ciudad = "San Luis Potosí", href = `/x/${id}`): Encontrado => ({ id, href, foto: "/f.png", titulo, detalle: "dato", van: 0, ciudad });
@@ -98,6 +98,10 @@ describe("lo que dice el renglón y a dónde lleva", () => {
     expect(metaConTipo("eventos", ["vie 2 oct · MUNI"])).toEqual(["Evento · vie 2 oct · MUNI"]);
     expect(metaConTipo("lugares", ["Museo", "Córdoba, España"])).toEqual(["Lugar · Museo", "Córdoba, España"]);
   });
+  it("un festival o una exposición dicen lo que son en el sitio del tipo (OL-338)", () => {
+    expect(metaConTipo("eventos", ["Del 16 al 18 de oct · Programa registrado: 3 actividades"], "Festival")).toEqual(["Festival · Del 16 al 18 de oct · Programa registrado: 3 actividades"]);
+    expect(metaConTipo("eventos", ["Hasta el mar 27 de oct · MUNI"], "Exposición")).toEqual(["Exposición · Hasta el mar 27 de oct · MUNI"]);
+  });
   it("un lugar, desde Lugares, vuelve al mapa de su ciudad con su ficha abierta", () => {
     expect(hrefEnMapa(hallado("1", "a", "San Luis Potosí", "/lugares/teatro-de-la-paz"))).toBe("/lugares?lugar=teatro-de-la-paz");
     expect(hrefEnMapa(hallado("2", "b", "Córdoba, España", "/lugares/museo-de-bellas-artes"))).toBe("/lugares?ciudad=cordoba-espana&lugar=museo-de-bellas-artes");
@@ -118,4 +122,14 @@ describe("atajosDeLaSemana: tres fijos que llevan a Agenda con el filtro que ya 
     expect(finDeSemana.href).toBe("/agenda?ciudad=cordoba-espana&desde=2026-10-04");
     expect(gratis.href).toBe("/agenda?ciudad=cordoba-espana&cuanto=gratis");
   });
+});
+
+describe("pedidoDeBusqueda (OL-338): una respuesta solo vale para la edición en la que se pidió", () => {
+  it("sin respuesta, o con la de otro texto, se busca", () => {
+    expect(pedidoDeBusqueda(null, "fellini", 0)).toBe("buscar");
+    expect(pedidoDeBusqueda({ texto: "felli", edicion: 5 }, "fellini", 7)).toBe("buscar");
+  });
+  it("la del mismo texto y la misma edición es la de ahora: nada que pedir", () => expect(pedidoDeBusqueda({ texto: "fellini", edicion: 7 }, "fellini", 7)).toBe("nada"));
+  it("la que repuso la memoria al volver de una ficha (edición −1) se pone al día", () => expect(pedidoDeBusqueda({ texto: "fellini", edicion: -1 }, "fellini", 0)).toBe("refrescar"));
+  it("borrar y volver a escribir lo mismo (otra edición) la pone al día", () => expect(pedidoDeBusqueda({ texto: "fellini", edicion: 7 }, "fellini", 15)).toBe("refrescar"));
 });
