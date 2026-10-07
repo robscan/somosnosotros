@@ -74,7 +74,7 @@ describe("armarTextos", () => {
     expect(t.dia).toBe("Viernes 16 de octubre");
     expect(t.diaCorto).toBe("Vie 16 oct");
     expect(t.hora).toBe("19:00 h");
-    expect(t.enlace).toBe("somosnosotros.org/e/noche-de-son-huasteco");
+    expect(t.fecha).toEqual({ numero: "16", mes: "OCT" });
     expect(t.etiqueta).toBe("Son huasteco");
     expect(t.precio).toBe("Entrada libre");
   });
@@ -91,6 +91,56 @@ describe("armarTextos", () => {
   it("quita lo que la fuente no dibuja (emojis) y los espacios de más", () => {
     expect(limpiarTexto("Fiesta 🎉  de   barrio")).toBe("Fiesta de barrio");
     expect(enlaceCorto("oca")).toBe("somosnosotros.org/e/oca");
+  });
+});
+
+/** Un instante a partir de la hora de San Luis Potosí (UTC−6, sin horario de verano). */
+const local = (fechaHora: string) => new Date(`${fechaHora}:00-06:00`).toISOString();
+
+describe("fechas del cartel (OL-336)", () => {
+  it("un fin a las 00:00 es el final del día anterior: «Ciclo Fellini» del 9 al 14, no al 15 (la regla de la ficha)", () => {
+    const t = armarTextos(CASOS.variosDias, null, AHORA_CASOS);
+    expect(t.dia).toBe("Del 9 al 14 de octubre");
+    expect(t.diaCorto).toBe("Vie 9 oct – Mié 14 oct");
+    expect(t.fecha).toEqual({ numero: "9–14", mes: "OCT" });
+    // Acaba con su último día: la hora es la de inicio, sin «–00:00».
+    expect(t.hora).toBe("10:00 h");
+  });
+  it("un fin a las 00:00 del día siguiente de un evento de una noche sigue siendo un solo día", () => {
+    const t = armarTextos({ ...CASOS.corto, inicio: local("2026-10-14T20:00"), fin: local("2026-10-15T00:00") }, null, AHORA_CASOS);
+    expect(t.dia).toBe("Miércoles 14 de octubre");
+    expect(t.fecha.numero).toBe("14");
+  });
+  it("de un mes a otro, con el mes de cada día", () => {
+    const t = armarTextos({ ...CASOS.variosDias, inicio: local("2026-10-30T18:00"), fin: local("2026-11-03T00:00") }, null, AHORA_CASOS);
+    expect(t.dia).toBe("Del 30 de octubre al 2 de noviembre");
+    expect(t.fecha).toEqual({ numero: "30–2", mes: "OCT–NOV" });
+  });
+  it("festival: solo el mes y el año, sin hora", () => {
+    const t = armarTextos(CASOS.festival, null, AHORA_CASOS);
+    expect(t.dia).toBe("Octubre 2026");
+    expect(t.diaCorto).toBe("Oct 2026");
+    expect(t.fecha).toEqual({ numero: "OCT", mes: "2026" });
+    expect(t.hora).toBeNull();
+  });
+  it("exposición de dos meses: «Octubre – Noviembre 2026»; un fin a las 00:00 del 1 de noviembre no suma noviembre", () => {
+    const expo = { ...CASOS.festival, clase: "exposicion" as const, inicio: local("2026-10-20T00:00"), fin: local("2026-11-30T23:59") };
+    const t = armarTextos(expo, null, AHORA_CASOS);
+    expect(t.dia).toBe("Octubre – Noviembre 2026");
+    expect(t.diaCorto).toBe("Oct – Nov 2026");
+    expect(t.fecha).toEqual({ numero: "OCT–NOV", mes: "2026" });
+    expect(t.hora).toBeNull();
+    expect(armarTextos({ ...expo, fin: local("2026-11-01T00:00") }, null, AHORA_CASOS).dia).toBe("Octubre 2026");
+  });
+  it("de un año a otro, cada mes con su año", () => {
+    const t = armarTextos({ ...CASOS.festival, inicio: local("2026-12-12T10:00"), fin: local("2027-01-10T23:59") }, null, AHORA_CASOS);
+    expect(t.dia).toBe("Diciembre 2026 – Enero 2027");
+    expect(t.fecha).toEqual({ numero: "DIC–ENE", mes: "2026–2027" });
+  });
+  it("un taller sigue igual: sus días y «Horario por día»", () => {
+    const t = armarTextos({ ...CASOS.precioLargo, clase: "taller" }, null, AHORA_CASOS);
+    expect(t.dia).toBe("Del 16 al 20 de octubre");
+    expect(t.hora).toBe("Horario por día");
   });
 });
 

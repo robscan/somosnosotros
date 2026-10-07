@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaDeSemana, rangoDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
+import { diaDeSemana, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
 import { CLASES, claseSugerida, esClase, formaDelCartel, cartelAFormulario, nombreDeClase } from "./eventos";
 import { localAIso } from "./fechas";
 
@@ -160,6 +160,11 @@ describe("taller y festival", () => {
     // Su fin a la medianoche (un último acto sin hora de fin) es el final del día anterior, no un día más.
     expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-15T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("Del 12 al 14 de nov");
     expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-13T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("jue 12 de nov");
+    // La misma regla, sola (OL-336: la usa el cartel): las 00:00 cierran el día anterior; 23:59 y cualquier otra hora, su día; sin fin, el de inicio.
+    expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, localAIso("2026-10-15T00:00", ZONA)!, ZONA)).toBe("2026-10-14");
+    expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, localAIso("2026-10-14T23:59", ZONA)!, ZONA)).toBe("2026-10-14");
+    expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, localAIso("2026-10-15T00:01", ZONA)!, ZONA)).toBe("2026-10-15");
+    expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, null, ZONA)).toBe("2026-10-07");
     expect(textoProgramaRegistrado(1)).toBe("Programa registrado: 1 actividad");
     expect(textoProgramaRegistrado(3)).toBe("Programa registrado: 3 actividades");
   });

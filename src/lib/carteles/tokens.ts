@@ -45,11 +45,18 @@ export const LETRA = {
   detalle: 27,
   /** El subtítulo. */
   subtitulo: 38,
-  /** El pie con la dirección del evento. */
+  /** El pie: el sello (símbolo y dominio). */
   pie: 22,
   /** El mínimo legible de cualquier texto que no sea el pie. */
   minimo: 20,
 } as const;
+
+/**
+ * El dominio del sello del pie (OL-336: el símbolo SN y el dominio, en el sitio donde iba la dirección corta). UNA sola constante para todos los
+ * carteles: el founder comprará `somosnosotrxs.org` y entonces se cambia aquí y nada más (la dirección corta `/e/<slug>` sigue igual en el
+ * dominio que la sirva). Los carteles ya descargados conservan el dominio con que se dibujaron.
+ */
+export const DOMINIO_CARTEL = "somosnosotros.org";
 
 /** El resaltador amarillo del zine y las cintas: decorativo, siempre con texto negro encima (contraste 16:1). */
 export const RESALTADOR = "#ffe85a";

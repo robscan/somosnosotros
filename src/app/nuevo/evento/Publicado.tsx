@@ -8,6 +8,7 @@ import Boton, { claseBoton } from "@/components/ui/Boton";
 import { IconoDescarga, IconoOk } from "@/components/ui/Iconos";
 import type { EventoAgenda } from "@/lib/agenda";
 import { enlaceAltaEvento } from "@/lib/armazon";
+import { hrefCreador } from "@/lib/carteles/origen";
 import { compartirEvento, hrefEvento, nombreSitio, type Clase } from "@/lib/eventos";
 import type { ReactNode } from "react";
 import styles from "./Publicado.module.css";
@@ -30,6 +31,8 @@ type Props = {
   /** Con la sugerencia en punteado a la vista, «Compartir» deja de ser la acción principal (bitácora 323: «Compartir es la acción principal
    *  salvo que haya una sugerencia en punteado»). */
   sugerenciaAbierta?: boolean;
+  /** La sugerencia de OL-323 se ve (abierta o ya hecha): «Crea su cartel» va después, en una línea (OL-336). */
+  sugerenciaVisible?: boolean;
   /** «Publicar otro»: vuelve al primer paso con todo vacío. */
   onOtro: () => void;
 };
@@ -48,10 +51,16 @@ const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion:
  *
  * A un evento o un taller (OL-323), la sugerencia que encuentre el servidor tras publicar (`SugerenciaPublicado`): la exposición que abre una
  * inauguración o el festival del que es parte. Llega cuando llega, sin mover el foco; mientras está en punteado, «Compartir» pasa a secundario.
- * Sin cartel, en punteado, «Crea su cartel» (OL-324), solo si no hay otra sugerencia a la vista.
+ *
+ * «Crea su cartel» (OL-324) sale SIEMPRE (OL-336; el founder no la vio: con la sugerencia de OL-323 montada nunca salía), tenga o no cartel. Sola,
+ * en punteado; tras otra sugerencia, va después y como secundaria, en una línea quieta (nunca dos cajas). Su botón no es el principal: «Compartir»
+ * lo sigue siendo, salvo con la sugerencia de OL-323 abierta. Abre el creador reemplazando «Publicado» (terminar el alta no la deja en el
+ * historial): desde el creador y desde la ficha, Atrás lleva adonde mandaba el alta.
  */
-export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, onOtro }: Props) {
+export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false, onOtro }: Props) {
   const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones, cuando);
+  const otraSugerencia = sugerenciaVisible || (clase === "exposicion" && sinInauguracion) || clase === "festival";
+  const crearCartel = hrefCreador(hrefEvento(evento), "publicado");
   return (
     <>
       <div className={styles.final}>
@@ -83,12 +92,15 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
         </div>
       )}
       {sugerencia}
-      {/* Sin cartel, la única sugerencia (OL-324): crear uno con los datos que ya tiene. Solo si no hay otra sugerencia a la vista (OL-321, OL-323): nunca dos. */}
-      {!conCartel && !sugerencia && !(clase === "exposicion" && sinInauguracion) && clase !== "festival" && (
+      {otraSugerencia ? (
+        <Boton href={crearCartel} replace prefetch={false} variante="quieto">
+          Crear su cartel
+        </Boton>
+      ) : (
         <section className={styles.sugerencia} aria-labelledby="sugerencia-cartel">
           <h3 id="sugerencia-cartel">Crea su cartel</h3>
           <p>Cuatro diseños con los datos del evento, listos para Instagram, Facebook o WhatsApp.</p>
-          <Boton href={`${hrefEvento(evento)}/cartel`} prefetch={false}>
+          <Boton href={crearCartel} replace prefetch={false} variante="secundario">
             Crear cartel
           </Boton>
         </section>

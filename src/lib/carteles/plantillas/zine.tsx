@@ -2,13 +2,13 @@ import type { CSSProperties } from "react";
 import { nombresVisibles } from "../datos";
 import { ajustar, ajustarRenglon } from "../medir";
 import { MARGEN, RESALTADOR, zonaDeTexto } from "../tokens";
-import { Capa, columna, Foto, Lienzo, pie, renglones, subtitulo, texto, type Bloque } from "./piezas";
+import { Capa, columna, Foto, Lienzo, pie, renglones, subtitulo, texto, unir, VACIO, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
  * Familia «zine» (muestra 4 del founder): fotocopia, cinta adhesiva, sellos y etiquetas negras. La foto en duotono (negro al acento) la
  * prepara `dibujar.ts`. A, «cinta»: la foto pegada con cinta, el sello redondo con la fecha y el título con resaltador. B, «recorte»: el
- * título en recortes alternados, como letras pegadas.
+ * título en recortes alternados, como letras pegadas. La fecha va en el sello (A) o en la etiqueta de arriba (B) y en ningún otro sitio (OL-336).
  */
 
 const AFINIDAD = { tiposLugar: ["colectivo", "cafe_bar", "galeria", "otro", "plaza"], disciplinas: ["musica", "artes_visuales", "letras", "circo"] } as const;
@@ -27,12 +27,12 @@ function cinta(x: number, y: number, giro: number) {
   return <Capa x={x} y={y} ancho={190} alto={52} estilo={{ backgroundColor: RESALTADOR, opacity: 0.85, transform: `rotate(${giro}deg)` }} />;
 }
 
-/** El sello redondo con la fecha y la hora, en el acento, ladeado. */
+/** El sello redondo con la fecha (el día, el rango de días o el mes: «16 OCT», «9–14 OCT», «OCT 2026») y la hora, en el acento, ladeado. */
 function selloFecha(c: Contexto, diametro: number) {
   const { textos: t, paleta: p } = c;
   const dentro = diametro * 0.66;
-  const dia = renglones(ajustarRenglon(t.diaCorto.split(" – ")[0], { fuente: "condensada-negra", ancho: dentro, mayor: Math.round(diametro * 0.2), menor: 26, mayusculas: true }), "condensada-negra", p.acento, { interlineado: 1.05, alinear: "center" });
-  const hora = renglones(ajustarRenglon(t.hora, { fuente: "condensada-negra", ancho: dentro, mayor: Math.round(diametro * 0.15), menor: 20 }), "condensada-negra", p.acento, { interlineado: 1.05, alinear: "center" });
+  const dia = renglones(ajustarRenglon(`${t.fecha.numero} ${t.fecha.mes}`, { fuente: "condensada-negra", ancho: dentro, mayor: Math.round(diametro * 0.2), menor: 26, mayusculas: true }), "condensada-negra", p.acento, { interlineado: 1.05, alinear: "center" });
+  const hora = t.hora ? renglones(ajustarRenglon(t.hora, { fuente: "condensada-negra", ancho: dentro, mayor: Math.round(diametro * 0.15), menor: 20 }), "condensada-negra", p.acento, { interlineado: 1.05, alinear: "center" }) : VACIO;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: diametro, height: diametro, borderRadius: diametro / 2, border: `6px solid ${p.acento}`, backgroundColor: p.fondo, transform: "rotate(10deg)" }}>
       {dia.el}
@@ -41,10 +41,13 @@ function selloFecha(c: Contexto, diametro: number) {
   );
 }
 
-/** Lo de abajo: el sitio en etiqueta negra, quién y el pie. */
-function datosZine(c: Contexto, ancho: number): Bloque {
+/**
+ * Lo de abajo: el sitio en etiqueta negra, el precio (si no va ya arriba), quién y el pie. La fecha no: ya la dicen el sello o la etiqueta de
+ * arriba.
+ */
+function datosZine(c: Contexto, ancho: number, conPrecio = true): Bloque {
   const { textos: t, paleta: p } = c;
-  return columna([etiquetaNegra(c, t.sitio, ancho, 34, -1), texto([t.dia, t.precio].join(" · "), { fuente: "media", ancho, renglones: 2, mayor: 30, menor: 22 }, p.texto, { interlineado: 1.2 }), texto(nombresVisibles(t.artistas, 3), { fuente: "regular", ancho, renglones: 2, mayor: 28, menor: 20 }, p.suave, { interlineado: 1.2 }), pie(c, ancho, p.suave)], 14);
+  return columna([etiquetaNegra(c, t.sitio, ancho, 34, -1), texto(conPrecio ? t.precio : null, { fuente: "media", ancho, renglones: 2, mayor: 30, menor: 22 }, p.texto, { interlineado: 1.2 }), texto(nombresVisibles(t.artistas, 3), { fuente: "regular", ancho, renglones: 2, mayor: 28, menor: 20 }, p.suave, { interlineado: 1.2 }), pie(c, ancho)], 14);
 }
 
 function dibujarCinta(c: Contexto): Dibujo {
@@ -53,7 +56,7 @@ function dibujarCinta(c: Contexto): Dibujo {
   const ancho = f.ancho - 2 * MARGEN;
   const sello = c.foto ? 230 : 260;
   const arriba = etiquetaNegra(c, t.etiqueta ?? t.precio, ancho - sello, 36, -2);
-  const abajo = datosZine(c, ancho);
+  const abajo = datosZine(c, ancho, !!t.etiqueta);
   const sub = subtitulo(t.subtitulo, ancho, p.texto, "left", "regular");
   const yArriba = zona.arriba;
   const yAbajo = f.alto - zona.abajo - abajo.alto;
@@ -113,7 +116,7 @@ function dibujarRecorte(c: Contexto): Dibujo {
   const { textos: t, paleta: p, formato: f } = c;
   const zona = zonaDeTexto(f);
   const ancho = f.ancho - 2 * MARGEN;
-  const arriba = etiquetaNegra(c, [t.etiqueta, t.diaCorto, t.hora].filter(Boolean).join(" · "), ancho, 34, -1.5);
+  const arriba = etiquetaNegra(c, unir(t.etiqueta, t.diaCorto, t.hora), ancho, 34, -1.5);
   const abajo = datosZine(c, ancho);
   const sub = subtitulo(t.subtitulo, ancho, p.texto, "left", "regular");
   const yArriba = zona.arriba;

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
-import { DOMINIO } from "../datos";
+import { CAJA_SN, TRAZO_SN } from "../../simboloSN";
 import { ajustar, ajustarRenglon, type Ajuste, type Caja, type Fuente } from "../medir";
-import { LETRA } from "../tokens";
+import { DOMINIO_CARTEL, LETRA } from "../tokens";
 import type { Contexto } from "./tipos";
 
 /**
@@ -122,15 +122,41 @@ export function dato(principal: string | null, detalle: string | null, ancho: nu
   );
 }
 
+/** El alto del símbolo SN del sello: poco más que las letras del pie, para que se lea como marca y no como adorno. */
+const ALTO_SIMBOLO = 30;
+/** Entre el símbolo y el dominio. */
+const ENTRE_SIMBOLO = 12;
+
 /**
- * El pie: la dirección corta del evento (`somosnosotros.org/e/<slug>`), que también es el sello discreto. Si no cabe en un renglón al tamaño
- * mínimo, solo el dominio. Sin sello no hay pie (lo decide el founder, doc 52 §4).
+ * El pie: el sello discreto (OL-336, pedido del founder): el símbolo SN de la app y el dominio (`DOMINIO_CARTEL`), en el sitio donde iba la
+ * dirección corta y con su misma jerarquía (letra del pie, color suave). Siempre en el color suave de la paleta: todas las paletas lo prueban
+ * con 4,5:1 sobre su fondo (`paleta.test.ts`), así el sello es AA en cualquier plantilla. El símbolo va como trazo en línea (satori lo vuelve
+ * imagen sin pedir nada a la red). Sin sello no hay pie (lo decide el founder, doc 52 §4).
  */
-export function pie(c: Contexto, ancho: number, color: string, alinear: Alinear = "left", { mayusculas = false, espaciado = 0 }: { mayusculas?: boolean; espaciado?: number } = {}): Bloque {
+export function pie(c: Contexto, ancho: number, alinear: Alinear = "left", { mayusculas = false, espaciado = 0 }: { mayusculas?: boolean; espaciado?: number } = {}): Bloque {
   if (!c.sello) return VACIO;
-  const caja: Caja = { fuente: "regular", ancho, renglones: 1, mayor: LETRA.pie, menor: 18, espaciado, mayusculas };
-  const enlace = ajustarRenglon(c.textos.enlace, caja);
-  return renglones(enlace.recortado ? ajustarRenglon(DOMINIO, caja) : enlace, "regular", color, { interlineado: 1.2, espaciado, alinear });
+  const color = c.paleta.suave;
+  const anchoSimbolo = Math.round((ALTO_SIMBOLO * CAJA_SN.ancho) / CAJA_SN.alto);
+  const caja: Caja = { fuente: "regular", ancho: ancho - anchoSimbolo - ENTRE_SIMBOLO, renglones: 1, mayor: LETRA.pie, menor: 18, espaciado, mayusculas };
+  const dominio = renglones(ajustarRenglon(DOMINIO_CARTEL, caja), "regular", color, { interlineado: 1.2, espaciado });
+  const alto = Math.max(ALTO_SIMBOLO, dominio.alto);
+  const el = (
+    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: ALINEAR[alinear], width: ancho, height: alto, gap: ENTRE_SIMBOLO }}>
+      <svg width={anchoSimbolo} height={ALTO_SIMBOLO} viewBox={`0 0 ${CAJA_SN.ancho} ${CAJA_SN.alto}`}>
+        <path fill={color} d={TRAZO_SN} />
+      </svg>
+      {dominio.el}
+    </div>
+  );
+  return { el, alto };
+}
+
+/**
+ * Partes de un renglón unidas por « · », sin las que faltan («Sáb 11 oct · 19:00 h», o solo «Oct 2026» si no hay hora); null si no queda nada.
+ * El punto va pegado a lo de antes con un espacio duro: si el texto se parte en renglones, ninguno empieza con «·».
+ */
+export function unir(...partes: (string | null | undefined)[]): string | null {
+  return partes.filter(Boolean).join("\u00a0· ") || null;
 }
 
 /** Un filete (línea fina) de lado a lado de su caja. */
@@ -144,10 +170,4 @@ export function cabecera(c: Contexto, ancho: number, colorEtiqueta: string, colo
   const precio = etiqueta(c.textos.precio, c.textos.etiqueta ? mitad : ancho, colorPrecio, "right");
   if (!c.textos.etiqueta) return fila([{ el: <div style={{ display: "flex" }} />, alto: 0 }, precio], { ancho });
   return fila([etiqueta(c.textos.etiqueta, mitad, colorEtiqueta), precio], { ancho });
-}
-
-/** El día del mes en grande («11») y su mes («OCT»), para las versiones sin foto que hacen de la fecha su imagen. */
-export function diaYMes(diaCorto: string): { numero: string; mes: string } {
-  const partes = diaCorto.split(" – ")[0].split(" ");
-  return { numero: partes[1] ?? "", mes: (partes[2] ?? "").toLocaleUpperCase("es-MX") };
 }

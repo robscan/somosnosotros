@@ -298,6 +298,9 @@ test("H1: la inauguración leída del cartel se publica como evento y «Publicad
   assert.deepEqual(pedida.pistas, { visita: { desde: "2026-11-06", hasta: "2026-11-30" }, apertura: true, muestra: true, festival: null });
   // Con la sugerencia a la vista, «Compartir» deja de ser el botón principal.
   assert.match(await claseCompartir(p), /secundario/);
+  // «Crea su cartel» sigue a la vista (OL-336), después y en una línea quieta: nunca dos cajas en punteado.
+  assert.equal(await p.getByRole("heading", { name: "Crea su cartel" }).count(), 0);
+  assert.match(await p.getByRole("link", { name: "Crear su cartel" }).getAttribute("href"), /\/cartel\?origen=publicado$/);
   await foto352(p, "01-h1-sugerencia-390");
   await sug.getByRole("button", { name: "Publicar exposición" }).click();
   await sug.getByText("Exposición publicada").waitFor();
@@ -416,7 +419,11 @@ test("sin sugerencia el final queda como siempre", TOPE, async (t) => {
   await boton(p, "Publicar").click();
   await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
   await p.waitForFunction(() => window.qa.pedidas.length === 1);
-  assert.equal(await p.locator("main section h3").count(), 0);
+  // La única sugerencia es «Crea su cartel» (OL-336: sale siempre), en punteado y con su botón secundario: «Compartir» sigue siendo el principal.
+  assert.deepEqual(await p.locator("main section h3").allInnerTexts(), ["Crea su cartel"]);
+  const crear = p.getByRole("link", { name: "Crear cartel" });
+  assert.match(await crear.getAttribute("href"), /\/cartel\?origen=publicado$/);
+  assert.match(await crear.getAttribute("class"), /secundario/);
   assert.doesNotMatch(await claseCompartir(p), /secundario/);
 });
 

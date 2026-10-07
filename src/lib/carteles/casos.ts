@@ -15,6 +15,7 @@ const base: EventoCartel = {
   fin: "2026-10-17T03:00:00.000Z",
   zona: "America/Mexico_City",
   precio: null,
+  clase: "puntual",
   conSesiones: false,
   sitio: "Casa de Cultura del Barrio de San Miguelito",
   tipoLugar: "casa_de_cultura",
@@ -32,6 +33,10 @@ export const CASOS: Record<string, EventoCartel> = {
   subtitulo: { ...base, slug: "sangre-de-coyote", titulo: "Sangre de Coyote: Semilla que florece el barrio (documental)", sitio: "Centro Cultural Universitario Bicentenario", tipoLugar: "foro", precio: "Cooperación solidaria", artistas: [{ nombre: "C. Muñoz", disciplina: "cine", detalle: "Documental" }] },
   sinNada: { ...base, slug: "oca", titulo: "OCA", sitio: null, tipoLugar: null, artistas: [] },
   precioLargo: { ...base, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", precio: "$300 por las tres sesiones, materiales incluidos", conSesiones: true, fin: "2026-10-21T01:00:00.000Z", sitio: "ACHE Galería", tipoLugar: "galeria", artistas: [{ nombre: "Aaron Cadena", disciplina: "artes_visuales", detalle: "Grabado" }] },
+  // OL-336: varios días con el fin a las 00:00 del día siguiente al último (así guarda la base «Ciclo Fellini»): el último día es el 14, no el 15.
+  variosDias: { ...base, slug: "cine-de-barrio-ciclo-fellini", titulo: "Cine de barrio: ciclo Fellini", inicio: "2026-10-09T16:00:00.000Z", fin: "2026-10-15T06:00:00.000Z", sitio: "Casa de Cultura del Barrio de San Miguelito", tipoLugar: "casa_de_cultura", artistas: [{ nombre: "Cineclub del Barrio", disciplina: "cine", detalle: "Cineclub" }] },
+  // OL-336: un festival dice solo el mes, sin hora.
+  festival: { ...base, slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", clase: "festival", inicio: "2026-10-10T01:00:00.000Z", fin: "2026-10-13T06:00:00.000Z", sitio: "Centro Cultural Universitario Bicentenario", tipoLugar: "foro", artistas: [{ nombre: "Leonora Films", disciplina: "cine", detalle: "Cine" }] },
   palabraLarga: { ...base, slug: "otorrinolaringologo", titulo: "Electroacústica: Otorrinolaringólogo Desinstitucionalizadamente", sitio: "Aether", tipoLugar: "galeria", artistas: [{ nombre: "0Backside0", disciplina: "musica", detalle: "Rock, metal y alternativo" }] },
 };
 

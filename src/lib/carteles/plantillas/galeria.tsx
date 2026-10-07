@@ -1,13 +1,14 @@
 import { nombresVisibles } from "../datos";
 import { ajustarRenglon } from "../medir";
 import { zonaDeTexto } from "../tokens";
-import { cabecera, Capa, columna, diaYMes, etiqueta, filete, fila, Foto, Lienzo, pie, renglones, subtitulo, texto, type Bloque } from "./piezas";
+import { cabecera, Capa, columna, etiqueta, filete, fila, Foto, Lienzo, pie, renglones, subtitulo, texto, unir, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
  * Familia «galería» (muestra 5 del founder): mucho blanco, la foto con aire alrededor, el título en letra ligera y los datos con su rótulo
  * («Cuándo», «Dónde», «Quién»). La que mejor aguanta muchos artistas. A, «marco»: la foto arriba y tres columnas de datos. B, «columna»: la
- * foto a la izquierda de lado a lado del alto y el texto en una columna a la derecha.
+ * foto a la izquierda de lado a lado del alto y el texto en una columna a la derecha (sin foto, la columna lleva el día enorme y el rótulo
+ * «Cuándo» pasa a «Hora»: la fecha sale una vez, OL-336).
  */
 
 const AFINIDAD = { tiposLugar: ["museo", "galeria", "biblioteca", "escuela"], disciplinas: ["artes_visuales", "letras", "cine"] } as const;
@@ -27,8 +28,8 @@ function dibujarMarco(c: Contexto): Dibujo {
   const ancho = f.ancho - 2 * m;
   const col = Math.floor((ancho - 2 * 28) / 3);
   const arriba = cabecera(c, ancho, p.suave, p.suave);
-  const datos = fila([rotulado(c, "Cuándo", `${t.dia} · ${t.hora}`, col), rotulado(c, "Dónde", t.sitio, col), rotulado(c, "Quién", nombresVisibles(t.artistas, 6) || null, col, 4)], { ancho, separacion: 28, estilo: { justifyContent: "flex-start" } });
-  const abajo = columna([filete(ancho, p.texto, 1), datos, pie(c, ancho, p.suave)], 24);
+  const datos = fila([rotulado(c, "Cuándo", unir(t.dia, t.hora), col), rotulado(c, "Dónde", t.sitio, col), rotulado(c, "Quién", nombresVisibles(t.artistas, 6) || null, col, 4)], { ancho, separacion: 28, estilo: { justifyContent: "flex-start" } });
+  const abajo = columna([filete(ancho, p.texto, 1), datos, pie(c, ancho)], 24);
   const sub = subtitulo(t.subtitulo, ancho, p.acento);
   const yArriba = zona.arriba + 24;
   const yAbajo = f.alto - zona.abajo - abajo.alto;
@@ -73,8 +74,10 @@ function dibujarColumna(c: Contexto): Dibujo {
   const x = COLUMNA + 56;
   const ancho = f.ancho - x - 56;
   const arriba = columna([etiqueta(t.etiqueta, ancho, p.suave, "left", 18), etiqueta(t.precio, ancho, p.acento, "left", 18)], 10);
-  const datos = columna([rotulado(c, "Cuándo", `${t.dia} · ${t.hora}`, ancho, 2), rotulado(c, "Dónde", t.sitio, ancho, 2), rotulado(c, "Quién", nombresVisibles(t.artistas, 6) || null, ancho, 4)], 24);
-  const abajo = columna([filete(ancho, p.texto, 1), datos, pie(c, ancho, p.suave)], 24);
+  // Sin foto el día enorme de la columna ya es la fecha: aquí solo la hora.
+  const cuando = c.foto ? rotulado(c, "Cuándo", unir(t.dia, t.hora), ancho, 2) : rotulado(c, "Hora", t.hora, ancho, 2);
+  const datos = columna([cuando, rotulado(c, "Dónde", t.sitio, ancho, 2), rotulado(c, "Quién", nombresVisibles(t.artistas, 6) || null, ancho, 4)], 24);
+  const abajo = columna([filete(ancho, p.texto, 1), datos, pie(c, ancho)], 24);
   const sub = subtitulo(t.subtitulo, ancho, p.acento);
   const yArriba = zona.arriba;
   const yAbajo = f.alto - zona.abajo - abajo.alto;
@@ -82,8 +85,8 @@ function dibujarColumna(c: Contexto): Dibujo {
   const titulo = texto(t.titulo, { fuente: "ligera", ancho, renglones: 8, mayor: t.tramo === "corto" ? 120 : t.tramo === "medio" ? 92 : 72, menor: 44, alto: disponible - (sub.el ? sub.alto + 20 : 0), parejo: true }, p.texto, { interlineado: 1.04 });
   const centro = columna([titulo, sub], 20);
   // Sin foto la columna es del acento y lleva el día enorme, de pie.
-  const { numero, mes } = diaYMes(t.diaCorto);
-  const dia = renglones(ajustarRenglon(numero, { fuente: "ligera", ancho: COLUMNA - 80, mayor: 300, menor: 120 }), "ligera", p.sobreAcento, { interlineado: 0.9 });
+  const { numero, mes } = t.fecha;
+  const dia = renglones(ajustarRenglon(numero, { fuente: "ligera", ancho: COLUMNA - 80, mayor: 300, menor: 64 }), "ligera", p.sobreAcento, { interlineado: 0.9 });
   const mesB = renglones(ajustarRenglon(mes, { fuente: "media", ancho: COLUMNA - 80, mayor: 48, menor: 28, espaciado: 8 }), "media", p.sobreAcento, { interlineado: 1.2, espaciado: 8 });
   const yDia = f.alto - zona.abajo - dia.alto - mesB.alto - 12;
   return {

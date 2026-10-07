@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const track = vi.fn();
 vi.mock("@vercel/analytics", () => ({ track: (...a: unknown[]) => track(...a) }));
 
-import { claseMedida, contextoGoogle, datosAsistencia, medicionActivaEnCliente, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, validarMedicion } from "./medir";
+import { claseMedida, contextoGoogle, datosAsistencia, formatoMedido, medicionActivaEnCliente, EVENTOS, fichaDeEnlace, MAX_DATOS, medirCliente, plantillaMedida, tandaMedida, validarMedicion } from "./medir";
 import { limpiarUrlEvento, limpiarUrlGoogle } from "./limpiarUrlAnalitica";
 
 /** La marca del rol que pinta `MarcaAdmin`: «admin», «otro» o ninguna (aún sin resolver). */
@@ -65,6 +65,30 @@ describe("la lista cerrada (OL-325)", () => {
     expect(validarMedicion("busqueda", null)).toBeNull();
     expect(validarMedicion("busqueda", ["si"])).toBeNull();
     expect(validarMedicion("busqueda", "si")).toBeNull();
+  });
+});
+
+describe("el creador de cartel (OL-336)", () => {
+  it("cada paso con sus datos: desde dónde se abrió, la tanda, el diseño y el formato", () => {
+    expect(validarMedicion("cartel_abierto", { desde: "publicado" })).toEqual({ desde: "publicado" });
+    expect(validarMedicion("cartel_otros", { tanda: tandaMedida(1) })).toEqual({ tanda: "segunda" });
+    expect(validarMedicion("cartel_elegido", { plantilla: plantillaMedida("cine-sangre"), formato: formatoMedido("4x5") })).toEqual({ plantilla: "cine_sangre", formato: "publicacion" });
+    expect(validarMedicion("cartel_formato", { formato: formatoMedido("9x16") })).toEqual({ formato: "historia" });
+    expect(validarMedicion("cartel_titulo_acortado")).toEqual({});
+    expect(validarMedicion("cartel_descargado", { plantilla: "deco_sol", formato: "historia" })).toEqual({ plantilla: "deco_sol", formato: "historia" });
+    expect(validarMedicion("cartel_usado", { plantilla: "zine_cinta", formato: "publicacion" })).toEqual({ plantilla: "zine_cinta", formato: "publicacion" });
+    expect(validarMedicion("cartel_ninguno", { tanda: "tercera" })).toEqual({ tanda: "tercera" });
+  });
+  it("nunca el evento (ni su slug ni su id), ni lo escrito en «Acortar título», ni una plantilla que no es del catálogo", () => {
+    expect(validarMedicion("cartel_abierto", { desde: "menu", evento: "oca" })).toBeNull();
+    expect(validarMedicion("cartel_usado", { plantilla: "cine_sangre", formato: "publicacion", evento: "00000000-0000-4000-8000-000000000001" })).toBeNull();
+    expect(validarMedicion("cartel_titulo_acortado", { titulo: "LXS COLOCAOS" })).toBeNull();
+    expect(validarMedicion("cartel_elegido", { plantilla: "cine-sangre", formato: "publicacion" })).toBeNull();
+    expect(plantillaMedida("no-existe")).toBeNull();
+    expect(validarMedicion("cartel_abierto", { desde: "/eventos/oca" })).toBeNull();
+  });
+  it("la tanda de la pantalla (0, 1, 2) se mide como primera, segunda o tercera", () => {
+    expect([0, 1, 2, 7].map(tandaMedida)).toEqual(["primera", "segunda", "tercera", "primera"]);
   });
 });
 

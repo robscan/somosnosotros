@@ -1,13 +1,14 @@
 import { nombresVisibles } from "../datos";
 import { ajustarRenglon } from "../medir";
 import { MARGEN, PICADO, zonaDeTexto } from "../tokens";
-import { Capa, columna, dato, diaYMes, etiqueta, Foto, Lienzo, pie, renglones, subtitulo, texto, type Bloque } from "./piezas";
+import { Capa, columna, dato, etiqueta, Foto, Lienzo, pie, renglones, subtitulo, texto, unir, VACIO, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
  * Familia «feria» (muestra 3 del founder): fiesta de barrio, colores de papel picado, el título centrado con sombra dura. Solo formas: el
  * papel picado son rectángulos con picos y figuras recortadas, no ilustración. A, «picado»: banderas arriba y la foto en un marco blanco
- * ladeado. B, «boleto»: la foto en un círculo entre confeti y los datos en un boleto.
+ * ladeado. B, «boleto»: la foto en un círculo entre confeti y los datos en un boleto. Sin foto, el sello redondo con el día es la fecha: la
+ * cinta o el boleto ya no la repiten, solo dicen la hora (OL-336).
  */
 
 const AFINIDAD = { tiposLugar: ["plaza", "casa_de_cultura", "colectivo", "cafe_bar", "otro"], disciplinas: ["musica", "danza", "circo", "teatro"] } as const;
@@ -45,10 +46,10 @@ function tituloFeria(c: Contexto, ancho: number, alto: number, mayor: number): B
   return texto(t.titulo, { fuente: "ancha-negra", ancho, renglones: 5, mayor, menor: 52, alto, parejo: true }, p.acento, { interlineado: 0.98, alinear: "center", estilo: { textShadow: `5px 5px 0 ${p.texto}` } });
 }
 
-/** El sello redondo con el día (sin foto): el círculo del acento con el número enorme y el mes. */
+/** El sello redondo con el día (sin foto): el círculo del acento con el número enorme (o el rango, o el mes) y el mes. */
 function sello(c: Contexto, diametro: number): Bloque {
-  const { numero, mes } = diaYMes(c.textos.diaCorto);
-  const n = renglones(ajustarRenglon(numero, { fuente: "ancha-negra", ancho: diametro * 0.7, mayor: Math.round(diametro * 0.5), menor: 80 }), "ancha-negra", c.paleta.sobreAcento, { interlineado: 0.9, alinear: "center" });
+  const { numero, mes } = c.textos.fecha;
+  const n = renglones(ajustarRenglon(numero, { fuente: "ancha-negra", ancho: diametro * 0.7, mayor: Math.round(diametro * 0.5), menor: 40 }), "ancha-negra", c.paleta.sobreAcento, { interlineado: 0.9, alinear: "center" });
   const m = renglones(ajustarRenglon(mes, { fuente: "ancha-negra", ancho: diametro * 0.6, mayor: Math.round(diametro * 0.16), menor: 32 }), "ancha-negra", c.paleta.sobreAcento, { interlineado: 1, alinear: "center" });
   return {
     el: (
@@ -67,12 +68,14 @@ function dibujarPicado(c: Contexto): Dibujo {
   const ancho = f.ancho - 2 * MARGEN;
   const yEtiqueta = Math.max(zona.arriba, 206);
   const arriba = columna([etiqueta([t.etiqueta, t.precio].filter(Boolean).join(" · "), ancho, p.acento, "center")], 0, { alinear: "center", ancho });
-  const cinta = renglones(ajustarRenglon(`${t.diaCorto} · ${t.hora}`, { fuente: "media", ancho: ancho - 80, mayor: 36, menor: 24 }), "media", p.fondo, { interlineado: 1.2, alinear: "center" });
+  // La cinta dice cuándo; sin foto, solo la hora (el sello ya dice el día), y sin hora no hay cinta.
+  const cuando = c.foto ? unir(t.diaCorto, t.hora) : t.hora;
+  const cinta = cuando ? renglones(ajustarRenglon(cuando, { fuente: "media", ancho: ancho - 80, mayor: 36, menor: 24 }), "media", p.fondo, { interlineado: 1.2, alinear: "center" }) : VACIO;
   const abajo = columna(
     [
-      { el: <div style={{ display: "flex", justifyContent: "center", width: ancho, padding: "18px 40px", borderRadius: 999, backgroundColor: p.texto }}>{cinta.el}</div>, alto: cinta.alto + 36 },
+      cinta.el ? { el: <div style={{ display: "flex", justifyContent: "center", width: ancho, padding: "18px 40px", borderRadius: 999, backgroundColor: p.texto }}>{cinta.el}</div>, alto: cinta.alto + 36 } : VACIO,
       dato(t.sitio, nombresVisibles(t.artistas, 2) || null, ancho, p.texto, p.suave, "center"),
-      pie(c, ancho, p.suave, "center"),
+      pie(c, ancho, "center"),
     ],
     22,
     { alinear: "center", ancho },
@@ -130,8 +133,13 @@ function dibujarBoleto(c: Contexto): Dibujo {
   // El boleto: a la izquierda el día y la hora, a la derecha el sitio y el precio, separados por la línea picada.
   const izquierda = 300;
   const derecha = ancho - izquierda - 2 * 36 - 40;
-  const cuando = columna([texto(t.diaCorto, { fuente: "ancha-negra", ancho: izquierda, renglones: 2, mayor: 52, menor: 30 }, p.sobreAcento, { interlineado: 1 }), texto(t.hora, { fuente: "media", ancho: izquierda, renglones: 1, mayor: 32, menor: 22 }, p.sobreAcento, { interlineado: 1.2 })], 8);
-  const donde = columna([texto(t.sitio, { fuente: "media", ancho: derecha, renglones: 2, mayor: 34, menor: 24 }, p.sobreAcento, { interlineado: 1.15 }), etiqueta(t.precio, derecha, p.sobreAcento)], 10);
+  // Sin foto el círculo es el sello con el día: el boleto dice solo la hora. Si no queda nada que decir a la izquierda (un festival sin foto),
+  // va ahí el precio.
+  const dia = c.foto ? texto(t.diaCorto, { fuente: "ancha-negra", ancho: izquierda, renglones: 2, mayor: 52, menor: 30 }, p.sobreAcento, { interlineado: 1 }) : VACIO;
+  const hora = texto(t.hora, { fuente: c.foto ? "media" : "ancha-negra", ancho: izquierda, renglones: 1, mayor: c.foto ? 32 : 52, menor: 22 }, p.sobreAcento, { interlineado: 1.2 });
+  const precioIzquierda = !dia.el && !hora.el;
+  const cuando = precioIzquierda ? etiqueta(t.precio, izquierda, p.sobreAcento) : columna([dia, hora], 8);
+  const donde = columna([texto(t.sitio, { fuente: "media", ancho: derecha, renglones: 2, mayor: 34, menor: 24 }, p.sobreAcento, { interlineado: 1.15 }), precioIzquierda ? VACIO : etiqueta(t.precio, derecha, p.sobreAcento)], 10);
   const altoBoleto = Math.max(cuando.alto, donde.alto) + 2 * 32;
   const boleto: Bloque = {
     el: (
@@ -150,7 +158,7 @@ function dibujarBoleto(c: Contexto): Dibujo {
     alto: altoBoleto,
   };
   const quien = texto(nombresVisibles(t.artistas, 2), { fuente: "media", ancho, renglones: 2, mayor: 30, menor: 22 }, p.suave, { interlineado: 1.2, alinear: "center" });
-  const abajo = columna([quien, boleto, pie(c, ancho, p.suave, "center")], 24, { alinear: "center", ancho });
+  const abajo = columna([quien, boleto, pie(c, ancho, "center")], 24, { alinear: "center", ancho });
   const sub = subtitulo(t.subtitulo, ancho, p.texto, "center");
   const arriba = etiqueta(t.etiqueta, ancho, p.acento, "center");
   const yArriba = zona.arriba;

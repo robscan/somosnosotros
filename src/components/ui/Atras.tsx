@@ -26,10 +26,18 @@ function claveDe(url: string): string {
  * Mientras el botón (o la ✕) está en pantalla, esta misma función queda registrada (`registrarVolverVisible`,
  * OL-205) para que el gesto nativo de deslizar desde el borde, dentro de la app de iPhone, vuelva exactamente igual
  * que un toque — nunca con el `WKBackForwardList` a secas, que no conoce la marca propia del historial.
+ *
+ * `salir`: otra salida en lugar de la pantalla anterior (la ✕ del creador de cartel vuelve siempre a la ficha del evento, `useVolverA`); la
+ * guardia de salida y el gesto de la app la usan igual.
  */
-export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
+export function useVolver(href: string, salir?: () => void): (e: React.MouseEvent<HTMLAnchorElement>) => void {
   const router = useRouter();
   const irse = useCallback(() => {
+    if (salir) {
+      if (pedirSalida(salir)) return;
+      salir();
+      return;
+    }
     const anterior = hayAnterior();
     // Sin historial al que volver (enlace compartido, o la vuelta de Apple en la app de iPhone) se va a la pantalla de la que se vino, si se sabe, y si no a la madre.
     const adonde = anterior ? href : (destinoSinHistorial() ?? href);
@@ -40,7 +48,7 @@ export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>
     };
     if (pedirSalida(ir)) return;
     ir();
-  }, [href, router]);
+  }, [href, router, salir]);
   useEffect(() => registrarVolverVisible(irse), [irse]);
   return function volver(e) {
     // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
@@ -48,6 +56,23 @@ export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>
     e.preventDefault();
     irse();
   };
+}
+
+/**
+ * Volver a una pantalla concreta sin terminar nada (OL-336: la ✕ y «No me gusta ninguno» del creador de cartel, que vuelven a la ficha del evento):
+ * con el historial si la pantalla de detrás es esa (misma ruta), así Atrás no la repite; si no, reemplazando la pantalla actual por ella. A
+ * diferencia de `useVolver`, nunca retrocede a otra pantalla: el creador abierto desde «Publicado» (que se reemplazó al abrirlo) vuelve a la ficha
+ * del evento, y no a donde estaba la persona antes del alta, que queda detrás de la ficha.
+ */
+export function useVolverA(): (destino: string) => void {
+  const router = useRouter();
+  return useCallback(
+    (destino: string) => {
+      if (vuelveADestino(destino)) router.back();
+      else router.replace(destino);
+    },
+    [router],
+  );
 }
 
 type OpcionesTerminar = {

@@ -21,8 +21,8 @@ type Props = {
   direccion: Direccion | null;
   /** Lo recorrido, de 0 a 1: la línea bajo la barra. */
   avance: number;
-  /** A dónde sale la ✕ del primer paso si no hay pantalla anterior. */
-  salida: { href: string; texto: string };
+  /** A dónde sale la ✕ del primer paso si no hay pantalla anterior; con `alSalir`, la ✕ sale por ahí (el creador de cartel vuelve siempre a la ficha). */
+  salida: { href: string; texto: string; alSalir?: () => void };
   /** Atrás del paso; sin él es el primero y la barra lleva la ✕. */
   onAtras?: () => void;
   /** Lo que va encima de la pregunta (en el alta de evento, la fila chica del cartel ya guardado, solo en la primera pregunta). */
@@ -66,7 +66,7 @@ export default function PorPasos({ titulo, paso, direccion, avance, salida, onAt
 
   return (
     <main ref={pantalla} className={styles.pasos} data-direccion={direccion ?? undefined}>
-      <Barra titulo={titulo} paso={{ avance, salida: onAtras ? <AtrasDelPaso onAtras={onAtras} /> : <Cerrar href={salida.href} texto={salida.texto} relieve="plano" /> }} />
+      <Barra titulo={titulo} paso={{ avance, salida: onAtras ? <AtrasDelPaso onAtras={onAtras} /> : <Cerrar href={salida.href} texto={salida.texto} relieve="plano" alCerrar={salida.alSalir} /> }} />
       <Fragment key={paso}>
         {encima}
         {pregunta && (
