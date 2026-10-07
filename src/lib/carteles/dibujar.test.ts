@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { beforeAll, describe, expect, it } from "vitest";
 import { AHORA_CASOS, CASOS } from "./casos";
 import { armarTextos } from "./datos";
-import { dibujarCartel, type NodoTexto, type Resultado } from "./dibujar";
+import { dibujarCartel, type NodoTexto, type Resultado, tonoDominante } from "./dibujar";
 import { CATALOGO } from "./plantillas";
 import { FORMATOS, type Formato } from "./tokens";
 
@@ -117,9 +117,21 @@ describe("imágenes que no se admiten", () => {
     expect(con.imagen.equals(sin.imagen)).toBe(true);
   });
   it("una imagen válida pero con demasiados píxeles sale como el cartel sin foto", async () => {
-    const lado = 6500; // 42 megapíxeles, por encima del tope de 40
+    const lado = 3500; // 12,25 megapíxeles, por encima del tope de 12
     const grande = await sharp({ create: { width: lado, height: lado, channels: 3, background: "#000" } }).png({ compressionLevel: 9 }).toBuffer();
     const [con, sin] = await Promise.all([dibujar(grande), dibujar(null)]);
+    expect(con.imagen.equals(sin.imagen)).toBe(true);
+  });
+  it("una foto grande dentro del tope (11 megapíxeles) sí lleva foto y su color se analiza sobre una miniatura", async () => {
+    const lado = 3300; // 10,9 megapíxeles
+    const grande = await sharp({ create: { width: lado, height: lado, channels: 3, background: "#cc3322" } }).png({ compressionLevel: 9 }).toBuffer();
+    const dominante = await tonoDominante(grande);
+    expect(dominante.r).toBeGreaterThan(dominante.b);
+    const [con, sin] = await Promise.all([dibujar(grande), dibujar(null)]);
+    expect(con.imagen.equals(sin.imagen)).toBe(false);
+  });
+  it("si preparar la foto pasa del tiempo máximo, el cartel sale sin foto", async () => {
+    const [con, sin] = await Promise.all([dibujarCartel({ plantilla: CATALOGO[0], formato: FORMATOS["4x5"], textos, imagen: foto, semilla: 1, tiempoMaxFotoMs: 0 }), dibujar(null)]);
     expect(con.imagen.equals(sin.imagen)).toBe(true);
   });
   it("un JPEG válido sí lleva foto (el cartel cambia)", async () => {
