@@ -14,3 +14,6 @@ next-env.d.ts
 # Datos capturados del CAPO (traen correos personales): nunca en git
 scripts/capo/salida/
 scripts/instituciones/salida/
+
+# Buzón local entre el gestor y Codex (OL-327): nunca entra al repo
+.buzon/
