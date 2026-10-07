@@ -2,7 +2,7 @@ import { compararEventos, corteNuevos, eventosNuevos, filtrarAgenda, LIMITE_NUEV
 import type { Agenda } from "./cargarAgenda";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import { enOrden } from "./destacados";
-import { exposicionesVigentes, marcosDe, plegarActos } from "./agendaPorClase";
+import { esMarco, exposicionesVigentes, festivalesVigentes, marcosDe, plegarActos, porCercania } from "./agendaPorClase";
 import { ocurrenciaPaso, ocurrenciasDe, proximaOcurrencia, type ConOcurrencia } from "./ocurrencias";
 
 /**
@@ -99,8 +99,8 @@ export const TOPE_ESTA_SEMANA = 20;
  * una con la hora de ese día y su propia llave (`ocurrencia.clave`); para los demás carriles sigue siendo un solo evento (`vistos` es por `id`).
  */
 export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona" | "sesiones" | "clase" | "evento_padre_id" | "programa">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()) {
-  // Por clase (OL-322, doc 55 §3): la exposición no está (no tiene ocurrencias: va en «Para visitar»); los actos de un festival cargado no salen
-  // sueltos: el marco sale UNA vez, en su lugar por fecha, con cuántos de sus actos caen en la semana («3 actividades esta semana»).
+  // Por clase (OL-322, doc 55 §3): la exposición no está (no tiene ocurrencias: va en «Festivales y exposiciones»); los actos de un festival
+  // cargado no salen sueltos: el marco sale UNA vez, en su lugar por fecha, con cuántos de sus actos caen en la semana («3 actividades esta semana»).
   const marcos = marcosDe(eventos);
   const ocurrencias = eventosEstaSemana(eventos.filter((e) => !vistos.has(e.id)), ahora);
   const actosPorMarco = new Map<string, Set<string>>();
@@ -123,16 +123,26 @@ export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | 
   return propios;
 }
 
-/** Tope de «Para visitar»: como el de «Esta semana». */
-export const TOPE_PARA_VISITAR = TOPE_ESTA_SEMANA;
+/** Tope de «Festivales y exposiciones»: como el de «Esta semana» (el que ya tenía «Para visitar»). En una ciudad hay pocas exposiciones vigentes
+ *  y menos festivales a la vez: el tope solo frena un catálogo grande, y bajarlo dejaría fuera lo que cierra después sin otro lugar en Inicio. */
+export const TOPE_FESTIVALES = TOPE_ESTA_SEMANA;
 
 /**
- * «Para visitar» (OL-322; doc 55 §3, prototipo caso 6): las exposiciones vigentes de la ciudad, la que cierra antes primero; va después de «Esta
- * semana». Una exposición no es algo que pase un día a una hora y no sale cada día en los demás carriles. Sin ninguna, el carril no se pinta.
+ * «Festivales y exposiciones» (OL-342, founder 2026-10-07: «Necesitamos un slider para festivales y galerías»; antes «Para visitar», OL-322, solo con
+ * las exposiciones): lo que no es algo que pase un día a una hora. Los festivales en curso o por venir (`festivalesVigentes`) y las exposiciones
+ * vigentes (`exposicionesVigentes`: abiertas o que abren en los próximos 7 días), juntos y ordenados por cercanía, no por tipo (`porCercania`: lo
+ * que está en curso primero, lo que termina antes; luego lo que viene, por su inicio). Va después de «Esta semana»: un festival con actos esa
+ * semana ya salió ahí como su marco (`vistos`) y no se repite. El acto de un festival cargado no sale suelto (lo dice su marco, como en «Esta
+ * semana»), ni después en otro carril. Sin nada, el carril no se pinta.
  */
-export function carrilParaVisitar<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona" | "clase">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
-  const propios = exposicionesVigentes(eventos.filter((e) => !vistos.has(e.id)), ahora).slice(0, TOPE_PARA_VISITAR);
+export function carrilFestivales<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona" | "clase" | "evento_padre_id" | "programa">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
+  const marcos = marcosDe(eventos);
+  const libres = eventos.filter((e) => !vistos.has(e.id) && !(e.evento_padre_id && marcos.has(e.evento_padre_id)));
+  const propios = [...festivalesVigentes(libres, ahora), ...exposicionesVigentes(libres, ahora)].toSorted((a, b) => porCercania(a, b, ahora)).slice(0, TOPE_FESTIVALES);
   for (const e of propios) vistos.add(e.id);
+  // Los actos de un festival que salió aquí tampoco salen después sueltos (en Nuevos): los dice su marco, como en «Esta semana».
+  const marcosPropios = new Set(propios.filter(esMarco).map((e) => e.id));
+  for (const e of eventos) if (e.evento_padre_id && marcosPropios.has(e.evento_padre_id)) vistos.add(e.id);
   return propios;
 }
 
@@ -171,7 +181,7 @@ export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "
  *  hasta esa carga. Lo que la persona decide durante la visita no recalcula nada y la tarjeta se queda donde está (si no,
  *  al tocar «Voy» desaparecería de la fila donde se tocó, la queja de OL-221); en la próxima carga ya no sale. Sin sesión
  *  (`asistencias` es null) nada cambia. */
-export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; paraVisitar: EventoAgenda[]; nuevos: EventoAgenda[] };
+export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; festivales: EventoAgenda[]; nuevos: EventoAgenda[] };
 export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date()): CarrilesDeAgenda {
   const vistos = new Set(Object.keys(agenda.asistencias ?? {}));
   // De lo que sigue la persona, un festival sale como su marco si también está (OL-322); los destacados los elige la administración, tal cual.
@@ -180,12 +190,13 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date())
   const destacados = enOrden(agenda.destacados, agenda.eventos);
   const estelar = hayFavoritos ? carrilEstelar(destacados, favoritos, vistos) : carrilDestacados(destacados, vistos);
   const estaSemana = carrilEstaSemana(agenda.eventos, vistos, ahora);
-  // En el orden de la pantalla: «Para visitar» va después de «Esta semana» y antes de «Nuevos eventos» (prototipo del doc 55, caso 6).
-  const paraVisitar = carrilParaVisitar(agenda.eventos, vistos, ahora);
+  // En el orden de la pantalla: «Festivales y exposiciones» va después de «Esta semana» y antes de «Nuevos eventos» (el lugar de «Para visitar»,
+  // prototipo del doc 55, caso 6).
+  const festivales = carrilFestivales(agenda.eventos, vistos, ahora);
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
   // Los carriles que hablan del evento y no de un día dicen su próximo día (el de hoy si sigue, y si no el que sigue), no el primero: un taller
   // que empezó el sábado pasado no se presenta con esa fecha (OL-320).
-  return { titulo: tituloEstelar(hayFavoritos), estelar: estelar.map((e) => proximaOcurrencia(e, ahora)), estaSemana, paraVisitar, nuevos: nuevos.map((e) => proximaOcurrencia(e, ahora)) };
+  return { titulo: tituloEstelar(hayFavoritos), estelar: estelar.map((e) => proximaOcurrencia(e, ahora)), estaSemana, festivales, nuevos: nuevos.map((e) => proximaOcurrencia(e, ahora)) };
 }
 
 /** Respaldo de Inicio: los próximos veinte por fecha, sin los compromisos de Tus planes.

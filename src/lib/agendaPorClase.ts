@@ -2,7 +2,7 @@ import { sumarDiasIso } from "./calendario";
 import { diaDeSemana, enVisita, rangosDelDia, visitaDeEvento, type Visita } from "./claseEvento";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import type { Clase } from "./eventos";
-import { diaConMesDe, diaLocal } from "./fechas";
+import { diaConMesDe, diaLocal, eventoPaso } from "./fechas";
 import { textoRangos, type Franja, type Rango } from "./horarioLugar";
 import { compararNombres } from "./lugares";
 
@@ -10,11 +10,12 @@ import { compararNombres } from "./lugares";
  * Dónde va cada forma de ocurrir en Inicio, la agenda, Cuándo y la hoja Filtros (OL-322; doc 55 §3 y su prototipo, casos 6 y 7). Lógica pura, sin
  * DOM ni base: la usan `lib/agenda` (la lista y sus números), `lib/inicio` (los carriles) y las pantallas.
  *
- * - **Exposición:** no es algo que pase un día a una hora (`lib/ocurrencias` no la reparte): vive en «Para visitar». En Inicio, un carril con las
- *   vigentes, la que cierra antes primero; en la agenda del día, «Para visitar hoy» con las que abren ese día **según su horario**. Sin horario
- *   no se promete «visitable hoy»: no entra ahí (sí en «Para visitar», con «Horario por confirmar»).
- * - **Festival:** el marco sale una vez en los carriles; en la agenda del día es un bloque con sus actos de ese día (`componerDia`). Un marco sin
- *   actos no sale (no promete nada).
+ * - **Exposición:** no es algo que pase un día a una hora (`lib/ocurrencias` no la reparte): vive en «Para visitar». En Inicio, en el carril
+ *   «Festivales y exposiciones» (OL-342; antes «Para visitar», solo con ellas) con las vigentes; en la agenda del día, «Para visitar hoy» con
+ *   las que abren ese día **según su horario**. Sin horario no se promete «visitable hoy»: no entra ahí (sí en «Para visitar», con «Horario por
+ *   confirmar»).
+ * - **Festival:** el marco sale una vez en los carriles (en Inicio, en «Esta semana» si tiene actos esa semana, y si no en «Festivales y
+ *   exposiciones»); en la agenda del día es un bloque con sus actos de ese día (`componerDia`). Un marco sin actos no sale (no promete nada).
  * - **Taller:** cada sesión es un renglón, con «Sesión 2 de 4» (`textoParte`).
  */
 
@@ -120,7 +121,7 @@ export function abiertasEseDia<T extends Exposicion>(eventos: readonly T[], dia:
 export const visitaEnRango = (e: Exposicion, desde: string, hasta: string): boolean => visitaDe(e).desde <= hasta && visitaDe(e).hasta >= desde;
 
 /**
- * El carril «Para visitar» de Inicio: las exposiciones que no han cerrado y que ya abrieron o abren en los próximos 7 días (la misma ventana de
+ * Las exposiciones del carril «Festivales y exposiciones» de Inicio (antes «Para visitar», OL-322): las exposiciones que no han cerrado y que ya abrieron o abren en los próximos 7 días (la misma ventana de
  * «Esta semana»), la que cierra antes primero. `hoy` es YYYY-MM-DD en la zona de cada exposición.
  */
 export function exposicionesVigentes<T extends Exposicion>(eventos: readonly T[], ahora: Date = new Date()): T[] {
@@ -131,6 +132,34 @@ export function exposicionesVigentes<T extends Exposicion>(eventos: readonly T[]
       return visitaEnRango(e, hoy, sumarDiasIso(hoy, DIAS_ESTA_SEMANA - 1));
     })
     .toSorted(porCierre);
+}
+
+// ---------- festivales y exposiciones (Inicio, OL-342) ----------
+
+type Vigente = ConClase & { id: string; titulo: string; inicio: string; fin: string | null; zona: string; programa?: { registrados: number } };
+
+/**
+ * Los festivales del carril «Festivales y exposiciones» de Inicio: los marcos en curso o por venir, sin ventana de días (a diferencia de las
+ * exposiciones: un festival se anuncia con semanas y hay pocos). Uno que ya pasó no está (la agenda ya no lo trae; aquí también se comprueba, con la regla de todas las clases: `yaPasoSegunClase`), ni
+ * uno que se sabe sin actos publicados (no promete nada, doc 55 §3); si no se pudo contar su programa, sí.
+ */
+export const festivalesVigentes = <T extends Vigente>(eventos: readonly T[], ahora: Date = new Date()): T[] =>
+  eventos.filter((e) => esMarco(e) && e.programa?.registrados !== 0 && !eventoPaso(e.inicio, e.fin, ahora, e.zona));
+
+/** Ya empezó: la exposición abrió (su `inicio` es el primer minuto de su primer día) o el festival tuvo su primer acto. */
+const enCurso = (e: Vigente, ahora: Date): boolean => Date.parse(e.inicio) <= ahora.getTime();
+/** Cuándo termina: el fin guardado (la exposición, al acabar su día de cierre; el festival, su último acto) o, sin él, su inicio. */
+const terminaEn = (e: Vigente): number => Date.parse(e.fin ?? e.inicio);
+
+/**
+ * El orden del carril (OL-342; el contexto ordena, no el tipo): primero lo que ya está en curso, lo que termina antes primero; luego lo que viene,
+ * por su inicio. Festivales y exposiciones van mezclados. A igual instante, por nombre y por id (dos cargas, el mismo orden).
+ */
+export function porCercania(a: Vigente, b: Vigente, ahora: Date = new Date()): number {
+  const curso = Number(enCurso(b, ahora)) - Number(enCurso(a, ahora));
+  if (curso) return curso;
+  const instante = enCurso(a, ahora) ? terminaEn(a) - terminaEn(b) : Date.parse(a.inicio) - Date.parse(b.inicio);
+  return instante || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
 }
 
 /** «Abre 10:00 a.m.–6:00 p.m.»: lo que dice el renglón de «Para visitar hoy». */
