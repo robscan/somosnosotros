@@ -1804,7 +1804,8 @@ test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descar
   assert.equal(await miniatura.evaluate((e) => e.naturalWidth > 0), true);
   assert.match(await tarjeta(p).innerText(), /jue 5 de nov · 19:00/);
   const descargar = p.getByRole("link", { name: "Descargar el cartel" });
-  assert.equal(await descargar.getAttribute("href"), "/api/cartel/0e0e0e0e-0000-4000-8000-000000000001");
+  // Con la versión de su imagen (OL-338): un cartel nuevo no baja el anterior guardado.
+  assert.match(await descargar.getAttribute("href"), /^\/api\/cartel\/0e0e0e0e-0000-4000-8000-000000000001\?v=[0-9a-f]{8}$/);
   await foto(p, "344-02-publicado-web-descargar-el-cartel");
   let archivos = 0;
   p.on("download", () => archivos++);

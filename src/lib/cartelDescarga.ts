@@ -21,6 +21,24 @@ export function extensionDeImagen(tipo: string | null | undefined): string | nul
   return EXTENSIONES[(tipo ?? "").split(";")[0].trim().toLowerCase()] ?? null;
 }
 
+/** Un resumen corto y estable de un texto (FNV-1a de 32 bits, en hexadecimal): para versionar una dirección sin alargarla. */
+function resumen(texto: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 0x01000193) >>> 0;
+  return h.toString(16).padStart(8, "0");
+}
+
+/**
+ * La dirección de la descarga del cartel subido (OL-338): `/api/cartel/<id>` con la versión de su imagen (`?v=`). La ruta deja guardar su
+ * respuesta (cinco minutos en el teléfono, una hora en el CDN) y la dirección era la misma después de cambiar el cartel, así que se bajaba el
+ * anterior. Cada cartel nuevo tiene su propio nombre en Storage (`subirFoto`, «Usar como cartel»): con el resumen de su dirección, cambiar el
+ * cartel cambia la de la descarga. La ruta no lee `v`; sin imagen, la dirección de siempre.
+ */
+export function hrefCartelSubido(id: string, imagen?: string | null): string {
+  const ruta = `/api/cartel/${encodeURIComponent(id)}`;
+  return imagen ? `${ruta}?v=${resumen(imagen)}` : ruta;
+}
+
 /** El nombre del archivo que se descarga: `cartel-<slug>.jpg`; el slug ya es de letras y guiones, y aun así se limpia. */
 export function nombreDeCartel(slug: string | null | undefined, extension: string): string {
   const base = (slug ?? "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
