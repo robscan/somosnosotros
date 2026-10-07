@@ -13,10 +13,9 @@ import { NextResponse } from "next/server";
  * `adb`; la de Google, lo que baja de Play):
  * - `HUELLA_SUBIDA`: SHA-256 de la llave de subida (`subida.keystore`, alias `subida`, guardada fuera del repo en
  *   somosnosotros-privado/android/).
- * - `HUELLA_FIRMA_GOOGLE`: SHA-256 de la llave de firma de Google. Aparece en Play Console tras la primera subida
- *   (Prueba y lanza → Configuración → Integridad de la app → Firma de apps → «Certificado de la clave de firma de
- *   la app»). TODAVÍA NO ESTÁ: hasta pegarla aquí, la app instalada desde Play abre la web con la barra de
- *   direcciones de Chrome (modo de respaldo, `fallbackType: customtabs`), no a pantalla completa.
+ * - `HUELLA_FIRMA_GOOGLE`: SHA-256 de la llave de firma de apps de Google, tomada de Play Console (Prueba y lanza →
+ *   Configuración → Integridad de la app → Firma de apps) tras la primera subida, el 2026-10-06. Con las dos huellas,
+ *   la app instalada desde Play se abre a pantalla completa, sin la barra de direcciones de Chrome.
  *
  * Confirmar que nada la redirige: src/proxy.ts solo actúa sobre `/artistas|lugares|eventos/<uuid>` y
  * next.config.ts no tiene ninguna regla que toque esta ruta.
@@ -25,10 +24,10 @@ const PAQUETE = "org.somosnosotros.app";
 
 const HUELLA_SUBIDA = "BC:BE:8F:FB:71:A6:B0:B9:0A:07:3A:F4:13:AB:45:64:1F:A4:A5:9E:9F:6F:51:6C:B0:3E:82:5E:D7:6E:40:50";
 
-/** Pegar aquí, en el mismo formato AA:BB:…, la huella que muestra Play Console tras la primera subida. */
-const HUELLA_FIRMA_GOOGLE: string | null = null;
+/** Llave de firma de apps de Google (Play App Signing), la que muestra Play Console. */
+const HUELLA_FIRMA_GOOGLE = "D6:F9:F9:04:10:B8:E0:A1:8E:F2:B9:08:83:22:83:89:72:88:4E:6E:3D:78:12:5C:19:DD:73:71:07:3B:2C:8F";
 
-const HUELLAS = [HUELLA_SUBIDA, HUELLA_FIRMA_GOOGLE].filter((h): h is string => h !== null);
+const HUELLAS = [HUELLA_SUBIDA, HUELLA_FIRMA_GOOGLE];
 
 const CONTENIDO = [
   {

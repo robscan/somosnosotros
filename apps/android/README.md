@@ -63,15 +63,18 @@ $ANDROID_SDK/build-tools/36.1.0/apksigner verify --print-certs app-release-signe
 - Huella SHA-256 de la llave de subida (pública; está en `assetlinks.json`):
   `BC:BE:8F:FB:71:A6:B0:B9:0A:07:3A:F4:13:AB:45:64:1F:A4:A5:9E:9F:6F:51:6C:B0:3E:82:5E:D7:6E:40:50`.
 
-## Tras la primera subida a Play Console (obligatorio, o la app abre con barra de Chrome)
+## Huella de la llave de firma de Google (hecho el 2026-10-06)
 
-1. En Play Console: Prueba y lanza → Configuración → Integridad de la app → Firma de apps → copiar la huella
-   «SHA-256» del **Certificado de la clave de firma de la app** (la de Google, no la de subida).
-2. Pegarla en `HUELLA_FIRMA_GOOGLE` de `src/app/.well-known/assetlinks.json/route.ts` (queda **junto** a la de
-   subida, nunca en su lugar) y publicar la web. Comprobar con
-   `curl -s https://somosnosotros.org/.well-known/assetlinks.json`.
-3. Instalar la app desde la pista de prueba y confirmar que se abre sin barra de direcciones. Si aparece una barra,
-   la huella no coincide o la web aún no se publicó (Chrome cachea el archivo; reinstalar la app lo fuerza).
+Tras la primera subida, Play Console (Prueba y lanza → Configuración → Integridad de la app → Firma de apps) dio la
+huella SHA-256 del certificado de la clave de firma de la app (la de Google, no la de subida):
+`D6:F9:F9:04:10:B8:E0:A1:8E:F2:B9:08:83:22:83:89:72:88:4E:6E:3D:78:12:5C:19:DD:73:71:07:3B:2C:8F`.
+Ya está en `HUELLA_FIRMA_GOOGLE` de `src/app/.well-known/assetlinks.json/route.ts`, **junto** a la de subida (nunca en
+su lugar: la de subida cubre el APK instalado a mano con `adb`). Sin las dos, la app abre la web con la barra de
+direcciones de Chrome. Para comprobarlo: `curl -s https://somosnosotros.org/.well-known/assetlinks.json` debe traer
+las dos huellas, y la app instalada desde la pista de prueba debe abrirse sin barra de direcciones (si aparece, la web
+aún no se publicó o la huella no coincide; Chrome cachea el archivo, reinstalar la app lo fuerza).
+
+Enlace para unirse a la prueba interna (verificadores internos): https://play.google.com/apps/internaltest/4701524694821002071
 
 ## Regla de Google para cuentas personales
 
