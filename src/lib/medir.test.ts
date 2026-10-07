@@ -12,8 +12,12 @@ function ponerVentana({ href = "https://somosnosotros.org/eventos/fiesta", admin
   vi.stubGlobal("document", { querySelector: (sel: string) => (admin && sel === "[data-medir-admin]" ? {} : null) });
 }
 
+const red = vi.fn();
 beforeEach(() => {
   track.mockReset();
+  red.mockReset();
+  red.mockResolvedValue(new Response(null, { status: 204 }));
+  vi.stubGlobal("fetch", red);
   vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "production");
   vi.stubEnv("NEXT_PUBLIC_MEDIR_DEPURAR", "");
 });
@@ -86,6 +90,12 @@ describe("medirCliente", () => {
     expect(evento?.[1]).toBe("busqueda");
     expect(evento?.[2]).toMatchObject({ resultados: "si", page_location: "https://somosnosotros.org/buscar", page_title: "/buscar", page_referrer: "" });
     expect(JSON.stringify(gtag.mock.calls)).not.toContain("rosa");
+    // Y el mismo evento al servidor, para el Measurement Protocol: solo nombre y datos.
+    expect(red).toHaveBeenCalledTimes(1);
+    const [url, opciones] = red.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/medir");
+    expect(opciones).toMatchObject({ method: "POST", keepalive: true });
+    expect(JSON.parse(String(opciones.body))).toEqual({ nombre: "busqueda", datos: { resultados: "si" } });
   });
   it("fuera de producción no manda nada", () => {
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
@@ -94,6 +104,7 @@ describe("medirCliente", () => {
     medirCliente("evento_creado", { cartel: "no" });
     expect(track).not.toHaveBeenCalled();
     expect(gtag).not.toHaveBeenCalled();
+    expect(red).not.toHaveBeenCalled();
   });
   it("con NEXT_PUBLIC_MEDIR_DEPURAR=1 fuera de producción lo escribe en la consola y no lo manda", () => {
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "");
@@ -111,6 +122,7 @@ describe("medirCliente", () => {
     medirCliente("asistencia", { estado: "voy", cambio: "puesto" });
     expect(track).not.toHaveBeenCalled();
     expect(gtag).not.toHaveBeenCalled();
+    expect(red).not.toHaveBeenCalled();
   });
   it("lo que no está en la lista no sale", () => {
     const gtag = vi.fn();
@@ -128,12 +140,16 @@ describe("medirCliente", () => {
         throw new Error("bloqueado");
       },
     });
+    red.mockRejectedValue(new TypeError("fetch failed"));
+    expect(() => medirCliente("reporte", { que: "evento" })).not.toThrow();
+    vi.stubGlobal("fetch", undefined);
     expect(() => medirCliente("reporte", { que: "evento" })).not.toThrow();
   });
   it("sin Google cargado manda solo a Vercel", () => {
     ponerVentana();
     medirCliente("app_instalada");
     expect(track).toHaveBeenCalledWith("app_instalada", {});
+    expect(red).not.toHaveBeenCalled(); // sin Google preparado tampoco va al servidor
   });
 });
 

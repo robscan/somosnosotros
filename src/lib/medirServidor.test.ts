@@ -7,6 +7,8 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "user-agent": "Prueba/1.0", "x-forwarded-for": "203.0.113.7", cookie: "sb-sesion=secreta", referer: "https://somosnosotros.org/nuevo/lugar?nombre=Casa" }),
 }));
 vi.mock("next/server", () => ({ after: (f: () => Promise<void>) => tareas.push(f) }));
+const google = vi.fn();
+vi.mock("@/lib/medirGoogleServidor", () => ({ enviarAGoogle: (...a: unknown[]) => google(...a) }));
 
 import { medirServidor } from "./medirServidor";
 
@@ -16,6 +18,8 @@ const correr = async () => {
 
 beforeEach(() => {
   track.mockReset();
+  google.mockReset();
+  google.mockResolvedValue(true);
   tareas.length = 0;
   vi.stubEnv("VERCEL_ENV", "production");
 });
@@ -29,6 +33,15 @@ describe("medirServidor (OL-325)", () => {
     expect(track).toHaveBeenCalledWith("entrar", { paso: "listo", metodo: "apple" }, { headers: { "user-agent": "Prueba/1.0", "x-forwarded-for": "203.0.113.7" } });
     expect(JSON.stringify(track.mock.calls)).not.toContain("secreta");
     expect(JSON.stringify(track.mock.calls)).not.toContain("Casa");
+    expect(google).toHaveBeenCalledWith("entrar", { paso: "listo", metodo: "apple" }); // y a Google por el Measurement Protocol
+  });
+  it("si Vercel falla, Google se manda igual", async () => {
+    track.mockImplementation(() => {
+      throw new Error("sin red");
+    });
+    await medirServidor("entrar", { paso: "fallo", metodo: "google" });
+    await correr();
+    expect(google).toHaveBeenCalledWith("entrar", { paso: "fallo", metodo: "google" });
   });
   it("fuera de producción no manda nada", async () => {
     vi.stubEnv("VERCEL_ENV", "preview");
@@ -40,6 +53,7 @@ describe("medirServidor (OL-325)", () => {
     await medirServidor("entrar", { paso: "listo", metodo: "google" }, { esAdmin: async () => true });
     await correr();
     expect(track).not.toHaveBeenCalled();
+    expect(google).not.toHaveBeenCalled();
   });
   it("lo que no está en la lista no sale", async () => {
     await (medirServidor as (n: string, d: unknown) => Promise<void>)("entrar", { paso: "listo", metodo: "correo", correo: "rosa@gmail.com" });

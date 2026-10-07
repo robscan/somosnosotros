@@ -3,14 +3,16 @@ import { track } from "@vercel/analytics/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { validarMedicion, type DatosDe, type NombreEvento } from "@/lib/medir";
+import { enviarAGoogle } from "@/lib/medirGoogleServidor";
 
 /**
  * Medir una acción desde el servidor (OL-325): solo para lo que termina sin pasar por una pantalla que pueda medirlo, como la vuelta de
  * Apple o Google al entrar. Lo demás se mide en el teléfono con `medirCliente` (`src/lib/medir.ts`): así llega igual a Vercel y a
  * Google Analytics, que solo se alcanza desde el navegador. Va aparte de `medir.ts` porque el navegador no puede cargar `next/headers`.
  *
- * Solo a Vercel Analytics, solo en producción (`VERCEL_ENV`) y nunca para la administración (`esAdmin`, si quien llama sabe de quién
- * es la acción). Se manda después de la respuesta (`after`): no frena a nadie. No lanza nunca.
+ * A Vercel Analytics y, con `GA_API_SECRET`, a Google Analytics por el Measurement Protocol (`src/lib/medirGoogleServidor.ts`); solo
+ * en producción (`VERCEL_ENV`) y nunca para la administración (`esAdmin`, si quien llama sabe de quién es la acción). Se manda después
+ * de la respuesta (`after`): no frena a nadie. No lanza nunca.
  *
  * A Vercel le pasamos solo el navegador y la IP de la petición (con eso cuenta visitantes sin cookies, igual que con las vistas):
  * nunca las cookies, que `track` mandaría por su cuenta y llevan la sesión. Llamarla solo desde rutas cuya dirección no diga nada
@@ -33,7 +35,8 @@ export async function medirServidor<N extends NombreEvento>(nombre: N, datosPedi
     const enviar = async () => {
       try {
         if (opciones.esAdmin && (await opciones.esAdmin())) return;
-        await track(nombre, datos, { headers: cabeceras });
+        // Cada destino por su lado: si Vercel falla, Google se manda igual (y al revés).
+        await Promise.all([Promise.resolve().then(() => track(nombre, datos, { headers: cabeceras })).catch(() => {}), enviarAGoogle(nombre, datos)]);
       } catch {
         // medir nunca rompe la acción
       }
