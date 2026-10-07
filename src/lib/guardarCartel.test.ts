@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destinoDelCartel, fotosDelSistema, textosDelCartel } from "./guardarCartel";
+import { destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel } from "./guardarCartel";
 
 const guardarFoto = async () => ({ guardado: true });
 
@@ -34,5 +34,16 @@ describe("destino y texto según el entorno", () => {
     const textos = textosDelCartel("descarga");
     expect(textos).toEqual({ reposo: "Descargar el cartel", preparando: "Preparando…", listo: "Cartel descargado", fallo: "No se pudo descargar" });
     expect(Object.values(textos).join(" ")).not.toMatch(/fotos/i);
+  });
+});
+
+describe("letreros cortos de la ficha", () => {
+  it("web: «Cartel» / «Descargado» / «No se pudo», con el nombre completo aparte", () => {
+    expect(textosDelCartel("descarga", true)).toEqual({ reposo: "Cartel", preparando: "Preparando…", listo: "Descargado", fallo: "No se pudo" });
+    expect(etiquetaDelCartel("descarga")).toBe("Descargar el cartel");
+  });
+  it("app: «En Fotos» / «Guardado» / «No se pudo», con el nombre completo aparte", () => {
+    expect(textosDelCartel("fotos", true)).toEqual({ reposo: "En Fotos", preparando: "Guardando…", listo: "Guardado", fallo: "No se pudo" });
+    expect(etiquetaDelCartel("fotos")).toBe("Guardar en Fotos");
   });
 });

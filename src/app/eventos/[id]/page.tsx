@@ -432,7 +432,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                   <IconoDescarga />
                 </span>
               }
-              claseTexto={ficha.accionEtiqueta}
+              corto
             />
           )}
         </div>

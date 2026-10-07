@@ -30,7 +30,7 @@ before(async () => {
       import BotonDescargarCartel from './src/components/BotonDescargarCartel';import './src/app/globals.css';
       const q = new URLSearchParams(location.search);
       createRoot(document.getElementById('root')).render(
-        <BotonDescargarCartel id="lectura-ab12" className="boton" icono={<b>↓</b>} precargar={q.has('precargar')} claseTexto={q.has('ficha') ? 'letrero' : undefined} />
+        <BotonDescargarCartel id="lectura-ab12" className="boton" icono={<b>↓</b>} precargar={q.has('precargar')} corto={q.has('ficha')} />
       );
     `,
     },
@@ -112,6 +112,8 @@ async function pagina(t, { hoja = true, ruta = "ok", fotos = "no", query = "" } 
 }
 const enlace = (p) => p.getByRole("link");
 const texto = async (p) => (await enlace(p).innerText()).replace(/^↓\s*/, "");
+/** Espera a que el botón diga exactamente eso (el icono de la prueba es «↓»). */
+const dice = (p, letrero) => p.waitForFunction((x) => document.querySelector("a")?.textContent === `↓${x}`, letrero);
 const sinHoja = async (p) => assert.deepEqual(await p.evaluate(() => window.compartidos), [], "el botón no abre la hoja de compartir");
 
 test("en la web (aunque el navegador comparta archivos, como Safari del iPhone): «Preparando…», descarga el archivo con el nombre de la ruta, dice «Cartel descargado» y vuelve a su texto a los 4 s; nunca abre la hoja de compartir", TOPE, async (t) => {
@@ -169,11 +171,30 @@ test("con `precargar` el cartel se pide al montarse y el toque no vuelve a pedir
   assert.equal(quieta.pedidos.length, 0);
 });
 
-test("en la ficha: el texto va en su propio letrero (la clase que se le da), el mismo que en «Publicado», y es su nombre accesible", TOPE, async (t) => {
-  const p = await pagina(t, { query: "?ficha" });
-  assert.equal(await texto(p), "Descargar el cartel");
-  assert.equal(await p.locator("a > span.letrero").innerText(), "Descargar el cartel");
+test("en la ficha (web): letrero corto «Cartel» con el nombre completo en `aria-label` mientras está en reposo; «Preparando…» y «Descargado» sin etiqueta; «No se pudo» si falla", TOPE, async (t) => {
+  const p = await pagina(t, { query: "?ficha", ruta: "lenta" });
+  assert.equal(await texto(p), "Cartel");
+  assert.equal(await enlace(p).getAttribute("aria-label"), "Descargar el cartel");
+  const [descarga] = await Promise.all([p.waitForEvent("download"), enlace(p).click(), (async () => { while (!p.liberar) await p.waitForTimeout(20); p.liberar(); })()]);
+  assert.equal(descarga.suggestedFilename(), "cartel-lectura-ab12.png");
+  await dice(p, "Descargado");
+  // Mientras avisa, el letrero que se lee es el aviso, no la etiqueta fija.
   assert.equal(await enlace(p).getAttribute("aria-label"), null);
+  const cae = await pagina(t, { query: "?ficha", ruta: "cae" });
+  await enlace(cae).click();
+  await dice(cae, "No se pudo");
+});
+
+test("en la ficha (app con plugin): letrero corto «En Fotos» con «Guardar en Fotos» en `aria-label`; «Guardado» al terminar y «No se pudo» si Fotos falla", TOPE, async (t) => {
+  const p = await pagina(t, { query: "?ficha", fotos: "ok" });
+  assert.equal(await texto(p), "En Fotos");
+  assert.equal(await enlace(p).getAttribute("aria-label"), "Guardar en Fotos");
+  await enlace(p).click();
+  await dice(p, "Guardado");
+  assert.equal(await enlace(p).getAttribute("aria-label"), null);
+  const falla = await pagina(t, { query: "?ficha", fotos: "permiso" });
+  await enlace(falla).click();
+  await dice(falla, "No se pudo");
 });
 
 test("en la app de iPhone con el plugin de Fotos: «Guardar en Fotos», un toque y la imagen llega al plugin (sin hoja ni descarga); «Guardado en Fotos» y vuelve a su texto a los 4 s", TOPE, async (t) => {

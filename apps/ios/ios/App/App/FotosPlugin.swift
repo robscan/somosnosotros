@@ -13,7 +13,7 @@ import UIKit
  *
  * Permiso mínimo: `PHAccessLevel.addOnly` (la app solo agrega a Fotos, nunca lee la fonoteca), con
  * `NSPhotoLibraryAddUsageDescription` en Info.plist. La primera vez iOS pregunta; si la persona dice que no, el método rechaza con el
- * código `permiso` y la web cae en la hoja de compartir (`src/components/BotonDescargarCartel.tsx`).
+ * código `permiso` y el botón de la web dice «No se pudo guardar» (`src/components/BotonDescargarCartel.tsx`; sin hoja de compartir ni descarga de respaldo).
  *
  * La web manda la imagen en base64 (`datos`) y su tipo (`tipo`). JPEG y PNG se guardan tal cual, byte por byte; cualquier otro formato que
  * iOS sepa leer (WebP, AVIF, GIF) se guarda como PNG para no depender de que Fotos lo acepte tal cual. Lo que no se pueda leer como imagen

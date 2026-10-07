@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
-import { destinoDelCartel, fotosDelSistema, textosDelCartel, type VentanaConFotos } from "@/lib/guardarCartel";
+import { destinoDelCartel, etiquetaDelCartel, fotosDelSistema, textosDelCartel, type VentanaConFotos } from "@/lib/guardarCartel";
 
 /** Cuánto se queda el aviso («Guardado en Fotos», «No se pudo guardar») antes de volver al texto de siempre. */
 const AVISO_MS = 4000;
@@ -15,8 +15,8 @@ type Props = {
   className: string;
   /** Lo que va antes del texto (el icono; en la ficha, dentro de su círculo). */
   icono?: ReactNode;
-  /** La clase del letrero (el texto va en su propio `<span>`): en la ficha, la que lo corta a dos líneas bajo su círculo. */
-  claseTexto?: string;
+  /** Letrero corto («Cartel», «En Fotos») para la ficha, donde va bajo un círculo como las demás acciones; el nombre completo queda en `aria-label`. */
+  corto?: boolean;
   /** Pide el cartel al montarse, para que el toque ya lo tenga y la descarga o el guardado salgan al instante. */
   precargar?: boolean;
 };
@@ -64,9 +64,10 @@ const hayFotosEnServidor = () => false;
  * La imagen vive en otro origen, así que se pide a `/api/cartel/[id]`, que la entrega como archivo. Es un enlace de verdad (mejora
  * progresiva, como `BotonCalendario`): sin JavaScript descarga igual.
  */
-export default function BotonDescargarCartel({ id, className, icono, claseTexto, precargar = false }: Props) {
+export default function BotonDescargarCartel({ id, className, icono, corto = false, precargar = false }: Props) {
   const conFotos = useSyncExternalStore(sinSuscripcion, hayFotos, hayFotosEnServidor);
-  const dice = textosDelCartel(destinoDelCartel({ conFotos }));
+  const destino = destinoDelCartel({ conFotos });
+  const dice = textosDelCartel(destino, corto);
   const href = `/api/cartel/${encodeURIComponent(id)}`;
   const [estado, setEstado] = useState<Estado>("reposo");
   const aviso = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -126,9 +127,9 @@ export default function BotonDescargarCartel({ id, className, icono, claseTexto,
   }
 
   return (
-    <a href={href} download className={className} onClick={alTocar} aria-busy={estado === "preparando" || undefined} aria-live="polite">
+    <a href={href} download className={className} onClick={alTocar} aria-label={corto && estado === "reposo" ? etiquetaDelCartel(destino) : undefined} aria-busy={estado === "preparando" || undefined} aria-live="polite">
       {icono}
-      <span className={claseTexto}>{dice[estado]}</span>
+      {dice[estado]}
     </a>
   );
 }

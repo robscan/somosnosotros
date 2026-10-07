@@ -32,8 +32,22 @@ export function destinoDelCartel({ conFotos }: { conFotos: boolean }): Destino {
 /** Lo que dice el botón en cada momento. Donde no se puede escribir en Fotos no se promete «Fotos»: se dice lo que hace, descargar. */
 export type Textos = { reposo: string; preparando: string; listo: string; fallo: string };
 
-export function textosDelCartel(destino: Destino): Textos {
-  return destino === "fotos"
-    ? { reposo: "Guardar en Fotos", preparando: "Guardando…", listo: "Guardado en Fotos", fallo: "No se pudo guardar" }
-    : { reposo: "Descargar el cartel", preparando: "Preparando…", listo: "Cartel descargado", fallo: "No se pudo descargar" };
+const COMPLETOS: Record<Destino, Textos> = {
+  fotos: { reposo: "Guardar en Fotos", preparando: "Guardando…", listo: "Guardado en Fotos", fallo: "No se pudo guardar" },
+  descarga: { reposo: "Descargar el cartel", preparando: "Preparando…", listo: "Cartel descargado", fallo: "No se pudo descargar" },
+};
+/** Los letreros cortos de la ficha (un círculo con su letrero debajo, como las demás acciones de la fila, a una línea). */
+const CORTOS: Record<Destino, Textos> = {
+  fotos: { reposo: "En Fotos", preparando: "Guardando…", listo: "Guardado", fallo: "No se pudo" },
+  descarga: { reposo: "Cartel", preparando: "Preparando…", listo: "Descargado", fallo: "No se pudo" },
+};
+
+/** Los textos del botón: completos («Publicado») o cortos (la ficha). */
+export function textosDelCartel(destino: Destino, corto = false): Textos {
+  return (corto ? CORTOS : COMPLETOS)[destino];
+}
+
+/** El nombre completo del botón en reposo: lo que lee el lector de pantalla cuando el letrero visible es corto. */
+export function etiquetaDelCartel(destino: Destino): string {
+  return COMPLETOS[destino].reposo;
 }
