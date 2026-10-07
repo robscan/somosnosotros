@@ -173,20 +173,32 @@ export function rangoCorto(desde: string, hasta: string, hoy: string): string {
 }
 
 /**
+ * ¿Dura varios días? Su fin cae un día después o más, pero una noche que solo cruza la medianoche (empieza 10:00 p.m., termina 1:00 a.m. del
+ * día siguiente: su fin cae antes de la hora de inicio) es una noche, no dos días. Es la regla con la que se lee el evento (`cuandoVariosDias`)
+ * y con la que la agenda lo reparte en sus días (`lib/ocurrencias`, OL-320).
+ */
+export function esDeVariosDias(inicio: string, fin: string | null | undefined, zona: string = ZONA_INICIAL): boolean {
+  if (!fin) return false;
+  const diaInicio = diaLocal(new Date(inicio), zona);
+  const diaFin = diaLocal(new Date(fin), zona);
+  if (diaFin <= diaInicio) return false;
+  return !(diaFin === sumarDias(diaInicio, 1) && horaCorta(fin, zona) <= horaCorta(inicio, zona));
+}
+
+/**
  * Un evento de varios días se lee como lo pregunta el alta (OL-309): el horario del primer día vale para todos, así que el texto dice los días
  * y, aparte, las horas de cada día («Del 10 al 12 de oct» y «20:00–21:00», en 24 h como todo el texto de la app); sin hora de fin puesta (acaba con su último día, ver
  * `acabaConSuUltimoDia`), solo la de inicio. Null si no dura varios días, también cuando solo cruza la medianoche (empieza 10:00 p.m., termina
  * 1:00 a.m. del día siguiente: su fin cae antes de la hora de inicio y es una noche, no dos días).
  */
 export function cuandoVariosDias(inicio: string, fin: string | null | undefined, ahora: Date = new Date(), zona: string = ZONA_INICIAL): { dias: string; horas: string } | null {
-  if (!fin) return null;
+  if (!fin || !esDeVariosDias(inicio, fin, zona)) return null;
   const d = new Date(inicio);
   const f = new Date(fin);
   const diaInicio = diaLocal(d, zona);
   const diaFin = diaLocal(f, zona);
   const horaInicio = horaCorta(inicio, zona);
   const horaFin = horaCorta(fin, zona);
-  if (diaFin <= diaInicio || (diaFin === sumarDias(diaInicio, 1) && horaFin <= horaInicio)) return null;
   // Cadena limpia (viaja a compartir, avisos y correos); que la hora no se parta en un renglón angosto lo resuelve quien la pinta, con CSS.
   const horas = acabaConSuUltimoDia(d, f, zona) ? horaInicio : `${horaInicio}–${horaFin}`;
   return { dias: rangoCorto(diaInicio, diaFin, diaLocal(ahora, zona)), horas };

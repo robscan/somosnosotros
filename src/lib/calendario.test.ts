@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { archivoIcs, botonDias, datosEventoNativo, diasActivosCalendario, diasEnMes, diasIniciales, escaparIcs, etiquetaDia, etiquetaHora, FIN_DEL_DIA, hayMesAnterior, haySiguienteMes, horasDeFin, mesAnterior, mesInicial, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso, textoDias, tocarDia, ultimoDia } from "./calendario";
+import { archivoIcs, botonDias, datosEventoNativo, diasActivosCalendario, diasEnMes, diasIniciales, escaparIcs, etiquetaDia, etiquetaHora, FIN_DEL_DIA, hayMesAnterior, haySiguienteMes, ocupaRango, horasDeFin, mesAnterior, mesInicial, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso, textoDias, tocarDia, ultimoDia } from "./calendario";
 
 const evento = { id: "fba5bd3e-7898-4261-b4fd-97a17b1d61ee", titulo: "Navidad queretana: danza, música; y más", inicio: "2026-12-06T18:00:00.000Z", fin: null, descripcion: "Espectáculo\nnavideño", lugar: "Teatro del IMSS, Tomasa Estévez 805" };
 
@@ -195,6 +195,16 @@ describe("diasActivosCalendario", () => {
   it("un `fin` corrupto (antes del inicio) no cuelga la función: solo cuenta el día de inicio", () => {
     const dias = diasActivosCalendario([{ inicio: "2026-09-25T19:00:00-06:00", fin: "2026-09-20T19:00:00-06:00", zona: ZONA }]);
     expect([...dias.keys()]).toEqual(["2026-09-25"]);
+  });
+
+  it("con horario por día cuenta solo los días de sus sesiones, no los de en medio (OL-320)", () => {
+    const sesiones = [{ inicio: "2026-09-26T10:00:00-06:00" }, { inicio: "2026-10-03T10:00:00-06:00" }, { inicio: "2026-10-10T10:00:00-06:00" }];
+    const taller = { inicio: sesiones[0].inicio, fin: "2026-10-10T12:00:00-06:00", zona: ZONA, sesiones };
+    expect([...diasActivosCalendario([taller]).entries()]).toEqual([["2026-09-26", 1], ["2026-10-03", 1], ["2026-10-10", 1]]);
+    expect(ocupaRango(taller, "2026-09-27", "2026-10-02")).toBe(false);
+    expect(ocupaRango(taller, "2026-09-27", "2026-10-03")).toBe(true);
+    // el día de una sesión es el de la zona del evento, no el del instante en UTC
+    expect([...diasActivosCalendario([{ ...taller, sesiones: [{ inicio: "2026-09-27T02:00:00Z" }, { inicio: "2026-10-04T02:00:00Z" }] }]).keys()]).toEqual(["2026-09-26", "2026-10-03"]);
   });
 
   it("sin eventos, un Map vacío", () => {

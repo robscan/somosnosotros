@@ -5,12 +5,15 @@ import type { Ciudad } from "./ciudad";
 import type { EventoAgenda } from "./agenda";
 import { type Destacado } from "./destacados";
 import { filtroSinPasar } from "./fechas";
+import { sesionesVigentes, type SesionGuardada } from "./sesionesEvento";
 import { clienteServidor } from "./supabase/servidor";
 
 const TOPE_AGENDA = 300;
 
-type Fila = Omit<EventoAgenda, "lugar" | "van"> & {
+type Fila = Omit<EventoAgenda, "lugar" | "van" | "sesiones"> & {
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
+  /** Su horario por día, como lo trae la misma consulta del evento (`sesiones:eventos_sesiones`); [] si no lo tiene. */
+  sesiones?: SesionGuardada[] | null;
 };
 
 export type Agenda = {
@@ -54,7 +57,7 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
   const [e, s, destacados] = await Promise.all([
-    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, lugar:lugares(nombre, portada)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
+    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, lugar:lugares(nombre, portada), sesiones:eventos_sesiones(inicio, fin)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? leer(supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000), "seguimientos propios", true) : Promise.resolve(null),
     leer<Destacado>(supabase.rpc("tira_destacados", { p_tipo: "eventos", p_ciudad: ciudad.nombre }), "destacados"),
@@ -80,9 +83,11 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   const van = new Map<string, number>();
   for (const fila of (a ?? []) as { evento_id: string; n: number }[]) van.set(fila.evento_id, Number(fila.n));
   const eventos: EventoAgenda[] = [];
-  for (const fila of (e ?? []) as unknown as (Fila & { ciudad: string })[]) {
+  for (const { sesiones: guardadas, ...fila } of (e ?? []) as unknown as (Fila & { ciudad: string })[]) {
     const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
-    eventos.push({ ...fila, lugar, van: a === null ? null : (van.get(fila.id) ?? 0) });
+    // Solo las sesiones que todavía le corresponden al evento (`sesionesVigentes`) y solo si hay: casi todos los eventos viajan sin ellas.
+    const sesiones = sesionesVigentes(fila, guardadas);
+    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), van: a === null ? null : (van.get(fila.id) ?? 0) });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
   return { eventos, seguidos, eventosSeguidos, artistasSeguidos: usuarioId ? artistasSeguidos : null, asistencias, destacados: destacados ?? [] };

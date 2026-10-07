@@ -125,7 +125,7 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
           // La redonda de un lugar o un artista sin foto lleva el símbolo SN ya generado; las demás, el nombre grande sobre fondo suave (H-03).
           const foto = t.foto ?? (tamano === "chica" ? SIN_FOTO : null);
           return (
-            <li key={t.id}>
+            <li key={t.clave ?? t.id}>
               <Link href={t.href} className={foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
                 {foto && <Imagen src={foto} alt="" className={styles.foto} width={384} height={384} sizes={tamanoImagenCarril(forma)} />}
                 <b>{t.titulo}</b>

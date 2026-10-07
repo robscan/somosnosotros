@@ -68,6 +68,30 @@ describe("Agenda distingue fallos de una lista vacía", () => {
   });
 });
 
+describe("el horario por día de cada evento (OL-320)", () => {
+  const sesiones = [
+    { inicio: "2026-10-07T18:00:00Z", fin: "2026-10-07T20:00:00Z" },
+    { inicio: "2026-10-14T18:00:00Z", fin: "2026-10-14T20:00:00Z" },
+  ];
+  const taller = { ...fila, id: "taller", inicio: sesiones[0].inicio, fin: sesiones[1].fin, sesiones };
+  it("pide las sesiones en la misma consulta de los eventos y las deja en el evento si todavía le corresponden", async () => {
+    const b = banco({ eventos: { data: [taller, { ...fila, sesiones: [] }, { ...fila, id: "sin-campo" }] } });
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);
+    expect(b.from).toHaveBeenCalledWith("eventos");
+    const select = (b.from.mock.results[0].value as { select: { mock: { calls: string[][] } } }).select.mock.calls[0][0];
+    expect(select).toContain("sesiones:eventos_sesiones(inicio, fin)");
+    expect(r.eventos.find((e) => e.id === "taller")?.sesiones).toEqual(sesiones);
+    // casi todos viajan sin ellas: ni la propiedad
+    expect(r.eventos.find((e) => e.id === "evento")).not.toHaveProperty("sesiones");
+    expect(r.eventos.find((e) => e.id === "sin-campo")).not.toHaveProperty("sesiones");
+  });
+  it("las sesiones de un evento que se editó después y ya no coinciden con sus días se ignoran", async () => {
+    const editado = { ...taller, inicio: "2026-10-09T18:00:00Z" };
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [editado] } }).cliente);
+    expect(r.eventos[0]).not.toHaveProperty("sesiones");
+  });
+});
+
 describe("señal preventiva de capacidad", () => {
   it.each([269, 270, 300])("%i eventos: avisa desde el90% sin registrar ciudad ni cuenta", async (n) => {
     const traza = vi.spyOn(console, "warn").mockImplementation(() => {});
