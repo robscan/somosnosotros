@@ -119,6 +119,10 @@ export function claseSugerida(titulo: string): Exclude<Clase, "puntual"> | null 
   let mejor: { en: number; clase: Exclude<Clase, "puntual"> } | null = null;
   for (const { patron, clase } of PALABRAS_DE_CLASE) {
     const m = patron.exec(texto);
+    // «Master Class · 9° Festival de Cine UASLP», «Concierto de clausura del Festival Umbral 2026»: el título nombra un acto del festival, no el
+    // festival (OL-323: ese acto se relaciona con su festival en «Publicado», H4/H5). Antes del festival solo puede ir su edición («9°», «XXIII»,
+    // «Noveno», «Gran»).
+    if (m && clase === "festival" && /\p{L}/u.test(texto.slice(0, m.index).replace(/(^|\s)(\d{1,2}\s*[º°ªoa]?\.?|[ivxl]{1,7}|primer|segundo|tercer|cuarto|quinto|sexto|septimo|octavo|noveno|decimo|gran|el|la|los|las)\s*$/, ""))) continue;
     if (m && (!mejor || m.index < mejor.en)) mejor = { en: m.index, clase };
   }
   return mejor?.clase ?? null;

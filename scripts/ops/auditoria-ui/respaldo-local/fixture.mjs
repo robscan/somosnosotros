@@ -249,7 +249,54 @@ export const rpcs = {
   guardar_evento_con_clase: ({ p_evento, p_operacion }) => ({ id: p_evento ?? p_operacion, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null, padre: null, inauguracion: null }),
   publicar_programa: ({ p_actos, p_operacion }) => ({ id: p_operacion, actos: (p_actos ?? []).filter((a) => a.publicar).map((a) => a.operacion), borradores: (p_actos ?? []).filter((a) => !a.publicar).map((a) => a.operacion) }),
   publicar_borrador_de_programa: ({ p_evento }) => ({ id: p_evento, padre: null }),
+  // OL-323: publicar un evento lo deja en memoria (como las asistencias: el fixture no cambia y otro arranque empieza limpio), para que «Publicado»
+  // encuentre su sugerencia; aceptar o descartar una sugerencia también queda en memoria.
+  guardar_evento_con_avisos: ({ p_evento, p_datos, p_operacion }, t) => enMemoria(t, p_evento, p_datos, p_operacion),
+  guardar_evento_con_sesiones: ({ p_evento, p_datos, p_operacion }, t) => enMemoria(t, p_evento, p_datos, p_operacion),
+  publicar_exposicion_de_inauguracion: ({ p_inauguracion, p_titulo, p_inicio, p_fin, p_operacion }, t) => {
+    const i = t.eventos.find((e) => e.id === p_inauguracion);
+    const r = enMemoria(t, null, { ...i, titulo: p_titulo, inicio: p_inicio, fin: p_fin, precio: null, descripcion: null }, p_operacion);
+    Object.assign(t.eventos.find((e) => e.id === r.id), { clase: "exposicion", inaugura_id: p_inauguracion, termina: p_fin });
+    if (i) i.sugerencias = { ...i.sugerencias, exposicion: { estado: "aceptada" } };
+    return { id: r.id, slug: t.eventos.find((e) => e.id === r.id).slug };
+  },
+  ligar_inauguracion: ({ p_exposicion, p_inauguracion }, t) => {
+    const x = t.eventos.find((e) => e.id === p_exposicion);
+    if (x) x.inaugura_id = p_inauguracion;
+    return { id: p_exposicion, slug: x?.slug ?? null };
+  },
+  relacionar_en_festival: ({ p_eventos = [], p_marco, p_titulo, p_operacion }, t) => {
+    const actos = t.eventos.filter((e) => p_eventos.includes(e.id)).sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const id = p_marco ?? p_operacion;
+    if (!t.eventos.some((e) => e.id === id)) enMemoria(t, null, { ...actos[0], titulo: p_titulo, inicio: actos[0].inicio, fin: actos.at(-1).termina }, id);
+    const marco = t.eventos.find((e) => e.id === id);
+    marco.clase = "festival";
+    for (const a of actos) Object.assign(a, { evento_padre_id: id, sugerencias: { ...a.sugerencias, festival: { estado: "aceptada" } } });
+    return { id, slug: marco.slug, titulo: marco.titulo, actos: t.eventos.filter((e) => e.evento_padre_id === id && e.visible).length };
+  },
+  anotar_sugerencia: ({ p_evento, p_tipo, p_estado, p_clave }, t) => {
+    const e = t.eventos.find((x) => x.id === p_evento);
+    if (e && e.sugerencias?.[p_tipo]?.estado !== "aceptada") e.sugerencias = { ...e.sugerencias, [p_tipo]: { estado: p_estado, ...(p_clave ? { clave: p_clave } : {}) } };
+    return null;
+  },
 };
+
+/** Un evento que se publica desde la app (OL-323): a la memoria, con lo que guarda la base (la clave de la operación como id, su slug, Ana). */
+function enMemoria(t, p_evento, p_datos, p_operacion) {
+  const vacio = { artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null };
+  if (p_evento) return { id: p_evento, ...vacio };
+  if (t.eventos.some((e) => e.id === p_operacion)) return { id: p_operacion, ...vacio, repetido: true };
+  const d = p_datos ?? {};
+  const slug = `${String(d.titulo ?? "evento").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)}-${String(p_operacion).slice(0, 4)}`;
+  const termina = d.fin ?? masHoras(d.inicio, 4);
+  t.eventos.push({
+    clase: "puntual", evento_padre_id: null, inaugura_id: null, borrador: false, sugerencias: {},
+    id: p_operacion, slug, titulo: d.titulo, inicio: d.inicio, fin: d.fin ?? null, termina, descripcion: d.descripcion ?? null, imagen: d.imagen ?? null, precio: d.precio ?? null, enlace: d.enlace ?? null,
+    creado_por: ANA, visible: true, sitio_texto: d.sitio_texto ?? null, sitio_direccion: d.sitio_direccion ?? null, sitio_lat: d.sitio_lat ?? null, sitio_lng: d.sitio_lng ?? null,
+    sitio_reservado: !!d.sitio_reservado, sitio_revelar_desde: null, lugar_id: d.lugar_id ?? null, zona: d.zona ?? ZONA, ciudad: d.ciudad ?? CIUDAD, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
+  });
+  return { id: p_operacion, ...vacio };
+}
 
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
