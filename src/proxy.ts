@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { redireccionDeNuevo } from "@/lib/armazon";
 import { configPublica } from "@/lib/config";
-import { destinoConSlug, rutaConUuid } from "@/lib/redireccionSlug";
+import { destinoConSlug, destinoEnlaceCorto, rutaConUuid } from "@/lib/redireccionSlug";
 
 /**
  * Se ejecuta antes de cada página: refresca la sesión de Supabase (cookies) para que
@@ -22,6 +22,9 @@ import { destinoConSlug, rutaConUuid } from "@/lib/redireccionSlug";
  * pantalla a la que se llega.
  */
 export async function proxy(request: NextRequest) {
+  // La dirección corta que imprime el creador de cartel (OL-324): `/e/<slug>` → la ficha del evento, sin consulta.
+  const corta = destinoEnlaceCorto(request.nextUrl.pathname);
+  if (corta) return NextResponse.redirect(new URL(corta, request.nextUrl), 308);
   if (request.nextUrl.pathname === "/nuevo") {
     const q = request.nextUrl.searchParams;
     const alta = redireccionDeNuevo({ tipo: q.get("tipo"), lugar: q.get("lugar"), artista: q.get("artista"), desde: q.get("desde"), ciudad: q.get("ciudad"), nombre: q.get("nombre"), lat: q.get("lat"), lng: q.get("lng") });
