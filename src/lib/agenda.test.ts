@@ -20,8 +20,11 @@ import {
   type Cuanto,
   type EventoAgenda,
   type EventoBuscable,
+  compararEventos,
 } from "./agenda";
 import { distanciaKm } from "./geo";
+import { diasActivosCalendario } from "./calendario";
+import { claveDe, textoParte } from "./ocurrencias";
 
 // "ahora": lunes 14 sep 2026, 12:00 hora de la ciudad (18:00Z)
 const AHORA = new Date("2026-09-14T18:00:00Z");
@@ -304,5 +307,83 @@ describe("Nuevos: lo publicado desde la última visita (docs/rediseno/23)", () =
     expect(conFiltros({ ...SIN_FILTROS, cuando: { desde: "2026-09-19", hasta: "2026-09-19" } })).toBe(true);
     expect(conFiltros({ ...SIN_FILTROS, cuanto: ["gratis"] })).toBe(true);
     expect(conFiltros({ ...SIN_FILTROS, siguiendo: true })).toBe(true);
+  });
+});
+
+describe("la agenda por día: cada día en que pasa algo (OL-320)", () => {
+  // Hoy lunes 14 sep 2026, 12:00 de la ciudad. Sábados 19 y 26 de sep y 3 de oct (América/México, UTC−6): cada sesión con su hora.
+  const hora = (d: string, h: string) => new Date(`${d}T${h}:00-06:00`).toISOString();
+  const sesiones = [
+    { inicio: hora("2026-09-19", "17:00"), fin: hora("2026-09-19", "19:00") },
+    { inicio: hora("2026-09-26", "18:00"), fin: hora("2026-09-26", "20:00") },
+    { inicio: hora("2026-10-03", "17:00"), fin: hora("2026-10-03", "19:00") },
+  ];
+  const taller = evento({ id: "taller", titulo: "Taller de grabado", inicio: sesiones[0].inicio, fin: sesiones[2].fin, sesiones, precio: "$300" });
+  const jazz = evento({ id: "jazz", titulo: "Noche de jazz", inicio: hora("2026-09-26", "19:00") });
+  const festival = evento({ id: "festival", titulo: "Festival", inicio: hora("2026-09-18", "20:00"), fin: hora("2026-09-20", "21:00") });
+  const agenda = { eventos: [jazz, taller, festival], seguidos: null, eventosSeguidos: [] };
+  const lista = (f: Partial<typeof SIN_FILTROS> = {}, ahora = AHORA) => listarAgenda(agenda, { ...SIN_FILTROS, ...f }, undefined, ahora);
+
+  it("un evento con tres sesiones sale tres veces, cada una con la hora de ese día, y el festival de cada día una por día", () => {
+    expect(lista().map((e) => [claveDe(e), e.inicio])).toEqual([
+      ["festival:2026-09-18", hora("2026-09-18", "20:00")],
+      ["taller:2026-09-19", sesiones[0].inicio],
+      ["festival:2026-09-19", hora("2026-09-19", "20:00")],
+      ["festival:2026-09-20", hora("2026-09-20", "20:00")],
+      ["taller:2026-09-26", sesiones[1].inicio],
+      ["jazz:2026-09-26", jazz.inicio],
+      ["taller:2026-10-03", sesiones[2].inicio],
+    ]);
+  });
+  it("las tres llaves son distintas aunque el evento sea el mismo: es lo que usan los renglones", () => {
+    const llaves = lista().map(claveDe);
+    expect(new Set(llaves).size).toBe(llaves.length);
+    expect(lista().filter((e) => e.id === "taller").map(textoParte)).toEqual(["Día 1 de 3", "Día 2 de 3", "Día 3 de 3"]);
+  });
+  it("los días se agrupan por el de cada sesión, no por el del inicio del evento", () => {
+    const grupos = agruparPorDia(lista(), AHORA);
+    expect(grupos.map((g) => [g.clave, g.eventos.map((e) => e.id)])).toEqual([
+      ["2026-09-18", ["festival"]],
+      ["2026-09-19", ["taller", "festival"]],
+      ["2026-09-20", ["festival"]],
+      ["2026-09-26", ["taller", "jazz"]],
+      ["2026-10-03", ["taller"]],
+    ]);
+  });
+  it("el día que ya pasó no sale: con el reloj en el segundo sábado, el primero ya no está", () => {
+    const despues = new Date(hora("2026-09-26", "12:00"));
+    expect(lista({}, despues).filter((e) => e.id === "taller").map(textoParte)).toEqual(["Día 2 de 3", "Día 3 de 3"]);
+    // y el festival, que acabó el domingo 20, tampoco
+    expect(lista({}, despues).some((e) => e.id === "festival")).toBe(false);
+  });
+  it("Cuándo: un día con sesión lo trae, y uno de en medio sin sesión no", () => {
+    expect(lista({ cuando: dia("2026-09-26") }).map((e) => e.id)).toEqual(["taller", "jazz"]);
+    expect(lista({ cuando: dia("2026-09-23") })).toEqual([]);
+    expect(lista({ cuando: { desde: "2026-09-20", hasta: "2026-09-25" } }).map(claveDe)).toEqual(["festival:2026-09-20"]);
+  });
+  it("«Ver N eventos» cuenta los renglones de la lista: lo que dice el botón es lo que se ve", () => {
+    const f = { cuando: { desde: "2026-09-19", hasta: "2026-09-26" } };
+    expect(lista(f)).toHaveLength(5);
+    expect(lista({ ...f, cuanto: ["costo"] }).map((e) => e.id)).toEqual(["taller", "taller"]);
+  });
+  it("Nuevos lista eventos, una vez cada uno, aunque Cuándo mire los días de sus sesiones", () => {
+    const nuevos = (f: Partial<typeof SIN_FILTROS>) => listarAgenda(agenda, { ...SIN_FILTROS, ...f }, 0, AHORA).map((e) => e.id);
+    expect(nuevos({})).toEqual(["festival", "taller", "jazz"]);
+    expect(nuevos({ cuando: dia("2026-09-26") })).toEqual(["taller", "jazz"]);
+    expect(nuevos({ cuando: dia("2026-09-23") })).toEqual([]);
+    expect(listarAgenda(agenda, SIN_FILTROS, 0, AHORA).find((e) => e.id === "taller")?.sesiones).toHaveLength(3);
+  });
+  it("los puntos del calendario de Cuándo caen en los días de las sesiones, no en los de en medio", () => {
+    const dias = diasActivosCalendario([taller]);
+    expect([...dias.keys()]).toEqual(["2026-09-19", "2026-09-26", "2026-10-03"]);
+    // El festival (sin horario por día) ocupa cada uno de sus días; el jazz, el suyo: el número de un día cuenta lo que hay ese día.
+    expect(diasActivosCalendario(agenda.eventos).get("2026-09-26")).toBe(2);
+    expect(diasActivosCalendario(agenda.eventos).get("2026-09-20")).toBe(1);
+    expect(diasActivosCalendario(agenda.eventos).get("2026-09-23")).toBeUndefined();
+  });
+  it("el orden de agenda compara instantes, no letras: «…Z» y «…+00:00» de la misma hora empatan y decide el título", () => {
+    const a = evento({ id: "a", titulo: "Beta", inicio: "2026-09-26T01:00:00.000Z" });
+    const b = evento({ id: "b", titulo: "Alfa", inicio: "2026-09-26T01:00:00+00:00" });
+    expect([a, b].sort(compararEventos).map((e) => e.id)).toEqual(["b", "a"]);
   });
 });

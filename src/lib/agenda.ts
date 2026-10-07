@@ -5,12 +5,18 @@ import type { EventoResumen } from "./eventos";
 import { claseDeCosto, nombreSitio, type ClaseDeCosto } from "./eventos";
 import { diaCorto, diaLocal, localAIso, ZONA_INICIAL } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
+import { ocurrenciasDeLista, type DatosOcurrencia } from "./ocurrencias";
+import type { SesionGuardada } from "./sesionesEvento";
 
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
 export type EventoAgenda = EventoResumen & {
   creado_en: string;
   /** Cuántas personas dijeron "Voy"; null si el recuento no está disponible. */
   van: number | null;
+  /** Su horario por día (`eventos_sesiones`, OL-311), solo si lo tiene y todavía vale (`sesionesVigentes`): la agenda lo reparte en sus días (`lib/ocurrencias`). */
+  sesiones?: SesionGuardada[];
+  /** Solo en lo que sale de repartir un evento en sus días (OL-320): el evento visto ese día, con el `inicio` y el `fin` de ese día. */
+  ocurrencia?: DatosOcurrencia;
 };
 
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };
@@ -21,13 +27,20 @@ type Publicable = Ordenable & Pick<EventoAgenda, "creado_en">;
 /** Lo que hace falta para agrupar por día: el orden y la zona del evento. */
 type Agrupable = Ordenable & Pick<EventoAgenda, "zona">;
 
+/** Los instantes se comparan como instantes: una hora que llega de la base («…+00:00») y una calculada aquí («…Z») son la misma. */
+function porInstante(a: string, b: string): number {
+  const x = Date.parse(a);
+  const y = Date.parse(b);
+  return Number.isFinite(x) && Number.isFinite(y) ? x - y : a.localeCompare(b);
+}
+
 /**
  * Orden de agenda: por hora y, a la misma hora, por título (alfabético, como Lugares y Artistas) y por id. La base no
  * garantiza el orden de los empates: sin desempate, dos cargas traían en otro orden los eventos de las 19:00 y la
  * memoria de pantalla reponía el scroll sobre otro evento (bitácora 062).
  */
 export function compararEventos(a: Ordenable, b: Ordenable): number {
-  return a.inicio.localeCompare(b.inicio) || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
+  return porInstante(a.inicio, b.inicio) || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
 }
 
 /**
@@ -232,7 +245,12 @@ export function buscarEventos<T extends Pick<EventoBuscable, "titulo" | "lugar" 
  * Lo que Agenda lista con esos filtros, en orden de agenda (o, en Nuevos, `nuevosDesde`, lo último publicado primero). La lista y el número de
  * cada botón «Ver N eventos» de las hojas de Cuándo y Filtros salen de aquí: lo que dice el botón es lo que se ve al tocarlo, en la pestaña
  * que se está viendo.
+ *
+ * Todos lista cada día en que pasa algo (OL-320, `lib/ocurrencias`): un evento con horario por día, o de varios días, sale en cada uno, con su
+ * hora de ese día, y el que ya pasó no sale; el número de «Ver N eventos» cuenta esos renglones. Nuevos, en cambio, lista eventos (cada uno
+ * una vez, por cuándo se publicó), aunque el filtro de Cuándo sí mira los días que ocupa cada uno.
  */
-export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, nuevosDesde?: number): EventoAgenda[] {
-  return filtrarAgenda(agenda.eventos, { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, nuevosDesde });
+export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, nuevosDesde?: number, ahora: Date = new Date()): EventoAgenda[] {
+  const eventos = nuevosDesde === undefined ? ocurrenciasDeLista(agenda.eventos, ahora) : agenda.eventos;
+  return filtrarAgenda(eventos, { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, nuevosDesde });
 }

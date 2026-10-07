@@ -16,6 +16,7 @@ import {
 } from "./inicio";
 import { corteNuevos, eventosNuevos, LIMITE_NUEVOS, listarAgenda, SIN_FILTROS } from "./agenda";
 import type { Agenda } from "./cargarAgenda";
+import { claveDe, textoParte } from "./ocurrencias";
 import { eventoPaso } from "./fechas";
 
 const ahora = new Date("2026-09-23T18:00:00Z");
@@ -402,5 +403,49 @@ describe("recuentos de Agenda no disponibles", () => {
     const destacado = evento("destacado", { van: null, inicio: "2026-10-08T10:00:00Z" });
     expect(carrilEstelar([destacado], [tarde, sinRecuento, temprano], new Set()).map((e) => e.id))
       .toEqual(["destacado", "temprano", "desconocido", "tarde"]);
+  });
+});
+
+describe("Inicio: los eventos con varios días (OL-320)", () => {
+  // `ahora`: miércoles 23 de sep, 12:00 de la ciudad. El taller: viernes 25 y sábado 26 (esta semana) y sábado 3 de oct (después).
+  const hora = (d: string, h: string) => new Date(`${d}T${h}:00-06:00`).toISOString();
+  const sesiones = [
+    { inicio: hora("2026-09-25", "18:00"), fin: hora("2026-09-25", "20:00") },
+    { inicio: hora("2026-09-26", "11:00"), fin: hora("2026-09-26", "13:00") },
+    { inicio: hora("2026-10-03", "17:00"), fin: hora("2026-10-03", "19:00") },
+  ];
+  const taller = eventoAgenda("taller", { titulo: "Taller", inicio: sesiones[0].inicio, fin: sesiones[2].fin, sesiones, lugar_id: "lugar-1" });
+
+  it("«Esta semana» pone el evento en cada día de la semana en que pasa algo, con la hora de ese día, y deja fuera el de después", () => {
+    const r = carrilEstaSemana([taller], new Set(), ahora);
+    expect(r.map((e) => [claveDe(e), e.inicio])).toEqual([["taller:2026-09-25", sesiones[0].inicio], ["taller:2026-09-26", sesiones[1].inicio]]);
+    expect(r.map(textoParte)).toEqual(["Día 1 de 3", "Día 2 de 3"]);
+  });
+  it("«Esta semana» marca el evento como visto una sola vez: ningún otro carril lo repite", () => {
+    const vistos = new Set<string>();
+    carrilEstaSemana([taller], vistos, ahora);
+    expect([...vistos]).toEqual(["taller"]);
+    expect(carrilEstaSemana([taller], vistos, ahora)).toEqual([]);
+  });
+  it("«Esta semana» no enseña un día que ya pasó aunque el evento siga en curso", () => {
+    const r = carrilEstaSemana([taller], new Set(), new Date(hora("2026-09-25", "21:00")));
+    expect(r.map((e) => claveDe(e))).toEqual(["taller:2026-09-26"]);
+  });
+  it("un evento en curso (empezó, sigue) sin sesión esta semana no está en «Esta semana»", () => {
+    const lejana = { inicio: hora("2026-10-10", "17:00"), fin: hora("2026-10-10", "19:00") };
+    const enCurso = eventoAgenda("curso", { inicio: sesiones[0].inicio, fin: lejana.fin, sesiones: [sesiones[0], lejana] });
+    expect(carrilEstaSemana([enCurso], new Set(), new Date(hora("2026-09-27", "12:00")))).toEqual([]);
+  });
+  it("un evento de varios días sin horario por día sale una vez por día de la semana, hoy incluido", () => {
+    const festival = eventoAgenda("festival", { inicio: hora("2026-09-23", "20:00"), fin: hora("2026-10-07", "21:00") }); // cada día de 20:00 a 21:00, 15 días
+    expect(carrilEstaSemana([festival], new Set(), ahora).map((e) => e.ocurrencia?.dia)).toEqual(["2026-09-23", "2026-09-24", "2026-09-25", "2026-09-26", "2026-09-27", "2026-09-28", "2026-09-29"]);
+  });
+  it("«Seleccionados para ti», «Nuevos» y «Más adelante» presentan el evento en su próximo día, no en el primero", () => {
+    const despues = new Date(hora("2026-09-25", "21:00"));
+    const r = calcularCarrilesAgenda(agenda({ eventos: [taller], seguidos: ["lugar-1"] }), despues);
+    expect(r.estelar).toHaveLength(1);
+    expect(r.estelar[0]).toMatchObject({ id: "taller", inicio: sesiones[1].inicio });
+    expect(textoParte(r.estelar[0])).toBe("Día 2 de 3");
+    expect(carrilMasAdelante(agenda({ eventos: [taller], asistencias: null }), despues)[0].inicio).toBe(sesiones[1].inicio);
   });
 });
