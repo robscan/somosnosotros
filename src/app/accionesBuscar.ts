@@ -3,6 +3,7 @@
 import { buscarEventos, type EventoAgenda, type EventoBuscable } from "@/lib/agenda";
 import type { ArtistaLista } from "@/lib/artistas";
 import { LIMITE_BUSQUEDA_UNIFICADA, ordenarPorCiudad, SIN_RESULTADOS_BUSQUEDA, type Encontrado, type ResultadoBusqueda } from "@/lib/buscarUnificado";
+import { conSedes } from "@/lib/cargarSedes";
 import { tarjetaArtista, tarjetaEvento, tarjetaLugar } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre, type LugarLista } from "@/lib/lugares";
@@ -52,7 +53,7 @@ export async function buscarUnificado(q: string, ciudades: string[]): Promise<Re
     artistas = artistas.ilike("nombre_orden", `%${palabra}%`);
   }
   const [e, l, a] = await Promise.all([
-    supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, lugar:lugares(nombre, portada), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).or(filtroSinPasar(ahora)).order("inicio").order("titulo").order("id").limit(EVENTOS_CANDIDATOS),
+    supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, lugar:lugares(nombre, portada), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).or(filtroSinPasar(ahora)).order("inicio").order("titulo").order("id").limit(EVENTOS_CANDIDATOS),
     lugares.order("nombre_orden").limit(CANDIDATOS),
     artistas.order("nombre_orden").limit(CANDIDATOS),
   ]);
@@ -61,7 +62,9 @@ export async function buscarUnificado(q: string, ciudades: string[]): Promise<Re
     const artistas = (fila.artistas ?? []).map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista)?.nombre).filter((n): n is string => !!n);
     return { ...fila, lugar, artistas, van: 0 };
   });
-  const eventos = buscarEventos(proximos, texto).map((p): Encontrado => ({ ...tarjetaEvento(p, ahora), ciudad: p.ciudad }));
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339), y se halla por cualquiera de ellas.
+  const conSusSedes = await conSedes(supabase, proximos);
+  const eventos = buscarEventos(conSusSedes, texto).map((p): Encontrado => ({ ...tarjetaEvento(p, ahora), ciudad: p.ciudad }));
   const lugaresHallados = ((l.data ?? []) as unknown as FilaLugar[]).map((fila): Encontrado => ({ ...tarjetaLugar({ ...fila, proximo: null } as LugarLista, ahora), ciudad: fila.ciudad }));
   const artistasHallados = ((a.data ?? []) as unknown as FilaArtista[]).map((fila): Encontrado => ({ ...tarjetaArtista({ ...fila, proxima: null } as ArtistaLista, ahora), ciudad: fila.ciudad }));
   const cortar = (lista: Encontrado[]) => ordenarPorCiudad(lista, orden).slice(0, LIMITE_BUSQUEDA_UNIFICADA);

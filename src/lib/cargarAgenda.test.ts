@@ -124,6 +124,21 @@ describe("por clase (OL-322): la clase, el horario de cada exposición y el prog
     expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("programa");
     expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("horario");
   });
+  it("las sedes de cada festival salen de sus actos, de la misma lectura que su programa (OL-339)", async () => {
+    const ccub = { id: "ccub", slug: "ccub", nombre: "Centro Cultural Universitario Bicentenario", direccion: null, lat: 22.14, lng: -101.01 };
+    const paz = { id: "paz", slug: "paz", nombre: "Teatro de la Paz", direccion: null, lat: 22.15, lng: -100.97 };
+    const enSedes = [
+      { ...actos[0], inicio: "2026-10-08T01:00:00Z", lugar_id: "ccub", lugar: ccub },
+      { ...actos[1], inicio: "2026-10-09T01:00:00Z", lugar_id: "paz", lugar: [paz] },
+    ];
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [marco, ...enSedes] } }).cliente);
+    expect(r.eventos.find((e) => e.id === "marco")).toMatchObject({ programa: { registrados: 2 }, sedes: [{ nombre: ccub.nombre }, { nombre: paz.nombre }] });
+    expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("sedes");
+  });
+  it("un festival cuyos actos no dicen dónde no lleva sedes (dice lo capturado en él)", async () => {
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [marco, ...actos] } }).cliente);
+    expect(r.eventos.find((e) => e.id === "marco")).not.toHaveProperty("sedes");
+  });
   it("sin exposiciones ni festivales no pide nada más", async () => {
     const b = banco();
     await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);

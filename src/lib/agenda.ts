@@ -264,11 +264,13 @@ export type EventoBuscable = EventoAgenda & { artistas: string[] };
  * sitio o artista, escrito a medias, sin importar acentos ni mayúsculas; cada palabra escrita tiene que estar («jazz museo» halla
  * el jazz del museo).
  */
-export function buscarEventos<T extends Pick<EventoBuscable, "titulo" | "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado" | "artistas">>(eventos: T[], busqueda: string): T[] {
+export function buscarEventos<T extends Pick<EventoBuscable, "titulo" | "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado" | "artistas" | "sedes">>(eventos: T[], busqueda: string): T[] {
   const palabras = normalizarNombre(busqueda).split(" ").filter(Boolean);
   if (palabras.length === 0) return eventos;
   return eventos.filter((e) => {
-    const texto = normalizarNombre(`${e.titulo} ${nombreSitio(e)} ${e.artistas.join(" ")}`);
+    // Un festival se halla por cualquiera de sus sedes (OL-339), no por «Varias sedes».
+    const sitio = e.sedes?.length ? e.sedes.map((s) => s.nombre).join(" ") : nombreSitio(e);
+    const texto = normalizarNombre(`${e.titulo} ${sitio} ${e.artistas.join(" ")}`);
     return palabras.every((p) => texto.includes(p));
   });
 }

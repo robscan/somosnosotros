@@ -1,5 +1,6 @@
 import "server-only";
 import type { EventoAgenda } from "@/lib/agenda";
+import { conSedes } from "@/lib/cargarSedes";
 import { conProximaFecha, type Disciplina, type FechaDeArtista, type ProximaFecha, type TipoArtista } from "@/lib/artistas";
 import { sitioEnLista } from "@/lib/eventos";
 import { eventoPaso, filtroSinPasar } from "@/lib/fechas";
@@ -12,7 +13,7 @@ export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: str
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: PerfilPublico; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
+type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[] };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
 type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -90,8 +91,10 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   const { data: conteo } = ids.length ? await supabase.rpc("van_por_evento", { ids }) : { data: [] as { evento_id: string; n: number }[] };
   const van = new Map<string, number>();
   for (const c of (conteo ?? []) as { evento_id: string; n: number }[]) van.set(c.evento_id, Number(c.n));
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única.
+  const conSusSedes = await conSedes(supabase, filas.map((x) => x.e));
   const aAgenda = (e: FilaEvento): EventoAgenda => ({ ...e, lugar: uno(e.lugar), van: van.get(e.id) ?? 0 });
-  const porEstado = (estado: string) => filas.filter((x) => x.estado === estado).map((x) => aAgenda(x.e)).sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const porEstado = (estado: string) => filas.flatMap((x, i) => (x.estado === estado ? [aAgenda(conSusSedes[i])] : [])).sort((a, b) => a.inicio.localeCompare(b.inicio));
   return { perfil: perfil as PerfilPublico, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };
 }
 

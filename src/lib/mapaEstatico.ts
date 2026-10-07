@@ -31,3 +31,21 @@ export function urlMapaFicha(punto: { lat: number; lng: number } | null): string
   const pin = `pin-s+${COLOR_PIN}(${punto.lng},${punto.lat})`;
   return `https://api.mapbox.com/styles/v1/${ESTILO_MINIATURA}/static/${pin}/${punto.lng},${punto.lat},15,0/${ANCHO_MAPA_FICHA}x${ALTO_MAPA_FICHA}@2x?access_token=${mapboxToken}`;
 }
+
+/** Cuántos pines se pintan como mucho: la dirección de la imagen tiene tope de largo, y más no se distinguen a ese tamaño. */
+const TOPE_PINES = 25;
+
+/** El aire alrededor de los pines al encuadrar varios (px de la imagen): que ninguno quede cortado contra el borde. */
+const AIRE_PINES = 40;
+
+/**
+ * El mapa de las sedes de un festival (OL-339): un pin por sede y el encuadre que los abarca a todos (`auto` de la Static Images API), en la misma
+ * imagen y proporción que el de un pin. Con uno solo, el de siempre; null sin token o sin puntos. A lo más `TOPE_PINES` (la dirección tiene tope).
+ */
+export function urlMapaSedes(puntos: readonly { lat: number; lng: number }[]): string | null {
+  if (puntos.length < 2) return urlMapaFicha(puntos[0] ?? null);
+  const { mapboxToken } = configPublica();
+  if (!mapboxToken) return null;
+  const pines = puntos.slice(0, TOPE_PINES).map((p) => `pin-s+${COLOR_PIN}(${p.lng},${p.lat})`).join(",");
+  return `https://api.mapbox.com/styles/v1/${ESTILO_MINIATURA}/static/${pines}/auto/${ANCHO_MAPA_FICHA}x${ALTO_MAPA_FICHA}@2x?padding=${AIRE_PINES}&access_token=${mapboxToken}`;
+}

@@ -5,6 +5,8 @@ import type { Ciudad } from "./ciudad";
 import type { EventoAgenda } from "./agenda";
 import { type Destacado } from "./destacados";
 import { horarioEfectivo } from "./claseEvento";
+import { cargarActosDeMarcos } from "./cargarSedes";
+import { sedesDeFestival, sedesParaLista } from "./sedesFestival";
 import { filtroSinPasar } from "./fechas";
 import { franjaDeFila, type Franja } from "./horarioLugar";
 import { sesionesVigentes, type SesionGuardada } from "./sesionesEvento";
@@ -12,7 +14,7 @@ import { clienteServidor } from "./supabase/servidor";
 
 const TOPE_AGENDA = 300;
 
-type Fila = Omit<EventoAgenda, "lugar" | "van" | "sesiones" | "horario" | "programa"> & {
+type Fila = Omit<EventoAgenda, "lugar" | "van" | "sesiones" | "horario" | "programa" | "sedes"> & {
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
   /** Su horario por día, como lo trae la misma consulta del evento (`sesiones:eventos_sesiones`); [] si no lo tiene. */
   sesiones?: SesionGuardada[] | null;
@@ -90,12 +92,11 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
     usuarioId && ids.length ? leer(supabase.from("asistencias").select("evento_id, estado").eq("usuario_id", usuarioId).in("evento_id", ids).limit(1000), "asistencias propias", true) : Promise.resolve([]),
     expos.length ? leer<FilaHorario & { evento_id: string }>(supabase.from("eventos_horarios").select("evento_id, dias, abre, cierra").in("evento_id", expos.map((x) => x.id)).limit(1000), "horario de exposiciones") : Promise.resolve([]),
     lugaresExpo.length ? leer<FilaHorario & { lugar_id: string }>(supabase.from("lugares_horarios").select("lugar_id, dias, abre, cierra").in("lugar_id", lugaresExpo).limit(1000), "horario de lugares") : Promise.resolve([]),
-    marcos.length ? leer<{ evento_padre_id: string }>(supabase.from("eventos").select("evento_padre_id").in("evento_padre_id", marcos).eq("visible", true).limit(1000), "programas de festivales") : Promise.resolve([]),
+    // Sus actos con su sitio (OL-339): cuántos tiene (el programa) y dónde son (sus sedes), de la misma lectura.
+    cargarActosDeMarcos(supabase, marcos),
   ]);
   const porEvento = agruparFranjas(hp, "evento_id");
   const porLugar = agruparFranjas(hl, "lugar_id");
-  const registrados = new Map<string, number>();
-  for (const x of actos ?? []) registrados.set(x.evento_padre_id, (registrados.get(x.evento_padre_id) ?? 0) + 1);
   const asistencias: Record<string, Exclude<Asistencia, null>> | null = usuarioId ? {} : null;
   for (const fila of (m ?? []) as { evento_id: string; estado: string }[]) {
     if (asistencias && (fila.estado === "voy" || fila.estado === "me_interesa")) asistencias[fila.evento_id] = fila.estado;
@@ -115,8 +116,11 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
     const sesiones = sesionesVigentes(fila, guardadas);
     // El horario que vale de una exposición (el suyo o el de su lugar; vacío, «Horario por confirmar»); sin poder leerlo, nada (no se inventa).
     const horario = fila.clase === "exposicion" && hp !== null && hl !== null ? horarioEfectivo(porEvento.get(fila.id), fila.lugar_id ? porLugar.get(fila.lugar_id) : null).franjas : undefined;
-    const programa = fila.clase === "festival" && actos !== null ? { registrados: registrados.get(fila.id) ?? 0 } : undefined;
-    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), ...(horario ? { horario } : {}), ...(programa ? { programa } : {}), van: a === null ? null : (van.get(fila.id) ?? 0) });
+    // Un festival: cuántos actos tiene publicados y sus sedes, derivadas de ellos (sin actos con sitio, dice lo capturado en el marco).
+    const suyos = fila.clase === "festival" ? actos?.get(fila.id) : undefined;
+    const programa = suyos ? { registrados: suyos.length } : undefined;
+    const sedes = suyos ? sedesDeFestival(suyos) : [];
+    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), ...(horario ? { horario } : {}), ...(programa ? { programa } : {}), ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), van: a === null ? null : (van.get(fila.id) ?? 0) });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
   return { eventos, seguidos, eventosSeguidos, artistasSeguidos: usuarioId ? artistasSeguidos : null, asistencias, destacados: destacados ?? [] };
