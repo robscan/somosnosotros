@@ -63,3 +63,4 @@ El founder aprobó el texto mandando la primera tanda él mismo: `npx tsx script
 - 2026-10-04 · mandados 15 · fallidos 0 · quedan 247
 - 2026-10-05 · mandados 15 · fallidos 0 · quedan 231
 - 2026-10-06 · mandados 15 · fallidos 0 · quedan 216
+- 2026-10-07 · mandados 15 · fallidos 0 · quedan 200
