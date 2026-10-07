@@ -167,13 +167,17 @@ ul { list-style: none; }
 .chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
 .app { position: relative; }
 .casilla b { white-space: normal; }
+/* La tira de tipos al pie del primer paso (la de hoy en /nuevo): Evento · Lugar · Artista en mayúsculas chicas, el actual con su punto. Solo en el primer paso. */
+.tira-tipos { display: grid; grid-template-columns: repeat(3, 1fr); min-height: var(--toque); padding-bottom: var(--piso); border-top: 1px solid var(--borde); background: var(--fondo); }
+.tira-tipos a, .tira-tipos b { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: var(--toque); font-size: var(--letra-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-suave); text-decoration: none; }
+.tira-tipos b { color: var(--texto); }
+.tira-tipos b::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--texto); }
 </style>
 </head>
 <body>
 <div class="tira">
   <select id="caso" aria-label="Caso del prototipo">
-    <option value="elegir">0 · «+» sin contexto: ¿qué publicas?</option>
-    <option value="lugar-sug">1 · Lugar con sugerencia del mapa (nombre resuelve dirección, punto y tipo)</option>
+    <option value="lugar-sug" selected>1 · Lugar con sugerencia del mapa (nombre resuelve dirección, punto y tipo)</option>
     <option value="lugar-sin">2 · Lugar sin sugerencia (dónde está y qué tipo es, preguntados)</option>
     <option value="lugar-ficha">3 · Lugar que ya tiene ficha</option>
     <option value="lugar-negocio">4 · Lugar que es un negocio (café)</option>
@@ -205,9 +209,8 @@ const ic = (n) => ({
 })[n];
 const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Plaza, jardín o parque','Otro'];
 const DISCIPLINAS = ['Música','Teatro','Danza','Artes visuales','Letras','Cine','Artes circenses','Otro'];
-let caso = 'elegir', e;
+let caso = 'lugar-sug', e;
 const CASOS = {
-  'elegir': { que: null },
   'lugar-sug': { que: 'lugar', q: 'Casa del Poeta', sug: { nombre: 'Casa del Poeta Ramón López Velarde', direccion: 'Vallejo 150, Centro, San Luis Potosí', tipo: 'Museo' } },
   'lugar-sin': { que: 'lugar', q: 'Taller La Grieta', sug: null },
   'lugar-ficha': { que: 'lugar', q: 'ACHE Gal', ficha: 'ACHE Galería' },
@@ -218,7 +221,7 @@ const CASOS = {
 };
 function nuevo() {
   const c = CASOS[caso];
-  e = { paso: c.que ? 'nombre' : 'elegir', que: c.que, q: '', tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, soyYo: false, escrito: false };
+  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, soyYo: false, escrito: false };
 }
 nuevo();
 const c = () => CASOS[caso];
@@ -232,17 +235,6 @@ function atras() { const o = orden(); const i = o.indexOf(e.paso); if (i > 0) e.
 const campo = (ph, valor) => `<label class="campo">${ic('buscar')}<input id="q" placeholder="${ph}" value="${valor}" autocomplete="off"><button class="limpiar" type="button" data-a="limpiar" aria-label="Borrar el texto">${ic('cerrar')}</button></label>`;
 
 const PANTALLAS = {
-  elegir: () => ({
-    titulo: 'Publicar', avance: 0, cerrar: true,
-    cuerpo: `<h1 class="pregunta">¿Qué publicas?</h1>
-      <div class="opciones">
-        <button class="opcion" data-a="que" data-que="evento">${ic('calendario')}<span>Un evento<small>Con cartel o sin él</small></span>${ic('chevron')}</button>
-        <button class="opcion" data-a="que" data-que="lugar">${ic('casa')}<span>Un lugar<small>Centro cultural, museo, foro, galería…</small></span>${ic('chevron')}</button>
-        <button class="opcion" data-a="que" data-que="artista">${ic('persona')}<span>Un artista o grupo<small>Tu ficha o la de alguien más</small></span>${ic('chevron')}</button>
-      </div>`,
-    pie: '',
-    notas: ['Doc 54 (aceptado): al tocar «+» sin contexto (Inicio, Agenda), una pantalla con tres opciones que avanzan al tocarlas. Desde Lugares o Artistas el «+» entra directo a su alta. Sustituye a la tira de tipos al pie, que chocaba con el botón pegado abajo; mientras no exista, la tira sigue en el primer paso del evento (OL-313).', 'Tres toques máximo para llegar a cualquier alta: «+», el tipo y ya estás en «¿Cómo se llama?».'],
-  }),
   nombre: () => {
     const k = c(); const hay = e.q.trim().length >= 3;
     let lista = '';
@@ -252,8 +244,9 @@ const PANTALLAS = {
     return {
       titulo: esLugar ? 'Registrar un lugar' : 'Registrar artista', avance: avance(), cerrar: true,
       cuerpo: `<h1 class="pregunta">¿Cómo se llama?</h1>${campo(esLugar ? 'Nombre del lugar' : 'Nombre de artista o grupo', e.q)}${lista}`,
-      pie: `<button class="btn" data-a="seguir" ${hay ? '' : 'disabled'}>${hay ? 'Siguiente' : 'Falta el nombre'}</button>`,
+      pie: `<button class="btn" data-a="seguir" ${hay ? '' : 'disabled'}>${hay ? 'Siguiente' : 'Falta el nombre'}</button><div class="tira-tipos" role="group" aria-label="Qué publicar">${['evento','lugar','artista'].map((x) => x === e.que ? `<b aria-current="true">${x}</b>` : `<a href="#" data-a="tipo-tira" data-que="${x}">${x}</a>`).join('')}</div>`,
       notas: [
+        'La tira de tipos al pie, como hoy en /nuevo: Evento · Lugar · Artista, con el tipo marcado según desde dónde se abrió el «+» (Inicio/Agenda → Evento; Lugares → Lugar; Artistas → Artista). Solo en el primer paso; después manda el pie del paso. Acordado con el founder (2026-10-06): sin pantalla de elegir, que sumaría un paso.',
         'El nombre resuelve casi todo. Lugar: tocar la sugerencia del mapa trae dirección, punto, ciudad y tipo (caso 1) y avanza solo; escribir sin tocar nada (caso 2) deja «¿Dónde está?» y «¿Qué tipo es?» por preguntar. Artista: del nombre se deduce qué hace y si es grupo (caso 5); sin pista (caso 6) se pregunta.',
         'Si ya tiene ficha (casos 3 y 7), se dice aquí, bajo el campo, y la salida es ir a esa ficha: no se llega a «Publicar». Hoy el aviso del lugar llega después de tocar «Publicar» y cuesta dos toques más.',
         'La casilla «Soy yo / es mi grupo» no es una pregunta: va en «Revisa» (recomendación aceptada del doc 54).',
@@ -333,7 +326,7 @@ function pintar() {
 document.getElementById('app').addEventListener('click', (ev) => {
   const b = ev.target.closest('[data-a]'); if (!b) return;
   const a = b.dataset.a;
-  if (a === 'que') { e.que = b.dataset.que; if (e.que === 'evento') { alert('Abre el alta de evento por pasos (ya construida).'); return; } caso = e.que === 'lugar' ? 'lugar-sug' : 'artista-pista'; document.getElementById('caso').value = caso; nuevo(); e.paso = 'nombre'; pintar(); return; }
+  if (a === 'tipo-tira') { ev.preventDefault(); const que = b.dataset.que; if (que === 'evento') { alert('Abre el alta de evento por pasos (ya construida), con su tira igual en el primer paso.'); return; } caso = que === 'lugar' ? 'lugar-sug' : 'artista-pista'; document.getElementById('caso').value = caso; nuevo(); e.q = ''; pintar(); return; }
   if (a === 'limpiar') { e.q = ''; pintar(); document.getElementById('q').focus(); return; }
   if (a === 'sugerencia') { e.tipo = c().sug.tipo; siguiente(); return; }
   if (a === 'ir-ficha') { alert('Va a la ficha que ya existe.'); return; }
@@ -346,7 +339,7 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (a === 'atras') { atras(); return; }
   if (a === 'reiniciar') { nuevo(); pintar(); return; }
 });
-document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); if (CASOS[caso].que) { e.q = CASOS[caso].q; } pintar(); });
+document.getElementById('caso').addEventListener('change', (ev) => { caso = ev.target.value; nuevo(); pintar(); });
 // Arranca con el texto del caso ya escrito en los casos con nombre, para ver la lista sin teclear.
 pintar();
 </script>
