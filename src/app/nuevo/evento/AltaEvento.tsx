@@ -14,6 +14,7 @@ import type { Franja } from "@/lib/horarioLugar";
 import { horarioParaEnviar } from "@/lib/horarioLugar";
 import { pistasDe } from "@/lib/sugerencias";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
+import { claseMedida, medirCliente } from "@/lib/medir";
 import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
 import { sinPisar, type Arranque } from "./arranque";
@@ -117,6 +118,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     const hecho = await accion(previo, datos);
     if (hecho.ok) {
       setCreado({ id: hecho.id, slug: hecho.slug ?? null, creadoEn: new Date().toISOString(), borradores: hecho.programa?.borradores ?? 0 });
+      medirCliente("evento_creado", { cartel: datos.get("imagen") ? "si" : "no", clase: claseMedida(datos.get("clase")) });
       publicado();
     }
     return hecho;

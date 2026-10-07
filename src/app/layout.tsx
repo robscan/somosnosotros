@@ -7,7 +7,10 @@ import BarraApp from "@/components/BarraApp";
 import Navegacion from "@/components/Navegacion";
 import NavSecciones from "@/components/NavSecciones";
 import PerfilEnNav from "@/components/PerfilEnNav";
+import AnalyticsGoogle from "@/components/AnalyticsGoogle";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
+import MarcaAdmin from "@/components/MarcaAdmin";
+import MedirInstalacion from "@/components/MedirInstalacion";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
 import Sesion, { AccesoAdmin } from "@/components/Sesion";
@@ -95,8 +98,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MemoriaScroll />
         </Suspense>
         <TituloInstalada />
-        {/* Vercel Analytics: vistas de página solo, sin cookies ni identificación de personas (OL-111, 2026-09-21). */}
-        <AnalyticsVercel />
+        {/* La medición (OL-325) arranca cuando la sesión dice quién mira: `MarcaAdmin` pinta la marca del rol y, solo si no es
+            administración, monta la analítica. Mientras tanto no se mide nada; para un admin, nunca (F10 de OL-327). */}
+        <Suspense fallback={null}>
+          <MarcaAdmin>
+            {/* Vercel Analytics: vistas de página, sin cookies ni identificación de personas (OL-111, 2026-09-21), y las acciones de la
+                lista cerrada de `src/lib/medir.ts`. */}
+            <AnalyticsVercel />
+            {/* Google Analytics 4: solo con `NEXT_PUBLIC_GA_ID` y en producción, leídos aquí en el servidor; consentimiento denegado, sin
+                cookies, solo para las vistas (las acciones van por el servidor). Sin el identificador no se carga nada de Google. */}
+            <AnalyticsGoogle id={process.env.NEXT_PUBLIC_GA_ID} produccion={process.env.VERCEL_ENV === "production"} />
+            <MedirInstalacion />
+          </MarcaAdmin>
+        </Suspense>
       </body>
     </html>
   );

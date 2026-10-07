@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { enlaceVisible } from "@/lib/enlaces";
 import { nombreArchivoQr } from "@/lib/artistas";
+import { fichaDeEnlace, medirCliente } from "@/lib/medir";
 import { descargarDataUrl, svgAPng } from "@/lib/qrCliente";
 import BotonCompartir from "../BotonCompartir";
 import { claseBoton } from "./Boton";
@@ -48,6 +49,8 @@ export default function CompartirFicha({ titulo, texto, url, svg, etiqueta, clas
   async function copiar() {
     try {
       await navigator.clipboard.writeText(url);
+      const que = fichaDeEnlace(url);
+      if (que) medirCliente("compartir", { que, medio: "copiado" });
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {

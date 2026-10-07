@@ -11,6 +11,7 @@ import { enlaceAltaEvento, enlaceAltaLugar } from "@/lib/armazon";
 import { artistaIgual, TIPOS_ARTISTA, type ArtistaResumen, type Disciplina, type Subcategoria } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
+import { medirCliente } from "@/lib/medir";
 import { subirFoto } from "@/lib/subirFoto";
 import TiraTipos from "../TiraTipos";
 import { avance, estadoInicial, faltaParaPublicar, flujo, pasoActual, type Arranque, type Paso, type Respuestas } from "./pasos";
@@ -96,6 +97,7 @@ function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, 
     const hecho = await accion(previo, datos);
     if (hecho.ok) {
       setCreado({ id: hecho.id, slug: hecho.slug ?? null, foto: String(datos.get("foto") ?? "") || null });
+      medirCliente("artista_creado", { soy: datos.get("soy") === "1" ? "si" : "no" });
       despachar({ tipo: "publicado" });
     }
     return hecho;

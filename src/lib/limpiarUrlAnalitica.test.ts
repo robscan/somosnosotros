@@ -100,10 +100,25 @@ describe("limpiarUrlAnalitica", () => {
       );
     });
 
-    it("mantiene parámetros públicos permitidos", () => {
+    it("mantiene solo los parámetros de la lista blanca (lo desconocido se quita)", () => {
+      // Antes (lista negra) `estado` pasaba; con la lista blanca (OL-325, F03) un parámetro que no está en ella no sale.
       expect(limpiarUrlAnalitica("/lugares?tipo=museo&estado=activo")).toBe(
-        "https://somosnosotros.org/lugares?tipo=museo&estado=activo"
+        "https://somosnosotros.org/lugares?tipo=museo"
       );
+    });
+
+    it("F03: el alta de lugar con el punto del mapa no deja salir ni el nombre ni la posición", () => {
+      expect(limpiarUrlAnalitica("https://somosnosotros.org/nuevo/lugar?nombre=Casa%20de%20la%20Cultura&lat=22.151123&lng=-100.977456")).toBe(
+        "https://somosnosotros.org/nuevo/lugar"
+      );
+      expect(limpiarUrlAnalitica("/nuevo/lugar?nombre=Casa&lat=22.151123&lng=-100.977456&ciudad=slp")).toBe("https://somosnosotros.org/nuevo/lugar");
+    });
+
+    it("F03: ids, fechas de duplicar y texto libre tampoco salen", () => {
+      expect(limpiarUrlAnalitica("/nuevo/evento?lugar=0b3c2a1e-0000-4000-8000-000000000000&artista=7&desde=0b3c&ciudad=slp")).toBe("https://somosnosotros.org/nuevo/evento");
+      expect(limpiarUrlAnalitica("/buscar?q=rosa&tipo=lugares")).toBe("https://somosnosotros.org/buscar?tipo=lugares");
+      expect(limpiarUrlAnalitica("/agenda?filtro=semana&cuanto=gratis&que=teatro&desde=2026-10-07")).toBe("https://somosnosotros.org/agenda?filtro=semana&cuanto=gratis&que=teatro");
+      expect(limpiarUrlAnalitica("/lugares?tipo=museo&tipo=teatro&utm_source=x")).toBe("https://somosnosotros.org/lugares?tipo=museo&tipo=teatro");
     });
 
     it("remueve parámetros privados y mantiene públicos", () => {

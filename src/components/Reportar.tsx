@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { medirCliente } from "@/lib/medir";
 import { MOTIVOS } from "@/lib/reportes";
 import { reportar, type ResultadoReporte } from "@/app/reportes";
 import Boton from "@/components/ui/Boton";
@@ -19,7 +20,11 @@ type Props = { tipo: TipoReportado; objetoId: string; volver: string; conSesion:
 export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
   const [abierto, setAbierto] = useState(false);
   const [detalle, setDetalle] = useState("");
-  const [resultado, enviar, enviando] = useActionState<ResultadoReporte | null, FormData>(reportar, null);
+  const [resultado, enviar, enviando] = useActionState<ResultadoReporte | null, FormData>(async (previo, datos) => {
+    const hecho = await reportar(previo, datos);
+    if (hecho.ok) medirCliente("reporte", { que: tipo });
+    return hecho;
+  }, null);
 
   if (resultado?.ok) return <p className={styles.gracias}>Gracias. La administración lo revisa.</p>;
   if (!conSesion)

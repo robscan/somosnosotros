@@ -15,6 +15,7 @@ import { enlaceDeAlta, enlaceDeBusqueda } from "@/lib/armazon";
 import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
 import { CIUDAD_INICIAL, ciudadesPorCercania, raizConCiudad, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { normalizarNombre } from "@/lib/lugares";
+import { medirCliente } from "@/lib/medir";
 import { crudoDeRecientes, guardarReciente, leerRecientes, type Reciente } from "@/lib/recientesBusqueda";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./buscar.module.css";
@@ -121,6 +122,8 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
     const espera = window.setTimeout(() => {
       void buscarUnificado(consulta, orden).then((resultado) => {
         if (!vigente) return;
+        // Solo si trajo algo o nada (OL-325): nunca lo escrito.
+        medirCliente("busqueda", { resultados: resultado.eventos.length + resultado.lugares.length + resultado.artistas.length > 0 ? "si" : "no" });
         setRespuesta({ texto: consulta, resultado });
         setAbiertos([]);
       });

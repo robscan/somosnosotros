@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import HojaInstalar from "./HojaInstalar";
 import { dondeSeActivan, enEste } from "@/lib/plataforma";
+import { medirCliente } from "@/lib/medir";
 import { disponibilidadPush, suscribirPush } from "@/lib/pushCliente";
 import { useInstalarApp, usePlataforma } from "@/lib/useAvisosTelefono";
 import { elegirAvisos } from "@/app/avisos/acciones";
@@ -87,6 +88,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
 
   async function porCorreo() {
     if (!(await guardar(() => elegirAvisos({ correo: true }), porCorreo))) return;
+    medirCliente("aviso_activado", { canal: "correo" });
     marcarAvisosContestados(cuenta);
     setCorreoOk(true);
     // Con un problema del teléfono a la vista, el correo cierra el asunto: el teléfono queda como estaba.
@@ -107,6 +109,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
       // el mismo "Intentar de nuevo" — ActivarAvisos y AvisosPerfil sí distinguen el motivo, aquí no hay sitio.
       if (!alta.ok) return setProblema(alta.motivo === "silenciado" || alta.motivo === "rechazado" ? "fallo" : alta.motivo);
       if (await guardarSuscripcionPush(alta.sub)) {
+        medirCliente("aviso_activado", { canal: "telefono" });
         marcarAvisosContestados(cuenta);
         setProblema(null);
         setTelefono("hecho");

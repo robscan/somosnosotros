@@ -1,6 +1,8 @@
 /**
  * Limpia la URL antes de enviarla a Vercel Analytics.
- * - Quita parámetros de consulta (query string): búsqueda, ciudad, el nombre que se buscó (`?nombre=`, del vacío de Buscar al alta) y tokens de invitación/reclamación.
+ * - De la consulta (`?…`) solo se quedan los parámetros de una LISTA BLANCA corta e inocua (`PARAMETROS_PUBLICOS`): todo lo demás se
+ *   quita —búsqueda, ciudad, el nombre que se escribió, la posición del mapa (`lat`, `lng`), ids (`lugar`, `artista`, `desde`), tokens—,
+ *   también lo que se añada mañana (OL-325, hallazgo F03 de OL-327: antes era una lista negra y dejaba pasar `lat` y `lng`).
  * - Evita rastrear rutas privadas: admin, perfil, ajustes y enlacescon token.
  * - Solo se envían rutas públicas sin identificación personal.
  * - Devuelve la URL ABSOLUTA (con esquema y dominio): Vercel Analytics rechaza URLs relativas.
@@ -9,10 +11,11 @@
  */
 
 /**
- * Parámetros privados que llevan información del usuario o identificación.
- * Se quitan del `?` para no enviarlos a Vercel.
+ * Los únicos parámetros que se conservan: filtros de las listas con opciones fijas (tipo de lugar, qué, filtro y costo de la agenda,
+ * disciplina de artistas). Ninguno lleva texto escrito, posición ni ids. `ciudad` no está (OL-111 ya la quitaba): dice dónde está la
+ * persona. Añadir uno aquí es decidir que es inocuo.
  */
-const PARAMETROS_PRIVADOS = new Set(["q", "buscar", "nombre", "ciudad", "token", "codigo"]);
+const PARAMETROS_PUBLICOS = new Set(["tipo", "que", "filtro", "cuanto", "hace", "disciplina"]);
 
 /**
  * Prefijos de ruta que son privadas y no se tracean.
@@ -44,11 +47,9 @@ export function limpiarUrlAnalitica(url: string): string | null {
       }
     }
 
-    // 2. Limpiar parámetros privados de la query string
+    // 2. De la query string, solo la lista blanca
     const params = urlObj.searchParams;
-    const keysToDelete = Array.from(params.keys()).filter((key) =>
-      PARAMETROS_PRIVADOS.has(key)
-    );
+    const keysToDelete = Array.from(new Set(params.keys())).filter((key) => !PARAMETROS_PUBLICOS.has(key));
     keysToDelete.forEach((key) => params.delete(key));
 
     // 3. Construir la URL limpia absoluta (conserva el origen real de la entrada)
@@ -58,4 +59,40 @@ export function limpiarUrlAnalitica(url: string): string | null {
     // Si algo falla en el parsing, no tracear por seguridad
     return null;
   }
+}
+
+/**
+ * La ruta de una persona (`/personas/<id>`) lleva su id: para Google Analytics y para los eventos queda solo «/personas» (OL-325; la
+ * lista cerrada no deja mandar ids de personas). Las vistas de Vercel siguen como las dejó OL-111.
+ */
+function sinIdDePersona(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.pathname.startsWith("/personas/")) return `${u.origin}/personas`;
+    return url;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * La página desde la que se hizo una acción medida (OL-325): la misma limpieza que las vistas; en una ruta privada (Entrar, Perfil…),
+ * en vez de no mandar nada —la acción sí se mide— queda solo su primer tramo («/entrar», sin `?siguiente=`). Nunca null.
+ */
+export function limpiarUrlEvento(url: string): string {
+  const limpia = limpiarUrlAnalitica(url);
+  if (limpia !== null) return sinIdDePersona(limpia);
+  try {
+    const u = url.startsWith("/") ? new URL(url, "https://somosnosotros.org") : new URL(url);
+    const tramo = u.pathname.split("/")[1] ?? "";
+    return `${u.origin}/${tramo}`;
+  } catch {
+    return "https://somosnosotros.org/";
+  }
+}
+
+/** Una vista de página para Google Analytics (OL-325): la limpieza de Vercel, sin el id de las personas; null si no se manda. */
+export function limpiarUrlGoogle(url: string): string | null {
+  const limpia = limpiarUrlAnalitica(url);
+  return limpia === null ? null : sinIdDePersona(limpia);
 }

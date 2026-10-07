@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { guardarSuscripcionPush } from "@/app/perfil/acciones";
 import { dondeSeActivan, dondeSeRegistra, enEste } from "@/lib/plataforma";
+import { medirCliente } from "@/lib/medir";
 import { observarEstadoPush, suscribirPush } from "@/lib/pushCliente";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import Boton from "./ui/Boton";
@@ -66,7 +67,9 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
         setDetalle(alta.detalle ?? null);
         return setEstado(alta.motivo === "bloqueado" || alta.motivo === "silenciado" || alta.motivo === "rechazado" ? alta.motivo : "fallo");
       }
-      setEstado((await guardarSuscripcionPush(alta.sub)) ? "listo" : "fallo");
+      const guardada = await guardarSuscripcionPush(alta.sub);
+      if (guardada) medirCliente("aviso_activado", { canal: "telefono" });
+      setEstado(guardada ? "listo" : "fallo");
     } catch {
       setEstado("fallo");
     }

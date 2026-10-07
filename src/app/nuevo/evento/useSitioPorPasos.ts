@@ -5,6 +5,7 @@ import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
 import { deducirTipo } from "@/lib/buscarLugares";
 import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import type { LugarResumen } from "@/lib/lugares";
+import { medirCliente } from "@/lib/medir";
 import { nombreDelSitio, sitioDeLugar, type Candidato, type Paso, type Uso } from "./pasos";
 import type { usePasosEvento } from "./usePasosEvento";
 
@@ -46,6 +47,7 @@ export function useSitioPorPasos({ pasos, lugares, ciudadContexto, onLugarNuevo 
         setErrorLugar(NO_SE_GUARDO);
         return;
       }
+      if (!creado.reutilizado) medirCliente("lugar_creado", { desde: "evento" });
       const nuevo = lugares.find((l) => l.id === creado.id) ?? { id: creado.id, nombre, tipo: deducirTipo(nombre, c.categorias) ?? "otro", direccion, lat: c.punto.lat, lng: c.punto.lng, portada: null };
       onLugarNuevo(nuevo);
       contestar({ sitio: sitioDeLugar(nuevo, r.sitio.otro) });
