@@ -76,6 +76,8 @@ describe.each(CATALOGO.map((p) => [p.id, p] as const))("plantilla %s", (_id, pla
             const girado = { ...n, x: n.x + n.ancho / 2 - n.alto / 2, y: n.y + n.alto / 2 - n.ancho / 2, ancho: n.alto, alto: n.ancho };
             expect(fueraDelLienzo(girado, formato) || enLoTapado(girado, formato), `texto girado fuera: ${n.texto}`).toBe(false);
           }
+          // Con datos de largo normal nada se corta con «…» (un rótulo cortado delató un tamaño mal puesto).
+          if (caso === "corto") expect(r.nodos.filter((n) => n.texto.includes("…")).map((n) => n.texto)).toEqual([]);
           // El título siempre se ve: al menos su primera palabra está en el lienzo.
           const primera = textos.titulo.split(" ")[0].toLocaleUpperCase("es-MX");
           expect(r.nodos.some((n) => n.texto.toLocaleUpperCase("es-MX").includes(primera.slice(0, 3)))).toBe(true);

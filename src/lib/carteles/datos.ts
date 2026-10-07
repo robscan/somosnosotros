@@ -62,12 +62,12 @@ export function recortar(texto: string, maximo: number): string {
 }
 
 /**
- * El subtítulo sale del propio título cuando trae dos partes unidas por dos puntos o una raya («Sangre de Coyote: Semilla que florece el
- * barrio»): es el mismo texto, partido donde la persona ya lo partió. No se aplica si la primera parte es una etiqueta corta («Charla:»,
+ * El subtítulo sale del propio título cuando trae dos partes unidas por dos puntos, una raya o un guion entre espacios («Sangre de Coyote:
+ * Semilla que florece el barrio», «Master Class - 9° Festival de Cine UASLP»): es el mismo texto, partido donde la persona ya lo partió. No se aplica si la primera parte es una etiqueta corta («Charla:»,
  * «Taller:»), que se queda en el título.
  */
 export function partirTitulo(titulo: string): { titulo: string; subtitulo: string | null } {
-  const m = /^(.{4,}?)\s*(?::|\s[–—|]\s)\s*(.{3,})$/.exec(titulo);
+  const m = /^(.{4,}?)\s*(?::|\s[–—|-]\s)\s*(.{3,})$/.exec(titulo);
   if (!m || [...m[1]].length < 10) return { titulo, subtitulo: null };
   return { titulo: m[1].trim(), subtitulo: m[2].trim() };
 }

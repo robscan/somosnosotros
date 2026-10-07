@@ -68,7 +68,7 @@ export function texto(valor: string | null | undefined, caja: Caja, color: strin
 
 /** La etiqueta de arriba: mayúsculas espaciadas, un renglón. */
 export function etiqueta(valor: string | null, ancho: number, color: string, alinear: Alinear = "left", tamano: number = LETRA.etiqueta): Bloque {
-  return texto(valor, { fuente: "media", ancho, renglones: 1, mayor: tamano, menor: LETRA.minimo - 2, espaciado: Math.round(tamano * 0.16), mayusculas: true }, color, { interlineado: 1.2, alinear });
+  return texto(valor, { fuente: "media", ancho, renglones: 1, mayor: tamano, menor: Math.min(tamano, LETRA.minimo - 2), espaciado: Math.round(tamano * 0.16), mayusculas: true }, color, { interlineado: 1.2, alinear });
 }
 
 /** El subtítulo: hasta dos renglones. */

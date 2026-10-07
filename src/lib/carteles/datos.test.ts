@@ -58,6 +58,10 @@ describe("partirTitulo", () => {
   it("parte en los dos puntos cuando la primera parte es un título", () => {
     expect(partirTitulo("Sangre de Coyote: Semilla que florece el barrio")).toEqual({ titulo: "Sangre de Coyote", subtitulo: "Semilla que florece el barrio" });
   });
+  it("también parte en una raya o un guion entre espacios, no en el guion de una palabra", () => {
+    expect(partirTitulo("Master Class - 9° Festival de Cine UASLP")).toEqual({ titulo: "Master Class", subtitulo: "9° Festival de Cine UASLP" });
+    expect(partirTitulo("Concierto de música afro-latina").subtitulo).toBeNull();
+  });
   it("no parte una etiqueta corta («Charla:») ni un título sin dos partes", () => {
     expect(partirTitulo("Charla: San Luis Potosí en la Cristiada").subtitulo).toBeNull();
     expect(partirTitulo("Noche de son huasteco").subtitulo).toBeNull();

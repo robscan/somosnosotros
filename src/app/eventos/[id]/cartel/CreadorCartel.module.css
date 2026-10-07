@@ -1,13 +1,15 @@
 /* ==========================================================================
    El creador de cartel (OL-324). Va dentro de la columna de `PorPasos`, que ya le da el aire de los lados, la entrada de lado y el pie
    anclado sobre el teclado. Hijos directos de la columna, sin envoltorios de más.
-   1. Las cuatro opciones · 2. La vista previa · 3. «Acortar título» · 4. La confirmación
+   1. Las cuatro opciones · 2. La vista previa · 3. «Acortar título» (encima de la vista previa: el campo nunca queda bajo el pie) · 4. La confirmación
    ========================================================================== */
 
 /* 1. Cuatro miniaturas grandes en rejilla de dos por dos (a 320 cada una mide ~136 px de ancho: se lee el título del cartel). Cada una es un
    botón de su proporción (4:5) con el gris de las miniaturas mientras llega la imagen, y el anillo del color de acción al enfocarla. */
 .opciones {
   display: grid;
+  padding: 0;
+  list-style: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--espacio-3);
 }
@@ -32,7 +34,8 @@
    cuadro (no salta al llegar la imagen); la historia (9:16), más alta, se angosta para caber en el mismo alto. La columna de los pasos le
    pone `width: auto` y el aire de los lados: aquí se limita con `max-width` y se centra con `align-self`. */
 .vista {
-  --alto-vista: min(58dvh, 640px);
+  /* Lo que queda bajo la barra, la pregunta, los chips y el pie (unos 23rem), entre 16rem y 40rem. */
+  --alto-vista: max(16rem, min(calc(100dvh - 23rem), 40rem));
   align-self: center;
   max-width: min(calc(100% - 2 * var(--gutter)), calc(var(--alto-vista) * 0.8));
   height: auto;

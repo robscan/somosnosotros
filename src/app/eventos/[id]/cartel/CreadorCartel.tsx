@@ -127,8 +127,6 @@ export default function CreadorCartel({ evento, tandas, v }: Props) {
           </Chip>
         ))}
       </Chips>
-      {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho */}
-      <img key={`${elegida.id}-${formato}-${propio}`} className={styles.vista} data-formato={formato} src={hrefCartel(evento.slug, { plantilla: elegida.id, formato, ancho: 720, titulo: propio, v })} alt={`Vista previa del cartel: ${elegida.nombre}`} width={720} height={formato === "9x16" ? 1280 : 900} />
       {(cortado || acortando) && (
         <div className={styles.titulo}>
           {cortado && !acortando && <p>El título no cabe completo en este diseño.</p>}
@@ -141,6 +139,8 @@ export default function CreadorCartel({ evento, tandas, v }: Props) {
           )}
         </div>
       )}
+      {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho */}
+      <img key={`${elegida.id}-${formato}-${propio}`} className={styles.vista} data-formato={formato} src={hrefCartel(evento.slug, { plantilla: elegida.id, formato, ancho: 720, titulo: propio, v })} alt={`Vista previa del cartel: ${elegida.nombre}`} width={720} height={formato === "9x16" ? 1280 : 900} />
       {error && (
         <p className="aviso-error" role="alert">
           {error}
