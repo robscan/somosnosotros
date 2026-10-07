@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destinoConSlug, esUuidExacto, rutaConUuid } from "./redireccionSlug";
+import { destinoConSlug, destinoEnlaceCorto, esUuidExacto, rutaConUuid } from "./redireccionSlug";
 
 const UUID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 
@@ -56,5 +56,18 @@ describe("destinoConSlug", () => {
   it("devuelve solo la ruta y escapa un slug raro sin romper la ruta", () => {
     expect(destinoConSlug({ tabla: "artistas", uuid: UUID, resto: "" }, "trio-xochitl-2")).toBe("/artistas/trio-xochitl-2");
     expect(destinoConSlug(ruta, "a/b")).toBe("/eventos/a%2Fb");
+  });
+});
+
+describe("destinoEnlaceCorto", () => {
+  it("/e/<slug> lleva a la ficha del evento", () => {
+    expect(destinoEnlaceCorto("/e/noche-de-son-huasteco")).toBe("/eventos/noche-de-son-huasteco");
+    expect(destinoEnlaceCorto("/e/Oca/")).toBe("/eventos/oca");
+  });
+  it("lo demás no es un enlace corto", () => {
+    expect(destinoEnlaceCorto("/e/")).toBeNull();
+    expect(destinoEnlaceCorto("/e/a/b")).toBeNull();
+    expect(destinoEnlaceCorto("/e/../admin")).toBeNull();
+    expect(destinoEnlaceCorto("/eventos/oca")).toBeNull();
   });
 });

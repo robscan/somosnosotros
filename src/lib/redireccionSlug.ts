@@ -48,3 +48,12 @@ export function rutaConUuid(pathname: string): RutaConUuid | null {
 export function destinoConSlug(ruta: RutaConUuid, slug: string, search = ""): string {
   return `/${ruta.tabla}/${encodeURIComponent(slug)}${ruta.resto}${search}`;
 }
+
+/**
+ * La dirección corta de un evento que se imprime en el cartel (OL-324): `somosnosotros.org/e/<slug>` lleva a `/eventos/<slug>` con un 308 del
+ * proxy, sin consulta (la ficha resuelve slug o UUID). Null si la ruta no es `/e/<algo>` de un solo tramo legible.
+ */
+export function destinoEnlaceCorto(pathname: string): string | null {
+  const m = /^\/e\/([a-z0-9-]{1,200})\/?$/i.exec(pathname);
+  return m ? `/eventos/${m[1].toLowerCase()}` : null;
+}
