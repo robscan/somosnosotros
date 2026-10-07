@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-const EVENTOS = ["inicio-estelar", "inicio-esta-semana", "inicio-para-visitar", "inicio-nuevos"];
+const EVENTOS = ["inicio-estelar", "inicio-esta-semana", "inicio-festivales", "inicio-nuevos"];
 const ENTIDADES = ["inicio-lugares-semana", "inicio-artistas-destacados", "inicio-artistas-semana"];
 type Estado = Record<string, boolean | null>;
 type Contexto = { eventosResueltos: boolean; hayEventos: boolean; vacio: boolean; informar: (clave: string, cantidad: number | null) => void };
