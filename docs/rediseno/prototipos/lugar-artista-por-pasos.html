@@ -167,6 +167,12 @@ ul { list-style: none; }
 .chip[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); color: var(--primario-texto); }
 .app { position: relative; }
 .casilla b { white-space: normal; }
+.grupo { display: grid; gap: var(--espacio-2); }
+.grupo > span { color: var(--texto-suave); font-size: var(--letra-sm); }
+.velo { position: absolute; inset: 0; background: rgba(0,0,0,.32); }
+.hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: var(--espacio-4); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso)); border-radius: 24px 24px 0 0; background: var(--fondo); box-shadow: 0 -2px 16px rgba(0,0,0,.1); }
+.hoja::before { content: ""; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: #d9d9d9; }
+.hoja h2 { font-size: var(--letra-xl); font-weight: 700; }
 /* La tira de tipos al pie del primer paso (la de hoy en /nuevo): Evento · Lugar · Artista en mayúsculas chicas, el actual con su punto. Solo en el primer paso. */
 .tira-tipos { display: grid; grid-template-columns: repeat(3, 1fr); min-height: var(--toque); padding-bottom: var(--piso); border-top: 1px solid var(--borde); background: var(--fondo); }
 .tira-tipos a, .tira-tipos b { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: var(--toque); font-size: var(--letra-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-suave); text-decoration: none; }
@@ -202,11 +208,18 @@ const ic = (n) => ({
   personas: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c0-3.3 3-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.5c3 0 5.5 1.9 5.5 4.5"/></svg>',
   musica: '<svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>',
   mas: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   calendario: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   casa: '<svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg>',
   camara: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   ciudad: '<svg viewBox="0 0 24 24"><path d="M4 20V8l5-3v15M9 20V11l5-2v11M14 20V13l6-2v9M3 20h18"/></svg>',
 })[n];
+const DIAS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+const HORAS_ABRE = ['09:00','10:00','11:00','12:00','16:00'];
+const HORAS_CIERRA = ['14:00','17:00','18:00','19:00','20:00','21:00'];
+const et = (h) => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${String(M).padStart(2, '0')} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
+const textoHorario = (h) => h ? `${rangoDias(h.dias)} · ${et(h.abre)}–${et(h.cierra)}` : '';
+function rangoDias(ds) { const idx = ds.map((d) => DIAS.indexOf(d)).sort((a, b) => a - b); if (!idx.length) return ''; const seguidos = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1); return seguidos && idx.length > 2 ? `${DIAS[idx[0]]}–${DIAS[idx[idx.length - 1]]}` : idx.map((i) => DIAS[i]).join(', '); }
 const TIPOS = ['Casa de cultura','Museo','Foro','Galería','Escuela','Colectivo','Biblioteca','Plaza, jardín o parque','Otro'];
 const DISCIPLINAS = ['Música','Teatro','Danza','Artes visuales','Letras','Cine','Artes circenses','Otro'];
 let caso = 'lugar-sug', e;
@@ -221,7 +234,7 @@ const CASOS = {
 };
 function nuevo() {
   const c = CASOS[caso];
-  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, soyYo: false, escrito: false };
+  e = { paso: 'nombre', que: c.que, q: c.q, tipo: c.sug?.tipo ?? null, hace: c.hace ?? null, soyYo: false, escrito: false, horario: null, hoja: null, dias: ['Ma','Mi','Ju','Vi','Sá','Do'], abre: '10:00', cierra: '18:00' };
 }
 nuevo();
 const c = () => CASOS[caso];
@@ -287,6 +300,7 @@ const PANTALLAS = {
     const renglones = esLugar
       ? `<button class="renglon">${ic('pin')}<b>${k.sug ? k.sug.direccion : 'Calle Inventada 12, Centro, San Luis Potosí'}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic('etiqueta')}<b>${e.tipo ?? 'Otro'}</b><span class="accion">Cambiar</span></button>
+         <button class="renglon ${e.horario ? '' : 'opcional'}" data-a="horario">${ic('reloj')}<b>${e.horario ? textoHorario(e.horario) : 'Horario'}</b><span class="accion">${e.horario ? 'Cambiar' : 'Agregar'}</span></button>
          <button class="renglon opcional">${ic('mas')}<b>Foto, descripción o redes</b><span class="accion">Agregar</span></button>`
       : `<button class="renglon">${ic('musica')}<b>${e.hace ?? 'Teatro'}</b><span class="accion">Cambiar</span></button>
          <button class="renglon">${ic(k.tipo === 'Solista' ? 'persona' : 'personas')}<b>${k.tipo}</b><span class="accion">Cambiar</span></button>
@@ -295,9 +309,9 @@ const PANTALLAS = {
          <button class="renglon opcional">${ic('mas')}<b>Foto, portada, redes o descripción</b><span class="accion">Agregar</span></button>`;
     return {
       titulo: 'Revisa', avance: avance(), atras: true,
-      cuerpo: `<h1>${c().sug?.nombre ?? c().q}</h1><div class="lista">${renglones}</div>`,
+      cuerpo: `<h1>${c().sug?.nombre ?? c().q}</h1><div class="lista">${renglones}</div>${e.hoja === 'horario' ? hojaHorario() : ''}`,
       pie: `<button class="btn" data-a="seguir">${esLugar ? 'Publicar lugar' : 'Publicar artista'}</button>`,
-      notas: ['Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: la casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
+      notas: ['Lugar · Horario (acordado con el founder): el horario en que abre el lugar, opcional en «Revisa» («Horario · Agregar»), abre una hoja con los días de la semana (chips, de Ma a Do marcados de entrada) y las horas en que abre y cierra (chips de hora, «Otra hora» para las demás). Sirve a las exposiciones: una exposición en ese lugar toma su horario de entrada, y la ficha del lugar lo enseña.', 'Renglones sin etiqueta (OL-297): el icono y el valor dicen qué es; lo opcional es un renglón punteado claro con «Agregar». «Cambiar» abre solo esa pregunta y vuelve aquí.', 'Artista: la casilla «Soy yo / es mi grupo» a la vista y con su consecuencia dicha. Hoy queda en «No» sin que la persona vea el interruptor y se queda sin poder editar su ficha.', 'La ciudad del artista es la de contexto (desde dónde se entró); se puede cambiar.'],
     };
   },
   publicado: () => {
@@ -313,6 +327,16 @@ const PANTALLAS = {
   },
 };
 
+function hojaHorario() {
+  return `<div class="velo" data-a="cerrar-hoja"></div><div class="hoja" role="dialog" aria-label="Horario">
+    <h2>¿Qué días abre?</h2>
+    <div class="chips">${DIAS.map((d) => `<button class="chip" aria-pressed="${e.dias.includes(d)}" data-a="dia" data-v="${d}">${d}</button>`).join('')}</div>
+    <div class="grupo"><span>Abre</span><div class="chips">${HORAS_ABRE.map((h) => `<button class="chip" aria-pressed="${e.abre === h}" data-a="abre" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
+    <div class="grupo"><span>Cierra</span><div class="chips">${HORAS_CIERRA.map((h) => `<button class="chip" aria-pressed="${e.cierra === h}" data-a="cierra" data-v="${h}">${et(h)}</button>`).join('')}<button class="chip">Otra hora</button></div></div>
+    <small class="aviso">Mismo horario esos días. Si cambia por día, se ajusta después desde la ficha.</small>
+    <button class="btn" data-a="horario-listo">Listo</button>
+  </div>`;
+}
 function pintar() {
   const p = PANTALLAS[e.paso]();
   document.getElementById('app').innerHTML = `
@@ -336,6 +360,12 @@ document.getElementById('app').addEventListener('click', (ev) => {
   if (a === 'tipo') { e.tipo = b.dataset.v; e.paso = 'revisa'; pintar(); return; }
   if (a === 'hace') { e.hace = b.dataset.v; e.paso = 'revisa'; pintar(); return; }
   if (a === 'soyyo') { e.soyYo = !e.soyYo; pintar(); return; }
+  if (a === 'horario') { e.hoja = 'horario'; pintar(); return; }
+  if (a === 'cerrar-hoja') { e.hoja = null; pintar(); return; }
+  if (a === 'dia') { const d = b.dataset.v; e.dias = e.dias.includes(d) ? e.dias.filter((x) => x !== d) : [...e.dias, d]; pintar(); return; }
+  if (a === 'abre') { e.abre = b.dataset.v; pintar(); return; }
+  if (a === 'cierra') { e.cierra = b.dataset.v; pintar(); return; }
+  if (a === 'horario-listo') { e.horario = e.dias.length ? { dias: e.dias, abre: e.abre, cierra: e.cierra } : null; e.hoja = null; pintar(); return; }
   if (a === 'atras') { atras(); return; }
   if (a === 'reiniciar') { nuevo(); pintar(); return; }
 });
