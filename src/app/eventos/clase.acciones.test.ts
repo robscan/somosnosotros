@@ -146,9 +146,27 @@ describe("publicar un borrador del programa (OL-328)", () => {
     expect(m.redirect).toHaveBeenCalledWith("/eventos/festival-de-cine?error=no_publicable");
   });
 
-  it("otro rechazo (no es suyo) vuelve sin aviso, como antes", async () => {
+  it("otro rechazo vuelve con un aviso de publicación", async () => {
     m.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "sin_permiso" } });
     await expect(publicarBorrador(ID, "/eventos/festival-de-cine")).rejects.toThrow("REDIRECT");
-    expect(m.redirect).toHaveBeenCalledWith("/eventos/festival-de-cine");
+    expect(m.redirect).toHaveBeenCalledWith("/eventos/festival-de-cine?error=publicar");
+  });
+  it.each(["https://ejemplo.org/salir", "//ejemplo.org", "/\\ejemplo.org", "/eventos\n/otra"])("descarta un regreso inseguro: %s", async (volver) => {
+    m.rpc.mockResolvedValue({ data: { id: ID }, error: null });
+    await expect(publicarBorrador(ID, volver)).rejects.toThrow("REDIRECT");
+    expect(m.sesion).toHaveBeenCalledWith(`/eventos/${ID}`);
+    expect(m.redirect).toHaveBeenCalledWith(`/eventos/${ID}`);
+    expect(m.invalidar).not.toHaveBeenCalledWith(volver);
+  });
+  it("añade el error conservando la consulta y el ancla del regreso", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { message: "sin_permiso" } });
+    await expect(publicarBorrador(ID, "/eventos/festival?desde=agenda&error=viejo#programa")).rejects.toThrow("REDIRECT");
+    expect(m.redirect).toHaveBeenCalledWith("/eventos/festival?desde=agenda&error=publicar#programa");
+    expect(m.invalidar).toHaveBeenCalledWith("/eventos/festival");
+  });
+  it("un id inválido no llega a la función de publicar", async () => {
+    await expect(publicarBorrador("no-es-id", "//ejemplo.org")).rejects.toThrow("REDIRECT");
+    expect(m.rpc).not.toHaveBeenCalled();
+    expect(m.redirect).toHaveBeenCalledWith("/eventos?error=publicar");
   });
 });
