@@ -13,6 +13,7 @@ import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, 
 import { cartelAFormulario, ciudadDelSitio, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { horarioDesdeJson, type Franja } from "@/lib/horarioLugar";
 import { localAIso, zonaSegura } from "@/lib/fechas";
+import { mencionDeFestival } from "@/lib/sugerencias";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
 import { validarSesiones, type SesionEvento } from "@/lib/sesionesEvento";
@@ -191,6 +192,13 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   if (data.padre) revalidatePath(`/eventos/${data.padre}`);
+  // El festival con su edición que leyó el cartel (OL-323): el título no siempre lo dice y el segundo acto lo necesita para reconocer a este
+  // (H4). Solo una pista: si no se anota (sin la migración, o falla), a lo más no se sugiere.
+  const mencion = mencionDeFestival(typeof formData.get("festival_leido") === "string" ? String(formData.get("festival_leido")) : null);
+  if (mencion && !data.repetido) {
+    const { error } = await supabase.from("eventos").update({ sugerencias: { mencion_festival: mencion.texto } }).eq("id", data.id);
+    if (error) console.error("crearEvento (mención del festival):", error.message);
+  }
   // La función guarda_evento_con_avisos no devuelve el slug (lo pone el disparador); una lectura de sobra para
   // no publicar con la dirección vieja desde el primer instante.
   const { data: creado } = await supabase.from("eventos").select("slug").eq("id", data.id).maybeSingle();
@@ -225,6 +233,13 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision, sesiones, usarClase ? clase : null);
   if (conflicto) return { ok: false, errores: {}, conflicto: true, general: "El evento cambió mientras lo editabas. Tus cambios siguen aquí, pero no se guardaron. Revisa la versión actual antes de volver a editar." };
   if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
+  // «Inauguración · Quitar» (OL-323, deshacer una sugerencia aceptada): la exposición deja de estar ligada a su inauguración y las dos fichas
+  // siguen. Solo si la pantalla lo pide (tenía una al abrir y se quitó): una inauguración que no se pudo leer al abrir no se suelta sola.
+  if (formData.get("quitar_inauguracion") === "1" && clase.clase === "exposicion" && !clase.inauguracion && existente?.inaugura_id) {
+    const { error } = await supabase.from("eventos").update({ inaugura_id: null }).eq("id", id);
+    if (error) return { ok: false, errores: {}, general: "Se guardó lo demás, pero no se pudo quitar la inauguración. Intenta de nuevo." };
+    revalidatePath(`/eventos/${existente.inaugura_id}`);
+  }
   revalidar(id, datos.lugar_id, [...data.artistas, ...data.artistas_anteriores]);
   if (data.lugar_anterior && data.lugar_anterior !== datos.lugar_id) revalidatePath(`/lugares/${data.lugar_anterior}`);
   if (data.padre) revalidatePath(`/eventos/${data.padre}`);
