@@ -180,6 +180,65 @@ describe("marca de navegación: sobre un historial", () => {
   });
 });
 
+/**
+ * El creador de cartel (OL-336, regla del founder: «siempre el botón atrás sea útil»). Sus salidas (la ✕, «No me gusta ninguno» y «Usar como cartel»)
+ * van a la ficha como `useVolverA` y `useTerminar`: con el historial si la pantalla de detrás es la ficha y, si no, reemplazando el creador. Cada
+ * caso dice a dónde lleva después el Atrás de la ficha.
+ */
+describe("el creador de cartel: Atrás útil (OL-336)", () => {
+  const FICHA = "/eventos/oca";
+  /** Lo que hacen `useVolverA` y `useTerminar` al salir del creador hacia la ficha. */
+  const salirALaFicha = (h: HistorialDePrueba) => (vuelveA(h.state, h.length, FICHA) ? next.volver(h) : next.reemplazar(h, FICHA));
+  /** El Atrás de la ficha (`useVolver`): con el historial si hay pantalla de la app detrás; si no, la pantalla madre. */
+  const atrasDeLaFicha = (h: HistorialDePrueba) => (atrasVuelve(h) ? (next.volver(h), h.url) : "madre");
+
+  it("antes: «Usar como cartel» apilaba la ficha y Atrás volvía al creador (lo que vio el founder)", () => {
+    const h = new HistorialDePrueba("/agenda");
+    instalar(h);
+    next.apilar(h, FICHA);
+    next.apilar(h, `${FICHA}/cartel?origen=accion`);
+    next.apilar(h, FICHA);
+    expect(atrasDeLaFicha(h)).toBe(`${FICHA}/cartel?origen=accion`);
+  });
+  it("desde la ficha (menú o acción redonda): usar, la ✕ o «ninguno» vuelven a la misma entrada de la ficha y su Atrás va a la agenda", () => {
+    for (const origen of ["menu", "accion"]) {
+      const h = new HistorialDePrueba("/agenda");
+      instalar(h);
+      next.apilar(h, FICHA);
+      next.apilar(h, `${FICHA}/cartel?origen=${origen}`);
+      salirALaFicha(h);
+      expect(h.url).toBe(FICHA);
+      expect(h.entradas.map((e) => e.url)).toEqual(["/agenda", FICHA, `${FICHA}/cartel?origen=${origen}`]); // el creador queda adelante, no detrás
+      expect(atrasDeLaFicha(h)).toBe("/agenda");
+    }
+  });
+  it("desde «Publicado»: el creador reemplaza al alta y la ficha al creador; Atrás va adonde mandaba el alta (la pantalla de antes)", () => {
+    const h = new HistorialDePrueba("/agenda");
+    instalar(h);
+    next.apilar(h, "/nuevo/evento");
+    next.reemplazar(h, `${FICHA}/cartel?origen=publicado`); // «Crear cartel» de «Publicado» abre con `replace`
+    expect(vuelveA(h.state, h.length, FICHA)).toBe(false);
+    salirALaFicha(h);
+    expect(h.entradas.map((e) => e.url)).toEqual(["/agenda", FICHA]);
+    expect(atrasDeLaFicha(h)).toBe("/agenda");
+  });
+  it("desde «Publicado» de un alta abierta sin nada detrás (enlace o app recién abierta): la ficha va a su pantalla madre", () => {
+    const h = new HistorialDePrueba("/nuevo/evento");
+    instalar(h, marcaDeLlegada("", "https://somosnosotros.org", 1));
+    next.reemplazar(h, `${FICHA}/cartel?origen=publicado`);
+    salirALaFicha(h);
+    expect(h.length).toBe(1);
+    expect(atrasDeLaFicha(h)).toBe("madre");
+  });
+  it("con un enlace al creador: la ficha lo reemplaza y su Atrás va a la pantalla madre, nunca al creador", () => {
+    const h = new HistorialDePrueba(`${FICHA}/cartel`);
+    instalar(h, marcaDeLlegada("", "https://somosnosotros.org", 1));
+    salirALaFicha(h);
+    expect(h.entradas.map((e) => e.url)).toEqual([FICHA]);
+    expect(atrasDeLaFicha(h)).toBe("madre");
+  });
+});
+
 /** El almacén de la pestaña, de mentira. */
 class AlmacenDePrueba implements Almacen {
   datos = new Map<string, string>();

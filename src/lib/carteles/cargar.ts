@@ -1,7 +1,7 @@
 import "server-only";
 import { cartelDescargable } from "../cartelDescarga";
 import { configPublica } from "../config";
-import { sitioEnLista } from "../eventos";
+import { esClase, sitioEnLista } from "../eventos";
 import { esUuid } from "../formulario";
 import type { ClienteServidor } from "../supabase/servidor";
 import type { EventoCartel } from "./datos";
@@ -35,6 +35,7 @@ type Fila = {
   fin: string | null;
   zona: string;
   precio: string | null;
+  clase: string | null;
   imagen: string | null;
   creado_por: string | null;
   lugar_id: string | null;
@@ -46,7 +47,7 @@ type Fila = {
 };
 type ArtistaFila = { nombre: string; disciplina: string; detalle: string | null; foto: string | null; portada: string | null };
 
-const COLUMNAS = "id, slug, titulo, inicio, fin, zona, precio, imagen, creado_por, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre, tipo, portada), sesiones:eventos_sesiones(inicio)";
+const COLUMNAS = "id, slug, titulo, inicio, fin, zona, precio, clase, imagen, creado_por, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre, tipo, portada), sesiones:eventos_sesiones(inicio)";
 
 /** El evento por slug o UUID con lo que hace falta para su cartel; null si no existe, no se ve o no hay sesión. */
 export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: string): Promise<ParaCartel | null> {
@@ -71,6 +72,8 @@ export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: strin
     fin: fila.fin,
     zona: fila.zona,
     precio: fila.precio,
+    // Una clase que no se reconoce (o una fila sin ella) es un evento, como en la ficha.
+    clase: esClase(fila.clase) ? fila.clase : "puntual",
     conSesiones: (fila.sesiones ?? []).length > 0,
     sitio: sitioEnLista({ lugar, sitio_texto: fila.sitio_texto, sitio_direccion: fila.sitio_direccion, sitio_reservado: fila.sitio_reservado }),
     tipoLugar: lugar?.tipo ?? null,

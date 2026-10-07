@@ -1,13 +1,19 @@
 import { etiquetaDisciplina } from "../artistas";
-import { claseDeCosto, COOPERACION_SOLIDARIA } from "../eventos";
-import { cuandoVariosDias, diaLocal, horaCorta, zonaSegura } from "../fechas";
+import { ultimoDiaDelPeriodo } from "../claseEvento";
+import { claseDeCosto, COOPERACION_SOLIDARIA, type Clase } from "../eventos";
+import { cuandoVariosDias, diaLocal, horaCorta, localAIso, zonaSegura } from "../fechas";
 import { tieneLetra } from "./medir";
+import { DOMINIO_CARTEL } from "./tokens";
 
 /**
  * Los textos del cartel (OL-324; doc 52 §3.2): de dónde sale cada campo y su máximo. Nada se inventa ni se reescribe: el título es el del evento
  * (o el que la persona acortó a mano para el cartel), la fecha y la hora las escribe el sistema en un formato fijo, el precio sale de la clase de
- * costo (`claseDeCosto`: sin precio, «Entrada libre»; nunca «gratis» como texto de la app) y el sitio web es la dirección corta del evento.
+ * costo (`claseDeCosto`: sin precio, «Entrada libre»; nunca «gratis» como texto de la app) y el sello del pie es el símbolo con el dominio.
  * Puro, para probarlo sin dibujar.
+ *
+ * Las fechas (OL-336, pedidos del founder tras probar en su iPhone): el último día de un evento de varios días sale con la misma regla que la
+ * ficha (`ultimoDiaDelPeriodo`: un fin a las 00:00 es el final del día anterior); a un festival o una exposición, que pueden cambiar de fechas
+ * y el cartel es una imagen que no se actualiza, solo el mes y el año («Octubre 2026») y sin hora; y cada plantilla dice la fecha una sola vez.
  */
 
 /** Lo que el cartel necesita del evento: lo arma `cargar.ts` desde la base, o una prueba a mano. */
@@ -19,6 +25,8 @@ export type EventoCartel = {
   fin: string | null;
   zona: string;
   precio: string | null;
+  /** Cómo ocurre (OL-321): a un festival o una exposición el cartel les pone solo el mes (OL-336). */
+  clase: Clase;
   /** Con horario por día (OL-311): cada día con su hora; el cartel no puede decirlas todas. */
   conSesiones: boolean;
   /** El nombre del sitio como lo dice la agenda (`sitioEnLista`): el lugar, «otro sitio» o «Sitio reservado». */
@@ -107,6 +115,9 @@ export function nombresVisibles(artistas: { nombres: string[]; mas: number }, to
 
 const primeraMayuscula = (t: string) => t.charAt(0).toLocaleUpperCase("es-MX") + t.slice(1);
 
+/** El mediodía de un día de calendario (YYYY-MM-DD) en la zona: el instante con que se escribe ese día sin que la hora lo mueva. */
+const mediodia = (dia: string, zona: string): string => localAIso(`${dia}T12:00`, zona) ?? `${dia}T12:00:00.000Z`;
+
 /** «Sábado 11 de octubre» (con año si no es el de `ahora`), en la zona del evento. */
 function diaLargoCartel(iso: string, zona: string, ahora: Date): string {
   const z = zonaSegura(zona);
@@ -122,13 +133,28 @@ function diaCortoCartel(iso: string, zona: string): string {
   return primeraMayuscula(texto.replace(/[.,]/g, "").replace(/\bde\s+/, ""));
 }
 
+/** El mes de un día de calendario: «octubre» (`long`) u «oct» (`short`). No depende de la zona. */
+const mesDe = (dia: string, largo: "long" | "short"): string => new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", month: largo }).format(new Date(`${dia}T12:00:00Z`)).replace(/[.,]/g, "");
+const numeroDe = (dia: string): string => String(Number(dia.slice(8, 10)));
+
 /** «Del 9 al 11 de octubre» (o «Del 30 de octubre al 2 de noviembre»), con el mes completo: en un cartel sobra el espacio que falta en una lista. */
-function rangoLargo(inicio: string, fin: string, zona: string): string {
-  const z = zonaSegura(zona);
-  const mes = (iso: string) => new Intl.DateTimeFormat("es-MX", { timeZone: z, month: "long" }).format(new Date(iso));
-  const dia = (iso: string) => String(Number(diaLocal(new Date(iso), z).slice(8, 10)));
-  return mes(inicio) === mes(fin) ? `Del ${dia(inicio)} al ${dia(fin)} de ${mes(fin)}` : `Del ${dia(inicio)} de ${mes(inicio)} al ${dia(fin)} de ${mes(fin)}`;
+function rangoLargo(desde: string, hasta: string): string {
+  return desde.slice(0, 7) === hasta.slice(0, 7) ? `Del ${numeroDe(desde)} al ${numeroDe(hasta)} de ${mesDe(hasta, "long")}` : `Del ${numeroDe(desde)} de ${mesDe(desde, "long")} al ${numeroDe(hasta)} de ${mesDe(hasta, "long")}`;
 }
+
+/**
+ * Solo el mes y el año (OL-336, decisión del founder: el cartel no se actualiza si un festival o una exposición cambia sus fechas): «Octubre
+ * 2026», «Octubre – Noviembre 2026» o, si cambia el año, «Diciembre 2026 – Enero 2027». `largo` da el mes completo y, si no, en tres letras.
+ */
+function soloMeses(desde: string, hasta: string, largo: "long" | "short"): string {
+  const mes = (dia: string) => primeraMayuscula(mesDe(dia, largo));
+  const [a, b] = [desde.slice(0, 4), hasta.slice(0, 4)];
+  if (desde.slice(0, 7) === hasta.slice(0, 7)) return `${mes(desde)} ${a}`;
+  return a === b ? `${mes(desde)} – ${mes(hasta)} ${b}` : `${mes(desde)} ${a} – ${mes(hasta)} ${b}`;
+}
+
+/** Las clases cuyo cartel dice solo el mes (OL-336): las que se viven a lo largo de días y pueden cambiar de fechas. */
+export const CLASES_SOLO_MES: readonly Clase[] = ["festival", "exposicion"];
 
 export type TextosCartel = {
   etiqueta: string | null;
@@ -137,25 +163,54 @@ export type TextosCartel = {
   tramo: Tramo;
   /** El título no cupo en los 80 del tramo largo y se cortó: la pantalla ofrece «Acortar título». */
   tituloRecortado: boolean;
-  /** «Sábado 11 de octubre» o «Del 9 al 11 de octubre». */
+  /** La fecha en un renglón: «Sábado 11 de octubre», «Del 9 al 11 de octubre» o, a un festival o una exposición, «Octubre 2026». */
   dia: string;
-  /** «Sáb 11 oct» (o «9–11 oct» si son varios días). */
+  /** La misma fecha en corto, para sellos, cintas y boletos: «Sáb 11 oct», «Vie 9 oct – Dom 11 oct» u «Oct 2026». */
   diaCorto: string;
-  /** «19:00 h», «19:00–21:00 h» (varios días con el mismo horario) u «Horario por día». */
-  hora: string;
+  /**
+   * La misma fecha como imagen (las versiones sin foto la hacen enorme): el número y, aparte, el mes. «11» y «OCT»; varios días, «9–11» y «OCT»
+   * (o «30–2» y «OCT–NOV»); solo el mes, «OCT» y «2026». Cada plantilla usa UNA de las tres formas: la fecha sale una vez por cartel (OL-336).
+   */
+  fecha: { numero: string; mes: string };
+  /** «19:00 h», «19:00–21:00 h» (varios días con el mismo horario) u «Horario por día»; null a un festival o una exposición (solo el mes). */
+  hora: string | null;
   sitio: string | null;
   artistas: { nombres: string[]; mas: number };
   precio: string;
-  /** «somosnosotros.org/e/<slug>». */
-  enlace: string;
 };
 
-/** El dominio, que también es el sello discreto del pie (doc 52 §4: si va siempre o solo en los sin costo lo decide el founder). */
-export const DOMINIO = "somosnosotros.org";
-
-/** La dirección corta del evento en el cartel: `somosnosotros.org/e/<slug>` (el proxy la lleva a `/eventos/<slug>` con un 308). */
+/** La dirección corta del evento (`somosnosotros.org/e/<slug>`; el proxy la lleva a `/eventos/<slug>` con un 308). Desde OL-336 el pie del cartel
+ *  lleva el símbolo con el dominio y no esta dirección, pero la dirección sigue valiendo para quien la tenga. */
 export function enlaceCorto(slug: string): string {
-  return `${DOMINIO}/e/${slug}`;
+  return `${DOMINIO_CARTEL}/e/${slug}`;
+}
+
+/** Las mayúsculas del mes en la fecha como imagen («OCT»). */
+const mayus = (t: string) => t.toLocaleUpperCase("es-MX");
+
+/** Las tres formas de la fecha (`dia`, `diaCorto`, `fecha`) y la hora, según la clase y los días del evento. */
+function fechas(e: EventoCartel, ahora: Date): Pick<TextosCartel, "dia" | "diaCorto" | "fecha" | "hora"> {
+  const z = zonaSegura(e.zona);
+  const desde = diaLocal(new Date(e.inicio), z);
+  // El último día con la regla de la ficha: un fin a las 00:00 es el final del día anterior («Ciclo Fellini» terminaba a las 00:00 del 15: es el 14).
+  const hasta = ultimoDiaDelPeriodo(e.inicio, e.fin, z);
+  if (CLASES_SOLO_MES.includes(e.clase)) {
+    const [a, b] = [desde.slice(0, 4), hasta.slice(0, 4)];
+    const meses = desde.slice(0, 7) === hasta.slice(0, 7) ? mayus(mesDe(desde, "short")) : `${mayus(mesDe(desde, "short"))}–${mayus(mesDe(hasta, "short"))}`;
+    return { dia: soloMeses(desde, hasta, "long"), diaCorto: soloMeses(desde, hasta, "short"), fecha: { numero: meses, mes: a === b ? a : `${a}–${b}` }, hora: null };
+  }
+  const varios = cuandoVariosDias(e.inicio, e.fin, ahora, z);
+  if (e.conSesiones || (varios && hasta > desde)) {
+    const mismoMes = desde.slice(0, 7) === hasta.slice(0, 7);
+    return {
+      dia: rangoLargo(desde, hasta),
+      diaCorto: `${diaCortoCartel(e.inicio, z)} – ${diaCortoCartel(mediodia(hasta, z), z)}`,
+      fecha: { numero: `${numeroDe(desde)}–${numeroDe(hasta)}`, mes: mismoMes ? mayus(mesDe(hasta, "short")) : `${mayus(mesDe(desde, "short"))}–${mayus(mesDe(hasta, "short"))}` },
+      // Con un fin a las 00:00 el evento acaba con su último día (la misma regla de arriba): la hora es solo la de inicio, como con 23:59.
+      hora: e.conSesiones ? "Horario por día" : `${varios && !(e.fin && horaCorta(e.fin, z) === "00:00") ? varios.horas : horaCorta(e.inicio, z)} h`,
+    };
+  }
+  return { dia: diaLargoCartel(e.inicio, z, ahora), diaCorto: diaCortoCartel(e.inicio, z), fecha: { numero: numeroDe(desde), mes: mayus(mesDe(desde, "short")) }, hora: `${horaCorta(e.inicio, z)} h` };
 }
 
 /**
@@ -167,22 +222,15 @@ export function armarTextos(e: EventoCartel, tituloPropio: string | null = null,
   const base = propio || limpiarTexto(e.titulo);
   const partes = propio ? { titulo: propio, subtitulo: null } : partirTitulo(base);
   const titulo = recortar(partes.titulo, MAXIMOS.titulo);
-  const varios = cuandoVariosDias(e.inicio, e.fin, ahora, e.zona);
-  const variosDias = e.conSesiones || !!varios;
-  const fin = e.fin ?? e.inicio;
-  const diaCorto = variosDias ? `${diaCortoCartel(e.inicio, e.zona)} – ${diaCortoCartel(fin, e.zona)}` : diaCortoCartel(e.inicio, e.zona);
   return {
     etiqueta: textoEtiqueta(e.artistas),
     titulo,
     subtitulo: partes.subtitulo ? recortar(partes.subtitulo, MAXIMOS.subtitulo) : null,
     tramo: tramoDeTitulo(titulo),
     tituloRecortado: titulo !== partes.titulo,
-    dia: variosDias ? rangoLargo(e.inicio, fin, e.zona) : diaLargoCartel(e.inicio, e.zona, ahora),
-    diaCorto,
-    hora: e.conSesiones ? "Horario por día" : varios ? `${varios.horas} h` : `${horaCorta(e.inicio, e.zona)} h`,
+    ...fechas(e, ahora),
     sitio: e.sitio ? recortar(limpiarTexto(e.sitio), MAXIMOS.lugar) : null,
     artistas: textoArtistas(e.artistas),
     precio: textoPrecio(e.precio),
-    enlace: enlaceCorto(e.slug),
   };
 }

@@ -2,12 +2,13 @@ import { nombresVisibles } from "../datos";
 import { ajustarRenglon } from "../medir";
 import { conAlfa } from "../paleta";
 import { zonaDeTexto } from "../tokens";
-import { Capa, columna, diaYMes, etiqueta, Foto, Lienzo, pie, renglones, texto, type Bloque } from "./piezas";
+import { Capa, columna, etiqueta, Foto, Lienzo, pie, renglones, texto, unir, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
  * Familia «deco» (muestra 6 del founder): fondo oscuro, filetes dorados, mayúsculas muy espaciadas, simetría. La foto entonada hacia el
- * dorado la prepara `dibujar.ts`. A, «arco»: la foto en un arco con el abanico encima. B, «sol»: la foto en un círculo con rayos.
+ * dorado la prepara `dibujar.ts`. A, «arco»: la foto en un arco con el abanico encima. B, «sol»: la foto en un círculo con rayos. Sin foto la
+ * forma lleva el día enorme y la línea de cuándo dice solo la hora (OL-336: la fecha, una vez).
  */
 
 const AFINIDAD = { tiposLugar: ["foro", "museo", "casa_de_cultura"], disciplinas: ["musica", "teatro", "danza"] } as const;
@@ -33,10 +34,10 @@ function textosDeco(c: Contexto, altoTitulo: number): { bloque: Bloque; recortad
   const mayor = t.tramo === "corto" ? 110 : t.tramo === "medio" ? 84 : 66;
   const titulo = texto(t.titulo, { fuente: "ancha-negra", ancho: DENTRO, renglones: 5, mayor, menor: 44, alto: altoTitulo, mayusculas: true, espaciado: 3, parejo: true }, p.texto, { interlineado: 1.08, alinear: "center" });
   const sub = texto(t.subtitulo, { fuente: "ligera", ancho: DENTRO, renglones: 2, mayor: 36, menor: 26, espaciado: 2 }, p.texto, { interlineado: 1.2, alinear: "center" });
-  const cuando = etiqueta(`${t.diaCorto} · ${t.hora}`, DENTRO, p.acento, "center", 30);
+  const cuando = etiqueta(c.foto ? unir(t.diaCorto, t.hora) : t.hora, DENTRO, p.acento, "center", 30);
   const donde = texto(t.sitio, { fuente: "media", ancho: DENTRO, renglones: 2, mayor: 30, menor: 22, espaciado: 2 }, p.texto, { interlineado: 1.2, alinear: "center" });
   const quien = texto([nombresVisibles(t.artistas, 2), t.precio].filter(Boolean).join(" · "), { fuente: "regular", ancho: DENTRO, renglones: 2, mayor: 26, menor: 20 }, p.suave, { interlineado: 1.25, alinear: "center" });
-  const bloque = columna([etiqueta(t.etiqueta, DENTRO, p.acento, "center", 22), titulo, sub, cuando, donde, quien, pie(c, DENTRO, conAlfa(p.texto, 0.6), "center", { mayusculas: true, espaciado: 3 })], 18, { alinear: "center", ancho: DENTRO });
+  const bloque = columna([etiqueta(t.etiqueta, DENTRO, p.acento, "center", 22), titulo, sub, cuando, donde, quien, pie(c, DENTRO, "center", { mayusculas: true, espaciado: 3 })], 18, { alinear: "center", ancho: DENTRO });
   return { bloque, recortado: !!titulo.recortado };
 }
 
@@ -59,10 +60,10 @@ function Abanico({ color }: { color: string }) {
   );
 }
 
-/** Sin foto, la forma (arco o círculo) se llena del acento con el día enorme. */
+/** Sin foto, la forma (arco o círculo) se llena del acento con el día enorme (o el rango, o el mes). */
 function diaEnForma(c: Contexto, ancho: number, alto: number): Bloque {
-  const { numero, mes } = diaYMes(c.textos.diaCorto);
-  const n = renglones(ajustarRenglon(numero, { fuente: "ancha-negra", ancho: ancho * 0.7, mayor: Math.round(Math.min(alto * 0.5, ancho * 0.45)), menor: 80 }), "ancha-negra", c.paleta.sobreAcento, { interlineado: 0.95, alinear: "center" });
+  const { numero, mes } = c.textos.fecha;
+  const n = renglones(ajustarRenglon(numero, { fuente: "ancha-negra", ancho: ancho * 0.7, mayor: Math.round(Math.min(alto * 0.5, ancho * 0.45)), menor: 40 }), "ancha-negra", c.paleta.sobreAcento, { interlineado: 0.95, alinear: "center" });
   const m = renglones(ajustarRenglon(mes, { fuente: "media", ancho: ancho * 0.6, mayor: 44, menor: 26, espaciado: 10 }), "media", c.paleta.sobreAcento, { interlineado: 1.2, alinear: "center", espaciado: 10 });
   return columna([n, m], 8, { alinear: "center" });
 }

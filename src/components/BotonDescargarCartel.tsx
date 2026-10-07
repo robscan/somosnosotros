@@ -22,6 +22,8 @@ type Props = {
   precargar?: boolean;
   /** Otra dirección de la imagen: el cartel generado por el creador (OL-324, `/api/cartel-nuevo/…&descarga=1`). Sin ella, el cartel subido. */
   href?: string;
+  /** Al quedar guardado (descargado o en Fotos): el creador lo mide (OL-336). Un fallo no llama. */
+  alGuardar?: () => void;
 };
 
 /** El nombre que trae la respuesta (`Content-Disposition`), o uno genérico. */
@@ -71,7 +73,7 @@ const hayFotosEnServidor = () => false;
  * 3 veces el cartel»): al terminar sale el aviso flotante de `ui/Confirmacion` («Cartel guardado en Fotos», «Cartel descargado», o el fallo con su ✕),
  * y el botón, esos mismos 2,5 s, muestra la palomita y no responde a más toques (`aria-disabled`, no `disabled`: el estilo no se apaga).
  */
-export default function BotonDescargarCartel({ id, className, icono, iconoListo, corto = false, precargar = false, href: otra }: Props) {
+export default function BotonDescargarCartel({ id, className, icono, iconoListo, corto = false, precargar = false, href: otra, alGuardar }: Props) {
   const conFotos = useSyncExternalStore(sinSuscripcion, hayFotos, hayFotosEnServidor);
   const destino = destinoDelCartel({ conFotos });
   const dice = textosDelCartel(destino, corto);
@@ -140,6 +142,7 @@ export default function BotonDescargarCartel({ id, className, icono, iconoListo,
       guardar(cartel);
     }
     avisar("listo");
+    alGuardar?.();
   }
 
   return (

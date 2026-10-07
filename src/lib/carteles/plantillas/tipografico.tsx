@@ -1,22 +1,26 @@
 import { nombresVisibles } from "../datos";
 import { ajustarRenglon } from "../medir";
 import { MARGEN, zonaDeTexto } from "../tokens";
-import { Capa, columna, dato, diaYMes, etiqueta, filete, fila, Foto, Lienzo, pie, renglones, subtitulo, texto, type Bloque } from "./piezas";
+import { Capa, columna, dato, etiqueta, filete, fila, Foto, Lienzo, pie, renglones, subtitulo, texto, unir, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
  * Familia «tipográfico» (muestra 2 del founder): papel claro, el título en negra ancha y mayúsculas, y el color en una franja. Va bien sin foto:
  * la letra es la imagen. A, «franja»: una franja de color a la derecha con la fecha girada (con foto, la franja es la foto). B, «fecha»: el día
  * enorme arriba y el título debajo (con foto, una banda de foto entre los dos).
+ *
+ * La fecha sale una vez (OL-336; el founder la vio dos veces en esta familia): donde va girada o enorme, los datos de abajo ya no la repiten.
  */
 
 const AFINIDAD = { tiposLugar: ["escuela", "biblioteca", "colectivo", "casa_de_cultura", "otro"], disciplinas: ["letras", "artes_visuales", "otro", "cine"] } as const;
 
-/** Lo de abajo de las dos: los datos en dos columnas y el pie. */
-function datosTipo(c: Contexto, ancho: number): Bloque {
+/** Lo de abajo de las dos: los datos (con la fecha y la hora en su columna, o sin ellas si el cartel ya las dice en grande) y el pie. */
+function datosTipo(c: Contexto, ancho: number, conFecha: boolean): Bloque {
   const { textos: t, paleta: p } = c;
   const mitad = Math.floor((ancho - 32) / 2);
-  return columna([fila([dato(t.dia, t.hora, mitad, p.texto, p.suave), dato(t.sitio, nombresVisibles(t.artistas, 4) || null, mitad, p.texto, p.suave)], { ancho }), pie(c, ancho, p.suave)], 28);
+  const quien = nombresVisibles(t.artistas, 4) || null;
+  const datos = conFecha ? fila([dato(t.dia, t.hora, mitad, p.texto, p.suave), dato(t.sitio, quien, mitad, p.texto, p.suave)], { ancho }) : dato(t.sitio, quien, ancho, p.texto, p.suave);
+  return columna([datos, pie(c, ancho)], 28);
 }
 
 /** El ancho de la franja de la derecha. */
@@ -27,7 +31,8 @@ function dibujarFranja(c: Contexto): Dibujo {
   const zona = zonaDeTexto(f);
   const ancho = f.ancho - FRANJA - 2 * MARGEN;
   const arriba = columna([etiqueta(t.etiqueta, ancho, p.texto), etiqueta(t.precio, ancho, p.acento)], 10);
-  const abajo = datosTipo(c, ancho);
+  // Sin foto la fecha va girada en la franja (con su hora): abajo, solo el sitio y quién.
+  const abajo = datosTipo(c, ancho, !!c.foto);
   const libre = f.alto - zona.arriba - zona.abajo - arriba.alto - abajo.alto - 2 * 56;
   const sub = subtitulo(t.subtitulo, ancho, p.texto);
   const altoTitulo = libre - (sub.el ? sub.alto + 28 : 0) - 6 - 36;
@@ -36,8 +41,8 @@ function dibujarFranja(c: Contexto): Dibujo {
   const yCentro = zona.arriba + arriba.alto + 56 + Math.max(0, (libre - centro.alto) / 2);
   // La fecha girada en la franja (sin foto): a lo largo del alto útil, centrada entre lo que tapa la interfaz.
   const largo = f.alto - zona.arriba - zona.abajo;
-  // El día en mayúsculas; la hora no («19:00 h», no «19:00 H»).
-  const girada = ajustarRenglon(`${t.diaCorto.toLocaleUpperCase("es-MX")} · ${t.hora}`, { fuente: "ancha-negra", ancho: largo, mayor: 112, menor: 48 });
+  // El día en mayúsculas; la hora no («19:00 h», no «19:00 H»). Un festival o una exposición, solo el mes («OCT 2026»).
+  const girada = ajustarRenglon(unir(t.diaCorto.toLocaleUpperCase("es-MX"), t.hora) ?? "", { fuente: "ancha-negra", ancho: largo, mayor: 112, menor: 48 });
   const altoGirada = girada.tamano * 1.1;
   const yCentroFranja = zona.arriba + largo / 2;
   return {
@@ -72,12 +77,12 @@ function dibujarFecha(c: Contexto): Dibujo {
   const { textos: t, paleta: p, formato: f } = c;
   const zona = zonaDeTexto(f);
   const ancho = f.ancho - 2 * MARGEN;
-  const { numero, mes } = diaYMes(t.diaCorto);
-  // El día enorme en el acento y, a su lado, el mes y la hora; varios días: el rango ya viene en `dia`.
-  const numeroB = renglones(ajustarRenglon(numero, { fuente: "ancha-negra", ancho: ancho * 0.48, mayor: c.foto ? 300 : 380, menor: 160 }), "ancha-negra", p.acento, { interlineado: 0.82 });
+  const { numero, mes } = t.fecha;
+  // La fecha es esta: el día (o el rango, o el mes) enorme en el acento y, a su lado, el mes y la hora. Abajo no se repite (OL-336).
+  const numeroB = renglones(ajustarRenglon(numero, { fuente: "ancha-negra", ancho: ancho * 0.48, mayor: c.foto ? 300 : 380, menor: 72 }), "ancha-negra", p.acento, { interlineado: 0.82 });
   const lado = columna([texto(mes, { fuente: "ancha-negra", ancho: ancho * 0.45, renglones: 1, mayor: 96, menor: 48 }, p.texto, { interlineado: 1 }), texto(t.hora, { fuente: "media", ancho: ancho * 0.45, renglones: 1, mayor: 40, menor: 24 }, p.suave, { interlineado: 1.2 }), etiqueta(t.precio, ancho * 0.45, p.acento)], 10);
   const cabeza = fila([numeroB, lado], { ancho, separacion: 32, estilo: { justifyContent: "flex-start", alignItems: "flex-end" } });
-  const abajo = columna([etiqueta(t.etiqueta, ancho, p.suave), datosTipo(c, ancho)], 24);
+  const abajo = columna([etiqueta(t.etiqueta, ancho, p.suave), datosTipo(c, ancho, false)], 24);
   const sub = subtitulo(t.subtitulo, ancho, p.suave);
   const altoFoto = c.foto ? Math.round((f.alto - zona.arriba - zona.abajo) * 0.3) : 0;
   const libre = f.alto - zona.arriba - zona.abajo - cabeza.alto - abajo.alto - (c.foto ? altoFoto + 48 : 0) - 2 * 48;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { afinidad, cuantasTandas, elegir, ordenar, type Datos } from "./elegir";
+import { plantillaMedida, PLANTILLAS_CARTEL } from "../medir";
 import { CATALOGO, plantillaPorId } from "./plantillas";
 
 const base: Datos = { conImagen: true, tipoLugar: null, disciplinas: [], artistas: 0, memoria: null };
@@ -12,6 +13,9 @@ describe("catálogo", () => {
     const porFamilia = new Map<string, number>();
     for (const p of CATALOGO) porFamilia.set(p.familia, (porFamilia.get(p.familia) ?? 0) + 1);
     expect([...porFamilia.values()]).toEqual([2, 2, 2, 2, 2, 2]);
+  });
+  it("la lista cerrada de la medición (OL-336) nombra justo las plantillas del catálogo", () => {
+    expect(CATALOGO.map((p) => plantillaMedida(p.id))).toEqual([...PLANTILLAS_CARTEL]);
   });
   it("plantillaPorId encuentra y rechaza", () => {
     expect(plantillaPorId("deco-sol")?.familia).toBe("deco");

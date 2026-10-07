@@ -47,6 +47,7 @@ import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
+import { hrefCreador } from "@/lib/carteles/origen";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -385,7 +386,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               </Link>
             </li>
             <li>
-              <Link href={`${hrefEvento(e)}/cartel`} className={renglon.ajuste}>
+              <Link href={hrefCreador(hrefEvento(e), "menu")} className={renglon.ajuste}>
                 <IconoCartel width={20} height={20} />
                 <b>Crear cartel</b>
               </Link>
@@ -528,7 +529,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             />
           )}
           {crearCartel && (
-            <Link href={`${hrefEvento(e)}/cartel`} className={ficha.accion}>
+            <Link href={hrefCreador(hrefEvento(e), "accion")} className={ficha.accion}>
               <span className={CIRCULO}>
                 <IconoCartel />
               </span>

@@ -52,6 +52,29 @@ function encimados(nodos: NodoTexto[]): [NodoTexto, NodoTexto] | null {
 
 const medidas: { formato: string; foto: boolean; ms: number; kb: number }[] = [];
 
+/** Cuántos textos del cartel nombran un número suelto (el día «16», no «2016» ni «16:00»). */
+const conNumero = (nodos: NodoTexto[], n: string) => nodos.filter((x) => new RegExp(`(^|[^\\d:])${n}([^\\d:]|$)`).test(x.texto)).length;
+
+/**
+ * OL-336: la fecha sale UNA vez en cada cartel (el founder la vio dos veces en «tipográfico»): cada día del evento lo nombra un solo texto,
+ * la hora también (y ninguna en un festival), y el festival dice el año una vez. Así ninguna plantilla junta la fecha en grande con la de los datos.
+ */
+function fechaUnaVez(caso: string, nodos: NodoTexto[]) {
+  const textos = nodos.map((n) => n.texto);
+  if (caso === "corto") {
+    expect(conNumero(nodos, "16"), `el día dos veces: ${textos.join(" | ")}`).toBe(1);
+    expect(nodos.filter((n) => n.texto.includes("19:00")).length, `la hora: ${textos.join(" | ")}`).toBe(1);
+  } else if (caso === "variosDias") {
+    expect(conNumero(nodos, "9"), `el primer día: ${textos.join(" | ")}`).toBe(1);
+    expect(conNumero(nodos, "14"), `el último día: ${textos.join(" | ")}`).toBe(1);
+    expect(conNumero(nodos, "15"), "el 15 no es un día del evento").toBe(0);
+  } else if (caso === "festival") {
+    expect(nodos.filter((n) => n.texto.includes("2026")).length, `el año: ${textos.join(" | ")}`).toBe(1);
+    expect(nodos.filter((n) => /\d{1,2}:\d{2}/.test(n.texto)).length, "un festival no lleva hora").toBe(0);
+    expect(conNumero(nodos, "9"), "un festival no lleva días").toBe(0);
+  }
+}
+
 describe.each(CATALOGO.map((p) => [p.id, p] as const))("plantilla %s", (_id, plantilla) => {
   for (const formato of Object.values(FORMATOS)) {
     for (const conFoto of [true, false]) {
@@ -76,8 +99,9 @@ describe.each(CATALOGO.map((p) => [p.id, p] as const))("plantilla %s", (_id, pla
             const girado = { ...n, x: n.x + n.ancho / 2 - n.alto / 2, y: n.y + n.alto / 2 - n.ancho / 2, ancho: n.alto, alto: n.ancho };
             expect(fueraDelLienzo(girado, formato) || enLoTapado(girado, formato), `texto girado fuera: ${n.texto}`).toBe(false);
           }
+          fechaUnaVez(caso, r.nodos);
           // Con datos de largo normal nada se corta con «…» (un rótulo cortado delató un tamaño mal puesto).
-          if (caso === "corto") expect(r.nodos.filter((n) => n.texto.includes("…")).map((n) => n.texto)).toEqual([]);
+          if (["corto", "variosDias", "festival"].includes(caso)) expect(r.nodos.filter((n) => n.texto.includes("…")).map((n) => n.texto)).toEqual([]);
           // El título siempre se ve: al menos su primera palabra está en el lienzo.
           const primera = textos.titulo.split(" ")[0].toLocaleUpperCase("es-MX");
           expect(r.nodos.some((n) => n.texto.toLocaleUpperCase("es-MX").includes(primera.slice(0, 3)))).toBe(true);

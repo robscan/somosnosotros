@@ -134,12 +134,18 @@ export function periodoDePrograma(actos: readonly { inicio: string; fin: string 
 }
 
 /**
- * Los días de un periodo guardado (un festival): «Del 12 al 14 de nov», o un solo día («jue 12 de nov»). Un fin justo a la medianoche es el final
- * del día anterior (así guarda la base el fin de un acto sin hora de fin: `termina`), no un día más.
+ * El último día (YYYY-MM-DD, en la zona) de un periodo guardado. Un fin justo a la medianoche es el final del día anterior (así guarda la base el
+ * fin de un acto sin hora de fin: `termina`), no un día más; sin fin, el día de inicio. La regla con la que la ficha lee un festival
+ * (`rangoDelPeriodo`) y con la que el cartel escribe sus fechas (OL-336: «Ciclo Fellini» terminaba a las 00:00 del 15 y el cartel decía «15»).
  */
+export function ultimoDiaDelPeriodo(inicio: string, fin: string | null, zona: string = ZONA_INICIAL): string {
+  return fin ? diaLocal(new Date(Math.max(Date.parse(inicio), Date.parse(fin) - 60000)), zona) : diaLocal(new Date(inicio), zona);
+}
+
+/** Los días de un periodo guardado (un festival): «Del 12 al 14 de nov», o un solo día («jue 12 de nov»), con su último día (`ultimoDiaDelPeriodo`). */
 export function rangoDelPeriodo(inicio: string, fin: string | null, zona: string = ZONA_INICIAL, ahora: Date = new Date()): string {
   const desde = diaLocal(new Date(inicio), zona);
-  const hasta = fin ? diaLocal(new Date(Math.max(Date.parse(inicio), Date.parse(fin) - 60000)), zona) : desde;
+  const hasta = ultimoDiaDelPeriodo(inicio, fin, zona);
   return hasta > desde ? rangoCorto(desde, hasta, diaLocal(ahora, zona)) : diaConMesDe(desde, ahora, zona);
 }
 

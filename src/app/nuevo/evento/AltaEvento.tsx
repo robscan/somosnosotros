@@ -259,6 +259,7 @@ function AlPublicar({ r, creado, evento, conCartel, zona, sugerencia, onPeriodo,
         )
       }
       sugerenciaAbierta={sugerencia?.estado.fase === "abierta"}
+      sugerenciaVisible={sugerencia?.estado.fase === "abierta" || sugerencia?.estado.fase === "hecha"}
       onOtro={onOtro}
     />
   );

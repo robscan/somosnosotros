@@ -11,6 +11,17 @@ import { limpiarUrlEvento } from "@/lib/limpiarUrlAnalitica";
  *
  * Los nombres van en snake_case y con 40 caracteres o menos: así valen igual en Vercel y en Google Analytics (GA4 corta a 40).
  */
+/**
+ * Las plantillas del creador de cartel (OL-324; `lib/carteles/plantillas`) como se miden: su id con «_» en vez de «-» (las opciones de la lista
+ * son letras y guiones bajos). Escritas aquí a mano para no cargar las plantillas en el teléfono solo para medir; una prueba comprueba que son
+ * las del catálogo (`carteles/elegir.test.ts`).
+ */
+export const PLANTILLAS_CARTEL = ["cine_sangre", "cine_banda", "tipo_franja", "tipo_fecha", "feria_picado", "feria_boleto", "zine_cinta", "zine_recorte", "galeria_marco", "galeria_columna", "deco_arco", "deco_sol"] as const;
+/** Los formatos del cartel como se miden: publicación (4:5) e historia (9:16). */
+const FORMATOS_CARTEL = ["publicacion", "historia"] as const;
+/** Las tandas de «¿Cuál te gusta?» (hay tres como mucho). */
+const TANDAS_CARTEL = ["primera", "segunda", "tercera"] as const;
+
 export const EVENTOS = {
   /** Entrar a la cuenta: se pidió (código por correo o salida a Apple/Google), quedó dentro o no se pudo. */
   entrar: { paso: ["pedido", "listo", "fallo"], metodo: ["correo", "apple", "google"] },
@@ -34,6 +45,22 @@ export const EVENTOS = {
   aviso_activado: { canal: ["correo", "telefono"] },
   /** Un reporte enviado, y de qué tipo de ficha. */
   reporte: { que: ["lugar", "evento", "perfil", "artista"] },
+  /** El creador de cartel (OL-336) se abrió, y desde dónde: el menú de la ficha, su acción redonda, «Publicado» del alta u otro camino. */
+  cartel_abierto: { desde: ["menu", "accion", "publicado", "otro"] },
+  /** «Ver otros diseños»: la tanda que se ve después (tras la tercera vuelve a la primera). */
+  cartel_otros: { tanda: TANDAS_CARTEL },
+  /** Se eligió un diseño en «¿Cuál te gusta?»: cuál y en qué formato se empieza a ver. */
+  cartel_elegido: { plantilla: PLANTILLAS_CARTEL, formato: FORMATOS_CARTEL },
+  /** Se cambió el formato en «Así queda»: publicación (4:5) o historia (9:16). */
+  cartel_formato: { formato: FORMATOS_CARTEL },
+  /** Se abrió «Acortar título» (nunca lo que se escribe). */
+  cartel_titulo_acortado: {},
+  /** «Descargar el cartel» o «Guardar en Fotos» terminó bien: qué diseño y en qué formato. */
+  cartel_descargado: { plantilla: PLANTILLAS_CARTEL, formato: FORMATOS_CARTEL },
+  /** «Usar como cartel del evento» lo puso en el evento: qué diseño y en qué formato. */
+  cartel_usado: { plantilla: PLANTILLAS_CARTEL, formato: FORMATOS_CARTEL },
+  /** «No me gusta ninguno»: en qué tanda se dio por vencida la persona (nunca por qué). */
+  cartel_ninguno: { tanda: TANDAS_CARTEL },
   /** La app quedó instalada (el aviso `appinstalled`: Chrome, Edge y Android; Safari de iPhone nunca lo da). */
   app_instalada: {},
   /** Una pantalla no cargó (la de «Algo falló»). */
@@ -85,6 +112,22 @@ export function datosAsistencia(nuevo: "voy" | "me_interesa" | null, previo: "vo
 export function claseMedida(valor: unknown): DatosDe<"evento_creado">["clase"] {
   const opciones: readonly string[] = EVENTOS.evento_creado.clase;
   return typeof valor === "string" && opciones.includes(valor) ? (valor as DatosDe<"evento_creado">["clase"]) : "puntual";
+}
+
+/** Una plantilla del cartel como se mide («cine-sangre» → «cine_sangre»), si es del catálogo (siempre lo es; lo demás no se mide). */
+export function plantillaMedida(id: string): (typeof PLANTILLAS_CARTEL)[number] | null {
+  const medida = id.replaceAll("-", "_");
+  return (PLANTILLAS_CARTEL as readonly string[]).includes(medida) ? (medida as (typeof PLANTILLAS_CARTEL)[number]) : null;
+}
+
+/** El formato del cartel (`4x5`, `9x16`) como se mide. */
+export function formatoMedido(id: "4x5" | "9x16"): (typeof FORMATOS_CARTEL)[number] {
+  return id === "9x16" ? "historia" : "publicacion";
+}
+
+/** La tanda (0, 1, 2 en la pantalla) como se mide. */
+export function tandaMedida(indice: number): (typeof TANDAS_CARTEL)[number] {
+  return TANDAS_CARTEL[indice] ?? "primera";
 }
 
 /** Qué ficha se comparte, por su dirección (`/eventos/…`, `/lugares/…`, `/artistas/…`); otra cosa (la app, una persona) no se mide. */

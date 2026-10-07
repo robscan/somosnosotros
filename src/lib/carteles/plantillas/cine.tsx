@@ -2,7 +2,7 @@ import { nombresVisibles } from "../datos";
 import type { Caja } from "../medir";
 import { conAlfa } from "../paleta";
 import { MARGEN, zonaDeTexto } from "../tokens";
-import { cabecera, Capa, columna, dato, diaYMes, filete, fila, Foto, Lienzo, pie, subtitulo, texto, type Bloque } from "./piezas";
+import { cabecera, Capa, columna, dato, filete, fila, Foto, Lienzo, pie, subtitulo, texto, type Bloque } from "./piezas";
 import type { Contexto, Dibujo, Plantilla } from "./tipos";
 
 /**
@@ -21,22 +21,26 @@ const TITULO_SANGRE: Record<string, Pick<Caja, "mayor" | "menor" | "renglones">>
   largo: { mayor: 124, menor: 76, renglones: 4 },
 };
 
-/** Lo de abajo de las dos: subtítulo, filete, datos en dos columnas y el pie. */
-function datosCine(c: Contexto, ancho: number): Bloque {
+/**
+ * Lo de abajo de las dos: los datos en dos columnas y el pie. `conFecha`: el día va aquí; sin él (la fecha ya es la imagen del cartel), solo la
+ * hora, para que la fecha salga una vez (OL-336). Si no queda nada a la izquierda (un festival sin hora), el sitio toma el ancho entero.
+ */
+function datosCine(c: Contexto, ancho: number, conFecha: boolean): Bloque {
   const { textos: t, paleta: p } = c;
   const mitad = Math.floor((ancho - 40) / 2);
-  return columna(
-    [fila([dato(t.dia, t.hora, mitad, p.texto, p.suave), dato(t.sitio, nombresVisibles(t.artistas, 3) || null, mitad, p.texto, p.suave, "right")], { ancho }), pie(c, ancho, p.suave)],
-    28,
-  );
+  const quien = nombresVisibles(t.artistas, 3) || null;
+  const cuando = conFecha ? dato(t.dia, t.hora, mitad, p.texto, p.suave) : dato(t.hora, null, mitad, p.texto, p.suave);
+  const datos = cuando.el ? fila([cuando, dato(t.sitio, quien, mitad, p.texto, p.suave, "right")], { ancho }) : dato(t.sitio, quien, ancho, p.texto, p.suave);
+  return columna([datos, pie(c, ancho)], 28);
 }
 
-/** Sin foto, la fecha es la imagen: el día enorme en el color de acento, con su mes al lado, en el alto que quede. */
+/** Sin foto, la fecha es la imagen: el día enorme en el color de acento, con su mes al lado, en el alto que quede (null si no cabe). */
 function fechaGrande(c: Contexto, alto: number, ancho: number, color: string): Bloque {
-  const { numero, mes } = diaYMes(c.textos.diaCorto);
+  const { numero, mes } = c.textos.fecha;
   const tamano = Math.min(520, Math.floor(alto / 0.84));
   if (tamano < 160 || !numero) return { el: null, alto: 0 };
-  const numeroB = texto(numero, { fuente: "condensada-negra", ancho: ancho * 0.7, renglones: 1, mayor: tamano, menor: 160 }, color, { interlineado: 0.84 });
+  // Un rango («9–14») o meses («OCT–NOV») piden más ancho: baja de tamaño antes que cortarse.
+  const numeroB = texto(numero, { fuente: "condensada-negra", ancho: ancho * 0.7, renglones: 1, mayor: tamano, menor: 96 }, color, { interlineado: 0.84 });
   const mesB = texto(mes, { fuente: "condensada-negra", ancho: ancho * 0.3, renglones: 1, mayor: Math.round(tamano * 0.3), menor: 60 }, color, { interlineado: 1 });
   return fila([numeroB, mesB], { ancho, separacion: 24, estilo: { justifyContent: "flex-start", alignItems: "flex-end" } });
 }
@@ -46,8 +50,13 @@ function dibujarSangre(c: Contexto): Dibujo {
   const zona = zonaDeTexto(f);
   const ancho = f.ancho - 2 * MARGEN;
   const titulo = texto(t.titulo, { fuente: "condensada-negra", ancho, ...TITULO_SANGRE[t.tramo], mayusculas: true, parejo: true }, p.texto, { interlineado: 0.88 });
-  const abajo = columna([titulo, subtitulo(t.subtitulo, ancho, p.acento), filete(ancho, conAlfa(p.texto, 0.35)), datosCine(c, ancho)], 26);
+  const armarAbajo = (conFecha: boolean) => columna([titulo, subtitulo(t.subtitulo, ancho, p.acento), filete(ancho, conAlfa(p.texto, 0.35)), datosCine(c, ancho, conFecha)], 26);
   const arriba = cabecera(c, ancho, p.acento, p.texto);
+  const yFecha = zona.arriba + arriba.alto + 32;
+  // Sin foto la fecha es la imagen y los datos no la repiten; si no cabe grande, vuelve a los datos.
+  const sinFecha = armarAbajo(false);
+  const fecha = c.foto ? null : fechaGrande(c, f.alto - zona.abajo - sinFecha.alto - yFecha - 40, ancho, p.acento);
+  const abajo = fecha?.el ? sinFecha : armarAbajo(true);
   const yAbajo = f.alto - zona.abajo - abajo.alto;
   // Dos degradados sobre la foto: arriba, oscuro hasta pasada la etiqueta (en una historia baja 250 px) y luego se abre; abajo, empieza a
   // oscurecer 260 px antes del título y ya es casi el fondo donde empieza el texto.
@@ -55,8 +64,6 @@ function dibujarSangre(c: Contexto): Dibujo {
   const abiertoArriba = ((zona.arriba + arriba.alto + 220) / f.alto) * 100;
   const desde = Math.max(abiertoArriba, ((yAbajo - 260) / f.alto) * 100);
   const hasta = (yAbajo / f.alto) * 100;
-  const yFecha = zona.arriba + arriba.alto + 32;
-  const fecha = c.foto ? null : fechaGrande(c, yAbajo - yFecha - 40, ancho, p.acento);
   return {
     elemento: (
       <Lienzo c={c}>
@@ -98,16 +105,18 @@ function dibujarBanda(c: Contexto): Dibujo {
   const caja = c.foto ? TITULO_BANDA[t.tramo] : { ...TITULO_BANDA[t.tramo], mayor: TITULO_BANDA[t.tramo].mayor + 50 };
   const titulo = texto(t.titulo, { fuente: "condensada-negra", ancho, ...caja, mayusculas: true, parejo: true }, p.sobreAcento, { interlineado: 0.9 });
   const banda = columna([cabecera(c, ancho, p.sobreAcento, p.sobreAcento), titulo, subtitulo(t.subtitulo, ancho, p.sobreAcento)], 22);
-  const resto = columna([datosCine(c, ancho)], 0);
-  const altoResto = resto.alto + 40 + zona.abajo;
   const altoBanda = banda.alto + 2 * relleno;
+  // Sin foto, la fecha grande ocupa lo que la banda tiene de sobra encima de su texto, y los datos de abajo no la repiten (OL-336); si no cabe,
+  // la fecha vuelve a los datos.
+  const yFecha = zona.arriba;
+  const sinFecha = datosCine(c, ancho, false);
+  const fecha = c.foto ? null : fechaGrande(c, f.alto - (sinFecha.alto + 40 + zona.abajo) - relleno - banda.alto - yFecha - 40, ancho, p.sobreAcento);
+  const resto = fecha?.el ? sinFecha : datosCine(c, ancho, true);
+  const altoResto = resto.alto + 40 + zona.abajo;
   // La foto se queda con lo que sobra (y al menos lo que tapa la interfaz arriba en una historia); sin foto, la banda empieza arriba.
   const altoFoto = c.foto ? Math.max(f.tapaArriba, f.alto - altoResto - altoBanda) : 0;
   const yBanda = c.foto ? altoFoto : 0;
   const altoBandaReal = c.foto ? altoBanda : f.alto - altoResto;
-  // Sin foto, la fecha grande ocupa lo que la banda tiene de sobra encima de su texto.
-  const yFecha = zona.arriba;
-  const fecha = c.foto ? null : fechaGrande(c, altoBandaReal - relleno - banda.alto - yFecha - 40, ancho, p.sobreAcento);
   return {
     elemento: (
       <Lienzo c={c}>
