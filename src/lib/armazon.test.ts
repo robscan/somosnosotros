@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { puntoDeTexto } from "./geo";
-import { altaDeParametro, altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceAltaDeTipo, enlaceAltaEvento, enlaceAltaLugar, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, redireccionDeNuevo, tituloDeAlta, vistaDeRuta } from "./armazon";
+import { altaDeParametro, altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceAltaArtista, enlaceAltaDeTipo, enlaceAltaEvento, enlaceAltaLugar, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, redireccionDeNuevo, tituloDeAlta, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("las cinco secciones y la pantalla que confirma un borrado son raíz", () => {
@@ -55,16 +55,16 @@ describe("armazón: el «+» de la barra", () => {
     expect(altaDeRuta("/artistas/aaron-cadena")).toBe("artista");
     expect(altaDeRuta("/eventos/concierto")).toBe("evento");
   });
-  it("lleva a la pantalla de alta con el tipo de la sección, y la ciudad que se está viendo solo al evento y al artista; el evento y el lugar, a su alta por pasos", () => {
+  it("lleva al alta por pasos del tipo de la sección, y la ciudad que se está viendo solo al evento y al artista", () => {
     expect(enlaceDeAlta("evento", null)).toEqual({ href: "/nuevo/evento", etiqueta: "Publicar un evento" });
     expect(enlaceDeAlta("evento", "queretaro").href).toBe("/nuevo/evento?ciudad=queretaro");
-    expect(enlaceDeAlta("artista", "queretaro")).toEqual({ href: "/nuevo?tipo=artista&ciudad=queretaro", etiqueta: "Registrar artista" });
+    expect(enlaceDeAlta("artista", "queretaro")).toEqual({ href: "/nuevo/artista?ciudad=queretaro", etiqueta: "Registrar artista" });
     expect(enlaceDeAlta("lugar", "queretaro")).toEqual({ href: "/nuevo/lugar", etiqueta: "Registrar un lugar" });
   });
   it("con el nombre que se buscó y no se encontró, el alta abre con él puesto (y bien escrito en la URL)", () => {
-    expect(enlaceDeAlta("artista", null, "Los Vecinos").href).toBe("/nuevo?tipo=artista&nombre=Los+Vecinos");
+    expect(enlaceDeAlta("artista", null, "Los Vecinos").href).toBe("/nuevo/artista?nombre=Los+Vecinos");
     expect(enlaceDeAlta("lugar", "queretaro", "Foro & Café").href).toBe("/nuevo/lugar?nombre=Foro+%26+Caf%C3%A9");
-    expect(enlaceDeAlta("artista", "queretaro", "Trío Xochitl").href).toBe("/nuevo?tipo=artista&ciudad=queretaro&nombre=Tr%C3%ADo+Xochitl");
+    expect(enlaceDeAlta("artista", "queretaro", "Trío Xochitl").href).toBe("/nuevo/artista?ciudad=queretaro&nombre=Tr%C3%ADo+Xochitl");
   });
   it("con el punto donde se sostuvo el dedo en el mapa, el alta abre con el lugar ya ubicado (y el nombre del sitio, si lo había)", () => {
     const punto = { lat: 22.15113049, lng: -100.97860012 };
@@ -85,12 +85,11 @@ describe("armazón: el «+» de la barra", () => {
     expect(tituloDeAlta("lugar")).toBe("Registrar un lugar");
     expect(tituloDeAlta("artista")).toBe("Registrar artista");
   });
-  it("el tipo del «+» sobrevive al viaje: el evento y el lugar van a su alta por pasos y el artista lleva su tipo a /nuevo", () => {
+  it("el tipo del «+» sobrevive al viaje: cada uno va a su alta por pasos (OL-316: también el artista)", () => {
     for (const ruta of ["/", "/agenda", "/perfil", "/lugares", "/lugares/teatro-de-la-paz", "/artistas", "/artistas/aaron-cadena"]) {
       const alta = altaDeRuta(ruta);
       const url = new URL(enlaceDeAlta(alta, null).href, "https://somosnosotros.org");
-      if (alta === "artista") expect(altaDeParametro(url.searchParams.get("tipo") ?? undefined), ruta).toBe("artista");
-      else expect(url.pathname, ruta).toBe(`/nuevo/${alta}`);
+      expect(url.pathname, ruta).toBe(`/nuevo/${alta}`);
     }
   });
 });
@@ -103,11 +102,11 @@ describe("armazón: el alta de evento por pasos (OL-312)", () => {
     expect(enlaceAltaEvento({ artista: ID, ciudad: "queretaro" })).toBe(`/nuevo/evento?artista=${ID}&ciudad=queretaro`);
     expect(enlaceAltaEvento({ ciudad: "queretaro", desde: ID, lugar: null, artista: "" })).toBe(`/nuevo/evento?desde=${ID}&ciudad=queretaro`);
   });
-  it("la tira del primer paso lleva al lugar a su alta por pasos y al artista a /nuevo con su tipo, con la ciudad si la hay", () => {
+  it("la tira del primer paso lleva al lugar y al artista a su alta por pasos, con la ciudad si la hay", () => {
     expect(enlaceAltaDeTipo("lugar", null)).toBe("/nuevo/lugar");
-    expect(enlaceAltaDeTipo("artista", null)).toBe("/nuevo?tipo=artista");
+    expect(enlaceAltaDeTipo("artista", null)).toBe("/nuevo/artista");
     expect(enlaceAltaDeTipo("lugar", "queretaro")).toBe("/nuevo/lugar?ciudad=queretaro");
-    expect(enlaceAltaDeTipo("artista", "queretaro")).toBe("/nuevo?tipo=artista&ciudad=queretaro");
+    expect(enlaceAltaDeTipo("artista", "queretaro")).toBe("/nuevo/artista?ciudad=queretaro");
   });
   it("/nuevo con un evento se va a /nuevo/evento con sus datos: sin tipo, tipo=evento, un tipo desconocido o un evento ya armado", () => {
     expect(redireccionDeNuevo({})).toBe("/nuevo/evento");
@@ -119,10 +118,17 @@ describe("armazón: el alta de evento por pasos (OL-312)", () => {
     // Un evento ya armado abría solo como evento aunque dijera otro tipo; sigue igual.
     expect(redireccionDeNuevo({ tipo: "lugar", lugar: ID })).toBe(`/nuevo/evento?lugar=${ID}`);
   });
-  it("un lugar se va a /nuevo/lugar con su ciudad, su nombre y su punto (OL-315); un artista se queda en /nuevo", () => {
+  it("un lugar se va a /nuevo/lugar con su ciudad, su nombre y su punto (OL-315); un artista, a /nuevo/artista con su ciudad y su nombre (OL-316)", () => {
     expect(redireccionDeNuevo({ tipo: "lugar" })).toBe("/nuevo/lugar");
     expect(redireccionDeNuevo({ tipo: "lugar", ciudad: "queretaro", nombre: "Foro & Café", lat: "22.151130", lng: "-100.978600" })).toBe("/nuevo/lugar?ciudad=queretaro&nombre=Foro+%26+Caf%C3%A9&lat=22.151130&lng=-100.978600");
-    expect(redireccionDeNuevo({ tipo: "artista", ciudad: "queretaro" })).toBeNull();
+    expect(redireccionDeNuevo({ tipo: "artista", ciudad: "queretaro" })).toBe("/nuevo/artista?ciudad=queretaro");
+    // El punto es del lugar: el artista no lo lleva.
+    expect(redireccionDeNuevo({ tipo: "artista", nombre: "Trío Xochitl", lat: "22.15", lng: "-100.97" })).toBe("/nuevo/artista?nombre=Tr%C3%ADo+Xochitl");
+  });
+  it("el alta de artista por pasos lleva lo que ya se sabe, en un orden fijo y sin lo vacío (OL-316)", () => {
+    expect(enlaceAltaArtista()).toBe("/nuevo/artista");
+    expect(enlaceAltaArtista({ nombre: "Los Vecinos", ciudad: "queretaro" })).toBe("/nuevo/artista?ciudad=queretaro&nombre=Los+Vecinos");
+    expect(enlaceAltaArtista({ ciudad: "", nombre: null })).toBe("/nuevo/artista");
   });
   it("el alta de lugar por pasos lleva lo que ya se sabe, en un orden fijo y sin lo vacío", () => {
     expect(enlaceAltaLugar()).toBe("/nuevo/lugar");

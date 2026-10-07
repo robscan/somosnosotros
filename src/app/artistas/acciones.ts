@@ -23,9 +23,10 @@ export async function artistasConMiCorreo(): Promise<ArtistaConMiCorreo[]> {
   return (data ?? []) as ArtistaConMiCorreo[];
 }
 
-/** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
+/** Publicar desde el alta por pasos (que se queda en «Publicado») devuelve lo creado; sin `quedarse`, lleva a la ficha nueva reemplazando
+ *  el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
 export type ResultadoArtista =
-  | { ok: true; id: string; volver: string }
+  | { ok: true; id: string; slug?: string | null; volver: string }
   | { ok: false; errores: ErroresArtista; general?: string; existente?: ArtistaResumen };
 
 
@@ -49,7 +50,10 @@ async function existenteIgual(supabase: Cliente, nombre: string, ciudad: string)
   return artistaIgual(((data ?? []) as (ArtistaResumen & { ciudad: string })[]).filter((a) => a.ciudad === ciudad), nombre) ?? undefined;
 }
 
-/** Alta de artista. Si ya hay uno con el mismo nombre, devuelve el existente para preguntar "¿es este?" (decisión 5). */
+/**
+ * Alta de artista. Si ya hay uno con el mismo nombre, devuelve el existente para preguntar "¿es este?" (decisión 5). Con `quedarse` (el alta
+ * por pasos, OL-316, que termina en «Publicado») devuelve lo creado en vez de ir a la ficha.
+ */
 export async function crearArtista(_previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("artista", null).href);
   const esAdmin = await esAdminDeSesion(supabase, user.id);
@@ -68,6 +72,7 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
   if (formData.get("soy") === "1") await supabase.from("artistas_cuentas").insert({ artista_id: data.id, perfil_id: user.id });
 
   revalidatePath("/artistas");
+  if (formData.get("quedarse") === "1") return { ok: true, id: data.id, slug: data.slug, volver: hrefArtista(data) };
   redirect(`${hrefArtista(data)}?nuevo=1`, RedirectType.replace);
 }
 

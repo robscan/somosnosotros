@@ -111,7 +111,7 @@ export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugere
       <ListaFlotante abierta={abierta} onCerrar={() => setCerradaPara(nombre)} ancla={ancla} id="lista-lugar" etiqueta="Lugares con ese nombre" reservaAbajo={altoPie}>
         {conFicha.map((l) => (
           <li key={`l-${l.id}`}>
-            <Link href={hrefLugar(l)} replace role="option" aria-selected={false} className={`${sug.renglon} ${styles.conFicha}`}>
+            <Link href={hrefLugar(l)} replace role="option" aria-selected={false} className={`${sug.renglon} ${sug.conFicha}`}>
               <IconoPin width={20} height={20} />
               <b>{l.nombre}</b>
               <small>{l.privado ? "Ya lo tienes guardado · Ir a su ficha" : "Ya tiene ficha · Ir a su ficha"}</small>
