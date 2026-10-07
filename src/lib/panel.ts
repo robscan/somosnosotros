@@ -53,6 +53,50 @@ export type Gestionar = {
 };
 export type Resumen = { ahora: Ahora; historia: Foto[]; gestionar: Gestionar };
 
+/** Lo que devuelve `panel_aportes()` (migración 20261007090000, OL-326): lo que hizo la gente en los últimos 7 días contra los 7 anteriores. */
+export type Aportes = {
+  /** Voy y Me interesa de los últimos 7 días, sin administradores, y los de los 7 anteriores. */
+  gestos_ahora: number;
+  gestos_antes: number;
+  voy: number;
+  me_interesa: number;
+  personas: number;
+  /** Cuentas cuya primera publicación (evento, lugar o artista) cayó en los últimos 7 días y en los 7 anteriores. */
+  primeras_ahora: number;
+  primeras_antes: number;
+  han_publicado: number;
+};
+
+/** Lo que devuelve `panel_fichas()` (migración 20261007090000, OL-326): fichas con una cuenta ligada, por la vía que sea. */
+export type FichasVinculadas = {
+  artistas: number;
+  lugares: number;
+  /** Por dónde llegó la primera cuenta de cada ficha. Se deduce de lo que queda en la base, no se guarda. */
+  vias: { solicitud: number; alta: number; correo: number; otra: number };
+  /** Doce semanas, de la más vieja a hoy: cuántas fichas ya tenían cuenta ligada entonces. */
+  serie: number[];
+  artistas_por_reclamar: number;
+  artistas_visibles: number;
+  artistas_con_foto: number;
+};
+
+const esCuenta = (x: unknown): x is number => typeof x === "number" && Number.isInteger(x) && x >= 0;
+
+/** Una respuesta ausente, incompleta o de otra versión nunca se pinta como cero: devuelve null y la pantalla lo dice. */
+export function leerAportes(d: unknown): Aportes | null {
+  const a = d as Partial<Record<keyof Aportes, unknown>> | null;
+  if (!a || typeof a !== "object") return null;
+  const claves: (keyof Aportes)[] = ["gestos_ahora", "gestos_antes", "voy", "me_interesa", "personas", "primeras_ahora", "primeras_antes", "han_publicado"];
+  return claves.every((c) => esCuenta(a[c])) ? (a as Aportes) : null;
+}
+
+export function leerFichas(d: unknown): FichasVinculadas | null {
+  const f = d as (Partial<Record<Exclude<keyof FichasVinculadas, "vias" | "serie">, unknown>> & { vias?: Record<string, unknown>; serie?: unknown }) | null;
+  if (!f || typeof f !== "object" || !f.vias || !Array.isArray(f.serie) || f.serie.length === 0) return null;
+  const numeros = [f.artistas, f.lugares, f.artistas_por_reclamar, f.artistas_visibles, f.artistas_con_foto, f.vias.solicitud, f.vias.alta, f.vias.correo, f.vias.otra, ...f.serie];
+  return numeros.every(esCuenta) ? (f as FichasVinculadas) : null;
+}
+
 /** Lo que devuelve `panel_comunidad()` (migración 20260917150000, doc 21 opción A): el embudo en bruto. */
 export type Comunidad = { registradas: number; hicieron_algo: number; vuelven_base: number; vuelven: number };
 
@@ -207,7 +251,7 @@ export function textoCambio(ahora: number, antes: number): string {
   return "Igual que hace una semana";
 }
 
-export type ClaveIndicador = "activas" | "coincidencias" | "agenda" | "comunidad";
+export type ClaveIndicador = "activas" | "coincidencias" | "agenda" | "comunidad" | "gestos" | "primeras" | "vinculadas" | "foto";
 export type Indicador = {
   clave: ClaveIndicador;
   nombre: string;
@@ -220,6 +264,8 @@ export type Indicador = {
   /** Qué cuenta, exactamente (al abrirlo). */
   que: string;
   partes: string[];
+  /** Lo que dice el desglose cuando no hay nada que contar; sin él, «Aún nada esta semana». */
+  vacio?: string;
   enlace: { texto: string; href: string };
 };
 
@@ -279,6 +325,87 @@ export function indicadores(r: Resumen, hoy: string): Indicador[] {
       enlace: { texto: "Ver los eventos de la comunidad", href: hrefLista("eventos", { filtro: "comunidad" }) },
     },
   ];
+}
+
+/**
+ * Lo que hizo la gente esta semana (OL-326): Voy / Me interesa y quién publica por primera vez. Son conteos de 7 días, así que se
+ * comparan con los 7 anteriores (no con la foto diaria de «Últimos 7 días»), y no llevan tendencia.
+ */
+export function indicadoresAportes(a: Aportes): Indicador[] {
+  return [
+    {
+      clave: "gestos",
+      nombre: "Voy y Me interesa",
+      valor: a.gestos_ahora,
+      base: `de ${a.personas} ${a.personas === 1 ? "persona" : "personas"}`,
+      cambio: textoCambio(a.gestos_ahora, a.gestos_antes),
+      serie: null,
+      que: "Veces que alguien dijo Voy o Me interesa en los últimos 7 días, sin contar administradores. Se compara con los 7 días anteriores.",
+      partes: [contar(a.voy, "Voy", "Voy"), contar(a.me_interesa, "Me interesa", "Me interesa"), `${a.gestos_antes} en los 7 días anteriores`].filter(Boolean) as string[],
+      enlace: { texto: "Ver las personas", href: "/admin/personas" },
+    },
+    {
+      clave: "primeras",
+      nombre: "Publican por primera vez",
+      valor: a.primeras_ahora,
+      base: `de ${a.han_publicado} ${a.han_publicado === 1 ? "cuenta que ha publicado" : "cuentas que han publicado"} alguna vez`,
+      cambio: textoCambio(a.primeras_ahora, a.primeras_antes),
+      serie: null,
+      que: "Cuentas cuya primera publicación (un evento, un lugar o un artista) cayó en los últimos 7 días, sin contar administradores. Se compara con los 7 días anteriores.",
+      partes: [contar(a.primeras_ahora, "cuenta publicó por primera vez esta semana", "cuentas publicaron por primera vez esta semana"), contar(a.primeras_antes, "lo hizo la semana anterior", "lo hicieron la semana anterior")].filter(Boolean) as string[],
+      vacio: "Nadie publicó por primera vez en los últimos 7 días",
+      enlace: { texto: "Ver las personas", href: "/admin/personas" },
+    },
+  ];
+}
+
+/**
+ * Las fichas con una cuenta (OL-326): «fichas vinculadas» cuenta las que alguna cuenta lleva por cualquier vía (solicitud aprobada,
+ * correo ligado, «Soy yo» al darse de alta o ligada por la administración), no solo las que pasaron por una solicitud. La
+ * comparación es con hace una semana, reconstruida de las fechas de los propios vínculos. Y cuántos artistas visibles muestran su foto.
+ */
+export function indicadoresFichas(f: FichasVinculadas): Indicador[] {
+  const total = f.artistas + f.lugares;
+  const antes = f.serie.length >= 2 ? f.serie[f.serie.length - 2] : null;
+  const conFoto = f.artistas_visibles > 0 ? Math.round((f.artistas_con_foto / f.artistas_visibles) * 100) : 0;
+  const sinFoto = f.artistas_visibles - f.artistas_con_foto;
+  return [
+    {
+      clave: "vinculadas",
+      nombre: "Fichas vinculadas",
+      valor: total,
+      base: unir([contar(f.artistas, "artista", "artistas"), contar(f.lugares, "lugar", "lugares")], "Ninguna aún"),
+      cambio: antes === null ? null : textoCambio(total, antes),
+      serie: f.serie.length >= 4 && Math.max(...f.serie) > 0 ? f.serie : null,
+      que: "Fichas de artista y de lugar que alguna cuenta lleva, llegue como llegue. Cada ficha cuenta una vez, aunque la lleven varias cuentas. La vía se deduce de lo que queda registrado: no se guarda.",
+      partes: [
+        contar(f.vias.solicitud, "por solicitud aprobada", "por solicitud aprobada"),
+        contar(f.vias.correo, "por correo ligado", "por correo ligado"),
+        contar(f.vias.alta, "al darse de alta con «Soy yo»", "al darse de alta con «Soy yo»"),
+        contar(f.vias.otra, "por otra vía (p. ej. la ligó la administración)", "por otra vía (p. ej. la ligó la administración)"),
+        contar(f.artistas_por_reclamar, "artista del catálogo por reclamar", "artistas del catálogo por reclamar"),
+      ].filter(Boolean) as string[],
+      vacio: "Aún ninguna ficha tiene una cuenta vinculada",
+      enlace: { texto: "Ver los artistas llevados", href: hrefLista("artistas", { filtro: "llevados" }) },
+    },
+    {
+      clave: "foto",
+      nombre: "Artistas con foto",
+      valor: f.artistas_con_foto,
+      base: `de ${f.artistas_visibles} ${f.artistas_visibles === 1 ? "artista visible" : "artistas visibles"} · ${conFoto} %`,
+      cambio: null,
+      serie: null,
+      que: "Fichas de artista visibles que ya tienen foto. Sin foto, una ficha no entra en la tira de artistas destacados.",
+      partes: [contar(sinFoto, "sin foto", "sin foto")].filter(Boolean) as string[],
+      vacio: "Todas las fichas de artista visibles tienen foto",
+      enlace: { texto: "Ver los artistas sin foto", href: hrefLista("artistas", { filtro: "sin_foto" }) },
+    },
+  ];
+}
+
+/** La nota bajo el grupo «Fichas»: con comparación posible lo dice; si no, que es el estado de hoy. */
+export function notaFichas(lista: Indicador[]): string {
+  return lista.some((i) => i.cambio) ? "Comparado con hace una semana" : "Al día de hoy";
 }
 
 /** La nota bajo "Últimos 7 días": sin ninguna comparación posible, lo dice. */

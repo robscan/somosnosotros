@@ -10,7 +10,7 @@ import styles from "./admin.module.css";
  * exactamente, el desglose y la lista que lo respalda; tocarlo otra vez (u otro) lo cierra. La nota y la lista son
  * hijos directos de la página.
  */
-export default function Indicadores({ lista, nota }: { lista: Indicador[]; nota: string }) {
+export default function Indicadores({ lista, nota, desglose = "desglose" }: { lista: Indicador[]; nota: string; /** El `id` del desglose abierto: único por grupo, porque la pantalla pinta dos. */ desglose?: string }) {
   const [abierto, setAbierto] = useState<ClaveIndicador | null>(null);
   const i = lista.findIndex((x) => x.clave === abierto);
   // El desglose va tras el segundo indicador de la fila tocada.
@@ -23,7 +23,7 @@ export default function Indicadores({ lista, nota }: { lista: Indicador[]; nota:
         {lista.map((x, k) => (
           <Fragment key={x.clave}>
             <li>
-              <button type="button" className={styles.indicador} aria-expanded={abierto === x.clave} aria-controls={abierto === x.clave ? "desglose" : undefined} onClick={() => setAbierto(abierto === x.clave ? null : x.clave)}>
+              <button type="button" className={styles.indicador} aria-expanded={abierto === x.clave} aria-controls={abierto === x.clave ? desglose : undefined} onClick={() => setAbierto(abierto === x.clave ? null : x.clave)}>
                 <span className={styles.nombreIndicador}>{x.nombre}</span>
                 <b>{x.valor}</b>
                 {x.serie && <Tendencia serie={x.serie} />}
@@ -32,9 +32,9 @@ export default function Indicadores({ lista, nota }: { lista: Indicador[]; nota:
               </button>
             </li>
             {k === tras && elegido && (
-              <li className={styles.desglose} id="desglose">
+              <li className={styles.desglose} id={desglose}>
                 <p>{elegido.que}</p>
-                <ul>{(elegido.partes.length ? elegido.partes : ["Aún nada esta semana"]).map((p) => <li key={p}>{p}</li>)}</ul>
+                <ul>{(elegido.partes.length ? elegido.partes : [elegido.vacio ?? "Aún nada esta semana"]).map((p) => <li key={p}>{p}</li>)}</ul>
                 <Link href={elegido.enlace.href} className={styles.enlace}>
                   {elegido.enlace.texto} ›
                 </Link>
