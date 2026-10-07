@@ -26,7 +26,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import type { EventoAgenda } from "@/lib/agenda";
-import { horarioEfectivo, kpisDeExposicion, lineaDeExposicion, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { horarioEfectivo, kpisDeExposicion, lineaDeExposicion, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -45,7 +45,7 @@ import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
-import { diaLocal, eventoPaso, formatearLargo, rangoCorto } from "@/lib/fechas";
+import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
@@ -294,7 +294,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
   const actosVisibles = ligados.actos.filter((a) => !a.borrador);
   const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
-  const rangoFestival = e.fin ? rangoCorto(diaLocal(new Date(e.inicio), e.zona), diaLocal(new Date(e.fin), e.zona), hoy) : null;
+  const rangoFestival = clase === "festival" ? rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora) : null;
   const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, textoProgramaRegistrado(actosVisibles.length)].filter(Boolean).join(" · ") : null;
   const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0, cuandoClase);
   const decididasActos = clase === "festival" ? await decididasDe(actual?.perfil.id ?? null, actosVisibles.map((a) => a.id)) : null;
@@ -444,7 +444,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </Kpis>
         ) : clase === "festival" ? (
           <Kpis>
-            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={`${actosVisibles.length} ${actosVisibles.length === 1 ? "actividad" : "actividades"}`} valor={rangoFestival ?? cuando.dia} />
+            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
             <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
             <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedes} />
           </Kpis>
@@ -458,6 +458,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </Kpis>
         )}
         {kpiExpo && <p className={styles.linea}>{lineaDeExposicion(e, horario.franjas, ahora)}</p>}
+        {clase === "festival" && cuandoClase && <p className={styles.linea}>{cuandoClase}</p>}
 
         {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
         <div className={ficha.acciones}>
@@ -665,9 +666,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </section>
         )}
 
-        <Suspense fallback={<EsqueletoQuienVa />}>
-          <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} consultaTrasFin={consultaTrasFin} />
-        </Suspense>
+        {/* Una exposición o un festival no tienen «Voy» (OL-321): tampoco «Quién va». */}
+        {!soloInteres(clase) && (
+          <Suspense fallback={<EsqueletoQuienVa />}>
+            <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} consultaTrasFin={consultaTrasFin} />
+          </Suspense>
+        )}
 
         <p className={ficha.pie}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}</p>
       </div>

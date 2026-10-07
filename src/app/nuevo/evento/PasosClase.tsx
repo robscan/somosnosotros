@@ -19,7 +19,7 @@ import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { ArtistaResumen } from "@/lib/artistas";
 import { etiquetaHora } from "@/lib/calendario";
-import { horariosDeTaller, resumenTaller, textoProgramaRegistrado } from "@/lib/claseEvento";
+import { horariosDeTaller, rangoDelPeriodo, resumenTaller, textoProgramaRegistrado } from "@/lib/claseEvento";
 import type { Ciudad } from "@/lib/ciudad";
 import { CLASES, LIMITES_EVENTO, type Clase } from "@/lib/eventos";
 import { diaConMesDe, diaLocal, rangoCorto } from "@/lib/fechas";
@@ -499,9 +499,8 @@ export function HojaInauguracion({ inauguracion, zona, onListo, onCerrar }: { in
  * nuevo con solo el nombre (toma sus fechas del programa registrado). Solo salen los propios: uno ajeno sería una propuesta pendiente de quien
  * lo administra, que todavía no existe (por confirmar). Con uno puesto, «Quitar del festival».
  */
-export function HojaFestival({ padre, festivales, zona, onElegir, onCerrar }: { padre: Padre | null; festivales: readonly FestivalElegible[]; zona: string; onElegir: (p: Padre | null) => void; onCerrar: () => void }) {
+export function HojaFestival({ padre, festivales, onElegir, onCerrar }: { padre: Padre | null; festivales: readonly FestivalElegible[]; onElegir: (p: Padre | null) => void; onCerrar: () => void }) {
   const [q, setQ] = useState("");
-  const hoy = diaLocal(new Date(), zona);
   const texto = q.trim();
   const buscado = normalizarNombre(texto);
   const encontrados = festivales.filter((f) => !buscado || normalizarNombre(f.titulo).includes(buscado)).slice(0, 8);
@@ -526,7 +525,7 @@ export function HojaFestival({ padre, festivales, zona, onElegir, onCerrar }: { 
       </label>
       <div className={pasos.opciones}>
         {encontrados.map((f) => (
-          <Opcion key={f.id} icono={<IconoEtiqueta />} titulo={f.titulo} detalle={f.fin ? rangoCorto(diaLocal(new Date(f.inicio), f.zona), diaLocal(new Date(f.fin), f.zona), hoy) : undefined} elegida={!!padre && "id" in padre && padre.id === f.id} onClick={() => onElegir({ id: f.id, titulo: f.titulo })} />
+          <Opcion key={f.id} icono={<IconoEtiqueta />} titulo={f.titulo} detalle={rangoDelPeriodo(f.inicio, f.fin, f.zona)} elegida={!!padre && "id" in padre && padre.id === f.id} onClick={() => onElegir({ id: f.id, titulo: f.titulo })} />
         ))}
         {texto && !igual && <Opcion icono={<IconoMas />} titulo={`Crear «${texto}»`} detalle="Festival nuevo, con solo el nombre: sus fechas salen de sus actividades." onClick={() => onElegir({ nuevo: texto })} />}
       </div>

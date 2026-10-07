@@ -50,8 +50,8 @@
     "s21-editar-evento": { "nodos": [43, 43, 77, 77], "profundidad": [7, 7, 7, 7] },
     "s22-alta-exposicion-visita": { "nodos": [71, 71, 105, 105], "profundidad": [7, 7, 7, 7] },
     "s23-alta-taller-sesiones": { "nodos": [76, 76, 110, 110], "profundidad": [7, 7, 7, 7] },
-    "s24-ficha-exposicion": { "nodos": [84, 84, 117, 117], "profundidad": [12, 12, 12, 12] },
-    "s25-ficha-festival": { "nodos": [120, 120, 153, 153], "profundidad": [11, 11, 11, 11] },
+    "s24-ficha-exposicion": { "nodos": [81, 81, 114, 114], "profundidad": [12, 12, 12, 12] },
+    "s25-ficha-festival": { "nodos": [118, 118, 151, 151], "profundidad": [11, 11, 11, 11] },
     "s26-editar-exposicion": { "nodos": [59, 59, 93, 93], "profundidad": [11, 11, 11, 11] }
   }
 }

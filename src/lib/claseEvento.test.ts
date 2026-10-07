@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaDeSemana, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
+import { diaDeSemana, rangoDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
 import { CLASES, claseSugerida, esClase, formaDelCartel, cartelAFormulario, nombreDeClase } from "./eventos";
 import { localAIso } from "./fechas";
 
@@ -157,6 +157,9 @@ describe("taller y festival", () => {
     ];
     expect(periodoDePrograma(actos, ZONA)).toEqual({ inicio: localAIso("2026-11-12T19:00", ZONA), fin: localAIso("2026-11-15T00:00", ZONA) });
     expect(periodoDePrograma([], ZONA)).toBeNull();
+    // Su fin a la medianoche (un último acto sin hora de fin) es el final del día anterior, no un día más.
+    expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-15T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("Del 12 al 14 de nov");
+    expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-13T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("jue 12 de nov");
     expect(textoProgramaRegistrado(1)).toBe("Programa registrado: 1 actividad");
     expect(textoProgramaRegistrado(3)).toBe("Programa registrado: 3 actividades");
   });

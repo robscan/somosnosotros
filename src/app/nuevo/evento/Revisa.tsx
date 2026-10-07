@@ -234,7 +234,7 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
           />
         )}
         {festival ? (
-          <Dato icono={<IconoPin width={20} height={20} />} clave="Sedes" orden={orden()} valor={sedes ? `Sedes: ${sedes}` : null} detalle={sedes ? "Por actividad" : undefined} falta="Las sedes, por actividad" onAbrir={festivalGuardado ? undefined : () => onAbrir("programa")} />
+          !festivalGuardado && <Dato icono={<IconoPin width={20} height={20} />} clave="Sedes" orden={orden()} valor={sedes ? `Sedes: ${sedes}` : null} detalle={sedes ? "Por actividad" : undefined} falta="Las sedes, por actividad" onAbrir={festivalGuardado ? undefined : () => onAbrir("programa")} />
         ) : (
           <Dato
             icono={<IconoPin width={20} height={20} />}
@@ -276,7 +276,7 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
       )}
       {hoja === "horario" && <HojaHorario titulo="¿Qué días se puede visitar?" franjas={r.horario ?? []} onListo={(franjas) => cambiar({ horario: franjas.length ? franjas : null })} onCerrar={() => setHoja(null)} />}
       {hoja === "inauguracion" && <HojaInauguracion inauguracion={r.inauguracion} zona={zona} onListo={(inauguracion) => cambiar({ inauguracion })} onCerrar={() => setHoja(null)} />}
-      {hoja === "festival" && <HojaFestival padre={r.padre} festivales={festivales} zona={zona} onElegir={(padre) => cambiar({ padre })} onCerrar={() => setHoja(null)} />}
+      {hoja === "festival" && <HojaFestival padre={r.padre} festivales={festivales} onElegir={(padre) => cambiar({ padre })} onCerrar={() => setHoja(null)} />}
       <Boton type="button" variante="quieto" className={styles.sube} style={turno(renglones + 1)} onClick={() => onAbrir("mas")}>
         {conExtras ? "Cambiar artistas, descripción o enlace" : "Agregar artistas, descripción o enlace"}
       </Boton>

@@ -366,7 +366,7 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
     const elementos = await abrir(expo, { eventos_horarios: { data: [{ dias: [1, 2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00" }] } });
     const kpis = elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta);
     expect(kpis).toEqual(["Hasta", "Abre", "Costo"]);
-    expect(elementos.filter((e) => e.type === Suspense).length).toBe(2);
+    expect(elementos.filter((e) => e.type === Suspense).length).toBe(1);
     expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
     expect(elementos.some((e) => e.props?.["aria-label"] === "Horario")).toBe(true);
   });
@@ -376,7 +376,7 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
     const elementos = await abrir(festival);
     expect(elementos.some((e) => e.props?.["aria-label"] === "Programa")).toBe(true);
     expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
-    expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["0 actividades", "Costo", "Sedes"]);
+    expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["Actos", "Costo", "Sedes"]);
     const suelto = await abrir(EVENTO);
     expect(suelto.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
   });

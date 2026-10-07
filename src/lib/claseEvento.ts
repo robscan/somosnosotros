@@ -133,6 +133,16 @@ export function periodoDePrograma(actos: readonly { inicio: string; fin: string 
   return { inicio: new Date(Math.min(...inicios)).toISOString(), fin: new Date(Math.max(...fines)).toISOString() };
 }
 
+/**
+ * Los días de un periodo guardado (un festival): «Del 12 al 14 de nov», o un solo día («jue 12 de nov»). Un fin justo a la medianoche es el final
+ * del día anterior (así guarda la base el fin de un acto sin hora de fin: `termina`), no un día más.
+ */
+export function rangoDelPeriodo(inicio: string, fin: string | null, zona: string = ZONA_INICIAL, ahora: Date = new Date()): string {
+  const desde = diaLocal(new Date(inicio), zona);
+  const hasta = fin ? diaLocal(new Date(Math.max(Date.parse(inicio), Date.parse(fin) - 60000)), zona) : desde;
+  return hasta > desde ? rangoCorto(desde, hasta, diaLocal(ahora, zona)) : diaConMesDe(desde, ahora, zona);
+}
+
 /** «Programa registrado: 3 actividades» (el modelo pide decir lo parcial: un festival registra lo que se sabe, no todo su programa). */
 export const textoProgramaRegistrado = (n: number): string => `Programa registrado: ${n} ${n === 1 ? "actividad" : "actividades"}`;
 

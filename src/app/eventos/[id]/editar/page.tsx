@@ -4,8 +4,7 @@ import { cupoDeCartel } from "@/app/eventos/acciones";
 import EditarEvento from "@/app/nuevo/evento/EditarEvento";
 import { respuestasAlEditar } from "@/app/nuevo/evento/alEditar";
 import { cargarContextoClase } from "@/app/nuevo/evento/contextoClase";
-import { textoProgramaRegistrado } from "@/lib/claseEvento";
-import { diaLocal, rangoCorto } from "@/lib/fechas";
+import { rangoDelPeriodo, textoProgramaRegistrado } from "@/lib/claseEvento";
 import { franjaDeFila } from "@/lib/horarioLugar";
 import { lecturaDeCartelActiva } from "@/lib/cartel";
 import { esUuid } from "@/lib/formulario";
@@ -59,7 +58,7 @@ export default async function EditarEventoPagina({ params }: { params: Promise<{
     evento.clase === "exposicion" && supabase ? supabase.from("eventos_horarios").select("dias, abre, cierra").eq("evento_id", evento.id).order("creado_en").then(({ data }) => (data ?? []).map(franjaDeFila)) : [],
     evento.inaugura_id && supabase ? supabase.from("eventos").select("inicio").eq("id", evento.inaugura_id).maybeSingle().then(({ data }) => data as { inicio: string } | null) : null,
     evento.evento_padre_id && supabase ? supabase.from("eventos").select("id, titulo").eq("id", evento.evento_padre_id).maybeSingle().then(({ data }) => data as { id: string; titulo: string } | null) : null,
-    evento.clase === "festival" && supabase ? supabase.from("eventos").select("id", { count: "exact", head: true }).eq("evento_padre_id", evento.id).eq("visible", true).then(({ count }) => count ?? 0) : 0,
+    evento.clase === "festival" && supabase ? supabase.from("eventos").select("id").eq("evento_padre_id", evento.id).eq("borrador", false).then(({ data }) => (Array.isArray(data) ? data.length : 0)) : 0,
   ]);
   const registrados = (lugares ?? []) as LugarResumen[];
   const sitioPrivado = privado as SitioPrivado | null;
@@ -68,10 +67,9 @@ export default async function EditarEventoPagina({ params }: { params: Promise<{
   const lugar = evento.lugar_id ? registrados.find((l) => l.id === evento.lugar_id) : undefined;
   const zona = zonaSegura(evento.sitio_texto || evento.sitio_reservado ? zonaSitio : (lugar?.zona ?? evento.zona));
   const respuestas = respuestasAlEditar({ evento, privado: sitioPrivado, lugares: registrados, quien: quien.map((q) => ({ id: q.id, nombre: q.nombre })), sesiones: evento.sesiones, zona, clase: { horario: horarioPropio, inauguracion, padre, actos } });
-  const hoy = diaLocal(new Date(), evento.zona);
   const festivalGuardado =
     evento.clase === "festival" && evento.fin
-      ? { actos, resumen: [rangoCorto(diaLocal(new Date(evento.inicio), evento.zona), diaLocal(new Date(evento.fin), evento.zona), hoy), textoProgramaRegistrado(actos)].join(" · ") }
+      ? { actos, resumen: [rangoDelPeriodo(evento.inicio, evento.fin, evento.zona), textoProgramaRegistrado(actos)].join(" · ") }
       : undefined;
   return (
     <EditarEvento

@@ -66,8 +66,8 @@ export type Respuestas = {
   sesionesDias: string[];
   /** Festival: su programa. */
   actos: Acto[];
-  /** Editar un festival que ya existe: cuántas actividades tiene registradas (su programa se edita en la ficha de cada una). */
-  programaGuardado: number;
+  /** Editar un festival que ya existe: cuántas actividades tiene registradas (su programa se edita en la ficha de cada una); null en el alta. */
+  programaGuardado: number | null;
   /** «Parte de un festival» (todo lo que no es festival). */
   padre: Padre | null;
   /** El día de inicio (YYYY-MM-DD) y, si dura varios, el último. */
@@ -156,7 +156,7 @@ export const RESPUESTAS_VACIAS: Respuestas = {
   inauguracion: null,
   sesionesDias: [],
   actos: [],
-  programaGuardado: 0,
+  programaGuardado: null,
   padre: null,
   sitio: { modo: "lugar", lugarId: "", otro: OTRO_VACIO },
   costo: null,
@@ -236,7 +236,7 @@ export function faltan(r: Respuestas): Paso[] {
     if (!r.sesionesDias.length || !r.hora) p.push("sesiones");
   } else if (r.clase === "festival") {
     const marcados = actosMarcados(r);
-    if (!r.programaGuardado && (!marcados.length || !marcados.every(actoListo))) p.push("programa");
+    if (r.programaGuardado === null && (!marcados.length || !marcados.every(actoListo))) p.push("programa");
   } else {
     if (!r.dias) p.push("dia");
     if (!r.hora || r.fin === null) p.push("hora");
