@@ -1,0 +1,91 @@
+/* ==========================================================================
+   Aviso flotante de confirmación (ui/Confirmacion, OL-318): tinta sobre blanco como `Hecho` y `Aviso`, con el sello de «Publicado» en chico
+   (círculo verde con palomita que se traza; en rojo con ✕ si no se pudo). Va en `body`, fijo y centrado: sube de abajo, se queda y se
+   desliza hacia abajo al irse. Sobre el pie del paso (`--alto-pie`, que pone `PiePaso` mientras está en pantalla) o, si no hay pie, sobre la
+   navegación (`--nav-abajo`); sobre la pastilla de una ficha lo sube `useSobreLaPastilla` con un `bottom` en línea. Con «reducir movimiento»
+   aparece y se quita sin moverse.
+   ========================================================================== */
+
+.confirmacion {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--alto-pie, var(--nav-abajo)) + var(--espacio-3));
+  left: 0;
+  z-index: var(--z-encima);
+  display: grid;
+  grid-template-columns: var(--sello-chico) auto;
+  align-items: center;
+  justify-content: center;
+  column-gap: var(--espacio-3);
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--espacio-4));
+  min-height: calc(var(--toque-min) + var(--espacio-2));
+  margin-inline: auto;
+  padding: var(--espacio-2) var(--espacio-5) var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio-pildora);
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  line-height: 1.3;
+  box-shadow: var(--sombra-flotante);
+  pointer-events: none; /* un aviso no se toca: lo de abajo sigue respondiendo */
+}
+
+.sello {
+  display: grid;
+  place-items: center;
+  width: var(--sello-chico);
+  height: var(--sello-chico);
+  border-radius: 50%;
+  background: var(--ok);
+  color: var(--primario-texto);
+}
+.confirmacion[data-fallo] .sello {
+  background: var(--error);
+}
+.sello > svg {
+  width: 60%;
+  height: 60%;
+  stroke-width: 2.8;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .confirmacion {
+    animation: sube var(--duracion) var(--curva);
+  }
+  .confirmacion[data-saliendo] {
+    animation: baja var(--duracion) var(--curva) forwards;
+  }
+  .sello {
+    animation: sella var(--duracion) var(--curva) 90ms backwards;
+  }
+  /* La palomita se traza (su trazo mide ~20; la ✕ solo crece). */
+  .confirmacion:not([data-fallo]) .sello > svg path {
+    stroke-dasharray: 24;
+    animation: traza 260ms var(--curva) 200ms backwards;
+  }
+}
+@keyframes sube {
+  from {
+    opacity: 0;
+    transform: translateY(var(--espacio-5));
+  }
+}
+@keyframes baja {
+  to {
+    opacity: 0;
+    transform: translateY(var(--espacio-4));
+  }
+}
+@keyframes sella {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+@keyframes traza {
+  from {
+    stroke-dashoffset: 24;
+  }
+}

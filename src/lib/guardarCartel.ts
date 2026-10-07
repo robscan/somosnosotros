@@ -47,6 +47,17 @@ export function textosDelCartel(destino: Destino, corto = false): Textos {
   return (corto ? CORTOS : COMPLETOS)[destino];
 }
 
+/** Lo que dice el aviso flotante (`ui/Confirmacion`, OL-318) al terminar: frases llanas y completas, no los letreros cortos del botón. */
+const AVISOS: Record<Destino, { listo: string; fallo: string }> = {
+  fotos: { listo: "Cartel guardado en Fotos", fallo: "No se pudo guardar" },
+  descarga: { listo: "Cartel descargado", fallo: "No se pudo descargar" },
+};
+
+/** El aviso flotante con que termina el botón: la confirmación, o el fallo (que lleva la ✕ en vez de la palomita). */
+export function avisoDelCartel(destino: Destino, fallo: boolean): { texto: string; fallo: boolean } {
+  return { texto: fallo ? AVISOS[destino].fallo : AVISOS[destino].listo, fallo };
+}
+
 /** El nombre completo del botón en reposo: lo que lee el lector de pantalla cuando el letrero visible es corto. */
 export function etiquetaDelCartel(destino: Destino): string {
   return COMPLETOS[destino].reposo;

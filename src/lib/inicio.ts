@@ -2,7 +2,7 @@ import { compararEventos, corteNuevos, eventosNuevos, filtrarAgenda, LIMITE_NUEV
 import type { Agenda } from "./cargarAgenda";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import { enOrden } from "./destacados";
-import { terminaDe } from "./fechas";
+import { ocurrenciaPaso, ocurrenciasDe, proximaOcurrencia } from "./ocurrencias";
 
 /**
  * Inicio: siete carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
@@ -13,11 +13,12 @@ import { terminaDe } from "./fechas";
  */
 
 /** "Esta semana" = próximos 7 días desde ahora (decisión del founder, segunda vuelta de doc 41): no es la semana de
- *  calendario (`DIAS_ESTA_SEMANA`, lib/cuando). Un evento que ya empezó cuenta hasta su fin o la medianoche de su zona, igual que Agenda. */
-export function eventosEstaSemana<T extends Pick<EventoAgenda, "inicio" | "fin" | "zona">>(eventos: T[], ahora: Date = new Date()): T[] {
-  const desde = ahora.getTime();
-  const hasta = desde + DIAS_ESTA_SEMANA * 86400000;
-  return eventos.filter((e) => new Date(terminaDe(e.inicio, e.fin, e.zona)).getTime() >= desde && new Date(e.inicio).getTime() < hasta);
+ *  calendario (`DIAS_ESTA_SEMANA`, lib/cuando). Cada día en que pasa algo cuenta (OL-320, `lib/ocurrencias`): un taller de tres sábados
+ *  sale en los sábados de la semana, cada uno con su hora; un evento que ya empezó cuenta hasta su fin o la medianoche de su zona,
+ *  igual que Agenda. */
+export function eventosEstaSemana<T extends Pick<EventoAgenda, "id" | "inicio" | "fin" | "zona" | "sesiones">>(eventos: T[], ahora: Date = new Date()) {
+  const hasta = ahora.getTime() + DIAS_ESTA_SEMANA * 86400000;
+  return eventos.flatMap((e) => ocurrenciasDe(e)).filter((o) => !ocurrenciaPaso(o, ahora) && new Date(o.inicio).getTime() < hasta);
 }
 
 /**
@@ -93,11 +94,13 @@ export const TOPE_ESTA_SEMANA = 20;
 /**
  * «Esta semana» (nuevo, OL-219): todos los eventos de los próximos 7 días, por fecha, con o sin sesión. A
  * diferencia de Nuevos eventos, no tiene piso: con 1 o 2 eventos se ve igual de corto, nunca vacío de
- * mentira (esa regla es solo de Nuevos eventos, ver `carrilNuevos`).
+ * mentira (esa regla es solo de Nuevos eventos, ver `carrilNuevos`). Un evento con varios días en la semana sale una vez por día (OL-320), cada
+ * una con la hora de ese día y su propia llave (`ocurrencia.clave`); para los demás carriles sigue siendo un solo evento (`vistos` es por `id`).
  */
-export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
-  const candidatos = eventosEstaSemana(eventos, ahora).toSorted(compararEventos);
-  return sinRepetidos(candidatos, vistos).slice(0, TOPE_ESTA_SEMANA);
+export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona" | "sesiones">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()) {
+  const propios = eventosEstaSemana(eventos.filter((e) => !vistos.has(e.id)), ahora).toSorted(compararEventos).slice(0, TOPE_ESTA_SEMANA);
+  for (const e of propios) vistos.add(e.id);
+  return propios;
 }
 
 /** Mínimo de Destacados (doc 20: al menos 3): con menos de 3 candidatos, "Nuevos eventos" no se pinta — ni con 1 ni con
@@ -143,13 +146,15 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date())
   const estelar = hayFavoritos ? carrilEstelar(destacados, favoritos, vistos) : carrilDestacados(destacados, vistos);
   const estaSemana = carrilEstaSemana(agenda.eventos, vistos, ahora);
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
-  return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, nuevos };
+  // Los carriles que hablan del evento y no de un día dicen su próximo día (el de hoy si sigue, y si no el que sigue), no el primero: un taller
+  // que empezó el sábado pasado no se presenta con esa fecha (OL-320).
+  return { titulo: tituloEstelar(hayFavoritos), estelar: estelar.map((e) => proximaOcurrencia(e, ahora)), estaSemana, nuevos: nuevos.map((e) => proximaOcurrencia(e, ahora)) };
 }
 
 /** Respaldo de Inicio: los próximos veinte por fecha, sin los compromisos de Tus planes.
  * Su visibilidad se decide con los carriles realmente pintados en el teléfono (Nuevos tiene una marca local).
  * Destacados conserva su presentación: primero fotos, por fecha dentro de cada grupo. */
-export function carrilMasAdelante(agenda: Agenda): EventoAgenda[] {
+export function carrilMasAdelante(agenda: Agenda, ahora: Date = new Date()): EventoAgenda[] {
   const propios = new Set(Object.keys(agenda.asistencias ?? {}));
-  return agenda.eventos.filter(e => !propios.has(e.id)).toSorted(compararEventos).slice(0, 20);
+  return agenda.eventos.filter(e => !propios.has(e.id)).toSorted(compararEventos).slice(0, 20).map((e) => proximaOcurrencia(e, ahora));
 }
