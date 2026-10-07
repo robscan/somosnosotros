@@ -24,7 +24,7 @@ type Props = {
 /**
  * «Publicado» (OL-304; prototipo firmado `publicar-por-pasos.html`, bitácora 323: «el final es el momento que se recuerda»): la confirmación
  * grande —un sello de palomita que crece, «Evento publicado»—, el evento como quedó en la tarjeta de siempre de las listas (toca y abre la
- * ficha; con cartel, lleva su miniatura) y el pie con lo que sigue: «Compartir» (el mismo texto que arma la ficha), «Descargar el cartel» si
+ * ficha; con cartel, lleva su miniatura) y el pie con lo que sigue: «Compartir» (el mismo texto que arma la ficha), «Descargar el cartel» (en la app, «Guardar en Fotos») si
  * lo tiene y «Publicar otro», quieto, que no compite con compartir. Aquí iría, en punteado, la única sugerencia que la fase siguiente suma
  * (exposición o festival que el cartel también anuncia): todavía no hay modelo de datos para publicarla.
  */
@@ -46,7 +46,7 @@ export default function Publicado({ evento, conCartel, conSesiones, onOtro }: Pr
         <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton()}>
           Compartir
         </BotonCompartir>
-        {conCartel && <BotonDescargarCartel id={evento.id} titulo={evento.titulo} className={claseBoton({ variante: "secundario" })} icono={<IconoDescarga width={20} height={20} />} precargar />}
+        {conCartel && <BotonDescargarCartel id={evento.id} className={claseBoton({ variante: "secundario" })} icono={<IconoDescarga width={20} height={20} />} precargar />}
         <Boton type="button" variante="quieto" onClick={onOtro}>
           Publicar otro
         </Boton>
