@@ -48,6 +48,7 @@ const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion:
  *
  * A un evento o un taller (OL-323), la sugerencia que encuentre el servidor tras publicar (`SugerenciaPublicado`): la exposición que abre una
  * inauguración o el festival del que es parte. Llega cuando llega, sin mover el foco; mientras está en punteado, «Compartir» pasa a secundario.
+ * Sin cartel, en punteado, «Crea su cartel» (OL-324), solo si no hay otra sugerencia a la vista.
  */
 export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, onOtro }: Props) {
   const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones, cuando);
@@ -82,6 +83,16 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
         </div>
       )}
       {sugerencia}
+      {/* Sin cartel, la única sugerencia (OL-324): crear uno con los datos que ya tiene. Solo si no hay otra sugerencia a la vista (OL-321, OL-323): nunca dos. */}
+      {!conCartel && !sugerencia && !(clase === "exposicion" && sinInauguracion) && clase !== "festival" && (
+        <section className={styles.sugerencia} aria-labelledby="sugerencia-cartel">
+          <h3 id="sugerencia-cartel">Crea su cartel</h3>
+          <p>Cuatro diseños con los datos del evento, listos para Instagram, Facebook o WhatsApp.</p>
+          <Boton href={`${hrefEvento(evento)}/cartel`} prefetch={false}>
+            Crear cartel
+          </Boton>
+        </section>
+      )}
       <PiePaso>
         <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton({ variante: sugerenciaAbierta ? "secundario" : "primario" })}>
           Compartir

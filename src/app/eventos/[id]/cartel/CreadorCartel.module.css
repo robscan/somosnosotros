@@ -1,0 +1,78 @@
+/* ==========================================================================
+   El creador de cartel (OL-324). Va dentro de la columna de `PorPasos`, que ya le da el aire de los lados, la entrada de lado y el pie
+   anclado sobre el teclado. Hijos directos de la columna, sin envoltorios de más.
+   1. Las cuatro opciones · 2. La vista previa · 3. «Acortar título» (encima de la vista previa: el campo nunca queda bajo el pie) · 4. La confirmación
+   ========================================================================== */
+
+/* 1. Cuatro miniaturas grandes en rejilla de dos por dos (a 320 cada una mide ~136 px de ancho: se lee el título del cartel). Cada una es un
+   botón de su proporción (4:5) con el gris de las miniaturas mientras llega la imagen, y el anillo del color de acción al enfocarla. */
+.opciones {
+  display: grid;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio-3);
+}
+.opcion {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
+}
+.opcion > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 2. La vista previa: tan grande como quepa sin empujar el pie fuera de la pantalla. Su caja tiene la proporción del formato desde el primer
+   cuadro (no salta al llegar la imagen); la historia (9:16), más alta, se angosta para caber en el mismo alto. La columna de los pasos le
+   pone `width: auto` y el aire de los lados: aquí se limita con `max-width` y se centra con `align-self`. */
+.vista {
+  /* Lo que queda bajo la barra, la pregunta, los chips y el pie (unos 23rem), entre 16rem y 40rem. */
+  --alto-vista: max(16rem, min(calc(100dvh - 23rem), 40rem));
+  align-self: center;
+  max-width: min(calc(100% - 2 * var(--gutter)), calc(var(--alto-vista) * 0.8));
+  height: auto;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
+}
+.vista[data-formato="9x16"] {
+  max-width: min(calc(100% - 2 * var(--gutter)), calc(var(--alto-vista) * 0.5625));
+  aspect-ratio: 9 / 16;
+}
+
+/* 3. «Acortar título»: el aviso y el enlace quieto, o el campo con su ✕ y su contador. */
+.titulo {
+  display: grid;
+  gap: var(--espacio-2);
+}
+.titulo > p {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
+/* 4. La hoja «¿Usar este cartel en el evento?»: el título y su frase juntos, luego los dos botones (como «¿Salir sin publicar?»). */
+.confirmar {
+  display: grid;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-2);
+}
+.encabezado {
+  display: grid;
+  gap: var(--espacio-1);
+}
+.encabezado > h3 {
+  font-size: var(--letra-xl);
+}
+.encabezado > p {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
