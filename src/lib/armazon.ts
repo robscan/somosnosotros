@@ -49,7 +49,8 @@ export function fichaConMenu(ruta: string): boolean {
 }
 
 /** Lo que se puede dar de alta desde el «+» de la barra: cada sección lleva a la suya; fuera de ellas, un evento. */
-export type Alta = "evento" | "lugar" | "artista";
+export const TIPOS_DE_ALTA = ["evento", "lugar", "artista"] as const;
+export type Alta = (typeof TIPOS_DE_ALTA)[number];
 
 export function altaDeRuta(ruta: string): Alta {
   if (ruta === "/lugares" || ruta.startsWith("/lugares/")) return "lugar";

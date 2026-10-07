@@ -116,15 +116,78 @@ describe("limpiarUrlAnalitica", () => {
 
     it("F03: ids, fechas de duplicar y texto libre tampoco salen", () => {
       expect(limpiarUrlAnalitica("/nuevo/evento?lugar=0b3c2a1e-0000-4000-8000-000000000000&artista=7&desde=0b3c&ciudad=slp")).toBe("https://somosnosotros.org/nuevo/evento");
-      expect(limpiarUrlAnalitica("/buscar?q=rosa&tipo=lugares")).toBe("https://somosnosotros.org/buscar?tipo=lugares");
-      expect(limpiarUrlAnalitica("/agenda?filtro=semana&cuanto=gratis&que=teatro&desde=2026-10-07")).toBe("https://somosnosotros.org/agenda?filtro=semana&cuanto=gratis&que=teatro");
-      expect(limpiarUrlAnalitica("/lugares?tipo=museo&tipo=teatro&utm_source=x")).toBe("https://somosnosotros.org/lugares?tipo=museo&tipo=teatro");
+      expect(limpiarUrlAnalitica("/lugares?q=rosa&tipo=museo")).toBe("https://somosnosotros.org/lugares?tipo=museo");
+      expect(limpiarUrlAnalitica("/agenda?filtro=siguiendo&cuanto=gratis&que=talleres&desde=2026-10-07")).toBe("https://somosnosotros.org/agenda?filtro=siguiendo&cuanto=gratis&que=talleres");
+      expect(limpiarUrlAnalitica("/lugares?tipo=museo&tipo=foro&utm_source=x")).toBe("https://somosnosotros.org/lugares?tipo=museo&tipo=foro");
     });
 
     it("remueve parámetros privados y mantiene públicos", () => {
-      expect(limpiarUrlAnalitica("/eventos?q=concierto&tipo=gratuito")).toBe(
-        "https://somosnosotros.org/eventos?tipo=gratuito"
+      expect(limpiarUrlAnalitica("/lugares?q=concierto&tipo=galeria")).toBe(
+        "https://somosnosotros.org/lugares?tipo=galeria"
       );
+    });
+  });
+
+  describe("OL-334 · F13: valores validados contra la lista cerrada de cada filtro", () => {
+    it("el caso de Codex: un valor libre en un parámetro permitido no sale", () => {
+      expect(limpiarUrlAnalitica("https://somosnosotros.org/agenda?tipo=correo%40local.test")).toBe("https://somosnosotros.org/agenda");
+      expect(limpiarUrlAnalitica("/agenda?tipo=correo%40local.test")).toBe("https://somosnosotros.org/agenda");
+    });
+
+    it("cada parámetro conserva sus valores válidos", () => {
+      expect(limpiarUrlAnalitica("/lugares?tipo=casa_de_cultura")).toBe("https://somosnosotros.org/lugares?tipo=casa_de_cultura");
+      expect(limpiarUrlAnalitica("/lugares?tipo=cafe_bar")).toBe("https://somosnosotros.org/lugares?tipo=cafe_bar");
+      expect(limpiarUrlAnalitica("/nuevo?tipo=artista")).toBe("https://somosnosotros.org/nuevo?tipo=artista");
+      expect(limpiarUrlAnalitica("/agenda?que=exposiciones")).toBe("https://somosnosotros.org/agenda?que=exposiciones");
+      expect(limpiarUrlAnalitica("/agenda?que=festivales")).toBe("https://somosnosotros.org/agenda?que=festivales");
+      expect(limpiarUrlAnalitica("/agenda?filtro=siguiendo")).toBe("https://somosnosotros.org/agenda?filtro=siguiendo");
+      expect(limpiarUrlAnalitica("/artistas?hace=artes_visuales")).toBe("https://somosnosotros.org/artistas?hace=artes_visuales");
+      expect(limpiarUrlAnalitica("/artistas?disciplina=circo")).toBe("https://somosnosotros.org/artistas?disciplina=circo");
+    });
+
+    it("cada parámetro quita lo que no está en su lista", () => {
+      expect(limpiarUrlAnalitica("/lugares?tipo=ana%40correo.mx")).toBe("https://somosnosotros.org/lugares");
+      expect(limpiarUrlAnalitica("/agenda?que=rosa")).toBe("https://somosnosotros.org/agenda");
+      expect(limpiarUrlAnalitica("/agenda?filtro=cercanos")).toBe("https://somosnosotros.org/agenda");
+      expect(limpiarUrlAnalitica("/artistas?hace=mi-banda")).toBe("https://somosnosotros.org/artistas");
+      expect(limpiarUrlAnalitica("/artistas?disciplina=por_completar")).toBe("https://somosnosotros.org/artistas");
+      // En /artistas `que` es una subcategoría que escribió la gente: no es de una lista cerrada.
+      expect(limpiarUrlAnalitica("/artistas?hace=musica&que=Los%20Vecinos")).toBe("https://somosnosotros.org/artistas?hace=musica");
+    });
+
+    it("distingue mayúsculas y no cuela nombres como constructor o __proto__", () => {
+      expect(limpiarUrlAnalitica("/lugares?tipo=MUSEO&constructor=museo&__proto__=museo&toString=x")).toBe("https://somosnosotros.org/lugares");
+    });
+
+    it("cuanto es una lista con comas: solo quedan las clases de costo válidas", () => {
+      expect(limpiarUrlAnalitica("/agenda?cuanto=gratis,cooperacion")).toBe("https://somosnosotros.org/agenda?cuanto=gratis%2Ccooperacion");
+      expect(limpiarUrlAnalitica("/agenda?cuanto=gratis,ana%40correo.mx")).toBe("https://somosnosotros.org/agenda?cuanto=gratis");
+      expect(limpiarUrlAnalitica("/agenda?cuanto=ana%40correo.mx")).toBe("https://somosnosotros.org/agenda");
+      expect(limpiarUrlAnalitica("/agenda?cuanto=")).toBe("https://somosnosotros.org/agenda");
+    });
+
+    it("un parámetro repetido conserva solo los valores válidos", () => {
+      expect(limpiarUrlAnalitica("/lugares?tipo=museo&tipo=a%40b.mx&tipo=foro")).toBe("https://somosnosotros.org/lugares?tipo=museo&tipo=foro");
+    });
+  });
+
+  describe("OL-334 · F13: la ficha de una persona no manda su id", () => {
+    it("/personas/<id> queda en /personas", () => {
+      expect(limpiarUrlAnalitica("https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001")).toBe("https://somosnosotros.org/personas");
+      expect(limpiarUrlAnalitica("/personas/00000000-0000-0000-0000-000000000001?tipo=museo&q=x")).toBe("https://somosnosotros.org/personas?tipo=museo");
+      expect(limpiarUrlAnalitica("/personas")).toBe("https://somosnosotros.org/personas");
+    });
+
+    it("también con la barra codificada o en mayúsculas", () => {
+      expect(limpiarUrlAnalitica("/personas%2F00000000-0000-0000-0000-000000000001")).toBe("https://somosnosotros.org/personas");
+      expect(limpiarUrlAnalitica("/Personas/00000000-0000-0000-0000-000000000001")).toBe("https://somosnosotros.org/personas");
+    });
+
+    it("no toca las fichas públicas por slug ni rutas que solo empiezan parecido", () => {
+      expect(limpiarUrlAnalitica("/lugares/casa-de-la-cultura")).toBe("https://somosnosotros.org/lugares/casa-de-la-cultura");
+      expect(limpiarUrlAnalitica("/artistas/los-vecinos")).toBe("https://somosnosotros.org/artistas/los-vecinos");
+      expect(limpiarUrlAnalitica("/eventos/fiesta-mayor")).toBe("https://somosnosotros.org/eventos/fiesta-mayor");
+      expect(limpiarUrlAnalitica("/personasx/uno")).toBe("https://somosnosotros.org/personasx/uno");
     });
   });
 
@@ -143,13 +206,13 @@ describe("limpiarUrlAnalitica", () => {
 
     it("remueve múltiples parámetros manteniendo orden", () => {
       expect(
-        limpiarUrlAnalitica("/artistas?buscar=lopez&ciudad=slp&disciplina=artes-visuales")
-      ).toBe("https://somosnosotros.org/artistas?disciplina=artes-visuales");
+        limpiarUrlAnalitica("/artistas?buscar=lopez&ciudad=slp&disciplina=artes_visuales")
+      ).toBe("https://somosnosotros.org/artistas?disciplina=artes_visuales");
     });
 
     it("mantiene ruta correcta después de limpiar", () => {
-      expect(limpiarUrlAnalitica("/lugares/123?q=teatro&tipo=cultural")).toBe(
-        "https://somosnosotros.org/lugares/123?tipo=cultural"
+      expect(limpiarUrlAnalitica("/lugares/123?q=teatro&tipo=museo")).toBe(
+        "https://somosnosotros.org/lugares/123?tipo=museo"
       );
     });
 
