@@ -58,10 +58,15 @@ describe.each(CATALOGO.map((p) => [p.id, p] as const))("plantilla %s", (_id, pla
       for (const [caso, evento] of Object.entries(CASOS)) {
         it(`${formato.proporcion} ${conFoto ? "con foto" : "sin foto"} · ${caso}`, async () => {
           const textos = armarTextos(evento, null, AHORA_CASOS);
-          const r: Resultado = await dibujarCartel({ plantilla, formato, textos, imagen: conFoto ? foto : null, conNodos: true, semilla: 1 });
-          const meta = await sharp(r.imagen).metadata();
-          expect(r.imagen.length).toBeGreaterThan(0);
-          expect([meta.width, meta.height]).toEqual([formato.ancho, formato.alto]);
+          // Rasterizar cuesta ~100 ms: se hace con el primer caso (y con todos si se piden los JPEG); los demás se comprueban con el árbol de satori.
+          const rasterizar = !!SALIDA || caso === "corto";
+          const r: Resultado = await dibujarCartel({ plantilla, formato, textos, imagen: conFoto ? foto : null, conNodos: true, semilla: 1, soloSvg: !rasterizar });
+          if (rasterizar) {
+            const meta = await sharp(r.imagen).metadata();
+            expect(r.imagen.length).toBeGreaterThan(0);
+            expect([meta.width, meta.height]).toEqual([formato.ancho, formato.alto]);
+            medidas.push({ formato: formato.proporcion, foto: conFoto, ms: r.ms.foto + r.ms.svg + r.ms.raster, kb: r.imagen.length / 1024 });
+          }
           const derechos = r.nodos.filter((n) => !n.girado);
           expect(derechos.filter((n) => fueraDelLienzo(n, formato)), "texto fuera del lienzo").toEqual([]);
           expect(derechos.filter((n) => enLoTapado(n, formato)), "texto en lo que tapa la interfaz").toEqual([]);
@@ -74,7 +79,6 @@ describe.each(CATALOGO.map((p) => [p.id, p] as const))("plantilla %s", (_id, pla
           // El título siempre se ve: al menos su primera palabra está en el lienzo.
           const primera = textos.titulo.split(" ")[0].toLocaleUpperCase("es-MX");
           expect(r.nodos.some((n) => n.texto.toLocaleUpperCase("es-MX").includes(primera.slice(0, 3)))).toBe(true);
-          medidas.push({ formato: formato.proporcion, foto: conFoto, ms: r.ms.foto + r.ms.svg + r.ms.raster, kb: r.imagen.length / 1024 });
           if (SALIDA) writeFileSync(path.join(SALIDA, `${plantilla.id}-${formato.id}-${conFoto ? "foto" : "sinfoto"}-${caso}.jpg`), r.imagen);
         });
       }

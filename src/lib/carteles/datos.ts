@@ -56,7 +56,8 @@ export function recortar(texto: string, maximo: number): string {
   const letras = [...texto];
   if (letras.length <= maximo) return texto;
   const corte = letras.slice(0, maximo - 1).join("");
-  const espacio = corte.lastIndexOf(" ");
+  // Si el corte cae justo al final de una palabra, la palabra se queda entera.
+  const espacio = letras[maximo - 1] === " " ? corte.length : corte.lastIndexOf(" ");
   return `${(espacio > maximo * 0.5 ? corte.slice(0, espacio) : corte).replace(/[\s,.;:·–—-]+$/, "")}…`;
 }
 

@@ -42,10 +42,16 @@ export async function tonoDominante(imagen: Buffer): Promise<Rgb> {
  * (zine) va del negro al acento de la paleta; el sepia (deco), entonado hacia el dorado del acento.
  */
 export async function prepararFoto(imagen: Buffer, plantilla: Pick<Plantilla, "tratamiento">, paleta: Paleta): Promise<string> {
-  let tubo = sharp(imagen).rotate().resize(LADO_FOTO, LADO_FOTO, { fit: "inside", withoutEnlargement: true });
-  if (plantilla.tratamiento === "duotono") tubo = tubo.grayscale().linear(1.35, -30).tint(hexARgb(paleta.acento));
-  if (plantilla.tratamiento === "sepia") tubo = tubo.modulate({ saturation: 0.55 }).tint(hexARgb(paleta.acento));
-  const jpeg = await tubo.jpeg({ quality: 85 }).toBuffer();
+  const reducida = sharp(imagen).rotate().resize(LADO_FOTO, LADO_FOTO, { fit: "inside", withoutEnlargement: true });
+  let jpeg: Buffer;
+  if (plantilla.tratamiento === "natural") {
+    jpeg = await reducida.jpeg({ quality: 85 }).toBuffer();
+  } else {
+    // En dos pasadas: sharp aplica sus operaciones en un orden fijo y, en una sola, el gris se come el entonado.
+    const base = plantilla.tratamiento === "duotono" ? reducida.grayscale().linear(1.35, -30) : reducida.modulate({ saturation: 0.55 });
+    const intermedia = await base.toColourspace("srgb").png().toBuffer();
+    jpeg = await sharp(intermedia).tint(hexARgb(paleta.acento)).jpeg({ quality: 85 }).toBuffer();
+  }
   return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
 }
 
@@ -70,6 +76,8 @@ export type Pedido = {
   conNodos?: boolean;
   /** Para las pruebas: también el PNG (más pesado, sin pérdida). */
   png?: boolean;
+  /** Para las pruebas: solo el árbol de satori (sus nodos), sin rasterizar; `imagen` sale vacía. */
+  soloSvg?: boolean;
 };
 
 export type Resultado = {
@@ -116,7 +124,7 @@ export async function dibujarCartel(p: Pedido): Promise<Resultado> {
   const t2 = performance.now();
   const ancho = Math.round(p.ancho ?? p.formato.ancho);
   const raster = sharp(Buffer.from(svg), { density: (72 * ancho) / p.formato.ancho });
-  const imagen = p.png ? await raster.png().toBuffer() : await raster.flatten({ background: paleta.fondo }).jpeg({ quality: 90, chromaSubsampling: "4:4:4" }).toBuffer();
+  const imagen = p.soloSvg ? Buffer.alloc(0) : p.png ? await raster.png().toBuffer() : await raster.flatten({ background: paleta.fondo }).jpeg({ quality: 90, chromaSubsampling: "4:4:4" }).toBuffer();
   const t3 = performance.now();
   return {
     imagen,
