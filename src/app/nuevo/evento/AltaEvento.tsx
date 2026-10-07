@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PorPasos from "@/components/PorPasos";
 import type { Cupo, ResultadoEvento } from "@/app/eventos/acciones";
 import { operacionEvento } from "@/app/eventos/operacionEvento";
@@ -8,23 +8,30 @@ import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
 import type { ArtistaResumen } from "@/lib/artistas";
 import { enlaceAltaDeTipo } from "@/lib/armazon";
 import type { Ciudad } from "@/lib/ciudad";
-import { zonaSegura } from "@/lib/fechas";
+import { diaLocal, zonaSegura } from "@/lib/fechas";
+import { nombreSitio } from "@/lib/eventos";
+import type { Franja } from "@/lib/horarioLugar";
+import { horarioParaEnviar } from "@/lib/horarioLugar";
+import { pistasDe } from "@/lib/sugerencias";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
 import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
-import { respuestasDelCartel } from "./cartelPorPasos";
+import { respuestasDelCartel, type Leido } from "./cartelPorPasos";
 import type { ContextoClase } from "./contextoClase";
 import { avance, eventoPublicado, faltaParaPublicar, preguntaDe, sesionesDe, type Creado } from "./pasos";
 import { cuandoDeClase, sedesDelPrograma } from "./clasePorPasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
+import { PasoVisita } from "./PasosClase";
 import Preguntas from "./Preguntas";
 import Publicado from "./Publicado";
 import Revisa from "./Revisa";
+import SugerenciaPublicado from "./SugerenciaPublicado";
 import { useLeerCartel } from "./useLeerCartel";
 import { usePasosEvento } from "./usePasosEvento";
 import { useSitioPorPasos } from "./useSitioPorPasos";
+import { useSugerencia, type AccionesSugerencia } from "./useSugerencia";
 
 type Props = {
   /** La acción del alta de evento (`crearEvento`): devuelve lo creado, sin salir de la pantalla. */
@@ -46,6 +53,8 @@ type Props = {
   arranque: Arranque | null;
   /** El horario de cada lugar y los festivales que se pueden elegir (OL-321); sin ellos, las salidas nuevas no tienen de dónde leer. */
   contexto?: ContextoClase;
+  /** Las acciones de la sugerencia de «Publicado» (OL-323); sin ellas, el final sale sin sugerencia. */
+  sugerencias?: AccionesSugerencia;
 };
 
 const FORMULARIO = "publicar-evento";
@@ -80,11 +89,13 @@ export default function AltaEvento(props: Props) {
   return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : null} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
 }
 
-function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, onOtro, onLugarNuevo }: Interno) {
+function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, sugerencias, onOtro, onLugarNuevo }: Interno) {
   const pasos = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : [], arranque);
   const { r, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, atras, publicado } = pasos;
   const horarios = contexto?.horarios ?? {};
   const sitio = useSitioPorPasos({ pasos, lugares, ciudadContexto, onLugarNuevo });
+  // Lo que leyó el cartel, para las sugerencias de «Publicado» (OL-323): la visita de una exposición y el festival que nombra.
+  const [leido, setLeido] = useState<Leido | null>(null);
   // Con cartel: se sube siempre y se lee si toca; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»); sin
   // lectura, sigue la primera pregunta. Si el cartel nombra un sitio que no es del directorio, «¿Dónde es?» abre con ese nombre ya escrito.
   const cartel = useLeerCartel({
@@ -93,6 +104,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     cupo,
     alGuardar: seguir,
     alLeer: (leido) => {
+      setLeido(leido);
       const leidas = sinPisar(respuestasDelCartel(leido, r.quien), arranque);
       if (leidas.sitio?.modo === "otro") sitio.setBusqueda(leidas.sitio.otro.sitioTexto || leidas.sitio.otro.direccion || "");
       contestar(leidas);
@@ -119,6 +131,27 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
   const falta = faltaParaPublicar(r);
   const atrasDelPaso = useCallback(() => atras(paso), [atras, paso]);
 
+  // La sugerencia de «Publicado» (OL-323): a un evento o un taller, con las pistas del título y del cartel. H2 abre «¿Cuándo se puede visitar?»
+  // (la pregunta de OL-321) dentro de esta misma pantalla, con «Desde» ya puesto; Atrás vuelve a «Publicado» sin crear nada.
+  const pistas = useMemo(
+    () => pistasDe(r.nombre, leido ? { clase: leido.valores.forma?.clase ?? null, visita: leido.valores.forma?.visita ?? null, inicio: leido.valores.inicio, horaLeida: leido.horaLeida, festival: leido.valores.festival ?? null } : null),
+    [r.nombre, leido],
+  );
+  const conSugerencia = r.clase === "puntual" || r.clase === "taller";
+  const sugerencia = useSugerencia(sugerencias, creado && conSugerencia ? creado.id : null, pistas);
+  const [periodo, setPeriodo] = useState<{ visita: { desde: string; hasta: string | null }; horario: Franja[] | null } | null>(null);
+  const [direccionPeriodo, setDireccionPeriodo] = useState<"entra" | "vuelve" | null>(null);
+  const abrirPeriodo = useCallback(() => {
+    const e = sugerencia.estado;
+    if (e.fase !== "abierta" || e.s.tipo !== "exposicion" || e.s.modo !== "periodo") return;
+    setDireccionPeriodo("entra");
+    setPeriodo({ visita: { desde: e.s.desde, hasta: null }, horario: null });
+  }, [sugerencia.estado]);
+  const cerrarPeriodo = useCallback(() => {
+    setDireccionPeriodo("vuelve");
+    setPeriodo(null);
+  }, []);
+
   function publicar(fd: FormData) {
     if (falta) return;
     // Un reintento con los mismos datos conserva su clave: el servidor no publica dos veces.
@@ -131,16 +164,18 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
   return (
     <PorPasos
       titulo={paso === "revisa" ? "Revisa" : "Publicar"}
-      paso={cartel.espera ? "espera" : paso}
-      direccion={cartel.espera ? null : direccion}
+      paso={cartel.espera ? "espera" : periodo ? "periodo" : paso}
+      direccion={cartel.espera ? null : periodo || direccionPeriodo ? direccionPeriodo : direccion}
       avance={avance(paso)}
       salida={salida}
-      onAtras={primero ? undefined : atrasDelPaso}
+      onAtras={periodo ? cerrarPeriodo : primero ? undefined : atrasDelPaso}
       encima={!cartel.espera && primeraPregunta && preguntaDe(paso, r) && cartel.subido && !cartel.subido.leido ? <CartelGuardado foto={cartel.subido.url} noPude={cartel.subido.noPude} /> : undefined}
-      pregunta={cartel.espera ? undefined : preguntaDe(paso, r)}
+      pregunta={cartel.espera ? undefined : periodo ? "¿Cuándo se puede visitar?" : preguntaDe(paso, r)}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} />
+          {/* El festival que nombra el cartel (OL-323): se anota con el evento para reconocerlo cuando se publique otro acto (H4). */}
+          <input type="hidden" name="festival_leido" value={leido?.valores.festival ?? ""} />
         </form>
       }
     >
@@ -173,17 +208,56 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           sedes={r.clase === "festival" ? sedesDelPrograma(r, lugares) : undefined}
         />
       )}
-      {paso === "publicado" && creado && (
-        <Publicado
-          evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })}
-          conCartel={!!cartel.subido}
-          conSesiones={!!sesionesDe(r)}
-          clase={r.clase}
-          cuando={cuandoDeClase(r, zona, creado.borradores)}
-          sinInauguracion={!r.inauguracion}
-          onOtro={onOtro}
+      {paso === "publicado" && creado && periodo && (
+        <PasoVisita
+          visita={periodo.visita}
+          zona={zona}
+          horarioLugar={sitio.lugar ? (horarios[sitio.lugar.id] ?? []) : []}
+          horario={periodo.horario}
+          onVisita={(visita) => setPeriodo((p) => p && { ...p, visita })}
+          onHorario={(horario) => setPeriodo((p) => p && { ...p, horario })}
+          texto="Publicar exposición"
+          onSeguir={() => {
+            const { visita, horario } = periodo;
+            if (!visita.hasta) return;
+            void sugerencia.aceptar({ desde: visita.desde, hasta: visita.hasta, horario: horario?.length ? horarioParaEnviar(horario) : null });
+            cerrarPeriodo();
+          }}
         />
       )}
+      {paso === "publicado" && creado && !periodo && (
+        <AlPublicar r={r} creado={creado} evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} zona={zona} sugerencia={conSugerencia ? sugerencia : null} onPeriodo={abrirPeriodo} onOtro={onOtro} />
+      )}
     </PorPasos>
+  );
+}
+
+/**
+ * «Publicado» con la sugerencia de OL-323 debajo de la tarjeta (a un evento o un taller; la exposición y el festival traen la suya de OL-321).
+ */
+function AlPublicar({ r, creado, evento, conCartel, zona, sugerencia, onPeriodo, onOtro }: { r: ReturnType<typeof usePasosEvento>["r"]; creado: Creado & { borradores: number }; evento: ReturnType<typeof eventoPublicado>; conCartel: boolean; zona: string; sugerencia: ReturnType<typeof useSugerencia> | null; onPeriodo: () => void; onOtro: () => void }) {
+  return (
+    <Publicado
+      evento={evento}
+      conCartel={conCartel}
+      conSesiones={!!sesionesDe(r)}
+      clase={r.clase}
+      cuando={cuandoDeClase(r, zona, creado.borradores)}
+      sinInauguracion={!r.inauguracion}
+      sugerencia={
+        sugerencia && (
+          <SugerenciaPublicado
+            estado={sugerencia.estado}
+            evento={{ titulo: evento.titulo, dia: evento.inicio ? diaLocal(new Date(evento.inicio), zona) : "", lugar: nombreSitio(evento) }}
+            zona={zona}
+            onAceptar={() => void sugerencia.aceptar()}
+            onPeriodo={onPeriodo}
+            onAhoraNo={sugerencia.ahoraNo}
+          />
+        )
+      }
+      sugerenciaAbierta={sugerencia?.estado.fase === "abierta"}
+      onOtro={onOtro}
+    />
   );
 }

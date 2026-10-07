@@ -9,6 +9,7 @@ import { IconoDescarga, IconoOk } from "@/components/ui/Iconos";
 import type { EventoAgenda } from "@/lib/agenda";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import { compartirEvento, hrefEvento, nombreSitio, type Clase } from "@/lib/eventos";
+import type { ReactNode } from "react";
 import styles from "./Publicado.module.css";
 
 type Props = {
@@ -24,6 +25,11 @@ type Props = {
   cuando?: string;
   /** Una exposición que se publicó sin inauguración: se sugiere agregarla. */
   sinInauguracion?: boolean;
+  /** La sugerencia al publicar (OL-323: la exposición tras la inauguración, el festival tras el segundo acto), ya armada, bajo la tarjeta. */
+  sugerencia?: ReactNode;
+  /** Con la sugerencia en punteado a la vista, «Compartir» deja de ser la acción principal (bitácora 323: «Compartir es la acción principal
+   *  salvo que haya una sugerencia en punteado»). */
+  sugerenciaAbierta?: boolean;
   /** «Publicar otro»: vuelve al primer paso con todo vacío. */
   onOtro: () => void;
 };
@@ -39,8 +45,11 @@ const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion:
  * Con su clase (OL-321; prototipo `exposicion-festival-taller.html`): «Exposición publicada», «Taller publicado» o «Festival publicado», la
  * tarjeta con su línea («Hasta el dom 30 de nov», el programa registrado) y UNA sugerencia en punteado: a una exposición sin inauguración,
  * «Agregar inauguración» (en editar, donde está su renglón); a un festival, «Agregar otra actividad» (el alta, ya dentro del festival).
+ *
+ * A un evento o un taller (OL-323), la sugerencia que encuentre el servidor tras publicar (`SugerenciaPublicado`): la exposición que abre una
+ * inauguración o el festival del que es parte. Llega cuando llega, sin mover el foco; mientras está en punteado, «Compartir» pasa a secundario.
  */
-export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, onOtro }: Props) {
+export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, onOtro }: Props) {
   const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones, cuando);
   return (
     <>
@@ -72,8 +81,9 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
           </Boton>
         </div>
       )}
+      {sugerencia}
       <PiePaso>
-        <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton()}>
+        <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton({ variante: sugerenciaAbierta ? "secundario" : "primario" })}>
           Compartir
         </BotonCompartir>
         {conCartel && <BotonDescargarCartel id={evento.id} className={claseBoton({ variante: "secundario" })} icono={<IconoDescarga width={20} height={20} />} iconoListo={<IconoOk width={20} height={20} />} precargar />}

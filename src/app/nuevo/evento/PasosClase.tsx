@@ -67,6 +67,8 @@ type PropsVisita = {
   onVisita: (visita: NonNullable<Respuestas["visita"]>) => void;
   onHorario: (horario: Franja[] | null) => void;
   onSeguir: () => void;
+  /** Lo que dice el botón del pie con todo puesto: «Siguiente» en el alta; «Publicar exposición» desde la sugerencia de «Publicado» (OL-323, H2). */
+  texto?: string;
 };
 
 /**
@@ -76,7 +78,7 @@ type PropsVisita = {
  * desmarcarla se abre la hoja de franjas del lugar (la misma pieza de OL-315) para el horario propio. Sin horario en ninguno, se publica con
  * «Horario por confirmar»: no se inventa.
  */
-export function PasoVisita({ visita, zona, horarioLugar, horario, onVisita, onHorario, onSeguir }: PropsVisita) {
+export function PasoVisita({ visita, zona, horarioLugar, horario, onVisita, onHorario, onSeguir, texto }: PropsVisita) {
   const [eligiendo, setEligiendo] = useState<"desde" | "hasta">(visita?.desde && !visita.hasta ? "hasta" : "desde");
   const [hoja, setHoja] = useState(false);
   const hoy = diaLocal(new Date(), zona);
@@ -133,7 +135,7 @@ export function PasoVisita({ visita, zona, horarioLugar, horario, onVisita, onHo
         </ul>
       )}
       {!conLugar && !propio && <p className={pasos.aviso}>Si el lugar no tiene horario, puedes ponerlo en «Revisa» o publicar con «Horario por confirmar».</p>}
-      <Siguiente falta={!desde ? "Falta desde cuándo" : !hasta ? "Falta hasta cuándo" : null} onSeguir={onSeguir} />
+      <Siguiente falta={!desde ? "Falta desde cuándo" : !hasta ? "Falta hasta cuándo" : null} texto={texto} onSeguir={onSeguir} />
       {hoja && (
         <HojaHorario
           titulo="¿Qué días se puede visitar?"

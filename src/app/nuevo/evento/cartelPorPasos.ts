@@ -2,6 +2,7 @@ import type { ResultadoCartel } from "@/app/eventos/acciones";
 import { quienTrasLeerCartel } from "@/app/eventos/gestosFlyer";
 import type { QuienItem } from "@/lib/artistas";
 import { LIMITES_EVENTO } from "@/lib/eventos";
+import { esApertura } from "@/lib/sugerencias";
 import { OTRO_VACIO, estadoInicial, faltan, finConHora, type Acto, type Paso, type Respuestas, type Sitio } from "./pasos";
 
 /**
@@ -81,6 +82,9 @@ function formaLeida(leido: Leido): Partial<Respuestas> | null {
   const horaLeida = leido.horaLeida ? hora : "";
   const clase = forma.actos.length >= 2 ? "festival" : forma.clase;
   if (clase === "exposicion") {
+    // El cartel de una inauguración («Inauguración de Ecos de papel»): se publica la apertura, un evento de un día a una hora, y la exposición
+    // con su periodo se sugiere en «Publicado» (OL-323, H1; prototipo aceptado `eventos-superficies.html`, caso h1).
+    if (esApertura(v.titulo)) return { claseFijada: true };
     const visita = forma.visita ?? (fecha ? { desde: fecha, hasta: null } : null);
     const inauguracion = forma.visita && fecha && horaLeida && fecha <= forma.visita.desde ? { dia: fecha, hora: horaLeida } : null;
     return { clase, claseFijada: true, visita, inauguracion };
