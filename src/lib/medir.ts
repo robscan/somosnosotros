@@ -61,6 +61,10 @@ export const EVENTOS = {
   cartel_usado: { plantilla: PLANTILLAS_CARTEL, formato: FORMATOS_CARTEL },
   /** «No me gusta ninguno»: en qué tanda se dio por vencida la persona (nunca por qué). */
   cartel_ninguno: { tanda: TANDAS_CARTEL },
+  /** «Usar otra foto» (OL-337) puso una foto propia en los diseños (subió y sirve). Nunca el archivo, su nombre ni el evento. */
+  cartel_foto_puesta: {},
+  /** «Quitar la foto»: los diseños vuelven a las imágenes de siempre. */
+  cartel_foto_quitada: {},
   /** La app quedó instalada (el aviso `appinstalled`: Chrome, Edge y Android; Safari de iPhone nunca lo da). */
   app_instalada: {},
   /** Una pantalla no cargó (la de «Algo falló»). */
