@@ -104,9 +104,31 @@ export function metaDe(e: Encontrado, ciudadActual: string): string[] {
   return e.ciudad && e.ciudad !== ciudadActual ? [datos, e.ciudad] : [datos];
 }
 
-/** La meta de un renglón que no lleva rótulo de grupo (el mejor resultado, los recientes): su tipo va delante, en la primera línea («Evento · vie 2 oct · MUNI»). */
-export function metaConTipo(grupo: GrupoBuscador, meta: string[]): string[] {
-  return [`${ROTULO[grupo].tipo} · ${meta[0] ?? ""}`, ...meta.slice(1)];
+/**
+ * La meta de un renglón que no lleva rótulo de grupo (el mejor resultado, los recientes): su tipo va delante, en la primera línea («Evento · vie 2
+ * oct · MUNI»). Un festival o una exposición (`clase`, OL-338) dicen lo que son en ese mismo sitio: «Festival · Del 16 al 18 de oct · …».
+ */
+export function metaConTipo(grupo: GrupoBuscador, meta: string[], clase?: string): string[] {
+  return [`${clase ?? ROTULO[grupo].tipo} · ${meta[0] ?? ""}`, ...meta.slice(1)];
+}
+
+/**
+ * Lo que se nombra de un evento en Buscar (OL-338): un festival y una exposición, como en el carril «Festivales y exposiciones» de Inicio
+ * (OL-342), con su nombre de siempre (`nombreDeClase`). Un taller y un evento suelto, nada (como en ese carril).
+ */
+export const CLASES_NOMBRADAS: readonly string[] = ["festival", "exposicion"];
+
+/**
+ * ¿Hay que pedir la búsqueda? (OL-338). Lo que se ve es lo que trajo la última respuesta, y una respuesta solo vale para la edición del campo en
+ * la que se pidió: lo encontrado puede cambiar (otra portada, otra fecha) mientras la persona mira una ficha o escribe otra cosa.
+ * - `buscar`: lo escrito no es lo de la respuesta (una búsqueda nueva, tras la espera de la última letra);
+ * - `refrescar`: es lo mismo, pero de otra edición: la memoria de pantalla la repuso al volver de una ficha, o se borró y se volvió a escribir
+ *   igual. Se ve lo que había y se pide otra vez sin espera, sin «Buscando…» y sin cerrar lo desplegado; lo que llega lo reemplaza;
+ * - `nada`: la respuesta es de lo escrito ahora.
+ */
+export function pedidoDeBusqueda(respuesta: { texto: string; edicion: number } | null, consulta: string, edicion: number): "buscar" | "refrescar" | "nada" {
+  if (respuesta?.texto !== consulta) return "buscar";
+  return respuesta.edicion === edicion ? "nada" : "refrescar";
 }
 
 /**

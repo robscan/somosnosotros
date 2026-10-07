@@ -514,6 +514,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           {hayCartel && (
             <BotonDescargarCartel
               id={e.slug}
+              imagen={e.imagen}
               className={ficha.accion}
               icono={
                 <span className={CIRCULO}>
