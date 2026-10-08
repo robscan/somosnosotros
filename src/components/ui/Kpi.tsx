@@ -2,9 +2,12 @@ import type { ReactNode } from "react";
 import Salto from "./Salto";
 import styles from "./Kpi.module.css";
 
-/** Los tres números de una ficha, en una fila (`Kpi` × 3). */
-export function Kpis({ children }: { children: ReactNode }) {
-  return <ul className={styles.kpis}>{children}</ul>;
+/**
+ * Los tres números de una ficha, en una fila (`Kpi` × 3). `piel="banda"`: sobre la banda oscura de la cabecera de una exposición, un taller o
+ * un festival (OL-351), en blanco translúcido.
+ */
+export function Kpis({ piel, children }: { piel?: "banda"; children: ReactNode }) {
+  return <ul className={piel === "banda" ? `${styles.kpis} ${styles.sobreBanda}` : styles.kpis}>{children}</ul>;
 }
 
 type Props = {

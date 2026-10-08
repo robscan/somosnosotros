@@ -56,3 +56,17 @@
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
+
+/* Sobre la banda oscura de la cabecera de una exposición, un taller o un festival (OL-351): la misma tarjeta en blanco translúcido; el valor en
+   blanco y lo que es, con su icono, en el blanco suave. El anillo del foco, blanco: el violeta no se lee sobre la banda. */
+.sobreBanda .kpi {
+  border-color: var(--sobre-banda-borde);
+  background: var(--sobre-banda);
+  color: var(--primario-texto);
+}
+.sobreBanda .kpi > :is(svg, small) {
+  color: var(--sobre-banda-suave);
+}
+.sobreBanda .kpi:focus-visible {
+  outline-color: var(--primario-texto);
+}

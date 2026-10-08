@@ -87,6 +87,7 @@ function* recorrer(nodo: unknown): Generator<{ type: unknown; props: Record<stri
     const el = nodo as unknown as { type: unknown; props: Record<string, unknown> };
     yield el;
     yield* recorrer(el.props?.children);
+    yield* recorrer(el.props?.banda); // los números de la cabecera oscura (`ui/Heroe`, OL-351)
   }
 }
 
@@ -365,7 +366,7 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
     const expo = { ...EVENTO, clase: "exposicion", inicio: "2099-01-01T06:00:00Z", fin: "2099-02-01T05:59:00Z" };
     const elementos = await abrir(expo, { eventos_horarios: { data: [{ dias: [1, 2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00" }] } });
     const kpis = elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta);
-    expect(kpis).toEqual(["Hasta", "Abre", "Costo"]);
+    expect(kpis).toEqual(["Hasta", "Costo", "Abre"]);
     expect(elementos.filter((e) => e.type === Suspense).length).toBe(1);
     expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
     expect(elementos.some((e) => e.props?.["aria-label"] === "Horario")).toBe(true);
@@ -379,5 +380,53 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
     expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["Actos", "Costo", "Sedes"]);
     const suelto = await abrir(EVENTO);
     expect(suelto.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
+  });
+});
+
+describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  const abrir = async (evento: Record<string, unknown>) => {
+    const cliente = clienteFalso({ eventos: { data: evento }, asistencias: { data: [] } }, { van_por_evento: { data: [] } });
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    const elementos = [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+    const heroe = elementos.find((e) => e.type === Heroe)!;
+    // Los números de la banda (dentro del héroe) y los del cuerpo (fuera): un mismo `Kpi` no sale en los dos.
+    const enBanda = [...recorrer(heroe.props.banda)].filter((e) => e.type === Kpi).map((e) => e.props.etiqueta);
+    return { heroe, enBanda, todos: elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta) };
+  };
+
+  it("el festival: «FESTIVAL», su periodo y su programa bajo el título, y «Actos · Costo · Sedes» en la banda", async () => {
+    const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-01-04T06:00:00Z" });
+    expect(heroe.props.etiqueta).toBe("Festival");
+    expect(heroe.props.meta).toMatch(/· Programa por confirmar$/);
+    expect(enBanda).toEqual(["Actos", "Costo", "Sedes"]);
+    expect(todos).toEqual(enBanda);
+  });
+
+  it("la exposición: sin línea bajo el título (repetía sus números) y «Hasta · Costo · Horario» en la banda", async () => {
+    const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "exposicion", inicio: "2000-01-01T06:00:00Z", fin: "2099-02-01T05:59:00Z" });
+    expect(heroe.props.etiqueta).toBe("Exposición");
+    expect(heroe.props.meta).toBeUndefined();
+    expect(enBanda).toEqual(["Hasta", "Costo", "Horario"]);
+    expect(todos).toEqual(enBanda);
+  });
+
+  it("el taller: cuándo y dónde bajo el título y «Sesiones · Costo» y «Van» (diferido) en la banda; sin «Cupo»", async () => {
+    const { heroe, enBanda } = await abrir({ ...EVENTO, clase: "taller", precio: "$50" });
+    expect(heroe.props.etiqueta).toBe("Taller");
+    expect(heroe.props.meta).toMatch(/· Foro de prueba$/);
+    expect(enBanda).toEqual(["Sesiones", "Costo"]);
+    expect([...recorrer(heroe.props.banda)].some((e) => e.type === Suspense)).toBe(true);
+    expect(JSON.stringify(enBanda)).not.toContain("Cupo");
+  });
+
+  it("un evento suelto no cambia: el héroe sin banda, etiqueta ni meta, y sus números en el cuerpo", async () => {
+    const { heroe, todos } = await abrir(EVENTO);
+    expect(heroe.props.banda).toBeUndefined();
+    expect(heroe.props.etiqueta).toBeUndefined();
+    expect(heroe.props.meta).toBeUndefined();
+    expect(todos).toHaveLength(2); // cuándo y «Costo»; «Van» es `KpiVan`, diferido
+    expect(todos[1]).toBe("Costo");
   });
 });

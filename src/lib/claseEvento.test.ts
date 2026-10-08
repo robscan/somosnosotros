@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { diaDeSemana, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
-import { CLASES, claseSugerida, esClase, formaDelCartel, cartelAFormulario, nombreDeClase } from "./eventos";
+import { diaDeSemana, lineaDeTaller, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
+import { CLASES, claseSugerida, cortoDeClase, esClase, formaDelCartel, cartelAFormulario, nombreDeClase } from "./eventos";
 import { localAIso } from "./fechas";
 
 const ZONA = "America/Mexico_City";
@@ -169,5 +169,19 @@ describe("taller y festival", () => {
     expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, null, ZONA)).toBe("2026-10-07");
     expect(textoProgramaRegistrado(1)).toBe("Programa registrado: 1 actividad");
     expect(textoProgramaRegistrado(3)).toBe("Programa registrado: 3 actividades");
+  });
+});
+
+describe("la cabecera oscura (OL-351): la etiqueta y la línea del taller", () => {
+  it("la etiqueta es la palabra de la clase; una que no se reconoce es un evento", () => {
+    expect(["exposicion", "taller", "festival"].map((c) => cortoDeClase(c as "taller"))).toEqual(["Exposición", "Taller", "Festival"]);
+    expect(cortoDeClase(null)).toBe("Evento");
+  });
+  it("un taller de un día dice ese día, su hora y dónde; de varios, sus días y dónde (las horas van en «Sesiones»)", () => {
+    const una = { inicio: localAIso("2026-10-08T17:00", ZONA)!, fin: localAIso("2026-10-08T19:00", ZONA)!, zona: ZONA };
+    expect(lineaDeTaller(una, "Foro lunaria", en("2026-10-07T12:00"))).toBe("jue 8 de oct · 17:00 · Foro lunaria");
+    const varias = { inicio: localAIso("2026-10-09T17:00", ZONA)!, fin: localAIso("2026-10-13T19:00", ZONA)!, zona: ZONA };
+    expect(lineaDeTaller(varias, "Foro lunaria", en("2026-10-07T12:00"))).toBe("Del 9 al 13 de oct · Foro lunaria");
+    expect(lineaDeTaller(varias, null, en("2026-10-07T12:00"))).toBe("Del 9 al 13 de oct");
   });
 });
