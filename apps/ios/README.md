@@ -27,7 +27,10 @@ se duplica aquí.
     una imagen a Fotos con `PHPhotoLibrary` (permiso de solo agregar, `NSPhotoLibraryAddUsageDescription` en Info.plist).
     Nativo puro, sin paquete de npm, como `CalendarioPlugin`; la web lo detecta en `window.Capacitor.Plugins.Fotos`
     (`src/lib/guardarCartel.ts`) y sin él descarga el archivo. Se descartó `@capacitor-community/media` (SDWebImage y
-    lectura de álbumes para una sola escritura).
+    lectura de álbumes para una sola escritura). Desde OL-332 (bitácora 361, hallazgo F08) no se fía de la web: tope de la
+    cadena antes de decodificar (8 MiB), permiso antes de tocar la imagen, formato por los bytes (JPEG, PNG o WebP),
+    dimensiones por metadatos (8000 px por lado, 12 Mpx); JPEG y PNG van tal cual y WebP pasa a JPEG. Rechaza con
+    `permiso`, `formato`, `tamano` o `error`.
   - `ios/App/App/MainViewController.swift` — registra ese plugin y muestra `www/index.html` cuando no hay red.
   - `ios/App/App/App.entitlements` — `applinks:somosnosotros.org` y `webcredentials:somosnosotros.org` (enlaces
     universales para las fichas — eventos, lugares, artistas — y el llavero de iOS; entrar con Apple/Google ya no
