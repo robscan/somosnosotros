@@ -4,7 +4,7 @@ import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, festival
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeTarjeta, notaDeClase, selloDeTarjeta, tarjetaConClase, tarjetaEvento } from "./destacados";
-import { calcularCarrilesAgenda, carrilEstaSemana, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
+import { calcularCarrilesAgenda, carrilDestacados, carrilEstaSemana, carrilEstelar, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
 
 // Miércoles 7 de octubre de 2026, 12:00 en la ciudad (seis horas detrás de UTC, sin horario de verano).
@@ -102,7 +102,7 @@ describe("el festival en la agenda de un día", () => {
     expect(textoBloque(4, 2, true)).toBe("Programa registrado: 4 actividades · hoy 2");
     expect(textoBloque(1, 1, false)).toBe("Programa registrado: 1 actividad · 1 este día");
   });
-  it("en una lista por evento (Nuevos, carriles) los actos de un marco presente se pliegan en él", () => {
+  it("en una lista por evento (la pestaña Nuevos de la agenda) los actos de un marco presente se pliegan en él", () => {
     expect(ids(plegarActos([cine, cine1, cine2, huerfano, concierto]))).toEqual(["cine", "huerfano", "concierto"]);
     expect(ids(plegarActos([cine1, cine2]))).toEqual(["cine1", "cine2"]); // sin su marco, salen sueltos
   });
@@ -181,40 +181,41 @@ describe("«Qué» en la URL y en la memoria de pantalla", () => {
 });
 
 describe("Inicio por clase", () => {
-  it("«Esta semana»: el marco una vez, con cuántas actividades caen en la semana, y no sus actos; la exposición no está", () => {
+  it("«Esta semana»: los actos de un festival sueltos, cada uno en su día; ni el marco ni la exposición (OL-347)", () => {
     const vistos = new Set<string>();
     const carril = carrilEstaSemana(TODOS, vistos, ahora);
-    expect(ids(carril)).toEqual(["concierto", "taller", "cine", "huerfano", "taller", "taller"]);
-    expect(carril.find((e) => e.id === "cine")?.programa).toEqual({ registrados: 4, estaSemana: 3 });
-    // Los actos plegados quedan vistos: no salen sueltos en «Nuevos eventos».
-    expect(vistos.has("cine2")).toBe(true);
+    expect(ids(carril)).toEqual(["concierto", "taller", "cine1", "huerfano", "cine2", "taller", "cine3", "taller"]);
+    expect(carril.some((e) => e.clase === "festival" || e.clase === "exposicion")).toBe(false);
+    expect(vistos.has("cine")).toBe(false); // el marco no salió aquí
   });
   it("«Festivales y exposiciones»: las exposiciones vigentes y el festival que viene, sin las que ya salieron en otro carril", () => {
     expect(ids(carrilFestivales(TODOS, new Set(["grabado"]), ahora))).toEqual(["sin-leer", "ecos", "cine", "futura"]);
     expect(carrilFestivales([concierto], new Set(), ahora)).toEqual([]);
   });
-  it("los carriles juntos: «Festivales y exposiciones» entre «Esta semana» y «Nuevos eventos»; el festival con actos en la semana sale en los dos (OL-346)", () => {
+  it("los carriles juntos: el festival con actos en la semana sale solo en «Festivales y exposiciones»; sus actos, en «Esta semana» (OL-347)", () => {
     const carriles = calcularCarrilesAgenda(agenda(), ahora);
-    // Su marco salió en «Esta semana» («3 actividades esta semana») y aquí sale igual, en su lugar por cercanía: este carril es su sitio.
-    expect(ids(carriles.estaSemana)).toContain("cine");
+    expect(ids(carriles.estaSemana)).not.toContain("cine");
+    expect(ids(carriles.estaSemana)).toEqual(expect.arrayContaining(["cine1", "cine2", "cine3"]));
     expect(ids(carriles.festivales)).toEqual(["sin-leer", "grabado", "ecos", "cine", "futura"]);
-    expect(carriles.festivales.find((e) => e.id === "cine")?.programa).toEqual({ registrados: 4 }); // aquí, su programa entero
+    expect(carriles.festivales.find((e) => e.id === "cine")?.programa).toEqual({ registrados: 4 }); // su programa entero
     expect(carriles.estaSemana.some((e) => e.clase === "exposicion")).toBe(false);
     // Un festival sin actos en la semana no está en «Esta semana»: sale aquí, en su lugar por cercanía.
     expect(ids(calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric] }), ahora).festivales)).toEqual(["sin-leer", "grabado", "ecos", "cine", "futura", "electric"]);
   });
-  it("un festival destacado o en «Tus planes» también sale en «Festivales y exposiciones»; una exposición ya vista, no (OL-346)", () => {
+  it("un festival destacado no sale en «Destacados» sino en su carril; uno en «Tus planes», también; una exposición ya vista, no (OL-346, OL-347)", () => {
     const carriles = calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric], destacados: [{ id: "electric", motivo: "elegido", hasta: null, van: 0 }, { id: "ecos", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
-    expect(ids(carriles.estelar)).toEqual(["electric", "ecos"]);
+    expect(ids(carriles.estelar)).toEqual(["ecos"]);
     expect(ids(carriles.festivales)).toEqual(["sin-leer", "grabado", "cine", "futura", "electric"]);
     const conPlanes = calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric], asistencias: { electric: "me_interesa" } }), ahora);
     expect(ids(conPlanes.festivales)).toContain("electric");
   });
-  it("«Nuevos eventos» y «Más adelante»: un festival nuevo como su marco", () => {
+  it("«Nuevos eventos» y «Más adelante»: un festival nuevo no sale; sus actos sí, como cualquier evento (OL-347)", () => {
     const tarde = (e: EventoAgenda, dias: number) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + dias * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
     const nuevos = carrilNuevos([tarde(cine, 20), tarde(cine1, 20), tarde(cine2, 20), tarde(concierto, 20), tarde(huerfano, 20)], new Set(), ahora);
-    expect(ids(nuevos).toSorted()).toEqual(["cine", "concierto", "huerfano"]);
-    expect(carrilMasAdelante(agenda(), ahora).some((e) => e.evento_padre_id === "cine")).toBe(false);
+    expect(ids(nuevos).toSorted()).toEqual(["cine1", "cine2", "concierto", "huerfano"]);
+    const masAdelante = carrilMasAdelante(agenda(), ahora);
+    expect(masAdelante.some((e) => e.clase === "festival")).toBe(false);
+    expect(masAdelante.some((e) => e.evento_padre_id === "cine")).toBe(true);
   });
   it("la tarjeta: «Hasta el …» y «Horario por confirmar»; el marco con su periodo y su programa; sin «Voy»", () => {
     expect(cuandoDeTarjeta(ecos, ahora)).toBe("Hasta el sáb 31 de oct");
@@ -224,7 +225,6 @@ describe("Inicio por clase", () => {
     expect(notaDeClase(sinLeer)).toBeNull(); // sin poder leer su horario no se dice nada
     expect(cuandoDeTarjeta(futura, ahora)).toBe("Del 12 de oct al 30 de nov");
     expect(cuandoDeTarjeta(cine, ahora)).toBe("Del 9 al 20 de oct");
-    expect(notaDeClase({ ...cine, programa: { registrados: 4, estaSemana: 3 } })).toBe("3 actividades esta semana");
     expect(notaDeClase(cine)).toBe("Programa registrado: 4 actividades");
     expect(tarjetaEvento(ecos, ahora)).toMatchObject({ sinVoy: true, hoy: false, detalle: "Hasta el sáb 31 de oct", sitio: "Foro" });
     expect(tarjetaEvento(grabado, ahora).sitio).toBe("Foro · Horario por confirmar");
@@ -271,13 +271,12 @@ describe("«Festivales y exposiciones» (OL-342)", () => {
     expect(vistos.has("vacio")).toBe(true);
     expect(vistos.has("lejana")).toBe(false);
   });
-  it("los actos de un festival que salió aquí quedan vistos: no salen sueltos después en «Nuevos eventos»", () => {
+  it("los actos de un festival que salió aquí no quedan vistos: salen después en «Nuevos eventos» como cualquier evento (OL-347)", () => {
     const vistos = new Set<string>();
     const lejano = (e: EventoAgenda) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + 20 * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
     const lista = [lejano(cine), lejano(cine1), lejano(cine2), lejano(cine3), lejano(concierto)];
     expect(ids(carrilFestivales(lista, vistos, ahora))).toEqual(["cine"]);
-    expect(["cine1", "cine2", "cine3"].every((id) => vistos.has(id))).toBe(true);
-    expect(vistos.has("concierto")).toBe(false);
+    expect(ids(carrilNuevos(lista, vistos, ahora)).toSorted()).toEqual(["cine1", "cine2", "cine3", "concierto"]);
   });
   it("con tope; sin nada, vacío (el carril no se pinta)", () => {
     const muchos = Array.from({ length: TOPE_FESTIVALES + 5 }, (_, i) => evento(`f${i}`, { clase: "festival", inicio: a("2026-11-01", "18:00"), fin: a("2026-11-02", "00:00") }));
@@ -292,6 +291,33 @@ describe("«Festivales y exposiciones» (OL-342)", () => {
     expect(selloDeTarjeta(tarjetaConClase(ecos, ahora))).toEqual({ texto: "Exposición", tuyo: false, hoy: false });
     expect(selloDeTarjeta({ ...tarjetaConClase(electric, ahora), hoy: true })).toEqual({ texto: "Hoy · Festival", tuyo: false, hoy: true });
     expect(selloDeTarjeta(tarjetaConClase(fiesta, ahora), true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
+  });
+});
+
+describe("los festivales solo en su carril (OL-347)", () => {
+  // Founder, 2026-10-08: «Evita poner festivales en otros carriles». El festival, destacado, seguido y nuevo a la vez; sus actos, en la semana y lejos.
+  const nuevo = (e: EventoAgenda, dias = 0) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + dias * 86400000).toISOString(), creado_en: "2026-10-06T00:00:00Z" });
+  const eventos = [nuevo(cine), nuevo(cine1), nuevo(cine2), nuevo(cine3), nuevo(cine4), nuevo(electric), nuevo(concierto), nuevo(huerfano, 20), nuevo(evento("lejos", { inicio: a("2026-10-25", "20:00") }))];
+  const destacados = [{ id: "cine", motivo: "elegido" as const, hasta: null, van: 0 }, { id: "electric", motivo: "elegido" as const, hasta: null, van: 0 }, { id: "cine2", motivo: "elegido" as const, hasta: null, van: 0 }];
+  const deFestival = (lista: EventoAgenda[]) => lista.filter((e) => e.clase === "festival");
+
+  it("nunca en «Destacados», «Esta semana», «Nuevos eventos» ni «Más adelante», aunque esté destacado o sea nuevo; sí en su carril", () => {
+    const carriles = calcularCarrilesAgenda(agenda({ eventos, destacados }), ahora);
+    expect(deFestival(carriles.estelar)).toEqual([]);
+    expect(deFestival(carriles.estaSemana)).toEqual([]);
+    expect(deFestival(carriles.nuevos)).toEqual([]);
+    expect(deFestival(carrilMasAdelante(agenda({ eventos, destacados }), ahora))).toEqual([]);
+    expect(ids(carriles.festivales)).toEqual(["cine", "electric"]);
+  });
+  it("sus actos sí, como cualquier evento: el destacado en «Destacados», los de la semana en «Esta semana», el nuevo y lejano en «Nuevos eventos»", () => {
+    const carriles = calcularCarrilesAgenda(agenda({ eventos, destacados }), ahora);
+    expect(ids(carriles.estelar)).toEqual(["cine2"]);
+    expect(ids(carriles.estaSemana)).toEqual(expect.arrayContaining(["cine1", "cine3"]));
+    expect(ids(carriles.nuevos)).toContain("cine4");
+  });
+  it("«Seleccionados para ti»: ni el festival destacado ni el que se sigue; sus actos, sí", () => {
+    expect(ids(carrilEstelar([cine, cine2], [electric, cine1], new Set()))).toEqual(["cine2", "cine1"]);
+    expect(ids(carrilDestacados([electric, cine2], new Set()))).toEqual(["cine2"]);
   });
 });
 
