@@ -26,7 +26,7 @@ const capturas = process.env.CAPTURAS;
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 /** Un cartel de mentira, vertical (4:5): lo que «sube» la persona y lo que Storage devuelve. */
 const CARTEL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect width="400" height="500" fill="#4a3a6b"/><rect x="30" y="30" width="340" height="440" fill="none" stroke="#e8dff5" stroke-width="3"/><text x="200" y="230" fill="#fff" font-family="Arial" font-size="42" font-weight="800" text-anchor="middle">ECOS DE</text><text x="200" y="285" fill="#fff" font-family="Arial" font-size="42" font-weight="800" text-anchor="middle">PAPEL</text><text x="200" y="360" fill="#e8dff5" font-family="Arial" font-size="22" text-anchor="middle">Jueves 5 de noviembre · 19:00</text></svg>';
-let dir, server, browser, origin;
+let dir, server, browser, origin, MEDIR;
 const mocks = {
   "@/app/eventos/acciones": `
     export async function leerCartelAccion(url){
@@ -61,6 +61,10 @@ const mocks = {
 };
 
 before(async () => {
+  // Nada de `await` suelto entre las pruebas (OL-344): las que vienen detrás se registran tarde y, con `--test-name-pattern` que solo
+  // elige esas, node:test daba la raíz por terminada y corría el `after` antes que este `before`; el servidor y Chromium que este abría
+  // ya no los cerraba nadie y el proceso quedaba vivo para siempre (cuatro así, de un día entero, en la Mac del founder).
+  MEDIR = await readFile(join(root, "scripts/ops/auditoria-ui/medir.js"), "utf8");
   dir = await mkdtemp(join(tmpdir(), "alta-por-pasos-"));
   await build({
     absWorkingDir: root,
@@ -1495,8 +1499,8 @@ for (const ancho of [320, 390]) {
   });
 }
 
-/** La regla de `npm run medir` (toques de 44, accionables tapados, hijos fuera de su caja, márgenes negativos) en estas pantallas. */
-const MEDIR = await readFile(join(root, "scripts/ops/auditoria-ui/medir.js"), "utf8");
+/** La regla de `npm run medir` (toques de 44, accionables tapados, hijos fuera de su caja, márgenes negativos) en estas pantallas: `MEDIR`,
+ *  que se lee en el `before` (ver allí por qué no aquí). */
 test("con cartel, ninguna pantalla tiene toques menores de 44, controles tapados, hijos fuera de su caja ni márgenes negativos (320 y 390)", TOPE, async (t) => {
   const medidas = async (p) => {
     const m = await p.evaluate(MEDIR);
