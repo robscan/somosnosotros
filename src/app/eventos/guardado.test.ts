@@ -16,7 +16,7 @@ function formulario() {
   const fd = new FormData();
   fd.set("operacion", ID);
   fd.set("revision", "2030-09-01T12:00:00Z");
-  for (const [k, v] of Object.entries({ modo_sitio: "otro", sitio_texto: "Plaza de prueba", titulo: "Evento", inicio: "2030-10-01T19:00", gratis: "si", quien: JSON.stringify([{ nombre: "Trio de prueba" }]) })) fd.set(k, v);
+  for (const [k, v] of Object.entries({ modo_sitio: "otro", sitio_texto: "Plaza de prueba", sitio_lat: "22.15", sitio_lng: "-100.98", ciudad: "San Luis Potosí", titulo: "Evento", inicio: "2030-10-01T19:00", gratis: "si", quien: JSON.stringify([{ nombre: "Trio de prueba" }]) })) fd.set(k, v);
   return fd;
 }
 

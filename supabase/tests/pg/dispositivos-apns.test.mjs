@@ -68,7 +68,7 @@ export async function run({ as, check, expectError, query, connection }) {
 
   const op = randomUUID();
   const datos = { titulo: "Concierto APNs", inicio: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null,
-    lugar_id: null, sitio_texto: "Zona pública", sitio_lat: null, sitio_lng: null, sitio_reservado: false,
+    lugar_id: null, sitio_texto: "Zona pública", sitio_lat: 22.15, sitio_lng: -100.98, sitio_reservado: false,
     sitio_revelar_desde: null, ciudad: "Prueba", zona: "America/Mexico_City", descripcion: null, imagen: null, precio: null, enlace: null };
   // p_evento=null crea un evento nuevo con el id de p_operacion (no de p_evento; ver guardar_evento_completo).
   await as("authenticated", AUTHOR, () => query(

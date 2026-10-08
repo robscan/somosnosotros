@@ -24,9 +24,10 @@ describe("quienTrasLeerCartel: 'Quién' refleja solo el cartel (founder, 2026-09
 
 const otro: OtroSitio = { reservado: false, sitioTexto: "Foro", direccion: "Calle Prueba 123", sitioPunto: { lat: 22, lng: -100 }, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: "Ciudad" };
 describe("direccion y privacidad", () => {
-  it("direccion estructurada sin pin no esta lista aun sin flag, legacy intacto si", () => {
+  it("sin pin no esta listo, tampoco el de antes con solo su nombre (OL-348)", () => {
     expect(sitioListo({...otro,sitioPunto:null})).toBe(false);
-    expect(sitioListo({...otro,direccion:"",sitioPunto:null,nombreLegacy:true})).toBe(true);
+    expect(sitioListo({...otro,direccion:"",sitioPunto:null,nombreLegacy:true})).toBe(false);
+    expect(sitioListo({...otro,direccion:"",nombreLegacy:true})).toBe(true);
     expect(sitioListo({...otro,pinPendiente:true})).toBe(false);
   });
   it("no separa texto legacy ni lo vuelve a usar como alias al revisar", () => {

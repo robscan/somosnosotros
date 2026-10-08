@@ -97,10 +97,16 @@ describe("ciudad del evento en otro sitio", () => {
     expect(await crearEvento(null, fd)).toEqual({ ok: false, errores: { direccion_privada: SIN_CIUDAD } });
     expect(m.rpc).not.toHaveBeenCalled();
   });
-  it("un sitio escrito sin coordenadas no tiene de dónde deducir la ciudad: sigue en la inicial y se publica", async () => {
+  it("un sitio escrito sin coordenadas ya no se publica (OL-348): falta la ubicación y la base no se toca", async () => {
     const fd = formulario(); fd.set("ciudad", ""); fd.set("sitio_direccion", ""); fd.set("sitio_lat", ""); fd.set("sitio_lng", "");
-    expect((await crearEvento(null, fd)).ok).toBe(true);
-    expect(m.rpc.mock.calls[0][1]).toMatchObject({ p_datos: { ciudad: "San Luis Potosí" } });
+    expect(await crearEvento(null, fd)).toMatchObject({ ok: false, errores: { sitio_direccion: "Confirma la ubicación eligiendo una dirección o poniendo el pin." } });
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+  it("(edición) tampoco: un sitio de antes sin punto no se guarda hasta tener el suyo (OL-348)", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { sitio_reservado: false, inicio: "2030-10-01T19:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, ciudad: "San Luis Potosí", sitio_lat: null, sitio_lng: null } });
+    const fd = formulario(); fd.set("sitio_direccion", ""); fd.set("sitio_lat", ""); fd.set("sitio_lng", "");
+    expect(await actualizarEvento(ID, null, fd)).toMatchObject({ ok: false, errores: { sitio_direccion: expect.any(String) } });
+    expect(m.rpc).not.toHaveBeenCalled();
   });
   it("(edición) con el mismo pin y sin ciudad en el formulario conserva la del evento guardado", async () => {
     m.maybeSingle.mockResolvedValue({ data: { sitio_reservado: false, inicio: "2030-10-01T19:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, ciudad: "Querétaro", sitio_lat: 22.15, sitio_lng: -100.98 } });

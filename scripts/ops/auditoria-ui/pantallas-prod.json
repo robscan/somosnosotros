@@ -8,5 +8,6 @@
   { "id": "07-ficha-lugar-4", "plantilla": "ficha", "url": "/lugares/teatro-de-la-paz", "completa": true, "espera": 5000 },
   { "id": "08-ficha-lugar-5", "plantilla": "ficha", "url": "/lugares/museo-del-ferrocarril-jesus-garcia-corona", "completa": true, "espera": 5000 },
   { "id": "09-ficha-artista", "plantilla": "ficha", "url": "/artistas/aaron-cadena", "completa": true },
-  { "id": "10-entrar", "plantilla": "tarea", "url": "/entrar" }
+  { "id": "10-entrar", "plantilla": "tarea", "url": "/entrar" },
+  { "id": "11-ficha-sitio", "plantilla": "ficha", "url": "/sitios/templo-de-san-francisco-san-luis-potosi", "completa": true, "espera": 4000 }
 ]

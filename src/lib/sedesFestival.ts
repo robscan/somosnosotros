@@ -1,4 +1,5 @@
-import { normalizarNombre } from "./lugares";
+import { hrefLugar, normalizarNombre } from "./lugares";
+import { hrefSitio } from "./sitios";
 
 /**
  * Las sedes de un festival (OL-339), sin DOM ni base. Regla del founder (2026-10-07): «Que la o las ubicaciones de un festival se alimenten de
@@ -25,6 +26,8 @@ export type ActoConSitio = {
   sitio_lat?: number | null;
   sitio_lng?: number | null;
   sitio_reservado?: boolean;
+  /** La ciudad del acto: con ella se arma la dirección de la ficha de un sitio fuera del directorio (`hrefSitio`, OL-348). */
+  ciudad?: string | null;
   /** Su cartel, si lo tiene (OL-346): el del próximo acto es la portada de un festival sin imagen propia (`portadaDeFestival`). */
   imagen?: string | null;
 };
@@ -40,6 +43,8 @@ export type Sede = {
   punto: { lat: number; lng: number } | null;
   /** Un sitio reservado: su nombre se dice, su dirección no (la revela la ficha de su acto cuando toca). */
   reservado: boolean;
+  /** La ficha que abre su renglón (OL-348): la del lugar del directorio o la del sitio fuera de él (`/sitios/<slug>`); null en un sitio reservado. */
+  href: string | null;
   /** Cuántos actos tiene; 0 en la sede de respaldo (lo capturado en el marco). */
   actos: number;
 };
@@ -57,6 +62,7 @@ function sedeDe(a: ActoConSitio): Omit<Sede, "actos"> | null {
       direccion: lugar.direccion ?? null,
       punto: numero(lugar.lat) && numero(lugar.lng) ? { lat: lugar.lat, lng: lugar.lng } : null,
       reservado: false,
+      href: hrefLugar({ id: lugar.id ?? a.lugar_id, slug: lugar.slug }),
     };
   }
   const texto = a.sitio_texto?.trim();
@@ -69,6 +75,7 @@ function sedeDe(a: ActoConSitio): Omit<Sede, "actos"> | null {
     direccion: reservado ? null : (a.sitio_direccion ?? null),
     punto: !reservado && numero(a.sitio_lat) && numero(a.sitio_lng) ? { lat: a.sitio_lat, lng: a.sitio_lng } : null,
     reservado,
+    href: hrefSitio({ lugar_id: null, sitio_texto: texto, sitio_reservado: reservado, ciudad: a.ciudad }),
   };
 }
 

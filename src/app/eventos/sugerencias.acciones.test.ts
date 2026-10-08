@@ -193,7 +193,7 @@ describe("aceptar y descartar", () => {
 describe("crearEvento anota el festival que leyó el cartel", () => {
   const formulario = (campos: Record<string, string>) => {
     const fd = new FormData();
-    for (const [k, v] of Object.entries({ operacion: ID, modo_sitio: "otro", sitio_texto: "Museo de prueba", sitio_direccion: "", sitio_lat: "", sitio_lng: "", sitio_pin_pendiente: "no", revelar_horas: "24", ciudad: "", titulo: "Concierto de Trío Bruma", inicio: "2030-11-07T18:00", gratis: "si", quien: "[]", ...campos })) fd.set(k, v);
+    for (const [k, v] of Object.entries({ operacion: ID, modo_sitio: "otro", sitio_texto: "Museo de prueba", sitio_direccion: "", sitio_lat: "22.15", sitio_lng: "-100.98", sitio_pin_pendiente: "no", revelar_horas: "24", ciudad: "San Luis Potosí", titulo: "Concierto de Trío Bruma", inicio: "2030-11-07T18:00", gratis: "si", quien: "[]", ...campos })) fd.set(k, v);
     return fd;
   };
 

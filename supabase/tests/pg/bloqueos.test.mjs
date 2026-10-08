@@ -23,7 +23,7 @@ export async function run({ as, check, expectError, query }) {
   const artista = (await query("insert into public.artistas (nombre, creado_por) values ('Artista de Beto (OL-203)', $1) returning id", [BETO])).rows[0].id;
   const evento = (
     await query(
-      "insert into public.eventos (titulo, inicio, sitio_texto, zona, creado_por) values ('Función de Beto (OL-203)', now() + interval '10 days', 'Sitio de prueba', 'America/Mexico_City', $1) returning id",
+      "insert into public.eventos (titulo, inicio, sitio_texto, sitio_lat, sitio_lng, zona, creado_por) values ('Función de Beto (OL-203)', now() + interval '10 days', 'Sitio de prueba', 22.15, -100.98, 'America/Mexico_City', $1) returning id",
       [BETO],
     )
   ).rows[0].id;
