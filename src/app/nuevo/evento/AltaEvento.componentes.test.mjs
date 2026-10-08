@@ -151,8 +151,8 @@ const SITIOS = {
 const CONTEXTO = { place: { name: "San Luis Potosí" }, country: { name: "México", country_code: "mx" } };
 const DIRECCIONES = { "22.1533": "Av. Universidad 300, Lomas, San Luis Potosí, México", "22.16": "Av. Carranza 100, Centro, San Luis Potosí, México", "22.1504": "Villerías 207, Centro, San Luis Potosí, México" };
 
-async function pagina(t, { movimiento = "reduce", ancho = 390, qa = {}, fotos = false, geolocation = { latitude: 22.1504, longitude: -100.97 } } = {}) {
-  const context = await browser.newContext({ viewport: { width: ancho, height: 844 }, reducedMotion: movimiento, timezoneId: "America/Mexico_City", deviceScaleFactor: capturas ? 2 : 1, locale: "es-MX", geolocation, permissions: ["geolocation"] });
+async function pagina(t, { movimiento = "reduce", ancho = 390, alto = 844, qa = {}, fotos = false, geolocation = { latitude: 22.1504, longitude: -100.97 } } = {}) {
+  const context = await browser.newContext({ viewport: { width: ancho, height: alto }, reducedMotion: movimiento, timezoneId: "America/Mexico_City", deviceScaleFactor: capturas ? 2 : 1, locale: "es-MX", geolocation, permissions: ["geolocation"] });
   t.after(() => context.close());
   await context.clock.setFixedTime(new Date("2026-10-07T16:00:00Z"));
   const p = await context.newPage();
@@ -344,6 +344,161 @@ test("el botón del pie dice qué falta y no avanza hasta tenerlo; Intro hace lo
   assert.equal(await pregunta(p), "¿Qué día es?");
   // El foco va a la pregunta del paso nuevo: el lector dice dónde se está.
   assert.equal(await p.evaluate(() => document.activeElement?.textContent), "¿Qué día es?");
+});
+
+// OL-345 (bitácora 374): bajo el nombre, los chips de la clase con la propuesta del título marcada; un toque la fija y el paso sigue igual.
+const fila = (p) => p.getByRole("group", { name: "Cómo ocurre" });
+/** Los chips de la clase: su texto y si están marcados. */
+const chipsDeClase = (p) => fila(p).getByRole("button").evaluateAll((bs) => bs.map((b) => `${b.textContent}${b.getAttribute("aria-pressed") === "true" ? "*" : ""}`));
+
+test("los chips de la clase salen bajo el nombre en cuanto hay texto, con la propuesta del título marcada, en un solo renglón pegado al campo", TOPE, async (t) => {
+  const p = await pagina(t);
+  await boton(p, "No tengo cartel").click();
+  const campo = p.getByLabel("Nombre del evento");
+  // Sin texto, el paso queda solo con su campo.
+  assert.equal(await fila(p).count(), 0);
+  await campo.fill("Lectura");
+  assert.deepEqual(await chipsDeClase(p), ["Evento*", "Exposición", "Taller", "Festival"]);
+  await campo.fill("Festival de jazz");
+  assert.deepEqual(await chipsDeClase(p), ["Evento", "Exposición", "Taller", "Festival*"]);
+  await campo.fill("Muestra de grabado");
+  assert.deepEqual(await chipsDeClase(p), ["Evento", "Exposición*", "Taller", "Festival"]);
+  // Sin rótulo a la vista: la fila es solo sus cuatro chips. Justo bajo el campo y por encima del pie.
+  assert.equal(await fila(p).innerText(), "Evento\nExposición\nTaller\nFestival");
+  const caja = await p.evaluate(() => {
+    const input = document.querySelector('input[aria-label="Nombre del evento"]').getBoundingClientRect();
+    const grupo = document.querySelector('[role="group"][aria-label="Cómo ocurre"]');
+    const chips = [...grupo.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
+    const pie = document.querySelector("main footer").getBoundingClientRect();
+    return { hueco: chips[0].top - input.bottom, renglones: new Set(chips.map((c) => Math.round(c.top))).size, abajo: Math.max(...chips.map((c) => c.bottom)), pie: pie.top };
+  });
+  assert.equal(caja.renglones, 1);
+  // El aire de la columna (20) más lo que la fila deja para el toque de sus chips (4): justo debajo, sin otra cosa en medio.
+  assert.ok(caja.hueco > 0 && caja.hueco <= 24, `hueco ${caja.hueco}`);
+  assert.ok(caja.abajo < caja.pie);
+  // Borrar el nombre los quita (nadie eligió todavía).
+  await boton(p, "Borrar lo escrito").click();
+  assert.equal(await fila(p).count(), 0);
+});
+
+test("tocar un chip fija la clase: el nombre ya no la cambia y «Siguiente» lleva al paso de esa clase; «Revisa» la confirma", TOPE, async (t) => {
+  const p = await pagina(t);
+  await boton(p, "No tengo cartel").click();
+  const campo = p.getByLabel("Nombre del evento");
+  await campo.fill("Ecos de papel");
+  await fila(p).getByRole("button", { name: "Exposición" }).click();
+  // Sigue en el mismo paso: sin pregunta nueva.
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  assert.deepEqual(await chipsDeClase(p), ["Evento", "Exposición*", "Taller", "Festival"]);
+  await campo.fill("Festival de papel");
+  assert.deepEqual(await chipsDeClase(p), ["Evento", "Exposición*", "Taller", "Festival"]);
+  await campo.fill("Ecos de papel");
+  await boton(p, "Siguiente").click();
+  assert.equal(await pregunta(p), "¿Cuándo se puede visitar?");
+  // Atrás: el chip elegido sigue marcado; elegir «Taller» lleva a sus sesiones.
+  await boton(p, "Atrás").click();
+  await fila(p).getByRole("button", { name: "Taller" }).click();
+  await boton(p, "Siguiente").click();
+  assert.equal(await pregunta(p), "¿Qué días son las sesiones?");
+  await boton(p, "Atrás").click();
+  await fila(p).getByRole("button", { name: "Festival" }).click();
+  await boton(p, "Siguiente").click();
+  assert.equal(await pregunta(p), "¿Qué actividades tiene?");
+  await boton(p, "Atrás").click();
+  await fila(p).getByRole("button", { name: "Evento" }).click();
+  await boton(p, "Siguiente").click();
+  assert.equal(await pregunta(p), "¿Qué día es?");
+});
+
+test("la exposición elegida en el primer paso llega a «Revisa» con «Exposición · Cambiar» y se publica como exposición", TOPE, async (t) => {
+  const p = await pagina(t);
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Ecos de papel");
+  await fila(p).getByRole("button", { name: "Exposición" }).click();
+  await boton(p, "Siguiente").click();
+  await enPaso(p, "¿Cuándo se puede visitar?");
+  await p.getByRole("gridcell", { name: /^viernes 9 de octubre/ }).click();
+  await p.getByRole("gridcell", { name: /^domingo 18 de octubre/ }).click();
+  await p.getByRole("button", { name: "Siguiente", exact: true }).click();
+  await elegirTeatro(p);
+  await boton(p, /^Gratis/).click();
+  await p.locator("main ul > li").first().waitFor();
+  const renglones = await p.locator("main ul > li").allInnerTexts();
+  assert.match(renglones[0], /Exposición\nCambiar/);
+  await boton(p, "Publicar exposición").click();
+  await p.waitForFunction(() => window.qa.envios.length >= 1);
+  assert.equal((await enviado(p)).clase, "exposicion");
+});
+
+test("a 320 los cuatro chips caben en un renglón o se deslizan de lado, sin desbordar la pantalla", TOPE, async (t) => {
+  const p = await pagina(t, { ancho: 320 });
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Festival de jazz");
+  await p.evaluate(() => document.fonts.ready);
+  const medida = await p.evaluate(() => {
+    const grupo = document.querySelector('[role="group"][aria-label="Cómo ocurre"]');
+    const tops = [...grupo.querySelectorAll("button")].map((b) => Math.round(b.getBoundingClientRect().top));
+    const fila = grupo.getBoundingClientRect();
+    const marcado = grupo.querySelector('[aria-pressed="true"]').getBoundingClientRect();
+    return { renglones: new Set(tops).size, desliza: getComputedStyle(grupo).overflowX, pagina: document.documentElement.scrollWidth, marcadoEntero: marcado.left >= fila.left - 0.5 && marcado.right <= fila.right + 0.5 }; // medio píxel: el desplazamiento va en píxeles enteros
+  });
+  assert.equal(medida.renglones, 1);
+  // «Festival», el último, no cabe a 320: la fila se desliza sola hasta dejar entero el marcado.
+  assert.equal(medida.marcadoEntero, true);
+  assert.equal(medida.desliza, "auto");
+  assert.equal(medida.pagina, 320);
+});
+
+/** Con `CAPTURAS_374=<carpeta>` (y `FUENTE`, y `CAPTURAS=1` para el 2×), las capturas de la bitácora 374. */
+const CAPTURAS_374 = process.env.CAPTURAS_374;
+const foto374 = async (p, nombre) => {
+  if (!CAPTURAS_374) return;
+  await p.evaluate(() => document.fonts.ready);
+  await p.waitForTimeout(300);
+  await p.screenshot({ path: join(CAPTURAS_374, `${nombre}.png`) });
+};
+
+test("con el teclado abierto (390×508) el campo, los chips de la clase y «Siguiente» se ven enteros; capturas a 390 y 320", TOPE, async (t) => {
+  for (const [ancho, alto] of [
+    [390, 844],
+    [320, 568],
+  ]) {
+    const p = await pagina(t, { ancho, alto });
+    await boton(p, "No tengo cartel").click();
+    const campo = p.getByLabel("Nombre del evento");
+    await campo.waitFor();
+    await foto374(p, `${ancho}-01-sin-texto`);
+    await campo.fill("Festival de jazz del barrio");
+    assert.deepEqual(await chipsDeClase(p), ["Evento", "Exposición", "Taller", "Festival*"]);
+    await foto374(p, `${ancho}-02-festival-sugerido`);
+    await fila(p).getByRole("button", { name: "Exposición" }).click();
+    await campo.fill("Ecos de papel");
+    assert.deepEqual(await chipsDeClase(p), ["Evento", "Exposición*", "Taller", "Festival"]);
+    await foto374(p, `${ancho}-03-exposicion-elegida`);
+  }
+  // El iPhone con su teclado: lo que queda a la vista mide 390×508. El campo enfocado, la fila de chips y el pie, enteros y sin nada encima.
+  const p = await pagina(t, { ancho: 390, alto: 508 });
+  await boton(p, "No tengo cartel").click();
+  const campo = p.getByLabel("Nombre del evento");
+  await campo.fill("Festival de jazz del barrio");
+  await campo.focus();
+  const vista = await p.evaluate(() => {
+    const caja = (el) => {
+      const r = el.getBoundingClientRect();
+      const encima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { top: r.top, bottom: r.bottom, libre: !!encima && (el === encima || el.contains(encima)) };
+    };
+    const chips = [...document.querySelectorAll('[role="group"][aria-label="Cómo ocurre"] button')];
+    const siguiente = [...document.querySelectorAll("main footer button")].find((b) => b.textContent === "Siguiente");
+    return { alto: innerHeight, foco: document.activeElement?.getAttribute("aria-label"), campo: caja(document.querySelector('input[aria-label="Nombre del evento"]')), chips: chips.map(caja), siguiente: caja(siguiente) };
+  });
+  assert.equal(vista.foco, "Nombre del evento");
+  // Los dos primeros chips siempre a la vista (a 390 caben los cuatro; si no cupieran, la fila se desliza).
+  for (const c of [vista.campo, ...vista.chips.slice(0, 2), vista.siguiente]) {
+    assert.ok(c.top >= 0 && c.bottom <= vista.alto, JSON.stringify(c));
+    assert.ok(c.libre, JSON.stringify(c));
+  }
+  await foto374(p, "390x508-04-teclado");
 });
 
 /** Empieza a las 10:00 p.m. con la hoja de «Otra hora» (no es una hora sugerida) y deja a la vista el grupo «¿Cuánto dura?». */

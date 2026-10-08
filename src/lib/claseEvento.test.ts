@@ -41,6 +41,8 @@ describe("la clase que proponen las palabras del título (doc 55 §2)", () => {
 
   it("las cuatro formas con su nombre y su frase llana, en el orden de la hoja; lo que no se reconoce es un evento", () => {
     expect(CLASES.map((c) => c.nombre)).toEqual(["Evento", "Exposición", "Taller o curso", "Festival"]);
+    // Lo que dicen sus chips en el primer paso (OL-345): una palabra cada uno, en el mismo orden fijo.
+    expect(CLASES.map((c) => c.corto)).toEqual(["Evento", "Exposición", "Taller", "Festival"]);
     expect(CLASES[1].frase).toBe("Se puede visitar varios días, en un horario.");
     expect(nombreDeClase("exposicion")).toBe("Exposición");
     expect(nombreDeClase(undefined)).toBe("Evento");

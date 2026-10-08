@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { localAIso } from "@/lib/fechas";
 import { respuestasAlEditar } from "./alEditar";
 import { respuestasDelCartel, type Leido } from "./cartelPorPasos";
-import { OTRO_VACIO, avance, estadoInicial, faltaParaPublicar, faltan, finDe, flujo, inicioDe, pasoActual, preguntaDe, resumenPrograma, sesionesDe, type Accion, type Acto, type Estado, type Respuestas, type Sitio } from "./pasos";
+import { OTRO_VACIO, avance, claseElegida, clasesALaVista, estadoInicial, faltaParaPublicar, faltan, finDe, flujo, inicioDe, pasoActual, preguntaDe, resumenPrograma, sesionesDe, type Accion, type Acto, type Estado, type Respuestas, type Sitio } from "./pasos";
 
 // OL-321 (bitácora 350; doc 55 §2, prototipo `exposicion-festival-taller.html`): la clase se propone (el título o el cartel), se confirma en
 // «Revisa» y cambia solo el paso del tiempo.
@@ -54,6 +54,79 @@ describe("el título propone la clase y su paso del tiempo", () => {
     expect(pasoActual(conNombre("Concierto de son"))).toBe("dia");
     const e = pasar(estadoInicial(), cambiar({ nombre: "Lectura" }), cambiar({ clase: "exposicion", claseFijada: true }), cambiar({ nombre: "Taller de lectura" }));
     expect(e.r.clase).toBe("exposicion");
+  });
+});
+
+// OL-345 (bitácora 374; founder, 2026-10-08): bajo el nombre, los chips Evento · Exposición · Taller · Festival con la propuesta del título marcada;
+// un toque la fija sin dejar el paso y «Siguiente» lleva al paso del tiempo de esa clase (el mismo camino que «Cambiar» en «Revisa»).
+describe("la clase en el primer paso (chips bajo el nombre)", () => {
+  const enNombre = (nombre = "") => pasar(estadoInicial(), { tipo: "seguir" }, cambiar({ nombre }));
+
+  it("sin nombre no hay chips; en cuanto hay texto salen, con la propuesta del título marcada o «Evento» por omisión", () => {
+    expect(clasesALaVista(enNombre().r)).toBe(false);
+    expect(clasesALaVista(enNombre("   ").r)).toBe(false);
+    expect(clasesALaVista(enNombre("C").r)).toBe(true);
+    expect(enNombre("Concierto de son").r.clase).toBe("puntual");
+    const e = enNombre("Festival de jazz");
+    expect(e.r).toMatchObject({ clase: "festival", claseFijada: false });
+    expect(pasoActual(e)).toBe("nombre");
+  });
+
+  it("mientras nadie elige, la propuesta sigue al nombre al escribir y al borrar", () => {
+    const e = pasar(enNombre("Festival"), cambiar({ nombre: "Fest" }));
+    expect(e.r.clase).toBe("puntual");
+    expect(pasar(e, cambiar({ nombre: "Expo de grabado" })).r.clase).toBe("exposicion");
+  });
+
+  it("un chip fija la clase sin dejar el paso; a partir de ahí el nombre ya no la cambia", () => {
+    let e = flujo(enNombre("Festival de grabado"), cambiar(claseElegida("exposicion")));
+    expect(e.r).toMatchObject({ clase: "exposicion", claseFijada: true });
+    expect(pasoActual(e)).toBe("nombre");
+    e = pasar(e, cambiar({ nombre: "Taller de grabado" }), cambiar({ nombre: "" }));
+    expect(e.r.clase).toBe("exposicion");
+    // Con la clase ya fijada los chips siguen a la vista aunque se borre el nombre: lo elegido no desaparece.
+    expect(clasesALaVista(e.r)).toBe(true);
+    // Elegir «Evento» sobre un título que propone otra cosa también la fija.
+    expect(pasar(enNombre("Taller de son"), cambiar(claseElegida("puntual")), cambiar({ nombre: "Taller de son jarocho" })).r.clase).toBe("puntual");
+  });
+
+  it("la clase del cartel también saca los chips, aunque el cartel no traiga nombre", () => {
+    expect(clasesALaVista({ nombre: "", claseFijada: true })).toBe(true);
+  });
+
+  it("«Siguiente» lleva por los pasos que pide la clase elegida: el orden de cada una", () => {
+    const orden = (clase: Parameters<typeof claseElegida>[0]) => {
+      const e = pasar(enNombre("Lectura en el jardín"), cambiar(claseElegida(clase)), { tipo: "seguir" });
+      return [pasoActual(e), ...faltan(e.r)];
+    };
+    expect(orden("puntual")).toEqual(["dia", "dia", "hora", "donde", "cuanto"]);
+    expect(orden("exposicion")).toEqual(["visita", "visita", "donde", "cuanto"]);
+    expect(orden("taller")).toEqual(["sesiones", "sesiones", "donde", "cuanto"]);
+    // Un festival no pregunta dónde (cada actividad tiene su sede): primero su programa, armado a mano.
+    expect(orden("festival")).toEqual(["programa", "programa", "cuanto"]);
+    const festival = pasar(enNombre("Lectura en el jardín"), cambiar(claseElegida("festival")), { tipo: "seguir" });
+    expect(preguntaDe("programa", festival.r)).toBe("¿Qué actividades tiene?");
+  });
+
+  it("el chip hace lo mismo que «Cambiar» en «Revisa»: la exposición del primer paso pregunta «¿Cuándo se puede visitar?» con la misma barra de avance", () => {
+    const porChip = pasar(enNombre("Ecos de papel"), cambiar(claseElegida("exposicion")), { tipo: "seguir" });
+    expect(pasoActual(porChip)).toBe("visita");
+    expect(preguntaDe("visita", porChip.r)).toBe("¿Cuándo se puede visitar?");
+    expect(avance("visita")).toBe(avance("dia"));
+    const porTitulo = conNombre("Exposición Ecos de papel");
+    expect(faltan(porChip.r)).toEqual(faltan(porTitulo.r));
+  });
+
+  it("vuelto al nombre desde «Revisa», un chip cambia la clase: «Siguiente» pregunta lo que le falte y regresa a «Revisa»", () => {
+    const revisa = pasar(conNombre("Lectura en voz alta"), contestar({ dias: { desde: "2026-10-10", hasta: null } }), cambiar({ hora: "19:00" }), contestar({ fin: "" }), contestar({ sitio: SITIO }), contestar({ costo: "gratis" }));
+    expect(pasoActual(revisa)).toBe("revisa");
+    let e = pasar(revisa, { tipo: "abrir", paso: "nombre" }, cambiar(claseElegida("exposicion")), { tipo: "seguir" });
+    // El día del evento es el primero de visita; falta hasta cuándo.
+    expect(pasoActual(e)).toBe("visita");
+    expect(e.r.visita).toEqual({ desde: "2026-10-10", hasta: null });
+    e = pasar(e, cambiar({ visita: { desde: "2026-10-10", hasta: "2026-10-31" } }), { tipo: "seguir" });
+    expect(pasoActual(e)).toBe("revisa");
+    expect(e.r).toMatchObject({ clase: "exposicion", nombre: "Lectura en voz alta", sitio: SITIO, costo: "gratis" });
   });
 });
 

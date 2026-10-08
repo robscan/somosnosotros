@@ -11,7 +11,7 @@ import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
 import { PasoPrograma, PasoSesiones, PasoVisita } from "./PasosClase";
-import { nombreDelSitio } from "./pasos";
+import { claseElegida, clasesALaVista, nombreDelSitio } from "./pasos";
 import type { usePasosEvento } from "./usePasosEvento";
 import type { useSitioPorPasos } from "./useSitioPorPasos";
 
@@ -27,6 +27,9 @@ type Props = {
   errores: ErroresEvento;
   /** El horario de cada lugar del directorio (OL-321): la casilla «Horario del lugar» de una exposición. */
   horarios?: Record<string, Franja[]>;
+  /** Los chips de la clase bajo el nombre (OL-345): en el alta. Editar no los lleva: entra por «Revisa», donde la clase se cambia con sus reglas
+   *  (un festival con actividades no deja de serlo). */
+  clases?: boolean;
 };
 
 /**
@@ -35,11 +38,11 @@ type Props = {
  * (`EditarEvento`, OL-319): en el alta se recorren; al editar, cada una se abre desde «Revisa» y vuelve a ella. Pinta solo la del paso a la
  * vista; los demás pasos (el cartel, «Revisa», «Publicado») los pinta cada pantalla.
  */
-export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios, ciudadContexto, errores, horarios = {} }: Props) {
+export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios, ciudadContexto, errores, horarios = {}, clases = false }: Props) {
   const { r, candidato, paso, cambiar, contestar, seguir, elegir, confirmar, atras, sedeDeActo } = pasos;
   switch (paso) {
     case "nombre":
-      return <PasoNombre nombre={r.nombre} onCambio={(nombre) => cambiar({ nombre })} onSeguir={seguir} />;
+      return <PasoNombre nombre={r.nombre} clase={clases && clasesALaVista(r) ? r.clase : null} onCambio={(nombre) => cambiar({ nombre })} onClase={(clase) => cambiar(claseElegida(clase))} onSeguir={seguir} />;
     case "dia":
       return <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />;
     case "hora":

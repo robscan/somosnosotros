@@ -53,7 +53,7 @@ export type Respuestas = {
   nombre: string;
   /** Cómo ocurre (OL-321; doc 55 §2): la proponen el cartel o el título y se confirma en «Revisa». Cambiarla cambia solo el paso del tiempo. */
   clase: Clase;
-  /** La eligió la persona (en la hoja «¿Cómo ocurre?») o la dijo el cartel: el título ya no la cambia. */
+  /** La eligió la persona (un chip bajo el nombre, OL-345, o la hoja «¿Cómo ocurre?» de «Revisa») o la dijo el cartel: el título ya no la cambia. */
   claseFijada: boolean;
   /** Exposición: el primer día de visita y el de cierre (inclusivo); `hasta` null mientras se elige. */
   visita: { desde: string; hasta: string | null } | null;
@@ -277,6 +277,18 @@ function con(r: Respuestas, cambios: Partial<Respuestas>): Respuestas {
   if (cambios.nombre !== undefined && cambios.clase === undefined && !nuevo.claseFijada) nuevo.clase = claseSugerida(nuevo.nombre) ?? "puntual";
   return nuevo.clase !== r.clase ? conClase(nuevo, r) : nuevo;
 }
+
+/**
+ * Elegir la clase: lo que mandan el chip bajo el nombre (OL-345) y la hoja «¿Cómo ocurre?» de «Revisa» (OL-321). Queda fijada: el título ya no la
+ * cambia. Lo demás (el paso del tiempo que pide, lo que se conserva) lo hace `con` al recibirla, sea quien sea quien la mande.
+ */
+export const claseElegida = (clase: Clase): Pick<Respuestas, "clase" | "claseFijada"> => ({ clase, claseFijada: true });
+
+/**
+ * ¿Salen los chips de la clase bajo el nombre (OL-345)? En cuanto hay nombre (el título ya propone una) o cuando la clase ya está fijada (la trajo
+ * el cartel o se eligió), aunque el nombre esté vacío. Sin nada escrito no hay qué proponer: el paso queda solo con su campo.
+ */
+export const clasesALaVista = (r: Pick<Respuestas, "nombre" | "claseFijada">): boolean => !!r.nombre.trim() || r.claseFijada;
 
 /**
  * Cambiar la clase cambia solo el paso del tiempo (doc 55 §2): nombre, dónde, quién, precio y cartel se conservan, y lo que ya se dijo del tiempo
