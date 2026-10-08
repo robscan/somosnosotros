@@ -93,8 +93,9 @@ after(async () => {
 
 /**
  * La pantalla con el botón. `hoja`: si el navegador ofrece `navigator.share` con archivos (el iPhone): el botón no debe usarla nunca.
- * `fotos` (la app de iPhone con `FotosPlugin`): 'no' (Safari o Chrome: no hay `window.Capacitor`), 'ok' (guarda), 'permiso' (la persona negó el
- * permiso: rechaza con el código `permiso`), 'cae' (rechaza por otra causa) o 'vieja' (Capacitor sin el plugin: una compilación anterior).
+ * `fotos` (la app de iPhone con `FotosPlugin`): 'no' (Safari o Chrome: no hay `window.Capacitor`), 'ok' (guarda), 'vieja' (Capacitor sin el plugin:
+ * una compilación anterior) o uno de los códigos con que rechaza el plugin (OL-332): 'permiso' (la persona negó el permiso), 'formato' (no es un
+ * JPEG, PNG o WebP legible), 'tamano' (pasa los topes) o 'error' (Fotos falló por otra causa).
  * Lo que recibe el plugin queda en `window.guardadasEnFotos`. `ruta` es lo que contesta `/api/cartel/lectura-ab12`: 'ok', 'cae' (502) o
  * 'lenta' (tarda hasta que la prueba la libera).
  */
@@ -132,8 +133,7 @@ async function pagina(t, { hoja = true, ruta = "ok", fotos = "no", query = "" } 
         Fotos: {
           guardarFoto: async (d) => {
             window.guardadasEnFotos.push({ tipo: d.tipo, base64: d.datos });
-            if (modoFotos === "permiso") throw Object.assign(new Error("Sin permiso para guardar en Fotos"), { code: "permiso" });
-            if (modoFotos === "cae") throw Object.assign(new Error("No se pudo guardar"), { code: "guardar" });
+            if (modoFotos !== "ok") throw Object.assign(new Error("No se pudo guardar"), { code: modoFotos });
             return { guardado: true };
           },
         },
@@ -249,8 +249,8 @@ test("en la app de iPhone con el plugin de Fotos: «Guardar en Fotos», un toque
   assert.equal(await texto(p), "Guardar en Fotos");
 });
 
-test("en la app, si Fotos falla (permiso negado u otra causa): dice «No se pudo guardar»; no abre la hoja, no descarga nada ni sale de la pantalla, y el siguiente toque lo intenta otra vez", TOPE, async (t) => {
-  for (const fotos of ["permiso", "cae"]) {
+test("en la app, si Fotos falla (permiso negado, formato o tamaño que el plugin rechaza, u otra causa): dice «No se pudo guardar»; no abre la hoja, no descarga nada ni sale de la pantalla, y el siguiente toque lo intenta otra vez", TOPE, async (t) => {
+  for (const fotos of ["permiso", "formato", "tamano", "error"]) {
     const p = await pagina(t, { fotos });
     await enlace(p).click();
     await p.locator("a", { hasText: "No se pudo guardar" }).waitFor();

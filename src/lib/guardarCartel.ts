@@ -7,7 +7,12 @@
  * forma parte de este botón: para eso está «Compartir». Este módulo solo decide; el botón (`BotonDescargarCartel`) hace el trabajo.
  */
 
-/** El plugin nativo que la app de iPhone pone en `window.Capacitor.Plugins.Fotos`; en Safari o Chrome no existe. */
+/**
+ * El plugin nativo que la app de iPhone pone en `window.Capacitor.Plugins.Fotos`; en Safari o Chrome no existe. Si no puede guardar, rechaza
+ * con un `code` corto y estable (OL-332, F08): `permiso` (la persona no dio permiso), `formato` (no es un JPEG, PNG o WebP legible: el
+ * plugin mira los bytes, no `tipo`), `tamano` (más de 8 MiB, de 8000 px por lado o de 12 Mpx) o `error` (Fotos falló por otra causa). Hoy el
+ * botón los trata igual: «No se pudo guardar».
+ */
 type PuenteFotos = { guardarFoto: (datos: { datos: string; tipo: string }) => Promise<{ guardado: boolean }> };
 
 /** La forma de `window` que le hace falta a `fotosDelSistema` (para pasar el `window` real, o uno de prueba). */
