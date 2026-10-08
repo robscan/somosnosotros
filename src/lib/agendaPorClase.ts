@@ -14,8 +14,9 @@ import { compararNombres } from "./lugares";
  *   «Festivales y exposiciones» (OL-342; antes «Para visitar», solo con ellas) con las vigentes; en la agenda del día, «Para visitar hoy» con
  *   las que abren ese día **según su horario**. Sin horario no se promete «visitable hoy»: no entra ahí (sí en «Para visitar», con «Horario por
  *   confirmar»).
- * - **Festival:** el marco sale una vez en los carriles (en Inicio, en «Esta semana» si tiene actos esa semana, y si no en «Festivales y
- *   exposiciones»); en la agenda del día es un bloque con sus actos de ese día (`componerDia`). Un marco sin actos no sale (no promete nada).
+ * - **Festival:** en Inicio sale en «Esta semana» como su marco si tiene actos esa semana, y siempre en «Festivales y exposiciones», su sitio (OL-346:
+ *   todos, también los que no tienen actos todavía, con «Programa por confirmar»); en la agenda del día es un bloque con sus actos de ese día
+ *   (`componerDia`).
  * - **Taller:** cada sesión es un renglón, con «Sesión 2 de 4» (`textoParte`).
  */
 
@@ -139,12 +140,13 @@ export function exposicionesVigentes<T extends Exposicion>(eventos: readonly T[]
 type Vigente = ConClase & { id: string; titulo: string; inicio: string; fin: string | null; zona: string; programa?: { registrados: number } };
 
 /**
- * Los festivales del carril «Festivales y exposiciones» de Inicio: los marcos en curso o por venir, sin ventana de días (a diferencia de las
- * exposiciones: un festival se anuncia con semanas y hay pocos). Uno que ya pasó no está (la agenda ya no lo trae; aquí también se comprueba, con la regla de todas las clases: `yaPasoSegunClase`), ni
- * uno que se sabe sin actos publicados (no promete nada, doc 55 §3); si no se pudo contar su programa, sí.
+ * Los festivales del carril «Festivales y exposiciones» de Inicio: TODOS los marcos en curso o por venir, sin ventana de días (a diferencia de las
+ * exposiciones: un festival se anuncia con semanas y hay pocos). Uno que ya pasó no está (la agenda ya no lo trae; aquí también se comprueba, con la
+ * regla de todas las clases: `eventoPaso`). Uno sin actos publicados también entra (OL-346, founder 2026-10-08: «La línea de festivales no los tiene
+ * todos»; antes quedaba fuera, doc 55 §3): su tarjeta dice «Programa por confirmar» (`notaDeClase`).
  */
 export const festivalesVigentes = <T extends Vigente>(eventos: readonly T[], ahora: Date = new Date()): T[] =>
-  eventos.filter((e) => esMarco(e) && e.programa?.registrados !== 0 && !eventoPaso(e.inicio, e.fin, ahora, e.zona));
+  eventos.filter((e) => esMarco(e) && !eventoPaso(e.inicio, e.fin, ahora, e.zona));
 
 /** Ya empezó: la exposición abrió (su `inicio` es el primer minuto de su primer día) o el festival tuvo su primer acto. */
 const enCurso = (e: Vigente, ahora: Date): boolean => Date.parse(e.inicio) <= ahora.getTime();

@@ -3,7 +3,7 @@
 import { buscarEventos, type EventoAgenda, type EventoBuscable } from "@/lib/agenda";
 import type { ArtistaLista } from "@/lib/artistas";
 import { CLASES_NOMBRADAS, LIMITE_BUSQUEDA_UNIFICADA, ordenarPorCiudad, SIN_RESULTADOS_BUSQUEDA, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
-import { conSedes } from "@/lib/cargarSedes";
+import { conLoDeSusActos } from "@/lib/cargarSedes";
 import { tarjetaArtista, tarjetaConClase, tarjetaEvento, tarjetaLugar } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
@@ -95,8 +95,9 @@ export async function buscarUnificado(q: string, ciudades: string[]): Promise<Re
     artistas.order("nombre_orden").limit(CANDIDATOS),
   ]);
   const proximos = ((e.data ?? []) as unknown as FilaEvento[]).map(buscable);
-  // Un festival dice sus sedes, derivadas de sus actos (OL-339), y se halla por cualquiera de ellas; su programa (OL-338) se cuenta después.
-  const conSusSedes = await conSedes(supabase, proximos);
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339), y se halla por cualquiera de ellas; sin imagen propia lleva el cartel de su
+  // próximo acto (OL-346); su programa (OL-338) se cuenta después.
+  const conSusSedes = await conLoDeSusActos(supabase, proximos, ahora);
   const eventos = (await conPrograma(supabase, buscarEventos(conSusSedes, texto))).map((p) => encontradoDeEvento(p, ahora));
   const lugaresHallados = ((l.data ?? []) as unknown as FilaLugar[]).map((fila) => encontradoDeLugar(fila, ahora));
   const artistasHallados = ((a.data ?? []) as unknown as FilaArtista[]).map((fila) => encontradoDeArtista(fila, ahora));
@@ -127,7 +128,9 @@ export async function vigentesDeRecientes(pedidos: { grupo: GrupoBuscador; id: s
   if (e?.error || l?.error || a?.error) return null;
   const ahora = new Date();
   const hallados = new Map<LlaveReciente, Encontrado>();
-  for (const p of await conPrograma(supabase, ((e?.data ?? []) as unknown as FilaEvento[]).map(buscable))) hallados.set(`eventos:${p.id}`, encontradoDeEvento(p, ahora));
+  // Un festival reciente, como en la búsqueda: sus sedes y, sin imagen propia, el cartel de su próximo acto (OL-346).
+  const eventos = await conLoDeSusActos(supabase, ((e?.data ?? []) as unknown as FilaEvento[]).map(buscable), ahora);
+  for (const p of await conPrograma(supabase, eventos)) hallados.set(`eventos:${p.id}`, encontradoDeEvento(p, ahora));
   for (const fila of (l?.data ?? []) as unknown as FilaLugar[]) hallados.set(`lugares:${fila.id}`, encontradoDeLugar(fila, ahora));
   for (const fila of (a?.data ?? []) as unknown as FilaArtista[]) hallados.set(`artistas:${fila.id}`, encontradoDeArtista(fila, ahora));
   return Object.fromEntries(validos.map((p) => [`${p.grupo}:${p.id}`, hallados.get(`${p.grupo}:${p.id}`) ?? null]));

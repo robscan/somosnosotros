@@ -37,11 +37,11 @@ import { enlaceAltaEvento } from "@/lib/armazon";
 import { cartelDescargable } from "@/lib/cartelDescarga";
 import { configPublica } from "@/lib/config";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
-import { puedeDestacarse } from "@/lib/destacados";
+import { PROGRAMA_POR_CONFIRMAR, puedeDestacarse } from "@/lib/destacados";
 import { jsonLdMigajas } from "@/lib/estructurados";
 import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { compartirEvento, direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar } from "@/lib/eventos";
+import { compartirEvento, direccionPublicaSitio, enlaceComoLlegar, fotoDeEvento, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar } from "@/lib/eventos";
 import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
@@ -49,8 +49,8 @@ import { SIN_FOTO } from "@/lib/imagen";
 import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { hrefCreador } from "@/lib/carteles/origen";
-import { cargarSedes } from "@/lib/cargarSedes";
-import { sedesDeFestival, textoActosEnSede, VARIAS_SEDES, type Sede } from "@/lib/sedesFestival";
+import { cargarActosDeMarcos } from "@/lib/cargarSedes";
+import { portadaDeFestival, sedesDeFestival, textoActosEnSede, VARIAS_SEDES, type Sede } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -259,11 +259,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14).
   if (!e || eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { title: "Evento · Somos Nosotros" };
   const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);
-  // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única.
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única; sin imagen propia, se comparte con el cartel de su
+  // próximo acto (OL-346). Las dos, de una lectura.
   const supabase = e.clase === "festival" ? await clienteServidor() : null;
-  const sedes = supabase ? (await cargarSedes(supabase, [e.id]))?.get(e.id) : undefined;
+  const actos = supabase ? (await cargarActosDeMarcos(supabase, [e.id]))?.get(e.id) : undefined;
+  const sedes = actos ? sedesDeFestival(actos) : undefined;
   const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
-  const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
+  const imagen = fotoDeEvento({ imagen: e.imagen, portadaActo: actos ? (portadaDeFestival(actos) ?? undefined) : undefined, lugar: e.lugar }) ?? undefined;
   return {
     title: `${e.titulo} · Somos Nosotros`,
     description: descripcion,
@@ -320,13 +322,16 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
   // Las sedes de un festival (OL-339): las de sus actos publicados (lo que ve cualquiera), sin repetir y en el orden de su primer acto; sin actos que
   // digan dónde, lo capturado en el festival (`sedesDeFestival`). Se calculan al leer: cambian en cuanto un acto cambia de lugar.
-  const sedesFestival = clase === "festival" ? sedesDeFestival(actosVisibles.filter((a) => a.visible !== false && !a.retirado_por_admin), e) : [];
+  const actosPublicados = actosVisibles.filter((a) => a.visible !== false && !a.retirado_por_admin);
+  const sedesFestival = clase === "festival" ? sedesDeFestival(actosPublicados, e) : [];
   // Las que salen de sus actos (la de respaldo se pinta como la de cualquier evento): con varias, mapa con todos los pines y su lista; con una, esa.
   const sedes = sedesFestival.some((s) => s.actos > 0) ? sedesFestival : [];
   const sedeUnica = sedes.length === 1 ? sedes[0] : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes });
   const rangoFestival = clase === "festival" ? rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora) : null;
-  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, textoProgramaRegistrado(actosVisibles.length)].filter(Boolean).join(" · ") : null;
+  // Sin actos publicados todavía, «Programa por confirmar», como su tarjeta en Inicio (OL-346).
+  const programaFestival = actosVisibles.length ? textoProgramaRegistrado(actosVisibles.length) : PROGRAMA_POR_CONFIRMAR;
+  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, programaFestival].filter(Boolean).join(" · ") : null;
   const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0, cuandoClase);
   const decididasActos = clase === "festival" ? await decididasDe(actual?.perfil.id ?? null, actosVisibles.map((a) => a.id)) : null;
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
@@ -384,7 +389,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // BreadcrumbList (OL-143, doc 36): misma condición que el JSON-LD del evento — lo que también vería un visitante sin sesión.
   const migajas = e.visible && !paso ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Agenda", url: "/" }, { nombre: e.titulo, url: hrefEvento(e) }]) : null;
 
-  const portada = e.imagen ?? e.lugar?.portada ?? null;
+  // Sin imagen propia, un festival lleva el cartel de su próximo acto publicado (OL-346), de los actos ya cargados; si no, la portada de su lugar.
+  const portadaActo = clase === "festival" && !e.imagen ? (portadaDeFestival(actosPublicados, ahora) ?? undefined) : undefined;
+  const portada = fotoDeEvento({ imagen: e.imagen, portadaActo, lugar: e.lugar });
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
   const kpiExpo = clase === "exposicion" ? kpisDeExposicion(e, horario.franjas, ahora) : null;
   const hayAvisos = error === "borrar" || error === "publicar" || error === "no_publicable" || !e.visible || paso;
@@ -456,7 +463,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </li>
         )}
       </BarraFicha>
-      <Heroe portada={portada} alt={e.imagen ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`} titulo={e.titulo} />
+      <Heroe portada={portada} alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`} titulo={e.titulo} />
 
       {hayAvisos && (
         <div className={ficha.avisos}>
