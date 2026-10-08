@@ -1,7 +1,7 @@
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { cuandoDeTarjeta, notaDeClase } from "@/lib/destacados";
-import { hrefEvento, sitioEnLista } from "@/lib/eventos";
+import { fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { cuandoPorDia, cuandoVariosDias, diaCorto, horaCorta } from "@/lib/fechas";
 import { textoParte } from "@/lib/ocurrencias";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -45,8 +45,8 @@ function cuandoDeVarios(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "sesio
 }
 
 /**
- * Renglón de evento: foto a la izquierda (la del evento o la del lugar), el título y dos líneas de datos, cada una cortada
- * con puntos suspensivos (H-09, doc 50: antes crecía hasta 190 px con la dirección postal y cada dato en su renglón). La
+ * Renglón de evento: foto a la izquierda (la del evento, la del próximo acto de un festival sin imagen o la del lugar: `fotoDeEvento`), el
+ * título y dos líneas de datos, cada una cortada con puntos suspensivos (H-09, doc 50: antes crecía hasta 190 px con la dirección postal y cada dato en su renglón). La
  * primera es cuándo —«19:00», con el día si hace falta; en un evento de varios días, «Del 10 al 12 de oct · 8:00–9:00 p.m.»— y, tras un punto, lo que no es gratis y cuántos van (sin «Gratis» en
  * todos); la segunda, el nombre del sitio, sin su dirección postal (esa vive en la ficha).
  *
@@ -60,7 +60,7 @@ export default function RenglonEvento({ evento: e, sinSitio = false, estado = nu
   const varios = cuandoDeVarios(e);
   const ademas = [nota ?? notaDeClase(e), textoParte(e), e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
-    <Renglon href={hrefEvento(e)} foto={e.imagen ?? e.lugar?.portada ?? null} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
+    <Renglon href={hrefEvento(e)} foto={fotoDeEvento(e)} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>
         {estado === "me_interesa" && <Chip variante="estado">Te interesa</Chip>}
         {!horas && (conDia || varios || cuando) ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}

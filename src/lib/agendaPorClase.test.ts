@@ -193,13 +193,22 @@ describe("Inicio por clase", () => {
     expect(ids(carrilFestivales(TODOS, new Set(["grabado"]), ahora))).toEqual(["sin-leer", "ecos", "cine", "futura"]);
     expect(carrilFestivales([concierto], new Set(), ahora)).toEqual([]);
   });
-  it("los carriles juntos: «Festivales y exposiciones» entre «Esta semana» y «Nuevos eventos», sin repetir (el marco con actos en la semana ya salió)", () => {
+  it("los carriles juntos: «Festivales y exposiciones» entre «Esta semana» y «Nuevos eventos»; el festival con actos en la semana sale en los dos (OL-346)", () => {
     const carriles = calcularCarrilesAgenda(agenda(), ahora);
-    expect(ids(carriles.festivales)).toEqual(["sin-leer", "grabado", "ecos", "futura"]);
+    // Su marco salió en «Esta semana» («3 actividades esta semana») y aquí sale igual, en su lugar por cercanía: este carril es su sitio.
     expect(ids(carriles.estaSemana)).toContain("cine");
+    expect(ids(carriles.festivales)).toEqual(["sin-leer", "grabado", "ecos", "cine", "futura"]);
+    expect(carriles.festivales.find((e) => e.id === "cine")?.programa).toEqual({ registrados: 4 }); // aquí, su programa entero
     expect(carriles.estaSemana.some((e) => e.clase === "exposicion")).toBe(false);
     // Un festival sin actos en la semana no está en «Esta semana»: sale aquí, en su lugar por cercanía.
-    expect(ids(calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric] }), ahora).festivales)).toEqual(["sin-leer", "grabado", "ecos", "futura", "electric"]);
+    expect(ids(calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric] }), ahora).festivales)).toEqual(["sin-leer", "grabado", "ecos", "cine", "futura", "electric"]);
+  });
+  it("un festival destacado o en «Tus planes» también sale en «Festivales y exposiciones»; una exposición ya vista, no (OL-346)", () => {
+    const carriles = calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric], destacados: [{ id: "electric", motivo: "elegido", hasta: null, van: 0 }, { id: "ecos", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
+    expect(ids(carriles.estelar)).toEqual(["electric", "ecos"]);
+    expect(ids(carriles.festivales)).toEqual(["sin-leer", "grabado", "cine", "futura", "electric"]);
+    const conPlanes = calcularCarrilesAgenda(agenda({ eventos: [...TODOS, electric], asistencias: { electric: "me_interesa" } }), ahora);
+    expect(ids(conPlanes.festivales)).toContain("electric");
   });
   it("«Nuevos eventos» y «Más adelante»: un festival nuevo como su marco", () => {
     const tarde = (e: EventoAgenda, dias: number) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + dias * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
@@ -236,7 +245,7 @@ describe("«Festivales y exposiciones» (OL-342)", () => {
   const LISTA = [ecos, grabado, futura, lejana, sinLeer, fiesta, electric, vacio, pasado, expoDelFestival, concierto, cine1];
 
   it("lo que está en curso primero, lo que termina antes; luego lo que viene, por su inicio; festivales y exposiciones mezclados", () => {
-    expect(ids(carrilFestivales(LISTA, new Set(), ahora))).toEqual(["fiesta", "sin-leer", "grabado", "ecos", "futura", "electric"]);
+    expect(ids(carrilFestivales(LISTA, new Set(), ahora))).toEqual(["fiesta", "sin-leer", "grabado", "ecos", "futura", "vacio", "electric"]);
   });
   it("un festival en curso va antes que una exposición que abre después", () => {
     expect(ids(carrilFestivales([futura, fiesta], new Set(), ahora))).toEqual(["fiesta", "futura"]);
@@ -245,14 +254,21 @@ describe("«Festivales y exposiciones» (OL-342)", () => {
     expect(ids(carrilFestivales(LISTA, new Set(), ahora))).not.toContain("expo-electric");
     expect(ids(carrilFestivales([expoDelFestival], new Set(), ahora))).toEqual(["expo-electric"]);
   });
-  it("ni un festival que ya pasó ni uno que se sabe sin actos; uno cuyo programa no se pudo contar, sí", () => {
-    expect(ids(festivalesVigentes([fiesta, electric, vacio, pasado], ahora))).toEqual(["fiesta", "electric"]);
+  it("todos los festivales que no han pasado: también el que aún no tiene actos (OL-346) y el que no se pudo contar; el que ya pasó, no", () => {
+    expect(ids(festivalesVigentes([fiesta, electric, vacio, pasado], ahora))).toEqual(["fiesta", "electric", "vacio"]);
     expect(ids(festivalesVigentes([{ ...vacio, programa: undefined }], ahora))).toEqual(["vacio"]);
   });
-  it("lo que sale queda visto para el carril que sigue; lo ya visto no sale", () => {
-    const vistos = new Set(["fiesta"]);
-    expect(ids(carrilFestivales(LISTA, vistos, ahora))[0]).toBe("sin-leer");
+  it("un festival sin actos dice «Programa por confirmar» junto a lo capturado; sin poder contarlo, nada (OL-346)", () => {
+    expect(notaDeClase(vacio)).toBe("Programa por confirmar");
+    expect(tarjetaConClase(vacio, ahora)).toMatchObject({ clase: "Festival", sitio: "Foro · Programa por confirmar" });
+    expect(tarjetaConClase({ ...vacio, sitio_texto: null }, ahora).sitio).toBe("Programa por confirmar"); // sin decir dos veces «por confirmar»
+    expect(notaDeClase({ ...vacio, programa: undefined })).toBeNull();
+  });
+  it("un festival ya visto en un carril anterior sale igual; una exposición ya vista, no; lo que sale queda visto para el que sigue", () => {
+    const vistos = new Set(["fiesta", "sin-leer"]);
+    expect(ids(carrilFestivales(LISTA, vistos, ahora)).slice(0, 2)).toEqual(["fiesta", "grabado"]);
     expect(vistos.has("electric")).toBe(true);
+    expect(vistos.has("vacio")).toBe(true);
     expect(vistos.has("lejana")).toBe(false);
   });
   it("los actos de un festival que salió aquí quedan vistos: no salen sueltos después en «Nuevos eventos»", () => {

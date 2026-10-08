@@ -1,6 +1,6 @@
 import "server-only";
 import type { EventoAgenda } from "@/lib/agenda";
-import { conSedes } from "@/lib/cargarSedes";
+import { conLoDeSusActos } from "@/lib/cargarSedes";
 import { conProximaFecha, type Disciplina, type FechaDeArtista, type ProximaFecha, type TipoArtista } from "@/lib/artistas";
 import { sitioEnLista } from "@/lib/eventos";
 import { eventoPaso, filtroSinPasar } from "@/lib/fechas";
@@ -91,8 +91,8 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   const { data: conteo } = ids.length ? await supabase.rpc("van_por_evento", { ids }) : { data: [] as { evento_id: string; n: number }[] };
   const van = new Map<string, number>();
   for (const c of (conteo ?? []) as { evento_id: string; n: number }[]) van.set(c.evento_id, Number(c.n));
-  // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única.
-  const conSusSedes = await conSedes(supabase, filas.map((x) => x.e));
+  // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única; sin imagen propia, el cartel de su próximo acto (OL-346).
+  const conSusSedes = await conLoDeSusActos(supabase, filas.map((x) => x.e));
   const aAgenda = (e: FilaEvento): EventoAgenda => ({ ...e, lugar: uno(e.lugar), van: van.get(e.id) ?? 0 });
   const porEstado = (estado: string) => filas.flatMap((x, i) => (x.estado === estado ? [aAgenda(conSusSedes[i])] : [])).sort((a, b) => a.inicio.localeCompare(b.inicio));
   return { perfil: perfil as PerfilPublico, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };

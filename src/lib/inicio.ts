@@ -131,14 +131,18 @@ export const TOPE_FESTIVALES = TOPE_ESTA_SEMANA;
  * «Festivales y exposiciones» (OL-342, founder 2026-10-07: «Necesitamos un slider para festivales y galerías»; antes «Para visitar», OL-322, solo con
  * las exposiciones): lo que no es algo que pase un día a una hora. Los festivales en curso o por venir (`festivalesVigentes`) y las exposiciones
  * vigentes (`exposicionesVigentes`: abiertas o que abren en los próximos 7 días), juntos y ordenados por cercanía, no por tipo (`porCercania`: lo
- * que está en curso primero, lo que termina antes; luego lo que viene, por su inicio). Va después de «Esta semana»: un festival con actos esa
- * semana ya salió ahí como su marco (`vistos`) y no se repite. El acto de un festival cargado no sale suelto (lo dice su marco, como en «Esta
- * semana»), ni después en otro carril. Sin nada, el carril no se pinta.
+ * que está en curso primero, lo que termina antes; luego lo que viene, por su inicio). Va después de «Esta semana».
+ *
+ * Este carril es el sitio de los festivales (OL-346, founder 2026-10-08: «La línea de festivales no los tiene todos»): salen TODOS, también el que
+ * ya salió en un carril anterior (en «Esta semana» como su marco, en «Destacados», en «Tus planes») y el que aún no tiene actos. Por eso a ellos no
+ * se les descuenta `vistos`; a las exposiciones sí, como antes. Lo que sale aquí queda visto para los carriles que siguen (Nuevos). El acto de un
+ * festival cargado no sale suelto (lo dice su marco, como en «Esta semana»), ni después en otro carril. Sin nada, el carril no se pinta.
  */
 export function carrilFestivales<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona" | "clase" | "evento_padre_id" | "programa">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
   const marcos = marcosDe(eventos);
-  const libres = eventos.filter((e) => !vistos.has(e.id) && !(e.evento_padre_id && marcos.has(e.evento_padre_id)));
-  const propios = [...festivalesVigentes(libres, ahora), ...exposicionesVigentes(libres, ahora)].toSorted((a, b) => porCercania(a, b, ahora)).slice(0, TOPE_FESTIVALES);
+  const candidatos = eventos.filter((e) => !(e.evento_padre_id && marcos.has(e.evento_padre_id)));
+  const exposiciones = exposicionesVigentes(candidatos.filter((e) => !vistos.has(e.id)), ahora);
+  const propios = [...festivalesVigentes(candidatos, ahora), ...exposiciones].toSorted((a, b) => porCercania(a, b, ahora)).slice(0, TOPE_FESTIVALES);
   for (const e of propios) vistos.add(e.id);
   // Los actos de un festival que salió aquí tampoco salen después sueltos (en Nuevos): los dice su marco, como en «Esta semana».
   const marcosPropios = new Set(propios.filter(esMarco).map((e) => e.id));

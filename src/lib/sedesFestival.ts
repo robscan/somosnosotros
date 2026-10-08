@@ -25,6 +25,8 @@ export type ActoConSitio = {
   sitio_lat?: number | null;
   sitio_lng?: number | null;
   sitio_reservado?: boolean;
+  /** Su cartel, si lo tiene (OL-346): el del próximo acto es la portada de un festival sin imagen propia (`portadaDeFestival`). */
+  imagen?: string | null;
 };
 
 /** Una sede: su nombre, el lugar del directorio si lo es (para enlazar su ficha), su dirección, su punto en el mapa y cuántos actos tiene ahí. */
@@ -106,3 +108,16 @@ export const sedesParaLista = (sedes: readonly Sede[]): { nombre: string }[] => 
 
 /** «3 actividades» junto al nombre de una sede en la ficha del festival. */
 export const textoActosEnSede = (n: number): string => `${n} ${n === 1 ? "actividad" : "actividades"}`;
+
+/**
+ * La portada de un festival sin imagen propia (OL-346, founder 2026-10-08: «En CINEMA no tiene cartel […]; deberíamos usar un cartel del próximo
+ * evento»): el cartel de su próximo acto que tenga uno (el primero que todavía no empieza, por fecha); si todos empezaron ya, el del último. Null si
+ * ningún acto tiene cartel (quien pinta sigue con lo de siempre: la portada de su lugar o el símbolo SN). Como las sedes, se deriva al leer de los
+ * actos publicados y nunca se guarda: cambia sola cuando un acto pasa, cambia de cartel o se oculta. Quien llama la usa solo si el festival no
+ * tiene `imagen` propia.
+ */
+export function portadaDeFestival(actos: readonly Pick<ActoConSitio, "inicio" | "imagen">[], ahora: Date = new Date()): string | null {
+  const conCartel = actos.filter((a) => a.imagen).toSorted((x, y) => Date.parse(x.inicio) - Date.parse(y.inicio));
+  const proximo = conCartel.find((a) => Date.parse(a.inicio) >= ahora.getTime()) ?? conCartel.at(-1);
+  return proximo?.imagen ?? null;
+}

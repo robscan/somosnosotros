@@ -1,15 +1,16 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sedesDeFestival, sedesParaLista, type ActoConSitio, type Sede } from "./sedesFestival";
+import { portadaDeFestival, sedesDeFestival, sedesParaLista, type ActoConSitio, type Sede } from "./sedesFestival";
 
 /**
- * Los actos publicados de unos festivales con lo que dice dónde es cada uno (OL-339), en una sola consulta, para derivar sus sedes al leer
- * (`sedesDeFestival`). La usan la agenda (que de paso cuenta el programa), Buscar, «Tus planes», el .ics, el cartel y la vista previa al compartir.
- * Opcional como todo lo de clase: si falla, null, y cada pantalla dice lo capturado en el marco, como antes.
+ * Los actos publicados de unos festivales con lo que dice dónde es cada uno (OL-339) y su cartel (OL-346), en una sola consulta, para derivar al
+ * leer sus sedes (`sedesDeFestival`) y la portada de un festival sin imagen propia (`portadaDeFestival`). La usan la agenda (que de paso cuenta el
+ * programa), Buscar, «Tus planes», el .ics, el cartel y la vista previa al compartir. Opcional como todo lo de clase: si falla, null, y cada
+ * pantalla dice lo capturado en el marco, como antes.
  */
 
-/** Lo que se pide de cada acto: su festival, cuándo empieza (el orden) y su sitio, con el lugar del directorio anidado. */
-const COLUMNAS = "evento_padre_id, inicio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, lugar:lugares(id, slug, nombre, direccion, lat, lng)";
+/** Lo que se pide de cada acto: su festival, cuándo empieza (el orden), su sitio, con el lugar del directorio anidado, y su cartel. */
+const COLUMNAS = "evento_padre_id, inicio, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, lugar:lugares(id, slug, nombre, direccion, lat, lng)";
 
 type Fila = ActoConSitio & { evento_padre_id: string; lugar: ActoConSitio["lugar"] | NonNullable<ActoConSitio["lugar"]>[] };
 
@@ -38,17 +39,20 @@ export async function cargarSedes(supabase: SupabaseClient, marcos: readonly str
 }
 
 /**
- * Las sedes de los festivales de una lista, puestas en cada marco (`sedes`, lo que lee `nombreSitio`), en una consulta; lo demás, tal cual y en
- * el mismo orden. Para las listas que no cargan la agenda (Buscar, «Tus planes»). Un evento sin la clase (una consulta que no la pide) se pregunta
- * igual: solo un festival tiene actos.
+ * Lo que un festival de una lista toma de sus actos, en una consulta: sus sedes (`sedes`, lo que lee `nombreSitio`) y, sin imagen propia, el cartel
+ * de su próximo acto (`portadaActo`, lo que lee `fotoDeEvento`, OL-346); lo demás, tal cual y en el mismo orden. Para las listas que no cargan la
+ * agenda (Buscar, sus recientes, «Tus planes»). Un evento sin la clase (una consulta que no la pide) se pregunta igual: solo un festival tiene actos.
  */
-export async function conSedes<T extends { id: string; clase?: string | null }>(supabase: SupabaseClient, eventos: T[]): Promise<(T & { sedes?: { nombre: string }[] })[]> {
+export async function conLoDeSusActos<T extends { id: string; clase?: string | null; imagen?: string | null }>(supabase: SupabaseClient, eventos: T[], ahora: Date = new Date()): Promise<(T & { sedes?: { nombre: string }[]; portadaActo?: string })[]> {
   const marcos = eventos.filter((e) => e.clase === "festival" || e.clase === undefined).map((e) => e.id);
   if (!marcos.length) return eventos;
-  const sedes = await cargarSedes(supabase, marcos);
-  if (!sedes) return eventos;
+  const actos = await cargarActosDeMarcos(supabase, marcos);
+  if (!actos) return eventos;
   return eventos.map((e) => {
-    const suyas = sedes.get(e.id);
-    return suyas?.length ? { ...e, sedes: sedesParaLista(suyas) } : e;
+    const suyos = actos.get(e.id);
+    if (!suyos?.length) return e;
+    const sedes = sedesDeFestival(suyos);
+    const portada = e.imagen ? null : portadaDeFestival(suyos, ahora);
+    return { ...e, ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...(portada ? { portadaActo: portada } : {}) };
   });
 }

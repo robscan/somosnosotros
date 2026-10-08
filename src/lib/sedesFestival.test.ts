@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buscarEventos, type EventoAgenda } from "./agenda";
 import { tarjetaEvento } from "./destacados";
-import { nombreSitio, sitioEnLista } from "./eventos";
-import { nombreDeSedes, sedesDeFestival, sedesParaLista, textoActosEnSede, VARIAS_SEDES, type ActoConSitio } from "./sedesFestival";
+import { fotoDeEvento, nombreSitio, sitioEnLista } from "./eventos";
+import { nombreDeSedes, portadaDeFestival, sedesDeFestival, sedesParaLista, textoActosEnSede, VARIAS_SEDES, type ActoConSitio } from "./sedesFestival";
 
 /** Las sedes de un festival (OL-339): derivadas de sus actos al leer, sin repetir, en el orden de su primer acto; lo del marco solo sin actos. */
 
@@ -108,3 +108,29 @@ describe("«Varias sedes»: el lugar de un festival en una línea, resuelto una 
     expect(buscarEventos([e], "varias sedes")).toHaveLength(0);
   });
 });
+
+describe("portadaDeFestival (OL-346): sin imagen propia, el cartel de su próximo acto", () => {
+  const ahora = new Date("2026-10-08T18:00:00Z");
+  const acto = (inicio: string, imagen: string | null) => ({ inicio, imagen });
+
+  it("el próximo acto que tiene cartel, por fecha, aunque lleguen desordenados; uno sin cartel no cuenta", () => {
+    const actos = [acto("2026-10-25T02:00:00Z", "clausura.jpg"), acto("2026-10-15T02:00:00Z", null), acto("2026-10-01T02:00:00Z", "pasado.jpg"), acto("2026-10-17T02:00:00Z", "musica.jpg")];
+    expect(portadaDeFestival(actos, ahora)).toBe("musica.jpg");
+  });
+  it("si todos los actos con cartel ya empezaron, el del último", () => {
+    expect(portadaDeFestival([acto("2026-09-30T02:00:00Z", "uno.jpg"), acto("2026-10-03T02:00:00Z", "dos.jpg"), acto("2026-10-20T02:00:00Z", null)], ahora)).toBe("dos.jpg");
+  });
+  it("ningún acto con cartel, o sin actos: null (sigue la portada de su lugar o el símbolo SN)", () => {
+    expect(portadaDeFestival([acto("2026-10-23T23:00:00Z", null), acto("2026-10-24T01:30:00Z", null)], ahora)).toBeNull();
+    expect(portadaDeFestival([], ahora)).toBeNull();
+  });
+  it("la foto de una lista: la imagen propia, luego el cartel del acto, luego la portada del lugar", () => {
+    const lugar = { nombre: "Cineteca", portada: "cineteca.jpg" };
+    expect(fotoDeEvento({ imagen: "propia.jpg", portadaActo: "acto.jpg", lugar })).toBe("propia.jpg");
+    expect(fotoDeEvento({ imagen: null, portadaActo: "acto.jpg", lugar })).toBe("acto.jpg");
+    expect(fotoDeEvento({ imagen: null, lugar })).toBe("cineteca.jpg");
+    expect(fotoDeEvento({ imagen: null, lugar: null })).toBeNull();
+    expect(tarjetaEvento({ id: "cine", titulo: "CINEMA", inicio: "2026-09-30T00:00:00Z", fin: "2026-10-25T06:00:00Z", zona: "America/Mexico_City", imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, lugar: null, creado_en: "2026-09-01T00:00:00Z", van: null, clase: "festival", portadaActo: "acto.jpg" }, ahora).foto).toBe("acto.jpg");
+  });
+});
+

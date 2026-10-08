@@ -135,6 +135,22 @@ describe("por clase (OL-322): la clase, el horario de cada exposición y el prog
     expect(r.eventos.find((e) => e.id === "marco")).toMatchObject({ programa: { registrados: 2 }, sedes: [{ nombre: ccub.nombre }, { nombre: paz.nombre }] });
     expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("sedes");
   });
+  it("un festival sin imagen lleva el cartel de su próximo acto, de la misma lectura; uno con imagen propia, no (OL-346)", async () => {
+    const futuro = (dias: number) => new Date(Date.now() + dias * 86400000).toISOString();
+    const conCartel = [
+      { ...actos[0], inicio: futuro(-2), imagen: "pasado.jpg" },
+      { ...actos[1], inicio: futuro(3), imagen: "proximo.jpg" },
+    ];
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [marco, { ...marco, id: "propio", imagen: "propia.jpg" }, ...conCartel, { ...conCartel[1], id: "acto3", evento_padre_id: "propio" }] } }).cliente);
+    expect(r.eventos.find((e) => e.id === "marco")?.portadaActo).toBe("proximo.jpg");
+    expect(r.eventos.find((e) => e.id === "propio")).not.toHaveProperty("portadaActo");
+    expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("portadaActo");
+    expect(r.eventos.find((e) => e.id === "marco")).toMatchObject({ programa: { registrados: 2 } });
+  });
+  it("un festival cuyos actos no tienen cartel no lleva portada (sigue lo de siempre)", async () => {
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [marco, ...actos] } }).cliente);
+    expect(r.eventos.find((e) => e.id === "marco")).not.toHaveProperty("portadaActo");
+  });
   it("un festival cuyos actos no dicen dónde no lleva sedes (dice lo capturado en él)", async () => {
     const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [marco, ...actos] } }).cliente);
     expect(r.eventos.find((e) => e.id === "marco")).not.toHaveProperty("sedes");

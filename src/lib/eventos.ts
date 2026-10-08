@@ -160,7 +160,16 @@ export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "i
   /** Solo en el marco de un festival con actos que dicen dónde (OL-339, `lib/sedesFestival`): sus sedes, derivadas de sus actos al leer. Con
    *  ellas `nombreSitio` dice «Varias sedes» o el nombre de la única, en vez de lo capturado en el marco. */
   sedes?: readonly { nombre: string }[];
+  /** Solo en el marco de un festival sin imagen propia cuyos actos tienen cartel (OL-346, `portadaDeFestival`): el cartel de su próximo acto,
+   *  derivado al leer. Lo lee `fotoDeEvento`. */
+  portadaActo?: string;
 };
+
+/**
+ * La foto de un evento en una lista (renglón, tarjeta, Buscar): su imagen; la de un festival sin imagen, el cartel de su próximo acto (OL-346); si
+ * no, la portada de su lugar. Null sin ninguna (quien pinta pone su relleno). Resuelta aquí para que cada pantalla elija igual.
+ */
+export const fotoDeEvento = (e: Pick<EventoResumen, "imagen" | "portadaActo" | "lugar">): string | null => e.imagen ?? e.portadaActo ?? e.lugar?.portada ?? null;
 
 /**
  * La dirección de la ficha: el slug si ya lo trae (todas las filas desde la migración `20260922170000_eventos_slug`),
