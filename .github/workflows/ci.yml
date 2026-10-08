@@ -13,6 +13,8 @@ concurrency:
 jobs:
   codigo:
     runs-on: ubuntu-latest
+    # Suele tardar 2-3 min (máx. 3.5 min en 52 corridas); un cuelgue falla solo (OL-344).
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +30,8 @@ jobs:
 
   contratos:
     runs-on: ubuntu-latest
+    # Suele tardar 3-4 min (máx. 4 min en 52 corridas); un cuelgue falla solo (OL-344).
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -55,6 +59,9 @@ jobs:
 
   interfaz:
     runs-on: ubuntu-latest
+    # Suele tardar 6-8 min (máx. 23 min en 52 corridas, con un apt lento). El tope corta un cuelgue en vez de esperar
+    # las 6 h que GitHub da por omisión (OL-344).
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -64,17 +71,36 @@ jobs:
       - run: npm ci
       # Los estilos, componentes y DOM siguen comprobándose con sus presupuestos y cuarentenas vigentes.
       - run: npm run inventario
-      - run: npx playwright-core install --with-deps --only-shell chromium
+      # OL-344: el 7 de octubre este paso se colgó tres veces (22 min, 46 min y 6 h, hasta cancelarlo) en el
+      # `apt-get update` que lanza `--with-deps`: el espejo de Azure no respondía y, tras pasar a archive.ubuntu.com,
+      # apt se quedaba callado para siempre después de «noble-security InRelease». Suele tardar 20 s. Cada intento
+      # tiene su propio tope (`timeout` corta también a sus hijos, sudo y apt-get) y se reintenta hasta tres veces;
+      # apt se rinde antes con sus propios plazos. La instalación es la misma de siempre.
+      - name: Chromium y sus dependencias del sistema (con tope y reintento)
+        timeout-minutes: 15
+        run: |
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/99-tope-ci > /dev/null
+          for intento in 1 2 3; do
+            if timeout --kill-after=15s 4m npx playwright-core install --with-deps --only-shell chromium; then exit 0; fi
+            echo "::warning::La instalación de Chromium no terminó en el intento $intento (apt colgado o caído); se reintenta."
+            # Un apt-get que sobreviva al corte dejaría tomado el candado de apt para el siguiente intento.
+            sudo pkill -x apt-get || true
+            sleep 5
+          done
+          exit 1
       - name: Pruebas de componentes en Chromium
         run: npm run test:componentes
         timeout-minutes: 10
+      # Suele tardar 2-3.5 min.
       - run: npm run medir
+        timeout-minutes: 10
 
   # Main exige este nombre. Un trabajo omitido o cancelado nunca equivale a una comprobación correcta.
   verificar:
     runs-on: ubuntu-latest
     needs: [codigo, contratos, interfaz]
     if: ${{ always() }}
+    timeout-minutes: 5
     steps:
       - name: Comprobar todos los resultados
         env:
