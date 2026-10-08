@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa a pantalla completa</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-350 (bitácora 379): el mapa de «Dónde» de una ficha se abre a pantalla completa con solo los pines de sus sedes, como
+   una versión ligera del mapa de Lugares. Mismo armazón que exposicion-festival-taller.html y publicar-por-pasos.html (tokens de
+   src/app/globals.css); arriba, la tira del prototipo para elegir el caso. El mapa es un fondo de calles dibujado (sin Mapbox). */
+:root {
+  color-scheme: light;
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: color-mix(in srgb, var(--primario) 12%, white); --ok: #1f6f43;
+  --fondo-mapa: #eef0ec; --fondo-miniatura: #e6e6e2; --vidrio: rgba(255, 255, 255, 0.92);
+  --velo-barra: rgba(0, 0, 0, 0.6);
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22); --sombra-punto: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --tira: #1a1a1a; --tira-campo: #2a2a2a; --tira-borde: #555555;
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --boton-icono: 48px; --boton-icono-grande: 56px; --columna: 600px; --gutter: 20px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+  --tope: env(safe-area-inset-top, 0px); --piso: env(safe-area-inset-bottom, 0px);
+  --z-sobre: 1; --z-flotante: 20; --z-capa: 50;
+  --duracion: 180ms; --curva: cubic-bezier(0.2, 0, 0, 1);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font: 400 var(--letra-md)/1.4 "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; font-variation-settings: var(--ancho-texto); display: grid; grid-template-rows: auto minmax(0, 1fr); }
+button { font: inherit; font-variation-settings: inherit; color: inherit; appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+h2 { font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+ul { list-style: none; }
+svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* La tira del prototipo: no es parte de la app. */
+.tira { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--espacio-1); padding: var(--espacio-2) var(--espacio-4); background: var(--tira); color: var(--fondo); }
+.tira select { min-height: var(--toque-min); width: 100%; padding: 0 var(--espacio-3); border: 1px solid var(--tira-borde); border-radius: var(--radio); background: var(--tira-campo); color: var(--fondo); font: inherit; }
+.tira output { min-height: 20px; font-size: var(--letra-xs); opacity: 0.8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* La app: la ficha detrás y, encima, la capa del mapa. Una sola celda: las dos ocupan la misma. */
+.app { position: relative; width: 100%; max-width: var(--columna); margin-inline: auto; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); overflow: hidden; background: var(--fondo-contenido); }
+.app > * { grid-area: 1 / 1; min-height: 0; }
+@media (min-width: 640px) { body { background: var(--fondo-suave); } .app { margin-block: var(--espacio-5); border: 1px solid var(--borde); border-radius: var(--radio-grande); max-width: 420px; } }
+
+/* ---------- La ficha (lo de hoy, en su barra compacta: la portada ya pasó) ---------- */
+.ficha { overflow-y: auto; display: grid; grid-template-rows: auto auto 1fr; grid-template-areas: "barra" "cuerpo" "flotantes"; }
+.barra { grid-area: barra; position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: var(--boton-icono) minmax(0, 1fr) var(--boton-icono); align-items: center; column-gap: var(--espacio-2); padding: calc(var(--tope) + var(--espacio-2)) var(--gutter) var(--espacio-2); background: linear-gradient(var(--velo-barra), var(--velo-barra)), var(--portada, #3b2a5c); color: var(--primario-texto); }
+.barra b { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+.barra button { display: grid; place-items: center; width: var(--boton-icono); height: var(--boton-icono); border-radius: 50%; }
+.cuerpo { grid-area: cuerpo; display: grid; align-content: start; row-gap: var(--espacio-6); padding: var(--espacio-4) var(--gutter) 0; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); }
+.kpi { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icono etiqueta" "valor valor"; align-items: center; gap: var(--espacio-1); padding: 10px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+.kpi svg { grid-area: icono; width: 16px; height: 16px; color: var(--texto-suave); }
+.kpi small { grid-area: etiqueta; min-width: 0; overflow: hidden; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; }
+.kpi b { grid-area: valor; font-size: 1rem; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.linea { margin-top: calc(var(--espacio-3) - var(--espacio-6)); color: var(--texto-suave); font-size: var(--letra-sm); }
+.acciones { display: flex; flex-wrap: wrap; gap: var(--espacio-3); }
+.accion { display: grid; justify-items: center; gap: 6px; min-width: var(--boton-icono-grande); font-size: var(--letra-xs); font-weight: 600; }
+.accion > span { display: grid; place-items: center; width: var(--boton-icono-grande); height: var(--boton-icono-grande); border-radius: 50%; background: var(--fondo); color: var(--primario); box-shadow: var(--sombra); }
+.tarjeta { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4) var(--espacio-2); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.bloque { display: grid; gap: var(--espacio-2); }
+.bloque p { color: var(--texto); }
+
+/* El mapa de la ficha: la imagen estática de hoy (5:2 en 600 × 250), con su pin o sus pines. Tocarlo abre la capa. */
+.mapa-ficha { position: relative; display: block; width: 100%; aspect-ratio: 600 / 250; overflow: hidden; border-radius: var(--radio); background: var(--fondo-mapa); }
+.mapa-ficha svg.base { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mapa-ficha .pin-s { position: absolute; width: 20px; height: 26px; translate: -50% -100%; color: var(--primario); }
+.mapa-ficha .pin-s svg { width: 100%; height: 100%; fill: currentColor; stroke: var(--fondo); stroke-width: 1.5; }
+.mapa-ficha .ampliar { position: absolute; right: var(--espacio-2); bottom: var(--espacio-2); display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); }
+.mapa-ficha .ampliar svg { width: 20px; height: 20px; }
+
+/* ui/Renglon .dato (TarjetaSede): pin, nombre, meta y el ángulo que abre la ficha. */
+.dato { display: grid; grid-template-columns: var(--toque-min) minmax(0, 1fr) auto; grid-template-areas: "icono texto angulo" "icono meta angulo"; align-items: center; column-gap: var(--espacio-1); min-height: var(--toque-min); padding: var(--espacio-2) 0; text-align: left; width: 100%; }
+.dato > svg:first-child { grid-area: icono; justify-self: center; width: 20px; height: 20px; color: var(--texto-suave); }
+.dato > b { grid-area: texto; font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-lg); line-height: 1.2; }
+.dato > small { grid-area: meta; color: var(--texto-suave); font-size: var(--letra-sm); }
+.dato > svg:last-child:not(:first-child) { grid-area: angulo; width: 20px; height: 20px; color: var(--texto-suave); }
+
+/* Las pastillas flotantes de la ficha. */
+.flotantes { grid-area: flotantes; align-self: end; justify-self: center; position: sticky; bottom: calc(var(--piso) + var(--espacio-4)); display: flex; gap: var(--espacio-2); margin-top: var(--espacio-6); z-index: var(--z-flotante); }
+.pastilla { display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-5); border-radius: var(--radio-pildora); background: var(--fondo); box-shadow: var(--sombra-flotante); font-size: var(--letra-lg); font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+.pastilla.primaria { background: var(--primario); color: var(--primario-texto); }
+
+/* ---------- La capa: el mapa a pantalla completa ---------- */
+/* Una rejilla plana: el lienzo ocupa todas las filas; encima, por fila, la ✕ arriba, los controles y la tarjeta abajo. */
+.capa { z-index: var(--z-capa); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "arriba" "." "controles" "tarjeta"; background: var(--fondo-mapa); }
+.capa[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) { .capa { animation: abre var(--duracion) var(--curva); } @keyframes abre { from { opacity: 0; transform: scale(0.98); } } }
+.lienzo { grid-area: 1 / 1 / -1 / -1; position: relative; overflow: hidden; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.lienzo.arrastrando { cursor: grabbing; }
+.lienzo svg.base { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cerrar { grid-area: arriba; justify-self: start; margin: calc(var(--tope) + var(--espacio-2)) 0 0 var(--gutter); z-index: var(--z-sobre); display: grid; place-items: center; width: var(--boton-icono); height: var(--boton-icono); border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); }
+.cerrar svg { stroke-width: 2; }
+.controles { grid-area: controles; z-index: var(--z-sobre); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; padding: 0 var(--gutter) var(--espacio-3); pointer-events: none; }
+.controles > * { pointer-events: auto; }
+.marca { justify-self: start; padding: 2px 6px; border-radius: var(--radio); background: var(--vidrio); color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; }
+.encuadrar { display: grid; place-items: center; width: var(--boton-icono); height: var(--boton-icono); border-radius: 50%; background: var(--fondo); color: var(--primario); box-shadow: var(--sombra); transition: opacity var(--duracion); }
+.encuadrar[aria-hidden="true"] { opacity: 0; pointer-events: none; }
+
+/* Los pines: los de Lugares. Punto de tinta si la sede no tiene actividad esta semana; disco del color de acción con el día si sí. El
+   nombre debajo, con halo blanco. El elegido: disco grande con aro blanco y sombra; su nombre siempre se ve. */
+.pin { position: absolute; left: 0; top: 0; display: grid; justify-items: center; row-gap: 2px; translate: -50% -12px; z-index: 1; }
+.pin .punto { display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid var(--fondo); border-radius: 50%; background: var(--primario); color: var(--primario-texto); font-size: 10px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1; box-shadow: var(--sombra-punto); }
+.pin.quieto { translate: -50% -6px; }
+.pin.quieto .punto { width: 12px; height: 12px; border-width: 1.5px; background: var(--texto); }
+.pin .nombre { max-width: 150px; color: var(--primario); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-align: center; text-shadow: 0 0 2px var(--fondo), 0 0 2px var(--fondo), 0 0 3px var(--fondo), 0 0 4px var(--fondo); pointer-events: none; }
+.pin.quieto .nombre { color: var(--texto); }
+.pin[aria-pressed="true"] { z-index: 2; translate: -50% -20px; }
+.pin[aria-pressed="true"] .punto { width: 40px; height: 40px; border-width: 3px; font-size: 13px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
+.pin.quieto[aria-pressed="true"] .punto { background: var(--texto); }
+.pin[aria-pressed="true"] .nombre { font-size: var(--letra-sm); }
+@media (prefers-reduced-motion: no-preference) { .pin .punto { transition: width var(--duracion), height var(--duracion); } }
+
+/* La tarjeta del pin: TarjetaSede (el ángulo SIEMPRE abre una ficha) y «Cómo llegar», alineada con la columna. */
+.tarjeta-pin { grid-area: tarjeta; z-index: var(--z-sobre); display: grid; grid-template-areas: "sede" "llegar"; row-gap: var(--espacio-2); margin: 0 var(--gutter) calc(var(--piso) + var(--espacio-4)); padding: var(--espacio-1) var(--espacio-4) var(--espacio-4); border-radius: var(--radio-grande); background: var(--fondo); box-shadow: var(--sombra-flotante); }
+@media (prefers-reduced-motion: no-preference) { .tarjeta-pin { animation: sube var(--duracion) var(--curva); } @keyframes sube { from { opacity: 0; transform: translateY(16px); } } }
+.tarjeta-pin .dato { grid-area: sede; }
+.boton { grid-area: llegar; display: flex; align-items: center; justify-content: center; gap: var(--espacio-2); width: 100%; min-height: var(--toque); padding: 0 var(--espacio-4); border-radius: var(--radio); background: var(--fondo); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde); font-size: var(--letra-lg); font-weight: 700; }
+.boton svg { color: var(--primario); }
+</style>
+</head>
+<body>
+<div class="tira">
+  <select id="caso" aria-label="Caso del prototipo">
+    <option value="evento-ficha" selected>1 · Evento, una sede: la ficha</option>
+    <option value="evento-mapa">2 · Evento: mapa a pantalla completa</option>
+    <option value="evento-pin">3 · Evento: pin elegido y su tarjeta</option>
+    <option value="festival-ficha">4 · Festival, tres sedes: la ficha</option>
+    <option value="festival-mapa">5 · Festival: mapa a pantalla completa</option>
+    <option value="festival-lugar">6 · Festival: sede del catálogo</option>
+    <option value="festival-sitio">7 · Festival: sede fuera del catálogo</option>
+    <option value="cinema-mapa">8 · CINEMA (real): siete sedes</option>
+  </select>
+  <output id="eco" aria-live="polite"></output>
+</div>
+<div class="app" id="app"></div>
+
+<!-- El mapa base dibujado a mano (el de mapa-lugares.html; sin Mapbox, sin token). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="manzanas" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#fafaf8"/><path d="M0 0.5H40M0.5 0V40" stroke="#e4e4df" stroke-width="2"/></pattern>
+    <g id="base">
+      <rect x="-1200" y="-1200" width="3040" height="3300" fill="url(#manzanas)"/>
+      <rect width="640" height="900" fill="#fafaf8"/>
+      <path d="M0 700 Q80 640 160 690 T320 700 T480 740 T640 700 V900 H0 Z" fill="#e4efdd"/>
+      <path d="M0 780 Q90 720 180 770 T360 790 T640 780 V900 H0 Z" fill="#d6e8cc"/>
+      <path d="M0 40 L110 40 L120 150 L40 170 L0 140 Z" fill="#d3e9c8"/>
+      <rect x="300" y="330" width="80" height="60" rx="4" fill="#cfe8c4"/>
+      <rect x="330" y="435" width="34" height="34" rx="3" fill="#dcead2"/>
+      <rect x="392" y="500" width="40" height="30" rx="3" fill="#dcead2"/>
+      <g stroke="#e4e4df" stroke-width="2">
+        <path d="M0 180H640M0 220H520M0 260H640M100 300H640M0 340H300M380 340H640M0 380H640M0 460H640M60 500H640M0 540H420M480 540H640M0 580H640M140 620H640M0 660H360M0 700H640"/>
+        <path d="M80 140V700M120 100V820M160 180V900M200 100V560M240 220V900M280 100V700M360 100V600M400 180V900M440 100V700M480 220V900M520 100V620M560 180V900M600 300V900"/>
+        <path d="M0 120 Q200 100 320 130 T640 90" fill="none" stroke-width="3"/>
+        <path d="M440 900 Q470 700 560 640 T640 480" fill="none" stroke-width="3"/>
+      </g>
+      <g stroke="#d6d6d2" stroke-width="5" fill="none" stroke-linecap="round">
+        <path d="M0 420H640"/><path d="M320 100V900"/><path d="M0 640 L640 260"/><path d="M60 100 Q40 400 120 900"/>
+      </g>
+      <g fill="#8f8f8a" font-size="10" font-weight="500" letter-spacing="0.8" font-family="Bricolage Grotesque, sans-serif">
+        <text x="140" y="413">AV. VENUSTIANO CARRANZA</text>
+        <text x="334" y="260" transform="rotate(-90 334 260)">AV. UNIVERSIDAD</text>
+      </g>
+      <g fill="#a3a39d" font-size="11" font-weight="600" letter-spacing="1.1" font-family="Bricolage Grotesque, sans-serif" text-anchor="middle">
+        <text x="285" y="447">CENTRO</text><text x="340" y="365">ALAMEDA</text><text x="80" y="110">TANGAMANGA</text><text x="520" y="560">LOMAS</text><text x="230" y="610">TEQUIS</text>
+      </g>
+    </g>
+  </defs>
+</svg>
+
+<script>
+const ic = (n) => `<svg class="i" viewBox="0 0 24 24">${({
+  cerrar: '<path d="M6 6l12 12M18 6L6 18"/>',
+  atras: '<path d="M14.5 6l-6 6 6 6"/>',
+  puntos: '<circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>',
+  pin: '<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+  chevron: '<path d="M9 6l6 6-6 6"/>',
+  ruta: '<path d="M12 3l9 9-9 9-9-9z"/><path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8"/>',
+  compartir: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11"/>',
+  calendarioMas: '<path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7.5"/><path d="M3 10h17M8 3v4M15 3v4M18 15v6M15 18h6"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  boleto: '<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z"/>',
+  reloj: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  personas: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3"/>',
+  estrella: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>',
+  ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  encuadrar: '<path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/>',
+  ampliar: '<path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5"/>',
+})[n]}</svg>`;
+const PIN_S = '<svg viewBox="0 0 20 26"><path d="M10 25s-8.5-8.2-8.5-14.3a8.5 8.5 0 0 1 17 0C18.5 16.8 10 25 10 25z"/><circle cx="10" cy="10.5" r="3" fill="#fff" stroke="none"/></svg>';
+
+// Hoy, en el prototipo: jueves 8 de octubre de 2026. Las sedes en coordenadas del mapa dibujado (640 × 900).
+// `dia`: el de su próxima actividad si es en los próximos siete días («Hoy», «Sáb»…), como el pin de Lugares; null = punto de tinta.
+// `href`: la ficha que abre el ángulo (del directorio o de sitio, OL-348). `comoLlegar`: lo que abre la acción.
+const EVENTOS = {
+  taller: {
+    titulo: 'Taller de cianotipia sobre papel: el símbolo como herramienta visual', portada: '#1d4e89',
+    kpis: [['reloj', '17:00', 'jue 8 oct'], ['boleto', 'Costo', '$50'], ['personas', 'Van', '0']],
+    linea: null, pastillas: ['Me interesa', 'Voy'],
+    sedes: [{ id: 'lunaria', nombre: 'Foro lunaria', x: 300, y: 452, dia: 'Hoy', meta: 'Calle Hermenegildo Galeana 423, Centro', href: '/lugares/foro-lunaria' }],
+    sobre: 'Taller teórico-práctico de cianotipia sobre papel impartido por Gyne Studio: exploración, creación y proceso. Cupo limitado.',
+  },
+  festival: {
+    titulo: 'Festival de Cine de Invierno', portada: '#2a1f4d',
+    kpis: [['calendario', 'Actos', '4'], ['boleto', 'Costo', 'Gratis'], ['pin', 'Sedes', '3']],
+    linea: 'Del 10 al 12 de oct · Programa registrado: 4 actividades', pastillas: ['Me interesa'],
+    sedes: [
+      { id: 'ccub', nombre: 'Centro Cultural Universitario Bicentenario', x: 230, y: 168, dia: 'Sáb', meta: '2 actividades', href: '/lugares/centro-cultural-universitario-bicentenario-cc200' },
+      { id: 'jardin', nombre: 'Jardín de San Juan de Dios', x: 412, y: 512, dia: 'Dom', meta: '1 actividad', href: '/sitios/jardin-de-san-juan-de-dios-san-luis-potosi', fuera: true },
+      { id: 'paz', nombre: 'Teatro de la Paz', x: 340, y: 452, dia: 'Lun', meta: '1 actividad', href: '/lugares/teatro-de-la-paz' },
+    ],
+    sobre: 'Funciones, una charla con la directora y una proyección al aire libre, del 10 al 12 de octubre en tres sedes.',
+  },
+  cinema: {
+    titulo: 'CINEMA: XV Festival de Cine México-Alemania', portada: '#3a1c1c',
+    kpis: [['calendario', 'Actos', '11'], ['boleto', 'Costo', 'Gratis'], ['pin', 'Sedes', '7']],
+    linea: 'Del 29 de sep al 24 de oct · Programa registrado: 11 actividades', pastillas: ['Me interesa'],
+    sedes: [
+      { id: 'c7b', nombre: 'Cinema 7B', x: 236, y: 318, dia: null, meta: '2 actividades', href: '/lugares/cinema-7b' },
+      { id: 'alboa', nombre: 'Alboa The Park', x: 492, y: 604, dia: null, meta: '2 actividades', href: '/sitios/alboa-the-park-san-luis-potosi', fuera: true },
+      { id: 'mac', nombre: 'Museo de Arte Contemporáneo (MAC)', x: 372, y: 392, dia: null, meta: '1 actividad', href: '/lugares/museo-de-arte-contemporaneo-mac' },
+      { id: 'ceart', nombre: 'Centro de las Artes Centenario (CEART)', x: 262, y: 226, dia: 'Mié', meta: '1 actividad', href: '/lugares/centro-de-las-artes-de-san-luis-potosi-centenario-ceart' },
+      { id: 'silva', nombre: 'Museo Federico Silva', x: 330, y: 522, dia: null, meta: '2 actividades', href: '/lugares/museo-federico-silva-escultura-contemporanea' },
+      { id: 'nieto', nombre: 'Auditorio Rafael Nieto', x: 282, y: 470, dia: null, meta: '2 actividades', href: '/lugares/auditorio-rafael-nieto' },
+      { id: 'leonora', nombre: 'Museo Leonora Carrington', x: 222, y: 236, dia: null, meta: '1 actividad', href: '/lugares/museo-leonora-carrington' },
+    ],
+    sobre: 'XV edición del festival de cine México-Alemania, con el Goethe-Institut: proyecciones, cortometrajes, un concierto de jazz y una obra escénica.',
+  },
+};
+const CASOS = {
+  'evento-ficha': { ev: 'taller', capa: false },
+  'evento-mapa': { ev: 'taller', capa: true },
+  'evento-pin': { ev: 'taller', capa: true, elegido: 'lunaria' },
+  'festival-ficha': { ev: 'festival', capa: false },
+  'festival-mapa': { ev: 'festival', capa: true },
+  'festival-lugar': { ev: 'festival', capa: true, elegido: 'paz' },
+  'festival-sitio': { ev: 'festival', capa: true, elegido: 'jardin' },
+  'cinema-mapa': { ev: 'cinema', capa: true },
+};
+let e;
+const ev = () => EVENTOS[e.ev];
+const eco = (t) => { document.getElementById('eco').textContent = t; };
+function nuevo(caso) {
+  const k = CASOS[caso];
+  e = { ev: k.ev, capa: k.capa, elegido: k.elegido ?? null, vista: null, movido: false };
+  eco('');
+}
+
+// El encuadre: todas las sedes dentro de la caja, con aire en píxeles a cada lado (el nombre va debajo y a lo ancho del punto) y un tope
+// de acercamiento para una sola sede. Devuelve la vista en coordenadas del mapa dibujado.
+function encuadre(W, H, aire, tope) {
+  const s = ev().sedes;
+  const x0 = Math.min(...s.map((p) => p.x)), x1 = Math.max(...s.map((p) => p.x));
+  const y0 = Math.min(...s.map((p) => p.y)), y1 = Math.max(...s.map((p) => p.y));
+  const aw = W - aire.izq - aire.der, ah = H - aire.arriba - aire.abajo;
+  const k = Math.min(aw / Math.max(x1 - x0, 1), ah / Math.max(y1 - y0, 1), tope);
+  return { x: (x0 + x1) / 2 - (aire.izq + aw / 2) / k, y: (y0 + y1) / 2 - (aire.arriba + ah / 2) / k, w: W / k, h: H / k };
+}
+const base = (v) => `<svg class="base" viewBox="${v.x} ${v.y} ${v.w} ${v.h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><use href="#base"/></svg>`;
+
+// ---------- La ficha ----------
+function ficha() {
+  const E = ev();
+  // La imagen estática encuadra los pines con aire («auto», 40 px); el pin dibuja hacia arriba, así que el encuadre sube un poco.
+  const vMini = encuadre(600, 250, { izq: 50, der: 50, arriba: 62, abajo: 30 }, 0.8);
+  const pct = (p) => `left:${((p.x - vMini.x) / vMini.w) * 100}%;top:${((p.y - vMini.y) / vMini.h) * 100}%`;
+  return `<div class="ficha" style="--portada:${E.portada}">
+    <div class="barra"><button aria-label="Atrás" data-a="eco" data-v="Atrás de la ficha">${ic('atras')}</button><b>${E.titulo}</b><button aria-label="Más" data-a="eco" data-v="Menú de la ficha">${ic('puntos')}</button></div>
+    <div class="cuerpo">
+      <ul class="kpis">${E.kpis.map(([i, t, v]) => `<li class="kpi">${ic(i)}<small>${t}</small><b>${v}</b></li>`).join('')}</ul>
+      ${E.linea ? `<p class="linea">${E.linea}</p>` : ''}
+      <div class="acciones">
+        <button class="accion" data-a="eco" data-v="Compartir"><span>${ic('compartir')}</span>Compartir</button>
+        <button class="accion" data-a="eco" data-v="A mi calendario"><span>${ic('calendarioMas')}</span>A mi calendario</button>
+        <button class="accion" data-a="eco" data-v="${E.sedes.length > 1 ? 'Cómo llegar baja a la lista de sedes' : 'Cómo llegar abre Mapas'}"><span>${ic('ruta')}</span>Cómo llegar</button>
+      </div>
+      <section class="tarjeta" aria-label="Dónde">
+        <h2>Dónde</h2>
+        <button class="mapa-ficha" data-a="abrir" aria-label="Abrir el mapa">${base(vMini)}${E.sedes.map((p) => `<span class="pin-s" style="${pct(p)}">${PIN_S}</span>`).join('')}<span class="ampliar">${ic('ampliar')}</span></button>
+        <ul>${E.sedes.map((p) => `<li><button class="dato" data-a="ficha-sede" data-v="${p.id}">${ic('pin')}<b>${p.nombre}</b><small>${p.meta}</small>${ic('chevron')}</button></li>`).join('')}</ul>
+      </section>
+      <section class="bloque" aria-label="Sobre el evento"><h2>Sobre el evento</h2><p>${E.sobre}</p></section>
+    </div>
+    <div class="flotantes">${E.pastillas.map((t) => `<button class="pastilla" data-a="eco" data-v="${t}">${t === 'Voy' ? ic('ok') : ic('estrella')}${t}</button>`).join('')}</div>
+  </div>`;
+}
+
+// ---------- La capa ----------
+function capa() {
+  const E = ev();
+  const s = e.elegido ? E.sedes.find((p) => p.id === e.elegido) : null;
+  return `<div class="capa" role="dialog" aria-modal="true" aria-label="Mapa de ${E.sedes.length > 1 ? 'las sedes' : E.sedes[0].nombre}">
+    <div class="lienzo" id="lienzo">${base({ x: 0, y: 0, w: 1, h: 1 })}${E.sedes.map((p) => `<button class="pin ${p.dia ? '' : 'quieto'}" data-pin="${p.id}" aria-pressed="${p.id === e.elegido}" aria-label="${p.nombre}"><span class="punto">${p.dia ?? ''}</span><span class="nombre">${p.nombre}</span></button>`).join('')}</div>
+    <button class="cerrar" data-a="cerrar" aria-label="Cerrar el mapa">${ic('cerrar')}</button>
+    <div class="controles"><span class="marca">© Mapbox ⓘ</span><button class="encuadrar" data-a="encuadrar" aria-label="Encuadrar las sedes" aria-hidden="${!e.movido}">${ic('encuadrar')}</button></div>
+    ${s ? `<div class="tarjeta-pin" role="group" aria-label="${s.nombre}">
+      <button class="dato" data-a="ficha-sede" data-v="${s.id}">${ic('pin')}<b>${s.nombre}</b><small>${s.meta}</small>${ic('chevron')}</button>
+      <button class="boton" data-a="eco" data-v="Cómo llegar a ${s.nombre}: abre Mapas">${ic('ruta')}Cómo llegar</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function pintar() {
+  const app = document.getElementById('app');
+  const scroll = app.querySelector('.ficha')?.scrollTop;
+  app.innerHTML = ficha() + (e.capa ? capa() : '');
+  const f = app.querySelector('.ficha');
+  if (scroll != null) f.scrollTop = scroll; else f.querySelector('[aria-label="Dónde"]').scrollIntoView({ block: 'center' });
+  if (e.capa) { prepararLienzo(); }
+}
+
+// El lienzo: el fondo con viewBox y los pines como elementos encima, en píxeles (miden lo mismo a cualquier zoom, como en Mapbox).
+function colocar() {
+  const L = document.getElementById('lienzo'); if (!L) return;
+  const r = L.getBoundingClientRect();
+  const v = e.vista;
+  L.querySelector('svg.base').setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`);
+  const k = r.width / v.w;
+  const dy = (r.height - v.h * k) / 2; // slice: centrado vertical
+  L.querySelectorAll('.pin').forEach((b) => { const p = ev().sedes.find((s) => s.id === b.dataset.pin); b.style.left = `${(p.x - v.x) * k}px`; b.style.top = `${(p.y - v.y) * k + dy}px`; });
+  // Como en Lugares: si dos nombres chocan, se esconde el de menos rango (gana el elegido, luego el que tiene actividad esta semana); el
+  // punto nunca se esconde.
+  const rango = (b) => (b.getAttribute('aria-pressed') === 'true' ? 2 : b.classList.contains('quieto') ? 0 : 1);
+  const puestos = [];
+  [...L.querySelectorAll('.pin')].sort((a, b) => rango(b) - rango(a)).forEach((b) => {
+    const n = b.querySelector('.nombre'); n.style.visibility = '';
+    const rn = n.getBoundingClientRect();
+    const choca = puestos.some((o) => rn.left < o.right && rn.right > o.left && rn.top < o.bottom && rn.bottom > o.top);
+    if (choca) n.style.visibility = 'hidden'; else puestos.push(rn);
+    puestos.push(b.querySelector('.punto').getBoundingClientRect());
+  });
+}
+function prepararLienzo() {
+  const L = document.getElementById('lienzo');
+  // La vista se calcula con la proporción de la caja; «slice» llena la caja: se ajusta el alto para que no quede hueco.
+  // Con un pin ya elegido, las sedes se encuadran en lo que deja ver la tarjeta (la vista crece hacia abajo, bajo la tarjeta).
+  const r = L.getBoundingClientRect();
+  if (!e.vista) e.vista = encuadre(r.width, r.height, { izq: 84, der: 84, arriba: RESERVA_ARRIBA + 24, abajo: RESERVA_ABAJO + 40 }, 1.3);
+  e.vista.h = e.vista.w * (r.height / r.width);
+  colocar();
+  let inicio = null;
+  L.addEventListener('pointerdown', (ev0) => { if (ev0.target.closest('.pin')) return; inicio = { x: ev0.clientX, y: ev0.clientY, v: { ...e.vista }, movio: false }; L.setPointerCapture(ev0.pointerId); });
+  L.addEventListener('pointermove', (m) => {
+    if (!inicio) return;
+    const dx = m.clientX - inicio.x, dy = m.clientY - inicio.y;
+    if (!inicio.movio && Math.hypot(dx, dy) < 6) return;
+    inicio.movio = true; L.classList.add('arrastrando');
+    const k = e.vista.w / L.getBoundingClientRect().width;
+    e.vista = { ...inicio.v, x: inicio.v.x - dx * k, y: inicio.v.y - dy * k };
+    colocar();
+    if (!e.movido) { e.movido = true; document.querySelector('.encuadrar').setAttribute('aria-hidden', 'false'); }
+  });
+  const fin = () => { if (!inicio) return; const tocar = !inicio.movio; inicio = null; L.classList.remove('arrastrando'); if (tocar && e.elegido) { e.elegido = null; pintarCapa(); } };
+  L.addEventListener('pointerup', fin); L.addEventListener('pointercancel', () => { inicio = null; L.classList.remove('arrastrando'); });
+  L.addEventListener('wheel', (w) => {
+    w.preventDefault();
+    const r2 = L.getBoundingClientRect(); const f = Math.exp(w.deltaY * 0.002);
+    const px = e.vista.x + (w.clientX - r2.left) / r2.width * e.vista.w, py = e.vista.y + (w.clientY - r2.top) / r2.height * e.vista.h;
+    const nw = Math.max(160, Math.min(900, e.vista.w * f)), nh = nw * (r2.height / r2.width);
+    e.vista = { x: px - (px - e.vista.x) * (nw / e.vista.w), y: py - (py - e.vista.y) * (nh / e.vista.h), w: nw, h: nh };
+    colocar(); if (!e.movido) { e.movido = true; document.querySelector('.encuadrar').setAttribute('aria-hidden', 'false'); }
+  }, { passive: false });
+}
+function pintarCapa() {
+  const vieja = document.querySelector('.capa');
+  const tmp = document.createElement('div'); tmp.innerHTML = capa();
+  const nueva = tmp.firstElementChild; nueva.style.animation = 'none';
+  vieja.replaceWith(nueva); prepararLienzo();
+}
+
+// Al elegir un pin que queda bajo la tarjeta o bajo la ✕, el mapa se mueve lo justo para dejarlo a la vista (como la hoja de Lugares
+// se recoge para darle sitio a la tarjeta). Las sedes se encuadran desde el principio en lo que la tarjeta deja libre.
+const RESERVA_ABAJO = 200, RESERVA_ARRIBA = 72;
+function asegurarVisible(id) {
+  const L = document.getElementById('lienzo'); const r = L.getBoundingClientRect();
+  const p = ev().sedes.find((s) => s.id === id); const k = r.width / e.vista.w;
+  const px = (p.x - e.vista.x) * k, py = (p.y - e.vista.y) * k;
+  const zona = { x0: 40, x1: r.width - 40, y0: RESERVA_ARRIBA + 24, y1: r.height - RESERVA_ABAJO - 24 };
+  if (px >= zona.x0 && px <= zona.x1 && py >= zona.y0 && py <= zona.y1) return;
+  const destino = { ...e.vista, x: p.x - ((zona.x0 + zona.x1) / 2) / k, y: p.y - ((zona.y0 + zona.y1) / 2) / k };
+  const desde = { ...e.vista }; const t0 = performance.now();
+  const paso = (t) => { const a = Math.min(1, (t - t0) / 250); const s = 1 - Math.pow(1 - a, 3); e.vista = { ...desde, x: desde.x + (destino.x - desde.x) * s, y: desde.y + (destino.y - desde.y) * s }; colocar(); if (a < 1) requestAnimationFrame(paso); };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { e.vista = destino; colocar(); } else requestAnimationFrame(paso);
+}
+
+// La capa no apila pantallas: al abrir deja UNA marca propia en el historial para que el Atrás del sistema la cierre; la ✕ la consume.
+function abrir() { e.capa = true; e.vista = null; e.movido = false; e.elegido = null; try { history.pushState({ capaMapa: true }, ''); } catch {} pintar(); }
+function cerrar(desdeHistorial) { if (!e.capa) return; e.capa = false; e.elegido = null; pintar(); if (!desdeHistorial && history.state?.capaMapa) history.back(); }
+window.addEventListener('popstate', () => { if (e.capa) cerrar(true); });
+document.addEventListener('keydown', (k) => { if (k.key === 'Escape' && e.capa) cerrar(false); });
+
+document.getElementById('app').addEventListener('click', (c) => {
+  const pin = c.target.closest('[data-pin]');
+  if (pin) { e.elegido = e.elegido === pin.dataset.pin ? null : pin.dataset.pin; pintarCapa(); if (e.elegido) asegurarVisible(e.elegido); return; }
+  const b = c.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, v = b.dataset.v;
+  if (a === 'abrir') { abrir(); return; }
+  if (a === 'cerrar') { cerrar(false); return; }
+  if (a === 'encuadrar') { e.vista = null; e.movido = false; pintarCapa(); return; }
+  if (a === 'ficha-sede') { const s = ev().sedes.find((p) => p.id === v); eco(`Abre ${s.fuera ? 'la ficha de sitio' : 'la ficha del lugar'}: ${s.href}`); return; }
+  if (a === 'eco') { eco(v); return; }
+});
+window.addEventListener('resize', () => { if (e.capa) { const L = document.getElementById('lienzo').getBoundingClientRect(); e.vista.h = e.vista.w * (L.height / L.width); colocar(); } });
+document.getElementById('caso').addEventListener('change', (c) => { nuevo(c.target.value); document.getElementById('app').innerHTML = ''; pintar(); });
+nuevo('evento-ficha'); pintar();
+</script>
+</body>
+</html>
