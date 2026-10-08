@@ -127,24 +127,40 @@
   font-weight: 700;
 }
 
-/* 4. «Revisa» con cartel: la miniatura a la izquierda y, a su derecha pegados a su base, el sello «Leído del cartel» y el nombre. Al editar
-   (OL-319), bajo el nombre, «Cambiar nombre» (`.cambiarNombre` de «Revisa») y «Cambiar cartel», uno sobre otro y alineados con la letra.
-   Lo que no está no ocupa: su fila queda sin alto. */
+/* 4. «Revisa» con cartel (OL-349, pedido del founder: «alinea la imagen a la parte superior izquierda como debe ser»): la miniatura pegada
+   arriba a la izquierda y, a su derecha desde la misma altura, el sello «Leído del cartel» (si lo hay) y el nombre. La última fila (`1fr`)
+   se lleva lo que sobre de alto cuando la miniatura es más alta que el texto, para que el sello y el nombre no se separen. Lo que no está no
+   ocupa: su fila queda sin alto. */
 .cabeza {
   display: grid;
   grid-template-columns: var(--ancho-cartel-revisa) minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
   grid-template-areas:
     "foto sello"
     "foto titulo"
-    "foto nombre"
-    "foto cartel";
+    "foto .";
   column-gap: var(--espacio-4);
-  align-items: end;
+  align-items: start;
 }
-.cabeza > img {
+/* Al editar, el lápiz del nombre va en su esquina de arriba a la derecha y el nombre lo rodea: un hueco flotante del tamaño del botón (con
+   su aire a la izquierda) aparta solo las primeras líneas; las de abajo usan todo el ancho (OL-349, segunda vuelta: una columna a toda la
+   altura dejaba un nombre largo en seis líneas a 390 y partía palabras a 320). El botón de verdad va encima, fuera del `h2` (dentro, su
+   nombre se sumaría al del título), y su círculo cae justo sobre el hueco. */
+.editable > h2::before {
+  content: "";
+  float: right;
+  width: var(--control);
+  height: var(--control);
+  margin-inline-start: var(--espacio-2);
+}
+/* La miniatura y el botón que la cubre miden lo mismo (4:5), aunque el nombre sea más alto que ella. */
+.cabeza > img,
+.cambiarCartel {
   grid-area: foto;
   width: 100%;
   aspect-ratio: 4 / 5;
+}
+.cabeza > img {
   border-radius: var(--radio);
   background: var(--fondo-miniatura);
   object-fit: cover;
@@ -152,11 +168,26 @@
 .cabeza > h2 {
   grid-area: titulo;
 }
-/* «Cambiar cartel»: sin el relleno de los lados, para alinearse con el nombre (el toque conserva su alto y el ancho de las palabras). */
-.cabeza > .cambiarCartel {
-  grid-area: cartel;
-  justify-self: start;
-  padding-inline: 0;
+/* Los dos lápices: un botón transparente del tamaño de lo que cubre, con el círculo blanco del canon dentro. El de la miniatura lo lleva al
+   centro; el del nombre cubre el nombre, con el círculo arriba a la derecha (a la altura de la primera línea, sobre el hueco flotante). */
+.cambiarCartel,
+.cambiarNombre {
+  display: grid;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio);
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cambiarCartel {
+  place-items: center;
+}
+.cambiarNombre {
+  grid-area: titulo;
+  align-self: stretch;
+  justify-items: end;
+  align-items: start;
 }
 .sello {
   grid-area: sello;

@@ -53,15 +53,6 @@
 
 /* 4. «Revisa»: el nombre del evento como título, y cada renglón se toca entero: su «Cambiar» lo cubre (el renglón sin clave ya es
    `position: relative`). */
-/* Al editar (OL-319), «Cambiar nombre» va bajo él, alineado con su letra: sin el relleno de los lados (el toque conserva su alto y el
-   ancho de las palabras). Dentro de la cabeza con cartel cae en su área `nombre`; sin cartel, es el siguiente de la columna, al inicio (no a
-   todo su ancho). */
-.titulo + .cambiarNombre {
-  grid-area: nombre;
-  justify-self: start;
-  align-self: flex-start;
-  padding-inline: 0;
-}
 .titulo {
   font-size: var(--letra-2xl);
   font-weight: 800;

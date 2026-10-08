@@ -108,6 +108,7 @@ before(async () => {
     ["/", ["text/html", `<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>${fuente ? "@font-face{font-family:Bricolage;src:url(/bricolage.woff2) format('woff2');font-weight:200 800;font-stretch:75% 100%}:root{--fuente-bricolage:Bricolage}" : ":root{--fuente-bricolage:Arial}"}</style><div id="root"></div><script src="/app.js"></script>`]],
     ["/cartel-viejo.svg", ["image/svg+xml", svg("#2f4a6b", "ECOS")]],
     ["/cartel.svg", ["image/svg+xml", svg("#6b3a4a", "NUEVO")]],
+    ["/sin-foto.png", ["image/png", await readFile(join(root, "public/sin-foto.png"))]],
     ...(fuente ? [["/bricolage.woff2", ["font/woff2", fuente]]] : []),
     ["/app.js", ["text/javascript", await readFile(join(dir, "app.js"))]],
     ["/app.css", ["text/css", await readFile(join(dir, "app.css"))]],
@@ -268,6 +269,88 @@ test("«Cambiar» el nombre: la pregunta del alta con el nombre de ahora, su ✕
   assert.equal((await guardar(p)).titulo, "Ecos de papel: lectura en voz alta");
 });
 
+/** OL-349 (bitácora 378): la cabecera sin letreros. Las cajas de la miniatura, del nombre y de los dos lápices, medidas en la página. */
+const cabecera = (p) =>
+  p.evaluate(() => {
+    const medidas = (r) => ({ x: r.x, y: r.y, ancho: r.width, alto: r.height, derecha: r.right, abajo: r.bottom });
+    const caja = (el) => medidas(el.getBoundingClientRect());
+    const lapiz = (nombre) => document.querySelector(`main button[aria-label="${nombre}"]`);
+    const cartel = lapiz("Cambiar cartel");
+    const nombre = lapiz("Cambiar nombre");
+    // Cada palabra del nombre con las cajas de sus renglones: una palabra partida tiene dos (en dos alturas).
+    const h2 = document.querySelector("main h2");
+    const texto = h2.firstChild;
+    const palabras = [...texto.data.matchAll(/\S+/g)].map((m) => {
+      const r = document.createRange();
+      r.setStart(texto, m.index);
+      r.setEnd(texto, m.index + m[0].length);
+      const cajas = [...r.getClientRects()].map(medidas);
+      return { palabra: m[0], cajas, renglones: new Set(cajas.map((k) => Math.round(k.y))).size };
+    });
+    return { img: caja(document.querySelector("main img")), titulo: caja(h2), palabras, cartel: caja(cartel), circuloCartel: caja(cartel.firstElementChild), nombre: caja(nombre), circuloNombre: caja(nombre.firstElementChild), columna: caja(h2.parentElement) };
+  });
+const LARGO = "Taller de cianotipia sobre papel: el símbolo como herramienta visual";
+
+for (const ancho of [320, 390]) {
+  test(`a ${ancho}: la cabecera sin letreros: la miniatura arriba a la izquierda con su lápiz al centro y el lápiz del nombre arriba a la derecha, sin encimarse`, TOPE, async (t) => {
+    const p = await pagina(t, { ancho, qa: { evento: { ...EVENTO, titulo: LARGO } } });
+    await p.getByRole("heading", { name: LARGO }).waitFor();
+    await p.locator("main img").evaluate((img) => img.decode());
+    // Sin letreros: ni «Cambiar nombre» ni «Cambiar cartel» se leen en la página; solo son el nombre de los botones.
+    assert.equal(await p.getByText("Cambiar nombre").count(), 0);
+    assert.equal(await p.getByText("Cambiar cartel").count(), 0);
+    const c = await cabecera(p);
+    // La miniatura arriba a la izquierda: a la altura del nombre y pegada al borde de la columna.
+    assert.ok(Math.abs(c.img.y - c.titulo.y) <= 1, JSON.stringify(c));
+    assert.ok(Math.abs(c.img.x - c.columna.x) <= 1, JSON.stringify(c));
+    // El lápiz del cartel: 44 de círculo, al centro de la miniatura; su botón es toda la miniatura.
+    assert.equal(Math.round(c.circuloCartel.ancho), 44);
+    assert.ok(Math.abs(c.circuloCartel.x + 22 - (c.img.x + c.img.ancho / 2)) <= 1 && Math.abs(c.circuloCartel.y + 22 - (c.img.y + c.img.alto / 2)) <= 1, JSON.stringify(c));
+    assert.deepEqual([c.cartel.x, c.cartel.y, c.cartel.ancho, c.cartel.alto].map(Math.round), [c.img.x, c.img.y, c.img.ancho, c.img.alto].map(Math.round));
+    // El lápiz del nombre: 44, arriba a la derecha de la columna, a la altura de la primera línea.
+    assert.equal(Math.round(c.circuloNombre.ancho), 44);
+    assert.ok(Math.abs(c.circuloNombre.derecha - c.columna.derecha) <= 1 && Math.abs(c.circuloNombre.y - c.titulo.y) <= 1, JSON.stringify(c));
+    assert.ok(c.titulo.x >= c.img.derecha, JSON.stringify(c));
+    // Nada encimado: ninguna palabra a la altura del lápiz llega a él (el hueco flotante las aparta).
+    const cajas = c.palabras.flatMap((p) => p.cajas);
+    const junto = cajas.filter((k) => k.y < c.circuloNombre.abajo && k.abajo > c.circuloNombre.y);
+    assert.ok(junto.length > 0 && junto.every((k) => k.derecha <= c.circuloNombre.x), JSON.stringify(c));
+    // Bajo el lápiz el nombre usa todo el ancho: el bloque llega al borde de la columna y algún renglón de abajo pasa por donde está el lápiz.
+    assert.ok(Math.abs(c.titulo.derecha - c.columna.derecha) <= 1, JSON.stringify(c));
+    assert.ok(cajas.some((k) => k.y >= c.circuloNombre.abajo && k.derecha > c.circuloNombre.x), JSON.stringify(c));
+    // Ninguna palabra se parte, y el nombre largo cabe en pocos renglones (a 390, los de la captura del founder: 3 a 4; a 320, con 168 px de ancho, hasta 6).
+    // Solo con la fuente real (`FUENTE`): con Arial, la de la CI, las palabras miden distinto y «cianotipia» se parte a 320.
+    if (process.env.FUENTE) {
+      assert.deepEqual(c.palabras.filter((p) => p.renglones > 1).map((p) => p.palabra), []);
+      const renglones = new Set(cajas.map((k) => Math.round(k.y))).size;
+      assert.ok(ancho === 390 ? renglones <= 4 : renglones <= 6, `${renglones} renglones`);
+    }
+    // Tocar el nombre (no solo el lápiz) también lo cambia.
+    await p.getByRole("heading", { name: LARGO }).click({ force: true });
+    assert.equal(await pregunta(p), "¿Cómo se llama?");
+    await boton(p, "Atrás").click();
+    if (ancho === 390) await foto(p, "01-cabecera-390");
+    else await foto(p, "02-cabecera-320");
+    // Tocar la miniatura fuera del círculo (su esquina) abre el paso del cartel, igual que el lápiz.
+    await p.mouse.click(c.img.x + 6, c.img.y + 6);
+    assert.ok(await p.getByText("Sube el cartel", { exact: true }).isVisible());
+  });
+}
+
+test("sin cartel, la miniatura es el símbolo SN con el mismo lápiz al centro, que pone uno", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { evento: { ...EVENTO, titulo: LARGO, imagen: null } } });
+  await p.locator("main img").evaluate((img) => img.decode());
+  assert.equal(await p.locator("main img").getAttribute("src"), "/sin-foto.png");
+  assert.equal(await p.getByText("Cambiar cartel").count(), 0);
+  const c = await cabecera(p);
+  assert.ok(Math.abs(c.img.y - c.titulo.y) <= 1, JSON.stringify(c));
+  assert.ok(Math.abs(c.circuloCartel.x + 22 - (c.img.x + c.img.ancho / 2)) <= 1, JSON.stringify(c));
+  await foto(p, "03-sin-cartel-390");
+  await boton(p, "Cambiar cartel").click();
+  assert.ok(await p.getByText("Sube el cartel", { exact: true }).isVisible());
+  assert.equal(await boton(p, "Quitar el cartel").count(), 0);
+});
+
 test("«Cambiar» el precio: el campo con el precio de ahora y su ✕; vuelve con el nuevo", TOPE, async (t) => {
   const p = await pagina(t);
   await boton(p, "Cambiar cuánto").click();
@@ -380,7 +463,7 @@ test("horario por día: un evento de un día pasa a varios y se ajusta día por 
   assert.equal(JSON.parse(d.sesiones)[1].inicio, "2026-10-10T17:00");
 });
 
-test("el cartel: «Cambiar» abre el paso del alta con la casilla desmarcada; «Quitar el cartel» lo quita y deja «Cartel · Agregar»", TOPE, async (t) => {
+test("el cartel: su lápiz abre el paso del alta con la casilla desmarcada; «Quitar el cartel» lo quita y deja el símbolo SN con el mismo lápiz", TOPE, async (t) => {
   const p = await pagina(t);
   await boton(p, "Cambiar cartel").click();
   assert.ok(await p.getByText("Sube el cartel", { exact: true }).isVisible());
@@ -389,11 +472,11 @@ test("el cartel: «Cambiar» abre el paso del alta con la casilla desmarcada; «
   await foto(p, "05-cambiar-cartel");
   await boton(p, "Quitar el cartel").click();
   assert.equal(await p.getByRole("heading", { name: "Ecos de papel" }).count(), 1);
-  assert.equal(await p.locator("main img").count(), 0);
-  assert.match(limpio((await renglones(p)).at(-1)), /Cartel Agregar/);
+  assert.equal(await p.locator("main img").getAttribute("src"), "/sin-foto.png");
+  assert.equal((await renglones(p)).filter((r) => /^cartel\n/i.test(r)).length, 0);
   assert.equal((await guardar(p)).imagen, "");
-  // Sin cartel, el renglón lo pone: abre el mismo paso, ahora sin «Quitar el cartel».
-  await boton(p, "Agregar cartel").click();
+  // Sin cartel, el lápiz del símbolo lo pone: abre el mismo paso, ahora sin «Quitar el cartel».
+  await boton(p, "Cambiar cartel").click();
   assert.equal(await boton(p, "Quitar el cartel").count(), 0);
 });
 
