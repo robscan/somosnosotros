@@ -131,7 +131,8 @@ export default async function FichaSitio({ params }: Params) {
 
         <section className={ficha.tarjeta}>
           <h2>Dónde</h2>
-          <MapaFicha punto={sede.punto} href={comoLlegar} alt={sede.nombre} />
+          {/* Su pin lleva el día de su próximo evento; su tarjeta, sin ángulo (es esta ficha) y con «Cómo llegar» (OL-350). */}
+          {comoLlegar && <MapaFicha sedes={[{ clave: sede.clave, nombre: sede.nombre, punto: sede.punto, meta: calle || null, href: null, comoLlegar, proximo: eventos[0] ? { inicio: eventos[0].inicio, zona: eventos[0].zona } : null }]} ficha="sitio" alt={sede.nombre} />}
           {/* La dirección es un dato, como en la ficha de un lugar: «Cómo llegar» está en las acciones. */}
           {calle && (
             <div className={renglon.dato}>

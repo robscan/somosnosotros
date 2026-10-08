@@ -89,6 +89,7 @@
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
   --columna-icono: 24px; /* la columna del icono en un renglón: icono | texto | acción */
   --alto-chip: 36px; /* alto que se ve de un chip que se toca; su ::before lo lleva a --toque-min */
+  --pista-ampliar: 36px; /* el círculo con el icono de ampliar en la esquina del mapa de una ficha: solo la pista; el toque es toda la imagen (OL-350) */
 
   /* Barras */
   --alto-barra: 56px; /* barra de la app (BarraApp) y cabecera interior de una ficha o una tarea: 56 sin la franja de la hora */

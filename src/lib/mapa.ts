@@ -73,3 +73,38 @@ export function colorDiseno(nombre: string, reserva: string): string {
   if (typeof document === "undefined") return reserva;
   return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || reserva;
 }
+
+/** Dónde mira la cámara de un mapa: su centro y su acercamiento (el `zoom` de Mapbox). */
+export type Vista = { centro: { lat: number; lng: number }; zoom: number };
+
+/** Lo que mide el mundo entero a acercamiento 0 en Mapbox GL (px): cada nivel lo dobla. */
+const MUNDO_EN_ZOOM_0 = 512;
+
+/** Un punto en Web Mercator, de 0 a 1 en cada eje (la proyección de Mapbox), y de vuelta. */
+function aMercator({ lat, lng }: { lat: number; lng: number }): { x: number; y: number } {
+  const s = Math.sin((lat * Math.PI) / 180);
+  return { x: (lng + 180) / 360, y: 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI) };
+}
+function deMercator({ x, y }: { x: number; y: number }): { lat: number; lng: number } {
+  return { lat: (Math.atan(Math.exp((0.5 - y) * 2 * Math.PI)) * 360) / Math.PI - 90, lng: x * 360 - 180 };
+}
+
+/**
+ * La vista que deja todos los puntos dentro de una caja de `caja.ancho` × `caja.alto` px con `aire` libre a cada lado (lo que tapan los controles y la
+ * tarjeta), sin acercarse más que `zoomMax` (con un solo punto, la caja libre se centra en él a ese acercamiento). Es lo que hace `fitBounds` de Mapbox,
+ * pero sin el mapa: así el mapa a pantalla completa de una ficha (OL-350) abre ya encuadrado, sin volar desde otro sitio. Null sin puntos.
+ */
+export function vistaQueEncuadra(puntos: readonly { lat: number; lng: number }[], caja: { ancho: number; alto: number }, aire: { arriba: number; abajo: number; izq: number; der: number }, zoomMax: number): Vista | null {
+  if (!puntos.length) return null;
+  const m = puntos.map(aMercator);
+  const xs = m.map((p) => p.x);
+  const ys = m.map((p) => p.y);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const libreAncho = Math.max(1, caja.ancho - aire.izq - aire.der);
+  const libreAlto = Math.max(1, caja.alto - aire.arriba - aire.abajo);
+  const escala = Math.min(x1 > x0 ? libreAncho / ((x1 - x0) * MUNDO_EN_ZOOM_0) : Infinity, y1 > y0 ? libreAlto / ((y1 - y0) * MUNDO_EN_ZOOM_0) : Infinity);
+  const zoom = Math.min(zoomMax, Math.log2(escala));
+  const mundo = MUNDO_EN_ZOOM_0 * 2 ** zoom;
+  // El centro de la caja libre está corrido del de la caja entera la mitad de la diferencia de aire en cada eje: el centro del mapa, al revés.
+  return { centro: deMercator({ x: (x0 + x1) / 2 - (aire.izq - aire.der) / 2 / mundo, y: (y0 + y1) / 2 - (aire.arriba - aire.abajo) / 2 / mundo }), zoom };
+}

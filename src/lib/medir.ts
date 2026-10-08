@@ -72,6 +72,14 @@ export const EVENTOS = {
   festival_parecido_visto: { caso: ["festival", "evento"] },
   festival_parecido_si: { caso: ["festival", "evento"] },
   festival_parecido_no: { caso: ["festival", "evento"] },
+  /**
+   * El mapa de una ficha a pantalla completa (OL-350): se abrió (y desde qué ficha), se eligió un pin, se tocó «Mi ubicación» o «Cómo llegar» en la
+   * tarjeta de un pin. Nunca qué sede, qué ficha ni dónde está la persona.
+   */
+  mapa_abierto: { ficha: ["evento", "festival", "lugar", "sitio"] },
+  mapa_pin: {},
+  mapa_ubicacion: {},
+  mapa_como_llegar: {},
   /** La app quedó instalada (el aviso `appinstalled`: Chrome, Edge y Android; Safari de iPhone nunca lo da). */
   app_instalada: {},
   /** Una pantalla no cargó (la de «Algo falló»). */

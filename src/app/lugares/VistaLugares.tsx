@@ -20,7 +20,7 @@ import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
 import { agruparLugares, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, puntoDeCercania, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
-import { leerUbicacionCercana, permisoConcedido } from "@/lib/ubicacion";
+import { avisoDeUbicacion, leerUbicacionCercana, permisoConcedido, type EstadoGeo } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
 import HojaLugares, { type DondeEstaba, type EstadoHoja, type Manejo } from "./HojaLugares";
@@ -30,7 +30,6 @@ import styles from "./lugares.module.css";
 const ALTA_DE_LUGAR = enlaceDeAlta("lugar", null).href;
 
 type Punto = { lat: number; lng: number };
-type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 type Encuadre = { puntos: Punto[]; vez: number };
 /**
  * La ficha abierta dentro de la hoja: el lugar y lo que llega del servidor (null mientras llega, «fallo» si no se pudo), con lo
@@ -235,7 +234,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
       encuadrar(encuadreCercanosDe(visibles, punto));
     } else pedirUbicacion();
   }
-  const notaGeo = geo === "negado" ? "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono." : geo === "error" ? "No pudimos leer tu ubicación." : null;
+  const notaGeo = avisoDeUbicacion(geo);
 
   // Al volver de una ficha o de otra pestaña: los filtros, la ficha abierta y la hoja donde estaba (altura y desplazamiento).
   useMemoriaPantalla<Memoria>("lugares", { conEventos, soloSigo, hoja: { ficha: abierta?.lugar.slug || abierta?.lugar.id || null, detente: hoja.detente, y: hoja.y } }, (r) => {

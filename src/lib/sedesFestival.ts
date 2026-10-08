@@ -1,3 +1,4 @@
+import { eventoPaso } from "./fechas";
 import { hrefLugar, normalizarNombre } from "./lugares";
 import { hrefSitio } from "./sitios";
 
@@ -99,6 +100,19 @@ export function sedesDeFestival(actos: readonly ActoConSitio[], respaldo?: ActoC
   if (sedes.size) return [...sedes.values()];
   const propia = respaldo ? sedeDe(respaldo) : null;
   return propia ? [{ ...propia, actos: 0 }] : [];
+}
+
+/**
+ * El primer acto que todavía no pasa en cada sede (por su `clave`): el día que lleva su pin en el mapa a pantalla completa (OL-350; `diaPin` decide si
+ * es «Hoy», el día de la semana o ninguno). Un acto de hoy cuenta hasta que acabe el día, como en la agenda. Una sede sin actos por venir no sale.
+ */
+export function proximoPorSede(actos: readonly ActoConSitio[], zona: string, ahora: Date = new Date()): Map<string, string> {
+  const proximos = new Map<string, string>();
+  for (const a of [...actos].sort((x, y) => Date.parse(x.inicio) - Date.parse(y.inicio))) {
+    const clave = sedeDe(a)?.clave;
+    if (clave && !proximos.has(clave) && !eventoPaso(a.inicio, null, ahora, zona)) proximos.set(clave, a.inicio);
+  }
+  return proximos;
 }
 
 /**

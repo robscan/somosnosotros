@@ -256,7 +256,13 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
 
       <section className={ficha.tarjeta}>
         <h2>Dónde</h2>
-        <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
+        {/* Su pin lleva el día de su próximo evento, que llega con su propia consulta; su tarjeta, sin ángulo (es esta ficha) y con «Cómo llegar» (OL-350). */}
+        <MapaFicha
+          sedes={[{ clave: lugar.id, nombre: lugar.nombre, punto: { lat: lugar.lat, lng: lugar.lng }, meta: calle || null, href: null, comoLlegar, proximo: null }]}
+          proximo={cargarEventosCache(lugar).then(([e]) => (e ? { inicio: e.inicio, zona: e.zona } : null))}
+          ficha="lugar"
+          alt={lugar.nombre}
+        />
         {/* La dirección es un dato, no un enlace (OL-348, founder 2026-10-08: «no es claro lo que va a pasar»): un ángulo siempre abre una
             ficha y «Cómo llegar» ya está en las acciones de arriba. */}
         <div className={renglon.dato}>

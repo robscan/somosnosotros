@@ -38,14 +38,28 @@ const TOPE_PINES = 25;
 /** El aire alrededor de los pines al encuadrar varios (px de la imagen): que ninguno quede cortado contra el borde. */
 const AIRE_PINES = 40;
 
+/** La pista de ampliar de `MapaFicha` en la esquina de abajo a la derecha: 36 de círculo y 8 de separación del borde (px de pantalla). */
+const PISTA_AMPLIAR = 44;
+/** Lo que mide de ancho el mapa de la ficha en la pantalla más angosta, 320 (px de pantalla, medido en la bitácora 381): ahí la pista ocupa más imagen. */
+const ANCHO_MAPA_MINIMO = 246;
+/** Medio ancho del pin `pin-s` de la imagen (px de la imagen): el pin cuelga hacia arriba de su punto y se abre a los lados. */
+const MEDIO_PIN = 10;
+/**
+ * El aire a la derecha (OL-350): la franja de la pista llevada a px de la imagen en la pantalla más angosta, más medio pin (44 × 600 / 246 → 108, + 10 =
+ * 118). Con todos los puntos a la izquierda de esa franja, ningún pin cae bajo la pista a ningún ancho. Solo a la derecha y no abajo: la imagen tiene
+ * 250 de alto y la pista ocuparía más de la mitad; a lo ancho sobran 600.
+ */
+const AIRE_DERECHA = Math.ceil((PISTA_AMPLIAR * ANCHO_MAPA_FICHA) / ANCHO_MAPA_MINIMO) + MEDIO_PIN;
+
 /**
  * El mapa de las sedes de un festival (OL-339): un pin por sede y el encuadre que los abarca a todos (`auto` de la Static Images API), en la misma
- * imagen y proporción que el de un pin. Con uno solo, el de siempre; null sin token o sin puntos. A lo más `TOPE_PINES` (la dirección tiene tope).
+ * imagen y proporción que el de un pin. Con uno solo, el de siempre (su pin va al centro, lejos de la pista de ampliar); null sin token o sin puntos.
+ * A lo más `TOPE_PINES` (la dirección tiene tope). El aire va como en CSS (arriba, derecha, abajo, izquierda): más a la derecha, por la pista.
  */
 export function urlMapaSedes(puntos: readonly { lat: number; lng: number }[]): string | null {
   if (puntos.length < 2) return urlMapaFicha(puntos[0] ?? null);
   const { mapboxToken } = configPublica();
   if (!mapboxToken) return null;
   const pines = puntos.slice(0, TOPE_PINES).map((p) => `pin-s+${COLOR_PIN}(${p.lng},${p.lat})`).join(",");
-  return `https://api.mapbox.com/styles/v1/${ESTILO_MINIATURA}/static/${pines}/auto/${ANCHO_MAPA_FICHA}x${ALTO_MAPA_FICHA}@2x?padding=${AIRE_PINES}&access_token=${mapboxToken}`;
+  return `https://api.mapbox.com/styles/v1/${ESTILO_MINIATURA}/static/${pines}/auto/${ANCHO_MAPA_FICHA}x${ALTO_MAPA_FICHA}@2x?padding=${AIRE_PINES},${AIRE_DERECHA},${AIRE_PINES},${AIRE_PINES}&access_token=${mapboxToken}`;
 }

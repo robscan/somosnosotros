@@ -8,7 +8,7 @@ import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
-import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa, type PuntoEnPantalla } from "@/lib/mapa";
+import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa, type PuntoEnPantalla, type Vista } from "@/lib/mapa";
 import { sinMovimiento } from "@/lib/movimiento";
 import { prioridadPin, propiedadesPin, rangosDeDias, RADIO_MEDIANO, TAMANO_DIA, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import { seguirMapa } from "./quitarMapa";
@@ -27,11 +27,14 @@ type Props = {
   /** La persona en el mapa (punto azul); `vez` cambia con cada toque al botón de ubicación para volver a centrar. */
   ubicacion?: (Punto & { vez: number }) | null;
   /** Puntos que encuadrar; `vez` cambia con cada encuadre nuevo (búsqueda, encuadre inicial, "cercanos" o el lugar cuya ficha se
-   *  abre). Uno solo: se acerca a él. */
-  encuadre?: { puntos: Punto[]; vez: number } | null;
+   *  abre). Uno solo: se acerca a él. Con `aLaVista` (uno solo), el mapa no se acerca: se mueve lo justo para sacarlo de debajo de lo que
+   *  tapa la hoja o de los bordes, y si ya se ve no se mueve (el pin elegido en el mapa de una ficha, OL-350). */
+  encuadre?: { puntos: Punto[]; vez: number; aLaVista?: boolean } | null;
   /** Lo que una hoja tapa del mapa por abajo (px). Cada encuadre lo deja libre, para que el lugar o los lugares encuadrados no
    *  queden detrás de ella (la hoja de Lugares, que cambia de altura). */
   tapaAbajo?: number;
+  /** Lo que tapan por arriba los controles que flotan sobre el mapa (px): cada encuadre lo deja libre (la ✕ y los botones del mapa de una ficha). */
+  tapaArriba?: number;
   ciudad?: Ciudad;
   /** Los lugares que la persona sigue (con sesión), en verde (`--ok`), encima de los demás. El resalte lo lleva el seguido, no el
    *  destacado (docs/rediseno/35, decisión del founder tras firmar, 2026-09-22; el color, corrección del founder, 2026-09-22,
@@ -48,6 +51,18 @@ type Props = {
   /** La persona mueve el mapa con un gesto (arrastrar, acercar, girar o inclinar): la hoja se recoge para dejarlo ver. Los movimientos de
    *  cámara de la propia app (encuadres, «Mi ubicación», abrir una ficha) no cuentan: solo los que traen el evento del dedo o del ratón. */
   onGesto?: () => void;
+  /** Dónde abre la cámara; sin esto, en el centro de `ciudad` (el mapa de una ficha abre ya encuadrado y, al volver a abrirlo, donde se dejó). */
+  vista?: Vista | null;
+  /** Cada vez que la cámara se queda quieta, dónde quedó (para volver a abrir el mapa ahí). */
+  alMover?: (vista: Vista) => void;
+  /** Tocar el mapa fuera de los lugares (el mapa de una ficha suelta ahí su tarjeta). */
+  onVacio?: () => void;
+  /** Sostener el dedo ofrece registrar un lugar (`PulsacionEnMapa`): en Lugares sí; en el mapa de una ficha, no. */
+  conAlta?: boolean;
+  /** La marca de Mapbox y su ⓘ abajo a la izquierda (arriba va la ✕ del mapa de una ficha); sin esto, arriba a la izquierda (abajo va la hoja de Lugares). */
+  marcaAbajo?: boolean;
+  /** El nombre del mapa para el lector de pantalla; sin esto, «Mapa de» y la ciudad. */
+  etiqueta?: string;
 };
 
 /** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba, que es de menor a mayor rango (Mapbox coloca primero la
@@ -73,6 +88,10 @@ const ANCLAS_NOMBRE: ("top" | "bottom" | "left" | "right")[] = ["top", "bottom",
 const SIN_SEGUIDOS: string[] = [];
 const SIN_DESTACADOS: string[] = [];
 const NADA = () => {};
+/** Lo que se deja libre arriba al encuadrar (px) si quien llama no dice otra cosa (`tapaArriba`): bajo la fila de contexto de Lugares. */
+const ARRIBA_ENCUADRE = 56;
+/** Un pin a menos de esto (px) de un borde no cuenta como a la vista: su nombre, que va a lo ancho del punto, se cortaría. */
+const MARGEN_A_LA_VISTA = 40;
 
 /** Lo que las capas leen de cada lugar (`propiedadesPin` más lo que dice el propio lugar). */
 type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean; rango: number };
@@ -253,7 +272,7 @@ function lugarTocado(mapa: MapaGL, { x, y }: PuntoEnPantalla): string | null {
  * Mapa de los lugares, llenando la caja donde se pone (acuerdo del council: "un solo renderer de mapa" para Lugares).
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera, onDespejar = NADA, onGesto }: Props) {
+export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, tapaArriba = ARRIBA_ENCUADRE, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera, onDespejar = NADA, onGesto, vista = null, alMover, onVacio, conAlta = true, marcaAbajo = false, etiqueta }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -268,11 +287,23 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
   useEffect(() => {
     onGestoRef.current = onGesto;
   }, [onGesto]);
+  const alMoverRef = useRef(alMover);
+  useEffect(() => {
+    alMoverRef.current = alMover;
+  }, [alMover]);
+  const onVacioRef = useRef(onVacio);
+  useEffect(() => {
+    onVacioRef.current = onVacio;
+  }, [onVacio]);
   // Cada encuadre lee la última altura de la hoja sin repetirse cuando ella cambia (la cámara solo se mueve al encuadrar).
   const tapaRef = useRef(tapaAbajo);
   useEffect(() => {
     tapaRef.current = tapaAbajo;
   }, [tapaAbajo]);
+  const arribaRef = useRef(tapaArriba);
+  useEffect(() => {
+    arribaRef.current = tapaArriba;
+  }, [tapaArriba]);
   const router = useRouter();
   const routerRef = useRef(router);
   useEffect(() => {
@@ -308,19 +339,21 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       mapboxgl.accessToken = mapboxToken;
+      const esquina = marcaAbajo ? "bottom-left" : "top-left"; // abajo va la hoja de Lugares; arriba, la ✕ del mapa de una ficha
+      const centro = vista?.centro ?? ciudad.centro;
       mapa = new mapboxgl.Map({
         container: nodo,
         style: mapboxStyle,
-        center: [ciudad.centro.lng, ciudad.centro.lat],
-        zoom: ciudad.zoom,
+        center: [centro.lng, centro.lat],
+        zoom: vista?.zoom ?? ciudad.zoom,
         language: "es",
         locale: TEXTOS_MAPBOX,
         attributionControl: false,
-        logoPosition: "top-left", // abajo va la hoja de Lugares
+        logoPosition: esquina,
       });
       mapaRef.current = mapa;
       quitar = seguirMapa(mapa);
-      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-left");
+      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), esquina);
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
         if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
@@ -330,9 +363,17 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
         console.error("Mapbox:", e.error);
         setEstado((actual) => (actual === "listo" ? actual : "error"));
       });
-      // Tocar un lugar abre su ficha; tocar fuera no hace nada.
+      // Tocar un lugar abre su ficha; tocar fuera no hace nada (o lo que pida quien llama: el mapa de una ficha suelta su tarjeta).
       mapa.on("click", (e) => {
-        if (mapa) abrirLugarEn(e.point);
+        if (mapa && !abrirLugarEn(e.point)) onVacioRef.current?.();
+      });
+      // El centro de la caja entera, no `getCenter()`: ese es el del hueco que dejó el último encuadre con relleno (`padding`), y abrir ahí sin
+      // relleno movería el mapa.
+      mapa.on("moveend", () => {
+        if (!mapa || !alMoverRef.current) return;
+        const { clientWidth, clientHeight } = mapa.getContainer();
+        const { lat, lng } = mapa.unproject([clientWidth / 2, clientHeight / 2]);
+        alMoverRef.current({ centro: { lat, lng }, zoom: mapa.getZoom() });
       });
       // Un gesto de la persona (trae `originalEvent`) recoge la hoja; la cámara que mueve la app no lo trae.
       for (const inicio of ["dragstart", "zoomstart", "rotatestart", "pitchstart"] as const) {
@@ -387,13 +428,23 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa || !encuadre || encuadre.puntos.length === 0) return;
     const duration = sinMovimiento() ? 0 : 600;
+    if (encuadre.aLaVista && encuadre.puntos.length === 1) {
+      // Lo justo para que se vea (OL-350): si ya cae en lo que dejan libres los bordes y la tarjeta, nada; si no, se centra ahí, sin acercarse.
+      const p = encuadre.puntos[0];
+      const enPantalla = mapa.project([p.lng, p.lat]);
+      const { clientWidth: ancho, clientHeight: alto } = mapa.getContainer();
+      const abajo = Math.max(72, tapaRef.current + 24);
+      if (enPantalla.x >= MARGEN_A_LA_VISTA && enPantalla.x <= ancho - MARGEN_A_LA_VISTA && enPantalla.y >= arribaRef.current && enPantalla.y <= alto - abajo) return;
+      mapa.easeTo({ center: [p.lng, p.lat], padding: { top: arribaRef.current, bottom: abajo, left: 0, right: 0 }, duration: sinMovimiento() ? 0 : 250 });
+      return;
+    }
     if (encuadre.puntos.length === 1) {
       const p = encuadre.puntos[0];
       mapa.flyTo({ center: [p.lng, p.lat], zoom: Math.max(mapa.getZoom(), 15), padding: { bottom: tapaRef.current }, duration });
       return;
     }
     let cancelado = false;
-    const arriba = 56;
+    const arriba = arribaRef.current;
     const abajo = Math.max(72, tapaRef.current + 24);
     // A cada lado, la mitad del nombre más ancho (9 em de 15 px = 135 px) y un poco de aire: el nombre de un pin de los extremos no toca el borde.
     const lado = 72;
@@ -460,9 +511,9 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
   }, [estado, ubicacion]);
 
   return (
-    <div className={styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
+    <div className={marcaAbajo ? `${styles.mapa} ${styles.marcaAbajo}` : styles.mapa} aria-label={etiqueta ?? `Mapa de ${ciudad.nombre}`} role="region">
       <div ref={contenedor} className={styles.lienzo} />
-      <PulsacionEnMapa mapa={mapaRef} contenedor={contenedor} listo={estado === "listo"} elegido={elegido} tapaAbajo={tapaAbajo} alDespejar={onDespejar} alLugar={abrirLugarEn} />
+      {conAlta && <PulsacionEnMapa mapa={mapaRef} contenedor={contenedor} listo={estado === "listo"} elegido={elegido} tapaAbajo={tapaAbajo} alDespejar={onDespejar} alLugar={abrirLugarEn} />}
       {estado !== "listo" && (
         <p className={styles.aviso} role="status">
           {estado === "cargando" && "Cargando el mapa…"}

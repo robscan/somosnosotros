@@ -97,6 +97,14 @@ describe("el creador de cartel (OL-336)", () => {
     expect(validarMedicion("cartel_foto_puesta", { foto: "https://x.supabase.co/storage/v1/object/public/fotos/lugares/u/cartel-foto-1.jpg" })).toBeNull();
     expect(validarMedicion("cartel_foto_quitada", { evento: "oca" })).toBeNull();
   });
+  it("el mapa a pantalla completa (OL-350): desde qué ficha se abrió, y pin, ubicación y «Cómo llegar» sin datos; nunca la sede ni el punto", () => {
+    for (const ficha of ["evento", "festival", "lugar", "sitio"]) expect(validarMedicion("mapa_abierto", { ficha })).toEqual({ ficha });
+    expect(validarMedicion("mapa_abierto", { ficha: "artista" })).toBeNull();
+    expect(validarMedicion("mapa_abierto")).toBeNull();
+    for (const nombre of ["mapa_pin", "mapa_ubicacion", "mapa_como_llegar"]) expect(validarMedicion(nombre)).toEqual({});
+    expect(validarMedicion("mapa_pin", { sede: "l:teatro-de-la-paz" })).toBeNull();
+    expect(validarMedicion("mapa_ubicacion", { lat: "22.15" })).toBeNull();
+  });
 });
 
 describe("claseMedida", () => {
