@@ -272,14 +272,22 @@ test("«Cambiar» el nombre: la pregunta del alta con el nombre de ahora, su ✕
 /** OL-349 (bitácora 378): la cabecera sin letreros. Las cajas de la miniatura, del nombre y de los dos lápices, medidas en la página. */
 const cabecera = (p) =>
   p.evaluate(() => {
-    const caja = (el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.x, y: r.y, ancho: r.width, alto: r.height, derecha: r.right, abajo: r.bottom };
-    };
+    const medidas = (r) => ({ x: r.x, y: r.y, ancho: r.width, alto: r.height, derecha: r.right, abajo: r.bottom });
+    const caja = (el) => medidas(el.getBoundingClientRect());
     const lapiz = (nombre) => document.querySelector(`main button[aria-label="${nombre}"]`);
     const cartel = lapiz("Cambiar cartel");
     const nombre = lapiz("Cambiar nombre");
-    return { img: caja(document.querySelector("main img")), titulo: caja(document.querySelector("main h2")), cartel: caja(cartel), circuloCartel: caja(cartel.firstElementChild), nombre: caja(nombre), circuloNombre: caja(nombre.firstElementChild), columna: caja(document.querySelector("main h2").parentElement) };
+    // Cada palabra del nombre con las cajas de sus renglones: una palabra partida tiene dos (en dos alturas).
+    const h2 = document.querySelector("main h2");
+    const texto = h2.firstChild;
+    const palabras = [...texto.data.matchAll(/\S+/g)].map((m) => {
+      const r = document.createRange();
+      r.setStart(texto, m.index);
+      r.setEnd(texto, m.index + m[0].length);
+      const cajas = [...r.getClientRects()].map(medidas);
+      return { palabra: m[0], cajas, renglones: new Set(cajas.map((k) => Math.round(k.y))).size };
+    });
+    return { img: caja(document.querySelector("main img")), titulo: caja(h2), palabras, cartel: caja(cartel), circuloCartel: caja(cartel.firstElementChild), nombre: caja(nombre), circuloNombre: caja(nombre.firstElementChild), columna: caja(h2.parentElement) };
   });
 const LARGO = "Taller de cianotipia sobre papel: el símbolo como herramienta visual";
 
@@ -299,12 +307,21 @@ for (const ancho of [320, 390]) {
     assert.equal(Math.round(c.circuloCartel.ancho), 44);
     assert.ok(Math.abs(c.circuloCartel.x + 22 - (c.img.x + c.img.ancho / 2)) <= 1 && Math.abs(c.circuloCartel.y + 22 - (c.img.y + c.img.alto / 2)) <= 1, JSON.stringify(c));
     assert.deepEqual([c.cartel.x, c.cartel.y, c.cartel.ancho, c.cartel.alto].map(Math.round), [c.img.x, c.img.y, c.img.ancho, c.img.alto].map(Math.round));
-    // El lápiz del nombre: 44, arriba a la derecha de la columna, a la altura de la primera línea; el nombre (de varias líneas) no pasa por debajo.
+    // El lápiz del nombre: 44, arriba a la derecha de la columna, a la altura de la primera línea.
     assert.equal(Math.round(c.circuloNombre.ancho), 44);
     assert.ok(Math.abs(c.circuloNombre.derecha - c.columna.derecha) <= 1 && Math.abs(c.circuloNombre.y - c.titulo.y) <= 1, JSON.stringify(c));
-    assert.ok(c.titulo.derecha <= c.circuloNombre.x, JSON.stringify(c));
     assert.ok(c.titulo.x >= c.img.derecha, JSON.stringify(c));
-    assert.ok(c.titulo.alto > 60, "el nombre largo ocupa varias líneas");
+    // Nada encimado: ninguna palabra a la altura del lápiz llega a él (el hueco flotante las aparta).
+    const cajas = c.palabras.flatMap((p) => p.cajas);
+    const junto = cajas.filter((k) => k.y < c.circuloNombre.abajo && k.abajo > c.circuloNombre.y);
+    assert.ok(junto.length > 0 && junto.every((k) => k.derecha <= c.circuloNombre.x), JSON.stringify(c));
+    // Bajo el lápiz el nombre usa todo el ancho: el bloque llega al borde de la columna y algún renglón de abajo pasa por donde está el lápiz.
+    assert.ok(Math.abs(c.titulo.derecha - c.columna.derecha) <= 1, JSON.stringify(c));
+    assert.ok(cajas.some((k) => k.y >= c.circuloNombre.abajo && k.derecha > c.circuloNombre.x), JSON.stringify(c));
+    // Ninguna palabra se parte, y el nombre largo cabe en pocos renglones (a 390, los de la captura del founder: 3 a 4; a 320, con 168 px de ancho, hasta 6).
+    assert.deepEqual(c.palabras.filter((p) => p.renglones > 1).map((p) => p.palabra), []);
+    const renglones = new Set(cajas.map((k) => Math.round(k.y))).size;
+    assert.ok(ancho === 390 ? renglones <= 4 : renglones <= 6, `${renglones} renglones`);
     // Tocar el nombre (no solo el lápiz) también lo cambia.
     await p.getByRole("heading", { name: LARGO }).click({ force: true });
     assert.equal(await pregunta(p), "¿Cómo se llama?");
