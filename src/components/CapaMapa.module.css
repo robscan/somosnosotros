@@ -1,0 +1,113 @@
+/* ==========================================================================
+   El mapa de una ficha a pantalla completa (`CapaMapa`, OL-350; prototipo firmado `docs/rediseno/prototipos/mapa-pantalla-completa.html`).
+   Una sola rejilla plana sobre toda la ventana: el mapa (`Mapa`, que se pone a lo ancho y alto de la capa) queda debajo de todo, y encima, cada
+   pieza en su área: la ✕ arriba a la izquierda; «Mi ubicación» arriba a la derecha y «Encuadrar» bajo ella (donde los pone Lugares); el aviso de la
+   ubicación bajo los botones; y abajo la tarjeta del pin elegido, alineada con la columna. Las celdas vacías dejan pasar el dedo al mapa.
+   ========================================================================== */
+.capa {
+  --mapa-marca-abajo: calc(var(--piso) + var(--espacio-2)); /* la marca de Mapbox, sobre la zona segura (con tarjeta, la pone `CapaMapa`) */
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-capa);
+  display: grid;
+  grid-template-columns: var(--boton-icono) minmax(0, 1fr) var(--boton-icono);
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "cerrar . ubicacion"
+    ". . encuadrar"
+    "aviso aviso aviso"
+    ". . ."
+    "tarjeta tarjeta tarjeta";
+  row-gap: var(--espacio-2);
+  padding: calc(var(--tope) + var(--espacio-2)) var(--espacio-4) calc(var(--piso) + var(--espacio-4));
+  background: var(--fondo-mapa);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .capa {
+    animation: abrir var(--duracion) var(--curva);
+  }
+}
+@keyframes abrir {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+/* Lo que flota sobre el mapa: encima de él (el mapa va posicionado en toda la capa). Los botones son `BotonIcono` de 48, blancos y con sombra, con el
+   glifo en tinta como en Lugares; el de la ubicación, del color de acción cuando ya la tiene, y late mientras llega. */
+.cerrar,
+.ubicacion,
+.encuadrar,
+.aviso,
+.tarjeta {
+  position: relative;
+  z-index: var(--z-sobre);
+}
+.cerrar {
+  grid-area: cerrar;
+  box-shadow: var(--sombra-flotante);
+}
+.ubicacion {
+  grid-area: ubicacion;
+}
+.encuadrar {
+  grid-area: encuadrar;
+  transition:
+    opacity var(--duracion) var(--curva),
+    visibility 0s;
+}
+.cerrar > svg,
+.ubicacion > svg,
+.encuadrar > svg {
+  color: var(--texto);
+}
+.ubicacion[data-activa] > svg {
+  color: var(--primario);
+}
+.ubicacion[data-pidiendo] > svg {
+  animation: latir 1.1s ease-in-out infinite;
+}
+@keyframes latir {
+  50% {
+    opacity: 0.45;
+  }
+}
+/* «Encuadrar» solo cuando la persona movió el mapa: oculto ni se ve ni se toca, y guarda su sitio (el aviso no salta). */
+.encuadrarOculto {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duracion) var(--curva),
+    visibility 0s var(--duracion);
+}
+.aviso {
+  grid-area: aviso;
+}
+
+/* La tarjeta del pin: `TarjetaSede` (pin, nombre, meta y el ángulo a su ficha) y «Cómo llegar» debajo, a lo ancho. */
+.tarjeta {
+  grid-area: tarjeta;
+  justify-self: center;
+  display: grid;
+  row-gap: var(--espacio-2);
+  width: min(100%, var(--columna));
+  padding: var(--espacio-1) var(--espacio-4) var(--espacio-4);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+  box-shadow: var(--sombra-flotante);
+}
+.tarjeta > a:last-child > svg {
+  color: var(--primario);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tarjeta {
+    animation: subir var(--duracion) var(--curva);
+  }
+}
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(var(--espacio-4));
+  }
+}

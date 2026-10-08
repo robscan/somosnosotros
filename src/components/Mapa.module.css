@@ -80,14 +80,23 @@
 /* La marca de Mapbox y la ⓘ (la licencia pide que las dos se vean), en una sola línea arriba a la izquierda del mapa, a 8 px de la línea
    de la fila de contexto: abajo va la hoja de Lugares y tapa la esquina. Sin relleno ni margen negativo: los controles pierden el margen
    que traen (10 y el −4 del logo). */
-.mapa :global(.mapboxgl-ctrl-top-left) {
+.mapa :global(.mapboxgl-ctrl-top-left),
+.marcaAbajo :global(.mapboxgl-ctrl-bottom-left) {
   top: var(--espacio-2);
   left: var(--espacio-2);
   display: flex;
   align-items: flex-start;
   gap: var(--espacio-2);
 }
-.mapa :global(.mapboxgl-ctrl-top-left .mapboxgl-ctrl),
-.mapa :global(.mapboxgl-ctrl-top-left .mapboxgl-ctrl-logo) {
+.mapa :global(.mapboxgl-ctrl-top-left :is(.mapboxgl-ctrl, .mapboxgl-ctrl-logo)),
+.marcaAbajo :global(.mapboxgl-ctrl-bottom-left :is(.mapboxgl-ctrl, .mapboxgl-ctrl-logo)) {
   margin: 0;
+}
+/* Abajo a la izquierda (`marcaAbajo`: el mapa de una ficha, con la ✕ arriba, OL-350): la misma línea, sobre lo que tape quien pone el mapa (la
+   tarjeta del pin y la zona segura, `--mapa-marca-abajo`). El de «¿Dónde es?» pone su logotipo ahí a la manera de Mapbox y no lleva esta clase. */
+.marcaAbajo :global(.mapboxgl-ctrl-bottom-left) {
+  top: auto;
+  bottom: var(--mapa-marca-abajo, var(--espacio-2));
+  align-items: flex-end;
+  transition: bottom var(--duracion) var(--curva);
 }

@@ -2,6 +2,15 @@ import type { Punto } from "./geo";
 
 export type ErrorUbicacion = "sin-soporte" | "negado" | "error";
 
+/** Cómo va «Mi ubicación» en un mapa (Lugares y el mapa de una ficha): sin pedir, pidiendo, o negada o fallida tras pedirla. */
+export type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
+
+/** Lo que dice el aviso del mapa cuando «Mi ubicación» no pudo leer la ubicación (el mismo en Lugares y en el mapa de una ficha); null, ninguno. */
+export function avisoDeUbicacion(estado: EstadoGeo): string | null {
+  if (estado === "negado") return "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono.";
+  return estado === "error" ? "No pudimos leer tu ubicación." : null;
+}
+
 /**
  * Una lectura de ubicación ya salió bien en esta carga de la app (y no se ha negado después). Solo en memoria, a propósito: es el
  * respaldo de `permissions.query`, que el WKWebView de la app de iPhone no soporta (lanza NotSupportedError), y ahí iOS vuelve a
