@@ -43,7 +43,7 @@ Ya decidido con él (por el gestor): el toque (no el arrastre) abre la capa; map
 4. **En un festival la tarjeta dice «N actividades» también con una sola sede** (founder: «puede decir n actividades»); en un evento, la calle.
 5. **«Encuadrar» sale al mover el mapa** (como el prototipo), no cuando las sedes quedan fuera de la vista como en Lugares.
 6. **Cambia la decisión 5 de OL-348**: con una sede, el mapa estático ya no abre Mapas; abre la capa. «Cómo llegar» sigue en las acciones de la ficha y en la tarjeta del pin.
-7. **La pista de ampliar puede tapar un pin** de la imagen estática cuando una sede cae en esa esquina (captura 01: el de Calzada de Guadalupe asoma por debajo). En la capa se ven todas. No moví el aire de la imagen (la API de Mapbox lo recibe; cambiarlo sin poder probar con la llave real arriesga una imagen rota).
+7. **La pista de ampliar ya no tapa ningún pin** (ajuste pedido por el gestor tras la primera entrega, cuando la captura 01 enseñaba el de Calzada de Guadalupe bajo ella). La imagen de varias sedes (`urlMapaSedes`, encuadre `auto`) lleva el aire como en CSS, `padding=40,118,40,40`: a la derecha, la franja de la pista (44 px de pantalla: 36 de círculo y 8 de separación) llevada a px de la imagen en la pantalla más angosta, donde el mapa mide 246 de ancho (44 × 600 / 246 → 108), más medio pin (10). Con todos los puntos a la izquierda de esa franja, ningún pin cae bajo la pista a ningún ancho. Solo a la derecha y no abajo: la imagen mide 250 de alto y la franja ocuparía más de la mitad, mientras que a lo ancho sobran 600. Con una sola sede la imagen no es `auto`: el pin va al centro (300, 125 de 600 × 250), lejos de la pista, y no cambia nada. **Por comprobar con el mapa real**: en este árbol no hay `.env.local` ni llave de Mapbox, así que no pude pedir la imagen a la API; el sustituto de las capturas encuadra con esos cuatro valores como lo describe la API (el gestor confirmó que acepta `padding=arriba,derecha,abajo,izquierda`). Si la API real lo rechazara, la imagen saldría rota: es lo primero que hay que mirar en la vista previa.
 
 ## Verificación
 
@@ -56,7 +56,7 @@ Ya decidido con él (por el gestor): el toque (no el arrastre) abre la capa; map
 
 App compilada contra una copia del respaldo local en el scratchpad (el festival «Festival de Cine de Invierno» y sus actos visibles y esta semana, con un acto al aire libre en «Calzada de Guadalupe», sitio fuera del directorio), Chrome de la Mac, 390×844 a 2× salvo las de 320, sin sesión. **Sin llave de Mapbox** (no hay en local): la imagen estática la contesta el script con un fondo liso y un pin violeta por cada `pin-s` de la URL que arma la app, encuadrados como la API; el mapa interactivo usa el sustituto de `npm run medir` y de las pruebas de Lugares (estilo vacío, glifos vacíos): **sin calles y sin los nombres ni los días de los pines** (los discos sí). Cada una abierta y mirada:
 
-- `01-festival-ficha.png`: «Dónde» del festival: la imagen con sus tres pines y la pista de ampliar abajo a la derecha (tapa casi entero el pin de Calzada de Guadalupe, decisión 7); debajo, las tres sedes con «2 actividades», «1 actividad» y sus ángulos.
+- `01-festival-ficha.png`: «Dónde» del festival: la imagen con sus tres pines, todos a la izquierda de la pista de ampliar (rehecha tras el ajuste de la decisión 7: antes la pista tapaba el de Calzada de Guadalupe); debajo, las tres sedes con «2 actividades», «1 actividad» y sus ángulos.
 - `02-festival-capa.png`: la capa: ✕ arriba a la izquierda, «Mi ubicación» arriba a la derecha, las tres sedes encuadradas en la parte de arriba (abajo queda la reserva de la tarjeta), la marca de Mapbox abajo a la izquierda.
 - `03-festival-pin-lugar.png`: Teatro de la Paz elegido (disco grande con aro y sombra) y su tarjeta: «Teatro de la Paz · 1 actividad ›» y «Cómo llegar»; la marca de Mapbox subió sobre la tarjeta.
 - `04-festival-pin-sitio.png`: Calzada de Guadalupe (fuera del directorio) elegida; su ángulo lleva a `/sitios/calzada-de-guadalupe-san-luis-potosi`.
@@ -64,7 +64,7 @@ App compilada contra una copia del respaldo local en el scratchpad (el festival 
 - `06-evento-una-sede.png`: su capa con el pin elegido al centro de lo que deja libre la tarjeta: «Teatro de la Paz · Villerías 205 ›» y «Cómo llegar».
 - `07-lugar-una-sede.png`: la capa desde la ficha del Teatro de la Paz: la misma tarjeta **sin ángulo** (es esa ficha).
 - `08-festival-ubicacion.png`: tras «Mi ubicación» con permiso: el punto azul con las sedes, el icono de ubicación en violeta y «Encuadrar» bajo él.
-- `09-festival-ficha-320.png`: la ficha del festival a 320: la imagen y la lista de sedes sin desbordes.
+- `09-festival-ficha-320.png`: la ficha del festival a 320 (rehecha con el mismo ajuste): los tres pines libres de la pista, que ahí ocupa más imagen; la lista de sedes sin desbordes.
 - `10-festival-pin-sitio-320.png`: la capa a 320 con la tarjeta de Calzada de Guadalupe, sin desbordes.
 
 `scrollWidth` igual al ancho en las diez; sin errores de página ni de consola.

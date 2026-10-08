@@ -27,13 +27,13 @@ describe("urlMapaFicha", () => {
 describe("urlMapaSedes (OL-339)", () => {
   const conToken = (mapboxToken: string | null) => mock.mockReturnValue({ mapboxToken, mapboxStyle: "mapbox://styles/robscan/flowya-light", supabaseUrl: null, supabaseAnonKey: null });
 
-  it("con varias sedes, un pin por cada una y el encuadre que las abarca (`auto`), con aire alrededor", () => {
+  it("con varias sedes, un pin por cada una y el encuadre que las abarca (`auto`), con aire alrededor y más a la derecha, donde va la pista de ampliar (OL-350)", () => {
     conToken("tok");
     const url = urlMapaSedes([
       { lat: 22.144, lng: -101.015 },
       { lat: 22.1517, lng: -100.9761 },
     ]);
-    expect(url).toBe("https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+6d34c8(-101.015,22.144),pin-s+6d34c8(-100.9761,22.1517)/auto/600x250@2x?padding=40&access_token=tok");
+    expect(url).toBe("https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+6d34c8(-101.015,22.144),pin-s+6d34c8(-100.9761,22.1517)/auto/600x250@2x?padding=40,118,40,40&access_token=tok");
   });
 
   it("con una sola es el mapa de siempre; sin ninguna o sin token, nada", () => {
