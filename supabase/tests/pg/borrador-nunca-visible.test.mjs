@@ -17,8 +17,8 @@ export async function run({ as, check, expectError, query }) {
   const insertar = (quien, { clase = "puntual", padre = null, visible = true, borrador = false, id = randomUUID() } = {}) =>
     as("authenticated", quien, async () => {
       await query(
-        `insert into public.eventos (id, titulo, inicio, fin, sitio_texto, ciudad, zona, creado_por, clase, evento_padre_id, visible, borrador)
-         values ($1, 'Acto OL-328', '2030-11-06T18:00Z', '2030-11-06T20:00Z', 'Sitio público', 'San Luis Potosí', 'America/Mexico_City', auth.uid(), $2, $3, $4, $5)`,
+        `insert into public.eventos (id, titulo, inicio, fin, sitio_texto, sitio_lat, sitio_lng, ciudad, zona, creado_por, clase, evento_padre_id, visible, borrador)
+         values ($1, 'Acto OL-328', '2030-11-06T18:00Z', '2030-11-06T20:00Z', 'Sitio público', 22.15, -100.98, 'San Luis Potosí', 'America/Mexico_City', auth.uid(), $2, $3, $4, $5)`,
         [id, clase, padre, visible, borrador],
       );
       return id;

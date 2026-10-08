@@ -10,7 +10,7 @@ export async function run({ as, query, check }) {
     const leer = (rol, usuario, id) => as(rol, usuario, async () => (await query('select direccion,lat,lng,indicaciones from public.eventos_sitio_privado where evento_id=$1', [id])).rowCount === 1);
     const crear = async ({ fin = '1 hour', revelar = '-1 hour', visible = true, reservado = true } = {}) => {
       const id = randomUUID();
-      await query("insert into public.eventos(id,titulo,inicio,fin,creado_por,visible,sitio_texto,sitio_reservado,sitio_revelar_desde) values ($1,'Ventana OL257',now()-interval '2 days',now()+$2::interval,$3,$4,'Alias OL257',$5,now()+$6::interval)", [id, fin, autora, visible, reservado, revelar]);
+      await query("insert into public.eventos(id,titulo,inicio,fin,creado_por,visible,sitio_texto,sitio_reservado,sitio_revelar_desde,sitio_lat,sitio_lng) values ($1,'Ventana OL257',now()-interval '2 days',now()+$2::interval,$3,$4,'Alias OL257',$5,now()+$6::interval,case when $5 then null else 22 end,case when $5 then null else -100 end)", [id, fin, autora, visible, reservado, revelar]);
       await query("insert into public.eventos_sitio_privado(evento_id,direccion,lat,lng,indicaciones,revelar_desde) values ($1,'Dirección sintética OL257',22,-100,'Indicaciones sintéticas',now()+$2::interval)", [id, revelar]);
       return id;
     };

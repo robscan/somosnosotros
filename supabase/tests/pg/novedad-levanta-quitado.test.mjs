@@ -51,7 +51,7 @@ export async function run({ as, check, query }) {
     await quitar(10, '6 hours'); await novedad(11, 10, '8 hours'); await novedad(12, 10, '1 hour', false);
     // 11 control: sin quitado, novedad como hoy.
     await novedad(13, 11, '3 hours');
-    const evento = (await query("insert into public.eventos(titulo,inicio,ciudad,sitio_texto,creado_por) values ('OL285 asistentes',now()+interval '1 day',$1,'Sitio sintético',$2) returning id", [CIUDAD, autor])).rows[0].id;
+    const evento = (await query("insert into public.eventos(titulo,inicio,ciudad,sitio_texto,sitio_lat,sitio_lng,creado_por) values ('OL285 asistentes',now()+interval '1 day',$1,'Sitio sintético',22.15,-100.98,$2) returning id", [CIUDAD, autor])).rows[0].id;
     for (const a of [7, 8]) await query('insert into public.eventos_artistas(evento_id,artista_id) values ($1,$2)', [evento, id(a)]);
     for (const u of [p1, p2, p3]) await query("insert into public.asistencias(usuario_id,evento_id,estado) values ($1,$2,'voy')", [u, evento]);
 

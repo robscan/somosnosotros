@@ -33,8 +33,9 @@ export async function run({as,query,check,expectError}) {
   await as('authenticated',AUTORA,()=>guardar(creada.id,clienteViejo,null,segundo.revision));
   check((await fila(creada.id)).sitio_direccion===actualizado.sitio_direccion,'omision en cliente anterior no borra direccion estructurada');
   // Contrato de un cliente anterior: JSON completo excepto el campo nuevo.
+  // Quitar el pin ya no es un cambio de ubicación: un sitio sin punto se rechaza (OL-348, eventos_sitio_con_punto).
   for (const delta of [{sitio_texto:'Sitio B'}, {sitio_lat:23.5}, {sitio_lng:-101.5},
-    {sitio_texto:'Sitio B',sitio_lat:23.5,sitio_lng:-101.5}, {sitio_lat:null,sitio_lng:null}]) {
+    {sitio_texto:'Sitio B',sitio_lat:23.5,sitio_lng:-101.5}]) {
     const alta = await as('authenticated',AUTORA,()=>guardar(null,base));
     const antes = await fila(alta.id);
     const viejo = {...base,...delta}; delete viejo.sitio_direccion;
@@ -42,6 +43,13 @@ export async function run({as,query,check,expectError}) {
     const despues = await fila(alta.id);
     check(despues.sitio_direccion===null,'cliente anterior que cambia texto/pin no conserva direccion A');
     check(respuesta.cambio==='donde','cambio de ubicacion legacy se detecta');
+  }
+  {
+    const alta = await as('authenticated',AUTORA,()=>guardar(null,base));
+    const antes = await fila(alta.id);
+    const viejo = {...base,sitio_lat:null,sitio_lng:null}; delete viejo.sitio_direccion;
+    await as('authenticated',AUTORA,()=>expectError(()=>guardar(alta.id,viejo,null,antes.revision),'23514','cliente anterior no deja un sitio sin pin (OL-348)'));
+    check((await fila(alta.id)).sitio_lat===base.sitio_lat,'el rechazo no quita el pin');
   }
   const privada={direccion:actualizado.sitio_direccion,lat:22.4,lng:-100.4,indicaciones:null,revelar_desde:'2030-09-30T20:00:00Z'};
   const reservada={...actualizado,sitio_reservado:true,sitio_direccion:null,sitio_lat:null,sitio_lng:null,sitio_revelar_desde:privada.revelar_desde};
@@ -63,14 +71,14 @@ export async function run({as,query,check,expectError}) {
   await as('authenticated',AUTORA,()=>expectError(()=>query('update public.eventos set sitio_lat=22 where id=$1',[creada.id]),'23514','CHECK impide coordenada publica reservada directa'));
   for(const texto of ['x'.repeat(201),'   ']) await as('authenticated',AUTORA,()=>expectError(()=>guardar(null,{...base,sitio_direccion:texto}),'23514','CHECK rechaza direccion vacia o demasiado larga'));
   check((await fila(creada.id)).revision===recargada.revision,'fallos de seguridad no modifican evento ni revision');
-  const fuera={...reservada,sitio_reservado:false,sitio_revelar_desde:null};
+  // Desreservar pide un pin público nuevo (OL-348): sin él, el sitio quedaría sin punto.
+  await as('authenticated',AUTORA,()=>expectError(()=>guardar(creada.id,{...reservada,sitio_reservado:false,sitio_revelar_desde:null},null,recargada.revision),'23514','desreservar sin pin publico se rechaza'));
+  const fuera={...reservada,sitio_reservado:false,sitio_revelar_desde:null,sitio_lat:22.5,sitio_lng:-100.5};
   await as('authenticated',AUTORA,()=>guardar(creada.id,fuera,null,recargada.revision));
   check((await fila(creada.id)).sitio_direccion===null && (await query('select * from public.eventos_sitio_privado where evento_id=$1',[creada.id])).rowCount===0,'desreservar no publica automaticamente la direccion privada');
-  const legacy=await as('authenticated',AUTORA,()=>guardar(null,{...base,sitio_texto:'Foro · Patio · Calle vieja 8',sitio_direccion:null,sitio_lat:null,sitio_lng:null}));
-  const vieja=await fila(legacy.id);
-  check(vieja.sitio_direccion===null && vieja.sitio_texto==='Foro · Patio · Calle vieja 8','legacy conserva texto opaco sin backfill ni parser');
-  await as('authenticated',AUTORA,()=>guardar(legacy.id,{...vieja,titulo:'Solo titulo'},null,vieja.revision));
-  check((await fila(legacy.id)).sitio_lat===null,'legacy intacto sin pin sigue editable');
+  // Un sitio con solo su nombre (como los de antes) ya no se crea (OL-348); los que ya existían, que la regla no revisó al crearse, se
+  // prueban en sitio-con-punto.test.mjs.
+  await as('authenticated',AUTORA,()=>expectError(()=>guardar(null,{...base,sitio_texto:'Foro · Patio · Calle vieja 8',sitio_direccion:null,sitio_lat:null,sitio_lng:null}),'23514','un sitio nuevo sin pin se rechaza (OL-348)'));
   // Fixture anterior a 181600: escritura directa de preparacion, no la RPC nueva.
   const legacyPrivado=randomUUID();
   await query('insert into public.eventos(id,titulo,inicio,creado_por,sitio_texto,sitio_reservado,sitio_revelar_desde) values($1,$2,$3,$4,$5,true,$6)',[legacyPrivado,'Legacy reservado',base.inicio,AUTORA,'Casa antigua',privada.revelar_desde]);

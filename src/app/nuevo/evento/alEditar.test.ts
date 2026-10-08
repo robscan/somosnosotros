@@ -66,13 +66,16 @@ describe("dónde", () => {
     expect(dondeResuelto(fuera)).toBe(false);
   });
 
-  it("otro sitio con nombre, dirección, punto y ciudad; el de antes sin dirección se respeta como está", () => {
+  it("otro sitio con nombre, dirección, punto y ciudad; el de antes sin dirección se respeta, y sin punto se vuelve a preguntar (OL-348)", () => {
     const otro = sitioAlEditar({ ...EVENTO, lugar_id: null, sitio_texto: "Jardín de San Juan de Dios", sitio_direccion: "Calle Madero 1", sitio_lat: 22.1511, sitio_lng: -100.9772 }, null, LUGARES);
     expect(otro).toMatchObject({ modo: "otro", otro: { sitioTexto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1", nombreLegacy: false, sitioPunto: { lat: 22.1511, lng: -100.9772 }, ciudad: "San Luis Potosí" } });
     expect(dondeResuelto(otro)).toBe(true);
-    const deAntes = sitioAlEditar({ ...EVENTO, lugar_id: null, sitio_texto: "La casa de la esquina" }, null, LUGARES);
+    const deAntes = sitioAlEditar({ ...EVENTO, lugar_id: null, sitio_texto: "La casa de la esquina", sitio_lat: 22.15, sitio_lng: -100.98 }, null, LUGARES);
     expect(deAntes.otro.nombreLegacy).toBe(true);
     expect(dondeResuelto(deAntes)).toBe(true);
+    // Sin punto (los eventos antiguos que la base no revisó): «Dónde» queda por contestar y «Revisa» dice «Falta el lugar».
+    const sinPunto = sitioAlEditar({ ...EVENTO, lugar_id: null, sitio_texto: "La casa de la esquina" }, null, LUGARES);
+    expect(dondeResuelto(sinPunto)).toBe(false);
   });
 
   it("un sitio reservado trae su dirección exacta, su punto, sus indicaciones y cuántas horas antes se revela", () => {

@@ -187,9 +187,16 @@ describe("direccion estructurada", () => {
     expect(cambiado.sitio_texto).toBe(datos.sitio_texto);
     expect(queCambio(datos, cambiado)).toBe("donde");
   });
-  it("vacio es NULL, legacy intacto no exige pin, pendiente editado si bloquea", () => {
+  it("vacio es NULL, todo sitio pide su pin (OL-348), pendiente editado si bloquea", () => {
     expect(validarEvento({...publico, sitio_direccion: "  ", sitio_lat: "", sitio_lng: ""}).datos.sitio_direccion).toBeNull();
-    expect(validarEvento({...publico, sitio_direccion: "", sitio_lat: "", sitio_lng: ""}).errores).toEqual({});
+    expect(validarEvento({...publico, sitio_direccion: ""}).errores).toEqual({});
+    // Un sitio con solo su nombre (como los de antes) ya no se guarda: falta la ubicación.
+    expect(validarEvento({...publico, sitio_direccion: "", sitio_lat: "", sitio_lng: ""}).errores.sitio_direccion).toBe("Confirma la ubicación eligiendo una dirección o poniendo el pin.");
+    // El marco de un festival no es un sitio (sus sedes salen de sus actos): sin punto se guarda; con medio punto, no.
+    expect(validarEvento({...publico, sitio_direccion: "", sitio_lat: "", sitio_lng: ""}, undefined, { marco: true }).errores).toEqual({});
+    expect(validarEvento({...publico, sitio_direccion: "", sitio_lat: "22", sitio_lng: ""}, undefined, { marco: true }).errores.sitio_direccion).toBeTruthy();
+    // Un sitio reservado no pide punto público: el suyo es privado.
+    expect(validarEvento({...publico, modo_sitio: "reservado", sitio_direccion: "", sitio_lat: "", sitio_lng: "", direccion_privada: "Calle 1", privado_lat: "22", privado_lng: "-100"}).errores).toEqual({});
     expect(validarEvento({...publico, sitio_pin_pendiente: "si"}).errores.sitio_direccion).toBeTruthy();
     expect(validarEvento({...publico, sitio_direccion: "x".repeat(201)}).errores.sitio_direccion).toBeTruthy();
   });

@@ -26,7 +26,7 @@ export const CARRIL = "(min-width: 792px)";
 
 const RAICES: readonly string[] = ["/", "/agenda", "/lugares", "/artistas", "/perfil", "/borrado"];
 /** Las secciones cuyo `/:id` es una ficha. */
-const FICHAS: readonly string[] = ["eventos", "lugares", "artistas", "personas"];
+const FICHAS: readonly string[] = ["eventos", "lugares", "sitios", "artistas", "personas"];
 
 /** La vista de una ruta (`usePathname`, sin consulta). Lo que no es raíz, ficha ni pantalla completa es una tarea. */
 export function vistaDeRuta(ruta: string): Vista {

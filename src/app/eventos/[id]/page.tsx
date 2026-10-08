@@ -1,4 +1,4 @@
-import { cache, Suspense, type ReactNode } from "react";
+import { cache, Suspense } from "react";
 import { sitioReservadoVencido } from "@/lib/retencionSitio";
 import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
@@ -22,6 +22,7 @@ import Ficha, { CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoCartel, IconoChevronDerecha, IconoCompartir, IconoDescarga, IconoEstrella, IconoEtiqueta, IconoLapiz, IconoOjo, IconoOjoTachado, IconoOk, IconoPersonas, IconoPin, IconoPincel, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import EventosPorDia from "@/components/EventosPorDia";
+import TarjetaSede from "@/components/TarjetaSede";
 import Salto from "@/components/ui/Salto";
 import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
@@ -50,7 +51,8 @@ import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { hrefCreador } from "@/lib/carteles/origen";
 import { cargarActosDeMarcos } from "@/lib/cargarSedes";
-import { portadaDeFestival, sedesDeFestival, textoActosEnSede, VARIAS_SEDES, type Sede } from "@/lib/sedesFestival";
+import { hrefSitio } from "@/lib/sitios";
+import { portadaDeFestival, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -196,7 +198,7 @@ async function QuienVaDiferido({ eventoId, miId, conSesion, consultaTrasFin }: {
  *  festival (sus actos visibles y, para su autor, sus borradores), el festival de un acto y la exposición que inaugura. Cada consulta falla
  *  sola sin tumbar la ficha (sin la migración, nada de esto existe y la ficha es la de siempre). */
 type Ligado = { id: string; slug: string | null; titulo: string; inicio: string; fin: string | null; zona: string };
-type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean; sitio_lat?: number | null; sitio_lng?: number | null };
+type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean; sitio_lat?: number | null; sitio_lng?: number | null; ciudad?: string | null };
 async function cargarLigados(e: EventoConLugar) {
   const supabase = await clienteServidor();
   const vacio = { horarioPropio: [] as Franja[], horarioLugar: [] as Franja[], inauguracion: null as Ligado | null, actos: [] as Acto[], padre: null as Ligado | null, inaugura: null as Ligado | null };
@@ -211,7 +213,7 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "festival"
       ? supabase
           .from("eventos")
-          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, creado_en, visible, borrador, retirado_por_admin, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng)")
+          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, creado_en, visible, borrador, retirado_por_admin, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng)")
           .eq("evento_padre_id", e.id)
           .order("inicio")
           .limit(100)
@@ -221,24 +223,6 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "puntual" || !e.clase ? supabase.from("eventos").select(columnas).eq("inaugura_id", e.id).limit(1).maybeSingle().then(uno, () => null) : null,
   ]);
   return { horarioPropio, horarioLugar, inauguracion, actos, padre, inaugura };
-}
-
-/** Una sede de un festival (OL-339) en el renglón de dato de la ficha: el pin, su nombre y su meta; la del directorio lleva a su ficha. */
-function RenglonSede({ sede, children }: { sede: Sede; children: ReactNode }) {
-  const contenido = (
-    <>
-      {sede.reservado ? <IconoCandado width={20} height={20} /> : <IconoPin width={20} height={20} />}
-      <b>{sede.nombre}</b>
-      {children}
-    </>
-  );
-  if (!sede.lugar) return <div className={renglon.dato}>{contenido}</div>;
-  return (
-    <Link href={hrefLugar(sede.lugar)} className={renglon.dato}>
-      {contenido}
-      <IconoChevronDerecha />
-    </Link>
-  );
 }
 
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
@@ -695,7 +679,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         )}
 
         {/* Un festival con sedes en sus actos (OL-339): con varias, el mapa con todos los pines y la lista de sedes, cada una con cuántas actividades
-            tiene ahí; con una, como cualquier evento. Las del directorio llevan a su ficha. */}
+            tiene ahí; con una, como cualquier evento. Cada sede abre su ficha, del directorio o de sitio (OL-348); una reservada, ninguna. */}
         {sedes.length > 0 && (
           <section className={ficha.tarjeta} id="donde" aria-label="Dónde">
             <h2>Dónde</h2>
@@ -703,7 +687,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             <ul>
               {sedes.map((s) => (
                 <li key={s.clave}>
-                  <RenglonSede sede={s}>{sedeUnica ? <MetaSitio direccion={s.direccion} punto={puntoDistancia} /> : <small>{textoActosEnSede(s.actos)}</small>}</RenglonSede>
+                  <TarjetaSede nombre={s.nombre} href={s.href} reservado={s.reservado}>
+                    {sedeUnica ? <MetaSitio direccion={s.direccion} punto={puntoDistancia} /> : <small>{textoActosEnSede(s.actos)}</small>}
+                  </TarjetaSede>
                 </li>
               ))}
             </ul>
@@ -714,20 +700,17 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <section className={ficha.tarjeta}>
             <h2>Dónde</h2>
             <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
+            {/* El ángulo siempre abre una ficha (OL-348): la del lugar o la del sitio fuera del directorio, armada con los eventos que lo
+                nombran (por eso solo si este se ve: uno oculto o que ya pasó no la arma). «Cómo llegar» está en las acciones de arriba. */}
             {e.lugar && (
-              <Link href={hrefLugar(e.lugar)} className={renglon.dato}>
-                <IconoPin width={20} height={20} />
-                <b>{e.lugar.nombre}</b>
+              <TarjetaSede nombre={e.lugar.nombre} href={hrefLugar(e.lugar)}>
                 <MetaSitio direccion={e.lugar.direccion} punto={puntoDistancia} />
-                <IconoChevronDerecha />
-              </Link>
+              </TarjetaSede>
             )}
             {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
-              <div className={renglon.dato}>
-                <IconoPin width={20} height={20} />
-                <b>{e.sitio_texto}</b>
+              <TarjetaSede nombre={e.sitio_texto} href={e.visible && !paso ? hrefSitio(e) : null}>
                 <MetaSitio direccion={e.sitio_direccion} punto={puntoDistancia} />
-              </div>
+              </TarjetaSede>
             )}
             {e.sitio_reservado &&
               (privado || actual ? (
