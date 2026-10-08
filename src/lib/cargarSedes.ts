@@ -10,7 +10,7 @@ import { portadaDeFestival, sedesDeFestival, sedesParaLista, type ActoConSitio, 
  */
 
 /** Lo que se pide de cada acto: su festival, cuándo empieza (el orden), su sitio, con el lugar del directorio anidado, y su cartel. */
-const COLUMNAS = "evento_padre_id, inicio, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, lugar:lugares(id, slug, nombre, direccion, lat, lng)";
+const COLUMNAS = "evento_padre_id, inicio, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, lugar:lugares(id, slug, nombre, direccion, lat, lng)";
 
 type Fila = ActoConSitio & { evento_padre_id: string; lugar: ActoConSitio["lugar"] | NonNullable<ActoConSitio["lugar"]>[] };
 

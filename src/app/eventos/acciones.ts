@@ -218,7 +218,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const clase = leerClase(formData);
   const sinPuntoTrasRetencion = sitioReservadoVencido(existente) && entrada.modo_sitio === "reservado" && !entrada.privado_lat && !entrada.privado_lng;
   const zona = sinPuntoTrasRetencion ? zonaSegura(existente?.zona) : zonaDelEvento(entrada, lugar);
-  const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente });
+  const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente, marco: clase.clase === "festival" });
   if (clase.error) errores.horario = clase.error;
   // Horario por día (OL-319): con la casilla «Mismo horario todos los días» desmarcada llega una sesión por día; sin el campo, el evento queda sin ellas.
   const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);

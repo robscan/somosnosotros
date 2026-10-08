@@ -15,8 +15,8 @@ describe("sedesDeFestival", () => {
   it("una sede por lugar del directorio, sin repetir, con cuántos actos tiene cada una", () => {
     const sedes = sedesDeFestival([enLugar("2026-10-16T01:00:00Z", CCUB), enLugar("2026-10-17T00:00:00Z", CCUB), enLugar("2026-10-17T23:00:00Z", PAZ)]);
     expect(sedes).toEqual([
-      { clave: "l:ccub", nombre: CCUB.nombre, lugar: { id: "ccub", slug: CCUB.slug }, direccion: CCUB.direccion, punto: { lat: CCUB.lat, lng: CCUB.lng }, reservado: false, actos: 2 },
-      { clave: "l:paz", nombre: PAZ.nombre, lugar: { id: "paz", slug: PAZ.slug }, direccion: PAZ.direccion, punto: { lat: PAZ.lat, lng: PAZ.lng }, reservado: false, actos: 1 },
+      { clave: "l:ccub", nombre: CCUB.nombre, lugar: { id: "ccub", slug: CCUB.slug }, direccion: CCUB.direccion, punto: { lat: CCUB.lat, lng: CCUB.lng }, reservado: false, href: `/lugares/${CCUB.slug}`, actos: 2 },
+      { clave: "l:paz", nombre: PAZ.nombre, lugar: { id: "paz", slug: PAZ.slug }, direccion: PAZ.direccion, punto: { lat: PAZ.lat, lng: PAZ.lng }, reservado: false, href: `/lugares/${PAZ.slug}`, actos: 1 },
     ]);
   });
 
@@ -33,6 +33,16 @@ describe("sedesDeFestival", () => {
     expect(sedes[1]).toMatchObject({ lugar: null, direccion: "Calle Madero 1", punto: { lat: 22.1511, lng: -100.9772 } });
   });
 
+  it("cada sede abre su ficha (OL-348): la del lugar del directorio o la del sitio fuera de él, con su ciudad; una reservada, ninguna", () => {
+    const sedes = sedesDeFestival([
+      enLugar("2026-10-16T01:00:00Z", CCUB),
+      enSitio("2026-10-17T01:00:00Z", "Jardín de San Juan de Dios", { ciudad: "San Luis Potosí", sitio_lat: 22.1511, sitio_lng: -100.9772 }),
+      enSitio("2026-10-18T01:00:00Z", "Casa de Lu", { sitio_reservado: true }),
+      enSitio("2026-10-19T01:00:00Z", "¡¡!!", { sitio_lat: 22.15, sitio_lng: -100.98 }),
+    ]);
+    expect(sedes.map((s) => s.href)).toEqual([`/lugares/${CCUB.slug}`, "/sitios/jardin-de-san-juan-de-dios-san-luis-potosi", null, null]);
+  });
+
   it("en el orden de su primer acto, aunque los actos lleguen desordenados", () => {
     const sedes = sedesDeFestival([enLugar("2026-10-20T01:00:00Z", CCUB), enLugar("2026-10-16T01:00:00Z", PAZ), enLugar("2026-10-21T01:00:00Z", PAZ)]);
     expect(sedes.map((s) => s.clave)).toEqual(["l:paz", "l:ccub"]);
@@ -40,7 +50,7 @@ describe("sedesDeFestival", () => {
 
   it("un sitio reservado dice su nombre pero no su dirección ni su punto; un acto sin sitio no es una sede", () => {
     const sedes = sedesDeFestival([enSitio("2026-10-16T01:00:00Z", "Casa de Lu", { sitio_reservado: true, sitio_direccion: "Privada 3", sitio_lat: 22.1, sitio_lng: -101 }), enSitio("2026-10-17T01:00:00Z", "  ")]);
-    expect(sedes).toEqual([{ clave: "s:casa de lu", nombre: "Casa de Lu · sitio reservado", lugar: null, direccion: null, punto: null, reservado: true, actos: 1 }]);
+    expect(sedes).toEqual([{ clave: "s:casa de lu", nombre: "Casa de Lu · sitio reservado", lugar: null, direccion: null, punto: null, reservado: true, href: null, actos: 1 }]);
   });
 
   it("un lugar que quien mira no puede leer (oculto) y sin sitio escrito no cuenta como sede", () => {

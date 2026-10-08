@@ -18,8 +18,10 @@ export function revisarNombreLegacy(otro: OtroSitio): OtroSitio {
   return otro.nombreLegacy ? { ...otro, nombreLegacy: false, referenciaLegacy: otro.sitioTexto, sitioTexto: "" } : otro;
 }
 
+/** ¿El sitio ya está contestado? Con nombre, sin pin por confirmar y con su punto: el público, el suyo; el reservado, su dirección exacta (su
+ *  punto es privado). Todo sitio lleva su punto (OL-348): un sitio de antes con solo su nombre se vuelve a preguntar. */
 export function sitioListo(otro: OtroSitio): boolean {
-  const publicoUbicado = !otro.direccion?.trim() || !!otro.sitioPunto && puntoValido(otro.sitioPunto);
+  const publicoUbicado = !!otro.sitioPunto && puntoValido(otro.sitioPunto);
   return !!otro.sitioTexto.trim() && !otro.pinPendiente && (otro.reservado ? !!otro.direccionPrivada.trim() : publicoUbicado);
 }
 

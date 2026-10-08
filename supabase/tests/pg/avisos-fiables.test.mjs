@@ -32,7 +32,7 @@ export async function run({ as, query, check, expectError, connection }) {
   await query("update public.avisos_config set capturar=true,corte=clock_timestamp()+interval '1 hour'");
   await expectError(()=>guardar(null),"55000","frontera futura no admite guardados prematuros");
   await query("update public.avisos_config set corte=clock_timestamp()");
-  const legacy=(await as("authenticated",AUTHOR,()=>query("insert into public.eventos(titulo,inicio,sitio_texto,creado_por) values('Legacy',clock_timestamp()+interval '2 days','Sitio',auth.uid()) returning id"))).rows[0].id;
+  const legacy=(await as("authenticated",AUTHOR,()=>query("insert into public.eventos(titulo,inicio,sitio_texto,sitio_lat,sitio_lng,creado_por) values('Legacy',clock_timestamp()+interval '2 days','Sitio',22.15,-100.98,auth.uid()) returning id"))).rows[0].id;
   check((await jobs(legacy)).length===0,"deployment viejo no encola durante convivencia");
   await as("authenticated",AUTHOR,()=>query("update public.eventos set inicio=inicio+interval '1 hour' where id=$1",[legacy]));
   check((await jobs(legacy)).length===0,"edicion legada conserva exclusivamente su after");
@@ -136,15 +136,15 @@ export async function run({ as, query, check, expectError, connection }) {
       await as(role,subject,()=>expectError(()=>query(`select public.${call}`),'42501',`${role} no invoca ${call.split('(')[0]}`));
     }
   }
-  const imported=(await query("insert into public.eventos(titulo,inicio,sitio_texto,creado_por) values('Importado',clock_timestamp()+interval '3 hours','Sitio',$1) returning id",[AUTHOR])).rows[0].id;
+  const imported=(await query("insert into public.eventos(titulo,inicio,sitio_texto,sitio_lat,sitio_lng,creado_por) values('Importado',clock_timestamp()+interval '3 hours','Sitio',22.15,-100.98,$1) returning id",[AUTHOR])).rows[0].id;
   check((await jobs(imported)).length===0,"importacion service uid null no crea notificaciones");
   await servicio("select public.avisos_recordatorios()");
   check((await jobs(imported)).length===0,"cron no notifica importacion sin Voy");
   await query("insert into public.asistencias(usuario_id,evento_id,estado) values($1,$2,'voy')",[USER,imported]);
-  const existing=(await query("insert into public.eventos(titulo,inicio,sitio_texto,creado_por,creado_en) values('Existente futuro',clock_timestamp()+interval '4 hours','Sitio',$1,clock_timestamp()-interval '20 days') returning id",[AUTHOR])).rows[0].id;
+  const existing=(await query("insert into public.eventos(titulo,inicio,sitio_texto,sitio_lat,sitio_lng,creado_por,creado_en) values('Existente futuro',clock_timestamp()+interval '4 hours','Sitio',22.15,-100.98,$1,clock_timestamp()-interval '20 days') returning id",[AUTHOR])).rows[0].id;
   // Reproduce el catalogo de un evento anterior al backfill de 24 h: sin origen.
   await query("delete from public.avisos_origen where evento_id=$1",[existing]);
-  const past=(await query("insert into public.eventos(titulo,inicio,sitio_texto,creado_por) values('Pasado',clock_timestamp()-interval '1 day','Sitio',$1) returning id",[AUTHOR])).rows[0].id;
+  const past=(await query("insert into public.eventos(titulo,inicio,sitio_texto,sitio_lat,sitio_lng,creado_por) values('Pasado',clock_timestamp()-interval '1 day','Sitio',22.15,-100.98,$1) returning id",[AUTHOR])).rows[0].id;
   await query("insert into public.asistencias(usuario_id,evento_id,estado) values($1,$2,'voy'),($1,$3,'voy')",[USER,existing,past]);
   await servicio("select public.avisos_recordatorios()");
   check((await jobs(imported)).some(j=>j.tipo==='recordatorio'),"futuro importado con Voy recibe recordatorio, nunca anuncio historico");
@@ -160,12 +160,12 @@ export async function run({ as, query, check, expectError, connection }) {
   const created=await Promise.all(Array.from({length:6},()=>connection(async c=>{
     await c.query("set role authenticated"); await c.query("select set_config('request.jwt.claim.sub',$1,false)",[CAPPED]);
     await c.query("select set_config('app.avisos_outbox','on',false)");
-    return (await c.query("insert into public.eventos(titulo,inicio,sitio_texto,creado_por) values('Cuota',clock_timestamp()+interval '2 days','Sitio',auth.uid()) returning id")).rows[0].id;
+    return (await c.query("insert into public.eventos(titulo,inicio,sitio_texto,sitio_lat,sitio_lng,creado_por) values('Cuota',clock_timestamp()+interval '2 days','Sitio',22.15,-100.98,auth.uid()) returning id")).rows[0].id;
   })));
   const cappedJobs=(await query("select estado,count(*)::int as n from public.avisos_jobs where evento_id=any($1::uuid[]) group by estado",[created])).rows;
   check(cappedJobs.find(x=>x.estado==='pendiente')?.n===3 && cappedJobs.find(x=>x.estado==='suprimido')?.n===3,"seis altas concurrentes solo permiten tres avisos");
   await as("authenticated",CAPPED,()=>query("delete from public.eventos where id=any($1::uuid[])",[created]));
-  const capPayload={...datos,sitio_reservado:false,sitio_revelar_desde:null};
+  const capPayload={...datos,sitio_reservado:false,sitio_revelar_desde:null,sitio_lat:22.15,sitio_lng:-100.98};
   await as("authenticated",CAPPED,()=>expectError(()=>query(rpcSql,[null,JSON.stringify(capPayload),'null','[]',null,created[0]]),'23505','operacion de evento borrado encuentra tombstone y no recrea'));
   check(!(await query("select id from public.eventos where id=$1",[created[0]])).rowCount && !(await jobs(created[0])).length,"tombstone revierte recreacion y job completos");
   const seventh=(await as("authenticated",CAPPED,()=>query(rpcSql,[null,JSON.stringify(capPayload),'null','[]',null,randomUUID()]))).rows[0].r.id;

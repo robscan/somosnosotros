@@ -4,6 +4,9 @@ export async function run({ as, query, check }) {
   const autora = randomUUID(), admin = randomUUID();
   await query("begin");
   try {
+    // Esta prueba cuenta eventos por ciudad, no sitios: sus miles de eventos sintéticos no traen punto. Desde OL-348 la base pide punto a
+    // todo sitio (eventos_sitio_con_punto); se retira solo dentro de esta transacción, como los eventos antiguos que la regla no revisa.
+    await query("alter table public.eventos drop constraint eventos_sitio_con_punto");
     await query("insert into public.admin_correos(correo) values ('ol268-admin@example.com')");
     await query("insert into auth.users(id,email,email_confirmed_at) values ($1,'ol268-autora@example.com',now()),($2,'ol268-admin@example.com',now())", [autora, admin]);
     // Una ciudad sintética exclusiva evita depender de lo que dejaron otros contratos.

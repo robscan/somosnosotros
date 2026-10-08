@@ -388,7 +388,13 @@ export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `imagenActual` es la
  *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la imagen de una ficha importada
  *  de otro dominio (S-01, docs/rediseno/46). */
-export type OpcionesValidarEvento = { esAdmin?: boolean; imagenActual?: string | null; eventoActual?: Partial<Evento> | null };
+export type OpcionesValidarEvento = {
+  esAdmin?: boolean;
+  imagenActual?: string | null;
+  eventoActual?: Partial<Evento> | null;
+  /** El marco de un festival (OL-348): no es un sitio (sus sedes salen de sus actos), así que no se le pide punto, como en la base. */
+  marco?: boolean;
+};
 
 /** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */
 export function validarEvento(
@@ -455,7 +461,11 @@ export function validarEvento(
   if (sitioTexto.length > LIMITES_EVENTO.sitio) errores.sitio_texto = `Máximo ${LIMITES_EVENTO.sitio} caracteres.`;
   if (modo === "otro" && sitioDireccion.length > LIMITES_EVENTO.direccion) errores.sitio_direccion = `Máximo ${LIMITES_EVENTO.direccion} caracteres.`;
   const puntoValido = (lat: number | null, lng: number | null) => lat !== null && lng !== null && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  if (modo === "otro" && (sitioDireccion || limpiar(entrada.sitio_lat) || limpiar(entrada.sitio_lng)) && !puntoValido(datos.sitio_lat, datos.sitio_lng)) {
+  // Todo sitio lleva su punto (OL-348; founder, 2026-10-08: «no podemos permitir sitios sin coordenadas. Es mandatorio que las tenga»):
+  // antes solo se pedía si traía dirección o medio punto. La base lo exige igual (`eventos_sitio_con_punto`); el marco de un festival queda
+  // fuera, salvo si trae un punto, que tiene que valer.
+  const pidePunto = !opciones.marco || !!sitioDireccion || !!limpiar(entrada.sitio_lat) || !!limpiar(entrada.sitio_lng);
+  if (modo === "otro" && pidePunto && !puntoValido(datos.sitio_lat, datos.sitio_lng)) {
     errores.sitio_direccion = "Confirma la ubicación eligiendo una dirección o poniendo el pin.";
   }
   // Sin punto privado, la RPC compara con lo persistido: solo admite legacy intacto.

@@ -69,7 +69,7 @@ export async function run({ query, as, check, expectError, connection }) {
     check(r.ok && r.eventos === 3 && !r.repetido, 'ejecución confirma tres eventos conservados');
     check((await query('select id from public.lugares where id=$1', [lugar])).rowCount === 0, 'solo el lugar elegido se elimina');
     const filas = (await query('select * from public.eventos where id=any($1::uuid[]) order by id', [[e1,e2,e3]])).rows;
-    check(filas.length === 3 && filas.every(e => e.lugar_id === null && e.sitio_texto === 'Lugar OL259' && e.sitio_direccion === null && e.sitio_lat === null && e.sitio_lng === null), 'eventos conservados sin dirección ni coordenadas copiadas');
+    check(filas.length === 3 && filas.every(e => e.lugar_id === null && e.sitio_texto === 'Lugar OL259' && e.sitio_direccion === null && e.sitio_lat === 22 && e.sitio_lng === -100 && !e.sitio_reservado), 'eventos conservados sin dirección, con el punto del lugar (OL-348: todo sitio lleva el suyo)');
     check(filas.find(e => e.id === e2).creado_por === null && !filas.find(e => e.id === e2).visible && filas.find(e => e.id === e1).visible, 'autoría y visibilidad de eventos públicos/ocultos se conservan');
     check((await query('select 1 from public.asistencias where evento_id=$1', [e1])).rowCount === 1, 'asistencias del evento se conservan');
     check((await query('select count(*)::int n from public.avisos_jobs')).rows[0].n === jobsAntes, 'desvinculación no genera avisos masivos');
@@ -84,7 +84,7 @@ export async function run({ query, as, check, expectError, connection }) {
       check(i.por_ocultar === 1, 'impacto advierte que preservará privacidad al desvincular');
       await ejecutar(id,i.confirmacion);
       const fila = (await query('select * from public.eventos where id=$1',[e])).rows[0];
-      check(!fila.visible && fila.sitio_texto === 'Lugar retirado' && fila.sitio_lat === null, 'desvincular lugar oculto/privado no publica su nombre o pin ni activa el evento');
+      check(!fila.visible && fila.sitio_texto === 'Lugar retirado' && fila.sitio_lat === null && fila.sitio_reservado, 'desvincular lugar oculto/privado no publica su nombre o pin ni activa el evento (queda como sitio reservado, OL-348)');
     }
     const bloqueado = await crear();
     await query("insert into public.contactos_importados(lugar_id,correo) values ($1,'sintetico@example.com')", [bloqueado]);

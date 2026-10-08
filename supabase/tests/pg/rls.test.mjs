@@ -67,7 +67,7 @@ export async function run({ as, check, expectError, query }) {
   ));
 
   const evento = await as("authenticated", AUTORA, () => query(
-    "insert into public.eventos (lugar_id, sitio_texto, titulo, inicio, creado_por) values (null, 'Sede de pruebas', 'Evento de prueba', now() + interval '1 day', auth.uid()) returning id",
+    "insert into public.eventos (lugar_id, sitio_texto, sitio_lat, sitio_lng, titulo, inicio, creado_por) values (null, 'Sede de pruebas', 22.15, -100.98, 'Evento de prueba', now() + interval '1 day', auth.uid()) returning id",
   ));
   const eventoId = evento.rows[0]?.id;
   check(Boolean(eventoId), "autenticada publica un evento propio");

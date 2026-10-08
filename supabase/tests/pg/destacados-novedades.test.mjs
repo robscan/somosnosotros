@@ -36,7 +36,7 @@ export async function run({ as, check, query }) {
     await novedad(1013, 12, 'vimeo', '6 hours');
     await novedad(1014, 13, 'youtube', '167 hours 59 minutes 59.999 seconds');
     await query("insert into public.destacados(artista_id,hasta,quitado) values ($1,now()+interval '7 days',false),($2,now()+interval '7 days',true)", [id(1), id(4)]);
-    const evento = (await query("insert into public.eventos(titulo,inicio,ciudad,sitio_texto,creado_por) values ('OL275 asistentes',now()+interval '1 day',$1,'Sitio sintético',$2) returning id", [CIUDAD, autor])).rows[0].id;
+    const evento = (await query("insert into public.eventos(titulo,inicio,ciudad,sitio_texto,sitio_lat,sitio_lng,creado_por) values ('OL275 asistentes',now()+interval '1 day',$1,'Sitio sintético',22.15,-100.98,$2) returning id", [CIUDAD, autor])).rows[0].id;
     await query('insert into public.eventos_artistas(evento_id,artista_id) values ($1,$2)', [evento, id(3)]);
     for (const u of [ligado, persona, otra]) await query("insert into public.asistencias(usuario_id,evento_id,estado) values ($1,$2,'voy')", [u, evento]);
     const leer = async (ids = null) => (await query('select * from public.novedades_recientes_artistas($1,$2)', [CIUDAD, ids])).rows;

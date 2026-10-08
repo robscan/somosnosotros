@@ -14,7 +14,7 @@ vi.mock("@/lib/cartel", () => ({ leerCartel: vi.fn() }));
 
 const ID = "00000000-0000-4000-8000-000000000001";
 const FESTIVAL = "00000000-0000-4000-8000-0000000000f1";
-const SITIO = { modo_sitio: "otro", sitio_texto: "Museo de prueba", sitio_direccion: "", sitio_lat: "", sitio_lng: "", sitio_pin_pendiente: "no", revelar_horas: "24", ciudad: "" };
+const SITIO = { modo_sitio: "otro", sitio_texto: "Museo de prueba", sitio_direccion: "", sitio_lat: "22.15", sitio_lng: "-100.98", sitio_pin_pendiente: "no", revelar_horas: "24", ciudad: "San Luis Potosí" };
 
 function formulario(campos: Record<string, string>) {
   const fd = new FormData();

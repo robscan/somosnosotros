@@ -15,7 +15,7 @@ import Seguir from "@/components/Seguir";
 import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import { EsqueletoKpi, EsqueletoRenglones } from "@/components/ui/Esqueleto";
-import { IconoCalendario, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import { CIRCULO } from "@/components/ui/Ficha";
@@ -191,8 +191,8 @@ function EsqueletoSeccionEventos() {
 }
 
 /**
- * El cuerpo de la ficha de un lugar (docs/rediseno/50, P6): sus tres números, las acciones, los próximos eventos, «Dónde» (el mapa y
- * la dirección, que lleva a la ruta), sobre el lugar y quién lo publicó. Lo mismo a pantalla completa (`page.tsx`, que pone encima su
+ * El cuerpo de la ficha de un lugar (docs/rediseno/50, P6): sus tres números, las acciones, los próximos eventos, «Dónde» (el mapa, que
+ * lleva a la ruta como «Cómo llegar», y la dirección como dato, OL-348), sobre el lugar y quién lo publicó. Lo mismo a pantalla completa (`page.tsx`, que pone encima su
  * barra y su héroe) y dentro de la hoja de Lugares (`FichaHoja`, que pone su cabecera y su héroe). No incluye la pastilla de Seguir
  * (`SeguirLugar`) ni el menú «···» (`OpcionesLugar`): cada sitio los coloca a su manera.
  */
@@ -257,12 +257,13 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
       <section className={ficha.tarjeta}>
         <h2>Dónde</h2>
         <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
-        <a href={comoLlegar} className={renglon.dato} target="_blank" rel="noopener noreferrer">
+        {/* La dirección es un dato, no un enlace (OL-348, founder 2026-10-08: «no es claro lo que va a pasar»): un ángulo siempre abre una
+            ficha y «Cómo llegar» ya está en las acciones de arriba. */}
+        <div className={renglon.dato}>
           <IconoPin width={20} height={20} />
           <b>{calle || "Sin dirección"}</b>
           {resto && <small>{resto}</small>}
-          <IconoChevronDerecha />
-        </a>
+        </div>
         {/* El horario, estructurado por el sistema (OL-315): los días arriba y las horas debajo, y los que cierra. */}
         {horario.length > 0 && (
           <div className={renglon.dato}>

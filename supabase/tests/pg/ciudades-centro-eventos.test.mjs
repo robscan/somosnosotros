@@ -17,6 +17,9 @@ export async function run({ as, query, check }) {
     // Solo eventos, con punto público: suma (dos con punto; uno sin punto cuenta como evento pero no como punto).
     await evento("OL283 a", "OL283 Gira", { lat: 19, lng: -101 });
     await evento("OL283 b", "OL283 Gira", { lat: 21, lng: -99 });
+    // Un sitio sin punto ya no se puede guardar (OL-348, eventos_sitio_con_punto); quedan los antiguos, que la regla no revisó al crearse.
+    // Se retira solo dentro de esta transacción para comprobar que la función no los cuenta como punto.
+    await query("alter table public.eventos drop constraint eventos_sitio_con_punto");
     await evento("OL283 c", "OL283 Gira");
     // Pasado y oculto no suman nada (el pasado ni siquiera cuenta como evento).
     await evento("OL283 pasado", "OL283 Gira", { inicio: "now() - interval '2 day'", fin: "now() - interval '1 day'", lat: 80, lng: 80 });

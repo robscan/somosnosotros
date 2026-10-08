@@ -10,7 +10,7 @@ export async function run({ check, query }) {
   const eventos = [];
   async function evento(titulo, inicio, opts = {}) {
     const { rows } = await query(
-      "insert into public.eventos(titulo, inicio, sitio_texto, zona, creado_por) values ($1, $2, 'Sitio de prueba', $3, $4) returning id",
+      "insert into public.eventos(titulo, inicio, sitio_texto, sitio_lat, sitio_lng, zona, creado_por) values ($1, $2, 'Sitio de prueba', 22.15, -100.98, $3, $4) returning id",
       [titulo, inicio, opts.zona ?? "America/Mexico_City", opts.creadoPor ?? autor],
     );
     eventos.push(rows[0].id);
