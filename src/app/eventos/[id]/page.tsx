@@ -28,7 +28,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import type { EventoAgenda } from "@/lib/agenda";
-import { horarioEfectivo, kpisDeExposicion, lineaDeExposicion, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { horarioEfectivo, kpisDeExposicion, lineaDeTaller, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -42,7 +42,7 @@ import { PROGRAMA_POR_CONFIRMAR, puedeDestacarse } from "@/lib/destacados";
 import { jsonLdMigajas } from "@/lib/estructurados";
 import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { compartirEvento, direccionPublicaSitio, enlaceComoLlegar, fotoDeEvento, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar } from "@/lib/eventos";
+import { compartirEvento, cortoDeClase, direccionPublicaSitio, enlaceComoLlegar, fotoDeEvento, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista } from "@/lib/eventos";
 import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
@@ -378,6 +378,32 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const portada = fotoDeEvento({ imagen: e.imagen, portadaActo, lugar: e.lugar });
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
   const kpiExpo = clase === "exposicion" ? kpisDeExposicion(e, horario.franjas, ahora) : null;
+  // La cabecera oscura (OL-351, prototipo firmado `cabecera-clases.html`, variante A): una exposición, un taller o un festival llevan su clase en la
+  // etiqueta, sus tres números en la banda y su línea bajo el título: el festival, su periodo y su programa; el taller, cuándo y dónde (el sitio
+  // sin su dirección, como en las listas: la dirección está en «Dónde»); la exposición ninguna (repetía lo que dicen «Hasta» y «Horario»). Sin
+  // «Cupo»: no existe en el modelo, el taller sigue con «Van». Un evento suelto, el héroe y los números de siempre.
+  const numerosClase = kpiExpo ? (
+    <Kpis piel="banda">
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Hasta" valor={kpiExpo.hasta} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+      <Kpi icono={<IconoReloj width={16} height={16} />} etiqueta={kpiExpo.hoy.etiqueta} valor={kpiExpo.hoy.valor} />
+    </Kpis>
+  ) : clase === "festival" ? (
+    <Kpis piel="banda">
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedesFestival.length} />
+    </Kpis>
+  ) : clase === "taller" ? (
+    <Kpis piel="banda">
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Sesiones" valor={Math.max(sesiones.length, 1)} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+      <Suspense fallback={<EsqueletoKpi />}>
+        <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
+      </Suspense>
+    </Kpis>
+  ) : undefined;
+  const metaClase = clase === "festival" ? (cuandoClase ?? undefined) : clase === "taller" ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes }), ahora) : undefined;
   const hayAvisos = error === "borrar" || error === "publicar" || error === "no_publicable" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
   // «Cartel»: solo con imagen propia del evento (no la portada del lugar) que la ruta de descarga pueda entregar, y mientras el evento se ve.
@@ -447,7 +473,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </li>
         )}
       </BarraFicha>
-      <Heroe portada={portada} alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`} titulo={e.titulo} />
+      <Heroe
+        portada={portada}
+        alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`}
+        titulo={e.titulo}
+        etiqueta={numerosClase && cortoDeClase(clase)}
+        meta={metaClase}
+        banda={numerosClase}
+      />
 
       {hayAvisos && (
         <div className={ficha.avisos}>
@@ -475,21 +508,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       )}
 
       <div className={ficha.cuerpo} data-cuerpo>
-        {/* Una exposición: hasta cuándo, el horario de hoy y el costo (sin «Van»: no se va un día). Un festival: su periodo con cuántas actividades
-            tiene, el costo y sus sedes. Lo demás, como siempre. */}
-        {kpiExpo ? (
-          <Kpis>
-            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Hasta" valor={kpiExpo.hasta} />
-            <Kpi icono={<IconoReloj width={16} height={16} />} etiqueta={kpiExpo.hoy.etiqueta} valor={kpiExpo.hoy.valor} />
-            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
-          </Kpis>
-        ) : clase === "festival" ? (
-          <Kpis>
-            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
-            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
-            <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedesFestival.length} />
-          </Kpis>
-        ) : (
+        {/* Un evento suelto: cuándo, el costo y cuántos van. Los de una exposición, un taller o un festival van en la banda de la cabecera. */}
+        {!numerosClase && (
           <Kpis>
             <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cuando.hora} valor={cuando.dia} />
             <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
@@ -498,8 +518,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             </Suspense>
           </Kpis>
         )}
-        {kpiExpo && <p className={styles.linea}>{lineaDeExposicion(e, horario.franjas, ahora)}</p>}
-        {clase === "festival" && cuandoClase && <p className={styles.linea}>{cuandoClase}</p>}
 
         {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
         <div className={ficha.acciones}>

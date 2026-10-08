@@ -1,6 +1,6 @@
 import { FIN_DEL_DIA, etiquetaHora } from "./calendario";
 import type { Clase } from "./eventos";
-import { diaConMesDe, diaLocal, eventoPaso, fechaCortaChip, localAIso, rangoCorto, terminaDe, ZONA_INICIAL } from "./fechas";
+import { diaConMesDe, diaLocal, eventoPaso, fechaCortaChip, horaCorta, localAIso, rangoCorto, terminaDe, ZONA_INICIAL } from "./fechas";
 import { estructurar, textoRangos, type Dia, type Franja, type Rango } from "./horarioLugar";
 import type { HorarioDia } from "./sesionesEvento";
 
@@ -123,6 +123,17 @@ export function resumenTaller(horarios: readonly HorarioDia[], hoy: string): str
   const iguales = dias.every((h) => h.hora === dias[0].hora && h.fin === dias[0].fin);
   const hora = iguales ? (dias[0].fin ? `${etiquetaHora(dias[0].hora)}–${etiquetaHora(dias[0].fin)}` : etiquetaHora(dias[0].hora)) : "horario por sesión";
   return `${dias.length} ${dias.length === 1 ? "sesión" : "sesiones"} · ${texto} · ${hora}`;
+}
+
+/**
+ * La línea de un taller bajo su título en la cabecera oscura (OL-351): cuándo y dónde, lo que sus números («Sesiones · Costo · Van») no dicen.
+ * En un día, ese día y su hora («jue 8 de oct · 17:00 · Foro lunaria»); en varios (varias sesiones o un taller de corrido), sus días («Del 9 al
+ * 13 de oct · Foro lunaria»): las horas de cada sesión van en «Sesiones».
+ */
+export function lineaDeTaller(evento: { inicio: string; fin: string | null; zona: string }, sitio: string | null, ahora: Date = new Date()): string {
+  const dia = diaLocal(new Date(evento.inicio), evento.zona);
+  const cuando = ultimoDiaDelPeriodo(evento.inicio, evento.fin, evento.zona) > dia ? rangoDelPeriodo(evento.inicio, evento.fin, evento.zona, ahora) : `${diaConMesDe(dia, ahora, evento.zona)} · ${horaCorta(evento.inicio, evento.zona)}`;
+  return [cuando, sitio].filter(Boolean).join(" · ");
 }
 
 /** El periodo de un festival: del inicio de su primer acto al final del último (con hora de fin, ese; sin ella, el final de su día). */

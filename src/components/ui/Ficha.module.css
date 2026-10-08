@@ -1,10 +1,10 @@
 /* ==========================================================================
    La ficha (docs/rediseno/50, P6; canon del prototipo firmado): una sola rejilla con áreas, la misma para un evento, un lugar y
    un artista, a pantalla completa (`ui/Ficha`) y dentro de la hoja de Lugares (`app/lugares/FichaHoja`). De arriba abajo: la barra
-   (una fila de alto 0 que se abre sobre el héroe), el héroe (la portada y su título, en la misma celda), los avisos de la página,
-   el cuerpo y las acciones flotantes. Nada se escapa del aire con un margen negativo: la barra y el héroe llegan a los bordes
+   (una fila de alto 0 que se abre sobre el héroe), el héroe (la portada y su título, en la misma celda), los números de la cabecera
+   oscura (vacía en las demás), los avisos de la página, el cuerpo y las acciones flotantes. Nada se escapa del aire con un margen negativo: la barra y el héroe llegan a los bordes
    porque la ficha no lleva aire a los lados, y el cuerpo pone el suyo.
-   1. La rejilla · 2. La barra · 3. El héroe · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
+   1. La rejilla · 2. La barra · 3. El héroe · 3b. La cabecera oscura · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
    8. Avisos de la página · 9. Otras páginas: la persona y la página de formulario · 10. Escritorio: dos columnas
    ========================================================================== */
 
@@ -15,10 +15,11 @@
   --alto-barra-ficha: calc(var(--barra-arriba) + var(--boton-icono) + var(--espacio-2));
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 0 max-content max-content max-content 1fr;
+  grid-template-rows: 0 max-content max-content max-content max-content 1fr;
   grid-template-areas:
     "barra"
     "heroe"
+    "numeros"
     "avisos"
     "cuerpo"
     "flotantes";
@@ -168,6 +169,37 @@
   grid-column: 2;
 }
 
+/* 3b. La cabecera oscura de una exposición, un taller o un festival (OL-351; prototipo firmado `cabecera-clases.html`, variante A): la ficha
+   de lo que dura varios días se distingue a la primera. La portada pasa a 4:3 y llena toda su celda aunque el título crezca (a 320 o con un
+   título largo): debajo del velo nunca asoma el fondo claro. El velo baja hasta el color de la banda; el título, más grande, y la meta, en
+   blanco encima. La banda sigue en su propia fila con los números de la clase (`ui/Kpis` `piel="banda"`). Del cuerpo hacia abajo, lo claro
+   de siempre. La imagen de dentro (`Cartel`) deja su 3:2 y se estira a la figura. */
+.portada.oscura {
+  display: grid;
+  aspect-ratio: 4 / 3;
+  align-self: stretch;
+  max-height: 60dvh;
+  background: var(--banda);
+}
+.portada.oscura > * {
+  aspect-ratio: auto;
+  max-height: none;
+}
+.titulo.oscura {
+  padding-top: calc(var(--espacio-8) * 2 + var(--espacio-4)); /* 96: el velo arranca alto y llega oscuro al título */
+  padding-bottom: var(--espacio-3);
+  background: var(--velo-banda);
+}
+.titulo.oscura > :is(h1, h2) {
+  font-size: var(--letra-2xl);
+  font-weight: 800;
+}
+.numeros {
+  grid-area: numeros;
+  padding: var(--espacio-1) var(--gutter) var(--espacio-5);
+  background: var(--banda);
+}
+
 /* 4. El cuerpo: los bloques de la ficha en fila, con el aire de la página a los lados. */
 .cuerpo {
   grid-area: cuerpo;
@@ -192,6 +224,10 @@
   flex-wrap: wrap;
   gap: var(--espacio-3);
   margin-top: var(--espacio-5);
+}
+/* Con la cabecera oscura los números van arriba, en la banda, y las acciones abren el cuerpo. */
+.cuerpo > .acciones:first-child {
+  margin-top: 0;
 }
 .accion {
   flex: none;
@@ -411,6 +447,7 @@
     grid-template-areas:
       "barra barra"
       "portada titulo"
+      "portada numeros"
       "portada avisos"
       "portada cuerpo"
       "flotantes flotantes";
@@ -440,5 +477,23 @@
   .enPagina > .avisos,
   .enPagina > .cuerpo {
     padding-left: 0;
+  }
+  /* La cabecera oscura en dos columnas: la portada a la izquierda como siempre (con su 4:3, sin estirarse) y, a la derecha, el título y los
+     números sobre la banda, una tarjeta con las esquinas de la portada y su aire por dentro (la portada ya no se estira: `align-self` de
+     arriba). */
+  .enPagina > .titulo.oscura {
+    margin-right: var(--gutter);
+    padding: var(--espacio-6) var(--espacio-5) var(--espacio-3);
+    border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+    background: var(--banda);
+    color: var(--primario-texto);
+  }
+  .enPagina > .titulo.oscura > .etiqueta {
+    background: var(--vidrio);
+  }
+  .enPagina > .numeros {
+    margin-right: var(--gutter);
+    padding: var(--espacio-1) var(--espacio-5) var(--espacio-5);
+    border-radius: 0 0 var(--radio-grande) var(--radio-grande);
   }
 }

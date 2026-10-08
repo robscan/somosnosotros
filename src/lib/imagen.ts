@@ -37,3 +37,5 @@ export async function reducirImagen(archivo: File, ladoMaximo = LADO_MAXIMO): Pr
  *  Se generan una vez con docs/diseno/logotipo/sin-foto-sn.mjs: la cuadrada para miniaturas y avatares, la ancha para la portada de las fichas. */
 export const SIN_FOTO = "/sin-foto.png";
 export const SIN_FOTO_ANCHA = "/sin-foto-ancha.png";
+/** La portada sin foto de la cabecera oscura (exposición, taller y festival, OL-351): el símbolo en claro sobre la banda, arriba del título. */
+export const SIN_FOTO_OSCURA = "/sin-foto-oscura.png";

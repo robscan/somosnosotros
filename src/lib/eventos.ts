@@ -97,6 +97,9 @@ export const CLASES: readonly { clase: Clase; nombre: string; corto: string; fra
 /** El nombre de una clase («Exposición»); una que no se reconoce es un evento. */
 export const nombreDeClase = (clase: Clase | null | undefined): string => (CLASES.find((c) => c.clase === clase) ?? CLASES[0]).nombre;
 
+/** La palabra de una clase («Taller»): la etiqueta de la cabecera oscura de su ficha (OL-351). */
+export const cortoDeClase = (clase: Clase | null | undefined): string => (CLASES.find((c) => c.clase === clase) ?? CLASES[0]).corto;
+
 /** ¿Es una de las cuatro? Lo que llega de un formulario, de la base o del lector de carteles. */
 export const esClase = (v: unknown): v is Clase => typeof v === "string" && CLASES.some((c) => c.clase === v);
 
