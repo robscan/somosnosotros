@@ -5,11 +5,12 @@ import { HojaHorario } from "@/app/lugares/Horario";
 import TextoHorario from "@/app/lugares/TextoHorario";
 import { PiePaso } from "@/components/PorPasos";
 import Boton from "@/components/ui/Boton";
-import { IconoBoleto, IconoCalendario, IconoCamara, IconoEstrella, IconoEtiqueta, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoEstrella, IconoEtiqueta, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { etiquetaHora } from "@/lib/calendario";
+import { SIN_FOTO } from "@/lib/imagen";
 import { COOPERACION_SOLIDARIA, nombreDeClase, type Clase, type ErroresEvento } from "@/lib/eventos";
 import type { Franja } from "@/lib/horarioLugar";
 import { HORARIOS_POR_DIA, cuandoVariosDias, diaConMesDe, diaLocal, formatearCuando, localAIso, rangoCorto, yaPaso } from "@/lib/fechas";
@@ -83,9 +84,9 @@ export const DIRECCION_RETIRADA = "La dirección ya no está disponible por priv
  * «Publicar». Los errores del servidor salen junto a su dato, como en el alta de siempre. Con cartel, la cabeza lleva su miniatura y el
  * sello «Leído del cartel» (OL-302); los datos leídos y los contestados se ven iguales.
  *
- * Al editar (OL-319) es la pantalla de entrada, con todo el evento puesto: el botón dice «Guardar cambios», bajo el nombre van «Cambiar
- * nombre» y, con cartel, «Cambiar cartel» (sin cartel, un renglón opcional «Cartel · Agregar») y lo opcional que ya tiene algo dice «Cambiar…» en
- * vez de «Agregar…».
+ * Al editar (OL-319) es la pantalla de entrada, con todo el evento puesto: el botón dice «Guardar cambios», la cabeza va siempre con su
+ * miniatura (el cartel, o el símbolo SN si no tiene) y dos lápices sin letreros, uno sobre la miniatura y otro junto al nombre (OL-349), y lo
+ * opcional que ya tiene algo dice «Cambiar…» en vez de «Agregar…».
  */
 export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, enviando, falta, formulario, onAbrir, editar, onCambiar, onClase, horarioLugar = [], festivales = [], sedes, festivalGuardado }: Props) {
   const [hoja, setHoja] = useState<"clase" | "horario" | "inauguracion" | "festival" | null>(null);
@@ -113,21 +114,16 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   );
   const cuanto = r.costo === "gratis" ? "Gratis" : r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" && r.precio ? `$${r.precio}` : null;
   const extras = errores.descripcion ?? errores.enlace ?? errores.imagen;
-  // Con cartel entra la cabeza entera (la foto, el sello y el nombre, como una pieza); sin él, el nombre. Al editar, el nombre lleva
-  // «Cambiar nombre» debajo (en el alta se cambia con Atrás); sin la palabra, «Cambiar» a secas no diría si es el nombre o el cartel.
+  // Con cartel, o al editar, entra la cabeza entera (la miniatura, el sello y el nombre, como una pieza); en el alta sin cartel, el nombre.
+  // Al editar, la cabeza lleva los lápices del cartel y del nombre (en el alta el nombre se cambia con Atrás); sin cartel, la miniatura es el
+  // símbolo SN y su lápiz pone uno.
+  const cabeza = !!(cartel || editar);
   const titulo = (
-    <>
-      <h2 className={cartel ? styles.titulo : `${styles.titulo} ${styles.sube}`} style={cartel ? undefined : turno(0)} tabIndex={-1}>
-        {r.nombre}
-      </h2>
-      {editar && (
-        <Boton type="button" variante="texto" alto="control" ancho="contenido" className={cartel ? styles.cambiarNombre : `${styles.cambiarNombre} ${styles.sube}`} style={cartel ? undefined : turno(0)} onClick={() => onAbrir("nombre")}>
-          Cambiar nombre
-        </Boton>
-      )}
-    </>
+    <h2 className={cabeza ? styles.titulo : `${styles.titulo} ${styles.sube}`} style={cabeza ? undefined : turno(0)} tabIndex={-1}>
+      {r.nombre}
+    </h2>
   );
-  // Los renglones entran del 1 al último; «Agregar…» tras ellos (Quién solo está si hay artistas; al editar sin cartel, el renglón del cartel).
+  // Los renglones entran del 1 al último; «Agregar…» tras ellos (Quién solo está si hay artistas).
   // Cómo ocurre (OL-321) suma su renglón arriba, el horario y la inauguración de una exposición y «Parte de un festival» (todo menos un festival).
   const conQuien = r.quien.length > 0;
   const expo = r.clase === "exposicion";
@@ -135,7 +131,7 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   const conInauguracion = expo && r.sitio.modo !== "reservado";
   let turnoSiguiente = 0;
   const orden = () => ++turnoSiguiente;
-  const renglones = 1 + 3 + (expo ? 1 : 0) + (conInauguracion ? 1 : 0) + (conQuien ? 1 : 0) + (festival ? 0 : 1) + (editar && !cartel ? 1 : 0);
+  const renglones = 1 + 3 + (expo ? 1 : 0) + (conInauguracion ? 1 : 0) + (conQuien ? 1 : 0) + (festival ? 0 : 1);
   const [boton, ocupado] = editar ? BOTON.editar : [botonDeClase(r), BOTON.publicar[1]];
   const hoy = diaLocal(ahora, zona);
   const cuandoClase = expo
@@ -167,13 +163,13 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   const conExtras = !!(editar && (conQuien || r.descripcion.trim() || r.enlace.trim()));
   return (
     <>
-      {cartel ? (
+      {cabeza ? (
         <CabezaCartel
-          foto={cartel.url}
-          leido={cartel.leido}
+          foto={cartel?.url ?? SIN_FOTO}
+          leido={!!cartel?.leido}
           className={styles.sube}
           style={turno(0)}
-          onCambiar={editar?.onCartel}
+          editar={editar && { onCartel: editar.onCartel, onNombre: () => onAbrir("nombre") }}
         >
           {titulo}
         </CabezaCartel>
@@ -260,8 +256,6 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
         )}
         {/* «Parte de un festival» (doc 55 §2): busca un festival propio por nombre o crea uno con solo el nombre. */}
         {!festival && <Dato icono={<IconoEtiqueta width={20} height={20} />} clave="Festival" orden={orden()} valor={r.padre ? `Parte de ${nombreDePadre(r.padre)}` : null} detalle={r.padre && "nuevo" in r.padre ? "Festival nuevo" : undefined} falta="Parte de un festival" opcional onAbrir={() => setHoja("festival")} />}
-        {/* Al editar un evento sin cartel: ponerle uno (con la cabeza, si ya lo tiene, se cambia o se quita). */}
-        {editar && !cartel && <Dato icono={<IconoCamara width={20} height={20} />} clave="Cartel" orden={renglones} valor={null} falta="Cartel" opcional onAbrir={editar.onCartel} />}
       </ul>
       {hoja === "clase" && (
         <HojaClase

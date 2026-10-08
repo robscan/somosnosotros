@@ -1,9 +1,9 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import Boton from "@/components/ui/Boton";
+import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import Casilla from "@/components/ui/Casilla";
-import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
+import { IconoCamara, IconoLapiz, IconoOk } from "@/components/ui/Iconos";
 import Opcion from "@/components/ui/Opcion";
 import styles from "./PasoCartel.module.css";
 
@@ -72,11 +72,19 @@ export function CartelGuardado({ foto, noPude }: { foto: string; noPude: boolean
   );
 }
 
-/** La cabeza de «Revisa» con cartel: la miniatura, el sello «Leído del cartel» (si de él salieron datos), el nombre (`children`) y, al editar
- *  (OL-319), «Cambiar cartel» bajo el nombre (`onCambiar`). `className` y `style` son de quien la pone (la entrada de «Revisa»). */
-export function CabezaCartel({ foto, leido, children, onCambiar, className, style }: { foto: string; leido: boolean; children: ReactNode; onCambiar?: () => void; className?: string; style?: CSSProperties }) {
+/** La cabeza de «Revisa» con cartel: la miniatura, el sello «Leído del cartel» (si de él salieron datos) y el nombre (`children`). Al editar
+ *  (OL-319 y OL-349) lleva dos lápices, sin letreros: uno al centro de la miniatura («Cambiar cartel»: toda la miniatura es el toque) y otro en
+ *  la esquina de arriba a la derecha del nombre («Cambiar nombre»: todo el nombre es el toque). Cada uno es un botón transparente del tamaño de
+ *  lo que cubre, con el círculo del canon dibujado dentro (`claseBotonIcono`). Sin cartel, al editar, la miniatura es el símbolo SN de siempre.
+ *  `className` y `style` son de quien la pone (la entrada de «Revisa»). */
+export function CabezaCartel({ foto, leido, children, editar, className, style }: { foto: string; leido: boolean; children: ReactNode; editar?: { onCartel: () => void; onNombre: () => void }; className?: string; style?: CSSProperties }) {
+  const lapiz = (
+    <span className={claseBotonIcono({ relieve: "elevado" })}>
+      <IconoLapiz width={20} height={20} />
+    </span>
+  );
   return (
-    <div className={className ? `${styles.cabeza} ${className}` : styles.cabeza} style={style}>
+    <div className={[styles.cabeza, editar && styles.editable, className].filter(Boolean).join(" ")} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
       <img src={foto} alt="" />
       {leido && (
@@ -86,10 +94,15 @@ export function CabezaCartel({ foto, leido, children, onCambiar, className, styl
         </span>
       )}
       {children}
-      {onCambiar && (
-        <Boton type="button" variante="texto" alto="control" ancho="contenido" className={styles.cambiarCartel} onClick={onCambiar}>
-          Cambiar cartel
-        </Boton>
+      {editar && (
+        <>
+          <button type="button" className={styles.cambiarCartel} aria-label="Cambiar cartel" onClick={editar.onCartel}>
+            {lapiz}
+          </button>
+          <button type="button" className={styles.cambiarNombre} aria-label="Cambiar nombre" onClick={editar.onNombre}>
+            {lapiz}
+          </button>
+        </>
       )}
     </div>
   );
