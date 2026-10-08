@@ -5,7 +5,6 @@ import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
 import { fotoDeEvento, hrefEvento, nombreDeClase, sitioEnLista } from "./eventos";
 import { diaCorto, diaLocal, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
-import { textoActividadesSemana } from "./agendaPorClase";
 import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
@@ -102,15 +101,14 @@ export function cuandoDeTarjeta(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" 
 export const PROGRAMA_POR_CONFIRMAR = "Programa por confirmar";
 
 /**
- * Lo que su clase añade al cuándo (OL-322): «Horario por confirmar» en una exposición que se sabe sin horario; en el marco de un festival, «3
- * actividades esta semana» (el carril «Esta semana»), «Programa registrado: 4 actividades» o, sin actos publicados, «Programa por confirmar»
+ * Lo que su clase añade al cuándo (OL-322): «Horario por confirmar» en una exposición que se sabe sin horario; en el marco de un festival,
+ * «Programa registrado: 4 actividades» o, sin actos publicados, «Programa por confirmar»
  * (OL-346; si no se pudo contar, nada). Null en lo demás. Va aparte del cuándo para que no se corte con él: en la tarjeta, en la línea del sitio;
  * en el renglón, tras el cuándo.
  */
 export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "programa">): string | null {
   if (e.clase === "exposicion") return e.horario && !e.horario.some((f) => f.dias.length) ? "Horario por confirmar" : null;
   if (e.clase === "festival") {
-    if (e.programa?.estaSemana) return textoActividadesSemana(e.programa.estaSemana);
     if (e.programa?.registrados) return textoProgramaRegistrado(e.programa.registrados);
     return e.programa ? PROGRAMA_POR_CONFIRMAR : null;
   }
@@ -119,7 +117,7 @@ export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "program
 
 /** La segunda línea de la tarjeta: el sitio; el de una exposición sin horario lo dice («Aether · Horario por confirmar»). El marco de un festival
  *  dice sus sedes, derivadas de sus actos, y cuántas actividades tiene en corto para que quepa en la tarjeta («Varias sedes · 4 actividades»,
- *  «… · 3 actividades esta semana», OL-339); si no se pudieron leer, solo su programa (lo capturado en el marco no es por fuerza donde pasa). Sin
+ *  OL-339); si no se pudieron leer, solo su programa (lo capturado en el marco no es por fuerza donde pasa). Sin
  *  actos todavía, lo capturado es lo único que dice dónde (como en su ficha): «ACHE Galería · Programa por confirmar» (OL-346). */
 function sitioDeTarjeta(e: EventoAgenda): string {
   const nota = notaDeClase(e);
@@ -128,8 +126,7 @@ function sitioDeTarjeta(e: EventoAgenda): string {
   // Sin actos ni sitio capturado no se dice dos veces «por confirmar»: solo el programa.
   if (nota === PROGRAMA_POR_CONFIRMAR) return e.lugar || e.sitio_texto || e.sitio_direccion || e.sitio_reservado ? `${sitioEnLista(e)} · ${nota}` : nota;
   if (!e.sedes?.length) return nota;
-  const corta = e.programa?.estaSemana ? nota : textoActosEnSede(e.programa?.registrados ?? 0);
-  return `${sitioEnLista(e)} · ${corta}`;
+  return `${sitioEnLista(e)} · ${textoActosEnSede(e.programa?.registrados ?? 0)}`;
 }
 
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {

@@ -26,11 +26,13 @@ export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref
     return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
   }
   // «Festivales y exposiciones» (OL-342): cada tarjeta dice qué es en su rótulo («Festival», «Exposición»: `tarjetaConClase`).
+  // Va con la tarjeta grande, la de «Destacados» (founder, 2026-10-08, OL-347: «a los festivales ponles tamaño de eventos
+  // estelares»); un carril tiene un solo tamaño, así que las exposiciones también.
   const datos =
     carril.parte === "estelar"
       ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaEvento(e, ahora)), tamano: "grande" as const, memoria: "inicio-estelar" }
       : carril.parte === "festivales"
-        ? { titulo: "Festivales y exposiciones", tarjetas: carriles.festivales.map((e) => tarjetaConClase(e, ahora)), tamano: "mediana" as const, memoria: "inicio-festivales" }
+        ? { titulo: "Festivales y exposiciones", tarjetas: carriles.festivales.map((e) => tarjetaConClase(e, ahora)), tamano: "grande" as const, memoria: "inicio-festivales" }
         : { titulo: "Esta semana", tarjetas: carriles.estaSemana.map((e) => tarjetaEvento(e, ahora)), tamano: "mediana" as const, memoria: "inicio-esta-semana" };
   return <CarrilEventosCliente {...comun} tarjetas={datos.tarjetas} titulo={datos.titulo} tamano={datos.tamano} memoria={datos.memoria} />;
 }

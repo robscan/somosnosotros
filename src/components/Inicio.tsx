@@ -82,7 +82,9 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotEstelar}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
-        <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotFestivales}</Suspense>
+        {/* OL-347: «Festivales y exposiciones» va con la tarjeta grande de «Destacados» (founder, 2026-10-08); el esqueleto
+            cambia con él para no saltar cuando llega la respuesta real. */}
+        <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotFestivales}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
         <Suspense fallback={null}>{slotMasAdelante}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>

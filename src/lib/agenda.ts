@@ -28,7 +28,7 @@ export type EventoAgenda = EventoResumen & {
   horario?: Franja[];
   /** Solo en el marco de un festival: cuántos actos tiene publicados (`registrados`, «Programa registrado: N») y, en el carril «Esta semana», cuántos
    *  caen en la semana. */
-  programa?: { registrados: number; estaSemana?: number };
+  programa?: { registrados: number };
 };
 
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };

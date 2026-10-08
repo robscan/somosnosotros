@@ -14,9 +14,9 @@ import { compararNombres } from "./lugares";
  *   «Festivales y exposiciones» (OL-342; antes «Para visitar», solo con ellas) con las vigentes; en la agenda del día, «Para visitar hoy» con
  *   las que abren ese día **según su horario**. Sin horario no se promete «visitable hoy»: no entra ahí (sí en «Para visitar», con «Horario por
  *   confirmar»).
- * - **Festival:** en Inicio sale en «Esta semana» como su marco si tiene actos esa semana, y siempre en «Festivales y exposiciones», su sitio (OL-346:
- *   todos, también los que no tienen actos todavía, con «Programa por confirmar»); en la agenda del día es un bloque con sus actos de ese día
- *   (`componerDia`).
+ * - **Festival:** en Inicio sale solo en «Festivales y exposiciones», su sitio (OL-346: todos, también los que no tienen actos todavía, con
+ *   «Programa por confirmar»; OL-347: en ningún otro carril, y sus actos salen en ellos sueltos, `sinFestivales` de lib/inicio); en la agenda del
+ *   día es un bloque con sus actos de ese día (`componerDia`).
  * - **Taller:** cada sesión es un renglón, con «Sesión 2 de 4» (`textoParte`).
  */
 
@@ -51,8 +51,8 @@ export function entraEnQue(e: ConClase, que: Que): boolean {
 }
 
 /**
- * En una lista que habla del evento y no de un día (Nuevos, los carriles de Inicio), el acto cuyo festival también está en la lista no sale: lo
- * dice su marco («un festival nuevo, como marco»). Uno cuyo marco no está (un acto nuevo de un festival viejo) sale como cualquier evento.
+ * En una lista que habla del evento y no de un día (la pestaña Nuevos de la agenda), el acto cuyo festival también está en la lista no sale: lo
+ * dice su marco («un festival nuevo, como marco»). Los carriles de Inicio ya no pliegan: ahí el festival solo sale en su carril (OL-347). Uno cuyo marco no está (un acto nuevo de un festival viejo) sale como cualquier evento.
  */
 export function plegarActos<T extends ConClase & { id: string }>(eventos: readonly T[]): T[] {
   const marcos = new Set(eventos.filter(esMarco).map((e) => e.id));
@@ -94,9 +94,6 @@ export function textoBloque(registrados: number, delDia: number, esHoy: boolean)
   const total = `Programa registrado: ${registrados} ${registrados === 1 ? "actividad" : "actividades"}`;
   return `${total} · ${esHoy ? `hoy ${delDia}` : `${delDia} este día`}`;
 }
-
-/** «3 actividades esta semana»: lo que dice la tarjeta del marco en el carril «Esta semana». */
-export const textoActividadesSemana = (n: number): string => `${n} ${n === 1 ? "actividad" : "actividades"} esta semana`;
 
 // ---------- exposiciones ----------
 
