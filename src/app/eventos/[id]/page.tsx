@@ -44,7 +44,8 @@ import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { compartirEvento, direccionPublicaSitio, enlaceComoLlegar, fotoDeEvento, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar } from "@/lib/eventos";
 import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
-import { hrefLugar } from "@/lib/lugares";
+import { calleCorta, hrefLugar } from "@/lib/lugares";
+import type { SedeMapa } from "@/lib/mapaSedes";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
@@ -52,7 +53,7 @@ import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } 
 import { hrefCreador } from "@/lib/carteles/origen";
 import { cargarActosDeMarcos } from "@/lib/cargarSedes";
 import { hrefSitio } from "@/lib/sitios";
-import { portadaDeFestival, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
+import { portadaDeFestival, proximoPorSede, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -331,6 +332,28 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const puntoMapa = puntoComoLlegar(argsSitio);
   // Solo la coordenada, para la distancia del renglón del sitio: `puntoMapa` puede ser el lugar entero y no tiene por qué viajar al teléfono.
   const puntoDistancia = puntoMapa && { lat: puntoMapa.lat, lng: puntoMapa.lng };
+  // Lo que pinta el mapa de «Dónde» y su capa a pantalla completa (OL-350): las sedes de los actos de un festival, cada una con «N actividades» y el día de
+  // su próximo acto en el pin (founder, 2026-10-08: «puede decir n actividades y la próxima se descubre en el listado»); si no, el sitio del evento con su
+  // dirección y el día del evento. El ángulo de su tarjeta abre la misma ficha que su renglón en «Dónde».
+  const proximos = sedes.length ? proximoPorSede(actosPublicados, e.zona, ahora) : null;
+  const sedesMapa: SedeMapa[] = proximos
+    ? sedes.flatMap((s) => {
+        const inicio = proximos.get(s.clave);
+        return s.punto ? [{ clave: s.clave, nombre: s.nombre, punto: s.punto, meta: textoActosEnSede(s.actos), href: s.href, reservado: s.reservado, comoLlegar: enlaceComoLlegar({ lugar: s.punto, sitioReservado: false, sitioLat: null, sitioLng: null, privado: null })!, proximo: inicio ? { inicio, zona: e.zona } : null }] : [];
+      })
+    : puntoDistancia && comoLlegar
+      ? [
+          {
+            clave: "sitio",
+            nombre: e.lugar?.nombre ?? e.sitio_texto ?? sitio,
+            punto: puntoDistancia,
+            meta: calleCorta(e.lugar ? e.lugar.direccion : e.sitio_reservado ? privado?.direccion : e.sitio_direccion) || null,
+            href: e.lugar ? hrefLugar(e.lugar) : !e.sitio_reservado && e.visible && !paso ? hrefSitio(e) : null,
+            comoLlegar,
+            proximo: { inicio: e.inicio, zona: e.zona },
+          },
+        ]
+      : [];
   // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos "Voy" hay: el menú de administración sigue en el
   // HTML inicial (OL-161) y no puede esperar esa consulta aparte.
   const avisoBorrar = 'Se borra el evento, con los "Voy" que tenga.';
@@ -683,7 +706,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         {sedes.length > 0 && (
           <section className={ficha.tarjeta} id="donde" aria-label="Dónde">
             <h2>Dónde</h2>
-            <MapaFicha punto={puntoMapa} puntos={sedes.length > 1 ? sedes.flatMap((s) => (s.punto ? [s.punto] : [])) : undefined} href={comoLlegar} alt={sedes.length > 1 ? `las sedes de ${e.titulo}` : sitio} />
+            <MapaFicha sedes={sedesMapa} ficha="festival" alt={sedes.length > 1 ? `las sedes de ${e.titulo}` : sitio} />
             <ul>
               {sedes.map((s) => (
                 <li key={s.clave}>
@@ -699,7 +722,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         {hayDonde && !sedes.length && (
           <section className={ficha.tarjeta}>
             <h2>Dónde</h2>
-            <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
+            <MapaFicha sedes={sedesMapa} ficha={clase === "festival" ? "festival" : "evento"} alt={sitio} />
             {/* El ángulo siempre abre una ficha (OL-348): la del lugar o la del sitio fuera del directorio, armada con los eventos que lo
                 nombran (por eso solo si este se ve: uno oculto o que ya pasó no la arma). «Cómo llegar» está en las acciones de arriba. */}
             {e.lugar && (

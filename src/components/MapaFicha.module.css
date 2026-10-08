@@ -1,15 +1,37 @@
-/* Mapa de referencia de una ficha, dentro de su tarjeta «Dónde»: a lo ancho de ella y con la proporción de su imagen (la pone
-   `MapaFicha`); esquinas como las tarjetas. */
+/* Mapa de referencia de una ficha, dentro de su tarjeta «Dónde»: a lo ancho de ella y con la proporción de su imagen (la pone `MapaFicha`); esquinas
+   como las tarjetas. Es un botón que abre el mapa a pantalla completa (OL-350): una sola celda con la imagen y, encima, en la esquina de abajo a la
+   derecha, la pista de ampliar (un círculo blanco con su icono, sin letrero). */
 .mapa {
-  display: block;
+  display: grid;
+  grid-template-areas: "mapa";
   width: 100%;
+  padding: 0;
+  border: 0;
   border-radius: var(--radio);
   overflow: hidden;
   background: var(--fondo-miniatura);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mapa > * {
+  grid-area: mapa;
 }
 .mapa img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* El círculo es el propio icono: su relleno deja el trazo de 20 en un círculo de 36, sin una caja de más. */
+.ampliar {
+  align-self: end;
+  justify-self: end;
+  width: var(--pista-ampliar);
+  height: var(--pista-ampliar);
+  margin: var(--espacio-2);
+  padding: var(--espacio-2);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra);
 }

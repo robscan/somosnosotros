@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cabeLaTarjeta, poiBajoElDedo, resultadosPerdidos, type ElementoDelMapa } from "./mapa";
+import { cabeLaTarjeta, poiBajoElDedo, resultadosPerdidos, vistaQueEncuadra, type ElementoDelMapa } from "./mapa";
 
 describe("resultadosPerdidos: ¿ningún lugar cae en lo que se ve del mapa?", () => {
   // Un mapa de 390×500 con la hoja tapando 200 px por abajo: lo que se ve es de 0,0 a 390,300.
@@ -89,5 +89,53 @@ describe("cabeLaTarjeta: ¿cabe la tarjeta de una pulsación larga en lo que se 
   it("en un mapa muy corto, ningún punto tiene sitio", () => {
     expect(cabeLaTarjeta(60, 130, 200, 0, 22)).toBe(false);
     expect(cabeLaTarjeta(100, 130, 200, 0, 22)).toBe(false);
+  });
+});
+
+describe("vistaQueEncuadra (OL-350): la cámara que deja todos los puntos en lo que dejan libre los controles y la tarjeta", () => {
+  const caja = { ancho: 390, alto: 844 };
+  const sinAire = { arriba: 0, abajo: 0, izq: 0, der: 0 };
+  // Lo mismo que hace Mapbox con su `project`: Web Mercator con un mundo de 512 px a acercamiento 0, centrado en la caja.
+  const enPantalla = (v: { centro: { lat: number; lng: number }; zoom: number }, p: { lat: number; lng: number }) => {
+    const m = (q: { lat: number; lng: number }) => {
+      const s = Math.sin((q.lat * Math.PI) / 180);
+      return { x: (q.lng + 180) / 360, y: 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI) };
+    };
+    const mundo = 512 * 2 ** v.zoom;
+    const [a, c] = [m(p), m(v.centro)];
+    return { x: caja.ancho / 2 + (a.x - c.x) * mundo, y: caja.alto / 2 + (a.y - c.y) * mundo };
+  };
+  const sedes = [
+    { lat: 22.144, lng: -101.015 },
+    { lat: 22.1517, lng: -100.9761 },
+    { lat: 22.1511, lng: -100.9772 },
+  ];
+  it("sin puntos no hay vista", () => {
+    expect(vistaQueEncuadra([], caja, sinAire, 15)).toBeNull();
+  });
+  it("un solo punto: en el centro de la caja libre, al acercamiento tope", () => {
+    const aire = { arriba: 72, abajo: 200, izq: 72, der: 72 };
+    const v = vistaQueEncuadra([sedes[0]], caja, aire, 15)!;
+    expect(v.zoom).toBe(15);
+    const p = enPantalla(v, sedes[0]);
+    expect(p.x).toBeCloseTo(195, 6);
+    expect(p.y).toBeCloseTo((72 + 844 - 200) / 2, 6);
+  });
+  it("varios: los extremos tocan el borde de la caja libre en el eje que manda y ninguno sale de ella", () => {
+    const aire = { arriba: 72, abajo: 200, izq: 72, der: 72 };
+    const v = vistaQueEncuadra(sedes, caja, aire, 15)!;
+    expect(v.zoom).toBeLessThan(15);
+    const ps = sedes.map((s) => enPantalla(v, s));
+    for (const p of ps) {
+      expect(p.x).toBeGreaterThanOrEqual(72 - 1e-6);
+      expect(p.x).toBeLessThanOrEqual(390 - 72 + 1e-6);
+      expect(p.y).toBeGreaterThanOrEqual(72 - 1e-6);
+      expect(p.y).toBeLessThanOrEqual(844 - 200 + 1e-6);
+    }
+    expect(Math.min(...ps.map((p) => p.x))).toBeCloseTo(72, 6);
+    expect(Math.max(...ps.map((p) => p.x))).toBeCloseTo(390 - 72, 6);
+  });
+  it("cercanos entre sí: no pasa del acercamiento tope", () => {
+    expect(vistaQueEncuadra([sedes[1], sedes[2]], caja, sinAire, 15)!.zoom).toBe(15);
   });
 });

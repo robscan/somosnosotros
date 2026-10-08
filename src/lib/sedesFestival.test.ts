@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buscarEventos, type EventoAgenda } from "./agenda";
 import { tarjetaEvento } from "./destacados";
 import { fotoDeEvento, nombreSitio, sitioEnLista } from "./eventos";
-import { nombreDeSedes, portadaDeFestival, sedesDeFestival, sedesParaLista, textoActosEnSede, VARIAS_SEDES, type ActoConSitio } from "./sedesFestival";
+import { lugaresDelMapa } from "./mapaSedes";
+import { nombreDeSedes, portadaDeFestival, proximoPorSede, sedesDeFestival, sedesParaLista, textoActosEnSede, VARIAS_SEDES, type ActoConSitio } from "./sedesFestival";
 
 /** Las sedes de un festival (OL-339): derivadas de sus actos al leer, sin repetir, en el orden de su primer acto; lo del marco solo sin actos. */
 
@@ -144,3 +145,23 @@ describe("portadaDeFestival (OL-346): sin imagen propia, el cartel de su próxim
   });
 });
 
+
+describe("proximoPorSede (OL-350): el día del pin de cada sede en el mapa a pantalla completa", () => {
+  const zona = "America/Mexico_City";
+  const ahora = new Date("2026-10-15T18:00:00Z"); // jueves 15 a mediodía en San Luis Potosí
+  it("el primer acto que todavía no pasa en cada sede, aunque lleguen desordenados; uno de hoy cuenta hasta que acabe el día", () => {
+    const actos = [enLugar("2026-10-17T02:00:00Z", CCUB), enLugar("2026-10-14T02:00:00Z", CCUB), enLugar("2026-10-15T15:00:00Z", PAZ), enLugar("2026-10-18T02:00:00Z", PAZ)];
+    expect(proximoPorSede(actos, zona, ahora)).toEqual(new Map([["l:paz", "2026-10-15T15:00:00Z"], ["l:ccub", "2026-10-17T02:00:00Z"]]));
+  });
+  it("una sede sin actos por venir no sale; un acto sin sitio no es sede", () => {
+    const actos = [enLugar("2026-10-10T02:00:00Z", CCUB), { inicio: "2026-10-20T02:00:00Z", lugar_id: null, lugar: null, sitio_texto: null }, enSitio("2026-10-20T02:00:00Z", "Jardín de San Juan de Dios")];
+    expect([...proximoPorSede(actos, zona, ahora).keys()]).toEqual(["s:jardin de san juan de dios"]);
+  });
+  it("las sedes van al mapa de Lugares con su clave, su punto y su próxima actividad (el día lo pone el pin)", () => {
+    const sede = { clave: "l:paz", nombre: PAZ.nombre, punto: { lat: PAZ.lat, lng: PAZ.lng }, meta: "1 actividad", href: "/lugares/teatro-de-la-paz", comoLlegar: "https://maps", proximo: { inicio: "2026-10-17T02:00:00Z", zona } };
+    expect(lugaresDelMapa([sede, { ...sede, clave: "s:jardin", proximo: null }])).toEqual([
+      { id: "l:paz", nombre: PAZ.nombre, tipo: "otro", direccion: null, lat: PAZ.lat, lng: PAZ.lng, portada: null, proximo: { id: "l:paz", inicio: "2026-10-17T02:00:00Z", zona, titulo: "" } },
+      { id: "s:jardin", nombre: PAZ.nombre, tipo: "otro", direccion: null, lat: PAZ.lat, lng: PAZ.lng, portada: null, proximo: null },
+    ]);
+  });
+});

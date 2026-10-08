@@ -157,6 +157,12 @@ export const IconoEncuadrar = (p: P) => (
     <path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3" />
   </svg>
 );
+/** Ampliar: dos flechas hacia las esquinas (el mapa de una ficha se abre a pantalla completa, OL-350). */
+export const IconoAmpliar = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5" />
+  </svg>
+);
 export const IconoRuta = (p: P) => (
   <svg {...base(p)}>
     <path d="M12 3l9 9-9 9-9-9z" />
