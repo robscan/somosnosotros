@@ -15,7 +15,7 @@ import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel } from "./cartelPorPasos";
 import { sedesDelPrograma } from "./clasePorPasos";
 import type { ContextoClase } from "./contextoClase";
-import { faltaParaPublicar, preguntaDe, type Respuestas } from "./pasos";
+import { claseElegida, faltaParaPublicar, preguntaDe, type Respuestas } from "./pasos";
 import { PasoEspera, PasoInicio } from "./PasoCartel";
 import Preguntas from "./Preguntas";
 import Revisa from "./Revisa";
@@ -163,7 +163,7 @@ export default function EditarEvento({ accion, respuestas, imagen, revision, zon
           onAbrir={sitio.abrirPaso}
           editar={{ onCartel: () => abrir("inicio"), conflicto: resultado && !resultado.ok && resultado.conflicto ? ficha : undefined }}
           onCambiar={cambiar}
-          onClase={(clase) => contestar({ clase, claseFijada: true })}
+          onClase={(clase) => contestar(claseElegida(clase))}
           horarioLugar={sitio.lugar ? (horarios[sitio.lugar.id] ?? []) : []}
           festivales={contexto?.festivales ?? []}
           sedes={r.clase === "festival" && !festivalGuardado ? sedesDelPrograma(r, lugares) : undefined}

@@ -21,7 +21,7 @@ import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel, type Leido } from "./cartelPorPasos";
 import type { ContextoClase } from "./contextoClase";
-import { avance, eventoPublicado, faltaParaPublicar, preguntaDe, sesionesDe, type Creado } from "./pasos";
+import { avance, claseElegida, eventoPublicado, faltaParaPublicar, preguntaDe, sesionesDe, type Creado } from "./pasos";
 import { cuandoDeClase, sedesDelPrograma } from "./clasePorPasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import { PasoVisita } from "./PasosClase";
@@ -189,7 +189,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           <TiraTipos actual="evento" destinos={{ lugar: enlaceAltaDeTipo("lugar", ciudadContexto?.slug ?? null), artista: enlaceAltaDeTipo("artista", ciudadContexto?.slug ?? null) }} />
         </>
       )}
-      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} />
+      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} clases />
       {paso === "revisa" && (
         <Revisa
           r={r}
@@ -204,7 +204,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           formulario={FORMULARIO}
           onAbrir={sitio.abrirPaso}
           onCambiar={cambiar}
-          onClase={(clase) => contestar({ clase, claseFijada: true })}
+          onClase={(clase) => contestar(claseElegida(clase))}
           horarioLugar={sitio.lugar ? (horarios[sitio.lugar.id] ?? []) : []}
           festivales={contexto?.festivales ?? []}
           sedes={r.clase === "festival" ? sedesDelPrograma(r, lugares) : undefined}

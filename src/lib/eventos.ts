@@ -83,12 +83,15 @@ export type Evento = {
  */
 export type Clase = "puntual" | "exposicion" | "taller" | "festival";
 
-/** Las cuatro formas, en el orden de la hoja «¿Cómo ocurre?», con su nombre y su frase llana (doc 55 §2; prototipo caso 5). */
-export const CLASES: readonly { clase: Clase; nombre: string; frase: string }[] = [
-  { clase: "puntual", nombre: "Evento", frase: "Pasa un día a una hora." },
-  { clase: "exposicion", nombre: "Exposición", frase: "Se puede visitar varios días, en un horario." },
-  { clase: "taller", nombre: "Taller o curso", frase: "Varias sesiones, una inscripción." },
-  { clase: "festival", nombre: "Festival", frase: "Agrupa varios eventos." },
+/**
+ * Las cuatro formas, en el orden de la hoja «¿Cómo ocurre?», con su nombre y su frase llana (doc 55 §2; prototipo caso 5). `corto` es lo que dice
+ * su chip bajo el nombre en el primer paso del alta (OL-345): una palabra, para que la fila quepa.
+ */
+export const CLASES: readonly { clase: Clase; nombre: string; corto: string; frase: string }[] = [
+  { clase: "puntual", nombre: "Evento", corto: "Evento", frase: "Pasa un día a una hora." },
+  { clase: "exposicion", nombre: "Exposición", corto: "Exposición", frase: "Se puede visitar varios días, en un horario." },
+  { clase: "taller", nombre: "Taller o curso", corto: "Taller", frase: "Varias sesiones, una inscripción." },
+  { clase: "festival", nombre: "Festival", corto: "Festival", frase: "Agrupa varios eventos." },
 ];
 
 /** El nombre de una clase («Exposición»); una que no se reconoce es un evento. */

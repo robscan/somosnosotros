@@ -600,6 +600,20 @@
         11,
         11
       ]
+    },
+    "s27-alta-evento-nombre-clase": {
+      "nodos": [
+        21,
+        21,
+        55,
+        55
+      ],
+      "profundidad": [
+        6,
+        6,
+        6,
+        6
+      ]
     }
   }
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { PiePaso } from "@/components/PorPasos";
 import SelectorQuien from "@/app/eventos/SelectorQuien";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Casilla from "@/components/ui/Casilla";
-import { Chip } from "@/components/ui/Chip";
+import { Chip, Chips } from "@/components/ui/Chip";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { IconoBoleto, IconoBuscar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
@@ -19,8 +19,9 @@ import type { ArtistaResumen } from "@/lib/artistas";
 import { etiquetaHora } from "@/lib/calendario";
 import type { Ciudad } from "@/lib/ciudad";
 import { partirLocal, resumenCadaDia } from "@/lib/cuandoEvento";
-import { LIMITES_EVENTO, type ErroresEvento } from "@/lib/eventos";
+import { CLASES, LIMITES_EVENTO, type Clase, type ErroresEvento } from "@/lib/eventos";
 import { diaLargo, diaLocal } from "@/lib/fechas";
+import { sinMovimiento } from "@/lib/movimiento";
 import { admitePorDia, finComun, horarioComun, resumenPorDia, type HorarioDia } from "@/lib/sesionesEvento";
 import { DURACIONES, HORAS_SUGERIDAS, diasElegidos, diasSugeridos, etiquetaDuracion, finConHora, finesSugeridos, type Costo, type Dias, type Respuestas } from "./pasos";
 import HorarioPorDia from "./HorarioPorDia";
@@ -48,8 +49,33 @@ const conIntro = (seguir: (() => void) | null) => (e: React.KeyboardEvent<HTMLIn
   if (e.key === "Enter" && seguir) seguir();
 };
 
-export function PasoNombre({ nombre, onCambio, onSeguir }: { nombre: string; onCambio: (nombre: string) => void; onSeguir: () => void }) {
+/**
+ * «¿Cómo se llama?». En el alta (OL-345; founder, 2026-10-08: «no veo la opción de especificar que es una galería/exposición temporal»), justo
+ * bajo el campo, los chips de la clase en su orden fijo (Evento · Exposición · Taller · Festival) con la propuesta del título ya marcada (o la del
+ * cartel, o la que se eligió): un toque la fija y el paso sigue igual, sin pregunta nueva; «Siguiente» lleva al paso del tiempo de esa clase y
+ * «Revisa» la confirma. Sin rótulo ni ayuda: la fila se nombra solo para el lector. Es la fila de los filtros (`ui/Chips`): si no cabe a lo ancho,
+ * se desliza, nunca en dos renglones, y se desliza sola hasta dejar entero el marcado (a 320 «Festival» queda en el borde). Va justo después del
+ * campo, con el aire de la columna y sin margen negativo (la medición no los admite); la tira Evento · Lugar · Artista (OL-313) es del paso del
+ * cartel y no sale aquí. `clase` null: sin chips (sin nombre todavía, o al editar, que cambia la clase desde «Revisa»).
+ */
+export function PasoNombre({ nombre, clase = null, onCambio, onClase, onSeguir }: { nombre: string; clase?: Clase | null; onCambio: (nombre: string) => void; onClase?: (clase: Clase) => void; onSeguir: () => void }) {
   const listo = !!nombre.trim();
+  const fila = useRef<HTMLDivElement>(null);
+  // Lo que se marca (al escribir «Festival…», o al aparecer la fila) se ve entero: la fila se desliza lo justo, sin mover la página. Otra vez
+  // cuando termina de llegar la letra: con Bricolage los chips cambian de ancho.
+  useEffect(() => {
+    const mostrar = () => {
+      const caja = fila.current;
+      const marcado = caja?.querySelector<HTMLElement>('[aria-pressed="true"]');
+      if (!caja || !marcado) return;
+      const f = caja.getBoundingClientRect();
+      const c = marcado.getBoundingClientRect();
+      const falta = c.right > f.right ? c.right - f.right : c.left < f.left ? c.left - f.left : 0;
+      if (falta) caja.scrollBy({ left: falta, behavior: sinMovimiento() ? "instant" : "smooth" });
+    };
+    mostrar();
+    void document.fonts?.ready.then(mostrar);
+  }, [clase]);
   return (
     <>
       <label className={`${canon.campo} ${nombre ? "" : canon.campoFalta}`}>
@@ -69,6 +95,15 @@ export function PasoNombre({ nombre, onCambio, onSeguir }: { nombre: string; onC
         <Limpiar visible={!!nombre} />
         <ContadorCaracteres valor={nombre} tope={LIMITES_EVENTO.titulo} />
       </label>
+      {clase && (
+        <Chips ref={fila} ariaLabel="Cómo ocurre">
+          {CLASES.map((c) => (
+            <Chip key={c.clase} activo={c.clase === clase} onClick={() => onClase?.(c.clase)}>
+              {c.corto}
+            </Chip>
+          ))}
+        </Chips>
+      )}
       <Siguiente falta={listo ? null : "Falta el nombre"} onSeguir={onSeguir} />
     </>
   );

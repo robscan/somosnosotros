@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useContext, useLayoutEffect, useRef, type MouseEvent, type MouseEventHandler, type ReactNode } from "react";
+import { useContext, useLayoutEffect, useRef, type MouseEvent, type MouseEventHandler, type ReactNode, type Ref } from "react";
 import { movimiento, sinMovimiento } from "@/lib/movimiento";
 import EnCamino from "./EnCamino";
 import { IconoCerrar } from "./Iconos";
@@ -143,10 +143,13 @@ export function Cuenta({ n }: { n: number }) {
   return <span className={styles.cuenta}>{n}</span>;
 }
 
-/** Fila de chips que se desliza a lo ancho sin barra de scroll; con `envuelve`, los chips pasan al renglón de abajo (una hoja). */
-export function Chips({ children, ariaLabel, envuelve = false }: { children: ReactNode; ariaLabel: string; envuelve?: boolean }) {
+/**
+ * Fila de chips que se desliza a lo ancho sin barra de scroll; con `envuelve`, los chips pasan al renglón de abajo (una hoja). `ref`, para quien
+ * necesita deslizarla hasta un chip (la clase marcada bajo el nombre del alta de evento, OL-345).
+ */
+export function Chips({ children, ariaLabel, envuelve = false, ref }: { children: ReactNode; ariaLabel: string; envuelve?: boolean; ref?: Ref<HTMLDivElement> }) {
   return (
-    <div className={envuelve ? `${styles.chips} ${styles.envuelve}` : styles.chips} role="group" aria-label={ariaLabel}>
+    <div ref={ref} className={envuelve ? `${styles.chips} ${styles.envuelve}` : styles.chips} role="group" aria-label={ariaLabel}>
       {children}
     </div>
   );

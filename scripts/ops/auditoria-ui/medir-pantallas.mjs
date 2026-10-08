@@ -66,6 +66,14 @@ PASOS["evento-nombre"] = async (page) => {
   await page.getByRole("textbox", { name: "Nombre del evento" }).waitFor();
   await aquietar(page);
 };
+// OL-345: «¿Cómo se llama?» con un nombre escrito: los chips de la clase bajo el campo, con la propuesta del título («Festival…») marcada. La
+// comprobación del teclado mide con ellos a la vista.
+PASOS["evento-nombre-clase"] = async (page) => {
+  await PASOS["evento-nombre"](page);
+  await page.getByRole("textbox", { name: "Nombre del evento" }).fill("Festival de jazz del barrio");
+  await page.getByRole("group", { name: "Cómo ocurre" }).waitFor();
+  await aquietar(page);
+};
 PASOS["evento-es-aqui"] = async (page) => {
   const ctx = page.context();
   await ctx.grantPermissions(["geolocation"]);
