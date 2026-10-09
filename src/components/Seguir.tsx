@@ -42,7 +42,9 @@ type Props = {
  * (useCanalDeListas): en una ficha los comparte con su lista de eventos, así no se encinan ni se pregunta dos veces (OL-057).
  */
 export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, hrefEntrar, avisosPreguntado, correo, llavePush }: Props) {
-  const [pendiente, iniciar] = useTransition();
+  // Sin `pendiente`: la pastilla no se apaga ni late mientras el servidor confirma (OL-354, bitácora 385); lo optimista ya
+  // la dejó en su estado final al tocar, y solo vuelve atrás, una vez, si no se pudo guardar.
+  const [, iniciar] = useTransition();
   const [estado, fijar] = useOptimistic(sigo, (_a, nuevo: boolean) => nuevo);
   const [hoja, setHoja] = useState(false);
   const toques = useRef<Toques>({});
@@ -105,7 +107,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   return (
     <>
       <div className={ficha.flotantes} data-flotantes>
-        <Boton type="button" ancho="contenido" flotante aria-pressed={estado} aria-busy={pendiente} onClick={() => cambiar(!estado)}>
+        <Boton type="button" ancho="contenido" flotante aria-pressed={estado} onClick={() => cambiar(!estado)}>
           {estado ? <IconoOk width={20} height={20} /> : <Glifo width={20} height={20} />}
           {estado ? "Sigues" : "Seguir"}
         </Boton>

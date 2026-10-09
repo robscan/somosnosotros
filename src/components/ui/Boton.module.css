@@ -92,13 +92,16 @@
 }
 
 /* Deshabilitado (con `disabled`, o con `aria-disabled` cuando el motivo se lee en pantalla) y en camino: el toque ya
-   se mandó y el servidor no ha respondido (un enlace lo sabe solo, con `EnCamino`; un botón, con `aria-busy`). */
+   se mandó y el servidor no ha respondido (un enlace lo sabe solo, con `EnCamino`; un botón, con `aria-busy`).
+   Un conmutador (`aria-pressed`: Me interesa, Voy, Seguir) nunca late: cambia al tocarlo, una sola vez, a lo que quedó, y
+   mientras el servidor confirma no se mueve (OL-354, bitácora 385: el latido bajaba la opacidad y volvía de golpe al
+   responder, el «fade» que el founder vio como de mala calidad). */
 .boton:disabled,
 .boton[aria-disabled="true"] {
   opacity: 0.55;
   cursor: default;
 }
-.boton[aria-busy="true"],
+.boton[aria-busy="true"]:not([aria-pressed]),
 .boton:has(> .enCamino) {
   animation: latido 0.9s ease-in-out infinite;
 }
