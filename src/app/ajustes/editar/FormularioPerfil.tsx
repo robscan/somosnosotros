@@ -45,7 +45,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
     if (!archivo) return;
     setSubiendo(true);
     setErrorFoto(null);
-    const r = await subirFoto("perfiles", perfil.id, "foto", archivo);
+    const r = await subirFoto("perfiles", perfil.id, "foto", archivo, "foto", "perfil");
     if ("error" in r) setErrorFoto(r.error);
     else setFoto(r.url);
     setSubiendo(false);
