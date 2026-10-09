@@ -62,6 +62,8 @@ Datos: lectura pública de somosnosotros.org el vie 9 de oct a las 16:15. Sin ho
 - **Firma del prototipo.**
 - **Al bajar, ¿se va o se queda?** Recomendación: **se va**. Fija suma 72 px a los 108 de las dos barras: con la barra de secciones (60) quedarían 240 de 844 px para marcos, el 28 % de la pantalla, mientras la persona ya está mirando carriles. Al volver arriba, la barra vuelve a estar.
 - El supuesto de las exposiciones sin horario (hasta las 18:00).
+- (Tercera vuelta) **La entrada a las historias:** la barra con miniatura (recomendación: ocupa 72 px, dice qué pasa y cuándo sin tocarla, y conserva la lista completa) o la fila de círculos (más reconocible y enseña los carteles, pero ocupa unos 112 px y solo dice una hora).
+- (Tercera vuelta) **Tarjetas:** título grande en toda la app, como pidió el founder, o solo en Inicio. Además, la fecha de «Caracolas para Luciana»: el cartel dice jueves 8 y la app viernes 9.
 
 ## Lo que costaría el código (después de la firma)
 
@@ -76,6 +78,63 @@ El founder preguntó «¿Qué pasa con el icono de listado?». Con toques reales
 Al probar los gestos con toques reales salió otro fallo: un deslizamiento que empieza con el dedo quieto más de 350 ms se tomaba como «mantener» y no pasaba de aviso. Ahora el deslizamiento gana aunque la barra ya se hubiera detenido.
 
 Comprobado con toques reales: el icono abre la lista, la ✕ y tocar fuera la cierran, tocar el aviso y una tarjeta dicen qué ficha se abriría, y deslizar pasa al siguiente aviso. Con eventos de puntero de tipo táctil: un deslizamiento lento pasa de aviso sin abrir la ficha, mantener la detiene y al soltar sigue en el mismo aviso, y un toque corto abre la ficha. Página publicada otra vez en el mismo enlace. Las capturas no cambian: el velo era invisible.
+
+## Tercera vuelta: historias con el cartel, estética propia y título grande
+
+**Lo que dijo el founder (textual):** «¿y si exploramos formato de historia? con imagen de cartel?»; después, con capturas de Apple Music («Playlists hechas para ti», «Estaciones para ti»): «¿y si creamos nuestra propia estética tipo Music de Apple? con degradados y partículas animadas?»; y, viendo las tarjetas de la primera versión: «me encanta como se ve en el prototipo por ejemplo el título en grande sobre la card de imagen, es una representación pero la sencillez ayuda a no gastar tanta atención y consumir rápido el contenido».
+
+**Lo que se encontró en los carteles** (lectura pública de somosnosotros.org, 23 imágenes a 768 px, la medida que la app ya sirve con `next/image`; carpeta `docs/rediseno/prototipos/barra-ahora/`, 1,6 MB):
+- De los 16 eventos de hoy y mañana, **5 no tienen cartel**: la app enseña la foto del edificio (Raúl Gamboa, IPBA, Museo del Ferrocarril ×2, Cineteca Alameda). En una pantalla vertical de historia, eso es una foto de arquitectura sin información.
+- Las proporciones varían: casi todos 4:5, el laboratorio y la noche astronómica 3:4, tres cuadrados (linterna, pinceles, catrinas) y dos apaisados (Dos siglos 1,34, la Murcisemana 1,77). Las fotos de lugar son todas apaisadas.
+- **Un dato a revisar:** el cartel de «Caracolas para Luciana» dice «JUEVES 8·OCT·2026 · 17.30 h», y la app lo tiene el vie 9 de oct a las 17:30. Una de las dos fechas está mal.
+
+**La regla de la estética** (como Apple Music, que deja intacta la portada de cada disco y pone sus degradados solo en lo suyo): el cartel del lugar o del artista se enseña tal cual; lo que arma la app lleva nuestros degradados. Eso es el fondo de la historia y la portada de un evento sin cartel. Los colores salen del propio cartel: se reduce a 16×20 y se juntan los píxeles por tono. Un cartel casi sin color (croma menor de 70 de 255: la foto sepia de la trentina, el laboratorio en blanco y negro, Caracolas, Desierto, la linterna) usa una paleta propia, elegida por el id del evento. Son seis, con nombre de aquí: Cantera, Xantolo (el violeta de marca hacia el cempasúchil), Huasteca, Real de Catorce, Media Luna y Tangamanga. La línea gráfica no cambia: los degradados viven en superficies oscuras (la historia) y en portadas, no en la interfaz, que sigue clara.
+
+**El prototipo** (mismo archivo; la tira ahora elige formato, tarjetas, día y estética, y lo demás pasa a «Más ajustes y reglas»):
+- **Formato.** «Barra + historias»: la barra lleva a la izquierda la miniatura del cartel (dice que al tocarla se ve el cartel), y tocarla abre las historias en ese aviso. «Círculos + historias»: una fila de círculos como Instagram; el anillo de «Ahora» gira con el degradado de marca, el de «En un rato» es oscuro, los demás grises, y se apagan al verlos; debajo, «Ahora», «En 30 min» o «20:00». «Barra sola (v1)» queda para comparar.
+- **Historias.** Pantalla completa sobre todo, con segmentos de 6 s (un cartel pide más lectura que un aviso). Cabecera con la etiqueta de urgencia, la hora y el lugar, y el título. Al centro, el cartel entero (proporción propia, esquinas de 8 y sombra). Abajo, «Ver ficha», «Me interesa» (estrella) y «Cómo llegar». Gestos como en Instagram: al apoyar el dedo se detiene; al soltar, si fue un toque de menos de 300 ms, pasa a la siguiente (o a la anterior en el tercio izquierdo); deslizar hacia abajo cierra. Al terminar la última, vuelve a Inicio.
+- **Sin cartel**, la historia es tipográfica, como la portada de una lista de Apple Music. El sello SMSNSTRS va arriba a la derecha y, abajo a la izquierda, «Hoy · 19:00», el título a 44 px en 800 condensado y el lugar. Lleva una sombra suave detrás del texto para que el blanco se lea con cualquier paleta: con Media Luna, el título quedaba sobre azul claro, el mismo problema de contraste que tiene «Nueva música» de Apple.
+- **Estética.** «Degradado vivo»: un lienzo de 36×72 con cuatro luces que se mueven despacio (el navegador lo estira, y el estirado ya es el desenfoque, sin filtros) y 36 partículas como polvo en la luz. Solo corre con la historia abierta y visible; con «Reducir movimiento» queda un cuadro quieto y sin partículas. «Cartel desenfocado»: el cartel borroso detrás; sin cartel, la foto del lugar oscurecida.
+- **Tarjetas: título grande** (lo que pidió el founder, por defecto). La tarjeta de la v1, con el título corto en mayúsculas arriba a la izquierda, ahora sobre el degradado de los colores de su cartel: el color más vivo a media luz, con las luces abajo y a la derecha para que la esquina del título quede oscura. El título corto sale de cómo ya se escriben los títulos de la app: lo que va antes de los dos puntos. En Inicio se lee; el cartel se mira al abrir la historia. «Tarjetas: cartel» enseña los carteles como hoy, para comparar.
+
+**Fallos encontrados al probar con toques reales, y su arreglo:**
+- Tocar la barra no abría nada con ratón ni en Android: el clic da el foco al botón, el foco detenía la barra y el arreglo del deslizamiento lento lo tomaba por «mantener». «Mantener» se mide ahora con su propio aviso, y el foco solo detiene la barra si viene del teclado. En el iPhone no pasaba: Safari no da el foco a un botón al tocarlo.
+- En las historias, un toque de más de 0,22 s contaba como «mantener». Ahora decide la duración al soltar (300 ms).
+- Con los círculos, la página se ensanchaba y se cortaba a la derecha: `overflow: clip` no evita que el contenido ensanche el marco. Lo arreglan `min-width: 0` y la columna `minmax(0, 1fr)` del cuerpo.
+- Las etiquetas pisaban los círculos: la imagen tomaba su alto natural. El anillo lleva ahora una sola celda fija.
+- El sello de las portadas generadas salía estirado en «Tarjetas: cartel».
+- El marco del foco salía en la ✕ al abrir con un toque. Ahora solo sale si se abre con el teclado.
+- Mientras la historia se cierra (0,2 s), su capa seguía recibiendo toques: uno rápido sobre un círculo contaba como «siguiente». Ahora una historia que se cierra no recibe toques.
+
+El founder dijo «cancela círculos, el formato de barra funciona» y, al ver que ya se estaban quitando, «no no, déjalos, pensé que no los habías terminado. Deja como está, lo reviso». Los círculos se quitaron y se repusieron tal cual; el prototipo queda con las dos entradas para que las revise.
+
+Comprobado con toques reales (clic por coordenadas a 390×844 en el navegador integrado):
+- La barra abre las historias.
+- Un toque a la derecha pasa a la siguiente (0→1→2) y uno a la izquierda vuelve (2→1).
+- Deslizar hacia abajo cierra y el foco vuelve a la barra.
+- El círculo abre su historia, y su anillo se apaga al verla.
+- «Me interesa» se marca sin pasar de historia.
+- «Ver ficha» cierra y dice qué ficha se abriría.
+
+Con eventos de puntero, mantener 600 ms detiene la historia y al soltar sigue en la misma. El ancho del documento se mantiene en 390 con los círculos.
+
+**Capturas nuevas** (Chrome con playwright-core, 390×844 y una a 320, sin errores de página), abiertas una por una:
+- `13-inicio-titulo-grande.png` — Inicio a las 16:15: la barra con la miniatura del cartel de Caracolas («EN 1 H 15 MIN») y Destacados con «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre granate y «LABORATORIO DE EXPLORACIÓN SONORA» sobre azul y violeta.
+- `14-historia-cartel-degradado.png` — la historia de Caracolas: el cartel entero sobre el degradado verde (Huasteca; el cartel tiene poco color) con partículas.
+- `15-historia-sin-cartel-degradado.png` — «¡Ah, qué la canción!: coro, baile y solistas», tipográfica sobre Media Luna, con el sello, «Hoy · 19:00» y el lugar; el título se lee sobre la sombra de abajo.
+- `16-historia-cartel-desenfocado.png` — la misma de Caracolas con su cartel borroso detrás.
+- `17-historia-sin-cartel-foto-lugar.png` — la del Raúl Gamboa con la foto del edificio oscurecida.
+- `18-circulos-1800.png` — los círculos a las 18:00: «Ahora» con el anillo de degradado, «En 30 min» y «En 1 h» con anillo oscuro, «20:00» con anillo gris.
+- `19-tarjetas-cartel.png` — «Tarjetas: cartel»: los carteles reales en los carriles y, en el de la canción (sin cartel), la portada de degradado con el sello.
+- `20-tarjetas-titulo-esta-semana.png` — «Esta semana» con título grande: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA, DE JACOBO REYNA» sobre verde y «¡AH, QUÉ LA CANCIÓN!» sobre azul.
+- `21-historia-acto-de-festival.png` — sáb 31 oct a las 13:00: «Efecto Tlacoyo en Electric Universe Festival», el cartel sobre el morado sacado de él.
+- `22-historia-sin-cartel-a-320.png` — la historia tipográfica a 320: el título en dos líneas, sin cortes.
+
+**Lo que costaría en la app** (después de la firma):
+- **Colores del cartel:** se calculan una vez, al subirlo (cuatro colores guardados con el evento, en la misma pasada que ya lo reduce, OL-352). Ni las tarjetas ni las historias vuelven a pedir la imagen para eso.
+- **Portada de un evento sin cartel:** la regla del founder dice «sin portada, imagen ya generada con el símbolo SN, nunca compuesta en vivo». La portada de degradado se generaría como imagen con el creador de cartel (satori, OL-324: una plantilla más), así que cumple la regla. Solo el fondo de la historia se mueve en vivo.
+- **Tarjetas de título grande:** son CSS sobre esos cuatro colores, sin imagen. Inicio pediría menos imágenes a Supabase (la cuota de tráfico ya se agotó una vez, 2026-10-03), y el cartel solo se carga al abrir su historia, precargando únicamente la siguiente.
+- **Historias:** un componente cliente con un lienzo; las partículas solo con la historia abierta.
 
 ## Límites
 
