@@ -30,7 +30,7 @@ describe("Heroe: la portada y el título de una ficha (docs/rediseno/50, P6)", (
   });
 });
 
-describe("Heroe: la cabecera oscura de toda ficha de evento (OL-351, OL-355)", () => {
+describe("Heroe: la cabecera oscura de exposición, taller y festival (OL-351)", () => {
   const numeros = Kpis({ piel: "banda", children: createElement(Kpi, { icono: null, etiqueta: "Actos", valor: 11 }) }); // `Kpis` no tiene estado: se llama directo
   it("con números en la banda: la portada y el título llevan su piel oscura y los números van en su fila, en la piel de la banda", () => {
     const html = pintar(createElement(Heroe, { portada: "https://example.com/cartel.jpg", alt: "Cartel de CINEMA", titulo: "CINEMA", etiqueta: "Festival", meta: "Del 29 de sep al 24 de oct", banda: numeros }));
@@ -45,15 +45,8 @@ describe("Heroe: la cabecera oscura de toda ficha de evento (OL-351, OL-355)", (
     expect(html).toContain('src="/sin-foto-oscura.png"');
     expect(html).not.toContain("sin-foto-ancha");
   });
-  it("un evento suelto (OL-355): la misma piel oscura sin chip ni línea, el título solo sobre el velo y sus números en la banda", () => {
-    const html = pintar(createElement(Heroe, { portada: "https://example.com/cartel.jpg", alt: "Cartel de Concierto", titulo: "Concierto", banda: numeros }));
-    expect(html.match(/class="[^"]*oscura[^"]*"/g)).toHaveLength(2);
-    expect(html).not.toMatch(/class="[^"]*etiqueta/);
-    expect(html).not.toMatch(/class="[^"]*meta/);
-    expect(html).toMatch(/<div class="[^"]*numeros[^"]*"><ul class="[^"]*kpis[^"]*sobreBanda[^"]*">/);
-  });
-  it("sin números (un lugar o un artista), el héroe claro de siempre: ni piel oscura ni fila de números", () => {
-    const html = pintar(createElement(Heroe, { portada: null, alt: "", titulo: "Un lugar" }));
+  it("sin números, el héroe de siempre: ni piel oscura ni fila de números", () => {
+    const html = pintar(createElement(Heroe, { portada: null, alt: "", titulo: "Un evento" }));
     expect(html).not.toContain("oscura");
     expect(html).not.toContain("numeros");
     expect(html).toContain('src="/sin-foto-ancha.png"');
@@ -64,10 +57,9 @@ describe("Heroe: la cabecera oscura de toda ficha de evento (OL-351, OL-355)", (
  * El contraste de la cabecera oscura con los tokens de `globals.css` (WCAG 2.x). El peor caso de la portada es un cartel blanco: el velo se
  * compone sobre blanco. Lo que va bajo su parada del 45 % (la meta y, salvo un título de tres líneas, todo el título) lleva al menos ese velo;
  * el título es letra grande (26 px en 800) y le basta 3:1, la meta y los números piden 4,5:1. Las capturas de la bitácora 382 miden además el
- * velo en la posición real de cada línea a 320 y 390, y las de la 386 en el evento suelto, cuyo título (sin chip ni línea) queda más abajo
- * en el velo que el de un festival: los mismos tokens, el mismo caso o uno mejor.
+ * velo en la posición real de cada línea a 320 y 390.
  */
-describe("contraste de la cabecera oscura de todo evento (OL-351, OL-355)", () => {
+describe("contraste de la cabecera oscura (OL-351)", () => {
   const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
   const token = (nombre: string) => css.match(new RegExp(`--${nombre}:\\s*([^;]+);`))![1].trim();
   const rgba = (v: string): [number, number, number, number] => {
