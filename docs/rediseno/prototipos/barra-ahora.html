@@ -131,7 +131,9 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
 .secciones span.activa i { background: var(--primario); color: #fff; }
 
 /* La hoja de la lista completa (ui/Hoja): todo lo de hoy, sin tope, por grupos. */
-.velo { position: absolute; inset: 0; z-index: 30; background: var(--velo); opacity: 0; transition: opacity var(--duracion) var(--curva); }
+/* El velo solo recibe toques con la hoja abierta: cerrado es transparente pero cubre todo el teléfono. */
+.velo { position: absolute; inset: 0; z-index: 30; background: var(--velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.marco.con-hoja .velo { pointer-events: auto; }
 .hoja { position: absolute; left: 0; right: 0; bottom: 0; z-index: 31; max-height: 82%; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-radius: var(--radio-grande) var(--radio-grande) 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); transform: translateY(100%); transition: transform var(--duracion) var(--curva); }
 .marco.con-hoja .velo { opacity: 1; }
 .marco.con-hoja .hoja { transform: none; }
@@ -373,8 +375,12 @@ pase.addEventListener('pointerup', () => {
   if (x0 === null) return;
   clearTimeout(sujeta); x0 = null;
   const av = pase.firstElementChild; if (av) av.style.transform = '';
-  if (pausada) { suprimir = true; pausar(false); return; }
-  if (movio) { suprimir = true; if (Math.abs(dx) > 40) ir(dx < 0 ? 1 : -1); }
+  // Deslizar gana aunque el dedo se haya quedado quieto al empezar (ya la había detenido): un arrastre lento no se pierde.
+  const sujetaba = pausada;
+  if (sujetaba) { pausada = false; $('ahora').classList.remove('pausada'); }
+  if (movio || sujetaba) suprimir = true;
+  if (movio && Math.abs(dx) > 40) ir(dx < 0 ? 1 : -1);
+  else if (sujetaba) pintarAviso(0);
 });
 pase.addEventListener('pointercancel', () => { clearTimeout(sujeta); x0 = null; const av = pase.firstElementChild; if (av) av.style.transform = ''; if (pausada) pausar(false); });
 pase.addEventListener('click', () => { if (suprimir) { suprimir = false; return; } abrir(avisos[indice].e); });

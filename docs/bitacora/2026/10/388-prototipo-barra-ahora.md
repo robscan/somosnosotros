@@ -69,6 +69,14 @@ Datos: lectura pública de somosnosotros.org el vie 9 de oct a las 16:15. Sin ho
 - **La barra:** un componente cliente en Inicio con lógica pura en `lib/` (la clasificación del prototipo, con pruebas) sobre los datos que Inicio ya carga (no hace falta consulta nueva: hoy y mañana ya están en «Esta semana»). Se recalcula cada minuto en el teléfono. La hoja usa `ui/Hoja`. Medición con `npm run medir`.
 - **El orden por cercanía** dentro de cada grupo (lo pidió el análisis) necesita la ubicación que Inicio ya usa para ordenar; el prototipo ordena solo por hora.
 
+## Arreglo tras la primera versión: el teléfono no recibía toques
+
+El founder preguntó «¿Qué pasa con el icono de listado?». Con toques reales (clic de ratón en el navegador integrado a 375×812) el icono se marcaba pero la lista no se abría. La causa: el velo de la hoja, transparente con la hoja cerrada, cubría todo el teléfono y se quedaba con **todos** los toques (icono, barra y tarjetas); `elementFromPoint` en el centro del icono devolvía `#velo`. Las pruebas anteriores usaban `element.click()`, que no pasa por esa comprobación de qué hay bajo el dedo, y por eso no lo vieron. Arreglo: el velo lleva `pointer-events: none` y solo los recibe con la hoja abierta.
+
+Al probar los gestos con toques reales salió otro fallo: un deslizamiento que empieza con el dedo quieto más de 350 ms se tomaba como «mantener» y no pasaba de aviso. Ahora el deslizamiento gana aunque la barra ya se hubiera detenido.
+
+Comprobado con toques reales: el icono abre la lista, la ✕ y tocar fuera la cierran, tocar el aviso y una tarjeta dicen qué ficha se abriría, y deslizar pasa al siguiente aviso. Con eventos de puntero de tipo táctil: un deslizamiento lento pasa de aviso sin abrir la ficha, mantener la detiene y al soltar sigue en el mismo aviso, y un toque corto abre la ficha. Página publicada otra vez en el mismo enlace. Las capturas no cambian: el velo era invisible.
+
 ## Límites
 
 - El prototipo no ordena por cercanía ni lee la ubicación.
