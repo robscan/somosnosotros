@@ -2,8 +2,8 @@
    La ficha (docs/rediseno/50, P6; canon del prototipo firmado): una sola rejilla con áreas, la misma para un evento, un lugar y
    un artista, a pantalla completa (`ui/Ficha`) y dentro de la hoja de Lugares (`app/lugares/FichaHoja`). De arriba abajo: la barra
    (una fila de alto 0 que se abre sobre el héroe), el héroe (la portada y su título, en la misma celda), los números de la cabecera
-   oscura (vacía en las demás), los avisos de la página, el cuerpo y las acciones flotantes. Nada se escapa del aire con un margen negativo: la barra y el héroe llegan a los bordes
-   porque la ficha no lleva aire a los lados, y el cuerpo pone el suyo.
+   oscura de un evento (vacía en lugar y artista), los avisos de la página, el cuerpo y las acciones flotantes. Nada se escapa del aire con
+   un margen negativo: la barra y el héroe llegan a los bordes porque la ficha no lleva aire a los lados, y el cuerpo pone el suyo.
    1. La rejilla · 2. La barra · 3. El héroe · 3b. La cabecera oscura · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
    8. Avisos de la página · 9. Otras páginas: la persona y la página de formulario · 10. Escritorio: dos columnas
    ========================================================================== */
@@ -169,11 +169,11 @@
   grid-column: 2;
 }
 
-/* 3b. La cabecera oscura de una exposición, un taller o un festival (OL-351; prototipo firmado `cabecera-clases.html`, variante A): la ficha
-   de lo que dura varios días se distingue a la primera. La portada pasa a 4:3 y llena toda su celda aunque el título crezca (a 320 o con un
-   título largo): debajo del velo nunca asoma el fondo claro. El velo baja hasta el color de la banda; el título, más grande, y la meta, en
-   blanco encima. La banda sigue en su propia fila con los números de la clase (`ui/Kpis` `piel="banda"`). Del cuerpo hacia abajo, lo claro
-   de siempre. La imagen de dentro (`Cartel`) deja su 3:2 y se estira a la figura. */
+/* 3b. La cabecera oscura de toda ficha de evento (OL-351 para exposición, taller y festival; prototipo firmado `cabecera-clases.html`,
+   variante A; desde OL-355 también el evento suelto y el acto de un festival). Lugar y artista siguen con el héroe claro de arriba. La
+   portada pasa a 4:3 y llena toda su celda aunque el título crezca (a 320 o con un título largo): debajo del velo nunca asoma el fondo claro.
+   El velo baja hasta el color de la banda; el título, más grande, y la meta, en blanco encima. La banda sigue en su propia fila con los
+   números del evento (`ui/Kpis` `piel="banda"`). Del cuerpo hacia abajo, lo claro de siempre. La imagen de dentro (`Cartel`) deja su 3:2 y se estira a la figura. */
 .portada.oscura {
   display: grid;
   aspect-ratio: 4 / 3;
