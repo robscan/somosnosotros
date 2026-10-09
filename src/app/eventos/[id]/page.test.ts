@@ -383,7 +383,7 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
   });
 });
 
-describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => {
+describe("la cabecera oscura de toda ficha de evento (OL-351, OL-355)", () => {
   afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
   const abrir = async (evento: Record<string, unknown>) => {
     const cliente = clienteFalso({ eventos: { data: evento }, asistencias: { data: [] } }, { van_por_evento: { data: [] } });
@@ -421,12 +421,15 @@ describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => 
     expect(JSON.stringify(enBanda)).not.toContain("Cupo");
   });
 
-  it("un evento suelto no cambia: el héroe sin banda, etiqueta ni meta, y sus números en el cuerpo", async () => {
-    const { heroe, todos } = await abrir(EVENTO);
-    expect(heroe.props.banda).toBeUndefined();
+  it("un evento suelto (OL-355): la misma cabecera oscura, sin etiqueta ni línea, y sus números de siempre en la banda, ninguno en el cuerpo", async () => {
+    const { heroe, enBanda, todos } = await abrir(EVENTO);
+    expect(heroe.props.banda).toBeDefined();
+    expect((heroe.props.banda as { props: { piel?: string } }).props.piel).toBe("banda");
     expect(heroe.props.etiqueta).toBeUndefined();
     expect(heroe.props.meta).toBeUndefined();
-    expect(todos).toHaveLength(2); // cuándo y «Costo»; «Van» es `KpiVan`, diferido
-    expect(todos[1]).toBe("Costo");
+    expect(enBanda).toHaveLength(2); // cuándo y «Costo»; «Van» es `KpiVan`, diferido
+    expect(enBanda[1]).toBe("Costo");
+    expect([...recorrer(heroe.props.banda)].some((e) => e.type === Suspense)).toBe(true);
+    expect(todos).toEqual(enBanda);
   });
 });
