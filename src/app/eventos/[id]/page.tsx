@@ -401,13 +401,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const portada = fotoDeEvento({ imagen: e.imagen, portadaActo, lugar: e.lugar });
   const cuando = e.fin && sesiones.length > 0 ? kpiCuandoPorDia(e.inicio, e.fin, e.zona) : kpiCuando(e.inicio, e.fin, e.zona);
   const kpiExpo = clase === "exposicion" ? kpisDeExposicion(e, horario.franjas, ahora) : null;
-  // La cabecera oscura (OL-351, prototipo firmado `cabecera-clases.html`, variante A) es la de toda ficha de evento (OL-355, founder 2026-10-08: «quiero
-  // que ese sea el diseño de todas las fichas "normales"»): sus tres números van en la banda. Una exposición, un taller o un festival llevan además
-  // su clase en la etiqueta y su línea bajo el título: el festival, su periodo y su programa; el taller, cuándo y dónde (el sitio sin su dirección,
-  // como en las listas: la dirección está en «Dónde»); la exposición ninguna (repetía lo que dicen «Hasta» y «Horario»). Sin «Cupo»: no existe en
-  // el modelo, el taller sigue con «Van». Un evento suelto (y el acto de un festival) sin etiqueta, como en el carril de la agenda, ni línea: su
-  // cuándo ya es su primer número; con cuándo, el costo y cuántos van, los de siempre.
-  const numeros = kpiExpo ? (
+  // La cabecera oscura (OL-351, prototipo firmado `cabecera-clases.html`, variante A): una exposición, un taller o un festival llevan su clase en la
+  // etiqueta, sus tres números en la banda y su línea bajo el título: el festival, su periodo y su programa; el taller, cuándo y dónde (el sitio
+  // sin su dirección, como en las listas: la dirección está en «Dónde»); la exposición ninguna (repetía lo que dicen «Hasta» y «Horario»). Sin
+  // «Cupo»: no existe en el modelo, el taller sigue con «Van». Un evento suelto, el héroe y los números de siempre.
+  const numerosClase = kpiExpo ? (
     <Kpis piel="banda">
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Hasta" valor={kpiExpo.hasta} />
       <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
@@ -427,15 +425,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
       </Suspense>
     </Kpis>
-  ) : (
-    <Kpis piel="banda">
-      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cuando.hora} valor={cuando.dia} />
-      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
-      <Suspense fallback={<EsqueletoKpi />}>
-        <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
-      </Suspense>
-    </Kpis>
-  );
+  ) : undefined;
   const metaClase = clase === "festival" ? (cuandoClase ?? undefined) : clase === "taller" ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes }), ahora) : undefined;
   const hayAvisos = error === "borrar" || error === "publicar" || error === "no_publicable" || !e.visible || paso;
   const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
@@ -510,9 +500,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         portada={portada}
         alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`}
         titulo={e.titulo}
-        etiqueta={clase === "puntual" ? undefined : cortoDeClase(clase)}
+        etiqueta={numerosClase && cortoDeClase(clase)}
         meta={metaClase}
-        banda={numeros}
+        banda={numerosClase}
       />
 
       {hayAvisos && (
@@ -541,6 +531,17 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       )}
 
       <div className={ficha.cuerpo} data-cuerpo>
+        {/* Un evento suelto: cuándo, el costo y cuántos van. Los de una exposición, un taller o un festival van en la banda de la cabecera. */}
+        {!numerosClase && (
+          <Kpis>
+            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cuando.hora} valor={cuando.dia} />
+            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+            <Suspense fallback={<EsqueletoKpi />}>
+              <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
+            </Suspense>
+          </Kpis>
+        )}
+
         {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
         <div className={ficha.acciones}>
           <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>

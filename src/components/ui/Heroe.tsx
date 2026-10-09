@@ -15,8 +15,8 @@ type Props = {
   /** La foto redonda de un artista, a la izquierda del título; sin ella (`src` null), el símbolo SN redondo. */
   avatar?: { src: string | null; alt: string };
   /**
-   * Los números de un evento (`ui/Kpis` con `piel="banda"`): con ellos la cabecera es la oscura de toda ficha de evento (OL-351, OL-355): la
-   * portada 4:3 baja por su velo hasta la banda y la banda sigue debajo con los números. Sin ellos, el héroe claro de un lugar o un artista.
+   * Los números de la clase (`ui/Kpis` con `piel="banda"`): con ellos la cabecera es la oscura de una exposición, un taller o un festival
+   * (OL-351): la portada 4:3 baja por su velo hasta la banda y la banda sigue debajo con los números. Sin ellos, el héroe de siempre.
    */
   banda?: ReactNode;
   /** `h1` en la página de la ficha; `h2` dentro de la hoja de Lugares, que ya tiene su propio título de pantalla. */
