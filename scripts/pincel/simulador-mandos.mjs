@@ -9,7 +9,7 @@
 //
 // Uso: node scripts/pincel/simulador-mandos.mjs [--tandas-desde N]
 // --tandas-desde 2 empieza en la tanda 2 (útil para reaprovechar una tanda anterior ya limpia sin repetirla).
-// Lee NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY directamente de /Users/apple-1/somosnosotros/.env
+// Lee NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY directamente de /Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env
 // (la ruta del proyecto principal, NUNCA copiado a esta carpeta), solo esas dos variables, solo en este proceso,
 // sin imprimirlas ni guardarlas en ningún archivo. Nunca lee ni usa SUPABASE_SERVICE_ROLE_KEY ni ninguna otra
 // variable de ese archivo — la llave anónima es pública por diseño (viaja en el navegador de cualquier
@@ -18,7 +18,7 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
-export const RUTA_ENV_REAL = "/Users/apple-1/somosnosotros/.env";
+export const RUTA_ENV_REAL = "/Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env";
 
 export function leerDosVariables(ruta, nombres) {
   const texto = readFileSync(ruta, "utf8"); // nunca se guarda ni se loguea; vive solo en esta variable local

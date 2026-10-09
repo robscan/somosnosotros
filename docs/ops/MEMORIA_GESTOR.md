@@ -103,8 +103,8 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   y publicacion aprobada. Pincel es experimento paralelo, no bloquea fase1.
 - Detalle de pendientes y evidencia: bit105,109,111-114 en la rama
   codex/cierre-pendientes; bit117 en codex/eventos-proximos-sliders.
-- Respaldo anterior a Astra: /Users/apple-1/Backups/somosnosotros/2026-09-17_184045-pre-astra.
-  Dump posterior: /Users/apple-1/Backups/somosnosotros/2026-09-18-pre-publicacion/supabase.dump.
+- Respaldo anterior a Astra: /Users/apple-1/Proyectos/somosnosotros/backups/2026-09-17_184045-pre-astra.
+  Dump posterior: /Users/apple-1/Proyectos/somosnosotros/backups/2026-09-18-pre-publicacion/supabase.dump.
   El dump NO incluye bytes de imagenes ni equivale a restaurar todo Supabase.
 - Cambios ajenos que preservar: bit056 en main y CLAUDE.md de integracion.
 

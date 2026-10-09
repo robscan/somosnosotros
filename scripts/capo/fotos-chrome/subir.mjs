@@ -1,10 +1,10 @@
 import fs from "fs";
 import { createRequire } from "module";
 import { objetoYaExiste, rutaConContenido } from "../../fotos/nombre-contenido.mjs";
-const require = createRequire("/Users/apple-1/somosnosotros/package.json");
+const require = createRequire("/Users/apple-1/Proyectos/somosnosotros/somosnosotros/package.json");
 const { createClient } = require("@supabase/supabase-js");
 const sharp = require("sharp");
-const env = Object.fromEntries(fs.readFileSync("/Users/apple-1/somosnosotros/.env","utf8").split("\n").filter(l=>/^[A-Z_]+=/.test(l)).map(l=>{const i=l.indexOf("=");return [l.slice(0,i), l.slice(i+1).trim().replace(/^["']|["']$/g,"")];}));
+const env = Object.fromEntries(fs.readFileSync("/Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env","utf8").split("\n").filter(l=>/^[A-Z_]+=/.test(l)).map(l=>{const i=l.indexOf("=");return [l.slice(0,i), l.slice(i+1).trim().replace(/^["']|["']$/g,"")];}));
 const url = env.NEXT_PUBLIC_SUPABASE_URL, key = env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) { console.error("faltan variables"); process.exit(1); }
 const db = createClient(url, key, { auth: { persistSession: false } });
@@ -22,7 +22,7 @@ for (const [i,r] of bajadas.entries()) {
   subidas.push({ nombre: r.nombre, url: publica });
   if ((i+1)%50===0) console.log(`${i+1}/${bajadas.length}`);
 }
-fs.writeFileSync("/Users/apple-1/somosnosotros/scripts/capo/salida/fotos-capo-subidas.json", JSON.stringify(subidas, null, 2)+"\n");
+fs.writeFileSync("/Users/apple-1/Proyectos/somosnosotros/somosnosotros/scripts/capo/salida/fotos-capo-subidas.json", JSON.stringify(subidas, null, 2)+"\n");
 fs.writeFileSync("fallos-subida.json", JSON.stringify(fallos,null,1));
 console.log("subidas:", subidas.length, "reducidas:", reducidas, "fallos:", fallos.length, fallos);
 console.log("ejemplo:", subidas[0]);

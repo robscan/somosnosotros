@@ -13,7 +13,7 @@
  * Uso: npx tsx scripts/capo/invitar.ts [N] [--ensayo|--enviar]
  *      N: cuántos invitar (por defecto 15).
  *
- * Las llaves salen de /Users/apple-1/somosnosotros/.env (no se imprimen). Si trabajas en otra copia
+ * Las llaves salen de /Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env (no se imprimen). Si trabajas en otra copia
  * del repo, pon esas mismas variables en el entorno antes de correr el script.
  */
 import { fileURLToPath } from "node:url";

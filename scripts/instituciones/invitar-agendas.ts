@@ -27,7 +27,7 @@
  * Uso: npx tsx scripts/instituciones/invitar-agendas.ts [--ensayo|--enviar --confirmo]
  *        [--comprobacion|--resto|--organismos|--recordatorio] [--asunto=A|B]
  *
- * Variables (de /Users/apple-1/somosnosotros/.env o del entorno; nunca se imprimen): AGENDAS_CORREOS_CSV,
+ * Variables (de /Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env o del entorno; nunca se imprimen): AGENDAS_CORREOS_CSV,
  * AGENDAS_SAL, FIRMA_TELEFONO, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY,
  * CORREO_REMITENTE.
  */

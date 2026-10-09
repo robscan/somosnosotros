@@ -1,4 +1,4 @@
-# Llaves y binarios: nunca al repo (es público). La llave de subida vive en somosnosotros-privado/android/.
+# Llaves y binarios: nunca al repo (es público). La llave de subida vive en ~/Proyectos/somosnosotros/privado/android/.
 *.keystore
 *.jks
 *.p12
