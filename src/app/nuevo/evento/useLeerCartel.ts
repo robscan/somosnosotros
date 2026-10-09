@@ -66,7 +66,7 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
       setEspera(leer ? "leyendo" : "subiendo");
       let url: string | null = null;
       try {
-        const subida = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen");
+        const subida = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen", "cartel");
         if ("error" in subida) {
           const f = falloAlSubir(imagen.current, subida.error, subida.motivo);
           setError(`${f.titulo}. ${f.mensaje}`);

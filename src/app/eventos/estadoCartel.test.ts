@@ -29,6 +29,8 @@ describe("estado del cartel", () => {
     const generico = falloAlSubir(null, "No se pudo subir la imagen. Intenta con otra.", "subida");
     expect(generico.mensaje).toBe("Puede ser tu conexión.");
     expect(generico.mensaje).not.toMatch(/otra foto|no se pudo/i);
+    // OL-352: la imagen que el teléfono no pudo leer dice eso, sin el «Prueba con otra» que ya da el chip.
+    expect(falloAlSubir(null, "No se pudo leer la imagen. Prueba con otra.", "lectura").mensaje).toBe("No se pudo leer la imagen.");
   });
 
   it("lo que se conserva es la imagen del evento, que es la que se publica", () => {

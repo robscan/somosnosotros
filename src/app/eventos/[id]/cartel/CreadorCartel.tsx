@@ -160,7 +160,7 @@ export default function CreadorCartel({ evento, tandas: tandasSinFoto, tandasCon
     setErrorFoto(null);
     setSubiendoFoto(true);
     try {
-      const subida = await subirFoto("lugares", usuarioId, PREFIJO_FOTO_PROPIA, archivo, "foto");
+      const subida = await subirFoto("lugares", usuarioId, PREFIJO_FOTO_PROPIA, archivo, "foto", "cartel");
       if ("error" in subida) return setErrorFoto(subida.error);
       const r = await comprobarFotoPropia(evento.slug, subida.url);
       if (!r.ok) return setErrorFoto(r.mensaje);

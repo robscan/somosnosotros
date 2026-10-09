@@ -18,8 +18,8 @@ export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo" | "sin_cupo";
  * El titular ya dice que no se pudo, y el chip de abajo ya dice qué hacer: aquí va **la causa**, nada más.
  */
 export function falloAlSubir(imagenDelEvento: string | null, error: string, motivo: FalloAlSubir): NonNullable<EstadoCartel> {
-  // "pesa" trae su propia causa con el tamaño; lo demás, en la práctica, es la señal.
-  const causa = motivo === "pesa" ? error.replace(/\s*Elige otra\.\s*$/, "") : "Puede ser tu conexión.";
+  // "pesa" y "lectura" traen su propia causa (sin el «elige otra», que ya dice el chip); lo demás, en la práctica, es la señal.
+  const causa = motivo === "subida" ? "Puede ser tu conexión." : error.replace(/\s*(Elige otra|Prueba con otra)\.\s*$/, "");
   return { estado: "fallo", titulo: "No pude subir el cartel", foto: imagenDelEvento ?? undefined, mensaje: imagenDelEvento ? `${causa} La imagen que ya tenías se queda.` : causa };
 }
 

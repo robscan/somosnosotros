@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import { capturaPng, navegadorDoble } from "../../../lib/imagenDePrueba.mjs";
 
 const root = fileURLToPath(new URL("../../../../", import.meta.url));
 const TEATRO = "0b0b0b0b-0000-4000-8000-000000000001";
@@ -23,7 +24,9 @@ const TOPE = { timeout: 30000 };
 const capturas = process.env.CAPTURAS;
 let dir, server, browser, origin;
 const mocks = {
-  "@/lib/subirFoto": "export async function subirFoto(carpeta,usuario,prefijo,archivo){window.qa.subidas.push({carpeta,usuario,prefijo,archivo:archivo.name});return {url:'/foto.svg'}}",
+  // Con `window.qa.real` (OL-352) la subida es la de verdad (`subirFoto` y `prepararImagen`) y solo Storage es un doble (`navegadorDoble`).
+  "./supabase/navegador": navegadorDoble,
+  "@/lib/subirFoto": "import {subirFoto as real} from './src/lib/subirFoto';export async function subirFoto(carpeta,usuario,prefijo,archivo,que,uso){window.qa.subidas.push({carpeta,usuario,prefijo,archivo:archivo.name});if(window.qa.real)return real(carpeta,usuario,prefijo,archivo,que,uso);return {url:'/foto.svg'}}",
   "@/components/MapaDondeEs":
     "import React from 'react';const h=React.createElement;export default function M(p){return h('div',{role:'region','aria-label':'Mapa de prueba','data-pin':p.seleccion?p.seleccion.lat+','+p.seleccion.lng:'',style:{position:'relative',height:'100%',background:'var(--fondo-mapa)'}},h('button',{type:'button',style:{position:'absolute',left:0,top:0,width:44,height:44,opacity:0},onClick:()=>p.onArrastre(window.qa.arrastre)},'Arrastrar el pin'))}",
   "./Atras":
@@ -523,4 +526,28 @@ test('reintentar conserva la operación; cambiar datos y publicar otro la renuev
   await boton(p, 'Publicar lugar').click();
   await p.waitForFunction(() => window.qa.envios.length === 4);
   assert.notEqual((await enviado(p)).operacion, anterior);
+});
+
+/** OL-352 (bitácora 383): la portada que el founder no pudo subir («pesa más de 5 MB»): una captura de pantalla PNG. */
+test("una captura de pantalla PNG de más de 5 MB como portada: «Subiendo la foto…» y sube como JPEG de menos de 1 MB y 1600 px de lado", TOPE, async (t) => {
+  const png = await capturaPng(browser);
+  assert.ok(png.length > 5 * 1024 * 1024, `la captura pesa ${png.length} bytes`);
+  const p = await pagina(t, { qa: { real: true, verSubida: true, esperaStorage: true } });
+  await hastaRevisa(p);
+  await boton(p, "Agregar foto, descripción o redes").click();
+  await enPaso(p, "¿Quieres agregar algo?");
+  await p.locator("main input[type=file]").setInputFiles({ name: "captura.png", mimeType: "image/png", buffer: png });
+  await boton(p, "Subiendo la foto…").waitFor();
+  await p.waitForFunction(() => typeof window.qa.liberarStorage === "function", null, { timeout: 15000 });
+  await foto(p, "383-portada-1-subiendo");
+  await p.evaluate(() => window.qa.liberarStorage());
+  await boton(p, "Listo").waitFor();
+  const [subido] = await p.evaluate(() => window.qa.storage);
+  assert.equal(subido.tipo, "image/jpeg");
+  assert.match(subido.ruta, /^lugares\/usuaria-1\/portada-[0-9a-f-]{36}\.jpg$/);
+  assert.ok(subido.peso < 1024 * 1024, `pesa ${subido.peso} bytes`);
+  assert.deepEqual([subido.ancho, subido.alto], [738, 1600]);
+  assert.equal(await p.getByRole("alert").count(), 0);
+  await p.locator("main img").evaluate((e) => e.decode());
+  await foto(p, "383-portada-2-puesta");
 });

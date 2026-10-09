@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import { capturaPng, fotoGirada, navegadorDoble } from "../../../lib/imagenDePrueba.mjs";
 
 const root = fileURLToPath(new URL("../../../../", import.meta.url));
 const LUGAR = "0b0b0b0b-0000-4000-8000-000000000001";
@@ -38,8 +39,10 @@ const mocks = {
       return structuredClone(q.lectura);
     }
   `,
-  "@/lib/subirFoto": "export async function subirFoto(carpeta,usuario,prefijo,archivo){const q=window.qa;q.subidas.push({carpeta,usuario,prefijo,archivo:archivo.name});if(q.esperaSubida)await new Promise((r)=>{q.liberarSubida=r});if(q.subida==='throw')throw Error('corte');return q.subida==='error'?{error:'No se pudo subir la imagen. Intenta con otra.',motivo:'subida'}:{url:'/cartel.svg'}}",
+  // Con `window.qa.real` (OL-352) la subida es la de verdad (`subirFoto` y `prepararImagen`) y solo Storage es un doble (`navegadorDoble`).
+  "@/lib/subirFoto": "import {subirFoto as real} from './src/lib/subirFoto';export async function subirFoto(carpeta,usuario,prefijo,archivo,que,uso){const q=window.qa;q.subidas.push({carpeta,usuario,prefijo,archivo:archivo.name});if(q.real)return real(carpeta,usuario,prefijo,archivo,que,uso);if(q.esperaSubida)await new Promise((r)=>{q.liberarSubida=r});if(q.subida==='throw')throw Error('corte');return q.subida==='error'?{error:'No se pudo subir la imagen. Intenta con otra.',motivo:'subida'}:{url:'/cartel.svg'}}",
   // El mapa de «¿Es aquí?»: dice dónde está el pin y su botón lo arrastra a otro punto (como `onArrastre` del real).
+  "./supabase/navegador": navegadorDoble,
   "@/components/MapaDondeEs":
     "import React from 'react';const h=React.createElement;export default function M(p){return h('div',{role:'region','aria-label':'Mapa de prueba','data-pin':p.seleccion?p.seleccion.lat+','+p.seleccion.lng:'',style:{position:'relative',height:'100%',background:'var(--fondo-mapa)'}},h('svg',{viewBox:'0 0 24 24',width:44,height:44,fill:'currentColor',fillRule:'evenodd',style:{position:'absolute',left:'calc(50% - 22px)',top:'calc(50% - 44px)',color:'var(--primario)'}},h('path',{d:'M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12zm0-9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z'})),h('button',{type:'button',style:{position:'absolute',left:0,top:0,width:44,height:44,opacity:0},onClick:()=>p.onArrastre({lat:22.1533,lng:-100.9811})},'Arrastrar el pin'))}",
   // La acción que crea el lugar (la de la hoja de siempre): guarda lo que recibe; `window.qa.lugar` dice qué contesta.
@@ -2210,4 +2213,42 @@ test("«Duplicar» (`?desde=`): entra en «¿Qué día es?» con el nombre, el l
     { titulo: d.titulo, inicio: d.inicio, fin: d.fin, modo_sitio: d.modo_sitio, lugar_id: d.lugar_id, gratis: d.gratis, cooperacion: d.cooperacion, precio: d.precio, quien: JSON.parse(d.quien), descripcion: d.descripcion, enlace: d.enlace, imagen: d.imagen },
     { titulo: "Ecos de papel", inicio: "2026-10-09T19:00", fin: "2026-10-09T21:00", modo_sitio: "lugar", lugar_id: LUGAR, gratis: "no", cooperacion: "no", precio: "150", quien: [ARTISTA], descripcion: "Lectura en voz alta con música.", enlace: "https://ejemplo.org/ecos", imagen: "" },
   );
+});
+
+/** OL-352 (bitácora 383): la captura de pantalla que el founder no pudo subir («pesa más de 5 MB»), ahora por la subida de verdad. */
+test("una captura de pantalla PNG de más de 5 MB se prepara en el teléfono y sube como JPEG de menos de 1 MB y 2000 px de lado; mientras, «Leyendo el cartel…»", TOPE, async (t) => {
+  const png = await capturaPng(browser);
+  assert.ok(png.length > 5 * 1024 * 1024, `la captura pesa ${png.length} bytes`);
+  const p = await pagina(t, { qa: { real: true, verSubida: true, esperaStorage: true, lectura: LEIDO } });
+  await p.locator("input[type=file]").setInputFiles({ name: "captura.png", mimeType: "image/png", buffer: png });
+  await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).waitFor();
+  await p.waitForFunction(() => typeof window.qa.liberarStorage === "function", null, { timeout: 15000 });
+  await foto(p, "383-alta-1-leyendo");
+  await p.evaluate(() => window.qa.liberarStorage());
+  await p.getByText("Leído del cartel").waitFor();
+  const [subido] = await p.evaluate(() => window.qa.storage);
+  assert.equal(subido.tipo, "image/jpeg");
+  assert.equal(subido.contentType, "image/jpeg");
+  assert.match(subido.ruta, /^lugares\/usuaria-1\/evento-[0-9a-f-]{36}\.jpg$/);
+  assert.ok(subido.peso < 1024 * 1024, `pesa ${subido.peso} bytes`);
+  assert.deepEqual([subido.ancho, subido.alto], [923, 2000]);
+  assert.equal(await p.getByText(/pesa más de 5 MB/).count(), 0);
+  // La lectura y «Revisa» usan lo subido.
+  assert.equal((await p.evaluate(() => window.qa.lecturas)).length, 1);
+  await p.locator("main img").evaluate((e) => e.decode());
+  await foto(p, "383-alta-2-revisa");
+});
+
+test("una foto con EXIF girado sube derecha (vertical) y un archivo que no es imagen dice «No se pudo leer la imagen»", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { real: true, lectura: LEIDO } });
+  await p.locator("input[type=file]").setInputFiles({ name: "girada.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  await p.getByText("Leído del cartel").waitFor();
+  const [subido] = await p.evaluate(() => window.qa.storage);
+  // 2400×1800 con orientación 6: se sube ya girada y reducida (1500×2000) y sin EXIF; la esquina de arriba a la izquierda es la azul.
+  assert.deepEqual([subido.ancho, subido.alto], [1500, 2000]);
+  assert.ok(subido.esquina[2] > 200 && subido.esquina[0] < 60, `esquina ${subido.esquina}`);
+  const q = await pagina(t, { qa: { real: true, lectura: LEIDO } });
+  await q.locator("input[type=file]").setInputFiles({ name: "nota.jpg", mimeType: "image/jpeg", buffer: Buffer.from("no soy una imagen") });
+  await q.getByText(/No se pudo leer la imagen\./).waitFor();
+  assert.equal(await q.evaluate(() => (window.qa.storage ?? []).length), 0);
 });

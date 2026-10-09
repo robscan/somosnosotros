@@ -12,9 +12,18 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import { capturaPng, navegadorDoble } from "../../../../lib/imagenDePrueba.mjs";
 
 const root = fileURLToPath(new URL("../../../../../", import.meta.url));
 const TOPE = { timeout: 30000 };
+/** Con `CAPTURAS=<carpeta>` la prueba de OL-352 guarda sus capturas (390×844). */
+const capturas = process.env.CAPTURAS;
+async function foto(p, nombre) {
+  if (!capturas) return;
+  await p.evaluate(() => document.fonts.ready);
+  await p.waitForTimeout(300);
+  await p.screenshot({ path: join(capturas, `${nombre}.png`) });
+}
 const CARPETA = "https://ejemplo.supabase.co/storage/v1/object/public/fotos/lugares/ana/";
 const FOTO = `${CARPETA}cartel-foto-1.jpg`;
 /** Un PNG de 1×1: lo que «dibuja» la ruta del cartel y la foto subida. */
@@ -39,7 +48,9 @@ const mocks = {
     export async function comprobarFotoPropia(slug, url){const q=window.qa;q.comprobadas.push([slug,url]);return q.comprobacion}
     export async function usarComoCartel(...a){window.qa.usados.push(a);return {ok:true, href:'/eventos/oca'}}
   `,
-  "@/lib/subirFoto": "export async function subirFoto(carpeta,usuario,prefijo,archivo,que){const q=window.qa;q.subidas.push([carpeta,usuario,prefijo,archivo.name,que]);return q.subida==='error'?{error:'La foto pesa más de 5 MB. Elige otra.',motivo:'pesa'}:{url:'" + FOTO + "'}}",
+  // Con `window.qa.real` (OL-352) la subida es la de verdad (`subirFoto` y `prepararImagen`) y solo Storage es un doble (`navegadorDoble`).
+  "./supabase/navegador": navegadorDoble,
+  "@/lib/subirFoto": "import {subirFoto as real} from './src/lib/subirFoto';export async function subirFoto(carpeta,usuario,prefijo,archivo,que,uso){const q=window.qa;q.subidas.push([carpeta,usuario,prefijo,archivo.name,que]);if(q.real)return real(carpeta,usuario,prefijo,archivo,que,uso);return q.subida==='error'?{error:'La foto pesa más de 5 MB. Elige otra.',motivo:'pesa'}:{url:'" + FOTO + "'}}",
   "@/lib/medir": `
     export function medirCliente(n,d){window.qa.medido.push(d?[n,d]:[n])}
     export const formatoMedido=(f)=>f==='9x16'?'historia':'publicacion';
@@ -238,4 +249,27 @@ test("sin ninguna imagen: «Poner una foto»; todas sin foto hasta ponerla, y en
   const con = await miniaturas(p);
   assert.equal(con.filter((m) => m.sinFoto).length, 1);
   assert.equal(con.filter((m) => m.foto === FOTO).length, 3);
+});
+
+/** OL-352 (bitácora 383): la foto propia que el founder no pudo poner («La foto pesa más de 5 MB»): una captura del carrusel de Instagram. */
+test("una captura de pantalla PNG de más de 5 MB se pone como foto propia: «Subiendo la foto…» y sube como JPEG de menos de 1 MB y 2000 px de lado", TOPE, async (t) => {
+  const png = await capturaPng(browser);
+  assert.ok(png.length > 5 * 1024 * 1024, `la captura pesa ${png.length} bytes`);
+  const p = await pagina(t, { real: true, verSubida: true, esperaStorage: true });
+  await p.locator('input[type="file"]').setInputFiles({ name: "captura.png", mimeType: "image/png", buffer: png });
+  await p.getByText("Subiendo la foto…").waitFor();
+  await p.waitForFunction(() => typeof window.qa.liberarStorage === "function", null, { timeout: 15000 });
+  await foto(p, "383-cartel-1-subiendo");
+  await p.evaluate(() => window.qa.liberarStorage());
+  await p.getByText("Tu foto").waitFor();
+  const q = await qa(p);
+  const [subido] = q.storage;
+  assert.equal(subido.tipo, "image/jpeg");
+  assert.match(subido.ruta, /^lugares\/ana\/cartel-foto-[0-9a-f-]{36}\.jpg$/);
+  assert.ok(subido.peso < 1024 * 1024, `pesa ${subido.peso} bytes`);
+  assert.deepEqual([subido.ancho, subido.alto], [923, 2000]);
+  assert.equal(q.comprobadas.length, 1);
+  assert.equal(await p.getByRole("alert").count(), 0);
+  await p.locator("img[width='44']").evaluate((e) => e.decode());
+  await foto(p, "383-cartel-2-tu-foto");
 });

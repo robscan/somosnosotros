@@ -10,14 +10,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./supabase/navegador", () => ({ clienteNavegador: mocks.cliente }));
-vi.mock("./imagen", () => ({ reducirImagen: mocks.reducir }));
+vi.mock("./imagen", async (original) => ({ ...(await original<typeof import("./imagen")>()), prepararImagen: mocks.reducir }));
 
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.cliente.mockReturnValue({ storage: { from: mocks.from } });
   mocks.from.mockReturnValue({ upload: mocks.upload, getPublicUrl: mocks.getPublicUrl });
   mocks.upload.mockResolvedValue({ error: null });
-  mocks.reducir.mockImplementation(async (archivo: File) => archivo);
+  mocks.reducir.mockImplementation(async (archivo: File) => ({ archivo }));
   mocks.getPublicUrl.mockImplementation((ruta: string) => ({ data: { publicUrl: `https://storage.local/fotos/${ruta}` } }));
 });
 
@@ -40,17 +40,42 @@ describe("subirFoto", () => {
   it("usa la extension y tipo de la imagen reducida", async () => {
     const original = new File(["png"], "imagen.png", { type: "image/png" });
     const reducida = new File(["jpg"], "imagen.jpg", { type: "image/jpeg" });
-    mocks.reducir.mockResolvedValue(reducida);
+    mocks.reducir.mockResolvedValue({ archivo: reducida });
     await subirFoto("perfiles", "cuenta", "foto", original);
-    expect(mocks.reducir).toHaveBeenCalledWith(original);
+    expect(mocks.reducir).toHaveBeenCalledWith(original, { ladoMaximo: 1600, tope: TAMANO_MAX_FOTO });
     expect(mocks.upload.mock.calls[0][0]).toMatch(/\.jpg$/);
     expect(mocks.upload.mock.calls[0][1]).toBe(reducida);
   });
 
-  it("no sube ni reduce una foto demasiado grande", async () => {
-    const grande = new File([new Uint8Array(TAMANO_MAX_FOTO + 1)], "foto.jpg");
-    expect(await subirFoto("perfiles", "cuenta", "foto", grande)).toMatchObject({ motivo: "pesa" });
-    expect(mocks.reducir).not.toHaveBeenCalled();
+  it("prepara antes de comprobar el peso: una captura grande que se comprime sube (OL-352)", async () => {
+    const grande = new File([new Uint8Array(TAMANO_MAX_FOTO + 1)], "captura.png", { type: "image/png" });
+    const chica = new File([new Uint8Array(300 * 1024)], "captura.jpg", { type: "image/jpeg" });
+    mocks.reducir.mockResolvedValue({ archivo: chica });
+    expect(await subirFoto("lugares", "cuenta", "evento", grande, "imagen", "cartel")).toHaveProperty("url");
+    expect(mocks.reducir).toHaveBeenCalledWith(grande, { ladoMaximo: 2000, tope: TAMANO_MAX_FOTO });
+    expect(mocks.upload.mock.calls[0][1]).toBe(chica);
+    expect(mocks.upload.mock.calls[0][0]).toMatch(/\.jpg$/);
+  });
+
+  it("el lado depende del uso: perfil 800, portada 1600, cartel 2000", async () => {
+    const foto = new File(["x"], "foto.jpg", { type: "image/jpeg" });
+    await subirFoto("perfiles", "cuenta", "foto", foto, "foto", "perfil");
+    await subirFoto("lugares", "cuenta", "portada", foto);
+    await subirFoto("lugares", "cuenta", "cartel-foto", foto, "foto", "cartel");
+    expect(mocks.reducir.mock.calls.map((c) => c[1].ladoMaximo)).toEqual([800, 1600, 2000]);
+  });
+
+  it("si no se pudo leer y la original pasa del tope, dice que pesa; si cabe, que no se pudo leer; nunca sube", async () => {
+    mocks.reducir.mockResolvedValue({ fallo: "lectura" });
+    const grande = new File([new Uint8Array(TAMANO_MAX_FOTO + 1)], "foto.heic");
+    expect(await subirFoto("perfiles", "cuenta", "foto", grande)).toEqual({ error: "La foto pesa más de 5 MB. Elige otra.", motivo: "pesa" });
+    expect(await subirFoto("perfiles", "cuenta", "foto", new File(["texto"], "nota.jpg"))).toEqual({ error: "No se pudo leer la imagen. Prueba con otra.", motivo: "lectura" });
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("no sube lo que, aun preparado, pasa del tope", async () => {
+    mocks.reducir.mockResolvedValue({ archivo: new File([new Uint8Array(TAMANO_MAX_FOTO + 1)], "foto.jpg", { type: "image/jpeg" }) });
+    expect(await subirFoto("perfiles", "cuenta", "foto", new File(["x"], "foto.jpg"))).toMatchObject({ motivo: "pesa" });
     expect(mocks.upload).not.toHaveBeenCalled();
   });
 
