@@ -2252,3 +2252,31 @@ test("una foto con EXIF girado sube derecha (vertical) y un archivo que no es im
   await q.getByText(/No se pudo leer la imagen\./).waitFor();
   assert.equal(await q.evaluate(() => (window.qa.storage ?? []).length), 0);
 });
+
+/**
+ * OL-353 (bitácora 384): la espera de subida de toda la app en el cartel del alta, también sin lectura. Subida de verdad con Storage lento
+ * (`retrasoStorage`, 2 s): en cuanto se elige, la foto de la persona (dirección local `blob:`) atenuada en el hueco del cartel, con `aria-busy`;
+ * al terminar, se va. Si Storage falla, la espera se quita y el recuadro vuelve igual, con el aviso.
+ */
+const enEspera = (p) => p.locator('main [aria-busy="true"] img[src^="blob:"]');
+test("sin lectura y con Storage lento, la foto elegida espera atenuada en el hueco del cartel hasta que se sube; si falla, vuelve el recuadro (OL-353)", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { real: true, verSubida: true, retrasoStorage: 2000, lectura: LEIDO } });
+  await casilla(p).click();
+  await p.locator("input[type=file]").setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  await enEspera(p).waitFor();
+  assert.equal(await enEspera(p).evaluate((e) => getComputedStyle(e).opacity), "0.6");
+  assert.equal(await p.locator("input[type=file]").count(), 0, "mientras sube no se puede elegir otra");
+  await p.getByRole("status").filter({ hasText: "Subiendo el cartel…" }).waitFor();
+  await foto(p, "384-alta-subiendo");
+  await p.getByRole("heading", { name: "¿Cómo se llama?" }).waitFor({ timeout: 15000 });
+  assert.equal(await p.locator('[aria-busy="true"]').count(), 0);
+  assert.equal(await guardado(p).innerText(), "Cartel guardado");
+
+  const q = await pagina(t, { qa: { real: true, retrasoStorage: 1000, falloStorage: true, lectura: LEIDO } });
+  await q.locator("input[type=file]").setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  await enEspera(q).waitFor();
+  await q.getByText(/No pude subir el cartel/).waitFor({ timeout: 15000 });
+  assert.equal(await q.locator('[aria-busy="true"]').count(), 0);
+  assert.equal(await q.locator("main img").count(), 0, "sin la foto que no se subió");
+  assert.equal(await q.locator("input[type=file]").isEnabled(), true);
+});

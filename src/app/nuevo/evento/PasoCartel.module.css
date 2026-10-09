@@ -69,8 +69,8 @@
   --aire-antes: var(--espacio-4);
 }
 
-/* 2. La espera: el cartel elegido, chico y al centro, que late mientras se sube y se lee (quieto con «reducir movimiento»), y debajo qué pasa.
-   Sin pie: dura lo que tarde. */
+/* 2. La espera: el cartel elegido, chico y al centro, que late mientras se sube y se lee (el latido es el de toda subida, `ui/FotoSubida`,
+   OL-353), y debajo qué pasa. Sin pie: dura lo que tarde. */
 .leyendo {
   display: grid;
   justify-items: center;
@@ -86,16 +86,6 @@
 }
 .leyendo > p {
   color: var(--texto-suave);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .leyendo > img {
-    animation: late 0.9s ease-in-out infinite alternate;
-  }
-}
-@keyframes late {
-  to {
-    opacity: 0.6;
-  }
 }
 
 /* 3. El cartel guardado sin leer, sobre la primera pregunta: una fila chica, la miniatura y el sello gris. Confirma que la imagen llegó

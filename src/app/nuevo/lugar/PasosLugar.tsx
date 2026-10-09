@@ -26,6 +26,8 @@ import type { Punto } from "@/lib/geo";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { hrefLugar, LIMITES_LUGAR, TIPOS, type ErroresLugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { subirFoto } from "@/lib/subirFoto";
+import FotoSubida from "@/components/ui/FotoSubida";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import { lugarAlLado, type Candidato } from "../evento/pasos";
 import { useBusquedaSitio } from "../evento/useBusquedaSitio";
 import { RADIO_ES_ESTE_M, type Respuestas, type Sitio } from "./pasos";
@@ -391,25 +393,22 @@ type Mas = Pick<Respuestas, "portada" | "descripcion" | "redes" | "privado">;
  * enlaces y redes; y, para la administración, la dirección de una imagen y «Solo yo lo veo»). «Listo» vuelve a «Revisa».
  */
 export function PasoMas({ r, usuarioId, esAdmin, errores, onCambio, onListo }: { r: Mas; usuarioId: string; esAdmin: boolean; errores: ErroresLugar; onCambio: (cambios: Partial<Mas>) => void; onListo: () => void }) {
-  const [subiendo, setSubiendo] = useState(false);
+  const subida = useSubidaDeFoto();
+  const subiendo = !!subida.subiendo;
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
-  async function subir(e: React.ChangeEvent<HTMLInputElement>) {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
-    setSubiendo(true);
-    setErrorFoto(null);
-    const hecho = await subirFoto("lugares", usuarioId, "portada", archivo);
-    if ("error" in hecho) setErrorFoto(hecho.error);
-    else onCambio({ portada: hecho.url });
-    setSubiendo(false);
-  }
+  // Con la espera de toda la app (`useSubidaDeFoto`, OL-353): la foto elegida late en el hueco de la portada hasta que la subida se ve.
+  const subir = (e: React.ChangeEvent<HTMLInputElement>) =>
+    subida.subir(e, async (archivo) => {
+      setErrorFoto(null);
+      const hecho = await subirFoto("lugares", usuarioId, "portada", archivo);
+      if ("error" in hecho) return setErrorFoto(hecho.error);
+      onCambio({ portada: hecho.url });
+      return hecho.url;
+    });
   return (
     <>
-      {r.portada && (
-        // eslint-disable-next-line @next/next/no-img-element -- URL de Storage recién subida
-        <img src={r.portada} alt="" className={formulario.portada} />
-      )}
-      <label className={canon.subir}>
+      <FotoSubida src={r.portada} vista={subida.vista} className={formulario.portada} />
+      <label className={canon.subir} aria-busy={subiendo || undefined}>
         <input type="file" accept="image/*" onChange={subir} disabled={subiendo} />
         {subiendo ? "Subiendo…" : r.portada ? "Cambiar la foto" : "Poner una foto de portada"}
       </label>
@@ -423,7 +422,7 @@ export function PasoMas({ r, usuarioId, esAdmin, errores, onCambio, onListo }: {
       <SelectorEnlaces inicial={r.redes} error={errores.enlaces} onCambio={(redes: Enlace[]) => onCambio({ redes })} />
       {esAdmin && <Casilla titulo="Solo yo lo veo" detalle="Mapeo privado: no sale en el mapa, la lista ni la búsqueda para nadie más." marcada={r.privado} onCambio={(privado) => onCambio({ privado })} />}
       <PiePaso>
-        <Boton type="button" aria-disabled={subiendo ? true : undefined} onClick={subiendo ? undefined : onListo}>
+        <Boton type="button" aria-disabled={subiendo ? true : undefined} aria-busy={subiendo || undefined} onClick={subiendo ? undefined : onListo}>
           {subiendo ? "Subiendo la foto…" : "Listo"}
         </Boton>
       </PiePaso>

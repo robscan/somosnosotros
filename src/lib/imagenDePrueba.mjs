@@ -105,7 +105,8 @@ const GRANO = 64;
 /**
  * El doble de `clienteNavegador` para las pruebas que suben de verdad (`window.qa.real`; sin él, null como sin Supabase): Storage guarda lo
  * que llega y lo mide en la página (`window.qa.storage`: peso, tipo, ancho, alto y el color de la esquina de arriba a la izquierda), y puede esperar a
- * `window.qa.liberarStorage()` si `window.qa.esperaStorage` (para ver la espera en pantalla). Con `window.qa.verSubida` la dirección pública
+ * `window.qa.liberarStorage()` si `window.qa.esperaStorage` (para ver la espera en pantalla). OL-353: `window.qa.retrasoStorage` (ms) la hace
+ * lenta como con mala señal y `window.qa.falloStorage` la hace fallar (como la red) después de esperar. Con `window.qa.verSubida` la dirección pública
  * es la de lo subido (blob:), para que las capturas enseñen la imagen ya preparada.
  */
 export const navegadorDoble = `
@@ -117,6 +118,8 @@ export const navegadorDoble = `
     return { storage: { from: (bucket) => ({
       async upload(ruta, archivo, opciones){
         if (q.esperaStorage) await new Promise((r) => { q.liberarStorage = r; });
+        if (q.retrasoStorage) await new Promise((r) => setTimeout(r, q.retrasoStorage));
+        if (q.falloStorage) return { error: { message: 'sin red' } };
         const bm = await createImageBitmap(archivo);
         const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height;
         const ctx = c.getContext('2d'); ctx.drawImage(bm, 0, 0);

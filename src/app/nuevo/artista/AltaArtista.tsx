@@ -13,6 +13,7 @@ import type { CiudadConArtistas } from "@/lib/ciudad";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { medirCliente } from "@/lib/medir";
 import { subirFoto } from "@/lib/subirFoto";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import TiraTipos from "../TiraTipos";
 import { avance, estadoInicial, faltaParaPublicar, flujo, pasoActual, type Arranque, type Paso, type Respuestas } from "./pasos";
 import { PasoHace, PasoMas, PasoNombre, PasoSub, preguntaSub } from "./PasosArtista";
@@ -89,7 +90,8 @@ function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, 
   const abrir = (p: Paso) => despachar({ tipo: "abrir", paso: p });
   const [hoja, setHoja] = useState<"es" | "ciudad" | null>(null);
   const [creado, setCreado] = useState<Creado | null>(null);
-  const [foto, setFoto] = useState<{ subiendo: boolean; error: string | null }>({ subiendo: false, error: null });
+  const subida = useSubidaDeFoto();
+  const [errorFoto, setErrorFoto] = useState<string | null>(null);
   // La ciudad con que se publicó por última vez: «Ya hay una ficha con ese nombre» del servidor vale para esa ciudad, no para otra.
   const [ciudadEnviada, setCiudadEnviada] = useState<string | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(async (previo, datos) => {
@@ -119,19 +121,21 @@ function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, 
     enviar(fd);
   }
 
-  /** «Agrega una foto» en «Publicado»: se sube y se guarda en la ficha recién publicada con la acción de editar (todo lo demás, igual). */
-  async function agregarFoto(archivo: File) {
-    if (!creado || foto.subiendo) return;
-    setFoto({ subiendo: true, error: null });
-    const subida = await subirFoto("artistas", usuarioId, "foto", archivo, "foto");
-    if ("error" in subida) return setFoto({ subiendo: false, error: subida.error });
-    const fd = new FormData();
-    for (const [clave, valor] of Object.entries(campos(r, subida.url))) fd.set(clave, valor);
-    const hecho = await actualizar(creado.id, null, fd).catch(() => null);
-    if (!hecho?.ok) return setFoto({ subiendo: false, error: "No se pudo guardar la foto. Intenta de nuevo." });
-    setCreado({ ...creado, foto: subida.url });
-    setFoto({ subiendo: false, error: null });
-  }
+  /** «Agrega una foto» en «Publicado»: se sube y se guarda en la ficha recién publicada con la acción de editar (todo lo demás, igual). La
+   *  espera es la de toda la app (`useSubidaDeFoto`, OL-353): la foto elegida late en el renglón del artista hasta que la guardada se ve. */
+  const agregarFoto = (archivo: File) =>
+    subida.subir(archivo, async (elegido) => {
+      if (!creado) return;
+      setErrorFoto(null);
+      const hecho = await subirFoto("artistas", usuarioId, "foto", elegido, "foto");
+      if ("error" in hecho) return setErrorFoto(hecho.error);
+      const fd = new FormData();
+      for (const [clave, valor] of Object.entries(campos(r, hecho.url))) fd.set(clave, valor);
+      const guardado = await actualizar(creado.id, null, fd).catch(() => null);
+      if (!guardado?.ok) return setErrorFoto("No se pudo guardar la foto. Intenta de nuevo.");
+      setCreado({ ...creado, foto: hecho.url });
+      return hecho.url;
+    });
 
   return (
     <PorPasos
@@ -183,8 +187,8 @@ function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, 
       {paso === "publicado" && creado && r.disciplina && r.tipo && (
         <Publicado
           artista={{ id: creado.id, slug: creado.slug ?? "", nombre: r.nombre.trim(), disciplina: r.disciplina, detalle: r.detalle || null, tipo: r.tipo, foto: creado.foto }}
-          subiendo={foto.subiendo}
-          errorFoto={foto.error}
+          vista={subida.vista}
+          errorFoto={errorFoto}
           onFoto={(archivo) => void agregarFoto(archivo)}
           onOtro={onOtro}
         />

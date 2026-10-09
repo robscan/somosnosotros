@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
-import { capturaPng, navegadorDoble } from "../../../lib/imagenDePrueba.mjs";
+import { capturaPng, fotoGirada, navegadorDoble } from "../../../lib/imagenDePrueba.mjs";
 
 const root = fileURLToPath(new URL("../../../../", import.meta.url));
 const TEATRO = "0b0b0b0b-0000-4000-8000-000000000001";
@@ -550,4 +550,38 @@ test("una captura de pantalla PNG de más de 5 MB como portada: «Subiendo la fo
   assert.equal(await p.getByRole("alert").count(), 0);
   await p.locator("main img").evaluate((e) => e.decode());
   await foto(p, "383-portada-2-puesta");
+});
+
+/**
+ * OL-353 (bitácora 384): la espera de subida en la portada del alta de lugar, con Storage lento (`retrasoStorage`, 2 s): en cuanto se elige, la
+ * foto de la persona (`blob:`) atenuada en el hueco de la portada, con `aria-busy`; el campo y «Listo» quedan apagados. Si falla, la espera se
+ * quita, no queda portada y el campo vuelve.
+ */
+test("con Storage lento la portada elegida espera atenuada en su hueco con el campo y «Listo» apagados; si falla, no queda portada (OL-353)", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { real: true, verSubida: true, retrasoStorage: 2000 } });
+  await hastaRevisa(p);
+  await boton(p, "Agregar foto, descripción o redes").click();
+  await enPaso(p, "¿Quieres agregar algo?");
+  await p.locator("main input[type=file]").setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  const vista = p.locator('main img[src^="blob:"]');
+  await vista.waitFor();
+  assert.equal(await vista.evaluate((e) => getComputedStyle(e).opacity), "0.6");
+  assert.equal(await p.locator('main label[aria-busy="true"]').count(), 1);
+  assert.equal(await p.locator("main input[type=file]").isDisabled(), true);
+  assert.equal(await boton(p, "Subiendo la foto…").getAttribute("aria-disabled"), "true");
+  await foto(p, "384-portada-subiendo");
+  await boton(p, "Listo").waitFor({ timeout: 15000 });
+  assert.equal(await p.locator('[aria-busy="true"]').count(), 0);
+  assert.equal(await p.locator("main img").evaluate((e) => getComputedStyle(e).opacity), "1");
+
+  const q = await pagina(t, { qa: { real: true, retrasoStorage: 1000, falloStorage: true } });
+  await hastaRevisa(q);
+  await boton(q, "Agregar foto, descripción o redes").click();
+  await enPaso(q, "¿Quieres agregar algo?");
+  await q.locator("main input[type=file]").setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  await q.locator('main img[src^="blob:"]').waitFor();
+  await q.getByRole("alert").waitFor({ timeout: 15000 });
+  assert.equal(await q.locator('[aria-busy="true"]').count(), 0);
+  assert.equal(await q.locator("main img").count(), 0);
+  assert.equal(await q.locator("main input[type=file]").isEnabled(), true);
 });

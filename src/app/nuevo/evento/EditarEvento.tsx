@@ -147,8 +147,9 @@ export default function EditarEvento({ accion, respuestas, imagen, revision, zon
           {esAdmin && <CampoImagenUrl valor={cartel.subido?.url ?? null} onCambio={cartel.poner} />}
         </PasoInicio>
       )}
-      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} />
-      {paso === "revisa" && (
+      {/* La espera del cartel dura hasta que la imagen subida se ve (OL-353): mientras, solo ella, aunque el paso ya haya avanzado. */}
+      {!cartel.espera && <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} />}
+      {!cartel.espera && paso === "revisa" && (
         <Revisa
           r={r}
           zona={zona}

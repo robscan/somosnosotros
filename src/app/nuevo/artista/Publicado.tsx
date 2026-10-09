@@ -6,6 +6,7 @@ import RenglonArtista from "@/components/RenglonArtista";
 import Boton, { claseBoton } from "@/components/ui/Boton";
 import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import { claseSubiendoDentro } from "@/components/ui/FotoSubida";
 import { compartirArtista, type ArtistaResumen } from "@/lib/artistas";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import publicado from "../evento/Publicado.module.css";
@@ -14,8 +15,8 @@ import styles from "./AltaArtista.module.css";
 type Props = {
   /** El artista como quedó, armado con lo publicado: lo que pinta la tarjeta es lo que verá la gente en Artistas. */
   artista: Pick<ArtistaResumen, "id" | "slug" | "nombre" | "disciplina" | "detalle" | "tipo" | "foto">;
-  /** Mientras la foto nueva se sube y se guarda en la ficha. */
-  subiendo: boolean;
+  /** Mientras la foto nueva se sube y se guarda en la ficha: la foto elegida, del teléfono (`useSubidaDeFoto`). */
+  vista: string | null;
   /** Si no se pudo subir o guardar la foto. */
   errorFoto: string | null;
   /** La foto elegida en el teléfono (cámara o carrete): se sube y se guarda en la ficha sin salir de aquí. */
@@ -31,8 +32,9 @@ type Props = {
  * aquí mismo; con foto, «Publicar una fecha», que abre el alta de evento con el artista ya puesto. En el pie, «Compartir» (el mismo texto que
  * la ficha) y «Publicar otro», quieto.
  */
-export default function Publicado({ artista, subiendo, errorFoto, onFoto, onOtro }: Props) {
+export default function Publicado({ artista, vista, errorFoto, onFoto, onOtro }: Props) {
   const { url, texto } = compartirArtista(artista);
+  const subiendo = !!vista;
   return (
     <>
       <div className={publicado.final}>
@@ -42,8 +44,9 @@ export default function Publicado({ artista, subiendo, errorFoto, onFoto, onOtro
         <h2 tabIndex={-1}>Artista publicado</h2>
         <p>Ya está en el directorio. Así lo ve la gente:</p>
       </div>
-      <ul className={publicado.tarjeta}>
-        <RenglonArtista artista={artista} />
+      {/* Mientras sube, la foto elegida ya en el renglón, con la espera de toda la app (OL-353): así se verá en Artistas. */}
+      <ul className={[publicado.tarjeta, subiendo && claseSubiendoDentro].filter(Boolean).join(" ")} aria-busy={subiendo || undefined}>
+        <RenglonArtista artista={vista ? { ...artista, foto: vista } : artista} />
       </ul>
       {artista.foto ? (
         <section className={publicado.sugerencia} aria-labelledby="sugerencia-artista">
@@ -57,7 +60,7 @@ export default function Publicado({ artista, subiendo, errorFoto, onFoto, onOtro
         <section className={publicado.sugerencia} aria-labelledby="sugerencia-artista">
           <h3 id="sugerencia-artista">Agrega una foto</h3>
           <p>Las fichas sin foto no salen en destacados.</p>
-          <label className={`${claseBoton()} ${canon.salida} ${styles.agregarFoto}`} aria-disabled={subiendo || undefined}>
+          <label className={`${claseBoton()} ${canon.salida} ${styles.agregarFoto}`} aria-disabled={subiendo || undefined} aria-busy={subiendo || undefined}>
             <IconoCamara width={20} height={20} />
             {subiendo ? "Subiendo la foto…" : "Agregar foto"}
             <input
