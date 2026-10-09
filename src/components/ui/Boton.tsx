@@ -32,7 +32,8 @@ export function claseBoton({ variante = "primario", forma = "recta", alto = "toq
  * Publicar un evento aquí, Ver más). Los redondos de solo icono son `BotonIcono`; las opciones de un toque, `Chip`.
  * Estados: pulsado y foco visible los da la app entera; deshabilitado, con `disabled` o con `aria-disabled` cuando
  * el motivo se lee en pantalla (`aria-describedby`; entonces no lleva `onClick`); en camino, solo con un enlace
- * (late mientras el servidor responde) o con `aria-busy` en un botón.
+ * (late mientras el servidor responde) o con `aria-busy` en un botón. Un conmutador (`aria-pressed`) no lleva espera: muestra
+ * al momento lo que quedó y no late (OL-354).
  */
 export default function Boton(props: ComoBoton | ComoEnlace) {
   const { variante, forma, alto, ancho, flotante, className, ...rest } = props;

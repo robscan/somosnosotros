@@ -42,7 +42,9 @@ type Props = {
  * actúa si su toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas), como en las demás fichas.
  */
 export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush, soloInteres = false }: Props) {
-  const [pendiente, iniciar] = useTransition();
+  // Sin `pendiente`: la pastilla no se apaga ni late mientras el servidor confirma (OL-354, bitácora 385); lo optimista ya
+  // la dejó en su estado final al tocar, y solo vuelve atrás, una vez, si no se pudo guardar.
+  const [, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
   const [hoja, setHoja] = useState(false);
   const toques = useRef<Toques>({});
@@ -96,12 +98,12 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
       <div className={ficha.flotantes} data-flotantes>
         {conSesion ? (
           <>
-            <Boton type="button" variante="secundario" ancho="contenido" flotante aria-pressed={interesa} aria-busy={pendiente} onClick={() => cambiar(interesa ? null : "me_interesa")}>
+            <Boton type="button" variante="secundario" ancho="contenido" flotante aria-pressed={interesa} onClick={() => cambiar(interesa ? null : "me_interesa")}>
               <IconoEstrella width={20} height={20} fill={interesa ? "currentColor" : "none"} />
               {interesa ? "Te interesa" : "Me interesa"}
             </Boton>
             {!soloInteres && (
-              <Boton type="button" ancho="contenido" flotante aria-pressed={voy} aria-busy={pendiente} onClick={() => cambiar(voy ? null : "voy")}>
+              <Boton type="button" ancho="contenido" flotante aria-pressed={voy} onClick={() => cambiar(voy ? null : "voy")}>
                 <IconoOk width={20} height={20} />
                 {voy ? "Vas" : "Voy"}
               </Boton>
