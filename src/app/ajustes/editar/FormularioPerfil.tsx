@@ -7,6 +7,8 @@ import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import { IconoCamara, IconoCandado, IconoCasa, IconoPersona, IconoTexto } from "@/components/ui/Iconos";
 import { LIMITES } from "@/lib/perfil";
 import { subirFoto } from "@/lib/subirFoto";
+import FotoSubida from "@/components/ui/FotoSubida";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import type { Perfil } from "@/lib/supabase/servidor";
 import { guardarPerfil, type ResultadoGuardar } from "@/app/perfil/acciones";
 import Limpiar from "@/components/ui/Limpiar";
@@ -36,20 +38,20 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
   const [colonia, setColonia] = useState(perfil.colonia ?? "");
   const [bio, setBio] = useState(perfil.bio ?? "");
   const [foto, setFoto] = useState<string | null>(perfil.foto);
-  const [subiendo, setSubiendo] = useState(false);
+  const subida = useSubidaDeFoto();
+  const subiendo = !!subida.subiendo;
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<Renglon | null>(null);
 
-  async function alElegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
-    setSubiendo(true);
-    setErrorFoto(null);
-    const r = await subirFoto("perfiles", perfil.id, "foto", archivo, "foto", "perfil");
-    if ("error" in r) setErrorFoto(r.error);
-    else setFoto(r.url);
-    setSubiendo(false);
-  }
+  // La espera es la de toda la app (`useSubidaDeFoto`, OL-353): la foto elegida late en el sitio del avatar hasta que la subida se ve.
+  const alElegirFoto = (e: React.ChangeEvent<HTMLInputElement>) =>
+    subida.subir(e, async (archivo) => {
+      setErrorFoto(null);
+      const r = await subirFoto("perfiles", perfil.id, "foto", archivo, "foto", "perfil");
+      if ("error" in r) return setErrorFoto(r.error);
+      setFoto(r.url);
+      return r.url;
+    });
 
   const hayCambio = nombre.trim() !== perfil.nombre || colonia.trim() !== (perfil.colonia ?? "") || bio.trim() !== (perfil.bio ?? "") || foto !== perfil.foto;
   const faltaNombre = nombre.trim().length === 0;
@@ -104,16 +106,11 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
     <form action={guardar} noValidate>
       <ul className={renglon.renglones}>
         {/* Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
-        <li className={`${renglon.resuelto} ${foto ? "" : renglon.opcional}`}>
-          {foto ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-            <img src={foto} alt="" />
-          ) : (
-            <IconoCamara width={20} height={20} />
-          )}
+        <li className={`${renglon.resuelto} ${foto ? "" : renglon.opcional}`} aria-busy={subiendo || undefined}>
+          {foto || subida.vista ? <FotoSubida src={foto} vista={subida.vista} /> : <IconoCamara width={20} height={20} />}
           <small>Foto</small>
           <b className={foto ? undefined : renglon.falta}>{subiendo ? "Subiendo…" : foto ? "Tu foto" : "Sin foto"}</b>
-          <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Poner una foto"}>
+          <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Poner una foto"} aria-disabled={subiendo || undefined} aria-busy={subiendo || undefined}>
             <IconoCamara width={22} height={22} />
             <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Poner una foto"} />
           </label>

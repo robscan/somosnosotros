@@ -20,6 +20,8 @@ import sug from "@/components/ui/Sugerencia.module.css";
 import { DISCIPLINAS, etiquetaDisciplina, hrefArtista, LIMITES_ARTISTA, SUBCATEGORIAS_A_LA_VISTA, subcategoriaParecida, type Disciplina, type ErroresArtista, type Subcategoria } from "@/lib/artistas";
 import type { Enlace } from "@/lib/enlaces";
 import { subirFoto } from "@/lib/subirFoto";
+import FotoSubida from "@/components/ui/FotoSubida";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import type { Candidato } from "./useArtistasConNombre";
 import type { Respuestas } from "./pasos";
 import evento from "../evento/AltaEvento.module.css";
@@ -199,31 +201,34 @@ type Mas = Pick<Respuestas, "foto" | "portada" | "descripcion" | "redes">;
  * imagen). «Listo» vuelve a «Revisa».
  */
 export function PasoMas({ r, usuarioId, esAdmin, errores, onCambio, onListo }: { r: Mas; usuarioId: string; esAdmin: boolean; errores: ErroresArtista; onCambio: (cambios: Partial<Mas>) => void; onListo: () => void }) {
-  const [subiendo, setSubiendo] = useState<"foto" | "portada" | null>(null);
+  const subida = useSubidaDeFoto<"foto" | "portada">();
+  const subiendo = subida.subiendo;
   const [error, setError] = useState<{ cual: "foto" | "portada"; texto: string } | null>(null);
-  async function subir(e: React.ChangeEvent<HTMLInputElement>, cual: "foto" | "portada") {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
-    setSubiendo(cual);
-    setError(null);
-    const hecho = await subirFoto("artistas", usuarioId, cual, archivo, cual);
-    if ("error" in hecho) setError({ cual, texto: hecho.error });
-    else onCambio({ [cual]: hecho.url });
-    setSubiendo(null);
-  }
+  // La espera es la de toda la app (`useSubidaDeFoto`, OL-353): la imagen elegida late en su hueco hasta que la subida se ve.
+  const subir = (e: React.ChangeEvent<HTMLInputElement>, cual: "foto" | "portada") =>
+    subida.subir(
+      e,
+      async (archivo) => {
+        setError(null);
+        const hecho = await subirFoto("artistas", usuarioId, cual, archivo, cual);
+        if ("error" in hecho) return setError({ cual, texto: hecho.error });
+        onCambio({ [cual]: hecho.url });
+        return hecho.url;
+      },
+      cual,
+    );
   const errorDe = (cual: "foto" | "portada") => (error?.cual === cual ? error.texto : errores[cual]);
   return (
     <>
-      <div className={styles.imagen}>
-        {r.foto ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL de Storage recién subida
-          <img src={r.foto} alt="" />
+      <div className={styles.imagen} aria-busy={subiendo === "foto" || undefined}>
+        {r.foto || subida.vistaDe("foto") ? (
+          <FotoSubida src={r.foto} vista={subida.vistaDe("foto")} />
         ) : (
           <span aria-hidden="true">
             <IconoPersona width={28} height={28} />
           </span>
         )}
-        <label className={canon.subir}>
+        <label className={canon.subir} aria-disabled={subiendo ? true : undefined}>
           <input type="file" accept="image/*" onChange={(e) => subir(e, "foto")} disabled={!!subiendo} aria-label={r.foto ? "Cambiar la foto" : "Poner una foto"} />
           {subiendo === "foto" ? "Subiendo…" : r.foto ? "Cambiar la foto" : "Poner una foto"}
         </label>
@@ -239,16 +244,15 @@ export function PasoMas({ r, usuarioId, esAdmin, errores, onCambio, onListo }: {
         </p>
       )}
       {esAdmin && <CampoImagenUrl etiqueta="O pega la dirección de la foto" valor={r.foto} onCambio={(foto) => onCambio({ foto })} />}
-      <div className={`${styles.imagen} ${styles.portada}`}>
-        {r.portada ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL de Storage recién subida
-          <img src={r.portada} alt="" />
+      <div className={`${styles.imagen} ${styles.portada}`} aria-busy={subiendo === "portada" || undefined}>
+        {r.portada || subida.vistaDe("portada") ? (
+          <FotoSubida src={r.portada} vista={subida.vistaDe("portada")} />
         ) : (
           <span aria-hidden="true">
             <IconoEncuadrar width={28} height={28} />
           </span>
         )}
-        <label className={canon.subir}>
+        <label className={canon.subir} aria-disabled={subiendo ? true : undefined}>
           <input type="file" accept="image/*" onChange={(e) => subir(e, "portada")} disabled={!!subiendo} aria-label={r.portada ? "Cambiar la portada" : "Poner una portada"} />
           {subiendo === "portada" ? "Subiendo…" : r.portada ? "Cambiar la portada" : "Poner una portada"}
         </label>
@@ -267,7 +271,7 @@ export function PasoMas({ r, usuarioId, esAdmin, errores, onCambio, onListo }: {
       <Campo etiqueta="Descripción" name="descripcion" multilinea value={r.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} mostrarContador />
       <SelectorEnlaces inicial={r.redes} error={errores.enlaces} onCambio={(redes: Enlace[]) => onCambio({ redes })} />
       <PiePaso>
-        <Boton type="button" aria-disabled={subiendo ? true : undefined} onClick={subiendo ? undefined : onListo}>
+        <Boton type="button" aria-disabled={subiendo ? true : undefined} aria-busy={subiendo ? true : undefined} onClick={subiendo ? undefined : onListo}>
           {subiendo ? `Subiendo la ${subiendo}…` : "Listo"}
         </Boton>
       </PiePaso>

@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import Casilla from "@/components/ui/Casilla";
+import FotoSubida from "@/components/ui/FotoSubida";
 import { IconoCamara, IconoLapiz, IconoOk } from "@/components/ui/Iconos";
 import Opcion from "@/components/ui/Opcion";
 import styles from "./PasoCartel.module.css";
@@ -47,12 +48,12 @@ export function PasoInicio({ casilla, error, onElegir, onSinCartel, sinCartel = 
   );
 }
 
-/** La espera: el cartel elegido, chico y al centro, y qué pasa («Leyendo el cartel…» si se lee; «Subiendo el cartel…» si solo se guarda). Sin pie. */
+/** La espera: el cartel elegido, chico y al centro, con la espera de subida de toda la app (`FotoSubida`, OL-353), y qué pasa («Leyendo el
+ *  cartel…» si se lee; «Subiendo el cartel…» si solo se guarda). Sin pie. */
 export function PasoEspera({ foto, leyendo }: { foto: string | null; leyendo: boolean }) {
   return (
-    <div className={styles.leyendo}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- la foto recién elegida, del teléfono */}
-      {foto && <img src={foto} alt="" />}
+    <div className={styles.leyendo} aria-busy="true">
+      <FotoSubida src={null} vista={foto} />
       <p role="status">{leyendo ? "Leyendo el cartel…" : "Subiendo el cartel…"}</p>
     </div>
   );

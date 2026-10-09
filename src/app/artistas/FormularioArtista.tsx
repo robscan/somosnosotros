@@ -23,6 +23,8 @@ import { normalizarNombre } from "@/lib/lugares";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
+import FotoSubida from "@/components/ui/FotoSubida";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import type { ResultadoArtista } from "./acciones";
 import HojaCiudad from "./HojaCiudad";
@@ -76,7 +78,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, esAdmin 
   const [ciudad, setCiudad] = useState(ciudadInicial);
   const [foto, setFoto] = useState<string | null>(artista.foto);
   const [portada, setPortada] = useState<string | null>(artista.portada);
-  const [subiendo, setSubiendo] = useState(false);
+  const subida = useSubidaDeFoto<"foto" | "portada">();
+  const subiendo = !!subida.subiendo;
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<Abierta>(null);
@@ -132,16 +135,20 @@ export default function FormularioArtista({ accion, artista, usuarioId, esAdmin 
   }, [nombre, artista.id]);
 
   /** Foto (el avatar) y portada (la imagen ancha de la cabecera) se suben igual; solo cambia dónde se guarda. */
-  async function subirImagen(e: React.ChangeEvent<HTMLInputElement>, cual: "foto" | "portada") {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
+  /** La espera es la de toda la app (`useSubidaDeFoto`, OL-353): la imagen elegida late en su hueco del renglón hasta que la subida se ve. */
+  function subirImagen(e: React.ChangeEvent<HTMLInputElement>, cual: "foto" | "portada") {
     const [poner, ponerError] = cual === "foto" ? [setFoto, setErrorFoto] : [setPortada, setErrorPortada];
-    setSubiendo(true);
-    ponerError(null);
-    const r = await subirFoto("artistas", usuarioId, cual, archivo, cual);
-    if ("error" in r) ponerError(r.error);
-    else poner(r.url);
-    setSubiendo(false);
+    return subida.subir(
+      e,
+      async (archivo) => {
+        ponerError(null);
+        const r = await subirFoto("artistas", usuarioId, cual, archivo, cual);
+        if ("error" in r) return ponerError(r.error);
+        poner(r.url);
+        return r.url;
+      },
+      cual,
+    );
   }
 
   const clave = normalizarNombre(nombre);
@@ -385,17 +392,12 @@ export default function FormularioArtista({ accion, artista, usuarioId, esAdmin 
         </li>
 
         {/* 5. Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
-        <li className={`${renglon.resuelto} ${renglon.sinClave} ${foto ? "" : renglon.opcional}`}>
-          {foto ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-            <img src={foto} alt="" />
-          ) : (
-            <IconoCamara width={20} height={20} />
-          )}
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${foto ? "" : renglon.opcional}`} aria-busy={subida.subiendo === "foto" || undefined}>
+          {foto || subida.vistaDe("foto") ? <FotoSubida src={foto} vista={subida.vistaDe("foto")} /> : <IconoCamara width={20} height={20} />}
           <small>Foto</small>
-          <b className={foto ? undefined : renglon.falta}>{subiendo ? "Subiendo la foto…" : foto ? "Foto de perfil lista" : "Sin foto de perfil"}</b>
+          <b className={foto ? undefined : renglon.falta}>{subida.subiendo === "foto" ? "Subiendo la foto…" : foto ? "Foto de perfil lista" : "Sin foto de perfil"}</b>
           <div className={renglon.opciones}>
-            <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
+            <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Elegir una foto"} aria-disabled={subiendo || undefined}>
               <IconoCamara width={22} height={22} />
               <input type="file" accept="image/*" onChange={(e) => subirImagen(e, "foto")} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
             </label>
@@ -413,17 +415,12 @@ export default function FormularioArtista({ accion, artista, usuarioId, esAdmin 
         </li>
 
         {/* 6. Portada: opcional, la imagen ancha de la cabecera; sin ella la ficha lleva el símbolo SN. */}
-        <li className={`${renglon.resuelto} ${renglon.sinClave} ${portada ? "" : renglon.opcional}`}>
-          {portada ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-            <img src={portada} alt="" />
-          ) : (
-            <IconoEncuadrar width={20} height={20} />
-          )}
+        <li className={`${renglon.resuelto} ${renglon.sinClave} ${portada ? "" : renglon.opcional}`} aria-busy={subida.subiendo === "portada" || undefined}>
+          {portada || subida.vistaDe("portada") ? <FotoSubida src={portada} vista={subida.vistaDe("portada")} /> : <IconoEncuadrar width={20} height={20} />}
           <small>Portada</small>
-          <b className={portada ? undefined : renglon.falta}>{subiendo ? "Subiendo la portada…" : portada ? "Portada lista" : "Sin portada"}</b>
+          <b className={portada ? undefined : renglon.falta}>{subida.subiendo === "portada" ? "Subiendo la portada…" : portada ? "Portada lista" : "Sin portada"}</b>
           <div className={renglon.opciones}>
-            <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={portada ? "Cambiar la portada" : "Elegir una portada"}>
+            <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={portada ? "Cambiar la portada" : "Elegir una portada"} aria-disabled={subiendo || undefined}>
               <IconoCamara width={22} height={22} />
               <input type="file" accept="image/*" onChange={(e) => subirImagen(e, "portada")} disabled={subiendo} aria-label={portada ? "Cambiar la portada" : "Elegir una portada"} />
             </label>

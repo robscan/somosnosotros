@@ -1,0 +1,21 @@
+/* La espera de una foto que se prepara y se sube (OL-353): la foto elegida, atenuada, late despacio entre dos opacidades (el latido que ya
+   tenía la espera del cartel del alta, OL-302). Con «reducir movimiento», quieta y atenuada. */
+.subiendo,
+.subiendoDentro img {
+  opacity: 0.6;
+  cursor: progress;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .subiendo,
+  .subiendoDentro img {
+    animation: late 0.9s ease-in-out infinite alternate;
+  }
+}
+@keyframes late {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 0.45;
+  }
+}

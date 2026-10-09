@@ -88,9 +88,6 @@
   outline: 2px solid var(--primario);
   outline-offset: 2px;
 }
-.ponerFoto[aria-busy] {
-  cursor: progress;
-}
 .fotoPuesta {
   display: grid;
   grid-template-areas: "mini texto quitar";

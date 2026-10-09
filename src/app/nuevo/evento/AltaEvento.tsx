@@ -189,8 +189,9 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           <TiraTipos actual="evento" destinos={{ lugar: enlaceAltaDeTipo("lugar", ciudadContexto?.slug ?? null), artista: enlaceAltaDeTipo("artista", ciudadContexto?.slug ?? null) }} />
         </>
       )}
-      <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} clases />
-      {paso === "revisa" && (
+      {/* La espera del cartel dura hasta que la imagen subida se ve (OL-353): mientras, solo ella, aunque el paso ya haya avanzado. */}
+      {!cartel.espera && <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} clases />}
+      {!cartel.espera && paso === "revisa" && (
         <Revisa
           r={r}
           zona={zona}

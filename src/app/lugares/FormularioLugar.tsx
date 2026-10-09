@@ -24,6 +24,8 @@ import { horarioParaEnviar, type Franja } from "@/lib/horarioLugar";
 import { etiquetaTipo, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { subirFoto } from "@/lib/subirFoto";
+import FotoSubida from "@/components/ui/FotoSubida";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
@@ -88,7 +90,8 @@ export default function FormularioLugar({ accion, lugar, horario: horarioInicial
   const [ubicando, setUbicando] = useState(false);
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
   const [portada, setPortada] = useState<string | null>(lugar.portada ?? null);
-  const [subiendo, setSubiendo] = useState(false);
+  const subida = useSubidaDeFoto();
+  const subiendo = !!subida.subiendo;
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
   const [privado, setPrivado] = useState(!!lugar.privado);
   const formRef = useRef<HTMLFormElement>(null);
@@ -121,16 +124,15 @@ export default function FormularioLugar({ accion, lugar, horario: horarioInicial
     });
   }
 
-  async function subirPortada(e: React.ChangeEvent<HTMLInputElement>) {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
-    setSubiendo(true);
-    setErrorPortada(null);
-    const r = await subirFoto("lugares", usuarioId, "portada", archivo);
-    if ("error" in r) setErrorPortada(r.error);
-    else setPortada(r.url);
-    setSubiendo(false);
-  }
+  // La portada se sube con la espera de toda la app (`useSubidaDeFoto`, OL-353): la foto elegida late en su hueco hasta que la subida se ve.
+  const subirPortada = (e: React.ChangeEvent<HTMLInputElement>) =>
+    subida.subir(e, async (archivo) => {
+      setErrorPortada(null);
+      const r = await subirFoto("lugares", usuarioId, "portada", archivo);
+      if ("error" in r) return setErrorPortada(r.error);
+      setPortada(r.url);
+      return r.url;
+    });
 
   // Lo único que dice qué falta es la nota bajo el botón.
   const falta = faltaEnLugar({ nombre, ubicado: true });
@@ -255,11 +257,8 @@ export default function FormularioLugar({ accion, lugar, horario: horarioInicial
             <div className={renglon.cuerpo} hidden={!masAbierto}>
               <Campo etiqueta="Descripción corta" name="descripcion" multilinea defaultValue={lugar.descripcion ?? ""} maxLength={LIMITES_LUGAR.descripcion} placeholder="Qué es y qué pasa ahí" error={errores.descripcion} mostrarContador />
               <SelectorEnlaces inicial={normalizarRedes(lugar.redes)} error={errores.enlaces} />
-              {portada && (
-                // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                <img src={portada} alt="" className={styles.portada} />
-              )}
-              <label className={canon.subir}>
+              <FotoSubida src={portada} vista={subida.vista} className={styles.portada} />
+              <label className={canon.subir} aria-busy={subiendo || undefined}>
                 <input type="file" accept="image/*" onChange={subirPortada} disabled={subiendo} />
                 {subiendo ? "Subiendo…" : portada ? "Cambiar la foto" : "Poner una foto de portada"}
               </label>

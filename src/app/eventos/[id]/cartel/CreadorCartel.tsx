@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import BotonDescargarCartel from "@/components/BotonDescargarCartel";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import PorPasos, { PiePaso, type Direccion } from "@/components/PorPasos";
@@ -8,8 +8,10 @@ import { useTerminar, useVolverA } from "@/components/ui/Atras";
 import Boton, { claseBoton } from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip, Chips } from "@/components/ui/Chip";
+import { claseSubiendo } from "@/components/ui/FotoSubida";
 import Hoja from "@/components/ui/Hoja";
 import { IconoDescarga } from "@/components/ui/Iconos";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import { PREFIJO_FOTO_PROPIA } from "@/lib/carteles/fotoPropia";
 import { reponerRecordado, type Paso, type Recordado } from "@/lib/carteles/memoria";
 import type { OrigenCreador } from "@/lib/carteles/origen";
@@ -51,6 +53,20 @@ const TOPE_TITULO = 80;
 const ESPERA_ROL_MS = 250;
 const INTENTOS_ROL = 20;
 
+
+/**
+ * Una de las cuatro opciones, que dibuja el servidor (360 de ancho). Mientras llega —al abrir, con «Ver otros diseños» y, sobre todo, al
+ * redibujarse con la foto propia recién puesta— lleva la espera de subida de toda la app (`claseSubiendo`, OL-353) sobre el gris de su caja.
+ * Si la imagen ya estaba (del caché, o llegó antes de hidratar), sin espera.
+ */
+function Miniatura({ src }: { src: string }) {
+  const [cargada, setCargada] = useState<string | null>(null);
+  const yaEsta = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete) setCargada(src);
+  }, [src]);
+  // eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor ya a su tamaño (360 de ancho)
+  return <img ref={yaEsta} src={src} alt="" width={360} height={450} className={cargada === src ? undefined : claseSubiendo} onLoad={() => setCargada(src)} onError={() => setCargada(src)} />;
+}
 /** Mide que se abrió el creador y desde dónde (OL-336), una vez al montarse. */
 function useMedirApertura(origen: Props["origen"]) {
   useEffect(() => {
@@ -101,10 +117,8 @@ export default function CreadorCartel({ evento, tandas: tandasSinFoto, tandasCon
   const [error, setError] = useState<string | null>(null);
   const [usando, empezar] = useTransition();
   const [foto, setFoto] = useState<string | null>(null);
-  const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
-  // Una subida a la vez: el toque que llega mientras sube no hace nada nuevo.
-  const subiendo = useRef(false);
+  const subida = useSubidaDeFoto();
 
   useMemoriaPantalla<Recordado>(null, { paso, tanda, plantilla, formato, titulo, foto }, (guardado) => {
     const r = reponerRecordado(guardado, { tandas: tandasSinFoto.length, tandasConFoto: tandasConFoto.length, carpeta });
@@ -151,29 +165,24 @@ export default function CreadorCartel({ evento, tandas: tandasSinFoto, tandasCon
     medirCliente("cartel_ninguno", { tanda: tandaMedida(tanda) });
     aLaFicha();
   };
-  // «Usar otra foto»: sube, el servidor comprueba que sirve y entonces entra a los diseños. Si no, un aviso corto y todo sigue igual.
-  const ponerFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const archivo = e.target.files?.[0];
-    e.target.value = ""; // la misma foto se puede volver a elegir
-    if (!archivo || subiendo.current) return;
-    subiendo.current = true;
-    setErrorFoto(null);
-    setSubiendoFoto(true);
-    try {
-      const subida = await subirFoto("lugares", usuarioId, PREFIJO_FOTO_PROPIA, archivo, "foto", "cartel");
-      if ("error" in subida) return setErrorFoto(subida.error);
-      const r = await comprobarFotoPropia(evento.slug, subida.url);
-      if (!r.ok) return setErrorFoto(r.mensaje);
-      medirCliente("cartel_foto_puesta");
-      setFoto(subida.url);
-      setTanda((t) => (t < tandasConFoto.length ? t : 0));
-    } catch {
-      setErrorFoto("No se pudo subir la foto. Intenta de nuevo.");
-    } finally {
-      subiendo.current = false;
-      setSubiendoFoto(false);
-    }
-  };
+  // «Usar otra foto»: sube, el servidor comprueba que sirve y entonces entra a los diseños. Si no, un aviso corto y todo sigue igual. Mientras
+  // tanto, la foto elegida late en el renglón (`useSubidaDeFoto`, OL-353).
+  const ponerFoto = (e: React.ChangeEvent<HTMLInputElement>) =>
+    subida.subir(e, async (archivo) => {
+      setErrorFoto(null);
+      try {
+        const hecho = await subirFoto("lugares", usuarioId, PREFIJO_FOTO_PROPIA, archivo, "foto", "cartel");
+        if ("error" in hecho) return setErrorFoto(hecho.error);
+        const r = await comprobarFotoPropia(evento.slug, hecho.url);
+        if (!r.ok) return setErrorFoto(r.mensaje);
+        medirCliente("cartel_foto_puesta");
+        setFoto(hecho.url);
+        setTanda((t) => (t < tandasConFoto.length ? t : 0));
+        return hecho.url;
+      } catch {
+        setErrorFoto("No se pudo subir la foto. Intenta de nuevo.");
+      }
+    });
   const quitarFoto = () => {
     medirCliente("cartel_foto_quitada");
     setFoto(null);
@@ -216,13 +225,12 @@ export default function CreadorCartel({ evento, tandas: tandasSinFoto, tandasCon
   if (paso === "elegir" || !elegida) {
     return (
       <PorPasos titulo="Crear cartel" paso={`elegir-${tanda}`} direccion={direccion} avance={0.5} salida={salida} pregunta="¿Cuál te gusta?">
-        <FotoDelCartel foto={foto} conImagen={conImagen} subiendo={subiendoFoto} error={errorFoto} onElegir={ponerFoto} onQuitar={quitarFoto} />
+        <FotoDelCartel foto={foto} vista={subida.vista} conImagen={conImagen} error={errorFoto} onElegir={ponerFoto} onQuitar={quitarFoto} />
         <ul className={styles.opciones} aria-label="Diseños">
           {opciones.map((o) => (
             <li key={o.id}>
               <button type="button" className={styles.opcion} onClick={() => elegir(o.id)} aria-label={o.sinFoto ? `${o.nombre}, sin foto` : o.nombre}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor ya a su tamaño (360 de ancho) */}
-                <img src={hrefCartel(evento.slug, { plantilla: o.id, formato: "4x5", ancho: 360, titulo: propio, ...conFoto(o), v })} alt="" width={360} height={450} />
+                <Miniatura src={hrefCartel(evento.slug, { plantilla: o.id, formato: "4x5", ancho: 360, titulo: propio, ...conFoto(o), v })} />
               </button>
             </li>
           ))}

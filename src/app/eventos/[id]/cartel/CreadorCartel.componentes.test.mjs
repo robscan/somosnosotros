@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
-import { capturaPng, navegadorDoble } from "../../../../lib/imagenDePrueba.mjs";
+import { capturaPng, fotoGirada, navegadorDoble } from "../../../../lib/imagenDePrueba.mjs";
 
 const root = fileURLToPath(new URL("../../../../../", import.meta.url));
 const TOPE = { timeout: 30000 };
@@ -272,4 +272,40 @@ test("una captura de pantalla PNG de más de 5 MB se pone como foto propia: «Su
   assert.equal(await p.getByRole("alert").count(), 0);
   await p.locator("img[width='44']").evaluate((e) => e.decode());
   await foto(p, "383-cartel-2-tu-foto");
+});
+
+/**
+ * OL-353 (bitácora 384): la espera de subida de la foto propia, con Storage lento (`retrasoStorage`, 2 s): en cuanto se elige, el renglón de la
+ * foto con la foto de la persona (`blob:`) atenuada y «Subiendo la foto…», con `aria-busy` y sin «Usar otra foto»; al terminar, «Tu foto», y
+ * las cuatro miniaturas esperan igual hasta que el servidor las redibuja. Si Storage falla, la espera se quita y vuelve «Usar otra foto».
+ */
+test("con Storage lento la foto propia espera atenuada en su renglón, las miniaturas esperan su redibujo y un fallo deja todo como estaba (OL-353)", TOPE, async (t) => {
+  const p = await pagina(t, { real: true, retrasoStorage: 2000 });
+  // Las miniaturas con la foto tardan en dibujarse (el servidor del cartel); las de siempre no.
+  await p.context().route("**/api/cartel-nuevo/**", async (r) => {
+    if (new URL(r.request().url()).searchParams.get("foto")) await new Promise((x) => setTimeout(x, 1500));
+    await r.fulfill({ contentType: "image/png", body: PNG });
+  });
+  await p.locator('input[type="file"]').setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  const vista = p.locator('[aria-busy="true"] img[src^="blob:"]');
+  await vista.waitFor();
+  assert.equal(await vista.evaluate((e) => getComputedStyle(e).opacity), "0.6");
+  assert.equal(await p.locator('[aria-busy="true"]').innerText(), "Subiendo la foto…");
+  assert.equal(await p.locator('input[type="file"]').count(), 0, "mientras sube no se puede elegir otra");
+  await foto(p, "384-creador-1-subiendo");
+  await p.getByText("Tu foto").waitFor({ timeout: 15000 });
+  assert.equal(await p.locator('[aria-busy="true"]').count(), 0);
+  // El redibujo de las cuatro con la foto: esperan atenuadas hasta llegar.
+  const atenuadas = () => p.locator('ul[aria-label="Diseños"] img').evaluateAll((imgs) => imgs.filter((i) => getComputedStyle(i).opacity === "0.6").length);
+  assert.ok((await atenuadas()) > 0, "las miniaturas con la foto esperan");
+  await foto(p, "384-creador-2-redibujo");
+  await p.waitForFunction(() => [...document.querySelectorAll('ul[aria-label="Diseños"] img')].every((i) => getComputedStyle(i).opacity === "1"), null, { timeout: 10000 });
+
+  const q = await pagina(t, { real: true, retrasoStorage: 1000, falloStorage: true });
+  await q.locator('input[type="file"]').setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await fotoGirada(browser) });
+  await q.locator('[aria-busy="true"] img[src^="blob:"]').waitFor();
+  await q.getByRole("alert").waitFor({ timeout: 15000 });
+  assert.equal(await q.locator('[aria-busy="true"]').count(), 0);
+  assert.equal(await q.getByText("Tu foto").count(), 0);
+  assert.equal(await q.getByText("Usar otra foto").count(), 1);
 });

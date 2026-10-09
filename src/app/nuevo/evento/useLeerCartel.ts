@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { leerCartelAccion, type Cupo } from "@/app/eventos/acciones";
 import { detalleDeLecturas, falloAlSubir, falloDeCorte, lecturaAgotada, seLee } from "@/app/eventos/estadoCartel";
 import { medirCliente } from "@/lib/medir";
+import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import { subirFoto } from "@/lib/subirFoto";
 import type { Leido } from "./cartelPorPasos";
 
@@ -31,11 +32,12 @@ type Opciones = {
  * sin servicio— o si la lectura falla (el modelo, un corte, o ya no había cupo en el servidor), el cartel queda guardado y se sigue a las
  * preguntas (`alGuardar`): nunca vuelve al recuadro. Solo si el cartel no llegó a subirse (`error`) la pantalla se queda en el primer paso,
  * con el recuadro igual para intentarlo otra vez. Nunca lanza ni se queda esperando: si se cae la señal a mitad (bitácora 095), cae en eso mismo.
- * `espera` es lo que dice la pantalla de espera (null en reposo): «leyendo» o «subiendo».
+ * `espera` es lo que dice la pantalla de espera (null en reposo): «leyendo» o «subiendo»; dura hasta que el cartel subido se puede dibujar.
  */
 export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, inicial = null, marcada: marcadaDeEntrada = true }: Opciones) {
-  const [espera, setEspera] = useState<"subiendo" | "leyendo" | null>(null);
-  const [miniatura, setMiniatura] = useState<string | null>(null);
+  // La subida en curso (OL-353): la vista local del cartel y una subida a la vez. `leyendo`: si esta subida también se lee.
+  const { subiendo, vista, subir } = useSubidaDeFoto();
+  const [leyendo, setLeyendo] = useState(false);
   const [subido, setSubido] = useState<CartelSubido | null>(() => (inicial ? { url: inicial, leido: false, noPude: false } : null));
   const [error, setError] = useState<string | null>(null);
   // En el alta la casilla «Lectura automática» arranca marcada: leer es lo normal, y desmarcarla es solo para el cartel que no se quiere leer.
@@ -43,8 +45,6 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
   const [marcada, setMarcada] = useState(marcadaDeEntrada);
   // El cupo con el que se abrió, al día con lo que se lee aquí (cada lectura buena resta una; un «ya no hay» del servidor lo agota).
   const [cupoActual, setCupoActual] = useState(cupo);
-  // Una subida o lectura a la vez; el toque que llega mientras tanto no hace nada nuevo.
-  const ocupado = useRef(false);
   // Lo último que se subió y los últimos gestos, para que una promesa que tarda no use los de hace rato.
   const imagen = useRef<string | null>(inicial);
   const gestos = useRef({ alLeer, alGuardar });
@@ -53,64 +53,56 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
   }, [alLeer, alGuardar]);
 
   const elegir = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const archivo = e.target.files?.[0];
-      e.target.value = ""; // el mismo archivo se puede volver a elegir
-      if (!archivo || ocupado.current) return;
-      ocupado.current = true;
-      const leer = seLee({ servicio, marcada, cupo: cupoActual });
-      // El cartel a la vista desde el primer instante, sin esperar a que suba.
-      const vista = URL.createObjectURL(archivo);
-      setMiniatura(vista);
-      setError(null);
-      setEspera(leer ? "leyendo" : "subiendo");
-      let url: string | null = null;
-      try {
-        const subida = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen", "cartel");
-        if ("error" in subida) {
-          const f = falloAlSubir(imagen.current, subida.error, subida.motivo);
-          setError(`${f.titulo}. ${f.mensaje}`);
-          return;
-        }
-        url = subida.url;
-        imagen.current = url;
-        if (!leer) {
-          setSubido({ url, leido: false, noPude: false });
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      // La espera (y el cartel a la vista, desde el primer instante) dura hasta que la imagen subida se puede dibujar (`useSubidaDeFoto`).
+      subir(e, async (archivo) => {
+        const leer = seLee({ servicio, marcada, cupo: cupoActual });
+        setLeyendo(leer);
+        setError(null);
+        let url: string | null = null;
+        try {
+          const hecho = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen", "cartel");
+          if ("error" in hecho) {
+            const f = falloAlSubir(imagen.current, hecho.error, hecho.motivo);
+            setError(`${f.titulo}. ${f.mensaje}`);
+            return null;
+          }
+          url = hecho.url;
+          imagen.current = url;
+          if (!leer) {
+            setSubido({ url, leido: false, noPude: false });
+            gestos.current.alGuardar();
+            return url;
+          }
+          const r = await leerCartelAccion(url);
+          if (r.ok) {
+            medirCliente("cartel_leido", { resultado: "ok" });
+            setSubido({ url, leido: true, noPude: false });
+            setCupoActual((c) => (c && !c.sinTope ? { ...c, usadas: c.usadas + 1 } : c));
+            gestos.current.alLeer(r);
+            return url;
+          }
+          // Ya no había cupo en el servidor (se gastó en otra pantalla): el cartel queda guardado y se sigue, sin decir que falló. Fallo de la lectura: «no pude leerlo».
+          const sinCupo = "sinCupo" in r;
+          if (!sinCupo) medirCliente("cartel_leido", { resultado: "fallo" });
+          if (sinCupo) setCupoActual((c) => (c ? { ...c, usadas: Math.max(c.usadas, c.tope) } : c));
+          setSubido({ url, leido: false, noPude: !sinCupo });
           gestos.current.alGuardar();
-          return;
+          return url;
+        } catch {
+          // Se cortó a mitad. Si el cartel ya estaba subido se queda y se sigue; si no, no llegó a guardarse.
+          if (url) {
+            if (leer) medirCliente("cartel_leido", { resultado: "fallo" }); // se cortó leyendo
+            setSubido({ url, leido: false, noPude: true });
+            gestos.current.alGuardar();
+          } else {
+            const f = falloDeCorte(null, imagen.current);
+            setError(`${f.titulo}. ${f.mensaje}`);
+          }
+          return url;
         }
-        const r = await leerCartelAccion(url);
-        if (r.ok) {
-          medirCliente("cartel_leido", { resultado: "ok" });
-          setSubido({ url, leido: true, noPude: false });
-          setCupoActual((c) => (c && !c.sinTope ? { ...c, usadas: c.usadas + 1 } : c));
-          gestos.current.alLeer(r);
-          return;
-        }
-        // Ya no había cupo en el servidor (se gastó en otra pantalla): el cartel queda guardado y se sigue, sin decir que falló. Fallo de la lectura: «no pude leerlo».
-        const sinCupo = "sinCupo" in r;
-        if (!sinCupo) medirCliente("cartel_leido", { resultado: "fallo" });
-        if (sinCupo) setCupoActual((c) => (c ? { ...c, usadas: Math.max(c.usadas, c.tope) } : c));
-        setSubido({ url, leido: false, noPude: !sinCupo });
-        gestos.current.alGuardar();
-      } catch {
-        // Se cortó a mitad. Si el cartel ya estaba subido se queda y se sigue; si no, no llegó a guardarse.
-        if (url) {
-          if (leer) medirCliente("cartel_leido", { resultado: "fallo" }); // se cortó leyendo
-          setSubido({ url, leido: false, noPude: true });
-          gestos.current.alGuardar();
-        } else {
-          const f = falloDeCorte(null, imagen.current);
-          setError(`${f.titulo}. ${f.mensaje}`);
-        }
-      } finally {
-        URL.revokeObjectURL(vista);
-        setMiniatura(null);
-        setEspera(null);
-        ocupado.current = false;
-      }
-    },
-    [usuarioId, servicio, marcada, cupoActual],
+      }),
+    [subir, usuarioId, servicio, marcada, cupoActual],
   );
 
   // La casilla: sin servicio no hay; agotada va apagada, con cuándo vuelven; si no, marcada o no según la persona.
@@ -124,5 +116,6 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
   }, []);
   const poner = useCallback((url: string | null) => setSubido(url ? { url, leido: false, noPude: false } : null), []);
 
-  return { espera, miniatura, subido, error, casilla, elegir, quitar, poner };
+  const espera: "subiendo" | "leyendo" | null = subiendo ? (leyendo ? "leyendo" : "subiendo") : null;
+  return { espera, miniatura: vista, subido, error, casilla, elegir, quitar, poner };
 }
