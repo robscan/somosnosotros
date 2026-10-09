@@ -10,8 +10,8 @@
 #   REFERENCIA — no es ley: se lee para no reinventar; el canon nuevo se escribe aparte.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IOS=/Users/apple-1/flowya-ios
-WEB=/Users/apple-1/flowya-app
+IOS=/Users/apple-1/Proyectos/flowya/flowya-ios
+WEB=/Users/apple-1/Archivo/flowya/flowya-app
 IOS_SHA=$(git -C "$IOS" rev-parse --short HEAD)
 WEB_SHA=$(git -C "$WEB" rev-parse --short HEAD)
 OUT="$ROOT/docs/heredado"

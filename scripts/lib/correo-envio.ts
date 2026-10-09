@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 
-export const RUTA_ENV = "/Users/apple-1/somosnosotros/.env";
+export const RUTA_ENV = "/Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env";
 
 /** Carga las variables de `ruta` sin pisar las que ya estén puestas en el entorno; nunca las imprime. */
 export function cargarEnv(ruta: string = RUTA_ENV): void {

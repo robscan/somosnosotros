@@ -5,8 +5,8 @@
 // y node scripts/fotos/correr.mjs artistas scripts/capo/salida/fotos-capo-subidas.json --autor <id> --hotlink [--simular]
 import { chromium } from "playwright-core";
 import fs from "fs";
-const datos = JSON.parse(fs.readFileSync("/Users/apple-1/somosnosotros/scripts/capo/salida/fotos-capo.json","utf8"));
-const CACHE = "/Users/apple-1/somosnosotros/scripts/capo/salida/html/";
+const datos = JSON.parse(fs.readFileSync("/Users/apple-1/Proyectos/somosnosotros/somosnosotros/scripts/capo/salida/fotos-capo.json","utf8"));
+const CACHE = "/Users/apple-1/Proyectos/somosnosotros/somosnosotros/scripts/capo/salida/html/";
 const nombreCache = u => decodeURIComponent(u.replace(/^https:\/\/www\.catalogoartistaspotosino\.com\/catalogoartistaspotosino\//,"")).replace(/\//g,"-").replace(/_/g,"-")+".html";
 const base = u => u.replace(/=w.*$/,"").replace(/=s\d+.*$/,"");
 const re=/https:\/\/lh[^"'\s\\]+googleusercontent\.com\/sitesv[^"'\s\\]*/g;

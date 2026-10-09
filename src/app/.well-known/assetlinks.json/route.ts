@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
  * así que hacen falta las dos y nunca se quita ninguna (la de subida cubre el APK que se instala a mano con
  * `adb`; la de Google, lo que baja de Play):
  * - `HUELLA_SUBIDA`: SHA-256 de la llave de subida (`subida.keystore`, alias `subida`, guardada fuera del repo en
- *   somosnosotros-privado/android/).
+ *   ~/Proyectos/somosnosotros/privado/android/).
  * - `HUELLA_FIRMA_GOOGLE`: SHA-256 de la llave de firma de apps de Google, tomada de Play Console (Prueba y lanza →
  *   Configuración → Integridad de la app → Firma de apps) tras la primera subida, el 2026-10-06. Con las dos huellas,
  *   la app instalada desde Play se abre a pantalla completa, sin la barra de direcciones de Chrome.

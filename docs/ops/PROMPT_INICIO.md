@@ -1,4 +1,4 @@
-# Prompt de inicio para el siguiente chat en `/Users/apple-1/somosnosotros/`
+# Prompt de inicio para el siguiente chat en `/Users/apple-1/Proyectos/somosnosotros/somosnosotros/`
 
 Copia y pega esto como primer mensaje del chat nuevo (Claude Code abierto en esa carpeta):
 
