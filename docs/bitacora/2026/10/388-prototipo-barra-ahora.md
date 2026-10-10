@@ -130,6 +130,20 @@ Con eventos de puntero, mantener 600 ms detiene la historia y al soltar sigue en
 - `21-historia-acto-de-festival.png` — sáb 31 oct a las 13:00: «Efecto Tlacoyo en Electric Universe Festival», el cartel sobre el morado sacado de él.
 - `22-historia-sin-cartel-a-320.png` — la historia tipográfica a 320: el título en dos líneas, sin cortes.
 
+**Cuarta opción de tarjeta: «título + cartel»** (founder: «¿podrías hacer una versión con tarjetas título grande y el cartel abajo para los que tienen?»), ahora la que sale por defecto. Es la tarjeta «Essentials» de Apple Music: arriba, una franja con el título corto (hasta tres líneas) sobre el degradado de su cartel; abajo, el cartel llena lo que queda, recortado desde arriba, que es donde suelen decir qué son. Sin cartel, la tarjeta entera es de título. En una tarjeta de 165×248, la franja mide 59 a 78 px y el cartel 169 a 188.
+
+Al hacerla se afinó el título corto:
+- Sin dos puntos, corta en una coma seguida de minúscula: «Presentación de Caracolas para Luciana, de Jacobo Reyna» queda en «Presentación de Caracolas para Luciana».
+- Se salta el tipo («Inauguración: Dos siglos…» queda en «Dos siglos a través de la lente»; «Inauguración: DESIERTO: …» en «DESIERTO») y el nombre del festival («CINEMA: El atractivo de la resistencia, …» queda en «El atractivo de la resistencia»), solo si lo que sigue empieza con mayúscula.
+- «Verbena, Ritmo y Sabor: verbena musical» se queda con el festival.
+- El corte a tres líneas va en el texto y no en la franja; antes asomaba la cuarta línea.
+
+Comprobado con un toque real en una tarjeta (dice qué ficha se abriría); el ancho se mantiene en 390.
+
+- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre granate con su cartel debajo (la foto y «Hoy») y «LABORATORIO DE EXPLORACIÓN SONORA» sobre azul y violeta con su cartel negro.
+- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre verde con el cartel debajo, y la canción (sin cartel) entera de título.
+- `25-tarjetas-titulo-y-cartel-a-320.png` — lo mismo a 320, sin cortes.
+
 **Lo que costaría en la app** (después de la firma):
 - **Colores del cartel:** se calculan una vez, al subirlo (cuatro colores guardados con el evento, en la misma pasada que ya lo reduce, OL-352). Ni las tarjetas ni las historias vuelven a pedir la imagen para eso.
 - **Portada de un evento sin cartel:** la regla del founder dice «sin portada, imagen ya generada con el símbolo SN, nunca compuesta en vivo». La portada de degradado se generaría como imagen con el creador de cartel (satori, OL-324: una plantilla más), así que cumple la regla. Solo el fondo de la historia se mueve en vivo.

@@ -188,9 +188,17 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
    el título corto arriba a la izquierda, en mayúsculas, sobre el degradado de los colores de su cartel; las luces van abajo y a la derecha
    para que la esquina del título quede oscura y el blanco se lea. */
 .portada.titular { display: grid; align-content: start; padding: var(--espacio-3); color: #fff; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); text-wrap: balance; }
+/* «Título + cartel» (founder, 2026-10-09: «una versión con tarjetas título grande y el cartel abajo para los que tienen»), como la
+   tarjeta «Essentials» de Apple Music: arriba la franja con el título corto sobre el degradado de su cartel (hasta tres líneas); abajo, el
+   cartel llena lo que queda, recortado desde arriba (ahí suele ir lo que dice qué es). Sin cartel, la tarjeta es entera de título. */
+.portada.mixta { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.portada.mixta > img { position: static; inset: auto; width: 100%; height: 100%; min-height: 0; object-fit: cover; object-position: center top; }
+.m-titulo { padding: var(--espacio-3) var(--espacio-3) 10px; color: #fff; font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-wrap: balance; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }
+/* El corte a tres líneas va en el texto, no en la franja: con el relleno en el mismo elemento, la cuarta línea asoma por debajo. */
+.m-titulo > span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .portada .hoy { position: absolute; left: var(--espacio-2); bottom: var(--espacio-2); padding: 2px var(--espacio-3); border-radius: var(--radio-pildora); background: var(--primario); color: #fff; font-size: var(--letra-sm); font-weight: 700; font-variation-settings: var(--ancho-titulo); }
 .portada.generada .hoy { top: var(--espacio-2); bottom: auto; }
-.portada.titular .hoy { text-transform: none; text-shadow: none; }
+.portada.titular .hoy, .portada.mixta .hoy { text-transform: none; text-shadow: none; }
 .tarjeta b { font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tarjeta .cuando { color: var(--primario); font-size: var(--letra-sm); font-weight: 500; }
 .tarjeta .donde { color: var(--texto-suave); font-size: var(--letra-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -243,7 +251,8 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
     <option value="barra">Barra sola (v1)</option>
   </select>
   <select id="tarjetas" aria-label="Tarjetas">
-    <option value="titulo" selected>Tarjetas: título grande</option>
+    <option value="mixta" selected>Tarjetas: título + cartel</option>
+    <option value="titulo">Tarjetas: título grande</option>
     <option value="cartel">Tarjetas: cartel</option>
   </select>
   <select id="dia" aria-label="Día">
@@ -280,7 +289,7 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
       <li><b>Ahora</b>: ya empezó y no ha terminado. Sin hora de fin, termina 3 h después de empezar (regla nueva para toda la app).</li>
       <li><b>En un rato</b>: empieza en menos de 2 h. <b>Exposiciones</b>: solo el día que inaugura o el último. <b>Hoy</b>: más tarde hoy. <b>Mañana</b>: si ya no queda nada hoy, o desde las 20:00. Tope de 8; del festival, sus actos.</li>
       <li><b>Historias</b>: toca la barra o un círculo. Toca a la derecha para la siguiente y a la izquierda para la anterior, mantén el dedo para detenerla y desliza hacia abajo para salir.</li>
-      <li><b>Tarjetas: título grande</b>: en Inicio se lee; el cartel se mira al abrir la historia. El título corto es lo que va antes de los dos puntos («La música de la generación trentina: docufilm…»), y el color sale del cartel.</li>
+      <li><b>Tarjetas: título + cartel</b>: la franja con el título arriba y el cartel abajo; sin cartel, la tarjeta entera de título. <b>Tarjetas: título grande</b>: en Inicio se lee; el cartel se mira al abrir la historia. El título corto es lo que va antes de los dos puntos («La música de la generación trentina: docufilm…»), y el color sale del cartel.</li>
       <li><b>Estética</b>: el cartel del lugar o del artista va tal cual. Lo que arma la app, el fondo de la historia y la portada de un evento sin cartel, lleva nuestros degradados: del color del cartel o, sin cartel, de una paleta propia (Cantera, Xantolo, Huasteca, Real de Catorce, Media Luna, Tangamanga).</li>
     </ol>
   </details>
@@ -409,8 +418,16 @@ const degradadoCSS = (c) => `radial-gradient(110% 70% at 15% 12%, ${c[1]} 0%, ${
 // El fondo es el color más vivo a media luz (como los bloques de la v1, llenos y oscuros), no el casi negro de la historia.
 const mitad = (hex, f = 0.5) => { const n = parseInt(hex.slice(1), 16); return '#' + [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * f).toString(16).padStart(2, '0')).join(''); };
 const degradadoTarjeta = (c) => `radial-gradient(90% 60% at 100% 35%, ${hexA(c[2], 0.9)} 0%, ${hexA(c[2], 0)} 70%), radial-gradient(110% 70% at 0% 110%, ${hexA(c[3], 0.85)} 0%, ${hexA(c[3], 0)} 68%), ${mitad(c[1])}`;
-// El título corto: lo que va antes de los dos puntos, como ya se escriben los títulos de la app.
-const tituloCorto = (t) => t.split(/:\s/)[0];
+// El título corto: lo que va antes de los dos puntos, como ya se escriben los títulos de la app. Si eso es solo el tipo («Inauguración: Dos
+// siglos…») o el nombre de su festival («CINEMA: El atractivo…») y sigue un nombre, ese nombre. Sin dos puntos, lo que va antes de una coma seguida de
+// minúscula («…, de Jacobo Reyna», «…, taller con Yanel Villarreal»); una coma dentro del nombre («Verbena, Ritmo y Sabor») no corta.
+const TIPOS = /^(inauguración|presentación|concierto|taller|charla|conferencia|exposición|proyección|recital|función|clausura|cine)$/i;
+function tituloCorto(t, festival) {
+  const i = t.search(/:\s/);
+  // Se salta el tipo o el festival solo si lo que sigue es un nombre (empieza con mayúscula): «…: verbena musical» se queda con el festival.
+  if (i > 0) { const antes = t.slice(0, i), resto = t.slice(i + 2); return (TIPOS.test(antes) || antes === festival) && /^[¡«"]?\p{Lu}/u.test(resto) ? tituloCorto(resto, festival) : antes; }
+  return t.split(/,\s(?=\p{Ll})/u)[0].replace(/\.$/, '');
+}
 
 // ===== La lógica: minutos del día, sin zonas (todo es de San Luis Potosí).
 const min = (h) => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
@@ -460,7 +477,7 @@ function rotulo(a) {
 // ===== El estado del prototipo.
 const $ = (id) => document.getElementById(id);
 let dia = '2026-10-09', ahora = min('16:15'), vivo = false, reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let formato = 'barra-historias', estetica = 'vivo', modoTarjetas = 'titulo';
+let formato = 'barra-historias', estetica = 'vivo', modoTarjetas = 'mixta';
 let todo = [], avisos = [], indice = 0, temporizador = null, pausada = false, hojaAbierta = false;
 const vistos = new Set(), interesan = new Set();
 
@@ -788,7 +805,8 @@ function cuandoTarjeta(e) {
 }
 function tarjeta(e) {
   const hoy = e.dia === dia ? '<span class="hoy">Hoy</span>' : '';
-  if (modoTarjetas === 'titulo') return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t)}${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
+  if (modoTarjetas === 'mixta' && e.cartel) return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada mixta"><span class="m-titulo" style="background:${degradadoTarjeta(coloresDe(e))}"><span>${tituloCorto(e.t, e.festival)}</span></span><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
+  if (modoTarjetas === 'titulo' || modoTarjetas === 'mixta') return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t, e.festival)}${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
   const portada = !e.cartel && estetica === 'vivo'
     ? `<span class="portada generada" style="background:${degradadoCSS(paletaDe(e.id).c)}"><img class="sello" src="barra-ahora/logotipo.svg" alt=""><span class="g-titulo">${e.t.split(/:\s/)[0]}</span>${hoy}</span>`
     : `<span class="portada"><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span>`;
