@@ -50,7 +50,7 @@ export default function TarjetaEvento({ t, tamano, decision }: Props) {
         </Chip>
       )}
       {/* Cada parte de la ceja no se parte; si no caben en un renglón, la segunda baja entera y el punto se queda al final del primero. */}
-      {ceja.length > 0 && <span className={styles.ceja}>{ceja.map((parte) => parte.replaceAll(" ", " ")).join(" · ")}</span>}
+      {ceja.length > 0 && <span className={styles.ceja}>{ceja.map((parte) => parte.replaceAll(" ", "\u00a0")).join("\u00a0· ")}</span>}
     </>
   );
   return (

@@ -480,7 +480,7 @@ test("firmada: la clase arriba del título solo si no es un evento, con su sesi�
       const c = [...a.children].find((x) => getComputedStyle(x).letterSpacing !== "normal");
       if (!c) return null;
       const titulo = a.querySelector(":scope > b").getBoundingClientRect(), r = c.getBoundingClientRect();
-      return { texto: c.innerText.replace(/ /g, " "), color: getComputedStyle(c).color, letra: getComputedStyle(c).fontSize, encima: r.bottom <= titulo.top + 0.5, renglones: Math.round(r.height / parseFloat(getComputedStyle(c).lineHeight)) };
+      return { texto: c.innerText.replace(/\u00a0/g, " "), color: getComputedStyle(c).color, letra: getComputedStyle(c).fontSize, encima: r.bottom <= titulo.top + 0.5, renglones: Math.round(r.height / parseFloat(getComputedStyle(c).lineHeight)) };
     });
   assert.deepEqual(await ceja("ev-taller"), { texto: "TALLER · SESIÓN 1 DE 4", color: "rgb(92, 92, 92)", letra: "12px", encima: true, renglones: 1 });
   assert.equal((await ceja("ev-festival")).texto, "FESTIVAL");
@@ -543,7 +543,7 @@ test("firmada: sin cartel, la portada con su paleta, el símbolo SN arriba a la 
       simbolo: [Math.round(r(svg).left - pr.left), Math.round(r(svg).top - pr.top), Math.round(r(svg).height), getComputedStyle(svg).color],
       sello: [Math.round(pr.right - r(sello).right), Math.round(r(sello).top - pr.top)],
       titulo: [Math.round(pr.bottom - r(titulo).bottom), Math.round(r(titulo).left - pr.left), getComputedStyle(titulo).textTransform, getComputedStyle(titulo).color],
-      apilados: r(chip).bottom <= r(ceja).top + 0.5 && r(ceja).bottom <= r(titulo).top + 0.5, ceja: ceja.innerText.replace(/ /g, " "),
+      apilados: r(chip).bottom <= r(ceja).top + 0.5 && r(ceja).bottom <= r(titulo).top + 0.5, ceja: ceja.innerText.replace(/\u00a0/g, " "),
       debajo: [lugar.textContent, cuando.textContent], fuera: r(lugar).top >= pr.bottom,
     };
   });
