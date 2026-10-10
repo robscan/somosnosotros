@@ -176,17 +176,28 @@
    de siempre. La imagen de dentro (`Cartel`) deja su 3:2 y se estira a la figura. */
 .portada.oscura {
   display: grid;
-  aspect-ratio: 4 / 3;
+  min-height: var(--alto-cabecera-oscura); /* OL-363: el cartel se ve aunque el título sea corto; con título largo la celda crece */
   align-self: stretch;
-  max-height: 60dvh;
   background: var(--banda);
 }
+.portada.oscura {
+  position: relative;
+}
+/* La imagen no empuja el alto (un cartel 4:5 crecería la cabecera): lo ponen el mínimo y el título. */
 .portada.oscura > * {
+  position: absolute;
+  inset: 0;
+  height: 100%;
   aspect-ratio: auto;
   max-height: none;
 }
+/* El cartel recortado desde arriba: lo de arriba (el nombre, la imagen) queda limpio; el velo solo cubre el pie, donde va el texto. */
+.portada.oscura img {
+  object-position: center top;
+}
 .titulo.oscura {
-  padding-top: calc(var(--espacio-8) * 2 + var(--espacio-4)); /* 96: el velo arranca alto y llega oscuro al título */
+  /* El velo arranca 96 px sobre el chip, pero nunca bajo la barra: con un título de tres renglones el chip no choca con Atrás (OL-363). */
+  padding-top: max(calc(var(--espacio-8) * 2 + var(--espacio-4)), calc(var(--alto-barra-ficha) + var(--espacio-2)));
   padding-bottom: var(--espacio-3);
   background: var(--velo-banda);
 }
@@ -481,6 +492,16 @@
   /* La cabecera oscura en dos columnas: la portada a la izquierda como siempre (con su 4:3, sin estirarse) y, a la derecha, el título y los
      números sobre la banda, una tarjeta con las esquinas de la portada y su aire por dentro (la portada ya no se estira: `align-self` de
      arriba). */
+  .enPagina > .portada.oscura {
+    min-height: 0;
+    position: static;
+  }
+  .enPagina > .portada.oscura > * {
+    position: static;
+  }
+  .enPagina > .portada.oscura {
+    aspect-ratio: 4 / 3; /* a dos columnas la portada vuelve a su tarjeta 4:3, sin el alto mínimo del teléfono */
+  }
   .enPagina > .titulo.oscura {
     margin-right: var(--gutter);
     padding: var(--espacio-6) var(--espacio-5) var(--espacio-3);

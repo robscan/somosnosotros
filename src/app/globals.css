@@ -36,9 +36,10 @@
   /* La cabecera oscura de una exposición, un taller o un festival (OL-351, prototipo firmado `cabecera-clases.html`, variante A): la portada
      baja por su velo hasta la banda, y la banda sigue con los números de la clase. Lo que va sobre ella es blanco translúcido. */
   --banda: #141414;
-  --velo-banda: linear-gradient(to top, var(--banda), rgba(20, 20, 20, 0.7) 45%, rgba(20, 20, 20, 0)); /* termina en la banda, sin costura */
+  --velo-banda: linear-gradient(to top, var(--banda), rgba(20, 20, 20, 0.8) 55%, rgba(20, 20, 20, 0)); /* termina en la banda, sin costura; OL-363: más denso bajo el título (≥ 4,5:1 aun con cartel blanco) */
   --sobre-banda: rgba(255, 255, 255, 0.08); /* el fondo de un número sobre la banda */
   --sobre-banda-borde: rgba(255, 255, 255, 0.18);
+  --alto-cabecera-oscura: min(56svh, 640px); /* OL-363: lo mínimo de la cabecera oscura para que el cartel se reconozca; topado en pantallas altas */
   --sobre-banda-suave: rgba(255, 255, 255, 0.72); /* lo que es cada número y su icono: 8,4:1 sobre su fondo */
   --fondo-video: #14181c; /* el marco de un video mientras carga */
   --fondo-audio: #f2f2f2; /* el marco de un reproductor de audio mientras carga */
