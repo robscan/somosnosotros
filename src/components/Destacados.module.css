@@ -39,8 +39,12 @@
   min-height: 0;
   overflow: hidden;
 }
+/* OL-361 (founder, 2026-10-09: «que los títulos de cada carril sean más grandes»): un escalón arriba, de --letra-xl
+   (19px) a --letra-2xl (26px). En un teléfono angosto el título largo pasa a dos líneas; nunca se trunca, y el enlace
+   de la derecha no se encoge ni crece. */
 .destacados h2 {
-  font-size: var(--letra-xl);
+  min-width: 0;
+  font-size: var(--letra-2xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.1;
@@ -50,6 +54,7 @@
  * menos `--toque-min` (44px) de alto, aunque el glifo dibujado sea de 18px.
  */
 .verTodo {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 2px;

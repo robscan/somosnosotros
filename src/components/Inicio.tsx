@@ -29,7 +29,7 @@ type Props = {
   slotAhora?: React.ReactNode;
   slotEstelar: React.ReactNode;
   slotEstaSemana: React.ReactNode;
-  /** «Festivales y exposiciones» (OL-342; antes «Para visitar», OL-322, solo las exposiciones), después de «Esta semana». */
+  /** «Festivales y expos» (OL-342; antes «Para visitar», OL-322, solo las exposiciones), después de «Esta semana». */
   slotFestivales: React.ReactNode;
   slotNuevos: React.ReactNode;
   slotLugaresSemana: React.ReactNode;
@@ -41,8 +41,8 @@ type Props = {
 /**
  * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Tus planes, Destacados, Esta semana, Festivales y
  * exposiciones (OL-342: los festivales y las exposiciones vigentes juntos, por cercanía; antes «Para visitar», OL-322, solo las
- * exposiciones), Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares con eventos esta semana, Artistas destacadxs y
- * Artistas con eventos esta semana, cada uno con su título a la izquierda y, a la derecha, el
+ * exposiciones), Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares de la semana, Artistas destacadxs y
+ * Artistas de la semana, cada uno con su título a la izquierda y, a la derecha, el
  * enlace que dice a dónde lleva — bajo la fila de contexto de las pantallas de eventos (`FilaEventos`: ciudad, Cuándo y
  * Filtros). Cuándo y Filtros no filtran a Inicio: al aplicarlos llevan a Agenda con eso puesto. Carga progresiva (pedido
  * del founder tras probar en producción): esta pantalla ya no espera ninguna consulta antes de pintar; cada carril llega
@@ -86,7 +86,7 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotEstelar}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotEstaSemana}</Suspense>
-        {/* OL-347: «Festivales y exposiciones» va con la tarjeta grande de «Destacados» (founder, 2026-10-08); el esqueleto
+        {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08); el esqueleto
             cambia con él para no saltar cuando llega la respuesta real. */}
         <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotFestivales}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotNuevos}</Suspense>

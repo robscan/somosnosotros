@@ -113,7 +113,7 @@ export function metaConTipo(grupo: GrupoBuscador, meta: string[], clase?: string
 }
 
 /**
- * Lo que se nombra de un evento en Buscar (OL-338): un festival y una exposición, como en el carril «Festivales y exposiciones» de Inicio
+ * Lo que se nombra de un evento en Buscar (OL-338): un festival y una exposición, como en el carril «Festivales y expos» de Inicio
  * (OL-342), con su nombre de siempre (`nombreDeClase`). Un taller y un evento suelto, nada (como en ese carril).
  */
 export const CLASES_NOMBRADAS: readonly string[] = ["festival", "exposicion"];
