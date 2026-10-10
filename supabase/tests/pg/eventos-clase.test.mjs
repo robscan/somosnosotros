@@ -70,7 +70,7 @@ export async function run({ as, check, expectError, query }) {
   check(new Date(m1.inicio).toISOString() === "2030-11-14T00:00:00.000Z" && new Date(m1.fin).toISOString() === "2030-11-14T02:00:00.000Z" && m1.sitio_texto === "Museo de prueba", "el marco toma el periodo y el sitio de su primer acto");
   await guardar(AUTORA, acto("Función de cortos", "2030-11-16T01:00:00Z", null), { clase: "puntual", padre: opMarco });
   const m2 = await fila(opMarco);
-  check(new Date(m2.inicio).toISOString() === "2030-11-14T00:00:00.000Z" && new Date(m2.fin).toISOString() === "2030-11-16T06:00:00.000Z", "con otro acto el periodo va del primero al final del día del último", { inicio: m2.inicio, fin: m2.fin });
+  check(new Date(m2.inicio).toISOString() === "2030-11-14T00:00:00.000Z" && new Date(m2.fin).toISOString() === "2030-11-16T04:00:00.000Z", "con otro acto el periodo va del primero a 3 h después del inicio del último (sin hora de fin, OL-358)", { inicio: m2.inicio, fin: m2.fin });
 
   // --- Lo que no se puede ligar.
   const ajeno = randomUUID();
@@ -117,7 +117,7 @@ export async function run({ as, check, expectError, query }) {
   await expectError(() => as("authenticated", OTRA, () => query("select public.publicar_borrador_de_programa($1::uuid)", [borrador.id])), "42501", "otra cuenta no publica el borrador");
   await as("authenticated", AUTORA, () => query("select public.publicar_borrador_de_programa($1::uuid)", [borrador.id]));
   const publicado = await fila(borrador.id);
-  check(publicado.visible && !publicado.borrador && new Date((await fila(opPrograma)).fin).toISOString() === "2030-11-17T06:00:00.000Z", "publicado el borrador, el festival llega hasta su día");
+  check(publicado.visible && !publicado.borrador && new Date((await fila(opPrograma)).fin).toISOString() === "2030-11-17T04:00:00.000Z", "publicado el borrador, el festival llega hasta 3 h después de su último acto");
 
   // Un evento que la administración ocultó no se vuelve borrador (ni se cuela de vuelta).
   await as("authenticated", ADMIN, () => query("update public.eventos set visible = false where id = $1", [a1.id]));

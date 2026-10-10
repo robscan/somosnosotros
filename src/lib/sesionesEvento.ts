@@ -16,7 +16,7 @@ export type RangoDias = { desde: string; hasta: string };
 /** El horario de un día, como lo ve la persona en el alta: horas de pared «HH:MM»; `fin` vacío es «Sin hora de fin». */
 export type HorarioDia = { dia: string; hora: string; fin: string };
 
-/** Una sesión como viaja al servidor y como la guarda la base: instantes (ISO); sin hora de fin es null (dura hasta que acaba su día). */
+/** Una sesión como viaja al servidor y como la guarda la base: instantes (ISO); sin hora de fin es null (se ve 3 h desde que empieza: `terminaDe`, OL-358). */
 export type SesionEvento = { inicio: string; fin: string | null };
 
 /** Hasta cuántos días se ajusta el horario día por día: un mes. Con más, el mismo horario para todos. */

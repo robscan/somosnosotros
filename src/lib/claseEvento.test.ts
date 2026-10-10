@@ -151,13 +151,13 @@ describe("taller y festival", () => {
     expect(resumenTaller([{ dia: "2027-01-09", hora: "10:00", fin: "" }], "2026-10-07")).toBe("1 sesión · sáb 9 de ene de 2027 · 10:00 a.m.");
   });
 
-  it("el periodo de un festival: del primer acto al final del último (sin hora de fin, el final de su día)", () => {
+  it("el periodo de un festival: del primer acto al final del último (sin hora de fin, 3 h después de empezar, OL-358)", () => {
     const actos = [
       { inicio: localAIso("2026-11-13T18:00", ZONA)!, fin: localAIso("2026-11-13T20:00", ZONA)! },
       { inicio: localAIso("2026-11-12T19:00", ZONA)!, fin: null },
       { inicio: localAIso("2026-11-14T17:00", ZONA)!, fin: null },
     ];
-    expect(periodoDePrograma(actos, ZONA)).toEqual({ inicio: localAIso("2026-11-12T19:00", ZONA), fin: localAIso("2026-11-15T00:00", ZONA) });
+    expect(periodoDePrograma(actos, ZONA)).toEqual({ inicio: localAIso("2026-11-12T19:00", ZONA), fin: localAIso("2026-11-14T20:00", ZONA) });
     expect(periodoDePrograma([], ZONA)).toBeNull();
     // Su fin a la medianoche (un último acto sin hora de fin) es el final del día anterior, no un día más.
     expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-15T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("Del 12 al 14 de nov");

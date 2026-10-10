@@ -8,10 +8,10 @@ describe("retención de la dirección del evento", () => {
     expect(sitioReservadoVencido(evento, new Date(corte.getTime() - 1))).toBe(false);
     expect(sitioReservadoVencido(evento, corte)).toBe(true);
   });
-  it("sin fin usa medianoche en la zona del evento, incluso al cambiar horario", () => {
+  it("sin fin cuenta desde inicio + 3 h (como eventos.termina, OL-358), incluso al cambiar horario", () => {
     const sinFin = { ...evento, inicio: "2026-11-01T04:30:00Z", fin: null, zona: "America/New_York" };
-    expect(sitioReservadoVencido(sinFin, new Date("2026-11-09T04:59:59Z"))).toBe(false);
-    expect(sitioReservadoVencido(sinFin, new Date("2026-11-09T05:00:00Z"))).toBe(true);
+    expect(sitioReservadoVencido(sinFin, new Date("2026-11-08T07:29:59Z"))).toBe(false);
+    expect(sitioReservadoVencido(sinFin, new Date("2026-11-08T07:30:00Z"))).toBe(true);
   });
   it("datos incompletos o sitio público no habilitan la excepción", () => {
     for (const e of [null, {}, { ...evento, inicio: "inválido" }, { ...evento, fin: "inválido" }, { ...evento, sitio_reservado: false }]) {

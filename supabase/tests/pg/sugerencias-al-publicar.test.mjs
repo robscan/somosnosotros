@@ -92,7 +92,7 @@ export async function run({ as, check, expectError, query }) {
   check(f.id === opF && marco.clase === "festival" && marco.titulo === "Festival Umbral 2030" && marco.creado_por === AUTORA && f.actos === 2, "el festival nace con el nombre de la mención y sus dos actos", f);
   check((await fila(a1)).evento_padre_id === opF && (await fila(a2)).evento_padre_id === opF, "los dos actos quedan dentro");
   check(new Date(marco.inicio).toISOString() === "2030-11-08T00:00:00.000Z" && marco.sitio_texto === "Museo de sugerencias", "el festival toma el sitio y el inicio de su primer acto");
-  check(new Date(marco.fin).toISOString() === "2030-11-09T06:00:00.000Z", "y llega al final del día del último", marco.fin);
+  check(new Date(marco.fin).toISOString() === "2030-11-08T20:00:00.000Z", "y llega a 3 h después del inicio del último (sin hora de fin, OL-358)", marco.fin);
   check((await fila(a1)).sugerencias.festival?.estado === "aceptada" && (await fila(a2)).sugerencias.festival?.estado === "aceptada", "la sugerencia queda aceptada en los dos");
   const nF = await cuantos();
   const f2 = await relacionar(AUTORA, [a2, a1], null, "Festival Umbral 2030", opF);
@@ -101,7 +101,7 @@ export async function run({ as, check, expectError, query }) {
   // --- H5: un tercer acto con el festival propio que ya existe.
   const a3 = await alta(AUTORA, { ...base, titulo: "Lectura de poesía", inicio: "2030-11-10T01:00:00Z", fin: null });
   const f3 = await relacionar(AUTORA, [a3], opF, null, null);
-  check(f3.id === opF && f3.actos === 3 && new Date((await fila(opF)).fin).toISOString() === "2030-11-10T06:00:00.000Z", "el acto entra al festival existente y lo alarga", f3);
+  check(f3.id === opF && f3.actos === 3 && new Date((await fila(opF)).fin).toISOString() === "2030-11-10T04:00:00.000Z", "el acto entra al festival existente y lo alarga", f3);
 
   // --- Lo que no se relaciona, sin dejar nada a medias.
   const deOtra = await alta(OTRA, { ...base, titulo: "Acto ajeno" });

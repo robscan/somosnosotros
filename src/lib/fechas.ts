@@ -264,11 +264,12 @@ export function diaPin(inicio: string, ahora: Date = new Date(), zona: string = 
   return DIAS_PIN[abrev] ?? null;
 }
 
-/** Hoy · Esta semana (7 días) · Próximos. Un evento de hoy sigue siendo de hoy hasta que acabe el día (la misma regla que `eventoPaso`). */
+/** Hoy · Esta semana (7 días) · Próximos, por el día en que empieza: un evento de hoy es de hoy todo el día. Si se ve o
+ *  no lo decide `eventoPaso` (fin o 3 h); esto solo agrupa, así que «pasado» es un día anterior a hoy. */
 export function tramo(inicio: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): Tramo {
-  if (eventoPaso(inicio, null, ahora, zona)) return "pasado";
   const dia = diaLocal(new Date(inicio), zona);
   const hoy = diaLocal(ahora, zona);
+  if (dia < hoy) return "pasado";
   if (dia === hoy) return "hoy";
   return dia <= sumarDias(hoy, 7) ? "semana" : "proximos";
 }
@@ -321,17 +322,22 @@ export function inicioDelDia(ahora: Date = new Date(), zona: string = ZONA_INICI
   return localAIso(`${diaLocal(ahora, zona)}T00:00`, zona) ?? ahora.toISOString();
 }
 
+/** Cuánto se ve un evento sin hora de fin: 3 horas desde que empieza (founder, 2026-10-09, OL-358). */
+export const DURACION_SIN_FIN_MS = 3 * 3600000;
+
 /**
- * Cuándo deja de verse un evento: la hora de fin o, sin ella, las 00:00 del día siguiente en su zona. Es la columna
- * `eventos.termina` de la base (migración 0029), con la que filtran las listas y el panel: la misma regla en los dos lados.
+ * Cuándo deja de verse un evento: la hora de fin o, sin ella, 3 horas después de empezar (decisión del founder del 2026-10-09,
+ * OL-358: de 36 eventos con hora de fin, 20 duran 3 h o menos). Sustituye la regla del 2026-09-16 (hasta la medianoche de su
+ * día). Es la columna `eventos.termina` de la base (migración 20261009100000), con la que filtran las listas y el panel: la
+ * misma regla en los dos lados. Ya no depende de la zona; `zona` se queda en la firma para no tocar a quien llama.
  */
-export function terminaDe(inicio: string, fin: string | null, zona: string = ZONA_INICIAL): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- la zona se queda en la firma: ya no cambia el resultado
+export function terminaDe(inicio: string, fin: string | null, _zona: string = ZONA_INICIAL): string {
   if (fin) return new Date(fin).toISOString();
-  return localAIso(`${sumarDias(diaLocal(new Date(inicio), zona), 1)}T00:00`, zona) ?? new Date(inicio).toISOString();
+  return new Date(Date.parse(inicio) + DURACION_SIN_FIN_MS).toISOString();
 }
 
-/** ¿Ya pasó el evento? Con hora de fin, cuando terminó; sin ella, cuando acabó su día en su zona (pedido del founder,
- *  2026-09-16: los eventos de hoy se quedan a la vista hasta que termine el día o termine el evento).
+/** ¿Ya pasó el evento? Con hora de fin, cuando terminó; sin ella, 3 horas después de empezar (`terminaDe`, OL-358).
  *  Un evento que ya pasó se oculta: solo lo ven su autor y el administrador. */
 export function eventoPaso(inicio: string, fin: string | null, ahora: Date = new Date(), zona: string = ZONA_INICIAL): boolean {
   return new Date(terminaDe(inicio, fin, zona)).getTime() < ahora.getTime();
@@ -339,7 +345,7 @@ export function eventoPaso(inicio: string, fin: string | null, ahora: Date = new
 
 /**
  * La misma regla como filtro de la base (PostgREST, para `.or()`): `termina >= ahora` (ver `terminaDe`). La calcula la
- * base con la zona de cada evento; el panel la usa igual (migración 0029).
+ * base (fin o inicio + 3 h, migración 20261009100000); el panel la usa igual.
  */
 export function filtroSinPasar(ahora: Date = new Date()): string {
   return `termina.gte."${ahora.toISOString()}"`;

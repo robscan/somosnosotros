@@ -106,7 +106,7 @@ export function ocurrenciasDe<T extends Evento>(e: T): ConOcurrencia<T>[] {
   return dias ?? [entero(e)];
 }
 
-/** ¿Ya terminó ese día? Con hora de fin, cuando terminó; sin ella, cuando acabó su día: la misma regla de siempre (`terminaDe`). */
+/** ¿Ya terminó ese día? Con hora de fin, cuando terminó; sin ella, 3 horas después de empezar: la misma regla que el evento (`terminaDe`, OL-358). */
 export const ocurrenciaPaso = (o: { inicio: string; fin: string | null; zona: string }, ahora: Date): boolean => new Date(terminaDe(o.inicio, o.fin, o.zona)).getTime() < ahora.getTime();
 
 /**

@@ -15,7 +15,7 @@ import { ocurrenciaPaso, ocurrenciasDe, proximaOcurrencia } from "./ocurrencias"
 
 /** "Esta semana" = próximos 7 días desde ahora (decisión del founder, segunda vuelta de doc 41): no es la semana de
  *  calendario (`DIAS_ESTA_SEMANA`, lib/cuando). Cada día en que pasa algo cuenta (OL-320, `lib/ocurrencias`): un taller de tres sábados
- *  sale en los sábados de la semana, cada uno con su hora; un evento que ya empezó cuenta hasta su fin o la medianoche de su zona,
+ *  sale en los sábados de la semana, cada uno con su hora; un evento que ya empezó cuenta hasta su fin o 3 h después de empezar (`terminaDe`),
  *  igual que Agenda. */
 export function eventosEstaSemana<T extends Pick<EventoAgenda, "id" | "inicio" | "fin" | "zona" | "sesiones">>(eventos: T[], ahora: Date = new Date()) {
   const hasta = ahora.getTime() + DIAS_ESTA_SEMANA * 86400000;

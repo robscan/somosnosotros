@@ -13,7 +13,7 @@ export type AparicionSemana = {
 };
 
 /** Hoy y los próximos siete días de calendario en la zona del evento, como la agenda.
- * También entran los que empezaron antes y siguen en curso. `termina` ya incorpora fin o medianoche local.
+ * También entran los que empezaron antes y siguen en curso. `termina` ya incorpora fin o inicio + 3 h (OL-358).
  */
 export function ocurreEstaSemana(e: AparicionSemana["evento"], ahora: Date): boolean {
   if (!e.visible || !Number.isFinite(Date.parse(e.inicio)) || !(Date.parse(e.termina) >= ahora.getTime())) return false;

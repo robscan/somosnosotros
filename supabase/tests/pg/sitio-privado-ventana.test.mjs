@@ -41,13 +41,13 @@ export async function run({ as, query, check }) {
     await query('delete from public.eventos where id=$1', [revocable]);
     check(!await leer('authenticated', otra, revocable), 'eliminar evento elimina su copia reservada');
 
-    // El fin implícito lo calcula eventos.termina en su zona.
+    // El fin implícito lo calcula eventos.termina: 3 h después del inicio, en cualquier zona (OL-358).
     for (const zona of ['America/Mexico_City', 'America/New_York', 'Asia/Tokyo']) {
-      for (const dias of [-1, 0]) {
+      for (const [horas, esperado] of [[1, true], [4, true], [6, false]]) {
         const id = await crear();
-        await query("update public.eventos set zona=$2, fin=null, inicio=timezone($2,date_trunc('day',timezone($2,now()))+make_interval(days=>$3)) where id=$1", [id, zona, dias]);
-        const { permitida, fin_correcto } = (await query("select now()<termina+interval '2 hours' as permitida, termina=timezone(zona,date_trunc('day',timezone(zona,inicio))+interval '1 day') as fin_correcto from public.eventos where id=$1", [id])).rows[0];
-        check(fin_correcto && await leer('authenticated', otra, id) === permitida, `sin fin respeta medianoche local + 2 h: ${zona}, día ${dias}`);
+        await query("update public.eventos set zona=$2, fin=null, inicio=now()-make_interval(hours=>$3) where id=$1", [id, zona, horas]);
+        const { permitida, fin_correcto } = (await query("select now()<termina+interval '2 hours' as permitida, termina=inicio+interval '3 hours' as fin_correcto from public.eventos where id=$1", [id])).rows[0];
+        check(fin_correcto && permitida === esperado && await leer('authenticated', otra, id) === esperado, `sin fin respeta inicio + 3 h + 2 h: ${zona}, empezó hace ${horas} h`);
       }
     }
     // Lugares ocultos del admin y privados reutilizables no son copias de evento.
