@@ -1,6 +1,7 @@
 /**
  * Los botones de estado no parpadean (OL-354, bitácora 385): «Me interesa» y «Voy» de la ficha de un evento, «Seguir» de la ficha de
- * un lugar o artista, y el botón redondo de los renglones y carriles («Voy» y «Seguir»). Al tocarlos cambian al momento y una sola
+ * un lugar o artista, y el botón redondo de los renglones («Voy» y «Seguir»; las tarjetas de los carriles de Inicio ya no llevan botón: OL-370 y
+ * OL-372). Al tocarlos cambian al momento y una sola
  * vez a su estado final; mientras el servidor confirma (aquí tarda 300 ms) no hay ningún cambio visual: la opacidad no baja de 1 ni
  * un cuadro. Si el servidor falla, vuelven una vez a como estaban. Antes, `aria-busy` encendía el latido de `ui/Boton` (la opacidad
  * bajaba hacia 0,55 y volvía de golpe al responder el servidor): el «fade» que vio el founder.
@@ -65,9 +66,9 @@ before(async () => {
         const s = useSeguirEnLista('lugar', seguidos, avisos);
         return <div data-qa="renglon-lugar"><BotonRenglon {...s.boton('l1', 'Foro')} />{s.extras}</div>;
       }
-      function Carril() {
+      function RenglonEvento() {
         const a = useAsistenciaEnLista(decididas, avisos);
-        return <div data-qa="carril-evento"><BotonRenglon sobreFoto {...a.boton({ id: 'e2', titulo: 'Concierto' })} />{a.extras}</div>;
+        return <div data-qa="renglon-evento"><BotonRenglon {...a.boton({ id: 'e2', titulo: 'Concierto' })} />{a.extras}</div>;
       }
       const que = new URLSearchParams(location.search).get('que');
       function App() {
@@ -77,7 +78,7 @@ before(async () => {
         window.qa.alGuardar = (v) => (que === 'seguir' ? setSigo(v) : setMiEstado(v));
         const lento = async (v) => { await new Promise((r) => setTimeout(r, 300)); if (window.qa.falla) return false; window.qa.alGuardar(v); return true };
         if (que === 'renglon') return <main><Lugar /></main>;
-        if (que === 'carril') return <main><Carril /></main>;
+        if (que === 'renglon-evento') return <main><RenglonEvento /></main>;
         if (que === 'seguir') return <main><Seguir que="lugar" nombre="Foro" sigo={sigo} conSesion cuenta="c1" accion={lento} hrefEntrar="/lugares/l1" avisosPreguntado correo="p...@example.com" llavePush="" /></main>;
         return <main><Asistencia eventoId="e1" eventoSlug="concierto" titulo="Concierto" miEstado={miEstado} conSesion cuenta="c1" avisosPreguntado correo="p...@example.com" llavePush="" /></main>;
       }
@@ -202,8 +203,8 @@ test("renglón de lugar: la campana pasa a la palomita al momento y no se atenú
   sinParpadeo(cuadros, ["true|Sigues — Foro"], "Seguir en renglón");
 });
 
-test("tarjeta de carril: «Voy» pasa a la palomita al momento y no se atenúa", async (t) => {
-  const p = await pagina(t, "carril");
-  const cuadros = await grabarToque(p, "[data-qa=carril-evento] button");
-  sinParpadeo(cuadros, ["true|Ya vas — Concierto"], "Voy en carril");
+test("renglón de evento: «Voy» pasa a la palomita al momento y no se atenúa", async (t) => {
+  const p = await pagina(t, "renglon-evento");
+  const cuadros = await grabarToque(p, "[data-qa=renglon-evento] button");
+  sinParpadeo(cuadros, ["true|Ya vas — Concierto"], "Voy en renglón");
 });

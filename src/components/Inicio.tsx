@@ -85,19 +85,19 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
             existen vacíos): el componente entero se omite. */}
         {/* OL-370 (E5 firmado): tarjeta grande en Tus planes, Destacados y Festivales y expos; mediana en Esta semana y Nuevos eventos. Cada
             esqueleto es del tamaño de su carril, para no saltar cuando llega la respuesta real. */}
-        {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="grande" cartel />}>{slotTusPlanes}</Suspense>}
-        <Suspense fallback={<CarrilEsqueleto tamano="grande" cartel />}>{slotEstelar}</Suspense>
-        <Suspense fallback={<CarrilEsqueleto tamano="mediana" cartel />}>{slotEstaSemana}</Suspense>
+        {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
+        <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotEstelar}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
         {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). */}
-        <Suspense fallback={<CarrilEsqueleto tamano="grande" cartel />}>{slotFestivales}</Suspense>
-        <Suspense fallback={<CarrilEsqueleto tamano="mediana" cartel />}>{slotNuevos}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotFestivales}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotNuevos}</Suspense>
         <Suspense fallback={null}>{slotMasAdelante}</Suspense>
-        <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
-        {/* OL-165: «Artistas destacadxs» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto
-            cambia con él para no saltar cuando llega la respuesta real. */}
-        <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotArtistasDestacados}</Suspense>
+        {/* OL-372 (E5 y E9 firmados): lugares y artistas de la semana en avatares de 64; «Artistas destacadxs» con la tarjeta mediana de un
+            evento. Cada esqueleto mide lo que su carril. */}
+        <Suspense fallback={<CarrilEsqueleto forma="avatar" />}>{slotLugaresSemana}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto forma="artista" />}>{slotArtistasDestacados}</Suspense>
         {/* OL-253: va después de los destacados porque no los repite (`app/page.tsx`). */}
-        <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotArtistasSemana}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto forma="avatar" />}>{slotArtistasSemana}</Suspense>
         <InicioVacio ciudad={ciudad.nombre} />
       </CarrilesDeInicio>
     </PantallaConAviso>

@@ -2,34 +2,29 @@
 
 import Link from "next/link";
 import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
-import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
+import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
-import { SIN_FOTO } from "@/lib/imagen";
-import { tamanoImagenCarril } from "@/lib/imagenOptima";
-import Imagen from "./ui/Imagen";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
-import CarrilEsqueleto from "./CarrilEsqueleto";
-import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
-import { Chip } from "./ui/Chip";
+import CarrilEsqueleto, { columnasDe, type FormaCarril } from "./CarrilEsqueleto";
 import { IconoChevronDerecha } from "./ui/Iconos";
-import TarjetaEvento from "./inicio/TarjetaEvento";
+import TarjetaAvatar from "./inicio/TarjetaAvatar";
+import TarjetaEvento, { TarjetaArtista } from "./inicio/TarjetaEvento";
 import styles from "./Destacados.module.css";
 
 /**
- * La tira de destacados arriba de un listado (docs/rediseno/20; doc 50, P10). Se desliza con el dedo, sin avance automático, y la
- * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho con la imagen
- * arriba (OL-226), salvo las redondas. `tamano`: `grande` (cartel vertical, lo que elige la administración: founder, 2026-09-18),
- * `mediana` (la de siempre) o `chica` (redonda, la de un lugar o un artista). Al volver de una ficha queda donde estaba (decisión 12).
+ * Un carril de Inicio (docs/rediseno/20; doc 50, P10): el título, el enlace que dice a dónde lleva y una tira que se desliza con el dedo, sin
+ * avance automático, con la siguiente tarjeta asomando (decisiones 1 y 2). Sin tarjetas no existe (decisión 4). Al volver de una ficha queda donde
+ * estaba (decisión 12).
  *
- * La tarjeta: la foto con, encima, un solo rótulo (`selloDeTarjeta`, H-02) y el botón; el título, a dos líneas como mucho, y los
- * datos en dos (cuándo, dónde), cada una con su elipsis (doc 50, punto 57). Sin foto (H-03) no hay bloque de imagen: el nombre
- * grande sobre un fondo suave. Cada tarjeta comparte las filas del carril con `subgrid`, así los títulos y los datos de todas
- * quedan alineados.
+ * Las tarjetas son las que firmó el founder el 2026-10-10 (prototipo `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada»; bitácora 398), y
+ * cada una es un solo enlace a su ficha, sin botón: decidir («Voy», «Me interesa») y seguir quedan en la ficha (y en las historias). `forma`:
+ * - `grande` o `mediana` (OL-370): la tarjeta de un evento (`inicio/TarjetaEvento`), el cartel entero en 4:5 con su sello de fecha; grande en Tus
+ *   planes, Destacados y Festivales y expos, mediana en Esta semana, Nuevos eventos y Más adelante (E5). Siempre con el tamaño de su carril: una
+ *   sola tarjeta no se estira a lo ancho.
+ * - `artista` (OL-372, E9): la de un artista en «Artistas destacadxs», que es la mediana de un evento (`TarjetaArtista`).
+ * - `avatar` (OL-372, E5): el redondo de 64 de «Lugares de la semana» y «Artistas de la semana» (`inicio/TarjetaAvatar`).
  *
- * `boton` (OL-106, bitácora 141): con él, cada tarjeta lleva el mismo botón de los renglones, flotando sobre la esquina superior
- * derecha de la foto (hermano del `<Link>`, nunca anidado dentro). Reutiliza el hook que la pantalla ya tiene para sus renglones
- * (`useAsistenciaEnLista`/`useSeguirEnLista`): `Tarjeta` ya trae `id`/`titulo` de la propia entidad, así que no hace falta ninguna
- * consulta nueva.
+ * Una foto real va antes que lo que no la tiene; dentro de cada grupo se conserva el orden de la curaduría o de las fechas.
  *
  * `verTodos` (OL-153, bitácora 188; letrero honesto en P5, doc 50 puntos 60 y 61): un enlace a la derecha del título que dice
  * a dónde lleva («Ver la agenda», «Ver mi perfil», «Ver lugares», «Ver artistas»; nunca «Ver todo») y abre esa sección con
@@ -37,17 +32,10 @@ import styles from "./Destacados.module.css";
  * `--toque-min` (44 px), y su nombre accesible dice también de qué carril viene («Ver la agenda: Destacados»), porque hay
  * varios iguales en la pantalla. Sin `verTodos` el carril no lleva enlace: un carril sin destino no lleva uno.
  *
- * `estadoDe` (OL-176, bitácora 211): solo en los carriles de eventos, lo que la persona ya decidió («Te interesa»). `Tarjeta` no
- * trae lo que la persona decidió (no es suyo: lo decide en la ficha, no al armar la tarjeta); en vez de eso, el llamador pasa el
- * `estado(id)` que ya expone `useAsistenciaEnLista` — el mismo hook que le da `boton` — sin tocar ese hook ni el tipo `Tarjeta`.
- * Sin `estadoDe` (lugares, artistas) no aparece nada.
- *
- * `cartel` (OL-370, prototipo firmado `inicio-tarjetas.html`; solo los carriles de eventos de Inicio): la tarjeta firmada el 2026-10-10
- * (`inicio/TarjetaEvento`), que es el cartel entero en 4:5 con su sello de fecha, sin botón: `boton` no se usa y `estadoDe` solo dice si va el
- * chip «Te interesa». `tamano` es `grande` (165×206) o `mediana` (132×165, E5). Siempre con el tamaño de su carril: una sola tarjeta no se estira
- * a lo ancho. Sustituye a la tarjeta «título + cartel» de OL-360.
+ * `estadoDe` (OL-176, bitácora 211): solo en los carriles de eventos, lo que la persona ya decidió (el `estado(id)` de `useAsistenciaEnLista`):
+ * la tarjeta dice «Te interesa» en su chip y «Vas» en el nombre del enlace. `Tarjeta` no lo trae: no es de la tarjeta, lo decide la persona.
  */
-export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos, cartel = false }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon | null; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string }; cartel?: boolean }) {
+export default function Destacados({ tarjetas, forma, encabezado = "Destacados", memoria = "destacados", estadoDe, verTodos }: { tarjetas: Tarjeta[]; forma: FormaCarril; encabezado?: string; memoria?: string; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string } }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -65,10 +53,8 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
     // sin querer (gestión de cambios, revisión de 6153f9a). La bajada se limpia siempre, para no arrastrarla al
     // siguiente click que no traiga la suya.
     if (inicio && e.detail !== 0 && huboArrastre(e.clientX - inicio.x, e.clientY - inicio.y)) {
+      // Recorrer el carril no abre la tarjeta donde se soltó el dedo: en la fase de captura, el toque ni llega a ella.
       e.preventDefault();
-      // OL-106: el botón de la tarjeta es hermano del <Link>, no su hijo — preventDefault() solo cancela la
-      // navegación del enlace, no llega a detener el propio onClick del botón. stopPropagation() en la fase de
-      // captura (antes de llegar al objetivo) sí lo hace: recorrer el carril empezando sobre el botón no lo dispara.
       e.stopPropagation();
     }
     bajada.current = null;
@@ -105,16 +91,11 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
     return (
       <div className={styles.vacio} aria-hidden="true">
         <div>
-          <CarrilEsqueleto tamano={tamano} cartel={cartel} />
+          <CarrilEsqueleto forma={forma} />
         </div>
       </div>
     );
   }
-  // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
-  const ordenadas = ordenarTarjetasPorFoto(tarjetas);
-  // Una sola tarjeta ocupa el ancho del carril (las redondas no). La tarjeta de evento de Inicio va en su carril de cartel 4:5 (OL-370) y nunca sola.
-  const forma = ordenadas.length === 1 && tamano !== "chica" ? "sola" : tamano;
-  const medidas = cartel ? (tamano === "mediana" ? styles.cartelMediana : styles.cartelGrande) : styles[forma];
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
@@ -126,41 +107,10 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
           </Link>
         )}
       </div>
-      <ul ref={recordar} className={`${styles.carril} ${medidas}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
-        {ordenadas.map((t) => {
-          if (cartel) {
-            return (
-              <li key={t.clave ?? t.id}>
-                <TarjetaEvento t={t} tamano={tamano === "mediana" ? "mediana" : "grande"} decision={estadoDe?.(t.id) ?? null} />
-              </li>
-            );
-          }
-          const sello = selloDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
-          // Sin botón si quien llama no lo da para esa tarjeta (una exposición o un festival: «Me interesa», en su ficha; OL-322).
-          const estadoBoton = boton?.(t) ?? null;
-          // La redonda de un lugar o un artista sin foto lleva el símbolo SN ya generado; las demás, el nombre grande sobre fondo suave (H-03).
-          const foto = t.foto ?? (tamano === "chica" ? SIN_FOTO : null);
-          const rotulo = sello && (
-            <Chip variante={sello.tuyo ? "estado" : "sello"} className={sello.hoy ? `${styles.rotulo} ${styles.hoy}` : styles.rotulo}>
-              {sello.texto}
-            </Chip>
-          );
-          return (
-            <li key={t.clave ?? t.id}>
-              <Link href={t.href} className={foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
-                {foto && <Imagen src={foto} alt="" className={styles.foto} width={384} height={384} sizes={tamanoImagenCarril(forma)} />}
-                <b>{t.titulo}</b>
-                <small>
-                  <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
-                  {t.sitio && <span>{t.sitio}</span>}
-                </small>
-                {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda. */}
-                {rotulo}
-              </Link>
-              {estadoBoton && <BotonRenglon {...estadoBoton} sobreFoto />}
-            </li>
-          );
-        })}
+      <ul ref={recordar} className={`${styles.carril} ${columnasDe(forma)}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
+        {ordenarTarjetasPorFoto(tarjetas).map((t) => (
+          <li key={t.clave ?? t.id}>{forma === "avatar" ? <TarjetaAvatar t={t} /> : forma === "artista" ? <TarjetaArtista t={t} /> : <TarjetaEvento t={t} tamano={forma} decision={estadoDe?.(t.id) ?? null} />}</li>
+        ))}
       </ul>
     </section>
   );

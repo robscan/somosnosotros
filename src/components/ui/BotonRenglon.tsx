@@ -18,25 +18,23 @@ export type EstadoBotonRenglon = {
 };
 
 /**
- * El botón de cada renglón y de cada tarjeta de carril (OL-104, bitácora 139; rediseño OL-106, bitácora 141), solo icono — sin
- * texto: el glifo invita y, decidido, se vuelve una palomita blanca sobre verde (tocarlo lo quita, con el mismo Deshacer de
- * siempre). Sobre una foto (`sobreFoto`, la tarjeta de un carril) es un `BotonIcono` elevado de 48 px: el círculo blanco con su
- * sombra lo separa del cartel. En una lista, sobre el fondo hueso, es el icono a secas de 44 px (H-19, doc 50): sin círculo ni
- * sombra, que pesaban lo mismo que la foto; decidido, solo el círculo verde.
+ * El botón de cada renglón (OL-104, bitácora 139; rediseño OL-106, bitácora 141), solo icono — sin texto: el glifo invita y, decidido, se vuelve
+ * una palomita blanca sobre verde (tocarlo lo quita, con el mismo Deshacer de siempre). Sobre el fondo hueso de una lista es el icono a secas de
+ * 44 px (H-19, doc 50): sin círculo ni sombra, que pesaban lo mismo que la foto; decidido, solo el círculo verde. Las tarjetas de los carriles de
+ * Inicio ya no lo llevan (OL-370 y OL-372: se decide y se sigue en la ficha), así que ya no hay botón sobre una foto.
  * El nombre completo va en el `aria-label`; el toast dice qué pasó, así que el icono no necesita decirlo con
  * palabras. Verde (`--ok`) y no el color de acción: el mismo violeta en el estado ya decidido invitaba a tocarlo otra
  * vez en vez de leerse como «esto ya quedó» (corrección del founder, 2026-09-21).
  *
- * Vive **fuera** del `<Link>` del renglón o de la tarjeta, como su hermano — nunca un control interactivo anidado
- * dentro de otro, que confunde a quien usa lector de pantalla — y su `onClick` hace `stopPropagation()`: tocarlo
- * nunca abre la ficha ni, en un carril, cuenta como el arrastre que `huboArrastre` mediría en el `<Link>`.
+ * Vive **fuera** del `<Link>` del renglón, como su hermano — nunca un control interactivo anidado dentro de otro, que confunde a quien usa
+ * lector de pantalla — y su `onClick` hace `stopPropagation()`: tocarlo nunca abre la ficha.
  */
-export default function BotonRenglon({ objeto, decidido, nombreAccesible, alTocar, sobreFoto = false }: EstadoBotonRenglon & { sobreFoto?: boolean }) {
+export default function BotonRenglon({ objeto, decidido, nombreAccesible, alTocar }: EstadoBotonRenglon) {
   const Glifo = decidido ? IconoOk : GLIFO[objeto];
   return (
     <BotonIcono
-      tamano={sobreFoto ? "accion" : "control"}
-      relieve={sobreFoto ? "elevado" : "plano"}
+      tamano="control"
+      relieve="plano"
       decidido={decidido}
       aria-label={nombreAccesible}
       onClick={(e) => {

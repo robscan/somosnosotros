@@ -1,15 +1,19 @@
 import type { EventoAgenda } from "./agenda";
+import { etiquetaDisciplina, type ArtistaLista } from "./artistas";
 import { soloInteres, textoVisita, ultimoDiaDelPeriodo } from "./claseEvento";
-import { cuandoDeTarjeta, tarjetaConClase, type Tarjeta, type TarjetaConFecha } from "./destacados";
+import { cuandoDeTarjeta, tarjetaArtista, tarjetaConClase, type Tarjeta, type TarjetaConFecha } from "./destacados";
 import type { Asistencia } from "./deslizar";
 import { cortoDeClase } from "./eventos";
 import { diaLocal } from "./fechas";
+import { selloNovedadArtista } from "./novedadesArtista";
 
 /**
- * La tarjeta de evento de Inicio (OL-370), la que firmó el founder el 2026-10-10 en el prototipo `docs/rediseno/prototipos/inicio-tarjetas.html`
- * («Firmada»: E1 · E3 · E3b · E5 · E7 · E8 · E8c · E9 · E10; bitácora 398). Aquí lo que se puede probar sin navegador: el sello de fecha que
+ * Las tarjetas de Inicio que firmó el founder el 2026-10-10 en el prototipo `docs/rediseno/prototipos/inicio-tarjetas.html` («Firmada»: E1 · E3 ·
+ * E3b · E5 · E7 · E8 · E8c · E9 · E10; bitácora 398). Aquí lo que se puede probar sin navegador. La de un evento (OL-370): el sello de fecha que
  * ocupa el sitio del botón de «Voy», la línea de cuándo, la ceja con la clase, el único chip sobre el cartel, el nombre del enlace y el corte del
- * título en palabra entera. La tarjeta la pinta `components/inicio/TarjetaEvento`.
+ * título en palabra entera; la pinta `components/inicio/TarjetaEvento`. La de un artista en «Artistas destacadxs» (E9, OL-372), que es la de un
+ * evento mediano (`TarjetaArtista`, en el mismo archivo), y el avatar de 64 de «Lugares de la semana» y «Artistas de la semana» (E5, OL-372;
+ * `components/inicio/TarjetaAvatar`).
  */
 
 /**
@@ -130,4 +134,37 @@ export function cortarEnPalabra(completo: string, cabe: (texto: string) => boole
     if (cabe(texto)) return texto;
   }
   return texto;
+}
+
+/**
+ * E9 (OL-372; founder, 2026-10-10: «para este carril usar jerarquía de nuevos eventos»): la tarjeta de un artista en «Artistas destacadxs» es la de
+ * siempre (`tarjetaArtista`: su foto, su enlace, su novedad vigente y su próxima fecha) con lo que va debajo de la foto como en un evento: su
+ * disciplina («Música», para la ceja; nada si la ficha está por completar) y su género (la subcategoría, tal como se escribió). Se arma en el
+ * servidor, como la de un evento.
+ */
+export function tarjetaArtistaDeInicio(a: ArtistaLista, ahora: Date = new Date()): Tarjeta {
+  const genero = a.detalle?.trim();
+  return { ...tarjetaArtista(a, ahora), ...(a.disciplina === "por_completar" ? {} : { disciplina: etiquetaDisciplina(a.disciplina) }), ...(genero ? { genero } : {}) };
+}
+
+/**
+ * Lo que dice la tarjeta de un artista (E9), como un evento: la disciplina en la ceja, el nombre como título tal como está escrito (es un nombre
+ * propio: no pasa a oración), el género en gris en la línea del lugar y, si tiene fecha, la fecha en violeta en la de cuándo. Sobre la foto, el
+ * chip «Nuevo video» o «Nuevo audio» si hay una novedad vigente (`selloNovedadArtista`, la regla de siempre); sin sello de fecha ni botón de
+ * seguir (se sigue desde la ficha). El nombre del enlace dice todo eso, separado por punto, como el prototipo.
+ */
+export function piezasDeArtista(t: Pick<Tarjeta, "titulo" | "detalle" | "cuando" | "novedad" | "disciplina" | "genero">, ahora: Date = new Date()): { ceja: string[]; titulo: string; genero: string | null; cuando: string | null; nuevo: string | null; nombre: string } {
+  const cuando = t.cuando ? t.detalle : null;
+  const nuevo = selloNovedadArtista(t.novedad, ahora);
+  return { ceja: t.disciplina ? [t.disciplina] : [], titulo: t.titulo, genero: t.genero ?? null, cuando, nuevo, nombre: [t.titulo, t.disciplina, t.genero, cuando, nuevo].filter(Boolean).join(". ") };
+}
+
+/**
+ * E5 (OL-372): el avatar de 64 de «Lugares de la semana» y «Artistas de la semana». La foto redonda, el nombre debajo y, solo si hay una novedad
+ * vigente, «Nuevo video» o «Nuevo audio» en violeta; nada más (lo de antes, «En curso» o «Mañana · 19:30», ya no va: así lo firmó el founder) y
+ * sin botón (seguir queda en la ficha). El nombre del enlace lleva el nombre completo, que a la vista se corta en una línea, y la novedad.
+ */
+export function avatarDeInicio(t: Pick<Tarjeta, "titulo" | "novedad">, ahora: Date = new Date()): { nombre: string; nuevo: string | null; etiqueta: string } {
+  const nuevo = selloNovedadArtista(t.novedad, ahora);
+  return { nombre: t.titulo, nuevo, etiqueta: nuevo ? `${t.titulo}. ${nuevo}` : t.titulo };
 }

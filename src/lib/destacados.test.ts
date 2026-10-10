@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
 import type { ArtistaLista } from "./artistas";
-import { decididoVigente, enOrden, fechasValidas, opcionDestacar, ordenarTarjetasPorFoto, puedeDestacarse, selloDeTarjeta, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
+import { decididoVigente, enOrden, fechasValidas, opcionDestacar, ordenarTarjetasPorFoto, puedeDestacarse, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
 import type { LugarLista } from "./lugares";
+import { chipDeTarjeta } from "./tarjetaInicio";
 
 // Miércoles 16 de septiembre de 2026, 18:00 en San Luis Potosí.
 const AHORA = new Date("2026-09-17T00:00:00Z");
@@ -37,12 +38,6 @@ describe("el día de un evento con varios días en la tarjeta (OL-320)", () => {
     const t = tarjetaEvento(evento({ inicio: "2026-09-20T00:00:00Z", fin: "2026-09-20T02:00:00Z", ocurrencia }), AHORA);
     expect(t.detalle).toBe("sáb 19 de sep · 18:00");
   });
-  it("el sello dice cuál día es: «Hoy · Día 2 de 3», o «Día 2 de 3» sin ser hoy; Te interesa sigue ganando y «N van» cede", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5, parte: "Día 2 de 3" })).toEqual({ texto: "Hoy · Día 2 de 3", tuyo: false, hoy: true });
-    expect(selloDeTarjeta({ hoy: false, van: 5, parte: "Día 2 de 3" })).toEqual({ texto: "Día 2 de 3", tuyo: false, hoy: false });
-    expect(selloDeTarjeta({ hoy: false, van: 5, parte: "Día 2 de 3" }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
-    expect(selloDeTarjeta({ van: 5 })).toEqual({ texto: "5 van", tuyo: false, hoy: false });
-  });
 });
 
 describe("ordenarTarjetasPorFoto", () => {
@@ -52,26 +47,10 @@ describe("ordenarTarjetasPorFoto", () => {
   });
 });
 
-describe("selloDeTarjeta: un solo rótulo por foto (H-02)", () => {
-  it("«Hoy» va antes que «N van»", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5 })).toEqual({ texto: "Hoy", tuyo: false, hoy: true });
-  });
-  it("sin ser hoy, cuántos van: «1 va», «3 van»", () => {
-    expect(selloDeTarjeta({ van: 1 })).toEqual({ texto: "1 va", tuyo: false, hoy: false });
-    expect(selloDeTarjeta({ hoy: false, van: 3 })).toEqual({ texto: "3 van", tuyo: false, hoy: false });
-  });
-  it("sin ninguno de los dos, nada", () => {
-    expect(selloDeTarjeta({ van: 0 })).toBeNull();
-    expect(selloDeTarjeta({ hoy: false, van: 0 })).toBeNull();
-  });
-  it("lo que la persona ya decidió («Te interesa») va primero y es suyo; «Recién agregado» ya no es un sello", () => {
-    expect(selloDeTarjeta({ hoy: true, van: 5 }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
-    expect(selloDeTarjeta({ van: 0 }, true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
+describe("tarjetas", () => {
+  it("«Recién agregado» ya no es un sello: la tarjeta no lo trae", () => {
     expect(tarjetaEvento(evento({ creado_en: "2026-09-16T00:00:00Z" }), AHORA)).not.toHaveProperty("reciente");
   });
-});
-
-describe("tarjetas", () => {
   it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde en dos datos", () => {
     expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", corto: "Gala de arias", colores: null, detalle: "mañana · 19:00", sitio: "Teatro de la Paz", van: 14, cuando: true, hoy: false, inicio: MANANA_19, fin: null, zona: ZONA });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
@@ -175,8 +154,9 @@ describe("qué se puede destacar", () => {
 it("el recuento desconocido viaja hasta la tarjeta y no crea una cifra", () => {
   const tarjeta = tarjetaEvento(evento({ van: null }), AHORA);
   expect(tarjeta.van).toBeNull();
-  expect(selloDeTarjeta(tarjeta)).toBeNull();
-  expect(selloDeTarjeta({ hoy: true, van: null })?.texto).toBe("Hoy");
+  // El chip de la tarjeta de Inicio (OL-370): sin recuento, ninguno; «Te interesa» sí.
+  expect(chipDeTarjeta(tarjeta, null)).toBeNull();
+  expect(chipDeTarjeta(tarjeta, "me_interesa")?.texto).toBe("Te interesa");
 });
 
 

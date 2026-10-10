@@ -1,7 +1,9 @@
 /* La tarjeta de evento de Inicio (OL-370; prototipo firmado `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada», bitácora 398). Una
    rejilla plana: la portada (el cartel, o sin cartel la de título) a su alto (`--foto`, que pone el carril: `.cartelGrande` y `.cartelMediana` en
    Destacados.module.css), un respiro y debajo, cada uno en su fila, la ceja, el título, el lugar y cuándo. Lo que va encima del cartel (el sello
-   de fecha y el chip) comparte su celda; nada se apila con z-index: lo de después en el código se pinta encima. */
+   de fecha y el chip) comparte su celda; nada se apila con z-index: lo de después en el código se pinta encima. La de un artista en «Artistas
+   destacadxs» (E9, OL-372) es esta misma, mediana: su foto en la portada, la disciplina en la ceja, el nombre, el género en la línea del lugar y su
+   fecha en la de cuándo. */
 .tarjeta {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -82,6 +84,12 @@
   align-self: end;
   justify-self: start;
   margin: var(--espacio-2);
+}
+/* E9 (OL-372): sobre la foto de un artista, «Nuevo video» o «Nuevo audio» con el trato de «Hoy» de siempre (OL-275; founder, 2026-10-10: «para
+   artistas se sigue chip de “Nuevo video” o audio»): el color de acción con el texto blanco (7,06:1). */
+.chip.nuevo {
+  background: var(--primario);
+  color: var(--primario-texto);
 }
 
 /* E3 + E3b: la clase chica arriba del título, solo si no es un evento, con su sesión al lado («TALLER · SESIÓN 1 DE 4»). */

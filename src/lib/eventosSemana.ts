@@ -2,6 +2,7 @@ import type { Tarjeta } from "./destacados";
 import { hrefArtista } from "./artistas";
 import { diaLocal, formatearCuando } from "./fechas";
 import { compararNombres, hrefLugar } from "./lugares";
+import { selloNovedadArtista, type NovedadRecienteArtista } from "./novedadesArtista";
 
 export type AparicionSemana = {
   ficha: { id: string; slug: string; nombre: string; foto: string | null; visible: boolean; privado?: boolean };
@@ -51,4 +52,17 @@ export function tarjetasDeSemana(apariciones: AparicionSemana[], tipo: "artistas
 export function seleccionarArtistasSemana(semana: Tarjeta[], destacados: Pick<Tarjeta, "id">[], tope: number): Tarjeta[] {
   const yaSalen = new Set(destacados.map((t) => t.id));
   return semana.filter((t) => !yaSalen.has(t.id)).slice(0, tope);
+}
+
+/**
+ * La novedad de cada artista de «Artistas de la semana» (OL-372, E5 firmado: bajo el avatar, «Nuevo video» o «Nuevo audio» si la hay): la última
+ * vigente, como la lee la base para el lote (`leerNovedadesRecientes`), con la regla de siempre (`selloNovedadArtista`). Como en «Artistas
+ * destacadxs» (`tarjetaArtista`), el enlace abre la ficha en esa novedad.
+ */
+export function conNovedades(tarjetas: Tarjeta[], novedades: ReadonlyMap<string, NovedadRecienteArtista>, ahora = new Date()): Tarjeta[] {
+  return tarjetas.map((t) => {
+    const novedad = novedades.get(t.id);
+    if (!novedad || !selloNovedadArtista(novedad, ahora)) return t;
+    return { ...t, novedad, href: `${t.href}?novedad=${encodeURIComponent(novedad.novedad_id)}` };
+  });
 }

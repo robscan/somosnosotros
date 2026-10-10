@@ -173,8 +173,19 @@ const artistas = [
   artista(A.cadena, "aaron-cadena", "Aaron Cadena", "artes_visuales", "Fotografía", "solista", "Artista visual, fotoperiodista y fotógrafo documental originario de San Luis Potosí.", [{ url: "https://aaroncadena.example.com" }]),
   artista(A.pimpolina, "pimpolina", "Pimpolina", "teatro", "Clown", "solista", null, [], cartel("delirium-pollum-clown-y-pantomima-con-pimpolina")),
   artista(A.feleal, "feleal", "Feleal", "musica", "Acordeón", "solista", null, [], cartel("feleal-un-viaje-por-el-mundo-en-acordeon")),
-  artista(A.backside, "0backside0", "0Backside0", "musica", "Rock, metal y alternativo", "grupo"),
+  // OL-372: con foto (un cartel público), para ver en «Artistas de la semana» un avatar con foto junto a los del símbolo SN.
+  artista(A.backside, "0backside0", "0Backside0", "musica", "Rock, metal y alternativo", "grupo", null, [], cartel("susurros-del-inconsciente")),
   artista(A.merlot, "abril-merlot", "Abril Merlot", "musica", "Música académica y clásica", "solista"),
+];
+// OL-372: lo que hace falta para ver «Artistas destacadxs» con la tarjeta de un evento (E9) y los avatares (E5). Pimpolina la eligió la
+// administración (sin novedad); la Orquesta («Nuevo audio», nombre largo que se corta, hoy) y Feleal («Nuevo video») entran por su novedad.
+// Abril Merlot, sin foto, publicó un audio: no puede ser destacada (un destacado exige foto) y lo dice bajo su avatar en «Artistas de la semana».
+const artistasElegidos = [A.pimpolina];
+const novedad = (n, artista_id, proveedor, url, dias) => ({ id: `cccc0002-0000-4000-8000-00000000000${n}`, artista_id, url, proveedor, embed_id: null, titulo: null, texto: null, creado_en: hace(dias), visible: true, publicado_por: null });
+const novedades_artista = [
+  novedad(1, A.osslp, "soundcloud", "https://soundcloud.com/osslp/huapango-de-moncayo", 1),
+  novedad(2, A.feleal, "youtube", "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 2),
+  novedad(3, A.merlot, "soundcloud", "https://soundcloud.com/abril-merlot/preludio", 3),
 ];
 const eventos_artistas = [
   { evento_id: E.sinfonica, artista_id: A.osslp, orden: 1 },
@@ -207,7 +218,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista: [], reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -233,6 +244,18 @@ export const FK = {
 // ---------- RPC ----------
 const van = (id) => asistencias.filter((a) => a.evento_id === id && a.estado === "voy").length;
 const resumenArtista = (a) => ({ id: a.id, slug: a.slug, nombre: a.nombre, disciplina: a.disciplina, detalle: a.detalle, tipo: a.tipo, foto: a.foto });
+/** Como `novedades_recientes_artistas` (OL-275): la última novedad visible de cada artista visible de la ciudad, de menos de 168 horas. */
+function ultimasNovedades(t, ciudad) {
+  const ahora = Date.now();
+  const ultimas = new Map();
+  for (const n of [...t.novedades_artista].sort((x, y) => y.creado_en.localeCompare(x.creado_en) || y.id.localeCompare(x.id))) {
+    const a = t.artistas.find((x) => x.id === n.artista_id);
+    const edad = ahora - Date.parse(n.creado_en);
+    if (!a?.visible || a.ciudad !== ciudad || !n.visible || edad < 0 || edad >= 168 * 3600e3 || ultimas.has(a.id)) continue;
+    ultimas.set(a.id, { artista_id: a.id, novedad_id: n.id, proveedor: n.proveedor, creado_en: n.creado_en });
+  }
+  return ultimas;
+}
 export const rpcs = {
   // OL-268: mismo contrato agregado de SQL; los permisos/RLS se comprueban en PostgreSQL.
   ciudades_agregadas: ({ p_ahora = new Date().toISOString() }, t) => {
@@ -259,6 +282,17 @@ export const rpcs = {
 
   van_por_evento: ({ ids }) => (ids || []).map((id) => ({ evento_id: id, n: van(id) })).filter((x) => x.n > 0),
   tira_destacados: ({ p_tipo }) => (p_tipo === "eventos" ? destacados.map((d) => ({ id: d.evento_id, motivo: "elegido", hasta: null, van: van(d.evento_id) })) : []),
+  // OL-372: los dos contratos de OL-275 (los permisos y el veto editorial se prueban en PostgreSQL). La tira de «Artistas destacadxs»: los que
+  // eligió la administración y luego los que tienen una novedad vigente, de la más reciente a la más vieja; todos con foto, doce como mucho.
+  artistas_destacados_novedades: ({ p_ciudad }, t) => {
+    const ultimas = ultimasNovedades(t, p_ciudad);
+    const conFoto = (id) => t.artistas.some((a) => a.id === id && a.visible && a.ciudad === p_ciudad && a.foto);
+    const fila = (id, motivo) => ({ id, motivo, hasta: null, van: 0, novedad_id: ultimas.get(id)?.novedad_id ?? null, proveedor: ultimas.get(id)?.proveedor ?? null, novedad_creado_en: ultimas.get(id)?.creado_en ?? null });
+    const elegidos = artistasElegidos.filter(conFoto).map((id) => fila(id, "elegido"));
+    const porNovedad = [...ultimas.values()].filter((n) => conFoto(n.artista_id) && !artistasElegidos.includes(n.artista_id)).map((n) => fila(n.artista_id, "novedad"));
+    return [...elegidos, ...porNovedad].slice(0, 12);
+  },
+  novedades_recientes_artistas: ({ p_ciudad, p_ids }, t) => [...ultimasNovedades(t, p_ciudad).values()].filter((n) => !p_ids || p_ids.includes(n.artista_id)),
   cuenta_seguidores: ({ p_lugar, p_artista }) => seguimientos.filter((s) => (p_lugar ? s.lugar_id === p_lugar : s.artista_id === p_artista)).length,
   disciplinas_con_artistas: () => Object.entries(artistas.reduce((m, a) => ((m[a.disciplina] = (m[a.disciplina] || 0) + 1), m), {})).map(([disciplina, n]) => ({ disciplina, n })),
   detalles_de_disciplina: () => [],

@@ -3,7 +3,7 @@ import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtr
 import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
-import { cuandoDeTarjeta, notaDeClase, selloDeTarjeta, tarjetaConClase, tarjetaEvento } from "./destacados";
+import { cuandoDeTarjeta, notaDeClase, tarjetaConClase, tarjetaEvento } from "./destacados";
 import { calcularCarrilesAgenda, carrilDestacados, carrilEstaSemana, carrilEstelar, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
 import { cejaDeTarjeta, chipDeTarjeta, tarjetaDeInicio } from "./tarjetaInicio";
@@ -284,14 +284,11 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(carrilFestivales(muchos, new Set(), ahora)).toHaveLength(TOPE_FESTIVALES);
     expect(carrilFestivales([concierto, cine1, taller], new Set(), ahora)).toEqual([]);
   });
-  it("la tarjeta dice qué es («Festival», «Exposición») en su rótulo y su fecha propia", () => {
+  it("la tarjeta dice qué es («Festival», «Exposición») y su fecha propia", () => {
     expect(tarjetaConClase(electric, ahora)).toMatchObject({ clase: "Festival", detalle: "sáb 31 de oct", sinVoy: true });
     expect(tarjetaConClase(fiesta, ahora)).toMatchObject({ clase: "Festival", detalle: "Del 5 al 7 de oct" });
     expect(tarjetaConClase(ecos, ahora)).toMatchObject({ clase: "Exposición", detalle: "Hasta el sáb 31 de oct" });
     expect(tarjetaEvento(ecos, ahora).clase).toBeUndefined(); // los demás carriles no cambian
-    expect(selloDeTarjeta(tarjetaConClase(ecos, ahora))).toEqual({ texto: "Exposición", tuyo: false, hoy: false });
-    expect(selloDeTarjeta({ ...tarjetaConClase(electric, ahora), hoy: true })).toEqual({ texto: "Hoy · Festival", tuyo: false, hoy: true });
-    expect(selloDeTarjeta(tarjetaConClase(fiesta, ahora), true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
   });
   it("OL-370: en Inicio la clase va en la ceja, solo si no es un evento; sobre el cartel, como mucho un chip («Te interesa» o cuántos van)", () => {
     expect(cejaDeTarjeta(tarjetaDeInicio(electric, ahora))).toEqual(["Festival"]);
