@@ -136,11 +136,25 @@ export function lineaDeTaller(evento: { inicio: string; fin: string | null; zona
   return [cuando, sitio].filter(Boolean).join(" · ");
 }
 
-/** El periodo de un festival: del inicio de su primer acto al final del último (con hora de fin, ese; sin ella, 3 h después de empezar: `terminaDe`). */
+/**
+ * Hasta dónde cuenta un acto en el periodo de su festival (OL-362, founder 2026-10-09): con hora de fin, su fin, aunque cruce la medianoche;
+ * sin ella, 3 h después de empezar (`terminaDe`) sin pasar de la medianoche que cierra su día, en su zona. Así un último acto a las 22:00 sin
+ * fin no le suma un día al rango («Del 12 al 14 de nov»): la medianoche exacta es el final del día anterior (`ultimoDiaDelPeriodo`). La base
+ * dice lo mismo en `fin_en_programa` (migración 20261009130000), que usa `recalcular_festival` para guardar el fin del marco.
+ */
+export function finEnPrograma(inicio: string, fin: string | null, zona: string = ZONA_INICIAL): string {
+  if (fin) return new Date(fin).toISOString();
+  const [a, m, d] = diaLocal(new Date(inicio), zona).split("-").map(Number);
+  const siguiente = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+  const medianoche = Date.parse(localAIso(`${siguiente}T00:00`, zona) as string);
+  return new Date(Math.min(Date.parse(terminaDe(inicio, null, zona)), medianoche)).toISOString();
+}
+
+/** El periodo de un festival: del inicio de su primer acto al final del último (`finEnPrograma`). */
 export function periodoDePrograma(actos: readonly { inicio: string; fin: string | null }[], zona: string = ZONA_INICIAL): { inicio: string; fin: string } | null {
   if (!actos.length) return null;
   const inicios = actos.map((a) => Date.parse(a.inicio));
-  const fines = actos.map((a) => Date.parse(terminaDe(a.inicio, a.fin, zona)));
+  const fines = actos.map((a) => Date.parse(finEnPrograma(a.inicio, a.fin, zona)));
   return { inicio: new Date(Math.min(...inicios)).toISOString(), fin: new Date(Math.max(...fines)).toISOString() };
 }
 
