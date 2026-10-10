@@ -175,7 +175,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       pregunta={cartel.espera ? undefined : periodo ? "¿Cuándo se puede visitar?" : preguntaDe(paso, r)}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
-          <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} />
+          <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} colores={cartel.subido?.colores} />
           {/* El festival que nombra el cartel (OL-323): se anota con el evento para reconocerlo cuando se publique otro acto (H4). */}
           <input type="hidden" name="festival_leido" value={leido?.valores.festival ?? ""} />
         </form>

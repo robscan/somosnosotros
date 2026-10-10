@@ -83,13 +83,13 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         {/* Orden firmado (doc 41, tercera vuelta): eventos siempre antes que lugares y artistas. "Tus planes"
             solo con sesión — sin ella, ni se pinta un carril colapsado (a diferencia de los demás, que sí
             existen vacíos): el componente entero se omite. */}
-        {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotTusPlanes}</Suspense>}
-        <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotEstelar}</Suspense>
-        <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
+        {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotTusPlanes}</Suspense>}
+        <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotEstelar}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotEstaSemana}</Suspense>
         {/* OL-347: «Festivales y exposiciones» va con la tarjeta grande de «Destacados» (founder, 2026-10-08); el esqueleto
             cambia con él para no saltar cuando llega la respuesta real. */}
-        <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotFestivales}</Suspense>
-        <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotFestivales}</Suspense>
+        <Suspense fallback={<CarrilEsqueleto tamano="grande" titular />}>{slotNuevos}</Suspense>
         <Suspense fallback={null}>{slotMasAdelante}</Suspense>
         <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
         {/* OL-165: «Artistas destacadxs» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto

@@ -73,6 +73,15 @@ before(async () => {
       // Una redonda sin foto (lugar o artista): lleva el símbolo SN ya generado.
       const redondaSinFoto = tarjeta('lug-sin-foto', 0, { sitio: undefined, foto: null, detalle: 'Hoy · 19:00' });
       const sola = tarjeta('la-sola', 0);
+      // OL-360: «título + cartel» (solo Inicio). Con colores guardados, sin colores (paleta propia), sin cartel (todo título y símbolo SN) y un
+      // festival (su rótulo de clase).
+      const COLORES = ['#2d2d2d', '#6d829b', '#3c2f23', '#bdbcba'];
+      const titulares = [
+        tarjeta('tit-colores', 0, { titulo: 'La música de la generación trentina: docufilm', corto: 'La música de la generación trentina', colores: COLORES, hoy: true }),
+        tarjeta('tit-sin-colores', 0, { corto: 'Evento sin colores', colores: null }),
+        tarjeta('tit-sin-cartel', 0, { titulo: '¡Ah, qué la canción!', corto: '¡Ah, qué la canción!', foto: null, hoy: true }),
+        tarjeta('tit-festival', 0, { corto: 'Festival de cine', clase: 'Festival', colores: COLORES }),
+      ];
 
       function App() {
         return React.createElement(React.Fragment, null,
@@ -89,6 +98,8 @@ before(async () => {
           React.createElement(Destacados, { tarjetas: [sola], encabezado: 'Carril solo', memoria: 'm11', boton }),
           React.createElement(Destacados, { tarjetas: [tarjeta('sola-sin-foto', 0, {foto: null})], encabezado: 'Carril solo sin foto', memoria: 'm13', boton }),
           React.createElement(Destacados, { tarjetas: [], encabezado: 'Carril vacio', memoria: 'm12' }),
+          React.createElement(Destacados, { tarjetas: titulares, tamano: 'grande', titular: true, encabezado: 'Carril titular', memoria: 'm14', boton }),
+          React.createElement(Destacados, { tarjetas: [tarjeta('tit-sola', 0, { corto: 'Sola' })], tamano: 'grande', titular: true, encabezado: 'Carril titular solo', memoria: 'm15', boton }),
         );
       }
       createRoot(document.getElementById('root')).render(React.createElement(App));
@@ -367,4 +378,50 @@ test("ya decidido, la palomita blanca sobre verde en los tres casos", async (t) 
     const estilo = await boton.evaluate((b) => ({ fondo: getComputedStyle(b).backgroundColor, glifo: getComputedStyle(b.querySelector("svg")).color }));
     assert.deepEqual(estilo, { fondo: "rgb(31, 111, 67)", glifo: "rgb(255, 255, 255)" }, id);
   }
+});
+
+// OL-360: la tarjeta «título + cartel» de Inicio (prototipo firmado `barra-ahora.html`).
+test("título + cartel: 165×248 a 390, franja con el título corto sobre su color y el cartel debajo, sin título repetido", async (t) => {
+  const p = await pagina(t);
+  const enlace = p.locator('a[href="/eventos/tit-colores"]');
+  await enlace.scrollIntoViewIfNeeded();
+  assert.equal(await enlace.getAttribute("aria-label"), "La música de la generación trentina: docufilm. vie 10 de oct · 19:00. Teatro de la Paz");
+  const m = await enlace.evaluate((a) => {
+    const portada = a.firstElementChild, franja = portada.firstElementChild, img = portada.querySelector("img");
+    const r = (e) => e.getBoundingClientRect();
+    return { ancho: r(portada).width, alto: r(portada).height, franjaAbajo: r(franja).bottom, imgArriba: r(img).top, imgAbajo: r(img).bottom, portadaAbajo: r(portada).bottom,
+      texto: franja.textContent, fondo: getComputedStyle(franja).backgroundImage + getComputedStyle(franja).backgroundColor, b: a.querySelector("b"), datos: a.querySelector("small").textContent };
+  });
+  assert.equal(Math.round(m.ancho), 165);
+  assert.equal(Math.round(m.alto), 248);
+  assert.ok(Math.abs(m.franjaAbajo - m.imgArriba) < 1 && Math.abs(m.imgAbajo - m.portadaAbajo) < 1, "el cartel llena lo que deja la franja, con corte limpio");
+  assert.equal(m.texto, "La música de la generación trentina");
+  assert.equal(m.b, null, "el título no se repite debajo");
+  assert.equal(m.datos, "vie 10 de oct · 19:00Teatro de la Paz");
+  // El color más vivo (#6d829b) hecho legible: luminancia ≤ 0,12.
+  const fondo = /rgb\((\d+), (\d+), (\d+)\)\s*$/.exec(m.fondo);
+  const L = fondo.slice(1).map(Number).map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  assert.ok(0.2126 * L[0] + 0.7152 * L[1] + 0.0722 * L[2] <= 0.1201, m.fondo);
+  assert.ok(await p.locator('a[href="/eventos/tit-colores"] + button').isVisible(), "el botón de asistencia sigue");
+});
+
+test("título + cartel: sin colores usa una paleta propia; sin cartel es todo título con «Hoy» y el símbolo SN abajo", async (t) => {
+  const p = await pagina(t);
+  const sinColores = await p.locator('a[href="/eventos/tit-sin-colores"] > span > span').first().evaluate((f) => getComputedStyle(f).backgroundImage);
+  assert.match(sinColores, /radial-gradient/);
+  const sinCartel = await p.locator('a[href="/eventos/tit-sin-cartel"]').evaluate((a) => {
+    const portada = a.firstElementChild, r = (e) => e.getBoundingClientRect(), svg = portada.querySelector("svg"), hoy = [...portada.children].find((e) => e.textContent === "Hoy");
+    return { img: portada.querySelector("img"), svgAlto: r(svg).height, svgDerecha: r(portada).right - r(svg).right, svgAbajo: r(portada).bottom - r(svg).bottom, hoyIzquierda: r(hoy).left - r(portada).left, hoyAbajo: r(portada).bottom - r(hoy).bottom };
+  });
+  assert.equal(sinCartel.img, null);
+  assert.equal(Math.round(sinCartel.svgAlto), 18);
+  assert.ok(sinCartel.svgDerecha < 20 && sinCartel.svgAbajo < 20, JSON.stringify(sinCartel));
+  assert.ok(sinCartel.hoyIzquierda < 20 && sinCartel.hoyAbajo < 20, JSON.stringify(sinCartel));
+});
+
+test("título + cartel: el festival conserva su rótulo y una sola tarjeta no se estira", async (t) => {
+  const p = await pagina(t);
+  assert.equal(await p.locator('a[href="/eventos/tit-festival"]').getByText("Festival", { exact: true }).count(), 1);
+  const ancho = await p.locator('a[href="/eventos/tit-sola"]').evaluate((a) => Math.round(a.getBoundingClientRect().width));
+  assert.equal(ancho, 165);
 });

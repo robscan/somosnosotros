@@ -5,6 +5,8 @@ import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UI
 import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { SIN_FOTO } from "@/lib/imagen";
+import { degradadoTarjeta, paletaPropia } from "@/lib/coloresCartel";
+import SimboloBlanco from "./inicio/SimboloBlanco";
 import { tamanoImagenCarril } from "@/lib/imagenOptima";
 import Imagen from "./ui/Imagen";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
@@ -40,8 +42,15 @@ import styles from "./Destacados.module.css";
  * trae lo que la persona decidió (no es suyo: lo decide en la ficha, no al armar la tarjeta); en vez de eso, el llamador pasa el
  * `estado(id)` que ya expone `useAsistenciaEnLista` — el mismo hook que le da `boton` — sin tocar ese hook ni el tipo `Tarjeta`.
  * Sin `estadoDe` (lugares, artistas) no aparece nada.
+ *
+ * `titular` (OL-360, prototipo firmado `barra-ahora.html`, «Tarjetas: título + cartel»; solo los carriles de eventos de Inicio): la tarjeta
+ * «Essentials» de Apple Music. Arriba, una franja con el título corto (`tituloCorto`, hasta tres líneas) sobre el color más vivo de su cartel
+ * hecho legible (`degradadoTarjeta`, con los colores guardados al subirlo); abajo, el cartel llena lo que queda, recortado desde arriba, con un
+ * corte limpio. Sin cartel, la tarjeta entera es de título, con su paleta propia y el símbolo SN abajo a la derecha. Sin colores guardados, la
+ * paleta propia: nunca se pide la imagen para calcularlos aquí. Debajo solo cuándo y dónde; el título completo va en el nombre del enlace.
+ * Siempre con el tamaño de su carril: una sola tarjeta no se estira a lo ancho.
  */
-export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon | null; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string } }) {
+export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos, titular = false }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon | null; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string }; titular?: boolean }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -107,7 +116,7 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
   // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
   const ordenadas = ordenarTarjetasPorFoto(tarjetas);
   // Una sola tarjeta ocupa el ancho del carril (las redondas no).
-  const forma = ordenadas.length === 1 && tamano !== "chica" ? "sola" : tamano;
+  const forma = ordenadas.length === 1 && tamano !== "chica" && !titular ? "sola" : tamano;
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
@@ -126,6 +135,42 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
           const estadoBoton = boton?.(t) ?? null;
           // La redonda de un lugar o un artista sin foto lleva el símbolo SN ya generado; las demás, el nombre grande sobre fondo suave (H-03).
           const foto = t.foto ?? (tamano === "chica" ? SIN_FOTO : null);
+          const rotulo = sello && (
+            <Chip variante={sello.tuyo ? "estado" : "sello"} className={sello.hoy ? `${styles.rotulo} ${styles.hoy}` : styles.rotulo}>
+              {sello.texto}
+            </Chip>
+          );
+          if (titular) {
+            const fondo = degradadoTarjeta(t.foto && t.colores ? t.colores : paletaPropia(t.id));
+            return (
+              <li key={t.clave ?? t.id}>
+                <Link href={t.href} className={`${styles.tarjeta} ${styles.titular}`} aria-label={[t.titulo, t.detalle, t.sitio].filter(Boolean).join(". ")}>
+                  {t.foto ? (
+                    <span className={styles.portada}>
+                      <span className={styles.franja} style={{ background: fondo }}>
+                        <span>{t.corto ?? t.titulo}</span>
+                      </span>
+                      <Imagen src={t.foto} alt="" className={styles.cartel} width={384} height={384} sizes={tamanoImagenCarril(forma)} />
+                      {rotulo}
+                    </span>
+                  ) : (
+                    <span className={`${styles.portada} ${styles.soloTitulo}`} style={{ background: fondo }}>
+                      <span className={styles.franja}>
+                        <span>{t.corto ?? t.titulo}</span>
+                      </span>
+                      {rotulo}
+                      <SimboloBlanco className={styles.simbolo} />
+                    </span>
+                  )}
+                  <small>
+                    <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
+                    {t.sitio && <span>{t.sitio}</span>}
+                  </small>
+                </Link>
+                {estadoBoton && <BotonRenglon {...estadoBoton} sobreFoto />}
+              </li>
+            );
+          }
           return (
             <li key={t.clave ?? t.id}>
               <Link href={t.href} className={foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
@@ -136,11 +181,7 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
                   {t.sitio && <span>{t.sitio}</span>}
                 </small>
                 {/* Al final para que se oiga después del título; un solo rótulo por foto, abajo a la izquierda. */}
-                {sello && (
-                  <Chip variante={sello.tuyo ? "estado" : "sello"} className={sello.hoy ? `${styles.rotulo} ${styles.hoy}` : styles.rotulo}>
-                    {sello.texto}
-                  </Chip>
-                )}
+                {rotulo}
               </Link>
               {estadoBoton && <BotonRenglon {...estadoBoton} sobreFoto />}
             </li>

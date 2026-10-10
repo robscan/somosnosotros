@@ -9,5 +9,5 @@ export default function CarrilMasAdelanteCliente({ tarjetas, verTodosHref, ...re
   const { eventosResueltos, hayEventos } = useEstadoCarriles();
   const cantidad = eventosResueltos ? (hayEventos ? 0 : tarjetas.length) : null;
   useCarrilResuelto("inicio-mas-adelante", cantidad);
-  return cantidad ? <CarrilEventosCliente {...resto} tarjetas={tarjetas} titulo="Más adelante" tamano="mediana" memoria="inicio-mas-adelante" verTodos={{ href: verTodosHref, etiqueta: "Ver la agenda" }} /> : null;
+  return cantidad ? <CarrilEventosCliente {...resto} tarjetas={tarjetas} titulo="Más adelante" tamano="grande" memoria="inicio-mas-adelante" verTodos={{ href: verTodosHref, etiqueta: "Ver la agenda" }} /> : null;
 }

@@ -11,7 +11,8 @@ import propios from "./CarrilEsqueleto.module.css";
  * página no salta al llegar la respuesta (doc 50, P10: una sola fuente de tamaños). Las líneas de texto llevan un
  * espacio duro: ocupan el alto de una línea de verdad, sin copiar ninguna medida.
  */
-export default function CarrilEsqueleto({ tamano = "mediana", cantidad = 3 }: { tamano?: "grande" | "mediana" | "chica"; cantidad?: number }) {
+/** `titular`: el de los carriles de eventos de Inicio (OL-360), sin la línea del título bajo la tarjeta (va dentro). */
+export default function CarrilEsqueleto({ tamano = "mediana", cantidad = 3, titular = false }: { tamano?: "grande" | "mediana" | "chica"; cantidad?: number; titular?: boolean }) {
   return (
     <section className={styles.destacados} aria-hidden="true">
       <div className={styles.cabecera}>
@@ -25,7 +26,7 @@ export default function CarrilEsqueleto({ tamano = "mediana", cantidad = 3 }: { 
           <li key={i}>
             <span className={styles.tarjeta}>
               <span className={`${styles.foto} ${esqueleto.respira}`} />
-              <b className={esqueleto.respira}>&nbsp;</b>
+              {!titular && <b className={esqueleto.respira}>&nbsp;</b>}
               <small>
                 <span className={esqueleto.respira}>&nbsp;</span>
                 <span className={`${esqueleto.respira} ${propios.corta}`}>&nbsp;</span>

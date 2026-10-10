@@ -10,6 +10,7 @@ import { formatoDe } from "@/lib/carteles/tokens";
 import { limpiarTexto, MAXIMOS } from "@/lib/carteles/datos";
 import { hrefEvento } from "@/lib/eventos";
 import { imagenPermitida } from "@/lib/imagenes";
+import { coloresDeImagenEnMemoria } from "@/lib/coloresCartelServidor";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 
 export type ResultadoUsar = { ok: true; href: string } | { ok: false; mensaje: string };
@@ -40,7 +41,9 @@ export async function usarComoCartel(idOSlug: string, idPlantilla: string, idFor
   if (subida.error) return { ok: false, mensaje: "No se pudo guardar el cartel. Intenta de nuevo." };
   const url = supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
   if (!imagenPermitida(url, { esAdmin: false })) return { ok: false, mensaje: "No se pudo guardar el cartel. Intenta de nuevo." };
-  const { data, error } = await supabase.from("eventos").update({ imagen: url }).eq("id", datos.evento.id).select("id").maybeSingle();
+  // Sus colores (OL-360), del mismo dibujo y en la misma escritura: la tarjeta de Inicio no pide la imagen para calcularlos.
+  const colores = await coloresDeImagenEnMemoria(dibujo);
+  const { data, error } = await supabase.from("eventos").update({ imagen: url, ...(colores ? { colores_cartel: colores } : {}) }).eq("id", datos.evento.id).select("id").maybeSingle();
   if (error || !data) return { ok: false, mensaje: "No se pudo poner el cartel en el evento. Intenta de nuevo." };
   await supabase.from("carteles_generados").insert({ evento_id: datos.evento.id, perfil_id: datos.perfilId, plantilla: plantilla.id, formato: formato.id, ruta });
   const href = hrefEvento(datos.evento);

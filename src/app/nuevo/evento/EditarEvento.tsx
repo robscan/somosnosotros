@@ -137,7 +137,7 @@ export default function EditarEvento({ accion, respuestas, imagen, revision, zon
           <input type="hidden" name="revision" value={revision} />
           {/* «Quitar la inauguración» de una exposición que la tenía (OL-323, deshacer): sin este campo, guardar sin inauguración la conserva. */}
           {respuestas.inauguracion && r.clase === "exposicion" && !r.inauguracion && <input type="hidden" name="quitar_inauguracion" value="1" />}
-          <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} />
+          <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} colores={cartel.subido?.colores} />
         </form>
       }
     >
