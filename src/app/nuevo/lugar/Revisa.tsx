@@ -10,6 +10,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { etiquetaLugar, etiquetaTipo, hrefLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import { Dato, turno } from "../evento/Revisa";
 import { resumenMas, type Paso, type Respuestas } from "./pasos";
+import type { AlElegir } from "./PasosLugar";
 import evento from "../evento/AltaEvento.module.css";
 import styles from "./AltaLugar.module.css";
 
@@ -34,6 +35,8 @@ type Props = {
   onCiudad: () => void;
   /** «No, es otro: publicar de todos modos». */
   onConfirmar: () => void;
+  /** Viniendo de un sitio (OL-366): elegir uno de los parecidos le liga sus eventos antes de abrir su ficha. */
+  alElegir?: AlElegir;
 };
 
 /**
@@ -43,7 +46,7 @@ type Props = {
  * su dato; si el servidor encontró uno parecido cerca, «¿Es este?» con su ficha y «No, es otro: publicar de todos modos», como en el formulario
  * de siempre. Entra de abajo para arriba como «Revisa» del evento.
  */
-export default function Revisa({ r, ciudad, pedirCiudad, errores, general, parecidos, enviando, falta, formulario, onAbrir, onHorario, onCiudad, onConfirmar }: Props) {
+export default function Revisa({ r, ciudad, pedirCiudad, errores, general, parecidos, enviando, falta, formulario, onAbrir, onHorario, onCiudad, onConfirmar, alElegir }: Props) {
   const tipo = r.tipo ? etiquetaLugar({ tipo: r.tipo, detalle: r.detalle.trim() || null }) : null;
   const mas = resumenMas(r);
   const renglones = pedirCiudad ? 5 : 4;
@@ -72,7 +75,7 @@ export default function Revisa({ r, ciudad, pedirCiudad, errores, general, parec
           <ul>
             {parecidos.map((p) => (
               <li key={p.id}>
-                <Link href={hrefLugar(p)} replace>
+                <Link href={hrefLugar(p)} replace onClick={alElegir && ((e) => alElegir(e, p))}>
                   {[p.nombre, etiquetaTipo(p.tipo), p.direccion].filter(Boolean).join(" · ")}
                 </Link>
               </li>

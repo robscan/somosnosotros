@@ -105,14 +105,15 @@ export function enlaceAltaEvento({ lugar, artista, desde, ciudad, festival }: Co
 
 /**
  * Lo que puede llevar el alta de lugar por pasos (OL-315): la ciudad que se veía (acerca la búsqueda y, a menos de 50 km, es la ciudad del
- * lugar si el mapa no la da), el nombre que se buscó y no se encontró y el punto donde se sostuvo el dedo en el mapa de Lugares.
+ * lugar si el mapa no la da), el nombre que se buscó y no se encontró y el punto donde se sostuvo el dedo en el mapa de Lugares. Desde la
+ * ficha de un sitio fuera del directorio («Agregar al directorio», OL-366), además la clave de ese sitio: sus eventos pasan al lugar.
  */
-export type ConsultaAltaLugar = { ciudad?: string | null; nombre?: string | null; lat?: string | null; lng?: string | null };
+export type ConsultaAltaLugar = { ciudad?: string | null; nombre?: string | null; lat?: string | null; lng?: string | null; sitio?: string | null };
 
 /** La dirección del alta de lugar por pasos con lo que ya se sabe, en un orden fijo; lo vacío no va. */
-export function enlaceAltaLugar({ ciudad, nombre, lat, lng }: ConsultaAltaLugar = {}): string {
+export function enlaceAltaLugar({ ciudad, nombre, lat, lng, sitio }: ConsultaAltaLugar = {}): string {
   const consulta = new URLSearchParams();
-  for (const [clave, valor] of Object.entries({ ciudad, nombre, lat, lng })) if (valor) consulta.set(clave, valor);
+  for (const [clave, valor] of Object.entries({ ciudad, nombre, lat, lng, sitio })) if (valor) consulta.set(clave, valor);
   return `/nuevo/lugar${consulta.size ? `?${consulta}` : ""}`;
 }
 
