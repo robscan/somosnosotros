@@ -16,7 +16,7 @@ export type Contexto = {
   paleta: Paleta;
   /** La foto ya preparada (data URL de un JPEG del tamaño del lienzo), o null: la plantilla dibuja su versión sin foto. */
   foto: string | null;
-  /** El sello discreto «somosnosotros.org» en el pie (por decidir el founder si va siempre o solo en los sin costo; hoy, siempre). */
+  /** El sello discreto con el dominio del cartel (`DOMINIO_CARTEL`, «somosnosotrxs.org») en el pie (por decidir el founder si va siempre o solo en los sin costo; hoy, siempre). */
   sello: boolean;
 };
 

@@ -53,10 +53,11 @@ export const LETRA = {
 
 /**
  * El dominio del sello del pie (OL-336: el símbolo SN y el dominio, en el sitio donde iba la dirección corta). UNA sola constante para todos los
- * carteles: el founder comprará `somosnosotrxs.org` y entonces se cambia aquí y nada más (la dirección corta `/e/<slug>` sigue igual en el
- * dominio que la sirva). Los carteles ya descargados conservan el dominio con que se dibujaron.
+ * carteles. Desde OL-368 es `somosnosotrxs.org` (founder, 2026-10-10: «comprado y conectado pero solo vamos a cambiar dominio en el cartel, no
+ * en ningún otro lugar»): el dominio lleva con un 308 a somosnosotros.org conservando la ruta, así que `/e/<slug>` también vale. El resto de la
+ * app sigue con somosnosotros.org. Los carteles ya descargados conservan el dominio con que se dibujaron.
  */
-export const DOMINIO_CARTEL = "somosnosotros.org";
+export const DOMINIO_CARTEL = "somosnosotrxs.org";
 
 /** El resaltador amarillo del zine y las cintas: decorativo, siempre con texto negro encima (contraste 16:1). */
 export const RESALTADOR = "#ffe85a";

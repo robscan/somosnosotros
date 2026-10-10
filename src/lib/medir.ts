@@ -208,8 +208,9 @@ type Gtag = (...args: unknown[]) => void;
 
 /**
  * Lo que Google Analytics lee de la página en cada envío, ya limpio: sin `?q=`, sin el nombre que se buscó, sin tokens, sin la ruta
- * entera de lo privado (queda solo su primer tramo: «/entrar») y sin el título de la pestaña (lleva nombres de personas y de fichas;
- * va la ruta en su lugar). Sin referente: podría traer la búsqueda de la página anterior.
+ * entera de lo privado (queda solo su primer tramo: «/entrar»), sin el slug de una ficha (queda su sección: «/lugares», OL-340) y sin el
+ * título de la pestaña (lleva nombres de personas y de fichas; va la ruta en su lugar). Sin referente: podría traer la búsqueda o la
+ * ficha de la página anterior.
  */
 export function contextoGoogle(href: string): { page_location: string; page_title: string; page_referrer: string } {
   const ubicacion = limpiarUrlEvento(href);

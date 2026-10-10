@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { armarCorreo, asuntoDe, type Candidato, elegirTanda, enmascarar, urlFicha } from "./invitar";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { armarCorreo, asuntoDe, type Candidato, elegirTanda, enmascarar, invitadosPrevios, normalizarCorreo, urlFicha } from "./invitar";
 
 describe("asuntoDe y urlFicha", () => {
   it("dos variantes de asunto, con el nombre del artista", () => {
@@ -61,5 +62,38 @@ describe("elegirTanda", () => {
   it("respeta el tamaño de la tanda", () => {
     expect(elegirTanda(candidatos, 2).map((c) => c.artistaId)).toEqual(["1", "2"]);
     expect(elegirTanda(candidatos, 0)).toEqual([]);
+  });
+  it("una sola invitación por dirección aunque varios artistas la compartan (sin distinguir mayúsculas ni espacios)", () => {
+    const compartida: Candidato[] = [
+      { artistaId: "1", nombre: "Ana", correo: "agencia@x.mx" },
+      { artistaId: "2", nombre: "Beto", correo: " Agencia@X.mx" },
+      { artistaId: "3", nombre: "Coco", correo: "c@x.mx" },
+      { artistaId: "4", nombre: "Dani", correo: "agencia@x.mx" },
+    ];
+    expect(elegirTanda(compartida, 10).map((c) => c.artistaId)).toEqual(["1", "3"]);
+  });
+  it("salta las direcciones que ya recibieron invitación en tandas anteriores", () => {
+    const tanda = elegirTanda(candidatos, 10, new Set([normalizarCorreo("B@x.mx ")]));
+    expect(tanda.map((c) => c.artistaId)).toEqual(["1", "3"]);
+  });
+});
+
+describe("invitadosPrevios", () => {
+  /** Un cliente de mentira: `from(...).select(...)` contesta con lo que se le diga. */
+  const cliente = (respuesta: { data: unknown; error: { code: string; message: string } | null }) =>
+    ({ from: () => ({ select: async () => respuesta }) }) as unknown as SupabaseClient;
+
+  it("junta artistas y direcciones ya invitados, sin distinguir mayúsculas ni espacios", async () => {
+    const r = await invitadosPrevios(cliente({ data: [{ artista_id: "1", correo: " A@X.mx" }, { artista_id: "2", correo: null }], error: null }));
+    expect([...r.artistas]).toEqual(["1", "2"]);
+    expect([...r.correos]).toEqual(["a@x.mx"]);
+  });
+  it("si la tabla aún no existe, nadie está invitado", async () => {
+    const r = await invitadosPrevios(cliente({ data: null, error: { code: "42P01", message: 'relation "public.invitaciones_enviadas" does not exist' } }));
+    expect(r.artistas.size + r.correos.size).toBe(0);
+  });
+  it("otro error que también dice «does not exist» (una columna que falta) corta el envío en vez de reenviar a todo el catálogo", async () => {
+    const error = { code: "42703", message: "column invitaciones_enviadas.correo does not exist" };
+    await expect(invitadosPrevios(cliente({ data: null, error }))).rejects.toMatchObject({ code: "42703" });
   });
 });

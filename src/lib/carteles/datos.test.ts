@@ -90,7 +90,7 @@ describe("armarTextos", () => {
   });
   it("quita lo que la fuente no dibuja (emojis) y los espacios de más", () => {
     expect(limpiarTexto("Fiesta 🎉  de   barrio")).toBe("Fiesta de barrio");
-    expect(enlaceCorto("oca")).toBe("somosnosotros.org/e/oca");
+    expect(enlaceCorto("oca")).toBe("somosnosotrxs.org/e/oca");
   });
 });
 

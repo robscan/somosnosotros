@@ -53,6 +53,13 @@ describe("AnalyticsVercel (OL-111, OL-325)", () => {
     expect(antes({ type: "pageview", url: "https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/personas" });
     expect(antes({ type: "event", url: "https://somosnosotros.org/personas/00000000-0000-0000-0000-000000000001" })).toEqual({ type: "event", url: "https://somosnosotros.org/personas" });
   });
+  it("OL-340: la ficha va a Vercel en su sección, sin slug, como vista y como acción", () => {
+    pagina(false);
+    expect(antes({ type: "pageview", url: "https://somosnosotros.org/lugares/casa-inventada" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/lugares" });
+    expect(antes({ type: "pageview", url: "https://somosnosotros.org/sitios/plaza-inventada" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/sitios" });
+    expect(antes({ type: "event", url: "https://somosnosotros.org/eventos/fiesta-inventada" })).toEqual({ type: "event", url: "https://somosnosotros.org/eventos" });
+    expect(antes({ type: "event", url: "https://somosnosotros.org/eventos/fiesta-inventada/cartel" })).toEqual({ type: "event", url: "https://somosnosotros.org/eventos" });
+  });
   it("F13: un valor libre en un filtro permitido no sale a Vercel; uno de su lista sí", () => {
     pagina(false);
     expect(antes({ type: "pageview", url: "https://somosnosotros.org/agenda?tipo=correo%40local.test" })).toEqual({ type: "pageview", url: "https://somosnosotros.org/agenda" });
@@ -69,6 +76,8 @@ describe("AnalyticsVercel (OL-111, OL-325)", () => {
       "https://somosnosotros.org/lugares?tipo=museo&tipo=otro@x.mx",
       "https://somosnosotros.org/nuevo/lugar?nombre=Casa&lat=22.151123&lng=-100.977456",
       "https://somosnosotros.org/lugares/casa-de-la-cultura",
+      "https://somosnosotros.org/eventos/fiesta-inventada/editar",
+      "https://somosnosotros.org/e/fiesta-inventada",
       "https://somosnosotros.org/perfil",
       "https://somosnosotros.org/entrar?siguiente=/",
       "https://somosnosotros.org/",
