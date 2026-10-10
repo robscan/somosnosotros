@@ -101,7 +101,7 @@ export function cuandoDeTarjeta(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" 
   return minuscula(formatearCuando(e.inicio, null, ahora, e.zona));
 }
 
-/** Lo que dice un festival que se sabe sin actos publicados todavía (OL-346: sale igual en «Festivales y exposiciones»). */
+/** Lo que dice un festival que se sabe sin actos publicados todavía (OL-346: sale igual en «Festivales y expos»). */
 export const PROGRAMA_POR_CONFIRMAR = "Programa por confirmar";
 
 /**
@@ -147,7 +147,7 @@ export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: st
   return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto, titulo: e.titulo, corto: tituloCorto(e.titulo, festival), colores, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
-/** La tarjeta del carril «Festivales y exposiciones» (OL-342): la de siempre, con el nombre de su clase para el rótulo. */
+/** La tarjeta del carril «Festivales y expos» (OL-342): la de siempre, con el nombre de su clase para el rótulo. */
 export const tarjetaConClase = (e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha => ({ ...tarjetaEvento(e, ahora, festival), clase: nombreDeClase(e.clase) });
 
 /** El nombre del festival de cada acto, de los eventos ya cargados (para el título corto de su tarjeta, OL-360). */
