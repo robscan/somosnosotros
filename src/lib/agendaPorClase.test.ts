@@ -188,11 +188,11 @@ describe("Inicio por clase", () => {
     expect(carril.some((e) => e.clase === "festival" || e.clase === "exposicion")).toBe(false);
     expect(vistos.has("cine")).toBe(false); // el marco no salió aquí
   });
-  it("«Festivales y exposiciones»: las exposiciones vigentes y el festival que viene, sin las que ya salieron en otro carril", () => {
+  it("«Festivales y expos»: las exposiciones vigentes y el festival que viene, sin las que ya salieron en otro carril", () => {
     expect(ids(carrilFestivales(TODOS, new Set(["grabado"]), ahora))).toEqual(["sin-leer", "ecos", "cine", "futura"]);
     expect(carrilFestivales([concierto], new Set(), ahora)).toEqual([]);
   });
-  it("los carriles juntos: el festival con actos en la semana sale solo en «Festivales y exposiciones»; sus actos, en «Esta semana» (OL-347)", () => {
+  it("los carriles juntos: el festival con actos en la semana sale solo en «Festivales y expos»; sus actos, en «Esta semana» (OL-347)", () => {
     const carriles = calcularCarrilesAgenda(agenda(), ahora);
     expect(ids(carriles.estaSemana)).not.toContain("cine");
     expect(ids(carriles.estaSemana)).toEqual(expect.arrayContaining(["cine1", "cine2", "cine3"]));
@@ -235,7 +235,7 @@ describe("Inicio por clase", () => {
   });
 });
 
-describe("«Festivales y exposiciones» (OL-342)", () => {
+describe("«Festivales y expos» (OL-342)", () => {
   // Un festival en curso (del 5 al 7: su fin se guardó a las 00:00 del 8, el cierre del 7), uno de un día que viene (sáb 31, de 18:00 a las 00:00),
   // uno que se sabe sin actos, uno que ya pasó y una exposición que es parte de un festival cargado.
   const fiesta = evento("fiesta", { clase: "festival", titulo: "Fiesta del barrio", inicio: a("2026-10-05", "18:00"), fin: a("2026-10-08", "00:00"), programa: { registrados: 2 } });
