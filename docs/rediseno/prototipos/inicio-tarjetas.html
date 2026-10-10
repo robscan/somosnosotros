@@ -1,0 +1,1131 @@
+<title>Tarjetas de Inicio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-367 (bitácora 398). Pedido del founder (2026-10-10): «antes necesito ver prototipos con ejercicios para las cards de inicio, se ve
+   super saturado». Inicio como está hoy en producción y ocho ejercicios, cada uno mueve una sola palanca y se combinan. El teléfono usa los
+   tokens claros de la app (src/app/globals.css) siempre; el marco de la página (controles y fondo) sigue el tema de quien mira.
+   Disposición: en el teléfono, Inicio a todo lo ancho y una hoja con los ejercicios; desde 760 px, el teléfono y los controles al lado; desde
+   1180 px, «Hoy» a la izquierda y la combinación a la derecha. */
+:root {
+  /* El teléfono: tokens de la app (claros, nunca se redefinen). */
+  --fondo: #ffffff;
+  --fondo-suave: #f4f4f2;
+  --fondo-contenido: #f6f5f1;
+  --texto: #1a1a1a;
+  --texto-suave: #5c5c5c;
+  --borde: #dcdcd8;
+  --primario: #6d34c8;
+  --primario-texto: #ffffff;
+  --primario-suave: #eee7f8;
+  --ok: #1f6f43;
+  --destacado: #d35400;
+  --fondo-miniatura: #e6e6e2;
+  --vidrio: rgba(255, 255, 255, 0.92);
+  --banda: #141414;
+  --sobre-banda-suave: rgba(255, 255, 255, 0.72);
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --boton-icono: 48px; --sello-chico: 28px; --alto-chip: 36px;
+  --alto-barra: 56px; --alto-nav: 60px; --gutter: 20px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem; --letra-2xl: 1.625rem;
+  --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --tarjeta-grande: 165px; --tarjeta-grande-foto: 248px; --tarjeta-chica: 104px; --circulo-ahora: 72px;
+  --duracion: 200ms; --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* Lo nuevo de los ejercicios: la tarjeta mediana de E5 (cartel 4:5 de 132 px: se ven dos y media) y el avatar de 64. */
+  --tarjeta-mediana-e5: 132px; --tarjeta-mediana-e5-foto: 165px; --avatar-e5: 64px;
+
+  /* El marco de la página: sigue el tema. */
+  --pg-fondo: #e6e4de;
+  --pg-panel: #fbfaf7;
+  --pg-texto: #1a1a1a;
+  --pg-suave: #5e5b54;
+  --pg-borde: #d3d0c8;
+  --pg-acento: #6d34c8;
+  --pg-acento-texto: #ffffff;
+  --pg-acento-suave: #ece4f8;
+  --pg-baja: #1f6f43;
+  --pg-sombra: 0 14px 36px rgba(28, 24, 16, 0.16);
+  --pg-sombra-chica: 0 1px 3px rgba(28, 24, 16, 0.16);
+  --pg-velo: rgba(0, 0, 0, 0.32);
+  --pg-perilla: #ffffff;
+  /* Lo que flota sobre el teléfono (que siempre es claro): oscuro en los dos temas. */
+  --pg-flotante: #1a1a1a;
+  --pg-flotante-texto: #ffffff;
+  --pg-flotante-suave: rgba(255, 255, 255, 0.72);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pg-fondo: #121210;
+    --pg-panel: #1c1b18;
+    --pg-texto: #eeebe4;
+    --pg-suave: #aaa69c;
+    --pg-borde: #37342e;
+    --pg-acento: #b59cf4;
+    --pg-acento-texto: #17141d;
+    --pg-acento-suave: #2d2542;
+    --pg-baja: #7fd3a2;
+    --pg-sombra: 0 14px 36px rgba(0, 0, 0, 0.55);
+    --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --pg-velo: rgba(0, 0, 0, 0.5);
+    --pg-perilla: #e4e0d8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --pg-fondo: #121210;
+  --pg-panel: #1c1b18;
+  --pg-texto: #eeebe4;
+  --pg-suave: #aaa69c;
+  --pg-borde: #37342e;
+  --pg-acento: #b59cf4;
+  --pg-acento-texto: #17141d;
+  --pg-acento-suave: #2d2542;
+  --pg-baja: #7fd3a2;
+  --pg-sombra: 0 14px 36px rgba(0, 0, 0, 0.55);
+  --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --pg-velo: rgba(0, 0, 0, 0.5);
+  --pg-perilla: #e4e0d8;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: var(--pg-fondo); color: var(--pg-texto); font: 400 var(--letra-md)/1.4 var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; }
+button, input { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+/* Los títulos que reciben el foco al abrir la hoja no son controles: sin anillo. */
+[tabindex="-1"]:focus { outline: none; }
+.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ===== La escena: en el teléfono, solo Inicio; desde 760, teléfono y controles; desde 1180, los dos teléfonos y los controles. ===== */
+.escena { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.columna { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--espacio-2); }
+.etiqueta-tel { display: none; margin: 0; font-size: var(--letra-sm); font-weight: 700; font-variation-settings: var(--ancho-titulo); color: var(--pg-suave); }
+.etiqueta-tel b { color: var(--pg-texto); }
+.caja-tel { position: relative; min-width: 0; min-height: 0; }
+.caja-tel > .tel { position: absolute; inset: 0; }
+/* «Hoy» fuera de la vista: el medidor lo mide en el mismo lugar que el otro. No recibe toques ni carga imágenes. */
+.col-hoy { position: fixed; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
+.col-hoy .caja-tel > .tel { position: relative; inset: auto; }
+
+@media (min-width: 760px) {
+  .escena { grid-template-columns: auto minmax(330px, 400px); justify-content: center; align-items: start; gap: var(--espacio-6); padding: var(--espacio-4); }
+  .columna { grid-template-rows: auto auto; }
+  .etiqueta-tel { display: block; }
+  .caja-tel { width: calc(390px * var(--escala, 1)); height: calc(844px * var(--escala, 1)); }
+  .caja-tel > .tel { inset: auto; left: 0; top: 0; width: 390px; height: 844px; transform: scale(var(--escala, 1)); transform-origin: 0 0; border: 1px solid var(--pg-borde); border-radius: 28px; box-shadow: var(--pg-sombra); }
+}
+@media (min-width: 1180px) {
+  .escena { grid-template-columns: auto auto minmax(340px, 400px); }
+  .col-hoy { position: static; left: auto; visibility: visible; pointer-events: auto; }
+  .col-hoy .caja-tel > .tel { position: absolute; }
+  .en-prueba .col-hoy { opacity: 0.2; pointer-events: none; }
+}
+
+/* ===== El teléfono (Inicio). Medidas y reglas de src/components: BarraApp, ui/Cabecera, FilaAhora, Destacados, NavSecciones. ===== */
+.tel { overflow: hidden; background: var(--fondo-contenido); color: var(--texto); color-scheme: light; font: 400 var(--letra-md)/1.4 var(--fuente); font-variation-settings: var(--ancho-texto); font-variant-numeric: tabular-nums; }
+/* Reinicios sin peso (:where), para que las reglas de cada pieza ganen. */
+:where(.tel) a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+:where(.tel) ul { list-style: none; margin: 0; padding: 0; }
+:where(.tel) h2, :where(.tel) p { margin: 0; }
+.tel :focus-visible { outline-color: var(--primario); }
+.pantalla { height: 100%; overflow-y: auto; overscroll-behavior-y: contain; display: flex; flex-direction: column; scrollbar-width: none; }
+.pantalla::-webkit-scrollbar { display: none; }
+.pantalla > * { flex: none; min-width: 0; }
+.pantalla > .relleno { flex: 1 0 var(--espacio-7); }
+
+.barra-app { height: var(--alto-barra); display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); align-items: center; padding: 0 var(--espacio-2); background: var(--fondo); }
+.barra-app > button { display: grid; place-items: center; width: var(--toque); height: var(--toque); }
+.barra-app .logo { justify-self: center; height: 28px; width: auto; }
+.contexto { position: sticky; top: 0; z-index: 10; display: flex; gap: var(--espacio-2); padding: var(--espacio-1) var(--gutter) var(--espacio-3); overflow-x: auto; scrollbar-width: none; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+.contexto::-webkit-scrollbar { display: none; }
+.ctx { flex: none; display: inline-flex; align-items: center; gap: 6px; height: var(--alto-chip); padding: 0 var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; white-space: nowrap; }
+.ctx .i { width: 18px; height: 18px; color: var(--texto-suave); }
+
+/* La fila «Ahora» (OL-359): una tira de círculos con la hora debajo. */
+.fila-ahora { background: var(--fondo); box-shadow: 0 1px 0 var(--borde); }
+.lista-ahora { display: flex; gap: var(--espacio-3); padding: var(--espacio-3) var(--gutter); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: var(--gutter); }
+.lista-ahora::-webkit-scrollbar { display: none; }
+.lista-ahora > li { flex: none; }
+.circulo { display: grid; justify-items: center; gap: var(--espacio-1); width: var(--circulo-ahora); }
+.anillo { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); width: var(--circulo-ahora); height: var(--circulo-ahora); padding: 3px; border-radius: 50%; background: var(--borde); overflow: hidden; }
+.anillo.ahora::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 210deg, var(--primario), var(--destacado), var(--primario)); animation: gira 4s linear infinite; }
+.anillo.ahora.quieto::before { background: var(--primario); animation: none; }
+.anillo.pronto { background: var(--texto); }
+.anillo > img, .anillo > .sin-cartel { position: relative; width: 100%; height: 100%; border: 2px solid var(--fondo); border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); }
+.anillo > .sin-cartel { display: grid; place-items: center; }
+.anillo > .sin-cartel img { width: 58%; height: auto; }
+.circulo small { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+.circulo small.ahora { color: var(--primario); font-weight: 700; }
+@keyframes gira { to { transform: rotate(1turn); } }
+
+/* Los carriles: título a la izquierda y, a la derecha, a dónde lleva. */
+.carril { display: grid; gap: var(--espacio-4); padding-top: var(--espacio-7); }
+/* E11 (founder, 10 de oct: «¿cómo podemos resaltar todo el carril de planes? Se trata de que se entienda que este es su contenedor con sus
+   eventos»). La banda de color se rechazó («Rechazada la banda de color»); tres maneras sin relleno, una a la vez (gana la a, luego la b): */
+/* E11a · contorno fino con esquinas redondeadas; título y tarjetas quedan a 20 px del borde, como en los demás carriles. */
+.carril.mio-contorno { margin: var(--espacio-5) var(--espacio-2) 0; padding-block: var(--espacio-4); border: 1px solid rgba(109, 52, 200, 0.4); border-radius: var(--radio-grande); }
+.carril.mio-contorno .cab, .carril.mio-contorno .tira { padding-inline: var(--espacio-3); }
+.carril.mio-contorno .tira { scroll-padding-inline: var(--espacio-3); }
+/* E11b · una línea violeta a la izquierda, de la cabecera a la última tarjeta. */
+.carril.mio-linea { position: relative; }
+.carril.mio-linea::before { content: ""; position: absolute; left: var(--espacio-2); top: var(--espacio-7); bottom: var(--espacio-2); width: 3px; border-radius: 2px; background: var(--primario); }
+/* E11c · solo el título distinto: el marcador de «Me interesa» junto a «Tus planes» y más aire arriba y abajo. */
+.carril.mio-titulo { padding-top: calc(var(--espacio-7) + var(--espacio-3)); padding-bottom: var(--espacio-3); }
+.cab h2 .icono-planes { display: inline-grid; vertical-align: -0.12em; margin-right: var(--espacio-2); color: var(--primario); }
+.cab h2 .icono-planes .i { width: 26px; height: 26px; fill: currentColor; stroke-width: 1.6; }
+.cab { display: flex; align-items: center; justify-content: space-between; padding-inline: var(--gutter); }
+.cab h2 { min-width: 0; font-size: var(--letra-2xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
+.ver { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque-min); padding-left: var(--espacio-2); color: var(--primario); font-size: var(--letra-sm); font-weight: 600; }
+.ver .i { width: 18px; height: 18px; stroke-width: 2; }
+.e4 .ver { color: var(--texto-suave); }
+.tira { --foto: var(--tarjeta-grande-foto); display: grid; grid-auto-flow: column; grid-auto-columns: var(--tarjeta-grande); align-items: start; gap: var(--espacio-1) var(--espacio-3); overflow-x: auto; padding: var(--espacio-1) var(--gutter) var(--espacio-2); scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+.tira::-webkit-scrollbar { display: none; }
+.tira > li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; scroll-snap-align: start; }
+.tira.mediana { --foto: var(--tarjeta-mediana-e5-foto); grid-auto-columns: var(--tarjeta-mediana-e5); }
+/* E1: la tarjeta es el cartel, en su proporción de siempre (4:5) y sin recortarle los lados. */
+.tira.grande.cartel-45 { --foto: calc(var(--tarjeta-grande) * 5 / 4); }
+.tira.chica { --foto: var(--tarjeta-chica); grid-auto-columns: var(--tarjeta-chica); }
+.tira.avatar { --foto: var(--avatar-e5); grid-auto-columns: calc(var(--avatar-e5) + var(--espacio-3)); column-gap: var(--espacio-2); }
+
+/* La tarjeta de un evento: la portada (franja + cartel, solo cartel con E1, o de título sin cartel) y debajo sus líneas. */
+.tarjeta { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--foto) auto; row-gap: var(--espacio-2); min-width: 0; color: var(--texto); }
+.tarjeta:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; border-radius: var(--radio); }
+.portada { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "franja" "cartel"; grid-template-rows: auto minmax(0, 1fr); height: var(--foto); min-width: 0; overflow: hidden; border-radius: var(--radio); background: var(--fondo-miniatura); }
+.portada.solo-cartel { grid-template-areas: "cartel"; grid-template-rows: minmax(0, 1fr); }
+.portada.titulo { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "franja franja" "rotulo simbolo"; grid-template-rows: minmax(0, 1fr) auto; align-items: end; }
+.portada.titulo.con-esquina { grid-template-areas: "esquina esquina" "franja franja" "rotulo simbolo"; grid-template-rows: auto minmax(0, 1fr) auto; }
+.franja { grid-area: franja; align-self: start; min-width: 0; padding: var(--espacio-3) var(--espacio-3) var(--espacio-2); color: var(--primario-texto); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+.franja.con-boton { padding-right: calc(var(--boton-icono) + var(--espacio-2)); }
+.franja.con-sello { padding-right: calc(var(--sello-chico) + var(--espacio-3)); }
+.franja .t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.mediana .franja { font-size: var(--letra-sm); }
+.cartel { grid-area: cartel; width: 100%; height: 100%; min-height: 0; object-fit: cover; object-position: center top; }
+.rotulos { grid-area: cartel; align-self: end; justify-self: start; display: flex; flex-wrap: wrap-reverse; gap: var(--espacio-1); min-width: 0; margin: 0 var(--espacio-2) var(--espacio-2); }
+.portada.titulo .rotulos { grid-area: rotulo; margin: 0 0 var(--espacio-3) var(--espacio-3); }
+.chip { display: inline-flex; align-items: center; max-width: 100%; padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--texto); font-size: var(--letra-xs); font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.chip.hoy { background: var(--primario); color: var(--primario-texto); }
+.chip.estado { padding-block: 0; background: var(--primario-suave); color: var(--primario); }
+.e4 .chip.hoy, .e4 .chip.estado { padding-block: 3px; background: var(--vidrio); color: var(--texto); }
+.simbolo { grid-area: simbolo; justify-self: end; height: 18px; width: auto; margin: 0 var(--espacio-3) var(--espacio-3) 0; opacity: 0.92; }
+/* E10 (founder, 10 de oct: «título en la base, logo en extremo superior izquierdo»): en la tarjeta sin cartel, el símbolo SN arriba a la
+   izquierda, la fecha y «Nuevo» arriba a la derecha, y abajo los chips y el título (con su ceja). */
+.portada.titulo.abajo { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "simbolo esquina" "vacio vacio" "rotulo rotulo" "franja franja"; grid-template-rows: auto minmax(0, 1fr) auto auto; align-items: start; }
+.portada.titulo.abajo .simbolo { grid-area: simbolo; justify-self: start; align-self: start; height: 20px; margin: var(--espacio-3) 0 0 var(--espacio-3); }
+.portada.titulo.abajo .esquina { grid-area: esquina; justify-self: end; }
+.portada.titulo.abajo .rotulos { grid-area: rotulo; margin: 0 0 var(--espacio-2) var(--espacio-3); }
+.portada.titulo.abajo .franja { align-self: end; padding: 0 var(--espacio-3) var(--espacio-3); }
+/* E3: la clase chica arriba del título (y, como mucho, un dato). */
+.ceja { display: flex; flex-wrap: wrap; column-gap: 0.35em; min-width: 0; font-size: var(--letra-2xs); font-weight: 700; letter-spacing: 0.06em; line-height: 1.3; text-transform: uppercase; color: var(--texto-suave); }
+.ceja > span { white-space: nowrap; }
+/* El punto va al final del primero: si no caben en un renglón, el segundo baja sin un punto delante. */
+.ceja > span:not(:last-child)::after { content: "\00a0·"; }
+.ceja .tuyo { color: var(--primario); }
+.e4 .ceja .tuyo { color: inherit; }
+.franja .ceja { margin-bottom: var(--espacio-1); color: var(--sobre-banda-suave); letter-spacing: 0.06em; }
+.franja .ceja .tuyo { color: var(--primario-texto); }
+/* Arriba a la izquierda del cartel: el sello de fecha (E8; referencia del founder: «Conciertos» de Apple Music) y la marca «Nuevo» (E6). */
+.esquina { grid-area: cartel; align-self: start; justify-self: start; z-index: 1; display: flex; align-items: flex-start; gap: var(--espacio-1); min-width: 0; margin: var(--espacio-2); }
+.portada.titulo .esquina { grid-area: esquina; }
+/* E8c (comentario del founder, 10 de oct: «prueba poniendo el componente de fecha donde antes estaba el de check»): el sello arriba a la derecha. */
+.esquina.derecha { justify-self: end; }
+.fecha { display: grid; justify-items: center; gap: 2px; min-width: 40px; padding: var(--espacio-1) var(--espacio-2); border-radius: var(--radio); background: var(--vidrio); box-shadow: var(--sombra); line-height: 1; text-align: center; }
+.nuevo { padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-2xs); font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.e4 .nuevo { background: var(--vidrio); color: var(--texto); }
+/* El mes (o el día de la semana con E8b) resaltado con el color de la app (founder, 10 de oct: «resaltar con color»), como el mes de un
+   calendario; es el mismo violeta del cuándo, así que también vale con E4. */
+.fecha small { font-size: var(--letra-2xs); font-weight: 700; color: var(--primario); text-transform: lowercase; }
+.fecha b { display: inline-flex; align-items: center; gap: 1px; font-size: var(--letra-2xl); font-weight: 600; font-variation-settings: var(--ancho-titulo); color: var(--texto); }
+.fecha .flecha { width: 11px; height: 11px; fill: none; stroke: var(--texto-suave); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* E2: el estado, chico (≤ 28 px), sin acción. */
+.estado-sello { position: absolute; top: var(--espacio-2); right: var(--espacio-2); z-index: 1; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; box-shadow: var(--sombra); }
+.estado-sello .i { width: 14px; height: 14px; stroke-width: 2.4; }
+.estado-sello.voy { background: var(--ok); color: var(--primario-texto); }
+.estado-sello.interesa { background: var(--fondo); color: var(--primario); }
+.estado-sello.interesa .i { fill: currentColor; stroke-width: 1.8; }
+.e4 .estado-sello.interesa { color: var(--texto); }
+/* El botón de la tarjeta (ui/BotonRenglon sobre foto): 48 px, blanco con la palomita violeta; decidido, verde. */
+.tira > li > .voy, .tira > li > .seguir { position: absolute; top: var(--espacio-2); right: var(--espacio-2); display: grid; place-items: center; width: var(--boton-icono); height: var(--boton-icono); border-radius: 50%; background: var(--fondo); color: var(--primario); box-shadow: var(--sombra); }
+.tira > li > [aria-pressed="true"] { background: var(--ok); color: var(--primario-texto); }
+.tira.chica > li > .seguir { top: 0; right: 0; }
+.voy .i, .seguir .i { width: 22px; height: 22px; }
+.voy .i { stroke-width: 2.2; }
+/* Debajo de la tarjeta: cuándo (violeta) y dónde; con E1 el título primero; con E8, título, lugar y fecha en gris. */
+.pie { display: grid; align-content: start; min-width: 0; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; }
+.pie > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pie .cuando { color: var(--primario); }
+.pie .cuando.gris { color: var(--texto-suave); }
+.pie .ceja { margin-bottom: 2px; }
+.titulo-pie { display: block; max-height: calc(2 * 1.15em); overflow: hidden; margin-bottom: 2px; color: var(--texto); font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: normal; }
+.mediana .titulo-pie { font-size: var(--letra-sm); }
+.mediana .pie { font-size: var(--letra-xs); }
+
+/* Lugares y artistas: redondos (chica), grandes (artistas destacadxs) o avatares de 64 (E5). */
+.en { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--foto) auto auto; min-width: 0; color: var(--texto); }
+.en .foto { width: 100%; height: var(--foto); border-radius: var(--radio); object-fit: cover; background: var(--fondo-miniatura); }
+/* «Nuevo video» o «Nuevo audio» (OL-275) sobre la foto del artista, con el trato de «Hoy»; el founder (10 de oct): «para artistas se sigue chip de “Nuevo video” o audio». */
+.en .caja-foto { position: relative; display: grid; min-width: 0; }
+.en .caja-foto .marca-novedad { position: absolute; left: var(--espacio-2); bottom: var(--espacio-2); }
+.en .nombre { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-top: var(--espacio-1); font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.en .det { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; }
+.en .det.cuando { color: var(--primario); }
+.chica .en { text-align: center; }
+.chica .en .foto { border-radius: 50%; }
+.chica .en .det { white-space: normal; }
+.avatar .en { grid-template-rows: var(--foto) auto; justify-items: center; text-align: center; }
+.avatar .en .foto { width: var(--foto); border-radius: 50%; }
+.avatar .en .nombre { display: block; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--letra-xs); }
+
+.secciones { position: sticky; bottom: 0; z-index: 12; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: var(--alto-nav); padding: var(--espacio-1) var(--espacio-2) 0; background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
+.secciones button { display: grid; justify-items: center; align-content: start; gap: 2px; font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+.secciones i { display: grid; place-items: center; width: 60px; height: 32px; border-radius: var(--radio-pildora); color: var(--texto); }
+.secciones .activa { color: var(--primario); }
+.secciones .activa i { background: var(--primario); color: var(--primario-texto); }
+
+.aviso { position: absolute; left: 50%; bottom: calc(var(--alto-nav) + 72px); z-index: 30; max-width: calc(100% - 2 * var(--gutter)); margin: 0; padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio-pildora); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); font-weight: 600; box-shadow: var(--sombra-flotante); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; transition: opacity var(--duracion), transform var(--duracion) var(--curva); }
+.aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===== Los controles: una hoja en el teléfono; desde 760, una columna fija al lado. ===== */
+.fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4) 0 var(--espacio-3); border-radius: var(--radio-pildora); background: var(--pg-flotante); color: var(--pg-flotante-texto); font-size: var(--letra-sm); font-weight: 700; box-shadow: var(--sombra-flotante); }
+.fab span { color: var(--pg-flotante-suave); font-weight: 600; }
+.fab .i { width: 20px; height: 20px; }
+.crono { position: fixed; left: var(--espacio-4); right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 41; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "tiempo tarea" "tiempo pista"; column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-flotante); color: var(--pg-flotante-texto); box-shadow: var(--sombra-flotante); text-align: left; }
+.crono b { grid-area: tiempo; font-size: var(--letra-2xl); font-variation-settings: var(--ancho-titulo); font-variant-numeric: tabular-nums; min-width: 3.4em; }
+.crono span { grid-area: tarea; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }
+.crono small { grid-area: pista; color: var(--pg-flotante-suave); font-size: var(--letra-xs); }
+.velo { position: fixed; inset: 0; z-index: 50; background: var(--pg-velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: min(72%, 680px); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra); transform: translateY(105%); visibility: hidden; transition: transform 240ms var(--curva), visibility 0s linear 240ms; }
+.hoja.abierta { transform: none; visibility: visible; transition: transform 240ms var(--curva), visibility 0s; }
+.asa { justify-self: center; width: 36px; height: 4px; margin-top: var(--espacio-2); border-radius: 2px; background: var(--pg-borde); }
+.hoja-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-2) var(--espacio-2) var(--espacio-4); }
+.hoja-cab h1 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.hoja-cab p { margin: 2px 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
+.resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
+.preajustes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); }
+.preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
+.combinacion { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.combinacion b { color: var(--pg-texto); }
+.medidor { display: grid; gap: 2px; }
+.medidor table { width: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.medidor th, .medidor td { padding: 1px 2px; text-align: center; }
+.medidor thead th { font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.15; vertical-align: bottom; }
+.medidor tbody th { width: 3.6em; text-align: left; font-size: var(--letra-2xs); font-weight: 700; color: var(--pg-suave); }
+.medidor .esta td { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.medidor .esta td.baja { color: var(--pg-baja); }
+.medidor .hoy td { font-size: var(--letra-sm); color: var(--pg-suave); }
+.medidor p { margin: 0; color: var(--pg-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+.bloque { padding-top: var(--espacio-4); }
+.bloque h2 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.bloque > p { margin: 0 0 var(--espacio-2); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.ejercicios { list-style: none; margin: 0; padding: 0; }
+.interruptor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-3); align-items: start; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); cursor: pointer; }
+.interruptor.sub { padding-left: var(--espacio-4); }
+.interruptor b { display: block; font-size: var(--letra-md); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+.interruptor small { display: block; margin-top: 2px; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.interruptor small.firma { color: var(--pg-texto); font-weight: 600; }
+.interruptor input { appearance: none; position: relative; flex: none; width: 46px; height: 28px; margin: 0; border-radius: 14px; background: var(--pg-borde); cursor: pointer; transition: background var(--duracion); }
+.interruptor input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--pg-perilla); box-shadow: var(--pg-sombra-chica); transition: transform var(--duracion) var(--curva); }
+.interruptor input:checked { background: var(--pg-acento); }
+.interruptor input:checked::after { transform: translateX(18px); }
+.interruptor input:disabled { opacity: 0.4; cursor: default; }
+.interruptor:has(input:disabled) { cursor: default; }
+.interruptor:has(input:disabled) b { color: var(--pg-suave); }
+.pruebas { list-style: none; margin: 0; padding: 0; }
+.prueba { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-1) var(--espacio-3); align-items: center; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); }
+.prueba .tarea { font-weight: 700; line-height: 1.25; }
+.prueba .tiempos { grid-column: 1 / -1; color: var(--pg-suave); font-size: var(--letra-xs); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.prueba .tiempos b { color: var(--pg-texto); }
+.prueba button, .boton-texto { min-height: var(--toque-min); padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--pg-acento); color: var(--pg-acento-texto); font-weight: 700; white-space: nowrap; }
+.prueba button.corriendo { background: var(--pg-texto); color: var(--pg-panel); font-variant-numeric: tabular-nums; }
+.boton-texto { background: none; color: var(--pg-acento); padding: 0; }
+.notas { margin: 0; padding-left: 1.1em; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas li + li { margin-top: var(--espacio-1); }
+.notas b { color: var(--pg-texto); }
+
+@media (min-width: 760px) {
+  .hoja { position: relative; left: auto; right: auto; bottom: auto; z-index: auto; align-self: stretch; height: calc(100vh - 2 * var(--espacio-4)); height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border: 1px solid var(--pg-borde); border-radius: var(--radio-grande); box-shadow: none; transform: none; visibility: visible; transition: none; }
+  .asa, .cerrar, .fab, .crono, .velo { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .anillo.ahora::before { animation: none; }
+  .hoja, .hoja.abierta, .velo, .aviso, .interruptor input, .interruptor input::after { transition: none; }
+}
+</style>
+
+<main class="escena" id="escena">
+  <section class="columna col-hoy" id="col-hoy" aria-label="Inicio hoy, en producción">
+    <p class="etiqueta-tel"><b>Hoy</b> · como está en producción</p>
+    <div class="caja-tel"><div class="tel" id="tel-hoy"></div></div>
+  </section>
+  <section class="columna col-mix" aria-label="Inicio con los ejercicios">
+    <p class="etiqueta-tel" id="etiqueta-mix"></p>
+    <div class="caja-tel"><div class="tel" id="tel-mix"></div></div>
+  </section>
+
+  <aside class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <span class="asa" aria-hidden="true"></span>
+    <header class="hoja-cab">
+      <div>
+        <h1 id="hoja-titulo" tabindex="-1">Tarjetas de Inicio</h1>
+        <p>Ejercicios contra la saturación · sáb 10 de oct, 11:49 · OL-367</p>
+      </div>
+      <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="hoja-cuerpo" id="hoja-cuerpo">
+      <div class="resumen">
+        <div class="preajustes" role="group" aria-label="Preajustes">
+          <button type="button" id="p-hoy" data-preset="hoy" aria-pressed="false">Hoy<small>todo apagado</small></button>
+          <button type="button" id="p-calma" data-preset="calma" aria-pressed="false">Calma<small>E1 E3 E7 E8 E8c E9 E10</small></button>
+          <button type="button" id="p-minima" data-preset="minima" aria-pressed="false">Mínima<small>todo encendido</small></button>
+          <button type="button" id="p-firmada" data-preset="firmada" aria-pressed="false">Firmada<small>10 de oct</small></button>
+        </div>
+        <p class="combinacion" id="combinacion"></p>
+        <section class="medidor" aria-label="Medidor de saturación">
+          <table>
+            <thead><tr><th scope="col"><span hidden>Teléfono</span></th><th scope="col">Rótulos</th><th scope="col">Botones</th><th scope="col">Colores</th><th scope="col">Mayúsculas</th><th scope="col">Cortados</th></tr></thead>
+            <tbody>
+              <tr class="esta"><th scope="row" id="m-nombre">Esta</th><td id="m-rotulos">–</td><td id="m-botones">–</td><td id="m-colores">–</td><td id="m-mayus">–</td><td id="m-cortados">–</td></tr>
+              <tr class="hoy"><th scope="row">Hoy</th><td id="h-rotulos">–</td><td id="h-botones">–</td><td id="h-colores">–</td><td id="h-mayus">–</td><td id="h-cortados">–</td></tr>
+            </tbody>
+          </table>
+          <p>Lo que se ve ahora en el teléfono, sin contar los carteles. «Mayúsculas» y «Cortados» cuentan títulos.</p>
+        </section>
+      </div>
+
+      <section class="bloque" aria-labelledby="t-ejercicios">
+        <h2 id="t-ejercicios">Ejercicios</h2>
+        <p>Cada uno mueve una sola cosa y se pueden combinar.</p>
+        <ul class="ejercicios" id="ejercicios"></ul>
+      </section>
+
+      <section class="bloque" id="bloque-pruebas" aria-labelledby="t-pruebas">
+        <h2 id="t-pruebas" tabindex="-1">Pruebas</h2>
+        <p>Elige un preajuste, toca «Empezar», búscalo en el teléfono y toca otra vez al encontrarlo. El tiempo se guarda por preajuste en este navegador.</p>
+        <ol class="pruebas" id="pruebas"></ol>
+        <p><button type="button" class="boton-texto" id="borrar-tiempos">Borrar los tiempos</button></p>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-notas">
+        <h2 id="t-notas">Cómo leerlo</h2>
+        <ul class="notas">
+          <li><b>«Hoy»</b> es Inicio de producción a las 11:49 del sáb 10 de oct (la hora de las capturas), armado con el código de la app: carriles, rótulos, título corto, colores del cartel y fila «Ahora».</li>
+          <li><b>Datos públicos</b> de somosnosotros.org leídos a las 11:51: ya traen las tres exposiciones de Pedro Friedeberg, que en las capturas aún no salían.</li>
+          <li><b>Persona de ejemplo</b>: dijo «Voy» a la presentación de Kopk Poj y le interesan el tributo a The Beatles y KOWAIFEST. Los botones de «Voy» y seguir funcionan; lo demás dice qué se abriría.</li>
+          <li><b>Por los datos</b>: «Nuevos eventos» lleva lo nuevo que no cupo arriba (los datos llegan al 18 de oct); los artistas sin fecha en los datos dicen su disciplina. «Nuevo video» y «Nuevo audio» son reales: cinco artistas publicaron esta semana (regla de la app: 7 días).</li>
+          <li><b>E8, referencia del founder</b>: el carril «Conciertos» de Apple Music. Un sello cuadrado con el mes y el día; debajo, título, lugar y fecha en gris.</li>
+        </ul>
+        <p><button type="button" class="boton-texto" id="volver-ejemplo" hidden>Volver a la persona de ejemplo</button></p>
+      </section>
+    </div>
+  </aside>
+</main>
+<div class="velo" id="velo"></div>
+<button class="fab" id="fab" type="button" aria-controls="hoja" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ejercicios <span id="fab-combinacion"></span></button>
+<button class="crono" id="crono" type="button" hidden><b id="crono-tiempo">0,0</b><span id="crono-tarea"></span><small>Toca aquí al encontrarlo</small></button>
+
+<script type="application/json" id="datos">{"ahora":"2026-10-10T17:49:00.000Z","zona":"America/Mexico_City","persona":{"voy":["f1f1fb06-c3be-4d92-9646-8608f34d1cbd"],"interesan":["17a0e9f6-98c8-4f59-a11d-e3f600e9f42d","62af5ba7-695e-4d0c-b472-08658b1ef0a0"]},"asistencias":{"f1f1fb06-c3be-4d92-9646-8608f34d1cbd":"voy","17a0e9f6-98c8-4f59-a11d-e3f600e9f42d":"me_interesa","62af5ba7-695e-4d0c-b472-08658b1ef0a0":"me_interesa"},"filaAhora":[{"id":"db0073e8-902f-4d9d-aa59-0d2a9251a4c1","clave":"db0073e8-902f-4d9d-aa59-0d2a9251a4c1:2026-10-10","titulo":"Día Nacional de las Cactáceas en el Jardín Botánico El Izotal","tipo":"ahora","rotulo":"Ahora","etiqueta":"Ahora","anillo":"ahora","inicio":"2026-10-10T15:00:00+00:00","exposicion":false,"cartel":"e-dia-nacional-de-las-cactaceas-en-el-jard.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d"},{"id":"2e6aafa7-3b57-42bf-b2df-1d54bd606a8b","clave":"2e6aafa7-3b57-42bf-b2df-1d54bd606a8b:2026-10-10","titulo":"Inauguración: Privacidad y elegancia, exposición de Pedro Friedeberg","tipo":"rato","rotulo":"En 11 min","etiqueta":"En 11 min","anillo":"pronto","inicio":"2026-10-10T18:00:00+00:00","exposicion":false,"cartel":"e-inauguracion-pedro-friedeberg-exposicion.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33"},{"id":"cdfb1842-520e-4cb7-b4e0-f9cf025c2fca","clave":"cdfb1842-520e-4cb7-b4e0-f9cf025c2fca:2026-10-10","titulo":"Guitarra en el Otoño: alumnado de la Universidad de Aguascalientes","tipo":"rato","rotulo":"En 1 h 11 min","etiqueta":"En 1 h 11 min","anillo":"pronto","inicio":"2026-10-10T19:00:00+00:00","exposicion":false,"cartel":"e-guitarra-en-el-otono-alumnado-de-la-univ.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33"},{"id":"f1f1fb06-c3be-4d92-9646-8608f34d1cbd","clave":"f1f1fb06-c3be-4d92-9646-8608f34d1cbd:2026-10-10","titulo":"Presentación de Kopk Poj: el aliento de la montaña, de Mito Reyes","tipo":"rato","rotulo":"En 1 h 11 min","etiqueta":"En 1 h 11 min","anillo":"pronto","inicio":"2026-10-10T19:00:00+00:00","exposicion":false,"cartel":"e-presentacion-de-kopk-poj-el-aliento-de-l.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d"},{"id":"937c2882-17ce-4165-96a8-3faab78d454b","clave":"937c2882-17ce-4165-96a8-3faab78d454b:2026-10-10","titulo":"Viajera: taller para aprender cómo funcionan los trenes","tipo":"rato","rotulo":"En 1 h 11 min","etiqueta":"En 1 h 11 min","anillo":"pronto","inicio":"2026-10-10T19:00:00+00:00","exposicion":false,"cartel":"e-viajera-taller-para-aprender-como-funcio.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e"},{"id":"20e98a85-545b-4172-a8a1-fbb15f6099f6","clave":"20e98a85-545b-4172-a8a1-fbb15f6099f6:2026-10-10","titulo":"Inauguración: Líneas de fuga, exposición de Pedro Friedeberg","tipo":"rato","rotulo":"En 1 h 41 min","etiqueta":"En 1 h 41 min","anillo":"pronto","inicio":"2026-10-10T19:30:00+00:00","exposicion":false,"cartel":"e-inauguracion-pedro-friedeberg-exposicion.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e"},{"id":"930900cc-cb40-4fc7-988a-f508cdce49c4","clave":"930900cc-cb40-4fc7-988a-f508cdce49c4","titulo":"Hilaridad y melancolía, exposición de Pedro Friedeberg","tipo":"expo","rotulo":"Inaugura hoy","etiqueta":"Inaugura hoy","anillo":"pronto","inicio":"2026-10-10T06:00:00+00:00","exposicion":true,"cartel":"e-inauguracion-pedro-friedeberg-exposicion.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d"},{"id":"ddeea88d-89e9-4a6d-9dc0-e18f0365b81b","clave":"ddeea88d-89e9-4a6d-9dc0-e18f0365b81b","titulo":"Líneas de fuga, exposición de Pedro Friedeberg","tipo":"expo","rotulo":"Inaugura hoy","etiqueta":"Inaugura hoy","anillo":"pronto","inicio":"2026-10-10T06:00:00+00:00","exposicion":true,"cartel":"e-inauguracion-pedro-friedeberg-exposicion.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608"}],"carriles":{"titulo":"Destacados","tusPlanes":[{"id":"f1f1fb06-c3be-4d92-9646-8608f34d1cbd","clave":"f1f1fb06-c3be-4d92-9646-8608f34d1cbd","titulo":"Presentación de Kopk Poj: el aliento de la montaña, de Mito Reyes","corto":"Presentación de Kopk Poj","clase":"puntual","claseTexto":"Evento","foto":"e-presentacion-de-kopk-poj-el-aliento-de-l.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(148,173,122,0.9) 0%, rgba(148,173,122,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(169,181,183,0.85) 0%, rgba(169,181,183,0) 68%), #4f636f","base":"#4f636f","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"hoy · 13:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":true,"parte":null,"van":1,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"17a0e9f6-98c8-4f59-a11d-e3f600e9f42d","clave":"17a0e9f6-98c8-4f59-a11d-e3f600e9f42d","titulo":"Tributo a The Beatles con Help!","corto":"Tributo a The Beatles con Help!","clase":"puntual","claseTexto":"Evento","foto":"lugar-cineteca.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","circulo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340","detalle":"hoy · 20:00","sitio":"Cineteca Alameda","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-11T02:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","clave":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","titulo":"KOWAIFEST","corto":"KOWAIFEST","clase":"festival","claseTexto":"Festival","foto":"e-kowaifest.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(25,69,65,0.9) 0%, rgba(25,69,65,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(35,33,33,0.85) 0%, rgba(35,33,33,0) 68%), #721323","base":"#721323","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"sáb 17 de oct","sitio":"Dēppa · Programa por confirmar","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-18T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false}],"destacados":[{"id":"2e6aafa7-3b57-42bf-b2df-1d54bd606a8b","clave":"2e6aafa7-3b57-42bf-b2df-1d54bd606a8b:2026-10-10","titulo":"Inauguración: Privacidad y elegancia, exposición de Pedro Friedeberg","corto":"Privacidad y elegancia","clase":"puntual","claseTexto":"Evento","foto":"e-inauguracion-pedro-friedeberg-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(91,54,51,0.9) 0%, rgba(91,54,51,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(61,59,58,0.85) 0%, rgba(61,59,58,0) 68%), #7f5739","base":"#7f5739","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"hoy · 12:00","sitio":"Galería Casa Diana","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T18:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"b5b5aaa5-9957-422d-9b8f-44ffe61e3032","clave":"b5b5aaa5-9957-422d-9b8f-44ffe61e3032:2026-10-10","titulo":"Laboratorio de exploración sonora: escucha activa, arte sonoro y grabación de campo","corto":"Laboratorio de exploración sonora","clase":"taller","claseTexto":"Taller","foto":"e-laboratorio-de-exploracion-sonora-escuch.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(24,24,23,0.9) 0%, rgba(24,24,23,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(24,24,23,0.85) 0%, rgba(24,24,23,0) 68%), #3e3f23","base":"#3e3f23","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"hoy · 17:00","sitio":"Aurora Co-Lab","hoy":true,"parte":"Sesión 1 de 4","van":1,"sinVoy":false,"sello":{"texto":"Hoy · Sesión 1 de 4","tuyo":false,"hoy":true},"inicio":"2026-10-10T23:00:00+00:00","fin":"2026-10-11T02:00:00+00:00","zona":"America/Mexico_City","nuevo":false},{"id":"8513ec9d-102b-4479-a07b-f797f55694b8","clave":"8513ec9d-102b-4479-a07b-f797f55694b8:2026-10-11","titulo":"Verbena, Ritmo y Sabor: vendimia, ritmos latinos y gastronomía","corto":"Verbena, Ritmo y Sabor","clase":"puntual","claseTexto":"Evento","foto":"e-verbena-ritmo-y-sabor-vendimia-ritmos-la.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(170,205,109,0.9) 0%, rgba(170,205,109,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(201,193,107,0.85) 0%, rgba(201,193,107,0) 68%), #7e582e","base":"#7e582e","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"mañana · 10:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-11T16:00:00+00:00","fin":"2026-10-12T00:00:00+00:00","zona":"America/Mexico_City","nuevo":false},{"id":"4bf2f781-36ba-46bb-af15-647814777756","clave":"4bf2f781-36ba-46bb-af15-647814777756:2026-10-12","titulo":"DESIERTO: Observación y Espacio.","corto":"DESIERTO","clase":"exposicion","claseTexto":"Exposición","foto":"e-desierto-observacion-y-espacio.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(53,39,24,0.9) 0%, rgba(53,39,24,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(66,68,65,0.85) 0%, rgba(66,68,65,0) 68%), #374e5a","base":"#374e5a","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"Del 12 de oct al 15 de nov","sitio":"Aether","hoy":false,"parte":null,"van":2,"sinVoy":true,"sello":{"texto":"2 van","tuyo":false,"hoy":false},"inicio":"2026-10-12T06:00:00+00:00","fin":"2026-11-16T05:59:00+00:00","zona":"America/Mexico_City","nuevo":false},{"id":"fada539a-11fe-4480-add3-25fa577a027e","clave":"fada539a-11fe-4480-add3-25fa577a027e:2026-10-14","titulo":"Chatbot Challenge, obra escénica de Interrobang Performance","corto":"Chatbot Challenge","clase":"puntual","claseTexto":"Evento","foto":"e-chatbot-challenge-obra-escenica-de-inter.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(60,60,147,0.9) 0%, rgba(60,60,147,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(87,84,86,0.85) 0%, rgba(87,84,86,0) 68%), #be1a16","base":"#be1a16","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"mié 14 de oct · 20:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":2,"sinVoy":false,"sello":{"texto":"2 van","tuyo":false,"hoy":false},"inicio":"2026-10-15T02:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"3d5b4fc4-a3a2-4328-a103-dcb356c8fe67","clave":"3d5b4fc4-a3a2-4328-a103-dcb356c8fe67:2026-10-17","titulo":"CINEMA: El atractivo de la resistencia, concierto y charla de MOTUS NEU jazz","corto":"CINEMA","clase":"puntual","claseTexto":"Evento","foto":"e-cinema-attraktivitat-des-widerstandigen.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(80,81,143,0.9) 0%, rgba(80,81,143,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(63,63,61,0.85) 0%, rgba(63,63,61,0) 68%), #be1713","base":"#be1713","circulo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340","detalle":"sáb 17 de oct · 19:00","sitio":"Museo Federico Silva Escultura Contemporánea","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-18T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false}],"estaSemana":[{"id":"db0073e8-902f-4d9d-aa59-0d2a9251a4c1","clave":"db0073e8-902f-4d9d-aa59-0d2a9251a4c1:2026-10-10","titulo":"Día Nacional de las Cactáceas en el Jardín Botánico El Izotal","corto":"Día Nacional de las Cactáceas en el Jardín Botánico El Izotal","clase":"puntual","claseTexto":"Evento","foto":"e-dia-nacional-de-las-cactaceas-en-el-jard.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(179,126,68,0.9) 0%, rgba(179,126,68,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(118,115,64,0.85) 0%, rgba(118,115,64,0) 68%), #3a638e","base":"#3a638e","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"hoy · 09:00","sitio":"Jardín Botánico El Izotal","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T15:00:00+00:00","fin":"2026-10-10T18:00:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"cdfb1842-520e-4cb7-b4e0-f9cf025c2fca","clave":"cdfb1842-520e-4cb7-b4e0-f9cf025c2fca:2026-10-10","titulo":"Guitarra en el Otoño: alumnado de la Universidad de Aguascalientes","corto":"Guitarra en el Otoño","clase":"puntual","claseTexto":"Evento","foto":"e-guitarra-en-el-otono-alumnado-de-la-univ.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(146,81,68,0.9) 0%, rgba(146,81,68,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(12,35,68,0.85) 0%, rgba(12,35,68,0) 68%), #944c2b","base":"#944c2b","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"hoy · 13:00","sitio":"Instituto Potosino de Bellas Artes (IPBA)","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"937c2882-17ce-4165-96a8-3faab78d454b","clave":"937c2882-17ce-4165-96a8-3faab78d454b:2026-10-10","titulo":"Viajera: taller para aprender cómo funcionan los trenes","corto":"Viajera","clase":"taller","claseTexto":"Taller","foto":"e-viajera-taller-para-aprender-como-funcio.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(56,22,25,0.9) 0%, rgba(56,22,25,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(42,10,19,0.85) 0%, rgba(42,10,19,0) 68%), #89540f","base":"#89540f","circulo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e","detalle":"hoy · 13:00","sitio":"Museo del Ferrocarril Jesús García Corona","hoy":true,"parte":null,"van":1,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"20e98a85-545b-4172-a8a1-fbb15f6099f6","clave":"20e98a85-545b-4172-a8a1-fbb15f6099f6:2026-10-10","titulo":"Inauguración: Líneas de fuga, exposición de Pedro Friedeberg","corto":"Líneas de fuga","clase":"puntual","claseTexto":"Evento","foto":"e-inauguracion-pedro-friedeberg-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(91,54,51,0.9) 0%, rgba(91,54,51,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(61,59,58,0.85) 0%, rgba(61,59,58,0) 68%), #7f5739","base":"#7f5739","circulo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e","detalle":"hoy · 13:30","sitio":"Casa de Cultura Banamex, Casa del Mayorazgo de la Canal","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T19:30:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"c2c27a1e-2dca-49d1-b2f0-fa59fdbd7493","clave":"c2c27a1e-2dca-49d1-b2f0-fa59fdbd7493:2026-10-10","titulo":"Inauguración: Hilaridad y melancolía, exposición de Pedro Friedeberg","corto":"Hilaridad y melancolía","clase":"puntual","claseTexto":"Evento","foto":"e-inauguracion-pedro-friedeberg-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(91,54,51,0.9) 0%, rgba(91,54,51,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(61,59,58,0.85) 0%, rgba(61,59,58,0) 68%), #7f5739","base":"#7f5739","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"hoy · 15:00","sitio":"Centro Cultural El Nigromante","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T21:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"d73d316c-87a6-432a-bb9a-f003b1e29548","clave":"d73d316c-87a6-432a-bb9a-f003b1e29548:2026-10-10","titulo":"Entre pinceles y sabores, taller con Yanel Villarreal","corto":"Entre pinceles y sabores","clase":"taller","claseTexto":"Taller","foto":"e-entre-pinceles-y-sabores-taller-con-yane.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(111,69,36,0.9) 0%, rgba(111,69,36,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(136,137,125,0.85) 0%, rgba(136,137,125,0) 68%), #6b1c13","base":"#6b1c13","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"hoy · 16:00","sitio":"Museo Francisco Cossío","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T22:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"15e80318-b7c9-4084-ac45-e295e100776b","clave":"15e80318-b7c9-4084-ac45-e295e100776b:2026-10-10","titulo":"La Murcisemana: ciencia, juegos y observación del cielo","corto":"La Murcisemana","clase":"puntual","claseTexto":"Evento","foto":"e-la-murcisemana-ciencia-juegos-y-observac.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(94,25,102,0.9) 0%, rgba(94,25,102,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(228,222,216,0.85) 0%, rgba(228,222,216,0) 68%), #501571","base":"#501571","circulo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340","detalle":"hoy · 17:00","sitio":"Museo Federico Silva Escultura Contemporánea","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"8e1346f5-fca5-413e-b17b-281eadc6f884","clave":"8e1346f5-fca5-413e-b17b-281eadc6f884:2026-10-10","titulo":"Verbena, Ritmo y Sabor: verbena musical","corto":"Verbena, Ritmo y Sabor","clase":"puntual","claseTexto":"Evento","foto":"e-verbena-ritmo-y-sabor-verbena-musical.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(170,205,109,0.9) 0%, rgba(170,205,109,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(201,193,107,0.85) 0%, rgba(201,193,107,0) 68%), #7e582e","base":"#7e582e","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"hoy · 17:30","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T23:30:00+00:00","fin":"2026-10-11T05:00:00+00:00","zona":"America/Mexico_City","nuevo":false},{"id":"322db5c7-12a4-44c3-aa5d-56f1de423088","clave":"322db5c7-12a4-44c3-aa5d-56f1de423088:2026-10-10","titulo":"Charla de lucha libre: la Momia de Guanajuato","corto":"Charla de lucha libre","clase":"puntual","claseTexto":"Evento","foto":"l-museo-del-ferrocarril-jesus-garcia-coron.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"hoy · 18:00","sitio":"Museo del Ferrocarril Jesús García Corona","hoy":true,"parte":null,"van":0,"sinVoy":false,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-11T00:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"191c6fc3-6e1a-49c0-b3ca-001a0bc105f1","clave":"191c6fc3-6e1a-49c0-b3ca-001a0bc105f1:2026-10-11","titulo":"Cine en el museo: Ralph el demoledor","corto":"Cine en el museo","clase":"puntual","claseTexto":"Evento","foto":"l-museo-del-ferrocarril-jesus-garcia-coron.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","circulo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340","detalle":"mañana · 13:00","sitio":"Museo del Ferrocarril Jesús García Corona","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-11T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"a2fd0b35-983d-481c-ba2c-e79c8c587f30","clave":"a2fd0b35-983d-481c-ba2c-e79c8c587f30:2026-10-13","titulo":"Café literario: la trilogía de Laura Esquivel","corto":"Café literario","clase":"puntual","claseTexto":"Evento","foto":"lugar-ceart.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"mar 13 de oct · 17:30","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-13T23:30:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"01a0551e-2106-4c13-9d1b-a1712c58e6a3","clave":"01a0551e-2106-4c13-9d1b-a1712c58e6a3:2026-10-14","titulo":"Cine de barrio: ciclo Fellini","corto":"Cine de barrio","clase":"puntual","claseTexto":"Evento","foto":"e-cine-de-barrio-ciclo-fellini-2026-10-14.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(38,44,71,0.9) 0%, rgba(38,44,71,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(149,155,171,0.85) 0%, rgba(149,155,171,0) 68%), #223f63","base":"#223f63","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"mié 14 de oct · 10:00","sitio":"Casa de Cultura del Barrio de San Miguelito","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-14T16:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"f295e536-8597-4466-808d-86484a551602","clave":"f295e536-8597-4466-808d-86484a551602:2026-10-14","titulo":"Querida yo: taller por el día contra el cáncer de mama","corto":"Querida yo","clase":"taller","claseTexto":"Taller","foto":"lugar-ceart.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"mié 14 de oct · 17:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-14T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"60512fe6-c325-4ffa-86a3-48c1e8c84dd5","clave":"60512fe6-c325-4ffa-86a3-48c1e8c84dd5:2026-10-15","titulo":"La sexualidad antes, durante y después del cáncer de mama, conferencia","corto":"La sexualidad antes","clase":"puntual","claseTexto":"Evento","foto":"lugar-ceart.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","circulo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340","detalle":"jue 15 de oct · 17:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-15T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"d8a6d958-d487-4e0a-b3c1-9cb5c8f6e861","clave":"d8a6d958-d487-4e0a-b3c1-9cb5c8f6e861:2026-10-15","titulo":"Un León Marinero: Por ti me voy de tour en Ciudad de México","corto":"Un León Marinero","clase":"puntual","claseTexto":"Evento","foto":"e-un-leon-marinero-por-ti-me-voy-de-tour-e.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(82,83,52,0.9) 0%, rgba(82,83,52,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(27,25,19,0.85) 0%, rgba(27,25,19,0) 68%), #3c6299","base":"#3c6299","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"jue 15 de oct · 19:00","sitio":"Herodoto 46","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-16T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":true},{"id":"a80e1775-bda4-45b9-b719-0e640a9ad07d","clave":"a80e1775-bda4-45b9-b719-0e640a9ad07d:2026-10-15","titulo":"Homenaje a don Wilberth Patrón","corto":"Homenaje a don Wilberth Patrón","clase":"puntual","claseTexto":"Evento","foto":"l-casa-museo-manuel-jose-othon.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"jue 15 de oct · 19:30","sitio":"Casa Museo Manuel José Othón","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-16T01:30:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"d77b6c93-32a1-4a45-88f9-963497497933","clave":"d77b6c93-32a1-4a45-88f9-963497497933:2026-10-16","titulo":"Expo Artesanal Las Penas con Pan y Muertos","corto":"Expo Artesanal Las Penas con Pan y Muertos","clase":"puntual","claseTexto":"Evento","foto":"e-expo-artesanal-las-penas-con-pan-y-muert.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(115,27,55,0.9) 0%, rgba(115,27,55,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(96,42,37,0.85) 0%, rgba(96,42,37,0) 68%), #885511","base":"#885511","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"vie 16 de oct · 12:00","sitio":"Museo Nacional de la Máscara","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-16T18:00:00+00:00","fin":"2026-10-17T03:00:00+00:00","zona":"America/Mexico_City","nuevo":false},{"id":"0bcf4b03-64cf-4bc1-8d9f-06a9f962d109","clave":"0bcf4b03-64cf-4bc1-8d9f-06a9f962d109:2026-10-13","titulo":"Primer recital musical de otoño de la Academia Inspiratio","corto":"Primer recital musical de otoño de la Academia Inspiratio","clase":"puntual","claseTexto":"Evento","foto":null,"fotoEsCartel":false,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","circulo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e","detalle":"mar 13 de oct · 19:00","sitio":"Casa de Cultura del Barrio de San Miguelito","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-14T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"49d4e217-007c-4125-8042-cb388e602d29","clave":"49d4e217-007c-4125-8042-cb388e602d29:2026-10-15","titulo":"Lectura homenaje a la poeta Olimpia Badillo","corto":"Lectura homenaje a la poeta Olimpia Badillo","clase":"puntual","claseTexto":"Evento","foto":null,"fotoEsCartel":false,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"jue 15 de oct · 19:00","sitio":"Casa del Poeta Ramón López Velarde","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-16T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false},{"id":"5b6e1437-11f3-4d6b-b751-e8af2f5bec65","clave":"5b6e1437-11f3-4d6b-b751-e8af2f5bec65:2026-10-16","titulo":"Yo Marcos, teatro unipersonal","corto":"Yo Marcos","clase":"puntual","claseTexto":"Evento","foto":null,"fotoEsCartel":false,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"vie 16 de oct · 17:00","sitio":"Teatro del IMSS San Luis Potosí","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-16T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false}],"festivales":[{"id":"dfbd5711-d3d3-487d-ac02-ff8464221542","clave":"dfbd5711-d3d3-487d-ac02-ff8464221542","titulo":"CINEMA: XV Festival de Cine México-Alemania","corto":"CINEMA","clase":"festival","claseTexto":"Festival","foto":"e-chatbot-challenge-obra-escenica-de-inter.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Del 29 de sep al 24 de oct","sitio":"Varias sedes","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-09-30T00:00:00+00:00","fin":"2026-10-25T05:00:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"c4c56775-340d-5bac-9bbb-1a7a283d64f8","clave":"c4c56775-340d-5bac-9bbb-1a7a283d64f8","titulo":"Ciclo Fellini","corto":"Ciclo Fellini","clase":"festival","claseTexto":"Festival","foto":"e-ciclo-fellini.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(179,165,85,0.9) 0%, rgba(179,165,85,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(214,206,196,0.85) 0%, rgba(214,206,196,0) 68%), #ad2e57","base":"#ad2e57","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"Del 23 de sep al 28 de oct","sitio":"Casa de Cultura del Barrio de San Miguelito","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-09-23T16:00:00+00:00","fin":"2026-10-28T19:00:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"1e78667f-22f0-4e77-a814-2463c03fb2ad","clave":"1e78667f-22f0-4e77-a814-2463c03fb2ad","titulo":"La memoria del agua, exposición de Alejandra Fersco","corto":"La memoria del agua","clase":"exposicion","claseTexto":"Exposición","foto":"lugar-ceart.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Hasta el dom 1 de nov","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-02T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"e78fa81d-48a2-4161-b900-914e6928ae23","clave":"e78fa81d-48a2-4161-b900-914e6928ae23","titulo":"El desplazamiento del eco, de Rob Maldonado","corto":"El desplazamiento del eco","clase":"exposicion","claseTexto":"Exposición","foto":"e-el-desplazamiento-del-eco-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(144,71,108,0.9) 0%, rgba(144,71,108,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(63,56,63,0.85) 0%, rgba(63,56,63,0) 68%), #832478","base":"#832478","circulo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e","detalle":"Hasta el lun 2 de nov","sitio":"Museo de Arte Contemporáneo (MAC)","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-09-24T06:00:00+00:00","fin":"2026-11-03T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"924330e5-643e-452c-a259-532787783cee","clave":"924330e5-643e-452c-a259-532787783cee","titulo":"Cachorros de Tigre: un universo posible de dibujo en México","corto":"Cachorros de Tigre","clase":"exposicion","claseTexto":"Exposición","foto":"lugar-ceart.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Hasta el dom 8 de nov","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-09T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"0bb73750-50cc-47b6-9883-160e4799fb3f","clave":"0bb73750-50cc-47b6-9883-160e4799fb3f","titulo":"Pre-Ruptura, de Humberto Márquez","corto":"Pre-Ruptura","clase":"exposicion","claseTexto":"Exposición","foto":"lugar-ceart.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","circulo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340","detalle":"Hasta el dom 8 de nov","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-09T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"ba8a5937-6d6f-4764-a5b7-e6f6f0feb6d5","clave":"ba8a5937-6d6f-4764-a5b7-e6f6f0feb6d5","titulo":"Reflejo atemporal: pintura y gráfica de Bernardo Calderón","corto":"Reflejo atemporal","clase":"exposicion","claseTexto":"Exposición","foto":"l-museo-leonora-carrington.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Hasta el dom 15 de nov","sitio":"Museo Leonora Carrington","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-16T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"17b85c87-1239-4838-ad4d-174a32e828c1","clave":"17b85c87-1239-4838-ad4d-174a32e828c1","titulo":"Homenaje al Dr. Salvador Gómez Eichelman, exposición pictórica","corto":"Homenaje al Dr. Salvador Gómez Eichelman","clase":"exposicion","claseTexto":"Exposición","foto":"e-homenaje-al-dr-salvador-gomez-eichelman.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(93,81,63,0.9) 0%, rgba(93,81,63,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(103,99,97,0.85) 0%, rgba(103,99,97,0) 68%), #795664","base":"#795664","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"Hasta el dom 22 de nov","sitio":"Teatro de la Paz","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-02T06:00:00+00:00","fin":"2026-11-23T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"748ac451-a805-46ef-8656-55d2f29eb370","clave":"748ac451-a805-46ef-8656-55d2f29eb370","titulo":"Esencialismo, exposición de Filippo Giusti","corto":"Esencialismo","clase":"exposicion","claseTexto":"Exposición","foto":"e-esencialismo-exposicion-de-filippo-giust.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(120,78,50,0.9) 0%, rgba(120,78,50,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(166,159,157,0.85) 0%, rgba(166,159,157,0) 68%), #235a8a","base":"#235a8a","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"Hasta el mié 2 de dic","sitio":"MUNI Museo Universitario UASLP","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-02T06:00:00+00:00","fin":"2026-12-03T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"bfdc1dff-bfec-509f-a79d-19605066c2b8","clave":"bfdc1dff-bfec-509f-a79d-19605066c2b8","titulo":"Fotovision 31","corto":"Fotovision 31","clase":"festival","claseTexto":"Festival","foto":"e-fotovision-31.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(54,62,74,0.9) 0%, rgba(54,62,74,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(73,73,75,0.85) 0%, rgba(73,73,75,0) 68%), #614b47","base":"#614b47","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Del 24 de sep al 3 de ene de 2027","sitio":"Centro de Difusión Cultural Raúl Gamboa","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-09-24T06:00:00+00:00","fin":"2027-01-04T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"94e498e2-ed45-4926-b436-e964b2b87912","clave":"94e498e2-ed45-4926-b436-e964b2b87912","titulo":"El rostro del paisaje es una máscara, exposición de Franco Méndez Calvillo","corto":"El rostro del paisaje es una máscara","clase":"exposicion","claseTexto":"Exposición","foto":"e-el-rostro-del-paisaje-es-una-mascara-exp.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(31,45,69,0.9) 0%, rgba(31,45,69,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(130,123,116,0.85) 0%, rgba(130,123,116,0) 68%), #7e5929","base":"#7e5929","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Hasta el vie 12 de feb de 2027","sitio":"MUNI Museo Universitario UASLP","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-02T06:00:00+00:00","fin":"2027-02-13T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"375368a1-21fe-4e82-9235-bfb376e88dab","clave":"375368a1-21fe-4e82-9235-bfb376e88dab","titulo":"LXS COLOCAOS: La última fogueada, exposición colectiva","corto":"LXS COLOCAOS","clase":"exposicion","claseTexto":"Exposición","foto":"e-lxs-colocaos-la-ultima-fogueada-exposici.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(185,130,118,0.9) 0%, rgba(185,130,118,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(170,162,158,0.85) 0%, rgba(170,162,158,0) 68%), #81563e","base":"#81563e","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"Hasta el vie 12 de feb de 2027","sitio":"MUNI Museo Universitario UASLP","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-02T06:00:00+00:00","fin":"2027-02-13T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"930900cc-cb40-4fc7-988a-f508cdce49c4","clave":"930900cc-cb40-4fc7-988a-f508cdce49c4","titulo":"Hilaridad y melancolía, exposición de Pedro Friedeberg","corto":"Hilaridad y melancolía","clase":"exposicion","claseTexto":"Exposición","foto":"e-inauguracion-pedro-friedeberg-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(91,54,51,0.9) 0%, rgba(91,54,51,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(61,59,58,0.85) 0%, rgba(61,59,58,0) 68%), #7f5739","base":"#7f5739","circulo":"radial-gradient(110% 70% at 15% 12%, #6d34c8 0%, rgba(109,52,200,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff7a1a 0%, rgba(255,122,26,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffd23f 0%, rgba(255,210,63,0) 64%), #1e0b3d","detalle":"Hasta el sáb 20 de feb de 2027","sitio":"Centro Cultural El Nigromante","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-10T06:00:00+00:00","fin":"2027-02-21T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"ddeea88d-89e9-4a6d-9dc0-e18f0365b81b","clave":"ddeea88d-89e9-4a6d-9dc0-e18f0365b81b","titulo":"Líneas de fuga, exposición de Pedro Friedeberg","corto":"Líneas de fuga","clase":"exposicion","claseTexto":"Exposición","foto":"e-inauguracion-pedro-friedeberg-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(91,54,51,0.9) 0%, rgba(91,54,51,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(61,59,58,0.85) 0%, rgba(61,59,58,0) 68%), #7f5739","base":"#7f5739","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"Hasta el sáb 20 de feb de 2027","sitio":"Casa de Cultura Banamex, Casa del Mayorazgo de la Canal","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-10T06:00:00+00:00","fin":"2027-02-21T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"e125ce86-7917-4084-8bc4-35e06cd15621","clave":"e125ce86-7917-4084-8bc4-35e06cd15621","titulo":"Privacidad y elegancia, exposición de Pedro Friedeberg","corto":"Privacidad y elegancia","clase":"exposicion","claseTexto":"Exposición","foto":"e-inauguracion-pedro-friedeberg-exposicion.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(91,54,51,0.9) 0%, rgba(91,54,51,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(61,59,58,0.85) 0%, rgba(61,59,58,0) 68%), #7f5739","base":"#7f5739","circulo":"radial-gradient(110% 70% at 15% 12%, #b0306a 0%, rgba(176,48,106,0) 62%), radial-gradient(90% 70% at 92% 40%, #ff6f61 0%, rgba(255,111,97,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffb88a 0%, rgba(255,184,138,0) 64%), #2a0a2e","detalle":"Hasta el sáb 20 de feb de 2027","sitio":"Galería Casa Diana","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-10T06:00:00+00:00","fin":"2027-02-21T05:59:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"67305228-eafd-55a7-97a0-5d4708222805","clave":"67305228-eafd-55a7-97a0-5d4708222805","titulo":"Verbena, ritmo y Sabor","corto":"Verbena","clase":"festival","claseTexto":"Festival","foto":"e-verbena-ritmo-y-sabor-verbena-musical.webp","fotoEsCartel":false,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"Del 10 al 11 de oct","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":true,"parte":null,"van":0,"sinVoy":true,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-10T23:30:00+00:00","fin":"2026-10-12T00:00:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"94c4c56d-8afd-4118-8213-0eff70821ffc","clave":"94c4c56d-8afd-4118-8213-0eff70821ffc","titulo":"Festival del Libro Independencia 4ta. Edición","corto":"Festival del Libro Independencia 4ta. Edición","clase":"festival","claseTexto":"Festival","foto":"e-festival-del-libro-independencia-4ta-edi.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(58,53,26,0.9) 0%, rgba(58,53,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(29,20,9,0.85) 0%, rgba(29,20,9,0) 68%), #463118","base":"#463118","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"sáb 10 de oct","sitio":"Plaza Jardin de los compositores · Programa por confirmar","hoy":true,"parte":null,"van":0,"sinVoy":true,"sello":{"texto":"Hoy","tuyo":false,"hoy":true},"inicio":"2026-10-11T01:00:00+00:00","fin":"2026-10-11T02:30:00+00:00","zona":"America/Mexico_City","nuevo":true},{"id":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","clave":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","titulo":"KOWAIFEST","corto":"KOWAIFEST","clase":"festival","claseTexto":"Festival","foto":"e-kowaifest.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(25,69,65,0.9) 0%, rgba(25,69,65,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(35,33,33,0.85) 0%, rgba(35,33,33,0) 68%), #721323","base":"#721323","circulo":"radial-gradient(110% 70% at 15% 12%, #0077b6 0%, rgba(0,119,182,0) 62%), radial-gradient(90% 70% at 92% 40%, #00b4d8 0%, rgba(0,180,216,0) 66%), radial-gradient(120% 80% at 40% 105%, #90e0ef 0%, rgba(144,224,239,0) 64%), #021d33","detalle":"sáb 17 de oct","sitio":"Dēppa · Programa por confirmar","hoy":false,"parte":null,"van":0,"sinVoy":true,"sello":null,"inicio":"2026-10-18T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":false}],"nuevos":[{"id":"6825ddcc-10e8-4fc8-a403-74fd246a1161","clave":"6825ddcc-10e8-4fc8-a403-74fd246a1161","titulo":"Un León Marinero: Por ti me voy de tour en Puebla","corto":"Un León Marinero","clase":"puntual","claseTexto":"Evento","foto":"e-un-leon-marinero-por-ti-me-voy-de-tour-e.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(82,83,52,0.9) 0%, rgba(82,83,52,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(27,25,19,0.85) 0%, rgba(27,25,19,0) 68%), #3c6299","base":"#3c6299","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"vie 16 de oct · 21:00","sitio":"Breve Espacio","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-17T03:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":true},{"id":"a8b748e7-20c2-4ad5-a673-75073d7bef89","clave":"a8b748e7-20c2-4ad5-a673-75073d7bef89","titulo":"Fotomúsica: caminata para tomar fotos al ritmo de una playlist","corto":"Fotomúsica","clase":"puntual","claseTexto":"Evento","foto":"e-fotomusica-caminata-para-tomar-fotos-al.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(88,61,32,0.9) 0%, rgba(88,61,32,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(78,84,87,0.85) 0%, rgba(78,84,87,0) 68%), #496282","base":"#496282","circulo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c","detalle":"sáb 17 de oct · 17:00","sitio":"Caja del Agua, Calzada de Guadalupe","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-17T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":true},{"id":"1641f01c-7134-4b89-9900-f296fd46865d","clave":"1641f01c-7134-4b89-9900-f296fd46865d","titulo":"Un León Marinero: Por ti me voy de tour en Morelia","corto":"Un León Marinero","clase":"puntual","claseTexto":"Evento","foto":"e-un-leon-marinero-por-ti-me-voy-de-tour-e.webp","fotoEsCartel":true,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(82,83,52,0.9) 0%, rgba(82,83,52,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(27,25,19,0.85) 0%, rgba(27,25,19,0) 68%), #3c6299","base":"#3c6299","circulo":"radial-gradient(110% 70% at 15% 12%, #b5541c 0%, rgba(181,84,28,0) 62%), radial-gradient(90% 70% at 92% 40%, #f29e4c 0%, rgba(242,158,76,0) 66%), radial-gradient(120% 80% at 40% 105%, #ffe1a8 0%, rgba(255,225,168,0) 64%), #2e1608","detalle":"sáb 17 de oct · 20:00","sitio":"Cuarto Cero Bar","hoy":false,"parte":null,"van":0,"sinVoy":false,"sello":null,"inicio":"2026-10-18T02:00:00+00:00","fin":null,"zona":"America/Mexico_City","nuevo":true}],"nuevosDeLaApp":0,"lugares":[{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","foto":"l-museo-de-arte-contemporaneo-mac.webp","detalle":"En curso","cuando":true},{"id":"bc443f31-a12f-49fb-b1b2-98a45879ef14","nombre":"Museo Leonora Carrington","foto":"l-museo-leonora-carrington.webp","detalle":"En curso","cuando":true},{"id":"abe11da5-5395-4cfd-80e8-a780cdd9e430","nombre":"MUNI Museo Universitario UASLP","foto":"l-muni-museo-universitario-uaslp.webp","detalle":"En curso","cuando":true},{"id":"1826c551-cf0f-43de-99c7-a49fb3d96be9","nombre":"Teatro de la Paz","foto":"l-teatro-de-la-paz.webp","detalle":"En curso","cuando":true},{"id":"a8e752c6-ead1-4d6b-89b9-fad39003aa03","nombre":"Casa de Cultura Banamex, Casa del Mayorazgo de la Canal","foto":null,"detalle":"En curso","cuando":true},{"id":"5d7cc5a3-d0d1-4472-bcdc-93ab23443c19","nombre":"Galería Casa Diana","foto":null,"detalle":"En curso","cuando":true},{"id":"4c7f8afb-c87c-4893-99f0-6728ba352935","nombre":"Instituto Potosino de Bellas Artes (IPBA)","foto":"l-instituto-potosino-de-bellas-artes-ipba.webp","detalle":"Hoy · 13:00","cuando":true},{"id":"372bc316-1257-4a51-8fbd-0b6bf800f70e","nombre":"Museo del Ferrocarril Jesús García Corona","foto":"l-museo-del-ferrocarril-jesus-garcia-coron.webp","detalle":"Hoy · 13:00","cuando":true},{"id":"98fee205-29c1-4fa5-b292-599da200d759","nombre":"Museo Francisco Cossío","foto":"l-museo-francisco-cossio.webp","detalle":"Hoy · 16:00","cuando":true},{"id":"f657a798-8b08-49b5-8a1e-7946a35de6e7","nombre":"Aurora Co-Lab","foto":null,"detalle":"Hoy · 17:00","cuando":true},{"id":"e8fc820b-fab6-49f0-a028-c487c5c8698a","nombre":"Museo Federico Silva Escultura Contemporánea","foto":"l-museo-federico-silva-escultura-contempor.webp","detalle":"Hoy · 17:00","cuando":true},{"id":"58f54ac7-365a-4151-9373-41ec33833296","nombre":"Casa Museo Manuel José Othón","foto":"l-casa-museo-manuel-jose-othon.webp","detalle":"jue 15 de oct · 19:30","cuando":true},{"id":"a2176e0d-2ac1-42e2-b3a6-40e1fe9b2b4d","nombre":"Museo Nacional de la Máscara","foto":"l-museo-nacional-de-la-mascara.webp","detalle":"vie 16 de oct · 12:00","cuando":true}],"artistasDestacados":[{"id":"6914e668-4586-440f-b3e3-08e5509bf435","nombre":"Markosblues","foto":"a-markosblues.webp","detalle":"Música","cuando":false,"novedad":"Nuevo video","disciplina":"Música","genero":"jazz, blues y soul"},{"id":"305d3aa5-3317-446a-8b5e-0425f5d6c255","nombre":"Fozco","foto":"a-fozco.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"rock, metal y alternativo"},{"id":"3d178d4e-51e8-4405-81bb-0e6256b6af52","nombre":"DwardNoize","foto":"a-dwardnoize.webp","detalle":"Música","cuando":false,"novedad":"Nuevo audio","disciplina":"Música","genero":"EDM, Dubstep, Hardstyle"},{"id":"d73c59dc-a3f5-4d87-a54a-1cf0eae69a9e","nombre":"Sangre de Coyote","foto":"a-sangre-de-coyote.webp","detalle":"Música","cuando":false,"novedad":"Nuevo video","disciplina":"Música","genero":"gypsy jazz y música balcánica"},{"id":"9d2a8481-d2ba-4411-a430-4b1f7372d01a","nombre":"Michell Kittrell","foto":"a-michell-kittrell.webp","detalle":"Artes visuales","cuando":false,"disciplina":"Artes visuales","genero":"pintura figurativa"},{"id":"cee6d8f9-ff67-42a0-97ad-9b37e9ed5387","nombre":"Robscan","foto":"a-robscan.webp","detalle":"Música","cuando":false,"novedad":"Nuevo audio","disciplina":"Música","genero":"Productor de música electrónica y dj"},{"id":"849fced7-604f-4360-87c7-bd77ccefce1f","nombre":"Un León Marinero","foto":"a-un-leon-marinero.webp","detalle":"jue 15 de oct · 19:00","cuando":true,"novedad":"Nuevo video","disciplina":"Música","genero":"folk y canción de autor"}],"artistasSemana":[{"id":"4bdf6671-c97a-4e70-b598-ea10f594e2a2","nombre":"Denisse Hervert","foto":"a-denisse-hervert.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"pop, urbano y electrónica"},{"id":"3c529f2f-4623-4222-8287-72e8034d0bc9","nombre":"François I. Martínez","foto":"a-francois-i-martinez.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"tradicional, folclore y canto nuevo"},{"id":"c4f2392d-10fb-48cc-a703-26e4c79a0c3e","nombre":"Yanel Villarreal","foto":"a-yanel-villarreal.webp","detalle":"Hoy · 16:00","cuando":true,"disciplina":"Artes visuales","genero":"pintura y clases de arte"},{"id":"159ce049-cd95-4478-84b0-318e35ececdc","nombre":"REVENNAND'S","foto":"a-revennand-s.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"rock, metal y alternativo"},{"id":"5e434989-eae7-4fd4-bf56-9e52b4eb3336","nombre":"CS2 Orquesta","foto":"a-cs2-orquesta.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"regional, tropical y versátil"},{"id":"9a9d0215-80dc-4d75-8517-1259d90d4c67","nombre":"AGRUPACION FOLKLORICA HUNAC-CEEL","foto":"a-agrupacion-folklorica-hunac-ceel.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"tradicional, folclore y canto nuevo"},{"id":"7b903e71-3458-4a34-82c5-114764836cfc","nombre":"EMOSSANA","foto":"a-emossana.webp","detalle":"Música","cuando":false,"disciplina":"Música","genero":"rock, metal y alternativo"}]}}</script>
+<script>
+(() => {
+  'use strict';
+  const D = JSON.parse(document.getElementById('datos').textContent);
+  const RUTA = 'inicio-tarjetas/';
+  const ZONA = D.zona;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const minus = (s) => (s ? s.charAt(0).toLocaleLowerCase('es') + s.slice(1) : s);
+
+  // ===== Fechas, en la zona de San Luis Potosí.
+  const fmtDia = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const fmtHora = new Intl.DateTimeFormat('es-MX', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: false });
+  const diaDe = (iso) => fmtDia.format(new Date(iso));
+  const horaDe = (iso) => fmtHora.format(new Date(iso));
+  const HOY = diaDe(D.ahora);
+  const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const MES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  const utc = (d) => { const [a, m, x] = d.split('-').map(Number); return Date.UTC(a, m - 1, x); };
+  const desdeHoy = (d) => Math.round((utc(d) - utc(HOY)) / 86400000);
+  const numDia = (d) => String(Number(d.slice(8, 10)));
+  const mesDe = (d) => MES[Number(d.slice(5, 7)) - 1];
+  const mesLargoDe = (d) => MES_LARGO[Number(d.slice(5, 7)) - 1];
+  const semanaDe = (d) => SEMANA[new Date(utc(d)).getUTCDay()];
+
+  /**
+   * E8 · El sello de fecha. Un día: mes y día («oct» / «11»). Un rango del mismo mes: «oct» / «10–11». Un rango entre meses (decidido aquí):
+   * si no ha empezado, desde cuándo («oct» / «12 →»); si ya empezó, hasta cuándo, con el mes del cierre («oct» / «→ 28»): de lo que ya está
+   * pasando importa cuándo se acaba. E8b: dentro de los próximos 7 días, el día de la semana en vez del mes («sáb» / «17»; hoy, «hoy» / «10»).
+   */
+  function selloFecha(t, e8b) {
+    const rango = t.clase === 'exposicion' || t.clase === 'festival';
+    const desde = diaDe(t.inicio);
+    const hasta = rango && t.fin ? diaDe(new Date(Math.max(Date.parse(t.inicio), Date.parse(t.fin) - 60000)).toISOString()) : desde;
+    const deSemana = (d) => { const n = desdeHoy(d); return n >= 0 && n <= 6 ? (n === 0 ? 'hoy' : semanaDe(d)) : null; };
+    const arriba = (d) => (e8b && deSemana(d)) || mesDe(d);
+    if (desde === hasta) return { arriba: arriba(desde), abajo: numDia(desde), aria: `${numDia(desde)} de ${mesLargoDe(desde)}` };
+    if (desde.slice(0, 7) === hasta.slice(0, 7)) return { arriba: arriba(desde), abajo: `${numDia(desde)}–${numDia(hasta)}`, aria: `del ${numDia(desde)} al ${numDia(hasta)} de ${mesLargoDe(hasta)}` };
+    if (HOY < desde) return { arriba: arriba(desde), abajo: numDia(desde), flecha: 'despues', aria: `desde el ${numDia(desde)} de ${mesLargoDe(desde)}` };
+    return { arriba: arriba(hasta), abajo: numDia(hasta), flecha: 'antes', aria: `hasta el ${numDia(hasta)} de ${mesLargoDe(hasta)}` };
+  }
+
+  /** E1 · El título como oración: una palabra toda en mayúsculas de 4 letras o más pasa a minúsculas («DESIERTO» → «Desierto»); las siglas cortas se quedan. */
+  function comoOracion(s) {
+    let primera = true;
+    return s.split(/(\s+)/).map((w) => {
+      if (!w.trim()) return w;
+      const letras = w.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '');
+      let r = w;
+      if (letras.length >= 4 && letras === letras.toLocaleUpperCase('es')) {
+        r = w.toLocaleLowerCase('es');
+        if (primera) r = r.replace(/\p{L}/u, (c) => c.toLocaleUpperCase('es'));
+      }
+      primera = false;
+      return r;
+    }).join('');
+  }
+
+  // ===== Los íconos de la app (src/components/ui/Iconos.tsx), de trazo, 24×24.
+  const svg = (d, extra = '') => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"${extra}>${d}</svg>`;
+  const I = {
+    mas: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/>'),
+    lupa: svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/>'),
+    pin: svg('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'),
+    baja: svg('<path d="M7 10l5 5 5-5"/>'),
+    calendario: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+    filtros: svg('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
+    derecha: svg('<path d="M9 6l6 6-6 6"/>'),
+    casa: svg('<path d="M4 11l8-7 8 7v8.5a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19.5z"/>'),
+    estrella: svg('<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>'),
+    persona: svg('<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
+    ok: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+    campanaMas: svg('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/><path d="M12 9.5v5M9.5 12h5"/>'),
+    personaMas: svg('<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 7.5v6M16 10.5h6"/>'),
+    marcador: svg('<path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/>'),
+  };
+  const FLECHA = '<svg class="flecha" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 6h8M6.5 3l3 3-3 3"/></svg>';
+
+  // ===== Los ejercicios y los preajustes.
+  const CLAVES = ['e1', 'e2', 'e3', 'e3b', 'e4', 'e5', 'e6', 'e7', 'e8', 'e8b', 'e8c', 'e9', 'e10', 'e11a', 'e11b', 'e11c'];
+  const NADA = Object.fromEntries(CLAVES.map((k) => [k, false]));
+  const PRESETS = {
+    hoy: { nombre: 'Hoy', e: { ...NADA } },
+    calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
+    minima: { nombre: 'Mínima', e: Object.fromEntries(CLAVES.map((k) => [k, true])) },
+    // La versión que firmó el founder el 10 de oct: «Listo, te acepto esta versión» y, al cerrar, «Personalizada · E1 · E3 · E3B · E5 · E7 ·
+    // E8 · E8C · E9 · E10», con los ajustes de sus comentarios. «Tus planes» queda sin marca (cerró ese comentario sin elegir E11).
+    firmada: { nombre: 'Firmada', e: { ...NADA, e1: true, e3: true, e3b: true, e5: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
+  };
+  const EJERCICIOS = [
+    { k: 'e1', t: 'E1 · Un solo título', d: 'Con cartel, la tarjeta es el cartel entero (4:5) y el título va debajo, como oración, en dos líneas y sin partir palabras. Sin cartel se queda la tarjeta de título.', f: 'Explora lo firmado en OL-357/360 («título + cartel»).' },
+    { k: 'e2', t: 'E2 · El botón solo cuando importa', d: 'Sin botón en reposo. Si ya decidiste, un sello chico que dice el estado, no una acción; decidir queda en la ficha y la historia. Lugares y artistas, sin seguir en el carril.', f: 'Explora OL-176.' },
+    { k: 'e3', t: 'E3 · Rótulos fuera del cartel', d: 'La clase va chica arriba del título, con la sesión a su lado («Taller · Sesión 1 de 4»); «Hoy», en la línea de cuándo. Sobre el cartel solo queda un chip: «Te interesa» o cuántos van.', f: 'Los chips de «Te interesa» y «van» volvieron por comentarios del founder (10 de oct).' },
+    { k: 'e3b', t: 'E3b · Evento por omisión', d: 'Solo se rotula lo que no es evento.', sub: 'e3' },
+    { k: 'e4', t: 'E4 · Color quieto', d: 'Violeta solo para el cuándo; «Ver la agenda» en gris; la franja en un solo tono oscuro.', f: 'Explora el «degradado vivo» firmado; en las historias se queda.' },
+    { k: 'e5', t: 'E5 · Jerarquía de tamaños', d: 'Destacados en grande. Esta semana y Nuevos en mediana (se ven dos y media). Lugares y artistas en avatares de 64 px, sin botón.' },
+    { k: 'e6', t: 'E6 · Menos carriles', d: '«Nuevos eventos» pasa a ser la marca «Nuevo» dentro de Esta semana. Cinco carriles como máximo: con «Tus planes», lugares y artistas comparten uno.' },
+    { k: 'e7', t: 'E7 · «Ahora» sin repetir', d: 'Si varios empiezan a la misma hora, solo el primero dice «En 1 h 11 min»; los demás, la hora.' },
+    { k: 'e8', t: 'E8 · Fecha en el cartel', d: 'Sin el botón de «Voy»: un sello con el mes y el día arriba a la izquierda, como «Conciertos» de Apple Music. Debajo, título, lugar y la fecha en violeta. En «Tus planes» solo se marca «Te interesa»: lo que no lo dice es a lo que vas.', f: 'Pedido del founder (10 de oct). Con E8, E2 no hace nada.' },
+    { k: 'e8b', t: 'E8b · Días esta semana', d: 'En los próximos 7 días, el día de la semana en vez del mes: «hoy», «dom», «lun».', sub: 'e8' },
+    { k: 'e8c', t: 'E8c · La fecha a la derecha', d: 'El sello va donde estaba el botón de «Voy», arriba a la derecha; a la izquierda solo queda «Nuevo».', sub: 'e8', f: 'Pedido del founder en un comentario (10 de oct).' },
+    { k: 'e9', t: 'E9 · Artistas como eventos', d: '«Artistas destacadxs» con la jerarquía de «Nuevos eventos»: la foto del tamaño de un cartel, la disciplina chica arriba del nombre y, debajo, su género y su próxima fecha. «Nuevo video» o «Nuevo audio» sigue sobre la foto; sin botón de seguir, como los eventos sin «Voy» (se sigue desde la ficha).', f: 'Pedido del founder en un comentario (10 de oct).' },
+    { k: 'e10', t: 'E10 · Sin cartel: título abajo', d: 'En la tarjeta sin cartel, el símbolo SN arriba a la izquierda y el título en la base; la fecha y «Nuevo» arriba a la derecha y los chips encima del título.', f: 'Pedido del founder en un comentario (10 de oct).' },
+    { k: 'e11a', t: 'E11a · «Tus planes» con contorno', d: 'Un contorno fino con esquinas redondeadas encierra título y tarjetas, como una caja; las tarjetas siguen a 20 px del borde.', f: 'Para marcar «Tus planes» como tu contenedor (comentario del founder, 10 de oct). La banda de color se rechazó.' },
+    { k: 'e11b', t: 'E11b · «Tus planes» con línea', d: 'Una línea violeta a la izquierda, de la cabecera a la última tarjeta.' },
+    { k: 'e11c', t: 'E11c · «Tus planes» con ícono y aire', d: 'Solo el título cambia: el marcador de «Me interesa» junto a «Tus planes» y más aire arriba y abajo.' },
+  ];
+  /** Lo que de verdad se aplica: E2 sin efecto con E8; los subinterruptores solo con su ejercicio. */
+  // Las tres maneras de E11 son una a la vez: gana la a, luego la b.
+  const vista = (e) => ({ ...e, e2: e.e2 && !e.e8, e3b: e.e3b && e.e3, e8b: e.e8b && e.e8, e8c: e.e8c && e.e8, e11b: e.e11b && !e.e11a, e11c: e.e11c && !e.e11a && !e.e11b });
+  const presetDe = (e) => Object.keys(PRESETS).find((p) => CLAVES.every((k) => !!PRESETS[p].e[k] === !!e[k])) || null;
+  const listaDe = (e) => CLAVES.filter((k) => e[k]).map((k) => k.toUpperCase()).join(' · ');
+  const cortaDe = (e) => CLAVES.filter((k) => e[k]).map((k) => k.toUpperCase()).join(' ');
+  const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${cortaDe(e) || 'nada'})`; };
+
+  // ===== Lo que guarda este navegador (comodidad: la combinación y los tiempos de las pruebas).
+  // «:2» desde E8c: quien ya abrió la página ve la combinación nueva de «Calma» en vez de la que guardó antes.
+  const LLAVE_ESTADO = 'inicio-tarjetas:estado:9';
+  const LLAVE_TIEMPOS = 'inicio-tarjetas:tiempos';
+  const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
+  const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento: se queda en la pantalla */ } };
+
+  const estado = { e: { ...PRESETS.firmada.e }, decisiones: new Map(Object.entries(D.asistencias)), seguidos: new Set() };
+  const guardado = leer(LLAVE_ESTADO);
+  if (guardado && typeof guardado === 'object') for (const k of CLAVES) estado.e[k] = !!guardado[k];
+  const desdeEnlace = location.hash.slice(1);
+  if (PRESETS[desdeEnlace]) estado.e = { ...PRESETS[desdeEnlace].e };
+
+  // ===== Las tarjetas: cada evento una vez, para «Tus planes» al decidir.
+  const POR_ID = new Map();
+  for (const k of ['tusPlanes', 'destacados', 'estaSemana', 'festivales', 'nuevos']) for (const t of D.carriles[k]) if (!POR_ID.has(t.id)) POR_ID.set(t.id, t);
+  const fotoPrimero = (l) => [...l.filter((t) => t.foto), ...l.filter((t) => !t.foto)];
+  const porFecha = (a, b) => Date.parse(a.inicio) - Date.parse(b.inicio) || a.titulo.localeCompare(b.titulo, 'es');
+  const tusPlanes = () => fotoPrimero([...estado.decisiones.keys()].map((id) => POR_ID.get(id)).filter(Boolean).sort(porFecha));
+  const CEJA = { Evento: 'Evento', Taller: 'Taller', 'Exposición': 'Expo', Festival: 'Festival' };
+
+  function carriles(v) {
+    const C = D.carriles;
+    const lista = [];
+    const planes = tusPlanes();
+    if (planes.length) lista.push({ clave: 'tusPlanes', titulo: 'Tus planes', ver: 'Ver mi perfil', tarjetas: planes, tamano: 'grande', tusPlanes: true });
+    lista.push({ clave: 'destacados', titulo: C.titulo, ver: 'Ver la agenda', tarjetas: C.destacados, tamano: 'grande' });
+    const semana = v.e6 ? fotoPrimero([...C.estaSemana, ...C.nuevos].sort(porFecha)) : C.estaSemana;
+    lista.push({ clave: 'estaSemana', titulo: 'Esta semana', ver: 'Ver la agenda', tarjetas: semana, tamano: v.e5 ? 'mediana' : 'grande', marcaNuevo: v.e6 });
+    lista.push({ clave: 'festivales', titulo: 'Festivales y expos', ver: 'Ver la agenda', tarjetas: C.festivales, tamano: 'grande' });
+    if (!v.e6 && C.nuevos.length >= 3) lista.push({ clave: 'nuevos', titulo: 'Nuevos eventos', ver: 'Ver la agenda', tarjetas: C.nuevos, tamano: v.e5 ? 'mediana' : 'grande' });
+    const lugares = C.lugares.map((x) => ({ ...x, que: 'lugar' }));
+    const artD = C.artistasDestacados.map((x) => ({ ...x, que: 'artista' }));
+    const artS = C.artistasSemana.map((x) => ({ ...x, que: 'artista' }));
+    const redonda = v.e5 ? 'avatar' : 'chica';
+    if (v.e6 && planes.length) lista.push({ clave: 'lugaresArtistas', titulo: 'Lugares y artistas de la semana', ver: null, entidades: [...lugares, ...artD, ...artS], forma: redonda });
+    else {
+      lista.push({ clave: 'lugares', titulo: 'Lugares de la semana', ver: 'Ver lugares', entidades: lugares, forma: redonda });
+      if (v.e6) lista.push({ clave: 'artistas', titulo: 'Artistas', ver: 'Ver artistas', entidades: [...artD, ...artS], forma: redonda });
+      else {
+        lista.push({ clave: 'artistasDestacados', titulo: 'Artistas destacadxs', ver: 'Ver artistas', entidades: artD, forma: v.e9 ? 'evento' : v.e5 ? 'avatar' : 'grande' });
+        lista.push({ clave: 'artistasSemana', titulo: 'Artistas de la semana', ver: 'Ver artistas', entidades: artS, forma: redonda });
+      }
+    }
+    return lista;
+  }
+
+  const fuente = (archivo, c) => (c.img ? `src="${RUTA}${archivo}" loading="lazy" decoding="async"` : `data-src="${RUTA}${archivo}"`);
+
+  function htmlEvento(t, c) {
+    const v = c.v;
+    const dec = estado.decisiones.get(t.id) || null;
+    const voy = dec === 'voy';
+    const interesa = dec === 'me_interesa';
+    const conCartel = !!t.foto;
+    const soloCartel = v.e1 && conCartel;
+    const modo = !conCartel ? 'titulo' : soloCartel ? 'solo-cartel' : 'mixta';
+    const fondo = v.e4 ? 'var(--banda)' : t.fondo;
+    const base = v.e4 ? '#141414' : t.base;
+    // «Vas» no se dice (founder, 10 de oct: «si son mis planes decir que vas es redundante»); «Te interesa» sí: en «Tus planes» es la excepción.
+    const tuyo = interesa && !v.e2 ? 'Te interesa' : null;
+    const nuevo = !!(c.marcaNuevo && t.nuevo);
+    const marcaNuevo = nuevo && !v.e3;
+    const boton = !v.e2 && !v.e8 && !t.sinVoy;
+    const sello = v.e2 && (voy || interesa) ? (voy ? 'voy' : 'interesa') : null;
+    const fecha = v.e8 ? selloFecha(t, v.e8b) : null;
+    let chips = '';
+    const ceja = [];
+    let cuando = t.detalle;
+    // Con E8, un festival que ya empezó dice cuándo termina, como las expos (founder, 10 de oct: «sería mejor decir que termina el…»):
+    // «Hasta el sáb 24 de oct» en vez de «Del 29 de sep al 24 de oct». El que no ha empezado conserva su rango.
+    if (v.e8 && t.clase === 'festival' && t.fin && Date.parse(t.inicio) <= Date.parse(D.ahora)) {
+      const hasta = diaDe(new Date(Math.max(Date.parse(t.inicio), Date.parse(t.fin) - 60000)).toISOString());
+      cuando = `Hasta el ${semanaDe(hasta)} ${numDia(hasta)} de ${mesDe(hasta)}`;
+    }
+    if (!v.e3) {
+      // Como hoy (OL-364): abajo a la izquierda la clase y a su lado, como mucho, un dato.
+      const dato = tuyo ? { texto: tuyo, clase: 'estado' } : t.sello ? { texto: t.sello.texto, clase: t.sello.hoy ? 'hoy' : '' } : null;
+      chips = `<span class="rotulos"><span class="chip" data-m="rotulo">${esc(t.claseTexto)}</span>${dato ? `<span class="chip ${dato.clase}" data-m="rotulo">${esc(dato.texto)}</span>` : ''}</span>`;
+    } else {
+      // E3: la clase en la ceja; «Hoy» y la sesión en la línea de cuándo; el dato que queda, en la ceja.
+      if (!(v.e3b && t.claseTexto === 'Evento')) ceja.push({ texto: CEJA[t.claseTexto] || t.claseTexto });
+      if (t.hoy && !/^hoy\b/.test(cuando)) cuando = `hoy · ${minus(cuando)}`;
+      // La sesión va en la ceja, junto a la clase (founder, 10 de oct: «¿podemos colocar las sesiones aquí?»): «Taller · Sesión 1 de 4».
+      if (t.parte) ceja.push({ texto: t.parte });
+      // Founder (10 de oct): «regresar a chip te interesa» y «regresar a chip cuántos van»: el dato de la persona vuelve como chip sobre el
+      // cartel, como en producción; la clase se queda arriba del título. Como «Hoy» y la sesión ya van en la línea de cuándo, el chip queda
+      // libre también para lo de hoy.
+      const dato = tuyo ? { texto: tuyo, clase: 'estado' } : t.van > 0 ? { texto: t.van === 1 ? '1 va' : `${t.van} van`, clase: '' } : null;
+      if (dato) chips = `<span class="rotulos"><span class="chip ${dato.clase}" data-m="rotulo">${esc(dato.texto)}</span></span>`;
+      if (nuevo) ceja.push({ texto: 'Nuevo' });
+    }
+    const cejaHtml = ceja.length ? `<span class="ceja">${ceja.map((x) => `<span class="${x.tuyo ? 'tuyo' : ''}" data-m="rotulo">${esc(x.texto)}</span>`).join('')}</span>` : '';
+    const relleno = boton ? ' con-boton' : sello ? ' con-sello' : '';
+    const franja = soloCartel ? '' : `<span class="franja${relleno}"${conCartel ? ` style="background:${fondo}" data-c="${base}"` : ''}>${cejaHtml}<span class="t" data-m="titulo">${esc(t.corto)}</span></span>`;
+    const cartel = conCartel ? `<img class="cartel" ${fuente(t.foto, c)} alt="">` : '';
+    const fechaHtml = fecha ? `<span class="fecha" data-m="rotulo" title="${esc(fecha.aria)}"><small>${esc(fecha.arriba)}</small><b>${fecha.flecha === 'antes' ? FLECHA : ''}${esc(fecha.abajo)}${fecha.flecha === 'despues' ? FLECHA : ''}</b></span>` : '';
+    // E8c: el sello va solo, arriba a la derecha (donde estaba el botón de «Voy»); a la izquierda queda «Nuevo».
+    const fechaDerecha = !!(fecha && v.e8c);
+    const izquierda = `${fechaDerecha ? '' : fechaHtml}${marcaNuevo ? '<span class="nuevo" data-m="rotulo">Nuevo</span>' : ''}`;
+    const tituloAbajo = !!(v.e10 && modo === 'titulo');
+    const esquina = tituloAbajo
+      ? (fecha || marcaNuevo ? `<span class="esquina derecha">${marcaNuevo ? '<span class="nuevo" data-m="rotulo">Nuevo</span>' : ''}${fechaHtml}</span>` : '')
+      : `${izquierda ? `<span class="esquina">${izquierda}</span>` : ''}${fechaDerecha ? `<span class="esquina derecha">${fechaHtml}</span>` : ''}`;
+    const selloHtml = sello ? `<span class="estado-sello ${sello}" data-m="rotulo">${sello === 'voy' ? I.ok : I.marcador}</span>` : '';
+    const simbolo = conCartel ? '' : `<img class="simbolo" src="${RUTA}simbolo-sn-blanco.svg" alt="">`;
+    const portada = `<span class="portada ${modo}${tituloAbajo ? ' abajo' : esquina && modo === 'titulo' ? ' con-esquina' : ''}"${conCartel ? '' : ` style="background:${fondo}" data-c="${base}"`}>${franja}${cartel}${chips}${esquina}${selloHtml}${simbolo}</span>`;
+    const tituloPie = soloCartel ? `<b class="titulo-pie" data-m="titulo" data-completo="${esc(comoOracion(t.corto))}">${esc(comoOracion(t.corto))}</b>` : '';
+    // Con E8, lugar y luego fecha (como «Conciertos» de Apple Music); la fecha conserva su violeta (founder, 10 de oct: «resaltar con color la fecha, como antes»).
+    const lineas = v.e8 ? `<span class="donde">${esc(t.sitio)}</span><span class="cuando">${esc(cuando)}</span>` : `<span class="cuando">${esc(cuando)}</span>${t.sitio ? `<span class="donde">${esc(t.sitio)}</span>` : ''}`;
+    const pie = `<span class="pie">${soloCartel ? cejaHtml : ''}${tituloPie}${lineas}</span>`;
+    // El nombre del enlace, como la app: título completo, cuándo y dónde; el estado, si ya no hay botón que lo diga.
+    const estadoTexto = !boton && voy ? 'Vas' : !boton && interesa ? 'Te interesa' : '';
+    const nombre = [t.titulo, cuando, t.sitio, estadoTexto].filter(Boolean).join('. ');
+    const botonHtml = boton ? `<button type="button" class="voy" data-accion="voy" data-id="${t.id}" aria-pressed="${voy}" aria-label="${esc(`${voy ? 'Vas' : 'Voy'}: ${t.titulo}`)}" data-m="boton">${I.ok}</button>` : '';
+    return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-titulo="${esc(t.titulo)}" aria-label="${esc(nombre)}">${portada}${pie}</a>${botonHtml}</li>`;
+  }
+
+  function htmlEntidad(x, c) {
+    const sigue = estado.seguidos.has(x.id);
+    const avatar = c.forma === 'avatar';
+    const boton = !c.v.e2 && !avatar;
+    const grande = c.forma === 'grande';
+    const chipNovedad = x.novedad && grande ? `<span class="marca-novedad"><span class="chip hoy" data-m="rotulo">${esc(x.novedad)}</span></span>` : '';
+    const det = x.novedad && !grande ? `<small class="det cuando" data-m="rotulo">${esc(x.novedad)}</small>` : avatar ? '' : `<small class="det${x.cuando ? ' cuando' : ''}">${esc(x.detalle)}</small>`;
+    const etiqueta = avatar ? 'span' : 'b';
+    const glifo = sigue ? I.ok : x.que === 'lugar' ? I.campanaMas : I.personaMas;
+    const btn = boton ? `<button type="button" class="seguir" data-accion="seguir" data-id="${x.id}" data-nombre="${esc(x.nombre)}" aria-pressed="${sigue}" aria-label="${esc(`${sigue ? 'Sigues' : 'Seguir'}: ${x.nombre}`)}" data-m="boton">${glifo}</button>` : '';
+    return `<li><a class="tarjeta en" href="#" data-accion="ficha" data-titulo="${esc(x.nombre)}" aria-label="${esc([x.nombre, x.novedad, avatar ? '' : x.detalle].filter(Boolean).join('. '))}"><span class="caja-foto"><img class="foto" ${fuente(x.foto || 'sin-foto.webp', c)} alt="">${chipNovedad}</span><${etiqueta} class="nombre" data-m="titulo">${esc(x.nombre)}</${etiqueta}>${det}</a>${btn}</li>`;
+  }
+
+  /**
+   * E9 (comentario del founder, 10 de oct: «para este carril usar jerarquía de nuevos eventos»): el artista con la tarjeta de un evento.
+   * La foto del tamaño del cartel de esa combinación, el chip de novedad sobre ella, y debajo la disciplina (ceja), el nombre y su género;
+   * si tiene fecha esta semana, la fecha como la de un evento. Sin botón de seguir, como el evento sin «Voy».
+   */
+  function htmlArtistaEvento(x, c) {
+    const v = c.v;
+    const chip = x.novedad ? `<span class="rotulos"><span class="chip hoy" data-m="rotulo">${esc(x.novedad)}</span></span>` : '';
+    const ceja = x.disciplina ? `<span class="ceja"><span data-m="rotulo">${esc(x.disciplina)}</span></span>` : '';
+    const lineas = `${x.genero ? `<span class="donde">${esc(x.genero)}</span>` : ''}${x.cuando ? `<span class="cuando">${esc(x.detalle)}</span>` : ''}`;
+    const nombre = [x.nombre, x.disciplina, x.genero, x.cuando ? x.detalle : '', x.novedad].filter(Boolean).join('. ');
+    return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-titulo="${esc(x.nombre)}" aria-label="${esc(nombre)}"><span class="portada solo-cartel"><img class="cartel" ${fuente(x.foto || 'sin-foto.webp', c)} alt="">${chip}</span><span class="pie">${ceja}<b class="titulo-pie" data-m="titulo" data-completo="${esc(x.nombre)}">${esc(x.nombre)}</b>${lineas}</span></a></li>`;
+  }
+
+  function htmlCarril(k, v, img) {
+    const icono = k.tusPlanes && v.e11c ? `<span class="icono-planes">${I.marcador}</span>` : '';
+    const cab = `<div class="cab"><h2>${icono}${esc(k.titulo)}</h2>${k.ver ? `<a class="ver" href="#" data-accion="ver" data-titulo="${esc(k.ver)}" aria-label="${esc(`${k.ver}: ${k.titulo}`)}">${esc(k.ver)}${I.derecha}</a>` : ''}</div>`;
+    const cuerpo = k.tarjetas
+      ? `<ul class="tira ${k.tamano}${v.e1 ? ' cartel-45' : ''}" data-carril="${k.clave}">${k.tarjetas.map((t) => htmlEvento(t, { v, img, tusPlanes: !!k.tusPlanes, marcaNuevo: !!k.marcaNuevo })).join('')}</ul>`
+      : k.forma === 'evento'
+        ? `<ul class="tira ${v.e5 ? 'mediana' : 'grande'}${v.e1 ? ' cartel-45' : ''}" data-carril="${k.clave}">${k.entidades.map((x) => htmlArtistaEvento(x, { v, img })).join('')}</ul>`
+        : `<ul class="tira ${k.forma}" data-carril="${k.clave}">${k.entidades.map((x) => htmlEntidad(x, { v, img, forma: k.forma })).join('')}</ul>`;
+    const mio = k.tusPlanes ? (v.e11a ? ' mio-contorno' : v.e11b ? ' mio-linea' : v.e11c ? ' mio-titulo' : '') : '';
+    return `<section class="carril${mio}" aria-label="${esc(k.titulo)}">${cab}${cuerpo}</section>`;
+  }
+
+  /** E7: si varios empiezan a la misma hora, solo el primero dice la cuenta atrás; los demás, la hora. */
+  function rotulosAhora(v) {
+    return D.filaAhora.map((a, i, l) => (v.e7 && i > 0 && a.tipo === 'rato' && l[i - 1].tipo === 'rato' && l[i - 1].inicio === a.inicio ? horaDe(a.inicio) : a.rotulo));
+  }
+  function htmlAhora(v, img) {
+    const rotulos = rotulosAhora(v);
+    return `<section class="fila-ahora" aria-label="Lo de hoy"><ul class="lista-ahora" data-carril="ahora">${D.filaAhora.map((a, i) => {
+      const color = a.anillo === 'ahora' ? (v.e4 ? '#6d34c8' : '#6d34c8 #d35400') : '';
+      const centro = a.cartel ? `<img ${fuente(a.cartel, { img })} alt="">` : `<span class="sin-cartel" style="background:${v.e4 ? 'var(--banda)' : a.fondo}"><img src="${RUTA}simbolo-sn-blanco.svg" alt=""></span>`;
+      return `<li><button type="button" class="circulo" data-accion="historia" data-i="${i}" aria-label="${esc(`${a.etiqueta}: ${a.titulo}`)}"><span class="anillo ${a.anillo}${v.e4 ? ' quieto' : ''}"${color ? ` data-c="${color}"` : ''}>${centro}</span><small class="${a.tipo === 'ahora' ? 'ahora' : ''}">${esc(rotulos[i])}</small></button></li>`;
+    }).join('')}</ul></section>`;
+  }
+
+  const BARRA = `<header class="barra-app"><button type="button" data-accion="nada" aria-label="Publicar">${I.mas}</button><img class="logo" src="${RUTA}logotipo.svg" alt="Somos Nosotros"><button type="button" data-accion="nada" aria-label="Buscar">${I.lupa}</button></header>`;
+  const CONTEXTO = `<div class="contexto"><button type="button" class="ctx" data-accion="nada">${I.pin}San Luis Potosí${I.baja}</button><button type="button" class="ctx" data-accion="nada">${I.calendario}Cuándo</button><button type="button" class="ctx" data-accion="nada">${I.filtros}Filtros</button></div>`;
+  const NAV = `<nav class="secciones" aria-label="Secciones">${[['Inicio', I.casa, true], ['Agenda', I.calendario], ['Lugares', I.pin], ['Artistas', I.estrella], ['Perfil', I.persona]].map(([n, i, activa]) => `<button type="button" class="${activa ? 'activa' : ''}" data-accion="nada"${activa ? ' aria-current="page"' : ''}><i>${i}</i>${n}</button>`).join('')}</nav>`;
+
+  function htmlTelefono(v, img) {
+    return `<div class="pantalla">${BARRA}${CONTEXTO}${htmlAhora(v, img)}${carriles(v).map((k) => htmlCarril(k, v, img)).join('')}<div class="relleno"></div>${NAV}</div><p class="aviso" role="status" aria-live="polite"></p>`;
+  }
+
+  // ===== Los dos teléfonos. «Hoy» siempre con todo apagado; a lo ancho se ve a la izquierda, si no, solo lo usa el medidor.
+  const telHoy = $('tel-hoy');
+  const telMix = $('tel-mix');
+  const mm = { medio: matchMedia('(min-width: 760px)'), ancho: matchMedia('(min-width: 1180px)') };
+  const modo = () => (mm.ancho.matches ? 'ancho' : mm.medio.matches ? 'medio' : 'movil');
+
+  function pintar(tel, e, img) {
+    const v = vista(e);
+    const viejo = tel.querySelector('.pantalla');
+    const arriba = viejo ? viejo.scrollTop : 0;
+    const lados = {};
+    tel.querySelectorAll('[data-carril]').forEach((u) => { lados[u.dataset.carril] = u.scrollLeft; });
+    tel.className = `tel${v.e4 ? ' e4' : ''}`;
+    tel.innerHTML = htmlTelefono(v, img);
+    tel.querySelector('.pantalla').scrollTop = arriba;
+    tel.querySelectorAll('[data-carril]').forEach((u) => { if (lados[u.dataset.carril]) u.scrollLeft = lados[u.dataset.carril]; });
+    recortarTitulos(tel);
+  }
+  function pintarTodo() {
+    pintar(telMix, estado.e, true);
+    pintar(telHoy, NADA, modo() === 'ancho');
+    programarMedida();
+  }
+
+  /** E1: un título de más de dos líneas se corta en la última palabra que cabe, con «…»; nunca a media palabra. */
+  function recortarTitulos(tel) {
+    tel.querySelectorAll('.titulo-pie').forEach((el) => {
+      const completo = el.dataset.completo;
+      el.textContent = completo;
+      delete el.dataset.cortado;
+      if (!sobra(el)) return;
+      const palabras = completo.split(' ');
+      while (palabras.length > 1 && sobra(el)) {
+        palabras.pop();
+        el.textContent = `${palabras.join(' ').replace(/[\s,:;·–-]+$/, '')}…`;
+      }
+      el.dataset.cortado = '1';
+    });
+  }
+
+  // ===== El medidor: lo que se ve ahora en cada teléfono (entre la fila de contexto y la barra de secciones), sin contar los carteles.
+  const rgbDe = (s) => {
+    if (!s) return null;
+    if (s[0] === '#') { const n = parseInt(s.slice(1), 16); return { r: n >> 16, g: (n >> 8) & 255, b: n & 255, a: 1 }; }
+    const m = s.match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const [r, g, b, a = 1] = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+    return { r, g, b, a };
+  };
+  /** Un color cuenta si tiene color (no gris, ni casi blanco ni casi negro); dos son el mismo si caen en el mismo tono (12 de 30°) y en la misma luz. */
+  function claveColor(c) {
+    if (!c || c.a < 0.5) return null;
+    const r = c.r / 255, g = c.g / 255, b = c.b / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+    if (d < 0.08 || l < 0.07 || l > 0.95) return null;
+    const s = d / (1 - Math.abs(2 * l - 1));
+    if (s < 0.25) return null;
+    let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    return `${Math.round(h / 30) % 12}-${l < 0.4 ? 'oscuro' : 'claro'}`;
+  }
+  const textoPropio = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.data.trim());
+  function palabraPartida(el) {
+    const caminante = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let n = caminante.nextNode(); n; n = caminante.nextNode()) {
+      const re = /\S+/g;
+      for (let m = re.exec(n.data); m; m = re.exec(n.data)) {
+        const r = document.createRange();
+        r.setStart(n, m.index);
+        r.setEnd(n, m.index + m[0].length);
+        const cajas = [...r.getClientRects()].filter((x) => x.width > 0.5);
+        if (cajas.length > 1 && Math.abs(cajas[0].top - cajas[cajas.length - 1].top) > 2) return true;
+      }
+    }
+    return false;
+  }
+  function enMayusculas(el) {
+    const cs = getComputedStyle(el);
+    if (parseFloat(cs.fontSize) < 13) return false;
+    if (cs.textTransform === 'uppercase') return true;
+    const letras = el.textContent.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '');
+    return letras.length >= 4 && letras === letras.toLocaleUpperCase('es');
+  }
+  /** Oculta media línea o más (el corte a N líneas esconde una entera; las letras de Bricolage asoman 1 o 2 px de su renglón sin que falte nada). */
+  const sobra = (el) => el.scrollHeight - el.clientHeight > (parseFloat(getComputedStyle(el).lineHeight) || 16) / 2;
+  const cortado = (el) => el.dataset.cortado === '1' || sobra(el) || el.scrollWidth > el.clientWidth + 1 || palabraPartida(el);
+
+  function medir(tel) {
+    const p = tel.querySelector('.pantalla');
+    if (!p) return null;
+    const r = p.getBoundingClientRect();
+    const caja = { l: r.left, r: r.right, t: Math.max(r.top, tel.querySelector('.contexto').getBoundingClientRect().bottom), b: Math.min(r.bottom, tel.querySelector('.secciones').getBoundingClientRect().top) };
+    const ve = (el) => {
+      const b = el.getBoundingClientRect();
+      const w = Math.min(b.right, caja.r) - Math.max(b.left, caja.l);
+      const h = Math.min(b.bottom, caja.b) - Math.max(b.top, caja.t);
+      return w > 0 && h > 0 && (w * h) / Math.max(1, b.width * b.height) >= 0.5;
+    };
+    const visibles = (sel) => [...tel.querySelectorAll(sel)].filter(ve);
+    const titulos = visibles('[data-m="titulo"]');
+    const colores = new Set();
+    const sumar = (c) => { const k = claveColor(rgbDe(c)); if (k) colores.add(k); };
+    for (const el of tel.querySelectorAll('.pantalla *')) {
+      if (el.tagName === 'IMG' || !ve(el)) continue;
+      const cs = getComputedStyle(el);
+      if (el.tagName === 'svg' || textoPropio(el)) sumar(cs.color);
+      sumar(cs.backgroundColor);
+      if (el.dataset && el.dataset.c) el.dataset.c.split(' ').forEach(sumar);
+    }
+    return { rotulos: visibles('[data-m="rotulo"]').length, botones: visibles('[data-m="boton"]').length, colores: colores.size, mayus: titulos.filter(enMayusculas).length, cortados: titulos.filter(cortado).length };
+  }
+  let temporizadorMedida = 0;
+  function programarMedida() {
+    clearTimeout(temporizadorMedida);
+    temporizadorMedida = setTimeout(() => {
+      const a = medir(telMix);
+      const h = medir(telHoy);
+      if (!a || !h) return;
+      for (const k of ['rotulos', 'botones', 'colores', 'mayus', 'cortados']) {
+        const celda = $(`m-${k}`);
+        celda.textContent = a[k];
+        celda.classList.toggle('baja', a[k] < h[k]);
+        $(`h-${k}`).textContent = h[k];
+      }
+      window.prototipo.ultimaMedida = { esta: a, hoy: h };
+    }, 140);
+  }
+
+  // ===== Los dos teléfonos van juntos al desplazar: el que se toca manda (el otro puede ser más corto y no debe devolverlo).
+  let manda = telMix;
+  for (const tel of [telHoy, telMix]) {
+    for (const ev of ['pointerdown', 'wheel', 'touchstart', 'keydown']) tel.addEventListener(ev, () => { manda = tel; }, { passive: true });
+    tel.addEventListener('scroll', (ev) => {
+      programarMedida();
+      if (tel !== manda) return;
+      const otro = tel === telMix ? telHoy : telMix;
+      const t = ev.target;
+      if (t.classList && t.classList.contains('pantalla')) {
+        const o = otro.querySelector('.pantalla');
+        if (o && Math.abs(o.scrollTop - t.scrollTop) > 1) o.scrollTop = t.scrollTop;
+      } else if (t.dataset && t.dataset.carril) {
+        const o = otro.querySelector(`[data-carril="${t.dataset.carril}"]`);
+        if (o && Math.abs(o.scrollLeft - t.scrollLeft) > 1) o.scrollLeft = t.scrollLeft;
+      }
+    }, { capture: true, passive: true });
+    tel.addEventListener('click', alTocar);
+  }
+
+  // ===== Los toques dentro del teléfono: «Voy» y seguir cambian de verdad; lo demás dice qué se abriría.
+  function avisar(tel, texto) {
+    const p = tel.querySelector('.aviso');
+    if (!p) return;
+    p.textContent = texto;
+    p.classList.add('visible');
+    clearTimeout(p._t);
+    p._t = setTimeout(() => p.classList.remove('visible'), 2200);
+  }
+  function alTocar(ev) {
+    const tel = ev.currentTarget;
+    const el = ev.target.closest('[data-accion]');
+    if (!el || !tel.contains(el)) return;
+    ev.preventDefault();
+    const accion = el.dataset.accion;
+    if (accion === 'voy') {
+      const id = el.dataset.id;
+      const ya = estado.decisiones.get(id) === 'voy';
+      if (ya) estado.decisiones.delete(id); else estado.decisiones.set(id, 'voy');
+      pintarTodo();
+      avisar(tel, ya ? 'Ya no vas' : 'Vas. Está en «Tus planes»');
+      revisarEjemplo();
+    } else if (accion === 'seguir') {
+      const id = el.dataset.id;
+      const ya = estado.seguidos.has(id);
+      if (ya) estado.seguidos.delete(id); else estado.seguidos.add(id);
+      pintarTodo();
+      avisar(tel, ya ? `Ya no sigues a ${el.dataset.nombre}` : `Sigues a ${el.dataset.nombre}`);
+      revisarEjemplo();
+    } else if (accion === 'ficha') avisar(tel, `Aquí se abre la ficha: ${el.dataset.titulo}`);
+    else if (accion === 'historia') { const a = D.filaAhora[Number(el.dataset.i)]; avisar(tel, `Aquí se abren las historias: ${a.titulo}`); }
+    else if (accion === 'ver') avisar(tel, `Aquí se abre: ${el.dataset.titulo}`);
+    else avisar(tel, 'En este prototipo solo cambia Inicio');
+  }
+  const ejemploIntacto = () => {
+    const base = Object.entries(D.asistencias);
+    return estado.seguidos.size === 0 && estado.decisiones.size === base.length && base.every(([id, d]) => estado.decisiones.get(id) === d);
+  };
+  function revisarEjemplo() { $('volver-ejemplo').hidden = ejemploIntacto(); }
+  $('volver-ejemplo').addEventListener('click', () => {
+    estado.decisiones = new Map(Object.entries(D.asistencias));
+    estado.seguidos = new Set();
+    pintarTodo();
+    revisarEjemplo();
+  });
+
+  // ===== Controles.
+  const lista = $('ejercicios');
+  lista.innerHTML = EJERCICIOS.map((x) => `<li><label class="interruptor${x.sub ? ' sub' : ''}" for="${x.k}"><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small>${x.f ? `<small class="firma">${esc(x.f)}</small>` : ''}</span><input type="checkbox" role="switch" id="${x.k}" data-k="${x.k}"></label></li>`).join('');
+  function pintarControles() {
+    for (const x of EJERCICIOS) {
+      const input = $(x.k);
+      input.checked = !!estado.e[x.k];
+      input.disabled = (x.sub && !estado.e[x.sub]) || (x.k === 'e2' && estado.e.e8);
+    }
+    const p = presetDe(estado.e);
+    for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
+    const activos = listaDe(estado.e);
+    const nombre = p ? PRESETS[p].nombre : 'Personalizada';
+    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}${estado.e.e2 && estado.e.e8 ? ' (E2 sin efecto)' : ''}`;
+    $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}`;
+    const n = CLAVES.filter((k) => estado.e[k]).length;
+    $('fab-combinacion').textContent = `· ${p ? nombre : n <= 3 ? cortaDe(estado.e) || 'nada' : `${n} ejercicios`}`;
+    $('m-nombre').textContent = nombre.length > 7 ? 'Esta' : nombre;
+  }
+  function aplicar(e) {
+    estado.e = { ...NADA, ...e };
+    guardar(LLAVE_ESTADO, estado.e);
+    pintarControles();
+    pintar(telMix, estado.e, true);
+    programarMedida();
+    pintarPruebas();
+  }
+  lista.addEventListener('change', (ev) => {
+    const k = ev.target.dataset.k;
+    if (!k) return;
+    aplicar({ ...estado.e, [k]: ev.target.checked });
+  });
+  for (const b of document.querySelectorAll('[data-preset]')) b.addEventListener('click', () => aplicar(PRESETS[b.dataset.preset].e));
+
+  // ===== La hoja (en el teléfono). Desde 760 es una columna fija: ni velo ni botón flotante.
+  const hoja = $('hoja');
+  const velo = $('velo');
+  const fab = $('fab');
+  let abierta = false;
+  function abrirHoja(enfocar) {
+    if (modo() !== 'movil') return;
+    abierta = true;
+    hoja.inert = false;
+    hoja.classList.add('abierta');
+    velo.classList.add('visible');
+    fab.setAttribute('aria-expanded', 'true');
+    if (enfocar) {
+      const cuerpo = $('hoja-cuerpo');
+      const resumen = cuerpo.querySelector('.resumen');
+      const bloque = enfocar.closest('.bloque');
+      cuerpo.scrollTop = Math.max(0, cuerpo.scrollTop + bloque.getBoundingClientRect().top - cuerpo.getBoundingClientRect().top - resumen.offsetHeight - 8);
+    }
+    (enfocar || $('hoja-titulo')).focus({ preventScroll: true });
+  }
+  function cerrarHoja() {
+    if (modo() !== 'movil' || !abierta) return;
+    abierta = false;
+    hoja.classList.remove('abierta');
+    velo.classList.remove('visible');
+    hoja.inert = true;
+    fab.setAttribute('aria-expanded', 'false');
+    if (!prueba) fab.focus({ preventScroll: true });
+  }
+  fab.addEventListener('click', () => abrirHoja());
+  $('cerrar-hoja').addEventListener('click', cerrarHoja);
+  velo.addEventListener('click', cerrarHoja);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHoja(); });
+
+  // ===== Las pruebas: un cronómetro por tarea, un toque para empezar y otro para parar; el tiempo, por preajuste.
+  const TAREAS = [
+    { id: 'tarde', texto: '¿Qué puedes ver hoy en la tarde?' },
+    { id: 'taller', texto: 'Encuentra un taller' },
+    { id: 'vas', texto: '¿A qué ya dijiste que vas?' },
+    { id: 'festival', texto: '¿Qué festival está pasando?' },
+  ];
+  let prueba = null;
+  const segundos = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
+  const tiempos = () => { const t = leer(LLAVE_TIEMPOS); return t && typeof t === 'object' ? t : {}; };
+  function pintarPruebas() {
+    const t = tiempos();
+    const claves = ['Hoy', 'Calma', 'Mínima', 'Firmada', ...Object.keys(t).filter((k) => !['Hoy', 'Calma', 'Mínima', 'Firmada'].includes(k))];
+    $('pruebas').innerHTML = TAREAS.map((x) => {
+      const corriendo = prueba && prueba.tarea === x.id;
+      const marcas = claves.map((k) => { const r = t[k] && t[k][x.id]; return r ? `${esc(k)} <b>${segundos(r.ms)}</b>` : (['Hoy', 'Calma', 'Mínima', 'Firmada'].includes(k) ? `${esc(k)} –` : ''); }).filter(Boolean).join(' · ');
+      return `<li class="prueba"><span class="tarea">${esc(x.texto)}</span><button type="button" id="b-${x.id}" data-tarea="${x.id}" class="${corriendo ? 'corriendo' : ''}">${corriendo ? `Parar ${segundos(performance.now() - prueba.inicio)}` : 'Empezar'}</button><span class="tiempos">${marcas}</span></li>`;
+    }).join('');
+  }
+  function alPrincipio() {
+    for (const tel of [telMix, telHoy]) {
+      const p = tel.querySelector('.pantalla');
+      if (p) p.scrollTop = 0;
+      tel.querySelectorAll('[data-carril]').forEach((u) => { u.scrollLeft = 0; });
+    }
+  }
+  function empezar(id) {
+    if (prueba) parar(false);
+    const tarea = TAREAS.find((x) => x.id === id);
+    alPrincipio();
+    prueba = { tarea: id, inicio: performance.now(), intervalo: 0 };
+    document.body.classList.add('en-prueba');
+    if (modo() === 'movil') {
+      cerrarHoja();
+      fab.hidden = true;
+      $('crono-tarea').textContent = tarea.texto;
+      $('crono').hidden = false;
+    }
+    const tic = () => {
+      if (!prueba) return;
+      const ms = performance.now() - prueba.inicio;
+      $('crono-tiempo').textContent = (ms / 1000).toFixed(1).replace('.', ',');
+      const b = $(`b-${id}`);
+      if (b) b.textContent = `Parar ${segundos(ms)}`;
+    };
+    prueba.intervalo = setInterval(tic, 100);
+    pintarPruebas();
+    tic();
+  }
+  function parar(guardarTiempo = true) {
+    if (!prueba) return;
+    const ms = performance.now() - prueba.inicio;
+    clearInterval(prueba.intervalo);
+    const id = prueba.tarea;
+    prueba = null;
+    document.body.classList.remove('en-prueba');
+    $('crono').hidden = true;
+    fab.hidden = false;
+    if (guardarTiempo) {
+      const t = tiempos();
+      const k = claveDe(estado.e);
+      t[k] = t[k] || {};
+      const antes = t[k][id];
+      t[k][id] = { ms: Math.round(ms), veces: (antes ? antes.veces : 0) + 1 };
+      guardar(LLAVE_TIEMPOS, t);
+      avisar(telMix, `${segundos(ms)} con ${k}`);
+    }
+    pintarPruebas();
+    if (guardarTiempo && modo() === 'movil') abrirHoja($('t-pruebas'));
+  }
+  $('pruebas').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-tarea]');
+    if (!b) return;
+    if (prueba && prueba.tarea === b.dataset.tarea) parar(); else empezar(b.dataset.tarea);
+  });
+  $('crono').addEventListener('click', () => parar());
+  let borrarListo = false;
+  $('borrar-tiempos').addEventListener('click', (ev) => {
+    if (!borrarListo) { borrarListo = true; ev.currentTarget.textContent = 'Toca otra vez para borrar'; setTimeout(() => { borrarListo = false; $('borrar-tiempos').textContent = 'Borrar los tiempos'; }, 4000); return; }
+    borrarListo = false;
+    try { localStorage.removeItem(LLAVE_TIEMPOS); } catch { /* nada */ }
+    ev.currentTarget.textContent = 'Borrar los tiempos';
+    pintarPruebas();
+  });
+
+  // ===== El tamaño: desde 760 el teléfono mide 390 × 844 y se escala para caber; en el teléfono ocupa toda la pantalla.
+  let modoAnterior = null;
+  function ajustar() {
+    const m = modo();
+    const escala = m === 'movil' ? 1 : Math.max(0.5, Math.min(1, (innerHeight - 2 * 16 - 30) / 844));
+    $('escena').style.setProperty('--escala', escala.toFixed(4));
+    if (m === 'movil') {
+      const r = telMix.getBoundingClientRect();
+      telHoy.style.width = `${Math.round(r.width)}px`;
+      telHoy.style.height = `${Math.round(r.height)}px`;
+    } else if (m === 'medio') {
+      telHoy.style.width = '390px';
+      telHoy.style.height = '844px';
+    } else {
+      telHoy.style.width = '';
+      telHoy.style.height = '';
+    }
+    const fijo = m !== 'movil';
+    hoja.inert = !fijo && !abierta;
+    if (fijo) { hoja.removeAttribute('role'); hoja.removeAttribute('aria-modal'); velo.classList.remove('visible'); abierta = false; hoja.classList.remove('abierta'); }
+    else { hoja.setAttribute('role', 'dialog'); hoja.setAttribute('aria-modal', 'true'); }
+    $('col-hoy').inert = m !== 'ancho';
+    $('col-hoy').setAttribute('aria-hidden', String(m !== 'ancho'));
+    if (modoAnterior !== null && (modoAnterior === 'ancho') !== (m === 'ancho')) pintar(telHoy, NADA, m === 'ancho');
+    modoAnterior = m;
+    recortarTitulos(telMix);
+    recortarTitulos(telHoy);
+    programarMedida();
+  }
+  let temporizadorAjuste = 0;
+  addEventListener('resize', () => { clearTimeout(temporizadorAjuste); temporizadorAjuste = setTimeout(ajustar, 120); });
+
+  // Para las pruebas automáticas y las capturas.
+  window.prototipo = {
+    aplicar: (nombreOEstado) => aplicar(typeof nombreOEstado === 'string' ? PRESETS[nombreOEstado].e : nombreOEstado),
+    estado: () => ({ ...estado.e }),
+    medirAhora: () => ({ esta: medir(telMix), hoy: medir(telHoy) }),
+    abrirHoja: () => abrirHoja(),
+    cerrarHoja: () => cerrarHoja(),
+    alPrincipio,
+    ultimaMedida: null,
+  };
+
+  pintarControles();
+  pintarTodo();
+  pintarPruebas();
+  revisarEjemplo();
+  ajustar();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { recortarTitulos(telMix); recortarTitulos(telHoy); programarMedida(); });
+})();
+</script>
