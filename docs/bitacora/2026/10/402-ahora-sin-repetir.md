@@ -85,3 +85,9 @@ En producción hoy se lee «En 1 h 11 min» bajo tres círculos seguidos.
 **Leído en la página a las 14:19:03:**
 - **Rótulos:** «Ahora», «En 11 min», «En 1 h 11 min», «15:30», «15:30», «En 1 h 41 min», «18:00», «19:00».
 - **Nombres accesibles de los tres:** «En 1 h 11 min: Guitarra en el Otoño…», «En 1 h 11 min: Presentación de Kopk Poj…» y «En 1 h 11 min: Viajera…».
+
+## Ajuste del gestor: la hora visible entra en el nombre accesible
+
+El operador señaló que, en los círculos que ahora dicen la hora («15:30»), el texto visible no estaba en el nombre accesible («En 1 h 11 min: …»). Lo mismo pasaba ya con «Hoy» y «Mañana» («18:00» bajo el círculo, nombre «Hoy: …»). Quien usa control por voz no podía decir «toca 15:30» (WCAG 2.5.3, la etiqueta visible dentro del nombre). El gestor lo arregló en la misma rama: cuando lo que se ve bajo el círculo no es el inicio del nombre, el nombre lo lleva delante, por ejemplo «19:00 · En 1 h: Evento b» o «21:00 · Hoy: Evento hoy». La cuenta atrás completa se conserva. Se actualizaron las dos aserciones de nombres de la prueba E7 y el localizador del círculo de «Hoy» en la prueba de pausa.
+
+Verificado: pruebas de componentes de la fila 8/8 con `TZ=UTC` y con `TZ=America/Mexico_City`; `npm test` con 3497 pruebas en verde; lint sin errores (el aviso de siempre); typecheck, inventario y medición (37 pantallas × 4 anchos) sin novedades.

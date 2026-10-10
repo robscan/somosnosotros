@@ -42,6 +42,14 @@ function guardarVistos(vistos: Set<string>) {
  * su cartel recortado o, sin cartel, su degradado con el símbolo SN; el anillo dice la urgencia y se apaga al verlo. Tocar abre las historias en él.
  * Se recalcula cada minuto. Sin nada que mostrar no pinta nada, ni hueco.
  */
+/**
+ * El nombre accesible de un círculo: la cuenta atrás completa y el título, y delante lo que se ve bajo el círculo cuando dice otra cosa
+ * («19:00 · En 1 h: …», «21:00 · Hoy: …»). Así el texto visible está en el nombre y el control por voz lo encuentra (WCAG 2.5.3).
+ */
+function nombreCirculo(visible: string, etiqueta: string, titulo: string): string {
+  return etiqueta.startsWith(visible) ? `${etiqueta}: ${titulo}` : `${visible} · ${etiqueta}: ${titulo}`;
+}
+
 export default function FilaAhora({ eventos, ahoraServidor, asistencias, conSesion }: Props) {
   const [ahora, setAhora] = useState(() => new Date(ahoraServidor));
   const [vistos, setVistos] = useState<Set<string>>(() => new Set());
@@ -106,7 +114,7 @@ export default function FilaAhora({ eventos, ahoraServidor, asistencias, conSesi
                 }}
                 type="button"
                 className={styles.circulo}
-                aria-label={`${etiquetaAhora(a, ahora)}: ${a.e.titulo}`}
+                aria-label={nombreCirculo(rotulos[i], etiquetaAhora(a, ahora), a.e.titulo)}
                 data-anillo={anillo}
                 onClick={(ev) => {
                   setCongelada(ahora);
