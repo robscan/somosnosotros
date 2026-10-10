@@ -80,10 +80,25 @@ describe("contraste de la cabecera oscura (OL-351)", () => {
     expect(contraste(sobre(rgba(token("sobre-banda-suave")), tarjeta), tarjeta)).toBeGreaterThanOrEqual(4.5);
   });
   it("el título y la meta en blanco sobre el velo, con un cartel blanco debajo", () => {
-    const parada = token("velo-banda").match(/rgba\([^)]+\)\s*45%/)![0];
+    const parada = token("velo-banda").match(/rgba\([^)]+\)\s*55%/)![0]; // OL-363: 0,8 al 55 %
     const fondo = sobre(rgba(parada), BLANCO);
     expect(contraste(BLANCO, fondo)).toBeGreaterThanOrEqual(4.5);
     expect(contraste(BLANCO, banda)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("alto mínimo de la cabecera oscura (OL-363)", () => {
+  const ficha = readFileSync(new URL("./Ficha.module.css", import.meta.url), "utf8");
+  const globales = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+  it("el cartel ocupa al menos el 56 % de la ventana (topado), recortado desde arriba y sin empujar el alto", () => {
+    expect(globales).toMatch(/--alto-cabecera-oscura:\s*min\(56svh,\s*640px\)/);
+    const portada = ficha.match(/\.portada\.oscura \{[^}]*\}/)![0];
+    expect(portada).toContain("min-height: var(--alto-cabecera-oscura)");
+    expect(ficha).toMatch(/\.portada\.oscura img \{\s*object-position: center top;/);
+    expect(ficha).toMatch(/\.portada\.oscura > \* \{\s*position: absolute;/);
+  });
+  it("el chip de la clase nunca queda bajo Atrás: el título deja al menos el alto de la barra arriba", () => {
+    expect(ficha).toMatch(/\.titulo\.oscura \{[^}]*padding-top: max\([^;]*var\(--alto-barra-ficha\)/);
   });
 });
 
