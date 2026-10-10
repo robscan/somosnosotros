@@ -519,7 +519,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     { k: 'e5', t: 'E5 · Jerarquía de tamaños', d: 'Destacados en grande. Esta semana y Nuevos en mediana (se ven dos y media). Lugares y artistas en avatares de 64 px, sin botón.' },
     { k: 'e6', t: 'E6 · Menos carriles', d: '«Nuevos eventos» pasa a ser la marca «Nuevo» dentro de Esta semana. Cinco carriles como máximo: con «Tus planes», lugares y artistas comparten uno.' },
     { k: 'e7', t: 'E7 · «Ahora» sin repetir', d: 'Si varios empiezan a la misma hora, solo el primero dice «En 1 h 11 min»; los demás, la hora.' },
-    { k: 'e8', t: 'E8 · Fecha en el cartel', d: 'Sin el botón de «Voy»: un sello con el mes y el día arriba a la izquierda, como «Conciertos» de Apple Music. Debajo, título, lugar y fecha en gris. En «Tus planes» solo se marca «Te interesa»: lo que no lo dice es a lo que vas.', f: 'Pedido del founder (10 de oct). Con E8, E2 no hace nada.' },
+    { k: 'e8', t: 'E8 · Fecha en el cartel', d: 'Sin el botón de «Voy»: un sello con el mes y el día arriba a la izquierda, como «Conciertos» de Apple Music. Debajo, título, lugar y la fecha en violeta. En «Tus planes» solo se marca «Te interesa»: lo que no lo dice es a lo que vas.', f: 'Pedido del founder (10 de oct). Con E8, E2 no hace nada.' },
     { k: 'e8b', t: 'E8b · Días esta semana', d: 'En los próximos 7 días, el día de la semana en vez del mes: «hoy», «dom», «lun».', sub: 'e8' },
     { k: 'e8c', t: 'E8c · La fecha a la derecha', d: 'El sello va donde estaba el botón de «Voy», arriba a la derecha; a la izquierda solo queda «Nuevo».', sub: 'e8', f: 'Pedido del founder en un comentario (10 de oct).' },
     { k: 'e9', t: 'E9 · Artistas como eventos', d: '«Artistas destacadxs» con la jerarquía de «Nuevos eventos»: la foto del tamaño de un cartel, la disciplina chica arriba del nombre y, debajo, su género y su próxima fecha. «Nuevo video» o «Nuevo audio» sigue sobre la foto; sin botón de seguir, como los eventos sin «Voy» (se sigue desde la ficha).', f: 'Pedido del founder en un comentario (10 de oct).' },
@@ -634,7 +634,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     const simbolo = conCartel ? '' : `<img class="simbolo" src="${RUTA}simbolo-sn-blanco.svg" alt="">`;
     const portada = `<span class="portada ${modo}${tituloAbajo ? ' abajo' : esquina && modo === 'titulo' ? ' con-esquina' : ''}"${conCartel ? '' : ` style="background:${fondo}" data-c="${base}"`}>${franja}${cartel}${chips}${esquina}${selloHtml}${simbolo}</span>`;
     const tituloPie = soloCartel ? `<b class="titulo-pie" data-m="titulo" data-completo="${esc(comoOracion(t.corto))}">${esc(comoOracion(t.corto))}</b>` : '';
-    const lineas = v.e8 ? `<span class="donde">${esc(t.sitio)}</span><span class="cuando gris">${esc(cuando)}</span>` : `<span class="cuando">${esc(cuando)}</span>${t.sitio ? `<span class="donde">${esc(t.sitio)}</span>` : ''}`;
+    // Con E8, lugar y luego fecha (como «Conciertos» de Apple Music); la fecha conserva su violeta (founder, 10 de oct: «resaltar con color la fecha, como antes»).
+    const lineas = v.e8 ? `<span class="donde">${esc(t.sitio)}</span><span class="cuando">${esc(cuando)}</span>` : `<span class="cuando">${esc(cuando)}</span>${t.sitio ? `<span class="donde">${esc(t.sitio)}</span>` : ''}`;
     const pie = `<span class="pie">${soloCartel ? cejaHtml : ''}${tituloPie}${lineas}</span>`;
     // El nombre del enlace, como la app: título completo, cuándo y dónde; el estado, si ya no hay botón que lo diga.
     const estadoTexto = !boton && voy ? 'Vas' : !boton && interesa ? 'Te interesa' : '';
@@ -665,7 +666,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     const v = c.v;
     const chip = x.novedad ? `<span class="rotulos"><span class="chip hoy" data-m="rotulo">${esc(x.novedad)}</span></span>` : '';
     const ceja = x.disciplina ? `<span class="ceja"><span data-m="rotulo">${esc(x.disciplina)}</span></span>` : '';
-    const lineas = `${x.genero ? `<span class="donde">${esc(x.genero)}</span>` : ''}${x.cuando ? `<span class="cuando${v.e8 ? ' gris' : ''}">${esc(x.detalle)}</span>` : ''}`;
+    const lineas = `${x.genero ? `<span class="donde">${esc(x.genero)}</span>` : ''}${x.cuando ? `<span class="cuando">${esc(x.detalle)}</span>` : ''}`;
     const nombre = [x.nombre, x.disciplina, x.genero, x.cuando ? x.detalle : '', x.novedad].filter(Boolean).join('. ');
     return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-titulo="${esc(x.nombre)}" aria-label="${esc(nombre)}"><span class="portada solo-cartel"><img class="cartel" ${fuente(x.foto || 'sin-foto.webp', c)} alt="">${chip}</span><span class="pie">${ceja}<b class="titulo-pie" data-m="titulo" data-completo="${esc(x.nombre)}">${esc(x.nombre)}</b>${lineas}</span></a></li>`;
   }

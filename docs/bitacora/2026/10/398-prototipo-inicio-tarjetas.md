@@ -259,3 +259,12 @@ Sobre la tarjeta sin cartel del recital de la Academia Inspiratio en «Esta sema
 Comprobado en Chrome a 390×844, sin errores. En las tres tarjetas sin cartel de «Esta semana» (el recital, la lectura a Olimpia Badillo y «Yo Marcos»), el símbolo está a 12 px de la esquina superior izquierda, el sello de fecha arriba a la derecha y el título termina a ras de la base de la tarjeta de 206 px.
 
 - `29-e10-sin-cartel-titulo-abajo.png` — «Calma», «Esta semana»: el recital y la lectura a Olimpia Badillo con «SN» arriba a la izquierda, «oct 13» y «oct 15» arriba a la derecha, y «EVENTO» con el título abajo; debajo, «Festivales y expos» con sus sellos de rango («oct → 24», «oct → 28»).
+
+## La fecha del pie, en violeta otra vez, y la proporción de Instagram (comentarios del founder)
+
+- **«Resaltar con color la fecha, como antes»** (sobre el laboratorio en «Destacados»): con E8 la línea de cuándo había quedado en gris; vuelve a `--primario`, también en las tarjetas de artista de E9. El lugar sigue en gris, encima de la fecha, como en «Conciertos».
+- **«¿La proporción puede ser la misma que se usa para publicar en Instagram?… Solo confirma»** (sobre CINEMA en «Festivales y expos»): confirmado y medido. Con E1 la tarjeta grande mide 165×206 (0,800, es decir 4:5, el post vertical de Instagram de 1080×1350) y la mediana de E5, 132×165. En «Hoy» mide 165×248 (casi 2:3) con la franja encima, por eso ahí el cartel se recorta. La tarjeta de CINEMA lleva el cartel de Chatbot Challenge porque el festival toma la portada de su próximo acto (OL-346, regla del founder); no es un respaldo, como dijo por error la respuesta automática.
+
+Comprobado en Chrome a 390×844, sin errores: la fecha pinta `rgb(109, 52, 200)` y el lugar `rgb(92, 92, 92)`.
+
+- `30-fecha-en-violeta.png` — «Calma», «Destacados»: «hoy · 12:00» y «hoy · 17:00» en violeta bajo «Galería Casa Diana» y «Aurora Co-Lab» en gris.
