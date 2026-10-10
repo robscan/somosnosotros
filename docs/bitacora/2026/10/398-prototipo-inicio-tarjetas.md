@@ -201,3 +201,11 @@ La página `docs/rediseno/prototipos/inicio-tarjetas.html` y los 55 archivos de 
 ## Pendiente
 
 Que el founder lo pruebe con los tres preajustes y las cuatro pruebas, y decida qué ejercicios pasan a una pieza de código.
+
+## Ajuste tras la primera vista: la fecha a la derecha (E8c)
+
+El founder, en un comentario sobre la tarjeta de «Tus planes» de la página publicada (2026-10-10): «prueba poniendo el componente de fecha donde antes estaba el de check». Se añadió el sub-interruptor **E8c · La fecha a la derecha**: el sello de mes y día va arriba a la derecha, donde estaba el botón de «Voy», y a la izquierda solo queda la marca «Nuevo» de E6. «Calma» pasa a ser E1 + E3 + E7 + E8 + E8c; con E8c apagado se compara con el sello a la izquierda. La llave de `localStorage` pasa a `inicio-tarjetas:estado:2` para que quien ya abrió la página vea la combinación nueva.
+
+Comprobado en Chrome a 390×844, con la página envuelta como al publicarla: sin errores en la consola; un clic real en el centro del sello (`elementFromPoint` cae en la tarjeta) abre su ficha.
+
+- `22-e8c-fecha-a-la-derecha.png` — «Calma» con E8c: en «Tus planes», el sello «oct / 10» arriba a la derecha del cartel de Kopk Poj y de la foto de la Cineteca; debajo, «EVENTO · VAS» y «EVENTO · TE INTERESA», título, lugar y hora; en «Destacados», el mismo sello a la derecha.

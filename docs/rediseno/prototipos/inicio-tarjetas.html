@@ -214,6 +214,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 /* Arriba a la izquierda del cartel: el sello de fecha (E8; referencia del founder: «Conciertos» de Apple Music) y la marca «Nuevo» (E6). */
 .esquina { grid-area: cartel; align-self: start; justify-self: start; z-index: 1; display: flex; align-items: flex-start; gap: var(--espacio-1); min-width: 0; margin: var(--espacio-2); }
 .portada.titulo .esquina { grid-area: esquina; }
+/* E8c (comentario del founder, 10 de oct: «prueba poniendo el componente de fecha donde antes estaba el de check»): el sello arriba a la derecha. */
+.esquina.derecha { justify-self: end; }
 .fecha { display: grid; justify-items: center; gap: 2px; min-width: 40px; padding: var(--espacio-1) var(--espacio-2); border-radius: var(--radio); background: var(--vidrio); box-shadow: var(--sombra); line-height: 1; text-align: center; }
 .nuevo { padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-2xs); font-weight: 700; line-height: 1.4; white-space: nowrap; }
 .e4 .nuevo { background: var(--vidrio); color: var(--texto); }
@@ -361,7 +363,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       <div class="resumen">
         <div class="preajustes" role="group" aria-label="Preajustes">
           <button type="button" id="p-hoy" data-preset="hoy" aria-pressed="false">Hoy<small>todo apagado</small></button>
-          <button type="button" id="p-calma" data-preset="calma" aria-pressed="false">Calma<small>E1 E3 E7 E8</small></button>
+          <button type="button" id="p-calma" data-preset="calma" aria-pressed="false">Calma<small>E1 E3 E7 E8 E8c</small></button>
           <button type="button" id="p-minima" data-preset="minima" aria-pressed="false">Mínima<small>todo encendido</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
@@ -489,11 +491,11 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   const FLECHA = '<svg class="flecha" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 6h8M6.5 3l3 3-3 3"/></svg>';
 
   // ===== Los ejercicios y los preajustes.
-  const CLAVES = ['e1', 'e2', 'e3', 'e3b', 'e4', 'e5', 'e6', 'e7', 'e8', 'e8b'];
+  const CLAVES = ['e1', 'e2', 'e3', 'e3b', 'e4', 'e5', 'e6', 'e7', 'e8', 'e8b', 'e8c'];
   const NADA = Object.fromEntries(CLAVES.map((k) => [k, false]));
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...NADA } },
-    calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true } },
+    calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true, e8c: true } },
     minima: { nombre: 'Mínima', e: Object.fromEntries(CLAVES.map((k) => [k, true])) },
   };
   const EJERCICIOS = [
@@ -507,16 +509,18 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     { k: 'e7', t: 'E7 · «Ahora» sin repetir', d: 'Si varios empiezan a la misma hora, solo el primero dice «En 1 h 11 min»; los demás, la hora.' },
     { k: 'e8', t: 'E8 · Fecha en el cartel', d: 'Sin el botón de «Voy»: un sello con el mes y el día arriba a la izquierda, como «Conciertos» de Apple Music. Debajo, título, lugar y fecha en gris. En «Tus planes», «Vas» en texto.', f: 'Pedido del founder (10 de oct). Con E8, E2 no hace nada.' },
     { k: 'e8b', t: 'E8b · Días esta semana', d: 'En los próximos 7 días, el día de la semana en vez del mes: «hoy», «dom», «lun».', sub: 'e8' },
+    { k: 'e8c', t: 'E8c · La fecha a la derecha', d: 'El sello va donde estaba el botón de «Voy», arriba a la derecha; a la izquierda solo queda «Nuevo».', sub: 'e8', f: 'Pedido del founder en un comentario (10 de oct).' },
   ];
   /** Lo que de verdad se aplica: E2 sin efecto con E8; los subinterruptores solo con su ejercicio. */
-  const vista = (e) => ({ ...e, e2: e.e2 && !e.e8, e3b: e.e3b && e.e3, e8b: e.e8b && e.e8 });
+  const vista = (e) => ({ ...e, e2: e.e2 && !e.e8, e3b: e.e3b && e.e3, e8b: e.e8b && e.e8, e8c: e.e8c && e.e8 });
   const presetDe = (e) => Object.keys(PRESETS).find((p) => CLAVES.every((k) => !!PRESETS[p].e[k] === !!e[k])) || null;
   const listaDe = (e) => CLAVES.filter((k) => e[k]).map((k) => k.toUpperCase()).join(' · ');
   const cortaDe = (e) => CLAVES.filter((k) => e[k]).map((k) => k.toUpperCase()).join(' ');
   const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${cortaDe(e) || 'nada'})`; };
 
   // ===== Lo que guarda este navegador (comodidad: la combinación y los tiempos de las pruebas).
-  const LLAVE_ESTADO = 'inicio-tarjetas:estado';
+  // «:2» desde E8c: quien ya abrió la página ve la combinación nueva de «Calma» en vez de la que guardó antes.
+  const LLAVE_ESTADO = 'inicio-tarjetas:estado:2';
   const LLAVE_TIEMPOS = 'inicio-tarjetas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento: se queda en la pantalla */ } };
@@ -600,7 +604,10 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     const franja = soloCartel ? '' : `<span class="franja${relleno}"${conCartel ? ` style="background:${fondo}" data-c="${base}"` : ''}>${cejaHtml}<span class="t" data-m="titulo">${esc(t.corto)}</span></span>`;
     const cartel = conCartel ? `<img class="cartel" ${fuente(t.foto, c)} alt="">` : '';
     const fechaHtml = fecha ? `<span class="fecha" data-m="rotulo" title="${esc(fecha.aria)}"><small>${esc(fecha.arriba)}</small><b>${fecha.flecha === 'antes' ? FLECHA : ''}${esc(fecha.abajo)}${fecha.flecha === 'despues' ? FLECHA : ''}</b></span>` : '';
-    const esquina = fecha || marcaNuevo ? `<span class="esquina">${fechaHtml}${marcaNuevo ? '<span class="nuevo" data-m="rotulo">Nuevo</span>' : ''}</span>` : '';
+    // E8c: el sello va solo, arriba a la derecha (donde estaba el botón de «Voy»); a la izquierda queda «Nuevo».
+    const fechaDerecha = !!(fecha && v.e8c);
+    const izquierda = `${fechaDerecha ? '' : fechaHtml}${marcaNuevo ? '<span class="nuevo" data-m="rotulo">Nuevo</span>' : ''}`;
+    const esquina = `${izquierda ? `<span class="esquina">${izquierda}</span>` : ''}${fechaDerecha ? `<span class="esquina derecha">${fechaHtml}</span>` : ''}`;
     const selloHtml = sello ? `<span class="estado-sello ${sello}" data-m="rotulo">${sello === 'voy' ? I.ok : I.marcador}</span>` : '';
     const simbolo = conCartel ? '' : `<img class="simbolo" src="${RUTA}simbolo-sn-blanco.svg" alt="">`;
     const portada = `<span class="portada ${modo}${esquina && modo === 'titulo' ? ' con-esquina' : ''}"${conCartel ? '' : ` style="background:${fondo}" data-c="${base}"`}>${franja}${cartel}${chips}${esquina}${selloHtml}${simbolo}</span>`;
