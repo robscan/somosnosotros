@@ -244,8 +244,8 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
 <body>
 <div class="tira">
   <select id="formato" aria-label="Formato">
-    <option value="barra-historias" selected>Barra + historias</option>
-    <option value="circulos">Círculos + historias</option>
+    <option value="circulos" selected>Círculos + historias</option>
+    <option value="barra-historias">Barra + historias</option>
     <option value="barra">Barra sola (v1)</option>
   </select>
   <select id="tarjetas" aria-label="Tarjetas">
@@ -353,7 +353,8 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
       <div class="h-centro" id="h-centro"></div>
       <footer class="h-acciones">
         <button class="h-ficha" id="h-ficha" type="button">Ver ficha</button>
-        <button class="h-icono" id="h-interesa" type="button" aria-label="Me interesa" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/></svg></button>
+        <!-- «Me interesa» con el marcador, no la estrella: la estrella es Artistas (founder: «el icono de me interesa es el mismo de artistas, hay que cambiarlo»). Relleno al marcarlo. -->
+        <button class="h-icono" id="h-interesa" type="button" aria-label="Me interesa" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/></svg></button>
         <button class="h-icono" id="h-ruta" type="button" aria-label="Cómo llegar"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 9-9 9-9-9z"/><path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8"/></svg></button>
       </footer>
     </div>
@@ -482,7 +483,8 @@ function rotulo(a) {
 // ===== El estado del prototipo.
 const $ = (id) => document.getElementById(id);
 let dia = '2026-10-09', ahora = min('16:15'), vivo = false, reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let formato = 'barra-historias', estetica = 'vivo', modoTarjetas = 'mixta';
+// Lo firmado por el founder (2026-10-09): «aprobado círculo + historias, tarjetas: título + cartel y degradado vivo».
+let formato = 'circulos', estetica = 'vivo', modoTarjetas = 'mixta';
 let todo = [], avisos = [], indice = 0, temporizador = null, pausada = false, hojaAbierta = false;
 const vistos = new Set(), interesan = new Set();
 
@@ -509,7 +511,8 @@ function calcular() {
 
 // La miniatura de un evento: su cartel o, sin cartel, su portada de degradado (o la foto del lugar con la otra estética).
 function miniatura(e, clase) {
-  if (!e.cartel && estetica === 'vivo') return `<span class="${clase}" style="background:${degradadoCSS(paletaDe(e.id).c)}"></span>`;
+  // Sin cartel, el símbolo SN al centro sobre su degradado (la regla de siempre: «sin foto, símbolo SN»).
+  if (!e.cartel && estetica === 'vivo') return `<span class="${clase}" style="background:url(barra-ahora/simbolo-sn-blanco.svg) center / 46% auto no-repeat, ${degradadoCSS(paletaDe(e.id).c)}"></span>`;
   return `<img class="${clase}" src="${imagen(e)}" alt="">`;
 }
 

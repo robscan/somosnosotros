@@ -1,7 +1,7 @@
 # 388 · Prototipo: la barra «Ahora» de Inicio y la regla de las 3 horas (OL-357)
 
 **Fecha:** 2026-10-09. **Rama:** `prototipo-barra-ahora`, base `origin/main` (`0c8fd99f`). **Operador:** Claude (chat «Barra marquee de eventos en directo»).
-**Estado:** prototipo probado en Chrome de la Mac (390×844 y 320) y publicado como página privada para verlo en el iPhone: https://claude.ai/artifact/YKtiejd9wXBZCGtfKYcqvi. **Sin código de la app y sin migración.** Falta la firma del founder.
+**Estado:** prototipo **FIRMADO** por el founder el 2026-10-09: «aprobado círculo + historias, tarjetas: título + cartel y degradado vivo». Probado en Chrome de la Mac (390×844 y 320) y publicado como página privada: https://claude.ai/artifact/YKtiejd9wXBZCGtfKYcqvi. **Sin código de la app y sin migración.**
 
 ## Qué pidió el founder (textual)
 
@@ -64,6 +64,26 @@ Datos: lectura pública de somosnosotros.org el vie 9 de oct a las 16:15. Sin ho
 - El supuesto de las exposiciones sin horario (hasta las 18:00).
 - (Tercera vuelta) **La entrada a las historias:** la barra con miniatura (recomendación: ocupa 72 px, dice qué pasa y cuándo sin tocarla, y conserva la lista completa) o la fila de círculos (más reconocible y enseña los carteles, pero ocupa unos 112 px y solo dice una hora).
 - (Tercera vuelta) **Tarjetas:** título grande en toda la app, como pidió el founder, o solo en Inicio. Además, la fecha de «Caracolas para Luciana»: el cartel dice jueves 8 y la app viernes 9.
+
+## Firma (2026-10-09)
+
+**El founder, textual:** «Bien, aprobado círculo + historias, tarjetas: título + cartel y degradado vivo. Además noté que el icono de me interesa es el mismo de artistas, hay que cambiarlo.»
+
+Lo firmado, que es como abre ahora el prototipo:
+- **Entrada: la fila de círculos** bajo las barras. El anillo de «Ahora» gira; los de «En un rato» y de las exposiciones que inauguran o cierran son oscuros; los demás, grises, y se apagan al verlos. Debajo, «Ahora», «En 30 min» o «20:00». Un evento sin cartel lleva el símbolo SN al centro sobre su degradado.
+- **Historias** a pantalla completa con el cartel, segmentos de 6 s, los gestos de Instagram y «Ver ficha», «Me interesa» y «Cómo llegar».
+- **Tarjetas «título + cartel»:** la franja con el título corto sobre el degradado de su cartel, el cartel debajo con corte limpio, y debajo solo cuándo y dónde. Sin cartel, la tarjeta entera de título con el símbolo SN abajo.
+- **Degradado vivo** en el fondo de las historias, con los colores del cartel (o una paleta propia sin cartel) y partículas.
+- La regla de 3 h sin hora de fin en toda la app y la clasificación (Ahora · En un rato · exposiciones · Hoy · Mañana, tope 8) siguen igual.
+
+**«Me interesa» con el marcador, no la estrella.** En la app, `IconoEstrella` (`src/components/ui/Iconos.tsx:137`) es a la vez Artistas (`NavSecciones`, el panel, `Borrar`, `RenglonArtista`), «Me interesa» (`eventos/[id]/Asistencia.tsx:102` y `:115`; la pestaña «Interesan» de `PestanasPersona.tsx:13`), «Inauguración» (`eventos/[id]/page.tsx:644` y `:711`; `nuevo/evento/Revisa.tsx:223`) y «Sigue» en el panel (`admin/personas/[id]/page.tsx:89`). En el prototipo, «Me interesa» pasa al marcador (el listón de «guardar para después»), vacío sin marcar y relleno en violeta al marcarlo. Probado con un toque real: se marca, dice «Te interesa» y no pasa de historia. Captura `27-historia-me-interesa-marcador.png`. En la app es un cambio aparte (un icono nuevo y tres sitios). «Inauguración» con estrella es otro choque que el founder no pidió cambiar; queda señalado.
+
+Captura `28-firmado-circulos-titulo-y-cartel.png`: lo firmado a las 18:00. Los círculos «Ahora» (Caracolas, anillo girando), «En 30 min», «En 1 h» (la canción, símbolo SN al centro) y «20:00»; debajo, Destacados con «título + cartel».
+
+**Lo que queda por decidir:**
+- Si la fila de círculos se va o se queda al bajar. Se toma «se va» mientras el founder no diga otra cosa.
+- La fecha de «Caracolas para Luciana»: el cartel dice jueves 8 y la app viernes 9.
+- Con los círculos ya no está el botón de la lista completa. La fila enseña los 8 primeros, y «Ver la agenda» queda para todo lo demás.
 
 ## Lo que costaría el código (después de la firma)
 
