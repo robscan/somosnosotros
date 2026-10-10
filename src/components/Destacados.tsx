@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
-import { ordenarTarjetasPorFoto, rotulosDeTarjeta, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
+import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { SIN_FOTO } from "@/lib/imagen";
-import { degradadoTarjeta, paletaPropia } from "@/lib/coloresCartel";
-import SimboloBlanco from "./inicio/SimboloBlanco";
 import { tamanoImagenCarril } from "@/lib/imagenOptima";
 import Imagen from "./ui/Imagen";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
@@ -14,6 +12,7 @@ import CarrilEsqueleto from "./CarrilEsqueleto";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
 import { IconoChevronDerecha } from "./ui/Iconos";
+import TarjetaEvento from "./inicio/TarjetaEvento";
 import styles from "./Destacados.module.css";
 
 /**
@@ -43,14 +42,12 @@ import styles from "./Destacados.module.css";
  * `estado(id)` que ya expone `useAsistenciaEnLista` — el mismo hook que le da `boton` — sin tocar ese hook ni el tipo `Tarjeta`.
  * Sin `estadoDe` (lugares, artistas) no aparece nada.
  *
- * `titular` (OL-360, prototipo firmado `barra-ahora.html`, «Tarjetas: título + cartel»; solo los carriles de eventos de Inicio): la tarjeta
- * «Essentials» de Apple Music. Arriba, una franja con el título corto (`tituloCorto`, hasta tres líneas) sobre el color más vivo de su cartel
- * hecho legible (`degradadoTarjeta`, con los colores guardados al subirlo); abajo, el cartel llena lo que queda, recortado desde arriba, con un
- * corte limpio. Sin cartel, la tarjeta entera es de título, con su paleta propia y el símbolo SN abajo a la derecha. Sin colores guardados, la
- * paleta propia: nunca se pide la imagen para calcularlos aquí. Debajo solo cuándo y dónde; el título completo va en el nombre del enlace.
- * Siempre con el tamaño de su carril: una sola tarjeta no se estira a lo ancho.
+ * `cartel` (OL-370, prototipo firmado `inicio-tarjetas.html`; solo los carriles de eventos de Inicio): la tarjeta firmada el 2026-10-10
+ * (`inicio/TarjetaEvento`), que es el cartel entero en 4:5 con su sello de fecha, sin botón: `boton` no se usa y `estadoDe` solo dice si va el
+ * chip «Te interesa». `tamano` es `grande` (165×206) o `mediana` (132×165, E5). Siempre con el tamaño de su carril: una sola tarjeta no se estira
+ * a lo ancho. Sustituye a la tarjeta «título + cartel» de OL-360.
  */
-export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos, titular = false }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon | null; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string }; titular?: boolean }) {
+export default function Destacados({ tarjetas, tamano = "mediana", encabezado = "Destacados", memoria = "destacados", boton, estadoDe, verTodos, cartel = false }: { tarjetas: Tarjeta[]; tamano?: "grande" | "mediana" | "chica"; encabezado?: string; memoria?: string; boton?: (t: Tarjeta) => EstadoBotonRenglon | null; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string }; cartel?: boolean }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -108,15 +105,16 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
     return (
       <div className={styles.vacio} aria-hidden="true">
         <div>
-          <CarrilEsqueleto tamano={tamano} />
+          <CarrilEsqueleto tamano={tamano} cartel={cartel} />
         </div>
       </div>
     );
   }
   // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
   const ordenadas = ordenarTarjetasPorFoto(tarjetas);
-  // Una sola tarjeta ocupa el ancho del carril (las redondas no).
-  const forma = ordenadas.length === 1 && tamano !== "chica" && !titular ? "sola" : tamano;
+  // Una sola tarjeta ocupa el ancho del carril (las redondas no). La tarjeta de evento de Inicio va en su carril de cartel 4:5 (OL-370) y nunca sola.
+  const forma = ordenadas.length === 1 && tamano !== "chica" ? "sola" : tamano;
+  const medidas = cartel ? (tamano === "mediana" ? styles.cartelMediana : styles.cartelGrande) : styles[forma];
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
@@ -128,8 +126,15 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
           </Link>
         )}
       </div>
-      <ul ref={recordar} className={`${styles.carril} ${styles[forma]}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
+      <ul ref={recordar} className={`${styles.carril} ${medidas}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
         {ordenadas.map((t) => {
+          if (cartel) {
+            return (
+              <li key={t.clave ?? t.id}>
+                <TarjetaEvento t={t} tamano={tamano === "mediana" ? "mediana" : "grande"} decision={estadoDe?.(t.id) ?? null} />
+              </li>
+            );
+          }
           const sello = selloDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
           // Sin botón si quien llama no lo da para esa tarjeta (una exposición o un festival: «Me interesa», en su ficha; OL-322).
           const estadoBoton = boton?.(t) ?? null;
@@ -140,49 +145,6 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
               {sello.texto}
             </Chip>
           );
-          if (titular) {
-            // OL-364: abajo a la izquierda, la clase y a su lado como mucho un dato (`rotulosDeTarjeta`).
-            const r = rotulosDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
-            const rotulos = (r.clase || r.sello) && (
-              <span className={styles.rotulos}>
-                {r.clase && <Chip variante="sello">{r.clase}</Chip>}
-                {r.sello && (
-                  <Chip variante={r.sello.tuyo ? "estado" : "sello"} className={r.sello.hoy ? styles.hoy : undefined}>
-                    {r.sello.texto}
-                  </Chip>
-                )}
-              </span>
-            );
-            const fondo = degradadoTarjeta(t.foto && t.colores ? t.colores : paletaPropia(t.id));
-            return (
-              <li key={t.clave ?? t.id}>
-                <Link href={t.href} className={`${styles.tarjeta} ${styles.titular}`} aria-label={[t.titulo, t.detalle, t.sitio].filter(Boolean).join(". ")}>
-                  {t.foto ? (
-                    <span className={styles.portada}>
-                      <span className={styles.franja} style={{ background: fondo }}>
-                        <span>{t.corto ?? t.titulo}</span>
-                      </span>
-                      <Imagen src={t.foto} alt="" className={styles.cartel} width={384} height={384} sizes={tamanoImagenCarril(forma)} />
-                      {rotulos}
-                    </span>
-                  ) : (
-                    <span className={`${styles.portada} ${styles.soloTitulo}`} style={{ background: fondo }}>
-                      <span className={styles.franja}>
-                        <span>{t.corto ?? t.titulo}</span>
-                      </span>
-                      {rotulos}
-                      <SimboloBlanco className={styles.simbolo} />
-                    </span>
-                  )}
-                  <small>
-                    <span className={t.cuando ? styles.cuando : undefined}>{t.detalle}</span>
-                    {t.sitio && <span>{t.sitio}</span>}
-                  </small>
-                </Link>
-                {estadoBoton && <BotonRenglon {...estadoBoton} sobreFoto />}
-              </li>
-            );
-          }
           return (
             <li key={t.clave ?? t.id}>
               <Link href={t.href} className={foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>

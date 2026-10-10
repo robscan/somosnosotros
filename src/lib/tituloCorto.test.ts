@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { tituloCorto } from "./tituloCorto";
+import { comoOracion, tituloCorto } from "./tituloCorto";
+
+describe("comoOracion (OL-370, E1 firmado)", () => {
+  it("una palabra en mayúsculas de cuatro letras o más pasa a minúsculas, con mayúscula inicial si es la primera", () => {
+    expect(comoOracion("DESIERTO")).toBe("Desierto");
+    expect(comoOracion("CINEMA")).toBe("Cinema");
+    expect(comoOracion("MERK LOCAL EDICIÓN CATRINAS")).toBe("Merk local edición catrinas");
+    expect(comoOracion("LXS COLOCAOS")).toBe("LXS colocaos");
+  });
+  it("las siglas cortas y lo que no va todo en mayúsculas se quedan", () => {
+    expect(comoOracion("XV Festival de Cine México-Alemania")).toBe("XV Festival de Cine México-Alemania");
+    expect(comoOracion("Tributo a The Beatles con Help!")).toBe("Tributo a The Beatles con Help!");
+    expect(comoOracion("Presentación de Kopk Poj")).toBe("Presentación de Kopk Poj");
+    expect(comoOracion("OCA")).toBe("OCA");
+  });
+  it("solo cuentan las letras: la puntuación pegada no impide el cambio, y los espacios se conservan", () => {
+    expect(comoOracion("¡KOWAIFEST!")).toBe("¡Kowaifest!");
+    expect(comoOracion("Noche  de  ROCK")).toBe("Noche  de  rock");
+    expect(comoOracion("Día de la ÑANDUTÍ")).toBe("Día de la ñandutí");
+  });
+});
 
 describe("tituloCorto", () => {
   it("corta antes de los dos puntos", () => {

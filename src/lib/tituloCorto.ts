@@ -19,3 +19,27 @@ export function tituloCorto(titulo: string, festival?: string | null): string {
   }
   return t.split(/,\s(?=\p{Ll})/u)[0].replace(/\.$/, "");
 }
+
+/**
+ * El título como oración, el que va debajo del cartel en la tarjeta de evento de Inicio (OL-370; prototipo firmado `inicio-tarjetas.html`, E1,
+ * `comoOracion`): una palabra toda en mayúsculas de cuatro letras o más pasa a minúsculas («DESIERTO» → «Desierto», «MERK LOCAL EDICIÓN» →
+ * «Merk local edición»), con la primera letra en mayúscula si es la primera palabra; las siglas cortas se quedan («XV Festival», «ONU»). Lo demás
+ * no se toca: un nombre propio que ya viene en minúsculas sigue igual.
+ */
+export function comoOracion(titulo: string): string {
+  let primera = true;
+  return titulo
+    .split(/(\s+)/)
+    .map((palabra) => {
+      if (!palabra.trim()) return palabra;
+      const letras = palabra.replace(/[^\p{L}]/gu, "");
+      let dicha = palabra;
+      if (letras.length >= 4 && letras === letras.toLocaleUpperCase("es")) {
+        dicha = palabra.toLocaleLowerCase("es");
+        if (primera) dicha = dicha.replace(/\p{L}/u, (c) => c.toLocaleUpperCase("es"));
+      }
+      primera = false;
+      return dicha;
+    })
+    .join("");
+}

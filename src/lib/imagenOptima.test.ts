@@ -49,10 +49,12 @@ describe("imágenes adaptadas (OL-263)", () => {
     expect(CONFIG_IMAGENES.maximumResponseBody).toBe(5 * 1024 * 1024);
   });
 
-  it("declara las cuatro cajas del carril sin enviar tamaño de héroe a una miniatura", () => {
+  it("declara las cinco cajas del carril sin enviar tamaño de héroe a una miniatura", () => {
     expect(tamanoImagenCarril("grande")).toBe("(min-width: 1048px) 190px, 165px");
     expect(tamanoImagenCarril("mediana")).toBe("220px");
     expect(tamanoImagenCarril("chica")).toBe("104px");
     expect(tamanoImagenCarril("sola")).toBe("(min-width: 1048px) 960px, (min-width: 640px) 600px, calc(100vw - 40px)");
+    // OL-370: la tarjeta de evento mediana de Inicio, 4/5 de la grande (132 y, desde 1048, 152).
+    expect(tamanoImagenCarril("cartelMediana")).toBe("(min-width: 1048px) 152px, 132px");
   });
 });
