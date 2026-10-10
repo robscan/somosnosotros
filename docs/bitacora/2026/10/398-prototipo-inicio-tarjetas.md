@@ -251,3 +251,11 @@ Sobre la ceja del laboratorio en «Destacados» (2026-10-10): «¿podemos coloca
 Comprobado en Chrome a 390×844, sin errores. La ceja cabe en una línea en la tarjeta de 165 px.
 
 - `28-sesion-junto-a-la-clase.png` — «Calma», «Destacados»: el laboratorio con «TALLER · SESIÓN 1 DE 4» arriba del título, «1 va» sobre el cartel y «hoy · 17:00» abajo; a su lado, Privacidad y elegancia con «EVENTO».
+
+## E10 · Sin cartel: título abajo (comentario del founder)
+
+Sobre la tarjeta sin cartel del recital de la Academia Inspiratio en «Esta semana» (2026-10-10): «Título en la base, logo en extremo superior izquierdo». Se añadió **E10**, encendido en «Calma» y en «Mínima». En la tarjeta sin cartel, el símbolo SN (20 px) va arriba a la izquierda, y la fecha y «Nuevo» van juntos arriba a la derecha para que el símbolo quede solo en su esquina. Abajo van los chips y el título con su ceja. En «Hoy» la tarjeta sigue como en producción. La llave de `localStorage` pasa a `inicio-tarjetas:estado:5`.
+
+Comprobado en Chrome a 390×844, sin errores. En las tres tarjetas sin cartel de «Esta semana» (el recital, la lectura a Olimpia Badillo y «Yo Marcos»), el símbolo está a 12 px de la esquina superior izquierda, el sello de fecha arriba a la derecha y el título termina a ras de la base de la tarjeta de 206 px.
+
+- `29-e10-sin-cartel-titulo-abajo.png` — «Calma», «Esta semana»: el recital y la lectura a Olimpia Badillo con «SN» arriba a la izquierda, «oct 13» y «oct 15» arriba a la derecha, y «EVENTO» con el título abajo; debajo, «Festivales y expos» con sus sellos de rango («oct → 24», «oct → 28»).
