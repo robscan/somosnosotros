@@ -135,8 +135,12 @@
   color: var(--primario-texto);
   pointer-events: none;
 }
+/* OL-364 (founder, 2026-10-09: «aplicar el mismo token de estilo a los títulos de las fichas, por consistencia»): el de los carriles de Inicio
+   (OL-361), 26 px con su interlineado de 1,1; la cabecera oscura le suma su peso 800. Un título largo crece hacia arriba sobre la portada,
+   siempre a todo lo ancho (nunca una columna junto a ella) y entero; si pasa del alto de la portada, la celda crece con él. */
 .titulo > :is(h1, h2) {
-  font-size: var(--letra-xl);
+  font-size: var(--letra-2xl);
+  line-height: 1.1;
 }
 .etiqueta {
   padding: 2px var(--espacio-2);
@@ -202,7 +206,6 @@
   background: var(--velo-banda);
 }
 .titulo.oscura > :is(h1, h2) {
-  font-size: var(--letra-2xl);
   font-weight: 800;
 }
 .numeros {

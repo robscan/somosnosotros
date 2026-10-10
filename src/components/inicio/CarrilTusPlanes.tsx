@@ -1,6 +1,6 @@
 import type { Persona } from "@/app/personas/consultas";
 import type { AvisosLista } from "@/components/useSeguirEnLista";
-import { tarjetaEvento } from "@/lib/destacados";
+import { tarjetaConClase } from "@/lib/destacados";
 import { carrilTusPlanes } from "@/lib/inicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 
@@ -27,5 +27,5 @@ export default async function CarrilTusPlanes({ personaPromise, avisos, verTodos
   const asistencias: Record<string, "voy" | "me_interesa"> = {};
   for (const e of persona?.eventos ?? []) asistencias[e.id] = "voy";
   for (const e of persona?.interesan ?? []) asistencias[e.id] = "me_interesa";
-  return <CarrilEventosCliente tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} asistencias={asistencias} avisos={avisos} titulo="Tus planes" tamano="grande" memoria="inicio-tus-planes" verTodos={{ href: verTodosHref, etiqueta: "Ver mi perfil" }} tusPlanes />;
+  return <CarrilEventosCliente tarjetas={eventos.map((e) => tarjetaConClase(e, ahora))} asistencias={asistencias} avisos={avisos} titulo="Tus planes" tamano="grande" memoria="inicio-tus-planes" verTodos={{ href: verTodosHref, etiqueta: "Ver mi perfil" }} tusPlanes />;
 }
