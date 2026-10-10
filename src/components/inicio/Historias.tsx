@@ -58,6 +58,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   const [aviso, setAviso] = useState<{ clave: string; texto: string } | null>(null);
   const raiz = useRef<HTMLElement>(null);
   const cerrar = useRef<HTMLButtonElement>(null);
+  const marco = useRef<HTMLDivElement>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
   const polvo = useRef<HTMLCanvasElement>(null);
   const indiceRef = useRef(indice);
@@ -168,7 +169,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   }, [reducido, oculta]);
 
   // Los gestos. Un toque sobre un botón o un enlace es suyo; el resto de la historia es la superficie del gesto.
-  const gesto = useRef<{ x: number; y: number; t: number; id: number } | null>(null);
+  const gesto = useRef<{ x: number; y: number; t: number; id: number; fuera: boolean } | null>(null);
   const soltar = useCallback(
     (ev: { clientX: number; clientY: number; pointerId: number }, cancelado: boolean) => {
       const g = gesto.current;
@@ -181,7 +182,9 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
       if (dy > CIERRA_DY) return salir();
       if (Math.abs(dx) > CAMBIA_DX && Math.abs(dx) > Math.abs(dy)) return pasar(dx < 0 ? 1 : -1);
       if (duro < TOQUE_CORTO && Math.abs(dx) < 12 && Math.abs(dy) < 12) {
-        const r = raiz.current?.getBoundingClientRect();
+        // Fuera del marco (tableta y escritorio): cierra, como tocar el velo de una hoja.
+        if (g.fuera) return salir();
+        const r = marco.current?.getBoundingClientRect();
         if (r) pasar(ev.clientX - r.left < r.width * 0.3 ? -1 : 1);
       }
     },
@@ -262,7 +265,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
       style={arrastre > 0 ? { transform: `translateY(${arrastre}px) scale(${1 - Math.min(arrastre, 400) / 2000})` } : undefined}
       onPointerDown={(ev) => {
         if ((ev.target as Element).closest("a, button")) return;
-        gesto.current = { x: ev.clientX, y: ev.clientY, t: performance.now(), id: ev.pointerId };
+        gesto.current = { x: ev.clientX, y: ev.clientY, t: performance.now(), id: ev.pointerId, fuera: !marco.current?.contains(ev.target as Node) };
         try {
           raiz.current?.setPointerCapture(ev.pointerId);
         } catch {
@@ -280,7 +283,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
     >
       <canvas ref={lienzo} className={styles.degradado} width={36} height={72} aria-hidden="true" />
       <canvas ref={polvo} className={styles.particulas} aria-hidden="true" data-quieto={reducido || undefined} />
-      <div className={styles.capa}>
+      <div ref={marco} className={styles.capa}>
         <div className={styles.segmentos} aria-hidden="true">
           {avisos.map((x, i) => (
             <span

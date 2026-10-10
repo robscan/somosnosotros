@@ -107,6 +107,34 @@ Contra `next dev` y el respaldo local (`scripts/ops/auditoria-ui/respaldo-local`
 - `05-me-interesa-marcador.png` — Caracolas tras un toque real en «Me interesa»: el botón es blanco con el marcador relleno en violeta, encima se lee «Te interesa» y la historia no pasó de la tercera.
 - `06-inicio-sin-nada-ahora.png` — el respaldo sin eventos de hoy ni de mañana: debajo de las dos barras va directo «Tus planes», sin fila ni hueco.
 
+## Corrección del founder: tableta y escritorio (2026-10-09)
+
+**El founder, textual:** «considera versión desktop y tablet, la imagen de cartel se hace demasiado grande».
+
+**El arreglo.** Desde 600 px de ancho, la historia es un marco 9:16 centrado:
+- Ancho máximo: `--marco-historia: 430px`, un token nuevo que es una medida, no un color.
+- Alto máximo: el de la ventana menos dos márgenes de `--espacio-6`.
+- Lleva esquinas `--radio-grande`. El texto, el cartel (`object-fit: contain`, con su alto acotado por la fila central) y las acciones quedan dentro del marco.
+- El degradado vivo y las partículas siguen en toda la pantalla, y lo de fuera del marco se oscurece con `--velo-hoja` (una sombra del marco, sin capa aparte).
+- Un toque corto fuera del marco cierra. Dentro, los tercios izquierdo y derecho se miden sobre el marco, no sobre la ventana.
+- En el teléfono no cambia nada.
+
+**La fila de círculos** no crece en anchos grandes: cada anillo mide 72 px a 1280, medido en los siete.
+
+**Comprobado** con Chrome y playwright-core contra `next dev` y el respaldo local:
+
+| Ventana | Marco | Cartel | Tocar fuera cierra |
+|---|---|---|---|
+| 768×1024 | 430×764 | 406×508 | sí |
+| 1280×800 | 423×752 | 399×499 | sí |
+
+`npm run medir` (320, 390, 820 y 1280) sigue sin novedades.
+
+**Capturas nuevas**, abiertas una por una:
+- `07-historia-tableta-768.png` — a 768×1024, el marco de Caracolas centrado, con esquinas redondeadas, sobre el degradado azul oscurecido. Dentro van los segmentos, «AHORA · Hasta 21:46 · Centro Cultural…», el título en dos líneas y la ✕. El cartel entero ocupa unos 406 px de ancho y abajo están «Ver ficha», el marcador y «Cómo llegar». Fuera del marco quedan partículas sobre el fondo oscurecido.
+- `08-historia-escritorio-1280.png` — a 1280×800, el mismo marco ocupa casi todo el alto, de arriba abajo con margen, y a los lados hay mucho fondo oscurecido. El cartel ya no se estira: 399×499.
+- `09-fila-escritorio-1280.png` — Inicio a 1280 con la barra lateral. Los siete círculos van alineados a la izquierda de la columna, del mismo tamaño que en el teléfono: tres «Ahora», «En 30 min» y «Último día» con anillo oscuro, «22:46» en gris y «Mañana 19:30» con su degradado y el símbolo SN.
+
 ## Lo que quedó fuera
 
 - Las tarjetas «título + cartel» y la persistencia de los colores del cartel con el evento: OL-360. `paletaDePixeles` ya es la función que correrá al subir el cartel.

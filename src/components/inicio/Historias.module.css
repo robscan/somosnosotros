@@ -294,3 +294,22 @@
     transition: none;
   }
 }
+
+/* Tableta y escritorio (founder, 2026-10-09: «considera versión desktop y tablet, la imagen de cartel se hace demasiado grande»): la historia es un
+   marco 9:16 centrado, de ancho máximo `--marco-historia` y alto el de la ventana menos márgenes; el degradado sigue en toda la pantalla y lo de
+   fuera del marco se oscurece (tocarlo cierra). En el teléfono, la pantalla entera. */
+@media (min-width: 600px) {
+  .capa {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: min(var(--marco-historia), calc((100dvh - 2 * var(--espacio-6)) * 9 / 16));
+    height: auto;
+    max-height: calc(100dvh - 2 * var(--espacio-6));
+    aspect-ratio: 9 / 16;
+    padding: var(--espacio-2) var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-grande);
+    box-shadow: 0 0 0 100vmax var(--velo-hoja);
+    overflow: hidden;
+  }
+}
