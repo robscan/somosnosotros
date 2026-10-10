@@ -243,3 +243,11 @@ Sobre el mes del sello de Fotomúsica en «Nuevos eventos» (2026-10-10): «resa
 Comprobado en Chrome a 390×844, sin errores: el mes pinta `rgb(109, 52, 200)` sobre el fondo de vidrio del sello.
 
 - `27-mes-del-sello-en-violeta.png` — «Calma», «Nuevos eventos»: «oct» en violeta sobre el 16 de Un León Marinero y el 17 de Fotomúsica.
+
+## La sesión junto a la clase (comentario del founder)
+
+Sobre la ceja del laboratorio en «Destacados» (2026-10-10): «¿podemos colocar las sesiones aquí?». Con E3, la sesión deja la línea de cuándo y va en la ceja, junto a la clase: «TALLER · SESIÓN 1 DE 4»; la línea de cuándo queda en «hoy · 17:00».
+
+Comprobado en Chrome a 390×844, sin errores. La ceja cabe en una línea en la tarjeta de 165 px.
+
+- `28-sesion-junto-a-la-clase.png` — «Calma», «Destacados»: el laboratorio con «TALLER · SESIÓN 1 DE 4» arriba del título, «1 va» sobre el cartel y «hoy · 17:00» abajo; a su lado, Privacidad y elegancia con «EVENTO».

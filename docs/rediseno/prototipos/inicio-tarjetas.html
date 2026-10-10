@@ -506,7 +506,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   const EJERCICIOS = [
     { k: 'e1', t: 'E1 · Un solo título', d: 'Con cartel, la tarjeta es el cartel entero (4:5) y el título va debajo, como oración, en dos líneas y sin partir palabras. Sin cartel se queda la tarjeta de título.', f: 'Explora lo firmado en OL-357/360 («título + cartel»).' },
     { k: 'e2', t: 'E2 · El botón solo cuando importa', d: 'Sin botón en reposo. Si ya decidiste, un sello chico que dice el estado, no una acción; decidir queda en la ficha y la historia. Lugares y artistas, sin seguir en el carril.', f: 'Explora OL-176.' },
-    { k: 'e3', t: 'E3 · Rótulos fuera del cartel', d: 'La clase va chica arriba del título; «Hoy» y la sesión, en la línea de cuándo. Sobre el cartel solo queda un chip: «Te interesa» o cuántos van.', f: 'Los chips de «Te interesa» y «van» volvieron por comentarios del founder (10 de oct).' },
+    { k: 'e3', t: 'E3 · Rótulos fuera del cartel', d: 'La clase va chica arriba del título, con la sesión a su lado («Taller · Sesión 1 de 4»); «Hoy», en la línea de cuándo. Sobre el cartel solo queda un chip: «Te interesa» o cuántos van.', f: 'Los chips de «Te interesa» y «van» volvieron por comentarios del founder (10 de oct).' },
     { k: 'e3b', t: 'E3b · Evento por omisión', d: 'Solo se rotula lo que no es evento.', sub: 'e3' },
     { k: 'e4', t: 'E4 · Color quieto', d: 'Violeta solo para el cuándo; «Ver la agenda» en gris; la franja en un solo tono oscuro.', f: 'Explora el «degradado vivo» firmado; en las historias se queda.' },
     { k: 'e5', t: 'E5 · Jerarquía de tamaños', d: 'Destacados en grande. Esta semana y Nuevos en mediana (se ven dos y media). Lugares y artistas en avatares de 64 px, sin botón.' },
@@ -601,7 +601,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       // E3: la clase en la ceja; «Hoy» y la sesión en la línea de cuándo; el dato que queda, en la ceja.
       if (!(v.e3b && t.claseTexto === 'Evento')) ceja.push({ texto: CEJA[t.claseTexto] || t.claseTexto });
       if (t.hoy && !/^hoy\b/.test(cuando)) cuando = `hoy · ${minus(cuando)}`;
-      if (t.parte) cuando += ` · ${minus(t.parte)}`;
+      // La sesión va en la ceja, junto a la clase (founder, 10 de oct: «¿podemos colocar las sesiones aquí?»): «Taller · Sesión 1 de 4».
+      if (t.parte) ceja.push({ texto: t.parte });
       // Founder (10 de oct): «regresar a chip te interesa» y «regresar a chip cuántos van»: el dato de la persona vuelve como chip sobre el
       // cartel, como en producción; la clase se queda arriba del título. Como «Hoy» y la sesión ya van en la línea de cuándo, el chip queda
       // libre también para lo de hoy.
