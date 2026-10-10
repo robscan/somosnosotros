@@ -307,17 +307,23 @@
   object-fit: cover;
   object-position: center top;
 }
-.portada > .rotulo {
+/* Los rótulos (OL-364): abajo a la izquierda, la clase y a su lado como mucho un dato, en una fila; si no caben, el dato sube sobre la clase
+   en vez de cortarse o meterse bajo el borde. */
+.rotulos {
   grid-area: cartel;
   align-self: end;
   justify-self: start;
-  margin: 0 0 var(--espacio-2) var(--espacio-2);
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: var(--espacio-1);
+  min-width: 0;
+  margin: 0 var(--espacio-2) var(--espacio-2);
 }
-.portada > .hoy {
+.rotulos > .hoy {
   background: var(--primario);
   color: var(--primario-texto);
 }
-/* Sin cartel: la portada entera es de título, con «Hoy» abajo a la izquierda y el símbolo SN abajo a la derecha (18 px). */
+/* Sin cartel: la portada entera es de título, con los rótulos abajo a la izquierda y el símbolo SN abajo a la derecha (18 px). */
 .soloTitulo {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
@@ -329,7 +335,7 @@
 .soloTitulo > .franja {
   align-self: start;
 }
-.soloTitulo > .rotulo {
+.soloTitulo > .rotulos {
   grid-area: rotulo;
   margin: 0 0 var(--espacio-3) var(--espacio-3);
 }

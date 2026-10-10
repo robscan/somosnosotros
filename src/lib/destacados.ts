@@ -2,7 +2,7 @@ import { selloNovedadArtista, type NovedadRecienteArtista } from "./novedadesArt
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
-import { fotoDeEvento, hrefEvento, nombreDeClase, sitioEnLista } from "./eventos";
+import { cortoDeClase, fotoDeEvento, hrefEvento, sitioEnLista } from "./eventos";
 import { diaCorto, diaLocal, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
 import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
@@ -147,8 +147,22 @@ export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: st
   return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto, titulo: e.titulo, corto: tituloCorto(e.titulo, festival), colores, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
-/** La tarjeta del carril «Festivales y expos» (OL-342): la de siempre, con el nombre de su clase para el rótulo. */
-export const tarjetaConClase = (e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha => ({ ...tarjetaEvento(e, ahora, festival), clase: nombreDeClase(e.clase) });
+/**
+ * La tarjeta con la palabra de su clase para el rótulo (OL-342; OL-364: «Evento», «Exposición», «Taller», «Festival», de `CLASES`): la de todos
+ * los carriles de eventos de Inicio y la de Buscar para lo que no es un evento suelto. Un acto de un festival es «Evento».
+ */
+export const tarjetaConClase = (e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha => ({ ...tarjetaEvento(e, ahora, festival), clase: cortoDeClase(e.clase) });
+
+/**
+ * Los rótulos de una tarjeta de Inicio (OL-364; founder, 2026-10-09: «señalar que se trata de un evento así como se hace con un festival» y
+ * «en Tus planes se pueden acumular más de un chip»). Una regla para todas: abajo a la izquierda, primero la clase y a su lado, como mucho, un
+ * dato; nunca tres. El dato es el de siempre (`selloDeTarjeta` sin la clase): «Te interesa» antes que «Hoy», «Sesión 1 de 3» o «2 van». «Voy» no
+ * lleva texto: lo dice el botón redondo verde de arriba a la derecha; «Me interesa» sí, porque ese botón no lo marca (y una exposición o un
+ * festival no llevan botón).
+ */
+export function rotulosDeTarjeta(t: Pick<Tarjeta, "hoy" | "van" | "novedad" | "parte" | "clase">, interesa = false): { clase: string | null; sello: ReturnType<typeof selloDeTarjeta> } {
+  return { clase: t.clase ?? null, sello: selloDeTarjeta({ ...t, clase: undefined }, interesa) };
+}
 
 /** El nombre del festival de cada acto, de los eventos ya cargados (para el título corto de su tarjeta, OL-360). */
 export function nombreDeFestival(eventos: readonly Pick<EventoAgenda, "id" | "titulo">[]): (e: Pick<EventoAgenda, "evento_padre_id">) => string | null {

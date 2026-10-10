@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
-import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
+import { ordenarTarjetasPorFoto, rotulosDeTarjeta, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { SIN_FOTO } from "@/lib/imagen";
 import { degradadoTarjeta, paletaPropia } from "@/lib/coloresCartel";
@@ -141,6 +141,18 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
             </Chip>
           );
           if (titular) {
+            // OL-364: abajo a la izquierda, la clase y a su lado como mucho un dato (`rotulosDeTarjeta`).
+            const r = rotulosDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
+            const rotulos = (r.clase || r.sello) && (
+              <span className={styles.rotulos}>
+                {r.clase && <Chip variante="sello">{r.clase}</Chip>}
+                {r.sello && (
+                  <Chip variante={r.sello.tuyo ? "estado" : "sello"} className={r.sello.hoy ? styles.hoy : undefined}>
+                    {r.sello.texto}
+                  </Chip>
+                )}
+              </span>
+            );
             const fondo = degradadoTarjeta(t.foto && t.colores ? t.colores : paletaPropia(t.id));
             return (
               <li key={t.clave ?? t.id}>
@@ -151,14 +163,14 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
                         <span>{t.corto ?? t.titulo}</span>
                       </span>
                       <Imagen src={t.foto} alt="" className={styles.cartel} width={384} height={384} sizes={tamanoImagenCarril(forma)} />
-                      {rotulo}
+                      {rotulos}
                     </span>
                   ) : (
                     <span className={`${styles.portada} ${styles.soloTitulo}`} style={{ background: fondo }}>
                       <span className={styles.franja}>
                         <span>{t.corto ?? t.titulo}</span>
                       </span>
-                      {rotulo}
+                      {rotulos}
                       <SimboloBlanco className={styles.simbolo} />
                     </span>
                   )}
