@@ -128,6 +128,21 @@ export function rotuloCirculo(a: AvisoAhora, ahora: Date): string {
   return etiquetaAhora(a, ahora);
 }
 
+/**
+ * Los rótulos de la fila ya clasificada, en su orden (E7 del prototipo firmado `inicio-tarjetas.html`, bitácora 398; OL-371): si varios
+ * «En un rato» seguidos empiezan a la misma hora, solo el primero dice la cuenta atrás y los demás la hora («En 1 h 11 min», «13:00»,
+ * «13:00»), en vez de repetir la misma cuenta bajo cada círculo. Cada aviso se compara con el de justo antes: los dos «En un rato» y el mismo
+ * instante de inicio. Lo demás («Ahora», exposiciones, «Hoy», «Mañana») dice lo de `rotuloCirculo`. El nombre accesible del círculo no sale
+ * de aquí: sigue con la cuenta atrás completa (`etiquetaAhora`).
+ */
+export function rotulosAhora(avisos: readonly AvisoAhora[], ahora: Date): string[] {
+  return avisos.map((a, i) => {
+    const antes = i > 0 ? avisos[i - 1] : null;
+    const repite = a.tipo === "rato" && antes?.tipo === "rato" && ms(antes.e.inicio) === ms(a.e.inicio);
+    return repite ? horaCorta(a.e.inicio, a.e.zona) : rotuloCirculo(a, ahora);
+  });
+}
+
 /** El cuándo de la historia: «Desde 17:30» o «Hasta 20:00» si ya empezó (sin fin no se inventa un «hasta»); si no, la hora. */
 export function cuandoAhora({ tipo, e }: AvisoAhora): string {
   if (tipo === "ahora") return e.fin ? `Hasta ${horaCorta(e.fin, e.zona)}` : `Desde ${horaCorta(e.inicio, e.zona)}`;

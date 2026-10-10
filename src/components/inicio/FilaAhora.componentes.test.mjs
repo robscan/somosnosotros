@@ -1,6 +1,6 @@
 /** OL-359: la fila de círculos «Ahora» y las historias de Inicio, en Chrome real: anillos, apertura, avance con toques, cierre (Escape y deslizar),
  *  foco de vuelta, «Me interesa» con el marcador, «Ver ficha» y «Cómo llegar», y nada pintado sin eventos. Con «Reducir movimiento» (la historia no
- *  avanza sola: la prueba no depende del reloj de las animaciones). */
+ *  avanza sola: la prueba no depende del reloj de las animaciones). OL-371 (E7): a la misma hora, la cuenta atrás solo bajo el primer círculo. */
 import {before,after,test} from 'node:test';import assert from 'node:assert/strict';
 import {createServer} from 'node:http';import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {join} from 'node:path';import {fileURLToPath,pathToFileURL} from 'node:url';import {build} from 'esbuild';
@@ -18,7 +18,10 @@ before(async()=>{
  const modo=new URLSearchParams(location.search).get('modo');const Z='America/Mexico_City';
  const h=(hora)=>new Date('2026-10-09T'+hora+':00-06:00').toISOString();
  const ev=(clave,hora,c={})=>({clave,id:clave,href:'/eventos/'+clave,titulo:'Evento '+clave,inicio:h(hora),fin:null,zona:Z,exposicion:false,cartel:null,sitio:'CEART',parte:null,destino:'CEART, San Luis Potosí',...c});
- const eventos=modo==='vacio'?[ev('viejo','10:00')]:[ev('ahora','17:30',{cartel:'/cartel.svg',titulo:'Caracolas para Luciana'}),ev('rato','18:30'),ev('hoy','21:00',{destino:null}),ev('expo','09:00',{exposicion:true,fin:h('23:00'),horario:[{dias:[5],abre:'10:00',cierra:'22:00'}],inicio:'2026-09-01T16:00:00Z'})];
+ const lleno=[ev('ahora','17:30',{cartel:'/cartel.svg',titulo:'Caracolas para Luciana'}),ev('rato','18:30'),ev('hoy','21:00',{destino:null}),ev('expo','09:00',{exposicion:true,fin:h('23:00'),horario:[{dias:[5],abre:'10:00',cierra:'22:00'}],inicio:'2026-09-01T16:00:00Z'})];
+ // OL-371 (E7): tres «En un rato» que empiezan a la misma hora y otro a otro minuto de esa hora.
+ const mismaHora=[lleno[0],ev('a','19:00'),ev('b','19:00'),ev('c','19:00'),ev('d','19:30'),lleno[2]];
+ const eventos=modo==='vacio'?[ev('viejo','10:00')]:modo==='misma-hora'?mismaHora:lleno;
  createRoot(document.getElementById('root')).render(<main><Fila eventos={eventos} ahoraServidor='${AHORA}' asistencias={{}} conSesion={modo!=='sin-sesion'}/><a href='/otra'>Otra cosa</a></main>);
  `},plugins:[{name:'dobles',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:mocks[a.path],loader:'js',resolveDir:root}));}}],loader:{'.png':'dataurl'}});
  const cartel='<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="#1e40af"/><rect y="400" width="400" height="100" fill="#f97316"/></svg>';
@@ -37,6 +40,18 @@ test('la fila: un círculo por evento, en el orden de urgencia y con su anillo; 
  const p=await pagina(t);await p.getByRole('button',{name:/Caracolas/}).waitFor();
  assert.deepEqual(await circulos(p),[['ahora','Ahora'],['pronto','En 30 min'],['pronto','Último día'],['resto','21:00']]);
  const q=await pagina(t,'vacio');await q.getByRole('link',{name:'Otra cosa'}).waitFor();assert.equal(await q.locator("section[aria-label='Lo de hoy']").count(),0);
+});
+
+test('E7: a la misma hora, la cuenta atrás solo en el primero y la hora en los demás; el nombre accesible la conserva y el minuto solo mueve la cuenta',async t=>{
+ const p=await pagina(t,'misma-hora');await p.getByRole('button',{name:/Caracolas/}).waitFor();
+ const nombres=()=>p.locator("section[aria-label='Lo de hoy'] button").evaluateAll(bs=>bs.map(b=>b.getAttribute('aria-label')));
+ // El primer pintado, sin esperar ningún temporizador.
+ assert.deepEqual((await circulos(p)).map(c=>c[1]),['Ahora','En 1 h','19:00','19:00','En 1 h 30 min','21:00']);
+ assert.deepEqual(await nombres(),['Ahora: Caracolas para Luciana','En 1 h: Evento a','En 1 h: Evento b','En 1 h: Evento c','En 1 h 30 min: Evento d','Hoy: Evento hoy']);
+ // Al minuto siguiente cambia la cuenta del primero y la de las 19:30; los otros dos siguen con la hora.
+ await p.clock.runFor(60_000);await p.getByRole('button',{name:'En 59 min: Evento a'}).waitFor();
+ assert.deepEqual((await circulos(p)).map(c=>c[1]),['Ahora','En 59 min','19:00','19:00','En 1 h 29 min','21:00']);
+ assert.deepEqual((await nombres()).slice(1,4),['En 59 min: Evento a','En 59 min: Evento b','En 59 min: Evento c']);
 });
 
 test('tocar un círculo abre su historia; derecha avanza, izquierda vuelve, Escape cierra, el foco vuelve y el anillo se apaga',async t=>{

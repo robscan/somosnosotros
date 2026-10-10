@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { anilloDe, clasificarAhora, etiquetaAhora, rotuloCirculo, type EventoAhora } from "@/lib/ahora";
+import { anilloDe, clasificarAhora, etiquetaAhora, rotulosAhora, type EventoAhora } from "@/lib/ahora";
 import { degradadoCSS, paletaPropia } from "@/lib/coloresCartel";
 import type { Asistencia } from "@/lib/deslizar";
 import Historias from "./Historias";
@@ -90,6 +90,8 @@ export default function FilaAhora({ eventos, ahoraServidor, asistencias, conSesi
   );
 
   if (!avisos.length) return null;
+  // Bajo cada círculo, su rótulo; la cuenta atrás, una vez por hora de inicio (E7, OL-371). El nombre accesible la conserva siempre.
+  const rotulos = rotulosAhora(avisos, ahora);
 
   return (
     <section className={styles.fila} aria-label="Lo de hoy">
@@ -122,7 +124,7 @@ export default function FilaAhora({ eventos, ahoraServidor, asistencias, conSesi
                   )}
                 </span>
                 <small className={styles.rotulo} data-ahora={a.tipo === "ahora" || undefined}>
-                  {rotuloCirculo(a, ahora)}
+                  {rotulos[i]}
                 </small>
               </button>
             </li>
