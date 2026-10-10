@@ -117,7 +117,9 @@ export async function invitadosPrevios(db: SupabaseClient): Promise<{ artistas: 
   if (error) {
     // 42P01: Postgres directo, "relation ... does not exist". PGRST205: PostgREST, tabla fuera de su caché de esquema
     // (mismo caso: la migración es nueva y aún no está aplicada a producción).
-    if (error.code === "42P01" || error.code === "PGRST205" || /does not exist|could not find the table/i.test(error.message)) return { artistas: new Set(), correos: new Set() };
+    // Solo «la tabla no existe» vale como «nadie invitado». Cualquier otro error (p. ej. una columna que falta, 42703, cuyo mensaje
+    // también dice «does not exist») corta el envío: tratarlo como vacío reenviaría la invitación a todo el catálogo.
+    if (error.code === "42P01" || error.code === "PGRST205" || /relation .* does not exist|could not find the table/i.test(error.message)) return { artistas: new Set(), correos: new Set() };
     throw error;
   }
   const filas = (data ?? []) as { artista_id: string; correo: string | null }[];
