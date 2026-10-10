@@ -120,7 +120,7 @@ Con eventos de puntero, mantener 600 ms detiene la historia y al soltar sigue en
 
 **Capturas nuevas** (Chrome con playwright-core, 390×844 y una a 320, sin errores de página), abiertas una por una:
 - `13-inicio-titulo-grande.png` — Inicio a las 16:15: la barra con la miniatura del cartel de Caracolas («EN 1 H 15 MIN») y Destacados con «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre granate y «LABORATORIO DE EXPLORACIÓN SONORA» sobre azul y violeta.
-- `14-historia-cartel-degradado.png` — la historia de Caracolas: el cartel entero sobre el degradado verde (Huasteca; el cartel tiene poco color) con partículas.
+- `14-historia-cartel-degradado.png` — la historia de Caracolas: el cartel entero sobre el degradado de sus propios colores (azul y beige) con partículas.
 - `15-historia-sin-cartel-degradado.png` — «¡Ah, qué la canción!: coro, baile y solistas», tipográfica sobre Media Luna, con el sello, «Hoy · 19:00» y el lugar; el título se lee sobre la sombra de abajo.
 - `16-historia-cartel-desenfocado.png` — la misma de Caracolas con su cartel borroso detrás.
 - `17-historia-sin-cartel-foto-lugar.png` — la del Raúl Gamboa con la foto del edificio oscurecida.
@@ -130,18 +130,28 @@ Con eventos de puntero, mantener 600 ms detiene la historia y al soltar sigue en
 - `21-historia-acto-de-festival.png` — sáb 31 oct a las 13:00: «Efecto Tlacoyo en Electric Universe Festival», el cartel sobre el morado sacado de él.
 - `22-historia-sin-cartel-a-320.png` — la historia tipográfica a 320: el título en dos líneas, sin cortes.
 
-**Cuarta opción de tarjeta: «título + cartel»** (founder: «¿podrías hacer una versión con tarjetas título grande y el cartel abajo para los que tienen?»), ahora la que sale por defecto. Es la tarjeta «Essentials» de Apple Music: arriba, una franja con el título corto (hasta tres líneas) sobre el degradado de su cartel; abajo, el cartel llena lo que queda, recortado desde arriba, que es donde suelen decir qué son. Sin cartel, la tarjeta entera es de título. En una tarjeta de 165×248, la franja mide 59 a 78 px y el cartel 169 a 188.
+**Cuarta opción de tarjeta: «título + cartel»** (founder: «¿podrías hacer una versión con tarjetas título grande y el cartel abajo para los que tienen?»), ahora la que sale por defecto. Es la tarjeta «Essentials» de Apple Music: arriba, una franja con el título corto sobre el degradado de su cartel; abajo, el cartel llena lo que queda, recortado desde arriba, que es donde suelen decir qué son. Sin cartel, la tarjeta entera es de título. Al verla, el founder pidió «menos espacio para cartel, bájalo más»: la franja ocupa ahora el 58 % de arriba y el cartel el 42 % de abajo (144 y 104 px en una tarjeta de 165×248), y el título admite hasta cuatro líneas.
 
 Al hacerla se afinó el título corto:
 - Sin dos puntos, corta en una coma seguida de minúscula: «Presentación de Caracolas para Luciana, de Jacobo Reyna» queda en «Presentación de Caracolas para Luciana».
 - Se salta el tipo («Inauguración: Dos siglos…» queda en «Dos siglos a través de la lente»; «Inauguración: DESIERTO: …» en «DESIERTO») y el nombre del festival («CINEMA: El atractivo de la resistencia, …» queda en «El atractivo de la resistencia»), solo si lo que sigue empieza con mayúscula.
 - «Verbena, Ritmo y Sabor: verbena musical» se queda con el festival.
-- El corte a tres líneas va en el texto y no en la franja; antes asomaba la cuarta línea.
+- El corte de líneas va en el texto y no en la franja; antes asomaba una línea de más.
 
 Comprobado con un toque real en una tarjeta (dice qué ficha se abriría); el ancho se mantiene en 390.
 
-- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre granate con su cartel debajo (la foto y «Hoy») y «LABORATORIO DE EXPLORACIÓN SONORA» sobre azul y violeta con su cartel negro.
-- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre verde con el cartel debajo, y la canción (sin cartel) entera de título.
+**El degradado, siempre del cartel** (founder: «¿podrías leer el color del cartel y definir el degradado en consecuencia?»). Antes, un cartel casi sin color usaba una paleta propia: la trentina, en sepia, salía granate y no se parecía a su cartel. Ahora:
+- **Siempre del cartel:** el degradado sale de sus colores, también si es sepia o blanco y negro. Las paletas propias quedan solo para los eventos sin cartel.
+- **Fondo legible:** el fondo de la tarjeta es el color más vivo del cartel, oscurecido lo justo para que el título blanco se lea (luminancia ≤ 0,12, contraste de 6:1 o más) y no a la mitad fija.
+- **Unión con el cartel:** en «título + cartel», la franja se funde desde el 55 % con el color del borde de arriba del cartel (la media de su primera fila), así que el cartel parece salir de ella.
+
+Resultado en las capturas 23, 24 y 14:
+- La trentina, azul pizarra que acaba en el beige de su cartel.
+- El laboratorio, negro oliva hacia su negro.
+- Caracolas, azul hacia su beige, también de fondo en su historia.
+
+- `23-tarjetas-titulo-y-cartel.png` — Destacados con la franja al 58 %: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre granate con la parte de arriba de su cartel debajo («LA MÚSICA DE LA MIGRACIÓN TRENTINA» y «Hoy») y «LABORATORIO DE EXPLORACIÓN SONORA» sobre azul y violeta con el principio de su cartel negro.
+- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre verde con la cabecera de su cartel abajo, y la canción (sin cartel) entera de título.
 - `25-tarjetas-titulo-y-cartel-a-320.png` — lo mismo a 320, sin cortes.
 
 **Lo que costaría en la app** (después de la firma):

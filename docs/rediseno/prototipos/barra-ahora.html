@@ -189,13 +189,14 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
    para que la esquina del título quede oscura y el blanco se lea. */
 .portada.titular { display: grid; align-content: start; padding: var(--espacio-3); color: #fff; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); text-wrap: balance; }
 /* «Título + cartel» (founder, 2026-10-09: «una versión con tarjetas título grande y el cartel abajo para los que tienen»), como la
-   tarjeta «Essentials» de Apple Music: arriba la franja con el título corto sobre el degradado de su cartel (hasta tres líneas); abajo, el
+   tarjeta «Essentials» de Apple Music: arriba la franja con el título corto sobre el degradado de su cartel (hasta cuatro líneas); abajo, el
    cartel llena lo que queda, recortado desde arriba (ahí suele ir lo que dice qué es). Sin cartel, la tarjeta es entera de título. */
-.portada.mixta { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+/* Founder, tras verla: «menos espacio para cartel, bájalo más». La franja ocupa el 58 % de arriba y el cartel el 42 % de abajo. */
+.portada.mixta { display: grid; grid-template-rows: 58% minmax(0, 1fr); }
 .portada.mixta > img { position: static; inset: auto; width: 100%; height: 100%; min-height: 0; object-fit: cover; object-position: center top; }
 .m-titulo { padding: var(--espacio-3) var(--espacio-3) 10px; color: #fff; font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-wrap: balance; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }
 /* El corte a tres líneas va en el texto, no en la franja: con el relleno en el mismo elemento, la cuarta línea asoma por debajo. */
-.m-titulo > span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.m-titulo > span { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .portada .hoy { position: absolute; left: var(--espacio-2); bottom: var(--espacio-2); padding: 2px var(--espacio-3); border-radius: var(--radio-pildora); background: var(--primario); color: #fff; font-size: var(--letra-sm); font-weight: 700; font-variation-settings: var(--ancho-titulo); }
 .portada.generada .hoy { top: var(--espacio-2); bottom: auto; }
 .portada.titular .hoy, .portada.mixta .hoy { text-transform: none; text-shadow: none; }
@@ -290,7 +291,7 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
       <li><b>En un rato</b>: empieza en menos de 2 h. <b>Exposiciones</b>: solo el día que inaugura o el último. <b>Hoy</b>: más tarde hoy. <b>Mañana</b>: si ya no queda nada hoy, o desde las 20:00. Tope de 8; del festival, sus actos.</li>
       <li><b>Historias</b>: toca la barra o un círculo. Toca a la derecha para la siguiente y a la izquierda para la anterior, mantén el dedo para detenerla y desliza hacia abajo para salir.</li>
       <li><b>Tarjetas: título + cartel</b>: la franja con el título arriba y el cartel abajo; sin cartel, la tarjeta entera de título. <b>Tarjetas: título grande</b>: en Inicio se lee; el cartel se mira al abrir la historia. El título corto es lo que va antes de los dos puntos («La música de la generación trentina: docufilm…»), y el color sale del cartel.</li>
-      <li><b>Estética</b>: el cartel del lugar o del artista va tal cual. Lo que arma la app, el fondo de la historia y la portada de un evento sin cartel, lleva nuestros degradados: del color del cartel o, sin cartel, de una paleta propia (Cantera, Xantolo, Huasteca, Real de Catorce, Media Luna, Tangamanga).</li>
+      <li><b>Estética</b>: el cartel del lugar o del artista va tal cual. Lo que arma la app, el fondo de la historia y la portada de un evento sin cartel, lleva nuestros degradados: siempre del color del cartel (también si es sepia o blanco y negro) o, sin cartel, de una paleta propia (Cantera, Xantolo, Huasteca, Real de Catorce, Media Luna, Tangamanga).</li>
     </ol>
   </details>
 </div>
@@ -415,9 +416,21 @@ const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${
 const degradadoCSS = (c) => `radial-gradient(110% 70% at 15% 12%, ${c[1]} 0%, ${hexA(c[1], 0)} 62%), radial-gradient(90% 70% at 92% 40%, ${c[2]} 0%, ${hexA(c[2], 0)} 66%), radial-gradient(120% 80% at 40% 105%, ${c[3]} 0%, ${hexA(c[3], 0)} 64%), ${c[0]}`;
 
 // El de la tarjeta de título grande: la esquina de arriba a la izquierda (el título) se queda en el fondo oscuro.
-// El fondo es el color más vivo a media luz (como los bloques de la v1, llenos y oscuros), no el casi negro de la historia.
-const mitad = (hex, f = 0.5) => { const n = parseInt(hex.slice(1), 16); return '#' + [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * f).toString(16).padStart(2, '0')).join(''); };
-const degradadoTarjeta = (c) => `radial-gradient(90% 60% at 100% 35%, ${hexA(c[2], 0.9)} 0%, ${hexA(c[2], 0)} 70%), radial-gradient(110% 70% at 0% 110%, ${hexA(c[3], 0.85)} 0%, ${hexA(c[3], 0)} 68%), ${mitad(c[1])}`;
+// El fondo es el color más vivo del cartel oscurecido lo justo para que el título blanco se lea (luminancia ≤ 0,12: contraste ≥ 6:1);
+// un color ya oscuro se queda como está. Lleno y oscuro como los bloques de la v1, no el casi negro de la historia.
+const legible = (hex) => {
+  const n = parseInt(hex.slice(1), 16), rgb = [n >> 16, (n >> 8) & 255, n & 255];
+  const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+  const f = L > 0.12 ? (0.12 / L) ** (1 / 2.2) : 1;
+  return '#' + rgb.map((v) => Math.round(v * f).toString(16).padStart(2, '0')).join('');
+};
+const degradadoTarjeta = (c) => `radial-gradient(90% 60% at 100% 35%, ${hexA(c[2], 0.9)} 0%, ${hexA(c[2], 0)} 70%), radial-gradient(110% 70% at 0% 110%, ${hexA(c[3], 0.85)} 0%, ${hexA(c[3], 0)} 68%), ${legible(c[1])}`;
+// La franja de «título + cartel»: arriba el fondo legible con una luz suave del cartel; desde la mitad (55 %, debajo de hasta cuatro
+// líneas de título) se funde en el color del borde de arriba del cartel, que empieza justo ahí.
+const degradadoFranja = (c) => tieneBorde(c)
+  ? `linear-gradient(180deg, ${hexA(c[4], 0)} 55%, ${c[4]} 100%), radial-gradient(90% 80% at 100% 0%, ${hexA(c[2], 0.6)} 0%, ${hexA(c[2], 0)} 70%), ${legible(c[1])}`
+  : degradadoTarjeta(c);
 // El título corto: lo que va antes de los dos puntos, como ya se escriben los títulos de la app. Si eso es solo el tipo («Inauguración: Dos
 // siglos…») o el nombre de su festival («CINEMA: El atractivo…») y sigue un nombre, ese nombre. Sin dos puntos, lo que va antes de una coma seguida de
 // minúscula («…, de Jacobo Reyna», «…, taller con Yanel Villarreal»); una coma dentro del nombre («Verbena, Ritmo y Sabor») no corta.
@@ -652,6 +665,7 @@ function rotuloLargo(a) {
 // el cartel y se guardarían con él (cuatro colores, sin pedir la imagen otra vez).
 const paletas = new Map();
 const coloresDe = (e) => (e.cartel && paletas.get(imagen(e))) || paletaDe(e.id).c;
+const tieneBorde = (c) => c.length > 4;
 function paletaDeCartel(src) {
   if (paletas.has(src)) return Promise.resolve(paletas.get(src));
   return new Promise((listo) => {
@@ -673,13 +687,16 @@ function paletaDeCartel(src) {
         while (orden.length < 3) orden.push(orden[0] || [109, 52, 200]);
         const hex = ([r, g, b]) => '#' + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
         const vivo = ([r, g, b]) => { const m = (r + g + b) / 3; return [m + (r - m) * 1.35, m + (g - m) * 1.35, m + (b - m) * 1.35].map((v) => v * 0.92); };
-        // Un cartel casi sin color (foto en sepia, blanco y negro, café oscuro) daría un degradado gris: entonces va la paleta propia. Se
-        // mide el color de verdad (la distancia entre el canal más alto y el más bajo, 0 a 255), no la saturación, que da «color» a un
-        // café casi negro. Los tres colores van del más vivo al menos vivo: el primero es el fondo de la tarjeta.
+        // Siempre los colores del cartel (founder: «¿podrías leer el color del cartel y definir el degradado en consecuencia?»): un cartel
+        // en sepia o en blanco y negro da un degradado en sus tonos, no una paleta ajena. Los tres van del más vivo al menos vivo (el
+        // primero es el fondo de la tarjeta). El quinto es el color del borde de arriba del cartel, donde la franja de «título + cartel» se
+        // junta con él: la franja acaba en ese color y el cartel parece salir de ella.
         const croma = ([r, g, b]) => Math.max(r, g, b) - Math.min(r, g, b);
         const tres = orden.slice(0, 3).sort((p, q) => croma(q) - croma(p));
-        if (croma(tres[0]) < 70) { paletas.set(src, null); listo(null); return; }
-        const paleta = [hex(orden[0].map((v) => v * 0.22)), ...tres.map((q) => hex(vivo(q)))];
+        const arriba = x.getImageData(0, 0, 16, 1).data; let br = 0, bg = 0, bb = 0;
+        for (let i = 0; i < arriba.length; i += 4) { br += arriba[i]; bg += arriba[i + 1]; bb += arriba[i + 2]; }
+        const borde = hex([br / 16, bg / 16, bb / 16]);
+        const paleta = [hex(orden[0].map((v) => v * 0.22)), ...tres.map((q) => hex(vivo(q))), borde];
         paletas.set(src, paleta); listo(paleta);
       } catch { listo(null); /* imagen de otro origen: se queda la paleta propia */ }
     };
@@ -805,7 +822,7 @@ function cuandoTarjeta(e) {
 }
 function tarjeta(e) {
   const hoy = e.dia === dia ? '<span class="hoy">Hoy</span>' : '';
-  if (modoTarjetas === 'mixta' && e.cartel) return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada mixta"><span class="m-titulo" style="background:${degradadoTarjeta(coloresDe(e))}"><span>${tituloCorto(e.t, e.festival)}</span></span><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
+  if (modoTarjetas === 'mixta' && e.cartel) return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada mixta"><span class="m-titulo" style="background:${degradadoFranja(coloresDe(e))}"><span>${tituloCorto(e.t, e.festival)}</span></span><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
   if (modoTarjetas === 'titulo' || modoTarjetas === 'mixta') return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t, e.festival)}${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
   const portada = !e.cartel && estetica === 'vivo'
     ? `<span class="portada generada" style="background:${degradadoCSS(paletaDe(e.id).c)}"><img class="sello" src="barra-ahora/logotipo.svg" alt=""><span class="g-titulo">${e.t.split(/:\s/)[0]}</span>${hoy}</span>`
