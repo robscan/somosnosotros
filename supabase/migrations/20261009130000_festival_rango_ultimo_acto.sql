@@ -8,7 +8,7 @@
 -- `publicar_programa` termina llamando a `recalcular_festival`, así que basta con cambiar esta. Solo añade y reemplaza.
 
 create or replace function public.fin_en_programa(p_inicio timestamptz, p_fin timestamptz, p_zona text) returns timestamptz
-language sql immutable set search_path = '' as $$
+language sql stable set search_path = '' as $$
   select coalesce(p_fin, least(p_inicio + interval '3 hours',
     (((p_inicio at time zone p_zona)::date + 1)::timestamp at time zone p_zona)));
 $$;
