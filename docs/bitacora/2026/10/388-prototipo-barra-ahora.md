@@ -130,7 +130,7 @@ Con eventos de puntero, mantener 600 ms detiene la historia y al soltar sigue en
 - `21-historia-acto-de-festival.png` — sáb 31 oct a las 13:00: «Efecto Tlacoyo en Electric Universe Festival», el cartel sobre el morado sacado de él.
 - `22-historia-sin-cartel-a-320.png` — la historia tipográfica a 320: el título en dos líneas, sin cortes.
 
-**Cuarta opción de tarjeta: «título + cartel»** (founder: «¿podrías hacer una versión con tarjetas título grande y el cartel abajo para los que tienen?»), ahora la que sale por defecto. Es la tarjeta «Essentials» de Apple Music: arriba, una franja con el título corto sobre el degradado de su cartel; abajo, el cartel llena lo que queda, recortado desde arriba, que es donde suelen decir qué son. Sin cartel, la tarjeta entera es de título. Al verla, el founder pidió «menos espacio para cartel, bájalo más»: la franja ocupa ahora el 58 % de arriba y el cartel el 42 % de abajo (144 y 104 px en una tarjeta de 165×248), y el título admite hasta cuatro líneas.
+**Cuarta opción de tarjeta: «título + cartel»** (founder: «¿podrías hacer una versión con tarjetas título grande y el cartel abajo para los que tienen?»), ahora la que sale por defecto. Es la tarjeta «Essentials» de Apple Music: arriba, una franja con el título corto sobre el degradado de su cartel; abajo, el cartel llena lo que queda, recortado desde arriba, que es donde suelen decir qué son. Sin cartel, la tarjeta entera es de título. La franja toma el alto de su título (hasta tres líneas: 59 a 78 px en una tarjeta de 165×248) y el cartel, el resto. El founder pidió «menos espacio para cartel, bájalo más» y se probó la franja al 58 % (144 y 104 px, cuatro líneas); después pidió revertir «la posición del cartel», y se volvió al alto del título.
 
 Al hacerla se afinó el título corto:
 - Sin dos puntos, corta en una coma seguida de minúscula: «Presentación de Caracolas para Luciana, de Jacobo Reyna» queda en «Presentación de Caracolas para Luciana».
@@ -143,15 +143,15 @@ Comprobado con un toque real en una tarjeta (dice qué ficha se abriría); el an
 **El degradado, siempre del cartel** (founder: «¿podrías leer el color del cartel y definir el degradado en consecuencia?»). Antes, un cartel casi sin color usaba una paleta propia: la trentina, en sepia, salía granate y no se parecía a su cartel. Ahora:
 - **Siempre del cartel:** el degradado sale de sus colores, también si es sepia o blanco y negro. Las paletas propias quedan solo para los eventos sin cartel.
 - **Fondo legible:** el fondo de la tarjeta es el color más vivo del cartel, oscurecido lo justo para que el título blanco se lea (luminancia ≤ 0,12, contraste de 6:1 o más) y no a la mitad fija.
-- **Unión con el cartel:** en «título + cartel», la franja se funde desde el 55 % con el color del borde de arriba del cartel (la media de su primera fila), así que el cartel parece salir de ella.
+- **Unión con el cartel:** en «título + cartel», la franja se funde en su último 20 %, debajo del título, con el color del borde de arriba del cartel (la media de su primera fila), así que el cartel parece salir de ella. Con la franja al 58 %, la fusión empezaba al 55 %; con la franja al alto del título, eso dejaba la tercera línea sobre el color claro.
 
 Resultado en las capturas 23, 24 y 14:
 - La trentina, azul pizarra que acaba en el beige de su cartel.
 - El laboratorio, negro oliva hacia su negro.
 - Caracolas, azul hacia su beige, también de fondo en su historia.
 
-- `23-tarjetas-titulo-y-cartel.png` — Destacados con la franja al 58 %: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre granate con la parte de arriba de su cartel debajo («LA MÚSICA DE LA MIGRACIÓN TRENTINA» y «Hoy») y «LABORATORIO DE EXPLORACIÓN SONORA» sobre azul y violeta con el principio de su cartel negro.
-- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre verde con la cabecera de su cartel abajo, y la canción (sin cartel) entera de título.
+- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre azul pizarra que se funde con el beige de su cartel (la foto y «Hoy» debajo), y «LABORATORIO DE EXPLORACIÓN SONORA» sobre negro oliva sobre su cartel negro.
+- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre azul que se funde con el beige de su cartel, y la canción (sin cartel) entera de título.
 - `25-tarjetas-titulo-y-cartel-a-320.png` — lo mismo a 320, sin cortes.
 
 **Lo que costaría en la app** (después de la firma):
