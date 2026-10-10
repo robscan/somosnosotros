@@ -284,3 +284,17 @@ Sobre la línea de cuándo de CINEMA (2026-10-10): «Sería mejor decir que term
 Comprobado en Chrome a 390×844, sin errores. Las líneas de «Festivales y expos» con «Calma» dicen «Hasta el sáb 24 de oct», «Hasta el mié 28 de oct» y, en las expos, «Hasta el dom 1 de nov», «Hasta el lun 2 de nov», etc.; «Hoy» sigue con «Del 29 de sep al 24 de oct».
 
 - `32-festival-hasta-cuando.png` — «Calma», «Festivales y expos»: CINEMA («Varias sedes», «Hasta el sáb 24 de oct») y Ciclo Fellini («Hasta el mié 28 de oct») con sus sellos «oct → 24» y «oct → 28».
+
+## E11 sin banda: tres maneras de marcar «Tus planes»
+
+El founder rechazó la banda de color («Rechazada la banda de color»). Se quitó de «Calma» y del código, junto con su captura 31. En su lugar hay tres ejercicios sin relleno, que no se suman: si hay varios encendidos, gana E11a y luego E11b. Ninguno va en «Calma» hasta que el founder elija.
+
+- **E11a · Contorno:** un borde violeta fino (40 % de opacidad) con esquinas redondeadas encierra título y tarjetas, a 8 px del borde de la pantalla. Por dentro, el título y las tarjetas quedan a 20-21 px del borde, como en los demás carriles.
+- **E11b · Línea:** una línea violeta de 3 px a la izquierda, en el margen, de la cabecera a la última tarjeta.
+- **E11c · Ícono y aire:** el marcador de «Me interesa» en violeta junto a «Tus planes» y más espacio arriba y abajo del carril.
+
+Comprobado en Chrome a 390×844, sin errores: «Calma» queda sin fondo en «Tus planes» y cada variante pone su clase. La primera tarjeta empieza en x = 21 con contorno y en x = 20 con línea y con ícono, igual que en «Destacados» (x = 20). «Mínima» toma el contorno.
+
+- `33-e11a-tus-planes-contorno.png` — «Tus planes» dentro de una caja de borde violeta fino.
+- `34-e11b-tus-planes-linea.png` — la línea violeta a la izquierda del carril, del título a la última tarjeta.
+- `35-e11c-tus-planes-icono.png` — el marcador violeta junto a «Tus planes» y más aire arriba.
