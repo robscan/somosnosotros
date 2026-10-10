@@ -226,3 +226,12 @@ Sobre el carril «Artistas destacadxs» (2026-10-10): «para este carril usar je
 Comprobado en Chrome a 390×844, sin errores. «Nuevos eventos» y «Artistas destacadxs» miden lo mismo: tira `grande cartel-45`, foto de 165×206, título de 17 px y ningún botón. Un clic real en la foto de Markosblues abre su ficha.
 
 - `24-e9-artistas-como-eventos.png` — «Calma»: «Artistas destacadxs» con Markosblues («Nuevo video» sobre la foto; «MÚSICA», el nombre y «jazz, blues y soul») y Fozco («rock, metal y alternativo»), sin botones; debajo, «Artistas de la semana» en redondo como antes.
+
+## Vuelven los chips de «Te interesa» y «van» (comentarios del founder)
+
+En la tarjeta del tributo a The Beatles, «regresar a chip te interesa»; en la de Chatbot Challenge, «regresar a chip cuantos van». Con E3, el dato de la persona vuelve a ser un chip sobre el cartel, abajo a la izquierda como en producción: «Te interesa» con su fondo violeta claro, o cuántos van con el fondo de vidrio. La clase se queda arriba del título; «Hoy» y la sesión siguen en la línea de cuándo, así que el chip de «van» sale también en lo de hoy. La llave de `localStorage` pasa a `inicio-tarjetas:estado:4`.
+
+Comprobado en Chrome a 390×844, sin errores. En «Tus planes», Kopk Poj lleva «1 va», y el tributo a The Beatles y KOWAIFEST llevan «Te interesa». En «Destacados», el laboratorio lleva «1 va», y DESIERTO y Chatbot Challenge «2 van».
+
+- `25-chip-te-interesa.png` — «Calma», «Tus planes»: «Te interesa» en violeta claro sobre la foto de la Cineteca y «1 va» sobre el cartel de Kopk Poj; el sello de fecha arriba a la derecha.
+- `26-chip-cuantos-van.png` — «Calma», «Destacados»: «2 van» sobre el cartel de Chatbot Challenge; Cinema sin chip.

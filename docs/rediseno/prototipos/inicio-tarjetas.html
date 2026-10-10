@@ -504,7 +504,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   const EJERCICIOS = [
     { k: 'e1', t: 'E1 · Un solo título', d: 'Con cartel, la tarjeta es el cartel entero (4:5) y el título va debajo, como oración, en dos líneas y sin partir palabras. Sin cartel se queda la tarjeta de título.', f: 'Explora lo firmado en OL-357/360 («título + cartel»).' },
     { k: 'e2', t: 'E2 · El botón solo cuando importa', d: 'Sin botón en reposo. Si ya decidiste, un sello chico que dice el estado, no una acción; decidir queda en la ficha y la historia. Lugares y artistas, sin seguir en el carril.', f: 'Explora OL-176.' },
-    { k: 'e3', t: 'E3 · Rótulos fuera del cartel', d: 'Nada encima del cartel. La clase va chica arriba del título; «Hoy» y la sesión, en la línea de cuándo.' },
+    { k: 'e3', t: 'E3 · Rótulos fuera del cartel', d: 'La clase va chica arriba del título; «Hoy» y la sesión, en la línea de cuándo. Sobre el cartel solo queda un chip: «Te interesa» o cuántos van.', f: 'Los chips de «Te interesa» y «van» volvieron por comentarios del founder (10 de oct).' },
     { k: 'e3b', t: 'E3b · Evento por omisión', d: 'Solo se rotula lo que no es evento.', sub: 'e3' },
     { k: 'e4', t: 'E4 · Color quieto', d: 'Violeta solo para el cuándo; «Ver la agenda» en gris; la franja en un solo tono oscuro.', f: 'Explora el «degradado vivo» firmado; en las historias se queda.' },
     { k: 'e5', t: 'E5 · Jerarquía de tamaños', d: 'Destacados en grande. Esta semana y Nuevos en mediana (se ven dos y media). Lugares y artistas en avatares de 64 px, sin botón.' },
@@ -524,7 +524,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
   // ===== Lo que guarda este navegador (comodidad: la combinación y los tiempos de las pruebas).
   // «:2» desde E8c: quien ya abrió la página ve la combinación nueva de «Calma» en vez de la que guardó antes.
-  const LLAVE_ESTADO = 'inicio-tarjetas:estado:3';
+  const LLAVE_ESTADO = 'inicio-tarjetas:estado:4';
   const LLAVE_TIEMPOS = 'inicio-tarjetas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento: se queda en la pantalla */ } };
@@ -600,8 +600,11 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       if (!(v.e3b && t.claseTexto === 'Evento')) ceja.push({ texto: CEJA[t.claseTexto] || t.claseTexto });
       if (t.hoy && !/^hoy\b/.test(cuando)) cuando = `hoy · ${minus(cuando)}`;
       if (t.parte) cuando += ` · ${minus(t.parte)}`;
-      const dato = tuyo ? { texto: tuyo, tuyo: true } : !t.hoy && !t.parte && t.van > 0 ? { texto: t.van === 1 ? '1 va' : `${t.van} van` } : null;
-      if (dato) ceja.push(dato);
+      // Founder (10 de oct): «regresar a chip te interesa» y «regresar a chip cuántos van»: el dato de la persona vuelve como chip sobre el
+      // cartel, como en producción; la clase se queda arriba del título. Como «Hoy» y la sesión ya van en la línea de cuándo, el chip queda
+      // libre también para lo de hoy.
+      const dato = tuyo ? { texto: tuyo, clase: 'estado' } : t.van > 0 ? { texto: t.van === 1 ? '1 va' : `${t.van} van`, clase: '' } : null;
+      if (dato) chips = `<span class="rotulos"><span class="chip ${dato.clase}" data-m="rotulo">${esc(dato.texto)}</span></span>`;
       if (nuevo) ceja.push({ texto: 'Nuevo' });
     }
     const cejaHtml = ceja.length ? `<span class="ceja">${ceja.map((x) => `<span class="${x.tuyo ? 'tuyo' : ''}" data-m="rotulo">${esc(x.texto)}</span>`).join('')}</span>` : '';
