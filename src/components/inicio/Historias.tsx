@@ -51,7 +51,9 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   const [abierta, setAbierta] = useState(false);
   const [pausada, setPausada] = useState(false);
   const [oculta, setOculta] = useState(false);
-  const [reducido, setReducido] = useState(false);
+  // Se lee ya en el primer pintado (la historia solo se monta en el teléfono, al tocar un círculo): si empezara en `false`, el segmento «actual»
+  // pintaría su animación con la duración de 0,01 ms de «Reducir movimiento» y su `animationend` pasaría a la siguiente antes de verla.
+  const [reducido, setReducido] = useState(() => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [arrastre, setArrastre] = useState(0);
   const [interesan, setInteresan] = useState<Record<string, boolean>>(() => Object.fromEntries(Object.entries(asistencias ?? {}).map(([id, e]) => [id, e === "me_interesa"])));
   /** El aviso de «Me interesa» es de su historia: al pasar a otra ya no se dice. */
@@ -289,7 +291,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
             <span
               key={i === indice ? `${x.e.clave}-actual` : x.e.clave}
               data-estado={i < indice ? "visto" : i === indice ? (reducido ? "visto" : "actual") : undefined}
-              onAnimationEnd={i === indice ? () => pasar(1) : undefined}
+              onAnimationEnd={i === indice && !reducido ? () => pasar(1) : undefined}
             />
           ))}
         </div>

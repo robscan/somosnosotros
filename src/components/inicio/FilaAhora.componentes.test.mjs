@@ -44,6 +44,8 @@ test('tocar un círculo abre su historia; derecha avanza, izquierda vuelve, Esca
  await p.mouse.click(r.x+r.width/2,r.y+r.height/2);const d=p.getByRole('dialog',{name:'Historias de hoy'});await d.waitFor();
  assert.equal(await d.getAttribute('aria-modal'),'true');
  await p.waitForFunction(()=>document.querySelector('[role=dialog][data-abierta]'));
+ // Con «Reducir movimiento» no pasa sola: en la CI el primer pintado sin `reducido` acababa la barra en 0,01 ms y saltaba a «Último día».
+ await p.waitForTimeout(150);
  assert.match(await p.locator('[role=dialog] p').first().innerText(),/EN 30 MIN|En 30 min/i);
  assert.equal(await tocar(p,330,420),'Historias de hoy');
  assert.match(await p.locator('[role=dialog] p').first().innerText(),/Último día/i);

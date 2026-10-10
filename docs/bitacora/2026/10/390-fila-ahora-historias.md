@@ -145,3 +145,11 @@ Contra `next dev` y el respaldo local (`scripts/ops/auditoria-ui/respaldo-local`
 ## Verificación
 
 `npm run lint && npm run typecheck && npm test && npm run inventario && npm run medir`: ver el informe de entrega (resumen real pegado ahí).
+
+## Arreglo tras la CI
+
+La CI falló en `FilaAhora.componentes.test.mjs:47`: al abrir «En 30 min» la historia ya decía «Último día». No era la zona horaria: `src/lib/ahora.ts` calcula todo en la zona del evento y la prueba pasa igual con `TZ=UTC` y `TZ=America/Mexico_City` (también `ahora.test.ts`, 15/15 en las dos). La causa era una carrera en `Historias.tsx`: `reducido` empezaba en `false` y se ponía en `true` en un efecto; en ese primer pintado el segmento «actual» arrancaba su barra con la duración de 0,01 ms que `globals.css` da a toda animación con «Reducir movimiento», y su `animationend` pasaba a la siguiente historia antes de que el efecto corriera (en una máquina lenta, como la de la CI). Le pasaría igual a quien tenga «Reducir movimiento» en el teléfono.
+
+Arreglo: `reducido` se lee de `matchMedia` en el primer pintado (la historia solo se monta en el teléfono), el `animationend` no pasa de historia con `reducido`, y con «Reducir movimiento» la barra del segmento actual no se anima (`animation: none`). La prueba espera 150 ms tras abrir y comprueba que sigue en «En 30 min».
+
+Verificación: `npm run lint && npm run typecheck && npm test && npm run inventario && npm run medir` en verde (lint 0 errores y 1 aviso previo en `VisorImagen.componentes.test.mjs`; 189 archivos y 3429 pruebas; inventario y medidas sin novedades). `TZ=UTC npm test`: 3429/3429. Prueba de componentes 7/7 con `TZ=UTC` y `TZ=America/Mexico_City`, con Chrome y con el `chrome-headless-shell` de la CI.

@@ -293,6 +293,10 @@
   .historias {
     transition: none;
   }
+  /* Sin la barra que se llena: con la duración de 0,01 ms de globals.css acabaría al instante y pasaría de historia sola. */
+  .segmentos span[data-estado="actual"]::after {
+    animation: none;
+  }
 }
 
 /* Tableta y escritorio (founder, 2026-10-09: «considera versión desktop y tablet, la imagen de cartel se hace demasiado grande»): la historia es un
