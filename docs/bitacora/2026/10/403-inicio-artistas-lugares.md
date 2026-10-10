@@ -1,7 +1,7 @@
 # 403 · Artistas y lugares firmados en Inicio (OL-372)
 
-**Fecha:** 2026-10-10. **Rama:** `inicio-artistas-lugares`, base `origin/inicio-tarjeta-evento` (`61ac29e3`, OL-370, PR #478 abierto y sin unir: de ahí sale la tarjeta de evento firmada que esta pieza reutiliza). **Operador:** Claude (agente del gestor V). **Sin migración.**
-**Estado:** lista para la revisión del gestor; el PR lo abre el gestor cuando OL-370 esté unido. Falta el «publica» del founder.
+**Fecha:** 2026-10-10. **Rama:** `inicio-artistas-lugares`, base `origin/inicio-tarjeta-evento` (`61ac29e3`, OL-370, PR #478 entonces sin unir: de ahí sale la tarjeta de evento firmada que esta pieza reutiliza). Al cerrar, OL-370 (#478) y OL-371 (#477) ya estaban en `main`, y la rama trae `origin/main` (`b5877544`; § Verificación). **Operador:** Claude (agente del gestor V). **Sin migración.**
+**Estado:** lista para la revisión del gestor y su PR. Falta el «publica» del founder.
 
 ## Lo que se lleva a la app
 
@@ -62,7 +62,7 @@ Medido a 390×844 en el Chrome de la Mac: el prototipo «Firmada» servido como 
 - **Los lugares y artistas sin foto van al final del carril** (regla de siempre de la app). En el prototipo, «Casa de Cultura Banamex» y «Galería Casa Diana» salían entre los que tienen foto.
 - **La fecha del artista puede ser de más adelante** que esta semana (§ Lo que decidí yo).
 - **Los datos:** el prototipo usa los artistas y lugares reales del 10 de octubre y la app, los inventados del respaldo; por eso cambian los nombres, las fotos y el alto del carril de artistas (la Orquesta tiene el nombre en dos líneas y fecha).
-- **Lo que no es de esta pieza:** la barra de abajo de la app se esconde al bajar y, abajo a la izquierda, flota el botón «Volver arriba», que en las capturas del final de la página tapa la primera tarjeta de «Artistas de la semana»; el prototipo no los tiene.
+- **Lo que no es de esta pieza:** la barra de abajo de la app se esconde al bajar y, abajo a la izquierda, flota el botón «Volver arriba», que en algunas capturas tapa el nombre del primer avatar de «Artistas de la semana»; el prototipo no los tiene.
 
 ## Presupuestos de `npm run medir`
 
@@ -100,7 +100,7 @@ Las demás pantallas no se mueven. `npm run inventario`: 333 medidas en duro (ig
 - `02-artistas-destacadxs-al-final-390.png` — «Artistas destacadxs» deslizado al final: Feleal entero, con «Nuevo video», «MÚSICA», «Feleal», «Acordeón» y «sáb 17 de oct · 19:00».
 - `03-artistas-de-la-semana-390.png` — al final de la página: «Artistas de la semana» entero, con «0Backside0», «Abril Merlot» con «Nuevo audio» debajo, y «Aaron Cadena»; sin botones.
 - `04-lugares-al-final-390.png` — «Lugares de la semana» deslizado al final: el Centro Cultural («Centro Cultu…») y Aether con el símbolo SN, los dos sin foto, al final.
-- `05-lugares-y-artistas-320.png` — a 320×568: los títulos en dos líneas (como desde OL-361), los avatares iguales (se ven cuatro) y las tarjetas de artista de 132.
+- `05-lugares-y-artistas-320.png` — a 320×568: los títulos en dos líneas (como desde OL-361), los avatares iguales (se ven tres y medio) y las tarjetas de artista de 132.
 - `06-artistas-320.png` — a 320: «Artistas destacadxs» con sus líneas y, abajo, los avatares de la semana.
 - `07-tableta-768.png` — a 768: los seis lugares a la vista, las tres tarjetas de artista enteras y los tres avatares de la semana con «Nuevo audio».
 - `08-lado-a-lado-lugares-y-destacadxs.png` — izquierda, el prototipo «Firmada»; derecha, la app, con «Lugares de la semana» a la misma altura: el título, los círculos, los nombres, el título de «Artistas destacadxs», las fotos, los chips, la ceja, el nombre y el género caen a la misma altura; cambian los datos.
@@ -116,4 +116,4 @@ Las demás pantallas no se mueven. `npm run inventario`: 333 medidas en duro (ig
 
 ## Pendiente
 
-Que se una OL-370 (PR #478), el PR de esta rama (lo abre el gestor) y el «publica» del founder.
+El PR de esta rama (lo abre el gestor) y el «publica» del founder.
