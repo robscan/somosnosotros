@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaDeSemana, lineaDeTaller, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
+import { diaDeSemana, lineaDeTaller, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, finEnPrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
 import { CLASES, claseSugerida, cortoDeClase, esClase, formaDelCartel, cartelAFormulario, nombreDeClase } from "./eventos";
 import { localAIso } from "./fechas";
 
@@ -149,6 +149,22 @@ describe("taller y festival", () => {
     expect(resumenTaller(sesiones, "2026-10-07")).toBe("3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 a.m.–12:00 p.m.");
     expect(resumenTaller([...sesiones.slice(0, 2), { dia: "2026-11-07", hora: "11:00", fin: "" }], "2026-10-07")).toBe("3 sesiones · sáb 10 y sáb 17 de oct y sáb 7 de nov · horario por sesión");
     expect(resumenTaller([{ dia: "2027-01-09", hora: "10:00", fin: "" }], "2026-10-07")).toBe("1 sesión · sáb 9 de ene de 2027 · 10:00 a.m.");
+  });
+
+  it("OL-362: un último acto sin hora de fin no le suma un día al rango del festival; uno con fin que cruza la medianoche, sí", () => {
+    const primero = { inicio: localAIso("2026-11-12T19:00", ZONA)!, fin: null };
+    // 22:00 sin fin: 3 h serían la 1:00 del 15; cuenta hasta la medianoche del 14, que es el final del 14.
+    const tarde = { inicio: localAIso("2026-11-14T22:00", ZONA)!, fin: null };
+    expect(finEnPrograma(tarde.inicio, null, ZONA)).toBe(localAIso("2026-11-15T00:00", ZONA));
+    const p = periodoDePrograma([primero, tarde], ZONA)!;
+    expect(rangoDelPeriodo(p.inicio, p.fin, ZONA, en("2026-10-07T12:00"))).toBe("Del 12 al 14 de nov");
+    // 18:00 sin fin: las 3 h caben en su día.
+    expect(finEnPrograma(localAIso("2026-11-14T18:00", ZONA)!, null, ZONA)).toBe(localAIso("2026-11-14T21:00", ZONA));
+    // Con fin a la 1:00 del 15: se respeta, y el rango llega al 15.
+    const conFin = { inicio: localAIso("2026-11-14T22:00", ZONA)!, fin: localAIso("2026-11-15T01:00", ZONA)! };
+    const q = periodoDePrograma([primero, conFin], ZONA)!;
+    expect(q.fin).toBe(localAIso("2026-11-15T01:00", ZONA));
+    expect(rangoDelPeriodo(q.inicio, q.fin, ZONA, en("2026-10-07T12:00"))).toBe("Del 12 al 15 de nov");
   });
 
   it("el periodo de un festival: del primer acto al final del último (sin hora de fin, 3 h después de empezar, OL-358)", () => {
