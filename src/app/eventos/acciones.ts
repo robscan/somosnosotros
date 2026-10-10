@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { rutaSegura } from "@/lib/rutas";
+import { comoPaleta } from "@/lib/coloresCartel";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { enlaceDeAlta } from "@/lib/armazon";
@@ -93,6 +94,19 @@ function revalidar(id: string, lugarId: string | null, artistas: string[] = [], 
 }
 
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
+
+/**
+ * Los colores del cartel recién subido (OL-360): el teléfono los calcula al subirlo (`coloresDeArchivo`) y llegan en `colores_cartel`. Se
+ * guardan en esta misma acción, después de guardar el evento, y solo si la imagen sigue siendo esa. Sin ellos (no se subió un cartel nuevo,
+ * o el teléfono no pudo leerlo) no se toca nada: al cambiar la imagen, la base ya los dejó sin calcular y el relleno los pondrá. Un fallo aquí
+ * no deshace lo guardado: la tarjeta usa su paleta propia.
+ */
+async function guardarColoresCartel(supabase: Cliente, id: string, imagen: string | null, formData: FormData) {
+  const colores = comoPaleta(formData.get("colores_cartel"));
+  if (!colores || !imagen) return;
+  const { error } = await supabase.from("eventos").update({ colores_cartel: colores }).eq("id", id).eq("imagen", imagen);
+  if (error) console.error("colores del cartel:", error.message);
+}
 
 type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento; repetido?: boolean; padre?: string | null; inauguracion?: string | null };
 
@@ -192,6 +206,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   if (ciudad === null) return sinCiudad(datos);
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
+  await guardarColoresCartel(supabase, data.id, datos.imagen, formData);
   if (data.padre) revalidatePath(`/eventos/${data.padre}`);
   // El festival con su edición que leyó el cartel (OL-323): el título no siempre lo dice y el segundo acto lo necesita para reconocer a este
   // (H4). Solo una pista: si no se anota (sin la migración, o falla), a lo más no se sugiere.
@@ -234,6 +249,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision, sesiones, usarClase ? clase : null);
   if (conflicto) return { ok: false, errores: {}, conflicto: true, general: "El evento cambió mientras lo editabas. Tus cambios siguen aquí, pero no se guardaron. Revisa la versión actual antes de volver a editar." };
   if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
+  await guardarColoresCartel(supabase, id, datos.imagen, formData);
   // «Inauguración · Quitar» (OL-323, deshacer una sugerencia aceptada): la exposición deja de estar ligada a su inauguración y las dos fichas
   // siguen. Solo si la pantalla lo pide (tenía una al abrir y se quitó): una inauguración que no se pudo leer al abrir no se suelta sola.
   if (formData.get("quitar_inauguracion") === "1" && clase.clase === "exposicion" && !clase.inauguracion && existente?.inaugura_id) {

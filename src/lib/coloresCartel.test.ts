@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conAlfa, paletaDePixeles, paletaPropia, PALETAS_PROPIAS } from "./coloresCartel";
+import { comoPaleta, conAlfa, degradadoTarjeta, legible, luminancia as luminanciaWcag, paletaDePixeles, paletaPropia, PALETAS_PROPIAS } from "./coloresCartel";
 
 /** Píxeles RGBA sintéticos: `n` veces el color dado. */
 const pixeles = (...grupos: [number, [number, number, number, number?]][]) => grupos.flatMap(([n, [r, g, b, a = 255]]) => Array.from({ length: n }, () => [r, g, b, a]).flat());
@@ -46,4 +46,27 @@ describe("paleta propia", () => {
     expect(new Set(["a", "b", "c", "d", "e", "f", "g", "h"].map(paletaPropia)).size).toBeGreaterThan(1);
   });
   it("conAlfa", () => expect(conAlfa("#6d34c8", 0.5)).toBe("rgba(109,52,200,0.5)"));
+});
+
+describe("tarjeta título + cartel (OL-360)", () => {
+  it("legible: el fondo deja el blanco a 6:1 o más y un color oscuro se queda", () => {
+    for (const c of ["#ff7a1a", "#ffd23f", "#90e0ef", "#ffffff", "#b5541c", "#3fc1a5"]) {
+      const L = luminanciaWcag(legible(c));
+      expect(L).toBeLessThanOrEqual(0.12);
+      expect(1.05 / (L + 0.05)).toBeGreaterThanOrEqual(6);
+    }
+    expect(legible("#1e0b3d")).toBe("#1e0b3d");
+  });
+  it("degradadoTarjeta acaba en el color legible", () => {
+    const c = PALETAS_PROPIAS[1].c;
+    expect(degradadoTarjeta(c).endsWith(legible(c[1]))).toBe(true);
+  });
+  it("comoPaleta acepta cuatro hex (también en JSON) y rechaza lo demás", () => {
+    expect(comoPaleta(["#AABBCC", "#000000", "#ffffff", "#123456"])).toEqual(["#aabbcc", "#000000", "#ffffff", "#123456"]);
+    expect(comoPaleta('["#aabbcc","#000000","#ffffff","#123456"]')).toEqual(["#aabbcc", "#000000", "#ffffff", "#123456"]);
+    expect(comoPaleta(["#aabbcc", "#000000", "#ffffff"])).toBeNull();
+    expect(comoPaleta(["red", "#000000", "#ffffff", "#123456"])).toBeNull();
+    expect(comoPaleta(null)).toBeNull();
+    expect(comoPaleta("no")).toBeNull();
+  });
 });

@@ -1,4 +1,5 @@
 import CamposSitio, { valoresSitio } from "@/app/eventos/CamposSitio";
+import type { Paleta } from "@/lib/coloresCartel";
 import type { Ciudad } from "@/lib/ciudad";
 import { combinarFechaHora } from "@/lib/fechas";
 import { horarioParaEnviar } from "@/lib/horarioLugar";
@@ -14,7 +15,7 @@ import { actosMarcados, finDe, inicioDe, sesionesDe, type Respuestas } from "./p
  * taller de varias sesiones, sus `sesiones` (días sueltos); lo que no es festival, el festival del que es parte (`padre` o `padre_nuevo`); un
  * festival, su programa (`actos`, cada uno con su inicio, su sede y si se publica).
  */
-export default function CamposEvento({ r, ciudadContexto, imagen }: { r: Respuestas; ciudadContexto: Ciudad | null; imagen: string | null }) {
+export default function CamposEvento({ r, ciudadContexto, imagen, colores = null }: { r: Respuestas; ciudadContexto: Ciudad | null; imagen: string | null; colores?: Paleta | null }) {
   const sesiones = sesionesDe(r);
   return (
     <>
@@ -51,6 +52,8 @@ export default function CamposEvento({ r, ciudadContexto, imagen }: { r: Respues
       <input type="hidden" name="descripcion" value={r.descripcion} />
       <input type="hidden" name="enlace" value={r.enlace} />
       <input type="hidden" name="imagen" value={imagen ?? ""} />
+      {/* Los colores del cartel recién subido (OL-360); sin cartel nuevo, nada. */}
+      {imagen && colores && <input type="hidden" name="colores_cartel" value={JSON.stringify(colores)} />}
     </>
   );
 }

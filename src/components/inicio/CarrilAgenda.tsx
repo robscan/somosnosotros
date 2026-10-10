@@ -1,6 +1,6 @@
 import type { AvisosLista } from "@/components/useSeguirEnLista";
 import type { Agenda } from "@/lib/cargarAgenda";
-import { tarjetaConClase, tarjetaEvento } from "@/lib/destacados";
+import { nombreDeFestival, tarjetaConClase, tarjetaEvento } from "@/lib/destacados";
 import { calcularCarrilesAgenda } from "@/lib/inicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 import CarrilNuevos from "./CarrilNuevos";
@@ -20,19 +20,21 @@ export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref
   const agenda = await agendaPromise;
   const ahora = new Date();
   const carriles = calcularCarrilesAgenda(agenda, ahora);
+  // El título corto de un acto salta el nombre de su festival (OL-360): se busca entre los eventos ya cargados.
+  const festival = nombreDeFestival(agenda.eventos);
   const comun = { asistencias: agenda.asistencias, avisos, verTodos: { href: verTodosHref, etiqueta: "Ver la agenda" } };
   if (carril.parte === "nuevos") {
-    const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaEvento(e, ahora), creado_en: e.creado_en }));
-    return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
+    const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaEvento(e, ahora, festival(e)), creado_en: e.creado_en }));
+    return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} titulo="Nuevos eventos" tamano="grande" memoria="inicio-nuevos" />;
   }
   // «Festivales y exposiciones» (OL-342): cada tarjeta dice qué es en su rótulo («Festival», «Exposición»: `tarjetaConClase`).
   // Va con la tarjeta grande, la de «Destacados» (founder, 2026-10-08, OL-347: «a los festivales ponles tamaño de eventos
   // estelares»); un carril tiene un solo tamaño, así que las exposiciones también.
   const datos =
     carril.parte === "estelar"
-      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaEvento(e, ahora)), tamano: "grande" as const, memoria: "inicio-estelar" }
+      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaEvento(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-estelar" }
       : carril.parte === "festivales"
-        ? { titulo: "Festivales y exposiciones", tarjetas: carriles.festivales.map((e) => tarjetaConClase(e, ahora)), tamano: "grande" as const, memoria: "inicio-festivales" }
-        : { titulo: "Esta semana", tarjetas: carriles.estaSemana.map((e) => tarjetaEvento(e, ahora)), tamano: "mediana" as const, memoria: "inicio-esta-semana" };
+        ? { titulo: "Festivales y exposiciones", tarjetas: carriles.festivales.map((e) => tarjetaConClase(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-festivales" }
+        : { titulo: "Esta semana", tarjetas: carriles.estaSemana.map((e) => tarjetaEvento(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-esta-semana" };
   return <CarrilEventosCliente {...comun} tarjetas={datos.tarjetas} titulo={datos.titulo} tamano={datos.tamano} memoria={datos.memoria} />;
 }

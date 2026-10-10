@@ -8,6 +8,8 @@ import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugare
 import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
+import { comoPaleta, type Paleta } from "./coloresCartel";
+import { tituloCorto } from "./tituloCorto";
 
 /**
  * Destacados (docs/rediseno/20, firmado por el founder el 2026-09-16): arriba de la Agenda, de Lugares y de Artistas, lo
@@ -33,8 +35,10 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
  *  `tarjetaEvento`: lugares y artistas no tienen qué decir así. `clave` y `parte` solo los lleva la tarjeta de un día de un evento con varios (OL-320,
  *  `lib/ocurrencias`): la llave de ese día, para que el mismo evento pueda salir dos veces en una tira, y «Día 2 de 3» («Sesión 2 de 4» en un taller).
  *  `sinVoy`: una exposición o el marco de un festival (OL-322), que no llevan el botón «Voy» de la tarjeta. `clase`: «Festival» o «Exposición»
- *  (`nombreDeClase`), solo en el carril que junta las dos (OL-342, `tarjetaConClase`): dice qué es cada cosa en el rótulo de la foto. */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string };
+ *  (`nombreDeClase`), solo en el carril que junta las dos (OL-342, `tarjetaConClase`): dice qué es cada cosa en el rótulo de la foto.
+ *  `corto` y `colores` (OL-360) solo los lleva la tarjeta de un evento: su título corto (`tituloCorto`) y los colores guardados de su propio
+ *  cartel (null si aún no se calcularon o si la foto no es su cartel sino la portada de su lugar o el cartel de un acto). */
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string; corto?: string; colores?: Paleta | null };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -129,16 +133,28 @@ function sitioDeTarjeta(e: EventoAgenda): string {
   return `${sitioEnLista(e)} · ${textoActosEnSede(e.programa?.registrados ?? 0)}`;
 }
 
-export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {
+/**
+ * La tarjeta de un evento. `festival`: el nombre de su festival, si es un acto, para que su título corto lo salte («CINEMA: El atractivo…»,
+ * `tituloCorto`). Los colores solo valen si la foto es su propio cartel: los de la portada de su lugar no se guardan con el evento.
+ */
+export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha {
   const parte = textoParte(e);
   // Una exposición no «es hoy» aunque se pueda visitar hoy: su rótulo no lo dice (no es algo que pase hoy a una hora). Ni ella ni el marco de un
   // festival llevan «Voy» (doc 55 §5, punto 2: «Me interesa», que se cambia en su ficha).
   const hoy = e.clase !== "exposicion" && diaCorto(e.inicio, ahora, e.zona) === "Hoy";
-  return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto: fotoDeEvento(e), titulo: e.titulo, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
+  const foto = fotoDeEvento(e);
+  const colores = foto && foto === e.imagen ? comoPaleta(e.colores_cartel) : null;
+  return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto, titulo: e.titulo, corto: tituloCorto(e.titulo, festival), colores, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 /** La tarjeta del carril «Festivales y exposiciones» (OL-342): la de siempre, con el nombre de su clase para el rótulo. */
-export const tarjetaConClase = (e: EventoAgenda, ahora = new Date()): TarjetaConFecha => ({ ...tarjetaEvento(e, ahora), clase: nombreDeClase(e.clase) });
+export const tarjetaConClase = (e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha => ({ ...tarjetaEvento(e, ahora, festival), clase: nombreDeClase(e.clase) });
+
+/** El nombre del festival de cada acto, de los eventos ya cargados (para el título corto de su tarjeta, OL-360). */
+export function nombreDeFestival(eventos: readonly Pick<EventoAgenda, "id" | "titulo">[]): (e: Pick<EventoAgenda, "evento_padre_id">) => string | null {
+  const nombres = new Map(eventos.map((x) => [x.id, x.titulo]));
+  return (e) => (e.evento_padre_id ? (nombres.get(e.evento_padre_id) ?? null) : null);
+}
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
   return { id: l.id, href: hrefLugar(l), foto: l.portada, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0, ...(l.proximo ? { cuando: true } : {}) };

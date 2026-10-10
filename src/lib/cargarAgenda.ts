@@ -71,7 +71,7 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
   const [e, s, destacados] = await Promise.all([
-    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, evento_padre_id, lugar:lugares(nombre, portada), sesiones:eventos_sesiones(inicio, fin)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
+    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, evento_padre_id, colores_cartel, lugar:lugares(nombre, portada), sesiones:eventos_sesiones(inicio, fin)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? leer(supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000), "seguimientos propios", true) : Promise.resolve(null),
     leer<Destacado>(supabase.rpc("tira_destacados", { p_tipo: "eventos", p_ciudad: ciudad.nombre }), "destacados"),

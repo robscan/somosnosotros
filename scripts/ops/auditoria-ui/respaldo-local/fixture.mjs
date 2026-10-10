@@ -87,11 +87,13 @@ const E = {
   // OL-320 (con OL-319 ya usaba «taller»; al apilar OL-322 este taller visible toma su propia clave).
   tallerLinoleo: "bbbb0001-0000-4000-8000-000000000023",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
     clase, evento_padre_id, inaugura_id, borrador, retirado_por_admin: false,
+    // OL-360: los colores guardados de su cartel (null = sin calcular: la tarjeta usa su paleta propia).
+    colores_cartel: colores,
     id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
     sitio_texto: sitio?.texto ?? null, sitio_direccion: sitio?.direccion ?? null, sitio_lat: sitio?.lat ?? null, sitio_lng: sitio?.lng ?? null, sitio_reservado: false, sitio_revelar_desde: null,
     lugar_id, zona: ZONA, ciudad: CIUDAD, creado_en: hace(creadoHace),
@@ -100,19 +102,19 @@ function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio 
   };
 }
 const eventos = [
-  evento({ id: E.sinfonica, slug: "concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", titulo: "Concierto de la Orquesta Sinfónica de San Luis Potosí", dias: 0, hora: "18:00", sitio: { texto: "Templo de San Francisco", direccion: "Calle Jardín Guerrero 7, 78000 San Luis Potosí, San Luis Potosí, México", lat: 22.1497, lng: -100.9768 }, creadoHace: 3, descripcion: "Programa por los 435 años del Convento de San Francisco. Entrada libre.", enlace: "https://www.facebook.com/osslp" }),
+  evento({ id: E.sinfonica, colores: ["#2c2820", "#bfa97c", "#b4aa72", "#a19c92"], slug: "concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", titulo: "Concierto de la Orquesta Sinfónica de San Luis Potosí", dias: 0, hora: "18:00", sitio: { texto: "Templo de San Francisco", direccion: "Calle Jardín Guerrero 7, 78000 San Luis Potosí, San Luis Potosí, México", lat: 22.1497, lng: -100.9768 }, creadoHace: 3, descripcion: "Programa por los 435 años del Convento de San Francisco. Entrada libre.", enlace: "https://www.facebook.com/osslp" }),
   evento({ id: E.macario, slug: "macario-xantolo-camino-al-mictlan", titulo: "Macario, Xantolo camino al Mictlán", dias: 0, hora: "19:00", sitio: { texto: "Teatro del Centro de Difusión Cultural del IPBA Raúl Gamboa", direccion: "Av. Universidad 1385, Centro, San Luis Potosí", lat: 22.1465, lng: -100.9745 }, creadoHace: 12, imagen: null }),
   evento({ id: E.cristiada, slug: "charla-san-luis-potosi-en-la-cristiada-con-joserra-ortiz", titulo: "Charla: San Luis Potosí en la Cristiada, con Joserra Ortiz", dias: 1, hora: "19:30", lugar_id: L.miguelito, creadoHace: 2, descripcion: "Conversación sobre el papel de San Luis Potosí durante la guerra cristera, con el historiador Joserra Ortiz." }),
   evento({ id: E.fellini, slug: "cine-de-barrio-ciclo-fellini-2026-09-30", titulo: "Cine de barrio: ciclo Fellini", dias: 2, hora: "10:00", lugar_id: L.miguelito, creadoHace: 9 }),
   evento({ id: E.pimpolina, slug: "delirium-pollum-clown-y-pantomima-con-pimpolina", titulo: "Delirium Pollum, clown y pantomima con Pimpolina", dias: 3, hora: "18:00", lugar_id: L.paz, precio: "$150", creadoHace: 15, descripcion: "Un espectáculo de clown para toda la familia." }),
-  evento({ id: E.colocaos, slug: "lxs-colocaos-la-ultima-fogueada", titulo: "LXS COLOCAOS: La última fogueada", dias: 4, hora: "19:00", dur: 3, lugar_id: L.muni, creadoHace: 1, descripcion: "Inauguración de la exposición colectiva de cerámica LXS COLOCAOS. Paulina Lucciotto, Marilú Juárez, Arantxa Zoé Hernández, Jesús Orlando Acosta, Sayuri Álvarez, Flora Moreno y Samantha Méndez." }),
+  evento({ id: E.colocaos, colores: ["#2d2d2d", "#6d829b", "#3c2f23", "#bdbcba"], slug: "lxs-colocaos-la-ultima-fogueada", titulo: "LXS COLOCAOS: La última fogueada", dias: 4, hora: "19:00", dur: 3, lugar_id: L.muni, creadoHace: 1, descripcion: "Inauguración de la exposición colectiva de cerámica LXS COLOCAOS. Paulina Lucciotto, Marilú Juárez, Arantxa Zoé Hernández, Jesús Orlando Acosta, Sayuri Álvarez, Flora Moreno y Samantha Méndez." }),
   evento({ id: E.arttoy, slug: "inauguracion-de-uno-de-uno-custom-art-toy-2026", titulo: "Inauguración de Uno de Uno · Custom Art Toy 2026", dias: 5, hora: "18:00", lugar_id: L.ache, creadoHace: 4 }),
   evento({ id: E.susurros, slug: "susurros-del-inconsciente", titulo: "Susurros del inconsciente", dias: 6, hora: "20:00", lugar_id: L.aether, precio: "Cooperación solidaria", creadoHace: 6 }),
   evento({ id: E.feleal, slug: "feleal-un-viaje-por-el-mundo-en-acordeon", titulo: "Feleal: un viaje por el mundo en acordeón", dias: 7, hora: "19:00", lugar_id: L.paz, precio: "$120 a $250", creadoHace: 10, enlace: "https://boletos.example.com/feleal" }),
-  evento({ id: E.master, slug: "master-class-9-festival-de-cine-uaslp", titulo: "Master Class - 9° Festival de Cine UASLP", dias: 8, hora: "12:00", lugar_id: L.ccub, creadoHace: 2, descripcion: "Con el actor Daniel Giménez Cacho. Entrada libre, cupo limitado." }),
+  evento({ id: E.master, colores: ["#060605", "#3d3f23", "#181816", "#181816"], slug: "master-class-9-festival-de-cine-uaslp", titulo: "Master Class - 9° Festival de Cine UASLP", dias: 8, hora: "12:00", lugar_id: L.ccub, creadoHace: 2, descripcion: "Con el actor Daniel Giménez Cacho. Entrada libre, cupo limitado." }),
   evento({ id: E.leonora, slug: "leonora-in-the-morning-light", titulo: "Leonora in the morning light", dias: 9, hora: "17:00", lugar_id: L.ccub, creadoHace: 2, descripcion: "Película de Thor Klein y Lena Vurma. Con presencia de las productoras. Clasificación B15." }),
   evento({ id: E.oca, slug: "oca", titulo: "OCA", dias: 10, hora: "19:00", lugar_id: L.mascara, creadoHace: 5 }),
-  evento({ id: E.desierto, slug: "desierto-observacion-y-espacio", titulo: "DESIERTO: Observación y Espacio", dias: 11, hora: "20:00", lugar_id: L.aether, creadoHace: 1, descripcion: "Inauguración de la exposición de escultura, en presencia del artista." }),
+  evento({ id: E.desierto, colores: ["#0f1315", "#38505b", "#3b565c", "#424542"], slug: "desierto-observacion-y-espacio", titulo: "DESIERTO: Observación y Espacio", dias: 11, hora: "20:00", lugar_id: L.aether, creadoHace: 1, descripcion: "Inauguración de la exposición de escultura, en presencia del artista." }),
   // OL-319 (editar por pasos): de Ana y ocultos. Uno de un día con cartel; otro de tres días (del viernes al domingo) con horario por día.
   evento({ id: E.taller, slug: "taller-de-grabado-en-el-barrio", titulo: "Taller de grabado en el barrio", dias: 2, hora: "17:00", lugar_id: L.miguelito, precio: "$80", creadoHace: 3, descripcion: "Grabado en linóleo para principiantes. Trae ropa que se pueda manchar.", imagen: imagenes.eventos["oca"] ?? null, autor: ANA, visible: false }),
   evento({ id: E.linternas, slug: "festival-de-las-linternas", titulo: "Festival de las Linternas", dias: 2, hora: "20:00", dur: 49, sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 3, imagen: null, autor: ANA, visible: false }),

@@ -73,9 +73,16 @@ describe("selloDeTarjeta: un solo rótulo por foto (H-02)", () => {
 
 describe("tarjetas", () => {
   it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde en dos datos", () => {
-    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00", sitio: "Teatro de la Paz", van: 14, cuando: true, hoy: false, inicio: MANANA_19, fin: null, zona: ZONA });
+    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", corto: "Gala de arias", colores: null, detalle: "mañana · 19:00", sitio: "Teatro de la Paz", van: 14, cuando: true, hoy: false, inicio: MANANA_19, fin: null, zona: ZONA });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: null, detalle: "mañana · 19:00", sitio: "Plaza de Armas" });
+  });
+  it("evento: título corto y colores de su propio cartel (OL-360)", () => {
+    const colores = ["#2d2d2d", "#6d829b", "#3c2f23", "#bdbcba"];
+    expect(tarjetaEvento(evento({ titulo: "CINEMA: El atractivo de la resistencia", imagen: "/c.jpg", colores_cartel: colores }), AHORA, "CINEMA")).toMatchObject({ corto: "El atractivo de la resistencia", titulo: "CINEMA: El atractivo de la resistencia", colores });
+    // Con la portada del lugar (no es su cartel) o con colores mal formados, sin colores: la tarjeta usa su paleta propia.
+    expect(tarjetaEvento(evento({ colores_cartel: colores, lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).colores).toBeNull();
+    expect(tarjetaEvento(evento({ imagen: "/c.jpg", colores_cartel: ["#fff"] }), AHORA).colores).toBeNull();
   });
   it("evento: el sitio va sin su dirección postal, como en las listas (H-09)", () => {
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Templo de San Francisco", sitio_direccion: "Calle Jardín Guerrero 7, 78000" }), AHORA).sitio).toBe("Templo de San Francisco");

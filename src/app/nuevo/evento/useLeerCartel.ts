@@ -6,10 +6,11 @@ import { detalleDeLecturas, falloAlSubir, falloDeCorte, lecturaAgotada, seLee } 
 import { medirCliente } from "@/lib/medir";
 import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
 import { subirFoto } from "@/lib/subirFoto";
+import { coloresDeArchivo, type Paleta } from "@/lib/coloresCartel";
 import type { Leido } from "./cartelPorPasos";
 
 /** El cartel que ya se subió. `leido`: de él salieron datos. `noPude`: se intentó leer y falló (la imagen se queda de todos modos, como en el alta de siempre). */
-export type CartelSubido = { url: string; leido: boolean; noPude: boolean };
+export type CartelSubido = { url: string; leido: boolean; noPude: boolean; /** Sus colores (OL-360), calculados aquí al subirlo; sin ellos, null. */ colores?: Paleta | null };
 
 type Opciones = {
   usuarioId: string;
@@ -60,6 +61,9 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
         setLeyendo(leer);
         setError(null);
         let url: string | null = null;
+        // Los colores del cartel (OL-360) se leen del archivo mientras sube: se guardan con el evento y la tarjeta de Inicio no pide la imagen.
+        const leyendoColores = coloresDeArchivo(archivo);
+        let colores: Paleta | null = null;
         try {
           const hecho = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen", "cartel");
           if ("error" in hecho) {
@@ -69,15 +73,16 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
           }
           url = hecho.url;
           imagen.current = url;
+          colores = await leyendoColores;
           if (!leer) {
-            setSubido({ url, leido: false, noPude: false });
+            setSubido({ url, leido: false, noPude: false, colores });
             gestos.current.alGuardar();
             return url;
           }
           const r = await leerCartelAccion(url);
           if (r.ok) {
             medirCliente("cartel_leido", { resultado: "ok" });
-            setSubido({ url, leido: true, noPude: false });
+            setSubido({ url, leido: true, noPude: false, colores });
             setCupoActual((c) => (c && !c.sinTope ? { ...c, usadas: c.usadas + 1 } : c));
             gestos.current.alLeer(r);
             return url;
@@ -86,14 +91,14 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
           const sinCupo = "sinCupo" in r;
           if (!sinCupo) medirCliente("cartel_leido", { resultado: "fallo" });
           if (sinCupo) setCupoActual((c) => (c ? { ...c, usadas: Math.max(c.usadas, c.tope) } : c));
-          setSubido({ url, leido: false, noPude: !sinCupo });
+          setSubido({ url, leido: false, noPude: !sinCupo, colores });
           gestos.current.alGuardar();
           return url;
         } catch {
           // Se cortó a mitad. Si el cartel ya estaba subido se queda y se sigue; si no, no llegó a guardarse.
           if (url) {
             if (leer) medirCliente("cartel_leido", { resultado: "fallo" }); // se cortó leyendo
-            setSubido({ url, leido: false, noPude: true });
+            setSubido({ url, leido: false, noPude: true, colores });
             gestos.current.alGuardar();
           } else {
             const f = falloDeCorte(null, imagen.current);

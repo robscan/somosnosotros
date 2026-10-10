@@ -96,3 +96,65 @@ export function coloresDeImagen(img: HTMLImageElement): Paleta | null {
 /** El degradado quieto de una paleta (el círculo de un evento sin cartel): tres luces sobre el fondo. */
 export const degradadoCSS = (c: Paleta): string =>
   `radial-gradient(110% 70% at 15% 12%, ${c[1]} 0%, ${conAlfa(c[1], 0)} 62%), radial-gradient(90% 70% at 92% 40%, ${c[2]} 0%, ${conAlfa(c[2], 0)} 66%), radial-gradient(120% 80% at 40% 105%, ${c[3]} 0%, ${conAlfa(c[3], 0)} 64%), ${c[0]}`;
+
+/** Si un valor (de la base o de un formulario) es una paleta: cuatro colores `#rrggbb`. Lo demás, null. */
+export function comoPaleta(valor: unknown): Paleta | null {
+  if (typeof valor === "string") {
+    try {
+      return comoPaleta(JSON.parse(valor));
+    } catch {
+      return null;
+    }
+  }
+  return Array.isArray(valor) && valor.length === 4 && valor.every((c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c)) ? (valor.map((c: string) => c.toLowerCase()) as unknown as Paleta) : null;
+}
+
+/** Luminancia relativa (WCAG) de un `#rrggbb`. */
+export function luminancia(color: string): number {
+  const n = parseInt(color.slice(1), 16);
+  const lin = (v: number) => {
+    v /= 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+}
+
+/**
+ * Un color oscurecido lo justo para que un texto blanco se lea encima (OL-360, bitácora 388, «Fondo legible»): luminancia ≤ 0,12, contraste
+ * de 6:1 o más. Un color ya oscuro se queda como está. Como el prototipo, escala con (0,12/L)^(1/2,2); si el redondeo lo deja un pelo arriba,
+ * se baja un poco más hasta que cumpla.
+ */
+export function legible(color: string): string {
+  const n = parseInt(color.slice(1), 16);
+  const rgb: Rgb = [n >> 16, (n >> 8) & 255, n & 255];
+  let f = 1;
+  for (let L = luminancia(color); L > 0.12; L = luminancia(hex(rgb.map((v) => v * f) as Rgb))) f *= L > 0.13 ? (0.12 / L) ** (1 / 2.2) : 0.98;
+  return hex(rgb.map((v) => v * f) as Rgb);
+}
+
+/**
+ * El fondo de la franja de título de una tarjeta (OL-360, el de `degradadoTarjeta` del prototipo): el color más vivo del cartel (`c[1]`) hecho
+ * legible, con dos luces abajo y a la derecha para que la esquina del título quede oscura.
+ */
+export const degradadoTarjeta = (c: Paleta): string =>
+  `radial-gradient(90% 60% at 100% 35%, ${conAlfa(c[2], 0.9)} 0%, ${conAlfa(c[2], 0)} 70%), radial-gradient(110% 70% at 0% 110%, ${conAlfa(c[3], 0.85)} 0%, ${conAlfa(c[3], 0)} 68%), ${legible(c[1])}`;
+
+/**
+ * Los colores de un archivo de imagen recién elegido (el cartel al subirlo, OL-360), en el navegador: se dibuja reducido a 16×20 y pasa por
+ * `paletaDePixeles`. Nunca lanza: si el teléfono no puede leerla, null (la tarjeta usa su paleta propia hasta que el relleno la calcule).
+ */
+export async function coloresDeArchivo(archivo: Blob): Promise<Paleta | null> {
+  try {
+    const mapa = await createImageBitmap(archivo);
+    const lienzo = document.createElement("canvas");
+    lienzo.width = 16;
+    lienzo.height = 20;
+    const ctx = lienzo.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(mapa, 0, 0, 16, 20);
+    mapa.close();
+    return paletaDePixeles(ctx.getImageData(0, 0, 16, 20).data);
+  } catch {
+    return null;
+  }
+}
