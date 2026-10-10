@@ -139,6 +139,13 @@ export const IconoEstrella = (p: P) => (
     <path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z" />
   </svg>
 );
+/** «Me interesa»: el listón de «guardar para después» (founder, 2026-10-09: «el icono de me interesa es el mismo de artistas, hay que cambiarlo»).
+ *  Vacío sin marcar; relleno al marcar (`fill="currentColor"`). La estrella se queda para Artistas e Inauguración. */
+export const IconoMarcador = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z" />
+  </svg>
+);
 export const IconoCaret = (p: P) => (
   <svg {...base({ strokeWidth: 2, ...p })}>
     <path d="M6 9l6 6 6-6" />

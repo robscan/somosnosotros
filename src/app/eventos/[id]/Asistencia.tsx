@@ -4,7 +4,7 @@ import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
-import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
+import { IconoMarcador, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
@@ -34,8 +34,8 @@ type Props = {
 
 /**
  * Las dos pastillas flotantes de la ficha (docs/rediseno/50, P6): «Me interesa» y «Voy». Cada una es un conmutador: tocarla
- * decide y volver a tocarla lo quita. Decidido, «Voy» pasa a «Vas» (verde, con su palomita) y «Me interesa» a «Te interesa» (con la
- * estrella llena); sin nota dentro de la pastilla. Sin sesión, las pastillas llevan a entrar y la decisión se aplica al volver. La
+ * decide y volver a tocarla lo quita. Decidido, «Voy» pasa a «Vas» (verde, con su palomita) y «Me interesa» a «Te interesa» (con el
+ * marcador lleno); sin nota dentro de la pastilla. Sin sesión, las pastillas llevan a entrar y la decisión se aplica al volver. La
  * hoja de avisos sale tras el toque de «Voy» (o al volver de entrar tras tocarlo), nunca sola al abrir la ficha (decisión 6 de
  * docs/rediseno/17). Si no se pudo guardar (o no hay red), la pastilla vuelve a como estaba y un aviso ofrece Reintentar, como en las
  * listas (bitácora 085). Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar solo
@@ -99,7 +99,7 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
         {conSesion ? (
           <>
             <Boton type="button" variante="secundario" ancho="contenido" flotante aria-pressed={interesa} onClick={() => cambiar(interesa ? null : "me_interesa")}>
-              <IconoEstrella width={20} height={20} fill={interesa ? "currentColor" : "none"} />
+              <IconoMarcador width={20} height={20} fill={interesa ? "currentColor" : "none"} />
               {interesa ? "Te interesa" : "Me interesa"}
             </Boton>
             {!soloInteres && (
@@ -112,7 +112,7 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
         ) : (
           <>
             <Boton href={entrar("me_interesa")} variante="secundario" ancho="contenido" flotante>
-              <IconoEstrella width={20} height={20} />
+              <IconoMarcador width={20} height={20} />
               Me interesa
             </Boton>
             {!soloInteres && (
