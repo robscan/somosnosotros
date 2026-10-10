@@ -235,3 +235,11 @@ Comprobado en Chrome a 390×844, sin errores. En «Tus planes», Kopk Poj lleva 
 
 - `25-chip-te-interesa.png` — «Calma», «Tus planes»: «Te interesa» en violeta claro sobre la foto de la Cineteca y «1 va» sobre el cartel de Kopk Poj; el sello de fecha arriba a la derecha.
 - `26-chip-cuantos-van.png` — «Calma», «Destacados»: «2 van» sobre el cartel de Chatbot Challenge; Cinema sin chip.
+
+## El mes del sello, en color (comentario del founder)
+
+Sobre el mes del sello de Fotomúsica en «Nuevos eventos» (2026-10-10): «resaltar con color». El mes (o el día de la semana con E8b) pasa a `--primario`, el violeta de la app, en peso 700, como el mes de una hoja de calendario. Es el mismo violeta del cuándo, así que también vale con E4. El número sigue en negro.
+
+Comprobado en Chrome a 390×844, sin errores: el mes pinta `rgb(109, 52, 200)` sobre el fondo de vidrio del sello.
+
+- `27-mes-del-sello-en-violeta.png` — «Calma», «Nuevos eventos»: «oct» en violeta sobre el 16 de Un León Marinero y el 17 de Fotomúsica.

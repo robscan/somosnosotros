@@ -219,7 +219,9 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .fecha { display: grid; justify-items: center; gap: 2px; min-width: 40px; padding: var(--espacio-1) var(--espacio-2); border-radius: var(--radio); background: var(--vidrio); box-shadow: var(--sombra); line-height: 1; text-align: center; }
 .nuevo { padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-2xs); font-weight: 700; line-height: 1.4; white-space: nowrap; }
 .e4 .nuevo { background: var(--vidrio); color: var(--texto); }
-.fecha small { font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+/* El mes (o el día de la semana con E8b) resaltado con el color de la app (founder, 10 de oct: «resaltar con color»), como el mes de un
+   calendario; es el mismo violeta del cuándo, así que también vale con E4. */
+.fecha small { font-size: var(--letra-2xs); font-weight: 700; color: var(--primario); text-transform: lowercase; }
 .fecha b { display: inline-flex; align-items: center; gap: 1px; font-size: var(--letra-2xl); font-weight: 600; font-variation-settings: var(--ancho-titulo); color: var(--texto); }
 .fecha .flecha { width: 11px; height: 11px; fill: none; stroke: var(--texto-suave); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* E2: el estado, chico (≤ 28 px), sin acción. */
