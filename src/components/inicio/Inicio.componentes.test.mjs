@@ -1,4 +1,4 @@
-/** OL-274: visibilidad efectiva de carriles reales, marca local de Nuevos y vacío de Inicio. OL-322: «Para visitar» después de «Esta semana»; OL-342: ahora «Festivales y expos», con el rótulo de cada clase; OL-347: con la tarjeta grande de «Destacados» (los tamaños, como en `CarrilAgenda`); OL-370: la tarjeta firmada, con la clase en su ceja y sin «Voy». */
+/** OL-274: visibilidad efectiva de carriles reales, marca local de Nuevos y vacío de Inicio. OL-322: «Para visitar» después de «Esta semana»; OL-342: ahora «Festivales y expos», con el rótulo de cada clase; OL-347: con la tarjeta grande de «Destacados» (los tamaños, como en `CarrilAgenda`); OL-370: la tarjeta firmada, con la clase en su ceja y sin «Voy»; OL-372: «Artistas destacadxs» con la tarjeta de un evento y sin seguir. */
 import {before,after,test} from 'node:test';import assert from 'node:assert/strict';
 import {createServer} from 'node:http';import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {join} from 'node:path';import {fileURLToPath,pathToFileURL} from 'node:url';import {build} from 'esbuild';
@@ -10,13 +10,11 @@ before(async()=>{
  'next/link':"import React from 'react';export const useLinkStatus=()=>({pending:false});export default function Link({replace,...p}){return React.createElement('a',p)}",
  'next/navigation':"export const useRouter=()=>({push(){},replace(){}});export const usePathname=()=>'/';export const useSearchParams=()=>new URLSearchParams(location.search)",
  '@/components/useAsistenciaEnLista':"export const useAsistenciaEnLista=(asistencias)=>({estado:id=>asistencias?.[id]??null,boton:t=>({objeto:'evento',decidido:asistencias?.[t.id]==='voy',nombreAccesible:'Voy — '+t.titulo,alTocar(){}}),extras:null})",
- '@/components/useSeguirEnLista':"export const useSeguirEnLista=()=>({boton:()=>({objeto:'artista',decidido:false,nombreAccesible:'Seguir',alTocar(){}}),extras:null})",
  './useCanalDeListas':"import React from 'react';export default function Pantalla(p){return React.createElement(React.Fragment,null,p.children)};export const useCanalDeListas=()=>({});export const useCanalDePantalla=()=>({});export const AvisoAbajo=()=>null",
  '@/components/useCanalDeListas':"import React from 'react';export default function Pantalla(p){return React.createElement(React.Fragment,null,p.children)};export const useCanalDeListas=()=>({});export const useCanalDePantalla=()=>({});export const AvisoAbajo=()=>null",
  './FilaEventos':"export default function Fila(){return null}",
  };
  mocks['./useAsistenciaEnLista']=mocks['@/components/useAsistenciaEnLista'];
- mocks['./useSeguirEnLista']=mocks['@/components/useSeguirEnLista'];
  await build({absWorkingDir:root,bundle:true,outfile:join(dir,'app.js'),jsx:'automatic',stdin:{resolveDir:root,loader:'tsx',contents:`
  import React,{use} from 'react';import{createRoot}from'react-dom/client';
  import Inicio from './src/components/Inicio';import Eventos from './src/components/inicio/CarrilEventosCliente';
@@ -29,7 +27,7 @@ before(async()=>{
  const una=[tarjeta('a')],tres=[...una,tarjeta('b'),tarjeta('c')];
  const expos=[{...tarjeta('ecos'),titulo:'Ecos de papel',detalle:'Hasta el sáb 31 de oct',sitio:'MUNI',sinVoy:true,clase:'Exposición'},{...tarjeta('electric'),titulo:'Electric Universe',detalle:'sáb 31 de oct',sitio:'Programa registrado: 3 actividades',sinVoy:true,clase:'Festival'},{...tarjeta('foto'),titulo:'Fotovisión',detalle:'Hasta el sáb 20 de dic · Horario por confirmar',sitio:'Centro de las Artes',sinVoy:true,clase:'Exposición'}];const comun={asistencias:null,avisos:null,tamano:'mediana',verTodos:{href:'/agenda?ciudad=puebla',etiqueta:'Ver la agenda'}};
  function Probe(){const s=useEstadoCarriles();return <span data-probe data-eventos-listos={s.eventosResueltos} data-vacio={s.vacio}/>}
- function Ultimo(){if(modo==='cargando'||modo==='error')use(pendiente);return <><Entidad tarjetas={modo==='entidades'?una:[]} que='artista' seguidos={null} avisos={null} titulo='Artistas destacadxs' memoria='inicio-artistas-destacados' verTodosHref='/artistas?ciudad=puebla'/></>}
+ function Ultimo(){if(modo==='cargando'||modo==='error')use(pendiente);return <><Entidad tarjetas={modo==='entidades'?una:[]} que='artista' titulo='Artistas destacadxs' memoria='inicio-artistas-destacados' verTodosHref='/artistas?ciudad=puebla' forma='artista'/></>}
  const evento=(memoria,titulo,tarjetas,tamano='mediana')=> <Eventos {...comun} tamano={tamano} memoria={memoria} titulo={titulo} tarjetas={tarjetas}/>;
  createRoot(document.getElementById('root')).render(<LimiteError><Inicio ciudad={ciudad} ciudades={[ciudad]} hoy='2026-10-07' zona={ciudad.zona} agenda={Promise.resolve({})} conSesion={modo==='planes'}
  slotTusPlanes={<Eventos {...comun} memoria='inicio-tus-planes' titulo='Tus planes' tarjetas={una} asistencias={{a:'voy'}} tusPlanes/>}
@@ -38,9 +36,9 @@ before(async()=>{
  slotFestivales={evento('inicio-festivales','Festivales y expos',modo==='visitar'||modo==='solo-visitar'?expos:[],'grande')}
  slotNuevos={<Nuevos {...comun} ciudad='puebla' memoria='inicio-nuevos' titulo='Nuevos eventos' tarjetas={modo==='nuevos'?tres:[]}/>}
  slotMasAdelante={<Mas tarjetas={modo==='uno'?una:modo==='nuevos'?tres:[]} asistencias={null} avisos={null} verTodosHref='/agenda?ciudad=puebla'/>}
- slotLugaresSemana={<Entidad tarjetas={[]} que='lugar' seguidos={null} avisos={null} titulo='Lugares' memoria='inicio-lugares-semana' verTodosHref='/lugares'/>}
+ slotLugaresSemana={<Entidad tarjetas={[]} que='lugar' titulo='Lugares' memoria='inicio-lugares-semana' verTodosHref='/lugares' forma='avatar'/>}
  slotArtistasDestacados={<Ultimo/>}
- slotArtistasSemana={<Entidad tarjetas={[]} que='artista' seguidos={null} avisos={null} titulo='Artistas' memoria='inicio-artistas-semana' verTodosHref='/artistas'/>}/></LimiteError>);
+ slotArtistasSemana={<Entidad tarjetas={[]} que='artista' titulo='Artistas' memoria='inicio-artistas-semana' verTodosHref='/artistas' forma='avatar'/>}/></LimiteError>);
  `},plugins:[{name:'dobles',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:mocks[a.path],loader:'js',resolveDir:root}));}}],loader:{'.png':'dataurl'}});
  server=createServer(async(req,res)=>{if(req.url.startsWith('/app.')){const ext=req.url.startsWith('/app.css')?'css':'js';res.setHeader('content-type',ext==='css'?'text/css; charset=utf-8':'text/javascript; charset=utf-8');res.end(await readFile(join(dir,'app.'+ext)));}else{res.setHeader('content-type','text/html; charset=utf-8');res.end('<link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script>');}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;
@@ -51,7 +49,9 @@ async function pagina(t,modo,marca=false){const c=await browser.newContext({view
 test('un futuro solo se muestra con Más adelante y enlaza Todos de su ciudad',async t=>{const p=await pagina(t,'uno');await p.getByRole('heading',{name:'Más adelante',exact:true}).waitFor();assert.equal(await p.getByRole('link',{name:'Ver la agenda: Más adelante'}).getAttribute('href'),'/agenda?ciudad=puebla');assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);});
 test('Esta semana y Nuevos visibles suprimen Más adelante',async t=>{for(const modo of ['semana','nuevos']){const p=await pagina(t,modo);await p.getByRole('heading',{name:modo==='semana'?'Esta semana':'Nuevos eventos',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Más adelante',exact:true}).count(),0);assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);}});
 test('la marca local vacía Nuevos y activa Más adelante con los mismos tres eventos',async t=>{const p=await pagina(t,'nuevos',true);await p.getByRole('heading',{name:'Más adelante',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Nuevos eventos',exact:true}).count(),0);assert.equal(await p.getByRole('link',{name:/Evento [abc]/}).count(),3);});
-test('un artista o Tus planes evitan declarar vacío el Inicio',async t=>{for(const modo of ['entidades','planes']){const p=await pagina(t,modo);await p.getByRole('heading',{name:modo==='planes'?'Tus planes':'Artistas destacadxs',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);}});
+test('un artista o Tus planes evitan declarar vacío el Inicio',async t=>{for(const modo of ['entidades','planes']){const p=await pagina(t,modo);await p.getByRole('heading',{name:modo==='planes'?'Tus planes':'Artistas destacadxs',exact:true}).waitFor();assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);}
+ // OL-372: «Artistas destacadxs» con la tarjeta de un evento (E9), sin botón de seguir: solo el enlace a la ficha.
+ const p=await pagina(t,'entidades');const carril=p.locator('section',{has:p.getByRole('heading',{name:'Artistas destacadxs',exact:true})});await carril.waitFor();assert.equal(await carril.getByRole('button').count(),0);assert.equal(await carril.locator('li > :not(a)').count(),0);assert.equal(await carril.getByRole('link',{name:'Ver artistas: Artistas destacadxs'}).getAttribute('href'),'/artistas?ciudad=puebla');});
 test('el vacío exacto de Agenda llega solo al resolver todos los carriles',async t=>{const p=await pagina(t,'cargando');await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);await p.evaluate(()=>window.liberar(null));await p.getByRole('heading',{name:'Próximos días',exact:true}).waitFor();assert.equal(await p.getByText('Aún no hay eventos próximos en Puebla. Si sabes de uno, publícalo.',{exact:true}).count(),1);});
 
 test('un fallo de un stream conserva la causa y nunca se convierte en vacío',async t=>{const p=await pagina(t,'error');await p.locator('[data-eventos-listos=true]').waitFor({state:'attached'});assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);await p.evaluate(()=>window.fallar());await p.getByRole('alert').waitFor();assert.equal(await p.getByRole('heading',{name:'Próximos días'}).count(),0);});

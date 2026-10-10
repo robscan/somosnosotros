@@ -56,5 +56,5 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
   }, [tusPlanes, cuenta, tarjetas]);
   const visibles = tusPlanes ? tarjetasTusPlanes(cuenta, tarjetas, new Date()).filter((t) => asistencia.estado(t.id) !== null) : tarjetas;
   useCarrilResuelto(memoria, resuelto ? visibles.length : null);
-  return <Destacados tarjetas={visibles} cartel tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} estadoDe={asistencia.estado} />;
+  return <Destacados tarjetas={visibles} forma={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} estadoDe={asistencia.estado} />;
 }

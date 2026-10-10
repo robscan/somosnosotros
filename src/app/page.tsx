@@ -13,10 +13,11 @@ import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
 import { CIUDAD_INICIAL, ciudadPorSlug, hrefConCiudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
-import { tarjetaArtista } from "@/lib/destacados";
 import { diaLocal } from "@/lib/fechas";
-import { seleccionarArtistasSemana } from "@/lib/eventosSemana";
+import { conNovedades, seleccionarArtistasSemana } from "@/lib/eventosSemana";
+import { leerNovedadesRecientes } from "@/lib/novedadesArtista";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { tarjetaArtistaDeInicio } from "@/lib/tarjetaInicio";
 import plantilla from "@/components/ui/Plantilla.module.css";
 
 type SearchParams = { ciudad?: string };
@@ -59,17 +60,17 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   // Sin await: cada promesa viaja tal cual a su carril, que la espera dentro de su propio <Suspense>.
   const agendaPromise = cargarAgenda(ciudad, usuarioId, supabase);
   const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
-  const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
-  // «Artistas de la semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí.
+  // «Artistas destacadxs» con la tarjeta de un evento (OL-372, E9): con su disciplina y su género.
+  const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtistaDeInicio(a, ahora)));
+  // «Artistas de la semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí. Con la novedad vigente de cada uno (OL-372, E5:
+  // «Nuevo video» o «Nuevo audio» bajo el avatar), en una sola lectura para el lote; si falla, el carril sale igual, sin novedades.
   const semanaArtistasPromise = Promise.all([cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora), artistasDestacadosPromise])
-    .then(([semana, destacados]) => seleccionarArtistasSemana(semana, destacados, TOPE_ARTISTAS_DESTACADOS));
-  // Reutiliza la lectura validada de Agenda: un fallo no se convierte en "no sigues a nadie".
-  const seguidosArtistasPromise = agendaPromise.then((a) => a.artistasSeguidos);
+    .then(([semana, destacados]) => seleccionarArtistasSemana(semana, destacados, TOPE_ARTISTAS_DESTACADOS))
+    .then(async (semana) => conNovedades(semana, await leerNovedadesRecientes(supabase, ciudad.nombre, semana.map((t) => t.id)), ahora));
   // «Tus planes» (OL-219): Voy + Me interesa, la misma consulta que ya usa Mi perfil (`cargarPersona`), sin filtro
   // de ciudad (un compromiso ya hecho no deja de ser tuyo por cambiar de ciudad en Inicio). Los demás carriles
   // le restan sus eventos al cargar con `agenda.asistencias` (`calcularCarrilesAgenda`), no con esta consulta.
   const personaPromise: Promise<Persona | null> = usuarioId ? cargarPersona(usuarioId) : Promise.resolve(null);
-  const seguidosLugaresPromise = agendaPromise.then((a) => a.seguidos);
 
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
 
@@ -99,9 +100,11 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotFestivales={<CarrilAgenda parte="festivales" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl)} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
         slotMasAdelante={<CarrilMasAdelante agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefConCiudad("/agenda", ciudad.slug)} />}
-        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares de la semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
-        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas de la semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
-        slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
+        // OL-372 (prototipo firmado, E5 y E9): lugares y artistas de la semana en avatares de 64, «Artistas destacadxs» con la tarjeta de un evento;
+        // ninguno lleva botón (seguir queda en la ficha).
+        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" titulo="Lugares de la semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} forma="avatar" />}
+        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" titulo="Artistas de la semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} forma="avatar" />}
+        slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} forma="artista" />}
       />
     </main>
   );

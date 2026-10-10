@@ -28,7 +28,7 @@ before(async () => {
     const novedades = [1,2,3,4,5].map(i=>({id:'n'+i,titulo:'Publicación '+i,texto:null,creado_en,proveedor:'youtube',visible:i!==4,incrustado:incrustadoDeNovedad({proveedor:'youtube',url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',embed_id:null})}));
     function App(){const [seguido,setSeguido]=useState(false);const [destino,setDestino]=useState(undefined);const [cargando,setCargando]=useState(false);const [fechas,setFechas]=useState(false);
       return <main style={{padding:20,paddingBottom:844}}>
-        <Destacados tarjetas={[tarjetaArtista(artista),tarjetaArtista({...audio,foto:'/foto.svg'})]} encabezado="Artistas"/>
+        <Destacados tarjetas={[tarjetaArtista(artista),tarjetaArtista({...audio,foto:'/foto.svg'})]} forma="artista" encabezado="Artistas"/>
         <ul><RenglonArtista artista={audio} boton={{objeto:'artista',decidido:seguido,nombreAccesible:seguido?'Sigues':'Seguir',alTocar:()=>setSeguido(!seguido)}}/></ul>
         <button onClick={()=>{setCargando(true);setDestino('n5');setTimeout(()=>{setCargando(false);setFechas(true)},200)}}>Abrir quinta</button>
         <button onClick={()=>setDestino('n4')}>Apuntar a oculta</button>

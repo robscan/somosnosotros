@@ -5,8 +5,9 @@ import { useLayoutEffect, useRef } from "react";
 import { degradadoTarjeta, paletaPropia } from "@/lib/coloresCartel";
 import type { Tarjeta, TarjetaConFecha } from "@/lib/destacados";
 import type { Asistencia } from "@/lib/deslizar";
+import { SIN_FOTO } from "@/lib/imagen";
 import { tamanoImagenCarril } from "@/lib/imagenOptima";
-import { cejaDeTarjeta, chipDeTarjeta, cortarEnPalabra, nombreDeTarjeta, selloFechaDe, type SelloFecha } from "@/lib/tarjetaInicio";
+import { cejaDeTarjeta, chipDeTarjeta, cortarEnPalabra, nombreDeTarjeta, piezasDeArtista, selloFechaDe, type SelloFecha } from "@/lib/tarjetaInicio";
 import { comoOracion, tituloCorto } from "@/lib/tituloCorto";
 import { Chip } from "../ui/Chip";
 import Imagen from "../ui/Imagen";
@@ -34,18 +35,64 @@ type Props = {
  *   ceja y el título corto; debajo, el lugar y cuándo.
  */
 export default function TarjetaEvento({ t, tamano, decision }: Props) {
-  const sello = selloFechaDe(t);
-  const ceja = cejaDeTarjeta(t);
   const chip = chipDeTarjeta(t, decision);
   const corto = t.corto ?? tituloCorto(t.titulo);
-  const oracion = comoOracion(corto);
-  const titulo = useTituloEnPalabra(oracion);
+  return (
+    <TarjetaCartel
+      href={t.href}
+      etiqueta={nombreDeTarjeta(t, decision)}
+      tamano={tamano}
+      portada={t.foto ? { foto: t.foto } : { fondo: degradadoTarjeta(paletaPropia(t.id)), corto }}
+      sello={selloFechaDe(t)}
+      chip={chip && { texto: chip.texto, variante: chip.tuyo ? "estado" : "sello" }}
+      ceja={cejaDeTarjeta(t)}
+      titulo={comoOracion(corto)}
+      lugar={t.sitio}
+      cuando={t.detalle}
+    />
+  );
+}
+
+/**
+ * E9 (OL-372; founder, 2026-10-10: «para este carril usar jerarquía de nuevos eventos»): un artista de «Artistas destacadxs» con la tarjeta mediana
+ * de un evento. Su foto entera como el cartel, sin franja (sin foto, la imagen ya generada con el símbolo SN); encima, abajo a la izquierda, «Nuevo
+ * video» o «Nuevo audio» si hay una novedad vigente, con el trato de «Hoy» de siempre. Debajo, la disciplina en la ceja, el nombre tal como está
+ * escrito, el género en gris y, si tiene fecha, la fecha en violeta (`piezasDeArtista`). Sin sello de fecha ni botón de seguir: se sigue desde la
+ * ficha.
+ */
+export function TarjetaArtista({ t }: { t: Tarjeta }) {
+  const a = piezasDeArtista(t);
+  return <TarjetaCartel href={t.href} etiqueta={a.nombre} tamano="mediana" portada={{ foto: t.foto ?? SIN_FOTO }} sello={null} chip={a.nuevo ? { texto: a.nuevo, variante: "sello", nuevo: true } : null} ceja={a.ceja} titulo={a.titulo} lugar={a.genero} cuando={a.cuando} />;
+}
+
+type PiezasCartel = {
+  href: string;
+  /** El nombre del enlace: lo que se ve, también para quien no lo ve. */
+  etiqueta: string;
+  tamano: "grande" | "mediana";
+  /** El cartel (o la foto del artista); sin él, la portada de título de un evento (E10) con su fondo y su título corto. */
+  portada: { foto: string } | { fondo: string; corto: string };
+  sello: SelloFecha | null;
+  /** El único chip sobre la portada: «Te interesa» (`estado`), cuántos van (`sello`) o la novedad de un artista (`sello` con el trato de «Hoy»). */
+  chip: { texto: string; variante: "estado" | "sello"; nuevo?: boolean } | null;
+  ceja: string[];
+  /** El título debajo del cartel, ya como se dice; se corta en palabra entera si no cabe en dos líneas. */
+  titulo: string;
+  /** La línea gris: el lugar de un evento o el género de un artista. */
+  lugar?: string | null;
+  /** La línea violeta: cuándo. */
+  cuando: string | null;
+};
+
+/** La tarjeta firmada (una rejilla plana con áreas, `TarjetaEvento.module.css`), con lo que dice cada una ya resuelto. */
+function TarjetaCartel({ href, etiqueta, tamano, portada, sello, chip, ceja, titulo, lugar, cuando }: PiezasCartel) {
+  const ref = useTituloEnPalabra(titulo);
   const clase = tamano === "mediana" ? `${styles.tarjeta} ${styles.mediana}` : styles.tarjeta;
   const encima = (
     <>
       {sello && <Sello sello={sello} />}
       {chip && (
-        <Chip variante={chip.tuyo ? "estado" : "sello"} className={styles.chip}>
+        <Chip variante={chip.variante} className={chip.nuevo ? `${styles.chip} ${styles.nuevo}` : styles.chip}>
           {chip.texto}
         </Chip>
       )}
@@ -54,24 +101,24 @@ export default function TarjetaEvento({ t, tamano, decision }: Props) {
     </>
   );
   return (
-    <Link href={t.href} className={clase} aria-label={nombreDeTarjeta(t, decision)}>
-      {t.foto ? (
+    <Link href={href} className={clase} aria-label={etiqueta}>
+      {"foto" in portada ? (
         <>
-          <Imagen src={t.foto} alt="" className={styles.cartel} width={384} height={480} sizes={tamanoImagenCarril(tamano === "mediana" ? "cartelMediana" : "grande")} />
+          <Imagen src={portada.foto} alt="" className={styles.cartel} width={384} height={480} sizes={tamanoImagenCarril(tamano === "mediana" ? "cartelMediana" : "grande")} />
           {encima}
-          <b ref={titulo} className={styles.titulo}>
-            {oracion}
+          <b ref={ref} className={styles.titulo}>
+            {titulo}
           </b>
         </>
       ) : (
-        <span className={styles.portada} style={{ background: degradadoTarjeta(paletaPropia(t.id)) }}>
+        <span className={styles.portada} style={{ background: portada.fondo }}>
           <SimboloBlanco className={styles.simbolo} />
           {encima}
-          <span className={styles.tituloPortada}>{corto}</span>
+          <span className={styles.tituloPortada}>{portada.corto}</span>
         </span>
       )}
-      {t.sitio && <span className={styles.lugar}>{t.sitio}</span>}
-      <span className={styles.cuando}>{t.detalle}</span>
+      {lugar && <span className={styles.lugar}>{lugar}</span>}
+      {cuando !== null && <span className={styles.cuando}>{cuando}</span>}
     </Link>
   );
 }

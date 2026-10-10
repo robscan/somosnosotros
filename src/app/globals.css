@@ -166,18 +166,14 @@
   --interlinea-lista: 1.15;
 
   /* Tarjetas del carril y foto del renglón: las medidas de la pieza y de su esqueleto */
-  --tarjeta-mediana: 220px; /* ancho de la tarjeta mediana */
-  --tarjeta-mediana-foto: 132px; /* alto de su foto */
   --tarjeta-grande: 165px; /* ancho de la tarjeta de cartel vertical */
-  --tarjeta-grande-foto: 248px; /* alto de su foto */
-  --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
-  --tarjeta-sola-foto: 264px; /* tope del alto de la foto de una tarjeta sola, que ocupa el ancho del carril */
-  /* La tarjeta de evento de Inicio (OL-370, prototipo firmado inicio-tarjetas, E1 y E5): el cartel entero en 4:5, la proporción del post vertical
-     de Instagram. La grande, del ancho de la tarjeta grande (165×206; desde 1048, 190×237,5); la mediana, un escalón abajo, 4/5 de la grande
-     (132×165; desde 1048, 152×190). La foto grande de 248 se queda para «Artistas destacadxs». */
+  /* Las tarjetas de Inicio (prototipo firmado inicio-tarjetas, E1 y E5): el cartel entero en 4:5, la proporción del post vertical de Instagram. La
+     grande, del ancho de la tarjeta grande (165×206; desde 1048, 190×237,5); la mediana, un escalón abajo, 4/5 de la grande (132×165; desde 1048,
+     152×190): la de un evento (OL-370) y la de un artista en «Artistas destacadxs» (E9, OL-372). */
   --tarjeta-cartel-foto: calc(var(--tarjeta-grande) * 5 / 4);
   --tarjeta-cartel-mediana: calc(var(--tarjeta-grande) * 4 / 5);
   --tarjeta-cartel-mediana-foto: calc(var(--tarjeta-cartel-mediana) * 5 / 4);
+  --avatar-carril: 64px; /* el avatar redondo de «Lugares de la semana» y «Artistas de la semana» en Inicio (OL-372, E5 firmado) */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
   --marco-historia: 430px; /* ancho máximo del marco 9:16 de una historia en tableta y escritorio (OL-359) */
   --circulo-ahora: 72px; /* el círculo de la fila «Ahora» de Inicio, con su anillo (OL-359, prototipo firmado barra-ahora) */
@@ -214,7 +210,6 @@
 @media (min-width: 1048px) {
   :root {
     --tarjeta-grande: 190px;
-    --tarjeta-grande-foto: 285px;
   }
 }
 

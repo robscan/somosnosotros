@@ -1,7 +1,7 @@
-/** La tarjeta del carril (OL-176, bitácora 211; doc 50, P10): un solo rótulo sobre la foto («Te interesa» si la persona ya lo
- *  decidió, luego «Hoy», luego «N van»), la tarjeta sin foto compacta, los datos en dos líneas, cada tarjeta ajustada a su contenido
- *  (sin filas compartidas, OL-251) y las medidas de los tokens `--tarjeta-*`, con el «+» dentro de la caja de la tarjeta en las redondas.
- *  «Te interesa» sale solo si el llamador pasa `estadoDe` (los carriles de eventos); sin ese prop (lugares, artistas) no aparece.
+/** Los carriles de Inicio con las tarjetas que firmó el founder el 2026-10-10 (prototipo `docs/rediseno/prototipos/inicio-tarjetas.html`,
+ *  «Firmada»; bitácora 398): la de un evento (OL-370, grande y mediana), la de un artista en «Artistas destacadxs» (E9, OL-372) y el avatar de
+ *  64 de «Lugares de la semana» y «Artistas de la semana» (E5, OL-372), con sus esqueletos; ninguna lleva botón. Y el carril vacío, que no deja
+ *  hueco. Con `FUENTE=<archivo .woff2 de Bricolage>` se mide con la letra de la app (dónde se corta un título); la CI usa Arial.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`, como las demás `.componentes.test.mjs` del repo). */
 import { after, before, test } from "node:test";
@@ -37,42 +37,6 @@ before(async () => {
 
       // Una tarjeta de evento con cartel; los cambios pisan lo que haga falta (sin foto, hoy, un sitio largo…).
       function tarjeta(id, van, cambios) { return { id, href: '/eventos/' + id, foto: '/cartel.jpg', titulo: 'Evento ' + id, detalle: 'vie 10 de oct · 19:00', sitio: 'Teatro de la Paz', van, cuando: true, ...cambios }; }
-      function boton(id) { return { objeto: 'evento', decidido: false, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
-      function botonDecidido(id) { return { objeto: 'evento', decidido: true, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
-      // El glifo lo decide qué se hace: seguir un lugar o un artista (y, decidido, la palomita en los tres).
-      const botonDe = (objeto, decidido) => (id) => ({ objeto, decidido, nombreAccesible: 'Seguir — ' + id, alTocar() {} });
-
-      // Carril de eventos: las combinaciones de «Te interesa», «Hoy» y «N van» (el rótulo lo escoge selloDeTarjeta).
-      const conTodo = tarjeta('con-todo', 3, { hoy: true });
-      const soloInteresa = tarjeta('solo-interesa', 0);
-      const hoyYVan = tarjeta('hoy-y-van', 4, { hoy: true });
-      const soloVan = tarjeta('solo-van', 5);
-      const sinNada = tarjeta('sin-nada', 0);
-      const estadoEventos = (id) => (id === 'con-todo' || id === 'solo-interesa') ? 'me_interesa' : null;
-
-      // Un evento decidido (Voy): «Te interesa» no debe salir; el botón ya está «decidido» (aria-pressed).
-      const conVoy = tarjeta('con-voy', 2);
-      const estadoVoy = (id) => id === 'con-voy' ? 'voy' : null;
-
-      // Sin sesión: estadoDe no se pasa (como decididas === null en useAsistenciaEnLista).
-      const sinSesion = tarjeta('sin-sesion', 4);
-
-      // Un carril de lugares o artistas: tampoco se pasa estadoDe, y nunca trae «van» ni «hoy». Sus datos son una sola línea.
-      const lugar = tarjeta('un-lugar', 0, { sitio: undefined, detalle: 'Museo', cuando: false });
-      const artista = tarjeta('un-artista', 0, { sitio: undefined });
-      const lugarSeguido = tarjeta('lugar-seguido', 0, { sitio: undefined });
-      const artistaSeguido = tarjeta('artista-seguido', 0, { sitio: undefined });
-
-      // Alineación y datos: un título de una línea junto a uno de dos, y un sitio más largo que la tarjeta; una tarjeta sin foto.
-      const corta = tarjeta('titulo-corto', 0, { titulo: 'Corto' });
-      const larga = tarjeta('titulo-largo', 0, { titulo: 'Un título tan largo que necesita dos líneas para decirse entero', sitio: 'Un sitio con un nombre larguísimo que no cabe en la tarjeta' });
-      const sinFoto = tarjeta('sin-foto', 2, { titulo: 'Macario, Xantolo camino al Mictlán', foto: null, hoy: true });
-
-      const grandes = [tarjeta('grande-a', 1), tarjeta('grande-b', 0)];
-      const redondas = ['uno', 'dos', 'tres'].map((id) => tarjeta('lug-' + id, 0, { sitio: undefined, detalle: 'mié 30 sep · 19:00' }));
-      // Una redonda sin foto (lugar o artista): lleva el símbolo SN ya generado.
-      const redondaSinFoto = tarjeta('lug-sin-foto', 0, { sitio: undefined, foto: null, detalle: 'Hoy · 19:00' });
-      const sola = tarjeta('la-sola', 0);
       // OL-370: la tarjeta firmada de Inicio (prototipo inicio-tarjetas.html, «Firmada»). El sello y la línea de cuándo llegan hechos, como los arma
       // tarjetaDeInicio en el servidor; la última es una que «Tus planes» guardó en el teléfono antes de OL-370, sin sello ni título corto.
       const sello = (mes, dia, flecha = null) => ({ mes, dia, flecha, texto: dia + ' de ' + mes });
@@ -89,27 +53,38 @@ before(async () => {
       // Kopk Poj: «Voy» (no se dice: va su chip de cuántos van); el tributo y el recital: «Te interesa».
       const decisionFirmadas = (id) => (id === 'ev-kopk' ? 'voy' : id === 'ev-interesa' || id === 'ev-sin-cartel' ? 'me_interesa' : null);
 
+      // OL-372: «Artistas destacadxs» (E9) como los arma tarjetaArtistaDeInicio en el servidor: la novedad, de hace una hora (vigente); la fecha, ya dicha.
+      const reciente = new Date(Date.now() - 3600000).toISOString();
+      const video = { novedad_id: 'n-video', proveedor: 'youtube', creado_en: reciente };
+      const audio = { novedad_id: 'n-audio', proveedor: 'soundcloud', creado_en: reciente };
+      const artista = (id, cambios) => ({ id, href: '/artistas/' + id, foto: '/foto.jpg', titulo: 'Artista ' + id, detalle: 'Música · Solista', van: 0, disciplina: 'Música', ...cambios });
+      const destacadxs = [
+        artista('a-markos', { titulo: 'Markosblues', genero: 'jazz, blues y soul', novedad: video, href: '/artistas/a-markos?novedad=n-video' }),
+        artista('a-leon', { titulo: 'Un León Marinero', genero: 'folk y canción de autor', novedad: audio, detalle: 'jue 15 de oct · 19:00', cuando: true }),
+        artista('a-largo', { titulo: 'Orquesta Sinfónica de San Luis Potosí y su coro de cámara', genero: 'Música académica y clásica', detalle: 'hoy · 18:00', cuando: true }),
+        artista('a-sin-foto', { titulo: 'Abril Merlot', foto: null, genero: 'Música académica y clásica' }),
+        artista('a-por-completar', { titulo: 'Sin ficha completa', disciplina: undefined, detalle: 'Ficha por completar' }),
+      ];
+      // OL-372: los avatares (E5). Un lugar sin foto y uno de nombre largo; un artista con «Nuevo video» y otro con «Nuevo audio».
+      const lugar = (id, cambios) => ({ id, href: '/lugares/' + id, foto: '/foto.jpg', titulo: 'Lugar ' + id, detalle: 'En curso', van: 0, cuando: true, ...cambios });
+      const lugares = [lugar('l-paz', { titulo: 'Teatro de la Paz' }), lugar('l-largo', { titulo: 'Casa de Cultura del Barrio de San Miguelito', detalle: 'mañana · 19:30' }), lugar('l-sin-foto', { titulo: 'Aether', foto: null }), lugar('l-muni', { titulo: 'MUNI' }), lugar('l-ache', { titulo: 'ACHE Galería' }), lugar('l-mascara', { titulo: 'Museo Nacional de la Máscara' })];
+      const semana = [
+        artista('s-video', { titulo: 'Denisse Hervert', foto: null, novedad: video, href: '/artistas/s-video?novedad=n-video', detalle: 'Hoy · 16:00', cuando: true }),
+        artista('s-audio', { titulo: 'Abril Merlot', novedad: audio, detalle: 'mañana · 19:30', cuando: true }),
+        artista('s-nada', { titulo: '0Backside0', detalle: 'En curso', cuando: true }),
+      ];
+
       function App() {
         return React.createElement(React.Fragment, null,
-          React.createElement(Destacados, { tarjetas: [conTodo, soloInteresa, hoyYVan, soloVan, sinNada], encabezado: 'Carril de eventos', memoria: 'm1', boton, estadoDe: estadoEventos }),
-          React.createElement(Destacados, { tarjetas: [conVoy], encabezado: 'Carril con voy', memoria: 'm2', boton: botonDecidido, estadoDe: estadoVoy }),
-          React.createElement(Destacados, { tarjetas: [sinSesion, tarjeta('otra', 0)], encabezado: 'Carril sin sesion', memoria: 'm3' }),
-          React.createElement(Destacados, { tarjetas: [lugar, tarjeta('otro-lugar', 0)], encabezado: 'Carril de lugares', memoria: 'm4', boton: botonDe('lugar', false) }),
-          React.createElement(Destacados, { tarjetas: [artista, tarjeta('otro-artista', 0)], encabezado: 'Carril de artistas', memoria: 'm5', boton: botonDe('artista', false) }),
-          React.createElement(Destacados, { tarjetas: [lugarSeguido, tarjeta('otro-lugar-seguido', 0)], encabezado: 'Carril de lugares seguidos', memoria: 'm6', boton: botonDe('lugar', true) }),
-          React.createElement(Destacados, { tarjetas: [artistaSeguido, tarjeta('otro-artista-seguido', 0)], encabezado: 'Carril de artistas seguidos', memoria: 'm7', boton: botonDe('artista', true) }),
-          React.createElement(Destacados, { tarjetas: [corta, larga, sinFoto], encabezado: 'Carril de datos', memoria: 'm8', boton }),
-          React.createElement(Destacados, { tarjetas: grandes, tamano: 'grande', encabezado: 'Carril grande', memoria: 'm9', boton }),
-          React.createElement(Destacados, { tarjetas: [...redondas, redondaSinFoto], tamano: 'chica', encabezado: 'Carril chico', memoria: 'm10', boton: botonDe('lugar', false) }),
-          React.createElement(Destacados, { tarjetas: [sola], encabezado: 'Carril solo', memoria: 'm11', boton }),
-          React.createElement(Destacados, { tarjetas: [tarjeta('sola-sin-foto', 0, {foto: null})], encabezado: 'Carril solo sin foto', memoria: 'm13', boton }),
-          React.createElement(Destacados, { tarjetas: [], encabezado: 'Carril vacio', memoria: 'm12' }),
-          // Con boton a propósito: la tarjeta firmada no lo pinta (OL-370).
-          React.createElement(Destacados, { tarjetas: firmadas, tamano: 'grande', cartel: true, encabezado: 'Carril firmado', memoria: 'm14', boton, estadoDe: decisionFirmadas }),
-          React.createElement(Destacados, { tarjetas: [...firmadas.slice(0, 3), firmadas[5]], tamano: 'mediana', cartel: true, encabezado: 'Carril firmado mediano', memoria: 'm16', estadoDe: decisionFirmadas }),
-          React.createElement(Destacados, { tarjetas: [tarjeta('ev-sola', 0, { corto: 'Sola', clase: 'Evento', selloFecha: sello('oct', '11') })], tamano: 'grande', cartel: true, encabezado: 'Carril firmado solo', memoria: 'm15', boton }),
-          // Los esqueletos de carga de los carriles de eventos de Inicio (OL-370): grande y mediano.
-          React.createElement('div', { id: 'esqueletos' }, React.createElement(CarrilEsqueleto, { tamano: 'grande', cartel: true }), React.createElement(CarrilEsqueleto, { tamano: 'mediana', cartel: true })),
+          React.createElement(Destacados, { tarjetas: firmadas, forma: 'grande', encabezado: 'Carril firmado', memoria: 'm14', estadoDe: decisionFirmadas }),
+          React.createElement(Destacados, { tarjetas: [...firmadas.slice(0, 3), firmadas[5]], forma: 'mediana', encabezado: 'Carril firmado mediano', memoria: 'm16', estadoDe: decisionFirmadas }),
+          React.createElement(Destacados, { tarjetas: [tarjeta('ev-sola', 0, { corto: 'Sola', clase: 'Evento', selloFecha: sello('oct', '11') })], forma: 'grande', encabezado: 'Carril firmado solo', memoria: 'm15' }),
+          React.createElement(Destacados, { tarjetas: [], forma: 'mediana', encabezado: 'Carril vacio', memoria: 'm12' }),
+          React.createElement(Destacados, { tarjetas: destacadxs, forma: 'artista', encabezado: 'Artistas destacadxs', memoria: 'm17', verTodos: { href: '/artistas', etiqueta: 'Ver artistas' } }),
+          React.createElement(Destacados, { tarjetas: lugares, forma: 'avatar', encabezado: 'Lugares de la semana', memoria: 'm18', verTodos: { href: '/lugares', etiqueta: 'Ver lugares' } }),
+          React.createElement(Destacados, { tarjetas: semana, forma: 'avatar', encabezado: 'Artistas de la semana', memoria: 'm19', verTodos: { href: '/artistas', etiqueta: 'Ver artistas' } }),
+          // Los esqueletos de carga de Inicio: los de eventos (OL-370), grande y mediano, y los de artistas y avatares (OL-372).
+          React.createElement('div', { id: 'esqueletos' }, ...['grande', 'mediana', 'artista', 'avatar'].map((forma) => React.createElement(CarrilEsqueleto, { key: forma, forma }))),
         );
       }
       createRoot(document.getElementById('root')).render(React.createElement(App));
@@ -143,16 +118,6 @@ before(async () => {
   browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_EXECUTABLE });
 });
 
-test("una sola tarjeta sin foto conserva el fondo 5:3 a320/390", async (t) => {
-  const p = await pagina(t);
-  for (const ancho of [390, 320]) {
-    await p.setViewportSize({ width: ancho, height: 844 });
-    const enlace = tarjeta(p, "sola-sin-foto");
-    await enlace.scrollIntoViewIfNeeded();
-    const caja = await enlace.evaluate(e => ({ ancho: e.getBoundingClientRect().width, altoFondo: parseFloat(getComputedStyle(e, "::before").height) }));
-    assert.ok(Math.abs(caja.altoFondo - caja.ancho * 3 / 5) < 1, JSON.stringify(caja));
-  }
-});
 after(async () => {
   await browser?.close();
   if (server) await new Promise((r) => server.close(r));
@@ -168,230 +133,17 @@ async function pagina(t, ancho = 390) {
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
   await p.goto(origin);
-  await p.getByRole("heading", { name: "Carril de eventos" }).waitFor();
+  await p.getByRole("heading", { name: "Carril firmado", exact: true }).waitFor();
   return p;
 }
 
-/** La tarjeta (el <a>) de un id dado: buscada por su enlace. */
-function tarjeta(p, id) {
-  return p.locator(`a[href="/eventos/${id}"]`);
-}
-/** Los rótulos de una tarjeta: los `span` que son hijos directos del <a> (el rótulo y, en su carril, nada más). */
-const rotulos = (enlace) => enlace.evaluate((a) => [...a.children].filter((el) => el.tagName === "SPAN").map((el) => el.textContent));
 const seccion = (p, titulo) => p.locator("section", { has: p.getByRole("heading", { name: titulo, exact: true }) });
-
-test("con me_interesa sale el rótulo «Te interesa»", async (t) => {
-  const p = await pagina(t);
-  const texto = await tarjeta(p, "solo-interesa").innerText();
-  assert.match(texto, /Te interesa/);
-});
-
-test("con voy no sale «Te interesa»: el botón queda decidido (aria-pressed)", async (t) => {
-  const p = await pagina(t);
-  const texto = await tarjeta(p, "con-voy").innerText();
-  assert.doesNotMatch(texto, /Te interesa/);
-  const boton = p.locator('a[href="/eventos/con-voy"] + button');
-  assert.equal(await boton.getAttribute("aria-pressed"), "true");
-});
-
-test("sin sesión (sin estadoDe) no sale «Te interesa»", async (t) => {
-  const p = await pagina(t);
-  const texto = await seccion(p, "Carril sin sesion").innerText();
-  assert.doesNotMatch(texto, /Te interesa/);
-});
-
-test("un carril de lugares o artistas (sin estadoDe) no lleva ningún rótulo", async (t) => {
-  const p = await pagina(t);
-  for (const titulo of ["Carril de lugares", "Carril de artistas"]) {
-    const texto = await seccion(p, titulo).innerText();
-    assert.doesNotMatch(texto, /Te interesa|van|Hoy/, titulo);
-  }
-});
-
-test("un solo rótulo por foto: lo tuyo, luego «Hoy», luego «N van», y «Recién agregado» ya no existe", async (t) => {
-  const p = await pagina(t);
-  // Con «Te interesa», «Hoy» y «3 van» a la vez sale uno solo: el de la persona.
-  assert.deepEqual(await rotulos(tarjeta(p, "con-todo")), ["Te interesa"]);
-  // «Hoy» gana a «N van»; sin ser hoy, cuántos van; sin nada, ninguno.
-  assert.deepEqual(await rotulos(tarjeta(p, "hoy-y-van")), ["Hoy"]);
-  assert.deepEqual(await rotulos(tarjeta(p, "solo-van")), ["5 van"]);
-  assert.deepEqual(await rotulos(tarjeta(p, "sin-nada")), []);
-  assert.doesNotMatch(await p.locator("body").innerText(), /Recién agregado/);
-});
-
-test("sobre el cartel van, como mucho, dos capas: el rótulo y el botón", async (t) => {
-  const p = await pagina(t);
-  const capas = await tarjeta(p, "con-todo").evaluate((a) => {
-    const cruzan = (x, y) => x.left < y.right && x.right > y.left && x.top < y.bottom && x.bottom > y.top;
-    const foto = a.querySelector("img").getBoundingClientRect();
-    return [...a.parentElement.querySelectorAll("button, span")].filter((el) => (el.tagName === "BUTTON" || [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) && cruzan(el.getBoundingClientRect(), foto)).length;
-  });
-  assert.equal(capas, 2);
-  // El rótulo queda dentro de la foto, abajo a la izquierda.
-  const dentro = await tarjeta(p, "hoy-y-van").evaluate((a) => {
-    const foto = a.querySelector("img").getBoundingClientRect();
-    const r = a.querySelector(":scope > span").getBoundingClientRect();
-    return r.left >= foto.left && r.bottom <= foto.bottom && r.top > foto.top + foto.height / 2;
-  });
-  assert.equal(dentro, true);
-});
-
-test("sin foto la tarjeta es compacta: sin imagen, el fondo suave de lo que no tiene foto, el nombre grande, y conserva su rótulo y su botón", async (t) => {
-  const p = await pagina(t);
-  const enlace = tarjeta(p, "sin-foto");
-  assert.equal(await enlace.locator("img").count(), 0, "sin bloque de imagen");
-  const datos = await enlace.evaluate((a) => {
-    const fondo = getComputedStyle(a, "::before");
-    const vecina = a.closest("ul").querySelector('a[href="/eventos/titulo-corto"]');
-    return {
-      fondo: fondo.backgroundColor, nombre: getComputedStyle(a.querySelector("b")).fontSize,
-      alto: Math.round(a.getBoundingClientRect().height), altoDatos: Math.round(a.querySelector("small").getBoundingClientRect().height),
-      altoVecina: Math.round(vecina.getBoundingClientRect().height), altoTituloVecina: Math.round(vecina.querySelector("b").getBoundingClientRect().height), altoDatosVecina: Math.round(vecina.querySelector("small").getBoundingClientRect().height),
-      altoFotoVecina: Math.round(vecina.querySelector("img").getBoundingClientRect().height),
-    };
-  });
-  assert.equal(datos.fondo, "rgb(230, 230, 226)", "--fondo-miniatura");
-  assert.equal(datos.nombre, "19px", "el nombre va a --letra-xl, más grande que el título de una tarjeta con foto (17px)");
-  assert.equal(datos.alto - datos.altoDatos, datos.altoFotoVecina, "el fondo suave mide lo que la foto de las demás (el título se ajusta a cada tarjeta)");
-  assert.equal(datos.altoVecina, datos.altoFotoVecina + datos.altoTituloVecina + datos.altoDatosVecina, "y las tarjetas con foto suman foto + título + datos, sin hueco");
-  assert.deepEqual(await rotulos(enlace), ["Hoy"]);
-  assert.equal(await p.locator('a[href="/eventos/sin-foto"] + button').count(), 1);
-});
-
-test("los datos van en dos líneas (cuándo, dónde), cada una con su elipsis", async (t) => {
-  const p = await pagina(t);
-  const datos = await tarjeta(p, "titulo-largo").locator("small > span").evaluateAll((ls) =>
-    ls.map((l) => ({ texto: l.textContent, ajuste: getComputedStyle(l).whiteSpace, puntos: getComputedStyle(l).textOverflow, cortada: l.scrollWidth > l.clientWidth })),
-  );
-  assert.equal(datos.length, 2);
-  assert.deepEqual(datos.map((d) => d.texto), ["vie 10 de oct · 19:00", "Un sitio con un nombre larguísimo que no cabe en la tarjeta"]);
-  for (const d of datos) assert.deepEqual([d.ajuste, d.puntos], ["nowrap", "ellipsis"]);
-  assert.deepEqual(datos.map((d) => d.cortada), [false, true], "el sitio largo se corta con puntos; el cuándo cabe");
-  // Lugares y artistas traen una sola línea.
-  assert.equal(await tarjeta(p, "un-lugar").locator("small > span").count(), 1);
-});
-
-test("cada tarjeta se ajusta a su contenido: con un título de una línea los datos quedan pegados a él, y las fotos siguen arriba y del mismo alto", async (t) => {
-  const p = await pagina(t);
-  const medidas = async (id) =>
-    tarjeta(p, id).evaluate((a) => {
-      const rango = document.createRange();
-      rango.selectNodeContents(a.querySelector("b"));
-      const lineas = new Set([...rango.getClientRects()].map((r) => Math.round(r.top))).size;
-      const b = a.querySelector("b").getBoundingClientRect(), d = a.querySelector("small").getBoundingClientRect(), f = a.querySelector("img").getBoundingClientRect();
-      return { lineas, hueco: Math.round(d.top - b.bottom), titulo: Math.round(b.height), fotoTop: Math.round(f.top), fotoAlto: Math.round(f.height), color: getComputedStyle(a.querySelector("small > span")).color };
-    });
-  const corto = await medidas("titulo-corto");
-  const largo = await medidas("titulo-largo");
-  assert.equal(corto.lineas, 1);
-  assert.ok(largo.lineas > corto.lineas, "el título largo sí ocupa más líneas");
-  assert.ok(largo.titulo > corto.titulo, "la caja del título mide lo que su texto, no lo del título más largo del carril");
-  assert.equal(corto.hueco, 0, "con una línea los datos quedan pegados al título, sin hueco blanco");
-  assert.equal(largo.hueco, 0);
-  assert.equal(corto.fotoTop, largo.fotoTop, "las fotos siguen alineadas arriba");
-  assert.equal(corto.fotoAlto, largo.fotoAlto, "y del mismo alto (el alto explícito de --foto)");
-});
-
-test("la línea de cuándo va en violeta (--primario) y el sitio en el gris de siempre; un lugar sin próximo no la pinta", async (t) => {
-  const p = await pagina(t);
-  const colores = await tarjeta(p, "titulo-largo").evaluate((a) => [...a.querySelectorAll("small > span")].map((s) => getComputedStyle(s).color));
-  assert.deepEqual(colores, ["rgb(109, 52, 200)", "rgb(92, 92, 92)"], "cuándo en #6d34c8; dónde en --texto-suave");
-  const tipo = await tarjeta(p, "un-lugar").evaluate((a) => getComputedStyle(a.querySelector("small > span")).color);
-  assert.equal(tipo, "rgb(92, 92, 92)", "el tipo de un lugar sin próximo (detalle que no es un cuándo) queda en gris");
-});
-
-test("las medidas salen de los tokens de tarjeta: mediana 220×132, grande 165×248 (190×285 desde 1048) y chica 104", async (t) => {
-  const p = await pagina(t);
-  const foto = (id) => tarjeta(p, id).locator("img").evaluate((i) => [Math.round(i.getBoundingClientRect().width), Math.round(i.getBoundingClientRect().height)]);
-  assert.deepEqual(await foto("solo-van"), [220, 132]);
-  assert.deepEqual(await foto("grande-a"), [165, 248]);
-  assert.deepEqual(await foto("lug-uno"), [104, 104]);
-  const ancha = await pagina(t, 1280);
-  const fotoAncha = (id) => tarjeta(ancha, id).locator("img").evaluate((i) => [Math.round(i.getBoundingClientRect().width), Math.round(i.getBoundingClientRect().height)]);
-  assert.deepEqual(await fotoAncha("grande-a"), [190, 285]);
-  assert.deepEqual(await fotoAncha("solo-van"), [220, 132], "la mediana no cambia");
-});
-
-test("en las redondas el botón queda dentro de la caja de su tarjeta (sin desbordes)", async (t) => {
-  const p = await pagina(t);
-  const fuera = await seccion(p, "Carril chico").locator("ul > li").evaluateAll((lis) =>
-    lis.filter((li) => {
-      const c = li.getBoundingClientRect();
-      const b = li.querySelector("button").getBoundingClientRect();
-      return b.left < c.left - 0.5 || b.right > c.right + 0.5 || b.top < c.top - 0.5 || b.bottom > c.bottom + 0.5;
-    }).length,
-  );
-  assert.equal(fuera, 0);
-  // Y sus datos, completos: la fecha se parte en dos líneas en vez de cortarse.
-  const ajuste = await tarjeta(p, "lug-uno").locator("small > span").evaluate((s) => getComputedStyle(s).whiteSpace);
-  assert.equal(ajuste, "normal");
-});
-
-test("una sola tarjeta ocupa el ancho del carril, con la foto en 5:3", async (t) => {
-  const p = await pagina(t);
-  const caja = await tarjeta(p, "la-sola").evaluate((a) => {
-    const foto = a.querySelector("img").getBoundingClientRect();
-    const carril = a.closest("ul");
-    return { ancho: Math.round(foto.width), carril: carril.clientWidth - 2 * 20, proporcion: +(foto.width / foto.height).toFixed(2) };
-  });
-  assert.equal(caja.ancho, caja.carril);
-  assert.equal(caja.proporcion, 1.67);
-});
 
 test("un carril vacío no deja hueco: se recoge a alto 0 y no se oye", async (t) => {
   const p = await pagina(t);
   await p.waitForFunction(() => document.querySelector('[aria-hidden="true"]') !== null);
   const alto = await p.locator("div[aria-hidden='true']").first().evaluate((d) => Math.round(d.getBoundingClientRect().height));
   assert.equal(alto, 0);
-});
-
-test("«Hoy» va en el color de acción con texto blanco (7,06:1); «N van» sigue en vidrio", async (t) => {
-  const p = await pagina(t);
-  const colores = (id) => tarjeta(p, id).locator(":scope > span").evaluate((r) => ({ fondo: getComputedStyle(r).backgroundColor, texto: getComputedStyle(r).color }));
-  assert.deepEqual(await colores("hoy-y-van"), { fondo: "rgb(109, 52, 200)", texto: "rgb(255, 255, 255)" }, "--primario con --primario-texto");
-  const van = await colores("solo-van");
-  assert.notEqual(van.fondo, "rgb(109, 52, 200)", "un dato que no es «Hoy» no se vuelve violeta");
-  assert.equal(van.texto, "rgb(26, 26, 26)");
-});
-
-test("la redonda sin foto lleva el símbolo SN ya generado, en círculo, y la fecha en violeta", async (t) => {
-  const p = await pagina(t);
-  const enlace = tarjeta(p, "lug-sin-foto");
-  const foto = await enlace.locator("img").evaluate((i) => ({ src: new URL(i.src).pathname, radio: getComputedStyle(i).borderTopLeftRadius, lado: Math.round(i.getBoundingClientRect().width) }));
-  assert.deepEqual(foto, { src: "/sin-foto.png", radio: "50%", lado: 104 });
-  assert.equal(await enlace.locator("small > span").evaluate((s) => getComputedStyle(s).color), "rgb(109, 52, 200)");
-  // Las no redondas sin foto siguen sin imagen (el nombre grande sobre el fondo suave, H-03).
-  assert.equal(await tarjeta(p, "sin-foto").locator("img").count(), 0);
-});
-
-// Los trazos de los tres glifos de acción (ui/Iconos): la palomita, la campana con «+» y la persona con «+».
-const PALOMITA = "M5 12.5l4.5 4.5L19 7.5";
-const CAMPANA_MAS = "M12 9.5v5M9.5 12h5";
-const PERSONA_MAS = "M19 7.5v6M16 10.5h6";
-
-test("el glifo del botón dice qué hace: palomita para Voy, campana con «+» para seguir un lugar, persona con «+» para un artista", async (t) => {
-  const p = await pagina(t);
-  const trazos = (id) => p.locator(`a[href="/eventos/${id}"] + button`).locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d")));
-  assert.deepEqual(await trazos("sin-nada"), [PALOMITA]);
-  assert.ok((await trazos("un-lugar")).includes(CAMPANA_MAS), "un lugar por seguir lleva la campana con «+»");
-  assert.ok((await trazos("un-artista")).includes(PERSONA_MAS), "un artista por seguir lleva la persona con «+»");
-});
-
-test("sobre la foto el botón es un círculo blanco de 48 con sombra", async (t) => {
-  const p = await pagina(t);
-  const boton = await p.locator('a[href="/eventos/sin-nada"] + button').evaluate((b) => ({ fondo: getComputedStyle(b).backgroundColor, sombra: getComputedStyle(b).boxShadow !== "none", lado: Math.round(b.getBoundingClientRect().width) }));
-  assert.deepEqual(boton, { fondo: "rgb(255, 255, 255)", sombra: true, lado: 48 });
-});
-
-test("ya decidido, la palomita blanca sobre verde en los tres casos", async (t) => {
-  const p = await pagina(t);
-  for (const id of ["con-voy", "lugar-seguido", "artista-seguido"]) {
-    const boton = p.locator(`a[href="/eventos/${id}"] + button`);
-    assert.equal(await boton.getAttribute("aria-pressed"), "true", id);
-    assert.deepEqual(await boton.locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d"))), [PALOMITA], id);
-    const estilo = await boton.evaluate((b) => ({ fondo: getComputedStyle(b).backgroundColor, glifo: getComputedStyle(b.querySelector("svg")).color }));
-    assert.deepEqual(estilo, { fondo: "rgb(31, 111, 67)", glifo: "rgb(255, 255, 255)" }, id);
-  }
 });
 
 // OL-370: la tarjeta de evento firmada de Inicio (prototipo `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada»; bitácora 398).
@@ -412,7 +164,7 @@ test("firmada: el cartel entero en 4:5, grande 165×206 y mediana 132×165; desd
   assert.equal(await firmada(p, "Carril firmado solo", "ev-sola").evaluate((a) => Math.round(a.getBoundingClientRect().width)), 165);
 });
 
-test("firmada: sin botón de «Voy» aunque el carril lo ofrezca; todo es el enlace a la ficha", async (t) => {
+test("firmada: sin botón de «Voy»; todo es el enlace a la ficha", async (t) => {
   const p = await pagina(t);
   for (const carril of ["Carril firmado", "Carril firmado mediano", "Carril firmado solo"]) assert.equal(await seccion(p, carril).locator("button").count(), 0, carril);
   assert.equal(await seccion(p, "Carril firmado").locator("li > :not(a)").count(), 0, "cada tarjeta es solo su enlace");
@@ -571,4 +323,182 @@ test("firmada: el esqueleto de carga mide lo que su carril: la columna, la porta
     const real = await medir(firmada(p, carril, "ev-largo").locator("xpath=.."));
     assert.deepEqual(esqueleto, real, carril);
   }
+});
+
+// OL-372: «Artistas destacadxs» con la tarjeta de un evento (E9) y los avatares de 64 de «Lugares de la semana» y «Artistas de la semana» (E5),
+// del prototipo firmado (`htmlArtistaEvento`, `htmlEntidad` con `forma: 'avatar'`, `.tira.avatar`, `.avatar .en`).
+const artistaE9 = (p, id) => seccion(p, "Artistas destacadxs").locator(`a[href^="/artistas/${id}"]`);
+const avatar = (p, carril, href) => seccion(p, carril).locator(`a[href^="${href}"]`);
+
+test("E9: el artista con la tarjeta mediana de un evento: 132×165 (152×190 desde 1048), la foto entera arriba, en la columna de la mediana", async (t) => {
+  const p = await pagina(t);
+  const medidas = (pg, enlace) => enlace.evaluate((a) => ({ columna: Math.round(a.parentElement.getBoundingClientRect().width * 10) / 10, foto: [a.firstElementChild.tagName, Math.round(a.firstElementChild.getBoundingClientRect().width * 10) / 10, Math.round(a.firstElementChild.getBoundingClientRect().height * 10) / 10], ajuste: getComputedStyle(a.firstElementChild).objectFit, encuadre: getComputedStyle(a.firstElementChild).objectPosition }));
+  assert.deepEqual(await medidas(p, artistaE9(p, "a-markos")), { columna: 132, foto: ["IMG", 132, 165], ajuste: "cover", encuadre: "50% 0%" });
+  // Mide lo mismo que la mediana de un evento, sin duplicar la tarjeta.
+  const evento = await firmada(p, "Carril firmado mediano", "ev-kopk").evaluate((a) => a.firstElementChild.getBoundingClientRect().height);
+  assert.equal(Math.round(evento * 10) / 10, 165);
+  const ancha = await pagina(t, 1280);
+  assert.deepEqual((await medidas(ancha, artistaE9(ancha, "a-markos"))).foto, ["IMG", 152, 190]);
+});
+
+test("E9: sin botón de seguir ni sello de fecha; cada tarjeta es solo su enlace", async (t) => {
+  const p = await pagina(t);
+  const carril = seccion(p, "Artistas destacadxs");
+  assert.equal(await carril.locator("button").count(), 0);
+  assert.equal(await carril.locator("li > :not(a)").count(), 0, "nada encima ni al lado del enlace");
+  assert.equal(await carril.locator("span[title]").count(), 0, "sin sello de fecha");
+});
+
+test("E9: «Nuevo video» o «Nuevo audio» sobre la foto, abajo a la izquierda, con el trato de «Hoy»; sin novedad, ningún chip", async (t) => {
+  const p = await pagina(t);
+  const chip = (id, texto) =>
+    artistaE9(p, id).evaluate((a, texto) => {
+      const f = a.firstElementChild.getBoundingClientRect();
+      const s = [...a.querySelectorAll("span")].find((x) => x.textContent === texto && !x.children.length);
+      if (!s) return null;
+      const r = s.getBoundingClientRect(), cs = getComputedStyle(s);
+      return { izquierda: Math.round(r.left - f.left), abajo: Math.round(f.bottom - r.bottom), alto: Math.round(r.height * 10) / 10, fondo: cs.backgroundColor, color: cs.color, letra: [cs.fontSize, cs.fontWeight] };
+    }, texto);
+  const nuevo = { izquierda: 8, abajo: 8, alto: 25.6, fondo: "rgb(109, 52, 200)", color: "rgb(255, 255, 255)", letra: ["14px", "700"] };
+  assert.deepEqual(await chip("a-markos", "Nuevo video"), nuevo);
+  assert.deepEqual(await chip("a-leon", "Nuevo audio"), nuevo);
+  assert.equal(await artistaE9(p, "a-largo").evaluate((a) => [...a.querySelectorAll("span")].filter((s) => /^Nuevo (video|audio)$/.test(s.textContent)).length), 0);
+});
+
+test("E9: debajo, la disciplina en la ceja, el nombre tal como está escrito, el género en gris y, si tiene fecha, la fecha en violeta", async (t) => {
+  const p = await pagina(t);
+  const pie = (id) =>
+    artistaE9(p, id).evaluate((a) => {
+      const r = (e) => e.getBoundingClientRect();
+      const foto = a.firstElementChild, b = a.querySelector(":scope > b");
+      const ceja = [...a.children].find((x) => getComputedStyle(x).letterSpacing !== "normal");
+      const despues = [...a.children].slice([...a.children].indexOf(b) + 1);
+      const linea = parseFloat(getComputedStyle(b).lineHeight);
+      return {
+        ceja: ceja ? [ceja.innerText, getComputedStyle(ceja).fontSize, getComputedStyle(ceja).color, Math.round(r(ceja).top - r(foto).bottom)] : null,
+        titulo: [b.textContent, getComputedStyle(b).fontSize, getComputedStyle(b).fontWeight, getComputedStyle(b).color], lineas: Math.round(r(b).height / linea), sobra: b.scrollHeight - b.clientHeight > linea / 2,
+        lineasDebajo: despues.map((x) => [x.textContent, getComputedStyle(x).color, getComputedStyle(x).fontSize]),
+        orden: despues.every((x, i) => (i === 0 ? r(b).bottom : r(despues[i - 1]).bottom) <= r(x).top + 0.5),
+      };
+    });
+  const markos = await pie("a-markos");
+  assert.deepEqual(markos.ceja, ["MÚSICA", "12px", "rgb(92, 92, 92)", 8], "la disciplina chica, en mayúsculas y gris, a 8 px de la foto");
+  assert.deepEqual(markos.titulo, ["Markosblues", "15px", "700", "rgb(26, 26, 26)"]);
+  assert.deepEqual(markos.lineasDebajo, [["jazz, blues y soul", "rgb(92, 92, 92)", "14px"]], "sin fecha, sin línea de cuándo");
+  assert.ok(markos.orden);
+  const leon = await pie("a-leon");
+  assert.equal(leon.titulo[0], "Un León Marinero", "el nombre no pasa a oración");
+  assert.deepEqual(leon.lineasDebajo, [["folk y canción de autor", "rgb(92, 92, 92)", "14px"], ["jue 15 de oct · 19:00", "rgb(109, 52, 200)", "14px"]]);
+  assert.ok(leon.orden, "ceja, nombre, género y fecha, en ese orden");
+  // Un nombre que no cabe: dos líneas como mucho, cortado en palabra entera con «…».
+  const completo = "Orquesta Sinfónica de San Luis Potosí y su coro de cámara";
+  const largo = await pie("a-largo");
+  assert.ok(largo.titulo[0].endsWith("…") && largo.lineas <= 2 && !largo.sobra, JSON.stringify(largo));
+  const sinPuntos = largo.titulo[0].slice(0, -1);
+  assert.ok(completo.startsWith(sinPuntos) && completo[sinPuntos.length] === " ", "se corta en palabra entera: " + largo.titulo[0]);
+  if (process.env.FUENTE) assert.equal(largo.titulo[0], "Orquesta Sinfónica de San Luis Potosí y su…");
+  // Una ficha por completar no tiene disciplina que decir: sin ceja.
+  assert.equal((await pie("a-por-completar")).ceja, null);
+});
+
+test("E9: el nombre del enlace dice nombre, disciplina, género, cuándo y novedad, separados por punto", async (t) => {
+  const p = await pagina(t);
+  assert.equal(await artistaE9(p, "a-markos").getAttribute("aria-label"), "Markosblues. Música. jazz, blues y soul. Nuevo video");
+  assert.equal(await artistaE9(p, "a-leon").getAttribute("aria-label"), "Un León Marinero. Música. folk y canción de autor. jue 15 de oct · 19:00. Nuevo audio");
+  assert.equal(await artistaE9(p, "a-markos").getAttribute("href"), "/artistas/a-markos?novedad=n-video", "abre la ficha en su novedad");
+});
+
+test("E9: sin foto, la imagen ya generada con el símbolo SN, del tamaño de un cartel y al final del carril", async (t) => {
+  const p = await pagina(t);
+  const foto = await artistaE9(p, "a-sin-foto").locator("img").evaluate((i) => ({ src: new URL(i.src).pathname, caja: [Math.round(i.getBoundingClientRect().width), Math.round(i.getBoundingClientRect().height)] }));
+  assert.deepEqual(foto, { src: "/sin-foto.png", caja: [132, 165] });
+  const orden = await seccion(p, "Artistas destacadxs").locator("li > a").evaluateAll((as) => as.map((a) => new URL(a.href).pathname));
+  assert.equal(orden.at(-1), "/artistas/a-sin-foto", "lo que tiene foto va antes: " + orden.join(" "));
+});
+
+test("E5: avatares de 64 en columnas de 76 con 8 entre ellas; la foto redonda al centro, el nombre a 12 px en una línea con «…»", async (t) => {
+  for (const ancho of [390, 1280]) {
+    const p = await pagina(t, ancho);
+    for (const carril of ["Lugares de la semana", "Artistas de la semana"]) {
+      // El margen lateral es el de toda la página (`--gutter`: 20 en el teléfono; a lo ancho crece para centrar el contenido).
+      const tira = await seccion(p, carril).locator("ul").evaluate((ul) => ({ columnas: getComputedStyle(ul).gridAutoColumns, hueco: getComputedStyle(ul).columnGap, relleno: [getComputedStyle(ul).paddingTop, getComputedStyle(ul).paddingLeft === getComputedStyle(ul.previousElementSibling).paddingLeft, getComputedStyle(ul).paddingBottom] }));
+      assert.deepEqual(tira, { columnas: "76px", hueco: "8px", relleno: ["4px", true, "8px"] }, `${carril} a ${ancho}`);
+      if (ancho === 390) assert.equal(await seccion(p, carril).locator("ul").evaluate((ul) => getComputedStyle(ul).paddingLeft), "20px");
+    }
+    const m = await avatar(p, "Lugares de la semana", "/lugares/l-paz").evaluate((a) => {
+      const r = (e) => e.getBoundingClientRect();
+      const li = a.parentElement, img = a.querySelector("img"), nombre = img.nextElementSibling, cs = getComputedStyle(nombre);
+      return {
+        li: [Math.round(r(li).width), Math.round(r(li).height * 10) / 10], foto: [Math.round(r(img).left - r(li).left), Math.round(r(img).width), Math.round(r(img).height), getComputedStyle(img).borderRadius],
+        nombre: [Math.round((r(nombre).top - r(img).bottom) * 10) / 10, Math.round(r(nombre).height * 10) / 10, cs.fontSize, cs.fontWeight, cs.whiteSpace, cs.textOverflow, cs.textAlign, cs.color],
+      };
+    });
+    assert.deepEqual(m, { li: [76, 92.1], foto: [6, 64, 64, "50%"], nombre: [12, 16.1, "14px", "700", "nowrap", "ellipsis", "center", "rgb(26, 26, 26)"] }, `a ${ancho}`);
+  }
+  // El nombre que no cabe se corta en su línea, al centro de su columna.
+  const p = await pagina(t);
+  const largo = await avatar(p, "Lugares de la semana", "/lugares/l-largo").evaluate((a) => { const n = a.querySelector("img").nextElementSibling; return { cortado: n.scrollWidth > n.clientWidth, ancho: Math.round(n.getBoundingClientRect().width), centro: Math.round(n.getBoundingClientRect().left + n.getBoundingClientRect().width / 2 - a.getBoundingClientRect().left) }; });
+  assert.deepEqual(largo, { cortado: true, ancho: 76, centro: 38 });
+});
+
+test("E5: sin botón y sin el detalle de antes; solo si hay novedad, «Nuevo video» o «Nuevo audio» en violeta a 8 px del nombre", async (t) => {
+  const p = await pagina(t);
+  for (const carril of ["Lugares de la semana", "Artistas de la semana"]) {
+    const s = seccion(p, carril);
+    assert.equal(await s.locator("button").count(), 0, carril);
+    assert.equal(await s.locator("li > :not(a)").count(), 0, carril);
+    assert.doesNotMatch(await s.locator("ul").innerText(), /En curso|Hoy|mañana|·/, `${carril}: ni «En curso» ni la hora`);
+  }
+  const novedad = (href) =>
+    avatar(p, "Artistas de la semana", href).evaluate((a) => {
+      const r = (e) => e.getBoundingClientRect();
+      const nombre = a.querySelector("img").nextElementSibling, n = nombre.nextElementSibling;
+      if (!n) return { alto: Math.round(r(a).height * 10) / 10 };
+      const cs = getComputedStyle(n);
+      return { texto: n.textContent, hueco: Math.round((r(n).top - r(nombre).bottom) * 10) / 10, letra: [cs.fontSize, cs.fontWeight, cs.color, cs.textAlign], alto: Math.round(r(a).height * 10) / 10 };
+    });
+  assert.deepEqual(await novedad("/artistas/s-video"), { texto: "Nuevo video", hueco: 8, letra: ["15px", "400", "rgb(109, 52, 200)", "center"], alto: 119.6 });
+  assert.equal((await novedad("/artistas/s-audio")).texto, "Nuevo audio");
+  assert.deepEqual(await novedad("/artistas/s-nada"), { alto: 92.1 });
+});
+
+test("E5: el nombre del enlace lleva el nombre completo y la novedad; sin foto, la imagen ya generada con el símbolo SN, redonda", async (t) => {
+  const p = await pagina(t);
+  assert.equal(await avatar(p, "Lugares de la semana", "/lugares/l-largo").getAttribute("aria-label"), "Casa de Cultura del Barrio de San Miguelito");
+  assert.equal(await avatar(p, "Artistas de la semana", "/artistas/s-video").getAttribute("aria-label"), "Denisse Hervert. Nuevo video");
+  assert.equal(await avatar(p, "Artistas de la semana", "/artistas/s-audio").getAttribute("aria-label"), "Abril Merlot. Nuevo audio");
+  const foto = await avatar(p, "Lugares de la semana", "/lugares/l-sin-foto").locator("img").evaluate((i) => ({ src: new URL(i.src).pathname, lado: Math.round(i.getBoundingClientRect().width), radio: getComputedStyle(i).borderRadius }));
+  assert.deepEqual(foto, { src: "/sin-foto.png", lado: 64, radio: "50%" });
+});
+
+test("E9 y E5: el centro de cada tarjeta y de cada avatar es su enlace (nada encima) y cada enlace se toca en 44 o más", async (t) => {
+  const p = await pagina(t);
+  for (const carril of ["Artistas destacadxs", "Lugares de la semana", "Artistas de la semana"]) {
+    const enlaces = seccion(p, carril).locator("li > a");
+    for (let i = 0; i < (await enlaces.count()); i++) {
+      const a = enlaces.nth(i);
+      await a.evaluate((el) => { el.closest("ul").scrollLeft = el.parentElement.offsetLeft - 20; el.scrollIntoView({ block: "center" }); });
+      const m = await a.evaluate((el) => {
+        const r = el.getBoundingClientRect(), foto = el.querySelector("img").getBoundingClientRect();
+        const centros = [[r.left + r.width / 2, r.top + r.height / 2], [foto.left + foto.width / 2, foto.top + foto.height / 2]];
+        return { caen: centros.map(([x, y]) => document.elementFromPoint(x, y)?.closest("a") === el), caja: [r.width, r.height] };
+      });
+      assert.deepEqual(m.caen, [true, true], `${carril} ${i}`);
+      assert.ok(m.caja[0] >= 44 && m.caja[1] >= 44, `${carril} ${i}: ${m.caja}`);
+    }
+  }
+});
+
+test("E9 y E5: los esqueletos miden lo que su carril", async (t) => {
+  const p = await pagina(t);
+  const medir = (loc) =>
+    loc.evaluate((li) => {
+      const tarjeta = li.firstElementChild, foto = tarjeta.firstElementChild.getBoundingClientRect();
+      return { columna: Math.round(li.getBoundingClientRect().width * 10) / 10, foto: [Math.round(foto.width * 10) / 10, Math.round(foto.height * 10) / 10], alto: Math.round(tarjeta.getBoundingClientRect().height * 10) / 10 };
+    });
+  // La de un artista: la foto, la disciplina, el nombre en una línea, el género y la fecha (el carril del prototipo con Un León Marinero).
+  assert.deepEqual(await medir(p.locator("#esqueletos > section:nth-child(3) li").first()), await medir(artistaE9(p, "a-leon").locator("xpath=..")));
+  // El avatar: el círculo y el nombre, sin novedad.
+  assert.deepEqual(await medir(p.locator("#esqueletos > section:nth-child(4) li").first()), await medir(avatar(p, "Lugares de la semana", "/lugares/l-paz").locator("xpath=..")));
+  assert.equal(await p.locator("#esqueletos > section:nth-child(4) li").count(), 5, "cinco avatares, para llenar el ancho como el carril");
 });

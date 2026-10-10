@@ -39,8 +39,9 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
  *  (`nombreDeClase`), solo en el carril que junta las dos (OL-342, `tarjetaConClase`): dice qué es cada cosa en el rótulo de la foto.
  *  `corto` y `colores` (OL-360) solo los lleva la tarjeta de un evento: su título corto (`tituloCorto`) y los colores guardados de su propio
  *  cartel (null si aún no se calcularon o si la foto no es su cartel sino la portada de su lugar o el cartel de un acto). `selloFecha` (OL-370)
- *  solo la de un evento en los carriles de Inicio (`tarjetaDeInicio`, `lib/tarjetaInicio`): el sello de mes y día de su cartel. */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string; corto?: string; colores?: Paleta | null; selloFecha?: SelloFecha };
+ *  solo la de un evento en los carriles de Inicio (`tarjetaDeInicio`, `lib/tarjetaInicio`): el sello de mes y día de su cartel. `disciplina` y
+ *  `genero` (OL-372) solo la de un artista en «Artistas destacadxs» (`tarjetaArtistaDeInicio`): «Música» y su subcategoría tal como se escribió. */
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string; corto?: string; colores?: Paleta | null; selloFecha?: SelloFecha; disciplina?: string; genero?: string };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -53,25 +54,6 @@ export type TarjetaConFecha = Tarjeta & { inicio: string; fin: string | null; zo
 /** Foto real primero; el orden de la selección o de las fechas se conserva dentro de cada grupo. */
 export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
   return tarjetas.toSorted((a, b) => Number(a.foto === null) - Number(b.foto === null));
-}
-
-/**
- * El único rótulo que lleva una tarjeta sobre su foto (docs/rediseno/50, H-02): no se apilan tres sobre el cartel. Lo tuyo primero
- * («Te interesa»), luego lo que ayuda a decidir: «Hoy» antes que «N van»; sin ninguno, nada. «Recién agregado» ya no es un sello: el
- * carril que lo agrupa lo dice. `tuyo` es lo que la persona ya decidió (un estado); lo demás, un dato del evento (un sello); `hoy` marca
- * el tratamiento de «Hoy», también para «Nuevo video/audio» de artistas (OL-275), en el color de acción. La clase (OL-342: «Festival»,
- * «Exposición») es un dato del evento como «Día 2 de 3»: va sola o tras «Hoy» («Hoy · Festival»), y cede ante «Te interesa».
- */
-export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van" | "novedad" | "parte" | "clase">, interesa = false): { texto: string; tuyo: boolean; hoy: boolean } | null {
-  if (interesa) return { texto: "Te interesa", tuyo: true, hoy: false };
-  const nuevo = selloNovedadArtista(t.novedad);
-  if (nuevo) return { texto: nuevo, tuyo: false, hoy: true };
-  // El día de un evento con varios dice cuál es («Hoy · Día 2 de 3»): sin eso, tres tarjetas del mismo evento parecerían repetidas.
-  const dato = t.parte ?? t.clase;
-  if (t.hoy) return { texto: dato ? `Hoy · ${dato}` : "Hoy", tuyo: false, hoy: true };
-  if (dato) return { texto: dato, tuyo: false, hoy: false };
-  if (t.van !== null && t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false, hoy: false };
-  return null;
 }
 
 /** Lo que elige la administración en lugares y artistas dura dos semanas; un evento, hasta que pasa. */

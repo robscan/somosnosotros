@@ -1,7 +1,7 @@
-/* La tira de destacados (docs/rediseno/20; doc 50, P10): título y un carril que se desliza de lado, con la siguiente tarjeta asomando.
-   Cada tarjeta es su propia rejilla de tres filas (foto, título, datos) y se ajusta a su contenido (OL-251): con un título de una línea
-   los datos suben pegados a él; las tarjetas se alinean arriba. Las medidas son los tokens `--tarjeta-*` de `:root` (a 1048 crece la tarjeta grande);
-   el esqueleto (CarrilEsqueleto) usa este mismo CSS, así que no hay un número copiado. */
+/* Un carril de Inicio (docs/rediseno/20; doc 50, P10): título y una tira que se desliza de lado, con la siguiente tarjeta asomando.
+   Aquí solo el carril: el ancho de sus columnas y el alto de la portada de su tarjeta (`--foto`), con los tokens de `:root` (a 1048 crece la
+   tarjeta grande). Las tarjetas son las firmadas (`inicio/TarjetaEvento`, también la de un artista, e `inicio/TarjetaAvatar`), cada una con su
+   CSS; el esqueleto (CarrilEsqueleto) usa este mismo, así que no hay un número copiado. */
 /*
  * Espaciado (founder, 2026-09-23, tras probar en producción, OL-156): la barra de título con "Ver todos" queda más
  * lejos del carril, para no tocar la primera tarjeta sin querer al tocar "Ver todos" — 4px (`--espacio-1`) → 16px
@@ -70,13 +70,12 @@
   flex: none;
 }
 
-/* El carril: una columna por tarjeta, alineadas arriba. Es la mediana; `.grande`, `.chica` y `.sola` cambian sus
-   medidas, y solo eso. Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. */
+/* El carril: una columna por tarjeta, alineadas arriba; `.cartelGrande`, `.cartelMediana` y `.avatar` ponen el ancho de la columna y, las dos
+   primeras, el alto de la portada (`--foto`). Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. Cada tarjeta es un
+   solo enlace, sin nada encima (OL-370 y OL-372: sin botones). */
 .carril {
-  --foto: var(--tarjeta-mediana-foto); /* el alto de la fila de la foto; `.grande` y `.chica` lo cambian */
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--tarjeta-mediana);
   align-items: start;
   gap: var(--espacio-1) var(--espacio-3);
   overflow-x: auto;
@@ -91,171 +90,17 @@
   display: none;
 }
 .carril > li {
-  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   scroll-snap-align: start;
 }
-/* El botón (OL-106, bitácora 141): hermano de `.tarjeta` (el <a>), nunca su hijo — flota sobre la esquina superior derecha de
-   la foto. Se selecciona por estructura (`> button`), no por una clase de `ui/BotonIcono`: ese componente no sabe que vive en
-   un carril, y así no hace falta tocar su CSS para colocarlo aquí. */
-.carril > li > button {
-  position: absolute;
-  top: var(--espacio-2);
-  right: var(--espacio-2);
-}
-
-/* La tarjeta: su propia rejilla, con la foto a su alto (`--foto`) y el título y los datos a lo que miden. */
-.tarjeta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: var(--foto) auto auto;
-  min-width: 0;
-  color: var(--texto);
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.tarjeta:focus-visible {
-  outline: 2px solid var(--primario);
-  outline-offset: 2px;
-  border-radius: var(--radio);
-}
-/* La foto mide lo que su fila, con el alto dicho (`--foto`) y no en porcentaje: en Safari (iOS 26, iPhone del founder, 2026-09-30)
-   `height: 100%` dentro de la subrejilla se resolvía como `auto` al llegar la imagen, y la foto crecía a su alto natural sobre el título. */
-.tarjeta > .foto {
-  grid-area: 1 / 1;
-  width: 100%;
-  height: var(--foto);
-  border-radius: var(--radio);
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
-/* Un solo rótulo por foto (H-02), abajo a la izquierda. */
-.tarjeta > .rotulo {
-  grid-area: 1 / 1;
-  align-self: end;
-  justify-self: start;
-  margin: 0 0 var(--espacio-2) var(--espacio-2);
-}
-/* «Hoy» en el color de acción, como la fecha en texto (founder, 2026-10-01, OL-253; blanco sobre #6d34c8: 7,06:1). */
-.tarjeta > .hoy {
-  background: var(--primario);
-  color: var(--primario-texto);
-}
-.tarjeta > b {
-  grid-area: 2 / 1;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-family: var(--fuente-lista);
-  font-size: var(--letra-tarjeta-titulo);
-  font-weight: var(--peso-lista-titulo);
-  font-variation-settings: var(--ancho-lista-titulo);
-  line-height: var(--interlinea-lista);
-}
-/* Los datos: cuándo y dónde, una línea cada uno, cortadas con puntos suspensivos. */
-.tarjeta > small {
-  grid-area: 3 / 1;
-  display: grid;
-  align-content: start;
-  color: var(--texto-suave);
-  font-family: var(--fuente-lista);
-  font-size: var(--letra-lista-meta);
-  font-variation-settings: var(--ancho-lista-meta);
-  line-height: 1.3;
-}
-.tarjeta > small > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* Cuándo pasa (founder, 2026-10-01, OL-251): solo el color, el violeta de acción; nada cambia de tamaño ni de peso. */
-.tarjeta > small > .cuando {
-  color: var(--primario);
-}
-
-/* Sin foto (H-03): sin bloque de imagen. El fondo suave de lo que no tiene foto ocupa el sitio de la foto (OL-251: ya no el de la foto y
-   el título, que ahora se ajusta a cada tarjeta), con el nombre grande y el rótulo dentro; los datos siguen debajo, como en toda
-   tarjeta. El fondo es de un pseudoelemento y el aire es relleno del nombre, que cabe en la fila de la foto. */
-.sinFoto::before {
-  content: "";
-  grid-area: 1 / 1;
-  border-radius: var(--radio);
-  background: var(--fondo-miniatura);
-}
-.sinFoto > b {
-  grid-area: 1 / 1;
-  align-self: start;
-  padding: var(--espacio-3) calc(var(--boton-icono) + var(--espacio-3)) 0 var(--espacio-3); /* el botón queda a la derecha */
-  font-size: var(--letra-xl);
-  -webkit-line-clamp: 3;
-}
-.sinFoto > .rotulo {
-  margin: 0 0 var(--espacio-3) var(--espacio-3);
-}
 
 /*
- * Solo «Destacados» (lo que elige la administración) va con cartel vertical, angosto (founder, 2026-09-18; corrección del gestor de
- * cambios, 2026-09-23, bitácora 188: proporción de cartel 2:3, para que quepan dos tarjetas completas y el borde de una tercera a
- * 390 px de ancho). «Con eventos esta semana» conserva el tamaño de antes (corrección del founder, 2026-09-19). El carril conserva
- * el desplazamiento real y la siguiente tarjeta asoma, sin recorte artificial (precisión del founder, 2026-09-18).
- */
-.grande {
-  --foto: var(--tarjeta-grande-foto);
-  grid-auto-columns: var(--tarjeta-grande);
-}
-
-/* Lugares y artistas: redondos como su avatar, angostos y al centro. El botón queda en la esquina de la tarjeta, sobre el borde de
-   la foto (founder, 2026-09-21: «que el icono de check salga del contenedor de círculo»), sin salirse de su caja; la fecha va
-   completa aunque ocupe dos líneas (founder, 2026-09-19). */
-.chica {
-  --foto: var(--tarjeta-chica);
-  grid-auto-columns: var(--tarjeta-chica);
-}
-.chica .tarjeta {
-  text-align: center;
-}
-.chica .foto {
-  border-radius: 50%;
-}
-.chica > li > button {
-  top: 0;
-  right: 0;
-}
-.chica .tarjeta > small > span {
-  white-space: normal;
-}
-
-/*
- * Una sola tarjeta (OL-226, founder: «prefiero que siempre se muestre la imagen arriba y el texto abajo para tener espacio
- * suficiente para chips»): a lo ancho, con la imagen arriba en 5:3 y el rótulo dentro de ella, abajo a la izquierda, como en
- * cualquier otra tarjeta. La fila de la foto mide lo que la imagen: con un alto fijo, el rótulo quedaba colgando fuera de ella
- * (founder, 2026-09-26). Las redondas de artistas no cambian.
- */
-.sola {
-  grid-auto-columns: 100%;
-}
-.sola .tarjeta {
-  grid-template-rows: auto auto auto;
-}
-.sola .foto {
-  height: auto;
-  max-height: var(--tarjeta-sola-foto);
-  aspect-ratio: 5 / 3;
-}
-.sola .sinFoto::before {
-  width: 100%;
-  max-height: var(--tarjeta-sola-foto);
-  aspect-ratio: 5 / 3;
-}
-
-/*
- * La tarjeta de evento de Inicio (OL-370; prototipo firmado `inicio-tarjetas.html`, E1 y E5): el carril del cartel entero en 4:5, grande en Tus
- * planes, Destacados y Festivales y expos (165×206; 190×237,5 desde 1048) y mediana en Esta semana, Nuevos eventos y Más adelante (132×165; se
- * ven dos y media). La tarjeta es `inicio/TarjetaEvento`; aquí solo el ancho de la columna y el alto de su portada (`--foto`).
+ * Las tarjetas de Inicio (prototipo firmado `inicio-tarjetas.html`, E1 y E5; bitácora 398): el cartel entero en 4:5, grande en Tus planes,
+ * Destacados y Festivales y expos (165×206; 190×237,5 desde 1048) y mediano en Esta semana, Nuevos eventos, Más adelante (OL-370) y «Artistas
+ * destacadxs» (E9, OL-372) (132×165; se ven dos y media). La tarjeta es `inicio/TarjetaEvento`; aquí solo el ancho de la columna y el alto de su
+ * portada (`--foto`).
  */
 .cartelGrande {
   --foto: var(--tarjeta-cartel-foto);
@@ -264,4 +109,10 @@
 .cartelMediana {
   --foto: var(--tarjeta-cartel-mediana-foto);
   grid-auto-columns: var(--tarjeta-cartel-mediana);
+}
+/* E5 (OL-372): «Lugares de la semana» y «Artistas de la semana» en avatares de 64, cada columna con 12 de aire y 8 entre columnas (`.tira.avatar`
+   del prototipo). La tarjeta es `inicio/TarjetaAvatar`. */
+.avatar {
+  grid-auto-columns: calc(var(--avatar-carril) + var(--espacio-3));
+  column-gap: var(--espacio-2);
 }

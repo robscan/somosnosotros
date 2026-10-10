@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { seleccionarArtistasSemana, tarjetasDeSemana, type AparicionSemana } from "./eventosSemana";
+import { conNovedades, seleccionarArtistasSemana, tarjetasDeSemana, type AparicionSemana } from "./eventosSemana";
 import { TOPE_ARTISTAS_DESTACADOS } from "./cargarArtistasDestacados";
 
 const ahora = new Date("2026-09-18T18:00:00Z"); // Viernes, mediodía en México.
@@ -86,5 +86,21 @@ describe("Con eventos esta semana", () => {
   });
   it("una fecha inválida no rompe el directorio", () => {
     expect(tarjetas([aparicion("malo", "incorrecto"), aparicion("fin-malo", undefined, { termina: "incorrecto" })])).toEqual([]);
+  });
+});
+
+describe("conNovedades (OL-372, E5): la novedad vigente de cada artista de la semana", () => {
+  const video = { novedad_id: "00000000-0000-4000-8000-000000000001", proveedor: "youtube", creado_en: "2026-09-17T18:00:00Z" } as const;
+  const vieja = { novedad_id: "00000000-0000-4000-8000-000000000002", proveedor: "soundcloud", creado_en: "2026-09-11T18:00:00Z" } as const;
+  it("la pone en la tarjeta que la tiene, con el enlace a esa novedad; a las demás no las toca", () => {
+    const semana = tarjetas([aparicion("con-video"), aparicion("sin-nada")]);
+    const r = conNovedades(semana, new Map([["con-video", video]]), ahora);
+    expect(r[0]).toEqual({ ...semana[0], novedad: video, href: `/artistas/con-video?novedad=${video.novedad_id}` });
+    expect(r[1]).toBe(semana[1]);
+  });
+  it("una de hace siete días o más ya no cuenta (la regla de `selloNovedadArtista`); sin novedades, la misma lista", () => {
+    const semana = tarjetas([aparicion("con-vieja")]);
+    expect(conNovedades(semana, new Map([["con-vieja", vieja]]), ahora)).toEqual(semana);
+    expect(conNovedades(semana, new Map(), ahora)).toEqual(semana);
   });
 });

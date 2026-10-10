@@ -1,0 +1,60 @@
+/* El avatar de un lugar o un artista en Inicio (OL-372; prototipo firmado `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada», E5: `.tira.avatar`
+   y `.avatar .en`). Una rejilla plana con áreas, todo al centro de su columna (64 + 12; el carril, `.avatar` en Destacados.module.css): la foto
+   redonda, el nombre a 12 px en una línea y, si hay una novedad, «Nuevo video» o «Nuevo audio» a 8 px. Sin novedad, su fila no mide nada. */
+.avatar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "foto"
+    "nombre"
+    "nuevo";
+  grid-template-rows: var(--avatar-carril) auto auto;
+  justify-items: center;
+  min-width: 0;
+  color: var(--texto);
+  text-align: center;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.avatar:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+  border-radius: var(--radio);
+}
+/* Alto dicho y no en porcentaje (Safari, OL-246). */
+.foto {
+  grid-area: foto;
+  width: var(--avatar-carril);
+  height: var(--avatar-carril);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+/* El nombre, chico y en una línea: el que no cabe se corta con «…» (el entero lo dice el nombre del enlace). */
+.nombre {
+  grid-area: nombre;
+  max-width: 100%;
+  margin-top: var(--espacio-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-xs);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
+}
+/* La novedad de un artista, en el violeta de lo que pasa (como el cuándo de una tarjeta). */
+.nuevo {
+  grid-area: nuevo;
+  max-width: 100%;
+  margin-top: var(--espacio-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--primario);
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-meta);
+  font-variation-settings: var(--ancho-lista-meta);
+  line-height: 1.3;
+}

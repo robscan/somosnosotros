@@ -49,12 +49,11 @@ describe("imágenes adaptadas (OL-263)", () => {
     expect(CONFIG_IMAGENES.maximumResponseBody).toBe(5 * 1024 * 1024);
   });
 
-  it("declara las cinco cajas del carril sin enviar tamaño de héroe a una miniatura", () => {
+  it("declara las tres cajas del carril sin enviar tamaño de héroe a una miniatura", () => {
     expect(tamanoImagenCarril("grande")).toBe("(min-width: 1048px) 190px, 165px");
-    expect(tamanoImagenCarril("mediana")).toBe("220px");
-    expect(tamanoImagenCarril("chica")).toBe("104px");
-    expect(tamanoImagenCarril("sola")).toBe("(min-width: 1048px) 960px, (min-width: 640px) 600px, calc(100vw - 40px)");
-    // OL-370: la tarjeta de evento mediana de Inicio, 4/5 de la grande (132 y, desde 1048, 152).
+    // OL-370 y OL-372: la tarjeta mediana de un evento o de un artista, 4/5 de la grande (132 y, desde 1048, 152).
     expect(tamanoImagenCarril("cartelMediana")).toBe("(min-width: 1048px) 152px, 132px");
+    // OL-372: el avatar de 64 de un lugar o un artista (a 2× pide la variante de 192, no la de 384 de la redonda de 104).
+    expect(tamanoImagenCarril("avatar")).toBe("64px");
   });
 });

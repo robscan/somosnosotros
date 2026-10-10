@@ -1,5 +1,5 @@
 /* Lo único propio del esqueleto de un carril: el largo de sus barras. La rejilla, la tarjeta y el respiro son los de
-   `Destacados.module.css` y `ui/Esqueleto.module.css`. */
+   `Destacados.module.css`, `inicio/TarjetaEvento.module.css`, `inicio/TarjetaAvatar.module.css` y `ui/Esqueleto.module.css`. */
 .titulo {
   width: 160px;
   height: 28px; /* el alto de una línea del título del carril (26px × 1,1; OL-361) */
@@ -10,7 +10,7 @@
   height: 14px;
   border-radius: var(--radio);
 }
-/* La segunda línea de los datos, más corta que la primera. */
+/* Una línea más corta que su columna: la de cuándo, la ceja de un artista y el nombre bajo un avatar. */
 .corta {
   width: 60%;
 }

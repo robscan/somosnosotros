@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
-import { cejaDeTarjeta, chipDeTarjeta, cortarEnPalabra, cuandoEnInicio, nombreDeTarjeta, selloDeFecha, selloFechaDe, tarjetaDeInicio } from "./tarjetaInicio";
+import type { ArtistaLista } from "./artistas";
+import { avatarDeInicio, cejaDeTarjeta, chipDeTarjeta, cortarEnPalabra, cuandoEnInicio, nombreDeTarjeta, piezasDeArtista, selloDeFecha, selloFechaDe, tarjetaArtistaDeInicio, tarjetaDeInicio } from "./tarjetaInicio";
 
 // Sábado 10 de octubre de 2026, 11:49 en San Luis Potosí: la hora del prototipo firmado (bitácora 398).
 const AHORA = new Date("2026-10-10T17:49:00Z");
@@ -149,5 +150,66 @@ describe("cortarEnPalabra (E1): dos líneas como mucho, cortado en palabra enter
     const probados: string[] = [];
     cortarEnPalabra("uno dos tres cuatro", (t) => (probados.push(t), t.length <= 8));
     expect(probados).toEqual(["uno dos tres cuatro", "uno dos tres…", "uno dos…"]);
+  });
+});
+
+// OL-372: «Artistas destacadxs» con la tarjeta de un evento (E9) y los avatares de «Lugares de la semana» y «Artistas de la semana» (E5).
+const video = { novedad_id: "00000000-0000-4000-8000-000000000001", proveedor: "youtube", creado_en: "2026-10-09T18:00:00Z" } as const;
+const audio = { novedad_id: "00000000-0000-4000-8000-000000000002", proveedor: "soundcloud", creado_en: "2026-10-08T12:00:00Z" } as const;
+const artista = (cambios: Partial<ArtistaLista> = {}): ArtistaLista => ({ id: "a1", slug: "markosblues", nombre: "Markosblues", disciplina: "musica", detalle: "jazz, blues y soul", tipo: "grupo", foto: "/markos.jpg", proxima: null, novedad: null, ...cambios });
+
+describe("tarjetaArtistaDeInicio (E9): la tarjeta de siempre con su disciplina y su género", () => {
+  it("la disciplina en palabras y el género tal como se escribió", () => {
+    expect(tarjetaArtistaDeInicio(artista(), AHORA)).toMatchObject({ id: "a1", href: "/artistas/markosblues", foto: "/markos.jpg", titulo: "Markosblues", disciplina: "Música", genero: "jazz, blues y soul" });
+    expect(tarjetaArtistaDeInicio(artista({ disciplina: "artes_visuales", detalle: "  Pintura figurativa " }), AHORA)).toMatchObject({ disciplina: "Artes visuales", genero: "Pintura figurativa" });
+  });
+  it("sin subcategoría no hay género; una ficha por completar no tiene disciplina que decir", () => {
+    const sinGenero = tarjetaArtistaDeInicio(artista({ detalle: null }), AHORA);
+    expect(sinGenero).not.toHaveProperty("genero");
+    expect(tarjetaArtistaDeInicio(artista({ detalle: "   " }), AHORA)).not.toHaveProperty("genero");
+    expect(tarjetaArtistaDeInicio(artista({ disciplina: "por_completar", detalle: null }), AHORA)).not.toHaveProperty("disciplina");
+  });
+  it("la novedad vigente y su enlace exacto, y la próxima fecha, como `tarjetaArtista`", () => {
+    const t = tarjetaArtistaDeInicio(artista({ novedad: video, proxima: { id: "e1", inicio: local("2026-10-15", "19:00"), zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA);
+    expect(t).toMatchObject({ href: `/artistas/markosblues?novedad=${video.novedad_id}`, novedad: video, detalle: "jue 15 de oct · 19:00", cuando: true });
+  });
+});
+
+describe("piezasDeArtista (E9): lo que dice la tarjeta de un artista, como un evento", () => {
+  it("la disciplina en la ceja, el nombre tal cual, el género en gris y la novedad en el chip; sin fecha, sin línea de cuándo", () => {
+    const t = tarjetaArtistaDeInicio(artista({ novedad: video }), AHORA);
+    expect(piezasDeArtista(t, AHORA)).toEqual({ ceja: ["Música"], titulo: "Markosblues", genero: "jazz, blues y soul", cuando: null, nuevo: "Nuevo video", nombre: "Markosblues. Música. jazz, blues y soul. Nuevo video" });
+  });
+  it("con fecha, la fecha en la línea de cuándo y en el nombre del enlace", () => {
+    const t = tarjetaArtistaDeInicio(artista({ nombre: "Un León Marinero", slug: "un-leon-marinero", detalle: "folk y canción de autor", novedad: audio, proxima: { id: "e1", inicio: local("2026-10-15", "19:00"), zona: ZONA, sitio: "Foro" } }), AHORA);
+    expect(piezasDeArtista(t, AHORA)).toMatchObject({ cuando: "jue 15 de oct · 19:00", nuevo: "Nuevo audio", nombre: "Un León Marinero. Música. folk y canción de autor. jue 15 de oct · 19:00. Nuevo audio" });
+    // Hoy dice «hoy», como la línea de un evento.
+    const hoy = tarjetaArtistaDeInicio(artista({ proxima: { id: "e2", inicio: local("2026-10-10", "18:00"), zona: ZONA, sitio: "Templo" } }), AHORA);
+    expect(piezasDeArtista(hoy, AHORA).cuando).toBe("hoy · 18:00");
+  });
+  it("el nombre no pasa a oración: es un nombre propio", () => {
+    const t = tarjetaArtistaDeInicio(artista({ nombre: "AGRUPACION FOLKLORICA HUNAC-CEEL" }), AHORA);
+    expect(piezasDeArtista(t, AHORA).titulo).toBe("AGRUPACION FOLKLORICA HUNAC-CEEL");
+  });
+  it("sin disciplina ni género ni novedad: solo el nombre", () => {
+    const t = tarjetaArtistaDeInicio(artista({ disciplina: "por_completar", detalle: null }), AHORA);
+    expect(piezasDeArtista(t, AHORA)).toEqual({ ceja: [], titulo: "Markosblues", genero: null, cuando: null, nuevo: null, nombre: "Markosblues" });
+  });
+  it("una novedad de hace siete días o más ya no se dice (la regla de `selloNovedadArtista`)", () => {
+    const t = { ...tarjetaArtistaDeInicio(artista(), AHORA), novedad: { ...video, creado_en: "2026-10-03T17:49:00Z" } };
+    expect(piezasDeArtista(t, AHORA).nuevo).toBeNull();
+    expect(piezasDeArtista(t, new Date("2026-10-10T17:48:59Z")).nuevo).toBe("Nuevo video");
+  });
+});
+
+describe("avatarDeInicio (E5): el nombre y, solo si la hay, la novedad", () => {
+  const lugar = { id: "l1", href: "/lugares/teatro-de-la-paz", foto: null, titulo: "Teatro de la Paz", detalle: "En curso", van: 0, cuando: true };
+  it("un lugar: su nombre, sin «En curso» ni la hora", () => {
+    expect(avatarDeInicio(lugar, AHORA)).toEqual({ nombre: "Teatro de la Paz", nuevo: null, etiqueta: "Teatro de la Paz" });
+  });
+  it("un artista con novedad: «Nuevo video» o «Nuevo audio», también en el nombre del enlace", () => {
+    expect(avatarDeInicio({ titulo: "Denisse Hervert", novedad: video }, AHORA)).toEqual({ nombre: "Denisse Hervert", nuevo: "Nuevo video", etiqueta: "Denisse Hervert. Nuevo video" });
+    expect(avatarDeInicio({ titulo: "Abril Merlot", novedad: audio }, AHORA)).toMatchObject({ nuevo: "Nuevo audio", etiqueta: "Abril Merlot. Nuevo audio" });
+    expect(avatarDeInicio({ titulo: "Abril Merlot", novedad: audio }, new Date("2026-10-15T12:00:00Z")).nuevo).toBeNull();
   });
 });
