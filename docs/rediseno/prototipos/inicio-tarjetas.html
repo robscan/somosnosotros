@@ -312,7 +312,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
 .hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
 .resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
-.preajustes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
 .preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); }
 .preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
 .preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
@@ -390,6 +390,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
           <button type="button" id="p-hoy" data-preset="hoy" aria-pressed="false">Hoy<small>todo apagado</small></button>
           <button type="button" id="p-calma" data-preset="calma" aria-pressed="false">Calma<small>E1 E3 E7 E8 E8c E9 E10</small></button>
           <button type="button" id="p-minima" data-preset="minima" aria-pressed="false">Mínima<small>todo encendido</small></button>
+          <button type="button" id="p-firmada" data-preset="firmada" aria-pressed="false">Firmada<small>10 de oct</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <section class="medidor" aria-label="Medidor de saturación">
@@ -522,6 +523,9 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     hoy: { nombre: 'Hoy', e: { ...NADA } },
     calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
     minima: { nombre: 'Mínima', e: Object.fromEntries(CLAVES.map((k) => [k, true])) },
+    // La versión que aceptó el founder el 10 de oct («Listo, te acepto esta versión»: E1 · E3 · E3B · E7 · E8 · E8C · E9 · E10, «y además
+    // los ejercicios que te pedí»); la marca de «Tus planes» (E11a, b o c) queda por elegir.
+    firmada: { nombre: 'Firmada', e: { ...NADA, e1: true, e3: true, e3b: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
   };
   const EJERCICIOS = [
     { k: 'e1', t: 'E1 · Un solo título', d: 'Con cartel, la tarjeta es el cartel entero (4:5) y el título va debajo, como oración, en dos líneas y sin partir palabras. Sin cartel se queda la tarjeta de título.', f: 'Explora lo firmado en OL-357/360 («título + cartel»).' },
@@ -551,12 +555,12 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
   // ===== Lo que guarda este navegador (comodidad: la combinación y los tiempos de las pruebas).
   // «:2» desde E8c: quien ya abrió la página ve la combinación nueva de «Calma» en vez de la que guardó antes.
-  const LLAVE_ESTADO = 'inicio-tarjetas:estado:7';
+  const LLAVE_ESTADO = 'inicio-tarjetas:estado:8';
   const LLAVE_TIEMPOS = 'inicio-tarjetas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento: se queda en la pantalla */ } };
 
-  const estado = { e: { ...PRESETS.calma.e }, decisiones: new Map(Object.entries(D.asistencias)), seguidos: new Set() };
+  const estado = { e: { ...PRESETS.firmada.e }, decisiones: new Map(Object.entries(D.asistencias)), seguidos: new Set() };
   const guardado = leer(LLAVE_ESTADO);
   if (guardado && typeof guardado === 'object') for (const k of CLAVES) estado.e[k] = !!guardado[k];
   const desdeEnlace = location.hash.slice(1);
@@ -1001,10 +1005,10 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   const tiempos = () => { const t = leer(LLAVE_TIEMPOS); return t && typeof t === 'object' ? t : {}; };
   function pintarPruebas() {
     const t = tiempos();
-    const claves = ['Hoy', 'Calma', 'Mínima', ...Object.keys(t).filter((k) => !['Hoy', 'Calma', 'Mínima'].includes(k))];
+    const claves = ['Hoy', 'Calma', 'Mínima', 'Firmada', ...Object.keys(t).filter((k) => !['Hoy', 'Calma', 'Mínima', 'Firmada'].includes(k))];
     $('pruebas').innerHTML = TAREAS.map((x) => {
       const corriendo = prueba && prueba.tarea === x.id;
-      const marcas = claves.map((k) => { const r = t[k] && t[k][x.id]; return r ? `${esc(k)} <b>${segundos(r.ms)}</b>` : (['Hoy', 'Calma', 'Mínima'].includes(k) ? `${esc(k)} –` : ''); }).filter(Boolean).join(' · ');
+      const marcas = claves.map((k) => { const r = t[k] && t[k][x.id]; return r ? `${esc(k)} <b>${segundos(r.ms)}</b>` : (['Hoy', 'Calma', 'Mínima', 'Firmada'].includes(k) ? `${esc(k)} –` : ''); }).filter(Boolean).join(' · ');
       return `<li class="prueba"><span class="tarea">${esc(x.texto)}</span><button type="button" id="b-${x.id}" data-tarea="${x.id}" class="${corriendo ? 'corriendo' : ''}">${corriendo ? `Parar ${segundos(performance.now() - prueba.inicio)}` : 'Empezar'}</button><span class="tiempos">${marcas}</span></li>`;
     }).join('');
   }

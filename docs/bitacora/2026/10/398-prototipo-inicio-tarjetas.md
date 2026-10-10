@@ -298,3 +298,24 @@ Comprobado en Chrome a 390×844, sin errores: «Calma» queda sin fondo en «Tus
 - `33-e11a-tus-planes-contorno.png` — «Tus planes» dentro de una caja de borde violeta fino.
 - `34-e11b-tus-planes-linea.png` — la línea violeta a la izquierda del carril, del título a la última tarjeta.
 - `35-e11c-tus-planes-icono.png` — el marcador violeta junto a «Tus planes» y más aire arriba.
+
+## Firma (2026-10-10)
+
+**El founder, textual, en un comentario de la página:** «Listo, te acepto esta versión». A la pregunta de qué combinación veía: «E1 · E3 · E3B · E7 · E8 · E8C · E9 · E10», «y además los ejercicios que te pedí».
+
+**Lo firmado**, que es el preajuste nuevo **«Firmada»** y la combinación con la que abre ahora la página:
+- **E1 · Un solo título:** con cartel, la tarjeta es el cartel entero en 4:5 (la proporción del post vertical de Instagram) y el título va debajo como oración.
+- **E3 + E3b · Rótulos fuera del cartel, evento por omisión:** la clase va chica arriba del título solo si no es evento (TALLER, EXPO, FESTIVAL), con la sesión al lado («TALLER · SESIÓN 1 DE 4»); «Hoy» va en la línea de cuándo. Sobre el cartel queda un solo chip: «Te interesa» o cuántos van.
+- **E7 · «Ahora» sin repetir.**
+- **E8 + E8c · Fecha en el cartel, a la derecha:** sin el botón de «Voy»; el sello de mes y día va arriba a la derecha, donde estaba el check, con el mes en violeta. Un festival en curso dice «Hasta el sáb 24 de oct».
+- **E9 · Artistas como eventos** en «Artistas destacadxs», con «Nuevo video» o «Nuevo audio» sobre la foto y sin botón de seguir.
+- **E10 · Sin cartel: título abajo**, con el símbolo SN arriba a la izquierda.
+- **Los ajustes de los comentarios**, que ya están en el código para cualquier combinación: «Nuevo video/audio» reales en artistas; sin «Vas» en «Tus planes» (sí «Te interesa»); los chips de «Te interesa» y «van» sobre el cartel; la fecha del pie en violeta; el lugar en gris encima de la fecha.
+
+**Queda por elegir:** cómo se marca «Tus planes» como contenedor (E11a contorno, recomendación del gestor; E11b línea; E11c ícono y aire; o nada). La banda de color está rechazada.
+
+**Medidor con «Firmada»** (primera pantalla, 390×844): 5 rótulos, 0 botones, 1 color, 0 títulos en mayúsculas y 0 cortados, contra 4, 2, 3, 2 y 0 de «Hoy».
+
+- `36-firmada-pliegue.png` — la versión firmada al abrir: «Tus planes» con Kopk Poj («1 va») y el tributo a The Beatles («Te interesa»), sin rótulo «EVENTO», con los sellos «oct 10» a la derecha y las fechas en violeta.
+- `37-firmada-bajando.png` — «Destacados» con el laboratorio («TALLER · SESIÓN 1 DE 4», «1 va») y «Esta semana» con carteles 4:5 y sus sellos.
+- `38-firmada-hoja.png` — la hoja de ejercicios con los cuatro preajustes, «Firmada» elegido, su combinación y el medidor.
