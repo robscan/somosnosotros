@@ -218,3 +218,11 @@ Comprobado en Chrome a 390×844, con la página envuelta como al publicarla: sin
 Comprobado en Chrome a 390×844 con la página envuelta como al publicarla, sin errores: las cejas de «Tus planes» dicen «Evento», «Evento · Te interesa» y «Festival · Te interesa»; hay cinco rótulos de novedad en «Calma» y cinco en «Hoy».
 
 - `23-artistas-nuevo-video.png` — «Calma»: «Artistas destacadxs» con Markosblues y su chip violeta «Nuevo video» abajo a la izquierda de la foto; Fozco sin novedad; debajo, «Artistas de la semana» en redondo.
+
+## E9 · Artistas como eventos (comentario del founder)
+
+Sobre el carril «Artistas destacadxs» (2026-10-10): «para este carril usar jerarquía de nuevos eventos». Se añadió **E9**, encendido en «Calma» y en «Mínima»: cada artista toma la tarjeta de un evento de esa misma combinación. La foto mide lo que el cartel (165×206 con E1; la mediana con E5), con «Nuevo video» o «Nuevo audio» encima. Debajo van la disciplina en la ceja, el nombre como título y el género; si toca esta semana, su fecha como la de un evento. Sin botón de seguir, igual que el evento sin «Voy»: se sigue desde la ficha. La disciplina y el género son los reales de cada ficha. La llave de `localStorage` pasa a `inicio-tarjetas:estado:3`.
+
+Comprobado en Chrome a 390×844, sin errores. «Nuevos eventos» y «Artistas destacadxs» miden lo mismo: tira `grande cartel-45`, foto de 165×206, título de 17 px y ningún botón. Un clic real en la foto de Markosblues abre su ficha.
+
+- `24-e9-artistas-como-eventos.png` — «Calma»: «Artistas destacadxs» con Markosblues («Nuevo video» sobre la foto; «MÚSICA», el nombre y «jazz, blues y soul») y Fozco («rock, metal y alternativo»), sin botones; debajo, «Artistas de la semana» en redondo como antes.
