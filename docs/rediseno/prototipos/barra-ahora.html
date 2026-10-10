@@ -812,8 +812,12 @@ function cuandoTarjeta(e) {
 }
 function tarjeta(e) {
   const hoy = e.dia === dia ? '<span class="hoy">Hoy</span>' : '';
-  if (modoTarjetas === 'mixta' && e.cartel) return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada mixta"><span class="m-titulo" style="background:${degradadoTarjeta(coloresDe(e))}"><span>${tituloCorto(e.t, e.festival)}</span></span><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
-  if (modoTarjetas === 'titulo' || modoTarjetas === 'mixta') return `<button class="tarjeta" type="button" data-id="${e.id}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t, e.festival)}${hoy}</span><b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
+  // Con el título dentro de la tarjeta no se repite debajo (founder: «el título se duplica»): debajo, cuándo y dónde. El título completo
+  // va en el nombre del botón (lo lee el lector de pantalla), en la ficha y en la historia.
+  const nombre = `${e.t}. ${cuandoTarjeta(e)}. ${e.l}`;
+  const pie = `<span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span>`;
+  if (modoTarjetas === 'mixta' && e.cartel) return `<button class="tarjeta" type="button" data-id="${e.id}" aria-label="${nombre}"><span class="portada mixta"><span class="m-titulo" style="background:${degradadoTarjeta(coloresDe(e))}"><span>${tituloCorto(e.t, e.festival)}</span></span><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span>${pie}</button>`;
+  if (modoTarjetas === 'titulo' || modoTarjetas === 'mixta') return `<button class="tarjeta" type="button" data-id="${e.id}" aria-label="${nombre}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t, e.festival)}${hoy}</span>${pie}</button>`;
   const portada = !e.cartel && estetica === 'vivo'
     ? `<span class="portada generada" style="background:${degradadoCSS(paletaDe(e.id).c)}"><img class="sello" src="barra-ahora/logotipo.svg" alt=""><span class="g-titulo">${e.t.split(/:\s/)[0]}</span>${hoy}</span>`
     : `<span class="portada"><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span>`;

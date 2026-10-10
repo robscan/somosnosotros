@@ -145,12 +145,14 @@ Comprobado con un toque real en una tarjeta (dice qué ficha se abriría); el an
 - **Fondo legible:** el fondo de la tarjeta es el color más vivo del cartel, oscurecido lo justo para que el título blanco se lea (luminancia ≤ 0,12, contraste de 6:1 o más) y no a la mitad fija.
 - **Unión con el cartel, probada y quitada:** la franja se fundía con el color del borde de arriba del cartel, para que el cartel pareciera salir de ella. El founder: «pusiste un degradado desde la imagen, ese efecto particularmente no me gusta». Se quitó con su cálculo, y la franja acaba en un corte limpio contra el cartel, como en «Essentials».
 
+**Sin título repetido** (founder: «ahora tenemos la situación de que el título se duplica»). En «título + cartel» y en «título grande», debajo de la tarjeta ya no va el título: solo cuándo (violeta) y dónde (gris). El título completo va en el nombre del botón (lo lee el lector de pantalla), en la ficha y en la historia. En «Tarjetas: cartel» se queda debajo, porque el cartel no lo dice con las palabras de la app.
+
 Resultado en las capturas 23, 24 y 14:
 - La trentina, en azul pizarra.
 - El laboratorio, en negro oliva.
 - Caracolas, en azul, también de fondo en su historia con el beige de su cartel.
 
-- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre azul pizarra con su cartel debajo, cortado limpio (la foto y «Hoy»), y «LABORATORIO DE EXPLORACIÓN SONORA» sobre negro oliva con su cartel negro.
+- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre azul pizarra con su cartel debajo, cortado limpio (la foto y «Hoy»), y «LABORATORIO DE EXPLORACIÓN SONORA» sobre negro oliva con su cartel negro; debajo de cada una, solo «hoy · 18:30» o «mañana · 17:00» y el lugar.
 - `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre azul con su cartel beige debajo, y la canción (sin cartel) entera de título.
 - `25-tarjetas-titulo-y-cartel-a-320.png` — lo mismo a 320, sin cortes.
 
