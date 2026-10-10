@@ -319,3 +319,20 @@ Comprobado en Chrome a 390×844, sin errores: «Calma» queda sin fondo en «Tus
 - `36-firmada-pliegue.png` — la versión firmada al abrir: «Tus planes» con Kopk Poj («1 va») y el tributo a The Beatles («Te interesa»), sin rótulo «EVENTO», con los sellos «oct 10» a la derecha y las fechas en violeta.
 - `37-firmada-bajando.png` — «Destacados» con el laboratorio («TALLER · SESIÓN 1 DE 4», «1 va») y «Esta semana» con carteles 4:5 y sus sellos.
 - `38-firmada-hoja.png` — la hoja de ejercicios con los cuatro preajustes, «Firmada» elegido, su combinación y el medidor.
+
+## Versión final de la firma: con E5 y sin marca en «Tus planes»
+
+Tras registrar la firma, el founder había escrito «a ver no, detente» cuando la respuesta automática le pidió elegir la marca de «Tus planes», y cerró ese comentario sin elegir. Al cerrar, dejó su versión: «listo, puedes ver como dejé la versión Personalizada · E1 · E3 · E3B · E5 · E7 · E8 · E8C · E9 · E10». El preajuste **«Firmada»** pasa a esa combinación, que **suma E5** (jerarquía de tamaños) a lo firmado antes. **«Tus planes» queda sin marca** (ni banda ni E11). La llave de `localStorage` pasa a `inicio-tarjetas:estado:9`.
+
+Con E5, los carriles quedan así (medido en Chrome a 390×844):
+
+| Carril | Tarjeta |
+|---|---|
+| Tus planes, Destacados, Festivales y expos | grande, cartel 4:5 de 165×206 |
+| Esta semana, Nuevos eventos, Artistas destacadxs | mediana, 4:5 de 132×165 (se ven dos y media) |
+| Lugares de la semana, Artistas de la semana | avatar redondo de 64 px, sin botón |
+
+Medidor en la primera pantalla: 6 rótulos, 0 botones, 2 colores, 0 títulos en mayúsculas y 0 cortados, contra 4, 4, 6, 4 y 2 de «Hoy». Sin errores.
+
+- `39-firmada-final-esta-semana.png` — «Esta semana» en mediana: las cactáceas, Guitarra en el Otoño y el taller Viajera («TALLER», «1 va»), y debajo «Festivales y expos» en grande.
+- `40-firmada-final-lugares-artistas.png` — «Lugares de la semana» en avatares de 64 px y «Artistas destacadxs» en mediana con «Nuevo video» (Markosblues) y «Nuevo audio» (DwardNoize).

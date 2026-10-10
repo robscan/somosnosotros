@@ -523,9 +523,9 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     hoy: { nombre: 'Hoy', e: { ...NADA } },
     calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
     minima: { nombre: 'Mínima', e: Object.fromEntries(CLAVES.map((k) => [k, true])) },
-    // La versión que aceptó el founder el 10 de oct («Listo, te acepto esta versión»: E1 · E3 · E3B · E7 · E8 · E8C · E9 · E10, «y además
-    // los ejercicios que te pedí»); la marca de «Tus planes» (E11a, b o c) queda por elegir.
-    firmada: { nombre: 'Firmada', e: { ...NADA, e1: true, e3: true, e3b: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
+    // La versión que firmó el founder el 10 de oct: «Listo, te acepto esta versión» y, al cerrar, «Personalizada · E1 · E3 · E3B · E5 · E7 ·
+    // E8 · E8C · E9 · E10», con los ajustes de sus comentarios. «Tus planes» queda sin marca (cerró ese comentario sin elegir E11).
+    firmada: { nombre: 'Firmada', e: { ...NADA, e1: true, e3: true, e3b: true, e5: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
   };
   const EJERCICIOS = [
     { k: 'e1', t: 'E1 · Un solo título', d: 'Con cartel, la tarjeta es el cartel entero (4:5) y el título va debajo, como oración, en dos líneas y sin partir palabras. Sin cartel se queda la tarjeta de título.', f: 'Explora lo firmado en OL-357/360 («título + cartel»).' },
@@ -555,7 +555,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
   // ===== Lo que guarda este navegador (comodidad: la combinación y los tiempos de las pruebas).
   // «:2» desde E8c: quien ya abrió la página ve la combinación nueva de «Calma» en vez de la que guardó antes.
-  const LLAVE_ESTADO = 'inicio-tarjetas:estado:8';
+  const LLAVE_ESTADO = 'inicio-tarjetas:estado:9';
   const LLAVE_TIEMPOS = 'inicio-tarjetas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento: se queda en la pantalla */ } };
