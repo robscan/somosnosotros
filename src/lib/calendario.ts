@@ -202,9 +202,9 @@ export function horasDeFin(despuesDe?: string, paso = 15): string[] {
   return despuesDe ? horas.filter((h) => h > despuesDe) : horas;
 }
 
-/** La hora de fin de un evento de varios días al que nadie le puso hora: acaba con su último día. Es la misma regla
- *  de `terminaDe` (sin fin, el evento dura hasta el final de su día), escrita como hora porque `eventos.fin` guarda
- *  siempre un instante: no se puede tener un día de fin sin hora (OL-298). En el selector se lee «Sin hora de fin». */
+/** La hora de fin de un evento de varios días al que nadie le puso hora: acaba con su último día, escrita como hora
+ *  porque `eventos.fin` guarda siempre un instante: no se puede tener un día de fin sin hora (OL-298). En el selector se
+ *  lee «Sin hora de fin». Cada día suelto (`ocurrencias`) vuelve a quedar sin fin y se ve 3 h (`terminaDe`, OL-358). */
 export const FIN_DEL_DIA = "23:59";
 
 /** "9:00 p.m." a partir de "HH:MM". */

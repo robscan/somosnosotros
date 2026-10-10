@@ -136,7 +136,7 @@ export function lineaDeTaller(evento: { inicio: string; fin: string | null; zona
   return [cuando, sitio].filter(Boolean).join(" · ");
 }
 
-/** El periodo de un festival: del inicio de su primer acto al final del último (con hora de fin, ese; sin ella, el final de su día). */
+/** El periodo de un festival: del inicio de su primer acto al final del último (con hora de fin, ese; sin ella, 3 h después de empezar: `terminaDe`). */
 export function periodoDePrograma(actos: readonly { inicio: string; fin: string | null }[], zona: string = ZONA_INICIAL): { inicio: string; fin: string } | null {
   if (!actos.length) return null;
   const inicios = actos.map((a) => Date.parse(a.inicio));

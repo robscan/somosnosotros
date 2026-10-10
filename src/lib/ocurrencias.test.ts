@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claveDe, ocurrenciasDe, ocurrenciasDeLista, ocurrenciasVigentes, proximaOcurrencia, textoParte } from "./ocurrencias";
+import { claveDe, ocurrenciaPaso, ocurrenciasDe, ocurrenciasDeLista, ocurrenciasVigentes, proximaOcurrencia, textoParte } from "./ocurrencias";
 
 const MX = "America/Mexico_City"; // UTC−6 todo el año
 type Prueba = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; sesiones?: { inicio: string; fin: string | null }[]; precio?: string };
@@ -117,9 +117,12 @@ describe("ocurrenciasVigentes: lo que pasó ya no sale", () => {
     expect(dias(ocurrenciasVigentes(taller, new Date(mx("2026-10-10T18:59"))))).toEqual(["2026-10-10", "2026-10-17"]);
     expect(dias(ocurrenciasVigentes(taller, new Date(mx("2026-10-10T19:01"))))).toEqual(["2026-10-17"]);
   });
-  it("una sesión de hoy sin hora de fin dura hasta que acaba el día", () => {
-    expect(dias(ocurrenciasVigentes(taller, new Date(mx("2026-10-17T23:30"))))).toEqual(["2026-10-17"]);
-    expect(ocurrenciasVigentes(taller, new Date(mx("2026-10-18T00:01")))).toEqual([]);
+  it("una sesión sin hora de fin se ve 3 h desde que empieza (OL-358)", () => {
+    expect(dias(ocurrenciasVigentes(taller, new Date(mx("2026-10-17T19:59"))))).toEqual(["2026-10-17"]);
+    expect(dias(ocurrenciasVigentes(taller, new Date(mx("2026-10-17T20:00"))))).toEqual(["2026-10-17"]);
+    expect(ocurrenciasVigentes(taller, new Date(mx("2026-10-17T20:01")))).toEqual([]);
+    expect(ocurrenciaPaso({ inicio: mx("2026-10-17T10:00"), fin: null, zona: MX }, new Date(mx("2026-10-17T12:59")))).toBe(false);
+    expect(ocurrenciaPaso({ inicio: mx("2026-10-17T10:00"), fin: null, zona: MX }, new Date(mx("2026-10-17T13:01")))).toBe(true);
   });
   it("varios días sin horario por día: ayer ya no sale, hoy sí", () => {
     const e = evento("a", mx("2026-10-09T20:00"), mx("2026-10-11T21:00"));

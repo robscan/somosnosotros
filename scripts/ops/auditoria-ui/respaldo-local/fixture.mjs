@@ -327,7 +327,7 @@ function enMemoria(t, p_evento, p_datos, p_operacion, autor = ANA, quien = []) {
   if (t.eventos.some((e) => e.id === p_operacion)) return { id: p_operacion, ...vacio, repetido: true };
   const d = p_datos ?? {};
   const slug = `${String(d.titulo ?? "evento").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)}-${String(p_operacion).slice(0, 4)}`;
-  const termina = d.fin ?? masHoras(d.inicio, 4);
+  const termina = d.fin ?? masHoras(d.inicio, 3); // como eventos.termina: fin o inicio + 3 h (OL-358)
   t.eventos.push({
     clase: "puntual", evento_padre_id: null, inaugura_id: null, borrador: false, retirado_por_admin: false, sugerencias: {},
     id: p_operacion, slug, titulo: d.titulo, inicio: d.inicio, fin: d.fin ?? null, termina, descripcion: d.descripcion ?? null, imagen: d.imagen ?? null, precio: d.precio ?? null, enlace: d.enlace ?? null,

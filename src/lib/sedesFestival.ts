@@ -20,6 +20,8 @@ export const VARIAS_SEDES = "Varias sedes";
 /** Un acto (o el marco, como respaldo) con lo que dice dónde es. El lugar llega anidado como lo da la consulta (`lugar:lugares(...)`). */
 export type ActoConSitio = {
   inicio: string;
+  /** Con él, el acto cuenta hasta su fin; sin él, 3 h desde que empieza (`eventoPaso`, OL-358). */
+  fin?: string | null;
   lugar_id: string | null;
   lugar?: { id?: string; slug?: string | null; nombre: string; direccion?: string | null; lat?: number | null; lng?: number | null } | null;
   sitio_texto: string | null;
@@ -104,13 +106,13 @@ export function sedesDeFestival(actos: readonly ActoConSitio[], respaldo?: ActoC
 
 /**
  * El primer acto que todavía no pasa en cada sede (por su `clave`): el día que lleva su pin en el mapa a pantalla completa (OL-350; `diaPin` decide si
- * es «Hoy», el día de la semana o ninguno). Un acto de hoy cuenta hasta que acabe el día, como en la agenda. Una sede sin actos por venir no sale.
+ * es «Hoy», el día de la semana o ninguno). Un acto cuenta hasta su fin o 3 h después de empezar, como en la agenda (`eventoPaso`). Una sede sin actos por venir no sale.
  */
 export function proximoPorSede(actos: readonly ActoConSitio[], zona: string, ahora: Date = new Date()): Map<string, string> {
   const proximos = new Map<string, string>();
   for (const a of [...actos].sort((x, y) => Date.parse(x.inicio) - Date.parse(y.inicio))) {
     const clave = sedeDe(a)?.clave;
-    if (clave && !proximos.has(clave) && !eventoPaso(a.inicio, null, ahora, zona)) proximos.set(clave, a.inicio);
+    if (clave && !proximos.has(clave) && !eventoPaso(a.inicio, a.fin ?? null, ahora, zona)) proximos.set(clave, a.inicio);
   }
   return proximos;
 }

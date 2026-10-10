@@ -56,13 +56,29 @@ describe("fechas", () => {
     expect(fraseCuando("2026-09-19T19:00", undefined, AHORA)).toBe("sábado 19 de septiembre · 19:00");
     expect(fraseCuando("nada")).toBe("");
   });
-  it("un evento ya pasó cuando terminó o, sin hora de fin, cuando acabó su día en la ciudad", () => {
-    expect(eventoPaso("2026-09-19T14:30:00Z", null, AHORA)).toBe(false); // hoy 8:30, sin fin: se queda todo el día
-    expect(eventoPaso("2026-09-19T06:00:00Z", null, AHORA)).toBe(false); // hoy 0:00, sin fin: se queda todo el día
-    expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA)).toBe(true); // ayer 23:59, sin fin: ya pasó
+  it("un evento ya pasó cuando terminó o, sin hora de fin, 3 horas después de empezar (OL-358)", () => {
+    expect(eventoPaso("2026-09-19T14:30:00Z", null, AHORA)).toBe(false); // hoy 8:30, sin fin: se ve hasta las 11:30
+    expect(eventoPaso("2026-09-19T13:00:00Z", null, AHORA)).toBe(false); // hoy 7:00, sin fin: las 10:00 justas aún cuentan
+    expect(eventoPaso("2026-09-19T12:59:00Z", null, AHORA)).toBe(true); // hoy 6:59, sin fin: se fue a las 9:59
+    expect(eventoPaso("2026-09-19T06:00:00Z", null, AHORA)).toBe(true); // hoy 0:00, sin fin: ya no se queda todo el día
     expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T17:00:00Z", AHORA)).toBe(false); // termina a las 11:00
     expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T15:59:00Z", AHORA)).toBe(true); // terminó a las 9:59
     expect(inicioDelDia(AHORA)).toBe("2026-09-19T06:00:00.000Z");
+  });
+  it("la regla de las 3 horas: sin fin a las 10:00 sigue a las 12:59 y ya pasó a las 13:01; con fin manda el fin", () => {
+    const diez = "2026-10-09T16:00:00Z"; // 10:00 en San Luis Potosí
+    expect(terminaDe(diez, null)).toBe("2026-10-09T19:00:00.000Z");
+    expect(eventoPaso(diez, null, new Date("2026-10-09T18:59:00Z"))).toBe(false); // 12:59
+    expect(eventoPaso(diez, null, new Date("2026-10-09T19:01:00Z"))).toBe(true); // 13:01
+    expect(terminaDe(diez, "2026-10-09T23:00:00Z")).toBe("2026-10-09T23:00:00.000Z"); // fin 17:00
+    expect(eventoPaso(diez, "2026-10-09T23:00:00Z", new Date("2026-10-09T19:01:00Z"))).toBe(false);
+    expect(eventoPaso(diez, "2026-10-09T17:00:00Z", new Date("2026-10-09T17:30:00Z"))).toBe(true); // fin corto antes de 3 h
+  });
+  it("la regla de las 3 horas no depende de la zona", () => {
+    expect(terminaDe("2026-09-19T17:00:00Z", null, "Europe/Madrid")).toBe("2026-09-19T20:00:00.000Z");
+    expect(terminaDe("2026-09-19T17:00:00Z", null, "Asia/Tokyo")).toBe("2026-09-19T20:00:00.000Z");
+    // Una noche que cruza la medianoche: 22:00 sin fin se ve hasta la 1:00.
+    expect(eventoPaso("2026-09-20T04:00:00Z", null, new Date("2026-09-20T06:30:00Z"))).toBe(false);
   });
   it("las listas filtran con termina, que la base calcula en la zona de cada evento", () => {
     expect(filtroSinPasar(AHORA)).toBe(`termina.gte."2026-09-19T16:00:00.000Z"`);
@@ -118,12 +134,14 @@ describe("fechas en la zona del evento", () => {
     expect(diaCorto("2026-09-19T23:30:00Z", AHORA, MADRID)).toBe("Mañana");
     expect(diaLargo("2026-09-20", AHORA, MADRID)).toBe("domingo 20 de septiembre");
   });
-  it("un evento sin hora de fin se va al acabar el día de su zona", () => {
-    // A las 00:30 del domingo en Madrid (16:30 del sábado en San Luis), un evento del sábado a las 19:00 de Madrid ya pasó.
+  it("un evento sin hora de fin se va 3 h después de empezar, en cualquier zona; el tramo agrupa por el día de su zona", () => {
+    // A las 00:30 del domingo en Madrid (16:30 del sábado en San Luis), un evento del sábado a las 19:00 de Madrid (17:00Z) ya pasó (20:00Z).
     const medianoche = new Date("2026-09-19T22:30:00Z");
     expect(eventoPaso("2026-09-19T17:00:00Z", null, medianoche, MADRID)).toBe(true);
-    expect(eventoPaso("2026-09-19T17:00:00Z", null, medianoche)).toBe(false);
+    expect(eventoPaso("2026-09-19T17:00:00Z", null, medianoche)).toBe(true);
+    expect(eventoPaso("2026-09-19T17:00:00Z", null, new Date("2026-09-19T19:59:00Z"), MADRID)).toBe(false);
     expect(tramo("2026-09-19T17:00:00Z", medianoche, MADRID)).toBe("pasado");
+    expect(tramo("2026-09-19T17:00:00Z", medianoche)).toBe("hoy");
     expect(inicioDelDia(AHORA, MADRID)).toBe("2026-09-18T22:00:00.000Z");
   });
   it("ofrece días y avisa si ya pasó con el reloj de la zona", () => {
@@ -152,12 +170,12 @@ describe("fechas en la zona del evento", () => {
 // son los mismos que la base calcula en `eventos.termina` (comprobados en un Postgres local): la misma regla en los dos lados.
 describe("banco por zona", () => {
   const casos = [
-    { zona: "America/Mexico_City", local: "2026-09-20T19:00", iso: "2026-09-21T01:00:00.000Z", termina: "2026-09-21T06:00:00.000Z" },
-    { zona: "America/Bogota", local: "2026-09-20T19:00", iso: "2026-09-21T00:00:00.000Z", termina: "2026-09-21T05:00:00.000Z" },
-    { zona: "Europe/Madrid", local: "2026-09-20T19:00", iso: "2026-09-20T17:00:00.000Z", termina: "2026-09-20T22:00:00.000Z" },
-    // Madrid adelanta el reloj el 29 mar (un día de 23 horas) y lo atrasa el 25 oct (de 25 horas).
-    { zona: "Europe/Madrid", local: "2026-03-29T01:30", iso: "2026-03-29T00:30:00.000Z", termina: "2026-03-29T22:00:00.000Z" },
-    { zona: "Europe/Madrid", local: "2026-10-25T01:30", iso: "2026-10-24T23:30:00.000Z", termina: "2026-10-25T23:00:00.000Z" },
+    { zona: "America/Mexico_City", local: "2026-09-20T19:00", iso: "2026-09-21T01:00:00.000Z", termina: "2026-09-21T04:00:00.000Z" },
+    { zona: "America/Bogota", local: "2026-09-20T19:00", iso: "2026-09-21T00:00:00.000Z", termina: "2026-09-21T03:00:00.000Z" },
+    { zona: "Europe/Madrid", local: "2026-09-20T19:00", iso: "2026-09-20T17:00:00.000Z", termina: "2026-09-20T20:00:00.000Z" },
+    // Madrid adelanta el reloj el 29 mar y lo atrasa el 25 oct: las 3 h son reales, no de reloj (OL-358).
+    { zona: "Europe/Madrid", local: "2026-03-29T01:30", iso: "2026-03-29T00:30:00.000Z", termina: "2026-03-29T03:30:00.000Z" },
+    { zona: "Europe/Madrid", local: "2026-10-25T01:30", iso: "2026-10-24T23:30:00.000Z", termina: "2026-10-25T02:30:00.000Z" },
   ];
   const min = 60000;
   for (const c of casos) {
@@ -186,7 +204,7 @@ describe("banco por zona", () => {
     const sinZona = null as unknown as string;
     expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, sinZona)).toBe("Hoy · 19:00");
     expect(horaCorta("2026-09-20T01:00:00Z", undefined)).toBe("19:00");
-    expect(terminaDe("2026-09-21T01:00:00.000Z", null, sinZona)).toBe("2026-09-21T06:00:00.000Z");
+    expect(terminaDe("2026-09-21T01:00:00.000Z", null, sinZona)).toBe("2026-09-21T04:00:00.000Z");
     expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA, sinZona)).toBe(true);
     expect(localAIso("2026-09-20T19:00", sinZona)).toBe("2026-09-21T01:00:00.000Z");
   });
