@@ -268,3 +268,11 @@ Comprobado en Chrome a 390×844, sin errores. En las tres tarjetas sin cartel de
 Comprobado en Chrome a 390×844, sin errores: la fecha pinta `rgb(109, 52, 200)` y el lugar `rgb(92, 92, 92)`.
 
 - `30-fecha-en-violeta.png` — «Calma», «Destacados»: «hoy · 12:00» y «hoy · 17:00» en violeta bajo «Galería Casa Diana» y «Aurora Co-Lab» en gris.
+
+## E11 · «Tus planes», tu espacio (comentario del founder)
+
+Sobre la cabecera de «Tus planes» (2026-10-10): «¿Cómo podemos resaltar todo el carril de planes? Se trata de que se entienda que este es su contenedor con sus eventos». Propuesta del gestor, como **E11**, encendido en «Calma» y en «Mínima»: región común, con una banda de `--primario-suave` (el violeta claro que ya usa el chip «Te interesa») de borde a borde detrás de todo el carril, del título a la última línea de las tarjetas. No suma elementos ni colores nuevos, y las tarjetas quedan alineadas con las de los demás carriles. Con E4 la banda pasa a un gris neutro. La llave de `localStorage` pasa a `inicio-tarjetas:estado:6`.
+
+Comprobado en Chrome a 390×844, sin errores: la banda mide los 390 px de ancho y pinta `rgb(238, 231, 248)`. La primera tarjeta empieza en x = 20, igual que en «Destacados».
+
+- `31-e11-tus-planes-tu-espacio.png` — «Calma»: «Tus planes» sobre la banda violeta clara, con Kopk Poj («1 va») y el tributo a The Beatles («Te interesa»); debajo, «Destacados» sobre el fondo de siempre.

@@ -168,6 +168,10 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
 /* Los carriles: título a la izquierda y, a la derecha, a dónde lleva. */
 .carril { display: grid; gap: var(--espacio-4); padding-top: var(--espacio-7); }
+/* E11 (founder, 10 de oct: «¿cómo podemos resaltar todo el carril de planes? Se trata de que se entienda que este es su contenedor con sus
+   eventos»): región común, una banda violeta muy clara de borde a borde detrás del carril; las tarjetas siguen alineadas con las demás. */
+.carril.mio { margin-top: var(--espacio-5); padding-block: var(--espacio-5) var(--espacio-4); background: var(--primario-suave); }
+.e4 .carril.mio { background: var(--fondo-miniatura); }
 .cab { display: flex; align-items: center; justify-content: space-between; padding-inline: var(--gutter); }
 .cab h2 { min-width: 0; font-size: var(--letra-2xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
 .ver { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque-min); padding-left: var(--espacio-2); color: var(--primario); font-size: var(--letra-sm); font-weight: 600; }
@@ -375,7 +379,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       <div class="resumen">
         <div class="preajustes" role="group" aria-label="Preajustes">
           <button type="button" id="p-hoy" data-preset="hoy" aria-pressed="false">Hoy<small>todo apagado</small></button>
-          <button type="button" id="p-calma" data-preset="calma" aria-pressed="false">Calma<small>E1 E3 E7 E8 E8c E9 E10</small></button>
+          <button type="button" id="p-calma" data-preset="calma" aria-pressed="false">Calma<small>E1 E3 E7 E8 E8c E9 E10 E11</small></button>
           <button type="button" id="p-minima" data-preset="minima" aria-pressed="false">Mínima<small>todo encendido</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
@@ -503,11 +507,11 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   const FLECHA = '<svg class="flecha" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 6h8M6.5 3l3 3-3 3"/></svg>';
 
   // ===== Los ejercicios y los preajustes.
-  const CLAVES = ['e1', 'e2', 'e3', 'e3b', 'e4', 'e5', 'e6', 'e7', 'e8', 'e8b', 'e8c', 'e9', 'e10'];
+  const CLAVES = ['e1', 'e2', 'e3', 'e3b', 'e4', 'e5', 'e6', 'e7', 'e8', 'e8b', 'e8c', 'e9', 'e10', 'e11'];
   const NADA = Object.fromEntries(CLAVES.map((k) => [k, false]));
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...NADA } },
-    calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true, e8c: true, e9: true, e10: true } },
+    calma: { nombre: 'Calma', e: { ...NADA, e1: true, e3: true, e7: true, e8: true, e8c: true, e9: true, e10: true, e11: true } },
     minima: { nombre: 'Mínima', e: Object.fromEntries(CLAVES.map((k) => [k, true])) },
   };
   const EJERCICIOS = [
@@ -524,6 +528,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     { k: 'e8c', t: 'E8c · La fecha a la derecha', d: 'El sello va donde estaba el botón de «Voy», arriba a la derecha; a la izquierda solo queda «Nuevo».', sub: 'e8', f: 'Pedido del founder en un comentario (10 de oct).' },
     { k: 'e9', t: 'E9 · Artistas como eventos', d: '«Artistas destacadxs» con la jerarquía de «Nuevos eventos»: la foto del tamaño de un cartel, la disciplina chica arriba del nombre y, debajo, su género y su próxima fecha. «Nuevo video» o «Nuevo audio» sigue sobre la foto; sin botón de seguir, como los eventos sin «Voy» (se sigue desde la ficha).', f: 'Pedido del founder en un comentario (10 de oct).' },
     { k: 'e10', t: 'E10 · Sin cartel: título abajo', d: 'En la tarjeta sin cartel, el símbolo SN arriba a la izquierda y el título en la base; la fecha y «Nuevo» arriba a la derecha y los chips encima del título.', f: 'Pedido del founder en un comentario (10 de oct).' },
+    { k: 'e11', t: 'E11 · «Tus planes», tu espacio', d: 'Una banda violeta muy clara de borde a borde detrás de todo el carril, para que se lea como el lugar de tus eventos; las tarjetas siguen alineadas con las demás.', f: 'Pedido del founder en un comentario (10 de oct).' },
   ];
   /** Lo que de verdad se aplica: E2 sin efecto con E8; los subinterruptores solo con su ejercicio. */
   const vista = (e) => ({ ...e, e2: e.e2 && !e.e8, e3b: e.e3b && e.e3, e8b: e.e8b && e.e8, e8c: e.e8c && e.e8 });
@@ -534,7 +539,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
   // ===== Lo que guarda este navegador (comodidad: la combinación y los tiempos de las pruebas).
   // «:2» desde E8c: quien ya abrió la página ve la combinación nueva de «Calma» en vez de la que guardó antes.
-  const LLAVE_ESTADO = 'inicio-tarjetas:estado:5';
+  const LLAVE_ESTADO = 'inicio-tarjetas:estado:6';
   const LLAVE_TIEMPOS = 'inicio-tarjetas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento: se queda en la pantalla */ } };
@@ -678,7 +683,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       : k.forma === 'evento'
         ? `<ul class="tira ${v.e5 ? 'mediana' : 'grande'}${v.e1 ? ' cartel-45' : ''}" data-carril="${k.clave}">${k.entidades.map((x) => htmlArtistaEvento(x, { v, img })).join('')}</ul>`
         : `<ul class="tira ${k.forma}" data-carril="${k.clave}">${k.entidades.map((x) => htmlEntidad(x, { v, img, forma: k.forma })).join('')}</ul>`;
-    return `<section class="carril" aria-label="${esc(k.titulo)}">${cab}${cuerpo}</section>`;
+    return `<section class="carril${k.tusPlanes && v.e11 ? ' mio' : ''}" aria-label="${esc(k.titulo)}">${cab}${cuerpo}</section>`;
   }
 
   /** E7: si varios empiezan a la misma hora, solo el primero dice la cuenta atrás; los demás, la hora. */
