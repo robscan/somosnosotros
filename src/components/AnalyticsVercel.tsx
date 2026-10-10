@@ -11,7 +11,8 @@ import { sinMedirEnPantalla } from "@/lib/medir";
  *   componente dentro de `MarcaAdmin`: solo existe cuando el rol se resolvió y no es admin, así que la primera vista sale entonces.
  * - Las acciones (`medirCliente`) llevan la página limpia y, en una ruta privada (Entrar, Perfil…), solo su primer tramo.
  * - Las vistas, con la limpieza de `limpiarUrlAnalitica` —la MISMA que usa Google (OL-334, F13 de OL-327): parámetros de la lista blanca con
- *   valor de su lista cerrada y `/personas/<id>` reducido a `/personas`—; las rutas privadas no se mandan.
+ *   valor de su lista cerrada y la ruta de una ficha reducida a su sección, sin slug ni id (`/lugares/<slug>` → `/lugares`, OL-340)—; las
+ *   rutas privadas no se mandan.
  */
 export function antesDeEnviarAVercel(event: BeforeSendEvent): BeforeSendEvent | null {
   if (sinMedirEnPantalla()) return null;

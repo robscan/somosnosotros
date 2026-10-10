@@ -179,7 +179,7 @@ export type TextosCartel = {
   precio: string;
 };
 
-/** La dirección corta del evento (`somosnosotros.org/e/<slug>`; el proxy la lleva a `/eventos/<slug>` con un 308). Desde OL-336 el pie del cartel
+/** La dirección corta del evento (`somosnosotrxs.org/e/<slug>`: el dominio lleva a somosnosotros.org con la misma ruta y el proxy a `/eventos/<slug>`, ambos con 308). Desde OL-336 el pie del cartel
  *  lleva el símbolo con el dominio y no esta dirección, pero la dirección sigue valiendo para quien la tenga. */
 export function enlaceCorto(slug: string): string {
   return `${DOMINIO_CARTEL}/e/${slug}`;

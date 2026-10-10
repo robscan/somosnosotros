@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { cargarParaCartel } from "@/lib/carteles/cargar";
 import { carpetaFotoPropia } from "@/lib/carteles/fotoPropia";
+import { DOMINIO_CARTEL } from "@/lib/carteles/tokens";
 import { cortaLaOpcion, ofrecer, type Oferta } from "@/lib/carteles/ofrecer";
 import { hrefCreador, origenCreador } from "@/lib/carteles/origen";
 import { configPublica } from "@/lib/config";
@@ -11,7 +12,7 @@ import CreadorCartel, { type Opcion } from "./CreadorCartel";
 
 export const metadata: Metadata = { title: "Crear cartel · Somos Nosotros", robots: { index: false, follow: false } };
 
-/** Una versión corta de lo que cambia el cartel: si el evento cambia, las imágenes en la caché del teléfono dejan de valer. */
+/** Una versión corta de lo que cambia el cartel: si el evento o el dominio del sello cambian, las imágenes en la caché del teléfono dejan de valer. */
 function version(texto: string): string {
   let n = 0;
   for (const letra of texto) n = (n * 33 + letra.charCodeAt(0)) | 0;
@@ -50,7 +51,7 @@ export default async function CrearCartel({ params, searchParams }: { params: Pr
       conImagen={datos.datosEleccion.conImagen}
       usuarioId={datos.perfilId}
       carpeta={carpetaFotoPropia(datos.perfilId, configPublica().supabaseUrl)}
-      v={version(JSON.stringify([datos.evento, datos.imagenes]))}
+      v={version(JSON.stringify([datos.evento, datos.imagenes, DOMINIO_CARTEL]))}
       origen={origen}
     />
   );

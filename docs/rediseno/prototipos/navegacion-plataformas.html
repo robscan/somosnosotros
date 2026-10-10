@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Navegación y shell — Web · iPhone · Android (OL-207)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --fondo:#ffffff;
+    --fondo-suave:#f4f4f2;
+    --fondo-contenido:#f6f5f1;
+    --texto:#1a1a1a;
+    --texto-suave:#5c5c5c;
+    --borde:#dcdcd8;
+    --primario:#6d34c8;
+    --primario-texto:#ffffff;
+    --primario-suave:#efe6fa;
+    --ok:#1f6f43;
+    --radio:12px;
+    --radio-grande:16px;
+    --e1:4px;--e2:8px;--e3:12px;--e4:16px;--e5:20px;--e6:24px;
+    --sombra-flotante:0 6px 20px rgba(0,0,0,.22);
+    --sombra-panel:0 -2px 16px rgba(0,0,0,.1);
+    --sombra-hoja:0 -8px 30px rgba(0,0,0,.22);
+    font-family:"Bricolage Grotesque",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#e7e5df;color:var(--texto);-webkit-font-smoothing:antialiased;}
+
+  /* ---------- Cabecera de la página (fuera de los teléfonos) ---------- */
+  .pagina{max-width:1360px;margin:0 auto;padding:28px 20px 60px;}
+  .titulo-doc{font-size:26px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em;}
+  .subtitulo-doc{color:var(--texto-suave);margin:0 0 20px;font-size:15px;max-width:840px;line-height:1.5;}
+
+  .panel-control{
+    background:var(--fondo);border:1px solid var(--borde);border-radius:var(--radio-grande);
+    padding:16px 18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+  }
+  .grupo-modo{display:inline-flex;border:1px solid var(--borde);border-radius:999px;padding:3px;background:var(--fondo-suave);}
+  .grupo-modo button{
+    border:none;background:transparent;padding:8px 18px;border-radius:999px;font-weight:700;font-size:14px;
+    cursor:pointer;color:var(--texto-suave);font-family:inherit;
+  }
+  .grupo-modo button.activo{background:var(--primario);color:#fff;}
+  .separador-v{width:1px;align-self:stretch;background:var(--borde);}
+  .acciones-compartidas{display:flex;flex-wrap:wrap;gap:8px;}
+  .btn{
+    border:1px solid var(--borde);background:var(--fondo);color:var(--texto);border-radius:999px;
+    padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  .btn:hover{background:var(--fondo-suave);}
+  .btn.primario{background:var(--primario);color:#fff;border-color:var(--primario);}
+  .btn.enlace{background:#fff7ea;border-color:#e8cf9a;color:#7a5410;}
+  .etiqueta-panel{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--texto-suave);font-weight:700;margin-right:2px;}
+
+  .leyenda{font-size:13px;color:var(--texto-suave);margin:0 0 22px;line-height:1.6;max-width:900px;}
+  .leyenda b{color:var(--texto);}
+
+  /* ---------- Fila de teléfonos ---------- */
+  .fila-telefonos{display:flex;gap:28px;align-items:flex-start;overflow-x:auto;padding-bottom:8px;}
+  .telefono{flex:0 0 auto;width:390px;display:flex;flex-direction:column;gap:10px;}
+  .telefono h2{font-size:15px;margin:0;display:flex;align-items:center;gap:8px;font-weight:800;}
+  .pill-plataforma{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;background:var(--fondo-suave);border:1px solid var(--borde);border-radius:999px;padding:2px 9px;color:var(--texto-suave);font-weight:700;}
+
+  /* Marco del dispositivo */
+  .marco{
+    width:390px;height:844px;background:#0c0c0e;border-radius:52px;padding:12px;position:relative;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+  }
+  .marco.web{border-radius:14px;background:#1d1f24;padding:0;}
+  .pantalla{
+    width:100%;height:100%;background:var(--fondo-contenido);border-radius:40px;overflow:hidden;position:relative;
+    display:flex;flex-direction:column;
+  }
+  .marco.web .pantalla{border-radius:14px;}
+
+  /* Barra de navegador (solo plataforma web) */
+  .chrome-web{height:76px;background:#2b2d33;display:flex;flex-direction:column;justify-content:flex-end;padding:8px 10px 6px;flex:none;}
+  .chrome-web .pestana{background:#1d1f24;border-radius:8px 8px 0 0;padding:5px 10px;font-size:10.5px;color:#cfcfd4;display:inline-flex;gap:6px;align-items:center;width:fit-content;margin-bottom:4px;}
+  .chrome-web .barra-url{background:#3a3d45;border-radius:999px;height:30px;display:flex;align-items:center;gap:8px;padding:0 10px;}
+  .chrome-web .barra-url input{background:transparent;border:none;color:#e6e6e8;font-size:11px;flex:1;font-family:inherit;}
+  .chrome-web button.nav-navegador{background:none;border:none;color:#cfcfd4;cursor:pointer;display:flex;padding:2px;}
+  .chrome-web button.nav-navegador:disabled{opacity:.3;cursor:default;}
+  .chrome-web button.nav-navegador svg{width:16px;height:16px;}
+
+  /* Barra de estado (iOS/Android) */
+  .status-bar{height:47px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 6px;font-size:14px;font-weight:700;color:#111;}
+  .marco.android .status-bar{height:34px;padding:0 16px 4px;font-size:12px;}
+  .status-bar .isla{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:100px;height:24px;background:#000;border-radius:14px;}
+  .marco.android .status-bar .isla{display:none;}
+
+  /* ---------- Barra superior de la app (Barra.tsx) ---------- */
+  .barra{flex:none;display:flex;align-items:center;background:var(--fondo);border-bottom:1px solid var(--borde);position:relative;}
+  .barra.raiz{justify-content:space-between;padding:0 20px;}
+  .barra.interior{padding:0 12px;}
+  .logotipo{font-weight:800;font-size:15px;letter-spacing:.01em;white-space:nowrap;}
+  .logotipo .puntos{color:var(--primario);}
+
+  /* Hoy: alto fijo 56px en las tres, botón Atrás en píldora con texto, logo siempre centrado en interior/alta */
+  .modo-hoy .barra{height:56px;}
+  .modo-hoy .barra.interior{justify-content:flex-start;gap:8px;}
+  .modo-hoy .barra.interior .titulo-pantalla{display:none;}
+  .modo-hoy .barra.interior .logotipo-centro{position:absolute;left:50%;transform:translateX(-50%);}
+  .modo-hoy .boton-atras{
+    display:inline-flex;align-items:center;gap:2px;height:40px;padding:0 14px 0 8px;border:1px solid var(--borde);
+    border-radius:999px;background:var(--fondo);font-size:14px;font-weight:600;color:var(--texto);
+  }
+  .modo-hoy .boton-atras svg{width:18px;height:18px;color:var(--texto-suave);}
+  .modo-hoy .boton-cerrar{width:40px;height:40px;border:1px solid var(--borde);border-radius:999px;display:inline-flex;align-items:center;justify-content:center;margin-left:auto;}
+
+  /* Propuesto: alto por plataforma, botón icono-solo de 48, título de sección en vez de logo en interiores */
+  .modo-propuesto .barra{height:var(--alto-barra-plat,44px);}
+  .modo-propuesto .marco.ios .barra{--alto-barra-plat:44px;}
+  .modo-propuesto .marco.android .barra{--alto-barra-plat:64px;}
+  .modo-propuesto .marco.web .barra{--alto-barra-plat:44px;}
+  .modo-propuesto .barra.interior{justify-content:flex-start;gap:4px;}
+  .modo-propuesto .barra.interior .logotipo-centro{display:none;}
+  .modo-propuesto .barra.interior .titulo-pantalla{font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .boton-plat{
+    width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;
+    color:var(--texto);flex:none;margin:0 -6px;
+  }
+  .boton-plat svg{width:24px;height:24px;}
+  .modo-propuesto .barra.raiz{padding:0 8px 0 20px;}
+  .accion-derecha{display:flex;align-items:center;gap:2px;margin-left:auto;}
+  .campana-mock{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;color:var(--texto);}
+  .campana-mock svg{width:22px;height:22px;}
+  .avatar-mock{width:34px;height:34px;border-radius:50%;background:var(--fondo-suave);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--texto-suave);border:1px solid var(--borde);}
+  .boton-mas-barra{width:44px;height:44px;border-radius:999px;background:var(--primario);color:#fff;display:none;align-items:center;justify-content:center;flex:none;}
+  .boton-mas-barra svg{width:22px;height:22px;}
+  .modo-propuesto .boton-mas-barra{display:inline-flex;}
+
+  /* ---------- Contenido ---------- */
+  .contenido{flex:1;overflow-y:auto;padding:16px 20px 100px;-webkit-overflow-scrolling:touch;}
+  .chips{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;}
+  .chip{
+    flex:none;height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--borde);background:var(--fondo);
+    font-size:13px;font-weight:700;color:var(--texto-suave);display:inline-flex;align-items:center;cursor:pointer;font-family:inherit;
+  }
+  .chip.activo{background:var(--primario);color:#fff;border-color:var(--primario);}
+  .lista{display:flex;flex-direction:column;gap:10px;}
+  .tarjeta{
+    background:var(--fondo);border:1px solid var(--borde);border-radius:var(--radio-grande);padding:14px;cursor:pointer;
+    display:flex;flex-direction:column;gap:4px;text-align:left;font-family:inherit;width:100%;
+  }
+  .tarjeta .t{font-size:16px;font-weight:700;color:var(--texto);}
+  .tarjeta .s{font-size:13px;color:var(--texto-suave);}
+  .titulo-pagina{font-size:22px;font-weight:800;margin:2px 0 4px;}
+  .subtitulo-pagina{font-size:13.5px;color:var(--texto-suave);margin:0 0 16px;}
+
+  .ficha-cuerpo{display:flex;flex-direction:column;gap:14px;}
+  .ficha-imagen{height:150px;border-radius:var(--radio-grande);background:linear-gradient(135deg,#efe6fa,#f4f4f2);display:flex;align-items:center;justify-content:center;color:var(--primario);font-weight:800;font-size:30px;}
+  .ficha-texto{font-size:14.5px;line-height:1.6;color:var(--texto);}
+  .accion-ficha{
+    margin-top:6px;display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 20px;border-radius:999px;
+    background:var(--primario-suave);color:var(--primario);border:1px solid var(--primario);font-weight:700;font-size:15px;width:fit-content;
+  }
+
+  .campo-alta{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .campo-alta label{font-size:12.5px;font-weight:700;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.04em;}
+  .campo-alta input{height:48px;border:1px solid var(--borde);border-radius:var(--radio);padding:0 14px;font-size:15px;font-family:inherit;background:#fff;}
+  .boton-publicar{height:48px;border-radius:999px;background:var(--primario);color:#fff;border:none;font-weight:700;font-size:15px;width:100%;font-family:inherit;}
+
+  /* ---------- Barra inferior ---------- */
+  .nav-inferior{
+    flex:none;display:grid;grid-template-columns:repeat(4,1fr);height:60px;background:var(--fondo);
+    border-top:1px solid var(--borde);box-shadow:var(--sombra-panel);position:relative;z-index:5;
+  }
+  .destino-nav{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;font-family:inherit;color:var(--texto-suave);cursor:pointer;}
+  .destino-nav svg{width:24px;height:24px;}
+  .destino-nav .icono-nav{width:56px;height:30px;border-radius:15px;display:grid;place-items:center;}
+  .destino-nav span{font-size:10.5px;font-weight:700;}
+  .destino-nav.activo{color:var(--primario);}
+  .destino-nav.activo .icono-nav{background:var(--primario);color:#fff;}
+  /* Android en modo propuesto: la píldora de Material solo ahí; web/iOS quedan neutras (solo color) */
+  .modo-propuesto .marco.ios .destino-nav.activo .icono-nav,
+  .modo-propuesto .marco.web .destino-nav.activo .icono-nav{background:none;color:var(--primario);}
+
+  /* Botón flotante "+" (shell de hoy) */
+  .fab{
+    position:absolute;right:20px;bottom:76px;height:48px;padding:0 20px;border-radius:999px;background:var(--primario);
+    color:#fff;display:none;align-items:center;gap:8px;font-weight:700;font-size:15px;box-shadow:var(--sombra-flotante);
+    border:none;font-family:inherit;z-index:6;
+  }
+  .fab svg{width:20px;height:20px;}
+  .modo-hoy .fab.visible{display:inline-flex;}
+  /* Propuesto: la acción principal se muda al "+" de la barra superior en las tres plataformas (sección 4.2 del
+     documento). Android podría conservar el FAB como alternativa (es su propio canon) — se documenta en el texto,
+     no se dibuja aquí a la vez que el "+" de barra para no mostrar la acción duplicada. */
+
+  /* ---------- Modal/hoja de tarea ---------- */
+  .modal-hoy{position:absolute;inset:0;background:var(--fondo-contenido);display:flex;flex-direction:column;z-index:8;}
+  .modal-propuesto{
+    position:absolute;left:0;right:0;bottom:0;top:64px;background:var(--fondo-contenido);border-radius:20px 20px 0 0;
+    box-shadow:var(--sombra-hoja);display:flex;flex-direction:column;z-index:8;animation:subir .22s ease-out;
+  }
+  @keyframes subir{from{transform:translateY(40px);opacity:.4;}to{transform:translateY(0);opacity:1;}}
+  .asa-hoja{width:36px;height:4px;border-radius:2px;background:#d9d9d9;margin:8px auto 0;flex:none;}
+
+  /* ---------- Aviso de sistema (bug del back nativo) ---------- */
+  .toast{
+    position:absolute;left:16px;right:16px;bottom:76px;background:#2a2a2a;color:#fff;padding:11px 14px;border-radius:12px;
+    font-size:12.5px;line-height:1.45;z-index:12;box-shadow:0 8px 20px rgba(0,0,0,.3);
+  }
+  .toast.ok{background:#1f6f43;}
+  .toast b{display:block;font-size:12px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.03em;}
+
+  /* ---------- Control de sistema (bajo el teléfono) ---------- */
+  .control-sistema{
+    display:flex;align-items:center;gap:10px;background:var(--fondo);border:1px solid var(--borde);border-radius:var(--radio);
+    padding:10px 14px;font-size:12.5px;color:var(--texto-suave);
+  }
+  .control-sistema button{
+    border:1px solid var(--borde);background:var(--fondo-suave);border-radius:999px;padding:8px 14px;font-weight:700;
+    font-size:13px;cursor:pointer;font-family:inherit;color:var(--texto);white-space:nowrap;
+  }
+  .control-sistema button:active{background:var(--borde);}
+
+  /* ---------- Pila de historial ---------- */
+  .pila{background:var(--fondo);border:1px solid var(--borde);border-radius:var(--radio);padding:12px 14px;}
+  .pila h3{margin:0 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--texto-suave);font-weight:800;}
+  .pila ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;}
+  .pila li{
+    display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:12.5px;border:1px solid transparent;
+  }
+  .pila li .num{width:16px;text-align:right;color:var(--texto-suave);font-variant-numeric:tabular-nums;flex:none;}
+  .pila li .tipo{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;padding:1px 6px;border-radius:5px;flex:none;}
+  .pila li .tipo.raiz{background:#eef2ff;color:#3b4bb8;}
+  .pila li .tipo.detalle{background:#fdf0e4;color:#a15a00;}
+  .pila li .tipo.modal{background:#fbe7ea;color:#a3223f;}
+  .pila li .etiqueta{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pila li.actual{background:var(--primario-suave);border-color:var(--primario);font-weight:700;}
+  .pila li.actual::after{content:"◀ aquí";font-size:10.5px;color:var(--primario);font-weight:800;flex:none;}
+
+  @media (max-width:1320px){
+    .fila-telefonos{flex-direction:column;align-items:center;overflow-x:visible;}
+  }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <h1 class="titulo-doc">Navegación y shell — Web · iPhone · Android</h1>
+  <p class="subtitulo-doc">Prototipo de OL-207 (documento <a href="../49-navegacion-plataformas.md">49</a>). Los tres teléfonos comparten la misma lógica de navegación; solo cambia el dibujo del shell. Usa el conmutador para comparar el comportamiento de hoy contra el propuesto.</p>
+
+  <div class="panel-control">
+    <span class="etiqueta-panel">Modo</span>
+    <div class="grupo-modo">
+      <button id="btn-hoy" onclick="fijarModo('hoy')">Hoy</button>
+      <button id="btn-propuesto" onclick="fijarModo('propuesto')">Propuesto</button>
+    </div>
+    <div class="separador-v"></div>
+    <span class="etiqueta-panel">Acciones (a los tres)</span>
+    <div class="acciones-compartidas">
+      <button class="btn" onclick="accionCompartida('seccion','lugares')">Ir a Lugares</button>
+      <button class="btn" onclick="accionCompartida('ficha')">Abrir una ficha</button>
+      <button class="btn" onclick="accionCompartida('chip')">Tocar un filtro</button>
+      <button class="btn" onclick="accionCompartida('alta')">Publicar (+)</button>
+      <button class="btn primario" onclick="accionCompartida('atrasApp')">Atrás (de la app)</button>
+      <button class="btn primario" onclick="accionCompartida('atrasSistema')">Gesto / botón nativo</button>
+      <button class="btn enlace" onclick="accionCompartida('enlace')">Llegar por enlace compartido</button>
+      <button class="btn" onclick="accionCompartida('reset')">Reiniciar los tres</button>
+    </div>
+  </div>
+
+  <p class="leyenda">
+    <b>Detalle apila</b> (tocar una tarjeta), <b>vista reemplaza</b> (chip de filtro) y <b>tarea modal</b> (el "+") se comportan igual en Hoy y en Propuesto — ya están bien escritos en el código de hoy. Lo que cambia con el conmutador: <b>cambiar de sección</b> en la barra inferior (hoy apila si vienes de otra sección — <code>NavInferior.tsx:60</code> —; propuesto siempre reemplaza), el dibujo de <b>Atrás</b> (píldora con texto de 40px → icono solo de 48px) y, sobre todo, qué hace el <b>gesto de borde / botón de Android / flecha del navegador</b> cuando la pantalla llegó sin nada detrás (botón "Llegar por enlace compartido"): en Hoy ese control no conoce la marca propia del historial y falla; en Propuesto la pila ya se armó bien desde el origen y el mismo gesto simplemente funciona.
+  </p>
+
+  <div class="fila-telefonos" id="fila-telefonos"></div>
+</div>
+
+<script>
+/* ============================= Datos de mentira (mismo aspecto que la app real, contenido inventado) ============================= */
+const ICONS = {
+  chevronLeft: '<path d="M14.5 6l-6 6 6 6"/>',
+  arrowLeft: '<path d="M19 12H5M11 18l-6-6 6-6"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  dotsH: '<circle cx="5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none"/>',
+  dotsV: '<circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  home: '<path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  pin: '<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+  star: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>',
+  back: '<path d="M15 18l-6-6 6-6"/>',
+  fwd: '<path d="M9 18l6-6-6-6"/>',
+};
+function svg(name, extra){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra||''}>${ICONS[name]}</svg>`; }
+
+const SECCIONES = [
+  { id:'inicio',   label:'Inicio',    icono:'home',     chips:[], items:[
+      {t:'Noche de jazz en el Centro', s:'Hoy · 20:00 · Centro Cultural'},
+      {t:'Museo Regional', s:'Recomendado cerca de ti'},
+      {t:'Taller de grabado', s:'Mañana · 17:00 · Casa de la Cultura'},
+  ]},
+  { id:'agenda',   label:'Agenda',    icono:'calendar', chips:['Hoy','Mañana','Semana'], items:[
+      {t:'Noche de jazz en el Centro', s:'Hoy · 20:00 · Centro Cultural'},
+      {t:'Feria del libro', s:'Sábado · 11:00 · Plaza de Armas'},
+      {t:'Cine club: función doble', s:'Domingo · 18:00 · Cineteca'},
+  ]},
+  { id:'lugares',  label:'Lugares',   icono:'pin',      chips:['Todos','Museo','Escuela'], items:[
+      {t:'Centro Cultural Universitario', s:'Zona Centro'},
+      {t:'Casa de la Cultura', s:'Barrio de San Sebastián'},
+      {t:'Museo Regional', s:'Zona Centro'},
+  ]},
+  { id:'artistas', label:'Artistas',  icono:'star',     chips:['Música','Teatro','Danza'], items:[
+      {t:'Colectivo Raíz', s:'Música · Sigues'},
+      {t:'Taller de Danza Contemporánea', s:'Danza'},
+      {t:'La Farsa Teatro', s:'Teatro'},
+  ]},
+];
+const seccionPorId = id => SECCIONES.find(s => s.id === id);
+const tituloAlta = seccion => ({ agenda:'Publicar evento', lugares:'Registrar lugar', artistas:'Registrar artista', inicio:'Publicar evento' }[seccion] || 'Publicar');
+
+let uidN = 1;
+const uid = () => uidN++;
+
+/* ============================= Estado ============================= */
+let modo = 'hoy';
+const PLATAFORMAS = [
+  { id:'web',     nombre:'Web · navegador',       clase:'web' },
+  { id:'ios',     nombre:'iPhone (app o Safari)', clase:'ios' },
+  { id:'android', nombre:'Android (app o Chrome)',clase:'android' },
+];
+
+function nuevoTelefono(plataforma){
+  return {
+    plataforma,
+    stack: [ entradaRaiz('inicio') ],
+    index: 0,
+    aviso: null, // {tipo:'ok'|'bug', texto}
+  };
+}
+const telefonos = PLATAFORMAS.map(p => nuevoTelefono(p.id));
+
+function entradaRaiz(seccion){ return { id:uid(), kind:'raiz', seccion, titulo: seccionPorId(seccion).label, filtro:null }; }
+function cima(ph){ return ph.stack[ph.index]; }
+
+function apilar(ph, entrada){
+  ph.stack = ph.stack.slice(0, ph.index+1);
+  ph.stack.push({ id:uid(), ...entrada });
+  ph.index = ph.stack.length-1;
+}
+function reemplazar(ph, entrada){
+  ph.stack[ph.index] = { ...ph.stack[ph.index], ...entrada };
+}
+
+/* ---- Las tres pantallas: detalle apila y vista reemplaza no cambian con el modo (ya están bien) ---- */
+function irSeccion(ph, seccion){
+  const actual = cima(ph);
+  ph.aviso = null;
+  if (modo === 'propuesto') {
+    reemplazar(ph, entradaRaiz(seccion));
+    return;
+  }
+  // Hoy (NavInferior.tsx:60): solo la pestaña YA activa reemplaza; cambiar de sección apila.
+  if (actual.kind === 'raiz' && actual.seccion === seccion) reemplazar(ph, entradaRaiz(seccion));
+  else apilar(ph, entradaRaiz(seccion));
+}
+function tocarChip(ph){
+  const actual = cima(ph);
+  const chips = seccionPorId(actual.seccion).chips;
+  if (!chips.length) return;
+  const i = chips.indexOf(actual.filtro);
+  const siguiente = chips[(i+1) % chips.length];
+  reemplazar(ph, { filtro: siguiente });
+  ph.aviso = null;
+}
+function abrirFicha(ph, item){
+  const seccion = cima(ph).seccion;
+  apilar(ph, { kind:'detalle', seccion, titulo:item.t, item });
+  ph.aviso = null;
+}
+function abrirAlta(ph){
+  const seccion = cima(ph).kind === 'raiz' ? cima(ph).seccion : (cima(ph).seccion || 'agenda');
+  apilar(ph, { kind:'modal', seccion, titulo: tituloAlta(seccion) });
+  ph.aviso = null;
+}
+
+/* ---- El botón propio "Atrás"/"Cerrar": siempre inteligente, en los dos modos (useVolver ya hace esto hoy) ---- */
+function atrasApp(ph){
+  ph.aviso = null;
+  if (ph.index > 0) { ph.index--; return; }
+  // Nada detrás en este teléfono: va a la pantalla madre de la sección actual, reemplazando.
+  reemplazar(ph, entradaRaiz(cima(ph).seccion || 'inicio'));
+}
+
+/* ---- El control del SISTEMA (gesto de borde, botón de Android, flecha del navegador): aquí está el diagnóstico ---- */
+function atrasSistema(ph){
+  if (modo === 'propuesto') {
+    // El historial ya se escribió bien desde el origen (sección reemplaza, pila armada al llegar):
+    // un pop ciego basta, es la MISMA operación primitiva que usa el botón propio.
+    if (ph.index > 0) { ph.index--; ph.aviso = { tipo:'ok', texto:'Pop simple del historial: coincide con lo que hace "Atrás". No hizo falta ninguna marca propia.' }; }
+    else ph.aviso = { tipo:'ok', texto:'Ya está en la primera pantalla real: sale de la app (correcto, no hay a dónde volver).' };
+    return;
+  }
+  // Hoy: el sistema no conoce la marca propia del historial (src/lib/historial.ts) — por eso existe
+  // GestoAtrasPlugin.swift, que la intercepta solo en la app instalada de iPhone. Aquí se simula el
+  // control SIN esa intercepción (así llega hoy a Android, que no tiene app, y a un WKBackForwardList a secas).
+  if (ph.index > 0) { ph.index--; ph.aviso = { tipo:'ok', texto:'Esta vez coincide (había algo detrás en el propio historial del navegador).' }; }
+  else ph.aviso = { tipo:'bug', texto:'⚠️ No pasa nada (o sale del sitio): el gesto/botón nativo no conoce la marca propia del historial, así que no sabe que debía ir a la pantalla madre. Por eso hoy hace falta interceptarlo a mano (GestoAtrasPlugin.swift) — y solo existe ese parche en la app de iPhone.' };
+}
+
+/* ---- "Llegar por enlace compartido": arranca el teléfono con una ficha, sin nada detrás ---- */
+function llegarPorEnlace(ph){
+  const seccion = 'agenda';
+  const item = seccionPorId(seccion).items[0];
+  if (modo === 'propuesto') {
+    ph.stack = [ entradaRaiz(seccion), { id:uid(), kind:'detalle', seccion, titulo:item.t, item } ];
+    ph.index = 1;
+    ph.aviso = { tipo:'ok', texto:'Pila armada al llegar: la pantalla madre (Agenda) ya quedó debajo de la ficha, antes de que se viera nada.' };
+  } else {
+    ph.stack = [ { id:uid(), kind:'detalle', seccion, titulo:item.t, item } ];
+    ph.index = 0;
+    ph.aviso = { tipo:'bug', texto:'Llega solo con la ficha: nada detrás en el historial real. "Atrás" (el botón propio) lo resuelve leyendo la marca; el gesto/botón nativo, no.' };
+  }
+}
+
+function accionCompartida(tipo, arg){
+  telefonos.forEach(ph => {
+    if (tipo === 'seccion') irSeccion(ph, arg);
+    else if (tipo === 'ficha') abrirFicha(ph, seccionPorId(cima(ph).seccion || cima(ph).kind==='raiz' ? cima(ph).seccion : 'agenda').items[0] || SECCIONES[0].items[0]);
+    else if (tipo === 'chip') tocarChip(ph);
+    else if (tipo === 'alta') abrirAlta(ph);
+    else if (tipo === 'atrasApp') atrasApp(ph);
+    else if (tipo === 'atrasSistema') atrasSistema(ph);
+    else if (tipo === 'enlace') llegarPorEnlace(ph);
+    else if (tipo === 'reset') { Object.assign(ph, nuevoTelefono(ph.plataforma)); }
+  });
+  render();
+}
+function fijarModo(m){
+  modo = m;
+  document.body.classList.toggle('modo-hoy', m === 'hoy');
+  document.body.classList.toggle('modo-propuesto', m === 'propuesto');
+  document.getElementById('btn-hoy').classList.toggle('activo', m === 'hoy');
+  document.getElementById('btn-propuesto').classList.toggle('activo', m === 'propuesto');
+  render();
+}
+
+/* ============================= Render ============================= */
+function iniciales(txt){ return txt.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+function renderBarra(ph){
+  const c = cima(ph);
+  const esRaiz = c.kind === 'raiz';
+  const esModal = c.kind === 'modal';
+  const dotsIcon = ph.plataforma === 'android' ? 'dotsV' : 'dotsH';
+  const atrasIcon = ph.plataforma === 'android' ? 'arrowLeft' : 'chevronLeft';
+
+  if (esRaiz) {
+    return `<header class="barra raiz">
+      <span class="logotipo">SMSNSTRS<span class="puntos">·</span></span>
+      <span class="accion-derecha">
+        <button class="boton-mas-barra" title="Publicar (propuesto)" onclick="abrirAltaUI('${ph.plataforma}')">${svg('plus')}</button>
+        <span class="campana-mock">${svg('bell')}</span>
+        <span class="avatar-mock">RO</span>
+      </span>
+    </header>`;
+  }
+  if (esModal) {
+    return `<header class="barra interior alta" style="justify-content:center;">
+      <span class="logotipo logotipo-centro">SMSNSTRS</span>
+      <span class="titulo-pantalla" style="text-align:center;">${c.titulo}</span>
+      <button class="boton-plat modo-hoy-cerrar" style="margin-left:auto;" onclick="atrasAppUI('${ph.plataforma}')" aria-label="Cerrar">${svg('x')}</button>
+    </header>`;
+  }
+  // detalle
+  return `<header class="barra interior">
+    <button class="boton-plat" onclick="atrasAppUI('${ph.plataforma}')" aria-label="Atrás">${svg(atrasIcon)}</button>
+    <span class="logotipo logotipo-centro">SMSNSTRS</span>
+    <span class="titulo-pantalla">${c.titulo}</span>
+    <button class="boton-plat" style="margin-left:auto;" aria-label="Más opciones">${svg(dotsIcon)}</button>
+  </header>`;
+}
+
+// En modo Hoy, el botón "Atrás" real es una píldora con texto (no el icono-solo de renderBarra genérico).
+// Se resuelve superponiendo un render distinto para .interior cuando body.modo-hoy — más simple: generamos
+// las dos variantes de HTML y CSS ya decide cuál mostrar (ver reglas .modo-hoy / .modo-propuesto arriba)
+// para evitar duplicar la lógica de eventos, aquí construimos directo el marcado que exige cada modo.
+function renderBarraHoyOInterior(ph){
+  const c = cima(ph);
+  if (c.kind === 'raiz') return renderBarra(ph);
+  if (c.kind === 'modal') {
+    return `<header class="barra interior alta">
+      <span class="logotipo logotipo-centro">SMSNSTRS</span>
+      <button class="boton-cerrar" onclick="atrasAppUI('${ph.plataforma}')" aria-label="Cerrar">${svg('x', 'width="18" height="18"')}</button>
+    </header>`;
+  }
+  return `<header class="barra interior">
+    <a class="boton-atras" onclick="atrasAppUI('${ph.plataforma}')" aria-label="Atrás">${svg('chevronLeft','width="18" height="18"')}<span>Atrás</span></a>
+    <span class="logotipo logotipo-centro">SMSNSTRS</span>
+  </header>`;
+}
+
+function renderContenido(ph){
+  const c = cima(ph);
+  if (c.kind === 'raiz') {
+    const s = seccionPorId(c.seccion);
+    const chips = s.chips.map(ch => `<button class="chip ${ (c.filtro||s.chips[0])===ch ? 'activo':''}" onclick="tocarChipUI('${ph.plataforma}')">${ch}</button>`).join('');
+    const items = s.items.map(it => `<button class="tarjeta" onclick="abrirFichaUI('${ph.plataforma}', ${JSON.stringify(it).replace(/"/g,'&quot;')})"><span class="t">${it.t}</span><span class="s">${it.s}</span></button>`).join('');
+    return `<div class="contenido">
+      <div class="titulo-pagina">${s.label}</div>
+      ${s.chips.length? `<div class="chips">${chips}</div>`:''}
+      <div class="lista">${items}</div>
+    </div>`;
+  }
+  if (c.kind === 'detalle') {
+    return `<div class="contenido">
+      <div class="ficha-cuerpo">
+        <div class="ficha-imagen">${iniciales(c.titulo)}</div>
+        <div class="titulo-pagina" style="font-size:20px;">${c.titulo}</div>
+        <p class="ficha-texto">Contenido de mentira para el prototipo: aquí iría la descripción, la fecha y el lugar, igual que en la ficha real. Este ejemplo solo demuestra cómo cambia la navegación, no el diseño de la ficha.</p>
+        <span class="accion-ficha">${svg('star','width="18" height="18"')} Voy</span>
+      </div>
+    </div>`;
+  }
+  // modal
+  return `<div class="contenido" style="padding-top:20px;">
+    <div class="campo-alta"><label>Nombre</label><input placeholder="Escribe aquí…" /></div>
+    <div class="campo-alta"><label>Dónde</label><input placeholder="Buscar dirección…" /></div>
+    <button class="boton-publicar" onclick="atrasAppUI('${ph.plataforma}')">Publicar</button>
+  </div>`;
+}
+
+function renderNavInferior(ph){
+  const c = cima(ph);
+  if (c.kind !== 'raiz') return '';
+  return `<nav class="nav-inferior">${SECCIONES.map(s => `
+    <button class="destino-nav ${c.seccion===s.id?'activo':''}" onclick="irSeccionUI('${ph.plataforma}','${s.id}')">
+      <span class="icono-nav">${svg(s.icono)}</span><span>${s.label}</span>
+    </button>`).join('')}</nav>`;
+}
+
+function renderFab(ph){
+  const c = cima(ph);
+  if (c.kind !== 'raiz') return '';
+  const etiqueta = { agenda:'Publicar evento', lugares:'Registrar lugar', artistas:'Registrar artista', inicio:'Publicar evento' }[c.seccion] || 'Publicar';
+  return `<button class="fab visible" onclick="abrirAltaUI('${ph.plataforma}')">${svg('plus')} ${etiqueta}</button>`;
+}
+
+function renderStatusBar(ph){
+  if (ph.plataforma === 'web') return '';
+  if (ph.plataforma === 'ios') return `<div class="status-bar"><span>9:41</span><span>🔋 📶</span><div class="isla"></div></div>`;
+  return `<div class="status-bar"><span>9:41</span><span>🔋 📶</span></div>`;
+}
+
+function renderChromeWeb(ph){
+  if (ph.plataforma !== 'web') return '';
+  const c = cima(ph);
+  return `<div class="chrome-web">
+    <span class="pestana">somosnosotros.org${ c.kind!=='raiz' ? ' — '+c.titulo : ''}</span>
+    <div class="barra-url">
+      <button class="nav-navegador" ${ph.index<=0?'disabled':''} onclick="atrasSistemaUI('${ph.plataforma}')" title="Atrás del navegador">${svg('back')}</button>
+      <button class="nav-navegador" disabled title="Adelante">${svg('fwd')}</button>
+      <input readonly value="somosnosotros.org${c.kind!=='raiz' ? '/'+c.seccion : (c.seccion==='inicio'?'':'/'+c.seccion)}" />
+    </div>
+  </div>`;
+}
+
+function renderModal(ph){
+  const c = cima(ph);
+  if (c.kind !== 'modal') return '';
+  return `
+    <div id="capa-modal-hoy-${ph.plataforma}" style="display:none;">
+      <div class="modal-hoy">${renderBarraHoyOInterior(ph)}${renderContenido(ph)}</div>
+    </div>
+    <div id="capa-modal-propuesto-${ph.plataforma}" style="display:none;">
+      <div class="modal-propuesto"><div class="asa-hoja"></div>${renderBarra(ph)}${renderContenido(ph)}</div>
+    </div>`;
+}
+
+function renderAviso(ph){
+  if (!ph.aviso) return '';
+  return `<div class="toast ${ph.aviso.tipo==='ok'?'ok':''}"><b>${ph.aviso.tipo==='ok'?'Se comporta como se espera':'Se rompe'}</b>${ph.aviso.texto}</div>`;
+}
+
+function renderPila(ph){
+  const filas = ph.stack.map((e,i) => {
+    const tipo = e.kind;
+    const etiqueta = e.kind==='raiz' ? `Raíz · ${e.titulo}${e.filtro?` (${e.filtro})`:''}` : e.titulo;
+    return `<li class="${i===ph.index?'actual':''}"><span class="num">${i+1}</span><span class="tipo ${tipo}">${tipo}</span><span class="etiqueta">${etiqueta}</span></li>`;
+  }).join('');
+  return `<div class="pila"><h3>Pila de historial — ${ph.plataforma}</h3><ol>${filas}</ol></div>`;
+}
+
+function nombreControlSistema(plataforma){
+  return { web:'Atrás del navegador (barra de arriba)', ios:'Simular gesto de borde ↩', android:'◁ Botón de Android' }[plataforma];
+}
+
+function render(){
+  const cont = document.getElementById('fila-telefonos');
+  cont.innerHTML = telefonos.map(ph => {
+    const barraGenerica = renderBarra(ph); // usado por Propuesto y por el modal en Propuesto
+    const barraHoyOInterior = renderBarraHoyOInterior(ph);
+    const usarBarra = modo === 'hoy' ? barraHoyOInterior : barraGenerica;
+    const cIsModal = cima(ph).kind === 'modal';
+    return `
+    <div class="telefono">
+      <h2>${PLATAFORMAS.find(p=>p.id===ph.plataforma).nombre} <span class="pill-plataforma">${ph.plataforma}</span></h2>
+      <div class="marco ${ph.plataforma}">
+        <div class="pantalla">
+          ${renderChromeWeb(ph)}
+          ${renderStatusBar(ph)}
+          ${cIsModal ? '' : usarBarra}
+          ${cIsModal ? '' : renderContenido(ph)}
+          ${cIsModal ? '' : renderNavInferior(ph)}
+          ${cIsModal ? renderFab(ph) : ''}
+          ${!cIsModal ? renderFab(ph) : ''}
+          ${cIsModal ? (modo==='hoy' ? `<div class="modal-hoy">${barraHoyOInterior}${renderContenido(ph)}</div>` : `<div class="modal-propuesto"><div class="asa-hoja"></div>${barraGenerica}${renderContenido(ph)}</div>`) : ''}
+          ${renderAviso(ph)}
+        </div>
+      </div>
+      <div class="control-sistema">
+        <button onclick="atrasSistemaUI('${ph.plataforma}')">${nombreControlSistema(ph.plataforma)}</button>
+        <span>simula el sistema, no el botón de la app</span>
+      </div>
+      ${renderPila(ph)}
+    </div>`;
+  }).join('');
+}
+
+/* ---- puentes UI → estado, por plataforma ---- */
+function porPlataforma(p){ return telefonos.find(t => t.plataforma === p); }
+function irSeccionUI(p, seccion){ irSeccion(porPlataforma(p), seccion); render(); }
+function tocarChipUI(p){ tocarChip(porPlataforma(p)); render(); }
+function abrirFichaUI(p, item){ abrirFicha(porPlataforma(p), item); render(); }
+function abrirAltaUI(p){ abrirAlta(porPlataforma(p)); render(); }
+function atrasAppUI(p){ atrasApp(porPlataforma(p)); render(); }
+function atrasSistemaUI(p){ atrasSistema(porPlataforma(p)); render(); }
+
+/* ---- Verificación programática (se ejecuta sola y expone window.__pruebaNavegacion) ---- */
+function pruebaNavegacion(){
+  const salidas = [];
+  const ok = (nombre, cond) => salidas.push(`${cond ? 'PASA' : 'FALLA'} — ${nombre}`);
+
+  // 1) Hoy: cambiar de sección sin estar en ella APILA.
+  fijarModo('hoy');
+  accionCompartida('reset');
+  const web = porPlataforma('web');
+  const largoAntes = web.stack.length;
+  irSeccion(web, 'lugares');
+  ok('Hoy: cambiar de sección apila (bug diagnosticado)', web.stack.length === largoAntes + 1 && web.index === web.stack.length - 1);
+
+  // 2) Propuesto: cambiar de sección SIEMPRE reemplaza.
+  fijarModo('propuesto');
+  accionCompartida('reset');
+  const web2 = porPlataforma('web');
+  const largo2 = web2.stack.length;
+  irSeccion(web2, 'lugares');
+  irSeccion(web2, 'artistas');
+  ok('Propuesto: cambiar de sección nunca apila', web2.stack.length === largo2);
+
+  // 3) Detalle apila en los dos modos.
+  fijarModo('hoy');
+  accionCompartida('reset');
+  const ios = porPlataforma('ios');
+  const l3 = ios.stack.length;
+  abrirFicha(ios, SECCIONES[1].items[0]);
+  ok('Hoy: abrir una ficha apila', ios.stack.length === l3 + 1);
+  fijarModo('propuesto');
+  const l3b = ios.stack.length;
+  const androide = porPlataforma('android');
+  const l3c = androide.stack.length;
+  abrirFicha(androide, SECCIONES[1].items[0]);
+  ok('Propuesto: abrir una ficha apila (igual que Hoy)', androide.stack.length === l3c + 1);
+
+  // 4) Chip de filtro siempre reemplaza, en los dos modos.
+  fijarModo('hoy');
+  accionCompartida('reset');
+  const a1 = porPlataforma('android');
+  irSeccion(a1, 'agenda');
+  const l4 = a1.stack.length;
+  tocarChip(a1); tocarChip(a1);
+  ok('Hoy: chip de filtro nunca apila', a1.stack.length === l4);
+  fijarModo('propuesto');
+  const l4b = a1.stack.length;
+  tocarChip(a1);
+  ok('Propuesto: chip de filtro nunca apila', a1.stack.length === l4b);
+
+  // 5) Llegar por enlace: Hoy no arma la pila (falla el back nativo); Propuesto sí la arma.
+  fijarModo('hoy');
+  const w5 = porPlataforma('web');
+  llegarPorEnlace(w5);
+  ok('Hoy: enlace compartido llega SIN pantalla madre detrás', w5.stack.length === 1);
+  atrasSistema(w5);
+  ok('Hoy: el control de sistema NO sabe volver a la madre (bug)', w5.aviso && w5.aviso.tipo === 'bug');
+
+  fijarModo('propuesto');
+  const w6 = porPlataforma('web');
+  llegarPorEnlace(w6);
+  ok('Propuesto: enlace compartido arma la pila con la madre debajo', w6.stack.length === 2 && w6.stack[0].kind === 'raiz' && w6.index === 1);
+  atrasSistema(w6);
+  ok('Propuesto: el control de sistema SÍ vuelve a la madre (pop simple)', w6.index === 0 && (!w6.aviso || w6.aviso.tipo === 'ok'));
+
+  // 6) El botón propio de la app siempre acierta, en los dos modos, aun sin nada detrás.
+  fijarModo('hoy');
+  const w7 = porPlataforma('web');
+  llegarPorEnlace(w7);
+  atrasApp(w7);
+  ok('Hoy: el botón "Atrás" de la app SÍ vuelve a la madre aunque el sistema no sepa', w7.index === 0 && cima(w7).kind === 'raiz' && cima(w7).seccion === 'agenda');
+
+  // Reset final a un estado limpio para quien siga viendo la página.
+  fijarModo('hoy');
+  accionCompartida('reset');
+
+  const resumen = salidas.join('\n');
+  console.log(resumen);
+  window.__pruebaNavegacion = { resultado: resumen, todoPasa: salidas.every(s => s.startsWith('PASA')) };
+  return window.__pruebaNavegacion;
+}
+
+/* ============================= Arranque ============================= */
+fijarModo('hoy');
+render();
+</script>
+</body>
+</html>

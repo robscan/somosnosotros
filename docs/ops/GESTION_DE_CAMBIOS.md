@@ -32,6 +32,24 @@ su revision; no hay dos escritores sobre el mismo candidato.
 
 10. **Informes e investigaciones privados** (founder, 2026-10-07: «no quiero que el informe sea público» y «Debemos proteger todas nuestras investigaciones»). El contenido completo y la evidencia se guardan fuera del repositorio público, en la carpeta privada indicada por el gestor: `~/Proyectos/somosnosotros/privado/seguridad/` para seguridad y `~/Proyectos/somosnosotros/privado/investigaciones/` para investigaciones. Incluye reproducciones de fallos, detalles de infraestructura, datos de personas y estrategia comercial. No se incluyen en commits, cuerpos de PR, comentarios, capturas ni registros públicos. Una versión pública, si la autoriza el founder, conserva solo el estado operativo y lleva el encabezado «Versión pública; el completo está en ~/Proyectos/somosnosotros/privado/…». Antes de subirla se revisa **todo el historial que va a enviarse**: redactar el último archivo no protege sus commits anteriores. Los documentos ya publicados se inventarían y se propone su tratamiento en una pieza reservada; no se mueven hasta el «publica» del founder. Borrar o redactar la copia actual no elimina versiones del historial ni copias ajenas. Si se encuentra una credencial expuesta, se coordina su revocación o rotación; archivarla no basta. Esta carpeta privada es la excepción expresa a la regla 9 para documentación sensible, no para código ni árboles de trabajo.
 
+## Cómo se usa Codex (founder, 2026-10-05)
+
+El founder tiene créditos de Codex y aceptó usarlos «sin ponernos en riesgo» así («Acepto tus sugerencias de uso para códex. Intégralo al plan de esa manera y pídele que ejecute actividades cuando se necesite»). Al principio el gestor redactaba cada encargo y el founder lo pegaba en el chat de Codex; desde el 2026-10-07 se escriben por el buzón `.buzon/gestor-codex.md` (fuera de git), que Codex lee directamente.
+
+En orden de preferencia:
+
+1. **Segunda revisión de cada PR antes de publicar** (solo lectura). El gestor le da el número del PR; Codex busca errores en el diff y contesta con hallazgos (archivo, línea, qué falla y con qué entrada). No toca nada. No sustituye la revisión del gestor ni la CI: la complementa.
+2. **Auditorías de solo lectura** con informe (lecturas que confunden «falló» con «no hay nada», textos, accesibilidad).
+3. **Inventarios y mediciones** que sirven de línea base a un rediseño. Si dejan un documento, va en una rama y un árbol que asigna el gestor.
+4. **Pruebas que faltan** para código que ya existe, sin cambiar ese código.
+5. **Piezas de código chicas y sin migración**, solo cuando el gestor tenga cola.
+
+No se le encarga: migraciones, permisos o datos de personas, diseño de pantallas nuevas ni piezas que ya tiene un agente del gestor.
+
+Candados de todo encargo: árbol de trabajo dentro del proyecto, asignado por el gestor (regla 9); sube su rama y no abre PR ni publica; no aplica nada en ninguna base; sin ayudantes; el gestor revisa y publica solo con el «publica» del founder. En lo que es solo lectura no hay rama: el informe llega por el buzón.
+
+(Rescatado el 2026-10-10 de la rama `gestor-registro-19`, que nunca se unió.)
+
 ## Tablero
 
 ### Ajuste de pruebas por costo (founder, 2026-09-18)

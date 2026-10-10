@@ -253,8 +253,14 @@ describe("la página que acompaña a cada envío", () => {
     expect(limpiarUrlGoogle("https://somosnosotros.org/admin")).toBeNull();
     expect(limpiarUrlGoogle("https://somosnosotros.org/entrar?siguiente=/")).toBeNull();
   });
-  it("el contexto de Google: la ruta en vez del título y sin referente", () => {
-    expect(contextoGoogle("https://somosnosotros.org/lugares/teatro?ciudad=slp")).toEqual({ page_location: "https://somosnosotros.org/lugares/teatro", page_title: "/lugares/teatro", page_referrer: "" });
+  it("el contexto de Google: la ruta en vez del título, la ficha en su sección (OL-340) y sin referente", () => {
+    expect(contextoGoogle("https://somosnosotros.org/lugares/teatro?ciudad=slp")).toEqual({ page_location: "https://somosnosotros.org/lugares", page_title: "/lugares", page_referrer: "" });
+    expect(contextoGoogle("https://somosnosotros.org/eventos/fiesta-inventada/cartel")).toEqual({ page_location: "https://somosnosotros.org/eventos", page_title: "/eventos", page_referrer: "" });
+  });
+  it("una acción hecha en una ficha lleva su sección, sin el slug (OL-340)", () => {
+    expect(limpiarUrlEvento("https://somosnosotros.org/eventos/fiesta-inventada")).toBe("https://somosnosotros.org/eventos");
+    expect(limpiarUrlEvento("https://somosnosotros.org/lugares/casa-inventada?tipo=museo")).toBe("https://somosnosotros.org/lugares?tipo=museo");
+    expect(limpiarUrlEvento("https://somosnosotros.org/sitios/plaza-inventada")).toBe("https://somosnosotros.org/sitios");
   });
 });
 
