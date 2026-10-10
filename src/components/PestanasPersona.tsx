@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { IconoCampana, IconoEstrella, IconoOk, IconoPersonas } from "./ui/Iconos";
+import { IconoCampana, IconoMarcador, IconoOk, IconoPersonas } from "./ui/Iconos";
 import kpi from "./ui/Kpi.module.css";
 import styles from "./PestanasPersona.module.css";
 
@@ -10,7 +10,7 @@ export type Pestana = { clave: string; n: number; etiqueta: string; contenido: R
 /** El icono de cada número de una persona (Voy, Interesan, Sigo, Van a lo mismo), como en las tarjetas del prototipo firmado. */
 const ICONO: Record<string, ReactNode> = {
   va: <IconoOk width={16} height={16} />,
-  interesa: <IconoEstrella width={16} height={16} />,
+  interesa: <IconoMarcador width={16} height={16} />,
   sigue: <IconoCampana width={16} height={16} />,
   juntos: <IconoPersonas width={16} height={16} />,
 };

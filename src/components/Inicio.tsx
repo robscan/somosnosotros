@@ -25,6 +25,8 @@ type Props = {
    *  `src/app/page.tsx`). `slotTusPlanes` solo se pinta con sesión (OL-219: sin cuenta, ese carril no existe, no
    *  colapsa vacío). */
   slotTusPlanes: React.ReactNode;
+  /** La fila de círculos «Ahora» (OL-359), bajo las dos barras y antes de los carriles; sin nada que mostrar no pinta nada. */
+  slotAhora?: React.ReactNode;
   slotEstelar: React.ReactNode;
   slotEstaSemana: React.ReactNode;
   /** «Festivales y exposiciones» (OL-342; antes «Para visitar», OL-322, solo las exposiciones), después de «Esta semana». */
@@ -54,7 +56,7 @@ type Props = {
  * crear cuenta en inicio»): y la barra tampoco lleva «Entrar» (founder, 2026-09-29): el acceso se ofrece al entrar a Perfil y al
  * seguir o marcar «Voy», sin bloquear nada delante del contenido de eventos, lugares y artistas.
  */
-export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotTusPlanes, slotEstelar, slotEstaSemana, slotFestivales, slotNuevos, slotLugaresSemana, slotArtistasSemana, slotArtistasDestacados, slotMasAdelante }: Props) {
+export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotAhora, slotTusPlanes, slotEstelar, slotEstaSemana, slotFestivales, slotNuevos, slotLugaresSemana, slotArtistasSemana, slotArtistasDestacados, slotMasAdelante }: Props) {
   const router = useRouter();
   const esCiudadInicial = ciudad.slug === CIUDAD_INICIAL.slug;
 
@@ -76,6 +78,8 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
             />
           }
         />
+        {/* La fila «Ahora» (OL-359, prototipo firmado `barra-ahora.html`): en el flujo, se va al bajar. Sin esqueleto: si no hay nada, ni hueco. */}
+        <Suspense fallback={null}>{slotAhora}</Suspense>
         {/* Orden firmado (doc 41, tercera vuelta): eventos siempre antes que lugares y artistas. "Tus planes"
             solo con sesión — sin ella, ni se pinta un carril colapsado (a diferencia de los demás, que sí
             existen vacíos): el componente entero se omite. */}

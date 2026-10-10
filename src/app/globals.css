@@ -171,6 +171,7 @@
   --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
   --tarjeta-sola-foto: 264px; /* tope del alto de la foto de una tarjeta sola, que ocupa el ancho del carril */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
+  --circulo-ahora: 72px; /* el círculo de la fila «Ahora» de Inicio, con su anillo (OL-359, prototipo firmado barra-ahora) */
   --avatar-ficha: 64px; /* avatar redondo dentro del héroe de la ficha de un artista */
   --avatar-perfil: 72px; /* avatar redondo de la cabecera de una persona (Mi perfil y su ficha) */
 

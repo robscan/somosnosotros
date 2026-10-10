@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cargarPersona, type Persona } from "@/app/personas/consultas";
 import Inicio from "@/components/Inicio";
 import CarrilAgenda from "@/components/inicio/CarrilAgenda";
+import CarrilAhora from "@/components/inicio/CarrilAhora";
 import CarrilEntidad from "@/components/inicio/CarrilEntidad";
 import CarrilTusPlanes from "@/components/inicio/CarrilTusPlanes";
 import CarrilMasAdelante from "@/components/inicio/CarrilMasAdelante";
@@ -89,6 +90,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         // Sin sesión, ni se construye: pasar el elemento igual lo haría ejecutarse (RSC renderiza cualquier hijo de
         // servidor que cruce a un componente de cliente, aunque ese cliente decida no montarlo) y filtraría "Tus
         // planes" al streaming de alguien sin cuenta, sin necesidad (OL-219).
+        slotAhora={<CarrilAhora agendaPromise={agendaPromise} ciudad={ciudad.nombre} conSesion={!!actual} />}
         slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
