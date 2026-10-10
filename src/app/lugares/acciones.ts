@@ -10,9 +10,11 @@ import { horarioDesdeJson } from "@/lib/horarioLugar";
 import { rutaSegura } from "@/lib/rutas";
 import { hrefLugar, validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import type { MotivoReclamo } from "@/lib/reportes";
+import { esSlugDeSitio } from "@/lib/sitios";
 import { esAdminDeSesion } from "@/lib/supabase/servidor";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { zonaDePunto } from "@/lib/zona";
+import { ligarEventosDelSitio } from "@/app/sitios/sitio";
 
 /** Publicar lleva a la ficha nueva reemplazando el alta; guardar, publicar desde el alta de evento o desde el alta por pasos (que se queda en
  *  «Publicado»), devuelve lo creado y a dónde volver. */
@@ -48,7 +50,9 @@ function privadoPermitido(pedido: boolean): boolean {
  * Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". Con horario (el
  * campo `horario` del alta por pasos, OL-315), el lugar y sus franjas se guardan en la misma transacción (`crear_lugar_con_horario`): si el
  * horario no se puede guardar, el lugar tampoco queda; sin él, como siempre. Con `quedarse` (el alta por pasos, que termina en «Publicado»)
- * devuelve lo creado en vez de ir a la ficha.
+ * devuelve lo creado en vez de ir a la ficha. Con `sitio` (la clave del sitio fuera del directorio desde cuya ficha se tocó «Agregar al
+ * directorio», OL-366), al quedar el lugar se le ligan los eventos de ese sitio que le tocan a quien lo registra (`ligarEventosDelSitio`; la
+ * regla, en la base); si no se pudo, el lugar queda igual y sus eventos siguen como sitio.
  */
 export async function crearLugar(_previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("lugar", null).href);
@@ -85,6 +89,10 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
         .select("id, slug")
         .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
+
+  // También al recuperar una respuesta perdida (`guardado`): ligar otra vez no cambia nada (la base solo liga los que siguen sin lugar).
+  const sitio = formData.get("sitio");
+  if (esSlugDeSitio(sitio)) await ligarEventosDelSitio(supabase, { id: user.id, esAdmin }, sitio, data);
 
   revalidatePath("/");
   if (formData.get("quedarse") === "1") return { ok: true, id: data.id, slug: data.slug, volver: hrefLugar(data) };

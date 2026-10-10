@@ -54,7 +54,13 @@ before(async () => {
       import AltaLugar from './src/app/nuevo/lugar/AltaLugar';
       import {CIUDAD_INICIAL} from './src/lib/ciudad';
       import './src/app/globals.css';
-      window.qa = {envios:[], subidas:[], reemplazos:[], salio:0, resultado:'publica', arrastre:{lat:22.1533,lng:-100.9811}, ...window.qaInicial};
+      window.qa = {envios:[], subidas:[], reemplazos:[], ligados:[], salio:0, resultado:'publica', arrastre:{lat:22.1533,lng:-100.9811}, ...window.qaInicial};
+      // OL-366: viniendo de la ficha de un sitio (\`qa.sitio\`), elegir un lugar que ya existe lo liga (\`ligarSitioALugar\` con el sitio atado).
+      async function ligar(id){
+        window.qa.ligados.push(id);
+        await new Promise((r) => setTimeout(r, window.qa.ligarLento ?? 0));
+        return {ok:true, ligados:1};
+      }
       async function accion(_, fd){
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         const r = window.qa.resultado;
@@ -73,7 +79,7 @@ before(async () => {
       ];
       const a = window.qa.arranque ?? {};
       createRoot(document.getElementById('root')).render(
-        <AltaLugar accion={accion} lugares={lugares} ciudadContexto={CIUDAD_INICIAL} conCiudad={window.qa.conCiudad ?? null} ciudades={ciudades} usuarioId="usuaria-1" esAdmin={!!window.qa.esAdmin} arranque={{nombre: a.nombre ?? '', punto: a.punto ?? null}} />
+        <AltaLugar accion={accion} lugares={lugares} ciudadContexto={CIUDAD_INICIAL} conCiudad={window.qa.conCiudad ?? null} ciudades={ciudades} usuarioId="usuaria-1" esAdmin={!!window.qa.esAdmin} arranque={{nombre: a.nombre ?? '', punto: a.punto ?? null}} sitio={window.qa.sitio ?? null} ligar={window.qa.sitio ? ligar : null} />
       );
     `,
     },
@@ -577,4 +583,96 @@ test("con Storage lento la portada elegida espera atenuada en su hueco con el ca
   assert.equal(await q.locator('[aria-busy="true"]').count(), 0);
   assert.equal(await q.locator("main img").count(), 0);
   assert.equal(await q.locator("main input[type=file]").isEnabled(), true);
+});
+
+/** OL-366 (bitácora 397): el alta que vino de «Agregar al directorio» en la ficha de un sitio fuera del directorio trae su clave (`qa.sitio`). */
+const SITIO = "bar-la-oficina-san-luis-potosi";
+/** Un toque de verdad en el centro de lo que señala `locator`, después de comprobar con `elementFromPoint` que es eso lo que hay ahí. */
+async function tocarDeVerdad(p, locator) {
+  const caja = await locator.boundingBox();
+  const x = caja.x + caja.width / 2;
+  const y = caja.y + caja.height / 2;
+  assert.ok(await locator.evaluate((el, [cx, cy]) => el.contains(document.elementFromPoint(cx, cy)), [x, y]), "en el centro está lo que se quiere tocar");
+  await p.mouse.click(x, y);
+}
+const ligadoYAbierto = (p) => p.evaluate(() => [window.qa.ligados, window.qa.reemplazos]);
+
+test("desde la ficha de un sitio: su clave viaja con lo que se publica (el servidor liga sus eventos al lugar nuevo); sin ella, el alta de siempre", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { sitio: SITIO, arranque: { nombre: "Bar La Oficina", punto: { lat: 22.1533, lng: -100.9811 } } } });
+  assert.equal(await nombre(p).inputValue(), "Bar La Oficina");
+  await boton(p, "Siguiente").click();
+  await enPaso(p, "¿Es aquí?");
+  await p.locator("main [role=status]").filter({ hasText: "Av. Universidad 300" }).waitFor();
+  await boton(p, "Sí, es aquí").click();
+  await p.getByRole("heading", { name: "Bar La Oficina" }).waitFor();
+  await boton(p, "Publicar lugar").click();
+  await p.getByRole("heading", { name: "Lugar publicado" }).waitFor();
+  assert.equal((await enviado(p)).sitio, SITIO);
+  // Publicar no liga desde la pantalla: lo hace `crearLugar` con el lugar ya creado. «Publicado» es el de siempre.
+  assert.deepEqual(await ligadoYAbierto(p), [[], []]);
+  assert.equal(await p.getByRole("link", { name: "Ver el lugar" }).getAttribute("href"), "/lugares/lugar-nuevo");
+
+  const q = await pagina(t);
+  await hastaRevisa(q);
+  await boton(q, "Publicar lugar").click();
+  await q.getByRole("heading", { name: "Lugar publicado" }).waitFor();
+  assert.equal("sitio" in (await enviado(q)), false);
+});
+
+test("desde un sitio, «¿Es este?» en el mapa: elegir el lugar que ya existe le liga los eventos del sitio y después abre su ficha; un segundo toque no liga otra vez", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { sitio: SITIO, ligarLento: 300 } });
+  await nombre(p).fill("La Grieta");
+  await boton(p, "Siguiente").click();
+  await enPaso(p, "¿Dónde está?");
+  await boton(p, /^Estoy aquí/).click();
+  const enlace = p.locator("main [role=status]").filter({ hasText: "¿Es este?" }).getByRole("link", { name: "Ir a su ficha" });
+  await enlace.waitFor();
+  assert.equal(await enlace.getAttribute("href"), "/lugares/taller-la-grieta");
+  await tocarDeVerdad(p, enlace);
+  await tocarDeVerdad(p, enlace);
+  // Mientras liga, todavía no se va.
+  assert.deepEqual(await ligadoYAbierto(p), [[GRIETA], []]);
+  await p.waitForFunction(() => window.qa.reemplazos.length === 1);
+  assert.deepEqual(await ligadoYAbierto(p), [[GRIETA], ["/lugares/taller-la-grieta"]]);
+});
+
+test("desde un sitio, «¿Es este?» en «Revisa» (el servidor encontró uno parecido) y «Ya tiene ficha» al escribir: elegirlo también liga y abre su ficha", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { sitio: SITIO, resultado: "parecidos" } });
+  await hastaRevisa(p);
+  await boton(p, "Publicar lugar").click();
+  const caja = p.getByRole("alert").filter({ hasText: "¿Es este?" });
+  await caja.waitFor();
+  await tocarDeVerdad(p, caja.getByRole("link"));
+  await p.waitForFunction(() => window.qa.reemplazos.length === 1);
+  assert.deepEqual(await ligadoYAbierto(p), [[TEATRO], ["/lugares/teatro-de-la-paz"]]);
+
+  const q = await pagina(t, { qa: { sitio: SITIO } });
+  await nombre(q).fill("Teatro de la");
+  const ficha = q.getByRole("option", { name: /Teatro de la Paz/ });
+  await ficha.waitFor();
+  await tocarDeVerdad(q, ficha);
+  await q.waitForFunction(() => window.qa.reemplazos.length === 1);
+  assert.deepEqual(await ligadoYAbierto(q), [[TEATRO], ["/lugares/teatro-de-la-paz"]]);
+});
+
+test("abrir el lugar en otra pestaña (con la tecla) es solo mirar: no liga; y sin sitio, «Ir a su ficha» es el enlace de siempre", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { sitio: SITIO } });
+  await nombre(p).fill("Teatro de la");
+  const ficha = p.getByRole("option", { name: /Teatro de la Paz/ });
+  await ficha.waitFor();
+  const otra = p.context().waitForEvent("page");
+  await ficha.click({ modifiers: ["ControlOrMeta"] });
+  await otra;
+  assert.deepEqual(await ligadoYAbierto(p), [[], []]);
+
+  const q = await pagina(t);
+  await nombre(q).fill("La Grieta");
+  await boton(q, "Siguiente").click();
+  await enPaso(q, "¿Dónde está?");
+  await boton(q, /^Estoy aquí/).click();
+  const enlace = q.locator("main [role=status]").filter({ hasText: "¿Es este?" }).getByRole("link", { name: "Ir a su ficha" });
+  await enlace.waitFor();
+  const ida = q.waitForRequest((r) => r.isNavigationRequest() && r.url() === `${origin}/lugares/taller-la-grieta`);
+  await tocarDeVerdad(q, enlace);
+  await ida;
 });

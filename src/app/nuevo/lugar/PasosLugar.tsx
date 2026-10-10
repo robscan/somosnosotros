@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import MapaDondeEs from "@/components/MapaDondeEs";
 import { PiePaso } from "@/components/PorPasos";
@@ -46,13 +46,16 @@ const conIntro = (seguir: (() => void) | null) => (e: React.KeyboardEvent<HTMLIn
   if (e.key === "Enter" && seguir) seguir();
 };
 
+/** Tocar el enlace a la ficha de un lugar que ya existe, viniendo de un sitio (OL-366): `AltaLugar` le liga sus eventos antes de abrirla. */
+export type AlElegir = (e: MouseEvent<HTMLAnchorElement>, lugar: LugarResumen) => void;
+
 /**
  * ¿Cómo se llama? El campo con lupa, ✕ y contador; con 3 letras o más, una lista flotante bajo él: primero los lugares del directorio que
  * coinciden («Ya tiene ficha · Ir a su ficha»: la salida es ir a esa ficha, no publicar otra) y debajo lo que trae el mapa (tocar uno trae
  * dirección, punto, ciudad y, si lo dice, el tipo, y lleva a confirmarlo en el mapa). «Siguiente» sigue sin sugerencia: el mapa preguntará
  * «¿Dónde está?». Al pie, bajo «Siguiente», la tira Evento · Lugar · Artista (`tira`), solo en este paso.
  */
-export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugerencia, onSeguir }: { nombre: string; lugares: LugarResumen[]; contexto: ContextoDireccion; tira: ReactNode; onNombre: (nombre: string) => void; onSugerencia: (c: Candidato) => void; onSeguir: () => void }) {
+export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugerencia, onSeguir, alElegir }: { nombre: string; lugares: LugarResumen[]; contexto: ContextoDireccion; tira: ReactNode; onNombre: (nombre: string) => void; onSugerencia: (c: Candidato) => void; onSeguir: () => void; alElegir?: AlElegir }) {
   const ancla = useRef<HTMLLabelElement>(null);
   const pie = useRef<HTMLElement>(null);
   const altoPie = useAlto(pie);
@@ -113,7 +116,7 @@ export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugere
       <ListaFlotante abierta={abierta} onCerrar={() => setCerradaPara(nombre)} ancla={ancla} id="lista-lugar" etiqueta="Lugares con ese nombre" reservaAbajo={altoPie}>
         {conFicha.map((l) => (
           <li key={`l-${l.id}`}>
-            <Link href={hrefLugar(l)} replace role="option" aria-selected={false} className={`${sug.renglon} ${sug.conFicha}`}>
+            <Link href={hrefLugar(l)} replace role="option" aria-selected={false} className={`${sug.renglon} ${sug.conFicha}`} onClick={alElegir && ((e) => alElegir(e, l))}>
               <IconoPin width={20} height={20} />
               <b>{l.nombre}</b>
               <small>{l.privado ? "Ya lo tienes guardado · Ir a su ficha" : "Ya tiene ficha · Ir a su ficha"}</small>
@@ -174,6 +177,7 @@ export function PasoUbicar({
   onEstoyAqui,
   onListo,
   onOtro,
+  alElegir,
 }: {
   nombre: string;
   /** «¿Es aquí?» (hay sugerencia o punto de entrada) o «¿Dónde está?». */
@@ -188,6 +192,7 @@ export function PasoUbicar({
   onEstoyAqui: (poner: (p: Punto) => void) => void;
   onListo: (sitio: Sitio) => void;
   onOtro: () => void;
+  alElegir?: AlElegir;
 }) {
   const [c, setC] = useState<Ubicado | null>(inicial);
   // El punto de entrada (el dedo sostenido en Lugares) llega sin dirección: se pide al llegar, como si se hubiera movido el pin.
@@ -313,7 +318,7 @@ export function PasoUbicar({
           <b>¿Es este?</b>
           <small>
             A {alLado.metros} m hay un lugar con ficha: {alLado.lugar.nombre}.{" "}
-            <Link href={hrefLugar(alLado.lugar)} replace className={styles.irFicha}>
+            <Link href={hrefLugar(alLado.lugar)} replace className={styles.irFicha} onClick={alElegir && ((e) => alElegir(e, alLado.lugar))}>
               Ir a su ficha
             </Link>
           </small>

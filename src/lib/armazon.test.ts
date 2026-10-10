@@ -134,6 +134,12 @@ describe("armazón: el alta de evento por pasos (OL-312)", () => {
     expect(enlaceAltaLugar()).toBe("/nuevo/lugar");
     expect(enlaceAltaLugar({ lng: "-100.97", nombre: "", ciudad: "queretaro", lat: "22.15" })).toBe("/nuevo/lugar?ciudad=queretaro&lat=22.15&lng=-100.97");
   });
+  it("desde la ficha de un sitio, «Agregar al directorio» lleva también su clave, al final (OL-366)", () => {
+    expect(enlaceAltaLugar({ sitio: "bar-la-oficina-san-luis-potosi", nombre: "Bar La Oficina", lat: "22.150000", lng: "-100.980000", ciudad: "san-luis-potosi" })).toBe(
+      "/nuevo/lugar?ciudad=san-luis-potosi&nombre=Bar+La+Oficina&lat=22.150000&lng=-100.980000&sitio=bar-la-oficina-san-luis-potosi",
+    );
+    expect(enlaceAltaLugar({ nombre: "Bar La Oficina", sitio: null })).toBe("/nuevo/lugar?nombre=Bar+La+Oficina");
+  });
 });
 
 describe("armazón: la lupa de la barra", () => {

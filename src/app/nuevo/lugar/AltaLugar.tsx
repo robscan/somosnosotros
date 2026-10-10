@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useReducer, useRef, useState, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
 import PorPasos from "@/components/PorPasos";
 import HojaCiudad from "@/app/artistas/HojaCiudad";
 import { HojaHorario } from "@/app/lugares/Horario";
@@ -13,7 +14,7 @@ import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { contextoDondeEsta } from "@/lib/hojaDonde";
 import { horarioParaEnviar } from "@/lib/horarioLugar";
 import { medirCliente } from "@/lib/medir";
-import type { LugarResumen } from "@/lib/lugares";
+import { hrefLugar, type LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import TiraTipos from "../TiraTipos";
 import { avance, estadoInicial, faltaParaPublicar, flujo, pasoActual, type Arranque, type Paso, type Respuestas } from "./pasos";
@@ -38,6 +39,10 @@ type Props = {
   esAdmin: boolean;
   /** Con qué se abre: el nombre que se buscó y el punto donde se sostuvo el dedo en Lugares. */
   arranque: Arranque;
+  /** La clave del sitio fuera del directorio desde cuya ficha se vino («Agregar al directorio», OL-366): viaja con lo que se publica. */
+  sitio?: string | null;
+  /** Con `sitio`: liga sus eventos a un lugar que ya existe (`ligarSitioALugar` con el sitio atado), al elegirlo en vez de publicar otro. */
+  ligar?: ((lugarId: string) => Promise<unknown>) | null;
 };
 
 const FORMULARIO = "registrar-lugar";
@@ -56,12 +61,16 @@ type Creado = { id: string; slug: string | null };
  * horario y `quedarse`, y es lo que mira la guardia. Publicar aparta la guardia; si el servidor devuelve un error, vuelve y el error sale en
  * «Revisa». La ciudad es la del mapa; si el mapa no la da, la de contexto a menos de 50 km; si tampoco, «Revisa» la pide en su renglón: nunca
  * San Luis Potosí en silencio. De «Publicado» se sale a la ficha o compartiendo (OL-365 quitó «Publicar otro»).
+ *
+ * Desde la ficha de un sitio fuera del directorio (OL-366) llega su clave (`sitio`): viaja con lo publicado y sus eventos pasan al lugar nuevo
+ * (`crearLugar`). Si en vez de publicar se elige uno que ya existe (los enlaces a su ficha de «Ya tiene ficha», «¿Es este?» en el mapa y en
+ * «Revisa»), primero se le ligan los eventos del sitio (`ligar`) y después se abre su ficha, como antes; sin `sitio`, son enlaces de siempre.
  */
 export default function AltaLugar(props: Props) {
   return <AltaPorPasos {...props} />;
 }
 
-function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, usuarioId, esAdmin, arranque }: Props) {
+function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, usuarioId, esAdmin, arranque, sitio = null, ligar = null }: Props) {
   const [estado, despachar] = useReducer(flujo, arranque, estadoInicial);
   const { r, candidato } = estado;
   const paso = pasoActual(estado);
@@ -101,6 +110,22 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
     enviar(fd);
   }
 
+  // Elegir el lugar que ya existe, viniendo de un sitio: se ligan sus eventos y después se abre su ficha (reemplazando el alta, como el
+  // enlace). Abrirlo en otra pestaña (con una tecla) es solo mirar: no liga. Un segundo toque mientras se liga no hace nada.
+  const router = useRouter();
+  const eligiendo = useRef(false);
+  const alElegir = ligar
+    ? (e: MouseEvent<HTMLAnchorElement>, lugar: LugarResumen) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        if (eligiendo.current) return;
+        eligiendo.current = true;
+        void ligar(lugar.id)
+          .catch(() => null)
+          .finally(() => router.replace(hrefLugar(lugar)));
+      }
+    : undefined;
+
   return (
     <PorPasos
       titulo={paso === "revisa" ? "Revisa" : "Registrar un lugar"}
@@ -126,6 +151,7 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
           <input type="hidden" name="privado" value={r.privado ? "1" : ""} />
           <input type="hidden" name="confirmado" value={confirmado ? "1" : ""} />
           <input type="hidden" name="quedarse" value="1" />
+          {sitio && <input type="hidden" name="sitio" value={sitio} />}
         </form>
       }
     >
@@ -138,6 +164,7 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
           onNombre={(nombre) => despachar({ tipo: "nombrar", nombre })}
           onSugerencia={(c) => despachar({ tipo: "sugerencia", candidato: c })}
           onSeguir={() => despachar({ tipo: "seguir" })}
+          alElegir={alElegir}
         />
       )}
       {paso === "mapa" && (
@@ -152,8 +179,9 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
           ubicando={ubicacion.ubicando}
           avisoUbicacion={ubicacion.avisoUbicacion}
           onEstoyAqui={ubicacion.estoyAqui}
-          onListo={(sitio) => despachar({ tipo: "ubicar", sitio })}
+          onListo={(ubicado) => despachar({ tipo: "ubicar", sitio: ubicado })}
           onOtro={atras}
+          alElegir={alElegir}
         />
       )}
       {paso === "tipo" && <PasoTipo onElegir={(valor) => despachar({ tipo: "tipo", valor })} />}
@@ -173,6 +201,7 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
           onHorario={() => setHoja("horario")}
           onCiudad={() => setHoja("ciudad")}
           onConfirmar={() => setConfirmado(true)}
+          alElegir={alElegir}
         />
       )}
       {paso === "mas" && <PasoMas r={r} usuarioId={usuarioId} esAdmin={esAdmin} errores={errores} onCambio={cambiar} onListo={() => despachar({ tipo: "seguir" })} />}
