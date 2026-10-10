@@ -21,6 +21,9 @@ function masHoras(s, h) {
   return new Date(new Date(s).getTime() + h * 3600e3).toISOString();
 }
 const hace = (dias) => new Date(Date.now() - dias * 86400e3).toISOString();
+// OL-370: cuántos días faltan para el primero de este mes y del que viene (negativo el primero), para fechas que cruzan de un mes a otro cualquier día.
+const primeroDelMes = 1 - Number(hoyLocal.slice(8, 10));
+const primeroDelMesQueViene = primeroDelMes + new Date(Date.UTC(Number(hoyLocal.slice(0, 4)), Number(hoyLocal.slice(5, 7)), 0)).getUTCDate();
 
 // ---------- personas ----------
 export const ANA = "11111111-1111-4111-8111-111111111111";
@@ -86,6 +89,9 @@ const E = {
   cine4: "bbbb0001-0000-4000-8000-000000000022",
   // OL-320 (con OL-319 ya usaba «taller»; al apilar OL-322 este taller visible toma su propia clave).
   tallerLinoleo: "bbbb0001-0000-4000-8000-000000000023",
+  // OL-370: un festival y una exposición visibles y en curso, de un mes a otro.
+  kowai: "bbbb0001-0000-4000-8000-000000000024",
+  mundo: "bbbb0001-0000-4000-8000-000000000025",
 };
 function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null }) {
   const inicio = iso(fecha(dias, hora));
@@ -130,6 +136,11 @@ const eventos = [
   // OL-320: un taller con horario por día (tres sesiones, cada una con su hora): la agenda lo pone en los tres días. Empieza con su primera sesión y termina con la última.
   // OL-322: es un taller (`clase`), así cada día dice «Sesión n de 3».
   { ...evento({ id: E.tallerLinoleo, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, clase: "taller", descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
+  // OL-370: para ver en «Festivales y expos» los sellos de un rango que ya empezó y cruza de mes («→ 23», «→ 8») y la línea «Hasta el…» del festival
+  // en curso. El festival, del día 27 del mes pasado (más o menos) a la medianoche que cierra el 23 del que viene; la exposición, del 21 del mes
+  // pasado al 8 del que viene (el MUNI tiene horario). Sin actos ni asistencias: no salen en otros carriles ni cambian los «van».
+  { ...evento({ id: E.kowai, slug: "kowaifest", titulo: "KOWAIFEST: festival de cultura japonesa", dias: primeroDelMes - 4, hora: "18:00", lugar_id: L.ccub, creadoHace: 12, clase: "festival" }), fin: iso(fecha(primeroDelMesQueViene + 23, "00:00")), termina: iso(fecha(primeroDelMesQueViene + 23, "00:00")) },
+  { ...evento({ id: E.mundo, slug: "un-mundo-para-mi", titulo: "Un mundo para mí", dias: primeroDelMes - 10, hora: "00:00", lugar_id: L.muni, creadoHace: 14, clase: "exposicion", descripcion: "Ilustración y gráfica de artistas potosinas." }), fin: iso(fecha(primeroDelMesQueViene + 7, "23:59")), termina: iso(fecha(primeroDelMesQueViene + 7, "23:59")) },
 ];
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];

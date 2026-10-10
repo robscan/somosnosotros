@@ -37,12 +37,13 @@ export function fondoImagen(src: string): string {
   return optimizable(src) ? `/_next/image?url=${encodeURIComponent(src)}&w=384&q=75` : src;
 }
 
-/** Cajas vigentes del canon; sizes no modifica el CSS. */
-export function tamanoImagenCarril(forma: "grande" | "mediana" | "chica" | "sola"): string {
+/** Cajas vigentes del canon; sizes no modifica el CSS. `cartelMediana`: la tarjeta de evento mediana de Inicio (OL-370), 4/5 de la grande. */
+export function tamanoImagenCarril(forma: "grande" | "mediana" | "chica" | "sola" | "cartelMediana"): string {
   switch (forma) {
     case "grande": return "(min-width: 1048px) 190px, 165px";
     case "mediana": return "220px";
     case "chica": return "104px";
     case "sola": return "(min-width: 1048px) 960px, (min-width: 640px) 600px, calc(100vw - 40px)";
+    case "cartelMediana": return "(min-width: 1048px) 152px, 132px";
   }
 }

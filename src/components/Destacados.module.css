@@ -253,98 +253,15 @@
 }
 
 /*
- * «Título + cartel» (OL-360; prototipo firmado `barra-ahora.html`, founder 2026-10-09: «tarjetas: título + cartel»): solo en los carriles de
- * eventos de Inicio, con las medidas de la tarjeta grande (165×248 a 390; a 1048 crece con su token). La tarjeta: la portada a su alto
- * (`--foto`) y debajo cuándo y dónde; el título va dentro. La portada: la franja con el título corto arriba, a lo que mida (hasta tres líneas),
- * y el cartel en lo que queda, recortado desde arriba (ahí suele decir qué es), con un corte limpio. Sin cartel, la portada entera es de título.
- * El título deja a su derecha el sitio del botón de la esquina.
+ * La tarjeta de evento de Inicio (OL-370; prototipo firmado `inicio-tarjetas.html`, E1 y E5): el carril del cartel entero en 4:5, grande en Tus
+ * planes, Destacados y Festivales y expos (165×206; 190×237,5 desde 1048) y mediana en Esta semana, Nuevos eventos y Más adelante (132×165; se
+ * ven dos y media). La tarjeta es `inicio/TarjetaEvento`; aquí solo el ancho de la columna y el alto de su portada (`--foto`).
  */
-.titular {
-  grid-template-rows: var(--foto) auto;
-  row-gap: var(--espacio-2);
+.cartelGrande {
+  --foto: var(--tarjeta-cartel-foto);
+  grid-auto-columns: var(--tarjeta-grande);
 }
-.titular > small {
-  grid-area: 2 / 1;
-}
-.portada {
-  grid-area: 1 / 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "franja"
-    "cartel";
-  grid-template-rows: auto minmax(0, 1fr);
-  height: var(--foto);
-  min-width: 0;
-  overflow: hidden;
-  border-radius: var(--radio);
-  background: var(--fondo-miniatura);
-}
-.franja {
-  grid-area: franja;
-  padding: var(--espacio-3) calc(var(--boton-icono) + var(--espacio-2)) var(--espacio-2) var(--espacio-3);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 800;
-  font-variation-settings: var(--ancho-titulo);
-  line-height: 1.04;
-  text-transform: uppercase;
-  text-wrap: balance;
-  overflow-wrap: anywhere; /* una palabra más ancha que la franja («INCONSCIENTE» a 165) se parte en vez de meterse bajo el botón */
-}
-/* El corte a tres líneas va en el texto, no en la franja: con el relleno en el mismo elemento, la cuarta línea asomaría por debajo. */
-.franja > span {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-.cartel {
-  grid-area: cartel;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  object-fit: cover;
-  object-position: center top;
-}
-/* Los rótulos (OL-364): abajo a la izquierda, la clase y a su lado como mucho un dato, en una fila; si no caben, el dato sube sobre la clase
-   en vez de cortarse o meterse bajo el borde. */
-.rotulos {
-  grid-area: cartel;
-  align-self: end;
-  justify-self: start;
-  display: flex;
-  flex-wrap: wrap-reverse;
-  gap: var(--espacio-1);
-  min-width: 0;
-  margin: 0 var(--espacio-2) var(--espacio-2);
-}
-.rotulos > .hoy {
-  background: var(--primario);
-  color: var(--primario-texto);
-}
-/* Sin cartel: la portada entera es de título, con los rótulos abajo a la izquierda y el símbolo SN abajo a la derecha (18 px). */
-.soloTitulo {
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "franja franja"
-    "rotulo simbolo";
-  grid-template-rows: minmax(0, 1fr) auto;
-  align-items: end;
-}
-.soloTitulo > .franja {
-  align-self: start;
-}
-.soloTitulo > .rotulos {
-  grid-area: rotulo;
-  margin: 0 0 var(--espacio-3) var(--espacio-3);
-}
-.simbolo {
-  grid-area: simbolo;
-  justify-self: end;
-  height: 18px;
-  width: auto;
-  margin: 0 var(--espacio-3) var(--espacio-3) 0;
-  color: var(--primario-texto);
-  opacity: 0.92;
+.cartelMediana {
+  --foto: var(--tarjeta-cartel-mediana-foto);
+  grid-auto-columns: var(--tarjeta-cartel-mediana);
 }

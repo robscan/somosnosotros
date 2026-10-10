@@ -3,9 +3,10 @@ import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtr
 import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
-import { cuandoDeTarjeta, notaDeClase, rotulosDeTarjeta, selloDeTarjeta, tarjetaConClase, tarjetaEvento } from "./destacados";
+import { cuandoDeTarjeta, notaDeClase, selloDeTarjeta, tarjetaConClase, tarjetaEvento } from "./destacados";
 import { calcularCarrilesAgenda, carrilDestacados, carrilEstaSemana, carrilEstelar, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
+import { cejaDeTarjeta, chipDeTarjeta, tarjetaDeInicio } from "./tarjetaInicio";
 
 // Miércoles 7 de octubre de 2026, 12:00 en la ciudad (seis horas detrás de UTC, sin horario de verano).
 const ahora = new Date("2026-10-07T18:00:00Z");
@@ -292,13 +293,16 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(selloDeTarjeta({ ...tarjetaConClase(electric, ahora), hoy: true })).toEqual({ texto: "Hoy · Festival", tuyo: false, hoy: true });
     expect(selloDeTarjeta(tarjetaConClase(fiesta, ahora), true)).toEqual({ texto: "Te interesa", tuyo: true, hoy: false });
   });
-  it("OL-364: en Inicio la clase va aparte, a la izquierda, y a su lado como mucho un dato; un evento suelto o un acto dicen «Evento»", () => {
-    expect(rotulosDeTarjeta({ ...tarjetaConClase(electric, ahora), hoy: true })).toEqual({ clase: "Festival", sello: { texto: "Hoy", tuyo: false, hoy: true } });
-    expect(rotulosDeTarjeta(tarjetaConClase(fiesta, ahora), true)).toEqual({ clase: "Festival", sello: { texto: "Te interesa", tuyo: true, hoy: false } });
-    expect(rotulosDeTarjeta(tarjetaConClase(ecos, ahora))).toEqual({ clase: "Exposición", sello: null });
-    expect(rotulosDeTarjeta({ ...tarjetaConClase({ ...ecos, clase: "puntual" }, ahora), van: 2, hoy: false })).toEqual({ clase: "Evento", sello: { texto: "2 van", tuyo: false, hoy: false } });
+  it("OL-370: en Inicio la clase va en la ceja, solo si no es un evento; sobre el cartel, como mucho un chip («Te interesa» o cuántos van)", () => {
+    expect(cejaDeTarjeta(tarjetaDeInicio(electric, ahora))).toEqual(["Festival"]);
+    expect(cejaDeTarjeta(tarjetaDeInicio(ecos, ahora))).toEqual(["Expo"]);
+    expect(cejaDeTarjeta(tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora))).toEqual([]); // un evento suelto o un acto no se rotulan (E3b)
     expect(tarjetaConClase({ ...ecos, clase: "taller" }, ahora).clase).toBe("Taller"); // la palabra corta de `CLASES`, no «Taller o curso»
-    expect(rotulosDeTarjeta({ hoy: false, van: null })).toEqual({ clase: null, sello: null }); // lugares y artistas: nada
+    expect(chipDeTarjeta(tarjetaDeInicio(fiesta, ahora), "me_interesa")).toEqual({ texto: "Te interesa", tuyo: true });
+    expect(chipDeTarjeta({ ...tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora), van: 2 }, null)).toEqual({ texto: "2 van", tuyo: false });
+    // El festival que ya empezó dice cuándo termina, como la exposición; el que viene conserva su día.
+    expect(tarjetaDeInicio(fiesta, ahora).detalle).toBe("Hasta el mié 7 de oct");
+    expect(tarjetaDeInicio(electric, ahora)).toMatchObject({ detalle: "sáb 31 de oct", selloFecha: { mes: "oct", dia: "31", flecha: null } });
   });
 });
 

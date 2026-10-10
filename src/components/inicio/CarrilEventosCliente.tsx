@@ -17,16 +17,19 @@ const sinDatosServidor = () => "";
 
 /**
  * El carril, ya en el cliente: la parte de datos la resolvió un componente de servidor (streaming, OL-156) y le pasó
- * `tarjetas` (ya serializable); aquí vive el botón Voy, con el mismo canal de aviso que comparten los demás carriles
- * de Inicio (`useCanalDePantalla`, la misma pieza que ya usan las fichas y Lugares — ver `PantallaConAviso`).
+ * `tarjetas` (ya serializable, con su sello de fecha: `tarjetaDeInicio`). Desde OL-370 (tarjeta firmada, `inicio/TarjetaEvento`) las tarjetas ya
+ * no llevan el botón de «Voy» (founder, 2026-10-10: «ya se resuelve en los carriles si va»; decidir queda en la ficha y en las historias): de
+ * `useAsistenciaEnLista` solo se usa lo que la persona decidió (`estado`, con lo corregido de esta visita), para el chip «Te interesa» y para
+ * «Tus planes». `tamano`: `grande` o `mediana` (E5).
  *
  * `tusPlanes` (OL-222, bitácora 251): solo en "Tus planes" (`CarrilTusPlanes`), una tarjeta que la persona quita
- * (Voy y Me interesa, las dos a "ya no") desaparece de este carril al momento — con Deshacer, como cualquier otro
- * toque; `useAsistenciaEnLista` es quien decide el estado (con lo optimista y con lo corregido de esta visita), así
- * que basta con leer `asistencia.estado` para filtrar. Los demás carriles (Estelar, Esta semana…) no filtran: ahí el
- * evento se queda con su check al día, nunca desaparece bajo el dedo (OL-221).
+ * (Voy y Me interesa, las dos a "ya no"; desde OL-370, en la ficha o en las historias) desaparece de este carril;
+ * `useAsistenciaEnLista` es quien decide el estado (con lo corregido de esta visita), así que basta con leer
+ * `asistencia.estado` para filtrar. Los demás carriles (Estelar, Esta semana…) no filtran: ahí el evento se queda,
+ * con su chip al día (OL-221).
  *
- * «Tus planes al instante» (OL-224, bitácora 253): también solo con `tusPlanes`, antes de filtrar se agrega lo que
+ * «Tus planes al instante» (OL-224, bitácora 253; desde OL-370 las tarjetas no tienen botón, así que solo quedan las que se guardaron antes):
+ * también solo con `tusPlanes`, antes de filtrar se agrega lo que
  * la persona acaba de decidir en OTRA fila de Inicio y el servidor todavía no trae (`tarjetasTusPlanes`, en su lugar
  * por fecha) — así la fila aparece o gana una tarjeta sin esperar a la próxima visita, y si estaba vacía (colapsada,
  * `Destacados` con `tarjetas.length === 0`) deja de estarlo en cuanto hay algo que agregar. El toque pudo pasar en
@@ -53,10 +56,5 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
   }, [tusPlanes, cuenta, tarjetas]);
   const visibles = tusPlanes ? tarjetasTusPlanes(cuenta, tarjetas, new Date()).filter((t) => asistencia.estado(t.id) !== null) : tarjetas;
   useCarrilResuelto(memoria, resuelto ? visibles.length : null);
-  return (
-    <>
-      <Destacados tarjetas={visibles} titular tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => (t.sinVoy ? null : asistencia.boton(t))} estadoDe={asistencia.estado} />
-      {asistencia.extras}
-    </>
-  );
+  return <Destacados tarjetas={visibles} cartel tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} estadoDe={asistencia.estado} />;
 }

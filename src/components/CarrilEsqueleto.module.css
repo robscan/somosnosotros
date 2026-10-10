@@ -14,3 +14,7 @@
 .corta {
   width: 60%;
 }
+/* El título de la tarjeta de evento (OL-370): sus dos líneas, con la letra y el interlineado de la tarjeta real. */
+.dosLineas {
+  height: calc(2em * var(--interlinea-lista));
+}
