@@ -209,3 +209,12 @@ El founder, en un comentario sobre la tarjeta de «Tus planes» de la página pu
 Comprobado en Chrome a 390×844, con la página envuelta como al publicarla: sin errores en la consola; un clic real en el centro del sello (`elementFromPoint` cae en la tarjeta) abre su ficha.
 
 - `22-e8c-fecha-a-la-derecha.png` — «Calma» con E8c: en «Tus planes», el sello «oct / 10» arriba a la derecha del cartel de Kopk Poj y de la foto de la Cineteca; debajo, «EVENTO · VAS» y «EVENTO · TE INTERESA», título, lugar y hora; en «Destacados», el mismo sello a la derecha.
+
+## Dos comentarios más del founder (2026-10-10)
+
+- **«Para artistas se sigue chip de “Nuevo video” o audio»:** el agente había escrito que los datos no traían novedades; no era así, la exportación del gestor no las incluía. Se añadieron las reales de `novedades_artista` con la regla de la app (`selloNovedadArtista`, 7 días contra «ahora»): Markosblues, Un León Marinero y Sangre de Coyote con «Nuevo video»; DwardNoize y Robscan con «Nuevo audio». En la tarjeta grande de «Artistas destacadxs» va el chip sobre la foto, con el trato de «Hoy», en todas las combinaciones (también en «Hoy», que así es más fiel a producción); en las redondas y en los avatares de E5, en la línea de abajo.
+- **«Si son mis planes decir que vas es redundante»:** en «Tus planes» ya no se dice «Vas»; solo se marca «Te interesa», que ahí es la excepción. Lo que no lo dice es a lo que vas.
+
+Comprobado en Chrome a 390×844 con la página envuelta como al publicarla, sin errores: las cejas de «Tus planes» dicen «Evento», «Evento · Te interesa» y «Festival · Te interesa»; hay cinco rótulos de novedad en «Calma» y cinco en «Hoy».
+
+- `23-artistas-nuevo-video.png` — «Calma»: «Artistas destacadxs» con Markosblues y su chip violeta «Nuevo video» abajo a la izquierda de la foto; Fozco sin novedad; debajo, «Artistas de la semana» en redondo.
