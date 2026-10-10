@@ -1,6 +1,6 @@
 import type { AvisosLista } from "@/components/useSeguirEnLista";
 import type { Agenda } from "@/lib/cargarAgenda";
-import { nombreDeFestival, tarjetaEvento } from "@/lib/destacados";
+import { nombreDeFestival, tarjetaConClase } from "@/lib/destacados";
 import { carrilMasAdelante } from "@/lib/inicio";
 import CarrilMasAdelanteCliente from "./CarrilMasAdelanteCliente";
 
@@ -9,5 +9,5 @@ export default async function CarrilMasAdelante({ agendaPromise, avisos, verTodo
   const agenda = await agendaPromise;
   const ahora = new Date();
   const festival = nombreDeFestival(agenda.eventos);
-  return <CarrilMasAdelanteCliente tarjetas={carrilMasAdelante(agenda).map((e) => tarjetaEvento(e, ahora, festival(e)))} asistencias={agenda.asistencias} avisos={avisos} verTodosHref={verTodosHref} />;
+  return <CarrilMasAdelanteCliente tarjetas={carrilMasAdelante(agenda).map((e) => tarjetaConClase(e, ahora, festival(e)))} asistencias={agenda.asistencias} avisos={avisos} verTodosHref={verTodosHref} />;
 }

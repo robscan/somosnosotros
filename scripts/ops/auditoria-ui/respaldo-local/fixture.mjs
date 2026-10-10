@@ -122,7 +122,7 @@ const eventos = [
   { ...evento({ id: E.ecos, slug: "ecos-de-papel", titulo: "Ecos de papel", dias: -3, hora: "00:00", lugar_id: L.muni, creadoHace: 4, descripcion: "Grabado y papel hecho a mano de Mariana Ruvalcaba.", imagen: imagenes.eventos["desierto-observacion-y-espacio"] ?? null, autor: ANA, visible: false, clase: "exposicion", inaugura_id: E.ecosInaug }), fin: iso(fecha(20, "23:59")), termina: iso(fecha(20, "23:59")) },
   evento({ id: E.ecosInaug, slug: "inauguracion-ecos-de-papel", titulo: "Inauguración: Ecos de papel", dias: -4, hora: "19:00", lugar_id: L.muni, creadoHace: 4, autor: ANA, visible: false }),
   // El festival: el marco y su programa (del día 9 al 11), con un acto como borrador.
-  { ...evento({ id: E.cine, slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, imagen: imagenes.eventos["leonora-in-the-morning-light"] ?? null, autor: ANA, visible: false, clase: "festival" }), fin: iso(fecha(12, "00:00")), termina: iso(fecha(12, "00:00")) },
+  { ...evento({ id: E.cine, slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, imagen: imagenes.eventos["leonora-in-the-morning-light"] ?? null, autor: ANA, visible: true, clase: "festival" }), fin: iso(fecha(12, "00:00")), termina: iso(fecha(12, "00:00")) },
   evento({ id: E.cine1, slug: "inauguracion-la-luz-que-queda", titulo: "Inauguración: «La luz que queda»", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine2, slug: "charla-con-la-directora", titulo: "Charla con la directora", dias: 10, hora: "18:00", dur: 1, lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine3, slug: "funcion-cortometrajes-potosinos", titulo: "Función: cortometrajes potosinos", dias: 11, hora: "17:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
@@ -183,6 +183,9 @@ const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000003", usuario_id: ANA, evento_id: E.leonora, estado: "me_interesa", creado_en: hace(0) },
   { id: "dddd0001-0000-4000-8000-000000000004", usuario_id: MARCOS, evento_id: E.colocaos, estado: "voy", creado_en: hace(2) },
   { id: "dddd0001-0000-4000-8000-000000000005", usuario_id: MARCOS, evento_id: E.feleal, estado: "voy", creado_en: hace(2) },
+  // OL-364: «Tus planes» con un festival y un taller que le interesan a Ana, para medir la clase junto a la decisión en la tarjeta.
+  { id: "dddd0001-0000-4000-8000-000000000006", usuario_id: ANA, evento_id: E.cine, estado: "me_interesa", creado_en: hace(0) },
+  { id: "dddd0001-0000-4000-8000-000000000007", usuario_id: ANA, evento_id: E.tallerLinoleo, estado: "me_interesa", creado_en: hace(0) },
 ];
 const seguimientos = [
   { id: "eeee0001-0000-4000-8000-000000000001", usuario_id: ANA, lugar_id: L.miguelito, artista_id: null, creado_en: hace(5) },

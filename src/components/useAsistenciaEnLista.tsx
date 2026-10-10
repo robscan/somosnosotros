@@ -27,7 +27,7 @@ type EventoLista = { id: string; slug?: string | null; titulo: string } & Partia
  *  tarjetas de carril (`Destacados`, con `tarjetaEvento`) lo traen completo; un renglón de Agenda/ficha, no. */
 function tarjetaDe(e: EventoLista): TarjetaConFecha | null {
   if (e.href === undefined || e.foto === undefined || e.detalle === undefined || e.van === undefined || e.inicio === undefined || e.fin === undefined || e.zona === undefined) return null;
-  return { id: e.id, href: e.href, foto: e.foto, titulo: e.titulo, detalle: e.detalle, sitio: e.sitio, van: e.van, hoy: e.hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
+  return { id: e.id, href: e.href, foto: e.foto, titulo: e.titulo, detalle: e.detalle, sitio: e.sitio, van: e.van, hoy: e.hoy, ...(e.clase ? { clase: e.clase } : {}), inicio: e.inicio, fin: e.fin, zona: e.zona }; // la clase: su rótulo en «Tus planes» (OL-364)
 }
 
 /**
