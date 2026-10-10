@@ -33,7 +33,7 @@ before(async () => {
       loader: "tsx",
       contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
-      import Destacados from './src/components/Destacados';import './src/app/globals.css';
+      import Destacados from './src/components/Destacados';import CarrilEsqueleto from './src/components/CarrilEsqueleto';import './src/app/globals.css';
 
       // Una tarjeta de evento con cartel; los cambios pisan lo que haga falta (sin foto, hoy, un sitio largo…).
       function tarjeta(id, van, cambios) { return { id, href: '/eventos/' + id, foto: '/cartel.jpg', titulo: 'Evento ' + id, detalle: 'vie 10 de oct · 19:00', sitio: 'Teatro de la Paz', van, cuando: true, ...cambios }; }
@@ -108,6 +108,8 @@ before(async () => {
           React.createElement(Destacados, { tarjetas: firmadas, tamano: 'grande', cartel: true, encabezado: 'Carril firmado', memoria: 'm14', boton, estadoDe: decisionFirmadas }),
           React.createElement(Destacados, { tarjetas: [...firmadas.slice(0, 3), firmadas[5]], tamano: 'mediana', cartel: true, encabezado: 'Carril firmado mediano', memoria: 'm16', estadoDe: decisionFirmadas }),
           React.createElement(Destacados, { tarjetas: [tarjeta('ev-sola', 0, { corto: 'Sola', clase: 'Evento', selloFecha: sello('oct', '11') })], tamano: 'grande', cartel: true, encabezado: 'Carril firmado solo', memoria: 'm15', boton }),
+          // Los esqueletos de carga de los carriles de eventos de Inicio (OL-370): grande y mediano.
+          React.createElement('div', { id: 'esqueletos' }, React.createElement(CarrilEsqueleto, { tamano: 'grande', cartel: true }), React.createElement(CarrilEsqueleto, { tamano: 'mediana', cartel: true })),
         );
       }
       createRoot(document.getElementById('root')).render(React.createElement(App));
@@ -554,4 +556,19 @@ test("firmada: sin cartel, la portada con su paleta, el símbolo SN arriba a la 
   assert.equal(m.ceja, "TALLER · SESIÓN 2 DE 3");
   assert.deepEqual(m.debajo, ["Casa de Cultura del Barrio de San Miguelito", "mar 13 de oct · 19:00"]);
   assert.ok(m.fuera, "el lugar y cuándo, debajo de la portada");
+});
+
+test("firmada: el esqueleto de carga mide lo que su carril: la columna, la portada y una tarjeta con el título en dos líneas", async (t) => {
+  const p = await pagina(t);
+  const medir = (loc) =>
+    loc.evaluate((li) => {
+      const tarjeta = li.firstElementChild, portada = tarjeta.firstElementChild.getBoundingClientRect();
+      return { columna: Math.round(li.getBoundingClientRect().width * 10) / 10, portada: [Math.round(portada.width * 10) / 10, Math.round(portada.height * 10) / 10], alto: Math.round(tarjeta.getBoundingClientRect().height) };
+    });
+  for (const [i, carril] of [[1, "Carril firmado"], [2, "Carril firmado mediano"]]) {
+    const esqueleto = await medir(p.locator(`#esqueletos > section:nth-child(${i}) li`).first());
+    // La tarjeta de referencia: título en dos líneas, sin ceja, con lugar y cuándo (el carril más común).
+    const real = await medir(firmada(p, carril, "ev-largo").locator("xpath=.."));
+    assert.deepEqual(esqueleto, real, carril);
+  }
 });
