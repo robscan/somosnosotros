@@ -12,7 +12,10 @@ import { TIPOS } from "./lugares";
  *   ids (`lugar`, `artista`, `desde`), tokens—, también lo que se añada mañana (OL-325, F03 de OL-327: antes era una lista negra y dejaba
  *   pasar `lat` y `lng`) y también un valor libre en un parámetro permitido, como `?tipo=correo%40local.test` (OL-334: la lista blanca
  *   limitaba los nombres, no los valores).
- * - La ficha de una persona (`/personas/<id>`) queda en `/personas`: el id nunca sale.
+ * - Toda ruta con el slug o el id de una ficha queda en su sección (OL-340; antes solo `/personas/<id>`, OL-334): `/lugares/<slug>…` →
+ *   `/lugares`, y lo mismo `/eventos` (también editar y el cartel), `/artistas`, `/sitios`, `/personas`, `/obra` y la dirección corta
+ *   `/e/<slug>`. Así no sale el slug de un lugar privado, de un evento oculto ni de un sitio con la dirección reservada: en el teléfono
+ *   no se sabe si una ficha es privada sin preguntar, por eso la regla es la misma para todas.
  * - Evita rastrear rutas privadas: admin, perfil, ajustes y enlaces con token.
  * - Solo se envían rutas públicas sin identificación personal.
  * - Devuelve la URL ABSOLUTA (con esquema y dominio): Vercel Analytics rechaza URLs relativas.
@@ -66,9 +69,40 @@ const RUTAS_PRIVADAS_PREFIJOS = [
   "/entrar",     // Entrada/autenticación
 ];
 
-/** La ficha de una persona lleva su id en la ruta: para medir queda solo «/personas» (también con la barra codificada o en mayúsculas). */
+/**
+ * Las secciones cuyas rutas llevan detrás el slug o el id de una ficha (OL-340): todas las rutas dinámicas de `src/app` que no son privadas,
+ * más la dirección corta del cartel, que resuelve el proxy. Para medir, la ruta queda en su sección sin importar lo que siga (editar, cartel,
+ * letrero, novedades). Una prueba recorre `src/app` y falla si aparece una ruta dinámica que esta lista no cubra.
+ */
+const SECCIONES_CON_FICHA = [
+  "lugares", // /lugares/<slug>, /editar
+  "eventos", // /eventos/<slug>, /editar, /cartel, /calendario
+  "artistas", // /artistas/<slug>, /editar, /letrero, /novedades/…
+  "sitios", // /sitios/<slug> (OL-348)
+  "personas", // /personas/<id> (OL-334)
+  "obra", // /obra/<id>/mando, /obra/<id>/pared
+  "e", // /e/<slug>, la dirección corta del cartel (OL-324)
+  "api", // /api/cartel/<id>, /api/cartel-nuevo/<id>: no son páginas, misma regla
+  "auth", // /auth/<proveedor>: tampoco son páginas
+] as const;
+
+/** Una sección de ficha al principio de la ruta, seguida de una barra (también codificada, `%2f`) o del final; sin distinguir mayúsculas. */
+const RUTA_DE_FICHA = new RegExp(`^/+(${SECCIONES_CON_FICHA.join("|")})(?:/|%2f|$)`, "i");
+
+/**
+ * La ruta como se mide: la de una ficha, solo su sección y en minúsculas (`/Eventos/fiesta-mayor/cartel/` → `/eventos`); cualquier otra,
+ * tal cual. Se mira decodificada, para que una barra o una letra codificadas (`/lugares%2Fcasa`, `/%6Cugares/casa`) no la esquiven; con
+ * un «%» suelto no se puede decodificar y se mira tal cual (la barra codificada se reconoce igual).
+ */
 function rutaSinId(pathname: string): string {
-  return /^\/personas(\/|%2f|$)/i.test(pathname) ? "/personas" : pathname;
+  let ruta = pathname;
+  try {
+    ruta = decodeURIComponent(pathname);
+  } catch {
+    // un «%» suelto: se mira tal cual
+  }
+  const seccion = RUTA_DE_FICHA.exec(ruta)?.[1];
+  return seccion ? `/${seccion.toLowerCase()}` : pathname;
 }
 
 /**
@@ -95,7 +129,7 @@ export function limpiarUrlAnalitica(url: string): string | null {
       if (conservado !== null) limpios.append(nombre, conservado);
     }
 
-    // 3. Construir la URL limpia absoluta (conserva el origen real de la entrada); sin el id de la persona
+    // 3. Construir la URL limpia absoluta (conserva el origen real de la entrada); la ficha, solo su sección
     const consulta = limpios.toString();
     return urlObj.origin + rutaSinId(pathname) + (consulta ? `?${consulta}` : "");
   } catch {
@@ -105,15 +139,16 @@ export function limpiarUrlAnalitica(url: string): string | null {
 }
 
 /**
- * La página desde la que se hizo una acción medida (OL-325): la misma limpieza que las vistas; en una ruta privada (Entrar, Perfil…),
- * en vez de no mandar nada —la acción sí se mide— queda solo su primer tramo («/entrar», sin `?siguiente=`). Nunca null.
+ * La página desde la que se hizo una acción medida (OL-325): la misma limpieza que las vistas (la ficha, solo su sección: un «Voy» en
+ * `/eventos/<slug>` va con `/eventos`, OL-340); en una ruta privada (Entrar, Perfil…), en vez de no mandar nada —la acción sí se mide—
+ * queda solo su primer tramo («/entrar», sin `?siguiente=`), cortado también en la barra codificada. Nunca null.
  */
 export function limpiarUrlEvento(url: string): string {
   const limpia = limpiarUrlAnalitica(url);
   if (limpia !== null) return limpia;
   try {
     const u = url.startsWith("/") ? new URL(url, "https://somosnosotros.org") : new URL(url);
-    const tramo = u.pathname.split("/")[1] ?? "";
+    const tramo = u.pathname.split(/\/|%2f/i)[1] ?? "";
     return `${u.origin}/${tramo}`;
   } catch {
     return "https://somosnosotros.org/";
