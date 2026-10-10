@@ -7,7 +7,7 @@ import Boton, { claseBoton } from "@/components/ui/Boton";
 import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import { claseSubiendoDentro } from "@/components/ui/FotoSubida";
-import { compartirArtista, type ArtistaResumen } from "@/lib/artistas";
+import { compartirArtista, hrefArtista, type ArtistaResumen } from "@/lib/artistas";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import publicado from "../evento/Publicado.module.css";
 import styles from "./AltaArtista.module.css";
@@ -21,18 +21,17 @@ type Props = {
   errorFoto: string | null;
   /** La foto elegida en el teléfono (cámara o carrete): se sube y se guarda en la ficha sin salir de aquí. */
   onFoto: (archivo: File) => void;
-  /** «Publicar otro»: vuelve al primer paso con todo vacío. */
-  onOtro: () => void;
 };
 
 /**
  * «Publicado» del alta de artista (prototipo firmado, bitácora 342; el final del canon, como el del evento y el del lugar): el sello, «Artista
  * publicado», el artista como quedó en el renglón de las listas (toca y abre su ficha) y una sola sugerencia en punteado. Sin foto, «Agrega
  * una foto» (las fichas sin foto no salen en destacados): el botón abre la cámara o el carrete del teléfono y la foto se guarda en la ficha
- * aquí mismo; con foto, «Publicar una fecha», que abre el alta de evento con el artista ya puesto. En el pie, «Compartir» (el mismo texto que
- * la ficha) y «Publicar otro», quieto.
+ * aquí mismo; con foto, «Publicar una fecha», que abre el alta de evento con el artista ya puesto. En el pie, las dos salidas del final del
+ * evento (OL-365): «Ver el artista», que abre su ficha reemplazando «Publicado», y «Compartir» (el mismo texto que la ficha). «Publicar otro»
+ * se quitó.
  */
-export default function Publicado({ artista, vista, errorFoto, onFoto, onOtro }: Props) {
+export default function Publicado({ artista, vista, errorFoto, onFoto }: Props) {
   const { url, texto } = compartirArtista(artista);
   const subiendo = !!vista;
   return (
@@ -83,12 +82,12 @@ export default function Publicado({ artista, vista, errorFoto, onFoto, onOtro }:
         </section>
       )}
       <PiePaso>
+        <Boton href={hrefArtista(artista)} replace prefetch={false} variante="secundario">
+          Ver el artista
+        </Boton>
         <BotonCompartir titulo={artista.nombre} texto={texto} url={url} className={claseBoton({ variante: "secundario" })}>
           Compartir
         </BotonCompartir>
-        <Boton type="button" variante="quieto" onClick={onOtro}>
-          Publicar otro
-        </Boton>
       </PiePaso>
     </>
   );

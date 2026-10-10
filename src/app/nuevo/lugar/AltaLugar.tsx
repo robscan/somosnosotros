@@ -55,14 +55,13 @@ type Creado = { id: string; slug: string | null };
  * en el reductor de `pasos.ts`; lo que se publica viaja en un formulario escondido con los campos del alta de siempre (`crearLugar`), más el
  * horario y `quedarse`, y es lo que mira la guardia. Publicar aparta la guardia; si el servidor devuelve un error, vuelve y el error sale en
  * «Revisa». La ciudad es la del mapa; si el mapa no la da, la de contexto a menos de 50 km; si tampoco, «Revisa» la pide en su renglón: nunca
- * San Luis Potosí en silencio. «Publicar otro» vuelve a montar el alta con otra `key`: todo vacío y la guardia de nuevo.
+ * San Luis Potosí en silencio. De «Publicado» se sale a la ficha o compartiendo (OL-365 quitó «Publicar otro»).
  */
 export default function AltaLugar(props: Props) {
-  const [vuelta, setVuelta] = useState(0);
-  return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : {}} onOtro={() => setVuelta((v) => v + 1)} />;
+  return <AltaPorPasos {...props} />;
 }
 
-function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, usuarioId, esAdmin, arranque, onOtro }: Props & { onOtro: () => void }) {
+function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, usuarioId, esAdmin, arranque }: Props) {
   const [estado, despachar] = useReducer(flujo, arranque, estadoInicial);
   const { r, candidato } = estado;
   const paso = pasoActual(estado);
@@ -178,7 +177,7 @@ function AltaPorPasos({ accion, lugares, ciudadContexto, conCiudad, ciudades, us
       )}
       {paso === "mas" && <PasoMas r={r} usuarioId={usuarioId} esAdmin={esAdmin} errores={errores} onCambio={cambiar} onListo={() => despachar({ tipo: "seguir" })} />}
       {paso === "publicado" && creado && r.tipo && (
-        <Publicado lugar={{ id: creado.id, slug: creado.slug, nombre: r.nombre.trim(), tipo: r.tipo, direccion: r.sitio?.direccion || null, portada: r.portada, privado: r.privado }} onOtro={onOtro} />
+        <Publicado lugar={{ id: creado.id, slug: creado.slug, nombre: r.nombre.trim(), tipo: r.tipo, direccion: r.sitio?.direccion || null, portada: r.portada, privado: r.privado }} />
       )}
       {hoja === "horario" && (
         <HojaHorario

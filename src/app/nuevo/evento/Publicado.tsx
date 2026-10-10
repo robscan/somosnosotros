@@ -16,7 +16,8 @@ import styles from "./Publicado.module.css";
 type Props = {
   /** El evento como quedó, armado con lo publicado: lo que pinta la tarjeta es lo que verá la gente en la agenda. */
   evento: EventoAgenda;
-  /** Tiene cartel (el que se subió en el primer paso): se ofrece descargarlo. */
+  /** Tiene cartel propio (el que la persona subió en el primer paso, no la portada del lugar): se ofrece descargarlo y ya no se ofrece
+   *  crearle uno (OL-365). */
   conCartel: boolean;
   /** Con horario por día (OL-311): el texto de compartir dice «horarios por día» en vez de un solo horario. */
   conSesiones?: boolean;
@@ -33,8 +34,6 @@ type Props = {
   sugerenciaAbierta?: boolean;
   /** La sugerencia de OL-323 se ve (abierta o ya hecha): «Crea su cartel» va después, en una línea (OL-336). */
   sugerenciaVisible?: boolean;
-  /** «Publicar otro»: vuelve al primer paso con todo vacío. */
-  onOtro: () => void;
 };
 
 const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion: "Exposición publicada", taller: "Taller publicado", festival: "Festival publicado" };
@@ -42,25 +41,27 @@ const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion:
 /**
  * «Publicado» (OL-304; prototipo firmado `publicar-por-pasos.html`, bitácora 323: «el final es el momento que se recuerda»): la confirmación
  * grande —un sello de palomita que crece, «Evento publicado»—, el evento como quedó en la tarjeta de siempre de las listas (toca y abre la
- * ficha; con cartel, lleva su miniatura) y el pie con lo que sigue: «Compartir» (el mismo texto que arma la ficha), «Descargar el cartel» (en la app, «Guardar en Fotos») si
- * lo tiene y «Publicar otro», quieto, que no compite con compartir.
+ * ficha; con cartel, lleva su miniatura) y el pie con las dos salidas (OL-365, el founder: «Con compartir y ver el evento está bien»): «Ver el
+ * evento», la principal, que abre la ficha reemplazando «Publicado», y «Compartir» (el mismo texto que arma la ficha); con cartel, además,
+ * «Descargar el cartel» (en la app, «Guardar en Fotos»). «Publicar otro» se quitó: no dejaba claro cómo salir.
  *
  * Con su clase (OL-321; prototipo `exposicion-festival-taller.html`): «Exposición publicada», «Taller publicado» o «Festival publicado», la
  * tarjeta con su línea («Hasta el dom 30 de nov», el programa registrado) y UNA sugerencia en punteado: a una exposición sin inauguración,
  * «Agregar inauguración» (en editar, donde está su renglón); a un festival, «Agregar otra actividad» (el alta, ya dentro del festival).
  *
  * A un evento o un taller (OL-323), la sugerencia que encuentre el servidor tras publicar (`SugerenciaPublicado`): la exposición que abre una
- * inauguración o el festival del que es parte. Llega cuando llega, sin mover el foco; mientras está en punteado, «Compartir» pasa a secundario.
+ * inauguración o el festival del que es parte. Llega cuando llega, sin mover el foco; mientras está en punteado, «Ver el evento» pasa a secundario.
  *
- * «Crea su cartel» (OL-324) sale SIEMPRE (OL-336; el founder no la vio: con la sugerencia de OL-323 montada nunca salía), tenga o no cartel. Sola,
- * en punteado; tras otra sugerencia, va después y como secundaria, en una línea quieta (nunca dos cajas). Su botón no es el principal: «Compartir»
- * lo sigue siendo, salvo con la sugerencia de OL-323 abierta. Abre el creador reemplazando «Publicado» (terminar el alta no la deja en el
- * historial): desde el creador y desde la ficha, Atrás lleva adonde mandaba el alta.
+ * «Crea su cartel» (OL-324) sale siempre que el evento NO tenga cartel propio (OL-336 la dejó a la vista con la sugerencia de OL-323; OL-365 la
+ * quita cuando ya se subió uno: «Si ya existe no debería de sugerirlo»). Sola, en punteado; tras otra sugerencia, va después y como secundaria,
+ * en una línea quieta (nunca dos cajas). Su botón no es el principal. Abre el creador reemplazando «Publicado» (terminar el alta no la deja en
+ * el historial): desde el creador y desde la ficha, Atrás lleva adonde mandaba el alta.
  */
-export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false, onOtro }: Props) {
+export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false }: Props) {
   const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones, cuando);
   const otraSugerencia = sugerenciaVisible || (clase === "exposicion" && sinInauguracion) || clase === "festival";
-  const crearCartel = hrefCreador(hrefEvento(evento), "publicado");
+  const ficha = hrefEvento(evento);
+  const crearCartel = hrefCreador(ficha, "publicado");
   return (
     <>
       <div className={styles.final}>
@@ -92,7 +93,7 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
         </div>
       )}
       {sugerencia}
-      {otraSugerencia ? (
+      {conCartel ? null : otraSugerencia ? (
         <Boton href={crearCartel} replace prefetch={false} variante="quieto">
           Crear su cartel
         </Boton>
@@ -106,13 +107,13 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
         </section>
       )}
       <PiePaso>
-        <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton({ variante: sugerenciaAbierta ? "secundario" : "primario" })}>
+        <Boton href={ficha} replace prefetch={false} variante={sugerenciaAbierta ? "secundario" : "primario"}>
+          Ver el evento
+        </Boton>
+        <BotonCompartir titulo={evento.titulo} texto={texto} url={url} className={claseBoton({ variante: "secundario" })}>
           Compartir
         </BotonCompartir>
         {conCartel && <BotonDescargarCartel id={evento.id} imagen={evento.imagen} className={claseBoton({ variante: "secundario" })} icono={<IconoDescarga width={20} height={20} />} iconoListo={<IconoOk width={20} height={20} />} precargar />}
-        <Boton type="button" variante="quieto" onClick={onOtro}>
-          Publicar otro
-        </Boton>
       </PiePaso>
     </>
   );

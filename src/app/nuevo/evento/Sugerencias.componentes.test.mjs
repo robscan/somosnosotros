@@ -103,7 +103,10 @@ before(async () => {
       // o \`abrir.desde\` ({evento, quien}); la ✕ sale a \`abrir.salida\`.
       const abrir = window.qa.abrir ?? {};
       const arranque = arranqueDe({ desde: abrir.desde ? respuestasDeEvento(abrir.desde.evento, lugares, abrir.desde.quien) : null, lugar: lugares.find((l) => l.id === abrir.lugar) ?? null, artista: abrir.artista ?? null });
-      createRoot(document.getElementById('root')).render(
+      // Salir de «Publicado» (a la ficha, con la ✕ o con Atrás) desmonta el alta; aquí, sin navegar, para leer lo que anotó al irse.
+      const raiz = createRoot(document.getElementById('root'));
+      window.desmontar = () => raiz.unmount();
+      raiz.render(
         <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={window.qa.ciudad ?? null} salida={{href: abrir.salida ?? '/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} arranque={arranque} contexto={window.qa.contexto ?? {horarios:{}, festivales:[]}} sugerencias={sugerencias} />
       );
     `,
@@ -281,7 +284,12 @@ const H4 = { tipo: "festival", modo: "relacionar", mencion: "Festival Umbral 202
 const H5 = { tipo: "festival", modo: "marco", mencion: "Festival Umbral 2026", clave: "festival umbral|2026", marco: { id: "0f0f0f0f-0000-4000-8000-0000000000f5", slug: "festival-umbral-2026", titulo: "Festival Umbral 2026", actos: 3 }, otro: null };
 const aceptadas = (p) => p.evaluate(() => window.qa.aceptadas);
 const descartes = (p) => p.evaluate(() => window.qa.descartes);
-const claseCompartir = (p) => p.getByRole("button", { name: "Compartir" }).getAttribute("class");
+/** La salida principal de «Publicado» (OL-365): «Ver el evento»; pasa a secundaria mientras hay una sugerencia en punteado. */
+const claseVer = (p) => p.getByRole("link", { name: "Ver el evento" }).getAttribute("class");
+const salir = async (p) => {
+  await p.evaluate(() => window.desmontar());
+  await p.waitForTimeout(50);
+};
 
 test("H1: la inauguración leída del cartel se publica como evento y «Publicado» propone la exposición en punteado; un toque la publica y queda la tarjeta de lo creado", TOPE, async (t) => {
   const p = await pagina(t, { qa: conClase({ lectura: LECTURA_H1, resultado: "publica", sugerencia: H1 }) });
@@ -297,11 +305,11 @@ test("H1: la inauguración leída del cartel se publica como evento y «Publicad
   // Las pistas que mandó la pantalla: la visita leída y que es una apertura de una muestra.
   const [pedida] = await p.evaluate(() => window.qa.pedidas);
   assert.deepEqual(pedida.pistas, { visita: { desde: "2026-11-06", hasta: "2026-11-30" }, apertura: true, muestra: true, festival: null });
-  // Con la sugerencia a la vista, «Compartir» deja de ser el botón principal.
-  assert.match(await claseCompartir(p), /secundario/);
-  // «Crea su cartel» sigue a la vista (OL-336), después y en una línea quieta: nunca dos cajas en punteado.
+  // Con la sugerencia a la vista, «Ver el evento» deja de ser el botón principal.
+  assert.match(await claseVer(p), /secundario/);
+  // Se publicó con su cartel: ni la caja ni la línea de «Crea su cartel» (OL-365).
   assert.equal(await p.getByRole("heading", { name: "Crea su cartel" }).count(), 0);
-  assert.match(await p.getByRole("link", { name: "Crear su cartel" }).getAttribute("href"), /\/cartel\?origen=publicado$/);
+  assert.equal(await p.getByRole("link", { name: /Crear (su )?cartel/ }).count(), 0);
   await foto352(p, "01-h1-sugerencia-390");
   await sug.getByRole("button", { name: "Publicar exposición" }).click();
   await sug.getByText("Exposición publicada").waitFor();
@@ -310,11 +318,10 @@ test("H1: la inauguración leída del cartel se publica como evento y «Publicad
   const [a] = await aceptadas(p);
   assert.equal(a.que, "exposicion");
   assert.deepEqual(a.args[1], { titulo: "Ecos de papel", desde: "2026-11-06", hasta: "2026-11-30", horario: null });
-  assert.doesNotMatch(await claseCompartir(p), /secundario/);
+  assert.doesNotMatch(await claseVer(p), /secundario/);
   await foto352(p, "02-h1-exposicion-publicada-390");
   // Ya aceptada: salir no la anota como descartada.
-  await boton(p, "Publicar otro").click();
-  await p.waitForTimeout(50);
+  await salir(p);
   assert.deepEqual(await descartes(p), []);
 });
 
@@ -378,25 +385,25 @@ test("H5: con el festival propio, desde el primer acto: «Parte de» y «Relacio
   assert.deepEqual((await aceptadas(p))[0].args[1], { otro: null, marco: H5.marco.id, titulo: "Festival Umbral 2026" });
 });
 
-test("ignorar no es confirmar: salir con «Publicar otro» sin tocarla la anota con la clave del festival; «Ahora no» la quita y la anota una vez", TOPE, async (t) => {
+test("ignorar no es confirmar: salir de «Publicado» sin tocarla la anota con la clave del festival; «Ahora no» la quita y la anota una vez", TOPE, async (t) => {
   const p = await pagina(t, { qa: conClase({ resultado: "publica", sugerencia: H4 }) });
   await hastaRevisa(p);
   await boton(p, "Publicar").click();
   await p.getByRole("region", { name: "Festival Umbral 2026" }).waitFor();
-  await boton(p, "Publicar otro").click();
+  await p.evaluate(() => window.desmontar());
   await p.waitForFunction(() => window.qa.descartes.length === 1);
   assert.deepEqual(await descartes(p), [{ id: "0e0e0e0e-0000-4000-8000-000000000001", tipo: "festival", clave: "festival umbral|2026" }]);
-  // Otra vuelta: «Ahora no».
-  await hastaRevisa(p);
-  await boton(p, "Publicar").click();
-  await p.getByRole("region", { name: "Festival Umbral 2026" }).getByRole("button", { name: "Ahora no" }).click();
-  await p.getByRole("region", { name: "Festival Umbral 2026" }).waitFor({ state: "detached" });
-  assert.equal((await descartes(p)).length, 2);
-  assert.doesNotMatch(await claseCompartir(p), /secundario/);
+  // Otra vez: «Ahora no».
+  const q = await pagina(t, { qa: conClase({ resultado: "publica", sugerencia: H4 }) });
+  await hastaRevisa(q);
+  await boton(q, "Publicar").click();
+  await q.getByRole("region", { name: "Festival Umbral 2026" }).getByRole("button", { name: "Ahora no" }).click();
+  await q.getByRole("region", { name: "Festival Umbral 2026" }).waitFor({ state: "detached" });
+  assert.equal((await descartes(q)).length, 1);
+  assert.doesNotMatch(await claseVer(q), /secundario/);
   // Y salir después ya no anota otra vez.
-  await boton(p, "Publicar otro").click();
-  await p.waitForTimeout(50);
-  assert.equal((await descartes(p)).length, 2);
+  await salir(q);
+  assert.equal((await descartes(q)).length, 1);
 });
 
 test("si aceptar falla, el error se dice en la sugerencia y se vuelve a intentar con la misma clave", TOPE, async (t) => {
@@ -420,12 +427,12 @@ test("sin sugerencia el final queda como siempre", TOPE, async (t) => {
   await boton(p, "Publicar").click();
   await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
   await p.waitForFunction(() => window.qa.pedidas.length === 1);
-  // La única sugerencia es «Crea su cartel» (OL-336: sale siempre), en punteado y con su botón secundario: «Compartir» sigue siendo el principal.
+  // Sin cartel propio, la única sugerencia es «Crea su cartel» (OL-336), en punteado y con su botón secundario: «Ver el evento» sigue siendo el principal (OL-365).
   assert.deepEqual(await p.locator("main section h3").allInnerTexts(), ["Crea su cartel"]);
   const crear = p.getByRole("link", { name: "Crear cartel" });
   assert.match(await crear.getAttribute("href"), /\/cartel\?origen=publicado$/);
   assert.match(await crear.getAttribute("class"), /secundario/);
-  assert.doesNotMatch(await claseCompartir(p), /secundario/);
+  assert.doesNotMatch(await claseVer(p), /secundario/);
 });
 
 test("a 320 la sugerencia y la tarjeta de lo creado caben sin desbordes", TOPE, async (t) => {
@@ -472,7 +479,7 @@ test("OL-341 (b): «Ya hay un evento igual» con el nombre de la participación 
   const campo = sug.getByLabel("Tu participación");
   assert.equal(await campo.inputValue(), "DJ Nova en Electric Universe Festival");
   // Una sola sugerencia: «Compartir» pasa a secundario y la otra caja (crear cartel) va en una línea quieta.
-  assert.match(await claseCompartir(p), /secundario/);
+  assert.match(await claseVer(p), /secundario/);
   await foto370(p, "01-b-ya-hay-un-evento-igual-390");
   // Vacío, el botón dice qué falta; la ✕ lo vacía.
   await sug.getByRole("button", { name: "Borrar lo escrito" }).click();
@@ -487,7 +494,7 @@ test("OL-341 (b): «Ya hay un evento igual» con el nombre de la participación 
   assert.deepEqual(a.args[1], { modo: "evento", con: PARECIDO_EVENTO.existente.id, titulo: "DJ Nova · Electric Universe Festival" });
   // La tarjeta del evento (lo que ve la gente) ya dice el nombre con que quedó.
   await p.locator("main ul").first().getByText("DJ Nova · Electric Universe Festival").waitFor();
-  assert.doesNotMatch(await claseCompartir(p), /secundario/);
+  assert.doesNotMatch(await claseVer(p), /secundario/);
   await foto370(p, "02-b-ya-son-parte-del-festival-390");
 });
 
@@ -518,16 +525,15 @@ test("OL-341: «No, es otro evento» la quita y la anota (una vez); el error de 
   await sug.getByText("Ya son parte del festival").waitFor();
   const [primera, segunda] = await aceptadas(p);
   assert.equal(primera.args[2], segunda.args[2], "la misma clave de operación: un reintento no crea dos festivales");
-  // Otra vuelta: «No, es otro evento».
-  await boton(p, "Publicar otro").click();
-  await hastaRevisa(p);
-  await boton(p, "Publicar").click();
-  await p.getByRole("region", { name: "Electric Universe Festival" }).getByRole("button", { name: "No, es otro evento" }).click();
-  await p.getByRole("region", { name: "Electric Universe Festival" }).waitFor({ state: "detached" });
-  assert.deepEqual(await descartes(p), [{ id: "0e0e0e0e-0000-4000-8000-000000000002", tipo: "parecido", clave: null }]);
-  await boton(p, "Publicar otro").click();
-  await p.waitForTimeout(50);
-  assert.equal((await descartes(p)).length, 1);
+  // Otra vez: «No, es otro evento».
+  const q = await pagina(t, { qa: conClase({ resultado: "publica", sugerencia: PARECIDO_EVENTO }) });
+  await hastaRevisa(q);
+  await boton(q, "Publicar").click();
+  await q.getByRole("region", { name: "Electric Universe Festival" }).getByRole("button", { name: "No, es otro evento" }).click();
+  await q.getByRole("region", { name: "Electric Universe Festival" }).waitFor({ state: "detached" });
+  assert.deepEqual(await descartes(q), [{ id: "0e0e0e0e-0000-4000-8000-000000000001", tipo: "parecido", clave: null }]);
+  await salir(q);
+  assert.equal((await descartes(q)).length, 1);
 });
 
 test("OL-341 a 320: la sugerencia con el campo no se sale de la pantalla", TOPE, async (t) => {
