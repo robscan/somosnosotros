@@ -149,13 +149,14 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
 .h-cerrar { grid-area: cerrar; align-self: start; display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); color: #fff; }
 .h-centro { min-height: 0; display: grid; place-items: center; }
 .h-centro .cartel-grande { max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: var(--radio); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); }
-/* La historia de un evento sin cartel: tipográfica, como la portada de una lista de Apple Music, con el sello de la app arriba. */
+/* La historia de un evento sin cartel: tipográfica, como la portada de una lista de Apple Music, con el símbolo SN arriba (founder: «si vas a
+   usar logo en tus propuestas pon el símbolo de SN»; `docs/diseno/logotipo/LogoFinal/SN - Symbol.svg`, en blanco). */
 .tipografica { align-self: stretch; justify-self: stretch; display: grid; grid-template-rows: auto 1fr auto auto auto; gap: var(--espacio-3); padding: var(--espacio-2) var(--espacio-2) var(--espacio-5); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
 /* Una sombra suave bajo el texto: con cualquier paleta el blanco del título queda sobre oscuro. */
 .historias.sin-cartel .h-capa::before { content: ""; position: absolute; inset: 40% 0 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)); pointer-events: none; }
 .historias.sin-cartel .h-linea small { display: none; }
 .h-capa > * { position: relative; }
-.sello { justify-self: end; height: 16px; width: auto; filter: invert(1); opacity: 0.9; }
+.sello { justify-self: end; height: 22px; width: auto; opacity: 0.92; }
 .t-cuando { grid-row: 3; font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); color: var(--sobre-historia); }
 .t-titulo { grid-row: 4; font-size: 2.75rem; line-height: 0.98; font-weight: 800; font-variation-settings: "wdth" 75; letter-spacing: -0.01em; text-wrap: balance; }
 .t-titulo.largo { font-size: 2.25rem; }
@@ -179,11 +180,9 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
 .portada { position: relative; aspect-ratio: 2 / 3; border-radius: var(--radio); overflow: hidden; margin-bottom: var(--espacio-2); background: var(--fondo-miniatura); }
 .tarjetas.anchas .portada { aspect-ratio: 4 / 5; }
 .portada > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-/* La portada de un evento sin cartel: el degradado de su paleta, el título grande y el sello (en la app, imagen ya generada). */
-.portada.generada { display: grid; grid-template-rows: auto 1fr auto; padding: var(--espacio-3); color: #fff; }
-/* El sello no es la imagen de la portada: sin esto, `.portada > img` lo estira a todo el recuadro. */
-.portada.generada > img.sello { position: relative; inset: auto; width: auto; height: 11px; justify-self: end; object-fit: contain; }
-.portada.generada .g-titulo { grid-row: 3; font-size: 1.5rem; font-weight: 800; font-variation-settings: "wdth" 75; line-height: 1; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+/* Sin cartel, el símbolo SN abajo a la derecha (founder: «colócalo en las cards sin cartel también en la parte de abajo»). */
+/* `inset` completo: `.portada > img` le pone arriba y a la izquierda en 0, y con eso el símbolo caía encima del título. */
+.portada .simbolo { position: absolute; inset: auto var(--espacio-3) var(--espacio-3) auto; height: 18px; width: auto; opacity: 0.92; }
 /* «Título grande» (founder, 2026-10-09: «me encanta […] el título en grande sobre la card […] la sencillez ayuda a no gastar tanta atención»):
    el título corto arriba a la izquierda, en mayúsculas, sobre el degradado de los colores de su cartel; las luces van abajo y a la derecha
    para que la esquina del título quede oscura y el blanco se lea. */
@@ -197,7 +196,6 @@ svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor;
 /* El corte a tres líneas va en el texto, no en la franja: con el relleno en el mismo elemento, la cuarta línea asoma por debajo. */
 .m-titulo > span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .portada .hoy { position: absolute; left: var(--espacio-2); bottom: var(--espacio-2); padding: 2px var(--espacio-3); border-radius: var(--radio-pildora); background: var(--primario); color: #fff; font-size: var(--letra-sm); font-weight: 700; font-variation-settings: var(--ancho-titulo); }
-.portada.generada .hoy { top: var(--espacio-2); bottom: auto; }
 .portada.titular .hoy, .portada.mixta .hoy { text-transform: none; text-shadow: none; }
 .tarjeta b { font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tarjeta .cuando { color: var(--primario); font-size: var(--letra-sm); font-weight: 500; }
@@ -630,7 +628,7 @@ function pintarHistoria() {
   const largo = e.t.length > 70 ? 'muy-largo' : e.t.length > 42 ? 'largo' : '';
   $('h-centro').innerHTML = e.cartel
     ? `<img class="cartel-grande" src="${imagen(e)}" alt="Cartel: ${e.t}">`
-    : `<div class="tipografica"><img class="sello" src="barra-ahora/logotipo.svg" alt=""><span class="t-cuando">${rotuloLargo(a)}</span><h2 class="t-titulo ${largo}">${e.t}</h2><span class="t-lugar">${e.l}${e.parte ? ` · ${e.parte}` : ''}</span></div>`;
+    : `<div class="tipografica"><img class="sello" src="barra-ahora/simbolo-sn-blanco.svg" alt=""><span class="t-cuando">${rotuloLargo(a)}</span><h2 class="t-titulo ${largo}">${e.t}</h2><span class="t-lugar">${e.l}${e.parte ? ` · ${e.parte}` : ''}</span></div>`;
   $('h-interesa').setAttribute('aria-pressed', String(interesan.has(e.id)));
   $('h-interesa').setAttribute('aria-label', interesan.has(e.id) ? 'Te interesa' : 'Me interesa');
   // El fondo: con «degradado vivo», el degradado animado (de los colores del cartel o de la paleta propia) y las partículas; con
@@ -817,10 +815,8 @@ function tarjeta(e) {
   const nombre = `${e.t}. ${cuandoTarjeta(e)}. ${e.l}`;
   const pie = `<span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span>`;
   if (modoTarjetas === 'mixta' && e.cartel) return `<button class="tarjeta" type="button" data-id="${e.id}" aria-label="${nombre}"><span class="portada mixta"><span class="m-titulo" style="background:${degradadoTarjeta(coloresDe(e))}"><span>${tituloCorto(e.t, e.festival)}</span></span><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span>${pie}</button>`;
-  if (modoTarjetas === 'titulo' || modoTarjetas === 'mixta') return `<button class="tarjeta" type="button" data-id="${e.id}" aria-label="${nombre}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t, e.festival)}${hoy}</span>${pie}</button>`;
-  const portada = !e.cartel && estetica === 'vivo'
-    ? `<span class="portada generada" style="background:${degradadoCSS(paletaDe(e.id).c)}"><img class="sello" src="barra-ahora/logotipo.svg" alt=""><span class="g-titulo">${e.t.split(/:\s/)[0]}</span>${hoy}</span>`
-    : `<span class="portada"><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span>`;
+  if (modoTarjetas === 'titulo' || modoTarjetas === 'mixta' || (!e.cartel && estetica === 'vivo')) return `<button class="tarjeta" type="button" data-id="${e.id}" aria-label="${nombre}"><span class="portada titular" style="background:${degradadoTarjeta(coloresDe(e))}">${tituloCorto(e.t, e.festival)}${hoy}${e.cartel ? '' : '<img class="simbolo" src="barra-ahora/simbolo-sn-blanco.svg" alt="">'}</span>${pie}</button>`;
+  const portada = `<span class="portada"><img src="${imagen(e)}" alt="" loading="lazy">${hoy}</span>`;
   return `<button class="tarjeta" type="button" data-id="${e.id}">${portada}<b>${e.t}</b><span class="cuando">${cuandoTarjeta(e)}</span><span class="donde">${e.l}</span></button>`;
 }
 function pintarCarriles() {

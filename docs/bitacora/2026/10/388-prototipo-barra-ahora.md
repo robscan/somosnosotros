@@ -147,6 +147,14 @@ Comprobado con un toque real en una tarjeta (dice qué ficha se abriría); el an
 
 **Sin título repetido** (founder: «ahora tenemos la situación de que el título se duplica»). En «título + cartel» y en «título grande», debajo de la tarjeta ya no va el título: solo cuándo (violeta) y dónde (gris). El título completo va en el nombre del botón (lo lee el lector de pantalla), en la ficha y en la historia. En «Tarjetas: cartel» se queda debajo, porque el cartel no lo dice con las palabras de la app.
 
+**El símbolo SN, no el logotipo** (founder: «si vas a usar logo en tus propuestas pon el símbolo de SN porfas. colócalo en las cards sin cartel también en la parte de abajo»):
+- La historia sin cartel lleva arriba a la derecha el símbolo SN del arte final (`docs/diseno/logotipo/LogoFinal/SN - Symbol.svg`), en una copia en blanco para el prototipo (`barra-ahora/simbolo-sn-blanco.svg`), en vez del logotipo SMSNSTRS.
+- Las tarjetas sin cartel lo llevan abajo a la derecha (18 px de alto), con «Hoy» abajo a la izquierda. En «Tarjetas: cartel», un evento sin cartel usa la misma tarjeta de título y se quita la portada generada aparte.
+- La cabecera de la app sigue con el logotipo: es la de producción.
+- Al ponerlo, el símbolo caía arriba a la izquierda, encima del título: `.portada > img` le fijaba arriba y a la izquierda en 0. Se le da su `inset` completo.
+
+Captura `26-tarjeta-sin-cartel-con-simbolo.png`: «¡AH, QUÉ LA CANCIÓN!» sobre azul con «Hoy» y el símbolo SN abajo, junto a «DESIERTO» con su cartel.
+
 Resultado en las capturas 23, 24 y 14:
 - La trentina, en azul pizarra.
 - El laboratorio, en negro oliva.
