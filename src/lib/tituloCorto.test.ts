@@ -2,22 +2,23 @@ import { describe, expect, it } from "vitest";
 import { comoOracion, tituloCorto } from "./tituloCorto";
 
 describe("comoOracion (OL-370, E1 firmado)", () => {
-  it("una palabra en mayúsculas de cuatro letras o más pasa a minúsculas, con mayúscula inicial si es la primera", () => {
+  it("un título escrito entero en mayúsculas pasa a oración", () => {
     expect(comoOracion("DESIERTO")).toBe("Desierto");
     expect(comoOracion("CINEMA")).toBe("Cinema");
     expect(comoOracion("MERK LOCAL EDICIÓN CATRINAS")).toBe("Merk local edición catrinas");
-    expect(comoOracion("LXS COLOCAOS")).toBe("LXS colocaos");
+    expect(comoOracion("LXS COLOCAOS")).toBe("Lxs colocaos");
+    expect(comoOracion("¡KOWAIFEST!")).toBe("¡Kowaifest!");
   });
-  it("las siglas cortas y lo que no va todo en mayúsculas se quedan", () => {
+  it("un título con minúsculas no se toca: las siglas se quedan", () => {
+    expect(comoOracion("Festival de Cine UASLP")).toBe("Festival de Cine UASLP");
     expect(comoOracion("XV Festival de Cine México-Alemania")).toBe("XV Festival de Cine México-Alemania");
     expect(comoOracion("Tributo a The Beatles con Help!")).toBe("Tributo a The Beatles con Help!");
-    expect(comoOracion("Presentación de Kopk Poj")).toBe("Presentación de Kopk Poj");
-    expect(comoOracion("OCA")).toBe("OCA");
+    expect(comoOracion("Noche  de  ROCK")).toBe("Noche  de  ROCK");
+    expect(comoOracion("Día de la ÑANDUTÍ")).toBe("Día de la ÑANDUTÍ");
   });
-  it("solo cuentan las letras: la puntuación pegada no impide el cambio, y los espacios se conservan", () => {
-    expect(comoOracion("¡KOWAIFEST!")).toBe("¡Kowaifest!");
-    expect(comoOracion("Noche  de  ROCK")).toBe("Noche  de  rock");
-    expect(comoOracion("Día de la ÑANDUTÍ")).toBe("Día de la ñandutí");
+  it("con menos de cuatro letras se queda como viene (suele ser una sigla)", () => {
+    expect(comoOracion("OCA")).toBe("OCA");
+    expect(comoOracion("XV")).toBe("XV");
   });
 });
 

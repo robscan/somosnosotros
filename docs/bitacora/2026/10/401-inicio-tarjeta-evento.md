@@ -1,13 +1,13 @@
 # 401 · La tarjeta de evento firmada en Inicio (OL-370)
 
 **Fecha:** 2026-10-10. **Rama:** `inicio-tarjeta-evento`, base `origin/main` (`c6591538`, la unión del PR #476 con el prototipo firmado). **Operador:** Claude (agente del gestor V). **Sin migración.**
-**Estado:** lista para la revisión del gestor; falta el «publica» del founder.
+**Estado:** revisada por el gestor, con un ajuste de `comoOracion` (§ Revisión del gestor); falta el «publica» del founder.
 
 ## Lo que se lleva a la app
 
 La versión que firmó el founder el 2026-10-10 en el prototipo [`inicio-tarjetas.html`](../../../rediseno/prototipos/inicio-tarjetas.html), preajuste **«Firmada»** (E1 · E3 · E3b · E5 · E7 · E8 · E8c · E9 · E10; bitácora [398](398-prototipo-inicio-tarjetas.md), § Firma y § Versión final). Esta pieza hace las tarjetas de **eventos** de todos los carriles de Inicio: Tus planes, Destacados (o Seleccionados para ti), Esta semana, Festivales y expos, Nuevos eventos y Más adelante. Los carriles de lugares y artistas no cambian (OL-372) y la fila «Ahora» tampoco (OL-371, otro agente). E7 (la fila «Ahora» sin repetir) y E9 (artistas como eventos) quedan para esas piezas.
 
-1. **E1 · La tarjeta es el cartel entero en 4:5**, sin la franja de color. Debajo, el título como oración (`comoOracion`: una palabra en mayúsculas de cuatro letras o más pasa a minúsculas, «DESIERTO» → «Desierto»), a partir del título corto (`tituloCorto`), en dos líneas como mucho y cortado en la última palabra entera con «…».
+1. **E1 · La tarjeta es el cartel entero en 4:5**, sin la franja de color. Debajo, el título como oración (`comoOracion`: un título corto escrito entero en mayúsculas pasa a oración, «DESIERTO» → «Desierto»; uno con minúsculas se queda como viene, ver § Revisión del gestor), a partir del título corto (`tituloCorto`), en dos líneas como mucho y cortado en la última palabra entera con «…».
 2. **E8 + E8c · Sin el botón de «Voy».** En su lugar, el sello de fecha arriba a la derecha: vidrio, el mes en minúsculas y en `--primario` (700) y el día grande en negro. Un día, «oct» / «11»; un rango del mismo mes, «oct» / «10–31»; un rango entre meses, «oct» / «→ 28» si ya empezó y «oct» / «12 →» si no. Tocar el sello abre la ficha (está dentro del enlace).
 3. **E3 + E3b · Rótulos fuera del cartel.** Arriba del título, chica, en mayúsculas y gris, la clase solo si no es evento («TALLER», «EXPO», «FESTIVAL»), con la sesión al lado («TALLER · SESIÓN 1 DE 4»). «Hoy» va en la línea de cuándo («hoy · 13:00»).
 4. **Un solo chip sobre el cartel**, abajo a la izquierda: «Te interesa» (violeta claro) o cuántos van («1 va», «2 van», vidrio), también en lo de hoy.
@@ -61,10 +61,18 @@ Medido a 390×844 en Chrome: el prototipo «Firmada» servido como al publicarlo
 ## Diferencias que quedan contra el prototipo
 
 - **La ceja mide 1,2 px menos** cuando tiene dos partes: el hueco entre ellas es un espacio y no 0,35 em.
-- **Las siglas de cuatro letras o más pasan a minúsculas** dentro de un título mixto: «Master Class - 9° Festival de Cine UASLP» queda «…de Cine uaslp». Es la regla firmada tal cual (`comoOracion`); en los datos del prototipo solo había nombres gritados enteros (KOWAIFEST, DESIERTO, CINEMA, LXS COLOCAOS) y ninguna sigla dentro de un título. **Por decidir con el founder:** convertir solo cuando el título corto entero va en mayúsculas, o dejarlo así.
+- **«LXS COLOCAOS» dice «Lxs colocaos»**, y el prototipo «LXS colocaos»: es el único título del prototipo que cambia con el ajuste de `comoOracion` (§ Revisión del gestor). «Cinema», «Desierto» y «Kowaifest» salen igual.
 - **En «Tus planes» un taller dice «TALLER» sin su sesión**, igual que hoy en producción: esa consulta (`cargarPersona`) no trae las sesiones, y repartirlo sin ellas lo partiría por días.
 - **La barra de abajo de la app se esconde al bajar**, como siempre; el prototipo la deja fija. No es de esta pieza.
 - **«Te interesa»** usa el `--primario-suave` de la app (`color-mix` del violeta al 12 %), un punto más oscuro en el rojo que el `#eee7f8` del prototipo.
+
+## Revisión del gestor
+
+El gestor comparó las capturas con el prototipo firmado y todo coincide salvo una regla. La de `comoOracion` del prototipo pasaba a minúsculas cada palabra en mayúsculas de cuatro letras o más, y con datos reales «Master Class - 9° Festival de Cine UASLP» quedaba «…de Cine uaslp» (la captura 02 de la primera entrega). En los datos del prototipo no había siglas dentro de un título y por eso no se vio.
+
+**Ajuste:** solo un título corto escrito entero en mayúsculas pasa a oración («DESIERTO» → «Desierto», «¡KOWAIFEST!» → «¡Kowaifest!», «LXS COLOCAOS» → «Lxs colocaos»). Un título con minúsculas se queda como viene, así que «UASLP» y «XV» se conservan. Con menos de cuatro letras tampoco cambia («OCA»): suele ser una sigla. La regla vieja además dejaba en mayúsculas las palabras cortas de un título gritado («TALLER DE ARTE CON IA» salía «Taller DE arte CON IA»).
+
+Después del ajuste: `npm run lint`, `npm run typecheck`, `npm test` (3495), `npm run inventario`, `npm run medir`, las pruebas de componentes de `Destacados` (43) y de `Inicio` (8), y las capturas 01 a 12 rehechas con el mismo guion.
 
 ## Presupuestos de `npm run medir`
 
@@ -90,16 +98,16 @@ Las demás pantallas no se mueven. `npm run inventario` sin novedades: 333 medid
 
 ## Capturas
 
-[`docs/rediseno/capturas-401/`](../../../rediseno/capturas-401/), Chrome de la Mac con playwright-core a 2×, la app compilada contra el respaldo con el reloj fijo en la hora del prototipo (sáb 10 de oct, 11:49) y la sesión de Ana. Los carteles son los públicos que trae el respaldo (`imagenes.json`): el optimizador de la app reutilizó su caché y pidió una sola vez los tamaños que faltaban. Abiertas una por una:
+[`docs/rediseno/capturas-401/`](../../../rediseno/capturas-401/), Chrome de la Mac con playwright-core a 2×, la app compilada contra el respaldo con el reloj fijo en la hora del prototipo (sáb 10 de oct, 11:49) y la sesión de Ana. Los carteles son los públicos que trae el respaldo (`imagenes.json`): el optimizador de la app reutilizó su caché y pidió una sola vez los tamaños que faltaban. Abiertas una por una. Rehechas con el mismo guion tras el ajuste de `comoOracion` (§ Revisión del gestor): contra las de la primera entrega, en la app solo cambian los píxeles de «UASLP» (02, 04, 07, 09, 11 y 12) y los de «Lxs colocaos» (01, 08 y 10); 03, 05 y 06 salen idénticas.
 
-- `01-pliegue-390.png` — Inicio al abrir. Fila «Ahora» con dos círculos (18:00 y 19:00). «Tus planes»: la Cristiada (foto de la Casa de Cultura, sello «oct / 11», chip «1 va», «San Luis Potosí en la / Cristiada», «Casa de Cultura del Barrio d…» en gris, «mañana · 19:30» en violeta) y el taller (sello «oct / 12», «Te interesa», ceja «TALLER», «Taller de grabado en / linóleo», «ACHE Galería», «lun 12 de oct · 17:00»); asoma LXS COLOCAOS. Abajo empieza «Seleccionados para ti» con «oct / 18» y «oct / 21».
-- `02-bajando-una-pantalla-390.png` — «Seleccionados para ti»: «Master Class - 9° Festival / de Cine uaslp» (la sigla en minúsculas, ver Diferencias) y «Desierto». «Esta semana» en mediana, dos y media a la vista: Delirium Pollum («oct / 13»), «Inauguración de Uno / de Uno · Custom Art…» (cortado en palabra) y Susurros. Empieza «Festivales y expos» con «nov / →8» y «nov / →23».
+- `01-pliegue-390.png` — Inicio al abrir. Fila «Ahora» con dos círculos (18:00 y 19:00). «Tus planes»: la Cristiada (foto de la Casa de Cultura, sello «oct / 11», chip «1 va», «San Luis Potosí en la / Cristiada», «Casa de Cultura del Barrio d…» en gris, «mañana · 19:30» en violeta) y el taller (sello «oct / 12», «Te interesa», ceja «TALLER», «Taller de grabado en / linóleo», «ACHE Galería», «lun 12 de oct · 17:00»); asoma «Lxs colocaos». Abajo empieza «Seleccionados para ti» con «oct / 18» y «oct / 21».
+- `02-bajando-una-pantalla-390.png` — «Seleccionados para ti»: «Master Class - 9° Festival / de Cine UASLP» (la sigla se queda, § Revisión del gestor) y «Desierto». «Esta semana» en mediana, dos y media a la vista: Delirium Pollum («oct / 13»), «Inauguración de Uno / de Uno · Custom Art…» (cortado en palabra) y Susurros. Empieza «Festivales y expos» con «nov / →8» y «nov / →23».
 - `03-bajando-dos-pantallas-390.png` — «Festivales y expos»: «EXPO / Un mundo para mí / MUNI… / Hasta el dom 8 de nov» y «FESTIVAL / Kowaifest / Centro Cultural… / Hasta el lun 23 de nov»; asoma el Festival de Cine de Invierno. Debajo, «Lugares de la semana» y «Artistas destacadxs» como en producción, con sus botones de seguir (no son de esta pieza).
 - `04-sin-cartel-y-festivales-390.png` — «Esta semana» deslizado al final: Susurros («oct / 16») y Macario sin cartel (paleta magenta, «SN» arriba a la izquierda, «oct / 10» arriba a la derecha, «MACARIO, XANTOLO CAMINO AL MICTLÁN» en la base; debajo «Teatro del Centro de Dif…» y «hoy · 19:00»). Debajo, «Festivales y expos».
 - `05-tus-planes-festival-y-taller-390.png` — «Tus planes» deslizado al final: Leonora («oct / 19», «Te interesa») y el Festival de Cine de Invierno («oct / 19–21», «Te interesa», ceja «FESTIVAL», «Del 19 al 21 de oct»).
 - `06-pliegue-320.png` — a 320×568: la misma tarjeta de 165 con su sello; la segunda asoma; la fila de contexto se desliza como siempre.
 - `07-bajando-320.png` — a 320: «Seleccionados / para ti» en dos líneas (como desde OL-361) y las tarjetas sin cambio.
-- `08-tableta-768.png` — a 768: cuatro grandes a la vista en «Tus planes»; LXS COLOCAOS con «2 van» (Ana va y no se dice «Vas»).
+- `08-tableta-768.png` — a 768: cuatro grandes a la vista en «Tus planes»; «Lxs colocaos» con «2 van» (Ana va y no se dice «Vas»).
 - `09-tableta-768-bajando.png` — a 768: las cuatro medianas de «Esta semana» (con Macario sin cartel) y los tres de «Festivales y expos» con «nov / →8», «nov / →23» y «oct / 19–21».
 - `10-lado-a-lado-pliegue.png` — izquierda, el prototipo «Firmada» (Kopk Poj con «1 va», el tributo con «Te interesa»); derecha, la app. El cartel, el sello, el chip y las tres líneas caen a la misma altura; cambian los datos (el prototipo usa los eventos reales del 10 de oct y la app el respaldo inventado).
 - `11-lado-a-lado-bajando.png` — una pantalla abajo: la mediana de «Esta semana» igual en los dos (132×165, sello en la misma esquina). La barra de abajo de la app se esconde al bajar; la del prototipo no.
@@ -114,4 +122,4 @@ Las demás pantallas no se mueven. `npm run inventario` sin novedades: 333 medid
 
 ## Pendiente
 
-Revisión del gestor y «publica» del founder; decidir lo de las siglas en minúsculas.
+El «publica» del founder.
