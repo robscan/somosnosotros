@@ -143,15 +143,15 @@ Comprobado con un toque real en una tarjeta (dice qué ficha se abriría); el an
 **El degradado, siempre del cartel** (founder: «¿podrías leer el color del cartel y definir el degradado en consecuencia?»). Antes, un cartel casi sin color usaba una paleta propia: la trentina, en sepia, salía granate y no se parecía a su cartel. Ahora:
 - **Siempre del cartel:** el degradado sale de sus colores, también si es sepia o blanco y negro. Las paletas propias quedan solo para los eventos sin cartel.
 - **Fondo legible:** el fondo de la tarjeta es el color más vivo del cartel, oscurecido lo justo para que el título blanco se lea (luminancia ≤ 0,12, contraste de 6:1 o más) y no a la mitad fija.
-- **Unión con el cartel:** en «título + cartel», la franja se funde en su último 20 %, debajo del título, con el color del borde de arriba del cartel (la media de su primera fila), así que el cartel parece salir de ella. Con la franja al 58 %, la fusión empezaba al 55 %; con la franja al alto del título, eso dejaba la tercera línea sobre el color claro.
+- **Unión con el cartel, probada y quitada:** la franja se fundía con el color del borde de arriba del cartel, para que el cartel pareciera salir de ella. El founder: «pusiste un degradado desde la imagen, ese efecto particularmente no me gusta». Se quitó con su cálculo, y la franja acaba en un corte limpio contra el cartel, como en «Essentials».
 
 Resultado en las capturas 23, 24 y 14:
-- La trentina, azul pizarra que acaba en el beige de su cartel.
-- El laboratorio, negro oliva hacia su negro.
-- Caracolas, azul hacia su beige, también de fondo en su historia.
+- La trentina, en azul pizarra.
+- El laboratorio, en negro oliva.
+- Caracolas, en azul, también de fondo en su historia con el beige de su cartel.
 
-- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre azul pizarra que se funde con el beige de su cartel (la foto y «Hoy» debajo), y «LABORATORIO DE EXPLORACIÓN SONORA» sobre negro oliva sobre su cartel negro.
-- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre azul que se funde con el beige de su cartel, y la canción (sin cartel) entera de título.
+- `23-tarjetas-titulo-y-cartel.png` — Destacados: «LA MÚSICA DE LA GENERACIÓN TRENTINA» sobre azul pizarra con su cartel debajo, cortado limpio (la foto y «Hoy»), y «LABORATORIO DE EXPLORACIÓN SONORA» sobre negro oliva con su cartel negro.
+- `24-tarjetas-titulo-y-cartel-esta-semana.png` — Esta semana: «PRESENTACIÓN DE CARACOLAS PARA LUCIANA» en tres líneas sobre azul con su cartel beige debajo, y la canción (sin cartel) entera de título.
 - `25-tarjetas-titulo-y-cartel-a-320.png` — lo mismo a 320, sin cortes.
 
 **Lo que costaría en la app** (después de la firma):
