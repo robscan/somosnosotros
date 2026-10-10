@@ -1,5 +1,8 @@
+import { readdirSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
-import { limpiarUrlAnalitica } from "./limpiarUrlAnalitica";
+import { limpiarUrlAnalitica, limpiarUrlEvento } from "./limpiarUrlAnalitica";
 
 describe("limpiarUrlAnalitica", () => {
   describe("Rutas públicas permitidas", () => {
@@ -11,18 +14,16 @@ describe("limpiarUrlAnalitica", () => {
       expect(limpiarUrlAnalitica("/lugares")).toBe("https://somosnosotros.org/lugares");
     });
 
-    it("permite rastrear una ficha de lugar", () => {
-      expect(limpiarUrlAnalitica("/lugares/123")).toBe("https://somosnosotros.org/lugares/123");
+    it("una ficha de lugar se mide como su sección (OL-340)", () => {
+      expect(limpiarUrlAnalitica("/lugares/123")).toBe("https://somosnosotros.org/lugares");
     });
 
     it("permite rastrear una lista de eventos", () => {
       expect(limpiarUrlAnalitica("/eventos")).toBe("https://somosnosotros.org/eventos");
     });
 
-    it("permite rastrear una ficha de evento", () => {
-      expect(limpiarUrlAnalitica("/eventos/abc-def")).toBe(
-        "https://somosnosotros.org/eventos/abc-def"
-      );
+    it("una ficha de evento se mide como su sección (OL-340)", () => {
+      expect(limpiarUrlAnalitica("/eventos/abc-def")).toBe("https://somosnosotros.org/eventos");
     });
 
     it("permite rastrear una lista de artistas", () => {
@@ -183,11 +184,170 @@ describe("limpiarUrlAnalitica", () => {
       expect(limpiarUrlAnalitica("/Personas/00000000-0000-0000-0000-000000000001")).toBe("https://somosnosotros.org/personas");
     });
 
-    it("no toca las fichas públicas por slug ni rutas que solo empiezan parecido", () => {
-      expect(limpiarUrlAnalitica("/lugares/casa-de-la-cultura")).toBe("https://somosnosotros.org/lugares/casa-de-la-cultura");
-      expect(limpiarUrlAnalitica("/artistas/los-vecinos")).toBe("https://somosnosotros.org/artistas/los-vecinos");
-      expect(limpiarUrlAnalitica("/eventos/fiesta-mayor")).toBe("https://somosnosotros.org/eventos/fiesta-mayor");
+    it("no toca rutas que solo empiezan parecido", () => {
       expect(limpiarUrlAnalitica("/personasx/uno")).toBe("https://somosnosotros.org/personasx/uno");
+    });
+  });
+
+  describe("OL-340 · la ruta de una ficha queda en su sección, sin slug ni id", () => {
+    // Slugs e ids inventados: ninguno es de producción.
+    const SLUG = "casa-inventada-zz9";
+    const UUID = "00000000-0000-4000-8000-000000000340";
+    const base = "https://somosnosotros.org";
+
+    it("cada ruta dinámica de la app, con lo que siga (editar, cartel, letrero, novedades…)", () => {
+      const casos: [string, string][] = [
+        [`/lugares/${SLUG}`, "/lugares"],
+        [`/lugares/${SLUG}/editar`, "/lugares"],
+        [`/eventos/${SLUG}`, "/eventos"],
+        [`/eventos/${SLUG}/editar`, "/eventos"],
+        [`/eventos/${SLUG}/cartel`, "/eventos"],
+        [`/eventos/${SLUG}/calendario`, "/eventos"],
+        [`/artistas/${SLUG}`, "/artistas"],
+        [`/artistas/${SLUG}/editar`, "/artistas"],
+        [`/artistas/${SLUG}/letrero`, "/artistas"],
+        [`/artistas/${SLUG}/novedades/nueva`, "/artistas"],
+        [`/artistas/${SLUG}/novedades/${UUID}/editar`, "/artistas"],
+        [`/sitios/${SLUG}`, "/sitios"],
+        [`/e/${SLUG}`, "/e"],
+        [`/personas/${UUID}`, "/personas"],
+        [`/obra/${UUID}/mando`, "/obra"],
+        [`/obra/${UUID}/pared`, "/obra"],
+        [`/api/cartel/${UUID}`, "/api"],
+        [`/api/cartel-nuevo/${UUID}`, "/api"],
+        [`/auth/apple/fin`, "/auth"],
+      ];
+      for (const [ruta, seccion] of casos) {
+        expect(limpiarUrlAnalitica(ruta), ruta).toBe(base + seccion);
+        expect(limpiarUrlAnalitica(base + ruta), ruta).toBe(base + seccion);
+      }
+    });
+
+    it("también en mayúsculas", () => {
+      expect(limpiarUrlAnalitica(`/Lugares/${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/EVENTOS/${SLUG}/Cartel`)).toBe(`${base}/eventos`);
+      expect(limpiarUrlAnalitica(`/Sitios/${SLUG.toUpperCase()}`)).toBe(`${base}/sitios`);
+      expect(limpiarUrlAnalitica(`/E/${SLUG}`)).toBe(`${base}/e`);
+    });
+
+    it("también con barra final o barras repetidas", () => {
+      expect(limpiarUrlAnalitica(`/lugares/${SLUG}/`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/eventos/${SLUG}/editar/`)).toBe(`${base}/eventos`);
+      expect(limpiarUrlAnalitica(`/e/${SLUG}/`)).toBe(`${base}/e`);
+      expect(limpiarUrlAnalitica("/lugares/")).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`${base}//lugares/${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/lugares//${SLUG}`)).toBe(`${base}/lugares`);
+    });
+
+    it("también con la barra codificada (%2f, %2F, doble) o una letra codificada", () => {
+      expect(limpiarUrlAnalitica(`/lugares%2F${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/lugares%2f${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/eventos%2F${SLUG}%2Fcartel`)).toBe(`${base}/eventos`);
+      expect(limpiarUrlAnalitica(`/sitios%2F${SLUG}`)).toBe(`${base}/sitios`);
+      expect(limpiarUrlAnalitica(`/e%2F${SLUG}`)).toBe(`${base}/e`);
+      expect(limpiarUrlAnalitica(`/lugares%252F${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/%6Cugares/${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/%2Flugares/${SLUG}`)).toBe(`${base}/lugares`);
+    });
+
+    it("con un «%» suelto (no se puede decodificar) también se reduce", () => {
+      expect(limpiarUrlAnalitica(`/lugares/${SLUG}%`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica(`/lugares%2F${SLUG}%zz`)).toBe(`${base}/lugares`);
+    });
+
+    it("la consulta permitida se conserva igual que en las listas (la misma regla que /personas)", () => {
+      expect(limpiarUrlAnalitica(`/lugares/${SLUG}?tipo=museo&q=x&lugar=${UUID}`)).toBe(`${base}/lugares?tipo=museo`);
+      expect(limpiarUrlAnalitica(`/eventos/${SLUG}/cartel?desde=publicado`)).toBe(`${base}/eventos`);
+    });
+
+    it("las listas sin slug y su consulta permitida no cambian", () => {
+      expect(limpiarUrlAnalitica("/lugares")).toBe(`${base}/lugares`);
+      expect(limpiarUrlAnalitica("/agenda")).toBe(`${base}/agenda`);
+      expect(limpiarUrlAnalitica("/artistas")).toBe(`${base}/artistas`);
+      expect(limpiarUrlAnalitica("/lugares?tipo=museo&tipo=foro")).toBe(`${base}/lugares?tipo=museo&tipo=foro`);
+      expect(limpiarUrlAnalitica("/agenda?que=talleres&filtro=siguiendo&cuanto=gratis")).toBe(`${base}/agenda?que=talleres&filtro=siguiendo&cuanto=gratis`);
+      expect(limpiarUrlAnalitica("/artistas?hace=musica")).toBe(`${base}/artistas?hace=musica`);
+    });
+
+    it("las demás rutas fijas tampoco cambian, ni las que solo empiezan parecido", () => {
+      expect(limpiarUrlAnalitica("/nuevo/evento")).toBe(`${base}/nuevo/evento`);
+      expect(limpiarUrlAnalitica("/nuevo/lugar")).toBe(`${base}/nuevo/lugar`);
+      expect(limpiarUrlAnalitica("/nuevo/artista")).toBe(`${base}/nuevo/artista`);
+      expect(limpiarUrlAnalitica("/buscar")).toBe(`${base}/buscar`);
+      expect(limpiarUrlAnalitica("/novedades")).toBe(`${base}/novedades`);
+      expect(limpiarUrlAnalitica("/")).toBe(`${base}/`);
+      expect(limpiarUrlAnalitica("/lugaresx/uno")).toBe(`${base}/lugaresx/uno`);
+      expect(limpiarUrlAnalitica("/ejemplo/uno")).toBe(`${base}/ejemplo/uno`);
+      expect(limpiarUrlAnalitica("/sitiosx")).toBe(`${base}/sitiosx`);
+    });
+
+    it("las rutas privadas siguen sin mandarse", () => {
+      expect(limpiarUrlAnalitica(`/admin/personas/${UUID}`)).toBeNull();
+      expect(limpiarUrlAnalitica(`/admin/obras-colectivas/${UUID}`)).toBeNull();
+      expect(limpiarUrlAnalitica("/admin/lugares")).toBeNull();
+      expect(limpiarUrlAnalitica("/perfil")).toBeNull();
+      expect(limpiarUrlAnalitica("/ajustes/editar")).toBeNull();
+      expect(limpiarUrlAnalitica(`/entrar?siguiente=/lugares/${SLUG}`)).toBeNull();
+    });
+
+    it("limpiarUrlEvento: una acción en una ficha va con su sección, nunca con el slug", () => {
+      expect(limpiarUrlEvento(`${base}/eventos/${SLUG}`)).toBe(`${base}/eventos`);
+      expect(limpiarUrlEvento(`${base}/eventos/${SLUG}/cartel?desde=publicado`)).toBe(`${base}/eventos`);
+      expect(limpiarUrlEvento(`${base}/lugares/${SLUG}`)).toBe(`${base}/lugares`);
+      expect(limpiarUrlEvento(`${base}/artistas/${SLUG}`)).toBe(`${base}/artistas`);
+      expect(limpiarUrlEvento(`${base}/sitios/${SLUG}`)).toBe(`${base}/sitios`);
+      expect(limpiarUrlEvento(`/Eventos%2F${SLUG}/`)).toBe(`${base}/eventos`);
+      expect(limpiarUrlEvento(`${base}/lugares?tipo=museo`)).toBe(`${base}/lugares?tipo=museo`);
+    });
+
+    it("limpiarUrlEvento: en una ruta privada queda el primer tramo, también con la barra codificada", () => {
+      expect(limpiarUrlEvento(`${base}/admin/personas/${UUID}`)).toBe(`${base}/admin`);
+      expect(limpiarUrlEvento(`${base}/entrar%2F${SLUG}`)).toBe(`${base}/entrar`);
+      expect(limpiarUrlEvento(`${base}/perfil%2f${SLUG}`)).toBe(`${base}/perfil`);
+    });
+  });
+
+  describe("OL-340 · ninguna ruta dinámica de src/app deja salir su slug", () => {
+    // Si mañana aparece una ruta con `[slug]` o `[id]` (o cualquier tramo dinámico) que la limpieza no cubre, esta prueba falla.
+    const APP = fileURLToPath(new URL("../app/", import.meta.url));
+    const MARCA = "slug-inventado-zz9";
+
+    /** Las carpetas de `src/app` con un tramo dinámico, como ruta de la URL con la marca en cada tramo dinámico. */
+    function rutasDinamicas(carpeta: string): string[] {
+      return readdirSync(carpeta).flatMap((nombre) => {
+        const ruta = join(carpeta, nombre);
+        if (!statSync(ruta).isDirectory()) return [];
+        const debajo = rutasDinamicas(ruta);
+        if (!nombre.startsWith("[")) return debajo;
+        const tramos = relative(APP, ruta)
+          .split(sep)
+          .filter((t) => !/^\(.*\)$/.test(t) && !t.startsWith("@")) // grupos de rutas y ranuras no salen en la URL
+          .map((t) => (t.startsWith("[") ? MARCA : t));
+        return [`/${tramos.join("/")}`, ...debajo];
+      });
+    }
+
+    const rutas = rutasDinamicas(APP);
+
+    it("encuentra las rutas dinámicas de la app (la búsqueda funciona)", () => {
+      expect(rutas).toContain(`/lugares/${MARCA}`);
+      expect(rutas).toContain(`/eventos/${MARCA}`);
+      expect(rutas).toContain(`/artistas/${MARCA}`);
+      expect(rutas).toContain(`/sitios/${MARCA}`);
+      expect(rutas.length).toBeGreaterThanOrEqual(10);
+    });
+
+    it("ni la vista ni la acción mandan el tramo dinámico de ninguna", () => {
+      // Más la dirección corta del cartel, que no es una carpeta: la resuelve el proxy.
+      for (const ruta of [...rutas, `/e/${MARCA}`]) {
+        const codificada = `/${ruta.slice(1).replaceAll("/", "%2F")}`;
+        for (const variante of [ruta, `${ruta}/editar`, `${ruta}/`, codificada]) {
+          const vista = limpiarUrlAnalitica(`https://somosnosotros.org${variante}`);
+          expect((vista ?? "").toLowerCase(), variante).not.toContain(MARCA);
+          const accion = limpiarUrlEvento(`https://somosnosotros.org${variante}`);
+          expect(accion.toLowerCase(), variante).not.toContain(MARCA);
+        }
+      }
     });
   });
 
@@ -210,9 +370,9 @@ describe("limpiarUrlAnalitica", () => {
       ).toBe("https://somosnosotros.org/artistas?disciplina=artes_visuales");
     });
 
-    it("mantiene ruta correcta después de limpiar", () => {
+    it("mantiene ruta correcta después de limpiar (la ficha, en su sección)", () => {
       expect(limpiarUrlAnalitica("/lugares/123?q=teatro&tipo=museo")).toBe(
-        "https://somosnosotros.org/lugares/123?tipo=museo"
+        "https://somosnosotros.org/lugares?tipo=museo"
       );
     });
 
