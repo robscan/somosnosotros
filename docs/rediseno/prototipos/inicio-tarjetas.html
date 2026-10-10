@@ -606,6 +606,12 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     let chips = '';
     const ceja = [];
     let cuando = t.detalle;
+    // Con E8, un festival que ya empezó dice cuándo termina, como las expos (founder, 10 de oct: «sería mejor decir que termina el…»):
+    // «Hasta el sáb 24 de oct» en vez de «Del 29 de sep al 24 de oct». El que no ha empezado conserva su rango.
+    if (v.e8 && t.clase === 'festival' && t.fin && Date.parse(t.inicio) <= Date.parse(D.ahora)) {
+      const hasta = diaDe(new Date(Math.max(Date.parse(t.inicio), Date.parse(t.fin) - 60000)).toISOString());
+      cuando = `Hasta el ${semanaDe(hasta)} ${numDia(hasta)} de ${mesDe(hasta)}`;
+    }
     if (!v.e3) {
       // Como hoy (OL-364): abajo a la izquierda la clase y a su lado, como mucho, un dato.
       const dato = tuyo ? { texto: tuyo, clase: 'estado' } : t.sello ? { texto: t.sello.texto, clase: t.sello.hoy ? 'hoy' : '' } : null;

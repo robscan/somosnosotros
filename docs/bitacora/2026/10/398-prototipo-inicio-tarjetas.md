@@ -276,3 +276,11 @@ Sobre la cabecera de «Tus planes» (2026-10-10): «¿Cómo podemos resaltar tod
 Comprobado en Chrome a 390×844, sin errores: la banda mide los 390 px de ancho y pinta `rgb(238, 231, 248)`. La primera tarjeta empieza en x = 20, igual que en «Destacados».
 
 - `31-e11-tus-planes-tu-espacio.png` — «Calma»: «Tus planes» sobre la banda violeta clara, con Kopk Poj («1 va») y el tributo a The Beatles («Te interesa»); debajo, «Destacados» sobre el fondo de siempre.
+
+## El festival en curso dice cuándo termina (comentario del founder)
+
+Sobre la línea de cuándo de CINEMA (2026-10-10): «Sería mejor decir que termina el "Viernes" 24 de oct». El 24 de octubre de 2026 es sábado (el 10 es sábado), así que con E8 un festival que ya empezó dice «Hasta el sáb 24 de oct», con el mismo formato que ya usan las exposiciones del carril («Hasta el dom 1 de nov»), en vez de «Del 29 de sep al 24 de oct». Ciclo Fellini queda en «Hasta el mié 28 de oct». El que no ha empezado conserva su rango, y en «Hoy» sigue el texto de producción.
+
+Comprobado en Chrome a 390×844, sin errores. Las líneas de «Festivales y expos» con «Calma» dicen «Hasta el sáb 24 de oct», «Hasta el mié 28 de oct» y, en las expos, «Hasta el dom 1 de nov», «Hasta el lun 2 de nov», etc.; «Hoy» sigue con «Del 29 de sep al 24 de oct».
+
+- `32-festival-hasta-cuando.png` — «Calma», «Festivales y expos»: CINEMA («Varias sedes», «Hasta el sáb 24 de oct») y Ciclo Fellini («Hasta el mié 28 de oct») con sus sellos «oct → 24» y «oct → 28».
