@@ -6,23 +6,21 @@ import RenglonLugar from "@/components/RenglonLugar";
 import Boton, { claseBoton } from "@/components/ui/Boton";
 import { IconoOk } from "@/components/ui/Iconos";
 import { enlaceAltaEvento } from "@/lib/armazon";
-import { compartirLugar, type LugarResumen } from "@/lib/lugares";
+import { compartirLugar, hrefLugar, type LugarResumen } from "@/lib/lugares";
 import publicado from "../evento/Publicado.module.css";
 
 type Props = {
   /** El lugar como quedó, armado con lo publicado: lo que pinta la tarjeta es lo que verá la gente en Lugares. */
   lugar: Pick<LugarResumen, "id" | "slug" | "nombre" | "tipo" | "direccion" | "portada" | "privado">;
-  /** «Publicar otro»: vuelve al primer paso con todo vacío. */
-  onOtro: () => void;
 };
 
 /**
  * «Publicado» del alta de lugar (prototipo firmado, bitácora 342; el final del canon, como el del evento): el sello, «Lugar publicado», el lugar
  * como quedó en el renglón de las listas (toca y abre su ficha) y una sola sugerencia en punteado, «Publicar un evento aquí», que abre el alta
- * de evento con el lugar ya puesto. En el pie, «Compartir» (el mismo texto que la ficha; no en un lugar privado, que nadie más abre) y
- * «Publicar otro», quieto.
+ * de evento con el lugar ya puesto. En el pie, las dos salidas del final del evento (OL-365): «Ver el lugar», que abre su ficha reemplazando
+ * «Publicado», y «Compartir» (el mismo texto que la ficha; no en un lugar privado, que nadie más abre). «Publicar otro» se quitó.
  */
-export default function Publicado({ lugar, onOtro }: Props) {
+export default function Publicado({ lugar }: Props) {
   const { url, texto } = compartirLugar(lugar);
   return (
     <>
@@ -44,14 +42,14 @@ export default function Publicado({ lugar, onOtro }: Props) {
         </Boton>
       </section>
       <PiePaso>
+        <Boton href={hrefLugar(lugar)} replace prefetch={false} variante="secundario">
+          Ver el lugar
+        </Boton>
         {!lugar.privado && (
           <BotonCompartir titulo={lugar.nombre} texto={texto} url={url} className={claseBoton({ variante: "secundario" })}>
             Compartir
           </BotonCompartir>
         )}
-        <Boton type="button" variante="quieto" onClick={onOtro}>
-          Publicar otro
-        </Boton>
       </PiePaso>
     </>
   );

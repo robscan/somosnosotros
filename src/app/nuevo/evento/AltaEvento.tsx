@@ -61,8 +61,6 @@ type Props = {
 const FORMULARIO = "publicar-evento";
 
 type Interno = Props & {
-  /** «Publicar otro»: el alta empieza de cero. */
-  onOtro: () => void;
   /** Un lugar que se guardó desde «No está en el directorio»: queda en la lista aunque se publique otro evento. */
   onLugarNuevo: (lugar: LugarResumen) => void;
 };
@@ -77,20 +75,18 @@ type Interno = Props & {
  * «Cartel guardado» sobre la primera. Las respuestas viven en `usePasosEvento`; lo que se publica viaja en un formulario escondido con los mismos campos que
  * editar, que también es lo que mira la guardia de salida. Publicar aparta la guardia; si el servidor devuelve un error, vuelve,
  * y el error sale en «Revisa». Si publica, la pantalla no sale: se queda en «Publicado» (la acción devuelve lo creado, no redirige a
- * la ficha). «Publicar otro» la vuelve a montar con otra `key`: respuestas, cartel, error y clave de
- * la operación empiezan de cero, sin el arranque con que se abrió (el lugar, el artista o el evento duplicado), y la guardia de salida se arma
- * de nuevo; los lugares que se guardaron en el camino se conservan aquí. Es la única alta de evento (OL-312): «Publicar aquí», «Publicar
+ * la ficha); de ahí se sale a la ficha («Ver el evento») o compartiendo (OL-365 quitó «Publicar otro»). Los lugares que se guardan en el
+ * camino se suman aquí a la lista. Es la única alta de evento (OL-312): «Publicar aquí», «Publicar
  * fecha» y «Duplicar» llegan con su `arranque`, y lo que traen no lo pisa la lectura del cartel (`sinPisar`). Solo el primer paso lleva, abajo, la tira
  * de tipos (OL-313): la salida a registrar un lugar o un artista (sus altas por pasos), que la alta única había quitado.
  */
 export default function AltaEvento(props: Props) {
-  const [vuelta, setVuelta] = useState(0);
   const [lugares, setLugares] = useState(props.lugares);
   const agregar = useCallback((nuevo: LugarResumen) => setLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo])), []);
-  return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : null} lugares={lugares} onLugarNuevo={agregar} onOtro={() => setVuelta((v) => v + 1)} />;
+  return <AltaPorPasos {...props} lugares={lugares} onLugarNuevo={agregar} />;
 }
 
-function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, sugerencias, onOtro, onLugarNuevo }: Interno) {
+function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, sugerencias, onLugarNuevo }: Interno) {
   const pasos = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : [], arranque);
   const { r, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, atras, publicado } = pasos;
   const horarios = contexto?.horarios ?? {};
@@ -229,7 +225,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         />
       )}
       {paso === "publicado" && creado && !periodo && (
-        <AlPublicar r={r} creado={creado} evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} zona={zona} sugerencia={conSugerencia ? sugerencia : null} onPeriodo={abrirPeriodo} onOtro={onOtro} />
+        <AlPublicar r={r} creado={creado} evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} zona={zona} sugerencia={conSugerencia ? sugerencia : null} onPeriodo={abrirPeriodo} />
       )}
     </PorPasos>
   );
@@ -238,7 +234,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
 /**
  * «Publicado» con la sugerencia de OL-323 debajo de la tarjeta (a un evento o un taller; la exposición y el festival traen la suya de OL-321).
  */
-function AlPublicar({ r, creado, evento: publicado, conCartel, zona, sugerencia, onPeriodo, onOtro }: { r: ReturnType<typeof usePasosEvento>["r"]; creado: Creado & { borradores: number }; evento: ReturnType<typeof eventoPublicado>; conCartel: boolean; zona: string; sugerencia: ReturnType<typeof useSugerencia> | null; onPeriodo: () => void; onOtro: () => void }) {
+function AlPublicar({ r, creado, evento: publicado, conCartel, zona, sugerencia, onPeriodo }: { r: ReturnType<typeof usePasosEvento>["r"]; creado: Creado & { borradores: number }; evento: ReturnType<typeof eventoPublicado>; conCartel: boolean; zona: string; sugerencia: ReturnType<typeof useSugerencia> | null; onPeriodo: () => void }) {
   // OL-341: si entró a un festival con otro nombre («<artista> en <festival>»), la tarjeta y compartir dicen el nombre con que quedó.
   const hecha = sugerencia?.estado.fase === "hecha" ? sugerencia.estado : null;
   const evento = hecha?.titulo ? { ...publicado, titulo: hecha.titulo } : publicado;
@@ -264,7 +260,6 @@ function AlPublicar({ r, creado, evento: publicado, conCartel, zona, sugerencia,
       }
       sugerenciaAbierta={sugerencia?.estado.fase === "abierta"}
       sugerenciaVisible={sugerencia?.estado.fase === "abierta" || sugerencia?.estado.fase === "hecha"}
-      onOtro={onOtro}
     />
   );
 }

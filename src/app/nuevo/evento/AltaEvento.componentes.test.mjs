@@ -1894,7 +1894,7 @@ async function publicarYQuedarse(p) {
 }
 const tarjeta = (p) => p.locator("main ul > li a");
 
-test("publicar no sale de la pantalla: «Evento publicado» con la tarjeta como quedó, «Compartir» y «Publicar otro», sin «Descargar el cartel» porque no hay cartel", TOPE, async (t) => {
+test("publicar no sale de la pantalla: «Evento publicado» con la tarjeta como quedó, «Ver el evento» y «Compartir» (OL-365: sin «Publicar otro»), sin «Descargar el cartel» porque no hay cartel y con «Crea su cartel»", TOPE, async (t) => {
   const p = await pagina(t);
   await hastaRevisa(p);
   await publicarYQuedarse(p);
@@ -1910,21 +1910,41 @@ test("publicar no sale de la pantalla: «Evento publicado» con la tarjeta como 
   assert.match(texto, /Lectura en voz alta/);
   assert.match(texto, /vie 9 de oct · 19:00/);
   assert.match(texto, /Teatro de la Paz/);
-  // Pie: Compartir, «Publicar otro» y nada de descargar (no hay cartel).
-  await boton(p, "Compartir").waitFor();
-  await boton(p, "Publicar otro").waitFor();
+  // Pie (OL-365): las dos salidas, «Ver el evento» (la principal, abre la ficha) y «Compartir»; nada de descargar (no hay cartel) ni «Publicar otro».
+  const ver = p.getByRole("link", { name: "Ver el evento" });
+  assert.equal(await ver.getAttribute("href"), "/eventos/lectura-en-voz-alta-ab11");
+  assert.doesNotMatch(await ver.getAttribute("class"), /secundario|quieto/);
+  assert.match(await boton(p, "Compartir").getAttribute("class"), /secundario/);
+  assert.equal(await boton(p, "Publicar otro").count(), 0);
   assert.equal(await p.getByRole("link", { name: /Descargar el cartel/ }).count(), 0);
+  // Sin cartel propio se le ofrece crearlo (OL-336).
+  await p.getByRole("heading", { name: "Crea su cartel" }).waitFor();
   // El foco va al encabezado; la línea de avance está completa; no hay Atrás, solo la ✕.
   assert.equal(await p.evaluate(() => document.activeElement?.textContent), "Evento publicado");
   assert.equal(await p.locator("header").evaluate((e) => e.style.getPropertyValue("--avance")), "1");
   assert.equal(await boton(p, "Atrás").count(), 0);
   await p.getByRole("link", { name: "Cerrar (Volver)" }).waitFor();
   await foto(p, "332-01-publicado-sin-cartel");
+  await foto(p, "396-03-publicado-sin-cartel");
   // La guardia ya no pregunta: ni al recargar, ni con la ✕.
   assert.equal(await avisa(p), false);
   await p.getByRole("link", { name: "Cerrar (Volver)" }).click();
   assert.equal(await p.evaluate(() => window.qa.salio), 1);
   assert.equal(await p.getByText("¿Salir sin publicar?").count(), 0);
+});
+
+test("OL-365: «Ver el evento», tocado en su sitio a 390×844, abre la ficha del evento publicado", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaRevisa(p);
+  await publicarYQuedarse(p);
+  // Un toque de verdad en el centro del botón (lo que hay ahí es el botón, no un velo encima).
+  const caja = await p.getByRole("link", { name: "Ver el evento" }).boundingBox();
+  const x = caja.x + caja.width / 2;
+  const y = caja.y + caja.height / 2;
+  assert.ok(y + caja.height / 2 <= 844, "el botón cabe en la pantalla");
+  assert.equal(await p.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("a")?.textContent, [x, y]), "Ver el evento");
+  await p.mouse.click(x, y);
+  await p.waitForURL(/\/eventos\/lectura-en-voz-alta-ab11$/);
 });
 
 test("«Compartir» manda el mismo texto y la misma dirección que la ficha: título, cuándo y dónde, y el enlace aparte", TOPE, async (t) => {
@@ -1965,6 +1985,13 @@ test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descar
   assert.equal(await miniatura.getAttribute("src"), "/cartel.svg");
   assert.equal(await miniatura.evaluate((e) => e.naturalWidth > 0), true);
   assert.match(await tarjeta(p).innerText(), /jue 5 de nov · 19:00/);
+  // Con cartel propio no se ofrece crear otro (OL-365: «Si ya existe no debería de sugerirlo») y las salidas son las mismas dos.
+  assert.equal(await p.getByRole("heading", { name: "Crea su cartel" }).count(), 0);
+  assert.equal(await p.getByRole("link", { name: /Crear (su )?cartel/ }).count(), 0);
+  await p.getByRole("link", { name: "Ver el evento" }).waitFor();
+  await boton(p, "Compartir").waitFor();
+  assert.equal(await boton(p, "Publicar otro").count(), 0);
+  await foto(p, "396-02-publicado-con-cartel-despues");
   const descargar = p.getByRole("link", { name: "Descargar el cartel" });
   // Con la versión de su imagen (OL-338): un cartel nuevo no baja el anterior guardado.
   assert.match(await descargar.getAttribute("href"), /^\/api\/cartel\/0e0e0e0e-0000-4000-8000-000000000001\?v=[0-9a-f]{8}$/);
@@ -2008,65 +2035,6 @@ test("en la app de iPhone (con el plugin de Fotos), «Publicado» ofrece «Guard
   assert.deepEqual(await p.evaluate(() => window.compartidos), []);
   assert.equal(descargas, 0);
   await cierre();
-});
-
-test("«Publicar otro» empieza de cero: el primer paso, nada escrito, otra clave de operación y la guardia armada de nuevo", TOPE, async (t) => {
-  const p = await pagina(t);
-  await hastaRevisa(p);
-  await publicarYQuedarse(p);
-  const primera = (await enviado(p)).operacion;
-  await boton(p, "Publicar otro").click();
-  // El primer paso, con su recuadro y «No tengo cartel»; la ✕ de la barra, sin Atrás.
-  await p.getByText("Será la portada del evento").waitFor();
-  assert.equal(await boton(p, "Atrás").count(), 0);
-  assert.equal(await p.locator("header").evaluate((e) => e.style.getPropertyValue("--avance")), "0");
-  // Nada escrito (nada avisa) y, en cuanto se escribe algo, la guardia vuelve a preguntar.
-  await boton(p, "No tengo cartel").click();
-  assert.equal(await p.getByLabel("Nombre del evento").inputValue(), "");
-  assert.equal(await avisa(p), false);
-  await p.getByLabel("Nombre del evento").fill("Segundo evento");
-  assert.equal(await avisa(p), true);
-  assert.equal(await p.evaluate(() => window.qa.pedirSalida(() => window.qa.salio++)), true);
-  await p.getByText("¿Salir sin publicar?").waitFor();
-  await boton(p, "Seguir editando").click();
-  // Se publica otro y el servidor no lo toma por el primero.
-  await boton(p, "Siguiente").click();
-  await boton(p, /^Este viernes/).click();
-  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
-  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "Sin hora de fin" }).click();
-  await elegirTeatro(p);
-  await boton(p, /^Gratis/).click();
-  await p.getByRole("heading", { name: "Segundo evento" }).waitFor();
-  await publicarYQuedarse(p);
-  const segunda = await enviado(p);
-  assert.equal(segunda.titulo, "Segundo evento");
-  assert.notEqual(segunda.operacion, primera);
-  assert.equal(await tarjeta(p).getAttribute("href"), "/eventos/lectura-en-voz-alta-ab12");
-  assert.match(await tarjeta(p).innerText(), /Segundo evento/);
-});
-
-test("un lugar guardado desde «No está en el directorio» sigue en la lista al publicar otro evento", TOPE, async (t) => {
-  const p = await pagina(t);
-  await hastaDonde(p);
-  await elegirDelMapa(p, "jardin", /Jardín de San Juan de Dios/);
-  await boton(p, "Sí, es aquí").click();
-  await boton(p, /^Guardarlo como lugar/).click();
-  await boton(p, /^Gratis/).click();
-  await p.getByRole("heading", { name: "Lectura en voz alta" }).waitFor();
-  await publicarYQuedarse(p);
-  await boton(p, "Publicar otro").click();
-  await boton(p, "No tengo cartel").click();
-  await p.getByLabel("Nombre del evento").fill("Otro");
-  await boton(p, "Siguiente").click();
-  await boton(p, /^Este viernes/).click();
-  await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
-  await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
-  await buscar(p).fill("jardin");
-  // Ya es del directorio (con su nombre), no un resultado del mapa.
-  await p.getByRole("option", { name: /Jardín de San Juan de Dios/ }).first().waitFor();
-  const lista = await opciones(p);
-  assert.equal(lista[0].nombre, "Jardín de San Juan de Dios");
-  assert.doesNotMatch(lista[0].detalle ?? "", /Del mapa/);
 });
 
 test("«Evento publicado» entra con el sello que crece, y con «reducir movimiento» no se anima", TOPE, async (t) => {
@@ -2148,18 +2116,6 @@ test("«Publicar aquí» (`?lugar=`): «¿Dónde es?» no se pregunta, «Revisa�
   await boton(p, "Cambiar dónde").click();
   assert.equal(await pregunta(p), "¿Dónde es?");
   assert.equal(await buscar(p).inputValue(), "Teatro de la Paz");
-});
-
-test("«Publicar otro» tras entrar por un lugar empieza de cero: esta vez «¿Dónde es?» sí se pregunta", TOPE, async (t) => {
-  const p = await pagina(t, { qa: { abrir: { lugar: LUGAR } } });
-  await hastaHora(p);
-  await horaYDuracion(p);
-  await boton(p, /^Gratis/).click();
-  await publicarYQuedarse(p);
-  await boton(p, "Publicar otro").click();
-  await hastaHora(p, "Otra lectura");
-  await horaYDuracion(p);
-  assert.equal(await pregunta(p), "¿Dónde es?");
 });
 
 test("«Publicar fecha» (`?artista=`): Quién empieza con el artista, «Revisa» lo enseña y se publica con su id", TOPE, async (t) => {

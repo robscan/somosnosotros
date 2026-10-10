@@ -204,10 +204,9 @@ test("caso 5 · con pista en el nombre: disciplina, subcategoría y grupo salen 
   await boton(p, "Compartir").click();
   await p.waitForFunction(() => window.compartidos.length === 1);
   assert.deepEqual(await p.evaluate(() => window.compartidos[0]), { titulo: "Compañía de Teatro La Rendija", texto: "Compañía de Teatro La Rendija · Compañía de teatro · Grupo", url: "https://somosnosotros.org/artistas/artista-nuevo" });
-  // «Publicar otro» vuelve a empezar, vacío.
-  await boton(p, "Publicar otro").click();
-  await enPaso(p, "¿Cómo se llama?");
-  assert.equal(await nombre(p).inputValue(), "");
+  // Las salidas (OL-365): «Ver el artista» abre su ficha y «Compartir»; ya no hay «Publicar otro».
+  assert.equal(await p.getByRole("link", { name: "Ver el artista" }).getAttribute("href"), "/artistas/artista-nuevo");
+  assert.equal(await boton(p, "Publicar otro").count(), 0);
 });
 
 test("caso 6 · sin pista: «¿Qué hace?» con el icono de etiqueta, «¿Qué tipo de teatro?» con las más usadas y, en «Revisa», solista o grupo por decir (nunca «Solista» por omisión) en su hoja", TOPE, async (t) => {

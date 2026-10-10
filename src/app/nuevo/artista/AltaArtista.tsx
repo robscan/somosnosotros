@@ -73,15 +73,14 @@ function campos(r: Respuestas, foto = r.foto): Record<string, string> {
  * contestado, pie que dice qué falta y se queda sobre el teclado, guardia de salida. Las respuestas viven en el reductor de `pasos.ts`; lo que
  * se publica viaja en un formulario escondido con los campos del alta de siempre (`crearArtista`) más `soy` y `quedarse`, y es lo que mira la
  * guardia. Nada se publica sin leerse: ni la disciplina ni solista o grupo salen por omisión. Publicar aparta la guardia; si el servidor
- * devuelve un error, vuelve y el error sale en «Revisa». «Publicar otro» vuelve a montar el alta con otra `key`: todo vacío y la guardia de
- * nuevo.
+ * devuelve un error, vuelve y el error sale en «Revisa». De «Publicado» se sale a la ficha o compartiendo (OL-365 quitó
+ * «Publicar otro»).
  */
 export default function AltaArtista(props: Props) {
-  const [vuelta, setVuelta] = useState(0);
-  return <AltaPorPasos key={vuelta} {...props} arranque={vuelta === 0 ? props.arranque : { ciudad: props.arranque.ciudad }} onOtro={() => setVuelta((v) => v + 1)} />;
+  return <AltaPorPasos {...props} />;
 }
 
-function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, salida, usuarioId, esAdmin, arranque, onOtro }: Props & { onOtro: () => void }) {
+function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, salida, usuarioId, esAdmin, arranque }: Props) {
   const [estado, despachar] = useReducer(flujo, { arranque, subcategorias }, estadoInicial);
   const { r } = estado;
   const paso = pasoActual(estado);
@@ -190,7 +189,6 @@ function AltaPorPasos({ accion, actualizar, subcategorias, ciudades, conCiudad, 
           vista={subida.vista}
           errorFoto={errorFoto}
           onFoto={(archivo) => void agregarFoto(archivo)}
-          onOtro={onOtro}
         />
       )}
       {hoja === "es" && (

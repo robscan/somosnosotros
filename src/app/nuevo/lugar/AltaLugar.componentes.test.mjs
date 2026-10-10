@@ -240,10 +240,9 @@ test("caso 1 · con sugerencia: tocarla confirma en el mapa («¿Es aquí?» con
   await boton(p, "Compartir").click();
   await p.waitForFunction(() => window.compartidos.length === 1);
   assert.deepEqual(await p.evaluate(() => window.compartidos[0]), { titulo: "Casa del Poeta Ramón López Velarde", texto: "Casa del Poeta Ramón López Velarde · Museo · Vallejo 150, Centro, San Luis Potosí, México", url: "https://somosnosotros.org/lugares/lugar-nuevo" });
-  // «Publicar otro» vuelve a empezar, vacío.
-  await boton(p, "Publicar otro").click();
-  await enPaso(p, "¿Cómo se llama?");
-  assert.equal(await nombre(p).inputValue(), "");
+  // Las salidas (OL-365): «Ver el lugar» abre su ficha y «Compartir»; ya no hay «Publicar otro».
+  assert.equal(await p.getByRole("link", { name: "Ver el lugar" }).getAttribute("href"), "/lugares/lugar-nuevo");
+  assert.equal(await boton(p, "Publicar otro").count(), 0);
 });
 
 test("si ya tiene ficha, se dice al escribir el nombre y la salida es ir a ella", TOPE, async (t) => {
@@ -520,12 +519,6 @@ test('reintentar conserva la operación; cambiar datos y publicar otro la renuev
   await p.getByRole('heading', { name: 'Lugar publicado' }).waitFor();
   assert.notEqual((await enviado(p)).operacion, primera);
   await foto(p, 'ol330-lugar-publicado-390');
-  const anterior = (await enviado(p)).operacion;
-  await boton(p, 'Publicar otro').click();
-  await hastaRevisa(p);
-  await boton(p, 'Publicar lugar').click();
-  await p.waitForFunction(() => window.qa.envios.length === 4);
-  assert.notEqual((await enviado(p)).operacion, anterior);
 });
 
 /** OL-352 (bitácora 383): la portada que el founder no pudo subir («pesa más de 5 MB»): una captura de pantalla PNG. */
