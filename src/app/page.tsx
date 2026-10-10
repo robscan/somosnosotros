@@ -60,7 +60,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   const agendaPromise = cargarAgenda(ciudad, usuarioId, supabase);
   const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
   const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
-  // «Artistas con eventos esta semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí.
+  // «Artistas de la semana» (OL-253): quien ya sale en «Artistas destacadxs» no se repite aquí.
   const semanaArtistasPromise = Promise.all([cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora), artistasDestacadosPromise])
     .then(([semana, destacados]) => seleccionarArtistasSemana(semana, destacados, TOPE_ARTISTAS_DESTACADOS));
   // Reutiliza la lectura validada de Agenda: un fallo no se convierte en "no sigues a nadie".
@@ -94,13 +94,13 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
-        // «Festivales y exposiciones» (OL-342): la agenda no tiene un «Qué» que junte las dos clases, así que su enlace va a la agenda sin filtro
+        // «Festivales y expos» (OL-342): la agenda no tiene un «Qué» que junte las dos clases, así que su enlace va a la agenda sin filtro
         // («Todo»: los festivales en sus bloques por día y las exposiciones en «Para visitar hoy»). Antes, «Para visitar» iba a «Qué» en Exposiciones.
         slotFestivales={<CarrilAgenda parte="festivales" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl)} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
         slotMasAdelante={<CarrilMasAdelante agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefConCiudad("/agenda", ciudad.slug)} />}
-        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos esta semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
-        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos esta semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
+        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares de la semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
+        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas de la semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
       />
     </main>

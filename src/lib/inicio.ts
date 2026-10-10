@@ -38,7 +38,7 @@ export function sinRepetidos<T extends { id: string }>(eventos: T[], vistos: Set
 }
 
 /**
- * Un festival (el marco) sale solo en su carril, «Festivales y exposiciones» (founder, 2026-10-08, OL-347: «Evita poner festivales en otros
+ * Un festival (el marco) sale solo en su carril, «Festivales y expos» (founder, 2026-10-08, OL-347: «Evita poner festivales en otros
  * carriles»): «Destacados» o «Seleccionados para ti», «Esta semana», «Nuevos eventos» y «Más adelante» lo quitan, aunque esté destacado o sea nuevo.
  * Sus actos sí salen en ellos, sueltos, como cualquier evento (antes, OL-322, se plegaban bajo su marco cuando el marco estaba en la lista).
  */
@@ -107,19 +107,19 @@ export const TOPE_ESTA_SEMANA = 20;
  */
 export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin" | "zona" | "sesiones" | "clase">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()) {
   // Por clase (OL-322, doc 55 §3): la exposición y el marco de un festival no tienen ocurrencias (`sinOcurrencias`, lib/ocurrencias): van en
-  // «Festivales y exposiciones». Los actos de un festival salen sueltos, cada uno en su día, como cualquier evento (OL-347: el marco ya no sale
+  // «Festivales y expos». Los actos de un festival salen sueltos, cada uno en su día, como cualquier evento (OL-347: el marco ya no sale
   // aquí con «3 actividades esta semana»; solo en su carril).
   const propios = eventosEstaSemana(eventos.filter((e) => !vistos.has(e.id)), ahora).toSorted(compararEventos).slice(0, TOPE_ESTA_SEMANA);
   for (const e of propios) vistos.add(e.id);
   return propios;
 }
 
-/** Tope de «Festivales y exposiciones»: como el de «Esta semana» (el que ya tenía «Para visitar»). En una ciudad hay pocas exposiciones vigentes
+/** Tope de «Festivales y expos»: como el de «Esta semana» (el que ya tenía «Para visitar»). En una ciudad hay pocas exposiciones vigentes
  *  y menos festivales a la vez: el tope solo frena un catálogo grande, y bajarlo dejaría fuera lo que cierra después sin otro lugar en Inicio. */
 export const TOPE_FESTIVALES = TOPE_ESTA_SEMANA;
 
 /**
- * «Festivales y exposiciones» (OL-342, founder 2026-10-07: «Necesitamos un slider para festivales y galerías»; antes «Para visitar», OL-322, solo con
+ * «Festivales y expos» (OL-342, founder 2026-10-07: «Necesitamos un slider para festivales y galerías»; antes «Para visitar», OL-322, solo con
  * las exposiciones): lo que no es algo que pase un día a una hora. Los festivales en curso o por venir (`festivalesVigentes`) y las exposiciones
  * vigentes (`exposicionesVigentes`: abiertas o que abren en los próximos 7 días), juntos y ordenados por cercanía, no por tipo (`porCercania`: lo
  * que está en curso primero, lo que termina antes; luego lo que viene, por su inicio). Va después de «Esta semana».
@@ -184,7 +184,7 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date())
   const destacados = enOrden(agenda.destacados, agenda.eventos);
   const estelar = hayFavoritos ? carrilEstelar(destacados, favoritos, vistos) : carrilDestacados(destacados, vistos);
   const estaSemana = carrilEstaSemana(agenda.eventos, vistos, ahora);
-  // En el orden de la pantalla: «Festivales y exposiciones» va después de «Esta semana» y antes de «Nuevos eventos» (el lugar de «Para visitar»,
+  // En el orden de la pantalla: «Festivales y expos» va después de «Esta semana» y antes de «Nuevos eventos» (el lugar de «Para visitar»,
   // prototipo del doc 55, caso 6).
   const festivales = carrilFestivales(agenda.eventos, vistos, ahora);
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);

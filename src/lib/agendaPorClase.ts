@@ -11,10 +11,10 @@ import { compararNombres } from "./lugares";
  * DOM ni base: la usan `lib/agenda` (la lista y sus números), `lib/inicio` (los carriles) y las pantallas.
  *
  * - **Exposición:** no es algo que pase un día a una hora (`lib/ocurrencias` no la reparte): vive en «Para visitar». En Inicio, en el carril
- *   «Festivales y exposiciones» (OL-342; antes «Para visitar», solo con ellas) con las vigentes; en la agenda del día, «Para visitar hoy» con
+ *   «Festivales y expos» (OL-342; antes «Para visitar», solo con ellas) con las vigentes; en la agenda del día, «Para visitar hoy» con
  *   las que abren ese día **según su horario**. Sin horario no se promete «visitable hoy»: no entra ahí (sí en «Para visitar», con «Horario por
  *   confirmar»).
- * - **Festival:** en Inicio sale solo en «Festivales y exposiciones», su sitio (OL-346: todos, también los que no tienen actos todavía, con
+ * - **Festival:** en Inicio sale solo en «Festivales y expos», su sitio (OL-346: todos, también los que no tienen actos todavía, con
  *   «Programa por confirmar»; OL-347: en ningún otro carril, y sus actos salen en ellos sueltos, `sinFestivales` de lib/inicio); en la agenda del
  *   día es un bloque con sus actos de ese día (`componerDia`).
  * - **Taller:** cada sesión es un renglón, con «Sesión 2 de 4» (`textoParte`).
@@ -119,7 +119,7 @@ export function abiertasEseDia<T extends Exposicion>(eventos: readonly T[], dia:
 export const visitaEnRango = (e: Exposicion, desde: string, hasta: string): boolean => visitaDe(e).desde <= hasta && visitaDe(e).hasta >= desde;
 
 /**
- * Las exposiciones del carril «Festivales y exposiciones» de Inicio (antes «Para visitar», OL-322): las exposiciones que no han cerrado y que ya abrieron o abren en los próximos 7 días (la misma ventana de
+ * Las exposiciones del carril «Festivales y expos» de Inicio (antes «Para visitar», OL-322): las exposiciones que no han cerrado y que ya abrieron o abren en los próximos 7 días (la misma ventana de
  * «Esta semana»), la que cierra antes primero. `hoy` es YYYY-MM-DD en la zona de cada exposición.
  */
 export function exposicionesVigentes<T extends Exposicion>(eventos: readonly T[], ahora: Date = new Date()): T[] {
@@ -137,7 +137,7 @@ export function exposicionesVigentes<T extends Exposicion>(eventos: readonly T[]
 type Vigente = ConClase & { id: string; titulo: string; inicio: string; fin: string | null; zona: string; programa?: { registrados: number } };
 
 /**
- * Los festivales del carril «Festivales y exposiciones» de Inicio: TODOS los marcos en curso o por venir, sin ventana de días (a diferencia de las
+ * Los festivales del carril «Festivales y expos» de Inicio: TODOS los marcos en curso o por venir, sin ventana de días (a diferencia de las
  * exposiciones: un festival se anuncia con semanas y hay pocos). Uno que ya pasó no está (la agenda ya no lo trae; aquí también se comprueba, con la
  * regla de todas las clases: `eventoPaso`). Uno sin actos publicados también entra (OL-346, founder 2026-10-08: «La línea de festivales no los tiene
  * todos»; antes quedaba fuera, doc 55 §3): su tarjeta dice «Programa por confirmar» (`notaDeClase`).
@@ -152,7 +152,7 @@ const terminaEn = (e: Vigente): number => Date.parse(e.fin ?? e.inicio);
 
 /**
  * El orden del carril (OL-342; el contexto ordena, no el tipo): primero lo que ya está en curso, lo que termina antes primero; luego lo que viene,
- * por su inicio. Festivales y exposiciones van mezclados. A igual instante, por nombre y por id (dos cargas, el mismo orden).
+ * por su inicio. Festivales y expos van mezclados. A igual instante, por nombre y por id (dos cargas, el mismo orden).
  */
 export function porCercania(a: Vigente, b: Vigente, ahora: Date = new Date()): number {
   const curso = Number(enCurso(b, ahora)) - Number(enCurso(a, ahora));
