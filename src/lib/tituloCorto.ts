@@ -19,3 +19,16 @@ export function tituloCorto(titulo: string, festival?: string | null): string {
   }
   return t.split(/,\s(?=\p{Ll})/u)[0].replace(/\.$/, "");
 }
+
+/**
+ * El título como oración, el que va debajo del cartel en la tarjeta de evento de Inicio (OL-370; prototipo firmado `inicio-tarjetas.html`, E1):
+ * un título escrito entero en mayúsculas pasa a oración («DESIERTO» → «Desierto», «MERK LOCAL EDICIÓN CATRINAS» → «Merk local edición
+ * catrinas», «¡KOWAIFEST!» → «¡Kowaifest!»). Un título con minúsculas no se toca, para no romper siglas como «UASLP» o «XV» (el prototipo
+ * cambiaba cada palabra en mayúsculas de cuatro letras o más y, con datos reales, salía «Festival de Cine uaslp»; ajuste del gestor). Con menos
+ * de cuatro letras se queda como viene («OCA»): suele ser una sigla.
+ */
+export function comoOracion(titulo: string): string {
+  const letras = titulo.replace(/[^\p{L}]/gu, "");
+  if (letras.length < 4 || letras !== letras.toLocaleUpperCase("es")) return titulo;
+  return titulo.toLocaleLowerCase("es").replace(/\p{L}/u, (c) => c.toLocaleUpperCase("es"));
+}

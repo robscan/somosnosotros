@@ -9,6 +9,7 @@ import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, vis
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
 import { comoPaleta, type Paleta } from "./coloresCartel";
+import type { SelloFecha } from "./tarjetaInicio";
 import { tituloCorto } from "./tituloCorto";
 
 /**
@@ -37,8 +38,9 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
  *  `sinVoy`: una exposición o el marco de un festival (OL-322), que no llevan el botón «Voy» de la tarjeta. `clase`: «Festival» o «Exposición»
  *  (`nombreDeClase`), solo en el carril que junta las dos (OL-342, `tarjetaConClase`): dice qué es cada cosa en el rótulo de la foto.
  *  `corto` y `colores` (OL-360) solo los lleva la tarjeta de un evento: su título corto (`tituloCorto`) y los colores guardados de su propio
- *  cartel (null si aún no se calcularon o si la foto no es su cartel sino la portada de su lugar o el cartel de un acto). */
-export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string; corto?: string; colores?: Paleta | null };
+ *  cartel (null si aún no se calcularon o si la foto no es su cartel sino la portada de su lugar o el cartel de un acto). `selloFecha` (OL-370)
+ *  solo la de un evento en los carriles de Inicio (`tarjetaDeInicio`, `lib/tarjetaInicio`): el sello de mes y día de su cartel. */
+export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string; corto?: string; colores?: Paleta | null; selloFecha?: SelloFecha };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -148,21 +150,11 @@ export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: st
 }
 
 /**
- * La tarjeta con la palabra de su clase para el rótulo (OL-342; OL-364: «Evento», «Exposición», «Taller», «Festival», de `CLASES`): la de todos
- * los carriles de eventos de Inicio y la de Buscar para lo que no es un evento suelto. Un acto de un festival es «Evento».
+ * La tarjeta con la palabra de su clase (OL-342; OL-364: «Evento», «Exposición», «Taller», «Festival», de `CLASES`): la base de la de los carriles
+ * de eventos de Inicio (`tarjetaDeInicio`, que la dice en su ceja: OL-370) y la de Buscar para lo que no es un evento suelto. Un acto de un
+ * festival es «Evento».
  */
 export const tarjetaConClase = (e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha => ({ ...tarjetaEvento(e, ahora, festival), clase: cortoDeClase(e.clase) });
-
-/**
- * Los rótulos de una tarjeta de Inicio (OL-364; founder, 2026-10-09: «señalar que se trata de un evento así como se hace con un festival» y
- * «en Tus planes se pueden acumular más de un chip»). Una regla para todas: abajo a la izquierda, primero la clase y a su lado, como mucho, un
- * dato; nunca tres. El dato es el de siempre (`selloDeTarjeta` sin la clase): «Te interesa» antes que «Hoy», «Sesión 1 de 3» o «2 van». «Voy» no
- * lleva texto: lo dice el botón redondo verde de arriba a la derecha; «Me interesa» sí, porque ese botón no lo marca (y una exposición o un
- * festival no llevan botón).
- */
-export function rotulosDeTarjeta(t: Pick<Tarjeta, "hoy" | "van" | "novedad" | "parte" | "clase">, interesa = false): { clase: string | null; sello: ReturnType<typeof selloDeTarjeta> } {
-  return { clase: t.clase ?? null, sello: selloDeTarjeta({ ...t, clase: undefined }, interesa) };
-}
 
 /** El nombre del festival de cada acto, de los eventos ya cargados (para el título corto de su tarjeta, OL-360). */
 export function nombreDeFestival(eventos: readonly Pick<EventoAgenda, "id" | "titulo">[]): (e: Pick<EventoAgenda, "evento_padre_id">) => string | null {

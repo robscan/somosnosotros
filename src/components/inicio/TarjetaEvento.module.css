@@ -1,0 +1,199 @@
+/* La tarjeta de evento de Inicio (OL-370; prototipo firmado `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada», bitácora 398). Una
+   rejilla plana: la portada (el cartel, o sin cartel la de título) a su alto (`--foto`, que pone el carril: `.cartelGrande` y `.cartelMediana` en
+   Destacados.module.css), un respiro y debajo, cada uno en su fila, la ceja, el título, el lugar y cuándo. Lo que va encima del cartel (el sello
+   de fecha y el chip) comparte su celda; nada se apila con z-index: lo de después en el código se pinta encima. */
+.tarjeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "portada"
+    "."
+    "ceja"
+    "titulo"
+    "lugar"
+    "cuando";
+  grid-template-rows: var(--foto) var(--espacio-2) auto auto auto auto;
+  min-width: 0;
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tarjeta:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+  border-radius: var(--radio);
+}
+
+/* E1: el cartel entero, sin recortarle los lados ni ponerle franja. Alto dicho (`--foto`), no en porcentaje (Safari, OL-246). */
+.cartel {
+  grid-area: portada;
+  width: 100%;
+  height: var(--foto);
+  border-radius: var(--radio);
+  object-fit: cover;
+  object-position: center top;
+  background: var(--fondo-miniatura);
+}
+
+/* E8 + E8c: el sello de fecha arriba a la derecha, donde estaba el botón de «Voy» (founder: «prueba poniendo el componente de fecha donde antes
+   estaba el de check»). Vidrio, el mes en el violeta de la app (founder: «resaltar con color») y el día grande en negro. */
+.fecha {
+  grid-area: portada;
+  align-self: start;
+  justify-self: end;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: var(--sello-fecha);
+  margin: var(--espacio-2);
+  padding: var(--espacio-1) var(--espacio-2);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  box-shadow: var(--sombra);
+  line-height: 1;
+  text-align: center;
+}
+.fecha > small {
+  color: var(--primario);
+  font-size: var(--letra-2xs);
+  font-weight: 700;
+  text-transform: lowercase;
+}
+.fecha > b {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: var(--texto);
+  font-size: var(--letra-2xl);
+  font-weight: 600;
+  font-variation-settings: var(--ancho-titulo);
+}
+.flecha {
+  fill: none;
+  stroke: var(--texto-suave);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* E3: un solo chip sobre el cartel, abajo a la izquierda, como en producción («Te interesa» o cuántos van). */
+.chip {
+  grid-area: portada;
+  align-self: end;
+  justify-self: start;
+  margin: var(--espacio-2);
+}
+
+/* E3 + E3b: la clase chica arriba del título, solo si no es un evento, con su sesión al lado («TALLER · SESIÓN 1 DE 4»). */
+.ceja {
+  grid-area: ceja;
+  min-width: 0;
+  margin-bottom: 2px;
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+/* E1: el título como oración, en dos líneas como mucho; si no cabe, se corta en palabra entera con «…» (TarjetaEvento, `cortarEnPalabra`). */
+.titulo {
+  grid-area: titulo;
+  max-height: calc(2em * var(--interlinea-lista));
+  overflow: hidden;
+  margin-bottom: 2px;
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-tarjeta-titulo);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
+  overflow-wrap: normal;
+}
+
+/* Debajo, como «Conciertos» de Apple Music: el lugar en gris y cuándo en violeta (founder: «resaltar con color la fecha, como antes»), una línea
+   cada uno con sus puntos suspensivos. */
+.lugar,
+.cuando {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--texto-suave);
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-meta);
+  font-variation-settings: var(--ancho-lista-meta);
+  line-height: 1.3;
+}
+.lugar {
+  grid-area: lugar;
+}
+.cuando {
+  grid-area: cuando;
+  color: var(--primario);
+}
+
+/* E10 (founder: «título en la base, logo en extremo superior izquierdo»): sin cartel, la portada lleva su paleta propia, el símbolo SN arriba a
+   la izquierda, el sello arriba a la derecha y en la base el chip, la ceja y el título corto en mayúsculas. */
+.portada {
+  grid-area: portada;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "simbolo fecha"
+    ". ."
+    "chip chip"
+    "ceja ceja"
+    "titulo titulo";
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  align-items: start;
+  height: var(--foto);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--radio);
+  color: var(--primario-texto);
+}
+.simbolo {
+  grid-area: simbolo;
+  width: auto;
+  height: 20px;
+  margin: var(--espacio-3) 0 0 var(--espacio-3);
+  opacity: 0.92;
+}
+.portada > .fecha {
+  grid-area: fecha;
+}
+.portada > .chip {
+  grid-area: chip;
+  margin: 0 0 var(--espacio-2) var(--espacio-3);
+}
+.portada > .ceja {
+  margin: 0 var(--espacio-3) var(--espacio-1);
+  color: var(--sobre-banda-suave);
+}
+/* El corte a tres líneas va con margen y no con relleno: con relleno, la cuarta línea asomaría por debajo. */
+.tituloPortada {
+  grid-area: titulo;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  margin: 0 var(--espacio-3) var(--espacio-3);
+  font-size: var(--letra-lg);
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.04;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: anywhere; /* una palabra más ancha que la portada se parte en vez de salirse */
+}
+
+/* E5: en Esta semana, Nuevos eventos y Más adelante, la tarjeta mediana con el título y las líneas un escalón más chicos. */
+.mediana .titulo,
+.mediana .tituloPortada {
+  font-size: var(--letra-sm);
+}
+.mediana .lugar,
+.mediana .cuando {
+  font-size: var(--letra-xs);
+}
