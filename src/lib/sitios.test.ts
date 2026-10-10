@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sedesDeFestival, type ActoConSitio } from "./sedesFestival";
-import { eventosDelSitio, hrefSitio, slugDeSitio, slugDelEvento } from "./sitios";
+import { esSlugDeSitio, eventosDelSitio, eventosParaLigar, hrefSitio, slugDeSitio, slugDelEvento, textoLigados, type EventoParaLigar } from "./sitios";
 
 /** La ficha de un sitio fuera del directorio (OL-348): su slug, qué eventos lo nombran y cómo se arma con ellos (como una sede de festival). */
 
@@ -55,5 +55,57 @@ describe("la ficha se arma con los eventos que nombran el sitio", () => {
     const [sede, ...otras] = sedesDeFestival(eventosDelSitio(eventos, slug));
     expect(otras).toEqual([]);
     expect(sede).toMatchObject({ nombre: "Jardín de San Juan de Dios", lugar: null, direccion: "Calle Madero 1", punto: { lat: 22.1511, lng: -100.9772 }, actos: 2, href: `/sitios/${slug}` });
+  });
+});
+
+/** OL-366: al agregar un sitio al directorio, sus eventos pasan al lugar. Qué eventos se piden ligar y cómo se dice cuántos pasaron. */
+describe("esSlugDeSitio", () => {
+  it("la clave que arma `slugDeSitio`, y nada más", () => {
+    expect(esSlugDeSitio(slugDeSitio("Jardín de San Juan de Dios", SLP))).toBe(true);
+    expect(esSlugDeSitio("bar-el-33")).toBe(true);
+    for (const malo of ["", "Jardin", "jardín", "-jardin", "jardin-", "jardin--de", "jardin de", "../lugares", "a".repeat(241), null, 7]) expect(esSlugDeSitio(malo)).toBe(false);
+  });
+});
+
+describe("eventosParaLigar", () => {
+  const ANA = "ana";
+  const MARCOS = "marcos";
+  const sitio = (id: string, extra: Partial<EventoParaLigar> = {}): EventoParaLigar => ({ id, lugar_id: null, sitio_texto: "Bar La Oficina", ciudad: SLP, creado_por: ANA, clase: "puntual", sitio_lat: 22.15, sitio_lng: -100.98, ...extra });
+  const eventos = [
+    sitio("propio"),
+    sitio("escrito-distinto", { sitio_texto: "bar la oficina" }),
+    sitio("de-marcos", { creado_por: MARCOS }),
+    sitio("sin-autor", { creado_por: null }),
+    sitio("marco", { clase: "festival" }),
+    sitio("sin-punto", { sitio_lat: null, sitio_lng: null }),
+    sitio("medio-punto", { sitio_lng: null }),
+    sitio("reservado", { sitio_reservado: true }),
+    sitio("con-lugar", { lugar_id: "lugar-1" }),
+    sitio("otra-ciudad", { ciudad: "Querétaro" }),
+    sitio("otro-sitio", { sitio_texto: "Café Paz" }),
+  ];
+  const slug = slugDeSitio("Bar La Oficina", SLP);
+
+  it("quien registra el lugar: solo los suyos del sitio (el mismo nombre escrito distinto también), con punto y sin ser el marco de un festival", () => {
+    expect(eventosParaLigar(eventos, slug, { id: ANA, esAdmin: false })).toEqual(["propio", "escrito-distinto"]);
+    expect(eventosParaLigar(eventos, slug, { id: MARCOS, esAdmin: false })).toEqual(["de-marcos"]);
+  });
+
+  it("la administración: todos los del sitio, también los de otras personas y los que se quedaron sin autor", () => {
+    expect(eventosParaLigar(eventos, slug, { id: "admin", esAdmin: true })).toEqual(["propio", "escrito-distinto", "de-marcos", "sin-autor"]);
+  });
+
+  it("nunca un sitio reservado, uno que ya tiene lugar, el de otra ciudad u otro sitio; con otro slug, nada", () => {
+    const todos = eventosParaLigar(eventos, slug, { id: "admin", esAdmin: true });
+    for (const fuera of ["reservado", "con-lugar", "otra-ciudad", "otro-sitio", "marco", "sin-punto", "medio-punto"]) expect(todos).not.toContain(fuera);
+    expect(eventosParaLigar(eventos, "no-existe", { id: "admin", esAdmin: true })).toEqual([]);
+  });
+});
+
+describe("textoLigados", () => {
+  it("dice cuántos eventos pasaron al lugar", () => {
+    expect(textoLigados(0)).toBe("Ningún evento ligado");
+    expect(textoLigados(1)).toBe("1 evento ligado");
+    expect(textoLigados(4)).toBe("4 eventos ligados");
   });
 });
