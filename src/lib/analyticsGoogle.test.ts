@@ -82,6 +82,16 @@ describe("vistaGoogle: vistas a mano con la URL limpia", () => {
     expect(libre).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/agenda", page_title: "/agenda", page_referrer: "" });
     expect(JSON.stringify([...persona.mock.calls, ...libre.mock.calls])).not.toMatch(/0000-0000|correo|local\.test/);
   });
+  it("OL-340: la vista de una ficha llega a Google en su sección, sin el slug", () => {
+    sinAdmin();
+    const gtag = vi.fn();
+    expect(vistaGoogle({ gtag, location: { href: "https://somosnosotros.org/sitios/plaza-inventada" } })).toBe(true);
+    expect(gtag).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/sitios", page_title: "/sitios", page_referrer: "" });
+    const evento = vi.fn();
+    expect(vistaGoogle({ gtag: evento, location: { href: "https://somosnosotros.org/eventos/fiesta-inventada/cartel" } })).toBe(true);
+    expect(evento).toHaveBeenCalledWith("event", "page_view", { page_location: "https://somosnosotros.org/eventos", page_title: "/eventos", page_referrer: "" });
+    expect(JSON.stringify([...gtag.mock.calls, ...evento.mock.calls])).not.toMatch(/inventada/);
+  });
   it("una ruta privada no manda vista, pero lo que siga saliendo de ahí lleva solo su primer tramo", () => {
     sinAdmin();
     const gtag = vi.fn();
