@@ -5,8 +5,9 @@
    queda en el centro exacto de la barra pase lo que pase en ellos: con o sin sesión, con o sin Atrás y menú, y también mientras
    la sesión llega del servidor. */
 .barra {
-  /* Lo que reserva cada lado junto al logotipo: un botón de la barra y sitio para el siguiente (la campana, con sesión). */
-  --flanco: calc(var(--control) + 3.5rem);
+  /* Lo que reserva cada lado junto al logotipo: un botón de la barra y sitio para el siguiente (la campana, con sesión). Son botones de icono,
+     que no crecen con la letra: en rem (3.5rem), con la letra grande los lados se comían la celda del logotipo y lo encogían (OL-373). */
+  --flanco: calc(2 * var(--control) + var(--espacio-3));
   grid-area: barra;
   position: sticky;
   top: 0;

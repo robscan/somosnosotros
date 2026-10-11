@@ -108,6 +108,38 @@
       "elemento": "a.mapboxgl-ctrl-logo",
       "pantalla": "s17",
       "porque": "Permanente: Mapbox pone su logotipo con un margen de −4 px; no se toca."
+    },
+    {
+      "regla": "tapado",
+      "elemento": "lugares/ubicacion",
+      "pantalla": "s13",
+      "anchos": [320],
+      "letra": 2,
+      "porque": "Permanente (OL-373): con la letra al doble, en un teléfono de 568 de alto, la portada y los números de la ficha no caben bajo los mandos del mapa: la ficha a media altura sube hasta la fila de contexto (no más) y los cubre, como la llena; se ven al bajarla o cerrarla."
+    },
+    {
+      "regla": "tapado",
+      "elemento": "a.mapboxgl-ctrl-logo",
+      "pantalla": "s13",
+      "anchos": [320],
+      "letra": 2,
+      "porque": "Permanente (OL-373): con la letra al doble, en un teléfono de 568 de alto, la ficha a media altura cubre el mapa hasta la fila de contexto, como la llena."
+    },
+    {
+      "regla": "tapado",
+      "elemento": "button.mapboxgl-ctrl-attrib-button",
+      "pantalla": "s13",
+      "anchos": [320],
+      "letra": 2,
+      "porque": "Permanente (OL-373): con la letra al doble, en un teléfono de 568 de alto, la ficha a media altura cubre el mapa hasta la fila de contexto, como la llena."
+    },
+    {
+      "regla": "tapado",
+      "elemento": "FichaHoja/asa",
+      "pantalla": "s13",
+      "anchos": [320],
+      "letra": 2,
+      "porque": "Permanente (OL-373): el asa mide lo ancho de la cabecera de la ficha (224 px a 320); con la letra al doble la pastilla «Seguir» cubre su centro, que es donde mide la prueba, pero la hoja se sigue arrastrando y el asa se toca a su izquierda."
     }
   ],
   "presupuestos": {

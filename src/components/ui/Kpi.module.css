@@ -1,9 +1,11 @@
 /* Los tres números de una pantalla (docs/rediseno/50, P6; canon del prototipo firmado): tarjetas que abrazan su contenido, con el
    icono y lo que es en la fila de arriba (una sola unidad: «qué es») y el valor solo, con todo el ancho, en la de abajo. Las tres
    miden lo mismo porque la rejilla estira cada una a la fila. Las usa la ficha (`ui/Kpi`) y las pestañas de Perfil, que le suman lo suyo. */
+/* Tres en fila mientras cada tarjeta tenga al menos cinco veces la letra de ancho; con la letra grande (OL-373) pasan a dos y luego a una por
+   fila, en vez de partir el valor a media palabra («Grati/s»). A la letra de fábrica caben tres desde 320 (88 de ancho cada una). */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(5 * var(--letra-base))), 1fr));
   gap: var(--espacio-2);
   list-style: none;
 }
@@ -49,7 +51,7 @@
 }
 .kpi > b {
   grid-area: valor;
-  font-size: 1rem;
+  font-size: var(--letra-base);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.15;

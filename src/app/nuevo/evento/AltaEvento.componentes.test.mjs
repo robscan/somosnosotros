@@ -870,9 +870,10 @@ for (const ancho of [320, 390]) {
     await boton(p, /^Gratis/).click();
     const hora = p.locator("main ul > li").nth(1).locator("b span");
     assert.equal(await hora.innerText(), "20:00–21:00");
-    // Una sola caja de línea: el span no se parte, aunque el renglón pase a dos líneas.
+    // Una sola caja de línea: el span no se parte, aunque el renglón pase a dos líneas. Es un bloque en línea (OL-373): pasa entero al renglón de
+    // abajo y solo se partiría dentro si ni en un renglón entero cupiera (la letra grande), en vez de salirse.
     assert.equal(await hora.evaluate((e) => e.getClientRects().length), 1);
-    assert.equal(await hora.evaluate((e) => getComputedStyle(e).whiteSpace), "nowrap");
+    assert.equal(await hora.evaluate((e) => getComputedStyle(e).display), "inline-block");
     // La cadena no lleva espacios no separables ni unidores: lo que viaja a compartir y a los avisos es texto limpio.
     assert.doesNotMatch(await p.locator("main ul > li").nth(1).innerText(), /[\u00a0\u202f\u2060]/);
     const d = await desborda(p);

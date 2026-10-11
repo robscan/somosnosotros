@@ -19,7 +19,7 @@
   padding: var(--espacio-2) var(--espacio-4);
   border: 1px solid transparent;
   border-radius: var(--radio);
-  font-size: 1.25rem;
+  font-size: var(--letra-proveedor);
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;

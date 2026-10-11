@@ -6,9 +6,10 @@ Herramientas de operación (no son código de la app). Las dos primeras son las 
 ## Las dos pruebas
 
 - **`npm run inventario`** (Node puro, un segundo). Recorre los `.css` de `src`. Falla si aparece un `z-index` que no es un
-  token (`var(--z-…)`, con o sin `± n`), un color literal fuera de los tokens de `globals.css`, `100vw` o un margen negativo
-  sin excepción, o si suben los bloques duplicados o las medidas en duro (píxeles fuera de los tokens, salvo 0, 1 y 2) respecto
-  a lo aceptado. Que bajen está bien.
+  token (`var(--z-…)`, con o sin `± n`), un color literal fuera de los tokens de `globals.css`, `100vw`, un margen negativo
+  o una medida en rem fuera de los tokens (OL-373: lo que va en rem crece con la letra del teléfono y el tope del doble vive
+  en los tokens) sin excepción, o si suben los bloques duplicados o las medidas en duro (píxeles fuera de los tokens, salvo
+  0, 1 y 2) respecto a lo aceptado. Que bajen está bien.
 - **`npm run medir`** (un minuto; necesita Chrome o Chromium). Levanta el respaldo local y la app compilada contra él y abre las
   pantallas de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px. Falla si una pantalla pasa de su
   presupuesto de nodos o de profundidad, o si tiene:
@@ -22,8 +23,10 @@ Herramientas de operación (no son código de la app). Las dos primeras son las 
   (`reloj-fijo.cjs`), así que salen los mismos números cualquier día y a cualquier hora. Compila la app en `.next`: no la
   corras con `next dev` abierto. La URL de Supabase, la llave y el token de Mapbox los pone la prueba (son inventados) y mandan
   sobre cualquier `.env.local`: la app solo llega al respaldo. Opciones: `--solo=texto` (solo las pantallas cuyo id lo
-  contiene), `CHROME_EXECUTABLE` (el navegador; sin él, el Chrome de la Mac y si no el Chromium de Playwright, que se instala
-  con `npx playwright-core install chromium`) y `MEDIR_HILOS` (los cuatro navegadores en paralelo).
+  contiene), `--letra=2` (OL-373: la letra de fábrica de Chromium al doble, 32 px, como quien agranda el texto en su
+  teléfono; las mismas comprobaciones, el teclado incluido, salvo el presupuesto de nodos y profundidad; una excepción con
+  `"letra": 2` vale solo ahí), `CHROME_EXECUTABLE` (el navegador; sin él, el Chrome de la Mac y si no el Chromium de
+  Playwright, que se instala con `npx playwright-core install chromium`) y `MEDIR_HILOS` (los cuatro navegadores en paralelo).
 
 Lo que no revisan: el desplazamiento interior de la hoja de Lugares ni las hojas cerradas (Ciudad, Cuándo, Filtros); el
 toque se mide con la resolución de un píxel.

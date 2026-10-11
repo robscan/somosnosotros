@@ -142,6 +142,11 @@
   font-size: var(--letra-2xl);
   line-height: 1.1;
 }
+/* Con la letra grande (OL-373) el título puede pasar del alto de la portada: la celda crece, pero su texto nunca empieza bajo Atrás y el menú
+   (como el de la cabecera oscura, abajo). Es un margen y no relleno: mientras el título quepa en la portada no mueve nada ni alarga el velo. */
+.titulo:not(.oscura) {
+  margin-top: calc(var(--alto-barra-ficha) + var(--espacio-2) - var(--espacio-8));
+}
 .etiqueta {
   padding: 2px var(--espacio-2);
   border-radius: var(--radio-pildora);
@@ -265,10 +270,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 /* El letrero de una acción con título editable (hasta 30 caracteres, OL-168): a dos líneas como mucho y con puntos suspensivos,
-   sin tocar el círculo. Su ancho máximo es el del círculo y aire a los lados. */
+   sin tocar el círculo. Su ancho máximo es el del círculo y aire a los lados; con la letra grande (OL-373), el de casi seis de sus letras
+   (5,7em: a la letra de fábrica, 80 px, lo mismo), para que «Instagram» no se parta a media palabra. */
 .accionEtiqueta {
   display: -webkit-box;
-  max-width: calc(var(--boton-icono-grande) + var(--espacio-6));
+  max-width: max(calc(var(--boton-icono-grande) + var(--espacio-6)), 5.7em);
   overflow: hidden;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -364,6 +370,8 @@
   z-index: calc(var(--z-flotante) + 1);
   justify-self: center;
   display: flex;
+  flex-wrap: wrap; /* con la letra grande (OL-373), si no caben juntas van una sobre otra, cada una entera */
+  justify-content: center;
   gap: var(--espacio-2);
   max-width: 100%;
   margin-top: var(--espacio-6);
@@ -477,6 +485,7 @@
   .enPagina > .titulo {
     grid-area: titulo;
     align-self: start;
+    margin-top: 0; /* aquí no va sobre la portada: sin el margen que lo aparta de Atrás (3) */
     padding: 0 var(--gutter) 0 0;
     background: none;
     color: var(--texto);

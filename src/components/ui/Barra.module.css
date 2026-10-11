@@ -22,10 +22,26 @@
   padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   border-bottom: 1px solid var(--borde);
 }
-/* El regreso, a la izquierda y capaz de encogerse */
+/* El regreso, a la izquierda */
 .interior > :first-child {
   justify-self: start;
   min-width: 0;
+}
+/* Con la letra grande (OL-373; la pantalla mide menos de 19¾ letras, ver globals.css) el regreso crece y en su mitad quedaba en «A…» y menos de
+   44 de toque: los lados miden al menos lo suyo y lo del centro (el logotipo, o un título con «…») se achica en lo que queda, aunque ya no quede
+   al centro exacto. */
+@container (max-width: 19.75rem) {
+  .interior {
+    grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
+  }
+}
+/* El logotipo se achica dentro de su celda en vez de empujar al regreso (como en la barra de la app a 320). Sin `object-fit`: el SVG ya se
+   escala entero y centrado en su caja (su `viewBox`), y con él Chrome lo pintaría distinto aunque mida lo mismo. */
+.logotipo {
+  min-width: 0;
+}
+.logotipo > img {
+  max-width: 100%;
 }
 /* Alta: sin regreso; el título va a la columna del centro y la ✕ a la derecha, sin hueco vacío en el árbol */
 .alta > :first-child {

@@ -203,7 +203,7 @@
 }
 .grande {
   grid-area: grande;
-  font-size: 2.75rem;
+  font-size: var(--letra-historia);
   line-height: 0.98;
   font-weight: 800;
   font-variation-settings: var(--ancho-titulo);
@@ -212,10 +212,10 @@
   overflow-wrap: anywhere;
 }
 .grande[data-largo="largo"] {
-  font-size: 2.25rem;
+  font-size: var(--letra-historia-larga);
 }
 .grande[data-largo="muyLargo"] {
-  font-size: 1.875rem;
+  font-size: var(--letra-3xl);
 }
 .lugar {
   grid-area: lugar;

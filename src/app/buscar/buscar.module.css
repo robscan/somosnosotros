@@ -24,10 +24,9 @@
   box-shadow: inset 0 -1px 0 var(--borde);
 }
 /* Sin borde (el foco se dibuja por dentro con una sombra igual de fina), para que el campo llene el alto de la píldora: toda ella es de
-   toque, no solo la franja del texto. */
+   toque, no solo la franja del texto. Mide un control y, con la letra grande (OL-373), lo que pida su renglón: el texto nunca se sale. */
 .barra > label {
-  height: var(--control);
-  min-height: 0;
+  min-height: var(--control);
   border: 0;
   background: var(--fondo-suave);
 }
