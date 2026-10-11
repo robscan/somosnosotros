@@ -7,6 +7,7 @@ import Barra from "./ui/Barra";
 import BotonIcono from "./ui/BotonIcono";
 import Cerrar from "./ui/Cerrar";
 import { IconoChevronIzquierda } from "./ui/Iconos";
+import { reasegurarCampo } from "./ui/useCampoVisible";
 import styles from "./PorPasos.module.css";
 
 /** Hacia dónde se movió el paso: el siguiente entra por la derecha y el anterior (Atrás, o la vuelta a «Revisa») por la izquierda. */
@@ -57,10 +58,19 @@ export default function PorPasos({ titulo, paso, direccion, avance, salida, onAt
   useEffect(() => {
     if (anterior.current === paso) return;
     anterior.current = paso;
-    window.scrollTo({ top: 0 });
     const main = pantalla.current;
     const activo = document.activeElement;
-    if (!main || (activo instanceof HTMLInputElement && main.contains(activo))) return;
+    const campoEnfocado = !!main && activo instanceof HTMLInputElement && main.contains(activo);
+    // Con el teclado ya abierto (se tocó «Estoy aquí» con el buscador enfocado) el campo del paso nuevo toma el foco al montarse y el
+    // desplazamiento es suyo (OL-373): subir arriba deshacía lo que `ui/useCampoVisible` hizo al enfocarlo y, con la letra grande, donde
+    // «¿Es aquí?» no cabe sobre el teclado, el campo quedaba bajo el pie o el teclado. Se vuelve a colocar ahora que el pie del paso nuevo
+    // (un hijo: su efecto ya corrió) publicó su alto.
+    if (campoEnfocado && document.documentElement.hasAttribute("data-teclado")) {
+      reasegurarCampo();
+      return;
+    }
+    window.scrollTo({ top: 0 });
+    if (!main || campoEnfocado) return;
     (main.querySelector("h2") ?? main.querySelector("h1"))?.focus({ preventScroll: true });
   }, [paso]);
 

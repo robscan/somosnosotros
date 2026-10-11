@@ -7,9 +7,13 @@
 // los botones de abajo (los del pie y los de todo lo pegado o fijo abajo) también deben verse enteros y sin nada encima: las acciones quedan
 // sobre el teclado. Sin llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador y
 // el reloj está fijo (`reloj-fijo.cjs`), así que salen los mismos números cualquier día y a cualquier hora.
+// Con `--letra=2` (OL-373) la letra de fábrica del navegador pasa al doble (32 px, como quien agranda el texto en su teléfono: WCAG 1.4.4 pide
+// que todo funcione al 200 %) y corren las mismas comprobaciones, el teclado incluido, salvo el presupuesto de nodos y profundidad: la
+// estructura se mide con la letra de fábrica, y con letra grande puede aparecer un «Ver más» que no es un fallo.
 //   npm run medir                     la prueba entera (compila la app en `.next`, así que no la corras con `next dev` abierto)
 //   npm run medir -- --aceptar        anota los presupuestos de hoy (las excepciones se escriben a mano, con su porqué)
 //   npm run medir -- --solo=lugares   solo las pantallas cuyo id contiene el texto
+//   npm run medir -- --letra=2        las mismas pantallas con el texto al doble (se combina con --solo)
 // CHROME_EXECUTABLE elige el navegador; sin él, el Chrome de la Mac si existe y si no el Chromium de Playwright.
 import { chromium } from "playwright-core";
 import { spawn, spawnSync } from "node:child_process";
@@ -40,12 +44,16 @@ const MAC = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 const args = process.argv.slice(2);
 const solo = args.find((a) => a.startsWith("--solo="))?.slice(7);
+// La letra de fábrica del navegador, en veces la de siempre (16 px): 1 es la prueba de siempre.
+const LETRA = Number(args.find((a) => a.startsWith("--letra="))?.slice(8) ?? 1);
 const leer = (archivo) => JSON.parse(fs.readFileSync(path.resolve(AQUI, archivo), "utf8"));
 const ACEPTADAS = path.join(AQUI, "medidas.aceptadas.json");
 const aceptadas = leer(ACEPTADAS);
 const pantallas = [...leer("pantallas-prod.json").map((p) => ({ ...p, sesion: false })), ...leer("pantallas-sesion.json").map((p) => ({ ...p, sesion: true }))].filter((p) => !solo || p.id.includes(solo));
 if (!pantallas.length) throw new Error(`ninguna pantalla contiene «${solo}»`);
+if (!(LETRA >= 1 && LETRA <= 3)) throw new Error("--letra va de 1 a 3 (veces la letra de fábrica)");
 if (args.includes("--aceptar") && solo) throw new Error("--aceptar pide la prueba entera: quita --solo");
+if (args.includes("--aceptar") && LETRA !== 1) throw new Error("--aceptar anota los presupuestos con la letra de fábrica: quita --letra");
 if (JSON.stringify(aceptadas.anchos) !== JSON.stringify(ANCHOS)) throw new Error("los anchos de medidas.aceptadas.json no son los de la prueba: corre `npm run medir -- --aceptar`");
 
 // La hoja de Lugares se lleva a «llena» con la rueda sobre su cuerpo; desde 792 px es un panel sin alturas y no hay nada que subir.
@@ -210,6 +218,9 @@ async function abrir(browser, base, p, ancho, alto, antes = null) {
       r.request().resourceType() === "image" ? r.fulfill({ contentType: "image/svg+xml", body: IMAGEN }) : /\/styles\/v1\//.test(r.request().url()) ? r.fulfill({ json: ESTILO_DE_MAPA }) : r.abort(),
     );
     const page = await ctx.newPage();
+    // `--letra`: la letra de fábrica del navegador (`medium`, la de la raíz de la app) al tamaño pedido, antes de cargar nada: como la
+    // preferencia de tamaño de texto de Chrome, sin tocar el CSS de la app.
+    if (LETRA !== 1) await (await ctx.newCDPSession(page)).send("Page.setFontSizes", { fontSizes: { standard: Math.round(16 * LETRA), fixed: Math.round(13 * LETRA) } });
     const errores = [];
     page.on("pageerror", (e) => errores.push(String(e.message).slice(0, 200)));
     await page.goto(base + p.url, { waitUntil: "load", timeout: 45000 });
@@ -226,6 +237,8 @@ async function medirPantalla(browser, medirJs, base, p, i) {
   try {
     const fuentes = await page.evaluate(() => [...document.fonts].map((f) => `${f.family} ${f.status}`));
     if (!fuentes.some((f) => /Bricolage.* loaded$/i.test(f))) throw new Error(`no cargó la fuente de la app, las medidas no valen (fuentes: ${fuentes.join(", ") || "ninguna"})`);
+    const raiz = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+    if (raiz !== `${Math.round(16 * LETRA)}px`) throw new Error(`la raíz mide ${raiz} y no ${Math.round(16 * LETRA)}px: las medidas no valen`);
     return { ...(await page.evaluate(medirJs)), errores };
   } finally {
     await ctx.close();
@@ -380,16 +393,18 @@ const REGLAS = {
   "error-de-pagina": (m) => m.errores.map((e) => ({ que: "la página", detalle: e })),
 };
 const usadas = new Set();
+// Una excepción con `letra` vale solo con esa letra (`--letra=2`); sin ella, con cualquiera.
 function permitido(regla, id, ancho, que) {
-  const coinciden = aceptadas.excepciones.flatMap((e, i) => (e.regla === regla && que.includes(e.elemento) && (!e.pantalla || id.includes(e.pantalla)) && (!e.anchos || e.anchos.includes(ancho)) ? [i] : []));
+  const coinciden = aceptadas.excepciones.flatMap((e, i) => (e.regla === regla && que.includes(e.elemento) && (!e.pantalla || id.includes(e.pantalla)) && (!e.anchos || e.anchos.includes(ancho)) && (!e.letra || e.letra === LETRA) ? [i] : []));
   coinciden.forEach((i) => usadas.add(i));
   return coinciden.length > 0;
 }
 function juzgar(p, i, m) {
   const fallos = [];
-  const tope = aceptadas.presupuestos[p.id];
-  if (!tope) fallos.push({ regla: "presupuesto", que: p.id, detalle: "sin presupuesto aceptado: corre `npm run medir -- --aceptar`" });
-  else {
+  // El presupuesto se mira solo con la letra de fábrica (ver arriba).
+  const tope = LETRA === 1 ? aceptadas.presupuestos[p.id] : undefined;
+  if (LETRA === 1 && !tope) fallos.push({ regla: "presupuesto", que: p.id, detalle: "sin presupuesto aceptado: corre `npm run medir -- --aceptar`" });
+  if (tope) {
     if (m.nodos > tope.nodos[i]) fallos.push({ regla: "presupuesto", que: p.id, detalle: `${m.nodos} nodos, el presupuesto es ${tope.nodos[i]}` });
     if (m.profundidadMax > tope.profundidad[i]) fallos.push({ regla: "presupuesto", que: p.id, detalle: `${m.profundidadMax} de profundidad, el presupuesto es ${tope.profundidad[i]} (${m.masProfundo})` });
   }
@@ -435,11 +450,14 @@ try {
     }),
   );
 
-  // Android (OL-308): el HTML trae `interactive-widget=resizes-content` en el viewport, para que Chrome encoja la ventana con el teclado.
+  // Android (OL-308): el HTML trae `interactive-widget=resizes-content` en el viewport, para que Chrome encoja la ventana con el teclado; y
+  // (OL-373) `text-scale=scale`, para que la letra de la raíz sea la que la persona eligió en su teléfono.
   try {
     const html = await (await fetch(`${base}/`)).text();
     const viewport = html.match(/<meta[^>]*name="viewport"[^>]*>/)?.[0] ?? "";
     if (!/interactive-widget=resizes-content/.test(viewport)) fallos.push({ regla: "viewport", pantalla: "layout", ancho: 0, que: "meta viewport", detalle: `falta interactive-widget=resizes-content (Android): ${viewport || "sin meta viewport"}` });
+    const escala = html.match(/<meta[^>]*name="text-scale"[^>]*>/)?.[0] ?? "";
+    if (!/content="scale"/.test(escala)) fallos.push({ regla: "viewport", pantalla: "layout", ancho: 0, que: "meta text-scale", detalle: `falta <meta name="text-scale" content="scale"> (Android): ${escala || "sin meta text-scale"}` });
   } catch (e) {
     fallos.push({ regla: "carga", pantalla: "layout", ancho: 0, que: "/", detalle: `viewport: ${String(e.message).split("\n")[0]}` });
   }
@@ -476,9 +494,10 @@ try {
   const problemas = aceptar ? fallos.filter((f) => f.regla !== "presupuesto") : fallos; // al aceptar, el presupuesto es justo lo que se anota
   console.log(`\n${"plantilla".padEnd(10)}${"pantalla".padEnd(28)}nodos ${ANCHOS.join(" ")}   profundidad`);
   for (const p of pantallas) console.log(`${(p.plantilla ?? "").padEnd(10)}${p.id.padEnd(28)}${cifras(p, "nodos").join(" ").padEnd(22)}${cifras(p, "profundidadMax").join(" ")}`);
-  const bajaron = pantallas.filter((p) => ANCHOS.some((_, i) => medidas.get(`${p.id}@${i}`)?.nodos < aceptadas.presupuestos[p.id]?.nodos[i]));
+  const bajaron = LETRA === 1 ? pantallas.filter((p) => ANCHOS.some((_, i) => medidas.get(`${p.id}@${i}`)?.nodos < aceptadas.presupuestos[p.id]?.nodos[i])) : [];
   if (bajaron.length && !aceptar) console.log(`\n${bajaron.length} pantallas bajaron de nodos: anótalo con \`npm run medir -- --aceptar\``);
-  if (!solo) aceptadas.excepciones.forEach((e, i) => usadas.has(i) || console.log(`excepción sin uso en esta corrida (¿ya no hace falta?): ${e.regla} ${e.elemento}`));
+  // Cada excepción se juzga en la corrida de su letra: las que no dicen letra, en la de fábrica; las de `letra: 2`, en `--letra=2`.
+  if (!solo) aceptadas.excepciones.forEach((e, i) => usadas.has(i) || (e.letra ?? 1) !== LETRA || console.log(`excepción sin uso en esta corrida (¿ya no hace falta?): ${e.regla} ${e.elemento}`));
   if (problemas.length) {
     const grupos = Map.groupBy(problemas, (f) => `${f.regla} · ${f.pantalla} · ${limpio(f.que)}`);
     console.error(`\nLa prueba falla (${grupos.size} hallazgos):`);
@@ -492,7 +511,7 @@ try {
   const conCampos = pantallas.filter((p) => conTeclado.get(p.id) > 0);
   console.log(`\nteclado (${ANCHO_TECLADO}×${ALTO_TECLADO}, de dos maneras): ${[...conTeclado.values()].reduce((a, b) => a + b, 0)} campos de texto en ${conCampos.length} pantallas (${conCampos.map((p) => `${p.id} ${conTeclado.get(p.id)}`).join(", ")})`);
   console.log(`botones de abajo comprobados con el teclado: ${conCampos.map((p) => `${p.id} ${["ventana", "area"].map((m) => `${m} [${(botonesDeAbajo.get(`${p.id}@${m}`) ?? []).map((b) => b.split(" · ")[1]).join(", ") || "—"}]`).join(" ")}`).join("; ")}`);
-  console.log(`\nmedidas: ${pantallas.length} pantallas × ${ANCHOS.length} anchos en ${Math.round((Date.now() - inicio) / 1000)} s, ${problemas.length ? "CON FALLOS" : aceptar ? "presupuestos anotados" : "sin novedades"}`);
+  console.log(`\nmedidas${LETRA === 1 ? "" : ` con la letra ×${LETRA} (${Math.round(16 * LETRA)} px)`}: ${pantallas.length} pantallas × ${ANCHOS.length} anchos en ${Math.round((Date.now() - inicio) / 1000)} s, ${problemas.length ? "CON FALLOS" : aceptar ? "presupuestos anotados" : "sin novedades"}`);
 } catch (e) {
   console.error(e.message);
   process.exitCode = 1;

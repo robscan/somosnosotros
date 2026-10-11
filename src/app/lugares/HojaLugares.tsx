@@ -154,10 +154,12 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     if (abierta) {
       const cabecera = abierta.querySelector("header")!;
       const alto = cabecera.offsetHeight;
-      // La media termina donde empieza lo que sigue a los tres números: la portada y los datos con su aire, sin asomar lo demás.
+      // La media termina donde empieza lo que sigue a los tres números: la portada y los datos con su aire, sin asomar lo demás. Nunca sube
+      // sobre la fila de contexto (solo la llena la cubre), ni con el reborde que recibe toques sobre el cuerpo (`recortar`): con la letra
+      // grande en un teléfono bajo la portada y los números ya no caben, y la hoja se quedaba con el borde de abajo de los chips (OL-373).
       const primero = abierta.querySelector("[data-cuerpo] > :first-child") ?? cabecera;
       const siguiente = abierta.querySelector("[data-cuerpo] > :nth-child(2)");
-      const media = Math.min(llena, (siguiente ? arribaDe(siguiente) : abajoDe(primero)) - alto);
+      const media = Math.min(llena - (bajoLaFila - arribaDeLaHoja) - REBORDE, (siguiente ? arribaDe(siguiente) : abajoDe(primero)) - alto);
       return { detentes: { recogida: 0, media, llena }, franja: alto, compactaDesde: llena + abajoDe(abierta.querySelector("[data-portada]")!) - alto, techo: bajaElTecho };
     }
     const lista = franja.current!.nextElementSibling;

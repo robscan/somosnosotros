@@ -64,9 +64,10 @@
   inset: 0;
 }
 
-/* Las horas de un evento de varios días no se parten en un renglón angosto (`Revisa`). */
+/* Las horas de un evento de varios días no se parten en un renglón angosto (`Revisa`): pasan enteras al de abajo. Solo si ni en un renglón entero
+   caben (la letra grande, OL-373) se parten dentro, en vez de salirse. */
 .hora {
-  white-space: nowrap;
+  display: inline-block;
 }
 .dato > b > small {
   display: block;

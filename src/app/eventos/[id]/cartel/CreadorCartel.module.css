@@ -35,8 +35,9 @@
    cuadro (no salta al llegar la imagen); la historia (9:16), más alta, se angosta para caber en el mismo alto. La columna de los pasos le
    pone `width: auto` y el aire de los lados: aquí se limita con `max-width` y se centra con `align-self`. */
 .vista {
-  /* Lo que queda bajo la barra, la pregunta, los chips y el pie (unos 23rem), entre 16rem y 40rem. */
-  --alto-vista: max(16rem, min(calc(100dvh - 23rem), 40rem));
+  /* Lo que queda bajo la barra, la pregunta, los chips y el pie (unas 23 letras de alto), entre 16 y 40 letras. En letras de la raíz topadas
+     (`--letra-base`, OL-373): con la letra más grande que el tope, la vista no crece más que el texto. */
+  --alto-vista: max(calc(16 * var(--letra-base)), min(calc(100dvh - 23 * var(--letra-base)), calc(40 * var(--letra-base))));
   align-self: center;
   max-width: min(calc(100% - 2 * var(--gutter)), calc(var(--alto-vista) * 0.8));
   height: auto;
@@ -97,8 +98,8 @@
 }
 .fotoPuesta > img {
   grid-area: mini;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: calc(2.75 * var(--letra-base));
+  height: calc(2.75 * var(--letra-base));
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo-miniatura);

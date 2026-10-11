@@ -85,6 +85,11 @@
   justify-self: start;
   margin: var(--espacio-2);
 }
+/* Con la letra grande (OL-373) su texto parte renglón dentro del cartel en vez de salirse de la tarjeta («Nuevo video» no cabe entero en la
+   mediana al doble). Dos clases: gana al `nowrap` del chip (ui/Chip) llegue en el orden que llegue. */
+.tarjeta .chip {
+  white-space: normal;
+}
 /* E9 (OL-372): sobre la foto de un artista, «Nuevo video» o «Nuevo audio» con el trato de «Hoy» de siempre (OL-275; founder, 2026-10-10: «para
    artistas se sigue chip de “Nuevo video” o audio»): el color de acción con el texto blanco (7,06:1). */
 .chip.nuevo {

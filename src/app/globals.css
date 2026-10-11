@@ -135,19 +135,43 @@
      de este gutter. */
   --gutter: max(var(--espacio-5), calc((100cqw - var(--columna)) / 2));
 
-  /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
-     Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA). */
-  --letra-2xs: 0.75rem; /* 12px: etiquetas de la navegación y sellos */
-  --letra-xs: 0.875rem; /* 14px: etiquetas en mayúsculas, cuándo */
-  --letra-sm: 0.9375rem; /* 15px: detalle, ayuda, error */
-  --letra-md: 1.0625rem; /* 17px: texto y campos */
-  --letra-lg: 1.125rem; /* 18px: botón principal */
-  --letra-xl: 1.1875rem; /* 19px: título de sección y de tarjeta */
+  /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él (la raíz, más abajo: en iPhone y iPad la
+     letra del sistema; en Android, `text-scale` en layout.tsx), y como mucho hasta `--letra-tope` veces sus px (OL-373: WCAG 1.4.4 pide
+     que todo funcione con el texto al 200 %; más allá, cada pantalla tendría que rehacerse). Los px de cada comentario son los de la raíz
+     de 16 (Chrome, Android y Mac); en iPhone y iPad la raíz de fábrica es la letra del sistema, 17, y todo sale un 6 % más grande.
+     Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA).
+     La letra grande en una fila: donde una fila pone una acción a la derecha de un texto (el nombre de una persona, el valor de una fila de
+     alta o edición) o una línea que no se corta (el cuándo de una lista), y con la letra grande el texto se partiría a media palabra o se
+     recortaría al borde, la acción baja y le deja la fila, y la línea parte renglón: `@container (max-width: 19.75rem)`, «la pantalla mide
+     menos de 19¾ letras de ancho» (la pantalla es un contenedor, Armazon.module.css; las consultas de contenedor en rem siguen la letra de
+     la raíz, también la del sistema en el iPhone, y las de `@media` no). Con la raíz de 16 son 316px y con la de fábrica del iPhone, 17,
+     336: ningún teléfono de hoy (el más angosto mide 320 y el iPhone más angosto, 375); con la mayor normal del iPhone (23) son 454, todos
+     los iPhone, y con la de un paso antes (21), 415, los de 414 o menos. El número va igual en cada consulta (una consulta no lee variables:
+     lo comprueba src/app/letra.test.ts). Lo que sube por portal a `body` (las hojas) no tiene contenedor y no cambia. */
+  --letra-tope: 2;
+  --letra-2xs: min(0.75rem, calc(12px * var(--letra-tope))); /* 12px: etiquetas de la navegación y sellos */
+  --letra-xs: min(0.875rem, calc(14px * var(--letra-tope))); /* 14px: etiquetas en mayúsculas, cuándo */
+  --letra-sm: min(0.9375rem, calc(15px * var(--letra-tope))); /* 15px: detalle, ayuda, error */
+  --letra-base: min(1rem, calc(16px * var(--letra-tope))); /* 16px: la letra de la raíz, cuando hay que nombrarla (el valor de un KPI) */
+  --letra-md: min(1.0625rem, calc(17px * var(--letra-tope))); /* 17px: texto y campos */
+  --letra-lg: min(1.125rem, calc(18px * var(--letra-tope))); /* 18px: botón principal */
+  --letra-xl: min(1.1875rem, calc(19px * var(--letra-tope))); /* 19px: título de sección y de tarjeta */
   --letra-campo: max(16px, var(--letra-md)); /* la de un campo: nunca baja de 16px, o Safari hace zoom al enfocarlo */
-  --letra-2xl: 1.625rem; /* 26px: título de pantalla */
-  --letra-3xl: 1.875rem; /* 30px: nombre del lugar o evento */
-  --alto-logo: 1.75rem; /* 28px: dibujo SMSNSTRS en la barra de las pantallas raíz */
-  --alto-logo-chico: 1.5rem; /* 24px: versión chica, al centro de la barra interior */
+  /* Las tiras de navegación de ancho fijo (la barra de abajo y la tira Evento · Lugar · Artista de las altas) crecen menos que el resto, con su
+     tope propio (OL-373): en la barra, «Artistas» mide 3,3 veces su letra y cada destino 62px a 320, y con más de 16px no cabe con aire ni
+     bajo su píldora en los 60 de la barra (que no crece); en la tira de las altas, los tres tipos con su aire no caben en 280. */
+  --letra-tope-tira: 16px;
+  --letra-2xl: min(1.625rem, calc(26px * var(--letra-tope))); /* 26px: título de pantalla */
+  --letra-3xl: min(1.875rem, calc(30px * var(--letra-tope))); /* 30px: nombre del lugar o evento */
+  /* Fuera de la escala, cada una para lo suyo: */
+  --letra-proveedor: min(1.25rem, calc(20px * var(--letra-tope))); /* 20px: los botones de Apple, Google y correo de Entrar */
+  --letra-historia-larga: min(2.25rem, calc(36px * var(--letra-tope))); /* 36px: el título tipográfico de una historia, si es largo */
+  --letra-cifra: min(2.5rem, calc(40px * var(--letra-tope))); /* 40px: la cifra de un indicador de administración */
+  --letra-historia: min(2.75rem, calc(44px * var(--letra-tope))); /* 44px: el título tipográfico de una historia sin cartel */
+  /* El logotipo crece con la letra (LINEA_GRAFICA), pero poco: es un dibujo y no un texto que leer, la barra mide 56 y a 40 el founder ya lo
+     vio «demasiado gigante» (2026-09-15). Hasta un cuarto más (OL-373). */
+  --alto-logo: min(1.75rem, 35px); /* 28px: dibujo SMSNSTRS en la barra de las pantallas raíz */
+  --alto-logo-chico: min(1.5rem, 30px); /* 24px: versión chica, al centro de la barra interior */
 
   /* Ancho de la letra (eje wdth de Bricolage Grotesque): condensada en todo, un poco más abierta en texto. */
   --ancho-titulo: "wdth" 75;
@@ -225,13 +249,30 @@ body {
   background: var(--fondo);
   color: var(--texto);
   font-family: var(--fuente);
-  font-size: 100%; /* 16px por defecto; respeta el tamaño de texto que la persona eligió en su teléfono */
+  font-size: 100%; /* la letra de la raíz es la del navegador: 16px de fábrica; en Android, con `text-scale` (layout.tsx), la del teléfono */
   line-height: 1.4;
   font-variation-settings: var(--ancho-texto);
   font-optical-sizing: auto; /* a lo grande enseña sus curvas; en texto chico queda limpia */
   font-variant-numeric: tabular-nums; /* horas y fechas alineadas en las listas */
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
+}
+/* iPhone y iPad (OL-373): Safari no lleva el tamaño de texto del teléfono a `100%`, que ahí vale siempre 16px (WebKit, bug 260880). Solo
+   lo sigue la letra del sistema: con ella 1rem mide 17px de fábrica, 23 en la mayor normal y 33 en «accesibilidad grande», y todo lo que
+   va en rem crece (hasta `--letra-tope`). La condición solo la cumple WebKit de iOS y iPadOS (Safari, la web instalada y la app de la
+   tienda): en Safari de Mac la letra del sistema mide 13px y la app se encogería. El atajo `font` repone a su valor inicial la familia, el
+   interlineado, el peso, las variaciones, los numerales y lo demás de la letra: aquí se vuelve a poner lo de la regla de arriba, con el
+   peso normal (la letra del sistema trae el suyo). */
+@supports (-webkit-touch-callout: none) {
+  html {
+    font: -apple-system-body;
+    font-family: var(--fuente);
+    font-weight: normal;
+    line-height: 1.4;
+    font-variation-settings: var(--ancho-texto);
+    font-optical-sizing: auto;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* Títulos: condensados (ancho 75) y en negrita 700; la condensada a 600 se ve floja. */

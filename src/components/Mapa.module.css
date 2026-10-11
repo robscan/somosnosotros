@@ -27,6 +27,16 @@
   text-align: center;
   box-shadow: var(--sombra);
 }
+/* Con la letra grande (OL-373; la pantalla mide menos de 19¾ letras, ver globals.css) el aviso usa el ancho del mapa: centrado desde la mitad
+   solo cabía en la mitad de ancho, partía en muchos renglones y en un mapa bajo («¿Es aquí?») se salía por arriba y por abajo. */
+@container (max-width: 19.75rem) {
+  .aviso {
+    left: var(--espacio-4);
+    right: var(--espacio-4);
+    max-width: none;
+    transform: translateY(-50%);
+  }
+}
 
 /* La persona: punto azul con halo, el estándar de los mapas. */
 .yo {

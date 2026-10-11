@@ -17,8 +17,9 @@
 .linea > b {
   font-weight: inherit;
 }
+/* Un rango pasa entero al renglón de abajo; solo si ni en un renglón entero cabe (la letra grande, OL-373) se parte dentro, en vez de salirse. */
 .rango {
-  white-space: nowrap;
+  display: inline-block;
 }
 .linea > small,
 .cierra {

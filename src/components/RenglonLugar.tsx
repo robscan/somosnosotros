@@ -13,6 +13,8 @@ type Props = {
   km?: number;
   /** Con botón, "Seguir" o "Sigues" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
   boton?: EstadoBotonRenglon;
+  /** El botón llega después (la hoja de Lugares lee la cuenta en el teléfono): mientras, su sitio queda guardado (`Renglon`). */
+  botonEnEspera?: boolean;
   /** Si se pone, tocar el renglón abre el lugar ahí (la ficha dentro de la hoja de Lugares) en vez de ir a su página; abrirlo con
    *  una tecla (en otra pestaña) sigue su enlace. */
   alAbrir?: () => void;
@@ -22,14 +24,14 @@ type Props = {
  * Renglón de lugar (OL-057): foto cuadrada, nombre y, en los datos, qué es, su calle (y a cuántos km, si se sabe) y su
  * próximo evento. Uno solo para todas las listas de lugares, como RenglonEvento para los eventos.
  */
-export default function RenglonLugar({ lugar: l, km, boton, alAbrir }: Props) {
+export default function RenglonLugar({ lugar: l, km, boton, botonEnEspera = false, alAbrir }: Props) {
   function alTocar(e: MouseEvent<HTMLAnchorElement>) {
     if (!alAbrir || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     alAbrir();
   }
   return (
-    <Renglon href={hrefLugar(l)} foto={l.portada} titulo={l.nombre} accion={boton && <BotonRenglon {...boton} />} onClick={alTocar}>
+    <Renglon href={hrefLugar(l)} foto={l.portada} titulo={l.nombre} accion={boton && <BotonRenglon {...boton} />} accionEnEspera={botonEnEspera} onClick={alTocar}>
       {l.privado && <Chip variante="estado">Solo tú lo ves</Chip>}
       <span className={styles.envuelve}>
         <IconoPin width={15} height={15} />

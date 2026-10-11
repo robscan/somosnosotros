@@ -45,6 +45,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://somosnosotros.org"),
   openGraph: { title: "Somos Nosotros", description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.", url: "https://somosnosotros.org", type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
   twitter: { card: "summary_large_image", title: "Somos Nosotros", description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.", images: ["/portada.png"] },
+  // Android (Chrome y Edge, 2026; OL-373): con `text-scale` la letra de la raíz (`100%` en globals.css) es la que la persona
+  // eligió en su teléfono, y lo que va en rem crece con ella hasta `--letra-tope`. Safari la ignora: en iPhone y iPad la raíz es la letra
+  // del sistema (globals.css). Referencia: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/text-scale
+  other: { "text-scale": "scale" },
 };
 
 export const viewport: Viewport = {

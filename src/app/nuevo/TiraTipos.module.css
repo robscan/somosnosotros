@@ -29,7 +29,7 @@
   place-content: center;
   min-width: 64px;
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
+  font-size: min(var(--letra-sm), var(--letra-tope-tira)); /* crece con la letra hasta el tope de las tiras (globals.css): los tres caben en 280 */
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
