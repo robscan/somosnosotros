@@ -260,6 +260,10 @@ Un tropiezo que salió aquí: el porqué de la Propuesta estaba dentro del resum
    - `35-giro-activo.png`: con dos eventos de orientación sintéticos, el botón se fue y las figuras de adelante se corrieron (`translate(3.98 1.91)`).
    - `36-giro-reducir-movimiento.png`: con «Reducir movimiento», el aviso de dónde apagarlo, sin acción.
 
+3. **«Se pueden cortar las figuras en la base, me parece que el contenedor tiene máscara»** (2026-10-11), con una captura de su iPhone: en Ciclo Fellini el círculo de afuera perdía su base al inclinar. La portada recorta el dibujo en la línea del título para que nada pase detrás del texto, y las figuras se apoyan en esa línea; al inclinar hacia uno bajan y el recorte les cortaba la base. Con P8, el recorte baja ahora lo que puede moverse la figura (4 unidades: 6,6 px en la grande y 5,3 en la mediana), dentro del relleno de arriba de la zona del título (12 y 8 px). En reposo no cambia nada. Medido con la inclinación máxima hacia abajo en «Tus planes»: antes el recorte quedaba a 11,6 px del primer texto y cortaba la figura; ahora queda a 5 px y la figura se ve entera.
+   - `37-antes-base-cortada.png`: inclinado al máximo, antes del arreglo. El triángulo negro del taller y el cuadro de afuera de «Desierto» pierden su base.
+   - `38-despues-base-entera.png`: lo mismo con el arreglo. Las figuras enteras, sin tocar el chip ni el título.
+
 ## Firma (2026-10-11)
 
 El founder eligió la combinación: «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8». Es el preajuste nuevo **«Firmada»**, con el que abre la página. Se diferencia de la «Propuesta» del agente en dos puntos:

@@ -899,7 +899,9 @@ const Portadas = (() => {
     const sello = p.querySelector('.fecha');
     let H = zona ? zona.offsetTop / escala : 125 - M;
     if (!zona && chip) H = Math.min(H, chip.offsetTop / escala - 3);
-    const corte = zona ? H : 125;
+    // Con P8, el recorte baja lo que puede moverse la figura (4 unidades: 6,6 px en la grande, 5,3 en la mediana) dentro del relleno de arriba de
+    // la zona (12 y 8 px): al inclinar, la base no se corta y nada llega al texto (founder, 11 de oct: «se pueden cortar las figuras en la base»).
+    const corte = zona ? H + (v.p8 ? MAX_UNIDADES : 0) : 125;
     const selloIzq = sello ? sello.offsetLeft / escala : 100;
     const selloAbajo = sello ? (sello.offsetTop + sello.offsetHeight) / escala : 0;
     const P = Portadas.paleta(p.dataset.hex);
