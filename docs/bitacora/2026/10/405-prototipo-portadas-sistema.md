@@ -182,6 +182,7 @@ Tres tareas con cronómetro, como en el prototipo 398: «Encuentra un taller», 
   - **La batería:** el sensor queda encendido mientras se ve Inicio, y las portadas a la vista se repintan mientras el teléfono se mueve.
   - **El roce con el desplazamiento:** el gesto del arrastre compite con deslizar los carriles, y el giroscopio mueve las figuras al caminar o al ir en el camión.
 - **Comprobado** con eventos `deviceorientation` sintéticos. La postura de partida y luego 25° a la derecha y 12,5° hacia el frente dan 4 y 2 unidades: la capa de adelante en `translate(3.98 1.99)`, la de atrás en `translate(1.99 1.00)`, el título sin transformación. Al volver a la postura de partida, todo regresa. El arrastre real con el dedo (eventos táctiles por CDP) corre 30 px a la izquierda y da `translate(-3.00 0.00)`; al soltar, vuelve. **No se probó en un iPhone real.**
+- **Para probar el giroscopio de verdad (gestor):** las reglas de las páginas publicadas en claude.ai confirman que su marco rechaza el sensor de movimiento, así que allí solo funciona el arrastre. La copia envuelta [`portadas-sistema.vista.html`](../../../rediseno/prototipos/portadas-sistema.vista.html) es la misma página con su `<!doctype>`: abierta fuera del marco (raw.githack del commit de la rama), el botón «Activar el giroscopio» pide el permiso del iPhone. Se genera desde `portadas-sistema.html` en un solo paso y no se edita a mano.
 
 ## Comprobado con toques reales
 
