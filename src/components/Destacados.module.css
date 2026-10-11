@@ -14,11 +14,14 @@
   gap: var(--espacio-4);
   padding-top: var(--espacio-7);
 }
-/* El título a la izquierda y, a la derecha, el enlace que dice a dónde lleva. */
+/* El título a la izquierda y, a la derecha, el enlace que dice a dónde lleva. Con la letra grande (OL-373), si ni la palabra más larga del
+   título cabe junto al enlace, el enlace baja a su renglón, al principio: nunca se enciman. */
 .cabecera {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  column-gap: var(--espacio-2);
   padding-inline: var(--gutter);
 }
 /* Un carril vacío no deja hueco (OL-156): lo que ocupaba su lugar (el esqueleto) se recoge de 1fr a 0fr y se desvanece en vez de
@@ -41,9 +44,11 @@
 }
 /* OL-361 (founder, 2026-10-09: «que los títulos de cada carril sean más grandes»): un escalón arriba, de --letra-xl
    (19px) a --letra-2xl (26px). En un teléfono angosto el título largo pasa a dos líneas; nunca se trunca, y el enlace
-   de la derecha no se encoge ni crece. */
+   de la derecha no se encoge ni crece. El título ocupa lo que deja el enlace y nunca menos que su palabra más larga
+   (`min-content`): así decide la rejilla flexible cuándo el enlace baja (OL-373). */
 .destacados h2 {
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: min-content;
   font-size: var(--letra-2xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
@@ -59,7 +64,6 @@
   align-items: center;
   gap: 2px;
   min-height: var(--toque-min);
-  padding-left: var(--espacio-2);
   color: var(--primario);
   font-size: var(--letra-sm);
   font-weight: 600;

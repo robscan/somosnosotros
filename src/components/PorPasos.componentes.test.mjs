@@ -68,7 +68,28 @@ before(async () => {
           </Hoja>
         );
       }
-      createRoot(document.getElementById('root')).render(<Armazon>{q.has('hoja') ? <ConHoja /> : <Paso />}</Armazon>);
+      // ?pasos=1: dos pasos, como «¿Dónde es?» (un buscador y «Estoy aquí») y «¿Es aquí?» (un paso largo con su campo al fondo, que toma el
+      // foco solo al llegar, y su pie).
+      function DosPasos() {
+        const [paso, setPaso] = React.useState('a');
+        return (
+          <PorPasos titulo="Publicar" paso={paso} direccion={null} avance={0.5} salida={{href:'/', texto:'Salir'}} pregunta={paso === 'a' ? '¿Dónde es?' : '¿Es aquí?'}>
+            {paso === 'a' ? (
+              <>
+                <label className="campo"><input type="text" aria-label="Buscar" /></label>
+                <button type="button" onClick={() => setPaso('b')}>Estoy aquí</button>
+              </>
+            ) : (
+              <>
+                <div style={{height: 540, background: 'var(--fondo-mapa)'}} role="img" aria-label="Mapa de prueba" />
+                <label className="campo"><input type="text" aria-label="Nombre del lugar" autoFocus /></label>
+                <PiePaso><button type="button">Sí, es aquí</button></PiePaso>
+              </>
+            )}
+          </PorPasos>
+        );
+      }
+      createRoot(document.getElementById('root')).render(<Armazon>{q.has('hoja') ? <ConHoja /> : q.has('pasos') ? <DosPasos /> : <Paso />}</Armazon>);
     `,
     },
     plugins: [
@@ -133,7 +154,7 @@ async function pagina(t, consulta = "") {
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
   await p.goto(origin + consulta);
-  await p.getByRole("textbox", { name: consulta.includes("hoja") ? "Campo de la hoja" : "Nombre del lugar" }).waitFor();
+  await p.getByRole("textbox", { name: consulta.includes("hoja") ? "Campo de la hoja" : consulta.includes("pasos") ? "Buscar" : "Nombre del lugar" }).waitFor();
   return p;
 }
 /** Abre el teclado como el iPhone: enfoca el campo y, cuando el teclado ya subió, encoge el área visible. Espera unos cuadros a que todo se asiente. */
@@ -406,4 +427,56 @@ test("en una hoja, el campo del fondo de su cuerpo queda dentro del área visibl
     return { top: campo.top, bottom: campo.bottom, visible: ventana - teclado };
   }, [VENTANA, TECLADO]);
   assert.ok(c.top >= 0 && c.bottom <= c.visible, `el campo de la hoja se ve entero (arriba ${c.top}, abajo ${c.bottom}, área visible ${c.visible})`);
+});
+
+/** Anota cada `window.scrollTo` que pide la página (el «arriba» de `PorPasos` al cambiar de paso). `useCampoVisible` desplaza con `scrollBy`. */
+const anotarSubidas = (p) =>
+  p.evaluate(() => {
+    window.__subidas = [];
+    const original = window.scrollTo.bind(window);
+    window.scrollTo = (...args) => {
+      window.__subidas.push(args[0]);
+      return original(...args);
+    };
+  });
+/**
+ * Toca «Estoy aquí» sin quitarle el foco al campo, como en el iPhone (Safari no enfoca un botón al tocarlo), y espera a que el paso nuevo se
+ * asiente. Antes comprueba que en el centro del botón esté el botón (`elementFromPoint`): que nada encima se coma el toque.
+ */
+async function estoyAqui(p) {
+  await p.evaluate(() => {
+    const boton = [...document.querySelectorAll("button")].find((b) => b.textContent === "Estoy aquí");
+    const r = boton.getBoundingClientRect();
+    const encima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    if (!boton.contains(encima)) throw new Error(`«Estoy aquí» está tapado por ${encima?.outerHTML.slice(0, 80)}`);
+    boton.click();
+  });
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).waitFor();
+  await p.evaluate(() => new Promise((ok) => setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok))), 50)));
+}
+
+test("al cambiar de paso con el teclado abierto (tocar «Estoy aquí» con el buscador enfocado), el campo del paso nuevo toma el foco y queda a la vista: el paso no sube la página (OL-373)", async (t) => {
+  const p = await pagina(t, "?pasos=1");
+  await abrirTeclado(p, "Buscar");
+  await anotarSubidas(p);
+  await estoyAqui(p);
+  const r = await p.evaluate(() => ({ foco: document.activeElement?.getAttribute("aria-label"), subidas: window.__subidas }));
+  assert.equal(r.foco, "Nombre del lugar", "el campo del paso nuevo tiene el foco");
+  // Antes, `PorPasos` subía la página al cambiar de paso aunque el campo nuevo ya tuviera el foco: si eso llegaba después de que
+  // `useCampoVisible` lo llevara a la vista, lo deshacía y el campo quedaba bajo el pie o el teclado (iPhone, letra grande, bitácora 404).
+  assert.deepEqual(r.subidas, [], `con el teclado abierto el paso no sube la página (pidió ${JSON.stringify(r.subidas)})`);
+  const c = await cajas(p, "Nombre del lugar");
+  assert.equal(c.atributo, true, "el teclado sigue abierto");
+  assert.ok(c.campo.top >= c.barraBottom && c.campo.bottom <= c.pie.top, `el campo se ve entre la barra y el pie (va de ${c.campo.top} a ${c.campo.bottom}; barra ${c.barraBottom}, pie ${c.pie.top}): ${JSON.stringify(c)}`);
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en el borde del área visible (${c.pie.bottom}, área ${c.visible})`);
+});
+
+test("sin teclado, al cambiar de paso la página sube arriba como siempre, aunque el campo del paso nuevo tome el foco solo", async (t) => {
+  const p = await pagina(t, "?pasos=1");
+  await anotarSubidas(p);
+  await estoyAqui(p);
+  const r = await p.evaluate(() => ({ foco: document.activeElement?.getAttribute("aria-label"), subidas: window.__subidas, y: window.scrollY }));
+  assert.equal(r.foco, "Nombre del lugar");
+  assert.deepEqual(r.subidas, [{ top: 0 }], "sube arriba una vez");
+  assert.equal(r.y, 0);
 });

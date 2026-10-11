@@ -15,6 +15,12 @@ type Props = {
   titulo: string;
   /** El botón de la derecha (Voy, Seguir): hermano del enlace, nunca dentro de él. */
   accion?: ReactNode;
+  /**
+   * El botón todavía no llega (la cuenta se lee en el teléfono, después del primer pintado): su sitio queda guardado, vacío. Así el texto
+   * no cambia de ancho cuando llega, ni salta, y Safari no deja el renglón con el alto que tenía antes (con la letra grande, el texto se
+   * montaba sobre el renglón siguiente; OL-373).
+   */
+  accionEnEspera?: boolean;
   /** Lo que hace el toque además de llevar a `href` (quien lo pone puede frenar la navegación: la ficha se abre en otro sitio). */
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   /**
@@ -30,7 +36,7 @@ type Props = {
  * con icono a la derecha, y el botón de acción (OL-104, bitácora 139) a la derecha del todo. Las otras tres pieles del
  * renglón (dato, ajuste y resuelto) son las clases de `Renglon.module.css`.
  */
-export default function Renglon({ href, foto, redonda = false, perezosa = false, titulo, accion, onClick, children }: Props) {
+export default function Renglon({ href, foto, redonda = false, perezosa = false, titulo, accion, accionEnEspera = false, onClick, children }: Props) {
   return (
     <li className={styles.lista}>
       <Link href={href} className={styles.frente} onClick={onClick}>
@@ -38,7 +44,7 @@ export default function Renglon({ href, foto, redonda = false, perezosa = false,
         <b>{titulo}</b>
         <small>{children}</small>
       </Link>
-      {accion}
+      {accion ?? (accionEnEspera && <span className={styles.accionEnEspera} aria-hidden="true" />)}
     </li>
   );
 }

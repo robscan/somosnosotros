@@ -17,6 +17,7 @@
       { "archivo": "app/eventos/SelectorQuien.module.css", "selector": ".elegido > svg", "porque": "Permanente: la ✕ descuenta su aire interno para quedar donde quedaba la letra." },
       { "archivo": "app/obra/[id]/mando/mando.module.css", "selector": ".tarjeta[aria-expanded=\"true\"] > span::after", "porque": "Permanente: centra a ojo el chevron girado del selector de la obra (1 px)." },
       { "archivo": "components/ui/Aviso.module.css", "selector": ".cerrar", "porque": "Permanente: la ✕ mide 44 para el toque y no debe engordar la fila del aviso." }
-    ]
+    ],
+    "remSuelto": []
   }
 }

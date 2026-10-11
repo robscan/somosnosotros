@@ -76,6 +76,10 @@
 .lista > button:not([aria-pressed="true"]) {
   color: var(--primario);
 }
+/* El sitio del botón mientras llega (`accionEnEspera`): del ancho del botón (ui/BotonRenglon, un control), sin alto ni nada que ver. */
+.accionEnEspera {
+  width: var(--control);
+}
 .foto {
   width: var(--foto-renglon);
   height: var(--foto-renglon);
@@ -136,6 +140,20 @@
 .frente > small > .envuelve {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+/* Con la letra grande (OL-373; la pantalla mide menos de 19¾ letras, ver globals.css) el cuándo ya no cabe en su renglón y se recortaba al borde
+   («Próximo: hoy · 18:0»): la línea pasa a texto corrido, con su icono delante, y parte renglón donde haga falta. */
+@container (max-width: 19.75rem) {
+  .frente > small > span {
+    display: block;
+    white-space: normal;
+  }
+  .frente > small > span > :not(:last-child) {
+    margin-right: var(--espacio-1); /* el aire que ponía el `gap` de la fila */
+  }
+  .frente > small > span > svg {
+    vertical-align: middle;
+  }
 }
 .frente > small b {
   color: var(--texto);
@@ -360,6 +378,27 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+/* Con la letra grande (OL-373; la pantalla mide menos de 19¾ letras, ver globals.css) el valor se partiría a media palabra junto a «Cambiar»: la
+   acción baja bajo el valor, que se queda con el ancho. */
+@container (max-width: 19.75rem) {
+  .resuelto {
+    grid-template-columns: var(--columna-icono) minmax(0, 1fr);
+    grid-template-areas:
+      "foto meta"
+      "foto titulo"
+      ". accion"
+      "cuerpo cuerpo";
+  }
+  .sinClave {
+    grid-template-areas:
+      "foto titulo"
+      ". accion"
+      "cuerpo cuerpo";
+  }
+  .resuelto > :where(:not(:first-child, b, small, .cuerpo, .nota)) {
+    justify-self: start;
+  }
 }
 .abierto {
   border-color: var(--texto);

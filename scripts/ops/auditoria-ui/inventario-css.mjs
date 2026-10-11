@@ -1,7 +1,8 @@
 // El inventario de los estilos como prueba (`npm run inventario`; doc 50 § 9, punto 1). Puro Node, sin navegador: recorre los
-// `.css` de `src` y falla si aparece un `z-index` que no es un token, un color literal, `100vw` o un margen negativo que no estén en
-// la lista de excepciones de `inventario.aceptado.json` (cada una con su porqué), o si el número de bloques duplicados o de medidas
-// en duro sube respecto al último aceptado. Que baje está bien: `npm run inventario -- --aceptar` anota las cifras de hoy.
+// `.css` de `src` y falla si aparece un `z-index` que no es un token, un color literal, `100vw`, un margen negativo o una medida en rem
+// fuera de los tokens (OL-373: lo que va en rem crece con la letra del teléfono, y el tope del doble vive en los tokens de `globals.css`)
+// que no estén en la lista de excepciones de `inventario.aceptado.json` (cada una con su porqué), o si el número de bloques duplicados o
+// de medidas en duro sube respecto al último aceptado. Que baje está bien: `npm run inventario -- --aceptar` anota las cifras de hoy.
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -15,6 +16,7 @@ const REGLAS = {
   colores: { titulo: "color literal fuera de globals.css", malo: (d, sinVar, definicion) => !definicion && /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|color-mix\(/i.test(sinVar) },
   vw100: { titulo: "100vw", malo: (d, sinVar) => /(^|[^\d.])100vw\b/.test(sinVar) },
   margenesNegativos: { titulo: "margen negativo", malo: (d) => d.prop.startsWith("margin") && /(^|[\s(,*/])-(?=[\d.]|var\()/.test(d.value) },
+  remSuelto: { titulo: "medida en rem fuera de los tokens", malo: (d, sinVar, definicion) => !definicion && /(^|[^\w.-])[\d.]+rem\b/.test(sinVar) },
 };
 const hallazgos = Object.fromEntries(Object.keys(REGLAS).map((k) => [k, []]));
 const usadas = new Set();

@@ -57,7 +57,7 @@ export default function ListaLugares({ grupos, km, seguidos, avisos, alAbrir, ac
       {primerosDeGrupos(grupos, mostrados).map((g) => (
         <Grupo key={g.clave} titulo={g.titulo} cuenta={g.total}>
           {g.lugares.map((l) => (
-            <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={accionesPendientes ? undefined : seguir.boton(l.id, l.nombre)} alAbrir={alAbrir ? () => alAbrir(l) : undefined} />
+            <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={accionesPendientes ? undefined : seguir.boton(l.id, l.nombre)} botonEnEspera={accionesPendientes} alAbrir={alAbrir ? () => alAbrir(l) : undefined} />
           ))}
         </Grupo>
       ))}

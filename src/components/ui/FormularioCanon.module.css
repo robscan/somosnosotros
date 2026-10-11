@@ -132,6 +132,7 @@
   position: absolute;
   width: 1px;
   height: 1px;
+  overflow: hidden; /* en Safari el botón propio del campo de archivo se sale de su caja de 1px y la página se desplazaba de lado (OL-373) */
   opacity: 0;
 }
 

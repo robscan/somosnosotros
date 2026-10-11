@@ -52,7 +52,7 @@
 .valorKpi {
   grid-area: valor;
   width: 70%;
-  height: 1.15rem;
+  height: calc(var(--letra-base) * 1.15); /* el renglón del valor de un KPI: su letra por su interlineado */
 }
 
 .corta {

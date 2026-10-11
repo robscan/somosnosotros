@@ -49,6 +49,22 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* Con la letra grande (OL-373; la pantalla mide menos de 19¾ letras, ver globals.css) el nombre ya no cabe entre la foto y las acciones sin partirse
+   a media palabra: la foto y las acciones van arriba y el nombre y la colonia, debajo, con la fila entera. */
+@container (max-width: 19.75rem) {
+  .cabecera {
+    grid-template-columns: var(--avatar-perfil) minmax(0, 1fr);
+    grid-template-areas:
+      "foto acciones"
+      "nombre nombre"
+      "colonia colonia";
+    row-gap: var(--espacio-2);
+  }
+  .acciones {
+    align-self: center;
+    justify-self: end;
+  }
+}
 /* 2. Sobre mí y el aviso de completar (solo la mía, si falta algo). */
 .sobreMi {
   margin-bottom: var(--espacio-2);
@@ -69,6 +85,17 @@
 }
 .completa > svg {
   color: var(--primario);
+}
+/* Con la letra grande (OL-373, ver globals.css) el botón baja bajo su frase, que se queda con el ancho. */
+@container (max-width: 19.75rem) {
+  .completa {
+    grid-template-columns: var(--columna-icono) minmax(0, 1fr);
+    row-gap: var(--espacio-2);
+  }
+  .completa > :last-child {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 .reservada {
   padding-block: var(--espacio-4);

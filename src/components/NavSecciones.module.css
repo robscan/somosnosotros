@@ -35,7 +35,7 @@
   gap: 3px;
   color: var(--texto-suave);
   text-decoration: none;
-  font-size: var(--letra-2xs);
+  font-size: min(var(--letra-2xs), var(--letra-tope-tira)); /* crece con la letra hasta el tope de las tiras (globals.css): la barra no crece */
   font-weight: 600;
   letter-spacing: 0.02em;
   -webkit-tap-highlight-color: transparent;

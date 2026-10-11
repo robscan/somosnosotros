@@ -28,6 +28,17 @@ function fijarAbajoVisible(px: number) {
 export function leerAbajoVisible(): number {
   return abajoVisibleActual;
 }
+
+/** Lo que vuelve a llevar a la vista el campo enfocado, mientras `useCampoVisible` está montado. */
+let reasegurar: (() => void) | null = null;
+/**
+ * Vuelve a llevar a la vista el campo enfocado, en el cuadro siguiente. Para quien cambió lo que rodea al campo después de que este hook lo
+ * colocara: al cambiar de paso con el teclado abierto (`PorPasos`, OL-373), el campo del paso nuevo toma el foco al montarse y se coloca
+ * antes de que el pie del paso nuevo publique su alto (`--alto-pie`), así que quedaba debajo del pie.
+ */
+export function reasegurarCampo() {
+  reasegurar?.();
+}
 /** A cuántos px del borde de abajo de la ventana termina lo que se ve (0 sin teclado): lo mismo que `--abajo-visible`. */
 export function useAbajoVisible(): number {
   return useSyncExternalStore(
@@ -152,9 +163,12 @@ export default function useCampoVisible() {
     vv?.addEventListener("resize", alCambiarElArea);
     vv?.addEventListener("scroll", alCambiarElArea);
     for (const evento of EVENTOS_DE_CAPACITOR) window.addEventListener(evento, alTecladoDeCapacitor);
+    // Dos cuadros después, como al cambiar el área: el aire de abajo que suma el pie nuevo (`--alto-pie`) tarda un cuadro en contar con «reducir movimiento».
+    reasegurar = () => requestAnimationFrame(() => requestAnimationFrame(() => asegurar(false)));
     // El campo que ya está enfocado al montar (un `autoFocus` que se hidrató antes que este efecto).
     enfocado(document.activeElement);
     return () => {
+      reasegurar = null;
       document.removeEventListener("focusin", alEnfocar);
       document.removeEventListener("focusout", alSoltar);
       vv?.removeEventListener("resize", alCambiarElArea);
