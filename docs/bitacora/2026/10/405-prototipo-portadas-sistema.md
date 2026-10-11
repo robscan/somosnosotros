@@ -249,6 +249,12 @@ Un tropiezo que salió aquí: el porqué de la Propuesta estaba dentro del resum
   - El respaldo por id dejó 5 de 11 en amarillo, y Una vez más (mostaza de su cartel) cae junto a Reflejo atemporal (amarillo de respaldo).
   - Una regla para la pieza de código: «si la vecina del carril tiene el mismo tono, esta toma el respaldo». Tiene un costo: el color de un evento cambiaría según el carril.
 
+## Comentarios del founder
+
+1. **El chip en su propio renglón** (2026-10-11, sobre «Desierto» en «Tus planes»): «este va en otra linea arriba, no jutes». En las portadas del sistema, el chip («Te interesa», «2 van») iba en el mismo renglón que la ceja («EXPO»). Ahora va solo, arriba de la ceja, en todas las portadas del sistema: `.renglon` pasa de una fila que se parte a una columna. La figura se recalcula y queda un poco más arriba, porque la zona del título crece un renglón.
+   - `28-comentario-chip-en-su-renglon.png`: la Propuesta al abrir. «Desierto» dice «Te interesa», abajo «EXPO» y abajo el título; el taller ya llevaba «2 van» solo porque su ceja es larga, y sigue igual.
+   - `29-comentario-chip-festivales.png`: el carril «Festivales y expos» con Verbena y Cinema, sin chip: no cambian. Contraste medido de los títulos a la vista: 5,1:1 y 5,3:1.
+
 ## Lo que recomiendo
 
 **La Propuesta:** P1 + A + «Cartel» con respaldo + título sobre la portada + en todo Inicio + P7, sin P6 y sin P8.

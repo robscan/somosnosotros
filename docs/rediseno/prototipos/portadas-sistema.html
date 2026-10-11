@@ -193,8 +193,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .portada.sistema.sin-zona { grid-template-areas: "simbolo fecha" "campo campo" "chip chip"; }
 .portada.sistema > .figura { grid-area: 1 / 1 / -1 / -1; display: block; width: 100%; height: var(--foto); }
 .portada.sistema > .zona { grid-area: zona; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "renglon" "titulo"; align-content: end; row-gap: 3px; min-width: 0; padding: var(--espacio-3); }
-/* El chip y la ceja comparten renglón (si no caben, la ceja baja): así el chip no le quita a la figura un renglón entero. */
-.portada.sistema .renglon { grid-area: renglon; display: flex; flex-wrap: wrap; align-items: center; gap: var(--espacio-1) var(--espacio-2); min-width: 0; }
+/* El chip va en su propio renglón, arriba de la ceja (founder, 11 de oct: «este va en otra línea arriba, no juntes»). */
+.portada.sistema .renglon { grid-area: renglon; display: grid; justify-items: start; row-gap: var(--espacio-1); min-width: 0; }
 .portada.sistema .renglon > .ceja { margin: 0; color: var(--tinta); }
 .portada.sistema .titulo-sobre { grid-area: titulo; }
 .titulo-sobre { display: block; justify-self: stretch; max-height: calc(2 * 1.06em); overflow: hidden; color: var(--tinta); font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.06; overflow-wrap: normal; }
