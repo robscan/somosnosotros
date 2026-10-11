@@ -255,7 +255,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
 .hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
 .resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
-.preajustes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
 .preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); }
 .preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
 .preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
@@ -345,7 +345,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       <div class="resumen">
         <div class="preajustes" role="group" aria-label="Preajustes">
           <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción</small></button>
-          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>recomendada</small></button>
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>11 de oct</small></button>
+          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del agente</small></button>
           <button type="button" data-preset="minima" aria-pressed="false">Mínima<small>solo un carril</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
@@ -752,6 +753,7 @@ const Portadas = (() => {
     hoy: 'Producción: carteles con mucho texto que a este tamaño no se leen, la foto del lugar repetida y, sin imagen, el degradado (E10), cuyo título baja hasta 2,5:1.',
     propuesta: 'Por qué: una figura grande por clase se reconoce de un vistazo (Prägnanz) y el arreglo cambia de tarjeta en tarjeta sin cambiar la figura (semejanza); el color sale del cartel y distingue cada tarjeta; el título va dentro, en su zona sin figuras, a 5:1 o más; en todo Inicio, para que un taller se vea igual en cada carril; y el evento sin imagen entra al mismo sistema, sin figura, para no confundirse.',
     minima: 'Lo menos que cambia: solo el carril «Festivales y expos» y el título debajo, como lo firmado.',
+    firmada: 'La elegida por el founder el 11 de oct: «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8». Patrones a la lawsofux con el color de cada cartel, el título dentro de la portada, en todo Inicio, el evento sin imagen en el mismo sistema y las figuras que reaccionan al teléfono.',
   };
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...HOY } },
@@ -760,6 +762,8 @@ const Portadas = (() => {
     propuesta: { nombre: 'Propuesta', e: { ...HOY, p1: true, p4: true, p5: true, p7: true } },
     // Lo mínimo: la portada solo en «Festivales y expos» y el título debajo, como lo firmado.
     minima: { nombre: 'Mínima', e: { ...HOY, p1: true, p4: false, p5: false } },
+    // La elegida por el founder (11 de oct): «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8».
+    firmada: { nombre: 'Firmada', e: { ...HOY, p1: true, p2: true, p4: true, p5: true, p7: true, p8: true } },
   };
   const EJERCICIOS = [
     { k: 'p1', t: 'P1 · Portada del sistema', d: 'Festival, exposición y taller llevan una portada hecha por la app en vez del cartel (el cartel sigue en la ficha y en la historia): un color plano, la figura de su clase y, con P4, el título dentro.', f: 'Founder (11 de oct): «portadas del sistema […] figuras geométricas (como ley de Prägnanz)».' },
@@ -786,12 +790,12 @@ const Portadas = (() => {
   };
   const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${listaDe(e) || 'nada'})`; };
 
-  const LLAVE_ESTADO = 'portadas-sistema:estado:1';
+  const LLAVE_ESTADO = 'portadas-sistema:estado:2';
   const LLAVE_TIEMPOS = 'portadas-sistema:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
 
-  const estado = { e: { ...PRESETS.propuesta.e }, decisiones: new Map(Object.entries(D.asistencias)), muestrario: false };
+  const estado = { e: { ...PRESETS.firmada.e }, decisiones: new Map(Object.entries(D.asistencias)), muestrario: false };
   const guardado = leer(LLAVE_ESTADO);
   if (guardado && typeof guardado === 'object') for (const k of CLAVES) if (k in guardado) estado.e[k] = k === 'p3' ? (['cartel', 'bauhaus', 'propias'].includes(guardado.p3) ? guardado.p3 : 'cartel') : !!guardado[k];
   const desdeEnlace = location.hash.slice(1);
@@ -1388,7 +1392,7 @@ const Portadas = (() => {
     { id: 'festival', texto: '¿Qué festival está pasando?' },
     { id: 'expo', texto: 'Encuentra una expo que cierre en noviembre' },
   ];
-  const NOMBRES = ['Hoy', 'Propuesta', 'Mínima'];
+  const NOMBRES = ['Hoy', 'Firmada', 'Propuesta', 'Mínima'];
   let prueba = null;
   const segundos = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
   const tiempos = () => { const t = leer(LLAVE_TIEMPOS); return t && typeof t === 'object' ? t : {}; };

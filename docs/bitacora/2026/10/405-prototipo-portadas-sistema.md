@@ -255,6 +255,24 @@ Un tropiezo que salió aquí: el porqué de la Propuesta estaba dentro del resum
    - `28-comentario-chip-en-su-renglon.png`: la Propuesta al abrir. «Desierto» dice «Te interesa», abajo «EXPO» y abajo el título; el taller ya llevaba «2 van» solo porque su ceja es larga, y sigue igual.
    - `29-comentario-chip-festivales.png`: el carril «Festivales y expos» con Verbena y Cinema, sin chip: no cambian. Contraste medido de los títulos a la vista: 5,1:1 y 5,3:1.
 
+## Firma (2026-10-11)
+
+El founder eligió la combinación: «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8». Es el preajuste nuevo **«Firmada»**, con el que abre la página. Se diferencia de la «Propuesta» del agente en dos puntos:
+
+- **Patrones (P2 B) en vez de una figura por clase:** anidados, retícula o ritmo, a la lawsofux, con el color de cada cartel. El agente había visto que a 165 px los patrones se leen como textura; el founder los prefiere.
+- **Las figuras reaccionan al teléfono (P8),** que el agente recomendaba dejar fuera por el permiso, la batería y el roce con el desplazamiento.
+
+Lo demás se queda como en la propuesta: el color del cartel con respaldo, el título dentro de la portada, en todo Inicio, el evento sin imagen en el mismo sistema y el chip en su propio renglón (comentario 1). El contraste del título en las 26 portadas va de 5,0:1 a 9,5:1.
+
+**Por decidir antes del código:**
+1. **Cómo pide la app el permiso del giroscopio en iPhone.** Safari solo lo pide tras un toque, y en Android no hace falta permiso. El arrastre con el dedo del prototipo no pasa a la app, porque compite con el desplazamiento.
+2. **Si dos tarjetas vecinas pueden compartir color.** Carteles parecidos dan cafés seguidos y el respaldo amarillo se repite. La regla de «vecinas distintas» lo evita, a cambio de que un evento cambie de color según el carril.
+
+Capturas de la firmada:
+- `30-firmada-pliegue.png`: «Tus planes». El taller con una hilera de triángulos en escalones de olivo y uno negro, «2 van» solo en su renglón, «TALLER · SESIÓN 2 DE 4» y el título. La expo «Desierto» con cuadros anidados en azul pizarra y el centro crema, «Te interesa», «EXPO» y el título.
+- `31-firmada-esta-semana.png`: «Esta semana» con eventos comunes que llevan su foto, sin cambio, y debajo «Festivales y expos».
+- `32-firmada-festivales.png`: «Festivales y expos». Verbena con círculos concéntricos en café y el punto crema; Cinema con una hilera de círculos que crecen, en rojo.
+
 ## Lo que recomiendo
 
 **La Propuesta:** P1 + A + «Cartel» con respaldo + título sobre la portada + en todo Inicio + P7, sin P6 y sin P8.
