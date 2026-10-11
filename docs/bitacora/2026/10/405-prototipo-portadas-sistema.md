@@ -254,6 +254,11 @@ Un tropiezo que salió aquí: el porqué de la Propuesta estaba dentro del resum
 1. **El chip en su propio renglón** (2026-10-11, sobre «Desierto» en «Tus planes»): «este va en otra linea arriba, no jutes». En las portadas del sistema, el chip («Te interesa», «2 van») iba en el mismo renglón que la ceja («EXPO»). Ahora va solo, arriba de la ceja, en todas las portadas del sistema: `.renglon` pasa de una fila que se parte a una columna. La figura se recalcula y queda un poco más arriba, porque la zona del título crece un renglón.
    - `28-comentario-chip-en-su-renglon.png`: la Propuesta al abrir. «Desierto» dice «Te interesa», abajo «EXPO» y abajo el título; el taller ya llevaba «2 van» solo porque su ceja es larga, y sigue igual.
    - `29-comentario-chip-festivales.png`: el carril «Festivales y expos» con Verbena y Cinema, sin chip: no cambian. Contraste medido de los títulos a la vista: 5,1:1 y 5,3:1.
+2. **«No pude ver efecto de giro del teléfono»** (2026-10-11). El giro pedía tres cosas que no se veían. Primero, abrir el enlace de prueba, porque la página de comentarios no recibe el sensor. Segundo, encender P8, que en la versión 2 venía apagado. Tercero, tocar «Activar el giroscopio», escondido en la hoja de ejercicios. Además no se mueve con «Reducir movimiento» encendido en el iPhone. Ahora, con P8 encendido (la firmada lo trae), sale sobre el teléfono un botón **«Activar el giro»** abajo a la izquierda, que pide el permiso del iPhone. Si a los 2,5 s no llega ningún evento, dice que esta página no lo recibe y que se abra con el enlace de prueba. Con «Reducir movimiento», dice dónde apagarlo. Cuando llega el giro, el botón se va y avisa «Giro activo». Desde 760 px no sale, porque ahí no hay giroscopio.
+   - `33-giro-boton.png`: la firmada al abrir, con «Activar el giro» abajo a la izquierda, junto al botón de ejercicios, sin encimarse.
+   - `34-giro-no-llega.png`: tras tocarlo en Chrome, sin giroscopio: «No llega el giro: esta página no lo recibe. Ábrela con el enlace de prueba».
+   - `35-giro-activo.png`: con dos eventos de orientación sintéticos, el botón se fue y las figuras de adelante se corrieron (`translate(3.98 1.91)`).
+   - `36-giro-reducir-movimiento.png`: con «Reducir movimiento», el aviso de dónde apagarlo, sin acción.
 
 ## Firma (2026-10-11)
 

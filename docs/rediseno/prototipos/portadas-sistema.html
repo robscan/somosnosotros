@@ -240,6 +240,10 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4) 0 var(--espacio-3); border-radius: var(--radio-pildora); background: var(--pg-flotante); color: var(--pg-flotante-texto); font-size: var(--letra-sm); font-weight: 700; box-shadow: var(--sombra-flotante); }
 .fab span { color: var(--pg-flotante-suave); font-weight: 600; }
 .fab .i { width: 20px; height: 20px; }
+/* P8 a la vista: el botón para pedir el giroscopio (en iPhone solo se pide tras un toque) y, si no llega, el porqué. */
+.giro { position: fixed; left: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: min(240px, calc(100% - 2 * var(--espacio-4) - 200px)); min-height: var(--toque); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-acento); color: var(--pg-acento-texto); font-size: var(--letra-sm); font-weight: 700; line-height: 1.2; text-align: left; box-shadow: var(--sombra-flotante); }
+.giro.aviso-giro { background: var(--pg-flotante); color: var(--pg-flotante-texto); font-weight: 600; font-size: var(--letra-xs); }
+.giro:disabled { cursor: default; }
 .crono { position: fixed; left: var(--espacio-4); right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 41; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "tiempo tarea" "tiempo pista"; column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-flotante); color: var(--pg-flotante-texto); box-shadow: var(--sombra-flotante); text-align: left; }
 .crono b { grid-area: tiempo; font-size: var(--letra-2xl); font-variation-settings: var(--ancho-titulo); font-variant-numeric: tabular-nums; min-width: 3.4em; }
 .crono span { grid-area: tarea; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }
@@ -314,7 +318,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
 @media (min-width: 760px) {
   .hoja { position: relative; left: auto; right: auto; bottom: auto; z-index: auto; align-self: stretch; height: calc(100vh - 2 * var(--espacio-4)); height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border: 1px solid var(--pg-borde); border-radius: var(--radio-grande); box-shadow: none; transform: none; visibility: visible; transition: none; }
-  .asa, .cerrar, .fab, .crono, .velo { display: none; }
+  .asa, .cerrar, .fab, .crono, .velo, .giro { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .anillo.ahora::before { animation: none; }
@@ -397,6 +401,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 </main>
 <div class="velo" id="velo"></div>
 <button class="fab" id="fab" type="button" aria-controls="hoja" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ejercicios <span id="fab-combinacion"></span></button>
+<button class="giro" id="giro" type="button" hidden>Activar el giro</button>
 <button class="crono" id="crono" type="button" hidden><b id="crono-tiempo">0,0</b><span id="crono-tarea"></span><small>Toca aquí al encontrarlo</small></button>
 <svg width="0" height="0" style="position: absolute" aria-hidden="true"><symbol id="sn" viewBox="0 0 1035 795"><path id="sn-trazo"/></symbol></svg>
 
@@ -1212,7 +1217,9 @@ const Portadas = (() => {
     if (!inclinacion.base) inclinacion.base = { gamma: ev.gamma, beta: ev.beta };
     // Desde la postura en que se activó: ±25° llenan el recorrido. Inclinar a la derecha corre las figuras a la derecha; hacia ti, hacia abajo.
     fijarDestino(((ev.gamma - inclinacion.base.gamma) / 25) * MAX_UNIDADES, ((ev.beta - inclinacion.base.beta) / 25) * MAX_UNIDADES);
+    const primera = inclinacion.activo !== 'giroscopio';
     inclinacion.activo = 'giroscopio';
+    if (primera) { pintarGiro(); avisar(telMix, 'Giro activo: inclina el teléfono'); }
     pintarEstadoP8(`Giroscopio activo · ${Math.round(ev.gamma)}° a los lados, ${Math.round(ev.beta)}° al frente`);
   }
   let escuchando = false;
@@ -1221,14 +1228,35 @@ const Portadas = (() => {
     try {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         const r = await DeviceOrientationEvent.requestPermission();
-        if (r !== 'granted') { pintarEstadoP8('Permiso negado: queda el arrastre con el dedo.'); return; }
+        if (r !== 'granted') { pintarEstadoP8('Permiso negado: queda el arrastre con el dedo.'); avisoGiro('Permiso negado: recarga la página y acepta el aviso del iPhone'); return; }
       }
       if (!escuchando) { addEventListener('deviceorientation', alOrientar); escuchando = true; }
       inclinacion.base = null;
       pintarEstadoP8('Esperando al giroscopio… Si nada se mueve, esta página no lo recibe (pasa dentro de un marco): mantén el dedo sobre una portada y arrástralo.');
-    } catch (e) { pintarEstadoP8(`No se pudo activar: ${e.message}`); }
+    } catch (e) { pintarEstadoP8(`No se pudo activar: ${e.message}`); avisoGiro(`No se pudo activar el giro: ${e.message}`); }
   }
   function pintarEstadoP8(texto) { const el = $('estado-p8'); if (el) el.textContent = texto; }
+  // El botón del giro, a la vista sobre el teléfono: con P8 encendido y mientras no llegue el giroscopio. Si no puede llegar, dice por qué.
+  const giro = $('giro');
+  let esperaGiro = 0;
+  function avisoGiro(texto) { giro.textContent = texto; giro.classList.add('aviso-giro'); giro.dataset.estado = 'aviso'; giro.disabled = false; giro.hidden = false; }
+  function pintarGiro() {
+    const quiere = !!(estado.e.p1 && estado.e.p8);
+    if (!quiere || modo() !== 'movil' || inclinacion.activo === 'giroscopio' || prueba) { giro.hidden = true; return; }
+    giro.hidden = false;
+    if (reducirMovimiento.matches) { giro.textContent = 'Tu iPhone tiene «Reducir movimiento»: apágalo en Ajustes › Accesibilidad › Movimiento para ver el giro'; giro.classList.add('aviso-giro'); giro.disabled = true; return; }
+    giro.disabled = false;
+    if (!giro.dataset.estado) { giro.textContent = 'Activar el giro'; giro.classList.remove('aviso-giro'); }
+  }
+  giro.addEventListener('click', () => {
+    if (giro.disabled) return;
+    giro.dataset.estado = 'esperando';
+    giro.classList.remove('aviso-giro');
+    giro.textContent = 'Esperando al giro…';
+    activarGiroscopio();
+    clearTimeout(esperaGiro);
+    esperaGiro = setTimeout(() => { if (inclinacion.eventos === 0 && giro.dataset.estado === 'esperando') avisoGiro('No llega el giro: esta página no lo recibe. Ábrela con el enlace de prueba'); }, 2500);
+  });
   // El respaldo: mantener el dedo 250 ms sobre una portada y arrastrar (si se mueve antes, es un desplazamiento y no se toca).
   const arrastre = { el: null, x0: 0, y0: 0, temporizador: 0, sostenido: false, id: null };
   function alBajar(ev) {
@@ -1338,6 +1366,7 @@ const Portadas = (() => {
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta» y con «Hoy».';
     $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}`;
     $('fab-combinacion').textContent = `· ${p ? nombre : 'personalizada'}`;
+    pintarGiro();
   }
   function aplicar(e) {
     estado.e = { ...HOY, ...e };
@@ -1418,6 +1447,7 @@ const Portadas = (() => {
     if (estado.muestrario) verMuestrario(false);
     alPrincipio();
     prueba = { tarea: id, inicio: performance.now(), intervalo: 0 };
+    pintarGiro();
     document.body.classList.add('en-prueba');
     if (modo() === 'movil') { cerrarHoja(); fab.hidden = true; $('crono-tarea').textContent = tarea.texto; $('crono').hidden = false; }
     const tic = () => { if (!prueba) return; const ms = performance.now() - prueba.inicio; $('crono-tiempo').textContent = (ms / 1000).toFixed(1).replace('.', ','); const b = $(`b-${id}`); if (b) b.textContent = `Parar ${segundos(ms)}`; };
@@ -1434,6 +1464,7 @@ const Portadas = (() => {
     document.body.classList.remove('en-prueba');
     $('crono').hidden = true;
     fab.hidden = false;
+    pintarGiro();
     if (guardarTiempo) {
       const t = tiempos();
       const k = claveDe(estado.e);
@@ -1476,6 +1507,7 @@ const Portadas = (() => {
     modoAnterior = m;
     for (const tel of [telMix, telHoy]) { recortarTitulos(tel); dibujarPortadas(tel); }
     programarMedida();
+    pintarGiro();
   }
   let temporizadorAjuste = 0;
   addEventListener('resize', () => { clearTimeout(temporizadorAjuste); temporizadorAjuste = setTimeout(ajustar, 120); });
