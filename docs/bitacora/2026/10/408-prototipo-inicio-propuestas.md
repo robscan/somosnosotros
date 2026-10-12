@@ -1,7 +1,7 @@
 # 408 · Prototipo con propuestas para las pruebas de usuario (OL-377)
 
 **Fecha:** 2026-10-12. **Rama:** `prototipo-inicio-propuestas`, base `origin/main` (`152ea11a`). **Operador:** Gestor de cambios VI (Fable 5.1), sin agentes. **Sin migración ni código de la app.**
-**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 9, «Propuesta 9 · Ya fui en la ficha, foto grande»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
+**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 10, «Propuesta 10 · icono a la izquierda, Ya fui solo expos»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
 
 ## Qué pidió el founder (2026-10-12, pruebas de usuario con su iPhone)
 
@@ -31,14 +31,13 @@
 | **D1** | Destacados antes de «Tus planes», debajo de la fila «Ahora» | interruptor |
 | **D2** | Tamaño de Destacados (solo ese carril) | Grande (165, hoy) · **XL** (248, se ve una y media, título 19 px) · Ancho (350, una por pantalla, «como Instagram») |
 | **D3** | Solo eventos en Destacados: las expos que llegan por lo que sigue la persona bajan a «Festivales y expos»; la expo destacada por la administración sí entra | interruptor |
-| **I1** | Lo que te interesa | Chip (hoy) · **Icono arriba a la derecha** (el sello pasa a la izquierda) · Icono bajo el sello · Icono junto al título. «3 van» sigue como chip |
+| **I1** | Lo que te interesa | Chip (hoy) · **Icono arriba a la izquierda** (el sello se queda a la derecha; pedido del founder a las 10:25) · Icono arriba a la derecha (el sello pasa a la izquierda) · Icono bajo el sello · Icono junto al título. «3 van» sigue como chip |
 | **F1** | Bajo la tarjeta, primero cuándo (violeta) y luego dónde (gris) | interruptor |
-| **Y1** | «Ya fui» en la ficha: en la ficha de una expo o un festival que ya empezó y está en tus planes, el pie lleva «Ya fui» junto a «Te interesa» / «Vas»; al tocarlo sale de «Tus planes» (con «Deshacer» en el aviso) y queda para el historial | interruptor |
-| **F2** | En «Tus planes», el festival enseña el cartel del acto que la persona marcó; sin ninguno, su portada genérica | interruptor |
+| **Y1** | «Ya fui» solo en la ficha de una exposición que ya abrió y está en tus planes: el pie lleva «Ya fui» junto a «Te interesa» / «Vas»; al tocarlo sale de «Tus planes» (con «Deshacer» en el aviso) y queda para el historial. En un festival no aplica | interruptor |
 | **X1** | En la ficha del festival, lo que ya pasó | Todos juntos (hoy, con enlace a «Esto ya no está») · **Aparte, sin enlace** (sección «Ya pasó», en gris) · Aparte, como pasado (cada acto abre su ficha en pasado: lo que traerá el historial) |
 | **X2** | «Ya pasó» empieza plegado («Ya pasó · 5 actividades») | interruptor |
 
-Preajustes: **Hoy** (todo apagado), **Propuesta** (N foto grande · T1 completo · D1 · D2 XL · D3 · I1 arriba a la derecha · F1 · Y1 · F2 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
+Preajustes: **Hoy** (todo apagado), **Propuesta** (N foto grande · T1 completo · D1 · D2 XL · D3 · I1 arriba a la izquierda · F1 · Y1 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
 
 ## Lo que mide (medidor de la hoja, en Chrome a 390×844)
 
@@ -69,8 +68,8 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N foto grande · T1 completo 
 - `12-d2-grande-d1.png` — Destacados en grande (165) pero en la primera línea.
 - `21-t1-corto-hoy.png`, `22-t1-completo-a-oracion.png`, `23-t1-completo-tal-cual.png` — «Tus planes» con el título corto («Cinema»), completo a oración y completo tal cual («CINEMA: XV Festival de Cine…»).
 - `24-t2-tres-lineas.png` — el título completo en tres líneas (opción no firmada).
-- `25-f2-tus-planes.png` — «Tus planes» con CINEMA con el cartel de Chatbot Challenge.
-- `26-y1-ya-fui-en-la-ficha.png`, `27-y1-ya-fui-tocado.png` — el pie de la ficha del CINEMA con «Ya fui» junto a «Te interesa»; después de tocarlo, CINEMA ya no está en «Tus planes».
+- `25-i1-icono-arriba-izquierda.png` — «Tus planes» con el marcador arriba a la izquierda y el sello a la derecha.
+- `26-y1-ya-fui-en-la-ficha-expo.png`, `27-y1-ya-fui-tocado.png` — el pie de la ficha de «Mirar debajo de los pies» con «Ya fui» junto a «Te interesa»; después de tocarlo, la expo ya no está en «Tus planes».
 - `13-ficha-hoy-arriba.png` — la ficha del CINEMA como en producción (cabecera oscura, KPI, acciones).
 - `14-ficha-hoy-programa-con-pasados.png` — el programa de hoy: los 5 actos pasados mezclados y enlazados.
 - `15-ficha-aparte-plegado.png` — «Programa registrado: 11 actividades · 6 por venir» y «Ya pasó · 5 actividades · sin enlace» plegado.
@@ -81,7 +80,7 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N foto grande · T1 completo 
 
 ## Por confirmar con el founder (en la página, con comentarios)
 
-0b. **Y1/F2:** ¿«Ya fui» así, bajo la tarjeta, y el festival con el cartel de tu acto?
+0b. **Y1:** ¿«Ya fui» así, en el pie de la ficha de la expo?
 1. **N:** ¿dos líneas (19 de 36 cortados), columna ancha (10) o nombre al lado (7)?
 2. **D2:** ¿XL (se ve una y media) o ancho (una por pantalla)?
 3. **I1:** ¿el marcador arriba a la derecha con el sello a la izquierda, bajo el sello, o junto al título?
@@ -98,6 +97,8 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N foto grande · T1 completo 
 6. **«¿Cómo propones resolver esto?»** (10:14, sobre «Títulos cortados 31 de 60»). Versión 7: dos salidas medidas. T1 «Corto + el resto debajo»: el corto de título y el resto del texto de quien publicó en una línea gris (7 de 60 cortados, nada se pierde, pero el corto manda en la primera línea). T2 «Título en tres líneas»: el completo con una línea más (10 de 60; unos 18 px más por carril). Lo que no propongo: letra más chica (el founder pidió más grande) ni una cuarta línea. **Decisión del founder (10:20): «ok, el punto es: ¿de dónde sale corto? Si no lo pone el usuario dejaría el que tiene original. Lo de menos es que lo edite para que quepa» y «dejamos como está el título por ahora aunque se corte».** Firmado: el título completo tal cual lo escribió quien publicó, en dos líneas con «…»; sin título corto calculado. La opción «corto + el resto» se retiró en la versión 8; T2 queda apagada como opción. Consecuencia: `tituloCorto` deja de usarse en las tarjetas de Inicio (OL-378, PR #487, ya no se ve ahí).
 10. **«Este no debe ir aquí. Ponlo en la ficha»** (10:21, sobre el botón «Ya fui» bajo la tarjeta de CINEMA). Versión 9: el botón sale de la tarjeta y va al pie de la ficha, junto a «Te interesa» / «Vas», solo si la ficha está en tus planes y ya empezó; al tocarlo sale de «Tus planes» con «Deshacer».
 11. **«Probemos un tamaño más grande para generar más ancho y quepa más texto»** (10:22, sobre el avatar del MAC en Lugares de la semana). Versión 9: opción N «Foto grande» (88 px, columna de 108, nombre en dos líneas): 9 de 36 cortados; la Propuesta la lleva.
+12. **«Si esto anuncia un festival entonces va portada de festival; solo si voy al evento entonces me presenta portada de evento. Aquí no aplica “ya fui” porque aquí sí tenemos varios eventos por separado. “Ya fui” es solo para galerías»** (10:25, sobre CINEMA en Tus planes). Versión 10: F2 retirado (el festival siempre con su portada del sistema; el acto al que vas, con la suya); «Ya fui» solo en la ficha de una exposición (el prototipo gana un boceto de ficha de expo, con Horario y Dónde de contexto, para probarlo desde DESIERTO o Mirar debajo de los pies); en el festival no aparece.
+13. **«Prueba arriba a la izquierda»** (10:25, sobre I1). Versión 10: opción «Icono arriba a la izquierda», el marcador en la esquina del símbolo y el sello de fecha en su sitio a la derecha; la Propuesta la lleva.
 7. **«Si planeo ir a una expo y ya fui, ¿cómo hago que se mueva de mis planes? En el caso de los festivales, lo que quisiera ver aquí es el cartel del evento que sí me interesa (si es que existe); si no, la portada genérica»** (10:13, sobre Mirar debajo de los pies en Tus planes). Versión 7: **Y1** «Ya fui» (botón bajo la tarjeta de una expo o un festival ya empezado en Tus planes; al tocarlo sale del carril, aviso con «Deshacer», y queda para el historial: es la pieza 1 que sigue; en la app iría también en la ficha junto a «Voy») y **F2** (la tarjeta del festival en Tus planes con el cartel del acto marcado: CINEMA con el de Chatbot Challenge; sin acto con cartel, la portada del sistema).
 8. **«Re apruebo esta propuesta, pero ojo con los errores que te dije, no reconstruyas la pantalla completa para no echar a perder lo que está bien en prod»** (10:15, sobre «Ya pasó · 3 actividades · sin enlace» en el Ciclo Fellini). **Firmado parcial: X1 «aparte, sin enlace» con X2 plegado.** La pieza de código tocará solo el programa por día y el bloque «Ya pasó» de la ficha del festival; cabecera, KPI, acciones, Dónde y pie quedan como en producción.
 9. **«No se ve igual a prod, pero con que mantengas prod como está todo bien»** (10:16, sobre la cabecera de la ficha) y **«¿Esta me imagino que es una representación del mapa, verdad?»** (10:15, sobre «Dónde»): la cabecera y el «Dónde» del prototipo son bocetos de contexto (el «Dónde» resumido en una línea; en producción van la lista de sedes y el mapa); no se proponen cambios ahí.
