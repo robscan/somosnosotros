@@ -1,7 +1,7 @@
 # 408 · Prototipo con propuestas para las pruebas de usuario (OL-377)
 
 **Fecha:** 2026-10-12. **Rama:** `prototipo-inicio-propuestas`, base `origin/main` (`152ea11a`). **Operador:** Gestor de cambios VI (Fable 5.1), sin agentes. **Sin migración ni código de la app.**
-**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 8, «Propuesta 8 · título firmado»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
+**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 9, «Propuesta 9 · Ya fui en la ficha, foto grande»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
 
 ## Qué pidió el founder (2026-10-12, pruebas de usuario con su iPhone)
 
@@ -25,7 +25,7 @@
 
 | Clave | Qué cambia | Opciones |
 |---|---|---|
-| **N** | El nombre en los avatares de 64 | Una línea (hoy) · **Dos líneas** (cortadas en palabra) · Columna ancha (96 px, se ven 3,5) · Nombre al lado (foto de 48 y el nombre en dos líneas a su derecha, 168 px) |
+| **N** | El nombre en los avatares de 64 | Una línea (hoy) · Dos líneas (cortadas en palabra) · Columna ancha (96 px, se ven 3,5) · **Foto grande** (88 px, columna de 108, nombre en dos líneas) · Nombre al lado (foto de 48 y el nombre en dos líneas a su derecha, 168 px) |
 | **T1** | El título de la tarjeta | Corto (hoy: `tituloCorto` + `comoOracion`) · **Completo, tal cual lo escribió quien publicó** (dos líneas, cortado en palabra) · Completo a oración (las mayúsculas sostenidas a oración)  · **Firmado el 12 de oct: completo tal cual, en dos líneas aunque se corte** |
 | **T2** | Título en tres líneas antes de cortarse | interruptor |
 | **D1** | Destacados antes de «Tus planes», debajo de la fila «Ahora» | interruptor |
@@ -33,24 +33,24 @@
 | **D3** | Solo eventos en Destacados: las expos que llegan por lo que sigue la persona bajan a «Festivales y expos»; la expo destacada por la administración sí entra | interruptor |
 | **I1** | Lo que te interesa | Chip (hoy) · **Icono arriba a la derecha** (el sello pasa a la izquierda) · Icono bajo el sello · Icono junto al título. «3 van» sigue como chip |
 | **F1** | Bajo la tarjeta, primero cuándo (violeta) y luego dónde (gris) | interruptor |
-| **Y1** | «Ya fui»: en «Tus planes», una expo o un festival que ya empezó lleva un botón «Ya fui»; al tocarlo sale del carril (con «Deshacer» en el aviso) y queda para el historial | interruptor |
+| **Y1** | «Ya fui» en la ficha: en la ficha de una expo o un festival que ya empezó y está en tus planes, el pie lleva «Ya fui» junto a «Te interesa» / «Vas»; al tocarlo sale de «Tus planes» (con «Deshacer» en el aviso) y queda para el historial | interruptor |
 | **F2** | En «Tus planes», el festival enseña el cartel del acto que la persona marcó; sin ninguno, su portada genérica | interruptor |
 | **X1** | En la ficha del festival, lo que ya pasó | Todos juntos (hoy, con enlace a «Esto ya no está») · **Aparte, sin enlace** (sección «Ya pasó», en gris) · Aparte, como pasado (cada acto abre su ficha en pasado: lo que traerá el historial) |
 | **X2** | «Ya pasó» empieza plegado («Ya pasó · 5 actividades») | interruptor |
 
-Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · T1 completo · D1 · D2 XL · D3 · I1 arriba a la derecha · F1 · Y1 · F2 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
+Preajustes: **Hoy** (todo apagado), **Propuesta** (N foto grande · T1 completo · D1 · D2 XL · D3 · I1 arriba a la derecha · F1 · Y1 · F2 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
 
 ## Lo que mide (medidor de la hoja, en Chrome a 390×844)
 
-| | Hoy | Propuesta | Columna ancha | Nombre al lado |
-|---|---|---|---|---|
-| Nombres cortados (de 36: 21 lugares + 15 artistas) | 26 | 19 | 10 | 7 |
+| | Hoy | Dos líneas | Columna ancha | Foto grande | Nombre al lado |
+|---|---|---|---|---|---|
+| Nombres cortados (de 36: 21 lugares + 15 artistas) | 26 | 19 | 10 | 9 | 7 |
 | Altura hasta el título de Destacados | 623 px | 225 px | | |
 | Ancho de la tarjeta de Destacados | 165 px | 248 px (XL) · 350 (ancho) | | |
 | Actos pasados con enlace roto en la ficha del CINEMA | 5 | 0 | | |
 | Títulos de tarjeta cortados con «…» (de 60 en todos los carriles) | 7 (corto) | 31 (completo, firmado) · 10 (completo en tres líneas) | | |
 
-**Hallazgo:** dos líneas no bastan para que los nombres se lean: en la columna de 64 + 12 todavía se cortan 19 de 36 («Casa de Cultura del…», «Centro de Difusión…»). La columna ancha baja a 10 y el nombre al lado a 7; los que siguen cortados son los larguísimos («Centro de las Artes de San Luis Potosí Centenario (CEART)»). La propuesta lleva dos líneas porque no ensancha el carril; si el founder prefiere leerlos enteros, «Columna ancha» o «Nombre al lado» (el medidor lo enseña).
+**Hallazgo:** dos líneas no bastan para que los nombres se lean (la foto grande de 88 px, pedida por el founder a las 10:22, deja 9 de 36 y es la que lleva la Propuesta desde la versión 9): en la columna de 64 + 12 todavía se cortan 19 de 36 («Casa de Cultura del…», «Centro de Difusión…»). La columna ancha baja a 10 y el nombre al lado a 7; los que siguen cortados son los larguísimos («Centro de las Artes de San Luis Potosí Centenario (CEART)»). La propuesta lleva dos líneas porque no ensancha el carril; si el founder prefiere leerlos enteros, «Columna ancha» o «Nombre al lado» (el medidor lo enseña).
 
 ## Capturas (`docs/rediseno/capturas-408/`, 390×844, Chrome real)
 
@@ -60,6 +60,7 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · T1 completo 
 - `04-propuesta-lugares-dos-lineas.png` — nombres en dos líneas («Casa de Cultura del…»): se leen más, no todos.
 - `05-n-columna-ancha.png` — columna de 96: «Casa de Cultura del Barrio de…», «Museo de Arte Contemporáneo…».
 - `06-n-nombre-al-lado.png` — foto de 48 con el nombre al lado, en dos líneas.
+- `06b-n-foto-grande.png` — foto de 88 en columna de 108, nombre en dos líneas (9 de 36 cortados).
 - `07-i1-icono-arriba-derecha.png` — «Tus planes»: el marcador relleno arriba a la derecha y el sello a la izquierda, sin chip.
 - `08-i1-icono-bajo-el-sello.png` — el marcador debajo del sello.
 - `09-i1-icono-junto-al-titulo.png` — el marcador en el pie, a la derecha de la primera línea.
@@ -68,7 +69,8 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · T1 completo 
 - `12-d2-grande-d1.png` — Destacados en grande (165) pero en la primera línea.
 - `21-t1-corto-hoy.png`, `22-t1-completo-a-oracion.png`, `23-t1-completo-tal-cual.png` — «Tus planes» con el título corto («Cinema»), completo a oración y completo tal cual («CINEMA: XV Festival de Cine…»).
 - `24-t2-tres-lineas.png` — el título completo en tres líneas (opción no firmada).
-- `25-y1-f2-tus-planes.png`, `26-y1-ya-fui-tocado.png` — «Tus planes» con CINEMA con el cartel de Chatbot Challenge y los botones «Ya fui»; después de tocar «Ya fui» en CINEMA: sale del carril y el aviso ofrece «Deshacer».
+- `25-f2-tus-planes.png` — «Tus planes» con CINEMA con el cartel de Chatbot Challenge.
+- `26-y1-ya-fui-en-la-ficha.png`, `27-y1-ya-fui-tocado.png` — el pie de la ficha del CINEMA con «Ya fui» junto a «Te interesa»; después de tocarlo, CINEMA ya no está en «Tus planes».
 - `13-ficha-hoy-arriba.png` — la ficha del CINEMA como en producción (cabecera oscura, KPI, acciones).
 - `14-ficha-hoy-programa-con-pasados.png` — el programa de hoy: los 5 actos pasados mezclados y enlazados.
 - `15-ficha-aparte-plegado.png` — «Programa registrado: 11 actividades · 6 por venir» y «Ya pasó · 5 actividades · sin enlace» plegado.
@@ -94,6 +96,8 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · T1 completo 
 4. **«Esta no la considero propuesta formal porque está rota, los elementos de navegación se movieron y el fondo degradado abajo no está»** (09:46), con una captura de su iPhone de la ficha del Ciclo Fellini. Era la cabecera oscura de la ficha del festival del prototipo: Atrás y ··· quedaban a media cabecera (`align-content: end` empujaba todas las filas al pie) y el velo oscuro iba en `::before`, que el cartel (`position: absolute`, después en el DOM) tapaba; el título blanco quedaba sobre el cartel claro. Versión 5: la cabecera con la rejilla de producción (los botones en la primera fila, el cartel en medio, el título y los KPI abajo), el velo en `::after` con z-index sobre el cartel y lo demás encima.
 5. **«¿De dónde sacas este título corto? Me parece un campo adicional que no viene en el formulario (y no lo pondría). Podríamos usar el mismo título que ingresa el usuario? Entiendo que puede ser grande pero hay riesgo de imponerle un título que no le guste»** (09:49, sobre «CINEMA: El atractivo de la resistencia…»). No es un campo: lo calcula `tituloCorto` (lo que va antes de los dos puntos o de la primera coma) y `comoOracion` (mayúsculas sostenidas a oración), desde OL-360/OL-370. Añadido **T1** en la versión 6: corto (hoy), completo tal cual, completo a oración; la «Propuesta» lleva el título tal cual. Medido: con el título completo se cortan con «…» 31 de 60 tarjetas (con el corto, 7 de 61); el título entero siempre está en el nombre del enlace, la ficha y la historia. Si el founder firma T1 completo, OL-378 (`tituloCorto` salta el festival) deja de verse en Inicio aunque siga siendo correcto donde se use el corto.
 6. **«¿Cómo propones resolver esto?»** (10:14, sobre «Títulos cortados 31 de 60»). Versión 7: dos salidas medidas. T1 «Corto + el resto debajo»: el corto de título y el resto del texto de quien publicó en una línea gris (7 de 60 cortados, nada se pierde, pero el corto manda en la primera línea). T2 «Título en tres líneas»: el completo con una línea más (10 de 60; unos 18 px más por carril). Lo que no propongo: letra más chica (el founder pidió más grande) ni una cuarta línea. **Decisión del founder (10:20): «ok, el punto es: ¿de dónde sale corto? Si no lo pone el usuario dejaría el que tiene original. Lo de menos es que lo edite para que quepa» y «dejamos como está el título por ahora aunque se corte».** Firmado: el título completo tal cual lo escribió quien publicó, en dos líneas con «…»; sin título corto calculado. La opción «corto + el resto» se retiró en la versión 8; T2 queda apagada como opción. Consecuencia: `tituloCorto` deja de usarse en las tarjetas de Inicio (OL-378, PR #487, ya no se ve ahí).
+10. **«Este no debe ir aquí. Ponlo en la ficha»** (10:21, sobre el botón «Ya fui» bajo la tarjeta de CINEMA). Versión 9: el botón sale de la tarjeta y va al pie de la ficha, junto a «Te interesa» / «Vas», solo si la ficha está en tus planes y ya empezó; al tocarlo sale de «Tus planes» con «Deshacer».
+11. **«Probemos un tamaño más grande para generar más ancho y quepa más texto»** (10:22, sobre el avatar del MAC en Lugares de la semana). Versión 9: opción N «Foto grande» (88 px, columna de 108, nombre en dos líneas): 9 de 36 cortados; la Propuesta la lleva.
 7. **«Si planeo ir a una expo y ya fui, ¿cómo hago que se mueva de mis planes? En el caso de los festivales, lo que quisiera ver aquí es el cartel del evento que sí me interesa (si es que existe); si no, la portada genérica»** (10:13, sobre Mirar debajo de los pies en Tus planes). Versión 7: **Y1** «Ya fui» (botón bajo la tarjeta de una expo o un festival ya empezado en Tus planes; al tocarlo sale del carril, aviso con «Deshacer», y queda para el historial: es la pieza 1 que sigue; en la app iría también en la ficha junto a «Voy») y **F2** (la tarjeta del festival en Tus planes con el cartel del acto marcado: CINEMA con el de Chatbot Challenge; sin acto con cartel, la portada del sistema).
 8. **«Re apruebo esta propuesta, pero ojo con los errores que te dije, no reconstruyas la pantalla completa para no echar a perder lo que está bien en prod»** (10:15, sobre «Ya pasó · 3 actividades · sin enlace» en el Ciclo Fellini). **Firmado parcial: X1 «aparte, sin enlace» con X2 plegado.** La pieza de código tocará solo el programa por día y el bloque «Ya pasó» de la ficha del festival; cabecera, KPI, acciones, Dónde y pie quedan como en producción.
 9. **«No se ve igual a prod, pero con que mantengas prod como está todo bien»** (10:16, sobre la cabecera de la ficha) y **«¿Esta me imagino que es una representación del mapa, verdad?»** (10:15, sobre «Dónde»): la cabecera y el «Dónde» del prototipo son bocetos de contexto (el «Dónde» resumido en una línea; en producción van la lista de sedes y el mapa); no se proponen cambios ahí.
