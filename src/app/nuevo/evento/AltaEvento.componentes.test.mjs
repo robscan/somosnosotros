@@ -91,6 +91,9 @@ before(async () => {
         window.qa.envios.push(Object.fromEntries(fd.entries()));
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
         if (window.qa.resultado === 'enlace') return {ok:false, errores:{enlace:'Ese enlace no se ve bien.'}};
+        // OL-384: uno parecido el mismo día en el mismo sitio, hasta que se confirma con «No, es otro» (como \`crearEvento\`).
+        if (window.qa.resultado === 'parecidos' && fd.get('confirmado') !== '1') return {ok:false, errores:{}, parecidos:[{id:'0d0d0d0d-0000-4000-8000-000000000001', slug:'lectura-en-voz-alta-de-poesia-x1', titulo:'Lectura de poesía en voz alta', inicio:'2026-10-10T00:30:00.000Z', zona:'America/Mexico_City', imagen:window.qa.conCartel ? '/cartel.svg' : null, lugar_id:'${LUGAR}', lugar_nombre:'Teatro de la Paz', sitio_texto:null}]};
+        if (window.qa.resultado === 'parecidos') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
         if (window.qa.resultado === 'publica') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
         return {ok:false, errores:{}, general:${JSON.stringify(GENERAL)}};
       }
@@ -291,6 +294,53 @@ test("recorrido completo sin cartel: la acción recibe los campos de siempre, y 
   await boton(p, "Publicar").click();
   await p.waitForFunction(() => window.qa.envios.length === 2);
   assert.equal((await enviado(p)).operacion, d.operacion);
+});
+
+test("OL-384: si ya hay uno parecido ese día en el mismo sitio, «¿Es este?» con su renglón y su ficha; «No, es otro» publica sin volver a preguntar", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { resultado: "parecidos", conCartel: true } });
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  const caja = p.getByRole("alert").filter({ hasText: "¿Es este?" });
+  await caja.waitFor();
+  assert.match(await caja.locator("p").innerText(), /¿Es este\? Ya hay uno parecido ese día en el mismo sitio:/);
+  // El renglón de lista: el cartel, el título, el día y la hora en su zona y el sitio; un toque abre su ficha.
+  const enlace = caja.getByRole("link");
+  assert.equal(await enlace.getAttribute("href"), "/eventos/lectura-en-voz-alta-de-poesia-x1");
+  assert.equal(await enlace.locator("img").getAttribute("src"), "/cartel.svg");
+  assert.deepEqual((await enlace.innerText()).split("\n").map((x) => x.trim()).filter(Boolean), ["Lectura de poesía en voz alta", "vie 9 de oct · 18:30", "Teatro de la Paz"]);
+  // Nada se publicó: lo dice el botón de siempre y la guardia sigue puesta.
+  assert.equal(await p.evaluate(() => window.qa.envios.length), 1);
+  assert.equal(await avisa(p), true);
+  await p.getByRole("button", { name: "Publicar", exact: true }).waitFor();
+  if (capturas) await p.screenshot({ path: join(capturas, "01-revisa-es-este-390.png") });
+  // Ni desborda ni tapa el pie a 320.
+  const anchos = await p.evaluate(() => ({ pagina: document.documentElement.scrollWidth, ventana: innerWidth }));
+  assert.ok(anchos.pagina <= anchos.ventana, JSON.stringify(anchos));
+  await boton(p, "No, es otro: publicar de todos modos").click();
+  await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
+  if (capturas) await p.screenshot({ path: join(capturas, "02-publicado-tras-no-es-otro-390.png") });
+  const envios = await p.evaluate(() => window.qa.envios.map((e) => ({ confirmado: e.confirmado ?? "", operacion: e.operacion })));
+  assert.deepEqual(envios.map((e) => e.confirmado), ["", "1"]);
+  // La misma operación: si la primera respuesta se hubiera perdido, el servidor no publica dos veces.
+  assert.equal(envios[0].operacion, envios[1].operacion);
+});
+
+test("OL-384: si se cambia el sitio después de «¿Es este?», el aviso se va y al publicar se vuelve a preguntar (sin la confirmación de antes)", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { resultado: "parecidos" } });
+  await hastaRevisa(p);
+  await boton(p, "Publicar").click();
+  await p.getByRole("alert").filter({ hasText: "¿Es este?" }).waitFor();
+  // Sin cartel: el símbolo SN.
+  assert.equal(await p.getByRole("alert").getByRole("link").locator("img").getAttribute("src"), "/sin-foto.png");
+  await p.locator("main ul > li").filter({ hasText: "Teatro de la Paz" }).first().getByRole("button").click();
+  await enPaso(p, "¿Dónde es?");
+  await buscar(p).fill("centro");
+  await p.getByRole("option", { name: /Centro de las Artes/ }).click();
+  await p.getByRole("heading", { name: "Lectura en voz alta" }).waitFor();
+  assert.equal(await p.getByRole("alert").filter({ hasText: "¿Es este?" }).count(), 0);
+  await p.getByRole("button", { name: "Publicar", exact: true }).click();
+  await p.getByRole("alert").filter({ hasText: "¿Es este?" }).waitFor();
+  assert.deepEqual(await p.evaluate(() => window.qa.envios.map((e) => e.confirmado ?? "")), ["", ""]);
 });
 
 test("un error de un dato sale junto a él en «Revisa», y mientras el servidor contesta el botón dice «Publicando…»", TOPE, async (t) => {

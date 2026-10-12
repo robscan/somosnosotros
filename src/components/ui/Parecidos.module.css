@@ -1,0 +1,29 @@
+/* ==========================================================================
+   «¿Es este?» del servidor al publicar (ui/Parecidos): lo que ya está publicado y se parece, y «No, es otro: publicar de todos modos».
+   Lo usan «Revisa» del alta de lugar (un lugar con ese nombre a menos de 150 m) y la del alta de evento (OL-384: uno parecido el mismo día en el
+   mismo sitio). 1. La caja · 2. La lista de los lugares · 3. Los renglones con foto de los eventos
+   ========================================================================== */
+
+/* 1. La caja: una sola rejilla (el texto, la lista y el botón), en el fondo suave con su borde. */
+.parecidos {
+  display: grid;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+
+/* 2. Los lugares: un enlace por línea, con su viñeta. */
+.parecidos ul {
+  display: grid;
+  gap: var(--espacio-1);
+  padding-left: var(--espacio-4);
+}
+
+/* 3. Los eventos: el renglón de lista (ui/Renglon, `.frente`: el cartel, el título y sus datos), sin viñeta ni sangría. */
+.parecidos ul.conFoto {
+  gap: var(--espacio-3);
+  padding-left: 0;
+  list-style: none;
+}
