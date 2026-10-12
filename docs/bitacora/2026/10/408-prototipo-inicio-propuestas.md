@@ -1,7 +1,7 @@
 # 408 · Prototipo con propuestas para las pruebas de usuario (OL-377)
 
 **Fecha:** 2026-10-12. **Rama:** `prototipo-inicio-propuestas`, base `origin/main` (`152ea11a`). **Operador:** Gestor de cambios VI (Fable 5.1), sin agentes. **Sin migración ni código de la app.**
-**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 1, «Propuesta (12 oct)»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
+**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 2, «Propuesta 2 · C1 cartel»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
 
 ## Qué pidió el founder (2026-10-12, pruebas de usuario con su iPhone)
 
@@ -28,12 +28,13 @@
 | **N** | El nombre en los avatares de 64 | Una línea (hoy) · **Dos líneas** (cortadas en palabra) · Columna ancha (96 px, se ven 3,5) · Nombre al lado (foto de 48 y el nombre en dos líneas a su derecha, 168 px) |
 | **D1** | Destacados antes de «Tus planes», debajo de la fila «Ahora» | interruptor |
 | **D2** | Tamaño de Destacados (solo ese carril) | Grande (165, hoy) · **XL** (248, se ve una y media, título 19 px) · Ancho (350, una por pantalla, «como Instagram») |
+| **C1** | El cartel dentro del 4:5 (solo tarjetas de evento con cartel) | Recorte arriba (hoy) · Recorte al centro · Entero con bandas oscuras · **Entero sobre su propio desenfoque** |
 | **I1** | Lo que te interesa | Chip (hoy) · **Icono arriba a la derecha** (el sello pasa a la izquierda) · Icono bajo el sello · Icono junto al título. «3 van» sigue como chip |
 | **F1** | Bajo la tarjeta, primero cuándo (violeta) y luego dónde (gris) | interruptor |
 | **X1** | En la ficha del festival, lo que ya pasó | Todos juntos (hoy, con enlace a «Esto ya no está») · **Aparte, sin enlace** (sección «Ya pasó», en gris) · Aparte, como pasado (cada acto abre su ficha en pasado: lo que traerá el historial) |
 | **X2** | «Ya pasó» empieza plegado («Ya pasó · 5 actividades») | interruptor |
 
-Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL · I1 arriba a la derecha · F1 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
+Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL · C1 desenfoque · I1 arriba a la derecha · F1 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
 
 ## Lo que mide (medidor de la hoja, en Chrome a 390×844)
 
@@ -60,6 +61,7 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL 
 - `10-i1-chip-hoy.png` — el chip «Te interesa» de producción, para comparar.
 - `11-d2-ancho.png` — una tarjeta de 350 a lo ancho, como un post de Instagram.
 - `12-d2-grande-d1.png` — Destacados en grande (165) pero en la primera línea.
+- `21-c1-recorte-arriba-hoy.png` a `24-c1-entero-sobre-desenfoque.png` — «Esta semana» (Yo Marcos, Figarella: fotos 3:4) con el cartel recortado desde arriba, recortado al centro, entero con bandas y entero sobre su desenfoque.
 - `13-ficha-hoy-arriba.png` — la ficha del CINEMA como en producción (cabecera oscura, KPI, acciones).
 - `14-ficha-hoy-programa-con-pasados.png` — el programa de hoy: los 5 actos pasados mezclados y enlazados.
 - `15-ficha-aparte-plegado.png` — «Programa registrado: 11 actividades · 6 por venir» y «Ya pasó · 5 actividades · sin enlace» plegado.
@@ -75,6 +77,11 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL 
 3. **I1:** ¿el marcador arriba a la derecha con el sello a la izquierda, bajo el sello, o junto al título?
 4. **X1:** ¿lo pasado sin enlace, o como pasado (pide la ficha en pasado del historial, pieza 1)?
 5. **X2:** ¿«Ya pasó» plegado o abierto?
+6. **C1:** ¿el cartel que no es 4:5 recortado, entero con bandas o entero sobre su desenfoque?
+
+## Comentarios del founder en la página
+
+1. **«Se corta la imagen, revisa que sí se use proporción de Instagram»** (2026-10-12, 09:36, sobre «CINEMA, clausura» en Seleccionados para ti). Medido: la tarjeta es 4:5 (165×206, 248×310 en XL, 350×437 en ancho) y ese cartel mide 400×511 (0,78), casi 4:5, así que apenas se recorta; lo cortado en esa captura es la tarjeta asomando por el borde (XL enseña una y media). Lo que sí se recortaba: 18 de los 40 carteles de hoy no son 4:5 (las fotos de película del CINEMA son apaisadas, de 1,14 a 1,51; KOWAIFEST es 9:16; cuatro fotos son 3:4) y con `object-fit: cover` anclado arriba pierden los lados o el pie. Añadido **C1** con cuatro opciones; la «Propuesta» lleva el cartel entero sobre su propio desenfoque. Versión 2 de la página.
 
 ## Lo que no entra aquí
 
