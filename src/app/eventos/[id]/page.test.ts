@@ -430,3 +430,54 @@ describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => 
     expect(todos[1]).toBe("Costo");
   });
 });
+
+describe("lo ligado que ya pasó no se enlaza (OL-380)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  /** Un cliente cuya tabla `eventos` responde según lo pedido: la ficha por su slug, y el ligado por su id o por `inaugura_id`. */
+  const abrir = async (evento: Record<string, unknown>, ligado: Record<string, unknown>) => {
+    const cliente = {
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return chain({ data: tabla === "asistencias" ? [] : null });
+        let respuesta: unknown = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c: any = chain({ data: [] });
+        c.eq = (columna: string, valor: unknown) => {
+          if (columna === "slug" && valor === evento.slug) respuesta = evento;
+          if ((columna === "id" && valor === ligado.id) || columna === "inaugura_id") respuesta = ligado;
+          return c;
+        };
+        c.maybeSingle = () => Promise.resolve({ data: respuesta });
+        return c;
+      },
+      rpc: () => Promise.resolve({ data: null }),
+    };
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+  };
+  const textos = (els: { type: unknown; props: Record<string, unknown> }[], tipo: string) => els.filter((e) => e.type === tipo).map((e) => [e.props.children].flat().join(""));
+  const EXPO = { ...EVENTO, clase: "exposicion", inicio: "2000-01-01T06:00:00Z", fin: "2099-02-01T05:59:00Z", inaugura_id: "inaug-1" };
+  const INAUG = { id: "inaug-1", slug: "inauguracion-de-prueba", titulo: "Inauguración de prueba", fin: null, zona: "America/Mexico_City" };
+
+  it("la inauguración que ya pasó: «Fue el …», sin enlace a su ficha", async () => {
+    const els = await abrir(EXPO, { ...INAUG, inicio: "2000-01-08T02:00:00Z" });
+    expect(textos(els, "small")).toContain("Fue el viernes 7 de enero de 2000 · 20:00");
+    expect(els.some((e) => e.props?.href === "/eventos/inauguracion-de-prueba")).toBe(false);
+  });
+
+  it("la inauguración que viene: su fecha y el enlace a su ficha", async () => {
+    const els = await abrir(EXPO, { ...INAUG, inicio: "2099-01-10T02:00:00Z" });
+    expect(els.some((e) => e.props?.href === "/eventos/inauguracion-de-prueba")).toBe(true);
+    expect(textos(els, "small").some((t) => t.startsWith("Fue el"))).toBe(false);
+  });
+
+  it("el acto de inauguración de una exposición que ya cerró no la enlaza; si sigue abierta, sí", async () => {
+    const acto = { ...EVENTO, clase: "puntual" };
+    const cerrada = { id: "expo-1", slug: "expo-cerrada", titulo: "Expo cerrada", inicio: "2000-01-01T06:00:00Z", fin: "2000-02-01T05:59:00Z", zona: "America/Mexico_City" };
+    const els = await abrir(acto, cerrada);
+    expect(textos(els, "b")).toContain("Inauguró Expo cerrada");
+    expect(els.some((e) => e.props?.href === "/eventos/expo-cerrada")).toBe(false);
+    const abierta = await abrir(acto, { ...cerrada, fin: "2099-02-01T05:59:00Z" });
+    expect(abierta.some((e) => e.props?.href === "/eventos/expo-cerrada")).toBe(true);
+  });
+});

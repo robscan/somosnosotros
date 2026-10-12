@@ -27,6 +27,9 @@ export function visitaDeEvento(inicio: string, fin: string | null, zona: string 
   return { desde, hasta: fin ? diaLocal(new Date(fin), zona) : desde };
 }
 
+/** Lo que dice una exposición de la que no se sabe el horario (la ficha, las tarjetas, la agenda): no se inventa. */
+export const HORARIO_POR_CONFIRMAR = "Horario por confirmar";
+
 /** De dónde sale el horario de una exposición: el suyo, el de su lugar o ninguno («Horario por confirmar»). */
 export type OrigenHorario = "propio" | "lugar" | null;
 
@@ -58,7 +61,7 @@ export const enVisita = (visita: Visita, dia: string): boolean => dia >= visita.
  */
 export function textoHoy(visita: Visita, franjas: readonly Franja[], hoy: string): string | null {
   if (!enVisita(visita, hoy)) return null;
-  if (!franjas.some((f) => f.dias.length)) return "Horario por confirmar";
+  if (!franjas.some((f) => f.dias.length)) return HORARIO_POR_CONFIRMAR;
   const rangos = rangosDelDia(franjas, diaDeSemana(hoy));
   return rangos.length ? `Abre hoy ${textoRangos(rangos)}` : "Hoy cierra";
 }
