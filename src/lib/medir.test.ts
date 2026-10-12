@@ -134,6 +134,21 @@ describe("datosAsistencia y fichaDeEnlace", () => {
   });
 });
 
+describe("compartir (OL-388)", () => {
+  it("una ficha o la app, por la hoja, WhatsApp o copiando el enlace (copiar también cuenta)", () => {
+    expect(validarMedicion("compartir", { que: "app", medio: "hoja" })).toEqual({ que: "app", medio: "hoja" });
+    expect(validarMedicion("compartir", { que: "app", medio: "copiado" })).toEqual({ que: "app", medio: "copiado" });
+    expect(validarMedicion("compartir", { que: "evento", medio: "copiado" })).toEqual({ que: "evento", medio: "copiado" });
+    expect(EVENTOS.compartir.que).toEqual(["evento", "lugar", "artista", "app"]);
+  });
+  it("nunca otra cosa: ni la dirección, ni a quién, ni un medio que no está en la lista", () => {
+    expect(validarMedicion("compartir", { que: "https://somosnosotros.org", medio: "hoja" })).toBeNull();
+    expect(validarMedicion("compartir", { que: "app", medio: "instagram" })).toBeNull();
+    expect(validarMedicion("compartir", { que: "app" })).toBeNull();
+    expect(validarMedicion("compartir", { que: "persona", medio: "hoja" })).toBeNull();
+  });
+});
+
 describe("medirCliente", () => {
   it("en producción manda a Vercel y a Google (solo por el servidor) el mismo nombre y los mismos datos", () => {
     const gtag = vi.fn();

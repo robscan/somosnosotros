@@ -5,17 +5,19 @@ export type Asistente = { id: string; nombre: string; foto: string | null };
 
 /**
  * "Van 3: Ana, Luis y 1 más" · "Va Ana" · "" si nadie. `total` cuenta también a quienes tienen el perfil
- * reservado (llegan sin nombre): "Van 3: Ana y 2 más" · "Van 2" si nadie se deja ver.
+ * reservado (llegan sin nombre): "Van 3: Ana y 2 más" · "Van 2" si nadie se deja ver. En pasado («Quién fue», OL-388):
+ * "Fueron 3: Ana, Luis y 1 más" · "Fue Ana".
  */
-export function resumenAsistentes(asistentes: Asistente[], maximo = 2, total = asistentes.length): string {
+export function resumenAsistentes(asistentes: Asistente[], maximo = 2, total = asistentes.length, pasado = false): string {
   const n = Math.max(total, asistentes.length);
   if (n === 0) return "";
+  const [uno, varios] = pasado ? ["Fue", "Fueron"] : ["Va", "Van"];
   const nombres = asistentes.map((a) => primerNombre(a.nombre)).filter(Boolean);
   const primeros = nombres.slice(0, maximo);
   const resto = n - primeros.length;
-  if (primeros.length === 0) return n === 1 ? "Va 1 persona" : `Van ${n}`;
+  if (primeros.length === 0) return n === 1 ? `${uno} 1 persona` : `${varios} ${n}`;
   const lista = resto > 0 ? `${primeros.join(", ")} y ${resto} más` : primeros.length === 2 ? `${primeros[0]} y ${primeros[1]}` : primeros.join(", ");
-  return n === 1 ? `Va ${lista}` : `Van ${n}: ${lista}`;
+  return n === 1 ? `${uno} ${lista}` : `${varios} ${n}: ${lista}`;
 }
 
 export function primerNombre(nombre: string): string {

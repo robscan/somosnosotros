@@ -182,10 +182,12 @@ describe("dirección reservada tras el fin (OL-257)", () => {
     await ficha("voy");
     expect(upsert).not.toHaveBeenCalled();
   });
-  it("un evento terminado no invita a registrarse: en pasado no lleva «Quién va» (OL-383)", async () => {
+  it("un evento terminado no invita a registrarse: en pasado, «Quién fue» y sin nadie no se pinta (OL-383, OL-388)", async () => {
     preparar(true);
     const elementos = [...recorrer(await ficha())];
-    expect(elementos.some(e => typeof e.type === "function" && (e.type as { name?: string }).name === "QuienVaDiferido")).toBe(false);
+    const diferido = elementos.find(e => typeof e.type === "function" && (e.type as { name?: string }).name === "QuienVaDiferido");
+    expect(diferido?.props.pasado).toBe(true);
+    expect(await (diferido!.type as (p: unknown) => Promise<unknown>)(diferido!.props)).toBeNull();
     expect(elementos.some(e => e.props?.id === "quien-va")).toBe(false);
   });
   it.each([
@@ -523,9 +525,9 @@ describe("la ficha en pasado (OL-383)", () => {
   });
 });
 
-describe("lo ligado que ya pasó no se enlaza (OL-380)", () => {
+describe("lo ligado que ya pasó se enlaza y se ve pasado (OL-388, sustituye a OL-380)", () => {
   afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
-  /** Un cliente cuya tabla `eventos` responde según lo pedido: la ficha por su slug, y el ligado por su id o por `inaugura_id`. */
+  /** Un cliente cuya tabla `eventos` responde según lo pedido: la ficha por su slug, y el ligado por su id o (si no es un festival) por `inaugura_id`. */
   const abrir = async (evento: Record<string, unknown>, ligado: Record<string, unknown>) => {
     const cliente = {
       from: (tabla: string) => {
@@ -535,7 +537,7 @@ describe("lo ligado que ya pasó no se enlaza (OL-380)", () => {
         const c: any = chain({ data: [] });
         c.eq = (columna: string, valor: unknown) => {
           if (columna === "slug" && valor === evento.slug) respuesta = evento;
-          if ((columna === "id" && valor === ligado.id) || columna === "inaugura_id") respuesta = ligado;
+          if ((columna === "id" && valor === ligado.id) || (columna === "inaugura_id" && ligado.clase !== "festival")) respuesta = ligado;
           return c;
         };
         c.maybeSingle = () => Promise.resolve({ data: respuesta });
@@ -547,30 +549,92 @@ describe("lo ligado que ya pasó no se enlaza (OL-380)", () => {
     const { default: FichaEvento } = await import("./page");
     return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
   };
-  const textos = (els: { type: unknown; props: Record<string, unknown> }[], tipo: string) => els.filter((e) => e.type === tipo).map((e) => [e.props.children].flat().join(""));
+  /** El renglón de lo ligado (`RenglonLigado`) que enlaza a `href`: sus props dicen título, fecha y si está en pasado. */
+  const renglonA = (els: { type: unknown; props: Record<string, unknown> }[], href: string) => els.find((e) => e.props?.href === href && "pasado" in e.props)?.props;
   const EXPO = { ...EVENTO, clase: "exposicion", inicio: "2000-01-01T06:00:00Z", fin: "2099-02-01T05:59:00Z", inaugura_id: "inaug-1" };
   const INAUG = { id: "inaug-1", slug: "inauguracion-de-prueba", titulo: "Inauguración de prueba", fin: null, zona: "America/Mexico_City" };
 
-  it("la inauguración que ya pasó: «Fue el …», sin enlace a su ficha", async () => {
+  it("la expo enlaza la inauguración que ya pasó, en pasado: «Fue el …»", async () => {
     const els = await abrir(EXPO, { ...INAUG, inicio: "2000-01-08T02:00:00Z" });
-    expect(textos(els, "small")).toContain("Fue el viernes 7 de enero de 2000 · 20:00");
-    expect(els.some((e) => e.props?.href === "/eventos/inauguracion-de-prueba")).toBe(false);
+    expect(renglonA(els, "/eventos/inauguracion-de-prueba")).toMatchObject({ titulo: "Inauguración", meta: "Fue el viernes 7 de enero de 2000 · 20:00", pasado: true });
   });
 
-  it("la inauguración que viene: su fecha y el enlace a su ficha", async () => {
+  it("la inauguración que viene, como siempre: su fecha y su enlace, sin nada de pasado", async () => {
     const els = await abrir(EXPO, { ...INAUG, inicio: "2099-01-10T02:00:00Z" });
-    expect(els.some((e) => e.props?.href === "/eventos/inauguracion-de-prueba")).toBe(true);
-    expect(textos(els, "small").some((t) => t.startsWith("Fue el"))).toBe(false);
+    const r = renglonA(els, "/eventos/inauguracion-de-prueba");
+    expect(r).toMatchObject({ titulo: "Inauguración", pasado: false });
+    expect(String(r?.meta).startsWith("Fue el")).toBe(false);
   });
 
-  it("el acto de inauguración de una exposición que ya cerró no la enlaza; si sigue abierta, sí", async () => {
+  it("el acto enlaza la exposición que ya cerró, en pasado («Inauguró …», «Cerró el …»); si sigue abierta, como siempre", async () => {
     const acto = { ...EVENTO, clase: "puntual" };
     const cerrada = { id: "expo-1", slug: "expo-cerrada", titulo: "Expo cerrada", inicio: "2000-01-01T06:00:00Z", fin: "2000-02-01T05:59:00Z", zona: "America/Mexico_City" };
     const els = await abrir(acto, cerrada);
-    expect(textos(els, "b")).toContain("Inauguró Expo cerrada");
-    expect(els.some((e) => e.props?.href === "/eventos/expo-cerrada")).toBe(false);
+    expect(renglonA(els, "/eventos/expo-cerrada")).toMatchObject({ titulo: "Inauguró Expo cerrada", meta: "Exposición · Cerró el lunes 31 de enero de 2000", pasado: true });
     const abierta = await abrir(acto, { ...cerrada, fin: "2099-02-01T05:59:00Z" });
-    expect(abierta.some((e) => e.props?.href === "/eventos/expo-cerrada")).toBe(true);
+    expect(renglonA(abierta, "/eventos/expo-cerrada")).toMatchObject({ titulo: "Inaugura Expo cerrada", meta: "Exposición", pasado: false });
+  });
+
+  it("«Parte de {festival}» enlaza el festival que ya terminó, en pasado; si sigue, como siempre", async () => {
+    const acto = { ...EVENTO, clase: "puntual", evento_padre_id: "fest-1" };
+    const festival = { id: "fest-1", slug: "festival-de-prueba", titulo: "Festival de prueba", clase: "festival", inicio: "2000-01-01T06:00:00Z", fin: "2000-01-04T05:59:00Z", zona: "America/Mexico_City" };
+    const els = await abrir(acto, festival);
+    expect(renglonA(els, "/eventos/festival-de-prueba")).toMatchObject({ titulo: "Parte de Festival de prueba", meta: "Festival · Terminó el lunes 3 de enero de 2000", pasado: true });
+    const sigue = await abrir(acto, { ...festival, fin: "2099-01-04T05:59:00Z" });
+    expect(renglonA(sigue, "/eventos/festival-de-prueba")).toMatchObject({ meta: "Festival", pasado: false });
+  });
+});
+
+describe("«Quién fue» en la ficha en pasado (OL-388)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  const PASADO = { ...EVENTO, inicio: "2000-01-01T19:00:00Z", fin: "2000-01-01T20:00:00Z", borrador: false };
+  const persona = (id: string, nombre: string) => ({ usuario_id: id, estado: "voy", perfil: { id, nombre, foto: null } });
+  /** La ficha en pasado con estas asistencias; y los bloques diferidos (`KpiVan`, `QuienVaDiferido`), ya resueltos como los pintaría React. */
+  const abrir = async (asistencias: unknown[]) => {
+    const cliente = clienteFalso({ eventos: { data: PASADO }, asistencias: { data: asistencias } }, { van_por_evento: { data: [{ evento_id: PASADO.id, n: asistencias.length }] } });
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    const els = [...recorrer(await FichaEvento({ params: Promise.resolve({ id: PASADO.slug }), searchParams: Promise.resolve({}) }))];
+    const diferido = async (nombre: string) => {
+      const e = els.find((x) => typeof x.type === "function" && (x.type as { name?: string }).name === nombre);
+      expect(e, nombre).toBeTruthy();
+      return (await (e!.type as (p: unknown) => Promise<{ type: unknown; props: Record<string, unknown> } | null>)(e!.props)) ?? null;
+    };
+    return { els, kpi: await diferido("KpiVan"), quien: await diferido("QuienVaDiferido") };
+  };
+
+  it("con gente: «Fueron 2» baja a «Quién fue», la lista de quienes dijeron «Voy», sin invitar a nadie", async () => {
+    const { kpi, quien } = await abrir([persona("p1", "Ana"), persona("p2", "Luis")]);
+    expect(kpi?.type).toBe(Kpi);
+    expect(kpi?.props).toMatchObject({ etiqueta: "Fueron", valor: 2, salto: "quien-va" });
+    expect(quien?.props).toMatchObject({ pasado: true, total: 2 });
+    expect((quien?.props.van as { nombre: string }[]).map((a) => a.nombre)).toEqual(["Ana", "Luis"]);
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const html = renderToStaticMarkup(quien as Parameters<typeof renderToStaticMarkup>[0]);
+    expect(html).toContain("<h2>Quién fue</h2>");
+    expect(html).toContain('aria-label="Quién fue"');
+    expect(html).toContain('id="quien-va"');
+    expect(html).not.toContain("Quién va");
+    expect(html).not.toContain("primera persona");
+    expect(html).toContain("Fueron 2: Ana y Luis");
+  });
+
+  it("con nadie: ni el número «Fueron» ni la sección", async () => {
+    const { els, kpi, quien } = await abrir([]);
+    expect(kpi).toBeNull();
+    expect(quien).toBeNull();
+    // Mientras llega, tampoco un esqueleto de «Quién va».
+    const limite = els.find((e) => e.type === Suspense && (e.props.children as { type?: { name?: string } } | undefined)?.type?.name === "QuienVaDiferido");
+    expect(limite).toBeTruthy();
+    expect(limite!.props.fallback).toBeNull();
+  });
+
+  it("y nada que parezca activo: sin «Voy» / «Me interesa», calendario ni «Cómo llegar»; solo «Compartir»", async () => {
+    const { els } = await abrir([persona("p1", "Ana")]);
+    expect(els.some((e) => e.type === Asistencia)).toBe(false);
+    expect(els.some((e) => e.type === BotonCalendario)).toBe(false);
+    expect(els.some((e) => [e.props?.children].flat().includes("Cómo llegar"))).toBe(false);
+    expect(els.some((e) => e.type === BotonCompartir)).toBe(true);
   });
 });
 
