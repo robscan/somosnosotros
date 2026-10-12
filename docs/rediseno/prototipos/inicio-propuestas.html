@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
 <style>
-/* Prototipo OL-377 (bitácora 408). Pruebas de usuario del founder (2026-10-12): nombres de lugares y artistas que se lean, Destacados en la
+/* Prototipo OL-377 (bitácora 408) y OL-386 (bitácora 417: banner para compartir y Destacados más grande). Pruebas de usuario del founder (2026-10-12): nombres de lugares y artistas que se lean, Destacados en la
    primera línea y más grande («como el de Instagram»), lo que te interesa solo con el icono, primero la fecha y luego el lugar, y en el festival
    lo que ya pasó aparte y sin enlaces rotos. Inicio como está hoy en producción (con las portadas firmadas en OL-374) y seis ejercicios que se
    combinan. Armazón de `portadas-sistema.html`: el teléfono con los tokens claros de la app; el marco sigue el tema. */
@@ -338,6 +338,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .en.n-lado:not(:has(.det)) .nombre { align-self: center; }
 /* D2 · El tamaño de Destacados: XL (248, se ve una y media) y ancho (350, una por pantalla, como un post de Instagram). */
 .tira.xl { --foto: 310px; grid-auto-columns: 248px; }
+.tira.xl2 { --foto: 350px; grid-auto-columns: 280px; }
+.xl2 .titulo-pie { font-size: 1.3125rem; } .xl2 .titulo-sobre { font-size: 1.625rem; } .xl2 .pie { font-size: var(--letra-md); } .xl2 .portada.sistema > .zona { padding: var(--espacio-4); }
 .tira.ancho { --foto: 437px; grid-auto-columns: calc(100% - 2 * var(--gutter) + var(--gutter)); grid-auto-columns: 350px; }
 .xl .titulo-pie { font-size: var(--letra-xl); } .ancho .titulo-pie { font-size: 1.3125rem; }
 .xl .titulo-sobre { font-size: 1.5rem; } .ancho .titulo-sobre { font-size: 1.75rem; }
@@ -365,6 +367,20 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .pie.con-interes > :not(.interes) { grid-column: 1; }
 .pie.con-interes > .interes.junto { grid-column: 2; grid-row: 1 / span 2; align-self: start; width: 24px; height: 24px; background: none; }
 .pie.con-interes > .interes.junto .i { width: 18px; height: 18px; }
+/* B1/B2 · El banner para compartir la app: a lo ancho con el aire de los carriles, rejilla plana (icono, título, texto, cerrar, botón). */
+.banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icono titulo cerrar" "icono texto cerrar" "boton boton boton"; column-gap: var(--espacio-3); row-gap: 2px; margin: var(--espacio-7) var(--gutter) 0; padding: var(--espacio-4); border-radius: var(--radio-grande); }
+.banner.suave, .banner.simbolo { background: var(--primario-suave); color: var(--texto); }
+.banner.violeta { background: var(--primario); color: var(--primario-texto); }
+.banner .icono { grid-area: icono; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--fondo); color: var(--primario); }
+.banner .icono .i { width: 22px; height: 22px; } .banner .icono .simbolo { width: 26px; height: auto; fill: var(--primario); }
+.banner b { grid-area: titulo; align-self: end; font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.banner p { grid-area: texto; align-self: start; font-size: var(--letra-sm); line-height: 1.3; }
+.banner.violeta p { color: var(--sobre-banda-suave); }
+.banner .cerrar-banner { grid-area: cerrar; align-self: start; display: grid; place-items: center; width: 36px; height: 36px; margin: -6px -6px 0 0; border-radius: 50%; color: inherit; opacity: 0.75; }
+.banner .cerrar-banner .i { width: 20px; height: 20px; }
+.banner .compartir { grid-area: boton; display: inline-flex; align-items: center; justify-content: center; gap: var(--espacio-2); min-height: 44px; margin-top: var(--espacio-3); border-radius: var(--radio-pildora); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-md); font-weight: 700; }
+.banner.violeta .compartir { background: var(--fondo); color: var(--primario); }
+.banner .compartir .i { width: 20px; height: 20px; }
 /* La ficha del festival (X1, X2): la cabecera oscura de producción, el programa por día y «Ya pasó». */
 .ficha { background: var(--fondo-contenido); }
 /* Como la cabecera oscura de producción (OL-363): Atrás y ··· arriba, flotando sobre el cartel; el título, el cuándo y los KPI abajo; entre medias, el cartel. El velo va en ::after (se pinta después del cartel) y lo demás encima con z-index. */
@@ -430,16 +446,16 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     <header class="hoja-cab">
       <div>
         <h1 id="hoja-titulo" tabindex="-1">Propuestas de Inicio</h1>
-        <p>Pruebas de usuario del founder · lun 12 de oct, 09:21 · OL-377</p>
+        <p>Banner para compartir y Destacados más grande · lun 12 de oct · OL-386 (sobre lo firmado en OL-377)</p>
       </div>
       <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="hoja-cuerpo" id="hoja-cuerpo">
       <div class="resumen">
         <div class="preajustes tres" role="group" aria-label="Preajustes">
-          <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción</small></button>
+          <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>firmado 12 oct</small></button>
           <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
-          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 de oct</small></button>
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 oct, 12:40</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <section class="medidor" aria-label="Medidor">
@@ -459,7 +475,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 
       <section class="bloque" aria-labelledby="t-ejercicios">
         <h2 id="t-ejercicios">Ejercicios</h2>
-        <p>Cada uno mueve una sola palanca; se combinan. Lo firmado el 10 y el 11 de octubre (tarjetas 4:5, sello de fecha, portadas del sistema) no se toca.</p>
+        <p>B1, B2, B3 y el tamaño de Destacados (D2) son la vuelta nueva; los demás ya se firmaron el 12 de octubre y siguen aquí por si quieres volver a verlos.</p>
         <ul class="ejercicios" id="ejercicios"></ul>
       </section>
 
@@ -834,6 +850,7 @@ const Portadas = (() => {
     ruta: svg('<path d="M12 3l9 9-9 9-9-9z"/><path d="M9.5 12.5h3.5a1.5 1.5 0 0 0 0-3H11"/><path d="M9.5 9.5v4"/>'),
     puntos: svg('<circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/>'),
     marcador: svg('<path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/>'),
+    cerrar: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
     marcadorLleno: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="fill: currentColor; stroke: none"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/></svg>',
   };
   const FLECHA = '<svg class="flecha" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 6h8M6.5 3l3 3-3 3"/></svg>';
@@ -841,25 +858,30 @@ const Portadas = (() => {
   $('sn-trazo').setAttribute('d', D.simbolo.trazo);
 
   // ===== Los ejercicios (cada uno mueve una palanca) y los preajustes.
-  const HOY = { n: 'hoy', t1: 'corto', d1: false, d2: 'grande', d3: false, t2: false, i1: 'chip', f1: false, y1: false, x1: 'hoy', x2: false };
+  // «Hoy» es lo firmado el 12 de oct, que ya está en producción (OL-382, OL-383); encima, la propuesta del banner (OL-386).
+  const HOY = { n: 'grande', t1: 'completo', t2: true, d1: true, d2: 'xl', d3: false, i1: 'izquierda', f1: true, y1: true, x1: 'pasado', x2: true, b1: 'no', b2: 'suave', visitas: '3' };
   const CLAVES = Object.keys(HOY);
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...HOY } },
-    propuesta: { nombre: 'Propuesta', e: { n: 'grande', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'izquierda', f1: true, y1: true, x1: 'aparte', x2: true } },
+    propuesta: { nombre: 'Propuesta', e: { ...HOY, b1: 'destacados', b2: 'suave', d2: 'xl2' } },
     // La firma del founder (12 de oct, 10:40): «te firmo Personalizada · N foto grande · T1 completo · D1 · D2 XL · T2 · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2». Sin D3.
-    firmada: { nombre: 'Firmada', e: { n: 'grande', t1: 'completo', t2: true, d1: true, d2: 'xl', d3: false, i1: 'izquierda', f1: true, y1: true, x1: 'pasado', x2: true } },
+    // Firma del founder (12 de oct, 12:40): «acepto: Personalizada · N foto grande · T1 completo · T2 · D1 · D2 XL+ · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2 · B1 tras Destacados · B2 símbolo».
+    firmada: { nombre: 'Firmada', e: { ...HOY, b1: 'destacados', b2: 'simbolo', d2: 'xl2' } },
   };
   const PORQUE = {
-    hoy: 'Producción esta mañana (12 de oct): nombres de lugares y artistas en una línea con «…», «Tus planes» arriba, Destacados a 165 px, «Te interesa» como chip sobre el cartel, el lugar antes que la fecha, y en la ficha del festival todos los actos juntos, también los que ya pasaron (con enlace a «Esto ya no está»).',
-    propuesta: 'Por qué: la foto de lugares y artistas más grande (88 px) da una columna más ancha y el nombre en dos líneas cabe casi siempre (N); el título es el que escribió quien publicó, tal cual, en dos líneas y cortado en palabra, sin inventarle uno corto (T1); Destacados es lo que la administración eligió, así que va primero y más grande, casi a lo ancho como un post de Instagram (D1, D2 XL); ahí solo eventos con su cartel, porque las expos tienen su carril abajo, salvo la que la administración destaque a propósito (D3); lo que te interesa se marca con el icono del marcador arriba a la derecha, donde ya vive el sello, y el chip queda solo para «cuántos van» (I1); primero cuándo y luego dónde, porque la fecha decide antes que el lugar (F1); una expo a la que ya fuiste sale de «Tus planes» con un toque en «Ya fui» desde su ficha y queda para el historial (Y1); el festival siempre con su portada de festival, y solo el acto al que vas con la suya; en el festival, lo que ya pasó se queda en su sección, plegada y sin enlaces rotos (X1, X2).',
-    firmada: 'La firmada por el founder el 12 de oct: foto grande en lugares y artistas, el título completo tal cual en hasta tres líneas, Destacados primero y en XL, el marcador de interés arriba a la izquierda, la fecha antes del lugar, «Ya fui» en la ficha de la expo, y en el festival lo pasado aparte, plegado y como pasado (cada acto abre su ficha en pasado). Sin D3: Destacados sigue trayendo lo que sigues.',
+    hoy: 'Lo firmado el 12 de oct, ya en producción (Inicio firmado OL-382, «Ya pasó» OL-383), sin banner. Antes de la firma, producción era: nombres de lugares y artistas en una línea con «…», «Tus planes» arriba, Destacados a 165 px, «Te interesa» como chip sobre el cartel, el lugar antes que la fecha, y en la ficha del festival todos los actos juntos, también los que ya pasaron (con enlace a «Esto ya no está»).',
+    propuesta: 'Por qué: el banner va justo después de «Seleccionados para ti», lo primero que la persona ve y lo que mejor habla de la app, y solo a quien ya volvió (tercera visita o más): pedir que comparta a quien apenas llega no funciona; suave (violeta claro) para no competir con los carteles; se cierra con × y no vuelve en 30 días; tras compartir, no vuelve. Destacados crece de 248 a 280 px (una tarjeta y un cuarto) para ganar presencia sin dejar de asomar la siguiente. Lo demás es lo firmado el 12: la foto de lugares y artistas más grande (88 px) da una columna más ancha y el nombre en dos líneas cabe casi siempre (N); el título es el que escribió quien publicó, tal cual, en dos líneas y cortado en palabra, sin inventarle uno corto (T1); Destacados es lo que la administración eligió, así que va primero y más grande, casi a lo ancho como un post de Instagram (D1, D2 XL); ahí solo eventos con su cartel, porque las expos tienen su carril abajo, salvo la que la administración destaque a propósito (D3); lo que te interesa se marca con el icono del marcador arriba a la derecha, donde ya vive el sello, y el chip queda solo para «cuántos van» (I1); primero cuándo y luego dónde, porque la fecha decide antes que el lugar (F1); una expo a la que ya fuiste sale de «Tus planes» con un toque en «Ya fui» desde su ficha y queda para el historial (Y1); el festival siempre con su portada de festival, y solo el acto al que vas con la suya; en el festival, lo que ya pasó se queda en su sección, plegada y sin enlaces rotos (X1, X2).',
+    firmada: 'Firmada el 12 de oct a las 12:40: el banner tras Destacados con el símbolo SN, Destacados en XL+ (280×350), y lo firmado por la mañana: foto grande en lugares y artistas, el título completo tal cual en hasta tres líneas, Destacados primero y en XL, el marcador de interés arriba a la izquierda, la fecha antes del lugar, «Ya fui» en la ficha de la expo, y en el festival lo pasado aparte, plegado y como pasado (cada acto abre su ficha en pasado). Sin D3: Destacados sigue trayendo lo que sigues.',
   };
   const EJERCICIOS = [
+    { k: 'b1', t: 'B1 · Banner para compartir la app: dónde', d: 'Un banner a lo ancho (con el aire de 20 px de los carriles) que dice «¿Te gusta Somos Nosotrxs?» y «Compártela con tus amigxs», con el botón «Compartir» (abre la hoja de compartir del teléfono con el enlace somosnosotros.org) y una × para cerrarlo (no vuelve en 30 días; tras compartir, no vuelve).', opciones: [['no', 'Sin banner (hoy)'], ['destacados', 'Tras Destacados'], ['planes', 'Tras Tus planes'], ['final', 'Al final de Inicio']], f: 'Pedido del founder (12 de oct): «un banner de ancho completo para que los usuarios compartan la app … para usuarios logueados que hayan entrado más de 2 veces».' },
+    { k: 'b2', t: 'B2 · Banner: cómo se ve', d: 'Suave: fondo violeta claro, icono de compartir en violeta y botón violeta. Violeta: fondo violeta pleno, texto blanco y botón blanco. Símbolo: como suave, con el símbolo SN en vez del icono.', opciones: [['suave', 'Suave'], ['violeta', 'Violeta'], ['simbolo', 'Con el símbolo SN']], sub: 'b1' },
+    { k: 'visitas', t: 'B3 · Cuándo aparece (prueba)', d: 'Solo con sesión y a partir de la tercera visita («más de 2 veces»). Aquí eliges cuántas veces ha entrado la persona para ver si sale. Las visitas se cuentan en el teléfono (la app ya guarda ahí lo que viste); la base solo sabe el último día que entraste.', opciones: [['1', '1.ª visita'], ['2', '2.ª visita'], ['3', '3.ª o más']], sub: 'b1' },
     { k: 'n', t: 'N · Nombres de lugares y artistas', d: 'En «Lugares de la semana» y «Artistas de la semana» hoy el nombre va en una línea y se corta («Casa de C…», «Centro de…»).', opciones: [['hoy', 'Una línea (hoy)'], ['dos', 'Dos líneas'], ['ancha', 'Columna ancha'], ['grande', 'Foto grande'], ['lado', 'Nombre al lado']], f: 'Pedido del founder (12 de oct): que se lean. Dos líneas cortadas en palabra; columna ancha (96 px, se ven 3,5); foto grande (88 px, columna de 108: «probemos un tamaño más grande para generar más ancho y quepa más texto», 12 de oct); o la foto chica con el nombre al lado, en dos líneas.' },
     { k: 't1', t: 'T1 · El título de la tarjeta', d: 'Hoy la tarjeta no enseña el título que escribió quien publicó: la app calcula uno «corto» (lo que va antes de los dos puntos o de la primera coma) y pasa las mayúsculas sostenidas a oración; por eso los once actos del CINEMA se llaman «Cinema». No es un campo del formulario. Completo: el título tal cual lo escribió, en dos líneas y cortado en palabra. Completo a oración: el mismo, pero «DESIERTO» se ve «Desierto».', opciones: [['corto', 'Corto (hoy)'], ['completo', 'Completo, tal cual'], ['oracion', 'Completo a oración']], f: 'Firmado por el founder (12 de oct): «si no lo pone el usuario dejaría el que tiene original … dejamos como está el título por ahora aunque se corte». Queda el título completo tal cual, en dos líneas.' },
     { k: 't2', t: 'T2 · Título en tres líneas', d: 'El título completo puede ocupar tres líneas en vez de dos antes de cortarse con «…» (10 de 60 cortados en vez de 31). Cuesta unos 18 px más por carril.', f: 'El founder decidió dejar dos líneas aunque se corte (12 de oct); queda como opción por si cambia.' },
     { k: 'd1', t: 'D1 · Destacados en la primera línea', d: '«Destacados» (o «Seleccionados para ti») va antes de «Tus planes», justo debajo de la fila «Ahora».', f: 'Founder: «siempre en la primera línea».' },
-    { k: 'd2', t: 'D2 · Tamaño de Destacados', d: 'Solo ese carril. Grande es lo firmado (165 px). XL mide 248 (se ve una y media, el título a 19 px). Ancho es una tarjeta por pantalla, a lo ancho (350 px), «como el de Instagram».', opciones: [['grande', 'Grande (hoy)'], ['xl', 'XL'], ['ancho', 'Ancho']] },
+    { k: 'd2', t: 'D2 · Tamaño de Destacados', d: 'Solo ese carril. Grande es lo firmado (165 px). XL mide 248 (se ve una y media, el título a 19 px). Ancho es una tarjeta por pantalla, a lo ancho (350 px), «como el de Instagram».', opciones: [['grande', 'Grande'], ['xl', 'XL (hoy, firmado)'], ['xl2', 'XL+ (280)'], ['ancho', 'Ancho']], f: 'Founder (12 de oct, segunda vuelta): «aprovecha para crecer proporcionalmente un poco más el carril de Destacados». XL+ mide 280×350: se ve una tarjeta y un cuarto; el título a 21 px.' },
     { k: 'd3', t: 'D3 · Solo eventos en Destacados', d: 'En «Seleccionados para ti» (o «Destacados») salen solo eventos con su cartel; las expos que llegaban por lo que sigues bajan a «Festivales y expos». La expo que la administración destaque a propósito sí entra aquí. Hoy, 9 de las 12 tarjetas del carril del founder son expos de los lugares que sigue; ninguna está destacada por la administración.', f: 'Comentario del founder en la página (12 de oct): «Aquí mostremos solo eventos con sus portadas. El espacio para expos es abajo, ojo si se destaca un evento de expo ese es el que va acá».' },
     { k: 'i1', t: 'I1 · Lo que te interesa', d: 'Hoy, el chip «Te interesa» sobre el cartel. Con el icono, solo el marcador relleno en violeta: arriba a la derecha (el sello de fecha pasa a la izquierda), debajo del sello, o junto al título. «3 van» sigue como chip.', opciones: [['chip', 'Chip (hoy)'], ['izquierda', 'Icono arriba izq.'], ['derecha', 'Icono arriba der.'], ['bajo', 'Icono bajo el sello'], ['junto', 'Icono junto al título']], f: 'Founder: «solo con el icono arriba a la derecha en vez del chip» y después «prueba arriba a la izquierda» (el sello de fecha se queda a la derecha).' },
     { k: 'f1', t: 'F1 · Primero la fecha, luego el lugar', d: 'Bajo la tarjeta, la línea de cuándo (violeta) arriba y el lugar (gris) debajo. Hoy es al revés.', f: 'Founder: «bajo la tarjeta primero la fecha y luego el lugar».' },
@@ -867,10 +889,10 @@ const Portadas = (() => {
     { k: 'x1', t: 'X1 · Festival: lo que ya pasó, aparte', d: 'Toca un festival (Cinema, Fotovisión, Ciclo Fellini) para ver su ficha. Hoy el programa lista todos los actos, también los pasados, con enlace a «Esto ya no está». «Aparte, sin enlace»: los pasados en su sección «Ya pasó», en gris. «Aparte, como pasado»: igual, pero cada uno abre su ficha en pasado (lo que traerá el historial).', opciones: [['hoy', 'Todos juntos (hoy)'], ['aparte', 'Aparte, sin enlace'], ['pasado', 'Aparte, como pasado']], f: 'Founder: «lo pasado se queda, pero separado y sin enlaces rotos».' },
     { k: 'x2', t: 'X2 · «Ya pasó» plegado', d: 'La sección empieza cerrada: un renglón «Ya pasó · 5 actividades» que se abre al tocar.', sub: 'x1' },
   ];
-  const vista = (e) => ({ ...e, x2: e.x1 !== 'hoy' && e.x2 });
+  const vista = (e) => ({ ...e, x2: e.x1 !== 'hoy' && e.x2, banner: e.b1 !== 'no' && Number(e.visitas) >= 3 && !estado.bannerCerrado });
   const igual = (a, b) => CLAVES.every((k) => a[k] === b[k]);
   const presetDe = (e) => Object.keys(PRESETS).find((p) => igual(PRESETS[p].e, e)) || null;
-  const NOMBRE_OPCION = { n: { hoy: '', dos: 'N dos líneas', ancha: 'N columna ancha', grande: 'N foto grande', lado: 'N nombre al lado' }, t1: { corto: '', completo: 'T1 completo', oracion: 'T1 completo a oración' }, d2: { grande: '', xl: 'D2 XL', ancho: 'D2 ancho' }, i1: { chip: '', izquierda: 'I1 arriba izq.', derecha: 'I1 arriba der.', bajo: 'I1 bajo el sello', junto: 'I1 junto al título' }, x1: { hoy: '', aparte: 'X1 aparte', pasado: 'X1 como pasado' } };
+  const NOMBRE_OPCION = { n: { hoy: '', dos: 'N dos líneas', ancha: 'N columna ancha', grande: 'N foto grande', lado: 'N nombre al lado' }, t1: { corto: '', completo: 'T1 completo', oracion: 'T1 completo a oración' }, d2: { grande: 'D2 grande', xl: '', xl2: 'D2 XL+', ancho: 'D2 ancho' }, b1: { no: '', destacados: 'B1 tras Destacados', planes: 'B1 tras Tus planes', final: 'B1 al final' }, b2: { suave: '', violeta: 'B2 violeta', simbolo: 'B2 símbolo' }, visitas: { '3': '', '1': 'visita 1', '2': 'visita 2' }, i1: { chip: '', izquierda: 'I1 arriba izq.', derecha: 'I1 arriba der.', bajo: 'I1 bajo el sello', junto: 'I1 junto al título' }, x1: { hoy: '', aparte: 'X1 aparte', pasado: 'X1 como pasado' } };
   const listaDe = (e) => {
     const l = [];
     for (const k of CLAVES) {
@@ -881,17 +903,17 @@ const Portadas = (() => {
   };
   const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${listaDe(e) || 'nada'})`; };
 
-  const LLAVE_ESTADO = 'inicio-propuestas:estado:2';
+  const LLAVE_ESTADO = 'inicio-propuestas:estado:4';
   const LLAVE_TIEMPOS = 'inicio-propuestas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
 
-  const estado = { e: { ...PRESETS.firmada.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [] };
+  const estado = { e: { ...PRESETS.firmada.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [], bannerCerrado: false };
   const guardado = leer(LLAVE_ESTADO);
   if (guardado && typeof guardado === 'object') for (const k of CLAVES) if (k in guardado) estado.e[k] = guardado[k];
   const desdeEnlace = location.hash.slice(1);
   if (PRESETS[desdeEnlace]) estado.e = { ...PRESETS[desdeEnlace].e };
-  for (const k of ['n', 't1', 'd2', 'i1', 'x1']) if (!NOMBRE_OPCION[k][estado.e[k]] && estado.e[k] !== HOY[k]) estado.e[k] = HOY[k];
+  for (const k of ['n', 't1', 'd2', 'i1', 'x1', 'b1', 'b2', 'visitas']) if (!NOMBRE_OPCION[k][estado.e[k]] && estado.e[k] !== HOY[k]) estado.e[k] = HOY[k];
 
   // ===== Fechas en la zona de San Luis.
   const fmtDia = new Intl.DateTimeFormat('en-CA', { timeZone: D.zona, year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -1008,7 +1030,7 @@ const Portadas = (() => {
     const lista = [];
     const misPlanes = C.tusPlanes.filter((t) => !estado.yaFui.includes(t.id));
     const planes = misPlanes.length ? { clave: 'tusPlanes', titulo: 'Tus planes', ver: 'Ver mi perfil', tarjetas: misPlanes, tamano: 'grande' } : null;
-    const estelar = { clave: 'destacados', titulo: C.titulo, ver: 'Ver la agenda', tarjetas: v.d3 ? C.destacadosD3 : C.destacados, tamano: v.d2 === 'grande' ? 'grande' : v.d2 };
+    const estelar = { clave: 'destacados', titulo: C.titulo, ver: 'Ver la agenda', tarjetas: v.d3 ? C.destacadosD3 : C.destacados, tamano: v.d2 };
     if (v.d1) { lista.push(estelar); if (planes) lista.push(planes); } else { if (planes) lista.push(planes); lista.push(estelar); }
     lista.push({ clave: 'estaSemana', titulo: 'Esta semana', ver: 'Ver la agenda', tarjetas: C.estaSemana, tamano: 'mediana' });
     lista.push({ clave: 'festivales', titulo: 'Festivales y expos', ver: 'Ver la agenda', tarjetas: v.d3 ? C.festivalesD3 : C.festivales, tamano: 'grande' });
@@ -1038,8 +1060,19 @@ const Portadas = (() => {
   const BARRA = `<header class="barra-app"><button type="button" data-accion="nada" aria-label="Publicar">${I.mas}</button><img class="logo" src="${RUTA}logotipo.svg" alt="Somos Nosotros"><button type="button" data-accion="nada" aria-label="Buscar">${I.lupa}</button></header>`;
   const CONTEXTO = `<div class="contexto"><button type="button" class="ctx" data-accion="nada">${I.pin}San Luis Potosí${I.baja}</button><button type="button" class="ctx" data-accion="nada">${I.calendario}Cuándo</button><button type="button" class="ctx" data-accion="nada">${I.filtros}Filtros</button></div>`;
   const NAV = `<nav class="secciones" aria-label="Secciones">${[['Inicio', I.casa, true], ['Agenda', I.calendario], ['Lugares', I.pin], ['Artistas', I.estrella], ['Perfil', I.persona]].map(([n, i, activa]) => `<button type="button" class="${activa ? 'activa' : ''}" data-accion="nada"><i>${i}</i>${n}</button>`).join('')}</nav>`;
+  /** B1/B2: el banner para compartir la app, a lo ancho, solo con sesión y desde la tercera visita. */
+  function htmlBanner(v) {
+    const icono = v.b2 === 'simbolo' ? SIMBOLO : I.compartir;
+    return `<section class="banner ${v.b2}" aria-label="Comparte la app"><span class="icono">${icono}</span><b>¿Te gusta Somos Nosotrxs?</b><p>Compártela con tus amigxs.</p><button type="button" class="cerrar-banner" data-accion="cerrar-banner" aria-label="Cerrar">${I.cerrar}</button><button type="button" class="compartir" data-accion="compartir-app">${I.compartir}Compartir</button></section>`;
+  }
   function htmlInicio(v, img) {
-    return `<div class="pantalla${v.t2 ? ' t3' : ''}">${BARRA}${CONTEXTO}${htmlAhora(img)}${carriles(v).map((k) => htmlCarril(k, v, img)).join('')}<div class="relleno"></div>${NAV}</div><p class="aviso" role="status" aria-live="polite"></p>`;
+    const lista = carriles(v).map((k) => ({ clave: k.clave, html: htmlCarril(k, v, img) }));
+    const banner = v.banner ? htmlBanner(v) : '';
+    const tras = v.b1 === 'destacados' ? 'destacados' : v.b1 === 'planes' ? 'tusPlanes' : null;
+    let cuerpo = '';
+    for (const k of lista) { cuerpo += k.html; if (banner && k.clave === tras) cuerpo += banner; }
+    if (banner && (v.b1 === 'final' || (tras && !lista.some((k) => k.clave === tras)))) cuerpo += banner;
+    return `<div class="pantalla${v.t2 ? ' t3' : ''}">${BARRA}${CONTEXTO}${htmlAhora(img)}${cuerpo}<div class="relleno"></div>${NAV}</div><p class="aviso" role="status" aria-live="polite"></p>`;
   }
 
   // ===== La ficha de un festival (X1, X2): la cabecera oscura de producción, el programa por día y, aparte, lo que ya pasó.
@@ -1204,6 +1237,9 @@ const Portadas = (() => {
     if (!el || !tel.contains(el)) return;
     ev.preventDefault();
     const accion = el.dataset.accion;
+    if (accion === 'cerrar-banner') { estado.bannerCerrado = true; pintarTodo(); avisar(telMix, 'Cerrado: no vuelve a salir en 30 días', true); return; }
+    if (accion === 'compartir-app') { avisar(tel, 'Aquí se abre la hoja de compartir del teléfono con somosnosotros.org; después el banner no vuelve'); return; }
+    if (accion === 'deshacer' && estado.bannerCerrado) { estado.bannerCerrado = false; pintarTodo(); avisar(telMix, 'El banner vuelve'); return; }
     if (accion === 'ya-fui') { estado.yaFui.push(el.dataset.id); pintarTodo(); avisar(telMix, 'Ya fuiste: pasa a tu historial', true); return; }
     if (accion === 'deshacer') { estado.yaFui.pop(); pintarTodo(); avisar(telMix, 'De vuelta en «Tus planes»'); return; }
     if (accion === 'ficha') {
@@ -1239,7 +1275,7 @@ const Portadas = (() => {
     for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
     const activos = listaDe(estado.e);
     const nombre = p ? PRESETS[p].nombre : 'Personalizada';
-    const sufijo = '';
+    const sufijo = p === 'firmada' && PRESETS.firmada.pendiente ? ' (por firmar: hoy es lo del 12 de oct)' : '';
     $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado (producción)'}${sufijo}`;
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta» y con «Hoy».';
     $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}`;
