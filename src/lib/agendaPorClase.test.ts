@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtrosRecordados, hrefAgenda, listarAgenda, paraVisitarEnAgenda, SIN_FILTROS, textoVer, type EventoAgenda, type FiltrosAgenda } from "./agenda";
-import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
+import { componerDia, cuandoParaVisitar, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, paraVisitarEseDia, plegarActos, queDe, rangosDeVisita, sinHorario, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeTarjeta, notaDeClase, tarjetaConClase, tarjetaEvento } from "./destacados";
@@ -69,11 +69,18 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
   it("vigentes en Inicio: las que no han cerrado y ya abrieron o abren esta semana, la que cierra antes primero", () => {
     expect(ids(exposicionesVigentes(TODOS, ahora))).toEqual(["sin-leer", "grabado", "ecos", "futura"]);
   });
-  it("abierta un día según su horario propio o del lugar (ya resuelto en `horario`); sin horario, o sin poder leerlo, no", () => {
-    expect(ids(abiertasEseDia(TODOS, HOY))).toEqual(["ecos"]);
-    // El lunes 12 el MUNI cierra; Fotovisión abre ese día de 11 a 19.
-    expect(ids(abiertasEseDia(TODOS, "2026-10-12"))).toEqual(["futura"]);
+  it("un día: primero las que abren según su horario (propio o del lugar, ya resuelto en `horario`), después las sin horario conocido (OL-381)", () => {
+    // Hoy: Ecos abre; Grabado (sin horario) y la que no se pudo leer entran después, la que cierra antes primero.
+    expect(ids(paraVisitarEseDia(TODOS, HOY))).toEqual(["ecos", "sin-leer", "grabado"]);
+    // El lunes 12 el MUNI cierra (Ecos, con horario, se sabe cerrada: fuera); Fotovisión abre ese día de 11 a 19; Grabado, sin horario, sigue.
+    expect(ids(paraVisitarEseDia(TODOS, "2026-10-12"))).toEqual(["futura", "grabado"]);
+    // Fuera de su periodo no entra, con horario o sin él: Grabado cerró el 20 y la que no se pudo leer el 9.
+    expect(ids(paraVisitarEseDia(TODOS, "2026-10-21"))).toEqual(["ecos", "futura"]);
     expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00 a.m.–6:00 p.m.");
+    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00 a.m.–6:00 p.m.");
+    expect(cuandoParaVisitar(grabado, HOY)).toBe("Horario por confirmar");
+    expect(cuandoParaVisitar(sinLeer, HOY)).toBe("Horario por confirmar");
+    expect([ecos, grabado, sinLeer, { ...grabado, horario: [{ dias: [], abre: "10:00", cierra: "18:00" }] }].map(sinHorario)).toEqual([false, true, true, true]);
     expect(rangosDeVisita(grabado, HOY)).toEqual([]);
     expect(rangosDeVisita(ecos, "2026-11-01")).toEqual([]); // fuera de su periodo
   });
@@ -129,8 +136,8 @@ describe("la agenda (Todos y Nuevos) por clase", () => {
     expect(componerDia(lista, marcosDe(TODOS))[0]).toMatchObject({ tipo: "festival", marco: { id: "cine" } });
   });
   it("«Para visitar hoy»: hoy, o el primer día de Cuándo; con otro «Qué» o en Nuevos, no hay sección", () => {
-    expect(paraVisitarEnAgenda(agenda(), SIN_FILTROS, HOY)).toMatchObject({ dia: HOY, exposiciones: [{ id: "ecos" }] });
-    expect(paraVisitarEnAgenda(agenda(), con({ cuando: { desde: "2026-10-12", hasta: "2026-10-12" } }), HOY)).toMatchObject({ dia: "2026-10-12", exposiciones: [{ id: "futura" }] });
+    expect(paraVisitarEnAgenda(agenda(), SIN_FILTROS, HOY)).toMatchObject({ dia: HOY, exposiciones: [{ id: "ecos" }, { id: "sin-leer" }, { id: "grabado" }] });
+    expect(paraVisitarEnAgenda(agenda(), con({ cuando: { desde: "2026-10-12", hasta: "2026-10-12" } }), HOY)).toMatchObject({ dia: "2026-10-12", exposiciones: [{ id: "futura" }, { id: "grabado" }] });
     expect(paraVisitarEnAgenda(agenda(), con({ que: "talleres" }), HOY)).toBeNull();
     expect(paraVisitarEnAgenda(agenda(), SIN_FILTROS, HOY, 0)).toBeNull();
     // Cuánto también filtra lo que hay para visitar.
@@ -148,8 +155,8 @@ describe("la agenda (Todos y Nuevos) por clase", () => {
 
 describe("los números de la agenda", () => {
   it("cuentan renglones (sesiones y actos; el marco no) y aparte lo que hay para visitar", () => {
-    expect(contarAgenda(agenda(), SIN_FILTROS, HOY, undefined, ahora)).toEqual({ renglones: 9, visitar: 1 });
-    expect(contarAgenda(agenda(), con({ cuando: { desde: "2026-10-10", hasta: "2026-10-10" } }), HOY, undefined, ahora)).toEqual({ renglones: 4, visitar: 1 });
+    expect(contarAgenda(agenda(), SIN_FILTROS, HOY, undefined, ahora)).toEqual({ renglones: 9, visitar: 3 });
+    expect(contarAgenda(agenda(), con({ cuando: { desde: "2026-10-10", hasta: "2026-10-10" } }), HOY, undefined, ahora)).toEqual({ renglones: 4, visitar: 2 });
     expect(contarAgenda(agenda(), con({ que: "exposiciones" }), HOY, undefined, ahora)).toEqual({ renglones: 0, visitar: 5 });
   });
   it("lo que dice el botón", () => {
