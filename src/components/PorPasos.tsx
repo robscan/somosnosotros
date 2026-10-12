@@ -64,7 +64,8 @@ export default function PorPasos({ titulo, paso, direccion, avance, salida, onAt
     // Con el teclado ya abierto (se tocó «Estoy aquí» con el buscador enfocado) el campo del paso nuevo toma el foco al montarse y el
     // desplazamiento es suyo (OL-373): subir arriba deshacía lo que `ui/useCampoVisible` hizo al enfocarlo y, con la letra grande, donde
     // «¿Es aquí?» no cabe sobre el teclado, el campo quedaba bajo el pie o el teclado. Se vuelve a colocar ahora que el pie del paso nuevo
-    // (un hijo: su efecto ya corrió) publicó su alto.
+    // (un hijo: su efecto ya corrió) publicó su alto, y `useCampoVisible` vigila un rato que el pie siga anclado: justo después Safari de
+    // iOS 27 desplaza la página por su cuenta y deja lo fijo atrás (OL-376).
     if (campoEnfocado && document.documentElement.hasAttribute("data-teclado")) {
       reasegurarCampo();
       return;

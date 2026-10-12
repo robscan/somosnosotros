@@ -141,11 +141,61 @@ async function pagina(t, consulta = "") {
     Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
     // `desvio`: lo que iOS desplaza la vista dentro de la ventana de maquetación (`pageTop - scrollY`); el área visible va de ahí a ahí + height.
     let desvio = 0;
-    Object.defineProperty(vv, "pageTop", { get: () => window.scrollY + desvio });
+    // `congelada`: el `pageTop` atascado de Safari de iOS 27 (OL-376), que se queda donde estaba aunque la página se desplace; null, sigue a `scrollY`.
+    let congelada = null;
+    Object.defineProperty(vv, "pageTop", { get: () => congelada ?? window.scrollY + desvio });
     window.teclado = (px, desplazada = 0) => {
       desvio = desplazada;
-      vv.height = window.innerHeight - px;
+      vv.height = document.documentElement.clientHeight - px;
       vv.dispatchEvent(new Event("resize"));
+    };
+    // Safari de iOS 27 con el teclado abierto (OL-376, bitácora 407): `innerHeight` deja de ser la ventana y mide lo que queda de la página
+    // desde lo que se ve, así que cambia al desplazar (medido en el simulador: 429, 457, 556, 600…; la ventana, 699).
+    window.altoInterior = (px) => Object.defineProperty(window, "innerHeight", { configurable: true, get: () => px });
+    // Las veces que la página pide desplazarse con `scrollBy` (el empujón de un píxel de `useCampoVisible`, entre otras).
+    window.__scrollBy = [];
+    const scrollByDeVerdad = window.scrollBy.bind(window);
+    window.scrollBy = (...a) => {
+      window.__scrollBy.push(typeof a[0] === "object" ? a[0].top : a[1]);
+      return scrollByDeVerdad(...a);
+    };
+    // Safari de iOS 27 tras un cambio de paso con el teclado abierto (OL-376): desplaza la página por su cuenta hasta `y` sin avisar al
+    // `visualViewport`, cuyo `pageTop` se queda donde estaba. En cuanto la página se desplaza de verdad un píxel (el empujón), «iOS» le
+    // vuelve a mandar lo que se ve: el `pageTop` al día y, con `cierra`, el teclado ya cerrado (el área entera), como cuando iOS lo escondió
+    // y la página lo seguía creyendo abierto.
+    // Safari de iOS 27 sin teclado: la vista quedó `px` más abajo del final de la página (un desplazamiento suave siguió de largo mientras iOS
+    // cerraba el teclado). En cuanto la página pide ir a algún sitio con `scrollTo`, «iOS» la vuelve a poner dentro del documento.
+    window.__scrollTo = [];
+    const scrollToDeVerdad = window.scrollTo.bind(window);
+    window.scrollTo = (...a) => {
+      const destino = typeof a[0] === "object" ? a[0].top : a[1];
+      window.__scrollTo.push(destino);
+      if (window.__pasada) {
+        window.__pasada = false;
+        congelada = null;
+        vv.dispatchEvent(new Event("scroll"));
+      }
+      return scrollToDeVerdad(...a);
+    };
+    window.pasarDelFinal = (px) => {
+      congelada = document.documentElement.scrollHeight - vv.height + px;
+      window.__pasada = true;
+    };
+    window.atascar = (y, cierra) => {
+      congelada = vv.pageTop;
+      window.__destrabada = false;
+      window.scrollTo(0, y);
+      const alDesplazar = () => {
+        if (Math.abs(window.scrollY - y) !== 1) return;
+        window.removeEventListener("scroll", alDesplazar);
+        congelada = null;
+        window.__destrabada = true;
+        if (cierra) {
+          vv.height = document.documentElement.clientHeight;
+          vv.dispatchEvent(new Event("resize"));
+        } else vv.dispatchEvent(new Event("scroll"));
+      };
+      window.addEventListener("scroll", alDesplazar);
     };
   });
   const p = await context.newPage();
@@ -479,4 +529,105 @@ test("sin teclado, al cambiar de paso la página sube arriba como siempre, aunqu
   assert.equal(r.foco, "Nombre del lugar");
   assert.deepEqual(r.subidas, [{ top: 0 }], "sube arriba una vez");
   assert.equal(r.y, 0);
+});
+
+// OL-376 (bitácora 407): Safari de iOS 27 tras tocar «Estoy aquí» con el teclado abierto. Lo que aquí no se puede imitar —que Safari deje lo
+// fijo atrás al desplazar la página— lo midió el simulador; aquí se prueba lo que hace el hook con lo que iOS le dice.
+
+test("iOS 27: con el teclado abierto `innerHeight` no es la ventana (mide lo que queda de la página): el teclado sale de la ventana de verdad y el pie queda en el borde de lo que se ve (OL-376)", async (t) => {
+  const p = await pagina(t);
+  await p.evaluate(() => window.altoInterior(600));
+  await abrirTeclado(p, "Nombre del lugar");
+  let c = await cajas(p, "Nombre del lugar");
+  // Antes se medía con `innerHeight`: 600 − 508 = 92 de teclado, poco aire abajo y el pie 244 px por debajo de lo que se ve.
+  assert.equal(c.teclado, `${TECLADO}px`, "el teclado se mide contra la ventana (clientHeight), no contra innerHeight");
+  assert.equal(c.abajoVisible, `${TECLADO}px`);
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y lo que se ve en ${c.visible}`);
+  assert.ok(c.campo.top >= c.barraBottom && c.campo.bottom <= c.pie.top, `el campo se ve entre la barra y el pie (va de ${c.campo.top} a ${c.campo.bottom}; pie en ${c.pie.top})`);
+  const relleno = c.relleno;
+  // Al desplazar, iOS 27 cambia `innerHeight`; el aire de abajo y el pie no se mueven (antes cada cambio cambiaba el largo de la página y la
+  // medida no se asentaba: 3,6 s yendo y viniendo en el simulador).
+  for (const [alto, y] of [
+    [429, 120],
+    [557, 40],
+    [699, 200],
+  ]) {
+    await p.evaluate(
+      ([a, desplazar]) => {
+        window.altoInterior(a);
+        window.scrollTo(0, desplazar);
+      },
+      [alto, y],
+    );
+    await asentarCuadros(p);
+    c = await cajas(p, "Nombre del lugar");
+    assert.equal(c.teclado, `${TECLADO}px`, `con innerHeight ${alto} el teclado sigue en ${TECLADO}`);
+    assert.equal(c.relleno, relleno, `con innerHeight ${alto} el aire de abajo no cambia`);
+    assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `con innerHeight ${alto} el pie termina en ${c.pie.bottom} y lo que se ve en ${c.visible}`);
+  }
+});
+
+/** Cambia de paso con el teclado abierto, como en el iPhone: el buscador enfocado y el teclado arriba, «Estoy aquí», y el campo del paso nuevo toma el foco. */
+async function aEsAqui(p) {
+  await abrirTeclado(p, "Buscar");
+  await estoyAqui(p);
+  await p.evaluate(() => (window.__scrollBy = []));
+  return p.evaluate(() => window.scrollY);
+}
+const empujones = (p) => p.evaluate(() => window.__scrollBy.filter((d) => Math.abs(d) === 1).length);
+
+test("iOS 27: si tras el cambio de paso el área visible queda atascada y iOS ya escondió el teclado, un empujón de un píxel destraba la página y todo queda como sin teclado (OL-376)", async (t) => {
+  const p = await pagina(t, "?pasos=1");
+  const y = await aEsAqui(p);
+  // Safari desplaza la página por su cuenta y no le avisa al visualViewport; para él, el teclado sigue abierto.
+  await p.evaluate((destino) => window.atascar(destino, true), y > 150 ? y - 150 : y + 150);
+  await p.waitForFunction(() => window.__destrabada, null, { timeout: 3000 });
+  await asentarCuadros(p);
+  const c = await cajas(p, "Nombre del lugar");
+  assert.equal(await empujones(p), 1, "una sola vez: con lo que llegó ya no está atascada");
+  assert.equal(c.atributo, false, "con lo que mandó iOS (el área entera) ya no hay teclado");
+  assert.equal(c.abajoVisible, "0px");
+  assert.equal(c.pie.posicion, "sticky", "el pie vuelve a su sitio de siempre, pegado abajo");
+});
+
+test("iOS 27: si el área visible queda atascada con el teclado de verdad abierto, el empujón la pone al día y el pie sigue sobre el teclado (OL-376)", async (t) => {
+  const p = await pagina(t, "?pasos=1");
+  const y = await aEsAqui(p);
+  await p.evaluate((destino) => window.atascar(destino, false), y > 150 ? y - 150 : y + 150);
+  await p.waitForFunction(() => window.__destrabada, null, { timeout: 3000 });
+  await asentarCuadros(p);
+  const c = await cajas(p, "Nombre del lugar");
+  const vista = await p.evaluate(() => ({ pageTop: window.visualViewport.pageTop, scrollY: window.scrollY }));
+  assert.equal(await empujones(p), 1);
+  assert.equal(vista.pageTop, vista.scrollY, "el área visible vuelve a cuadrar con la página");
+  assert.equal(c.atributo, true, "el teclado sigue abierto");
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y lo que se ve en ${c.visible}`);
+});
+
+test("iOS 27: si sin teclado la vista quedó más abajo del final de la página (el pie a media pantalla), se lleva la página a su final (OL-376)", async (t) => {
+  const p = await pagina(t);
+  // El campo enfocado sin teclado (como al llegar a «¿Es aquí?» cuando iOS ya lo cerró) y la vista 200 px más abajo del final.
+  await p.getByRole("textbox", { name: "Nombre del lugar" }).focus();
+  await asentarCuadros(p);
+  const final = await p.evaluate(() => {
+    window.__scrollTo = [];
+    window.pasarDelFinal(200);
+    return document.documentElement.scrollHeight - window.visualViewport.height;
+  });
+  await p.waitForFunction(() => window.__scrollTo.length > 0, null, { timeout: 3000 });
+  const destinos = await p.evaluate(() => window.__scrollTo);
+  assert.deepEqual(destinos, [final], `la página vuelve a su final (${final}) una sola vez`);
+  const c = await cajas(p, "Nombre del lugar");
+  assert.equal(c.atributo, false, "sin teclado");
+  assert.ok(Math.abs(c.pie.bottom - VENTANA) <= 1, `el pie vuelve al borde de abajo (${c.pie.bottom})`);
+});
+
+test("sin atascarse, el cambio de paso con el teclado abierto no empuja la página (OL-376)", async (t) => {
+  const p = await pagina(t, "?pasos=1");
+  await aEsAqui(p);
+  // Más que la vigilancia entera (1,2 s): ningún desplazamiento de un píxel.
+  await p.evaluate(() => new Promise((ok) => setTimeout(ok, 1500)));
+  assert.equal(await empujones(p), 0);
+  const c = await cajas(p, "Nombre del lugar");
+  assert.ok(Math.abs(c.pie.bottom - c.visible) <= 1, `el pie termina en ${c.pie.bottom} y lo que se ve en ${c.visible}`);
 });
