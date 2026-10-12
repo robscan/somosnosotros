@@ -67,3 +67,7 @@ La app compilada contra el respaldo local (`scripts/ops/auditoria-ui/respaldo-lo
 ## Lo que no entra aquí
 
 Las otras pintas (suave, violeta) y posiciones del banner (tras «Tus planes», al final) no se firmaron. Medir cuántas personas comparten no entra (BotonCompartir solo mide las fichas; compartir la app no se mide).
+
+## Nota del gestor al unir (2026-10-12, 12:50)
+
+Al traer `main` (con OL-385) la CI falló en `npm run inventario`: `medidasEnDuro` subió de 333 a 342 (las 9 son del banner: 44 px del círculo del símbolo y del toque de la ×, 36 px de la × visible, 26 px del símbolo, 6 y 2 px de ajustes). Cada rama pasaba sola con su propia línea base; juntas, no. Aceptadas con `npm run inventario -- --aceptar` (342). Los 44 y 36 podrían ser tokens (`--toque-min`, `--sello-chico`): queda como mejora chica.
