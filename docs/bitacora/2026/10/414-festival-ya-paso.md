@@ -50,7 +50,8 @@ Solo cambian el programa del festival, «Ya pasó» y la ficha de un evento que 
     - los metadatos;
     - el festival con 3 pasados y 3 por venir («Programa» con los 3 por venir, la línea, el `details` cerrado con «Ya pasó · 3 actividades», los 3 renglones con «ya pasó» y sin botón, el KPI «Actos» en 6);
     - un festival sin pasados no lleva «Ya pasó».
-- En verde: `npm run lint` (0 errores; 1 aviso que ya estaba, en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (198 archivos, 3594 pruebas) y `npm run build`.
+- **Unida con `origin/inauguracion-pasada` (PR #488, OL-380)**, como pedía el encargo. Hubo tres choques y en los tres quedaron los dos lados: los `import` de `page.tsx` (`renglonLigado` junto a `programaFestival`), los dos `describe` nuevos al final de `page.test.ts` y las dos líneas de `OPEN_LOOPS.md` (la de OL-383 arriba). Tras unir, siguen en verde lint, tipos, `npm test` (199 archivos, 3601 pruebas) y build. Si #488 entra primero, este PR solo trae lo de OL-383; si no entra, este PR la arrastra: avisar al gestor.
+- Antes de unir, en verde: `npm run lint` (0 errores; 1 aviso que ya estaba, en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (198 archivos, 3594 pruebas) y `npm run build`.
 
 ## Capturas (390×844, `docs/rediseno/capturas-414/`)
 
