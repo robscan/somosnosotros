@@ -92,7 +92,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         // servidor que cruce a un componente de cliente, aunque ese cliente decida no montarlo) y filtraría "Tus
         // planes" al streaming de alguien sin cuenta, sin necesidad (OL-219).
         slotAhora={<CarrilAhora agendaPromise={agendaPromise} ciudad={ciudad.nombre} conSesion={!!actual} />}
-        slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
+        slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} agendaPromise={agendaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         // «Festivales y expos» (OL-342): la agenda no tiene un «Qué» que junte las dos clases, así que su enlace va a la agenda sin filtro

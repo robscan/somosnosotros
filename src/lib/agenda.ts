@@ -23,6 +23,8 @@ export type EventoAgenda = EventoResumen & {
   clase?: Clase;
   /** El festival del que es parte (un acto de su programa), si lo es. */
   evento_padre_id?: string | null;
+  /** Solo en una exposición: el acto puntual que la inaugura (OL-379). La fila «Ahora» busca su hora entre los eventos cargados. */
+  inaugura_id?: string | null;
   /** Solo en una exposición: el horario que vale (el suyo o, sin él, el de su lugar; `horarioEfectivo`). Vacío es «Horario por confirmar»; sin la
    *  propiedad, no se cargó y no se dice nada del horario. */
   horario?: Franja[];

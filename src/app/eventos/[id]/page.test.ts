@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Heroe from "@/components/ui/Heroe";
 import { Kpi } from "@/components/ui/Kpi";
 import BotonCalendario from "@/components/BotonCalendario";
+import BotonCompartir from "@/components/BotonCompartir";
 import Asistencia from "./Asistencia";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
@@ -153,9 +154,9 @@ describe("JSON-LD de un evento activo reservado (OL-278)", () => {
 describe("dirección reservada tras el fin (OL-257)", () => {
   afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
 
-  const preparar = (privado: boolean, sesion = true, autor = false, reservado = true) => {
+  const preparar = (privado: boolean, sesion = true, autor = false, reservado = true, visible = true) => {
     const upsert = vi.fn();
-    const evento = { ...EVENTO, inicio: "2000-01-01T19:00:00Z", fin: "2000-01-01T20:00:00Z", sitio_reservado: reservado };
+    const evento = { ...EVENTO, inicio: "2000-01-01T19:00:00Z", fin: "2000-01-01T20:00:00Z", sitio_reservado: reservado, visible };
     const cliente = clienteFalso({ eventos: { data: evento }, eventos_sitio_privado: { data: privado ? { direccion: "Calle reservada 257", lat: 22, lng: -100, indicaciones: null } : null } });
     const from = cliente.from;
     cliente.from = (tabla: string) => tabla === "asistencias" ? { ...chain({ data: [] }), upsert } : from(tabla);
@@ -180,22 +181,32 @@ describe("dirección reservada tras el fin (OL-257)", () => {
     await ficha("voy");
     expect(upsert).not.toHaveBeenCalled();
   });
-  it("sin asistentes, el bloque diferido no invita a registrarse para un evento terminado", async () => {
+  it("un evento terminado no invita a registrarse: en pasado no lleva «Quién va» (OL-383)", async () => {
     preparar(true);
-    const diferido = [...recorrer(await ficha())].find(e => typeof e.type === "function" && e.props.consultaTrasFin === true);
-    expect(diferido).toBeTruthy();
-    const componente = diferido!.type as (props: Record<string, unknown>) => Promise<unknown>;
-    const elementos = [...recorrer(await componente(diferido!.props))];
-    expect(elementos.find(e => e.type === "p")?.props.children).toBe("Nadie confirmó asistencia.");
+    const elementos = [...recorrer(await ficha())];
+    expect(elementos.some(e => typeof e.type === "function" && (e.type as { name?: string }).name === "QuienVaDiferido")).toBe(false);
+    expect(elementos.some(e => e.props?.id === "quien-va")).toBe(false);
   });
   it.each([
     [false, true, true], // ventana vencida/revocada: RLS no devuelve fila.
     [false, false, true], // anónimo.
     [true, false, true], // ni una respuesta privada inesperada sustituye la sesión.
     [false, true, false], // evento ordinario pasado.
-  ])("sin acceso reservado vigente conserva 404: %j", async (privado, sesion, reservado) => {
-    preparar(privado, sesion, false, reservado);
+  ])("oculto y sin acceso reservado vigente conserva 404: %j", async (privado, sesion, reservado) => {
+    preparar(privado, sesion, false, reservado, false);
     await expect(ficha()).rejects.toThrow("NOT_FOUND");
+  });
+  it.each([
+    [false, true], // ventana vencida/revocada: RLS no devuelve fila.
+    [false, false], // anónimo.
+    [true, false], // ni una respuesta privada inesperada sustituye la sesión.
+  ])("visible y sin acceso reservado vigente: la ficha en pasado, sin la dirección (OL-383): %j", async (privado, sesion) => {
+    preparar(privado, sesion);
+    const elementos = [...recorrer(await ficha())];
+    expect(elementos.find(e => e.type === Heroe)?.props.etiqueta).toBe("Ya pasó");
+    expect(elementos.some(e => e.type === "b" && e.props.children === "Calle reservada 257")).toBe(false);
+    expect(elementos.some(e => e.type === "small" && e.props.children === "La dirección ya no está disponible por privacidad.")).toBe(true);
+    expect(elementos.some(e => e.props?.role === "status")).toBe(false);
   });
   it("la autora conserva acceso a su evento pasado aunque no haya dirección privada", async () => {
     preparar(false, true, true);
@@ -428,6 +439,86 @@ describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => 
     expect(heroe.props.meta).toBeUndefined();
     expect(todos).toHaveLength(2); // cuándo y «Costo»; «Van» es `KpiVan`, diferido
     expect(todos[1]).toBe("Costo");
+  });
+});
+
+describe("la ficha en pasado (OL-383)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  /** Un cliente cuya tabla `eventos` da la ficha a `maybeSingle` y la lista de actos a la consulta del programa. */
+  const abrir = async (evento: Record<string, unknown>, actos: Record<string, unknown>[] = []) => {
+    const cliente = {
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return chain({ data: tabla === "asistencias" ? [] : null });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c: any = chain({ data: actos });
+        c.maybeSingle = () => Promise.resolve({ data: evento });
+        return c;
+      },
+      rpc: () => Promise.resolve({ data: null }),
+    };
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+  };
+  const PASADO = { ...EVENTO, inicio: "2000-01-01T19:00:00Z", fin: "2000-01-01T20:00:00Z", borrador: false };
+
+  it("un evento pasado que se ve: «Ya pasó» en la cabecera, el cuándo en pasado, solo «Compartir»; sin «Voy», calendario, «Cómo llegar» ni «Quién va»", async () => {
+    const elementos = await abrir(PASADO);
+    expect(elementos.find((e) => e.type === Heroe)?.props.etiqueta).toBe("Ya pasó");
+    expect(elementos.find((e) => e.type === Kpi)?.props.etiqueta).toMatch(/^Fue · /);
+    expect(elementos.some((e) => e.type === BotonCompartir)).toBe(true);
+    expect(elementos.some((e) => e.type === BotonCalendario)).toBe(false);
+    expect(elementos.some((e) => e.type === Asistencia)).toBe(false);
+    expect(elementos.some((e) => [e.props?.children].flat().includes("Cómo llegar"))).toBe(false);
+    expect(elementos.some((e) => e.props?.id === "quien-va")).toBe(false);
+    // Lo demás, tal cual: el sitio en «Dónde» y el pie.
+    expect(elementos.some((e) => e.props?.nombre === "Foro de prueba")).toBe(true);
+  });
+
+  it("un borrador o un evento oculto que ya pasó sigue en «Esto ya no está»", async () => {
+    await expect(abrir({ ...PASADO, borrador: true, visible: false })).rejects.toThrow("NOT_FOUND");
+    await expect(abrir({ ...PASADO, visible: false })).rejects.toThrow("NOT_FOUND");
+  });
+
+  it("el título dice que ya pasó, sin imagen para compartir ni noindex", async () => {
+    const cliente = clienteFalso({ eventos: { data: PASADO } });
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { generateMetadata } = await import("./page");
+    const meta = await generateMetadata({ params: Promise.resolve({ id: PASADO.slug }) });
+    expect(meta.title).toBe("Evento de prueba · Ya pasó · Somos Nosotros");
+    expect(meta.openGraph).toBeUndefined();
+    expect(meta.robots).toBeUndefined();
+  });
+
+  it("el festival: «Programa» solo con lo que viene y, aparte y plegado, «Ya pasó» con los pasados enlazados a su ficha", async () => {
+    const festival = { ...EVENTO, id: "fest-1", slug: "festival-de-prueba", clase: "festival", inicio: "2000-01-01T19:00:00Z", fin: "2099-01-04T06:00:00Z" };
+    const acto = (n: number, inicio: string) => ({ id: `acto-${n}`, slug: `acto-${n}`, titulo: `Acto ${n}`, inicio, fin: null, zona: "America/Mexico_City", imagen: null, precio: null, lugar_id: null, sitio_texto: "Foro", sitio_reservado: false, visible: true, borrador: false, lugar: null });
+    const actos = [acto(1, "2000-01-01T19:00:00Z"), acto(2, "2000-01-02T19:00:00Z"), acto(3, "2000-01-03T19:00:00Z"), acto(4, "2099-01-01T19:00:00Z"), acto(5, "2099-01-02T19:00:00Z"), acto(6, "2099-01-03T19:00:00Z")];
+    const elementos = await abrir(festival, actos);
+    const programa = elementos.find((e) => e.props?.["aria-label"] === "Programa")!;
+    const enPrograma = [...recorrer(programa)];
+    const porDia = enPrograma.find((e) => Array.isArray(e.props?.eventos))!;
+    expect((porDia.props.eventos as { id: string }[]).map((a) => a.id)).toEqual(["acto-4", "acto-5", "acto-6"]);
+    expect(enPrograma.some((e) => e.type === "p" && [e.props.children].flat().join("") === "Programa registrado: 6 actividades · 3 por venir")).toBe(true);
+    const yaPaso = elementos.find((e) => e.type === "details")!;
+    expect(yaPaso.props.open).toBeUndefined();
+    const dentro = [...recorrer(yaPaso)];
+    expect(dentro.find((e) => e.type === "h2")?.props.children).toBe("Ya pasó");
+    expect(dentro.find((e) => e.type === "small")?.props.children).toBe("3 actividades");
+    const renglones = dentro.filter((e) => (e.props?.evento as { id?: string } | undefined)?.id);
+    expect(renglones.map((e) => (e.props.evento as { id: string }).id)).toEqual(["acto-1", "acto-2", "acto-3"]);
+    expect(renglones.every((e) => e.props.nota === "ya pasó" && !e.props.boton)).toBe(true);
+    // El número de actos sigue contándolos todos.
+    const heroe = elementos.find((e) => e.type === Heroe)!;
+    expect([...recorrer(heroe.props.banda)].find((e) => e.type === Kpi && e.props.etiqueta === "Actos")?.props.valor).toBe(6);
+  });
+
+  it("un festival sin actos pasados no lleva «Ya pasó» y su línea es la de siempre", async () => {
+    const festival = { ...EVENTO, id: "fest-2", slug: "festival-futuro", clase: "festival", inicio: "2099-01-01T19:00:00Z", fin: "2099-01-04T06:00:00Z" };
+    const actos = [{ id: "a", slug: "a", titulo: "A", inicio: "2099-01-01T19:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, precio: null, lugar_id: null, sitio_texto: "Foro", sitio_reservado: false, visible: true, borrador: false, lugar: null }];
+    const elementos = await abrir(festival, actos);
+    expect(elementos.some((e) => e.type === "details")).toBe(false);
+    expect(elementos.some((e) => e.type === "p" && [e.props.children].flat().join("") === "Programa registrado: 1 actividad")).toBe(true);
   });
 });
 

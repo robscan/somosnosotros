@@ -45,6 +45,34 @@ describe("tituloCorto", () => {
   it("sin el nombre del festival no lo salta", () => {
     expect(tituloCorto("CINEMA: El atractivo de la resistencia")).toBe("CINEMA");
   });
+  describe("con los títulos reales de producción (OL-378)", () => {
+    const FESTIVAL = "CINEMA: XV Festival de Cine México-Alemania";
+    it("el prefijo cuenta como el festival si es su propio título corto", () => {
+      expect(tituloCorto(FESTIVAL)).toBe("CINEMA");
+      expect(tituloCorto("CINEMA: El atractivo de la resistencia, concierto y charla de MOTUS NEU jazz", FESTIVAL)).toBe("El atractivo de la resistencia");
+      expect(comoOracion(tituloCorto("CINEMA: El atractivo de la resistencia, concierto y charla de MOTUS NEU jazz", FESTIVAL))).toBe("El atractivo de la resistencia");
+    });
+    it("el festival seguido de un tipo, separados por coma, también se salta", () => {
+      expect(tituloCorto("CINEMA, clausura: Metrópolis con banda sonora en vivo de Jo Beyer", FESTIVAL)).toBe("Metrópolis con banda sonora en vivo de Jo Beyer");
+      expect(tituloCorto("CINEMA, clausura: Metrópolis con banda sonora en vivo de Jo Beyer", "CINEMA")).toBe("Metrópolis con banda sonora en vivo de Jo Beyer");
+    });
+    it("sin festival, el acto se queda como hoy", () => {
+      expect(tituloCorto("CINEMA: El atractivo de la resistencia, concierto y charla de MOTUS NEU jazz")).toBe("CINEMA");
+      expect(tituloCorto("CINEMA, clausura: Metrópolis con banda sonora en vivo de Jo Beyer")).toBe("CINEMA, clausura");
+    });
+    it("un acto de otro festival no se salta", () => {
+      expect(tituloCorto("CINEMA: El atractivo de la resistencia", "Festival de Cine UASLP")).toBe("CINEMA");
+      expect(tituloCorto("CINEMA, clausura: Metrópolis", "Festival de Cine UASLP")).toBe("CINEMA, clausura");
+    });
+    it("«Inauguración: DESIERTO: Observación y Espacio.» sigue igual", () => {
+      expect(tituloCorto("Inauguración: DESIERTO: Observación y Espacio.")).toBe("DESIERTO");
+      expect(tituloCorto("Inauguración: DESIERTO: Observación y Espacio.", FESTIVAL)).toBe("DESIERTO");
+    });
+    it("la minúscula se queda con el festival, también por su título corto", () => {
+      expect(tituloCorto("CINEMA: función doble", FESTIVAL)).toBe("CINEMA");
+      expect(tituloCorto("Verbena, Ritmo y Sabor: verbena musical", "Verbena, Ritmo y Sabor: edición 2026")).toBe("Verbena, Ritmo y Sabor");
+    });
+  });
   it("quita el punto final y deja un título simple igual", () => {
     expect(tituloCorto("Taller de grabado en el barrio.")).toBe("Taller de grabado en el barrio");
     expect(tituloCorto("Macario")).toBe("Macario");

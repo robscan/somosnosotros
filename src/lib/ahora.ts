@@ -10,7 +10,8 @@ import { ocurrenciasDe } from "./ocurrencias";
  * Sale de los eventos que Inicio ya carga (hoy y mañana ya están en «Esta semana»): sin consulta nueva. El orden es el del prototipo:
  * 1. **Ahora:** ya empezó y no ha terminado (`terminaDe`: con fin, su fin; sin él, 3 h después de empezar, OL-358).
  * 2. **En un rato:** empieza hoy en menos de 2 h, con la cuenta atrás («En 30 min», «En 1 h 15 min»).
- * 3. **Exposiciones:** solo el día que inaugura o el último, hasta su cierre de hoy o, sin horario de hoy, hasta las 18:00.
+ * 3. **Exposiciones:** solo su primer día o el último, hasta su cierre de hoy o, sin horario de hoy, hasta las 18:00. «Inaugura hoy» solo si su
+ *    acto de inauguración (`inaugura_id`) es hoy; si no, su primer día «Abre hoy» (OL-379: «hoy se visita solamente»).
  * 4. **Hoy:** lo que empieza más tarde hoy.
  * 5. **Mañana:** solo si ya no queda nada hoy o desde las 20:00.
  * Tope de 8. Del festival salen sus actos, nunca el festival entero (OL-347). Sin «Destacados» propio: un destacado sale por su hora. Cada hora y
@@ -40,6 +41,9 @@ export type EventoAhora = {
   exposicion: boolean;
   /** Solo de una exposición: su horario (días 1 = lunes … 7 = domingo). Sin él o sin franja de hoy, hasta las 18:00. */
   horario?: Franja[];
+  /** Solo de una exposición con acto de inauguración que todavía no termina (por eso está en la agenda): el inicio ISO de ese acto. El teléfono
+   *  compara su día con el de «ahora» cada minuto (a medianoche, la de mañana pasa a ser de hoy). Sin la propiedad, no inaugura hoy (OL-379). */
+  inaugura?: string;
   /** El cartel del evento (su imagen), nunca la foto del lugar: sin él, la historia es tipográfica con el símbolo SN. */
   cartel: string | null;
   sitio: string;
@@ -112,12 +116,18 @@ export function cuentaAtras(inicio: string, ahora: Date): string {
 }
 
 const esUltimoDia = (e: EventoAhora, ahora: Date) => !!e.fin && diaLocal(new Date(e.fin), e.zona) === diaLocal(ahora, e.zona);
+/** ¿Su acto de inauguración es hoy (en la zona de la exposición)? Sin acto cargado, no: si ya pasó, la agenda ya no lo trae. */
+const inauguraHoy = (e: EventoAhora, ahora: Date) => !!e.inaugura && diaLocal(new Date(e.inaugura), e.zona) === diaLocal(ahora, e.zona);
 
-/** La urgencia, como etiqueta de la historia: «Ahora», «En 30 min», «Último día», «Inaugura hoy», «Hoy», «Mañana». */
+/**
+ * La urgencia, como etiqueta de la historia: «Ahora», «En 30 min», «Último día», «Inaugura hoy», «Abre hoy», «Hoy», «Mañana». Una exposición dice
+ * «Inaugura hoy» solo si su acto de inauguración es hoy (OL-379; antes lo decía su primer día aunque la inauguración hubiera sido días antes);
+ * su primer día sin inauguración hoy, «Abre hoy», como la ficha (`textoHoy`).
+ */
 export function etiquetaAhora({ tipo, e }: AvisoAhora, ahora: Date): string {
   if (tipo === "ahora") return "Ahora";
   if (tipo === "rato") return cuentaAtras(e.inicio, ahora);
-  if (tipo === "expo") return esUltimoDia(e, ahora) ? "Último día" : "Inaugura hoy";
+  if (tipo === "expo") return esUltimoDia(e, ahora) ? "Último día" : inauguraHoy(e, ahora) ? "Inaugura hoy" : "Abre hoy";
   return tipo === "hoy" ? "Hoy" : "Mañana";
 }
 
@@ -162,13 +172,15 @@ export function anilloDe(tipo: TipoAhora, visto: boolean): "ahora" | "pronto" | 
 
 /**
  * Los candidatos, en el servidor, de la agenda que Inicio ya cargó: cada día de un evento (`ocurrenciasDe`, OL-320) que empieza antes de
- * `ahora` + 2 días y no ha terminado, más las exposiciones que inauguran o cierran en esos días. Nunca el marco de un festival (sus actos sí).
+ * `ahora` + 2 días y no ha terminado, más las exposiciones que abren o cierran en esos días, con el inicio de su acto de inauguración si la agenda
+ * lo trae (`inaugura_id`; ya terminado, no está y no inaugura hoy). Nunca el marco de un festival (sus actos sí).
  * Sobran unos pocos a propósito: el teléfono reclasifica cada minuto y a medianoche lo de mañana pasa a ser de hoy.
  */
 export function candidatosAhora(eventos: readonly EventoAgenda[], ciudad: string, ahora: Date = new Date()): EventoAhora[] {
   const t = ahora.getTime();
   const hasta = t + 2 * 86400_000;
   const salida: EventoAhora[] = [];
+  const inicioDe = new Map(eventos.map((e) => [e.id, e.inicio]));
   for (const e of eventos) {
     if (esMarco(e)) continue;
     const base = {
@@ -182,7 +194,8 @@ export function candidatosAhora(eventos: readonly EventoAgenda[], ciudad: string
     };
     if (e.clase === "exposicion") {
       const marcas = [e.inicio, e.fin].filter((x): x is string => !!x).map(ms);
-      if (marcas.some((m) => m < hasta && m > t - 86400_000)) salida.push({ ...base, clave: e.id, inicio: e.inicio, fin: e.fin, exposicion: true, parte: null, ...(e.horario ? { horario: e.horario } : {}) });
+      const inaugura = e.inaugura_id ? inicioDe.get(e.inaugura_id) : undefined;
+      if (marcas.some((m) => m < hasta && m > t - 86400_000)) salida.push({ ...base, clave: e.id, inicio: e.inicio, fin: e.fin, exposicion: true, parte: null, ...(e.horario ? { horario: e.horario } : {}), ...(inaugura ? { inaugura } : {}) });
       continue;
     }
     for (const o of ocurrenciasDe(e)) {

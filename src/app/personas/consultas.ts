@@ -13,7 +13,7 @@ export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: str
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: PerfilPublico; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[] };
+type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; evento_padre_id?: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[] };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
 type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -77,7 +77,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
     supabase.from("seguimientos").select("lugar:lugares(id, slug, nombre, tipo, direccion, portada), artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, colores_cartel, clase, lugar:lugares(nombre, portada))")
+      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, colores_cartel, clase, evento_padre_id, lugar:lugares(nombre, portada))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),
