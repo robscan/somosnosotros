@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
-import { agruparPorDia, agruparPorPublicacion, conFiltros, corteNuevos, exposicionesEnAgenda, filtrosRecordados, listarAgenda, paraVisitarEnAgenda, queDeFiltros, sinSeguirSinSesion, type EventoAgenda, type FiltrosAgenda } from "@/lib/agenda";
+import { agruparPiezasPorPublicacion, agruparPorDia, conFiltros, corteNuevos, exposicionesEnAgenda, filtrosRecordados, listarAgenda, listarNuevos, paraVisitarEnAgenda, queDeFiltros, sinSeguirSinSesion, type EventoAgenda, type FiltrosAgenda } from "@/lib/agenda";
 import { componerDia, cuandoParaVisitar, marcosDe, notaDeVisita, textoHastaEl, tituloParaVisitar } from "@/lib/agendaPorClase";
 import { soloInteres } from "@/lib/claseEvento";
 import type { Agenda } from "@/lib/cargarAgenda";
@@ -10,6 +10,7 @@ import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { ZONA_INICIAL } from "@/lib/fechas";
 import { marcarNuevosVisto } from "@/lib/nuevosVisto";
 import { claveDe } from "@/lib/ocurrencias";
+import { textoActosNuevos, textoDesde, textoFunciones, type Pieza } from "@/lib/series";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
@@ -277,13 +278,16 @@ function AgendaLista({
  * se publicó y lo último arriba, con los mismos filtros de la fila de contexto que Todos. Como el grupo dice cuándo se publicó y no cuándo
  * es, el renglón lleva el día del evento. Enseñarla cuenta como haberla visto (`marcarNuevosVisto`), salvo con filtros puestos: lo que no
  * se enseñó sigue siendo nuevo.
+ *
+ * Un renglón por serie (OL-385, `listarNuevos`): los actos nuevos de un festival, en el renglón del festival con «3 actos nuevos»; las funciones de
+ * lo mismo, en el de la más próxima con «6 funciones · desde vie 16 de oct · 20:00» y sin «Voy» (es por función: se elige en su ficha).
  */
 function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Promise<Agenda>; filtros: FiltrosAgenda; desde: number; ciudad: Ciudad; avisos: AvisosLista | null }) {
   const datos = use(agenda);
   const ahora = new Date();
   const canal = useCanalDeListas();
   const asistencia = useAsistenciaEnLista(datos.asistencias, avisos, canal);
-  const lista = listarAgenda(datos, filtros, desde);
+  const lista = listarNuevos(datos, filtros, desde);
   const vistoTodo = !conFiltros(filtros);
   useEffect(() => {
     if (vistoTodo) marcarNuevosVisto(ciudad.slug, datos.eventos);
@@ -296,10 +300,10 @@ function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Prom
           <p>{vistoTodo ? "Nada nuevo desde tu última visita." : "Nada nuevo con lo que elegiste. Cambia o quita algún filtro para ver más."}</p>
         </div>
       ) : (
-        agruparPorPublicacion(lista, ahora).map((g) => (
+        agruparPiezasPorPublicacion(lista, ahora).map((g) => (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
-            {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} conDia estado={asistencia.estado(e.id)} boton={soloInteres(e.clase) ? undefined : asistencia.boton(e)} />
+            {g.eventos.map((p) => (
+              <RenglonDePieza key={p.tipo === "suelto" ? p.evento.id : `${p.tipo}-${p.tipo === "serie" ? p.cabeza.id : p.marco.id}`} pieza={p} ahora={ahora} asistencia={asistencia} />
             ))}
           </Grupo>
         ))
@@ -308,6 +312,14 @@ function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Prom
       <AvisoAbajo canal={canal} />
     </>
   );
+}
+
+/** El renglón de una pieza de Nuevos (OL-385): el evento suelto como siempre; el festival con sus actos nuevos; la serie con sus funciones. */
+function RenglonDePieza({ pieza: p, ahora, asistencia }: { pieza: Pieza<EventoAgenda>; ahora: Date; asistencia: ReturnType<typeof useAsistenciaEnLista> }) {
+  if (p.tipo === "festival") return <RenglonEvento evento={p.marco} conDia estado={asistencia.estado(p.marco.id)} nota={p.nuevos ? textoActosNuevos(p.nuevos) : null} />;
+  if (p.tipo === "serie") return <RenglonEvento evento={p.cabeza} cuando={`${textoFunciones(p.funciones)} · ${textoDesde(p.cabeza, ahora, true)}`} />;
+  const e = p.evento;
+  return <RenglonEvento evento={e} conDia estado={asistencia.estado(e.id)} boton={soloInteres(e.clase) ? undefined : asistencia.boton(e)} />;
 }
 
 /** Un vacío con su causa. */

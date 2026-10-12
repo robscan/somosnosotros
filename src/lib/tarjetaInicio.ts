@@ -6,6 +6,7 @@ import type { Asistencia } from "./deslizar";
 import { cortoDeClase } from "./eventos";
 import { diaLocal } from "./fechas";
 import { selloNovedadArtista } from "./novedadesArtista";
+import { textoActosNuevos, textoDesde, textoFunciones, type Pieza } from "./series";
 
 /**
  * Las tarjetas de Inicio que firmó el founder el 2026-10-10 en el prototipo `docs/rediseno/prototipos/inicio-tarjetas.html` («Firmada»: E1 · E3 ·
@@ -71,6 +72,30 @@ export function cuandoEnInicio(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" |
 export function tarjetaDeInicio(e: EventoAgenda, ahora: Date = new Date(), festival?: string | null): TarjetaConFecha {
   const t = tarjetaConClase(e, ahora, festival);
   return { ...t, detalle: cuandoEnInicio(e, !!t.hoy, ahora), selloFecha: selloDeFecha(e, soloInteres(e.clase), ahora) };
+}
+
+/**
+ * La tarjeta de una pieza de «Nuevos eventos» (OL-385, `lib/series`), con la tarjeta firmada tal cual (OL-382: mismos tamaños, mismo orden de líneas):
+ * - **festival** (sus actos nuevos juntos): la tarjeta del festival, con su portada del sistema y su enlace a la ficha del festival, y en la ceja,
+ *   junto a «Festival», cuántos actos nuevos trae («Festival · 3 actos nuevos»). La ceja es donde la tarjeta ya dice cuál de varios es («Sesión 1
+ *   de 4»); en la línea de cuándo se cortaría con los puntos suspensivos («Hasta el sáb 2 de nov» ya la llena en la mediana). Excepción acotada a
+ *   OL-347: el festival sale aquí solo porque agrupa actos nuevos, nunca por ser nuevo él (`carrilNuevos`).
+ * - **serie** (funciones de lo mismo): la tarjeta de la más próxima, con «6 funciones» en la ceja y «desde vie 16 · 20:00» en su cuándo (sin el mes: lo dice el sello); el
+ *   sello va del primer día al último («oct 16–18»; si son el mismo día, ese día). Lleva a la ficha de esa función, que enseña las otras.
+ * - **suelto:** la de siempre.
+ * La llave (`clave`) es la de la pieza: la cabeza de una serie no puede chocar con otra tarjeta suya.
+ */
+export function tarjetaDePieza<T extends TarjetaConFecha>(p: Pieza<T>, ahora: Date = new Date()): TarjetaConFecha {
+  if (p.tipo === "suelto") return p.evento;
+  if (p.tipo === "festival") return { ...p.marco, clave: `festival-${p.marco.id}`, ...(p.nuevos ? { parte: textoActosNuevos(p.nuevos) } : {}) };
+  const ultima = p.eventos[p.eventos.length - 1];
+  return {
+    ...p.cabeza,
+    clave: `serie-${p.cabeza.id}`,
+    parte: textoFunciones(p.funciones),
+    detalle: textoDesde(p.cabeza, ahora),
+    selloFecha: selloDeFecha({ inicio: p.desde, fin: ultima.inicio, zona: p.cabeza.zona }, true, ahora),
+  };
 }
 
 const EVENTO = cortoDeClase("puntual");

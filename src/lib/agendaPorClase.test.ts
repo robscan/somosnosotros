@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtrosRecordados, hrefAgenda, listarAgenda, paraVisitarEnAgenda, SIN_FILTROS, textoVer, type EventoAgenda, type FiltrosAgenda } from "./agenda";
-import { componerDia, cuandoParaVisitar, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, paraVisitarEseDia, plegarActos, queDe, rangosDeVisita, sinHorario, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
+import { componerDia, cuandoParaVisitar, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, paraVisitarEseDia, queDe, rangosDeVisita, sinHorario, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeTarjeta, notaDeClase, tarjetaConClase, tarjetaEvento } from "./destacados";
 import { calcularCarrilesAgenda, carrilDestacados, carrilEstaSemana, carrilEstelar, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
+import { agruparSeries, cabezaDe } from "./series";
 import { cejaDeTarjeta, chipDeTarjeta, tarjetaDeInicio } from "./tarjetaInicio";
 
 // Miércoles 7 de octubre de 2026, 12:00 en la ciudad (seis horas detrás de UTC, sin horario de verano).
@@ -110,9 +111,10 @@ describe("el festival en la agenda de un día", () => {
     expect(textoBloque(4, 2, true)).toBe("Programa registrado: 4 actividades · hoy 2");
     expect(textoBloque(1, 1, false)).toBe("Programa registrado: 1 actividad · 1 este día");
   });
-  it("en una lista por evento (la pestaña Nuevos de la agenda) los actos de un marco presente se pliegan en él", () => {
-    expect(ids(plegarActos([cine, cine1, cine2, huerfano, concierto]))).toEqual(["cine", "huerfano", "concierto"]);
-    expect(ids(plegarActos([cine1, cine2]))).toEqual(["cine1", "cine2"]); // sin su marco, salen sueltos
+  it("en una lista por evento (la pestaña Nuevos de la agenda) los actos de un marco presente van en él (antes `plegarActos`; OL-385: `agruparSeries`)", () => {
+    expect(ids(agruparSeries([cine, cine1, cine2, huerfano, concierto]).map(cabezaDe))).toEqual(["cine", "huerfano", "concierto"]);
+    expect(ids(agruparSeries([cine1, cine2]).map(cabezaDe))).toEqual(["cine1", "cine2"]); // sin su marco cargado, salen sueltos
+    expect(ids(agruparSeries([cine1, cine2], marcosDe(TODOS)).map(cabezaDe))).toEqual(["cine"]); // con él cargado, aunque no esté en la lista, en él
   });
 });
 
@@ -279,12 +281,14 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(vistos.has("vacio")).toBe(true);
     expect(vistos.has("lejana")).toBe(false);
   });
-  it("los actos de un festival que salió aquí no quedan vistos: salen después en «Nuevos eventos» como cualquier evento (OL-347)", () => {
+  it("los actos de un festival que salió aquí no quedan vistos: salen después en «Nuevos eventos», juntos en la tarjeta de su festival (OL-347, OL-385)", () => {
     const vistos = new Set<string>();
     const lejano = (e: EventoAgenda) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + 20 * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
-    const lista = [lejano(cine), lejano(cine1), lejano(cine2), lejano(cine3), lejano(concierto)];
+    const lista = [lejano(cine), lejano(cine1), lejano(cine2), lejano(cine3), lejano(concierto), lejano(huerfano)];
     expect(ids(carrilFestivales(lista, vistos, ahora))).toEqual(["cine"]);
-    expect(ids(carrilNuevos(lista, vistos, ahora)).toSorted()).toEqual(["cine1", "cine2", "cine3", "concierto"]);
+    // Tres piezas (el festival con sus tres actos, el concierto y el acto sin su festival cargado): llega al mínimo de tres.
+    expect(ids(carrilNuevos(lista, vistos, ahora)).toSorted()).toEqual(["cine1", "cine2", "cine3", "concierto", "huerfano"]);
+    expect(ids(carrilNuevos(lista.slice(0, 5), new Set(["cine"]), ahora))).toEqual([]); // dos piezas: no se pinta
   });
   it("con tope; sin nada, vacío (el carril no se pinta)", () => {
     const muchos = Array.from({ length: TOPE_FESTIVALES + 5 }, (_, i) => evento(`f${i}`, { clase: "festival", inicio: a("2026-11-01", "18:00"), fin: a("2026-11-02", "00:00") }));

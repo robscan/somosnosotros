@@ -49,12 +49,13 @@ import { calleCorta, hrefLugar } from "@/lib/lugares";
 import type { SedeMapa } from "@/lib/mapaSedes";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
-import { diaLocal, eventoPaso, fechaCortaChip, formatearLargo } from "@/lib/fechas";
+import { diaLocal, eventoPaso, fechaCortaChip, filtroSinPasar, formatearLargo } from "@/lib/fechas";
 import { renglonLigado } from "@/lib/ligado";
 import { programaDeFestival, textoActividades, textoProgramaConPasados, vistaDeFicha } from "@/lib/programaFestival";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { hrefCreador } from "@/lib/carteles/origen";
 import { cargarActosDeMarcos } from "@/lib/cargarSedes";
+import { otrasFunciones, textoFuncion } from "@/lib/series";
 import { hrefSitio } from "@/lib/sitios";
 import { portadaDeFestival, proximoPorSede, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -223,6 +224,29 @@ async function cargarLigados(e: EventoConLugar) {
   return { horarioPropio, horarioLugar, inauguracion, actos, padre, inaugura };
 }
 
+/**
+ * Las otras funciones de lo mismo (OL-385): los eventos visibles y sin pasar del mismo lugar (o, sin lugar, del mismo sitio escrito, sin importar
+ * mayúsculas), hasta 100, y aquí, en TypeScript, los de su mismo título normalizado (`otrasFunciones`). Ni un festival ni una exposición las tienen.
+ * Si la consulta falla, la ficha sigue sin el bloque.
+ */
+async function cargarOtrasFunciones(e: EventoConLugar, ahora: Date): Promise<EventoAgenda[]> {
+  if (e.clase === "festival" || e.clase === "exposicion" || (!e.lugar_id && !e.sitio_texto?.trim())) return [];
+  const supabase = await clienteServidor();
+  if (!supabase) return [];
+  let consulta = supabase
+    .from("eventos")
+    .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, clase, evento_padre_id, colores_cartel, lugar:lugares(nombre, portada)")
+    .eq("visible", true)
+    .or(filtroSinPasar(ahora))
+    .neq("id", e.id);
+  // En el sitio escrito, `%`, `_` y la barra no son comodines: se escapan.
+  consulta = e.lugar_id ? consulta.eq("lugar_id", e.lugar_id) : consulta.is("lugar_id", null).eq("ciudad", e.ciudad).ilike("sitio_texto", e.sitio_texto!.trim().replace(/[\\%_]/g, "\\$&"));
+  const { data } = await consulta.order("inicio").limit(100);
+  const filas = Array.isArray(data) ? (data as unknown as (EventoAgenda & { lugar: EventoAgenda["lugar"] | NonNullable<EventoAgenda["lugar"]>[] })[]) : [];
+  const candidatos = filas.map((f) => ({ ...f, lugar: Array.isArray(f.lugar) ? (f.lugar[0] ?? null) : f.lugar, van: null }));
+  return otrasFunciones(e, candidatos, (x) => eventoPaso(x.inicio, x.fin, ahora, x.zona));
+}
+
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
 async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
   const supabase = await clienteServidor();
@@ -304,9 +328,13 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const sesiones = sesionesVigentes(e, e.sesiones);
   // Cómo ocurre (OL-321; doc 55 §3): lo ligado por su clase, la línea de cuándo de una exposición y de un festival, y «Me interesa» sin «Voy».
   const clase = e.clase ?? "puntual";
-  const ligados = await cargarLigados(e);
-  const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
   const ahora = new Date();
+  const [ligados, funciones] = await Promise.all([cargarLigados(e), cargarOtrasFunciones(e, ahora)]);
+  const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
+  // «Función 2 de 6» junto a la clase, si tiene funciones hermanas y no ha pasado (entre las que no han pasado no estaría ella). «Voy» sigue siendo
+  // por función (H8 de docs/investigaciones/eventos-modelo.md): cada renglón de «Otras funciones» lleva el suyo.
+  const funcion = consultaTrasFin || paso ? null : textoFuncion(e, funciones);
+  const decididasFunciones = funciones.length ? await decididasDe(actual?.perfil.id ?? null, funciones.map((f) => f.id)) : null;
   const hoy = diaLocal(ahora, e.zona);
   // Lo ligado que ya pasó no se enlaza (OL-380): su ficha le diría «Esto ya no está» al visitante.
   const inauguracion = ligados.inauguracion ? renglonLigado(ligados.inauguracion, ahora) : null;
@@ -515,7 +543,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         portada={portada}
         alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`}
         titulo={e.titulo}
-        etiqueta={[numerosClase && cortoDeClase(clase), consultaTrasFin && "Ya pasó"].filter(Boolean).join(" · ") || undefined}
+        etiqueta={[numerosClase && cortoDeClase(clase), funcion, consultaTrasFin && "Ya pasó"].filter(Boolean).join(" · ") || undefined}
         meta={metaClase}
         banda={numerosClase}
       />
@@ -646,6 +674,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* Las otras funciones de lo mismo (OL-385: mismo título, mismo sitio), debajo del cuándo y antes de «Dónde»: cada una con su día y su hora,
+            su «Voy» (o «Vas», o «Te interesa» si ya decidió) y su ficha. El sitio es el mismo: no se repite. */}
+        {funciones.length > 0 && (
+          <section className={ficha.bloque} aria-label="Otras funciones">
+            <h2>Otras funciones</h2>
+            <EventosPorDia eventos={funciones} sinSitio decididas={decididasFunciones} avisos={avisosParaListas(actual)} />
           </section>
         )}
 

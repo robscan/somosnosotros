@@ -1,7 +1,9 @@
 import type { AvisosLista } from "@/components/useSeguirEnLista";
+import { marcosDe } from "@/lib/agendaPorClase";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { nombreDeFestival } from "@/lib/destacados";
 import { calcularCarrilesAgenda } from "@/lib/inicio";
+import { grupoDe } from "@/lib/series";
 import { tarjetaDeInicio } from "@/lib/tarjetaInicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 import CarrilNuevos from "./CarrilNuevos";
@@ -27,8 +29,17 @@ export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref
   const festival = nombreDeFestival(agenda.eventos);
   const comun = { asistencias: agenda.asistencias, avisos, verTodos: { href: verTodosHref, etiqueta: "Ver la agenda" } };
   if (carril.parte === "nuevos") {
-    const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaDeInicio(e, ahora, festival(e)), creado_en: e.creado_en }));
-    return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
+    // Una tarjeta por serie (OL-385): cada tarjeta lleva con quién va (`grupoDe`) y, aparte, la tarjeta de cada festival con actos nuevos (aunque el
+    // festival no sea nuevo): el teléfono las junta tras quitar lo que esa persona ya vio (`CarrilNuevos`).
+    const marcos = marcosDe(agenda.eventos);
+    const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaDeInicio(e, ahora, festival(e)), creado_en: e.creado_en, grupo: grupoDe(e, marcos) }));
+    const festivales = Object.fromEntries(
+      [...new Set(carriles.nuevos.flatMap((e) => (e.evento_padre_id && marcos.has(e.evento_padre_id) ? [e.evento_padre_id] : [])))].map((id) => {
+        const marco = marcos.get(id)!;
+        return [id, { ...tarjetaDeInicio(marco, ahora), creado_en: marco.creado_en }];
+      }),
+    );
+    return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} festivales={festivales} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
   }
   // «Festivales y expos» (OL-342): cada tarjeta dice qué es en su ceja («Festival», «Expo»: OL-370).
   // Va con la tarjeta grande, la de «Destacados» (founder, 2026-10-08, OL-347: «a los festivales ponles tamaño de eventos

@@ -4,6 +4,7 @@ import { DIAS_ESTA_SEMANA } from "./cuando";
 import { enOrden } from "./destacados";
 import { esMarco, exposicionesVigentes, festivalesVigentes, marcosDe, porCercania } from "./agendaPorClase";
 import { ocurrenciaPaso, ocurrenciasDe, proximaOcurrencia } from "./ocurrencias";
+import { agruparSeries, eventosDePiezas, type Agrupable } from "./series";
 
 /**
  * Inicio: siete carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
@@ -153,15 +154,22 @@ export const MINIMO_NUEVOS = 3;
  * El servidor no sabe cuándo miró la persona por última vez (esa marca vive en su teléfono): aquí «nuevo» es lo de los últimos 7 días y
  * `CarrilNuevos`, ya en el teléfono, deja lo que sigue siéndolo para ella.
  *
+ * Una tarjeta por serie (OL-385, `lib/series`): los actos nuevos de un festival van dentro de la tarjeta del festival y las funciones de lo mismo
+ * (mismo título, mismo sitio) en una sola tarjeta. Por eso el mínimo de 3 y el tope de `LIMITE_NUEVOS` cuentan piezas (lo que se ve), no eventos:
+ * tres funciones de la misma obra son una tarjeta y no llenan el carril. Aquí se devuelven los eventos de esas piezas, en su orden de publicación;
+ * `CarrilNuevos`, en el teléfono, los vuelve a juntar después de quitar lo que esa persona ya vio (la cuenta de «3 actos nuevos» es la suya).
+ *
  * El umbral de 3 se comprueba ANTES de tocar `vistos`: un candidato que no llega al mínimo no se muta al conjunto
  * compartido, para que un carril que de todos modos no se pinta no le quite, por accidente, un evento a otro.
  */
-export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "titulo" | "inicio" | "clase">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
+export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "titulo" | "inicio" | "clase"> & Agrupable>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
   const empiezaDespuesDeEstaSemana = ahora.getTime() + DIAS_ESTA_SEMANA * 86400000;
-  // Un festival nuevo no sale aquí, solo en su carril; sus actos nuevos sí, como cualquier evento (OL-347; antes salía el marco, OL-322).
+  // Un festival nuevo no sale aquí por ser nuevo, solo en su carril (OL-347). Sus actos nuevos sí, pero juntos en la tarjeta de su festival (OL-385:
+  // la excepción acotada a OL-347, el festival sale porque agrupa actos nuevos, nunca por ser nuevo él). El marco se busca entre todo lo cargado.
   const candidatos = sinFestivales(eventosNuevos(eventos, corteNuevos(null, ahora)).filter((e) => new Date(e.inicio).getTime() >= empiezaDespuesDeEstaSemana && !vistos.has(e.id)));
-  if (candidatos.length < MINIMO_NUEVOS) return [];
-  const propios = candidatos.slice(0, LIMITE_NUEVOS);
+  const piezas = agruparSeries(candidatos, marcosDe(eventos));
+  if (piezas.length < MINIMO_NUEVOS) return [];
+  const propios = eventosDePiezas(piezas.slice(0, LIMITE_NUEVOS), candidatos);
   for (const e of propios) vistos.add(e.id);
   return propios;
 }
