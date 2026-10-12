@@ -353,10 +353,11 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .pie.con-interes > .interes.junto .i { width: 18px; height: 18px; }
 /* La ficha del festival (X1, X2): la cabecera oscura de producción, el programa por día y «Ya pasó». */
 .ficha { background: var(--fondo-contenido); }
-.cab-oscura { position: relative; display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); grid-template-areas: "atras . mas" "chip chip chip" "titulo titulo titulo" "cuando cuando cuando" "kpi kpi kpi"; grid-template-rows: var(--alto-barra) auto auto auto auto; align-content: end; gap: 0 var(--espacio-2); min-height: min(56svh, 480px); padding: var(--espacio-2) var(--espacio-2) var(--espacio-4); background: var(--banda); color: #fff; overflow: hidden; }
-.cab-oscura > .fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.cab-oscura.con-cartel::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(20,20,20,0) 30%, rgba(20,20,20,0.8) 55%, rgba(20,20,20,0.95) 100%); }
-.cab-oscura > * { position: relative; }
+/* Como la cabecera oscura de producción (OL-363): Atrás y ··· arriba, flotando sobre el cartel; el título, el cuándo y los KPI abajo; entre medias, el cartel. El velo va en ::after (se pinta después del cartel) y lo demás encima con z-index. */
+.cab-oscura { position: relative; display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); grid-template-areas: "atras . mas" ". . ." "chip chip chip" "titulo titulo titulo" "cuando cuando cuando" "kpi kpi kpi"; grid-template-rows: var(--alto-barra) minmax(0, 1fr) auto auto auto auto; gap: 0 var(--espacio-2); min-height: min(56svh, 480px); padding: var(--espacio-2) var(--espacio-2) var(--espacio-4); background: var(--banda); color: #fff; overflow: hidden; }
+.cab-oscura > .fondo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.cab-oscura.con-cartel::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgba(20,20,20,0.1) 0%, rgba(20,20,20,0.1) 30%, rgba(20,20,20,0.8) 55%, rgba(20,20,20,0.95) 100%); }
+.cab-oscura > :not(.fondo) { position: relative; z-index: 2; }
 .cab-oscura .redondo { display: grid; place-items: center; width: var(--toque); height: var(--toque); border-radius: 50%; background: var(--fondo); color: var(--texto); align-self: start; }
 .cab-oscura .atras { grid-area: atras; } .cab-oscura .mas { grid-area: mas; }
 .cab-oscura .chip-clase { grid-area: chip; justify-self: start; margin: 0 var(--espacio-3) var(--espacio-2); padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-2xs); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
