@@ -16,7 +16,8 @@ type Parte = { parte: "estelar" | "estaSemana" | "festivales" } | { parte: "nuev
  * y recalcula los carriles completos de forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
  * Lo que ya está en «Tus planes» al cargar no sale en ninguno de los tres: ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
- * Cada tarjeta es la firmada (OL-370, `tarjetaDeInicio`: su sello de fecha y su línea de cuándo), grande o mediana según su carril (E5).
+ * Cada tarjeta es la firmada (OL-370, `tarjetaDeInicio`: su sello de fecha y su línea de cuándo), XL, grande o mediana según su carril (E5; el
+ * estelar en XL, OL-382, D2).
  */
 export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref, ...carril }: { agendaPromise: Promise<Agenda>; avisos: AvisosLista | null; verTodosHref: string } & Parte) {
   const agenda = await agendaPromise;
@@ -34,7 +35,7 @@ export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref
   // estelares»); un carril tiene un solo tamaño, así que las exposiciones también. «Esta semana» va en la mediana (OL-370, E5).
   const datos =
     carril.parte === "estelar"
-      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-estelar" }
+      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "xl" as const, memoria: "inicio-estelar" }
       : carril.parte === "festivales"
         ? { titulo: "Festivales y expos", tarjetas: carriles.festivales.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-festivales" }
         : { titulo: "Esta semana", tarjetas: carriles.estaSemana.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "mediana" as const, memoria: "inicio-esta-semana" };

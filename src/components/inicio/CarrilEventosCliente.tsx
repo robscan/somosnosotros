@@ -9,6 +9,7 @@ import { crudoDecisionesVisita, limpiarTarjetasTusPlanesResueltas, suscribirseDe
 import type { TarjetaConFecha } from "@/lib/destacados";
 import Destacados from "@/components/Destacados";
 import { useCarrilResuelto } from "./EstadoCarriles";
+import type { TamanoTarjeta } from "./TarjetaEvento";
 
 function sinSuscripcion() {
   return () => {};
@@ -19,8 +20,8 @@ const sinDatosServidor = () => "";
  * El carril, ya en el cliente: la parte de datos la resolvió un componente de servidor (streaming, OL-156) y le pasó
  * `tarjetas` (ya serializable, con su sello de fecha: `tarjetaDeInicio`). Desde OL-370 (tarjeta firmada, `inicio/TarjetaEvento`) las tarjetas ya
  * no llevan el botón de «Voy» (founder, 2026-10-10: «ya se resuelve en los carriles si va»; decidir queda en la ficha y en las historias): de
- * `useAsistenciaEnLista` solo se usa lo que la persona decidió (`estado`, con lo corregido de esta visita), para el chip «Te interesa» y para
- * «Tus planes». `tamano`: `grande` o `mediana` (E5).
+ * `useAsistenciaEnLista` solo se usa lo que la persona decidió (`estado`, con lo corregido de esta visita), para el marcador «Te interesa»
+ * (OL-382, I1) y para «Tus planes». `tamano`: `xl` (el carril estelar, OL-382, D2), `grande` o `mediana` (E5).
  *
  * `tusPlanes` (OL-222, bitácora 251): solo en "Tus planes" (`CarrilTusPlanes`), una tarjeta que la persona quita
  * (Voy y Me interesa, las dos a "ya no"; desde OL-370, en la ficha o en las historias) desaparece de este carril;
@@ -44,7 +45,7 @@ const sinDatosServidor = () => "";
  * fila sigue mostrando una copia vieja (`staleTimes`, hasta 60 s, o Atrás), y borrarla ahí perdería la tarjeta antes
  * de que esta fila la usara (bug real, visto al reproducir con Chrome: ir y volver de Agenda la borraba).
  */
-export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, titulo, tamano, memoria, verTodos, tusPlanes = false, resuelto = true }: { tarjetas: TarjetaConFecha[]; asistencias: Decididas; avisos: AvisosLista | null; titulo: string; tamano: "grande" | "mediana"; memoria: string; verTodos: { href: string; etiqueta: string }; tusPlanes?: boolean; resuelto?: boolean }) {
+export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, titulo, tamano, memoria, verTodos, tusPlanes = false, resuelto = true }: { tarjetas: TarjetaConFecha[]; asistencias: Decididas; avisos: AvisosLista | null; titulo: string; tamano: TamanoTarjeta; memoria: string; verTodos: { href: string; etiqueta: string }; tusPlanes?: boolean; resuelto?: boolean }) {
   const canal = useCanalDePantalla();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
   const cuenta = avisos?.cuenta ?? null;
