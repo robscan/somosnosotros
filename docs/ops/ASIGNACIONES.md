@@ -1506,6 +1506,8 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 
 - 2026-10-12 (12:30): pedido del founder: «banner de ancho completo para que los usuarios compartan la app … para usuarios logueados que hayan entrado más de 2 veces … analiza, presenta prototipo, aprovecha para crecer un poco más Destacados». **OL-386** prototipo (bitácora 417, rama `prototipo-banner-compartir`): versión 12 de la página privada, B1/B2/B3 + D2 XL+; esperando firma. Siguientes libres: OL-387 y bitácora 418.
 
+- 2026-10-12 (12:40): **OL-386 FIRMADO**: «acepto: … D2 XL+ · … · B1 tras Destacados · B2 símbolo» (versión 13 de la página; PR #495 solo documentos). Lo no dicho queda como propuesto (visitas en el teléfono por día distinto, × 30 días, tras compartir no vuelve, «Nosotrxs» tal cual). **OL-387** `banner-compartir` (bitácora 418), agente Opus en paralelo con OL-385 (archivos distintos). Siguientes libres: OL-388 y bitácora 419.
+
 El founder cerró la jornada del 11 de octubre y la mañana del 12 pidió «Haz un nuevo gestor por favor, Gestor de cambios VI», con los resultados de sus pruebas de usuario y el arranque del historial. «Gestor de cambios V» (sesión `local_51c2d1e4…`) deja este relevo y no toma trabajo nuevo.
 
 **Estado:** main `bef2fdc7`, Production desplegada, cero PR, nada en curso. Todo lo del 10 y el 11 de octubre está en producción: tarjetas de Inicio firmadas (OL-370 a OL-372), la letra que sigue al tamaño del teléfono (OL-373), el prototipo de portadas firmado (OL-374), las portadas del sistema en Inicio con el giro desde Ajustes (OL-375) y el pie tras «Estoy aquí» en iOS 27 (OL-376). **Siguientes libres: OL-377 y bitácora 408.**
