@@ -55,7 +55,7 @@ describe("imágenes adaptadas (OL-263)", () => {
     expect(tamanoImagenCarril("cartelMediana")).toBe("(min-width: 1048px) 152px, 132px");
     // OL-372 y OL-382 (N): el avatar de 88 de un lugar o un artista (a 2× pide la variante de 192, no la de 384 de la redonda de 104).
     expect(tamanoImagenCarril("avatar")).toBe("88px");
-    // OL-382 (D2): la XL del carril estelar, 248 (286 desde 1048, crece con la grande).
-    expect(tamanoImagenCarril("xl")).toBe("(min-width: 1048px) 286px, 248px");
+    // OL-382 (D2), XL+ desde OL-387: la XL del carril estelar, 280 (323 desde 1048, crece con la grande).
+    expect(tamanoImagenCarril("xl")).toBe("(min-width: 1048px) 323px, 280px");
   });
 });

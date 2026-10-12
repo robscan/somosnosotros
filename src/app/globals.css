@@ -164,7 +164,8 @@
   --letra-2xl: min(1.625rem, calc(26px * var(--letra-tope))); /* 26px: título de pantalla */
   --letra-3xl: min(1.875rem, calc(30px * var(--letra-tope))); /* 30px: nombre del lugar o evento */
   /* Fuera de la escala, cada una para lo suyo: */
-  --letra-portada-xl: min(1.5rem, calc(24px * var(--letra-tope))); /* 24px: el título dentro de la portada del sistema en la tarjeta XL (OL-382) */
+  --letra-portada-xl: min(1.625rem, calc(26px * var(--letra-tope))); /* 26px: el título dentro de la portada del sistema en la tarjeta XL (OL-382; 24 → 26 con la XL+, OL-387) */
+  --letra-titulo-xl: min(1.3125rem, calc(21px * var(--letra-tope))); /* 21px: el título bajo el cartel en la tarjeta XL+ del carril estelar (OL-387, D2) */
   --letra-proveedor: min(1.25rem, calc(20px * var(--letra-tope))); /* 20px: los botones de Apple, Google y correo de Entrar */
   --letra-historia-larga: min(2.25rem, calc(36px * var(--letra-tope))); /* 36px: el título tipográfico de una historia, si es largo */
   --letra-cifra: min(2.5rem, calc(40px * var(--letra-tope))); /* 40px: la cifra de un indicador de administración */
@@ -198,9 +199,9 @@
   --tarjeta-cartel-foto: calc(var(--tarjeta-grande) * 5 / 4);
   --tarjeta-cartel-mediana: calc(var(--tarjeta-grande) * 4 / 5);
   --tarjeta-cartel-mediana-foto: calc(var(--tarjeta-cartel-mediana) * 5 / 4);
-  /* La XL del carril estelar de Inicio (OL-382, D2 firmado el 2026-10-12, «como el de Instagram»): 248×310, se ve una y media; crece con la
-     grande (286×357,5 desde 1048). */
-  --tarjeta-xl: calc(var(--tarjeta-grande) * 248 / 165);
+  /* La XL del carril estelar de Inicio (OL-382, D2 firmado el 2026-10-12, «como el de Instagram»), desde OL-387 la XL+ (firmada el mismo día a las
+     12:40, «D2 XL+»): 280×350, se ve una tarjeta y un cuarto; crece con la grande en la misma proporción (322,4×403 desde 1048). Antes, 248×310. */
+  --tarjeta-xl: calc(var(--tarjeta-grande) * 280 / 165);
   --tarjeta-xl-foto: calc(var(--tarjeta-xl) * 5 / 4);
   --avatar-carril: 88px; /* el avatar redondo de «Lugares de la semana» y «Artistas de la semana» en Inicio (OL-372, E5; OL-382, N «foto grande») */
   --marca-interes: 36px; /* el círculo del marcador «Te interesa» arriba a la izquierda de una tarjeta de evento de Inicio (OL-382, I1) */

@@ -6,7 +6,7 @@ import propios from "./CarrilEsqueleto.module.css";
 
 /**
  * Qué tarjeta lleva un carril de Inicio (prototipo firmado `inicio-tarjetas.html`, E5): `xl`, `grande` y `mediana`, la de un evento (OL-370; la XL
- * de 248×310 en el carril estelar, OL-382, D2; 165×206 en Tus planes y Festivales y expos, 132×165 en Esta semana, Nuevos eventos y Más
+ * de 280×350 en el carril estelar, OL-382, D2, XL+ desde OL-387; 165×206 en Tus planes y Festivales y expos, 132×165 en Esta semana, Nuevos eventos y Más
  * adelante); `artista`, la de un artista en «Artistas destacadxs», que es la mediana de un evento (E9, OL-372); `avatar`, el redondo de 88 de
  * «Lugares de la semana» y «Artistas de la semana» (OL-372; OL-382, N).
  */

@@ -1,0 +1,88 @@
+/* El banner para compartir la app (OL-387; prototipo firmado `inicio-propuestas.html`, B1 «tras Destacados» y B2 «con el símbolo SN», bitácora
+   417): a lo ancho con el aire de los carriles (20 a los lados, 32 arriba, como entre carriles), una sola rejilla plana: el símbolo a la
+   izquierda en dos filas, el título y el texto, la × arriba a la derecha y el botón abajo a lo ancho. */
+.banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icono titulo cerrar"
+    "icono texto cerrar"
+    "boton boton boton";
+  column-gap: var(--espacio-3);
+  row-gap: 2px;
+  margin: var(--espacio-7) var(--gutter) 0;
+  padding: var(--espacio-4);
+  border-radius: var(--radio-grande);
+  background: var(--primario-suave);
+  color: var(--texto);
+}
+/* El símbolo SN en violeta sobre un círculo blanco de 44. */
+.icono {
+  grid-area: icono;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--primario);
+}
+.simbolo {
+  width: 26px;
+  height: auto;
+}
+.titulo {
+  grid-area: titulo;
+  align-self: end;
+  font-size: var(--letra-lg);
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+}
+.texto {
+  grid-area: texto;
+  align-self: start;
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+}
+/* La ×, de 36, corrida 6 hacia la esquina (como el prototipo, sin margen negativo: la app no los usa); se toca de 44 (`::before`), sin salirse
+   del banner. */
+.cerrar {
+  position: relative;
+  top: -6px;
+  right: -6px;
+  grid-area: cerrar;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  opacity: 0.75;
+}
+.cerrar::before {
+  content: "";
+  position: absolute;
+  inset: calc((36px - var(--toque-min)) / 2);
+}
+.compartir {
+  grid-area: boton;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  min-height: 44px;
+  margin-top: var(--espacio-3);
+  padding: 0 var(--espacio-4);
+  border: 0;
+  border-radius: var(--radio-pildora);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-md);
+  font-weight: 700;
+}
