@@ -33,6 +33,8 @@ export type ActoConSitio = {
   ciudad?: string | null;
   /** Su cartel, si lo tiene (OL-346): el del próximo acto es la portada de un festival sin imagen propia (`portadaDeFestival`). */
   imagen?: string | null;
+  /** Los colores de su cartel (`eventos.colores_cartel`, OL-360): de ellos sale el color de la portada del sistema de su festival (OL-375). */
+  colores_cartel?: unknown;
 };
 
 /** Una sede: su nombre, el lugar del directorio si lo es (para enlazar su ficha), su dirección, su punto en el mapa y cuántos actos tiene ahí. */
@@ -140,7 +142,14 @@ export const textoActosEnSede = (n: number): string => `${n} ${n === 1 ? "activi
  * tiene `imagen` propia.
  */
 export function portadaDeFestival(actos: readonly Pick<ActoConSitio, "inicio" | "imagen">[], ahora: Date = new Date()): string | null {
+  return actoDePortada(actos, ahora)?.imagen ?? null;
+}
+
+/**
+ * El acto cuyo cartel es la portada de un festival sin imagen propia (`portadaDeFestival`): su próximo acto con cartel. Con él viajan los colores
+ * de ese cartel (OL-375: la portada del sistema del festival toma el color del cartel que enseña). Null si ningún acto tiene cartel.
+ */
+export function actoDePortada<A extends Pick<ActoConSitio, "inicio" | "imagen">>(actos: readonly A[], ahora: Date = new Date()): A | null {
   const conCartel = actos.filter((a) => a.imagen).toSorted((x, y) => Date.parse(x.inicio) - Date.parse(y.inicio));
-  const proximo = conCartel.find((a) => Date.parse(a.inicio) >= ahora.getTime()) ?? conCartel.at(-1);
-  return proximo?.imagen ?? null;
+  return conCartel.find((a) => Date.parse(a.inicio) >= ahora.getTime()) ?? conCartel.at(-1) ?? null;
 }

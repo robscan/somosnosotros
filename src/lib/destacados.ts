@@ -37,8 +37,9 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
  *  `lib/ocurrencias`): la llave de ese día, para que el mismo evento pueda salir dos veces en una tira, y «Día 2 de 3» («Sesión 2 de 4» en un taller).
  *  `sinVoy`: una exposición o el marco de un festival (OL-322), que no llevan el botón «Voy» de la tarjeta. `clase`: «Festival» o «Exposición»
  *  (`nombreDeClase`), solo en el carril que junta las dos (OL-342, `tarjetaConClase`): dice qué es cada cosa en el rótulo de la foto.
- *  `corto` y `colores` (OL-360) solo los lleva la tarjeta de un evento: su título corto (`tituloCorto`) y los colores guardados de su propio
- *  cartel (null si aún no se calcularon o si la foto no es su cartel sino la portada de su lugar o el cartel de un acto). `selloFecha` (OL-370)
+ *  `corto` y `colores` (OL-360) solo los lleva la tarjeta de un evento: su título corto (`tituloCorto`) y los colores guardados del cartel que
+ *  enseña, el suyo o, en un festival sin cartel propio, el de su próximo acto (OL-375: de ellos sale el color de su portada del sistema); null si
+ *  aún no se calcularon o si la foto es la portada de su lugar. `selloFecha` (OL-370)
  *  solo la de un evento en los carriles de Inicio (`tarjetaDeInicio`, `lib/tarjetaInicio`): el sello de mes y día de su cartel. `disciplina` y
  *  `genero` (OL-372) solo la de un artista en «Artistas destacadxs» (`tarjetaArtistaDeInicio`): «Música» y su subcategoría tal como se escribió. */
 export type Tarjeta = { id: string; href: string; foto: string | null; titulo: string; detalle: string; sitio?: string; van: number | null; hoy?: boolean; cuando?: boolean; novedad?: NovedadRecienteArtista | null; clave?: string; parte?: string; sinVoy?: boolean; clase?: string; corto?: string; colores?: Paleta | null; selloFecha?: SelloFecha; disciplina?: string; genero?: string };
@@ -119,7 +120,8 @@ function sitioDeTarjeta(e: EventoAgenda): string {
 
 /**
  * La tarjeta de un evento. `festival`: el nombre de su festival, si es un acto, para que su título corto lo salte («CINEMA: El atractivo…»,
- * `tituloCorto`). Los colores solo valen si la foto es su propio cartel: los de la portada de su lugar no se guardan con el evento.
+ * `tituloCorto`). Los colores solo valen si la foto es un cartel: el suyo o, en un festival sin cartel propio, el de su próximo acto (OL-375); los
+ * de la portada de su lugar no se guardan con el evento.
  */
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: string | null): TarjetaConFecha {
   const parte = textoParte(e);
@@ -127,7 +129,7 @@ export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: st
   // festival llevan «Voy» (doc 55 §5, punto 2: «Me interesa», que se cambia en su ficha).
   const hoy = e.clase !== "exposicion" && diaCorto(e.inicio, ahora, e.zona) === "Hoy";
   const foto = fotoDeEvento(e);
-  const colores = foto && foto === e.imagen ? comoPaleta(e.colores_cartel) : null;
+  const colores = !foto ? null : foto === e.imagen ? comoPaleta(e.colores_cartel) : foto === e.portadaActo ? comoPaleta(e.coloresActo) : null;
   return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto, titulo: e.titulo, corto: tituloCorto(e.titulo, festival), colores, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 

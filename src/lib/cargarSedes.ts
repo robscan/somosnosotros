@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { portadaDeFestival, sedesDeFestival, sedesParaLista, type ActoConSitio, type Sede } from "./sedesFestival";
+import { actoDePortada, sedesDeFestival, sedesParaLista, type ActoConSitio, type Sede } from "./sedesFestival";
 
 /**
  * Los actos publicados de unos festivales con lo que dice dónde es cada uno (OL-339) y su cartel (OL-346), en una sola consulta, para derivar al
@@ -9,8 +9,9 @@ import { portadaDeFestival, sedesDeFestival, sedesParaLista, type ActoConSitio, 
  * pantalla dice lo capturado en el marco, como antes.
  */
 
-/** Lo que se pide de cada acto: su festival, cuándo empieza (el orden), su sitio, con el lugar del directorio anidado, y su cartel. */
-const COLUMNAS = "evento_padre_id, inicio, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, lugar:lugares(id, slug, nombre, direccion, lat, lng)";
+/** Lo que se pide de cada acto: su festival, cuándo empieza (el orden), su sitio, con el lugar del directorio anidado, y su cartel con sus colores
+ *  (OL-375: la portada del sistema de un festival sin cartel propio toma el color del cartel de su próximo acto). */
+const COLUMNAS = "evento_padre_id, inicio, imagen, colores_cartel, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, lugar:lugares(id, slug, nombre, direccion, lat, lng)";
 
 type Fila = ActoConSitio & { evento_padre_id: string; lugar: ActoConSitio["lugar"] | NonNullable<ActoConSitio["lugar"]>[] };
 
@@ -40,10 +41,11 @@ export async function cargarSedes(supabase: SupabaseClient, marcos: readonly str
 
 /**
  * Lo que un festival de una lista toma de sus actos, en una consulta: sus sedes (`sedes`, lo que lee `nombreSitio`) y, sin imagen propia, el cartel
- * de su próximo acto (`portadaActo`, lo que lee `fotoDeEvento`, OL-346); lo demás, tal cual y en el mismo orden. Para las listas que no cargan la
- * agenda (Buscar, sus recientes, «Tus planes»). Un evento sin la clase (una consulta que no la pide) se pregunta igual: solo un festival tiene actos.
+ * de su próximo acto (`portadaActo`, lo que lee `fotoDeEvento`, OL-346) con sus colores (`coloresActo`, OL-375); lo demás, tal cual y en el mismo
+ * orden. Para las listas que no cargan la agenda (Buscar, sus recientes, «Tus planes»). Un evento sin la clase (una consulta que no la pide) se
+ * pregunta igual: solo un festival tiene actos.
  */
-export async function conLoDeSusActos<T extends { id: string; clase?: string | null; imagen?: string | null }>(supabase: SupabaseClient, eventos: T[], ahora: Date = new Date()): Promise<(T & { sedes?: { nombre: string }[]; portadaActo?: string })[]> {
+export async function conLoDeSusActos<T extends { id: string; clase?: string | null; imagen?: string | null }>(supabase: SupabaseClient, eventos: T[], ahora: Date = new Date()): Promise<(T & { sedes?: { nombre: string }[]; portadaActo?: string; coloresActo?: unknown })[]> {
   const marcos = eventos.filter((e) => e.clase === "festival" || e.clase === undefined).map((e) => e.id);
   if (!marcos.length) return eventos;
   const actos = await cargarActosDeMarcos(supabase, marcos);
@@ -52,7 +54,7 @@ export async function conLoDeSusActos<T extends { id: string; clase?: string | n
     const suyos = actos.get(e.id);
     if (!suyos?.length) return e;
     const sedes = sedesDeFestival(suyos);
-    const portada = e.imagen ? null : portadaDeFestival(suyos, ahora);
-    return { ...e, ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...(portada ? { portadaActo: portada } : {}) };
+    const acto = e.imagen ? null : actoDePortada(suyos, ahora);
+    return { ...e, ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...(acto?.imagen ? { portadaActo: acto.imagen, coloresActo: acto.colores_cartel ?? null } : {}) };
   });
 }

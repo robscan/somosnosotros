@@ -1,9 +1,10 @@
 /* La tarjeta de evento de Inicio (OL-370; prototipo firmado `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada», bitácora 398). Una
-   rejilla plana: la portada (el cartel, o sin cartel la de título) a su alto (`--foto`, que pone el carril: `.cartelGrande` y `.cartelMediana` en
-   Destacados.module.css), un respiro y debajo, cada uno en su fila, la ceja, el título, el lugar y cuándo. Lo que va encima del cartel (el sello
-   de fecha y el chip) comparte su celda; nada se apila con z-index: lo de después en el código se pinta encima. La de un artista en «Artistas
-   destacadxs» (E9, OL-372) es esta misma, mediana: su foto en la portada, la disciplina en la ceja, el nombre, el género en la línea del lugar y su
-   fecha en la de cuándo. */
+   rejilla plana: la portada (el cartel, o la portada del sistema de OL-375: `PortadaSistema.module.css`) a su alto (`--foto`, que pone el carril:
+   `.cartelGrande` y `.cartelMediana` en Destacados.module.css), un respiro y debajo, cada uno en su fila, la ceja, el título, el lugar y cuándo
+   (la portada del sistema lleva la ceja y el título dentro: sus filas quedan vacías). Lo que va encima del cartel (el sello de fecha y el chip)
+   comparte su celda; nada se apila con z-index: lo de después en el código se pinta encima. La de un artista en «Artistas destacadxs» (E9,
+   OL-372) es esta misma, mediana: su foto en la portada, la disciplina en la ceja, el nombre, el género en la línea del lugar y su fecha en la de
+   cuándo. */
 .tarjeta {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -14,7 +15,8 @@
     "titulo"
     "lugar"
     "cuando";
-  grid-template-rows: var(--foto) var(--espacio-2) auto auto auto auto;
+  /* La portada mide `--foto`; la del sistema (OL-375) crece si su zona del título no cabe (`PortadaSistema.module.css`). */
+  grid-template-rows: minmax(var(--foto), auto) var(--espacio-2) auto auto auto auto;
   min-width: 0;
   color: var(--texto);
   text-decoration: none;
@@ -146,64 +148,8 @@
   color: var(--primario);
 }
 
-/* E10 (founder: «título en la base, logo en extremo superior izquierdo»): sin cartel, la portada lleva su paleta propia, el símbolo SN arriba a
-   la izquierda, el sello arriba a la derecha y en la base el chip, la ceja y el título corto en mayúsculas. */
-.portada {
-  grid-area: portada;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    "simbolo fecha"
-    ". ."
-    "chip chip"
-    "ceja ceja"
-    "titulo titulo";
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-  align-items: start;
-  height: var(--foto);
-  min-width: 0;
-  overflow: hidden;
-  border-radius: var(--radio);
-  color: var(--primario-texto);
-}
-.simbolo {
-  grid-area: simbolo;
-  width: auto;
-  height: 20px;
-  margin: var(--espacio-3) 0 0 var(--espacio-3);
-  opacity: 0.92;
-}
-.portada > .fecha {
-  grid-area: fecha;
-}
-.portada > .chip {
-  grid-area: chip;
-  margin: 0 0 var(--espacio-2) var(--espacio-3);
-}
-.portada > .ceja {
-  margin: 0 var(--espacio-3) var(--espacio-1);
-  color: var(--sobre-banda-suave);
-}
-/* El corte a tres líneas va con margen y no con relleno: con relleno, la cuarta línea asomaría por debajo. */
-.tituloPortada {
-  grid-area: titulo;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  margin: 0 var(--espacio-3) var(--espacio-3);
-  font-size: var(--letra-lg);
-  font-weight: 800;
-  font-variation-settings: var(--ancho-titulo);
-  line-height: 1.04;
-  text-transform: uppercase;
-  text-wrap: balance;
-  overflow-wrap: anywhere; /* una palabra más ancha que la portada se parte en vez de salirse */
-}
-
 /* E5: en Esta semana, Nuevos eventos y Más adelante, la tarjeta mediana con el título y las líneas un escalón más chicos. */
-.mediana .titulo,
-.mediana .tituloPortada {
+.mediana .titulo {
   font-size: var(--letra-sm);
 }
 .mediana .lugar,

@@ -88,8 +88,9 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotEstelar}</Suspense>
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
-        {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). */}
-        <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotFestivales}</Suspense>
+        {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). OL-375: todas con la portada del sistema,
+            el título dentro: su esqueleto, sin el título debajo. */}
+        <Suspense fallback={<CarrilEsqueleto forma="grande" tituloDentro />}>{slotFestivales}</Suspense>
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotNuevos}</Suspense>
         <Suspense fallback={null}>{slotMasAdelante}</Suspense>
         {/* OL-372 (E5 y E9 firmados): lugares y artistas de la semana en avatares de 64; «Artistas destacadxs» con la tarjeta mediana de un

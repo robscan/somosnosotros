@@ -5,6 +5,7 @@ import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UI
 import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
+import { paletasDeCarril } from "@/lib/portadasSistema";
 import CarrilEsqueleto, { columnasDe, type FormaCarril } from "./CarrilEsqueleto";
 import { IconoChevronDerecha } from "./ui/Iconos";
 import TarjetaAvatar from "./inicio/TarjetaAvatar";
@@ -20,7 +21,8 @@ import styles from "./Destacados.module.css";
  * cada una es un solo enlace a su ficha, sin botón: decidir («Voy», «Me interesa») y seguir quedan en la ficha (y en las historias). `forma`:
  * - `grande` o `mediana` (OL-370): la tarjeta de un evento (`inicio/TarjetaEvento`), el cartel entero en 4:5 con su sello de fecha; grande en Tus
  *   planes, Destacados y Festivales y expos, mediana en Esta semana, Nuevos eventos y Más adelante (E5). Siempre con el tamaño de su carril: una
- *   sola tarjeta no se estira a lo ancho.
+ *   sola tarjeta no se estira a lo ancho. Festival, exposición y taller, y el evento sin imagen, llevan la portada del sistema (OL-375): su color
+ *   se decide aquí, en el orden del carril, para que dos seguidas no salgan casi iguales (`paletasDeCarril`).
  * - `artista` (OL-372, E9): la de un artista en «Artistas destacadxs», que es la mediana de un evento (`TarjetaArtista`).
  * - `avatar` (OL-372, E5): el redondo de 64 de «Lugares de la semana» y «Artistas de la semana» (`inicio/TarjetaAvatar`).
  *
@@ -96,6 +98,9 @@ export default function Destacados({ tarjetas, forma, encabezado = "Destacados",
       </div>
     );
   }
+  const ordenadas = ordenarTarjetasPorFoto(tarjetas);
+  // OL-375: las portadas del sistema del carril, con la regla de las vecinas (dos seguidas de casi el mismo color no se repiten).
+  const paletas = forma === "grande" || forma === "mediana" ? paletasDeCarril(ordenadas) : null;
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
@@ -108,8 +113,8 @@ export default function Destacados({ tarjetas, forma, encabezado = "Destacados",
         )}
       </div>
       <ul ref={recordar} className={`${styles.carril} ${columnasDe(forma)}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
-        {ordenarTarjetasPorFoto(tarjetas).map((t) => (
-          <li key={t.clave ?? t.id}>{forma === "avatar" ? <TarjetaAvatar t={t} /> : forma === "artista" ? <TarjetaArtista t={t} /> : <TarjetaEvento t={t} tamano={forma} decision={estadoDe?.(t.id) ?? null} />}</li>
+        {ordenadas.map((t, i) => (
+          <li key={t.clave ?? t.id}>{forma === "avatar" ? <TarjetaAvatar t={t} /> : forma === "artista" ? <TarjetaArtista t={t} /> : <TarjetaEvento t={t} tamano={forma} decision={estadoDe?.(t.id) ?? null} paleta={paletas?.[i]} />}</li>
         ))}
       </ul>
     </section>
