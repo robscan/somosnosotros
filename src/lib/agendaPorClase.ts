@@ -52,15 +52,6 @@ export function entraEnQue(e: ConClase, que: Que): boolean {
   return true;
 }
 
-/**
- * En una lista que habla del evento y no de un día (la pestaña Nuevos de la agenda), el acto cuyo festival también está en la lista no sale: lo
- * dice su marco («un festival nuevo, como marco»). Los carriles de Inicio ya no pliegan: ahí el festival solo sale en su carril (OL-347). Uno cuyo marco no está (un acto nuevo de un festival viejo) sale como cualquier evento.
- */
-export function plegarActos<T extends ConClase & { id: string }>(eventos: readonly T[]): T[] {
-  const marcos = new Set(eventos.filter(esMarco).map((e) => e.id));
-  return eventos.filter((e) => !e.evento_padre_id || !marcos.has(e.evento_padre_id));
-}
-
 /** Una pieza de la agenda de un día: un renglón, o el bloque de un festival con sus actos de ese día debajo. */
 export type PiezaDelDia<T> = { tipo: "renglon"; evento: T } | { tipo: "festival"; marco: T; actos: T[] };
 
