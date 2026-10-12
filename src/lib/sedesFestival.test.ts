@@ -3,7 +3,7 @@ import { buscarEventos, type EventoAgenda } from "./agenda";
 import { tarjetaEvento } from "./destacados";
 import { fotoDeEvento, nombreSitio, sitioEnLista } from "./eventos";
 import { lugaresDelMapa } from "./mapaSedes";
-import { nombreDeSedes, portadaDeFestival, proximoPorSede, sedesDeFestival, sedesParaLista, textoActosEnSede, VARIAS_SEDES, type ActoConSitio } from "./sedesFestival";
+import { actoDePortada, nombreDeSedes, portadaDeFestival, proximoPorSede, sedesDeFestival, sedesParaLista, textoActosEnSede, VARIAS_SEDES, type ActoConSitio } from "./sedesFestival";
 
 /** Las sedes de un festival (OL-339): derivadas de sus actos al leer, sin repetir, en el orden de su primer acto; lo del marco solo sin actos. */
 
@@ -134,6 +134,12 @@ describe("portadaDeFestival (OL-346): sin imagen propia, el cartel de su próxim
   it("ningún acto con cartel, o sin actos: null (sigue la portada de su lugar o el símbolo SN)", () => {
     expect(portadaDeFestival([acto("2026-10-23T23:00:00Z", null), acto("2026-10-24T01:30:00Z", null)], ahora)).toBeNull();
     expect(portadaDeFestival([], ahora)).toBeNull();
+  });
+  it("OL-375: el acto de la portada trae los colores de su cartel (el color de la portada del sistema del festival)", () => {
+    const colores = ["#280a09", "#c61b17", "#3c3c93", "#575456"];
+    const actos = [{ ...acto("2026-10-01T02:00:00Z", "pasado.jpg"), colores_cartel: ["#000000", "#111111", "#222222", "#333333"] }, { ...acto("2026-10-17T02:00:00Z", "chatbot.jpg"), colores_cartel: colores }];
+    expect(actoDePortada(actos, ahora)).toEqual({ inicio: "2026-10-17T02:00:00Z", imagen: "chatbot.jpg", colores_cartel: colores });
+    expect(actoDePortada([acto("2026-10-17T02:00:00Z", null)], ahora)).toBeNull();
   });
   it("la foto de una lista: la imagen propia, luego el cartel del acto, luego la portada del lugar", () => {
     const lugar = { nombre: "Cineteca", portada: "cineteca.jpg" };

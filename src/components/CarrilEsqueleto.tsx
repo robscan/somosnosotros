@@ -25,11 +25,12 @@ export function columnasDe(forma: FormaCarril): string {
  * fuente de tamaños). Las líneas de texto llevan un espacio duro: ocupan el alto de una línea de verdad, sin copiar ninguna medida.
  *
  * Cada forma, con la tarjeta del caso que más alto deja su carril de ordinario:
- * - `grande` y `mediana` (OL-370): el cartel 4:5 de su tamaño, el título en dos líneas, el lugar y cuándo.
+ * - `grande` y `mediana` (OL-370): el cartel 4:5 de su tamaño, el título en dos líneas, el lugar y cuándo. Con `tituloDentro` (OL-375), la de
+ *   «Festivales y expos»: todas sus tarjetas llevan la portada del sistema, con el título dentro, así que debajo solo van el lugar y cuándo.
  * - `artista` (OL-372): la foto mediana, la disciplina, el nombre en una línea, el género y la fecha.
  * - `avatar` (OL-372): el círculo de 64 y el nombre, sin novedad (la mayoría no la tiene); cinco, para llenar el ancho como el carril.
  */
-export default function CarrilEsqueleto({ forma, cantidad = forma === "avatar" ? 5 : 3 }: { forma: FormaCarril; cantidad?: number }) {
+export default function CarrilEsqueleto({ forma, cantidad = forma === "avatar" ? 5 : 3, tituloDentro = false }: { forma: FormaCarril; cantidad?: number; tituloDentro?: boolean }) {
   const tarjeta = forma === "grande" ? evento.tarjeta : `${evento.tarjeta} ${evento.mediana}`;
   return (
     <section className={styles.destacados} aria-hidden="true">
@@ -56,7 +57,7 @@ export default function CarrilEsqueleto({ forma, cantidad = forma === "avatar" ?
                     <span className={`${evento.titulo} ${esqueleto.respira}`}>&nbsp;</span>
                   </>
                 ) : (
-                  <span className={`${evento.titulo} ${propios.dosLineas} ${esqueleto.respira}`} />
+                  !tituloDentro && <span className={`${evento.titulo} ${propios.dosLineas} ${esqueleto.respira}`} />
                 )}
                 <span className={`${evento.lugar} ${esqueleto.respira}`}>&nbsp;</span>
                 <span className={`${evento.cuando} ${esqueleto.respira} ${propios.corta}`}>&nbsp;</span>

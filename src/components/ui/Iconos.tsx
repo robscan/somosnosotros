@@ -52,6 +52,13 @@ export const IconoTelefono = (p: P) => (
     <path d="M10.5 18h3" />
   </svg>
 );
+/** Mover las portadas con el teléfono (OL-375): el teléfono inclinado entre dos arcos, el gesto de girarlo. */
+export const IconoGiro = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="8.5" y="4" width="7" height="16" rx="1.6" transform="rotate(-20 12 12)" />
+    <path d="M4.2 9.2a8.5 8.5 0 0 0 0 5.6M19.8 9.2a8.5 8.5 0 0 1 0 5.6" />
+  </svg>
+);
 export const IconoPersona = (p: P) => (
   <svg {...base(p)}>
     <circle cx="12" cy="8" r="3.5" />

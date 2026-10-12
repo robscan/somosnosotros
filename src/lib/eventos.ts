@@ -169,6 +169,8 @@ export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "i
   /** Los colores de su cartel (OL-360, `eventos.colores_cartel`): cuatro `#rrggbb` o null si aún no se calcularon. Solo los leen las
    *  consultas de Inicio; se validan con `comoPaleta` antes de pintarlos. */
   colores_cartel?: unknown;
+  /** Con `portadaActo`, los colores de ese cartel (los `colores_cartel` del acto, OL-375): el color de la portada del sistema del festival. */
+  coloresActo?: unknown;
 };
 
 /**
