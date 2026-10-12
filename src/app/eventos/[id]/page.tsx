@@ -49,6 +49,7 @@ import type { SedeMapa } from "@/lib/mapaSedes";
 import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { diaLocal, eventoPaso, formatearLargo } from "@/lib/fechas";
+import { renglonLigado } from "@/lib/ligado";
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { hrefCreador } from "@/lib/carteles/origen";
 import { cargarActosDeMarcos } from "@/lib/cargarSedes";
@@ -302,6 +303,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
   const ahora = new Date();
   const hoy = diaLocal(ahora, e.zona);
+  // Lo ligado que ya pasó no se enlaza (OL-380): su ficha le diría «Esto ya no está» al visitante.
+  const inauguracion = ligados.inauguracion ? renglonLigado(ligados.inauguracion, ahora) : null;
+  const inaugura = ligados.inaugura ? renglonLigado(ligados.inaugura, ahora) : null;
   // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
   const actosVisibles = ligados.actos.filter((a) => !a.borrador);
   const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
@@ -638,14 +642,22 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <b>{horario.franjas.length ? <TextoHorario franjas={horario.franjas} /> : "Horario por confirmar"}</b>
                 <small>{horario.origen === "lugar" ? "Horario del lugar" : horario.origen === "propio" ? "Horario de la exposición" : "Pregunta en el lugar antes de ir."}</small>
               </li>
-              {ligados.inauguracion && (
+              {/* Si ya pasó (OL-380), el renglón sin enlace ni chevrón, en pasado: su ficha diría «Esto ya no está». */}
+              {ligados.inauguracion && inauguracion?.enlaza && (
                 <li>
                   <Link href={hrefEvento(ligados.inauguracion)} className={renglon.dato}>
                     <IconoEstrella width={20} height={20} />
                     <b>Inauguración</b>
-                    <small>{formatearLargo(ligados.inauguracion.inicio, ahora, null, ligados.inauguracion.zona)}</small>
+                    <small>{inauguracion.cuando}</small>
                     <IconoChevronDerecha />
                   </Link>
+                </li>
+              )}
+              {inauguracion && !inauguracion.enlaza && (
+                <li className={`${renglon.dato} ${styles.ligadoPasado}`}>
+                  <IconoEstrella width={20} height={20} />
+                  <b>Inauguración</b>
+                  <small>{inauguracion.cuando}</small>
                 </li>
               )}
             </ul>
@@ -705,7 +717,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                   </Link>
                 </li>
               )}
-              {ligados.inaugura && (
+              {ligados.inaugura && inaugura?.enlaza && (
                 <li>
                   <Link href={hrefEvento(ligados.inaugura)} className={renglon.dato}>
                     <IconoEstrella width={20} height={20} />
@@ -713,6 +725,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                     <small>Exposición</small>
                     <IconoChevronDerecha />
                   </Link>
+                </li>
+              )}
+              {/* La exposición que ya cerró (OL-380): tampoco se enlaza. */}
+              {ligados.inaugura && inaugura && !inaugura.enlaza && (
+                <li className={`${renglon.dato} ${styles.ligadoPasado}`}>
+                  <IconoEstrella width={20} height={20} />
+                  <b>Inauguró {ligados.inaugura.titulo}</b>
+                  <small>Exposición · ya cerró</small>
                 </li>
               )}
             </ul>
