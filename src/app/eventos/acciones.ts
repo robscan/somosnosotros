@@ -18,6 +18,7 @@ import { localAIso, zonaSegura } from "@/lib/fechas";
 import { mencionDeFestival } from "@/lib/sugerencias";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
+import { preguntaSiHayParecidos, type EventoParecido } from "@/lib/eventosParecidos";
 import { validarSesiones, type SesionEvento } from "@/lib/sesionesEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
@@ -31,7 +32,7 @@ import { sitioReservadoVencido } from "@/lib/retencionSitio";
  */
 export type ResultadoEvento =
   | { ok: true; id: string; volver: string; slug?: string | null; href?: string; /** Un festival publicado con su programa (OL-321): cuántos actos y borradores. */ programa?: { actos: number; borradores: number } }
-  | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
+  | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean; /** «¿Es este?» (OL-384): eventos visibles parecidos el mismo día en el mismo sitio. */ parecidos?: EventoParecido[] };
 
 
 function leer(formData: FormData) {
@@ -189,6 +190,29 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
 }
 
 
+/**
+ * «¿Es este?» antes de publicar (OL-384, como el lugar): los eventos visibles, sin pasar, el mismo día local y en el mismo sitio con un título
+ * parecido (la regla vive en la base, `eventos_parecidos`). Primero se recupera una respuesta perdida: si esta operación ya guardó, el
+ * reintento no se encuentra a sí mismo. Sin la migración, o si la lectura falla, se publica como siempre: preguntar ayuda, no es un candado.
+ */
+async function eventosParecidos(supabase: Cliente, datos: DatosEvento, operacion: FormDataEntryValue | null, usuario: string): Promise<EventoParecido[]> {
+  // Sin una clave válida no se guarda (`guardarCompleto`): no hay nada que preguntar.
+  if (typeof operacion !== "string" || !esUuid(operacion)) return [];
+  try {
+    const { data: previo, error: errorPrevio } = await supabase.from("eventos").select("id").eq("operacion_guardado", operacion).eq("creado_por", usuario).maybeSingle();
+    if (errorPrevio || previo) return [];
+    const { data, error } = await supabase.rpc("eventos_parecidos", { p_titulo: datos.titulo, p_inicio: datos.inicio, p_zona: datos.zona, p_lugar_id: datos.lugar_id, p_sitio_texto: datos.sitio_texto });
+    if (error) {
+      console.error("crearEvento (eventos parecidos):", error.message);
+      return [];
+    }
+    return Array.isArray(data) ? (data as EventoParecido[]) : [];
+  } catch (e) {
+    console.error("crearEvento (eventos parecidos):", e);
+    return [];
+  }
+}
+
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const entrada = leer(formData);
@@ -204,6 +228,11 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   if (ciudad === null) return sinCiudad(datos);
+  // «¿Es este?» (OL-384): si ya hay uno parecido y no se confirmó con «No, es otro», no publica y lo devuelve para preguntar.
+  if (formData.get("confirmado") !== "1" && preguntaSiHayParecidos(clase.clase)) {
+    const parecidos = await eventosParecidos(supabase, datos, formData.get("operacion"), user.id);
+    if (parecidos.length) return { ok: false, errores: {}, parecidos };
+  }
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   await guardarColoresCartel(supabase, data.id, datos.imagen, formData);

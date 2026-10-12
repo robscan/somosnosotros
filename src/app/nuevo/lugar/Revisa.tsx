@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PiePaso } from "@/components/PorPasos";
 import Boton from "@/components/ui/Boton";
+import Parecidos from "@/components/ui/Parecidos";
 import { IconoBandera, IconoEtiqueta, IconoMas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -12,7 +13,6 @@ import { Dato, turno } from "../evento/Revisa";
 import { resumenMas, type Paso, type Respuestas } from "./pasos";
 import type { AlElegir } from "./PasosLugar";
 import evento from "../evento/AltaEvento.module.css";
-import styles from "./AltaLugar.module.css";
 
 type Props = {
   r: Respuestas;
@@ -68,23 +68,15 @@ export default function Revisa({ r, ciudad, pedirCiudad, errores, general, parec
         <Dato icono={<IconoMas width={20} height={20} />} clave="Foto, descripción o redes" orden={renglones} valor={mas} falta="Foto, descripción o redes" opcional error={errores.descripcion ?? errores.enlaces ?? errores.portada} onAbrir={() => onAbrir("mas")} />
       </ul>
       {parecidos && parecidos.length > 0 && (
-        <div className={styles.parecidos} role="alert">
-          <p>
-            <b>¿Es este?</b> Ya hay un lugar con ese nombre muy cerca:
-          </p>
-          <ul>
-            {parecidos.map((p) => (
-              <li key={p.id}>
-                <Link href={hrefLugar(p)} replace onClick={alElegir && ((e) => alElegir(e, p))}>
-                  {[p.nombre, etiquetaTipo(p.tipo), p.direccion].filter(Boolean).join(" · ")}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <Boton type="button" variante="secundario" onClick={onConfirmar}>
-            No, es otro: publicar de todos modos
-          </Boton>
-        </div>
+        <Parecidos texto="Ya hay un lugar con ese nombre muy cerca:" onConfirmar={onConfirmar}>
+          {parecidos.map((p) => (
+            <li key={p.id}>
+              <Link href={hrefLugar(p)} replace onClick={alElegir && ((e) => alElegir(e, p))}>
+                {[p.nombre, etiquetaTipo(p.tipo), p.direccion].filter(Boolean).join(" · ")}
+              </Link>
+            </li>
+          ))}
+        </Parecidos>
       )}
       <PiePaso>
         {general && (

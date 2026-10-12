@@ -55,6 +55,8 @@ const mocks = {
   "@/app/eventos/SelectorQuien": "export default function C(){return null}",
   "@/lib/useAvisosTelefono": "export function usePlataforma(){return null}",
   "./Logotipo": "export default function Logotipo(){return null}",
+  // «Revisa» trae «¿Es este?» del alta (OL-384, `ui/Parecidos`) con la imagen de las listas (`next/image`, que fuera de Next no corre): aquí es `img`.
+  "./Imagen": "import React from 'react';export default function Imagen({src,alt,className,width,height,loading}){return React.createElement('img',{src,alt,className,width,height,loading})}",
   "next/navigation": "export function useRouter(){return {replace:()=>{},back:()=>{},refresh:()=>{}}}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link({prefetch,replace,...p}){return React.createElement('a',p)}",
 };
