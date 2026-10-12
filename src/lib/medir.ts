@@ -39,8 +39,11 @@ export const EVENTOS = {
   seguir: { que: ["lugar", "artista"], cambio: ["puesto", "quitado"] },
   /** Una búsqueda que llegó con respuesta: si trajo algo o nada. Nunca lo escrito. */
   busqueda: { resultados: ["si", "no"] },
-  /** Compartir una ficha: la hoja del teléfono, WhatsApp (sin hoja) o «Copiar» el enlace. */
-  compartir: { que: ["evento", "lugar", "artista"], medio: ["hoja", "whatsapp", "copiado"] },
+  /**
+   * Compartir una ficha o la app (el banner de Inicio, OL-388): la hoja del teléfono (abierta y no cancelada), WhatsApp (sin hoja) o «Copiar» el
+   * enlace. Copiar también cuenta como compartir (founder, 2026-10-12: «copiar sí cuenta como compartir»); el medio dice cuál fue.
+   */
+  compartir: { que: ["evento", "lugar", "artista", "app"], medio: ["hoja", "whatsapp", "copiado"] },
   /** Avisos encendidos: por correo o en el teléfono. */
   aviso_activado: { canal: ["correo", "telefono"] },
   /** Un reporte enviado, y de qué tipo de ficha. */
@@ -149,8 +152,11 @@ export function tandaMedida(indice: number): (typeof TANDAS_CARTEL)[number] {
   return TANDAS_CARTEL[indice] ?? "primera";
 }
 
-/** Qué ficha se comparte, por su dirección (`/eventos/…`, `/lugares/…`, `/artistas/…`); otra cosa (la app, una persona) no se mide. */
-export function fichaDeEnlace(url: string): DatosDe<"compartir">["que"] | null {
+/**
+ * Qué ficha se comparte, por su dirección (`/eventos/…`, `/lugares/…`, `/artistas/…`); otra cosa (una persona, la raíz) no se mide desde el botón de
+ * una ficha. La app la mide su banner, con `que: "app"` (OL-388).
+ */
+export function fichaDeEnlace(url: string): Exclude<DatosDe<"compartir">["que"], "app"> | null {
   try {
     const seccion = new URL(url, "https://somosnosotros.org").pathname.split("/")[1];
     return seccion === "eventos" ? "evento" : seccion === "lugares" ? "lugar" : seccion === "artistas" ? "artista" : null;

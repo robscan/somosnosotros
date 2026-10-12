@@ -1,4 +1,4 @@
-import { cache, Fragment, Suspense } from "react";
+import { cache, Fragment, Suspense, type ReactNode } from "react";
 import { sitioReservadoVencido } from "@/lib/retencionSitio";
 import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
@@ -145,8 +145,9 @@ const cargarTotalVanCache = cache(async (id: string): Promise<number> => {
 async function KpiVan({ eventoId, miId, pasado = false }: { eventoId: string; miId: string | null; pasado?: boolean }) {
   const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
   const valor = Math.max(totalVanRpc, asistencias.van.length);
-  // En pasado (OL-383) es cuántos dijeron «Voy», «Fueron», y no baja a ningún sitio: la ficha en pasado no lleva «Quién va».
-  return pasado ? <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Fueron" valor={valor} /> : <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Van" valor={valor} salto="quien-va" />;
+  // En pasado (OL-383) es cuántos dijeron «Voy», «Fueron», y baja a «Quién fue» (OL-388); con nadie no se pinta, como tampoco «Quién fue».
+  if (pasado && valor === 0) return null;
+  return <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta={pasado ? "Fueron" : "Van"} valor={valor} salto="quien-va" />;
 }
 
 /**
@@ -186,11 +187,33 @@ function EsqueletoQuienVa() {
   );
 }
 
-/** La lista de quién va (`QuienVa`), diferida: la misma consulta que `KpiVan`, memoizada por `cache()`. Un evento en pasado no la lleva (OL-383). */
-async function QuienVaDiferido({ eventoId, miId, conSesion }: { eventoId: string; miId: string | null; conSesion: boolean }) {
+/**
+ * La lista de quién va (`QuienVa`), diferida: la misma consulta que `KpiVan`, memoizada por `cache()`. En pasado (OL-388) es «Quién fue», quienes
+ * dijeron «Voy»; si nadie lo dijo, no hay sección.
+ */
+async function QuienVaDiferido({ eventoId, miId, conSesion, pasado = false }: { eventoId: string; miId: string | null; conSesion: boolean; pasado?: boolean }) {
   const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
   const totalVan = Math.max(totalVanRpc, asistencias.van.length);
-  return <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={conSesion} />;
+  if (pasado && totalVan === 0) return null;
+  return <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={conSesion} pasado={pasado} />;
+}
+
+/**
+ * Un renglón de lo ligado (la inauguración, la exposición que inaugura, el festival del que es parte): siempre a su ficha. Lo que ya pasó (OL-388)
+ * se ve pasado y no activo: «Ya pasó» chico encima (como la ceja de las tarjetas), el título en el gris del texto suave y la fecha en pasado.
+ */
+function RenglonLigado({ href, icono, titulo, meta, pasado }: { href: string; icono: ReactNode; titulo: string; meta: string; pasado: boolean }) {
+  return (
+    <li>
+      <Link href={href} className={pasado ? `${renglon.dato} ${styles.ligadoPasado}` : renglon.dato}>
+        {icono}
+        {pasado && <i>Ya pasó</i>}
+        <b>{titulo}</b>
+        <small>{meta}</small>
+        <IconoChevronDerecha />
+      </Link>
+    </li>
+  );
 }
 
 /** Lo ligado a un evento por su clase (OL-321): el horario de una exposición (propio y el de su lugar) y su inauguración, el programa de un
@@ -336,9 +359,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const funcion = consultaTrasFin || paso ? null : textoFuncion(e, funciones);
   const decididasFunciones = funciones.length ? await decididasDe(actual?.perfil.id ?? null, funciones.map((f) => f.id)) : null;
   const hoy = diaLocal(ahora, e.zona);
-  // Lo ligado que ya pasó no se enlaza (OL-380): su ficha le diría «Esto ya no está» al visitante.
+  // Lo ligado que ya pasó se enlaza a su ficha en pasado y se dice en pasado (OL-388, sustituye a OL-380): «Fue el …», «Cerró el …», «Terminó el …».
   const inauguracion = ligados.inauguracion ? renglonLigado(ligados.inauguracion, ahora) : null;
-  const inaugura = ligados.inaugura ? renglonLigado(ligados.inaugura, ahora) : null;
+  const inaugura = ligados.inaugura ? renglonLigado(ligados.inaugura, ahora, "Cerró") : null;
+  const padre = ligados.padre ? renglonLigado(ligados.padre, ahora, "Terminó") : null;
   // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
   const actosVisibles = ligados.actos.filter((a) => !a.borrador);
   // Lo que viene va en «Programa»; lo que ya pasó, aparte y plegado en «Ya pasó», cada acto con su ficha en pasado (OL-383, «X1 como pasado · X2»).
@@ -696,24 +720,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <b>{horario.franjas.length ? <TextoHorario franjas={horario.franjas} /> : "Horario por confirmar"}</b>
                 <small>{horario.origen === "lugar" ? "Horario del lugar" : horario.origen === "propio" ? "Horario de la exposición" : "Pregunta en el lugar antes de ir."}</small>
               </li>
-              {/* Si ya pasó (OL-380), el renglón sin enlace ni chevrón, en pasado: su ficha diría «Esto ya no está». */}
-              {ligados.inauguracion && inauguracion?.enlaza && (
-                <li>
-                  <Link href={hrefEvento(ligados.inauguracion)} className={renglon.dato}>
-                    <IconoEstrella width={20} height={20} />
-                    <b>Inauguración</b>
-                    <small>{inauguracion.cuando}</small>
-                    <IconoChevronDerecha />
-                  </Link>
-                </li>
-              )}
-              {inauguracion && !inauguracion.enlaza && (
-                <li className={`${renglon.dato} ${styles.ligadoPasado}`}>
-                  <IconoEstrella width={20} height={20} />
-                  <b>Inauguración</b>
-                  <small>{inauguracion.cuando}</small>
-                </li>
-              )}
+              {/* Si ya pasó (OL-388), a su ficha en pasado, con el renglón en pasado. */}
+              {ligados.inauguracion && inauguracion && <RenglonLigado href={hrefEvento(ligados.inauguracion)} icono={<IconoEstrella width={20} height={20} />} titulo="Inauguración" meta={inauguracion.cuando} pasado={inauguracion.pasado} />}
             </ul>
           </section>
         )}
@@ -784,37 +792,21 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </details>
         )}
 
-        {/* El festival del que es parte, y la exposición que inaugura (OL-321): enlaces a su ficha. */}
+        {/* El festival del que es parte, y la exposición que inaugura (OL-321): enlaces a su ficha; lo que ya acabó, en pasado (OL-388). */}
         {(ligados.padre || ligados.inaugura) && (
           <section className={ficha.bloque} aria-label="Parte de">
             <ul>
-              {ligados.padre && (
-                <li>
-                  <Link href={hrefEvento(ligados.padre)} className={renglon.dato}>
-                    <IconoEtiqueta width={20} height={20} />
-                    <b>Parte de {ligados.padre.titulo}</b>
-                    <small>Festival</small>
-                    <IconoChevronDerecha />
-                  </Link>
-                </li>
+              {ligados.padre && padre && (
+                <RenglonLigado href={hrefEvento(ligados.padre)} icono={<IconoEtiqueta width={20} height={20} />} titulo={`Parte de ${ligados.padre.titulo}`} meta={padre.pasado ? `Festival · ${padre.cuando}` : "Festival"} pasado={padre.pasado} />
               )}
-              {ligados.inaugura && inaugura?.enlaza && (
-                <li>
-                  <Link href={hrefEvento(ligados.inaugura)} className={renglon.dato}>
-                    <IconoEstrella width={20} height={20} />
-                    <b>Inaugura {ligados.inaugura.titulo}</b>
-                    <small>Exposición</small>
-                    <IconoChevronDerecha />
-                  </Link>
-                </li>
-              )}
-              {/* La exposición que ya cerró (OL-380): tampoco se enlaza. */}
-              {ligados.inaugura && inaugura && !inaugura.enlaza && (
-                <li className={`${renglon.dato} ${styles.ligadoPasado}`}>
-                  <IconoEstrella width={20} height={20} />
-                  <b>Inauguró {ligados.inaugura.titulo}</b>
-                  <small>Exposición · ya cerró</small>
-                </li>
+              {ligados.inaugura && inaugura && (
+                <RenglonLigado
+                  href={hrefEvento(ligados.inaugura)}
+                  icono={<IconoEstrella width={20} height={20} />}
+                  titulo={`${inaugura.pasado ? "Inauguró" : "Inaugura"} ${ligados.inaugura.titulo}`}
+                  meta={inaugura.pasado ? `Exposición · ${inaugura.cuando}` : "Exposición"}
+                  pasado={inaugura.pasado}
+                />
               )}
             </ul>
           </section>
@@ -890,10 +882,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </section>
         )}
 
-        {/* Una exposición o un festival no tienen «Voy» (OL-321): tampoco «Quién va». Un evento en pasado tampoco (OL-383). */}
-        {!soloInteres(clase) && !consultaTrasFin && (
-          <Suspense fallback={<EsqueletoQuienVa />}>
-            <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} />
+        {/* Una exposición o un festival no tienen «Voy» (OL-321): tampoco «Quién va». En pasado (OL-388), «Quién fue», solo si alguien dijo «Voy»: sin
+            esqueleto mientras llega, para no pintar una sección que quizá no existe. */}
+        {!soloInteres(clase) && (
+          <Suspense fallback={consultaTrasFin ? null : <EsqueletoQuienVa />}>
+            <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} pasado={consultaTrasFin} />
           </Suspense>
         )}
 
