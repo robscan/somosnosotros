@@ -1,7 +1,7 @@
 /* ==========================================================================
    Lo propio de la ficha de evento (docs/rediseno/04-ficha-evento-flujo-y-estados.md). Lo común con las fichas de lugar y de artista
    (la rejilla, el héroe, las acciones, los bloques, el pie) está en components/ui/Ficha.module.css.
-   1. Enlace externo · 2. Quién va: la pila de avatares
+   1. Enlace externo · 2. Quién va: la pila de avatares · 3. Cómo ocurre · 4. Lo ligado que ya pasó
    ========================================================================== */
 
 /* 1. Enlace externo del evento, bajo su descripción: se toca en 44 de alto sin cambiar cómo se lee */
@@ -60,4 +60,10 @@
   font-size: var(--letra-sm);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* 4. Lo ligado que ya pasó (OL-380): la inauguración de una exposición, o la exposición que inauguró un acto, ya no se enlaza; su renglón
+   queda con la misma rejilla y el nombre en el gris del texto suave, sin tachar. */
+.ligadoPasado > b {
+  color: var(--texto-suave);
 }
