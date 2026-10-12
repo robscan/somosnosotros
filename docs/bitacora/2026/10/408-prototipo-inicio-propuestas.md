@@ -1,7 +1,7 @@
 # 408 · Prototipo con propuestas para las pruebas de usuario (OL-377)
 
 **Fecha:** 2026-10-12. **Rama:** `prototipo-inicio-propuestas`, base `origin/main` (`152ea11a`). **Operador:** Gestor de cambios VI (Fable 5.1), sin agentes. **Sin migración ni código de la app.**
-**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 3, «Propuesta 3 · sin C1»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
+**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 4, «Propuesta 4 · D3»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
 
 ## Qué pidió el founder (2026-10-12, pruebas de usuario con su iPhone)
 
@@ -28,12 +28,13 @@
 | **N** | El nombre en los avatares de 64 | Una línea (hoy) · **Dos líneas** (cortadas en palabra) · Columna ancha (96 px, se ven 3,5) · Nombre al lado (foto de 48 y el nombre en dos líneas a su derecha, 168 px) |
 | **D1** | Destacados antes de «Tus planes», debajo de la fila «Ahora» | interruptor |
 | **D2** | Tamaño de Destacados (solo ese carril) | Grande (165, hoy) · **XL** (248, se ve una y media, título 19 px) · Ancho (350, una por pantalla, «como Instagram») |
+| **D3** | Solo eventos en Destacados: las expos que llegan por lo que sigue la persona bajan a «Festivales y expos»; la expo destacada por la administración sí entra | interruptor |
 | **I1** | Lo que te interesa | Chip (hoy) · **Icono arriba a la derecha** (el sello pasa a la izquierda) · Icono bajo el sello · Icono junto al título. «3 van» sigue como chip |
 | **F1** | Bajo la tarjeta, primero cuándo (violeta) y luego dónde (gris) | interruptor |
 | **X1** | En la ficha del festival, lo que ya pasó | Todos juntos (hoy, con enlace a «Esto ya no está») · **Aparte, sin enlace** (sección «Ya pasó», en gris) · Aparte, como pasado (cada acto abre su ficha en pasado: lo que traerá el historial) |
 | **X2** | «Ya pasó» empieza plegado («Ya pasó · 5 actividades») | interruptor |
 
-Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL · I1 arriba a la derecha · F1 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
+Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL · D3 · I1 arriba a la derecha · F1 · X1 aparte · X2) y **Firmada** (por firmar: mientras, es la propuesta). La ficha del festival se abre tocando Cinema, Fotovisión o Ciclo Fellini; Atrás vuelve a Inicio; la hoja trae los botones «Inicio» y «Ficha del CINEMA».
 
 ## Lo que mide (medidor de la hoja, en Chrome a 390×844)
 
@@ -50,7 +51,7 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL 
 
 - `01-hoy-arriba.png` — producción: fila «Ahora» con DESIERTO «Inaugura hoy», «Tus planes» arriba, Cinema con «Te interesa» como chip.
 - `02-hoy-lugares.png` — «Lugares de la semana» con los nombres cortados en una línea («Casa de Cult…», «Centro de Di…», «Museo de Ar…»).
-- `03-propuesta-arriba.png` — «Seleccionados para ti» en la primera línea, XL (248 px), sello a la derecha, fecha y luego lugar.
+- `03-propuesta-arriba.png` — «Seleccionados para ti» en la primera línea, XL (248 px), sello a la derecha, fecha y luego lugar; con D3 solo quedan los 3 eventos destacados por la administración.
 - `04-propuesta-lugares-dos-lineas.png` — nombres en dos líneas («Casa de Cultura del…»): se leen más, no todos.
 - `05-n-columna-ancha.png` — columna de 96: «Casa de Cultura del Barrio de…», «Museo de Arte Contemporáneo…».
 - `06-n-nombre-al-lado.png` — foto de 48 con el nombre al lado, en dos líneas.
@@ -80,6 +81,7 @@ Preajustes: **Hoy** (todo apagado), **Propuesta** (N dos líneas · D1 · D2 XL 
 
 1. **«Se corta la imagen, revisa que sí se use proporción de Instagram»** (2026-10-12, 09:36, sobre «CINEMA, clausura» en Seleccionados para ti). Medido: la tarjeta es 4:5 (165×206, 248×310 en XL, 350×437 en ancho) y ese cartel mide 400×511 (0,78), casi 4:5, así que apenas se recorta; lo cortado en esa captura es la tarjeta asomando por el borde (XL enseña una y media). Lo que sí se recortaba: 18 de los 40 carteles de hoy no son 4:5 (las fotos de película del CINEMA son apaisadas, de 1,14 a 1,51; KOWAIFEST es 9:16; cuatro fotos son 3:4) y con `object-fit: cover` anclado arriba pierden los lados o el pie. Añadido **C1** con cuatro opciones en la versión 2.
 2. **«Se sigue cortando, el problema es la captura del cartel, revierte por favor»** (09:42). Revertido en la versión 3: C1 fuera, el cartel vuelve al recorte de hoy. Lo que se ve cortado es el archivo mismo del cartel de la clausura en producción (400×511, con «INEMA» y «ROGRAMA» ya cortados por la izquierda: se subió recortado); no es la tarjeta. Queda para el founder: volver a subir ese cartel desde la ficha del acto.
+3. **«Aquí mostremos solo eventos con sus portadas. El espacio para expos es abajo, ojo si se destaca un evento de expo ese es el que va acá»** (09:45, sobre Fotovisión 31 en «Seleccionados para ti»). Comprobado con la tira de la administración (`tira_destacados`): de las 12 tarjetas del carril del founder, 3 son destacadas por la administración (Cinema, CINEMA clausura, Austin TV) y las otras 9 son expos de los lugares que sigue (`carrilEstelar`: destacados y después lo que sigue). Añadido **D3** en la versión 4: en el carril estelar solo eventos, salvo la expo destacada a propósito; las expos que salen de ahí dejan de estar «vistas» y aparecen en «Festivales y expos» (de 9 a 17 tarjetas) y, si toca, en «Nuevos». La «Propuesta» lo lleva encendido. Para la app sería un cambio en `carrilEstelar` (`src/lib/inicio.ts`): los favoritos sin exposiciones.
 
 ## Lo que no entra aquí
 
