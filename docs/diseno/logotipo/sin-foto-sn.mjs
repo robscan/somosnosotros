@@ -36,3 +36,6 @@ await imagen("public/sin-foto-ancha.png", 1680, 660, 0.36);
 // Oscura, 4:3 a 3× de la cabecera oscura en el teléfono (390 de ancho): sobre `--banda`, y el símbolo arriba del centro, donde el título y su
 // velo no lo tapan.
 await imagen("public/sin-foto-oscura.png", 1200, 900, 0.28, { fondo: "#141414", tinta: "#6b6b66", centro: 0.34 });
+// Redonda oscura, a 3× del círculo de 60 px de la fila de fotos del historial («Se ha presentado en», «Han pasado por aquí», OL-390): el
+// símbolo en blanco sobre casi negro, como lo firmó el founder en el prototipo `historial-propuestas.html`. El círculo lo recorta su contenedor.
+await imagen("public/sin-foto-redonda.png", 180, 180, 0.42, { fondo: "#1a1a1a", tinta: "#dcdcdc" });

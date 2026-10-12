@@ -100,9 +100,9 @@ describe("ficha de lugar: la cabecera pinta antes que sus eventos (OL-161)", () 
     expect(datos["@type"]).toBe("Place");
     expect(datos.name).toBe("Lugar de prueba");
 
-    // Cuántos eventos vienen y cuánta gente lo sigue (dos números, un Suspense) y "Próximos eventos" (otro): dos límites.
+    // Cuántos eventos vienen y cuánta gente lo sigue (dos números, un Suspense), "Próximos eventos" (otro) y el historial (OL-390, otro).
     const suspenses = elementos.filter((e) => e.type === Suspense);
-    expect(suspenses.length).toBe(2);
+    expect(suspenses.length).toBe(3);
   });
 
   it("una ficha por UUID redirige (308 permanente) a su slug", async () => {
@@ -174,5 +174,60 @@ describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", (
     await con({ data: null, error: { message: "secreto-remoto" } }, async () => {
       expect(await metadatos()).toEqual({});
     });
+  });
+});
+
+describe("el historial del lugar (OL-390)", () => {
+  const pasado = (id: string, artistas: { id: string; slug: string; nombre: string }[]) => ({
+    evento: { id, slug: id, titulo: id, inicio: "2026-10-09T01:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, lugar_id: LUGAR.id, sitio_texto: null, sitio_direccion: null, sitio_reservado: false, evento_padre_id: null, lugar: { id: LUGAR.id, slug: LUGAR.slug, nombre: LUGAR.nombre, portada: null } },
+    artistas: artistas.map((a, i) => ({ evento_id: id, orden: i + 1, artista: { ...a, foto: null } })),
+  });
+
+  /** El cuerpo del lugar con esos eventos pasados: devuelve lo que pinta su sección de historial, ya resuelta. */
+  async function historial(pasados: ReturnType<typeof pasado>[]) {
+    const { clienteServidor } = await import("@/lib/supabase/servidor");
+    const { default: Historial } = await import("@/components/Historial");
+    const { default: CuerpoLugar } = await import("./CuerpoLugar");
+    const previo = vi.mocked(clienteServidor).getMockImplementation()!;
+    const base = clienteFalso({ lugares: { data: LUGAR }, eventos_artistas: { data: pasados.flatMap((p) => p.artistas) } }, { cuenta_seguidores: { data: 0 }, van_por_evento: { data: [] } });
+    const cliente = {
+      ...base,
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return base.from(tabla);
+        let enPasado = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const q: any = {};
+        for (const metodo of ["select", "eq", "in", "or", "order", "limit", "not"]) q[metodo] = () => q;
+        q.lt = () => ((enPasado = true), q);
+        q.then = (ok: (v: unknown) => void, mal: (e: unknown) => void) => Promise.resolve({ data: enPasado ? pasados.map((p) => p.evento) : [] }).then(ok, mal);
+        return q;
+      },
+    };
+    vi.mocked(clienteServidor).mockImplementation((async () => cliente) as never);
+    try {
+      const { cargarFicha } = await import("./CuerpoLugar");
+      const f = await cargarFicha(LUGAR.slug);
+      const cuerpo = [...recorrer(CuerpoLugar({ f: f! }))];
+      const diferidos = cuerpo.filter((e) => e.type === Suspense).map((s) => s.props.children as { type: (p: unknown) => unknown; props: unknown });
+      const seccion = diferidos.find((d) => d.type.name === "SeccionHistorialLugar")!;
+      const el = (await seccion.type(seccion.props)) as { type: unknown; props: Parameters<typeof Historial>[0] };
+      expect(el.type).toBe(Historial);
+      return Historial(el.props) as { props: Record<string, unknown> } | null;
+    } finally {
+      vi.mocked(clienteServidor).mockImplementation(previo);
+    }
+  }
+
+  it("sin eventos pasados la sección no existe", async () => {
+    expect(await historial([])).toBeNull();
+  });
+
+  it("con eventos pasados sale «Historial» con eventos y artistas distintos", async () => {
+    const LEO = { id: "a-leo", slug: "leo", nombre: "Leo Traeger" };
+    const LATIFE = { id: "a-latife", slug: "latife", nombre: "Latife Zetune" };
+    const raiz = await historial([pasado("a", [LEO, LATIFE]), pasado("b", [LEO]), pasado("c", [])]);
+    expect(raiz?.props.titulo).toBe("Historial");
+    expect(raiz?.props.id).toBe("historial");
+    expect(raiz?.props.cuenta).toBe("3 eventos · 2 artistas");
   });
 });

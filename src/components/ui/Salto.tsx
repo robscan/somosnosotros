@@ -2,10 +2,12 @@
 
 import { useEffect, type ReactNode } from "react";
 
-/** Baja hasta la sección (respeta su `scroll-margin-top`, como un ancla) y la devuelve; null si no está en la pantalla. */
+/** Baja hasta la sección (respeta su `scroll-margin-top`, como un ancla) y la devuelve; null si no está en la pantalla. Si es una sección
+ *  plegada (`ui/Plegado`, un `<details>`), la abre antes: «Lugares» baja a la trayectoria de un artista y la enseña (OL-390). */
 function bajarA(id: string): HTMLElement | null {
   const destino = document.getElementById(id);
   if (!destino) return null;
+  if (destino instanceof HTMLDetailsElement) destino.open = true;
   destino.scrollIntoView({ block: "start", behavior: "instant" });
   return destino;
 }

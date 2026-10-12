@@ -9,6 +9,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Desplegable from "@/components/Desplegable";
 import EventosPorDia from "@/components/EventosPorDia";
+import Historial from "@/components/Historial";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
@@ -26,6 +27,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
+import { cargarHistorialLugar } from "@/lib/cargarHistorial";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
@@ -180,6 +182,11 @@ async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar:
   );
 }
 
+/** «Historial» (OL-390): los eventos pasados del lugar, plegados bajo «Próximos eventos»; sin ninguno, no existe. Consulta aparte, en `<Suspense>`. */
+async function SeccionHistorialLugar({ lugar }: { lugar: LugarConAutor }) {
+  return <Historial de="lugar" historial={await cargarHistorialLugar(lugar.id)} />;
+}
+
 /** Fallback de `SeccionEventosLugar`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */
 function EsqueletoSeccionEventos() {
   return (
@@ -252,6 +259,11 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
 
       <Suspense fallback={<EsqueletoSeccionEventos />}>
         <SeccionEventosLugar lugar={lugar} actual={actual} hrefPublicarAqui={hrefPublicarAqui} />
+      </Suspense>
+
+      {/* Lo que ya pasó aquí (OL-390): plegado bajo lo próximo. Mientras llega no se adivina si existe: nada en su sitio. */}
+      <Suspense fallback={null}>
+        <SeccionHistorialLugar lugar={lugar} />
       </Suspense>
 
       <section className={ficha.tarjeta}>

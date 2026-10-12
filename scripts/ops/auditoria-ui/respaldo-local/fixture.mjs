@@ -150,6 +150,32 @@ const eventos = [
   // OL-375: sin cartel (la foto del MUNI); cierra entre «Un mundo para mí» y KOWAIFEST, así en «Festivales y expos» va justo después de la mostaza.
   { ...evento({ id: E.reflejo, slug: "reflejo-atemporal-pintura-y-grafica", titulo: "Reflejo atemporal: pintura y gráfica", dias: -6, hora: "00:00", lugar_id: L.muni, creadoHace: 20, imagen: null, clase: "exposicion", descripcion: "Pintura y gráfica de Bernardo Cid." }), fin: iso(fecha(primeroDelMesQueViene + 14, "23:59")), termina: iso(fecha(primeroDelMesQueViene + 14, "23:59")) },
 ];
+// OL-390: lo que ya pasó, para la «Trayectoria» de un artista y el «Historial» de un lugar. Solo en ACHE Galería y el Centro Cultural
+// Universitario Bicentenario y con Feleal, Abril Merlot, 0Backside0 y Rocío Lozano (de visita, sin fechas próximas): ninguna pantalla que mide
+// `npm run medir` los enseña (Teatro de la Paz, el Museo del Ferrocarril y Aaron Cadena no cambian). Visibles y ya terminados: no salen en
+// ninguna lista de lo que viene. Dos meses (este y el anterior), un acto de un festival que ya pasó, un sitio sin ficha y quiénes fueron.
+const EP = {
+  noche: "bbbb0003-0000-4000-8000-000000000001",
+  retratos: "bbbb0003-0000-4000-8000-000000000002",
+  otono: "bbbb0003-0000-4000-8000-000000000003",
+  otonoDuo: "bbbb0003-0000-4000-8000-000000000004",
+  otonoCierre: "bbbb0003-0000-4000-8000-000000000005",
+  acordeonAche: "bbbb0003-0000-4000-8000-000000000006",
+  jardin: "bbbb0003-0000-4000-8000-000000000007",
+  rocioCcub: "bbbb0003-0000-4000-8000-000000000008",
+};
+eventos.push(
+  evento({ id: EP.noche, slug: "noche-de-acordeon-y-guitarra", titulo: "Noche de acordeón y guitarra", dias: -2, hora: "20:00", lugar_id: L.ache, creadoHace: 12, imagen: null }),
+  evento({ id: EP.retratos, slug: "retratos-de-barrio-en-vivo", titulo: "Retratos de barrio en vivo", dias: -5, hora: "19:00", lugar_id: L.ache, creadoHace: 15, imagen: null }),
+  // Un festival que ya pasó (del mes anterior), con dos actos en el Bicentenario: la ceja del festival en los renglones.
+  { ...evento({ id: EP.otono, slug: "festival-otono-sonoro", titulo: "Festival Otoño Sonoro", dias: primeroDelMes - 9, hora: "18:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, clase: "festival" }), fin: iso(fecha(primeroDelMes - 7, "23:00")), termina: iso(fecha(primeroDelMes - 7, "23:00")) },
+  evento({ id: EP.otonoDuo, slug: "feleal-y-abril-merlot-a-duo", titulo: "Feleal y Abril Merlot a dúo", dias: primeroDelMes - 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono }),
+  evento({ id: EP.otonoCierre, slug: "cierre-otono-sonoro", titulo: "Cierre de Otoño Sonoro", dias: primeroDelMes - 7, hora: "20:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono }),
+  evento({ id: EP.acordeonAche, slug: "feleal-acordeon-en-ache", titulo: "Feleal: acordeón en ACHE", dias: primeroDelMes - 4, hora: "20:00", lugar_id: L.ache, creadoHace: 35, imagen: null }),
+  // En un sitio sin ficha: cuenta en la trayectoria, pero no en «Se ha presentado en».
+  evento({ id: EP.jardin, slug: "feleal-en-el-jardin-de-san-juan-de-dios", titulo: "Feleal en el Jardín de San Juan de Dios", dias: primeroDelMes - 12, hora: "12:00", sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 45, imagen: null }),
+  evento({ id: EP.rocioCcub, slug: "rocio-lozano-canciones-de-ida-y-vuelta", titulo: "Rocío Lozano: canciones de ida y vuelta", dias: primeroDelMes - 3, hora: "19:30", lugar_id: L.ccub, creadoHace: 30, imagen: null }),
+);
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];
 /** El horario por día del Festival de las Linternas: viernes y domingo de 20:00 a 21:00, el sábado de 18:00 a 21:00. */
@@ -170,6 +196,9 @@ const A = {
   feleal: "cccc0001-0000-4000-8000-000000000004",
   backside: "cccc0001-0000-4000-8000-000000000005",
   merlot: "cccc0001-0000-4000-8000-000000000006",
+  // OL-390: de visita (de otra ciudad, así no entra en Artistas de San Luis), sin fechas próximas y con dos pasadas en San Luis: «Lugares» baja
+  // a su trayectoria.
+  rocio: "cccc0003-0000-4000-8000-000000000001",
 };
 // Inicio solo destaca a quien tiene foto (doc 50, H-03): los tres con evento próximo usan el cartel público de su propio evento.
 const cartel = (slug) => imagenes.eventos[slug] ?? null;
@@ -184,6 +213,7 @@ const artistas = [
   // OL-372: con foto (un cartel público), para ver en «Artistas de la semana» un avatar con foto junto a los del símbolo SN.
   artista(A.backside, "0backside0", "0Backside0", "musica", "Rock, metal y alternativo", "grupo", null, [], cartel("susurros-del-inconsciente")),
   artista(A.merlot, "abril-merlot", "Abril Merlot", "musica", "Música académica y clásica", "solista"),
+  { ...artista(A.rocio, "rocio-lozano", "Rocío Lozano", "musica", "Canción", "solista", "Cantautora de la Ciudad de México que se presenta seguido en San Luis Potosí."), ciudad: "Ciudad de México" },
 ];
 // OL-372: lo que hace falta para ver «Artistas destacadxs» con la tarjeta de un evento (E9) y los avatares (E5). Pimpolina la eligió la
 // administración (sin novedad); la Orquesta («Nuevo audio», nombre largo que se corta, hoy) y Feleal («Nuevo video») entran por su novedad.
@@ -204,6 +234,18 @@ const eventos_artistas = [
   { evento_id: E.macario, artista_id: A.backside, orden: 1 },
   { evento_id: E.cristiada, artista_id: A.merlot, orden: 1 },
   { evento_id: E.arttoy, artista_id: A.cadena, orden: 1 },
+  // OL-390: lo que ya pasó. «Noche de acordeón y guitarra» con cuatro artistas («con Abril Merlot, 0Backside0 y 1 más»).
+  { evento_id: EP.noche, artista_id: A.feleal, orden: 1 },
+  { evento_id: EP.noche, artista_id: A.merlot, orden: 2 },
+  { evento_id: EP.noche, artista_id: A.backside, orden: 3 },
+  { evento_id: EP.noche, artista_id: A.rocio, orden: 4 },
+  { evento_id: EP.retratos, artista_id: A.backside, orden: 1 },
+  { evento_id: EP.otonoDuo, artista_id: A.feleal, orden: 1 },
+  { evento_id: EP.otonoDuo, artista_id: A.merlot, orden: 2 },
+  { evento_id: EP.otonoCierre, artista_id: A.backside, orden: 1 },
+  { evento_id: EP.acordeonAche, artista_id: A.feleal, orden: 1 },
+  { evento_id: EP.jardin, artista_id: A.feleal, orden: 1 },
+  { evento_id: EP.rocioCcub, artista_id: A.rocio, orden: 1 },
 ];
 
 // ---------- lo de las personas ----------
@@ -216,6 +258,10 @@ const asistencias = [
   // OL-364: «Tus planes» con un festival y un taller que le interesan a Ana, para medir la clase junto a la decisión en la tarjeta.
   { id: "dddd0001-0000-4000-8000-000000000006", usuario_id: ANA, evento_id: E.cine, estado: "me_interesa", creado_en: hace(0) },
   { id: "dddd0001-0000-4000-8000-000000000007", usuario_id: ANA, evento_id: E.tallerLinoleo, estado: "me_interesa", creado_en: hace(0) },
+  // OL-390: quiénes fueron a lo que ya pasó («2 fueron», «1 fue»): Marcos y una cuenta sin perfil, nunca Ana (su perfil y sus novedades se miden).
+  { id: "dddd0003-0000-4000-8000-000000000001", usuario_id: MARCOS, evento_id: EP.noche, estado: "voy", creado_en: hace(4) },
+  { id: "dddd0003-0000-4000-8000-000000000002", usuario_id: "33333333-3333-4333-8333-333333333333", evento_id: EP.noche, estado: "voy", creado_en: hace(4) },
+  { id: "dddd0003-0000-4000-8000-000000000003", usuario_id: MARCOS, evento_id: EP.otonoDuo, estado: "voy", creado_en: hace(30) },
 ];
 const seguimientos = [
   { id: "eeee0001-0000-4000-8000-000000000001", usuario_id: ANA, lugar_id: L.miguelito, artista_id: null, creado_en: hace(5) },

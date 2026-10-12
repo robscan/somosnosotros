@@ -50,58 +50,10 @@
 }
 
 /* «Ya pasó» de un festival (OL-383, prototipo firmado `inicio-propuestas.html`, «X1 como pasado · X2»): un `<details>` plegado al abrir la
-   ficha. Su renglón: el título del bloque y cuántas actividades debajo, el caret a la derecha (gira al abrir), del alto de un toque. Dentro, los
-   días y sus renglones como en «Programa», con la foto apagada y el título y la hora en el gris del texto suave: siguen enlazando a su ficha en
-   pasado. */
-.yaPaso > summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "titulo caret"
-    "cuenta caret";
-  align-items: center;
-  column-gap: var(--espacio-3);
-  min-height: var(--toque-min);
-  list-style: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.yaPaso > summary::-webkit-details-marker {
-  display: none;
-}
-.yaPaso > summary > h2 {
-  grid-area: titulo;
-  font-size: var(--letra-xl);
-}
-.yaPaso > summary > small {
-  grid-area: cuenta;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.yaPaso > summary > svg {
-  grid-area: caret;
-  color: var(--texto-suave);
-  transition: transform var(--duracion);
-}
-.yaPaso[open] > summary > svg {
-  transform: rotate(180deg);
-}
-.yaPaso > h3 {
-  padding-top: var(--espacio-4);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-}
-.yaPaso > ul {
-  list-style: none;
-}
-.yaPaso li > a > img {
-  filter: grayscale(1);
-  opacity: 0.7;
-}
-.yaPaso li > a > b,
-.yaPaso li > a > small > span:has(> b) {
-  color: var(--texto-suave);
+   ficha, con sus renglones apagados. Desde OL-390 el mismo patrón sirve a la «Trayectoria» de un artista y al «Historial» de un lugar: vive en
+   `ui/Plegado` y aquí se toma tal cual. */
+.yaPaso {
+  composes: plegado from "../../../components/ui/Plegado.module.css";
 }
 
 /* 3. Cómo ocurre (OL-321):el «Publicar» de un borrador del programa, un botón de texto en el color de acción, del alto de un toque. (La línea

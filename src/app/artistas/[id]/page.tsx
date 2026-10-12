@@ -15,6 +15,7 @@ import { CAPO_SIN_RECLAMAR_EN_SITEMAP } from "@/lib/sitemap";
 import Desplegable from "@/components/Desplegable";
 import { EsqueletoKpis, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import EventosPorDia from "@/components/EventosPorDia";
+import Historial from "@/components/Historial";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import BarraFicha from "@/components/ui/BarraFicha";
@@ -37,6 +38,8 @@ import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
+import { cargarTrayectoria } from "@/lib/cargarHistorial";
+import { contarLugares, saltoLugares } from "@/lib/historialFichas";
 import { incrustadoDeNovedad } from "@/lib/incrustado";
 import { leerNovedadesRecientes, selloNovedadArtista, type NovedadArtista } from "@/lib/novedadesArtista";
 import { qrDeUrl } from "@/lib/qr";
@@ -167,20 +170,26 @@ const cargarSeguidoresArtistaCache = cache(async (artistaId: string): Promise<nu
 });
 
 /**
- * Sus tres números (`ui/Kpi`): cuántas fechas vienen, cuánta gente lo sigue y en cuántos lugares se presenta. Piden una consulta
- * aparte de la del artista (OL-161), así que van en `<Suspense>`, con tres tarjetas de esqueleto del mismo alto mientras llegan;
- * la cabecera (foto, nombre, etiqueta) no las espera.
+ * Sus tres números (`ui/Kpi`): cuántas fechas vienen, cuánta gente lo sigue y en cuántos lugares se ha presentado o se presentará. Piden
+ * consultas aparte de la del artista (OL-161), así que van en `<Suspense>`, con tres tarjetas de esqueleto del mismo alto mientras llegan;
+ * la cabecera (foto, nombre, etiqueta) no las espera. «Lugares» cuenta los de todas sus fechas visibles, pasadas y por venir (OL-390, K1
+ * «todos»): con fechas próximas baja a ellas; sin ellas, a la trayectoria, que se abre.
  */
 async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
-  const [seguidores, fechas] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), cargarFechasCache(artista.id)]);
-  const lugares = new Set(fechas.map((f) => f.lugar_id).filter(Boolean)).size;
+  const [seguidores, fechas, trayectoria] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), cargarFechasCache(artista.id), cargarTrayectoria(artista.id)]);
+  const lugares = contarLugares(fechas, trayectoria.eventos);
   return (
     <Kpis>
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Fechas" valor={kpiProximos(fechas.length, true)} salto={fechas.length > 0 ? "fechas" : undefined} />
       <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Siguen" valor={seguidores} />
-      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Lugares" valor={lugares} />
+      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Lugares" valor={lugares} salto={saltoLugares(lugares, fechas.length, trayectoria.eventos.length)} />
     </Kpis>
   );
+}
+
+/** «Trayectoria» (OL-390): sus fechas pasadas, plegadas bajo «Próximas fechas»; sin ninguna, no existe. Consulta aparte, en `<Suspense>`. */
+async function SeccionTrayectoria({ artista }: { artista: ArtistaConAutor }) {
+  return <Historial de="artista" artistaId={artista.id} historial={await cargarTrayectoria(artista.id)} />;
 }
 
 /** «Próximas fechas» entero: la misma consulta que `KpisArtista`, memoizada por `cache()`, más quién decidió qué. */
@@ -417,6 +426,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
         <Suspense fallback={<EsqueletoSeccionFechas />}>
           <SeccionFechasArtista artista={a} actual={actual} hrefPublicarFecha={hrefPublicarFecha} />
+        </Suspense>
+
+        {/* Lo que ya pasó (OL-390): plegado bajo lo próximo. Mientras llega no se adivina si existe: nada en su sitio. */}
+        <Suspense fallback={null}>
+          <SeccionTrayectoria artista={a} />
         </Suspense>
 
         {/* Novedades, fase 1 (doc 44 §1, OL-175): después de las fechas, antes de «Sobre». Sin novedades y sin poder publicar,
