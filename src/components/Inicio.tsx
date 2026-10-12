@@ -11,6 +11,7 @@ import Cabecera from "./ui/Cabecera";
 import PantallaConAviso from "./useCanalDeListas";
 import { Vacio } from "./AgendaInicio";
 import { CarrilesDeInicio, useEstadoCarriles } from "./inicio/EstadoCarriles";
+import BannerCompartir from "./inicio/BannerCompartir";
 
 type Props = {
   ciudad: Ciudad;
@@ -39,7 +40,8 @@ type Props = {
 };
 
 /**
- * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Destacados (primero desde OL-382, D1), Tus planes, Esta semana, Festivales y
+ * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Destacados (primero desde OL-382, D1), el banner para
+ * compartir la app (OL-387, con sesión y desde la tercera visita), Tus planes, Esta semana, Festivales y
  * exposiciones (OL-342: los festivales y las exposiciones vigentes juntos, por cercanía; antes «Para visitar», OL-322, solo las
  * exposiciones), Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares de la semana, Artistas destacadxs y
  * Artistas de la semana, cada uno con su título a la izquierda y, a la derecha, el
@@ -88,6 +90,9 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
             tarjeta grande en Tus planes y Festivales y expos; mediana en Esta semana y Nuevos eventos. Cada esqueleto es del tamaño de su carril,
             para no saltar cuando llega la respuesta real. */}
         <Suspense fallback={<CarrilEsqueleto forma="xl" />}>{slotEstelar}</Suspense>
+        {/* OL-387 (B1 y B2, firmados el 2026-10-12): el banner para compartir la app, justo tras el carril estelar y antes de «Tus planes»; solo con
+            sesión y, de eso, solo desde la tercera visita (lo decide el teléfono tras el primer pintado: sin él, no ocupa nada). */}
+        {conSesion && <BannerCompartir zona={zona} />}
         {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
         {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). OL-375: todas con la portada del sistema,

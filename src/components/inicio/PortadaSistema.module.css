@@ -34,7 +34,7 @@
 .mediana {
   --zona-arriba: var(--espacio-2);
 }
-/* D2 (OL-382): en la XL del carril estelar, la zona del título con 16 de relleno por todos lados y el título a 24. */
+/* D2 (OL-382; XL+ desde OL-387): en la XL del carril estelar, la zona del título con 16 de relleno por todos lados y el título a 26. */
 .xl {
   --zona-arriba: var(--espacio-4);
   --zona-lado: var(--espacio-4);

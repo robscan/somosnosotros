@@ -164,16 +164,16 @@ test("un carril vacío no deja hueco: se recoge a alto 0 y no se oye", async (t)
 const firmada = (p, carril, id) => seccion(p, carril).locator(`a[href="/eventos/${id}"]`);
 const caja = (r) => [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10];
 
-test("firmada: el cartel entero en 4:5, XL 248×310, grande 165×206 y mediana 132×165; desde 1048, 285,6×357, 190×237,5 y 152×190", async (t) => {
+test("firmada: el cartel entero en 4:5, XL+ 280×350, grande 165×206 y mediana 132×165; desde 1048, 322,4×403, 190×237,5 y 152×190", async (t) => {
   const p = await pagina(t);
   const portada = (pg, carril, id) => firmada(pg, carril, id).evaluate((a) => a.firstElementChild.getBoundingClientRect().toJSON());
-  assert.deepEqual(caja(await portada(p, "Carril firmado XL", "ev-kopk")), [248, 310], "OL-382 (D2): la XL del carril estelar");
+  assert.deepEqual(caja(await portada(p, "Carril firmado XL", "ev-kopk")), [280, 350], "OL-382 (D2), XL+ desde OL-387: la XL del carril estelar");
   assert.deepEqual(caja(await portada(p, "Carril firmado", "ev-kopk")), [165, 206.3]);
   assert.deepEqual(caja(await portada(p, "Carril firmado mediano", "ev-kopk")), [132, 165]);
   assert.deepEqual(caja(await portada(p, "Carril firmado", "ev-sin-imagen")), [165, 206.3], "sin cartel, la portada mide lo mismo");
-  assert.deepEqual(caja(await portada(p, "Carril firmado XL", "ev-sin-imagen")), [248, 310], "sin cartel, la XL también");
+  assert.deepEqual(caja(await portada(p, "Carril firmado XL", "ev-sin-imagen")), [280, 350], "sin cartel, la XL también");
   const ancha = await pagina(t, 1280);
-  assert.deepEqual(caja(await portada(ancha, "Carril firmado XL", "ev-kopk")), [285.6, 357]);
+  assert.deepEqual(caja(await portada(ancha, "Carril firmado XL", "ev-kopk")), [322.4, 403]);
   assert.deepEqual(caja(await portada(ancha, "Carril firmado", "ev-kopk")), [190, 237.5]);
   assert.deepEqual(caja(await portada(ancha, "Carril firmado mediano", "ev-kopk")), [152, 190]);
   // Una sola tarjeta no se estira a lo ancho.
@@ -326,11 +326,11 @@ test("firmada: debajo, el título completo tal cual en tres líneas como mucho, 
   }
   // Tal cual: las mayúsculas de quien publicó no pasan a oración (antes, «DESIERTO» → «Desierto»).
   assert.equal((await pie("ev-guardada")).titulo, "DESIERTO: Observación y Espacio");
-  // La mediana, un escalón más chica; la XL (D2), uno más grande: el título a 19 y las líneas a 17.
+  // La mediana, un escalón más chica; la XL+ (D2, OL-387), más grande: el título a 21 y las líneas a 17.
   const mediana = await pie("ev-kopk", "Carril firmado mediano");
   assert.deepEqual([mediana.letra, mediana.lugar[2]], ["15px", "14px"]);
   const xl = await pie("ev-kopk", "Carril firmado XL");
-  assert.deepEqual([xl.letra, xl.lugar[2], xl.titulo], ["19px", "17px", "Presentación de Kopk Poj: el aliento de la montaña"]);
+  assert.deepEqual([xl.letra, xl.lugar[2], xl.titulo], ["21px", "17px", "Presentación de Kopk Poj: el aliento de la montaña"]);
   assert.ok(xl.orden && xl.debajoDelCartel);
 });
 
@@ -394,11 +394,11 @@ test("OL-375: festival, expo y taller llevan la portada del sistema: el color de
   assert.deepEqual([expo.fondo, expo.tinta, expo.formas], ["rgb(193, 176, 34)", "rgb(26, 26, 26)", ["rect"]]);
   // El título, a 4,5:1 o más (5:1 por construcción): 5,84, 5,30 y 7,87, los de la bitácora 405.
   assert.deepEqual([taller.contraste, cinema.contraste, expo.contraste], [5.84, 5.3, 7.87]);
-  // La mediana: el título a 17 px y la zona con 8 arriba. La XL (OL-382, D2): el título a 24 y la zona con 16 por todos lados.
+  // La mediana: el título a 17 px y la zona con 8 arriba. La XL (OL-382, D2; XL+ desde OL-387): el título a 26 y la zona con 16 por todos lados.
   const mediana = await medirPortada(firmada(p, "Carril firmado mediano", "ev-taller"));
   assert.deepEqual([mediana.titulo[1], mediana.zona], ["17px", { izquierda: 12, derecha: 12, abajo: 12, arriba: 8 }]);
   const xl = await medirPortada(firmada(p, "Carril firmado XL", "ev-taller"));
-  assert.deepEqual([xl.titulo[1], xl.zona, xl.sello], ["24px", { izquierda: 16, derecha: 16, abajo: 16, arriba: 16 }, [8, 8]]);
+  assert.deepEqual([xl.titulo[1], xl.zona, xl.sello], ["26px", { izquierda: 16, derecha: 16, abajo: 16, arriba: 16 }, [8, 8]]);
   // T1: el festival, tal cual, con sus mayúsculas (antes, «Cinema»).
   assert.ok("CINEMA: XV Festival de Cine México-Alemania".startsWith((await medirPortada(firmada(p, "Carril firmado XL", "ev-festival"))).titulo[0].replace(/…$/, "")));
 });

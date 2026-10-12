@@ -67,6 +67,15 @@ const PASOS = {
   },
 };
 
+// OL-387: Inicio con sesión en la tercera visita (dos días ya guardados en el teléfono): con el banner para compartir la app tras el carril
+// estelar. Sin esos días no sale, así que en `s01-inicio-sesion` no cuenta; aquí sí.
+PASOS["banner-compartir"] = async (page) => {
+  await page.evaluate(() => localStorage.setItem("somosnosotros:inicio-compartir", JSON.stringify({ dias: ["2026-10-05", "2026-10-06"], cerradoHasta: null, compartido: false })));
+  await page.reload({ waitUntil: "load" });
+  await page.getByRole("region", { name: "Comparte la app" }).waitFor();
+  await aquietar(page);
+};
+
 // Las pantallas que piden un gesto antes de enseñar sus campos: el alta de evento por pasos, en «¿Cómo se llama?» y en «¿Es aquí?» con
 // «Ponle nombre» abierto (sin Mapbox la dirección del punto no llega, así que el nombre se pide de entrada). Con «Estoy aquí» y una ubicación fija.
 PASOS["evento-nombre"] = async (page) => {

@@ -176,9 +176,10 @@
   font-size: var(--letra-xs);
 }
 
-/* D2 (OL-382): en el carril estelar, la tarjeta XL (248 de ancho, se ve una y media) con el título y las líneas un escalón más grandes. */
+/* D2 (OL-382; XL+ desde OL-387): en el carril estelar, la tarjeta XL+ (280 de ancho, se ve una y cuarto) con el título a 21 y las líneas un
+   escalón más grandes, a 17. */
 .xl .titulo {
-  font-size: var(--letra-xl);
+  font-size: var(--letra-titulo-xl);
 }
 .xl .lugar,
 .xl .cuando {

@@ -107,7 +107,7 @@
  * portada (`--foto`).
  */
 /* D2 (OL-382; prototipo `inicio-propuestas.html`, «Firmada»): el carril estelar («Destacados» o «Seleccionados para ti») con la tarjeta XL,
-   248×310 (se ve una y media, «como el de Instagram»). */
+   desde OL-387 la XL+: 280×350 (se ve una y cuarto; «aprovecha para crecer proporcionalmente un poco más el carril»). */
 .cartelXl {
   --foto: var(--tarjeta-xl-foto);
   grid-auto-columns: var(--tarjeta-xl);

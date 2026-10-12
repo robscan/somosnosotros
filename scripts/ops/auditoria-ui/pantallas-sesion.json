@@ -24,5 +24,6 @@
   { "id": "s24-ficha-exposicion", "plantilla": "ficha", "url": "/eventos/ecos-de-papel" },
   { "id": "s25-ficha-festival", "plantilla": "ficha", "url": "/eventos/festival-de-cine-de-invierno" },
   { "id": "s26-editar-exposicion", "plantilla": "tarea", "url": "/eventos/ecos-de-papel/editar" },
-  { "id": "s27-alta-evento-nombre-clase", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-nombre-clase" }
+  { "id": "s27-alta-evento-nombre-clase", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-nombre-clase" },
+  { "id": "s28-inicio-banner-compartir", "plantilla": "raíz", "url": "/", "completa": true, "paso": "banner-compartir" }
 ]
