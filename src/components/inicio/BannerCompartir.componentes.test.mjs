@@ -1,7 +1,8 @@
 /** OL-387: el banner para compartir la app en Inicio (prototipo firmado `inicio-propuestas.html`, «Firmada»: B1 tras Destacados, B2 con el
  *  símbolo SN; bitácora 417). Sale desde el tercer día distinto (lo cuenta el teléfono, `lib/visitasInicio`), la × lo esconde 30 días con
- *  «Deshacer», «Compartir» abre la hoja del teléfono y, sin ella, copia el enlace y avisa. No corre con `npm test`; se corre con
- *  `npm run test:componentes`. */
+ *  «Deshacer», «Compartir» abre la hoja del teléfono y, sin ella, copia el enlace y avisa. Lo compartido se mide (OL-388: `compartir` con
+ *  `que: "app"`, por la hoja o copiado; cancelar no se mide): fuera de producción `medirCliente` solo lo escribe en consola con
+ *  `NEXT_PUBLIC_MEDIR_DEPURAR=1`, y de ahí se lee. No corre con `npm test`; se corre con `npm run test:componentes`. */
 import { before, after, test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -22,6 +23,7 @@ before(async () => {
     bundle: true,
     outfile: join(dir, "app.js"),
     jsx: "automatic",
+    define: { "process.env.NEXT_PUBLIC_VERCEL_ENV": '"preview"', "process.env.NEXT_PUBLIC_MEDIR_DEPURAR": '"1"' },
     stdin: {
       resolveDir: root,
       loader: "tsx",
@@ -80,12 +82,23 @@ async function pagina(t, { dias = ["2026-10-10", "2026-10-11"], cerradoHasta = n
   const p = await c.newPage();
   const errores = [];
   p.on("pageerror", (e) => errores.push(e.message));
+  // Lo que se mediría (OL-388): `[medir] <nombre> <datos> (…)` en la consola.
+  p.medidas = [];
+  p.on("console", async (m) => {
+    if (!m.text().startsWith("[medir]")) return;
+    const [, nombre, datos] = await Promise.all(m.args().map((a) => a.jsonValue()));
+    p.medidas.push({ nombre, datos });
+  });
   t.after(() => assert.deepEqual(errores, []));
   p.setDefaultTimeout(5000);
   await p.clock.install({ time: new Date("2026-10-12T16:00:00Z") });
   await p.goto(origin);
   await p.getByRole("heading", { name: "Tus planes" }).waitFor();
   return p;
+}
+/** Espera (hasta 1 s) a que llegue lo medido: la consola se lee aparte del toque. */
+async function medido(p) {
+  for (let i = 0; i < 50 && p.medidas.length === 0; i++) await new Promise((r) => setTimeout(r, 20));
 }
 const banner = (p) => p.getByRole("region", { name: "Comparte la app" });
 const guardado = (p) => p.evaluate((llave) => JSON.parse(localStorage.getItem(llave)), LLAVE);
@@ -177,6 +190,8 @@ test("«Compartir» sin hoja (escritorio): copia somosnosotros.org, avisa «Enla
   assert.equal(await p.evaluate(() => window.copiado), "https://somosnosotros.org");
   assert.equal(await banner(p).count(), 0);
   assert.equal((await guardado(p)).compartido, true);
+  await medido(p);
+  assert.deepEqual(p.medidas, [{ nombre: "compartir", datos: { que: "app", medio: "copiado" } }], "copiar cuenta como compartir");
 });
 
 test("«Compartir» con la hoja del teléfono: compartida, se va con un aviso; cancelada, se queda", async (t) => {
@@ -186,6 +201,8 @@ test("«Compartir» con la hoja del teléfono: compartida, se va con un aviso; c
   assert.deepEqual(await p.evaluate(() => window.compartidoCon), { title: "Somos Nosotrxs", text: "¿Te gusta Somos Nosotrxs? Compártela con tus amigxs.", url: "https://somosnosotros.org" });
   assert.equal(await banner(p).count(), 0);
   assert.equal((await guardado(p)).compartido, true);
+  await medido(p);
+  assert.deepEqual(p.medidas, [{ nombre: "compartir", datos: { que: "app", medio: "hoja" } }], "la hoja abierta y no cancelada");
 
   const q = await pagina(t, { hoja: "cancelada" });
   await tocar(q, banner(q).getByRole("button", { name: "Compartir" }));
@@ -194,4 +211,5 @@ test("«Compartir» con la hoja del teléfono: compartida, se va con un aviso; c
   assert.equal(await banner(q).count(), 1, "cancelar la hoja no cuenta como compartir");
   assert.equal(await q.evaluate(() => window.copiado), null);
   assert.equal((await guardado(q)).compartido, false);
+  assert.deepEqual(q.medidas, [], "cancelar la hoja no se mide");
 });
