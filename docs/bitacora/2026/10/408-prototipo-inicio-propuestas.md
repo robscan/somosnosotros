@@ -1,7 +1,7 @@
 # 408 · Prototipo con propuestas para las pruebas de usuario (OL-377)
 
 **Fecha:** 2026-10-12. **Rama:** `prototipo-inicio-propuestas`, base `origin/main` (`152ea11a`). **Operador:** Gestor de cambios VI (Fable 5.1), sin agentes. **Sin migración ni código de la app.**
-**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 10, «Propuesta 10 · icono a la izquierda, Ya fui solo expos»). **Estado:** esperando los comentarios del founder; la firma quedará como preajuste «Firmada».
+**Página privada para comentarios:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 11, «Firmada»). **Estado: FIRMADO** por el founder el 12 de octubre a las 10:40: «ok te firmo Personalizada · N foto grande · T1 completo · D1 · D2 XL · T2 · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2». Es el preajuste «Firmada», con el que abre la página. Sin D3 (Destacados sigue trayendo lo que la persona sigue). De aquí salen las piezas de código: OL-382 (Inicio firmado: N, T1, T2, D1, D2, I1, F1) y OL-383 (el festival: «Ya pasó» plegado, cada acto en pasado con su ficha en pasado); Y1 («Ya fui» en la ficha de la expo) pide un estado nuevo de asistencia y va con el historial (pieza 2).
 
 ## Qué pidió el founder (2026-10-12, pruebas de usuario con su iPhone)
 

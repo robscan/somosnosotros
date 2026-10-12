@@ -439,7 +439,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
         <div class="preajustes tres" role="group" aria-label="Preajustes">
           <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción</small></button>
           <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
-          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>por firmar</small></button>
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 de oct</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <section class="medidor" aria-label="Medidor">
@@ -846,13 +846,13 @@ const Portadas = (() => {
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...HOY } },
     propuesta: { nombre: 'Propuesta', e: { n: 'grande', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'izquierda', f1: true, y1: true, x1: 'aparte', x2: true } },
-    // La firma del founder queda aquí cuando la dé (hoy es la propuesta, marcada «por firmar»).
-    firmada: { nombre: 'Firmada', e: { n: 'grande', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'izquierda', f1: true, y1: true, x1: 'aparte', x2: true }, pendiente: true },
+    // La firma del founder (12 de oct, 10:40): «te firmo Personalizada · N foto grande · T1 completo · D1 · D2 XL · T2 · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2». Sin D3.
+    firmada: { nombre: 'Firmada', e: { n: 'grande', t1: 'completo', t2: true, d1: true, d2: 'xl', d3: false, i1: 'izquierda', f1: true, y1: true, x1: 'pasado', x2: true } },
   };
   const PORQUE = {
     hoy: 'Producción esta mañana (12 de oct): nombres de lugares y artistas en una línea con «…», «Tus planes» arriba, Destacados a 165 px, «Te interesa» como chip sobre el cartel, el lugar antes que la fecha, y en la ficha del festival todos los actos juntos, también los que ya pasaron (con enlace a «Esto ya no está»).',
     propuesta: 'Por qué: la foto de lugares y artistas más grande (88 px) da una columna más ancha y el nombre en dos líneas cabe casi siempre (N); el título es el que escribió quien publicó, tal cual, en dos líneas y cortado en palabra, sin inventarle uno corto (T1); Destacados es lo que la administración eligió, así que va primero y más grande, casi a lo ancho como un post de Instagram (D1, D2 XL); ahí solo eventos con su cartel, porque las expos tienen su carril abajo, salvo la que la administración destaque a propósito (D3); lo que te interesa se marca con el icono del marcador arriba a la derecha, donde ya vive el sello, y el chip queda solo para «cuántos van» (I1); primero cuándo y luego dónde, porque la fecha decide antes que el lugar (F1); una expo a la que ya fuiste sale de «Tus planes» con un toque en «Ya fui» desde su ficha y queda para el historial (Y1); el festival siempre con su portada de festival, y solo el acto al que vas con la suya; en el festival, lo que ya pasó se queda en su sección, plegada y sin enlaces rotos (X1, X2).',
-    firmada: 'La combinación que firme el founder. Mientras no la firme, es la propuesta.',
+    firmada: 'La firmada por el founder el 12 de oct: foto grande en lugares y artistas, el título completo tal cual en hasta tres líneas, Destacados primero y en XL, el marcador de interés arriba a la izquierda, la fecha antes del lugar, «Ya fui» en la ficha de la expo, y en el festival lo pasado aparte, plegado y como pasado (cada acto abre su ficha en pasado). Sin D3: Destacados sigue trayendo lo que sigues.',
   };
   const EJERCICIOS = [
     { k: 'n', t: 'N · Nombres de lugares y artistas', d: 'En «Lugares de la semana» y «Artistas de la semana» hoy el nombre va en una línea y se corta («Casa de C…», «Centro de…»).', opciones: [['hoy', 'Una línea (hoy)'], ['dos', 'Dos líneas'], ['ancha', 'Columna ancha'], ['grande', 'Foto grande'], ['lado', 'Nombre al lado']], f: 'Pedido del founder (12 de oct): que se lean. Dos líneas cortadas en palabra; columna ancha (96 px, se ven 3,5); foto grande (88 px, columna de 108: «probemos un tamaño más grande para generar más ancho y quepa más texto», 12 de oct); o la foto chica con el nombre al lado, en dos líneas.' },
@@ -881,12 +881,12 @@ const Portadas = (() => {
   };
   const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${listaDe(e) || 'nada'})`; };
 
-  const LLAVE_ESTADO = 'inicio-propuestas:estado:1';
+  const LLAVE_ESTADO = 'inicio-propuestas:estado:2';
   const LLAVE_TIEMPOS = 'inicio-propuestas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
 
-  const estado = { e: { ...PRESETS.propuesta.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [] };
+  const estado = { e: { ...PRESETS.firmada.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [] };
   const guardado = leer(LLAVE_ESTADO);
   if (guardado && typeof guardado === 'object') for (const k of CLAVES) if (k in guardado) estado.e[k] = guardado[k];
   const desdeEnlace = location.hash.slice(1);
@@ -1239,7 +1239,7 @@ const Portadas = (() => {
     for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
     const activos = listaDe(estado.e);
     const nombre = p ? PRESETS[p].nombre : 'Personalizada';
-    const sufijo = p === 'firmada' && PRESETS.firmada.pendiente ? ' (por firmar: hoy es la propuesta)' : '';
+    const sufijo = '';
     $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado (producción)'}${sufijo}`;
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta» y con «Hoy».';
     $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}`;
