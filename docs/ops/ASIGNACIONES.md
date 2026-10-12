@@ -1510,6 +1510,8 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 
 - 2026-10-12 (13:00): OL-385 entregada y revisada (162 pruebas en mi corrida, diff y capturas): PR abierto, esperando el «publica». Decisiones del agente: un solo acto nuevo también va en la tarjeta del festival; si ya vas a una función, la serie la cuenta sin ella; «Función N de M» solo cuenta las que no han pasado; `medir` avisa que la ficha de exposición bajó de 86 a 84 nodos por OL-380 (presupuesto sin tocar).
 
+- 2026-10-12 (12:40): **publicados** con el tercer «publica» («publics»): #495 OL-386 prototipo firmado (`077882b0`) y #496 OL-385 (`519de100`). La CI de #495 (solo documentos) falló una vez por tiempo agotado en la prueba de componentes de OL-366 «abrir el lugar en otra pestaña (con la tecla)»; relanzada, pasó: prueba frágil para la lista. Entregada OL-387 (`banner-compartir`, bitácora 418, PR #497), esperando el «publica». Árboles y ramas de #495 y #496 quitados.
+
 El founder cerró la jornada del 11 de octubre y la mañana del 12 pidió «Haz un nuevo gestor por favor, Gestor de cambios VI», con los resultados de sus pruebas de usuario y el arranque del historial. «Gestor de cambios V» (sesión `local_51c2d1e4…`) deja este relevo y no toma trabajo nuevo.
 
 **Estado:** main `bef2fdc7`, Production desplegada, cero PR, nada en curso. Todo lo del 10 y el 11 de octubre está en producción: tarjetas de Inicio firmadas (OL-370 a OL-372), la letra que sigue al tamaño del teléfono (OL-373), el prototipo de portadas firmado (OL-374), las portadas del sistema en Inicio con el giro desde Ajustes (OL-375) y el pie tras «Estoy aquí» en iOS 27 (OL-376). **Siguientes libres: OL-377 y bitácora 408.**
