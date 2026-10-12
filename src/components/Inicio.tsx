@@ -39,7 +39,7 @@ type Props = {
 };
 
 /**
- * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Tus planes, Destacados, Esta semana, Festivales y
+ * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Destacados (primero desde OL-382, D1), Tus planes, Esta semana, Festivales y
  * exposiciones (OL-342: los festivales y las exposiciones vigentes juntos, por cercanía; antes «Para visitar», OL-322, solo las
  * exposiciones), Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares de la semana, Artistas destacadxs y
  * Artistas de la semana, cada uno con su título a la izquierda y, a la derecha, el
@@ -83,17 +83,19 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         {/* Orden firmado (doc 41, tercera vuelta): eventos siempre antes que lugares y artistas. "Tus planes"
             solo con sesión — sin ella, ni se pinta un carril colapsado (a diferencia de los demás, que sí
             existen vacíos): el componente entero se omite. */}
-        {/* OL-370 (E5 firmado): tarjeta grande en Tus planes, Destacados y Festivales y expos; mediana en Esta semana y Nuevos eventos. Cada
-            esqueleto es del tamaño de su carril, para no saltar cuando llega la respuesta real. */}
+        {/* OL-382 (D1 y D2, firmados el 2026-10-12: «siempre en la primera línea», «como el de Instagram»): el carril estelar («Destacados» o
+            «Seleccionados para ti») va primero, justo debajo de la fila «Ahora» y antes de «Tus planes», con la tarjeta XL. OL-370 (E5 firmado):
+            tarjeta grande en Tus planes y Festivales y expos; mediana en Esta semana y Nuevos eventos. Cada esqueleto es del tamaño de su carril,
+            para no saltar cuando llega la respuesta real. */}
+        <Suspense fallback={<CarrilEsqueleto forma="xl" />}>{slotEstelar}</Suspense>
         {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
-        <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotEstelar}</Suspense>
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
         {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). OL-375: todas con la portada del sistema,
             el título dentro: su esqueleto, sin el título debajo. */}
         <Suspense fallback={<CarrilEsqueleto forma="grande" tituloDentro />}>{slotFestivales}</Suspense>
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotNuevos}</Suspense>
         <Suspense fallback={null}>{slotMasAdelante}</Suspense>
-        {/* OL-372 (E5 y E9 firmados): lugares y artistas de la semana en avatares de 64; «Artistas destacadxs» con la tarjeta mediana de un
+        {/* OL-372 (E5 y E9 firmados): lugares y artistas de la semana en avatares (de 88 desde OL-382, N); «Artistas destacadxs» con la tarjeta mediana de un
             evento. Cada esqueleto mide lo que su carril. */}
         <Suspense fallback={<CarrilEsqueleto forma="avatar" />}>{slotLugaresSemana}</Suspense>
         <Suspense fallback={<CarrilEsqueleto forma="artista" />}>{slotArtistasDestacados}</Suspense>

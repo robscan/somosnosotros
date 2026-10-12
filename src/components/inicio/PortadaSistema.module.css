@@ -1,12 +1,14 @@
 /* La portada del sistema (OL-375; prototipo firmado `docs/rediseno/prototipos/portadas-sistema.html`, «Firmada»; bitácora 405), en el sitio del
    cartel de la tarjeta de evento de Inicio (`TarjetaEvento.module.css`, área `portada`). Una rejilla plana con áreas: arriba el símbolo SN (P7) y
    el sello de fecha, en medio el campo de las figuras y abajo la zona del título, una fila por pieza (el chip solo en su renglón, la ceja y el
-   título), sin caja que las envuelva: sus márgenes son el relleno de la zona del prototipo (12 a los lados y abajo; arriba 12, u 8 en la mediana).
+   título), sin caja que las envuelva: sus márgenes son el relleno de la zona del prototipo (12 a los lados y abajo; arriba 12, u 8 en la mediana;
+   16 por todos lados en la XL del carril estelar, OL-382).
    El dibujo (`.figura`) ocupa toda la portada y va debajo de todo; lo de después en el código se pinta encima, sin z-index. El color plano
    (`--base`) y la tinta del texto (`--tinta`, crema u oscuro según la banda) los pone la tarjeta: son los del sistema de portadas
    (`lib/portadasSistema`). */
 .portada {
   --zona-arriba: var(--espacio-3);
+  --zona-lado: var(--espacio-3);
   --antes-del-titulo: 3px;
   grid-area: portada;
   position: relative; /* la zona y el sello se miden desde aquí (`offsetTop`), como en el prototipo */
@@ -32,6 +34,11 @@
 .mediana {
   --zona-arriba: var(--espacio-2);
 }
+/* D2 (OL-382): en la XL del carril estelar, la zona del título con 16 de relleno por todos lados y el título a 24. */
+.xl {
+  --zona-arriba: var(--espacio-4);
+  --zona-lado: var(--espacio-4);
+}
 /* El dibujo cubre la portada. Su 100 × 125 va arriba, al ancho de la portada (`xMidYMin meet`): en 4:5 la llena igual que el prototipo y, si la
    portada creció, debajo sigue su color. */
 .figura {
@@ -47,9 +54,17 @@
   height: var(--espacio-5);
   margin: var(--espacio-3) 0 0 var(--espacio-3);
 }
+/* I1 (OL-382): con el marcador «Te interesa» en su celda, el símbolo se corre a su derecha (36 del círculo + 8 de su margen). */
+.simbolo.corrido {
+  margin-left: calc(var(--marca-interes) + var(--espacio-2));
+}
 /* El sello de fecha de siempre (`TarjetaEvento`), en su esquina de esta rejilla. */
 .portada > .fecha {
   grid-area: fecha;
+}
+/* El marcador «Te interesa» (`TarjetaEvento`, I1, OL-382), arriba a la izquierda, en la celda del símbolo. */
+.portada > .interes {
+  grid-area: simbolo;
 }
 
 /* La zona del título: abajo, del color de la base y sin figuras detrás (el dibujo se recorta en su borde). El chip va solo en su renglón,
@@ -58,19 +73,19 @@
 .chip,
 .ceja,
 .titulo {
-  margin-inline: var(--espacio-3);
+  margin-inline: var(--zona-lado);
 }
-.portada > :is(svg, .fecha) + :is(.chip, .ceja) {
+.portada > :is(svg, .fecha, .interes) + :is(.chip, .ceja) {
   margin-top: var(--zona-arriba);
 }
-.portada > :is(svg, .fecha) + .titulo {
+.portada > :is(svg, .fecha, .interes) + .titulo {
   margin-top: calc(var(--zona-arriba) + var(--antes-del-titulo));
 }
 /* Con la letra grande (OL-373) su texto parte renglón en vez de salirse de la tarjeta. */
 .chip {
   grid-area: chip;
   justify-self: start;
-  max-width: calc(100% - 2 * var(--espacio-3));
+  max-width: calc(100% - 2 * var(--zona-lado));
   white-space: normal;
 }
 .chip + .ceja {
@@ -90,12 +105,12 @@
 :is(.chip, .ceja) + .titulo {
   margin-top: var(--antes-del-titulo);
 }
-/* El título como oración, en dos líneas como mucho, cortado en palabra entera con «…» (`TarjetaEvento`, `cortarEnPalabra`). */
+/* El título tal cual (OL-382, T1), en tres líneas como mucho (T2), cortado en palabra entera con «…» (`useTextoEnPalabra`, `cortarEnPalabra`). */
 .titulo {
   grid-area: titulo;
-  max-height: calc(2em * 1.06);
+  max-height: calc(3em * 1.06);
   overflow: hidden;
-  margin-bottom: var(--espacio-3);
+  margin-bottom: var(--zona-lado);
   font-size: var(--letra-xl);
   font-weight: 800;
   font-variation-settings: var(--ancho-titulo);
@@ -104,4 +119,7 @@
 }
 .mediana > .titulo {
   font-size: var(--letra-md);
+}
+.xl > .titulo {
+  font-size: var(--letra-portada-xl);
 }

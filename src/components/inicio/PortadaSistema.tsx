@@ -14,12 +14,14 @@ type Props = {
   clase: ClaseConFigura | null;
   /** Su paleta, ya con la regla de las vecinas de su carril (`paletasDeCarril`). */
   paleta: PaletaPortada;
-  tamano: "grande" | "mediana";
+  tamano: "xl" | "grande" | "mediana";
   /** El sello de fecha, en su esquina: quien lo pinta recibe la clase que lo pone ahí (y por la que la figura sabe dónde queda). */
   sello: ((className: string) => ReactNode) | null;
+  /** I1 (OL-382): el marcador «Te interesa», arriba a la izquierda, igual que el sello: recibe la clase que lo pone en su esquina. */
+  interesa: ((className: string) => ReactNode) | null;
   chip: { texto: string; variante: "estado" | "sello" } | null;
   ceja: string[];
-  /** El título como oración; se corta en palabra entera con «…» (`tituloRef`, el de `TarjetaEvento`). */
+  /** El título tal cual (OL-382, T1); se corta en palabra entera con «…» si no cabe en tres líneas (`tituloRef`, el de `TarjetaEvento`). */
   titulo: string;
   tituloRef: Ref<HTMLElement>;
 };
@@ -27,7 +29,10 @@ type Props = {
 /**
  * La portada del sistema (OL-375; prototipo firmado `portadas-sistema.html`, «Firmada»; bitácora 405): un color plano, el patrón de figuras de su
  * clase arriba y, abajo, la zona del título (el chip solo en su renglón, la ceja y el título, en la tinta de su banda: 5:1 o más). Toda la
- * portada es decorativa salvo el texto: el nombre lo dice el enlace que la contiene.
+ * portada es decorativa salvo el texto: el nombre lo dice el enlace que la contiene. Desde OL-382 (prototipo `inicio-propuestas.html`, «Firmada»)
+ * el título va completo en hasta tres líneas (T2), la XL del carril estelar lleva la zona con 16 de relleno y el título a 24 (D2), y el marcador
+ * «Te interesa» va arriba a la izquierda (I1): las figuras dejan libre su esquina como la del sello y, sin figura (P7), el símbolo SN se corre a
+ * su derecha.
  *
  * El color, el texto y el sello llegan del servidor. El dibujo no: las figuras se apoyan en la línea de la zona del título, que depende de cuántos
  * renglones ocupa el título y de la letra del teléfono (OL-373), y dejan libre la esquina del sello; eso solo se sabe en la página, como en el
@@ -37,7 +42,7 @@ type Props = {
  * recorte baja `MAX_UNIDADES` dentro del relleno de arriba de la zona (comentario 3 del founder), así la base nunca se corta y nada llega al texto.
  * Maquetación plana: la zona no es una caja, sus piezas van en la rejilla de la portada (`PortadaSistema.module.css`).
  */
-export default function PortadaSistema({ id, clase, paleta, tamano, sello, chip, ceja, titulo, tituloRef }: Props) {
+export default function PortadaSistema({ id, clase, paleta, tamano, sello, interesa, chip, ceja, titulo, tituloRef }: Props) {
   const portada = useRef<HTMLSpanElement>(null);
   const figura = useRef<SVGSVGElement>(null);
   const giro = useGiroEncendido();
@@ -52,7 +57,8 @@ export default function PortadaSistema({ id, clase, paleta, tamano, sello, chip,
     if (!clase || !p || !svg) return;
     const P = paletaDeBase(base, banda);
     const hijo = (clases: string[]) => [...p.children].filter((el): el is HTMLElement => el instanceof HTMLElement && clases.some((c) => el.classList.contains(c)));
-    const [s] = hijo([styles.fecha]);
+    // Las esquinas que las figuras dejan libres: el sello y, si te interesa, el marcador (I1, OL-382), como el prototipo.
+    const esquinas = hijo([styles.fecha, styles.interes]);
     // La zona del título no es una caja: empieza donde empieza su primera pieza, menos el relleno de arriba (su margen).
     const zona = hijo([styles.chip, styles.ceja, styles.titulo]);
     let dibujado = "";
@@ -62,7 +68,9 @@ export default function PortadaSistema({ id, clase, paleta, tamano, sello, chip,
       // En unidades de la portada (100 de ancho), como el prototipo: el margen del título (12 px), la línea de la zona y la esquina del sello.
       const escala = ancho / 100;
       const linea = zona[0].offsetTop - parseFloat(getComputedStyle(zona[0]).marginTop);
-      const medidas = { H: linea / escala, M: 12 / escala, selloIzq: s ? s.offsetLeft / escala : 100, selloAbajo: s ? (s.offsetTop + s.offsetHeight) / escala : 0 };
+      const selloIzq = esquinas.length ? Math.min(...esquinas.map((s) => s.offsetLeft)) / escala : 100;
+      const selloAbajo = esquinas.length ? Math.max(...esquinas.map((s) => s.offsetTop + s.offsetHeight)) / escala : 0;
+      const medidas = { H: linea / escala, M: 12 / escala, selloIzq, selloAbajo };
       const dibujo = dibujoDePortada({ clase, id, P, medidas, giro, clip });
       if (dibujo === dibujado) return;
       dibujado = dibujo;
@@ -71,7 +79,7 @@ export default function PortadaSistema({ id, clase, paleta, tamano, sello, chip,
     };
     dibujar();
     const observador = new ResizeObserver(dibujar);
-    for (const el of [p, s, ...zona]) if (el) observador.observe(el);
+    for (const el of [p, ...esquinas, ...zona]) observador.observe(el);
     const quitar = registrarPortada(p);
     return () => {
       observador.disconnect();
@@ -80,9 +88,10 @@ export default function PortadaSistema({ id, clase, paleta, tamano, sello, chip,
   }, [clase, id, base, banda, giro, clip, piezas]);
 
   return (
-    <span ref={portada} className={tamano === "mediana" ? `${styles.portada} ${styles.mediana}` : styles.portada} style={{ "--base": base, "--tinta": paleta.tinta } as CSSProperties}>
-      {clase ? <svg ref={figura} className={styles.figura} viewBox="0 0 100 125" preserveAspectRatio="xMidYMin meet" aria-hidden="true" focusable="false" /> : <SimboloBlanco className={styles.simbolo} />}
+    <span ref={portada} className={tamano === "grande" ? styles.portada : `${styles.portada} ${styles[tamano]}`} style={{ "--base": base, "--tinta": paleta.tinta } as CSSProperties}>
+      {clase ? <svg ref={figura} className={styles.figura} viewBox="0 0 100 125" preserveAspectRatio="xMidYMin meet" aria-hidden="true" focusable="false" /> : <SimboloBlanco className={interesa ? `${styles.simbolo} ${styles.corrido}` : styles.simbolo} />}
       {sello?.(styles.fecha)}
+      {interesa?.(styles.interes)}
       {chip && (
         <Chip variante={chip.variante} className={styles.chip}>
           {chip.texto}

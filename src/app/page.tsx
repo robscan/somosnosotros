@@ -100,7 +100,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotFestivales={<CarrilAgenda parte="festivales" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl)} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
         slotMasAdelante={<CarrilMasAdelante agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefConCiudad("/agenda", ciudad.slug)} />}
-        // OL-372 (prototipo firmado, E5 y E9): lugares y artistas de la semana en avatares de 64, «Artistas destacadxs» con la tarjeta de un evento;
+        // OL-372 (prototipo firmado, E5 y E9): lugares y artistas de la semana en avatares (de 88, OL-382), «Artistas destacadxs» con la tarjeta de un evento;
         // ninguno lleva botón (seguir queda en la ficha).
         slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" titulo="Lugares de la semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} forma="avatar" />}
         slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" titulo="Artistas de la semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} forma="avatar" />}

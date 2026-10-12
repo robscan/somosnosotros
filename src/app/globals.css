@@ -164,6 +164,7 @@
   --letra-2xl: min(1.625rem, calc(26px * var(--letra-tope))); /* 26px: título de pantalla */
   --letra-3xl: min(1.875rem, calc(30px * var(--letra-tope))); /* 30px: nombre del lugar o evento */
   /* Fuera de la escala, cada una para lo suyo: */
+  --letra-portada-xl: min(1.5rem, calc(24px * var(--letra-tope))); /* 24px: el título dentro de la portada del sistema en la tarjeta XL (OL-382) */
   --letra-proveedor: min(1.25rem, calc(20px * var(--letra-tope))); /* 20px: los botones de Apple, Google y correo de Entrar */
   --letra-historia-larga: min(2.25rem, calc(36px * var(--letra-tope))); /* 36px: el título tipográfico de una historia, si es largo */
   --letra-cifra: min(2.5rem, calc(40px * var(--letra-tope))); /* 40px: la cifra de un indicador de administración */
@@ -197,7 +198,12 @@
   --tarjeta-cartel-foto: calc(var(--tarjeta-grande) * 5 / 4);
   --tarjeta-cartel-mediana: calc(var(--tarjeta-grande) * 4 / 5);
   --tarjeta-cartel-mediana-foto: calc(var(--tarjeta-cartel-mediana) * 5 / 4);
-  --avatar-carril: 64px; /* el avatar redondo de «Lugares de la semana» y «Artistas de la semana» en Inicio (OL-372, E5 firmado) */
+  /* La XL del carril estelar de Inicio (OL-382, D2 firmado el 2026-10-12, «como el de Instagram»): 248×310, se ve una y media; crece con la
+     grande (286×357,5 desde 1048). */
+  --tarjeta-xl: calc(var(--tarjeta-grande) * 248 / 165);
+  --tarjeta-xl-foto: calc(var(--tarjeta-xl) * 5 / 4);
+  --avatar-carril: 88px; /* el avatar redondo de «Lugares de la semana» y «Artistas de la semana» en Inicio (OL-372, E5; OL-382, N «foto grande») */
+  --marca-interes: 36px; /* el círculo del marcador «Te interesa» arriba a la izquierda de una tarjeta de evento de Inicio (OL-382, I1) */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
   --marco-historia: 430px; /* ancho máximo del marco 9:16 de una historia en tableta y escritorio (OL-359) */
   --circulo-ahora: 72px; /* el círculo de la fila «Ahora» de Inicio, con su anillo (OL-359, prototipo firmado barra-ahora) */

@@ -162,9 +162,8 @@ describe("qué se puede destacar", () => {
 it("el recuento desconocido viaja hasta la tarjeta y no crea una cifra", () => {
   const tarjeta = tarjetaEvento(evento({ van: null }), AHORA);
   expect(tarjeta.van).toBeNull();
-  // El chip de la tarjeta de Inicio (OL-370): sin recuento, ninguno; «Te interesa» sí.
-  expect(chipDeTarjeta(tarjeta, null)).toBeNull();
-  expect(chipDeTarjeta(tarjeta, "me_interesa")?.texto).toBe("Te interesa");
+  // El chip de la tarjeta de Inicio (OL-370): sin recuento, ninguno («Te interesa» es el marcador desde OL-382, I1).
+  expect(chipDeTarjeta(tarjeta)).toBeNull();
 });
 
 

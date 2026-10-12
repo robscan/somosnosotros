@@ -19,12 +19,12 @@ import styles from "./Destacados.module.css";
  *
  * Las tarjetas son las que firmó el founder el 2026-10-10 (prototipo `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada»; bitácora 398), y
  * cada una es un solo enlace a su ficha, sin botón: decidir («Voy», «Me interesa») y seguir quedan en la ficha (y en las historias). `forma`:
- * - `grande` o `mediana` (OL-370): la tarjeta de un evento (`inicio/TarjetaEvento`), el cartel entero en 4:5 con su sello de fecha; grande en Tus
- *   planes, Destacados y Festivales y expos, mediana en Esta semana, Nuevos eventos y Más adelante (E5). Siempre con el tamaño de su carril: una
+ * - `xl`, `grande` o `mediana` (OL-370): la tarjeta de un evento (`inicio/TarjetaEvento`), el cartel entero en 4:5 con su sello de fecha; XL en
+ *   el carril estelar (OL-382, D2), grande en Tus planes y Festivales y expos, mediana en Esta semana, Nuevos eventos y Más adelante (E5). Siempre con el tamaño de su carril: una
  *   sola tarjeta no se estira a lo ancho. Festival, exposición y taller, y el evento sin imagen, llevan la portada del sistema (OL-375): su color
  *   se decide aquí, en el orden del carril, para que dos seguidas no salgan casi iguales (`paletasDeCarril`).
  * - `artista` (OL-372, E9): la de un artista en «Artistas destacadxs», que es la mediana de un evento (`TarjetaArtista`).
- * - `avatar` (OL-372, E5): el redondo de 64 de «Lugares de la semana» y «Artistas de la semana» (`inicio/TarjetaAvatar`).
+ * - `avatar` (OL-372, E5): el redondo de 88 de «Lugares de la semana» y «Artistas de la semana» (`inicio/TarjetaAvatar`; OL-382, N).
  *
  * Una foto real va antes que lo que no la tiene; dentro de cada grupo se conserva el orden de la curaduría o de las fechas.
  *
@@ -35,7 +35,7 @@ import styles from "./Destacados.module.css";
  * varios iguales en la pantalla. Sin `verTodos` el carril no lleva enlace: un carril sin destino no lleva uno.
  *
  * `estadoDe` (OL-176, bitácora 211): solo en los carriles de eventos, lo que la persona ya decidió (el `estado(id)` de `useAsistenciaEnLista`):
- * la tarjeta dice «Te interesa» en su chip y «Vas» en el nombre del enlace. `Tarjeta` no lo trae: no es de la tarjeta, lo decide la persona.
+ * la tarjeta lleva el marcador «Te interesa» arriba a la izquierda (OL-382, I1) y dice «Vas» en el nombre del enlace. `Tarjeta` no lo trae: no es de la tarjeta, lo decide la persona.
  */
 export default function Destacados({ tarjetas, forma, encabezado = "Destacados", memoria = "destacados", estadoDe, verTodos }: { tarjetas: Tarjeta[]; forma: FormaCarril; encabezado?: string; memoria?: string; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string } }) {
   const titulo = useId();
@@ -100,7 +100,7 @@ export default function Destacados({ tarjetas, forma, encabezado = "Destacados",
   }
   const ordenadas = ordenarTarjetasPorFoto(tarjetas);
   // OL-375: las portadas del sistema del carril, con la regla de las vecinas (dos seguidas de casi el mismo color no se repiten).
-  const paletas = forma === "grande" || forma === "mediana" ? paletasDeCarril(ordenadas) : null;
+  const paletas = forma === "xl" || forma === "grande" || forma === "mediana" ? paletasDeCarril(ordenadas) : null;
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>

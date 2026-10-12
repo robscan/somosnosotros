@@ -105,31 +105,30 @@ describe("cejaDeTarjeta (E3 + E3b): la clase solo si no es un evento, con su ses
   });
 });
 
-describe("chipDeTarjeta: un solo chip sobre el cartel", () => {
-  it("«Te interesa» gana a cuántos van", () => {
-    expect(chipDeTarjeta({ van: 3 }, "me_interesa")).toEqual({ texto: "Te interesa", tuyo: true });
-  });
-  it("si no, cuántos van; también en lo tuyo, porque «Vas» no se dice", () => {
-    expect(chipDeTarjeta({ van: 1 }, null)).toEqual({ texto: "1 va", tuyo: false });
-    expect(chipDeTarjeta({ van: 2 }, "voy")).toEqual({ texto: "2 van", tuyo: false });
+describe("chipDeTarjeta: un solo chip sobre el cartel, cuántos van (OL-382, I1: «Te interesa» ya no es chip)", () => {
+  it("cuántos van, también en lo tuyo y en lo que te interesa (el marcador va arriba a la izquierda; «Vas» no se dice)", () => {
+    expect(chipDeTarjeta({ van: 1 })).toEqual({ texto: "1 va" });
+    expect(chipDeTarjeta({ van: 2 })).toEqual({ texto: "2 van" });
+    expect(chipDeTarjeta({ van: 3 })).toEqual({ texto: "3 van" });
   });
   it("sin nadie (o sin recuento), ninguno", () => {
-    expect(chipDeTarjeta({ van: 0 }, null)).toBeNull();
-    expect(chipDeTarjeta({ van: null }, null)).toBeNull();
-    expect(chipDeTarjeta({ van: 0 }, "voy")).toBeNull();
+    expect(chipDeTarjeta({ van: 0 })).toBeNull();
+    expect(chipDeTarjeta({ van: null })).toBeNull();
   });
 });
 
 describe("nombreDeTarjeta: lo que dice el enlace", () => {
-  it("el título completo, la clase con su sesión, cuándo, dónde, «Vas» y el chip", () => {
+  it("el título completo, la clase con su sesión, cuándo, dónde, «Vas» o «Te interesa» y el chip", () => {
     const taller = { titulo: "Laboratorio de exploración sonora: escucha activa", clase: "Taller", parte: "Sesión 1 de 4", detalle: "hoy · 17:00", sitio: "Aurora Co-Lab", van: 1 };
     expect(nombreDeTarjeta(taller, null)).toBe("Laboratorio de exploración sonora: escucha activa. Taller · Sesión 1 de 4. hoy · 17:00. Aurora Co-Lab. 1 va");
     expect(nombreDeTarjeta({ titulo: "Presentación de Kopk Poj", clase: "Evento", detalle: "hoy · 13:00", sitio: "CEART", van: 1 }, "voy")).toBe("Presentación de Kopk Poj. hoy · 13:00. CEART. Vas. 1 va");
     expect(nombreDeTarjeta({ titulo: "Tributo a The Beatles", clase: "Evento", detalle: "hoy · 20:00", sitio: "Cineteca Alameda", van: 0 }, "me_interesa")).toBe("Tributo a The Beatles. hoy · 20:00. Cineteca Alameda. Te interesa");
+    // OL-382 (I1): el marcador no tiene texto, así que el enlace dice «Te interesa» y, además, cuántos van (antes el chip de interés lo tapaba).
+    expect(nombreDeTarjeta({ titulo: "Tributo a The Beatles", clase: "Evento", detalle: "hoy · 20:00", sitio: "Cineteca Alameda", van: 3 }, "me_interesa")).toBe("Tributo a The Beatles. hoy · 20:00. Cineteca Alameda. Te interesa. 3 van");
   });
 });
 
-describe("cortarEnPalabra (E1): dos líneas como mucho, cortado en palabra entera con «…»", () => {
+describe("cortarEnPalabra (E1): lo que quepa (tres líneas en el título, OL-382; dos en el nombre de un avatar), cortado en palabra entera con «…»", () => {
   const hasta = (n: number) => (texto: string) => texto.length <= n;
   it("lo que cabe se queda entero", () => {
     expect(cortarEnPalabra("Presentación de Kopk Poj", hasta(40))).toBe("Presentación de Kopk Poj");
