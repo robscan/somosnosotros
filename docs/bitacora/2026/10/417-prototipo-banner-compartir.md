@@ -1,7 +1,7 @@
 # 417 · Prototipo: banner para compartir la app y Destacados más grande (OL-386)
 
 **Fecha:** 2026-10-12. **Rama:** `prototipo-banner-compartir`, base `origin/main` (`567f202e`). **Operador:** Gestor de cambios VI (Fable 5.1), sin agentes. **Sin migración ni código de la app.**
-**Página privada:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 12, «Banner para compartir (OL-386)»; la misma página de OL-377, con «Hoy» = lo firmado el 12 de octubre, que ya está en producción). **Estado:** esperando los comentarios y la firma del founder.
+**Página privada:** https://claude.ai/artifact/8EpqEMd3c3n553UqND5KQ8 (versión 12, «Banner para compartir (OL-386)»; la misma página de OL-377, con «Hoy» = lo firmado el 12 de octubre, que ya está en producción). **Estado: FIRMADO** por el founder el 12 de octubre a las 12:40: «acepto: Personalizada · N foto grande · T1 completo · T2 · D1 · D2 XL+ · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2 · B1 tras Destacados · B2 símbolo». Es el preajuste «Firmada» (versión 13). Lo que no dijo queda como propuesto: visitas contadas en el teléfono por día distinto, × 30 días, tras compartir no vuelve, «Nosotrxs» tal cual. Pieza de código: OL-387 (bitácora 418).
 
 ## Qué pidió el founder (2026-10-12, 12:10, textual)
 

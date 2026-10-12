@@ -455,7 +455,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
         <div class="preajustes tres" role="group" aria-label="Preajustes">
           <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>firmado 12 oct</small></button>
           <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
-          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>por firmar</small></button>
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 oct, 12:40</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <section class="medidor" aria-label="Medidor">
@@ -865,12 +865,13 @@ const Portadas = (() => {
     hoy: { nombre: 'Hoy', e: { ...HOY } },
     propuesta: { nombre: 'Propuesta', e: { ...HOY, b1: 'destacados', b2: 'suave', d2: 'xl2' } },
     // La firma del founder (12 de oct, 10:40): «te firmo Personalizada · N foto grande · T1 completo · D1 · D2 XL · T2 · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2». Sin D3.
-    firmada: { nombre: 'Firmada', e: { ...HOY }, pendiente: true },
+    // Firma del founder (12 de oct, 12:40): «acepto: Personalizada · N foto grande · T1 completo · T2 · D1 · D2 XL+ · I1 arriba izq. · F1 · Y1 · X1 como pasado · X2 · B1 tras Destacados · B2 símbolo».
+    firmada: { nombre: 'Firmada', e: { ...HOY, b1: 'destacados', b2: 'simbolo', d2: 'xl2' } },
   };
   const PORQUE = {
     hoy: 'Lo firmado el 12 de oct, ya en producción (Inicio firmado OL-382, «Ya pasó» OL-383), sin banner. Antes de la firma, producción era: nombres de lugares y artistas en una línea con «…», «Tus planes» arriba, Destacados a 165 px, «Te interesa» como chip sobre el cartel, el lugar antes que la fecha, y en la ficha del festival todos los actos juntos, también los que ya pasaron (con enlace a «Esto ya no está»).',
     propuesta: 'Por qué: el banner va justo después de «Seleccionados para ti», lo primero que la persona ve y lo que mejor habla de la app, y solo a quien ya volvió (tercera visita o más): pedir que comparta a quien apenas llega no funciona; suave (violeta claro) para no competir con los carteles; se cierra con × y no vuelve en 30 días; tras compartir, no vuelve. Destacados crece de 248 a 280 px (una tarjeta y un cuarto) para ganar presencia sin dejar de asomar la siguiente. Lo demás es lo firmado el 12: la foto de lugares y artistas más grande (88 px) da una columna más ancha y el nombre en dos líneas cabe casi siempre (N); el título es el que escribió quien publicó, tal cual, en dos líneas y cortado en palabra, sin inventarle uno corto (T1); Destacados es lo que la administración eligió, así que va primero y más grande, casi a lo ancho como un post de Instagram (D1, D2 XL); ahí solo eventos con su cartel, porque las expos tienen su carril abajo, salvo la que la administración destaque a propósito (D3); lo que te interesa se marca con el icono del marcador arriba a la derecha, donde ya vive el sello, y el chip queda solo para «cuántos van» (I1); primero cuándo y luego dónde, porque la fecha decide antes que el lugar (F1); una expo a la que ya fuiste sale de «Tus planes» con un toque en «Ya fui» desde su ficha y queda para el historial (Y1); el festival siempre con su portada de festival, y solo el acto al que vas con la suya; en el festival, lo que ya pasó se queda en su sección, plegada y sin enlaces rotos (X1, X2).',
-    firmada: 'Pendiente: la combinación que firme el founder para el banner y el tamaño de Destacados. Mientras, es lo firmado el 12 de oct: foto grande en lugares y artistas, el título completo tal cual en hasta tres líneas, Destacados primero y en XL, el marcador de interés arriba a la izquierda, la fecha antes del lugar, «Ya fui» en la ficha de la expo, y en el festival lo pasado aparte, plegado y como pasado (cada acto abre su ficha en pasado). Sin D3: Destacados sigue trayendo lo que sigues.',
+    firmada: 'Firmada el 12 de oct a las 12:40: el banner tras Destacados con el símbolo SN, Destacados en XL+ (280×350), y lo firmado por la mañana: foto grande en lugares y artistas, el título completo tal cual en hasta tres líneas, Destacados primero y en XL, el marcador de interés arriba a la izquierda, la fecha antes del lugar, «Ya fui» en la ficha de la expo, y en el festival lo pasado aparte, plegado y como pasado (cada acto abre su ficha en pasado). Sin D3: Destacados sigue trayendo lo que sigues.',
   };
   const EJERCICIOS = [
     { k: 'b1', t: 'B1 · Banner para compartir la app: dónde', d: 'Un banner a lo ancho (con el aire de 20 px de los carriles) que dice «¿Te gusta Somos Nosotrxs?» y «Compártela con tus amigxs», con el botón «Compartir» (abre la hoja de compartir del teléfono con el enlace somosnosotros.org) y una × para cerrarlo (no vuelve en 30 días; tras compartir, no vuelve).', opciones: [['no', 'Sin banner (hoy)'], ['destacados', 'Tras Destacados'], ['planes', 'Tras Tus planes'], ['final', 'Al final de Inicio']], f: 'Pedido del founder (12 de oct): «un banner de ancho completo para que los usuarios compartan la app … para usuarios logueados que hayan entrado más de 2 veces».' },
@@ -902,12 +903,12 @@ const Portadas = (() => {
   };
   const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${listaDe(e) || 'nada'})`; };
 
-  const LLAVE_ESTADO = 'inicio-propuestas:estado:3';
+  const LLAVE_ESTADO = 'inicio-propuestas:estado:4';
   const LLAVE_TIEMPOS = 'inicio-propuestas:tiempos';
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
 
-  const estado = { e: { ...PRESETS.propuesta.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [], bannerCerrado: false };
+  const estado = { e: { ...PRESETS.firmada.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [], bannerCerrado: false };
   const guardado = leer(LLAVE_ESTADO);
   if (guardado && typeof guardado === 'object') for (const k of CLAVES) if (k in guardado) estado.e[k] = guardado[k];
   const desdeEnlace = location.hash.slice(1);
