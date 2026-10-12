@@ -1,5 +1,5 @@
 import { sumarDiasIso } from "./calendario";
-import { diaDeSemana, enVisita, rangosDelDia, visitaDeEvento, type Visita } from "./claseEvento";
+import { diaDeSemana, enVisita, HORARIO_POR_CONFIRMAR, rangosDelDia, visitaDeEvento, type Visita } from "./claseEvento";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import type { Clase } from "./eventos";
 import { diaConMesDe, diaLocal, eventoPaso } from "./fechas";
@@ -12,8 +12,10 @@ import { compararNombres } from "./lugares";
  *
  * - **Exposición:** no es algo que pase un día a una hora (`lib/ocurrencias` no la reparte): vive en «Para visitar». En Inicio, en el carril
  *   «Festivales y expos» (OL-342; antes «Para visitar», solo con ellas) con las vigentes; en la agenda del día, «Para visitar hoy» con
- *   las que abren ese día **según su horario**. Sin horario no se promete «visitable hoy»: no entra ahí (sí en «Para visitar», con «Horario por
- *   confirmar»).
+ *   las que ese día están en su periodo y **abren según su horario** o **no tienen horario conocido** («Horario por confirmar», después de las
+ *   que dicen sus horas). Solo queda fuera la que se sabe cerrada ese día. OL-381 (pruebas de usuario del founder, 2026-10-12): antes, sin
+ *   horario no entraba (doc 55 §3: «no se promete “visitable hoy”»), y como casi ninguna tiene horario, «Para visitar mañana» enseñaba una
+ *   de 17 vigentes; lo que no se sabe no es razón para esconderla.
  * - **Festival:** en Inicio sale solo en «Festivales y expos», su sitio (OL-346: todos, también los que no tienen actos todavía, con
  *   «Programa por confirmar»; OL-347: en ningún otro carril, y sus actos salen en ellos sueltos, `sinFestivales` de lib/inicio); en la agenda del
  *   día es un bloque con sus actos de ese día (`componerDia`).
@@ -110,9 +112,16 @@ export function rangosDeVisita(e: Exposicion, dia: string): Rango[] {
   return rangosDelDia(e.horario, diaDeSemana(dia));
 }
 
-/** «Para visitar hoy» (o ese día): las exposiciones abiertas ese día según su horario, la que cierra antes primero. Sin horario no entran. */
-export function abiertasEseDia<T extends Exposicion>(eventos: readonly T[], dia: string): T[] {
-  return eventos.filter((e) => esExposicion(e) && rangosDeVisita(e, dia).length > 0).toSorted(porCierre);
+/** ¿No se sabe su horario? Sin franjas con días: no tiene (ni ella ni su lugar) o no se pudo leer (`horario` ausente). */
+export const sinHorario = (e: Exposicion): boolean => !e.horario?.some((f) => f.dias.length);
+
+/**
+ * «Para visitar hoy» (o ese día; OL-381, founder 2026-10-12): las exposiciones en su periodo ese día que abren según su horario y, después, las
+ * que no tienen horario conocido; en cada parte, la que cierra antes primero. La que tiene horario y ese día cierra no entra: de ella sí se sabe.
+ */
+export function paraVisitarEseDia<T extends Exposicion>(eventos: readonly T[], dia: string): T[] {
+  const enDia = eventos.filter((e) => esExposicion(e) && enVisita(visitaDe(e), dia));
+  return [...enDia.filter((e) => rangosDeVisita(e, dia).length > 0).toSorted(porCierre), ...enDia.filter(sinHorario).toSorted(porCierre)];
 }
 
 /** ¿Se puede visitar algún día entre `desde` y `hasta` (YYYY-MM-DD, inclusivos)? Por su periodo, sin mirar el horario (para elegir con Cuándo). */
@@ -163,6 +172,9 @@ export function porCercania(a: Vigente, b: Vigente, ahora: Date = new Date()): n
 
 /** «Abre 10:00 a.m.–6:00 p.m.»: lo que dice el renglón de «Para visitar hoy». */
 export const textoAbre = (rangos: readonly Rango[]): string => `Abre ${textoRangos(rangos)}`;
+
+/** El cuándo de un renglón de «Para visitar hoy» (las de `paraVisitarEseDia`): sus horas ese día o, sin horario conocido, «Horario por confirmar». */
+export const cuandoParaVisitar = (e: Exposicion, dia: string): string => (sinHorario(e) ? HORARIO_POR_CONFIRMAR : textoAbre(rangosDeVisita(e, dia)));
 
 /** «hasta el dom 30 de nov», en minúscula: lo que sigue a la hora en «Para visitar hoy». */
 export const textoHastaEl = (e: Exposicion, ahora: Date = new Date()): string => `hasta el ${diaConMesDe(visitaDe(e).hasta, ahora, e.zona)}`;
