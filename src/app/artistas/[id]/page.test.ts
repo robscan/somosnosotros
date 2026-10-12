@@ -92,9 +92,9 @@ describe("ficha de artista: la cabecera pinta antes que sus fechas (OL-161)", ()
     const datos = JSON.parse((jsonLd!.props.dangerouslySetInnerHTML as { __html: string }).__html);
     expect(datos.name).toBe("Artista de prueba");
 
-    // Sus tres números (un Suspense) y "Próximas fechas" (otro): dos límites.
+    // Sus tres números (un Suspense), "Próximas fechas" (otro) y la trayectoria (OL-390, otro): tres límites.
     const suspenses = elementos.filter((e) => e.type === Suspense);
-    expect(suspenses.length).toBe(2);
+    expect(suspenses.length).toBe(3);
   });
 
   it("una ficha por UUID redirige (308 permanente) a su slug", async () => {
@@ -203,5 +203,82 @@ describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", (
     await con({ data: null, error: { message: "secreto-remoto" } }, async () => {
       expect(await metadatos()).toEqual({});
     });
+  });
+});
+
+describe("la trayectoria del artista (OL-390)", () => {
+  const PROXIMA = { id: "e-proxima", slug: "proxima", titulo: "Próxima", inicio: "2099-10-10T01:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, precio: null, lugar_id: "l-paz", sitio_texto: null, sitio_direccion: null, sitio_reservado: false, creado_en: "2026-10-01T00:00:00Z", lugar: { nombre: "Teatro de la Paz", portada: null } };
+  const pasada = (id: string, lugar: { id: string; slug: string; nombre: string } | null) => ({ id, slug: id, titulo: id, inicio: "2026-10-09T01:00:00Z", fin: null, zona: "America/Mexico_City", imagen: null, lugar_id: lugar?.id ?? null, sitio_texto: lugar ? null : "Jardín Colón", sitio_direccion: null, sitio_reservado: false, evento_padre_id: null, lugar: lugar && { ...lugar, portada: null } });
+  const CDC = { id: "l-cdc", slug: "cdc", nombre: "Centro de Difusión Cultural Raúl Gamboa" };
+
+  /** Un cliente cuya consulta de eventos contesta lo pasado si se filtró con `lt` (`termina < ahora`) y lo próximo si no. */
+  function clienteConFechas(proximas: unknown[], pasadas: unknown[]) {
+    const base = clienteFalso({ artistas: { data: ARTISTA }, artistas_cuentas: { data: [] }, eventos_artistas: { data: [] } }, { cuenta_seguidores: { data: 0 }, novedades_recientes_artistas: { data: [] }, van_por_evento: { data: [] } });
+    return {
+      ...base,
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return base.from(tabla);
+        let pasado = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const q: any = {};
+        for (const metodo of ["select", "eq", "in", "or", "order", "limit", "not"]) q[metodo] = () => q;
+        q.lt = () => ((pasado = true), q);
+        q.then = (ok: (v: unknown) => void, mal: (e: unknown) => void) => Promise.resolve({ data: pasado ? pasadas : proximas }).then(ok, mal);
+        return q;
+      },
+    };
+  }
+
+  /** Corre la ficha con esas fechas y devuelve el árbol de los números y de la trayectoria, ya resueltos. */
+  async function ficha(proximas: unknown[], pasadas: unknown[]) {
+    const { clienteServidor } = await import("@/lib/supabase/servidor");
+    const { Kpi } = await import("@/components/ui/Kpi");
+    const { default: Historial } = await import("@/components/Historial");
+    const previo = vi.mocked(clienteServidor).getMockImplementation()!;
+    vi.mocked(clienteServidor).mockImplementation((async () => clienteConFechas(proximas, pasadas)) as never);
+    try {
+      const { default: FichaArtista } = await import("./page");
+      const arbol = await FichaArtista({ params: Promise.resolve({ id: ARTISTA.slug }), searchParams: Promise.resolve({}) });
+      const diferidos = [...recorrer(arbol)].filter((e) => e.type === Suspense).map((s) => s.props.children as { type: (p: unknown) => Promise<unknown>; props: unknown });
+      const resueltos = await Promise.all(diferidos.map((d) => d.type(d.props)));
+      const elementos = resueltos.flatMap((r) => [...recorrer(r)]);
+      const historial = elementos.find((e) => e.type === Historial);
+      const lugares = elementos.find((e) => e.type === Kpi && e.props.etiqueta === "Lugares");
+      return { seccion: historial ? Historial(historial.props as Parameters<typeof Historial>[0]) : undefined, lugares };
+    } finally {
+      vi.mocked(clienteServidor).mockImplementation(previo);
+    }
+  }
+
+  it("sin fechas pasadas la sección no existe", async () => {
+    const { seccion, lugares } = await ficha([PROXIMA], []);
+    expect(seccion).toBeNull();
+    expect(lugares?.props.valor).toBe(1);
+  });
+
+  it("con fechas pasadas sale «Trayectoria» con su cuenta", async () => {
+    const { seccion } = await ficha([], [pasada("a", CDC), pasada("b", CDC), pasada("c", null)]);
+    const raiz = seccion as { props: Record<string, unknown> };
+    expect(raiz.props.titulo).toBe("Trayectoria");
+    expect(raiz.props.id).toBe("trayectoria");
+    expect(raiz.props.cuenta).toBe("3 fechas · 1 lugar");
+  });
+
+  it("«Lugares» cuenta pasadas y próximas; con próximas baja a ellas", async () => {
+    const { lugares } = await ficha([PROXIMA], [pasada("a", CDC)]);
+    expect(lugares?.props.valor).toBe(2);
+    expect(lugares?.props.salto).toBe("fechas");
+  });
+
+  it("sin próximas, «Lugares» baja a la trayectoria", async () => {
+    const { lugares } = await ficha([], [pasada("a", CDC)]);
+    expect(lugares?.props.valor).toBe(1);
+    expect(lugares?.props.salto).toBe("trayectoria");
+  });
+
+  it("sin lugares con ficha, «Lugares» no lleva a ninguna parte", async () => {
+    const { lugares } = await ficha([], [pasada("a", null)]);
+    expect(lugares?.props.valor).toBe(0);
+    expect(lugares?.props.salto).toBeUndefined();
   });
 });
