@@ -341,6 +341,15 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .xl .titulo-sobre { font-size: 1.5rem; } .ancho .titulo-sobre { font-size: 1.75rem; }
 .xl .pie, .ancho .pie { font-size: var(--letra-md); }
 .xl .portada.sistema > .zona, .ancho .portada.sistema > .zona { padding: var(--espacio-4); }
+/* Y1 · «Ya fui»: un botón de texto bajo la tarjeta, a la derecha de la última línea; la tarjeta deja sitio. */
+.tira > li.con-ya-fui > .tarjeta .pie > span:last-of-type { padding-right: 60px; }
+.ya-fui { position: absolute; right: 0; bottom: 0; min-height: 28px; padding: 0 var(--espacio-2); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); color: var(--primario); font-size: var(--letra-2xs); font-weight: 700; }
+.aviso .deshacer { margin-left: var(--espacio-2); color: var(--pg-acento, #b59cf4); font-weight: 800; text-decoration: underline; }
+/* T1 «corto + el resto»: la línea gris bajo el título (una línea con «…»); dentro de la portada del sistema, en la tinta atenuada. T2: tres líneas. */
+.pie > .subtitulo { color: var(--texto-suave); font-size: var(--letra-xs); }
+.portada.sistema .zona > .subtitulo { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: 2px; opacity: 0.82; font-size: var(--letra-xs); line-height: 1.3; }
+.t3 .titulo-pie { max-height: calc(3 * 1.15em); }
+.t3 .titulo-sobre { max-height: calc(3 * 1.06em); }
 /* I1 · Lo que te interesa como icono: el marcador relleno en violeta sobre vidrio. Arriba a la derecha (el sello pasa a la izquierda), bajo el sello, o junto al título. */
 .interes { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--vidrio); color: var(--primario); }
 .interes .i { width: 20px; height: 20px; }
@@ -827,34 +836,37 @@ const Portadas = (() => {
   $('sn-trazo').setAttribute('d', D.simbolo.trazo);
 
   // ===== Los ejercicios (cada uno mueve una palanca) y los preajustes.
-  const HOY = { n: 'hoy', t1: 'corto', d1: false, d2: 'grande', d3: false, i1: 'chip', f1: false, x1: 'hoy', x2: false };
+  const HOY = { n: 'hoy', t1: 'corto', d1: false, d2: 'grande', d3: false, t2: false, i1: 'chip', f1: false, y1: false, f2: false, x1: 'hoy', x2: false };
   const CLAVES = Object.keys(HOY);
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...HOY } },
-    propuesta: { nombre: 'Propuesta', e: { n: 'dos', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'derecha', f1: true, x1: 'aparte', x2: true } },
+    propuesta: { nombre: 'Propuesta', e: { n: 'dos', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'derecha', f1: true, y1: true, f2: true, x1: 'aparte', x2: true } },
     // La firma del founder queda aquí cuando la dé (hoy es la propuesta, marcada «por firmar»).
-    firmada: { nombre: 'Firmada', e: { n: 'dos', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'derecha', f1: true, x1: 'aparte', x2: true }, pendiente: true },
+    firmada: { nombre: 'Firmada', e: { n: 'dos', t1: 'completo', d1: true, d2: 'xl', d3: true, i1: 'derecha', f1: true, y1: true, f2: true, x1: 'aparte', x2: true }, pendiente: true },
   };
   const PORQUE = {
     hoy: 'Producción esta mañana (12 de oct): nombres de lugares y artistas en una línea con «…», «Tus planes» arriba, Destacados a 165 px, «Te interesa» como chip sobre el cartel, el lugar antes que la fecha, y en la ficha del festival todos los actos juntos, también los que ya pasaron (con enlace a «Esto ya no está»).',
-    propuesta: 'Por qué: el nombre en dos líneas se lee entero sin ensanchar el carril (N2); el título es el que escribió quien publicó, tal cual, en dos líneas y cortado en palabra, sin inventarle uno corto (T1); Destacados es lo que la administración eligió, así que va primero y más grande, casi a lo ancho como un post de Instagram (D1, D2 XL); ahí solo eventos con su cartel, porque las expos tienen su carril abajo, salvo la que la administración destaque a propósito (D3); lo que te interesa se marca con el icono del marcador arriba a la derecha, donde ya vive el sello, y el chip queda solo para «cuántos van» (I1); primero cuándo y luego dónde, porque la fecha decide antes que el lugar (F1); en el festival, lo que ya pasó se queda en su sección, plegada y sin enlaces rotos (X1, X2).',
+    propuesta: 'Por qué: el nombre en dos líneas se lee entero sin ensanchar el carril (N2); el título es el que escribió quien publicó, tal cual, en dos líneas y cortado en palabra, sin inventarle uno corto (T1); Destacados es lo que la administración eligió, así que va primero y más grande, casi a lo ancho como un post de Instagram (D1, D2 XL); ahí solo eventos con su cartel, porque las expos tienen su carril abajo, salvo la que la administración destaque a propósito (D3); lo que te interesa se marca con el icono del marcador arriba a la derecha, donde ya vive el sello, y el chip queda solo para «cuántos van» (I1); primero cuándo y luego dónde, porque la fecha decide antes que el lugar (F1); una expo o un festival a los que ya fuiste salen de «Tus planes» con un toque en «Ya fui» y quedan para el historial (Y1); el festival en «Tus planes» enseña el cartel del acto que marcaste, y solo sin él la portada genérica (F2); en el festival, lo que ya pasó se queda en su sección, plegada y sin enlaces rotos (X1, X2).',
     firmada: 'La combinación que firme el founder. Mientras no la firme, es la propuesta.',
   };
   const EJERCICIOS = [
     { k: 'n', t: 'N · Nombres de lugares y artistas', d: 'En «Lugares de la semana» y «Artistas de la semana» hoy el nombre va en una línea y se corta («Casa de C…», «Centro de…»).', opciones: [['hoy', 'Una línea (hoy)'], ['dos', 'Dos líneas'], ['ancha', 'Columna ancha'], ['lado', 'Nombre al lado']], f: 'Pedido del founder (12 de oct): que se lean. Dos líneas cortadas en palabra; columna ancha (96 px, se ven 3,5); o la foto chica con el nombre al lado, en dos líneas.' },
-    { k: 't1', t: 'T1 · El título de la tarjeta', d: 'Hoy la tarjeta no enseña el título que escribió quien publicó: la app calcula uno «corto» (lo que va antes de los dos puntos o de la primera coma) y pasa las mayúsculas sostenidas a oración; por eso los once actos del CINEMA se llaman «Cinema». No es un campo del formulario. Completo: el título tal cual lo escribió, en dos líneas y cortado en palabra. Completo a oración: el mismo, pero «DESIERTO» se ve «Desierto».', opciones: [['corto', 'Corto (hoy)'], ['completo', 'Completo, tal cual'], ['oracion', 'Completo a oración']], f: 'Comentario del founder (12 de oct): «¿De dónde sacas este título corto? … Podríamos usar el mismo título que ingresa el usuario … hay riesgo de imponerle un título que no le guste».' },
+    { k: 't1', t: 'T1 · El título de la tarjeta', d: 'Hoy la tarjeta no enseña el título que escribió quien publicó: la app calcula uno «corto» (lo que va antes de los dos puntos o de la primera coma) y pasa las mayúsculas sostenidas a oración; por eso los once actos del CINEMA se llaman «Cinema». No es un campo del formulario. Completo: el título tal cual lo escribió, en dos líneas y cortado en palabra. Completo a oración: el mismo, pero «DESIERTO» se ve «Desierto».', opciones: [['corto', 'Corto (hoy)'], ['completo', 'Completo, tal cual'], ['oracion', 'Completo a oración'], ['subtitulo', 'Corto + el resto debajo']], f: 'Comentario del founder (12 de oct): «¿De dónde sacas este título corto? … Podríamos usar el mismo título que ingresa el usuario … hay riesgo de imponerle un título que no le guste».' },
+    { k: 't2', t: 'T2 · Título en tres líneas', d: 'El título bajo la tarjeta (o dentro de la portada) puede ocupar tres líneas en vez de dos antes de cortarse con «…». Cuesta unos 18 px más por carril.', f: 'Pregunta del founder (12 de oct): «¿Cómo propones resolver esto?» sobre los 31 de 60 títulos cortados con el título completo. Con «Corto + el resto debajo» el corto va de título y lo que sigue a los dos puntos o la coma, en gris, en una línea: nada del texto de quien publicó se pierde, y el título no se corta.' },
     { k: 'd1', t: 'D1 · Destacados en la primera línea', d: '«Destacados» (o «Seleccionados para ti») va antes de «Tus planes», justo debajo de la fila «Ahora».', f: 'Founder: «siempre en la primera línea».' },
     { k: 'd2', t: 'D2 · Tamaño de Destacados', d: 'Solo ese carril. Grande es lo firmado (165 px). XL mide 248 (se ve una y media, el título a 19 px). Ancho es una tarjeta por pantalla, a lo ancho (350 px), «como el de Instagram».', opciones: [['grande', 'Grande (hoy)'], ['xl', 'XL'], ['ancho', 'Ancho']] },
     { k: 'd3', t: 'D3 · Solo eventos en Destacados', d: 'En «Seleccionados para ti» (o «Destacados») salen solo eventos con su cartel; las expos que llegaban por lo que sigues bajan a «Festivales y expos». La expo que la administración destaque a propósito sí entra aquí. Hoy, 9 de las 12 tarjetas del carril del founder son expos de los lugares que sigue; ninguna está destacada por la administración.', f: 'Comentario del founder en la página (12 de oct): «Aquí mostremos solo eventos con sus portadas. El espacio para expos es abajo, ojo si se destaca un evento de expo ese es el que va acá».' },
     { k: 'i1', t: 'I1 · Lo que te interesa', d: 'Hoy, el chip «Te interesa» sobre el cartel. Con el icono, solo el marcador relleno en violeta: arriba a la derecha (el sello de fecha pasa a la izquierda), debajo del sello, o junto al título. «3 van» sigue como chip.', opciones: [['chip', 'Chip (hoy)'], ['derecha', 'Icono arriba der.'], ['bajo', 'Icono bajo el sello'], ['junto', 'Icono junto al título']], f: 'Founder: «solo con el icono arriba a la derecha en vez del chip».' },
     { k: 'f1', t: 'F1 · Primero la fecha, luego el lugar', d: 'Bajo la tarjeta, la línea de cuándo (violeta) arriba y el lugar (gris) debajo. Hoy es al revés.', f: 'Founder: «bajo la tarjeta primero la fecha y luego el lugar».' },
+    { k: 'y1', t: 'Y1 · «Ya fui»', d: 'En «Tus planes», una expo o un festival que ya empezó lleva debajo un botón «Ya fui»: al tocarlo sale del carril (con «Deshacer» en el aviso) y queda para el historial de la persona, que es la pieza 1 que sigue. En la ficha iría el mismo botón junto a «Voy». Hoy, lo que marcaste se queda hasta su fecha de cierre (Mirar debajo de los pies, hasta el 28 de feb).', f: 'Comentario del founder (12 de oct): «si planeo ir a una expo y ya fui, ¿cómo hago que se mueva de mis planes?».' },
+    { k: 'f2', t: 'F2 · El festival con el cartel de tu acto', d: 'En «Tus planes», la tarjeta de un festival enseña el cartel del acto que marcaste (Voy o Me interesa) si lo tiene; sin ninguno, su portada genérica. Hoy CINEMA sale con la portada del sistema aunque vas a Chatbot Challenge, que tiene cartel.', f: 'Comentario del founder (12 de oct): «en el caso de los festivales, lo que quisiera ver aquí es el cartel del evento que sí me interesa (si es que existe); si no, la portada genérica».' },
     { k: 'x1', t: 'X1 · Festival: lo que ya pasó, aparte', d: 'Toca un festival (Cinema, Fotovisión, Ciclo Fellini) para ver su ficha. Hoy el programa lista todos los actos, también los pasados, con enlace a «Esto ya no está». «Aparte, sin enlace»: los pasados en su sección «Ya pasó», en gris. «Aparte, como pasado»: igual, pero cada uno abre su ficha en pasado (lo que traerá el historial).', opciones: [['hoy', 'Todos juntos (hoy)'], ['aparte', 'Aparte, sin enlace'], ['pasado', 'Aparte, como pasado']], f: 'Founder: «lo pasado se queda, pero separado y sin enlaces rotos».' },
     { k: 'x2', t: 'X2 · «Ya pasó» plegado', d: 'La sección empieza cerrada: un renglón «Ya pasó · 5 actividades» que se abre al tocar.', sub: 'x1' },
   ];
   const vista = (e) => ({ ...e, x2: e.x1 !== 'hoy' && e.x2 });
   const igual = (a, b) => CLAVES.every((k) => a[k] === b[k]);
   const presetDe = (e) => Object.keys(PRESETS).find((p) => igual(PRESETS[p].e, e)) || null;
-  const NOMBRE_OPCION = { n: { hoy: '', dos: 'N dos líneas', ancha: 'N columna ancha', lado: 'N nombre al lado' }, t1: { corto: '', completo: 'T1 completo', oracion: 'T1 completo a oración' }, d2: { grande: '', xl: 'D2 XL', ancho: 'D2 ancho' }, i1: { chip: '', derecha: 'I1 arriba der.', bajo: 'I1 bajo el sello', junto: 'I1 junto al título' }, x1: { hoy: '', aparte: 'X1 aparte', pasado: 'X1 como pasado' } };
+  const NOMBRE_OPCION = { n: { hoy: '', dos: 'N dos líneas', ancha: 'N columna ancha', lado: 'N nombre al lado' }, t1: { corto: '', completo: 'T1 completo', oracion: 'T1 completo a oración', subtitulo: 'T1 corto + resto' }, d2: { grande: '', xl: 'D2 XL', ancho: 'D2 ancho' }, i1: { chip: '', derecha: 'I1 arriba der.', bajo: 'I1 bajo el sello', junto: 'I1 junto al título' }, x1: { hoy: '', aparte: 'X1 aparte', pasado: 'X1 como pasado' } };
   const listaDe = (e) => {
     const l = [];
     for (const k of CLAVES) {
@@ -870,7 +882,7 @@ const Portadas = (() => {
   const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
   const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
 
-  const estado = { e: { ...PRESETS.propuesta.e }, pantalla: 'inicio', abiertos: new Set() };
+  const estado = { e: { ...PRESETS.propuesta.e }, pantalla: 'inicio', abiertos: new Set(), yaFui: [] };
   const guardado = leer(LLAVE_ESTADO);
   if (guardado && typeof guardado === 'object') for (const k of CLAVES) if (k in guardado) estado.e[k] = guardado[k];
   const desdeEnlace = location.hash.slice(1);
@@ -907,28 +919,44 @@ const Portadas = (() => {
   function pieHtml(t, v, conTitulo) {
     const junto = interesa(t) && v.i1 === 'junto';
     const tit = tituloDe(t, v);
-    const titulo = conTitulo ? `${cejaHtml(t)}<b class="titulo-pie" data-m="titulo" data-completo="${esc(tit)}">${esc(tit)}</b>` : '';
+    const resto = conTitulo ? restoDe(t, v) : '';
+    const titulo = conTitulo ? `${cejaHtml(t)}<b class="titulo-pie" data-m="titulo" data-completo="${esc(tit)}">${esc(tit)}</b>${resto ? `<span class="subtitulo">${esc(resto)}</span>` : ''}` : '';
     const lineas = v.f1 ? `<span class="cuando">${esc(t.detalle)}</span><span class="donde">${esc(t.sitio)}</span>` : `<span class="donde">${esc(t.sitio)}</span><span class="cuando">${esc(t.detalle)}</span>`;
     return `<span class="pie${junto ? ' con-interes' : ''}">${titulo}${lineas}${junto ? `<span class="interes junto" title="Te interesa">${I.marcadorLleno}</span>` : ''}</span>`;
   }
   const tituloDe = (t, v) => (v.t1 === 'completo' ? t.titulo : v.t1 === 'oracion' ? t.tituloOracion : t.oracion);
+  /** T1 «corto + el resto»: lo que el título corto dejó fuera (tras los dos puntos o la coma), para la línea gris. */
+  function restoDe(t, v) {
+    if (v.t1 !== 'subtitulo') return '';
+    const i = t.titulo.toLocaleLowerCase('es').indexOf(t.corto.toLocaleLowerCase('es'));
+    const resto = (i >= 0 ? t.titulo.slice(i + t.corto.length) : '').replace(/^[\s:,.·–-]+/, '').replace(/\.$/, '');
+    return resto.trim();
+  }
+  /** F2: en «Tus planes», el cartel del acto del festival que la persona marcó. */
+  const cartelDeActo = (t, v, carril) => (v.f2 && carril === 'tusPlanes' && t.clase === 'festival' ? (D.carriles.tusPlanes.find((x) => x.padre === t.id && x.foto) || null) : null);
+  /** Y1: «Ya fui» en «Tus planes», en lo que ya empezó y no es de un día (expo, festival). */
+  const conYaFui = (t, v, carril) => v.y1 && carril === 'tusPlanes' && (t.clase === 'exposicion' || t.clase === 'festival') && Date.parse(t.inicio) <= Date.parse(D.ahora);
   function htmlEvento(t, c) {
     const v = c.v;
     const tit = tituloDe(t, v);
+    const acto = cartelDeActo(t, v, c.carril);
+    const yaFui = conYaFui(t, v, c.carril) ? `<button type="button" class="ya-fui" data-accion="ya-fui" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(`Ya fui: ${t.titulo}`)}">Ya fui</button>` : '';
+    const li = yaFui ? '<li class="con-ya-fui">' : '<li>';
     const lado = interesa(t) && v.i1 === 'derecha' ? 'izq' : '';
     const sello = selloHtml(t.sello, lado);
     const icono = iconoInteres(v, t);
     const nombre = `${t.nombre}${interesa(t) && v.i1 !== 'chip' && !/Te interesa/.test(t.nombre) ? '. Te interesa' : ''}`;
-    if (t.sistema) {
+    if (t.sistema && !acto) {
       const P = paletaDeBase(t.sistema.base, t.sistema.banda);
       const chip = chipHtml(t, v);
       const renglon = chip || t.ceja.length ? `<span class="renglon">${chip}${cejaHtml(t)}</span>` : '';
-      const zona = `<span class="zona">${renglon}<b class="titulo-sobre" data-m="titulo" data-completo="${esc(tit)}">${esc(tit)}</b></span>`;
+      const resto = restoDe(t, v);
+      const zona = `<span class="zona">${renglon}<b class="titulo-sobre" data-m="titulo" data-completo="${esc(tit)}">${esc(tit)}</b>${resto ? `<small class="subtitulo">${esc(resto)}</small>` : ''}</span>`;
       const portada = `<span class="portada sistema${lado ? ' sello-izq' : ''}" style="--base:${P.base};--tinta:${P.tinta}" data-id="${t.id}" data-clase="${t.sistema.clase || ''}" data-base="${P.base}" data-banda="${P.banda}"><svg class="figura" viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>${t.sistema.clase ? '' : SIMBOLO}${sello}${icono}${zona}</span>`;
-      return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(nombre)}">${portada}${pieHtml(t, v, false)}</a></li>`;
+      return `${li}<a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(nombre)}">${portada}${pieHtml(t, v, false)}</a>${yaFui}</li>`;
     }
-    const portada = `<span class="portada${lado ? ' sello-izq' : ''}"><img class="cartel" ${fuente(t.foto, c.img)} alt="">${sello}${icono}${chipHtml(t, v)}</span>`;
-    return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(nombre)}">${portada}${pieHtml(t, v, true)}</a></li>`;
+    const portada = `<span class="portada${lado ? ' sello-izq' : ''}"><img class="cartel" ${fuente(acto ? acto.foto : t.foto, c.img)} alt="">${sello}${icono}${chipHtml(t, v)}</span>`;
+    return `${li}<a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(nombre)}">${portada}${pieHtml(t, v, true)}</a>${yaFui}</li>`;
   }
 
   /** La figura de una portada del sistema, dibujada después de medir dónde quedaron la zona del título y el sello (como la app). */
@@ -974,7 +1002,8 @@ const Portadas = (() => {
   function carriles(v) {
     const C = D.carriles;
     const lista = [];
-    const planes = C.tusPlanes.length ? { clave: 'tusPlanes', titulo: 'Tus planes', ver: 'Ver mi perfil', tarjetas: C.tusPlanes, tamano: 'grande' } : null;
+    const misPlanes = C.tusPlanes.filter((t) => !estado.yaFui.includes(t.id));
+    const planes = misPlanes.length ? { clave: 'tusPlanes', titulo: 'Tus planes', ver: 'Ver mi perfil', tarjetas: misPlanes, tamano: 'grande' } : null;
     const estelar = { clave: 'destacados', titulo: C.titulo, ver: 'Ver la agenda', tarjetas: v.d3 ? C.destacadosD3 : C.destacados, tamano: v.d2 === 'grande' ? 'grande' : v.d2 };
     if (v.d1) { lista.push(estelar); if (planes) lista.push(planes); } else { if (planes) lista.push(planes); lista.push(estelar); }
     lista.push({ clave: 'estaSemana', titulo: 'Esta semana', ver: 'Ver la agenda', tarjetas: C.estaSemana, tamano: 'mediana' });
@@ -1006,7 +1035,7 @@ const Portadas = (() => {
   const CONTEXTO = `<div class="contexto"><button type="button" class="ctx" data-accion="nada">${I.pin}San Luis Potosí${I.baja}</button><button type="button" class="ctx" data-accion="nada">${I.calendario}Cuándo</button><button type="button" class="ctx" data-accion="nada">${I.filtros}Filtros</button></div>`;
   const NAV = `<nav class="secciones" aria-label="Secciones">${[['Inicio', I.casa, true], ['Agenda', I.calendario], ['Lugares', I.pin], ['Artistas', I.estrella], ['Perfil', I.persona]].map(([n, i, activa]) => `<button type="button" class="${activa ? 'activa' : ''}" data-accion="nada"><i>${i}</i>${n}</button>`).join('')}</nav>`;
   function htmlInicio(v, img) {
-    return `<div class="pantalla">${BARRA}${CONTEXTO}${htmlAhora(img)}${carriles(v).map((k) => htmlCarril(k, v, img)).join('')}<div class="relleno"></div>${NAV}</div><p class="aviso" role="status" aria-live="polite"></p>`;
+    return `<div class="pantalla${v.t2 ? ' t3' : ''}">${BARRA}${CONTEXTO}${htmlAhora(img)}${carriles(v).map((k) => htmlCarril(k, v, img)).join('')}<div class="relleno"></div>${NAV}</div><p class="aviso" role="status" aria-live="polite"></p>`;
   }
 
   // ===== La ficha de un festival (X1, X2): la cabecera oscura de producción, el programa por día y, aparte, lo que ya pasó.
@@ -1137,10 +1166,11 @@ const Portadas = (() => {
     }, { capture: true, passive: true });
     tel.addEventListener('click', alTocar);
   }
-  function avisar(tel, texto) {
+  // El aviso vive fuera del teléfono pintado: también escucha sus toques («Deshacer»).
+  function avisar(tel, texto, deshacer) {
     const p = tel.querySelector('.aviso');
     if (!p) return;
-    p.textContent = texto;
+    p.innerHTML = deshacer ? `${esc(texto)} <button type="button" class="deshacer" data-accion="deshacer">Deshacer</button>` : esc(texto);
     p.classList.add('visible');
     clearTimeout(p._t);
     p._t = setTimeout(() => p.classList.remove('visible'), 2400);
@@ -1156,6 +1186,8 @@ const Portadas = (() => {
     if (!el || !tel.contains(el)) return;
     ev.preventDefault();
     const accion = el.dataset.accion;
+    if (accion === 'ya-fui') { estado.yaFui.push(el.dataset.id); pintarTodo(); avisar(telMix, `Ya fuiste: ${el.dataset.titulo} pasa a tu historial`, true); return; }
+    if (accion === 'deshacer') { estado.yaFui.pop(); pintarTodo(); avisar(telMix, 'De vuelta en «Tus planes»'); return; }
     if (accion === 'ficha') {
       if (FESTIVAL_POR_ID.has(el.dataset.id)) irA(el.dataset.id);
       else avisar(tel, `Aquí se abre la ficha: ${el.dataset.titulo}`);
