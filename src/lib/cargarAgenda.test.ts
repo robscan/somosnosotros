@@ -117,6 +117,8 @@ describe("por clase (OL-322): la clase, el horario de cada exposición y el prog
     const r = await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);
     const select = (b.from.mock.results[0].value as { select: { mock: { calls: string[][] } } }).select.mock.calls[0][0];
     expect(select).toContain("clase, evento_padre_id");
+    // El acto que inaugura cada exposición (OL-379): la fila «Ahora» dice «Inaugura hoy» solo si ese acto es hoy.
+    expect(select).toContain("inaugura_id");
     expect(r.eventos.find((e) => e.id === "expo")?.horario).toEqual([{ dias: [2, 3, 4, 5, 6, 7], abre: "10:00", cierra: "18:00" }]);
     expect(r.eventos.find((e) => e.id === "propia")?.horario).toEqual([{ dias: [6, 7], abre: "11:00", cierra: "15:00" }]);
     // El doble devuelve las mismas filas a la consulta del programa: cuenta las que apuntan al marco.
