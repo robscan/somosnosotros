@@ -54,6 +54,8 @@ Comparé las 27 portadas del modelo de «Firmada» con un arnés que pinta, con 
 | Hilaridad y melancolía | `#865c3c` | `#4d3522` | Lxs colocaos ya cambiado `#764f39` (5,9 → 11,0) | 5,03 → 9,83 |
 | Privacidad y elegancia | `#865c3c` | `#63432c` | Líneas de fuga `#865c3c` (0 → 10,1) | 5,03 → 7,67 |
 
+**El contraste de cada título, medido en los píxeles de las dos páginas.** Se esconde el texto, se captura cada portada y se toma el peor píxel de cada renglón del título y de la ceja. Las 23 iguales dan lo mismo que el prototipo (con 0,05 de diferencia como mucho), de 5,03:1 (Homenaje al Dr. Salvador Gómez, Líneas de fuga) a 9,47:1 (los amarillos). Las 4 de las vecinas suben, como en la tabla. En la app, todas quedan entre 5,03 y 10,81:1, y la ceja, igual que su título.
+
 Lo demás que queda distinto:
 - **El giro sin arrastre ni botón sobre la pantalla:** el permiso vive en Ajustes (decisión 1).
 - **La Retícula de la expo** en los casos que se salían de la L (arriba).
@@ -118,7 +120,7 @@ De dónde sale cada número (medido con el código de la rama y los datos de `ma
   - La corrida entera (`npm run test:componentes`, Chromium 153): 583 de 584.
   - La que falla, de `CampoLargo` («el teclado ya estaba abierto al tocar el renglón»), no es de esta pieza: no toca nada de lo que cambié, falla igual con el código de `main` en esta Mac (tres de tres) y pasó en la primera corrida entera.
   - Esa primera corrida destapó lo del permiso en Android (arriba). La prueba del giro ahora imita el «prompt» de Chrome, y falla si se quita el arreglo (comprobado).
-- **Contra el prototipo firmado:** la comparación de arriba (23 de 27 iguales, 4 por la regla de las vecinas) y las capturas lado a lado 10 a 14.
+- **Contra el prototipo firmado:** la comparación de arriba (23 de 27 iguales, 4 por la regla de las vecinas; el contraste de los 27 títulos, medido en píxeles en las dos páginas) y las capturas lado a lado 10 a 14.
 - **La app compilada contra el respaldo local** (Chrome de la Mac, 390×844 a 2×; capturas 01 a 09):
   - Contraste medido en los píxeles (se esconde el texto, se captura cada portada y se toma el peor píxel de cada renglón):
     - el taller de grabado, 5,84:1;
@@ -188,4 +190,4 @@ De dónde sale cada número (medido con el código de la rama y los datos de `ma
 
 ## Pendiente
 
-El PR (lo abre el gestor) y el «publica» del founder. Probarlo en su iPhone: la palanca con su aviso y el giro en Inicio, en Safari y en la app instalada.
+El PR (lo abre el gestor) y el «publica» del founder. Probarlo en su iPhone: la palanca con su aviso y el giro en Inicio, en Safari y en la app instalada. Vista previa de la rama en Vercel (pide la sesión de Vercel): `https://somosnosotros-git-portadas-sistema-robscans-projects.vercel.app`.
