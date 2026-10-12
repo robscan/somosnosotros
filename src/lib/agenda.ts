@@ -1,4 +1,4 @@
-import { abiertasEseDia, entraEnQue, esExposicion, plegarActos, porCierre, queDe, visitaEnRango, type Que } from "./agendaPorClase";
+import { entraEnQue, esExposicion, paraVisitarEseDia, plegarActos, porCierre, queDe, visitaEnRango, type Que } from "./agendaPorClase";
 import { ocupaRango } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeUrl, type Cuando } from "./cuando";
@@ -303,14 +303,15 @@ function exposicionesFiltradas(agenda: DatosAgenda, filtros: FiltrosAgenda): Eve
 }
 
 /**
- * «Para visitar hoy» (OL-322; doc 55 §3): en Todos y con «Qué» en Todo, las exposiciones abiertas un día según su horario, la que cierra antes
- * primero. El día es el primero de lo que se ve: hoy, o el primero que se eligió con Cuándo. Sin horario no entran (no se promete «visitable
- * hoy»). Null en Nuevos o con otro «Qué»: ahí no hay sección.
+ * «Para visitar hoy» (OL-322; doc 55 §3): en Todos y con «Qué» en Todo, las exposiciones que se pueden visitar un día: las que abren según su
+ * horario y, después, las que no tienen horario conocido, con «Horario por confirmar» (`paraVisitarEseDia`); la que se sabe cerrada ese día, no.
+ * El día es el primero de lo que se ve: hoy, o el primero que se eligió con Cuándo. OL-381 (pruebas de usuario del founder, 2026-10-12): antes
+ * las sin horario no entraban y «Para visitar mañana» enseñaba una de 17. Null en Nuevos o con otro «Qué»: ahí no hay sección.
  */
 export function paraVisitarEnAgenda(agenda: DatosAgenda, filtros: FiltrosAgenda, hoy: string, nuevosDesde?: number): { dia: string; exposiciones: EventoAgenda[] } | null {
   if (nuevosDesde !== undefined || queDeFiltros(filtros) !== "todo") return null;
   const dia = filtros.cuando && filtros.cuando.desde > hoy ? filtros.cuando.desde : hoy;
-  return { dia, exposiciones: abiertasEseDia(exposicionesFiltradas(agenda, filtros), dia) };
+  return { dia, exposiciones: paraVisitarEseDia(exposicionesFiltradas(agenda, filtros), dia) };
 }
 
 /**

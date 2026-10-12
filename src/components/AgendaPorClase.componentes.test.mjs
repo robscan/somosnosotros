@@ -1,7 +1,7 @@
 /** Prueba de componente de la agenda por clase (OL-322; doc 55 §3, prototipo caso 7): `AgendaInicio` real, con su `Cabecera`, sus hojas y sus estilos,
  *  con una exposición abierta hoy (horario del lugar), otra sin horario, un festival con tres actos y un taller de tres sesiones. Cubre: el festival
  *  es un bloque con sus actos del día y el marco no cuenta; el taller dice «Sesión n de N»; «Para visitar hoy» va tras el día de hoy, sin «Voy» y sin
- *  «00:00»; la hoja Filtros con «Qué» (una sola elección, el botón dice lo que se verá, el chip para quitarlo y sin apilar historial); Cuándo sin
+ *  «00:00», con la que abre y después la sin horario («Horario por confirmar», OL-381); la hoja Filtros con «Qué» (una sola elección, el botón dice lo que se verá, el chip para quitarlo y sin apilar historial); Cuándo sin
  *  punto por la exposición ni por el marco y con «y N para visitar»; y a 320 nada se sale.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
@@ -119,7 +119,7 @@ const dia = (page, fecha) => page.locator(`[data-fecha="${fecha}"]`);
 
 test("el festival es un bloque con sus actos del día, el taller dice «Sesión n de N» y «Para visitar hoy» va tras hoy", async () => {
   const { context, page, errores } = await abrir();
-  assert.deepEqual(await titulos(page), ["Hoy", "Para visitar hoy", "Mañana", "vie 9 de oct", "sáb 10 de oct· 3", "lun 12 de oct"]);
+  assert.deepEqual(await titulos(page), ["Hoy", "Para visitar hoy· 2", "Mañana", "vie 9 de oct", "sáb 10 de oct· 3", "lun 12 de oct"]);
   // El bloque: cabecera con su programa (el marco no cuenta en el «· 3» del día) y los dos actos de ese día, cada uno a su ficha con su «Voy».
   const sabado = grupo(page, "sáb 10 de oct");
   const bloque = sabado.locator("li", { has: page.locator("a[href='/eventos/cine']") });
@@ -127,10 +127,9 @@ test("el festival es un bloque con sus actos del día, el taller dice «Sesión 
   assert.deepEqual(await bloque.locator("a[href^='/eventos/cine']").evaluateAll((as) => as.map((x) => x.getAttribute("href"))), ["/eventos/cine", "/eventos/cine2", "/eventos/cine3"]);
   assert.equal(await bloque.getByRole("button", { name: /^Voy/ }).count(), 2);
   assert.match(await sabado.locator("a[href='/eventos/taller']").innerText(), /18:00\s+· Sesión 2 de 3 · \$300/);
-  // «Para visitar hoy»: la abierta hoy según su horario; la que no tiene horario no promete nada aquí.
+  // «Para visitar hoy»: la abierta hoy según su horario y, después, la que no tiene horario, sin prometer horas (OL-381).
   const visitar = grupo(page, "Para visitar hoy");
-  assert.match(await visitar.innerText(), /Ecos de papel\s+Abre 10:00 a\.m\.–6:00 p\.m\.\s+· hasta el sáb 31 de oct\s+MUNI/);
-  assert.equal(await visitar.locator("a[href='/eventos/foto']").count(), 0);
+  assert.match(await visitar.innerText(), /Ecos de papel\s+Abre 10:00 a\.m\.–6:00 p\.m\.\s+· hasta el sáb 31 de oct\s+MUNI[\s\S]*Fotovisión\s+Horario por confirmar\s+· hasta el dom 20 de dic\s+Foro/);
   assert.equal(await visitar.getByRole("button").count(), 0, "sin «Voy»");
   // Ninguna exposición ni el marco salen como renglón de un día; nada dice «00:00».
   assert.equal(await page.locator("a[href='/eventos/ecos']").count(), 1);
@@ -146,7 +145,7 @@ test("Filtros: «Qué» elige una sola cosa, el botón dice lo que se verá y ap
   const filtros = hoja(page, "Filtros");
   const que = filtros.getByRole("group", { name: "Qué" }).or(filtros.locator("[aria-label='Qué']"));
   assert.deepEqual(await que.getByRole("button").allTextContents(), ["Todo", "Eventos", "Exposiciones", "Talleres", "Festivales"]);
-  assert.equal(await aplicar(page, "Filtros").innerText(), "Ver 7 eventos y 1 para visitar");
+  assert.equal(await aplicar(page, "Filtros").innerText(), "Ver 7 eventos y 2 para visitar");
   await que.getByRole("button", { name: "Talleres" }).click();
   assert.equal(await aplicar(page, "Filtros").innerText(), "Ver 3 eventos");
   await que.getByRole("button", { name: "Festivales" }).click();
@@ -181,9 +180,9 @@ test("Cuándo: sin punto por la exposición ni por el marco; un día cuenta sus 
   assert.ok(!(await punto("2026-10-11")), "el marco dura hasta el 11 pero ese día no tiene actos");
   assert.ok(!(await punto("2026-10-14")), "la exposición no pone punto");
   await dia(page, "2026-10-10").click();
-  assert.equal(await aplicar(page, "Cuándo").innerText(), "Ver 3 eventos y 1 para visitar");
+  assert.equal(await aplicar(page, "Cuándo").innerText(), "Ver 3 eventos y 2 para visitar");
   await aplicar(page, "Cuándo").click();
-  assert.deepEqual(await titulos(page), ["sáb 10 de oct· 3", "Para visitar el sáb 10 de oct"]);
+  assert.deepEqual(await titulos(page), ["sáb 10 de oct· 3", "Para visitar el sáb 10 de oct· 2"]);
   await context.close();
 });
 

@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
 import { agruparPorDia, agruparPorPublicacion, conFiltros, corteNuevos, exposicionesEnAgenda, filtrosRecordados, listarAgenda, paraVisitarEnAgenda, queDeFiltros, sinSeguirSinSesion, type EventoAgenda, type FiltrosAgenda } from "@/lib/agenda";
-import { componerDia, marcosDe, notaDeVisita, rangosDeVisita, textoAbre, textoHastaEl, tituloParaVisitar } from "@/lib/agendaPorClase";
+import { componerDia, cuandoParaVisitar, marcosDe, notaDeVisita, textoHastaEl, tituloParaVisitar } from "@/lib/agendaPorClase";
 import { soloInteres } from "@/lib/claseEvento";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
@@ -65,8 +65,9 @@ type Recordado = { filtros: FiltrosAgenda; mostrados: number; visita?: string | 
  * en los tres, con «Sesión 2 de 3»; el día que ya pasó no sale. El grupo de cada día cuenta renglones de ese día.
  *
  * Por clase (OL-322, doc 55 §3): un festival es un bloque con sus actos del día (`BloqueFestival`; el marco no cuenta como renglón); las
- * exposiciones van aparte, en «Para visitar hoy» tras los renglones de hoy (o del primer día elegido con Cuándo), solo las que abren ese día
- * según su horario; con «Qué» en Exposiciones, la lista es «Para visitar» entera.
+ * exposiciones van aparte, en «Para visitar hoy» tras los renglones de hoy (o del primer día elegido con Cuándo): las que abren ese día según
+ * su horario y, después, las que no tienen horario conocido, con «Horario por confirmar» (OL-381); con «Qué» en Exposiciones, la lista es
+ * «Para visitar» entera.
  */
 export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, conSesion, filtrosIniciales }: Props) {
   const [guardados, setFiltros] = useState(filtrosIniciales);
@@ -198,13 +199,13 @@ function AgendaLista({
   const hayMasEventos = mostrados < total;
   const centinelaRef = useCentinela(hayMasEventos, () => onMostrados((m) => siguienteTanda(total, m).mostrados));
 
-  /** «Para visitar hoy» (o el día que se eligió): las exposiciones abiertas ese día, con sus horas y hasta cuándo. */
+  /** «Para visitar hoy» (o el día que se eligió): las que abren ese día, con sus horas, y las sin horario («Horario por confirmar»); y hasta cuándo. */
   function seccionParaVisitar() {
     if (!visitar || visitar.exposiciones.length === 0) return null;
     return (
       <Grupo key="para-visitar" titulo={tituloParaVisitar(visitar.dia, hoy, ahora, visitar.exposiciones[0].zona)} cuenta={visitar.exposiciones.length}>
         {visitar.exposiciones.map((e) => (
-          <RenglonEvento key={e.id} evento={e} cuando={textoAbre(rangosDeVisita(e, visitar.dia))} horas nota={textoHastaEl(e, ahora)} estado={asistencia.estado(e.id)} />
+          <RenglonEvento key={e.id} evento={e} cuando={cuandoParaVisitar(e, visitar.dia)} horas nota={textoHastaEl(e, ahora)} estado={asistencia.estado(e.id)} />
         ))}
       </Grupo>
     );
