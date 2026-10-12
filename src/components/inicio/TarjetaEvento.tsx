@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useLayoutEffect, useRef } from "react";
-import { degradadoTarjeta, paletaPropia } from "@/lib/coloresCartel";
 import type { Tarjeta, TarjetaConFecha } from "@/lib/destacados";
 import type { Asistencia } from "@/lib/deslizar";
 import { SIN_FOTO } from "@/lib/imagen";
 import { tamanoImagenCarril } from "@/lib/imagenOptima";
+import { claseConFigura, conPortadaDelSistema, paletasDeCarril, type ClaseConFigura, type PaletaPortada } from "@/lib/portadasSistema";
 import { cejaDeTarjeta, chipDeTarjeta, cortarEnPalabra, nombreDeTarjeta, piezasDeArtista, selloFechaDe, type SelloFecha } from "@/lib/tarjetaInicio";
 import { comoOracion, tituloCorto } from "@/lib/tituloCorto";
 import { Chip } from "../ui/Chip";
 import Imagen from "../ui/Imagen";
-import SimboloBlanco from "./SimboloBlanco";
+import PortadaSistema from "./PortadaSistema";
 import styles from "./TarjetaEvento.module.css";
 
 type Props = {
@@ -21,28 +21,35 @@ type Props = {
   tamano: "grande" | "mediana";
   /** Lo que la persona decidió («Te interesa» es el chip; «Vas» solo lo dice el nombre del enlace). */
   decision: Asistencia;
+  /** La paleta de su portada del sistema con la regla de las vecinas de su carril (`paletasDeCarril`, la pone `Destacados`); sin ella, la suya. */
+  paleta?: PaletaPortada | null;
 };
 
 /**
  * La tarjeta de evento de Inicio (OL-370), la versión que firmó el founder el 2026-10-10 (prototipo `inicio-tarjetas.html`, «Firmada»; bitácora
- * 398). Todo es un enlace a la ficha, también el sello de fecha; ya no lleva el botón de «Voy» (founder: «ya se resuelve en los carriles si va»;
- * decidir queda en la ficha y en las historias).
+ * 398), con las portadas del sistema que firmó el 2026-10-11 (OL-375; prototipo `portadas-sistema.html`, «Firmada»; bitácora 405). Todo es un
+ * enlace a la ficha, también el sello de fecha; ya no lleva el botón de «Voy» (founder: «ya se resuelve en los carriles si va»; decidir queda en
+ * la ficha y en las historias).
  *
- * - Con cartel (E1): el cartel entero en 4:5, sin franja; encima, el sello de fecha arriba a la derecha (E8 + E8c) y como mucho un chip abajo a
- *   la izquierda («Te interesa» o cuántos van). Debajo, la ceja (la clase si no es un evento, con su sesión: E3 + E3b), el título como oración en
- *   dos líneas como mucho y cortado en palabra, el lugar en gris y cuándo en violeta.
- * - Sin cartel (E10): la portada con su paleta propia, el símbolo SN arriba a la izquierda, el sello arriba a la derecha y en la base el chip, la
- *   ceja y el título corto; debajo, el lugar y cuándo.
+ * - Con cartel o foto (E1), un evento: el cartel entero en 4:5, sin franja; encima, el sello de fecha arriba a la derecha (E8 + E8c) y como mucho
+ *   un chip abajo a la izquierda («Te interesa» o cuántos van). Debajo, la ceja (su día si es de varios: E3b), el título como oración en dos líneas
+ *   como mucho y cortado en palabra, el lugar en gris y cuándo en violeta.
+ * - Festival, exposición y taller (P1, en todos los carriles: P5): la portada del sistema en vez del cartel (`PortadaSistema`), con el color de su
+ *   cartel (el de su próximo acto si es un festival sin cartel propio) o su respaldo y el patrón de su clase; dentro, la zona del título: el chip
+ *   solo en su renglón, la ceja y el título (P4). El cartel sigue en la ficha y en la historia. Debajo, el lugar y cuándo.
+ * - Un evento sin ninguna imagen (P7): la misma portada sin figura, con el símbolo SN arriba a la izquierda y el título abajo (sustituye al
+ *   degradado E10, cuyo título bajaba a 2,3:1).
  */
-export default function TarjetaEvento({ t, tamano, decision }: Props) {
+export default function TarjetaEvento({ t, tamano, decision, paleta }: Props) {
   const chip = chipDeTarjeta(t, decision);
   const corto = t.corto ?? tituloCorto(t.titulo);
+  const sistema = conPortadaDelSistema(t) ? { id: t.id, clase: claseConFigura(t.clase), paleta: paleta ?? paletasDeCarril([t])[0]! } : null;
   return (
     <TarjetaCartel
       href={t.href}
       etiqueta={nombreDeTarjeta(t, decision)}
       tamano={tamano}
-      portada={t.foto ? { foto: t.foto } : { fondo: degradadoTarjeta(paletaPropia(t.id)), corto }}
+      portada={sistema ? { sistema } : { foto: t.foto! }}
       sello={selloFechaDe(t)}
       chip={chip && { texto: chip.texto, variante: chip.tuyo ? "estado" : "sello" }}
       ceja={cejaDeTarjeta(t)}
@@ -70,13 +77,13 @@ type PiezasCartel = {
   /** El nombre del enlace: lo que se ve, también para quien no lo ve. */
   etiqueta: string;
   tamano: "grande" | "mediana";
-  /** El cartel (o la foto del artista); sin él, la portada de título de un evento (E10) con su fondo y su título corto. */
-  portada: { foto: string } | { fondo: string; corto: string };
+  /** El cartel (o la foto del artista), o la portada del sistema (OL-375) con su clase y su paleta. */
+  portada: { foto: string } | { sistema: { id: string; clase: ClaseConFigura | null; paleta: PaletaPortada } };
   sello: SelloFecha | null;
   /** El único chip sobre la portada: «Te interesa» (`estado`), cuántos van (`sello`) o la novedad de un artista (`sello` con el trato de «Hoy»). */
   chip: { texto: string; variante: "estado" | "sello"; nuevo?: boolean } | null;
   ceja: string[];
-  /** El título debajo del cartel, ya como se dice; se corta en palabra entera si no cabe en dos líneas. */
+  /** El título debajo del cartel (en la portada del sistema, dentro), ya como se dice; se corta en palabra entera si no cabe en dos líneas. */
   titulo: string;
   /** La línea gris: el lugar de un evento o el género de un artista. */
   lugar?: string | null;
@@ -88,6 +95,7 @@ type PiezasCartel = {
 function TarjetaCartel({ href, etiqueta, tamano, portada, sello, chip, ceja, titulo, lugar, cuando }: PiezasCartel) {
   const ref = useTituloEnPalabra(titulo);
   const clase = tamano === "mediana" ? `${styles.tarjeta} ${styles.mediana}` : styles.tarjeta;
+  // Sobre el cartel, el sello y el chip; debajo, la ceja. En la portada del sistema van dentro de ella (`PortadaSistema`).
   const encima = (
     <>
       {sello && <Sello sello={sello} />}
@@ -111,11 +119,7 @@ function TarjetaCartel({ href, etiqueta, tamano, portada, sello, chip, ceja, tit
           </b>
         </>
       ) : (
-        <span className={styles.portada} style={{ background: portada.fondo }}>
-          <SimboloBlanco className={styles.simbolo} />
-          {encima}
-          <span className={styles.tituloPortada}>{portada.corto}</span>
-        </span>
+        <PortadaSistema {...portada.sistema} tamano={tamano} sello={sello && ((enSuEsquina) => <Sello sello={sello} className={enSuEsquina} />)} chip={chip} ceja={ceja} titulo={titulo} tituloRef={ref} />
       )}
       {lugar && <span className={styles.lugar}>{lugar}</span>}
       {cuando !== null && <span className={styles.cuando}>{cuando}</span>}
@@ -123,15 +127,18 @@ function TarjetaCartel({ href, etiqueta, tamano, portada, sello, chip, ceja, tit
   );
 }
 
-/** El sello: el mes arriba y el día (o los días) abajo; la flecha de un rango entre meses es de trazo (Bricolage no trae «→»). */
-function Sello({ sello }: { sello: SelloFecha }) {
+/**
+ * El sello: el mes arriba y el día (o los días) abajo; la flecha de un rango entre meses es de trazo (Bricolage no trae «→»). En la portada del
+ * sistema, `className` lo pone en su esquina.
+ */
+function Sello({ sello, className }: { sello: SelloFecha; className?: string }) {
   const flecha = (
     <svg className={styles.flecha} viewBox="0 0 12 12" width={11} height={11} aria-hidden="true" focusable="false">
       <path d="M1.5 6h8M6.5 3l3 3-3 3" />
     </svg>
   );
   return (
-    <span className={styles.fecha} title={sello.texto}>
+    <span className={className ? `${styles.fecha} ${className}` : styles.fecha} title={sello.texto}>
       <small>{sello.mes}</small>
       <b>
         {sello.flecha === "antes" && flecha}

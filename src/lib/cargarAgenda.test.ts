@@ -147,6 +147,16 @@ describe("por clase (OL-322): la clase, el horario de cada exposición y el prog
     expect(r.eventos.find((e) => e.id === "acto1")).not.toHaveProperty("portadaActo");
     expect(r.eventos.find((e) => e.id === "marco")).toMatchObject({ programa: { registrados: 2 } });
   });
+  it("con el cartel de su próximo acto vienen sus colores, pedidos en la misma lectura (OL-375: el color de su portada del sistema)", async () => {
+    const futuro = (dias: number) => new Date(Date.now() + dias * 86400000).toISOString();
+    const colores = ["#280a09", "#c61b17", "#3c3c93", "#575456"];
+    const b = banco({ eventos: { data: [marco, { ...actos[0], inicio: futuro(3), imagen: "chatbot.jpg", colores_cartel: colores }] } });
+    const r = await cargarAgenda(CIUDAD_INICIAL, null, b.cliente);
+    expect(r.eventos.find((e) => e.id === "marco")).toMatchObject({ portadaActo: "chatbot.jpg", coloresActo: colores });
+    // La consulta de los actos pide sus colores.
+    const selects = b.from.mock.results.map((x) => (x.value as { select: { mock: { calls: string[][] } } }).select.mock.calls[0]?.[0] ?? "");
+    expect(selects.some((s) => s.startsWith("evento_padre_id") && s.includes("colores_cartel"))).toBe(true);
+  });
   it("un festival cuyos actos no tienen cartel no lleva portada (sigue lo de siempre)", async () => {
     const r = await cargarAgenda(CIUDAD_INICIAL, null, banco({ eventos: { data: [marco, ...actos] } }).cliente);
     expect(r.eventos.find((e) => e.id === "marco")).not.toHaveProperty("portadaActo");

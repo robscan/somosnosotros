@@ -92,6 +92,9 @@ const E = {
   // OL-370: un festival y una exposición visibles y en curso, de un mes a otro.
   kowai: "bbbb0001-0000-4000-8000-000000000024",
   mundo: "bbbb0001-0000-4000-8000-000000000025",
+  // OL-375: una exposición sin cartel (enseña la foto de su lugar): su portada del sistema toma su color de respaldo. Su id da el amarillo
+  // («Xantolo»), el caso de la bitácora 405 junto a la mostaza de «Un mundo para mí» (vecinas casi del mismo color).
+  reflejo: "bbbb0001-0000-4000-8000-000000000039",
 };
 function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null }) {
   const inicio = iso(fecha(dias, hora));
@@ -127,20 +130,25 @@ const eventos = [
   // OL-321. La exposición: del día −3 (00:00) al día +20 (23:59), en el MUNI (que tiene horario: Ma–Do de 10:00 a 18:00; un lugar que `medir` no mide, así su ficha no cambia).
   { ...evento({ id: E.ecos, slug: "ecos-de-papel", titulo: "Ecos de papel", dias: -3, hora: "00:00", lugar_id: L.muni, creadoHace: 4, descripcion: "Grabado y papel hecho a mano de Mariana Ruvalcaba.", imagen: imagenes.eventos["desierto-observacion-y-espacio"] ?? null, autor: ANA, visible: false, clase: "exposicion", inaugura_id: E.ecosInaug }), fin: iso(fecha(20, "23:59")), termina: iso(fecha(20, "23:59")) },
   evento({ id: E.ecosInaug, slug: "inauguracion-ecos-de-papel", titulo: "Inauguración: Ecos de papel", dias: -4, hora: "19:00", lugar_id: L.muni, creadoHace: 4, autor: ANA, visible: false }),
-  // El festival: el marco y su programa (del día 9 al 11), con un acto como borrador.
-  { ...evento({ id: E.cine, slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, imagen: imagenes.eventos["leonora-in-the-morning-light"] ?? null, autor: ANA, visible: true, clase: "festival" }), fin: iso(fecha(12, "00:00")), termina: iso(fecha(12, "00:00")) },
+  // El festival: el marco y su programa (del día 9 al 11), con un acto como borrador. OL-375: su cartel es gris (los colores de Fotovisión 31): su
+  // portada del sistema toma su color de respaldo.
+  { ...evento({ id: E.cine, colores: ["#111112", "#614b47", "#363e4a", "#49494b"], slug: "festival-de-cine-de-invierno", titulo: "Festival de Cine de Invierno", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, imagen: imagenes.eventos["leonora-in-the-morning-light"] ?? null, autor: ANA, visible: true, clase: "festival" }), fin: iso(fecha(12, "00:00")), termina: iso(fecha(12, "00:00")) },
   evento({ id: E.cine1, slug: "inauguracion-la-luz-que-queda", titulo: "Inauguración: «La luz que queda»", dias: 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine2, slug: "charla-con-la-directora", titulo: "Charla con la directora", dias: 10, hora: "18:00", dur: 1, lugar_id: L.ccub, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine3, slug: "funcion-cortometrajes-potosinos", titulo: "Función: cortometrajes potosinos", dias: 11, hora: "17:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine }),
   evento({ id: E.cine4, slug: "funcion-de-clausura", titulo: "Función de clausura", dias: 12, hora: "19:00", lugar_id: L.paz, creadoHace: 2, autor: ANA, visible: false, evento_padre_id: E.cine, borrador: true }),
   // OL-320: un taller con horario por día (tres sesiones, cada una con su hora): la agenda lo pone en los tres días. Empieza con su primera sesión y termina con la última.
-  // OL-322: es un taller (`clase`), así cada día dice «Sesión n de 3».
-  { ...evento({ id: E.tallerLinoleo, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, clase: "taller", descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
+  // OL-322: es un taller (`clase`), así cada día dice «Sesión n de 3». OL-375: con su cartel y sus colores (los del laboratorio de exploración
+  // sonora, olivo: la banda clara con tinta negra).
+  { ...evento({ id: E.tallerLinoleo, colores: ["#060605", "#3e3f23", "#181817", "#181817"], imagen: imagenes.eventos["9-festival-de-cine-uaslp-cafe-chairel"] ?? null, slug: "taller-de-grabado-en-linoleo", titulo: "Taller de grabado en linóleo", dias: 2, hora: "17:00", lugar_id: L.ache, precio: "$300", creadoHace: 3, clase: "taller", descripcion: "Tres sesiones para tallar, entintar y estampar tu primera plancha. Trae ropa que se pueda manchar." }), fin: iso(fecha(6, "19:00")), termina: iso(fecha(6, "19:00")) },
   // OL-370: para ver en «Festivales y expos» los sellos de un rango que ya empezó y cruza de mes («→ 23», «→ 8») y la línea «Hasta el…» del festival
   // en curso. El festival, del día 27 del mes pasado (más o menos) a la medianoche que cierra el 23 del que viene; la exposición, del 21 del mes
   // pasado al 8 del que viene (el MUNI tiene horario). Sin actos ni asistencias: no salen en otros carriles ni cambian los «van».
-  { ...evento({ id: E.kowai, slug: "kowaifest", titulo: "KOWAIFEST: festival de cultura japonesa", dias: primeroDelMes - 4, hora: "18:00", lugar_id: L.ccub, creadoHace: 12, clase: "festival" }), fin: iso(fecha(primeroDelMesQueViene + 23, "00:00")), termina: iso(fecha(primeroDelMesQueViene + 23, "00:00")) },
-  { ...evento({ id: E.mundo, slug: "un-mundo-para-mi", titulo: "Un mundo para mí", dias: primeroDelMes - 10, hora: "00:00", lugar_id: L.muni, creadoHace: 14, clase: "exposicion", descripcion: "Ilustración y gráfica de artistas potosinas." }), fin: iso(fecha(primeroDelMesQueViene + 7, "23:59")), termina: iso(fecha(primeroDelMesQueViene + 7, "23:59")) },
+  // OL-375: el festival con los colores de su cartel (los de KOWAIFEST) y la exposición con los de una mostaza («Una vez más»: la banda clara).
+  { ...evento({ id: E.kowai, colores: ["#18070a", "#721323", "#194541", "#232121"], slug: "kowaifest", titulo: "KOWAIFEST: festival de cultura japonesa", dias: primeroDelMes - 4, hora: "18:00", lugar_id: L.ccub, creadoHace: 12, clase: "festival" }), fin: iso(fecha(primeroDelMesQueViene + 23, "00:00")), termina: iso(fecha(primeroDelMesQueViene + 23, "00:00")) },
+  { ...evento({ id: E.mundo, colores: ["#312d08", "#e3cb00", "#d52713", "#a09f9f"], slug: "un-mundo-para-mi", titulo: "Un mundo para mí", dias: primeroDelMes - 10, hora: "00:00", lugar_id: L.muni, creadoHace: 14, clase: "exposicion", descripcion: "Ilustración y gráfica de artistas potosinas." }), fin: iso(fecha(primeroDelMesQueViene + 7, "23:59")), termina: iso(fecha(primeroDelMesQueViene + 7, "23:59")) },
+  // OL-375: sin cartel (la foto del MUNI); cierra entre «Un mundo para mí» y KOWAIFEST, así en «Festivales y expos» va justo después de la mostaza.
+  { ...evento({ id: E.reflejo, slug: "reflejo-atemporal-pintura-y-grafica", titulo: "Reflejo atemporal: pintura y gráfica", dias: -6, hora: "00:00", lugar_id: L.muni, creadoHace: 20, imagen: null, clase: "exposicion", descripcion: "Pintura y gráfica de Bernardo Cid." }), fin: iso(fecha(primeroDelMesQueViene + 14, "23:59")), termina: iso(fecha(primeroDelMesQueViene + 14, "23:59")) },
 ];
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];

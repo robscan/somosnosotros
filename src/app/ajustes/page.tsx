@@ -17,6 +17,7 @@ import { borrarMiCuenta } from "@/app/perfil/acciones";
 import { contarPendientes } from "@/app/admin/consultas";
 import AvisoSalidaAjuste from "./AvisoSalidaAjuste";
 import BotonSalir from "./BotonSalir";
+import GiroPortadasAjuste from "./GiroPortadasAjuste";
 import InstalarApp from "./InstalarApp";
 import RenglonLecturas from "./RenglonLecturas";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -109,6 +110,8 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
             </li>
           )}
           <AvisoSalidaAjuste />
+          {/* OL-375: el giro de las portadas de Inicio, otra preferencia que vive en el teléfono; solo donde hay giroscopio. */}
+          <GiroPortadasAjuste />
           <li>
             <Link href="/ayuda" className={renglon.ajuste}>
               <IconoAyuda width={20} height={20} />

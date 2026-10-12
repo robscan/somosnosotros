@@ -1,0 +1,107 @@
+/* La portada del sistema (OL-375; prototipo firmado `docs/rediseno/prototipos/portadas-sistema.html`, «Firmada»; bitácora 405), en el sitio del
+   cartel de la tarjeta de evento de Inicio (`TarjetaEvento.module.css`, área `portada`). Una rejilla plana con áreas: arriba el símbolo SN (P7) y
+   el sello de fecha, en medio el campo de las figuras y abajo la zona del título, una fila por pieza (el chip solo en su renglón, la ceja y el
+   título), sin caja que las envuelva: sus márgenes son el relleno de la zona del prototipo (12 a los lados y abajo; arriba 12, u 8 en la mediana).
+   El dibujo (`.figura`) ocupa toda la portada y va debajo de todo; lo de después en el código se pinta encima, sin z-index. El color plano
+   (`--base`) y la tinta del texto (`--tinta`, crema u oscuro según la banda) los pone la tarjeta: son los del sistema de portadas
+   (`lib/portadasSistema`). */
+.portada {
+  --zona-arriba: var(--espacio-3);
+  --antes-del-titulo: 3px;
+  grid-area: portada;
+  position: relative; /* la zona y el sello se miden desde aquí (`offsetTop`), como en el prototipo */
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "simbolo fecha"
+    "campo campo"
+    "chip chip"
+    "ceja ceja"
+    "titulo titulo";
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  align-items: start;
+  /* 4:5 mientras la zona del título quepa; si no cabe (el chip, una ceja larga y el título en dos líneas en la mediana, o la letra grande del
+     teléfono, OL-373), la portada crece en vez de cortar el texto. */
+  min-height: var(--foto);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--radio);
+  background: var(--base);
+  color: var(--tinta);
+}
+.mediana {
+  --zona-arriba: var(--espacio-2);
+}
+/* El dibujo cubre la portada. Su 100 × 125 va arriba, al ancho de la portada (`xMidYMin meet`): en 4:5 la llena igual que el prototipo y, si la
+   portada creció, debajo sigue su color. */
+.figura {
+  grid-area: 1 / 1 / -1 / -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* P7: el símbolo SN arriba a la izquierda, donde lo tenía la tarjeta sin cartel de antes, en la tinta. */
+.simbolo {
+  grid-area: simbolo;
+  width: auto;
+  height: var(--espacio-5);
+  margin: var(--espacio-3) 0 0 var(--espacio-3);
+}
+/* El sello de fecha de siempre (`TarjetaEvento`), en su esquina de esta rejilla. */
+.portada > .fecha {
+  grid-area: fecha;
+}
+
+/* La zona del título: abajo, del color de la base y sin figuras detrás (el dibujo se recorta en su borde). El chip va solo en su renglón,
+   arriba de la ceja (founder, 11 de oct: «este va en otra línea arriba, no juntes»), y luego el título: 4 entre el chip y la ceja y 3 antes del
+   título, también sin chip ni ceja (en el prototipo, el renglón vacío y su espacio). La primera pieza lleva el relleno de arriba de la zona. */
+.chip,
+.ceja,
+.titulo {
+  margin-inline: var(--espacio-3);
+}
+.portada > :is(svg, .fecha) + :is(.chip, .ceja) {
+  margin-top: var(--zona-arriba);
+}
+.portada > :is(svg, .fecha) + .titulo {
+  margin-top: calc(var(--zona-arriba) + var(--antes-del-titulo));
+}
+/* Con la letra grande (OL-373) su texto parte renglón en vez de salirse de la tarjeta. */
+.chip {
+  grid-area: chip;
+  justify-self: start;
+  max-width: calc(100% - 2 * var(--espacio-3));
+  white-space: normal;
+}
+.chip + .ceja {
+  margin-top: var(--espacio-1);
+}
+/* La ceja en la tinta del título (la de la tarjeta sin cartel de antes, blanca al 72 %, no llegaba a 4,5:1). */
+.ceja {
+  grid-area: ceja;
+  justify-self: start;
+  min-width: 0;
+  font-size: var(--letra-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+:is(.chip, .ceja) + .titulo {
+  margin-top: var(--antes-del-titulo);
+}
+/* El título como oración, en dos líneas como mucho, cortado en palabra entera con «…» (`TarjetaEvento`, `cortarEnPalabra`). */
+.titulo {
+  grid-area: titulo;
+  max-height: calc(2em * 1.06);
+  overflow: hidden;
+  margin-bottom: var(--espacio-3);
+  font-size: var(--letra-xl);
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.06;
+  overflow-wrap: normal;
+}
+.mediana > .titulo {
+  font-size: var(--letra-md);
+}

@@ -6,7 +6,7 @@ import type { EventoAgenda } from "./agenda";
 import { type Destacado } from "./destacados";
 import { horarioEfectivo } from "./claseEvento";
 import { cargarActosDeMarcos } from "./cargarSedes";
-import { portadaDeFestival, sedesDeFestival, sedesParaLista } from "./sedesFestival";
+import { actoDePortada, sedesDeFestival, sedesParaLista } from "./sedesFestival";
 import { filtroSinPasar } from "./fechas";
 import { franjaDeFila, type Franja } from "./horarioLugar";
 import { sesionesVigentes, type SesionGuardada } from "./sesionesEvento";
@@ -14,7 +14,7 @@ import { clienteServidor } from "./supabase/servidor";
 
 const TOPE_AGENDA = 300;
 
-type Fila = Omit<EventoAgenda, "lugar" | "van" | "sesiones" | "horario" | "programa" | "sedes" | "portadaActo"> & {
+type Fila = Omit<EventoAgenda, "lugar" | "van" | "sesiones" | "horario" | "programa" | "sedes" | "portadaActo" | "coloresActo"> & {
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
   /** Su horario por día, como lo trae la misma consulta del evento (`sesiones:eventos_sesiones`); [] si no lo tiene. */
   sesiones?: SesionGuardada[] | null;
@@ -118,12 +118,13 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
     // El horario que vale de una exposición (el suyo o el de su lugar; vacío, «Horario por confirmar»); sin poder leerlo, nada (no se inventa).
     const horario = fila.clase === "exposicion" && hp !== null && hl !== null ? horarioEfectivo(porEvento.get(fila.id), fila.lugar_id ? porLugar.get(fila.lugar_id) : null).franjas : undefined;
     // Un festival: cuántos actos tiene publicados y sus sedes, derivadas de ellos (sin actos con sitio, dice lo capturado en el marco); sin imagen
-    // propia, el cartel de su próximo acto (OL-346).
+    // propia, el cartel de su próximo acto (OL-346) y sus colores (OL-375: el color de su portada del sistema).
     const suyos = fila.clase === "festival" ? actos?.get(fila.id) : undefined;
     const programa = suyos ? { registrados: suyos.length } : undefined;
     const sedes = suyos ? sedesDeFestival(suyos) : [];
-    const portadaActo = suyos && !fila.imagen ? portadaDeFestival(suyos, ahora) : null;
-    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), ...(horario ? { horario } : {}), ...(programa ? { programa } : {}), ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...(portadaActo ? { portadaActo } : {}), van: a === null ? null : (van.get(fila.id) ?? 0) });
+    const acto = suyos && !fila.imagen ? actoDePortada(suyos, ahora) : null;
+    const portada = acto?.imagen ? { portadaActo: acto.imagen, coloresActo: acto.colores_cartel ?? null } : {};
+    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), ...(horario ? { horario } : {}), ...(programa ? { programa } : {}), ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...portada, van: a === null ? null : (van.get(fila.id) ?? 0) });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
   return { eventos, seguidos, eventosSeguidos, artistasSeguidos: usuarioId ? artistasSeguidos : null, asistencias, destacados: destacados ?? [] };

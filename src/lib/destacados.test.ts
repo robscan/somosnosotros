@@ -63,6 +63,14 @@ describe("tarjetas", () => {
     expect(tarjetaEvento(evento({ colores_cartel: colores, lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).colores).toBeNull();
     expect(tarjetaEvento(evento({ imagen: "/c.jpg", colores_cartel: ["#fff"] }), AHORA).colores).toBeNull();
   });
+  it("festival sin cartel propio: enseña el cartel de su próximo acto y lleva sus colores (OL-375, el color de su portada del sistema)", () => {
+    const delActo = ["#280a09", "#c61b17", "#3c3c93", "#575456"];
+    const cinema = evento({ titulo: "CINEMA: XV Festival de Cine México-Alemania", clase: "festival", imagen: null, portadaActo: "/chatbot.jpg", coloresActo: delActo, colores_cartel: null });
+    expect(tarjetaEvento(cinema, AHORA)).toMatchObject({ foto: "/chatbot.jpg", colores: delActo });
+    // Con cartel propio, los suyos (aunque llegaran los de un acto); sin colores calculados del acto, ninguno.
+    expect(tarjetaEvento({ ...cinema, imagen: "/cinema.jpg", colores_cartel: ["#111111", "#222222", "#333333", "#444444"] }, AHORA).colores).toEqual(["#111111", "#222222", "#333333", "#444444"]);
+    expect(tarjetaEvento({ ...cinema, coloresActo: null }, AHORA).colores).toBeNull();
+  });
   it("evento: el sitio va sin su dirección postal, como en las listas (H-09)", () => {
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Templo de San Francisco", sitio_direccion: "Calle Jardín Guerrero 7, 78000" }), AHORA).sitio).toBe("Templo de San Francisco");
   });
