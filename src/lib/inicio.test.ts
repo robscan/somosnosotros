@@ -262,6 +262,15 @@ describe("Inicio: carril Nuevos eventos (publicado hace ≤7 días Y empieza des
     const dos = [...uno, evento("b", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(2) })];
     expect(carrilNuevos(dos, new Set(), ahora)).toEqual([]);
   });
+  it("el mínimo de 3 cuenta tarjetas (OL-385): tres funciones de lo mismo y una más son dos tarjetas y no se pinta", () => {
+    const funcion = (id: string, horas: number) => eventoAgenda(id, { titulo: "El Sótano", sitio_texto: "Foro Café", creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(horas), fin: null });
+    const otro = eventoAgenda("otro", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(9), fin: null });
+    const vistos = new Set<string>();
+    expect(carrilNuevos([funcion("s1", 1), funcion("s2", 2), funcion("s3", 3), otro], vistos, ahora)).toEqual([]);
+    expect(vistos.size).toBe(0);
+    const masUno = eventoAgenda("mas-uno", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(10), fin: null });
+    expect(carrilNuevos([funcion("s1", 1), funcion("s2", 2), funcion("s3", 3), otro, masUno], vistos, ahora).map((e) => e.id)).toEqual(["s1", "s2", "s3", "otro", "mas-uno"]);
+  });
   it("un candidato descartado por no llegar al mínimo no toca el conjunto compartido", () => {
     const vistos = new Set(["ya-usado"]);
     const r = carrilNuevos([evento("ya-usado", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(1) }), evento("solo", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(2) })], vistos, ahora);

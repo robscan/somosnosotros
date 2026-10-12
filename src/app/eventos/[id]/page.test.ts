@@ -4,6 +4,7 @@ import Heroe from "@/components/ui/Heroe";
 import { Kpi } from "@/components/ui/Kpi";
 import BotonCalendario from "@/components/BotonCalendario";
 import BotonCompartir from "@/components/BotonCompartir";
+import EventosPorDia from "@/components/EventosPorDia";
 import Asistencia from "./Asistencia";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
@@ -33,7 +34,7 @@ function chain(resultado: unknown) {
   const promesa = Promise.resolve(resultado);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const objeto: any = {};
-  for (const metodo of ["select", "eq", "in", "or", "order", "limit", "not", "upsert"]) objeto[metodo] = () => objeto;
+  for (const metodo of ["select", "eq", "neq", "is", "ilike", "in", "or", "order", "limit", "not", "upsert"]) objeto[metodo] = () => objeto;
   objeto.maybeSingle = () => promesa;
   objeto.single = () => promesa;
   objeto.then = (resuelto: (v: unknown) => void, rechazado: (e: unknown) => void) => promesa.then(resuelto, rechazado);
@@ -570,5 +571,52 @@ describe("lo ligado que ya pasó no se enlaza (OL-380)", () => {
     expect(els.some((e) => e.props?.href === "/eventos/expo-cerrada")).toBe(false);
     const abierta = await abrir(acto, { ...cerrada, fin: "2099-02-01T05:59:00Z" });
     expect(abierta.some((e) => e.props?.href === "/eventos/expo-cerrada")).toBe(true);
+  });
+});
+
+describe("las otras funciones de lo mismo (OL-385)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  /** Un cliente cuya tabla `eventos` da la ficha a `maybeSingle` y los candidatos (mismo sitio) a la lista; anota los filtros de la lista. */
+  const abrir = async (evento: Record<string, unknown>, candidatos: Record<string, unknown>[]) => {
+    const filtros: string[] = [];
+    const cliente = {
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return chain({ data: tabla === "asistencias" ? [] : null });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c: any = chain({ data: candidatos });
+        for (const metodo of ["eq", "neq", "is", "ilike"]) c[metodo] = (...args: unknown[]) => (filtros.push(`${metodo}:${args.join("=")}`), c);
+        c.maybeSingle = () => Promise.resolve({ data: evento });
+        return c;
+      },
+      rpc: () => Promise.resolve({ data: null }),
+    };
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { default: FichaEvento } = await import("./page");
+    const elementos = [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+    return { elementos, filtros, heroe: elementos.find((e) => e.type === Heroe)!, seccion: elementos.find((e) => e.type === "section" && e.props["aria-label"] === "Otras funciones") };
+  };
+  const funcion = (id: string, inicio: string, cambios: Record<string, unknown> = {}) => ({ ...EVENTO, id, slug: id, titulo: "Las cosas extraordinarias", lugar_id: "teatro", sitio_texto: null, inicio, creado_en: "2098-12-01T00:00:00Z", clase: "puntual", evento_padre_id: null, ...cambios });
+  const segunda = funcion("ext-2", "2099-01-02T02:00:00Z");
+
+  it("con funciones hermanas: «Otras funciones» con una por renglón (mismo título y lugar, sin ella misma) y «Función 2 de 3» en la cabecera", async () => {
+    const candidatos = [funcion("ext-1", "2099-01-02T00:00:00Z"), segunda, funcion("ext-3", "2099-01-03T02:00:00Z", { titulo: "LAS COSAS EXTRAORDINARIAS" }), funcion("otra", "2099-01-03T02:00:00Z", { titulo: "Otra obra" })];
+    const { seccion, heroe, elementos, filtros } = await abrir(segunda, candidatos);
+    expect(seccion).toBeTruthy();
+    const lista = elementos.find((e) => e.type === EventosPorDia)!;
+    expect((lista.props.eventos as { id: string }[]).map((e) => e.id)).toEqual(["ext-1", "ext-3"]);
+    expect(lista.props.sinSitio).toBe(true);
+    expect(heroe.props.etiqueta).toBe("Función 2 de 3");
+    // Los candidatos son los del mismo lugar, visibles y sin ella misma (la comparación de títulos va en TypeScript).
+    expect(filtros).toEqual(expect.arrayContaining(["eq:lugar_id=teatro", "eq:visible=true", "neq:id=ext-2"]));
+  });
+  it("sin lugar, por el sitio escrito (sin importar mayúsculas, sin comodines) y en su ciudad", async () => {
+    const enForo = { ...segunda, lugar_id: null, sitio_texto: "Foro 100%_café" };
+    const { filtros } = await abrir(enForo, []);
+    expect(filtros).toEqual(expect.arrayContaining(["is:lugar_id=", "eq:ciudad=San Luis Potosí", "ilike:sitio_texto=Foro 100\\%\\_café"]));
+  });
+  it("sin funciones hermanas la ficha no cambia: ni el bloque ni la etiqueta", async () => {
+    const { seccion, heroe } = await abrir(segunda, [funcion("otra", "2099-01-03T02:00:00Z", { titulo: "Otra obra" })]);
+    expect(seccion).toBeUndefined();
+    expect(heroe.props.etiqueta).toBeUndefined();
   });
 });

@@ -1,0 +1,64 @@
+# 416 · Una tarjeta por serie en «Nuevos eventos» y las otras funciones en la ficha (OL-385)
+
+**Fecha:** 2026-10-12. **Rama:** `nuevos-por-serie`, base `origin/main` (`567f202e`). **Operador:** Claude (agente del gestor VI). **Sin migración.**
+**Estado:** lista para la revisión del gestor. Falta el «publica» del founder.
+
+## Lo que pidió el founder
+
+El 12 de octubre, al ver Inicio en su iPhone (lo relató la sesión de redes): en «Nuevos eventos» salían tres tarjetas con el mismo cartel y el mismo título, los actos del Foro Infantil Xantolo, que son parte del festival «Xantolo ¡Se vive en tu ciudad!»; como el festival no era nuevo, no se juntaban. Lo mismo con la cartelera de Cinema 7B. «No es claro para el usuario.» Aceptó dos reglas:
+
+1. En «Nuevos» y en la agenda, **una tarjeta por serie**: si un evento es parte de un festival, cuenta dentro de la tarjeta del festival aunque el festival no sea nuevo, y no se repite afuera.
+2. Si son **funciones de lo mismo** (mismo título, mismo lugar), una sola tarjeta con «6 funciones · desde vie 16», y dentro de la ficha se elige la función. «Voy» sigue siendo por función.
+
+## La regla, en palabras llanas
+
+- **Lo nuevo se cuenta por cosas, no por fechas.** Tres actos nuevos del mismo festival son una tarjeta, la del festival, con «3 actos nuevos». Seis funciones de la misma obra en el mismo teatro son una tarjeta, la de la función más próxima, con «6 funciones» y «desde vie 23 · 18:00».
+- **«Lo mismo» es mismo título y mismo sitio.** El título se compara sin acentos ni mayúsculas («El Sótano» y «El sótano» son lo mismo); el sitio es el lugar del directorio o, si no tiene, el nombre del sitio escrito, también sin acentos ni mayúsculas («Foro Café» y «foro cafe»). Sin sitio no se junta nada: el título solo no basta. Una exposición no tiene funciones.
+- **El festival sale en «Nuevos eventos» solo porque junta actos nuevos, nunca por ser nuevo él.** Es una excepción acotada a OL-347 («los festivales solo en su carril»): un festival recién publicado y sin actos nuevos sigue sin salir ahí.
+- **Mínimo y tope cuentan tarjetas.** El carril se pinta con tres tarjetas o más (antes, tres eventos): seis funciones de una obra y un concierto son dos tarjetas y el carril no se pinta. El tope de 20 también es de tarjetas, en el carril y en la pestaña.
+- **«Esta semana» y los demás carriles no cambian:** ahí cada función es un día y sale en el suyo.
+- **En la ficha de una función**, debajo de los botones y antes de «Dónde», el bloque **«Otras funciones»**: las demás del mismo título y sitio que no han pasado, por día, cada una con su hora, su «Voy» (o «Vas», o «Te interesa» si ya decidió) y su ficha. En la cabecera, «Función 2 de 6». Sin otras funciones, la ficha no cambia.
+
+## Qué cambió
+
+- **`src/lib/series.ts` (nuevo).** `agruparSeries(eventos, marcos?)` da las piezas en orden (cada una donde va el primero de los suyos): `festival` (el marco, buscado entre todo lo cargado aunque no sea nuevo, con sus `actos` y `nuevos: N`), `serie` (la `cabeza`, la más próxima; `funciones: N`, `desde`, `hasta`) o `suelto`. Por dentro, `grupoDe(e, marcos)` da la llave de cada evento (`festival:<id>`, `serie:<sitio>|<título>` o nada) y `juntarPiezas(lista, grupo, marcoDe)` junta: es genérica para que el teléfono junte tarjetas con la misma regla. También `otrasFunciones` y `textoFuncion` para la ficha, y los textos («3 actos nuevos», «6 funciones», «desde vie 23 · 18:00»).
+  - Se separó de la firma pedida (`agruparSeries(eventos, ahora)`): no necesita el reloj (la lista ya viene sin lo que pasó y por eso la primera por hora es la más próxima) y sí los festivales cargados. Lo dice su comentario.
+- **`plegarActos` se retira** (`agendaPorClase.ts`): lo que hacía (el acto de un festival nuevo se pliega en su marco) es el caso «marco en la lista» de `agruparSeries`. Su prueba pasó a `agruparSeries`.
+- **Inicio, «Nuevos eventos».** `carrilNuevos` junta los candidatos en piezas, pide tres piezas y corta a 20 piezas, y devuelve los eventos de esas piezas (solo esos quedan vistos). `CarrilAgenda` manda cada tarjeta con su llave (`grupo`) y, aparte, la tarjeta de cada festival con actos nuevos. `CarrilNuevos`, en el teléfono, quita lo que esa persona ya vio, junta (`juntarPiezas`), aplica el mínimo y el tope por piezas y pinta cada una con `tarjetaDePieza` (`tarjetaInicio.ts`):
+  - **festival:** su tarjeta tal cual (portada del sistema, su sello de rango, su enlace a la ficha del festival) con **«3 actos nuevos» en la ceja**, junto a «Festival». Se eligió la ceja porque ahí la tarjeta ya dice cuál de varios es («Sesión 1 de 4») y la línea de cuándo, de una sola línea, ya la llena el rango del festival en la mediana («Del 28 de oct al 2 de nov»): se cortaría. En la mediana la ceja ocupa dos renglones («FESTIVAL ·» / «3 ACTOS NUEVOS», como ya se previó para el taller) y la figura se achica un poco (captura 02).
+  - **serie:** la tarjeta de la función más próxima, con **«6 funciones» en la ceja**, su cuándo **«desde vie 23 · 18:00»** (sin el mes: lo dice el sello, y así no se corta; con el mes se cortaba en «20:…», primera captura de prueba) y el **sello del primer día al último** («oct 23–25»; dos funciones el mismo día, ese día). Lleva a la ficha de esa función.
+  - La tarjeta firmada de OL-382 no cambia: mismos tamaños y mismo orden de líneas; solo cambia lo que dicen la ceja, el cuándo y el sello.
+- **La pestaña Nuevos de la agenda.** `listarNuevos` da las piezas (con los mismos filtros de Todos y el festival buscado entre todo lo cargado); `listarAgenda` en Nuevos da la cabeza de cada pieza, así el botón «Ver N eventos» cuenta lo que se ve. `agruparPiezasPorPublicacion` agrupa por el más reciente de cada pieza (un festival viejo con actos de ayer va en «Publicado ayer»). `AgendaNuevos` pinta: la serie con «6 funciones · desde vie 23 de oct · 18:00» en su cuándo y sin «Voy» (es por función); el festival con «3 actos nuevos» tras su rango; lo suelto como siempre.
+- **La ficha** (`src/app/eventos/[id]/page.tsx`). `cargarOtrasFunciones`: los eventos visibles y sin pasar del mismo `lugar_id` (o, sin lugar, de la misma ciudad y el mismo `sitio_texto` con `ilike`, sin comodines), sin ella misma, hasta 100; en TypeScript, los del mismo título normalizado (`otrasFunciones`). Se carga en paralelo con lo ligado. El bloque «Otras funciones» reutiliza `EventosPorDia` (el de «Programa» del festival) con `sinSitio` y las decisiones de quien mira; «Función 2 de 6» va en la etiqueta del héroe, junto a la clase, solo si la ficha no está en pasado. Ni un festival ni una exposición consultan nada.
+
+## Pruebas
+
+- `src/lib/series.test.ts` (nuevo, 13): Xantolo (tres actos en la tarjeta del festival viejo; sin el festival cargado, sueltos), «Las cosas extraordinarias» (seis funciones en tres días, dos por día: una pieza, la cabeza la más próxima, desde y hasta), «El Sótano» (dos el mismo día en un sitio escrito con y sin acento; sin sitio no se juntan), Tour de Cine Francés (festival nuevo con sus películas, lo de `plegarActos`) y la cartelera de Cinema 7B (serie), uno mixto (el orden de las piezas, la misma obra en otro teatro, exposiciones con el mismo título, un acto sin su festival), la llave para el teléfono, la tarjeta de cada pieza (ceja, cuándo, sello, enlace), los carriles y la pestaña contando piezas, y `otrasFunciones`/`textoFuncion`.
+- `inicio.test.ts`: el mínimo de tres cuenta tarjetas. `agenda.test.ts`: 25 funciones de lo mismo son un renglón en Nuevos y 25 en Todos. `agendaPorClase.test.ts`: la prueba de `plegarActos` pasa a `agruparSeries`, y la de OL-347 («los actos salen en Nuevos») lleva una pieza más para llegar al mínimo, con el caso de dos piezas que no se pinta.
+- `src/app/eventos/[id]/page.test.ts`: «Otras funciones» con sus renglones y «Función 2 de 3»; los filtros de la consulta (lugar, visible, sin ella; sin lugar, ciudad y sitio escrito con los comodines escapados); sin hermanas, ni bloque ni etiqueta. Al encadenado de prueba se le añadieron `neq`, `is` e `ilike`.
+- `npm run lint` (0 errores; el aviso de siempre en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (3643), `npm run inventario` (sin novedades), `npm run build` y `npm run medir` (sin novedades). **El presupuesto de Inicio no cambia** (`s01-inicio-sesion` 368, `01-inicio` 363; el respaldo de `medir` no tiene series). `medir` avisa que `s24-ficha-exposicion` **bajó** de 86 a 84 nodos: no es de esta pieza (la exposición no consulta funciones); viene de OL-380, que dejó de enlazar la inauguración pasada. No se aceptó aquí: lo decide el gestor (`npm run medir -- --aceptar`).
+
+## Capturas (`docs/rediseno/capturas-416/`)
+
+La app compilada contra una copia del respaldo local (`scripts/ops/auditoria-ui/respaldo-local`, en el scratchpad) con datos inventados de más: el festival «Xantolo ¡Se vive en tu ciudad!» publicado hace 20 días con tres actos «Foro Infantil Xantolo» publicados ayer; seis funciones de «Las cosas extraordinarias» en el Teatro de la Paz (vie 23 a dom 25, 18:00 y 20:00) y un suelto, «Guitarra en el otoño». Reloj fijo el lun 12 de oct a las 10:00, la sesión inventada de Ana, Chrome de la Mac con playwright-core a 390×844 (2×). Sin `.env.local`: las variables del respaldo se pasan al compilar y al arrancar. **Ni una lectura a producción:** los carteles se contestan en el navegador (`/_next/image` interceptado) con los archivos del prototipo `inicio-tarjetas/`; por eso algunas fotos no son de su evento (el renglón de Xantolo lleva un cartel de cactáceas). Para la ficha, Ana ya dijo «Voy» a la primera función (en Inicio no, porque lo que está en «Tus planes» no sale en los demás carriles y la serie diría «5 funciones»). Abiertas una por una.
+
+- `01-inicio-nuevos-serie-y-suelto.png` — «Nuevos eventos»: la serie con su cartel, el sello «oct 23–25», la ceja «6 FUNCIONES», el título y «desde vie 23 · 18:00» entero en violeta; a su lado «Guitarra en el otoño», suelta, como siempre.
+- `02-inicio-nuevos-festival-3-actos.png` — el carril desplazado: la tarjeta del festival Xantolo con su portada del sistema, el sello «oct 28 →», la ceja «FESTIVAL · / 3 ACTOS NUEVOS» en dos renglones y el título en dos; debajo «Del 28 de oct al 2 de nov» y su sede. Luego OCA, suelta. Ningún «Foro Infantil Xantolo» afuera.
+- `03-agenda-nuevos-serie-y-festival.png` — la pestaña Nuevos: «Publicado ayer · 5» con «Las cosas extraordinarias» («6 funciones · desde vie 23 de oct · 18:00 · $…», sin botón de «Voy») y, al final del grupo, «Xantolo ¡Se vive en tu ciudad!» con «Del 28 de oct al 2 de nov · 3 actos nuevos».
+- `04-agenda-nuevos-festival-abajo.png` — lo mismo un poco más abajo: el renglón del festival entero y el grupo «Esta semana» después, sin cambios.
+- `05-ficha-funcion-2-de-6.png` — la ficha de la segunda función: «FUNCIÓN 2 DE 6» en la etiqueta del héroe, sus números (20:00 · vie 23 oct, $200, Van 0), los botones y «Otras funciones» empezando: «vie 23 de oct», la de las 18:00 con «Vas» (el círculo verde) y su precio.
+- `06-ficha-otras-funciones.png` — el bloque entero: vie 23 (18:00, Vas), sáb 24 (18:00 y 20:00), dom 25 (18:00 y 20:00), cada una con su «Voy», y luego «Dónde».
+
+## Por confirmar con el founder
+
+1. **Un solo acto nuevo de un festival también va en la tarjeta del festival** («Festival · 1 acto nuevo»), por la regla 1 («cuenta dentro de la tarjeta del festival»). Si prefiere que un acto solo salga como él mismo, es una línea en `juntarPiezas`.
+2. **«3 actos nuevos» en la ceja**, no en la línea de cuándo (ver arriba por qué). En la mediana la ceja ocupa dos renglones y la figura de la portada se achica.
+3. **La serie de Inicio dice el día sin el mes** («desde vie 23 · 18:00»): el mes está en el sello. La agenda, que no tiene sello, lo dice entero.
+4. **Lo que está en «Tus planes» no cuenta en la serie de «Nuevos eventos».** Si ya vas a una función, las otras se juntan sin ella («5 funciones»): la regla de siempre de no repetir lo que ya está en «Tus planes».
+5. **«Función 2 de 6» cuenta solo las que no han pasado** (las que ya pasaron no se cargan); en una ficha en pasado no se dice.
+6. **En la ficha se juntan también los actos de un festival** con el mismo título y sitio (los tres «Foro Infantil Xantolo» se enseñan entre sí en «Otras funciones»), aunque también salgan en el «Programa» del festival. En las listas no, porque ahí van dentro del festival.
+7. **El renglón de una serie en la agenda no lleva «Voy»** ni el chip de lo que decidió: «Voy» es por función y se elige en su ficha.
+
+## Lo que no entra aquí
+
+Dos funciones el mismo día siguen siendo dos eventos (no caben en `eventos_sesiones`): solo esta agrupación las junta en pantalla. Sin migración: la comparación de títulos va en TypeScript sobre los candidatos del mismo sitio. No se tocó «Esta semana», «Más adelante», «Destacados» ni «Festivales y expos».

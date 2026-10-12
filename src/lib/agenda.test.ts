@@ -294,6 +294,14 @@ describe("Nuevos: lo publicado desde la última visita (docs/rediseno/23)", () =
       expect(listarAgenda(lista, { ...SIN_FILTROS, cuanto: ["gratis"] }, tope)).toHaveLength(LIMITE_NUEVOS);
       expect(listarAgenda(lista, SIN_FILTROS)).toHaveLength(25);
     });
+    it("una pieza por serie (OL-385): el tope y el número del botón cuentan piezas; 25 funciones de lo mismo son un renglón", () => {
+      const funciones = Array.from({ length: 25 }, (_, i) => evento({ id: `f${i}`, titulo: "Las cosas extraordinarias", lugar_id: "teatro", inicio: new Date(Date.parse("2026-09-19T01:00:00Z") + i * 86400000).toISOString(), creado_en: new Date(HOY.getTime() - (i + 1) * 3600000).toISOString() }));
+      const lista = { eventos: [...funciones, evento({ id: "suelto", inicio: "2026-09-20T01:00:00Z", creado_en: HOY.toISOString() })], seguidos: null, eventosSeguidos: [] };
+      expect(listarAgenda(lista, SIN_FILTROS, tope).map((e) => e.id)).toEqual(["suelto", "f0"]);
+      expect(contarAgenda(lista, SIN_FILTROS, "2026-09-17", tope).renglones).toBe(2);
+      // En Todos cada función es su renglón: ahí cada una es un día.
+      expect(listarAgenda(lista, SIN_FILTROS)).toHaveLength(26);
+    });
     it("con un día elegido, la pestaña trae solo lo nuevo de ese día: lo que dice el botón «Ver N eventos»", () => {
       expect(de({}, new Date("2026-09-17T00:00:00Z").getTime())).toEqual(["suyo", "hoy-pronto"]);
       expect(de({ cuando: { desde: "2026-10-08", hasta: "2026-10-08" } }, new Date("2026-09-17T00:00:00Z").getTime())).toEqual(["suyo"]);
