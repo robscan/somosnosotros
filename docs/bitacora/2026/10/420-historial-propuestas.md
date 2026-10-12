@@ -1,7 +1,7 @@
 # 420 · Prototipo: historial de artistas y lugares, pieza 1 (OL-389)
 
 **Fecha:** 2026-10-12 (tarde). **Rama:** `historial-propuestas`, desde `origin/main` (`d5cc52cc`). **Gestor:** Claude Fable 5.1 (Gestor de cambios VI). **Sin código de la app, sin migración.**
-**Estado:** página armada y publicada en privado para los comentarios del founder; esperando la firma.
+**Estado:** firmada por el founder el 12 de oct a las 15:50 («te firmo la propuesta tal como la hiciste»): H1 plegado · H2 propio · H3 por mes · H4 · H5 · K1 todos · Q1 fotos. Pasa a código como OL-390 (bitácora 421). La regla «realizado salvo "se canceló"» sigue sin respuesta en palabras; no detiene la pieza 1 (hoy todo lo pasado cuenta) y se resuelve en la pieza 2.
 
 ## El encargo
 

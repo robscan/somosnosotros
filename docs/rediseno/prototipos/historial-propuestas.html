@@ -517,6 +517,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .fc .chips button small { margin-left: 4px; color: var(--texto-suave); font-weight: 600; }
 .fc .sub-gente { margin: 0; color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
 .fc .relleno { flex: 1 0 32px; }
+.preajustes.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 </style>
 
 <main class="escena" id="escena">
@@ -540,10 +541,9 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     </header>
     <div class="hoja-cuerpo" id="hoja-cuerpo">
       <div class="resumen">
-        <div class="preajustes tres" role="group" aria-label="Preajustes">
+        <div class="preajustes dos" role="group" aria-label="Preajustes">
           <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción</small></button>
-          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
-          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>por firmar</small></button>
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 oct, 15:50</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <label class="selector-ficha"><span>Ficha</span><select id="ficha" aria-label="Qué ficha se ve en los teléfonos"></select></label>
@@ -569,7 +569,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       <section class="bloque" aria-labelledby="t-regla">
         <h2 id="t-regla">La regla que falta firmar</h2>
         <ul class="notas">
-          <li><b>Realizado salvo «se canceló».</b> Un evento que ya pasó cuenta como realizado y entra al historial de su artista y de su lugar. Quien gestiona el evento (o la administración) puede marcarlo «se canceló» de un toque desde su ficha en pasado: se queda en la lista, dice «Se canceló» y no cuenta. Nadie tiene que confirmar nada para que lo normal (que sí ocurrió) aparezca. Pruébalo con C1.</li>
+          <li><b>Realizado salvo «se canceló»</b> (pendiente de respuesta; no detiene la pieza 1). Un evento que ya pasó cuenta como realizado y entra al historial de su artista y de su lugar. Quien gestiona el evento (o la administración) puede marcarlo «se canceló» de un toque desde su ficha en pasado: se queda en la lista, dice «Se canceló» y no cuenta. Nadie tiene que confirmar nada para que lo normal (que sí ocurrió) aparezca. Pruébalo con C1.</li>
           <li><b>Sin tablas nuevas.</b> Todo lo de esta pieza sale de los eventos que ya existen y de sus artistas y lugares. Lo único nuevo en la base sería la marca «se canceló» (pieza 2) y el «Ya fui» de las expos (Y1, firmado el 12 de oct), que son un campo cada uno.</li>
         </ul>
       </section>
@@ -628,12 +628,13 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   const PRESETS = {
     hoy: { nombre: 'Hoy', e: { ...HOY } },
     propuesta: { nombre: 'Propuesta', e: { ...PROPUESTA } },
-    firmada: { nombre: 'Firmada', e: { ...PROPUESTA }, pendiente: true },
+    // Firma del founder (12 de oct, 15:50): «te firmo la propuesta tal como la hiciste».
+    firmada: { nombre: 'Firmada', e: { ...PROPUESTA } },
   };
   const PORQUE = {
     hoy: 'Producción el 12 de oct: la ficha del artista enseña solo sus fechas próximas (Leo Traeger tocó tres veces en octubre y su ficha dice «Aún no tiene fechas publicadas»); la del lugar, solo sus próximos eventos. «Lugares» cuenta los lugares de las fechas próximas, así que vale 0 aunque se haya presentado en dos. Lo pasado existe en la base y en la ficha del evento (OL-383), pero ninguna ficha de artista o de lugar lo enlaza.',
     propuesta: 'Por qué: lo que ya pasó va en su propia sección, plegada al abrir la ficha, igual que el «Ya pasó» del festival que firmaste el 12 (H1): lo próximo manda y lo pasado está a un toque, sin alargar la ficha. Se llama «Trayectoria» en el artista e «Historial» en el lugar (H2), porque «Ya pasó» en la ficha de una persona suena a otra cosa. Agrupado por mes (H3): hoy todo es de septiembre y octubre, pero en un año serán meses y después años, y el mes ya dice el año. Cada renglón abre la ficha del evento en pasado, en gris y con su fecha completa, como pediste: se ve quién fue sin parecer activo. «Fueron» solo cuando alguien dijo «Voy» (H4) y con quién tocó o quién pasó por el lugar (H5), que es lo que vuelve útil un historial y ya está en los datos. «Lugares» cuenta todos los lugares donde se ha presentado, pasados y por venir (K1), y lleva a la trayectoria si no hay fechas próximas. La fila de fotos «Han pasado por aquí» (Q1) es la cara del lugar; en el artista, «Se ha presentado en». Nada de esto pide tablas nuevas.',
-    firmada: 'Todavía no hay firma: hasta que firmes, «Firmada» es la propuesta del gestor. Cuando firmes una combinación («Propuesta · H1 abierto»), se guarda aquí.',
+    firmada: 'Firmada el 12 de oct a las 15:50, tal como la propuesta: lo pasado plegado bajo lo próximo (H1), «Trayectoria» en el artista e «Historial» en el lugar (H2), por mes (H3), con cuántos fueron (H4) y con quién o quiénes (H5), «Lugares» contando todos (K1) y la fila de fotos «Han pasado por aquí» / «Se ha presentado en» (Q1). Pasa a código como OL-390.',
   };
   const EJERCICIOS = [
     { k: 'h1', t: 'H1 · Dónde va lo que ya pasó', d: 'Hoy no está. Plegado: una sección propia debajo de las fechas próximas, cerrada al abrir la ficha («Trayectoria · 3 fechas»), como el «Ya pasó» del festival. Abierto: la misma sección ya abierta, con los seis más recientes y «Ver todas». Pestañas: dentro de la sección de fechas, «Próximas» y «Pasadas».', opciones: [['hoy', 'No está (hoy)'], ['plegado', 'Plegado'], ['abierto', 'Abierto'], ['pestanas', 'Pestañas']], f: 'Founder (12 de oct, sobre el festival): «lo pasado se queda, pero separado y sin enlaces rotos»; y después: «Pon enlace a objetos del pasado para que se vea quién fue, pero claramente que sean pasados y no se perciban activos».' },
@@ -647,7 +648,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   ];
   const vista = (e) => ({ ...e, h2: e.h1 === 'hoy' ? 'ya-paso' : e.h2 });
   const igual = (a, b) => CLAVES.every((k) => a[k] === b[k]);
-  const presetDe = (e) => (igual(PRESETS.hoy.e, e) ? 'hoy' : igual(PRESETS.propuesta.e, e) ? 'propuesta' : null);
+  const presetDe = (e) => (igual(PRESETS.hoy.e, e) ? 'hoy' : igual(PRESETS.firmada.e, e) ? 'firmada' : null);
   const NOMBRE_OPCION = { h1: { hoy: '', plegado: 'H1 plegado', abierto: 'H1 abierto', pestanas: 'H1 pestañas' }, h2: { 'ya-paso': '', propio: 'H2 propio', antes: 'H2 antes' }, h3: { dia: '', mes: 'H3 por mes', plano: 'H3 plano' }, k1: { hoy: '', todos: 'K1 todos', pasadas: 'K1 pasadas' }, q1: { no: '', avatares: 'Q1 fotos', nombres: 'Q1 chips' } };
   const listaDe = (e) => {
     const l = [];
@@ -949,11 +950,11 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
       input.disabled = !!apagado;
     }
     const p = presetDe(estado.e);
-    const nombreP = p === 'propuesta' ? 'propuesta' : p;
+    const nombreP = p;
     for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === nombreP));
     const activos = listaDe(estado.e);
     const nombre = p ? PRESETS[p].nombre : 'Personalizada';
-    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado (producción)'}${p === 'propuesta' ? ' · por firmar' : ''}`;
+    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado (producción)'}`;
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta» y con «Hoy».';
     $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}`;
     $('fab-combinacion').textContent = `· ${p ? nombre : 'personalizada'}`;
