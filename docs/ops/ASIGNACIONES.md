@@ -1462,3 +1462,33 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 - **Contraste de la tarjeta sin cartel (E10):** el título blanco cae sobre el brillo claro de abajo a la izquierda, con un peor punto de 2,3 a 3,5:1 en las seis paletas propias. Propuesta del gestor: una sombra en la base (`rgba(0,0,0,.4)` a transparente al 60 %), que lo sube a 5,3 a 7,2:1. El founder publicó sin ella; falta saber si va aparte.
 - **Prueba local inestable:** `CampoLargo`, «el teclado ya estaba abierto…», falla en la Mac también sobre main porque lee la capa sin esperar a que se acomode. En la CI pasa.
 - **Estado:** main `e8c93309`, Production desplegada, cero PR, nada en curso. Pendientes del founder: la sombra de E10; el orden de los hallazgos de Codex; pruebas en iPhone de las tarjetas; historial de artistas/lugares. **Siguientes libres: OL-373 y bitácora 404.**
+
+**Jornada del gestor V, 2026-10-11:**
+
+- **#481 · OL-373 · La letra sigue al tamaño del teléfono** (agente Opus, bitácora 404, 40 capturas).
+  - **Reporte del founder:** «algunas personas de más de 45 años señalaron que el texto podría ser más grande […] al tratar de modificar el tamaño desde configuración/accesibilidad en un iPhone no se hizo más grande».
+  - **Diagnóstico del gestor** en el simulador con un proxy de producción: Safari de iPhone solo sigue Dynamic Type con `font: -apple-system-body` en la raíz.
+  - **Lo que se hizo:** raíz de iOS con la letra del sistema, «17 px está bien», y solo en iOS, porque en la Mac mide 13. `text-scale` para Android. Tope al doble en los tokens. `medir -- --letra=2` pasó de 117 problemas a ninguno.
+  - **Publicado:** main `70a54b5f`, verificado en producción.
+- **#482 · OL-374 · Prototipo de portadas del sistema, FIRMADO** (bitácora 405, agente Fable que se quedó sin créditos a media pieza, continuado por Opus en el mismo árbol).
+  - **Pedido del founder:** distinguir festivales, galerías y talleres con figuras (Prägnanz), lineamientos de Bauhaus al estilo lawsofux, colores del cartel y título integrado; «elimina movimiento por ahora»; el giro del teléfono como ejercicio.
+  - **Firma:** «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8».
+  - **Comentarios aplicados:** el chip en su renglón, el botón del giro a la vista y la base de las figuras al inclinar.
+  - **Para el giro real:** copia envuelta por raw.githack.
+- **#483 · OL-375 · Portadas del sistema en Inicio** (agente Opus, bitácora 406, 24 capturas).
+  - **Decisiones:** con «Continúa. Vamos a prod», el gestor tomó sus dos recomendaciones. El permiso del giro va en Ajustes, y si dos vecinas tienen color casi igual, la segunda cambia un escalón de tono (CIEDE2000 menor de 10).
+  - **Contra lo firmado:** 23 de 27 portadas iguales; contraste de 5,03 a 10,81:1.
+  - **Abierto:** en iPhone el permiso del giro se olvida al cerrar Safari o la app.
+- **#484 · OL-376 · El pie tras «Estoy aquí» en iOS 27** (agente Opus, bitácora 407, 20 capturas).
+  - **Causa:** cuatro fallos de Safari con el teclado (`innerHeight`, lo fijo que se queda atrás, el teclado fantasma, el desbordamiento con letra grande).
+  - **Arreglo:** en `ui/useCampoVisible`. Antes fallaba de 2 de 10 a 9 de 10 según el caso; después, 0 en 35 intentos.
+- **Pincel revisado** a pedido del founder. El interruptor está encendido, las políticas del canal están bien, el canal en vivo responde en 57 ms y las 137 pruebas pasan. **No hay ninguna obra en producción**: para probarlo hay que crear una desde Administración.
+- **Incidente:** al detener el founder un pedido suyo se detuvieron también los dos agentes en segundo plano, sin aviso. El gestor no lo notó hasta que él pidió el estado, y los relanzó cuando lo pidió. Memoria nueva: revisar `ListAgents` tras cada interrupción.
+- **Codex:** su revisión de las últimas entregas se triagió el 10 de octubre. Con las portadas, la herramienta de colores vuelve a usarse, así que sus hallazgos 1, 5 y 7 ahora tocan arreglarse.
+- **Estado:** main `76ff8faa`, Production desplegada, cero PR, nada en curso. Pendientes del founder:
+  - probar en su iPhone las portadas (con la app instalada, para el permiso del giro), el teclado y la letra grande;
+  - crear una obra para probar Pincel;
+  - el historial de artistas y lugares, con la pregunta de «realizado salvo "se canceló"» sin responder;
+  - el orden de los hallazgos de Codex.
+
+  **Siguientes libres: OL-377 y bitácora 408.**
