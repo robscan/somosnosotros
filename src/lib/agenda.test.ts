@@ -4,6 +4,7 @@ import {
   agruparPorPublicacion,
   buscarEventos,
   conFiltros,
+  contarAgenda,
   corteNuevos,
   DIAS_NUEVOS,
   eventosNuevos,
@@ -13,15 +14,18 @@ import {
   hrefAgenda,
   LIMITE_NUEVOS,
   listarAgenda,
+  paraVisitarEnAgenda,
   SIN_FILTROS,
   sinSeguirSinSesion,
   textoDistancia,
+  textoVer,
   tituloPublicacion,
   type Cuanto,
   type EventoAgenda,
   type EventoBuscable,
   compararEventos,
 } from "./agenda";
+import { cuandoParaVisitar, textoHastaEl } from "./agendaPorClase";
 import { distanciaKm } from "./geo";
 import { diasActivosCalendario } from "./calendario";
 import { claveDe, textoParte } from "./ocurrencias";
@@ -385,5 +389,40 @@ describe("la agenda por día: cada día en que pasa algo (OL-320)", () => {
     const a = evento({ id: "a", titulo: "Beta", inicio: "2026-09-26T01:00:00.000Z" });
     const b = evento({ id: "b", titulo: "Alfa", inicio: "2026-09-26T01:00:00+00:00" });
     expect([a, b].sort(compararEventos).map((e) => e.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("«Para visitar» un día: también las exposiciones sin horario (OL-381)", () => {
+  // Las pruebas del founder (2026-10-12): con Cuándo en «Mañana», «Para visitar mañana» enseñaba 1 de 17 vigentes, porque solo DESIERTO (en
+  // Aether, de lunes a viernes de 9:00 a 18:00) tiene horario. Datos con la forma de producción: cada exposición de su primer día a las 00:00 al
+  // último a las 23:59 de la ciudad, y el horario ya resuelto (el suyo o el de su lugar; `[]` si ninguno).
+  const hoy = "2026-10-12"; // lunes
+  const ahora = new Date("2026-10-12T18:00:00Z");
+  const manana = { ...SIN_FILTROS, cuando: dia("2026-10-13") }; // martes
+  const expo = (id: string, titulo: string, inicio: string, fin: string, horario: { dias: number[]; abre: string; cierra: string }[]) =>
+    evento({ id, titulo, inicio, fin, clase: "exposicion", horario: horario as EventoAgenda["horario"] });
+  const desierto = expo("desierto", "DESIERTO", "2026-10-12T06:00:00Z", "2026-11-16T05:59:00Z", [{ dias: [1, 2, 3, 4, 5], abre: "09:00", cierra: "18:00" }]);
+  const unaVezMas = expo("una-vez-mas", "Una vez más", "2026-10-10T06:00:00Z", "2026-11-15T05:59:00Z", []);
+  const breve = expo("breve", "Breve", "2026-10-01T06:00:00Z", "2026-10-21T05:59:00Z", []);
+  const sabatina = expo("sabatina", "Sabatina", "2026-10-01T06:00:00Z", "2026-11-30T05:59:00Z", [{ dias: [6], abre: "11:00", cierra: "15:00" }]);
+  const datos = { eventos: [unaVezMas, sabatina, breve, desierto], seguidos: null, eventosSeguidos: [] };
+  const ids = (l: { id: string }[] | undefined) => l?.map((e) => e.id);
+
+  it("mañana: primero la que abre con sus horas; luego las sin horario, la que cierra antes primero; la que se sabe cerrada, no", () => {
+    const visitar = paraVisitarEnAgenda(datos, manana, hoy);
+    expect(visitar?.dia).toBe("2026-10-13");
+    expect(ids(visitar?.exposiciones)).toEqual(["desierto", "breve", "una-vez-mas"]);
+    expect(visitar?.exposiciones.map((e) => cuandoParaVisitar(e, "2026-10-13"))).toEqual(["Abre 9:00 a.m.–6:00 p.m.", "Horario por confirmar", "Horario por confirmar"]);
+    expect(textoHastaEl(unaVezMas, ahora)).toBe("hasta el sáb 14 de nov");
+  });
+  it("el sábado DESIERTO cierra (tiene horario) y Sabatina abre; las sin horario siguen", () => {
+    expect(ids(paraVisitarEnAgenda(datos, { ...SIN_FILTROS, cuando: dia("2026-10-17") }, hoy)?.exposiciones)).toEqual(["sabatina", "breve", "una-vez-mas"]);
+  });
+  it("el «Ver N» de las hojas cuenta lo mismo que se enseña", () => {
+    for (const filtros of [SIN_FILTROS, manana, { ...SIN_FILTROS, cuando: dia("2026-10-17") }, { ...SIN_FILTROS, cuando: dia("2026-10-25") }]) {
+      const cuenta = contarAgenda(datos, filtros, hoy, undefined, ahora);
+      expect(cuenta.visitar).toBe(paraVisitarEnAgenda(datos, filtros, hoy)?.exposiciones.length);
+    }
+    expect(textoVer(contarAgenda(datos, manana, hoy, undefined, ahora))).toBe("Ver 3 para visitar");
   });
 });

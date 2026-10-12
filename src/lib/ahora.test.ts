@@ -63,7 +63,8 @@ describe("clasificarAhora", () => {
     const conHorario = { ...cierra, horario: [{ dias: [6, 7], abre: "10:00", cierra: "20:00" }] };
     expect(tipos(clasificarAhora([conHorario], sl("2026-11-01", "19:00")))).toEqual(["expo"]);
     const abre = ev("abre", "2026-10-09", "19:00", { exposicion: true, fin: iso("2026-12-01", "18:00") });
-    expect(etiquetaAhora(clasificarAhora([abre], sl("2026-10-09", "11:00"))[0], sl("2026-10-09", "11:00"))).toBe("Inaugura hoy");
+    // Su primer día sin acto de inauguración: «Abre hoy» (OL-379); antes decía «Inaugura hoy» solo por ser el primer día.
+    expect(etiquetaAhora(clasificarAhora([abre], sl("2026-10-09", "11:00"))[0], sl("2026-10-09", "11:00"))).toBe("Abre hoy");
     expect(etiquetaAhora(clasificarAhora([cierra], sl("2026-11-01", "11:00"))[0], sl("2026-11-01", "11:00"))).toBe("Último día");
   });
 
@@ -130,9 +131,9 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
       ev("hilaridad", "2026-10-10", "00:00", { exposicion: true, fin: iso("2026-12-01", "18:00") }),
     ], a);
     expect(tipos(l)).toEqual(["ahora", "rato", "rato", "rato", "rato", "rato", "expo"]);
-    expect(rotulosAhora(l, a)).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "13:00", "13:00", "En 1 h 41 min", "Inaugura hoy"]);
+    expect(rotulosAhora(l, a)).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "13:00", "13:00", "En 1 h 41 min", "Abre hoy"]);
     // El nombre accesible de cada círculo sale de `etiquetaAhora`: la cuenta atrás completa en los tres.
-    expect(l.map((x) => etiquetaAhora(x, a))).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "En 1 h 11 min", "En 1 h 11 min", "En 1 h 41 min", "Inaugura hoy"]);
+    expect(l.map((x) => etiquetaAhora(x, a))).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "En 1 h 11 min", "En 1 h 11 min", "En 1 h 41 min", "Abre hoy"]);
   });
 
   it("dos a la misma hora separados por otro tipo: cada uno con su cuenta atrás (solo cuenta el aviso de justo antes)", () => {
@@ -141,10 +142,10 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
       { tipo: "expo", e: ev("hilaridad", "2026-10-10", "13:00", { exposicion: true, fin: iso("2026-12-01", "18:00") }) },
       { tipo: "rato", e: ev("viajera", "2026-10-10", "13:00") },
     ];
-    expect(rotulosAhora(l, a)).toEqual(["En 1 h 11 min", "Inaugura hoy", "En 1 h 11 min"]);
-    // Y lo que sigue a la misma hora sin ser «En un rato» (una exposición que inaugura a las 13:00) dice lo suyo.
+    expect(rotulosAhora(l, a)).toEqual(["En 1 h 11 min", "Abre hoy", "En 1 h 11 min"]);
+    // Y lo que sigue a la misma hora sin ser «En un rato» (una exposición que abre a las 13:00) dice lo suyo.
     const clasificada = clasificarAhora([ev("guitarra", "2026-10-10", "13:00"), ev("viajera", "2026-10-10", "13:00"), ev("lineas", "2026-10-10", "13:00", { exposicion: true, fin: iso("2026-12-01", "18:00") })], a);
-    expect(rotulosAhora(clasificada, a)).toEqual(["En 1 h 11 min", "13:00", "Inaugura hoy"]);
+    expect(rotulosAhora(clasificada, a)).toEqual(["En 1 h 11 min", "13:00", "Abre hoy"]);
   });
 
   it("misma hora con distinto minuto: cada uno con su cuenta atrás; se compara el inicio exacto", () => {
@@ -165,7 +166,7 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
       ev("m1", "2026-10-11", "09:00"), ev("m2", "2026-10-11", "09:00"),
     ], tarde);
     expect(tipos(l)).toEqual(["ahora", "ahora", "expo", "expo", "hoy", "hoy", "manana", "manana"]);
-    expect(rotulosAhora(l, tarde)).toEqual(["Ahora", "Ahora", "Inaugura hoy", "Inaugura hoy", "23:00", "23:00", "Mañana 09:00", "Mañana 09:00"]);
+    expect(rotulosAhora(l, tarde)).toEqual(["Ahora", "Ahora", "Abre hoy", "Abre hoy", "23:00", "23:00", "Mañana 09:00", "Mañana 09:00"]);
   });
 
   it("la hora se lee en la zona del evento, no en la del teléfono", () => {
@@ -205,8 +206,65 @@ describe("candidatosAhora", () => {
     const l = candidatosAhora([taller, e("viejo", { inicio: iso("2026-10-09", "09:00") })], "San Luis Potosí", ahora);
     expect(l.map((x) => [x.clave, x.parte])).toEqual([["taller:2026-10-09", "Sesión 2 de 3"]]);
   });
-  it("exposición: solo si inaugura o cierra en los próximos días", () => {
+  it("exposición: solo si abre o cierra en los próximos días", () => {
     const l = candidatosAhora([e("cierra", { clase: "exposicion", inicio: iso("2026-09-01", "10:00"), fin: iso("2026-10-10", "18:00") }), e("lejos", { clase: "exposicion", inicio: iso("2026-09-01", "10:00"), fin: iso("2026-12-10", "18:00") })], "San Luis Potosí", ahora);
     expect(l.map((x) => [x.clave, x.exposicion])).toEqual([["cierra", true]]);
+  });
+});
+
+describe("OL-379: «Inaugura hoy» solo si el acto de inauguración es hoy («hoy se visita solamente»)", () => {
+  // El caso real: «DESIERTO: Observación y Espacio.» se visita desde el lunes 12 de octubre (00:00 de San Luis) y su inauguración fue el
+  // viernes 9 a las 20:00. El 12 a las 11:00 salía «Inaugura hoy».
+  const DESIERTO = { inicio: "2026-10-12T06:00:00Z", fin: "2026-11-16T05:59:00Z" };
+  const lunes = sl("2026-10-12", "11:00");
+  const desierto = (cambios: Partial<EventoAhora> = {}) => ev("desierto", "2026-10-12", "00:00", { exposicion: true, ...DESIERTO, ...cambios });
+  const etiqueta = (e: EventoAhora, a: Date) => clasificarAhora([e], a).map((x) => [x.tipo, etiquetaAhora(x, a), rotuloCirculo(x, a)]);
+
+  it("inaugurada el viernes 9: el lunes 12, su primer día, «Abre hoy»", () => {
+    expect(etiqueta(desierto({ inaugura: "2026-10-10T02:00:00Z" }), lunes)).toEqual([["expo", "Abre hoy", "Abre hoy"]]);
+  });
+  it("con la inauguración el mismo 12 a las 20:00: «Inaugura hoy», también antes de que empiece", () => {
+    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), lunes)).toEqual([["expo", "Inaugura hoy", "Inaugura hoy"]]);
+  });
+  it("sin acto de inauguración, su primer día: «Abre hoy»", () => {
+    expect(etiqueta(desierto(), lunes)).toEqual([["expo", "Abre hoy", "Abre hoy"]]);
+  });
+  it("su último día: «Último día», tenga o no inauguración", () => {
+    const domingo = sl("2026-11-15", "12:00");
+    expect(etiqueta(desierto(), domingo)).toEqual([["expo", "Último día", "Último día"]]);
+    expect(etiqueta(desierto({ inaugura: "2026-10-10T02:00:00Z" }), domingo)).toEqual([["expo", "Último día", "Último día"]]);
+  });
+  it("un día cualquiera en medio no entra, aunque traiga su inauguración", () => {
+    expect(clasificarAhora([desierto({ inaugura: "2026-10-10T02:00:00Z" })], sl("2026-10-20", "12:00"))).toEqual([]);
+  });
+  it("la inauguración de mañana no es de hoy; a medianoche el teléfono la vuelve de hoy", () => {
+    const e = ev("abre", "2026-10-12", "00:00", { exposicion: true, fin: iso("2026-12-01", "18:00"), inaugura: iso("2026-10-13", "19:00") });
+    expect(etiqueta(e, lunes)).toEqual([["expo", "Abre hoy", "Abre hoy"]]);
+    // El 13 ya no es su primer día ni el último: no entra, aunque inaugure (el acto sale por su cuenta en la fila).
+    expect(clasificarAhora([e], sl("2026-10-13", "00:01"))).toEqual([]);
+    const mismaNoche = { ...e, inicio: iso("2026-10-13", "00:00") };
+    expect(etiqueta(mismaNoche, sl("2026-10-12", "23:59"))).toEqual([]);
+    expect(etiqueta(mismaNoche, sl("2026-10-13", "00:01"))).toEqual([["expo", "Inaugura hoy", "Inaugura hoy"]]);
+  });
+  it("el día se lee en la zona de la exposición: las 20:00 de San Luis del 12 son el 13 en UTC y siguen siendo hoy", () => {
+    expect(iso("2026-10-12", "20:00").slice(0, 10)).toBe("2026-10-13");
+    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), sl("2026-10-12", "17:00"))).toEqual([["expo", "Inaugura hoy", "Inaugura hoy"]]);
+  });
+
+  describe("candidatosAhora trae el inicio de su acto de inauguración", () => {
+    const base = { slug: null, imagen: null, precio: null, lugar_id: "l", sitio_texto: null, sitio_direccion: null, sitio_reservado: false, zona: ZONA, lugar: { nombre: "Centro de las Artes", portada: null }, creado_en: "2026-09-01T00:00:00Z", van: 0 };
+    const e = (id: string, cambios: Partial<EventoAgenda>): EventoAgenda => ({ ...base, id, titulo: id, inicio: iso("2026-10-12", "19:00"), fin: null, ...cambios }) as EventoAgenda;
+    const expo = e("desierto", { clase: "exposicion", ...DESIERTO, inaugura_id: "acto" });
+
+    it("si el acto está en la agenda (todavía no termina), viaja su inicio y la etiqueta es «Inaugura hoy»", () => {
+      const [x] = candidatosAhora([expo, e("acto", { clase: "puntual", inicio: iso("2026-10-12", "20:00") })], "San Luis Potosí", lunes).filter((c) => c.exposicion);
+      expect(x.inaugura).toBe(iso("2026-10-12", "20:00"));
+      expect(etiquetaAhora(clasificarAhora([x], lunes)[0], lunes)).toBe("Inaugura hoy");
+    });
+    it("si ya pasó, la agenda no lo trae: sin inauguración y «Abre hoy» (el caso del 12 de octubre)", () => {
+      const [x] = candidatosAhora([expo], "San Luis Potosí", lunes);
+      expect("inaugura" in x).toBe(false);
+      expect(etiquetaAhora(clasificarAhora([x], lunes)[0], lunes)).toBe("Abre hoy");
+    });
   });
 });
