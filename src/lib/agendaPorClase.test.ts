@@ -297,13 +297,13 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(tarjetaConClase(ecos, ahora)).toMatchObject({ clase: "Exposición", detalle: "Hasta el sáb 31 de oct" });
     expect(tarjetaEvento(ecos, ahora).clase).toBeUndefined(); // los demás carriles no cambian
   });
-  it("OL-370: en Inicio la clase va en la ceja, solo si no es un evento; sobre el cartel, como mucho un chip («Te interesa» o cuántos van)", () => {
+  it("OL-370: en Inicio la clase va en la ceja, solo si no es un evento; sobre el cartel, como mucho un chip (cuántos van; «Te interesa» es el marcador, OL-382)", () => {
     expect(cejaDeTarjeta(tarjetaDeInicio(electric, ahora))).toEqual(["Festival"]);
     expect(cejaDeTarjeta(tarjetaDeInicio(ecos, ahora))).toEqual(["Expo"]);
     expect(cejaDeTarjeta(tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora))).toEqual([]); // un evento suelto o un acto no se rotulan (E3b)
     expect(tarjetaConClase({ ...ecos, clase: "taller" }, ahora).clase).toBe("Taller"); // la palabra corta de `CLASES`, no «Taller o curso»
-    expect(chipDeTarjeta(tarjetaDeInicio(fiesta, ahora), "me_interesa")).toEqual({ texto: "Te interesa", tuyo: true });
-    expect(chipDeTarjeta({ ...tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora), van: 2 }, null)).toEqual({ texto: "2 van", tuyo: false });
+    expect(chipDeTarjeta(tarjetaDeInicio(fiesta, ahora))).toBeNull();
+    expect(chipDeTarjeta({ ...tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora), van: 2 })).toEqual({ texto: "2 van" });
     // El festival que ya empezó dice cuándo termina, como la exposición; el que viene conserva su día.
     expect(tarjetaDeInicio(fiesta, ahora).detalle).toBe("Hasta el mié 7 de oct");
     expect(tarjetaDeInicio(electric, ahora)).toMatchObject({ detalle: "sáb 31 de oct", selloFecha: { mes: "oct", dia: "31", flecha: null } });

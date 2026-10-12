@@ -1,6 +1,7 @@
 /* El avatar de un lugar o un artista en Inicio (OL-372; prototipo firmado `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada», E5: `.tira.avatar`
-   y `.avatar .en`). Una rejilla plana con áreas, todo al centro de su columna (64 + 12; el carril, `.avatar` en Destacados.module.css): la foto
-   redonda, el nombre a 12 px en una línea y, si hay una novedad, «Nuevo video» o «Nuevo audio» a 8 px. Sin novedad, su fila no mide nada. */
+   y `.avatar .en`), con la foto grande de OL-382 (N; prototipo `inicio-propuestas.html`, «Firmada»: `.tira.avatar.n-grande`). Una rejilla plana
+   con áreas, todo al centro de su columna (88 + 20; el carril, `.avatar` en Destacados.module.css): la foto redonda, el nombre a 12 px en dos
+   líneas y, si hay una novedad, «Nuevo video» o «Nuevo audio» a 8 px. Sin novedad, su fila no mide nada. */
 .avatar {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -30,19 +31,21 @@
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-/* El nombre, chico y en una línea: el que no cabe se corta con «…» (el entero lo dice el nombre del enlace). */
+/* N (OL-382): el nombre a 15 en dos líneas como mucho, repartidas parejas; el que no cabe se corta en palabra entera con «…»
+   (`useTextoEnPalabra`; el entero lo dice el nombre del enlace). */
 .nombre {
   grid-area: nombre;
   max-width: 100%;
+  max-height: calc(2em * 1.25);
   margin-top: var(--espacio-3);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-family: var(--fuente-lista);
-  font-size: var(--letra-xs);
+  font-size: var(--letra-sm);
   font-weight: var(--peso-lista-titulo);
   font-variation-settings: var(--ancho-lista-titulo);
-  line-height: var(--interlinea-lista);
+  line-height: 1.25;
+  text-wrap: balance;
+  overflow-wrap: normal;
 }
 /* La novedad de un artista, en el violeta de lo que pasa (como el cuándo de una tarjeta). */
 .nuevo {
