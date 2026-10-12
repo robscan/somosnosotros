@@ -1495,6 +1495,8 @@ El chat «Gestor de cambios III» (`local_004a210b-4803-4298-bd64-2666df33576c`)
 
 ## Relevo del gestor VI (2026-10-12)
 
+**Arranque del VI (2026-10-12, 09:10):** sesión `local_b41c62e9-c9ab-4348-ad24-23631f333d32`, modelo **Fable 5.1** (`claude-fable-5-1`). PR #486 unido (`152ea11a`); `siguiente-bitacora.sh` dio OL-377 y bitácora 408, como dice el relevo. Reservas de la mañana: OL-377 · prototipo con propuestas (bitácora 408, gestor); OL-378 `titulo-corto-festival` (bitácora 409), OL-379 `ahora-inaugura-hoy` (410), OL-380 `inauguracion-pasada` (411), OL-381 `visitar-sin-horario` (412): los cuatro fallos, a agentes Opus en árboles aislados. Registro de la jornada: rama `gestor-registro-48`. Siguientes libres: OL-382 y bitácora 413.
+
 El founder cerró la jornada del 11 de octubre y la mañana del 12 pidió «Haz un nuevo gestor por favor, Gestor de cambios VI», con los resultados de sus pruebas de usuario y el arranque del historial. «Gestor de cambios V» (sesión `local_51c2d1e4…`) deja este relevo y no toma trabajo nuevo.
 
 **Estado:** main `bef2fdc7`, Production desplegada, cero PR, nada en curso. Todo lo del 10 y el 11 de octubre está en producción: tarjetas de Inicio firmadas (OL-370 a OL-372), la letra que sigue al tamaño del teléfono (OL-373), el prototipo de portadas firmado (OL-374), las portadas del sistema en Inicio con el giro desde Ajustes (OL-375) y el pie tras «Estoy aquí» en iOS 27 (OL-376). **Siguientes libres: OL-377 y bitácora 408.**
