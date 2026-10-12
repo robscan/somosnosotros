@@ -1,5 +1,7 @@
 import type { Persona } from "@/app/personas/consultas";
 import type { AvisosLista } from "@/components/useSeguirEnLista";
+import type { Agenda } from "@/lib/cargarAgenda";
+import { nombreDeFestival } from "@/lib/destacados";
 import { carrilTusPlanes } from "@/lib/inicio";
 import { tarjetaDeInicio } from "@/lib/tarjetaInicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
@@ -19,13 +21,19 @@ import CarrilEventosCliente from "./CarrilEventosCliente";
  * ni te interesa". Y, al revés (OL-224, bitácora 253): gana al instante la tarjeta de un evento recién decidido en
  * cualquier otra fila de Inicio, aunque esta lista (armada aquí, en el servidor) todavía no la traiga — lo agrega
  * `tarjetasTusPlanes` en el cliente, con el recuerdo de la visita (`lib/decisionesVisita`).
+ *
+ * El título corto de un acto salta el nombre de su festival (OL-360, OL-378), como en los demás carriles: el nombre se busca entre los eventos ya
+ * cargados de la agenda de la ciudad (la misma lectura que comparten los carriles) y entre los planes de la persona (por si el festival también es
+ * uno). Un acto de un festival de otra ciudad que la persona no marcó se queda con el título corto de siempre.
  */
-export default async function CarrilTusPlanes({ personaPromise, avisos, verTodosHref }: { personaPromise: Promise<Persona | null>; avisos: AvisosLista | null; verTodosHref: string }) {
-  const persona = await personaPromise;
+export default async function CarrilTusPlanes({ personaPromise, agendaPromise, avisos, verTodosHref }: { personaPromise: Promise<Persona | null>; agendaPromise: Promise<Agenda>; avisos: AvisosLista | null; verTodosHref: string }) {
+  // Si la agenda no se pudo leer, «Tus planes» sale igual, sin saltar el festival (como antes de OL-378).
+  const [persona, agenda] = await Promise.all([personaPromise, agendaPromise.catch(() => null)]);
   const ahora = new Date();
   const eventos = persona ? carrilTusPlanes(persona.eventos, persona.interesan) : [];
+  const festival = nombreDeFestival([...(agenda?.eventos ?? []), ...(persona?.eventos ?? []), ...(persona?.interesan ?? [])]);
   const asistencias: Record<string, "voy" | "me_interesa"> = {};
   for (const e of persona?.eventos ?? []) asistencias[e.id] = "voy";
   for (const e of persona?.interesan ?? []) asistencias[e.id] = "me_interesa";
-  return <CarrilEventosCliente tarjetas={eventos.map((e) => tarjetaDeInicio(e, ahora))} asistencias={asistencias} avisos={avisos} titulo="Tus planes" tamano="grande" memoria="inicio-tus-planes" verTodos={{ href: verTodosHref, etiqueta: "Ver mi perfil" }} tusPlanes />;
+  return <CarrilEventosCliente tarjetas={eventos.map((e) => tarjetaDeInicio(e, ahora, festival(e)))} asistencias={asistencias} avisos={avisos} titulo="Tus planes" tamano="grande" memoria="inicio-tus-planes" verTodos={{ href: verTodosHref, etiqueta: "Ver mi perfil" }} tusPlanes />;
 }

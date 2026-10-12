@@ -25,7 +25,7 @@ type Props = {
   conDia?: boolean;
   /** La línea de cuándo de algo que no es un evento de un día (OL-321: «Hasta el dom 30 de nov», «3 sesiones · …», el programa de un festival);
    *  sin ella, la de siempre, que ya sabe la de una exposición y la del marco de un festival (OL-322, `cuandoDeTarjeta`). La usan «Publicado» y,
-   *  en «Para visitar hoy», «Abre 10:00 a.m.–6:00 p.m.» (con `horas`: lleva el reloj, no el calendario). */
+   *  en «Para visitar hoy», «Abre 10:00 a.m.–6:00 p.m.» o «Horario por confirmar» (con `horas`: lleva el reloj, no el calendario). */
   cuando?: string;
   /** El cuándo son las horas de un día («Abre 10:00 a.m.–6:00 p.m.»): con el icono del reloj. */
   horas?: boolean;
