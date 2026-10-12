@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { diaLocal } from "@/lib/fechas";
+import { medirCliente } from "@/lib/medir";
 import { abrirInicio, bannerALaVista, cambiarGuardado, cerrarBanner, guardar, leerGuardado, marcarCompartido, mostrarBanner, ocultarBanner, suscribirseBanner } from "@/lib/visitasInicio";
 import { useCanalDePantalla } from "../useCanalDeListas";
 import { IconoCerrar, IconoCompartir } from "../ui/Iconos";
@@ -22,6 +23,9 @@ const DE = "compartir-app";
  *
  * «Compartir»: la hoja del teléfono (`navigator.share`) con somosnosotros.org; sin ella (escritorio), copia el enlace y avisa «Enlace copiado». Si
  * la persona cancela la hoja, no cuenta como compartido. Los avisos van por el canal único de Inicio (`PantallaConAviso`, OL-284).
+ *
+ * Se mide (OL-388, lista cerrada de `lib/medir`): `compartir` con `que: "app"` y el medio, «hoja» si la hoja se abrió y no se canceló, «copiado» si
+ * se copió el enlace («copiar sí cuenta como compartir», founder, 2026-10-12). Cancelar la hoja no se mide.
  */
 export default function BannerCompartir({ zona }: { zona: string }) {
   const visible = useSyncExternalStore(suscribirseBanner, bannerALaVista, () => false);
@@ -55,6 +59,7 @@ export default function BannerCompartir({ zona }: { zona: string }) {
   async function copiar() {
     try {
       await navigator.clipboard.writeText(ENLACE_APP);
+      medirCliente("compartir", { que: "app", medio: "copiado" });
       compartido("Enlace copiado");
     } catch {
       canal?.avisar({ de: DE, texto: "No se pudo copiar el enlace", fallo: true });
@@ -65,6 +70,7 @@ export default function BannerCompartir({ zona }: { zona: string }) {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share(DATOS_COMPARTIR);
+        medirCliente("compartir", { que: "app", medio: "hoja" });
         compartido("Gracias por compartir");
       } catch (e) {
         // Cerró la hoja sin compartir: el banner se queda. Cualquier otro fallo de la hoja: se copia el enlace.

@@ -8,27 +8,37 @@ import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./ficha.module.css";
 
-type Props = { van: Asistente[]; /** Cuántos van en total, también los de perfil reservado (que no traen nombre). */ total: number; interesados: number; conSesion: boolean };
+type Props = {
+  van: Asistente[];
+  /** Cuántos van en total, también los de perfil reservado (que no traen nombre). */
+  total: number;
+  interesados: number;
+  conSesion: boolean;
+  /** La ficha en pasado (OL-388): «Quién fue», en pasado y sin invitar a nadie. */
+  pasado?: boolean;
+};
 
-const textoInteresados = (n: number) => (n === 1 ? "A 1 persona le interesa." : `A ${n} personas les interesa.`);
+const textoInteresados = (n: number, pasado: boolean) => (pasado ? (n === 1 ? "A 1 persona le interesó." : `A ${n} personas les interesó.`) : n === 1 ? "A 1 persona le interesa." : `A ${n} personas les interesa.`);
 
 /**
  * Quién va, en el renglón de datos de la ficha (docs/rediseno/50, P6): sus avatares apilados, «Ana, Luis y 10 más» y a cuántas
- * personas más les interesa; tocarlo despliega la lista, y cada persona lleva a su ficha. El número «Van» de arriba baja hasta aquí.
+ * personas más les interesa; tocarlo despliega la lista, y cada persona lleva a su ficha. El número «Van» de arriba baja hasta aquí. En la ficha
+ * en pasado (OL-388) es «Quién fue»: la misma lista, de quienes dijeron «Voy», y el número «Fueron» baja aquí; con nadie, la ficha no la pinta.
  */
-export default function QuienVa({ van, total, interesados, conSesion }: Props) {
+export default function QuienVa({ van, total, interesados, conSesion, pasado = false }: Props) {
+  const titulo = pasado ? "Quién fue" : "Quién va";
   const [abierto, setAbierto] = useState(false);
   const n = Math.max(total, van.length);
   const reservados = n - van.length;
-  const resumen = resumenAsistentes(van, 2, n);
+  const resumen = resumenAsistentes(van, 2, n, pasado);
 
   return (
-    <section className={ficha.bloque} id="quien-va" aria-label="Quién va">
-      <h2>Quién va</h2>
+    <section className={ficha.bloque} id="quien-va" aria-label={titulo}>
+      <h2>{titulo}</h2>
       {n === 0 ? (
         <>
-          <p className={ficha.vacio}>Nadie ha dicho que va todavía. {conSesion ? "Sé la primera persona." : "Entra y sé la primera persona."}</p>
-          {interesados > 0 && <p className={ficha.vacio}>{textoInteresados(interesados)}</p>}
+          <p className={ficha.vacio}>{pasado ? "Nadie dijo que iba." : `Nadie ha dicho que va todavía. ${conSesion ? "Sé la primera persona." : "Entra y sé la primera persona."}`}</p>
+          {interesados > 0 && <p className={ficha.vacio}>{textoInteresados(interesados, pasado)}</p>}
         </>
       ) : (
         <>
@@ -39,7 +49,7 @@ export default function QuienVa({ van, total, interesados, conSesion }: Props) {
               ))}
             </span>
             <b>{resumen}</b>
-            {interesados > 0 && <small>{textoInteresados(interesados)}</small>}
+            {interesados > 0 && <small>{textoInteresados(interesados, pasado)}</small>}
             <IconoCaret />
           </button>
           {abierto && (
