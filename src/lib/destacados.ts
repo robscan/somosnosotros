@@ -5,7 +5,7 @@ import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
 import { cortoDeClase, fotoDeEvento, hrefEvento, sitioEnLista } from "./eventos";
 import { diaCorto, diaLocal, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
-import { rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
+import { HORARIO_POR_CONFIRMAR, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
 import { comoPaleta, type Paleta } from "./coloresCartel";
@@ -96,7 +96,7 @@ export const PROGRAMA_POR_CONFIRMAR = "Programa por confirmar";
  * en el renglón, tras el cuándo.
  */
 export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "programa">): string | null {
-  if (e.clase === "exposicion") return e.horario && !e.horario.some((f) => f.dias.length) ? "Horario por confirmar" : null;
+  if (e.clase === "exposicion") return e.horario && !e.horario.some((f) => f.dias.length) ? HORARIO_POR_CONFIRMAR : null;
   if (e.clase === "festival") {
     if (e.programa?.registrados) return textoProgramaRegistrado(e.programa.registrados);
     return e.programa ? PROGRAMA_POR_CONFIRMAR : null;
