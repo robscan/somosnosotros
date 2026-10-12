@@ -1,0 +1,1543 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><!-- Copia envuelta de portadas-sistema.html para abrirla fuera del marco de claude.ai (el giroscopio de P8 en el iPhone). Generada; no se edita a mano. --></head><body style="margin:0"><title>Portadas del sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-374 (bitácora 405). Pedido del founder (2026-10-11): «facilitar que se distingan los festivales, galerías, talleres de los eventos en
+   inicio […] portadas del sistema […] partículas y figuras geométricas (como ley de Prägnanz) que dejen claro qué tipo de objeto es […] colores
+   [del] cartel […] integrar el título a la card», con «lineamientos de Bauhaus de diseño gráfico», sin movimiento automático, y aparte «que las
+   figuras reaccionen al movimiento del celular». Parte de lo firmado en OL-367 (inicio-tarjetas.html, «Firmada», que es la producción de hoy):
+   mismas tarjetas y mismo armazón; la portada del sistema ocupa el sitio del cartel. El teléfono usa siempre los tokens claros de la app; el
+   marco de la página sigue el tema de quien mira. */
+:root {
+  /* El teléfono: tokens de la app (claros, nunca se redefinen). */
+  --fondo: #ffffff;
+  --fondo-suave: #f4f4f2;
+  --fondo-contenido: #f6f5f1;
+  --texto: #1a1a1a;
+  --texto-suave: #5c5c5c;
+  --borde: #dcdcd8;
+  --primario: #6d34c8;
+  --primario-texto: #ffffff;
+  --primario-suave: #eee7f8;
+  --ok: #1f6f43;
+  --destacado: #d35400;
+  --fondo-miniatura: #e6e6e2;
+  --vidrio: rgba(255, 255, 255, 0.92);
+  --sobre-banda-suave: rgba(255, 255, 255, 0.72);
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --alto-chip: 36px;
+  --alto-barra: 56px; --alto-nav: 60px; --gutter: 20px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem; --letra-2xl: 1.625rem;
+  --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --tarjeta-grande: 165px; --tarjeta-grande-foto: 206px; --tarjeta-mediana: 132px; --tarjeta-mediana-foto: 165px; --avatar: 64px; --circulo-ahora: 72px;
+  --duracion: 200ms; --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* El marco de la página: sigue el tema. */
+  --pg-fondo: #e6e4de;
+  --pg-panel: #fbfaf7;
+  --pg-texto: #1a1a1a;
+  --pg-suave: #5e5b54;
+  --pg-borde: #d3d0c8;
+  --pg-acento: #6d34c8;
+  --pg-acento-texto: #ffffff;
+  --pg-acento-suave: #ece4f8;
+  --pg-baja: #1f6f43;
+  --pg-mal: #b3261e;
+  --pg-sombra: 0 14px 36px rgba(28, 24, 16, 0.16);
+  --pg-sombra-chica: 0 1px 3px rgba(28, 24, 16, 0.16);
+  --pg-velo: rgba(0, 0, 0, 0.32);
+  --pg-perilla: #ffffff;
+  --pg-flotante: #1a1a1a;
+  --pg-flotante-texto: #ffffff;
+  --pg-flotante-suave: rgba(255, 255, 255, 0.72);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pg-fondo: #121210; --pg-panel: #1c1b18; --pg-texto: #eeebe4; --pg-suave: #aaa69c; --pg-borde: #37342e; --pg-acento: #b59cf4; --pg-acento-texto: #17141d;
+    --pg-acento-suave: #2d2542; --pg-baja: #7fd3a2; --pg-mal: #f2a59e; --pg-sombra: 0 14px 36px rgba(0, 0, 0, 0.55); --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --pg-velo: rgba(0, 0, 0, 0.5); --pg-perilla: #e4e0d8; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --pg-fondo: #121210; --pg-panel: #1c1b18; --pg-texto: #eeebe4; --pg-suave: #aaa69c; --pg-borde: #37342e; --pg-acento: #b59cf4; --pg-acento-texto: #17141d;
+  --pg-acento-suave: #2d2542; --pg-baja: #7fd3a2; --pg-mal: #f2a59e; --pg-sombra: 0 14px 36px rgba(0, 0, 0, 0.55); --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --pg-velo: rgba(0, 0, 0, 0.5); --pg-perilla: #e4e0d8; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: var(--pg-fondo); color: var(--pg-texto); font: 400 var(--letra-md)/1.4 var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; }
+button, input { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+[tabindex="-1"]:focus { outline: none; }
+.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ===== La escena: en el teléfono, solo Inicio; desde 760, teléfono y controles; desde 1180, los dos teléfonos y los controles. ===== */
+.escena { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.columna { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--espacio-2); }
+.etiqueta-tel { display: none; margin: 0; font-size: var(--letra-sm); font-weight: 700; font-variation-settings: var(--ancho-titulo); color: var(--pg-suave); }
+.etiqueta-tel b { color: var(--pg-texto); }
+.caja-tel { position: relative; min-width: 0; min-height: 0; }
+.caja-tel > .tel { position: absolute; inset: 0; }
+.col-hoy { position: fixed; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
+.col-hoy .caja-tel > .tel { position: relative; inset: auto; }
+@media (min-width: 760px) {
+  .escena { grid-template-columns: auto minmax(330px, 400px); justify-content: center; align-items: start; gap: var(--espacio-6); padding: var(--espacio-4); }
+  .columna { grid-template-rows: auto auto; }
+  .etiqueta-tel { display: block; }
+  .caja-tel { width: calc(390px * var(--escala, 1)); height: calc(844px * var(--escala, 1)); }
+  .caja-tel > .tel { inset: auto; left: 0; top: 0; width: 390px; height: 844px; transform: scale(var(--escala, 1)); transform-origin: 0 0; border: 1px solid var(--pg-borde); border-radius: 28px; box-shadow: var(--pg-sombra); }
+}
+@media (min-width: 1180px) {
+  .escena { grid-template-columns: auto auto minmax(340px, 400px); }
+  .col-hoy { position: static; left: auto; visibility: visible; pointer-events: auto; }
+  .col-hoy .caja-tel > .tel { position: absolute; }
+  .en-prueba .col-hoy { opacity: 0.2; pointer-events: none; }
+}
+
+/* ===== El teléfono (Inicio), como lo firmado en OL-367 y lo que pinta la app (OL-370 a OL-372). ===== */
+.tel { overflow: hidden; background: var(--fondo-contenido); color: var(--texto); color-scheme: light; font: 400 var(--letra-md)/1.4 var(--fuente); font-variation-settings: var(--ancho-texto); font-variant-numeric: tabular-nums; }
+:where(.tel) a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+:where(.tel) ul { list-style: none; margin: 0; padding: 0; }
+:where(.tel) h2, :where(.tel) p { margin: 0; }
+.tel :focus-visible { outline-color: var(--primario); }
+.pantalla { height: 100%; overflow-y: auto; overscroll-behavior-y: contain; display: flex; flex-direction: column; scrollbar-width: none; }
+.pantalla::-webkit-scrollbar { display: none; }
+.pantalla > * { flex: none; min-width: 0; }
+.pantalla > .relleno { flex: 1 0 var(--espacio-7); }
+
+.barra-app { height: var(--alto-barra); display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); align-items: center; padding: 0 var(--espacio-2); background: var(--fondo); }
+.barra-app > button { display: grid; place-items: center; width: var(--toque); height: var(--toque); }
+.barra-app .logo { justify-self: center; height: 28px; width: auto; }
+.contexto { position: sticky; top: 0; z-index: 10; display: flex; gap: var(--espacio-2); padding: var(--espacio-1) var(--gutter) var(--espacio-3); overflow-x: auto; scrollbar-width: none; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+.contexto::-webkit-scrollbar { display: none; }
+.ctx { flex: none; display: inline-flex; align-items: center; gap: 6px; height: var(--alto-chip); padding: 0 var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; white-space: nowrap; }
+.ctx .i { width: 18px; height: 18px; color: var(--texto-suave); }
+
+/* La fila «Ahora» (OL-359, OL-371). */
+.fila-ahora { background: var(--fondo); box-shadow: 0 1px 0 var(--borde); }
+.lista-ahora { display: flex; gap: var(--espacio-3); padding: var(--espacio-3) var(--gutter); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: var(--gutter); }
+.lista-ahora::-webkit-scrollbar { display: none; }
+.lista-ahora > li { flex: none; }
+.circulo { display: grid; justify-items: center; gap: var(--espacio-1); width: var(--circulo-ahora); }
+.anillo { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); width: var(--circulo-ahora); height: var(--circulo-ahora); padding: 3px; border-radius: 50%; background: var(--borde); overflow: hidden; }
+.anillo.ahora::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 210deg, var(--primario), var(--destacado), var(--primario)); animation: gira 4s linear infinite; }
+.anillo.pronto { background: var(--texto); }
+.anillo > img, .anillo > .sin-cartel { position: relative; width: 100%; height: 100%; border: 2px solid var(--fondo); border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); }
+.anillo > .sin-cartel { display: grid; place-items: center; }
+.anillo > .sin-cartel img { width: 58%; height: auto; }
+.circulo small { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+.circulo small.ahora { color: var(--primario); font-weight: 700; }
+@keyframes gira { to { transform: rotate(1turn); } }
+
+/* Los carriles. */
+.carril { display: grid; gap: var(--espacio-4); padding-top: var(--espacio-7); }
+.cab { display: flex; align-items: center; justify-content: space-between; padding-inline: var(--gutter); }
+.cab h2 { min-width: 0; font-size: var(--letra-2xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
+.ver { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque-min); padding-left: var(--espacio-2); color: var(--primario); font-size: var(--letra-sm); font-weight: 600; }
+.ver .i { width: 18px; height: 18px; stroke-width: 2; }
+.tira { --foto: var(--tarjeta-grande-foto); display: grid; grid-auto-flow: column; grid-auto-columns: var(--tarjeta-grande); align-items: start; gap: var(--espacio-1) var(--espacio-3); overflow-x: auto; padding: var(--espacio-1) var(--gutter) var(--espacio-2); scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+.tira::-webkit-scrollbar { display: none; }
+.tira > li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; scroll-snap-align: start; }
+.tira.mediana { --foto: var(--tarjeta-mediana-foto); grid-auto-columns: var(--tarjeta-mediana); }
+.tira.avatar { --foto: var(--avatar); grid-auto-columns: calc(var(--avatar) + var(--espacio-3)); column-gap: var(--espacio-2); }
+
+/* La tarjeta firmada (OL-370): una rejilla plana, la portada arriba y debajo la ceja, el título, el lugar y cuándo. */
+.tarjeta { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "portada" "pie"; grid-template-rows: var(--foto) auto; row-gap: var(--espacio-2); min-width: 0; color: var(--texto); }
+.tarjeta:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; border-radius: var(--radio); }
+/* La portada: el cartel (o la figura del sistema) debajo de todo y, encima, en sus celdas, el sello, el chip y, sin cartel, el símbolo y el
+   título. Nada se apila con z-index: lo de después en el código se pinta encima. */
+.portada { grid-area: portada; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "simbolo fecha" "campo campo" "chip chip" "zona zona"; grid-template-rows: auto minmax(0, 1fr) auto auto; align-items: start; height: var(--foto); min-width: 0; overflow: hidden; border-radius: var(--radio); background: var(--fondo-miniatura); }
+.portada > .cartel { grid-area: 1 / 1 / -1 / -1; width: 100%; height: var(--foto); object-fit: cover; object-position: center top; }
+.fecha { grid-area: fecha; justify-self: end; align-self: start; display: grid; justify-items: center; gap: 2px; min-width: 40px; margin: var(--espacio-2); padding: var(--espacio-1) var(--espacio-2); border-radius: var(--radio); background: var(--vidrio); box-shadow: var(--sombra); line-height: 1; text-align: center; }
+.fecha small { font-size: var(--letra-2xs); font-weight: 700; color: var(--primario); text-transform: lowercase; }
+.fecha b { display: inline-flex; align-items: center; gap: 1px; font-size: var(--letra-2xl); font-weight: 600; font-variation-settings: var(--ancho-titulo); color: var(--texto); }
+.fecha .flecha { width: 11px; height: 11px; fill: none; stroke: var(--texto-suave); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chip { display: inline-flex; align-items: center; max-width: 100%; padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--texto); font-size: var(--letra-xs); font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.chip.estado { padding-block: 0; background: var(--primario-suave); color: var(--primario); }
+.chip.nuevo { background: var(--primario); color: var(--primario-texto); }
+.portada > .chip { grid-area: chip; justify-self: start; align-self: end; margin: var(--espacio-2); }
+.ceja { display: flex; flex-wrap: wrap; column-gap: 0.35em; min-width: 0; margin-bottom: 2px; font-size: var(--letra-2xs); font-weight: 700; letter-spacing: 0.06em; line-height: 1.3; text-transform: uppercase; color: var(--texto-suave); }
+.ceja > span { white-space: nowrap; }
+.ceja > span:not(:last-child)::after { content: "\00a0·"; }
+/* Sin cartel (E10, producción): el degradado de su paleta propia, el símbolo SN arriba a la izquierda y, en la base, el chip, la ceja y el
+   título corto. */
+.portada.e10 { color: var(--primario-texto); }
+.portada.e10 > .simbolo { grid-area: simbolo; width: auto; height: 20px; margin: var(--espacio-3) 0 0 var(--espacio-3); opacity: 0.92; }
+.portada.e10 > .chip { margin: 0 0 var(--espacio-2) var(--espacio-3); }
+.portada.e10 > .ceja { grid-area: zona; margin: 0 var(--espacio-3) var(--espacio-1); color: var(--sobre-banda-suave); }
+.portada.e10 > .titulo-e10 { grid-area: zona; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; margin: 0 var(--espacio-3) var(--espacio-3); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+.portada.e10.con-ceja { grid-template-areas: "simbolo fecha" "campo campo" "chip chip" "ceja ceja" "zona zona"; grid-template-rows: auto minmax(0, 1fr) auto auto auto; }
+.portada.e10.con-ceja > .ceja { grid-area: ceja; }
+.mediana .portada.e10 > .titulo-e10 { font-size: var(--letra-sm); }
+/* Debajo de la portada: la ceja, el título como oración en dos líneas (cortado en palabra), el lugar en gris y cuándo en violeta. */
+.pie { grid-area: pie; display: grid; align-content: start; min-width: 0; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; }
+.pie > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pie .cuando { color: var(--primario); }
+.titulo-pie { display: block; max-height: calc(2 * 1.15em); overflow: hidden; margin-bottom: 2px; color: var(--texto); font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: normal; }
+.mediana .titulo-pie { font-size: var(--letra-sm); }
+.mediana .pie { font-size: var(--letra-xs); }
+
+/* ===== La portada del sistema (P1). Un color plano de la tarjeta (`--base`, del cartel) con escalones del mismo color y un solo crema; la
+   figura dice la clase (círculo festival, cuadrado expo, triángulo taller) y vive arriba, apoyada en la línea del título. Abajo, la zona del
+   título: sin figuras (un recorte del SVG lo garantiza), el chip, la ceja y el título en la tinta de la banda (crema u oscuro, 5:1 o más por
+   construcción, y medido). El SVG lo dibuja el código después de medir dónde quedó la zona y el sello. ===== */
+.portada.sistema { grid-template-areas: "simbolo fecha" "campo campo" "zona zona"; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--base); color: var(--tinta); }
+.portada.sistema.sin-zona { grid-template-areas: "simbolo fecha" "campo campo" "chip chip"; }
+.portada.sistema > .figura { grid-area: 1 / 1 / -1 / -1; display: block; width: 100%; height: var(--foto); }
+.portada.sistema > .zona { grid-area: zona; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "renglon" "titulo"; align-content: end; row-gap: 3px; min-width: 0; padding: var(--espacio-3); }
+/* El chip va en su propio renglón, arriba de la ceja (founder, 11 de oct: «este va en otra línea arriba, no juntes»). */
+.portada.sistema .renglon { grid-area: renglon; display: grid; justify-items: start; row-gap: var(--espacio-1); min-width: 0; }
+.portada.sistema .renglon > .ceja { margin: 0; color: var(--tinta); }
+.portada.sistema .titulo-sobre { grid-area: titulo; }
+.titulo-sobre { display: block; justify-self: stretch; max-height: calc(2 * 1.06em); overflow: hidden; color: var(--tinta); font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.06; overflow-wrap: normal; }
+.mediana .titulo-sobre { font-size: var(--letra-md); }
+.mediana .portada.sistema > .zona { padding: var(--espacio-2) var(--espacio-3) var(--espacio-3); }
+/* P7: el evento común sin cartel con la misma gramática: el símbolo SN (en la tinta) donde E10 lo tenía; sin figura. */
+.portada.sistema > .simbolo { grid-area: simbolo; width: auto; height: 20px; margin: var(--espacio-3) 0 0 var(--espacio-3); fill: currentColor; }
+/* P8: mantener el dedo en una tarjeta no abre la vista previa del enlace de Safari ni selecciona texto (el arrastre de respaldo la usa). */
+.con-p8 a.tarjeta { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* Medidas: el contraste del texto en su peor punto, pegado a la portada. */
+.medida { position: absolute; left: 0; top: 0; padding: 2px 6px; border-radius: 0 0 var(--radio) 0; background: var(--texto); color: var(--fondo); font-size: 11px; font-weight: 700; line-height: 1.3; font-variant-numeric: tabular-nums; pointer-events: none; }
+.medida.mal { background: #b3261e; }
+.medida.bien { background: var(--ok); }
+
+/* Lugares y artistas (OL-372): avatares de 64 y la tarjeta mediana de artista. */
+.en { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--foto) auto; justify-items: center; min-width: 0; color: var(--texto); text-align: center; }
+.en .foto { width: var(--foto); height: var(--foto); border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); }
+.en .nombre { display: block; width: 100%; overflow: hidden; margin-top: var(--espacio-1); white-space: nowrap; text-overflow: ellipsis; font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.en .det { width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--primario); font-size: var(--letra-2xs); font-weight: 700; }
+
+.secciones { position: sticky; bottom: 0; z-index: 12; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: var(--alto-nav); padding: var(--espacio-1) var(--espacio-2) 0; background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
+.secciones button { display: grid; justify-items: center; align-content: start; gap: 2px; font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+.secciones i { display: grid; place-items: center; width: 60px; height: 32px; border-radius: var(--radio-pildora); color: var(--texto); }
+.secciones .activa { color: var(--primario); }
+.secciones .activa i { background: var(--primario); color: var(--primario-texto); }
+.aviso { position: absolute; left: 50%; bottom: calc(var(--alto-nav) + 72px); z-index: 30; max-width: calc(100% - 2 * var(--gutter)); margin: 0; padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio-pildora); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); font-weight: 600; box-shadow: var(--sombra-flotante); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; transition: opacity var(--duracion), transform var(--duracion) var(--curva); }
+.aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===== El muestrario: todas las portadas de festivales, expos y talleres (y los eventos sin cartel) con la combinación de ahora. ===== */
+.muestrario { background: var(--fondo-contenido); }
+.muestrario .cab-m { display: grid; grid-template-columns: var(--toque) minmax(0, 1fr); align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-3) var(--espacio-2) var(--espacio-2); background: var(--fondo); box-shadow: 0 1px 0 var(--borde); }
+.muestrario .cab-m button { display: grid; place-items: center; width: var(--toque); height: var(--toque); }
+.muestrario .cab-m h2 { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.muestrario .cab-m p { color: var(--texto-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.muestrario h3 { margin: var(--espacio-5) var(--gutter) var(--espacio-2); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.rejilla { --foto: var(--tarjeta-grande-foto); display: grid; grid-template-columns: repeat(2, var(--tarjeta-grande)); justify-content: start; gap: var(--espacio-5) var(--espacio-5); padding: 0 var(--gutter) var(--espacio-4); }
+.rejilla.mediana { --foto: var(--tarjeta-mediana-foto); grid-template-columns: repeat(2, var(--tarjeta-mediana)); }
+.rejilla > li { position: relative; display: grid; min-width: 0; align-content: start; }
+.rejilla .nota { margin-top: var(--espacio-1); color: var(--texto-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+.rejilla .nota b { color: var(--texto); }
+
+/* ===== Los controles: una hoja en el teléfono; desde 760, una columna fija al lado. ===== */
+.fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4) 0 var(--espacio-3); border-radius: var(--radio-pildora); background: var(--pg-flotante); color: var(--pg-flotante-texto); font-size: var(--letra-sm); font-weight: 700; box-shadow: var(--sombra-flotante); }
+.fab span { color: var(--pg-flotante-suave); font-weight: 600; }
+.fab .i { width: 20px; height: 20px; }
+/* P8 a la vista: el botón para pedir el giroscopio (en iPhone solo se pide tras un toque) y, si no llega, el porqué. */
+.giro { position: fixed; left: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: min(240px, calc(100% - 2 * var(--espacio-4) - 200px)); min-height: var(--toque); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-acento); color: var(--pg-acento-texto); font-size: var(--letra-sm); font-weight: 700; line-height: 1.2; text-align: left; box-shadow: var(--sombra-flotante); }
+.giro.aviso-giro { background: var(--pg-flotante); color: var(--pg-flotante-texto); font-weight: 600; font-size: var(--letra-xs); }
+.giro:disabled { cursor: default; }
+.crono { position: fixed; left: var(--espacio-4); right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 41; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "tiempo tarea" "tiempo pista"; column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-flotante); color: var(--pg-flotante-texto); box-shadow: var(--sombra-flotante); text-align: left; }
+.crono b { grid-area: tiempo; font-size: var(--letra-2xl); font-variation-settings: var(--ancho-titulo); font-variant-numeric: tabular-nums; min-width: 3.4em; }
+.crono span { grid-area: tarea; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }
+.crono small { grid-area: pista; color: var(--pg-flotante-suave); font-size: var(--letra-xs); }
+.velo { position: fixed; inset: 0; z-index: 50; background: var(--pg-velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: min(72%, 680px); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra); transform: translateY(105%); visibility: hidden; transition: transform 240ms var(--curva), visibility 0s linear 240ms; }
+.hoja.abierta { transform: none; visibility: visible; transition: transform 240ms var(--curva), visibility 0s; }
+.asa { justify-self: center; width: 36px; height: 4px; margin-top: var(--espacio-2); border-radius: 2px; background: var(--pg-borde); }
+.hoja-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-2) var(--espacio-2) var(--espacio-4); }
+.hoja-cab h1 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.hoja-cab p { margin: 2px 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
+.resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
+.preajustes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); }
+.preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
+.combinacion { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.combinacion b { color: var(--pg-texto); }
+.medidor { display: grid; gap: var(--espacio-1); }
+.medidor .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-2); }
+.medidor .cifra { display: grid; gap: 1px; min-width: 0; padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio); background: var(--pg-fondo); }
+.medidor .cifra small { font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.15; }
+.medidor .cifra b { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.medidor .cifra b.bien { color: var(--pg-baja); }
+.medidor .cifra b.mal { color: var(--pg-mal); }
+.medidor .cifra span { font-size: var(--letra-2xs); color: var(--pg-suave); line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.medidor p { margin: 0; color: var(--pg-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+/* El porqué del preajuste: fuera del resumen fijo (si no, el resumen tapa media hoja y los interruptores pasan debajo). */
+.porque { margin: var(--espacio-3) 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.bloque { padding-top: var(--espacio-4); }
+.bloque h2 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.bloque > p { margin: 0 0 var(--espacio-2); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.ejercicios { list-style: none; margin: 0; padding: 0; }
+.interruptor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-3); align-items: start; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); cursor: pointer; }
+.interruptor.sub { padding-left: var(--espacio-4); }
+.interruptor b { display: block; font-size: var(--letra-md); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+.interruptor small { display: block; margin-top: 2px; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.interruptor small.firma { color: var(--pg-texto); font-weight: 600; }
+.interruptor input { appearance: none; position: relative; flex: none; width: 46px; height: 28px; margin: 0; border-radius: 14px; background: var(--pg-borde); cursor: pointer; transition: background var(--duracion); }
+.interruptor input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--pg-perilla); box-shadow: var(--pg-sombra-chica); transition: transform var(--duracion) var(--curva); }
+.interruptor input:checked { background: var(--pg-acento); }
+.interruptor input:checked::after { transform: translateX(18px); }
+.interruptor input:disabled { opacity: 0.4; cursor: default; }
+.interruptor.apagado { cursor: default; }
+.interruptor.apagado b { color: var(--pg-suave); }
+.opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-1); margin-top: var(--espacio-2); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.opciones button { min-height: 36px; border-radius: var(--radio-pildora); color: var(--pg-suave); font-size: var(--letra-xs); font-weight: 700; }
+.opciones button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.sub-p8 { display: grid; gap: var(--espacio-2); margin-top: var(--espacio-2); }
+.sub-p8 .estado-p8 { color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.boton { min-height: var(--toque-min); padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--pg-acento); color: var(--pg-acento-texto); font-weight: 700; white-space: nowrap; }
+.boton.secundario { background: var(--pg-fondo); color: var(--pg-texto); }
+.boton.corriendo { background: var(--pg-texto); color: var(--pg-panel); font-variant-numeric: tabular-nums; }
+.boton-texto { min-height: var(--toque-min); padding: 0; background: none; color: var(--pg-acento); font-weight: 700; }
+.pruebas { list-style: none; margin: 0; padding: 0; }
+.prueba { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-1) var(--espacio-3); align-items: center; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); }
+.prueba .tarea { font-weight: 700; line-height: 1.25; }
+.prueba .tiempos { grid-column: 1 / -1; color: var(--pg-suave); font-size: var(--letra-xs); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.prueba .tiempos b { color: var(--pg-texto); }
+.tabla-medidas { width: 100%; border-collapse: collapse; font-size: var(--letra-2xs); font-variant-numeric: tabular-nums; }
+.tabla-medidas th, .tabla-medidas td { padding: 3px 4px; border-bottom: 1px solid var(--pg-borde); text-align: left; vertical-align: top; }
+.tabla-medidas th { font-weight: 600; color: var(--pg-suave); }
+.tabla-medidas td.n { text-align: right; white-space: nowrap; font-weight: 700; }
+.tabla-medidas td.n.mal { color: var(--pg-mal); }
+.tabla-medidas td.n.bien { color: var(--pg-baja); }
+.notas { margin: 0; padding-left: 1.1em; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas li + li { margin-top: var(--espacio-1); }
+.notas b { color: var(--pg-texto); }
+
+@media (min-width: 760px) {
+  .hoja { position: relative; left: auto; right: auto; bottom: auto; z-index: auto; align-self: stretch; height: calc(100vh - 2 * var(--espacio-4)); height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border: 1px solid var(--pg-borde); border-radius: var(--radio-grande); box-shadow: none; transform: none; visibility: visible; transition: none; }
+  .asa, .cerrar, .fab, .crono, .velo, .giro { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .anillo.ahora::before { animation: none; }
+  .hoja, .hoja.abierta, .velo, .aviso, .interruptor input, .interruptor input::after { transition: none; }
+}
+</style>
+
+<main class="escena" id="escena">
+  <section class="columna col-hoy" id="col-hoy" aria-label="Inicio hoy, en producción">
+    <p class="etiqueta-tel"><b>Hoy</b> · como está en producción</p>
+    <div class="caja-tel"><div class="tel" id="tel-hoy"></div></div>
+  </section>
+  <section class="columna col-mix" aria-label="Inicio con los ejercicios">
+    <p class="etiqueta-tel" id="etiqueta-mix"></p>
+    <div class="caja-tel"><div class="tel" id="tel-mix"></div></div>
+  </section>
+
+  <aside class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <span class="asa" aria-hidden="true"></span>
+    <header class="hoja-cab">
+      <div>
+        <h1 id="hoja-titulo" tabindex="-1">Portadas del sistema</h1>
+        <p>Festivales, expos y talleres · dom 11 de oct, 14:16 · OL-374</p>
+      </div>
+      <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="hoja-cuerpo" id="hoja-cuerpo">
+      <div class="resumen">
+        <div class="preajustes" role="group" aria-label="Preajustes">
+          <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción</small></button>
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>11 de oct</small></button>
+          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del agente</small></button>
+          <button type="button" data-preset="minima" aria-pressed="false">Mínima<small>solo un carril</small></button>
+        </div>
+        <p class="combinacion" id="combinacion"></p>
+        <section class="medidor" aria-label="Medidor de contraste">
+          <div class="cifras">
+            <div class="cifra"><small>Peor texto sobre portada · esta</small><b id="m-esta">–</b><span id="m-esta-cual"></span></div>
+            <div class="cifra"><small>Peor texto sobre portada · Hoy</small><b id="m-hoy">–</b><span id="m-hoy-cual"></span></div>
+          </div>
+          <p>Contraste del título y su ceja en el peor punto de la portada, en lo que se ve ahora en el teléfono (mínimo 4,5:1). Con «Medidas», cada tarjeta enseña el suyo.</p>
+        </section>
+      </div>
+
+      <p class="porque" id="porque"></p>
+
+      <section class="bloque" aria-labelledby="t-ejercicios">
+        <h2 id="t-ejercicios">Ejercicios</h2>
+        <p>P1 enciende la portada del sistema; los demás afinan cómo es. Se combinan.</p>
+        <ul class="ejercicios" id="ejercicios"></ul>
+        <p style="margin-top: var(--espacio-3)"><button type="button" class="boton secundario" id="ver-muestrario">Ver todas las portadas</button></p>
+      </section>
+
+      <section class="bloque" id="bloque-medidas" aria-labelledby="t-medidas">
+        <h2 id="t-medidas">Medidas por tarjeta</h2>
+        <p>Las portadas con texto encima que están a la vista (o todas, en el muestrario): el título y su ceja en el peor punto.</p>
+        <table class="tabla-medidas"><thead><tr><th>Tarjeta</th><th>Portada</th><th>Título</th><th>Ceja</th></tr></thead><tbody id="tabla-medidas"></tbody></table>
+      </section>
+
+      <section class="bloque" id="bloque-pruebas" aria-labelledby="t-pruebas">
+        <h2 id="t-pruebas" tabindex="-1">Pruebas</h2>
+        <p>Elige un preajuste, toca «Empezar», búscalo en el teléfono y toca abajo al encontrarlo. El tiempo se guarda por preajuste en este navegador.</p>
+        <ol class="pruebas" id="pruebas"></ol>
+        <p><button type="button" class="boton-texto" id="borrar-tiempos">Borrar los tiempos</button></p>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-notas">
+        <h2 id="t-notas">Cómo leerlo</h2>
+        <ul class="notas">
+          <li><b>«Hoy»</b> es Inicio de producción el dom 11 de oct a las 14:16 (la hora de la extracción), armado con el código de la app: carriles, sello, ceja, chip, título corto y fila «Ahora».</li>
+          <li><b>Persona de ejemplo:</b> va al laboratorio de exploración sonora (taller) y le interesan KOWAIFEST (festival) y DESIERTO (expo); por eso las tres clases salen en «Tus planes».</li>
+          <li><b>La figura dice la clase</b>, nunca el color: círculo, festival (lo que reúne: un centro y todo lo que pasa alrededor); cuadrado, expo (un cuadro: la palabra es la misma); triángulo, taller (la escuadra, la herramienta). La palabra de la ceja lo confirma.</li>
+          <li><b>El color distingue tarjetas:</b> el más vivo de su cartel (un festival sin cartel, el de su próximo acto), en medio tono, con escalones del mismo color y un solo crema. Cartel gris, sin cartel o con la foto del lugar: un color de respaldo de las paletas propias de la app, por id.</li>
+          <li><b>Una composición por evento</b>, siempre la misma (la elige su id): tres arreglos por juego que comparten las tres clases. Las figuras se apoyan en la línea del título y dejan libre la esquina del sello.</li>
+          <li><b>El título nunca tiene figuras detrás:</b> la zona del título es del color de la base y el dibujo se recorta en su borde; crema sobre base oscura o negro sobre base clara, 5:1 o más.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</main>
+<div class="velo" id="velo"></div>
+<button class="fab" id="fab" type="button" aria-controls="hoja" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ejercicios <span id="fab-combinacion"></span></button>
+<button class="giro" id="giro" type="button" hidden>Activar el giro</button>
+<button class="crono" id="crono" type="button" hidden><b id="crono-tiempo">0,0</b><span id="crono-tarea"></span><small>Toca aquí al encontrarlo</small></button>
+<svg width="0" height="0" style="position: absolute" aria-hidden="true"><symbol id="sn" viewBox="0 0 1035 795"><path id="sn-trazo"/></symbol></svg>
+
+<script type="application/json" id="datos">{"ahora":"2026-10-11T20:16:55.000Z","zona":"America/Mexico_City","persona":{"voy":["b5b5aaa5-9957-422d-9b8f-44ffe61e3032"],"interesan":["62af5ba7-695e-4d0c-b472-08658b1ef0a0","4bf2f781-36ba-46bb-af15-647814777756"]},"simbolo":{"caja":{"ancho":1035,"alto":795},"trazo":"M654.972 664.298V377.338H657.972L802.852 702.408L803.834 772.338H859.113V740.438L895.647 772.338H1011.32C1015.33 772.338 1018.02 770.009 1020.02 766.538C1020.79 765.21 1021.66 763.987 1022.5 762.806C1024.93 759.375 1025.32 744.418 1022.5 732.918C1018.57 716.918 991.664 702.408 971.164 702.408C950.664 702.408 957.9 683.087 949.261 676.338C939.969 669.079 941.761 650.838 941.761 639.838C941.761 639.838 953.737 637.338 953.737 632.338L941.761 181.838C941.761 176.929 948.917 174.439 948.737 169.533C948.557 164.628 948.393 161.643 948.033 156.747C947.725 152.55 947.497 149.998 947.058 145.813C946.75 142.883 947.222 140.55 947.699 138.19C948.141 136.01 948.587 133.807 948.426 131.089C947.804 120.589 944.766 114.438 944.577 103.922C944.403 94.2806 935.975 86.4288 926.333 86.6021C920.238 86.7117 914.742 90.0096 911.568 94.8571C909.409 86.0564 900.44 80.0264 891.126 80.7628C886.766 81.1075 882.712 82.9056 879.558 85.6473C879.424 82.1268 879.258 78.7443 879.09 75.3096C878.783 69.0579 878.468 62.6332 878.323 54.8882C878.121 44.0821 877.261 37.5309 876.921 26.7283C876.626 17.3693 868.472 9.7135 859.113 10.0082C849.754 10.303 842.099 18.4568 842.393 27.8158C842.574 33.5427 842.502 38.0653 842.429 42.6836V42.696C842.366 46.644 842.303 50.6616 842.394 55.5606C842.579 65.4564 842.323 73.1658 842.056 81.1579C841.905 85.6824 841.751 90.2974 841.673 95.451C836.054 82.5561 831.351 73.8527 825.31 59.9263C821.297 50.6773 818.224 45.3332 814.141 36.1148C810.418 27.7068 800.171 23.7502 791.763 27.4736C783.355 31.1971 779.399 41.4436 783.122 49.8516C787.164 58.9784 788.987 64.8041 792.959 73.9611C799.636 89.3508 802.6 99.1727 809.08 114.646C810.698 118.509 811.127 124.296 811.219 128.165C811.161 128.062 811.094 127.966 811.018 127.878C801.685 117.207 786.328 107.716 775.657 117.049C764.986 126.381 772.346 142.866 781.679 153.537C784.318 156.554 788.9 156.516 793.133 156.48C797.982 156.439 802.372 156.402 802.852 160.969C803.109 163.418 803.242 164.911 803.423 167.366C803.633 170.23 803.729 171.977 803.834 174.848C803.94 177.718 811.219 178.966 811.219 181.838C811.219 181.838 817.308 409.357 825.31 459.338C833.311 509.319 786.761 426.838 771.657 393.838C756.554 360.838 694.072 181.02 663.761 131.089C647.16 103.742 593.272 94.4434 561.793 110.838C537.793 123.338 526.673 132.443 521.793 190.338C517.289 243.78 521.131 354.203 521.793 433.838C522.718 544.941 508.972 649.698 508.972 649.698C508.972 667.686 504.592 678.43 504.592 696.418C504.592 705.649 501.095 710.85 498.752 719.778C495.219 733.238 490.417 740.95 489.262 754.818C489.231 755.189 489.198 755.569 489.164 755.958C488.566 762.882 487.748 772.338 494.372 772.338H725.052C729.088 772.338 731.794 769.993 733.812 766.498C734.584 765.161 735.459 763.929 736.303 762.74C738.757 759.286 740.957 756.188 739.652 751.898C736.877 742.78 731.201 738.657 723.592 732.918C713.799 725.534 705.284 725.185 695.122 718.318C684.433 711.096 677.267 706.771 669.572 696.418C661.504 685.563 654.972 677.823 654.972 664.298ZM269.211 784.338C315.878 784.338 353.378 776.505 381.711 760.838C410.044 745.172 430.711 723.505 443.711 695.838C456.711 668.172 463.211 637.005 463.211 602.338C463.211 571.672 459.044 544.672 450.711 521.338C442.378 498.005 431.044 477.338 416.711 459.338C402.378 441.338 386.211 425.172 368.211 410.838C358.277 402.927 348.139 395.271 337.798 387.868C339.827 388.375 341.981 388.445 344.12 387.985C351.697 386.354 356.719 378.578 355.088 371.001C354.595 368.711 354.585 367.263 354.135 364.964C352.648 357.371 352.807 352.587 351.794 344.916C351.579 343.289 352.15 340.649 352.15 340.649C352.15 340.649 353.809 345.402 354.152 348.483C355.395 359.669 357.654 366.257 360.42 377.167C361.49 381.387 362.599 383.823 363.89 387.98C366.467 396.277 375.651 401.108 383.948 398.531C389.672 396.754 393.746 391.831 394.877 386.225C397.789 393.555 405.7 398.303 413.714 396.968C422.908 395.438 429.38 386.38 427.85 377.186C427.277 373.747 427.336 371.598 426.832 368.149C426.282 364.378 426.001 361.148 425.815 358.045C426.283 360.012 426.764 362.09 427.248 364.373C427.986 367.852 428.823 369.874 429.667 373.329C431.801 382.059 440.978 387.631 449.709 385.497C458.44 383.363 464.011 374.186 461.877 365.455C461.126 362.384 461.056 360.433 460.4 357.34C458.652 349.1 458.604 343.599 457.799 335.777C464.362 339.09 471.324 339.788 476.895 334.893C486.745 326.237 479.811 311.02 471.155 301.171C468.884 298.585 464.767 299.373 461.002 300.094C456.949 300.869 453.303 301.567 452.804 297.896C452.593 296.346 452.479 295.4 452.317 293.844C452.128 292.028 452.033 290.92 451.911 289.099C451.751 286.728 451.635 285.284 451.62 282.908C451.437 253.853 447.134 227.83 438.711 204.838C426.378 171.172 405.711 145.338 376.711 127.338C347.711 109.338 310.544 100.338 265.211 100.338C255.658 100.338 325.524 70.8383 291.711 66.3383C257.898 61.8383 215.261 96.3597 205.211 95.2602C181.663 92.6839 158.318 90.8559 138.531 94.8571C101.442 102.357 73.9708 135.338 70.5256 163.838C67.0804 192.338 76.211 237.338 76.211 271.338C76.211 297.338 80.0443 320.338 87.711 340.338C95.3776 360.338 105.544 378.172 118.211 393.838C130.878 409.505 144.878 423.505 160.211 435.838C175.544 448.172 190.544 459.672 205.211 470.338C221.878 481.672 238.211 494.005 254.211 507.338C270.211 520.672 283.378 536.172 293.711 553.838C304.044 571.505 309.211 592.672 309.211 617.338C309.211 630.005 307.711 640.338 304.711 648.338C301.711 656.338 297.378 662.338 291.711 666.338C286.044 670.338 279.211 672.338 271.211 672.338C254.544 672.338 242.544 664.838 235.211 649.838C227.878 634.838 223.878 615.505 223.211 591.838C223.183 590.852 223.159 589.864 223.14 588.876L223.139 588.838C222.813 572.695 219.64 563.025 215.68 547.362C211.478 530.743 205.111 521.795 196.561 506.938C189.221 494.183 182.019 488.19 171.811 477.591C168.297 473.942 166.735 471.06 162.644 468.072C158.662 465.165 152.608 467.137 151.076 462.45C148.132 453.442 145.514 448.249 142.488 439.268C141.118 435.203 139.918 432.86 138.531 428.801C136.267 422.169 128.753 418.481 122.121 420.745C115.49 423.01 111.801 430.524 114.066 437.155C115.439 441.176 115.903 443.742 117.259 447.768C120.254 456.658 121.242 462.332 124.156 471.249C124.916 473.574 127.236 476.838 127.236 476.838C127.236 476.838 124.169 476.528 123.291 475.134C116.59 464.486 111.618 458.598 104.606 448.152C100.887 442.611 98.1805 439.549 94.3751 434.066C89.8877 427.602 80.6373 425.932 74.1727 430.419C67.7081 434.907 66.0382 444.157 70.5256 450.622C74.2302 455.959 76.0354 459.506 79.6562 464.9C85.6393 473.813 88.8728 480.107 93.9792 488.512C85.2532 480.464 78.9731 475.829 69.9866 467.364C65.0393 462.703 61.6682 460.26 56.7272 455.593C50.6023 449.807 40.5428 450.094 34.7576 456.219C28.9723 462.344 29.2592 472.404 35.384 478.189C40.3369 482.867 42.9803 486.097 47.9395 490.768C56.161 498.513 61.0693 504.182 68.4135 511.351C60.1953 507.131 54.0695 504.583 45.3412 499.56C40.534 496.793 37.3853 495.505 32.6195 492.668C25.6294 488.507 16.2108 490.896 12.0498 497.886C7.88873 504.876 10.2782 514.295 17.2683 518.456C22.1822 521.381 24.9383 523.549 29.8949 526.401C39.8115 532.108 45.5618 536.367 55.3709 541.695C39.3376 544.271 21.2994 549.695 23.2703 564.881C25.4879 581.969 49.045 580.639 66.1326 578.422C68.6666 578.093 70.3304 575.101 71.7823 572.49C73.3656 569.643 74.6969 567.249 76.6299 569.256C77.5005 570.16 77.5501 571.208 77.6017 572.297C77.6447 573.204 77.6891 574.14 78.2106 575.046C78.9547 576.339 78.706 577.554 78.4461 578.824C78.2356 579.853 78.0177 580.917 78.3138 582.089C78.8429 584.182 78.1837 585.79 77.4815 587.503C77.06 588.531 76.6231 589.596 76.4184 590.827L76.3956 590.828C76.3755 591.04 76.3556 591.251 76.336 591.463C74.7526 608.547 74.8776 624.672 76.711 639.838C80.3776 670.172 90.211 696.172 106.211 717.838C122.211 739.505 143.878 756.005 171.211 767.338C198.544 778.672 231.211 784.338 269.211 784.338ZM329.141 381.762C323.556 377.882 317.912 374.074 312.211 370.338C298.211 361.005 284.711 351.505 271.711 341.838C258.711 332.172 248.211 321.172 240.211 308.838C232.211 296.505 228.211 282.005 228.211 265.338C228.211 255.338 229.711 246.838 232.711 239.838C235.711 232.838 240.044 227.338 245.711 223.338C251.378 219.338 257.878 217.338 265.211 217.338C275.878 217.338 284.711 220.838 291.711 227.838C298.711 234.838 303.878 244.338 307.211 256.338C310.032 266.492 311.778 277.72 312.451 290.022L312.452 290.053C312.627 293.263 312.657 295.23 312.874 298.445C313.127 302.219 313.324 304.515 313.716 308.277C314.051 311.503 314.287 313.463 314.724 316.677C315.444 321.97 315.576 325.242 316.602 330.485C318.002 337.64 320.092 341.75 321.046 348.978C322.153 357.356 323.9 362.271 325.524 370.565C326.014 373.067 326.6 374.525 327.136 377.017C327.509 378.748 328.203 380.346 329.141 381.762Z"},"asistencias":{"b5b5aaa5-9957-422d-9b8f-44ffe61e3032":"voy","62af5ba7-695e-4d0c-b472-08658b1ef0a0":"me_interesa","4bf2f781-36ba-46bb-af15-647814777756":"me_interesa"},"filaAhora":[{"id":"8513ec9d-102b-4479-a07b-f797f55694b8","clave":"8513ec9d-102b-4479-a07b-f797f55694b8:2026-10-11","titulo":"Verbena, Ritmo y Sabor: vendimia, ritmos latinos y gastronomía","tipo":"ahora","rotulo":"Ahora","etiqueta":"Ahora","anillo":"ahora","inicio":"2026-10-11T16:00:00+00:00","exposicion":false,"cartel":"e-verbena-ritmo-y-sabor-vendimia-ritmos-la.webp","fondo":"radial-gradient(110% 70% at 15% 12%, #0f7c6c 0%, rgba(15,124,108,0) 62%), radial-gradient(90% 70% at 92% 40%, #3fc1a5 0%, rgba(63,193,165,0) 66%), radial-gradient(120% 80% at 40% 105%, #c6f68d 0%, rgba(198,246,141,0) 64%), #04262c"},{"id":"191c6fc3-6e1a-49c0-b3ca-001a0bc105f1","clave":"191c6fc3-6e1a-49c0-b3ca-001a0bc105f1:2026-10-11","titulo":"Cine en el museo: Ralph el demoledor","tipo":"ahora","rotulo":"Ahora","etiqueta":"Ahora","anillo":"ahora","inicio":"2026-10-11T19:00:00+00:00","exposicion":false,"cartel":null,"fondo":"radial-gradient(110% 70% at 15% 12%, #2d3fd6 0%, rgba(45,63,214,0) 62%), radial-gradient(90% 70% at 92% 40%, #a43fd6 0%, rgba(164,63,214,0) 66%), radial-gradient(120% 80% at 40% 105%, #48c6ef 0%, rgba(72,198,239,0) 64%), #0b1340"}],"carriles":{"titulo":"Destacados","tusPlanes":[{"id":"b5b5aaa5-9957-422d-9b8f-44ffe61e3032","clave":"b5b5aaa5-9957-422d-9b8f-44ffe61e3032:2026-10-17","titulo":"Laboratorio de exploración sonora: escucha activa, arte sonoro y grabación de campo","corto":"Laboratorio de exploración sonora","oracion":"Laboratorio de exploración sonora","clase":"taller","claseTexto":"Taller","ceja":["Taller","Sesión 2 de 4"],"chip":{"texto":"2 van","tuyo":false},"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"Laboratorio de exploración sonora: escucha activa, arte sonoro y grabación de campo. Taller · Sesión 2 de 4. sáb 17 de oct · 17:00. Aurora Co-Lab. Vas. 2 van","foto":"e-laboratorio-de-exploracion-sonora-escuch.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":["#060605","#3e3f23","#181817","#181817"],"cartelGris":false,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"sáb 17 de oct · 17:00","sitio":"Aurora Co-Lab","hoy":false,"parte":"Sesión 2 de 4","van":2,"sinVoy":false,"inicio":"2026-10-17T23:00:00+00:00","fin":"2026-10-18T02:00:00+00:00","zona":"America/Mexico_City","decision":"voy"},{"id":"4bf2f781-36ba-46bb-af15-647814777756","clave":"4bf2f781-36ba-46bb-af15-647814777756:2026-10-12","titulo":"DESIERTO: Observación y Espacio.","corto":"DESIERTO","oracion":"Desierto","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":{"texto":"Te interesa","tuyo":true},"sello":{"mes":"oct","dia":"12","flecha":"despues","texto":"desde el 12 de octubre"},"nombre":"DESIERTO: Observación y Espacio.. Exposición. Del 12 de oct al 15 de nov. Aether. Te interesa","foto":"e-desierto-observacion-y-espacio.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","coloresCartel":["#0e1215","#374e5a","#352718","#424441"],"cartelGris":false,"propia":["#1e0b3d","#6d34c8","#ff7a1a","#ffd23f"],"nombrePropia":"Xantolo","detalle":"Del 12 de oct al 15 de nov","sitio":"Aether","hoy":false,"parte":null,"van":2,"sinVoy":true,"inicio":"2026-10-12T06:00:00+00:00","fin":"2026-11-16T05:59:00+00:00","zona":"America/Mexico_City","decision":"me_interesa"},{"id":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","clave":"62af5ba7-695e-4d0c-b472-08658b1ef0a0:2026-10-17","titulo":"KOWAIFEST","corto":"KOWAIFEST","oracion":"Kowaifest","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":{"texto":"Te interesa","tuyo":true},"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"KOWAIFEST. Festival. sáb 17 de oct. Dēppa · Programa por confirmar. Te interesa","foto":"e-kowaifest.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":["#18070a","#721323","#194541","#232121"],"cartelGris":false,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"sáb 17 de oct","sitio":"Dēppa · Programa por confirmar","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-18T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":"me_interesa"}],"destacados":[{"id":"8513ec9d-102b-4479-a07b-f797f55694b8","clave":"8513ec9d-102b-4479-a07b-f797f55694b8:2026-10-11","titulo":"Verbena, Ritmo y Sabor: vendimia, ritmos latinos y gastronomía","corto":"Verbena, Ritmo y Sabor","oracion":"Verbena, Ritmo y Sabor","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"11","flecha":null,"texto":"11 de octubre"},"nombre":"Verbena, Ritmo y Sabor: vendimia, ritmos latinos y gastronomía. hoy · 10:00. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"e-verbena-ritmo-y-sabor-vendimia-ritmos-la.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":["#2e2c1d","#e19e53","#aacd6d","#c9c16b"],"cartelGris":false,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"hoy · 10:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":true,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-11T16:00:00+00:00","fin":"2026-10-12T00:00:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"fada539a-11fe-4480-add3-25fa577a027e","clave":"fada539a-11fe-4480-add3-25fa577a027e:2026-10-14","titulo":"Chatbot Challenge, obra escénica de Interrobang Performance","corto":"Chatbot Challenge","oracion":"Chatbot Challenge","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":{"texto":"2 van","tuyo":false},"sello":{"mes":"oct","dia":"14","flecha":null,"texto":"14 de octubre"},"nombre":"Chatbot Challenge, obra escénica de Interrobang Performance. mié 14 de oct · 20:00. Centro de las Artes de San Luis Potosí Centenario (CEART). 2 van","foto":"e-chatbot-challenge-obra-escenica-de-inter.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":["#280a09","#c61b17","#3c3c93","#575456"],"cartelGris":false,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"mié 14 de oct · 20:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":2,"sinVoy":false,"inicio":"2026-10-15T02:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"3d5b4fc4-a3a2-4328-a103-dcb356c8fe67","clave":"3d5b4fc4-a3a2-4328-a103-dcb356c8fe67:2026-10-17","titulo":"CINEMA: El atractivo de la resistencia, concierto y charla de MOTUS NEU jazz","corto":"CINEMA","oracion":"Cinema","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"CINEMA: El atractivo de la resistencia, concierto y charla de MOTUS NEU jazz. sáb 17 de oct · 19:00. Museo Federico Silva Escultura Contemporánea","foto":"e-cinema-attraktivitat-des-widerstandigen.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","coloresCartel":["#260908","#be1713","#50518f","#3f3f3d"],"cartelGris":false,"propia":["#0b1340","#2d3fd6","#a43fd6","#48c6ef"],"nombrePropia":"Tangamanga","detalle":"sáb 17 de oct · 19:00","sitio":"Museo Federico Silva Escultura Contemporánea","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-18T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"ad11d69b-b2e1-46f6-ad68-a0fd53f02fd5","clave":"ad11d69b-b2e1-46f6-ad68-a0fd53f02fd5:2026-10-22","titulo":"Orquesta Sinfónica de San Luis Potosí: Gala de Ópera","corto":"Orquesta Sinfónica de San Luis Potosí","oracion":"Orquesta Sinfónica de San Luis Potosí","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"22","flecha":null,"texto":"22 de octubre"},"nombre":"Orquesta Sinfónica de San Luis Potosí: Gala de Ópera. jue 22 de oct · 20:00. Teatro de la Paz","foto":"l-teatro-de-la-paz.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","coloresCartel":null,"cartelGris":null,"propia":["#2a0a2e","#b0306a","#ff6f61","#ffb88a"],"nombrePropia":"Cantera","detalle":"jue 22 de oct · 20:00","sitio":"Teatro de la Paz","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-23T02:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null}],"estaSemana":[{"id":"191c6fc3-6e1a-49c0-b3ca-001a0bc105f1","clave":"191c6fc3-6e1a-49c0-b3ca-001a0bc105f1:2026-10-11","titulo":"Cine en el museo: Ralph el demoledor","corto":"Cine en el museo","oracion":"Cine en el museo","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"11","flecha":null,"texto":"11 de octubre"},"nombre":"Cine en el museo: Ralph el demoledor. hoy · 13:00. Museo del Ferrocarril Jesús García Corona","foto":"l-museo-del-ferrocarril-jesus-garcia-coron.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","coloresCartel":null,"cartelGris":null,"propia":["#0b1340","#2d3fd6","#a43fd6","#48c6ef"],"nombrePropia":"Tangamanga","detalle":"hoy · 13:00","sitio":"Museo del Ferrocarril Jesús García Corona","hoy":true,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-11T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"a2fd0b35-983d-481c-ba2c-e79c8c587f30","clave":"a2fd0b35-983d-481c-ba2c-e79c8c587f30:2026-10-13","titulo":"Café literario: la trilogía de Laura Esquivel","corto":"Café literario","oracion":"Café literario","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"13","flecha":null,"texto":"13 de octubre"},"nombre":"Café literario: la trilogía de Laura Esquivel. mar 13 de oct · 17:30. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"mar 13 de oct · 17:30","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-13T23:30:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"01a0551e-2106-4c13-9d1b-a1712c58e6a3","clave":"01a0551e-2106-4c13-9d1b-a1712c58e6a3:2026-10-14","titulo":"Cine de barrio: ciclo Fellini","corto":"Cine de barrio","oracion":"Cine de barrio","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"14","flecha":null,"texto":"14 de octubre"},"nombre":"Cine de barrio: ciclo Fellini. mié 14 de oct · 10:00. Casa de Cultura del Barrio de San Miguelito","foto":"e-cine-de-barrio-ciclo-fellini-2026-10-14.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":["#0a0f16","#223f63","#262c47","#959bab"],"cartelGris":false,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"mié 14 de oct · 10:00","sitio":"Casa de Cultura del Barrio de San Miguelito","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-14T16:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"f295e536-8597-4466-808d-86484a551602","clave":"f295e536-8597-4466-808d-86484a551602:2026-10-14","titulo":"Querida yo: taller por el día contra el cáncer de mama","corto":"Querida yo","oracion":"Querida yo","clase":"taller","claseTexto":"Taller","ceja":["Taller"],"chip":null,"sello":{"mes":"oct","dia":"14","flecha":null,"texto":"14 de octubre"},"nombre":"Querida yo: taller por el día contra el cáncer de mama. Taller. mié 14 de oct · 17:00. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","coloresCartel":null,"cartelGris":null,"propia":["#1e0b3d","#6d34c8","#ff7a1a","#ffd23f"],"nombrePropia":"Xantolo","detalle":"mié 14 de oct · 17:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-14T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"60512fe6-c325-4ffa-86a3-48c1e8c84dd5","clave":"60512fe6-c325-4ffa-86a3-48c1e8c84dd5:2026-10-15","titulo":"La sexualidad antes, durante y después del cáncer de mama, conferencia","corto":"La sexualidad antes","oracion":"La sexualidad antes","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"15","flecha":null,"texto":"15 de octubre"},"nombre":"La sexualidad antes, durante y después del cáncer de mama, conferencia. jue 15 de oct · 17:00. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","coloresCartel":null,"cartelGris":null,"propia":["#0b1340","#2d3fd6","#a43fd6","#48c6ef"],"nombrePropia":"Tangamanga","detalle":"jue 15 de oct · 17:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-15T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"d8a6d958-d487-4e0a-b3c1-9cb5c8f6e861","clave":"d8a6d958-d487-4e0a-b3c1-9cb5c8f6e861:2026-10-15","titulo":"Un León Marinero: Por ti me voy de tour en Ciudad de México","corto":"Un León Marinero","oracion":"Un León Marinero","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"15","flecha":null,"texto":"15 de octubre"},"nombre":"Un León Marinero: Por ti me voy de tour en Ciudad de México. jue 15 de oct · 19:00. Herodoto 46","foto":"e-un-leon-marinero-por-ti-me-voy-de-tour-e.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":["#121923","#4068a2","#525334","#1b1913"],"cartelGris":false,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"jue 15 de oct · 19:00","sitio":"Herodoto 46","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-16T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"a80e1775-bda4-45b9-b719-0e640a9ad07d","clave":"a80e1775-bda4-45b9-b719-0e640a9ad07d:2026-10-15","titulo":"Homenaje a don Wilberth Patrón","corto":"Homenaje a don Wilberth Patrón","oracion":"Homenaje a don Wilberth Patrón","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"15","flecha":null,"texto":"15 de octubre"},"nombre":"Homenaje a don Wilberth Patrón. jue 15 de oct · 19:30. Casa Museo Manuel José Othón","foto":"l-casa-museo-manuel-jose-othon.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":null,"cartelGris":null,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"jue 15 de oct · 19:30","sitio":"Casa Museo Manuel José Othón","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-16T01:30:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"d77b6c93-32a1-4a45-88f9-963497497933","clave":"d77b6c93-32a1-4a45-88f9-963497497933:2026-10-16","titulo":"Expo Artesanal Las Penas con Pan y Muertos","corto":"Expo Artesanal Las Penas con Pan y Muertos","oracion":"Expo Artesanal Las Penas con Pan y Muertos","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Expo Artesanal Las Penas con Pan y Muertos. vie 16 de oct · 12:00. Museo Nacional de la Máscara","foto":"e-expo-artesanal-las-penas-con-pan-y-muert.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","coloresCartel":["#1e1508","#8b5711","#731b37","#602a25"],"cartelGris":false,"propia":["#1e0b3d","#6d34c8","#ff7a1a","#ffd23f"],"nombrePropia":"Xantolo","detalle":"vie 16 de oct · 12:00","sitio":"Museo Nacional de la Máscara","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-16T18:00:00+00:00","fin":"2026-10-17T03:00:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"43738aba-cb43-4c98-b4ba-78c0f875cf6a","clave":"43738aba-cb43-4c98-b4ba-78c0f875cf6a:2026-10-16","titulo":"Presentación de Figarella, antología gatuna de Julio Grotten","corto":"Presentación de Figarella","oracion":"Presentación de Figarella","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Presentación de Figarella, antología gatuna de Julio Grotten. vie 16 de oct · 17:30. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","coloresCartel":null,"cartelGris":null,"propia":["#0b1340","#2d3fd6","#a43fd6","#48c6ef"],"nombrePropia":"Tangamanga","detalle":"vie 16 de oct · 17:30","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-16T23:30:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"db290cd1-a3b8-45f4-81df-345c0a56e94d","clave":"db290cd1-a3b8-45f4-81df-345c0a56e94d:2026-10-16","titulo":"Del escenario a la pantalla: el trabajo del actor, conversatorio","corto":"Del escenario a la pantalla","oracion":"Del escenario a la pantalla","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Del escenario a la pantalla: el trabajo del actor, conversatorio. vie 16 de oct · 18:00. Instituto Potosino de Bellas Artes (IPBA)","foto":"l-instituto-potosino-de-bellas-artes-ipba.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":null,"cartelGris":null,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"vie 16 de oct · 18:00","sitio":"Instituto Potosino de Bellas Artes (IPBA)","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T00:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"4a4139f2-9ba9-4427-9245-9f5b7839c413","clave":"4a4139f2-9ba9-4427-9245-9f5b7839c413:2026-10-16","titulo":"Gitanos mexicanos 2.ª edición: Pargazz","corto":"Gitanos mexicanos 2.ª edición","oracion":"Gitanos mexicanos 2.ª edición","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Gitanos mexicanos 2.ª edición: Pargazz. vie 16 de oct · 19:00. Museo Francisco Cossío","foto":"l-museo-francisco-cossio.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":null,"cartelGris":null,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"vie 16 de oct · 19:00","sitio":"Museo Francisco Cossío","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"787f61cf-e07d-40ff-afc2-cee763b99089","clave":"787f61cf-e07d-40ff-afc2-cee763b99089:2026-10-16","titulo":"CINEMA: The Future of Music, de Anna Schmidt","corto":"CINEMA","oracion":"Cinema","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"CINEMA: The Future of Music, de Anna Schmidt. vie 16 de oct · 20:00. Museo Federico Silva Escultura Contemporánea","foto":"e-cinema-the-future-of-music-de-anna-schmi.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":["#210b09","#a02219","#8b7053","#3f4341"],"cartelGris":false,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"vie 16 de oct · 20:00","sitio":"Museo Federico Silva Escultura Contemporánea","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T02:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"6825ddcc-10e8-4fc8-a403-74fd246a1161","clave":"6825ddcc-10e8-4fc8-a403-74fd246a1161:2026-10-16","titulo":"Un León Marinero: Por ti me voy de tour en Puebla","corto":"Un León Marinero","oracion":"Un León Marinero","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Un León Marinero: Por ti me voy de tour en Puebla. vie 16 de oct · 21:00. Breve Espacio","foto":"e-un-leon-marinero-por-ti-me-voy-de-tour-e.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":["#121923","#4068a2","#525334","#1b1913"],"cartelGris":false,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"vie 16 de oct · 21:00","sitio":"Breve Espacio","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T03:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"7742f268-9d2f-45ab-8f1a-6de93b9fec7f","clave":"7742f268-9d2f-45ab-8f1a-6de93b9fec7f:2026-10-17","titulo":"Expo Artesanal Las Penas con Pan y Muertos","corto":"Expo Artesanal Las Penas con Pan y Muertos","oracion":"Expo Artesanal Las Penas con Pan y Muertos","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"Expo Artesanal Las Penas con Pan y Muertos. sáb 17 de oct · 12:00. Museo Nacional de la Máscara","foto":"e-expo-artesanal-las-penas-con-pan-y-muert.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":["#1e1508","#8b5711","#731b37","#602a25"],"cartelGris":false,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"sáb 17 de oct · 12:00","sitio":"Museo Nacional de la Máscara","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T18:00:00+00:00","fin":"2026-10-18T03:00:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"f82e32c9-4609-4647-9d72-3dd6923a7c92","clave":"f82e32c9-4609-4647-9d72-3dd6923a7c92:2026-10-17","titulo":"Presentación de 903 km. BCS & SLP: poesía de los desiertos","corto":"Presentación de 903 km. BCS & SLP","oracion":"Presentación de 903 km. BCS & SLP","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"Presentación de 903 km. BCS & SLP: poesía de los desiertos. sáb 17 de oct · 13:00. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","coloresCartel":null,"cartelGris":null,"propia":["#2a0a2e","#b0306a","#ff6f61","#ffb88a"],"nombrePropia":"Cantera","detalle":"sáb 17 de oct · 13:00","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"7bed54ba-1976-4e0d-ac2f-6b73f34cd20b","clave":"7bed54ba-1976-4e0d-ac2f-6b73f34cd20b:2026-10-17","titulo":"Viajera: actividades lúdicas para niñas y niños","corto":"Viajera","oracion":"Viajera","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"Viajera: actividades lúdicas para niñas y niños. sáb 17 de oct · 13:00. Museo del Ferrocarril Jesús García Corona","foto":"l-museo-del-ferrocarril-jesus-garcia-coron.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","coloresCartel":null,"cartelGris":null,"propia":["#0b1340","#2d3fd6","#a43fd6","#48c6ef"],"nombrePropia":"Tangamanga","detalle":"sáb 17 de oct · 13:00","sitio":"Museo del Ferrocarril Jesús García Corona","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T19:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"0bcf4b03-64cf-4bc1-8d9f-06a9f962d109","clave":"0bcf4b03-64cf-4bc1-8d9f-06a9f962d109:2026-10-13","titulo":"Primer recital musical de otoño de la Academia Inspiratio","corto":"Primer recital musical de otoño de la Academia Inspiratio","oracion":"Primer recital musical de otoño de la Academia Inspiratio","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"13","flecha":null,"texto":"13 de octubre"},"nombre":"Primer recital musical de otoño de la Academia Inspiratio. mar 13 de oct · 19:00. Casa de Cultura del Barrio de San Miguelito","foto":null,"fotoEsCartel":false,"fotoOrigen":null,"coloresActo":null,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","coloresCartel":null,"cartelGris":null,"propia":["#2a0a2e","#b0306a","#ff6f61","#ffb88a"],"nombrePropia":"Cantera","detalle":"mar 13 de oct · 19:00","sitio":"Casa de Cultura del Barrio de San Miguelito","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-14T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"49d4e217-007c-4125-8042-cb388e602d29","clave":"49d4e217-007c-4125-8042-cb388e602d29:2026-10-15","titulo":"Lectura homenaje a la poeta Olimpia Badillo","corto":"Lectura homenaje a la poeta Olimpia Badillo","oracion":"Lectura homenaje a la poeta Olimpia Badillo","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"15","flecha":null,"texto":"15 de octubre"},"nombre":"Lectura homenaje a la poeta Olimpia Badillo. jue 15 de oct · 19:00. Casa del Poeta Ramón López Velarde","foto":null,"fotoEsCartel":false,"fotoOrigen":null,"coloresActo":null,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":null,"cartelGris":null,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"jue 15 de oct · 19:00","sitio":"Casa del Poeta Ramón López Velarde","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-16T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"5b6e1437-11f3-4d6b-b751-e8af2f5bec65","clave":"5b6e1437-11f3-4d6b-b751-e8af2f5bec65:2026-10-16","titulo":"Yo Marcos, teatro unipersonal","corto":"Yo Marcos","oracion":"Yo Marcos","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Yo Marcos, teatro unipersonal. vie 16 de oct · 17:00. Teatro del IMSS San Luis Potosí","foto":null,"fotoEsCartel":false,"fotoOrigen":null,"coloresActo":null,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"vie 16 de oct · 17:00","sitio":"Teatro del IMSS San Luis Potosí","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-16T23:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null},{"id":"2b4bc46a-4d93-4284-b29c-ef53d861b358","clave":"2b4bc46a-4d93-4284-b29c-ef53d861b358:2026-10-16","titulo":"Presentación de Palabra fértil, de Angélica Hernández","corto":"Presentación de Palabra fértil","oracion":"Presentación de Palabra fértil","clase":"puntual","claseTexto":"Evento","ceja":[],"chip":null,"sello":{"mes":"oct","dia":"16","flecha":null,"texto":"16 de octubre"},"nombre":"Presentación de Palabra fértil, de Angélica Hernández. vie 16 de oct · 19:30. Biblioteca Central del Estado","foto":null,"fotoEsCartel":false,"fotoOrigen":null,"coloresActo":null,"sinCartel":true,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","coloresCartel":null,"cartelGris":null,"propia":["#1e0b3d","#6d34c8","#ff7a1a","#ffd23f"],"nombrePropia":"Xantolo","detalle":"vie 16 de oct · 19:30","sitio":"Biblioteca Central del Estado","hoy":false,"parte":null,"van":0,"sinVoy":false,"inicio":"2026-10-17T01:30:00+00:00","fin":null,"zona":"America/Mexico_City","decision":null}],"festivales":[{"id":"67305228-eafd-55a7-97a0-5d4708222805","clave":"67305228-eafd-55a7-97a0-5d4708222805","titulo":"Verbena, ritmo y Sabor","corto":"Verbena","oracion":"Verbena","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":null,"sello":{"mes":"oct","dia":"10–11","flecha":null,"texto":"del 10 al 11 de octubre"},"nombre":"Verbena, ritmo y Sabor. Festival. Hasta el dom 11 de oct. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"e-verbena-ritmo-y-sabor-vendimia-ritmos-la.webp","fotoEsCartel":false,"fotoOrigen":"acto","coloresActo":["#2e2c1d","#e19e53","#aacd6d","#c9c16b"],"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el dom 11 de oct","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-10T23:30:00+00:00","fin":"2026-10-12T00:00:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"dfbd5711-d3d3-487d-ac02-ff8464221542","clave":"dfbd5711-d3d3-487d-ac02-ff8464221542","titulo":"CINEMA: XV Festival de Cine México-Alemania","corto":"CINEMA","oracion":"Cinema","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":null,"sello":{"mes":"oct","dia":"24","flecha":"antes","texto":"hasta el 24 de octubre"},"nombre":"CINEMA: XV Festival de Cine México-Alemania. Festival. Hasta el sáb 24 de oct. Varias sedes","foto":"e-chatbot-challenge-obra-escenica-de-inter.webp","fotoEsCartel":false,"fotoOrigen":"acto","coloresActo":["#280a09","#c61b17","#3c3c93","#575456"],"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el sáb 24 de oct","sitio":"Varias sedes","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-09-30T00:00:00+00:00","fin":"2026-10-25T05:00:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"c4c56775-340d-5bac-9bbb-1a7a283d64f8","clave":"c4c56775-340d-5bac-9bbb-1a7a283d64f8","titulo":"Ciclo Fellini","corto":"Ciclo Fellini","oracion":"Ciclo Fellini","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":null,"sello":{"mes":"oct","dia":"28","flecha":"antes","texto":"hasta el 28 de octubre"},"nombre":"Ciclo Fellini. Festival. Hasta el mié 28 de oct. Casa de Cultura del Barrio de San Miguelito","foto":"e-ciclo-fellini.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","coloresCartel":["#2e121b","#d7396c","#b3a555","#d6cec4"],"cartelGris":false,"propia":["#1e0b3d","#6d34c8","#ff7a1a","#ffd23f"],"nombrePropia":"Xantolo","detalle":"Hasta el mié 28 de oct","sitio":"Casa de Cultura del Barrio de San Miguelito","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-09-23T16:00:00+00:00","fin":"2026-10-28T19:00:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"1e78667f-22f0-4e77-a814-2463c03fb2ad","clave":"1e78667f-22f0-4e77-a814-2463c03fb2ad","titulo":"La memoria del agua, exposición de Alejandra Fersco","corto":"La memoria del agua","oracion":"La memoria del agua","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"1","flecha":"antes","texto":"hasta el 1 de noviembre"},"nombre":"La memoria del agua, exposición de Alejandra Fersco. Exposición. Hasta el dom 1 de nov. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el dom 1 de nov","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-02T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"e78fa81d-48a2-4161-b900-914e6928ae23","clave":"e78fa81d-48a2-4161-b900-914e6928ae23","titulo":"El desplazamiento del eco, de Rob Maldonado","corto":"El desplazamiento del eco","oracion":"El desplazamiento del eco","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"2","flecha":"antes","texto":"hasta el 2 de noviembre"},"nombre":"El desplazamiento del eco, de Rob Maldonado. Exposición. Hasta el lun 2 de nov. Museo de Arte Contemporáneo (MAC)","foto":"e-el-desplazamiento-del-eco-exposicion.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","coloresCartel":["#20131a","#832478","#90476c","#3f383f"],"cartelGris":false,"propia":["#2a0a2e","#b0306a","#ff6f61","#ffb88a"],"nombrePropia":"Cantera","detalle":"Hasta el lun 2 de nov","sitio":"Museo de Arte Contemporáneo (MAC)","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-09-24T06:00:00+00:00","fin":"2026-11-03T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"924330e5-643e-452c-a259-532787783cee","clave":"924330e5-643e-452c-a259-532787783cee","titulo":"Cachorros de Tigre: un universo posible de dibujo en México","corto":"Cachorros de Tigre","oracion":"Cachorros de Tigre","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"8","flecha":"antes","texto":"hasta el 8 de noviembre"},"nombre":"Cachorros de Tigre: un universo posible de dibujo en México. Exposición. Hasta el dom 8 de nov. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el dom 8 de nov","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-09T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"0bb73750-50cc-47b6-9883-160e4799fb3f","clave":"0bb73750-50cc-47b6-9883-160e4799fb3f","titulo":"Pre-Ruptura, de Humberto Márquez","corto":"Pre-Ruptura","oracion":"Pre-Ruptura","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"8","flecha":"antes","texto":"hasta el 8 de noviembre"},"nombre":"Pre-Ruptura, de Humberto Márquez. Exposición. Hasta el dom 8 de nov. Centro de las Artes de San Luis Potosí Centenario (CEART)","foto":"lugar-ceart.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(164,63,214,0.9) 0%, rgba(164,63,214,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(72,198,239,0.85) 0%, rgba(72,198,239,0) 68%), #2d3fd6","base":"#2d3fd6","coloresCartel":null,"cartelGris":null,"propia":["#0b1340","#2d3fd6","#a43fd6","#48c6ef"],"nombrePropia":"Tangamanga","detalle":"Hasta el dom 8 de nov","sitio":"Centro de las Artes de San Luis Potosí Centenario (CEART)","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-09T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"ae3aee68-f07b-4669-9dfc-a8c9379d520f","clave":"ae3aee68-f07b-4669-9dfc-a8c9379d520f","titulo":"Una vez más","corto":"Una vez más","oracion":"Una vez más","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"14","flecha":"antes","texto":"hasta el 14 de noviembre"},"nombre":"Una vez más. Exposición. Hasta el sáb 14 de nov. Foro lunaria","foto":"e-una-vez-mas.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":["#312d08","#e3cb00","#d52713","#a09f9f"],"cartelGris":false,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"Hasta el sáb 14 de nov","sitio":"Foro lunaria","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-10T06:00:00+00:00","fin":"2026-11-15T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"ba8a5937-6d6f-4764-a5b7-e6f6f0feb6d5","clave":"ba8a5937-6d6f-4764-a5b7-e6f6f0feb6d5","titulo":"Reflejo atemporal: pintura y gráfica de Bernardo Calderón","corto":"Reflejo atemporal","oracion":"Reflejo atemporal","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"15","flecha":"antes","texto":"hasta el 15 de noviembre"},"nombre":"Reflejo atemporal: pintura y gráfica de Bernardo Calderón. Exposición. Hasta el dom 15 de nov. Museo Leonora Carrington","foto":"l-museo-leonora-carrington.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":null,"cartelGris":null,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el dom 15 de nov","sitio":"Museo Leonora Carrington","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-01T06:00:00+00:00","fin":"2026-11-16T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"17b85c87-1239-4838-ad4d-174a32e828c1","clave":"17b85c87-1239-4838-ad4d-174a32e828c1","titulo":"Homenaje al Dr. Salvador Gómez Eichelman, exposición pictórica","corto":"Homenaje al Dr. Salvador Gómez Eichelman","oracion":"Homenaje al Dr. Salvador Gómez Eichelman","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"nov","dia":"22","flecha":"antes","texto":"hasta el 22 de noviembre"},"nombre":"Homenaje al Dr. Salvador Gómez Eichelman, exposición pictórica. Exposición. Hasta el dom 22 de nov. Teatro de la Paz","foto":"e-homenaje-al-dr-salvador-gomez-eichelman.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":["#181817","#a27486","#5d513f","#676361"],"cartelGris":false,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"Hasta el dom 22 de nov","sitio":"Teatro de la Paz","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-02T06:00:00+00:00","fin":"2026-11-23T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"748ac451-a805-46ef-8656-55d2f29eb370","clave":"748ac451-a805-46ef-8656-55d2f29eb370","titulo":"Esencialismo, exposición de Filippo Giusti","corto":"Esencialismo","oracion":"Esencialismo","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"dic","dia":"2","flecha":"antes","texto":"hasta el 2 de diciembre"},"nombre":"Esencialismo, exposición de Filippo Giusti. Exposición. Hasta el mié 2 de dic. MUNI Museo Universitario UASLP","foto":"e-esencialismo-exposicion-de-filippo-giust.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(63,193,165,0.9) 0%, rgba(63,193,165,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(198,246,141,0.85) 0%, rgba(198,246,141,0) 68%), #0d6c5e","base":"#0d6c5e","coloresCartel":["#1a130e","#235a8a","#784e32","#a69f9d"],"cartelGris":false,"propia":["#04262c","#0f7c6c","#3fc1a5","#c6f68d"],"nombrePropia":"Huasteca","detalle":"Hasta el mié 2 de dic","sitio":"MUNI Museo Universitario UASLP","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-02T06:00:00+00:00","fin":"2026-12-03T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"bfdc1dff-bfec-509f-a79d-19605066c2b8","clave":"bfdc1dff-bfec-509f-a79d-19605066c2b8","titulo":"Fotovision 31","corto":"Fotovision 31","oracion":"Fotovision 31","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":null,"sello":{"mes":"ene","dia":"3","flecha":"antes","texto":"hasta el 3 de enero"},"nombre":"Fotovision 31. Festival. Hasta el dom 3 de ene de 2027. Centro de Difusión Cultural Raúl Gamboa","foto":"e-fotovision-31.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":["#111112","#614b47","#363e4a","#49494b"],"cartelGris":false,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el dom 3 de ene de 2027","sitio":"Centro de Difusión Cultural Raúl Gamboa","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-09-24T06:00:00+00:00","fin":"2027-01-04T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"94e498e2-ed45-4926-b436-e964b2b87912","clave":"94e498e2-ed45-4926-b436-e964b2b87912","titulo":"El rostro del paisaje es una máscara, exposición de Franco Méndez Calvillo","corto":"El rostro del paisaje es una máscara","oracion":"El rostro del paisaje es una máscara","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"feb","dia":"12","flecha":"antes","texto":"hasta el 12 de febrero"},"nombre":"El rostro del paisaje es una máscara, exposición de Franco Méndez Calvillo. Exposición. Hasta el vie 12 de feb de 2027. MUNI Museo Universitario UASLP","foto":"e-el-rostro-del-paisaje-es-una-mascara-exp.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":["#271e12","#b37f3a","#1f2d45","#827b74"],"cartelGris":false,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"Hasta el vie 12 de feb de 2027","sitio":"MUNI Museo Universitario UASLP","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-02T06:00:00+00:00","fin":"2027-02-13T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"375368a1-21fe-4e82-9235-bfb376e88dab","clave":"375368a1-21fe-4e82-9235-bfb376e88dab","titulo":"LXS COLOCAOS: La última fogueada, exposición colectiva","corto":"LXS COLOCAOS","oracion":"Lxs colocaos","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"feb","dia":"12","flecha":"antes","texto":"hasta el 12 de febrero"},"nombre":"LXS COLOCAOS: La última fogueada, exposición colectiva. Exposición. Hasta el vie 12 de feb de 2027. MUNI Museo Universitario UASLP","foto":"e-lxs-colocaos-la-ultima-fogueada-exposici.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":["#221914","#9a674a","#b98276","#aaa29e"],"cartelGris":false,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"Hasta el vie 12 de feb de 2027","sitio":"MUNI Museo Universitario UASLP","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-02T06:00:00+00:00","fin":"2027-02-13T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"930900cc-cb40-4fc7-988a-f508cdce49c4","clave":"930900cc-cb40-4fc7-988a-f508cdce49c4","titulo":"Hilaridad y melancolía, exposición de Pedro Friedeberg","corto":"Hilaridad y melancolía","oracion":"Hilaridad y melancolía","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"feb","dia":"20","flecha":"antes","texto":"hasta el 20 de febrero"},"nombre":"Hilaridad y melancolía, exposición de Pedro Friedeberg. Exposición. Hasta el sáb 20 de feb de 2027. Centro Cultural El Nigromante","foto":"e-hilaridad-y-melancolia-exposicion-de-ped.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,122,26,0.9) 0%, rgba(255,122,26,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,210,63,0.85) 0%, rgba(255,210,63,0) 68%), #6d34c8","base":"#6d34c8","coloresCartel":["#0e0e0e","#9b6a45","#5b3633","#3d3b3a"],"cartelGris":false,"propia":["#1e0b3d","#6d34c8","#ff7a1a","#ffd23f"],"nombrePropia":"Xantolo","detalle":"Hasta el sáb 20 de feb de 2027","sitio":"Centro Cultural El Nigromante","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-10T06:00:00+00:00","fin":"2027-02-21T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"ddeea88d-89e9-4a6d-9dc0-e18f0365b81b","clave":"ddeea88d-89e9-4a6d-9dc0-e18f0365b81b","titulo":"Líneas de fuga, exposición de Pedro Friedeberg","corto":"Líneas de fuga","oracion":"Líneas de fuga","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"feb","dia":"20","flecha":"antes","texto":"hasta el 20 de febrero"},"nombre":"Líneas de fuga, exposición de Pedro Friedeberg. Exposición. Hasta el sáb 20 de feb de 2027. Casa de Cultura Banamex, Casa del Mayorazgo de la Canal","foto":"e-hilaridad-y-melancolia-exposicion-de-ped.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(242,158,76,0.9) 0%, rgba(242,158,76,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,225,168,0.85) 0%, rgba(255,225,168,0) 68%), #9b4818","base":"#9b4818","coloresCartel":["#0e0e0e","#9b6a45","#5b3633","#3d3b3a"],"cartelGris":false,"propia":["#2e1608","#b5541c","#f29e4c","#ffe1a8"],"nombrePropia":"Real de Catorce","detalle":"Hasta el sáb 20 de feb de 2027","sitio":"Casa de Cultura Banamex, Casa del Mayorazgo de la Canal","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-10T06:00:00+00:00","fin":"2027-02-21T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"e125ce86-7917-4084-8bc4-35e06cd15621","clave":"e125ce86-7917-4084-8bc4-35e06cd15621","titulo":"Privacidad y elegancia, exposición de Pedro Friedeberg","corto":"Privacidad y elegancia","oracion":"Privacidad y elegancia","clase":"exposicion","claseTexto":"Exposición","ceja":["Expo"],"chip":null,"sello":{"mes":"feb","dia":"20","flecha":"antes","texto":"hasta el 20 de febrero"},"nombre":"Privacidad y elegancia, exposición de Pedro Friedeberg. Exposición. Hasta el sáb 20 de feb de 2027. Galería Casa Diana","foto":"e-hilaridad-y-melancolia-exposicion-de-ped.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","coloresCartel":["#0e0e0e","#9b6a45","#5b3633","#3d3b3a"],"cartelGris":false,"propia":["#2a0a2e","#b0306a","#ff6f61","#ffb88a"],"nombrePropia":"Cantera","detalle":"Hasta el sáb 20 de feb de 2027","sitio":"Galería Casa Diana","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-10T06:00:00+00:00","fin":"2027-02-21T05:59:00+00:00","zona":"America/Mexico_City","decision":null},{"id":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","clave":"62af5ba7-695e-4d0c-b472-08658b1ef0a0","titulo":"KOWAIFEST","corto":"KOWAIFEST","oracion":"Kowaifest","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":{"texto":"Te interesa","tuyo":true},"sello":{"mes":"oct","dia":"17","flecha":null,"texto":"17 de octubre"},"nombre":"KOWAIFEST. Festival. sáb 17 de oct. Dēppa · Programa por confirmar. Te interesa","foto":"e-kowaifest.webp","fotoEsCartel":true,"fotoOrigen":"cartel","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(0,180,216,0.9) 0%, rgba(0,180,216,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(144,224,239,0.85) 0%, rgba(144,224,239,0) 68%), #00659a","base":"#00659a","coloresCartel":["#18070a","#721323","#194541","#232121"],"cartelGris":false,"propia":["#021d33","#0077b6","#00b4d8","#90e0ef"],"nombrePropia":"Media Luna","detalle":"sáb 17 de oct","sitio":"Dēppa · Programa por confirmar","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-18T01:00:00+00:00","fin":null,"zona":"America/Mexico_City","decision":"me_interesa"},{"id":"943fa209-ee6c-407e-8abf-a91f4d0e9800","clave":"943fa209-ee6c-407e-8abf-a91f4d0e9800","titulo":"Xantolo ¡Se vive en tu ciudad!","corto":"Xantolo ¡Se vive en tu ciudad!","oracion":"Xantolo ¡Se vive en tu ciudad!","clase":"festival","claseTexto":"Festival","ceja":["Festival"],"chip":null,"sello":{"mes":"oct","dia":"23","flecha":null,"texto":"23 de octubre"},"nombre":"Xantolo ¡Se vive en tu ciudad!. Festival. vie 23 de oct. Varias sedes","foto":"l-museo-federico-silva-escultura-contempor.webp","fotoEsCartel":false,"fotoOrigen":"lugar","coloresActo":null,"sinCartel":false,"fondo":"radial-gradient(90% 60% at 100% 35%, rgba(255,111,97,0.9) 0%, rgba(255,111,97,0) 70%), radial-gradient(110% 70% at 0% 110%, rgba(255,184,138,0.85) 0%, rgba(255,184,138,0) 68%), #ac2f68","base":"#ac2f68","coloresCartel":null,"cartelGris":null,"propia":["#2a0a2e","#b0306a","#ff6f61","#ffb88a"],"nombrePropia":"Cantera","detalle":"vie 23 de oct","sitio":"Varias sedes","hoy":false,"parte":null,"van":0,"sinVoy":true,"inicio":"2026-10-23T23:00:00+00:00","fin":"2026-10-24T04:30:00+00:00","zona":"America/Mexico_City","decision":null}],"nuevos":[],"lugares":[{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","foto":"l-museo-de-arte-contemporaneo-mac.webp"},{"id":"bc443f31-a12f-49fb-b1b2-98a45879ef14","nombre":"Museo Leonora Carrington","foto":"l-museo-leonora-carrington.webp"},{"id":"abe11da5-5395-4cfd-80e8-a780cdd9e430","nombre":"MUNI Museo Universitario UASLP","foto":"l-muni-museo-universitario-uaslp.webp"},{"id":"1826c551-cf0f-43de-99c7-a49fb3d96be9","nombre":"Teatro de la Paz","foto":"l-teatro-de-la-paz.webp"},{"id":"a8e752c6-ead1-4d6b-89b9-fad39003aa03","nombre":"Casa de Cultura Banamex, Casa del Mayorazgo de la Canal","foto":null},{"id":"5d7cc5a3-d0d1-4472-bcdc-93ab23443c19","nombre":"Galería Casa Diana","foto":null},{"id":"f657a798-8b08-49b5-8a1e-7946a35de6e7","nombre":"Aurora Co-Lab","foto":null},{"id":"372bc316-1257-4a51-8fbd-0b6bf800f70e","nombre":"Museo del Ferrocarril Jesús García Corona","foto":"l-museo-del-ferrocarril-jesus-garcia-coron.webp"},{"id":"58f54ac7-365a-4151-9373-41ec33833296","nombre":"Casa Museo Manuel José Othón","foto":"l-casa-museo-manuel-jose-othon.webp"},{"id":"a2176e0d-2ac1-42e2-b3a6-40e1fe9b2b4d","nombre":"Museo Nacional de la Máscara","foto":"l-museo-nacional-de-la-mascara.webp"},{"id":"4c7f8afb-c87c-4893-99f0-6728ba352935","nombre":"Instituto Potosino de Bellas Artes (IPBA)","foto":"l-instituto-potosino-de-bellas-artes-ipba.webp"},{"id":"98fee205-29c1-4fa5-b292-599da200d759","nombre":"Museo Francisco Cossío","foto":"l-museo-francisco-cossio.webp"},{"id":"e8fc820b-fab6-49f0-a028-c487c5c8698a","nombre":"Museo Federico Silva Escultura Contemporánea","foto":"l-museo-federico-silva-escultura-contempor.webp"}],"artistasDestacados":[{"id":"d73c59dc-a3f5-4d87-a54a-1cf0eae69a9e","nombre":"Sangre de Coyote","foto":"a-sangre-de-coyote.webp","disciplina":"Música","genero":"gypsy jazz y música balcánica","cuando":null,"novedad":"Nuevo video"},{"id":"849fced7-604f-4360-87c7-bd77ccefce1f","nombre":"Un León Marinero","foto":"a-un-leon-marinero.webp","disciplina":"Música","genero":"folk y canción de autor","cuando":"jue 15 de oct · 19:00","novedad":"Nuevo video"},{"id":"9d2a8481-d2ba-4411-a430-4b1f7372d01a","nombre":"Michell Kittrell","foto":"a-michell-kittrell.webp","disciplina":"Artes visuales","genero":"pintura figurativa","cuando":null,"novedad":null},{"id":"cee6d8f9-ff67-42a0-97ad-9b37e9ed5387","nombre":"Robscan","foto":"a-robscan.webp","disciplina":"Música","genero":"Productor de música electrónica y dj","cuando":null,"novedad":"Nuevo audio"},{"id":"305d3aa5-3317-446a-8b5e-0425f5d6c255","nombre":"Fozco","foto":"a-fozco.webp","disciplina":"Música","genero":"rock, metal y alternativo","cuando":null,"novedad":null},{"id":"6914e668-4586-440f-b3e3-08e5509bf435","nombre":"Markosblues","foto":"a-markosblues.webp","disciplina":"Música","genero":"jazz, blues y soul","cuando":null,"novedad":"Nuevo video"},{"id":"3d178d4e-51e8-4405-81bb-0e6256b6af52","nombre":"DwardNoize","foto":"a-dwardnoize.webp","disciplina":"Música","genero":"EDM, Dubstep, Hardstyle","cuando":null,"novedad":"Nuevo audio"}],"artistasSemana":[{"id":"af7d7ed4-1528-43a2-9b67-05891ee12b14","nombre":"Oscar Omar Carrillo Guel -Pianoman live show","foto":"a-oscar-omar-carrillo-guel-pianoman-live-s.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null},{"id":"3b2d446e-c993-4b10-97f5-1f9c912029af","nombre":"Emiliano Cárdenas Díaz","foto":"a-emiliano-cardenas-diaz.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null},{"id":"c12b7754-0cdf-4871-9e39-c226a8a76ba2","nombre":"Diego Belth","foto":"a-diego-belth.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null},{"id":"e90602dd-d5fd-4fb2-994c-75ec767f99be","nombre":"Karlos Álvarez","foto":"a-karlos-alvarez.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null},{"id":"cd755092-a513-4a08-85dd-ec62dd2e864f","nombre":"Avith Ortega","foto":"a-avith-ortega.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null},{"id":"4d4a3c7d-a307-4833-911e-8e64cdf8bad9","nombre":"Trio Guanaxteco","foto":"a-trio-guanaxteco.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null},{"id":"d4ea53b7-5817-4b8a-90d7-10b075262092","nombre":"Ollinkan","foto":"a-ollinkan.webp","disciplina":"Música","genero":null,"cuando":null,"novedad":null}]}}</script>
+<script>
+// OL-374 · Portadas del sistema: el color de la portada y las composiciones por clase (se pega tal cual en el prototipo).
+// La portada mide 100 de ancho por 125 de alto (4:5). Las figuras viven arriba, en el campo (de 0 a H); debajo de H va la zona del título, sin
+// figuras (un recorte lo garantiza). Reglas de la retícula:
+//  · la figura se apoya en la línea H, como un objeto sobre una repisa, y se alinea con el margen del título (M, 12 px de la tarjeta);
+//  · deja libre la esquina del sello de fecha (arriba a la derecha): el área libre tiene forma de L;
+//  · es la más grande que cabe en esa L, con su proporción.
+// Cada composición declara su caja (ancho por alto 1) y dibuja dentro de ella; lo de atrás (escalones oscuros) puede salir por el borde.
+// Devuelve dos capas: atrás y delante (en P8 se mueven distinto).
+const Portadas = (() => {
+  const hexRgb = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+  const rgbHex = (rgb) => `#${rgb.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`;
+  function rgbHsl([r, g, b]) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+    if (!d) return [0, 0, l];
+    const s = d / (1 - Math.abs(2 * l - 1));
+    const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [(h * 60 + 360) % 360, s, l];
+  }
+  function hslRgb([h, s, l]) {
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+    const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
+  const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const lumRgb = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  const lum = (hex) => lumRgb(hexRgb(hex));
+  const contrasteL = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const contraste = (a, b) => contrasteL(lum(a), lum(b));
+  const mezcla = (a, b, t) => { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x.map((v, i) => v + (y[i] - v) * t)); };
+
+  const CREMA = '#f4efd6';
+  const NEGRO = '#1a1a1a';
+  // Las dos bandas de luz de la base. Oscura: luminancia ≤ 0,13 (el título crema queda en 5:1 o más). Clara: ≥ 0,30 (el título negro, en
+  // 5,8:1 o más). Entre 0,15 y 0,23 ni crema ni negro llegan a 4,5:1: la base nunca se queda ahí.
+  const OSCURA = 0.13, CLARA = 0.3;
+
+  /** ¿El color trae un tono que valga, o es gris (cartel en blanco y negro)? Croma de 28 o más, de 255. */
+  const tieneTono = (hex) => { const [r, g, b] = hexRgb(hex); return Math.max(r, g, b) - Math.min(r, g, b) >= 28; };
+
+  /**
+   * La paleta de una portada a partir de su color de origen. Se queda el tono; la saturación va entre 0,32 y 0,7 (medios tonos, como las
+   * tarjetas de lawsofux) y la luz parte de la del color y se lleva a su banda: los amarillos, mostazas y olivos (tono de
+   * 40° a 80°) a la clara, con título y figura en negro (el amarillo con negro de los carteles de la Bauhaus); todos los demás a la oscura, con
+   * título y figura en crema (como lawsofux). Un amarillo oscurecido se vuelve café verdoso y un azul aclarado, pastel: por eso la banda la
+   * dice el tono. Escalones del mismo color: oscuro y más oscuro (como su negro al 20 %), claro (con crema) y el crema.
+   */
+  function paleta(origen) {
+    const [h, s0, l0] = rgbHsl(hexRgb(origen));
+    const s = Math.min(0.7, Math.max(0.32, s0));
+    const L = (l) => lumRgb(hslRgb([h, s, l]));
+    const clara = h >= 40 && h <= 80;
+    // La luz parte de la del color: entre 0,3 y 0,46 en la banda oscura (más hondo que un neón) y entre 0,4 y 0,58 en la clara.
+    let l = clara ? Math.min(0.58, Math.max(0.4, l0)) : Math.min(0.46, Math.max(0.3, l0));
+    if (clara) while (L(l) < CLARA && l < 0.95) l += 0.0025;
+    else while (L(l) > OSCURA && l > 0.05) l -= 0.0025;
+    const base = rgbHex(hslRgb([h, s, l]));
+    return {
+      origen, base, banda: clara ? 'clara' : 'oscura',
+      tinta: clara ? NEGRO : CREMA,
+      f: clara ? NEGRO : CREMA,
+      k: CREMA,
+      c: mezcla(base, CREMA, clara ? 0.5 : 0.34),
+      o: mezcla(base, '#000000', clara ? 0.22 : 0.28),
+      oo: mezcla(base, '#000000', clara ? 0.42 : 0.5),
+      n: NEGRO,
+    };
+  }
+
+  // ===== Primitivas, con el color ya puesto: el SVG se dibuja igual en la tarjeta y en el medidor.
+  const r2 = (n) => Math.round(n * 100) / 100;
+  const pts = (l) => l.map(([x, y]) => `${r2(x)},${r2(y)}`).join(' ');
+  const circ = (cx, cy, r, fill) => `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${fill}"/>`;
+  const rect = (x, y, w, h, fill) => `<rect x="${r2(x)}" y="${r2(y)}" width="${r2(w)}" height="${r2(h)}" fill="${fill}"/>`;
+  const poli = (l, fill) => `<polygon points="${pts(l)}" fill="${fill}"/>`;
+  /** Triángulo con la base en y (de x a x + w) y la punta arriba. */
+  const tri = (x, y, w, a, fill) => poli([[x, y], [x + w, y], [x + w / 2, y - a]], fill);
+  /** El cruce de dos figuras en un tercer tono (la transparencia de la Bauhaus): la figura dibujada solo dentro del recorte. */
+  const cruce = (id, recorte, figura) => `<clipPath id="${id}">${recorte}</clipPath><g clip-path="url(#${id})">${figura}</g>`;
+
+  /**
+   * Un número estable por id (FNV-1a): la misma composición siempre para el mismo evento. Es otro que el de `paletaPropia` de la app
+   * (h × 31 + c): con el mismo, el color de respaldo y el arreglo irían de la mano y dos vecinas podrían salir idénticas.
+   */
+  const hash = (id) => { let h = 0x811c9dc5; for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+
+  /**
+   * Dónde va la caja de una composición (proporción ancho:alto = r:1). Dos maneras de caber en la L libre: a todo lo ancho por debajo del
+   * sello, o a la izquierda del sello con todo el alto. Gana la que da la figura más grande; la caja se apoya en H, en el margen M.
+   */
+  function colocar(r, c) {
+    const hueco = 3;
+    const u1 = Math.min((100 - 2 * c.M) / r, c.H - c.selloAbajo - hueco);
+    const u2 = Math.min((c.selloIzq - hueco - c.M) / r, c.H - c.arriba);
+    const u = Math.max(4, Math.min(c.tope || 1e9, Math.max(u1, u2)));
+    return { x: c.M, y: c.H, u, w: u * r };
+  }
+
+  // ===== A · una figura por clase (Kandinsky). Tres arreglos que comparten las tres clases: «Cruce» (dos figuras iguales que se cruzan; el
+  // cruce en un tercer tono), «Escala» (una grande y oscura que entra por el borde y una chica en crema que se le monta) y la firma de cada
+  // clase (el sol sobre la línea, el cuadro de Albers, la escuadra). Solo la figura de su clase: la clase se lee por la figura; el arreglo
+  // solo cambia de una tarjeta a otra. f(c) recibe c = { H, M, P, id, s, arriba, selloIzq, selloAbajo }.
+  const A = {
+    festival: [
+      {
+        nombre: 'Cruce', caja: 1.59,
+        idea: 'Dos círculos iguales que se cruzan sobre la línea del título; el cruce, en un tercer tono.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.59, c), r = u / 2, cy = y - r, x1 = x + r, x2 = x1 + 1.18 * r;
+          return [[circ(x1, cy, r, P.o)], [circ(x2, cy, r, P.f), cruce(`${id}x`, circ(x1, cy, r, '#000'), circ(x2, cy, r, P.c))]];
+        },
+      },
+      {
+        nombre: 'Escala', caja: 1,
+        idea: 'Un círculo grande y oscuro que entra por el borde izquierdo y uno chico en crema que se le monta, apoyado en la línea.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1, c);
+          const R = 0.62 * u, cx = x + 0.08 * u, cy = y - 0.5 * u, r = 0.29 * u, x2 = x + u - r, y2 = y - r;
+          return [[circ(cx, cy, R, P.o)], [circ(x2, y2, r, P.f), cruce(`${id}x`, circ(cx, cy, R, '#000'), circ(x2, y2, r, P.c))]];
+        },
+      },
+      {
+        nombre: 'Horizonte', caja: 1.31,
+        idea: 'Un círculo entero sobre la línea y dos mayores detrás que la línea corta: el sol que sale, el público alrededor.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1.31, c), r = 0.345 * u, cx = x + 1.9 * r, cy = y - r;
+          return [[circ(cx, cy, r * 1.9, P.o), circ(cx, cy, r * 1.45, P.c)], [circ(cx, cy, r, P.f)]];
+        },
+      },
+    ],
+    exposicion: [
+      {
+        nombre: 'Cruce', caja: 1.2,
+        idea: 'Dos cuadrados iguales, uno más alto que el otro, que se cruzan; el cruce, en un tercer tono.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.2, c), s = u / 1.3, y1 = y - u, x2 = x + 0.56 * s, y2 = y - s;
+          return [[rect(x, y1, s, s, P.o)], [rect(x2, y2, s, s, P.f), cruce(`${id}x`, rect(x, y1, s, s, '#000'), rect(x2, y2, s, s, P.c))]];
+        },
+      },
+      {
+        nombre: 'Escala', caja: 1,
+        idea: 'Un cuadrado grande y oscuro que entra por el borde izquierdo y uno chico en crema que se le monta, apoyado en la línea.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1, c);
+          const S = u / 0.86, x1 = x - 0.32 * S, y1 = y - u, s = 0.48 * S, x2 = x1 + S - 0.42 * s, y2 = y - s;
+          return [[rect(x1, y1, S, S, P.o)], [rect(x2, y2, s, s, P.f), cruce(`${id}x`, rect(x1, y1, S, S, '#000'), rect(x2, y2, s, s, P.c))]];
+        },
+      },
+      {
+        nombre: 'Cuadro', caja: 1,
+        idea: 'Un cuadrado alineado con el título y otro adentro, bajado hacia el pie (el homenaje al cuadrado de Josef Albers).',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1, c), d = u * 0.5;
+          return [[], [rect(x, y - u, u, u, P.f), rect(x + (u - d) / 2, y - u + (u - d) * 0.7, d, d, P.o)]];
+        },
+      },
+    ],
+    taller: [
+      {
+        nombre: 'Cruce', caja: 1.5,
+        idea: 'Un triángulo hacia arriba y otro hacia abajo que se cruzan sobre la línea; el cruce, en un tercer tono.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.5, c), w = u * 1.155, x2 = x + 0.3 * w;
+          const arriba = (fill) => tri(x, y, w, u, fill);
+          const abajo = (fill) => poli([[x2, y - u], [x2 + w, y - u], [x2 + w / 2, y]], fill);
+          return [[abajo(P.o)], [arriba(P.f), cruce(`${id}x`, abajo('#000'), arriba(P.c))]];
+        },
+      },
+      {
+        nombre: 'Escala', caja: 1.1,
+        idea: 'Un triángulo recto grande y oscuro que entra por el borde izquierdo (su diagonal) y uno chico en crema que se le monta.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.1, c);
+          const W1 = 1.25 * u, x1 = x - 0.3 * W1, a = 0.56 * u, w = a * 1.155, x2 = x1 + W1 - w * 0.6;
+          const grande = (fill) => poli([[x1, y], [x1 + W1, y], [x1, y - u]], fill);
+          return [[grande(P.o)], [tri(x2, y, w, a, P.f), cruce(`${id}x`, grande('#000'), tri(x2, y, w, a, P.c))]];
+        },
+      },
+      {
+        nombre: 'Escuadra', caja: 1.18,
+        idea: 'La escuadra de dibujo: un triángulo recto con su hueco, apoyado en la línea y alineado con el título.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1.18, c), w = 1.18 * u, g = 0.17;
+          const hueco = [[x + w * g, y - u * g * 0.62], [x + w * (1 - g * 2.1), y - u * g * 0.62], [x + w * g, y - u * (1 - g * 2.1)]];
+          return [[], [poli([[x, y], [x + w, y], [x, y - u]], P.f), poli(hueco, P.base)]];
+        },
+      },
+    ],
+  };
+
+  /** Una retícula que llena la L libre: filas que caben en el alto y columnas que caben a lo ancho (menos las que tapa el sello). */
+  function reticula(c, paso, tam, maxFilas, maxCols) {
+    const filas = Math.max(2, Math.min(maxFilas, Math.floor((c.H - c.arriba + (paso - tam)) / paso)));
+    const y0 = c.H - filas * paso + (paso - tam);
+    const celdas = [];
+    for (let i = 0; i < filas; i++) {
+      const y = y0 + i * paso;
+      const limite = y < c.selloAbajo + 2 ? c.selloIzq - 3 : 100 - c.M;
+      const cols = Math.min(maxCols, Math.floor((limite - c.M + (paso - tam)) / paso));
+      for (let j = 0; j < cols; j++) celdas.push({ i, j, x: c.M + j * paso, y, filas });
+    }
+    return { celdas, filas };
+  }
+
+  // ===== B · patrones (lawsofux). Tres arreglos que comparten las tres clases: «Anidados» (la figura repetida hacia adentro, en escalones de
+  // tono), «Retícula» (muchas iguales y unas cuantas en crema: semejanza; las «partículas» del pedido) y «Ritmo» (una hilera que crece).
+  const B = {
+    festival: [
+      {
+        nombre: 'Anidados', caja: 1,
+        idea: 'Círculos que se oscurecen hacia el centro, con un punto crema (la tarjeta de Doherty en lawsofux).',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1, c), R = u / 2, cx = x + R, cy = y - R;
+          return [[circ(cx, cy, R, P.c), circ(cx, cy, R * 0.74, P.o)], [circ(cx, cy, R * 0.48, P.oo), circ(cx, cy, R * 0.2, P.f)]];
+        },
+      },
+      {
+        nombre: 'Retícula', caja: 0,
+        idea: 'Una retícula de puntos oscuros y unos cuantos crema en diagonal (semejanza): un programa de muchos actos.',
+        f: (c) => {
+          const { P, s } = c, paso = 11.2, r = 3.8, { celdas, filas } = reticula(c, paso, 2 * r, 6, 7);
+          const d = s % 3, atras = [], delante = [];
+          for (const k of celdas) { const crema = k.j - (filas - 1 - k.i) === d; (crema ? delante : atras).push(circ(k.x + r, k.y + r, r, crema ? P.f : P.o)); }
+          return [atras, delante];
+        },
+      },
+      {
+        nombre: 'Ritmo', caja: 2.5,
+        idea: 'Una hilera de círculos que crecen sobre la línea; el último, crema.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(2.5, c), tam = [0.28, 0.44, 0.67, 1], hueco = 0.04 * u;
+          const atras = [], delante = [];
+          let xx = x;
+          tam.forEach((k, i) => { const r = (u * k) / 2, ult = i === tam.length - 1; (ult ? delante : atras).push(circ(xx + r, y - r, r, ult ? P.f : i === 2 ? P.c : P.o)); xx += 2 * r + hueco; });
+          return [atras, delante];
+        },
+      },
+    ],
+    exposicion: [
+      {
+        nombre: 'Anidados', caja: 1,
+        idea: 'Cuatro cuadrados anidados y bajados hacia el pie, en escalones del mismo color (el homenaje al cuadrado de Albers).',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1, c);
+          const l = [[1, P.oo], [0.76, P.o], [0.52, P.c], [0.28, P.f]].map(([k, col]) => { const t = u * k, m = (u - t) / 2; return rect(x + m, y - u + m * 1.5, t, t, col); });
+          return [l.slice(0, 2), l.slice(2)];
+        },
+      },
+      {
+        nombre: 'Retícula', caja: 0,
+        idea: 'Una pared de cuadros oscuros y uno grande en crema (semejanza): la obra que se mira.',
+        f: (c) => {
+          const { P, s } = c, paso = 12, lado = 9.2, { celdas, filas } = reticula(c, paso, lado, 5, 6);
+          const abajo = celdas.filter((k) => k.i >= filas - 2);
+          const cols = Math.max(2, ...abajo.map((k) => k.j + 1));
+          const gj = s % (cols - 1), gi = filas - 2 - ((s >> 3) % Math.max(1, filas - 2));
+          const dentro = (k) => k.i >= gi && k.i <= gi + 1 && k.j >= gj && k.j <= gj + 1;
+          const atras = celdas.filter((k) => !dentro(k)).map((k) => rect(k.x, k.y, lado, lado, P.o));
+          const k0 = celdas.find((k) => k.i === gi && k.j === gj) || celdas[0];
+          return [atras, [rect(k0.x, k0.y, paso + lado, paso + lado, P.f)]];
+        },
+      },
+      {
+        nombre: 'Ritmo', caja: 2.5,
+        idea: 'Una hilera de cuadrados que crecen sobre la línea, como cuadros colgados; el último, crema.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(2.5, c), tam = [0.28, 0.44, 0.67, 1], hueco = 0.06 * u;
+          const atras = [], delante = [];
+          let xx = x;
+          tam.forEach((k, i) => { const l = u * k, ult = i === tam.length - 1; (ult ? delante : atras).push(rect(xx, y - l, l, l, ult ? P.f : i === 2 ? P.c : P.o)); xx += l + hueco; });
+          return [atras, delante];
+        },
+      },
+    ],
+    taller: [
+      {
+        nombre: 'Anidados', caja: 1.155,
+        idea: 'Triángulos anidados y bajados hacia la base, en escalones del mismo color.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1.155, c), w = 1.155 * u;
+          const l = [[1, P.oo], [0.74, P.o], [0.5, P.c], [0.26, P.f]].map(([k, col]) => { const a = u * k, ww = w * k; return tri(x + (w - ww) / 2, y - (u - a) * 0.18, ww, a, col); });
+          return [l.slice(0, 2), l.slice(2)];
+        },
+      },
+      {
+        nombre: 'Retícula', caja: 0,
+        idea: 'Una retícula de triángulos oscuros y unos cuantos crema en diagonal (semejanza).',
+        f: (c) => {
+          const { P, s } = c, paso = 12, w = 9.6, a = 8.4, { celdas, filas } = reticula(c, paso, a, 6, 7);
+          const d = s % 3, atras = [], delante = [];
+          for (const k of celdas) { const crema = k.j - (filas - 1 - k.i) === d; (crema ? delante : atras).push(tri(k.x, k.y + a, w, a, crema ? P.f : P.o)); }
+          return [atras, delante];
+        },
+      },
+      {
+        nombre: 'Ritmo', caja: 4,
+        idea: 'Una tira de triángulos que se alternan, arriba y abajo (teselado); uno crema.',
+        f: (c) => {
+          const { P, s } = c, { x, y, u } = colocar(4, c), n = 7, w = u, a = u * 0.92;
+          const atras = [], delante = [];
+          const elegido = 2 * (s % 4);
+          for (let i = 0; i < n; i++) {
+            const xx = x + (i * w) / 2, arriba = i % 2 === 0;
+            const l = arriba ? [[xx, y], [xx + w, y], [xx + w / 2, y - a]] : [[xx, y - a], [xx + w, y - a], [xx + w / 2, y]];
+            const col = i === elegido ? P.f : arriba ? P.o : P.c;
+            (i === elegido ? delante : atras).push(poli(l, col));
+          }
+          return [atras, delante];
+        },
+      },
+    ],
+  };
+
+  return { hexRgb, rgbHex, rgbHsl, hslRgb, lum, lumRgb, contraste, contrasteL, mezcla, tieneTono, paleta, hash, colocar, A, B, CREMA, NEGRO, circ, rect, poli, tri };
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  const D = JSON.parse(document.getElementById('datos').textContent);
+  const RUTA = 'portadas-sistema/';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const reducirMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
+  $('sn-trazo').setAttribute('d', D.simbolo.trazo);
+
+  // ===== Los íconos de la app (src/components/ui/Iconos.tsx), de trazo, 24×24.
+  const svg = (d) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const I = {
+    mas: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/>'),
+    lupa: svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/>'),
+    pin: svg('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'),
+    baja: svg('<path d="M7 10l5 5 5-5"/>'),
+    calendario: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+    filtros: svg('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
+    derecha: svg('<path d="M9 6l6 6-6 6"/>'),
+    izquierda: svg('<path d="M15 6l-6 6 6 6"/>'),
+    casa: svg('<path d="M4 11l8-7 8 7v8.5a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19.5z"/>'),
+    estrella: svg('<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>'),
+    persona: svg('<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
+  };
+  const FLECHA = '<svg class="flecha" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 6h8M6.5 3l3 3-3 3"/></svg>';
+  const SIMBOLO = '<svg class="simbolo" viewBox="0 0 1035 795" aria-hidden="true"><use href="#sn"/></svg>';
+
+  // ===== Los ejercicios y los preajustes.
+  const CLAVES = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'medidas'];
+  const HOY = { p1: false, p2: false, p3: 'cartel', p4: true, p5: true, p6: false, p7: false, p8: false, medidas: false };
+  const PORQUE = {
+    hoy: 'Producción: carteles con mucho texto que a este tamaño no se leen, la foto del lugar repetida y, sin imagen, el degradado (E10), cuyo título baja hasta 2,5:1.',
+    propuesta: 'Por qué: una figura grande por clase se reconoce de un vistazo (Prägnanz) y el arreglo cambia de tarjeta en tarjeta sin cambiar la figura (semejanza); el color sale del cartel y distingue cada tarjeta; el título va dentro, en su zona sin figuras, a 5:1 o más; en todo Inicio, para que un taller se vea igual en cada carril; y el evento sin imagen entra al mismo sistema, sin figura, para no confundirse.',
+    minima: 'Lo menos que cambia: solo el carril «Festivales y expos» y el título debajo, como lo firmado.',
+    firmada: 'La elegida por el founder el 11 de oct: «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8». Patrones a la lawsofux con el color de cada cartel, el título dentro de la portada, en todo Inicio, el evento sin imagen en el mismo sistema y las figuras que reaccionan al teléfono.',
+  };
+  const PRESETS = {
+    hoy: { nombre: 'Hoy', e: { ...HOY } },
+    // La propuesta: una figura por clase (A), el color de su cartel con respaldo, el título sobre la portada, en todo Inicio y el evento común sin
+    // cartel con la misma gramática. Sin movimiento (decisión del founder).
+    propuesta: { nombre: 'Propuesta', e: { ...HOY, p1: true, p4: true, p5: true, p7: true } },
+    // Lo mínimo: la portada solo en «Festivales y expos» y el título debajo, como lo firmado.
+    minima: { nombre: 'Mínima', e: { ...HOY, p1: true, p4: false, p5: false } },
+    // La elegida por el founder (11 de oct): «vamos por P1 · P2 B · P3 cartel · P4 sobre · P5 todo · P7 · P8».
+    firmada: { nombre: 'Firmada', e: { ...HOY, p1: true, p2: true, p4: true, p5: true, p7: true, p8: true } },
+  };
+  const EJERCICIOS = [
+    { k: 'p1', t: 'P1 · Portada del sistema', d: 'Festival, exposición y taller llevan una portada hecha por la app en vez del cartel (el cartel sigue en la ficha y en la historia): un color plano, la figura de su clase y, con P4, el título dentro.', f: 'Founder (11 de oct): «portadas del sistema […] figuras geométricas (como ley de Prägnanz)».' },
+    { k: 'p2', t: 'P2 · Patrones en vez de una figura', d: 'Apagado, A: una figura por clase, grande, a la Kandinsky, en tres arreglos (dos que se cruzan; una grande y una chica; la firma de la clase: el sol, el cuadro de Albers, la escuadra). Encendido, B: patrones a la lawsofux, en tres arreglos (anidados en escalones de tono; retícula con unos cuantos en crema; una hilera que crece).', sub: 'p1' },
+    { k: 'p3', t: 'P3 · Paleta', d: 'De dónde sale el color. «Cartel»: el color más vivo de su cartel, en medio tono; si el cartel es gris, no hay cartel o es la foto del lugar, un color de respaldo (las luces de las paletas propias de la app, sin repetir tono), por id. «Bauhaus»: azul, rojo y amarillo por clase (el cuestionario de Kandinsky de 1923: círculo azul, cuadrado rojo, triángulo amarillo). «Propias»: el respaldo para todas.', sub: 'p1', opciones: [['cartel', 'Cartel'], ['bauhaus', 'Bauhaus'], ['propias', 'Propias']] },
+    { k: 'p4', t: 'P4 · Título sobre la portada', d: 'Encendido: el chip, la ceja y el título van abajo, dentro de la portada, en su zona sin figuras; la figura se apoya en esa línea. Apagado: el título debajo de la tarjeta, como lo firmado, y la figura usa toda la portada.', sub: 'p1', f: 'Founder: «podemos integrar el título a la card».' },
+    { k: 'p5', t: 'P5 · En todo Inicio', d: 'Encendido: la portada del sistema donde salga un festival, una expo o un taller (Tus planes, Destacados, Esta semana). Apagado: solo en el carril «Festivales y expos».', sub: 'p1' },
+    { k: 'p6', t: 'P6 · Exposición enmarcada', d: 'Su cartel, chico, como cuadro colgado (marialuisa crema) en una pared de sus colores, apoyado en la línea del título. Sin cartel propio, su figura de siempre.', sub: 'p1', f: 'La alternativa del gestor, para verla al lado.' },
+    { k: 'p7', t: 'P7 · Sin cartel, la misma gramática', d: 'El evento común sin imagen deja el degradado de hoy (E10) y usa el mismo sistema: color plano de su paleta propia, el símbolo SN arriba a la izquierda y el título abajo. Sin figura: la figura queda para las tres clases.', sub: 'p1' },
+    { k: 'p8', t: 'P8 · Reacciona al teléfono', d: 'Las figuras se desplazan unos píxeles con la inclinación (las de atrás la mitad que las de adelante), solo en las tarjetas a la vista; el título, el sello y el chip no se mueven. Apagado por omisión y nunca con «Reducir movimiento». En iPhone el giroscopio pide permiso tras un toque: el botón de abajo. Sin giroscopio, mantén el dedo sobre una portada y arrástralo. Costos: un permiso más que pedir, el sensor encendido mientras se ve Inicio (batería) y un gesto que compite con el desplazamiento.', sub: 'p1', f: 'Founder: «¿y si haces una propuesta donde las figuras reaccionen al movimiento del celular?».' },
+    { k: 'medidas', t: 'Medidas', d: 'Cada portada con texto encima enseña el contraste de su peor punto, medido en píxeles: verde si llega a 4,5:1.' },
+  ];
+  const vista = (e) => {
+    const p1 = !!e.p1;
+    return { ...e, p2: p1 && e.p2, p4: p1 ? !!e.p4 : true, p5: p1 && e.p5, p6: p1 && e.p6, p7: p1 && e.p7, p8: p1 && e.p8 && !reducirMovimiento.matches };
+  };
+  const igual = (a, b) => CLAVES.filter((k) => k !== 'medidas').every((k) => a[k] === b[k]);
+  const presetDe = (e) => Object.keys(PRESETS).find((p) => igual(PRESETS[p].e, e)) || null;
+  const listaDe = (e) => {
+    if (!e.p1) return '';
+    const l = ['P1', e.p2 ? 'P2 B' : 'P2 A', `P3 ${e.p3}`, e.p4 ? 'P4 sobre' : 'P4 debajo', e.p5 ? 'P5 todo' : 'P5 un carril'];
+    for (const k of ['p6', 'p7', 'p8']) if (e[k]) l.push(k.toUpperCase());
+    return l.join(' · ');
+  };
+  const claveDe = (e) => { const p = presetDe(e); return p ? PRESETS[p].nombre : `Personalizada (${listaDe(e) || 'nada'})`; };
+
+  const LLAVE_ESTADO = 'portadas-sistema:estado:2';
+  const LLAVE_TIEMPOS = 'portadas-sistema:tiempos';
+  const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
+  const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
+
+  const estado = { e: { ...PRESETS.firmada.e }, decisiones: new Map(Object.entries(D.asistencias)), muestrario: false };
+  const guardado = leer(LLAVE_ESTADO);
+  if (guardado && typeof guardado === 'object') for (const k of CLAVES) if (k in guardado) estado.e[k] = k === 'p3' ? (['cartel', 'bauhaus', 'propias'].includes(guardado.p3) ? guardado.p3 : 'cartel') : !!guardado[k];
+  const desdeEnlace = location.hash.slice(1);
+  if (PRESETS[desdeEnlace]) estado.e = { ...PRESETS[desdeEnlace].e };
+  if (desdeEnlace === 'muestrario') estado.muestrario = true;
+
+  // ===== El color de una portada (P3). El de su cartel con respaldo, el primario Bauhaus de su clase o la paleta propia por id.
+  const BAUHAUS = { festival: '#1d4f9c', exposicion: '#c8341f', taller: '#f2c12e' };
+  // El respaldo, para un cartel gris, sin cartel o con la foto del lugar: las luces de las paletas propias de la app (las de la historia y de
+  // E10) sin repetir tono, nueve en vez de seis paletas (cada paleta trae dos luces casi iguales: Media Luna, dos cianes), elegida por el id.
+  const RESPALDO = [['Cantera', '#ff6f61'], ['Real de Catorce', '#b5541c'], ['Xantolo', '#ffd23f'], ['Huasteca', '#c6f68d'], ['Huasteca', '#0f7c6c'], ['Media Luna', '#0077b6'], ['Tangamanga', '#2d3fd6'], ['Xantolo', '#6d34c8'], ['Cantera', '#b0306a']];
+  function respaldoDe(t) {
+    const [nombre, hex] = RESPALDO[Portadas.hash(`${t.id}·respaldo`) % RESPALDO.length];
+    return { hex, origen: `respaldo ${hex} («${nombre}»)` };
+  }
+  function origenDe(t, v) {
+    if (v.p3 === 'bauhaus' && BAUHAUS[t.clase]) return { hex: BAUHAUS[t.clase], origen: 'Bauhaus por clase' };
+    const respaldo = respaldoDe(t);
+    if (v.p3 === 'propias') return respaldo;
+    // Un festival sin cartel propio enseña el de su próximo acto (OL-346): toma también sus colores.
+    const cartel = t.coloresCartel ? { c: t.coloresCartel, de: 'cartel' } : t.coloresActo ? { c: t.coloresActo, de: 'cartel de su próximo acto' } : null;
+    if (!cartel) return { ...respaldo, origen: `${t.fotoOrigen === 'lugar' ? 'foto del lugar' : 'sin imagen'} → ${respaldo.origen}` };
+    if (!Portadas.tieneTono(cartel.c[1])) return { ...respaldo, origen: `${cartel.de} gris (${cartel.c[1]}) → ${respaldo.origen}` };
+    return { hex: cartel.c[1], origen: `${cartel.de} (${cartel.c[1]})` };
+  }
+
+  // ===== La composición de una tarjeta: el juego (A o B), el arreglo que toca a su id. Las comunes sin cartel (P7) no llevan figura.
+  const ESPECIALES = new Set(['festival', 'exposicion', 'taller']);
+  function composicionDe(t, v) {
+    const lista = (v.p2 ? Portadas.B : Portadas.A)[t.clase];
+    if (!lista) return null;
+    const s = Portadas.hash(t.id);
+    const enmarcada = v.p6 && t.clase === 'exposicion' && t.fotoEsCartel;
+    if (enmarcada) return { nombre: 'Enmarcada', letra: 'P6', s, enmarcada: true };
+    return { ...lista[s % lista.length], letra: v.p2 ? 'B' : 'A', s };
+  }
+  /** P6: el cartel como cuadro colgado: marialuisa crema, una línea oscura y una sombra plana del escalón oscuro (Bauhaus: sin difuminado). */
+  function enmarcada(c, href) {
+    const { P, id } = c, { x, y, u } = Portadas.colocar(0.8, c), w = 0.8 * u, m = 0.07 * w;
+    const sombra = Portadas.rect(x + 1.6, y - u + 1.6, w, u, P.o);
+    const imagen = `<clipPath id="${id}i"><rect x="${x + m}" y="${y - u + m}" width="${w - 2 * m}" height="${u - 2 * m}"/></clipPath><image href="${href}" x="${x + m}" y="${y - u + m}" width="${w - 2 * m}" height="${u - 2 * m}" preserveAspectRatio="xMidYMin slice" clip-path="url(#${id}i)"/>`;
+    return [[sombra], [Portadas.rect(x, y - u, w, u, P.k), imagen, `<rect x="${x + m - 0.4}" y="${y - u + m - 0.4}" width="${w - 2 * m + 0.8}" height="${u - 2 * m + 0.8}" fill="none" stroke="${P.oo}" stroke-width="0.8"/>`]];
+  }
+
+  // ===== Las tarjetas.
+  const POR_ID = new Map();
+  for (const k of ['tusPlanes', 'destacados', 'estaSemana', 'festivales', 'nuevos']) for (const t of D.carriles[k]) if (!POR_ID.has(t.id)) POR_ID.set(t.id, t);
+  const fuente = (archivo, img) => (img ? `src="${RUTA}${archivo}" loading="lazy" decoding="async"` : `data-src="${RUTA}${archivo}"`);
+  const selloHtml = (s) => (s ? `<span class="fecha" title="${esc(s.texto)}"><small>${esc(s.mes)}</small><b>${s.flecha === 'antes' ? FLECHA : ''}${esc(s.dia)}${s.flecha === 'despues' ? FLECHA : ''}</b></span>` : '');
+  const chipHtml = (t) => (t.chip ? `<span class="chip${t.chip.tuyo ? ' estado' : ''}">${esc(t.chip.texto)}</span>` : '');
+  const cejaHtml = (t) => (t.ceja.length ? `<span class="ceja">${t.ceja.map((x) => `<span>${esc(x)}</span>`).join('')}</span>` : '');
+  const pieHtml = (t, conTitulo) => `<span class="pie">${conTitulo ? `${cejaHtml(t)}<b class="titulo-pie" data-m="titulo" data-completo="${esc(t.oracion)}">${esc(t.oracion)}</b>` : ''}<span class="donde">${esc(t.sitio)}</span><span class="cuando">${esc(t.detalle)}</span></span>`;
+
+  /** ¿Esta tarjeta lleva portada del sistema con esta combinación (y en este carril)? */
+  function usaSistema(t, v, carril) {
+    if (!v.p1) return false;
+    if (ESPECIALES.has(t.clase)) return v.p5 || carril === 'festivales' || carril === 'muestrario';
+    return v.p7 && !t.foto;
+  }
+
+  function htmlEvento(t, c) {
+    const v = c.v;
+    const sello = selloHtml(t.sello);
+    if (usaSistema(t, v, c.carril)) {
+      const { hex, origen } = origenDe(t, v);
+      const P = Portadas.paleta(hex);
+      const comp = composicionDe(t, v);
+      const conZona = v.p4;
+      const simbolo = comp ? '' : SIMBOLO;
+      const renglon = t.chip || t.ceja.length ? `<span class="renglon">${chipHtml(t)}${cejaHtml(t)}</span>` : '';
+      const zona = conZona ? `<span class="zona">${renglon}<b class="titulo-sobre" data-m="titulo" data-completo="${esc(t.oracion)}">${esc(t.oracion)}</b></span>` : chipHtml(t);
+      const datos = `data-id="${t.id}" data-hex="${hex}" data-origen="${esc(origen)}" data-comp="${esc(comp ? `${comp.letra} · ${comp.nombre}` : 'Neutra (P7)')}"`;
+      const portada = `<span class="portada sistema${conZona ? '' : ' sin-zona'}" style="--base:${P.base};--tinta:${P.tinta}" ${datos}><svg class="figura" viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>${simbolo}${sello}${zona}</span>`;
+      return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(t.nombre)}">${portada}${pieHtml(t, !conZona)}</a></li>`;
+    }
+    if (t.foto) {
+      const portada = `<span class="portada"><img class="cartel" ${fuente(t.foto, c.img)} alt="">${sello}${chipHtml(t)}</span>`;
+      return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(t.nombre)}">${portada}${pieHtml(t, true)}</a></li>`;
+    }
+    // E10 (producción): el degradado de su paleta propia, el símbolo SN, el sello, el chip, la ceja y el título corto en la base.
+    const portada = `<span class="portada e10${t.ceja.length ? ' con-ceja' : ''}" style="background:${t.fondo}" data-paleta="${t.propia.join(' ')}"><img class="simbolo" src="${RUTA}simbolo-sn-blanco.svg" alt="">${sello}${chipHtml(t)}${cejaHtml(t)}<span class="titulo-e10" data-m="titulo">${esc(t.corto)}</span></span>`;
+    return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-id="${t.id}" data-titulo="${esc(t.titulo)}" aria-label="${esc(t.nombre)}">${portada}${pieHtml(t, false)}</a></li>`;
+  }
+
+  /** Dibuja la figura de una portada del sistema: después de medir dónde quedaron la zona del título y el sello (en unidades de 100). */
+  let dibujos = 0;
+  function dibujarPortada(p) {
+    const ancho = p.clientWidth;
+    if (!ancho) return;
+    const t = POR_ID.get(p.dataset.id);
+    const v = vista(estado.e);
+    const escala = ancho / 100;
+    const M = 12 / escala;
+    const zona = p.querySelector('.zona');
+    const chip = p.querySelector(':scope > .chip');
+    const sello = p.querySelector('.fecha');
+    let H = zona ? zona.offsetTop / escala : 125 - M;
+    if (!zona && chip) H = Math.min(H, chip.offsetTop / escala - 3);
+    // Con P8, el recorte baja lo que puede moverse la figura (4 unidades: 6,6 px en la grande, 5,3 en la mediana) dentro del relleno de arriba de
+    // la zona (12 y 8 px): al inclinar, la base no se corta y nada llega al texto (founder, 11 de oct: «se pueden cortar las figuras en la base»).
+    const corte = zona ? H + (v.p8 ? MAX_UNIDADES : 0) : 125;
+    const selloIzq = sello ? sello.offsetLeft / escala : 100;
+    const selloAbajo = sello ? (sello.offsetTop + sello.offsetHeight) / escala : 0;
+    const P = Portadas.paleta(p.dataset.hex);
+    const comp = composicionDe(t, v);
+    const id = `d${++dibujos}`;
+    const c = { H, M, P, s: comp ? comp.s : 0, id, arriba: M * 0.8, selloIzq, selloAbajo };
+    const [atras, delante] = !comp ? [[], []] : comp.enmarcada ? enmarcada(c, `${RUTA}${t.foto}`) : comp.f(c);
+    p.dataset.campo = H.toFixed(1);
+    p.querySelector('svg.figura').innerHTML = `<rect width="100" height="125" fill="${P.base}"/><clipPath id="${id}c"><rect width="100" height="${corte.toFixed(2)}"/></clipPath><g clip-path="url(#${id}c)"><g class="capa-1">${atras.join('')}</g><g class="capa-2">${delante.join('')}</g></g>`;
+    p.querySelectorAll('clipPath > :first-child').forEach((el) => { if (el.closest('.capa-2') && !el.closest('clipPath').id.endsWith('i')) el.classList.add('sigue-1'); });
+  }
+  const dibujarPortadas = (raiz) => raiz.querySelectorAll('.portada.sistema').forEach(dibujarPortada);
+
+  function htmlAvatar(x, c) {
+    return `<li><a class="tarjeta en" href="#" data-accion="ficha" data-titulo="${esc(x.nombre)}" aria-label="${esc(x.novedad ? `${x.nombre}. ${x.novedad}` : x.nombre)}"><img class="foto" ${fuente(x.foto || 'sin-foto.webp', c.img)} alt=""><span class="nombre">${esc(x.nombre)}</span>${x.novedad ? `<small class="det">${esc(x.novedad)}</small>` : ''}</a></li>`;
+  }
+  function htmlArtistaEvento(x, c) {
+    const chip = x.novedad ? `<span class="chip nuevo">${esc(x.novedad)}</span>` : '';
+    const ceja = x.disciplina ? `<span class="ceja"><span>${esc(x.disciplina)}</span></span>` : '';
+    const lineas = `${x.genero ? `<span class="donde">${esc(x.genero)}</span>` : ''}${x.cuando ? `<span class="cuando">${esc(x.cuando)}</span>` : ''}`;
+    return `<li><a class="tarjeta ev" href="#" data-accion="ficha" data-titulo="${esc(x.nombre)}" aria-label="${esc([x.nombre, x.disciplina, x.genero, x.cuando, x.novedad].filter(Boolean).join('. '))}"><span class="portada"><img class="cartel" ${fuente(x.foto || 'sin-foto.webp', c.img)} alt="">${chip}</span><span class="pie">${ceja}<b class="titulo-pie" data-m="titulo" data-completo="${esc(x.nombre)}">${esc(x.nombre)}</b>${lineas}</span></a></li>`;
+  }
+
+  const fotoPrimero = (l) => [...l.filter((t) => t.foto), ...l.filter((t) => !t.foto)];
+  const porFecha = (a, b) => Date.parse(a.inicio) - Date.parse(b.inicio) || a.titulo.localeCompare(b.titulo, 'es');
+  function carriles() {
+    const C = D.carriles;
+    const lista = [];
+    if (C.tusPlanes.length) lista.push({ clave: 'tusPlanes', titulo: 'Tus planes', ver: 'Ver mi perfil', tarjetas: C.tusPlanes, tamano: 'grande' });
+    lista.push({ clave: 'destacados', titulo: C.titulo, ver: 'Ver la agenda', tarjetas: C.destacados, tamano: 'grande' });
+    lista.push({ clave: 'estaSemana', titulo: 'Esta semana', ver: 'Ver la agenda', tarjetas: C.estaSemana, tamano: 'mediana' });
+    lista.push({ clave: 'festivales', titulo: 'Festivales y expos', ver: 'Ver la agenda', tarjetas: C.festivales, tamano: 'grande' });
+    if (C.nuevos.length >= 3) lista.push({ clave: 'nuevos', titulo: 'Nuevos eventos', ver: 'Ver la agenda', tarjetas: C.nuevos, tamano: 'mediana' });
+    lista.push({ clave: 'lugares', titulo: 'Lugares de la semana', ver: 'Ver lugares', entidades: C.lugares, forma: 'avatar' });
+    lista.push({ clave: 'artistasDestacados', titulo: 'Artistas destacadxs', ver: 'Ver artistas', entidades: C.artistasDestacados, forma: 'evento' });
+    lista.push({ clave: 'artistasSemana', titulo: 'Artistas de la semana', ver: 'Ver artistas', entidades: C.artistasSemana, forma: 'avatar' });
+    return lista;
+  }
+  function htmlCarril(k, v, img) {
+    const cab = `<div class="cab"><h2>${esc(k.titulo)}</h2>${k.ver ? `<a class="ver" href="#" data-accion="ver" data-titulo="${esc(k.ver)}" aria-label="${esc(`${k.ver}: ${k.titulo}`)}">${esc(k.ver)}${I.derecha}</a>` : ''}</div>`;
+    const cuerpo = k.tarjetas
+      ? `<ul class="tira ${k.tamano}" data-carril="${k.clave}">${k.tarjetas.map((t) => htmlEvento(t, { v, img, carril: k.clave })).join('')}</ul>`
+      : k.forma === 'evento'
+        ? `<ul class="tira mediana" data-carril="${k.clave}">${k.entidades.map((x) => htmlArtistaEvento(x, { v, img })).join('')}</ul>`
+        : `<ul class="tira avatar" data-carril="${k.clave}">${k.entidades.map((x) => htmlAvatar(x, { v, img })).join('')}</ul>`;
+    return `<section class="carril" aria-label="${esc(k.titulo)}">${cab}${cuerpo}</section>`;
+  }
+  function htmlAhora(img) {
+    return `<section class="fila-ahora" aria-label="Lo de hoy"><ul class="lista-ahora" data-carril="ahora">${D.filaAhora.map((a, i) => {
+      const centro = a.cartel ? `<img ${fuente(a.cartel, img)} alt="">` : `<span class="sin-cartel" style="background:${a.fondo}"><img src="${RUTA}simbolo-sn-blanco.svg" alt=""></span>`;
+      return `<li><button type="button" class="circulo" data-accion="historia" data-i="${i}" aria-label="${esc(`${a.etiqueta}: ${a.titulo}`)}"><span class="anillo ${a.anillo}">${centro}</span><small class="${a.tipo === 'ahora' ? 'ahora' : ''}">${esc(a.rotulo)}</small></button></li>`;
+    }).join('')}</ul></section>`;
+  }
+  const BARRA = `<header class="barra-app"><button type="button" data-accion="nada" aria-label="Publicar">${I.mas}</button><img class="logo" src="${RUTA}logotipo.svg" alt="Somos Nosotros"><button type="button" data-accion="nada" aria-label="Buscar">${I.lupa}</button></header>`;
+  const CONTEXTO = `<div class="contexto"><button type="button" class="ctx" data-accion="nada">${I.pin}San Luis Potosí${I.baja}</button><button type="button" class="ctx" data-accion="nada">${I.calendario}Cuándo</button><button type="button" class="ctx" data-accion="nada">${I.filtros}Filtros</button></div>`;
+  const NAV = `<nav class="secciones" aria-label="Secciones">${[['Inicio', I.casa, true], ['Agenda', I.calendario], ['Lugares', I.pin], ['Artistas', I.estrella], ['Perfil', I.persona]].map(([n, i, activa]) => `<button type="button" class="${activa ? 'activa' : ''}" data-accion="nada"${activa ? ' aria-current="page"' : ''}><i>${i}</i>${n}</button>`).join('')}</nav>`;
+  function htmlTelefono(v, img) {
+    return `<div class="pantalla">${BARRA}${CONTEXTO}${htmlAhora(img)}${carriles().map((k) => htmlCarril(k, v, img)).join('')}<div class="relleno"></div>${NAV}</div><p class="aviso" role="status" aria-live="polite"></p>`;
+  }
+
+  /** El muestrario: cada festival, expo y taller una vez (en grande) y los eventos sin imagen (en mediana), con la combinación de ahora. */
+  function tarjetasDelMuestrario() {
+    const vistos = new Set();
+    const especiales = [];
+    const sinCartel = [];
+    for (const k of ['tusPlanes', 'destacados', 'estaSemana', 'festivales', 'nuevos']) for (const t of D.carriles[k]) {
+      if (vistos.has(t.id)) continue;
+      vistos.add(t.id);
+      if (ESPECIALES.has(t.clase)) especiales.push(t);
+      else if (!t.foto) sinCartel.push(t);
+    }
+    const orden = { festival: 0, exposicion: 1, taller: 2 };
+    especiales.sort((a, b) => orden[a.clase] - orden[b.clase] || porFecha(a, b));
+    return { especiales, sinCartel };
+  }
+  function htmlMuestrario(v, img) {
+    const { especiales, sinCartel } = tarjetasDelMuestrario();
+    const item = (t) => `${htmlEvento(t, { v, img, carril: 'muestrario' }).replace(/^<li>|<\/li>$/g, '')}<span class="nota" data-nota="${t.id}"></span>`;
+    const grupo = (titulo, lista, clase) => (lista.length ? `<h3>${esc(titulo)}</h3><ul class="rejilla${clase ? ` ${clase}` : ''}">${lista.map((t) => `<li>${item(t)}</li>`).join('')}</ul>` : '');
+    const vista7 = { ...v, p7: v.p1 && v.p7 };
+    return `<div class="pantalla muestrario"><header class="cab-m"><button type="button" data-accion="cerrar-muestrario" aria-label="Volver a Inicio">${I.izquierda}</button><div><h2>Todas las portadas</h2><p>${especiales.length} festivales, expos y talleres · ${sinCartel.length} eventos sin imagen · ${esc(claveDe(estado.e))}</p></div></header>${grupo('Festivales', especiales.filter((t) => t.clase === 'festival'))}${grupo('Exposiciones', especiales.filter((t) => t.clase === 'exposicion'))}${grupo('Talleres', especiales.filter((t) => t.clase === 'taller'))}${grupo(vista7.p7 ? 'Eventos sin imagen (P7, mediana)' : 'Eventos sin imagen (hoy, E10, mediana)', sinCartel, 'mediana')}<div class="relleno"></div></div><p class="aviso" role="status" aria-live="polite"></p>`;
+  }
+
+  // ===== Los dos teléfonos. «Hoy» siempre con todo apagado; a lo ancho se ve a la izquierda, si no, solo lo usa el medidor.
+  const telHoy = $('tel-hoy');
+  const telMix = $('tel-mix');
+  const mm = { medio: matchMedia('(min-width: 760px)'), ancho: matchMedia('(min-width: 1180px)') };
+  const modo = () => (mm.ancho.matches ? 'ancho' : mm.medio.matches ? 'medio' : 'movil');
+  function pintar(tel, e, img) {
+    const v = vista(e);
+    const viejo = tel.querySelector('.pantalla');
+    const arriba = viejo && !viejo.classList.contains('muestrario') ? viejo.scrollTop : 0;
+    const lados = {};
+    tel.querySelectorAll('[data-carril]').forEach((u) => { lados[u.dataset.carril] = u.scrollLeft; });
+    tel.className = tel === telMix && v.p8 ? 'tel con-p8' : 'tel';
+    tel.innerHTML = tel === telMix && estado.muestrario ? htmlMuestrario(v, img) : htmlTelefono(v, img);
+    if (!estado.muestrario || tel !== telMix) {
+      tel.querySelector('.pantalla').scrollTop = arriba;
+      tel.querySelectorAll('[data-carril]').forEach((u) => { if (lados[u.dataset.carril]) u.scrollLeft = lados[u.dataset.carril]; });
+    }
+    recortarTitulos(tel);
+    dibujarPortadas(tel);
+    observarPortadas(tel);
+  }
+  function pintarTodo() {
+    pintar(telMix, estado.e, true);
+    pintar(telHoy, HOY, modo() === 'ancho');
+    programarMedida();
+  }
+  /** El título de más de dos líneas se corta en la última palabra que cabe, con «…»; nunca a media palabra (como la app, `cortarEnPalabra`). */
+  const sobra = (el) => el.scrollHeight - el.clientHeight > (parseFloat(getComputedStyle(el).lineHeight) || 16) / 2;
+  function recortarTitulos(tel) {
+    tel.querySelectorAll('.titulo-pie, .titulo-sobre').forEach((el) => {
+      const completo = el.dataset.completo;
+      el.textContent = completo;
+      if (!sobra(el)) return;
+      const palabras = completo.split(' ');
+      while (palabras.length > 1 && sobra(el)) {
+        palabras.pop();
+        el.textContent = `${palabras.join(' ').replace(/[\s,:;·–-]+$/, '')}…`;
+      }
+    });
+  }
+
+  // ===== El medidor: el contraste del texto en su peor punto, en los píxeles de la portada (sin el texto). La portada del sistema se dibuja en
+  // un lienzo tal cual (su SVG trae los colores puestos; el cartel enmarcado no se dibuja: nunca está detrás del texto); la de hoy sin cartel
+  // (E10), con los mismos degradados que la app (`degradadoTarjeta`). Se muestrea todo el rectángulo del título y de la ceja.
+  const lienzo = document.createElement('canvas');
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  const cacheRaster = new Map();
+  const hexRgb = Portadas.hexRgb, rgbHex = Portadas.rgbHex, lumRgb = Portadas.lumRgb, contrasteL = Portadas.contrasteL;
+  function cargarImagen(src) {
+    return new Promise((listo, falla) => { const im = new Image(); im.onload = () => listo(im); im.onerror = falla; im.src = src; });
+  }
+  const colorCss = (s) => { const m = s && s.match(/rgba?\(([^)]+)\)/); if (!m) return null; const [r, g, b, a = 1] = m[1].split(/[\s,/]+/).filter(Boolean).map(Number); return { r, g, b, a }; };
+  function legible(hex) {
+    const rgb = hexRgb(hex);
+    let f = 1;
+    for (let L = Portadas.lum(hex); L > 0.12; L = lumRgb(rgb.map((v) => v * f))) f *= L > 0.13 ? (0.12 / L) ** (1 / 2.2) : 0.98;
+    return rgbHex(rgb.map((v) => v * f));
+  }
+  function pintarDegradadoE10(w, h, paleta) {
+    // `degradadoTarjeta`: radial(90% 60% at 100% 35%, c2 0,9 → 0 al 70 %), radial(110% 70% at 0% 110%, c3 0,85 → 0 al 68 %), legible(c1).
+    ctx.fillStyle = legible(paleta[1]);
+    ctx.fillRect(0, 0, w, h);
+    const radial = (cxp, cyp, rxp, ryp, hex, a0, p1) => {
+      const [r, g, b] = hexRgb(hex);
+      ctx.save();
+      ctx.translate(cxp * w, cyp * h);
+      ctx.scale(rxp * w, ryp * h);
+      const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      gr.addColorStop(0, `rgba(${r},${g},${b},${a0})`);
+      gr.addColorStop(p1, `rgba(${r},${g},${b},0)`);
+      gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = gr;
+      ctx.fillRect(-cxp / rxp - 1, -cyp / ryp - 1, 1 / rxp + 2, 1 / ryp + 2);
+      ctx.restore();
+    };
+    radial(0, 1.1, 1.1, 0.7, paleta[3], 0.85, 0.68);
+    radial(1, 0.35, 0.9, 0.6, paleta[2], 0.9, 0.7);
+  }
+  function peorEn(caja, x0, y0, w, h, tinta) {
+    const esc2 = 2;
+    const a = Math.max(0, Math.floor((caja.left - x0) * esc2)), b = Math.max(0, Math.floor((caja.top - y0) * esc2));
+    const c = Math.min(w, Math.ceil((caja.right - x0) * esc2)), d = Math.min(h, Math.ceil((caja.bottom - y0) * esc2));
+    if (c <= a || d <= b) return null;
+    let datos;
+    try { datos = ctx.getImageData(a, b, c - a, d - b).data; } catch { return null; }
+    const lt = lumRgb(tinta);
+    let peor = Infinity, peorRgb = null;
+    for (let i = 0; i < datos.length; i += 4) {
+      if (datos[i + 3] < 250) continue;
+      const k = contrasteL(lt, lumRgb([datos[i], datos[i + 1], datos[i + 2]]));
+      if (k < peor) { peor = k; peorRgb = [datos[i], datos[i + 1], datos[i + 2]]; }
+    }
+    return Number.isFinite(peor) ? { contraste: peor, peor: rgbHex(peorRgb), tinta: rgbHex(tinta) } : null;
+  }
+  /**
+   * Las cajas de texto de un elemento: una por renglón (getClientRects), recortadas a la caja del elemento (lo que sobresale no se pinta: el
+   * título corta con overflow), en coordenadas de la portada sin escalar.
+   */
+  function cajasDe(el, portada) {
+    const pr = portada.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const k = portada.offsetWidth / pr.width || 1;
+    const rango = document.createRange();
+    rango.selectNodeContents(el);
+    return [...rango.getClientRects()].map((r) => ({ left: Math.max(r.left, er.left), top: Math.max(r.top, er.top), right: Math.min(r.right, er.right), bottom: Math.min(r.bottom, er.bottom) })).filter((r) => r.right - r.left > 1 && r.bottom - r.top > 1).map((r) => ({ left: (r.left - pr.left) * k, top: (r.top - pr.top) * k, right: (r.right - pr.left) * k, bottom: (r.bottom - pr.top) * k }));
+  }
+  async function medirPortada(portada) {
+    const esSistema = portada.classList.contains('sistema');
+    const esE10 = portada.classList.contains('e10');
+    const titulo = portada.querySelector('[data-m="titulo"]');
+    if (!titulo || !(esSistema || esE10)) return null;
+    const w = Math.round(portada.offsetWidth * 2), h = Math.round(portada.offsetHeight * 2);
+    if (!w || !h) return null;
+    lienzo.width = w; lienzo.height = h;
+    ctx.clearRect(0, 0, w, h);
+    if (esSistema) {
+      const original = portada.querySelector('svg.figura');
+      const copia = original.cloneNode(true);
+      copia.querySelectorAll('image').forEach((x) => x.remove());
+      copia.querySelectorAll('[transform]').forEach((x) => x.removeAttribute('transform'));
+      copia.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      copia.setAttribute('width', w); copia.setAttribute('height', h);
+      const llave = copia.outerHTML;
+      let im = cacheRaster.get(llave);
+      if (!im) { im = await cargarImagen(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(llave)}`); cacheRaster.set(llave, im); }
+      ctx.drawImage(im, 0, 0, w, h);
+    } else {
+      pintarDegradadoE10(w, h, portada.dataset.paleta.split(' '));
+    }
+    const medir1 = (el) => {
+      if (!el) return null;
+      const tinta = colorCss(getComputedStyle(el).color);
+      let peor = null;
+      for (const caja of cajasDe(el, portada)) { const m = peorEn(caja, 0, 0, w, h, [tinta.r, tinta.g, tinta.b]); if (m && (!peor || m.contraste < peor.contraste)) peor = m; }
+      return peor;
+    };
+    const ceja = portada.querySelector('.ceja');
+    return { titulo: medir1(titulo), ceja: medir1(ceja) };
+  }
+  const fmt = (c) => `${c.toFixed(1).replace('.', ',')}:1`;
+  function visible(tel, el) {
+    const p = tel.querySelector('.pantalla');
+    const r = p.getBoundingClientRect();
+    const ctxEl = tel.querySelector('.contexto');
+    const nav = tel.querySelector('.secciones');
+    const caja = { l: r.left, r: r.right, t: ctxEl ? Math.max(r.top, ctxEl.getBoundingClientRect().bottom) : r.top, b: nav ? Math.min(r.bottom, nav.getBoundingClientRect().top) : r.bottom };
+    const b = el.getBoundingClientRect();
+    const w = Math.min(b.right, caja.r) - Math.max(b.left, caja.l);
+    const h = Math.min(b.bottom, caja.b) - Math.max(b.top, caja.t);
+    return w > 0 && h > 0 && (w * h) / Math.max(1, b.width * b.height) >= 0.5;
+  }
+  const peorDe2 = (m) => (!m ? null : [m.titulo, m.ceja].filter(Boolean).reduce((p, x) => (!p || x.contraste < p.contraste ? x : p), null));
+  let midiendo = false, otraVez = false;
+  async function medir() {
+    if (midiendo) { otraVez = true; return; }
+    midiendo = true;
+    try {
+      const resultado = { esta: [], hoy: [] };
+      for (const [nombre, tel] of [['esta', telMix], ['hoy', telHoy]]) {
+        const todas = estado.muestrario && tel === telMix;
+        const portadas = [...tel.querySelectorAll('.portada')].filter((p) => (p.classList.contains('sistema') || p.classList.contains('e10')) && p.querySelector('[data-m="titulo"]') && (todas || visible(tel, p)));
+        for (const p of portadas) {
+          const a = p.closest('a');
+          const m = await medirPortada(p);
+          const id = a.dataset.id;
+          const peor = peorDe2(m);
+          resultado[nombre].push({ id, titulo: a.dataset.titulo, portada: p.classList.contains('sistema') ? `${p.dataset.comp} · ${p.dataset.origen}` : 'sin cartel (E10)', m, peor });
+          p.querySelectorAll('.medida').forEach((x) => x.remove());
+          if (estado.e.medidas && tel === telMix && peor) p.insertAdjacentHTML('beforeend', `<span class="medida ${peor.contraste >= 4.5 ? 'bien' : 'mal'}">${fmt(peor.contraste)}</span>`);
+          const nota = tel.querySelector(`[data-nota="${id}"]`);
+          if (nota) nota.innerHTML = `<b>${esc(p.dataset.comp || 'E10')}</b> · ${esc(p.dataset.origen || 'degradado de su paleta propia')}${peor ? ` · <b>${fmt(peor.contraste)}</b>` : ''}`;
+        }
+      }
+      // Las tarjetas con el título debajo: negro sobre el fondo de la página, el mismo valor para todas.
+      const fondoPagina = colorCss(getComputedStyle(telMix).backgroundColor);
+      const abajo = fondoPagina ? contrasteL(Portadas.lum('#1a1a1a'), lumRgb([fondoPagina.r, fondoPagina.g, fondoPagina.b])) : null;
+      const peorDe = (l) => l.filter((x) => x.peor).reduce((p, x) => (!p || x.peor.contraste < p.peor.contraste ? x : p), null);
+      for (const [nombre, lista] of Object.entries(resultado)) {
+        const peor = peorDe(lista);
+        const celda = $(`m-${nombre}`), cual = $(`m-${nombre}-cual`);
+        if (peor) { celda.textContent = fmt(peor.peor.contraste); celda.className = peor.peor.contraste >= 4.5 ? 'bien' : 'mal'; cual.textContent = peor.titulo; }
+        else if (abajo) { celda.textContent = fmt(abajo); celda.className = 'bien'; cual.textContent = 'títulos debajo, sobre el fondo'; }
+        else { celda.textContent = '–'; celda.className = ''; cual.textContent = ''; }
+      }
+      const celda = (x) => `<td class="n ${x ? (x.contraste >= 4.5 ? 'bien' : 'mal') : ''}">${x ? fmt(x.contraste) : '–'}</td>`;
+      const filas = resultado.esta.map((x) => `<tr><td>${esc(x.titulo.length > 30 ? `${x.titulo.slice(0, 29)}…` : x.titulo)}</td><td>${esc(x.portada)}</td>${celda(x.m && x.m.titulo)}${celda(x.m && x.m.ceja)}</tr>`);
+      $('tabla-medidas').innerHTML = filas.join('') || `<tr><td colspan="4">Ninguna portada con texto encima a la vista. ${abajo ? `Los títulos debajo de la tarjeta van en negro sobre el fondo: ${fmt(abajo)}.` : ''}</td></tr>`;
+      window.prototipo.ultimaMedida = { ...resultado, titulosDebajo: abajo };
+    } finally {
+      midiendo = false;
+      if (otraVez) { otraVez = false; programarMedida(); }
+    }
+  }
+  let temporizadorMedida = 0;
+  function programarMedida() { clearTimeout(temporizadorMedida); temporizadorMedida = setTimeout(medir, 160); }
+
+  // ===== P8 · La inclinación: el giroscopio (en iPhone con permiso, tras un toque) o el dedo sobre una portada. Solo las portadas a la vista;
+  // las figuras de atrás se mueven la mitad que las de adelante. El recorte del campo no se mueve: nada entra a la zona del título.
+  const inclinacion = { x: 0, y: 0, destinoX: 0, destinoY: 0, base: null, activo: null, cuadro: 0, eventos: 0 };
+  const MAX_UNIDADES = 4; // en unidades de la portada (100 de ancho): unos 6,6 px en la tarjeta grande, 5,3 en la mediana
+  const aLaVista = new Set();
+  let observador = null;
+  function moverCapas(p, x, y) {
+    const t1 = `translate(${(x * 0.5).toFixed(2)} ${(y * 0.5).toFixed(2)})`, t2 = `translate(${x.toFixed(2)} ${y.toFixed(2)})`, ts = `translate(${(-x * 0.5).toFixed(2)} ${(-y * 0.5).toFixed(2)})`;
+    p.querySelectorAll('.capa-1').forEach((g) => g.setAttribute('transform', t1));
+    p.querySelectorAll('.capa-2').forEach((g) => g.setAttribute('transform', t2));
+    // El cruce (dentro de la capa de adelante) recorta con la figura de atrás: su recorte sigue a la capa 1.
+    p.querySelectorAll('.sigue-1').forEach((g) => g.setAttribute('transform', ts));
+  }
+  function observarPortadas(tel) {
+    if (tel !== telMix) return;
+    if (observador) observador.disconnect();
+    aLaVista.clear();
+    observador = new IntersectionObserver((entradas) => { for (const en of entradas) { if (en.isIntersecting) aLaVista.add(en.target); else { aLaVista.delete(en.target); moverCapas(en.target, 0, 0); } } }, { root: null, threshold: 0.1 });
+    tel.querySelectorAll('.portada.sistema').forEach((p) => observador.observe(p));
+  }
+  function aplicarInclinacion() {
+    inclinacion.cuadro = 0;
+    inclinacion.x += (inclinacion.destinoX - inclinacion.x) * 0.2;
+    inclinacion.y += (inclinacion.destinoY - inclinacion.y) * 0.2;
+    for (const p of aLaVista) if (!p.dataset.arrastre) moverCapas(p, inclinacion.x, inclinacion.y);
+    if (Math.abs(inclinacion.destinoX - inclinacion.x) > 0.02 || Math.abs(inclinacion.destinoY - inclinacion.y) > 0.02) inclinacion.cuadro = requestAnimationFrame(aplicarInclinacion);
+  }
+  function fijarDestino(x, y) {
+    inclinacion.destinoX = Math.max(-MAX_UNIDADES, Math.min(MAX_UNIDADES, x));
+    inclinacion.destinoY = Math.max(-MAX_UNIDADES, Math.min(MAX_UNIDADES, y));
+    if (!inclinacion.cuadro) inclinacion.cuadro = requestAnimationFrame(aplicarInclinacion);
+  }
+  function alOrientar(ev) {
+    if (!vista(estado.e).p8 || ev.gamma == null || ev.beta == null) return;
+    inclinacion.eventos++;
+    if (!inclinacion.base) inclinacion.base = { gamma: ev.gamma, beta: ev.beta };
+    // Desde la postura en que se activó: ±25° llenan el recorrido. Inclinar a la derecha corre las figuras a la derecha; hacia ti, hacia abajo.
+    fijarDestino(((ev.gamma - inclinacion.base.gamma) / 25) * MAX_UNIDADES, ((ev.beta - inclinacion.base.beta) / 25) * MAX_UNIDADES);
+    const primera = inclinacion.activo !== 'giroscopio';
+    inclinacion.activo = 'giroscopio';
+    if (primera) { pintarGiro(); avisar(telMix, 'Giro activo: inclina el teléfono'); }
+    pintarEstadoP8(`Giroscopio activo · ${Math.round(ev.gamma)}° a los lados, ${Math.round(ev.beta)}° al frente`);
+  }
+  let escuchando = false;
+  async function activarGiroscopio() {
+    if (!vista(estado.e).p8) return;
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const r = await DeviceOrientationEvent.requestPermission();
+        if (r !== 'granted') { pintarEstadoP8('Permiso negado: queda el arrastre con el dedo.'); avisoGiro('Permiso negado: recarga la página y acepta el aviso del iPhone'); return; }
+      }
+      if (!escuchando) { addEventListener('deviceorientation', alOrientar); escuchando = true; }
+      inclinacion.base = null;
+      pintarEstadoP8('Esperando al giroscopio… Si nada se mueve, esta página no lo recibe (pasa dentro de un marco): mantén el dedo sobre una portada y arrástralo.');
+    } catch (e) { pintarEstadoP8(`No se pudo activar: ${e.message}`); avisoGiro(`No se pudo activar el giro: ${e.message}`); }
+  }
+  function pintarEstadoP8(texto) { const el = $('estado-p8'); if (el) el.textContent = texto; }
+  // El botón del giro, a la vista sobre el teléfono: con P8 encendido y mientras no llegue el giroscopio. Si no puede llegar, dice por qué.
+  const giro = $('giro');
+  let esperaGiro = 0;
+  function avisoGiro(texto) { giro.textContent = texto; giro.classList.add('aviso-giro'); giro.dataset.estado = 'aviso'; giro.disabled = false; giro.hidden = false; }
+  function pintarGiro() {
+    const quiere = !!(estado.e.p1 && estado.e.p8);
+    if (!quiere || modo() !== 'movil' || inclinacion.activo === 'giroscopio' || prueba) { giro.hidden = true; return; }
+    giro.hidden = false;
+    if (reducirMovimiento.matches) { giro.textContent = 'Tu iPhone tiene «Reducir movimiento»: apágalo en Ajustes › Accesibilidad › Movimiento para ver el giro'; giro.classList.add('aviso-giro'); giro.disabled = true; return; }
+    giro.disabled = false;
+    if (!giro.dataset.estado) { giro.textContent = 'Activar el giro'; giro.classList.remove('aviso-giro'); }
+  }
+  giro.addEventListener('click', () => {
+    if (giro.disabled) return;
+    giro.dataset.estado = 'esperando';
+    giro.classList.remove('aviso-giro');
+    giro.textContent = 'Esperando al giro…';
+    activarGiroscopio();
+    clearTimeout(esperaGiro);
+    esperaGiro = setTimeout(() => { if (inclinacion.eventos === 0 && giro.dataset.estado === 'esperando') avisoGiro('No llega el giro: esta página no lo recibe. Ábrela con el enlace de prueba'); }, 2500);
+  });
+  // El respaldo: mantener el dedo 250 ms sobre una portada y arrastrar (si se mueve antes, es un desplazamiento y no se toca).
+  const arrastre = { el: null, x0: 0, y0: 0, temporizador: 0, sostenido: false, id: null };
+  function alBajar(ev) {
+    if (!vista(estado.e).p8 || ev.button) return;
+    const p = ev.target.closest('.portada.sistema');
+    if (!p || !telMix.contains(p)) return;
+    arrastre.el = p; arrastre.x0 = ev.clientX; arrastre.y0 = ev.clientY; arrastre.sostenido = false; arrastre.id = ev.pointerId;
+    clearTimeout(arrastre.temporizador);
+    arrastre.temporizador = setTimeout(() => { if (arrastre.el === p) { arrastre.sostenido = true; p.dataset.arrastre = '1'; try { p.setPointerCapture(arrastre.id); } catch { /* nada */ } pintarEstadoP8('Arrastre con el dedo: suéltalo y las figuras vuelven.'); } }, 250);
+  }
+  function alMover(ev) {
+    if (!arrastre.el || ev.pointerId !== arrastre.id) return;
+    const dx = ev.clientX - arrastre.x0, dy = ev.clientY - arrastre.y0;
+    if (!arrastre.sostenido) { if (Math.hypot(dx, dy) > 8) soltar(); return; }
+    const x = Math.max(-MAX_UNIDADES, Math.min(MAX_UNIDADES, (dx / 40) * MAX_UNIDADES)), y = Math.max(-MAX_UNIDADES, Math.min(MAX_UNIDADES, (dy / 40) * MAX_UNIDADES));
+    moverCapas(arrastre.el, x, y);
+    inclinacion.activo = 'arrastre';
+  }
+  function soltar() {
+    clearTimeout(arrastre.temporizador);
+    const p = arrastre.el;
+    if (p && arrastre.sostenido) { delete p.dataset.arrastre; moverCapas(p, inclinacion.x, inclinacion.y); p.dataset.arrastrado = '1'; setTimeout(() => delete p.dataset.arrastrado, 60); }
+    arrastre.el = null; arrastre.sostenido = false;
+  }
+  telMix.addEventListener('pointerdown', alBajar);
+  telMix.addEventListener('pointermove', alMover);
+  addEventListener('pointerup', soltar);
+  addEventListener('pointercancel', soltar);
+  // Sostenido el dedo, el desplazamiento no se lleva la tarjeta: solo entonces se frena el toque.
+  telMix.addEventListener('touchmove', (ev) => { if (arrastre.sostenido) ev.preventDefault(); }, { passive: false });
+  // Mantener el dedo abre el menú del navegador en una imagen o un enlace: con P8, no sobre las portadas.
+  telMix.addEventListener('contextmenu', (ev) => { if (vista(estado.e).p8 && ev.target.closest('.portada.sistema')) ev.preventDefault(); });
+
+  // ===== Los dos teléfonos van juntos al desplazar.
+  let manda = telMix;
+  for (const tel of [telHoy, telMix]) {
+    for (const ev of ['pointerdown', 'wheel', 'touchstart', 'keydown']) tel.addEventListener(ev, () => { manda = tel; }, { passive: true });
+    tel.addEventListener('scroll', (ev) => {
+      programarMedida();
+      if (tel !== manda || estado.muestrario) return;
+      const otro = tel === telMix ? telHoy : telMix;
+      const t = ev.target;
+      if (t.classList && t.classList.contains('pantalla')) { const o = otro.querySelector('.pantalla'); if (o && Math.abs(o.scrollTop - t.scrollTop) > 1) o.scrollTop = t.scrollTop; }
+      else if (t.dataset && t.dataset.carril) { const o = otro.querySelector(`[data-carril="${t.dataset.carril}"]`); if (o && Math.abs(o.scrollLeft - t.scrollLeft) > 1) o.scrollLeft = t.scrollLeft; }
+    }, { capture: true, passive: true });
+    tel.addEventListener('click', alTocar);
+  }
+  function avisar(tel, texto) {
+    const p = tel.querySelector('.aviso');
+    if (!p) return;
+    p.textContent = texto;
+    p.classList.add('visible');
+    clearTimeout(p._t);
+    p._t = setTimeout(() => p.classList.remove('visible'), 2200);
+  }
+  function alTocar(ev) {
+    const tel = ev.currentTarget;
+    const el = ev.target.closest('[data-accion]');
+    if (!el || !tel.contains(el)) return;
+    ev.preventDefault();
+    const portada = ev.target.closest('.portada');
+    if (portada && portada.dataset.arrastrado) return;
+    const accion = el.dataset.accion;
+    if (accion === 'ficha') avisar(tel, `Aquí se abre la ficha: ${el.dataset.titulo}`);
+    else if (accion === 'historia') { const a = D.filaAhora[Number(el.dataset.i)]; avisar(tel, `Aquí se abren las historias: ${a.titulo}`); }
+    else if (accion === 'ver') avisar(tel, `Aquí se abre: ${el.dataset.titulo}`);
+    else if (accion === 'cerrar-muestrario') verMuestrario(false);
+    else avisar(tel, 'En este prototipo solo cambia Inicio');
+  }
+  function verMuestrario(abierto) {
+    estado.muestrario = abierto;
+    pintar(telMix, estado.e, true);
+    programarMedida();
+    $('ver-muestrario').textContent = abierto ? 'Volver a Inicio' : 'Ver todas las portadas';
+    if (abierto) cerrarHoja();
+  }
+  $('ver-muestrario').addEventListener('click', () => verMuestrario(!estado.muestrario));
+
+  // ===== Controles.
+  const lista = $('ejercicios');
+  lista.innerHTML = EJERCICIOS.map((x) => {
+    const extra = x.opciones
+      ? `<span class="opciones" role="group" aria-label="${esc(x.t)}">${x.opciones.map(([val, nombre]) => `<button type="button" data-opcion="${x.k}" data-valor="${val}" aria-pressed="false">${esc(nombre)}</button>`).join('')}</span>`
+      : x.k === 'p8' ? `<span class="sub-p8" id="sub-p8" hidden><span class="estado-p8" id="estado-p8">Quieto.</span><button type="button" class="boton secundario" id="activar-giroscopio">Activar el giroscopio</button></span>` : '';
+    const control = x.opciones ? '' : `<input type="checkbox" role="switch" id="${x.k}" data-k="${x.k}">`;
+    return `<li><label class="interruptor${x.sub ? ' sub' : ''}" ${x.opciones ? '' : `for="${x.k}"`} data-fila="${x.k}"><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small>${x.f ? `<small class="firma">${esc(x.f)}</small>` : ''}${extra}</span>${control}</label></li>`;
+  }).join('');
+  $('activar-giroscopio').addEventListener('click', (ev) => { ev.preventDefault(); activarGiroscopio(); });
+  function pintarControles() {
+    const v = vista(estado.e);
+    for (const x of EJERCICIOS) {
+      const fila = document.querySelector(`[data-fila="${x.k}"]`);
+      const apagado = (x.sub && !estado.e[x.sub]) || (x.k === 'p8' && reducirMovimiento.matches);
+      fila.classList.toggle('apagado', !!apagado);
+      if (x.opciones) { for (const b of fila.querySelectorAll('[data-opcion]')) { b.setAttribute('aria-pressed', String(estado.e.p3 === b.dataset.valor)); b.disabled = !!apagado; } continue; }
+      const input = $(x.k);
+      input.checked = !!estado.e[x.k];
+      input.disabled = !!apagado;
+    }
+    $('sub-p8').hidden = !v.p8;
+    if (reducirMovimiento.matches) pintarEstadoP8('Este teléfono pide reducir el movimiento: P8 no se enciende.');
+    const p = presetDe(estado.e);
+    for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
+    const activos = listaDe(estado.e);
+    const nombre = p ? PRESETS[p].nombre : 'Personalizada';
+    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado (producción)'}${estado.e.p8 && reducirMovimiento.matches ? ' (P8 sin efecto)' : ''}`;
+    $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta» y con «Hoy».';
+    $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ' · todo apagado'}`;
+    $('fab-combinacion').textContent = `· ${p ? nombre : 'personalizada'}`;
+    pintarGiro();
+  }
+  function aplicar(e) {
+    estado.e = { ...HOY, ...e };
+    guardar(LLAVE_ESTADO, estado.e);
+    if (!vista(estado.e).p8) { inclinacion.x = inclinacion.y = inclinacion.destinoX = inclinacion.destinoY = 0; inclinacion.base = null; }
+    pintarControles();
+    pintar(telMix, estado.e, true);
+    programarMedida();
+    pintarPruebas();
+  }
+  lista.addEventListener('change', (ev) => { const k = ev.target.dataset.k; if (k) aplicar({ ...estado.e, [k]: ev.target.checked }); });
+  lista.addEventListener('click', (ev) => { const b = ev.target.closest('[data-opcion]'); if (b && !b.disabled) { ev.preventDefault(); aplicar({ ...estado.e, [b.dataset.opcion]: b.dataset.valor }); } });
+  for (const b of document.querySelectorAll('[data-preset]')) b.addEventListener('click', () => aplicar({ ...PRESETS[b.dataset.preset].e, medidas: estado.e.medidas }));
+
+  // ===== La hoja (en el teléfono). Desde 760 es una columna fija.
+  const hoja = $('hoja');
+  const velo = $('velo');
+  const fab = $('fab');
+  let abierta = false;
+  function abrirHoja(enfocar) {
+    if (modo() !== 'movil') return;
+    abierta = true;
+    hoja.inert = false;
+    hoja.classList.add('abierta');
+    velo.classList.add('visible');
+    fab.setAttribute('aria-expanded', 'true');
+    if (enfocar) {
+      const cuerpo = $('hoja-cuerpo');
+      const resumen = cuerpo.querySelector('.resumen');
+      const bloque = enfocar.closest('.bloque');
+      cuerpo.scrollTop = Math.max(0, cuerpo.scrollTop + bloque.getBoundingClientRect().top - cuerpo.getBoundingClientRect().top - resumen.offsetHeight - 8);
+    }
+    (enfocar || $('hoja-titulo')).focus({ preventScroll: true });
+  }
+  function cerrarHoja() {
+    if (modo() !== 'movil' || !abierta) return;
+    abierta = false;
+    hoja.classList.remove('abierta');
+    velo.classList.remove('visible');
+    hoja.inert = true;
+    fab.setAttribute('aria-expanded', 'false');
+    if (!prueba) fab.focus({ preventScroll: true });
+  }
+  fab.addEventListener('click', () => abrirHoja());
+  $('cerrar-hoja').addEventListener('click', cerrarHoja);
+  velo.addEventListener('click', cerrarHoja);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHoja(); });
+
+  // ===== Las pruebas: un cronómetro por tarea.
+  const TAREAS = [
+    { id: 'taller', texto: 'Encuentra un taller' },
+    { id: 'festival', texto: '¿Qué festival está pasando?' },
+    { id: 'expo', texto: 'Encuentra una expo que cierre en noviembre' },
+  ];
+  const NOMBRES = ['Hoy', 'Firmada', 'Propuesta', 'Mínima'];
+  let prueba = null;
+  const segundos = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
+  const tiempos = () => { const t = leer(LLAVE_TIEMPOS); return t && typeof t === 'object' ? t : {}; };
+  function pintarPruebas() {
+    const t = tiempos();
+    const claves = [...NOMBRES, ...Object.keys(t).filter((k) => !NOMBRES.includes(k))];
+    $('pruebas').innerHTML = TAREAS.map((x) => {
+      const corriendo = prueba && prueba.tarea === x.id;
+      const marcas = claves.map((k) => { const r = t[k] && t[k][x.id]; return r ? `${esc(k)} <b>${segundos(r.ms)}</b>` : NOMBRES.includes(k) ? `${esc(k)} –` : ''; }).filter(Boolean).join(' · ');
+      return `<li class="prueba"><span class="tarea">${esc(x.texto)}</span><button type="button" class="boton${corriendo ? ' corriendo' : ''}" id="b-${x.id}" data-tarea="${x.id}">${corriendo ? `Parar ${segundos(performance.now() - prueba.inicio)}` : 'Empezar'}</button><span class="tiempos">${marcas}</span></li>`;
+    }).join('');
+  }
+  function alPrincipio() {
+    for (const tel of [telMix, telHoy]) {
+      const p = tel.querySelector('.pantalla');
+      if (p) p.scrollTop = 0;
+      tel.querySelectorAll('[data-carril]').forEach((u) => { u.scrollLeft = 0; });
+    }
+  }
+  function empezar(id) {
+    if (prueba) parar(false);
+    const tarea = TAREAS.find((x) => x.id === id);
+    if (estado.muestrario) verMuestrario(false);
+    alPrincipio();
+    prueba = { tarea: id, inicio: performance.now(), intervalo: 0 };
+    pintarGiro();
+    document.body.classList.add('en-prueba');
+    if (modo() === 'movil') { cerrarHoja(); fab.hidden = true; $('crono-tarea').textContent = tarea.texto; $('crono').hidden = false; }
+    const tic = () => { if (!prueba) return; const ms = performance.now() - prueba.inicio; $('crono-tiempo').textContent = (ms / 1000).toFixed(1).replace('.', ','); const b = $(`b-${id}`); if (b) b.textContent = `Parar ${segundos(ms)}`; };
+    prueba.intervalo = setInterval(tic, 100);
+    pintarPruebas();
+    tic();
+  }
+  function parar(guardarTiempo = true) {
+    if (!prueba) return;
+    const ms = performance.now() - prueba.inicio;
+    clearInterval(prueba.intervalo);
+    const id = prueba.tarea;
+    prueba = null;
+    document.body.classList.remove('en-prueba');
+    $('crono').hidden = true;
+    fab.hidden = false;
+    pintarGiro();
+    if (guardarTiempo) {
+      const t = tiempos();
+      const k = claveDe(estado.e);
+      t[k] = t[k] || {};
+      const antes = t[k][id];
+      t[k][id] = { ms: Math.round(ms), veces: (antes ? antes.veces : 0) + 1 };
+      guardar(LLAVE_TIEMPOS, t);
+      avisar(telMix, `${segundos(ms)} con ${k}`);
+    }
+    pintarPruebas();
+    if (guardarTiempo && modo() === 'movil') abrirHoja($('t-pruebas'));
+  }
+  $('pruebas').addEventListener('click', (ev) => { const b = ev.target.closest('[data-tarea]'); if (!b) return; if (prueba && prueba.tarea === b.dataset.tarea) parar(); else empezar(b.dataset.tarea); });
+  $('crono').addEventListener('click', () => parar());
+  let borrarListo = false;
+  $('borrar-tiempos').addEventListener('click', (ev) => {
+    if (!borrarListo) { borrarListo = true; ev.currentTarget.textContent = 'Toca otra vez para borrar'; setTimeout(() => { borrarListo = false; $('borrar-tiempos').textContent = 'Borrar los tiempos'; }, 4000); return; }
+    borrarListo = false;
+    try { localStorage.removeItem(LLAVE_TIEMPOS); } catch { /* nada */ }
+    ev.currentTarget.textContent = 'Borrar los tiempos';
+    pintarPruebas();
+  });
+
+  // ===== El tamaño: desde 760 el teléfono mide 390 × 844 y se escala para caber; en el teléfono ocupa toda la pantalla.
+  let modoAnterior = null;
+  function ajustar() {
+    const m = modo();
+    const escala = m === 'movil' ? 1 : Math.max(0.5, Math.min(1, (innerHeight - 2 * 16 - 30) / 844));
+    $('escena').style.setProperty('--escala', escala.toFixed(4));
+    if (m === 'movil') { telHoy.style.width = `${Math.round(telMix.offsetWidth)}px`; telHoy.style.height = `${Math.round(telMix.offsetHeight)}px`; }
+    else if (m === 'medio') { telHoy.style.width = '390px'; telHoy.style.height = '844px'; }
+    else { telHoy.style.width = ''; telHoy.style.height = ''; }
+    const fijo = m !== 'movil';
+    hoja.inert = !fijo && !abierta;
+    if (fijo) { hoja.removeAttribute('role'); hoja.removeAttribute('aria-modal'); velo.classList.remove('visible'); abierta = false; hoja.classList.remove('abierta'); }
+    else { hoja.setAttribute('role', 'dialog'); hoja.setAttribute('aria-modal', 'true'); }
+    $('col-hoy').inert = m !== 'ancho';
+    $('col-hoy').setAttribute('aria-hidden', String(m !== 'ancho'));
+    if (modoAnterior !== null && (modoAnterior === 'ancho') !== (m === 'ancho')) pintar(telHoy, HOY, m === 'ancho');
+    modoAnterior = m;
+    for (const tel of [telMix, telHoy]) { recortarTitulos(tel); dibujarPortadas(tel); }
+    programarMedida();
+    pintarGiro();
+  }
+  let temporizadorAjuste = 0;
+  addEventListener('resize', () => { clearTimeout(temporizadorAjuste); temporizadorAjuste = setTimeout(ajustar, 120); });
+
+  // Para las pruebas automáticas y las capturas.
+  window.prototipo = {
+    aplicar: (nombreOEstado) => aplicar(typeof nombreOEstado === 'string' ? { ...PRESETS[nombreOEstado].e, medidas: estado.e.medidas } : nombreOEstado),
+    estado: () => ({ ...estado.e }),
+    medirAhora: async () => { await medir(); return window.prototipo.ultimaMedida; },
+    muestrario: (abierto) => verMuestrario(!!abierto),
+    inclinar: (gamma, beta) => alOrientar({ gamma, beta }),
+    activarGiroscopio,
+    inclinacion: () => ({ x: inclinacion.x, y: inclinacion.y, activo: inclinacion.activo, eventos: inclinacion.eventos, aLaVista: aLaVista.size }),
+    paleta: (hex) => Portadas.paleta(hex),
+    origenDe: (id) => origenDe(POR_ID.get(id), vista(estado.e)),
+    composicionDe: (id) => { const c = composicionDe(POR_ID.get(id), vista(estado.e)); return c ? `${c.letra} · ${c.nombre}` : 'Neutra'; },
+    abrirHoja: () => abrirHoja(),
+    cerrarHoja: () => cerrarHoja(),
+    alPrincipio,
+    irA: (carril, margen = 104) => { const u = telMix.querySelector(`[data-carril="${carril}"]`); if (!u) return; const p = telMix.querySelector('.pantalla'); p.scrollTop += u.getBoundingClientRect().top - p.getBoundingClientRect().top - margen; p.dispatchEvent(new Event('scroll')); },
+    ultimaMedida: null,
+  };
+
+  pintarControles();
+  pintarTodo();
+  pintarPruebas();
+  ajustar();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { for (const tel of [telMix, telHoy]) { recortarTitulos(tel); dibujarPortadas(tel); } programarMedida(); });
+})();
+</script>
+</body></html>
