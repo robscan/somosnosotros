@@ -194,7 +194,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
         <h2 id="t-como">Cómo se haría</h2>
         <ul class="notas">
           <li><b>Sin ubicación (O):</b> `agruparLugares` ordena «Con eventos» en dos tandas: primero los lugares cuyo próximo tiene hora (un evento, una sesión de taller, un acto), por fecha; luego los que solo tienen algo en curso de varios días (exposición, taller, festival), el que cierra antes primero. «Sin eventos próximos» sigue por nombre.</li>
-          <li><b>Con ubicación (D, E):</b> un desplegable en la cabecera del grupo «Con eventos»; «Más cercanos primero» es lo de hoy; «Eventos próximos primero» aplica el orden de arriba a ese grupo (la distancia sigue en cada renglón). «Sin eventos próximos» siempre por cercanía. La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
+          <li><b>Con ubicación (D, E):</b> un desplegable en la cabecera del grupo «Con eventos»; «Cercanos primero» es lo de hoy; «Próximos primero» aplica el orden de arriba a ese grupo (la distancia sigue en cada renglón). «Sin eventos próximos» siempre por cercanía. La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
           <li><b>El renglón con las dos cosas (R):</b> `conProximo` guarda por lugar lo próximo con hora y, aparte, lo que está en curso; `RenglonLugar` pinta lo que diga la opción elegida. Sin tablas nuevas ni migración: todo sale de la consulta de eventos que ya trae `/lugares`.</li>
         </ul>
       </section>
@@ -242,15 +242,15 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   ];
 
   // ===== Ejercicios y preajustes.
-  const HOY = { o: 'fecha', d: 'ninguno', e: 'largas', r: 'primero' };
-  const PROPUESTA = { o: 'hora', d: 'grupo', e: 'largas', r: 'dos' };
+  const HOY = { o: 'fecha', d: 'ninguno', e: 'firmadas', r: 'primero' };
+  const PROPUESTA = { o: 'hora', d: 'grupo', e: 'firmadas', r: 'dos' };
   const EJERCICIOS = [
     { clave: 'o', titulo: 'O · Sin ubicación: qué va primero en «Con eventos»', nota: 'Hoy ordena por la fecha de lo próximo, así que una expo abierta desde septiembre va antes que el concierto de mañana.',
       opciones: [['fecha', 'Por fecha (hoy)'], ['hora', 'Con hora primero'], ['cierre', 'En curso primero']], firma: 'Founder, 13 oct: «los eventos van antes que las expos cuando el usuario no tiene activa ubicación».' },
     { clave: 'd', titulo: 'D · Con ubicación: dónde va el desplegable', nota: 'El orden elegido solo afecta a «Con eventos»; «Sin eventos próximos» siempre va por cercanía.',
       opciones: [['ninguno', 'Ninguno (hoy)'], ['grupo', 'Cabecera «Con eventos»'], ['titulo', 'Cabecera «N lugares»'], ['chip', 'Chip junto a Filtros']] },
-    { clave: 'e', titulo: 'E · Qué dicen sus opciones', nota: 'Con tus palabras o en corto.',
-      opciones: [['largas', '«Más cercanos primero» · «Eventos próximos primero»'], ['cortas', '«Cerca» · «Pronto»']] },
+    { clave: 'e', titulo: 'E · Qué dicen sus opciones', nota: 'El letrero corto que pediste, las frases largas o solo la palabra.',
+      opciones: [['firmadas', '«Cercanos primero» · «Próximos primero»'], ['largas', '«Más cercanos primero» · «Eventos próximos primero»'], ['cortas', '«Cerca» · «Pronto»']], firma: 'Founder, 13 oct: «cortemos el letrero: Cercanos primero, Próximos primero».' },
     { clave: 'r', titulo: 'R · Un lugar con expo abierta y evento con hora (el MUNI)', nota: 'Hoy dice lo primero por fecha: la expo. Qué debe decir el renglón.',
       opciones: [['primero', 'Lo primero por fecha (la expo)'], ['hora', 'El evento con hora'], ['dos', 'Las dos líneas']] },
   ];
@@ -292,7 +292,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     ];
   }
   const kmTexto = (km) => (km < 1 ? `a ${Math.round(km * 1000)} m` : `a ${km.toFixed(1).replace('.', ',')} km`);
-  const etiquetas = () => (estado.e === 'cortas' ? { cerca: 'Cerca', pronto: 'Pronto' } : { cerca: 'Más cercanos primero', pronto: 'Eventos próximos primero' });
+  const etiquetas = () => (estado.e === 'cortas' ? { cerca: 'Cerca', pronto: 'Pronto' } : estado.e === 'largas' ? { cerca: 'Más cercanos primero', pronto: 'Eventos próximos primero' } : { cerca: 'Cercanos primero', pronto: 'Próximos primero' });
 
   // ===== Pintar un teléfono.
   function desplegable(donde) {
@@ -352,7 +352,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   }
   const PORQUE = {
     hoy: 'Hoy: «Con eventos» va por la fecha de lo próximo, así que el MUNI (expo abierta desde septiembre) sale antes que el Teatro de la Paz (hoy a las 20:00); con ubicación no hay forma de pedir otro orden.',
-    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; con ubicación, el desplegable en la cabecera de «Con eventos» con tus palabras, cercanía por defecto, y la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
+    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; con ubicación, el desplegable «Cercanos primero» / «Próximos primero» en la cabecera de «Con eventos», cercanía por defecto, y la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
   };
   function pintarTodo() {
     pintar($('tel-sin'), false);
