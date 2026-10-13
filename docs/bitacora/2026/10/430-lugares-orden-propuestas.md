@@ -20,7 +20,7 @@ Hoy (con OL-398) «Con eventos» va por la fecha de lo próximo de cada lugar: u
 | **E** · qué dicen sus opciones | «Más cercanos primero» · «Eventos próximos primero» / «Cerca» · «Pronto» | **las largas**, con las palabras del founder |
 | **R** · el renglón de un lugar con expo abierta y evento con hora | lo primero por fecha (la expo) · el evento con hora · las dos líneas | **las dos líneas**: «Próximo: sáb 24 de oct · 12:00» y «Exposición hasta el dom 8 de nov» |
 
-Medidor: cuántos de los cinco primeros de «Con eventos» tienen hora (sin ubicación), toques para cambiar el orden (con ubicación), el renglón más alto y cuántas expos abiertas se ven. Con la propuesta: 5 de 5, 2 toques, 160 px (el MUNI con nombre en dos líneas y sus dos líneas de vida), 2 de 2. Con «Hoy»: 1 de 5 y no se puede cambiar el orden.
+Medidor: cuántos de los cinco primeros de «Con eventos» tienen hora (sin ubicación), toques para cambiar el orden (con ubicación), el renglón más alto y cuántas expos abiertas se ven. Con la propuesta: 5 de 5, 2 toques, 140 px (el MUNI con nombre en dos líneas y sus dos líneas de vida), 2 de 2. Con «Hoy»: 1 de 5 y no se puede cambiar el orden.
 
 ## Capturas (`docs/rediseno/capturas-430/`, Chrome real, 390×844 a 2×)
 
