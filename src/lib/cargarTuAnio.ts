@@ -50,10 +50,10 @@ export type TuAnio = {
   archivo: string;
 };
 
-type Quien = { id: string; rol: string } | null;
+export type Quien = { id: string; rol: string } | null;
 
-/** ¿Quien mira gestiona esta ficha? Administración, su autor o una cuenta ligada (`artistas_cuentas` / `lugares_cuentas`). */
-async function gestiona(supabase: SupabaseClient, quien: Quien, tabla: "artistas_cuentas" | "lugares_cuentas", columna: "artista_id" | "lugar_id", fichaId: string, autor: string | null): Promise<boolean> {
+/** ¿Quien mira gestiona esta ficha? Administración, su autor o una cuenta ligada (`artistas_cuentas` / `lugares_cuentas`). También el PDF (OL-396). */
+export async function gestiona(supabase: SupabaseClient, quien: Quien, tabla: "artistas_cuentas" | "lugares_cuentas", columna: "artista_id" | "lugar_id", fichaId: string, autor: string | null): Promise<boolean> {
   if (!quien) return false;
   if (quien.rol === "admin" || autor === quien.id) return true;
   const { data } = await supabase.from(tabla).select("perfil_id").eq(columna, fichaId).eq("perfil_id", quien.id).limit(1);
@@ -61,7 +61,7 @@ async function gestiona(supabase: SupabaseClient, quien: Quien, tabla: "artistas
 }
 
 /** Lee una ficha por su slug y, si no aparece y es un UUID, por su id (como las fichas). */
-async function leerFicha<T>(supabase: SupabaseClient, tabla: "artistas" | "lugares", columnas: string, idOSlug: string): Promise<T | null> {
+export async function leerFicha<T>(supabase: SupabaseClient, tabla: "artistas" | "lugares", columnas: string, idOSlug: string): Promise<T | null> {
   const porSlug = await supabase.from(tabla).select(columnas).eq("slug", idOSlug).maybeSingle();
   if (porSlug.data) return porSlug.data as T;
   if (!esUuid(idOSlug)) return null;
