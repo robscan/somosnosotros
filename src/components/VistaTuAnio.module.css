@@ -1,0 +1,87 @@
+/* ==========================================================================
+   La vista previa de «Tu año» (OL-394, `.previa` del prototipo firmado `tu-anio-propuestas.html`): pantalla completa sobre la banda oscura, en
+   tres filas planas: la barra (Atrás, el título, la ✕), la imagen al centro y el pie anclado abajo con «Compartir» y «Guardar».
+   1. La pantalla · 2. La barra · 3. La imagen · 4. El pie
+   ========================================================================== */
+
+/* 1. */
+.previa {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 100dvh;
+  background: var(--banda);
+  color: var(--primario-texto);
+}
+
+/* 2. Los dos botones del alto de un toque a los lados y el título al centro, bajo la franja de la hora. */
+.barra {
+  display: grid;
+  grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque);
+  align-items: center;
+  min-height: calc(var(--alto-barra) + var(--tope));
+  padding: var(--tope) var(--espacio-2) 0;
+}
+.barra > h1 {
+  font-size: var(--letra-md);
+  font-weight: 800;
+  text-align: center;
+}
+.barra > a {
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 3. Tan grande como quepa entre la barra y el pie sin pasarse de su 4:5; su caja tiene la proporción desde el primer cuadro (no salta al
+   llegar la imagen) y el gris de las miniaturas mientras llega. */
+.imagen {
+  align-self: center;
+  justify-self: center;
+  width: min(calc(100% - 2 * var(--gutter)), calc((100dvh - 2 * var(--alto-barra) - 2 * var(--toque) - var(--tope) - var(--piso)) * 0.8));
+  height: auto;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
+  box-shadow: var(--sombra-flotante);
+}
+
+/* 4. Anclado abajo, con la zona segura: «Compartir» (violeta, principal) y «Guardar» (sobre la banda), mitad y mitad. */
+.pie {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-4) + var(--piso));
+  background: var(--banda);
+}
+.principal,
+.secundario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  min-height: var(--boton-icono-grande);
+  border: 1px solid transparent;
+  border-radius: var(--radio-pildora);
+  font-size: var(--letra-lg);
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.principal {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.principal[aria-busy="true"] {
+  opacity: 0.7;
+}
+.secundario {
+  border-color: var(--sobre-banda-borde);
+  background: var(--sobre-banda);
+  color: var(--primario-texto);
+}

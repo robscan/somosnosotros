@@ -3,17 +3,19 @@ import { Fragment } from "react";
 import { fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { agruparPorMes, artistasDelHistorial, cabeceraHistorial, cabeceraTrayectoria, cuandoPasado, listaCon, lugaresDeTrayectoria, otrosArtistas, type EventoPasado, type Historial as DatosHistorial, type Presencia } from "@/lib/historialFichas";
 import { SIN_FOTO_REDONDA } from "@/lib/imagen";
+import BotonTuAnio from "./BotonTuAnio";
 import { IconoCalendario, IconoChevronDerecha, IconoEtiqueta, IconoPersonas, IconoPin } from "./ui/Iconos";
 import Imagen from "./ui/Imagen";
 import Plegado from "./ui/Plegado";
 import Renglon from "./ui/Renglon";
 import styles from "./Historial.module.css";
 
+/** `tuAnio`: la vista previa de «Tu año» (OL-394), si quien mira gestiona la ficha y hay algo este año; sin ella, no hay botón. */
 type Props =
   /** La trayectoria de un artista: sus fechas pasadas, dónde y con quién. */
-  | { de: "artista"; artistaId: string; historial: DatosHistorial }
+  | { de: "artista"; artistaId: string; historial: DatosHistorial; tuAnio?: string | null }
   /** El historial de un lugar: sus eventos pasados y quiénes pasaron por ahí. */
-  | { de: "lugar"; historial: DatosHistorial };
+  | { de: "lugar"; historial: DatosHistorial; tuAnio?: string | null };
 
 /**
  * Lo que ya pasó en la ficha de un artista («Trayectoria») o de un lugar («Historial»): OL-390, prototipo firmado `historial-propuestas.html`
@@ -53,6 +55,7 @@ export default function Historial(props: Props) {
           </ul>
         </Fragment>
       ))}
+      {props.tuAnio && <BotonTuAnio href={props.tuAnio} className={styles.tuAnio} />}
     </Plegado>
   );
 }
