@@ -3,10 +3,11 @@ import { cartelDescargable } from "../cartelDescarga";
 import { configPublica } from "../config";
 import type { ParaCartel } from "./cargar";
 import { armarTextos } from "./datos";
-import { dibujarCartel, type Resultado } from "./dibujar";
+import { dibujarCartel, dibujarImagenTuAnio, type Resultado, type ResultadoTuAnio } from "./dibujar";
 import { imagenAdmitida, PLAZO_DESCARGA_MS, TIEMPO_MAX_FOTO_MS, TOPE_BYTES } from "./imagenSegura";
 import type { Plantilla } from "./plantillas";
 import type { Formato } from "./tokens";
+import type { ResumenTuAnio } from "../tuAnio";
 
 /**
  * Generar un cartel de un evento ya cargado (OL-324): trae la primera imagen que responda (por orden) y dibuja. Lo usan la ruta que da las
@@ -127,5 +128,18 @@ export async function generarCartel(datos: ParaCartel, plantilla: Plantilla, for
   const msImagen = Math.round(performance.now() - t0);
   const textos = armarTextos(datos.evento, opciones.titulo ?? null, opciones.ahora);
   const resultado = await dibujarCartel({ plantilla, formato, textos, imagen, ancho: opciones.ancho, semilla: semillaDe(datos.evento.id), tiempoMaxFotoMs: quedan() });
+  return { ...resultado, msImagen };
+}
+
+/**
+ * La imagen de «Tu año» (OL-394): trae la foto de quien comparte (solo del Storage propio, como el cartel, con su plazo) y dibuja. Sin foto, o si
+ * no llega a tiempo, la imagen sale sin ella.
+ */
+export async function generarTuAnio(resumen: ResumenTuAnio, id: string, opciones: { ancho?: number; descarga?: OpcionesDescarga } = {}): Promise<ResultadoTuAnio & { msImagen: number }> {
+  const t0 = performance.now();
+  const presupuesto = opciones.descarga?.tiempoMaxFotoMs ?? TIEMPO_MAX_FOTO_MS;
+  const foto = resumen.quien.foto ? await traerImagen(resumen.quien.foto, { ...opciones.descarga, plazoMs: Math.min(opciones.descarga?.plazoMs ?? PLAZO_DESCARGA_MS, presupuesto) }) : null;
+  const msImagen = Math.round(performance.now() - t0);
+  const resultado = await dibujarImagenTuAnio({ resumen, id, foto, ancho: opciones.ancho, tiempoMaxFotoMs: Math.max(0, presupuesto - msImagen) });
   return { ...resultado, msImagen };
 }

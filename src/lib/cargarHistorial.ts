@@ -13,11 +13,12 @@ import { TOPE_HISTORIAL, type ArtistaDelEvento, type EventoPasado, type Historia
  * Memoizadas con `cache()` de React: los números y la sección las piden por separado, en `<Suspense>` distintos.
  */
 
-const COLUMNAS = "id, slug, titulo, inicio, fin, zona, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, evento_padre_id, lugar:lugares(id, slug, nombre, portada)";
+/** Las columnas de un evento pasado y su lugar con ficha (también las lee «Tu año» de la persona, OL-394, por sus asistencias). */
+export const COLUMNAS_PASADO = "id, slug, titulo, inicio, fin, zona, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, evento_padre_id, lugar:lugares(id, slug, nombre, portada)";
 /** Cuántos ids van en un `in` por la URL (200 UUID pasan de los 7 000 caracteres). */
 const TANDA = 100;
 
-type Fila = Omit<EventoPasado, "lugar" | "festival" | "artistas" | "van"> & {
+export type FilaPasado = Omit<EventoPasado, "lugar" | "festival" | "artistas" | "van"> & {
   evento_padre_id: string | null;
   lugar: LugarDelEvento | LugarDelEvento[] | null;
   /** Solo en la trayectoria: el filtro por artista (no se usa). */
@@ -35,8 +36,8 @@ async function enTandas<T>(ids: string[], leer: (tanda: string[]) => PromiseLike
   return respuestas.flatMap((r) => (r.data ?? []) as T[]);
 }
 
-/** Lo que falta de cada fila: sus artistas, su festival y cuántos fueron. */
-async function completar(supabase: SupabaseClient, filas: Fila[]): Promise<EventoPasado[]> {
+/** Lo que falta de cada fila: sus artistas, su festival y cuántos fueron (también para «Tu año» de la persona, OL-394). */
+export async function completar(supabase: SupabaseClient, filas: FilaPasado[]): Promise<EventoPasado[]> {
   if (filas.length === 0) return [];
   const ids = filas.map((f) => f.id);
   const padres = [...new Set(filas.map((f) => f.evento_padre_id).filter((x): x is string => !!x))];
@@ -67,7 +68,7 @@ async function leerHistorial(consulta: (supabase: SupabaseClient, ahora: string)
   const supabase = await clienteServidor();
   if (!supabase) return { eventos: [], lleno: false };
   const { data } = await consulta(supabase, new Date().toISOString());
-  const filas = (data ?? []) as Fila[];
+  const filas = (data ?? []) as FilaPasado[];
   return { eventos: await completar(supabase, filas), lleno: filas.length >= TOPE_HISTORIAL };
 }
 
@@ -76,7 +77,7 @@ export const cargarTrayectoria = cache((artistaId: string) =>
   leerHistorial((supabase, ahora) =>
     supabase
       .from("eventos")
-      .select(`${COLUMNAS}, eventos_artistas!inner(artista_id)`)
+      .select(`${COLUMNAS_PASADO}, eventos_artistas!inner(artista_id)`)
       .eq("eventos_artistas.artista_id", artistaId)
       .eq("visible", true)
       .eq("borrador", false)
@@ -90,6 +91,6 @@ export const cargarTrayectoria = cache((artistaId: string) =>
 /** El historial de un lugar: los eventos pasados con su `lugar_id`. */
 export const cargarHistorialLugar = cache((lugarId: string) =>
   leerHistorial((supabase, ahora) =>
-    supabase.from("eventos").select(COLUMNAS).eq("lugar_id", lugarId).eq("visible", true).eq("borrador", false).lt("termina", ahora).order("inicio", { ascending: false }).order("id").limit(TOPE_HISTORIAL),
+    supabase.from("eventos").select(COLUMNAS_PASADO).eq("lugar_id", lugarId).eq("visible", true).eq("borrador", false).lt("termina", ahora).order("inicio", { ascending: false }).order("id").limit(TOPE_HISTORIAL),
   ),
 );

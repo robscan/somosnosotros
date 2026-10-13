@@ -44,6 +44,11 @@ export const EVENTOS = {
    * enlace. Copiar también cuenta como compartir (founder, 2026-10-12: «copiar sí cuenta como compartir»); el medio dice cuál fue.
    */
   compartir: { que: ["evento", "lugar", "artista", "app"], medio: ["hoja", "whatsapp", "copiado"] },
+  /**
+   * «Tu año» (OL-394): la imagen se compartió con la hoja del teléfono (abierta y no cancelada) o se guardó (en Fotos o descargada). De quién es
+   * el año (la persona, un artista o un lugar), nunca cuál. Cancelar la hoja no cuenta.
+   */
+  tu_anio: { que: ["persona", "artista", "lugar"], medio: ["hoja", "guardado"] },
   /** Avisos encendidos: por correo o en el teléfono. */
   aviso_activado: { canal: ["correo", "telefono"] },
   /** Un reporte enviado, y de qué tipo de ficha. */
