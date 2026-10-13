@@ -70,3 +70,8 @@ Sin nombres de personas reales (respaldo inventado; los asistentes salen anónim
 - **Nada en Supabase ni en Vercel:** sin migración y sin variables nuevas (usa `SUPABASE_SERVICE_ROLE_KEY`, que ya existe en Vercel). Hay que dejar `SUPABASE_SERVICE_ROLE_KEY` en el entorno de la vista previa de la rama para que la pantalla lea; sin ella dice «No pudimos leer el grafo.».
 - Conflictos probables: `docs/ops/OPEN_LOOPS.md` (una bala y la cabecera) y `scripts/ops/auditoria-ui/medidas.aceptadas.json` (una línea de presupuesto al final del bloque de presupuestos).
 - Revisar en el iPhone del founder, Safari y app instalada, con la vista previa de la rama: el gesto con dos dedos, las hojas, el rendimiento con los ~750 nodos reales y que el rótulo largo no se corte.
+
+## Revisión de la sesión del grafo (13 de oct, 12:48)
+
+Hallazgo al leer `grafo.ts`: la lectura de `asistencias` pedía `order=id`, y esa tabla no tiene columna `id` (su llave es usuario + evento). Contra la base real, en solo lectura, PostgREST responde 400 «column asistencias.id does not exist»: en producción la pantalla habría dicho «No pudimos leer el grafo». El respaldo local no lo detecta porque acepta cualquier orden. Corregido en `46d75dda`: `asistencias` se ordena por `usuario_id, evento_id`; `eventos_artistas` ya iba por su par; `seguimientos` sí tiene `id`. Las 27 pruebas siguen en verde. Lección para el respaldo: rechazar `order=` por columnas que la tabla no tiene.
+
