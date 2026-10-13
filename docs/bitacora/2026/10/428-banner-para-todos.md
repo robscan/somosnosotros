@@ -21,6 +21,10 @@ El founder preguntó por qué no veía el banner de compartir (OL-387, bitácora
 - inventario: sin novedades (342 medidas en duro aceptadas).
 - medir: 38 pantallas × 4 anchos. Las dos pantallas de Inicio crecen los 9 nodos del banner (01-inicio de 363/365 a 372/374; s01-inicio-sesion de 368/370 a 377/379): línea base ajustada a mano en `medidas.aceptadas.json` solo para esas dos, sin `--aceptar`. Lo demás sin novedades.
 
+## Captura (`docs/rediseno/capturas-428/`, 390×844)
+
+- `01-inicio-sin-sesion-primera-visita-banner`: Inicio **sin sesión**, primera visita (el teléfono no tenía nada guardado; tras abrir, `dias: ["2026-10-12"]`), contra el respaldo local de datos inventados (la app compilada y servida como en `medir`, sin tocar producción): el banner «¿Te gusta Somos Nosotrxs?» con el símbolo SN sale tras Destacados, antes de «Esta semana». La vista previa de Vercel no se deja capturar desde aquí (pide login de Vercel); el founder la revisa en su iPhone.
+
 ## Para que el founder confirme
 
 - En modo privado o con el almacenamiento bloqueado el banner no sale (no podría recordar la ×). Si quieres que salga también ahí, es una línea.
