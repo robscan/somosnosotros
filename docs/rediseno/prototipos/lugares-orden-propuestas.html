@@ -186,7 +186,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
 
       <section class="bloque" aria-labelledby="t-ejercicios">
         <h2 id="t-ejercicios">Ejercicios</h2>
-        <p>El teléfono de la izquierda no tiene ubicación; el de la derecha sí (punto azul y kilómetros). Toca el desplegable en el de la derecha para abrirlo.</p>
+        <p>El teléfono de la izquierda no tiene ubicación; el de la derecha sí (punto azul y kilómetros). Toca el desplegable en cualquiera de los dos para abrirlo.</p>
         <ul class="ejercicios" id="ejercicios"></ul>
       </section>
 
@@ -194,7 +194,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
         <h2 id="t-como">Cómo se haría</h2>
         <ul class="notas">
           <li><b>Sin ubicación (O):</b> `agruparLugares` ordena «Con eventos» en dos tandas: primero los lugares cuyo próximo tiene hora (un evento, una sesión de taller, un acto), por fecha; luego los que solo tienen algo en curso de varios días (exposición, taller, festival), el que cierra antes primero. «Sin eventos próximos» sigue por nombre.</li>
-          <li><b>Con ubicación (D, E):</b> un desplegable en la cabecera del grupo «Con eventos»; «Cercanos primero» es lo de hoy; «Próximos primero» aplica el orden de arriba a ese grupo (la distancia sigue en cada renglón). «Sin eventos próximos» siempre por cercanía. La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
+          <li><b>El desplegable (D, E):</b> junto a «N lugares», en la cabecera de la hoja. Con ubicación: «Cercanos primero» (lo de hoy), «Próximos primero» (el orden de arriba en «Con eventos»; la distancia sigue en cada renglón) y «Alfabético» (los dos grupos por nombre). Sin ubicación: «Próximos primero» y «Alfabético». La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
           <li><b>El renglón con las dos cosas (R):</b> `conProximo` guarda por lugar lo próximo con hora y, aparte, lo que está en curso; `RenglonLugar` pinta lo que diga la opción elegida. Sin tablas nuevas ni migración: todo sale de la consulta de eventos que ya trae `/lugares`.</li>
         </ul>
       </section>
@@ -243,19 +243,19 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
 
   // ===== Ejercicios y preajustes.
   const HOY = { o: 'fecha', d: 'ninguno', e: 'firmadas', r: 'primero' };
-  const PROPUESTA = { o: 'hora', d: 'grupo', e: 'firmadas', r: 'dos' };
+  const PROPUESTA = { o: 'hora', d: 'titulo', e: 'firmadas', r: 'dos' };
   const EJERCICIOS = [
     { clave: 'o', titulo: 'O · Sin ubicación: qué va primero en «Con eventos»', nota: 'Hoy ordena por la fecha de lo próximo, así que una expo abierta desde septiembre va antes que el concierto de mañana.',
       opciones: [['fecha', 'Por fecha (hoy)'], ['hora', 'Con hora primero'], ['cierre', 'En curso primero']], firma: 'Founder, 13 oct: «los eventos van antes que las expos cuando el usuario no tiene activa ubicación».' },
-    { clave: 'd', titulo: 'D · Con ubicación: dónde va el desplegable', nota: 'El orden elegido solo afecta a «Con eventos»; «Sin eventos próximos» siempre va por cercanía.',
-      opciones: [['ninguno', 'Ninguno (hoy)'], ['grupo', 'Cabecera «Con eventos»'], ['titulo', 'Cabecera «N lugares»'], ['chip', 'Chip junto a Filtros']] },
+    { clave: 'd', titulo: 'D · Dónde va el desplegable', nota: 'Con ubicación: «Cercanos primero» · «Próximos primero» · «Alfabético». Sin ubicación (propuesta del gestor): «Próximos primero» · «Alfabético». «Alfabético» ordena los dos grupos por nombre.',
+      opciones: [['ninguno', 'Ninguno (hoy)'], ['titulo', 'Cabecera «N lugares»'], ['grupo', 'Cabecera «Con eventos»'], ['chip', 'Chip junto a Filtros']], firma: 'Founder, 13 oct: «el dropdown debe [ir] con la cantidad de lugares, agrega por orden alfabético también».' },
     { clave: 'e', titulo: 'E · Qué dicen sus opciones', nota: 'El letrero corto que pediste, las frases largas o solo la palabra.',
       opciones: [['firmadas', '«Cercanos primero» · «Próximos primero»'], ['largas', '«Más cercanos primero» · «Eventos próximos primero»'], ['cortas', '«Cerca» · «Pronto»']], firma: 'Founder, 13 oct: «cortemos el letrero: Cercanos primero, Próximos primero».' },
     { clave: 'r', titulo: 'R · Un lugar con expo abierta y evento con hora (el MUNI)', nota: 'Hoy dice lo primero por fecha: la expo. Qué debe decir el renglón.',
       opciones: [['primero', 'Lo primero por fecha (la expo)'], ['hora', 'El evento con hora'], ['dos', 'Las dos líneas']] },
   ];
   const LLAVE_ESTADO = 'ol399:estado';
-  let estado = { ...PROPUESTA, orden: 'cerca', menu: false };
+  let estado = { ...PROPUESTA, orden: 'cerca', ordenSin: 'pronto', menu: false };
   try { const g = JSON.parse(localStorage.getItem(LLAVE_ESTADO) || 'null'); if (g && typeof g === 'object') estado = { ...estado, ...g, menu: false }; } catch {}
   const guardar = () => { try { localStorage.setItem(LLAVE_ESTADO, JSON.stringify(estado)); } catch {} };
   const preset = () => (['o','d','e','r'].every((k) => estado[k] === HOY[k]) ? 'hoy' : ['o','d','e','r'].every((k) => estado[k] === PROPUESTA[k]) ? 'propuesta' : null);
@@ -277,6 +277,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   const porNombre = (a, b) => a.nombre.localeCompare(b.nombre, 'es');
   function ordenarCon(lista, modo) {
     if (modo === 'cerca') return [...lista].sort((a, b) => a.km - b.km);
+    if (modo === 'abc') return [...lista].sort(porNombre);
     if (modo === 'fecha') return [...lista].sort((a, b) => inicioDe(a).localeCompare(inicioDe(b)) || porNombre(a, b));
     if (modo === 'cierre') return [...lista].sort((a, b) => Number(!!b.curso) - Number(!!a.curso) || (a.curso && b.curso ? a.curso.iso.localeCompare(b.curso.iso) : inicioDe(a).localeCompare(inicioDe(b))) || porNombre(a, b));
     // 'hora': con hora primero por fecha; luego lo en curso, el que cierra antes primero.
@@ -285,25 +286,26 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   function grupos(conUbicacion) {
     const con = LUGARES.filter((l) => l.hora || l.curso);
     const sin = LUGARES.filter((l) => !l.hora && !l.curso);
-    const modoCon = conUbicacion ? (estado.d !== 'ninguno' && estado.orden === 'pronto' ? 'hora' : 'cerca') : estado.o;
+    const hay = estado.d !== 'ninguno';
+    const elegido = conUbicacion ? (hay ? estado.orden : 'cerca') : hay && estado.ordenSin === 'abc' ? 'abc' : 'pronto';
+    const modoCon = elegido === 'abc' ? 'abc' : conUbicacion ? (elegido === 'pronto' ? 'hora' : 'cerca') : estado.o;
     return [
       { titulo: 'Con eventos', lista: ordenarCon(con, modoCon) },
-      { titulo: 'Sin eventos próximos', lista: conUbicacion ? [...sin].sort((a, b) => a.km - b.km) : [...sin].sort(porNombre) },
+      { titulo: 'Sin eventos próximos', lista: conUbicacion && elegido !== 'abc' ? [...sin].sort((a, b) => a.km - b.km) : [...sin].sort(porNombre) },
     ];
   }
   const kmTexto = (km) => (km < 1 ? `a ${Math.round(km * 1000)} m` : `a ${km.toFixed(1).replace('.', ',')} km`);
-  const etiquetas = () => (estado.e === 'cortas' ? { cerca: 'Cerca', pronto: 'Pronto' } : estado.e === 'largas' ? { cerca: 'Más cercanos primero', pronto: 'Eventos próximos primero' } : { cerca: 'Cercanos primero', pronto: 'Próximos primero' });
+  const etiquetas = () => (estado.e === 'cortas' ? { cerca: 'Cerca', pronto: 'Pronto', abc: 'A–Z' } : estado.e === 'largas' ? { cerca: 'Más cercanos primero', pronto: 'Eventos próximos primero', abc: 'Por nombre' } : { cerca: 'Cercanos primero', pronto: 'Próximos primero', abc: 'Alfabético' });
 
   // ===== Pintar un teléfono.
-  function desplegable(donde) {
+  function desplegable(donde, conUbicacion) {
     if (estado.d !== donde) return '';
     const E = etiquetas();
-    const actual = estado.orden === 'pronto' ? E.pronto : E.cerca;
-    return `<div class="orden${donde === 'chip' ? ' chip-orden' : ''}"><button type="button" id="orden-boton" aria-haspopup="menu" aria-expanded="${estado.menu}">${esc(actual)}${I.caret}</button>
-      <div class="menu" role="menu" id="orden-menu" ${estado.menu ? '' : 'hidden'}>
-        <button type="button" role="menuitemradio" data-orden="cerca" aria-checked="${estado.orden === 'cerca'}">${I.check}<span>${esc(E.cerca)}</span></button>
-        <button type="button" role="menuitemradio" data-orden="pronto" aria-checked="${estado.orden === 'pronto'}">${I.check}<span>${esc(E.pronto)}</span></button>
-      </div></div>`;
+    const claves = conUbicacion ? ['cerca', 'pronto', 'abc'] : ['pronto', 'abc'];
+    const elegido = conUbicacion ? estado.orden : estado.ordenSin;
+    const abierto = estado.menu === (conUbicacion ? 'con' : 'sin');
+    return `<div class="orden${donde === 'chip' ? ' chip-orden' : ''}"><button type="button" class="orden-boton" aria-haspopup="menu" aria-expanded="${abierto}">${esc(E[elegido])}${I.caret}</button>
+      <div class="menu" role="menu" ${abierto ? '' : 'hidden'}>${claves.map((c) => `<button type="button" role="menuitemradio" data-orden="${c}" aria-checked="${elegido === c}">${I.check}<span>${esc(E[c])}</span></button>`).join('')}</div></div>`;
   }
   function renglon(l, conUbicacion) {
     const datos = [l.tipo, l.calle, conUbicacion ? kmTexto(l.km) : null].filter(Boolean).join(' · ');
@@ -315,17 +317,16 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     const total = LUGARES.length;
     el.innerHTML = `
       <div class="cab">${I.mas}<span class="logo">SMSNSTRS</span>${I.lupa}${I.campana}</div>
-      <div class="contexto"><span class="chip">${I.pin}San Luis Potosí ${I.caret}</span><span class="chip">${I.filtros}Filtros</span>${conUbicacion ? desplegable('chip') : ''}</div>
+      <div class="contexto"><span class="chip">${I.pin}San Luis Potosí ${I.caret}</span><span class="chip">${I.filtros}Filtros</span>${desplegable('chip', conUbicacion)}</div>
       <div class="mapa"><i class="v" style="left:26%;top:40%"></i><i class="v" style="left:40%;top:60%"></i><i style="left:60%;top:30%"></i><i class="ok" style="left:70%;top:70%"></i><i style="left:84%;top:45%"></i>${conUbicacion ? '<span class="yo"></span>' : ''}</div>
       <div class="hoja-lista"><span class="asa-l"></span>
-        <div class="titulo-lista"><h2>${total} lugares</h2>${conUbicacion ? desplegable('titulo') : ''}</div>
-        <div class="lista">${G.map((g) => `<div class="grupo"><h3>${esc(g.titulo)} <small>· ${g.lista.length}</small></h3>${conUbicacion && g.titulo === 'Con eventos' ? desplegable('grupo') : ''}</div><ul>${g.lista.map((l) => renglon(l, conUbicacion)).join('')}</ul>`).join('')}</div>
+        <div class="titulo-lista"><h2>${total} lugares</h2>${desplegable('titulo', conUbicacion)}</div>
+        <div class="lista">${G.map((g) => `<div class="grupo"><h3>${esc(g.titulo)} <small>· ${g.lista.length}</small></h3>${g.titulo === 'Con eventos' ? desplegable('grupo', conUbicacion) : ''}</div><ul>${g.lista.map((l) => renglon(l, conUbicacion)).join('')}</ul>`).join('')}</div>
       </div>
       <nav class="nav"><span>Inicio</span><span>Agenda</span><span class="on">Lugares</span><span>Artistas</span><span>Perfil</span></nav>`;
-    if (conUbicacion) {
-      el.querySelector('#orden-boton')?.addEventListener('click', () => { estado.menu = !estado.menu; pintarTodo(); });
-      el.querySelectorAll('[data-orden]').forEach((b) => b.addEventListener('click', () => { estado.orden = b.dataset.orden; estado.menu = false; guardar(); pintarTodo(); }));
-    }
+    const cual = conUbicacion ? 'con' : 'sin';
+    el.querySelector('.orden-boton')?.addEventListener('click', () => { estado.menu = estado.menu === cual ? false : cual; pintarTodo(); });
+    el.querySelectorAll('[data-orden]').forEach((b) => b.addEventListener('click', () => { estado[conUbicacion ? 'orden' : 'ordenSin'] = b.dataset.orden; estado.menu = false; guardar(); pintarTodo(); }));
   }
 
   // ===== La hoja.
@@ -352,7 +353,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   }
   const PORQUE = {
     hoy: 'Hoy: «Con eventos» va por la fecha de lo próximo, así que el MUNI (expo abierta desde septiembre) sale antes que el Teatro de la Paz (hoy a las 20:00); con ubicación no hay forma de pedir otro orden.',
-    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; con ubicación, el desplegable «Cercanos primero» / «Próximos primero» en la cabecera de «Con eventos», cercanía por defecto, y la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
+    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; el desplegable va junto a «10 lugares»: con ubicación «Cercanos primero» (por defecto) · «Próximos primero» · «Alfabético», y sin ubicación «Próximos primero» · «Alfabético»; la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
   };
   function pintarTodo() {
     pintar($('tel-sin'), false);
@@ -365,7 +366,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compara con «Hoy» y «Propuesta» arriba.';
     requestAnimationFrame(medir);
   }
-  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { Object.assign(estado, b.dataset.preset === 'hoy' ? HOY : PROPUESTA, { menu: false }); guardar(); pintarTodo(); }));
+  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { Object.assign(estado, b.dataset.preset === 'hoy' ? HOY : PROPUESTA, { menu: false, orden: 'cerca', ordenSin: 'pronto' }); guardar(); pintarTodo(); }));
   const abrir = (si) => { $('hoja').classList.toggle('abierta', si); $('velo').classList.toggle('visible', si); $('fab').setAttribute('aria-expanded', String(si)); if (si) $('hoja-titulo').focus(); };
   $('fab').addEventListener('click', () => abrir(true));
   $('cerrar-hoja').addEventListener('click', () => abrir(false));

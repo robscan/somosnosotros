@@ -16,7 +16,7 @@ Hoy (con OL-398) «Con eventos» va por la fecha de lo próximo de cada lugar: u
 | Ejercicio | Opciones | Propuesta |
 |---|---|---|
 | **O** · sin ubicación, qué va primero en «Con eventos» | por fecha (hoy) · con hora primero · en curso primero | **con hora primero**, por fecha; después lo en curso, el que cierra antes primero |
-| **D** · con ubicación, dónde va el desplegable | ninguno (hoy) · cabecera «Con eventos» · cabecera «N lugares» · chip junto a Filtros | **cabecera «Con eventos»**: solo ordena ese grupo; «Sin eventos próximos» siempre por cercanía |
+| **D** · dónde va el desplegable y qué ofrece | ninguno (hoy) · cabecera «N lugares» · cabecera «Con eventos» · chip junto a Filtros | **cabecera «N lugares»** (founder, 11:50: «el dropdown debe [ir] con la cantidad de lugares, agrega por orden alfabético también»). Con ubicación: «Cercanos primero» · «Próximos primero» · «Alfabético»; sin ubicación (añadido del gestor, por confirmar): «Próximos primero» · «Alfabético». «Alfabético» ordena los dos grupos por nombre |
 | **E** · qué dicen sus opciones | «Cercanos primero» · «Próximos primero» / «Más cercanos primero» · «Eventos próximos primero» / «Cerca» · «Pronto» | **«Cercanos primero» · «Próximos primero»**: el founder, a las 11:45, al ver la página: «cortemos el letrero: Cercanos primero, Próximos primero» |
 | **R** · el renglón de un lugar con expo abierta y evento con hora | lo primero por fecha (la expo) · el evento con hora · las dos líneas | **las dos líneas**: «Próximo: sáb 24 de oct · 12:00» y «Exposición hasta el dom 8 de nov» |
 
@@ -25,11 +25,11 @@ Medidor: cuántos de los cinco primeros de «Con eventos» tienen hora (sin ubic
 ## Capturas (`docs/rediseno/capturas-430/`, Chrome real, 390×844 a 2×)
 
 - `01-hoy-sin-ubicacion.png` y `02-hoy-con-ubicacion.png`: lo de hoy; ACHE (taller) y MUNI (expo) encabezan «Con eventos», el Teatro de la Paz (hoy 20:00) va cuarto.
-- `03-propuesta-sin-ubicacion.png`: Teatro de la Paz (hoy), San Miguelito (mañana), Laberinto (vie 16), MUNI (sáb 24)…; lo en curso al final del grupo.
-- `04-propuesta-con-ubicacion-cerca.png`: con ubicación, «Cercanos primero ⌄» en la cabecera de «Con eventos»; por distancia.
-- `05-propuesta-con-ubicacion-menu.png`: el menú abierto con las dos opciones y la marca en la elegida.
-- `06-propuesta-con-ubicacion-pronto.png`: «Próximos primero» puesto; el grupo cambia, los kilómetros siguen en cada renglón.
-- `07-D-cabecera-n-lugares.png` y `08-D-chip-junto-a-filtros.png`: las otras dos posiciones del desplegable.
+- `03-propuesta-sin-ubicacion.png`: Teatro de la Paz (hoy), San Miguelito (mañana), Laberinto (vie 16), MUNI (sáb 24)…; lo en curso al final del grupo; `03b-…-menu.png`, su desplegable con «Próximos primero» y «Alfabético»; `03c-…-alfabetico.png`, los dos grupos por nombre.
+- `04-propuesta-con-ubicacion-cerca.png`: con ubicación, «Cercanos primero ⌄» junto a «10 lugares»; por distancia.
+- `05-propuesta-con-ubicacion-menu.png`: el menú abierto con las tres opciones y la marca en la elegida.
+- `06-propuesta-con-ubicacion-pronto.png`: «Próximos primero» puesto; el grupo cambia, los kilómetros siguen en cada renglón; `06b-…-alfabetico.png`, «Alfabético».
+- `07-D-cabecera-con-eventos.png` y `08-D-chip-junto-a-filtros.png`: las otras dos posiciones del desplegable.
 - `09-E-cortas.png`: el menú con «Cerca» y «Pronto»; `09b-E-largas.png`, con las frases largas de la primera versión.
 - `10-R-el-evento-con-hora.png`: el MUNI diciendo solo la charla (pierde la expo).
 - `11-O-en-curso-primero.png`: la tercera opción de O.
@@ -40,4 +40,4 @@ Medidor: cuántos de los cinco primeros de «Con eventos» tienen hora (sin ubic
 
 - `agruparLugares` recibe el modo («cerca» o «pronto») y, sin ubicación o con «pronto», ordena «Con eventos» en dos tandas: lo con hora por fecha, luego lo en curso por cierre.
 - `conProximo` guarda por lugar lo próximo con hora y, aparte, lo en curso; `RenglonLugar` pinta una o dos líneas. Todo sale de la consulta de eventos que ya trae `/lugares` (OL-398): sin tablas ni migración.
-- El desplegable vive en `ListaLugares`, en la cabecera del grupo, solo con ubicación; la elección se guarda con la memoria de pantalla de Lugares (`useMemoriaPantalla`) y vuelve a «cerca» en un teléfono nuevo.
+- El desplegable vive en la cabecera de la hoja de Lugares, junto a «N lugares» (`VistaLugares`); con ubicación ofrece «Cercanos primero» · «Próximos primero» · «Alfabético» y sin ella «Próximos primero» · «Alfabético»; la elección se guarda con la memoria de pantalla de Lugares (`useMemoriaPantalla`) y vuelve a la primera opción en un teléfono nuevo.
