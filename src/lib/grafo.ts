@@ -413,7 +413,8 @@ const PAGINA = 1000;
 
 type Respuesta = { data: unknown[] | null; error: { message: string } | null };
 
-/** Lee una tabla entera de 1 000 en 1 000 (el servidor no devuelve más de eso por consulta). */
+/** Lee una tabla entera de 1 000 en 1 000 (el servidor no devuelve más de eso por consulta). El orden es por la llave de cada tabla:
+ * `asistencias` y `eventos_artistas` no tienen columna `id` (su llave es el par), y pedir `order=id` ahí falla en PostgREST. */
 async function leerTodo<T>(consulta: (desde: number, hasta: number) => PromiseLike<Respuesta>): Promise<T[]> {
   const todo: T[] = [];
   for (let desde = 0; ; desde += PAGINA) {
@@ -436,7 +437,7 @@ async function leerFilas(): Promise<FilasGrafo> {
     ),
     leerTodo<FilaEventoArtista>((d, h) => db.from("eventos_artistas").select("evento_id, artista_id").order("evento_id").order("artista_id").range(d, h)),
     leerTodo<FilaSeguimiento>((d, h) => db.from("seguimientos").select("usuario_id, lugar_id, artista_id").order("id").range(d, h)),
-    leerTodo<FilaAsistencia>((d, h) => db.from("asistencias").select("usuario_id, evento_id, estado").order("id").range(d, h)),
+    leerTodo<FilaAsistencia>((d, h) => db.from("asistencias").select("usuario_id, evento_id, estado").order("usuario_id").order("evento_id").range(d, h)),
   ]);
   return { lugares, artistas, eventos, eventos_artistas, seguimientos, asistencias };
 }
