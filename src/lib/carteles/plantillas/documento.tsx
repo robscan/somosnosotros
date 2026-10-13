@@ -440,7 +440,7 @@ function Simbolo({ ancho, color }: { ancho: number; color: string }) {
   );
 }
 
-function CabeceraCompleta({ d, c, foto }: { d: Documento; c: Cabecera; foto: string | null }) {
+function CabeceraCompleta({ c, foto }: { c: Cabecera; foto: string | null }) {
   const lado = CABECERA.foto;
   const alto = c.alto - CABECERA.abajo - CABECERA.raya;
   return (
@@ -505,7 +505,7 @@ function Pie({ d, m, i }: { d: Documento; m: Maqueta; i: number }) {
 export function dibujarPaginaDocumento(d: Documento, m: Maqueta, i: number, foto: string | null): ReactElement {
   return (
     <div style={{ display: "flex", flexDirection: "column", width: m.ancho, height: m.alto, paddingTop: M.arriba, paddingLeft: M.lado, paddingRight: M.lado, paddingBottom: M.abajo, backgroundColor: C.fondo, color: C.tinta, fontFamily: NEGRA, overflow: "hidden" }}>
-      {i === 0 ? <CabeceraCompleta d={d} c={m.cabecera} foto={foto} /> : <CabeceraCorta d={d} i={i} n={m.paginas.length} util={m.util} />}
+      {i === 0 ? <CabeceraCompleta c={m.cabecera} foto={foto} /> : <CabeceraCorta d={d} i={i} n={m.paginas.length} util={m.util} />}
       <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, paddingTop: CUERPO_ARRIBA, overflow: "hidden" }}>
         {m.paginas[i].map((pieza, k) => (
           <div key={k} style={{ display: "flex", flexShrink: 0, height: pieza.alto, marginTop: k ? pieza.antes : 0 }}>

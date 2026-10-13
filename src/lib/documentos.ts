@@ -148,7 +148,7 @@ function anioDe(e: Pick<EventoPasado, "inicio" | "zona">): string {
 
 /** Lo que entra para la presentación: la ficha, su trayectoria (OL-390) y sus próximas fechas. */
 export type EntradaPresentacion = {
-  artista: { id: string; slug: string | null; nombre: string; detalle?: string | null; tipo?: string | null; ciudad?: string | null; descripcion?: string | null; redes?: unknown; foto?: string | null; portada?: string | null };
+  artista: { id: string; slug?: string | null; nombre: string; detalle?: string | null; tipo?: string | null; ciudad?: string | null; descripcion?: string | null; redes?: unknown; foto?: string | null; portada?: string | null };
   pasados: readonly EventoPasado[];
   /** Se llenó la lectura de lo pasado (`TOPE_HISTORIAL`): la cuenta dice «200+ fechas». */
   lleno?: boolean;
@@ -291,7 +291,7 @@ export function cuentasInforme(eventos: readonly EventoPasado[], periodo: Period
 
 /** Lo que entra para el informe: la ficha, su historial (OL-390), el periodo y la hora. */
 export type EntradaInforme = {
-  lugar: { id: string; slug: string | null; nombre: string; direccion?: string | null; portada?: string | null; zona?: string | null };
+  lugar: { id: string; slug?: string | null; nombre: string; direccion?: string | null; portada?: string | null; zona?: string | null };
   pasados: readonly EventoPasado[];
   periodo: PeriodoInforme;
   ahora: Date;

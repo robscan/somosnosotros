@@ -38,7 +38,8 @@ import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
-import { cargarTrayectoria } from "@/lib/cargarHistorial";
+import { cargarProximasArtista, cargarTrayectoria } from "@/lib/cargarHistorial";
+import { opcionesPresentacion } from "@/lib/opcionesDocumento";
 import { contarLugares, realizados, saltoLugares } from "@/lib/historialFichas";
 import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
 import { incrustadoDeNovedad } from "@/lib/incrustado";
@@ -192,12 +193,15 @@ async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
 
 /**
  * «Trayectoria» (OL-390): sus fechas pasadas, plegadas bajo «Próximas fechas»; sin ninguna, no existe. Consulta aparte, en `<Suspense>`. Al final,
- * «Tu año» (OL-394) si quien mira gestiona la ficha y hay alguna fecha pasada de este año.
+ * «Tu año» (OL-394) si quien mira gestiona la ficha y hay alguna fecha pasada de este año, y junto a él la «Presentación» en PDF (OL-396) si la
+ * gestiona y hay algo pasado.
  */
 async function SeccionTrayectoria({ artista, puedeEditar }: { artista: ArtistaConAutor; puedeEditar: boolean }) {
   const historial = await cargarTrayectoria(artista.id);
   const tuAnio = puedeEditar && hayTuAnio(historial.eventos) ? hrefVistaTuAnio("artista", hrefArtista(artista)) : null;
-  return <Historial de="artista" artistaId={artista.id} historial={historial} tuAnio={tuAnio} />;
+  // La «Presentación» en PDF (OL-396): solo quien gestiona y con algo pasado; sus próximas fechas se leen solo entonces.
+  const documento = puedeEditar && historial.eventos.length ? { que: "artista" as const, opciones: opcionesPresentacion({ artista, pasados: historial.eventos, lleno: historial.lleno, proximos: await cargarProximasArtista(artista.id), ahora: new Date() }), etiquetasPeriodo: null } : null;
+  return <Historial de="artista" artistaId={artista.id} historial={historial} tuAnio={tuAnio} documento={documento} />;
 }
 
 /** «Próximas fechas» entero: la misma consulta que `KpisArtista`, memoizada por `cache()`, más quién decidió qué. */

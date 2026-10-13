@@ -4,6 +4,8 @@ import { fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { agruparPorMes, artistasDelHistorial, cabeceraHistorial, cabeceraTrayectoria, cuandoPasado, listaCon, lugaresDeTrayectoria, otrosArtistas, realizados, type EventoPasado, type Historial as DatosHistorial, type Presencia } from "@/lib/historialFichas";
 import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import BotonTuAnio from "./BotonTuAnio";
+import DocumentoPdf from "./DocumentoPdf";
+import type { PropsDocumento } from "@/lib/opcionesDocumento";
 import { IconoCalendario, IconoChevronDerecha, IconoEtiqueta, IconoPersonas, IconoPin } from "./ui/Iconos";
 import Imagen from "./ui/Imagen";
 import Plegado from "./ui/Plegado";
@@ -11,12 +13,16 @@ import Renglon from "./ui/Renglon";
 import SeCancelo from "./ui/SeCancelo";
 import styles from "./Historial.module.css";
 
-/** `tuAnio`: la vista previa de «Tu año» (OL-394), si quien mira gestiona la ficha y hay algo este año; sin ella, no hay botón. */
+/**
+ * `tuAnio`: la vista previa de «Tu año» (OL-394), si quien mira gestiona la ficha y hay algo este año; sin ella, no hay botón. `documento`: las
+ * opciones del PDF (OL-396, «Presentación» o «Informe»), si quien mira gestiona la ficha y hay algo pasado; sin ellas, no hay botón.
+ */
+type Extras = { tuAnio?: string | null; documento?: PropsDocumento | null };
 type Props =
   /** La trayectoria de un artista: sus fechas pasadas, dónde y con quién. */
-  | { de: "artista"; artistaId: string; historial: DatosHistorial; tuAnio?: string | null }
+  | ({ de: "artista"; artistaId: string; historial: DatosHistorial } & Extras)
   /** El historial de un lugar: sus eventos pasados y quiénes pasaron por ahí. */
-  | { de: "lugar"; historial: DatosHistorial; tuAnio?: string | null };
+  | ({ de: "lugar"; historial: DatosHistorial } & Extras);
 
 /**
  * Lo que ya pasó en la ficha de un artista («Trayectoria») o de un lugar («Historial»): OL-390, prototipo firmado `historial-propuestas.html`
@@ -60,7 +66,13 @@ export default function Historial(props: Props) {
           </ul>
         </Fragment>
       ))}
-      {props.tuAnio && <BotonTuAnio href={props.tuAnio} className={styles.tuAnio} />}
+      {(props.tuAnio || props.documento) && (
+        // «O junto a "Tu año"» (OL-396): una fila de dos pastillas a lo ancho; con una sola, a todo lo ancho.
+        <div className={styles.botones}>
+          {props.tuAnio && <BotonTuAnio href={props.tuAnio} />}
+          {props.documento && <DocumentoPdf {...props.documento} />}
+        </div>
+      )}
     </Plegado>
   );
 }
