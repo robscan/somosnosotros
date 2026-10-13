@@ -29,6 +29,10 @@ Tres entregas: el documento, el prototipo navegable y esta bitácora con la lín
 - **Sin librerías de grafos 3D:** su motor de fuerzas contradice la regla geográfica.
 - **Anonimato en un repo público:** el prototipo no lleva ids de personas ni líneas desde Seguir (privado). Lo escribí como regla en el doc (§ 5) con un umbral de anonimato propuesto (3 Voy por evento) que el prototipo no aplica porque la cuenta es chica.
 
+## Ajuste tras la primera revisión del founder (misma noche)
+
+«¿Por qué el grafo no muestra conexiones entre elementos hasta que se seleccionan? Podríamos verlas aunque sea más tenues que cuando se seleccionan.» Era decisión mía copiando a Absynth. Ahora todas las líneas se ven siempre, tenues (16 % en oscuro, 14 % en claro, sin escribir profundidad), y las del elegido brillantes encima; con un elegido las demás bajan a menos de la mitad. Solo se dibujan entre nodos que pasan el filtro. Casilla «Todas las líneas, tenues» en Ajustes para comparar con la versión anterior. Capturas vueltas a sacar.
+
 ## Lo que choca con lo firmado
 
 DEFINICION (firmado el 2026-09-21): «Las personas que asisten no son fichas del grafo: se cuentan […] nunca su ubicación» y «las conexiones se muestran, no se puntúan […] nada se destaca por tener más conexiones». El pedido pone a los asistentes como nodos con ubicación y da tamaño por seguidores. No lo resolví: está como preguntas 1 a 3 del doc, con la regla que propongo si el founder decide que sí (interruptor apagado de origen, posición solo del botón «Dónde estás», redondeada a 500 m con corrimiento fijo, sin historial, tramos, sin líneas desde Seguir, umbral de 3, se borra con la cuenta).

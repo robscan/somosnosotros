@@ -173,7 +173,7 @@ const vecinos = nodos.map(() => []);
 aristas.forEach((e, i) => { vecinos[e.a].push(i); vecinos[e.b].push(i); });
 
 // ---------- Tamaño: raíz cuadrada del peso, con techo, para que uno grande no aplaste a los demás ----------
-let factorTamano = 1, factorAltura = 1, mostrarSueltos = true;
+let factorTamano = 1, factorAltura = 1, mostrarSueltos = true, mostrarLineas = true;
 function radio(n) {
   if (n.tipo === "persona") return (4 + 3 * n.tramo) * factorTamano;      // tramos 1·2·3 → 7 · 10 · 13
   if (n.suelto) return 2.5 * factorTamano;                                  // sin conexión: chicos y apagados
@@ -204,7 +204,11 @@ for (let km = 1; km <= 10; km++) {
   anillos.add(l);
 }
 escena.add(anillos);
-// Las aristas del nodo elegido
+// Todas las líneas, tenues, siempre (pedido del founder: verlas aunque sea más tenues que al elegir)
+const geoTenues = new THREE.BufferGeometry();
+const matTenues = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, depthWrite: false });
+const tenues = new THREE.LineSegments(geoTenues, matTenues); tenues.frustumCulled = false; escena.add(tenues);
+// Las aristas del nodo elegido, brillantes encima
 const geoAristas = new THREE.BufferGeometry();
 const matAristas = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 });
 const lineas = new THREE.LineSegments(geoAristas, matAristas); lineas.frustumCulled = false; escena.add(lineas);
@@ -221,6 +225,7 @@ function leerTema() {
   const claro = document.documentElement.dataset.tema === "claro";
   anillos.children.forEach((l, i) => { l.material.color.set(claro ? 0x000000 : 0xffffff); l.material.opacity = (i + 1) % 5 === 0 ? (claro ? 0.14 : 0.16) : (claro ? 0.05 : 0.06); });
   matAristas.color.set(claro ? 0x1a1a1a : 0xffffff); aro.material.color.set(claro ? 0x1a1a1a : 0xffffff);
+  matTenues.color.set(claro ? 0x1a1a1a : 0xffffff); matTenues.opacity = claro ? 0.14 : 0.16;
 }
 
 // ---------- Filtro y selección ----------
@@ -254,6 +259,13 @@ function pintar() {
     malla.setMatrixAt(i, m4); malla.setColorAt(i, c);
   }
   malla.instanceMatrix.needsUpdate = true; if (malla.instanceColor) malla.instanceColor.needsUpdate = true;
+  // todas las líneas, tenues: solo entre nodos visibles; con un elegido, aún más apagadas para que las suyas destaquen
+  if (mostrarLineas) {
+    const pos = [];
+    for (const e of aristas) { if (!visible[e.a] || !visible[e.b]) continue; const a = nodos[e.a], b = nodos[e.b]; pos.push(a.x, a.y * factorAltura, a.z, b.x, b.y * factorAltura, b.z); }
+    geoTenues.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geoTenues.computeBoundingSphere();
+    tenues.visible = pos.length > 0; matTenues.opacity = (document.documentElement.dataset.tema === "claro" ? 0.14 : 0.16) * (haySel ? 0.45 : 1);
+  } else tenues.visible = false;
   // aristas del elegido
   if (haySel) {
     const pos = [];
@@ -402,11 +414,13 @@ function pintarArbol() {
     <label class="ajuste"><span>Tamaño de las esferas</span><input type="range" id="aj-tamano" min="0.4" max="2.2" step="0.1" value="${factorTamano}"></label>
     <label class="ajuste"><span>Altura de las capas</span><input type="range" id="aj-altura" min="0" max="2" step="0.1" value="${factorAltura}"></label>
     <label class="ajuste"><span>Mostrar sin conexión</span><input type="checkbox" id="aj-sueltos" ${mostrarSueltos ? "checked" : ""}></label>
+    <label class="ajuste"><span>Todas las líneas, tenues</span><input type="checkbox" id="aj-lineas" ${mostrarLineas ? "checked" : ""}></label>
     <p class="nota">Lugares a escala real: 1 unidad = 10 m desde el centro de los lugares de San Luis Potosí; cada anillo del suelo es 1 km. Lo que está a más de 10 km (San Miguel de Allende) se acerca en logaritmo para que quepa.</p>
     <p class="nota">Datos reales de solo lectura del ${DATOS.extraido}: ${DATOS.resumen.eventos} eventos, ${DATOS.resumen.seguimientos} seguimientos, ${DATOS.resumen.asistencias} asistencias. Los seguimientos solo suman al tamaño; las personas que solo siguen (${DATOS.resumen.personasQueSiguen - DATOS.personas.length}) no se dibujan.</p>`);
   arbol.querySelector("#aj-tamano").oninput = (e) => { factorTamano = +e.target.value; pintar(); };
   arbol.querySelector("#aj-altura").oninput = (e) => { factorAltura = +e.target.value; pintar(); };
   arbol.querySelector("#aj-sueltos").onchange = (e) => { mostrarSueltos = e.target.checked; pintar(); pintarLista(); };
+  arbol.querySelector("#aj-lineas").onchange = (e) => { mostrarLineas = e.target.checked; pintar(); };
 }
 function ponerFiltro(tipo, clase) { filtro = { tipo, clase }; if (seleccion >= 0 && !pasaFiltro(nodos[seleccion])) seleccion = -1, resaltados = new Set(), pintarTarjeta(); pintarArbol(); pintar(); pintarLista(); if (window.innerWidth < 792) cerrarHojas(); }
 
