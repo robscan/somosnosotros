@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lugares: el orden y el desplegable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-399 (bitácora 430): el orden de «Con eventos» en la lista de Lugares sin ubicación y, con ubicación, el desplegable para elegir
+   entre los más cercanos y los eventos próximos. Pedido del founder del 13 de octubre tras OL-398. Mismo armazón que las propuestas anteriores:
+   dos teléfonos y la hoja de ejercicios; el estado se guarda en el teléfono (localStorage) y `window.prototipo` sirve a las capturas. */
+:root {
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #eee7f8; --ok: #1f6f43; --fondo-miniatura: #e6e6e2;
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px; --toque: 48px; --toque-min: 44px; --alto-chip: 36px; --alto-nav: 60px; --gutter: 20px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem; --letra-2xl: 1.625rem;
+  --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --duracion: 200ms; --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-acento-suave: #ece4f8; --pg-velo: rgba(20, 18, 14, 0.4); --pg-perilla: #ffffff; --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.16); --pg-baja: #1f6f43; --pg-mal: #b3261e;
+  --pg-flotante: #1a1a1a; --pg-flotante-texto: #ffffff; --pg-flotante-suave: #c9c6bf;
+}
+* { box-sizing: border-box; }
+html { font: 400 var(--letra-md) / 1.4 var(--fuente); font-variation-settings: var(--ancho-texto); color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ===== La escena: en el teléfono, un teléfono; desde 760, teléfono y hoja; desde 1180, los dos teléfonos y la hoja. ===== */
+.escena { display: grid; gap: var(--espacio-4); padding: var(--espacio-4); min-height: 100dvh; align-content: start; }
+.columna { display: grid; gap: var(--espacio-2); justify-items: center; align-content: start; }
+.col-con { display: none; }
+.etiqueta-tel { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; text-align: center; }
+.etiqueta-tel b { color: var(--pg-texto); }
+.caja-tel { width: min(100%, 390px); }
+.tel { position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 28px; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); font-size: var(--letra-md); }
+@media (min-width: 760px) { .escena { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } }
+@media (min-width: 1180px) { .escena { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 380px; } .col-con { display: grid; } }
+
+/* ===== El teléfono: Lugares con la hoja de la lista abierta a tres cuartos (como la captura del founder). ===== */
+.tel .cab { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: var(--espacio-3); height: 56px; padding: 0 var(--gutter); }
+.tel .cab .logo { grid-column: 2; justify-self: center; font-weight: 800; font-variation-settings: "wdth" 75, "wght" 800; font-size: 26px; letter-spacing: -0.02em; }
+.tel .contexto { display: flex; gap: var(--espacio-2); padding: var(--espacio-2) var(--gutter) var(--espacio-3); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: var(--alto-chip); padding: 0 14px; border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-weight: 600; font-size: var(--letra-sm); white-space: nowrap; }
+.chip.puesto { background: var(--primario-suave); border-color: var(--primario-suave); color: var(--primario); }
+.mapa { position: relative; height: 150px; background: #e8e6df; }
+.mapa i { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #1a1a1a; }
+.mapa i.v { background: var(--primario); }
+.mapa i.ok { background: var(--ok); }
+.mapa .yo { position: absolute; left: 58%; top: 52%; width: 14px; height: 14px; border-radius: 50%; background: #2f7cf6; box-shadow: 0 0 0 4px rgba(47, 124, 246, 0.25); }
+.hoja-lista { position: absolute; left: 0; right: 0; top: 262px; bottom: 0; border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--fondo); box-shadow: 0 -4px 16px rgba(0,0,0,0.12); overflow: hidden; }
+.hoja-lista .asa-l { display: block; width: 72px; height: 5px; margin: var(--espacio-3) auto 0; border-radius: 3px; background: var(--borde); }
+.titulo-lista { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--gutter) var(--espacio-3); }
+.titulo-lista h2 { margin: 0; font-size: 26px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.grupo { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--gutter); background: var(--fondo-suave); }
+.grupo h3 { margin: 0; font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.grupo h3 small { color: var(--texto-suave); font-weight: 700; font-size: var(--letra-xl); }
+.lista { overflow-y: auto; height: calc(100% - 70px); }
+.lista ul { list-style: none; margin: 0; padding: 0; }
+/* El desplegable: un botón de texto violeta con el caret, como «San Luis Potosí ⌄» de la fila de contexto; abre un menú de dos opciones. */
+.orden { position: relative; }
+.orden > button { display: inline-flex; align-items: center; gap: 4px; min-height: var(--toque-min); padding: 0 var(--espacio-1); color: var(--primario); font-weight: 700; font-size: var(--letra-sm); white-space: nowrap; }
+.orden > button .i { width: 16px; height: 16px; }
+.orden.chip-orden > button { height: var(--alto-chip); min-height: 0; padding: 0 14px; border: 1px solid var(--borde); border-radius: var(--radio-pildora); color: var(--texto); font-weight: 600; }
+.menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; min-width: 268px; padding: var(--espacio-1); border-radius: var(--radio-grande); background: var(--fondo); box-shadow: var(--sombra-flotante); }
+.menu[hidden] { display: none; }
+.menu button { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: var(--espacio-2); width: 100%; min-height: var(--toque); padding: 0 var(--espacio-3); border-radius: var(--radio); text-align: left; font-weight: 600; }
+.menu button[aria-checked="true"] { color: var(--primario); background: var(--primario-suave); }
+.menu button .i { width: 18px; height: 18px; visibility: hidden; }
+.menu button[aria-checked="true"] .i { visibility: visible; }
+/* El renglón de lugar (ui/Renglon): foto cuadrada, nombre, datos y el botón. */
+.renglon { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: var(--espacio-3); align-items: center; padding: var(--espacio-3) var(--gutter); border-bottom: 1px solid var(--borde); }
+.renglon .foto { width: 60px; height: 60px; border-radius: var(--radio); background: var(--fondo-miniatura); display: grid; place-items: center; color: #b9b4a8; font-weight: 800; font-size: 18px; align-self: start; }
+.renglon .foto.f1 { background: linear-gradient(135deg, #8f8a7c, #4d4a42); color: transparent; }
+.renglon .foto.f2 { background: linear-gradient(135deg, #b89a6a, #5e4b2c); color: transparent; }
+.renglon .foto.f3 { background: linear-gradient(135deg, #7d93a8, #35485a); color: transparent; }
+.renglon .foto.f4 { background: linear-gradient(135deg, #9a7fb5, #4b3566); color: transparent; }
+.renglon .cuerpo { display: grid; gap: 2px; min-width: 0; }
+.renglon h4 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.renglon small { display: flex; align-items: center; gap: 6px; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; }
+.renglon small.vida { color: var(--primario); font-weight: 600; }
+.renglon small > span { min-width: 0; }
+.renglon small.vida > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.renglon small .i { width: 15px; height: 15px; }
+.renglon .btn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--primario); }
+.renglon .btn.sigue { background: var(--ok); color: #fff; }
+.nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--alto-nav); padding: 0 var(--espacio-2); background: var(--fondo); border-top: 1px solid var(--borde); font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); text-align: center; align-items: center; }
+.nav span.on { color: var(--primario); }
+.nav span.on::before { content: ""; display: block; width: 56px; height: 28px; margin: 0 auto 2px; border-radius: var(--radio-pildora); background: var(--primario); }
+.aviso-sin { margin: 0; padding: var(--espacio-2) var(--gutter); color: var(--texto-suave); font-size: var(--letra-xs); }
+.marca { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--primario); opacity: 0; }
+
+/* ===== La hoja de ejercicios. ===== */
+.fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--pg-flotante); color: var(--pg-flotante-texto); font-weight: 700; box-shadow: var(--sombra-flotante); }
+.velo { position: fixed; inset: 0; z-index: 50; background: var(--pg-velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: min(72%, 680px); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--pg-panel); box-shadow: var(--sombra-flotante); transform: translateY(100%); visibility: hidden; transition: transform 240ms var(--curva), visibility 0s 240ms; }
+.hoja.abierta { transform: none; visibility: visible; transition: transform 240ms var(--curva), visibility 0s; }
+.asa { justify-self: center; width: 36px; height: 4px; margin-top: var(--espacio-2); border-radius: 2px; background: var(--pg-borde); }
+.hoja-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-2) var(--espacio-2) var(--espacio-4); }
+.hoja-cab h1 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.hoja-cab p { margin: 2px 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
+.resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
+.preajustes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); line-height: 1.1; }
+.preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
+.combinacion { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.combinacion b { color: var(--pg-texto); }
+.medidor { display: grid; gap: var(--espacio-1); }
+.medidor .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-2); }
+.medidor .cifra { display: grid; gap: 1px; min-width: 0; padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio); background: var(--pg-fondo); }
+.medidor .cifra small { font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.15; }
+.medidor .cifra b { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.medidor .cifra b.bien { color: var(--pg-baja); }
+.medidor .cifra b.mal { color: var(--pg-mal); }
+.medidor .cifra span { font-size: var(--letra-2xs); color: var(--pg-suave); line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.medidor p { margin: 0; color: var(--pg-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+.porque { margin: var(--espacio-3) 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.bloque { padding-top: var(--espacio-4); }
+.bloque h2 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.bloque > p { margin: 0 0 var(--espacio-2); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.ejercicios { list-style: none; margin: 0; padding: 0; }
+.ejercicio { padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); }
+.ejercicio b { display: block; font-size: var(--letra-md); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+.ejercicio small { display: block; margin-top: 2px; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-1); margin-top: var(--espacio-2); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.opciones.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opciones button { min-height: 36px; padding: 0 6px; border-radius: var(--radio-pildora); color: var(--pg-suave); font-size: var(--letra-xs); font-weight: 700; line-height: 1.1; }
+.opciones button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.notas { margin: 0; padding-left: 1.1em; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas li + li { margin-top: var(--espacio-1); }
+.notas b { color: var(--pg-texto); }
+@media (min-width: 760px) {
+  .hoja { position: relative; left: auto; right: auto; bottom: auto; z-index: auto; align-self: stretch; height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border-radius: var(--radio-grande); box-shadow: var(--sombra); transform: none; visibility: visible; transition: none; }
+  .asa, .cerrar, .fab, .velo { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .hoja, .hoja.abierta, .velo { transition: none; } }
+</style>
+</head>
+<body>
+<main class="escena" id="escena">
+  <section class="columna col-sin" aria-label="Sin ubicación">
+    <p class="etiqueta-tel" id="etiqueta-sin"><b>Sin ubicación</b> · el orden de «Con eventos»</p>
+    <div class="caja-tel"><div class="tel" id="tel-sin"></div></div>
+  </section>
+  <section class="columna col-con" aria-label="Con ubicación">
+    <p class="etiqueta-tel" id="etiqueta-con"><b>Con ubicación</b> · el desplegable del orden</p>
+    <div class="caja-tel"><div class="tel" id="tel-con"></div></div>
+  </section>
+
+  <aside class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <span class="asa" aria-hidden="true"></span>
+    <header class="hoja-cab">
+      <div>
+        <h1 id="hoja-titulo" tabindex="-1">Lugares: el orden y el desplegable</h1>
+        <p>Tras OL-398: qué va primero en «Con eventos» y cómo se elige con ubicación · mar 13 de oct · OL-399</p>
+      </div>
+      <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="hoja-cuerpo" id="hoja-cuerpo">
+      <div class="resumen">
+        <div class="preajustes" role="group" aria-label="Preajustes">
+          <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción, con OL-398</small></button>
+          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
+        </div>
+        <p class="combinacion" id="combinacion"></p>
+        <section class="medidor" aria-label="Medidor">
+          <div class="cifras">
+            <div class="cifra"><small>Con hora entre los 5 primeros (sin ubicación)</small><b id="m-hora">–</b><span id="s-hora"></span></div>
+            <div class="cifra"><small>Toques para cambiar el orden (con ubicación)</small><b id="m-toques">–</b><span id="s-toques"></span></div>
+            <div class="cifra"><small>Renglón más alto (px)</small><b id="m-alto">–</b><span id="s-alto"></span></div>
+            <div class="cifra"><small>Expos abiertas que se ven en la lista</small><b id="m-expos">–</b><span id="s-expos"></span></div>
+          </div>
+          <p>Lo primero que asoma en la hoja es lo que más se usa: adónde ir hoy o mañana. Con ubicación, la cercanía manda salvo que la persona pida otra cosa; el orden elegido se recuerda en el teléfono (memoria de pantalla).</p>
+        </section>
+      </div>
+
+      <p class="porque" id="porque"></p>
+
+      <section class="bloque" aria-labelledby="t-ejercicios">
+        <h2 id="t-ejercicios">Ejercicios</h2>
+        <p>El teléfono de la izquierda no tiene ubicación; el de la derecha sí (punto azul y kilómetros). Toca el desplegable en el de la derecha para abrirlo.</p>
+        <ul class="ejercicios" id="ejercicios"></ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-como">
+        <h2 id="t-como">Cómo se haría</h2>
+        <ul class="notas">
+          <li><b>Sin ubicación (O):</b> `agruparLugares` ordena «Con eventos» en dos tandas: primero los lugares cuyo próximo tiene hora (un evento, una sesión de taller, un acto), por fecha; luego los que solo tienen algo en curso de varios días (exposición, taller, festival), el que cierra antes primero. «Sin eventos próximos» sigue por nombre.</li>
+          <li><b>Con ubicación (D, E):</b> un desplegable en la cabecera del grupo «Con eventos»; «Más cercanos primero» es lo de hoy; «Eventos próximos primero» aplica el orden de arriba a ese grupo (la distancia sigue en cada renglón). «Sin eventos próximos» siempre por cercanía. La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
+          <li><b>El renglón con las dos cosas (R):</b> `conProximo` guarda por lugar lo próximo con hora y, aparte, lo que está en curso; `RenglonLugar` pinta lo que diga la opción elegida. Sin tablas nuevas ni migración: todo sale de la consulta de eventos que ya trae `/lugares`.</li>
+        </ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-notas">
+        <h2 id="t-notas">Cómo leerlo</h2>
+        <ul class="notas">
+          <li><b>Los lugares son los de tu captura del 13 de oct</b> (Jardín Botánico, Laberinto, MUNI, CC200, Laboratorio, Casa Bauen) y los del respaldo; las fechas y distancias están puestas a mano para que salgan los casos: un lugar con expo abierta y charla con hora (MUNI), uno con taller en curso (ACHE), dos solo con expo (MUNI, Cossío).</li>
+          <li><b>Hoy es martes 13 de octubre.</b> «Hoy» y «mañana» se calculan desde ahí.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</main>
+<div class="velo" id="velo"></div>
+<button class="fab" id="fab" type="button" aria-controls="hoja" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>Ejercicios</span></button>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const svg = (d) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const I = {
+    pin: svg('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'),
+    cal: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+    caret: svg('<path d="M6 9l6 6 6-6"/>'), check: svg('<path d="M5 12l4.5 4.5L19 7"/>'),
+    campana: svg('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4M12 8v3M10.5 9.5h3"/>'),
+    filtros: svg('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'),
+    lupa: svg('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>'), mas: svg('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>'),
+  };
+
+  // ===== Los lugares (tu captura del 13 de oct y el respaldo), con lo próximo con hora y lo que está en curso. Hoy: mar 13 de oct.
+  const LUGARES = [
+    { id: 'lab', nombre: 'Laboratorio Centro Histórico', tipo: 'Colectivo', calle: 'C. 5 de Mayo 1100', km: 0.05, sigue: true, foto: 'SN' },
+    { id: 'bauen', nombre: 'Casa Bauen', tipo: 'Casa de cultura', calle: 'Prol Pedro Vallejo 785', km: 0.25, foto: 'SN' },
+    { id: 'paz', nombre: 'Teatro de la Paz', tipo: 'Foro', calle: 'Villerías 205', km: 0.4, foto: 'f1', hora: { dia: 'hoy', hora: '20:00', iso: '2026-10-13T20:00' } },
+    { id: 'ache', nombre: 'ACHE Galería', tipo: 'Galería', calle: 'Valentín Gama 840', km: 0.9, foto: 'f2', curso: { clase: 'Taller', hasta: 'vie 23 de oct', iso: '2026-10-23' } },
+    { id: 'miguelito', nombre: 'Casa de Cultura del Barrio de San Miguelito', tipo: 'Casa de cultura', calle: '5 de Mayo 1225', km: 1.2, foto: 'f3', hora: { dia: 'mañana', hora: '19:30', iso: '2026-10-14T19:30' } },
+    { id: 'cossio', nombre: 'Museo Francisco Cossío', tipo: 'Museo', calle: 'Av. Venustiano Carranza 1815', km: 2.1, foto: 'f4', curso: { clase: 'Exposición', hasta: 'dom 15 de nov', iso: '2026-11-15' } },
+    { id: 'izotal', nombre: 'Jardín Botánico El Izotal', tipo: 'Otro', calle: 'Parque Tangamanga I', km: 3.7, foto: 'f2', hora: { dia: 'sáb 31 de oct', hora: '12:00', iso: '2026-10-31T12:00' } },
+    { id: 'laberinto', nombre: 'Museo Laberinto de las Ciencias y las Artes', tipo: 'Museo', calle: 'Blvd. Antonio Rocha Cordero s/n', km: 3.9, sigue: true, foto: 'f3', hora: { dia: 'vie 16 de oct', hora: '18:00', iso: '2026-10-16T18:00' } },
+    { id: 'muni', nombre: 'MUNI Museo Universitario UASLP', tipo: 'Museo', calle: 'Sierra Leona 550', km: 5.3, sigue: true, foto: 'f1', curso: { clase: 'Exposición', hasta: 'dom 8 de nov', iso: '2026-11-08' }, hora: { dia: 'sáb 24 de oct', hora: '12:00', iso: '2026-10-24T12:00' } },
+    { id: 'cc200', nombre: 'Centro Cultural Universitario Bicentenario (CC200)', tipo: 'Casa de cultura', calle: 'Sierra Leona 550 esq. Camino a la Presa', km: 5.3, sigue: true, foto: 'f4', hora: { dia: 'vie 30 de oct', hora: '20:00', iso: '2026-10-30T20:00' } },
+  ];
+
+  // ===== Ejercicios y preajustes.
+  const HOY = { o: 'fecha', d: 'ninguno', e: 'largas', r: 'primero' };
+  const PROPUESTA = { o: 'hora', d: 'grupo', e: 'largas', r: 'dos' };
+  const EJERCICIOS = [
+    { clave: 'o', titulo: 'O · Sin ubicación: qué va primero en «Con eventos»', nota: 'Hoy ordena por la fecha de lo próximo, así que una expo abierta desde septiembre va antes que el concierto de mañana.',
+      opciones: [['fecha', 'Por fecha (hoy)'], ['hora', 'Con hora primero'], ['cierre', 'En curso primero']], firma: 'Founder, 13 oct: «los eventos van antes que las expos cuando el usuario no tiene activa ubicación».' },
+    { clave: 'd', titulo: 'D · Con ubicación: dónde va el desplegable', nota: 'El orden elegido solo afecta a «Con eventos»; «Sin eventos próximos» siempre va por cercanía.',
+      opciones: [['ninguno', 'Ninguno (hoy)'], ['grupo', 'Cabecera «Con eventos»'], ['titulo', 'Cabecera «N lugares»'], ['chip', 'Chip junto a Filtros']] },
+    { clave: 'e', titulo: 'E · Qué dicen sus opciones', nota: 'Con tus palabras o en corto.',
+      opciones: [['largas', '«Más cercanos primero» · «Eventos próximos primero»'], ['cortas', '«Cerca» · «Pronto»']] },
+    { clave: 'r', titulo: 'R · Un lugar con expo abierta y evento con hora (el MUNI)', nota: 'Hoy dice lo primero por fecha: la expo. Qué debe decir el renglón.',
+      opciones: [['primero', 'Lo primero por fecha (la expo)'], ['hora', 'El evento con hora'], ['dos', 'Las dos líneas']] },
+  ];
+  const LLAVE_ESTADO = 'ol399:estado';
+  let estado = { ...PROPUESTA, orden: 'cerca', menu: false };
+  try { const g = JSON.parse(localStorage.getItem(LLAVE_ESTADO) || 'null'); if (g && typeof g === 'object') estado = { ...estado, ...g, menu: false }; } catch {}
+  const guardar = () => { try { localStorage.setItem(LLAVE_ESTADO, JSON.stringify(estado)); } catch {} };
+  const preset = () => (['o','d','e','r'].every((k) => estado[k] === HOY[k]) ? 'hoy' : ['o','d','e','r'].every((k) => estado[k] === PROPUESTA[k]) ? 'propuesta' : null);
+
+  // ===== Las reglas.
+  const vida = (l) => {
+    const linea = (h) => `Próximo: ${h.dia} · ${h.hora}`;
+    const curso = (c) => `${c.clase} hasta el ${c.hasta}`;
+    if (l.hora && l.curso) {
+      if (estado.r === 'hora') return [linea(l.hora)];
+      if (estado.r === 'dos') return [linea(l.hora), curso(l.curso)];
+      // Lo primero por fecha: la expo (empezó antes), como OL-398.
+      return [curso(l.curso)];
+    }
+    return l.hora ? [linea(l.hora)] : l.curso ? [curso(l.curso)] : [];
+  };
+  const inicioDe = (l) => (l.hora && l.curso ? (estado.r === 'hora' ? l.hora.iso : '2026-09-21') : l.hora ? l.hora.iso : '2026-09-21');
+  const conHora = (l) => !!l.hora && (estado.r !== 'primero' || !l.curso);
+  const porNombre = (a, b) => a.nombre.localeCompare(b.nombre, 'es');
+  function ordenarCon(lista, modo) {
+    if (modo === 'cerca') return [...lista].sort((a, b) => a.km - b.km);
+    if (modo === 'fecha') return [...lista].sort((a, b) => inicioDe(a).localeCompare(inicioDe(b)) || porNombre(a, b));
+    if (modo === 'cierre') return [...lista].sort((a, b) => Number(!!b.curso) - Number(!!a.curso) || (a.curso && b.curso ? a.curso.iso.localeCompare(b.curso.iso) : inicioDe(a).localeCompare(inicioDe(b))) || porNombre(a, b));
+    // 'hora': con hora primero por fecha; luego lo en curso, el que cierra antes primero.
+    return [...lista].sort((a, b) => Number(conHora(b)) - Number(conHora(a)) || (conHora(a) ? a.hora.iso.localeCompare(b.hora.iso) : a.curso.iso.localeCompare(b.curso.iso)) || porNombre(a, b));
+  }
+  function grupos(conUbicacion) {
+    const con = LUGARES.filter((l) => l.hora || l.curso);
+    const sin = LUGARES.filter((l) => !l.hora && !l.curso);
+    const modoCon = conUbicacion ? (estado.d !== 'ninguno' && estado.orden === 'pronto' ? 'hora' : 'cerca') : estado.o;
+    return [
+      { titulo: 'Con eventos', lista: ordenarCon(con, modoCon) },
+      { titulo: 'Sin eventos próximos', lista: conUbicacion ? [...sin].sort((a, b) => a.km - b.km) : [...sin].sort(porNombre) },
+    ];
+  }
+  const kmTexto = (km) => (km < 1 ? `a ${Math.round(km * 1000)} m` : `a ${km.toFixed(1).replace('.', ',')} km`);
+  const etiquetas = () => (estado.e === 'cortas' ? { cerca: 'Cerca', pronto: 'Pronto' } : { cerca: 'Más cercanos primero', pronto: 'Eventos próximos primero' });
+
+  // ===== Pintar un teléfono.
+  function desplegable(donde) {
+    if (estado.d !== donde) return '';
+    const E = etiquetas();
+    const actual = estado.orden === 'pronto' ? E.pronto : E.cerca;
+    return `<div class="orden${donde === 'chip' ? ' chip-orden' : ''}"><button type="button" id="orden-boton" aria-haspopup="menu" aria-expanded="${estado.menu}">${esc(actual)}${I.caret}</button>
+      <div class="menu" role="menu" id="orden-menu" ${estado.menu ? '' : 'hidden'}>
+        <button type="button" role="menuitemradio" data-orden="cerca" aria-checked="${estado.orden === 'cerca'}">${I.check}<span>${esc(E.cerca)}</span></button>
+        <button type="button" role="menuitemradio" data-orden="pronto" aria-checked="${estado.orden === 'pronto'}">${I.check}<span>${esc(E.pronto)}</span></button>
+      </div></div>`;
+  }
+  function renglon(l, conUbicacion) {
+    const datos = [l.tipo, l.calle, conUbicacion ? kmTexto(l.km) : null].filter(Boolean).join(' · ');
+    const lineas = vida(l).map((t) => `<small class="vida">${I.cal}<span>${esc(t)}</span></small>`).join('');
+    return `<li class="renglon" data-id="${l.id}"><div class="foto ${l.foto === 'SN' ? '' : l.foto}">${l.foto === 'SN' ? 'SN' : ''}</div><div class="cuerpo"><h4>${esc(l.nombre)}</h4><small>${I.pin}<span>${esc(datos)}</span></small>${lineas}</div><span class="btn${l.sigue ? ' sigue' : ''}">${l.sigue ? I.check : I.campana}</span></li>`;
+  }
+  function pintar(el, conUbicacion) {
+    const G = grupos(conUbicacion);
+    const total = LUGARES.length;
+    el.innerHTML = `
+      <div class="cab">${I.mas}<span class="logo">SMSNSTRS</span>${I.lupa}${I.campana}</div>
+      <div class="contexto"><span class="chip">${I.pin}San Luis Potosí ${I.caret}</span><span class="chip">${I.filtros}Filtros</span>${conUbicacion ? desplegable('chip') : ''}</div>
+      <div class="mapa"><i class="v" style="left:26%;top:40%"></i><i class="v" style="left:40%;top:60%"></i><i style="left:60%;top:30%"></i><i class="ok" style="left:70%;top:70%"></i><i style="left:84%;top:45%"></i>${conUbicacion ? '<span class="yo"></span>' : ''}</div>
+      <div class="hoja-lista"><span class="asa-l"></span>
+        <div class="titulo-lista"><h2>${total} lugares</h2>${conUbicacion ? desplegable('titulo') : ''}</div>
+        <div class="lista">${G.map((g) => `<div class="grupo"><h3>${esc(g.titulo)} <small>· ${g.lista.length}</small></h3>${conUbicacion && g.titulo === 'Con eventos' ? desplegable('grupo') : ''}</div><ul>${g.lista.map((l) => renglon(l, conUbicacion)).join('')}</ul>`).join('')}</div>
+      </div>
+      <nav class="nav"><span>Inicio</span><span>Agenda</span><span class="on">Lugares</span><span>Artistas</span><span>Perfil</span></nav>`;
+    if (conUbicacion) {
+      el.querySelector('#orden-boton')?.addEventListener('click', () => { estado.menu = !estado.menu; pintarTodo(); });
+      el.querySelectorAll('[data-orden]').forEach((b) => b.addEventListener('click', () => { estado.orden = b.dataset.orden; estado.menu = false; guardar(); pintarTodo(); }));
+    }
+  }
+
+  // ===== La hoja.
+  function pintarEjercicios() {
+    $('ejercicios').innerHTML = EJERCICIOS.map((e) => `<li class="ejercicio" data-clave="${e.clave}"><b>${esc(e.titulo)}</b><small>${esc(e.nota)}</small>${e.firma ? `<small class="firma">${esc(e.firma)}</small>` : ''}
+      <div class="opciones${e.opciones.length === 2 ? ' dos' : e.opciones.length === 4 ? ' dos' : ''}" role="group">${e.opciones.map(([v, t]) => `<button type="button" data-clave="${e.clave}" data-valor="${v}" aria-pressed="${estado[e.clave] === v}">${esc(t)}</button>`).join('')}</div></li>`).join('');
+    $('ejercicios').querySelectorAll('button[data-clave]').forEach((b) => b.addEventListener('click', () => { estado[b.dataset.clave] = b.dataset.valor; guardar(); pintarTodo(); }));
+  }
+  function medir() {
+    const sin = grupos(false)[0].lista.slice(0, 5);
+    const nHora = sin.filter((l) => conHora(l)).length;
+    $('m-hora').textContent = String(nHora); $('m-hora').className = nHora >= 4 ? 'bien' : nHora >= 3 ? '' : 'mal';
+    $('s-hora').textContent = sin.map((l) => l.nombre.split(' ')[0]).join(' · ');
+    const toques = estado.d === 'ninguno' ? '—' : '2';
+    $('m-toques').textContent = toques; $('m-toques').className = estado.d === 'ninguno' ? 'mal' : 'bien';
+    $('s-toques').textContent = estado.d === 'ninguno' ? 'no se puede' : 'abrir y elegir';
+    const altos = [...document.querySelectorAll('#tel-sin .renglon')].map((r) => r.getBoundingClientRect().height);
+    const alto = Math.round(Math.max(0, ...altos));
+    $('m-alto').textContent = String(alto); $('m-alto').className = alto <= 112 ? 'bien' : alto <= 136 ? '' : 'mal';
+    $('s-alto').textContent = 'el del MUNI con las dos líneas';
+    const expos = [...document.querySelectorAll('#tel-sin .vida')].filter((s) => /Exposición hasta/.test(s.textContent)).length;
+    $('m-expos').textContent = `${expos} de 2`; $('m-expos').className = expos === 2 ? 'bien' : 'mal';
+    $('s-expos').textContent = expos === 2 ? 'el MUNI y el Cossío' : 'el MUNI pierde la suya';
+  }
+  const PORQUE = {
+    hoy: 'Hoy: «Con eventos» va por la fecha de lo próximo, así que el MUNI (expo abierta desde septiembre) sale antes que el Teatro de la Paz (hoy a las 20:00); con ubicación no hay forma de pedir otro orden.',
+    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; con ubicación, el desplegable en la cabecera de «Con eventos» con tus palabras, cercanía por defecto, y la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
+  };
+  function pintarTodo() {
+    pintar($('tel-sin'), false);
+    pintar($('tel-con'), true);
+    pintarEjercicios();
+    const p = preset();
+    document.querySelectorAll('[data-preset]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === p)));
+    const E = etiquetas();
+    $('combinacion').innerHTML = `<b>O</b> ${esc(EJERCICIOS[0].opciones.find(([v]) => v === estado.o)[1])} · <b>D</b> ${esc(EJERCICIOS[1].opciones.find(([v]) => v === estado.d)[1])} · <b>E</b> ${esc(E.cerca)} / ${esc(E.pronto)} · <b>R</b> ${esc(EJERCICIOS[3].opciones.find(([v]) => v === estado.r)[1])}`;
+    $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compara con «Hoy» y «Propuesta» arriba.';
+    requestAnimationFrame(medir);
+  }
+  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { Object.assign(estado, b.dataset.preset === 'hoy' ? HOY : PROPUESTA, { menu: false }); guardar(); pintarTodo(); }));
+  const abrir = (si) => { $('hoja').classList.toggle('abierta', si); $('velo').classList.toggle('visible', si); $('fab').setAttribute('aria-expanded', String(si)); if (si) $('hoja-titulo').focus(); };
+  $('fab').addEventListener('click', () => abrir(true));
+  $('cerrar-hoja').addEventListener('click', () => abrir(false));
+  $('velo').addEventListener('click', () => abrir(false));
+  document.addEventListener('click', (ev) => { if (estado.menu && !ev.target.closest('.orden')) { estado.menu = false; pintarTodo(); } });
+  window.prototipo = { aplicar: (v) => { Object.assign(estado, v); guardar(); pintarTodo(); }, estado: () => ({ ...estado }), HOY, PROPUESTA };
+  pintarTodo();
+})();
+</script>
+</body>
+</html>
