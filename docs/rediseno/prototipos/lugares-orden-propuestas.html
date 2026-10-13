@@ -91,7 +91,15 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
 .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--alto-nav); padding: 0 var(--espacio-2); background: var(--fondo); border-top: 1px solid var(--borde); font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); text-align: center; align-items: center; }
 .nav span.on { color: var(--primario); }
 .nav span.on::before { content: ""; display: block; width: 56px; height: 28px; margin: 0 auto 2px; border-radius: var(--radio-pildora); background: var(--primario); }
-.aviso-sin { margin: 0; padding: var(--espacio-2) var(--gutter); color: var(--texto-suave); font-size: var(--letra-xs); }
+.aviso-sin { margin: 0; padding: 0 var(--gutter) var(--espacio-2); color: var(--texto-suave); font-size: var(--letra-xs); }
+/* El permiso de ubicación: como lo pinta Safari en iPhone (simulado). */
+.permiso { position: absolute; inset: 0; z-index: 9; display: grid; place-items: center; background: rgba(0, 0, 0, 0.35); }
+.caja-permiso { width: 270px; border-radius: 14px; background: rgba(245, 245, 245, 0.96); color: #000; font: 400 13px / 1.3 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; text-align: center; overflow: hidden; }
+.caja-permiso b { display: block; padding: 18px 16px 2px; font-size: 17px; font-weight: 600; line-height: 1.25; }
+.caja-permiso p { margin: 0; padding: 0 16px 14px; }
+.botones-permiso { display: grid; border-top: 1px solid rgba(0, 0, 0, 0.2); }
+.botones-permiso button { min-height: 44px; font: inherit; font-size: 17px; color: #007aff; border-bottom: 1px solid rgba(0, 0, 0, 0.2); }
+.botones-permiso button:last-child { border-bottom: 0; font-weight: 600; }
 .marca { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--primario); opacity: 0; }
 
 /* ===== La hoja de ejercicios. ===== */
@@ -194,7 +202,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
         <h2 id="t-como">Cómo se haría</h2>
         <ul class="notas">
           <li><b>Sin ubicación (O):</b> `agruparLugares` ordena «Con eventos» en dos tandas: primero los lugares cuyo próximo tiene hora (un evento, una sesión de taller, un acto), por fecha; luego los que solo tienen algo en curso de varios días (exposición, taller, festival), el que cierra antes primero. «Sin eventos próximos» sigue por nombre.</li>
-          <li><b>El desplegable (D, E):</b> junto a «N lugares», en la cabecera de la hoja. Con ubicación: «Cercanos primero» (lo de hoy), «Próximos primero» (el orden de arriba en «Con eventos»; la distancia sigue en cada renglón) y «Alfabético» (los dos grupos por nombre). Sin ubicación: «Próximos primero» y «Alfabético». La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
+          <li><b>El desplegable (D, E):</b> junto a «N lugares», en la cabecera de la hoja, siempre con las tres opciones. «Cercanos primero» es lo de hoy con ubicación; sin ella, elegirlo pide el permiso por el mismo camino que el botón «Mi ubicación» (`puntoDeCercania`, `useUbicacionFresca`) y, concedido, ordena por distancia; negado, se queda en «Próximos primero» con una línea que lo dice. «Próximos primero» aplica el orden de arriba a «Con eventos» (la distancia sigue en cada renglón); «Alfabético», los dos grupos por nombre. La elección se guarda en el teléfono con la memoria de pantalla de Lugares (`useMemoriaPantalla`).</li>
           <li><b>El renglón con las dos cosas (R):</b> `conProximo` guarda por lugar lo próximo con hora y, aparte, lo que está en curso; `RenglonLugar` pinta lo que diga la opción elegida. Sin tablas nuevas ni migración: todo sale de la consulta de eventos que ya trae `/lugares`.</li>
         </ul>
       </section>
@@ -247,16 +255,16 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   const EJERCICIOS = [
     { clave: 'o', titulo: 'O · Sin ubicación: qué va primero en «Con eventos»', nota: 'Hoy ordena por la fecha de lo próximo, así que una expo abierta desde septiembre va antes que el concierto de mañana.',
       opciones: [['fecha', 'Por fecha (hoy)'], ['hora', 'Con hora primero'], ['cierre', 'En curso primero']], firma: 'Founder, 13 oct: «los eventos van antes que las expos cuando el usuario no tiene activa ubicación».' },
-    { clave: 'd', titulo: 'D · Dónde va el desplegable', nota: 'Con ubicación: «Cercanos primero» · «Próximos primero» · «Alfabético». Sin ubicación (propuesta del gestor): «Próximos primero» · «Alfabético». «Alfabético» ordena los dos grupos por nombre.',
-      opciones: [['ninguno', 'Ninguno (hoy)'], ['titulo', 'Cabecera «N lugares»'], ['grupo', 'Cabecera «Con eventos»'], ['chip', 'Chip junto a Filtros']], firma: 'Founder, 13 oct: «el dropdown debe [ir] con la cantidad de lugares, agrega por orden alfabético también».' },
+    { clave: 'd', titulo: 'D · Dónde va el desplegable', nota: 'Las mismas tres opciones con o sin ubicación: «Cercanos primero» · «Próximos primero» · «Alfabético». Sin ubicación, «Cercanos primero» pide el permiso (en el teléfono de la izquierda, tócalo). «Alfabético» ordena los dos grupos por nombre, sin mezclarlos.',
+      opciones: [['ninguno', 'Ninguno (hoy)'], ['titulo', 'Cabecera «N lugares»'], ['grupo', 'Cabecera «Con eventos»'], ['chip', 'Chip junto a Filtros']], firma: 'Founder, 13 oct: «el dropdown debe [ir] con la cantidad de lugares, agrega por orden alfabético también»; «agregar cercanos primero aunque no tenga activa ubicación, pero que eso haga que se active».' },
     { clave: 'e', titulo: 'E · Qué dicen sus opciones', nota: 'El letrero corto que pediste, las frases largas o solo la palabra.',
       opciones: [['firmadas', '«Cercanos primero» · «Próximos primero»'], ['largas', '«Más cercanos primero» · «Eventos próximos primero»'], ['cortas', '«Cerca» · «Pronto»']], firma: 'Founder, 13 oct: «cortemos el letrero: Cercanos primero, Próximos primero».' },
     { clave: 'r', titulo: 'R · Un lugar con expo abierta y evento con hora (el MUNI)', nota: 'Hoy dice lo primero por fecha: la expo. Qué debe decir el renglón.',
       opciones: [['primero', 'Lo primero por fecha (la expo)'], ['hora', 'El evento con hora'], ['dos', 'Las dos líneas']] },
   ];
   const LLAVE_ESTADO = 'ol399:estado';
-  let estado = { ...PROPUESTA, orden: 'cerca', ordenSin: 'pronto', menu: false };
-  try { const g = JSON.parse(localStorage.getItem(LLAVE_ESTADO) || 'null'); if (g && typeof g === 'object') estado = { ...estado, ...g, menu: false }; } catch {}
+  let estado = { ...PROPUESTA, orden: 'cerca', ordenSin: 'pronto', menu: false, ubicacionSin: false, pidiendo: false, avisoSin: '' };
+  try { const g = JSON.parse(localStorage.getItem(LLAVE_ESTADO) || 'null'); if (g && typeof g === 'object') estado = { ...estado, ...g, menu: false, pidiendo: false, avisoSin: '' }; } catch {}
   const guardar = () => { try { localStorage.setItem(LLAVE_ESTADO, JSON.stringify(estado)); } catch {} };
   const preset = () => (['o','d','e','r'].every((k) => estado[k] === HOY[k]) ? 'hoy' : ['o','d','e','r'].every((k) => estado[k] === PROPUESTA[k]) ? 'propuesta' : null);
 
@@ -287,11 +295,13 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     const con = LUGARES.filter((l) => l.hora || l.curso);
     const sin = LUGARES.filter((l) => !l.hora && !l.curso);
     const hay = estado.d !== 'ninguno';
-    const elegido = conUbicacion ? (hay ? estado.orden : 'cerca') : hay && estado.ordenSin === 'abc' ? 'abc' : 'pronto';
-    const modoCon = elegido === 'abc' ? 'abc' : conUbicacion ? (elegido === 'pronto' ? 'hora' : 'cerca') : estado.o;
+    const ubic = conUbicacion || estado.ubicacionSin;
+    let elegido = conUbicacion ? (hay ? estado.orden : 'cerca') : hay ? estado.ordenSin : 'pronto';
+    if (!ubic && elegido === 'cerca') elegido = 'pronto'; // sin permiso todavía: se queda como estaba
+    const modoCon = elegido === 'abc' ? 'abc' : elegido === 'cerca' ? 'cerca' : ubic ? 'hora' : estado.o;
     return [
       { titulo: 'Con eventos', lista: ordenarCon(con, modoCon) },
-      { titulo: 'Sin eventos próximos', lista: conUbicacion && elegido !== 'abc' ? [...sin].sort((a, b) => a.km - b.km) : [...sin].sort(porNombre) },
+      { titulo: 'Sin eventos próximos', lista: ubic && elegido !== 'abc' ? [...sin].sort((a, b) => a.km - b.km) : [...sin].sort(porNombre) },
     ];
   }
   const kmTexto = (km) => (km < 1 ? `a ${Math.round(km * 1000)} m` : `a ${km.toFixed(1).replace('.', ',')} km`);
@@ -301,7 +311,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   function desplegable(donde, conUbicacion) {
     if (estado.d !== donde) return '';
     const E = etiquetas();
-    const claves = conUbicacion ? ['cerca', 'pronto', 'abc'] : ['pronto', 'abc'];
+    const claves = ['cerca', 'pronto', 'abc'];
     const elegido = conUbicacion ? estado.orden : estado.ordenSin;
     const abierto = estado.menu === (conUbicacion ? 'con' : 'sin');
     return `<div class="orden${donde === 'chip' ? ' chip-orden' : ''}"><button type="button" class="orden-boton" aria-haspopup="menu" aria-expanded="${abierto}">${esc(E[elegido])}${I.caret}</button>
@@ -315,18 +325,31 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   function pintar(el, conUbicacion) {
     const G = grupos(conUbicacion);
     const total = LUGARES.length;
+    const ubic = conUbicacion || estado.ubicacionSin;
+    const dialogo = !conUbicacion && estado.pidiendo ? `<div class="permiso"><div class="caja-permiso"><b>«somosnosotros.org» quiere usar tu ubicación</b><p>Para ordenar los lugares por cercanía.</p><div class="botones-permiso"><button type="button" data-permiso="si">Permitir mientras uso la app</button><button type="button" data-permiso="no">No permitir</button></div></div></div>` : '';
     el.innerHTML = `
       <div class="cab">${I.mas}<span class="logo">SMSNSTRS</span>${I.lupa}${I.campana}</div>
       <div class="contexto"><span class="chip">${I.pin}San Luis Potosí ${I.caret}</span><span class="chip">${I.filtros}Filtros</span>${desplegable('chip', conUbicacion)}</div>
-      <div class="mapa"><i class="v" style="left:26%;top:40%"></i><i class="v" style="left:40%;top:60%"></i><i style="left:60%;top:30%"></i><i class="ok" style="left:70%;top:70%"></i><i style="left:84%;top:45%"></i>${conUbicacion ? '<span class="yo"></span>' : ''}</div>
+      <div class="mapa"><i class="v" style="left:26%;top:40%"></i><i class="v" style="left:40%;top:60%"></i><i style="left:60%;top:30%"></i><i class="ok" style="left:70%;top:70%"></i><i style="left:84%;top:45%"></i>${ubic ? '<span class="yo"></span>' : ''}</div>
       <div class="hoja-lista"><span class="asa-l"></span>
         <div class="titulo-lista"><h2>${total} lugares</h2>${desplegable('titulo', conUbicacion)}</div>
-        <div class="lista">${G.map((g) => `<div class="grupo"><h3>${esc(g.titulo)} <small>· ${g.lista.length}</small></h3>${g.titulo === 'Con eventos' ? desplegable('grupo', conUbicacion) : ''}</div><ul>${g.lista.map((l) => renglon(l, conUbicacion)).join('')}</ul>`).join('')}</div>
+        ${!conUbicacion && estado.avisoSin ? `<p class="aviso-sin">${esc(estado.avisoSin)}</p>` : ''}
+        <div class="lista">${G.map((g) => `<div class="grupo"><h3>${esc(g.titulo)} <small>· ${g.lista.length}</small></h3>${g.titulo === 'Con eventos' ? desplegable('grupo', conUbicacion) : ''}</div><ul>${g.lista.map((l) => renglon(l, ubic)).join('')}</ul>`).join('')}</div>
       </div>
-      <nav class="nav"><span>Inicio</span><span>Agenda</span><span class="on">Lugares</span><span>Artistas</span><span>Perfil</span></nav>`;
+      <nav class="nav"><span>Inicio</span><span>Agenda</span><span class="on">Lugares</span><span>Artistas</span><span>Perfil</span></nav>${dialogo}`;
+    el.querySelectorAll('[data-permiso]').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.permiso === 'si') Object.assign(estado, { ubicacionSin: true, pidiendo: false, avisoSin: '' });
+      else Object.assign(estado, { ordenSin: 'pronto', pidiendo: false, avisoSin: 'Sin tu ubicación no hay cercanos: siguen los próximos primero.' });
+      guardar(); pintarTodo();
+    }));
     const cual = conUbicacion ? 'con' : 'sin';
     el.querySelector('.orden-boton')?.addEventListener('click', () => { estado.menu = estado.menu === cual ? false : cual; pintarTodo(); });
-    el.querySelectorAll('[data-orden]').forEach((b) => b.addEventListener('click', () => { estado[conUbicacion ? 'orden' : 'ordenSin'] = b.dataset.orden; estado.menu = false; guardar(); pintarTodo(); }));
+    el.querySelectorAll('[data-orden]').forEach((b) => b.addEventListener('click', () => {
+      estado[conUbicacion ? 'orden' : 'ordenSin'] = b.dataset.orden; estado.menu = false; estado.avisoSin = '';
+      // Sin ubicación, «Cercanos primero» pide el permiso (founder, 13 oct: «que eso haga que se active»).
+      if (!conUbicacion && b.dataset.orden === 'cerca' && !estado.ubicacionSin) estado.pidiendo = true;
+      guardar(); pintarTodo();
+    }));
   }
 
   // ===== La hoja.
@@ -353,9 +376,10 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   }
   const PORQUE = {
     hoy: 'Hoy: «Con eventos» va por la fecha de lo próximo, así que el MUNI (expo abierta desde septiembre) sale antes que el Teatro de la Paz (hoy a las 20:00); con ubicación no hay forma de pedir otro orden.',
-    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; el desplegable va junto a «10 lugares»: con ubicación «Cercanos primero» (por defecto) · «Próximos primero» · «Alfabético», y sin ubicación «Próximos primero» · «Alfabético»; la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
+    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; el desplegable va junto a «10 lugares» con «Cercanos primero» · «Próximos primero» · «Alfabético»; con ubicación arranca en cercanos y sin ella en próximos, y pedir cercanos pide el permiso; la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
   };
   function pintarTodo() {
+    $('etiqueta-sin').innerHTML = estado.ubicacionSin ? '<b>Sin ubicación</b> · eligió «Cercanos primero» y dio permiso' : '<b>Sin ubicación</b> · el orden de «Con eventos»';
     pintar($('tel-sin'), false);
     pintar($('tel-con'), true);
     pintarEjercicios();
@@ -366,7 +390,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compara con «Hoy» y «Propuesta» arriba.';
     requestAnimationFrame(medir);
   }
-  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { Object.assign(estado, b.dataset.preset === 'hoy' ? HOY : PROPUESTA, { menu: false, orden: 'cerca', ordenSin: 'pronto' }); guardar(); pintarTodo(); }));
+  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { Object.assign(estado, b.dataset.preset === 'hoy' ? HOY : PROPUESTA, { menu: false, orden: 'cerca', ordenSin: 'pronto', ubicacionSin: false, pidiendo: false, avisoSin: '' }); guardar(); pintarTodo(); }));
   const abrir = (si) => { $('hoja').classList.toggle('abierta', si); $('velo').classList.toggle('visible', si); $('fab').setAttribute('aria-expanded', String(si)); if (si) $('hoja-titulo').focus(); };
   $('fab').addEventListener('click', () => abrir(true));
   $('cerrar-hoja').addEventListener('click', () => abrir(false));
