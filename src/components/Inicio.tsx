@@ -92,7 +92,8 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         <Suspense fallback={<CarrilEsqueleto forma="xl" />}>{slotEstelar}</Suspense>
         {/* OL-387 (B1 y B2, firmados el 2026-10-12): el banner para compartir la app, justo tras el carril estelar y antes de «Tus planes»; solo con
             sesión y, de eso, solo desde la tercera visita (lo decide el teléfono tras el primer pintado: sin él, no ocupa nada). */}
-        {conSesion && <BannerCompartir zona={zona} />}
+        {/* Para todo el mundo, con o sin sesión (OL-397; antes solo con sesión, OL-387). */}
+        <BannerCompartir zona={zona} />
         {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
         {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). OL-375: todas con la portada del sistema,

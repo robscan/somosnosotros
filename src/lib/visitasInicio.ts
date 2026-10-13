@@ -1,8 +1,9 @@
 /**
  * Cuándo sale el banner para compartir la app en Inicio (OL-387; prototipo firmado `inicio-propuestas.html`, B1 «tras Destacados», bitácora 417).
  * El founder (2026-10-12): «aparecerá para usuarios logueados que hayan entrado más de 2 veces». Se cuenta en el teléfono, no en el servidor: en
- * `localStorage`, la lista de días distintos (YYYY-MM-DD, el día de la ciudad) en que se abrió Inicio con sesión, así recargar no cuenta. Sale desde
- * el tercer día distinto. La × lo esconde 30 días; tras compartir no vuelve. Todo en una sola llave; sin red, sin tabla y sin saber nada de la
+ * `localStorage`, la lista de días distintos (YYYY-MM-DD, el día de la ciudad) en que se abrió Inicio, así recargar no cuenta. Salía desde
+ * el tercer día distinto y solo con sesión; desde OL-397 (founder, la noche del 12: «mejor que lo vea todos siempre. Luego volvemos a este
+ * criterio de 3 días») sale desde el primer día y con o sin sesión (`DIAS_PARA_BANNER`). La × lo esconde 30 días; tras compartir no vuelve. Todo en una sola llave; sin red, sin tabla y sin saber nada de la
  * persona en el servidor. Sin almacenamiento (modo privado, bloqueado o lleno), no sale: si no se puede recordar la ×, no se insiste.
  */
 
@@ -17,8 +18,9 @@ export type EstadoCompartir = {
 };
 
 export const LLAVE_COMPARTIR = "somosnosotros:inicio-compartir";
-/** «Más de 2 veces»: desde el tercer día distinto. */
-export const DIAS_PARA_BANNER = 3;
+/** Desde el primer día: el founder (2026-10-12, noche): «mejor que lo vea todos siempre. Luego volvemos a este criterio de 3 días» (OL-397).
+ * La regla de OL-387 («más de 2 veces»: desde el tercer día distinto) se vuelve a poner cambiando este número a 3. */
+export const DIAS_PARA_BANNER = 1;
 export const MAXIMO_DIAS = 10;
 export const DESCANSO_DIAS = 30;
 
@@ -56,13 +58,13 @@ export function leerEstado(crudo: string | null): EstadoCompartir {
   }
 }
 
-/** Abrió Inicio con sesión hoy: el día cuenta una sola vez. */
+/** Abrió Inicio hoy: el día cuenta una sola vez. */
 export function anotarVisita(e: EstadoCompartir, hoy: string): EstadoCompartir {
   if (e.dias.includes(hoy)) return e;
   return { ...e, dias: [...e.dias, hoy].sort().slice(-MAXIMO_DIAS) };
 }
 
-/** ¿Sale hoy? Desde el tercer día distinto, si no compartió y si la × ya descansó. */
+/** ¿Sale hoy? Desde el día `DIAS_PARA_BANNER` (hoy el primero), si no compartió y si la × ya descansó. */
 export function tocaBanner(e: EstadoCompartir, hoy: string): boolean {
   if (e.compartido || e.dias.length < DIAS_PARA_BANNER) return false;
   return e.cerradoHasta === null || hoy >= e.cerradoHasta;
@@ -95,7 +97,7 @@ export function guardar(e: EstadoCompartir, almacen: Almacen | null = almacenLoc
   }
 }
 
-/** Se abrió Inicio con sesión: anota el día y dice si sale el banner. Si no se puede leer o guardar, no sale (sin memoria, la × no se recordaría). */
+/** Se abrió Inicio (con o sin sesión): anota el día y dice si sale el banner. Si no se puede leer o guardar, no sale (sin memoria, la × no se recordaría). */
 export function visitaDeInicio(hoy: string, almacen: Almacen | null = almacenLocal()): boolean {
   const antes = leerGuardado(almacen);
   if (!antes) return false;
@@ -131,7 +133,7 @@ export function suscribirseBanner(escucha: () => void): () => void {
 
 export const bannerALaVista = (): boolean => aLaVista;
 
-/** Se abrió Inicio con sesión: anota el día y muestra el banner si toca. */
+/** Se abrió Inicio: anota el día y muestra el banner si toca. */
 export function abrirInicio(hoy: string, almacen: Almacen | null = almacenLocal()): void {
   fijarBanner(visitaDeInicio(hoy, almacen));
 }
