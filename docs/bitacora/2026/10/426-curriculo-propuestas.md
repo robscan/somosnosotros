@@ -1,7 +1,7 @@
 # 426 · Prototipo: el currículo del artista y el informe del lugar en PDF (OL-395)
 
 **Fecha:** 2026-10-12 (noche). **Rama:** `curriculo-propuestas`, desde `origin/main` (`ac8e30e`, con OL-390 y OL-391). **Gestor:** Claude Fable 5.1 (Gestor de cambios VI). **Sin código de la app, sin migración.**
-**Estado:** página armada y publicada en privado para los comentarios del founder; esperando la firma. Pieza 4 de 5 del historial («Publica y continúa con los otros pasos», 12 de oct).
+**Estado:** firmada por el founder el 12 de oct por la noche («Acepto propuesta de fecha 4 de», leído como la pieza 4 tal como la propuesta): T presentación · F carta · E sobrio · R1 · R2 reciente · R3 · R4 · I1 mes · I2 lista · I3 · Q solo quien gestiona · O junto a «Tu año» · X PDF. Pasa a código como OL-396 (bitácora 427). Pieza 4 de 5 del historial («Publica y continúa con los otros pasos», 12 de oct).
 
 ## El encargo
 

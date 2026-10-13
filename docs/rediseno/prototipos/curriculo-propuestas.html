@@ -690,6 +690,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .hoja-app .acciones-h .principal { background: var(--primario); color: #fff; }
 .hoja-app .acciones-h .secundario { background: var(--fondo); border: 1px solid var(--borde); color: var(--texto); }
 .hoja-app .acciones-h .i { width: 22px; height: 22px; }
+.preajustes.una { grid-template-columns: 1fr; }
 </style>
 
 <main class="escena" id="escena">
@@ -713,9 +714,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     </header>
     <div class="hoja-cuerpo" id="hoja-cuerpo">
       <div class="resumen">
-        <div class="preajustes dos" role="group" aria-label="Preajustes">
-          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
-          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>por firmar</small></button>
+        <div class="preajustes una" role="group" aria-label="Preajustes">
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 oct, noche</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <label class="selector-ficha"><span>De quién</span><select id="sujeto" aria-label="De quién es el documento"></select></label>
@@ -789,10 +789,11 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
   // ===== Ejercicios y preajustes. No hay «Hoy»: ni el currículo ni el informe existen en producción.
   const PROPUESTA = { t: 'presentacion', f: 'carta', e: 'sobrio', r1: true, r2: 'reciente', r3: true, r4: true, i1: 'mes', i2: 'lista', i3: true, q: 'gestiona', o: 'seccion', x: 'pdf' };
   const CLAVES = Object.keys(PROPUESTA);
-  const PRESETS = { propuesta: { nombre: 'Propuesta', e: { ...PROPUESTA } }, firmada: { nombre: 'Firmada', e: { ...PROPUESTA }, pendiente: true } };
+  // Firma del founder (12 de oct, noche): «Acepto propuesta de fecha 4 de» (pieza 4, tal como la propuesta).
+  const PRESETS = { propuesta: { nombre: 'Propuesta', e: { ...PROPUESTA } }, firmada: { nombre: 'Firmada', e: { ...PROPUESTA } } };
   const PORQUE = {
     propuesta: 'Por qué: «Presentación» (T) es lo que un booker o una galería esperan recibir y no suena a trámite escolar; «Currículo» queda en la hoja como sinónimo. Carta (F) porque es el tamaño de México; el A4 es un toque. Sobrio (E): blanco, negro y el violeta solo en los rótulos, porque se imprime y se adjunta a un correo. La reseña tal cual la ficha (R1) con las redes debajo, lo más reciente primero (R2) como en la trayectoria, las próximas fechas al final (R3) porque también venden, y con quién tocó (R4) porque es lo que diferencia un currículo de una lista. En el informe, el mes (I1) es el periodo con el que rinde cuentas un espacio, con la lista de actividades y los artistas (I2) y «dijeron Voy» con su definición (I3), nunca como asistencia. Solo quien gestiona descarga (Q); se abre junto a «Tu año» al final de la sección (O), donde ya está mirando su pasado. Solo PDF (X): la tabla CSV es un toque más cuando alguien la pida.',
-    firmada: 'Todavía no hay firma: hasta que firmes, «Firmada» es la propuesta del gestor.',
+    firmada: 'Firmada el 12 de oct por la noche tal como la propuesta: «Presentación» en carta y sobrio con reseña, trayectoria reciente primero, próximas fechas y con quién; informe del mes con cifras definidas, actividades y artistas y «dijeron Voy»; solo quien gestiona, junto a «Tu año», solo PDF. Pasa a código como OL-396.',
   };
   const EJERCICIOS = [
     { k: 't', t: 'T · Cómo se llama el del artista', d: '«Presentación de Leo Traeger», «Currículo de Leo Traeger» o «Trayectoria de Leo Traeger»: el título del PDF y del botón.', opciones: [['presentacion', 'Presentación'], ['curriculo', 'Currículo'], ['trayectoria', 'Trayectoria']], f: 'Founder (8 de oct): «currículos, reportes». Investigación de artistas §8: «presentación profesional».' },
@@ -810,7 +811,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     { k: 'x', t: 'X · Qué se descarga', d: 'Solo el PDF, o también la tabla (CSV) con las mismas filas para quien lleve sus cuentas en una hoja de cálculo.', opciones: [['pdf', 'PDF'], ['pdf+csv', 'PDF y tabla']], f: 'Investigación de lugares §6: «primero registros y exportación tabular; un PDF narrativo puede ser una etapa posterior».' },
   ];
   const igual = (a, b) => CLAVES.every((k) => a[k] === b[k]);
-  const presetDe = (e) => (igual(PRESETS.propuesta.e, e) ? 'propuesta' : null);
+  const presetDe = (e) => (igual(PRESETS.firmada.e, e) ? 'firmada' : null);
   const NOMBRE_OPCION = { t: { presentacion: '', curriculo: 'T currículo', trayectoria: 'T trayectoria' }, f: { carta: '', a4: 'F A4' }, e: { sobrio: '', crema: 'E crema' }, r2: { reciente: '', cronologico: 'R2 cronológico' }, i1: { mes: '', anio: 'I1 año', todo: 'I1 todo' }, i2: { lista: '', cifras: 'I2 cifras' }, q: { gestiona: '', enlace: 'Q enlace' }, o: { seccion: '', menu: 'O menú' }, x: { pdf: '', 'pdf+csv': 'X PDF y tabla' } };
   const listaDe = (e) => { const l = []; for (const k of CLAVES) { if (NOMBRE_OPCION[k]) { if (NOMBRE_OPCION[k][e[k]]) l.push(NOMBRE_OPCION[k][e[k]]); } else if (e[k] !== PROPUESTA[k]) l.push(e[k] ? k.toUpperCase() : `sin ${k.toUpperCase()}`); } return l.join(' · '); };
   const LLAVE_ESTADO = 'curriculo-propuestas:estado:1';
@@ -1061,7 +1062,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     const p = presetDe(estado.e);
     for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
     const activos = listaDe(estado.e); const nombre = p ? PRESETS[p].nombre : 'Personalizada';
-    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}${p === 'propuesta' ? ' · por firmar' : ''}`;
+    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}`;
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta».';
     $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}`;
     $('fab-combinacion').textContent = `· ${p ? nombre : 'personalizada'}`;
