@@ -10,6 +10,8 @@ type Props = {
   titulo: string;
   /** Qué es (MUSEO, ARTES VISUALES, FESTIVAL): el chip que va sobre el título. */
   etiqueta?: string;
+  /** El chip dice «Se canceló» (OL-391): en el rojo apagado de error, como la etiqueta del historial. */
+  cancelado?: boolean;
   /** Una línea más bajo el título («Fotografía · Solista · San Luis Potosí»). */
   meta?: string;
   /** La foto redonda de un artista, a la izquierda del título; sin ella (`src` null), el símbolo SN redondo. */
@@ -30,7 +32,7 @@ type Props = {
  * hoja miden ahí cuándo la imagen ya se fue arriba. Con `banda`, su piel oscura: las mismas piezas y la fila de los números
  * (`Ficha.module.css`, «La cabecera oscura»).
  */
-export default function Heroe({ portada, alt, titulo, etiqueta, meta, avatar, banda, nivel = 1 }: Props) {
+export default function Heroe({ portada, alt, titulo, etiqueta, cancelado = false, meta, avatar, banda, nivel = 1 }: Props) {
   const Titulo = nivel === 1 ? "h1" : "h2";
   const oscura = banda !== undefined;
   return (
@@ -40,7 +42,7 @@ export default function Heroe({ portada, alt, titulo, etiqueta, meta, avatar, ba
       </figure>
       <div className={[ficha.titulo, avatar && ficha.conAvatar, oscura && ficha.oscura].filter(Boolean).join(" ")}>
         {avatar && <Cartel src={avatar.src} alt={avatar.alt} forma="avatar" />}
-        {etiqueta && <span className={ficha.etiqueta}>{etiqueta}</span>}
+        {etiqueta && <span className={cancelado ? `${ficha.etiqueta} ${ficha.cancelado}` : ficha.etiqueta}>{etiqueta}</span>}
         <Titulo>{titulo}</Titulo>
         {meta && <p className={ficha.meta}>{meta}</p>}
       </div>

@@ -14,7 +14,7 @@ import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { cartelAFormulario, ciudadDelSitio, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { horarioDesdeJson, type Franja } from "@/lib/horarioLugar";
-import { localAIso, zonaSegura } from "@/lib/fechas";
+import { eventoPaso, localAIso, zonaSegura } from "@/lib/fechas";
 import { mencionDeFestival } from "@/lib/sugerencias";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
@@ -374,6 +374,31 @@ export async function cambiarVisibleEvento(id: string, lugarId: string | null, v
   await supabase.from("eventos").update({ visible }).eq("id", id);
   revalidar(id, lugarId);
   redirect(`/eventos/${id}`);
+}
+
+/** Por qué no se pudo marcar: no es suyo (o no existe), aún no pasa, no se ve (borrador u oculto) o la base no lo guardó. */
+export type ResultadoCancelado = { ok: true; cancelado: boolean } | { ok: false; error: "sin_permiso" | "no_paso" | "no_visible" | "fallo" };
+
+/**
+ * «Se canceló» / «No se canceló» (OL-391): desde el menú «···» de la ficha de un evento que ya pasó, de un toque y sin diálogo (se deshace desde el
+ * aviso). Un evento que ya pasó cuenta como realizado en el historial de su artista y de su lugar salvo que quien lo gestiona (su autora o la
+ * administración) diga que se canceló. Las políticas de la base ya dejan editar solo a esas dos; aquí además: solo lo que ya pasó (`eventoPaso`, la
+ * misma regla que la ficha en pasado) y solo lo que se ve (un borrador o algo oculto no cambian). No manda avisos: la marca no es cuándo ni dónde.
+ */
+export async function marcarCancelado(id: string, cancelado: boolean): Promise<ResultadoCancelado> {
+  const { supabase, user } = await sesionOEntrar(`/eventos/${id}`);
+  if (!esUuid(id)) return { ok: false, error: "sin_permiso" };
+  const { data: e } = await supabase.from("eventos").select("id, slug, inicio, fin, zona, creado_por, visible, borrador, lugar_id, evento_padre_id, eventos_artistas(artista_id)").eq("id", id).maybeSingle();
+  if (!e) return { ok: false, error: "sin_permiso" };
+  if (e.creado_por !== user.id && !(await esAdminDeSesion(supabase, user.id))) return { ok: false, error: "sin_permiso" };
+  if (!e.visible || e.borrador) return { ok: false, error: "no_visible" };
+  if (!eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { ok: false, error: "no_paso" };
+  const { data, error } = await supabase.from("eventos").update({ cancelado }).eq("id", id).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: "fallo" };
+  const artistas = ((e.eventos_artistas ?? []) as { artista_id: string }[]).map((a) => a.artista_id);
+  revalidar(id, e.lugar_id, artistas, e.slug);
+  if (e.evento_padre_id) revalidatePath(`/eventos/${e.evento_padre_id}`);
+  return { ok: true, cancelado };
 }
 
 export type ResultadoCartel =
