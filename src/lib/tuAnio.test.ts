@@ -15,8 +15,16 @@ const art = (id: string, nombre = id): ArtistaDelEvento => ({ id, slug: id, nomb
 let n = 0;
 function ev(inicio: string, lugar: LugarDelEvento | null, artistas: ArtistaDelEvento[] = [], van = 0): EventoPasado {
   n++;
-  return { id: `e${n}`, slug: `e${n}`, titulo: `Evento ${n}`, inicio, fin: null, zona: ZONA, imagen: null, lugar_id: lugar?.id ?? null, sitio_texto: lugar ? null : "Jardín Colón", sitio_direccion: null, sitio_reservado: false, lugar, festival: null, artistas, van };
+  return { id: `e${n}`, slug: `e${n}`, titulo: `Evento ${n}`, inicio, fin: null, zona: ZONA, imagen: null, cancelado: false, lugar_id: lugar?.id ?? null, sitio_texto: lugar ? null : "Jardín Colón", sitio_direccion: null, sitio_reservado: false, lugar, festival: null, artistas, van };
 }
+
+describe("lo cancelado (OL-391)", () => {
+  it("no cuenta en «Tu año»", () => {
+    const lista = [ev("2026-10-01T02:00:00Z", MAC), { ...ev("2026-09-17T02:00:00Z", ACHE), cancelado: true }];
+    const r = resumirTuAnio({ tipo: "persona", id: "p1", nombre: "Ana", foto: null, eventos: lista, ahora: AHORA, zona: ZONA });
+    expect(r.protagonista.n).toBe(1);
+  });
+});
 
 describe("el periodo (P año)", () => {
   it("solo entra lo que empezó este año, en la zona de la ficha, del más viejo al más reciente", () => {
