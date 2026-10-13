@@ -61,23 +61,30 @@ three.js pesa 194 KB comprimido (90 + 104). Las funciones `medirFps()`, `medirRe
 
 Probado con toques reales en el navegador integrado a 390×844: tocar la nube elige el nodo más cercano (salió «Canto Quetzal» al tocar cerca de su esfera), «Filtros» abre el árbol, «Museo» deja 13 esferas violeta y cierra la hoja, «Lista» abre la hoja con «Museo · 13» ordenados por tamaño. Sin errores en la consola.
 
-## Las capturas (`capturas-424/`)
+## Las capturas (`capturas-424/`, versión final de la noche)
 
-1. `01-movil-nube.png` (390×844): la nube entera desde la cámara inicial: el cúmulo del centro (lugares violeta con los artistas crema flotando encima y los asistentes naranja debajo), los lugares de las afueras a su distancia real, los anillos de 1 km y, al fondo, el polvo gris del anillo de los sin conexión.
-2. `02-movil-lugar-elegido.png`: el Museo de Arte Contemporáneo elegido: blanco con anillo, tarjeta «Museo · San Luis Potosí · 0 seguidores · 7 asistencias · 10 eventos (4 próximos) · 7 conexiones», líneas a sus artistas (rotulados) y a tres asistentes anónimos; lo demás apagado.
-3. `03-movil-artista-elegido.png`: Canto Quetzal (artista «por completar», en 1 lugar): líneas a Estudio Ojo Zarco y a dos asistentes.
-4. `04-movil-asistente-elegido.png`: un asistente anónimo: tarjeta «Asistente · sin nombre ni perfil · Actividad media · posición inventada (la base no guarda dónde está nadie) · 8 conexiones».
-5. `05-movil-filtros.png`: la hoja del árbol abierta desde la izquierda, con las cuentas por tipo y disciplina.
-6. `06-movil-filtro-museos.png`: filtro «Museo»: solo las 13 esferas violeta.
-7. `07-movil-lista.png`: la hoja de abajo con «Museo · 13», cada renglón con tipo, «n siguen · n van» y sus conexiones.
-8. `08-movil-sin-conexion.png`: filtro «Sin conexión» desde lejos: el anillo de polvo gris a 8–9,5 km, la ciudad vacía en medio.
-9. `09-movil-desde-arriba.png`: la cámara casi vertical: el mapa de la ciudad tal cual (el cúmulo del centro, un cúmulo al oeste, otro al sur) con los halos de artistas alrededor de cada lugar.
-10. `10-movil-tema-claro.png`: el tema claro: fondo crema, lugares violeta, artistas en tinta, asistentes naranja.
-11. `11-ancho-nube.png` (844×390): a lo ancho, la nube cabe con el mando y la leyenda.
-12. `12-ancho-lugar-elegido.png`: el MAC elegido a lo ancho.
-13. `13-escritorio-tres-columnas.png` (1280×800): árbol · escena · lista; el Centro de las Artes (CEART) elegido con sus 20 conexiones rotuladas.
+Teléfono 390×844, tema oscuro salvo donde se dice:
 
-Lo que vi y no corregí: con el nodo elegido cerca, los rótulos de los vecinos se enciman entre sí y con la leyenda (captura 2 y 13); es cosmético y depende de cómo decida el founder la pantalla.
+1. `01-movil-mapa.png`: la lectura «Mapa» entera: el cúmulo del centro con sus líneas tenues, los lugares de las afueras a su distancia real con líneas largas hacia el centro, los anillos de 1 km y, arriba a la derecha, el nodo gris «518 artistas por conectar».
+2. `02-movil-lugar-elegido-dos-pasos.png`: el Museo de Arte Contemporáneo elegido: tarjeta «12 conexiones: 4 artistas · 5 lugares del mismo festival · 3 asistentes · a dos pasos, 98»; sus líneas gruesas (violeta las de festival, blancas las demás), sus vecinos rotulados y, a media luz, los vecinos de sus vecinos.
+3. `03-movil-artista-tocan-juntos.png`: Octavio Vázquez (artes visuales): «toca con 7 artistas · en 1 lugar · 1 asistente», las líneas crema entre artistas de la misma exposición colectiva.
+4. `04-movil-asistente-elegido.png`: un asistente anónimo: sin nombre ni perfil, posición inventada, sus líneas a lugares, artistas y a los asistentes con los que coincide (naranja).
+5. `05-movil-vista-red.png`: la lectura «Red»: el núcleo conectado (CEART, Cossío, Gamboa y sus artistas) y, alrededor, los cúmulos chicos y los lugares sin línea en su anillo.
+6. `06-movil-red-ceart.png`: el CEART elegido en «Red», con sus 25 conexiones y el segundo paso.
+7. `07-movil-lentes.png`: la hoja de la izquierda: las seis lentes arriba, luego Filtrar, Tiempo y Ajustes.
+8. `08-movil-lente-zonas-lista.png` y 9. `09-movil-lente-zonas-mapa.png`: la lente «¿Qué zonas no tienen un lugar a 2 km?»: la hoja con el diagnóstico y las tres zonas («4,3 km al sureste del centro · 43 km²»…) y la planta desde arriba con las celdas sin lugar en naranja.
+10. `10-movil-lente-islas.png`: «¿Qué lugares no comparten artista con nadie?»: las islas encendidas, lo demás apagado.
+11. `11-movil-lente-puentes-lista.png` y 12. `12-movil-lente-puentes-red.png`: «¿Quién une lugares distintos?»: los 6 puentes en la lista («une Centro de Difusión Cultural Raúl Gamboa y Museo Francisco Cossío») y, en «Red», solo ellos y sus lugares con sus líneas.
+13. `13-movil-lente-por-conectar.png`: el nodo «518 artistas por conectar» elegido: «Música 293 · Artes visuales 90 · Teatro 50…» y la lista por disciplina con «Copiar lista».
+14. `14-movil-tiempo-ventana.png` y 15. `15-movil-tiempo-nube.png`: ventana de 2 semanas hasta el 16 de octubre: en el árbol, el deslizador; en la nube, solo las líneas con un evento en esas dos semanas y los nodos sin línea activa atenuados; el diagnóstico añade «189 conexiones activas de 419».
+16. `16-movil-diagnostico.png`: la hoja de la lista con las cuatro frases del diagnóstico y «Todo · 227».
+17. `17-movil-tema-claro.png`: el tema claro.
+18. `18-ancho-lugar-elegido.png` (844×390): el MAC elegido a lo ancho.
+19. `19-escritorio-mapa.png` (1280×800): lentes y filtros · escena · diagnóstico y lista.
+20. `20-escritorio-lente-islas.png`: la lente de islas en escritorio.
+21. `21-escritorio-lente-puentes-red.png`: la lente de puentes en «Red» en escritorio.
+
+Lo que vi y no corregí: de cerca, los rótulos de los vecinos se enciman entre sí (capturas 2 y 6); con el elegido muy conectado las líneas gruesas tapan parte de la nube. Es cosmético y depende de cómo decida el founder la pantalla.
 
 ## Para el gestor
 

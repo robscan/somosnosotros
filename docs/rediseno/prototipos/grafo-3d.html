@@ -302,6 +302,7 @@ function cambiarVista(nueva) {
   const desde = pos.map((p) => p.slice()), hastaP = vista === "red" ? posRed : posMapa; const t0 = performance.now();
   transicion = (t) => { const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3); for (let i = 0; i < pos.length; i++) for (let c = 0; c < 3; c++) pos[i][c] = desde[i][c] + (hastaP[i][c] - desde[i][c]) * e; pintar(false); if (k >= 1) transicion = null; };
   anillos.visible = vista === "mapa"; zonasMesh.visible = vista === "mapa" && lenteActiva === "zonas";
+  animarCamara({ objetivo: new THREE.Vector3(0, 0, 0), distancia: vista === "red" ? 1450 : 1700 }, 900); // la cámara vuelve a encuadrar la nube entera
   const b = document.getElementById("vista-red"); b.setAttribute("aria-pressed", String(vista === "red")); b.textContent = vista === "red" ? "Mapa" : "Red";
   pedirCuadro();
 }
@@ -350,7 +351,7 @@ function pintar(recalcular = true) {
   if (haySel) aristas.forEach((e, i) => { if (mias.has(i) || !activas[i] || !visible[e.a] || !visible[e.b]) return; const pa = primero.has(e.a), pb = primero.has(e.b); if ((pa && (pb || segundo.has(e.b))) || (pb && segundo.has(e.a))) deSegundo.add(i); });
   ponerTubos(tenues, mostrarLineas ? aristas.filter((e, i) => activas[i] && visible[e.a] && visible[e.b] && !mias.has(i) && !deSegundo.has(i) && (!enfoque || (enfoque.has(e.a) && enfoque.has(e.b)))) : [], 1);
   tenues.material.opacity = (document.documentElement.dataset.tema === "claro" ? 0.2 : 0.22) * (haySel ? 0.4 : 1);
-  ponerTubos(destacadas, [...mias].map((i) => aristas[i]), 1.9);
+  ponerTubos(destacadas, [...mias].map((i) => aristas[i]), 1.5);
   ponerTubos(segundas, [...deSegundo].map((i) => aristas[i]), 1.2);
   if (haySel) { aro.visible = true; aro.position.copy(P3(seleccion)); const r = radio(nodos[seleccion]) * 1.15; aro.scale.set(r, r, r); } else aro.visible = false;
   pedirCuadro();
@@ -385,7 +386,7 @@ function animarCamara(hastaC, ms = 650) {
     if (k >= 1) animacion = null; };
   pedirCuadro();
 }
-const volarA = (i) => animarCamara({ objetivo: P3(i).clone(), distancia: Math.min(cam.distancia, 420) });
+const volarA = (i) => animarCamara({ objetivo: P3(i).clone(), distancia: Math.min(cam.distancia, 520) });
 function ponerArriba(si) { desdeArriba = si; animarCamara(si ? { phi: 0.06, theta: 0 } : { phi: 0.95, theta: -0.35 }); const b = document.getElementById("vista-arriba"); b.setAttribute("aria-pressed", String(si)); b.textContent = si ? "Volver al 3D" : "Desde arriba"; }
 const punteros = new Map(); let inicioToque = null, gestoPrevio = null;
 lienzo.addEventListener("pointerdown", (ev) => { lienzo.setPointerCapture(ev.pointerId); punteros.set(ev.pointerId, { x: ev.clientX, y: ev.clientY }); if (punteros.size === 1) inicioToque = { x: ev.clientX, y: ev.clientY, t: performance.now() }; gestoPrevio = null; animacion = null; });
