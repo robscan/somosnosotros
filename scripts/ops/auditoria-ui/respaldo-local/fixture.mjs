@@ -32,6 +32,8 @@ export const MARCOS = "22222222-2222-4222-8222-222222222222";
 // OL-401: la cuenta de administración del respaldo (el grafo cultural de /admin/grafo): su cookie es `cookieDe(ADMIN)`. Su perfil solo lo
 // devuelve `mi_perfil` (no está en `perfiles`), así ninguna lista ni cuenta de las pantallas que se miden cambia.
 export const ADMIN = "55555555-5555-4555-8555-555555555555";
+// Una segunda cuenta de administración sin ninguna asistencia (el aviso «Aún no tienes asistencias» del interruptor «Yo»): `cookieDe(ADMIN_SIN)`.
+export const ADMIN_SIN = "77777777-7777-4777-8777-777777777777";
 const perfilAdmin = { id: ADMIN, nombre: "Admin de prueba", foto: null, colonia: null, bio: null, rol: "admin", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) };
 const perfiles = [
   { id: ANA, nombre: "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) },
@@ -312,6 +314,9 @@ export const extrasServicio = {
     { id: "dddd0009-0000-4000-8000-000000000002", usuario_id: persona(2), evento_id: E.leonora, estado: "me_interesa", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000003", usuario_id: persona(1), evento_id: E.colocaos, estado: "voy", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000004", usuario_id: persona(3), evento_id: E.oca, estado: "voy", creado_en: hace(3) },
+    // La cuenta de administración del respaldo va a «Leonora» y a «Los colocaos» (los dos con 3 o más): su punto «Tú» tiene líneas.
+    { id: "dddd0009-0000-4000-8000-000000000007", usuario_id: ADMIN, evento_id: E.leonora, estado: "voy", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000008", usuario_id: ADMIN, evento_id: E.colocaos, estado: "me_interesa", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000005", usuario_id: persona(1), evento_id: E.feleal, estado: "voy", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000006", usuario_id: persona(2), evento_id: E.feleal, estado: "voy", creado_en: hace(3) },
   ],
@@ -379,7 +384,7 @@ export const rpcs = {
     return [...grupos].map(([ciudad, artistas]) => ({ ciudad, artistas }));
   },
   // Respaldo sintético de la cuenta autenticada (la del token: Ana o, con su cookie, Marcos). Los permisos reales se prueban en PostgreSQL.
-  mi_perfil: (_args, t, { sub } = {}) => (sub === ADMIN ? perfilAdmin : t.perfiles.find(p => p.id === (sub ?? ANA)) ?? null),
+  mi_perfil: (_args, t, { sub } = {}) => (sub === ADMIN ? perfilAdmin : sub === ADMIN_SIN ? { ...perfilAdmin, id: ADMIN_SIN, nombre: "Admin sin asistencias" } : t.perfiles.find(p => p.id === (sub ?? ANA)) ?? null),
 
   van_por_evento: ({ ids }) => (ids || []).map((id) => ({ evento_id: id, n: van(id) })).filter((x) => x.n > 0),
   tira_destacados: ({ p_tipo }) => (p_tipo === "eventos" ? destacados.map((d) => ({ id: d.evento_id, motivo: "elegido", hasta: null, van: van(d.evento_id) })) : []),
@@ -499,10 +504,10 @@ function enMemoria(t, p_evento, p_datos, p_operacion, autor = ANA, quien = []) {
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const ahora = Math.floor(Date.now() / 1000);
-const CORREOS = { [ANA]: "ana@example.com", [MARCOS]: "marcos@example.com", [ADMIN]: "admin@example.com" };
+const CORREOS = { [ANA]: "ana@example.com", [MARCOS]: "marcos@example.com", [ADMIN]: "admin@example.com", [ADMIN_SIN]: "admin-sin@example.com" };
 /** La sesión inventada de una cuenta del respaldo (Ana por omisión; Marcos para el caso de dos cuentas, OL-341). */
 export function sesionDe(sub = ANA) {
-  const claims = { iss: "http://127.0.0.1:8823/auth/v1", sub, aud: "authenticated", exp: ahora + 365 * 86400, iat: ahora, email: CORREOS[sub], phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, role: "authenticated", aal: "aal1", amr: [{ method: "otp", timestamp: ahora }], session_id: sub === ANA ? "33333333-3333-4333-8333-333333333333" : sub === ADMIN ? "66666666-6666-4666-8666-666666666666" : "44444444-4444-4444-8444-444444444444", is_anonymous: false };
+  const claims = { iss: "http://127.0.0.1:8823/auth/v1", sub, aud: "authenticated", exp: ahora + 365 * 86400, iat: ahora, email: CORREOS[sub], phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, role: "authenticated", aal: "aal1", amr: [{ method: "otp", timestamp: ahora }], session_id: sub === ANA ? "33333333-3333-4333-8333-333333333333" : sub === ADMIN ? "66666666-6666-4666-8666-666666666666" : sub === ADMIN_SIN ? "88888888-8888-4888-8888-888888888888" : "44444444-4444-4444-8444-444444444444", is_anonymous: false };
   const jwt = `${b64({ alg: "HS256", typ: "JWT" })}.${b64(claims)}.ZmlybWFfZGVfcHJ1ZWJh`;
   const usuario = { id: sub, aud: "authenticated", role: "authenticated", email: CORREOS[sub], email_confirmed_at: hace(30), phone: "", confirmed_at: hace(30), last_sign_in_at: hace(0), app_metadata: claims.app_metadata, user_metadata: {}, identities: [], created_at: hace(30), updated_at: hace(0), is_anonymous: false };
   return { access_token: jwt, token_type: "bearer", expires_in: 365 * 86400, expires_at: claims.exp, refresh_token: `refresco-de-prueba-${sub.slice(0, 4)}`, user: usuario };
