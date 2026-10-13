@@ -137,3 +137,70 @@ test('cambio de ciudad y regreso conservan hoja, enlaces y encuadre',async()=>{
   assert.ok(await page.evaluate(()=>window.qa.fichas.every(id=>id==='otro-espacio')));
   assert.deepEqual(await page.evaluate(()=>window.qa.errores),[]);await ctx.close();
 });
+
+// OL-400: el desplegable del orden junto a «N lugares». La ubicación del navegador se dobla en la página: niega, concede o ya estaba concedida.
+async function abrirConUbicacion(modo){
+  const ctx=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+  await ctx.addInitScript(m=>{
+    const geo=navigator.geolocation;
+    geo.getCurrentPosition=(ok,fallo)=>setTimeout(()=>m==='niega'?fallo({code:1,PERMISSION_DENIED:1,message:'negado'}):ok({coords:{latitude:22.15,longitude:-100.97,accuracy:30}}),20);
+    const q=navigator.permissions.query.bind(navigator.permissions);
+    navigator.permissions.query=d=>d?.name==='geolocation'?Promise.resolve({state:m==='concedida'?'granted':'prompt'}):q(d);
+  },modo);
+  const page=await ctx.newPage();const errores=[];page.on('pageerror',e=>errores.push(e.message));
+  await page.goto(origin);await page.waitForFunction(()=>window.qa?.resolver&&document.querySelector('[data-hoja]'));await resolver(page);
+  return {ctx,page,errores};
+}
+const botonOrden=page=>page.locator('button[aria-haspopup="menu"]');
+const menuOrden=page=>page.getByRole('menu',{name:'Orden de la lista'});
+
+test('OL-400: sin ubicación arranca en «Próximos primero»; el menú abre, marca la elegida, cambia el orden y cierra con Escape y al tocar fuera',async()=>{
+  const {ctx,page,errores}=await abrirConUbicacion('niega');
+  assert.equal(await botonOrden(page).textContent(),'Próximos primero');
+  assert.equal(await botonOrden(page).getAttribute('aria-expanded'),'false');
+  await botonOrden(page).click();await menuOrden(page).waitFor();
+  await menuOrden(page).getByRole('menuitemradio',{name:'Alfabético'}).waitFor();
+  assert.deepEqual(await menuOrden(page).getByRole('menuitemradio').allTextContents(),['Cercanos primero','Próximos primero','Alfabético']);
+  assert.equal(await menuOrden(page).getByRole('menuitemradio',{name:'Próximos primero'}).getAttribute('aria-checked'),'true');
+  // Flotando sobre todo y nunca bajo la navegación: dentro de la ventana y con un toque de 44 o más.
+  const caja=await menuOrden(page).boundingBox();assert.ok(caja.y>=0&&caja.y+caja.height<=844,'el menú cabe en la pantalla');
+  for(const alto of await menuOrden(page).getByRole('menuitemradio').evaluateAll(b=>b.map(x=>x.getBoundingClientRect().height)))assert.ok(alto>=44);
+  await page.keyboard.press('Escape');await menuOrden(page).waitFor({state:'detached'});
+  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-haspopup')),'menu','el foco vuelve al botón');
+  await botonOrden(page).click();await menuOrden(page).waitFor();
+  await page.mouse.click(20,300);await menuOrden(page).waitFor({state:'detached'});
+  await botonOrden(page).click();await menuOrden(page).getByRole('menuitemradio',{name:'Alfabético'}).click();
+  await menuOrden(page).waitFor({state:'detached'});
+  assert.equal(await botonOrden(page).textContent(),'Alfabético');
+  // La elección vive en la memoria de pantalla: al volver a la sección sigue puesta.
+  await page.evaluate(()=>window.qa.volver());await page.waitForFunction(()=>document.querySelector('button[aria-haspopup="menu"]')?.textContent==='Alfabético');
+  assert.deepEqual(errores,[]);await ctx.close();
+});
+
+test('OL-400: «Cercanos primero» sin ubicación pide el permiso; negado, sigue «Próximos primero» con su línea',async()=>{
+  const {ctx,page,errores}=await abrirConUbicacion('niega');
+  await botonOrden(page).click();await menuOrden(page).getByRole('menuitemradio',{name:'Cercanos primero'}).click();
+  await page.getByText('Sin tu ubicación no hay cercanos: siguen los próximos primero.').waitFor();
+  assert.equal(await botonOrden(page).textContent(),'Próximos primero');
+  assert.equal(await lista(page).getByText(/km/).count(),0);
+  // Elegir otra cosa quita la línea.
+  await botonOrden(page).click();await menuOrden(page).getByRole('menuitemradio',{name:'Alfabético'}).click();
+  await page.getByText('Sin tu ubicación no hay cercanos',{exact:false}).waitFor({state:'detached'});
+  assert.deepEqual(errores,[]);await ctx.close();
+});
+
+test('OL-400: «Cercanos primero» sin ubicación, concedida: ordena por distancia y enseña los km',async()=>{
+  const {ctx,page,errores}=await abrirConUbicacion('concede');
+  assert.equal(await botonOrden(page).textContent(),'Próximos primero');
+  await botonOrden(page).click();await menuOrden(page).getByRole('menuitemradio',{name:'Cercanos primero'}).click();
+  await page.waitForFunction(()=>document.querySelector('button[aria-haspopup="menu"]')?.textContent==='Cercanos primero');
+  assert.ok(await lista(page).getByText(/km/).count()>0,'los renglones dicen los km');
+  assert.equal(await page.getByText('Sin tu ubicación no hay cercanos',{exact:false}).count(),0);
+  assert.deepEqual(errores,[]);await ctx.close();
+});
+
+test('OL-400: con el permiso ya concedido arranca en «Cercanos primero»',async()=>{
+  const {ctx,page,errores}=await abrirConUbicacion('concedida');
+  await page.waitForFunction(()=>document.querySelector('button[aria-haspopup="menu"]')?.textContent==='Cercanos primero');
+  assert.deepEqual(errores,[]);await ctx.close();
+});

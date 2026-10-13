@@ -1,0 +1,67 @@
+/* El menú de opciones (ui/MenuOpciones, OL-400): el botón es texto violeta con su caret, como el chip de la ciudad pero sin borde; el
+   menú flota fijo junto a él (la posición la pone el componente) sobre todo lo demás, también sobre la navegación. */
+.boton {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--espacio-1);
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  border: 0;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.boton[aria-busy="true"] {
+  opacity: 0.6;
+}
+
+.menu {
+  position: fixed;
+  z-index: var(--z-encima);
+  display: grid;
+  min-width: max-content;
+  padding: var(--espacio-1);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+  box-shadow: var(--sombra-flotante);
+}
+
+/* Cada opción: la marca a la izquierda (solo se ve en la elegida) y su nombre. */
+.opcion {
+  display: grid;
+  grid-template-columns: var(--espacio-5) 1fr;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  padding: 0 var(--espacio-6) 0 var(--espacio-3);
+  border: 0;
+  border-radius: var(--radio);
+  background: none;
+  color: var(--texto);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.opcion > svg {
+  visibility: hidden;
+}
+.opcion[aria-checked="true"] {
+  background: var(--primario-suave);
+  color: var(--primario);
+}
+.opcion[aria-checked="true"] > svg {
+  visibility: visible;
+}
+
+/* Sonda: mide lo que ocupa abajo la navegación con su zona segura (`--nav-abajo`), para que el menú no quede bajo ella. */
+.sonda {
+  position: fixed;
+  bottom: 0;
+  height: var(--nav-abajo);
+  visibility: hidden;
+  pointer-events: none;
+}
