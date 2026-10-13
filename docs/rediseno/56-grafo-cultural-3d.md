@@ -101,6 +101,10 @@ Como dice el doc de Artistas (investigaciones), «compartió actividad con» es 
 
 La tarjeta del elegido desglosa sus conexiones: «toca con 4 artistas · en 2 lugares · 3 asistentes».
 
+### 3.7 Dos lecturas: «Mapa» y «Red»
+
+En «Mapa» (lo de arriba) la cercanía en pantalla es la de la ciudad: dos puntos juntos están juntos en la calle, no necesariamente relacionados. Para diagnosticar hace falta la otra lectura, «Red», donde lo que se atrae es lo que se relaciona: un cálculo de fuerzas (los nodos se repelen, cada línea tira de sus dos extremos, todo tira un poco al centro y cada nodo hacia la altura de su capa), 260 vueltas en unos 60 ms, solo sobre los nodos con alguna línea; los 30 lugares sin ninguna van a un anillo aparte. Ahí saltan a la vista los cúmulos, los puentes y los aislados. El botón «Red / Mapa» cambia entre las dos con los mismos nodos y una transición de 0,9 s, para que la persona no pierda a quién estaba mirando. «Desde arriba» pone la cámara vertical: la planta, para leer; el 3D, para explorar.
+
 ## 4. Tamaño: raíz cuadrada con techo
 
 ```
@@ -170,11 +174,31 @@ Leído con la llave de servicio del `.env` local, sin escribir nada y sin imprim
 
 | Escena | Cuadros por segundo | CPU por cuadro |
 | --- | --- | --- |
-| 745 nodos, 390×844 | 120 (es el tope de la pantalla) | 0,05 ms |
+| 745 nodos, 390×844 (v1, líneas de 1 px) | 120 (es el tope de la pantalla) | 0,05 ms |
+| 745 nodos y 419 tubos, 390×844 (v2) | 57–99 mientras se mueve (medido con el panel visible) | el cálculo de «Red», 62 ms una sola vez |
 | + 5 000 esferas más | 119 | 0,07 ms |
 | + 20 000 esferas más | 117 | 0,04 ms |
 
 Es decir, en la Mac el límite no se alcanza ni con 28 veces los nodos de hoy. En un iPhone la tarjeta gráfica es menor y Safari limita a 60 cuadros: la prueba que cuenta es en el iPhone del founder, en Safari y en la app instalada, con la vista previa de la rama. Las funciones `medirFps()`, `medirRender()` y `estresar(n)` quedan en la página para repetir la medición en cualquier aparato desde la consola.
+
+## 7 bis. Lo que se añadió tras la revisión del founder (misma noche)
+
+Preguntó si esto es un grafo y si cumple la definición, qué mejoraría y cómo facilitar la lectura y los diagnósticos; aceptó las propuestas («adelante con tus ajustes propuestos, entiendo la advertencia, aún no lanzamos oficialmente»). Lo que entró al prototipo:
+
+| Mejora | Cómo quedó |
+| --- | --- |
+| Tiempo | «Ventana» (2 semanas · 1 mes · 3 meses · todo) y «Hasta» (deslizador por semanas). Una línea está activa si tiene un evento dentro de la ventana; lo demás se apaga y los nodos sin línea activa se atenúan. Mover «Hasta» compara dos momentos. Hoy la base solo cubre del 18 de septiembre al 6 de diciembre de 2026: 80 días. |
+| Dos lecturas | «Mapa» y «Red» (§ 3.7), con transición animada; «Desde arriba» para la planta. |
+| Grosor por peso | Las líneas son tubos finos: radio 0,5 + 0,35·√(eventos en común); las del elegido, casi el doble. |
+| Segundo paso | Al elegir, los vecinos de los vecinos se ven a media luz y sus líneas también; la tarjeta dice «a dos pasos, 91». |
+| Menos ruido | Los 518 sin conexión no se dibujan: un solo nodo gris, «518 artistas por conectar», en el anillo exterior; al tocarlo, cuántos por disciplina y la lista. La casilla «Mostrar sin conexión» los despliega. Los nombres de los lugares aparecen al acercarse (24 como mucho). |
+| Lentes de diagnóstico | Seis preguntas fijas, cada una un filtro, una vista y una lista: zonas sin lugar a 2 km (cuadrícula de 1 km, zonas en naranja sobre la planta), islas (lugares con eventos cuyos artistas no tocan en ningún otro), siempre en el mismo sitio (dos o más fechas, un lugar), puentes (artistas en más de un lugar, en «Red»), festivales que conectan sedes, por conectar (por disciplina). |
+| Diagnóstico en frases | Arriba de la lista, calculado al vuelo: «8 de cada 10 artistas no tienen ningún evento registrado», «el 39 % de los eventos con sede ocurre en 5 lugares; 30 de 69 lugares no tienen ninguno», «los lugares con eventos forman 27 cúmulos que no comparten ni un artista ni un festival (el mayor, 12)», «3 zonas de la ciudad no tienen un lugar a menos de 2 km (80 km² dentro de 7 km del centro)» y, con periodo, cuántas conexiones están activas. |
+| Salidas accionables | «Copiar lista» en cada lista: los 518 por conectar para la siguiente tanda de invitaciones, los lugares sin eventos para la rutina de agendas, las islas, los puentes. |
+
+Lo que no entró porque la base no lo tiene: papel y procedencia de cada relación (hueco 2 del doc 24). Queda como la primera migración si esto pasa a la app.
+
+**Dónde vivirían los diagnósticos:** en Administración, con el identificador sin nombre ya firmado, para todo lo que toque personas; en lo público, solo la versión sin asistentes o con la regla de § 5.
 
 ## 8. Lo que no entra todavía
 
