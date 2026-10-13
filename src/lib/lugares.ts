@@ -4,7 +4,8 @@ import { DIAS_ESTA_SEMANA } from "./cuando";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
-import { diaPin, formatearCuando } from "./fechas";
+import { cortoDeClase, type Clase } from "./eventos";
+import { diaConMesDe, diaLocal, diaPin, formatearCuando, rangoCorto } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import type { Origen } from "./origen";
 import { LIMITES_LUGAR } from "./limites";
@@ -59,8 +60,8 @@ export function compartirLugar(l: { id: string; slug?: string | null; nombre: st
   return { url: `https://somosnosotros.org${hrefLugar(l)}`, texto: `${l.nombre} · ${etiquetaTipo(l.tipo)}${l.direccion ? ` · ${l.direccion}` : ""}` };
 }
 
-/** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
-export type ProximoEvento = { id: string; inicio: string; zona: string; titulo: string };
+/** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. `fin` y `clase` (OL-398) dicen si es algo de varios días ya en curso. */
+export type ProximoEvento = { id: string; inicio: string; zona: string; titulo: string; fin?: string | null; clase?: Clase | null };
 
 /** Lo que el mapa y la lista enseñan de cada lugar. `diasEvento` es opcional: solo lo necesitan los filtros de Lugares
  *  (Con eventos); las demás pantallas no lo piden. */
@@ -190,16 +191,33 @@ export function lugaresAEncuadrar<T extends LugarLista>(p: { ficha: T | null; ha
   return p.hayFiltros ? p.visibles : lugaresEncuadreInicial(p.visibles, p.destacados, p.centro, p.ahora);
 }
 
-/** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00", con la hora de la zona del evento. */
-export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona">, ahora: Date = new Date()): string {
-  const cuando = formatearCuando(p.inicio, null, ahora, p.zona);
-  return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)}`;
+const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
+
+/**
+ * La línea de vida del renglón de un lugar: «Próximo: hoy · 19:30» · «Próximo: mié 16 de sep · 19:00», con la hora de la zona del evento.
+ * Una exposición, un taller o un festival ya en curso no son «próximos» ni tienen una hora que decir (OL-398; founder, 2026-10-13: el MUNI
+ * decía «Próximo: vie 2 de oct · 00:00» por su exposición abierta): dicen qué son y hasta cuándo, «Exposición hasta el dom 8 de nov». Una
+ * exposición o un festival que todavía no abre dice sus días, «Exposición del 16 al 30 de oct»; un taller por empezar, su primera sesión como
+ * cualquier evento. Lo puntual sigue igual (ya pasado no se consulta: `filtroSinPasar`).
+ */
+export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona" | "fin" | "clase">, ahora: Date = new Date()): string {
+  const { clase, fin } = p;
+  if (fin && (clase === "exposicion" || clase === "taller" || clase === "festival")) {
+    const hoy = diaLocal(ahora, p.zona);
+    const hasta = diaLocal(new Date(fin), p.zona);
+    if (Date.parse(p.inicio) <= ahora.getTime()) return `${cortoDeClase(clase)} hasta el ${diaConMesDe(hasta, ahora, p.zona)}`;
+    if (clase !== "taller") return `${cortoDeClase(clase)} ${minuscula(rangoCorto(diaLocal(new Date(p.inicio), p.zona), hasta, hoy))}`;
+  }
+  return `Próximo: ${minuscula(formatearCuando(p.inicio, null, ahora, p.zona))}`;
 }
 
-/** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). */
+/** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). `fin` y `clase` viajan si la consulta los trajo (OL-398). */
 export function conProximo<T extends { id: string }>(lugares: T[], eventos: (ProximoEvento & { lugar_id: string | null })[]): (T & { proximo: ProximoEvento | null })[] {
   const proximo = new Map<string, ProximoEvento>();
-  for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona, titulo: e.titulo });
+  for (const e of eventos) {
+    if (!e.lugar_id || proximo.has(e.lugar_id)) continue;
+    proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona, titulo: e.titulo, ...(e.fin !== undefined ? { fin: e.fin } : {}), ...(e.clase !== undefined ? { clase: e.clase } : {}) });
+  }
   return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
 }
 
