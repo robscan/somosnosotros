@@ -96,11 +96,12 @@ const E = {
   // («Xantolo»), el caso de la bitácora 405 junto a la mostaza de «Un mundo para mí» (vecinas casi del mismo color).
   reflejo: "bbbb0001-0000-4000-8000-000000000039",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null, cancelado = false }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
-    clase, evento_padre_id, inaugura_id, borrador, retirado_por_admin: false,
+    // OL-391: «se canceló» (solo en lo que ya pasó).
+    clase, evento_padre_id, inaugura_id, borrador, retirado_por_admin: false, cancelado,
     // OL-360: los colores guardados de su cartel (null = sin calcular: la tarjeta usa su paleta propia).
     colores_cartel: colores,
     id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
@@ -163,18 +164,27 @@ const EP = {
   acordeonAche: "bbbb0003-0000-4000-8000-000000000006",
   jardin: "bbbb0003-0000-4000-8000-000000000007",
   rocioCcub: "bbbb0003-0000-4000-8000-000000000008",
+  // OL-391: una exposición que ya cerró en la Casa del Poeta y su inauguración, que se canceló (lo ligado que se canceló: «Se canceló»).
+  agua: "bbbb0003-0000-4000-8000-000000000009",
+  aguaInaug: "bbbb0003-0000-4000-8000-000000000010",
 };
 eventos.push(
   evento({ id: EP.noche, slug: "noche-de-acordeon-y-guitarra", titulo: "Noche de acordeón y guitarra", dias: -2, hora: "20:00", lugar_id: L.ache, creadoHace: 12, imagen: null }),
   evento({ id: EP.retratos, slug: "retratos-de-barrio-en-vivo", titulo: "Retratos de barrio en vivo", dias: -5, hora: "19:00", lugar_id: L.ache, creadoHace: 15, imagen: null }),
   // Un festival que ya pasó (del mes anterior), con dos actos en el Bicentenario: la ceja del festival en los renglones.
+  // OL-391: el cierre del festival se canceló: en su «Ya pasó», tachado y con «Se canceló» delante de la hora; no cuenta en el historial del
+  // Bicentenario ni en la trayectoria de 0Backside0.
   { ...evento({ id: EP.otono, slug: "festival-otono-sonoro", titulo: "Festival Otoño Sonoro", dias: primeroDelMes - 9, hora: "18:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, clase: "festival" }), fin: iso(fecha(primeroDelMes - 7, "23:00")), termina: iso(fecha(primeroDelMes - 7, "23:00")) },
   evento({ id: EP.otonoDuo, slug: "feleal-y-abril-merlot-a-duo", titulo: "Feleal y Abril Merlot a dúo", dias: primeroDelMes - 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono }),
-  evento({ id: EP.otonoCierre, slug: "cierre-otono-sonoro", titulo: "Cierre de Otoño Sonoro", dias: primeroDelMes - 7, hora: "20:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono }),
-  evento({ id: EP.acordeonAche, slug: "feleal-acordeon-en-ache", titulo: "Feleal: acordeón en ACHE", dias: primeroDelMes - 4, hora: "20:00", lugar_id: L.ache, creadoHace: 35, imagen: null }),
+  evento({ id: EP.otonoCierre, slug: "cierre-otono-sonoro", titulo: "Cierre de Otoño Sonoro", dias: primeroDelMes - 7, hora: "20:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono, cancelado: true }),
+  // OL-391: se canceló. Feleal: «3 fechas · 1 cancelado · 2 lugares» (ACHE sigue por la «Noche de acordeón y guitarra»).
+  evento({ id: EP.acordeonAche, slug: "feleal-acordeon-en-ache", titulo: "Feleal: acordeón en ACHE", dias: primeroDelMes - 4, hora: "20:00", lugar_id: L.ache, creadoHace: 35, imagen: null, cancelado: true }),
   // En un sitio sin ficha: cuenta en la trayectoria, pero no en «Se ha presentado en».
   evento({ id: EP.jardin, slug: "feleal-en-el-jardin-de-san-juan-de-dios", titulo: "Feleal en el Jardín de San Juan de Dios", dias: primeroDelMes - 12, hora: "12:00", sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 45, imagen: null }),
   evento({ id: EP.rocioCcub, slug: "rocio-lozano-canciones-de-ida-y-vuelta", titulo: "Rocío Lozano: canciones de ida y vuelta", dias: primeroDelMes - 3, hora: "19:30", lugar_id: L.ccub, creadoHace: 30, imagen: null }),
+  // OL-391: la exposición abrió sin su inauguración (se canceló) y ya cerró; en la Casa del Poeta, que ninguna pantalla medida enseña.
+  { ...evento({ id: EP.agua, slug: "cartografias-del-agua", titulo: "Cartografías del agua", dias: primeroDelMes - 20, hora: "00:00", lugar_id: L.poeta, creadoHace: 50, imagen: null, clase: "exposicion", inaugura_id: EP.aguaInaug, descripcion: "Grabado y mapas dibujados a mano sobre los ríos de la Huasteca." }), fin: iso(fecha(primeroDelMes - 2, "23:59")), termina: iso(fecha(primeroDelMes - 2, "23:59")) },
+  evento({ id: EP.aguaInaug, slug: "inauguracion-cartografias-del-agua", titulo: "Inauguración: Cartografías del agua", dias: primeroDelMes - 20, hora: "19:00", lugar_id: L.poeta, creadoHace: 50, imagen: null, cancelado: true }),
 );
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];

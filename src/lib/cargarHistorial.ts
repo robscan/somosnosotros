@@ -13,7 +13,8 @@ import { TOPE_HISTORIAL, type ArtistaDelEvento, type EventoPasado, type Historia
  * Memoizadas con `cache()` de React: los números y la sección las piden por separado, en `<Suspense>` distintos.
  */
 
-const COLUMNAS = "id, slug, titulo, inicio, fin, zona, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, evento_padre_id, lugar:lugares(id, slug, nombre, portada)";
+// `cancelado` (OL-391): lo que se marcó «se canceló» viene igual (se queda en la lista, tachado) y las cuentas lo apartan (`realizados`).
+const COLUMNAS = "id, slug, titulo, inicio, fin, zona, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, cancelado, evento_padre_id, lugar:lugares(id, slug, nombre, portada)";
 /** Cuántos ids van en un `in` por la URL (200 UUID pasan de los 7 000 caracteres). */
 const TANDA = 100;
 
@@ -56,6 +57,7 @@ async function completar(supabase: SupabaseClient, filas: Fila[]): Promise<Event
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- el filtro por artista no viaja al renglón
   return filas.map(({ evento_padre_id, lugar, eventos_artistas, ...f }) => ({
     ...f,
+    cancelado: f.cancelado === true,
     lugar: uno(lugar),
     festival: evento_padre_id ? (titulos.get(evento_padre_id) ?? null) : null,
     artistas: porEvento.get(f.id) ?? [],

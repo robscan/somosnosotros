@@ -61,6 +61,7 @@ import { portadaDeFestival, proximoPorSede, sedesDeFestival, textoActosEnSede, V
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
+import RenglonCancelado, { AvisoCancelado } from "./MarcarCancelado";
 import MetaSitio from "./MetaSitio";
 import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
@@ -142,7 +143,9 @@ const cargarTotalVanCache = cache(async (id: string): Promise<number> => {
  * (OL-161); va en `<Suspense>`, con una tarjeta de esqueleto del mismo alto mientras llega (`EsqueletoKpi`, canon de
  * `docs/PRINCIPIOS_UX.md`).
  */
-async function KpiVan({ eventoId, miId, pasado = false }: { eventoId: string; miId: string | null; pasado?: boolean }) {
+async function KpiVan({ eventoId, miId, pasado = false, cancelado = false }: { eventoId: string; miId: string | null; pasado?: boolean; cancelado?: boolean }) {
+  // Lo que se canceló (OL-391) no tuvo a nadie: ni «Fueron» ni «Van».
+  if (cancelado) return null;
   const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
   const valor = Math.max(totalVanRpc, asistencias.van.length);
   // En pasado (OL-383) es cuántos dijeron «Voy», «Fueron», y baja a «Quién fue» (OL-388); con nadie no se pinta, como tampoco «Quién fue».
@@ -191,7 +194,9 @@ function EsqueletoQuienVa() {
  * La lista de quién va (`QuienVa`), diferida: la misma consulta que `KpiVan`, memoizada por `cache()`. En pasado (OL-388) es «Quién fue», quienes
  * dijeron «Voy»; si nadie lo dijo, no hay sección.
  */
-async function QuienVaDiferido({ eventoId, miId, conSesion, pasado = false }: { eventoId: string; miId: string | null; conSesion: boolean; pasado?: boolean }) {
+async function QuienVaDiferido({ eventoId, miId, conSesion, pasado = false, cancelado = false }: { eventoId: string; miId: string | null; conSesion: boolean; pasado?: boolean; cancelado?: boolean }) {
+  // Nadie fue a lo que no ocurrió (OL-391): sin «Quién fue».
+  if (cancelado) return null;
   const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
   const totalVan = Math.max(totalVanRpc, asistencias.van.length);
   if (pasado && totalVan === 0) return null;
@@ -200,12 +205,13 @@ async function QuienVaDiferido({ eventoId, miId, conSesion, pasado = false }: { 
 
 /**
  * Un renglón de lo ligado (la inauguración, la exposición que inaugura, el festival del que es parte): siempre a su ficha. Lo que ya pasó (OL-388)
- * se ve pasado y no activo: «Ya pasó» chico encima (como la ceja de las tarjetas), el título en el gris del texto suave y la fecha en pasado.
+ * se ve pasado y no activo: «Ya pasó» chico encima (como la ceja de las tarjetas), el título en el gris del texto suave y la fecha en pasado. Si
+ * se canceló (OL-391), el título tachado y «Se canceló» en vez de «Fue el …» (`renglonLigado`).
  */
-function RenglonLigado({ href, icono, titulo, meta, pasado }: { href: string; icono: ReactNode; titulo: string; meta: string; pasado: boolean }) {
+function RenglonLigado({ href, icono, titulo, meta, pasado, cancelado = false }: { href: string; icono: ReactNode; titulo: string; meta: string; pasado: boolean; cancelado?: boolean }) {
   return (
     <li>
-      <Link href={href} className={pasado ? `${renglon.dato} ${styles.ligadoPasado}` : renglon.dato}>
+      <Link href={href} className={[renglon.dato, pasado && styles.ligadoPasado, pasado && cancelado && styles.ligadoCancelado].filter(Boolean).join(" ")}>
         {icono}
         {pasado && <i>Ya pasó</i>}
         <b>{titulo}</b>
@@ -219,15 +225,16 @@ function RenglonLigado({ href, icono, titulo, meta, pasado }: { href: string; ic
 /** Lo ligado a un evento por su clase (OL-321): el horario de una exposición (propio y el de su lugar) y su inauguración, el programa de un
  *  festival (sus actos visibles y, para su autor, sus borradores), el festival de un acto y la exposición que inaugura. Cada consulta falla
  *  sola sin tumbar la ficha (sin la migración, nada de esto existe y la ficha es la de siempre). */
-type Ligado = { id: string; slug: string | null; titulo: string; inicio: string; fin: string | null; zona: string };
-type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean; sitio_lat?: number | null; sitio_lng?: number | null; ciudad?: string | null };
+type Ligado = { id: string; slug: string | null; titulo: string; inicio: string; fin: string | null; zona: string; cancelado?: boolean };
+type Acto = EventoAgenda & { borrador?: boolean; visible?: boolean; retirado_por_admin?: boolean; cancelado?: boolean; sitio_lat?: number | null; sitio_lng?: number | null; ciudad?: string | null };
 async function cargarLigados(e: EventoConLugar) {
   const supabase = await clienteServidor();
   const vacio = { horarioPropio: [] as Franja[], horarioLugar: [] as Franja[], inauguracion: null as Ligado | null, actos: [] as Acto[], padre: null as Ligado | null, inaugura: null as Ligado | null };
   if (!supabase) return vacio;
   const filas = (r: { data: unknown }) => (Array.isArray(r.data) ? (r.data as { dias: number[]; abre: string; cierra: string }[]).map(franjaDeFila) : []);
   const uno = (r: { data: unknown }) => (r.data as Ligado | null) ?? null;
-  const columnas = "id, slug, titulo, inicio, fin, zona";
+  // `cancelado` (OL-391): lo ligado que ya pasó y se canceló lo dice («Se canceló»), y un acto cancelado lo dice en el «Ya pasó» del festival.
+  const columnas = "id, slug, titulo, inicio, fin, zona, cancelado";
   const [horarioPropio, horarioLugar, inauguracion, actos, padre, inaugura] = await Promise.all([
     e.clase === "exposicion" ? supabase.from("eventos_horarios").select("dias, abre, cierra").eq("evento_id", e.id).order("creado_en").then(filas) : [],
     e.clase === "exposicion" && e.lugar_id ? supabase.from("lugares_horarios").select("dias, abre, cierra").eq("lugar_id", e.lugar_id).order("creado_en").then(filas) : [],
@@ -235,7 +242,7 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "festival"
       ? supabase
           .from("eventos")
-          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, creado_en, visible, borrador, retirado_por_admin, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng)")
+          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, creado_en, visible, borrador, retirado_por_admin, cancelado, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng)")
           .eq("evento_padre_id", e.id)
           .order("inicio")
           .limit(100)
@@ -289,7 +296,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14): sin imagen ni tarjeta; su ficha existe en pasado
   // (OL-383) y su título y su descripción lo dicen.
   if (eventoPaso(e.inicio, e.fin, new Date(), e.zona)) {
-    return { title: `${e.titulo} · Ya pasó · Somos Nosotros`, description: `Ya pasó: fue el ${formatearLargo(e.inicio, new Date(), null, e.zona)}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
+    // Si se marcó «se canceló» (OL-391), lo dice en vez de «Ya pasó»: sigue visible y se puede compartir.
+    const cuandoFue = formatearLargo(e.inicio, new Date(), null, e.zona);
+    if (e.cancelado) return { title: `${e.titulo} · Se canceló · Somos Nosotros`, description: `Se canceló: era el ${cuandoFue}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
+    return { title: `${e.titulo} · Ya pasó · Somos Nosotros`, description: `Ya pasó: fue el ${cuandoFue}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
   }
   const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);
   // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única; sin imagen propia, se comparte con el cartel de su
@@ -335,6 +345,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // Tras el fin, la dirección reservada solo con sesión (OL-257): una respuesta inesperada sin sesión no la enseña en la ficha en pasado.
   const privado = paso && !puedeEditar && !actual ? null : privadoLeido;
   const consultaTrasFin = vista === "pasado";
+  // «Se canceló» (OL-391): solo cuenta en lo que ya pasó. Quien gestiona el evento (autora o administración) lo marca o lo deshace desde el menú
+  // «···», de un toque, mientras se vea (un borrador u oculto no cambian); la acción vuelve a comprobarlo todo en el servidor.
+  const cancelado = paso && !!e.cancelado;
+  const ofrecerCancelar = puedeEditar && paso && e.visible && !e.borrador;
   // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola.
   if (actual && !consultaTrasFin && (accion === "voy" || accion === "me_interesa")) {
     const supabase = await clienteServidor();
@@ -487,7 +501,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Sesiones" valor={Math.max(sesiones.length, 1)} />
       <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
       <Suspense fallback={<EsqueletoKpi />}>
-        <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} />
+        <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} cancelado={cancelado} />
       </Suspense>
     </Kpis>
   ) : undefined;
@@ -530,6 +544,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <b>Crear cartel</b>
               </Link>
             </li>
+            {ofrecerCancelar && <RenglonCancelado eventoId={e.id} cancelado={cancelado} />}
           </>
         )}
         {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
@@ -567,7 +582,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         portada={portada}
         alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`}
         titulo={e.titulo}
-        etiqueta={[numerosClase && cortoDeClase(clase), funcion, consultaTrasFin && "Ya pasó"].filter(Boolean).join(" · ") || undefined}
+        etiqueta={[numerosClase && cortoDeClase(clase), funcion, cancelado ? "Se canceló" : consultaTrasFin && "Ya pasó"].filter(Boolean).join(" · ") || undefined}
+        cancelado={cancelado}
         meta={metaClase}
         banda={numerosClase}
       />
@@ -594,7 +610,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           )}
           {!consultaTrasFin && (!e.visible || paso) && (
             <p className={`aviso-error ${ficha.oculto}`} role="status">
-              {paso && e.visible ? "Este evento ya pasó: los demás lo ven en pasado, sin «Voy» ni «Cómo llegar»." : `${paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven quien lo publicó y la administración.`}
+              {paso && e.visible
+                ? cancelado
+                  ? "Marcado «Se canceló»: los demás lo ven así y no cuenta en el historial de sus artistas ni de su lugar."
+                  : "Este evento ya pasó: los demás lo ven en pasado, sin «Voy» ni «Cómo llegar»."
+                : `${paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven quien lo publicó y la administración.`}
             </p>
           )}
         </div>
@@ -604,10 +624,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         {/* Un evento suelto: cuándo, el costo y cuántos van. Los de una exposición, un taller o un festival van en la banda de la cabecera. */}
         {!numerosClase && (
           <Kpis>
-            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={consultaTrasFin ? `Fue · ${cuando.hora}` : cuando.hora} valor={cuando.dia} />
+            {/* Lo que se canceló (OL-391) no «fue»: «Era · 19:00». */}
+            <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cancelado ? `Era · ${cuando.hora}` : consultaTrasFin ? `Fue · ${cuando.hora}` : cuando.hora} valor={cuando.dia} />
             <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
-            <Suspense fallback={<EsqueletoKpi />}>
-              <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} />
+            <Suspense fallback={cancelado ? null : <EsqueletoKpi />}>
+              <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} cancelado={cancelado} />
             </Suspense>
           </Kpis>
         )}
@@ -721,7 +742,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <small>{horario.origen === "lugar" ? "Horario del lugar" : horario.origen === "propio" ? "Horario de la exposición" : "Pregunta en el lugar antes de ir."}</small>
               </li>
               {/* Si ya pasó (OL-388), a su ficha en pasado, con el renglón en pasado. */}
-              {ligados.inauguracion && inauguracion && <RenglonLigado href={hrefEvento(ligados.inauguracion)} icono={<IconoEstrella width={20} height={20} />} titulo="Inauguración" meta={inauguracion.cuando} pasado={inauguracion.pasado} />}
+              {ligados.inauguracion && inauguracion && <RenglonLigado href={hrefEvento(ligados.inauguracion)} icono={<IconoEstrella width={20} height={20} />} titulo="Inauguración" meta={inauguracion.cuando} pasado={inauguracion.pasado} cancelado={!!ligados.inauguracion.cancelado} />}
             </ul>
           </section>
         )}
@@ -784,7 +805,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <h3>{g.titulo}</h3>
                 <ul aria-label={g.titulo}>
                   {g.eventos.map((a) => (
-                    <RenglonEvento key={a.id} evento={a} nota="ya pasó" />
+                    <RenglonEvento key={a.id} evento={a} nota="ya pasó" cancelado={!!a.cancelado} />
                   ))}
                 </ul>
               </Fragment>
@@ -797,7 +818,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <section className={ficha.bloque} aria-label="Parte de">
             <ul>
               {ligados.padre && padre && (
-                <RenglonLigado href={hrefEvento(ligados.padre)} icono={<IconoEtiqueta width={20} height={20} />} titulo={`Parte de ${ligados.padre.titulo}`} meta={padre.pasado ? `Festival · ${padre.cuando}` : "Festival"} pasado={padre.pasado} />
+                <RenglonLigado href={hrefEvento(ligados.padre)} icono={<IconoEtiqueta width={20} height={20} />} titulo={`Parte de ${ligados.padre.titulo}`} meta={padre.pasado ? `Festival · ${padre.cuando}` : "Festival"} pasado={padre.pasado} cancelado={!!ligados.padre.cancelado} />
               )}
               {ligados.inaugura && inaugura && (
                 <RenglonLigado
@@ -806,6 +827,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                   titulo={`${inaugura.pasado ? "Inauguró" : "Inaugura"} ${ligados.inaugura.titulo}`}
                   meta={inaugura.pasado ? `Exposición · ${inaugura.cuando}` : "Exposición"}
                   pasado={inaugura.pasado}
+                  cancelado={!!ligados.inaugura.cancelado}
                 />
               )}
             </ul>
@@ -885,8 +907,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         {/* Una exposición o un festival no tienen «Voy» (OL-321): tampoco «Quién va». En pasado (OL-388), «Quién fue», solo si alguien dijo «Voy»: sin
             esqueleto mientras llega, para no pintar una sección que quizá no existe. */}
         {!soloInteres(clase) && (
-          <Suspense fallback={consultaTrasFin ? null : <EsqueletoQuienVa />}>
-            <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} pasado={consultaTrasFin} />
+          <Suspense fallback={consultaTrasFin || cancelado ? null : <EsqueletoQuienVa />}>
+            <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} pasado={consultaTrasFin} cancelado={cancelado} />
           </Suspense>
         )}
 
@@ -907,6 +929,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           soloInteres={soloInteres(clase)}
         />
       )}
+      {/* El aviso de «Se canceló» con Deshacer (OL-391): fuera del menú, que se cierra al tocar. */}
+      {ofrecerCancelar && <AvisoCancelado eventoId={e.id} />}
     </Ficha>
   );
 }

@@ -30,4 +30,14 @@ describe("renglonLigado (OL-380, OL-388)", () => {
     // Sin haber acabado, el cierre no cambia nada.
     expect(renglonLigado(EXPO, new Date("2026-10-12T17:00:00Z"), "Cerró").pasado).toBe(false);
   });
+  it("lo que ya pasó y se marcó «se canceló» (OL-391) dice «Se canceló» en vez de «Fue el …», también con `cierre`", () => {
+    const despues = new Date("2026-12-01T17:00:00Z");
+    expect(renglonLigado({ ...INAUGURACION, cancelado: true }, despues)).toEqual({ pasado: true, cuando: "Se canceló" });
+    expect(renglonLigado({ ...EXPO, cancelado: true }, despues, "Cerró")).toEqual({ pasado: true, cuando: "Se canceló" });
+    expect(renglonLigado({ ...INAUGURACION, cancelado: false }, despues).cuando).toBe("Fue el viernes 9 de octubre · 20:00");
+  });
+  it("lo que no ha pasado no cambia aunque llegue marcado (la marca solo vale en pasado)", () => {
+    const antes = new Date("2026-10-10T01:00:00Z");
+    expect(renglonLigado({ ...INAUGURACION, cancelado: true }, antes)).toEqual({ pasado: false, cuando: "viernes 9 de octubre · 20:00" });
+  });
 });
