@@ -1,5 +1,5 @@
 /** OL-387: el banner para compartir la app en Inicio (prototipo firmado `inicio-propuestas.html`, «Firmada»: B1 tras Destacados, B2 con el
- *  símbolo SN; bitácora 417). Sale desde el tercer día distinto (lo cuenta el teléfono, `lib/visitasInicio`), la × lo esconde 30 días con
+ *  símbolo SN; bitácora 417). Salía desde el tercer día distinto; desde OL-397 sale desde el primero y con o sin sesión (lo cuenta el teléfono, `lib/visitasInicio`), la × lo esconde 30 días con
  *  «Deshacer», «Compartir» abre la hoja del teléfono y, sin ella, copia el enlace y avisa. Lo compartido se mide (OL-388: `compartir` con
  *  `que: "app"`, por la hoja o copiado; cancelar no se mide): fuera de producción `medirCliente` solo lo escribe en consola con
  *  `NEXT_PUBLIC_MEDIR_DEPURAR=1`, y de ahí se lee. No corre con `npm test`; se corre con `npm run test:componentes`. */
@@ -155,10 +155,19 @@ test("tercer día distinto: sale tras el carril estelar, con las medidas firmada
   assert.deepEqual(orden, ["Destacados", "Comparte la app", "Tus planes"]);
 });
 
-test("segunda visita, mismo día tres veces, cerrado o ya compartido: no sale", async (t) => {
+test("primera visita (OL-397: para todo el mundo, desde el primer día): sale y anota el día", async (t) => {
   for (const [caso, opciones] of [
+    ["primera visita", { dias: [] }],
     ["segunda visita", { dias: ["2026-10-11"] }],
-    ["el mismo día tres veces cuenta uno", { dias: ["2026-10-12"] }],
+  ]) {
+    const p = await pagina(t, opciones);
+    await banner(p).waitFor();
+    assert.ok((await guardado(p)).dias.includes("2026-10-12"), caso);
+  }
+});
+
+test("cerrado o ya compartido: no sale", async (t) => {
+  for (const [caso, opciones] of [
     ["cerrado hasta mañana", { dias: ["2026-10-10", "2026-10-11"], cerradoHasta: "2026-10-13" }],
     ["ya compartido", { dias: ["2026-10-01", "2026-10-10", "2026-10-11"], compartido: true }],
     ["sin almacenamiento", { sinAlmacen: true }],
