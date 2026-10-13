@@ -530,3 +530,11 @@
     border-radius: 0 0 var(--radio-grande) var(--radio-grande);
   }
 }
+
+/* «Se canceló» en el chip de la cabecera (OL-391): mismo sitio y tamaño que «Ya pasó», en el rojo apagado de error sobre su fondo suave (como la
+   etiqueta del historial, `ui/SeCancelo`), sobre la portada, en la columna ancha y en la cabecera oscura. */
+.titulo > .etiqueta.cancelado,
+.enPagina > .titulo.oscura > .etiqueta.cancelado {
+  background: var(--error-suave);
+  color: var(--error);
+}

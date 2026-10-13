@@ -1,0 +1,21 @@
+/* «Se canceló» (OL-391, C1 del prototipo `historial-propuestas.html`): la etiqueta delante de la fecha, en el rojo de error sobre su fondo suave,
+   en mayúsculas como un sello. El renglón que la lleva (`ui/Renglon`, `li > a`) tacha su título en gris y apaga más su miniatura: se queda en
+   su sitio, pero se ve que no ocurrió. El selector mira el renglón entero para no tocar `ui/Renglon` ni cada lista que lo pinta. */
+.seCancelo {
+  padding: 1px var(--espacio-1);
+  border-radius: var(--radio-pildora);
+  background: var(--error-suave);
+  color: var(--error);
+  font-size: var(--letra-2xs);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+li:has(.seCancelo) > a[href] > b {
+  text-decoration: line-through;
+  text-decoration-color: var(--texto-suave);
+  text-decoration-thickness: 1px;
+}
+li:has(.seCancelo) > a[href] > img {
+  opacity: 0.45;
+}

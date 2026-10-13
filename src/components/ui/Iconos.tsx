@@ -331,6 +331,20 @@ export const IconoCalendarioMas = (p: P) => (
     <path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5" />
   </svg>
 );
+/** «Se canceló» (OL-391): el calendario con la ✕ dentro (la convención de un evento cancelado, como `calendar-x`). */
+export const IconoCalendarioCancelado = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4M10 13l4 4M14 13l-4 4" />
+  </svg>
+);
+/** «No se canceló» (OL-391): el calendario con la palomita, el evento sí ocurrió. */
+export const IconoCalendarioOk = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4" />
+  </svg>
+);
 /** Agregar a mi calendario: el + en la esquina (convención de Apple y Google), distinto del + al centro de Publicar evento. */
 export const IconoCalendarioAgregar = (p: P) => (
   <svg {...base(p)}>
