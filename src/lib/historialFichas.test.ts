@@ -9,6 +9,7 @@ import {
   listaCon,
   lugaresDeTrayectoria,
   otrosArtistas,
+  realizados,
   saltoLugares,
   textoFueron,
   type EventoPasado,
@@ -24,7 +25,7 @@ const ANA = { id: "a-ana", slug: null, nombre: "Ana", foto: null };
 const BETO = { id: "a-beto", slug: "beto", nombre: "Beto", foto: null };
 
 function evento(id: string, inicio: string, extra: Partial<EventoPasado> = {}): EventoPasado {
-  return { id, slug: id, titulo: id, inicio, fin: null, zona: ZONA, imagen: null, lugar_id: null, sitio_texto: null, sitio_direccion: null, sitio_reservado: false, lugar: null, festival: null, artistas: [], van: 0, ...extra };
+  return { id, slug: id, titulo: id, inicio, fin: null, zona: ZONA, imagen: null, lugar_id: null, sitio_texto: null, sitio_direccion: null, sitio_reservado: false, lugar: null, festival: null, artistas: [], van: 0, cancelado: false, ...extra };
 }
 const en = (lugar: LugarDelEvento) => ({ lugar_id: lugar.id, lugar });
 
@@ -153,5 +154,56 @@ describe("«Lugares» cuenta todos (K1)", () => {
     expect(saltoLugares(2, 0, 3)).toBe("trayectoria");
     expect(saltoLugares(0, 0, 1)).toBeUndefined();
     expect(saltoLugares(0, 0, 0)).toBeUndefined();
+  });
+});
+
+describe("«Se canceló»: anunciado vs. realizado (OL-391, C1)", () => {
+  // El caso del prototipo (captura 15 de la bitácora 420): Leo Traeger con dos fechas que ocurrieron en dos lugares y la clase magistral en el
+  // CDC marcada «se canceló».
+  const flamenco = evento("flamenco", "2026-10-09T01:00:00Z", { ...en(CDC), artistas: [LEO], van: 3 });
+  const cossio = evento("cossio", "2026-10-08T01:00:00Z", { ...en(COSSIO), artistas: [LEO, LATIFE] });
+  const clase = evento("clase", "2026-10-06T18:00:00Z", { ...en(CDC), artistas: [LEO, BETO], van: 2, cancelado: true });
+
+  it("la cabecera: «2 fechas · 1 cancelado · 2 lugares»; el cancelado no cuenta en las fechas", () => {
+    expect(cabeceraTrayectoria(2, 2, false, 1)).toBe("2 fechas · 1 cancelado · 2 lugares");
+    expect(cabeceraTrayectoria(3, 1, false, 2)).toBe("3 fechas · 2 cancelados · 1 lugar");
+    expect(cabeceraHistorial(12, 11, false, 1)).toBe("12 eventos · 1 cancelado · 11 artistas");
+    // Sin cancelados, la de siempre.
+    expect(cabeceraTrayectoria(2, 2, false, 0)).toBe("2 fechas · 2 lugares");
+    // Todo lo pasado se canceló: solo eso, sin «0 fechas»; y con el tope lleno, la cuenta sigue diciendo «200+».
+    expect(cabeceraTrayectoria(0, 0, false, 1)).toBe("1 cancelado");
+    expect(cabeceraHistorial(0, 0, false, 2)).toBe("2 cancelados");
+    expect(cabeceraTrayectoria(198, 12, true, 2)).toBe("198+ fechas · 2 cancelados · 12 lugares");
+  });
+
+  it("lo realizado es lo pasado menos lo cancelado", () => {
+    expect(realizados([flamenco, cossio, clase]).map((e) => e.id)).toEqual(["flamenco", "cossio"]);
+  });
+
+  it("no cuenta en «Se ha presentado en» ni en «Han pasado por aquí»", () => {
+    // El CDC sigue por el flamenco, pero una vez y no dos.
+    expect(lugaresDeTrayectoria([flamenco, cossio, clase]).map((p) => [p.nombre, p.veces])).toEqual([
+      [CDC.nombre, 1],
+      [COSSIO.nombre, 1],
+    ]);
+    // Si solo hubo lo cancelado en un lugar, el lugar no sale.
+    expect(lugaresDeTrayectoria([clase])).toEqual([]);
+    // Beto solo estaba en la clase cancelada: no pasó por aquí.
+    expect(artistasDelHistorial([flamenco, clase]).map((p) => [p.nombre, p.veces])).toEqual([["Leo Traeger", 1]]);
+  });
+
+  it("no cuenta en «Lugares» (K1) ni lleva a la trayectoria si es lo único pasado", () => {
+    expect(contarLugares([], realizados([clase]))).toBe(0);
+    expect(contarLugares([], realizados([cossio, clase]))).toBe(1);
+    expect(saltoLugares(contarLugares([], realizados([clase])), 0, realizados([clase]).length)).toBeUndefined();
+  });
+
+  it("se queda en su mes, en su sitio", () => {
+    const grupos = agruparPorMes([flamenco, cossio, clase]);
+    expect(grupos[0].eventos.map((e) => [e.id, e.cancelado])).toEqual([
+      ["flamenco", false],
+      ["cossio", false],
+      ["clase", true],
+    ]);
   });
 });

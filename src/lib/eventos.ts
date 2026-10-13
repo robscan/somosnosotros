@@ -75,6 +75,8 @@ export type Evento = {
   inaugura_id?: string | null;
   /** Un acto registrado en un programa sin publicar: oculto hasta que su autor lo publica. */
   borrador?: boolean;
+  /** «Se canceló» (OL-391, migración `20261012190000_eventos_cancelado`): ya pasó y quien lo gestiona dice que no ocurrió; no cuenta en el historial. */
+  cancelado?: boolean;
 };
 
 /**
