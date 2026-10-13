@@ -22,7 +22,7 @@ Nota de numeración: el encargo decía «doc 53», pero el 53 (inventario de Pub
 
 ## 2. Respuesta corta: sí es posible, y ya se puede tocar
 
-Las tres reglas se pueden cumplir con lo que la base guarda hoy, salvo una: **la base no guarda dónde está ninguna persona**, así que los asistentes del prototipo llevan posiciones inventadas (marcadas como tales) y la regla real de los asistentes necesita decisiones del founder (§ 5). El prototipo dibuja 745 esferas y 249 conexiones en el teléfono sin despeinarse (§ 7).
+Las tres reglas se pueden cumplir con lo que la base guarda hoy, salvo una: **la base no guarda dónde está ninguna persona**, así que los asistentes del prototipo llevan posiciones inventadas (marcadas como tales) y la regla real de los asistentes necesita decisiones del founder (§ 5). El prototipo dibuja 745 esferas y 419 conexiones en el teléfono sin despeinarse (§ 7).
 
 En una línea cada regla, tal como está en el prototipo:
 
@@ -87,6 +87,20 @@ Hoy `perfiles` guarda nombre, foto, colonia (texto libre, apenas usado) y bio; *
 
 Lo que haría falta para que fuera real está en § 5, porque no es un problema técnico: es de privacidad.
 
+### 3.6 Correlaciones entre iguales
+
+Pedido del founder la misma noche: «Me faltó agregar correlaciones entre iguales. Como entre artistas que tocan juntos en uno o varios lugares y entre lugares que participan en un mismo festival. Usuarios que coinciden en eventos también.» Las tres salen de lo que ya hay, sin tabla nueva, y van en el prototipo como líneas del color del tipo (las cruzadas son blancas):
+
+| Entre | De dónde sale | Peso de la línea | Hoy |
+| --- | --- | --- | --- |
+| Artista y artista | Comparten un evento en `eventos_artistas` («tocan juntos») | Eventos compartidos | 133 líneas |
+| Lugar y lugar | Son sede de actos del mismo festival (`evento_padre_id`) | Festivales compartidos | 22 líneas |
+| Asistente y asistente | Voy o Me interesa al mismo evento («coinciden») | Eventos en común | 15 líneas |
+
+Como dice el doc de Artistas (investigaciones), «compartió actividad con» es más preciso que «colaboró con»: estar en el mismo festival no prueba una actuación compartida. Por eso la línea artista–artista sale solo del mismo evento (el acto), no del festival entero. Las de lugares sí son por festival, que es lo que une a dos sedes. Las de asistentes son las más delicadas: dicen que dos personas estuvieron en el mismo sitio; en el prototipo son anónimas, y en la app dependen del umbral de la pregunta 10.
+
+La tarjeta del elegido desglosa sus conexiones: «toca con 4 artistas · en 2 lugares · 3 asistentes».
+
 ## 4. Tamaño: raíz cuadrada con techo
 
 ```
@@ -135,13 +149,13 @@ Leído con la llave de servicio del `.env` local, sin escribir nada y sin imprim
 | --- | --- | --- |
 | Lugares con coordenadas | 69 (66 en San Luis, 3 en San Miguel de Allende; 18 casas de cultura, 13 museos, 12 foros, 9 escuelas, 5 galerías, 3 colectivos, 3 bibliotecas, 6 otros) | 69 nodos, posición real |
 | Artistas | 663 (333 música, 116 artes visuales, 67 teatro, 42 letras, 32 danza, 29 cine, 7 circo, 37 por completar) | 663 nodos: 122 con lugar, 23 en sitios libres, 518 sin conexión |
-| Eventos | 336 (167 pasados, 169 próximos o en curso; 298 con ficha de lugar, 38 en sitio libre) | Las líneas artista–lugar salen de aquí; 39 lugares tienen eventos |
-| Evento–artista | 190 pares válidos | 129 líneas artista–lugar (sumando por lugar) |
+| Eventos | 336 (167 pasados, 169 próximos o en curso; 298 con ficha de lugar, 38 en sitio libre; 10 festivales) | Las líneas artista–lugar salen de aquí; 39 lugares tienen eventos; 22 líneas lugar–lugar por festival compartido |
+| Evento–artista | 190 pares válidos | 129 líneas artista–lugar (sumando por lugar) y 133 artista–artista (comparten evento) |
 | Seguimientos | 262 (213 a artistas, 49 a lugares) | Solo tamaño |
-| Asistencias | 67 (59 Voy, 8 Me interesa), de 14 personas | 36 líneas asistente–lugar y 84 asistente–artista |
+| Asistencias | 67 (59 Voy, 8 Me interesa), de 14 personas | 36 líneas asistente–lugar, 84 asistente–artista y 15 asistente–asistente (coinciden) |
 | Personas con alguna acción | 40 de 71 perfiles; dos cuentas concentran 264 de las 329 acciones | 13 nodos en el prototipo |
 
-**Total hoy: 745 nodos y 249 líneas.** Lo que falta en la base para que esto sea más que un prototipo: la posición de las personas (§ 5), el papel y la procedencia de cada relación (hueco 2 del doc 24: hoy «participa» es la única relación artista–evento) y, si se quiere, la línea artista–artista «compartieron evento», que se deriva de `eventos_artistas` y no se dibujó para no inflar.
+**Total hoy: 745 nodos y 419 líneas** (249 cruzadas y 170 entre iguales). Lo que falta en la base para que esto sea más que un prototipo: la posición de las personas (§ 5), el papel y la procedencia de cada relación (hueco 2 del doc 24: hoy «participa» es la única relación artista–evento) y, con uso, las relaciones con papel (quién curó, quién organizó) que afinarían las líneas entre iguales de § 3.6.
 
 ## 7. La tecnología en la PWA del iPhone
 
