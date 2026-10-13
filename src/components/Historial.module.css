@@ -79,7 +79,12 @@ li small > span > span.sitio:not(:last-child) {
   flex: 0 1 auto;
 }
 
-/* 3. «Tu año» (OL-394, «O en la sección»): al final de la sección abierta, separado del último renglón. */
-.tuAnio {
+/* 3. «Tu año» (OL-394, «O en la sección») y, junto a él, «Presentación» o «Informe» (OL-396, «O junto a "Tu año"»): al final de la sección
+   abierta, separados del último renglón, en una fila de dos pastillas iguales; con una sola, a todo lo ancho. */
+.botones {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
   margin-top: var(--espacio-4);
 }

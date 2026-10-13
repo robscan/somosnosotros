@@ -293,6 +293,11 @@ describe("«Tu año» al final de la trayectoria (OL-394)", () => {
 
   /** La trayectoria resuelta con esas fechas pasadas y esa persona mirando: la dirección del botón, o nada. */
   async function botonCon(pasadas: unknown[], quien: { id: string; rol: "admin" | "usuario" } | null) {
+    return (await propsCon(pasadas, quien))?.tuAnio;
+  }
+
+  /** Las props de la trayectoria resuelta con esas fechas pasadas y esa persona mirando. */
+  async function propsCon(pasadas: unknown[], quien: { id: string; rol: "admin" | "usuario" } | null) {
     const { clienteServidor, usuarioActual } = await import("@/lib/supabase/servidor");
     const { default: Historial } = await import("@/components/Historial");
     const previo = vi.mocked(clienteServidor).getMockImplementation()!;
@@ -316,7 +321,7 @@ describe("«Tu año» al final de la trayectoria (OL-394)", () => {
       const arbol = await FichaArtista({ params: Promise.resolve({ id: ARTISTA.slug }), searchParams: Promise.resolve({}) });
       const diferidos = [...recorrer(arbol)].filter((e) => e.type === Suspense).map((s) => s.props.children as { type: (p: unknown) => Promise<unknown>; props: unknown });
       const resueltos = await Promise.all(diferidos.map((d) => d.type(d.props)));
-      return resueltos.flatMap((r) => [...recorrer(r)]).find((e) => e.type === Historial)?.props.tuAnio;
+      return resueltos.flatMap((r) => [...recorrer(r)]).find((e) => e.type === Historial)?.props as Parameters<typeof Historial>[0] | undefined;
     } finally {
       vi.mocked(clienteServidor).mockImplementation(previo);
     }
@@ -337,5 +342,18 @@ describe("«Tu año» al final de la trayectoria (OL-394)", () => {
 
   it("solo con fechas del año pasado: sin botón (la trayectoria sí sale)", async () => {
     expect(await botonCon([pasada("a", "2025-10-09T01:00:00Z")], { id: "autor-1", rol: "usuario" })).toBeNull();
+  });
+
+  it("«Presentación» en PDF (OL-396): quien la gestiona, con algo pasado aunque sea de otro año, recibe las opciones de la hoja", async () => {
+    const props = await propsCon([pasada("a", "2025-10-09T01:00:00Z")], { id: "autor-1", rol: "usuario" });
+    expect(props?.documento?.que).toBe("artista");
+    expect(props?.documento?.opciones.map((o) => [o.formato, o.paginas, o.archivo])).toEqual([["carta", 1, "presentacion-artista-de-prueba.pdf"], ["a4", 1, "presentacion-artista-de-prueba.pdf"]]);
+    expect(props?.documento?.opciones[0].href).toMatch(/^\/api\/documento\?que=artista&id=artista-de-prueba&formato=carta&v=/);
+    expect((await propsCon([pasada("a", "2026-10-09T01:00:00Z")], { id: "admin-1", rol: "admin" }))?.documento?.que).toBe("artista");
+  });
+
+  it("«Presentación» en PDF: sin sesión o ajeno, sin botón", async () => {
+    expect((await propsCon([pasada("a", "2026-10-09T01:00:00Z")], null))?.documento).toBeNull();
+    expect((await propsCon([pasada("a", "2026-10-09T01:00:00Z")], { id: "otra", rol: "usuario" }))?.documento).toBeNull();
   });
 });

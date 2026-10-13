@@ -162,6 +162,19 @@ describe("tu_anio (OL-394)", () => {
   });
 });
 
+describe("documento (OL-396)", () => {
+  it("de qué ficha es el PDF y si se compartió con la hoja o se descargó", () => {
+    expect(validarMedicion("documento", { que: "artista", medio: "hoja" })).toEqual({ que: "artista", medio: "hoja" });
+    expect(validarMedicion("documento", { que: "lugar", medio: "guardado" })).toEqual({ que: "lugar", medio: "guardado" });
+  });
+  it("nunca la persona, cuál ficha, otro medio ni un tercer dato", () => {
+    expect(validarMedicion("documento", { que: "persona", medio: "hoja" })).toBeNull();
+    expect(validarMedicion("documento", { que: "leo-traeger", medio: "hoja" })).toBeNull();
+    expect(validarMedicion("documento", { que: "artista", medio: "copiado" })).toBeNull();
+    expect(validarMedicion("documento", { que: "artista", medio: "hoja", tipo: "presentacion" })).toBeNull();
+  });
+});
+
 describe("medirCliente", () => {
   it("en producción manda a Vercel y a Google (solo por el servidor) el mismo nombre y los mismos datos", () => {
     const gtag = vi.fn();

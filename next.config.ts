@@ -43,6 +43,7 @@ const nextConfig: NextConfig = {
     "/api/cartel-nuevo/[id]": ["./src/lib/carteles/fuentes/*.ttf"],
     "/eventos/[id]/cartel": ["./src/lib/carteles/fuentes/*.ttf"],
     "/api/tu-anio": ["./src/lib/carteles/fuentes/*.ttf"],
+    "/api/documento": ["./src/lib/carteles/fuentes/*.ttf"],
   },
   /**
    * Segunda vuelta de Inicio (OL-156): la app abre siempre en Inicio y Agenda pasa a `/agenda`. "/inicio" ya no

@@ -49,6 +49,12 @@ export const EVENTOS = {
    * el año (la persona, un artista o un lugar), nunca cuál. Cancelar la hoja no cuenta.
    */
   tu_anio: { que: ["persona", "artista", "lugar"], medio: ["hoja", "guardado"] },
+  /**
+   * La «Presentación» del artista o el «Informe de actividad» del lugar en PDF (OL-396): se compartió con la hoja del teléfono (abierta y no
+   * cancelada) o se descargó. De qué ficha es (artista: la presentación; lugar: el informe), nunca cuál. El tipo de documento no va aparte: sale
+   * de `que` uno a uno, y la lista admite dos datos como mucho (`MAX_DATOS`). Cancelar la hoja no cuenta.
+   */
+  documento: { que: ["artista", "lugar"], medio: ["hoja", "guardado"] },
   /** Avisos encendidos: por correo o en el teléfono. */
   aviso_activado: { canal: ["correo", "telefono"] },
   /**
