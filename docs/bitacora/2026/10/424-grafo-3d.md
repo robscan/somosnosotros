@@ -43,6 +43,10 @@ Founder: «bien, ahora responde: ¿Este es un grafo? ¿Cumple con la definición
 
 Lo que se corrigió al probar: la vista «Red» salió primero como una columna y luego como una bolita (los lugares sin línea y los cúmulos sueltos se repelen lejos y mandaban en la escala): ahora los sin línea van a un anillo aparte, la escala la fija el percentil 85 y lo que sobra se recoge a 720. Los nombres de lugares de cerca solo salen sin nodo elegido, para no encimarse con los rótulos de los vecinos. El medidor de cuadros por segundo con el panel oculto se cuelga (limitación ya conocida del navegador integrado): se midió con el panel visible, 57–99 fps mientras se mueve.
 
+## Cuarto ajuste (13 de oct): esferas finas e iluminación
+
+Founder: «si puedes por favor mejora el aspecto de las esferas, se ven low polly y además la iluminación puede mejorar. Solo si no impacta demasiado.» Esferas de 14×10 caras a 48×32, material físico (`MeshStandardMaterial`, rugosidad 0,38, sin metal), tres luces de estudio (clave cálida arriba a la derecha, relleno frío a la izquierda, contraluz detrás) sobre un ambiente suave, y tono ACES. Sigue siendo una sola malla instanciada: el costo por cuadro no cambia de forma medible (0,03 ms de CPU; con el panel visible, igual que antes). Capturas vueltas a sacar.
+
 ## Lo que choca con lo firmado
 
 DEFINICION (firmado el 2026-09-21): «Las personas que asisten no son fichas del grafo: se cuentan […] nunca su ubicación» y «las conexiones se muestran, no se puntúan […] nada se destaca por tener más conexiones». El pedido pone a los asistentes como nodos con ubicación y da tamaño por seguidores. No lo resolví: está como preguntas 1 a 3 del doc, con la regla que propongo si el founder decide que sí (interruptor apagado de origen, posición solo del botón «Dónde estás», redondeada a 500 m con corrimiento fijo, sin historial, tramos, sin líneas desde Seguir, umbral de 3, se borra con la cuenta).

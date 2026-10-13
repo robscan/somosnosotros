@@ -217,12 +217,17 @@ function radio(n) {
 const lienzo = document.getElementById("lienzo");
 const renderer = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const escena = new THREE.Scene();
 const camara = new THREE.PerspectiveCamera(50, 1, 1, 30000);
-escena.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.1));
-const sol = new THREE.DirectionalLight(0xffffff, 1.4); sol.position.set(600, 1200, 800); escena.add(sol);
-const geo = new THREE.SphereGeometry(1, 14, 10);
-const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+// Iluminación de estudio: ambiente suave, luz clave cálida desde arriba a la derecha, relleno frío desde la izquierda y un contraluz que recorta las esferas del fondo.
+escena.add(new THREE.HemisphereLight(0xffffff, 0x2a2438, 0.55));
+const clave = new THREE.DirectionalLight(0xfff4e6, 2.2); clave.position.set(700, 1300, 900); escena.add(clave);
+const relleno = new THREE.DirectionalLight(0xdde6ff, 0.7); relleno.position.set(-900, 400, -300); escena.add(relleno);
+const contraluz = new THREE.DirectionalLight(0xffffff, 1.1); contraluz.position.set(-300, 500, -1200); escena.add(contraluz);
+// Esferas finas (48×32 caras) con material físico: un poco de brillo, nada de metal. Una sola malla instanciada, así que el costo es el mismo.
+const geo = new THREE.SphereGeometry(1, 48, 32);
+const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.38, metalness: 0.05 });
 const malla = new THREE.InstancedMesh(geo, mat, nodos.length); malla.frustumCulled = false; escena.add(malla);
 const m4 = new THREE.Matrix4(), v3 = new THREE.Vector3(), q4 = new THREE.Quaternion(), ARRIBA = new THREE.Vector3(0, 1, 0), esc3 = new THREE.Vector3();
 
