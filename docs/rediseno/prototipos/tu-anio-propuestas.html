@@ -611,6 +611,7 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
 .previa .formatos { display: flex; justify-content: center; gap: var(--espacio-2); }
 .previa .formatos button { min-height: 36px; padding: 0 var(--espacio-3); border-radius: var(--radio-pildora); background: #2a2a2a; color: #bbb; font-size: var(--letra-xs); font-weight: 700; }
 .previa .formatos button[aria-pressed="true"] { background: #fff; color: #1a1a1a; }
+.preajustes.una { grid-template-columns: 1fr; }
 </style>
 
 <main class="escena" id="escena">
@@ -634,9 +635,8 @@ button { appearance: none; border: 0; background: none; padding: 0; cursor: poin
     </header>
     <div class="hoja-cuerpo" id="hoja-cuerpo">
       <div class="resumen">
-        <div class="preajustes dos" role="group" aria-label="Preajustes">
-          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
-          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>por firmar</small></button>
+        <div class="preajustes una" role="group" aria-label="Preajustes">
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 oct, noche</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <label class="selector-ficha"><span>De quién</span><select id="sujeto" aria-label="De quién es el año"></select></label>
@@ -1032,10 +1032,11 @@ const Portadas = (() => {
   // ===== Ejercicios y preajustes. No hay «Hoy»: «Tu año» no existe en producción.
   const PROPUESTA = { p: 'anio', f: '4x5', c: 'calma', e: 'crema', d: 'mas', n: true, q: 'gestiona', o: 'seccion' };
   const CLAVES = Object.keys(PROPUESTA);
-  const PRESETS = { propuesta: { nombre: 'Propuesta', e: { ...PROPUESTA } }, firmada: { nombre: 'Firmada', e: { ...PROPUESTA }, pendiente: true } };
+  // Firma del founder (12 de oct, noche): «Te acepto porque no es importante ahora. Vamos a avanzar» → «Tu año» v2 tal como la propuesta.
+  const PRESETS = { propuesta: { nombre: 'Propuesta', e: { ...PROPUESTA } }, firmada: { nombre: 'Firmada', e: { ...PROPUESTA } } };
   const PORQUE = {
     propuesta: 'Por qué: calma (C): una imagen dice una cosa; el número grande es la que importa y lo demás acompaña, chico; la figura de las portadas va en su esquina, del color del sujeto, sin pisar texto. Crema (E): la crema y el negro de las portadas del sistema leen bien en el feed y en la historia, y el color del sujeto queda como acento, no como fondo. «Tu 2026» (P) dice lo que la persona espera de un «Tu año» tipo Spotify y, mientras el año no acaba, aclara desde cuándo cuenta («hasta el 12 de oct»); el mes queda como opción para quien quiera presumir octubre. Publicación 4:5 (F) es el formato que firmaste para los flyers; la historia 9:16 se arma con las mismas zonas y respeta lo que Instagram tapa arriba y abajo. La pinta Bauhaus (E) es la de las portadas del sistema que ya están en producción: la imagen se reconoce como de la app sin poner un logotipo enorme. Las cifras con «lo más» (D) cuentan algo que una lista de títulos no cuenta: dónde más fuiste, con quién, qué mes; la lista cabe en la historia. Con nombre y foto (N): es la cara de quien comparte. Solo quien gestiona la ficha (Q) la saca de su propio año: es un «Tu», no una ficha pública; la persona desde su perfil. Se ofrece dentro de «Trayectoria» / «Historial» abiertos (O), donde ya está mirando su pasado, y en Perfil para la persona.',
-    firmada: 'Todavía no hay firma: hasta que firmes, «Firmada» es la propuesta del gestor.',
+    firmada: 'Firmada el 12 de oct por la noche, tal como la segunda propuesta: calma sobre crema, «Tu 2026» con el número protagonista, publicación 4:5, cifras y lo más, nombre y foto, solo quien gestiona, desde la sección. Pasa a código como OL-394.',
   };
   const EJERCICIOS = [
     { k: 'p', t: 'P · El periodo', d: 'Año: «Tu 2026» y, mientras no acabe, «hasta el 12 de oct». Mes: «Tu octubre». Hasta hoy: «Tu año en Somos Nosotrxs» con todo desde que entraste.', opciones: [['anio', 'Año'], ['mes', 'Este mes'], ['todo', 'Hasta hoy']], f: 'Pedido del founder (8 de oct): «Tu año» tipo Spotify.' },
@@ -1048,7 +1049,7 @@ const Portadas = (() => {
     { k: 'o', t: 'O · Dónde se abre', d: 'En la sección: un botón «Tu año» al final de «Trayectoria» / «Historial» abiertos (y en Perfil para la persona). En las acciones: un círculo «Tu año» junto a Compartir. En el menú «···». Aviso en Inicio: un banner como el de compartir, solo en diciembre. Toca «Dónde se abre» arriba para verlo.', opciones: [['seccion', 'En la sección'], ['acciones', 'Junto a Compartir'], ['menu', 'En el menú ···'], ['inicio', 'Aviso en Inicio']] },
   ];
   const igual = (a, b) => CLAVES.every((k) => a[k] === b[k]);
-  const presetDe = (e) => (igual(PRESETS.propuesta.e, e) ? 'propuesta' : null);
+  const presetDe = (e) => (igual(PRESETS.firmada.e, e) ? 'firmada' : null);
   const NOMBRE_OPCION = { p: { anio: '', mes: 'P mes', todo: 'P hasta hoy' }, f: { '4x5': '', '9x16': 'F historia' }, c: { calma: '', cartel: 'C cartel', pila: 'C pila' }, e: { crema: '', color: 'E color', fotos: 'E fotos' }, d: { mas: '', cifras: 'D cifras', lista: 'D lista' }, q: { gestiona: '', cualquiera: 'Q cualquiera' }, o: { seccion: '', acciones: 'O junto a Compartir', menu: 'O menú', inicio: 'O Inicio' } };
   const listaDe = (e) => { const l = []; for (const k of CLAVES) { if (NOMBRE_OPCION[k]) { if (NOMBRE_OPCION[k][e[k]]) l.push(NOMBRE_OPCION[k][e[k]]); } else if (e[k] !== PROPUESTA[k]) l.push(e[k] ? k.toUpperCase() : `sin ${k.toUpperCase()}`); } return l.join(' · '); };
 
@@ -1262,7 +1263,7 @@ const Portadas = (() => {
     for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
     const activos = listaDe(estado.e);
     const nombre = p ? PRESETS[p].nombre : 'Personalizada';
-    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}${p === 'propuesta' ? ' · por firmar' : ''}`;
+    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}`;
     $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta».';
     $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}`;
     $('fab-combinacion').textContent = `· ${p ? nombre : 'personalizada'}`;

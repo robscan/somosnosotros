@@ -1,7 +1,7 @@
 # 423 · Prototipo: «Tu año» como imagen para compartir (OL-392)
 
 **Fecha:** 2026-10-12 (tarde). **Rama:** `tu-anio-propuestas`, desde `origin/main` (`242ef825`, ya con el historial de OL-390). **Gestor:** Claude Fable 5.1 (Gestor de cambios VI). **Sin código de la app, sin migración.**
-**Estado:** página armada y publicada en privado para los comentarios del founder; esperando la firma. Pieza 3 de 5 del historial («sigue con piezas faltantes», 12 de oct).
+**Estado:** firmada por el founder el 12 de oct por la noche («Te acepto porque no es importante ahora. Vamos a avanzar»), tal como la segunda propuesta: P año · F publicación · C calma · E crema · D cifras y lo más · N · Q solo quien gestiona · O en la sección. Pasa a código como OL-394 (bitácora 425). Pieza 3 de 5 del historial («sigue con piezas faltantes», 12 de oct).
 
 ## El encargo
 
