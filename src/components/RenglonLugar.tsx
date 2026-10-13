@@ -8,7 +8,7 @@ import Renglon from "./ui/Renglon";
 import styles from "./ui/Renglon.module.css";
 
 type Props = {
-  lugar: Pick<LugarResumen, "id" | "slug" | "nombre" | "direccion" | "portada" | "privado"> & { tipo: string; proximo?: ProximoEvento | null };
+  lugar: Pick<LugarResumen, "id" | "slug" | "nombre" | "direccion" | "portada" | "privado"> & { tipo: string; proximo?: ProximoEvento | null; enCurso?: ProximoEvento | null };
   /** Distancia desde el punto de quien mira, cuando la lista se ordena por cercanía. */
   km?: number;
   /** Con botón, "Seguir" o "Sigues" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
@@ -21,8 +21,9 @@ type Props = {
 };
 
 /**
- * Renglón de lugar (OL-057): foto cuadrada, nombre y, en los datos, qué es, su calle (y a cuántos km, si se sabe) y su
- * próximo evento. Uno solo para todas las listas de lugares, como RenglonEvento para los eventos.
+ * Renglón de lugar (OL-057): foto cuadrada, nombre y, en los datos, qué es, su calle (y a cuántos km, si se sabe), su
+ * próximo evento y, debajo, lo que tiene abierto de varios días («Exposición hasta el dom 8 de nov»; OL-400, el founder firmó «las dos
+ * líneas»). Uno solo para todas las listas de lugares, como RenglonEvento para los eventos.
  */
 export default function RenglonLugar({ lugar: l, km, boton, botonEnEspera = false, alAbrir }: Props) {
   function alTocar(e: MouseEvent<HTMLAnchorElement>) {
@@ -37,11 +38,14 @@ export default function RenglonLugar({ lugar: l, km, boton, botonEnEspera = fals
         <IconoPin width={15} height={15} />
         {[etiquetaTipo(l.tipo), calleCorta(l.direccion) || "Sin dirección", km !== undefined && textoDistancia(km)].filter(Boolean).join(" · ")}
       </span>
-      {l.proximo && (
-        <span>
-          <IconoCalendario width={15} height={15} />
-          <b>{textoProximo(l.proximo)}</b>
-        </span>
+      {[l.proximo, l.enCurso].map(
+        (vida) =>
+          vida && (
+            <span key={vida.id}>
+              <IconoCalendario width={15} height={15} />
+              <b>{textoProximo(vida)}</b>
+            </span>
+          ),
       )}
     </Renglon>
   );

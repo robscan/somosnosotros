@@ -63,9 +63,44 @@ export function compartirLugar(l: { id: string; slug?: string | null; nombre: st
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. `fin` y `clase` (OL-398) dicen si es algo de varios días ya en curso. */
 export type ProximoEvento = { id: string; inicio: string; zona: string; titulo: string; fin?: string | null; clase?: Clase | null };
 
-/** Lo que el mapa y la lista enseñan de cada lugar. `diasEvento` es opcional: solo lo necesitan los filtros de Lugares
- *  (Con eventos); las demás pantallas no lo piden. */
-export type LugarLista = LugarResumen & { proximo: ProximoEvento | null; diasEvento?: string[] };
+/** Lo que el mapa y la lista enseñan de cada lugar. `proximo` es lo próximo con hora (un evento, una sesión, un acto; o una exposición
+ *  o un festival por abrir) y `enCurso`, la exposición, el taller o el festival de varios días ya abierto (OL-400): el renglón dice
+ *  las dos cosas. `enCurso` y `diasEvento` son opcionales: solo los traen las pantallas que los piden (Lugares, lo que sigue una
+ *  persona); `diasEvento` solo lo necesitan los filtros de Lugares (Con eventos). */
+export type LugarLista = LugarResumen & { proximo: ProximoEvento | null; enCurso?: ProximoEvento | null; diasEvento?: string[] };
+
+/** Las clases de varios días: abiertas dicen «hasta el …» en vez de un «Próximo» que ya pasó (OL-398). */
+const VARIOS_DIAS: readonly (Clase | null | undefined)[] = ["exposicion", "taller", "festival"];
+
+/**
+ * Una exposición, un taller o un festival ya abierto y sin cerrar (OL-400): ni es próximo ni tiene una hora que decir. Sin `fin` no se sabe
+ * hasta cuándo y cuenta como cualquier evento.
+ */
+export function estaEnCurso(p: Pick<ProximoEvento, "inicio" | "fin" | "clase">, ahora: Date = new Date()): boolean {
+  return !!p.fin && VARIOS_DIAS.includes(p.clase) && Date.parse(p.inicio) <= ahora.getTime() && Date.parse(p.fin) > ahora.getTime();
+}
+
+/** Lo que el lugar tiene, para quien solo puede decir una cosa (la tarjeta de Destacados): lo próximo con hora y, si no hay, lo que está abierto. */
+export const vidaDeLugar = (l: { proximo?: ProximoEvento | null; enCurso?: ProximoEvento | null }): ProximoEvento | null => l.proximo ?? l.enCurso ?? null;
+
+/**
+ * Cómo se ordena la lista de Lugares (OL-400; founder, 13 de octubre: «O Con hora primero · D Cabecera «N lugares» · E Cercanos primero /
+ * Próximos primero»): por cercanía, por lo próximo o por nombre. Se elige en el desplegable junto a «N lugares».
+ */
+export type OrdenLugares = "cerca" | "pronto" | "abc";
+export const ORDENES_LUGARES: readonly { clave: OrdenLugares; etiqueta: string }[] = [
+  { clave: "cerca", etiqueta: "Cercanos primero" },
+  { clave: "pronto", etiqueta: "Próximos primero" },
+  { clave: "abc", etiqueta: "Alfabético" },
+];
+/** La línea bajo la cabecera cuando se pidió «Cercanos primero» y no hubo ubicación (negada, sin respuesta o ya negada de antes). */
+export const SIN_CERCANOS = "Sin tu ubicación no hay cercanos: siguen los próximos primero.";
+
+/** El orden que se aplica: el elegido o, sin elección, cercanos con ubicación y próximos sin ella. Sin ubicación no hay cercanos: próximos. */
+export function ordenEfectivo(elegido: OrdenLugares | null, hayPunto: boolean): OrdenLugares {
+  const orden = elegido ?? (hayPunto ? "cerca" : "pronto");
+  return orden === "cerca" && !hayPunto ? "pronto" : orden;
+}
 
 export type Lugar = LugarResumen & {
   descripcion: string | null;
@@ -125,26 +160,32 @@ export function puntoDeCercania<P>(pedido: P | null, fresca: P | null, concedido
 
 /**
  * La lista de la hoja en dos grupos con su título (OL-249, ajuste 7; propuesta del gestor, ante el pedido del founder de ordenar primero los lugares con
- * eventos): «Con eventos», los que tienen un evento próximo, y «Sin eventos próximos». Un orden mezclado y sin explicar desorienta en un directorio; con
- * los dos títulos se entiende solo, y lo que asoma en los dos renglones y medio de la hoja es lo más útil: adónde ir. Con ubicación, cada grupo va por
- * distancia (como antes de los grupos); sin ella, el de eventos, del más próximo al más lejano en fecha, y el otro, por nombre. Un grupo sin lugares no
- * existe: con filtros puestos pueden quedar uno o ninguno.
+ * eventos): «Con eventos», los que tienen algo próximo o abierto, y «Sin eventos próximos». Un orden mezclado y sin explicar desorienta en un directorio;
+ * con los dos títulos se entiende solo, y lo que asoma en los dos renglones y medio de la hoja es lo más útil: adónde ir. Un grupo sin lugares no existe:
+ * con filtros puestos pueden quedar uno o ninguno. Cada grupo va en el orden elegido (OL-400):
+ * - «cerca» (con ubicación): por distancia, los dos grupos.
+ * - «pronto» (y «cerca» sin ubicación): «Con eventos» en dos tandas, primero los que tienen algo con hora, por su fecha, y después los que solo tienen
+ *   algo de varios días ya abierto, el que cierra antes primero (founder, 13 de octubre: «Los eventos van antes que las expos»); «Sin eventos
+ *   próximos», por nombre.
+ * - «abc»: los dos grupos por nombre, sin mezclarlos.
+ * A igual instante o distancia, por nombre y por id. Con ubicación, los km de todos (el renglón los dice en cualquier orden).
  */
-export function agruparLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null): { grupos: GrupoLugares<T>[]; km: Map<string, number> } {
-  const con = ordenarLugares(
-    lugares.filter((l) => l.proximo !== null),
-    punto,
-  );
-  const sin = ordenarLugares(
-    lugares.filter((l) => l.proximo === null),
-    punto,
-  );
-  const porFecha = (a: T, b: T) => a.proximo!.inicio.localeCompare(b.proximo!.inicio) || compararNombres(a.nombre, b.nombre) || a.id.localeCompare(b.id);
+export function agruparLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null, orden: OrdenLugares = "cerca"): { grupos: GrupoLugares<T>[]; km: Map<string, number> } {
+  const modo = ordenEfectivo(orden, punto !== null);
+  const km = new Map<string, number>();
+  if (punto) for (const l of lugares) km.set(l.id, distanciaKm(punto, l));
+  const porNombre = (a: T, b: T) => compararNombres(a.nombre, b.nombre) || a.id.localeCompare(b.id);
+  const porDistancia = (a: T, b: T) => km.get(a.id)! - km.get(b.id)! || porNombre(a, b);
+  // Lo con hora, por su inicio; lo solo abierto, por su cierre, y siempre después.
+  const instante = (l: T) => (l.proximo ? Date.parse(l.proximo.inicio) : Date.parse(l.enCurso!.fin!));
+  const porLoProximo = (a: T, b: T) => Number(!a.proximo) - Number(!b.proximo) || instante(a) - instante(b) || porNombre(a, b);
+  const con = lugares.filter((l) => vidaDeLugar(l) !== null);
+  const sin = lugares.filter((l) => vidaDeLugar(l) === null);
   const grupos: GrupoLugares<T>[] = [
-    { clave: "con-eventos", titulo: "Con eventos", lugares: punto ? con.lista : [...con.lista].sort(porFecha) },
-    { clave: "sin-eventos", titulo: "Sin eventos próximos", lugares: sin.lista },
+    { clave: "con-eventos", titulo: "Con eventos", lugares: con.sort(modo === "cerca" ? porDistancia : modo === "pronto" ? porLoProximo : porNombre) },
+    { clave: "sin-eventos", titulo: "Sin eventos próximos", lugares: sin.sort(modo === "cerca" ? porDistancia : porNombre) },
   ];
-  return { grupos: grupos.filter((g) => g.lugares.length > 0), km: new Map([...con.km, ...sin.km]) };
+  return { grupos: grupos.filter((g) => g.lugares.length > 0), km };
 }
 
 /**
@@ -202,7 +243,7 @@ const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice
  */
 export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona" | "fin" | "clase">, ahora: Date = new Date()): string {
   const { clase, fin } = p;
-  if (fin && (clase === "exposicion" || clase === "taller" || clase === "festival")) {
+  if (fin && clase && VARIOS_DIAS.includes(clase)) {
     const hoy = diaLocal(ahora, p.zona);
     const hasta = diaLocal(new Date(fin), p.zona);
     if (Date.parse(p.inicio) <= ahora.getTime()) return `${cortoDeClase(clase)} hasta el ${diaConMesDe(hasta, ahora, p.zona)}`;
@@ -211,14 +252,23 @@ export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona" | "fin" | 
   return `Próximo: ${minuscula(formatearCuando(p.inicio, null, ahora, p.zona))}`;
 }
 
-/** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). `fin` y `clase` viajan si la consulta los trajo (OL-398). */
-export function conProximo<T extends { id: string }>(lugares: T[], eventos: (ProximoEvento & { lugar_id: string | null })[]): (T & { proximo: ProximoEvento | null })[] {
+/**
+ * Une lugares con lo que tienen (los eventos vienen ordenados por inicio): `proximo`, el primero que no esté abierto de antes (un evento, una sesión,
+ * un acto, o una exposición o un festival por abrir), y `enCurso`, la exposición, el taller o el festival de varios días ya abierto, el que cierra
+ * antes si hay varios (OL-400: el renglón dice las dos cosas). `fin` y `clase` viajan si la consulta los trajo (OL-398); sin ellos nada está en curso.
+ */
+export function conProximo<T extends { id: string }>(lugares: T[], eventos: (ProximoEvento & { lugar_id: string | null })[], ahora: Date = new Date()): (T & { proximo: ProximoEvento | null; enCurso: ProximoEvento | null })[] {
   const proximo = new Map<string, ProximoEvento>();
+  const enCurso = new Map<string, ProximoEvento>();
   for (const e of eventos) {
-    if (!e.lugar_id || proximo.has(e.lugar_id)) continue;
-    proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona, titulo: e.titulo, ...(e.fin !== undefined ? { fin: e.fin } : {}), ...(e.clase !== undefined ? { clase: e.clase } : {}) });
+    if (!e.lugar_id) continue;
+    const p: ProximoEvento = { id: e.id, inicio: e.inicio, zona: e.zona, titulo: e.titulo, ...(e.fin !== undefined ? { fin: e.fin } : {}), ...(e.clase !== undefined ? { clase: e.clase } : {}) };
+    if (estaEnCurso(p, ahora)) {
+      const antes = enCurso.get(e.lugar_id);
+      if (!antes || Date.parse(p.fin!) < Date.parse(antes.fin!)) enCurso.set(e.lugar_id, p);
+    } else if (!proximo.has(e.lugar_id)) proximo.set(e.lugar_id, p);
   }
-  return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
+  return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null, enCurso: enCurso.get(l.id) ?? null }));
 }
 
 /**

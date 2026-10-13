@@ -9,7 +9,7 @@ import { conProximo, type ProximoEvento } from "@/lib/lugares";
 import { clienteServidor, type PerfilPublico } from "@/lib/supabase/servidor";
 
 /** Con `proximo` y `proxima` cuando la ficha los pide: el mismo renglón que en Lugares y Artistas (OL-057). */
-export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null };
+export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null; enCurso?: ProximoEvento | null };
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: PerfilPublico; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
@@ -20,7 +20,7 @@ type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; s
 
 const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
 
-/** El próximo evento de cada lugar seguido, como en la lista de Lugares. */
+/** El próximo evento de cada lugar seguido y lo que tiene abierto (OL-400), como en la lista de Lugares. */
 async function conProximos(supabase: Cliente, lugares: LugarSeguido[]): Promise<LugarSeguido[]> {
   if (lugares.length === 0) return lugares;
   const { data } = await supabase.from("eventos").select("id, inicio, fin, clase, lugar_id, zona, titulo").in("lugar_id", lugares.map((l) => l.id)).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(500);

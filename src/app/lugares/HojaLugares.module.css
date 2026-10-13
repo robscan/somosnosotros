@@ -148,12 +148,6 @@
   line-height: 28px;
   font-variation-settings: var(--ancho-titulo);
 }
-.resumen small {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 500;
-  font-variation-settings: var(--ancho-texto);
-}
 
 /* 3. Desde 792 la hoja es el panel izquierdo (400 px), sin hueco ni asa, y desplaza como cualquier panel; el mapa ocupa el resto.
    La navegación es el carril del armazón, a la izquierda de la pantalla: el panel llega hasta el pie de la ventana. */
