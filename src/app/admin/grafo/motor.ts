@@ -34,8 +34,9 @@ type Nodo = {
 type Linea = { a: number; b: number; t: string; w: number; d: number[]; par?: "artista" | "lugar" | "persona" };
 type Filtro = { tipo: string | null; clase: string | null };
 type Item = { i?: number; nombre: string; sub?: string; color: string; grupo?: boolean; n?: number };
-type Resultado = { titulo: string; items: Item[] };
-type Lente = { id: string; titulo: string; sub: string; aplicar: () => Resultado };
+type Resultado = { titulo: string; items: Item[]; aviso?: string };
+type Capa = "lugar" | "artista" | "persona";
+type Lente = { id: string; titulo: string; sub: string; /** Las capas que la lente necesita a la vista: si están plegadas, la lente las despliega. */ necesita: Capa[]; aplicar: () => Resultado };
 type Paso = ((t: number) => void) | null;
 type Parte = string | { b: string };
 
@@ -76,7 +77,14 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, clase = "", texto = "
 
 export type Motor = { destruir: () => void };
 
-export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
+/** Dónde se recuerdan en el teléfono las capas plegadas y el «Yo»; sin almacenamiento (modo privado, bloqueado), no se recuerda y no pasa nada. */
+const CLAVE_GUARDADO = "grafo-admin:capas";
+const NOMBRE_CAPA: Record<Capa, string> = { lugar: "Lugar", artista: "Artista", persona: "Asistente" };
+const LECTURA_MAPA = "Mapa: cada lugar en su sitio real, a escala; los artistas flotan sobre el lugar donde más tocan y los asistentes, debajo, cerca de los lugares a los que van. Dos puntos juntos están juntos en la ciudad, no necesariamente relacionados.";
+const LECTURA_RED = "Red: la posición la dan las conexiones, no el sitio: lo que se relaciona se atrae y lo más conectado queda al centro; los cúmulos sueltos quedan aparte y los lugares sin ninguna línea, en el anillo de fuera.";
+
+/** `yo`: el número del punto de quien mira entre los asistentes (o null si no tiene asistencias): lo único que el navegador sabe de su cuenta. */
+export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: number | null = null): Motor {
   const limpiezas: Array<() => void> = [];
   const escuchar = <T extends EventTarget>(blanco: T, tipo: string, fn: (ev: never) => void, opciones?: AddEventListenerOptions) => {
     blanco.addEventListener(tipo, fn as EventListener, opciones);
@@ -87,6 +95,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
   const arbol = q<HTMLElement>("arbol");
   const lista = q<HTMLElement>("lista");
   const rotulo = q<HTMLDivElement>("rotulo");
+  const rotuloYo = q<HTMLDivElement>("rotuloYo");
   const capaVecinos = q<HTMLDivElement>("vecinos");
   const capaEtiquetas = q<HTMLDivElement>("etiquetas");
   const tarjeta = q<HTMLElement>("tarjeta");
@@ -106,6 +115,32 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
   nodos.forEach((n, i) => {
     if (n.suelto) sueltos.push(i);
   });
+
+  // ---------- Capas plegables y «Yo» ----------
+  const capas: Record<Capa, boolean> = { lugar: true, artista: true, persona: true };
+  const capaDe = (n: Nodo): Capa => (n.tipo === "lugar" ? "lugar" : n.tipo === "persona" ? "persona" : "artista"); // el nodo «por conectar» va con los artistas
+  const capaVisible = (i: number) => capas[capaDe(nodos[i])];
+  const yoNodo = yo !== null && yo >= 0 && yo < DATOS.personas.length ? basePer + yo : -1;
+  let yoActivo = false;
+  /** El nombre que se enseña: el de cada nodo, salvo el de quien mira cuando se marca («Tú»); los demás asistentes siguen anónimos. */
+  const nombreDe = (i: number) => (yoActivo && i === yoNodo ? "Tú" : nodos[i].nombre);
+  function leerGuardado() {
+    try {
+      const g = JSON.parse(localStorage.getItem(CLAVE_GUARDADO) ?? "null") as { capas?: Partial<Record<Capa, unknown>>; yo?: unknown } | null;
+      if (!g || typeof g !== "object") return;
+      for (const c of ["lugar", "artista", "persona"] as const) if (typeof g.capas?.[c] === "boolean") capas[c] = g.capas[c] as boolean;
+      if (g.yo === true && yoNodo >= 0) yoActivo = true;
+    } catch {
+      // sin almacenamiento o con datos ilegibles: se empieza con todo desplegado
+    }
+  }
+  function guardar() {
+    try {
+      localStorage.setItem(CLAVE_GUARDADO, JSON.stringify({ capas, yo: yoActivo }));
+    } catch {
+      // sin almacenamiento: no se recuerda
+    }
+  }
 
   // ---------- Líneas (con sus días, para el tiempo) ----------
   const aristas: Linea[] = DATOS.aristas.map(([t, a, b, w, d]) =>
@@ -219,6 +254,11 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
   const aro = new THREE.Mesh(geoAro, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.95 }));
   aro.visible = false;
   escena.add(aro);
+  // El anillo fino de quien mira («Yo»), del color de persona
+  const geoAroYo = new THREE.RingGeometry(1.3, 1.4, 48);
+  const aroYo = new THREE.Mesh(geoAroYo, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.95 }));
+  aroYo.visible = false;
+  escena.add(aroYo);
   // Marcas de zonas sin lugar (lente 1): discos planos en el suelo
   const geoDisco = new THREE.CircleGeometry(46, 24);
   geoDisco.rotateX(-Math.PI / 2);
@@ -255,6 +295,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
       material.opacity = (i + 1) % 5 === 0 ? 0.15 : 0.055;
     });
     (aro.material as THREE.MeshBasicMaterial).color.copy(colores.sel);
+    (aroYo.material as THREE.MeshBasicMaterial).color.copy(colores.persona);
     (zonasMesh.material as THREE.MeshBasicMaterial).color.copy(destacado);
   }
   const colorNodo = (n: Nodo) => (n.tipo === "persona" ? colores.persona : n.tipo === "lugar" ? colores.lugar : n.tipo === "resumen" ? colores.resumen : n.suelto ? colores.suelto : colores.artista);
@@ -375,12 +416,14 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     animarCamara({ objetivo: new THREE.Vector3(0, 0, 0), distancia: vista === "red" ? 1450 : 1700 }, 900); // la cámara vuelve a encuadrar la nube entera
     botonRed.setAttribute("aria-pressed", String(vista === "red"));
     botonRed.textContent = vista === "red" ? "Mapa" : "Red";
+    lista.querySelectorAll<HTMLElement>("[data-lectura]").forEach((p) => (p.dataset.activa = String(p.dataset.lectura === vista)));
     pedirCuadro();
   }
   const P3 = (i: number) => v3.set(pos[i][0], pos[i][1] * factorAltura, pos[i][2]);
 
   // ---------- Filtro, enfoque y dibujo ----------
   function pasaFiltro(n: Nodo): boolean {
+    if (!capas[capaDe(n)]) return false;
     if (n.tipo === "resumen") return !mostrarSueltos && (!filtro.tipo || filtro.tipo === "artista");
     if (n.suelto && !mostrarSueltos && filtro.tipo !== "sueltos") return false;
     if (!filtro.tipo) return true;
@@ -462,7 +505,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     malla.instanceMatrix.needsUpdate = true;
     if (malla.instanceColor) malla.instanceColor.needsUpdate = true;
     // líneas: las del elegido, las del segundo paso y las demás tenues
-    const mias = new Set(haySel ? vecinos[seleccion].filter((i) => activas[i]) : []);
+    const mias = new Set(haySel ? vecinos[seleccion].filter((i) => activas[i] && capaVisible(aristas[i].a) && capaVisible(aristas[i].b)) : []);
     const deSegundo = new Set<number>();
     if (haySel)
       aristas.forEach((e, i) => {
@@ -481,19 +524,31 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
       const r = radio(nodos[seleccion]) * 1.15;
       aro.scale.set(r, r, r);
     } else aro.visible = false;
+    if (yoActivo && yoNodo >= 0 && visible[yoNodo]) {
+      aroYo.visible = true;
+      aroYo.position.copy(P3(yoNodo));
+      const r = radio(nodos[yoNodo]);
+      aroYo.scale.set(r, r, r);
+    } else aroYo.visible = false;
     pedirCuadro();
+  }
+  /** Los vecinos a un paso y a dos del elegido, con las líneas activas en el periodo y solo de las capas a la vista. */
+  function calcularVecinos(i: number) {
+    primero = new Set();
+    segundo = new Set();
+    for (const ei of vecinos[i]) if (activas[ei] && capaVisible(otro(aristas[ei], i))) primero.add(otro(aristas[ei], i));
+    for (const p of primero)
+      for (const ei of vecinos[p])
+        if (activas[ei] && capaVisible(otro(aristas[ei], p))) {
+          const o = otro(aristas[ei], p);
+          if (o !== i && !primero.has(o)) segundo.add(o);
+        }
   }
   function seleccionar(i: number, volar = false) {
     seleccion = i;
     primero = new Set();
     segundo = new Set();
-    if (i >= 0) {
-      for (const ei of vecinos[i]) if (activas[ei]) primero.add(otro(aristas[ei], i));
-      for (const p of primero) for (const ei of vecinos[p]) if (activas[ei]) {
-        const o = otro(aristas[ei], p);
-        if (o !== i && !primero.has(o)) segundo.add(o);
-      }
-    }
+    if (i >= 0) calcularVecinos(i);
     pintarTarjeta();
     pintar();
     pintarLista();
@@ -511,6 +566,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     camara.position.set(cam.objetivo.x + d * sp * Math.sin(cam.theta), cam.objetivo.y + d * Math.cos(cam.phi), cam.objetivo.z + d * sp * Math.cos(cam.theta));
     camara.lookAt(cam.objetivo);
     aro.quaternion.copy(camara.quaternion);
+    aroYo.quaternion.copy(camara.quaternion);
   }
   function acotar() {
     cam.phi = Math.min(1.5, Math.max(0.05, cam.phi));
@@ -690,7 +746,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     } else {
       const p = proyectar(seleccion);
       rotulo.style.display = p.dentro ? "block" : "none";
-      rotulo.textContent = nodos[seleccion].nombre;
+      rotulo.textContent = nombreDe(seleccion);
       // El rótulo se queda dentro de la escena aunque el nodo esté en el borde
       const mitad = rotulo.offsetWidth / 2 + 8;
       const x = Math.min(Math.max(p.x - r.left, mitad), Math.max(mitad, r.width - mitad));
@@ -701,13 +757,21 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
         if (k++ > 14) break;
         const o = proyectar(i);
         if (!o.dentro) continue;
-        const d = el("div", `${S.rotulo} ${S.vecino}`, nodos[i].nombre);
+        const d = el("div", `${S.rotulo} ${S.vecino}`, nombreDe(i));
         d.style.display = "block";
         d.style.transform = `translate(${(o.x - r.left).toFixed(0)}px, ${(o.y - r.top).toFixed(0)}px) translate(-50%, -140%)`;
         hijos.push(d);
       }
       capaVecinos.replaceChildren(...hijos);
     }
+    // El «Tú» de quien mira, sobre su punto (si no es el elegido: ese ya lleva su rótulo)
+    if (yoActivo && yoNodo >= 0 && visible[yoNodo] && seleccion !== yoNodo) {
+      const p = proyectar(yoNodo);
+      if (p.dentro) {
+        rotuloYo.style.display = "block";
+        rotuloYo.style.transform = `translate(${(p.x - r.left).toFixed(0)}px, ${(p.y - r.top).toFixed(0)}px) translate(-50%, calc(-100% - ${(radio(nodos[yoNodo]) * ppu + 8).toFixed(0)}px))`;
+      } else rotuloYo.style.display = "none";
+    } else rotuloYo.style.display = "none";
     if (cam.distancia < 700 && seleccion < 0) {
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
@@ -758,13 +822,13 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
         linea1 = `${etiqueta(n.clase)}${n.ciudad !== "San Luis Potosí" ? ` · ${n.ciudad}` : ""}${n.suelto ? " · sin conexión" : n.sitioLibre ? " · solo en sitios libres" : ` · en ${plural(n.lugares ?? 0, "lugar", "lugares")}`}`;
         linea2 = `${plural(n.seguidores ?? 0, "seguidor", "seguidores")} · ${plural(n.asistentes ?? 0, "asistencia", "asistencias")} · ${plural(n.fechas ?? 0, "fecha", "fechas")}`;
       } else {
-        linea1 = "Asistente · sin nombre ni perfil";
+        linea1 = seleccion === yoNodo && yoActivo ? "Eres tú · los demás asistentes siguen anónimos" : "Asistente · sin nombre ni perfil";
         linea2 = `Actividad ${NIVEL[(n.tramo ?? 1) - 1]} · posición inventada (la base no guarda dónde está nadie)`;
       }
       const porTipo: Record<string, number> = {};
       let cuenta = 0;
       for (const ei of vecinos[seleccion]) {
-        if (!activas[ei]) continue;
+        if (!activas[ei] || !capaVisible(otro(aristas[ei], seleccion))) continue;
         cuenta++;
         const o = nodos[otro(aristas[ei], seleccion)];
         porTipo[o.tipo] = (porTipo[o.tipo] || 0) + 1;
@@ -789,7 +853,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     const punto = el("span", S.punto);
     punto.style.setProperty("--c", c);
     const texto = el("div");
-    texto.append(el("h3", "", n.nombre), el("p", "", linea1), el("p", "", linea2), el("p", "", linea3));
+    texto.append(el("h3", "", nombreDe(seleccion)), el("p", "", linea1), el("p", "", linea2), el("p", "", linea3));
     const cerrar = el("button", S.cerrar, "✕");
     cerrar.type = "button";
     cerrar.setAttribute("aria-label", "Cerrar");
@@ -921,6 +985,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
   const LENTES: Lente[] = [
     {
       id: "zonas",
+      necesita: ["lugar"],
       titulo: "¿Qué zonas no tienen un lugar a 2 km?",
       sub: "mapa desde arriba; las zonas en naranja",
       aplicar() {
@@ -942,6 +1007,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     },
     {
       id: "islas",
+      necesita: ["lugar"],
       titulo: "¿Qué lugares no comparten artista con nadie?",
       sub: "islas: tienen eventos, pero ningún artista suyo toca en otro lugar",
       aplicar() {
@@ -976,6 +1042,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     },
     {
       id: "dependencia",
+      necesita: ["artista"],
       titulo: "¿Qué artistas tocan siempre en el mismo sitio?",
       sub: "dos o más fechas, un solo lugar",
       aplicar() {
@@ -993,6 +1060,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     },
     {
       id: "puentes",
+      necesita: ["lugar", "artista"],
       titulo: "¿Quién une lugares distintos?",
       sub: "red: artistas que tocan en más de un lugar",
       aplicar() {
@@ -1009,6 +1077,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     },
     {
       id: "festivales",
+      necesita: ["lugar"],
       titulo: "¿Qué festivales conectan sedes?",
       sub: "lugares unidos por un festival (líneas violeta)",
       aplicar() {
@@ -1030,6 +1099,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     },
     {
       id: "conectar",
+      necesita: ["artista"],
       titulo: "¿Cuántos faltan por conectar, por disciplina?",
       sub: "artistas sin ningún evento: la lista para invitar",
       aplicar() {
@@ -1063,7 +1133,16 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
       segundo = new Set();
       pintarTarjeta();
     }
+    // Si la lente necesita una capa plegada, la despliega y lo dice bajo el título de su lista
+    const desplegadas = l.necesita.filter((c) => !capas[c]);
+    for (const c of desplegadas) capas[c] = true;
+    if (desplegadas.length) {
+      sincronizarCapas();
+      guardar();
+    }
     resultadoLente = l.aplicar();
+    if (desplegadas.length) resultadoLente.aviso = `Se ${desplegadas.length > 1 ? "desplegaron las capas" : "desplegó la capa"} ${desplegadas.map((c) => NOMBRE_CAPA[c]).join(" y ")} para esta lente.`;
+    pintarCifras();
     pintarArbol();
     pintar();
     pintarLista();
@@ -1073,6 +1152,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     lenteActiva = null;
     resultadoLente = null;
     enfoque = null;
+    filtro = { tipo: null, clase: null }; // la lente fijó su propio filtro: al quitarla, todo vuelve a verse
     zonasMesh.visible = false;
     if (desdeArriba) ponerArriba(false);
     if (repintar) {
@@ -1123,7 +1203,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
       if (lenteActiva) quitarLente(false);
       ponerFiltro(t, c);
     };
-    li(fila("Todo", nodos.length - 1 - sueltos.length + (mostrarSueltos ? sueltos.length : 0), "var(--g-suave)", !filtro.tipo && !lenteActiva, () => poner(null, null)));
+    li(fila("Todo", nodos.filter((n, i) => i !== RESUMEN && capaVisible(i) && (!n.suelto || mostrarSueltos)).length, "var(--g-suave)", !filtro.tipo && !lenteActiva, () => poner(null, null)));
     const lLug = li(fila("Lugares", DATOS.lugares.length, "var(--g-c-lugar)", filtro.tipo === "lugar" && !filtro.clase && !lenteActiva, () => poner("lugar", null)));
     const tipos: Record<string, number> = {};
     for (const l of DATOS.lugares) tipos[l.tipo] = (tipos[l.tipo] || 0) + 1;
@@ -1230,6 +1310,15 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     lista.replaceChildren();
     lista.append(el("h2", "", "Diagnóstico"));
     const dg = el("div", S.diagnostico);
+    // Qué significa cada lectura, con la activa en negrita (cambia al pulsar «Red» / «Mapa»)
+    const lecturas = el("div", S.lecturas);
+    for (const [lectura, texto] of [["mapa", LECTURA_MAPA], ["red", LECTURA_RED]] as const) {
+      const p = el("p", S.lectura, texto);
+      p.dataset.lectura = lectura;
+      p.dataset.activa = String(vista === lectura);
+      lecturas.append(p);
+    }
+    dg.append(lecturas);
     for (const f of diagnostico()) {
       const p = el("p");
       for (const parte of f) {
@@ -1270,10 +1359,10 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
         const n = nodos[i];
         return {
           i,
-          nombre: n.nombre,
+          nombre: nombreDe(i),
           color: n.tipo === "persona" ? "var(--g-c-persona)" : n.tipo === "lugar" ? "var(--g-c-lugar)" : n.suelto ? "var(--g-c-suelto)" : "var(--g-c-artista)",
           sub: n.tipo === "persona" ? `actividad ${NIVEL[(n.tramo ?? 1) - 1]}` : `${etiqueta(n.clase)} · ${n.seguidores} siguen · ${n.asistentes} van`,
-          n: vecinos[i].filter((ei) => activas[ei]).length,
+          n: vecinos[i].filter((ei) => activas[ei] && capaVisible(otro(aristas[ei], i))).length,
         };
       });
     }
@@ -1295,6 +1384,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     };
     h.append(copiar);
     lista.append(h);
+    if (resultadoLente?.aviso) lista.append(el("p", S.nota, resultadoLente.aviso));
     const ul = el("ul");
     const tope = 400;
     for (const it of items.slice(0, tope)) {
@@ -1350,7 +1440,52 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     leerTema();
     pintar();
   });
-  q("cifras").textContent = `${nodos.length - 1} nodos · ${aristas.length} conexiones · ${DATOS.lugares.length} lugares · ${DATOS.artistas.length} artistas · ${DATOS.personas.length} asistentes`;
+  /** Las cuentas de la barra: solo lo que está a la vista (una capa plegada no cuenta ni sus líneas). */
+  function pintarCifras() {
+    const n = { lugar: DATOS.lugares.length, artista: DATOS.artistas.length, persona: DATOS.personas.length };
+    const aVista = (["lugar", "artista", "persona"] as const).filter((c) => capas[c]);
+    const nodosVistos = aVista.reduce((s, c) => s + n[c], 0);
+    const lineas = aristas.filter((e) => capaVisible(e.a) && capaVisible(e.b)).length;
+    const nombres = { lugar: "lugares", artista: "artistas", persona: "asistentes" };
+    q("cifras").textContent = [`${nodosVistos} nodos`, `${lineas} conexiones`, ...aVista.map((c) => `${n[c]} ${nombres[c]}`)].join(" · ");
+  }
+
+  // ---------- La leyenda: cada capa se pliega; «Yo» marca el punto de quien mira ----------
+  const botonesCapa = { lugar: q<HTMLButtonElement>("capa-lugar"), artista: q<HTMLButtonElement>("capa-artista"), persona: q<HTMLButtonElement>("capa-persona") };
+  const botonYo = q<HTMLButtonElement>("yo");
+  function sincronizarCapas() {
+    for (const c of ["lugar", "artista", "persona"] as const) botonesCapa[c].setAttribute("aria-pressed", String(capas[c]));
+    botonYo.setAttribute("aria-pressed", String(yoActivo));
+  }
+  /** Tras cambiar capas o «Yo»: se repinta todo lo que las cuenta (barra, árbol, tarjeta, escena y lista). */
+  function refrescarCapas() {
+    if (seleccion >= 0 && !capaVisible(seleccion)) {
+      seleccion = -1;
+      primero = new Set();
+      segundo = new Set();
+    } else if (seleccion >= 0) calcularVecinos(seleccion);
+    sincronizarCapas();
+    guardar();
+    pintarCifras();
+    pintarTarjeta();
+    pintar();
+    pintarArbol();
+    pintarLista();
+  }
+  for (const c of ["lugar", "artista", "persona"] as const) {
+    escuchar(botonesCapa[c], "click", () => {
+      capas[c] = !capas[c];
+      refrescarCapas();
+    });
+  }
+  escuchar(botonYo, "click", () => {
+    if (yoNodo < 0) return;
+    yoActivo = !yoActivo;
+    if (yoActivo) capas.persona = true; // quien se marca tiene que estar a la vista
+    refrescarCapas();
+    if (yoActivo) volarA(yoNodo);
+  });
+  botonYo.disabled = yoNodo < 0;
 
   let cuadros = 0;
   let t0 = performance.now();
@@ -1465,6 +1600,9 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
     },
   };
 
+  leerGuardado();
+  sincronizarCapas();
+  pintarCifras();
   recalcularTiempo();
   leerTema();
   sincronizarHojas();
@@ -1492,6 +1630,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos): Motor {
       mat.dispose();
       geoTubo.dispose();
       geoAro.dispose();
+      geoAroYo.dispose();
       geoDisco.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

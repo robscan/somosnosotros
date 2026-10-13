@@ -10,9 +10,10 @@ import styles from "./Grafo.module.css";
 /**
  * El grafo cultural en 3D, solo para Administración (OL-401, bitácora 432). React pone el armazón y el motor (`motor.ts`, con three.js) llena
  * el árbol y la lista y dibuja la escena; three.js se carga aquí, al entrar, y no pesa en ninguna otra pantalla. Los datos llegan ya
- * anónimos del servidor: ninguna persona lleva id, nombre ni foto.
+ * anónimos del servidor: ninguna persona lleva id, nombre ni foto. `yo` es el número del punto de quien mira entre los asistentes (o null si no tiene
+ * asistencias): el interruptor «Yo» lo marca como «Tú» sin que el navegador sepa de qué cuenta es.
  */
-export default function Grafo({ datos }: { datos: DatosGrafo }) {
+export default function Grafo({ datos, yo }: { datos: DatosGrafo; yo: number | null }) {
   const raiz = useRef<HTMLDivElement>(null);
   const [sinWebgl, setSinWebgl] = useState(false);
   const volver = useVolver("/admin");
@@ -26,7 +27,7 @@ export default function Grafo({ datos }: { datos: DatosGrafo }) {
       .then(({ crearMotor }) => {
         if (cancelado) return;
         try {
-          destruir = crearMotor(datos, nodo, styles).destruir;
+          destruir = crearMotor(datos, nodo, styles, yo).destruir;
         } catch {
           setSinWebgl(true);
         }
@@ -36,7 +37,7 @@ export default function Grafo({ datos }: { datos: DatosGrafo }) {
       cancelado = true;
       destruir?.();
     };
-  }, [datos]);
+  }, [datos, yo]);
 
   return (
     <main ref={raiz} className={styles.app} data-tema="oscuro">
@@ -59,15 +60,34 @@ export default function Grafo({ datos }: { datos: DatosGrafo }) {
       <section className={styles.escena} aria-label="Escena en 3D">
         <canvas className={styles.lienzo} data-g="lienzo" />
         <div className={styles.rotulo} data-g="rotulo" />
+        <div className={`${styles.rotulo} ${styles.tu}`} data-g="rotuloYo">
+          Tú
+        </div>
         <div data-g="vecinos" />
         <div data-g="etiquetas" />
         <section className={styles.tarjeta} data-g="tarjeta" aria-live="polite" />
         {sinWebgl && <p className={styles.sinWebgl}>Este navegador no puede dibujar el grafo en 3D.</p>}
         <div className={styles.leyenda}>
-          <span style={{ "--c": "var(--g-c-lugar, var(--primario))" } as CSSProperties}>Lugar · en su posición real</span>
-          <span style={{ "--c": "var(--g-c-artista, var(--fondo-contenido))" } as CSSProperties}>Artista · sobre el lugar donde más toca</span>
-          <span style={{ "--c": "var(--g-c-persona, var(--destacado))" } as CSSProperties}>Asistente · anónimo, posición inventada</span>
-          <span className={styles.linea}>Líneas: blancas entre tipos; del color del tipo entre iguales; más gruesas, más eventos en común</span>
+          <div className={styles.capa}>
+            <button type="button" className={styles.capaBoton} data-g="capa-lugar" aria-pressed="true" style={{ "--c": "var(--g-c-lugar, var(--primario))" } as CSSProperties}>
+              Lugar · en su posición real
+            </button>
+          </div>
+          <div className={styles.capa}>
+            <button type="button" className={styles.capaBoton} data-g="capa-artista" aria-pressed="true" style={{ "--c": "var(--g-c-artista, var(--fondo-contenido))" } as CSSProperties}>
+              Artista · sobre el lugar donde más toca
+            </button>
+          </div>
+          <div className={styles.capa}>
+            <button type="button" className={styles.capaBoton} data-g="capa-persona" aria-pressed="true" style={{ "--c": "var(--g-c-persona, var(--destacado))" } as CSSProperties}>
+              Asistente · anónimo, posición inventada
+            </button>
+            <button type="button" className={`${styles.pildora} ${styles.yo}`} data-g="yo" aria-pressed="false" disabled={yo === null} title="Marca tu punto entre los asistentes (los demás siguen anónimos)">
+              Yo
+            </button>
+          </div>
+          {yo === null && <p className={styles.sinAsistencias}>Aún no tienes asistencias</p>}
+          <p className={styles.linea}>Líneas: blancas entre tipos; del color del tipo entre iguales; más gruesas, más eventos en común</p>
         </div>
         <div className={styles.botonesHojas}>
           <button type="button" className={styles.flotante} data-g="abrirArbol">

@@ -159,7 +159,13 @@ function sumarArista(acc: Acumulador, tipo: TipoArista, a: number, b: number, w:
 }
 
 // ---------- El grafo ----------
-export function construirGrafo(entrada: FilasGrafo, hoy: number): Grafo {
+/**
+ * El grafo y, aparte, qué punto de `personas` es cada usuario (`indicePorUsuario`: id de la cuenta → índice). Ese mapa es PRIVADO del servidor: sirve
+ * para que la página sepa cuál es el punto de quien mira (el interruptor «Yo») y nunca viaja al navegador.
+ */
+export type GrafoConIndice = { grafo: Grafo; indicePorUsuario: Record<string, number> };
+
+export function armarGrafo(entrada: FilasGrafo, hoy: number): GrafoConIndice {
   // Todo se ordena por id: el resultado no depende del orden en que llegaron las filas.
   const lugaresFila = entrada.lugares.filter((l) => l.visible && !l.privado && esNumero(l.lat) && esNumero(l.lng)).sort(porId);
   const artistasFila = entrada.artistas.filter((a) => a.visible).sort(porId);
@@ -381,7 +387,7 @@ export function construirGrafo(entrada: FilasGrafo, hoy: number): Grafo {
   // ----- Resumen y periodo -----
   const dias = eventosFila.map((e) => diaDe(e.inicio));
   const personasConAccion = new Set([...eventosDePersona.keys(), ...seguimientosDePersona.keys()]);
-  return {
+  const grafo: Grafo = {
     extraido: new Date(hoy * DIA_MS).toISOString().slice(0, 10),
     hoy,
     primerDia: dias.length ? Math.min(...dias) : hoy,
@@ -406,6 +412,12 @@ export function construirGrafo(entrada: FilasGrafo, hoy: number): Grafo {
     personas,
     aristas,
   };
+  return { grafo, indicePorUsuario: Object.fromEntries(personaIdx) };
+}
+
+/** Solo el grafo (lo que dibuja la pantalla y lo que prueban las pruebas de posiciones y líneas). */
+export function construirGrafo(entrada: FilasGrafo, hoy: number): Grafo {
+  return armarGrafo(entrada, hoy).grafo;
 }
 
 // ---------- La lectura ----------
@@ -444,6 +456,7 @@ async function leerFilas(): Promise<FilasGrafo> {
 
 /**
  * El grafo de Administración. Cuesta seis lecturas completas, así que se guarda una hora: diez administradores que lo abren
- * suman una sola lectura por hora. Solo en el servidor y con la llave de servicio (nunca en el navegador).
+ * suman una sola lectura por hora. Solo en el servidor y con la llave de servicio (nunca en el navegador). Devuelve también el mapa privado
+ * usuario → punto (`indicePorUsuario`): quien llama toma de ahí el punto de la cuenta con sesión y NO pasa el mapa al navegador.
  */
-export const cargarGrafo = unstable_cache(async (): Promise<Grafo> => construirGrafo(await leerFilas(), Math.floor(Date.now() / DIA_MS)), ["grafo-admin"], { revalidate: 3600 });
+export const cargarGrafo = unstable_cache(async (): Promise<GrafoConIndice> => armarGrafo(await leerFilas(), Math.floor(Date.now() / DIA_MS)), ["grafo-admin"], { revalidate: 3600 });

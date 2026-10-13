@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { construirGrafo, hash01, proyectar, tramoDe, UMBRAL_ANONIMATO, type FilasGrafo } from "./grafo";
+import { armarGrafo, construirGrafo, hash01, proyectar, tramoDe, UMBRAL_ANONIMATO, type FilasGrafo } from "./grafo";
 
 // Hoy = 2026-10-13 (día 20739 desde 1970)
 const HOY = 20739;
@@ -357,5 +357,46 @@ describe("determinismo", () => {
     expect(g.aristas).toEqual([]);
     expect(g.primerDia).toBe(HOY);
     expect(g.extraido).toBe("2026-10-13");
+  });
+});
+
+describe("el punto de quien mira (el interruptor «Yo»)", () => {
+  const uuid = (n: number) => `${String(n).padStart(8, "0")}-aaaa-4bbb-8ccc-${String(n).padStart(12, "0")}`;
+  const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+  const conUuid = (): FilasGrafo => {
+    const f = vacio();
+    f.lugares = [{ ...lugar(uuid(1), 22.01, -101.01), nombre: "Teatro" }, { ...lugar(uuid(2), 21.99, -100.99), nombre: "Galería" }];
+    f.artistas = [{ ...artista(uuid(3)), nombre: "Dúo" }];
+    f.eventos = [evento(uuid(4), HOY + 1, uuid(1)), evento(uuid(5), HOY + 2, uuid(2))];
+    f.eventos_artistas = [{ evento_id: uuid(4), artista_id: uuid(3) }];
+    f.asistencias = [10, 11, 12, 13].map((n) => voy(uuid(n), uuid(4))).concat([voy(uuid(10), uuid(5))]);
+    f.seguimientos = [{ usuario_id: uuid(20), lugar_id: uuid(1), artista_id: null }];
+    return f;
+  };
+  it("cada usuario con asistencias tiene un punto distinto, y el de otro usuario o el que solo sigue no tiene", () => {
+    const { grafo, indicePorUsuario } = armarGrafo(conUuid(), HOY);
+    const indices = [10, 11, 12, 13].map((n) => indicePorUsuario[uuid(n)]);
+    expect(new Set(indices).size).toBe(4);
+    for (const i of indices) {
+      expect(i).toBeGreaterThanOrEqual(0);
+      expect(i).toBeLessThan(grafo.personas.length);
+    }
+    expect(Object.keys(indicePorUsuario)).toHaveLength(grafo.personas.length);
+    expect(indicePorUsuario[uuid(20)]).toBeUndefined();
+    // la persona 10 fue a dos eventos: su punto tiene el tramo de dos acciones (2 a 5)
+    expect(grafo.personas[indicePorUsuario[uuid(10)]].tramo).toBe(2);
+    expect(grafo.personas[indicePorUsuario[uuid(11)]].tramo).toBe(1);
+  });
+  it("lo que recibe el componente del navegador (el grafo y un número) no contiene ningún id", () => {
+    const { grafo, indicePorUsuario } = armarGrafo(conUuid(), HOY);
+    const yo = indicePorUsuario[uuid(10)] ?? null;
+    const props = JSON.stringify({ datos: grafo, yo });
+    expect(props).not.toMatch(UUID);
+    expect(typeof yo).toBe("number");
+    // el mapa privado, en cambio, sí lleva los ids: por eso se queda en el servidor
+    expect(JSON.stringify(indicePorUsuario)).toMatch(UUID);
+  });
+  it("armarGrafo y construirGrafo dan el mismo grafo", () => {
+    expect(armarGrafo(conUuid(), HOY).grafo).toEqual(construirGrafo(conUuid(), HOY));
   });
 });
