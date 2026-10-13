@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import plantilla from "@/components/ui/Plantilla.module.css";
-import { cargarGrafo, type GrafoConIndice } from "@/lib/grafo";
+import { cargarGrafo, type GrafoCargado } from "@/lib/grafo";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../Reintentar";
 import Grafo from "./Grafo";
@@ -18,7 +18,7 @@ export default async function PaginaGrafo() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin/grafo");
   if (actual.perfil.rol !== "admin") redirect("/");
-  let cargado: GrafoConIndice | null = null;
+  let cargado: GrafoCargado | null = null;
   try {
     cargado = await cargarGrafo();
   } catch (error) {
@@ -33,5 +33,5 @@ export default async function PaginaGrafo() {
     );
   // El punto de quien mira (el interruptor «Yo»): el mapa usuario → punto se queda aquí, en el servidor; al navegador solo llega un número o null.
   const yo = cargado.indicePorUsuario[actual.perfil.id] ?? null;
-  return <Grafo datos={cargado.grafo} yo={yo} />;
+  return <Grafo datos={cargado.grafo} yo={yo} calculadoEn={cargado.calculadoEn} />;
 }
