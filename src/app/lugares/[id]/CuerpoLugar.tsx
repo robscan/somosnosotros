@@ -28,6 +28,7 @@ import { puedeDestacarse } from "@/lib/destacados";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { cargarHistorialLugar } from "@/lib/cargarHistorial";
+import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
@@ -182,9 +183,14 @@ async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar:
   );
 }
 
-/** «Historial» (OL-390): los eventos pasados del lugar, plegados bajo «Próximos eventos»; sin ninguno, no existe. Consulta aparte, en `<Suspense>`. */
-async function SeccionHistorialLugar({ lugar }: { lugar: LugarConAutor }) {
-  return <Historial de="lugar" historial={await cargarHistorialLugar(lugar.id)} />;
+/**
+ * «Historial» (OL-390): los eventos pasados del lugar, plegados bajo «Próximos eventos»; sin ninguno, no existe. Consulta aparte, en `<Suspense>`.
+ * Al final, «Tu año» (OL-394) si quien mira gestiona la ficha y hay algún evento pasado de este año.
+ */
+async function SeccionHistorialLugar({ lugar, puedeEditar }: { lugar: LugarConAutor; puedeEditar: boolean }) {
+  const historial = await cargarHistorialLugar(lugar.id);
+  const tuAnio = puedeEditar && hayTuAnio(historial.eventos, new Date(), lugar.zona) ? hrefVistaTuAnio("lugar", hrefLugar(lugar)) : null;
+  return <Historial de="lugar" historial={historial} tuAnio={tuAnio} />;
 }
 
 /** Fallback de `SeccionEventosLugar`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */
@@ -263,7 +269,7 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
 
       {/* Lo que ya pasó aquí (OL-390): plegado bajo lo próximo. Mientras llega no se adivina si existe: nada en su sitio. */}
       <Suspense fallback={null}>
-        <SeccionHistorialLugar lugar={lugar} />
+        <SeccionHistorialLugar lugar={lugar} puedeEditar={puedeEditar} />
       </Suspense>
 
       <section className={ficha.tarjeta}>

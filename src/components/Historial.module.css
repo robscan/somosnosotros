@@ -1,7 +1,7 @@
 /* ==========================================================================
    La trayectoria de un artista y el historial de un lugar (OL-390, prototipo firmado `historial-propuestas.html`). El bloque plegado y el gris
    de lo pasado son de `ui/Plegado`; aquí, lo propio: la fila de fotos (Q1) y lo de la derecha de un renglón pasado (H4).
-   1. La fila de fotos · 2. El renglón pasado
+   1. La fila de fotos · 2. El renglón pasado · 3. «Tu año»
    ========================================================================== */
 
 /* 1. «Se ha presentado en · 2» / «Han pasado por aquí · 11»: el título en gris (un `p`, como el `h3` de un mes: `ui/Plegado`) y debajo la
@@ -77,4 +77,9 @@
    suspensivos y el festival no desaparece tras un nombre largo. */
 li small > span > span.sitio:not(:last-child) {
   flex: 0 1 auto;
+}
+
+/* 3. «Tu año» (OL-394, «O en la sección»): al final de la sección abierta, separado del último renglón. */
+.tuAnio {
+  margin-top: var(--espacio-4);
 }

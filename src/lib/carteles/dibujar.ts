@@ -8,7 +8,9 @@ import { ENTRADA_SEGURA, imagenAdmitida, TIEMPO_MAX_FOTO_MS } from "./imagenSegu
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
+import { COLORES_TU_ANIO, dibujarTuAnio, FORMATO_TU_ANIO } from "./plantillas/tuAnio";
 import type { Formato } from "./tokens";
+import type { ResumenTuAnio } from "../tuAnio";
 
 /**
  * Dibujar el cartel en el servidor (OL-324, bitácora 353). Decidido con medidas (spike de la bitácora): satori arma el SVG (2 a 6 ms) y sharp
@@ -154,6 +156,82 @@ export async function dibujarCartel(p: Pedido): Promise<Resultado> {
     alto: Math.round((ancho * p.formato.alto) / p.formato.ancho),
     paleta,
     tituloRecortado,
+    ms: { foto: Math.round(t1 - t0), svg: Math.round(t2 - t1), raster: Math.round(t3 - t2) },
+    nodos,
+  };
+}
+
+// ===== «Tu año» (OL-394): la misma rasterización, con su propia plantilla (recibe un resumen, no un evento).
+
+/** El lado de la foto redonda ya preparada: 96 px en el lienzo, al doble para que no se vea borrosa a 1080. */
+const LADO_FOTO_TU_ANIO = 192;
+
+/** La foto de quien comparte, recortada al centro en cuadrado y como data URL de un JPEG (la plantilla la redondea). */
+export async function prepararFotoTuAnio(imagen: Buffer): Promise<string> {
+  const jpeg = await sharp(imagen, ENTRADA_SEGURA)
+    .timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 })
+    .rotate()
+    .resize(LADO_FOTO_TU_ANIO, LADO_FOTO_TU_ANIO, { fit: "cover" })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+  return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+}
+
+export type PedidoTuAnio = {
+  resumen: ResumenTuAnio;
+  /** El id de la ficha (o del perfil): elige la figura. */
+  id: string;
+  /** La foto original (bytes) o null; si no es un JPEG, PNG o WebP admitido, o no se prepara a tiempo, la imagen sale sin foto. */
+  foto: Buffer | null;
+  ancho?: number;
+  tiempoMaxFotoMs?: number;
+  conNodos?: boolean;
+  png?: boolean;
+  soloSvg?: boolean;
+};
+
+export type ResultadoTuAnio = Omit<Resultado, "paleta" | "tituloRecortado">;
+
+/** Dibuja la imagen de «Tu año» (1080×1350, o el ancho que se pida). Como el cartel: sin foto si la foto falla, nunca una imagen rota. */
+export async function dibujarImagenTuAnio(p: PedidoTuAnio): Promise<ResultadoTuAnio> {
+  const t0 = performance.now();
+  let foto: string | null = null;
+  if (p.foto && (await imagenAdmitida(p.foto))) {
+    let reloj: ReturnType<typeof setTimeout> | undefined;
+    const preparar = prepararFotoTuAnio(p.foto);
+    preparar.catch(() => {}); // si pierde la carrera, que su fallo no quede sin atender
+    try {
+      foto = await Promise.race([preparar, new Promise<null>((resolver) => { reloj = setTimeout(() => resolver(null), p.tiempoMaxFotoMs ?? TIEMPO_MAX_FOTO_MS); })]);
+    } catch {
+      foto = null;
+    } finally {
+      clearTimeout(reloj);
+    }
+  }
+  const t1 = performance.now();
+  const { elemento } = dibujarTuAnio({ resumen: p.resumen, id: p.id, foto });
+  const f = FORMATO_TU_ANIO;
+  const nodos: NodoTexto[] = [];
+  const svg = await satori(elemento, {
+    width: f.ancho,
+    height: f.alto,
+    fonts: cargarFuentes(),
+    onNodeDetected: p.conNodos
+      ? (n) => {
+          if (typeof n.textContent === "string" && n.textContent.trim()) nodos.push({ texto: n.textContent, x: n.left, y: n.top, ancho: n.width, alto: n.height, girado: false });
+        }
+      : undefined,
+  });
+  const t2 = performance.now();
+  const ancho = Math.round(p.ancho ?? f.ancho);
+  const raster = sharp(Buffer.from(svg), { density: (72 * ancho) / f.ancho });
+  const imagen = p.soloSvg ? Buffer.alloc(0) : p.png ? await raster.png().toBuffer() : await raster.flatten({ background: COLORES_TU_ANIO.fondo }).jpeg({ quality: 90, chromaSubsampling: "4:4:4" }).toBuffer();
+  const t3 = performance.now();
+  return {
+    imagen,
+    tipo: p.png ? "image/png" : "image/jpeg",
+    ancho,
+    alto: Math.round((ancho * f.alto) / f.ancho),
     ms: { foto: Math.round(t1 - t0), svg: Math.round(t2 - t1), raster: Math.round(t3 - t2) },
     nodos,
   };

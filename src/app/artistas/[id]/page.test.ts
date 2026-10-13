@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
 import Heroe from "@/components/ui/Heroe";
 
@@ -280,5 +280,62 @@ describe("la trayectoria del artista (OL-390)", () => {
     const { lugares } = await ficha([], [pasada("a", null)]);
     expect(lugares?.props.valor).toBe(0);
     expect(lugares?.props.salto).toBeUndefined();
+  });
+});
+
+describe("«Tu año» al final de la trayectoria (OL-394)", () => {
+  const pasada = (id: string, inicio: string) => ({ id, slug: id, titulo: id, inicio, fin: null, zona: "America/Mexico_City", imagen: null, lugar_id: null, sitio_texto: "Jardín Colón", sitio_direccion: null, sitio_reservado: false, evento_padre_id: null, lugar: null });
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-12T20:00:00Z"));
+  });
+  afterAll(() => vi.useRealTimers());
+
+  /** La trayectoria resuelta con esas fechas pasadas y esa persona mirando: la dirección del botón, o nada. */
+  async function botonCon(pasadas: unknown[], quien: { id: string; rol: "admin" | "usuario" } | null) {
+    const { clienteServidor, usuarioActual } = await import("@/lib/supabase/servidor");
+    const { default: Historial } = await import("@/components/Historial");
+    const previo = vi.mocked(clienteServidor).getMockImplementation()!;
+    const base = clienteFalso({ artistas: { data: ARTISTA }, artistas_cuentas: { data: [] }, eventos_artistas: { data: [] }, seguimientos: { data: null } }, { cuenta_seguidores: { data: 0 }, novedades_recientes_artistas: { data: [] }, van_por_evento: { data: [] } });
+    vi.mocked(clienteServidor).mockImplementation((async () => ({
+      ...base,
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return base.from(tabla);
+        let pasado = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const q: any = {};
+        for (const metodo of ["select", "eq", "in", "or", "order", "limit", "not"]) q[metodo] = () => q;
+        q.lt = () => ((pasado = true), q);
+        q.then = (ok: (v: unknown) => void, mal: (e: unknown) => void) => Promise.resolve({ data: pasado ? pasadas : [] }).then(ok, mal);
+        return q;
+      },
+    })) as never);
+    if (quien) vi.mocked(usuarioActual).mockResolvedValueOnce({ correo: null, perfil: { id: quien.id, rol: quien.rol, nombre: "Quien mira", foto: null, colonia: null, bio: null } });
+    try {
+      const { default: FichaArtista } = await import("./page");
+      const arbol = await FichaArtista({ params: Promise.resolve({ id: ARTISTA.slug }), searchParams: Promise.resolve({}) });
+      const diferidos = [...recorrer(arbol)].filter((e) => e.type === Suspense).map((s) => s.props.children as { type: (p: unknown) => Promise<unknown>; props: unknown });
+      const resueltos = await Promise.all(diferidos.map((d) => d.type(d.props)));
+      return resueltos.flatMap((r) => [...recorrer(r)]).find((e) => e.type === Historial)?.props.tuAnio;
+    } finally {
+      vi.mocked(clienteServidor).mockImplementation(previo);
+    }
+  }
+
+  it("quien la gestiona (su autor) y con fechas pasadas de este año: el botón lleva a la vista previa", async () => {
+    expect(await botonCon([pasada("a", "2026-10-09T01:00:00Z")], { id: "autor-1", rol: "usuario" })).toBe("/artistas/artista-de-prueba/tu-anio");
+  });
+
+  it("la administración también", async () => {
+    expect(await botonCon([pasada("a", "2026-10-09T01:00:00Z")], { id: "admin-1", rol: "admin" })).toBe("/artistas/artista-de-prueba/tu-anio");
+  });
+
+  it("sin sesión o quien no la gestiona: sin botón", async () => {
+    expect(await botonCon([pasada("a", "2026-10-09T01:00:00Z")], null)).toBeNull();
+    expect(await botonCon([pasada("a", "2026-10-09T01:00:00Z")], { id: "otra", rol: "usuario" })).toBeNull();
+  });
+
+  it("solo con fechas del año pasado: sin botón (la trayectoria sí sale)", async () => {
+    expect(await botonCon([pasada("a", "2025-10-09T01:00:00Z")], { id: "autor-1", rol: "usuario" })).toBeNull();
   });
 });

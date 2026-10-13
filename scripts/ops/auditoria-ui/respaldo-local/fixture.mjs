@@ -272,7 +272,17 @@ const asistencias = [
   { id: "dddd0003-0000-4000-8000-000000000001", usuario_id: MARCOS, evento_id: EP.noche, estado: "voy", creado_en: hace(4) },
   { id: "dddd0003-0000-4000-8000-000000000002", usuario_id: "33333333-3333-4333-8333-333333333333", evento_id: EP.noche, estado: "voy", creado_en: hace(4) },
   { id: "dddd0003-0000-4000-8000-000000000003", usuario_id: MARCOS, evento_id: EP.otonoDuo, estado: "voy", creado_en: hace(30) },
+  // OL-394: el año de Marcos («Tu año» en su perfil): seis «Voy» que ya pasaron, tres en ACHE («Donde más fuiste: ACHE Galería · 3 veces»), dos
+  // en el Bicentenario y uno en un sitio sin ficha. Nunca Ana (su perfil se mide).
+  { id: "dddd0004-0000-4000-8000-000000000001", usuario_id: MARCOS, evento_id: EP.retratos, estado: "voy", creado_en: hace(6) },
+  { id: "dddd0004-0000-4000-8000-000000000002", usuario_id: MARCOS, evento_id: EP.acordeonAche, estado: "voy", creado_en: hace(20) },
+  { id: "dddd0004-0000-4000-8000-000000000003", usuario_id: MARCOS, evento_id: EP.rocioCcub, estado: "voy", creado_en: hace(20) },
+  { id: "dddd0004-0000-4000-8000-000000000004", usuario_id: MARCOS, evento_id: EP.jardin, estado: "voy", creado_en: hace(25) },
 ];
+// OL-394: Marcos gestiona la ficha de Feleal y la de ACHE Galería (cuentas ligadas), para ver «Tu año» al final de «Trayectoria» y de
+// «Historial». Ana no gestiona ninguna: las fichas que se miden no cambian.
+const artistas_cuentas = [{ artista_id: A.feleal, perfil_id: MARCOS, creado_en: hace(30) }];
+const lugares_cuentas = [{ lugar_id: L.ache, perfil_id: MARCOS, creado_en: hace(30) }];
 const seguimientos = [
   { id: "eeee0001-0000-4000-8000-000000000001", usuario_id: ANA, lugar_id: L.miguelito, artista_id: null, creado_en: hace(5) },
   { id: "eeee0001-0000-4000-8000-000000000002", usuario_id: ANA, lugar_id: null, artista_id: A.osslp, creado_en: hace(5) },
@@ -282,7 +292,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */

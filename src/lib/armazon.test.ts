@@ -33,6 +33,9 @@ describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("la pared, el mando y el letrero se quedan con toda la pantalla", () => {
     for (const ruta of ["/obra/4d2e/pared", "/obra/4d2e/mando", "/artistas/aaron-cadena/letrero"]) expect(vistaDeRuta(ruta), ruta).toBe("completa");
   });
+  it("la vista previa de «Tu año» (OL-394) también: fondo oscuro, sin la barra de la app ni la navegación", () => {
+    for (const ruta of ["/tu-anio", "/artistas/feleal/tu-anio", "/lugares/ache-galeria/tu-anio"]) expect(vistaDeRuta(ruta), ruta).toBe("completa");
+  });
 });
 
 describe("armazón: el menú «···» de la ficha", () => {

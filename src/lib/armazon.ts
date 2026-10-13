@@ -13,7 +13,8 @@ import type { Punto } from "./geo";
  *   barra de la app ofrece Atrás y el menú, y el carril sigue a la vista.
  * - `tarea`: altas, ediciones, buscar, ajustes, entrar…: en el teléfono llevan su propia barra; desde 792 traen la barra de la
  *   app y el carril, con su cabecera propia debajo.
- * - `completa`: la pared y el mando de una obra colectiva y el letrero para imprimir; la pantalla se queda con todo.
+ * - `completa`: la pared y el mando de una obra colectiva, el letrero para imprimir y la vista previa de «Tu año» (OL-394, fondo oscuro con la
+ *   imagen); la pantalla se queda con todo.
  */
 export type Vista = "raiz" | "ficha" | "tarea" | "completa";
 
@@ -33,6 +34,7 @@ export function vistaDeRuta(ruta: string): Vista {
   if (RAICES.includes(ruta)) return "raiz";
   const [seccion, id, ...resto] = ruta.split("/").filter(Boolean);
   if (seccion === "obra" || (seccion === "artistas" && resto.join("/") === "letrero")) return "completa";
+  if (seccion === "tu-anio" || ((seccion === "artistas" || seccion === "lugares") && resto.join("/") === "tu-anio")) return "completa";
   if (FICHAS.includes(seccion) && id && resto.length === 0) return "ficha";
   return "tarea";
 }
