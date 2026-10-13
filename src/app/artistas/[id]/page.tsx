@@ -39,7 +39,7 @@ import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { cargarTrayectoria } from "@/lib/cargarHistorial";
-import { contarLugares, saltoLugares } from "@/lib/historialFichas";
+import { contarLugares, realizados, saltoLugares } from "@/lib/historialFichas";
 import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
 import { incrustadoDeNovedad } from "@/lib/incrustado";
 import { leerNovedadesRecientes, selloNovedadArtista, type NovedadArtista } from "@/lib/novedadesArtista";
@@ -178,12 +178,14 @@ const cargarSeguidoresArtistaCache = cache(async (artistaId: string): Promise<nu
  */
 async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
   const [seguidores, fechas, trayectoria] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), cargarFechasCache(artista.id), cargarTrayectoria(artista.id)]);
-  const lugares = contarLugares(fechas, trayectoria.eventos);
+  // Lo que se marcó «se canceló» (OL-391) no cuenta: ni sus lugares ni como fecha a la que bajar.
+  const ocurridas = realizados(trayectoria.eventos);
+  const lugares = contarLugares(fechas, ocurridas);
   return (
     <Kpis>
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Fechas" valor={kpiProximos(fechas.length, true)} salto={fechas.length > 0 ? "fechas" : undefined} />
       <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Siguen" valor={seguidores} />
-      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Lugares" valor={lugares} salto={saltoLugares(lugares, fechas.length, trayectoria.eventos.length)} />
+      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Lugares" valor={lugares} salto={saltoLugares(lugares, fechas.length, ocurridas.length)} />
     </Kpis>
   );
 }

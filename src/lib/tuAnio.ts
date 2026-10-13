@@ -6,7 +6,7 @@
  * La lectura está en `cargarTuAnio.ts`; el dibujo, en `carteles/plantillas/tuAnio.tsx`. Las cuentas de lugares y artistas son las del historial
  * de las fichas (`historialFichas.ts`, OL-390): no se agrupa dos veces.
  */
-import { agruparPorMes, artistasDelHistorial, lugaresDeTrayectoria, plural, type EventoPasado, type Presencia } from "./historialFichas";
+import { agruparPorMes, artistasDelHistorial, lugaresDeTrayectoria, plural, type EventoPasado, type Presencia, realizados } from "./historialFichas";
 import { ZONA_INICIAL, zonaSegura } from "./fechas";
 import { respaldoDe } from "./portadasSistema";
 
@@ -108,7 +108,8 @@ export type EntradaTuAnio = {
  */
 export function resumirTuAnio(e: EntradaTuAnio): ResumenTuAnio {
   const zona = e.zona ?? ZONA_INICIAL;
-  const lista = delAnio(e.eventos, e.ahora, zona) as EventoPasado[];
+  // Lo marcado «se canceló» (OL-391) no cuenta en «Tu año», como no cuenta en el historial.
+  const lista = realizados(delAnio(e.eventos, e.ahora, zona) as EventoPasado[]);
   const lugares = lugaresDeTrayectoria(lista);
   // Los artistas del año; en el de un artista, los otros (con quien compartió fecha), nunca él mismo.
   const artistas = artistasDelHistorial(e.tipo === "artista" ? lista.map((x) => ({ ...x, artistas: x.artistas.filter((a) => a.id !== e.id) })) : lista);

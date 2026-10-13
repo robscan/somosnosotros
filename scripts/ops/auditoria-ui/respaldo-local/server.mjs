@@ -294,6 +294,16 @@ const servidor = http.createServer(async (req, res) => {
   // Escrituras: se anotan y se contestan con lo mismo (nunca cambian el fixture, salvo asistencias/seguimientos en memoria)
   const cuerpo = await leerCuerpo(req);
   registro.push(`  cuerpo: ${JSON.stringify(cuerpo).slice(0, 300)}`);
+  // OL-391: «Se canceló» se marca en memoria (otro arranque empieza limpio), para ver la ficha cancelada tras el toque. Los permisos reales se
+  // prueban en PostgreSQL (`supabase/tests/pg/eventos-cancelado.test.mjs`).
+  if (req.method === "PATCH" && tabla === "eventos" && cuerpo && Object.keys(cuerpo).join() === "cancelado") {
+    const { propios } = parseFiltros(url.searchParams);
+    const cambiadas = tablas.eventos.filter((fila) => propios.every((c) => cumple(fila, c)));
+    for (const fila of cambiadas) fila.cancelado = cuerpo.cancelado === true;
+    const filas = cambiadas.map((fila) => proyectar("eventos", fila, parseSelect(url.searchParams.get("select")), []));
+    if (quiereObjeto(req)) return filas.length === 1 ? responder(res, 200, filas[0]) : responder(res, 406, { code: "PGRST116", message: `${filas.length} filas` });
+    return responder(res, 200, filas);
+  }
   const filas = Array.isArray(cuerpo) ? cuerpo : cuerpo ? [cuerpo] : [];
   const conId = filas.map((f) => ({ id: crypto.randomUUID(), ...f }));
   if (quiereObjeto(req)) return responder(res, req.method === "POST" ? 201 : 200, conId[0] || {});

@@ -583,6 +583,14 @@ describe("lo ligado que ya pasó se enlaza y se ve pasado (OL-388, sustituye a O
     const sigue = await abrir(acto, { ...festival, fin: "2099-01-04T05:59:00Z" });
     expect(renglonA(sigue, "/eventos/festival-de-prueba")).toMatchObject({ meta: "Festival", pasado: false });
   });
+
+  it("lo ligado que ya pasó y se canceló (OL-391) dice «Se canceló» en vez de «Fue el …» y va tachado", async () => {
+    const els = await abrir(EXPO, { ...INAUG, inicio: "2000-01-08T02:00:00Z", cancelado: true });
+    expect(renglonA(els, "/eventos/inauguracion-de-prueba")).toMatchObject({ titulo: "Inauguración", meta: "Se canceló", pasado: true, cancelado: true });
+    const acto = { ...EVENTO, clase: "puntual", evento_padre_id: "fest-1" };
+    const festival = { id: "fest-1", slug: "festival-de-prueba", titulo: "Festival de prueba", clase: "festival", inicio: "2000-01-01T06:00:00Z", fin: "2000-01-04T05:59:00Z", zona: "America/Mexico_City", cancelado: true };
+    expect(renglonA(await abrir(acto, festival), "/eventos/festival-de-prueba")).toMatchObject({ meta: "Festival · Se canceló", cancelado: true });
+  });
 });
 
 describe("«Quién fue» en la ficha en pasado (OL-388)", () => {
@@ -682,5 +690,102 @@ describe("las otras funciones de lo mismo (OL-385)", () => {
     const { seccion, heroe } = await abrir(segunda, [funcion("otra", "2099-01-03T02:00:00Z", { titulo: "Otra obra" })]);
     expect(seccion).toBeUndefined();
     expect(heroe.props.etiqueta).toBeUndefined();
+  });
+});
+
+describe("«Se canceló»: anunciado vs. realizado (OL-391)", () => {
+  afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
+  const PASADO = { ...EVENTO, inicio: "2000-01-01T19:00:00Z", fin: "2000-01-01T20:00:00Z", borrador: false };
+  /** La ficha de `evento` vista por `quien` (sin sesión, la autora, otra cuenta o la administración); con `actos`, los del programa de un festival. */
+  const abrir = async (evento: Record<string, unknown>, quien: { id: string; rol: "usuario" | "admin" } | null = null, actos: Record<string, unknown>[] = []) => {
+    const cliente = {
+      from: (tabla: string) => {
+        if (tabla !== "eventos") return chain({ data: tabla === "asistencias" ? [] : null });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c: any = chain({ data: actos });
+        c.maybeSingle = () => Promise.resolve({ data: evento });
+        return c;
+      },
+      rpc: () => Promise.resolve({ data: [{ evento_id: evento.id, n: 2 }] }),
+    };
+    vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    vi.mocked(usuarioActual).mockResolvedValue(quien ? { correo: "prueba@example.com", perfil: { id: quien.id, nombre: "Prueba", rol: quien.rol, foto: null, colonia: null, bio: null } } : null);
+    const { default: FichaEvento } = await import("./page");
+    return [...recorrer(await FichaEvento({ params: Promise.resolve({ id: String(evento.slug) }), searchParams: Promise.resolve({}) }))];
+  };
+  const fila = async (els: { type: unknown; props: Record<string, unknown> }[]) => {
+    const { default: RenglonCancelado } = await import("./MarcarCancelado");
+    return els.find((e) => e.type === RenglonCancelado)?.props;
+  };
+  const AUTORA = { id: "autor-1", rol: "usuario" as const };
+
+  it("el menú «···» ofrece «Se canceló» a la autora de un evento que ya pasó, y marcado, «No se canceló»", async () => {
+    expect(await fila(await abrir(PASADO, AUTORA))).toEqual({ eventoId: "evento-1", cancelado: false });
+    expect(await fila(await abrir({ ...PASADO, cancelado: true }, AUTORA))).toEqual({ eventoId: "evento-1", cancelado: true });
+    // La administración también, aunque no sea suyo.
+    expect(await fila(await abrir(PASADO, { id: "admin-1", rol: "admin" }))).toBeTruthy();
+  });
+
+  it("no lo ofrece si no ha pasado, a quien no lo gestiona, ni en un borrador u oculto", async () => {
+    expect(await fila(await abrir(EVENTO, AUTORA))).toBeUndefined();
+    expect(await fila(await abrir(PASADO, { id: "lectora", rol: "usuario" }))).toBeUndefined();
+    expect(await fila(await abrir(PASADO, null))).toBeUndefined();
+    expect(await fila(await abrir({ ...PASADO, visible: false }, AUTORA))).toBeUndefined();
+    expect(await fila(await abrir({ ...PASADO, visible: false, borrador: true }, AUTORA))).toBeUndefined();
+  });
+
+  it("quien lo gestiona tiene el aviso con Deshacer en la ficha (fuera del menú); un visitante no", async () => {
+    const { AvisoCancelado } = await import("./MarcarCancelado");
+    expect((await abrir(PASADO, AUTORA)).some((e) => e.type === AvisoCancelado)).toBe(true);
+    expect((await abrir(PASADO, null)).some((e) => e.type === AvisoCancelado)).toBe(false);
+  });
+
+  it("la ficha cancelada en pasado: el chip dice «Se canceló» (en rojo) en vez de «Ya pasó», «Era · hora», sin «Fueron» ni «Quién fue», y se comparte", async () => {
+    const els = await abrir({ ...PASADO, cancelado: true });
+    const heroe = els.find((e) => e.type === Heroe)!;
+    expect(heroe.props).toMatchObject({ etiqueta: "Se canceló", cancelado: true });
+    expect(els.find((e) => e.type === Kpi)?.props.etiqueta).toMatch(/^Era · /);
+    const diferido = async (nombre: string) => {
+      const e = els.find((x) => typeof x.type === "function" && (x.type as { name?: string }).name === nombre)!;
+      return (e.type as (p: unknown) => Promise<unknown>)(e.props);
+    };
+    // Aunque dos dijeron «Voy», nadie fue a lo que no ocurrió.
+    expect(await diferido("KpiVan")).toBeNull();
+    expect(await diferido("QuienVaDiferido")).toBeNull();
+    expect(els.some((e) => e.type === BotonCompartir)).toBe(true);
+    expect(els.some((e) => e.type === Asistencia)).toBe(false);
+  });
+
+  it("sin la marca, la ficha en pasado no cambia: «Ya pasó» y «Fue · hora»", async () => {
+    const els = await abrir(PASADO);
+    expect(els.find((e) => e.type === Heroe)?.props).toMatchObject({ etiqueta: "Ya pasó", cancelado: false });
+    expect(els.find((e) => e.type === Kpi)?.props.etiqueta).toMatch(/^Fue · /);
+  });
+
+  it("una marca en algo que no ha pasado no cuenta (la acción no lo deja, pero si llegara): la ficha viva de siempre", async () => {
+    const els = await abrir({ ...EVENTO, cancelado: true });
+    expect(els.find((e) => e.type === Heroe)?.props.etiqueta).toBeUndefined();
+    expect(els.some((e) => e.type === Asistencia)).toBe(true);
+  });
+
+  it("el título de la pestaña dice «Se canceló»", async () => {
+    vi.mocked(clienteServidor).mockResolvedValue(clienteFalso({ eventos: { data: { ...PASADO, cancelado: true } } }) as unknown as Awaited<ReturnType<typeof clienteServidor>>);
+    const { generateMetadata } = await import("./page");
+    const meta = await generateMetadata({ params: Promise.resolve({ id: PASADO.slug }) });
+    expect(meta.title).toBe("Evento de prueba · Se canceló · Somos Nosotros");
+    expect(meta.description).toMatch(/^Se canceló: era el /);
+    expect(meta.openGraph).toBeUndefined();
+  });
+
+  it("en el «Ya pasó» del festival, el acto cancelado lleva la etiqueta (`cancelado`) y los demás no", async () => {
+    const festival = { ...EVENTO, id: "fest-1", slug: "festival-de-prueba", clase: "festival", inicio: "2000-01-01T19:00:00Z", fin: "2099-01-04T06:00:00Z" };
+    const acto = (n: number, cancelado = false) => ({ id: `acto-${n}`, slug: `acto-${n}`, titulo: `Acto ${n}`, inicio: `2000-01-0${n}T19:00:00Z`, fin: null, zona: "America/Mexico_City", imagen: null, precio: null, lugar_id: null, sitio_texto: "Foro", sitio_reservado: false, visible: true, borrador: false, cancelado, lugar: null });
+    const els = await abrir(festival, null, [acto(1), acto(2, true)]);
+    const dentro = [...recorrer(els.find((e) => e.type === "details"))];
+    const renglones = dentro.filter((e) => (e.props?.evento as { id?: string } | undefined)?.id);
+    expect(renglones.map((e) => [(e.props.evento as { id: string }).id, e.props.cancelado])).toEqual([
+      ["acto-1", false],
+      ["acto-2", true],
+    ]);
   });
 });
