@@ -501,3 +501,10 @@ export const IconoRegalo = (p: P) => (
     <path d="M3 13h18M12 9v12M7.5 9a2.5 2.5 0 1 1 2.5-2.5V9M16.5 9a2.5 2.5 0 1 0-2.5-2.5V9" />
   </svg>
 );
+/** «Presentación» e «Informe» en PDF (OL-396): la hoja con la esquina doblada y dos renglones, como en el prototipo firmado (`curriculo-propuestas.html`). */
+export const IconoDocumento = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+    <path d="M14 3v5h5M9 13h6M9 17h6" />
+  </svg>
+);

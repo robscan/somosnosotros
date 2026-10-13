@@ -10,14 +10,15 @@ const estado = (cambios: Partial<EstadoCompartir> = {}): EstadoCompartir => ({ d
 describe("El banner para compartir la app (OL-387): cuándo sale", () => {
   it("tres días distintos: sale; dos: no", () => {
     const a = almacen();
-    expect(visitaDeInicio("2026-10-10", a)).toBe(false);
-    expect(visitaDeInicio("2026-10-11", a)).toBe(false);
+    // OL-397: desde el primer día (antes, desde el tercero: `DIAS_PARA_BANNER`).
+    expect(visitaDeInicio("2026-10-10", a)).toBe(true);
+    expect(visitaDeInicio("2026-10-11", a)).toBe(true);
     expect(visitaDeInicio("2026-10-12", a)).toBe(true);
     expect(leerEstado(a.datos[LLAVE_COMPARTIR]).dias).toEqual(["2026-10-10", "2026-10-11", "2026-10-12"]);
   });
   it("el mismo día tres veces cuenta uno", () => {
     const a = almacen();
-    for (let i = 0; i < 3; i++) expect(visitaDeInicio("2026-10-12", a)).toBe(false);
+    for (let i = 0; i < 3; i++) expect(visitaDeInicio("2026-10-12", a)).toBe(true);
     expect(leerEstado(a.datos[LLAVE_COMPARTIR]).dias).toEqual(["2026-10-12"]);
   });
   it("cerrado hasta mañana: no sale hoy; sale mañana", () => {

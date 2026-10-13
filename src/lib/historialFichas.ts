@@ -40,6 +40,10 @@ export type EventoPasado = {
   van: number;
   /** «Se canceló» (OL-391): se queda en su mes, tachado, y no cuenta. */
   cancelado: boolean;
+  /** Cómo ocurre (`eventos.clase`: puntual, exposición, taller, festival): el informe del lugar (OL-396) aparta el festival marco y nombra los talleres. */
+  clase?: string | null;
+  /** El id del festival del que es parte (con su título en `festival`): el informe del lugar sabe así qué festival tiene actos en el periodo. */
+  festivalId?: string | null;
 };
 
 /** Lo pasado de una ficha: los eventos (lo más reciente primero) y si se llegó al tope de la lectura. */

@@ -29,6 +29,8 @@ import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { cargarHistorialLugar } from "@/lib/cargarHistorial";
 import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
+import { etiquetasPeriodo, zonaInforme } from "@/lib/documentos";
+import { opcionesInforme } from "@/lib/opcionesDocumento";
 import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
@@ -185,12 +187,16 @@ async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar:
 
 /**
  * «Historial» (OL-390): los eventos pasados del lugar, plegados bajo «Próximos eventos»; sin ninguno, no existe. Consulta aparte, en `<Suspense>`.
- * Al final, «Tu año» (OL-394) si quien mira gestiona la ficha y hay algún evento pasado de este año.
+ * Al final, «Tu año» (OL-394) si quien mira gestiona la ficha y hay algún evento pasado de este año, y junto a él el «Informe» en PDF (OL-396) si
+ * la gestiona y hay algo pasado.
  */
 async function SeccionHistorialLugar({ lugar, puedeEditar }: { lugar: LugarConAutor; puedeEditar: boolean }) {
   const historial = await cargarHistorialLugar(lugar.id);
-  const tuAnio = puedeEditar && hayTuAnio(historial.eventos, new Date(), lugar.zona) ? hrefVistaTuAnio("lugar", hrefLugar(lugar)) : null;
-  return <Historial de="lugar" historial={historial} tuAnio={tuAnio} />;
+  const ahora = new Date();
+  const tuAnio = puedeEditar && hayTuAnio(historial.eventos, ahora, lugar.zona) ? hrefVistaTuAnio("lugar", hrefLugar(lugar)) : null;
+  // El «Informe» en PDF (OL-396): solo quien gestiona y con algo pasado; las páginas de cada opción se cuentan aquí (sin leer nada más).
+  const documento = puedeEditar && historial.eventos.length ? { que: "lugar" as const, opciones: opcionesInforme({ lugar, pasados: historial.eventos, ahora }), etiquetasPeriodo: etiquetasPeriodo(ahora, zonaInforme(lugar)) } : null;
+  return <Historial de="lugar" historial={historial} tuAnio={tuAnio} documento={documento} />;
 }
 
 /** Fallback de `SeccionEventosLugar`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */

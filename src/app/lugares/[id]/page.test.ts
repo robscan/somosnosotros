@@ -261,4 +261,28 @@ describe("el historial del lugar (OL-390)", () => {
       expect((await seccionCon([viejo], { id: "autor-1", rol: "usuario" })).props.tuAnio).toBeNull();
     });
   });
+
+  describe("«Informe» en PDF junto a «Tu año» (OL-396)", () => {
+    beforeAll(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-12T20:00:00Z"));
+    });
+    afterAll(() => vi.useRealTimers());
+
+    it("quien gestiona el lugar, con algo pasado aunque sea de otro año: las seis opciones (mes, año, todo × carta, A4) y los nombres del periodo", async () => {
+      const viejo = pasado("a", []);
+      viejo.evento.inicio = "2025-10-09T01:00:00Z";
+      const { documento } = (await seccionCon([viejo], { id: "autor-1", rol: "usuario" })).props;
+      expect(documento?.que).toBe("lugar");
+      expect(documento?.etiquetasPeriodo).toEqual({ mes: "Octubre", anio: "2026", todo: "Todo" });
+      expect(documento?.opciones.map((o) => `${o.periodo}/${o.formato}/${o.paginas}`)).toEqual(["mes/carta/1", "mes/a4/1", "anio/carta/1", "anio/a4/1", "todo/carta/1", "todo/a4/1"]);
+      expect(documento?.opciones[0].archivo).toBe("informe-lugar-de-prueba-2026-10.pdf");
+      expect((await seccionCon([pasado("a", [])], { id: "admin-1", rol: "admin" })).props.documento?.que).toBe("lugar");
+    });
+
+    it("sin sesión o quien no lo gestiona: sin botón", async () => {
+      expect((await seccionCon([pasado("a", [])])).props.documento).toBeNull();
+      expect((await seccionCon([pasado("a", [])], { id: "otra", rol: "usuario" })).props.documento).toBeNull();
+    });
+  });
 });

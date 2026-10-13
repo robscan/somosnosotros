@@ -17,8 +17,8 @@ const DE = "compartir-app";
 /**
  * El banner para compartir la app (OL-387; prototipo firmado `inicio-propuestas.html`, «Firmada»: B1 tras Destacados, B2 con el símbolo SN,
  * bitácora 417). El founder (2026-10-12): «un banner de ancho completo para que los usuarios compartan la app … para usuarios logueados que hayan
- * entrado más de 2 veces». Inicio lo pone solo con sesión; cuándo sale lo decide el teléfono (`lib/visitasInicio`: tres días distintos o más, la ×
- * descansa 30 días, tras compartir no vuelve). El servidor no sabe nada: se decide tras el primer pintado (como «lo nuevo» de Nuevos eventos), así
+ * entrado más de 2 veces»; la noche del 12: «mejor que lo vea todos siempre. Luego volvemos a este criterio de 3 días» (OL-397). Inicio lo pone
+ * con o sin sesión; cuándo sale lo decide el teléfono (`lib/visitasInicio`: desde el primer día, la × descansa 30 días, tras compartir no vuelve). El servidor no sabe nada: se decide tras el primer pintado (como «lo nuevo» de Nuevos eventos), así
  * que mientras no sale no ocupa nada.
  *
  * «Compartir»: la hoja del teléfono (`navigator.share`) con somosnosotros.org; sin ella (escritorio), copia el enlace y avisa «Enlace copiado». Si
