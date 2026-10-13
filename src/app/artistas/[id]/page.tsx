@@ -40,6 +40,7 @@ import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { cargarTrayectoria } from "@/lib/cargarHistorial";
 import { contarLugares, realizados, saltoLugares } from "@/lib/historialFichas";
+import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
 import { incrustadoDeNovedad } from "@/lib/incrustado";
 import { leerNovedadesRecientes, selloNovedadArtista, type NovedadArtista } from "@/lib/novedadesArtista";
 import { qrDeUrl } from "@/lib/qr";
@@ -189,9 +190,14 @@ async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
   );
 }
 
-/** «Trayectoria» (OL-390): sus fechas pasadas, plegadas bajo «Próximas fechas»; sin ninguna, no existe. Consulta aparte, en `<Suspense>`. */
-async function SeccionTrayectoria({ artista }: { artista: ArtistaConAutor }) {
-  return <Historial de="artista" artistaId={artista.id} historial={await cargarTrayectoria(artista.id)} />;
+/**
+ * «Trayectoria» (OL-390): sus fechas pasadas, plegadas bajo «Próximas fechas»; sin ninguna, no existe. Consulta aparte, en `<Suspense>`. Al final,
+ * «Tu año» (OL-394) si quien mira gestiona la ficha y hay alguna fecha pasada de este año.
+ */
+async function SeccionTrayectoria({ artista, puedeEditar }: { artista: ArtistaConAutor; puedeEditar: boolean }) {
+  const historial = await cargarTrayectoria(artista.id);
+  const tuAnio = puedeEditar && hayTuAnio(historial.eventos) ? hrefVistaTuAnio("artista", hrefArtista(artista)) : null;
+  return <Historial de="artista" artistaId={artista.id} historial={historial} tuAnio={tuAnio} />;
 }
 
 /** «Próximas fechas» entero: la misma consulta que `KpisArtista`, memoizada por `cache()`, más quién decidió qué. */
@@ -432,7 +438,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
         {/* Lo que ya pasó (OL-390): plegado bajo lo próximo. Mientras llega no se adivina si existe: nada en su sitio. */}
         <Suspense fallback={null}>
-          <SeccionTrayectoria artista={a} />
+          <SeccionTrayectoria artista={a} puedeEditar={puedeEditar} />
         </Suspense>
 
         {/* Novedades, fase 1 (doc 44 §1, OL-175): después de las fechas, antes de «Sobre». Sin novedades y sin poder publicar,

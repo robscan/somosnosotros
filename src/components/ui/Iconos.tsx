@@ -494,3 +494,10 @@ export const IconoBasura = (p: P) => (
     <path d="M10 11v6M14 11v6" />
   </svg>
 );
+/** «Tu año» (OL-394): el regalo, como en el prototipo firmado (`tu-anio-propuestas.html`). */
+export const IconoRegalo = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="9" width="18" height="12" rx="2" />
+    <path d="M3 13h18M12 9v12M7.5 9a2.5 2.5 0 1 1 2.5-2.5V9M16.5 9a2.5 2.5 0 1 0-2.5-2.5V9" />
+  </svg>
+);
