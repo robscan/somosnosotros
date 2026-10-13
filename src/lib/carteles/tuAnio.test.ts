@@ -23,7 +23,8 @@ beforeAll(async () => {
 });
 
 const PERSONA: ResumenTuAnio = {
-  quien: { nombre: "Marcos Ledesma", foto: "x", tipo: "persona" },
+  // Los datos de la captura firmada (capturas-423/01) y su figura (la del id «persona», como en el prototipo), para compararla.
+  quien: { nombre: "Robscan", foto: "x", tipo: "persona" },
   periodo: { titulo: "Tu 2026", desde: "del 17 sep al 12 oct" },
   protagonista: { n: 36, frase: "eventos a los que fuiste" },
   secundarios: [
@@ -70,7 +71,7 @@ function encimados(nodos: NodoTexto[]): [NodoTexto, NodoTexto] | null {
 }
 
 async function dibujar(nombre: string, resumen: ResumenTuAnio, conFoto: boolean, ancho?: number): Promise<ResultadoTuAnio> {
-  const r = await dibujarImagenTuAnio({ resumen, id: `id-${nombre}`, foto: conFoto ? foto : null, conNodos: true, ancho });
+  const r = await dibujarImagenTuAnio({ resumen, id: resumen.quien.tipo === "persona" ? "persona" : `id-${nombre}`, foto: conFoto ? foto : null, conNodos: true, ancho });
   if (SALIDA) writeFileSync(path.join(SALIDA, `${nombre}.jpg`), r.imagen);
   return r;
 }
@@ -106,14 +107,14 @@ describe("la imagen de «Tu año» (OL-394)", () => {
     const con = await dibujarImagenTuAnio({ resumen: PERSONA, id: "x", foto, soloSvg: true, conNodos: true });
     const sin = await dibujarImagenTuAnio({ resumen: PERSONA, id: "x", foto: null, soloSvg: true, conNodos: true });
     // Sin foto, el nombre empieza en el margen; con foto, después de ella (96 + 24).
-    const x = (r: ResultadoTuAnio) => r.nodos.find((n) => n.texto === "Marcos Ledesma")!.x;
+    const x = (r: ResultadoTuAnio) => r.nodos.find((n) => n.texto === "Robscan")!.x;
     expect(x(sin)).toBeCloseTo(80, 0);
     expect(x(con)).toBeCloseTo(200, 0);
   });
 
   it("una foto que no es imagen (un SVG, basura) se ignora: sale sin foto, nunca rota", async () => {
     const r = await dibujarImagenTuAnio({ resumen: PERSONA, id: "x", foto: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>"), soloSvg: true, conNodos: true });
-    expect(r.nodos.find((n) => n.texto === "Marcos Ledesma")!.x).toBeCloseTo(80, 0);
+    expect(r.nodos.find((n) => n.texto === "Robscan")!.x).toBeCloseTo(80, 0);
   });
 
   it("el número protagonista baja de 440 para caber: tres y cuatro cifras", () => {
