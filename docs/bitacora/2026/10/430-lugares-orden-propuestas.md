@@ -1,7 +1,7 @@
 # 430 · Prototipo: el orden de «Con eventos» y el desplegable con ubicación (OL-399)
 
 **Fecha:** 2026-10-13. **Rama:** `lugares-orden-propuestas`, base `origin/main` (`9f81f2b0`, con OL-398 ya unido). **Operador:** Gestor VI (Fable 5.1), sin agente. **Solo documentación: una página de propuestas y sus capturas.**
-**Estado:** espera la firma del founder.
+**Estado:** **firmada** por el founder el 13 de octubre a las 12:10: «O Con hora primero · D Cabecera «N lugares» · E Cercanos primero / Próximos primero · R Las dos líneas». En código: OL-400.
 
 ## El pedido
 
@@ -36,7 +36,7 @@ Medidor: cuántos de los cinco primeros de «Con eventos» tienen hora (sin ubic
 - `11b-R-muni-las-dos-lineas.png`: el renglón del MUNI con sus dos líneas.
 - `12-pagina-entera.png`: la página con la hoja (1280 px).
 
-## Cómo se haría (si se firma la propuesta)
+## Cómo se hace (OL-400)
 
 - `agruparLugares` recibe el modo («cerca» o «pronto») y, sin ubicación o con «pronto», ordena «Con eventos» en dos tandas: lo con hora por fecha, luego lo en curso por cierre.
 - `conProximo` guarda por lugar lo próximo con hora y, aparte, lo en curso; `RenglonLugar` pinta una o dos líneas. Todo sale de la consulta de eventos que ya trae `/lugares` (OL-398): sin tablas ni migración.

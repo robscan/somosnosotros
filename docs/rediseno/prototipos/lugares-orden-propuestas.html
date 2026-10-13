@@ -168,7 +168,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     <header class="hoja-cab">
       <div>
         <h1 id="hoja-titulo" tabindex="-1">Lugares: el orden y el desplegable</h1>
-        <p>Tras OL-398: qué va primero en «Con eventos» y cómo se elige con ubicación · mar 13 de oct · OL-399</p>
+        <p>Tras OL-398: qué va primero en «Con eventos» y cómo se elige el orden · mar 13 de oct · OL-399 · <b>firmada</b>: O con hora primero · D cabecera «N lugares» · E Cercanos primero / Próximos primero · R las dos líneas</p>
       </div>
       <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
@@ -176,7 +176,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
       <div class="resumen">
         <div class="preajustes" role="group" aria-label="Preajustes">
           <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción, con OL-398</small></button>
-          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
+          <button type="button" data-preset="propuesta" aria-pressed="false">Firmada<small>13 oct, 12:10</small></button>
         </div>
         <p class="combinacion" id="combinacion"></p>
         <section class="medidor" aria-label="Medidor">
@@ -376,7 +376,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   }
   const PORQUE = {
     hoy: 'Hoy: «Con eventos» va por la fecha de lo próximo, así que el MUNI (expo abierta desde septiembre) sale antes que el Teatro de la Paz (hoy a las 20:00); con ubicación no hay forma de pedir otro orden.',
-    propuesta: 'Propuesta: sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; el desplegable va junto a «10 lugares» con «Cercanos primero» · «Próximos primero» · «Alfabético»; con ubicación arranca en cercanos y sin ella en próximos, y pedir cercanos pide el permiso; la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
+    propuesta: 'Firmada (founder, 13 oct, 12:10: «O Con hora primero · D Cabecera «N lugares» · E Cercanos primero / Próximos primero · R Las dos líneas»): sin ubicación, lo que tiene hora va primero y por fecha (Teatro de la Paz hoy, San Miguelito mañana…) y lo en curso cierra el grupo, el que termina antes primero; el desplegable va junto a «10 lugares» con «Cercanos primero» · «Próximos primero» · «Alfabético»; con ubicación arranca en cercanos y sin ella en próximos, y pedir cercanos pide el permiso; la elección se recuerda. El MUNI dice sus dos cosas: la charla del 24 y la expo hasta el 8 de nov.',
   };
   function pintarTodo() {
     $('etiqueta-sin').innerHTML = estado.ubicacionSin ? '<b>Sin ubicación</b> · eligió «Cercanos primero» y dio permiso' : '<b>Sin ubicación</b> · el orden de «Con eventos»';
