@@ -976,7 +976,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       [{ b: `${Math.round((sinEvento / (nArt || 1)) * 10)} de cada 10 artistas` }, ` no tienen ningún evento registrado (${sinEvento} de ${nArt}).`],
       [{ b: `El ${Math.round((top5 / (totalEv || 1)) * 100)} % de los eventos` }, ` con sede ocurre en 5 lugares; ${baseArt - conEv} de los ${baseArt} lugares no tienen ninguno.`],
       ["Los lugares con eventos forman ", { b: plural(comp.length, "cúmulo", "cúmulos") }, ` que no comparten ni un artista ni un festival entre sí (el mayor, ${comp[0]?.length ?? 0} lugares).`],
-      [{ b: `${plural(zonas.zonas.length, "zona", "zonas")} de la ciudad` }, ` no tienen un lugar a menos de 2 km (${zonas.celdas.length} km² dentro de 7 km del centro).`],
+      [{ b: `${plural(zonas.zonas.length, "zona", "zonas")} de la ciudad` }, ` ${zonas.zonas.length === 1 ? "no tiene" : "no tienen"} un lugar a menos de 2 km (${zonas.celdas.length} km² dentro de 7 km del centro).`],
     ];
     if (!todoElTiempo()) frases.push(["En el periodo elegido hay ", { b: `${activas.filter(Boolean).length} conexiones activas` }, ` de ${aristas.length}.`]);
     return frases;
