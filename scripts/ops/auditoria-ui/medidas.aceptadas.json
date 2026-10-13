@@ -180,6 +180,7 @@
     "s25-ficha-festival": { "nodos": [122, 122, 155, 155], "profundidad": [11, 11, 11, 11] },
     "s26-editar-exposicion": { "nodos": [63, 63, 97, 97], "profundidad": [11, 11, 11, 11] },
     "s27-alta-evento-nombre-clase": { "nodos": [21, 21, 55, 55], "profundidad": [6, 6, 6, 6] },
-    "s28-inicio-banner-compartir": { "nodos": [377, 377, 379, 379], "profundidad": [11, 11, 11, 11] }
+    "s28-inicio-banner-compartir": { "nodos": [377, 377, 379, 379], "profundidad": [11, 11, 11, 11] },
+    "s29-admin-grafo": { "nodos": [381, 381, 418, 414], "profundidad": [11, 11, 11, 11] }
   }
 }
