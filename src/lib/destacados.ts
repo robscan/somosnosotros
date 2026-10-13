@@ -4,7 +4,7 @@ import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
 import { cortoDeClase, fotoDeEvento, hrefEvento, sitioEnLista } from "./eventos";
 import { diaCorto, diaLocal, formatearCuando, ZONA_INICIAL } from "./fechas";
-import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
+import { etiquetaTipo, hrefLugar, textoProximo, vidaDeLugar, type LugarLista } from "./lugares";
 import { HORARIO_POR_CONFIRMAR, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
@@ -146,8 +146,10 @@ export function nombreDeFestival(eventos: readonly Pick<EventoAgenda, "id" | "ti
   return (e) => (e.evento_padre_id ? (nombres.get(e.evento_padre_id) ?? null) : null);
 }
 
+/** La tarjeta dice una sola cosa: lo próximo con hora y, si no hay, lo que está abierto (OL-400, `vidaDeLugar`); sin nada, qué es. */
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
-  return { id: l.id, href: hrefLugar(l), foto: l.portada, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0, ...(l.proximo ? { cuando: true } : {}) };
+  const vida = vidaDeLugar(l);
+  return { id: l.id, href: hrefLugar(l), foto: l.portada, titulo: l.nombre, detalle: vida ? textoProximo(vida, ahora) : etiquetaTipo(l.tipo), van: 0, ...(vida ? { cuando: true } : {}) };
 }
 
 /** La tarjeta de artista usa el mismo rectángulo que eventos; la fecha va sin el sitio. */

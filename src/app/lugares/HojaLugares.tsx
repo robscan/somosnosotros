@@ -61,6 +61,9 @@ export function useHoja(): Manejo {
 type Props = {
   /** La cantidad, en la franja que queda a la vista con la hoja recogida. */
   resumen: ReactNode;
+  /** En la franja, después del asa (la tapa solo donde está): cómo se ordena la lista (el desplegable de OL-400). Se coloca solo, con su
+   *  clase, en la celda de la franja. */
+  orden?: ReactNode;
   /** La ficha abierta dentro de la hoja, o null. La lista sigue montada, y donde estaba, mientras hay una. */
   ficha: ReactNode | null;
   /** Cambia con cada ficha que entra por un gesto de la persona (un pin, un renglón): la hoja sube desde el borde de abajo hasta su altura.
@@ -105,7 +108,7 @@ type Props = {
  * estado de React: cambian con cada cuadro del desplazamiento y no deben volver a pintar la lista. Quien la usa solo se entera
  * cuando la hoja se asienta y cuando la lista pasa de una pantalla desplazada (`alLejos`, el botón de volver arriba).
  */
-export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar, alLejos, ref, children }: Props) {
+export default function HojaLugares({ resumen, orden, ficha, entrada, desde, alAsentar, alLejos, ref, children }: Props) {
   const hoja = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
   const franja = useRef<HTMLDivElement>(null);
@@ -163,14 +166,15 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
       return { detentes: { recogida: 0, media, llena }, franja: alto, compactaDesde: llena + abajoDe(abierta.querySelector("[data-portada]")!) - alto, techo: bajaElTecho };
     }
     const lista = franja.current!.nextElementSibling;
-    const fila = lista?.querySelector("li");
+    // El primer renglón, aunque antes de la lista vaya una línea (OL-400: «Sin tu ubicación no hay cercanos…»), que también asoma.
+    const fila = c.querySelector<HTMLElement>(":scope > :not([data-ficha-hoja]) li");
     // Lo que el mapa deja libre arriba: los mandos que flotan sobre él (`data-libre`: «Mi ubicación» y «Encuadrar los lugares», que ocupa su sitio
     // aunque esté oculto) con el mismo aire arriba del primero y abajo del último.
     const arribaDelMapa = techo.getBoundingClientRect().top;
     const mandos = [...techo.querySelectorAll("[data-libre]")].map((m) => m.getBoundingClientRect());
     const libre = mandos.length ? mandos[0].top - arribaDelMapa + Math.max(...mandos.map((m) => m.bottom)) - arribaDelMapa : 0;
     // Lo que hay antes del primer renglón (el título de su grupo) también asoma: los renglones que se ven siguen siendo dos y medio.
-    const antesDeLaFila = fila && lista ? fila.getBoundingClientRect().top - lista.getBoundingClientRect().top : 0;
+    const antesDeLaFila = fila ? fila.getBoundingClientRect().top - franja.current!.getBoundingClientRect().bottom : 0;
     const asoma = alturaAsoma(fila ? antesDeLaFila + RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
     return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity, techo: bajaElTecho };
   }, []);
@@ -428,6 +432,7 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
           <div ref={franja} className={styles.franja}>
             <h2 className={styles.resumen}>{resumen}</h2>
             <button type="button" className={styles.asa} aria-label="Subir o bajar la lista" onClick={manejo.siguiente} />
+            {orden}
           </div>
           {children}
           {ficha}
