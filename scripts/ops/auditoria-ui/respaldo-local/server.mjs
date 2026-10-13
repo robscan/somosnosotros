@@ -1,7 +1,7 @@
 // Respaldo local 100 % inventado: imita Auth y PostgREST de Supabase sobre el fixture (nunca toca producción).
 // node server.mjs [puerto]  →  http://127.0.0.1:8823
 import http from "node:http";
-import { tablas, rpcs, sesionDe, subDe, FK } from "./fixture.mjs";
+import { tablas, rpcs, sesionDe, subDe, FK, LLAVE_SERVICIO, extrasServicio } from "./fixture.mjs";
 
 const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8823);
 const CORS = {
@@ -223,7 +223,9 @@ function quiereObjeto(req) {
   return String(req.headers.accept || "").includes("vnd.pgrst.object");
 }
 function consultar(tabla, url, req) {
-  const filas = tablas[tabla] || [];
+  // Con la llave de servicio (OL-401) se leen además las filas que solo ella ve (`extrasServicio`); con cualquier otra, solo el fixture.
+  const conLlave = req.headers.apikey === LLAVE_SERVICIO;
+  const filas = [...(tablas[tabla] || []), ...(conLlave ? (extrasServicio[tabla] || []) : [])];
   const nodos = parseSelect(url.searchParams.get("select"));
   const { propios, embebidos } = parseFiltros(url.searchParams);
   let resultado = [];
