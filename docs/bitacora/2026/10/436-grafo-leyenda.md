@@ -21,6 +21,7 @@ El founder cerró las dudas de las bitácoras 432 y 435 la noche del 13 de octub
 - `Grafo.module.css`: una fila más en la rejilla (`capas`); en columnas anchas (desde 1048) la fila queda solo sobre la escena y el árbol y la lista siguen ocupando toda la altura; las píldoras; la pila en horizontal pasa a «botones · panel» (antes «leyenda · panel» y botones debajo); en horizontal bajo 520 de alto, «Red» y «Desde arriba» van en una fila (con la fila de capas encima, en columna ya no cabían con el mando). Se borraron `.leyenda`, `.capa`, `.marcaSitio` y `.sinAsistencias`. `medidasEnDuro` sigue en 342.
 - `ayuda.ts`: «Capa Lugar», «Capa Artista», «Capa Asistente» y «Yo» dicen lo que decía la leyenda (el gris de los sitios, «tócala para plegarla», «sin asistencias queda apagado»); los detalles (y con ellos el manual) cuentan que las capas son las píldoras bajo la barra y que una lente solo despliega la capa mientras está puesta. La entrada «Sitio sin ficha» se queda (la usa la tarjeta del sitio) y el manual no cambia de estructura.
 - `scripts/ops/auditoria-ui/medidas.aceptadas.json`: `s29-admin-grafo` baja de 464 · 464 · 502 · 501 a **460 · 460 · 498 · 497** nodos (se fueron cuatro: la marca, el aviso, los envoltorios de la leyenda; entró la fila). Profundidad igual (11). `s30` no se movió. Ajustado a mano; solo bajó.
+- `motor.ts` y `docs/rediseno/prototipos/grafo-3d.html`: las dos luces de la sección «Luces».
 - `docs/rediseno/56-grafo-cultural-3d.md`: § 5 punto 7 (con la nota fechada del founder), § 3.6 (la frase que remite a la pregunta 10), § 7 bis (nota al final de la sección: la sección no nombraba el 3) y la pregunta 10 (tachado el 3, 1, y la nota). El resto del documento no se tocó.
 
 ## Decisiones que tomé
@@ -56,6 +57,15 @@ El founder cerró las dudas de las bitácoras 432 y 435 la noche del 13 de octub
 7. `07-movil-yo-encendido.png`: «Yo» encendido, en blanco; la cámara vuela a su punto con el anillo y el rótulo «Tú».
 8. `08-movil-yo-sin-asistencias.png`: la cuenta de administración sin asistencias: «Yo» atenuado y ningún texto debajo.
 9. `09-escritorio-ayuda-capa-lugar.png` (1280×800): con el puntero sobre «Lugar», el panel de ayuda enseña «Capa Lugar: Los lugares (violeta) y los sitios sin ficha (gris), en su posición real…», el texto que salió de la pantalla.
+10. y 11. `10-luces-antes-0.55-2.2.png` y `11-luces-despues-0.75-1.6.png`: ver «Luces».
+
+## Luces
+
+Ajuste que el founder aprobó tras ver capturas comparadas, ya dentro de esta pieza: «sube intensidad de ambiente a ,75. Baja clave a 1.6 manten los demás valores» → «apruebo». En `motor.ts` la luz de ambiente pasa a `HemisphereLight(0xffffff, 0x2a2438, 0.75)` (antes 0,55) y la clave a `DirectionalLight(0xfff4e6, 1.6)` (antes 2,2); relleno (0,7), contraluz (1,1), tono ACES y exposición no se tocaron. Lo mismo en las dos líneas de `docs/rediseno/prototipos/grafo-3d.html` (224 y 225, editadas por reemplazo exacto; no se reescribió el archivo) para que prototipo y app no diverjan. Commit aparte.
+
+Capturas acercadas (390×844 táctil, respaldo local, el Centro Cultural Universitario Bicentenario elegido y `grafo.cam.distancia = 500`; la «antes» salió de la app compilada con los valores viejos y la «después» de la compilada con los nuevos, mismo guion):
+- `10-luces-antes-0.55-2.2.png`: valores viejos (ambiente 0,55 · clave 2,2).
+- `11-luces-despues-0.75-1.6.png`: valores nuevos (ambiente 0,75 · clave 1,6). El cambio es sutil, como era de esperar con +0,2 y −0,6: el lado iluminado de las esferas baja un poco y su lado en sombra sube un poco (por ejemplo, el promedio de color del lugar violeta grande pasa de RGB 119·106·144 a 114·102·140 y el del artista blanco de 144·142·140 a 141·140·138); la composición y las líneas son iguales.
 
 ## Lo que no entró
 
