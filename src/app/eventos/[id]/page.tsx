@@ -43,7 +43,7 @@ import { PROGRAMA_POR_CONFIRMAR, puedeDestacarse } from "@/lib/destacados";
 import { jsonLdMigajas } from "@/lib/estructurados";
 import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { compartirEvento, cortoDeClase, direccionPublicaSitio, enlaceComoLlegar, fotoDeEvento, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista } from "@/lib/eventos";
+import { POR_CONFIRMAR, compartirEvento, cortoDeClase, costoOpcional, direccionPublicaSitio, enlaceComoLlegar, fotoDeEvento, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sabidoGratis, sitioEnLista, textoCosto } from "@/lib/eventos";
 import { kpiCuando, kpiCuandoPorDia } from "@/lib/ficha";
 import { calleCorta, hrefLugar } from "@/lib/lugares";
 import type { SedeMapa } from "@/lib/mapaSedes";
@@ -307,7 +307,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const supabase = e.clase === "festival" ? await clienteServidor() : null;
   const actos = supabase ? (await cargarActosDeMarcos(supabase, [e.id]))?.get(e.id) : undefined;
   const sedes = actos ? sedesDeFestival(actos) : undefined;
-  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
+  // El costo, solo si se sabe (OL-411): sin precio, «Gratis» en un evento suelto; en uno de costo opcional («Por confirmar» en la ficha), nada.
+  const costo = textoCosto(e.precio, costoOpcional(e));
+  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes })}${costo === POR_CONFIRMAR ? "" : ` · ${costo}`}`;
   const imagen = fotoDeEvento({ imagen: e.imagen, portadaActo: actos ? (portadaDeFestival(actos) ?? undefined) : undefined, lugar: e.lugar }) ?? undefined;
   return {
     title: `${e.titulo} · Somos Nosotros`,
@@ -367,6 +369,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const clase = e.clase ?? "puntual";
   const ahora = new Date();
   const [ligados, funciones] = await Promise.all([cargarLigados(e), cargarOtrasFunciones(e, ahora)]);
+  // El costo (OL-411; firma del founder: «K «Por confirmar»»): sin precio, «Gratis» solo en un evento suelto; en un festival, una exposición, un
+  // taller, un acto de festival o una inauguración (que heredan el costo de lo suyo), «Por confirmar».
+  const opcional = costoOpcional({ clase, evento_padre_id: e.evento_padre_id, inauguracion: !!ligados.inaugura });
+  const costo = textoCosto(e.precio, opcional);
   const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
   // «Función 2 de 6» junto a la clase, si tiene funciones hermanas y no ha pasado (entre las que no han pasado no estaría ella). «Voy» sigue siendo
   // por función (H8 de docs/investigaciones/eventos-modelo.md): cada renglón de «Otras funciones» lleva el suyo.
@@ -462,7 +468,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           inicio: e.inicio,
           fin: e.fin,
           imagen: e.imagen,
-          gratis: e.precio === null,
+          gratis: sabidoGratis(e.precio, opcional),
           sitioNombre: sitio,
           direccionPublica: direccionYCiudad.direccion,
           ciudadPublica: direccionYCiudad.ciudad,
@@ -487,19 +493,19 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const numerosClase = kpiExpo ? (
     <Kpis piel="banda">
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={consultaTrasFin ? "Cerró" : "Hasta"} valor={kpiExpo.hasta} />
-      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
       <Kpi icono={<IconoReloj width={16} height={16} />} etiqueta={kpiExpo.hoy.etiqueta} valor={kpiExpo.hoy.valor} />
     </Kpis>
   ) : clase === "festival" ? (
     <Kpis piel="banda">
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
-      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
       <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedesFestival.length} />
     </Kpis>
   ) : clase === "taller" ? (
     <Kpis piel="banda">
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Sesiones" valor={Math.max(sesiones.length, 1)} />
-      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
       <Suspense fallback={<EsqueletoKpi />}>
         <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} cancelado={cancelado} />
       </Suspense>
@@ -626,7 +632,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <Kpis>
             {/* Lo que se canceló (OL-391) no «fue»: «Era · 19:00». */}
             <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cancelado ? `Era · ${cuando.hora}` : consultaTrasFin ? `Fue · ${cuando.hora}` : cuando.hora} valor={cuando.dia} />
-            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+            <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
             <Suspense fallback={cancelado ? null : <EsqueletoKpi />}>
               <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} cancelado={cancelado} />
             </Suspense>

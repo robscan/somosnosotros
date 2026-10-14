@@ -112,7 +112,9 @@ describe("un festival con su programa (H6)", () => {
     const [funcion, args] = m.rpc.mock.calls[0];
     expect(funcion).toBe("publicar_programa");
     expect(args.p_operacion).toBe(ID);
-    expect(args.p_marco).toEqual({ datos: { titulo: "Festival de Cine", imagen: null, precio: null, descripcion: null, enlace: null }, quien: [] });
+    // «Gratis» elegido en un festival se guarda escrito (OL-411): ahí el vacío es «Por confirmar».
+    expect(args.p_marco).toEqual({ datos: { titulo: "Festival de Cine", imagen: null, precio: "Gratis", descripcion: null, enlace: null }, quien: [] });
+    expect(args.p_actos.every((a: { datos: { precio: string | null } }) => a.datos.precio === "Gratis")).toBe(true);
     expect(args.p_actos.map((a: { publicar: boolean }) => a.publicar)).toEqual([true, true, false]);
     expect(args.p_actos[0].datos).toMatchObject({ titulo: "Inauguración", inicio: "2030-11-13T01:00:00.000Z", sitio_texto: "Museo de prueba" });
     expect(args.p_actos[0].quien).toEqual([{ nombre: "Cine Club", tipo: expect.any(String) }]);
@@ -129,6 +131,46 @@ describe("un festival con su programa (H6)", () => {
     const fd = formulario({ clase: "festival", titulo: "Festival de Cine", actos: JSON.stringify([acto("Charla", "2030-11-13T18:00", false)]) });
     expect(await crearEvento(null, fd)).toMatchObject({ ok: false, general: expect.stringContaining("Falta una actividad") });
     expect(m.rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("el costo por confirmar (OL-411)", () => {
+  const SIN_COSTO = { gratis: "no", cooperacion: "no", precio: "", por_confirmar: "si" };
+  const acto = (titulo: string, inicio: string) => ({ titulo, inicio, fin: "", sitio: SITIO, quien: [], marcado: true });
+
+  it("un festival sin costo se publica: el marco y cada acto van sin precio (nada que copiar)", async () => {
+    m.rpc.mockResolvedValue({ data: { id: ID, actos: ["a1", "a2"], borradores: [] }, error: null });
+    m.maybeSingle.mockResolvedValue({ data: { slug: "festival-ab12" } });
+    const fd = formulario({ ...SIN_COSTO, clase: "festival", titulo: "Festival", actos: JSON.stringify([acto("Uno", "2030-11-12T19:00"), acto("Dos", "2030-11-13T19:00")]) });
+    expect((await crearEvento(null, fd)).ok).toBe(true);
+    const [, args] = m.rpc.mock.calls[0];
+    expect(args.p_marco.datos.precio).toBeNull();
+    expect(args.p_actos.map((a: { datos: { precio: string | null } }) => a.datos.precio)).toEqual([null, null]);
+  });
+
+  it("una exposición, un taller o un acto de festival se guardan sin costo; «Gratis» elegido, escrito", async () => {
+    const casos: Record<string, string>[] = [{ clase: "exposicion", inicio: "2030-11-06T00:00", fin: "2030-11-30T23:59", horario: "" }, { clase: "taller", inicio: "2030-11-06T18:00" }, { clase: "puntual", inicio: "2030-11-06T18:00", padre: FESTIVAL }];
+    for (const campos of casos) {
+      m.rpc.mockClear();
+      expect((await crearEvento(null, formulario({ ...SIN_COSTO, ...campos }))).ok, campos.clase).toBe(true);
+      expect(m.rpc.mock.calls.at(-1)?.[1].p_datos.precio).toBeNull();
+      m.rpc.mockClear();
+      expect((await crearEvento(null, formulario({ ...campos, gratis: "si" }))).ok).toBe(true);
+      expect(m.rpc.mock.calls.at(-1)?.[1].p_datos.precio).toBe("Gratis");
+    }
+  });
+
+  it("un evento suelto no se publica sin costo, y gratis sigue siendo vacío", async () => {
+    expect(await crearEvento(null, formulario({ ...SIN_COSTO, clase: "puntual", inicio: "2030-11-06T18:00" }))).toMatchObject({ ok: false, errores: { precio: expect.any(String) } });
+    expect(m.rpc).not.toHaveBeenCalled();
+    expect((await crearEvento(null, formulario({ clase: "puntual", inicio: "2030-11-06T18:00", gratis: "si", confirmado: "1" }))).ok).toBe(true);
+    expect(m.rpc.mock.calls.at(-1)?.[1].p_datos.precio).toBeNull();
+  });
+
+  it("al editar, cuenta la clase que llega; sin ella (una pantalla de antes), la guardada", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { clase: "exposicion", evento_padre_id: null, imagen: null, inicio: "2030-11-06T06:00:00Z", fin: null, zona: "America/Mexico_City", sitio_reservado: false, ciudad: "San Luis Potosí", sitio_lat: null, sitio_lng: null } });
+    expect((await actualizarEvento(ID, null, formulario({ ...SIN_COSTO, inicio: "2030-11-06T00:00", fin: "2030-11-30T23:59" }))).ok).toBe(true);
+    expect(await actualizarEvento(ID, null, formulario({ ...SIN_COSTO, clase: "puntual", inicio: "2030-11-06T19:00" }))).toMatchObject({ ok: false, errores: { precio: expect.any(String) } });
   });
 });
 
