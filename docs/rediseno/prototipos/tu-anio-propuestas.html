@@ -1,0 +1,1327 @@
+<title>«Tu año» para compartir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-392 (bitácora 423): «Tu año» como imagen para compartir, pieza 3 de 5 del historial. La imagen (1080 px, como un cartel del
+   creador) de tu año, del año de un artista o del de un lugar, con datos reales de solo lectura, y siete ejercicios: periodo, formato, pinta, qué
+   dice, nombre y foto, quién puede sacarla y dónde se abre. Armazón de `inicio-propuestas.html` (OL-377/OL-386) y el módulo de portadas del
+   sistema de `portadas-sistema.html` (OL-374). */
+:root {
+  /* El teléfono: tokens de la app (claros, nunca se redefinen). */
+  --fondo: #ffffff;
+  --fondo-suave: #f4f4f2;
+  --fondo-contenido: #f6f5f1;
+  --texto: #1a1a1a;
+  --texto-suave: #5c5c5c;
+  --borde: #dcdcd8;
+  --primario: #6d34c8;
+  --primario-texto: #ffffff;
+  --primario-suave: #eee7f8;
+  --ok: #1f6f43;
+  --destacado: #d35400;
+  --fondo-miniatura: #e6e6e2;
+  --vidrio: rgba(255, 255, 255, 0.92);
+  --sobre-banda-suave: rgba(255, 255, 255, 0.72);
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px;
+  --toque: 48px; --toque-min: 44px; --alto-chip: 36px;
+  --alto-barra: 56px; --alto-nav: 60px; --gutter: 20px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem; --letra-2xl: 1.625rem;
+  --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --tarjeta-grande: 165px; --tarjeta-grande-foto: 206px; --tarjeta-mediana: 132px; --tarjeta-mediana-foto: 165px; --avatar: 64px; --circulo-ahora: 72px;
+  --duracion: 200ms; --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* El marco de la página: sigue el tema. */
+  --pg-fondo: #e6e4de;
+  --pg-panel: #fbfaf7;
+  --pg-texto: #1a1a1a;
+  --pg-suave: #5e5b54;
+  --pg-borde: #d3d0c8;
+  --pg-acento: #6d34c8;
+  --pg-acento-texto: #ffffff;
+  --pg-acento-suave: #ece4f8;
+  --pg-baja: #1f6f43;
+  --pg-mal: #b3261e;
+  --pg-sombra: 0 14px 36px rgba(28, 24, 16, 0.16);
+  --pg-sombra-chica: 0 1px 3px rgba(28, 24, 16, 0.16);
+  --pg-velo: rgba(0, 0, 0, 0.32);
+  --pg-perilla: #ffffff;
+  --pg-flotante: #1a1a1a;
+  --pg-flotante-texto: #ffffff;
+  --pg-flotante-suave: rgba(255, 255, 255, 0.72);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pg-fondo: #121210; --pg-panel: #1c1b18; --pg-texto: #eeebe4; --pg-suave: #aaa69c; --pg-borde: #37342e; --pg-acento: #b59cf4; --pg-acento-texto: #17141d;
+    --pg-acento-suave: #2d2542; --pg-baja: #7fd3a2; --pg-mal: #f2a59e; --pg-sombra: 0 14px 36px rgba(0, 0, 0, 0.55); --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --pg-velo: rgba(0, 0, 0, 0.5); --pg-perilla: #e4e0d8; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --pg-fondo: #121210; --pg-panel: #1c1b18; --pg-texto: #eeebe4; --pg-suave: #aaa69c; --pg-borde: #37342e; --pg-acento: #b59cf4; --pg-acento-texto: #17141d;
+  --pg-acento-suave: #2d2542; --pg-baja: #7fd3a2; --pg-mal: #f2a59e; --pg-sombra: 0 14px 36px rgba(0, 0, 0, 0.55); --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --pg-velo: rgba(0, 0, 0, 0.5); --pg-perilla: #e4e0d8; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: var(--pg-fondo); color: var(--pg-texto); font: 400 var(--letra-md)/1.4 var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; }
+button, input { font: inherit; font-variation-settings: inherit; color: inherit; }
+button { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+[tabindex="-1"]:focus { outline: none; }
+.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ===== La escena: en el teléfono, solo Inicio; desde 760, teléfono y controles; desde 1180, los dos teléfonos y los controles. ===== */
+.escena { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.columna { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--espacio-2); }
+.etiqueta-tel { display: none; margin: 0; font-size: var(--letra-sm); font-weight: 700; font-variation-settings: var(--ancho-titulo); color: var(--pg-suave); }
+.etiqueta-tel b { color: var(--pg-texto); }
+.caja-tel { position: relative; min-width: 0; min-height: 0; }
+.caja-tel > .tel { position: absolute; inset: 0; }
+.col-hoy { position: fixed; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
+.col-hoy .caja-tel > .tel { position: relative; inset: auto; }
+@media (min-width: 760px) {
+  .escena { grid-template-columns: auto minmax(330px, 400px); justify-content: center; align-items: start; gap: var(--espacio-6); padding: var(--espacio-4); }
+  .columna { grid-template-rows: auto auto; }
+  .etiqueta-tel { display: block; }
+  .caja-tel { width: calc(390px * var(--escala, 1)); height: calc(844px * var(--escala, 1)); }
+  .caja-tel > .tel { inset: auto; left: 0; top: 0; width: 390px; height: 844px; transform: scale(var(--escala, 1)); transform-origin: 0 0; border: 1px solid var(--pg-borde); border-radius: 28px; box-shadow: var(--pg-sombra); }
+}
+@media (min-width: 1180px) {
+  .escena { grid-template-columns: auto auto minmax(340px, 400px); }
+  .col-hoy { position: static; left: auto; visibility: visible; pointer-events: auto; }
+  .col-hoy .caja-tel > .tel { position: absolute; }
+  .en-prueba .col-hoy { opacity: 0.2; pointer-events: none; }
+}
+
+/* ===== El teléfono (Inicio), como lo firmado en OL-367 y lo que pinta la app (OL-370 a OL-372). ===== */
+.tel { overflow: hidden; background: var(--fondo-contenido); color: var(--texto); color-scheme: light; font: 400 var(--letra-md)/1.4 var(--fuente); font-variation-settings: var(--ancho-texto); font-variant-numeric: tabular-nums; }
+:where(.tel) a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+:where(.tel) ul { list-style: none; margin: 0; padding: 0; }
+:where(.tel) h2, :where(.tel) p { margin: 0; }
+.tel :focus-visible { outline-color: var(--primario); }
+.pantalla { height: 100%; overflow-y: auto; overscroll-behavior-y: contain; display: flex; flex-direction: column; scrollbar-width: none; }
+.pantalla::-webkit-scrollbar { display: none; }
+.pantalla > * { flex: none; min-width: 0; }
+.pantalla > .relleno { flex: 1 0 var(--espacio-7); }
+
+.barra-app { height: var(--alto-barra); display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); align-items: center; padding: 0 var(--espacio-2); background: var(--fondo); }
+.barra-app > button { display: grid; place-items: center; width: var(--toque); height: var(--toque); }
+.barra-app .logo { justify-self: center; height: 28px; width: auto; }
+.contexto { position: sticky; top: 0; z-index: 10; display: flex; gap: var(--espacio-2); padding: var(--espacio-1) var(--gutter) var(--espacio-3); overflow-x: auto; scrollbar-width: none; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+.contexto::-webkit-scrollbar { display: none; }
+.ctx { flex: none; display: inline-flex; align-items: center; gap: 6px; height: var(--alto-chip); padding: 0 var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); font-size: var(--letra-sm); font-weight: 600; white-space: nowrap; }
+.ctx .i { width: 18px; height: 18px; color: var(--texto-suave); }
+
+/* La fila «Ahora» (OL-359, OL-371). */
+.fila-ahora { background: var(--fondo); box-shadow: 0 1px 0 var(--borde); }
+.lista-ahora { display: flex; gap: var(--espacio-3); padding: var(--espacio-3) var(--gutter); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: var(--gutter); }
+.lista-ahora::-webkit-scrollbar { display: none; }
+.lista-ahora > li { flex: none; }
+.circulo { display: grid; justify-items: center; gap: var(--espacio-1); width: var(--circulo-ahora); }
+.anillo { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); width: var(--circulo-ahora); height: var(--circulo-ahora); padding: 3px; border-radius: 50%; background: var(--borde); overflow: hidden; }
+.anillo.ahora::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 210deg, var(--primario), var(--destacado), var(--primario)); animation: gira 4s linear infinite; }
+.anillo.pronto { background: var(--texto); }
+.anillo > img, .anillo > .sin-cartel { position: relative; width: 100%; height: 100%; border: 2px solid var(--fondo); border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); }
+.anillo > .sin-cartel { display: grid; place-items: center; }
+.anillo > .sin-cartel img { width: 58%; height: auto; }
+.circulo small { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+.circulo small.ahora { color: var(--primario); font-weight: 700; }
+@keyframes gira { to { transform: rotate(1turn); } }
+
+/* Los carriles. */
+.carril { display: grid; gap: var(--espacio-4); padding-top: var(--espacio-7); }
+.cab { display: flex; align-items: center; justify-content: space-between; padding-inline: var(--gutter); }
+.cab h2 { min-width: 0; font-size: var(--letra-2xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
+.ver { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque-min); padding-left: var(--espacio-2); color: var(--primario); font-size: var(--letra-sm); font-weight: 600; }
+.ver .i { width: 18px; height: 18px; stroke-width: 2; }
+.tira { --foto: var(--tarjeta-grande-foto); display: grid; grid-auto-flow: column; grid-auto-columns: var(--tarjeta-grande); align-items: start; gap: var(--espacio-1) var(--espacio-3); overflow-x: auto; padding: var(--espacio-1) var(--gutter) var(--espacio-2); scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+.tira::-webkit-scrollbar { display: none; }
+.tira > li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; scroll-snap-align: start; }
+.tira.mediana { --foto: var(--tarjeta-mediana-foto); grid-auto-columns: var(--tarjeta-mediana); }
+.tira.avatar { --foto: var(--avatar); grid-auto-columns: calc(var(--avatar) + var(--espacio-3)); column-gap: var(--espacio-2); }
+
+/* La tarjeta firmada (OL-370): una rejilla plana, la portada arriba y debajo la ceja, el título, el lugar y cuándo. */
+.tarjeta { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "portada" "pie"; grid-template-rows: var(--foto) auto; row-gap: var(--espacio-2); min-width: 0; color: var(--texto); }
+.tarjeta:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; border-radius: var(--radio); }
+/* La portada: el cartel (o la figura del sistema) debajo de todo y, encima, en sus celdas, el sello, el chip y, sin cartel, el símbolo y el
+   título. Nada se apila con z-index: lo de después en el código se pinta encima. */
+.portada { grid-area: portada; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "simbolo fecha" "campo campo" "chip chip" "zona zona"; grid-template-rows: auto minmax(0, 1fr) auto auto; align-items: start; height: var(--foto); min-width: 0; overflow: hidden; border-radius: var(--radio); background: var(--fondo-miniatura); }
+.portada > .cartel { grid-area: 1 / 1 / -1 / -1; width: 100%; height: var(--foto); object-fit: cover; object-position: center top; }
+.fecha { grid-area: fecha; justify-self: end; align-self: start; display: grid; justify-items: center; gap: 2px; min-width: 40px; margin: var(--espacio-2); padding: var(--espacio-1) var(--espacio-2); border-radius: var(--radio); background: var(--vidrio); box-shadow: var(--sombra); line-height: 1; text-align: center; }
+.fecha small { font-size: var(--letra-2xs); font-weight: 700; color: var(--primario); text-transform: lowercase; }
+.fecha b { display: inline-flex; align-items: center; gap: 1px; font-size: var(--letra-2xl); font-weight: 600; font-variation-settings: var(--ancho-titulo); color: var(--texto); }
+.fecha .flecha { width: 11px; height: 11px; fill: none; stroke: var(--texto-suave); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chip { display: inline-flex; align-items: center; max-width: 100%; padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--texto); font-size: var(--letra-xs); font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.chip.estado { padding-block: 0; background: var(--primario-suave); color: var(--primario); }
+.chip.nuevo { background: var(--primario); color: var(--primario-texto); }
+.portada > .chip { grid-area: chip; justify-self: start; align-self: end; margin: var(--espacio-2); }
+.ceja { display: flex; flex-wrap: wrap; column-gap: 0.35em; min-width: 0; margin-bottom: 2px; font-size: var(--letra-2xs); font-weight: 700; letter-spacing: 0.06em; line-height: 1.3; text-transform: uppercase; color: var(--texto-suave); }
+.ceja > span { white-space: nowrap; }
+.ceja > span:not(:last-child)::after { content: "\00a0·"; }
+/* Sin cartel (E10, producción): el degradado de su paleta propia, el símbolo SN arriba a la izquierda y, en la base, el chip, la ceja y el
+   título corto. */
+.portada.e10 { color: var(--primario-texto); }
+.portada.e10 > .simbolo { grid-area: simbolo; width: auto; height: 20px; margin: var(--espacio-3) 0 0 var(--espacio-3); opacity: 0.92; }
+.portada.e10 > .chip { margin: 0 0 var(--espacio-2) var(--espacio-3); }
+.portada.e10 > .ceja { grid-area: zona; margin: 0 var(--espacio-3) var(--espacio-1); color: var(--sobre-banda-suave); }
+.portada.e10 > .titulo-e10 { grid-area: zona; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; margin: 0 var(--espacio-3) var(--espacio-3); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.04; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+.portada.e10.con-ceja { grid-template-areas: "simbolo fecha" "campo campo" "chip chip" "ceja ceja" "zona zona"; grid-template-rows: auto minmax(0, 1fr) auto auto auto; }
+.portada.e10.con-ceja > .ceja { grid-area: ceja; }
+.mediana .portada.e10 > .titulo-e10 { font-size: var(--letra-sm); }
+/* Debajo de la portada: la ceja, el título como oración en dos líneas (cortado en palabra), el lugar en gris y cuándo en violeta. */
+.pie { grid-area: pie; display: grid; align-content: start; min-width: 0; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; }
+.pie > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pie .cuando { color: var(--primario); }
+.titulo-pie { display: block; max-height: calc(2 * 1.15em); overflow: hidden; margin-bottom: 2px; color: var(--texto); font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: normal; }
+.mediana .titulo-pie { font-size: var(--letra-sm); }
+.mediana .pie { font-size: var(--letra-xs); }
+
+/* ===== La portada del sistema (P1). Un color plano de la tarjeta (`--base`, del cartel) con escalones del mismo color y un solo crema; la
+   figura dice la clase (círculo festival, cuadrado expo, triángulo taller) y vive arriba, apoyada en la línea del título. Abajo, la zona del
+   título: sin figuras (un recorte del SVG lo garantiza), el chip, la ceja y el título en la tinta de la banda (crema u oscuro, 5:1 o más por
+   construcción, y medido). El SVG lo dibuja el código después de medir dónde quedó la zona y el sello. ===== */
+.portada.sistema { grid-template-areas: "simbolo fecha" "campo campo" "zona zona"; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--base); color: var(--tinta); }
+.portada.sistema.sin-zona { grid-template-areas: "simbolo fecha" "campo campo" "chip chip"; }
+.portada.sistema > .figura { grid-area: 1 / 1 / -1 / -1; display: block; width: 100%; height: var(--foto); }
+.portada.sistema > .zona { grid-area: zona; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "renglon" "titulo"; align-content: end; row-gap: 3px; min-width: 0; padding: var(--espacio-3); }
+/* El chip va en su propio renglón, arriba de la ceja (founder, 11 de oct: «este va en otra línea arriba, no juntes»). */
+.portada.sistema .renglon { grid-area: renglon; display: grid; justify-items: start; row-gap: var(--espacio-1); min-width: 0; }
+.portada.sistema .renglon > .ceja { margin: 0; color: var(--tinta); }
+.portada.sistema .titulo-sobre { grid-area: titulo; }
+.titulo-sobre { display: block; justify-self: stretch; max-height: calc(2 * 1.06em); overflow: hidden; color: var(--tinta); font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.06; overflow-wrap: normal; }
+.mediana .titulo-sobre { font-size: var(--letra-md); }
+.mediana .portada.sistema > .zona { padding: var(--espacio-2) var(--espacio-3) var(--espacio-3); }
+/* P7: el evento común sin cartel con la misma gramática: el símbolo SN (en la tinta) donde E10 lo tenía; sin figura. */
+.portada.sistema > .simbolo { grid-area: simbolo; width: auto; height: 20px; margin: var(--espacio-3) 0 0 var(--espacio-3); fill: currentColor; }
+/* P8: mantener el dedo en una tarjeta no abre la vista previa del enlace de Safari ni selecciona texto (el arrastre de respaldo la usa). */
+.con-p8 a.tarjeta { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* Medidas: el contraste del texto en su peor punto, pegado a la portada. */
+.medida { position: absolute; left: 0; top: 0; padding: 2px 6px; border-radius: 0 0 var(--radio) 0; background: var(--texto); color: var(--fondo); font-size: 11px; font-weight: 700; line-height: 1.3; font-variant-numeric: tabular-nums; pointer-events: none; }
+.medida.mal { background: #b3261e; }
+.medida.bien { background: var(--ok); }
+
+/* Lugares y artistas (OL-372): avatares de 64 y la tarjeta mediana de artista. */
+.en { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--foto) auto; justify-items: center; min-width: 0; color: var(--texto); text-align: center; }
+.en .foto { width: var(--foto); height: var(--foto); border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); }
+.en .nombre { display: block; width: 100%; overflow: hidden; margin-top: var(--espacio-1); white-space: nowrap; text-overflow: ellipsis; font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.en .det { width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--primario); font-size: var(--letra-2xs); font-weight: 700; }
+
+.secciones { position: sticky; bottom: 0; z-index: 12; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: var(--alto-nav); padding: var(--espacio-1) var(--espacio-2) 0; background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
+.secciones button { display: grid; justify-items: center; align-content: start; gap: 2px; font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); }
+.secciones i { display: grid; place-items: center; width: 60px; height: 32px; border-radius: var(--radio-pildora); color: var(--texto); }
+.secciones .activa { color: var(--primario); }
+.secciones .activa i { background: var(--primario); color: var(--primario-texto); }
+.aviso { position: absolute; left: 50%; bottom: calc(var(--alto-nav) + 72px); z-index: 30; max-width: calc(100% - 2 * var(--gutter)); margin: 0; padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio-pildora); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); font-weight: 600; box-shadow: var(--sombra-flotante); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; transition: opacity var(--duracion), transform var(--duracion) var(--curva); }
+.aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===== El muestrario: todas las portadas de festivales, expos y talleres (y los eventos sin cartel) con la combinación de ahora. ===== */
+.muestrario { background: var(--fondo-contenido); }
+.muestrario .cab-m { display: grid; grid-template-columns: var(--toque) minmax(0, 1fr); align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-3) var(--espacio-2) var(--espacio-2); background: var(--fondo); box-shadow: 0 1px 0 var(--borde); }
+.muestrario .cab-m button { display: grid; place-items: center; width: var(--toque); height: var(--toque); }
+.muestrario .cab-m h2 { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.muestrario .cab-m p { color: var(--texto-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.muestrario h3 { margin: var(--espacio-5) var(--gutter) var(--espacio-2); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.rejilla { --foto: var(--tarjeta-grande-foto); display: grid; grid-template-columns: repeat(2, var(--tarjeta-grande)); justify-content: start; gap: var(--espacio-5) var(--espacio-5); padding: 0 var(--gutter) var(--espacio-4); }
+.rejilla.mediana { --foto: var(--tarjeta-mediana-foto); grid-template-columns: repeat(2, var(--tarjeta-mediana)); }
+.rejilla > li { position: relative; display: grid; min-width: 0; align-content: start; }
+.rejilla .nota { margin-top: var(--espacio-1); color: var(--texto-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+.rejilla .nota b { color: var(--texto); }
+
+/* ===== Los controles: una hoja en el teléfono; desde 760, una columna fija al lado. ===== */
+.fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4) 0 var(--espacio-3); border-radius: var(--radio-pildora); background: var(--pg-flotante); color: var(--pg-flotante-texto); font-size: var(--letra-sm); font-weight: 700; box-shadow: var(--sombra-flotante); }
+.fab span { color: var(--pg-flotante-suave); font-weight: 600; }
+.fab .i { width: 20px; height: 20px; }
+/* P8 a la vista: el botón para pedir el giroscopio (en iPhone solo se pide tras un toque) y, si no llega, el porqué. */
+.giro { position: fixed; left: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: min(240px, calc(100% - 2 * var(--espacio-4) - 200px)); min-height: var(--toque); padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-acento); color: var(--pg-acento-texto); font-size: var(--letra-sm); font-weight: 700; line-height: 1.2; text-align: left; box-shadow: var(--sombra-flotante); }
+.giro.aviso-giro { background: var(--pg-flotante); color: var(--pg-flotante-texto); font-weight: 600; font-size: var(--letra-xs); }
+.giro:disabled { cursor: default; }
+.crono { position: fixed; left: var(--espacio-4); right: var(--espacio-4); bottom: calc(var(--alto-nav) + var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 41; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "tiempo tarea" "tiempo pista"; column-gap: var(--espacio-3); align-items: center; min-height: 56px; padding: var(--espacio-2) var(--espacio-4); border-radius: var(--radio-grande); background: var(--pg-flotante); color: var(--pg-flotante-texto); box-shadow: var(--sombra-flotante); text-align: left; }
+.crono b { grid-area: tiempo; font-size: var(--letra-2xl); font-variation-settings: var(--ancho-titulo); font-variant-numeric: tabular-nums; min-width: 3.4em; }
+.crono span { grid-area: tarea; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }
+.crono small { grid-area: pista; color: var(--pg-flotante-suave); font-size: var(--letra-xs); }
+.velo { position: fixed; inset: 0; z-index: 50; background: var(--pg-velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: min(72%, 680px); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra); transform: translateY(105%); visibility: hidden; transition: transform 240ms var(--curva), visibility 0s linear 240ms; }
+.hoja.abierta { transform: none; visibility: visible; transition: transform 240ms var(--curva), visibility 0s; }
+.asa { justify-self: center; width: 36px; height: 4px; margin-top: var(--espacio-2); border-radius: 2px; background: var(--pg-borde); }
+.hoja-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-2) var(--espacio-2) var(--espacio-4); }
+.hoja-cab h1 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.hoja-cab p { margin: 2px 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
+.resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
+.preajustes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); }
+.preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
+.combinacion { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.combinacion b { color: var(--pg-texto); }
+.medidor { display: grid; gap: var(--espacio-1); }
+.medidor .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-2); }
+.medidor .cifra { display: grid; gap: 1px; min-width: 0; padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio); background: var(--pg-fondo); }
+.medidor .cifra small { font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.15; }
+.medidor .cifra b { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.medidor .cifra b.bien { color: var(--pg-baja); }
+.medidor .cifra b.mal { color: var(--pg-mal); }
+.medidor .cifra span { font-size: var(--letra-2xs); color: var(--pg-suave); line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.medidor p { margin: 0; color: var(--pg-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+/* El porqué del preajuste: fuera del resumen fijo (si no, el resumen tapa media hoja y los interruptores pasan debajo). */
+.porque { margin: var(--espacio-3) 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.bloque { padding-top: var(--espacio-4); }
+.bloque h2 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.bloque > p { margin: 0 0 var(--espacio-2); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.ejercicios { list-style: none; margin: 0; padding: 0; }
+.interruptor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-3); align-items: start; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); cursor: pointer; }
+.interruptor.sub { padding-left: var(--espacio-4); }
+.interruptor b { display: block; font-size: var(--letra-md); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+.interruptor small { display: block; margin-top: 2px; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.interruptor small.firma { color: var(--pg-texto); font-weight: 600; }
+.interruptor input { appearance: none; position: relative; flex: none; width: 46px; height: 28px; margin: 0; border-radius: 14px; background: var(--pg-borde); cursor: pointer; transition: background var(--duracion); }
+.interruptor input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--pg-perilla); box-shadow: var(--pg-sombra-chica); transition: transform var(--duracion) var(--curva); }
+.interruptor input:checked { background: var(--pg-acento); }
+.interruptor input:checked::after { transform: translateX(18px); }
+.interruptor input:disabled { opacity: 0.4; cursor: default; }
+.interruptor.apagado { cursor: default; }
+.interruptor.apagado b { color: var(--pg-suave); }
+.opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-1); margin-top: var(--espacio-2); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.opciones button { min-height: 36px; border-radius: var(--radio-pildora); color: var(--pg-suave); font-size: var(--letra-xs); font-weight: 700; }
+.opciones button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.sub-p8 { display: grid; gap: var(--espacio-2); margin-top: var(--espacio-2); }
+.sub-p8 .estado-p8 { color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.boton { min-height: var(--toque-min); padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--pg-acento); color: var(--pg-acento-texto); font-weight: 700; white-space: nowrap; }
+.boton.secundario { background: var(--pg-fondo); color: var(--pg-texto); }
+.boton.corriendo { background: var(--pg-texto); color: var(--pg-panel); font-variant-numeric: tabular-nums; }
+.boton-texto { min-height: var(--toque-min); padding: 0; background: none; color: var(--pg-acento); font-weight: 700; }
+.pruebas { list-style: none; margin: 0; padding: 0; }
+.prueba { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-1) var(--espacio-3); align-items: center; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); }
+.prueba .tarea { font-weight: 700; line-height: 1.25; }
+.prueba .tiempos { grid-column: 1 / -1; color: var(--pg-suave); font-size: var(--letra-xs); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.prueba .tiempos b { color: var(--pg-texto); }
+.tabla-medidas { width: 100%; border-collapse: collapse; font-size: var(--letra-2xs); font-variant-numeric: tabular-nums; }
+.tabla-medidas th, .tabla-medidas td { padding: 3px 4px; border-bottom: 1px solid var(--pg-borde); text-align: left; vertical-align: top; }
+.tabla-medidas th { font-weight: 600; color: var(--pg-suave); }
+.tabla-medidas td.n { text-align: right; white-space: nowrap; font-weight: 700; }
+.tabla-medidas td.n.mal { color: var(--pg-mal); }
+.tabla-medidas td.n.bien { color: var(--pg-baja); }
+.notas { margin: 0; padding-left: 1.1em; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas li + li { margin-top: var(--espacio-1); }
+.notas b { color: var(--pg-texto); }
+
+@media (min-width: 760px) {
+  .hoja { position: relative; left: auto; right: auto; bottom: auto; z-index: auto; align-self: stretch; height: calc(100vh - 2 * var(--espacio-4)); height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border: 1px solid var(--pg-borde); border-radius: var(--radio-grande); box-shadow: none; transform: none; visibility: visible; transition: none; }
+  .asa, .cerrar, .fab, .crono, .velo, .giro { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .anillo.ahora::before { animation: none; }
+  .hoja, .hoja.abierta, .velo, .aviso, .interruptor input, .interruptor input::after { transition: none; }
+}
+
+/* ===== OL-377 · Lo que añaden estos ejercicios. ===== */
+/* N · Nombres: dos líneas cortadas en palabra; columna ancha (96); nombre al lado de la foto chica. */
+.en.n-dos .nombre, .en.n-ancha .nombre, .en.n-lado .nombre { white-space: normal; text-overflow: clip; max-height: calc(2 * 1.25em); line-height: 1.25; text-wrap: balance; }
+.tira.avatar.n-ancha { grid-auto-columns: 96px; column-gap: var(--espacio-2); }
+.tira.avatar.n-lado { --foto: 48px; grid-auto-columns: 168px; column-gap: var(--espacio-2); }
+.tira.avatar.n-grande { --foto: 88px; grid-auto-columns: 108px; column-gap: var(--espacio-2); }
+.en.n-grande .nombre { white-space: normal; text-overflow: clip; max-height: calc(2 * 1.25em); line-height: 1.25; text-wrap: balance; font-size: var(--letra-sm); }
+.en.n-lado { grid-template-columns: var(--foto) minmax(0, 1fr); grid-template-rows: auto auto; grid-template-areas: "foto nombre" "foto det"; align-items: center; justify-items: start; column-gap: var(--espacio-2); min-height: 56px; text-align: left; }
+.en.n-lado .foto { grid-area: foto; align-self: center; }
+.en.n-lado .nombre { grid-area: nombre; margin-top: 0; align-self: end; }
+.en.n-lado .det { grid-area: det; align-self: start; }
+.en.n-lado:not(:has(.det)) { grid-template-areas: "foto nombre" "foto nombre"; }
+.en.n-lado:not(:has(.det)) .nombre { align-self: center; }
+/* D2 · El tamaño de Destacados: XL (248, se ve una y media) y ancho (350, una por pantalla, como un post de Instagram). */
+.tira.xl { --foto: 310px; grid-auto-columns: 248px; }
+.tira.xl2 { --foto: 350px; grid-auto-columns: 280px; }
+.xl2 .titulo-pie { font-size: 1.3125rem; } .xl2 .titulo-sobre { font-size: 1.625rem; } .xl2 .pie { font-size: var(--letra-md); } .xl2 .portada.sistema > .zona { padding: var(--espacio-4); }
+.tira.ancho { --foto: 437px; grid-auto-columns: calc(100% - 2 * var(--gutter) + var(--gutter)); grid-auto-columns: 350px; }
+.xl .titulo-pie { font-size: var(--letra-xl); } .ancho .titulo-pie { font-size: 1.3125rem; }
+.xl .titulo-sobre { font-size: 1.5rem; } .ancho .titulo-sobre { font-size: 1.75rem; }
+.xl .pie, .ancho .pie { font-size: var(--letra-md); }
+.xl .portada.sistema > .zona, .ancho .portada.sistema > .zona { padding: var(--espacio-4); }
+/* Y1 · «Ya fui»: un botón de texto bajo la tarjeta, a la derecha de la última línea; la tarjeta deja sitio. */
+.tira > li.con-ya-fui > .tarjeta .pie > span:last-of-type { padding-right: 60px; }
+.ya-fui { position: absolute; right: 0; bottom: 0; min-height: 28px; padding: 0 var(--espacio-2); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); color: var(--primario); font-size: var(--letra-2xs); font-weight: 700; }
+.aviso:has(.deshacer) { white-space: normal; }
+.aviso .deshacer { margin-left: var(--espacio-2); color: var(--pg-acento, #b59cf4); font-weight: 800; text-decoration: underline; }
+/* T1 «corto + el resto»: la línea gris bajo el título (una línea con «…»); dentro de la portada del sistema, en la tinta atenuada. T2: tres líneas. */
+.pie > .subtitulo { color: var(--texto-suave); font-size: var(--letra-xs); }
+.portada.sistema .zona > .subtitulo { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: 2px; opacity: 0.82; font-size: var(--letra-xs); line-height: 1.3; }
+.t3 .titulo-pie { max-height: calc(3 * 1.15em); }
+.t3 .titulo-sobre { max-height: calc(3 * 1.06em); }
+/* I1 · Lo que te interesa como icono: el marcador relleno en violeta sobre vidrio. Arriba a la derecha (el sello pasa a la izquierda), bajo el sello, o junto al título. */
+.interes { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--vidrio); color: var(--primario); }
+.interes .i { width: 20px; height: 20px; }
+.portada > .interes.derecha { grid-area: fecha; justify-self: end; align-self: start; margin: var(--espacio-2); }
+.portada > .interes.izquierda { grid-area: simbolo; justify-self: start; align-self: start; margin: var(--espacio-2); }
+.portada.sistema > .interes.izquierda ~ .simbolo, .portada.sistema > .simbolo ~ .interes.izquierda { margin-left: 44px; }
+.portada.sello-izq > .fecha { grid-area: simbolo; justify-self: start; }
+.portada > .interes.bajo { grid-area: campo; justify-self: end; align-self: start; margin: 0 var(--espacio-2); }
+.pie.con-interes { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--espacio-2); }
+.pie.con-interes > :not(.interes) { grid-column: 1; }
+.pie.con-interes > .interes.junto { grid-column: 2; grid-row: 1 / span 2; align-self: start; width: 24px; height: 24px; background: none; }
+.pie.con-interes > .interes.junto .i { width: 18px; height: 18px; }
+/* B1/B2 · El banner para compartir la app: a lo ancho con el aire de los carriles, rejilla plana (icono, título, texto, cerrar, botón). */
+.banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icono titulo cerrar" "icono texto cerrar" "boton boton boton"; column-gap: var(--espacio-3); row-gap: 2px; margin: var(--espacio-7) var(--gutter) 0; padding: var(--espacio-4); border-radius: var(--radio-grande); }
+.banner.suave, .banner.simbolo { background: var(--primario-suave); color: var(--texto); }
+.banner.violeta { background: var(--primario); color: var(--primario-texto); }
+.banner .icono { grid-area: icono; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--fondo); color: var(--primario); }
+.banner .icono .i { width: 22px; height: 22px; } .banner .icono .simbolo { width: 26px; height: auto; fill: var(--primario); }
+.banner b { grid-area: titulo; align-self: end; font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.banner p { grid-area: texto; align-self: start; font-size: var(--letra-sm); line-height: 1.3; }
+.banner.violeta p { color: var(--sobre-banda-suave); }
+.banner .cerrar-banner { grid-area: cerrar; align-self: start; display: grid; place-items: center; width: 36px; height: 36px; margin: -6px -6px 0 0; border-radius: 50%; color: inherit; opacity: 0.75; }
+.banner .cerrar-banner .i { width: 20px; height: 20px; }
+.banner .compartir { grid-area: boton; display: inline-flex; align-items: center; justify-content: center; gap: var(--espacio-2); min-height: 44px; margin-top: var(--espacio-3); border-radius: var(--radio-pildora); background: var(--primario); color: var(--primario-texto); font-size: var(--letra-md); font-weight: 700; }
+.banner.violeta .compartir { background: var(--fondo); color: var(--primario); }
+.banner .compartir .i { width: 20px; height: 20px; }
+/* La ficha del festival (X1, X2): la cabecera oscura de producción, el programa por día y «Ya pasó». */
+.ficha { background: var(--fondo-contenido); }
+/* Como la cabecera oscura de producción (OL-363): Atrás y ··· arriba, flotando sobre el cartel; el título, el cuándo y los KPI abajo; entre medias, el cartel. El velo va en ::after (se pinta después del cartel) y lo demás encima con z-index. */
+.cab-oscura { position: relative; display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); grid-template-areas: "atras . mas" ". . ." "chip chip chip" "titulo titulo titulo" "cuando cuando cuando" "kpi kpi kpi"; grid-template-rows: var(--alto-barra) minmax(0, 1fr) auto auto auto auto; gap: 0 var(--espacio-2); min-height: min(56svh, 480px); padding: var(--espacio-2) var(--espacio-2) var(--espacio-4); background: var(--banda); color: #fff; overflow: hidden; }
+.cab-oscura > .fondo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.cab-oscura.con-cartel::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgba(20,20,20,0.1) 0%, rgba(20,20,20,0.1) 30%, rgba(20,20,20,0.8) 55%, rgba(20,20,20,0.95) 100%); }
+.cab-oscura > :not(.fondo) { position: relative; z-index: 2; }
+.cab-oscura .redondo { display: grid; place-items: center; width: var(--toque); height: var(--toque); border-radius: 50%; background: var(--fondo); color: var(--texto); align-self: start; }
+.cab-oscura .atras { grid-area: atras; } .cab-oscura .mas { grid-area: mas; }
+.cab-oscura .chip-clase { grid-area: chip; justify-self: start; margin: 0 var(--espacio-3) var(--espacio-2); padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-2xs); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.cab-oscura h1 { grid-area: titulo; margin: 0 var(--espacio-3); font-size: var(--letra-2xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.cab-oscura > p { grid-area: cuando; margin: var(--espacio-2) var(--espacio-3) 0; font-size: var(--letra-md); line-height: 1.3; }
+.kpi { grid-area: kpi; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin: var(--espacio-4) var(--espacio-3) 0; }
+.kpi li { display: grid; gap: 2px; padding: var(--espacio-2) var(--espacio-3); border: 1px solid rgba(255,255,255,0.25); border-radius: var(--radio); background: rgba(255,255,255,0.08); }
+.kpi small { display: inline-flex; align-items: center; gap: 4px; color: var(--sobre-banda-suave); font-size: var(--letra-2xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.kpi small .i { width: 14px; height: 14px; }
+.kpi b { font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.acciones { display: flex; gap: var(--espacio-4); padding: var(--espacio-5) var(--gutter) var(--espacio-2); }
+.acciones button { display: grid; justify-items: center; gap: var(--espacio-2); font-size: var(--letra-sm); font-weight: 700; }
+.acciones i { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--fondo); color: var(--primario); box-shadow: var(--sombra); }
+.bloque-f { display: grid; gap: var(--espacio-2); padding: var(--espacio-5) var(--gutter) 0; }
+.bloque-f h2 { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.bloque-f h3 { margin: var(--espacio-3) 0 0; color: var(--texto-suave); font-size: var(--letra-md); font-weight: 700; }
+.bloque-f ul { display: grid; }
+.bloque-f .vacio { color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; }
+.renglon > a, .renglon > div { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: "foto titulo vas" "foto meta vas" "foto sitio vas"; column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--borde); color: var(--texto); }
+.renglon .mini { grid-area: foto; align-self: start; width: 56px; height: 56px; border-radius: var(--radio); object-fit: cover; background: var(--fondo-miniatura); }
+.renglon .mini.sin { display: grid; place-items: center; } .renglon .mini.sin img { width: 28px; opacity: 0.35; filter: invert(1); }
+.renglon b { grid-area: titulo; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.renglon small { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--texto-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.renglon small .i { width: 15px; height: 15px; flex: none; }
+.renglon .meta { grid-area: meta; color: var(--primario); font-weight: 700; } .renglon .sitio { grid-area: sitio; }
+.renglon > a > .i:last-child, .renglon .vas { grid-area: vas; color: var(--texto-suave); }
+.renglon .vas { display: grid; place-items: center; color: var(--primario); }
+.renglon.pasado b, .renglon.pasado .meta { color: var(--texto-suave); font-weight: 600; }
+.renglon.pasado .mini { filter: grayscale(1); opacity: 0.7; }
+.ya-paso .plegable { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: var(--toque); padding: var(--espacio-2) 0; text-align: left; color: var(--texto); }
+.ya-paso .plegable b { display: block; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.ya-paso .plegable small { display: block; margin-top: 2px; color: var(--texto-suave); font-size: var(--letra-xs); }
+.ya-paso .plegable .i { transition: transform var(--duracion) var(--curva); } .ya-paso.abierto .plegable .i { transform: rotate(180deg); }
+.pie-ficha { position: sticky; bottom: 0; display: flex; justify-content: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--gutter) calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px)); }
+.interes-boton { display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: 56px; padding: 0 var(--espacio-5); border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto); font-size: var(--letra-lg); font-weight: 800; box-shadow: var(--sombra-flotante); }
+/* La hoja: tres preajustes y los dos botones de pantalla. */
+.preajustes.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pantallas { display: flex; gap: var(--espacio-2); margin: 0; }
+.pantallas .boton { flex: 1; font-size: var(--letra-xs); }
+.opciones.o4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.medidor .cifras { grid-template-columns: 1fr 1fr; }
+
+/* ===== OL-389 · Historial de artistas y lugares: la ficha clara de producción (héroe con portada 3:2, velo, avatar, números, acciones, secciones). */
+.selector-ficha { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--espacio-2); margin: 0; font-size: var(--letra-xs); font-weight: 700; color: var(--pg-suave); }
+.selector-ficha select { min-height: var(--toque-min); padding: 0 var(--espacio-3); border: 1px solid var(--pg-borde); border-radius: var(--radio); background: var(--pg-fondo); color: var(--pg-texto); font: inherit; font-weight: 700; }
+.opciones.o4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fc { position: relative; }
+.fc .barra-ficha { position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: auto minmax(0, 1fr) var(--toque); align-items: center; height: var(--alto-barra); padding: 0 var(--espacio-2); }
+.fc .barra-ficha .volver { display: inline-flex; align-items: center; gap: 2px; min-height: var(--toque); padding-right: var(--espacio-2); color: #fff; font-size: var(--letra-sm); font-weight: 700; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+.fc .barra-ficha .volver .i { width: 24px; height: 24px; }
+.fc .barra-ficha .mas { display: grid; place-items: center; width: var(--toque); height: var(--toque); color: #fff; filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5)); }
+.fc .heroe { position: relative; display: grid; margin-top: calc(-1 * var(--alto-barra)); }
+.fc .heroe > * { grid-area: 1 / 1; }
+.fc .heroe .portada-h { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; background: var(--fondo-miniatura); }
+.fc .heroe .portada-h.sin { display: grid; place-items: center; background: #1a1a1a; } .fc .heroe .portada-h.sin svg { width: 44%; fill: #fff; opacity: 0.9; }
+.fc .heroe .velo-h { align-self: end; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; column-gap: var(--espacio-3); row-gap: var(--espacio-2); padding: 40px var(--gutter) var(--espacio-4); background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.78) 100%); color: #fff; }
+.fc .heroe .velo-h.sin-avatar { grid-template-columns: minmax(0, 1fr); }
+.fc .heroe .avatar-h { grid-row: 1 / span 3; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); box-shadow: 0 0 0 2px rgba(255,255,255,0.6); }
+.fc .heroe .avatar-h.sin { display: grid; place-items: center; background: #2a2a2a; } .fc .heroe .avatar-h.sin svg { width: 60%; fill: #fff; opacity: 0.85; }
+.fc .heroe .velo-h > :not(.avatar-h) { grid-column: 2; } .fc .heroe .velo-h.sin-avatar > * { grid-column: 1; }
+.fc .heroe .etiqueta-h { justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: rgba(255,255,255,0.9); color: var(--primario); font-size: var(--letra-xs); font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
+.fc .heroe h1 { margin: 0; font-size: var(--letra-2xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
+.fc .heroe .meta { margin: 0; font-size: var(--letra-sm); font-weight: 500; opacity: 0.9; }
+.fc .cuerpo { display: grid; gap: var(--espacio-6); padding: var(--espacio-4) var(--gutter) 0; }
+.fc .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); list-style: none; margin: 0; padding: 0; }
+.fc .kpis > li { display: grid; }
+.fc .kpis .kpi-c { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icono etiqueta" "valor valor"; align-items: center; column-gap: var(--espacio-1); row-gap: var(--espacio-1); margin: 0; padding: 10px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto); text-align: left; }
+.fc .kpis .kpi-c .i { grid-area: icono; width: 16px; height: 16px; color: var(--texto-suave); }
+.fc .kpis .kpi-c small { grid-area: etiqueta; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc .kpis .kpi-c b { grid-area: valor; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.fc .kpis .kpi-c b small { display: inline; margin-left: 4px; font-size: var(--letra-2xs); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--texto-suave); }
+.fc .kpis button.kpi-c { cursor: pointer; }
+.fc .acciones-f { display: flex; flex-wrap: wrap; gap: var(--espacio-3); }
+.fc .acciones-f button { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px; color: var(--texto); font-size: var(--letra-xs); font-weight: 700; }
+.fc .acciones-f i { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--fondo); color: var(--primario); box-shadow: var(--sombra); }
+.fc .acciones-f i .i { width: 24px; height: 24px; }
+.fc .seccion { display: grid; gap: var(--espacio-2); scroll-margin-top: var(--alto-barra); }
+.fc .seccion > h2 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.fc .seccion > h2 .cuenta { color: var(--texto-suave); font-weight: 500; }
+.fc .seccion > h3 { margin: 0; padding-top: var(--espacio-2); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
+.fc .seccion ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.fc .seccion .vacio { margin: 0; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.4; }
+.fc .seccion .boton-sec { justify-self: stretch; min-height: var(--toque); margin-top: var(--espacio-2); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto); font-size: var(--letra-md); font-weight: 700; }
+.fc .tarjeta-f { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4) var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.fc .tarjeta-f h2 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.fc .tarjeta-f p { margin: 0; font-size: var(--letra-sm); line-height: 1.4; }
+.fc .tarjeta-f p + p { color: var(--texto-suave); }
+.fc .sobre { margin: 0; font-size: var(--letra-md); line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+.fc .pie-registro { margin: 0; color: var(--texto-suave); font-size: var(--letra-xs); }
+.fc .pie-ficha { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: center; padding: var(--espacio-3) var(--gutter) calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px)); pointer-events: none; }
+.fc .pie-ficha button { pointer-events: auto; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: 56px; padding: 0 var(--espacio-6); border-radius: var(--radio-pildora); background: var(--primario); color: #fff; font-size: var(--letra-lg); font-weight: 800; box-shadow: var(--sombra-flotante); }
+.fc .pie-ficha button.sigues { background: #1f7a3f; }
+/* Los renglones de evento (los de producción, `ui/Renglon`): foto, título, cuándo (violeta), dónde (gris) y a la derecha lo que haga falta. */
+.fc .renglon > a, .fc .renglon > div { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: "foto titulo lado" "foto meta lado" "foto sitio lado" "foto con lado"; column-gap: var(--espacio-3); align-items: center; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--borde); color: var(--texto); text-align: left; }
+.fc .renglon > a > .i:last-child { grid-area: lado; width: 20px; height: 20px; color: var(--texto-suave); }
+.fc .renglon .con { grid-area: con; color: var(--texto-suave); }
+.fc .renglon .con .i { width: 15px; height: 15px; }
+.fc .renglon .lado { grid-area: lado; display: grid; justify-items: center; gap: 2px; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 700; line-height: 1; }
+.fc .renglon .lado b { font-size: var(--letra-md); font-weight: 800; }
+.fc .renglon .lado .i { width: 20px; height: 20px; }
+.fc .renglon.pasado .meta { color: var(--texto-suave); font-weight: 600; }
+.fc .renglon.pasado b[data-m] { color: var(--texto-suave); font-weight: 600; }
+.fc .renglon.cancelado .mini { opacity: 0.45; }
+.fc .renglon.cancelado b[data-m] { text-decoration: line-through; text-decoration-color: var(--texto-suave); text-decoration-thickness: 1px; }
+.fc .renglon .cancelado-chip { display: inline-block; padding: 1px 6px; border-radius: var(--radio-pildora); background: #fbe7e4; color: #a3321d; font-size: var(--letra-2xs); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.fc .renglon .ceja-padre { color: var(--texto-suave); font-weight: 500; }
+/* La sección de lo pasado: plegada como el «Ya pasó» del festival (OL-383), o abierta, o en pestañas. */
+.fc .pasado-sec .plegable { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: var(--toque); padding: 0; text-align: left; color: var(--texto); }
+.fc .pasado-sec .plegable b { display: block; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.fc .pasado-sec .plegable small { display: block; margin-top: 2px; color: var(--texto-suave); font-size: var(--letra-xs); }
+.fc .pasado-sec .plegable .i { width: 24px; height: 24px; color: var(--texto-suave); transition: transform var(--duracion) var(--curva); }
+.fc .pasado-sec.abierto .plegable .i { transform: rotate(180deg); }
+.fc .pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--fondo-suave); }
+.fc .pestanas button { min-height: 36px; border-radius: var(--radio-pildora); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
+.fc .pestanas button[aria-selected="true"] { background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); }
+/* «Han pasado por aquí» / «Se ha presentado en»: fotos redondas en fila, o chips con el nombre. */
+.fc .seccion ul.gente, .fc .gente { display: flex; gap: var(--espacio-3); margin: 0 calc(-1 * var(--gutter)); padding: var(--espacio-1) var(--gutter) var(--espacio-2); overflow-x: auto; scrollbar-width: none; }
+.fc .gente::-webkit-scrollbar { display: none; }
+.fc .gente li { flex: none; width: 72px; }
+.fc .gente button { display: grid; justify-items: center; gap: 6px; width: 100%; color: var(--texto); font-size: var(--letra-2xs); font-weight: 700; line-height: 1.15; text-align: center; }
+.fc .gente img, .fc .gente .sin { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: var(--fondo-miniatura); }
+.fc .gente .sin { display: grid; place-items: center; background: #1a1a1a; } .fc .gente .sin svg { width: 55%; fill: #fff; opacity: 0.85; }
+.fc .gente .nombre { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.fc .gente .veces { color: var(--texto-suave); font-weight: 600; }
+.fc .seccion ul.chips, .fc .chips { display: flex; flex-wrap: wrap; gap: var(--espacio-2); margin: 0; padding: 0; list-style: none; }
+.fc .chips button { min-height: var(--alto-chip); padding: 0 var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-pildora); background: var(--fondo); color: var(--texto); font-size: var(--letra-sm); font-weight: 700; }
+.fc .chips button small { margin-left: 4px; color: var(--texto-suave); font-weight: 600; }
+.fc .sub-gente { margin: 0; color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
+.fc .relleno { flex: 1 0 32px; }
+.preajustes.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* ===== OL-392 · «Tu año»: la imagen (lienzo de 1080 escalado) y la pantalla de la app. */
+.selector-ficha { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--espacio-2); margin: 0; font-size: var(--letra-xs); font-weight: 700; color: var(--pg-suave); }
+.selector-ficha select { min-height: var(--toque-min); padding: 0 var(--espacio-3); border: 1px solid var(--pg-borde); border-radius: var(--radio); background: var(--pg-fondo); color: var(--pg-texto); font: inherit; font-weight: 700; }
+.preajustes.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opciones.o4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opciones.o2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* El teléfono de la izquierda: la imagen sola, sobre fondo oscuro, a lo ancho. */
+.solo-imagen { display: grid; place-items: center; height: 100%; padding: var(--espacio-4); background: #141414; overflow-y: auto; }
+.marco-lienzo { position: relative; width: 358px; overflow: hidden; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.marco-lienzo.f4x5 { height: calc(358px * 1350 / 1080); } .marco-lienzo.f9x16 { height: calc(358px * 1920 / 1080); }
+.marco-lienzo > .lienzo { transform: scale(calc(358 / 1080)); transform-origin: 0 0; }
+/* El lienzo: 1080 de ancho, como el cartel del creador. Todo en px del lienzo. Crema y negro de las portadas del sistema; el color del sujeto, de acento. */
+.lienzo { position: relative; display: grid; width: 1080px; overflow: hidden; background: var(--base); color: var(--tinta); font-family: var(--fuente); font-variation-settings: "wdth" 75, "opsz" 96; }
+.lienzo.f4x5 { height: 1350px; } .lienzo.f9x16 { height: 1920px; }
+.lienzo .contenido { position: relative; display: grid; align-content: start; gap: 48px; padding: var(--tapa-arriba, 80px) 80px var(--tapa-abajo, 80px); }
+.lienzo .quien-l { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 24px; }
+.lienzo .quien-l.sin-foto { grid-template-columns: minmax(0, 1fr); }
+.lienzo .quien-l img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
+.lienzo .quien-l small { display: block; font-size: 26px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--suave); }
+.lienzo .quien-l b { display: block; margin-top: 4px; font-size: 44px; font-weight: 800; line-height: 1.05; }
+.lienzo .ceja-l { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--suave); }
+.lienzo .pie-l { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: auto; }
+.lienzo .pie-l .marca svg { width: 96px; height: auto; fill: currentColor; }
+.lienzo .pie-l .dominio { font-size: 30px; font-weight: 600; color: var(--suave); }
+.lienzo .contenido { height: 100%; }
+.lienzo .mas-l { margin: 0; font-size: 38px; font-weight: 500; line-height: 1.3; color: var(--suave); }
+.lienzo .mas-l b { font-weight: 800; color: var(--tinta); }
+.lienzo .lista-l { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.lienzo .lista-l li { font-size: 34px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lienzo .lista-l li span { color: var(--suave); font-weight: 500; }
+.lienzo .desde { margin: 0; font-size: 32px; font-weight: 600; color: var(--suave); }
+/* Calma: el número protagonista a la izquierda, la figura chica a la derecha, los dos secundarios debajo. */
+.lienzo .calma .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 40px; margin-top: 40px; }
+.lienzo .calma .hero-num b { display: block; font-size: 440px; font-weight: 800; line-height: 0.82; letter-spacing: -0.03em; }
+.lienzo .calma .hero-num p { margin: 18px 0 0; font-size: 50px; font-weight: 700; line-height: 1.1; }
+.lienzo .calma .hero-num .desde { margin-top: 10px; }
+.lienzo .calma .figura { flex: none; }
+.lienzo .secs { display: flex; gap: 72px; }
+.lienzo .sec b { display: block; font-size: 96px; font-weight: 800; line-height: 1; }
+.lienzo .sec small { display: block; margin-top: 6px; font-size: 30px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--suave); }
+/* Cartel: una banda de color arriba con la figura y el título; abajo crema con tres números. */
+.lienzo.c-cartel { grid-template-rows: 46% minmax(0, 1fr); }
+.lienzo.c-cartel.f9x16 { grid-template-rows: 42% minmax(0, 1fr); }
+.lienzo .banda { position: relative; display: grid; align-content: end; min-height: 0; padding: 60px 80px; overflow: hidden; }
+.lienzo.f9x16 .banda { padding-top: 290px; }
+.lienzo .banda .figura { position: absolute; right: 60px; top: 50%; transform: translateY(-50%); }
+.lienzo.f9x16 .banda .figura { top: 58%; }
+.lienzo .banda .mosaico { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.lienzo .banda .mosaico img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lienzo .banda .mosaico::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(20,20,20,0.5), rgba(20,20,20,0.85)); }
+.lienzo .banda .titulo-banda { position: relative; margin: 0; max-width: 55%; font-size: 150px; font-weight: 800; line-height: 0.95; letter-spacing: -0.01em; }
+.lienzo .cartel { height: auto; min-height: 0; }
+.lienzo.c-cartel .contenido { --tapa-arriba: 64px; }
+.lienzo .tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.lienzo .tres .sec b { font-size: 120px; }
+/* Pila: solo tipografía; cada número con su palabra al lado, el primero en el color del sujeto. */
+.lienzo .titulo-pila { margin: 20px 0 0; font-size: 110px; font-weight: 800; line-height: 0.95; }
+.lienzo .titulo-pila span { display: block; margin-top: 14px; font-size: 32px; font-weight: 600; color: var(--suave); }
+.lienzo .apilado { display: grid; gap: 8px; }
+.lienzo .fila-p { display: flex; align-items: baseline; gap: 28px; }
+.lienzo .fila-p b { font-size: 230px; font-weight: 800; line-height: 0.9; letter-spacing: -0.03em; }
+.lienzo .fila-p.acento b { color: var(--acento); }
+.lienzo.color .fila-p.acento b { color: var(--tinta); text-decoration: underline; text-decoration-thickness: 10px; text-underline-offset: 18px; }
+.lienzo .fila-p small { font-size: 44px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--suave); }
+/* La pantalla en la app: la ficha (dónde se abre) y la vista previa con Compartir y Guardar. */
+.fc .boton-ano { display: inline-flex; align-items: center; justify-content: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-md); font-weight: 800; }
+.fc .boton-ano .i { width: 20px; height: 20px; }
+.fc .accion-ano { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px; color: var(--texto); font-size: var(--letra-xs); font-weight: 700; }
+.fc .accion-ano i { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--primario); color: #fff; box-shadow: var(--sombra); }
+.fc .accion-ano i .i { width: 24px; height: 24px; }
+.fc .banner-ano { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-3); margin: 0; padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio-grande); background: var(--primario-suave); color: var(--texto); }
+.fc .banner-ano b { display: block; font-size: var(--letra-md); font-weight: 800; }
+.fc .banner-ano small { display: block; color: var(--texto-suave); font-size: var(--letra-xs); }
+.fc .banner-ano .sn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #1a1a1a; } .fc .banner-ano .sn svg { width: 60%; fill: currentColor; }
+.fc .menu-f { margin: 0; padding: var(--espacio-2) 0; list-style: none; border-top: 1px solid var(--borde); }
+.fc .menu-f li { display: flex; align-items: center; gap: var(--espacio-3); min-height: var(--toque); font-size: var(--letra-md); font-weight: 700; }
+.fc .menu-f li .i { width: 20px; height: 20px; color: var(--texto-suave); }
+.previa { display: grid; grid-template-rows: auto 1fr auto; height: 100%; background: #141414; color: #fff; }
+.previa .barra-p { display: grid; grid-template-columns: var(--toque) minmax(0, 1fr) var(--toque); align-items: center; height: var(--alto-barra); padding: 0 var(--espacio-2); }
+.previa .barra-p b { text-align: center; font-size: var(--letra-md); }
+.previa .barra-p button { display: grid; place-items: center; width: var(--toque); height: var(--toque); color: #fff; }
+.previa .cuerpo-p { display: grid; place-items: center; min-height: 0; padding: var(--espacio-2) var(--espacio-4); overflow: hidden; }
+.previa .marco-lienzo { width: 318px; } .previa .marco-lienzo.f4x5 { height: calc(318px * 1350 / 1080); } .previa .marco-lienzo.f9x16 { height: calc(318px * 1920 / 1080); max-height: 100%; }
+.previa .marco-lienzo > .lienzo { transform: scale(calc(318 / 1080)); }
+.previa .pie-p { display: grid; gap: var(--espacio-2); padding: var(--espacio-3) var(--gutter) calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px)); }
+.previa .pie-p .fila { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-2); }
+.previa .pie-p button { min-height: 56px; border-radius: var(--radio-pildora); font-size: var(--letra-lg); font-weight: 800; }
+.previa .pie-p .principal { background: var(--primario); color: #fff; } .previa .pie-p .secundario { background: #2a2a2a; color: #fff; }
+.previa .pie-p .texto { background: none; color: #bbb; font-size: var(--letra-sm); font-weight: 700; min-height: var(--toque-min); }
+.previa .formatos { display: flex; justify-content: center; gap: var(--espacio-2); }
+.previa .formatos button { min-height: 36px; padding: 0 var(--espacio-3); border-radius: var(--radio-pildora); background: #2a2a2a; color: #bbb; font-size: var(--letra-xs); font-weight: 700; }
+.previa .formatos button[aria-pressed="true"] { background: #fff; color: #1a1a1a; }
+.preajustes.una { grid-template-columns: 1fr; }
+</style>
+
+<main class="escena" id="escena">
+  <section class="columna col-hoy" id="col-hoy" aria-label="La imagen">
+    <p class="etiqueta-tel"><b>La imagen</b> · tal cual se comparte</p>
+    <div class="caja-tel"><div class="tel" id="tel-hoy"></div></div>
+  </section>
+  <section class="columna col-mix" aria-label="En la app">
+    <p class="etiqueta-tel" id="etiqueta-mix"></p>
+    <div class="caja-tel"><div class="tel" id="tel-mix"></div></div>
+  </section>
+
+  <aside class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <span class="asa" aria-hidden="true"></span>
+    <header class="hoja-cab">
+      <div>
+        <h1 id="hoja-titulo" tabindex="-1">«Tu año» para compartir</h1>
+        <p>Historial, pieza 3 de 5: una imagen con tu año · lun 12 de oct · OL-392</p>
+      </div>
+      <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="hoja-cuerpo" id="hoja-cuerpo">
+      <div class="resumen">
+        <div class="preajustes una" role="group" aria-label="Preajustes">
+          <button type="button" data-preset="firmada" aria-pressed="false">Firmada<small>12 oct, noche</small></button>
+        </div>
+        <p class="combinacion" id="combinacion"></p>
+        <label class="selector-ficha"><span>De quién</span><select id="sujeto" aria-label="De quién es el año"></select></label>
+        <section class="medidor" aria-label="Medidor">
+          <div class="cifras">
+            <div class="cifra"><small>Datos que dice la imagen</small><b id="m-datos">–</b><span id="s-datos"></span></div>
+            <div class="cifra"><small>Toques de la ficha a compartir</small><b id="m-toques">–</b><span id="s-toques"></span></div>
+            <div class="cifra"><small>Letra más chica (px en 1080)</small><b id="m-letra">–</b><span id="s-letra"></span></div>
+            <div class="cifra"><small>Medida</small><b id="m-medida">–</b><span id="s-medida"></span></div>
+          </div>
+          <p>La imagen se arma como un cartel del creador (1080 px de ancho, satori y sharp en el servidor). Letra más chica: el texto menor que lleva; Instagram la verá a un tercio.</p>
+        </section>
+        <p class="pantallas"><button type="button" class="boton secundario" id="ir-entrada">Dónde se abre</button><button type="button" class="boton secundario" id="ir-imagen">La imagen en la app</button></p>
+      </div>
+
+      <p class="porque" id="porque"></p>
+
+      <section class="bloque" aria-labelledby="t-ejercicios">
+        <h2 id="t-ejercicios">Ejercicios</h2>
+        <p>Segunda vuelta (12 de oct, tarde): el founder vio la primera «deficiente, saturada y poco legible». Ahora la composición es un ejercicio (C) y el color otro (E); la propuesta es calma sobre crema. El teléfono de la izquierda enseña la imagen tal cual se compartiría; el de la derecha, dónde se abre en la app y la pantalla para compartirla. Los nombres (P, F, C…) son para firmar: «Propuesta · C cartel».</p>
+        <ul class="ejercicios" id="ejercicios"></ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-como">
+        <h2 id="t-como">Cómo se haría</h2>
+        <ul class="notas">
+          <li><b>Con el creador de cartel que ya existe</b> (OL-324): una plantilla nueva «Tu año» que recibe el sujeto (persona, artista o lugar) y el periodo en vez de un evento, y sale por la misma ruta a 1080 px, en 4:5 o 9:16. Las cifras salen de lo mismo que la trayectoria y el historial (OL-390); los «fueron», de `van_por_evento`. Sin tablas nuevas.</li>
+          <li><b>Compartir:</b> la hoja del teléfono con la imagen como archivo (`navigator.share` con `files`, que el iPhone y Android admiten); si no se puede, «Guardar» como ya hace el cartel. La imagen no se guarda en la base: se genera al pedirla (unos 100 ms) y se cachea un día.</li>
+          <li><b>Los colores</b> son los de las portadas del sistema (OL-374): crema y negro de fondo y texto, y el color base del sujeto (la portada del lugar o la foto del artista, o el color de respaldo por su id) solo en la figura y en un acento; la figura, la de su clase (festival, expo, taller), chica y en su esquina.</li>
+          <li><b>Medir:</b> un evento `tu_anio` con `que` (persona · artista · lugar), `periodo` y `medio` (hoja · guardado).</li>
+        </ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-notas">
+        <h2 id="t-notas">Cómo leerlo</h2>
+        <ul class="notas">
+          <li><b>Datos reales, solo lectura</b> (12 de oct): tu propia cuenta (36 eventos a los que dijiste «Voy» y ya pasaron, en 19 lugares, con 42 artistas), Leo Traeger y Oscar Formacio, el CC200 y el Museo Francisco Cossío. La app tiene un mes de vida: por eso «Tu 2026» dice desde cuándo cuenta, y el periodo «mes» sirve desde ya.</li>
+          <li><b>Lo que no decide esta pieza:</b> el currículo y el reporte en PDF (pieza 4) y lo anterior a la app (pieza 5). «Tu año» es una imagen para presumir y compartir, no un informe.</li>
+          <li><b>No es un ranking:</b> dice lo tuyo (o lo del artista o del lugar), nunca compara con otros ni enseña a quién más fue.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</main>
+<div class="velo" id="velo"></div>
+<button class="fab" id="fab" type="button" aria-controls="hoja" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ejercicios <span id="fab-combinacion"></span></button>
+<button class="crono" id="crono" type="button" hidden><b id="crono-tiempo">0,0</b><span id="crono-tarea"></span><small>Toca aquí al encontrarlo</small></button>
+<svg width="0" height="0" style="position: absolute" aria-hidden="true"><symbol id="sn" viewBox="0 0 1035 795"><path id="sn-trazo"/></symbol></svg>
+
+<script type="application/json" id="datos">{"ahora":"2026-10-12T20:48:27.453Z","zona":"America/Mexico_City","simbolo":{"caja":{"ancho":1035,"alto":795},"trazo":"M654.972 664.298V377.338H657.972L802.852 702.408L803.834 772.338H859.113V740.438L895.647 772.338H1011.32C1015.33 772.338 1018.02 770.009 1020.02 766.538C1020.79 765.21 1021.66 763.987 1022.5 762.806C1024.93 759.375 1025.32 744.418 1022.5 732.918C1018.57 716.918 991.664 702.408 971.164 702.408C950.664 702.408 957.9 683.087 949.261 676.338C939.969 669.079 941.761 650.838 941.761 639.838C941.761 639.838 953.737 637.338 953.737 632.338L941.761 181.838C941.761 176.929 948.917 174.439 948.737 169.533C948.557 164.628 948.393 161.643 948.033 156.747C947.725 152.55 947.497 149.998 947.058 145.813C946.75 142.883 947.222 140.55 947.699 138.19C948.141 136.01 948.587 133.807 948.426 131.089C947.804 120.589 944.766 114.438 944.577 103.922C944.403 94.2806 935.975 86.4288 926.333 86.6021C920.238 86.7117 914.742 90.0096 911.568 94.8571C909.409 86.0564 900.44 80.0264 891.126 80.7628C886.766 81.1075 882.712 82.9056 879.558 85.6473C879.424 82.1268 879.258 78.7443 879.09 75.3096C878.783 69.0579 878.468 62.6332 878.323 54.8882C878.121 44.0821 877.261 37.5309 876.921 26.7283C876.626 17.3693 868.472 9.7135 859.113 10.0082C849.754 10.303 842.099 18.4568 842.393 27.8158C842.574 33.5427 842.502 38.0653 842.429 42.6836V42.696C842.366 46.644 842.303 50.6616 842.394 55.5606C842.579 65.4564 842.323 73.1658 842.056 81.1579C841.905 85.6824 841.751 90.2974 841.673 95.451C836.054 82.5561 831.351 73.8527 825.31 59.9263C821.297 50.6773 818.224 45.3332 814.141 36.1148C810.418 27.7068 800.171 23.7502 791.763 27.4736C783.355 31.1971 779.399 41.4436 783.122 49.8516C787.164 58.9784 788.987 64.8041 792.959 73.9611C799.636 89.3508 802.6 99.1727 809.08 114.646C810.698 118.509 811.127 124.296 811.219 128.165C811.161 128.062 811.094 127.966 811.018 127.878C801.685 117.207 786.328 107.716 775.657 117.049C764.986 126.381 772.346 142.866 781.679 153.537C784.318 156.554 788.9 156.516 793.133 156.48C797.982 156.439 802.372 156.402 802.852 160.969C803.109 163.418 803.242 164.911 803.423 167.366C803.633 170.23 803.729 171.977 803.834 174.848C803.94 177.718 811.219 178.966 811.219 181.838C811.219 181.838 817.308 409.357 825.31 459.338C833.311 509.319 786.761 426.838 771.657 393.838C756.554 360.838 694.072 181.02 663.761 131.089C647.16 103.742 593.272 94.4434 561.793 110.838C537.793 123.338 526.673 132.443 521.793 190.338C517.289 243.78 521.131 354.203 521.793 433.838C522.718 544.941 508.972 649.698 508.972 649.698C508.972 667.686 504.592 678.43 504.592 696.418C504.592 705.649 501.095 710.85 498.752 719.778C495.219 733.238 490.417 740.95 489.262 754.818C489.231 755.189 489.198 755.569 489.164 755.958C488.566 762.882 487.748 772.338 494.372 772.338H725.052C729.088 772.338 731.794 769.993 733.812 766.498C734.584 765.161 735.459 763.929 736.303 762.74C738.757 759.286 740.957 756.188 739.652 751.898C736.877 742.78 731.201 738.657 723.592 732.918C713.799 725.534 705.284 725.185 695.122 718.318C684.433 711.096 677.267 706.771 669.572 696.418C661.504 685.563 654.972 677.823 654.972 664.298ZM269.211 784.338C315.878 784.338 353.378 776.505 381.711 760.838C410.044 745.172 430.711 723.505 443.711 695.838C456.711 668.172 463.211 637.005 463.211 602.338C463.211 571.672 459.044 544.672 450.711 521.338C442.378 498.005 431.044 477.338 416.711 459.338C402.378 441.338 386.211 425.172 368.211 410.838C358.277 402.927 348.139 395.271 337.798 387.868C339.827 388.375 341.981 388.445 344.12 387.985C351.697 386.354 356.719 378.578 355.088 371.001C354.595 368.711 354.585 367.263 354.135 364.964C352.648 357.371 352.807 352.587 351.794 344.916C351.579 343.289 352.15 340.649 352.15 340.649C352.15 340.649 353.809 345.402 354.152 348.483C355.395 359.669 357.654 366.257 360.42 377.167C361.49 381.387 362.599 383.823 363.89 387.98C366.467 396.277 375.651 401.108 383.948 398.531C389.672 396.754 393.746 391.831 394.877 386.225C397.789 393.555 405.7 398.303 413.714 396.968C422.908 395.438 429.38 386.38 427.85 377.186C427.277 373.747 427.336 371.598 426.832 368.149C426.282 364.378 426.001 361.148 425.815 358.045C426.283 360.012 426.764 362.09 427.248 364.373C427.986 367.852 428.823 369.874 429.667 373.329C431.801 382.059 440.978 387.631 449.709 385.497C458.44 383.363 464.011 374.186 461.877 365.455C461.126 362.384 461.056 360.433 460.4 357.34C458.652 349.1 458.604 343.599 457.799 335.777C464.362 339.09 471.324 339.788 476.895 334.893C486.745 326.237 479.811 311.02 471.155 301.171C468.884 298.585 464.767 299.373 461.002 300.094C456.949 300.869 453.303 301.567 452.804 297.896C452.593 296.346 452.479 295.4 452.317 293.844C452.128 292.028 452.033 290.92 451.911 289.099C451.751 286.728 451.635 285.284 451.62 282.908C451.437 253.853 447.134 227.83 438.711 204.838C426.378 171.172 405.711 145.338 376.711 127.338C347.711 109.338 310.544 100.338 265.211 100.338C255.658 100.338 325.524 70.8383 291.711 66.3383C257.898 61.8383 215.261 96.3597 205.211 95.2602C181.663 92.6839 158.318 90.8559 138.531 94.8571C101.442 102.357 73.9708 135.338 70.5256 163.838C67.0804 192.338 76.211 237.338 76.211 271.338C76.211 297.338 80.0443 320.338 87.711 340.338C95.3776 360.338 105.544 378.172 118.211 393.838C130.878 409.505 144.878 423.505 160.211 435.838C175.544 448.172 190.544 459.672 205.211 470.338C221.878 481.672 238.211 494.005 254.211 507.338C270.211 520.672 283.378 536.172 293.711 553.838C304.044 571.505 309.211 592.672 309.211 617.338C309.211 630.005 307.711 640.338 304.711 648.338C301.711 656.338 297.378 662.338 291.711 666.338C286.044 670.338 279.211 672.338 271.211 672.338C254.544 672.338 242.544 664.838 235.211 649.838C227.878 634.838 223.878 615.505 223.211 591.838C223.183 590.852 223.159 589.864 223.14 588.876L223.139 588.838C222.813 572.695 219.64 563.025 215.68 547.362C211.478 530.743 205.111 521.795 196.561 506.938C189.221 494.183 182.019 488.19 171.811 477.591C168.297 473.942 166.735 471.06 162.644 468.072C158.662 465.165 152.608 467.137 151.076 462.45C148.132 453.442 145.514 448.249 142.488 439.268C141.118 435.203 139.918 432.86 138.531 428.801C136.267 422.169 128.753 418.481 122.121 420.745C115.49 423.01 111.801 430.524 114.066 437.155C115.439 441.176 115.903 443.742 117.259 447.768C120.254 456.658 121.242 462.332 124.156 471.249C124.916 473.574 127.236 476.838 127.236 476.838C127.236 476.838 124.169 476.528 123.291 475.134C116.59 464.486 111.618 458.598 104.606 448.152C100.887 442.611 98.1805 439.549 94.3751 434.066C89.8877 427.602 80.6373 425.932 74.1727 430.419C67.7081 434.907 66.0382 444.157 70.5256 450.622C74.2302 455.959 76.0354 459.506 79.6562 464.9C85.6393 473.813 88.8728 480.107 93.9792 488.512C85.2532 480.464 78.9731 475.829 69.9866 467.364C65.0393 462.703 61.6682 460.26 56.7272 455.593C50.6023 449.807 40.5428 450.094 34.7576 456.219C28.9723 462.344 29.2592 472.404 35.384 478.189C40.3369 482.867 42.9803 486.097 47.9395 490.768C56.161 498.513 61.0693 504.182 68.4135 511.351C60.1953 507.131 54.0695 504.583 45.3412 499.56C40.534 496.793 37.3853 495.505 32.6195 492.668C25.6294 488.507 16.2108 490.896 12.0498 497.886C7.88873 504.876 10.2782 514.295 17.2683 518.456C22.1822 521.381 24.9383 523.549 29.8949 526.401C39.8115 532.108 45.5618 536.367 55.3709 541.695C39.3376 544.271 21.2994 549.695 23.2703 564.881C25.4879 581.969 49.045 580.639 66.1326 578.422C68.6666 578.093 70.3304 575.101 71.7823 572.49C73.3656 569.643 74.6969 567.249 76.6299 569.256C77.5005 570.16 77.5501 571.208 77.6017 572.297C77.6447 573.204 77.6891 574.14 78.2106 575.046C78.9547 576.339 78.706 577.554 78.4461 578.824C78.2356 579.853 78.0177 580.917 78.3138 582.089C78.8429 584.182 78.1837 585.79 77.4815 587.503C77.06 588.531 76.6231 589.596 76.4184 590.827L76.3956 590.828C76.3755 591.04 76.3556 591.251 76.336 591.463C74.7526 608.547 74.8776 624.672 76.711 639.838C80.3776 670.172 90.211 696.172 106.211 717.838C122.211 739.505 143.878 756.005 171.211 767.338C198.544 778.672 231.211 784.338 269.211 784.338ZM329.141 381.762C323.556 377.882 317.912 374.074 312.211 370.338C298.211 361.005 284.711 351.505 271.711 341.838C258.711 332.172 248.211 321.172 240.211 308.838C232.211 296.505 228.211 282.005 228.211 265.338C228.211 255.338 229.711 246.838 232.711 239.838C235.711 232.838 240.044 227.338 245.711 223.338C251.378 219.338 257.878 217.338 265.211 217.338C275.878 217.338 284.711 220.838 291.711 227.838C298.711 234.838 303.878 244.338 307.211 256.338C310.032 266.492 311.778 277.72 312.451 290.022L312.452 290.053C312.627 293.263 312.657 295.23 312.874 298.445C313.127 302.219 313.324 304.515 313.716 308.277C314.051 311.503 314.287 313.463 314.724 316.677C315.444 321.97 315.576 325.242 316.602 330.485C318.002 337.64 320.092 341.75 321.046 348.978C322.153 357.356 323.9 362.271 325.524 370.565C326.014 373.067 326.6 374.525 327.136 377.017C327.509 378.748 328.203 380.346 329.141 381.762Z"},"persona":{"nombre":"Robscan","seguidos":62,"interesan":4,"fotoArchivo":"u-robscan.webp"},"pasados":[{"id":"2b96d069-c507-4c0e-ab11-924572acd6eb","slug":"lectura-del-taller-de-creacion-literaria-literatura-experimental","titulo":"Lectura del Taller de Creación Literaria: literatura experimental","inicio":"2026-09-18T01:00:00+00:00","clase":"puntual","lugar":{"id":"30c8a676-9aea-4525-9611-85b999cf39c3","nombre":"Casa del Poeta Ramón López Velarde","tipo":"casa_de_cultura","portadaArchivo":"l-casa-del-poeta-ramon-lopez-velarde.webp"},"artistas":[],"cartel":null},{"id":"6fcafbea-2c86-419c-a59e-ac167a46847a","slug":"camerata-de-san-luis-cierre-del-ciclo-sonidos-de-san-luis-potosi","titulo":"ΚΟΣΜΟΣ: Camerata de San Luis, cierre del ciclo Sonidos de San Luis Potosí","inicio":"2026-09-18T01:00:00+00:00","clase":"puntual","lugar":{"id":"bc443f31-a12f-49fb-b1b2-98a45879ef14","nombre":"Museo Leonora Carrington","tipo":"museo","portadaArchivo":"l-museo-leonora-carrington.webp"},"artistas":[],"cartel":"e-camerata-de-san-luis-cierre-del-ciclo-sonidos-de-san-luis-potosi.webp"},{"id":"38825aba-9940-4ce4-9f2d-701f46644b26","slug":"la-orquesta-sinfonica-de-san-luis-potosi-en-el-templo-de-san-sebastian","titulo":"La Orquesta Sinfónica de San Luis Potosí en el templo de San Sebastián","inicio":"2026-09-18T02:00:00+00:00","clase":"puntual","lugar":null,"artistas":[],"cartel":null},{"id":"39da8e72-82f9-4ab0-9cca-a6b00a5538a7","slug":"presentacion-editorial-70-poemas-en-petalos-de-orquideas","titulo":"Presentación editorial: 70 poemas en pétalos de orquídeas","inicio":"2026-09-18T23:30:00+00:00","clase":"puntual","lugar":{"id":"678b8bd3-2916-492b-a186-7472720741aa","nombre":"Centro de las Artes de San Luis Potosí Centenario (CEART)","tipo":"casa_de_cultura","portadaArchivo":"l-centro-de-las-artes-de-san-luis-potosi-centenario-ceart.webp"},"artistas":[],"cartel":"e-presentacion-editorial-70-poemas-en-petalos-de-orquideas.webp"},{"id":"1e6995e7-a6e2-47ed-8e34-54d115fb6c81","slug":"23-anos-del-museo-federico-silva-serenata-e-inauguracion-de-ricardo-rendon","titulo":"23 años del Museo Federico Silva: serenata e inauguración de Ricardo Rendón","inicio":"2026-09-19T02:00:00+00:00","clase":"puntual","lugar":{"id":"e8fc820b-fab6-49f0-a028-c487c5c8698a","nombre":"Museo Federico Silva Escultura Contemporánea","tipo":"museo","portadaArchivo":"l-museo-federico-silva-escultura-contemporanea.webp"},"artistas":[],"cartel":null},{"id":"470b45c4-ecd6-4bd4-bf4b-aea7c4f01719","slug":"circulo-de-lectura-del-inconsciente-al-surrealismo","titulo":"Círculo de lectura: Del inconsciente al surrealismo","inicio":"2026-09-19T16:00:00+00:00","clase":"puntual","lugar":{"id":"bc443f31-a12f-49fb-b1b2-98a45879ef14","nombre":"Museo Leonora Carrington","tipo":"museo","portadaArchivo":"l-museo-leonora-carrington.webp"},"artistas":[],"cartel":"e-circulo-de-lectura-del-inconsciente-al-surrealismo.webp"},{"id":"16932d58-854b-498f-ad1d-13d0c3057d87","slug":"mexico-magico-musical","titulo":"México, Mágico, Musical","inicio":"2026-09-20T03:00:00+00:00","clase":"puntual","lugar":null,"artistas":[{"id":"dbe2831d-0b98-4427-b481-24718597ea82","nombre":"La Lupita Fullband","disciplina":"por_completar","fotoArchivo":null},{"id":"4cf866a0-8317-42f5-9ab5-4fae29cd9849","nombre":"La Lupita","disciplina":"musica","fotoArchivo":"a-la-lupita.webp"}],"cartel":"e-mexico-magico-musical.webp"},{"id":"b65bbe1a-8b20-4794-848f-0acd563388fd","slug":"nos-vamos-con-estilo","titulo":"Nos vamos con estilo","inicio":"2026-09-20T03:00:00+00:00","clase":"puntual","lugar":null,"artistas":[{"id":"f6132bef-c788-491b-b50d-d4b0805e6ca3","nombre":"Cumbia Fantasma","disciplina":"musica","fotoArchivo":"a-cumbia-fantasma.webp"},{"id":"e6854c16-c7fa-441c-8222-244aab24d0e6","nombre":"Disonauta","disciplina":"musica","fotoArchivo":"a-disonauta.webp"},{"id":"4c3edccd-4670-4b2c-a59a-4604d4de6630","nombre":"Ricardo Za","disciplina":"musica","fotoArchivo":"a-ricardo-za.webp"}],"cartel":"e-nos-vamos-con-estilo.webp"},{"id":"bbf1448e-1580-4f53-bfb0-51088c90d058","slug":"primer-parpadeo-aniversario-fest-mercadito-de-arte","titulo":"Primer Parpadeo Aniversario Fest - Mercadito de Arte","inicio":"2026-09-20T20:00:00+00:00","clase":"puntual","lugar":{"id":"35fc6879-4caf-4514-bf31-bc135789709a","nombre":"Estudio Ojo Zarco","tipo":"colectivo","portadaArchivo":null},"artistas":[{"id":"ae3937c1-1a90-454d-9ddc-95649b67770b","nombre":"Acorde On","disciplina":"por_completar","fotoArchivo":null},{"id":"234ecf9d-39c3-4a1e-b5c1-136aa71eb08f","nombre":"Canto Quetzal","disciplina":"por_completar","fotoArchivo":null},{"id":"38bfc44e-2f73-4114-8a5c-563fa061620d","nombre":"Fly Marina","disciplina":"por_completar","fotoArchivo":null},{"id":"defac769-7065-43e1-9ecf-508bee24e39d","nombre":"Katana Lírica","disciplina":"por_completar","fotoArchivo":null},{"id":"d3c7c1b0-e869-49e4-ab32-d2945d072655","nombre":"Dais Qrohc","disciplina":"por_completar","fotoArchivo":null},{"id":"f5712666-9683-4751-83a6-fef95e127af9","nombre":"Gordo Ang","disciplina":"por_completar","fotoArchivo":null}],"cartel":"e-primer-parpadeo-aniversario-fest-mercadito-de-arte.webp"},{"id":"e3398ec9-ecbd-43a8-8992-6f2205d6f63b","slug":"analizando-amores-perros","titulo":"Analizando Amores Perros","inicio":"2026-09-20T23:00:00+00:00","clase":"puntual","lugar":null,"artistas":[{"id":"48b9ec74-bc37-47fd-80df-9ea239a57f11","nombre":"Cinema Cuarentena","disciplina":"cine","fotoArchivo":"a-cinema-cuarentena.webp"}],"cartel":"e-analizando-amores-perros.webp"},{"id":"23bf025f-4150-4a69-b1a4-e20ba9792035","slug":"muestra-de-cortometrajes-potosinos","titulo":"Muestra de Cortometrajes Potosinos","inicio":"2026-09-24T00:00:00+00:00","clase":"puntual","lugar":{"id":"4e7746b2-5f95-4772-9d23-1891e14548ea","nombre":"Auditorio Rafael Nieto","tipo":"foro","portadaArchivo":"l-auditorio-rafael-nieto.webp"},"artistas":[{"id":"3711a6bb-0c4b-461c-805b-2819d3876277","nombre":"Mario Ávila Monreal","disciplina":"por_completar","fotoArchivo":null},{"id":"76fc470f-1add-4fca-a087-4c944d5bb651","nombre":"Rafael Duque","disciplina":"por_completar","fotoArchivo":null},{"id":"ae51ff0d-e6d1-4ac0-9403-c0deb725b6f3","nombre":"Enrique Esparza","disciplina":"por_completar","fotoArchivo":null},{"id":"4ffc9804-1238-448b-8e26-e06f97f71f15","nombre":"Daniel Velez","disciplina":"por_completar","fotoArchivo":null},{"id":"a1862016-2b00-444f-b91e-384cbee83530","nombre":"Cristian Salas","disciplina":"por_completar","fotoArchivo":null}],"cartel":"e-muestra-de-cortometrajes-potosinos.webp"},{"id":"e581cb16-4198-451b-bc76-40e5c810012b","slug":"el-rey-sin-traje-teatro-para-toda-la-familia","titulo":"El rey sin traje, teatro para toda la familia","inicio":"2026-09-24T23:00:00+00:00","clase":"puntual","lugar":{"id":"b86ff58d-cda0-40d9-9a48-1007f71ae627","nombre":"Teatro del IMSS San Luis Potosí","tipo":"foro","portadaArchivo":"l-teatro-del-imss-san-luis-potosi.webp"},"artistas":[],"cartel":null},{"id":"95c16315-3e40-46d7-8ce8-301b9b5b7846","slug":"identidad","titulo":"Identidad","inicio":"2026-09-25T01:00:00+00:00","clase":"puntual","lugar":{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","tipo":"museo","portadaArchivo":"l-museo-de-arte-contemporaneo-mac.webp"},"artistas":[{"id":"506b9c13-c382-4a85-96b9-6372a8503640","nombre":"Neto Medellín","disciplina":"artes_visuales","fotoArchivo":null}],"cartel":"e-identidad.webp"},{"id":"3d3a3ae8-9cdc-4fb2-afb4-9486bfacdf0f","slug":"inauguracion-de-la-nueva-temporada-de-exposiciones-del-mac","titulo":"Inauguración de la nueva temporada de exposiciones del MAC","inicio":"2026-09-25T01:00:00+00:00","clase":"puntual","lugar":{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","tipo":"museo","portadaArchivo":"l-museo-de-arte-contemporaneo-mac.webp"},"artistas":[],"cartel":"e-inauguracion-de-la-nueva-temporada-de-exposiciones-del-mac.webp"},{"id":"53a25126-6e67-4a02-a439-30c132b343f9","slug":"las-figuraciones","titulo":"Las Figuraciones","inicio":"2026-09-25T01:00:00+00:00","clase":"puntual","lugar":{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","tipo":"museo","portadaArchivo":"l-museo-de-arte-contemporaneo-mac.webp"},"artistas":[{"id":"8a3ca60b-facb-4c1f-8b0f-bff5733a4f9f","nombre":"Eréndida Zapata","disciplina":"artes_visuales","fotoArchivo":null}],"cartel":"e-las-figuraciones.webp"},{"id":"ff4bc78f-745c-423a-871e-c6ec53ace530","slug":"el-desplazamiento-del-eco-el-principio-de-las-voces","titulo":"EL DESPLAZAMIENTO DEL ECO EL PRINCIPIO DE LAS VOCES","inicio":"2026-09-25T01:00:00+00:00","clase":"puntual","lugar":{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","tipo":"museo","portadaArchivo":"l-museo-de-arte-contemporaneo-mac.webp"},"artistas":[{"id":"b9c20e6c-b4a7-418a-926b-a2d87197f5d6","nombre":"Rob Maldonado","disciplina":"artes_visuales","fotoArchivo":"a-rob-maldonado.webp"}],"cartel":"e-el-desplazamiento-del-eco-el-principio-de-las-voces.webp"},{"id":"fe0e8576-ee44-4e39-8ba5-e148dd349921","slug":"el-desplazamiento-del-eco","titulo":"El desplazamiento del eco","inicio":"2026-09-25T01:00:00+00:00","clase":"puntual","lugar":{"id":"c82e2714-8cc5-417d-ae16-bcd12d7f5998","nombre":"Museo de Arte Contemporáneo (MAC)","tipo":"museo","portadaArchivo":"l-museo-de-arte-contemporaneo-mac.webp"},"artistas":[{"id":"b9c20e6c-b4a7-418a-926b-a2d87197f5d6","nombre":"Rob Maldonado","disciplina":"artes_visuales","fotoArchivo":"a-rob-maldonado.webp"}],"cartel":"e-el-desplazamiento-del-eco.webp"},{"id":"c3213a99-0794-4e53-ab29-2b620de71b68","slug":"fotovision-31-inauguracion-de-cinco-exposiciones-de-fotografia","titulo":"Fotovisión 31: inauguración de cinco exposiciones de fotografía","inicio":"2026-09-25T01:30:00+00:00","clase":"puntual","lugar":{"id":"054f8973-688e-455c-a9ae-b46c8c934393","nombre":"Centro de Difusión Cultural Raúl Gamboa","tipo":"casa_de_cultura","portadaArchivo":"l-centro-de-difusion-cultural-raul-gamboa.webp"},"artistas":[],"cartel":null},{"id":"67423987-c8d7-45af-84bc-9dc570837cc2","slug":"fotovision-31-inauguracion-de-la-colectiva-cuerpo-contra-imagen","titulo":"Fotovisión 31: inauguración de la colectiva Cuerpo contra imagen","inicio":"2026-09-26T01:30:00+00:00","clase":"puntual","lugar":{"id":"4c7f8afb-c87c-4893-99f0-6728ba352935","nombre":"Instituto Potosino de Bellas Artes (IPBA)","tipo":"escuela","portadaArchivo":"l-instituto-potosino-de-bellas-artes-ipba.webp"},"artistas":[],"cartel":null},{"id":"dcd9d67c-ce59-4845-a7b5-d4833f8d6b2f","slug":"bule-collective-takeover-las-puertas","titulo":"Bulé Collective Takeover @ Las Puertas","inicio":"2026-09-26T22:00:00+00:00","clase":"puntual","lugar":null,"artistas":[{"id":"83440662-2d69-4e48-b9de-b5d8ae193b43","nombre":"Bulé Collective","disciplina":"por_completar","fotoArchivo":null}],"cartel":"e-bule-collective-takeover-las-puertas.webp"},{"id":"33e90d94-dc13-4775-a482-c9a68dd561e2","slug":"house-house-baby","titulo":"HOUSE, HOUSE, BABY!","inicio":"2026-09-27T03:00:00+00:00","clase":"puntual","lugar":{"id":"8439f5cc-e40d-4d02-96c1-1e6dcac3eb2e","nombre":"El Ricardito","tipo":"otro","portadaArchivo":null},"artistas":[{"id":"5884be1c-66ce-4a27-9fc5-c381afce79d5","nombre":"HVRVVRD","disciplina":"por_completar","fotoArchivo":null}],"cartel":"e-house-house-baby.webp"},{"id":"7f257177-ee49-4901-9840-fedd094fb1c7","slug":"un-evangelio-versiculo-vi-el-hijo-prodigo-2026-09-27","titulo":"Un evangelio— Versículo VI: El hijo pródigo","inicio":"2026-09-28T01:00:00+00:00","clase":"puntual","lugar":{"id":"423fa22f-fcff-4f82-b781-06ad5adcea73","nombre":"Teatro El Rinoceronte Enamorado","tipo":"foro","portadaArchivo":"l-teatro-el-rinoceronte-enamorado.webp"},"artistas":[{"id":"76d4edf2-b3fc-4ddf-9e31-cefa48516f01","nombre":"Jesús Coronado","disciplina":"teatro","fotoArchivo":null},{"id":"b711db06-e41c-4257-8549-f250ebf68d01","nombre":"Gerardo Canela","disciplina":"teatro","fotoArchivo":null},{"id":"b491e821-f73b-45c3-a937-cf1435f1468d","nombre":"Antonio Herrero del Rello","disciplina":"teatro","fotoArchivo":null},{"id":"3e6bea66-f71c-4065-a988-f48f910ab827","nombre":"Lourdes Uribe","disciplina":"teatro","fotoArchivo":null},{"id":"22b7a759-a738-4fbf-b898-c48cd496f3b3","nombre":"Antonio Orta","disciplina":"teatro","fotoArchivo":null}],"cartel":"e-un-evangelio-versiculo-vi-el-hijo-prodigo.webp"},{"id":"7732a153-835f-49e0-93e8-0a0cbcdb3012","slug":"pianos-de-otono-alumnado-de-la-universidad-de-aguascalientes","titulo":"Pianos de Otoño: alumnado de la Universidad de Aguascalientes","inicio":"2026-10-02T19:00:00+00:00","clase":"puntual","lugar":{"id":"4c7f8afb-c87c-4893-99f0-6728ba352935","nombre":"Instituto Potosino de Bellas Artes (IPBA)","tipo":"escuela","portadaArchivo":"l-instituto-potosino-de-bellas-artes-ipba.webp"},"artistas":[],"cartel":"e-pianos-de-otono-alumnado-de-la-universidad-de-aguascalientes.webp"},{"id":"1b39b0b5-4edd-45da-ab83-472d0eb8d588","slug":"inauguracion-heridas-para-sanar-exposicion-de-cristina-ovalle","titulo":"Inauguración: Heridas para sanar, exposición de Cristina Ovalle","inicio":"2026-10-03T00:30:00+00:00","clase":"puntual","lugar":{"id":"20910a54-5622-41b8-b7d5-4fbc5bb34103","nombre":"Museo del Virreinato","tipo":"museo","portadaArchivo":"l-museo-del-virreinato.webp"},"artistas":[{"id":"2f25d6d2-5674-4063-b6e0-fd8247dd85f4","nombre":"Cristina Ovalle","disciplina":"artes_visuales","fotoArchivo":null}],"cartel":"e-inauguracion-heridas-para-sanar-exposicion-de-cristina-ovalle.webp"},{"id":"ad7f32c1-4a4e-4e46-92b2-a56271b5847b","slug":"lxs-colocaos-la-ultima-fogueada","titulo":"LXS COLOCAOS: La última fogueada","inicio":"2026-10-03T01:00:00+00:00","clase":"puntual","lugar":{"id":"abe11da5-5395-4cfd-80e8-a780cdd9e430","nombre":"MUNI Museo Universitario UASLP","tipo":"museo","portadaArchivo":"l-muni-museo-universitario-uaslp.webp"},"artistas":[{"id":"5f02174f-cccc-47f7-8fb9-b1530c620594","nombre":"Paulina Lucciotto","disciplina":"por_completar","fotoArchivo":null},{"id":"2af8dfc9-5aa5-459c-aa59-a62e35f25aeb","nombre":"Marín Jonathan Juárez","disciplina":"por_completar","fotoArchivo":null},{"id":"37e05107-58b1-4d7a-9221-0f02e9ab1b31","nombre":"Arantxa Zoé Hernández Díaz","disciplina":"por_completar","fotoArchivo":null},{"id":"3d721bd5-46a9-4ee8-954c-d9019252dceb","nombre":"Jesús Orlando Acosta Govea","disciplina":"por_completar","fotoArchivo":null},{"id":"276f1e7b-d04f-4d0f-b304-09733cd0ff97","nombre":"Sayuri Alvarez Tapia","disciplina":"por_completar","fotoArchivo":null},{"id":"cbb4aac5-deb0-4e28-afec-45a79ab80a49","nombre":"Flora Moreno","disciplina":"por_completar","fotoArchivo":null}],"cartel":"e-lxs-colocaos-la-ultima-fogueada.webp"},{"id":"15eaed6a-e4d2-4348-93e7-9dcef42630dc","slug":"inauguracion-esencialismo-exposicion-de-filippo-giusti","titulo":"Inauguración: Esencialismo, exposición de Filippo Giusti","inicio":"2026-10-03T01:00:00+00:00","clase":"puntual","lugar":{"id":"abe11da5-5395-4cfd-80e8-a780cdd9e430","nombre":"MUNI Museo Universitario UASLP","tipo":"museo","portadaArchivo":"l-muni-museo-universitario-uaslp.webp"},"artistas":[{"id":"c567efc7-7800-4d83-9b21-58fbd802febd","nombre":"Filippo Giusti","disciplina":"artes_visuales","fotoArchivo":null}],"cartel":"e-inauguracion-esencialismo-exposicion-de-filippo-giusti.webp"},{"id":"7147d0ee-ddc0-4e30-8752-02eb5a43566e","slug":"noches-de-recorrido-en-el-ceart","titulo":"Noches de recorrido en el CEART","inicio":"2026-10-03T01:30:00+00:00","clase":"puntual","lugar":{"id":"678b8bd3-2916-492b-a186-7472720741aa","nombre":"Centro de las Artes de San Luis Potosí Centenario (CEART)","tipo":"casa_de_cultura","portadaArchivo":"l-centro-de-las-artes-de-san-luis-potosi-centenario-ceart.webp"},"artistas":[],"cartel":"e-noches-de-recorrido-en-el-ceart.webp"},{"id":"5bd4c15f-d409-4910-b530-a6828ba16c80","slug":"susurros-del-inconsciente","titulo":"Susurros del inconsciente","inicio":"2026-10-03T23:00:00+00:00","clase":"puntual","lugar":{"id":"a2176e0d-2ac1-42e2-b3a6-40e1fe9b2b4d","nombre":"Museo Nacional de la Máscara","tipo":"museo","portadaArchivo":"l-museo-nacional-de-la-mascara.webp"},"artistas":[{"id":"9d2a8481-d2ba-4411-a430-4b1f7372d01a","nombre":"Michell Kittrell","disciplina":"artes_visuales","fotoArchivo":"a-michell-kittrell.webp"}],"cartel":"e-susurros-del-inconsciente.webp"},{"id":"af74420c-ff98-4fae-b5d6-4c1ef5969cb1","slug":"feleal-2026","titulo":"FELEAL 2026","inicio":"2026-10-03T23:00:00+00:00","clase":"puntual","lugar":{"id":"a2176e0d-2ac1-42e2-b3a6-40e1fe9b2b4d","nombre":"Museo Nacional de la Máscara","tipo":"museo","portadaArchivo":"l-museo-nacional-de-la-mascara.webp"},"artistas":[{"id":"305d3aa5-3317-446a-8b5e-0425f5d6c255","nombre":"Fozco","disciplina":"musica","fotoArchivo":"a-fozco.webp"}],"cartel":"e-feleal-2026.webp"},{"id":"c8cc08ae-80c2-460e-8848-2797fe1308f7","slug":"octubre-en-asia-dia-del-sake-en-japon-y-dia-de-la-fundacion-de-corea","titulo":"Octubre en Asia: Día del Sake en Japón y Día de la Fundación de Corea","inicio":"2026-10-04T00:00:00+00:00","clase":"puntual","lugar":{"id":"dbcfef1f-2f82-4aed-8196-77651a0ceb73","nombre":"Centro Cultural Palacio Municipal","tipo":"casa_de_cultura","portadaArchivo":"l-centro-cultural-palacio-municipal.webp"},"artistas":[],"cartel":"e-octubre-en-asia-dia-del-sake-en-japon-y-dia-de-la-fundacion-de-corea.webp"},{"id":"09f944ac-c8d6-4e53-874a-ac5a94607ae1","slug":"los-sabrosetes-sabado-de-ritmos-latinos","titulo":"Los Sabrosetes: sábado de ritmos latinos","inicio":"2026-10-04T01:00:00+00:00","clase":"puntual","lugar":null,"artistas":[{"id":"dbb1bfe8-3ede-4904-a3b9-7d9475ce16d2","nombre":"Los Sabrosetes","disciplina":"musica","fotoArchivo":null}],"cartel":"e-los-sabrosetes-sabado-de-ritmos-latinos.webp"},{"id":"2693115d-90ef-4317-8ec8-a4f0fe83a7b2","slug":"feleal-un-viaje-por-el-mundo-en-acordeon","titulo":"FELEAL - Un viaje por el mundo en acordeón","inicio":"2026-10-04T23:00:00+00:00","clase":"puntual","lugar":{"id":"a2176e0d-2ac1-42e2-b3a6-40e1fe9b2b4d","nombre":"Museo Nacional de la Máscara","tipo":"museo","portadaArchivo":"l-museo-nacional-de-la-mascara.webp"},"artistas":[{"id":"5a7a848f-fab2-4901-b6e5-277763617854","nombre":"Andrés Torres","disciplina":"musica","fotoArchivo":null}],"cartel":"e-feleal-un-viaje-por-el-mundo-en-acordeon.webp"},{"id":"db4bca76-b5b2-48c4-8e4d-cb9cb61a25d8","slug":"9-festival-de-cine-uaslp-apertura-juana","titulo":"9° Festival de Cine UASLP - Apertura: Juana","inicio":"2026-10-06T00:00:00+00:00","clase":"puntual","lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","nombre":"Centro Cultural Universitario Bicentenario (CC200)","tipo":"casa_de_cultura","portadaArchivo":"l-centro-cultural-universitario-bicentenario-cc200.webp"},"artistas":[{"id":"d56a927a-316a-44ec-95db-96c27f9f27f5","nombre":"Daniel Giménez Cacho","disciplina":"cine","fotoArchivo":null},{"id":"193c979d-924a-4e55-8bd3-771d0d595294","nombre":"Diana Sedano","disciplina":"cine","fotoArchivo":"a-diana-sedano.webp"}],"cartel":"e-9-festival-de-cine-uaslp-apertura-juana.webp"},{"id":"597d388d-0bc3-4b9d-917d-96da8cd78010","slug":"master-class-9-festival-de-cine-uaslp","titulo":"Master Class - 9° Festival de Cine UASLP","inicio":"2026-10-06T18:00:00+00:00","clase":"puntual","lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","nombre":"Centro Cultural Universitario Bicentenario (CC200)","tipo":"casa_de_cultura","portadaArchivo":"l-centro-cultural-universitario-bicentenario-cc200.webp"},"artistas":[{"id":"d56a927a-316a-44ec-95db-96c27f9f27f5","nombre":"Daniel Giménez Cacho","disciplina":"cine","fotoArchivo":null}],"cartel":"e-master-class-9-festival-de-cine-uaslp.webp"},{"id":"15257981-b4bd-43c8-824f-b0181edfe118","slug":"inauguracion-mirar-debajo-de-los-pies-exposicion-de-oscar-formacio","titulo":"Inauguración: Mirar debajo de los pies, exposición de Oscar Formacio","inicio":"2026-10-08T01:00:00+00:00","clase":"puntual","lugar":{"id":"b4ca27ba-38cd-4f63-b41e-6ef99e062d7b","nombre":"ACHE Galería","tipo":"galeria","portadaArchivo":"l-ache-galeria.webp"},"artistas":[{"id":"bd7f0100-0cea-4e37-b9fc-79733ecf0def","nombre":"Oscar Formacio","disciplina":"artes_visuales","fotoArchivo":"a-oscar-formacio.webp"}],"cartel":"e-inauguracion-mirar-debajo-de-los-pies-exposicion-de-oscar-formacio.webp"},{"id":"937c2882-17ce-4165-96a8-3faab78d454b","slug":"viajera-taller-para-aprender-como-funcionan-los-trenes","titulo":"Viajera: taller para aprender cómo funcionan los trenes","inicio":"2026-10-10T19:00:00+00:00","clase":"taller","lugar":{"id":"372bc316-1257-4a51-8fbd-0b6bf800f70e","nombre":"Museo del Ferrocarril Jesús García Corona","tipo":"museo","portadaArchivo":"l-museo-del-ferrocarril-jesus-garcia-corona.webp"},"artistas":[],"cartel":"e-viajera-taller-para-aprender-como-funcionan-los-trenes.webp"}],"artistas":[{"id":"402421c9-6ff7-4a24-9273-7f0a796d4b22","slug":"leo-traeger","nombre":"Leo Traeger","disciplina":"musica","detalle":"rock, metal y alternativo","tipo":"solista","foto":"a-leo-traeger.webp","portada":null,"descripcion":"Leo Traeger es un Multi Guitarrista y compositor mexicano que creció en San Luis Potosí y que cuenta con una carrera internacional. Toca múltiples guitarras al mismo tiempo y sus videos de arreglos de música de compositores como Beethoven, Mozart o géneros de música como el flamenco el pop y el metal le han abierto puertas en el mundo gracias a que han sido vistos por audiencias masivas en redes sociales. Como director musical ha creado música para espectáculos escénicos como “San Luis de Oro y Plata”, “Nastia” y diversas obras de danza en México.","ciudad":"San Luis Potosí","redes":[{"red":"instagram","url":"https://www.instagram.com/leotraeger_?igsh=YWgzdjZ4cHcwNnRw&utm_source=qr"},{"red":"tiktok","url":"https://www.tiktok.com/@leotraeger?_t=ZM-8tXBggvEZAj&_r=1"}],"visible":true,"seguidores":0,"eventos":[{"id":"79aac1bc-217b-41b8-b7d4-1de5c047e0a2","slug":"clase-magistral-de-guitarra-flamenca-dos-guitarras-un-mundo","titulo":"Clase magistral de guitarra flamenca: Dos guitarras, un mundo","inicio":"2026-10-06T18:00:00+00:00","fin":"2026-10-07T17:30:00+00:00","termina":"2026-10-07T17:30:00+00:00","precio":"$300","clase":"taller","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"054f8973-688e-455c-a9ae-b46c8c934393","slug":"centro-de-difusion-cultural-raul-gamboa","nombre":"Centro de Difusión Cultural Raúl Gamboa"},"sitio":"Centro de Difusión Cultural Raúl Gamboa","cartel":null,"cartelGrande":null,"artistas":[{"id":"402421c9-6ff7-4a24-9273-7f0a796d4b22","slug":"leo-traeger","nombre":"Leo Traeger","disciplina":"musica","tipo":"solista","foto":"a-leo-traeger.webp"}]},{"id":"67fd6588-e673-47ff-905b-bda98dd3b5ef","slug":"dos-guitarras-un-mundo-concierto-en-el-museo-francisco-cossio","titulo":"Dos guitarras, un mundo: concierto en el Museo Francisco Cossío","inicio":"2026-10-08T01:00:00+00:00","fin":null,"termina":"2026-10-08T04:00:00+00:00","precio":"$300","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-dos-guitarras-un-mundo-concierto-en-el-museo-francisco-cossio.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-dos-guitarras-un-mundo-concierto-en-el-museo-francisco-cossio.jpg","artistas":[{"id":"402421c9-6ff7-4a24-9273-7f0a796d4b22","slug":"leo-traeger","nombre":"Leo Traeger","disciplina":"musica","tipo":"solista","foto":"a-leo-traeger.webp"}]},{"id":"1bd1a01b-19a9-4aa1-ab1b-b3476919cfed","slug":"dos-guitarras-un-mundo-flamenco-en-el-teatro-raul-gamboa","titulo":"Dos guitarras, un mundo: flamenco en el Teatro Raúl Gamboa","inicio":"2026-10-09T01:00:00+00:00","fin":null,"termina":"2026-10-09T04:00:00+00:00","precio":"$500","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"054f8973-688e-455c-a9ae-b46c8c934393","slug":"centro-de-difusion-cultural-raul-gamboa","nombre":"Centro de Difusión Cultural Raúl Gamboa"},"sitio":"Centro de Difusión Cultural Raúl Gamboa","cartel":null,"cartelGrande":null,"artistas":[{"id":"402421c9-6ff7-4a24-9273-7f0a796d4b22","slug":"leo-traeger","nombre":"Leo Traeger","disciplina":"musica","tipo":"solista","foto":"a-leo-traeger.webp"}]}]},{"id":"bd7f0100-0cea-4e37-b9fc-79733ecf0def","slug":"oscar-formacio","nombre":"Oscar Formacio","disciplina":"artes_visuales","detalle":"investigación artística","tipo":"solista","foto":"a-oscar-formacio.webp","portada":"p-oscar-formacio.webp","descripcion":"Gestor y artista investigador de San Andrés Cholula, Puebla; trabaja entre la Ciudad de México y Milán. Su obra parte de las microhistorias de su comunidad y explora la relación entre historia, materiales y territorio a través de la imagen, la escucha y el caminar. Fundó Error Proyecto. Presenta «Mirar debajo de los pies» en ACHE Galería.","ciudad":"San Andrés Cholula","redes":[{"red":"instagram","url":"https://www.instagram.com/oscarformacio/"},{"red":"sitio","url":"https://oscarformacio.com/"}],"visible":true,"seguidores":0,"eventos":[{"id":"1d224121-1325-4cca-ade6-9749fdffac73","slug":"mirar-debajo-de-los-pies","titulo":"Mirar debajo de los pies","inicio":"2026-10-07T06:00:00+00:00","fin":"2027-03-01T05:59:00+00:00","termina":"2027-03-01T05:59:00+00:00","precio":null,"clase":"exposicion","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"b4ca27ba-38cd-4f63-b41e-6ef99e062d7b","slug":"ache-galeria","nombre":"ACHE Galería"},"sitio":"ACHE Galería","cartel":"e-mirar-debajo-de-los-pies.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-b2d08021-8e83-4cae-be7e-446049d400a5.jpg","artistas":[{"id":"bd7f0100-0cea-4e37-b9fc-79733ecf0def","slug":"oscar-formacio","nombre":"Oscar Formacio","disciplina":"artes_visuales","tipo":"solista","foto":"a-oscar-formacio.webp"}]},{"id":"15257981-b4bd-43c8-824f-b0181edfe118","slug":"inauguracion-mirar-debajo-de-los-pies-exposicion-de-oscar-formacio","titulo":"Inauguración: Mirar debajo de los pies, exposición de Oscar Formacio","inicio":"2026-10-08T01:00:00+00:00","fin":null,"termina":"2026-10-08T04:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":1,"paso":true,"lugar":{"id":"b4ca27ba-38cd-4f63-b41e-6ef99e062d7b","slug":"ache-galeria","nombre":"ACHE Galería"},"sitio":"ACHE Galería","cartel":"e-inauguracion-mirar-debajo-de-los-pies-exposicion-de-oscar-formacio.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-inauguracion-mirar-debajo-de-los-pies-exposicion-de-oscar-fo.jpg","artistas":[{"id":"bd7f0100-0cea-4e37-b9fc-79733ecf0def","slug":"oscar-formacio","nombre":"Oscar Formacio","disciplina":"artes_visuales","tipo":"solista","foto":"a-oscar-formacio.webp"}]},{"id":"2e0ebeaf-e4ba-580a-8972-15d6e4225c7b","slug":"inauguracion-mirar-debajo-de-los-pies","titulo":"Inauguración: Mirar debajo de los pies","inicio":"2026-10-08T01:00:00+00:00","fin":null,"termina":"2026-10-08T04:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"b4ca27ba-38cd-4f63-b41e-6ef99e062d7b","slug":"ache-galeria","nombre":"ACHE Galería"},"sitio":"ACHE Galería","cartel":"e-inauguracion-mirar-debajo-de-los-pies.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-b2d08021-8e83-4cae-be7e-446049d400a5.jpg","artistas":[{"id":"bd7f0100-0cea-4e37-b9fc-79733ecf0def","slug":"oscar-formacio","nombre":"Oscar Formacio","disciplina":"artes_visuales","tipo":"solista","foto":"a-oscar-formacio.webp"}]}]}],"lugares":[{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)","tipo":"casa_de_cultura","direccion":"Sierra Leona 550 esq. Camino a la Presa, Lomas 2a Sección, 78210, San Luis Potosí, S.L.P.","portada":"l-centro-cultural-universitario-bicentenario-cc200.webp","descripcion":"Centro cultural de la UASLP abierto en 2010, con un teatro de cerca de 1,400 lugares y 13 salas. Programa conciertos, teatro, danza, cine y literatura para la comunidad universitaria y el público, y recibe ceremonias y ferias universitarias.","ciudad":"San Luis Potosí","redes":[{"red":"sitio","url":"https://cc200.uaslp.mx"},{"red":"facebook","url":"https://www.facebook.com/cc200uaslp"},{"red":"instagram","url":"https://www.instagram.com/cc200uaslp"}],"visible":true,"seguidores":1,"horarios":[{"dias":[1,2,3,4],"abre":"09:00:00","cierra":"19:00:00"},{"dias":[5],"abre":"09:00:00","cierra":"19:30:00"}],"eventos":[{"id":"0937801a-dc43-4d83-bd54-90db72ca4210","slug":"9-festival-de-cine-uaslp","titulo":"9° Festival de Cine UASLP","inicio":"2026-10-06T00:00:00+00:00","fin":"2026-10-09T21:00:00+00:00","termina":"2026-10-09T21:00:00+00:00","precio":null,"clase":"festival","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"db4bca76-b5b2-48c4-8e4d-cb9cb61a25d8","slug":"9-festival-de-cine-uaslp-apertura-juana","titulo":"9° Festival de Cine UASLP - Apertura: Juana","inicio":"2026-10-06T00:00:00+00:00","fin":null,"termina":"2026-10-06T03:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":1,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-9-festival-de-cine-uaslp-apertura-juana.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-574ff12b-62b6-455f-bd7e-dd717bc12a9c.jpeg","artistas":[{"id":"d56a927a-316a-44ec-95db-96c27f9f27f5","slug":"daniel-gimenez-cacho","nombre":"Daniel Giménez Cacho","disciplina":"cine","tipo":"solista","foto":null},{"id":"193c979d-924a-4e55-8bd3-771d0d595294","slug":"diana-sedano","nombre":"Diana Sedano","disciplina":"cine","tipo":"solista","foto":"a-diana-sedano.webp"}]},{"id":"597d388d-0bc3-4b9d-917d-96da8cd78010","slug":"master-class-9-festival-de-cine-uaslp","titulo":"Master Class - 9° Festival de Cine UASLP","inicio":"2026-10-06T18:00:00+00:00","fin":null,"termina":"2026-10-06T21:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":1,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-master-class-9-festival-de-cine-uaslp.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-ef64ac00-4e74-431e-88d1-b6c9e8763d1d.jpg","artistas":[{"id":"d56a927a-316a-44ec-95db-96c27f9f27f5","slug":"daniel-gimenez-cacho","nombre":"Daniel Giménez Cacho","disciplina":"cine","tipo":"solista","foto":null}]},{"id":"2270968c-438e-4274-92bf-5042c319b59e","slug":"muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp-2026-10-06","titulo":"Muestra de Cortometrajes Potosinos, Sala B del 9º Festival de Cine UASLP","inicio":"2026-10-06T18:00:00+00:00","fin":"2026-10-07T02:00:00+00:00","termina":"2026-10-07T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-.jpg","artistas":[]},{"id":"1601520b-d574-4c1f-a0c8-007147d04c0c","slug":"estreno-sangre-de-coyote-semilla-que-florece-el-barrio-documental","titulo":"Estreno: Sangre de Coyote, semilla que florece el barrio (documental)","inicio":"2026-10-06T23:15:00+00:00","fin":null,"termina":"2026-10-07T02:15:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-estreno-sangre-de-coyote-semilla-que-florece-el-barrio-documental.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-sangre-de-coyote-documental.jpg","artistas":[{"id":"d73c59dc-a3f5-4d87-a54a-1cf0eae69a9e","slug":"sangre-de-coyote","nombre":"Sangre de Coyote","disciplina":"musica","tipo":"grupo","foto":"a-sangre-de-coyote.webp"}]},{"id":"e091624b-c6c2-4ed8-9e5d-9aefc9365559","slug":"oca","titulo":"OCA","inicio":"2026-10-07T01:00:00+00:00","fin":null,"termina":"2026-10-07T04:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-oca.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-f9e3ca5b-f7b0-4e5d-b697-e3b0a86aa714.jpeg","artistas":[{"id":"9e7b5144-8700-460f-aa42-d0329a3ab9fb","slug":"karla-badillo","nombre":"Karla Badillo","disciplina":"cine","tipo":"solista","foto":null},{"id":"fc6ae40f-e9a7-4b7b-b0e8-ac4d917aad46","slug":"natalia-solian","nombre":"Natalia Solián","disciplina":"cine","tipo":"solista","foto":"a-natalia-solian.webp"},{"id":"d1cbfad1-5271-4c7f-843c-d14e0957302e","slug":"maria-jose-cordova","nombre":"María José Córdova","disciplina":"cine","tipo":"solista","foto":null}]},{"id":"64739123-537a-420a-a82c-76035343210c","slug":"muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp","titulo":"Muestra de Cortometrajes Potosinos, Sala B del 9º Festival de Cine UASLP","inicio":"2026-10-07T18:00:00+00:00","fin":"2026-10-08T02:00:00+00:00","termina":"2026-10-08T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-.jpg","artistas":[]},{"id":"a2728404-ecf6-4f3d-8d22-22cf0c73ffed","slug":"leonora-in-the-morning-light","titulo":"Leonora in the morning light","inicio":"2026-10-07T23:00:00+00:00","fin":null,"termina":"2026-10-08T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-leonora-in-the-morning-light.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-022918fa-d969-47a3-8d3d-c9083da2f895.jpg","artistas":[{"id":"d907a8c6-324c-40b5-9525-52f08e0fc0a4","slug":"monica-moreno","nombre":"Mónica Moreno","disciplina":"cine","tipo":"solista","foto":null},{"id":"cd2d05a3-13ae-4306-a30e-9bcea6fce6ec","slug":"alejandra-malvido","nombre":"Alejandra Malvido","disciplina":"cine","tipo":"solista","foto":null}]},{"id":"e161a853-23db-49e6-ac85-661159a7840a","slug":"9-festival-de-cine-uaslp-el-diablo-fuma-y-guarda-las-cabezas-de-los-cerillos-quemados-en-la-misma-caja","titulo":"9° Festival de Cine UASLP - El diablo fuma (y guarda las cabezas de los cerillos quemados en la misma caja)","inicio":"2026-10-08T01:00:00+00:00","fin":null,"termina":"2026-10-08T04:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-9-festival-de-cine-uaslp-el-diablo-fuma-y-guarda-las-cabezas-de-los-cerillos-quemados-en-la-misma-caja.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-a29b9214-716e-44dd-8521-4b135814698e.jpg","artistas":[{"id":"25bf1314-c672-4537-90ed-40f1fcfb4c29","slug":"carmen-ramos","nombre":"Carmen Ramos","disciplina":"cine","tipo":"solista","foto":null}]},{"id":"51f3c151-6284-4da6-9909-1bd55dcd626c","slug":"muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp-2026-10-08","titulo":"Muestra de Cortometrajes Potosinos, Sala B del 9º Festival de Cine UASLP","inicio":"2026-10-08T18:00:00+00:00","fin":"2026-10-09T02:00:00+00:00","termina":"2026-10-09T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-.jpg","artistas":[]},{"id":"30a38a1a-059e-4f0d-a614-3a7a65251468","slug":"un-mundo-para-mi","titulo":"Un mundo para mí","inicio":"2026-10-08T23:00:00+00:00","fin":null,"termina":"2026-10-09T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-un-mundo-para-mi.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-35da3854-7732-4c72-9102-4293fcce3faf.jpeg","artistas":[{"id":"0d850723-d721-4d09-9bdd-69a237068f02","slug":"alejandro-zuno","nombre":"Alejandro Zuno","disciplina":"cine","tipo":"solista","foto":null}]},{"id":"9d53c415-0e55-4b94-a7c4-f7601626ab8c","slug":"9-festival-de-cine-uaslp-cafe-chairel","titulo":"9° Festival de Cine UASLP - Café Chairel","inicio":"2026-10-09T01:00:00+00:00","fin":null,"termina":"2026-10-09T04:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-9-festival-de-cine-uaslp-cafe-chairel.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-e77c51e9-0755-4cad-b994-4a6b1ac4f6c9.jpeg","artistas":[{"id":"f32b3ded-7b0e-4605-8675-b11c5eeb2adf","slug":"fernando-barreda-luna","nombre":"Fernando Barreda Luna","disciplina":"cine","tipo":"solista","foto":null}]},{"id":"9cb61863-5bb4-4eec-a3b1-f8fc423b3252","slug":"muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp-2026-10-09","titulo":"Muestra de Cortometrajes Potosinos, Sala B del 9º Festival de Cine UASLP","inicio":"2026-10-09T18:00:00+00:00","fin":"2026-10-09T21:00:00+00:00","termina":"2026-10-09T21:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":"0937801a-dc43-4d83-bd54-90db72ca4210","van":0,"paso":true,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-cine-uaslp.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-muestra-de-cortometrajes-potosinos-sala-b-del-9-festival-de-.jpg","artistas":[]},{"id":"be9bd485-d39e-48e0-979a-6192d251d63f","slug":"concierto-para-violin-de-bruch-joyas-de-espana-noches-negras","titulo":"Concierto para Violín de Bruch / Joyas de España / Noches Negras","inicio":"2026-10-31T02:00:00+00:00","fin":null,"termina":"2026-10-31T05:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"e83c27aa-53f2-4a4c-8b55-c7d313656df9","slug":"centro-cultural-universitario-bicentenario-cc200","nombre":"Centro Cultural Universitario Bicentenario (CC200)"},"sitio":"Centro Cultural Universitario Bicentenario (CC200)","cartel":"e-concierto-para-violin-de-bruch-joyas-de-espana-noches-negras.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-b1237996-daee-426c-b51a-8882a469ee00.jpeg","artistas":[{"id":"85e5cb74-1f7d-44de-abeb-a6eebb6964e5","slug":"orquesta-sinfonica-universitaria","nombre":"Orquesta Sinfónica Universitaria","disciplina":"por_completar","tipo":"grupo","foto":null},{"id":"b16e3c8e-944b-461b-8681-554c0a7c6065","slug":"alfredo-ibarra","nombre":"Alfredo Ibarra","disciplina":"por_completar","tipo":"solista","foto":null},{"id":"9de9134e-a241-4101-9e08-1af0772fbf15","slug":"roman-shimalin-tsyganov","nombre":"Román Shimalin Tsyganov","disciplina":"por_completar","tipo":"solista","foto":null}]}]},{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío","tipo":"museo","direccion":"Av. Venustiano Carranza 1815, Col. Jardín, 78270, San Luis Potosí, S.L.P.","portada":"l-museo-francisco-cossio.webp","descripcion":"Museo de la Secretaría de Cultura del Estado en la antigua Casa de la Cultura, abierta en 1970 sobre Av. Carranza. Presenta exposiciones de arte, visitas guiadas, talleres y cursos, y eventos en su jardín como lecturas y conciertos.","ciudad":"San Luis Potosí","redes":[{"red":"sitio","url":"https://www.museofranciscocossio.org"},{"red":"facebook","url":"https://www.facebook.com/museo.francisco.cossio"}],"visible":true,"seguidores":1,"horarios":[{"dias":[1,2,3,4,5,6,7],"abre":"10:00:00","cierra":"17:00:00"}],"eventos":[{"id":"46de5184-3b68-4a8c-9f03-3a0c65e2d271","slug":"recorrido-guiado-herencia-colores-y-texturas-de-xil","titulo":"Recorrido guiado: Herencia, colores y texturas de Xil","inicio":"2026-09-19T18:00:00+00:00","fin":null,"termina":"2026-09-19T21:00:00+00:00","precio":"Gratis con boleto de entrada al museo","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-recorrido-guiado-herencia-colores-y-texturas-de-xil.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/redes-museo-francisco-cossio_ddsb4tjj3y2_1.jpg","artistas":[]},{"id":"11d311a4-cf41-452e-8d23-60f413dc908c","slug":"recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo","titulo":"Recorrido nocturno con linterna: un viaje a través del tiempo","inicio":"2026-09-24T02:00:00+00:00","fin":null,"termina":"2026-09-24T05:00:00+00:00","precio":"$100","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/redes-museo-francisco-cossio_dduf3urj12n_1.jpg","artistas":[]},{"id":"0b62d529-29b7-4b38-ad1e-70454abe08cd","slug":"concierto-tercera-juventud","titulo":"Concierto Tercera Juventud","inicio":"2026-09-24T23:00:00+00:00","fin":null,"termina":"2026-09-25T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"4d8233b7-1a50-4339-b0b3-549f75f1fff5","slug":"mandala-y-arte-actividad-infantil","titulo":"Mandala y arte: actividad infantil","inicio":"2026-09-25T17:00:00+00:00","fin":null,"termina":"2026-09-25T20:00:00+00:00","precio":"$100, incluye material","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"7aebeef4-916b-4e2a-9607-f90a702e1892","slug":"recital-de-guitarra-de-la-escuela-estatal-de-iniciacion-musical-julian-carrillo","titulo":"Recital de guitarra de la Escuela Estatal de Iniciación Musical Julián Carrillo","inicio":"2026-09-26T18:00:00+00:00","fin":null,"termina":"2026-09-26T21:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"67fd6588-e673-47ff-905b-bda98dd3b5ef","slug":"dos-guitarras-un-mundo-concierto-en-el-museo-francisco-cossio","titulo":"Dos guitarras, un mundo: concierto en el Museo Francisco Cossío","inicio":"2026-10-08T01:00:00+00:00","fin":null,"termina":"2026-10-08T04:00:00+00:00","precio":"$300","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-dos-guitarras-un-mundo-concierto-en-el-museo-francisco-cossio.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-dos-guitarras-un-mundo-concierto-en-el-museo-francisco-cossio.jpg","artistas":[{"id":"402421c9-6ff7-4a24-9273-7f0a796d4b22","slug":"leo-traeger","nombre":"Leo Traeger","disciplina":"musica","tipo":"solista","foto":"a-leo-traeger.webp"},{"id":"923a24b7-df2c-4a0e-a80b-16fe56167489","slug":"latife-zetune","nombre":"Latife Zetune","disciplina":"danza","tipo":"solista","foto":"a-latife-zetune.webp"},{"id":"e5ef57ac-f8c2-4b45-961c-2256e705c046","slug":"jeronimo-maya","nombre":"Jerónimo Maya","disciplina":"musica","tipo":"solista","foto":"a-jeronimo-maya.webp"},{"id":"f35afbad-b8ba-4bae-b1c3-d4ee35c2aa7d","slug":"marlon-aldana","nombre":"Marlon Aldana","disciplina":"musica","tipo":"solista","foto":"a-marlon-aldana.webp"}]},{"id":"b5e4f18e-8f49-44f9-b8fd-eb6c97f74aee","slug":"versos-en-el-jardin-microfono-abierto-para-poetas","titulo":"Versos en el Jardín: micrófono abierto para poetas","inicio":"2026-10-09T00:00:00+00:00","fin":null,"termina":"2026-10-09T03:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-versos-en-el-jardin-microfono-abierto-para-poetas.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-versos-en-el-jardin-microfono-abierto-para-poetas.jpg","artistas":[{"id":"ce8c3ff2-9058-400e-8b5d-f195bf755032","slug":"margarita-diaz-de-leon","nombre":"Margarita Díaz de León","disciplina":"letras","tipo":"solista","foto":null}]},{"id":"e427a465-02b9-4b52-8c16-0c0ea7602e2b","slug":"dos-siglos-a-traves-de-la-lente","titulo":"Dos Siglos a Través de la Lente","inicio":"2026-10-09T06:00:00+00:00","fin":"2026-12-10T05:59:00+00:00","termina":"2026-12-10T05:59:00+00:00","precio":null,"clase":"exposicion","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-dos-siglos-a-traves-de-la-lente.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-af0e8c3e-4980-4508-98ed-59b905796692.jpeg","artistas":[]},{"id":"42bcc9dd-bbd9-4f51-8af4-af5a63f20870","slug":"inauguracion-dos-siglos-a-traves-de-la-lente","titulo":"Inauguración: Dos siglos a través de la lente","inicio":"2026-10-09T16:00:00+00:00","fin":null,"termina":"2026-10-09T19:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-inauguracion-dos-siglos-a-traves-de-la-lente.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-inauguracion-dos-siglos-a-traves-de-la-lente.jpg","artistas":[]},{"id":"5c89b30a-45ce-4771-9266-1c3634dee095","slug":"recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo-2026-10-09","titulo":"Recorrido nocturno con linterna: un viaje a través del tiempo","inicio":"2026-10-10T02:00:00+00:00","fin":null,"termina":"2026-10-10T05:00:00+00:00","precio":"$100","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo-2026-10-0.jpg","artistas":[]},{"id":"d73d316c-87a6-432a-bb9a-f003b1e29548","slug":"entre-pinceles-y-sabores-taller-con-yanel-villarreal","titulo":"Entre pinceles y sabores, taller con Yanel Villarreal","inicio":"2026-10-10T22:00:00+00:00","fin":null,"termina":"2026-10-11T01:00:00+00:00","precio":"$250","clase":"taller","visible":true,"borrador":false,"padre":null,"van":0,"paso":true,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-entre-pinceles-y-sabores-taller-con-yanel-villarreal.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-entre-pinceles-y-sabores-70b34f477e567e8d34490a3f9978867db68f89b08a1532b255ed4f98cecf4fc4.jpg","artistas":[{"id":"c4f2392d-10fb-48cc-a703-26e4c79a0c3e","slug":"yanel-villarreal","nombre":"Yanel Villarreal","disciplina":"artes_visuales","tipo":"solista","foto":"a-yanel-villarreal.webp"}]},{"id":"4a4139f2-9ba9-4427-9245-9f5b7839c413","slug":"gitanos-mexicanos-2-edicion-pargazz","titulo":"Gitanos mexicanos 2.ª edición: Pargazz","inicio":"2026-10-17T01:00:00+00:00","fin":null,"termina":"2026-10-17T04:00:00+00:00","precio":"$120","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[{"id":"774fa089-641d-407b-9828-b5f9ddd82147","slug":"pargazz","nombre":"Pargazz","disciplina":"musica","tipo":"grupo","foto":"a-pargazz.webp"},{"id":"8ff6d059-b445-498d-bf21-5eb8951aa54f","slug":"oscar-loredo","nombre":"Óscar Loredo","disciplina":"musica","tipo":"solista","foto":null},{"id":"955fb65b-d4ef-4227-9e20-d9c72a992284","slug":"carlos-de-santos","nombre":"Carlos de Santos","disciplina":"musica","tipo":"solista","foto":null}]},{"id":"34008241-622c-453a-af27-eb41d7ac8d30","slug":"pargazz-gitanos-mexicanos-2-edicion","titulo":"Pargazz: Gitanos mexicanos, 2ª Edición","inicio":"2026-10-17T01:00:00+00:00","fin":null,"termina":"2026-10-17T04:00:00+00:00","precio":"$120","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-pargazz-gitanos-mexicanos-2-edicion.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-223431ca-0179-4cbd-b6c2-88f8a2d1c9d1.jpeg","artistas":[{"id":"955fb65b-d4ef-4227-9e20-d9c72a992284","slug":"carlos-de-santos","nombre":"Carlos de Santos","disciplina":"musica","tipo":"solista","foto":null},{"id":"8ff6d059-b445-498d-bf21-5eb8951aa54f","slug":"oscar-loredo","nombre":"Óscar Loredo","disciplina":"musica","tipo":"solista","foto":null}]},{"id":"0d436934-008a-49d1-9ffb-b3e36c63855b","slug":"alfeniques-el-dulce-de-la-muerte-actividad-en-familia","titulo":"Alfeñiques, el dulce de la muerte: actividad en familia","inicio":"2026-10-24T17:00:00+00:00","fin":null,"termina":"2026-10-24T20:00:00+00:00","precio":"$100","clase":"taller","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"5f735d1c-d201-4f31-8708-8955f1f1c735","slug":"recorrido-guiado-un-viaje-a-traves-del-tiempo","titulo":"Recorrido guiado: un viaje a través del tiempo","inicio":"2026-10-24T19:00:00+00:00","fin":null,"termina":"2026-10-24T22:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"27458608-08af-48ce-9744-031d4c77dd83","slug":"concierto-tercera-juventud-2026-10-29","titulo":"Concierto Tercera Juventud","inicio":"2026-10-29T23:00:00+00:00","fin":null,"termina":"2026-10-30T02:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"afecd242-0062-49ac-9f26-229013e9b2af","slug":"color-y-tradiciones-taller-para-ninas-y-ninos","titulo":"Color y tradiciones: taller para niñas y niños","inicio":"2026-10-30T16:00:00+00:00","fin":null,"termina":"2026-10-30T19:00:00+00:00","precio":"$250","clase":"taller","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[{"id":"c4f2392d-10fb-48cc-a703-26e4c79a0c3e","slug":"yanel-villarreal","nombre":"Yanel Villarreal","disciplina":"artes_visuales","tipo":"solista","foto":"a-yanel-villarreal.webp"}]},{"id":"49a3b8e5-661e-4678-94e3-1d4f5de23ddb","slug":"premiacion-del-8-concurso-de-calaveritas-literarias","titulo":"Premiación del 8.º Concurso de Calaveritas Literarias","inicio":"2026-10-31T00:00:00+00:00","fin":null,"termina":"2026-10-31T03:00:00+00:00","precio":null,"clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[]},{"id":"2bb362fb-9eab-4e45-805d-483656f793bf","slug":"recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo-2026-10-30","titulo":"Recorrido nocturno con linterna: un viaje a través del tiempo","inicio":"2026-10-31T02:00:00+00:00","fin":null,"termina":"2026-10-31T05:00:00+00:00","precio":"$100","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/recorrido-nocturno-con-linterna-un-viaje-a-traves-del-tiempo-f6308770be0f.jpg","artistas":[]},{"id":"6fab5cef-d74a-4178-86d8-3354752fcac0","slug":"merk-local-edicion-catrinas-concurso-al-mejor-disfraz-de-catrina-y-catrin","titulo":"Merk Local edición Catrinas: concurso al mejor disfraz de catrina y catrín","inicio":"2026-10-31T23:00:00+00:00","fin":"2026-11-01T05:00:00+00:00","termina":"2026-11-01T05:00:00+00:00","precio":"$60","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":"e-merk-local-edicion-catrinas-concurso-al-mejor-disfraz-de-catrina-y-catrin.webp","cartelGrande":"https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-merk-local-catrinas-851ea5649567be8530c552b385d7a3a671d3cf04bba676fb25b4fe1d1cb41250.jpg","artistas":[]},{"id":"f7e49c6a-f594-48bd-bdbe-60559d17440d","slug":"art-wine-con-karim-olvera","titulo":"Art & Wine con Karim Olvera","inicio":"2026-10-31T23:00:00+00:00","fin":null,"termina":"2026-11-01T02:00:00+00:00","precio":"$250","clase":"puntual","visible":true,"borrador":false,"padre":null,"van":0,"paso":false,"lugar":{"id":"98fee205-29c1-4fa5-b292-599da200d759","slug":"museo-francisco-cossio","nombre":"Museo Francisco Cossío"},"sitio":"Museo Francisco Cossío","cartel":null,"cartelGrande":null,"artistas":[{"id":"c09a6320-1d45-41df-adee-d9c458bba6a3","slug":"karim-olvera","nombre":"Karim Olvera","disciplina":"artes_visuales","tipo":"solista","foto":"a-karim-olvera.webp"}]}]}],"colores":{"persona":"#6d34c8","a:leo-traeger":"#b0306a","a:oscar-formacio":"#8a5a2b","l:centro-cultural-universitario-bicentenario-cc200":"#2f6f9f","l:museo-francisco-cossio":"#3f7a4f"}}</script>
+<script>
+// OL-374 · Portadas del sistema: el color de la portada y las composiciones por clase (se pega tal cual en el prototipo).
+// La portada mide 100 de ancho por 125 de alto (4:5). Las figuras viven arriba, en el campo (de 0 a H); debajo de H va la zona del título, sin
+// figuras (un recorte lo garantiza). Reglas de la retícula:
+//  · la figura se apoya en la línea H, como un objeto sobre una repisa, y se alinea con el margen del título (M, 12 px de la tarjeta);
+//  · deja libre la esquina del sello de fecha (arriba a la derecha): el área libre tiene forma de L;
+//  · es la más grande que cabe en esa L, con su proporción.
+// Cada composición declara su caja (ancho por alto 1) y dibuja dentro de ella; lo de atrás (escalones oscuros) puede salir por el borde.
+// Devuelve dos capas: atrás y delante (en P8 se mueven distinto).
+const Portadas = (() => {
+  const hexRgb = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+  const rgbHex = (rgb) => `#${rgb.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`;
+  function rgbHsl([r, g, b]) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+    if (!d) return [0, 0, l];
+    const s = d / (1 - Math.abs(2 * l - 1));
+    const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [(h * 60 + 360) % 360, s, l];
+  }
+  function hslRgb([h, s, l]) {
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+    const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
+  const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const lumRgb = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  const lum = (hex) => lumRgb(hexRgb(hex));
+  const contrasteL = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const contraste = (a, b) => contrasteL(lum(a), lum(b));
+  const mezcla = (a, b, t) => { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x.map((v, i) => v + (y[i] - v) * t)); };
+
+  const CREMA = '#f4efd6';
+  const NEGRO = '#1a1a1a';
+  // Las dos bandas de luz de la base. Oscura: luminancia ≤ 0,13 (el título crema queda en 5:1 o más). Clara: ≥ 0,30 (el título negro, en
+  // 5,8:1 o más). Entre 0,15 y 0,23 ni crema ni negro llegan a 4,5:1: la base nunca se queda ahí.
+  const OSCURA = 0.13, CLARA = 0.3;
+
+  /** ¿El color trae un tono que valga, o es gris (cartel en blanco y negro)? Croma de 28 o más, de 255. */
+  const tieneTono = (hex) => { const [r, g, b] = hexRgb(hex); return Math.max(r, g, b) - Math.min(r, g, b) >= 28; };
+
+  /**
+   * La paleta de una portada a partir de su color de origen. Se queda el tono; la saturación va entre 0,32 y 0,7 (medios tonos, como las
+   * tarjetas de lawsofux) y la luz parte de la del color y se lleva a su banda: los amarillos, mostazas y olivos (tono de
+   * 40° a 80°) a la clara, con título y figura en negro (el amarillo con negro de los carteles de la Bauhaus); todos los demás a la oscura, con
+   * título y figura en crema (como lawsofux). Un amarillo oscurecido se vuelve café verdoso y un azul aclarado, pastel: por eso la banda la
+   * dice el tono. Escalones del mismo color: oscuro y más oscuro (como su negro al 20 %), claro (con crema) y el crema.
+   */
+  function paleta(origen) {
+    const [h, s0, l0] = rgbHsl(hexRgb(origen));
+    const s = Math.min(0.7, Math.max(0.32, s0));
+    const L = (l) => lumRgb(hslRgb([h, s, l]));
+    const clara = h >= 40 && h <= 80;
+    // La luz parte de la del color: entre 0,3 y 0,46 en la banda oscura (más hondo que un neón) y entre 0,4 y 0,58 en la clara.
+    let l = clara ? Math.min(0.58, Math.max(0.4, l0)) : Math.min(0.46, Math.max(0.3, l0));
+    if (clara) while (L(l) < CLARA && l < 0.95) l += 0.0025;
+    else while (L(l) > OSCURA && l > 0.05) l -= 0.0025;
+    const base = rgbHex(hslRgb([h, s, l]));
+    return {
+      origen, base, banda: clara ? 'clara' : 'oscura',
+      tinta: clara ? NEGRO : CREMA,
+      f: clara ? NEGRO : CREMA,
+      k: CREMA,
+      c: mezcla(base, CREMA, clara ? 0.5 : 0.34),
+      o: mezcla(base, '#000000', clara ? 0.22 : 0.28),
+      oo: mezcla(base, '#000000', clara ? 0.42 : 0.5),
+      n: NEGRO,
+    };
+  }
+
+  // ===== Primitivas, con el color ya puesto: el SVG se dibuja igual en la tarjeta y en el medidor.
+  const r2 = (n) => Math.round(n * 100) / 100;
+  const pts = (l) => l.map(([x, y]) => `${r2(x)},${r2(y)}`).join(' ');
+  const circ = (cx, cy, r, fill) => `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${fill}"/>`;
+  const rect = (x, y, w, h, fill) => `<rect x="${r2(x)}" y="${r2(y)}" width="${r2(w)}" height="${r2(h)}" fill="${fill}"/>`;
+  const poli = (l, fill) => `<polygon points="${pts(l)}" fill="${fill}"/>`;
+  /** Triángulo con la base en y (de x a x + w) y la punta arriba. */
+  const tri = (x, y, w, a, fill) => poli([[x, y], [x + w, y], [x + w / 2, y - a]], fill);
+  /** El cruce de dos figuras en un tercer tono (la transparencia de la Bauhaus): la figura dibujada solo dentro del recorte. */
+  const cruce = (id, recorte, figura) => `<clipPath id="${id}">${recorte}</clipPath><g clip-path="url(#${id})">${figura}</g>`;
+
+  /**
+   * Un número estable por id (FNV-1a): la misma composición siempre para el mismo evento. Es otro que el de `paletaPropia` de la app
+   * (h × 31 + c): con el mismo, el color de respaldo y el arreglo irían de la mano y dos vecinas podrían salir idénticas.
+   */
+  const hash = (id) => { let h = 0x811c9dc5; for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+
+  /**
+   * Dónde va la caja de una composición (proporción ancho:alto = r:1). Dos maneras de caber en la L libre: a todo lo ancho por debajo del
+   * sello, o a la izquierda del sello con todo el alto. Gana la que da la figura más grande; la caja se apoya en H, en el margen M.
+   */
+  function colocar(r, c) {
+    const hueco = 3;
+    const u1 = Math.min((100 - 2 * c.M) / r, c.H - c.selloAbajo - hueco);
+    const u2 = Math.min((c.selloIzq - hueco - c.M) / r, c.H - c.arriba);
+    const u = Math.max(4, Math.min(c.tope || 1e9, Math.max(u1, u2)));
+    return { x: c.M, y: c.H, u, w: u * r };
+  }
+
+  // ===== A · una figura por clase (Kandinsky). Tres arreglos que comparten las tres clases: «Cruce» (dos figuras iguales que se cruzan; el
+  // cruce en un tercer tono), «Escala» (una grande y oscura que entra por el borde y una chica en crema que se le monta) y la firma de cada
+  // clase (el sol sobre la línea, el cuadro de Albers, la escuadra). Solo la figura de su clase: la clase se lee por la figura; el arreglo
+  // solo cambia de una tarjeta a otra. f(c) recibe c = { H, M, P, id, s, arriba, selloIzq, selloAbajo }.
+  const A = {
+    festival: [
+      {
+        nombre: 'Cruce', caja: 1.59,
+        idea: 'Dos círculos iguales que se cruzan sobre la línea del título; el cruce, en un tercer tono.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.59, c), r = u / 2, cy = y - r, x1 = x + r, x2 = x1 + 1.18 * r;
+          return [[circ(x1, cy, r, P.o)], [circ(x2, cy, r, P.f), cruce(`${id}x`, circ(x1, cy, r, '#000'), circ(x2, cy, r, P.c))]];
+        },
+      },
+      {
+        nombre: 'Escala', caja: 1,
+        idea: 'Un círculo grande y oscuro que entra por el borde izquierdo y uno chico en crema que se le monta, apoyado en la línea.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1, c);
+          const R = 0.62 * u, cx = x + 0.08 * u, cy = y - 0.5 * u, r = 0.29 * u, x2 = x + u - r, y2 = y - r;
+          return [[circ(cx, cy, R, P.o)], [circ(x2, y2, r, P.f), cruce(`${id}x`, circ(cx, cy, R, '#000'), circ(x2, y2, r, P.c))]];
+        },
+      },
+      {
+        nombre: 'Horizonte', caja: 1.31,
+        idea: 'Un círculo entero sobre la línea y dos mayores detrás que la línea corta: el sol que sale, el público alrededor.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1.31, c), r = 0.345 * u, cx = x + 1.9 * r, cy = y - r;
+          return [[circ(cx, cy, r * 1.9, P.o), circ(cx, cy, r * 1.45, P.c)], [circ(cx, cy, r, P.f)]];
+        },
+      },
+    ],
+    exposicion: [
+      {
+        nombre: 'Cruce', caja: 1.2,
+        idea: 'Dos cuadrados iguales, uno más alto que el otro, que se cruzan; el cruce, en un tercer tono.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.2, c), s = u / 1.3, y1 = y - u, x2 = x + 0.56 * s, y2 = y - s;
+          return [[rect(x, y1, s, s, P.o)], [rect(x2, y2, s, s, P.f), cruce(`${id}x`, rect(x, y1, s, s, '#000'), rect(x2, y2, s, s, P.c))]];
+        },
+      },
+      {
+        nombre: 'Escala', caja: 1,
+        idea: 'Un cuadrado grande y oscuro que entra por el borde izquierdo y uno chico en crema que se le monta, apoyado en la línea.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1, c);
+          const S = u / 0.86, x1 = x - 0.32 * S, y1 = y - u, s = 0.48 * S, x2 = x1 + S - 0.42 * s, y2 = y - s;
+          return [[rect(x1, y1, S, S, P.o)], [rect(x2, y2, s, s, P.f), cruce(`${id}x`, rect(x1, y1, S, S, '#000'), rect(x2, y2, s, s, P.c))]];
+        },
+      },
+      {
+        nombre: 'Cuadro', caja: 1,
+        idea: 'Un cuadrado alineado con el título y otro adentro, bajado hacia el pie (el homenaje al cuadrado de Josef Albers).',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1, c), d = u * 0.5;
+          return [[], [rect(x, y - u, u, u, P.f), rect(x + (u - d) / 2, y - u + (u - d) * 0.7, d, d, P.o)]];
+        },
+      },
+    ],
+    taller: [
+      {
+        nombre: 'Cruce', caja: 1.5,
+        idea: 'Un triángulo hacia arriba y otro hacia abajo que se cruzan sobre la línea; el cruce, en un tercer tono.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.5, c), w = u * 1.155, x2 = x + 0.3 * w;
+          const arriba = (fill) => tri(x, y, w, u, fill);
+          const abajo = (fill) => poli([[x2, y - u], [x2 + w, y - u], [x2 + w / 2, y]], fill);
+          return [[abajo(P.o)], [arriba(P.f), cruce(`${id}x`, abajo('#000'), arriba(P.c))]];
+        },
+      },
+      {
+        nombre: 'Escala', caja: 1.1,
+        idea: 'Un triángulo recto grande y oscuro que entra por el borde izquierdo (su diagonal) y uno chico en crema que se le monta.',
+        f: (c) => {
+          const { P, id } = c, { x, y, u } = colocar(1.1, c);
+          const W1 = 1.25 * u, x1 = x - 0.3 * W1, a = 0.56 * u, w = a * 1.155, x2 = x1 + W1 - w * 0.6;
+          const grande = (fill) => poli([[x1, y], [x1 + W1, y], [x1, y - u]], fill);
+          return [[grande(P.o)], [tri(x2, y, w, a, P.f), cruce(`${id}x`, grande('#000'), tri(x2, y, w, a, P.c))]];
+        },
+      },
+      {
+        nombre: 'Escuadra', caja: 1.18,
+        idea: 'La escuadra de dibujo: un triángulo recto con su hueco, apoyado en la línea y alineado con el título.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1.18, c), w = 1.18 * u, g = 0.17;
+          const hueco = [[x + w * g, y - u * g * 0.62], [x + w * (1 - g * 2.1), y - u * g * 0.62], [x + w * g, y - u * (1 - g * 2.1)]];
+          return [[], [poli([[x, y], [x + w, y], [x, y - u]], P.f), poli(hueco, P.base)]];
+        },
+      },
+    ],
+  };
+
+  /** Una retícula que llena la L libre: filas que caben en el alto y columnas que caben a lo ancho (menos las que tapa el sello). */
+  function reticula(c, paso, tam, maxFilas, maxCols) {
+    const filas = Math.max(2, Math.min(maxFilas, Math.floor((c.H - c.arriba + (paso - tam)) / paso)));
+    const y0 = c.H - filas * paso + (paso - tam);
+    const celdas = [];
+    for (let i = 0; i < filas; i++) {
+      const y = y0 + i * paso;
+      const limite = y < c.selloAbajo + 2 ? c.selloIzq - 3 : 100 - c.M;
+      const cols = Math.min(maxCols, Math.floor((limite - c.M + (paso - tam)) / paso));
+      for (let j = 0; j < cols; j++) celdas.push({ i, j, x: c.M + j * paso, y, filas });
+    }
+    return { celdas, filas };
+  }
+
+  // ===== B · patrones (lawsofux). Tres arreglos que comparten las tres clases: «Anidados» (la figura repetida hacia adentro, en escalones de
+  // tono), «Retícula» (muchas iguales y unas cuantas en crema: semejanza; las «partículas» del pedido) y «Ritmo» (una hilera que crece).
+  const B = {
+    festival: [
+      {
+        nombre: 'Anidados', caja: 1,
+        idea: 'Círculos que se oscurecen hacia el centro, con un punto crema (la tarjeta de Doherty en lawsofux).',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1, c), R = u / 2, cx = x + R, cy = y - R;
+          return [[circ(cx, cy, R, P.c), circ(cx, cy, R * 0.74, P.o)], [circ(cx, cy, R * 0.48, P.oo), circ(cx, cy, R * 0.2, P.f)]];
+        },
+      },
+      {
+        nombre: 'Retícula', caja: 0,
+        idea: 'Una retícula de puntos oscuros y unos cuantos crema en diagonal (semejanza): un programa de muchos actos.',
+        f: (c) => {
+          const { P, s } = c, paso = 11.2, r = 3.8, { celdas, filas } = reticula(c, paso, 2 * r, 6, 7);
+          const d = s % 3, atras = [], delante = [];
+          for (const k of celdas) { const crema = k.j - (filas - 1 - k.i) === d; (crema ? delante : atras).push(circ(k.x + r, k.y + r, r, crema ? P.f : P.o)); }
+          return [atras, delante];
+        },
+      },
+      {
+        nombre: 'Ritmo', caja: 2.5,
+        idea: 'Una hilera de círculos que crecen sobre la línea; el último, crema.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(2.5, c), tam = [0.28, 0.44, 0.67, 1], hueco = 0.04 * u;
+          const atras = [], delante = [];
+          let xx = x;
+          tam.forEach((k, i) => { const r = (u * k) / 2, ult = i === tam.length - 1; (ult ? delante : atras).push(circ(xx + r, y - r, r, ult ? P.f : i === 2 ? P.c : P.o)); xx += 2 * r + hueco; });
+          return [atras, delante];
+        },
+      },
+    ],
+    exposicion: [
+      {
+        nombre: 'Anidados', caja: 1,
+        idea: 'Cuatro cuadrados anidados y bajados hacia el pie, en escalones del mismo color (el homenaje al cuadrado de Albers).',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1, c);
+          const l = [[1, P.oo], [0.76, P.o], [0.52, P.c], [0.28, P.f]].map(([k, col]) => { const t = u * k, m = (u - t) / 2; return rect(x + m, y - u + m * 1.5, t, t, col); });
+          return [l.slice(0, 2), l.slice(2)];
+        },
+      },
+      {
+        nombre: 'Retícula', caja: 0,
+        idea: 'Una pared de cuadros oscuros y uno grande en crema (semejanza): la obra que se mira.',
+        f: (c) => {
+          const { P, s } = c, paso = 12, lado = 9.2, { celdas, filas } = reticula(c, paso, lado, 5, 6);
+          const abajo = celdas.filter((k) => k.i >= filas - 2);
+          const cols = Math.max(2, ...abajo.map((k) => k.j + 1));
+          const gj = s % (cols - 1), gi = filas - 2 - ((s >> 3) % Math.max(1, filas - 2));
+          const dentro = (k) => k.i >= gi && k.i <= gi + 1 && k.j >= gj && k.j <= gj + 1;
+          const atras = celdas.filter((k) => !dentro(k)).map((k) => rect(k.x, k.y, lado, lado, P.o));
+          const k0 = celdas.find((k) => k.i === gi && k.j === gj) || celdas[0];
+          return [atras, [rect(k0.x, k0.y, paso + lado, paso + lado, P.f)]];
+        },
+      },
+      {
+        nombre: 'Ritmo', caja: 2.5,
+        idea: 'Una hilera de cuadrados que crecen sobre la línea, como cuadros colgados; el último, crema.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(2.5, c), tam = [0.28, 0.44, 0.67, 1], hueco = 0.06 * u;
+          const atras = [], delante = [];
+          let xx = x;
+          tam.forEach((k, i) => { const l = u * k, ult = i === tam.length - 1; (ult ? delante : atras).push(rect(xx, y - l, l, l, ult ? P.f : i === 2 ? P.c : P.o)); xx += l + hueco; });
+          return [atras, delante];
+        },
+      },
+    ],
+    taller: [
+      {
+        nombre: 'Anidados', caja: 1.155,
+        idea: 'Triángulos anidados y bajados hacia la base, en escalones del mismo color.',
+        f: (c) => {
+          const { P } = c, { x, y, u } = colocar(1.155, c), w = 1.155 * u;
+          const l = [[1, P.oo], [0.74, P.o], [0.5, P.c], [0.26, P.f]].map(([k, col]) => { const a = u * k, ww = w * k; return tri(x + (w - ww) / 2, y - (u - a) * 0.18, ww, a, col); });
+          return [l.slice(0, 2), l.slice(2)];
+        },
+      },
+      {
+        nombre: 'Retícula', caja: 0,
+        idea: 'Una retícula de triángulos oscuros y unos cuantos crema en diagonal (semejanza).',
+        f: (c) => {
+          const { P, s } = c, paso = 12, w = 9.6, a = 8.4, { celdas, filas } = reticula(c, paso, a, 6, 7);
+          const d = s % 3, atras = [], delante = [];
+          for (const k of celdas) { const crema = k.j - (filas - 1 - k.i) === d; (crema ? delante : atras).push(tri(k.x, k.y + a, w, a, crema ? P.f : P.o)); }
+          return [atras, delante];
+        },
+      },
+      {
+        nombre: 'Ritmo', caja: 4,
+        idea: 'Una tira de triángulos que se alternan, arriba y abajo (teselado); uno crema.',
+        f: (c) => {
+          const { P, s } = c, { x, y, u } = colocar(4, c), n = 7, w = u, a = u * 0.92;
+          const atras = [], delante = [];
+          const elegido = 2 * (s % 4);
+          for (let i = 0; i < n; i++) {
+            const xx = x + (i * w) / 2, arriba = i % 2 === 0;
+            const l = arriba ? [[xx, y], [xx + w, y], [xx + w / 2, y - a]] : [[xx, y - a], [xx + w, y - a], [xx + w / 2, y]];
+            const col = i === elegido ? P.f : arriba ? P.o : P.c;
+            (i === elegido ? delante : atras).push(poli(l, col));
+          }
+          return [atras, delante];
+        },
+      },
+    ],
+  };
+
+  return { hexRgb, rgbHex, rgbHsl, hslRgb, lum, lumRgb, contraste, contrasteL, mezcla, tieneTono, paleta, hash, colocar, A, B, CREMA, NEGRO, circ, rect, poli, tri };
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  const D = JSON.parse(document.getElementById('datos').textContent);
+  const RUTA = 'tu-anio-propuestas/';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const svg = (d) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const I = {
+    izquierda: svg('<path d="M15 6l-6 6 6 6"/>'),
+    derecha: svg('<path d="M9 6l6 6-6 6"/>'),
+    baja: svg('<path d="M7 10l5 5 5-5"/>'),
+    compartir: svg('<path d="M12 3v12M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/>'),
+    puntos: svg('<circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/>'),
+    estrella: svg('<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>'),
+    lapiz: svg('<path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/>'),
+    ojo: svg('<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/>'),
+    bandera: svg('<path d="M5 21V4h11l-1.5 3.5L16 11H5"/>'),
+    cerrar: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+    calendario: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+    regalo: svg('<rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 13h18M12 9v12M7.5 9a2.5 2.5 0 1 1 2.5-2.5V9M16.5 9a2.5 2.5 0 1 0-2.5-2.5V9"/>'),
+  };
+  const SIMBOLO = `<svg viewBox="0 0 1035 795" aria-hidden="true"><use href="#sn"/></svg>`;
+  $('sn-trazo').setAttribute('d', D.simbolo.trazo);
+
+  // ===== Ejercicios y preajustes. No hay «Hoy»: «Tu año» no existe en producción.
+  const PROPUESTA = { p: 'anio', f: '4x5', c: 'calma', e: 'crema', d: 'mas', n: true, q: 'gestiona', o: 'seccion' };
+  const CLAVES = Object.keys(PROPUESTA);
+  // Firma del founder (12 de oct, noche): «Te acepto porque no es importante ahora. Vamos a avanzar» → «Tu año» v2 tal como la propuesta.
+  const PRESETS = { propuesta: { nombre: 'Propuesta', e: { ...PROPUESTA } }, firmada: { nombre: 'Firmada', e: { ...PROPUESTA } } };
+  const PORQUE = {
+    propuesta: 'Por qué: calma (C): una imagen dice una cosa; el número grande es la que importa y lo demás acompaña, chico; la figura de las portadas va en su esquina, del color del sujeto, sin pisar texto. Crema (E): la crema y el negro de las portadas del sistema leen bien en el feed y en la historia, y el color del sujeto queda como acento, no como fondo. «Tu 2026» (P) dice lo que la persona espera de un «Tu año» tipo Spotify y, mientras el año no acaba, aclara desde cuándo cuenta («hasta el 12 de oct»); el mes queda como opción para quien quiera presumir octubre. Publicación 4:5 (F) es el formato que firmaste para los flyers; la historia 9:16 se arma con las mismas zonas y respeta lo que Instagram tapa arriba y abajo. La pinta Bauhaus (E) es la de las portadas del sistema que ya están en producción: la imagen se reconoce como de la app sin poner un logotipo enorme. Las cifras con «lo más» (D) cuentan algo que una lista de títulos no cuenta: dónde más fuiste, con quién, qué mes; la lista cabe en la historia. Con nombre y foto (N): es la cara de quien comparte. Solo quien gestiona la ficha (Q) la saca de su propio año: es un «Tu», no una ficha pública; la persona desde su perfil. Se ofrece dentro de «Trayectoria» / «Historial» abiertos (O), donde ya está mirando su pasado, y en Perfil para la persona.',
+    firmada: 'Firmada el 12 de oct por la noche, tal como la segunda propuesta: calma sobre crema, «Tu 2026» con el número protagonista, publicación 4:5, cifras y lo más, nombre y foto, solo quien gestiona, desde la sección. Pasa a código como OL-394.',
+  };
+  const EJERCICIOS = [
+    { k: 'p', t: 'P · El periodo', d: 'Año: «Tu 2026» y, mientras no acabe, «hasta el 12 de oct». Mes: «Tu octubre». Hasta hoy: «Tu año en Somos Nosotrxs» con todo desde que entraste.', opciones: [['anio', 'Año'], ['mes', 'Este mes'], ['todo', 'Hasta hoy']], f: 'Pedido del founder (8 de oct): «Tu año» tipo Spotify.' },
+    { k: 'f', t: 'F · El formato', d: 'Publicación 4:5 (1080×1350) para el feed; historia 9:16 (1080×1920) con 250 px libres arriba y 340 abajo, donde Instagram pone su interfaz.', opciones: [['4x5', 'Publicación 4:5'], ['9x16', 'Historia 9:16']], f: 'Doc 52 §3.1: publicación ahora; la historia «queda para después», pero aquí sale de las mismas zonas.' },
+    { k: 'c', t: 'C · La composición', d: 'Calma: un solo número protagonista, los otros dos chicos debajo, una línea de «lo más» y la figura de las portadas chica en su esquina, sin tocar el texto. Cartel: una banda de color arriba con la figura grande y el título; los números abajo sobre crema. Pila: solo tipografía, los números apilados a la izquierda con su palabra al lado.', opciones: [['calma', 'Calma'], ['cartel', 'Cartel'], ['pila', 'Pila']], f: 'Founder (12 de oct, sobre la primera vuelta): «composición deficiente, saturada y poco legible». La primera vuelta ponía la figura detrás de los números sobre violeta pleno y tres tarjetas iguales.' },
+    { k: 'e', t: 'E · El color', d: 'Crema: fondo crema y texto negro, el color del sujeto solo en la figura y en un acento. Color: el fondo del color del sujeto con texto crema (como una portada del sistema). Fotos: el mosaico de carteles atrás, con velo, solo en «Cartel».', opciones: [['crema', 'Crema'], ['color', 'Color'], ['fotos', 'Fotos']] },
+    { k: 'd', t: 'D · Qué dice', d: 'Cifras: eventos, lugares y artistas (en el artista: fechas, lugares y cuántos fueron; en el lugar: eventos, artistas y cuántos fueron). Con «lo más»: además dónde más, con quién más y el mes más movido. Lista: las cifras y los primeros títulos.', opciones: [['cifras', 'Solo cifras'], ['mas', 'Cifras y lo más'], ['lista', 'Cifras y lista']] },
+    { k: 'n', t: 'N · Nombre y foto arriba', d: 'La foto redonda y el nombre de quien comparte (tú, el artista o el lugar). Sin ellos, solo el título.' },
+    { k: 'q', t: 'Q · Quién puede sacarla', d: 'Solo quien gestiona: la persona desde su perfil, el artista o el lugar desde su ficha si la gestionan. Cualquiera: desde cualquier ficha («El 2026 de Leo Traeger»), con el nombre siempre.', opciones: [['gestiona', 'Solo quien gestiona'], ['cualquiera', 'Cualquiera']] },
+    { k: 'o', t: 'O · Dónde se abre', d: 'En la sección: un botón «Tu año» al final de «Trayectoria» / «Historial» abiertos (y en Perfil para la persona). En las acciones: un círculo «Tu año» junto a Compartir. En el menú «···». Aviso en Inicio: un banner como el de compartir, solo en diciembre. Toca «Dónde se abre» arriba para verlo.', opciones: [['seccion', 'En la sección'], ['acciones', 'Junto a Compartir'], ['menu', 'En el menú ···'], ['inicio', 'Aviso en Inicio']] },
+  ];
+  const igual = (a, b) => CLAVES.every((k) => a[k] === b[k]);
+  const presetDe = (e) => (igual(PRESETS.firmada.e, e) ? 'firmada' : null);
+  const NOMBRE_OPCION = { p: { anio: '', mes: 'P mes', todo: 'P hasta hoy' }, f: { '4x5': '', '9x16': 'F historia' }, c: { calma: '', cartel: 'C cartel', pila: 'C pila' }, e: { crema: '', color: 'E color', fotos: 'E fotos' }, d: { mas: '', cifras: 'D cifras', lista: 'D lista' }, q: { gestiona: '', cualquiera: 'Q cualquiera' }, o: { seccion: '', acciones: 'O junto a Compartir', menu: 'O menú', inicio: 'O Inicio' } };
+  const listaDe = (e) => { const l = []; for (const k of CLAVES) { if (NOMBRE_OPCION[k]) { if (NOMBRE_OPCION[k][e[k]]) l.push(NOMBRE_OPCION[k][e[k]]); } else if (e[k] !== PROPUESTA[k]) l.push(e[k] ? k.toUpperCase() : `sin ${k.toUpperCase()}`); } return l.join(' · '); };
+
+  const LLAVE_ESTADO = 'tu-anio-propuestas:estado:1';
+  const leer = (llave) => { try { const v = localStorage.getItem(llave); return v ? JSON.parse(v) : null; } catch { return null; } };
+  const guardar = (llave, valor) => { try { localStorage.setItem(llave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
+
+  // ===== Los sujetos: la persona (tú), dos artistas y dos lugares.
+  const SUJETOS = [
+    { k: 'persona', tipo: 'persona', nombre: D.persona.nombre, foto: D.persona.fotoArchivo, color: null, id: 'persona', eventos: D.pasados },
+    ...D.artistas.map((a) => ({ k: `a:${a.slug}`, tipo: 'artista', nombre: a.nombre, foto: a.foto, color: null, id: a.id, eventos: a.eventos.filter((e) => e.paso && !e.borrador), sub: a })),
+    ...D.lugares.map((l) => ({ k: `l:${l.slug}`, tipo: 'lugar', nombre: l.nombre, foto: l.portada, color: null, id: l.id, eventos: l.eventos.filter((e) => e.paso && !e.borrador), sub: l })),
+  ];
+  const estado = { e: { ...PROPUESTA }, sujeto: 'persona', pantalla: 'entrada' };
+  const guardado = leer(LLAVE_ESTADO);
+  if (guardado && typeof guardado === 'object') { for (const k of CLAVES) if (k in guardado) estado.e[k] = guardado[k]; if (SUJETOS.some((s) => s.k === guardado.sujeto)) estado.sujeto = guardado.sujeto; }
+  for (const k of Object.keys(NOMBRE_OPCION)) if (!(estado.e[k] in NOMBRE_OPCION[k])) estado.e[k] = PROPUESTA[k];
+
+  // ===== Fechas en la zona de San Luis.
+  const f = (op) => new Intl.DateTimeFormat('es-MX', { timeZone: D.zona, ...op });
+  const fMesLargo = f({ month: 'long' });
+  const fDiaMes = f({ day: 'numeric', month: 'short' });
+  const fAnio = f({ year: 'numeric' });
+  const fClaveMes = new Intl.DateTimeFormat('en-CA', { timeZone: D.zona, year: 'numeric', month: '2-digit' });
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const mesDe = (iso) => fMesLargo.format(new Date(iso));
+  const claveMes = (iso) => fClaveMes.format(new Date(iso));
+  const anioDe = (iso) => fAnio.format(new Date(iso));
+  const AHORA_MES = claveMes(D.ahora), AHORA_ANIO = anioDe(D.ahora);
+  const diaMes = (iso) => fDiaMes.format(new Date(iso)).replace('.', '');
+  const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+
+  // ===== Lo que dice la imagen, por sujeto y periodo.
+  function resumen(s, v) {
+    const todos = s.eventos;
+    const lista = v.p === 'anio' ? todos.filter((e) => anioDe(e.inicio) === AHORA_ANIO) : v.p === 'mes' ? todos.filter((e) => claveMes(e.inicio) === AHORA_MES) : todos;
+    const ordenada = [...lista].sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio));
+    const cuenta = (xs) => { const m = new Map(); for (const x of xs) if (x) m.set(x, (m.get(x) || 0) + 1); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+    const lugares = cuenta(ordenada.map((e) => e.lugar?.nombre));
+    const artistas = cuenta(ordenada.flatMap((e) => (e.artistas || []).filter((a) => a.id !== s.id).map((a) => a.nombre)));
+    const meses = cuenta(ordenada.map((e) => claveMes(e.inicio)));
+    const fueron = ordenada.reduce((n, e) => n + (e.van || 0), 0);
+    const titulo = v.p === 'anio' ? `Tu ${AHORA_ANIO}` : v.p === 'mes' ? `Tu ${mesDe(D.ahora)}` : 'Tu año';
+    const tituloAjeno = v.p === 'anio' ? `${AHORA_ANIO} de ${s.nombre}` : v.p === 'mes' ? `${cap(mesDe(D.ahora))} de ${s.nombre}` : `El año de ${s.nombre}`;
+    const desde = ordenada.length ? (v.p === 'mes' ? `${plural(ordenada.length, 'día', 'días')} con planes` : `del ${diaMes(ordenada[0].inicio)} al ${diaMes(D.ahora)}`) : 'todavía sin nada';
+    const cifras = s.tipo === 'persona'
+      ? [[ordenada.length, 'eventos', 'evento'], [lugares.length, 'lugares', 'lugar'], [artistas.length, 'artistas', 'artista']]
+      : s.tipo === 'artista' ? [[ordenada.length, 'fechas', 'fecha'], [lugares.length, 'lugares', 'lugar'], [fueron, 'fueron', 'fue']]
+      : [[ordenada.length, 'eventos', 'evento'], [artistas.length, 'artistas', 'artista'], [fueron, 'fueron', 'fue']];
+    const mas = [];
+    if (lugares[0] && s.tipo !== 'lugar') mas.push([s.tipo === 'persona' ? 'Donde más fuiste' : 'Donde más tocó', lugares[0][0], lugares[0][1] > 1 ? `${lugares[0][1]} veces` : '']);
+    if (artistas[0]) mas.push([s.tipo === 'persona' ? 'A quien más viste' : s.tipo === 'artista' ? 'Con quien más' : 'Quien más pasó', artistas[0][0], artistas[0][1] > 1 ? `${artistas[0][1]} veces` : '']);
+    if (meses.length > 1) mas.push(['El mes más movido', cap(mesDe(`${meses[0][0]}-15T12:00:00Z`)), plural(meses[0][1], s.tipo === 'persona' ? 'evento' : 'fecha', s.tipo === 'persona' ? 'eventos' : 'fechas')]);
+    return { lista: ordenada, cifras, mas, titulo, tituloAjeno, desde, lugares, artistas, meses, fueron };
+  }
+
+  // ===== La imagen (lienzo de 1080): la composición (C) y el color (E). La figura es la de las portadas del sistema, chica y en su sitio.
+  const paletaDe = (s) => Portadas.paleta(D.colores[s.k] || '#6d34c8');
+  function figura(s, tam, colorFondo) {
+    const P = paletaDe(s);
+    const clase = s.tipo === 'lugar' ? 'exposicion' : s.tipo === 'artista' ? 'festival' : 'taller';
+    const lista = Portadas.B[clase] || Portadas.B.festival;
+    const comp = lista[Portadas.hash(s.k) % lista.length];
+    const [atras, delante] = comp.f({ H: 100, M: 0, P, s: Portadas.hash(s.k), arriba: 0, selloIzq: 100, selloAbajo: 0, tope: 100 });
+    return `<svg class="figura" viewBox="0 0 100 100" width="${tam}" height="${tam}" aria-hidden="true">${colorFondo ? `<rect width="100" height="100" fill="${colorFondo}"/>` : ''}${atras.join('')}${delante.join('')}</svg>`;
+  }
+  function htmlLienzo(s, v) {
+    const r = resumen(s, v);
+    const esPersona = s.tipo === 'persona';
+    const titulo = esPersona || v.q === 'gestiona' ? r.titulo : r.tituloAjeno;
+    const P = paletaDe(s);
+    const color = v.e === 'color';
+    const estilo = `--acento:${P.base};--base:${color ? P.base : '#f4efd6'};--tinta:${color ? P.tinta : '#1a1a1a'};--suave:${color ? (P.banda === 'clara' ? 'rgba(26,26,26,0.7)' : 'rgba(244,239,214,0.75)') : '#5c5c5c'}`;
+    const [n1, n2, n3] = r.cifras;
+    const palabra = (c) => (c[0] === 1 ? c[2] : c[1]);
+    const fraseHero = esPersona ? `${palabra(n1)} a los que fuiste` : s.tipo === 'artista' ? `${palabra(n1)} en ${r.lugares.length === 1 ? 'un lugar' : `${r.lugares.length} lugares`}` : `${palabra(n1)} con ${r.artistas.length === 1 ? 'un artista' : `${r.artistas.length} artistas`}`;
+    const secundarios = [n2, n3].filter((c) => c[0] > 0).map((c) => `<div class="sec"><b>${c[0]}</b><small>${esc(palabra(c))}</small></div>`).join('');
+    const unMas = v.d !== 'cifras' && r.mas.length ? `<p class="mas-l">${esc(r.mas[0][0])}: <b>${esc(r.mas[0][1])}</b>${r.mas[0][2] ? ` · ${esc(r.mas[0][2])}` : ''}</p>` : '';
+    const tope = v.f === '9x16' ? 6 : 4;
+    const lista = v.d === 'lista' && r.lista.length ? `<ul class="lista-l">${[...r.lista].reverse().slice(0, tope).map((e) => `<li>${esc(e.titulo)} <span>· ${esc(diaMes(e.inicio))}</span></li>`).join('')}${r.lista.length > tope ? `<li><span>y ${r.lista.length - tope} más</span></li>` : ''}</ul>` : '';
+    const fotos = r.lista.map((e) => e.cartel).filter(Boolean).slice(0, 8);
+    const mosaico = v.e === 'fotos' && fotos.length ? `<div class="mosaico" aria-hidden="true">${fotos.map((c) => `<img src="${RUTA}${c}" alt="" loading="lazy">`).join('')}</div>` : '';
+    const quien = v.n ? `<div class="quien-l${s.foto ? '' : ' sin-foto'}">${s.foto ? `<img src="${RUTA}${s.foto}" alt="">` : ''}<span><small>${esc(esPersona ? 'Somos Nosotrxs' : s.tipo === 'artista' ? 'Artista · Somos Nosotrxs' : 'Lugar · Somos Nosotrxs')}</small><b>${esc(s.nombre)}</b></span></div>` : `<p class="ceja-l">Somos Nosotrxs</p>`;
+    const pie = `<div class="pie-l"><span class="marca">${SIMBOLO}</span><span class="dominio">somosnosotros.org</span></div>`;
+    const tapas = v.f === '9x16' ? 'style="--tapa-arriba:290px;--tapa-abajo:380px"' : '';
+    let cuerpo = '';
+    if (v.c === 'calma') {
+      cuerpo = `<div class="contenido calma" ${tapas}>${quien}<div class="hero"><div class="hero-num"><b>${n1[0]}</b><p>${esc(fraseHero)}</p><p class="desde">${esc(titulo)} · ${esc(r.desde)}</p></div>${figura(s, 300)}</div><div class="secs">${secundarios}</div>${unMas}${lista}${pie}</div>`;
+    } else if (v.c === 'cartel') {
+      cuerpo = `<div class="banda" style="background:${P.base}">${mosaico}${figura(s, v.f === '9x16' ? 620 : 520, null)}<p class="titulo-banda" style="color:${P.tinta}">${esc(titulo)}</p></div><div class="contenido cartel" ${tapas}>${quien}<div class="tres">${[n1, n2, n3].filter((c) => c[0] > 0 || c === n1).map((c) => `<div class="sec"><b>${c[0]}</b><small>${esc(palabra(c))}</small></div>`).join('')}</div><p class="desde">${esc(r.desde)}</p>${unMas}${lista}${pie}</div>`;
+    } else {
+      cuerpo = `<div class="contenido pila" ${tapas}>${quien}<p class="titulo-pila">${esc(titulo)}<span>${esc(r.desde)}</span></p><div class="apilado">${[n1, n2, n3].filter((c) => c[0] > 0 || c === n1).map((c, i) => `<div class="fila-p${i === 0 ? ' acento' : ''}"><b>${c[0]}</b><small>${esc(palabra(c))}</small></div>`).join('')}</div>${unMas}${lista}${pie}</div>`;
+    }
+    return `<div class="lienzo f${v.f} c-${v.c}${color ? ' color' : ''}" style="${estilo}" data-lienzo>${cuerpo}</div>`;
+  }
+  const htmlMarco = (s, v) => `<div class="marco-lienzo f${v.f}">${htmlLienzo(s, v)}</div>`;
+
+  // ===== La pantalla de la app: dónde se abre (la ficha con la sección abierta) y la vista previa.
+  function htmlEntrada(s, v) {
+    const esPersona = s.tipo === 'persona';
+    const r = resumen(s, { ...v, p: 'todo' });
+    const nombreSeccion = esPersona ? 'Tus planes' : s.tipo === 'artista' ? 'Trayectoria' : 'Historial';
+    const cuenta = esPersona ? `${plural(r.lista.length, 'evento al que fuiste', 'eventos a los que fuiste')}` : s.tipo === 'artista' ? `${plural(r.lista.length, 'fecha', 'fechas')} · ${plural(r.lugares.length, 'lugar', 'lugares')}` : `${plural(r.lista.length, 'evento', 'eventos')} · ${plural(r.artistas.length, 'artista', 'artistas')}`;
+    const botonSeccion = v.o === 'seccion' ? `<button type="button" class="boton-ano" data-accion="abrir-ano">${I.regalo}${esc(esPersona ? 'Tu año' : v.q === 'gestiona' ? 'Tu año' : `El año de ${s.nombre.split(' ')[0]}`)}</button>` : '';
+    const accionAno = v.o === 'acciones' ? `<button type="button" class="accion-ano" data-accion="abrir-ano"><i>${I.regalo}</i>Tu año</button>` : '';
+    const menu = v.o === 'menu' ? `<ul class="menu-f" aria-label="Menú"><li>${I.lapiz}Editar</li><li class="resaltado">${I.regalo}<button type="button" data-accion="abrir-ano" style="font:inherit;color:var(--primario)">Tu año</button></li><li>${I.bandera}Reportar</li></ul>` : '';
+    const banner = v.o === 'inicio' ? `<p class="banner-ano"><span class="sn">${SIMBOLO}</span><span><b>Tu ${AHORA_ANIO} ya está listo</b><small>Compártelo con tus amigxs · solo en diciembre</small></span><button type="button" class="boton-ano" data-accion="abrir-ano">Ver</button></p>` : '';
+    const quien = v.q === 'gestiona' ? (esPersona ? 'Tu perfil' : `Gestionas esta ficha`) : 'Cualquiera que mire la ficha';
+    const renglones = [...r.lista].reverse().slice(0, 3).map((e) => `<li class="renglon pasado"><div>${e.cartel ? `<img class="mini" src="${RUTA}${e.cartel}" alt="">` : `<span class="mini sin"><img src="${RUTA}simbolo-sn-blanco.svg" alt=""></span>`}<b data-m="renglon">${esc(e.titulo)}</b><small class="meta">${I.calendario}${esc(diaMes(e.inicio))}</small>${e.lugar ? `<small class="sitio">${esc(e.lugar.nombre)}</small>` : ''}</div></li>`).join('');
+    return `<div class="pantalla fc" data-ficha="${esc(s.k)}">
+      <header class="barra-ficha" style="background:var(--fondo-contenido);position:static"><button type="button" class="volver" style="color:var(--texto);text-shadow:none" data-accion="nada">${I.izquierda}${esc(esPersona ? 'Perfil' : s.tipo === 'artista' ? 'Artistas' : 'Lugares')}</button><span></span><button type="button" class="mas" style="color:var(--texto);filter:none" data-accion="nada" aria-label="Más">${I.puntos}</button></header>
+      ${menu}
+      <div class="cuerpo">
+        ${banner}
+        <p class="pie-registro">${esc(quien)} · ${esc(s.nombre)}</p>
+        ${accionAno ? `<div class="acciones-f"><button type="button" data-accion="nada"><i>${I.compartir}</i>Compartir</button>${accionAno}</div>` : ''}
+        <section class="seccion pasado-sec abierto" aria-label="${esc(nombreSeccion)}"><h2>${esc(nombreSeccion)}<span class="cuenta"> · ${esc(cuenta)}</span></h2><ul>${renglones}</ul>${r.lista.length > 3 ? `<p class="vacio">y ${r.lista.length - 3} más…</p>` : ''}${botonSeccion}</section>
+      </div>
+      <div class="relleno"></div>
+    </div><p class="aviso" role="status" aria-live="polite"></p>`;
+  }
+  function htmlPrevia(s, v) {
+    const r = resumen(s, v);
+    return `<div class="pantalla previa" data-ficha="${esc(s.k)}">
+      <header class="barra-p"><button type="button" data-accion="volver" aria-label="Atrás">${I.izquierda}</button><b>${esc(s.tipo === 'persona' || v.q === 'gestiona' ? r.titulo : r.tituloAjeno)}</b><button type="button" data-accion="volver" aria-label="Cerrar">${I.cerrar}</button></header>
+      <div class="cuerpo-p">${htmlMarco(s, v)}</div>
+      <div class="pie-p"><div class="formatos" role="group" aria-label="Formato"><button type="button" data-accion="formato" data-f="4x5" aria-pressed="${v.f === '4x5'}">Publicación</button><button type="button" data-accion="formato" data-f="9x16" aria-pressed="${v.f === '9x16'}">Historia</button></div><div class="fila"><button type="button" class="principal" data-accion="compartir">${I.compartir}Compartir</button><button type="button" class="secundario" data-accion="guardar">Guardar</button></div><button type="button" class="texto" data-accion="otra">Otra pinta</button></div>
+    </div><p class="aviso" role="status" aria-live="polite"></p>`;
+  }
+
+  // ===== Los dos teléfonos: la imagen a la izquierda, la app a la derecha.
+  const telHoy = $('tel-hoy');
+  const telMix = $('tel-mix');
+  const mm = { medio: matchMedia('(min-width: 760px)'), ancho: matchMedia('(min-width: 1180px)') };
+  const modo = () => (mm.ancho.matches ? 'ancho' : mm.medio.matches ? 'medio' : 'movil');
+  const sujetoActual = () => SUJETOS.find((x) => x.k === estado.sujeto) || SUJETOS[0];
+  function pintar() {
+    const s = sujetoActual(), v = estado.e;
+    telHoy.className = 'tel';
+    telHoy.innerHTML = `<div class="pantalla solo-imagen">${htmlMarco(s, v)}</div><p class="aviso" role="status"></p>`;
+    const viejo = telMix.querySelector('.pantalla');
+    const arriba = viejo && viejo.dataset.ficha === s.k ? viejo.scrollTop : 0;
+    telMix.className = 'tel';
+    telMix.innerHTML = estado.pantalla === 'entrada' ? htmlEntrada(s, v) : htmlPrevia(s, v);
+    telMix.querySelector('.pantalla').scrollTop = arriba;
+    programarMedida();
+  }
+
+  // ===== El medidor.
+  function medir() {
+    const s = sujetoActual(), v = estado.e, r = resumen(s, v);
+    const datos = r.cifras.filter(([n]) => n > 0).length + (v.d === 'mas' ? r.mas.length : v.d === 'lista' ? Math.min(r.lista.length, v.f === '9x16' ? 8 : 4) : 0) + (v.n ? 1 : 0);
+    const toques = v.o === 'seccion' ? 2 : v.o === 'acciones' ? 1 : v.o === 'menu' ? 2 : 1;
+    const lienzo = telHoy.querySelector('[data-lienzo]');
+    let menor = Infinity;
+    if (lienzo) for (const el of lienzo.querySelectorAll('p, b, small, li, span')) { if (!el.textContent.trim()) continue; const px = parseFloat(getComputedStyle(el).fontSize); if (px < menor) menor = px; }
+    return { datos, toques, menor: Number.isFinite(menor) ? Math.round(menor) : null, medida: v.f === '9x16' ? '1080×1920' : '1080×1350' };
+  }
+  let temporizadorMedida = 0;
+  function programarMedida() {
+    clearTimeout(temporizadorMedida);
+    temporizadorMedida = setTimeout(() => {
+      const a = medir();
+      const v = estado.e;
+      $('m-datos').textContent = String(a.datos); $('s-datos').textContent = v.d === 'cifras' ? 'solo cifras' : v.d === 'mas' ? 'cifras y lo más' : 'cifras y lista';
+      $('m-toques').textContent = String(a.toques); $('s-toques').textContent = v.o === 'seccion' ? 'abrir la sección y tocar' : v.o === 'menu' ? 'menú y tocar' : 'un toque';
+      $('m-letra').textContent = a.menor === null ? '–' : `${a.menor} px`; $('s-letra').textContent = a.menor !== null && a.menor < 32 ? 'chica para Instagram' : 'se lee en el feed';
+      $('m-medida').textContent = a.medida; $('s-medida').textContent = v.f === '9x16' ? 'historia, con sus tapas' : 'publicación';
+      window.prototipo.ultimaMedida = a;
+    }, 160);
+  }
+
+  // ===== Toques en los teléfonos.
+  function avisar(tel, texto) {
+    const p = tel.querySelector('.aviso');
+    if (!p) return;
+    p.textContent = texto; p.classList.add('visible'); clearTimeout(p._t); p._t = setTimeout(() => p.classList.remove('visible'), 2600);
+  }
+  function alTocar(ev) {
+    const tel = ev.currentTarget;
+    const el = ev.target.closest('[data-accion]');
+    if (!el || !tel.contains(el)) return;
+    ev.preventDefault();
+    const a = el.dataset.accion;
+    if (a === 'abrir-ano') { estado.pantalla = 'imagen'; pintar(); return; }
+    if (a === 'volver') { estado.pantalla = 'entrada'; pintar(); return; }
+    if (a === 'formato') { aplicar({ ...estado.e, f: el.dataset.f }); return; }
+    if (a === 'compartir') { avisar(tel, 'Aquí se abre la hoja de compartir del teléfono con la imagen como archivo'); return; }
+    if (a === 'guardar') { avisar(tel, 'Aquí se guarda la imagen en Fotos'); return; }
+    if (a === 'otra') { const orden = ['calma', 'cartel', 'pila']; aplicar({ ...estado.e, c: orden[(orden.indexOf(estado.e.c) + 1) % orden.length] }); return; }
+    avisar(tel, 'En este prototipo solo cambia «Tu año»');
+  }
+  for (const tel of [telHoy, telMix]) tel.addEventListener('click', alTocar);
+
+  // ===== Controles.
+  const listaEj = $('ejercicios');
+  listaEj.innerHTML = EJERCICIOS.map((x) => {
+    const extra = x.opciones ? `<span class="opciones o${x.opciones.length}" role="group" aria-label="${esc(x.t)}">${x.opciones.map(([val, nombre]) => `<button type="button" data-opcion="${x.k}" data-valor="${val}" aria-pressed="false">${esc(nombre)}</button>`).join('')}</span>` : '';
+    const control = x.opciones ? '' : `<input type="checkbox" role="switch" id="${x.k}" data-k="${x.k}">`;
+    return `<li><label class="interruptor" ${x.opciones ? '' : `for="${x.k}"`} data-fila="${x.k}"><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small>${x.f ? `<small class="firma">${esc(x.f)}</small>` : ''}${extra}</span>${control}</label></li>`;
+  }).join('');
+  const selSujeto = $('sujeto');
+  selSujeto.innerHTML = SUJETOS.map((s) => `<option value="${esc(s.k)}">${esc(s.tipo === 'persona' ? `Tú (${s.nombre})` : s.nombre)} · ${s.eventos.length} ${s.tipo === 'persona' ? 'eventos' : s.tipo === 'artista' ? 'fechas' : 'eventos'}</option>`).join('');
+  function pintarControles() {
+    for (const x of EJERCICIOS) {
+      const fila = document.querySelector(`[data-fila="${x.k}"]`);
+      if (x.opciones) { for (const b of fila.querySelectorAll('[data-opcion]')) b.setAttribute('aria-pressed', String(estado.e[x.k] === b.dataset.valor)); continue; }
+      $(x.k).checked = !!estado.e[x.k];
+    }
+    const p = presetDe(estado.e);
+    for (const b of document.querySelectorAll('[data-preset]')) b.setAttribute('aria-pressed', String(b.dataset.preset === p));
+    const activos = listaDe(estado.e);
+    const nombre = p ? PRESETS[p].nombre : 'Personalizada';
+    $('combinacion').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}`;
+    $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compárala con «Propuesta».';
+    $('etiqueta-mix').innerHTML = `<b>${esc(nombre)}</b>${activos ? ` · ${esc(activos)}` : ''}`;
+    $('fab-combinacion').textContent = `· ${p ? nombre : 'personalizada'}`;
+    selSujeto.value = estado.sujeto;
+  }
+  function aplicar(e) {
+    estado.e = { ...PROPUESTA, ...e };
+    guardar(LLAVE_ESTADO, { ...estado.e, sujeto: estado.sujeto });
+    pintarControles();
+    pintar();
+  }
+  listaEj.addEventListener('change', (ev) => { const k = ev.target.dataset.k; if (k) aplicar({ ...estado.e, [k]: ev.target.checked }); });
+  listaEj.addEventListener('click', (ev) => { const b = ev.target.closest('[data-opcion]'); if (b) { ev.preventDefault(); aplicar({ ...estado.e, [b.dataset.opcion]: b.dataset.valor }); } });
+  for (const b of document.querySelectorAll('[data-preset]')) b.addEventListener('click', () => aplicar(PRESETS[b.dataset.preset].e));
+  selSujeto.addEventListener('change', () => { estado.sujeto = selSujeto.value; guardar(LLAVE_ESTADO, { ...estado.e, sujeto: estado.sujeto }); pintar(); });
+  $('ir-entrada').addEventListener('click', () => { estado.pantalla = 'entrada'; pintar(); });
+  $('ir-imagen').addEventListener('click', () => { estado.pantalla = 'imagen'; pintar(); });
+
+  // ===== La hoja (en el teléfono). Desde 760 es una columna fija.
+  const hoja = $('hoja'), velo = $('velo'), fab = $('fab');
+  let abierta = false;
+  function abrirHoja() { if (modo() !== 'movil') return; abierta = true; hoja.inert = false; hoja.classList.add('abierta'); velo.classList.add('visible'); fab.setAttribute('aria-expanded', 'true'); $('hoja-titulo').focus({ preventScroll: true }); }
+  function cerrarHoja() { if (modo() !== 'movil' || !abierta) return; abierta = false; hoja.classList.remove('abierta'); velo.classList.remove('visible'); hoja.inert = true; fab.setAttribute('aria-expanded', 'false'); fab.focus({ preventScroll: true }); }
+  fab.addEventListener('click', () => abrirHoja());
+  $('cerrar-hoja').addEventListener('click', cerrarHoja);
+  velo.addEventListener('click', cerrarHoja);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHoja(); });
+
+  // ===== El tamaño.
+  function ajustar() {
+    const m = modo();
+    const escala = m === 'movil' ? 1 : Math.max(0.5, Math.min(1, (innerHeight - 2 * 16 - 30) / 844));
+    $('escena').style.setProperty('--escala', escala.toFixed(4));
+    if (m === 'movil') { telHoy.style.width = `${Math.round(telMix.offsetWidth)}px`; telHoy.style.height = `${Math.round(telMix.offsetHeight)}px`; }
+    else if (m === 'medio') { telHoy.style.width = '390px'; telHoy.style.height = '844px'; }
+    else { telHoy.style.width = ''; telHoy.style.height = ''; }
+    const fijo = m !== 'movil';
+    hoja.inert = !fijo && !abierta;
+    if (fijo) { hoja.removeAttribute('role'); hoja.removeAttribute('aria-modal'); velo.classList.remove('visible'); abierta = false; hoja.classList.remove('abierta'); }
+    else { hoja.setAttribute('role', 'dialog'); hoja.setAttribute('aria-modal', 'true'); }
+    $('col-hoy').inert = m !== 'ancho';
+    $('col-hoy').setAttribute('aria-hidden', String(m !== 'ancho'));
+    programarMedida();
+  }
+  let temporizadorAjuste = 0;
+  addEventListener('resize', () => { clearTimeout(temporizadorAjuste); temporizadorAjuste = setTimeout(ajustar, 120); });
+
+  window.prototipo = {
+    aplicar: (x) => aplicar(typeof x === 'string' ? PRESETS[x].e : x),
+    estado: () => ({ ...estado.e, sujeto: estado.sujeto, pantalla: estado.pantalla }),
+    sujeto: (k) => { estado.sujeto = k; pintar(); },
+    pantalla: (p) => { estado.pantalla = p; pintar(); },
+    medirAhora: () => medir(),
+    abrirHoja: () => abrirHoja(), cerrarHoja: () => cerrarHoja(),
+    ultimaMedida: null,
+  };
+  pintarControles();
+  pintar();
+  ajustar();
+})();
+</script>

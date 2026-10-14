@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { createContext, useState, type ReactNode } from "react";
 import BotonIcono from "./BotonIcono";
 import Hoja from "./Hoja";
 import { IconoPuntos } from "./Iconos";
 import ficha from "./Ficha.module.css";
 import renglon from "./Renglon.module.css";
+
+/**
+ * Cerrar el menú desde una de sus filas: la que hace algo de un toque y lo cuenta fuera de la hoja, en la ficha (OL-391, «Se canceló», con su aviso
+ * y Deshacer). Fuera de un menú no hace nada.
+ */
+export const CerrarMenu = createContext<() => void>(() => {});
 
 /**
  * Menú "···" de la barra de una ficha: lo secundario (editar, reportar, borrar…) en una hoja. Los elementos llegan como <li> ya
@@ -22,7 +28,9 @@ export default function MenuAcciones({ tamano, relieve, className, children }: {
       </BotonIcono>
       {abierto && (
         <Hoja etiqueta="Más acciones" onCerrar={() => setAbierto(false)}>
-          <ul className={`${renglon.tarjeta} ${ficha.menu}`}>{children}</ul>
+          <CerrarMenu.Provider value={() => setAbierto(false)}>
+            <ul className={`${renglon.tarjeta} ${ficha.menu}`}>{children}</ul>
+          </CerrarMenu.Provider>
         </Hoja>
       )}
     </>

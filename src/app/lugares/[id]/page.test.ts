@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
 import Heroe from "@/components/ui/Heroe";
 
@@ -183,12 +183,13 @@ describe("el historial del lugar (OL-390)", () => {
     artistas: artistas.map((a, i) => ({ evento_id: id, orden: i + 1, artista: { ...a, foto: null } })),
   });
 
-  /** El cuerpo del lugar con esos eventos pasados: devuelve lo que pinta su sección de historial, ya resuelta. */
-  async function historial(pasados: ReturnType<typeof pasado>[]) {
-    const { clienteServidor } = await import("@/lib/supabase/servidor");
+  /** El cuerpo del lugar con esos eventos pasados y esa persona mirando: el elemento `Historial` que pinta su sección, ya resuelta. */
+  async function seccionCon(pasados: ReturnType<typeof pasado>[], quien: { id: string; rol: "admin" | "usuario" } | null = null) {
+    const { clienteServidor, usuarioActual } = await import("@/lib/supabase/servidor");
     const { default: Historial } = await import("@/components/Historial");
     const { default: CuerpoLugar } = await import("./CuerpoLugar");
     const previo = vi.mocked(clienteServidor).getMockImplementation()!;
+    if (quien) vi.mocked(usuarioActual).mockResolvedValueOnce({ correo: null, perfil: { id: quien.id, rol: quien.rol, nombre: "Quien mira", foto: null, colonia: null, bio: null } });
     const base = clienteFalso({ lugares: { data: LUGAR }, eventos_artistas: { data: pasados.flatMap((p) => p.artistas) } }, { cuenta_seguidores: { data: 0 }, van_por_evento: { data: [] } });
     const cliente = {
       ...base,
@@ -212,10 +213,16 @@ describe("el historial del lugar (OL-390)", () => {
       const seccion = diferidos.find((d) => d.type.name === "SeccionHistorialLugar")!;
       const el = (await seccion.type(seccion.props)) as { type: unknown; props: Parameters<typeof Historial>[0] };
       expect(el.type).toBe(Historial);
-      return Historial(el.props) as { props: Record<string, unknown> } | null;
+      return el;
     } finally {
       vi.mocked(clienteServidor).mockImplementation(previo);
     }
+  }
+
+  /** Lo que pinta la sección de historial, ya resuelta (sin nadie mirando). */
+  async function historial(pasados: ReturnType<typeof pasado>[]) {
+    const { default: Historial } = await import("@/components/Historial");
+    return Historial((await seccionCon(pasados)).props) as { props: Record<string, unknown> } | null;
   }
 
   it("sin eventos pasados la sección no existe", async () => {
@@ -229,5 +236,53 @@ describe("el historial del lugar (OL-390)", () => {
     expect(raiz?.props.titulo).toBe("Historial");
     expect(raiz?.props.id).toBe("historial");
     expect(raiz?.props.cuenta).toBe("3 eventos · 2 artistas");
+  });
+
+  describe("«Tu año» al final (OL-394)", () => {
+    beforeAll(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-12T20:00:00Z"));
+    });
+    afterAll(() => vi.useRealTimers());
+
+    it("quien gestiona el lugar (su autor o la administración) y con eventos de este año: el botón", async () => {
+      expect((await seccionCon([pasado("a", [])], { id: "autor-1", rol: "usuario" })).props.tuAnio).toBe("/lugares/lugar-de-prueba/tu-anio");
+      expect((await seccionCon([pasado("a", [])], { id: "admin-1", rol: "admin" })).props.tuAnio).toBe("/lugares/lugar-de-prueba/tu-anio");
+    });
+
+    it("sin sesión o quien no lo gestiona: sin botón", async () => {
+      expect((await seccionCon([pasado("a", [])])).props.tuAnio).toBeNull();
+      expect((await seccionCon([pasado("a", [])], { id: "otra", rol: "usuario" })).props.tuAnio).toBeNull();
+    });
+
+    it("solo con eventos del año pasado: sin botón", async () => {
+      const viejo = pasado("a", []);
+      viejo.evento.inicio = "2025-10-09T01:00:00Z";
+      expect((await seccionCon([viejo], { id: "autor-1", rol: "usuario" })).props.tuAnio).toBeNull();
+    });
+  });
+
+  describe("«Informe» en PDF junto a «Tu año» (OL-396)", () => {
+    beforeAll(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-12T20:00:00Z"));
+    });
+    afterAll(() => vi.useRealTimers());
+
+    it("quien gestiona el lugar, con algo pasado aunque sea de otro año: las seis opciones (mes, año, todo × carta, A4) y los nombres del periodo", async () => {
+      const viejo = pasado("a", []);
+      viejo.evento.inicio = "2025-10-09T01:00:00Z";
+      const { documento } = (await seccionCon([viejo], { id: "autor-1", rol: "usuario" })).props;
+      expect(documento?.que).toBe("lugar");
+      expect(documento?.etiquetasPeriodo).toEqual({ mes: "Octubre", anio: "2026", todo: "Todo" });
+      expect(documento?.opciones.map((o) => `${o.periodo}/${o.formato}/${o.paginas}`)).toEqual(["mes/carta/1", "mes/a4/1", "anio/carta/1", "anio/a4/1", "todo/carta/1", "todo/a4/1"]);
+      expect(documento?.opciones[0].archivo).toBe("informe-lugar-de-prueba-2026-10.pdf");
+      expect((await seccionCon([pasado("a", [])], { id: "admin-1", rol: "admin" })).props.documento?.que).toBe("lugar");
+    });
+
+    it("sin sesión o quien no lo gestiona: sin botón", async () => {
+      expect((await seccionCon([pasado("a", [])])).props.documento).toBeNull();
+      expect((await seccionCon([pasado("a", [])], { id: "otra", rol: "usuario" })).props.documento).toBeNull();
+    });
   });
 });

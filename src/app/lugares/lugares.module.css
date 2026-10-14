@@ -1,7 +1,7 @@
 /* ==========================================================================
    Lugares (docs/rediseno/06-lugares-flujo-y-estados.md; docs/rediseno/50, P5b). La fila de contexto es ui/Cabecera; la hoja con la
    lista y la ficha, HojaLugares.module.css.
-   1. La pantalla: fila arriba y mapa debajo · 2. Lo que flota sobre el mapa
+   1. La pantalla: fila arriba y mapa debajo · 2. Lo que flota sobre el mapa · 3. El orden de la lista
    ========================================================================== */
 
 /* 1. Una rejilla de dos filas, la cabecera y el mapa: el mapa llena lo que deja la fila, sin calcular nada (H-14), y acaba donde
@@ -104,4 +104,17 @@
 .nada {
   padding: var(--espacio-2) var(--gutter) var(--espacio-4);
   color: var(--texto-suave);
+}
+
+/* 3. El orden de la lista (OL-400): el desplegable «Cercanos primero ⌄» a la derecha de «N lugares», en la misma celda de la franja de la
+   hoja (va después del asa y la tapa solo donde está), y la línea que dice por qué no hay cercanos, bajo la franja. */
+.orden {
+  align-self: end;
+  justify-self: end;
+  margin-right: calc(var(--gutter) - var(--espacio-1));
+}
+.sinCercanos {
+  padding: 0 var(--gutter) var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
 }

@@ -2,8 +2,9 @@
  * Lo que ya pasó en la ficha de un artista («Trayectoria») y en la de un lugar («Historial»): OL-390, pieza 1 del historial, prototipo firmado
  * `docs/rediseno/prototipos/historial-propuestas.html` (OL-389, bitácora 420: «H1 plegado · H2 propio · H3 por mes · H4 · H5 · K1 todos · Q1
  * fotos»). Todo sale de `eventos`, `eventos_artistas`, `lugares`, `artistas` y `asistencias`, sin tablas nuevas. Aquí solo la lógica que no lee
- * la base: los textos, el orden y la agrupación (la lectura está en `cargarHistorial.ts`). Lo que ya pasó cuenta como realizado; la marca «se
- * canceló» es la pieza 2.
+ * la base: los textos, el orden y la agrupación (la lectura está en `cargarHistorial.ts`). Lo que ya pasó cuenta como realizado salvo que quien
+ * lo gestiona lo marque «se canceló» (OL-391, pieza 2): se queda en la lista, tachado, y no cuenta en las cifras, en la fila de fotos ni en
+ * «Lugares» (ejercicio C1 del prototipo).
  */
 import { hrefArtista } from "./artistas";
 import { esDeVariosDias, horaCorta, ZONA_INICIAL, zonaSegura } from "./fechas";
@@ -37,6 +38,12 @@ export type EventoPasado = {
   artistas: ArtistaDelEvento[];
   /** Cuántos dijeron «Voy». */
   van: number;
+  /** «Se canceló» (OL-391): se queda en su mes, tachado, y no cuenta. */
+  cancelado: boolean;
+  /** Cómo ocurre (`eventos.clase`: puntual, exposición, taller, festival): el informe del lugar (OL-396) aparta el festival marco y nombra los talleres. */
+  clase?: string | null;
+  /** El id del festival del que es parte (con su título en `festival`): el informe del lugar sabe así qué festival tiene actos en el periodo. */
+  festivalId?: string | null;
 };
 
 /** Lo pasado de una ficha: los eventos (lo más reciente primero) y si se llegó al tope de la lectura. */
@@ -51,14 +58,27 @@ export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 
 /** La cuenta con el tope: «200+» si la lectura se llenó (puede haber más), si no el número. */
 const cuenta = (n: number, lleno: boolean, uno: string, varios: string) => (lleno ? `${n}+ ${varios}` : plural(n, uno, varios));
 
-/** El renglón-cabecera de la trayectoria de un artista: «3 fechas · 2 lugares» (sin lugares con ficha, solo las fechas). */
-export function cabeceraTrayectoria(fechas: number, lugares: number, lleno = false): string {
-  return [cuenta(fechas, lleno, "fecha", "fechas"), lugares > 0 ? plural(lugares, "lugar", "lugares") : null].filter(Boolean).join(" · ");
+/**
+ * Lo que ocurrió y lo cancelado, juntos: «2 fechas · 1 cancelado» (C1). Los cancelados solo se nombran si hay alguno; si todo lo pasado se
+ * canceló, solo ellos («1 cancelado»), sin un «0 fechas».
+ */
+function cuentas(realizados: number, cancelados: number, lleno: boolean, uno: string, varios: string): (string | null)[] {
+  return [realizados > 0 || cancelados === 0 ? cuenta(realizados, lleno, uno, varios) : null, cancelados > 0 ? plural(cancelados, "cancelado", "cancelados") : null];
 }
 
-/** El renglón-cabecera del historial de un lugar: «13 eventos · 11 artistas» (sin artistas, solo los eventos). */
-export function cabeceraHistorial(eventos: number, artistas: number, lleno = false): string {
-  return [cuenta(eventos, lleno, "evento", "eventos"), artistas > 0 ? plural(artistas, "artista", "artistas") : null].filter(Boolean).join(" · ");
+/** El renglón-cabecera de la trayectoria de un artista: «3 fechas · 1 cancelado · 2 lugares» (sin lugares con ficha, sin ellos). */
+export function cabeceraTrayectoria(fechas: number, lugares: number, lleno = false, cancelados = 0): string {
+  return [...cuentas(fechas, cancelados, lleno, "fecha", "fechas"), lugares > 0 ? plural(lugares, "lugar", "lugares") : null].filter(Boolean).join(" · ");
+}
+
+/** El renglón-cabecera del historial de un lugar: «13 eventos · 1 cancelado · 11 artistas» (sin artistas, sin ellos). */
+export function cabeceraHistorial(eventos: number, artistas: number, lleno = false, cancelados = 0): string {
+  return [...cuentas(eventos, cancelados, lleno, "evento", "eventos"), artistas > 0 ? plural(artistas, "artista", "artistas") : null].filter(Boolean).join(" · ");
+}
+
+/** Lo que sí ocurrió (lo que cuenta): todo lo pasado menos lo que se marcó «se canceló». */
+export function realizados<T extends Pick<EventoPasado, "cancelado">>(eventos: readonly T[]): T[] {
+  return eventos.filter((e) => !e.cancelado);
 }
 
 /** Los nombres de una lista corta: «A», «A y B», «A, B y 2 más». */
@@ -112,10 +132,13 @@ export function agruparPorMes(eventos: readonly EventoPasado[]): GrupoMes[] {
 /** Por cuántas veces y luego por nombre (como se ordena en español). */
 const porVeces = (a: Presencia, b: Presencia) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, "es");
 
-/** «Se ha presentado en»: los lugares con ficha de sus fechas pasadas, con cuántas veces. Las fechas en un sitio sin ficha no entran. */
+/**
+ * «Se ha presentado en»: los lugares con ficha de sus fechas pasadas, con cuántas veces. Las fechas en un sitio sin ficha no entran, ni las que
+ * se cancelaron.
+ */
 export function lugaresDeTrayectoria(eventos: readonly EventoPasado[]): Presencia[] {
   const porId = new Map<string, Presencia>();
-  for (const e of eventos) {
+  for (const e of realizados(eventos)) {
     if (!e.lugar) continue;
     const p = porId.get(e.lugar.id) ?? { id: e.lugar.id, href: hrefLugar({ id: e.lugar.id, slug: e.lugar.slug }), nombre: e.lugar.nombre, foto: e.lugar.portada, veces: 0 };
     p.veces++;
@@ -124,10 +147,10 @@ export function lugaresDeTrayectoria(eventos: readonly EventoPasado[]): Presenci
   return [...porId.values()].sort(porVeces);
 }
 
-/** «Han pasado por aquí»: los artistas de los eventos pasados de un lugar, con cuántas veces. */
+/** «Han pasado por aquí»: los artistas de los eventos pasados de un lugar, con cuántas veces (lo cancelado no cuenta: no pasaron). */
 export function artistasDelHistorial(eventos: readonly EventoPasado[]): Presencia[] {
   const porId = new Map<string, Presencia>();
-  for (const e of eventos) {
+  for (const e of realizados(eventos)) {
     for (const a of e.artistas) {
       const p = porId.get(a.id) ?? { id: a.id, href: hrefArtista({ id: a.id, slug: a.slug }), nombre: a.nombre, foto: a.foto, veces: 0 };
       p.veces++;
@@ -142,7 +165,10 @@ export function otrosArtistas(e: Pick<EventoPasado, "artistas">, artistaId: stri
   return e.artistas.filter((a) => a.id !== artistaId).map((a) => a.nombre);
 }
 
-/** K1 «todos»: el número «Lugares» del artista cuenta los lugares con ficha de todas sus fechas visibles, pasadas y por venir. */
+/**
+ * K1 «todos»: el número «Lugares» del artista cuenta los lugares con ficha de todas sus fechas visibles, pasadas y por venir. Lo pasado llega ya
+ * sin lo cancelado (`realizados`).
+ */
 export function contarLugares(...listas: readonly (readonly { lugar_id: string | null }[])[]): number {
   return new Set(listas.flat().map((e) => e.lugar_id).filter(Boolean)).size;
 }

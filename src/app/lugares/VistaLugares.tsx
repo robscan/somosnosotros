@@ -15,11 +15,12 @@ import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
 import { EsqueletoCaja } from "@/components/ui/Esqueleto";
 import { IconoEncuadrar, IconoUbicacion } from "@/components/ui/Iconos";
+import MenuOpciones from "@/components/ui/MenuOpciones";
 import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { agruparLugares, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, puntoDeCercania, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { agruparLugares, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ORDENES_LUGARES, ordenarLugares, ordenEfectivo, puntoDeCercania, SIN_CERCANOS, TIPOS, type ConEventos, type EleccionLugares, type LugarLista, type OrdenLugares } from "@/lib/lugares";
 import { avisoDeUbicacion, leerUbicacionCercana, permisoConcedido, type EstadoGeo } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -67,8 +68,11 @@ type Props = {
   abrirFicha: (idOSlug: string) => Promise<PiezasFicha | null>;
 };
 
-/** Lo que Lugares recuerda de la pantalla al salir de ella (a una ficha, a otra pestaña) y repone al volver. */
-type Memoria = { conEventos: ConEventos | null; soloSigo: boolean; hoja: DondeEstaba & { ficha: string | null } };
+/** Lo que Lugares recuerda de la pantalla al salir de ella (a una ficha, a otra pestaña) y repone al volver; `orden`, el que se eligió en el
+ *  desplegable (null: ninguno, el de la ubicación). */
+type Memoria = { conEventos: ConEventos | null; soloSigo: boolean; orden?: OrdenLugares | null; hoja: DondeEstaba & { ficha: string | null } };
+
+const esOrden = (v: unknown): v is OrdenLugares => ORDENES_LUGARES.some((o) => o.clave === v);
 
 /** El tipo que trae la URL (`?tipo=`): solo vale si existe. */
 function tipoDeLaUrl(params: { get(nombre: string): string | null }): string | null {
@@ -121,6 +125,12 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
     void permisoConcedido().then(setConcedido);
   }, [hayFresca]);
   const punto = puntoDeCercania(puntoPedido, fresca, concedido);
+  // El orden de la lista (OL-400): el que la persona eligió en el desplegable o, sin elección, cercanos con ubicación y próximos sin ella.
+  const [ordenElegido, setOrdenElegido] = useState<OrdenLugares | null>(null);
+  const orden = ordenEfectivo(ordenElegido, punto !== null);
+  /** Se pidió «Cercanos primero» sin ubicación y no la hubo: la línea bajo la cabecera lo dice. */
+  const [sinCercanos, setSinCercanos] = useState(false);
+  const [pidiendoCercanos, setPidiendoCercanos] = useState(false);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const [encuadre, setEncuadre] = useState<Encuadre | null>(null);
@@ -235,11 +245,38 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
     } else pedirUbicacion();
   }
   const notaGeo = avisoDeUbicacion(geo);
+  /**
+   * El desplegable del orden (OL-400). «Cercanos primero» sin ubicación la pide por el mismo camino que «Mi ubicación» (con una fresca guardada no
+   * vuelve a preguntar): concedida, ordena por distancia y enseña los km (el punto azul aparece, la cámara no se mueve); negada, sin respuesta o
+   * ya negada de antes (el navegador no vuelve a preguntar), sigue «Próximos primero» con su línea. La hoja enseña la lista, como al filtrar.
+   */
+  function elegirOrden(nuevo: OrdenLugares) {
+    setSinCercanos(false);
+    mostrarResultado(null);
+    if (nuevo !== "cerca" || punto) {
+      setOrdenElegido(nuevo);
+      return;
+    }
+    setPidiendoCercanos(true);
+    leerUbicacionCercana()
+      .then(
+        (p) => {
+          setPunto(p);
+          setOrdenElegido("cerca");
+        },
+        () => {
+          setOrdenElegido("pronto");
+          setSinCercanos(true);
+        },
+      )
+      .finally(() => setPidiendoCercanos(false));
+  }
 
   // Al volver de una ficha o de otra pestaña: los filtros, la ficha abierta y la hoja donde estaba (altura y desplazamiento).
-  useMemoriaPantalla<Memoria>("lugares", { conEventos, soloSigo, hoja: { ficha: abierta?.lugar.slug || abierta?.lugar.id || null, detente: hoja.detente, y: hoja.y } }, (r) => {
+  useMemoriaPantalla<Memoria>("lugares", { conEventos, soloSigo, orden: ordenElegido, hoja: { ficha: abierta?.lugar.slug || abierta?.lugar.id || null, detente: hoja.detente, y: hoja.y } }, (r) => {
     setConEventos(r.conEventos === "hoy" || r.conEventos === "semana" ? r.conEventos : null);
     setSoloSigo(!!r.soloSigo);
+    setOrdenElegido(esOrden(r.orden) ? r.orden : null);
     if (!r.hoja) return;
     setRestaurar({ detente: r.hoja.detente, y: r.hoja.y });
     const lugar = r.hoja.ficha ? lugares.find((l) => (l.slug || l.id) === r.hoja.ficha) : undefined;
@@ -280,6 +317,10 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
           ciudad={ciudad}
           eleccion={eleccion}
           punto={punto}
+          orden={orden}
+          onOrden={elegirOrden}
+          pidiendoCercanos={pidiendoCercanos}
+          sinCercanos={sinCercanos}
           vez={vez}
           encuadre={encuadre}
           tapaAbajo={hoja.cubre}
@@ -317,6 +358,13 @@ type PropsCuerpo = {
   ciudad: Ciudad;
   eleccion: EleccionLugares;
   punto: Punto | null;
+  /** Cómo va la lista (OL-400) y el desplegable que lo cambia. */
+  orden: OrdenLugares;
+  onOrden: (orden: OrdenLugares) => void;
+  /** Se está pidiendo la ubicación para «Cercanos primero». */
+  pidiendoCercanos: boolean;
+  /** Se pidió «Cercanos primero» y no hubo ubicación: la línea bajo la cabecera. */
+  sinCercanos: boolean;
   vez: number;
   encuadre: Encuadre | null;
   /** Lo que la hoja tapa del mapa por abajo: cada encuadre lo deja libre. */
@@ -343,8 +391,8 @@ type PropsCuerpo = {
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
-  const { grupos, km } = useMemo(() => agruparLugares(visibles, punto), [visibles, punto]);
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, orden, onOrden, pidiendoCercanos, sinCercanos, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
+  const { grupos, km } = useMemo(() => agruparLugares(visibles, punto, orden), [visibles, punto, orden]);
   const enTira = useMemo(() => extra?.destacados.map((d) => d.id) ?? [], [extra?.destacados]);
   const cantidad = visibles.length === 1 ? "1 lugar" : `${visibles.length} lugares`;
   // «Encuadrar los lugares» sale cuando ninguno de los lugares (con una ficha abierta, el suyo) queda en lo que se ve del mapa, y los trae de vuelta.
@@ -368,22 +416,15 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
       </div>
       <HojaLugares
         ref={hojaRef}
-        resumen={
-          visibles.length === 0 ? (
-            "Ningún lugar"
-          ) : (
-            <>
-              {cantidad}
-              {punto && <small> · los más cercanos primero</small>}
-            </>
-          )
-        }
+        resumen={visibles.length === 0 ? "Ningún lugar" : cantidad}
+        orden={visibles.length > 0 && <MenuOpciones className={styles.orden} etiqueta="Orden de la lista" opciones={ORDENES_LUGARES} valor={orden} onElegir={onOrden} ocupado={pidiendoCercanos} />}
         ficha={ficha && <FichaHoja key={ficha.lugar.id} lugar={ficha.lugar} piezas={ficha.piezas} onCerrar={onCerrarFicha} />}
         entrada={entrada}
         desde={restaurar}
         alAsentar={alAsentar}
         alLejos={alLejos}
       >
+        {sinCercanos && visibles.length > 0 && <p className={styles.sinCercanos}>{SIN_CERCANOS}</p>}
         {grupos.length > 0 ? (
           <ListaLugares grupos={grupos} km={km} seguidos={extra?.seguidos ?? null} avisos={extra?.avisos ?? null} accionesPendientes={!extra} alAbrir={extra ? onAbrir : undefined} />
         ) : lugares.length === 0 ? (

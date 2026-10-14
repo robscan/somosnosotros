@@ -93,3 +93,9 @@ a.ligadoPasado {
 .ligadoPasado > b {
   color: var(--texto-suave);
 }
+/* Lo ligado que ya pasó y se canceló (OL-391): el título tachado, como en el historial (`ui/SeCancelo`); debajo, «Se canceló». */
+.ligadoCancelado > b {
+  text-decoration: line-through;
+  text-decoration-color: var(--texto-suave);
+  text-decoration-thickness: 1px;
+}

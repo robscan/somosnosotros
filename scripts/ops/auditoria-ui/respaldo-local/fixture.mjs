@@ -29,6 +29,12 @@ const primeroDelMesQueViene = primeroDelMes + new Date(Date.UTC(Number(hoyLocal.
 export const ANA = "11111111-1111-4111-8111-111111111111";
 // OL-341: la segunda cuenta con sesión (el caso de dos cuentas que publican el mismo evento): su cookie es `cookieDe(MARCOS)`.
 export const MARCOS = "22222222-2222-4222-8222-222222222222";
+// OL-401: la cuenta de administración del respaldo (el grafo cultural de /admin/grafo): su cookie es `cookieDe(ADMIN)`. Su perfil solo lo
+// devuelve `mi_perfil` (no está en `perfiles`), así ninguna lista ni cuenta de las pantallas que se miden cambia.
+export const ADMIN = "55555555-5555-4555-8555-555555555555";
+// Una segunda cuenta de administración sin ninguna asistencia (el aviso «Aún no tienes asistencias» del interruptor «Yo»): `cookieDe(ADMIN_SIN)`.
+export const ADMIN_SIN = "77777777-7777-4777-8777-777777777777";
+const perfilAdmin = { id: ADMIN, nombre: "Admin de prueba", foto: null, colonia: null, bio: null, rol: "admin", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) };
 const perfiles = [
   { id: ANA, nombre: "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) },
   { id: MARCOS, nombre: "Marcos Ledesma", foto: null, colonia: "Centro", bio: null, rol: "usuario", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: null },
@@ -96,11 +102,12 @@ const E = {
   // («Xantolo»), el caso de la bitácora 405 junto a la mostaza de «Un mundo para mí» (vecinas casi del mismo color).
   reflejo: "bbbb0001-0000-4000-8000-000000000039",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen, autor = MARCOS, visible = true, clase = "puntual", evento_padre_id = null, inaugura_id = null, borrador = false, colores = null, cancelado = false }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
-    clase, evento_padre_id, inaugura_id, borrador, retirado_por_admin: false,
+    // OL-391: «se canceló» (solo en lo que ya pasó).
+    clase, evento_padre_id, inaugura_id, borrador, retirado_por_admin: false, cancelado,
     // OL-360: los colores guardados de su cartel (null = sin calcular: la tarjeta usa su paleta propia).
     colores_cartel: colores,
     id, slug, titulo, inicio, fin, termina: fin, descripcion, imagen: imagen ?? imagenes.eventos[slug] ?? null, precio, enlace, creado_por: autor, visible,
@@ -163,18 +170,27 @@ const EP = {
   acordeonAche: "bbbb0003-0000-4000-8000-000000000006",
   jardin: "bbbb0003-0000-4000-8000-000000000007",
   rocioCcub: "bbbb0003-0000-4000-8000-000000000008",
+  // OL-391: una exposición que ya cerró en la Casa del Poeta y su inauguración, que se canceló (lo ligado que se canceló: «Se canceló»).
+  agua: "bbbb0003-0000-4000-8000-000000000009",
+  aguaInaug: "bbbb0003-0000-4000-8000-000000000010",
 };
 eventos.push(
   evento({ id: EP.noche, slug: "noche-de-acordeon-y-guitarra", titulo: "Noche de acordeón y guitarra", dias: -2, hora: "20:00", lugar_id: L.ache, creadoHace: 12, imagen: null }),
   evento({ id: EP.retratos, slug: "retratos-de-barrio-en-vivo", titulo: "Retratos de barrio en vivo", dias: -5, hora: "19:00", lugar_id: L.ache, creadoHace: 15, imagen: null }),
   // Un festival que ya pasó (del mes anterior), con dos actos en el Bicentenario: la ceja del festival en los renglones.
+  // OL-391: el cierre del festival se canceló: en su «Ya pasó», tachado y con «Se canceló» delante de la hora; no cuenta en el historial del
+  // Bicentenario ni en la trayectoria de 0Backside0.
   { ...evento({ id: EP.otono, slug: "festival-otono-sonoro", titulo: "Festival Otoño Sonoro", dias: primeroDelMes - 9, hora: "18:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, clase: "festival" }), fin: iso(fecha(primeroDelMes - 7, "23:00")), termina: iso(fecha(primeroDelMes - 7, "23:00")) },
   evento({ id: EP.otonoDuo, slug: "feleal-y-abril-merlot-a-duo", titulo: "Feleal y Abril Merlot a dúo", dias: primeroDelMes - 9, hora: "19:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono }),
-  evento({ id: EP.otonoCierre, slug: "cierre-otono-sonoro", titulo: "Cierre de Otoño Sonoro", dias: primeroDelMes - 7, hora: "20:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono }),
-  evento({ id: EP.acordeonAche, slug: "feleal-acordeon-en-ache", titulo: "Feleal: acordeón en ACHE", dias: primeroDelMes - 4, hora: "20:00", lugar_id: L.ache, creadoHace: 35, imagen: null }),
+  evento({ id: EP.otonoCierre, slug: "cierre-otono-sonoro", titulo: "Cierre de Otoño Sonoro", dias: primeroDelMes - 7, hora: "20:00", lugar_id: L.ccub, creadoHace: 40, imagen: null, evento_padre_id: EP.otono, cancelado: true }),
+  // OL-391: se canceló. Feleal: «3 fechas · 1 cancelado · 2 lugares» (ACHE sigue por la «Noche de acordeón y guitarra»).
+  evento({ id: EP.acordeonAche, slug: "feleal-acordeon-en-ache", titulo: "Feleal: acordeón en ACHE", dias: primeroDelMes - 4, hora: "20:00", lugar_id: L.ache, creadoHace: 35, imagen: null, cancelado: true }),
   // En un sitio sin ficha: cuenta en la trayectoria, pero no en «Se ha presentado en».
   evento({ id: EP.jardin, slug: "feleal-en-el-jardin-de-san-juan-de-dios", titulo: "Feleal en el Jardín de San Juan de Dios", dias: primeroDelMes - 12, hora: "12:00", sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, creadoHace: 45, imagen: null }),
   evento({ id: EP.rocioCcub, slug: "rocio-lozano-canciones-de-ida-y-vuelta", titulo: "Rocío Lozano: canciones de ida y vuelta", dias: primeroDelMes - 3, hora: "19:30", lugar_id: L.ccub, creadoHace: 30, imagen: null }),
+  // OL-391: la exposición abrió sin su inauguración (se canceló) y ya cerró; en la Casa del Poeta, que ninguna pantalla medida enseña.
+  { ...evento({ id: EP.agua, slug: "cartografias-del-agua", titulo: "Cartografías del agua", dias: primeroDelMes - 20, hora: "00:00", lugar_id: L.poeta, creadoHace: 50, imagen: null, clase: "exposicion", inaugura_id: EP.aguaInaug, descripcion: "Grabado y mapas dibujados a mano sobre los ríos de la Huasteca." }), fin: iso(fecha(primeroDelMes - 2, "23:59")), termina: iso(fecha(primeroDelMes - 2, "23:59")) },
+  evento({ id: EP.aguaInaug, slug: "inauguracion-cartografias-del-agua", titulo: "Inauguración: Cartografías del agua", dias: primeroDelMes - 20, hora: "19:00", lugar_id: L.poeta, creadoHace: 50, imagen: null, cancelado: true }),
 );
 /** OL-321: el horario del MUNI Museo Universitario, de martes a domingo de 10:00 a 18:00 (la exposición «Ecos de papel» lo toma). */
 const lugares_horarios = [{ id: "aaaa0002-0000-4000-8000-000000000001", lugar_id: L.muni, dias: [2, 3, 4, 5, 6, 7], abre: "10:00:00", cierra: "18:00:00", creado_en: hace(10) }];
@@ -262,7 +278,17 @@ const asistencias = [
   { id: "dddd0003-0000-4000-8000-000000000001", usuario_id: MARCOS, evento_id: EP.noche, estado: "voy", creado_en: hace(4) },
   { id: "dddd0003-0000-4000-8000-000000000002", usuario_id: "33333333-3333-4333-8333-333333333333", evento_id: EP.noche, estado: "voy", creado_en: hace(4) },
   { id: "dddd0003-0000-4000-8000-000000000003", usuario_id: MARCOS, evento_id: EP.otonoDuo, estado: "voy", creado_en: hace(30) },
+  // OL-394: el año de Marcos («Tu año» en su perfil): seis «Voy» que ya pasaron, tres en ACHE («Donde más fuiste: ACHE Galería · 3 veces»), dos
+  // en el Bicentenario y uno en un sitio sin ficha. Nunca Ana (su perfil se mide).
+  { id: "dddd0004-0000-4000-8000-000000000001", usuario_id: MARCOS, evento_id: EP.retratos, estado: "voy", creado_en: hace(6) },
+  { id: "dddd0004-0000-4000-8000-000000000002", usuario_id: MARCOS, evento_id: EP.acordeonAche, estado: "voy", creado_en: hace(20) },
+  { id: "dddd0004-0000-4000-8000-000000000003", usuario_id: MARCOS, evento_id: EP.rocioCcub, estado: "voy", creado_en: hace(20) },
+  { id: "dddd0004-0000-4000-8000-000000000004", usuario_id: MARCOS, evento_id: EP.jardin, estado: "voy", creado_en: hace(25) },
 ];
+// OL-394: Marcos gestiona la ficha de Feleal y la de ACHE Galería (cuentas ligadas), para ver «Tu año» al final de «Trayectoria» y de
+// «Historial». Ana no gestiona ninguna: las fichas que se miden no cambian.
+const artistas_cuentas = [{ artista_id: A.feleal, perfil_id: MARCOS, creado_en: hace(30) }];
+const lugares_cuentas = [{ lugar_id: L.ache, perfil_id: MARCOS, creado_en: hace(30) }];
 const seguimientos = [
   { id: "eeee0001-0000-4000-8000-000000000001", usuario_id: ANA, lugar_id: L.miguelito, artista_id: null, creado_en: hace(5) },
   { id: "eeee0001-0000-4000-8000-000000000002", usuario_id: ANA, lugar_id: null, artista_id: A.osslp, creado_en: hace(5) },
@@ -272,7 +298,33 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas: [], lugares_cuentas: [], bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+};
+
+// OL-401: lo que el grafo cultural lee con la llave de servicio (`cargarGrafo`, que salta las reglas por fila): filas de más que SOLO ve quien manda
+// esa llave, para que la pantalla tenga qué dibujar sin cambiar nada de lo que miden las demás. Tres personas con «Voy» en un mismo evento (el
+// umbral de anonimato: sus líneas salen), una con uno solo (no sale ninguna), una que solo sigue (no se dibuja) y seis artistas sin eventos
+// (el nodo «por conectar»). Todo inventado.
+export const LLAVE_SERVICIO = "llave-servicio-inventada";
+const persona = (n) => `99999999-0000-4000-8000-00000000000${n}`;
+export const extrasServicio = {
+  artistas: ["Colectivo Sol Naciente", "Lía Montoya", "Trío Los Alamos", "Mateo Quiroz", "Cía. Teatro de Bolsillo", "Dúo Aurora"].map((nombre, i) => ({ id: `cccc0009-0000-4000-8000-00000000000${i + 1}`, nombre, disciplina: ["musica", "artes_visuales", "musica", "letras", "teatro", "danza"][i], ciudad: CIUDAD, visible: true })),
+  asistencias: [
+    { id: "dddd0009-0000-4000-8000-000000000001", usuario_id: persona(1), evento_id: E.leonora, estado: "voy", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000002", usuario_id: persona(2), evento_id: E.leonora, estado: "me_interesa", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000003", usuario_id: persona(1), evento_id: E.colocaos, estado: "voy", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000004", usuario_id: persona(3), evento_id: E.oca, estado: "voy", creado_en: hace(3) },
+    // La cuenta de administración del respaldo va a «Leonora» y a «Los colocaos» (los dos con 3 o más): su punto «Tú» tiene líneas.
+    { id: "dddd0009-0000-4000-8000-000000000007", usuario_id: ADMIN, evento_id: E.leonora, estado: "voy", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000008", usuario_id: ADMIN, evento_id: E.colocaos, estado: "me_interesa", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000005", usuario_id: persona(1), evento_id: E.feleal, estado: "voy", creado_en: hace(3) },
+    { id: "dddd0009-0000-4000-8000-000000000006", usuario_id: persona(2), evento_id: E.feleal, estado: "voy", creado_en: hace(3) },
+  ],
+  seguimientos: [
+    { id: "eeee0009-0000-4000-8000-000000000001", usuario_id: persona(4), lugar_id: L.paz, artista_id: null, creado_en: hace(3) },
+    { id: "eeee0009-0000-4000-8000-000000000002", usuario_id: persona(4), lugar_id: null, artista_id: A.feleal, creado_en: hace(3) },
+    { id: "eeee0009-0000-4000-8000-000000000003", usuario_id: persona(1), lugar_id: L.ccub, artista_id: null, creado_en: hace(3) },
+  ],
 };
 
 /** Qué columna del padre apunta a cada tabla (para los `select` anidados). */
@@ -332,7 +384,7 @@ export const rpcs = {
     return [...grupos].map(([ciudad, artistas]) => ({ ciudad, artistas }));
   },
   // Respaldo sintético de la cuenta autenticada (la del token: Ana o, con su cookie, Marcos). Los permisos reales se prueban en PostgreSQL.
-  mi_perfil: (_args, t, { sub } = {}) => t.perfiles.find(p => p.id === (sub ?? ANA)) ?? null,
+  mi_perfil: (_args, t, { sub } = {}) => (sub === ADMIN ? perfilAdmin : sub === ADMIN_SIN ? { ...perfilAdmin, id: ADMIN_SIN, nombre: "Admin sin asistencias" } : t.perfiles.find(p => p.id === (sub ?? ANA)) ?? null),
 
   van_por_evento: ({ ids }) => (ids || []).map((id) => ({ evento_id: id, n: van(id) })).filter((x) => x.n > 0),
   tira_destacados: ({ p_tipo }) => (p_tipo === "eventos" ? destacados.map((d) => ({ id: d.evento_id, motivo: "elegido", hasta: null, van: van(d.evento_id) })) : []),
@@ -452,10 +504,10 @@ function enMemoria(t, p_evento, p_datos, p_operacion, autor = ANA, quien = []) {
 // ---------- sesión inventada (JWT HS256 sin firma válida: la app solo lo decodifica y pregunta a /auth/v1/user) ----------
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const ahora = Math.floor(Date.now() / 1000);
-const CORREOS = { [ANA]: "ana@example.com", [MARCOS]: "marcos@example.com" };
+const CORREOS = { [ANA]: "ana@example.com", [MARCOS]: "marcos@example.com", [ADMIN]: "admin@example.com", [ADMIN_SIN]: "admin-sin@example.com" };
 /** La sesión inventada de una cuenta del respaldo (Ana por omisión; Marcos para el caso de dos cuentas, OL-341). */
 export function sesionDe(sub = ANA) {
-  const claims = { iss: "http://127.0.0.1:8823/auth/v1", sub, aud: "authenticated", exp: ahora + 365 * 86400, iat: ahora, email: CORREOS[sub], phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, role: "authenticated", aal: "aal1", amr: [{ method: "otp", timestamp: ahora }], session_id: sub === ANA ? "33333333-3333-4333-8333-333333333333" : "44444444-4444-4444-8444-444444444444", is_anonymous: false };
+  const claims = { iss: "http://127.0.0.1:8823/auth/v1", sub, aud: "authenticated", exp: ahora + 365 * 86400, iat: ahora, email: CORREOS[sub], phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, role: "authenticated", aal: "aal1", amr: [{ method: "otp", timestamp: ahora }], session_id: sub === ANA ? "33333333-3333-4333-8333-333333333333" : sub === ADMIN ? "66666666-6666-4666-8666-666666666666" : sub === ADMIN_SIN ? "88888888-8888-4888-8888-888888888888" : "44444444-4444-4444-8444-444444444444", is_anonymous: false };
   const jwt = `${b64({ alg: "HS256", typ: "JWT" })}.${b64(claims)}.ZmlybWFfZGVfcHJ1ZWJh`;
   const usuario = { id: sub, aud: "authenticated", role: "authenticated", email: CORREOS[sub], email_confirmed_at: hace(30), phone: "", confirmed_at: hace(30), last_sign_in_at: hace(0), app_metadata: claims.app_metadata, user_metadata: {}, identities: [], created_at: hace(30), updated_at: hace(0), is_anonymous: false };
   return { access_token: jwt, token_type: "bearer", expires_in: 365 * 86400, expires_at: claims.exp, refresh_token: `refresco-de-prueba-${sub.slice(0, 4)}`, user: usuario };

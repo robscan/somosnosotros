@@ -1,0 +1,92 @@
+/* «Presentación» / «Informe» (OL-396, `.boton-ano.secundario` del prototipo firmado): la pastilla junto a «Tu año», del alto de un toque, con
+   borde y en el color del texto; la de «Tu año» es la violeta suave. */
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-pildora);
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--letra-md);
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* La hoja de opciones: la ayuda, el periodo (el lugar), el tamaño y «Preparar una reseña» (el artista), uno bajo otro. */
+.cuerpo {
+  display: grid;
+  gap: var(--espacio-4);
+}
+.cuerpo > p {
+  margin-bottom: 0;
+}
+.grupo {
+  display: grid;
+  gap: var(--espacio-2);
+}
+.etiqueta {
+  font-size: var(--letra-sm);
+  font-weight: 800;
+}
+
+/* Las opciones excluyentes (`.segmento`): un carril gris y la elegida en blanco con sombra. */
+.segmento {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--espacio-1);
+  padding: var(--espacio-1);
+  border-radius: var(--radio-pildora);
+  background: var(--fondo-suave);
+}
+.segmento button {
+  min-height: var(--toque-min);
+  border: none;
+  border-radius: var(--radio-pildora);
+  background: none;
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.segmento button[aria-pressed="true"] {
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra);
+}
+
+/* «Preparar una reseña · Pronto»: apagado, no hace nada todavía. */
+.renglon {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
+}
+.renglon b {
+  display: block;
+  font-size: var(--letra-md);
+}
+.renglon small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+}
+.pronto {
+  padding: var(--espacio-1) var(--espacio-2);
+  border-radius: var(--radio-pildora);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

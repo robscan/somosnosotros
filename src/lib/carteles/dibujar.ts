@@ -8,7 +8,11 @@ import { ENTRADA_SEGURA, imagenAdmitida, TIEMPO_MAX_FOTO_MS } from "./imagenSegu
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
+import { COLORES_DOCUMENTO, dibujarPaginaDocumento, maquetar } from "./plantillas/documento";
+import { COLORES_TU_ANIO, dibujarTuAnio, FORMATO_TU_ANIO } from "./plantillas/tuAnio";
 import type { Formato } from "./tokens";
+import type { ResumenTuAnio } from "../tuAnio";
+import type { Documento, FormatoDocumento } from "../documentos";
 
 /**
  * Dibujar el cartel en el servidor (OL-324, bitácora 353). Decidido con medidas (spike de la bitácora): satori arma el SVG (2 a 6 ms) y sharp
@@ -156,5 +160,165 @@ export async function dibujarCartel(p: Pedido): Promise<Resultado> {
     tituloRecortado,
     ms: { foto: Math.round(t1 - t0), svg: Math.round(t2 - t1), raster: Math.round(t3 - t2) },
     nodos,
+  };
+}
+
+// ===== «Tu año» (OL-394): la misma rasterización, con su propia plantilla (recibe un resumen, no un evento).
+
+/** El lado de la foto redonda ya preparada: 96 px en el lienzo, al doble para que no se vea borrosa a 1080. */
+const LADO_FOTO_TU_ANIO = 192;
+
+/** La foto de quien comparte, recortada al centro en cuadrado y como data URL de un JPEG (la plantilla la redondea). `lado`: el del recorte. */
+export async function prepararFotoTuAnio(imagen: Buffer, lado: number = LADO_FOTO_TU_ANIO): Promise<string> {
+  const jpeg = await sharp(imagen, ENTRADA_SEGURA)
+    .timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 })
+    .rotate()
+    .resize(lado, lado, { fit: "cover" })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+  return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+}
+
+export type PedidoTuAnio = {
+  resumen: ResumenTuAnio;
+  /** El id de la ficha (o del perfil): elige la figura. */
+  id: string;
+  /** La foto original (bytes) o null; si no es un JPEG, PNG o WebP admitido, o no se prepara a tiempo, la imagen sale sin foto. */
+  foto: Buffer | null;
+  ancho?: number;
+  tiempoMaxFotoMs?: number;
+  conNodos?: boolean;
+  png?: boolean;
+  soloSvg?: boolean;
+};
+
+export type ResultadoTuAnio = Omit<Resultado, "paleta" | "tituloRecortado">;
+
+/** Dibuja la imagen de «Tu año» (1080×1350, o el ancho que se pida). Como el cartel: sin foto si la foto falla, nunca una imagen rota. */
+export async function dibujarImagenTuAnio(p: PedidoTuAnio): Promise<ResultadoTuAnio> {
+  const t0 = performance.now();
+  let foto: string | null = null;
+  if (p.foto && (await imagenAdmitida(p.foto))) {
+    let reloj: ReturnType<typeof setTimeout> | undefined;
+    const preparar = prepararFotoTuAnio(p.foto);
+    preparar.catch(() => {}); // si pierde la carrera, que su fallo no quede sin atender
+    try {
+      foto = await Promise.race([preparar, new Promise<null>((resolver) => { reloj = setTimeout(() => resolver(null), p.tiempoMaxFotoMs ?? TIEMPO_MAX_FOTO_MS); })]);
+    } catch {
+      foto = null;
+    } finally {
+      clearTimeout(reloj);
+    }
+  }
+  const t1 = performance.now();
+  const { elemento } = dibujarTuAnio({ resumen: p.resumen, id: p.id, foto });
+  const f = FORMATO_TU_ANIO;
+  const nodos: NodoTexto[] = [];
+  const svg = await satori(elemento, {
+    width: f.ancho,
+    height: f.alto,
+    fonts: cargarFuentes(),
+    onNodeDetected: p.conNodos
+      ? (n) => {
+          if (typeof n.textContent === "string" && n.textContent.trim()) nodos.push({ texto: n.textContent, x: n.left, y: n.top, ancho: n.width, alto: n.height, girado: false });
+        }
+      : undefined,
+  });
+  const t2 = performance.now();
+  const ancho = Math.round(p.ancho ?? f.ancho);
+  const raster = sharp(Buffer.from(svg), { density: (72 * ancho) / f.ancho });
+  const imagen = p.soloSvg ? Buffer.alloc(0) : p.png ? await raster.png().toBuffer() : await raster.flatten({ background: COLORES_TU_ANIO.fondo }).jpeg({ quality: 90, chromaSubsampling: "4:4:4" }).toBuffer();
+  const t3 = performance.now();
+  return {
+    imagen,
+    tipo: p.png ? "image/png" : "image/jpeg",
+    ancho,
+    alto: Math.round((ancho * f.alto) / f.ancho),
+    ms: { foto: Math.round(t1 - t0), svg: Math.round(t2 - t1), raster: Math.round(t3 - t2) },
+    nodos,
+  };
+}
+
+// ===== La presentación y el informe en PDF (OL-396): la misma rasterización, una imagen por página.
+
+/** El lado de la foto redonda de la cabecera ya preparada: 131 px en la página, al doble para que no se vea borrosa impresa. */
+const LADO_FOTO_DOCUMENTO = 262;
+
+/** Una foto que llega a tiempo y es una imagen admitida, recortada en cuadrado; si no, null (la cabecera lleva el círculo con el SN). */
+async function fotoATiempo(foto: Buffer | null, lado: number, tiempoMaxMs: number): Promise<string | null> {
+  if (!foto || !(await imagenAdmitida(foto))) return null;
+  let reloj: ReturnType<typeof setTimeout> | undefined;
+  const preparar = prepararFotoTuAnio(foto, lado);
+  preparar.catch(() => {}); // si pierde la carrera, que su fallo no quede sin atender
+  try {
+    return await Promise.race([preparar, new Promise<null>((resolver) => { reloj = setTimeout(() => resolver(null), tiempoMaxMs); })]);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(reloj);
+  }
+}
+
+export type PedidoDocumento = {
+  documento: Documento;
+  formato: FormatoDocumento;
+  /** La foto original (bytes) o null; como en «Tu año», sin foto si no es una imagen admitida o no se prepara a tiempo. */
+  foto: Buffer | null;
+  tiempoMaxFotoMs?: number;
+  /** Para las pruebas: los nodos de texto de cada página con su caja. */
+  conNodos?: boolean;
+  /** Para las pruebas: PNG en vez de JPEG. */
+  png?: boolean;
+  /** Para las pruebas: solo el árbol de satori, sin rasterizar. */
+  soloSvg?: boolean;
+};
+
+export type ResultadoDocumento = {
+  /** Una imagen por página, a 150 ppp (carta 1275 × 1650, A4 1240 × 1754). */
+  paginas: Buffer[];
+  tipo: "image/jpeg" | "image/png";
+  ancho: number;
+  alto: number;
+  nodos: NodoTexto[][];
+  ms: { foto: number; svg: number; raster: number };
+};
+
+/** Dibuja cada página del documento: satori arma el SVG y sharp lo deja en JPEG (calidad 88, sin submuestreo: el texto queda nítido). */
+export async function dibujarDocumento(p: PedidoDocumento): Promise<ResultadoDocumento> {
+  const t0 = performance.now();
+  const foto = await fotoATiempo(p.foto, LADO_FOTO_DOCUMENTO, p.tiempoMaxFotoMs ?? TIEMPO_MAX_FOTO_MS);
+  const t1 = performance.now();
+  const m = maquetar(p.documento, p.formato);
+  const fuentesListas = cargarFuentes();
+  const svgs: string[] = [];
+  const nodos: NodoTexto[][] = [];
+  for (let i = 0; i < m.paginas.length; i++) {
+    const deEsta: NodoTexto[] = [];
+    svgs.push(
+      await satori(dibujarPaginaDocumento(p.documento, m, i, foto), {
+        width: m.ancho,
+        height: m.alto,
+        fonts: fuentesListas,
+        onNodeDetected: p.conNodos
+          ? (n) => {
+              if (typeof n.textContent === "string" && n.textContent.trim()) deEsta.push({ texto: n.textContent, x: n.left, y: n.top, ancho: n.width, alto: n.height, girado: false });
+            }
+          : undefined,
+      }),
+    );
+    nodos.push(deEsta);
+  }
+  const t2 = performance.now();
+  const paginas = p.soloSvg
+    ? svgs.map(() => Buffer.alloc(0))
+    : await Promise.all(svgs.map((svg) => (p.png ? sharp(Buffer.from(svg)).png().toBuffer() : sharp(Buffer.from(svg)).flatten({ background: COLORES_DOCUMENTO.fondo }).jpeg({ quality: 88, chromaSubsampling: "4:4:4" }).toBuffer())));
+  const t3 = performance.now();
+  return {
+    paginas,
+    tipo: p.png ? "image/png" : "image/jpeg",
+    ancho: m.ancho,
+    alto: m.alto,
+    nodos,
+    ms: { foto: Math.round(t1 - t0), svg: Math.round(t2 - t1), raster: Math.round(t3 - t2) },
   };
 }
