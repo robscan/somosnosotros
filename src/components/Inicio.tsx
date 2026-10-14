@@ -41,7 +41,7 @@ type Props = {
 
 /**
  * Inicio (docs/rediseno/41, tercera vuelta OL-219; doc 50, P5): solo carriles — Destacados (primero desde OL-382, D1), el banner para
- * compartir la app (OL-387, con sesión y desde la tercera visita), Tus planes, Esta semana, Festivales y
+ * compartir la app (OL-387; para todo el mundo desde OL-397; compartir no lo quita y la × solo hasta volver a abrir la app, OL-407), Tus planes, Esta semana, Festivales y
  * exposiciones (OL-342: los festivales y las exposiciones vigentes juntos, por cercanía; antes «Para visitar», OL-322, solo las
  * exposiciones), Nuevos eventos, Más adelante cuando los anteriores están vacíos, Lugares de la semana, Artistas destacadxs y
  * Artistas de la semana, cada uno con su título a la izquierda y, a la derecha, el
@@ -92,7 +92,8 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         <Suspense fallback={<CarrilEsqueleto forma="xl" />}>{slotEstelar}</Suspense>
         {/* OL-387 (B1 y B2, firmados el 2026-10-12): el banner para compartir la app, justo tras el carril estelar y antes de «Tus planes»; solo con
             sesión y, de eso, solo desde la tercera visita (lo decide el teléfono tras el primer pintado: sin él, no ocupa nada). */}
-        {/* Para todo el mundo, con o sin sesión (OL-397; antes solo con sesión, OL-387). */}
+        {/* Para todo el mundo, con o sin sesión (OL-397; antes solo con sesión, OL-387). Compartir no lo quita; la × lo esconde hasta la siguiente vez
+            que se abre la app (OL-407). */}
         <BannerCompartir zona={zona} />
         {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
