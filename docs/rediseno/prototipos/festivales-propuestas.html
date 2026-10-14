@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Festivales, expos y talleres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-409 (bitácora 440): cómo se muestran festivales, exposiciones y talleres en las fichas de lugar y artista, en la ficha del
+   festival y en el alta (el costo), a partir de la revisión que pidió el founder el 14 de octubre («revisa cómo se está resolviendo festivales,
+   galerías y talleres… debe haber alternativa para no indicar costo»). Mismo armazón que las propuestas anteriores: dos teléfonos y la hoja
+   de ejercicios; el estado se guarda en el teléfono (localStorage) y `window.prototipo` sirve a las capturas. */
+:root {
+  --fondo: #ffffff; --fondo-suave: #f4f4f2; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+  --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #eee7f8; --ok: #1f6f43; --fondo-miniatura: #e6e6e2;
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px; --toque: 48px; --toque-min: 44px; --alto-chip: 36px; --alto-nav: 60px; --gutter: 20px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem; --letra-2xl: 1.625rem;
+  --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --duracion: 200ms; --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-acento-suave: #ece4f8; --pg-velo: rgba(20, 18, 14, 0.4); --pg-perilla: #ffffff; --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.16); --pg-baja: #1f6f43; --pg-mal: #b3261e;
+  --pg-flotante: #1a1a1a; --pg-flotante-texto: #ffffff; --pg-flotante-suave: #c9c6bf;
+}
+* { box-sizing: border-box; }
+html { font: 400 var(--letra-md) / 1.4 var(--fuente); font-variation-settings: var(--ancho-texto); color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ===== La escena: en el teléfono, un teléfono; desde 760, teléfono y hoja; desde 1180, los dos teléfonos y la hoja. ===== */
+.escena { display: grid; gap: var(--espacio-4); padding: var(--espacio-4); min-height: 100dvh; align-content: start; }
+.columna { display: grid; gap: var(--espacio-2); justify-items: center; align-content: start; }
+.col-con { display: none; }
+.etiqueta-tel { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; text-align: center; }
+.etiqueta-tel b { color: var(--pg-texto); }
+.caja-tel { width: min(100%, 390px); }
+.tel { position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 28px; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); font-size: var(--letra-md); }
+@media (min-width: 760px) { .escena { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } }
+@media (min-width: 1180px) { .escena { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 380px; } .col-con { display: grid; } }
+
+
+/* ===== El teléfono: la ficha del lugar (Cinema 7B, datos de la captura del founder del 14 de oct), la ficha del festival y el paso «Cuánto». ===== */
+.tel .cab-ficha { position: relative; height: 150px; background: linear-gradient(180deg, #ecebe6 0%, #d9d8d1 60%, #2b2b2b 100%); display: grid; align-content: end; padding: 0 var(--gutter) var(--espacio-3); color: #fff; }
+.tel .cab-ficha .sn { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); font-weight: 800; font-size: 44px; color: #8d8c86; font-variation-settings: "wdth" 75; letter-spacing: -0.04em; }
+.tel .cab-ficha h1 { margin: 4px 0 0; font-size: 28px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.05; }
+.tel .cab-ficha .clase-chip { display: inline-block; width: max-content; padding: 2px 10px; border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-2xs); font-weight: 800; letter-spacing: 0.04em; }
+.tel .cab-ficha .botones { position: absolute; left: var(--gutter); right: var(--gutter); top: 12px; display: flex; justify-content: space-between; }
+.tel .cab-ficha .botones span { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; color: var(--texto); }
+.tel .cuerpo { position: absolute; left: 0; right: 0; top: 150px; bottom: var(--alto-nav); overflow-y: auto; padding: var(--espacio-3) var(--gutter) var(--espacio-6); background: var(--fondo-contenido, #f6f5f1); }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin-bottom: var(--espacio-3); }
+.kpi { display: grid; gap: 2px; padding: var(--espacio-2) var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); }
+.kpi small { color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.kpi b { font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.kpi b.suave { color: var(--texto-suave); font-weight: 600; }
+.kpi.oculto { display: none; }
+.kpis.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.seccion h2 { margin: var(--espacio-4) 0 var(--espacio-2); font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.seccion h2 small { color: var(--texto-suave); font-size: var(--letra-xl); font-weight: 700; }
+.dia { margin: var(--espacio-3) 0 var(--espacio-1); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; }
+.dia.pasado { color: #b3261e; }
+.renglon-e { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: var(--espacio-3); align-items: center; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--borde); }
+.renglon-e .foto { width: 56px; height: 56px; border-radius: var(--radio); background: var(--fondo-miniatura); align-self: start; display: grid; place-items: center; font-size: 10px; font-weight: 800; color: #fff; text-align: center; padding: 4px; }
+.renglon-e .foto.c1 { background: #2b1a1a; color: #e7b64a; } .renglon-e .foto.c2 { background: #9bcf2a; color: #2d2f9f; } .renglon-e .foto.c3 { background: #1f2a44; color: #cfd8ff; } .renglon-e .foto.c4 { background: #5c3a7a; color: #f3e6ff; }
+.renglon-e h4 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.renglon-e small { display: flex; align-items: center; gap: 6px; color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.3; min-width: 0; }
+.renglon-e small > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.renglon-e small b { color: var(--primario); font-weight: 600; }
+.renglon-e small.mal b { color: #b3261e; text-decoration: underline wavy #b3261e; }
+.renglon-e .cuerpo-r { display: grid; gap: 2px; min-width: 0; }
+.renglon-e .voy { color: var(--primario); }
+.renglon-e .voy.no { visibility: hidden; }
+/* El bloque de festival (como en Agenda): la línea del festival y sus funciones aquí debajo, con el aire de un grupo. */
+.bloque-f { margin: var(--espacio-3) 0; border-left: 3px solid var(--primario); padding-left: var(--espacio-3); }
+.bloque-f .linea-f { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) 0; }
+.bloque-f .linea-f h3 { margin: 0; font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+.bloque-f .linea-f small { display: block; color: var(--texto-suave); font-size: var(--letra-sm); }
+.bloque-f .linea-f .caret { color: var(--texto-suave); }
+.bloque-f .renglon-e { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.bloque-f .renglon-e .foto { width: 44px; height: 44px; }
+.bloque-f .renglon-e:last-child { border-bottom: 0; }
+.grupo-visita { margin: var(--espacio-3) 0; }
+.grupo-visita h3 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+/* La ficha del festival: cabecera oscura con el nombre, los KPI y el programa. */
+.cab-ficha.oscura { background: linear-gradient(180deg, #3b2a1a 0%, #1f1a1a 100%); }
+.meta-f { color: var(--texto-suave); font-size: var(--letra-sm); margin: 0 0 var(--espacio-3); }
+/* El paso «Cuánto» del alta: las opciones como renglones con radio. */
+.paso h2 { margin: var(--espacio-2) 0 var(--espacio-1); font-size: 26px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.05; }
+.paso p { margin: 0 0 var(--espacio-3); color: var(--texto-suave); font-size: var(--letra-sm); }
+.opcion { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: var(--espacio-3); align-items: start; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--borde); }
+.opcion i { width: 22px; height: 22px; border: 2px solid var(--borde); border-radius: 50%; margin-top: 2px; }
+.opcion.puesta i { border-color: var(--primario); box-shadow: inset 0 0 0 5px var(--primario); }
+.opcion b { display: block; font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.opcion small { display: block; color: var(--texto-suave); font-size: var(--letra-sm); }
+.opcion.nueva b::after { content: " nueva"; color: var(--primario); font-size: var(--letra-2xs); font-weight: 800; letter-spacing: 0.04em; vertical-align: middle; }
+.campo { margin-top: var(--espacio-3); padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-grande); background: var(--fondo); color: var(--texto-suave); }
+.pie-paso { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--espacio-3) var(--gutter) calc(var(--espacio-3) + 10px); background: var(--fondo); border-top: 1px solid var(--borde); }
+.pie-paso button { width: 100%; height: var(--toque); border-radius: var(--radio-pildora); background: var(--primario); color: #fff; font-weight: 800; font-size: var(--letra-md); }
+.nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--alto-nav); padding: 0 var(--espacio-2); background: var(--fondo); border-top: 1px solid var(--borde); font-size: var(--letra-2xs); font-weight: 600; color: var(--texto-suave); text-align: center; align-items: center; }
+.nav span.on { color: var(--primario); }
+.nav span.on::before { content: ""; display: block; width: 56px; height: 28px; margin: 0 auto 2px; border-radius: var(--radio-pildora); background: var(--primario); }
+.pantallas-der { display: flex; gap: var(--espacio-1); justify-content: center; margin-bottom: var(--espacio-1); }
+.pantallas-der button { min-height: 32px; padding: 0 12px; border-radius: var(--radio-pildora); background: var(--pg-fondo); color: var(--pg-suave); font-size: var(--letra-xs); font-weight: 700; }
+.pantallas-der button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+/* ===== La hoja de ejercicios. ===== */
+.fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--pg-flotante); color: var(--pg-flotante-texto); font-weight: 700; box-shadow: var(--sombra-flotante); }
+.velo { position: fixed; inset: 0; z-index: 50; background: var(--pg-velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: min(72%, 680px); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--pg-panel); box-shadow: var(--sombra-flotante); transform: translateY(100%); visibility: hidden; transition: transform 240ms var(--curva), visibility 0s 240ms; }
+.hoja.abierta { transform: none; visibility: visible; transition: transform 240ms var(--curva), visibility 0s; }
+.asa { justify-self: center; width: 36px; height: 4px; margin-top: var(--espacio-2); border-radius: 2px; background: var(--pg-borde); }
+.hoja-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-2) var(--espacio-2) var(--espacio-4); }
+.hoja-cab h1 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.hoja-cab p { margin: 2px 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
+.resumen { position: sticky; top: 0; z-index: 2; display: grid; gap: var(--espacio-2); padding: var(--espacio-1) 0 var(--espacio-3); background: var(--pg-panel); box-shadow: 0 1px 0 var(--pg-borde); }
+.preajustes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--espacio-1); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.preajustes button { min-height: var(--toque-min); border-radius: var(--radio-pildora); color: var(--pg-suave); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: var(--letra-md); line-height: 1.1; }
+.preajustes button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.preajustes button small { display: block; font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.1; }
+.combinacion { margin: 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.combinacion b { color: var(--pg-texto); }
+.medidor { display: grid; gap: var(--espacio-1); }
+.medidor .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-2); }
+.medidor .cifra { display: grid; gap: 1px; min-width: 0; padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio); background: var(--pg-fondo); }
+.medidor .cifra small { font-size: var(--letra-2xs); font-weight: 600; color: var(--pg-suave); line-height: 1.15; }
+.medidor .cifra b { font-size: var(--letra-xl); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+.medidor .cifra b.bien { color: var(--pg-baja); }
+.medidor .cifra b.mal { color: var(--pg-mal); }
+.medidor .cifra span { font-size: var(--letra-2xs); color: var(--pg-suave); line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.medidor p { margin: 0; color: var(--pg-suave); font-size: var(--letra-2xs); line-height: 1.3; }
+.porque { margin: var(--espacio-3) 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.bloque { padding-top: var(--espacio-4); }
+.bloque h2 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+.bloque > p { margin: 0 0 var(--espacio-2); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.ejercicios { list-style: none; margin: 0; padding: 0; }
+.ejercicio { padding: var(--espacio-3) 0; border-bottom: 1px solid var(--pg-borde); }
+.ejercicio b { display: block; font-size: var(--letra-md); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+.ejercicio small { display: block; margin-top: 2px; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.35; }
+.opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-1); margin-top: var(--espacio-2); padding: var(--espacio-1); border-radius: var(--radio-pildora); background: var(--pg-fondo); }
+.opciones.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opciones button { min-height: 36px; padding: 0 6px; border-radius: var(--radio-pildora); color: var(--pg-suave); font-size: var(--letra-xs); font-weight: 700; line-height: 1.1; }
+.opciones button[aria-pressed="true"] { background: var(--pg-panel); color: var(--pg-texto); box-shadow: var(--pg-sombra-chica); }
+.notas { margin: 0; padding-left: 1.1em; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas li + li { margin-top: var(--espacio-1); }
+.notas b { color: var(--pg-texto); }
+@media (min-width: 760px) {
+  .hoja { position: relative; left: auto; right: auto; bottom: auto; z-index: auto; align-self: stretch; height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border-radius: var(--radio-grande); box-shadow: var(--sombra); transform: none; visibility: visible; transition: none; }
+  .asa, .cerrar, .fab, .velo { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .hoja, .hoja.abierta, .velo { transition: none; } }
+</style>
+</head>
+<body>
+<main class="escena" id="escena">
+  <section class="columna col-sin" aria-label="Ficha del lugar">
+    <p class="etiqueta-tel" id="etiqueta-sin"><b>Ficha del lugar</b> · Cinema 7B, «Próximos eventos»</p>
+    <div class="caja-tel"><div class="tel" id="tel-sin"></div></div>
+  </section>
+  <section class="columna col-con" aria-label="Ficha del festival y el alta">
+    <div class="pantallas-der" role="group" aria-label="Pantalla de la derecha">
+      <button type="button" data-pantalla="festival" aria-pressed="true">Ficha del festival</button>
+      <button type="button" data-pantalla="cuanto" aria-pressed="false">Alta: «Cuánto»</button>
+      <button type="button" data-pantalla="expo" aria-pressed="false">Ficha de la expo</button>
+    </div>
+    <p class="etiqueta-tel" id="etiqueta-con"><b>Ficha del festival</b> · CINEMA XV, con sus KPI</p>
+    <div class="caja-tel"><div class="tel" id="tel-con"></div></div>
+  </section>
+
+  <aside class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <span class="asa" aria-hidden="true"></span>
+    <header class="hoja-cab">
+      <div>
+        <h1 id="hoja-titulo" tabindex="-1">Festivales, expos y talleres</h1>
+        <p>Cómo se muestran en las fichas y qué pasa con el costo · mié 14 de oct · OL-409</p>
+      </div>
+      <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar los ejercicios"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="hoja-cuerpo" id="hoja-cuerpo">
+      <div class="resumen">
+        <div class="preajustes" role="group" aria-label="Preajustes">
+          <button type="button" data-preset="hoy" aria-pressed="false">Hoy<small>producción, 14 oct</small></button>
+          <button type="button" data-preset="propuesta" aria-pressed="false">Propuesta<small>del gestor</small></button>
+        </div>
+        <p class="combinacion" id="combinacion"></p>
+        <section class="medidor" aria-label="Medidor">
+          <div class="cifras">
+            <div class="cifra"><small>Renglones en «Próximos eventos»</small><b id="m-renglones">–</b><span id="s-renglones"></span></div>
+            <div class="cifra"><small>Festivales bajo una fecha ya pasada</small><b id="m-pasados">–</b><span id="s-pasados"></span></div>
+            <div class="cifra"><small>Horas imposibles («20:00–19:00»)</small><b id="m-horas">–</b><span id="s-horas"></span></div>
+            <div class="cifra"><small>«Gratis» dicho sin saberlo</small><b id="m-gratis">–</b><span id="s-gratis"></span></div>
+          </div>
+          <p>Lo que la ficha del lugar enseña hoy sale de una consulta que no sabe qué es un festival, una expo o un taller: por eso coloca el marco por su inicio ya pasado, pega la hora del primer día con la del último y, sin costo, dice «Gratis».</p>
+        </section>
+      </div>
+
+      <p class="porque" id="porque"></p>
+
+      <section class="bloque" aria-labelledby="t-ejercicios">
+        <h2 id="t-ejercicios">Ejercicios</h2>
+        <p>El teléfono de la izquierda es la ficha de Cinema 7B tal como la viste el 14 de octubre (datos reales; los horarios que no vi están inventados y marcados). El de la derecha cambia con los botones de arriba: la ficha del festival, el paso «Cuánto» del alta o la ficha de una expo.</p>
+        <ul class="ejercicios" id="ejercicios"></ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-como">
+        <h2 id="t-como">Cómo se haría</h2>
+        <ul class="notas">
+          <li><b>Una sola consulta para todas las listas:</b> la ficha del lugar, la del artista, Buscar y Tus planes pasan a pedir lo mismo que Agenda (clase, festival, sesiones, horario) y a usar las mismas piezas (el bloque de festival, el reparto por día, «Para visitar»). Sin tablas ni migración.</li>
+          <li><b>El bloque de festival en las fichas</b> se coloca por su siguiente función en ese lugar o de ese artista; sin funciones por venir, se va al Historial. El marco nunca sale suelto ni sus actos repetidos.</li>
+          <li><b>El costo:</b> una cuarta opción en el paso «Cuánto», «Varía» («Según la función» en festival y taller, «Consulta en el lugar» en expo); el marco de un festival no pide costo (lo tiene cada acto) y su KPI dice «Según función». Vacío nunca se vuelve «Gratis»: solo lo dice quien eligió Gratis. Migración que solo añade un valor (`precio = "varía"`) si hiciera falta; si no, se guarda como texto como hoy «Cooperación solidaria».</li>
+          <li><b>Una regla para el cuándo de festival y expo</b> en todas las superficies: en curso, «Hasta el …»; por venir, «Del … al …».</li>
+        </ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-notas">
+        <h2 id="t-notas">Lo que encontró la revisión (14 de octubre)</h2>
+        <ul class="notas">
+          <li><b>Catorce incoherencias</b> entre superficies, las que más se ven: el marco colocado por su inicio pasado; «20:00–19:00» en actos con sesiones; actos repetidos junto a su marco en la ficha del lugar; la expo con «Voy» y «00:00» en fichas de lugar y artista; Buscar sin «Taller» en la ceja; «Hasta el …» en Inicio y «Del … al …» en la ficha para el mismo festival; el costo vacío dicho de tres formas (Gratis, nada, Entrada libre).</li>
+          <li><b>El costo es obligatorio en todas las clases</b> y en un festival se copia a cada acto; un texto como «taquilla» no se puede guardar.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</main>
+<div class="velo" id="velo"></div>
+<button class="fab" id="fab" type="button" aria-controls="hoja" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>Ejercicios</span></button>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const svg = (d) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const I = {
+    cal: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'), reloj: svg('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>'),
+    check: svg('<path d="M5 12l4.5 4.5L19 7"/>'), caret: svg('<path d="M9 6l6 6-6 6"/>'), atras: svg('<path d="M15 6l-6 6 6 6"/>'), puntos: svg('<circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/>'),
+    pin: svg('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'), etiqueta: svg('<path d="M3 12l9-9h9v9l-9 9z"/><circle cx="16.5" cy="7.5" r="1.3"/>'),
+  };
+  // Hoy: miércoles 14 de octubre de 2026. Datos de la ficha de Cinema 7B que el founder capturó; los horarios con (i) son inventados.
+  const FESTIVALES = [
+    { id: 'cinema', titulo: 'CINEMA: XV Festival de Cine México-Alemania', desde: '2026-09-29', hasta: '2026-10-24', foto: 'c1', textoFoto: 'SEP–OCT CINEMA XV', actos: [
+      { titulo: 'Pedro Páramo, de Carlos Velo (1967)', dia: '2026-10-16', hora: '18:00', inv: true },
+      { titulo: 'Las herederas, de Marcelo Martinessi', dia: '2026-10-21', hora: '20:00', inv: true },
+      { titulo: 'Clausura: Sophie Scholl', dia: '2026-10-24', hora: '18:00', inv: true },
+    ] },
+    { id: 'cartelera', titulo: 'Cartelera de Cinema 7B: cine de culto y terror, del 12 al 17 de octubre', desde: '2026-10-12', hasta: '2026-10-17', foto: 'c2', textoFoto: 'OCTUBRE del 12 al 17', actos: [
+      { titulo: 'Arrebato, de Iván Zulueta (1979)', sesiones: [['2026-10-12','17:30','19:20'],['2026-10-14','21:00','22:50'],['2026-10-16','17:30','19:20']], precio: '$70' },
+      { titulo: 'Spider-Man: Brand New Day, de Destin Daniel Cretton (2026)', sesiones: [['2026-10-12','20:00','22:00'],['2026-10-13','17:00','19:00'],['2026-10-15','17:00','19:00']], precio: 'Boletos en taquilla' },
+      { titulo: 'Demon Slayer: Kimetsu no Yaiba, Castillo Infinito', sesiones: [['2026-10-14','19:50','22:00'],['2026-10-17','17:00','19:10']], precio: 'Boletos en taquilla' },
+      { titulo: 'The Shining, de Stanley Kubrick (1980)', sesiones: [['2026-10-15','20:00','22:30'],['2026-10-17','20:00','22:30']], precio: '$70', inv: true },
+    ] },
+  ];
+  const SUELTOS = [
+    { titulo: 'Taller de guion: la escena corta', clase: 'taller', sesiones: [['2026-10-20','18:00','20:00'],['2026-10-22','18:00','20:00'],['2026-10-27','18:00','20:00']], foto: 'c3', textoFoto: 'TALLER', precio: '$450', inv: true },
+    { titulo: 'Fotogramas: carteles del cine potosino', clase: 'exposicion', desde: '2026-10-05', hasta: '2026-11-08', foto: 'c4', textoFoto: 'EXPO', horario: 'Abre 17:00–22:00', inv: true },
+  ];
+  const HOY = '2026-10-14';
+  const DIAS = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const diaCorto = (d) => { if (d === HOY) return 'Hoy'; const x = new Date(d + 'T12:00:00'); return `${DIAS[x.getDay()]} ${x.getDate()} de ${MESES[x.getMonth()]}`; };
+  const diaMes = (d) => { const x = new Date(d + 'T12:00:00'); return `${x.getDate()} de ${MESES[x.getMonth()]}`; };
+  const rango = (a, b) => { const x = new Date(a + 'T12:00:00'), y = new Date(b + 'T12:00:00'); return x.getMonth() === y.getMonth() ? `Del ${x.getDate()} al ${y.getDate()} de ${MESES[y.getMonth()]}` : `Del ${diaMes(a)} al ${diaMes(b)}`; };
+  const enCurso = (desde, hasta) => desde <= HOY && HOY <= hasta;
+  const cuandoPeriodo = (desde, hasta) => (estado.u === 'uno' ? (enCurso(desde, hasta) ? `Hasta el ${diaCorto(hasta)}` : rango(desde, hasta)) : rango(desde, hasta));
+
+  // ===== Ejercicios y preajustes.
+  const HOY_P = { f: 'suelto', s: 'pegadas', e: 'puntual', c: 'obligatorio', k: 'gratis', u: 'mezcla' };
+  const PROPUESTA = { f: 'bloque', s: 'funcion', e: 'visita', c: 'varia', k: 'confirmar', u: 'uno' };
+  const EJERCICIOS = [
+    { clave: 'f', titulo: 'F · El festival en la ficha del lugar (y del artista)', nota: 'Hoy el marco sale como un renglón más, bajo la fecha de su primer acto (ya pasada), y sus funciones repetidas sueltas.',
+      opciones: [['suelto', 'Renglón por su inicio (hoy)'], ['bloque', 'Bloque como Agenda'], ['marco', 'Solo el marco, «N funciones aquí»']] },
+    { clave: 's', titulo: 'S · Funciones y sesiones por día', nota: 'Hoy pega la hora del primer día con la del último («Del 12 al 15 de oct · 20:00–19:00»).',
+      opciones: [['pegadas', 'Primer inicio–último fin (hoy)'], ['funcion', 'La hora de cada función, en su día'], ['pordia', '«horarios por día»']] },
+    { clave: 'e', titulo: 'E · La exposición en las fichas', nota: 'Hoy se lee como un evento puntual: «Del 5 de oct al 8 de nov · 00:00», con «Voy», bajo su día de apertura ya pasado.',
+      opciones: [['puntual', 'Como un evento (hoy)'], ['visita', 'Grupo «Para visitar», sin Voy'], ['renglon', 'Renglón «Hasta el …», sin Voy']] },
+    { clave: 'c', titulo: 'C · El costo en el alta de festival, expo y taller', nota: 'Hoy es obligatorio (Gratis · Cooperación · Tiene precio) y en el festival se copia a cada acto.',
+      opciones: [['obligatorio', 'Obligatorio (hoy)'], ['varia', 'Cuarta opción: «Varía»'], ['opcional', 'Se puede dejar vacío']] },
+    { clave: 'k', titulo: 'K · El KPI «Costo» sin dato', nota: 'Hoy un costo vacío se muestra como «Gratis» en la ficha, nada en tarjetas y renglones, «Entrada libre» en el cartel.',
+      opciones: [['gratis', '«Gratis» (hoy)'], ['confirmar', '«Por confirmar»'], ['oculto', 'Sin el KPI']] },
+    { clave: 'u', titulo: 'U · El cuándo del festival y la expo', nota: 'Hoy Inicio dice «Hasta el …» y la ficha «Del … al …» para el mismo festival en curso.',
+      opciones: [['mezcla', 'Cada superficie lo suyo (hoy)'], ['uno', 'En curso «Hasta el …», por venir «Del … al …»']] },
+  ];
+  const LLAVE_ESTADO = 'ol409:estado';
+  let estado = { ...PROPUESTA, pantalla: 'festival' };
+  try { const g = JSON.parse(localStorage.getItem(LLAVE_ESTADO) || 'null'); if (g && typeof g === 'object') estado = { ...estado, ...g }; } catch {}
+  const guardar = () => { try { localStorage.setItem(LLAVE_ESTADO, JSON.stringify(estado)); } catch {} };
+  const CLAVES = ['f','s','e','c','k','u'];
+  const preset = () => (CLAVES.every((k) => estado[k] === HOY_P[k]) ? 'hoy' : CLAVES.every((k) => estado[k] === PROPUESTA[k]) ? 'propuesta' : null);
+
+  // ===== Reglas de lo que dice cada renglón.
+  const hhmm = (h) => h;
+  function cuandoActo(a) {
+    if (a.sesiones) {
+      const vivas = a.sesiones.filter((s) => s[0] >= HOY);
+      const todas = a.sesiones;
+      if (estado.s === 'pegadas') return { dia: todas[0][0], texto: `${rango(todas[0][0], todas[todas.length - 1][0])} · ${todas[0][1]}–${todas[todas.length - 1][2]}`, mal: todas[0][1] > todas[todas.length - 1][2] };
+      if (estado.s === 'pordia') return { dia: (vivas[0] ?? todas[0])[0], texto: `${rango(todas[0][0], todas[todas.length - 1][0])} · horarios por día` };
+      return null; // 'funcion': se reparte por día
+    }
+    return { dia: a.dia, texto: `${diaCorto(a.dia)} · ${a.hora}` };
+  }
+  const ocurrencias = (a) => (a.sesiones && estado.s === 'funcion' ? a.sesiones.filter((s) => s[0] >= HOY).map((s, i) => ({ dia: s[0], texto: `${s[1]}–${s[2]}`, parte: a.clase === 'taller' ? `Sesión ${a.sesiones.indexOf(s) + 1} de ${a.sesiones.length}` : null })) : null);
+  const precioDe = (a) => (a.precio ? a.precio : null);
+
+  // Qué se pinta en «Próximos eventos» de Cinema 7B: una lista de piezas con su día de colocación.
+  function piezasLugar() {
+    const piezas = [];
+    for (const f of FESTIVALES) {
+      const actos = f.actos;
+      if (estado.f === 'suelto') {
+        piezas.push({ tipo: 'renglon', dia: f.desde, titulo: f.titulo, foto: f.foto, textoFoto: f.textoFoto, cuando: `${cuandoPeriodo(f.desde, f.hasta)} · ${estado.s === 'pegadas' ? '18:00–23:00' : 'programa'}`, voy: true, marco: true, pasado: f.desde < HOY });
+        for (const a of actos) {
+          const oc = ocurrencias(a);
+          if (oc) oc.forEach((o) => piezas.push({ tipo: 'renglon', dia: o.dia, titulo: a.titulo, foto: f.foto, textoFoto: f.textoFoto, cuando: o.texto, nota: precioDe(a), voy: true }));
+          else { const c = cuandoActo(a); piezas.push({ tipo: 'renglon', dia: c.dia, titulo: a.titulo, foto: f.foto, textoFoto: f.textoFoto, cuando: c.texto, mal: c.mal, nota: precioDe(a), voy: true, pasado: c.dia < HOY }); }
+        }
+        continue;
+      }
+      // bloque o marco: colocado por su siguiente función aquí
+      const funciones = [];
+      for (const a of actos) {
+        const oc = ocurrencias(a);
+        if (oc) oc.forEach((o) => funciones.push({ dia: o.dia, titulo: a.titulo, cuando: `${diaCorto(o.dia)} · ${o.texto}`, nota: precioDe(a) }));
+        else { const c = cuandoActo(a); if (c.dia >= HOY || (a.sesiones && a.sesiones.some((s) => s[0] >= HOY))) funciones.push({ dia: c.dia < HOY ? HOY : c.dia, titulo: a.titulo, cuando: c.texto, mal: c.mal, nota: precioDe(a) }); }
+      }
+      funciones.sort((p, q) => p.dia.localeCompare(q.dia));
+      if (!funciones.length) continue;
+      piezas.push({ tipo: estado.f === 'bloque' ? 'bloque' : 'marco', dia: funciones[0].dia, festival: f, funciones });
+    }
+    for (const s of SUELTOS) {
+      if (s.clase === 'taller') {
+        const oc = ocurrencias(s);
+        if (oc) oc.forEach((o) => piezas.push({ tipo: 'renglon', dia: o.dia, titulo: s.titulo, foto: s.foto, textoFoto: s.textoFoto, cuando: `${o.texto} · ${o.parte}`, nota: precioDe(s), voy: true }));
+        else { const c = cuandoActo(s); piezas.push({ tipo: 'renglon', dia: c.dia, titulo: s.titulo, foto: s.foto, textoFoto: s.textoFoto, cuando: c.texto, mal: c.mal, nota: precioDe(s), voy: true }); }
+      } else {
+        if (estado.e === 'puntual') piezas.push({ tipo: 'renglon', dia: s.desde, titulo: s.titulo, foto: s.foto, textoFoto: s.textoFoto, cuando: `${rango(s.desde, s.hasta)} · 00:00`, voy: true, pasado: s.desde < HOY });
+        else if (estado.e === 'renglon') piezas.push({ tipo: 'renglon', dia: HOY, titulo: s.titulo, foto: s.foto, textoFoto: s.textoFoto, cuando: `${cuandoPeriodo(s.desde, s.hasta)} · ${s.horario}`, voy: false, expo: true });
+        else piezas.push({ tipo: 'visita', dia: HOY, titulo: s.titulo, foto: s.foto, textoFoto: s.textoFoto, cuando: `${s.horario} · hasta el ${diaCorto(s.hasta)}` });
+      }
+    }
+    piezas.sort((p, q) => p.dia.localeCompare(q.dia) || (p.tipo === 'visita' ? -1 : 0));
+    return piezas;
+  }
+  const renglon = (p, chico) => `<div class="renglon-e"><div class="foto ${p.foto}">${esc(p.textoFoto)}</div><div class="cuerpo-r"><h4>${esc(p.titulo)}</h4><small class="${p.mal ? 'mal' : ''}">${p.expo || p.tipo === 'visita' ? I.reloj : I.cal}<span><b>${esc(p.cuando)}</b>${p.nota ? ` · ${esc(p.nota)}` : ''}</span></small></div><span class="voy ${p.voy === false ? 'no' : ''}">${I.check}</span></div>`;
+  function pintarLugar(el) {
+    const piezas = piezasLugar();
+    let html = '', diaActual = null;
+    const total = piezas.reduce((n, p) => n + (p.tipo === 'bloque' ? p.funciones.length : 1), 0);
+    for (const p of piezas) {
+      if (p.tipo === 'visita') { html += `<div class="grupo-visita"><h3>Para visitar</h3>${renglon(p)}</div>`; continue; }
+      if (p.dia !== diaActual) { diaActual = p.dia; html += `<p class="dia ${p.dia < HOY ? 'pasado' : ''}">${esc(diaCorto(p.dia))}</p>`; }
+      if (p.tipo === 'renglon') html += renglon(p);
+      else if (p.tipo === 'marco') html += `<div class="renglon-e"><div class="foto ${p.festival.foto}">${esc(p.festival.textoFoto)}</div><div class="cuerpo-r"><h4>${esc(p.festival.titulo)}</h4><small>${I.etiqueta}<span><b>${esc(cuandoPeriodo(p.festival.desde, p.festival.hasta))}</b> · ${p.funciones.length} funciones aquí</span></small></div><span class="voy no">${I.check}</span></div>`;
+      else html += `<div class="bloque-f"><div class="linea-f"><div><h3>${esc(p.festival.titulo)}</h3><small>${esc(cuandoPeriodo(p.festival.desde, p.festival.hasta))} · ${p.funciones.length} funciones aquí</small></div><span class="caret">${I.caret}</span></div>${p.funciones.map((f) => `<div class="renglon-e"><div class="foto ${p.festival.foto}">${esc(p.festival.textoFoto)}</div><div class="cuerpo-r"><h4>${esc(f.titulo)}</h4><small class="${f.mal ? 'mal' : ''}">${I.cal}<span><b>${esc(f.cuando)}</b>${f.nota ? ` · ${esc(f.nota)}` : ''}</span></small></div><span class="voy">${I.check}</span></div>`).join('')}</div>`;
+    }
+    el.innerHTML = `<div class="cab-ficha"><div class="botones"><span>${I.atras}</span><span>${I.puntos}</span></div><span class="sn">SN</span><span class="clase-chip">FORO</span><h1>Cinema 7B</h1></div>
+      <div class="cuerpo"><div class="kpis"><div class="kpi"><small>Distancia</small><b>2 km</b></div><div class="kpi"><small>Eventos</small><b>${total} próximos</b></div><div class="kpi"><small>Siguen</small><b>0</b></div></div>
+      <div class="seccion"><h2>Próximos eventos <small>· ${total}</small></h2>${html}</div></div>
+      <nav class="nav"><span>Inicio</span><span>Agenda</span><span class="on">Lugares</span><span>Artistas</span><span>Perfil</span></nav>`;
+    return piezas;
+  }
+
+  // ===== La derecha: ficha del festival, paso «Cuánto» o ficha de la expo.
+  const kpiCosto = (valor) => {
+    if (valor) return `<div class="kpi"><small>Costo</small><b>${esc(valor)}</b></div>`;
+    if (estado.k === 'oculto') return '';
+    return `<div class="kpi"><small>Costo</small><b class="${estado.k === 'confirmar' ? 'suave' : ''}">${estado.k === 'gratis' ? 'Gratis' : 'Por confirmar'}</b></div>`;
+  };
+  function pintarFestival(el) {
+    const f = FESTIVALES[1];
+    const costoMarco = estado.c === 'varia' ? 'Según función' : estado.c === 'opcional' ? null : 'Gratis';
+    const kpi = estado.c === 'varia' ? `<div class="kpi"><small>Costo</small><b class="suave">Según función</b></div>` : kpiCosto(estado.c === 'obligatorio' ? null : null);
+    const por = {};
+    for (const a of f.actos) for (const s of a.sesiones) if (s[0] >= HOY) (por[s[0]] ??= []).push({ a, s });
+    const dias = Object.keys(por).sort();
+    const programa = dias.map((d) => `<p class="dia">${esc(diaCorto(d))}</p>${por[d].map(({ a, s }) => `<div class="renglon-e"><div class="foto ${f.foto}">${esc(f.textoFoto)}</div><div class="cuerpo-r"><h4>${esc(a.titulo)}</h4><small>${I.reloj}<span><b>${estado.s === 'pegadas' ? esc(`${rango(a.sesiones[0][0], a.sesiones[a.sesiones.length - 1][0])} · ${a.sesiones[0][1]}–${a.sesiones[a.sesiones.length - 1][2]}`) : estado.s === 'pordia' ? esc(`${rango(a.sesiones[0][0], a.sesiones[a.sesiones.length - 1][0])} · horarios por día`) : esc(`${s[1]}–${s[2]}`)}</b>${a.precio ? ` · ${esc(a.precio)}` : (estado.k === 'gratis' ? ' · Gratis' : estado.k === 'confirmar' ? ' · Por confirmar' : '')}</span></small></div><span class="voy">${I.check}</span></div>`).join('')}`).join('');
+    el.innerHTML = `<div class="cab-ficha oscura"><div class="botones"><span>${I.atras}</span><span>${I.puntos}</span></div><span class="clase-chip">FESTIVAL</span><h1>Cartelera de Cinema 7B: cine de culto y terror</h1></div>
+      <div class="cuerpo"><p class="meta-f">${esc(cuandoPeriodo(f.desde, f.hasta))} · Programa registrado: ${f.actos.length} actividades · ${dias.length} días por venir</p>
+      <div class="kpis"><div class="kpi"><small>Actos</small><b>${f.actos.length}</b></div>${kpi}<div class="kpi"><small>Sedes</small><b>1</b></div></div>
+      <div class="seccion"><h2>Programa <small>· ${dias.reduce((n, d) => n + por[d].length, 0)}</small></h2>${programa}</div></div>
+      <nav class="nav"><span>Inicio</span><span class="on">Agenda</span><span>Lugares</span><span>Artistas</span><span>Perfil</span></nav>`;
+  }
+  function pintarCuanto(el) {
+    const op = (clave, titulo, sub, puesta, nueva) => `<div class="opcion ${puesta ? 'puesta' : ''} ${nueva ? 'nueva' : ''}"><i></i><div><b>${esc(titulo)}</b><small>${esc(sub)}</small></div></div>`;
+    const opciones = [
+      op('gratis', 'Gratis', 'Entrada libre', false),
+      op('coop', 'Cooperación', 'Cada quien pone lo que puede', false),
+      op('precio', 'Tiene precio', 'Escribe cuánto', estado.c !== 'varia'),
+      estado.c === 'varia' ? op('varia', 'Varía', 'Según la función o la actividad; se dice en cada una', true, true) : '',
+    ].join('');
+    const campo = estado.c === 'varia' ? `<div class="campo">Cada función del festival trae su propio costo al registrarla. En la ficha del festival se lee «Según función».</div>` : estado.c === 'opcional' ? `<div class="campo">Se puede dejar vacío: la ficha dirá «${estado.k === 'gratis' ? 'Gratis' : estado.k === 'confirmar' ? 'Por confirmar' : '(nada)'}».</div>` : `<div class="campo">Ej. 150</div>`;
+    el.innerHTML = `<div class="cuerpo paso" style="top:0"><p style="margin:12px 0 0">Festival · paso 4 de 5</p><h2>¿Cuánto cuesta?</h2><p>${estado.c === 'obligatorio' ? 'Obligatorio: si falta, «Falta el precio».' : estado.c === 'varia' ? 'Si el precio cambia por función, elige «Varía».' : 'Si no lo sabes, déjalo vacío.'}</p>${opciones}${campo}</div>
+      <div class="pie-paso"><button type="button">${estado.c === 'obligatorio' ? 'Falta el precio' : 'Siguiente'}</button></div>`;
+  }
+  function pintarExpo(el) {
+    const s = SUELTOS[1];
+    el.innerHTML = `<div class="cab-ficha oscura" style="background:linear-gradient(180deg,#3a2a52,#1b1726)"><div class="botones"><span>${I.atras}</span><span>${I.puntos}</span></div><span class="clase-chip">EXPOSICIÓN</span><h1>${esc(s.titulo)}</h1></div>
+      <div class="cuerpo"><p class="meta-f">${esc(cuandoPeriodo(s.desde, s.hasta))} · ${esc(s.horario)}</p>
+      <div class="kpis ${estado.k === 'oculto' ? 'dos' : ''}"><div class="kpi"><small>Hasta</small><b>${esc(diaCorto(s.hasta))}</b></div>${estado.c === 'varia' ? `<div class="kpi"><small>Costo</small><b class="suave">Consulta en el lugar</b></div>` : kpiCosto(null)}<div class="kpi"><small>Hoy</small><b>Abre 17:00</b></div></div>
+      <div class="seccion"><h2>Horario</h2><p class="meta-f">Martes a domingo · 17:00–22:00 (el del lugar)</p><h2>Dónde</h2><p class="meta-f">${I.pin} Cinema 7B · Avenida Cuauhtémoc 1605e</p></div></div>
+      <nav class="nav"><span>Inicio</span><span class="on">Agenda</span><span>Lugares</span><span>Artistas</span><span>Perfil</span></nav>`;
+  }
+
+  // ===== La hoja.
+  function pintarEjercicios() {
+    $('ejercicios').innerHTML = EJERCICIOS.map((e) => `<li class="ejercicio" data-clave="${e.clave}"><b>${esc(e.titulo)}</b><small>${esc(e.nota)}</small>
+      <div class="opciones ${e.opciones.length === 2 ? 'dos' : ''}" role="group">${e.opciones.map(([v, t]) => `<button type="button" data-clave="${e.clave}" data-valor="${v}" aria-pressed="${estado[e.clave] === v}">${esc(t)}</button>`).join('')}</div></li>`).join('');
+    $('ejercicios').querySelectorAll('button[data-clave]').forEach((b) => b.addEventListener('click', () => { estado[b.dataset.clave] = b.dataset.valor; guardar(); pintarTodo(); }));
+  }
+  function medir(piezas) {
+    const renglones = document.querySelectorAll('#tel-sin .renglon-e').length;
+    $('m-renglones').textContent = String(renglones); $('m-renglones').className = renglones <= 10 ? 'bien' : renglones <= 13 ? '' : 'mal';
+    $('s-renglones').textContent = `${piezas.filter((p) => p.tipo === 'bloque').length} bloques de festival`;
+    const pasados = piezas.filter((p) => p.pasado && (p.marco || p.tipo === 'renglon') && p.dia < HOY).length;
+    $('m-pasados').textContent = String(piezas.filter((p) => p.marco && p.dia < HOY).length); $('m-pasados').className = piezas.some((p) => p.marco && p.dia < HOY) ? 'mal' : 'bien';
+    $('s-pasados').textContent = pasados ? `${pasados} renglones bajo fechas pasadas` : 'ninguno bajo una fecha pasada';
+    const malas = document.querySelectorAll('#tel-sin small.mal').length;
+    $('m-horas').textContent = String(malas); $('m-horas').className = malas ? 'mal' : 'bien';
+    $('s-horas').textContent = malas ? 'primer inicio pegado al último fin' : 'cada función con su hora';
+    const gratis = [...document.querySelectorAll('#tel-con .kpi b, #tel-con small')].filter((x) => /Gratis/.test(x.textContent)).length;
+    $('m-gratis').textContent = String(gratis); $('m-gratis').className = gratis ? 'mal' : 'bien';
+    $('s-gratis').textContent = gratis ? 'en la ficha de la derecha' : 'nada se inventa';
+  }
+  const PORQUE = {
+    hoy: 'Hoy: la ficha del lugar no sabe qué es un festival, una expo o un taller. Coloca el marco de CINEMA bajo «mar 29 de sep», repite sus funciones sueltas, dice «20:00–19:00» en las que tienen sesiones y, sin costo, «Gratis».',
+    propuesta: 'Propuesta: cada festival es un bloque como en Agenda, colocado por su siguiente función aquí; cada función con su hora en su día; la expo en «Para visitar» sin «Voy»; en el alta, «Varía» para festival, expo y taller; un costo vacío nunca se vuelve «Gratis», dice «Por confirmar»; y el cuándo de festival y expo se dice igual en todas partes.',
+  };
+  function pintarTodo() {
+    const piezas = pintarLugar($('tel-sin'));
+    const der = $('tel-con');
+    if (estado.pantalla === 'cuanto') { pintarCuanto(der); $('etiqueta-con').innerHTML = '<b>Alta por pasos</b> · paso «Cuánto» de un festival'; }
+    else if (estado.pantalla === 'expo') { pintarExpo(der); $('etiqueta-con').innerHTML = '<b>Ficha de la expo</b> · con sus KPI'; }
+    else { pintarFestival(der); $('etiqueta-con').innerHTML = '<b>Ficha del festival</b> · Cartelera de Cinema 7B, con sus KPI y su programa'; }
+    document.querySelectorAll('[data-pantalla]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pantalla === estado.pantalla)));
+    pintarEjercicios();
+    const p = preset();
+    document.querySelectorAll('[data-preset]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === p)));
+    $('combinacion').innerHTML = EJERCICIOS.map((e) => `<b>${e.clave.toUpperCase()}</b> ${esc(e.opciones.find(([v]) => v === estado[e.clave])[1].replace(' (hoy)', ''))}`).join(' · ');
+    $('porque').textContent = p ? PORQUE[p] : 'Combinación propia: compara con «Hoy» y «Propuesta» arriba.';
+    requestAnimationFrame(() => medir(piezas));
+  }
+  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { Object.assign(estado, b.dataset.preset === 'hoy' ? HOY_P : PROPUESTA); guardar(); pintarTodo(); }));
+  document.querySelectorAll('[data-pantalla]').forEach((b) => b.addEventListener('click', () => { estado.pantalla = b.dataset.pantalla; guardar(); pintarTodo(); }));
+  const abrir = (si) => { $('hoja').classList.toggle('abierta', si); $('velo').classList.toggle('visible', si); $('fab').setAttribute('aria-expanded', String(si)); if (si) $('hoja-titulo').focus(); };
+  $('fab').addEventListener('click', () => abrir(true));
+  $('cerrar-hoja').addEventListener('click', () => abrir(false));
+  $('velo').addEventListener('click', () => abrir(false));
+  window.prototipo = { aplicar: (v) => { Object.assign(estado, v); guardar(); pintarTodo(); }, estado: () => ({ ...estado }), HOY: HOY_P, PROPUESTA };
+  pintarTodo();
+})();
+</script>
+</body>
+</html>
