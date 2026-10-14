@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COOPERACION_SOLIDARIA, cartelAFormulario, ciudadDelSitio, claseDeCosto, compartirEvento, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { COOPERACION_SOLIDARIA, GRATIS, POR_CONFIRMAR, cartelAFormulario, ciudadDelSitio, claseDeCosto, costoEnLista, costoOpcional, sabidoGratis, textoCosto, compartirEvento, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -138,6 +138,46 @@ describe("claseDeCosto", () => {
   });
   it("cualquier otro texto es con costo, con cifra o sin ella", () => {
     for (const precio of ["$150", "$120 a $250", "taquilla", "Con costo", "$100 estudiantes", "Gratis con boleto de entrada al museo", "Costo por confirmar"]) expect(claseDeCosto(precio)).toBe("costo");
+  });
+});
+
+describe("el costo por confirmar (OL-411)", () => {
+  it("es opcional en un festival, una exposición, un taller, un acto de festival y una inauguración; no en un evento suelto", () => {
+    for (const e of [{ clase: "festival" }, { clase: "exposicion" }, { clase: "taller" }, { clase: "puntual", evento_padre_id: "f1" }, { clase: "puntual", inauguracion: true }]) expect(costoOpcional(e)).toBe(true);
+    for (const e of [{}, { clase: "puntual" }, { clase: null }]) expect(costoOpcional(e)).toBe(false);
+  });
+
+  it("lo que dice la ficha: «Gratis» solo si se eligió gratis; vacío donde el costo es opcional, «Por confirmar»", () => {
+    expect(textoCosto(null, false)).toBe(GRATIS);
+    expect(textoCosto(null, true)).toBe(POR_CONFIRMAR);
+    expect(textoCosto("  ", true)).toBe(POR_CONFIRMAR);
+    expect(textoCosto("Gratis", true)).toBe("Gratis");
+    expect(textoCosto(COOPERACION_SOLIDARIA, true)).toBe(COOPERACION_SOLIDARIA);
+    expect(textoCosto("$150", false)).toBe("$150");
+    expect(textoCosto("Incluida en el boleto del museo", true)).toBe("Incluida en el boleto del museo");
+  });
+
+  it("se sabe gratis (el JSON-LD) solo si lo es; las listas solo dicen lo que no es gratis", () => {
+    expect(sabidoGratis(null, false)).toBe(true);
+    expect(sabidoGratis(null, true)).toBe(false);
+    expect(sabidoGratis("Gratis", true)).toBe(true);
+    expect(sabidoGratis("$150", false)).toBe(false);
+    for (const p of [null, "", " ", "Gratis"]) expect(costoEnLista(p)).toBeNull();
+    expect(costoEnLista("Entrada libre")).toBe("Entrada libre");
+    expect(costoEnLista("$150")).toBe("$150");
+    expect(costoEnLista(COOPERACION_SOLIDARIA)).toBe(COOPERACION_SOLIDARIA);
+  });
+
+  it("validarEvento: «por confirmar» se guarda vacío solo donde el costo es opcional; ahí «Gratis» se guarda escrito", () => {
+    const sinCosto = { ...base, gratis: "no", por_confirmar: "si" };
+    expect(validarEvento(sinCosto).errores.precio).toBeTruthy();
+    const opcional = validarEvento(sinCosto, undefined, { costoOpcional: true });
+    expect(opcional.errores.precio).toBeUndefined();
+    expect(opcional.datos.precio).toBeNull();
+    expect(validarEvento(base, undefined, { costoOpcional: true }).datos.precio).toBe(GRATIS);
+    expect(validarEvento(base).datos.precio).toBeNull();
+    // «por confirmar» no tapa un precio ni una cooperación elegidos a la vez: manda el precio vacío solo si no hay otro.
+    expect(validarEvento({ ...sinCosto, cooperacion: "si" }, undefined, { costoOpcional: true }).datos.precio).toBe(COOPERACION_SOLIDARIA);
   });
 });
 

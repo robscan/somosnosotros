@@ -233,22 +233,36 @@ export function PasoHora({ r, zona, onInicio, onFin, onCambiar, onSeguir }: { r:
   );
 }
 
-/** Tres opciones grandes: «Gratis» y «Cooperación» avanzan al tocarlas; «Tiene precio» abre el campo del precio, solo números. */
-export function PasoCuanto({ precio, onCosto, onPrecio }: { precio: string; onCosto: (costo: Costo) => void; onPrecio: (precio: string) => void }) {
+/**
+ * Tres opciones grandes: «Gratis» y «Cooperación» avanzan al tocarlas; «Tiene precio» abre el campo del precio, solo números.
+ *
+ * Con `onPorConfirmar` (OL-411: un festival, una exposición, un taller o un acto de festival, donde el costo se puede dejar vacío) el pie lleva
+ * «Dejar por confirmar», quieto como «Seguir sin especificar» del alta de artista: sigue sin costo y la ficha dirá «Por confirmar». Va también
+ * en el campo del precio, con «Siguiente» solo si hay algo escrito. Desde «Revisa» quita el costo que hubiera.
+ */
+export function PasoCuanto({ precio, onCosto, onPrecio, onPorConfirmar }: { precio: string; onCosto: (costo: Costo) => void; onPrecio: (precio: string) => void; onPorConfirmar?: () => void }) {
   const [conPrecio, setConPrecio] = useState(false);
+  const porConfirmar = onPorConfirmar && (
+    <Boton type="button" variante="quieto" onClick={onPorConfirmar}>
+      Dejar por confirmar
+    </Boton>
+  );
   if (!conPrecio) {
     return (
-      <div className={styles.opciones} role="group" aria-label="Cuánto cuesta">
-        <Opcion icono={<IconoBoleto />} titulo="Gratis" detalle="Entrada libre" onClick={() => onCosto("gratis")} />
-        <Opcion icono={<IconoBoleto />} titulo="Cooperación" detalle="Cada quien pone lo que puede" onClick={() => onCosto("cooperacion")} />
-        <Opcion icono={<IconoBoleto />} titulo="Tiene precio" detalle="Escribe cuánto" onClick={() => setConPrecio(true)} />
-      </div>
+      <>
+        <div className={styles.opciones} role="group" aria-label="Cuánto cuesta">
+          <Opcion icono={<IconoBoleto />} titulo="Gratis" detalle="Entrada libre" onClick={() => onCosto("gratis")} />
+          <Opcion icono={<IconoBoleto />} titulo="Cooperación" detalle="Cada quien pone lo que puede" onClick={() => onCosto("cooperacion")} />
+          <Opcion icono={<IconoBoleto />} titulo="Tiene precio" detalle="Escribe cuánto" onClick={() => setConPrecio(true)} />
+        </div>
+        {porConfirmar && <PiePaso>{porConfirmar}</PiePaso>}
+      </>
     );
   }
   const seguir = () => onCosto("precio");
   return (
     <>
-      <label className={`${canon.campo} ${precio ? "" : canon.campoFalta}`}>
+      <label className={`${canon.campo} ${precio || porConfirmar ? "" : canon.campoFalta}`}>
         <IconoBoleto width={20} height={20} />
         <input
           type="text"
@@ -267,7 +281,18 @@ export function PasoCuanto({ precio, onCosto, onPrecio }: { precio: string; onCo
         <Limpiar visible={!!precio} />
         <ContadorCaracteres valor={precio} tope={LIMITES_EVENTO.precio} />
       </label>
-      <Siguiente falta={precio ? null : "Falta el precio"} onSeguir={seguir} />
+      {porConfirmar ? (
+        <PiePaso>
+          {precio && (
+            <Boton type="button" onClick={seguir}>
+              Siguiente
+            </Boton>
+          )}
+          {porConfirmar}
+        </PiePaso>
+      ) : (
+        <Siguiente falta={precio ? null : "Falta el precio"} onSeguir={seguir} />
+      )}
     </>
   );
 }

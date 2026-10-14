@@ -1,7 +1,7 @@
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { cuandoDeTarjeta, notaDeClase } from "@/lib/destacados";
-import { fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
+import { costoEnLista, fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { cuandoPorDia, cuandoVariosDias, diaCorto, diaLocal, horaCorta } from "@/lib/fechas";
 import { textoParte } from "@/lib/ocurrencias";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -70,7 +70,7 @@ export default function RenglonEvento({ evento: e, sinSitio = false, estado = nu
   const cuando = dado ?? (e.clase === "exposicion" || e.clase === "festival" ? cuandoDeTarjeta(e) : undefined);
   // Un evento de varios días dice sus días y su horario de cada día; la lista lo ubica en el día en que empieza.
   const varios = cuandoDeVarios(e);
-  const ademas = [cancelado ? null : (nota ?? notaDeClase(e)), textoParte(e), e.precio, e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
+  const ademas = [cancelado ? null : (nota ?? notaDeClase(e)), textoParte(e), costoEnLista(e.precio), e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
     <Renglon href={hrefEvento(e)} foto={fotoDeEvento(e)} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>

@@ -157,6 +157,45 @@ export function claseDeCosto(precio: string | null | undefined): ClaseDeCosto {
   return /^cooperaci[oó]n/i.test(texto) ? "cooperacion" : "costo";
 }
 
+/**
+ * El costo que se puede dejar vacío (OL-411; firma del founder, 14 de octubre: «C Se puede dejar vacío · K «Por confirmar»»): el de un festival, una
+ * exposición o un taller, que suelen tener precios distintos por función o por sala, y el de lo que cuelga de ellos (un acto de un festival, que
+ * hereda el costo del marco, y la inauguración de una exposición, que hereda el de la exposición). El de un evento suelto sigue siendo obligatorio.
+ */
+export const COSTO_OPCIONAL: readonly Clase[] = ["festival", "exposicion", "taller"];
+export function costoOpcional(e: { clase?: string | null; evento_padre_id?: string | null; inauguracion?: boolean }): boolean {
+  return COSTO_OPCIONAL.includes((e.clase ?? "puntual") as Clase) || !!e.evento_padre_id || !!e.inauguracion;
+}
+
+/**
+ * «Gratis» elegido en un evento de costo opcional se guarda escrito (`precio = 'Gratis'`, sin migración, como «Cooperación solidaria»): ahí el
+ * vacío ya no es gratis sino «por confirmar». En un evento suelto, gratis sigue siendo `precio` vacío (el costo siempre se eligió).
+ */
+export const GRATIS = "Gratis";
+export const POR_CONFIRMAR = "Por confirmar";
+
+/**
+ * Lo que dice el costo de un evento donde se dice (el KPI «Costo» de la ficha): el texto guardado tal cual; sin texto, «Gratis» en un evento suelto
+ * (el costo era obligatorio: vacío es que eligió Gratis) y «Por confirmar» en uno de costo opcional (nadie dijo que fuera gratis). Las tarjetas y los
+ * renglones no lo dicen si es gratis o no se sabe (`costoEnLista`).
+ */
+export function textoCosto(precio: string | null | undefined, opcional: boolean): string {
+  const texto = (precio ?? "").trim();
+  return texto || (opcional ? POR_CONFIRMAR : GRATIS);
+}
+
+/** ¿Se sabe que es gratis? Sin texto, solo en un evento suelto; con texto, si dice «Gratis», «Entrada libre»… (`claseDeCosto`). */
+export const sabidoGratis = (precio: string | null | undefined, opcional: boolean): boolean => ((precio ?? "").trim() ? claseDeCosto(precio) === "gratis" : !opcional);
+
+/**
+ * El costo en un renglón o una tarjeta, como hasta ahora: el texto guardado; sin precio, nada (ni «Gratis» ni «Por confirmar»). El «Gratis» que se
+ * guarda escrito en un evento de costo opcional (OL-411) tampoco: antes era vacío y no se decía. Lo escrito a mano («Entrada libre») sigue.
+ */
+export const costoEnLista = (precio: string | null | undefined): string | null => {
+  const texto = (precio ?? "").trim();
+  return texto && texto !== GRATIS ? texto : null;
+};
+
 export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
   /** Opcional porque no todas las consultas lo piden todavía (bitácora 154); `hrefEvento` cae al UUID cuando falta. */
   slug?: string | null;
@@ -404,6 +443,9 @@ export type OpcionesValidarEvento = {
   eventoActual?: Partial<Evento> | null;
   /** El marco de un festival (OL-348): no es un sitio (sus sedes salen de sus actos), así que no se le pide punto, como en la base. */
   marco?: boolean;
+  /** Un festival, una exposición, un taller o un acto de festival (OL-411, `costoOpcional`): el costo se puede dejar vacío (`por_confirmar`) y
+   *  «Gratis» se guarda escrito. */
+  costoOpcional?: boolean;
 };
 
 /** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */
@@ -418,7 +460,9 @@ export function validarEvento(
   const finTexto = limpiar(entrada.fin);
   const fin = finTexto ? localAIso(finTexto, zonaSitio) : null;
   const cooperacion = limpiar(entrada.cooperacion) === "si";
-  const gratis = !cooperacion && limpiar(entrada.gratis) !== "no";
+  // Sin elegir costo (OL-411): solo vale donde el costo es opcional; en un evento suelto es el error de siempre.
+  const porConfirmar = !cooperacion && limpiar(entrada.por_confirmar) === "si";
+  const gratis = !cooperacion && !porConfirmar && limpiar(entrada.gratis) !== "no";
   const enlaceTexto = limpiar(entrada.enlace);
   const revelarHoras = Number(limpiar(entrada.revelar_horas)) || 24;
   const revelarDesde = inicio ? new Date(new Date(inicio).getTime() - revelarHoras * 3600000).toISOString() : null;
@@ -430,7 +474,7 @@ export function validarEvento(
 
   // El precio viene como número del formulario (ej. "150"), pero también puede venir con "$" del cartel o de datos viejos.
   // Se extrae el número, se valida, y se guarda con "$" para que la ficha muestre "$150".
-  const precioRaw = gratis || cooperacion ? "" : extraerNumero(limpiar(entrada.precio));
+  const precioRaw = gratis || cooperacion || porConfirmar ? "" : extraerNumero(limpiar(entrada.precio));
   const precioValido = precioRaw && /^\d{1,6}$/.test(precioRaw);
 
   const datos: DatosEvento = {
@@ -440,7 +484,7 @@ export function validarEvento(
     fin,
     descripcion: limpiar(entrada.descripcion),
     imagen: limpiar(entrada.imagen) || null,
-    precio: cooperacion ? COOPERACION_SOLIDARIA : gratis ? null : (precioValido ? "$" + precioRaw : precioRaw || null),
+    precio: cooperacion ? COOPERACION_SOLIDARIA : gratis ? (opciones.costoOpcional ? GRATIS : null) : porConfirmar ? null : precioValido ? "$" + precioRaw : precioRaw || null,
     enlace: enlaceTexto ? (/^https?:\/\//i.test(enlaceTexto) ? enlaceTexto : `https://${enlaceTexto}`) : null,
     sitio_texto: modo === "lugar" ? null : sitioTexto || null,
     sitio_direccion: modo === "otro" ? sitioDireccion || null : null,
@@ -494,7 +538,7 @@ export function validarEvento(
   if (inicio && fin && new Date(fin) <= new Date(inicio)) errores.fin = "El fin tiene que ser después del inicio.";
   if (datos.descripcion.length > LIMITES_EVENTO.descripcion) errores.descripcion = `Máximo ${LIMITES_EVENTO.descripcion} caracteres.`;
   if (datos.imagen && !imagenPermitida(datos.imagen, { esAdmin: !!opciones.esAdmin, actual: opciones.imagenActual })) errores.imagen = "La imagen no se subió bien. Intenta de nuevo.";
-  if (!gratis && !cooperacion && !precioRaw) errores.precio = "Pon el precio, o marca que es gratis.";
+  if (!gratis && !cooperacion && !precioRaw && !(porConfirmar && opciones.costoOpcional)) errores.precio = "Pon el precio, o marca que es gratis.";
   if (precioRaw && !precioValido) errores.precio = "El precio debe ser solo números (máximo 6 dígitos, ej. 150).";
   if (datos.enlace) {
     if (datos.enlace.length > 500) errores.enlace = "Demasiado largo.";

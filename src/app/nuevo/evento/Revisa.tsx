@@ -12,13 +12,13 @@ import renglon from "@/components/ui/Renglon.module.css";
 import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { etiquetaHora } from "@/lib/calendario";
 import { SIN_FOTO } from "@/lib/imagen";
-import { COOPERACION_SOLIDARIA, nombreDeClase, type Clase, type ErroresEvento } from "@/lib/eventos";
+import { COOPERACION_SOLIDARIA, GRATIS, POR_CONFIRMAR, nombreDeClase, type Clase, type ErroresEvento } from "@/lib/eventos";
 import { renglonParecido, type EventoParecido } from "@/lib/eventosParecidos";
 import type { Franja } from "@/lib/horarioLugar";
 import { HORARIOS_POR_DIA, cuandoVariosDias, diaConMesDe, diaLocal, formatearCuando, localAIso, rangoCorto, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import type { FestivalElegible } from "./contextoClase";
-import { NOMBRE_RESERVADO, actosMarcados, dondeResuelto, finDe, inicioDe, nombreDelSitio, resumenPrograma, type Paso, type Respuestas } from "./pasos";
+import { NOMBRE_RESERVADO, actosMarcados, costoOpcionalEn, dondeResuelto, finDe, inicioDe, nombreDelSitio, resumenPrograma, type Paso, type Respuestas } from "./pasos";
 import { textoSesiones } from "./clasePorPasos";
 import { HojaClase, HojaFestival, HojaInauguracion, nombreDePadre } from "./PasosClase";
 import { CabezaCartel } from "./PasoCartel";
@@ -118,7 +118,8 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   ) : (
     unDia
   );
-  const cuanto = r.costo === "gratis" ? "Gratis" : r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" && r.precio ? `$${r.precio}` : null;
+  // «Dejar por confirmar» (OL-411) se dice como lo dirá su ficha; si la clase cambió a evento, vuelve a faltar.
+  const cuanto = r.costo === "gratis" ? GRATIS : r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" ? (r.precio ? `$${r.precio}` : null) : r.costo === "por_confirmar" && costoOpcionalEn(r) ? POR_CONFIRMAR : null;
   const extras = errores.descripcion ?? errores.enlace ?? errores.imagen;
   // Con cartel, o al editar, entra la cabeza entera (la miniatura, el sello y el nombre, como una pieza); en el alta sin cartel, el nombre.
   // Al editar, la cabeza lleva los lápices del cartel y del nombre (en el alta el nombre se cambia con Atrás); sin cartel, la miniatura es el

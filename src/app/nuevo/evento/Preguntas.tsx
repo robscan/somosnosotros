@@ -11,7 +11,7 @@ import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
 import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
 import { PasoPrograma, PasoSesiones, PasoVisita } from "./PasosClase";
-import { claseElegida, clasesALaVista, nombreDelSitio } from "./pasos";
+import { claseElegida, clasesALaVista, costoOpcionalEn, nombreDelSitio } from "./pasos";
 import type { usePasosEvento } from "./usePasosEvento";
 import type { useSitioPorPasos } from "./useSitioPorPasos";
 
@@ -89,7 +89,7 @@ export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios
     case "uso":
       return candidato ? <PasoUso candidato={candidato} guardando={sitio.guardando} error={sitio.errorLugar} onUsar={sitio.usarSitio} /> : null;
     case "cuanto":
-      return <PasoCuanto precio={r.precio} onCosto={(costo) => contestar({ costo })} onPrecio={(precio) => cambiar({ precio })} />;
+      return <PasoCuanto precio={r.precio} onCosto={(costo) => contestar({ costo })} onPrecio={(precio) => cambiar({ precio })} onPorConfirmar={costoOpcionalEn(r) ? () => contestar({ costo: "por_confirmar", precio: "" }) : undefined} />;
     case "mas":
       return <PasoMas r={r} mios={mios} ciudadContexto={ciudadContexto} errores={errores} onCambio={cambiar} onListo={seguir} />;
     default:

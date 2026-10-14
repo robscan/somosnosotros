@@ -447,6 +447,24 @@ test("festival desde el cartel (caso 4, H6): «El cartel trae 3 eventos», corre
   ]);
 });
 
+test("OL-411: un festival cuyo cartel no dice el costo pregunta «¿Cuánto cuesta?» con «Dejar por confirmar»; «Revisa» dice «Por confirmar» y se publica sin costo", TOPE, async (t) => {
+  const p = await pagina(t, { qa: conClase({ lectura: { ...PROGRAMA, costoLeido: false } }) });
+  await subir(p);
+  await enPaso(p, "El cartel trae 3 eventos");
+  // La charla espera su sede: se deja como borrador.
+  await p.locator("main ul > li").nth(1).getByRole("checkbox").click();
+  await boton(p, "Revisar el festival").click();
+  await enPaso(p, "¿Cuánto cuesta?");
+  await boton(p, "Dejar por confirmar").click();
+  await p.getByText("Leído del cartel").waitFor();
+  const cuanto = (await datosRevisa(p)).find((f) => /Por confirmar/.test(f));
+  assert.match(cuanto, /Por confirmar\nCambiar/);
+  await boton(p, "Publicar el festival y 2 eventos").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ clase: d.clase, gratis: d.gratis, precio: d.precio, por_confirmar: d.por_confirmar }, { clase: "festival", gratis: "no", precio: "", por_confirmar: "si" });
+});
+
 test("«¿Cómo ocurre?» (caso 5): las cuatro formas con su frase; cambiarla cambia solo el paso del tiempo y conserva lo demás", TOPE, async (t) => {
   const p = await pagina(t, { qa: conClase() });
   await hastaRevisa(p);

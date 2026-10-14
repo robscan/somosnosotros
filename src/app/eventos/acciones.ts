@@ -12,7 +12,7 @@ import { CIUDAD_INICIAL, SIN_CIUDAD } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
-import { cartelAFormulario, ciudadDelSitio, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { cartelAFormulario, ciudadDelSitio, costoOpcional, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { horarioDesdeJson, type Franja } from "@/lib/horarioLugar";
 import { eventoPaso, localAIso, zonaSegura } from "@/lib/fechas";
 import { mencionDeFestival } from "@/lib/sugerencias";
@@ -36,7 +36,7 @@ export type ResultadoEvento =
 
 
 function leer(formData: FormData) {
-  const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_direccion", "sitio_pin_pendiente", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "cooperacion", "precio", "enlace", "ciudad"];
+  const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_direccion", "sitio_pin_pendiente", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "cooperacion", "por_confirmar", "precio", "enlace", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
@@ -146,6 +146,9 @@ function leerClase(formData: FormData): LecturaClase {
   return { clase, horario: franjas && franjas.length ? franjas : null, inauguracion: clase === "exposicion" ? inauguracion : null, padre: clase === "festival" ? null : padre, padreNuevo: clase === "festival" || padre ? null : nuevo || null, error };
 }
 
+/** ¿Se puede dejar el costo vacío (OL-411)? En un festival, una exposición, un taller o lo que es parte de un festival (`costoOpcional`). */
+const costoOpcionalDe = (c: LecturaClase): boolean => costoOpcional({ clase: c.clase, evento_padre_id: c.padre ?? c.padreNuevo });
+
 /** ¿Hace falta la función con la clase? Para todo lo que no sea un evento suelto sin festival, o un evento que deja de ser otra cosa. */
 const conClase = (c: LecturaClase, antes?: { clase?: string | null; evento_padre_id?: string | null } | null): boolean =>
   c.clase !== "puntual" || !!c.padre || !!c.padreNuevo || (!!antes && ((antes.clase ?? "puntual") !== "puntual" || !!antes.evento_padre_id));
@@ -220,7 +223,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   // Un festival se publica con su programa: el marco y sus actos en una sola operación (H6).
   if (clase.clase === "festival") return publicarPrograma(supabase, formData, await esAdminDeSesion(supabase, user.id));
   const [lugar, esAdmin] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id)]);
-  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
+  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin, costoOpcional: costoOpcionalDe(clase) });
   if (clase.error) errores.horario = clase.error;
   // Horario por día (OL-311): solo si la casilla «Mismo horario todos los días» vino desmarcada; sin el campo, el evento es como siempre.
   const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);
@@ -262,7 +265,14 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const clase = leerClase(formData);
   const sinPuntoTrasRetencion = sitioReservadoVencido(existente) && entrada.modo_sitio === "reservado" && !entrada.privado_lat && !entrada.privado_lng;
   const zona = sinPuntoTrasRetencion ? zonaSegura(existente?.zona) : zonaDelEvento(entrada, lugar);
-  const { datos, errores } = validarEvento(entrada, zona, { esAdmin, imagenActual: existente?.imagen ?? null, eventoActual: existente, marco: clase.clase === "festival" });
+  const { datos, errores } = validarEvento(entrada, zona, {
+    esAdmin,
+    imagenActual: existente?.imagen ?? null,
+    eventoActual: existente,
+    marco: clase.clase === "festival",
+    // Sin el campo `clase` (una pantalla de antes) cuenta lo guardado.
+    costoOpcional: formData.has("clase") ? costoOpcionalDe(clase) : costoOpcional(existente ?? {}),
+  });
   if (clase.error) errores.horario = clase.error;
   // Horario por día (OL-319): con la casilla «Mismo horario todos los días» desmarcada llega una sesión por día; sin el campo, el evento queda sin ellas.
   const { sesiones, error: errorSesiones } = validarSesiones(formData.get("sesiones"), datos.zona, datos.inicio, datos.fin);
@@ -323,7 +333,9 @@ async function publicarPrograma(supabase: Cliente, formData: FormData, esAdmin: 
     const nombre = typeof a.titulo === "string" ? a.titulo : "";
     const entrada = { ...marco, ...Object.fromEntries(Object.entries(a.sitio ?? {}).map(([k, v]) => [k, typeof v === "string" ? v : v == null ? null : String(v)])), titulo: nombre, inicio: typeof a.inicio === "string" ? a.inicio : "", fin: typeof a.fin === "string" ? a.fin : "", descripcion: "" } as Entrada;
     const lugar = await lugarDelEvento(supabase, entrada);
-    const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
+    // Cada acto lleva el costo del festival tal cual (OL-411): elegido, el mismo en todos (cada uno se cambia en su ficha); vacío, vacío, y su
+    // ficha dice «Por confirmar» en vez de copiar un «Gratis» que nadie dijo.
+    const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin, costoOpcional: true });
     const error = Object.values(errores)[0];
     if (error) return { ok: false, errores: {}, general: `Revisa «${nombre || "la actividad sin nombre"}»: ${error}` };
     const ciudad = ciudadDe(datos, lugar);

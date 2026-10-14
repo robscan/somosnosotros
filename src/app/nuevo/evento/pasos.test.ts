@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LugarResumen } from "@/lib/lugares";
-import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finDe, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas, diasElegidos } from "./pasos";
+import { DURACIONES, NOMBRE_RESERVADO, OTRO_VACIO, avance, costoOpcionalEn, diasSugeridos, estadoInicial, etiquetaDuracion, eventoPublicado, faltaParaPublicar, faltan, finConHora, finDe, finesSugeridos, flujo, inicioDe, lugarAlLado, nombreDelSitio, pasoActual, puedeGuardarComoLugar, sitioDeCandidato, sitioDeLugar, usosDisponibles, type Accion, type Candidato, type Estado, type Respuestas, diasElegidos } from "./pasos";
 
 const ZONA = "America/Mexico_City";
 const pasar = (e: Estado, ...acciones: Accion[]) => acciones.reduce(flujo, e);
@@ -69,6 +69,50 @@ describe("qué se pregunta según lo que falta", () => {
   it("el botón de «Revisa» dice todo lo que falta, sin punto", () => {
     expect(faltaParaPublicar({ ...hastaRevisa().r, dias: null, hora: null, fin: null })).toBe("Falta el día y la hora");
     expect(faltaParaPublicar(estadoInicial().r)).toBe("Falta el nombre, el día, la hora, el lugar y el precio");
+  });
+});
+
+describe("el costo que se puede dejar por confirmar (OL-411)", () => {
+  // Todo contestado menos el costo, por clase.
+  const listo = (cambios: Partial<Respuestas>): Respuestas => ({ ...estadoInicial().r, nombre: "x", dias: { desde: "2026-10-10", hasta: null }, hora: "19:00", fin: "", sitio: LUGAR, ...cambios });
+  const EXPO = { clase: "exposicion" as const, visita: { desde: "2026-10-10", hasta: "2026-10-30" } };
+  const TALLER = { clase: "taller" as const, sesionesDias: ["2026-10-10"], hora: "10:00" };
+  const ACTO = { padre: { id: "f1", titulo: "Festival" } };
+
+  it("se puede en un festival, una exposición, un taller y lo que es parte de un festival (también uno nuevo); en un evento suelto, no", () => {
+    expect(costoOpcionalEn(listo({}))).toBe(false);
+    for (const c of [EXPO, TALLER, { clase: "festival" as const }, ACTO, { padre: { nuevo: "Festival nuevo" } }]) expect(costoOpcionalEn(listo(c))).toBe(true);
+  });
+
+  it("«Cuánto» se pregunta en todas las clases; «Dejar por confirmar» lo contesta salvo en un evento suelto", () => {
+    for (const c of [{}, EXPO, TALLER, ACTO]) expect(faltan(listo(c))).toEqual(["cuanto"]);
+    for (const c of [EXPO, TALLER, ACTO]) {
+      expect(faltan(listo({ ...c, costo: "por_confirmar" }))).toEqual([]);
+      expect(faltaParaPublicar(listo({ ...c, costo: "por_confirmar" }))).toBeNull();
+    }
+    expect(faltan(listo({ costo: "por_confirmar" }))).toEqual(["cuanto"]);
+    expect(faltaParaPublicar(listo({ costo: "por_confirmar" }))).toBe("Falta el precio");
+    // «Tiene precio» sin escribirlo falta en todas.
+    for (const c of [{}, EXPO, ACTO]) expect(faltan(listo({ ...c, costo: "precio", precio: "" }))).toEqual(["cuanto"]);
+  });
+
+  it("en el alta de una exposición el paso «Cuánto» sale y «Dejar por confirmar» lleva a «Revisa»", () => {
+    const e = pasar(estadoInicial(), { tipo: "seguir" }, { tipo: "cambiar", cambios: { nombre: "Exposición de grabado" } }, { tipo: "seguir" }, { tipo: "cambiar", cambios: { visita: EXPO.visita } }, { tipo: "seguir" }, contestar({ sitio: LUGAR }));
+    expect(e.r.clase).toBe("exposicion");
+    expect(pasoActual(e)).toBe("cuanto");
+    expect(pasoActual(flujo(e, contestar({ costo: "por_confirmar", precio: "" })))).toBe("revisa");
+  });
+
+  it("si la clase vuelve a evento, «por confirmar» vuelve a faltar", () => {
+    expect(faltan({ ...listo({ ...EXPO, costo: "por_confirmar" }), clase: "puntual" })).toContain("cuanto");
+  });
+
+  it("la tarjeta de «Publicado»: sin precio por confirmar; gratis escrito donde el costo es opcional, vacío en un evento", () => {
+    const creado = { id: "e1", slug: null, creadoEn: "2026-10-01T00:00:00Z" };
+    const opciones = { lugar: undefined, zona: ZONA, imagen: null };
+    expect(eventoPublicado(listo({ ...EXPO, costo: "por_confirmar" }), creado, opciones).precio).toBeNull();
+    expect(eventoPublicado(listo({ ...EXPO, costo: "gratis" }), creado, opciones).precio).toBe("Gratis");
+    expect(eventoPublicado(listo({ costo: "gratis" }), creado, opciones).precio).toBeNull();
   });
 });
 

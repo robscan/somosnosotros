@@ -24,6 +24,18 @@ describe("el evento que se duplica", () => {
     expect(costoDeEvento("taquilla")).toBeNull();
     expect(respuestasDeEvento({ ...EVENTO, precio: "taquilla" }, LUGARES, [])).not.toHaveProperty("costo");
   });
+  it("el costo de lo que puede quedar por confirmar (OL-411): sin precio, «por confirmar», nunca gratis; «Gratis» escrito, gratis", () => {
+    expect(costoDeEvento(null, true)).toEqual({ costo: "por_confirmar", precio: "" });
+    expect(costoDeEvento("  ", true)).toEqual({ costo: "por_confirmar", precio: "" });
+    expect(costoDeEvento("Gratis", true)).toEqual({ costo: "gratis", precio: "" });
+    expect(costoDeEvento("Entrada libre")).toEqual({ costo: "gratis", precio: "" });
+    expect(costoDeEvento("$80", true)).toEqual({ costo: "precio", precio: "80" });
+    expect(costoDeEvento("Incluida en el boleto del museo", true)).toBeNull();
+    // Duplicar una exposición sin costo no inventa «Gratis»: el evento nuevo lo pregunta.
+    expect(respuestasDeEvento({ ...EVENTO, precio: null, clase: "exposicion" }, LUGARES, [])).toMatchObject({ costo: "por_confirmar" });
+    expect(respuestasDeEvento({ ...EVENTO, precio: null, evento_padre_id: "f1" }, LUGARES, [])).toMatchObject({ costo: "por_confirmar" });
+    expect(respuestasDeEvento({ ...EVENTO, precio: null }, LUGARES, [])).toMatchObject({ costo: "gratis" });
+  });
   it("el sitio: un lugar que ya no está en el directorio se pregunta; uno privado de la cuenta va como reservado", () => {
     expect(sitioDeEvento({ ...EVENTO, lugar_id: "0b0b0b0b-0000-4000-8000-0000000000ff" }, LUGARES)).toBeUndefined();
     expect(sitioDeEvento({ ...EVENTO, lugar_id: MI_TALLER.id }, LUGARES)?.modo).toBe("reservado");

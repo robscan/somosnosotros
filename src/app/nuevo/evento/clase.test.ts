@@ -259,6 +259,21 @@ describe("editar con la clase", () => {
     expect(inicioDe(r)).toBe("2026-11-12T19:00");
   });
 
+  it("el costo vacío de una exposición, un taller, un festival o un acto entra «por confirmar» y no falta; el de un evento, gratis (OL-411)", () => {
+    const sinPrecio = { ...base, precio: null };
+    const expo = respuestasAlEditar({ evento: { ...sinPrecio, clase: "exposicion" as const, inicio: localAIso("2026-11-06T00:00", ZONA)!, fin: localAIso("2026-11-30T23:59", ZONA)! }, privado: null, lugares, quien: [], zona: ZONA });
+    expect(expo.costo).toBe("por_confirmar");
+    expect(faltan(expo)).toEqual([]);
+    const acto = respuestasAlEditar({ evento: { ...sinPrecio, inicio: localAIso("2026-11-13T18:00", ZONA)!, fin: null }, privado: null, lugares, quien: [], zona: ZONA, clase: { padre: { id: "f1", titulo: "Festival" } } });
+    expect(acto.costo).toBe("por_confirmar");
+    expect(faltan(acto)).not.toContain("cuanto");
+    // Un evento suelto sin precio es el gratis de siempre (el costo era obligatorio); si el acto deja su festival, vuelve a faltar.
+    expect(respuestasAlEditar({ evento: { ...sinPrecio, inicio: localAIso("2026-11-13T18:00", ZONA)!, fin: null }, privado: null, lugares, quien: [], zona: ZONA }).costo).toBe("gratis");
+    expect(faltan({ ...acto, padre: null })).toContain("cuanto");
+    // «Gratis» escrito (elegido en una exposición) entra como gratis.
+    expect(respuestasAlEditar({ evento: { ...base, precio: "Gratis", clase: "exposicion" as const, inicio: localAIso("2026-11-06T00:00", ZONA)!, fin: localAIso("2026-11-30T23:59", ZONA)! }, privado: null, lugares, quien: [], zona: ZONA }).costo).toBe("gratis");
+  });
+
   it("un acto entra con su festival; un evento de antes (sin clase) es un evento", () => {
     const evento = { ...base, titulo: "Charla", inicio: localAIso("2026-11-13T18:00", ZONA)!, fin: null };
     expect(respuestasAlEditar({ evento, privado: null, lugares, quien: [], zona: ZONA, clase: { padre: { id: "f1", titulo: "Festival de Cine" } } })).toMatchObject({ clase: "puntual", padre: { id: "f1", titulo: "Festival de Cine" } });

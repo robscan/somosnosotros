@@ -2,7 +2,7 @@ import type { QuienItem } from "@/lib/artistas";
 import { sumarDiasIso } from "@/lib/calendario";
 import { partirLocal } from "@/lib/cuandoEvento";
 import { visitaDeEvento } from "@/lib/claseEvento";
-import { LIMITES_EVENTO, REVELAR_OPCIONES, esClase, type Evento, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
+import { LIMITES_EVENTO, REVELAR_OPCIONES, costoOpcional, esClase, type Evento, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
 import type { Franja } from "@/lib/horarioLugar";
 import { diaLocal, isoALocal } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
@@ -131,7 +131,7 @@ export function respuestasAlEditar({ evento, privado, lugares, quien, sesiones, 
     ...cuando,
     sesiones: horariosDeEvento({ inicio: evento.inicio, fin: evento.fin, zona }, sesiones, cuando),
     sitio: sitioAlEditar(evento, privado, lugares),
-    ...(costoDeEvento(evento.precio) ?? { costo: null, precio: "" }),
+    ...(costoDeEvento(evento.precio, costoOpcional({ clase, evento_padre_id: evento.evento_padre_id ?? extra.padre?.id })) ?? { costo: null, precio: "" }),
     quien,
     descripcion: evento.descripcion ?? "",
     enlace: evento.enlace ?? "",
