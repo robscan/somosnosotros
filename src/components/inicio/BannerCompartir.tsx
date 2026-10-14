@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { diaLocal } from "@/lib/fechas";
 import { medirCliente } from "@/lib/medir";
-import { abrirInicio, bannerALaVista, cambiarGuardado, cerrarBanner, guardar, leerGuardado, marcarCompartido, mostrarBanner, ocultarBanner, suscribirseBanner } from "@/lib/visitasInicio";
+import { abrirInicio, bannerALaVista, cerrarEnEstaSesion, mostrarBanner, ocultarBanner, reabrirEnEstaSesion, suscribirseBanner } from "@/lib/visitasInicio";
 import { useCanalDePantalla } from "../useCanalDeListas";
 import { IconoCerrar, IconoCompartir } from "../ui/Iconos";
 import SimboloBlanco from "./SimboloBlanco";
@@ -11,18 +11,21 @@ import styles from "./BannerCompartir.module.css";
 
 /** El enlace que se comparte: el dominio principal (el founder, 2026-10-10: somosnosotrxs.org solo va en el cartel). */
 export const ENLACE_APP = "https://somosnosotros.org";
-const DATOS_COMPARTIR = { title: "Somos Nosotrxs", text: "¿Te gusta Somos Nosotrxs? Compártela con tus amigxs.", url: ENLACE_APP };
+/** Lo que se comparte (founder, 2026-10-14, OL-407): «¿Te gusta Somos Nosotrxs? Comparte con tus amigxs. Somos Nosotrxs». */
+const DATOS_COMPARTIR = { title: "Somos Nosotrxs", text: "¿Te gusta Somos Nosotrxs? Comparte con tus amigxs.", url: ENLACE_APP };
 const DE = "compartir-app";
 
 /**
  * El banner para compartir la app (OL-387; prototipo firmado `inicio-propuestas.html`, «Firmada»: B1 tras Destacados, B2 con el símbolo SN,
  * bitácora 417). El founder (2026-10-12): «un banner de ancho completo para que los usuarios compartan la app … para usuarios logueados que hayan
  * entrado más de 2 veces»; la noche del 12: «mejor que lo vea todos siempre. Luego volvemos a este criterio de 3 días» (OL-397). Inicio lo pone
- * con o sin sesión; cuándo sale lo decide el teléfono (`lib/visitasInicio`: desde el primer día, la × descansa 30 días, tras compartir no vuelve). El servidor no sabe nada: se decide tras el primer pintado (como «lo nuevo» de Nuevos eventos), así
- * que mientras no sale no ocupa nada.
+ * con o sin sesión; cuándo sale lo decide el teléfono (`lib/visitasInicio`: desde el primer día). Desde OL-407 (founder, 2026-10-14: «Que el
+ * banner de compartir no se oculte al compartir una vez. Si se cierra se vuelve a abrir al siguiente inicio de sesión»), compartir no lo quita y
+ * la × lo esconde solo hasta la siguiente vez que se abre la app (antes: tras compartir no volvía y la × descansaba 30 días, OL-397). El servidor
+ * no sabe nada: se decide tras el primer pintado (como «lo nuevo» de Nuevos eventos), así que mientras no sale no ocupa nada.
  *
- * «Compartir»: la hoja del teléfono (`navigator.share`) con somosnosotros.org; sin ella (escritorio), copia el enlace y avisa «Enlace copiado». Si
- * la persona cancela la hoja, no cuenta como compartido. Los avisos van por el canal único de Inicio (`PantallaConAviso`, OL-284).
+ * «Compartir»: la hoja del teléfono (`navigator.share`) con somosnosotros.org; sin ella (escritorio), copia el enlace y avisa «Enlace copiado». El
+ * banner se queda. Si la persona cancela la hoja, no cuenta como compartido. Los avisos van por el canal único de Inicio (`PantallaConAviso`, OL-284).
  *
  * Se mide (OL-388, lista cerrada de `lib/medir`): `compartir` con `que: "app"` y el medio, «hoja» si la hoja se abrió y no se canceló, «copiado» si
  * se copió el enlace («copiar sí cuenta como compartir», founder, 2026-10-12). Cancelar la hoja no se mide.
@@ -37,22 +40,20 @@ export default function BannerCompartir({ zona }: { zona: string }) {
   if (!visible) return null;
 
   function cerrar() {
-    const antes = leerGuardado();
-    cambiarGuardado((e) => cerrarBanner(e, diaLocal(new Date(), zona)));
+    cerrarEnEstaSesion();
     ocultarBanner();
     canal?.avisar({
       de: DE,
-      texto: "Cerrado: no vuelve a salir en 30 días",
+      texto: "Cerrado hasta que vuelvas a abrir la app",
       boton: () => {
-        if (antes) guardar(antes);
+        reabrirEnEstaSesion();
         mostrarBanner();
       },
     });
   }
 
+  /** Compartió (o copió): las gracias, y el banner se queda (OL-407). */
   function compartido(texto: string) {
-    cambiarGuardado(marcarCompartido);
-    ocultarBanner();
     canal?.avisar({ de: DE, texto });
   }
 
@@ -87,7 +88,7 @@ export default function BannerCompartir({ zona }: { zona: string }) {
         <SimboloBlanco className={styles.simbolo} />
       </span>
       <p className={styles.titulo}>¿Te gusta Somos Nosotrxs?</p>
-      <p className={styles.texto}>Compártela con tus amigxs.</p>
+      <p className={styles.texto}>Comparte con tus amigxs.</p>
       <button type="button" className={styles.cerrar} onClick={cerrar} aria-label="Cerrar">
         <IconoCerrar width={20} height={20} />
       </button>
