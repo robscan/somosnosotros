@@ -1,5 +1,5 @@
 import type { QuienItem } from "@/lib/artistas";
-import { esCooperacion, extraerNumero, LIMITES_EVENTO, type Evento } from "@/lib/eventos";
+import { claseDeCosto, costoOpcional, esCooperacion, extraerNumero, LIMITES_EVENTO, type Evento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { OTRO_VACIO, sitioDeLugar, type Respuestas, type Sitio } from "./pasos";
 
@@ -12,7 +12,12 @@ import { OTRO_VACIO, sitioDeLugar, type Respuestas, type Sitio } from "./pasos";
 export type Arranque = { r: Partial<Respuestas>; entrar: boolean };
 
 /** Lo del evento que se duplica y sirve para el nuevo (lo de `select *`, sin pedir nada más). */
-export type EventoBase = Pick<Evento, "titulo" | "lugar_id" | "precio" | "descripcion" | "enlace" | "sitio_texto" | "sitio_direccion" | "sitio_lat" | "sitio_lng" | "sitio_reservado"> & { ciudad?: string | null };
+export type EventoBase = Pick<Evento, "titulo" | "lugar_id" | "precio" | "descripcion" | "enlace" | "sitio_texto" | "sitio_direccion" | "sitio_lat" | "sitio_lng" | "sitio_reservado"> & {
+  ciudad?: string | null;
+  /** Para leer su costo (OL-411): sin precio, una exposición, un taller, un festival o un acto no es gratis sino «por confirmar». */
+  clase?: string | null;
+  evento_padre_id?: string | null;
+};
 
 /**
  * El sitio del evento que se duplica, como respuesta; undefined si hay que preguntarlo. Un lugar del directorio, si sigue en él (uno privado
@@ -41,10 +46,15 @@ export function sitioDeEvento(e: EventoBase, lugares: readonly LugarResumen[]): 
   };
 }
 
-/** Cuánto cuesta el evento que se duplica: sin precio, gratis; «Cooperación solidaria», cooperación; con un número, ese precio; un texto sin número («taquilla»), se pregunta. */
-export function costoDeEvento(precio: string | null): Pick<Respuestas, "costo" | "precio"> | null {
-  if (!precio) return { costo: "gratis", precio: "" };
+/**
+ * Cuánto cuesta un evento guardado, como respuesta (al duplicarlo y al editarlo): «Cooperación solidaria», cooperación; «Gratis» (o «Entrada libre»)
+ * escrito, gratis; con un número, ese precio. Sin precio, gratis en un evento suelto (el costo era obligatorio) y «por confirmar» en uno de costo
+ * opcional (`opcional`, OL-411: su ficha lo dice así y así sigue). Un texto sin número («taquilla»), null: se pregunta, nunca se borra sin verse.
+ */
+export function costoDeEvento(precio: string | null, opcional = false): Pick<Respuestas, "costo" | "precio"> | null {
+  if (!precio?.trim()) return { costo: opcional ? "por_confirmar" : "gratis", precio: "" };
   if (esCooperacion(precio)) return { costo: "cooperacion", precio: "" };
+  if (claseDeCosto(precio) === "gratis") return { costo: "gratis", precio: "" };
   const numero = extraerNumero(precio).slice(0, LIMITES_EVENTO.precio);
   return numero ? { costo: "precio", precio: numero } : null;
 }
@@ -55,7 +65,7 @@ export function respuestasDeEvento(e: EventoBase, lugares: readonly LugarResumen
   return {
     nombre: e.titulo.slice(0, LIMITES_EVENTO.titulo),
     ...(sitio ? { sitio } : {}),
-    ...costoDeEvento(e.precio),
+    ...costoDeEvento(e.precio, costoOpcional(e)),
     quien,
     descripcion: e.descripcion ?? "",
     enlace: e.enlace ?? "",

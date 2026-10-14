@@ -46,7 +46,7 @@ export default async function NuevoEventoPorPasos({ searchParams }: { searchPara
     cargarMisArtistas(actual.perfil.id),
     cartelActivo ? cupoDeCartel() : null,
     desde && esUuid(desde) && supabase
-      ? supabase.from("eventos").select("id, slug, titulo, lugar_id, precio, descripcion, enlace, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad").eq("id", desde).maybeSingle().then(({ data }) => data as (EventoBase & { id: string; slug: string | null }) | null)
+      ? supabase.from("eventos").select("id, slug, titulo, lugar_id, precio, descripcion, enlace, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, clase, evento_padre_id").eq("id", desde).maybeSingle().then(({ data }) => data as (EventoBase & { id: string; slug: string | null }) | null)
       : null,
     desde && esUuid(desde) ? cargarQuien(desde) : [],
     artista && esUuid(artista) && supabase ? supabase.from("artistas").select("id, nombre").eq("id", artista).maybeSingle().then(({ data }) => data as { id: string; nombre: string } | null) : null,

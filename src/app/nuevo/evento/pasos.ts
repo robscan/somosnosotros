@@ -4,7 +4,7 @@ import type { QuienItem } from "@/lib/artistas";
 import { FIN_DEL_DIA, sumarDiasIso } from "@/lib/calendario";
 import { conHoraFin } from "@/lib/cuandoEvento";
 import { horariosDeTaller, periodoDeVisita, textoProgramaRegistrado } from "@/lib/claseEvento";
-import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, claseSugerida, type Clase, type ModoSitio, type OtroSitio } from "@/lib/eventos";
+import { COOPERACION_SOLIDARIA, GRATIS, LIMITES_EVENTO, claseSugerida, costoOpcional, type Clase, type ModoSitio, type OtroSitio } from "@/lib/eventos";
 import type { Franja } from "@/lib/horarioLugar";
 import { combinarFechaHora, localAIso, rangoCorto, sumarHoras } from "@/lib/fechas";
 import { queFalta } from "@/lib/formulario";
@@ -25,7 +25,9 @@ export type Paso = "inicio" | "nombre" | "dia" | "hora" | "visita" | "sesiones" 
 /** El camino sin cartel, de principio a fin: también da la línea de avance. */
 const ORDEN: readonly Paso[] = ["inicio", "nombre", "dia", "hora", "donde", "cuanto", "revisa"];
 
-export type Costo = "gratis" | "cooperacion" | "precio";
+/** «Por confirmar» (OL-411) es una respuesta: «Dejar por confirmar» en el paso «Cuánto». Solo vale donde el costo es opcional (`costoOpcionalEn`);
+ *  en un evento suelto vuelve a faltar. */
+export type Costo = "gratis" | "cooperacion" | "precio" | "por_confirmar";
 export type Sitio = { modo: ModoSitio; lugarId: string; otro: OtroSitio };
 export type Dias = { desde: string; hasta: string | null };
 
@@ -222,10 +224,17 @@ export const actoListo = (a: Acto): boolean => !!a.titulo.trim() && !!a.dia && !
 export const actosMarcados = (r: Pick<Respuestas, "actos">): Acto[] => r.actos.filter((a) => a.marcado);
 
 /**
+ * ¿Se puede dejar el costo por confirmar (OL-411)? Un festival, una exposición, un taller o lo que es parte de un festival (`costoOpcional`): su
+ * ficha dirá «Por confirmar». Un evento suelto, no.
+ */
+export const costoOpcionalEn = (r: Pick<Respuestas, "clase" | "padre">): boolean => costoOpcional({ clase: r.clase, evento_padre_id: r.padre ? ("id" in r.padre ? r.padre.id : r.padre.nuevo) : null });
+
+/**
  * Lo que falta para publicar, en el orden en que se pregunta. El paso del tiempo depende de la clase (doc 55 §2): un evento pregunta el día y la
  * hora; una exposición, cuándo se puede visitar; un taller, los días de sus sesiones y su hora; un festival, su programa (al menos un acto
- * marcado, y todos los marcados completos). Un festival no pregunta dónde (cada acto tiene su sede); cuánto, sí: es el de sus actos (sin él, la
- * ficha diría lo que nadie dijo).
+ * marcado, y todos los marcados completos). Un festival no pregunta dónde (cada acto tiene su sede). Cuánto se pregunta siempre; en un festival,
+ * una exposición, un taller o un acto de festival se puede contestar «Dejar por confirmar» (OL-411, `costoOpcionalEn`), que en un evento suelto
+ * no vale (si la clase cambia a evento, vuelve a faltar). «Tiene precio» sin escribirlo falta siempre.
  */
 export function faltan(r: Respuestas): Paso[] {
   const p: Paso[] = [];
@@ -242,7 +251,7 @@ export function faltan(r: Respuestas): Paso[] {
     if (!r.hora || r.fin === null) p.push("hora");
   }
   if (r.clase !== "festival" && !dondeResuelto(r.sitio)) p.push("donde");
-  if (!r.costo || (r.costo === "precio" && !r.precio)) p.push("cuanto");
+  if (!r.costo || (r.costo === "precio" && !r.precio) || (r.costo === "por_confirmar" && !costoOpcionalEn(r))) p.push("cuanto");
   return p;
 }
 
@@ -577,7 +586,7 @@ export function eventoPublicado(r: Respuestas, creado: Creado, { lugar, zona, im
     fin: fin ? localAIso(fin, zona) : null,
     zona,
     imagen,
-    precio: r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" ? `$${r.precio}` : null,
+    precio: r.costo === "cooperacion" ? COOPERACION_SOLIDARIA : r.costo === "precio" ? `$${r.precio}` : r.costo === "gratis" && costoOpcionalEn(r) ? GRATIS : null,
     lugar_id: modo === "lugar" ? lugarId : null,
     sitio_texto: modo === "lugar" ? null : otro.sitioTexto.slice(0, LIMITES_EVENTO.sitio),
     // La dirección de un sitio reservado nunca sale: es lo que se reserva.

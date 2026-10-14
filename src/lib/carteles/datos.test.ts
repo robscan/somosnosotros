@@ -13,9 +13,19 @@ describe("textoPrecio", () => {
   });
   it("con costo: el texto de quien publicó, con su tope de 24", () => {
     expect(textoPrecio("$150")).toBe("$150");
-    const largo = textoPrecio("$300 por las tres sesiones, materiales incluidos");
+    const largo = textoPrecio("$300 por las tres sesiones, materiales incluidos") ?? "";
     expect([...largo].length).toBeLessThanOrEqual(MAXIMOS.precio);
     expect(largo.endsWith("…")).toBe(true);
+  });
+  it("sin precio en un festival, una exposición, un taller o un acto (costo opcional, OL-411): nada, nunca «Entrada libre»", () => {
+    for (const p of [null, "", "  "]) expect(textoPrecio(p, true)).toBeNull();
+    expect(textoPrecio("Gratis", true)).toBe("Entrada libre");
+    expect(textoPrecio("$150", true)).toBe("$150");
+  });
+  it("el cartel de una exposición sin costo no dice precio; con «Gratis» elegido, «Entrada libre»", () => {
+    expect(armarTextos({ ...CASOS.medio, clase: "exposicion", costoOpcional: true, precio: null }, null, AHORA_CASOS).precio).toBeNull();
+    expect(armarTextos({ ...CASOS.medio, clase: "exposicion", costoOpcional: true, precio: "Gratis" }, null, AHORA_CASOS).precio).toBe("Entrada libre");
+    expect(armarTextos({ ...CASOS.medio, precio: null }, null, AHORA_CASOS).precio).toBe("Entrada libre");
   });
 });
 

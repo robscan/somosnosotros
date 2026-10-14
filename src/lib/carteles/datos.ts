@@ -27,6 +27,8 @@ export type EventoCartel = {
   precio: string | null;
   /** Cómo ocurre (OL-321): a un festival o una exposición el cartel les pone solo el mes (OL-336). */
   clase: Clase;
+  /** Su costo se puede dejar vacío (OL-411, `costoOpcional`): sin precio, el cartel no dice ninguno. */
+  costoOpcional?: boolean;
   /** Con horario por día (OL-311): cada día con su hora; el cartel no puede decirlas todas. */
   conSesiones: boolean;
   /** El nombre del sitio como lo dice la agenda (`sitioEnLista`): el lugar, «otro sitio», «Sitio reservado» o, en un festival, «Varias sedes» (OL-339). */
@@ -80,8 +82,12 @@ export function partirTitulo(titulo: string): { titulo: string; subtitulo: strin
   return { titulo: m[1].trim(), subtitulo: m[2].trim() };
 }
 
-/** El precio en el cartel: «Entrada libre», «Cooperación solidaria» o lo que escribió quien publicó, con su tope. */
-export function textoPrecio(precio: string | null | undefined): string {
+/**
+ * El precio en el cartel: «Entrada libre», «Cooperación solidaria» o lo que escribió quien publicó, con su tope. Sin precio en un evento de costo
+ * opcional (`opcional`, OL-411: su ficha dice «Por confirmar»), nada: un cartel no anuncia lo que no se sabe, y «Entrada libre» sería inventarlo.
+ */
+export function textoPrecio(precio: string | null | undefined, opcional = false): string | null {
+  if (opcional && !(precio ?? "").trim()) return null;
   const clase = claseDeCosto(precio);
   if (clase === "gratis") return "Entrada libre";
   const texto = limpiarTexto(precio ?? "");
@@ -176,7 +182,8 @@ export type TextosCartel = {
   hora: string | null;
   sitio: string | null;
   artistas: { nombres: string[]; mas: number };
-  precio: string;
+  /** null: costo por confirmar (OL-411), el cartel no dice precio. */
+  precio: string | null;
 };
 
 /** La dirección corta del evento (`somosnosotrxs.org/e/<slug>`: el dominio lleva a somosnosotros.org con la misma ruta y el proxy a `/eventos/<slug>`, ambos con 308). Desde OL-336 el pie del cartel
@@ -231,6 +238,6 @@ export function armarTextos(e: EventoCartel, tituloPropio: string | null = null,
     ...fechas(e, ahora),
     sitio: e.sitio ? recortar(limpiarTexto(e.sitio), MAXIMOS.lugar) : null,
     artistas: textoArtistas(e.artistas),
-    precio: textoPrecio(e.precio),
+    precio: textoPrecio(e.precio, !!e.costoOpcional),
   };
 }

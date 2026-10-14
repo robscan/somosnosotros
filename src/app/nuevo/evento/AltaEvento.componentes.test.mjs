@@ -952,6 +952,75 @@ test("«Tiene precio» abre el número, solo dígitos, y «Revisa» lo enseña c
   assert.deepEqual({ gratis: d.gratis, cooperacion: d.cooperacion, precio: d.precio, fin: d.fin }, { gratis: "no", cooperacion: "no", precio: "150", fin: "" });
 });
 
+/** OL-411: una exposición hasta «¿Cuánto cuesta?» (elegida con su chip, del 9 al 18 de octubre, en el Teatro de la Paz). */
+async function exposicionHastaCuanto(p) {
+  await boton(p, "No tengo cartel").click();
+  await p.getByLabel("Nombre del evento").fill("Ecos de papel");
+  await fila(p).getByRole("button", { name: "Exposición" }).click();
+  await boton(p, "Siguiente").click();
+  await enPaso(p, "¿Cuándo se puede visitar?");
+  await p.getByRole("gridcell", { name: /^viernes 9 de octubre/ }).click();
+  await p.getByRole("gridcell", { name: /^domingo 18 de octubre/ }).click();
+  await p.getByRole("button", { name: "Siguiente", exact: true }).click();
+  await elegirTeatro(p);
+  await enPaso(p, "¿Cuánto cuesta?");
+}
+
+test("OL-411: en una exposición «¿Cuánto cuesta?» lleva «Dejar por confirmar» quieto al pie; «Revisa» dice «Por confirmar» y se publica sin costo", TOPE, async (t) => {
+  const p = await pagina(t);
+  await exposicionHastaCuanto(p);
+  const quieto = boton(p, "Dejar por confirmar");
+  assert.match(await quieto.getAttribute("class"), /quieto/);
+  assert.equal(await p.locator("main footer").getByRole("button").count(), 1);
+  await quieto.click();
+  // El renglón de «Cuánto» (su clave queda para el lector; el horario de la expo también puede decir «por confirmar»).
+  const cuanto = p.locator("main ul > li").filter({ hasText: "Cuánto" });
+  await cuanto.filter({ hasText: "Por confirmar" }).waitFor();
+  assert.match(await cuanto.innerText(), /Por confirmar\nCambiar/);
+  // Nada falta: el botón publica.
+  await boton(p, "Publicar exposición").click();
+  await p.waitForFunction(() => window.qa.envios.length >= 1);
+  const d = await enviado(p);
+  assert.deepEqual({ clase: d.clase, gratis: d.gratis, cooperacion: d.cooperacion, precio: d.precio, por_confirmar: d.por_confirmar }, { clase: "exposicion", gratis: "no", cooperacion: "no", precio: "", por_confirmar: "si" });
+});
+
+test("OL-411: en «Tiene precio» de una exposición, vacío no falta: «Siguiente» sale al escribir y «Dejar por confirmar» sigue; con el teclado (390×508) los dos se ven", TOPE, async (t) => {
+  const p = await pagina(t, { alto: 508 });
+  await exposicionHastaCuanto(p);
+  await boton(p, /^Tiene precio/).click();
+  assert.equal(await boton(p, "Falta el precio").count(), 0);
+  assert.equal(await boton(p, "Siguiente").count(), 0);
+  await p.getByLabel("Precio (solo números)").fill("80");
+  const vista = await p.evaluate(() => {
+    const caja = (el) => {
+      const r = el.getBoundingClientRect();
+      const encima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { texto: el.textContent, top: r.top, bottom: r.bottom, libre: !!encima && (el === encima || el.contains(encima)) };
+    };
+    return { alto: innerHeight, foco: document.activeElement?.getAttribute("aria-label"), botones: [...document.querySelectorAll("main footer button")].map(caja) };
+  });
+  assert.equal(vista.foco, "Precio (solo números)");
+  assert.deepEqual(vista.botones.map((b) => b.texto), ["Siguiente", "Dejar por confirmar"]);
+  for (const b of vista.botones) assert.ok(b.top >= 0 && b.bottom <= vista.alto && b.libre, JSON.stringify(b));
+  // Desde «Revisa», «Dejar por confirmar» quita el precio que había.
+  await boton(p, "Siguiente").click();
+  await p.locator("main ul > li").filter({ hasText: "$80" }).waitFor();
+  await p.getByRole("button", { name: "Cambiar cuánto" }).click();
+  await boton(p, "Dejar por confirmar").click();
+  await p.locator("main ul > li").filter({ hasText: "Cuánto" }).filter({ hasText: "Por confirmar" }).waitFor();
+});
+
+test("OL-411: en un evento suelto «¿Cuánto cuesta?» no tiene «Dejar por confirmar»: el costo sigue siendo obligatorio", TOPE, async (t) => {
+  const p = await pagina(t);
+  await hastaDonde(p);
+  await elegirTeatro(p);
+  await enPaso(p, "¿Cuánto cuesta?");
+  assert.equal(await boton(p, "Dejar por confirmar").count(), 0);
+  await boton(p, /^Tiene precio/).click();
+  assert.equal(await boton(p, "Falta el precio").getAttribute("aria-disabled"), "true");
+  assert.equal(await boton(p, "Dejar por confirmar").count(), 0);
+});
+
 test("tocar un dato en «Revisa» abre solo su pregunta y, al contestarla, vuelve; Atrás desde «Revisa» sigue el camino de ida", TOPE, async (t) => {
   const p = await pagina(t);
   await hastaRevisa(p);

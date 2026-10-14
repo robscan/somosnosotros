@@ -48,6 +48,8 @@ export default function CamposEvento({ r, ciudadContexto, imagen, colores = null
       <input type="hidden" name="gratis" value={r.costo === "gratis" ? "si" : "no"} />
       <input type="hidden" name="cooperacion" value={r.costo === "cooperacion" ? "si" : "no"} />
       <input type="hidden" name="precio" value={r.costo === "precio" ? r.precio : ""} />
+      {/* «Dejar por confirmar» (OL-411): solo vale donde el costo es opcional; en un evento suelto el servidor lo rechaza como siempre. */}
+      <input type="hidden" name="por_confirmar" value={r.costo === "por_confirmar" ? "si" : "no"} />
       <input type="hidden" name="quien" value={JSON.stringify(r.quien)} />
       <input type="hidden" name="descripcion" value={r.descripcion} />
       <input type="hidden" name="enlace" value={r.enlace} />
