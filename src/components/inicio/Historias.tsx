@@ -6,9 +6,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { IconoMarcador, IconoRuta } from "@/components/ui/Iconos";
+import { SIN_ACERCAR } from "@/lib/acercar";
 import { etiquetaAhora, metaAhora, type AvisoAhora } from "@/lib/ahora";
 import { coloresDeImagen, conAlfa, paletaPropia, type Paleta } from "@/lib/coloresCartel";
 import type { Asistencia } from "@/lib/deslizar";
+import { useZoomImagen } from "../useZoomImagen";
 import SimboloBlanco from "./SimboloBlanco";
 import styles from "./Historias.module.css";
 
@@ -45,6 +47,9 @@ const FOCABLES = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"
  * tercio izquierdo retrocede, mantener pausa, deslizar hacia abajo cierra. Los arrastres terminan solo con `pointerup` y `pointercancel` (también en
  * `window`), nunca con `pointerleave` (Safari táctil lo dispara en el primer movimiento). Abajo, «Ver ficha», «Me interesa» y «Cómo llegar».
  * No toca la URL ni el historial (filtrar no es navegar): al cerrar, Inicio está donde estaba. Teclado: flechas, Espacio y Escape; el foco no sale.
+ * El cartel se acerca como en el visor (OL-408, `useZoomImagen`): pellizcar hasta 4× y, acercado, uno o dos dedos lo recorren (o la rueda, en
+ * escritorio). Mientras está acercado la historia se queda quieta: el avance se pausa, deslizar mueve el cartel y un toque no pasa de historia, lo
+ * devuelve a 1× y el avance sigue. Sin doble toque para acercar: el toque simple ya avanza y esperar un segundo toque retrasaría cada uno.
  */
 export default function Historias({ avisos, inicial, conTeclado, ahora, asistencias, conSesion, onVer, onCerrar }: Props) {
   const [indice, setIndice] = useState(inicial);
@@ -55,6 +60,8 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   // pintaría su animación con la duración de 0,01 ms de «Reducir movimiento» y su `animationend` pasaría a la siguiente antes de verla.
   const [reducido, setReducido] = useState(() => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [arrastre, setArrastre] = useState(0);
+  /** El cartel acercado: la historia se pausa y los gestos son del cartel. */
+  const [acercada, setAcercada] = useState(false);
   const [interesan, setInteresan] = useState<Record<string, boolean>>(() => Object.fromEntries(Object.entries(asistencias ?? {}).map(([id, e]) => [id, e === "me_interesa"])));
   /** El aviso de «Me interesa» es de su historia: al pasar a otra ya no se dice. */
   const [aviso, setAviso] = useState<{ clave: string; texto: string } | null>(null);
@@ -63,6 +70,8 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   const marco = useRef<HTMLDivElement>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
   const polvo = useRef<HTMLCanvasElement>(null);
+  const zoom = useZoomImagen<HTMLDivElement>({ rueda: true, alCambiar: setAcercada, bordes: "imagen" });
+  const { caja: centro, imagen: cartel } = zoom;
   const indiceRef = useRef(indice);
   const cerrandoRef = useRef(false);
   const a = avisos[Math.min(indice, avisos.length - 1)];
@@ -117,6 +126,10 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
     colores.current = (a.e.cartel && paletas.get(a.e.cartel)) || paletaPropia(a.e.id);
   }, [a.e.clave, a.e.cartel, a.e.id, onVer]);
 
+  // Otra historia (con las flechas del teclado, que siguen pasando acercada) empieza con su cartel a 1×.
+  const reiniciarZoom = zoom.reiniciar;
+  useEffect(() => reiniciarZoom(), [a.e.clave, reiniciarZoom]);
+
   // El degradado vivo: un lienzo de 36×72 con cuatro luces que se mueven despacio (el navegador lo estira: el estirado ya es el desenfoque) y,
   // encima, 36 partículas. Solo con la historia abierta y visible; con «Reducir movimiento», un cuadro quieto y sin partículas.
   useEffect(() => {
@@ -170,12 +183,24 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
     return () => cancelAnimationFrame(id);
   }, [reducido, oculta]);
 
-  // Los gestos. Un toque sobre un botón o un enlace es suyo; el resto de la historia es la superficie del gesto.
+  // Los gestos. Un toque sobre un botón o un enlace es suyo; el resto de la historia es la superficie del gesto. Los dedos sobre el cartel son
+  // además del zoom: con un segundo dedo (pellizco) o con el cartel acercado, el gesto de la historia se suelta y todo es del cartel.
   const gesto = useRef<{ x: number; y: number; t: number; id: number; fuera: boolean } | null>(null);
+  const { tocar: tocarZoom, mover: moverZoom, soltar: soltarZoom, dedos, acercada: estaAcercada, poner: ponerZoom } = zoom;
   const soltar = useCallback(
-    (ev: { clientX: number; clientY: number; pointerId: number }, cancelado: boolean) => {
+    (ev: { clientX: number; clientY: number; pointerId: number; type?: string }, cancelado: boolean) => {
+      const enZoom = dedos();
+      const toqueZoom = soltarZoom(ev);
       const g = gesto.current;
-      if (!g || g.id !== ev.pointerId) return;
+      if (!g || g.id !== ev.pointerId) {
+        // El último dedo del cartel: el avance sigue (si quedó acercado, sigue en pausa por `acercada`). Acercado, un toque lo devuelve a 1×; nunca
+        // pasa de historia.
+        if (enZoom > 0 && dedos() === 0) {
+          setPausada(false);
+          if (toqueZoom && !cancelado && estaAcercada()) ponerZoom(SIN_ACERCAR, true);
+        }
+        return;
+      }
       gesto.current = null;
       setArrastre(0);
       setPausada(false);
@@ -190,7 +215,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
         if (r) pasar(ev.clientX - r.left < r.width * 0.3 ? -1 : 1);
       }
     },
-    [pasar, salir],
+    [pasar, salir, dedos, soltarZoom, estaAcercada, ponerZoom],
   );
   useEffect(() => {
     const arriba = (ev: PointerEvent) => soltar(ev, false);
@@ -261,21 +286,28 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
       aria-label="Historias de hoy"
       tabIndex={-1}
       data-abierta={abierta || undefined}
-      data-pausada={pausa || undefined}
+      data-pausada={pausa || acercada || undefined}
       data-sin-cartel={!e.cartel || undefined}
       data-arrastrando={arrastre > 0 || undefined}
       style={arrastre > 0 ? { transform: `translateY(${arrastre}px) scale(${1 - Math.min(arrastre, 400) / 2000})` } : undefined}
       onPointerDown={(ev) => {
         if ((ev.target as Element).closest("a, button")) return;
-        gesto.current = { x: ev.clientX, y: ev.clientY, t: performance.now(), id: ev.pointerId, fuera: !marco.current?.contains(ev.target as Node) };
+        if (cartel.current?.contains(ev.target as Node) || dedos() > 0 || estaAcercada()) tocarZoom(ev);
         try {
           raiz.current?.setPointerCapture(ev.pointerId);
         } catch {
           // Sin captura (un puntero sintético): el `pointerup` de `window` cierra el gesto igual.
         }
         setPausada(true);
+        if (dedos() > 1 || estaAcercada()) {
+          gesto.current = null;
+          setArrastre(0);
+          return;
+        }
+        gesto.current = { x: ev.clientX, y: ev.clientY, t: performance.now(), id: ev.pointerId, fuera: !marco.current?.contains(ev.target as Node) };
       }}
       onPointerMove={(ev) => {
+        moverZoom(ev);
         const g = gesto.current;
         if (!g || g.id !== ev.pointerId) return;
         const dy = ev.clientY - g.y;
@@ -309,10 +341,11 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
             </svg>
           </button>
         </header>
-        <div className={styles.centro}>
+        <div ref={centro} className={styles.centro} data-acercada={acercada || undefined}>
           {e.cartel ? (
             <Image
               key={e.cartel}
+              ref={cartel}
               className={styles.cartel}
               src={e.cartel}
               alt={`Cartel: ${e.titulo}`}
