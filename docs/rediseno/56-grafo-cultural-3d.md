@@ -97,7 +97,7 @@ Pedido del founder la misma noche: «Me faltó agregar correlaciones entre igual
 | Lugar y lugar | Son sede de actos del mismo festival (`evento_padre_id`) | Festivales compartidos | 22 líneas |
 | Asistente y asistente | Voy o Me interesa al mismo evento («coinciden») | Eventos en común | 15 líneas |
 
-Como dice el doc de Artistas (investigaciones), «compartió actividad con» es más preciso que «colaboró con»: estar en el mismo festival no prueba una actuación compartida. Por eso la línea artista–artista sale solo del mismo evento (el acto), no del festival entero. Las de lugares sí son por festival, que es lo que une a dos sedes. Las de asistentes son las más delicadas: dicen que dos personas estuvieron en el mismo sitio; en el prototipo son anónimas, y en la app dependen del umbral de la pregunta 10.
+Como dice el doc de Artistas (investigaciones), «compartió actividad con» es más preciso que «colaboró con»: estar en el mismo festival no prueba una actuación compartida. Por eso la línea artista–artista sale solo del mismo evento (el acto), no del festival entero. Las de lugares sí son por festival, que es lo que une a dos sedes. Las de asistentes son las más delicadas: dicen que dos personas estuvieron en el mismo sitio; en el prototipo son anónimas, y en la app dependen del umbral de la pregunta 10 (desde el 13 de octubre de 2026, en Administración, es 1: nota de § 5, punto 7; antes se proponía 3).
 
 La tarjeta del elegido desglosa sus conexiones: «toca con 4 artistas · en 2 lugares · 3 asistentes».
 
@@ -139,7 +139,8 @@ radio = 5 + 4 · √min(peso, 64)
 4. **Redondeada antes de guardarse:** a una cuadrícula de 500 m y con un corrimiento al azar de hasta 300 m que se fija por persona y no cambia (si cambiara en cada consulta, se promediaría y se recuperaría la casa). Nunca se guarda la coordenada cruda ni un historial: cada posición nueva **reemplaza** a la anterior, así «hoy consulta desde un sitio y mañana desde otro, y el punto se mueve», como pidió el founder, sin dejar rastro del recorrido.
 5. **Tamaño por tramos**, nunca el número (§ 4).
 6. **Sin líneas desde Seguir.** Seguir es privado (la ficha dice «3 siguen», no quiénes). Las líneas de un asistente salen solo de Voy y Me interesa, que la app ya enseña con nombre a quien tiene sesión («Van 2: Ana y Marcos»).
-7. **Umbral de anonimato:** si un evento tiene menos de 3 personas con Voy, las líneas de sus asistentes no se dibujan (si no, «un asistente anónimo → ese evento» más «Fueron 1: Ana» en la ficha es Ana con otro nombre). El 3 es propuesta (pregunta 10).
+7. **Umbral de anonimato:** si un evento tiene menos de ~~3~~ **1** personas con Voy (umbral 1: basta una), las líneas de sus asistentes no se dibujan (si no, «un asistente anónimo → ese evento» más «Fueron 1: Ana» en la ficha es Ana con otro nombre). El 3 era la propuesta (pregunta 10).
+   > **Nota, 13 de octubre de 2026: el founder bajó el umbral a 1 para Administración («baja humbral a 1 para grafo y acepto tus otras recomendaciones», tras ver a DwardNoize sin relaciones); los puntos siguen anónimos. OL-404.**
 8. **Se borra con la cuenta** y al apagar el interruptor.
 9. En Administración puede existir una variante con el identificador sin nombre, como ya está firmado; no en lo público.
 
@@ -200,6 +201,8 @@ Lo que no entró porque la base no lo tiene: papel y procedencia de cada relaci�
 
 **Dónde vivirían los diagnósticos:** en Administración, con el identificador sin nombre ya firmado, para todo lo que toque personas; en lo público, solo la versión sin asistentes o con la regla de § 5.
 
+> **Nota, 13 de octubre de 2026: el founder bajó el umbral a 1 para Administración («baja humbral a 1 para grafo y acepto tus otras recomendaciones», tras ver a DwardNoize sin relaciones); los puntos siguen anónimos. OL-404.**
+
 ## 8. Lo que no entra todavía
 
 - Rutas, trayectos y «recorridos» de personas: no (sin rastreo).
@@ -217,4 +220,5 @@ Lo que no entró porque la base no lo tiene: papel y procedencia de cada relaci�
 7. **El tercer color.** Violeta para lugares y crema para artistas; el negro de la línea gráfica desaparece sobre fondo oscuro, así que los asistentes van en el naranja cempasúchil de los destacados (en tema claro: violeta, tinta y naranja). ¿Vale, o prefiere otro?
 8. **¿Dónde vive y quién lo ve?** Una pantalla aparte fuera de las cinco pestañas (por ejemplo desde «···» o desde Lugares), pública o solo con sesión.
 9. **Los sin conexión:** ¿a la vista en gris, como ahora, o escondidos de origen?
-10. **Umbral de anonimato:** ¿3 personas con Voy para dibujar las líneas de un asistente a ese evento?
+10. **Umbral de anonimato:** ¿~~3~~ **1** persona con Voy para dibujar las líneas de un asistente a ese evento?
+    > **Nota, 13 de octubre de 2026: el founder bajó el umbral a 1 para Administración («baja humbral a 1 para grafo y acepto tus otras recomendaciones», tras ver a DwardNoize sin relaciones); los puntos siguen anónimos. OL-404.**
