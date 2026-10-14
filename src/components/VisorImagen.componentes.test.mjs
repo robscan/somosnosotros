@@ -25,6 +25,8 @@ const mocks = {
 
 /** Un cartel 3:2 con un punto de referencia en cada esquina, para saber qué parte se ve. */
 const CARTEL = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#e8e0d0"/><circle cx="60" cy="60" r="40" fill="#c0392b"/><circle cx="840" cy="540" r="40" fill="#2980b9"/></svg>')}`;
+/** Un cartel 4:5 más alto que una ventana de escritorio (OL-403): 1 080×1 350 en 1 280×800. */
+const CARTEL_ALTO = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350"><rect width="1080" height="1350" fill="#e8e0d0"/><circle cx="80" cy="80" r="60" fill="#c0392b"/><circle cx="1000" cy="1270" r="60" fill="#2980b9"/></svg>')}`;
 
 before(async () => {
   dir = await mkdtemp(join(tmpdir(), "visor-componentes-"));
@@ -38,7 +40,7 @@ before(async () => {
       contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
       import Cartel from './src/components/Cartel';import './src/app/globals.css';
-      createRoot(document.getElementById('root')).render(<main style={{ padding: 20 }}><Cartel src=${JSON.stringify(CARTEL)} alt="Cartel de prueba" /></main>);
+      createRoot(document.getElementById('root')).render(<main style={{ padding: 20 }}><Cartel src=${JSON.stringify(CARTEL)} alt="Cartel de prueba" /><Cartel src=${JSON.stringify(CARTEL_ALTO)} alt="Cartel alto" /></main>);
     `,
     },
     plugins: [
@@ -75,14 +77,14 @@ after(async () => {
 const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
 const cerca = (a, b, t = 1) => assert.ok(Math.abs(a - b) <= t, `${a} debía estar a ${t} de ${b}`);
 
-async function abrir({ tactil = true } = {}) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: tactil, isMobile: tactil, deviceScaleFactor: 2 });
+async function abrir({ tactil = true, viewport = { width: 390, height: 844 }, cartel = "Cartel de prueba" } = {}) {
+  const context = await browser.newContext({ viewport, hasTouch: tactil, isMobile: tactil, deviceScaleFactor: 2 });
   const page = await context.newPage();
   const errores = [];
   page.on("pageerror", (e) => errores.push(e.message));
   const cdp = await context.newCDPSession(page);
   await page.goto(origin);
-  await page.getByRole("button", { name: /entero/ }).click();
+  await page.getByRole("button", { name: `Ver ${cartel} entero` }).click();
   await page.getByRole("dialog").waitFor();
   const toque = (tipo, puntos) => cdp.send("Input.dispatchTouchEvent", { type: tipo, touchPoints: puntos.map(([x, y], id) => ({ x, y, id })) });
   /** Un doble toque con su propia hora (100 ms entre uno y otro): con varias pruebas a la vez, Chrome tarda más en recibir los toques y dos toques reales podrían salir más lejos que el tiempo de un doble toque. */
@@ -195,13 +197,13 @@ test("tocar sin moverse cierra con la imagen a 1× (tras el tiempo de un doble t
   await espera(500);
   assert.equal(await abierto(), false, "a 1×, un toque sobre la imagen la cierra");
 
-  await page.getByRole("button", { name: /entero/ }).click();
+  await page.getByRole("button", { name: "Ver Cartel de prueba entero" }).click();
   await page.getByRole("dialog").waitFor();
   await page.touchscreen.tap(195, 100); // el negro, arriba de la imagen
   await espera(150);
   assert.equal(await abierto(), false, "tocar el negro cierra al instante");
 
-  await page.getByRole("button", { name: /entero/ }).click();
+  await page.getByRole("button", { name: "Ver Cartel de prueba entero" }).click();
   await page.getByRole("dialog").waitFor();
   await dobleToque(195, 422);
   await espera(400);
@@ -213,7 +215,7 @@ test("tocar sin moverse cierra con la imagen a 1× (tras el tiempo de un doble t
   await espera(100);
   assert.equal(await abierto(), false, "la ✕ cierra acercada");
 
-  await page.getByRole("button", { name: /entero/ }).click();
+  await page.getByRole("button", { name: "Ver Cartel de prueba entero" }).click();
   await page.getByRole("dialog").waitFor();
   await page.keyboard.press("Escape");
   await espera(100);
@@ -221,7 +223,7 @@ test("tocar sin moverse cierra con la imagen a 1× (tras el tiempo de un doble t
   await context.close();
 });
 
-test("en escritorio la rueda acerca alrededor del cursor y alejar la deja a 1×", async () => {
+test("en escritorio la rueda acerca alrededor del cursor y alejar (Ctrl con la rueda o el pellizco del trackpad) la deja a 1×", async () => {
   const { context, page, imagen, abierto } = await abrir({ tactil: false });
   const foco = [260, 422];
   const antes = await imagen();
@@ -233,10 +235,68 @@ test("en escritorio la rueda acerca alrededor del cursor y alejar la deja a 1×"
   assert.ok(acercada.escala > 1.2, `la rueda acerca (${acercada.escala})`);
   cerca(fraccion(acercada)[0], fraccion(antes)[0], 0.01);
   cerca(fraccion(acercada)[1], fraccion(antes)[1], 0.01);
+  // Acercada, la rueda sola desplaza (OL-403); para alejar, Ctrl con la rueda (el pellizco del trackpad llega igual, con `ctrlKey`).
+  await page.keyboard.down("Control");
   await page.mouse.wheel(0, 3000);
+  await page.keyboard.up("Control");
   await espera(150);
   const vuelta = await imagen();
   assert.deepEqual([vuelta.escala, vuelta.x, vuelta.y], [1, 0, 0]);
   assert.equal(await abierto(), true);
+  await context.close();
+});
+
+const ESCRITORIO = { width: 1280, height: 800 };
+
+test("en escritorio un cartel más alto que la ventana abre entero, ajustado a ella y centrado (OL-403)", async () => {
+  const { context, imagen, errores } = await abrir({ tactil: false, viewport: ESCRITORIO, cartel: "Cartel alto" });
+  const v = await imagen();
+  assert.deepEqual([v.escala, Math.round(v.ancho), Math.round(v.alto)], [1, 640, 800], "4:5 en 1280×800: 640×800, el alto de la ventana es el tope");
+  assert.deepEqual([Math.round(v.arriba), Math.round(v.abajo), Math.round(v.izq), Math.round(v.der)], [0, 800, 320, 960], "entero dentro de la ventana, centrado");
+  assert.deepEqual(errores, []);
+  await context.close();
+});
+
+test("en escritorio, acercada, la imagen se desplaza con la rueda y arrastrándola con el ratón, sin salirse de sus bordes (OL-403)", async () => {
+  const { context, page, imagen, abierto } = await abrir({ tactil: false, viewport: ESCRITORIO, cartel: "Cartel alto" });
+  // Lo que de verdad llega en `deltaY` (Chrome lo reparte en varios eventos y lo escala según la pantalla): la cuenta se compara con eso.
+  await page.evaluate(() => {
+    window.ruedaY = 0;
+    addEventListener("wheel", (e) => (window.ruedaY += e.deltaY), { capture: true });
+  });
+  const rueda = async (dy) => {
+    await page.evaluate(() => (window.ruedaY = 0));
+    await page.mouse.wheel(0, dy);
+    await espera(150);
+    return page.evaluate(() => window.ruedaY);
+  };
+  await page.mouse.move(640, 400);
+  const giro = await rueda(-700); // a 1× la rueda acerca, de corrido en todo el giro
+  const acercada = await imagen();
+  cerca(acercada.escala, Math.exp(-giro * 0.002), 0.02);
+  assert.ok(acercada.escala > 1.5, `acerca (${acercada.escala})`);
+  // Otro giro, tras una pausa: la rueda sola ya no acerca, baja la imagen (enseña lo de abajo) lo que avanzó la rueda, a la misma escala.
+  await espera(400);
+  const paso = await rueda(200);
+  const bajada = await imagen();
+  cerca(bajada.escala, acercada.escala, 0.001);
+  assert.ok(paso > 0);
+  cerca(bajada.y - acercada.y, -paso, 1);
+  // Hasta el final: el pie del cartel llega al pie de la ventana y no pasa de ahí.
+  await page.mouse.wheel(0, 5000);
+  await espera(150);
+  const alPie = await imagen();
+  cerca(alPie.abajo, 800, 1);
+  assert.ok(alPie.arriba < 0, "lo de arriba quedó fuera, por encima");
+  // Arrastrar con el ratón la mueve igual que un dedo: hacia abajo 200 px.
+  await page.mouse.move(640, 300);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(640, 300 + 20 * i);
+  await page.mouse.up();
+  await espera(150);
+  const arrastrada = await imagen();
+  cerca(arrastrada.y - alPie.y, 200, 1);
+  await espera(400);
+  assert.equal(await abierto(), true, "arrastrar no la cierra");
   await context.close();
 });

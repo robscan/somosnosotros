@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { dobleToque, escalarEn, limitar, razonConRueda, SIN_ACERCAR, type Punto, type Vista } from "@/lib/acercar";
+import { desplazar, dobleToque, escalarEn, limitar, PAUSA_RUEDA_MS, pxDeRueda, razonConRueda, ruedaAcerca, SIN_ACERCAR, type Punto, type Vista } from "@/lib/acercar";
 import BotonIcono from "./ui/BotonIcono";
 import { IconoCerrar } from "./ui/Iconos";
 import styles from "./Cartel.module.css";
@@ -16,7 +16,8 @@ const DOBLE_TOQUE_PX = 40;
 /**
  * El visor de un cartel (OL-249, ajuste 5): la imagen entera sobre negro, a pantalla completa, que se puede acercar hasta 4×. Pellizcar acerca
  * alrededor de los dedos; con un dedo, la imagen acercada se mueve sin salirse de sus bordes; un doble toque alterna 1× y 2,5× en el punto tocado; la
- * rueda del ratón acerca alrededor del cursor. Tocar sin moverse con la imagen a 1× la cierra (acercada, no: así no se cierra por error al leerla);
+ * rueda del ratón acerca alrededor del cursor y, ya acercada, desplaza la imagen (con Ctrl/⌘ o el pellizco del trackpad, acerca y aleja siempre; OL-403);
+ * con el ratón, la imagen acercada se arrastra como con un dedo. Abre ajustada a la ventana, nunca más grande (`Cartel.module.css`). Tocar sin moverse con la imagen a 1× la cierra (acercada, no: así no se cierra por error al leerla);
  * tocar el negro y la ✕ cierran siempre. La cuenta está en `lib/acercar`; aquí solo los gestos, con eventos de puntero (que terminan en `pointerup` o
  * `pointercancel`, nunca en `pointerleave`: Safari lo dispara en el primer movimiento del dedo) y la transformación puesta directo en la imagen,
  * sin pasar por el estado de React.
@@ -32,6 +33,8 @@ export default function VisorImagen({ src, alt, onCerrar }: { src: string; alt: 
   /** El último toque, para reconocer el doble. */
   const anterior = useRef<{ t: number; x: number; y: number } | null>(null);
   const cierre = useRef(0);
+  /** El último evento de rueda y si acercó o desplazó: un mismo giro sigue haciendo lo que empezó. */
+  const giro = useRef<{ t: number; acerca: boolean } | null>(null);
 
   /** Un punto de la pantalla, respecto al centro de la ventana (donde está la imagen). */
   const alCentro = useCallback((x: number, y: number): Punto => ({ x: x - visor.current!.clientWidth / 2, y: y - visor.current!.clientHeight / 2 }), []);
@@ -41,16 +44,24 @@ export default function VisorImagen({ src, alt, onCerrar }: { src: string; alt: 
     const caja = visor.current!;
     vista.current = limitar(v, { ancho: el.offsetWidth, alto: el.offsetHeight }, { ancho: caja.clientWidth, alto: caja.clientHeight });
     el.toggleAttribute("data-suave", suave);
+    el.toggleAttribute("data-acercada", vista.current.escala > 1); // con el ratón, la mano: se puede arrastrar
     el.style.transform = `translate(${vista.current.x}px, ${vista.current.y}px) scale(${vista.current.escala})`;
   }, []);
 
   useEffect(() => {
     const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
-    // La rueda no puede ser pasiva: acerca la imagen y la página de atrás no debe desplazarse.
+    // La rueda no puede ser pasiva: mueve la imagen y la página de atrás no debe desplazarse. Con Ctrl/⌘ (o el pellizco del trackpad), o a 1×,
+    // acerca o aleja alrededor del cursor; acercada y sin tecla, desplaza la imagen como una página (OL-403).
     const alRodar = (e: WheelEvent) => {
       e.preventDefault();
+      const alto = visor.current!.clientHeight;
+      const [dx, dy] = [pxDeRueda(e.deltaX, e.deltaMode, alto), pxDeRueda(e.deltaY, e.deltaMode, alto)];
+      const antes = giro.current;
+      const acerca = ruedaAcerca(e, vista.current, antes && e.timeStamp - antes.t < PAUSA_RUEDA_MS ? antes.acerca : undefined);
+      giro.current = { t: e.timeStamp, acerca };
+      if (!acerca) return poner(desplazar(vista.current, dx, dy));
       const foco = alCentro(e.clientX, e.clientY);
-      poner(escalarEn(vista.current, razonConRueda(e.deltaY), foco, foco));
+      poner(escalarEn(vista.current, razonConRueda(dy), foco, foco));
     };
     const caja = visor.current!;
     document.addEventListener("keydown", alTeclear);
