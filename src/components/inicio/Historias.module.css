@@ -176,6 +176,21 @@
   border-radius: var(--radio);
   box-shadow: var(--sombra-flotante);
   -webkit-user-drag: none;
+  /* Se acerca con los dedos (OL-408, `useZoomImagen`): el navegador no hace zoom ni desplaza sobre él, ni saca la vista previa al mantener. */
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+/* Acercado no se sale de su celda: la cabecera y las acciones siguen a la vista y a mano. */
+.centro[data-acercada] {
+  overflow: hidden;
+  border-radius: var(--radio);
+}
+.cartel[data-acercada] {
+  cursor: grab;
+}
+/* La vuelta a 1× con un toque se anima; el pellizco y el arrastre siguen al dedo sin transición. Con «Reducir movimiento», al instante (globals). */
+.cartel[data-suave] {
+  transition: transform var(--duracion) var(--curva);
 }
 
 /* Sin cartel: tipográfica, como la portada de una lista de Apple Music, con el símbolo SN arriba a la derecha. */
