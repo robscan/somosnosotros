@@ -1,6 +1,6 @@
 import type { EventoAgenda } from "./agenda";
 import { etiquetaDisciplina, type ArtistaLista } from "./artistas";
-import { soloInteres, textoVisita, ultimoDiaDelPeriodo } from "./claseEvento";
+import { soloInteres, ultimoDiaDelPeriodo } from "./claseEvento";
 import { cuandoDeTarjeta, tarjetaArtista, tarjetaConClase, type Tarjeta, type TarjetaConFecha } from "./destacados";
 import type { Asistencia } from "./deslizar";
 import { cortoDeClase } from "./eventos";
@@ -51,20 +51,13 @@ export function selloDeFecha(e: Pick<TarjetaConFecha, "inicio" | "fin" | "zona">
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 /**
- * La línea de cuándo bajo el lugar, en violeta. La de siempre (`cuandoDeTarjeta`), salvo dos cosas firmadas:
- * - un festival que ya empezó dice cuándo termina, con el formato de las exposiciones (`textoVisita`): «Hasta el sáb 24 de oct» en vez de «Del
- *   29 de sep al 24 de oct» (founder, 2026-10-10: «sería mejor decir que termina el…»). El que no ha empezado conserva su rango. «Ya empezó» es
- *   la misma regla del sello: hoy ya es uno de sus días;
- * - «Hoy» ya no es un chip sobre el cartel (E3): va al principio de esta línea («hoy · 13:00»; un festival que empieza hoy, «hoy · hasta el…»).
+ * La línea de cuándo bajo el lugar, en violeta: la de siempre (`cuandoDeTarjeta`, que ya dice «Hasta el sáb 24 de oct» de un festival o una
+ * exposición en curso y sus días si está por venir: la regla de todo periodo, OL-409 «U»; antes solo Inicio lo hacía con el festival, founder
+ * 2026-10-10), salvo que «Hoy» ya no es un chip sobre el cartel (E3): va al principio de esta línea («hoy · 13:00»; un festival que empieza hoy,
+ * «hoy · hasta el…»).
  */
 export function cuandoEnInicio(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase">, hoy: boolean, ahora: Date = new Date()): string {
-  let cuando = cuandoDeTarjeta(e, ahora);
-  if (e.clase === "festival") {
-    const desde = diaLocal(new Date(e.inicio), e.zona);
-    const hasta = ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona);
-    const dia = diaLocal(ahora, e.zona);
-    if (hasta > desde && dia >= desde) cuando = textoVisita({ desde, hasta }, dia, ahora, e.zona);
-  }
+  const cuando = cuandoDeTarjeta(e, ahora);
   return hoy && !/^hoy\b/.test(cuando) ? `hoy · ${minuscula(cuando)}` : cuando;
 }
 

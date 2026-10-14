@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import EventosPorDia from "@/components/EventosPorDia";
+import { eventosDeFicha } from "@/lib/eventosFicha";
 import MapaFicha from "@/components/MapaFicha";
 import BarraFicha from "@/components/ui/BarraFicha";
 import Ficha from "@/components/ui/Ficha";
@@ -107,7 +108,7 @@ export default async function FichaSitio({ params }: Params) {
 
         <section className={ficha.bloque} id="eventos" aria-label="Próximos eventos">
           <h2>
-            Próximos eventos<span className={ficha.cuenta}> · {eventos.length}</span>
+            Próximos eventos<span className={ficha.cuenta}> · {eventosDeFicha(eventos).cuenta}</span>
           </h2>
           <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
         </section>

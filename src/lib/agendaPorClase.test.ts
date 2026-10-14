@@ -77,8 +77,8 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
     expect(ids(paraVisitarEseDia(TODOS, "2026-10-12"))).toEqual(["futura", "grabado"]);
     // Fuera de su periodo no entra, con horario o sin él: Grabado cerró el 20 y la que no se pudo leer el 9.
     expect(ids(paraVisitarEseDia(TODOS, "2026-10-21"))).toEqual(["ecos", "futura"]);
-    expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00 a.m.–6:00 p.m.");
-    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00 a.m.–6:00 p.m.");
+    expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00–18:00");
+    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00–18:00");
     expect(cuandoParaVisitar(grabado, HOY)).toBe("Horario por confirmar");
     expect(cuandoParaVisitar(sinLeer, HOY)).toBe("Horario por confirmar");
     expect([ecos, grabado, sinLeer, { ...grabado, horario: [{ dias: [], abre: "10:00", cierra: "18:00" }] }].map(sinHorario)).toEqual([false, true, true, true]);
@@ -86,8 +86,8 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
     expect(rangosDeVisita(ecos, "2026-11-01")).toEqual([]); // fuera de su periodo
   });
   it("lo que dice de un día la lista de exposiciones", () => {
-    expect(notaDeVisita(ecos, HOY, HOY)).toBe("Abre hoy 10:00 a.m.–6:00 p.m.");
-    expect(notaDeVisita(ecos, "2026-10-10", HOY)).toBe("Abre 10:00 a.m.–6:00 p.m.");
+    expect(notaDeVisita(ecos, HOY, HOY)).toBe("Abre hoy 10:00–18:00");
+    expect(notaDeVisita(ecos, "2026-10-10", HOY)).toBe("Abre 10:00–18:00");
     expect(notaDeVisita(ecos, "2026-10-12", HOY)).toBe("Cierra ese día");
     expect(notaDeVisita(grabado, HOY, HOY)).toBeNull(); // su cuándo ya dice «Horario por confirmar»
     expect(notaDeVisita(sinLeer, HOY, HOY)).toBeNull();
@@ -297,7 +297,8 @@ describe("«Festivales y expos» (OL-342)", () => {
   });
   it("la tarjeta dice qué es («Festival», «Exposición») y su fecha propia", () => {
     expect(tarjetaConClase(electric, ahora)).toMatchObject({ clase: "Festival", detalle: "sáb 31 de oct", sinVoy: true });
-    expect(tarjetaConClase(fiesta, ahora)).toMatchObject({ clase: "Festival", detalle: "Del 5 al 7 de oct" });
+    // En curso: «Hasta el …», en todas las superficies (OL-409, «U»; antes «Del 5 al 7 de oct» aquí y «Hasta el …» solo en Inicio).
+    expect(tarjetaConClase(fiesta, ahora)).toMatchObject({ clase: "Festival", detalle: "Hasta el mié 7 de oct" });
     expect(tarjetaConClase(ecos, ahora)).toMatchObject({ clase: "Exposición", detalle: "Hasta el sáb 31 de oct" });
     expect(tarjetaEvento(ecos, ahora).clase).toBeUndefined(); // los demás carriles no cambian
   });

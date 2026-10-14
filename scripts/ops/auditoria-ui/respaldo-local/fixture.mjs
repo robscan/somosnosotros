@@ -264,6 +264,53 @@ const eventos_artistas = [
   { evento_id: EP.rocioCcub, artista_id: A.rocio, orden: 1 },
 ];
 
+// OL-410 (lo firmado en OL-409): una ficha de lugar y una de artista con lo que antes salía mal, para ver el bloque de un festival, la hora de cada
+// función en su día y «Para visitar». En otra ciudad (Aguascalientes), así Inicio, Agenda y las fichas de San Luis que mide `npm run medir` no
+// cambian. Todo inventado: el «Cine Foro Alameda (demo)», su cartelera (en curso, tres actos: dos con varias funciones en días distintos), una
+// función de una muestra que empezó hace dos semanas en otro sitio (su marco no es de la ficha), un taller de tres sesiones, una exposición abierta
+// con su horario (martes a domingo, 17:00 a 22:00) y el «Cineclub Cuadro Negro (demo)», que presenta dos actos de la cartelera y el taller.
+// Solo con `RESPALDO_FICHAS=1` en el entorno del respaldo: el grafo de /admin/grafo lee todos los lugares, artistas y eventos de todas las ciudades
+// y con ellos pasaba de su presupuesto (460 → 487 nodos); `npm run medir` no la pone, así ninguna pantalla medida cambia.
+const CON_FICHAS = process.env.RESPALDO_FICHAS === "1";
+const AGS = "Aguascalientes";
+const L_CINE = "aaaa0001-0000-4000-8000-000000000041";
+const EF = {
+  cartelera: "bbbb0004-0000-4000-8000-000000000001",
+  arrebato: "bbbb0004-0000-4000-8000-000000000002",
+  montana: "bbbb0004-0000-4000-8000-000000000003",
+  espinazo: "bbbb0004-0000-4000-8000-000000000004",
+  muestra: "bbbb0004-0000-4000-8000-000000000005",
+  muestraAqui: "bbbb0004-0000-4000-8000-000000000006",
+  muestraFuera: "bbbb0004-0000-4000-8000-000000000007",
+  guion: "bbbb0004-0000-4000-8000-000000000008",
+  fotogramas: "bbbb0004-0000-4000-8000-000000000009",
+};
+const A_CUADRO = "cccc0004-0000-4000-8000-000000000001";
+if (CON_FICHAS) lugares.push({ ...lugar(L_CINE, "cine-foro-alameda-demo", "Cine Foro Alameda (demo)", "foro", "Calle inventada 123, Centro, Aguascalientes, Ags.", 21.8818, -102.2916, [], "Cine foro inventado para la prueba de las fichas (OL-410)."), ciudad: AGS });
+/** Un evento de la ficha de prueba, en Aguascalientes. */
+const enAgs = (datos) => ({ ...evento({ lugar_id: L_CINE, imagen: null, creadoHace: 5, ...datos }), ciudad: AGS });
+/** Su horario por día: empieza con su primera sesión y termina con la última (como lo guarda la base). */
+const conSesionesDe = (ev, lista, base) => {
+  const filas = lista.map(([dias, hora, finHora], i) => ({ id: `bbbb0005-0000-4000-8000-0000000${String(base + i).padStart(5, "0")}`, evento_id: ev.id, fecha: fecha(dias, hora).slice(0, 10), inicio: iso(fecha(dias, hora)), fin: iso(fecha(dias, finHora)) }));
+  sesiones.push(...filas);
+  return { ...ev, inicio: filas[0].inicio, fin: filas[filas.length - 1].fin, termina: filas[filas.length - 1].fin };
+};
+if (CON_FICHAS) eventos.push(
+  { ...enAgs({ id: EF.cartelera, slug: "cartelera-de-otono-cine-de-culto-demo", titulo: "Cartelera de otoño: cine de culto (demo)", dias: -2, hora: "17:30", clase: "festival" }), fin: iso(fecha(3, "22:00")), termina: iso(fecha(3, "22:00")) },
+  conSesionesDe(enAgs({ id: EF.arrebato, slug: "arrebato-de-ivan-zulueta-demo", titulo: "Arrebato, de Iván Zulueta (1979)", dias: -2, hora: "17:30", precio: "$70", evento_padre_id: EF.cartelera }), [[-2, "17:30", "19:20"], [0, "21:00", "22:50"], [2, "17:30", "19:20"]], 1),
+  conSesionesDe(enAgs({ id: EF.montana, slug: "la-montana-sagrada-demo", titulo: "La montaña sagrada, de Alejandro Jodorowsky (1973)", dias: -1, hora: "17:00", precio: "$70", evento_padre_id: EF.cartelera }), [[-1, "17:00", "19:00"], [1, "17:00", "19:00"], [3, "20:00", "22:00"]], 4),
+  enAgs({ id: EF.espinazo, slug: "el-espinazo-del-diablo-demo", titulo: "El espinazo del diablo, de Guillermo del Toro (2001)", dias: 3, hora: "17:00", dur: 2, precio: "$70", evento_padre_id: EF.cartelera }),
+  // La muestra empezó hace dos semanas en otra sede y tiene una función aquí pasado mañana.
+  { ...enAgs({ id: EF.muestra, slug: "muestra-internacional-de-cine-demo", titulo: "Muestra Internacional de Cine (demo)", dias: -14, hora: "18:00", lugar_id: null, sitio: { texto: "Teatro inventado", direccion: "Calle inventada 9, Aguascalientes", lat: 21.8823, lng: -102.2950 }, clase: "festival" }), fin: iso(fecha(10, "20:00")), termina: iso(fecha(10, "20:00")) },
+  enAgs({ id: EF.muestraAqui, slug: "muestra-funcion-en-el-foro-alameda-demo", titulo: "Muestra: Roma, de Alfonso Cuarón (2018)", dias: 2, hora: "18:00", dur: 2.5, evento_padre_id: EF.muestra }),
+  enAgs({ id: EF.muestraFuera, slug: "muestra-clausura-demo", titulo: "Muestra: clausura", dias: 10, hora: "18:00", lugar_id: null, sitio: { texto: "Teatro inventado", direccion: "Calle inventada 9, Aguascalientes", lat: 21.8823, lng: -102.2950 }, evento_padre_id: EF.muestra }),
+  conSesionesDe(enAgs({ id: EF.guion, slug: "taller-de-guion-la-escena-corta-demo", titulo: "Taller de guion: la escena corta (demo)", dias: 4, hora: "18:00", precio: "$450", clase: "taller" }), [[4, "18:00", "20:00"], [6, "18:00", "20:00"], [9, "18:00", "20:00"]], 7),
+  { ...enAgs({ id: EF.fotogramas, slug: "fotogramas-carteles-del-cine-demo", titulo: "Fotogramas: carteles del cine (demo)", dias: -9, hora: "00:00", clase: "exposicion" }), fin: iso(fecha(25, "23:59")), termina: iso(fecha(25, "23:59")) },
+);
+const eventos_horarios = !CON_FICHAS ? [] : [{ id: "bbbb0006-0000-4000-8000-000000000001", evento_id: EF.fotogramas, dias: [2, 3, 4, 5, 6, 7], abre: "17:00:00", cierra: "22:00:00", creado_en: hace(5) }];
+if (CON_FICHAS) artistas.push({ ...artista(A_CUADRO, "cineclub-cuadro-negro-demo", "Cineclub Cuadro Negro (demo)", "cine", "Cineclub", "grupo", "Cineclub inventado para la prueba de las fichas (OL-410)."), ciudad: AGS });
+if (CON_FICHAS) eventos_artistas.push({ evento_id: EF.arrebato, artista_id: A_CUADRO, orden: 1 }, { evento_id: EF.montana, artista_id: A_CUADRO, orden: 1 }, { evento_id: EF.guion, artista_id: A_CUADRO, orden: 1 });
+
 // ---------- lo de las personas ----------
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },
@@ -298,7 +345,7 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
-  artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios: [], ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios, ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
 };
 
 // OL-401: lo que el grafo cultural lee con la llave de servicio (`cargarGrafo`, que salta las reglas por fila): filas de más que SOLO ve quien manda

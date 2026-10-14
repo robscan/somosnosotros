@@ -3,9 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
 import { cortoDeClase, fotoDeEvento, hrefEvento, sitioEnLista } from "./eventos";
-import { diaCorto, diaLocal, formatearCuando, ZONA_INICIAL } from "./fechas";
+import { diaCorto, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { etiquetaTipo, hrefLugar, textoProximo, vidaDeLugar, type LugarLista } from "./lugares";
-import { HORARIO_POR_CONFIRMAR, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "./claseEvento";
+import { cuandoDePeriodo, HORARIO_POR_CONFIRMAR, soloInteres, textoProgramaRegistrado } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
 import { comoPaleta, type Paleta } from "./coloresCartel";
@@ -77,12 +77,12 @@ export function enOrden<T extends { id: string }>(tira: { id: string }[], fichas
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 /**
- * La línea de cuándo de la tarjeta de un evento: su día y su hora y, por clase (OL-322, doc 55 §3), la de una exposición («Hasta el dom 30 de nov»)
- * o los días del marco de un festival («Del 12 al 14 de nov»). Lo demás de su clase lo dice `notaDeClase`.
+ * La línea de cuándo de la tarjeta de un evento: su día y su hora y, por clase (OL-322, doc 55 §3), la de una exposición o del marco de un
+ * festival con la regla de todo periodo (OL-409, «U»: en curso «Hasta el sáb 17 de oct», por venir «Del 12 al 17 de oct»; `cuandoDePeriodo`).
+ * Lo demás de su clase lo dice `notaDeClase`.
  */
 export function cuandoDeTarjeta(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase">, ahora = new Date()): string {
-  if (e.clase === "exposicion") return textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), diaLocal(ahora, e.zona), ahora, e.zona);
-  if (e.clase === "festival") return rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora);
+  if (e.clase === "exposicion" || e.clase === "festival") return cuandoDePeriodo(e, ahora);
   return minuscula(formatearCuando(e.inicio, null, ahora, e.zona));
 }
 

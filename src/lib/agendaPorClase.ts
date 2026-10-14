@@ -3,7 +3,7 @@ import { diaDeSemana, enVisita, HORARIO_POR_CONFIRMAR, rangosDelDia, visitaDeEve
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import type { Clase } from "./eventos";
 import { diaConMesDe, diaLocal, eventoPaso } from "./fechas";
-import { textoRangos, type Franja, type Rango } from "./horarioLugar";
+import { textoRangos24, type Franja, type Rango } from "./horarioLugar";
 import { compararNombres } from "./lugares";
 
 /**
@@ -161,8 +161,8 @@ export function porCercania(a: Vigente, b: Vigente, ahora: Date = new Date()): n
   return instante || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
 }
 
-/** «Abre 10:00 a.m.–6:00 p.m.»: lo que dice el renglón de «Para visitar hoy». */
-export const textoAbre = (rangos: readonly Rango[]): string => `Abre ${textoRangos(rangos)}`;
+/** «Abre 10:00–18:00»: lo que dice el renglón de «Para visitar» (Agenda y fichas), en 24 h como las horas de los demás renglones (OL-410). */
+export const textoAbre = (rangos: readonly Rango[]): string => `Abre ${textoRangos24(rangos)}`;
 
 /** El cuándo de un renglón de «Para visitar hoy» (las de `paraVisitarEseDia`): sus horas ese día o, sin horario conocido, «Horario por confirmar». */
 export const cuandoParaVisitar = (e: Exposicion, dia: string): string => (sinHorario(e) ? HORARIO_POR_CONFIRMAR : textoAbre(rangosDeVisita(e, dia)));
@@ -179,7 +179,7 @@ export function notaDeVisita(e: Exposicion, dia: string, hoy: string): string | 
   if (!e.horario?.some((f) => f.dias.length) || !enVisita(visitaDe(e), dia)) return null;
   const rangos = rangosDeVisita(e, dia);
   if (!rangos.length) return dia === hoy ? "Hoy cierra" : "Cierra ese día";
-  return dia === hoy ? `Abre hoy ${textoRangos(rangos)}` : textoAbre(rangos);
+  return dia === hoy ? `Abre hoy ${textoRangos24(rangos)}` : textoAbre(rangos);
 }
 
 /** El título de la sección de un día: «Para visitar hoy», «Para visitar mañana» o «Para visitar el sáb 10 de oct». */

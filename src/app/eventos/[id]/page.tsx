@@ -29,7 +29,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
-import { horarioEfectivo, kpisDeExposicion, lineaDeTaller, rangoDelPeriodo, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { cuandoDePeriodo, horarioEfectivo, kpisDeExposicion, lineaDeTaller, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -242,11 +242,19 @@ async function cargarLigados(e: EventoConLugar) {
     e.clase === "festival"
       ? supabase
           .from("eventos")
-          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, creado_en, visible, borrador, retirado_por_admin, cancelado, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng)")
+          // Con su clase, su festival y su horario por día (OL-410, «S»): el programa pone cada función de un acto en su día, con su hora.
+          .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_lat, sitio_lng, sitio_reservado, ciudad, creado_en, visible, borrador, retirado_por_admin, cancelado, clase, evento_padre_id, lugar:lugares(id, slug, nombre, portada, direccion, lat, lng), sesiones:eventos_sesiones(inicio, fin)")
           .eq("evento_padre_id", e.id)
           .order("inicio")
           .limit(100)
-          .then((r) => (Array.isArray(r.data) ? (r.data as unknown as (Acto & { lugar: Acto["lugar"] | Acto["lugar"][] })[]).map((a) => ({ ...a, lugar: Array.isArray(a.lugar) ? (a.lugar[0] ?? null) : a.lugar, van: null })) : []))
+          .then((r) =>
+            Array.isArray(r.data)
+              ? (r.data as unknown as (Omit<Acto, "sesiones"> & { lugar: Acto["lugar"] | Acto["lugar"][]; sesiones?: SesionGuardada[] | null })[]).map(({ sesiones: guardadas, ...a }) => {
+                  const sesiones = sesionesVigentes(a, guardadas);
+                  return { ...a, lugar: Array.isArray(a.lugar) ? (a.lugar[0] ?? null) : a.lugar, van: null, ...(sesiones.length ? { sesiones } : {}) };
+                })
+              : [],
+          )
       : [],
     e.evento_padre_id ? supabase.from("eventos").select(columnas).eq("id", e.evento_padre_id).maybeSingle().then(uno) : null,
     e.clase === "puntual" || !e.clase ? supabase.from("eventos").select(columnas).eq("inaugura_id", e.id).limit(1).maybeSingle().then(uno, () => null) : null,
@@ -390,7 +398,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const sedes = sedesFestival.some((s) => s.actos > 0) ? sedesFestival : [];
   const sedeUnica = sedes.length === 1 ? sedes[0] : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes });
-  const rangoFestival = clase === "festival" ? rangoDelPeriodo(e.inicio, e.fin, e.zona, ahora) : null;
+  // El cuándo del festival con la regla de todo periodo (OL-409, «U»): en curso «Hasta el …», por venir «Del … al …».
+  const rangoFestival = clase === "festival" ? cuandoDePeriodo(e, ahora) : null;
   // Sin actos publicados todavía, «Programa por confirmar», como su tarjeta en Inicio (OL-346).
   const programaFestival = actosVisibles.length ? textoProgramaRegistrado(actosVisibles.length) : PROGRAMA_POR_CONFIRMAR;
   const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, programaFestival].filter(Boolean).join(" · ") : null;

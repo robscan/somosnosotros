@@ -56,6 +56,20 @@ Un marco sin actos no sale en la agenda (no promete nada); se publica con al men
 
 Los números de la agenda («12 eventos esta semana») cuentan ocurrencias: una por sesión de taller, una por acto de festival (el marco no suma), y las exposiciones aparte («y 4 para visitar»).
 
+### Al día: lo que quedó (OL-410, 14 de octubre de 2026)
+
+La tabla de arriba es la propuesta del 6 de octubre. Desde entonces se firmó y se construyó lo siguiente; donde la tabla diga otra cosa, vale esto:
+
+- **Inicio:** las exposiciones y los festivales van juntos en el carril «Festivales y expos» (OL-342), todos los festivales vigentes, también sin actos («Programa por confirmar», OL-346); el marco solo sale ahí y sus actos salen sueltos en los demás carriles (OL-347). «Nuevos eventos» junta los actos nuevos en la tarjeta de su festival (OL-385).
+- **Agenda:** «Para visitar hoy» va con las exposiciones que abren ese día y también con las que no tienen horario conocido («Horario por confirmar», después de las otras; OL-381). El bloque de festival dice «Programa registrado: N actividades · hoy M».
+- **Fichas de lugar y de artista (OL-410, firma del founder del 14 de octubre sobre el prototipo de OL-409: «F Bloque como Agenda · S La hora de cada función, en su día · E Grupo "Para visitar", sin Voy · U En curso "Hasta el …", por venir "Del … al …"»):** piden lo mismo que Agenda (`COLUMNAS_EVENTO_LISTA` y `completarEventos`, `lib/cargarAgenda`; `lib/cargarEventosFicha`) y lo arman igual (`lib/eventosFicha`):
+  - **F:** un festival es un bloque (`BloqueFestival`) con todas sus funciones en ese lugar (o de ese artista) debajo, cada una con su día y su hora; el bloque va en el día de su **siguiente función** ahí, nunca bajo el día en que empezó el festival. Su cabecera: «Hasta el sáb 17 de oct · 7 funciones aquí» (en un artista, «2 funciones suyas»). Sin funciones por venir ahí, no sale (lo que pasó está en el Historial o la Trayectoria). El marco nunca es un renglón suelto: si es de la ficha y no tiene ningún acto publicado, sale solo su cabecera con «Programa por confirmar».
+  - **S:** cada función y cada sesión en su día, con su hora de inicio y de fin («17:30–19:20»; un taller, «18:00–20:00 · Sesión 2 de 3»). Una función de un acto de festival no dice «Día n de N». Nunca el primer inicio pegado al último fin («20:00–19:00»). Lo mismo en el programa de la ficha de un festival, en Buscar y en «Tus planes» (la próxima función o sesión).
+  - **E:** las exposiciones van en el grupo «Para visitar», arriba de los días, sin «Voy»: abierta, «Abre 17:00–22:00 · hasta el dom 8 de nov» (en 24 h, también en «Para visitar hoy» de Agenda) con el reloj (o «Horario por confirmar», o «Hoy cierra»); por abrir, sus días. Nunca «00:00» bajo su día de apertura.
+  - El número «Eventos · N próximos» (o «Fechas») y el de la sección cuentan lo que se lista: cada renglón, cada función de un bloque, la cabecera sola de un festival y cada exposición.
+- **U · el cuándo de un festival y una exposición, en todas las superficies** (tarjetas de Inicio y Buscar, renglones de Agenda y de las fichas, la ficha del festival y de la exposición, «Tus planes», la hoja de Lugares): ya en curso (hoy es uno de sus días) «Hasta el sáb 17 de oct»; por venir «Del 12 al 17 de oct»; de un solo día, ese día. Una sola regla: `textoDePeriodo` (`lib/fechas`) y `cuandoDePeriodo` (`lib/claseEvento`). El alta y la edición de un festival (el resumen de su periodo) siguen diciendo sus días.
+- **El costo** (C y K de la misma firma: se puede dejar vacío; sin dato, «Por confirmar») es otra pieza, OL-411.
+
 ## 4. Piezas
 
 1. **OL-321 · Modelo y alta por pasos de exposición, taller y festival** (migración que solo añade; `Lectura` del cartel con clase, visita, sesiones y actos; el paso del tiempo según la clase; renglones nuevos en «Revisa»; publicar programa H6 con corrección por renglón; «Parte de un festival» con marco nuevo o existente; la ficha de cada clase). Prototipo: [`prototipos/exposicion-festival-taller.html`](prototipos/exposicion-festival-taller.html).
