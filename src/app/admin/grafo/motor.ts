@@ -232,8 +232,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   const escena = new THREE.Scene();
   const camara = new THREE.PerspectiveCamera(50, 1, 1, 30000);
   // Iluminación de estudio: ambiente suave, luz clave cálida desde arriba a la derecha, relleno frío desde la izquierda y un contraluz que recorta las esferas del fondo.
-  escena.add(new THREE.HemisphereLight(0xffffff, 0x2a2438, 0.55));
-  const clave = new THREE.DirectionalLight(0xfff4e6, 2.2);
+  escena.add(new THREE.HemisphereLight(0xffffff, 0x2a2438, 0.75));
+  const clave = new THREE.DirectionalLight(0xfff4e6, 1.6);
   clave.position.set(700, 1300, 900);
   escena.add(clave);
   const relleno = new THREE.DirectionalLight(0xdde6ff, 0.7);

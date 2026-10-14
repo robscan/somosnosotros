@@ -221,8 +221,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 const escena = new THREE.Scene();
 const camara = new THREE.PerspectiveCamera(50, 1, 1, 30000);
 // Iluminación de estudio: ambiente suave, luz clave cálida desde arriba a la derecha, relleno frío desde la izquierda y un contraluz que recorta las esferas del fondo.
-escena.add(new THREE.HemisphereLight(0xffffff, 0x2a2438, 0.55));
-const clave = new THREE.DirectionalLight(0xfff4e6, 2.2); clave.position.set(700, 1300, 900); escena.add(clave);
+escena.add(new THREE.HemisphereLight(0xffffff, 0x2a2438, 0.75));
+const clave = new THREE.DirectionalLight(0xfff4e6, 1.6); clave.position.set(700, 1300, 900); escena.add(clave);
 const relleno = new THREE.DirectionalLight(0xdde6ff, 0.7); relleno.position.set(-900, 400, -300); escena.add(relleno);
 const contraluz = new THREE.DirectionalLight(0xffffff, 1.1); contraluz.position.set(-300, 500, -1200); escena.add(contraluz);
 // Esferas finas (48×32 caras) con material físico: un poco de brillo, nada de metal. Una sola malla instanciada, así que el costo es el mismo.
