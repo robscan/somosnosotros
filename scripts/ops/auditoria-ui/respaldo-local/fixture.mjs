@@ -307,8 +307,26 @@ export const tablas = {
 // (el nodo «por conectar»). Todo inventado.
 export const LLAVE_SERVICIO = "llave-servicio-inventada";
 const persona = (n) => `99999999-0000-4000-8000-00000000000${n}`;
+// OL-404: un caso como el que el founder revisó en el grafo real (un artista cuya única fecha es un acto de un festival en un sitio libre, con una
+// asistencia y dos seguidores): el artista inventado «Ruido Blanco», el festival «Festival Eléctrico (demo)» con su marco y un acto en un parque sin
+// ficha (a ~22 m del marco: caen en el mismo sitio) y otro acto en un lugar con ficha (la línea lugar–sitio por festival compartido).
+const FESTIVAL_DEMO = "bbbb0009-0000-4000-8000-000000000001";
+const ACTO_PARQUE = "bbbb0009-0000-4000-8000-000000000002";
+const ACTO_FICHA = "bbbb0009-0000-4000-8000-000000000003";
+const RUIDO_BLANCO = "cccc0009-0000-4000-8000-000000000011";
+const PARQUE = { texto: "Parque Lineal (demo)", direccion: "Sitio inventado para la prueba", lat: 22.133, lng: -101.015 };
 export const extrasServicio = {
-  artistas: ["Colectivo Sol Naciente", "Lía Montoya", "Trío Los Alamos", "Mateo Quiroz", "Cía. Teatro de Bolsillo", "Dúo Aurora"].map((nombre, i) => ({ id: `cccc0009-0000-4000-8000-00000000000${i + 1}`, nombre, disciplina: ["musica", "artes_visuales", "musica", "letras", "teatro", "danza"][i], ciudad: CIUDAD, visible: true })),
+  eventos: [
+    evento({ id: FESTIVAL_DEMO, slug: "festival-electrico-demo", titulo: "Festival Eléctrico (demo)", dias: -2, hora: "18:00", dur: 30, sitio: PARQUE, clase: "festival", imagen: null, creadoHace: 20 }),
+    evento({ id: ACTO_PARQUE, slug: "festival-electrico-demo-parque", titulo: "Festival Eléctrico: noche en el parque", dias: -2, hora: "21:00", dur: 4, sitio: { ...PARQUE, lat: 22.1332 }, evento_padre_id: FESTIVAL_DEMO, imagen: null, creadoHace: 20 }),
+    evento({ id: ACTO_FICHA, slug: "festival-electrico-demo-ficha", titulo: "Festival Eléctrico: cierre en el foro", dias: -1, hora: "20:00", dur: 3, lugar_id: L.ache, evento_padre_id: FESTIVAL_DEMO, imagen: null, creadoHace: 20 }),
+  ],
+  eventos_artistas: [{ evento_id: ACTO_PARQUE, artista_id: RUIDO_BLANCO }],
+  artistas: [
+    { id: RUIDO_BLANCO, nombre: "Ruido Blanco", disciplina: "musica", ciudad: CIUDAD, visible: true },
+    // (los demás, sin eventos)
+    ...["Colectivo Sol Naciente", "Lía Montoya", "Trío Los Alamos", "Mateo Quiroz", "Cía. Teatro de Bolsillo", "Dúo Aurora"].map((nombre, i) => ({ id: `cccc0009-0000-4000-8000-00000000000${i + 1}`, nombre, disciplina: ["musica", "artes_visuales", "musica", "letras", "teatro", "danza"][i], ciudad: CIUDAD, visible: true })),
+  ],
   asistencias: [
     { id: "dddd0009-0000-4000-8000-000000000001", usuario_id: persona(1), evento_id: E.leonora, estado: "voy", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000002", usuario_id: persona(2), evento_id: E.leonora, estado: "me_interesa", creado_en: hace(3) },
@@ -319,11 +337,16 @@ export const extrasServicio = {
     { id: "dddd0009-0000-4000-8000-000000000008", usuario_id: ADMIN, evento_id: E.colocaos, estado: "me_interesa", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000005", usuario_id: persona(1), evento_id: E.feleal, estado: "voy", creado_en: hace(3) },
     { id: "dddd0009-0000-4000-8000-000000000006", usuario_id: persona(2), evento_id: E.feleal, estado: "voy", creado_en: hace(3) },
+    // OL-404: la única asistencia al acto del parque sin ficha (con el umbral en 1 ya dibuja sus líneas).
+    { id: "dddd0009-0000-4000-8000-000000000009", usuario_id: persona(5), evento_id: ACTO_PARQUE, estado: "voy", creado_en: hace(2) },
   ],
   seguimientos: [
     { id: "eeee0009-0000-4000-8000-000000000001", usuario_id: persona(4), lugar_id: L.paz, artista_id: null, creado_en: hace(3) },
     { id: "eeee0009-0000-4000-8000-000000000002", usuario_id: persona(4), lugar_id: null, artista_id: A.feleal, creado_en: hace(3) },
     { id: "eeee0009-0000-4000-8000-000000000003", usuario_id: persona(1), lugar_id: L.ccub, artista_id: null, creado_en: hace(3) },
+    // OL-404: los dos seguidores de «Ruido Blanco» (no asistieron a nada: solo siguen).
+    { id: "eeee0009-0000-4000-8000-000000000004", usuario_id: persona(6), lugar_id: null, artista_id: RUIDO_BLANCO, creado_en: hace(2) },
+    { id: "eeee0009-0000-4000-8000-000000000005", usuario_id: persona(7), lugar_id: null, artista_id: RUIDO_BLANCO, creado_en: hace(2) },
   ],
 };
 
