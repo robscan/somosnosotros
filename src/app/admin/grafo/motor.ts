@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { enlaceAltaLugar } from "@/lib/armazon";
 import type { Grafo } from "@/lib/grafo";
+import { alternarCapa, aplicarLente as desplegarPorLente, CAPAS, capasGuardables, capasVistas, estadoDeGuardado, estadoInicial, ponerCapa, quitarLente as replegarPorLente, type Capa } from "./capas";
 import { textoDatosDe } from "./datosDe";
 
 /**
@@ -43,7 +44,6 @@ type Linea = { a: number; b: number; t: string; w: number; d: number[]; par?: "a
 type Filtro = { tipo: string | null; clase: string | null };
 type Item = { i?: number; nombre: string; sub?: string; color: string; grupo?: boolean; n?: number };
 type Resultado = { titulo: string; items: Item[]; aviso?: string };
-type Capa = "lugar" | "artista" | "persona";
 type Lente = { id: string; titulo: string; /** La clave de su explicación en `ayuda.ts`. */ ayuda: string; /** Las capas que la lente necesita a la vista: si están plegadas, la lente las despliega. */ necesita: Capa[]; aplicar: () => Resultado };
 type Paso = ((t: number) => void) | null;
 type Parte = string | { b: string };
@@ -127,7 +127,10 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   });
 
   // ---------- Capas plegables y «Yo» ----------
-  const capas: Record<Capa, boolean> = { lugar: true, artista: true, persona: true };
+  /** `estadoCapas` separa lo que la persona eligió (lo único que se guarda) de lo que una lente desplegó por ella; `capas` es lo que se ve (ver `capas.ts`). */
+  let estadoCapas = estadoInicial();
+  const capas: Record<Capa, boolean> = capasVistas(estadoCapas);
+  const verCapas = () => Object.assign(capas, capasVistas(estadoCapas));
   const capaDe = (n: Nodo): Capa => (n.tipo === "lugar" || n.tipo === "sitio" ? "lugar" : n.tipo === "persona" ? "persona" : "artista"); // el nodo «por conectar» va con los artistas
   const capaVisible = (i: number) => capas[capaDe(nodos[i])];
   const yoNodo = yo !== null && yo >= 0 && yo < DATOS.personas.length ? basePer + yo : -1;
@@ -138,7 +141,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     try {
       const g = JSON.parse(localStorage.getItem(CLAVE_GUARDADO) ?? "null") as { capas?: Partial<Record<Capa, unknown>>; yo?: unknown } | null;
       if (!g || typeof g !== "object") return;
-      for (const c of ["lugar", "artista", "persona"] as const) if (typeof g.capas?.[c] === "boolean") capas[c] = g.capas[c] as boolean;
+      estadoCapas = estadoDeGuardado(g);
+      verCapas();
       if (g.yo === true && yoNodo >= 0) yoActivo = true;
     } catch {
       // sin almacenamiento o con datos ilegibles: se empieza con todo desplegado
@@ -146,7 +150,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   }
   function guardar() {
     try {
-      localStorage.setItem(CLAVE_GUARDADO, JSON.stringify({ capas, yo: yoActivo }));
+      localStorage.setItem(CLAVE_GUARDADO, JSON.stringify({ capas: capasGuardables(estadoCapas), yo: yoActivo }));
     } catch {
       // sin almacenamiento: no se recuerda
     }
@@ -1211,12 +1215,11 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       pintarTarjeta();
     }
     // Si la lente necesita una capa plegada, la despliega y lo dice bajo el título de su lista
-    const desplegadas = l.necesita.filter((c) => !capas[c]);
-    for (const c of desplegadas) capas[c] = true;
-    if (desplegadas.length) {
-      sincronizarCapas();
-      guardar();
-    }
+    // (solo por esta lente: al quitarla vuelven a plegarse y lo que se recuerda en el aparato no cambia)
+    const { estado, desplegadas } = desplegarPorLente(estadoCapas, l.necesita);
+    estadoCapas = estado;
+    verCapas();
+    if (desplegadas.length) sincronizarCapas();
     resultadoLente = l.aplicar();
     if (desplegadas.length) resultadoLente.aviso = `Se ${desplegadas.length > 1 ? "desplegaron las capas" : "desplegó la capa"} ${desplegadas.map((c) => NOMBRE_CAPA[c]).join(" y ")} para esta lente.`;
     pintarCifras();
@@ -1232,10 +1235,18 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     filtro = { tipo: null, clase: null }; // la lente fijó su propio filtro: al quitarla, todo vuelve a verse
     zonasMesh.visible = false;
     if (desdeArriba) ponerArriba(false);
+    // las capas que la lente desplegó vuelven a como las tenía la persona
+    const habia = { ...capas };
+    estadoCapas = replegarPorLente(estadoCapas);
+    verCapas();
+    if (CAPAS.some((c) => habia[c] !== capas[c])) sincronizarCapas();
     if (repintar) {
-      pintarArbol();
-      pintar();
-      pintarLista();
+      if (CAPAS.some((c) => habia[c] !== capas[c])) refrescarCapas();
+      else {
+        pintarArbol();
+        pintar();
+        pintarLista();
+      }
     }
   }
 
@@ -1526,11 +1537,11 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     q("cifras").textContent = [`${nodosVistos} nodos`, `${lineas} conexiones`, ...aVista.map((c) => `${n[c]} ${nombres[c]}`)].join(" · ");
   }
 
-  // ---------- La leyenda: cada capa se pliega; «Yo» marca el punto de quien mira ----------
+  // ---------- Las píldoras de capas (bajo la barra): cada capa se pliega; «Yo» marca el punto de quien mira ----------
   const botonesCapa = { lugar: q<HTMLButtonElement>("capa-lugar"), artista: q<HTMLButtonElement>("capa-artista"), persona: q<HTMLButtonElement>("capa-persona") };
   const botonYo = q<HTMLButtonElement>("yo");
   function sincronizarCapas() {
-    for (const c of ["lugar", "artista", "persona"] as const) botonesCapa[c].setAttribute("aria-pressed", String(capas[c]));
+    for (const c of CAPAS) botonesCapa[c].setAttribute("aria-pressed", String(capas[c]));
     botonYo.setAttribute("aria-pressed", String(yoActivo));
   }
   /** Tras cambiar capas o «Yo»: se repinta todo lo que las cuenta (barra, árbol, tarjeta, escena y lista). */
@@ -1548,20 +1559,24 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     pintarArbol();
     pintarLista();
   }
-  for (const c of ["lugar", "artista", "persona"] as const) {
+  for (const c of CAPAS) {
     escuchar(botonesCapa[c], "click", () => {
-      capas[c] = !capas[c];
+      estadoCapas = alternarCapa(estadoCapas, c); // la elección de la persona manda, también con una lente puesta
+      verCapas();
       refrescarCapas();
     });
   }
   escuchar(botonYo, "click", () => {
     if (yoNodo < 0) return;
     yoActivo = !yoActivo;
-    if (yoActivo) capas.persona = true; // quien se marca tiene que estar a la vista
+    if (yoActivo) {
+      estadoCapas = ponerCapa(estadoCapas, "persona", true); // quien se marca tiene que estar a la vista
+      verCapas();
+    }
     refrescarCapas();
     if (yoActivo) volarA(yoNodo);
   });
-  botonYo.disabled = yoNodo < 0;
+  botonYo.setAttribute("aria-disabled", String(yoNodo < 0)); // sin asistencias queda apagado, pero sigue recibiendo el puntero para que el panel de ayuda explique por qué
 
   let cuadros = 0;
   let t0 = performance.now();
