@@ -19,6 +19,7 @@ const evento = (id: string, dias: number, lugar_id: string | null, extra: Partia
   evento_padre_id: null,
   sitio_lat: null,
   sitio_lng: null,
+  sitio_texto: null,
   ...extra,
 });
 const vacio = (): FilasGrafo => ({ lugares: [], artistas: [], eventos: [], eventos_artistas: [], seguimientos: [], asistencias: [] });
@@ -128,21 +129,26 @@ describe("artistas", () => {
     expect(Math.hypot(a.x - bx, a.z - bz)).toBeCloseTo(18, 0);
     expect(g.resumen.artistasConectados).toBe(1);
   });
-  it("solo en sitios libres se coloca en ese sitio, sin lugar", () => {
+  it("solo en sitios libres flota en un halo sobre su sitio sin ficha, sin lugar", () => {
     const f = base();
     f.artistas = [artista("a1")];
-    f.eventos = [evento("e1", HOY + 1, null, { sitio_lat: 22.05, sitio_lng: -101 })];
+    f.eventos = [evento("e1", HOY + 1, null, { sitio_lat: 22.05, sitio_lng: -101, sitio_texto: "Parque" })];
     f.eventos_artistas = [{ evento_id: "e1", artista_id: "a1" }];
     const g = construirGrafo(f, HOY);
     const a = g.artistas[0];
     expect(a.sitioLibre).toBe(true);
     expect(a.suelto).toBeUndefined();
     expect(a.lugar).toBe(-1);
+    expect(a.lugares).toBe(0);
+    expect(a.sitios).toBe(1);
+    // el mismo halo que sobre un lugar: 28 + 11·√1 del sitio
+    const [s0] = g.sitios;
+    expect(Math.hypot(a.x - s0.x, a.z - s0.z)).toBeCloseTo(28 + 11, 0);
     const sitio = proyectar(22.05, -101, g.centro);
-    const d = Math.hypot(a.x - sitio.x, a.z - sitio.z);
-    expect(d).toBeGreaterThanOrEqual(15 - 0.2);
-    expect(d).toBeLessThanOrEqual(35 + 0.2);
+    expect(Math.hypot(s0.x - sitio.x, s0.z - sitio.z)).toBeLessThan(0.2);
+    // ya no hay artista suelto en un sitio libre: la línea es artista→sitio
     expect(g.aristas.filter((x) => x[0] === "a")).toHaveLength(0);
+    expect(g.aristas.filter((x) => x[0] === "as")).toEqual([["as", 0, 0, 2, [HOY + 1]]]);
   });
   it("sin ningún evento va al anillo exterior (800 a 950) y entre −120 y 120 de alto", () => {
     const f = base();
@@ -204,13 +210,40 @@ describe("personas", () => {
     f.artistas = Array.from({ length: 6 }, (_, i) => artista(`x${i}`));
     expect(construirGrafo(f, HOY).personas[0].tramo).toBe(3);
   });
-  it("quien solo sigue no se dibuja: sus seguimientos solo suman a los seguidores", () => {
+  it("quien solo sigue existe como punto anónimo y sus seguimientos también suman a los seguidores", () => {
     const f = conGente(1);
     f.seguimientos = [{ usuario_id: "otra-persona", lugar_id: "l1", artista_id: null }];
     const g = construirGrafo(f, HOY);
-    expect(g.personas).toHaveLength(1);
-    expect(g.resumen.personasQueSiguen).toBe(2);
+    expect(g.personas).toHaveLength(2);
+    expect(g.resumen.personasQueSiguen).toBe(1);
+    expect(g.resumen.personasSoloSiguen).toBe(1);
     expect(g.lugares.find((l) => l.nombre === "Lugar l1")!.seguidores).toBe(1);
+    expect(JSON.stringify(g)).not.toContain("otra-persona");
+    for (const p of g.personas) expect(Object.keys(p).sort()).toEqual(["inventada", "tramo", "x", "y", "z"]);
+  });
+  it("su posición sale del promedio de los lugares que sigue y de donde más tocan los artistas que sigue", () => {
+    const f = base();
+    f.artistas = [artista("a1")];
+    f.eventos = [evento("e1", HOY + 1, "l2")];
+    f.eventos_artistas = [{ evento_id: "e1", artista_id: "a1" }];
+    f.seguimientos = [
+      { usuario_id: "uno", lugar_id: "l1", artista_id: null },
+      { usuario_id: "uno", lugar_id: null, artista_id: "a1" },
+    ];
+    const g = construirGrafo(f, HOY);
+    const [l1, l2] = [g.lugares.find((l) => l.nombre === "Lugar l1")!, g.lugares.find((l) => l.nombre === "Lugar l2")!];
+    const medio = { x: (l1.x + l2.x) / 2, z: (l1.z + l2.z) / 2 };
+    const d = Math.hypot(g.personas[0].x - medio.x, g.personas[0].z - medio.z);
+    expect(d).toBeGreaterThanOrEqual(30 - 0.2);
+    expect(d).toBeLessThanOrEqual(90 + 0.2);
+  });
+  it("si lo que sigue no tiene posición, queda cerca del centro (30 a 90 unidades)", () => {
+    const f = base();
+    f.artistas = [artista("a1")];
+    f.seguimientos = [{ usuario_id: "uno", lugar_id: null, artista_id: "a1" }];
+    const [p] = construirGrafo(f, HOY).personas;
+    expect(Math.hypot(p.x, p.z)).toBeGreaterThanOrEqual(30 - 0.2);
+    expect(Math.hypot(p.x, p.z)).toBeLessThanOrEqual(90 + 0.2);
   });
   it("su posición se deriva de los lugares a los que va, corrida 30 a 90 unidades", () => {
     const g = construirGrafo(conGente(3), HOY);
@@ -233,14 +266,13 @@ describe("umbral de anonimato", () => {
     return f;
   };
   const deGente = (g: ReturnType<typeof construirGrafo>) => g.aristas.filter((x) => x[0] === "pl" || x[0] === "pa" || x[0] === "pp");
-  it("el umbral es 3", () => expect(UMBRAL_ANONIMATO).toBe(3));
-  it("un evento con 2 Voy no produce líneas de personas, pero las personas suman a los tamaños", () => {
-    const g = construirGrafo(evento3(2), HOY);
-    expect(deGente(g)).toHaveLength(0);
-    expect(g.personas).toHaveLength(2);
-    expect(g.lugares.find((l) => l.nombre === "Lugar l1")!.asistentes).toBe(2);
-    expect(g.artistas[0].asistentes).toBe(2);
-    expect(g.aristas.filter((x) => x[0] === "a")).toHaveLength(1);
+  it("el umbral es 1 (decisión del founder, 13 de octubre de 2026)", () => expect(UMBRAL_ANONIMATO).toBe(1));
+  it("un solo Voy ya produce sus líneas: a lugar y a artista", () => {
+    const g = construirGrafo(evento3(1), HOY);
+    expect(g.aristas.filter((x) => x[0] === "pl")).toHaveLength(1);
+    expect(g.aristas.filter((x) => x[0] === "pa")).toHaveLength(1);
+    expect(g.aristas.filter((x) => x[0] === "pp")).toHaveLength(0); // entre personas hacen falta dos
+    expect(g.personas).toHaveLength(1);
   });
   it("con 3 Voy salen sus líneas a lugar, a artista y entre ellas", () => {
     const g = construirGrafo(evento3(3), HOY);
@@ -248,10 +280,179 @@ describe("umbral de anonimato", () => {
     expect(g.aristas.filter((x) => x[0] === "pa")).toHaveLength(3);
     expect(g.aristas.filter((x) => x[0] === "pp")).toHaveLength(3);
   });
-  it("Me interesa también cuenta para el umbral", () => {
-    const f = evento3(2);
+  it("Me interesa también cuenta", () => {
+    const f = evento3(0);
     f.asistencias.push({ usuario_id: "u9", evento_id: "e1", estado: "me_interesa" });
     expect(deGente(construirGrafo(f, HOY)).length).toBeGreaterThan(0);
+  });
+  it("un evento sin nadie no produce líneas de personas, y otros estados no cuentan", () => {
+    const f = evento3(0);
+    f.asistencias.push({ usuario_id: "u9", evento_id: "e1", estado: "no_voy" });
+    const g = construirGrafo(f, HOY);
+    expect(deGente(g)).toHaveLength(0);
+    expect(g.personas).toHaveLength(0);
+  });
+});
+
+describe("«sigue a» como línea", () => {
+  const conSeguidores = (): FilasGrafo => {
+    const f = base();
+    f.artistas = [artista("a1"), artista("a2")];
+    f.eventos = [evento("e1", HOY - 40, "l1")];
+    f.eventos_artistas = [{ evento_id: "e1", artista_id: "a1" }];
+    f.seguimientos = [
+      { usuario_id: "s1", lugar_id: null, artista_id: "a1" },
+      { usuario_id: "s1", lugar_id: "l2", artista_id: null },
+      { usuario_id: "s2", lugar_id: null, artista_id: "a1" },
+      { usuario_id: "s2", lugar_id: null, artista_id: "a2" },
+    ];
+    return f;
+  };
+  it("cada seguimiento es una línea persona→artista (`psa`) o persona→lugar (`psl`) de peso 1, sin días", () => {
+    const g = construirGrafo(conSeguidores(), HOY);
+    expect(g.aristas.filter((x) => x[0] === "psa")).toHaveLength(3);
+    expect(g.aristas.filter((x) => x[0] === "psl")).toHaveLength(1);
+    for (const x of g.aristas.filter((y) => y[0] === "psa" || y[0] === "psl")) {
+      expect(x[3]).toBe(1);
+      expect(x[4]).toEqual([]);
+    }
+  });
+  it("sin umbral: un solo seguidor ya da la línea, y quien sigue y también asiste no se duplica como punto", () => {
+    const f = conSeguidores();
+    f.asistencias = [voy("s1", "e1")];
+    const g = construirGrafo(f, HOY);
+    expect(g.personas).toHaveLength(2);
+    expect(g.resumen.personasQueSiguen).toBe(2);
+    expect(g.resumen.personasSoloSiguen).toBe(1);
+    expect(g.aristas.filter((x) => x[0] === "psa")).toHaveLength(3);
+    expect(g.aristas.filter((x) => x[0] === "pa")).toHaveLength(1); // asistir sigue siendo otra línea
+  });
+  it("un seguimiento a algo que no está en el grafo no produce línea ni punto", () => {
+    const f = base();
+    f.seguimientos = [{ usuario_id: "s1", lugar_id: "no-existe", artista_id: null }];
+    const g = construirGrafo(f, HOY);
+    expect(g.personas).toHaveLength(0);
+    expect(g.aristas).toHaveLength(0);
+  });
+  it("el orden de las filas de seguimientos no cambia el resultado", () => {
+    const a = conSeguidores();
+    const b = { ...a, seguimientos: [...a.seguimientos].reverse() };
+    expect(construirGrafo(b, HOY)).toEqual(construirGrafo(a, HOY));
+  });
+});
+
+describe("sitios sin ficha como nodo (OL-404)", () => {
+  const conSitio = (): FilasGrafo => {
+    const f = base();
+    f.artistas = [artista("dwa")];
+    f.eventos = [evento("fest", HOY - 2, null, { clase: "festival" }), evento("acto", HOY - 1, null, { evento_padre_id: "fest", sitio_lat: 22.05, sitio_lng: -101, sitio_texto: "Parque Tangamanga" })];
+    f.eventos_artistas = [{ evento_id: "acto", artista_id: "dwa" }];
+    f.asistencias = [voy("asiste", "acto")];
+    f.seguimientos = [
+      { usuario_id: "sigue1", lugar_id: null, artista_id: "dwa" },
+      { usuario_id: "sigue2", lugar_id: null, artista_id: "dwa" },
+    ];
+    return f;
+  };
+  it("el caso de DwardNoize: un artista con una fecha en sitio libre, una asistencia y dos seguidores queda unido a su sitio, a su asistente y a sus dos seguidores", () => {
+    const g = construirGrafo(conSitio(), HOY);
+    expect(g.sitios).toHaveLength(1);
+    expect(g.sitios[0].nombre).toBe("Parque Tangamanga");
+    expect(g.sitios[0].eventos).toBe(1);
+    expect(g.sitios[0].asistentes).toBe(1);
+    const cuenta = (t: string) => g.aristas.filter((x) => x[0] === t).length;
+    expect(cuenta("as")).toBe(1); // artista→sitio
+    expect(cuenta("pa")).toBe(1); // asistente→artista
+    expect(cuenta("psit")).toBe(1); // asistente→sitio
+    expect(cuenta("psa")).toBe(2); // dos seguidores→artista
+    // y nada más: ni líneas a lugares ni entre personas
+    expect(g.aristas).toHaveLength(5);
+    expect(g.resumen.sitios).toBe(1);
+    expect(g.resumen.eventosEnSitios).toBe(1);
+    expect(g.resumen.personas).toBe(3);
+  });
+  it("dos eventos a 30 m caen en el mismo sitio; a 200 m, en sitios distintos", () => {
+    const f = base();
+    const metros = (m: number) => m / 111_320; // grados de latitud
+    f.eventos = [
+      evento("e1", HOY, null, { sitio_lat: 22.05, sitio_lng: -101 }),
+      evento("e2", HOY, null, { sitio_lat: 22.05 + metros(30), sitio_lng: -101 }),
+      evento("e3", HOY, null, { sitio_lat: 22.05 + metros(230), sitio_lng: -101 }),
+    ];
+    const g = construirGrafo(f, HOY);
+    expect(g.sitios.map((s) => s.eventos).sort()).toEqual([1, 2]);
+  });
+  it("la agrupación no depende de la raya de una rejilla: 30 m en cualquier punto es un solo sitio", () => {
+    for (const lat of [22.0499, 22.04995, 22.0500, 22.05005, 22.0501]) {
+      const f = base();
+      f.eventos = [evento("e1", HOY, null, { sitio_lat: lat, sitio_lng: -101 }), evento("e2", HOY, null, { sitio_lat: lat + 30 / 111_320, sitio_lng: -101 })];
+      expect(construirGrafo(f, HOY).sitios).toHaveLength(1);
+    }
+  });
+  it("el nombre es el texto más repetido; sin texto, «Sitio sin ficha»; y no depende del orden de las filas", () => {
+    const f = base();
+    f.eventos = [
+      evento("e1", HOY, null, { sitio_lat: 22.05, sitio_lng: -101, sitio_texto: "El Parque" }),
+      evento("e2", HOY, null, { sitio_lat: 22.05, sitio_lng: -101, sitio_texto: "Parque Tangamanga" }),
+      evento("e3", HOY, null, { sitio_lat: 22.05, sitio_lng: -101, sitio_texto: "Parque Tangamanga" }),
+      evento("e4", HOY, null, { sitio_lat: 22.2, sitio_lng: -101, sitio_texto: "  " }),
+    ];
+    const g = construirGrafo(f, HOY);
+    expect(g.sitios.map((s) => s.nombre).sort()).toEqual(["Parque Tangamanga", "Sitio sin ficha"]);
+    expect(construirGrafo({ ...f, eventos: [...f.eventos].reverse() }, HOY)).toEqual(g);
+  });
+  it("un evento con lugar con ficha, o sin coordenadas, o un borrador no crea sitio", () => {
+    const f = base();
+    f.eventos = [
+      evento("e1", HOY, "l1", { sitio_lat: 22.05, sitio_lng: -101 }),
+      evento("e2", HOY, null),
+      evento("e3", HOY, null, { sitio_lat: 22.05, sitio_lng: -101, borrador: true }),
+    ];
+    expect(construirGrafo(f, HOY).sitios).toHaveLength(0);
+  });
+  it("tamaño y días: asistencias a sus eventos, eventos, próximos y días", () => {
+    const f = base();
+    f.eventos = [evento("e1", HOY - 5, null, { sitio_lat: 22.05, sitio_lng: -101 }), evento("e2", HOY + 3, null, { sitio_lat: 22.05, sitio_lng: -101 })];
+    f.asistencias = [voy("u1", "e1"), voy("u2", "e2"), voy("u3", "e2")];
+    const [s] = construirGrafo(f, HOY).sitios;
+    expect(s.asistentes).toBe(3);
+    expect(s.eventos).toBe(2);
+    expect(s.proximos).toBe(1);
+    expect(s.d).toEqual([HOY - 5, HOY + 3]);
+  });
+  it("festival compartido: lugar–sitio (`ls`) y sitio–sitio (`ss`) con la regla de «mismo festival»", () => {
+    const f = base();
+    f.eventos = [
+      evento("fest", HOY, null, { clase: "festival" }),
+      evento("a", HOY + 1, "l1", { evento_padre_id: "fest" }),
+      evento("b", HOY + 1, null, { evento_padre_id: "fest", sitio_lat: 22.05, sitio_lng: -101 }),
+      evento("c", HOY + 2, null, { evento_padre_id: "fest", sitio_lat: 22.2, sitio_lng: -101 }),
+    ];
+    const g = construirGrafo(f, HOY);
+    expect(g.sitios).toHaveLength(2);
+    const ls = g.aristas.filter((x) => x[0] === "ls");
+    const l1 = g.lugares.findIndex((l) => l.nombre === "Lugar l1");
+    expect(ls.map((x) => x.slice(1, 3))).toEqual([[l1, 0], [l1, 1]]); // l1 con cada sitio
+    expect(g.aristas.filter((x) => x[0] === "ss")).toHaveLength(1);
+    expect(g.aristas.filter((x) => x[0] === "ll")).toHaveLength(0);
+  });
+  it("un artista que toca en un lugar y en un sitio queda entre los dos y cuenta uno de cada", () => {
+    const f = base();
+    f.artistas = [artista("a1")];
+    f.eventos = [evento("e1", HOY + 1, "l1"), evento("e2", HOY + 2, null, { sitio_lat: 22.05, sitio_lng: -101 })];
+    f.eventos_artistas = ["e1", "e2"].map((evento_id) => ({ evento_id, artista_id: "a1" }));
+    const g = construirGrafo(f, HOY);
+    const [a] = g.artistas;
+    expect(a.lugares).toBe(1);
+    expect(a.sitios).toBe(1);
+    expect(a.sitioLibre).toBeUndefined();
+    expect(g.aristas.filter((x) => x[0] === "a")).toHaveLength(1);
+    expect(g.aristas.filter((x) => x[0] === "as")).toHaveLength(1);
+  });
+  it("las personas a un sitio salen anónimas y el grafo no lleva ningún id", () => {
+    const g = construirGrafo(conSitio(), HOY);
+    const texto = JSON.stringify(g);
+    for (const secreto of ["asiste", "sigue1", "sigue2"]) expect(texto).not.toContain(`"${secreto}"`);
   });
 });
 
@@ -373,7 +574,7 @@ describe("el punto de quien mira (el interruptor «Yo»)", () => {
     f.seguimientos = [{ usuario_id: uuid(20), lugar_id: uuid(1), artista_id: null }];
     return f;
   };
-  it("cada usuario con asistencias tiene un punto distinto, y el de otro usuario o el que solo sigue no tiene", () => {
+  it("cada usuario con asistencias o seguimientos tiene un punto distinto; quien no hizo nada no tiene", () => {
     const { grafo, indicePorUsuario } = armarGrafo(conUuid(), HOY);
     const indices = [10, 11, 12, 13].map((n) => indicePorUsuario[uuid(n)]);
     expect(new Set(indices).size).toBe(4);
@@ -382,7 +583,9 @@ describe("el punto de quien mira (el interruptor «Yo»)", () => {
       expect(i).toBeLessThan(grafo.personas.length);
     }
     expect(Object.keys(indicePorUsuario)).toHaveLength(grafo.personas.length);
-    expect(indicePorUsuario[uuid(20)]).toBeUndefined();
+    // quien solo sigue (OL-404) también es un punto; un usuario que no hizo nada, no
+    expect(indicePorUsuario[uuid(20)]).toBeGreaterThanOrEqual(0);
+    expect(indicePorUsuario[uuid(99)]).toBeUndefined();
     // la persona 10 fue a dos eventos: su punto tiene el tramo de dos acciones (2 a 5)
     expect(grafo.personas[indicePorUsuario[uuid(10)]].tramo).toBe(2);
     expect(grafo.personas[indicePorUsuario[uuid(11)]].tramo).toBe(1);
