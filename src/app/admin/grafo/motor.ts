@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { Grafo } from "@/lib/grafo";
+import { textoDatosDe } from "./datosDe";
 
 /**
  * El motor del grafo cultural en 3D (OL-401, bitácora 432): el prototipo firmado de la rama grafo-3d (`docs/rediseno/prototipos/grafo-3d.html`)
@@ -36,7 +37,7 @@ type Filtro = { tipo: string | null; clase: string | null };
 type Item = { i?: number; nombre: string; sub?: string; color: string; grupo?: boolean; n?: number };
 type Resultado = { titulo: string; items: Item[]; aviso?: string };
 type Capa = "lugar" | "artista" | "persona";
-type Lente = { id: string; titulo: string; sub: string; /** Las capas que la lente necesita a la vista: si están plegadas, la lente las despliega. */ necesita: Capa[]; aplicar: () => Resultado };
+type Lente = { id: string; titulo: string; /** La clave de su explicación en `ayuda.ts`. */ ayuda: string; /** Las capas que la lente necesita a la vista: si están plegadas, la lente las despliega. */ necesita: Capa[]; aplicar: () => Resultado };
 type Paso = ((t: number) => void) | null;
 type Parte = string | { b: string };
 
@@ -80,11 +81,9 @@ export type Motor = { destruir: () => void };
 /** Dónde se recuerdan en el teléfono las capas plegadas y el «Yo»; sin almacenamiento (modo privado, bloqueado), no se recuerda y no pasa nada. */
 const CLAVE_GUARDADO = "grafo-admin:capas";
 const NOMBRE_CAPA: Record<Capa, string> = { lugar: "Lugar", artista: "Artista", persona: "Asistente" };
-const LECTURA_MAPA = "Mapa: cada lugar en su sitio real, a escala; los artistas flotan sobre el lugar donde más tocan y los asistentes, debajo, cerca de los lugares a los que van. Dos puntos juntos están juntos en la ciudad, no necesariamente relacionados.";
-const LECTURA_RED = "Red: la posición la dan las conexiones, no el sitio: lo que se relaciona se atrae y lo más conectado queda al centro; los cúmulos sueltos quedan aparte y los lugares sin ninguna línea, en el anillo de fuera.";
 
-/** `yo`: el número del punto de quien mira entre los asistentes (o null si no tiene asistencias): lo único que el navegador sabe de su cuenta. */
-export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: number | null = null): Motor {
+/** `yo`: el número del punto de quien mira entre los asistentes (o null si no tiene asistencias): lo único que el navegador sabe de su cuenta. `calculadoEn`: el instante (ISO) en que el servidor leyó la base. */
+export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: number | null = null, calculadoEn = ""): Motor {
   const limpiezas: Array<() => void> = [];
   const escuchar = <T extends EventTarget>(blanco: T, tipo: string, fn: (ev: never) => void, opciones?: AddEventListenerOptions) => {
     blanco.addEventListener(tipo, fn as EventListener, opciones);
@@ -416,7 +415,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     animarCamara({ objetivo: new THREE.Vector3(0, 0, 0), distancia: vista === "red" ? 1450 : 1700 }, 900); // la cámara vuelve a encuadrar la nube entera
     botonRed.setAttribute("aria-pressed", String(vista === "red"));
     botonRed.textContent = vista === "red" ? "Mapa" : "Red";
-    lista.querySelectorAll<HTMLElement>("[data-lectura]").forEach((p) => (p.dataset.activa = String(p.dataset.lectura === vista)));
+    botonRed.dataset.ayuda = vista === "red" ? "mapa" : "red"; // el botón dice a qué lectura lleva: su explicación es la de esa lectura
     pedirCuadro();
   }
   const P3 = (i: number) => v3.set(pos[i][0], pos[i][1] * factorAltura, pos[i][2]);
@@ -801,6 +800,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       return;
     }
     const n = nodos[seleccion];
+    tarjeta.dataset.ayuda = n.tipo === "resumen" ? "por-conectar" : "tarjeta";
     const c = n.tipo === "persona" ? "var(--g-c-persona)" : n.tipo === "lugar" ? "var(--g-c-lugar)" : n.tipo === "resumen" ? "var(--g-c-suelto)" : "var(--g-c-artista)";
     let linea1: string;
     let linea2: string;
@@ -853,7 +853,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     const punto = el("span", S.punto);
     punto.style.setProperty("--c", c);
     const texto = el("div");
-    texto.append(el("h3", "", nombreDe(seleccion)), el("p", "", linea1), el("p", "", linea2), el("p", "", linea3));
+    texto.append(el("h3", "", nombreDe(seleccion)), el("p", "", linea1), el("p", "", linea2), n.tipo === "resumen" ? el("p", "", linea3) : conAyuda(el("p", "", linea3), "lineas"));
     const cerrar = el("button", S.cerrar, "✕");
     cerrar.type = "button";
     cerrar.setAttribute("aria-label", "Cerrar");
@@ -987,7 +987,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       id: "zonas",
       necesita: ["lugar"],
       titulo: "¿Qué zonas no tienen un lugar a 2 km?",
-      sub: "mapa desde arriba; las zonas en naranja",
+      ayuda: "lente-zonas",
       aplicar() {
         const z = zonasDe();
         filtro = { tipo: "lugar", clase: null };
@@ -1009,7 +1009,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       id: "islas",
       necesita: ["lugar"],
       titulo: "¿Qué lugares no comparten artista con nadie?",
-      sub: "islas: tienen eventos, pero ningún artista suyo toca en otro lugar",
+      ayuda: "lente-islas",
       aplicar() {
         filtro = { tipo: "lugar", clase: null };
         cambiarVista("mapa");
@@ -1044,7 +1044,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       id: "dependencia",
       necesita: ["artista"],
       titulo: "¿Qué artistas tocan siempre en el mismo sitio?",
-      sub: "dos o más fechas, un solo lugar",
+      ayuda: "lente-mismo-sitio",
       aplicar() {
         filtro = { tipo: "artista", clase: "conectados" };
         cambiarVista("mapa");
@@ -1062,7 +1062,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       id: "puentes",
       necesita: ["lugar", "artista"],
       titulo: "¿Quién une lugares distintos?",
-      sub: "red: artistas que tocan en más de un lugar",
+      ayuda: "lente-puentes",
       aplicar() {
         filtro = { tipo: null, clase: null };
         cambiarVista("red");
@@ -1079,7 +1079,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       id: "festivales",
       necesita: ["lugar"],
       titulo: "¿Qué festivales conectan sedes?",
-      sub: "lugares unidos por un festival (líneas violeta)",
+      ayuda: "lente-festivales",
       aplicar() {
         filtro = { tipo: "lugar", clase: null };
         cambiarVista("mapa");
@@ -1101,7 +1101,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       id: "conectar",
       necesita: ["artista"],
       titulo: "¿Cuántos faltan por conectar, por disciplina?",
-      sub: "artistas sin ningún evento: la lista para invitar",
+      ayuda: "lente-por-conectar",
       aplicar() {
         filtro = { tipo: null, clase: null };
         enfoque = null;
@@ -1163,6 +1163,11 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   }
 
   // ---------- Árbol (izquierda): lentes, filtros, tiempo, ajustes ----------
+  /** Marca un control con la clave de su explicación (el panel de ayuda la lee por `data-ayuda`; el texto vive en `ayuda.ts`). */
+  const conAyuda = <T extends HTMLElement>(e: T, clave: string): T => {
+    e.dataset.ayuda = clave;
+    return e;
+  };
   function fila(texto: string, n: string | number | undefined, color: string | null, activo: boolean, onclick: () => void, sub?: string, clase = ""): HTMLButtonElement {
     const b = el("button", `${S.fila} ${clase}`.trim());
     b.type = "button";
@@ -1182,16 +1187,15 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   const fechaDeDia = (d: number) => new Date(d * 86400000).toLocaleDateString("es-MX", { day: "numeric", month: "short", timeZone: "UTC" });
   function pintarArbol() {
     arbol.replaceChildren();
-    const h0 = el("h2", "", "Lentes de diagnóstico");
-    arbol.append(h0);
+    arbol.append(conAyuda(el("h2", "", "Lentes de diagnóstico"), "lentes"));
     const ulL = el("ul");
     for (const l of LENTES) {
       const li = el("li");
-      li.append(fila(l.titulo, "", null, lenteActiva === l.id, () => aplicarLente(l.id), l.sub, S.lente));
+      li.append(conAyuda(fila(l.titulo, "", null, lenteActiva === l.id, () => aplicarLente(l.id), undefined, S.lente), l.ayuda));
       ulL.append(li);
     }
     arbol.append(ulL);
-    arbol.append(el("h2", "", "Filtrar"));
+    arbol.append(conAyuda(el("h2", "", "Filtrar"), "filtrar"));
     const ul = el("ul");
     const li = (hijo: HTMLElement) => {
       const l = el("li");
@@ -1203,40 +1207,39 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       if (lenteActiva) quitarLente(false);
       ponerFiltro(t, c);
     };
-    li(fila("Todo", nodos.filter((n, i) => i !== RESUMEN && capaVisible(i) && (!n.suelto || mostrarSueltos)).length, "var(--g-suave)", !filtro.tipo && !lenteActiva, () => poner(null, null)));
-    const lLug = li(fila("Lugares", DATOS.lugares.length, "var(--g-c-lugar)", filtro.tipo === "lugar" && !filtro.clase && !lenteActiva, () => poner("lugar", null)));
+    li(conAyuda(fila("Todo", nodos.filter((n, i) => i !== RESUMEN && capaVisible(i) && (!n.suelto || mostrarSueltos)).length, "var(--g-suave)", !filtro.tipo && !lenteActiva, () => poner(null, null)), "filtro-todo"));
+    const lLug = li(conAyuda(fila("Lugares", DATOS.lugares.length, "var(--g-c-lugar)", filtro.tipo === "lugar" && !filtro.clase && !lenteActiva, () => poner("lugar", null)), "filtro-lugares"));
     const tipos: Record<string, number> = {};
     for (const l of DATOS.lugares) tipos[l.tipo] = (tipos[l.tipo] || 0) + 1;
     const ulLug = el("ul");
     for (const [t, n] of Object.entries(tipos).sort((a, b) => b[1] - a[1])) {
       const x = el("li");
-      x.append(fila(etiqueta(t), n, "var(--g-c-lugar)", filtro.tipo === "lugar" && filtro.clase === t && !lenteActiva, () => poner("lugar", t)));
+      x.append(conAyuda(fila(etiqueta(t), n, "var(--g-c-lugar)", filtro.tipo === "lugar" && filtro.clase === t && !lenteActiva, () => poner("lugar", t)), "filtro-tipo"));
       ulLug.append(x);
     }
     lLug.append(ulLug);
-    const lArt = li(fila("Artistas", DATOS.artistas.length, "var(--g-c-artista)", filtro.tipo === "artista" && !filtro.clase && !lenteActiva, () => poner("artista", null)));
+    const lArt = li(conAyuda(fila("Artistas", DATOS.artistas.length, "var(--g-c-artista)", filtro.tipo === "artista" && !filtro.clase && !lenteActiva, () => poner("artista", null)), "filtro-artistas"));
     const disc: Record<string, number> = {};
     for (const a of DATOS.artistas) disc[a.disciplina] = (disc[a.disciplina] || 0) + 1;
     const ulA = el("ul");
-    const add = (et: string, n: number, activo: boolean, f: () => void, sub?: string) => {
+    const add = (et: string, n: number, activo: boolean, f: () => void, ayuda: string, sub?: string) => {
       const x = el("li");
-      x.append(fila(et, n, "var(--g-c-artista)", activo && !lenteActiva, f, sub));
+      x.append(conAyuda(fila(et, n, "var(--g-c-artista)", activo && !lenteActiva, f, sub), ayuda));
       ulA.append(x);
     };
-    add("Con lugar", DATOS.resumen.artistasConectados, filtro.tipo === "artista" && filtro.clase === "conectados", () => poner("artista", "conectados"), "flotan sobre el lugar donde más tocan");
-    for (const [t, n] of Object.entries(disc).sort((a, b) => b[1] - a[1])) add(etiqueta(t), n, filtro.tipo === "artista" && filtro.clase === t, () => poner("artista", t));
+    add("Con lugar", DATOS.resumen.artistasConectados, filtro.tipo === "artista" && filtro.clase === "conectados", () => poner("artista", "conectados"), "filtro-con-lugar", "flotan sobre el lugar donde más tocan");
+    for (const [t, n] of Object.entries(disc).sort((a, b) => b[1] - a[1])) add(etiqueta(t), n, filtro.tipo === "artista" && filtro.clase === t, () => poner("artista", t), "filtro-disciplina");
     lArt.append(ulA);
-    li(fila("Solo en sitios libres", DATOS.resumen.artistasEnSitioLibre, "var(--g-c-artista)", filtro.tipo === "libres" && !lenteActiva, () => poner("libres", null), "eventos sin ficha de lugar; se colocan en ese sitio"));
-    li(fila("Sin conexión", DATOS.resumen.artistasSueltos, "var(--g-c-suelto)", filtro.tipo === "sueltos" && !lenteActiva, () => poner("sueltos", null), "ni evento ni lugar: resumidos en un nodo; aquí se despliegan"));
-    li(fila("Asistentes", DATOS.personas.length, "var(--g-c-persona)", filtro.tipo === "persona" && !lenteActiva, () => poner("persona", null), "anónimos; solo quienes dijeron Voy o Me interesa"));
+    li(conAyuda(fila("Solo en sitios libres", DATOS.resumen.artistasEnSitioLibre, "var(--g-c-artista)", filtro.tipo === "libres" && !lenteActiva, () => poner("libres", null), "eventos sin ficha de lugar; se colocan en ese sitio"), "filtro-libres"));
+    li(conAyuda(fila("Sin conexión", DATOS.resumen.artistasSueltos, "var(--g-c-suelto)", filtro.tipo === "sueltos" && !lenteActiva, () => poner("sueltos", null), "ni evento ni lugar: resumidos en un nodo; aquí se despliegan"), "filtro-sin-conexion"));
+    li(conAyuda(fila("Asistentes", DATOS.personas.length, "var(--g-c-persona)", filtro.tipo === "persona" && !lenteActiva, () => poner("persona", null), "anónimos; solo quienes dijeron Voy o Me interesa"), "filtro-asistentes"));
     arbol.append(ul);
 
-    arbol.append(el("h2", "", "Tiempo"));
+    arbol.append(conAyuda(el("h2", "", "Tiempo"), "tiempo"));
     arbol.insertAdjacentHTML(
       "beforeend",
-      `<label class="${S.ajuste}"><span>Ventana</span><select data-g="t-ventana"><option value="14">2 semanas</option><option value="30">1 mes</option><option value="90">3 meses</option><option value="Infinity">Todo</option></select></label>
-       <label class="${S.ajuste}"><span>Hasta <b data-g="t-hasta-txt"></b></span><input type="range" data-g="t-hasta" min="${DATOS.primerDia}" max="${DATOS.ultimoDia}" step="7" value="${hasta}"></label>
-       <p class="${S.nota}">Una línea está activa si tiene un evento dentro de la ventana que termina en «Hasta»; lo demás se apaga. Hoy la base cubre del ${fechaDeDia(DATOS.primerDia)} al ${fechaDeDia(DATOS.ultimoDia)}: ${DATOS.ultimoDia - DATOS.primerDia} días. Para comparar dos momentos, mueve «Hasta» y mira cómo cambian el diagnóstico y la nube.</p>`,
+      `<label class="${S.ajuste}" data-ayuda="ventana"><span>Ventana</span><select data-g="t-ventana"><option value="14">2 semanas</option><option value="30">1 mes</option><option value="90">3 meses</option><option value="Infinity">Todo</option></select></label>
+       <label class="${S.ajuste}" data-ayuda="hasta"><span>Hasta <b data-g="t-hasta-txt"></b></span><input type="range" data-g="t-hasta" min="${DATOS.primerDia}" max="${DATOS.ultimoDia}" step="7" value="${hasta}"></label>`,
     );
     const txt = arbol.querySelector<HTMLElement>('[data-g="t-hasta-txt"]') as HTMLElement;
     txt.textContent = fechaDeDia(hasta);
@@ -1253,15 +1256,13 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       cambiarTiempo();
     };
 
-    arbol.append(el("h2", "", "Ajustes"));
+    arbol.append(conAyuda(el("h2", "", "Ajustes"), "ajustes"));
     arbol.insertAdjacentHTML(
       "beforeend",
-      `<label class="${S.ajuste}"><span>Tamaño de las esferas</span><input type="range" data-g="aj-tamano" min="0.4" max="2.2" step="0.1" value="${factorTamano}"></label>
-       <label class="${S.ajuste}"><span>Altura de las capas</span><input type="range" data-g="aj-altura" min="0" max="2" step="0.1" value="${factorAltura}"></label>
-       <label class="${S.ajuste}"><span>Mostrar sin conexión</span><input type="checkbox" data-g="aj-sueltos" ${mostrarSueltos ? "checked" : ""}></label>
-       <label class="${S.ajuste}"><span>Todas las líneas, tenues</span><input type="checkbox" data-g="aj-lineas" ${mostrarLineas ? "checked" : ""}></label>
-       <p class="${S.nota}">Lugares a escala real: 1 unidad = 10 m desde el centro de los lugares de San Luis Potosí; cada anillo del suelo es 1 km. Lo que está a más de 10 km (San Miguel de Allende) se acerca en logaritmo. En «Red» la cercanía deja de ser la de la ciudad y pasa a ser la relación.</p>
-       <p class="${S.nota}">Datos reales de solo lectura del ${DATOS.extraido}: ${DATOS.resumen.eventos} eventos, ${DATOS.resumen.seguimientos} seguimientos, ${DATOS.resumen.asistencias} asistencias. Los seguimientos solo suman al tamaño; las personas que solo siguen (${DATOS.resumen.personasQueSiguen - DATOS.personas.length}) no se dibujan. Las líneas de una persona solo salen de eventos con 3 o más asistencias.</p>`,
+      `<label class="${S.ajuste}" data-ayuda="ajuste-tamano"><span>Tamaño de las esferas</span><input type="range" data-g="aj-tamano" min="0.4" max="2.2" step="0.1" value="${factorTamano}"></label>
+       <label class="${S.ajuste}" data-ayuda="ajuste-altura"><span>Altura de las capas</span><input type="range" data-g="aj-altura" min="0" max="2" step="0.1" value="${factorAltura}"></label>
+       <label class="${S.ajuste}" data-ayuda="ajuste-sueltos"><span>Mostrar sin conexión</span><input type="checkbox" data-g="aj-sueltos" ${mostrarSueltos ? "checked" : ""}></label>
+       <label class="${S.ajuste}" data-ayuda="ajuste-lineas"><span>Todas las líneas, tenues</span><input type="checkbox" data-g="aj-lineas" ${mostrarLineas ? "checked" : ""}></label>`,
     );
     const aj = <T extends HTMLElement>(n: string) => arbol.querySelector(`[data-g="${n}"]`) as T;
     aj<HTMLInputElement>("aj-tamano").oninput = (e) => {
@@ -1308,17 +1309,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   // ---------- Lista (derecha): diagnóstico y lo filtrado o lo de la lente ----------
   function pintarLista() {
     lista.replaceChildren();
-    lista.append(el("h2", "", "Diagnóstico"));
-    const dg = el("div", S.diagnostico);
-    // Qué significa cada lectura, con la activa en negrita (cambia al pulsar «Red» / «Mapa»)
-    const lecturas = el("div", S.lecturas);
-    for (const [lectura, texto] of [["mapa", LECTURA_MAPA], ["red", LECTURA_RED]] as const) {
-      const p = el("p", S.lectura, texto);
-      p.dataset.lectura = lectura;
-      p.dataset.activa = String(vista === lectura);
-      lecturas.append(p);
-    }
-    dg.append(lecturas);
+    lista.append(conAyuda(el("h2", "", "Diagnóstico"), "diagnostico"));
+    const dg = conAyuda(el("div", S.diagnostico), "diagnostico");
     for (const f of diagnostico()) {
       const p = el("p");
       for (const parte of f) {
@@ -1368,7 +1360,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     }
     const h = el("h2");
     h.append(el("span", "", titulo));
-    const copiar = el("button", S.copiar, "Copiar lista");
+    const copiar = conAyuda(el("button", S.copiar, "Copiar lista"), "copiar");
     copiar.type = "button";
     copiar.onclick = async () => {
       const texto = `${titulo}\n` + items.map((it) => `${it.grupo ? "\n" : "- "}${it.nombre}${it.sub ? ` · ${it.sub}` : ""}`).join("\n");
@@ -1388,12 +1380,12 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     const ul = el("ul");
     const tope = 400;
     for (const it of items.slice(0, tope)) {
-      const b = fila(it.nombre, it.n ?? "", it.color, false, () => {
+      const b = conAyuda(fila(it.nombre, it.n ?? "", it.color, false, () => {
         if (it.i !== undefined) {
           seleccionar(it.i, true);
           if (!columnas.matches) cerrarHojas();
         }
-      }, it.sub);
+      }, it.sub), it.i !== undefined ? "renglon" : "lista");
       if (it.grupo) b.classList.add(S.grupo);
       if (it.i === seleccion) b.setAttribute("aria-current", "true");
       const li = el("li");
@@ -1402,6 +1394,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     }
     lista.append(ul);
     if (items.length > tope) lista.append(el("p", S.nota, `Se muestran ${tope} de ${items.length}.`));
+    // De dónde salen los números: una línea al final con la hora del cálculo; lo que significan está en el manual
+    lista.append(conAyuda(el("p", S.nota, `${textoDatosDe(calculadoEn, new Date())}: ${plural(DATOS.resumen.eventos, "evento", "eventos")} · ${plural(DATOS.resumen.seguimientos, "seguimiento", "seguimientos")} · ${plural(DATOS.resumen.asistencias, "asistencia", "asistencias")}.`), "datos-de"));
     // Se lleva el renglón elegido a la vista desplazando solo la lista (scrollIntoView movería también la escena si la hoja está cerrada)
     const sel = lista.querySelector('[aria-current="true"]');
     if (sel) {
