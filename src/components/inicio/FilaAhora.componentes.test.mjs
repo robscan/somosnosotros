@@ -1,5 +1,5 @@
 /** OL-359: la fila de círculos «Ahora» y las historias de Inicio, en Chrome real: anillos, apertura, avance con toques, cierre (Escape y deslizar),
- *  foco de vuelta, «Me interesa» con el marcador, «Ver ficha» y «Cómo llegar», y nada pintado sin eventos. Con «Reducir movimiento» (la historia no
+ *  foco de vuelta, «Me interesa» con el marcador, «Ver más información» y «Cómo llegar», y nada pintado sin eventos. Con «Reducir movimiento» (la historia no
  *  avanza sola: la prueba no depende del reloj de las animaciones). OL-371 (E7): a la misma hora, la cuenta atrás solo bajo el primer círculo. */
 import {before,after,test} from 'node:test';import assert from 'node:assert/strict';
 import {createServer} from 'node:http';import {mkdtemp,readFile,rm} from 'node:fs/promises';
@@ -96,7 +96,7 @@ test('mantener pausa y soltar sigue en la misma; acabar la última vuelve a Inic
  await tocar(p,330,420);await p.getByRole('dialog').waitFor({state:'detached'});
 });
 
-test('acciones: «Me interesa» con el marcador se guarda sin pasar de historia; «Ver ficha» y «Cómo llegar» llevan a su sitio',async t=>{
+test('acciones: «Me interesa» con el marcador se guarda sin pasar de historia; «Ver más información» y «Cómo llegar» llevan a su sitio',async t=>{
  const p=await pagina(t);const b=p.getByRole('button',{name:/Caracolas/});const r=await b.boundingBox();await p.mouse.click(r.x+r.width/2,r.y+r.height/2);
  await p.waitForFunction(()=>document.querySelector('[role=dialog][data-abierta]'));
  const m=p.getByRole('button',{name:'Me interesa'});const c=await m.boundingBox();
@@ -106,7 +106,7 @@ test('acciones: «Me interesa» con el marcador se guarda sin pasar de historia;
  assert.equal(await marcado.getAttribute('aria-pressed'),'true');assert.equal(await marcado.locator('svg').getAttribute('fill'),'currentColor');
  assert.deepEqual(await p.evaluate(()=>window.guardados),[['ahora','me_interesa']]);
  assert.equal(await titulo(p),'Caracolas para Luciana');assert.equal(await p.getByRole('status').innerText(),'Te interesa');
- assert.equal(await p.getByRole('link',{name:'Ver ficha'}).getAttribute('href'),'/eventos/ahora');
+ assert.equal(await p.getByRole('link',{name:'Ver más información'}).getAttribute('href'),'/eventos/ahora');
  assert.equal(await p.getByRole('link',{name:'Cómo llegar'}).getAttribute('href'),'https://www.google.com/maps/dir/?api=1&destination=CEART%2C%20San%20Luis%20Potos%C3%AD');
  // Un fallo devuelve el marcador y lo dice.
  await p.evaluate(()=>{window.fallar=true});await marcado.click();await p.getByText('No se pudo guardar').waitFor();assert.equal(await p.getByRole('button',{name:'Te interesa'}).getAttribute('aria-pressed'),'true');
