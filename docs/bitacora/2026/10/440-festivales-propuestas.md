@@ -1,7 +1,7 @@
 # 440 · Prototipo: festivales, exposiciones y talleres en las fichas, y el costo que no se fija (OL-409)
 
 **Fecha:** 2026-10-14. **Rama:** `festivales-propuestas`, base `origin/main` (`aa2909cf`). **Operador:** Gestor VI (Fable 5.1), con un agente de solo lectura para el inventario. **Solo documentación.**
-**Estado:** espera la firma del founder.
+**Estado:** FIRMADO por el founder la tarde del 14 de octubre: «F Bloque como Agenda · S La hora de cada función, en su día · E Grupo «Para visitar», sin Voy · C Se puede dejar vacío · K «Por confirmar» · U En curso «Hasta el …», por venir «Del … al …»». En C eligió «se puede dejar vacío» en vez de la cuarta opción «Varía». El código: OL-410 (fichas: F, S, E, U) y OL-411 (costo: C, K).
 
 ## El pedido
 
