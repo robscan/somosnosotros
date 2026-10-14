@@ -42,9 +42,16 @@ export type ConOcurrencia<T> = Omit<T, "sesiones"> & { ocurrencia?: DatosOcurren
 /** La llave de un renglón o una tarjeta: la de su día si es una ocurrencia, y el `id` si es el evento entero. */
 export const claveDe = (e: { id: string; ocurrencia?: Pick<DatosOcurrencia, "clave"> }): string => e.ocurrencia?.clave ?? e.id;
 
-/** «Día 2 de 3» o, en un taller, «Sesión 2 de 4» (OL-322); null si es un evento de un solo día. */
-export const textoParte = (e: { ocurrencia?: Pick<DatosOcurrencia, "parte">; clase?: Clase | null }): string | null =>
-  e.ocurrencia?.parte ? `${e.clase === "taller" ? "Sesión" : "Día"} ${e.ocurrencia.parte.n} de ${e.ocurrencia.parte.de}` : null;
+/**
+ * «Día 2 de 3» o, en un taller, «Sesión 2 de 4» (OL-322); null si es un evento de un solo día. Una función de un acto de festival (un acto con
+ * horario por día: una película en tres funciones) no lleva «Día n de N» (OL-409, «S»: la hora de cada función, en su día; no son días de un
+ * mismo evento que se siguen): null.
+ */
+export const textoParte = (e: { ocurrencia?: Pick<DatosOcurrencia, "parte">; clase?: Clase | null; evento_padre_id?: string | null }): string | null => {
+  if (!e.ocurrencia?.parte) return null;
+  if (e.clase === "taller") return `Sesión ${e.ocurrencia.parte.n} de ${e.ocurrencia.parte.de}`;
+  return e.evento_padre_id ? null : `Día ${e.ocurrencia.parte.n} de ${e.ocurrencia.parte.de}`;
+};
 
 /** ¿Tiene ocurrencias? Una exposición y el marco de un festival no (OL-322): no pasan un día a una hora. */
 export const sinOcurrencias = (e: { clase?: Clase | null }): boolean => e.clase === "exposicion" || e.clase === "festival";

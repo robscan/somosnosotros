@@ -173,6 +173,19 @@ export function rangoCorto(desde: string, hasta: string, hoy: string): string {
 }
 
 /**
+ * El cuándo de lo que dura un periodo (un festival, una exposición), con una sola regla en todas las superficies (OL-409, firma del founder del
+ * 14 de octubre, «U»: «En curso "Hasta el …", por venir "Del … al …"»): por venir, sus días («Del 12 al 17 de oct»); ya en curso (hoy es uno de
+ * sus días), hasta cuándo («Hasta el sáb 17 de oct»); de un solo día, ese día («jue 12 de nov»). `desde` y `hasta` son días de calendario
+ * (YYYY-MM-DD) en la zona; `hoy`, el de quien mira en esa zona. La usan `textoVisita` (la exposición), `cuandoDePeriodo` (el festival y la
+ * exposición, `lib/claseEvento`) y, de ahí, las tarjetas, los renglones, las fichas, Buscar, «Tus planes» y la hoja de Lugares.
+ */
+export function textoDePeriodo(desde: string, hasta: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL, hoy: string = diaLocal(ahora, zona)): string {
+  if (hasta <= desde) return diaConMesDe(desde, ahora, zona);
+  if (hoy < desde) return rangoCorto(desde, hasta, hoy);
+  return `Hasta el ${diaConMesDe(hasta, ahora, zona)}`;
+}
+
+/**
  * ¿Dura varios días? Su fin cae un día después o más, pero una noche que solo cruza la medianoche (empieza 10:00 p.m., termina 1:00 a.m. del
  * día siguiente: su fin cae antes de la hora de inicio) es una noche, no dos días. Es la regla con la que se lee el evento (`cuandoVariosDias`)
  * y con la que la agenda lo reparte en sus días (`lib/ocurrencias`, OL-320).

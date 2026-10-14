@@ -30,12 +30,12 @@ import IconoRed from "@/components/ui/IconoRed";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
-import type { EventoAgenda } from "@/lib/agenda";
 import { compartirArtista, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
-import { filtroSinPasar } from "@/lib/fechas";
+import { cargarEventosDeArtista } from "@/lib/cargarEventosFicha";
+import { eventosDeFicha } from "@/lib/eventosFicha";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
 import { cargarProximasArtista, cargarTrayectoria } from "@/lib/cargarHistorial";
@@ -55,7 +55,6 @@ import SeccionNovedades, { type NovedadParaFicha } from "./SeccionNovedades";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; novedad?: string }> };
 type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null };
-type FilaEvento = Omit<EventoAgenda, "lugar" | "van"> & { lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
@@ -88,37 +87,6 @@ async function cargarArtista(idOSlug: string): Promise<ArtistaConAutor | null> {
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
   return { ...(data as unknown as Artista), autor: autor as ArtistaConAutor["autor"] };
-}
-
-/** Las fechas próximas en las que se presenta, con su sitio y cuántos van, listas para el renglón de la agenda (decisión 8). */
-async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
-  const supabase = await clienteServidor();
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from("eventos")
-    .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, lugar:lugares(nombre, portada), eventos_artistas!inner(artista_id)")
-    .eq("eventos_artistas.artista_id", artistaId)
-    .eq("visible", true)
-    .or(filtroSinPasar())
-    .order("inicio")
-    .order("titulo")
-    .order("id")
-    .limit(30);
-  const filas = (data ?? []) as unknown as FilaEvento[];
-  if (filas.length === 0) return [];
-  // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.
-  const { data: a } = await supabase
-    .from("asistencias")
-    .select("evento_id")
-    .eq("estado", "voy")
-    .in(
-      "evento_id",
-      filas.map((f) => f.id),
-    )
-    .limit(2000);
-  const van = new Map<string, number>();
-  for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
-  return filas.map((f) => ({ ...f, lugar: Array.isArray(f.lugar) ? (f.lugar[0] ?? null) : f.lugar, van: van.get(f.id) ?? 0 }));
 }
 
 /** Las novedades del artista, más nueva primero (doc 44 §4, OL-175). El `src` del reproductor se arma y valida
@@ -161,10 +129,14 @@ async function cargarNovedadesArtista(artistaId: string, novedadId?: string): Pr
   }));
 }
 
-// `cargarFechas` y cuántos siguen al artista se piden de nuevo abajo (`KpisArtista` y `SeccionFechasArtista`, en
-// `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola consulta por
-// petición (OL-161, bitácora 196; mismo patrón que `cargarLigadas`, arriba).
-const cargarFechasCache = cache(cargarFechas);
+// Sus fechas próximas (`cargarEventosDeArtista`, OL-410: la misma consulta y lo mismo que lee Agenda) y cuántos lo siguen se piden de nuevo
+// abajo (`KpisArtista` y `SeccionFechasArtista`, en `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola
+// consulta por petición (OL-161, bitácora 196; mismo patrón que `cargarLigadas`, arriba).
+/** Lo que lista «Próximas fechas» (`eventosDeFicha`): lo que cuenta su número es lo que se ve. */
+const fechasListadas = cache(async (artistaId: string) => {
+  const { eventos, marcos } = await cargarEventosDeArtista(artistaId);
+  return { eventos, marcos, ficha: eventosDeFicha(eventos, marcos) };
+});
 const cargarSeguidoresArtistaCache = cache(async (artistaId: string): Promise<number> => {
   const supabase = await clienteServidor();
   const { data } = (await supabase?.rpc("cuenta_seguidores", { p_artista: artistaId })) ?? { data: 0 };
@@ -178,15 +150,15 @@ const cargarSeguidoresArtistaCache = cache(async (artistaId: string): Promise<nu
  * «todos»): con fechas próximas baja a ellas; sin ellas, a la trayectoria, que se abre.
  */
 async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
-  const [seguidores, fechas, trayectoria] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), cargarFechasCache(artista.id), cargarTrayectoria(artista.id)]);
+  const [seguidores, { eventos: fechas, ficha: lista }, trayectoria] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), fechasListadas(artista.id), cargarTrayectoria(artista.id)]);
   // Lo que se marcó «se canceló» (OL-391) no cuenta: ni sus lugares ni como fecha a la que bajar.
   const ocurridas = realizados(trayectoria.eventos);
   const lugares = contarLugares(fechas, ocurridas);
   return (
     <Kpis>
-      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Fechas" valor={kpiProximos(fechas.length, true)} salto={fechas.length > 0 ? "fechas" : undefined} />
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Fechas" valor={kpiProximos(lista.cuenta, true)} salto={lista.cuenta > 0 ? "fechas" : undefined} />
       <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Siguen" valor={seguidores} />
-      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Lugares" valor={lugares} salto={saltoLugares(lugares, fechas.length, ocurridas.length)} />
+      <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Lugares" valor={lugares} salto={saltoLugares(lugares, lista.cuenta, ocurridas.length)} />
     </Kpis>
   );
 }
@@ -206,16 +178,16 @@ async function SeccionTrayectoria({ artista, puedeEditar }: { artista: ArtistaCo
 
 /** «Próximas fechas» entero: la misma consulta que `KpisArtista`, memoizada por `cache()`, más quién decidió qué. */
 async function SeccionFechasArtista({ artista, actual, hrefPublicarFecha }: { artista: ArtistaConAutor; actual: { correo: string | null; perfil: Perfil } | null; hrefPublicarFecha: string }) {
-  const fechas = await cargarFechasCache(artista.id);
+  const { eventos: fechas, marcos, ficha: lista } = await fechasListadas(artista.id);
   const decididas = await decididasDe(actual?.perfil.id ?? null, fechas.map((e) => e.id));
   return (
     <section className={ficha.bloque} id="fechas" aria-label="Próximas fechas">
       <h2>
         Próximas fechas
-        {fechas.length > 0 && <span className={ficha.cuenta}> · {fechas.length}</span>}
+        {lista.cuenta > 0 && <span className={ficha.cuenta}> · {lista.cuenta}</span>}
       </h2>
-      {fechas.length === 0 && <p className={ficha.vacio}>Aún no tiene fechas publicadas. ¿Sabes de una? Publícala.</p>}
-      <EventosPorDia eventos={fechas} decididas={decididas} avisos={avisosParaListas(actual)} />
+      {lista.cuenta === 0 && <p className={ficha.vacio}>Aún no tiene fechas publicadas. ¿Sabes de una? Publícala.</p>}
+      <EventosPorDia eventos={fechas} marcos={marcos} de="artista" decididas={decididas} avisos={avisosParaListas(actual)} />
       <Boton href={hrefPublicarFecha} variante="secundario">
         Publicar una fecha
       </Boton>

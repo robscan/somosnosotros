@@ -22,7 +22,6 @@ import { Kpi, Kpis } from "@/components/ui/Kpi";
 import { CIRCULO } from "@/components/ui/Ficha";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
-import type { EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
@@ -31,7 +30,8 @@ import { cargarHistorialLugar } from "@/lib/cargarHistorial";
 import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
 import { etiquetasPeriodo, zonaInforme } from "@/lib/documentos";
 import { opcionesInforme } from "@/lib/opcionesDocumento";
-import { filtroSinPasar } from "@/lib/fechas";
+import { cargarEventosDeLugar } from "@/lib/cargarEventosFicha";
+import { eventosDeFicha, primeroDeFicha } from "@/lib/eventosFicha";
 import { esUuid } from "@/lib/formulario";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
@@ -119,36 +119,19 @@ export async function cargarFicha(idOSlug: string): Promise<FichaLugar | null> {
   };
 }
 
-/** Los eventos próximos del lugar, con cuántos van, listos para el renglón de la agenda. */
-async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
-  const supabase = await clienteServidor();
-  if (!supabase) return [];
-  const { data } = await supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(30);
-  const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van">[];
-  if (filas.length === 0) return [];
-  // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.
-  const { data: a } = await supabase
-    .from("asistencias")
-    .select("evento_id")
-    .eq("estado", "voy")
-    .in(
-      "evento_id",
-      filas.map((f) => f.id),
-    )
-    .limit(2000);
-  const van = new Map<string, number>();
-  for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
-  return filas.map((f) => ({ ...f, lugar: { nombre: lugar.nombre, portada: lugar.portada }, van: van.get(f.id) ?? 0 }));
-}
-
-// `cargarEventos` y cuántos siguen al lugar se piden de nuevo abajo (`KpisLugar` y `SeccionEventosLugar`, en
-// `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola consulta por petición
-// (OL-161, bitácora 196; mismo patrón que `cargarLigadas` en la ficha de artista).
-const cargarEventosCache = cache(cargarEventos);
+// Los próximos eventos del lugar (`cargarEventosDeLugar`, OL-410: la misma consulta y lo mismo que lee Agenda) y cuántos lo siguen se piden de
+// nuevo abajo (`KpisLugar`, `SeccionEventosLugar` y el mapa, en `<Suspense>` separados): `cache()` de React las memoiza por argumento para que
+// sea una sola consulta por petición (OL-161, bitácora 196; mismo patrón que `cargarLigadas` en la ficha de artista).
 const cargarSeguidoresLugarCache = cache(async (lugarId: string): Promise<number> => {
   const supabase = await clienteServidor();
   const { data } = (await supabase?.rpc("cuenta_seguidores", { p_lugar: lugarId })) ?? { data: 0 };
   return Number(data ?? 0);
+});
+
+/** Lo que lista «Próximos eventos» (`eventosDeFicha`): lo que cuenta su número es lo que se ve. */
+const eventosListados = cache(async (lugarId: string) => {
+  const { eventos, marcos } = await cargarEventosDeLugar(lugarId);
+  return { eventos, marcos, ficha: eventosDeFicha(eventos, marcos) };
 });
 
 /**
@@ -157,10 +140,10 @@ const cargarSeguidoresLugarCache = cache(async (lugarId: string): Promise<number
  * esqueleto del mismo alto mientras llegan; la cabecera (foto, nombre, tipo) no las espera.
  */
 async function KpisLugar({ lugar }: { lugar: LugarConAutor }) {
-  const [seguidores, eventos] = await Promise.all([cargarSeguidoresLugarCache(lugar.id), cargarEventosCache(lugar)]);
+  const [seguidores, { ficha: lista }] = await Promise.all([cargarSeguidoresLugarCache(lugar.id), eventosListados(lugar.id)]);
   return (
     <>
-      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Eventos" valor={kpiProximos(eventos.length)} salto={eventos.length > 0 ? "eventos" : undefined} />
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Eventos" valor={kpiProximos(lista.cuenta)} salto={lista.cuenta > 0 ? "eventos" : undefined} />
       <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Siguen" valor={seguidores} />
     </>
   );
@@ -168,16 +151,16 @@ async function KpisLugar({ lugar }: { lugar: LugarConAutor }) {
 
 /** "Próximos eventos" entero: la misma consulta que `KpisLugar`, memoizada por `cache()`, más quién decidió qué. */
 async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar: LugarConAutor; actual: Actual | null; hrefPublicarAqui: string }) {
-  const eventos = await cargarEventosCache(lugar);
+  const { eventos, marcos, ficha: lista } = await eventosListados(lugar.id);
   const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
   return (
     <section className={ficha.bloque} id="eventos" aria-label="Próximos eventos">
       <h2>
         Próximos eventos
-        {eventos.length > 0 && <span className={ficha.cuenta}> · {eventos.length}</span>}
+        {lista.cuenta > 0 && <span className={ficha.cuenta}> · {lista.cuenta}</span>}
       </h2>
-      {eventos.length === 0 && <p className={ficha.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
-      <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
+      {lista.cuenta === 0 && <p className={ficha.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
+      <EventosPorDia eventos={eventos} marcos={marcos} de="lugar" sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
       <Boton href={hrefPublicarAqui} variante="secundario">
         Publicar un evento aquí
       </Boton>
@@ -283,7 +266,10 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
         {/* Su pin lleva el día de su próximo evento, que llega con su propia consulta; su tarjeta, sin ángulo (es esta ficha) y con «Cómo llegar» (OL-350). */}
         <MapaFicha
           sedes={[{ clave: lugar.id, nombre: lugar.nombre, punto: { lat: lugar.lat, lng: lugar.lng }, meta: calle || null, href: null, comoLlegar, proximo: null }]}
-          proximo={cargarEventosCache(lugar).then(([e]) => (e ? { inicio: e.inicio, zona: e.zona } : null))}
+          proximo={eventosListados(lugar.id).then(({ ficha: lista }) => {
+            const e = primeroDeFicha(lista);
+            return e ? { inicio: e.inicio, zona: e.zona } : null;
+          })}
           ficha="lugar"
           alt={lugar.nombre}
         />

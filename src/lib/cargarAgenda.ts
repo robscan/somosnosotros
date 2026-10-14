@@ -56,6 +56,60 @@ async function leer<T>(consulta: PromiseLike<{ data: T[] | null; error?: unknown
   return null;
 }
 
+/** Lo que se pide de cada evento en toda lista de eventos (Agenda, Inicio y las fichas de lugar y de artista, OL-410): su clase, su festival, su
+ *  horario por día y su cartel. Una sola definición: lo que una lista no pide, lo pinta mal (OL-409: la ficha del lugar, sin clase ni sesiones,
+ *  ponía un festival bajo el día de su primer acto y «20:00–19:00» en una película con tres funciones). */
+export const COLUMNAS_EVENTO_LISTA = "id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, evento_padre_id, inaugura_id, colores_cartel, lugar:lugares(nombre, portada), sesiones:eventos_sesiones(inicio, fin)";
+
+/** Un evento como lo trae `COLUMNAS_EVENTO_LISTA`. */
+export type FilaEvento = Fila;
+
+/**
+ * Lo que una lista de eventos necesita además de la fila, en una tanda en paralelo: cuántos van, el horario que vale de cada exposición (el suyo o
+ * el de su lugar), los actos de cada festival (su programa, sus sedes y, sin cartel propio, el de su próximo acto) y las sesiones que todavía le
+ * corresponden a cada evento. La misma para Agenda e Inicio (`cargarAgenda`) y para las fichas de lugar y de artista (`cargarEventosFicha`,
+ * OL-410). Lo opcional falla en silencio (sin recuento, `van` es null; sin horario, la exposición no dice nada de él; sin actos, el festival dice
+ * lo capturado en su marco).
+ */
+export async function completarEventos(supabase: SupabaseClient, filasDadas: readonly FilaEvento[], ahora: Date = new Date()): Promise<EventoAgenda[]> {
+  const ids = filasDadas.map((x) => x.id);
+  // Por clase (OL-322): el horario de cada exposición (el suyo y el de su lugar) y cuántos actos tiene publicados cada festival. Solo si hay alguna;
+  // van en la misma tanda que los recuentos (sin un viaje de más) y son opcionales: sin ellos la exposición no dice nada de su horario y el
+  // festival cuenta los actos que trajo la agenda.
+  const filas = filasDadas as unknown as { id: string; clase?: string | null; lugar_id: string | null }[];
+  const expos = filas.filter((x) => x.clase === "exposicion");
+  const lugaresExpo = [...new Set(expos.map((x) => x.lugar_id).filter((x): x is string => !!x))];
+  const marcos = filas.filter((x) => x.clase === "festival").map((x) => x.id);
+  const [a, hp, hl, actos] = await Promise.all([
+    ids.length ? leer<{ evento_id: string; n: number }>(supabase.rpc("van_por_evento", { ids }), "recuento de asistentes") : Promise.resolve([]),
+    expos.length ? leer<FilaHorario & { evento_id: string }>(supabase.from("eventos_horarios").select("evento_id, dias, abre, cierra").in("evento_id", expos.map((x) => x.id)).limit(1000), "horario de exposiciones") : Promise.resolve([]),
+    lugaresExpo.length ? leer<FilaHorario & { lugar_id: string }>(supabase.from("lugares_horarios").select("lugar_id, dias, abre, cierra").in("lugar_id", lugaresExpo).limit(1000), "horario de lugares") : Promise.resolve([]),
+    // Sus actos con su sitio (OL-339) y su cartel (OL-346): cuántos tiene (el programa), dónde son (sus sedes) y su portada, de la misma lectura.
+    cargarActosDeMarcos(supabase, marcos),
+  ]);
+  const porEvento = agruparFranjas(hp, "evento_id");
+  const porLugar = agruparFranjas(hl, "lugar_id");
+  const van = new Map<string, number>();
+  for (const fila of (a ?? []) as { evento_id: string; n: number }[]) van.set(fila.evento_id, Number(fila.n));
+  const eventos: EventoAgenda[] = [];
+  for (const { sesiones: guardadas, ...fila } of filasDadas) {
+    const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
+    // Solo las sesiones que todavía le corresponden al evento (`sesionesVigentes`) y solo si hay: casi todos los eventos viajan sin ellas.
+    const sesiones = sesionesVigentes(fila, guardadas);
+    // El horario que vale de una exposición (el suyo o el de su lugar; vacío, «Horario por confirmar»); sin poder leerlo, nada (no se inventa).
+    const horario = fila.clase === "exposicion" && hp !== null && hl !== null ? horarioEfectivo(porEvento.get(fila.id), fila.lugar_id ? porLugar.get(fila.lugar_id) : null).franjas : undefined;
+    // Un festival: cuántos actos tiene publicados y sus sedes, derivadas de ellos (sin actos con sitio, dice lo capturado en el marco); sin imagen
+    // propia, el cartel de su próximo acto (OL-346) y sus colores (OL-375: el color de su portada del sistema).
+    const suyos = fila.clase === "festival" ? actos?.get(fila.id) : undefined;
+    const programa = suyos ? { registrados: suyos.length } : undefined;
+    const sedes = suyos ? sedesDeFestival(suyos) : [];
+    const acto = suyos && !fila.imagen ? actoDePortada(suyos, ahora) : null;
+    const portada = acto?.imagen ? { portadaActo: acto.imagen, coloresActo: acto.colores_cartel ?? null } : {};
+    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), ...(horario ? { horario } : {}), ...(programa ? { programa } : {}), ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...portada, van: a === null ? null : (van.get(fila.id) ?? 0) });
+  }
+  return eventos;
+}
+
 /**
  * La agenda de una ciudad: eventos próximos con su lugar, cuántos van, lo que la persona sigue y lo que decidió en
  * cada evento. Extraído de `src/app/page.tsx` (OL-153, bitácora 188) para que Inicio reutilice la misma consulta en
@@ -71,7 +125,7 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
   const [e, s, destacados] = await Promise.all([
-    leer(supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, evento_padre_id, inaugura_id, colores_cartel, lugar:lugares(nombre, portada), sesiones:eventos_sesiones(inicio, fin)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
+    leer(supabase.from("eventos").select(COLUMNAS_EVENTO_LISTA).eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(TOPE_AGENDA), "eventos", true),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? leer(supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000), "seguimientos propios", true) : Promise.resolve(null),
     leer<Destacado>(supabase.rpc("tira_destacados", { p_tipo: "eventos", p_ciudad: ciudad.nombre }), "destacados"),
@@ -79,24 +133,11 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // Señal preventiva para abrir la pieza de filtros/paginación antes de alcanzar el corte (OL-268).
   if ((e?.length ?? 0) >= TOPE_AGENDA * 0.9) console.warn("[agenda] capacidad: lectura al 90% del tope");
   const ids = (e ?? []).map((x) => x.id as string);
-  // Por clase (OL-322): el horario de cada exposición (el suyo y el de su lugar) y cuántos actos tiene publicados cada festival. Solo si hay alguna;
-  // van en la misma tanda que los recuentos (sin un viaje de más) y son opcionales: sin ellos la exposición no dice nada de su horario y el
-  // festival cuenta los actos que trajo la agenda.
-  const filas = (e ?? []) as unknown as { id: string; clase?: string | null; lugar_id: string | null }[];
-  const expos = filas.filter((x) => x.clase === "exposicion");
-  const lugaresExpo = [...new Set(expos.map((x) => x.lugar_id).filter((x): x is string => !!x))];
-  const marcos = filas.filter((x) => x.clase === "festival").map((x) => x.id);
-  // Cuántos van y, con sesión, qué decidió la persona en esos eventos (se ve en el renglón y cambia al deslizar).
-  const [a, m, hp, hl, actos] = await Promise.all([
-    ids.length ? leer<{ evento_id: string; n: number }>(supabase.rpc("van_por_evento", { ids }), "recuento de asistentes") : Promise.resolve([]),
+  // Cuántos van, lo de cada clase (`completarEventos`) y, con sesión, qué decidió la persona en esos eventos (se ve en el renglón y cambia al deslizar).
+  const [eventos, m] = await Promise.all([
+    completarEventos(supabase, (e ?? []) as unknown as FilaEvento[]),
     usuarioId && ids.length ? leer(supabase.from("asistencias").select("evento_id, estado").eq("usuario_id", usuarioId).in("evento_id", ids).limit(1000), "asistencias propias", true) : Promise.resolve([]),
-    expos.length ? leer<FilaHorario & { evento_id: string }>(supabase.from("eventos_horarios").select("evento_id, dias, abre, cierra").in("evento_id", expos.map((x) => x.id)).limit(1000), "horario de exposiciones") : Promise.resolve([]),
-    lugaresExpo.length ? leer<FilaHorario & { lugar_id: string }>(supabase.from("lugares_horarios").select("lugar_id, dias, abre, cierra").in("lugar_id", lugaresExpo).limit(1000), "horario de lugares") : Promise.resolve([]),
-    // Sus actos con su sitio (OL-339) y su cartel (OL-346): cuántos tiene (el programa), dónde son (sus sedes) y su portada, de la misma lectura.
-    cargarActosDeMarcos(supabase, marcos),
   ]);
-  const porEvento = agruparFranjas(hp, "evento_id");
-  const porLugar = agruparFranjas(hl, "lugar_id");
   const asistencias: Record<string, Exclude<Asistencia, null>> | null = usuarioId ? {} : null;
   for (const fila of (m ?? []) as { evento_id: string; estado: string }[]) {
     if (asistencias && (fila.estado === "voy" || fila.estado === "me_interesa")) asistencias[fila.evento_id] = fila.estado;
@@ -107,25 +148,6 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // Tope de sobra (más artistas seguidos que fechas cabrían) para no depender del corte silencioso de PostgREST.
   const ea = artistasSeguidos.length ? await leer(supabase.from("eventos_artistas").select("evento_id").in("artista_id", artistasSeguidos).limit(1000), "eventos de artistas seguidos", true) : [];
   const eventosSeguidos = [...new Set((ea ?? []).map((x) => x.evento_id as string))];
-  const van = new Map<string, number>();
-  for (const fila of (a ?? []) as { evento_id: string; n: number }[]) van.set(fila.evento_id, Number(fila.n));
-  const eventos: EventoAgenda[] = [];
-  const ahora = new Date();
-  for (const { sesiones: guardadas, ...fila } of (e ?? []) as unknown as (Fila & { ciudad: string })[]) {
-    const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
-    // Solo las sesiones que todavía le corresponden al evento (`sesionesVigentes`) y solo si hay: casi todos los eventos viajan sin ellas.
-    const sesiones = sesionesVigentes(fila, guardadas);
-    // El horario que vale de una exposición (el suyo o el de su lugar; vacío, «Horario por confirmar»); sin poder leerlo, nada (no se inventa).
-    const horario = fila.clase === "exposicion" && hp !== null && hl !== null ? horarioEfectivo(porEvento.get(fila.id), fila.lugar_id ? porLugar.get(fila.lugar_id) : null).franjas : undefined;
-    // Un festival: cuántos actos tiene publicados y sus sedes, derivadas de ellos (sin actos con sitio, dice lo capturado en el marco); sin imagen
-    // propia, el cartel de su próximo acto (OL-346) y sus colores (OL-375: el color de su portada del sistema).
-    const suyos = fila.clase === "festival" ? actos?.get(fila.id) : undefined;
-    const programa = suyos ? { registrados: suyos.length } : undefined;
-    const sedes = suyos ? sedesDeFestival(suyos) : [];
-    const acto = suyos && !fila.imagen ? actoDePortada(suyos, ahora) : null;
-    const portada = acto?.imagen ? { portadaActo: acto.imagen, coloresActo: acto.colores_cartel ?? null } : {};
-    eventos.push({ ...fila, lugar, ...(sesiones.length > 0 ? { sesiones } : {}), ...(horario ? { horario } : {}), ...(programa ? { programa } : {}), ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...portada, van: a === null ? null : (van.get(fila.id) ?? 0) });
-  }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
   return { eventos, seguidos, eventosSeguidos, artistasSeguidos: usuarioId ? artistasSeguidos : null, asistencias, destacados: destacados ?? [] };
 }

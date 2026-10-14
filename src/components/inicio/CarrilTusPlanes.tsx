@@ -3,6 +3,7 @@ import type { AvisosLista } from "@/components/useSeguirEnLista";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { nombreDeFestival } from "@/lib/destacados";
 import { carrilTusPlanes } from "@/lib/inicio";
+import { proximaOcurrencia } from "@/lib/ocurrencias";
 import { tarjetaDeInicio } from "@/lib/tarjetaInicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 
@@ -30,7 +31,10 @@ export default async function CarrilTusPlanes({ personaPromise, agendaPromise, a
   // Si la agenda no se pudo leer, «Tus planes» sale igual, sin saltar el festival (como antes de OL-378).
   const [persona, agenda] = await Promise.all([personaPromise, agendaPromise.catch(() => null)]);
   const ahora = new Date();
-  const eventos = persona ? carrilTusPlanes(persona.eventos, persona.interesan) : [];
+  // Cada plan en su próximo día (OL-410, «S»): un taller en su próxima sesión, una película en su próxima función, con su hora; no en su primer
+  // día, que puede haber pasado. Un festival y una exposición dicen su periodo (OL-409, «U»).
+  const proximos = (lista: Persona["eventos"]) => lista.map((e) => proximaOcurrencia(e, ahora));
+  const eventos = persona ? carrilTusPlanes(proximos(persona.eventos), proximos(persona.interesan)) : [];
   const festival = nombreDeFestival([...(agenda?.eventos ?? []), ...(persona?.eventos ?? []), ...(persona?.interesan ?? [])]);
   const asistencias: Record<string, "voy" | "me_interesa"> = {};
   for (const e of persona?.eventos ?? []) asistencias[e.id] = "voy";

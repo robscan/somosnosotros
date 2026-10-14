@@ -119,10 +119,11 @@ test("cada evento sale en cada día en que pasa algo, con la hora de ese día y 
   const lista = await renglones(page);
   assert.deepEqual(lista.map((r) => r.id), ["hoy", "festival", "taller", "festival", "festival", "taller", "jazz", "taller"]);
   const taller = lista.filter((r) => r.id === "taller").map((r) => r.texto);
-  assert.match(taller[0], /17:00 · Día 1 de 3 · \$300/);
-  assert.match(taller[1], /18:00 · Día 2 de 3 · \$300/);
-  assert.match(taller[2], /17:00 · Día 3 de 3 · \$300/);
-  assert.deepEqual(lista.filter((r) => r.id === "festival").map((r) => r.texto.match(/\d\d:\d\d · Día \d de \d/)?.[0]), ["20:00 · Día 1 de 3", "20:00 · Día 2 de 3", "20:00 · Día 3 de 3"]);
+  // Con su hora de fin si termina ese día (OL-410, «S»: «17:00–19:00»).
+  assert.match(taller[0], /17:00(–\d\d:\d\d)? · Día 1 de 3 · \$300/);
+  assert.match(taller[1], /18:00(–\d\d:\d\d)? · Día 2 de 3 · \$300/);
+  assert.match(taller[2], /17:00(–\d\d:\d\d)? · Día 3 de 3 · \$300/);
+  assert.deepEqual(lista.filter((r) => r.id === "festival").map((r) => r.texto.match(/(\d\d:\d\d)(?:–\d\d:\d\d)? · (Día \d de \d)/)?.slice(1).join(" · ")), ["20:00 · Día 1 de 3", "20:00 · Día 2 de 3", "20:00 · Día 3 de 3"]);
   // Ni el evento de un solo día lleva «Día»; ningún renglón dice el rango de siempre.
   assert.doesNotMatch(lista.find((r) => r.id === "jazz").texto, /Día/);
   assert.ok(lista.every((r) => !/Del \d+ al/.test(r.texto)));

@@ -9,13 +9,16 @@ import { filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { normalizarNombre, type LugarLista } from "@/lib/lugares";
 import { MAXIMO_RECIENTES } from "@/lib/recientesBusqueda";
+import { proximaOcurrencia } from "@/lib/ocurrencias";
+import { sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 type Nombre = { nombre: string };
-type FilaEvento = Omit<EventoAgenda, "lugar" | "van"> & {
+type FilaEvento = Omit<EventoAgenda, "lugar" | "van" | "sesiones"> & {
   ciudad: string;
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
   artistas: { artista: Nombre | Nombre[] | null }[] | null;
+  sesiones?: SesionGuardada[] | null;
 };
 type FilaLugar = { id: string; slug: string | null; nombre: string; tipo: LugarLista["tipo"]; direccion: string | null; lat: number; lng: number; portada: string | null; ciudad: string };
 type FilaArtista = { id: string; slug: string; nombre: string; disciplina: ArtistaLista["disciplina"]; detalle: string | null; tipo: ArtistaLista["tipo"]; foto: string | null; ciudad: string };
@@ -23,7 +26,8 @@ type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type Buscable = EventoBuscable & { ciudad: string };
 
 /** Lo que se pide de cada tabla: lo mismo para buscar y para poner al día los recientes (la clase de un evento, OL-338, para nombrarla). */
-const COLUMNAS_EVENTO = "id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, lugar:lugares(nombre, portada), artistas:eventos_artistas(artista:artistas(nombre))";
+// OL-410: también su festival y su horario por día, como Agenda: un evento con sesiones dice su próxima, con su hora (no «20:00–19:00»).
+const COLUMNAS_EVENTO = "id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, ciudad, clase, evento_padre_id, lugar:lugares(nombre, portada), artistas:eventos_artistas(artista:artistas(nombre)), sesiones:eventos_sesiones(inicio, fin)";
 const COLUMNAS_LUGAR = "id, slug, nombre, tipo, direccion, lat, lng, portada, ciudad";
 const COLUMNAS_ARTISTA = "id, slug, nombre, disciplina, detalle, tipo, foto, ciudad";
 
@@ -36,10 +40,11 @@ const LARGO_MAXIMO = 80;
 const PALABRAS_MAXIMO = 5;
 
 /** Un evento tal como llega de la base, con su lugar y los nombres de sus artistas (por ellos también se busca). */
-function buscable(fila: FilaEvento): Buscable {
+function buscable({ sesiones: guardadas, ...fila }: FilaEvento): Buscable {
   const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
   const artistas = (fila.artistas ?? []).map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista)?.nombre).filter((n): n is string => !!n);
-  return { ...fila, lugar, artistas, van: 0 };
+  const sesiones = sesionesVigentes(fila, guardadas);
+  return { ...fila, lugar, artistas, van: 0, ...(sesiones.length ? { sesiones } : {}) };
 }
 
 /**
@@ -56,9 +61,16 @@ async function conPrograma(supabase: Cliente, eventos: Buscable[]): Promise<Busc
   return eventos.map((e) => (e.clase === "festival" ? { ...e, programa: { registrados: registrados.get(e.id) ?? 0 } } : e));
 }
 
-/** Un evento encontrado: su tarjeta y, si es un festival o una exposición, el nombre de lo que es (OL-338, `CLASES_NOMBRADAS`). */
+/**
+ * Un evento encontrado: su tarjeta y, si es un festival o una exposición, el nombre de lo que es (OL-338, `CLASES_NOMBRADAS`). Un evento que se
+ * reparte en varios días (un taller con sus sesiones, una película con tres funciones) dice el próximo, con su hora (OL-410, «S»:
+ * `proximaOcurrencia`, como las tarjetas de Inicio) y, si es una sesión, cuál («vie 16 de oct · 18:00 · Sesión 2 de 3»); un festival y una
+ * exposición, su periodo (OL-409, «U»: «Hasta el …» o «Del … al …»).
+ */
 function encontradoDeEvento(e: Buscable, ahora: Date): Encontrado {
-  return { ...(e.clase && CLASES_NOMBRADAS.includes(e.clase) ? tarjetaConClase(e, ahora) : tarjetaEvento(e, ahora)), ciudad: e.ciudad };
+  const proximo = proximaOcurrencia(e, ahora);
+  const t = proximo.clase && CLASES_NOMBRADAS.includes(proximo.clase) ? tarjetaConClase(proximo, ahora) : tarjetaEvento(proximo, ahora);
+  return { ...t, ...(t.parte ? { detalle: `${t.detalle} · ${t.parte}` } : {}), ciudad: e.ciudad };
 }
 const encontradoDeLugar = (fila: FilaLugar, ahora: Date): Encontrado => ({ ...tarjetaLugar({ ...fila, proximo: null } as LugarLista, ahora), ciudad: fila.ciudad });
 const encontradoDeArtista = (fila: FilaArtista, ahora: Date): Encontrado => ({ ...tarjetaArtista({ ...fila, proxima: null } as ArtistaLista, ahora), ciudad: fila.ciudad });

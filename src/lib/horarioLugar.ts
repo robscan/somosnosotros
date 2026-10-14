@@ -105,6 +105,9 @@ const lista = new Intl.ListFormat("es", { type: "conjunction" });
 export const textoRango = (r: Rango): string => `${etiquetaHora(r.abre)}–${etiquetaHora(r.cierra)}`;
 /** «10:00 a.m.–2:00 p.m. y 4:00 p.m.–8:00 p.m.»: los rangos de un día, con la «y» del español. */
 export const textoRangos = (rangos: readonly Rango[]): string => lista.format(rangos.map(textoRango));
+/** «17:00–22:00 y …» en 24 h, como las horas de los renglones de las listas (OL-410: «Para visitar» en una ficha y en Agenda, «Abre 17:00–22:00 · hasta el
+ *  dom 8 de nov», como lo firmó el founder en OL-409; con «a.m./p.m.» no cabía en el renglón a 390 px y se cortaba el «hasta el …»). */
+export const textoRangos24 = (rangos: readonly Rango[]): string => lista.format(rangos.map((r) => `${r.abre.slice(0, 5)}–${r.cierra.slice(0, 5)}`));
 
 /**
  * Lo que se enseña de un horario, ya estructurado: un renglón por grupo («Lu–Vi» y «10:00 a.m.–2:00 p.m. y 4:00 p.m.–8:00 p.m.») y, aparte, los

@@ -6,6 +6,7 @@ import { sitioEnLista } from "@/lib/eventos";
 import { eventoPaso, filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { conProximo, type ProximoEvento } from "@/lib/lugares";
+import { sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor, type PerfilPublico } from "@/lib/supabase/servidor";
 
 /** Con `proximo` y `proxima` cuando la ficha los pide: el mismo renglón que en Lugares y Artistas (OL-057). */
@@ -13,7 +14,7 @@ export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: str
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: PerfilPublico; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; evento_padre_id?: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[] };
+type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; evento_padre_id?: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[]; sesiones?: SesionGuardada[] | null };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
 type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -77,7 +78,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
     supabase.from("seguimientos").select("lugar:lugares(id, slug, nombre, tipo, direccion, portada), artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, colores_cartel, clase, evento_padre_id, lugar:lugares(nombre, portada))")
+      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, colores_cartel, clase, evento_padre_id, lugar:lugares(nombre, portada), sesiones:eventos_sesiones(inicio, fin))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),
@@ -93,7 +94,11 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   for (const c of (conteo ?? []) as { evento_id: string; n: number }[]) van.set(c.evento_id, Number(c.n));
   // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única; sin imagen propia, el cartel de su próximo acto (OL-346).
   const conSusSedes = await conLoDeSusActos(supabase, filas.map((x) => x.e));
-  const aAgenda = (e: FilaEvento): EventoAgenda => ({ ...e, lugar: uno(e.lugar), van: van.get(e.id) ?? 0 });
+  // Con su horario por día, si lo tiene y todavía le corresponde (OL-410): «Tus planes» lo pone en su próxima sesión o función, con su hora.
+  const aAgenda = ({ sesiones: guardadas, ...e }: FilaEvento): EventoAgenda => {
+    const sesiones = sesionesVigentes(e, guardadas);
+    return { ...e, lugar: uno(e.lugar), van: van.get(e.id) ?? 0, ...(sesiones.length ? { sesiones } : {}) };
+  };
   const porEstado = (estado: string) => filas.flatMap((x, i) => (x.estado === estado ? [aAgenda(conSusSedes[i])] : [])).sort((a, b) => a.inicio.localeCompare(b.inicio));
   return { perfil: perfil as PerfilPublico, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };
 }

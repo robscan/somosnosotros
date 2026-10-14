@@ -1,6 +1,6 @@
 import { FIN_DEL_DIA, etiquetaHora } from "./calendario";
 import type { Clase } from "./eventos";
-import { diaConMesDe, diaLocal, eventoPaso, fechaCortaChip, horaCorta, localAIso, rangoCorto, terminaDe, ZONA_INICIAL } from "./fechas";
+import { diaConMesDe, diaLocal, eventoPaso, fechaCortaChip, horaCorta, localAIso, rangoCorto, terminaDe, textoDePeriodo, ZONA_INICIAL } from "./fechas";
 import { estructurar, textoRangos, type Dia, type Franja, type Rango } from "./horarioLugar";
 import type { HorarioDia } from "./sesionesEvento";
 
@@ -66,10 +66,21 @@ export function textoHoy(visita: Visita, franjas: readonly Franja[], hoy: string
   return rangos.length ? `Abre hoy ${textoRangos(rangos)}` : "Hoy cierra";
 }
 
-/** «Hasta el dom 30 de nov» o, antes de abrir, «Del 6 al 30 de nov». `hoy` es YYYY-MM-DD en la zona. */
+/** «Hasta el dom 30 de nov» o, antes de abrir, «Del 6 al 30 de nov»: la regla de todo periodo (`textoDePeriodo`, OL-409 «U»). `hoy` es
+ *  YYYY-MM-DD en la zona. */
 export function textoVisita(visita: Visita, hoy: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
-  if (hoy < visita.desde) return rangoCorto(visita.desde, visita.hasta, hoy);
-  return `Hasta el ${diaConMesDe(visita.hasta, ahora, zona)}`;
+  return textoDePeriodo(visita.desde, visita.hasta, ahora, zona, hoy);
+}
+
+/**
+ * El cuándo de una exposición o del marco de un festival en todas las superficies (OL-409, firma del founder, «U»): en curso «Hasta el …», por
+ * venir «Del … al …» (`textoDePeriodo`). La exposición, por sus días de visita (`visitaDeEvento`); el festival, de su primer acto al último
+ * (`ultimoDiaDelPeriodo`: un fin a la medianoche es el final del día anterior). Lo demás (un evento, un taller) no tiene periodo: su día y su hora.
+ */
+export function cuandoDePeriodo(e: { inicio: string; fin: string | null; zona: string; clase?: Clase | null }, ahora: Date = new Date()): string {
+  const desde = diaLocal(new Date(e.inicio), e.zona);
+  const hasta = e.clase === "exposicion" ? visitaDeEvento(e.inicio, e.fin, e.zona).hasta : ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona);
+  return textoDePeriodo(desde, hasta, ahora, e.zona);
 }
 
 /**

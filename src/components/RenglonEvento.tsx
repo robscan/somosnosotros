@@ -2,7 +2,7 @@ import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { cuandoDeTarjeta, notaDeClase } from "@/lib/destacados";
 import { costoEnLista, fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
-import { cuandoPorDia, cuandoVariosDias, diaCorto, horaCorta } from "@/lib/fechas";
+import { cuandoPorDia, cuandoVariosDias, diaCorto, diaLocal, horaCorta } from "@/lib/fechas";
 import { textoParte } from "@/lib/ocurrencias";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
@@ -48,6 +48,15 @@ function cuandoDeVarios(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "sesio
 }
 
 /**
+ * La hora de un renglón: la de inicio y, si termina el mismo día, la de fin («17:30–19:20»; OL-409, «S»: cada función y cada sesión con su hora
+ * en su día). Sin fin, o si acaba otro día (una noche que cruza la medianoche), solo la de inicio.
+ */
+function horaDelRenglon(e: Pick<EventoAgenda, "inicio" | "fin" | "zona">): string {
+  const inicio = horaCorta(e.inicio, e.zona);
+  return e.fin && diaLocal(new Date(e.fin), e.zona) === diaLocal(new Date(e.inicio), e.zona) ? `${inicio}–${horaCorta(e.fin, e.zona)}` : inicio;
+}
+
+/**
  * Renglón de evento: foto a la izquierda (la del evento, la del próximo acto de un festival sin imagen o la del lugar: `fotoDeEvento`), el
  * título y dos líneas de datos, cada una cortada con puntos suspensivos (H-09, doc 50: antes crecía hasta 190 px con la dirección postal y cada dato en su renglón). La
  * primera es cuándo —«19:00», con el día si hace falta; en un evento de varios días, «Del 10 al 12 de oct · 8:00–9:00 p.m.»— y, tras un punto, lo que no es gratis y cuántos van (sin «Gratis» en
@@ -70,7 +79,7 @@ export default function RenglonEvento({ evento: e, sinSitio = false, estado = nu
         {cancelado && <SeCancelo />}
         <b>
           {cancelado && "· "}
-          {cuando ?? varios ?? `${conDia ? `${diaCorto(e.inicio, new Date(), e.zona)} · ` : ""}${horaCorta(e.inicio, e.zona)}`}
+          {cuando ?? varios ?? `${conDia ? `${diaCorto(e.inicio, new Date(), e.zona)} · ` : ""}${horaDelRenglon(e)}`}
         </b>
         {ademas && <span>· {ademas}</span>}
       </span>

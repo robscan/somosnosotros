@@ -4,8 +4,9 @@ import { DIAS_ESTA_SEMANA } from "./cuando";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
+import { cuandoDePeriodo } from "./claseEvento";
 import { cortoDeClase, type Clase } from "./eventos";
-import { diaConMesDe, diaLocal, diaPin, formatearCuando, rangoCorto } from "./fechas";
+import { diaConMesDe, diaLocal, diaPin, formatearCuando } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import type { Origen } from "./origen";
 import { LIMITES_LUGAR } from "./limites";
@@ -244,10 +245,10 @@ const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice
 export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona" | "fin" | "clase">, ahora: Date = new Date()): string {
   const { clase, fin } = p;
   if (fin && clase && VARIOS_DIAS.includes(clase)) {
-    const hoy = diaLocal(ahora, p.zona);
     const hasta = diaLocal(new Date(fin), p.zona);
+    // Una exposición o un festival: la regla de todo periodo (OL-409, «U»: `cuandoDePeriodo`), la misma de las tarjetas y las fichas.
+    if (clase !== "taller") return `${cortoDeClase(clase)} ${minuscula(cuandoDePeriodo({ inicio: p.inicio, fin, zona: p.zona, clase }, ahora))}`;
     if (Date.parse(p.inicio) <= ahora.getTime()) return `${cortoDeClase(clase)} hasta el ${diaConMesDe(hasta, ahora, p.zona)}`;
-    if (clase !== "taller") return `${cortoDeClase(clase)} ${minuscula(rangoCorto(diaLocal(new Date(p.inicio), p.zona), hasta, hoy))}`;
   }
   return `Próximo: ${minuscula(formatearCuando(p.inicio, null, ahora, p.zona))}`;
 }
