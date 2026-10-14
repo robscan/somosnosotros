@@ -15,7 +15,7 @@ Founder, 14 de octubre, con dos capturas de la ficha de Cinema 7B en su iPhone: 
 
 ## La página
 
-`docs/rediseno/prototipos/festivales-propuestas.html`: la ficha de Cinema 7B a la izquierda (datos de la captura del founder; los horarios que no vi están inventados y marcados en el código) y a la derecha, con tres botones, la ficha del festival «Cartelera de Cinema 7B», el paso «Cuánto» del alta y la ficha de una expo. Preajustes **Hoy** y **Propuesta**; seis ejercicios; medidor (renglones, festivales bajo fecha pasada, horas imposibles, «Gratis» dicho sin saberlo).
+`docs/rediseno/prototipos/festivales-propuestas.html`: la ficha de Cinema 7B a la izquierda (datos de la captura del founder; los horarios que no vi están inventados y marcados en el código; los carteles que no tengo, cuadros de color) y a la derecha, con tres botones, la ficha del festival «Cartelera de Cinema 7B», el paso «Cuánto» del alta y la ficha de una expo. **Segunda versión (la tarde del 14):** los dos teléfonos son la pantalla real de la app, no un dibujo (ver «Sobre la ficha real», abajo). Preajustes **Hoy** y **Propuesta**; seis ejercicios; medidor (renglones, festivales bajo fecha pasada, horas imposibles, «Gratis» dicho sin saberlo).
 
 | Ejercicio | Opciones | Propuesta |
 |---|---|---|
@@ -27,6 +27,18 @@ Founder, 14 de octubre, con dos capturas de la ficha de Cinema 7B en su iPhone: 
 | **U** · el cuándo del festival y la expo | cada superficie lo suyo (hoy) · en curso «Hasta el …», por venir «Del … al …» | **una regla** en todas las superficies |
 
 Medidor con «Hoy»: 11 renglones, 2 festivales bajo fecha pasada, 2 horas imposibles, 1 «Gratis» inventado. Con la propuesta: 14 renglones (cada función con su hora), 0, 0, 0.
+
+## Sobre la ficha real (segunda versión, 14 de octubre por la tarde)
+
+El founder, al ver la primera versión: «Me preocupa que en tus prototipos las maquetas de fichas no te salen bien, me parece que tienen un error de maquetación de origen, puedes revisar primero la maqueta productiva para ver si está optimizada?».
+
+**La maqueta productiva está bien.** `Ficha.module.css` es una sola rejilla con áreas (barra, héroe, números, avisos, cuerpo, flotantes), la misma para evento, lugar y artista, en página y en la hoja; sin anidación de más ni márgenes negativos. `npm run medir -- --solo=ficha` en un árbol sin `.env`: las nueve pantallas de ficha sin novedades en los cuatro anchos (nada fuera de su caja, nada tapado, ningún toque chico), de 69 a 168 elementos y profundidad 7 a 12, dentro del presupuesto. Lo único discutible: la parte de escritorio sobreescribe unas doce reglas para las dos columnas; funciona.
+
+**El error de origen estaba en el prototipo:** dibujé las fichas a mano con un CSS propio. Lado a lado con la ficha real (compilada contra el respaldo local): el héroe de lugar medía 150 px con un «SN» en letras en vez de la portada 3:2 (260 px) con el símbolo; la cabecera del festival era un degradado sin cartel y con los KPI blancos debajo, en vez del cartel 4:3 al 56 % de la pantalla con los KPI translúcidos sobre la banda; faltaba la fila de acciones (Cómo llegar, Compartir, Instagram); al pie salía la barra de navegación de las pantallas raíz en vez de la pastilla flotante; los botones de la barra medían 40 y no 48. Lo mismo, en menor grado, en prototipos anteriores: cada uno rehacía la pantalla y acumulaba desviaciones.
+
+**Lo que cambia desde esta versión.** `scripts/ops/auditoria-ui/maqueta-pantalla.mjs` compila la app contra el respaldo local, abre la ficha de verdad (lugar, festival, exposición, Agenda y el paso «Cuánto» del alta, llegando a él por el formulario) y guarda cada una como HTML autónomo: el DOM pintado, todo el CSS que se sirvió y las imágenes dentro, sin scripts. El prototipo mete ese CSS en cada teléfono, que ahora es un marco (`iframe`, así su CSS nunca choca con el del armazón), y arma las pantallas con el mismo marcado que producción (`ui/Ficha`, `ui/Heroe`, `ui/Kpi`, `ui/Renglon`, `BloqueFestival`, `ui/Opcion`), con sus clases tal cual (con su hash) y sus iconos. Lo único propio del prototipo son tres clases `p-…` dentro del marco (la marca «nueva» de una opción, una ayuda bajo las opciones del alta y el subrayado de una hora imposible) y los carteles de Cinema 7B que no tengo, como cuadros de color. La página pesa 629 KB porque lleva el CSS entero de la app (sin sus fuentes: la letra la trae Google Fonts, la misma Bricolage con los mismos ejes). Las catorce capturas se rehicieron; los ejercicios, los preajustes y el medidor son los mismos y dan las mismas cifras (Hoy: 11 · 2 · 2 · 1; Propuesta: 14 · 0 · 0 · 0).
+
+**Regla desde hoy:** un prototipo que toque una pantalla que ya existe parte de su maqueta real guardada con `maqueta-pantalla.mjs`, nunca de un dibujo.
 
 ## Capturas (`docs/rediseno/capturas-440/`, Chrome real, 390×844 a 2×)
 
