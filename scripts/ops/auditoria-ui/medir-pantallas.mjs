@@ -22,7 +22,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { cookie } from "./respaldo-local/fixture.mjs";
+import { ADMIN, cookie, cookieDe, LLAVE_SERVICIO } from "./respaldo-local/fixture.mjs";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.resolve(AQUI, "../../..");
@@ -65,6 +65,15 @@ const PASOS = {
     await page.waitForFunction(() => document.querySelector("[data-hoja]").dataset.hoja === "llena");
     await aquietar(page);
   },
+};
+
+// OL-387: Inicio con sesión en la tercera visita (dos días ya guardados en el teléfono): con el banner para compartir la app tras el carril
+// estelar. Sin esos días no sale, así que en `s01-inicio-sesion` no cuenta; aquí sí.
+PASOS["banner-compartir"] = async (page) => {
+  await page.evaluate(() => localStorage.setItem("somosnosotros:inicio-compartir", JSON.stringify({ dias: ["2026-10-05", "2026-10-06"], cerradoHasta: null, compartido: false })));
+  await page.reload({ waitUntil: "load" });
+  await page.getByRole("region", { name: "Comparte la app" }).waitFor();
+  await aquietar(page);
 };
 
 // Las pantallas que piden un gesto antes de enseñar sus campos: el alta de evento por pasos, en «¿Cómo se llama?» y en «¿Es aquí?» con
@@ -212,7 +221,7 @@ async function abrir(browser, base, p, ancho, alto, antes = null) {
   try {
     await ctx.clock.setFixedTime(new Date(AHORA));
     if (antes) await ctx.addInitScript(antes);
-    if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: cookie, url: base }]);
+    if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
     await ctx.route("**/_vercel/**", (r) => r.fulfill({ contentType: "text/javascript", body: "" }));
     await ctx.route((u) => u.hostname !== "127.0.0.1", (r) =>
       r.request().resourceType() === "image" ? r.fulfill({ contentType: "image/svg+xml", body: IMAGEN }) : /\/styles\/v1\//.test(r.request().url()) ? r.fulfill({ json: ESTILO_DE_MAPA }) : r.abort(),
@@ -416,7 +425,7 @@ function juzgar(p, i, m) {
 const inicio = Date.now();
 const [puertoRespaldo, puertoApp] = [await puertoLibre(), await puertoLibre()];
 const base = `http://127.0.0.1:${puertoApp}`;
-const app = { NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${puertoRespaldo}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: "llave-anon-inventada", NEXT_PUBLIC_MAPBOX_TOKEN: "pk.inventado" };
+const app = { NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${puertoRespaldo}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: "llave-anon-inventada", NEXT_PUBLIC_MAPBOX_TOKEN: "pk.inventado", SUPABASE_SERVICE_ROLE_KEY: LLAVE_SERVICIO };
 const reloj = { RELOJ_FIJO: AHORA, TZ: "America/Mexico_City", NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --require=${path.join(AQUI, "reloj-fijo.cjs")}` };
 let browser;
 try {

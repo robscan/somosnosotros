@@ -41,3 +41,20 @@ export function dobleToque(v: Vista, foco: Punto): Vista {
 
 /** Cuánto acerca (mayor que 1) o aleja (menor) la rueda, o el pellizco de un trackpad: cada punto de `deltaY` pesa lo mismo a cualquier escala. */
 export const razonConRueda = (deltaY: number) => Math.exp(-deltaY * 0.002);
+
+/**
+ * Qué hace la rueda o el trackpad en el visor (OL-403, founder 2026-10-13: «al dar tap… se hace mas grande que el view port y no se puede hacer
+ * scroll»). El pellizco del trackpad y Ctrl/⌘ con la rueda llegan con `ctrlKey`/`metaKey`: acercan o alejan siempre. Sin tecla, a 1× la rueda acerca
+ * (no hay nada que desplazar: la imagen cabe entera) y, acercada, desplaza como cualquier página: dos dedos en el trackpad o la rueda del ratón.
+ * Un mismo giro sigue haciendo lo que empezó (`sigue`: lo que hizo el evento anterior si llegó hace menos de `PAUSA_RUEDA_MS`): girar la rueda desde
+ * 1× acerca de corrido, y no solo el primer paso; el giro siguiente, tras una pausa, ya desplaza.
+ */
+export const ruedaAcerca = (e: { ctrlKey: boolean; metaKey: boolean }, v: Vista, sigue?: boolean) => e.ctrlKey || e.metaKey || (sigue ?? v.escala === 1);
+/** Entre dos eventos de rueda de un mismo giro (o de la inercia del trackpad) pasan unos 16 ms; una pausa más larga que esto empieza otro giro. */
+export const PAUSA_RUEDA_MS = 250;
+
+/** Los px que trae un evento de rueda: lo que llega en líneas (`deltaMode` 1) o en páginas (2) se pasa a px. */
+export const pxDeRueda = (delta: number, modo: number, pagina: number) => (modo === 1 ? delta * 16 : modo === 2 ? delta * pagina : delta);
+
+/** Desplaza la vista lo que avanzó la rueda: bajarla enseña lo de abajo (la imagen sube). Después pasa por `limitar`. */
+export const desplazar = (v: Vista, dx: number, dy: number): Vista => ({ ...v, x: v.x - dx, y: v.y - dy });

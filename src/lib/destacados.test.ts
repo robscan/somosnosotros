@@ -83,6 +83,11 @@ describe("tarjetas", () => {
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA).cuando).toBeUndefined();
   });
+  it("lugar con lo próximo con hora y una exposición abierta: dice solo lo próximo; con solo la exposición, la exposición (OL-400)", () => {
+    const expo = { id: "x1", inicio: "2026-09-01T06:00:00Z", fin: "2026-10-31T05:59:00Z", zona: ZONA, titulo: "Expo", clase: "exposicion" as const };
+    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" }, enCurso: expo }), AHORA).detalle).toBe("Próximo: mañana · 19:00");
+    expect(tarjetaLugar(lugar({ proximo: null, enCurso: expo }), AHORA)).toMatchObject({ detalle: "Exposición hasta el vie 30 de oct", cuando: true });
+  });
   it("artista: la fecha sin el sitio, o lo que hace", () => {
     expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/trio-potosino", foto: null, detalle: "mañana · 19:00" });
     expect(tarjetaArtista(artista({ foto: "/trio.jpg" }), AHORA)).toMatchObject({ foto: "/trio.jpg", detalle: "Música · Grupo" });
@@ -162,9 +167,8 @@ describe("qué se puede destacar", () => {
 it("el recuento desconocido viaja hasta la tarjeta y no crea una cifra", () => {
   const tarjeta = tarjetaEvento(evento({ van: null }), AHORA);
   expect(tarjeta.van).toBeNull();
-  // El chip de la tarjeta de Inicio (OL-370): sin recuento, ninguno; «Te interesa» sí.
-  expect(chipDeTarjeta(tarjeta, null)).toBeNull();
-  expect(chipDeTarjeta(tarjeta, "me_interesa")?.texto).toBe("Te interesa");
+  // El chip de la tarjeta de Inicio (OL-370): sin recuento, ninguno («Te interesa» es el marcador desde OL-382, I1).
+  expect(chipDeTarjeta(tarjeta)).toBeNull();
 });
 
 

@@ -1,0 +1,79 @@
+/* El manual del grafo (OL-402, bitácora 433): una columna de lectura sobre el tono del contenido, con los tokens de la app. Maquetación plana:
+   un artículo con un título, un índice de bloques y una sección por entrada. */
+
+.manual {
+  display: grid;
+  gap: var(--espacio-3);
+  align-content: start;
+  padding-bottom: var(--espacio-6);
+}
+.manual h1 {
+  margin: 0;
+  font-size: var(--letra-2xl);
+}
+.intro {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-md);
+}
+.indice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+.indice a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-pildora);
+  color: var(--texto);
+  font-size: var(--letra-xs);
+}
+.bloque {
+  display: grid;
+  gap: var(--espacio-3);
+  scroll-margin-top: calc(var(--alto-barra) + var(--espacio-4));
+}
+.bloque h2 {
+  margin: var(--espacio-4) 0 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.entrada {
+  display: grid;
+  gap: var(--espacio-1);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+  scroll-margin-top: calc(var(--alto-barra) + var(--espacio-4));
+}
+.entrada h3 {
+  margin: 0;
+  font-size: var(--letra-md);
+}
+.entrada p {
+  margin: 0;
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.entrada p + p {
+  color: var(--texto-suave);
+}
+.entrada:target {
+  border-color: var(--primario);
+}
+.volver {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

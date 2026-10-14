@@ -331,6 +331,20 @@ export const IconoCalendarioMas = (p: P) => (
     <path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5" />
   </svg>
 );
+/** «Se canceló» (OL-391): el calendario con la ✕ dentro (la convención de un evento cancelado, como `calendar-x`). */
+export const IconoCalendarioCancelado = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4M10 13l4 4M14 13l-4 4" />
+  </svg>
+);
+/** «No se canceló» (OL-391): el calendario con la palomita, el evento sí ocurrió. */
+export const IconoCalendarioOk = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4" />
+  </svg>
+);
 /** Agregar a mi calendario: el + en la esquina (convención de Apple y Google), distinto del + al centro de Publicar evento. */
 export const IconoCalendarioAgregar = (p: P) => (
   <svg {...base(p)}>
@@ -478,5 +492,19 @@ export const IconoBasura = (p: P) => (
     <path d="M4.5 7h15M9.5 7V4.5h5V7" />
     <path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.5h6.4a1.5 1.5 0 0 0 1.5-1.5l.8-12" />
     <path d="M10 11v6M14 11v6" />
+  </svg>
+);
+/** «Tu año» (OL-394): el regalo, como en el prototipo firmado (`tu-anio-propuestas.html`). */
+export const IconoRegalo = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="9" width="18" height="12" rx="2" />
+    <path d="M3 13h18M12 9v12M7.5 9a2.5 2.5 0 1 1 2.5-2.5V9M16.5 9a2.5 2.5 0 1 0-2.5-2.5V9" />
+  </svg>
+);
+/** «Presentación» e «Informe» en PDF (OL-396): la hoja con la esquina doblada y dos renglones, como en el prototipo firmado (`curriculo-propuestas.html`). */
+export const IconoDocumento = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+    <path d="M14 3v5h5M9 13h6M9 17h6" />
   </svg>
 );

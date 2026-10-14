@@ -4,6 +4,11 @@
   --alto-cabecera: 0px;
 }
 
+/* Al pie de Mi perfil, «Tu año» (OL-394): a lo ancho de la columna, con el aire de los lados de la página. */
+.tuAnio {
+  margin: var(--espacio-6) var(--gutter) 0;
+}
+
 /* Al pie de Mi perfil: cómo me ven los demás. Un botón de texto con el aire de la página. */
 .enlace {
   justify-self: start;

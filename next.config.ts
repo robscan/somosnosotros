@@ -36,12 +36,14 @@ const nextConfig: NextConfig = {
   experimental: { staleTimes: { dynamic: 60 } },
   htmlLimitedBots: BOTS_SIN_STREAMING,
   // El creador de cartel (OL-324) lee las letras con `fs` desde `process.cwd()`: el rastreo de archivos no las ve solo. Van con la ruta que
-  // dibuja y con la página (su acción «Usar como cartel» también dibuja).
+  // dibuja y con la página (su acción «Usar como cartel» también dibuja). La imagen de «Tu año» (OL-394) las lee igual.
   // satori trae harfbuzz en WebAssembly y lo lee de su carpeta en `node_modules`: empaquetado, la ruta deja de existir. Se carga tal cual.
   serverExternalPackages: ["satori"],
   outputFileTracingIncludes: {
     "/api/cartel-nuevo/[id]": ["./src/lib/carteles/fuentes/*.ttf"],
     "/eventos/[id]/cartel": ["./src/lib/carteles/fuentes/*.ttf"],
+    "/api/tu-anio": ["./src/lib/carteles/fuentes/*.ttf"],
+    "/api/documento": ["./src/lib/carteles/fuentes/*.ttf"],
   },
   /**
    * Segunda vuelta de Inicio (OL-156): la app abre siempre en Inicio y Agenda pasa a `/agenda`. "/inicio" ya no

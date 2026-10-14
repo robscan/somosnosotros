@@ -1,10 +1,11 @@
 /* La tarjeta de evento de Inicio (OL-370; prototipo firmado `docs/rediseno/prototipos/inicio-tarjetas.html`, «Firmada», bitácora 398). Una
    rejilla plana: la portada (el cartel, o la portada del sistema de OL-375: `PortadaSistema.module.css`) a su alto (`--foto`, que pone el carril:
-   `.cartelGrande` y `.cartelMediana` en Destacados.module.css), un respiro y debajo, cada uno en su fila, la ceja, el título, el lugar y cuándo
-   (la portada del sistema lleva la ceja y el título dentro: sus filas quedan vacías). Lo que va encima del cartel (el sello de fecha y el chip)
-   comparte su celda; nada se apila con z-index: lo de después en el código se pinta encima. La de un artista en «Artistas destacadxs» (E9,
-   OL-372) es esta misma, mediana: su foto en la portada, la disciplina en la ceja, el nombre, el género en la línea del lugar y su fecha en la de
-   cuándo. */
+   `.cartelXl`, `.cartelGrande` y `.cartelMediana` en Destacados.module.css), un respiro y debajo, cada uno en su fila, la ceja, el título, cuándo
+   y el lugar (OL-382, F1: primero la fecha; la portada del sistema lleva la ceja y el título dentro: sus filas quedan vacías). Lo que va encima
+   del cartel (el sello de fecha, el marcador de interés y el chip) comparte su celda; nada se apila con z-index: lo de después en el código se
+   pinta encima. La de un artista en «Artistas destacadxs» (E9,
+   OL-372) es esta misma, mediana: su foto en la portada, la disciplina en la ceja, el nombre, su fecha en la línea de cuándo y el género en la del
+   lugar. */
 .tarjeta {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -13,8 +14,8 @@
     "."
     "ceja"
     "titulo"
-    "lugar"
-    "cuando";
+    "cuando"
+    "lugar";
   /* La portada mide `--foto`; la del sistema (OL-375) crece si su zona del título no cabe (`PortadaSistema.module.css`). */
   grid-template-rows: minmax(var(--foto), auto) var(--espacio-2) auto auto auto auto;
   min-width: 0;
@@ -80,7 +81,24 @@
   stroke-linejoin: round;
 }
 
-/* E3: un solo chip sobre el cartel, abajo a la izquierda, como en producción («Te interesa» o cuántos van). */
+/* I1 (OL-382; prototipo `inicio-propuestas.html`, «Firmada»): lo que te interesa, en vez del chip, es el marcador relleno en violeta (20 px) en un
+   círculo de vidrio de 36 arriba a la izquierda, a 8 del borde; el sello de fecha se queda a la derecha. En la portada del sistema va en la celda
+   del símbolo (`PortadaSistema.module.css`). */
+.interes {
+  grid-area: portada;
+  align-self: start;
+  justify-self: start;
+  display: grid;
+  place-items: center;
+  width: var(--marca-interes);
+  height: var(--marca-interes);
+  margin: var(--espacio-2);
+  border-radius: 50%;
+  background: var(--vidrio);
+  color: var(--primario);
+}
+
+/* E3: un solo chip sobre el cartel, abajo a la izquierda, como en producción (cuántos van; «Te interesa» es el marcador desde OL-382). */
 .chip {
   grid-area: portada;
   align-self: end;
@@ -112,10 +130,11 @@
   text-transform: uppercase;
 }
 
-/* E1: el título como oración, en dos líneas como mucho; si no cabe, se corta en palabra entera con «…» (TarjetaEvento, `cortarEnPalabra`). */
+/* E1 con T1 y T2 (OL-382): el título tal cual lo escribió quien publicó, en tres líneas como mucho; si no cabe, se corta en palabra entera con
+   «…» (`useTextoEnPalabra`, `cortarEnPalabra`). */
 .titulo {
   grid-area: titulo;
-  max-height: calc(2em * var(--interlinea-lista));
+  max-height: calc(3em * var(--interlinea-lista));
   overflow: hidden;
   margin-bottom: 2px;
   font-family: var(--fuente-lista);
@@ -126,8 +145,8 @@
   overflow-wrap: normal;
 }
 
-/* Debajo, como «Conciertos» de Apple Music: el lugar en gris y cuándo en violeta (founder: «resaltar con color la fecha, como antes»), una línea
-   cada uno con sus puntos suspensivos. */
+/* Debajo, como «Conciertos» de Apple Music: cuándo en violeta (founder: «resaltar con color la fecha, como antes») y luego el lugar en gris
+   (OL-382, F1: «bajo la tarjeta primero la fecha y luego el lugar»), una línea cada uno con sus puntos suspensivos. */
 .lugar,
 .cuando {
   min-width: 0;
@@ -155,4 +174,14 @@
 .mediana .lugar,
 .mediana .cuando {
   font-size: var(--letra-xs);
+}
+
+/* D2 (OL-382; XL+ desde OL-387): en el carril estelar, la tarjeta XL+ (280 de ancho, se ve una y cuarto) con el título a 21 y las líneas un
+   escalón más grandes, a 17. */
+.xl .titulo {
+  font-size: var(--letra-titulo-xl);
+}
+.xl .lugar,
+.xl .cuando {
+  font-size: var(--letra-md);
 }

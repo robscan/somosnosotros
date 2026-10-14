@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dobleToque, escalarEn, ESCALA_DOBLE_TOQUE, ESCALA_MAXIMA, limitar, razonConRueda, SIN_ACERCAR } from "./acercar";
+import { desplazar, dobleToque, escalarEn, ESCALA_DOBLE_TOQUE, ESCALA_MAXIMA, limitar, pxDeRueda, razonConRueda, ruedaAcerca, SIN_ACERCAR } from "./acercar";
 
 /** Una ventana de teléfono y una imagen que a 1× llena el ancho y deja aire arriba y abajo. */
 const VENTANA = { ancho: 390, alto: 844 };
@@ -64,5 +64,37 @@ describe("acercar: pellizcar y doble toque", () => {
     expect(razonConRueda(100)).toBeLessThan(1);
     expect(razonConRueda(0)).toBe(1);
     expect(razonConRueda(-50) ** 2).toBeCloseTo(razonConRueda(-100), 10);
+  });
+});
+
+describe("acercar: la rueda en escritorio (OL-403)", () => {
+  it("con Ctrl o ⌘ (o el pellizco del trackpad) acerca siempre; sin tecla, solo a 1×", () => {
+    const sin = { ctrlKey: false, metaKey: false };
+    expect(ruedaAcerca(sin, SIN_ACERCAR)).toBe(true);
+    expect(ruedaAcerca(sin, { escala: 2, x: 0, y: 0 })).toBe(false);
+    expect(ruedaAcerca({ ctrlKey: true, metaKey: false }, { escala: 2, x: 0, y: 0 })).toBe(true);
+    expect(ruedaAcerca({ ctrlKey: false, metaKey: true }, { escala: 3, x: 0, y: 0 })).toBe(true);
+  });
+  it("un mismo giro sigue con lo que empezó: el que acercó desde 1× sigue acercando, el que desplazaba sigue desplazando", () => {
+    const sin = { ctrlKey: false, metaKey: false };
+    expect(ruedaAcerca(sin, { escala: 1.4, x: 0, y: 0 }, true)).toBe(true);
+    expect(ruedaAcerca(sin, { escala: 1.4, x: 0, y: 0 }, false)).toBe(false);
+    expect(ruedaAcerca({ ctrlKey: true, metaKey: false }, { escala: 2, x: 0, y: 0 }, false)).toBe(true);
+  });
+  it("acercada, la rueda desplaza la imagen sin salirse de sus bordes", () => {
+    // Un cartel 4:5 ajustado a una ventana de escritorio (640×800 en 1280×800), a 2×: mide 1 600 de alto, sobran 800, 400 de cada lado.
+    const ventana = { ancho: 1280, alto: 800 };
+    const cartel = { ancho: 640, alto: 800 };
+    const v = { escala: 2, x: 0, y: 0 };
+    expect(limitar(desplazar(v, 0, 150), cartel, ventana)).toEqual({ escala: 2, x: 0, y: -150 });
+    expect(limitar(desplazar(v, 0, 5000), cartel, ventana).y).toBe(-400);
+    expect(limitar(desplazar(v, 0, -5000), cartel, ventana).y).toBe(400);
+    // A lo ancho, a 2× mide 1 280: justo la ventana, no se mueve.
+    expect(limitar(desplazar(v, 300, 0), cartel, ventana).x + 0).toBe(0);
+  });
+  it("las líneas y las páginas de la rueda se cuentan en px", () => {
+    expect(pxDeRueda(3, 0, 800)).toBe(3);
+    expect(pxDeRueda(3, 1, 800)).toBe(48);
+    expect(pxDeRueda(1, 2, 800)).toBe(800);
   });
 });

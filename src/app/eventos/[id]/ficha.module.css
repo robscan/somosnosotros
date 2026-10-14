@@ -1,7 +1,7 @@
 /* ==========================================================================
    Lo propio de la ficha de evento (docs/rediseno/04-ficha-evento-flujo-y-estados.md). Lo común con las fichas de lugar y de artista
    (la rejilla, el héroe, las acciones, los bloques, el pie) está en components/ui/Ficha.module.css.
-   1. Enlace externo · 2. Quién va: la pila de avatares
+   1. Enlace externo · 2. Quién va: la pila de avatares · 3. Cómo ocurre · 4. Lo ligado que ya pasó
    ========================================================================== */
 
 /* 1. Enlace externo del evento, bajo su descripción: se toca en 44 de alto sin cambiar cómo se lee */
@@ -49,7 +49,14 @@
   transform: rotate(180deg);
 }
 
-/* 3. Cómo ocurre (OL-321): el «Publicar» de un borrador del programa, un botón de texto en el color de acción, del alto de un toque. (La línea
+/* «Ya pasó» de un festival (OL-383, prototipo firmado `inicio-propuestas.html`, «X1 como pasado · X2»): un `<details>` plegado al abrir la
+   ficha, con sus renglones apagados. Desde OL-390 el mismo patrón sirve a la «Trayectoria» de un artista y al «Historial» de un lugar: vive en
+   `ui/Plegado` y aquí se toma tal cual. */
+.yaPaso {
+  composes: plegado from "../../../components/ui/Plegado.module.css";
+}
+
+/* 3. Cómo ocurre (OL-321):el «Publicar» de un borrador del programa, un botón de texto en el color de acción, del alto de un toque. (La línea
    de una exposición y la de un festival bajo sus números pasaron a la cabecera oscura, OL-351.) */
 .publicarBorrador {
   min-height: var(--toque-min);
@@ -60,4 +67,35 @@
   font-size: var(--letra-sm);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* 4. Lo ligado que ya pasó (OL-388, sustituye a OL-380): la inauguración de una exposición, la exposición que inauguró un acto o el festival que
+   terminó se enlazan a su ficha en pasado, pero se ven pasados: «Ya pasó» chico encima del título (como la ceja de las tarjetas de Inicio), el
+   título en el gris del texto suave, sin tachar; el icono y el chevrón ya van en gris. La misma rejilla del renglón con una fila más arriba (con
+   `a` delante: `ui/Renglon` puede cargarse después y su `.dato` pisaría las áreas). */
+a.ligadoPasado {
+  grid-template-areas:
+    "foto ceja accion"
+    "foto titulo accion"
+    "foto meta accion"
+    "cuerpo cuerpo cuerpo";
+}
+.ligadoPasado > i {
+  grid-area: ceja;
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.ligadoPasado > b {
+  color: var(--texto-suave);
+}
+/* Lo ligado que ya pasó y se canceló (OL-391): el título tachado, como en el historial (`ui/SeCancelo`); debajo, «Se canceló». */
+.ligadoCancelado > b {
+  text-decoration: line-through;
+  text-decoration-color: var(--texto-suave);
+  text-decoration-thickness: 1px;
 }

@@ -6,13 +6,15 @@ import type { Asistencia } from "./deslizar";
 import { cortoDeClase } from "./eventos";
 import { diaLocal } from "./fechas";
 import { selloNovedadArtista } from "./novedadesArtista";
+import { textoActosNuevos, textoDesde, textoFunciones, type Pieza } from "./series";
 
 /**
  * Las tarjetas de Inicio que firmó el founder el 2026-10-10 en el prototipo `docs/rediseno/prototipos/inicio-tarjetas.html` («Firmada»: E1 · E3 ·
- * E3b · E5 · E7 · E8 · E8c · E9 · E10; bitácora 398). Aquí lo que se puede probar sin navegador. La de un evento (OL-370): el sello de fecha que
- * ocupa el sitio del botón de «Voy», la línea de cuándo, la ceja con la clase, el único chip sobre el cartel, el nombre del enlace y el corte del
- * título en palabra entera; la pinta `components/inicio/TarjetaEvento`. La de un artista en «Artistas destacadxs» (E9, OL-372), que es la de un
- * evento mediano (`TarjetaArtista`, en el mismo archivo), y el avatar de 64 de «Lugares de la semana» y «Artistas de la semana» (E5, OL-372;
+ * E3b · E5 · E7 · E8 · E8c · E9 · E10; bitácora 398), con lo que firmó el 2026-10-12 (OL-382; prototipo `inicio-propuestas.html`, «Firmada»;
+ * bitácora 408). Aquí lo que se puede probar sin navegador. La de un evento (OL-370): el sello de fecha que ocupa el sitio del botón de «Voy», la
+ * línea de cuándo, la ceja con la clase, el único chip sobre el cartel, el nombre del enlace y el corte del título en palabra entera; la pinta
+ * `components/inicio/TarjetaEvento`. La de un artista en «Artistas destacadxs» (E9, OL-372), que es la de un
+ * evento mediano (`TarjetaArtista`, en el mismo archivo), y el avatar de 88 de «Lugares de la semana» y «Artistas de la semana» (E5, OL-372;
  * `components/inicio/TarjetaAvatar`).
  */
 
@@ -72,6 +74,30 @@ export function tarjetaDeInicio(e: EventoAgenda, ahora: Date = new Date(), festi
   return { ...t, detalle: cuandoEnInicio(e, !!t.hoy, ahora), selloFecha: selloDeFecha(e, soloInteres(e.clase), ahora) };
 }
 
+/**
+ * La tarjeta de una pieza de «Nuevos eventos» (OL-385, `lib/series`), con la tarjeta firmada tal cual (OL-382: mismos tamaños, mismo orden de líneas):
+ * - **festival** (sus actos nuevos juntos): la tarjeta del festival, con su portada del sistema y su enlace a la ficha del festival, y en la ceja,
+ *   junto a «Festival», cuántos actos nuevos trae («Festival · 3 actos nuevos»). La ceja es donde la tarjeta ya dice cuál de varios es («Sesión 1
+ *   de 4»); en la línea de cuándo se cortaría con los puntos suspensivos («Hasta el sáb 2 de nov» ya la llena en la mediana). Excepción acotada a
+ *   OL-347: el festival sale aquí solo porque agrupa actos nuevos, nunca por ser nuevo él (`carrilNuevos`).
+ * - **serie** (funciones de lo mismo): la tarjeta de la más próxima, con «6 funciones» en la ceja y «desde vie 16 · 20:00» en su cuándo (sin el mes: lo dice el sello); el
+ *   sello va del primer día al último («oct 16–18»; si son el mismo día, ese día). Lleva a la ficha de esa función, que enseña las otras.
+ * - **suelto:** la de siempre.
+ * La llave (`clave`) es la de la pieza: la cabeza de una serie no puede chocar con otra tarjeta suya.
+ */
+export function tarjetaDePieza<T extends TarjetaConFecha>(p: Pieza<T>, ahora: Date = new Date()): TarjetaConFecha {
+  if (p.tipo === "suelto") return p.evento;
+  if (p.tipo === "festival") return { ...p.marco, clave: `festival-${p.marco.id}`, ...(p.nuevos ? { parte: textoActosNuevos(p.nuevos) } : {}) };
+  const ultima = p.eventos[p.eventos.length - 1];
+  return {
+    ...p.cabeza,
+    clave: `serie-${p.cabeza.id}`,
+    parte: textoFunciones(p.funciones),
+    detalle: textoDesde(p.cabeza, ahora),
+    selloFecha: selloDeFecha({ inicio: p.desde, fin: ultima.inicio, zona: p.cabeza.zona }, true, ahora),
+  };
+}
+
 const EVENTO = cortoDeClase("puntual");
 const EXPOSICION = cortoDeClase("exposicion");
 const FESTIVAL = cortoDeClase("festival");
@@ -99,28 +125,28 @@ export function cejaDeTarjeta(t: Pick<Tarjeta, "clase" | "parte">): string[] {
 }
 
 /**
- * El único chip sobre el cartel, abajo a la izquierda, como en producción (founder, 2026-10-10: «regresar a chip te interesa» y «regresar a chip
- * cuántos van»): «Te interesa» si la persona lo marcó (`tuyo`: el violeta claro de lo que ya decidió); si no, cuántos van, si va alguien.
- * «Vas» no se dice (founder: «si son mis planes decir que vas es redundante»): lo que no lo dice, en «Tus planes», es a lo que vas.
+ * El único chip sobre el cartel, abajo a la izquierda, como en producción (founder, 2026-10-10: «regresar a chip cuántos van»): cuántos van, si va
+ * alguien. «Te interesa» ya no es un chip: desde OL-382 (I1; founder, 2026-10-12: «solo con el icono… en vez del chip») es el marcador arriba a la
+ * izquierda de la portada, y el chip de cuántos van sigue aunque te interese. «Vas» no se dice (founder: «si son mis planes decir que vas es
+ * redundante»): lo que no lo dice, en «Tus planes», es a lo que vas.
  */
-export function chipDeTarjeta(t: Pick<Tarjeta, "van">, decision: Asistencia): { texto: string; tuyo: boolean } | null {
-  if (decision === "me_interesa") return { texto: "Te interesa", tuyo: true };
-  if (t.van !== null && t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false };
+export function chipDeTarjeta(t: Pick<Tarjeta, "van">): { texto: string } | null {
+  if (t.van !== null && t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van` };
   return null;
 }
 
 /**
- * El nombre del enlace: el título completo (el de la tarjeta es corto y puede ir cortado), su clase y su día si no es un evento suelto, cuándo,
- * dónde, «Vas» (ya no hay botón que lo diga) y el chip.
+ * El nombre del enlace: el título completo (el de la tarjeta puede ir cortado), su clase y su día si no es un evento suelto, cuándo, dónde, «Vas»
+ * (ya no hay botón que lo diga), «Te interesa» (el marcador no tiene texto: OL-382, I1) y el chip.
  */
 export function nombreDeTarjeta(t: Pick<Tarjeta, "titulo" | "clase" | "parte" | "detalle" | "sitio" | "van">, decision: Asistencia): string {
   const clase = [t.clase && t.clase !== EVENTO ? t.clase : null, t.parte].filter(Boolean).join(" · ");
-  return [t.titulo, clase, t.detalle, t.sitio, decision === "voy" ? "Vas" : null, chipDeTarjeta(t, decision)?.texto].filter(Boolean).join(". ");
+  return [t.titulo, clase, t.detalle, t.sitio, decision === "voy" ? "Vas" : decision === "me_interesa" ? "Te interesa" : null, chipDeTarjeta(t)?.texto].filter(Boolean).join(". ");
 }
 
 /**
- * El título debajo del cartel va en dos líneas como mucho y, si no cabe, se corta en la última palabra entera con «…», nunca a media palabra
- * (E1; `recortarTitulos` del prototipo). `cabe` dice si un texto cabe; aquí solo se decide qué texto probar: el entero y, si no cabe, quitando
+ * El título debajo del cartel va en tres líneas como mucho (OL-382, T2; antes dos) y el nombre bajo un avatar en dos (OL-382, N); si no cabe, se
+ * corta en la última palabra entera con «…», nunca a media palabra (E1; `recortarTitulos` del prototipo). `cabe` dice si un texto cabe; aquí solo se decide qué texto probar: el entero y, si no cabe, quitando
  * palabras desde el final (sin la puntuación que quede colgando) hasta que quepa. Si ni la primera palabra con «…» cabe, se queda esa; una
  * sola palabra que no cabe se queda entera (como en el prototipo: la recorta su caja).
  */
@@ -149,7 +175,7 @@ export function tarjetaArtistaDeInicio(a: ArtistaLista, ahora: Date = new Date()
 
 /**
  * Lo que dice la tarjeta de un artista (E9), como un evento: la disciplina en la ceja, el nombre como título tal como está escrito (es un nombre
- * propio: no pasa a oración), el género en gris en la línea del lugar y, si tiene fecha, la fecha en violeta en la de cuándo. Sobre la foto, el
+ * propio: no pasa a oración), si tiene fecha, la fecha en violeta en la línea de cuándo y luego el género en gris en la del lugar (OL-382, F1). Sobre la foto, el
  * chip «Nuevo video» o «Nuevo audio» si hay una novedad vigente (`selloNovedadArtista`, la regla de siempre); sin sello de fecha ni botón de
  * seguir (se sigue desde la ficha). El nombre del enlace dice todo eso, separado por punto, como el prototipo.
  */
@@ -160,9 +186,10 @@ export function piezasDeArtista(t: Pick<Tarjeta, "titulo" | "detalle" | "cuando"
 }
 
 /**
- * E5 (OL-372): el avatar de 64 de «Lugares de la semana» y «Artistas de la semana». La foto redonda, el nombre debajo y, solo si hay una novedad
- * vigente, «Nuevo video» o «Nuevo audio» en violeta; nada más (lo de antes, «En curso» o «Mañana · 19:30», ya no va: así lo firmó el founder) y
- * sin botón (seguir queda en la ficha). El nombre del enlace lleva el nombre completo, que a la vista se corta en una línea, y la novedad.
+ * E5 (OL-372): el avatar de «Lugares de la semana» y «Artistas de la semana» (de 88 desde OL-382, N). La foto redonda, el nombre debajo y, solo si
+ * hay una novedad vigente, «Nuevo video» o «Nuevo audio» en violeta; nada más (lo de antes, «En curso» o «Mañana · 19:30», ya no va: así lo firmó
+ * el founder) y sin botón (seguir queda en la ficha). El nombre del enlace lleva el nombre completo, que a la vista se corta en dos líneas, y la
+ * novedad.
  */
 export function avatarDeInicio(t: Pick<Tarjeta, "titulo" | "novedad">, ahora: Date = new Date()): { nombre: string; nuevo: string | null; etiqueta: string } {
   const nuevo = selloNovedadArtista(t.novedad, ahora);

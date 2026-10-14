@@ -11,6 +11,16 @@ describe("resumenAsistentes", () => {
   });
 });
 
+describe("resumenAsistentes en pasado (OL-388, «Quién fue»)", () => {
+  it("dice quiénes fueron", () => {
+    const a = (nombre: string) => ({ id: nombre, nombre, foto: null });
+    expect(resumenAsistentes([a("Ana Rentería")], 2, 1, true)).toBe("Fue Ana");
+    expect(resumenAsistentes([a("Ana"), a("Marcos")], 2, 2, true)).toBe("Fueron 2: Ana y Marcos");
+    expect(resumenAsistentes([], 2, 3, true)).toBe("Fueron 3");
+    expect(resumenAsistentes([], 2, 1, true)).toBe("Fue 1 persona");
+  });
+});
+
 describe("resumenAsistentes con reservados", () => {
   it("cuenta a los reservados sin nombre", () => {
     expect(resumenAsistentes([{ id: "a", nombre: "Ana López", foto: null }], 2, 3)).toBe("Van 3: Ana y 2 más");

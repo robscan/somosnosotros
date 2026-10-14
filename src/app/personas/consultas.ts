@@ -9,21 +9,21 @@ import { conProximo, type ProximoEvento } from "@/lib/lugares";
 import { clienteServidor, type PerfilPublico } from "@/lib/supabase/servidor";
 
 /** Con `proximo` y `proxima` cuando la ficha los pide: el mismo renglón que en Lugares y Artistas (OL-057). */
-export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null };
+export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null; enCurso?: ProximoEvento | null };
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: PerfilPublico; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[] };
+type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; evento_padre_id?: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null; sedes?: { nombre: string }[] };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
 type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
 
 const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
 
-/** El próximo evento de cada lugar seguido, como en la lista de Lugares. */
+/** El próximo evento de cada lugar seguido y lo que tiene abierto (OL-400), como en la lista de Lugares. */
 async function conProximos(supabase: Cliente, lugares: LugarSeguido[]): Promise<LugarSeguido[]> {
   if (lugares.length === 0) return lugares;
-  const { data } = await supabase.from("eventos").select("id, inicio, lugar_id, zona, titulo").in("lugar_id", lugares.map((l) => l.id)).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(500);
+  const { data } = await supabase.from("eventos").select("id, inicio, fin, clase, lugar_id, zona, titulo").in("lugar_id", lugares.map((l) => l.id)).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(500);
   return conProximo(lugares, (data ?? []) as (ProximoEvento & { lugar_id: string | null })[]);
 }
 
@@ -77,7 +77,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
     supabase.from("seguimientos").select("lugar:lugares(id, slug, nombre, tipo, direccion, portada), artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, colores_cartel, clase, lugar:lugares(nombre, portada))")
+      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, colores_cartel, clase, evento_padre_id, lugar:lugares(nombre, portada))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),

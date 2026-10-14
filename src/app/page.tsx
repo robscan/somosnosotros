@@ -92,7 +92,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         // servidor que cruce a un componente de cliente, aunque ese cliente decida no montarlo) y filtraría "Tus
         // planes" al streaming de alguien sin cuenta, sin necesidad (OL-219).
         slotAhora={<CarrilAhora agendaPromise={agendaPromise} ciudad={ciudad.nombre} conSesion={!!actual} />}
-        slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
+        slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} agendaPromise={agendaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
         slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         // «Festivales y expos» (OL-342): la agenda no tiene un «Qué» que junte las dos clases, así que su enlace va a la agenda sin filtro
@@ -100,7 +100,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotFestivales={<CarrilAgenda parte="festivales" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl)} />}
         slotNuevos={<CarrilAgenda parte="nuevos" ciudad={ciudad.slug} agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefAgenda(SIN_FILTROS, slugEnUrl, true)} />}
         slotMasAdelante={<CarrilMasAdelante agendaPromise={agendaPromise} avisos={avisos} verTodosHref={hrefConCiudad("/agenda", ciudad.slug)} />}
-        // OL-372 (prototipo firmado, E5 y E9): lugares y artistas de la semana en avatares de 64, «Artistas destacadxs» con la tarjeta de un evento;
+        // OL-372 (prototipo firmado, E5 y E9): lugares y artistas de la semana en avatares (de 88, OL-382), «Artistas destacadxs» con la tarjeta de un evento;
         // ninguno lleva botón (seguir queda en la ficha).
         slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" titulo="Lugares de la semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} forma="avatar" />}
         slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" titulo="Artistas de la semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} forma="avatar" />}

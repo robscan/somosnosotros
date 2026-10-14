@@ -15,13 +15,14 @@ import { horarioParaEnviar } from "@/lib/horarioLugar";
 import { pistasDe } from "@/lib/sugerencias";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { claseMedida, medirCliente } from "@/lib/medir";
+import { firmaParecidos } from "@/lib/eventosParecidos";
 import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
 import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
 import { respuestasDelCartel, type Leido } from "./cartelPorPasos";
 import type { ContextoClase } from "./contextoClase";
-import { avance, claseElegida, eventoPublicado, faltaParaPublicar, preguntaDe, sesionesDe, type Creado } from "./pasos";
+import { avance, claseElegida, eventoPublicado, faltaParaPublicar, inicioDe, preguntaDe, sesionesDe, type Creado } from "./pasos";
 import { cuandoDeClase, sedesDelPrograma } from "./clasePorPasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import { PasoVisita } from "./PasosClase";
@@ -110,8 +111,15 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
   const ubicacion = useEstoyAqui();
   // Lo que devolvió el servidor al publicar; con eso y las respuestas se arma la tarjeta de «Publicado».
   const [creado, setCreado] = useState<(Creado & { borradores: number }) | null>(null);
+  // «¿Es este?» (OL-384, como el lugar): el servidor devuelve los parecidos si no se confirmó. Lo confirmado y lo preguntado van con la firma de
+  // lo que se publicaba (título, día y hora, sitio): si se cambia algo de eso, el aviso se va y se vuelve a preguntar al publicar.
+  const firma = firmaParecidos(r.nombre, inicioDe(r), r.sitio);
+  const [confirmado, setConfirmado] = useState<string | null>(null);
+  const [preguntado, setPreguntado] = useState<string | null>(null);
+  const enviada = useRef("");
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(async (previo, datos) => {
     const hecho = await accion(previo, datos);
+    if (!hecho.ok && hecho.parecidos?.length) setPreguntado(enviada.current);
     if (hecho.ok) {
       setCreado({ id: hecho.id, slug: hecho.slug ?? null, creadoEn: new Date().toISOString(), borradores: hecho.programa?.borradores ?? 0 });
       medirCliente("evento_creado", { cartel: datos.get("imagen") ? "si" : "no", clase: claseMedida(datos.get("clase")) });
@@ -123,6 +131,13 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
   useEffect(() => {
     if (resultado && !resultado.ok) reponerGuardia();
   }, [resultado]);
+  // Tras «No, es otro», publicar en cuanto la confirmación ya está en el estado (`publicar` la lee de él).
+  const confirmar = useRef(false);
+  useEffect(() => {
+    if (!confirmar.current || confirmado !== firma) return;
+    confirmar.current = false;
+    (document.getElementById(FORMULARIO) as HTMLFormElement | null)?.requestSubmit();
+  }, [confirmado, firma]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   // Las horas son las del sitio del evento: las del lugar, si es en uno; si no, las de la ciudad inicial (el servidor guarda en la del punto).
   const zona = zonaSegura(sitio.lugar?.zona);
@@ -155,6 +170,8 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     // Un reintento con los mismos datos conserva su clave: el servidor no publica dos veces.
     operacion.current = operacionEvento(fd, operacion.current);
     fd.set("operacion", operacion.current.id);
+    enviada.current = firma;
+    if (confirmado === firma) fd.set("confirmado", "1");
     apartarGuardia();
     enviar(fd);
   }
@@ -196,6 +213,12 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           cartel={cartel.subido}
           errores={errores}
           general={resultado && !resultado.ok ? resultado.general : undefined}
+          parecidos={resultado && !resultado.ok && preguntado === firma && confirmado !== firma ? resultado.parecidos : undefined}
+          onConfirmar={() => {
+            // «No, es otro: publicar de todos modos»: publica ya, con la confirmación (el formulario la pone al ver la firma confirmada).
+            setConfirmado(firma);
+            confirmar.current = true;
+          }}
           enviando={enviando}
           falta={falta}
           formulario={FORMULARIO}

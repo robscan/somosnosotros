@@ -1,4 +1,4 @@
-import { abiertasEseDia, entraEnQue, esExposicion, plegarActos, porCierre, queDe, visitaEnRango, type Que } from "./agendaPorClase";
+import { entraEnQue, esExposicion, marcosDe, paraVisitarEseDia, porCierre, queDe, visitaEnRango, type Que } from "./agendaPorClase";
 import { ocupaRango } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeUrl, type Cuando } from "./cuando";
@@ -8,6 +8,7 @@ import { claseDeCosto, nombreSitio, type ClaseDeCosto } from "./eventos";
 import { diaCorto, diaLocal, localAIso, ZONA_INICIAL } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
 import { ocurrenciasDeLista, type DatosOcurrencia } from "./ocurrencias";
+import { agruparSeries, cabezaDe, type Pieza } from "./series";
 import type { SesionGuardada } from "./sesionesEvento";
 
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
@@ -23,6 +24,8 @@ export type EventoAgenda = EventoResumen & {
   clase?: Clase;
   /** El festival del que es parte (un acto de su programa), si lo es. */
   evento_padre_id?: string | null;
+  /** Solo en una exposición: el acto puntual que la inaugura (OL-379). La fila «Ahora» busca su hora entre los eventos cargados. */
+  inaugura_id?: string | null;
   /** Solo en una exposición: el horario que vale (el suyo o, sin él, el de su lugar; `horarioEfectivo`). Vacío es «Horario por confirmar»; sin la
    *  propiedad, no se cargó y no se dice nada del horario. */
   horario?: Franja[];
@@ -145,6 +148,24 @@ export function agruparPorPublicacion<T extends Publicable>(eventos: T[], ahora:
   return [...grupos.values()];
 }
 
+/**
+ * La pestaña Nuevos por piezas (OL-385, `lib/series`), agrupada como `agruparPorPublicacion`: cada pieza va con lo más reciente de los suyos (`primero`:
+ * la lista llega por publicación), así un festival viejo con actos nuevos va donde van sus actos, no donde fue publicado él.
+ */
+export function agruparPiezasPorPublicacion<T extends Publicable>(piezas: readonly Pieza<T>[], ahora: Date = new Date(), zona: string = zonaDelEntorno()): Grupo<Pieza<T>>[] {
+  const grupos = new Map<string, Grupo<Pieza<T>>>();
+  for (const p of piezas) {
+    const titulo = tituloPublicacion(p.primero.creado_en, ahora, zona);
+    let g = grupos.get(titulo);
+    if (!g) {
+      g = { clave: titulo, titulo, eventos: [] };
+      grupos.set(titulo, g);
+    }
+    g.eventos.push(p);
+  }
+  return [...grupos.values()];
+}
+
 /** "a 600 m" · "a 2.4 km" · "a 12 km". */
 export function textoDistancia(km: number): string {
   if (km < 1) return `a ${Math.max(50, Math.round(km * 1000 / 50) * 50)} m`;
@@ -230,8 +251,11 @@ export type ContextoFiltro = {
   cuando: Cuando | null;
   /** Las clases de costo elegidas (gratis, cooperación, con costo); vacío o sin él, cualquier precio. */
   cuanto?: readonly Cuanto[];
-  /** La pestaña Nuevos: solo lo publicado desde ese instante (`corteNuevos`), lo más reciente primero y con el tope de `LIMITE_NUEVOS`; sin él, toda la agenda. */
+  /** La pestaña Nuevos: solo lo publicado desde ese instante (`corteNuevos`), lo más reciente primero, una pieza por serie (`piezasNuevas`) y con el
+   *  tope de `LIMITE_NUEVOS`; sin él, toda la agenda. */
   nuevosDesde?: number;
+  /** En Nuevos, los festivales cargados (aunque no sean nuevos ni pasen los filtros): el de un acto nuevo se busca aquí. Sin él, los de la lista. */
+  marcos?: ReadonlyMap<string, EventoAgenda>;
 };
 
 /**
@@ -245,8 +269,17 @@ export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: Context
   // confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247.
   let lista = eventos.filter((e) => (!ctx.cuando || ocupaRango(e, ctx.cuando.desde, ctx.cuando.hasta)) && cuesta(e, ctx.cuanto)).sort(compararEventos);
   if (ctx.siguiendo) lista = lista.filter(loSigue(ctx));
-  // En Nuevos un festival nuevo sale como su marco y no con sus actos (OL-322): se pliegan después de saber qué es nuevo y antes del tope.
-  return ctx.nuevosDesde === undefined ? lista : plegarActos(eventosNuevos(lista, ctx.nuevosDesde)).slice(0, LIMITE_NUEVOS);
+  // En Nuevos, lo que se cuenta y se enseña son piezas (OL-385): cada una por lo que la representa (`cabezaDe`).
+  return ctx.nuevosDesde === undefined ? lista : piezasNuevas(lista, ctx.nuevosDesde, ctx.marcos as ReadonlyMap<string, T> | undefined).map(cabezaDe);
+}
+
+/**
+ * Nuevos por piezas (OL-385): lo publicado desde `desde`, lo más reciente primero, juntado con `agruparSeries` después de saber qué es nuevo y antes
+ * del tope (el tope cuenta piezas). Los actos de un festival van en la pieza de su festival, sea nuevo el festival (antes, OL-322, `plegarActos`) o
+ * no (lo buscado en `marcos`); las funciones de lo mismo, en una serie.
+ */
+export function piezasNuevas<T extends EventoAgenda>(lista: T[], desde: number, marcos: ReadonlyMap<string, T> = marcosDe(lista)): Pieza<T>[] {
+  return agruparSeries(eventosNuevos(lista, desde), marcos).slice(0, LIMITE_NUEVOS);
 }
 
 /** «Solo lo que sigo»: los eventos de sus lugares y aquellos en los que se presenta un artista que sigue. */
@@ -289,9 +322,19 @@ export function buscarEventos<T extends Pick<EventoBuscable, "titulo" | "lugar" 
  * exposición y el marco son un evento más y los actos de un festival nuevo se pliegan en él. «Qué» elige la clase (`entraEnQue`).
  */
 export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, nuevosDesde?: number, ahora: Date = new Date()): EventoAgenda[] {
+  if (nuevosDesde !== undefined) return listarNuevos(agenda, filtros, nuevosDesde).map(cabezaDe);
   const que = queDeFiltros(filtros);
-  const eventos = (nuevosDesde === undefined ? ocurrenciasDeLista(agenda.eventos, ahora) : agenda.eventos).filter((e) => entraEnQue(e, que));
-  return filtrarAgenda(eventos, { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, nuevosDesde });
+  return filtrarAgenda(ocurrenciasDeLista(agenda.eventos, ahora).filter((e) => entraEnQue(e, que)), { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto });
+}
+
+/**
+ * La pestaña Nuevos por piezas (OL-385): lo que pinta (`AgendaNuevos`) y lo que cuenta su botón «Ver N» (`listarAgenda`, que da la cabeza de cada
+ * una). Los mismos filtros de Todos; el festival de un acto nuevo se busca entre todo lo cargado, aunque no sea nuevo ni pase los filtros.
+ */
+export function listarNuevos(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, nuevosDesde: number): Pieza<EventoAgenda>[] {
+  const que = queDeFiltros(filtros);
+  const lista = filtrarAgenda(agenda.eventos.filter((e) => entraEnQue(e, que)), { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto });
+  return piezasNuevas(lista, nuevosDesde, marcosDe(agenda.eventos));
 }
 
 type DatosAgenda = Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">;
@@ -303,14 +346,15 @@ function exposicionesFiltradas(agenda: DatosAgenda, filtros: FiltrosAgenda): Eve
 }
 
 /**
- * «Para visitar hoy» (OL-322; doc 55 §3): en Todos y con «Qué» en Todo, las exposiciones abiertas un día según su horario, la que cierra antes
- * primero. El día es el primero de lo que se ve: hoy, o el primero que se eligió con Cuándo. Sin horario no entran (no se promete «visitable
- * hoy»). Null en Nuevos o con otro «Qué»: ahí no hay sección.
+ * «Para visitar hoy» (OL-322; doc 55 §3): en Todos y con «Qué» en Todo, las exposiciones que se pueden visitar un día: las que abren según su
+ * horario y, después, las que no tienen horario conocido, con «Horario por confirmar» (`paraVisitarEseDia`); la que se sabe cerrada ese día, no.
+ * El día es el primero de lo que se ve: hoy, o el primero que se eligió con Cuándo. OL-381 (pruebas de usuario del founder, 2026-10-12): antes
+ * las sin horario no entraban y «Para visitar mañana» enseñaba una de 17. Null en Nuevos o con otro «Qué»: ahí no hay sección.
  */
 export function paraVisitarEnAgenda(agenda: DatosAgenda, filtros: FiltrosAgenda, hoy: string, nuevosDesde?: number): { dia: string; exposiciones: EventoAgenda[] } | null {
   if (nuevosDesde !== undefined || queDeFiltros(filtros) !== "todo") return null;
   const dia = filtros.cuando && filtros.cuando.desde > hoy ? filtros.cuando.desde : hoy;
-  return { dia, exposiciones: abiertasEseDia(exposicionesFiltradas(agenda, filtros), dia) };
+  return { dia, exposiciones: paraVisitarEseDia(exposicionesFiltradas(agenda, filtros), dia) };
 }
 
 /**

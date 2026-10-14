@@ -1,0 +1,97 @@
+/* El panel de ayuda (OL-402, bitácora 433), como el «Info View» de Ableton: una caja chica con el nombre del control en negrita y dos o tres
+   líneas. Maquetación plana: una rejilla de una celda donde el cuerpo y la ⓘ comparten sitio (la ⓘ en la esquina de arriba a la derecha).
+   Plegado, queda solo la ⓘ. El color lo toma de las variables que la pantalla defina (`--g-opaco`, `--g-borde`, `--g-texto`, `--g-suave`, las del
+   grafo) y, si no, de los tokens de la app. Hay un solo panel por pantalla; la pantalla lo coloca. */
+
+.ayuda {
+  --a-fondo: var(--g-opaco, var(--fondo));
+  --a-borde: var(--g-borde, var(--borde));
+  --a-texto: var(--g-texto, var(--texto));
+  --a-suave: var(--g-suave, var(--texto-suave));
+  display: grid;
+  width: var(--control);
+  pointer-events: auto;
+  color: var(--a-texto);
+}
+.ayuda[data-abierta="true"] {
+  width: min(100%, calc(var(--panel) * 0.8));
+  border: 1px solid var(--a-borde);
+  border-radius: var(--radio-grande);
+  background: var(--a-fondo);
+  box-shadow: var(--sombra-flotante);
+}
+.info {
+  grid-area: 1 / 1;
+  justify-self: end;
+  align-self: start;
+  z-index: var(--z-sobre);
+  display: grid;
+  place-items: center;
+  width: var(--control);
+  height: var(--control);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--a-texto);
+  font: inherit;
+  cursor: pointer;
+}
+/* Plegada, la ⓘ es un botón flotante redondo, como los demás de la escena */
+.ayuda[data-abierta="false"] .info {
+  border: 1px solid var(--a-borde);
+  border-radius: var(--radio-pildora);
+  background: var(--a-fondo);
+  box-shadow: var(--sombra-flotante);
+}
+.info:focus-visible,
+.enlace:focus-visible {
+  outline: 2px solid var(--a-texto);
+  outline-offset: calc(var(--espacio-1) * -0.5);
+  border-radius: var(--radio);
+}
+.cuerpo {
+  grid-area: 1 / 1;
+  display: grid;
+  min-width: 0;
+}
+/* El nombre ocupa la fila de la ⓘ y le deja su sitio */
+.titulo,
+.vacio {
+  display: flex;
+  align-items: center;
+  min-height: var(--control);
+  padding: 0 var(--control) 0 var(--espacio-3);
+  font-size: var(--letra-sm);
+  line-height: 1.25;
+}
+.titulo {
+  font-weight: 700;
+}
+.texto,
+.vacio {
+  margin: 0;
+  color: var(--a-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.35;
+}
+.texto {
+  padding: 0 var(--espacio-3);
+}
+.vacio {
+  padding-top: var(--espacio-2);
+  padding-bottom: var(--espacio-2);
+}
+.enlace {
+  display: flex;
+  align-items: center;
+  min-height: var(--control);
+  padding: 0 var(--espacio-3);
+  color: var(--a-suave);
+  font-size: var(--letra-xs);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+/* El «modo ayuda»: lo que se toca se explica y no se usa, así que lo que se arrastra o se abre con el dedo no recibe el toque (llega su renglón) */
+:global([data-modo-ayuda="true"]) :global([data-ayuda]) :is(input, select, textarea) {
+  pointer-events: none;
+}

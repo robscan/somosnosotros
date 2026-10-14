@@ -10,6 +10,7 @@ import { cargarAportes, cargarComunidad, cargarResumen, cargarVinculadas } from 
 import ComunidadComoVa from "./ComunidadComoVa";
 import CapoComoVa from "./CapoComoVa";
 import { cargarCapo } from "./capo-consultas";
+import IconoGrafo from "./grafo/IconoGrafo";
 import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
@@ -89,6 +90,20 @@ export default async function Admin() {
           <Link href="/admin/obras-colectivas" className={styles.fila}>
             <IconoPincel width={20} height={20} />
             <b>Obras colectivas</b>
+            <span className={styles.total}>
+              <IconoChevronDerecha />
+            </span>
+          </Link>
+        </li>
+      </ul>
+      {/* El grafo cultural en 3D (OL-401): una herramienta de lectura, aparte de Gestionar y de las altas. */}
+      <h2 className={styles.grupo}>Grafo cultural</h2>
+      <ul className={renglon.tarjeta}>
+        <li>
+          <Link href="/admin/grafo" className={styles.fila}>
+            <IconoGrafo width={20} height={20} />
+            <b>Grafo cultural</b>
+            <small>Lugares, artistas y asistentes en 3D</small>
             <span className={styles.total}>
               <IconoChevronDerecha />
             </span>

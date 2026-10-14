@@ -5,6 +5,7 @@ import { HojaHorario } from "@/app/lugares/Horario";
 import TextoHorario from "@/app/lugares/TextoHorario";
 import { PiePaso } from "@/components/PorPasos";
 import Boton from "@/components/ui/Boton";
+import Parecidos, { RenglonParecido } from "@/components/ui/Parecidos";
 import { IconoBoleto, IconoCalendario, IconoEstrella, IconoEtiqueta, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -12,6 +13,7 @@ import { unirNombres, type ArtistaResumen } from "@/lib/artistas";
 import { etiquetaHora } from "@/lib/calendario";
 import { SIN_FOTO } from "@/lib/imagen";
 import { COOPERACION_SOLIDARIA, nombreDeClase, type Clase, type ErroresEvento } from "@/lib/eventos";
+import { renglonParecido, type EventoParecido } from "@/lib/eventosParecidos";
 import type { Franja } from "@/lib/horarioLugar";
 import { HORARIOS_POR_DIA, cuandoVariosDias, diaConMesDe, diaLocal, formatearCuando, localAIso, rangoCorto, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
@@ -37,6 +39,10 @@ type Props = {
   errores: ErroresEvento;
   /** El error que no es de un dato («No se pudo publicar el evento completo»), encima del botón como en el alta de siempre. */
   general?: string;
+  /** Eventos parecidos que encontró el servidor al publicar (OL-384, como el lugar): «¿Es este?» antes de publicar otro. Solo en el alta. */
+  parecidos?: EventoParecido[];
+  /** «No, es otro: publicar de todos modos»: publica sin volver a preguntar. */
+  onConfirmar?: () => void;
   enviando: boolean;
   /** Lo que falta todavía, dicho en el botón; null si ya se puede publicar. */
   falta: string | null;
@@ -88,7 +94,7 @@ export const DIRECCION_RETIRADA = "La dirección ya no está disponible por priv
  * miniatura (el cartel, o el símbolo SN si no tiene) y dos lápices sin letreros, uno sobre la miniatura y otro junto al nombre (OL-349), y lo
  * opcional que ya tiene algo dice «Cambiar…» en vez de «Agregar…».
  */
-export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, enviando, falta, formulario, onAbrir, editar, onCambiar, onClase, horarioLugar = [], festivales = [], sedes, festivalGuardado }: Props) {
+export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, parecidos, onConfirmar, enviando, falta, formulario, onAbrir, editar, onCambiar, onClase, horarioLugar = [], festivales = [], sedes, festivalGuardado }: Props) {
   const [hoja, setHoja] = useState<"clase" | "horario" | "inauguracion" | "festival" | null>(null);
   const cambiar = (cambios: Partial<Respuestas>) => {
     onCambiar?.(cambios);
@@ -279,6 +285,13 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
           {extras}
         </p>
       )}
+      {parecidos && parecidos.length > 0 && onConfirmar && (
+        <Parecidos texto="Ya hay uno parecido ese día en el mismo sitio:" conFoto onConfirmar={onConfirmar}>
+          {parecidos.map((p) => (
+            <RenglonParecido key={p.id} {...renglonParecido(p)} />
+          ))}
+        </Parecidos>
+      )}
       <PiePaso>
         {general && (
           <p className="aviso-error" role="alert">
@@ -328,3 +341,4 @@ export function Dato({ icono, clave, orden, valor, detalle, falta, opcional, err
     </li>
   );
 }
+

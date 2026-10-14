@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { contarAgenda, exposicionesEnAgenda, filtrosDeUrl, filtrosPuestos, filtrosRecordados, hrefAgenda, listarAgenda, paraVisitarEnAgenda, SIN_FILTROS, textoVer, type EventoAgenda, type FiltrosAgenda } from "./agenda";
-import { abiertasEseDia, componerDia, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, plegarActos, queDe, rangosDeVisita, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
+import { componerDia, cuandoParaVisitar, entraEnQue, exposicionesVigentes, festivalesVigentes, marcosDe, notaDeVisita, paraVisitarEseDia, queDe, rangosDeVisita, sinHorario, sinPuntoEnCalendario, textoAbre, textoBloque, textoHastaEl, tituloParaVisitar } from "./agendaPorClase";
 import { archivoIcs } from "./calendario";
 import type { Agenda } from "./cargarAgenda";
 import { cuandoDeTarjeta, notaDeClase, tarjetaConClase, tarjetaEvento } from "./destacados";
 import { calcularCarrilesAgenda, carrilDestacados, carrilEstaSemana, carrilEstelar, carrilFestivales, carrilMasAdelante, carrilNuevos, TOPE_FESTIVALES } from "./inicio";
 import { ocurrenciasDe, proximaOcurrencia, textoParte } from "./ocurrencias";
+import { agruparSeries, cabezaDe } from "./series";
 import { cejaDeTarjeta, chipDeTarjeta, tarjetaDeInicio } from "./tarjetaInicio";
 
 // Miércoles 7 de octubre de 2026, 12:00 en la ciudad (seis horas detrás de UTC, sin horario de verano).
@@ -69,11 +70,18 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
   it("vigentes en Inicio: las que no han cerrado y ya abrieron o abren esta semana, la que cierra antes primero", () => {
     expect(ids(exposicionesVigentes(TODOS, ahora))).toEqual(["sin-leer", "grabado", "ecos", "futura"]);
   });
-  it("abierta un día según su horario propio o del lugar (ya resuelto en `horario`); sin horario, o sin poder leerlo, no", () => {
-    expect(ids(abiertasEseDia(TODOS, HOY))).toEqual(["ecos"]);
-    // El lunes 12 el MUNI cierra; Fotovisión abre ese día de 11 a 19.
-    expect(ids(abiertasEseDia(TODOS, "2026-10-12"))).toEqual(["futura"]);
+  it("un día: primero las que abren según su horario (propio o del lugar, ya resuelto en `horario`), después las sin horario conocido (OL-381)", () => {
+    // Hoy: Ecos abre; Grabado (sin horario) y la que no se pudo leer entran después, la que cierra antes primero.
+    expect(ids(paraVisitarEseDia(TODOS, HOY))).toEqual(["ecos", "sin-leer", "grabado"]);
+    // El lunes 12 el MUNI cierra (Ecos, con horario, se sabe cerrada: fuera); Fotovisión abre ese día de 11 a 19; Grabado, sin horario, sigue.
+    expect(ids(paraVisitarEseDia(TODOS, "2026-10-12"))).toEqual(["futura", "grabado"]);
+    // Fuera de su periodo no entra, con horario o sin él: Grabado cerró el 20 y la que no se pudo leer el 9.
+    expect(ids(paraVisitarEseDia(TODOS, "2026-10-21"))).toEqual(["ecos", "futura"]);
     expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00 a.m.–6:00 p.m.");
+    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00 a.m.–6:00 p.m.");
+    expect(cuandoParaVisitar(grabado, HOY)).toBe("Horario por confirmar");
+    expect(cuandoParaVisitar(sinLeer, HOY)).toBe("Horario por confirmar");
+    expect([ecos, grabado, sinLeer, { ...grabado, horario: [{ dias: [], abre: "10:00", cierra: "18:00" }] }].map(sinHorario)).toEqual([false, true, true, true]);
     expect(rangosDeVisita(grabado, HOY)).toEqual([]);
     expect(rangosDeVisita(ecos, "2026-11-01")).toEqual([]); // fuera de su periodo
   });
@@ -103,9 +111,10 @@ describe("el festival en la agenda de un día", () => {
     expect(textoBloque(4, 2, true)).toBe("Programa registrado: 4 actividades · hoy 2");
     expect(textoBloque(1, 1, false)).toBe("Programa registrado: 1 actividad · 1 este día");
   });
-  it("en una lista por evento (la pestaña Nuevos de la agenda) los actos de un marco presente se pliegan en él", () => {
-    expect(ids(plegarActos([cine, cine1, cine2, huerfano, concierto]))).toEqual(["cine", "huerfano", "concierto"]);
-    expect(ids(plegarActos([cine1, cine2]))).toEqual(["cine1", "cine2"]); // sin su marco, salen sueltos
+  it("en una lista por evento (la pestaña Nuevos de la agenda) los actos de un marco presente van en él (antes `plegarActos`; OL-385: `agruparSeries`)", () => {
+    expect(ids(agruparSeries([cine, cine1, cine2, huerfano, concierto]).map(cabezaDe))).toEqual(["cine", "huerfano", "concierto"]);
+    expect(ids(agruparSeries([cine1, cine2]).map(cabezaDe))).toEqual(["cine1", "cine2"]); // sin su marco cargado, salen sueltos
+    expect(ids(agruparSeries([cine1, cine2], marcosDe(TODOS)).map(cabezaDe))).toEqual(["cine"]); // con él cargado, aunque no esté en la lista, en él
   });
 });
 
@@ -129,8 +138,8 @@ describe("la agenda (Todos y Nuevos) por clase", () => {
     expect(componerDia(lista, marcosDe(TODOS))[0]).toMatchObject({ tipo: "festival", marco: { id: "cine" } });
   });
   it("«Para visitar hoy»: hoy, o el primer día de Cuándo; con otro «Qué» o en Nuevos, no hay sección", () => {
-    expect(paraVisitarEnAgenda(agenda(), SIN_FILTROS, HOY)).toMatchObject({ dia: HOY, exposiciones: [{ id: "ecos" }] });
-    expect(paraVisitarEnAgenda(agenda(), con({ cuando: { desde: "2026-10-12", hasta: "2026-10-12" } }), HOY)).toMatchObject({ dia: "2026-10-12", exposiciones: [{ id: "futura" }] });
+    expect(paraVisitarEnAgenda(agenda(), SIN_FILTROS, HOY)).toMatchObject({ dia: HOY, exposiciones: [{ id: "ecos" }, { id: "sin-leer" }, { id: "grabado" }] });
+    expect(paraVisitarEnAgenda(agenda(), con({ cuando: { desde: "2026-10-12", hasta: "2026-10-12" } }), HOY)).toMatchObject({ dia: "2026-10-12", exposiciones: [{ id: "futura" }, { id: "grabado" }] });
     expect(paraVisitarEnAgenda(agenda(), con({ que: "talleres" }), HOY)).toBeNull();
     expect(paraVisitarEnAgenda(agenda(), SIN_FILTROS, HOY, 0)).toBeNull();
     // Cuánto también filtra lo que hay para visitar.
@@ -148,8 +157,8 @@ describe("la agenda (Todos y Nuevos) por clase", () => {
 
 describe("los números de la agenda", () => {
   it("cuentan renglones (sesiones y actos; el marco no) y aparte lo que hay para visitar", () => {
-    expect(contarAgenda(agenda(), SIN_FILTROS, HOY, undefined, ahora)).toEqual({ renglones: 9, visitar: 1 });
-    expect(contarAgenda(agenda(), con({ cuando: { desde: "2026-10-10", hasta: "2026-10-10" } }), HOY, undefined, ahora)).toEqual({ renglones: 4, visitar: 1 });
+    expect(contarAgenda(agenda(), SIN_FILTROS, HOY, undefined, ahora)).toEqual({ renglones: 9, visitar: 3 });
+    expect(contarAgenda(agenda(), con({ cuando: { desde: "2026-10-10", hasta: "2026-10-10" } }), HOY, undefined, ahora)).toEqual({ renglones: 4, visitar: 2 });
     expect(contarAgenda(agenda(), con({ que: "exposiciones" }), HOY, undefined, ahora)).toEqual({ renglones: 0, visitar: 5 });
   });
   it("lo que dice el botón", () => {
@@ -272,12 +281,14 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(vistos.has("vacio")).toBe(true);
     expect(vistos.has("lejana")).toBe(false);
   });
-  it("los actos de un festival que salió aquí no quedan vistos: salen después en «Nuevos eventos» como cualquier evento (OL-347)", () => {
+  it("los actos de un festival que salió aquí no quedan vistos: salen después en «Nuevos eventos», juntos en la tarjeta de su festival (OL-347, OL-385)", () => {
     const vistos = new Set<string>();
     const lejano = (e: EventoAgenda) => ({ ...e, inicio: new Date(Date.parse(e.inicio) + 20 * 86400000).toISOString(), fin: null, creado_en: "2026-10-06T00:00:00Z" });
-    const lista = [lejano(cine), lejano(cine1), lejano(cine2), lejano(cine3), lejano(concierto)];
+    const lista = [lejano(cine), lejano(cine1), lejano(cine2), lejano(cine3), lejano(concierto), lejano(huerfano)];
     expect(ids(carrilFestivales(lista, vistos, ahora))).toEqual(["cine"]);
-    expect(ids(carrilNuevos(lista, vistos, ahora)).toSorted()).toEqual(["cine1", "cine2", "cine3", "concierto"]);
+    // Tres piezas (el festival con sus tres actos, el concierto y el acto sin su festival cargado): llega al mínimo de tres.
+    expect(ids(carrilNuevos(lista, vistos, ahora)).toSorted()).toEqual(["cine1", "cine2", "cine3", "concierto", "huerfano"]);
+    expect(ids(carrilNuevos(lista.slice(0, 5), new Set(["cine"]), ahora))).toEqual([]); // dos piezas: no se pinta
   });
   it("con tope; sin nada, vacío (el carril no se pinta)", () => {
     const muchos = Array.from({ length: TOPE_FESTIVALES + 5 }, (_, i) => evento(`f${i}`, { clase: "festival", inicio: a("2026-11-01", "18:00"), fin: a("2026-11-02", "00:00") }));
@@ -290,13 +301,13 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(tarjetaConClase(ecos, ahora)).toMatchObject({ clase: "Exposición", detalle: "Hasta el sáb 31 de oct" });
     expect(tarjetaEvento(ecos, ahora).clase).toBeUndefined(); // los demás carriles no cambian
   });
-  it("OL-370: en Inicio la clase va en la ceja, solo si no es un evento; sobre el cartel, como mucho un chip («Te interesa» o cuántos van)", () => {
+  it("OL-370: en Inicio la clase va en la ceja, solo si no es un evento; sobre el cartel, como mucho un chip (cuántos van; «Te interesa» es el marcador, OL-382)", () => {
     expect(cejaDeTarjeta(tarjetaDeInicio(electric, ahora))).toEqual(["Festival"]);
     expect(cejaDeTarjeta(tarjetaDeInicio(ecos, ahora))).toEqual(["Expo"]);
     expect(cejaDeTarjeta(tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora))).toEqual([]); // un evento suelto o un acto no se rotulan (E3b)
     expect(tarjetaConClase({ ...ecos, clase: "taller" }, ahora).clase).toBe("Taller"); // la palabra corta de `CLASES`, no «Taller o curso»
-    expect(chipDeTarjeta(tarjetaDeInicio(fiesta, ahora), "me_interesa")).toEqual({ texto: "Te interesa", tuyo: true });
-    expect(chipDeTarjeta({ ...tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora), van: 2 }, null)).toEqual({ texto: "2 van", tuyo: false });
+    expect(chipDeTarjeta(tarjetaDeInicio(fiesta, ahora))).toBeNull();
+    expect(chipDeTarjeta({ ...tarjetaDeInicio({ ...ecos, clase: "puntual" }, ahora), van: 2 })).toEqual({ texto: "2 van" });
     // El festival que ya empezó dice cuándo termina, como la exposición; el que viene conserva su día.
     expect(tarjetaDeInicio(fiesta, ahora).detalle).toBe("Hasta el mié 7 de oct");
     expect(tarjetaDeInicio(electric, ahora)).toMatchObject({ detalle: "sáb 31 de oct", selloFecha: { mes: "oct", dia: "31", flecha: null } });

@@ -5,15 +5,16 @@ import esqueleto from "./ui/Esqueleto.module.css";
 import propios from "./CarrilEsqueleto.module.css";
 
 /**
- * Qué tarjeta lleva un carril de Inicio (prototipo firmado `inicio-tarjetas.html`, E5): `grande` y `mediana`, la de un evento (OL-370; 165×206 en
- * Tus planes, Destacados y Festivales y expos, 132×165 en Esta semana, Nuevos eventos y Más adelante); `artista`, la de un artista en «Artistas
- * destacadxs», que es la mediana de un evento (E9, OL-372); `avatar`, el redondo de 64 de «Lugares de la semana» y «Artistas de la semana» (OL-372).
+ * Qué tarjeta lleva un carril de Inicio (prototipo firmado `inicio-tarjetas.html`, E5): `xl`, `grande` y `mediana`, la de un evento (OL-370; la XL
+ * de 280×350 en el carril estelar, OL-382, D2, XL+ desde OL-387; 165×206 en Tus planes y Festivales y expos, 132×165 en Esta semana, Nuevos eventos y Más
+ * adelante); `artista`, la de un artista en «Artistas destacadxs», que es la mediana de un evento (E9, OL-372); `avatar`, el redondo de 88 de
+ * «Lugares de la semana» y «Artistas de la semana» (OL-372; OL-382, N).
  */
-export type FormaCarril = "grande" | "mediana" | "artista" | "avatar";
+export type FormaCarril = "xl" | "grande" | "mediana" | "artista" | "avatar";
 
 /** Las columnas del carril de cada forma (`Destacados.module.css`): el carril y su esqueleto usan la misma. */
 export function columnasDe(forma: FormaCarril): string {
-  return forma === "grande" ? styles.cartelGrande : forma === "avatar" ? styles.avatar : styles.cartelMediana;
+  return forma === "xl" ? styles.cartelXl : forma === "grande" ? styles.cartelGrande : forma === "avatar" ? styles.avatar : styles.cartelMediana;
 }
 
 /**
@@ -25,13 +26,14 @@ export function columnasDe(forma: FormaCarril): string {
  * fuente de tamaños). Las líneas de texto llevan un espacio duro: ocupan el alto de una línea de verdad, sin copiar ninguna medida.
  *
  * Cada forma, con la tarjeta del caso que más alto deja su carril de ordinario:
- * - `grande` y `mediana` (OL-370): el cartel 4:5 de su tamaño, el título en dos líneas, el lugar y cuándo. Con `tituloDentro` (OL-375), la de
+ * - `xl`, `grande` y `mediana` (OL-370, OL-382): el cartel 4:5 de su tamaño, el título en dos líneas, cuándo y el lugar. Con `tituloDentro` (OL-375), la de
  *   «Festivales y expos»: todas sus tarjetas llevan la portada del sistema, con el título dentro, así que debajo solo van el lugar y cuándo.
  * - `artista` (OL-372): la foto mediana, la disciplina, el nombre en una línea, el género y la fecha.
- * - `avatar` (OL-372): el círculo de 64 y el nombre, sin novedad (la mayoría no la tiene); cinco, para llenar el ancho como el carril.
+ * - `avatar` (OL-372): el círculo de 88 y el nombre en dos líneas (OL-382, N: la mayoría de los nombres las ocupa), sin novedad (la mayoría no la
+ *   tiene); cinco, para llenar el ancho como el carril.
  */
 export default function CarrilEsqueleto({ forma, cantidad = forma === "avatar" ? 5 : 3, tituloDentro = false }: { forma: FormaCarril; cantidad?: number; tituloDentro?: boolean }) {
-  const tarjeta = forma === "grande" ? evento.tarjeta : `${evento.tarjeta} ${evento.mediana}`;
+  const tarjeta = forma === "grande" ? evento.tarjeta : `${evento.tarjeta} ${forma === "xl" ? evento.xl : evento.mediana}`;
   return (
     <section className={styles.destacados} aria-hidden="true">
       <div className={styles.cabecera}>
@@ -46,7 +48,7 @@ export default function CarrilEsqueleto({ forma, cantidad = forma === "avatar" ?
             {forma === "avatar" ? (
               <span className={avatar.avatar}>
                 <span className={`${avatar.foto} ${esqueleto.respira}`} />
-                <span className={`${avatar.nombre} ${esqueleto.respira} ${propios.corta}`}>&nbsp;</span>
+                <span className={`${avatar.nombre} ${esqueleto.respira} ${propios.corta} ${propios.dosRenglones}`} />
               </span>
             ) : (
               <span className={tarjeta}>

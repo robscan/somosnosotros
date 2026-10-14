@@ -153,3 +153,5 @@ export const SIN_FOTO = "/sin-foto.png";
 export const SIN_FOTO_ANCHA = "/sin-foto-ancha.png";
 /** La portada sin foto de la cabecera oscura (exposición, taller y festival, OL-351): el símbolo en claro sobre la banda, arriba del título. */
 export const SIN_FOTO_OSCURA = "/sin-foto-oscura.png";
+/** El círculo oscuro de la fila de fotos del historial (OL-390: «Se ha presentado en», «Han pasado por aquí»): el símbolo en blanco sobre casi negro. */
+export const SIN_FOTO_REDONDA = "/sin-foto-redonda.png";

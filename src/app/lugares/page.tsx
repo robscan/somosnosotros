@@ -3,6 +3,7 @@ import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { leerTira } from "@/lib/destacados";
+import type { Clase } from "@/lib/eventos";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { conProximo, diasConEvento, type LugarLista, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -54,10 +55,11 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
     // los privados de QUIEN MIRA (creado_por = auth.uid()) en este mapa y lista públicos -correcto en una ficha
     // propia, un error aquí. No depender de la RLS para esto (auditoría de la bitácora 214).
     supabase.from("lugares").select("id, slug, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("privado", false).eq("ciudad", ciudadNombre).order("nombre").limit(1000),
-    // `fin` (OL-218): un evento de varios días cuenta en cada día que ocupa, igual que la Agenda (`diasActivosCalendario`).
-    supabase.from("eventos").select("id, inicio, fin, lugar_id, zona, titulo").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
+    // `fin` (OL-218): un evento de varios días cuenta en cada día que ocupa, igual que la Agenda (`diasActivosCalendario`). `clase` (OL-398): una
+    // exposición, un taller o un festival en curso dicen «hasta el …» en vez de un «Próximo» que ya pasó.
+    supabase.from("eventos").select("id, inicio, fin, lugar_id, zona, titulo, clase").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
-  const eventos = (e.data ?? []) as (ProximoEvento & { fin: string | null; lugar_id: string | null })[];
+  const eventos = (e.data ?? []) as (ProximoEvento & { fin: string | null; clase: Clase | null; lugar_id: string | null })[];
   return diasConEvento(conProximo((l.data ?? []) as LugarResumen[], eventos), eventos);
 }
 

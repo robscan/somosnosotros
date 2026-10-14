@@ -1,0 +1,90 @@
+/* ==========================================================================
+   La trayectoria de un artista y el historial de un lugar (OL-390, prototipo firmado `historial-propuestas.html`). El bloque plegado y el gris
+   de lo pasado son de `ui/Plegado`; aquí, lo propio: la fila de fotos (Q1) y lo de la derecha de un renglón pasado (H4).
+   1. La fila de fotos · 2. El renglón pasado · 3. «Tu año»
+   ========================================================================== */
+
+/* 1. «Se ha presentado en · 2» / «Han pasado por aquí · 11»: el título en gris (un `p`, como el `h3` de un mes: `ui/Plegado`) y debajo la
+   fila, que se desliza de lado. Cada foto es un enlace a su ficha: el círculo, el nombre en dos líneas y «2 veces» si repite, una rejilla de
+   una columna. */
+.fila {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(var(--avatar-historial) + var(--espacio-3));
+  justify-content: start;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-2) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.fila::-webkit-scrollbar {
+  display: none;
+}
+.presencia {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  row-gap: var(--espacio-1);
+  color: var(--texto);
+  font-size: var(--letra-2xs);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.foto {
+  width: var(--avatar-historial);
+  height: var(--avatar-historial);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.nombre {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: break-word;
+  hyphens: auto; /* «Bicentenario» no cabe en 72: se parte con guion, en español */
+}
+.veces {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+
+/* 2. A la derecha de un renglón pasado, en gris y sin nada que parezca un botón: «2 fueron» (el número arriba, la palabra debajo) si alguien
+   dijo «Voy», o el chevrón. El festival de un acto, tras el sitio, también en gris. */
+.fueron {
+  display: grid;
+  justify-items: center;
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.fueron > b {
+  font-size: var(--letra-md);
+  font-weight: 800;
+}
+.chevron {
+  color: var(--texto-suave);
+}
+.festival {
+  color: var(--texto-suave);
+}
+/* Con el festival detrás, el sitio también cede (en `ui/Renglon` lo que no es lo último de la línea no se encoge): los dos se cortan con puntos
+   suspensivos y el festival no desaparece tras un nombre largo. */
+li small > span > span.sitio:not(:last-child) {
+  flex: 0 1 auto;
+}
+
+/* 3. «Tu año» (OL-394, «O en la sección») y, junto a él, «Presentación» o «Informe» (OL-396, «O junto a "Tu año"»): al final de la sección
+   abierta, separados del último renglón, en una fila de dos pastillas iguales; con una sola, a todo lo ancho. */
+.botones {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-4);
+}

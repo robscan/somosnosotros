@@ -475,6 +475,8 @@ test("un error del servidor sale en «Revisa» y la guardia vuelve; si encuentra
   const caja = q.getByRole("alert").filter({ hasText: "¿Es este?" });
   await caja.waitFor();
   assert.equal(await caja.getByRole("link").getAttribute("href"), "/lugares/teatro-de-la-paz");
+  // OL-384: el mismo bloque (`ui/Parecidos`) que el del alta de evento; su captura, para compararlos.
+  if (capturas) await q.screenshot({ path: join(capturas, "03-lugar-es-este-390.png") });
   await boton(q, "No, es otro: publicar de todos modos").click();
   await boton(q, "Publicar lugar").click();
   await q.getByRole("heading", { name: "Lugar publicado" }).waitFor();

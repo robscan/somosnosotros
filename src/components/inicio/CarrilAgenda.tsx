@@ -1,7 +1,9 @@
 import type { AvisosLista } from "@/components/useSeguirEnLista";
+import { marcosDe } from "@/lib/agendaPorClase";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { nombreDeFestival } from "@/lib/destacados";
 import { calcularCarrilesAgenda } from "@/lib/inicio";
+import { grupoDe } from "@/lib/series";
 import { tarjetaDeInicio } from "@/lib/tarjetaInicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 import CarrilNuevos from "./CarrilNuevos";
@@ -16,7 +18,8 @@ type Parte = { parte: "estelar" | "estaSemana" | "festivales" } | { parte: "nuev
  * y recalcula los carriles completos de forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
  * Lo que ya está en «Tus planes» al cargar no sale en ninguno de los tres: ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
- * Cada tarjeta es la firmada (OL-370, `tarjetaDeInicio`: su sello de fecha y su línea de cuándo), grande o mediana según su carril (E5).
+ * Cada tarjeta es la firmada (OL-370, `tarjetaDeInicio`: su sello de fecha y su línea de cuándo), XL, grande o mediana según su carril (E5; el
+ * estelar en XL, OL-382, D2).
  */
 export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref, ...carril }: { agendaPromise: Promise<Agenda>; avisos: AvisosLista | null; verTodosHref: string } & Parte) {
   const agenda = await agendaPromise;
@@ -26,15 +29,24 @@ export default async function CarrilAgenda({ agendaPromise, avisos, verTodosHref
   const festival = nombreDeFestival(agenda.eventos);
   const comun = { asistencias: agenda.asistencias, avisos, verTodos: { href: verTodosHref, etiqueta: "Ver la agenda" } };
   if (carril.parte === "nuevos") {
-    const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaDeInicio(e, ahora, festival(e)), creado_en: e.creado_en }));
-    return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
+    // Una tarjeta por serie (OL-385): cada tarjeta lleva con quién va (`grupoDe`) y, aparte, la tarjeta de cada festival con actos nuevos (aunque el
+    // festival no sea nuevo): el teléfono las junta tras quitar lo que esa persona ya vio (`CarrilNuevos`).
+    const marcos = marcosDe(agenda.eventos);
+    const tarjetas = carriles.nuevos.map((e) => ({ ...tarjetaDeInicio(e, ahora, festival(e)), creado_en: e.creado_en, grupo: grupoDe(e, marcos) }));
+    const festivales = Object.fromEntries(
+      [...new Set(carriles.nuevos.flatMap((e) => (e.evento_padre_id && marcos.has(e.evento_padre_id) ? [e.evento_padre_id] : [])))].map((id) => {
+        const marco = marcos.get(id)!;
+        return [id, { ...tarjetaDeInicio(marco, ahora), creado_en: marco.creado_en }];
+      }),
+    );
+    return <CarrilNuevos {...comun} ciudad={carril.ciudad} tarjetas={tarjetas} festivales={festivales} titulo="Nuevos eventos" tamano="mediana" memoria="inicio-nuevos" />;
   }
   // «Festivales y expos» (OL-342): cada tarjeta dice qué es en su ceja («Festival», «Expo»: OL-370).
   // Va con la tarjeta grande, la de «Destacados» (founder, 2026-10-08, OL-347: «a los festivales ponles tamaño de eventos
   // estelares»); un carril tiene un solo tamaño, así que las exposiciones también. «Esta semana» va en la mediana (OL-370, E5).
   const datos =
     carril.parte === "estelar"
-      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-estelar" }
+      ? { titulo: carriles.titulo, tarjetas: carriles.estelar.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "xl" as const, memoria: "inicio-estelar" }
       : carril.parte === "festivales"
         ? { titulo: "Festivales y expos", tarjetas: carriles.festivales.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "grande" as const, memoria: "inicio-festivales" }
         : { titulo: "Esta semana", tarjetas: carriles.estaSemana.map((e) => tarjetaDeInicio(e, ahora, festival(e))), tamano: "mediana" as const, memoria: "inicio-esta-semana" };

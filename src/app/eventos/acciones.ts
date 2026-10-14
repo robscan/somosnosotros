@@ -14,10 +14,11 @@ import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { cartelAFormulario, ciudadDelSitio, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { horarioDesdeJson, type Franja } from "@/lib/horarioLugar";
-import { localAIso, zonaSegura } from "@/lib/fechas";
+import { eventoPaso, localAIso, zonaSegura } from "@/lib/fechas";
 import { mencionDeFestival } from "@/lib/sugerencias";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
+import { preguntaSiHayParecidos, type EventoParecido } from "@/lib/eventosParecidos";
 import { validarSesiones, type SesionEvento } from "@/lib/sesionesEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
@@ -31,7 +32,7 @@ import { sitioReservadoVencido } from "@/lib/retencionSitio";
  */
 export type ResultadoEvento =
   | { ok: true; id: string; volver: string; slug?: string | null; href?: string; /** Un festival publicado con su programa (OL-321): cuántos actos y borradores. */ programa?: { actos: number; borradores: number } }
-  | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
+  | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean; /** «¿Es este?» (OL-384): eventos visibles parecidos el mismo día en el mismo sitio. */ parecidos?: EventoParecido[] };
 
 
 function leer(formData: FormData) {
@@ -189,6 +190,29 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
 }
 
 
+/**
+ * «¿Es este?» antes de publicar (OL-384, como el lugar): los eventos visibles, sin pasar, el mismo día local y en el mismo sitio con un título
+ * parecido (la regla vive en la base, `eventos_parecidos`). Primero se recupera una respuesta perdida: si esta operación ya guardó, el
+ * reintento no se encuentra a sí mismo. Sin la migración, o si la lectura falla, se publica como siempre: preguntar ayuda, no es un candado.
+ */
+async function eventosParecidos(supabase: Cliente, datos: DatosEvento, operacion: FormDataEntryValue | null, usuario: string): Promise<EventoParecido[]> {
+  // Sin una clave válida no se guarda (`guardarCompleto`): no hay nada que preguntar.
+  if (typeof operacion !== "string" || !esUuid(operacion)) return [];
+  try {
+    const { data: previo, error: errorPrevio } = await supabase.from("eventos").select("id").eq("operacion_guardado", operacion).eq("creado_por", usuario).maybeSingle();
+    if (errorPrevio || previo) return [];
+    const { data, error } = await supabase.rpc("eventos_parecidos", { p_titulo: datos.titulo, p_inicio: datos.inicio, p_zona: datos.zona, p_lugar_id: datos.lugar_id, p_sitio_texto: datos.sitio_texto });
+    if (error) {
+      console.error("crearEvento (eventos parecidos):", error.message);
+      return [];
+    }
+    return Array.isArray(data) ? (data as EventoParecido[]) : [];
+  } catch (e) {
+    console.error("crearEvento (eventos parecidos):", e);
+    return [];
+  }
+}
+
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const entrada = leer(formData);
@@ -204,6 +228,11 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   if (ciudad === null) return sinCiudad(datos);
+  // «¿Es este?» (OL-384): si ya hay uno parecido y no se confirmó con «No, es otro», no publica y lo devuelve para preguntar.
+  if (formData.get("confirmado") !== "1" && preguntaSiHayParecidos(clase.clase)) {
+    const parecidos = await eventosParecidos(supabase, datos, formData.get("operacion"), user.id);
+    if (parecidos.length) return { ok: false, errores: {}, parecidos };
+  }
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   await guardarColoresCartel(supabase, data.id, datos.imagen, formData);
@@ -345,6 +374,31 @@ export async function cambiarVisibleEvento(id: string, lugarId: string | null, v
   await supabase.from("eventos").update({ visible }).eq("id", id);
   revalidar(id, lugarId);
   redirect(`/eventos/${id}`);
+}
+
+/** Por qué no se pudo marcar: no es suyo (o no existe), aún no pasa, no se ve (borrador u oculto) o la base no lo guardó. */
+export type ResultadoCancelado = { ok: true; cancelado: boolean } | { ok: false; error: "sin_permiso" | "no_paso" | "no_visible" | "fallo" };
+
+/**
+ * «Se canceló» / «No se canceló» (OL-391): desde el menú «···» de la ficha de un evento que ya pasó, de un toque y sin diálogo (se deshace desde el
+ * aviso). Un evento que ya pasó cuenta como realizado en el historial de su artista y de su lugar salvo que quien lo gestiona (su autora o la
+ * administración) diga que se canceló. Las políticas de la base ya dejan editar solo a esas dos; aquí además: solo lo que ya pasó (`eventoPaso`, la
+ * misma regla que la ficha en pasado) y solo lo que se ve (un borrador o algo oculto no cambian). No manda avisos: la marca no es cuándo ni dónde.
+ */
+export async function marcarCancelado(id: string, cancelado: boolean): Promise<ResultadoCancelado> {
+  const { supabase, user } = await sesionOEntrar(`/eventos/${id}`);
+  if (!esUuid(id)) return { ok: false, error: "sin_permiso" };
+  const { data: e } = await supabase.from("eventos").select("id, slug, inicio, fin, zona, creado_por, visible, borrador, lugar_id, evento_padre_id, eventos_artistas(artista_id)").eq("id", id).maybeSingle();
+  if (!e) return { ok: false, error: "sin_permiso" };
+  if (e.creado_por !== user.id && !(await esAdminDeSesion(supabase, user.id))) return { ok: false, error: "sin_permiso" };
+  if (!e.visible || e.borrador) return { ok: false, error: "no_visible" };
+  if (!eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { ok: false, error: "no_paso" };
+  const { data, error } = await supabase.from("eventos").update({ cancelado }).eq("id", id).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: "fallo" };
+  const artistas = ((e.eventos_artistas ?? []) as { artista_id: string }[]).map((a) => a.artista_id);
+  revalidar(id, e.lugar_id, artistas, e.slug);
+  if (e.evento_padre_id) revalidatePath(`/eventos/${e.evento_padre_id}`);
+  return { ok: true, cancelado };
 }
 
 export type ResultadoCartel =

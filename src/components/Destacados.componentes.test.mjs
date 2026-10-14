@@ -1,7 +1,9 @@
 /** Los carriles de Inicio con las tarjetas que firmó el founder el 2026-10-10 (prototipo `docs/rediseno/prototipos/inicio-tarjetas.html`,
  *  «Firmada»; bitácora 398): la de un evento (OL-370, grande y mediana), la de un artista en «Artistas destacadxs» (E9, OL-372) y el avatar de
- *  64 de «Lugares de la semana» y «Artistas de la semana» (E5, OL-372), con sus esqueletos; ninguna lleva botón. Y el carril vacío, que no deja
- *  hueco. Con `FUENTE=<archivo .woff2 de Bricolage>` se mide con la letra de la app (dónde se corta un título); la CI usa Arial.
+ *  «Lugares de la semana» y «Artistas de la semana» (E5, OL-372), con sus esqueletos; ninguna lleva botón. Y el carril vacío, que no deja
+ *  hueco. Con lo firmado el 2026-10-12 (OL-382; prototipo `inicio-propuestas.html`, «Firmada»; bitácora 408): la XL del carril estelar (D2), el
+ *  título completo tal cual (T1) en tres líneas (T2), el marcador «Te interesa» arriba a la izquierda (I1), cuándo antes que el lugar (F1) y el
+ *  avatar de 88 con el nombre en dos líneas (N). Con `FUENTE=<archivo .woff2 de Bricolage>` se mide con la letra de la app (dónde se corta un título); la CI usa Arial.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`, como las demás `.componentes.test.mjs` del repo). */
 import { after, before, test } from "node:test";
@@ -54,7 +56,7 @@ before(async () => {
         tarjeta('ev-sin-imagen', 2, { titulo: 'Primer recital musical de otoño de la Academia Inspiratio', corto: 'Primer recital musical de otoño de la Academia Inspiratio', foto: null, clase: 'Evento', parte: 'Día 2 de 3', detalle: 'mar 13 de oct · 19:00', sitio: 'Casa de Cultura del Barrio de San Miguelito', selloFecha: sello('oct', '13') }),
         tarjeta('ev-guardada', 0, { titulo: 'DESIERTO: Observación y Espacio', clase: 'Evento', detalle: 'mié 21 de oct · 20:00', sitio: 'Aether', inicio: '2026-10-22T02:00:00Z', fin: null, zona: 'America/Mexico_City' }),
       ];
-      // Kopk Poj: «Voy» (no se dice: va su chip de cuántos van); el tributo, el taller sin cartel y el recital: «Te interesa».
+      // Kopk Poj: «Voy» (no se dice: va su chip de cuántos van); el tributo, el taller sin cartel y el recital: «Te interesa» (el marcador, OL-382).
       const decisionFirmadas = (id) => (id === 'ev-kopk' ? 'voy' : id === 'ev-interesa' || id === 'ev-sin-cartel' || id === 'ev-sin-imagen' ? 'me_interesa' : null);
       // OL-375, vecinas distintas: tres expos con el mismo cartel café (las de Friedeberg), una con cartel entre la segunda y la tercera de otra tira.
       const cafe = ['#0e0e0e', '#9b6a45', '#5b3633', '#3d3b3a'];
@@ -92,8 +94,10 @@ before(async () => {
           React.createElement(Destacados, { tarjetas: destacadxs, forma: 'artista', encabezado: 'Artistas destacadxs', memoria: 'm17', verTodos: { href: '/artistas', etiqueta: 'Ver artistas' } }),
           React.createElement(Destacados, { tarjetas: lugares, forma: 'avatar', encabezado: 'Lugares de la semana', memoria: 'm18', verTodos: { href: '/lugares', etiqueta: 'Ver lugares' } }),
           React.createElement(Destacados, { tarjetas: semana, forma: 'avatar', encabezado: 'Artistas de la semana', memoria: 'm19', verTodos: { href: '/artistas', etiqueta: 'Ver artistas' } }),
-          // Los esqueletos de carga de Inicio: los de eventos (OL-370), grande y mediano, y los de artistas y avatares (OL-372).
-          React.createElement('div', { id: 'esqueletos' }, ...['grande', 'mediana', 'artista', 'avatar'].map((forma) => React.createElement(CarrilEsqueleto, { key: forma, forma }))),
+          // OL-382 (D2): el carril estelar, con la tarjeta XL.
+          React.createElement(Destacados, { tarjetas: firmadas, forma: 'xl', encabezado: 'Carril firmado XL', memoria: 'm22', estadoDe: decisionFirmadas }),
+          // Los esqueletos de carga de Inicio: los de eventos (OL-370), grande y mediano, los de artistas y avatares (OL-372) y el XL (OL-382).
+          React.createElement('div', { id: 'esqueletos' }, ...['grande', 'mediana', 'artista', 'avatar', 'xl'].map((forma) => React.createElement(CarrilEsqueleto, { key: forma, forma }))),
         );
       }
       createRoot(document.getElementById('root')).render(React.createElement(App));
@@ -160,13 +164,16 @@ test("un carril vacío no deja hueco: se recoge a alto 0 y no se oye", async (t)
 const firmada = (p, carril, id) => seccion(p, carril).locator(`a[href="/eventos/${id}"]`);
 const caja = (r) => [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10];
 
-test("firmada: el cartel entero en 4:5, grande 165×206 y mediana 132×165; desde 1048, 190×237,5 y 152×190", async (t) => {
+test("firmada: el cartel entero en 4:5, XL+ 280×350, grande 165×206 y mediana 132×165; desde 1048, 322,4×403, 190×237,5 y 152×190", async (t) => {
   const p = await pagina(t);
   const portada = (pg, carril, id) => firmada(pg, carril, id).evaluate((a) => a.firstElementChild.getBoundingClientRect().toJSON());
+  assert.deepEqual(caja(await portada(p, "Carril firmado XL", "ev-kopk")), [280, 350], "OL-382 (D2), XL+ desde OL-387: la XL del carril estelar");
   assert.deepEqual(caja(await portada(p, "Carril firmado", "ev-kopk")), [165, 206.3]);
   assert.deepEqual(caja(await portada(p, "Carril firmado mediano", "ev-kopk")), [132, 165]);
-  assert.deepEqual(caja(await portada(p, "Carril firmado", "ev-sin-cartel")), [165, 206.3], "sin cartel, la portada mide lo mismo");
+  assert.deepEqual(caja(await portada(p, "Carril firmado", "ev-sin-imagen")), [165, 206.3], "sin cartel, la portada mide lo mismo");
+  assert.deepEqual(caja(await portada(p, "Carril firmado XL", "ev-sin-imagen")), [280, 350], "sin cartel, la XL también");
   const ancha = await pagina(t, 1280);
+  assert.deepEqual(caja(await portada(ancha, "Carril firmado XL", "ev-kopk")), [322.4, 403]);
   assert.deepEqual(caja(await portada(ancha, "Carril firmado", "ev-kopk")), [190, 237.5]);
   assert.deepEqual(caja(await portada(ancha, "Carril firmado mediano", "ev-kopk")), [152, 190]);
   // Una sola tarjeta no se estira a lo ancho.
@@ -210,7 +217,7 @@ test("firmada: el sello de fecha va arriba a la derecha (8 px), con el mes en vi
   assert.deepEqual(await firmada(p, "Carril firmado", "ev-guardada").locator("span[title]").evaluate((s) => [s.querySelector("small").textContent, s.querySelector("b").textContent]), ["oct", "21"]);
 });
 
-test("firmada: un solo chip abajo a la izquierda: «Te interesa» en violeta claro o cuántos van en vidrio; «Vas» no se dice", async (t) => {
+test("firmada: un solo chip abajo a la izquierda, cuántos van, en vidrio; «Vas» no se dice", async (t) => {
   const p = await pagina(t);
   const chip = (id, texto) =>
     firmada(p, "Carril firmado", id).evaluate((a, texto) => {
@@ -220,11 +227,10 @@ test("firmada: un solo chip abajo a la izquierda: «Te interesa» en violeta cla
       const r = s.getBoundingClientRect();
       return { izquierda: Math.round(r.left - c.left), abajo: Math.round(c.bottom - r.bottom), fondo: getComputedStyle(s).backgroundColor, color: getComputedStyle(s).color };
     }, texto);
-  const interesa = await chip("ev-interesa", "Te interesa");
-  assert.deepEqual([interesa.izquierda, interesa.abajo], [8, 8]);
-  assert.equal(interesa.color, "rgb(109, 52, 200)");
-  assert.notEqual(interesa.fondo, "rgba(255, 255, 255, 0.92)", "«Te interesa» lleva el violeta claro de lo decidido, no el vidrio");
-  assert.equal(await chip("ev-interesa", "3 van"), null, "«Te interesa» gana a cuántos van: un solo chip");
+  // OL-382 (I1): «Te interesa» ya no es un chip (es el marcador arriba a la izquierda: la prueba siguiente); el chip de cuántos van sigue.
+  assert.equal(await chip("ev-interesa", "Te interesa"), null, "«Te interesa» ya no es chip");
+  const van = await chip("ev-interesa", "3 van");
+  assert.deepEqual([van.izquierda, van.abajo, van.fondo, van.color], [8, 8, "rgba(255, 255, 255, 0.92)", "rgb(26, 26, 26)"]);
   // OL-375: en la portada del sistema el chip va en la zona del título, solo en su renglón, a 12 del borde como el título (lo mide la prueba de la
   // portada); el mismo vidrio.
   const taller = await chip("ev-taller", "1 va");
@@ -235,6 +241,32 @@ test("firmada: un solo chip abajo a la izquierda: «Te interesa» en violeta cla
   assert.equal(await firmada(p, "Carril firmado", "ev-kopk").getAttribute("aria-label"), "Presentación de Kopk Poj: el aliento de la montaña. hoy · 13:00. Centro de las Artes de San Luis Potosí Centenario (CEART). Vas. 1 va");
   // Sin nadie, ningún chip; «Hoy» ya no es un chip: va en la línea de cuándo.
   assert.equal(await firmada(p, "Carril firmado", "ev-festival").evaluate((a) => [...a.querySelectorAll("span")].filter((s) => /^(\d+ van?|Te interesa|Hoy)$/.test(s.textContent)).length), 0);
+});
+
+test("OL-382 (I1): lo que te interesa es el marcador relleno en violeta, en un círculo de vidrio de 36 arriba a la izquierda (8 px); el sello sigue a la derecha", async (t) => {
+  const p = await pagina(t);
+  const marcador = (carril, id) =>
+    firmada(p, carril, id).evaluate((a) => {
+      const c = a.firstElementChild.getBoundingClientRect();
+      const m = a.querySelector('span[title="Te interesa"]');
+      if (!m) return null;
+      const r = m.getBoundingClientRect(), i = m.querySelector("svg"), ri = i.getBoundingClientRect(), sello = a.querySelector("span[title]:not([title='Te interesa'])").getBoundingClientRect();
+      const centro = [r.left + r.width / 2, r.top + r.height / 2];
+      return {
+        caja: [Math.round(r.left - c.left), Math.round(r.top - c.top), Math.round(r.width), Math.round(r.height)], radio: getComputedStyle(m).borderRadius, fondo: getComputedStyle(m).backgroundColor,
+        icono: [Math.round(ri.width), getComputedStyle(i).fill, getComputedStyle(i).stroke], selloDerecha: Math.round(c.right - sello.right), bajoElDedo: document.elementFromPoint(...centro)?.closest("a") === a,
+      };
+    });
+  const esperado = { caja: [8, 8, 36, 36], radio: "50%", fondo: "rgba(255, 255, 255, 0.92)", icono: [20, "rgb(109, 52, 200)", "none"], selloDerecha: 8, bajoElDedo: true };
+  // Sobre un cartel, en la portada del sistema (el taller sin cartel) y en la del evento sin imagen (P7), en la grande, la mediana y la XL.
+  for (const [carril, id] of [["Carril firmado", "ev-interesa"], ["Carril firmado", "ev-sin-cartel"], ["Carril firmado", "ev-sin-imagen"], ["Carril firmado mediano", "ev-interesa"], ["Carril firmado XL", "ev-interesa"], ["Carril firmado XL", "ev-sin-imagen"]]) {
+    await firmada(p, carril, id).evaluate((a) => { a.closest("ul").scrollLeft = a.parentElement.offsetLeft - 20; a.scrollIntoView({ block: "center" }); });
+    assert.deepEqual(await marcador(carril, id), esperado, `${carril} ${id}`);
+  }
+  // Sin «Me interesa» (nada, o «Voy»), ningún marcador.
+  for (const id of ["ev-kopk", "ev-festival", "ev-largo"]) assert.equal(await marcador("Carril firmado", id), null, id);
+  // El nombre del enlace lo sigue diciendo, con cuántos van.
+  assert.equal(await firmada(p, "Carril firmado", "ev-interesa").getAttribute("aria-label"), "Tributo a The Beatles con Help!. hoy · 20:00. Cineteca Alameda. Te interesa. 3 van");
 });
 
 test("firmada: la clase arriba del título solo si no es un evento, con su sesión; chica y en mayúsculas (en la portada del sistema, en su tinta)", async (t) => {
@@ -257,44 +289,49 @@ test("firmada: la clase arriba del título solo si no es un evento, con su sesi�
   assert.equal(await ceja("ev-kopk"), null, "un evento no se rotula");
 });
 
-test("firmada: debajo, el título como oración en dos líneas como mucho, cortado en palabra con «…»; luego el lugar en gris y cuándo en violeta", async (t) => {
+test("firmada: debajo, el título completo tal cual en tres líneas como mucho, cortado en palabra con «…»; luego cuándo en violeta y el lugar en gris", async (t) => {
   const p = await pagina(t);
   const pie = (id, carril = "Carril firmado") =>
     firmada(p, carril, id).evaluate((a) => {
       const b = a.querySelector(":scope > b");
-      const [lugar, cuando] = [...a.children].slice(-2);
+      // OL-382 (F1): primero cuándo y luego el lugar.
+      const [cuando, lugar] = [...a.children].slice(-2);
       const r = (e) => e.getBoundingClientRect();
       const linea = parseFloat(getComputedStyle(b).lineHeight);
       return {
         titulo: b.textContent, lineas: Math.round(r(b).height / linea), sobra: b.scrollHeight - b.clientHeight > linea / 2, letra: getComputedStyle(b).fontSize, color: getComputedStyle(b).color,
         lugar: [lugar.textContent, getComputedStyle(lugar).color, getComputedStyle(lugar).fontSize], cuando: [cuando.textContent, getComputedStyle(cuando).color],
-        orden: r(b).bottom <= r(lugar).top + 0.5 && r(lugar).bottom <= r(cuando).top + 0.5, debajoDelCartel: r(a.firstElementChild).bottom + 8 <= r(b).top + 0.5,
+        orden: r(b).bottom <= r(cuando).top + 0.5 && r(cuando).bottom <= r(lugar).top + 0.5, debajoDelCartel: r(a.firstElementChild).bottom + 8 <= r(b).top + 0.5,
       };
     });
+  // OL-382 (T1): el título tal cual lo escribió quien publicó, sin título corto calculado (el `corto` que trae la tarjeta ya no se enseña).
   const kopk = await pie("ev-kopk");
-  assert.equal(kopk.titulo, "Presentación de Kopk Poj");
+  assert.equal(kopk.titulo, "Presentación de Kopk Poj: el aliento de la montaña");
   assert.deepEqual([kopk.letra, kopk.color], ["17px", "rgb(26, 26, 26)"]);
   assert.deepEqual(kopk.lugar, ["Centro de las Artes de San Luis Potosí Centenario (CEART)", "rgb(92, 92, 92)", "15px"]);
   assert.deepEqual(kopk.cuando, ["hoy · 13:00", "rgb(109, 52, 200)"]);
-  assert.ok(kopk.orden && kopk.debajoDelCartel, "título, lugar y cuándo, en ese orden, a 8 px del cartel");
-  // Un título que no cabe: dos líneas y la última palabra entera con «…», nunca media palabra.
+  assert.ok(kopk.orden && kopk.debajoDelCartel, "título, cuándo y lugar, en ese orden, a 8 px del cartel");
+  // Un título largo (T2): hasta tres líneas; si no cabe, la última palabra entera con «…», nunca media palabra. Con Arial (la CI) la mediana lo
+  // corta en la tercera línea; con la letra de la app (más angosta) cabe entero en tres, en la mediana y en la grande.
   const completo = "Día Nacional de las Cactáceas en el Jardín Botánico El Izotal";
-  const largo = await pie("ev-largo");
-  assert.ok(largo.titulo.endsWith("…") && largo.lineas <= 2 && !largo.sobra, JSON.stringify(largo));
-  const sinPuntos = largo.titulo.slice(0, -1);
-  assert.ok(completo.startsWith(sinPuntos) && completo[sinPuntos.length] === " ", "se corta en palabra entera: " + largo.titulo);
-  // Con la letra de la app, el corte del prototipo firmado: en la mediana de «Esta semana», «Día Nacional de las Cactáceas en el…».
-  const largoMediano = await pie("ev-largo", "Carril firmado mediano");
-  assert.ok(largoMediano.titulo.endsWith("…") && largoMediano.lineas <= 2 && !largoMediano.sobra, JSON.stringify(largoMediano));
-  if (process.env.FUENTE) {
-    assert.equal(largo.titulo, "Día Nacional de las Cactáceas en el Jardín…");
-    assert.equal(largoMediano.titulo, "Día Nacional de las Cactáceas en el…");
+  const enPalabra = (t) => t === completo || (t.endsWith("…") && completo.startsWith(t.slice(0, -1)) && completo[t.length - 1] === " ");
+  for (const carril of ["Carril firmado mediano", "Carril firmado", "Carril firmado XL"]) {
+    const largo = await pie("ev-largo", carril);
+    assert.ok(largo.lineas <= 3 && !largo.sobra && enPalabra(largo.titulo), `${carril}: ${JSON.stringify(largo)}`);
+    if (process.env.FUENTE) assert.equal(largo.titulo, completo, carril);
   }
-  // Como oración: «DESIERTO» → «Desierto» (la tarjeta guardada no trae título corto: se saca del título).
-  assert.equal((await pie("ev-guardada")).titulo, "Desierto");
-  // La mediana, un escalón más chica.
+  if (!process.env.FUENTE) {
+    const largoMediano = await pie("ev-largo", "Carril firmado mediano");
+    assert.ok(largoMediano.titulo.endsWith("…") && largoMediano.lineas === 3, "con Arial, la mediana corta en la tercera línea: " + JSON.stringify(largoMediano));
+  }
+  // Tal cual: las mayúsculas de quien publicó no pasan a oración (antes, «DESIERTO» → «Desierto»).
+  assert.equal((await pie("ev-guardada")).titulo, "DESIERTO: Observación y Espacio");
+  // La mediana, un escalón más chica; la XL+ (D2, OL-387), más grande: el título a 21 y las líneas a 17.
   const mediana = await pie("ev-kopk", "Carril firmado mediano");
   assert.deepEqual([mediana.letra, mediana.lugar[2]], ["15px", "14px"]);
+  const xl = await pie("ev-kopk", "Carril firmado XL");
+  assert.deepEqual([xl.letra, xl.lugar[2], xl.titulo], ["21px", "17px", "Presentación de Kopk Poj: el aliento de la montaña"]);
+  assert.ok(xl.orden && xl.debajoDelCartel);
 });
 
 // OL-375: las portadas del sistema (prototipo firmado `docs/rediseno/prototipos/portadas-sistema.html`, «Firmada»; bitácora 405).
@@ -310,7 +347,7 @@ const medirPortada = (enlace) =>
     const primera = chip ?? ceja ?? titulo;
     const arriba = parseFloat(getComputedStyle(primera).marginTop), zonaTop = r(primera).top - arriba;
     const formas = svg ? [...svg.querySelectorAll("[data-capa] > *")] : [];
-    const [lugar, cuando] = [...a.children].slice(-2);
+    const [cuando, lugar] = [...a.children].slice(-2);
     const escala = pr.width / 100;
     const lum = (c) => { const v = c.match(/\d+/g).slice(0, 3).map((x) => { x /= 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
     const fondo = getComputedStyle(portada).backgroundColor, tinta = getComputedStyle(titulo).color;
@@ -331,11 +368,11 @@ const medirPortada = (enlace) =>
       apilados: !ceja || r(ceja).bottom <= r(titulo).top - 2.5,
       ceja: ceja ? ceja.innerText.replace(/ /g, " ") : null,
       titulo: [titulo.textContent, getComputedStyle(titulo).fontSize, getComputedStyle(titulo).fontWeight, getComputedStyle(titulo).lineHeight, getComputedStyle(titulo).textTransform],
-      debajo: [lugar.textContent, cuando.textContent], fuera: r(lugar).top >= pr.bottom,
+      debajo: [cuando.textContent, lugar.textContent], fuera: r(cuando).top >= pr.bottom,
     };
   });
 
-test("OL-375: festival, expo y taller llevan la portada del sistema: el color de su cartel, el patrón de su clase y, en su zona, el chip solo en su renglón, la ceja y el título en su tinta; debajo, el lugar y cuándo", async (t) => {
+test("OL-375: festival, expo y taller llevan la portada del sistema: el color de su cartel, el patrón de su clase y, en su zona, el chip solo en su renglón, la ceja y el título en su tinta; debajo, cuándo y el lugar", async (t) => {
   const p = await pagina(t);
   // El laboratorio (taller): su cartel olivo va a la banda clara, con tinta negra; triángulos.
   const taller = await medirPortada(firmada(p, "Carril firmado", "ev-taller"));
@@ -345,8 +382,9 @@ test("OL-375: festival, expo y taller llevan la portada del sistema: el color de
   assert.deepEqual(taller.zona, { izquierda: 12, derecha: 12, abajo: 12, arriba: 12 });
   assert.deepEqual(taller.chip, { izquierda: 12, solo: true }, "el chip, solo en su renglón arriba de la ceja (comentario 1 del founder)");
   assert.ok(taller.apilados, "la ceja arriba del título");
-  assert.deepEqual(taller.titulo.slice(1), ["19px", "800", "20.14px", "none"], "19 px 800, interlineado 1,06, como oración");
-  assert.deepEqual(taller.debajo, ["Aurora Co-Lab", "hoy · 17:00"]);
+  assert.deepEqual(taller.titulo.slice(1), ["19px", "800", "20.14px", "none"], "19 px 800, interlineado 1,06");
+  assert.ok("Laboratorio de exploración sonora: escucha activa".startsWith(taller.titulo[0].replace(/…$/, "")), "tal cual (OL-382, T1): " + taller.titulo[0]);
+  assert.deepEqual(taller.debajo, ["hoy · 17:00", "Aurora Co-Lab"]);
   assert.ok(taller.fuera);
   // Cinema (festival): el rojo del cartel de su próximo acto, la banda oscura con tinta crema; círculos.
   const cinema = await medirPortada(firmada(p, "Carril firmado", "ev-festival"));
@@ -356,14 +394,18 @@ test("OL-375: festival, expo y taller llevan la portada del sistema: el color de
   assert.deepEqual([expo.fondo, expo.tinta, expo.formas], ["rgb(193, 176, 34)", "rgb(26, 26, 26)", ["rect"]]);
   // El título, a 4,5:1 o más (5:1 por construcción): 5,84, 5,30 y 7,87, los de la bitácora 405.
   assert.deepEqual([taller.contraste, cinema.contraste, expo.contraste], [5.84, 5.3, 7.87]);
-  // La mediana: el título a 17 px y la zona con 8 arriba.
+  // La mediana: el título a 17 px y la zona con 8 arriba. La XL (OL-382, D2; XL+ desde OL-387): el título a 26 y la zona con 16 por todos lados.
   const mediana = await medirPortada(firmada(p, "Carril firmado mediano", "ev-taller"));
   assert.deepEqual([mediana.titulo[1], mediana.zona], ["17px", { izquierda: 12, derecha: 12, abajo: 12, arriba: 8 }]);
+  const xl = await medirPortada(firmada(p, "Carril firmado XL", "ev-taller"));
+  assert.deepEqual([xl.titulo[1], xl.zona, xl.sello], ["26px", { izquierda: 16, derecha: 16, abajo: 16, arriba: 16 }, [8, 8]]);
+  // T1: el festival, tal cual, con sus mayúsculas (antes, «Cinema»).
+  assert.ok("CINEMA: XV Festival de Cine México-Alemania".startsWith((await medirPortada(firmada(p, "Carril firmado XL", "ev-festival"))).titulo[0].replace(/…$/, "")));
 });
 
 test("OL-375: las figuras se apoyan en la línea de la zona del título y no pasan de ella ni pisan el sello; el dibujo se recorta ahí", async (t) => {
   const p = await pagina(t);
-  for (const [carril, ids] of [["Carril firmado", ["ev-taller", "ev-festival", "ev-expo", "ev-sin-cartel"]], ["Carril firmado mediano", ["ev-taller"]], ["Carril vecinas", ["ex-hilaridad", "ex-lineas", "ex-privacidad"]]]) {
+  for (const [carril, ids] of [["Carril firmado", ["ev-taller", "ev-festival", "ev-expo", "ev-sin-cartel"]], ["Carril firmado mediano", ["ev-taller"]], ["Carril firmado XL", ["ev-taller", "ev-festival", "ev-expo", "ev-sin-cartel"]], ["Carril vecinas", ["ex-hilaridad", "ex-lineas", "ex-privacidad"]]]) {
     for (const id of ids) {
       const m = await medirPortada(firmada(p, carril, id));
       const que = `${carril} ${id}`;
@@ -372,6 +414,14 @@ test("OL-375: las figuras se apoyan en la línea de la zona del título y no pas
       assert.ok(m.fondoFiguras <= 0.6 && m.fondoFiguras > -1.5, `${que}: la figura se apoya en la línea (${m.fondoFiguras} px)`);
       assert.equal(m.pisaSello, false, `${que}: la esquina del sello queda libre`);
     }
+  }
+  // OL-382 (I1): con el marcador arriba a la izquierda (el taller sin cartel te interesa), las figuras tampoco lo pisan.
+  for (const carril of ["Carril firmado", "Carril firmado XL"]) {
+    const pisa = await firmada(p, carril, "ev-sin-cartel").evaluate((a) => {
+      const m = a.querySelector('span[title="Te interesa"]').getBoundingClientRect();
+      return [...a.querySelectorAll("[data-capa] > *")].some((f) => { const b = f.getBoundingClientRect(); return b.right > m.left + 0.5 && b.left < m.right - 0.5 && b.bottom > m.top + 0.5 && b.top < m.bottom - 0.5; });
+    });
+    assert.equal(pisa, false, `${carril}: la esquina del marcador queda libre`);
   }
 });
 
@@ -383,15 +433,18 @@ test("OL-375: la portada del sistema conserva su 4:5 mientras su zona del títul
         .filter((a) => a.firstElementChild.tagName === "SPAN" && a.firstElementChild.querySelector(":scope > b"))
         .map((a) => {
           const pr = a.firstElementChild.getBoundingClientRect(), b = a.firstElementChild.querySelector(":scope > b").getBoundingClientRect();
-          return { id: a.getAttribute("href"), mediana: a.closest("section").querySelector("h2").textContent.includes("mediano"), alto: Math.round(pr.height * 10) / 10, ancho: pr.width, aire: Math.round(pr.bottom - b.bottom) };
+          const carril = a.closest("section").querySelector("h2").textContent;
+          return { id: a.getAttribute("href"), mediana: carril.includes("mediano"), xl: carril.includes("XL"), alto: Math.round(pr.height * 10) / 10, ancho: pr.width, aire: Math.round(pr.bottom - b.bottom) };
         }),
     );
     for (const m of medidas) {
       assert.ok(m.alto >= Math.round(m.ancho * 1.25 * 10) / 10 - 0.1, `${ancho} ${m.id}: al menos 4:5 (${m.alto})`);
-      assert.equal(m.aire, 12, `${ancho} ${m.id}: el título entero, a 12 del borde de abajo`);
+      assert.equal(m.aire, m.xl ? 16 : 12, `${ancho} ${m.id}: el título entero, a ${m.xl ? 16 : 12} del borde de abajo`);
     }
-    // Las grandes caben en 4:5; el taller de la mediana, con su chip, su ceja y el título en dos líneas, crece.
-    assert.ok(medidas.filter((m) => !m.mediana).every((m) => Math.abs(m.alto - m.ancho * 1.25) < 0.1), JSON.stringify(medidas));
+    // Las XL siempre caben en 4:5. Con el título en tres líneas (OL-382, T2) la zona de un taller con su chip y su ceja ya no cabe en la grande
+    // con Arial (la CI) y crece unos px, como la mediana; lo que no lleva chip ni ceja larga cabe en 4:5.
+    assert.ok(medidas.filter((m) => m.xl).every((m) => Math.abs(m.alto - m.ancho * 1.25) < 0.1), JSON.stringify(medidas));
+    assert.ok(medidas.filter((m) => !m.mediana && !m.xl && ["/eventos/ev-festival", "/eventos/ev-expo", "/eventos/ev-sin-imagen"].includes(m.id)).every((m) => Math.abs(m.alto - m.ancho * 1.25) < 0.1), JSON.stringify(medidas));
     const taller = medidas.find((m) => m.mediana && m.id === "/eventos/ev-taller");
     if (ancho === 390) assert.ok(taller.alto > 165, `la mediana del taller crece: ${taller.alto}`);
   }
@@ -403,13 +456,15 @@ test("OL-375 (P7): el evento sin ninguna imagen entra al sistema sin figura: el 
   assert.equal(m.img, null);
   assert.equal(m.imagenDeFondo, "none", "un color plano, ya no el degradado (E10)");
   assert.equal(m.figuras, 0, "sin figura: la figura dice la clase; el SN, sin imagen");
-  assert.deepEqual(m.simbolo, [12, 12, 20, m.tinta], "el SN donde lo tenía la tarjeta sin cartel de antes, en la tinta");
+  // Te interesa (OL-382, I1): el SN se corre a la derecha del marcador (36 + 8), en la tinta. Sin marcador, a 12 (la XL de una tarjeta sin
+  // «Me interesa» lo comprueba abajo).
+  assert.deepEqual(m.simbolo, [44, 12, 20, m.tinta], "el SN a la derecha del marcador, en la tinta");
   assert.deepEqual(m.sello, [8, 8]);
   assert.deepEqual(m.chip, { izquierda: 12, solo: true });
   assert.equal(m.ceja, "DÍA 2 DE 3");
-  assert.equal(m.titulo[4], "none", "como oración, no en mayúsculas");
+  assert.equal(m.titulo[4], "none", "tal cual, no en mayúsculas");
   assert.ok(m.contraste >= 4.5, `contraste ${m.contraste}`);
-  assert.deepEqual(m.debajo, ["Casa de Cultura del Barrio de San Miguelito", "mar 13 de oct · 19:00"]);
+  assert.deepEqual(m.debajo, ["mar 13 de oct · 19:00", "Casa de Cultura del Barrio de San Miguelito"]);
   // Un taller sin cartel ni foto: su figura (triángulos) con su respaldo; sin SN.
   const taller = await medirPortada(firmada(p, "Carril firmado", "ev-sin-cartel"));
   assert.deepEqual([taller.formas, taller.simbolo], [["polygon"], null]);
@@ -464,23 +519,33 @@ test("OL-375 (P8): con «Reducir movimiento» las figuras no se mueven; sin él,
   assert.ok(Math.abs(m.recorte - sinGiro - 4) < 0.01, `con el giro encendido el recorte baja 4 unidades (comentario 3): ${sinGiro} → ${m.recorte}`);
 });
 
-test("firmada: el esqueleto de carga mide lo que su carril: la columna, la portada y una tarjeta con el título en dos líneas", async (t) => {
+test("firmada: el esqueleto de carga mide lo que su carril: la columna, la portada y una tarjeta con el título en dos líneas (grande, mediana y XL)", async (t) => {
   const p = await pagina(t);
   const medir = (loc) =>
     loc.evaluate((li) => {
       const tarjeta = li.firstElementChild, portada = tarjeta.firstElementChild.getBoundingClientRect();
       return { columna: Math.round(li.getBoundingClientRect().width * 10) / 10, portada: [Math.round(portada.width * 10) / 10, Math.round(portada.height * 10) / 10], alto: Math.round(tarjeta.getBoundingClientRect().height) };
     });
-  for (const [i, carril] of [[1, "Carril firmado"], [2, "Carril firmado mediano"]]) {
+  for (const [i, carril] of [[1, "Carril firmado"], [2, "Carril firmado mediano"], [5, "Carril firmado XL"]]) {
     const esqueleto = await medir(p.locator(`#esqueletos > section:nth-child(${i}) li`).first());
-    // La tarjeta de referencia: título en dos líneas, sin ceja, con lugar y cuándo (el carril más común).
-    const real = await medir(firmada(p, carril, "ev-largo").locator("xpath=.."));
+    // La tarjeta de referencia: con cartel, título en dos líneas, sin ceja, con cuándo y lugar (el carril más común). Cuál ocupa dos líneas
+    // depende del ancho y de la letra (desde OL-382 el título va completo, en hasta tres): se busca en el carril.
+    const referencia = await seccion(p, carril).locator("li").evaluateAll((lis) =>
+      lis.findIndex((li) => {
+        const a = li.firstElementChild, b = a.querySelector(":scope > b");
+        const ceja = [...a.children].some((x) => getComputedStyle(x).letterSpacing !== "normal");
+        return a.firstElementChild.tagName === "IMG" && b && !ceja && Math.round(b.getBoundingClientRect().height / parseFloat(getComputedStyle(b).lineHeight)) === 2;
+      }),
+    );
+    assert.ok(referencia >= 0, `${carril}: hay una tarjeta de referencia`);
+    const real = await medir(seccion(p, carril).locator("li").nth(referencia));
     assert.deepEqual(esqueleto, real, carril);
   }
 });
 
-// OL-372: «Artistas destacadxs» con la tarjeta de un evento (E9) y los avatares de 64 de «Lugares de la semana» y «Artistas de la semana» (E5),
-// del prototipo firmado (`htmlArtistaEvento`, `htmlEntidad` con `forma: 'avatar'`, `.tira.avatar`, `.avatar .en`).
+// OL-372: «Artistas destacadxs» con la tarjeta de un evento (E9) y los avatares de «Lugares de la semana» y «Artistas de la semana» (E5),
+// del prototipo firmado (`htmlArtistaEvento`, `htmlEntidad` con `forma: 'avatar'`, `.tira.avatar`, `.avatar .en`); desde OL-382 (N), la foto
+// grande de 88 en columnas de 108 con el nombre en dos líneas (`.tira.avatar.n-grande` del prototipo `inicio-propuestas.html`).
 const artistaE9 = (p, id) => seccion(p, "Artistas destacadxs").locator(`a[href^="/artistas/${id}"]`);
 const avatar = (p, carril, href) => seccion(p, carril).locator(`a[href^="${href}"]`);
 
@@ -519,7 +584,7 @@ test("E9: «Nuevo video» o «Nuevo audio» sobre la foto, abajo a la izquierda,
   assert.equal(await artistaE9(p, "a-largo").evaluate((a) => [...a.querySelectorAll("span")].filter((s) => /^Nuevo (video|audio)$/.test(s.textContent)).length), 0);
 });
 
-test("E9: debajo, la disciplina en la ceja, el nombre tal como está escrito, el género en gris y, si tiene fecha, la fecha en violeta", async (t) => {
+test("E9: debajo, la disciplina en la ceja, el nombre tal como está escrito, si tiene fecha, la fecha en violeta y luego el género en gris", async (t) => {
   const p = await pagina(t);
   const pie = (id) =>
     artistaE9(p, id).evaluate((a) => {
@@ -542,15 +607,13 @@ test("E9: debajo, la disciplina en la ceja, el nombre tal como está escrito, el
   assert.ok(markos.orden);
   const leon = await pie("a-leon");
   assert.equal(leon.titulo[0], "Un León Marinero", "el nombre no pasa a oración");
-  assert.deepEqual(leon.lineasDebajo, [["folk y canción de autor", "rgb(92, 92, 92)", "14px"], ["jue 15 de oct · 19:00", "rgb(109, 52, 200)", "14px"]]);
-  assert.ok(leon.orden, "ceja, nombre, género y fecha, en ese orden");
-  // Un nombre que no cabe: dos líneas como mucho, cortado en palabra entera con «…».
+  // OL-382 (F1): primero la fecha y luego el género.
+  assert.deepEqual(leon.lineasDebajo, [["jue 15 de oct · 19:00", "rgb(109, 52, 200)", "14px"], ["folk y canción de autor", "rgb(92, 92, 92)", "14px"]]);
+  assert.ok(leon.orden, "ceja, nombre, fecha y género, en ese orden");
+  // Un nombre que no cabe: tres líneas como mucho (OL-382, T2: el mismo título de la tarjeta), cortado en palabra entera con «…».
   const completo = "Orquesta Sinfónica de San Luis Potosí y su coro de cámara";
   const largo = await pie("a-largo");
-  assert.ok(largo.titulo[0].endsWith("…") && largo.lineas <= 2 && !largo.sobra, JSON.stringify(largo));
-  const sinPuntos = largo.titulo[0].slice(0, -1);
-  assert.ok(completo.startsWith(sinPuntos) && completo[sinPuntos.length] === " ", "se corta en palabra entera: " + largo.titulo[0]);
-  if (process.env.FUENTE) assert.equal(largo.titulo[0], "Orquesta Sinfónica de San Luis Potosí y su…");
+  assert.ok(largo.lineas <= 3 && !largo.sobra && (largo.titulo[0] === completo || completo.startsWith(largo.titulo[0].slice(0, -1))), JSON.stringify(largo));
   // Una ficha por completar no tiene disciplina que decir: sin ceja.
   assert.equal((await pie("a-por-completar")).ceja, null);
 });
@@ -570,29 +633,37 @@ test("E9: sin foto, la imagen ya generada con el símbolo SN, del tamaño de un 
   assert.equal(orden.at(-1), "/artistas/a-sin-foto", "lo que tiene foto va antes: " + orden.join(" "));
 });
 
-test("E5: avatares de 64 en columnas de 76 con 8 entre ellas; la foto redonda al centro, el nombre a 12 px en una línea con «…»", async (t) => {
+test("E5 con N (OL-382): avatares de 88 en columnas de 108 con 8 entre ellas; la foto redonda al centro, el nombre a 12 px en dos líneas a 15", async (t) => {
   for (const ancho of [390, 1280]) {
     const p = await pagina(t, ancho);
     for (const carril of ["Lugares de la semana", "Artistas de la semana"]) {
       // El margen lateral es el de toda la página (`--gutter`: 20 en el teléfono; a lo ancho crece para centrar el contenido).
       const tira = await seccion(p, carril).locator("ul").evaluate((ul) => ({ columnas: getComputedStyle(ul).gridAutoColumns, hueco: getComputedStyle(ul).columnGap, relleno: [getComputedStyle(ul).paddingTop, getComputedStyle(ul).paddingLeft === getComputedStyle(ul.previousElementSibling).paddingLeft, getComputedStyle(ul).paddingBottom] }));
-      assert.deepEqual(tira, { columnas: "76px", hueco: "8px", relleno: ["4px", true, "8px"] }, `${carril} a ${ancho}`);
+      assert.deepEqual(tira, { columnas: "108px", hueco: "8px", relleno: ["4px", true, "8px"] }, `${carril} a ${ancho}`);
       if (ancho === 390) assert.equal(await seccion(p, carril).locator("ul").evaluate((ul) => getComputedStyle(ul).paddingLeft), "20px");
     }
-    const m = await avatar(p, "Lugares de la semana", "/lugares/l-paz").evaluate((a) => {
+    const m = await avatar(p, "Lugares de la semana", "/lugares/l-muni").evaluate((a) => {
       const r = (e) => e.getBoundingClientRect();
       const li = a.parentElement, img = a.querySelector("img"), nombre = img.nextElementSibling, cs = getComputedStyle(nombre);
       return {
         li: [Math.round(r(li).width), Math.round(r(li).height * 10) / 10], foto: [Math.round(r(img).left - r(li).left), Math.round(r(img).width), Math.round(r(img).height), getComputedStyle(img).borderRadius],
-        nombre: [Math.round((r(nombre).top - r(img).bottom) * 10) / 10, Math.round(r(nombre).height * 10) / 10, cs.fontSize, cs.fontWeight, cs.whiteSpace, cs.textOverflow, cs.textAlign, cs.color],
+        nombre: [Math.round((r(nombre).top - r(img).bottom) * 10) / 10, Math.round(r(nombre).height * 10) / 10, cs.fontSize, cs.fontWeight, cs.lineHeight, cs.whiteSpace, cs.textAlign, cs.color],
       };
     });
-    assert.deepEqual(m, { li: [76, 92.1], foto: [6, 64, 64, "50%"], nombre: [12, 16.1, "14px", "700", "nowrap", "ellipsis", "center", "rgb(26, 26, 26)"] }, `a ${ancho}`);
+    assert.deepEqual(m, { li: [108, 118.8], foto: [10, 88, 88, "50%"], nombre: [12, 18.8, "15px", "700", "18.75px", "normal", "center", "rgb(26, 26, 26)"] }, `a ${ancho}`);
   }
-  // El nombre que no cabe se corta en su línea, al centro de su columna.
+  // El nombre que no cabe en dos líneas se corta en palabra entera con «…», al centro de su columna; el entero, en el nombre del enlace.
   const p = await pagina(t);
-  const largo = await avatar(p, "Lugares de la semana", "/lugares/l-largo").evaluate((a) => { const n = a.querySelector("img").nextElementSibling; return { cortado: n.scrollWidth > n.clientWidth, ancho: Math.round(n.getBoundingClientRect().width), centro: Math.round(n.getBoundingClientRect().left + n.getBoundingClientRect().width / 2 - a.getBoundingClientRect().left) }; });
-  assert.deepEqual(largo, { cortado: true, ancho: 76, centro: 38 });
+  const completo = "Casa de Cultura del Barrio de San Miguelito";
+  const largo = await avatar(p, "Lugares de la semana", "/lugares/l-largo").evaluate((a) => {
+    const n = a.querySelector("img").nextElementSibling, r = n.getBoundingClientRect(), linea = parseFloat(getComputedStyle(n).lineHeight);
+    return { texto: n.textContent, lineas: Math.round(r.height / linea), sobra: n.scrollHeight - n.clientHeight > linea / 2, ancho: Math.round(r.width), centro: Math.round(r.left + r.width / 2 - a.getBoundingClientRect().left) };
+  });
+  assert.ok(largo.texto.endsWith("…") && completo.startsWith(largo.texto.slice(0, -1)) && completo[largo.texto.length - 1] === " ", JSON.stringify(largo));
+  assert.deepEqual([largo.lineas, largo.sobra, largo.centro], [2, false, 54], JSON.stringify(largo));
+  if (process.env.FUENTE) assert.equal(largo.texto, "Casa de Cultura del Barrio de San…");
+  // Uno que cabe en dos líneas va entero.
+  assert.equal(await avatar(p, "Lugares de la semana", "/lugares/l-paz").evaluate((a) => a.querySelector("img").nextElementSibling.textContent), "Teatro de la Paz");
 });
 
 test("E5: sin botón y sin el detalle de antes; solo si hay novedad, «Nuevo video» o «Nuevo audio» en violeta a 8 px del nombre", async (t) => {
@@ -609,11 +680,11 @@ test("E5: sin botón y sin el detalle de antes; solo si hay novedad, «Nuevo vid
       const nombre = a.querySelector("img").nextElementSibling, n = nombre.nextElementSibling;
       if (!n) return { alto: Math.round(r(a).height * 10) / 10 };
       const cs = getComputedStyle(n);
-      return { texto: n.textContent, hueco: Math.round((r(n).top - r(nombre).bottom) * 10) / 10, letra: [cs.fontSize, cs.fontWeight, cs.color, cs.textAlign], alto: Math.round(r(a).height * 10) / 10 };
+      return { texto: n.textContent, hueco: Math.round((r(n).top - r(nombre).bottom) * 10) / 10, letra: [cs.fontSize, cs.fontWeight, cs.color, cs.textAlign], alAbajo: Math.round(r(a).bottom - r(n).bottom) };
     });
-  assert.deepEqual(await novedad("/artistas/s-video"), { texto: "Nuevo video", hueco: 8, letra: ["15px", "400", "rgb(109, 52, 200)", "center"], alto: 119.6 });
+  assert.deepEqual(await novedad("/artistas/s-video"), { texto: "Nuevo video", hueco: 8, letra: ["15px", "400", "rgb(109, 52, 200)", "center"], alAbajo: 0 });
   assert.equal((await novedad("/artistas/s-audio")).texto, "Nuevo audio");
-  assert.deepEqual(await novedad("/artistas/s-nada"), { alto: 92.1 });
+  assert.deepEqual(await novedad("/artistas/s-nada"), { alto: 118.8 });
 });
 
 test("E5: el nombre del enlace lleva el nombre completo y la novedad; sin foto, la imagen ya generada con el símbolo SN, redonda", async (t) => {
@@ -622,7 +693,7 @@ test("E5: el nombre del enlace lleva el nombre completo y la novedad; sin foto, 
   assert.equal(await avatar(p, "Artistas de la semana", "/artistas/s-video").getAttribute("aria-label"), "Denisse Hervert. Nuevo video");
   assert.equal(await avatar(p, "Artistas de la semana", "/artistas/s-audio").getAttribute("aria-label"), "Abril Merlot. Nuevo audio");
   const foto = await avatar(p, "Lugares de la semana", "/lugares/l-sin-foto").locator("img").evaluate((i) => ({ src: new URL(i.src).pathname, lado: Math.round(i.getBoundingClientRect().width), radio: getComputedStyle(i).borderRadius }));
-  assert.deepEqual(foto, { src: "/sin-foto.png", lado: 64, radio: "50%" });
+  assert.deepEqual(foto, { src: "/sin-foto.png", lado: 88, radio: "50%" });
 });
 
 test("E9 y E5: el centro de cada tarjeta y de cada avatar es su enlace (nada encima) y cada enlace se toca en 44 o más", async (t) => {
@@ -652,7 +723,7 @@ test("E9 y E5: los esqueletos miden lo que su carril", async (t) => {
     });
   // La de un artista: la foto, la disciplina, el nombre en una línea, el género y la fecha (el carril del prototipo con Un León Marinero).
   assert.deepEqual(await medir(p.locator("#esqueletos > section:nth-child(3) li").first()), await medir(artistaE9(p, "a-leon").locator("xpath=..")));
-  // El avatar: el círculo y el nombre, sin novedad.
-  assert.deepEqual(await medir(p.locator("#esqueletos > section:nth-child(4) li").first()), await medir(avatar(p, "Lugares de la semana", "/lugares/l-paz").locator("xpath=..")));
+  // El avatar: el círculo y el nombre en dos líneas (OL-382, N), sin novedad.
+  assert.deepEqual(await medir(p.locator("#esqueletos > section:nth-child(4) li").first()), await medir(avatar(p, "Lugares de la semana", "/lugares/l-largo").locator("xpath=..")));
   assert.equal(await p.locator("#esqueletos > section:nth-child(4) li").count(), 5, "cinco avatares, para llenar el ancho como el carril");
 });

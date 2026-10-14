@@ -1,7 +1,7 @@
 // Respaldo local 100 % inventado: imita Auth y PostgREST de Supabase sobre el fixture (nunca toca producción).
 // node server.mjs [puerto]  →  http://127.0.0.1:8823
 import http from "node:http";
-import { tablas, rpcs, sesionDe, subDe, FK } from "./fixture.mjs";
+import { tablas, rpcs, sesionDe, subDe, FK, LLAVE_SERVICIO, extrasServicio } from "./fixture.mjs";
 
 const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8823);
 const CORS = {
@@ -223,7 +223,9 @@ function quiereObjeto(req) {
   return String(req.headers.accept || "").includes("vnd.pgrst.object");
 }
 function consultar(tabla, url, req) {
-  const filas = tablas[tabla] || [];
+  // Con la llave de servicio (OL-401) se leen además las filas que solo ella ve (`extrasServicio`); con cualquier otra, solo el fixture.
+  const conLlave = req.headers.apikey === LLAVE_SERVICIO;
+  const filas = [...(tablas[tabla] || []), ...(conLlave ? (extrasServicio[tabla] || []) : [])];
   const nodos = parseSelect(url.searchParams.get("select"));
   const { propios, embebidos } = parseFiltros(url.searchParams);
   let resultado = [];
@@ -294,6 +296,16 @@ const servidor = http.createServer(async (req, res) => {
   // Escrituras: se anotan y se contestan con lo mismo (nunca cambian el fixture, salvo asistencias/seguimientos en memoria)
   const cuerpo = await leerCuerpo(req);
   registro.push(`  cuerpo: ${JSON.stringify(cuerpo).slice(0, 300)}`);
+  // OL-391: «Se canceló» se marca en memoria (otro arranque empieza limpio), para ver la ficha cancelada tras el toque. Los permisos reales se
+  // prueban en PostgreSQL (`supabase/tests/pg/eventos-cancelado.test.mjs`).
+  if (req.method === "PATCH" && tabla === "eventos" && cuerpo && Object.keys(cuerpo).join() === "cancelado") {
+    const { propios } = parseFiltros(url.searchParams);
+    const cambiadas = tablas.eventos.filter((fila) => propios.every((c) => cumple(fila, c)));
+    for (const fila of cambiadas) fila.cancelado = cuerpo.cancelado === true;
+    const filas = cambiadas.map((fila) => proyectar("eventos", fila, parseSelect(url.searchParams.get("select")), []));
+    if (quiereObjeto(req)) return filas.length === 1 ? responder(res, 200, filas[0]) : responder(res, 406, { code: "PGRST116", message: `${filas.length} filas` });
+    return responder(res, 200, filas);
+  }
   const filas = Array.isArray(cuerpo) ? cuerpo : cuerpo ? [cuerpo] : [];
   const conId = filas.map((f) => ({ id: crypto.randomUUID(), ...f }));
   if (quiereObjeto(req)) return responder(res, req.method === "POST" ? 201 : 200, conId[0] || {});

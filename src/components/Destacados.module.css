@@ -74,8 +74,8 @@
   flex: none;
 }
 
-/* El carril: una columna por tarjeta, alineadas arriba; `.cartelGrande`, `.cartelMediana` y `.avatar` ponen el ancho de la columna y, las dos
-   primeras, el alto de la portada (`--foto`). Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. Cada tarjeta es un
+/* El carril: una columna por tarjeta, alineadas arriba; `.cartelXl`, `.cartelGrande`, `.cartelMediana` y `.avatar` ponen el ancho de la columna
+   y, las tres primeras, el alto de la portada (`--foto`). Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. Cada tarjeta es un
    solo enlace, sin nada encima (OL-370 y OL-372: sin botones). */
 .carril {
   display: grid;
@@ -106,6 +106,12 @@
  * destacadxs» (E9, OL-372) (132×165; se ven dos y media). La tarjeta es `inicio/TarjetaEvento`; aquí solo el ancho de la columna y el alto de su
  * portada (`--foto`).
  */
+/* D2 (OL-382; prototipo `inicio-propuestas.html`, «Firmada»): el carril estelar («Destacados» o «Seleccionados para ti») con la tarjeta XL,
+   desde OL-387 la XL+: 280×350 (se ve una y cuarto; «aprovecha para crecer proporcionalmente un poco más el carril»). */
+.cartelXl {
+  --foto: var(--tarjeta-xl-foto);
+  grid-auto-columns: var(--tarjeta-xl);
+}
 .cartelGrande {
   --foto: var(--tarjeta-cartel-foto);
   grid-auto-columns: var(--tarjeta-grande);
@@ -114,9 +120,10 @@
   --foto: var(--tarjeta-cartel-mediana-foto);
   grid-auto-columns: var(--tarjeta-cartel-mediana);
 }
-/* E5 (OL-372): «Lugares de la semana» y «Artistas de la semana» en avatares de 64, cada columna con 12 de aire y 8 entre columnas (`.tira.avatar`
-   del prototipo). La tarjeta es `inicio/TarjetaAvatar`. */
+/* E5 (OL-372) con N (OL-382, «foto grande»): «Lugares de la semana» y «Artistas de la semana» en avatares de 88, cada columna de 108 (20 de
+   aire, para que el nombre quepa en dos líneas) y 8 entre columnas (`.tira.avatar.n-grande` del prototipo `inicio-propuestas.html`). La tarjeta
+   es `inicio/TarjetaAvatar`. */
 .avatar {
-  grid-auto-columns: calc(var(--avatar-carril) + var(--espacio-3));
+  grid-auto-columns: calc(var(--avatar-carril) + var(--espacio-5));
   column-gap: var(--espacio-2);
 }

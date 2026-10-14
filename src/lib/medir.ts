@@ -39,10 +39,29 @@ export const EVENTOS = {
   seguir: { que: ["lugar", "artista"], cambio: ["puesto", "quitado"] },
   /** Una búsqueda que llegó con respuesta: si trajo algo o nada. Nunca lo escrito. */
   busqueda: { resultados: ["si", "no"] },
-  /** Compartir una ficha: la hoja del teléfono, WhatsApp (sin hoja) o «Copiar» el enlace. */
-  compartir: { que: ["evento", "lugar", "artista"], medio: ["hoja", "whatsapp", "copiado"] },
+  /**
+   * Compartir una ficha o la app (el banner de Inicio, OL-388): la hoja del teléfono (abierta y no cancelada), WhatsApp (sin hoja) o «Copiar» el
+   * enlace. Copiar también cuenta como compartir (founder, 2026-10-12: «copiar sí cuenta como compartir»); el medio dice cuál fue.
+   */
+  compartir: { que: ["evento", "lugar", "artista", "app"], medio: ["hoja", "whatsapp", "copiado"] },
+  /**
+   * «Tu año» (OL-394): la imagen se compartió con la hoja del teléfono (abierta y no cancelada) o se guardó (en Fotos o descargada). De quién es
+   * el año (la persona, un artista o un lugar), nunca cuál. Cancelar la hoja no cuenta.
+   */
+  tu_anio: { que: ["persona", "artista", "lugar"], medio: ["hoja", "guardado"] },
+  /**
+   * La «Presentación» del artista o el «Informe de actividad» del lugar en PDF (OL-396): se compartió con la hoja del teléfono (abierta y no
+   * cancelada) o se descargó. De qué ficha es (artista: la presentación; lugar: el informe), nunca cuál. El tipo de documento no va aparte: sale
+   * de `que` uno a uno, y la lista admite dos datos como mucho (`MAX_DATOS`). Cancelar la hoja no cuenta.
+   */
+  documento: { que: ["artista", "lugar"], medio: ["hoja", "guardado"] },
   /** Avisos encendidos: por correo o en el teléfono. */
   aviso_activado: { canal: ["correo", "telefono"] },
+  /**
+   * «Se canceló» (OL-391): quien gestiona un evento que ya pasó lo marcó desde el menú de su ficha, o lo deshizo («Deshacer» del aviso o «No se
+   * canceló»). Como todo, nunca para la administración. Sin ids ni títulos.
+   */
+  cancelar: { que: ["marcar", "deshacer"] },
   /** Un reporte enviado, y de qué tipo de ficha. */
   reporte: { que: ["lugar", "evento", "perfil", "artista"] },
   /** El creador de cartel (OL-336) se abrió, y desde dónde: el menú de la ficha, su acción redonda, «Publicado» del alta u otro camino. */
@@ -149,8 +168,11 @@ export function tandaMedida(indice: number): (typeof TANDAS_CARTEL)[number] {
   return TANDAS_CARTEL[indice] ?? "primera";
 }
 
-/** Qué ficha se comparte, por su dirección (`/eventos/…`, `/lugares/…`, `/artistas/…`); otra cosa (la app, una persona) no se mide. */
-export function fichaDeEnlace(url: string): DatosDe<"compartir">["que"] | null {
+/**
+ * Qué ficha se comparte, por su dirección (`/eventos/…`, `/lugares/…`, `/artistas/…`); otra cosa (una persona, la raíz) no se mide desde el botón de
+ * una ficha. La app la mide su banner, con `que: "app"` (OL-388).
+ */
+export function fichaDeEnlace(url: string): Exclude<DatosDe<"compartir">["que"], "app"> | null {
   try {
     const seccion = new URL(url, "https://somosnosotros.org").pathname.split("/")[1];
     return seccion === "eventos" ? "evento" : seccion === "lugares" ? "lugar" : seccion === "artistas" ? "artista" : null;

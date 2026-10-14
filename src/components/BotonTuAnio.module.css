@@ -1,0 +1,17 @@
+/* «Tu año» (OL-394, `.boton-ano` del prototipo firmado): a todo lo ancho, del alto de un toque, en el violeta suave de lo que se elige, con el
+   regalo y la letra en violeta. El aire alrededor lo pone quien lo usa (`className`): al final de la sección abierta o al pie de Mi perfil. */
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border-radius: var(--radio-pildora);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 800;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}

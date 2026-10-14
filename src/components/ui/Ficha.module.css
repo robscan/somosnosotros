@@ -461,9 +461,14 @@
 /* 10. Escritorio: dos columnas. Desde 1048 la página de la ficha reparte la misma rejilla en dos: la portada a la izquierda, con
    sus esquinas, y a la derecha el título (ya sin velo: en tinta, sobre el fondo), los avisos y el cuerpo. Cada pieza deja su aire
    del lado izquierdo a la columna: la portada lo pone antes y las demás lo empiezan en el borde de la suya. Solo la página: la ficha
-   de la hoja de Lugares es un panel y no cambia. */
+   de la hoja de Lugares es un panel y no cambia.
+   OL-403 (founder, 2026-10-13: «presentar el cartel completo sin cortarse»): la portada va entera, con su proporción (un cartel 4:5 o 9:16,
+   una foto 3:2), a lo ancho de su columna y con el alto de la ventana como tope (`--alto-portada`); la caja se ciñe a la imagen. Se queda
+   pegada bajo la barra de la app mientras la columna de la derecha pasa (`--portada-arriba`). */
 @media (min-width: 1048px) {
   .enPagina {
+    --portada-arriba: calc(var(--barra-flujo, 0px) + var(--espacio-5));
+    --alto-portada: calc(100dvh - var(--portada-arriba) - var(--espacio-5));
     padding-top: var(--espacio-5); /* la portada es una tarjeta con esquinas: deja su aire bajo la barra de la app */
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     grid-template-areas:
@@ -478,9 +483,32 @@
   .enPagina > .portada {
     grid-area: portada;
     align-self: start;
+    justify-self: start;
+    position: sticky;
+    top: var(--portada-arriba);
     margin-left: var(--gutter);
     border-radius: var(--radio-grande);
     overflow: hidden;
+  }
+  /* La imagen (`Cartel`: el botón que la abre y su imagen) a su tamaño natural, topada por el ancho de la columna y el alto de la ventana: así
+     nunca se recorta. La de la cabecera oscura deja su caja de teléfono (3b) y hace lo mismo. Sin portada, la imagen del símbolo SN (una `img`
+     suelta, sin botón) sigue en su caja de siempre: 3:2 y, en la cabecera oscura, 4:3. */
+  .enPagina > .portada > *,
+  .enPagina > .portada > button > img {
+    position: static;
+    display: block;
+    max-width: 100%;
+  }
+  .enPagina > .portada > button,
+  .enPagina > .portada > button > img {
+    width: auto;
+    height: auto;
+    max-height: var(--alto-portada);
+    aspect-ratio: auto;
+  }
+  .enPagina > .portada.oscura > img {
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
   .enPagina > .titulo {
     grid-area: titulo;
@@ -501,18 +529,12 @@
   .enPagina > .cuerpo {
     padding-left: 0;
   }
-  /* La cabecera oscura en dos columnas: la portada a la izquierda como siempre (con su 4:3, sin estirarse) y, a la derecha, el título y los
-     números sobre la banda, una tarjeta con las esquinas de la portada y su aire por dentro (la portada ya no se estira: `align-self` de
-     arriba). */
+  /* La cabecera oscura en dos columnas: la portada a la izquierda como las demás, entera (OL-403; antes, una tarjeta 4:3 que recortaba el
+     cartel) y, a la derecha, el título y los números sobre la banda, una tarjeta con las esquinas de la portada y su aire por dentro. */
   .enPagina > .portada.oscura {
+    display: block;
     min-height: 0;
-    position: static;
-  }
-  .enPagina > .portada.oscura > * {
-    position: static;
-  }
-  .enPagina > .portada.oscura {
-    aspect-ratio: 4 / 3; /* a dos columnas la portada vuelve a su tarjeta 4:3, sin el alto mínimo del teléfono */
+    background: none;
   }
   .enPagina > .titulo.oscura {
     margin-right: var(--gutter);
@@ -529,4 +551,12 @@
     padding: var(--espacio-1) var(--espacio-5) var(--espacio-5);
     border-radius: 0 0 var(--radio-grande) var(--radio-grande);
   }
+}
+
+/* «Se canceló» en el chip de la cabecera (OL-391): mismo sitio y tamaño que «Ya pasó», en el rojo apagado de error sobre su fondo suave (como la
+   etiqueta del historial, `ui/SeCancelo`), sobre la portada, en la columna ancha y en la cabecera oscura. */
+.titulo > .etiqueta.cancelado,
+.enPagina > .titulo.oscura > .etiqueta.cancelado {
+  background: var(--error-suave);
+  color: var(--error);
 }
