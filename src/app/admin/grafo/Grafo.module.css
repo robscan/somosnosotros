@@ -2,7 +2,7 @@
    lista). Hasta 1047 el árbol y la lista son hojas que suben sobre la escena; desde 1048 (el corte de las columnas anchas) son columnas.
    Fondo oscuro con los tokens de la banda de las fichas; el botón «Claro» lo pasa al tono del contenido. Los colores de la nube los pone el
    motor (`--g-c-*`) a partir de los mismos tokens, así la leyenda y la escena dicen lo mismo.
-   1. Armazón y tema · 2. Barra · 3. Escena y flotantes · 4. Árbol y lista · 5. Hojas */
+   1. Armazón y tema · 2. Barra y capas · 3. Escena y flotantes · 4. Árbol y lista · 5. Hojas */
 
 /* ---------- 1. Armazón y tema ---------- */
 .app {
@@ -18,9 +18,10 @@
   display: grid;
   height: calc(100dvh - var(--barra-flujo, 0px));
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-areas:
     "barra"
+    "capas"
     "escena";
   background: var(--g-fondo);
   color: var(--g-texto);
@@ -48,7 +49,7 @@
   cursor: pointer;
 }
 
-/* ---------- 2. Barra ---------- */
+/* ---------- 2. Barra y capas ---------- */
 .barra {
   grid-area: barra;
   display: grid;
@@ -124,6 +125,78 @@
   .fps {
     display: block;
   }
+}
+
+/* Las capas, en una fila de píldoras bajo la barra (OL-405): cada una se ve de `--alto-chip` y se toca de `--toque-min` (su ::after sale de la caja,
+   y la fila les deja ese aire arriba y abajo). Corre hasta los bordes con el mismo aire lateral que la barra y, si no cabe, se desliza de lado. */
+.capas {
+  grid-area: capas;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: calc((var(--toque-min) - var(--alto-chip)) / 2) var(--espacio-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--g-borde);
+  background: var(--g-fondo);
+}
+.capas::-webkit-scrollbar {
+  display: none;
+}
+/* Cada capa es un interruptor: desplegada, su punto es lleno; plegada, hueco y con el texto apagado */
+.capaBoton {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--alto-chip);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--g-borde);
+  border-radius: var(--radio-pildora);
+  background: var(--g-opaco);
+  color: var(--g-texto);
+  font-size: var(--letra-sm);
+  white-space: nowrap;
+}
+.capaBoton::after {
+  content: "";
+  position: absolute;
+  inset: calc((var(--alto-chip) - var(--toque-min)) / 2 - 1px) calc(1px * -1); /* el 1px del borde: el toque parte de su borde */
+}
+.capaBoton::before {
+  content: "";
+  flex: none;
+  box-sizing: border-box;
+  width: var(--espacio-2);
+  height: var(--espacio-2);
+  border: 2px solid var(--c);
+  border-radius: 50%;
+  background: var(--c);
+}
+.capaBoton[aria-pressed="false"] {
+  color: var(--g-suave);
+}
+.capaBoton[aria-pressed="false"]::before {
+  background: transparent;
+}
+/* «Yo» va aparte, junto a Asistente: sin punto, y encendido se llena como los demás botones de la barra */
+.yo {
+  margin-inline-start: var(--espacio-2);
+  min-width: var(--toque-min);
+  justify-content: center;
+}
+.yo::before {
+  display: none;
+}
+.yo[aria-pressed="true"] {
+  background: var(--g-texto);
+  border-color: var(--g-texto);
+  color: var(--g-fondo);
+}
+.yo[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* ---------- 3. Escena y flotantes ---------- */
@@ -238,7 +311,7 @@
   height: var(--control);
   color: var(--g-suave);
 }
-/* Abajo a la izquierda, una columna: la leyenda, el panel de ayuda y los botones «Lentes · Lista». Si el panel crece, lo de encima sube */
+/* Abajo a la izquierda, una columna: el panel de ayuda y los botones «Lentes · Lista». Si el panel crece, lo de encima sube */
 .pila {
   position: absolute;
   left: var(--espacio-4);
@@ -252,20 +325,15 @@
   min-width: min-content; /* a 320 los botones «Lentes · Lista» miden más que el tope: manda lo que miden */
   pointer-events: none;
 }
-/* En horizontal falta alto: la leyenda y el panel van lado a lado y los botones debajo */
+/* En horizontal falta alto: los botones y el panel van lado a lado */
 @media (max-height: 520px) {
   .pila {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas:
-      "leyenda ayuda"
-      "botones botones";
+    grid-template-areas: "botones ayuda";
     align-items: end;
     justify-items: start;
     column-gap: var(--espacio-3);
-  }
-  .pila .leyenda {
-    grid-area: leyenda;
   }
   .pila .ayuda {
     grid-area: ayuda;
@@ -273,83 +341,6 @@
   .pila .botonesHojas {
     grid-area: botones;
   }
-}
-.leyenda {
-  display: grid;
-  font-size: var(--letra-2xs);
-  color: var(--g-suave);
-}
-.capa {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--espacio-2);
-}
-/* Cada capa es un interruptor: desplegada, su punto es lleno; plegada, hueco y con el texto apagado */
-.capaBoton {
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-2);
-  min-height: var(--control);
-  color: var(--g-texto);
-  font-size: var(--letra-2xs);
-  text-align: left;
-  text-shadow:
-    0 0 var(--espacio-1) var(--g-fondo),
-    0 0 var(--espacio-2) var(--g-fondo);
-}
-.capaBoton::before {
-  content: "";
-  flex: none;
-  box-sizing: border-box;
-  width: var(--espacio-2);
-  height: var(--espacio-2);
-  border: 2px solid var(--c);
-  border-radius: 50%;
-  background: var(--c);
-}
-.capaBoton[aria-pressed="false"] {
-  color: var(--g-suave);
-}
-.capaBoton[aria-pressed="false"]::before {
-  background: transparent;
-}
-/* Bajo «Lugar»: la marca del gris de los sitios sin ficha (no es un interruptor: plegar la capa Lugar los pliega también) */
-.marcaSitio {
-  pointer-events: auto;
-  grid-column: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-2);
-  margin: 0;
-  color: var(--g-suave);
-  font-size: var(--letra-2xs);
-  text-shadow:
-    0 0 var(--espacio-1) var(--g-fondo),
-    0 0 var(--espacio-2) var(--g-fondo);
-}
-.marcaSitio::before {
-  content: "";
-  flex: none;
-  box-sizing: border-box;
-  width: var(--espacio-2);
-  height: var(--espacio-2);
-  border-radius: 50%;
-  background: var(--c);
-}
-.yo {
-  pointer-events: auto;
-  min-width: var(--control);
-}
-.yo:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.sinAsistencias {
-  margin: 0;
-  color: var(--g-suave);
-  font-size: var(--letra-2xs);
 }
 .botonesHojas {
   display: flex;
@@ -378,6 +369,12 @@
 }
 .vistas .pildora {
   box-shadow: var(--sombra-flotante);
+}
+/* En horizontal, con la fila de capas encima, el alto no alcanza para «Red» y «Desde arriba» uno sobre otro y el mando: van en una sola fila sobre el mando */
+@media (max-height: 520px) {
+  .vistas {
+    grid-auto-flow: column;
+  }
 }
 .mando {
   position: absolute;
@@ -679,8 +676,10 @@
 @media (min-width: 1048px) {
   .app {
     grid-template-columns: calc(var(--panel) * 0.68) minmax(0, 1fr) calc(var(--panel) * 0.8);
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       "barra barra barra"
+      "arbol capas lista"
       "arbol escena lista";
   }
   .arbol,

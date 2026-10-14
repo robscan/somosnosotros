@@ -19,6 +19,7 @@ import styles from "./Grafo.module.css";
  * asistencias): el interruptor «Yo» lo marca como «Tú» sin que el navegador sepa de qué cuenta es.
  * Los textos que explican cada control no están en la pantalla: cada uno lleva su clave en `data-ayuda` y su explicación vive en `ayuda.ts`
  * (OL-402, bitácora 433): la enseña el panel «Ayuda» y la lista completa el manual.
+ * Las capas son una fila de píldoras bajo la barra (OL-405, bitácora 436): solo llevan el nombre; lo que antes decían los textos largos de la leyenda vive en `ayuda.ts`.
  */
 export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; yo: number | null; calculadoEn: string }) {
   const raiz = useRef<HTMLDivElement>(null);
@@ -86,6 +87,21 @@ export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; y
         </button>
       </header>
 
+      <div className={styles.capas} role="group" aria-label="Capas">
+        <button type="button" className={styles.capaBoton} data-g="capa-lugar" data-ayuda="capa-lugar" aria-pressed="true" style={{ "--c": "var(--g-c-lugar, var(--primario))" } as CSSProperties}>
+          Lugar
+        </button>
+        <button type="button" className={styles.capaBoton} data-g="capa-artista" data-ayuda="capa-artista" aria-pressed="true" style={{ "--c": "var(--g-c-artista, var(--fondo-contenido))" } as CSSProperties}>
+          Artista
+        </button>
+        <button type="button" className={styles.capaBoton} data-g="capa-persona" data-ayuda="capa-asistente" aria-pressed="true" style={{ "--c": "var(--g-c-persona, var(--destacado))" } as CSSProperties}>
+          Asistente
+        </button>
+        <button type="button" className={`${styles.capaBoton} ${styles.yo}`} data-g="yo" data-ayuda="yo" aria-pressed="false" aria-disabled={yo === null}>
+          Yo
+        </button>
+      </div>
+
       <nav className={styles.arbol} data-g="arbol" aria-label="Lentes, filtros y ajustes" />
 
       <section className={styles.escena} aria-label="Escena en 3D">
@@ -99,30 +115,6 @@ export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; y
         <section className={styles.tarjeta} data-g="tarjeta" aria-live="polite" />
         {sinWebgl && <p className={styles.sinWebgl}>Este navegador no puede dibujar el grafo en 3D.</p>}
         <div className={styles.pila}>
-          <div className={styles.leyenda}>
-            <div className={styles.capa}>
-              <button type="button" className={styles.capaBoton} data-g="capa-lugar" data-ayuda="capa-lugar" aria-pressed="true" style={{ "--c": "var(--g-c-lugar, var(--primario))" } as CSSProperties}>
-                Lugar · en su posición real
-              </button>
-              <p className={styles.marcaSitio} data-ayuda="sitio" style={{ "--c": "var(--g-c-sitio, var(--texto-suave))" } as CSSProperties}>
-                Sitio sin ficha · por dar de alta
-              </p>
-            </div>
-            <div className={styles.capa}>
-              <button type="button" className={styles.capaBoton} data-g="capa-artista" data-ayuda="capa-artista" aria-pressed="true" style={{ "--c": "var(--g-c-artista, var(--fondo-contenido))" } as CSSProperties}>
-                Artista · sobre el lugar donde más toca
-              </button>
-            </div>
-            <div className={styles.capa}>
-              <button type="button" className={styles.capaBoton} data-g="capa-persona" data-ayuda="capa-asistente" aria-pressed="true" style={{ "--c": "var(--g-c-persona, var(--destacado))" } as CSSProperties}>
-                Asistente · anónimo, posición inventada
-              </button>
-              <button type="button" className={`${styles.pildora} ${styles.yo}`} data-g="yo" data-ayuda="yo" aria-pressed="false" disabled={yo === null}>
-                Yo
-              </button>
-            </div>
-            {yo === null && <p className={styles.sinAsistencias}>Aún no has asistido ni seguido</p>}
-          </div>
           <Ayuda className={styles.ayuda} raiz={raiz} diccionario={AYUDA} manual={RUTA_MANUAL} memoria="grafo-admin:ayuda" />
           <div className={styles.botonesHojas}>
             <button type="button" className={styles.flotante} data-g="abrirArbol" data-ayuda="lentes">

@@ -55,7 +55,7 @@ export const AYUDA: DiccionarioAyuda = {
     titulo: "Lentes de diagnóstico",
     texto: "Seis preguntas ya hechas sobre la red. Elegir una enfoca la escena y deja la respuesta en la lista, lista para copiar.",
     detalle:
-      "Una lente cambia el filtro y la lectura, mueve la cámara y escribe su respuesta en la lista (en el teléfono, en la hoja «Lista»). Si necesita una capa que estaba plegada, la despliega y lo avisa bajo el título de la lista. Para quitarla, vuelve a tocarla o elige un filtro.",
+      "Una lente cambia el filtro y la lectura, mueve la cámara y escribe su respuesta en la lista (en el teléfono, en la hoja «Lista»). Si necesita una capa que estaba plegada, la despliega y lo avisa bajo el título de la lista; al quitar la lente, esa capa vuelve a plegarse. Para quitarla, vuelve a tocarla o elige un filtro.",
     manual: "lentes",
   },
   "lente-zonas": {
@@ -123,9 +123,9 @@ export const AYUDA: DiccionarioAyuda = {
   // ---------- Capas y Yo ----------
   "capa-lugar": {
     titulo: "Capa Lugar",
-    texto: "Los lugares y los sitios sin ficha, en su posición real. Tócala para plegarla: se van sus puntos y las líneas que los tocan.",
+    texto: "Los lugares (violeta) y los sitios sin ficha (gris), en su posición real. Tócala para plegarla: se van sus puntos y sus líneas.",
     detalle:
-      "Plegar una capa quita de la escena sus puntos y todas las líneas que los tocan, y también de la lista, de las cuentas del árbol y de las de la barra; el tamaño de lo que queda no cambia. Se recuerda en este aparato. Una lente que necesita una capa plegada la despliega.",
+      "Las capas son las píldoras bajo la barra (Lugar, Artista y Asistente), con «Yo» al lado; un punto lleno es capa desplegada y uno hueco, plegada. Plegar una capa quita de la escena sus puntos y todas las líneas que los tocan, y también de la lista, de las cuentas del árbol y de las de la barra; el tamaño de lo que queda no cambia. Se recuerda en este aparato. Una lente que necesita una capa plegada la despliega mientras está puesta y, al quitarla, la vuelve a plegar; si tocas la capa con la lente puesta, mandas tú.",
     manual: "capas",
   },
   sitio: {
@@ -137,19 +137,19 @@ export const AYUDA: DiccionarioAyuda = {
   },
   "capa-artista": {
     titulo: "Capa Artista",
-    texto: "Los artistas, sobre el lugar donde más tocan. Tócala para plegarla, junto con el punto «por conectar».",
+    texto: "Los artistas, flotando sobre el lugar donde más tocan. Tócala para plegarla, junto con el punto «por conectar».",
   },
   "capa-asistente": {
     titulo: "Capa Asistente",
-    texto: "Los asistentes, anónimos y en una posición inventada: la base no guarda dónde está nadie.",
+    texto: "Los asistentes, anónimos y en una posición inventada: la base no guarda dónde está nadie. Tócala para plegarla.",
     detalle:
       "Su posición sale de los lugares a los que van, nunca de una ubicación; quien solo sigue, queda entre los lugares que sigue y donde más tocan los artistas que sigue. Desde el 13 de octubre de 2026 (decisión del founder, solo para Administración) basta un «Voy» o un «Me interesa» para que salgan sus líneas, y quien solo sigue ya es un punto con sus líneas «sigue a». Siguen sin nombre, perfil ni foto.",
     manual: "asistentes",
   },
   yo: {
     titulo: "Yo",
-    texto: "Marca tu propio punto entre los asistentes con un anillo y la palabra «Tú»; los demás siguen anónimos.",
-    detalle: "Sin asistencias ni seguimientos tuyos no hay punto: el interruptor queda apagado. El navegador solo recibe el número de tu punto, nunca de qué cuenta es cada uno.",
+    texto: "Marca tu propio punto entre los asistentes con un anillo y la palabra «Tú». Sin asistencias ni seguimientos tuyos, queda apagado.",
+    detalle: "Los demás asistentes siguen anónimos. Sin asistencias ni seguimientos tuyos no hay punto: el interruptor queda apagado (se ve atenuado y no hace nada). El navegador solo recibe el número de tu punto, nunca de qué cuenta es cada uno.",
     manual: "yo",
   },
 
