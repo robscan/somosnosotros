@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { enlaceAltaLugar } from "@/lib/armazon";
 import type { Grafo } from "@/lib/grafo";
 import { textoDatosDe } from "./datosDe";
 
@@ -10,7 +11,7 @@ import { textoDatosDe } from "./datosDe";
  */
 
 export type Estilos = Record<string, string>;
-type Tipo = "lugar" | "artista" | "persona" | "resumen";
+type Tipo = "lugar" | "sitio" | "artista" | "persona" | "resumen";
 type Nodo = {
   tipo: Tipo;
   clase: string;
@@ -27,12 +28,18 @@ type Nodo = {
   ciudad?: string;
   fechas?: number;
   lugares?: number;
+  sitios?: number;
+  /** Solo en un sitio sin ficha: su posición y si ningún evento le dio nombre (para el enlace al alta de lugar). */
+  lat?: number;
+  lng?: number;
+  sinNombre?: boolean;
   suelto?: boolean;
   sitioLibre?: boolean;
   tramo?: number;
   inventada?: boolean;
 };
-type Linea = { a: number; b: number; t: string; w: number; d: number[]; par?: "artista" | "lugar" | "persona" };
+/** `fino`: «sigue a» (más delgada y tenue). Sin días (`d` vacío), una línea está activa siempre. */
+type Linea = { a: number; b: number; t: string; w: number; d: number[]; par?: "artista" | "lugar" | "persona"; fino?: boolean };
 type Filtro = { tipo: string | null; clase: string | null };
 type Item = { i?: number; nombre: string; sub?: string; color: string; grupo?: boolean; n?: number };
 type Resultado = { titulo: string; items: Item[]; aviso?: string };
@@ -63,6 +70,7 @@ const ETIQUETA: Record<string, string> = {
   cine: "Cine",
   circo: "Circo",
   por_completar: "Por completar",
+  sitio: "Sitios sin ficha",
 };
 const etiqueta = (k: string) => ETIQUETA[k] ?? k;
 const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
@@ -103,8 +111,11 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   // ---------- Nodos ----------
   const nodos: Nodo[] = [];
   for (const l of DATOS.lugares) nodos.push({ tipo: "lugar", clase: l.tipo, nombre: l.nombre, x: l.x, y: 0, z: l.z, peso: l.seguidores + l.asistentes, seguidores: l.seguidores, asistentes: l.asistentes, eventos: l.eventos, proximos: l.proximos, d: l.d, ciudad: l.ciudad });
+  // Los sitios sin ficha (OL-404) van tras los lugares, en el suelo, con el mismo tamaño por seguidores (0) y asistencias
+  const baseSit = nodos.length;
+  for (const s of DATOS.sitios) nodos.push({ tipo: "sitio", clase: "sitio", nombre: s.nombre, x: s.x, y: 0, z: s.z, peso: s.asistentes, seguidores: 0, asistentes: s.asistentes, eventos: s.eventos, proximos: s.proximos, d: s.d, lat: s.lat, lng: s.lng, sinNombre: !!s.sinNombre });
   const baseArt = nodos.length;
-  for (const a of DATOS.artistas) nodos.push({ tipo: "artista", clase: a.disciplina, nombre: a.nombre, x: a.x, y: a.y, z: a.z, peso: a.seguidores + a.asistentes, seguidores: a.seguidores, asistentes: a.asistentes, fechas: a.fechas, lugares: a.lugares || 0, suelto: !!a.suelto, sitioLibre: !!a.sitioLibre, ciudad: a.ciudad });
+  for (const a of DATOS.artistas) nodos.push({ tipo: "artista", clase: a.disciplina, nombre: a.nombre, x: a.x, y: a.y, z: a.z, peso: a.seguidores + a.asistentes, seguidores: a.seguidores, asistentes: a.asistentes, fechas: a.fechas, lugares: a.lugares || 0, sitios: a.sitios || 0, suelto: !!a.suelto, sitioLibre: !!a.sitioLibre, ciudad: a.ciudad });
   const basePer = nodos.length;
   DATOS.personas.forEach((p, i) => nodos.push({ tipo: "persona", clase: "persona", nombre: `Asistente anónimo ${i + 1}`, x: p.x, y: p.y, z: p.z, peso: p.tramo, tramo: p.tramo, inventada: true }));
   // El nodo resumen de los que no tienen ninguna conexión: uno solo, en el anillo exterior
@@ -117,7 +128,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
 
   // ---------- Capas plegables y «Yo» ----------
   const capas: Record<Capa, boolean> = { lugar: true, artista: true, persona: true };
-  const capaDe = (n: Nodo): Capa => (n.tipo === "lugar" ? "lugar" : n.tipo === "persona" ? "persona" : "artista"); // el nodo «por conectar» va con los artistas
+  const capaDe = (n: Nodo): Capa => (n.tipo === "lugar" || n.tipo === "sitio" ? "lugar" : n.tipo === "persona" ? "persona" : "artista"); // el nodo «por conectar» va con los artistas
   const capaVisible = (i: number) => capas[capaDe(nodos[i])];
   const yoNodo = yo !== null && yo >= 0 && yo < DATOS.personas.length ? basePer + yo : -1;
   let yoActivo = false;
@@ -142,19 +153,34 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   }
 
   // ---------- Líneas (con sus días, para el tiempo) ----------
-  const aristas: Linea[] = DATOS.aristas.map(([t, a, b, w, d]) =>
-    t === "a"
-      ? { a: baseArt + a, b, t: "toca en", w, d }
-      : t === "pl"
-        ? { a: basePer + a, b, t: "va a", w, d }
-        : t === "pa"
-          ? { a: basePer + a, b: baseArt + b, t: "fue a ver a", w, d }
-          : t === "aa"
-            ? { a: baseArt + a, b: baseArt + b, t: "tocan juntos", w, d, par: "artista" as const }
-            : t === "ll"
-              ? { a, b, t: "mismo festival", w, d, par: "lugar" as const }
-              : { a: basePer + a, b: basePer + b, t: "coinciden en eventos", w, d, par: "persona" as const },
-  );
+  const aristas: Linea[] = DATOS.aristas.map(([t, a, b, w, d]): Linea => {
+    switch (t) {
+      case "a":
+        return { a: baseArt + a, b, t: "toca en", w, d };
+      case "as":
+        return { a: baseArt + a, b: baseSit + b, t: "toca en sitio", w, d };
+      case "pl":
+        return { a: basePer + a, b, t: "va a", w, d };
+      case "psit":
+        return { a: basePer + a, b: baseSit + b, t: "va a sitio", w, d };
+      case "pa":
+        return { a: basePer + a, b: baseArt + b, t: "fue a ver a", w, d };
+      case "psa":
+        return { a: basePer + a, b: baseArt + b, t: "sigue a", w, d, fino: true };
+      case "psl":
+        return { a: basePer + a, b, t: "sigue a", w, d, fino: true };
+      case "aa":
+        return { a: baseArt + a, b: baseArt + b, t: "tocan juntos", w, d, par: "artista" };
+      case "ll":
+        return { a, b, t: "mismo festival", w, d, par: "lugar" };
+      case "ls":
+        return { a, b: baseSit + b, t: "mismo festival", w, d, par: "lugar" };
+      case "ss":
+        return { a: baseSit + a, b: baseSit + b, t: "mismo festival", w, d, par: "lugar" };
+      default:
+        return { a: basePer + a, b: basePer + b, t: "coinciden en eventos", w, d, par: "persona" };
+    }
+  });
   const vecinos: number[][] = nodos.map(() => []);
   aristas.forEach((e, i) => {
     vecinos[e.a].push(i);
@@ -177,7 +203,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   let hasta = DATOS.ultimoDia;
   let ventana = Infinity; // la línea está activa si tiene un evento en (hasta − ventana, hasta]
   const todoElTiempo = () => ventana === Infinity && hasta >= DATOS.ultimoDia;
-  const activa = (e: Linea) => todoElTiempo() || e.d.some((x) => x > hasta - ventana && x <= hasta);
+  // «Sigue a» no tiene días (seguir no es un día): esa línea está siempre activa; en cambio no hace "activo" a un punto en el periodo (ver `pintar`)
+  const activa = (e: Linea) => e.d.length === 0 || todoElTiempo() || e.d.some((x) => x > hasta - ventana && x <= hasta);
   const activas = aristas.map(() => true);
   const recalcularTiempo = () => aristas.forEach((e, i) => (activas[i] = activa(e)));
 
@@ -268,7 +295,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   escena.add(zonasMesh);
 
   // ---------- Colores por tema (de los tokens de la app; en oscuro, lugares y asistentes un poco más claros para que se lean sobre la banda) ----------
-  const colores = {} as Record<"lugar" | "artista" | "persona" | "suelto" | "sel" | "resumen" | "fondo" | "cruzada", THREE.Color>;
+  const colores = {} as Record<"lugar" | "sitio" | "artista" | "persona" | "suelto" | "sel" | "resumen" | "fondo" | "cruzada" | "sigue", THREE.Color>;
   const mezclar = (c: THREE.Color, con: THREE.Color, k: number) => c.clone().lerp(con, k);
   let claro = false;
   function leerTema() {
@@ -284,10 +311,14 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     colores.persona = claro ? destacado : mezclar(destacado, blanco, 0.2);
     colores.suelto = claro ? mezclar(token("--borde"), suave, 0.5) : mezclar(suave, blanco, 0.4);
     colores.sel = claro ? token("--texto") : blanco;
+    // El sitio sin ficha: un gris más oscuro que el de «por conectar» (y mucho más grande, porque tiene tamaño de lugar)
+    colores.sitio = claro ? suave : mezclar(suave, blanco, 0.12);
     colores.resumen = colores.suelto;
     colores.fondo = token(claro ? "--fondo-contenido" : "--banda");
     colores.cruzada = claro ? token("--texto") : blanco;
-    for (const k of ["lugar", "artista", "persona", "suelto"] as const) raiz.style.setProperty(`--g-c-${k}`, `#${colores[k].getHexString()}`);
+    // «Sigue a»: el color de persona atenuado hacia el fondo (y delgada, ver `ponerTubos`)
+    colores.sigue = mezclar(colores.persona, colores.fondo, 0.4);
+    for (const k of ["lugar", "sitio", "artista", "persona", "suelto"] as const) raiz.style.setProperty(`--g-c-${k}`, `#${colores[k].getHexString()}`);
     anillos.children.forEach((l, i) => {
       const material = (l as THREE.Line).material as THREE.LineBasicMaterial;
       material.color.set(claro ? 0x000000 : 0xffffff);
@@ -297,8 +328,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     (aroYo.material as THREE.MeshBasicMaterial).color.copy(colores.persona);
     (zonasMesh.material as THREE.MeshBasicMaterial).color.copy(destacado);
   }
-  const colorNodo = (n: Nodo) => (n.tipo === "persona" ? colores.persona : n.tipo === "lugar" ? colores.lugar : n.tipo === "resumen" ? colores.resumen : n.suelto ? colores.suelto : colores.artista);
-  const colorLinea = (e: Linea) => (e.par ? colores[e.par] : colores.cruzada);
+  const colorNodo = (n: Nodo) => (n.tipo === "persona" ? colores.persona : n.tipo === "lugar" ? colores.lugar : n.tipo === "sitio" ? colores.sitio : n.tipo === "resumen" ? colores.resumen : n.suelto ? colores.suelto : colores.artista);
+  const colorLinea = (e: Linea) => (e.fino ? colores.sigue : e.par ? colores[e.par] : colores.cruzada);
 
   // ---------- Posiciones: mapa (geografía) y red (fuerzas), con transición ----------
   const posMapa = nodos.map((n) => [n.x, n.y, n.z]);
@@ -320,7 +351,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     const P = ids.map((i) => [posMapa[i][0] * 0.5, posMapa[i][1], posMapa[i][2] * 0.5]);
     const donde = new Map(ids.map((id, j) => [id, j]));
     const E = aristas.map((e) => [donde.get(e.a), donde.get(e.b), e.w] as const).filter((x): x is readonly [number, number, number] => x[0] !== undefined && x[1] !== undefined);
-    const capa = (i: number) => (nodos[i].tipo === "lugar" ? 0 : nodos[i].tipo === "artista" ? 90 : -90);
+    const capa = (i: number) => (nodos[i].tipo === "lugar" || nodos[i].tipo === "sitio" ? 0 : nodos[i].tipo === "artista" ? 90 : -90);
     let t = 60;
     for (let it = 0; it < 260; it++) {
       const D = P.map(() => [0, 0, 0]);
@@ -428,7 +459,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     if (!filtro.tipo) return true;
     if (filtro.tipo === "sueltos") return n.tipo === "artista" && !!n.suelto;
     if (filtro.tipo === "libres") return n.tipo === "artista" && !!n.sitioLibre;
-    if (n.tipo !== filtro.tipo) return false;
+    if ((n.tipo === "sitio" ? "lugar" : n.tipo) !== filtro.tipo) return false; // el filtro «Lugares» incluye los sitios sin ficha; «Sitios sin ficha» es su subfiltro
     if (filtro.tipo === "artista" && filtro.clase === "conectados") return !n.suelto && !n.sitioLibre;
     return !filtro.clase || n.clase === filtro.clase;
   }
@@ -448,7 +479,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       dir.divideScalar(len);
       mid.addVectors(va, vb).multiplyScalar(0.5);
       q4.setFromUnitVectors(ARRIBA, dir);
-      const r = (0.5 + 0.35 * Math.sqrt(e.w)) * grosor;
+      const r = (0.5 + 0.35 * Math.sqrt(e.w)) * grosor * (e.fino ? 0.55 : 1);
       m4.compose(mid, q4, esc3.set(r, len, r));
       mesh.setMatrixAt(k, m4);
       mesh.setColorAt(k, colorLinea(e));
@@ -463,7 +494,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     if (recalcular) {
       const conAlguna = nodos.map(() => false);
       aristas.forEach((e, i) => {
-        if (activas[i]) {
+        // «Sigue a» no hace activo a un punto en un periodo (no tiene días); con todo el tiempo a la vista, cualquier línea activa vale
+        if (activas[i] && (e.d.length > 0 || todoElTiempo())) {
           conAlguna[e.a] = true;
           conAlguna[e.b] = true;
         }
@@ -800,8 +832,9 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       return;
     }
     const n = nodos[seleccion];
-    tarjeta.dataset.ayuda = n.tipo === "resumen" ? "por-conectar" : "tarjeta";
-    const c = n.tipo === "persona" ? "var(--g-c-persona)" : n.tipo === "lugar" ? "var(--g-c-lugar)" : n.tipo === "resumen" ? "var(--g-c-suelto)" : "var(--g-c-artista)";
+    tarjeta.dataset.ayuda = n.tipo === "resumen" ? "por-conectar" : n.tipo === "sitio" ? "sitio" : "tarjeta";
+    const c =
+      n.tipo === "persona" ? "var(--g-c-persona)" : n.tipo === "lugar" ? "var(--g-c-lugar)" : n.tipo === "sitio" ? "var(--g-c-sitio)" : n.tipo === "resumen" ? "var(--g-c-suelto)" : "var(--g-c-artista)";
     let linea1: string;
     let linea2: string;
     let linea3: string;
@@ -818,34 +851,58 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       if (n.tipo === "lugar") {
         linea1 = `${etiqueta(n.clase)} · ${n.ciudad}`;
         linea2 = `${plural(n.seguidores ?? 0, "seguidor", "seguidores")} · ${plural(n.asistentes ?? 0, "asistencia", "asistencias")} · ${plural(n.eventos ?? 0, "evento", "eventos")}${n.proximos ? ` (${n.proximos} próximos)` : ""}`;
+      } else if (n.tipo === "sitio") {
+        linea1 = "Sitio sin ficha de lugar";
+        linea2 = `${plural(n.asistentes ?? 0, "asistencia", "asistencias")} · ${plural(n.eventos ?? 0, "evento", "eventos")}${n.proximos ? ` (${n.proximos} próximos)` : ""}`;
       } else if (n.tipo === "artista") {
-        linea1 = `${etiqueta(n.clase)}${n.ciudad !== "San Luis Potosí" ? ` · ${n.ciudad}` : ""}${n.suelto ? " · sin conexión" : n.sitioLibre ? " · solo en sitios libres" : ` · en ${plural(n.lugares ?? 0, "lugar", "lugares")}`}`;
+        const dondeToca = n.suelto ? " · sin conexión" : n.sitioLibre ? " · solo en sitios libres" : ` · en ${plural(n.lugares ?? 0, "lugar", "lugares")}${n.sitios ? ` y ${plural(n.sitios, "sitio sin ficha", "sitios sin ficha")}` : ""}`;
+        linea1 = `${etiqueta(n.clase)}${n.ciudad !== "San Luis Potosí" ? ` · ${n.ciudad}` : ""}${dondeToca}`;
         linea2 = `${plural(n.seguidores ?? 0, "seguidor", "seguidores")} · ${plural(n.asistentes ?? 0, "asistencia", "asistencias")} · ${plural(n.fechas ?? 0, "fecha", "fechas")}`;
       } else {
         linea1 = seleccion === yoNodo && yoActivo ? "Eres tú · los demás asistentes siguen anónimos" : "Asistente · sin nombre ni perfil";
         linea2 = `Actividad ${NIVEL[(n.tramo ?? 1) - 1]} · posición inventada (la base no guarda dónde está nadie)`;
       }
-      const porTipo: Record<string, number> = {};
+      // Las conexiones, contadas por clase de línea y por lo que hay al otro lado
+      const cu: Record<string, number> = {};
       let cuenta = 0;
       for (const ei of vecinos[seleccion]) {
         if (!activas[ei] || !capaVisible(otro(aristas[ei], seleccion))) continue;
         cuenta++;
-        const o = nodos[otro(aristas[ei], seleccion)];
-        porTipo[o.tipo] = (porTipo[o.tipo] || 0) + 1;
+        const k = `${aristas[ei].t}|${nodos[otro(aristas[ei], seleccion)].tipo}`;
+        cu[k] = (cu[k] || 0) + 1;
       }
+      const v = (k: string) => cu[k] ?? 0;
       const partes: string[] = [];
+      const si = (cuantos: number, texto: (n: number) => string) => {
+        if (cuantos) partes.push(texto(cuantos));
+      };
+      const festival = (lugares: number, sitiosSin: number) => {
+        si(lugares, (k) => `${plural(k, "lugar", "lugares")} del mismo festival`);
+        si(sitiosSin, (k) => `${plural(k, "sitio sin ficha", "sitios sin ficha")} del mismo festival`);
+      };
       if (n.tipo === "artista") {
-        if (porTipo.artista) partes.push(`toca con ${plural(porTipo.artista, "artista", "artistas")}`);
-        if (porTipo.lugar) partes.push(`en ${plural(porTipo.lugar, "lugar", "lugares")}`);
-        if (porTipo.persona) partes.push(plural(porTipo.persona, "asistente", "asistentes"));
+        si(v("tocan juntos|artista"), (k) => `toca con ${plural(k, "artista", "artistas")}`);
+        si(v("toca en|lugar"), (k) => `en ${plural(k, "lugar", "lugares")}`);
+        si(v("toca en sitio|sitio"), (k) => `en ${plural(k, "sitio sin ficha", "sitios sin ficha")}`);
+        si(v("fue a ver a|persona"), (k) => plural(k, "asistente", "asistentes"));
+        si(v("sigue a|persona"), (k) => `${k} ${k === 1 ? "lo sigue" : "lo siguen"}`);
       } else if (n.tipo === "lugar") {
-        if (porTipo.artista) partes.push(plural(porTipo.artista, "artista", "artistas"));
-        if (porTipo.lugar) partes.push(`${plural(porTipo.lugar, "lugar", "lugares")} del mismo festival`);
-        if (porTipo.persona) partes.push(plural(porTipo.persona, "asistente", "asistentes"));
+        si(v("toca en|artista"), (k) => plural(k, "artista", "artistas"));
+        festival(v("mismo festival|lugar"), v("mismo festival|sitio"));
+        si(v("va a|persona"), (k) => plural(k, "asistente", "asistentes"));
+        si(v("sigue a|persona"), (k) => `${k} ${k === 1 ? "lo sigue" : "lo siguen"}`);
+      } else if (n.tipo === "sitio") {
+        si(v("toca en sitio|artista"), (k) => plural(k, "artista", "artistas"));
+        festival(v("mismo festival|lugar"), v("mismo festival|sitio"));
+        si(v("va a sitio|persona"), (k) => plural(k, "asistente", "asistentes"));
       } else {
-        if (porTipo.lugar) partes.push(`va a ${plural(porTipo.lugar, "lugar", "lugares")}`);
-        if (porTipo.artista) partes.push(plural(porTipo.artista, "artista", "artistas"));
-        if (porTipo.persona) partes.push(`coincide con ${plural(porTipo.persona, "asistente", "asistentes")}`);
+        si(v("va a|lugar"), (k) => `va a ${plural(k, "lugar", "lugares")}`);
+        si(v("va a sitio|sitio"), (k) => `${v("va a|lugar") ? "" : "va a "}${plural(k, "sitio sin ficha", "sitios sin ficha")}`);
+        si(v("fue a ver a|artista"), (k) => `fue a ver a ${plural(k, "artista", "artistas")}`);
+        si(v("coinciden en eventos|persona"), (k) => `coincide con ${plural(k, "asistente", "asistentes")}`);
+        const sa = v("sigue a|artista");
+        const sl = v("sigue a|lugar");
+        if (sa || sl) partes.push(`sigue a ${[sa ? plural(sa, "artista", "artistas") : "", sl ? plural(sl, "lugar", "lugares") : ""].filter(Boolean).join(" · ")}`);
       }
       const periodo = todoElTiempo() ? "" : " en el periodo";
       linea3 = partes.length ? `${plural(cuenta, "conexión", "conexiones")}${periodo}: ${partes.join(" · ")}${segundo.size ? ` · a dos pasos, ${segundo.size}` : ""}` : `sin conexiones${periodo}`;
@@ -854,6 +911,12 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     punto.style.setProperty("--c", c);
     const texto = el("div");
     texto.append(el("h3", "", nombreDe(seleccion)), el("p", "", linea1), el("p", "", linea2), n.tipo === "resumen" ? el("p", "", linea3) : conAyuda(el("p", "", linea3), "lineas"));
+    if (n.tipo === "sitio") {
+      // Cada sitio sin ficha es un lugar por dar de alta: el enlace lleva al alta con el nombre (si lo hay) y el punto ya puestos
+      const alta = el("a", S.altaSitio, "Sin ficha · dar de alta el lugar");
+      alta.href = enlaceAltaLugar({ nombre: n.sinNombre ? null : n.nombre, lat: String(n.lat), lng: String(n.lng) });
+      texto.append(alta);
+    }
     const cerrar = el("button", S.cerrar, "✕");
     cerrar.type = "button";
     cerrar.setAttribute("aria-label", "Cerrar");
@@ -880,9 +943,18 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     }
     return s;
   }
+  /** Los lugares con ficha y los sitios sin ficha donde toca un artista. */
+  function sedesDeArtista(i: number) {
+    const s = new Set<number>();
+    for (const ei of vecinos[i]) {
+      const e = aristas[ei];
+      if (e.t === "toca en" || e.t === "toca en sitio") s.add(e.b);
+    }
+    return s;
+  }
   function componentesDeLugares(): number[][] {
     const con: number[] = [];
-    for (let i = 0; i < baseArt; i++) if ((nodos[i].eventos ?? 0) > 0) con.push(i);
+    for (let i = 0; i < baseSit; i++) if ((nodos[i].eventos ?? 0) > 0) con.push(i);
     const padre = new Map(con.map((i) => [i, i]));
     const raizDe = (x: number): number => {
       while (padre.get(x) !== x) {
@@ -919,7 +991,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
         const cz = gz * celda + celda / 2;
         if (Math.hypot(cx, cz) > 700) continue;
         let cerca = false;
-        for (let i = 0; i < baseArt; i++)
+        for (let i = 0; i < baseSit; i++)
           if (Math.hypot(posMapa[i][0] - cx, posMapa[i][2] - cz) < 200) {
             cerca = true;
             break;
@@ -968,16 +1040,21 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     const comp = compDe();
     const nArt = basePer - baseArt;
     const sinEvento = nodos.slice(baseArt, basePer).filter((n) => n.fechas === 0).length;
-    const porLugar = nodos.slice(0, baseArt).map((n) => n.eventos ?? 0).sort((a, b) => b - a);
+    const porLugar = nodos.slice(0, baseSit).map((n) => n.eventos ?? 0).sort((a, b) => b - a);
     const totalEv = porLugar.reduce((a, b) => a + b, 0);
     const top5 = porLugar.slice(0, 5).reduce((a, b) => a + b, 0);
-    const conEv = nodos.slice(0, baseArt).filter((n) => (n.eventos ?? 0) > 0).length;
+    const conEv = nodos.slice(0, baseSit).filter((n) => (n.eventos ?? 0) > 0).length;
     const frases: Parte[][] = [
       [{ b: `${Math.round((sinEvento / (nArt || 1)) * 10)} de cada 10 artistas` }, ` no tienen ningún evento registrado (${sinEvento} de ${nArt}).`],
-      [{ b: `El ${Math.round((top5 / (totalEv || 1)) * 100)} % de los eventos` }, ` con sede ocurre en 5 lugares; ${baseArt - conEv} de los ${baseArt} lugares no tienen ninguno.`],
+      [{ b: `El ${Math.round((top5 / (totalEv || 1)) * 100)} % de los eventos` }, ` con sede ocurre en 5 lugares; ${baseSit - conEv} de los ${baseSit} lugares no tienen ninguno.`],
       ["Los lugares con eventos forman ", { b: plural(comp.length, "cúmulo", "cúmulos") }, ` que no comparten ni un artista ni un festival entre sí (el mayor, ${comp[0]?.length ?? 0} lugares).`],
       [{ b: `${plural(zonas.zonas.length, "zona", "zonas")} de la ciudad` }, ` ${zonas.zonas.length === 1 ? "no tiene" : "no tienen"} un lugar a menos de 2 km (${zonas.celdas.length} km² dentro de 7 km del centro).`],
     ];
+    const R = DATOS.resumen;
+    if (R.personasQueSiguen)
+      frases.push([{ b: `${plural(R.personasQueSiguen, "persona sigue", "personas siguen")} a alguien` }, `; ${R.personasSoloSiguen} ${R.personasSoloSiguen === 1 ? "solo sigue" : "solo siguen"}, sin asistir aún.`]);
+    if (R.sitios)
+      frases.push([{ b: plural(R.sitios, "sitio sin ficha", "sitios sin ficha") }, ` con ${plural(R.eventosEnSitios, "evento", "eventos")}: ${R.sitios === 1 ? "es un lugar" : "cada uno es un lugar"} por dar de alta.`]);
     if (!todoElTiempo()) frases.push(["En el periodo elegido hay ", { b: `${activas.filter(Boolean).length} conexiones activas` }, ` de ${aristas.length}.`]);
     return frases;
   }
@@ -1015,7 +1092,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
         cambiarVista("mapa");
         const islas: number[] = [];
         const sinEventos: number[] = [];
-        for (let i = 0; i < baseArt; i++) {
+        for (let i = 0; i < baseSit; i++) {
           const n = nodos[i];
           if ((n.eventos ?? 0) === 0) {
             sinEventos.push(i);
@@ -1051,11 +1128,11 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
         const lis: number[] = [];
         for (let i = baseArt; i < basePer; i++) {
           const n = nodos[i];
-          if ((n.fechas ?? 0) >= 2 && n.lugares === 1) lis.push(i);
+          if ((n.fechas ?? 0) >= 2 && (n.lugares ?? 0) + (n.sitios ?? 0) === 1) lis.push(i);
         }
         enfoque = new Set(lis);
         lis.sort((a, b) => (nodos[b].fechas ?? 0) - (nodos[a].fechas ?? 0));
-        return { titulo: `Siempre en el mismo sitio · ${lis.length}`, items: lis.map((i) => ({ i, nombre: nombreL(i), sub: `${plural(nodos[i].fechas ?? 0, "fecha", "fechas")} en ${nombreL([...lugaresDeArtista(i)][0])}`, color: "var(--g-c-artista)" })) };
+        return { titulo: `Siempre en el mismo sitio · ${lis.length}`, items: lis.map((i) => ({ i, nombre: nombreL(i), sub: `${plural(nodos[i].fechas ?? 0, "fecha", "fechas")} en ${nombreL([...sedesDeArtista(i)][0])}`, color: "var(--g-c-artista)" })) };
       },
     },
     {
@@ -1067,12 +1144,12 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
         filtro = { tipo: null, clase: null };
         cambiarVista("red");
         const lis: number[] = [];
-        for (let i = baseArt; i < basePer; i++) if ((nodos[i].lugares ?? 0) >= 2) lis.push(i);
+        for (let i = baseArt; i < basePer; i++) if ((nodos[i].lugares ?? 0) + (nodos[i].sitios ?? 0) >= 2) lis.push(i);
         const sitios = new Set<number>();
-        for (const i of lis) for (const l of lugaresDeArtista(i)) sitios.add(l);
+        for (const i of lis) for (const l of sedesDeArtista(i)) sitios.add(l);
         enfoque = new Set([...lis, ...sitios]);
-        lis.sort((a, b) => (nodos[b].lugares ?? 0) - (nodos[a].lugares ?? 0));
-        return { titulo: `Puentes · ${lis.length}`, items: lis.map((i) => ({ i, nombre: nombreL(i), sub: `une ${[...lugaresDeArtista(i)].map(nombreL).join(" y ")}`, color: "var(--g-c-artista)" })) };
+        lis.sort((a, b) => (nodos[b].lugares ?? 0) + (nodos[b].sitios ?? 0) - (nodos[a].lugares ?? 0) - (nodos[a].sitios ?? 0));
+        return { titulo: `Puentes · ${lis.length}`, items: lis.map((i) => ({ i, nombre: nombreL(i), sub: `une ${[...sedesDeArtista(i)].map(nombreL).join(" y ")}`, color: "var(--g-c-artista)" })) };
       },
     },
     {
@@ -1208,13 +1285,18 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
       ponerFiltro(t, c);
     };
     li(conAyuda(fila("Todo", nodos.filter((n, i) => i !== RESUMEN && capaVisible(i) && (!n.suelto || mostrarSueltos)).length, "var(--g-suave)", !filtro.tipo && !lenteActiva, () => poner(null, null)), "filtro-todo"));
-    const lLug = li(conAyuda(fila("Lugares", DATOS.lugares.length, "var(--g-c-lugar)", filtro.tipo === "lugar" && !filtro.clase && !lenteActiva, () => poner("lugar", null)), "filtro-lugares"));
+    const lLug = li(conAyuda(fila("Lugares", DATOS.lugares.length + DATOS.sitios.length, "var(--g-c-lugar)", filtro.tipo === "lugar" && !filtro.clase && !lenteActiva, () => poner("lugar", null)), "filtro-lugares"));
     const tipos: Record<string, number> = {};
     for (const l of DATOS.lugares) tipos[l.tipo] = (tipos[l.tipo] || 0) + 1;
     const ulLug = el("ul");
     for (const [t, n] of Object.entries(tipos).sort((a, b) => b[1] - a[1])) {
       const x = el("li");
       x.append(conAyuda(fila(etiqueta(t), n, "var(--g-c-lugar)", filtro.tipo === "lugar" && filtro.clase === t && !lenteActiva, () => poner("lugar", t)), "filtro-tipo"));
+      ulLug.append(x);
+    }
+    if (DATOS.sitios.length) {
+      const x = el("li");
+      x.append(conAyuda(fila("Sitios sin ficha", DATOS.sitios.length, "var(--g-c-sitio)", filtro.tipo === "lugar" && filtro.clase === "sitio" && !lenteActiva, () => poner("lugar", "sitio"), "cada uno es un lugar por dar de alta"), "filtro-sitios"));
       ulLug.append(x);
     }
     lLug.append(ulLug);
@@ -1232,7 +1314,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     lArt.append(ulA);
     li(conAyuda(fila("Solo en sitios libres", DATOS.resumen.artistasEnSitioLibre, "var(--g-c-artista)", filtro.tipo === "libres" && !lenteActiva, () => poner("libres", null), "eventos sin ficha de lugar; se colocan en ese sitio"), "filtro-libres"));
     li(conAyuda(fila("Sin conexión", DATOS.resumen.artistasSueltos, "var(--g-c-suelto)", filtro.tipo === "sueltos" && !lenteActiva, () => poner("sueltos", null), "ni evento ni lugar: resumidos en un nodo; aquí se despliegan"), "filtro-sin-conexion"));
-    li(conAyuda(fila("Asistentes", DATOS.personas.length, "var(--g-c-persona)", filtro.tipo === "persona" && !lenteActiva, () => poner("persona", null), "anónimos; solo quienes dijeron Voy o Me interesa"), "filtro-asistentes"));
+    li(conAyuda(fila("Asistentes", DATOS.personas.length, "var(--g-c-persona)", filtro.tipo === "persona" && !lenteActiva, () => poner("persona", null), "anónimos; quienes dijeron Voy o Me interesa, o siguen a alguien"), "filtro-asistentes"));
     arbol.append(ul);
 
     arbol.append(conAyuda(el("h2", "", "Tiempo"), "tiempo"));
@@ -1352,8 +1434,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
         return {
           i,
           nombre: nombreDe(i),
-          color: n.tipo === "persona" ? "var(--g-c-persona)" : n.tipo === "lugar" ? "var(--g-c-lugar)" : n.suelto ? "var(--g-c-suelto)" : "var(--g-c-artista)",
-          sub: n.tipo === "persona" ? `actividad ${NIVEL[(n.tramo ?? 1) - 1]}` : `${etiqueta(n.clase)} · ${n.seguidores} siguen · ${n.asistentes} van`,
+          color: n.tipo === "persona" ? "var(--g-c-persona)" : n.tipo === "lugar" ? "var(--g-c-lugar)" : n.tipo === "sitio" ? "var(--g-c-sitio)" : n.suelto ? "var(--g-c-suelto)" : "var(--g-c-artista)",
+          sub: n.tipo === "persona" ? `actividad ${NIVEL[(n.tramo ?? 1) - 1]}` : n.tipo === "sitio" ? `sitio sin ficha · ${n.asistentes} van · ${plural(n.eventos ?? 0, "evento", "eventos")}` : `${etiqueta(n.clase)} · ${n.seguidores} siguen · ${n.asistentes} van`,
           n: vecinos[i].filter((ei) => activas[ei] && capaVisible(otro(aristas[ei], i))).length,
         };
       });
@@ -1436,7 +1518,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   });
   /** Las cuentas de la barra: solo lo que está a la vista (una capa plegada no cuenta ni sus líneas). */
   function pintarCifras() {
-    const n = { lugar: DATOS.lugares.length, artista: DATOS.artistas.length, persona: DATOS.personas.length };
+    const n = { lugar: DATOS.lugares.length + DATOS.sitios.length, artista: DATOS.artistas.length, persona: DATOS.personas.length };
     const aVista = (["lugar", "artista", "persona"] as const).filter((c) => capas[c]);
     const nodosVistos = aVista.reduce((s, c) => s + n[c], 0);
     const lineas = aristas.filter((e) => capaVisible(e.a) && capaVisible(e.b)).length;

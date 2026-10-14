@@ -48,7 +48,7 @@ export type NodoLugar = { nombre: string; tipo: string; ciudad: string; x: numbe
  * Un sitio sin ficha de lugar (OL-404): los eventos con `lugar_id` nulo y coordenadas que caen a 50 m o menos unos de otros. Va en el suelo (y = 0), con el
  * mismo tamaño que un lugar (seguidores 0 + asistencias a sus eventos). Son coordenadas de un sitio, no de una persona.
  */
-export type NodoSitio = { nombre: string; lat: number; lng: number; x: number; z: number; asistentes: number; eventos: number; proximos: number; d: number[] };
+export type NodoSitio = { nombre: string; /** Verdadero si ningún evento trae el nombre del sitio (el nombre es «Sitio sin ficha»). */ sinNombre?: true; lat: number; lng: number; x: number; z: number; asistentes: number; eventos: number; proximos: number; d: number[] };
 export type NodoArtista = {
   nombre: string;
   disciplina: string;
@@ -345,6 +345,7 @@ export function armarGrafo(entrada: FilasGrafo, hoy: number): GrafoConIndice {
   };
   const sitios: NodoSitio[] = eventosDeSitio.map((evs, si) => ({
     nombre: nombreDeSitio(evs),
+    ...(evs.some((e) => e.sitio_texto?.trim()) ? {} : { sinNombre: true as const }),
     lat: Math.round(puntoSitio[si].lat * 1e5) / 1e5,
     lng: Math.round(puntoSitio[si].lng * 1e5) / 1e5,
     x: redondear(posSitio[si].x),

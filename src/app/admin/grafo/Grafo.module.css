@@ -220,6 +220,17 @@
   font-size: var(--letra-xs);
   color: var(--g-suave);
 }
+/* El enlace de la tarjeta de un sitio sin ficha (OL-404): a dar de alta ese lugar */
+.altaSitio {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control);
+  color: var(--g-texto);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .cerrar {
   display: grid;
   place-items: center;
@@ -303,6 +314,29 @@
 }
 .capaBoton[aria-pressed="false"]::before {
   background: transparent;
+}
+/* Bajo «Lugar»: la marca del gris de los sitios sin ficha (no es un interruptor: plegar la capa Lugar los pliega también) */
+.marcaSitio {
+  pointer-events: auto;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  margin: 0;
+  color: var(--g-suave);
+  font-size: var(--letra-2xs);
+  text-shadow:
+    0 0 var(--espacio-1) var(--g-fondo),
+    0 0 var(--espacio-2) var(--g-fondo);
+}
+.marcaSitio::before {
+  content: "";
+  flex: none;
+  box-sizing: border-box;
+  width: var(--espacio-2);
+  height: var(--espacio-2);
+  border-radius: 50%;
+  background: var(--c);
 }
 .yo {
   pointer-events: auto;

@@ -104,6 +104,9 @@ export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; y
               <button type="button" className={styles.capaBoton} data-g="capa-lugar" data-ayuda="capa-lugar" aria-pressed="true" style={{ "--c": "var(--g-c-lugar, var(--primario))" } as CSSProperties}>
                 Lugar · en su posición real
               </button>
+              <p className={styles.marcaSitio} data-ayuda="sitio" style={{ "--c": "var(--g-c-sitio, var(--texto-suave))" } as CSSProperties}>
+                Sitio sin ficha · por dar de alta
+              </p>
             </div>
             <div className={styles.capa}>
               <button type="button" className={styles.capaBoton} data-g="capa-artista" data-ayuda="capa-artista" aria-pressed="true" style={{ "--c": "var(--g-c-artista, var(--fondo-contenido))" } as CSSProperties}>
@@ -118,7 +121,7 @@ export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; y
                 Yo
               </button>
             </div>
-            {yo === null && <p className={styles.sinAsistencias}>Aún no tienes asistencias</p>}
+            {yo === null && <p className={styles.sinAsistencias}>Aún no has asistido ni seguido</p>}
           </div>
           <Ayuda className={styles.ayuda} raiz={raiz} diccionario={AYUDA} manual={RUTA_MANUAL} memoria="grafo-admin:ayuda" />
           <div className={styles.botonesHojas}>

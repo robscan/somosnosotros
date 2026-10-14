@@ -13,7 +13,7 @@ export const AYUDA: DiccionarioAyuda = {
     titulo: "Grafo cultural",
     texto: "Lugares, artistas y asistentes como puntos, y las líneas que los unen. Arrastra para girar; pellizca para acercar.",
     detalle:
-      "Cada lugar está en su sitio real; los artistas, sobre el lugar donde más tocan, y los asistentes (anónimos), cerca de los lugares a los que van. Solo la ve Administración. Un asistente no tiene nombre, perfil ni foto: lo único que se sabe de él es a qué eventos dijo «Voy» o «Me interesa». Con el dedo: uno gira, dos acercan y mueven. Con el ratón: arrastra para girar y la rueda acerca. Con el teclado: las flechas giran e inclinan, + y − acercan y alejan, Inicio vuelve al centro y Esc suelta lo elegido.",
+      "Cada lugar está en su sitio real; los artistas, sobre el lugar donde más tocan, y los asistentes (anónimos), cerca de los lugares a los que van. Solo la ve Administración. Un asistente no tiene nombre, perfil ni foto: lo único que se sabe de él es a qué eventos dijo «Voy» o «Me interesa» y a quién sigue. Los eventos en un sitio sin ficha de lugar son un punto gris en el suelo, para que ningún acto quede suelto. Con el dedo: uno gira, dos acercan y mueven. Con el ratón: arrastra para girar y la rueda acerca. Con el teclado: las flechas giran e inclinan, + y − acercan y alejan, Inicio vuelve al centro y Esc suelta lo elegido.",
     manual: "pantalla",
   },
   cifras: {
@@ -93,7 +93,7 @@ export const AYUDA: DiccionarioAyuda = {
     texto: "Deja a la vista solo un tipo de punto; lo demás se apaga. Quita la lente que estuviera puesta.",
   },
   "filtro-todo": { titulo: "Todo", texto: "Todos los puntos de las capas a la vista. El número es cuántos son." },
-  "filtro-lugares": { titulo: "Lugares", texto: "Solo los lugares. El número es cuántos hay." },
+  "filtro-lugares": { titulo: "Lugares", texto: "Solo los lugares, con ficha o sin ella (los sitios sin ficha). El número es cuántos hay." },
   "filtro-tipo": { titulo: "Tipo de lugar", texto: "Solo los lugares de ese tipo. El número es cuántos hay." },
   "filtro-artistas": { titulo: "Artistas", texto: "Solo los artistas. El número es cuántos hay." },
   "filtro-con-lugar": {
@@ -103,7 +103,13 @@ export const AYUDA: DiccionarioAyuda = {
   "filtro-disciplina": { titulo: "Disciplina", texto: "Solo los artistas de esa disciplina. El número es cuántos hay." },
   "filtro-libres": {
     titulo: "Solo en sitios libres",
-    texto: "Artistas cuyos eventos son en un sitio sin ficha de lugar; se colocan en ese sitio.",
+    texto: "Artistas cuyos eventos son todos en sitios sin ficha de lugar; flotan sobre el sitio, unidos a él.",
+  },
+  "filtro-sitios": {
+    titulo: "Sitios sin ficha",
+    texto: "Solo los sitios con eventos que aún no tienen ficha de lugar: cada uno es un lugar por dar de alta. El número es cuántos hay.",
+    detalle: "Es un subfiltro de «Lugares». Para dar de alta uno, elígelo y usa el enlace de su tarjeta.",
+    manual: "filtro-sitios",
   },
   "filtro-sin-conexion": {
     titulo: "Sin conexión",
@@ -111,16 +117,23 @@ export const AYUDA: DiccionarioAyuda = {
   },
   "filtro-asistentes": {
     titulo: "Asistentes",
-    texto: "Anónimos; solo quienes dijeron «Voy» o «Me interesa» a algún evento.",
+    texto: "Anónimos: quienes dijeron «Voy» o «Me interesa» a algún evento, o siguen a un lugar o a un artista.",
   },
 
   // ---------- Capas y Yo ----------
   "capa-lugar": {
     titulo: "Capa Lugar",
-    texto: "Los lugares, en su posición real. Tócala para plegarla: se van sus puntos y todas las líneas que los tocan.",
+    texto: "Los lugares y los sitios sin ficha, en su posición real. Tócala para plegarla: se van sus puntos y las líneas que los tocan.",
     detalle:
       "Plegar una capa quita de la escena sus puntos y todas las líneas que los tocan, y también de la lista, de las cuentas del árbol y de las de la barra; el tamaño de lo que queda no cambia. Se recuerda en este aparato. Una lente que necesita una capa plegada la despliega.",
     manual: "capas",
+  },
+  sitio: {
+    titulo: "Sitio sin ficha",
+    texto: "Un sitio donde hay eventos pero que aún no tiene ficha de lugar. Gris, en el suelo; une a sus artistas y asistentes.",
+    detalle:
+      "Los eventos sin lugar y con coordenadas que quedan a 50 m o menos unos de otros son el mismo sitio (así 30 m de diferencia no los parte en dos). El nombre es el que más se repite entre sus eventos; sin nombre, «Sitio sin ficha». Tiene tamaño de lugar (sus asistencias) y, en su tarjeta, un enlace para dar de alta ese lugar con el nombre y el punto ya puestos. Cuando se da de alta y sus eventos pasan al lugar, el punto gris desaparece y sus líneas pasan al lugar nuevo. Los sitios van con la capa Lugar.",
+    manual: "sitios",
   },
   "capa-artista": {
     titulo: "Capa Artista",
@@ -130,13 +143,13 @@ export const AYUDA: DiccionarioAyuda = {
     titulo: "Capa Asistente",
     texto: "Los asistentes, anónimos y en una posición inventada: la base no guarda dónde está nadie.",
     detalle:
-      "Su posición sale de los lugares a los que van, nunca de una ubicación. Las líneas de una persona solo salen de eventos con 3 o más asistentes, para que nadie se pueda reconocer. Quienes solo siguen un lugar o un artista, sin ir a ningún evento, no se dibujan: los seguimientos solo suman al tamaño.",
+      "Su posición sale de los lugares a los que van, nunca de una ubicación; quien solo sigue, queda entre los lugares que sigue y donde más tocan los artistas que sigue. Desde el 13 de octubre de 2026 (decisión del founder, solo para Administración) basta un «Voy» o un «Me interesa» para que salgan sus líneas, y quien solo sigue ya es un punto con sus líneas «sigue a». Siguen sin nombre, perfil ni foto.",
     manual: "asistentes",
   },
   yo: {
     titulo: "Yo",
     texto: "Marca tu propio punto entre los asistentes con un anillo y la palabra «Tú»; los demás siguen anónimos.",
-    detalle: "Sin asistencias tuyas no hay punto: el interruptor queda apagado. El navegador solo recibe el número de tu punto, nunca de qué cuenta es cada uno.",
+    detalle: "Sin asistencias ni seguimientos tuyos no hay punto: el interruptor queda apagado. El navegador solo recibe el número de tu punto, nunca de qué cuenta es cada uno.",
     manual: "yo",
   },
 
@@ -144,7 +157,7 @@ export const AYUDA: DiccionarioAyuda = {
   tiempo: {
     titulo: "Tiempo",
     texto: "Una línea está activa si tiene un evento dentro de la ventana que termina en «Hasta»; lo demás se apaga.",
-    detalle: "Para comparar dos momentos, mueve «Hasta» y mira cómo cambian el diagnóstico y la nube. El control cubre desde el primer evento de la base hasta el último.",
+    detalle: "«Sigue a» no tiene fecha, así que se queda activa siempre; un punto que solo tiene líneas de ese tipo se apaga fuera del periodo. Para comparar dos momentos, mueve «Hasta» y mira cómo cambian el diagnóstico y la nube. El control cubre desde el primer evento de la base hasta el último.",
     manual: "tiempo",
   },
   ventana: { titulo: "Ventana", texto: "Cuánto tiempo hacia atrás cuenta desde «Hasta»: dos semanas, un mes, tres meses o todo." },
@@ -188,9 +201,9 @@ export const AYUDA: DiccionarioAyuda = {
   },
   lineas: {
     titulo: "Las líneas",
-    texto: "Blancas entre tipos distintos; del color del tipo entre iguales. Más gruesas, más eventos en común.",
+    texto: "Blancas entre tipos distintos; del color del tipo entre iguales; «sigue a», finas y tenues. Más gruesas, más eventos en común.",
     detalle:
-      "Una línea está activa si tiene un evento dentro de la ventana de Tiempo. Las de una persona solo salen de eventos con 3 o más asistentes. Entre iguales: las de dos lugares, el mismo festival; las de dos artistas, tocar juntos; las de dos asistentes, coincidir en eventos.",
+      "Una línea está activa si tiene un evento dentro de la ventana de Tiempo. Las de una persona salen desde un solo «Voy» o «Me interesa» a un evento (al lugar o sitio, y a sus artistas). «Sigue a»: de una persona a un artista o a un lugar que sigue; es delgada, del color de persona atenuado, vale 1 y no tiene fecha. Entre iguales: las de dos lugares o sitios, el mismo festival; las de dos artistas, tocar juntos; las de dos asistentes, coincidir en eventos. Un sitio sin ficha se une a sus artistas, a sus asistentes y, si comparte festival, a otros lugares.",
     manual: "lineas",
   },
   "por-conectar": {
@@ -203,9 +216,9 @@ export const AYUDA: DiccionarioAyuda = {
   // ---------- Diagnóstico ----------
   diagnostico: {
     titulo: "Diagnóstico",
-    texto: "Cuatro frases con números de hoy sobre toda la red: artistas sin eventos, concentración, cúmulos aislados y zonas vacías.",
+    texto: "Frases con números de hoy sobre toda la red: artistas sin eventos, concentración, cúmulos aislados, zonas vacías, seguidores y sitios por dar de alta.",
     detalle:
-      "La primera cuenta los artistas sin ningún evento registrado. La segunda, qué parte de los eventos con sede ocurre en solo cinco lugares y cuántos lugares no tienen ninguno. La tercera, cuántos cúmulos forman los lugares con eventos que no comparten ni un artista ni un festival entre sí. La cuarta, cuántas zonas de la ciudad no tienen un lugar a menos de 2 km. Si la ventana de Tiempo no es «Todo», una quinta frase cuenta las conexiones activas de ese periodo.",
+      "La primera cuenta los artistas sin ningún evento registrado. La segunda, qué parte de los eventos con sede ocurre en solo cinco lugares y cuántos lugares no tienen ninguno. La tercera, cuántos cúmulos forman los lugares con eventos que no comparten ni un artista ni un festival entre sí. La cuarta, cuántas zonas de la ciudad no tienen un lugar a menos de 2 km. Si hay personas que siguen, otra frase dice cuántas siguen a alguien y cuántas solo siguen, sin haber dicho «Voy»; si hay sitios sin ficha, otra dice cuántos son y cuántos eventos tienen (cada uno es un lugar por dar de alta). Los sitios sin ficha no cuentan como lugares en las cuatro primeras. Si la ventana de Tiempo no es «Todo», una quinta frase cuenta las conexiones activas de ese periodo.",
     manual: "diagnostico",
   },
   lista: { titulo: "Lista", texto: "Abre el diagnóstico y la lista de lo que está a la vista o de la lente. Tocar un renglón elige ese punto." },
@@ -225,9 +238,9 @@ export const BLOQUES: { id: string; titulo: string; claves: string[] }[] = [
   {
     id: "filtrar",
     titulo: "Filtrar",
-    claves: ["filtrar", "filtro-todo", "filtro-lugares", "filtro-tipo", "filtro-artistas", "filtro-con-lugar", "filtro-disciplina", "filtro-libres", "filtro-sin-conexion", "filtro-asistentes"],
+    claves: ["filtrar", "filtro-todo", "filtro-lugares", "filtro-tipo", "filtro-artistas", "filtro-con-lugar", "filtro-disciplina", "filtro-libres", "filtro-sitios", "filtro-sin-conexion", "filtro-asistentes"],
   },
-  { id: "capas", titulo: "Capas y Yo", claves: ["capa-lugar", "capa-artista", "capa-asistente", "yo"] },
+  { id: "capas", titulo: "Capas y Yo", claves: ["capa-lugar", "sitio", "capa-artista", "capa-asistente", "yo"] },
   { id: "tiempo", titulo: "Tiempo", claves: ["tiempo", "ventana", "hasta"] },
   { id: "ajustes", titulo: "Ajustes", claves: ["ajustes", "ajuste-tamano", "ajuste-altura", "ajuste-sueltos", "ajuste-lineas"] },
   { id: "camara", titulo: "Cámara", claves: ["camara-izq", "camara-der", "camara-arriba", "camara-abajo", "camara-mas", "camara-menos", "camara-centro"] },
