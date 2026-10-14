@@ -1312,7 +1312,7 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
     add("Con lugar", DATOS.resumen.artistasConectados, filtro.tipo === "artista" && filtro.clase === "conectados", () => poner("artista", "conectados"), "filtro-con-lugar", "flotan sobre el lugar donde más tocan");
     for (const [t, n] of Object.entries(disc).sort((a, b) => b[1] - a[1])) add(etiqueta(t), n, filtro.tipo === "artista" && filtro.clase === t, () => poner("artista", t), "filtro-disciplina");
     lArt.append(ulA);
-    li(conAyuda(fila("Solo en sitios libres", DATOS.resumen.artistasEnSitioLibre, "var(--g-c-artista)", filtro.tipo === "libres" && !lenteActiva, () => poner("libres", null), "todos sus eventos son en sitios sin ficha; flotan sobre el sitio"), "filtro-libres"));
+    li(conAyuda(fila("Solo en sitios libres", DATOS.resumen.artistasEnSitioLibre, "var(--g-c-artista)", filtro.tipo === "libres" && !lenteActiva, () => poner("libres", null), "en sitios sin ficha; flotan sobre el sitio"), "filtro-libres"));
     li(conAyuda(fila("Sin conexión", DATOS.resumen.artistasSueltos, "var(--g-c-suelto)", filtro.tipo === "sueltos" && !lenteActiva, () => poner("sueltos", null), "ni evento ni lugar: resumidos en un nodo; aquí se despliegan"), "filtro-sin-conexion"));
     li(conAyuda(fila("Asistentes", DATOS.personas.length, "var(--g-c-persona)", filtro.tipo === "persona" && !lenteActiva, () => poner("persona", null), "anónimos; quienes dijeron Voy o Me interesa, o siguen a alguien"), "filtro-asistentes"));
     arbol.append(ul);
