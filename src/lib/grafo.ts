@@ -454,9 +454,17 @@ async function leerFilas(): Promise<FilasGrafo> {
   return { lugares, artistas, eventos, eventos_artistas, seguimientos, asistencias };
 }
 
+/** Lo que guarda la caché: el grafo, el índice de quien mira y el instante exacto del cálculo (ISO), que la pantalla enseña como «Datos de las 14:05». */
+export type GrafoCargado = GrafoConIndice & { calculadoEn: string };
+/** Etiqueta de la caché del grafo: `actualizarGrafo` (acción de administración) la invalida para forzar una lectura nueva sin esperar la hora. */
+export const ETIQUETA_GRAFO = "grafo-admin";
 /**
  * El grafo de Administración. Cuesta seis lecturas completas, así que se guarda una hora: diez administradores que lo abren
  * suman una sola lectura por hora. Solo en el servidor y con la llave de servicio (nunca en el navegador). Devuelve también el mapa privado
  * usuario → punto (`indicePorUsuario`): quien llama toma de ahí el punto de la cuenta con sesión y NO pasa el mapa al navegador.
  */
-export const cargarGrafo = unstable_cache(async (): Promise<GrafoConIndice> => armarGrafo(await leerFilas(), Math.floor(Date.now() / DIA_MS)), ["grafo-admin"], { revalidate: 3600 });
+export const cargarGrafo = unstable_cache(
+  async (): Promise<GrafoCargado> => ({ ...armarGrafo(await leerFilas(), Math.floor(Date.now() / DIA_MS)), calculadoEn: new Date().toISOString() }),
+  ["grafo-admin"],
+  { revalidate: 3600, tags: [ETIQUETA_GRAFO] },
+);
