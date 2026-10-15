@@ -447,3 +447,9 @@ button:active:not(:disabled) {
     scroll-behavior: auto !important;
   }
 }
+
+/* Las historias de Inicio abiertas (`inicio/Historias`): la página de atrás no se desplaza. Un atributo y no un estilo en línea: se quita sin
+   adivinar qué había antes, y nunca se queda puesto si el desmontaje se retrasa. */
+html[data-historia] {
+  overflow: hidden;
+}

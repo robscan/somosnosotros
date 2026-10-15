@@ -45,7 +45,7 @@ const FOCABLES = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"
  * sobre un degradado vivo de sus propios colores (o, sin cartel, la historia tipográfica con el símbolo SN sobre una paleta propia) y partículas,
  * solo con la historia abierta y nunca con «Reducir movimiento». Segmentos de 6 s; los gestos de Instagram: tocar a la derecha avanza y en el
  * tercio izquierdo retrocede, mantener pausa, deslizar hacia abajo cierra. Los arrastres terminan solo con `pointerup` y `pointercancel` (también en
- * `window`), nunca con `pointerleave` (Safari táctil lo dispara en el primer movimiento). Abajo, «Ver ficha», «Me interesa» y «Cómo llegar».
+ * `window`), nunca con `pointerleave` (Safari táctil lo dispara en el primer movimiento). Abajo, «Ver más información», «Me interesa» y «Cómo llegar».
  * No toca la URL ni el historial (filtrar no es navegar): al cerrar, Inicio está donde estaba. Teclado: flechas, Espacio y Escape; el foco no sale.
  * El cartel se acerca como en el visor (OL-408, `useZoomImagen`): pellizcar hasta 4× y, acercado, uno o dos dedos lo recorren (o la rueda, en
  * escritorio). Mientras está acercado la historia se queda quieta: el avance se pausa, deslizar mueve el cartel y un toque no pasa de historia, lo
@@ -84,6 +84,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   const salir = useCallback(() => {
     if (cerrandoRef.current) return;
     cerrandoRef.current = true;
+    document.documentElement.removeAttribute("data-historia"); // la página vuelve a desplazarse ya, sin esperar al desmontaje
     setAbierta(false);
     setTimeout(() => onCerrar(indiceRef.current), reducido ? 0 : SALIDA_MS);
   }, [onCerrar, reducido]);
@@ -105,16 +106,21 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
     mq.addEventListener("change", alCambiar);
     const entra = setTimeout(() => setAbierta(true), 16);
     (conTeclado ? cerrar.current : raiz.current)?.focus({ preventScroll: true });
+    // La página de atrás no se desplaza mientras la historia está abierta: `html[data-historia]` (globals), nunca un estilo en línea que
+    // pudiera quedarse si el desmontaje se retrasa (al navegar a la ficha) o si otra capa ya lo había puesto. Se quita al cerrar, al
+    // desmontar y si la página se va (`pagehide`): el desplazamiento de Inicio nunca queda muerto.
     const html = document.documentElement;
-    const antes = html.style.overflow;
-    html.style.overflow = "hidden";
+    html.setAttribute("data-historia", "");
+    const soltarPagina = () => html.removeAttribute("data-historia");
     const visible = () => setOculta(document.hidden);
     document.addEventListener("visibilitychange", visible);
+    window.addEventListener("pagehide", soltarPagina);
     return () => {
       clearTimeout(entra);
       mq.removeEventListener("change", alCambiar);
       document.removeEventListener("visibilitychange", visible);
-      html.style.overflow = antes;
+      window.removeEventListener("pagehide", soltarPagina);
+      soltarPagina();
     };
     // Solo al abrir.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -375,8 +381,10 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
           )}
         </div>
         <footer className={styles.acciones}>
-          <Link className={styles.ficha} href={e.href}>
-            Ver ficha
+          {/* «Ver más información» (founder, 14 oct: «no se entiende ficha»). Al tocarlo la página de atrás ya puede desplazarse: si la ficha tarda
+              en llegar o no llega, Inicio no se queda trabado. */}
+          <Link className={styles.ficha} href={e.href} onClick={() => document.documentElement.removeAttribute("data-historia")}>
+            Ver más información
           </Link>
           {conSesion ? (
             <button type="button" className={styles.icono} aria-pressed={interesa} aria-label={interesa ? "Te interesa" : "Me interesa"} onClick={alternarInteres}>
