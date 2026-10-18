@@ -4,6 +4,7 @@ import { decididoVigente, SECCION_DE, SIN_DECIDIR, TIPO_DE, type Decidido, type 
 import { esUuid } from "@/lib/formulario";
 import type { Aportes, ArtistaFila, Comunidad, EventoFila, FichasVinculadas, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
 import { leerAportes, leerFichas, PAGINA_PANEL } from "@/lib/panel";
+import type { ArtistaPublicado, EventoPublicado, LugarPublicado, Publicado, TipoPublicado } from "@/lib/panelPublicado";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -64,6 +65,52 @@ export async function cargarPersona(id: string): Promise<{ persona: PersonaFicha
   const supabase = (await clienteServidor())!;
   const { data, error } = await supabase.rpc("panel_persona", { p_perfil: id });
   return { persona: error ? null : ((data as PersonaFicha | null) ?? null), error: !!error };
+}
+
+/**
+ * «Lo que publicó» una persona (OL-414): lo que tiene `creado_por` = ella en eventos, lugares y artistas, del más reciente al más antiguo, con
+ * el total de cada tipo (`count` de la misma consulta: el número que dice «Publicó» es el de la lista). Lee como las listas del panel: con la
+ * sesión de quien administra, que por sus reglas ve todo, también lo oculto y los borradores; sin función nueva en la base. Un acto de festival
+ * se pone justo después de su festival (se dan de alta juntos, con la misma hora) y en el orden de su programa. Si una lectura falla, null: la
+ * pantalla lo dice en su sitio y no enseña una lista a medias.
+ */
+export async function cargarPublicado(perfilId: string, paginas: Record<TipoPublicado, number>): Promise<Publicado | null> {
+  if (!esUuid(perfilId)) return null;
+  try {
+    const supabase = await clienteServidor();
+    if (!supabase) return null;
+    const [e, l, a] = await Promise.all([
+      supabase
+        .from("eventos")
+        .select("id, slug, titulo, imagen, inicio, fin, zona, clase, visible, borrador, cancelado, evento_padre_id, creado_en, sitio_texto, lugar:lugares(nombre, portada)", { count: "exact" })
+        .eq("creado_por", perfilId)
+        .order("creado_en", { ascending: false })
+        .order("evento_padre_id", { ascending: true, nullsFirst: true })
+        .order("inicio", { ascending: true })
+        .order("id", { ascending: true })
+        .limit(paginas.eventos),
+      supabase.from("lugares").select("id, slug, nombre, tipo, detalle, portada, visible, privado, creado_en", { count: "exact" }).eq("creado_por", perfilId).order("creado_en", { ascending: false }).order("id", { ascending: true }).limit(paginas.lugares),
+      supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, foto, visible, creado_en", { count: "exact" }).eq("creado_por", perfilId).order("creado_en", { ascending: false }).order("id", { ascending: true }).limit(paginas.artistas),
+    ]);
+    if (e.error || l.error || a.error) return null;
+    const eventos = (e.data ?? []) as unknown as EventoPublicado[];
+    // El nombre del festival de cada acto, en una sola lectura (sin anidar `eventos` en sí misma).
+    const padres = [...new Set(eventos.map((x) => x.evento_padre_id).filter((x): x is string => !!x))];
+    let festivales: Record<string, string> = {};
+    if (padres.length) {
+      const f = await supabase.from("eventos").select("id, titulo").in("id", padres).limit(padres.length);
+      if (f.error) return null;
+      festivales = Object.fromEntries(((f.data ?? []) as { id: string; titulo: string }[]).map((x) => [x.id, x.titulo]));
+    }
+    return {
+      eventos: { filas: eventos, total: e.count ?? eventos.length },
+      lugares: { filas: (l.data ?? []) as LugarPublicado[], total: l.count ?? (l.data ?? []).length },
+      artistas: { filas: (a.data ?? []) as ArtistaPublicado[], total: a.count ?? (a.data ?? []).length },
+      festivales,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export type FilaDe = { lugares: LugarFila; eventos: EventoFila; artistas: ArtistaFila };

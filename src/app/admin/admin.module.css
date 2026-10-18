@@ -505,24 +505,26 @@ a.ficha::after,
 .quitar {
   color: var(--error);
 }
+/* La cabecera de la ficha de una persona (OL-414): la foto grande arriba y al centro, y debajo el nombre y su detalle, como la ficha de un contacto
+   del teléfono. Con la foto al lado, el nombre se quedaba con 200 px a 390. */
 .cabecera {
   display: grid;
-  grid-template-columns: 64px 1fr;
   grid-template-areas:
-    "avatar nombre"
-    "avatar detalle";
-  column-gap: 14px;
-  align-items: center;
+    "avatar"
+    "nombre"
+    "detalle";
+  justify-items: center;
+  row-gap: var(--espacio-1);
+  text-align: center;
 }
 .cabecera > h1 {
   grid-area: nombre;
-  align-self: end;
+  margin-top: var(--espacio-2);
   overflow-wrap: anywhere;
   font-size: var(--letra-2xl);
 }
 .cabecera > small {
   grid-area: detalle;
-  align-self: start;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -550,35 +552,51 @@ a.ficha::after,
 .renglones > li + li {
   border-top: 1px solid var(--borde);
 }
+/* El renglón de Personas: la foto del lado de las listas de la app (`--foto-renglon`, 56; OL-414, antes 44). */
 .persona {
   display: grid;
-  grid-template-columns: 44px 1fr 16px;
+  grid-template-columns: var(--foto-renglon) 1fr 16px;
   grid-template-areas:
     "avatar nombre chevron"
     "avatar detalle chevron";
   column-gap: var(--espacio-3);
   align-items: center;
-  min-height: 68px;
   padding: 10px 0;
   color: var(--texto);
   text-decoration: none;
 }
+/* La foto redonda o la inicial (`Avatar`, `FotoPersona`); su lado lo pone su sitio. */
 .avatar {
   grid-area: avatar;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  overflow: hidden;
+  padding: 0;
+  border: none;
   border-radius: 50%;
   object-fit: cover;
   background: var(--fondo-miniatura);
   color: var(--texto-suave);
   font-weight: 700;
 }
+.persona > .avatar {
+  width: var(--foto-renglon);
+  height: var(--foto-renglon);
+}
+/* La de la cabecera de la ficha (OL-414): el doble del avatar de la cabecera de una persona en la app (Mi perfil y su ficha pública, 72), 144; con
+   foto es un botón que la abre entera (VisorImagen). */
 .cabecera > .avatar {
-  width: 64px;
-  height: 64px;
-  font-size: var(--letra-xl);
+  width: calc(var(--avatar-perfil) * 2);
+  height: calc(var(--avatar-perfil) * 2);
+  font-size: var(--letra-cifra); /* la inicial, a la medida de la cifra de los indicadores */
+}
+button.avatar {
+  cursor: zoom-in;
+}
+.avatar > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .persona > b,
 .renglonFicha > a > b {
@@ -661,6 +679,34 @@ a.ficha::after,
 }
 .verMas {
   margin-top: var(--espacio-4);
+}
+
+/* «Lo que publicó» en la ficha de una persona (OL-414): un rótulo por tipo con su cuenta y los renglones de lista de la app (`ui/Renglon`) sobre el
+   tono del contenido, como las listas de la app (en una tarjeta blanca no se vería el resaltado al tocar). El renglón «Publicó» baja aquí. */
+.ancla {
+  scroll-margin-top: calc(var(--alto-barra) + var(--espacio-4));
+}
+.tipoPublicado {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-5);
+  padding-left: var(--espacio-1);
+  font-size: var(--letra-md);
+  font-weight: 700;
+}
+.tipoPublicado > small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* El primer tipo va pegado a su rótulo «Lo que publicó», que ya deja su aire */
+.ancla + .tipoPublicado {
+  margin-top: 0;
+}
+.publicado {
+  list-style: none;
 }
 
 /* ---------- 6. Hojas: hacer o quitar administrador, y el menú de cada ficha ---------- */

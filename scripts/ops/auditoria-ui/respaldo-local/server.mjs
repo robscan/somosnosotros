@@ -202,15 +202,16 @@ function ordenar(filas, order) {
     const m = o.match(/^([a-z_]+)\(([a-z_]+)\)(?:\.(asc|desc))?/);
     if (m) return { emb: m[1], col: m[2], desc: m[3] === "desc" };
     const p = o.split(".");
-    return { col: p[0], desc: p.includes("desc") };
+    // `nullsfirst` explícito (OL-414: el festival antes de sus actos); sin él, lo vacío al final, como siempre en el respaldo.
+    return { col: p[0], desc: p.includes("desc"), vaciosPrimero: p.includes("nullsfirst") };
   });
   return [...filas].sort((a, b) => {
     for (const k of claves) {
       const va = k.emb ? a[k.emb]?.[k.col] : a[k.col];
       const vb = k.emb ? b[k.emb]?.[k.col] : b[k.col];
       if (va === vb) continue;
-      if (va === null || va === undefined) return 1;
-      if (vb === null || vb === undefined) return -1;
+      if (va === null || va === undefined) return k.vaciosPrimero ? -1 : 1;
+      if (vb === null || vb === undefined) return k.vaciosPrimero ? 1 : -1;
       return (va < vb ? -1 : 1) * (k.desc ? -1 : 1);
     }
     return 0;

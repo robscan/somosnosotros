@@ -57,6 +57,11 @@ La lectura de carteles sin la API (OL-413, bitácora 444): con la app arrancada 
 `RESPALDO_CARTELES=1` suma el Laboratorio Centro Histórico, Foro lunaria y un festival de una noche sin programa (`npm run medir` no lo usa).
 `capturar-cartel-leido.mjs` arma todo eso y saca las capturas del alta con cartel.
 
+Administración › Personas (OL-414, bitácora 445): el respaldo contesta `panel_personas`, `panel_personas_conteos` y `panel_persona` (la cuenta de
+administración es `cookieDe(ADMIN)`). Con `RESPALDO_PERSONAS=1` suma fotos inventadas (`retratos.example`, que dibuja quien captura), tres cuentas
+más en la lista y lo que Ana dio de alta además de sus eventos (un lugar y un artista a la vista y uno oculto de cada uno); `npm run medir` no lo
+pone. `capturar-persona-publicado.mjs` saca las capturas de la lista, la ficha con la foto grande, el visor y «Lo que publicó».
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes
