@@ -83,6 +83,12 @@ cruzaba solo por nombre.
   nada); el mismo título varios días seguidos en una sede → `temporada`; días o sedes distintas → `programa`. «Lunaria» y «Foro Lunaria» son
   la misma sede. `nombresParaQuien` (el servidor pasa los nombres de una noche a los artistas para cruzarlos con el directorio) y
   `descripcionDeNoche`.
+- `src/lib/lugarDelCartel.ts` (nuevo, puro; ajuste tras la verificación real del gestor): `lugarPorNombre`, el cruce tolerante del nombre del
+  lugar: si el nombre completo no cruza con ningún lugar, se prueba cada palabra distintiva (sin acentos ni mayúsculas, sin las genéricas —foro,
+  espacio, centro, cultural, casa, galería, museo, teatro, café, bar, expandido, lab, sala, artículos…— y de 4 letras o más), y se acepta solo si
+  entre todas dan un único lugar de la ciudad (uno de otra ciudad no cuenta). «Lunaria Foro Expandido» → «Foro lunaria»; «Roma Lab» con dos
+  «Roma» → ninguno. El nombre completo manda como siempre (uno, ese; varios, ninguno). Pruebas en `src/lib/lugarDelCartel.test.ts` (6) y en
+  `src/app/eventos/cupo.acciones.test.ts` (la acción con la búsqueda simulada).
 - `src/lib/direccionCartel.ts` (nuevo, puro): `partirDireccion` (calle y número del primer tramo, sin acentos, sin «C.», «Calle», «Av.», «No.»,
   «#», código postal, ciudad ni país), `mismaDireccion` y `unicoConDireccion` (uno solo o ninguno).
 - `src/app/eventos/acciones.ts`: `leerCartelAccion(url, ciudad)` busca el lugar por su dirección cuando el nombre no cruza (`lugarConDireccion`:
@@ -164,9 +170,15 @@ cruzaba solo por nombre.
 
 ## Evidencia
 
-- `npm run lint` (0 errores; el aviso de siempre en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (225 archivos, 3 998
+- `npm run lint` (0 errores; el aviso de siempre en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test` (226 archivos, 4 005
   pruebas), `npm run inventario` (sin novedades), `npm run test:componentes` (618) y `npm run medir` (40 pantallas × 4 anchos, sin novedades) en
   verde, en un árbol sin `.env`.
+- **Verificación real del gestor (18 de octubre, con la API y el esquema de esta rama, sobre los dos carteles):** Cumbiachella salió como festival,
+  sin actos, con los cuatro artistas y de 20:00 a 02:00, pero con `lugar` «Lunaria Foro Expandido», que `lugares_con_nombre` no cruza en
+  producción (con «Lunaria», sí): de ahí el cruce tolerante de `lib/lugarDelCartel`, que lo resuelve. Trayectos salió como evento puntual, sin
+  actos y con la dirección «5 de mayo 1100, Centro Histórico» (el cruce por dirección lo resuelve), pero con `artistas` ["Disonáuta", "El
+  Ermitaño", "Las brujas de la Cañada", "Charlemos"]: **límite de la lectura**, «Charlemos» es el nombre de la charla y no de alguien que se
+  presenta; no se corrige a la fuerza (se quita a mano en «Quién», desde «Revisa»).
 - `npm run test:db` contra un PostgreSQL 17 local temporal (un `initdb` en la carpeta de trabajo, solo 127.0.0.1, detenido al terminar): las 99
   migraciones con la nueva y 2 031 pruebas, 0 fallaron (con la matriz del Security Advisor).
 - **Presupuestos de `medir` subidos (decisión del gestor):** la primera corrida falló en `02-agenda` (347 nodos; presupuesto 333),
@@ -228,7 +240,7 @@ cruzaba solo por nombre.
 1. **«Voy» en un festival sin programa** (supuesto 3). Si prefieres que todo festival siga con solo «Me interesa», es una línea.
 2. **Hasta 31 días sin programa va como evento** (supuesto 4): un festival de 3 noches en un mismo foro sin desglose sale cada noche en la agenda,
    con «Día n de 3». Uno de más de un mes sin actos sigue como «Programa por confirmar».
-3. **«Charlemos» y «Sorpresas»** de Trayectos: con la lectura de antes van a la descripción, no a «Quién» (supuesto 5). Con el esquema nuevo el
-   lector ya no los lee como artistas.
+3. **«Charlemos» y «Sorpresas»** de Trayectos: con la lectura de antes, «Charlemos» va a la descripción, no a «Quién» (supuesto 5). Con el esquema
+   nuevo, la lectura real del gestor puso «Charlemos» en los artistas: es un límite del lector, no se corrige a la fuerza; se quita en «Quién».
 4. La migración `20261018120000_festival_sin_programa.sql` va **antes** de unir: sin ella, publicar un festival sin programa dice «No se pudo
    publicar el festival».

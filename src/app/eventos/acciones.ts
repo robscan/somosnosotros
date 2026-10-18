@@ -12,6 +12,7 @@ import { CIUDAD_INICIAL, SIN_CIUDAD } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { nombresParaQuien } from "@/lib/actosLeidos";
 import { partirDireccion, unicoConDireccion } from "@/lib/direccionCartel";
+import { lugarPorNombre } from "@/lib/lugarDelCartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { cartelAFormulario, ciudadDelSitio, costoOpcional, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
@@ -519,20 +520,23 @@ export async function leerCartelAccion(urlImagen: string, ciudad: string | null 
     return { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." };
   }
   const valores = cartelAFormulario(lectura);
+  const ciudadLimpia = typeof ciudad === "string" && ciudad.trim() ? ciudad.trim().slice(0, 80) : null;
   // Un lugar del directorio que se llama como lo dice el cartel (uno solo: con dos, se pregunta); lo mismo con la sede de cada acto de un programa.
+  // OL-413: si el nombre completo no cruza («Lunaria Foro Expandido»), sus palabras distintivas («lunaria»), si entre todas dan un único lugar
+  // de la ciudad (`lugarPorNombre`).
+  const buscarLugares = async (texto: string) => {
+    const { data } = await supabase.rpc("lugares_con_nombre", { p_nombre: texto });
+    return (Array.isArray(data) ? data : []) as (LugarResumen & { ciudad?: string | null })[];
+  };
   const sedes = new Map<string, string | null>();
   const lugarConNombre = async (nombre: string): Promise<string | null> => {
-    if (!sedes.has(nombre)) {
-      const { data } = await supabase.rpc("lugares_con_nombre", { p_nombre: nombre });
-      const lugares = (data ?? []) as LugarResumen[];
-      sedes.set(nombre, lugares.length === 1 ? lugares[0].id : null);
-    }
+    if (!sedes.has(nombre)) sedes.set(nombre, (await lugarPorNombre(nombre, buscarLugares, ciudadLimpia))?.id ?? null);
     return sedes.get(nombre) ?? null;
   };
   const lugarId = valores.lugar ? await lugarConNombre(valores.lugar) : null;
   for (const acto of valores.forma?.actos ?? []) acto.lugarId = acto.lugar ? await lugarConNombre(acto.lugar) : lugarId;
   // Sin un lugar que se llame así, el que está en la dirección del cartel (OL-413): se propone, no se elige solo.
-  const sugerido = !lugarId && valores.direccion ? await lugarConDireccion(supabase, valores.direccion, typeof ciudad === "string" && ciudad.trim() ? ciudad.trim().slice(0, 80) : null) : null;
+  const sugerido = !lugarId && valores.direccion ? await lugarConDireccion(supabase, valores.direccion, ciudadLimpia) : null;
   // Una noche leída como programa sin artistas aparte (OL-413): los nombres de sus actos son la alineación.
   valores.artistas = nombresParaQuien(valores.artistas, valores.forma?.actos ?? [], valores.lugar);
   // Los nombres del cartel: registrados si se llaman igual; si no, por crear con solo el nombre.
