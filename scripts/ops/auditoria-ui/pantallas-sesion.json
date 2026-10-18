@@ -27,5 +27,6 @@
   { "id": "s27-alta-evento-nombre-clase", "plantilla": "tarea", "url": "/nuevo/evento", "paso": "evento-nombre-clase" },
   { "id": "s28-inicio-banner-compartir", "plantilla": "raíz", "url": "/", "completa": true, "paso": "banner-compartir" },
   { "id": "s29-admin-grafo", "plantilla": "tarea", "url": "/admin/grafo", "cuenta": "admin" },
-  { "id": "s30-admin-grafo-manual", "plantilla": "tarea", "url": "/admin/grafo/manual", "cuenta": "admin" }
+  { "id": "s30-admin-grafo-manual", "plantilla": "tarea", "url": "/admin/grafo/manual", "cuenta": "admin" },
+  { "id": "s31-admin-persona", "plantilla": "tarea", "url": "/admin/personas/11111111-1111-4111-8111-111111111111", "cuenta": "admin" }
 ]
