@@ -76,7 +76,8 @@ el número («2 eventos») sin decir cuáles.
 - `src/app/admin/Avatar.tsx`: con `ui/Imagen` y el lado que se ve (`lado`, 56 por omisión); `inicial()` compartida con `FotoPersona`.
 - `src/app/admin/admin.module.css`: `.persona` con `--foto-renglon`; `.avatar` sin lado propio (lo pone su sitio) y como botón; la cabecera
   apilada y centrada con la foto a `calc(var(--avatar-perfil) * 2)` y la inicial a `--letra-cifra`; `.ancla` (`scroll-margin-top` bajo la barra),
-  `.tipoPublicado` y `.publicado`. Bajan las medidas en duro del inventario (342 → 334, anotado con `--aceptar`).
+  `.tipoPublicado` y `.publicado`; y `.fila > .pildora` (el «Hacer administrador» de Rol) parte su texto en dos renglones cuando no cabe junto al
+  texto, en vez de salirse de la tarjeta (ver Evidencia). Bajan las medidas en duro del inventario (342 → 334, anotado con `--aceptar`).
 - `scripts/ops/auditoria-ui/respaldo-local/fixture.mjs`: los contratos de `panel_personas`, `panel_personas_conteos` y `panel_persona` sobre las
   personas del respaldo (antes Administración › Personas salía vacía contra el respaldo) y, solo con `RESPALDO_PERSONAS=1`, fotos para Ana y
   Marcos, tres cuentas más en la lista (Lucía y Valeria con foto, Diego sin foto ni nada publicado) y lo que Ana dio de alta además de sus nueve
@@ -98,7 +99,10 @@ el número («2 eventos») sin decir cuáles.
 - **`npm run medir` con la ficha nueva:** `s31-admin-persona` (la ficha de administración de Ana, como admin: sus nueve eventos con el festival,
   sus actos ocultos y el borrador) pasa a 320, 390, 820 y 1280 sin hijos fuera de su caja, sin desplazamiento a lo ancho y con todos los toques de
   44 o más; su presupuesto (178/178/212/212 nodos, profundidad 9) lo anoté con `--aceptar` y en el diff de `medidas.aceptadas.json` solo entra esa
-  línea. **Hallazgo aparte, no de esta pieza:** probé también la lista de Personas (`/admin/personas`) y falla por el buscador del panel
+  línea. **La CI la encontró a 320 con un fallo de antes:** con la letra de Linux, el botón «Hacer administrador» del renglón Rol salía 5 px de su
+  renglón (en la Mac cabía justo, metido 4 px en el relleno de la tarjeta). Ahora ese botón parte su texto en dos renglones («Hacer /
+  administrador») cuando no cabe junto al texto, y en un solo renglón donde cabe (390 y más); comprobado a 280, 300, 320 y 390, y `medir` de
+  `s31` en verde con el Chrome de la Mac y con el Chromium de la CI (`chrome-headless-shell`). **Hallazgo aparte, no de esta pieza:** probé también la lista de Personas (`/admin/personas`) y falla por el buscador del panel
   (`ui/Buscador`): su campo se toca de 220×24 (lo mismo en las listas de Lugares, Eventos y Artistas del panel, que `medir` tampoco mide). No la
   dejé en la prueba; queda para otra pieza.
 - Capturas en `docs/rediseno/capturas-445/` (Chrome real con playwright-core, `channel: 'chrome'`, 390×844 a 2×, **sin comprimir**), con

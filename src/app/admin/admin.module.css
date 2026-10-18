@@ -502,6 +502,13 @@ a.ficha::after,
   opacity: 0.55;
   cursor: default;
 }
+/* En una fila (Rol: «Hacer administrador»), si no cabe junto al texto la píldora parte el suyo en dos renglones en vez de salirse de la tarjeta
+   (OL-414: a 320, con la letra de Linux de la CI, salía 5 px). Donde cabe, sigue en uno. */
+.fila > .pildora {
+  white-space: normal;
+  text-align: center;
+  text-wrap: balance;
+}
 .quitar {
   color: var(--error);
 }
