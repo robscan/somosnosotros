@@ -29,7 +29,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
-import { cuandoDePeriodo, festivalComoEvento, horarioEfectivo, kpisDeExposicion, lineaDeTaller, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { cuandoDePeriodo, festivalComoEvento, horarioEfectivo, kpisDeExposicion, lineaDeFestivalSinPrograma, lineaDeTaller, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -532,7 +532,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       </Suspense>
     </Kpis>
   ) : undefined;
-  const metaClase = comoEvento ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }), ahora) : clase === "festival" ? (cuandoClase ?? undefined) : clase === "taller" ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes }), ahora) : undefined;
+  const metaClase = comoEvento ? lineaDeFestivalSinPrograma(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }), ahora) : clase === "festival" ? (cuandoClase ?? undefined) : clase === "taller" ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes }), ahora) : undefined;
   // En pasado (OL-383) lo dice el chip de la cabecera; el aviso queda solo para la dirección reservada que aún se puede consultar (OL-257).
   const avisoPasado = consultaTrasFin && !!privado;
   const hayAvisos = error === "borrar" || error === "publicar" || error === "no_publicable" || avisoPasado || (!consultaTrasFin && (!e.visible || paso));

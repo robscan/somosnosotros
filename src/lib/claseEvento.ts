@@ -1,6 +1,6 @@
 import { FIN_DEL_DIA, etiquetaHora } from "./calendario";
 import type { Clase } from "./eventos";
-import { diaConMesDe, diaLocal, eventoPaso, fechaCortaChip, horaCorta, localAIso, rangoCorto, terminaDe, textoDePeriodo, ZONA_INICIAL } from "./fechas";
+import { diaConMesDe, diaLocal, esDeVariosDias, eventoPaso, fechaCortaChip, horaCorta, localAIso, rangoCorto, terminaDe, textoDePeriodo, ZONA_INICIAL } from "./fechas";
 import { estructurar, textoRangos, type Dia, type Franja, type Rango } from "./horarioLugar";
 import type { HorarioDia } from "./sesionesEvento";
 
@@ -196,6 +196,16 @@ export const textoProgramaRegistrado = (n: number): string => `Programa registra
  * su día de cierre, el taller al terminar su última sesión y el festival al terminar su último acto registrado.
  */
 export const yaPasoSegunClase = (e: { inicio: string; fin: string | null; zona: string; clase?: Clase }, ahora: Date = new Date()): boolean => eventoPaso(e.inicio, e.fin, ahora, e.zona);
+
+/**
+ * La línea bajo el título de un festival sin programa (OL-413): su día y su hora, como un evento (una noche que cruza la medianoche, «8 pm–2 am», es
+ * un día: `esDeVariosDias`), o sus días si dura varios, y su lugar: «sáb 17 de oct · 20:00 · Foro lunaria».
+ */
+export function lineaDeFestivalSinPrograma(evento: { inicio: string; fin: string | null; zona: string }, sitio: string | null, ahora: Date = new Date()): string {
+  const dia = diaLocal(new Date(evento.inicio), evento.zona);
+  const cuando = esDeVariosDias(evento.inicio, evento.fin, evento.zona) ? rangoDelPeriodo(evento.inicio, evento.fin, evento.zona, ahora) : `${diaConMesDe(dia, ahora, evento.zona)} · ${horaCorta(evento.inicio, evento.zona)}`;
+  return [cuando, sitio].filter(Boolean).join(" · ");
+}
 
 /** Hasta cuántos días un festival sin programa se lista como un evento: los del horario por día (OL-311). */
 const DIAS_COMO_EVENTO = 31;

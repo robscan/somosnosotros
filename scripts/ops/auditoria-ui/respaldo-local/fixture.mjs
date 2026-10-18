@@ -311,6 +311,22 @@ const eventos_horarios = !CON_FICHAS ? [] : [{ id: "bbbb0006-0000-4000-8000-0000
 if (CON_FICHAS) artistas.push({ ...artista(A_CUADRO, "cineclub-cuadro-negro-demo", "Cineclub Cuadro Negro (demo)", "cine", "Cineclub", "grupo", "Cineclub inventado para la prueba de las fichas (OL-410)."), ciudad: AGS });
 if (CON_FICHAS) eventos_artistas.push({ evento_id: EF.arrebato, artista_id: A_CUADRO, orden: 1 }, { evento_id: EF.montana, artista_id: A_CUADRO, orden: 1 }, { evento_id: EF.guion, artista_id: A_CUADRO, orden: 1 });
 
+// OL-413 (bitácora 444): los dos lugares de los carteles del founder y un festival de una noche sin programa, para ver el alta con lectura del cartel
+// (Cumbiachella en Lunaria; Trayectos Interactivos por la dirección del Laboratorio Centro Histórico) y el festival sin programa en su ficha, en la
+// ficha de su lugar, en Agenda y en Inicio. Todo inventado salvo los nombres y las direcciones de los dos lugares. Solo con `RESPALDO_CARTELES=1`:
+// `npm run medir` no lo pone, así ninguna pantalla medida cambia.
+export const CON_CARTELES = process.env.RESPALDO_CARTELES === "1";
+export const L_LAB = "aaaa0001-0000-4000-8000-000000000051";
+export const L_LUNARIA = "aaaa0001-0000-4000-8000-000000000052";
+export const E_CUMBIA = "bbbb0010-0000-4000-8000-000000000001";
+if (CON_CARTELES) {
+  lugares.push(
+    lugar(L_LAB, "laboratorio-centro-historico", "Laboratorio Centro Histórico", "foro", "C. 5 de Mayo 1100, 78339 San Luis Potosí, Mexico", 22.1469, -100.9771),
+    lugar(L_LUNARIA, "foro-lunaria", "Foro lunaria", "foro", "Calle Hermenegildo Galeana 423, Centro, 78000, San Luis Potosí, S.L.P.", 22.1512, -100.9768),
+  );
+  eventos.push({ ...evento({ id: E_CUMBIA, slug: "noche-cumbiera-demo", titulo: "Noche cumbiera (demo)", dias: 1, hora: "20:00", dur: 6, lugar_id: L_LUNARIA, imagen: null, creadoHace: 3, clase: "festival", descripcion: "Festival cumbiero de una noche: sonidos, baile y disfraz." }) });
+}
+
 // ---------- lo de las personas ----------
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },
@@ -488,6 +504,16 @@ export const rpcs = {
   guardar_evento_con_clase: ({ p_evento, p_operacion }) => ({ id: p_evento ?? p_operacion, artistas: [], artistas_anteriores: [], lugar_anterior: null, cambio: null, padre: null, inauguracion: null }),
   publicar_programa: ({ p_actos, p_operacion }) => ({ id: p_operacion, actos: (p_actos ?? []).filter((a) => a.publicar).map((a) => a.operacion), borradores: (p_actos ?? []).filter((a) => !a.publicar).map((a) => a.operacion) }),
   publicar_borrador_de_programa: ({ p_evento }) => ({ id: p_evento, padre: null }),
+  // OL-413: un festival sin programa se publica como un evento y queda con clase festival (en memoria, como las demás altas).
+  publicar_festival_sin_programa: ({ p_datos, p_operacion, p_quien }, t, { sub } = {}) => {
+    const r = enMemoria(t, null, p_datos, p_operacion, sub, p_quien);
+    const e = t.eventos.find((x) => x.id === r.id);
+    if (e) e.clase = "festival";
+    return { ...r, padre: null, inauguracion: null };
+  },
+  // La lectura del cartel (OL-413): el cupo siempre alcanza en el respaldo; lo leído lo contesta `server.mjs` en `/anthropic/v1/messages`.
+  apartar_lectura_de_cartel: () => true,
+  devolver_lectura_de_cartel: () => null,
   // OL-323: publicar un evento lo deja en memoria (como las asistencias: el fixture no cambia y otro arranque empieza limpio), para que «Publicado»
   // encuentre su sugerencia; aceptar o descartar una sugerencia también queda en memoria.
   guardar_evento_con_avisos: ({ p_evento, p_datos, p_operacion, p_quien }, t, { sub } = {}) => enMemoria(t, p_evento, p_datos, p_operacion, sub, p_quien),
