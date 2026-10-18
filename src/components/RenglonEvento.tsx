@@ -1,5 +1,6 @@
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
+import { festivalComoEvento } from "@/lib/claseEvento";
 import { cuandoDeTarjeta, notaDeClase } from "@/lib/destacados";
 import { costoEnLista, fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { cuandoPorDia, cuandoVariosDias, diaCorto, diaLocal, horaCorta } from "@/lib/fechas";
@@ -67,7 +68,8 @@ function horaDelRenglon(e: Pick<EventoAgenda, "inicio" | "fin" | "zona">): strin
  */
 export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false, cuando: dado, horas = false, nota = null, cancelado = false }: Props) {
   // Una exposición dice hasta cuándo se visita y el marco de un festival sus días y su programa, nunca «Del … al … · 00:00» (OL-322).
-  const cuando = dado ?? (e.clase === "exposicion" || e.clase === "festival" ? cuandoDeTarjeta(e) : undefined);
+  // Un festival sin programa (OL-413) es un renglón con su hora, como cualquier evento.
+  const cuando = dado ?? (e.clase === "exposicion" || (e.clase === "festival" && !festivalComoEvento(e)) ? cuandoDeTarjeta(e) : undefined);
   // Un evento de varios días dice sus días y su horario de cada día; la lista lo ubica en el día en que empieza.
   const varios = cuandoDeVarios(e);
   const ademas = [cancelado ? null : (nota ?? notaDeClase(e)), textoParte(e), costoEnLista(e.precio), e.van !== null && e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");

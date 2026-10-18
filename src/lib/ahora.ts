@@ -1,5 +1,5 @@
 import type { EventoAgenda } from "./agenda";
-import { esMarco } from "./agendaPorClase";
+import { esMarcoConPrograma } from "./agendaPorClase";
 import { diaLocal, horaCorta, localAIso, terminaDe } from "./fechas";
 import type { Franja } from "./horarioLugar";
 import { hrefEvento, nombreSitio } from "./eventos";
@@ -182,7 +182,8 @@ export function candidatosAhora(eventos: readonly EventoAgenda[], ciudad: string
   const salida: EventoAhora[] = [];
   const inicioDe = new Map(eventos.map((e) => [e.id, e.inicio]));
   for (const e of eventos) {
-    if (esMarco(e)) continue;
+    // Un festival sin programa (OL-413) es un evento con su hora: sí entra.
+    if (esMarcoConPrograma(e)) continue;
     const base = {
       id: e.id,
       href: hrefEvento(e),

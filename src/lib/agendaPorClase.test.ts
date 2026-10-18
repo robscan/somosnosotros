@@ -268,11 +268,22 @@ describe("«Festivales y expos» (OL-342)", () => {
     expect(ids(festivalesVigentes([fiesta, electric, vacio, pasado], ahora))).toEqual(["fiesta", "electric", "vacio"]);
     expect(ids(festivalesVigentes([{ ...vacio, programa: undefined }], ahora))).toEqual(["vacio"]);
   });
-  it("un festival sin actos dice «Programa por confirmar» junto a lo capturado; sin poder contarlo, nada (OL-346)", () => {
-    expect(notaDeClase(vacio)).toBe("Programa por confirmar");
-    expect(tarjetaConClase(vacio, ahora)).toMatchObject({ clase: "Festival", sitio: "Foro · Programa por confirmar" });
-    expect(tarjetaConClase({ ...vacio, sitio_texto: null }, ahora).sitio).toBe("Programa por confirmar"); // sin decir dos veces «por confirmar»
-    expect(notaDeClase({ ...vacio, programa: undefined })).toBeNull();
+  it("un festival largo sin actos dice «Programa por confirmar» junto a lo capturado; sin poder contarlo, nada (OL-346)", () => {
+    // OL-413: solo uno de más de 31 días; uno corto sin programa va como evento (la prueba de abajo).
+    const largo = { ...vacio, fin: a("2026-12-20", "00:00") };
+    expect(notaDeClase(largo)).toBe("Programa por confirmar");
+    expect(tarjetaConClase(largo, ahora)).toMatchObject({ clase: "Festival", sitio: "Foro · Programa por confirmar" });
+    expect(tarjetaConClase({ ...largo, sitio_texto: null }, ahora).sitio).toBe("Programa por confirmar"); // sin decir dos veces «por confirmar»
+    expect(notaDeClase({ ...largo, programa: undefined })).toBeNull();
+  });
+  it("un festival de un día sin programa (OL-413) es una sola ficha: su lugar, su día con su hora y su «Voy», y sigue diciendo «Festival»", () => {
+    expect(notaDeClase(vacio)).toBeNull();
+    const t = tarjetaConClase(vacio, ahora);
+    expect(t).toMatchObject({ clase: "Festival", sitio: "Foro" });
+    expect(t.sinVoy).toBeUndefined();
+    expect(t.detalle).toMatch(/18:00/);
+    // Sin poder contar sus actos no se sabe: como marco, sin «Voy».
+    expect(tarjetaConClase({ ...vacio, programa: undefined }, ahora).sinVoy).toBe(true);
   });
   it("un festival ya visto en un carril anterior sale igual; una exposición ya vista, no; lo que sale queda visto para el que sigue", () => {
     const vistos = new Set(["fiesta", "sin-leer"]);

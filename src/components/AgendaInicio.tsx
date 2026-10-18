@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
 import { agruparPiezasPorPublicacion, agruparPorDia, conFiltros, corteNuevos, exposicionesEnAgenda, filtrosRecordados, listarAgenda, listarNuevos, paraVisitarEnAgenda, queDeFiltros, sinSeguirSinSesion, type EventoAgenda, type FiltrosAgenda } from "@/lib/agenda";
 import { componerDia, cuandoParaVisitar, marcosDe, notaDeVisita, textoHastaEl, tituloParaVisitar } from "@/lib/agendaPorClase";
-import { soloInteres } from "@/lib/claseEvento";
+import { festivalComoEvento, soloInteres } from "@/lib/claseEvento";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { ZONA_INICIAL } from "@/lib/fechas";
@@ -182,8 +182,9 @@ function AgendaLista({
   const que = queDeFiltros(filtros);
   const visitar = paraVisitarEnAgenda(datos, filtros, hoy);
   const marcos = marcosDe(datos.eventos);
-  // Ni una exposición ni el marco de un festival llevan «Voy» en la lista (doc 55 §5, punto 2: «Me interesa», en su ficha).
-  const botonDe = (e: EventoAgenda) => (soloInteres(e.clase) ? undefined : asistencia.boton(e));
+  // Ni una exposición ni el marco de un festival llevan «Voy» en la lista (doc 55 §5, punto 2: «Me interesa», en su ficha); un festival sin
+  // programa sí (OL-413: pasa un día a una hora).
+  const botonDe = (e: EventoAgenda) => (soloInteres(e.clase, festivalComoEvento(e)) ? undefined : asistencia.boton(e));
 
   // Carga progresiva de la lista agrupada por día (OL-158): el total cambia con los filtros o la ciudad;
   // cuando cambia, la tanda se acota de nuevo (nunca menos que la primera, nunca más que lo que hay) en vez de quedarse
@@ -319,7 +320,7 @@ function RenglonDePieza({ pieza: p, ahora, asistencia }: { pieza: Pieza<EventoAg
   if (p.tipo === "festival") return <RenglonEvento evento={p.marco} conDia estado={asistencia.estado(p.marco.id)} nota={p.nuevos ? textoActosNuevos(p.nuevos) : null} />;
   if (p.tipo === "serie") return <RenglonEvento evento={p.cabeza} cuando={`${textoFunciones(p.funciones)} · ${textoDesde(p.cabeza, ahora, true)}`} />;
   const e = p.evento;
-  return <RenglonEvento evento={e} conDia estado={asistencia.estado(e.id)} boton={soloInteres(e.clase) ? undefined : asistencia.boton(e)} />;
+  return <RenglonEvento evento={e} conDia estado={asistencia.estado(e.id)} boton={soloInteres(e.clase, festivalComoEvento(e)) ? undefined : asistencia.boton(e)} />;
 }
 
 /** Un vacío con su causa. */

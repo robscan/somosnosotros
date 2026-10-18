@@ -10,6 +10,8 @@ import { enlaceDeAlta } from "@/lib/armazon";
 import { intentarDrenarAvisos } from "@/lib/avisosWorker";
 import { CIUDAD_INICIAL, SIN_CIUDAD } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
+import { nombresParaQuien } from "@/lib/actosLeidos";
+import { partirDireccion, unicoConDireccion } from "@/lib/direccionCartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { cartelAFormulario, ciudadDelSitio, costoOpcional, esClase, hrefEvento, validarEvento, type CambioEvento, type Clase, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
@@ -192,6 +194,35 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
   return { data: error || !data ? null : data as GuardadoCompleto, conflicto: error?.code === "40001" };
 }
 
+/**
+ * Publicar un festival sin programa (OL-413; definición aprobada por el founder el 18 de octubre: «Festival = un nombre que reúne varias
+ * presentaciones; el programa es opcional»): un día (o varios, con su horario por día), una hora y un lugar, como un evento, y clase festival. La
+ * base lo hace en una transacción (`publicar_festival_sin_programa`, migración `20261018120000_festival_sin_programa.sql`: `guardar_evento_con_clase`
+ * rechaza un festival nuevo sin actos, `festival_por_programa`). Un reintento con la misma operación devuelve lo ya publicado.
+ */
+async function publicarFestivalSinPrograma(supabase: Cliente, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, sesiones: SesionEvento[] | null): Promise<GuardadoCompleto | null> {
+  if (typeof operacion !== "string" || !esUuid(operacion)) return null;
+  const { data, error } = await supabase.rpc("publicar_festival_sin_programa", {
+    p_datos: filaEvento(datos, ciudad),
+    p_privado: datos.privado,
+    p_quien: quien.map((item) => ({ ...item, tipo: deducirTipoArtista(item.nombre) ?? "solista" })),
+    p_sesiones: sesiones,
+    p_operacion: operacion,
+  });
+  if (error) console.error("crearEvento (festival sin programa):", error.message);
+  return error || !data ? null : (data as GuardadoCompleto);
+}
+
+/** ¿El alta trae un programa? Algún acto marcado en el campo `actos` (OL-413: sin él, el festival se publica sin programa). */
+function traePrograma(formData: FormData): boolean {
+  try {
+    const crudo = JSON.parse(String(formData.get("actos") ?? "[]"));
+    return Array.isArray(crudo) && crudo.some((a) => a && typeof a === "object" && (a as { marcado?: unknown }).marcado === true);
+  } catch {
+    return false;
+  }
+}
+
 
 /**
  * «¿Es este?» antes de publicar (OL-384, como el lugar): los eventos visibles, sin pasar, el mismo día local y en el mismo sitio con un título
@@ -220,8 +251,8 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const entrada = leer(formData);
   const clase = leerClase(formData);
-  // Un festival se publica con su programa: el marco y sus actos en una sola operación (H6).
-  if (clase.clase === "festival") return publicarPrograma(supabase, formData, await esAdminDeSesion(supabase, user.id));
+  // Un festival con programa se publica con él: el marco y sus actos en una sola operación (H6). Sin programa (OL-413), como un evento.
+  if (clase.clase === "festival" && traePrograma(formData)) return publicarPrograma(supabase, formData, await esAdminDeSesion(supabase, user.id));
   const [lugar, esAdmin] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id)]);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin, costoOpcional: costoOpcionalDe(clase) });
   if (clase.error) errores.horario = clase.error;
@@ -236,8 +267,12 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
     const parecidos = await eventosParecidos(supabase, datos, formData.get("operacion"), user.id);
     if (parecidos.length) return { ok: false, errores: {}, parecidos };
   }
-  const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
-  if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
+  const quien = quienDesdeJson(formData.get("quien"));
+  const { data } =
+    clase.clase === "festival"
+      ? { data: await publicarFestivalSinPrograma(supabase, datos, ciudad, quien, formData.get("operacion"), sesiones) }
+      : await guardarCompleto(supabase, null, datos, ciudad, quien, formData.get("operacion"), null, sesiones, conClase(clase) ? clase : null);
+  if (!data) return { ok: false, errores: {}, general: clase.clase === "festival" ? "No se pudo publicar el festival. Intenta de nuevo." : "No se pudo publicar el evento completo. Intenta de nuevo." };
   await guardarColoresCartel(supabase, data.id, datos.imagen, formData);
   if (data.padre) revalidatePath(`/eventos/${data.padre}`);
   // El festival con su edición que leyó el cartel (OL-323): el título no siempre lo dice y el segundo acto lo necesita para reconocer a este
@@ -416,8 +451,9 @@ export async function marcarCancelado(id: string, cancelado: boolean): Promise<R
 export type ResultadoCartel =
   /** `horaLeida` y `costoLeido`: el cartel trae esa hora y ese precio de verdad. `valores` rellena lo que falta (las 19:00 si hay fecha
    *  sin hora, «gratis» si no dice nada de precio) porque el alta de siempre se apoya en eso; el alta por pasos necesita saber qué no
-   *  se leyó para preguntarlo en vez de publicarlo a ciegas. */
-  | { ok: true; valores: ReturnType<typeof cartelAFormulario>; lugarId: string | null; quien: QuienItem[]; horaLeida: boolean; costoLeido: boolean }
+   *  se leyó para preguntarlo en vez de publicarlo a ciegas. `sugerido` (OL-413): el lugar del directorio cuya dirección es la del cartel, cuando
+   *  su nombre no cruzó (el alta pregunta «¿Es en …?»). */
+  | { ok: true; valores: ReturnType<typeof cartelAFormulario>; lugarId: string | null; quien: QuienItem[]; horaLeida: boolean; costoLeido: boolean; sugerido?: LugarResumen | null }
   | { ok: false; mensaje: string }
   | { ok: false; sinCupo: true };
 
@@ -435,8 +471,33 @@ async function devolverLectura(perfilId: string) {
   }
 }
 
-/** Lee el cartel ya subido a Storage y devuelve los valores para llenar el formulario. */
-export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCartel> {
+/** Lo que se pide de un lugar para proponerlo en el alta (lo mismo que la lista de lugares de la pantalla). */
+const COLUMNAS_LUGAR = "id, nombre, tipo, direccion, lat, lng, portada, zona, privado";
+
+/**
+ * El lugar del directorio que está en la dirección del cartel (OL-413: «Trayectos Interactivos» decía «5 de mayo 1100 · Centro Histórico» y el
+ * Laboratorio Centro Histórico está en «C. 5 de Mayo 1100»). Una consulta acotada por el número (los visibles y públicos, de la ciudad si se sabe)
+ * y la comparación de calle y número aquí (`lib/direccionCartel`). Uno solo, o nada: con dos iguales se pregunta como siempre. Sin migración.
+ */
+async function lugarConDireccion(supabase: Cliente, direccion: string, ciudad: string | null): Promise<LugarResumen | null> {
+  const partes = partirDireccion(direccion);
+  if (!partes) return null;
+  try {
+    let consulta = supabase.from("lugares").select(COLUMNAS_LUGAR).eq("visible", true).eq("privado", false).ilike("direccion", `%${partes.numero}%`);
+    if (ciudad) consulta = consulta.eq("ciudad", ciudad);
+    const { data, error } = await consulta.limit(40);
+    if (error || !Array.isArray(data)) return null;
+    return unicoConDireccion(direccion, data as LugarResumen[]);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lee el cartel ya subido a Storage y devuelve los valores para llenar el formulario. `ciudad` (OL-413): la ciudad desde la que se publica, para
+ * buscar el lugar por su dirección solo en ella; sin ella, en todas (con dos iguales no se propone ninguno).
+ */
+export async function leerCartelAccion(urlImagen: string, ciudad: string | null = null): Promise<ResultadoCartel> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const { supabaseUrl } = configPublica();
   if (!supabaseUrl || !urlImagen.startsWith(`${supabaseUrl}/storage/v1/object/public/fotos/`)) return { ok: false, mensaje: "La imagen no es de aquí." };
@@ -470,6 +531,10 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
   };
   const lugarId = valores.lugar ? await lugarConNombre(valores.lugar) : null;
   for (const acto of valores.forma?.actos ?? []) acto.lugarId = acto.lugar ? await lugarConNombre(acto.lugar) : lugarId;
+  // Sin un lugar que se llame así, el que está en la dirección del cartel (OL-413): se propone, no se elige solo.
+  const sugerido = !lugarId && valores.direccion ? await lugarConDireccion(supabase, valores.direccion, typeof ciudad === "string" && ciudad.trim() ? ciudad.trim().slice(0, 80) : null) : null;
+  // Una noche leída como programa sin artistas aparte (OL-413): los nombres de sus actos son la alineación.
+  valores.artistas = nombresParaQuien(valores.artistas, valores.forma?.actos ?? [], valores.lugar);
   // Los nombres del cartel: registrados si se llaman igual; si no, por crear con solo el nombre.
   const quien: QuienItem[] = [];
   for (const nombre of valores.artistas) {
@@ -477,7 +542,7 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
     const igual = artistaIgual((data ?? []) as ArtistaResumen[], nombre);
     quien.push(igual ? { id: igual.id, nombre: igual.nombre } : { nombre });
   }
-  return { ok: true, valores, lugarId, quien, horaLeida: /^\d{2}:\d{2}$/.test(lectura.hora ?? ""), costoLeido: lectura.gratis === true || valores.precio !== "" };
+  return { ok: true, valores, lugarId, quien, horaLeida: /^\d{2}:\d{2}$/.test(lectura.hora ?? ""), costoLeido: lectura.gratis === true || valores.precio !== "", sugerido };
 }
 
 export type EstadoAsistencia = "voy" | "me_interesa" | null;

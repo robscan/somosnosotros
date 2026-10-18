@@ -29,7 +29,7 @@ import { normalizarNombre } from "@/lib/lugares";
 import { finesDelDia, type HorarioDia } from "@/lib/sesionesEvento";
 import type { FestivalElegible } from "./contextoClase";
 import HorarioPorDia from "./HorarioPorDia";
-import { HORAS_SUGERIDAS, actoListo, dondeResuelto, horariosDelTaller, nombreDelSitio, type Acto, type Inauguracion, type Padre, type Respuestas } from "./pasos";
+import { HORAS_SUGERIDAS, actoListo, dondeResuelto, horariosDelTaller, nombreDelSitio, type Acto, type Inauguracion, type Padre, type Respuestas, type Sitio } from "./pasos";
 import pasos from "./AltaEvento.module.css";
 import styles from "./PasosClase.module.css";
 
@@ -277,10 +277,18 @@ type PropsPrograma = {
   onSeguir: () => void;
 };
 
-/** Lo que dice un acto bajo su nombre: «vie 13 de nov · 6:00 p.m. · CC200 · Foro», o lo que le falta. */
-export function detalleActo(a: Acto, lugares: readonly LugarResumen[], zona: string, ahora: Date = new Date()): string {
-  const lugar = a.sitio.modo === "lugar" ? lugares.find((l) => l.id === a.sitio.lugarId) : undefined;
-  const sede = dondeResuelto(a.sitio) ? nombreDelSitio(a.sitio, lugar) : a.sedeLeida ? `${a.sedeLeida} · confirmar la sede` : "Falta la sede";
+/** El nombre de una sede ya resuelta («CC200»); "" si todavía no lo está. */
+function nombreDeSede(sitio: Sitio, lugares: readonly LugarResumen[]): string {
+  if (!dondeResuelto(sitio)) return "";
+  return nombreDelSitio(sitio, sitio.modo === "lugar" ? lugares.find((l) => l.id === sitio.lugarId) : undefined);
+}
+
+/**
+ * Lo que dice un acto bajo su nombre: «vie 13 de nov · 6:00 p.m. · CC200», o lo que le falta. Sin sede propia es la del festival (OL-413): su nombre
+ * si ya se eligió, o «sede del festival» (se pregunta una sola vez, después del programa).
+ */
+export function detalleActo(a: Acto, lugares: readonly LugarResumen[], zona: string, ahora: Date = new Date(), festival?: Sitio): string {
+  const sede = a.sitio ? nombreDeSede(a.sitio, lugares) || (a.sedeLeida ? `${a.sedeLeida} · confirmar la sede` : "Falta la sede") : (festival && nombreDeSede(festival, lugares)) || "Sede del festival";
   return [a.dia ? diaConMesDe(a.dia, ahora, zona) : "Falta el día", a.hora ? etiquetaHora(a.hora) : "Falta la hora", sede].join(" · ");
 }
 
@@ -288,6 +296,10 @@ export function detalleActo(a: Acto, lugares: readonly LugarResumen[], zona: str
  * El programa de un festival (caso 4; H6): «El cartel trae N eventos», cada acto en su renglón con su casilla (marcada se publica; desmarcada
  * queda como borrador del festival), su día, su hora y su sede. Tocar el renglón abre su hoja para corregirlo antes de publicar. «Agregar
  * actividad» suma uno a mano (también sirve para armar un festival sin cartel). «Revisar el festival» lleva a «Revisa» del marco.
+ *
+ * OL-413: el programa es opcional. Cada acto sin sede propia lleva la del festival, que se pregunta una sola vez después; sin ningún acto marcado,
+ * «Revisar el festival» sigue y el festival se publica sin programa (con su día, su hora y su lugar). Una actividad agregada y dejada en blanco se
+ * quita al cerrar su hoja.
  */
 export function PasoPrograma({ r, zona, lugares, mios, ciudadContexto, onCambiar, onSede, onSeguir }: PropsPrograma) {
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -296,7 +308,7 @@ export function PasoPrograma({ r, zona, lugares, mios, ciudadContexto, onCambiar
   const cambiarActo = (clave: string, cambios: Partial<Acto>) => onCambiar({ actos: r.actos.map((a) => (a.clave === clave ? { ...a, ...cambios } : a)) });
   function agregar() {
     const clave = `nuevo-${r.actos.length}-${Date.now().toString(36)}`;
-    onCambiar({ actos: [...r.actos, { clave, titulo: "", dia: "", hora: "", sitio: r.sitio, sedeLeida: "", quien: [], marcado: true, leido: false }] });
+    onCambiar({ actos: [...r.actos, { clave, titulo: "", dia: "", hora: "", sitio: null, sedeLeida: "", quien: [], marcado: true, leido: false }] });
     setAbierto(clave);
   }
   const marcados = r.actos.filter((a) => a.marcado);
@@ -309,7 +321,7 @@ export function PasoPrograma({ r, zona, lugares, mios, ciudadContexto, onCambiar
             Se publican juntos como el programa de <b>{r.nombre || "el festival"}</b>. Toca uno para corregirlo; desmarca el que no quieras publicar aún.
           </>
         ) : (
-          "Agrega cada actividad con su día, su hora y su sede: se publican juntas como el programa del festival."
+          "Agrega cada actividad con su día y su hora: se publican juntas como el programa del festival, en su sede si no le pones otra."
         )}
       </p>
       {r.actos.length > 0 && (
@@ -321,7 +333,7 @@ export function PasoPrograma({ r, zona, lugares, mios, ciudadContexto, onCambiar
               </button>
               <button type="button" className={styles.corregir} onClick={() => setAbierto(a.clave)}>
                 <b>{a.titulo || "Actividad sin nombre"}</b>
-                <small className={a.marcado && !actoListo(a) ? styles.falta : undefined}>{detalleActo(a, lugares, zona)}</small>
+                <small className={a.marcado && !actoListo(a) ? styles.falta : undefined}>{detalleActo(a, lugares, zona, new Date(), r.sitio)}</small>
                 <span>Corregir</span>
               </button>
             </li>
@@ -333,12 +345,13 @@ export function PasoPrograma({ r, zona, lugares, mios, ciudadContexto, onCambiar
         Agregar actividad
       </Boton>
       {marcados.length > 0 && <p className={pasos.aviso}>{`${textoProgramaRegistrado(marcados.length)}${r.actos.length > marcados.length ? ` · ${r.actos.length - marcados.length} sin publicar (borrador)` : ""}`}</p>}
-      <Siguiente falta={!marcados.length ? "Falta una actividad" : incompleto ? `Completa «${incompleto.titulo || "la actividad sin nombre"}»` : null} texto="Revisar el festival" onSeguir={onSeguir} />
+      <Siguiente falta={incompleto ? `Completa «${incompleto.titulo || "la actividad sin nombre"}»` : null} texto="Revisar el festival" onSeguir={onSeguir} />
       {acto && (
         <HojaActo
           acto={acto}
           zona={zona}
           lugares={lugares}
+          festival={r.sitio}
           mios={mios}
           ciudadContexto={ciudadContexto}
           onCambio={(cambios) => cambiarActo(acto.clave, cambios)}
@@ -346,7 +359,11 @@ export function PasoPrograma({ r, zona, lugares, mios, ciudadContexto, onCambiar
             setAbierto(null);
             onSede(acto);
           }}
-          onCerrar={() => setAbierto(null)}
+          onCerrar={() => {
+            setAbierto(null);
+            // Agregada y dejada en blanco: no queda como «Actividad sin nombre» por completar.
+            if (!acto.leido && !acto.titulo.trim() && !acto.dia && !acto.hora && !acto.sitio) onCambiar({ actos: r.actos.filter((a) => a.clave !== acto.clave) });
+          }}
         />
       )}
     </>
@@ -357,6 +374,8 @@ type PropsActo = {
   acto: Acto;
   zona: string;
   lugares: LugarResumen[];
+  /** La sede del festival: la de cada acto que no tiene una propia (OL-413). */
+  festival: Sitio;
   mios: ArtistaResumen[];
   ciudadContexto: Ciudad | null;
   onCambio: (cambios: Partial<Acto>) => void;
@@ -366,13 +385,14 @@ type PropsActo = {
 
 /**
  * La hoja de un acto (lo que le faltaba al prototipo aceptado, bitácora 314): su nombre (con su ✕ y su contador), su día y su hora (las hojas de
- * siempre), su sede (el paso «Dónde» de siempre) y quién. «Listo» siempre a la vista.
+ * siempre), su sede (el paso «Dónde» de siempre) y quién. «Listo» siempre a la vista. Sin sede propia dice la del festival (OL-413: «Sede del
+ * festival», con su nombre si ya se eligió); «Cambiar» le pone una propia.
  */
-function HojaActo({ acto, zona, lugares, mios, ciudadContexto, onCambio, onSede, onCerrar }: PropsActo) {
+function HojaActo({ acto, zona, lugares, festival, mios, ciudadContexto, onCambio, onSede, onCerrar }: PropsActo) {
   const [otra, setOtra] = useState<"dia" | "hora" | null>(null);
   const ahora = new Date();
-  const lugar = acto.sitio.modo === "lugar" ? lugares.find((l) => l.id === acto.sitio.lugarId) : undefined;
-  const sede = dondeResuelto(acto.sitio) ? nombreDelSitio(acto.sitio, lugar) : null;
+  const delFestival = nombreDeSede(festival, lugares);
+  const sede = acto.sitio ? nombreDeSede(acto.sitio, lugares) || null : delFestival ? `${delFestival} · sede del festival` : "Sede del festival";
   const titulo = acto.titulo.trim() || "Actividad nueva";
   return (
     <>

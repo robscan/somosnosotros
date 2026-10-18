@@ -1,4 +1,5 @@
 import { esExposicion, esMarco, marcosDe } from "./agendaPorClase";
+import { festivalComoEvento } from "./claseEvento";
 import type { Clase } from "./eventos";
 import { diaConMes, diaCorto, horaCorta } from "./fechas";
 import { normalizarNombre } from "./lugares";
@@ -20,7 +21,7 @@ import { normalizarNombre } from "./lugares";
  */
 
 /** Lo que hace falta de un evento para saber con quién va. */
-export type Agrupable = { id: string; titulo: string; inicio: string; lugar_id?: string | null; sitio_texto?: string | null; evento_padre_id?: string | null; clase?: Clase | null };
+export type Agrupable = { id: string; titulo: string; inicio: string; lugar_id?: string | null; sitio_texto?: string | null; evento_padre_id?: string | null; clase?: Clase | null; fin?: string | null; zona?: string; programa?: { registrados: number } | null };
 
 /** Una pieza de una lista de lo nuevo. `primero` es el de los suyos que la puso en su sitio (en una lista por publicación, el más reciente). */
 export type Pieza<T> =
@@ -47,6 +48,8 @@ export function mismaSerie(a: Agrupable, b: Agrupable): boolean {
  * tarjeta) y el teléfono (que junta lo que sigue siendo nuevo para la persona).
  */
 export function grupoDe(e: Agrupable, marcos: ReadonlyMap<string, unknown>): string | null {
+  // Un festival sin programa (OL-413) va suelto, como un evento: no tiene actos que juntar.
+  if (esMarco(e) && e.zona && festivalComoEvento({ ...e, fin: e.fin ?? null, zona: e.zona })) return null;
   if (esMarco(e)) return `festival:${e.id}`;
   if (e.evento_padre_id) return marcos.has(e.evento_padre_id) ? `festival:${e.evento_padre_id}` : null;
   if (esExposicion(e)) return null;

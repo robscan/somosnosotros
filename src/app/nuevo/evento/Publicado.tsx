@@ -23,6 +23,8 @@ type Props = {
   conSesiones?: boolean;
   /** Cómo ocurre (OL-321): el título del final, la línea de la tarjeta y la sugerencia. */
   clase?: Clase;
+  /** Un festival publicado sin programa (OL-413): la sugerencia ofrece agregarlo, sin decir que falta. */
+  sinPrograma?: boolean;
   /** La línea de cuándo de la tarjeta y de compartir cuando no es la de un evento («Hasta el dom 30 de nov», «3 sesiones · …», el programa). */
   cuando?: string;
   /** Una exposición que se publicó sin inauguración: se sugiere agregarla. */
@@ -57,7 +59,7 @@ const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion:
  * en una línea quieta (nunca dos cajas). Su botón no es el principal. Abre el creador reemplazando «Publicado» (terminar el alta no la deja en
  * el historial): desde el creador y desde la ficha, Atrás lleva adonde mandaba el alta.
  */
-export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false }: Props) {
+export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", sinPrograma = false, cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false }: Props) {
   const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones, cuando);
   const otraSugerencia = sugerenciaVisible || (clase === "exposicion" && sinInauguracion) || clase === "festival";
   const ficha = hrefEvento(evento);
@@ -85,10 +87,10 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
       )}
       {clase === "festival" && (
         <div className={styles.sugerencia}>
-          <h3>¿Falta algo del programa?</h3>
-          <p>Puedes agregar actividades después; la ficha dice cuántas lleva.</p>
+          <h3>{sinPrograma ? "¿Sus presentaciones tienen ficha propia?" : "¿Falta algo del programa?"}</h3>
+          <p>{sinPrograma ? "Si cada una tiene su día o su sede, agrégalas como su programa. Si no, así está completo." : "Puedes agregar actividades después; la ficha dice cuántas lleva."}</p>
           <Boton href={enlaceAltaEvento({ festival: evento.id })} variante="secundario">
-            Agregar otra actividad
+            {sinPrograma ? "Agregar programa" : "Agregar otra actividad"}
           </Boton>
         </div>
       )}

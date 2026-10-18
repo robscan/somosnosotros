@@ -197,5 +197,25 @@ export const textoProgramaRegistrado = (n: number): string => `Programa registra
  */
 export const yaPasoSegunClase = (e: { inicio: string; fin: string | null; zona: string; clase?: Clase }, ahora: Date = new Date()): boolean => eventoPaso(e.inicio, e.fin, ahora, e.zona);
 
-/** «Me interesa» en vez de «Voy» para lo que no se vive un día concreto: una exposición o un festival (doc 55 §5, punto 2: no se inventa un día). */
-export const soloInteres = (clase: Clase | null | undefined): boolean => clase === "exposicion" || clase === "festival";
+/** Hasta cuántos días un festival sin programa se lista como un evento: los del horario por día (OL-311). */
+const DIAS_COMO_EVENTO = 31;
+
+/**
+ * ¿Es un festival sin programa que se lista como un evento? (OL-413; definición aprobada por el founder el 18 de octubre: «Festival = un nombre que
+ * reúne varias presentaciones; el programa es opcional»). Un festival sin ningún acto publicado (`programa.registrados` 0: se sabe solo si se
+ * contaron) de hasta 31 días: Cumbiachella, una noche en un lugar. En las listas va como un evento, en su día (o en cada uno), con su hora, su
+ * lugar y su «Voy»; conserva lo de festival (la cabecera oscura, la portada del sistema, la etiqueta «Festival»). Uno más largo sin actos (un
+ * festival de meses anunciado sin programa todavía) sigue como marco, con «Programa por confirmar». Sin contar sus actos, no se sabe: como marco.
+ */
+export function festivalComoEvento(e: { clase?: Clase | null; inicio: string; fin: string | null; zona: string; programa?: { registrados: number } | null }): boolean {
+  if (e.clase !== "festival" || e.programa?.registrados !== 0) return false;
+  const desde = diaLocal(new Date(e.inicio), e.zona);
+  const hasta = ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona);
+  return Math.round((Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / 86400000) + 1 <= DIAS_COMO_EVENTO;
+}
+
+/**
+ * «Me interesa» en vez de «Voy» para lo que no se vive un día concreto: una exposición o un festival (doc 55 §5, punto 2: no se inventa un día). Un
+ * festival sin programa que va como evento (`comoEvento`, OL-413: `festivalComoEvento`) sí pasa un día a una hora: lleva «Voy».
+ */
+export const soloInteres = (clase: Clase | null | undefined, comoEvento = false): boolean => !comoEvento && (clase === "exposicion" || clase === "festival");
