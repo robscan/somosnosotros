@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { IconoBandera, IconoBoleto, IconoCalendario, IconoCampana, IconoChevronDerecha, IconoEstrella, IconoLapiz, IconoPersona, IconoReloj } from "@/components/ui/Iconos";
+import { IconoBandera, IconoBoleto, IconoCalendario, IconoCampana, IconoCaret, IconoChevronDerecha, IconoEstrella, IconoLapiz, IconoPersona, IconoReloj } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import Salto from "@/components/ui/Salto";
 import { datosPersona, estadoRol, unir } from "@/lib/panel";
+import { leerPaginasPublicado, totalesPublicado, totalPublicado, type TipoPublicado } from "@/lib/panelPublicado";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import Avatar from "../../Avatar";
-import { cargarPersona } from "../../consultas";
+import { cargarPersona, cargarPublicado } from "../../consultas";
 import Reintentar from "../../Reintentar";
 import CorreoPersona from "./CorreoPersona";
+import FotoPersona from "./FotoPersona";
+import LoPublicado, { ANCLA_PUBLICADO } from "./LoPublicado";
 import RolPersona from "./RolPersona";
 import styles from "../../admin.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -16,15 +19,17 @@ import renglon from "@/components/ui/Renglon.module.css";
 export const metadata = { title: "Persona · Administración · Somos Nosotros", robots: { index: false, follow: false } };
 
 /**
- * La ficha de administración de una persona (decisión 8): cabecera, Cuenta y Actividad con el dibujo de Ajustes, y Rol
- * al final y solo. Si la cuenta ya no existe, lo dice (P9).
+ * La ficha de administración de una persona (decisión 8): cabecera, Cuenta y Actividad con el dibujo de Ajustes, «Lo que publicó» (OL-414) y Rol
+ * al final y solo. Si la cuenta ya no existe, lo dice (P9). La foto de la cabecera es grande y se abre entera (OL-414); el renglón «Publicó» baja a
+ * «Lo que publicó», y su número es el de esa lista (sale de la misma lectura).
  */
-export default async function PersonaAdmin({ params }: { params: Promise<{ id: string }> }) {
+export default async function PersonaAdmin({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Partial<Record<TipoPublicado, string>>> }) {
   const { id } = await params;
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/admin/personas/${id}`);
   if (actual.perfil.rol !== "admin") redirect("/");
-  const { persona: f, error } = await cargarPersona(id);
+  const paginas = leerPaginasPublicado(await searchParams);
+  const [{ persona: f, error }, publicado] = await Promise.all([cargarPersona(id), cargarPublicado(id, paginas)]);
   if (error) {
     return (
       <main className={plantilla.paginaContenido}>
@@ -48,12 +53,15 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
     );
   }
   const ahora = new Date();
-  const d = datosPersona(f, ahora);
+  // El número de «Publicó» sale de la lectura de «Lo que publicó» (cuenta lo mismo que `panel_persona`: todo lo que tiene `creado_por` = esta
+  // persona); si esa lectura falló, el de `panel_persona`.
+  const d = datosPersona(publicado ? { ...f, ...totalesPublicado(publicado) } : f, ahora);
+  const hayPublicado = !!publicado && totalPublicado(publicado) > 0;
   return (
     <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
       <header className={styles.cabecera}>
-        <Avatar foto={f.foto} nombre={f.nombre} />
+        <FotoPersona foto={f.foto} nombre={f.nombre} />
         <h1>{f.nombre || "Sin nombre"}</h1>
         <small>{unir([f.es_yo && "Tú", f.colonia, f.reservado ? "perfil reservado" : "perfil público"])}</small>
       </header>
@@ -90,11 +98,24 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
           <small>Sigue</small>
           <b>{d.sigue}</b>
         </li>
-        <li className={styles.dato}>
-          <IconoLapiz width={20} height={20} />
-          <small>Publicó</small>
-          <b>{d.publico}</b>
-        </li>
+        {hayPublicado ? (
+          <li>
+            <Salto destino={ANCLA_PUBLICADO} className={styles.dato}>
+              <IconoLapiz width={20} height={20} />
+              <small>Publicó</small>
+              <b>{d.publico}</b>
+              <span className={styles.total}>
+                <IconoCaret />
+              </span>
+            </Salto>
+          </li>
+        ) : (
+          <li className={styles.dato}>
+            <IconoLapiz width={20} height={20} />
+            <small>Publicó</small>
+            <b>{d.publico}</b>
+          </li>
+        )}
         {f.lleva.length === 0 ? (
           <li className={styles.dato}>
             <IconoPersona width={20} height={20} />
@@ -121,6 +142,15 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
           <b>{d.reportes}</b>
         </li>
       </ul>
+
+      {publicado === null ? (
+        <>
+          <h2 className={styles.grupo}>Lo que publicó</h2>
+          <Reintentar texto="No pudimos leer lo que publicó." />
+        </>
+      ) : (
+        hayPublicado && <LoPublicado perfilId={f.id} publicado={publicado} paginas={paginas} ahora={ahora} />
+      )}
 
       <h2 className={styles.grupo}>Rol</h2>
       <RolPersona perfilId={f.id} nombre={f.nombre} estado={estadoRol(f, actual.perfil.id, ahora)} />

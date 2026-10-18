@@ -327,6 +327,30 @@ if (CON_CARTELES) {
   eventos.push({ ...evento({ id: E_CUMBIA, slug: "noche-cumbiera-demo", titulo: "Noche cumbiera (demo)", dias: 1, hora: "20:00", dur: 6, lugar_id: L_LUNARIA, imagen: null, creadoHace: 3, clase: "festival", descripcion: "Festival cumbiero de una noche: sonidos, baile y disfraz." }) });
 }
 
+// OL-414 (bitácora 445): Administración › Personas con fotos y «Lo que publicó» con eventos, lugares y artistas. Ana y Marcos con foto, tres cuentas
+// más en la lista (dos con foto, una sin ella), y lo que Ana dio de alta además de sus eventos: un lugar a la vista y uno oculto, un artista a la
+// vista y uno oculto; su festival y sus actos con la misma hora de alta (como los guarda la base: se dan de alta juntos). Todo inventado; las
+// fotos (`retratos.example`) las dibuja `capturar-persona-publicado.mjs`. Solo con `RESPALDO_PERSONAS=1`: `npm run medir` no lo pone, así ninguna
+// pantalla medida cambia.
+export const CON_PERSONAS = process.env.RESPALDO_PERSONAS === "1";
+export const RETRATOS = "https://retratos.example";
+const L_ANA = { taller: "aaaa0001-0000-4000-8000-000000000061", patio: "aaaa0001-0000-4000-8000-000000000062" };
+const A_ANA = { mariana: "cccc0001-0000-4000-8000-000000000061", tinta: "cccc0001-0000-4000-8000-000000000062" };
+if (CON_PERSONAS) {
+  perfiles.find((p) => p.id === ANA).foto = `${RETRATOS}/ana.png`;
+  perfiles.find((p) => p.id === MARCOS).foto = `${RETRATOS}/marcos.png`;
+  lugares.push(
+    { ...lugar(L_ANA.taller, "taller-barro-y-fuego-demo", "Taller Barro y Fuego (demo)", "colectivo", "Calle inventada 45, Barrio de San Miguelito, San Luis Potosí", 22.1430, -100.9750), portada: `${RETRATOS}/taller.png`, creado_por: ANA, creado_en: hace(6) },
+    { ...lugar(L_ANA.patio, "patio-de-la-vecindad-demo", "Patio de la Vecindad (demo)", "otro", "Calle inventada 12, Centro, San Luis Potosí", 22.1500, -100.9790), detalle: "Patio de vecindad", creado_por: ANA, visible: false, creado_en: hace(9) },
+  );
+  artistas.push(
+    { ...artista(A_ANA.mariana, "mariana-ruvalcaba-demo", "Mariana Ruvalcaba (demo)", "artes_visuales", "Grabado", "solista", "Grabadora y papelera inventada para la prueba de Administración (OL-414).", [], `${RETRATOS}/mariana.png`), creado_por: ANA, creado_en: hace(5) },
+    { ...artista(A_ANA.tinta, "colectivo-tinta-roja-demo", "Colectivo Tinta Roja (demo)", "artes_visuales", "Gráfica", "grupo"), creado_por: ANA, visible: false, creado_en: hace(8) },
+  );
+  const altaDelFestival = hace(2);
+  for (const e of eventos) if (e.id === E.cine || e.evento_padre_id === E.cine) e.creado_en = altaDelFestival;
+}
+
 // ---------- lo de las personas ----------
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },
@@ -568,6 +592,74 @@ export const rpcs = {
     return null;
   },
 };
+
+// OL-414: Administración › Personas, la lista y la ficha de una persona: los contratos de `panel_personas`, `panel_personas_conteos` y
+// `panel_persona` sobre las personas del respaldo (los permisos reales y las cuentas se prueban en PostgreSQL, `supabase/tests`). Lo publicado
+// cuenta todo lo que tiene `creado_por` = esa persona, como la base. La cuenta de administración del respaldo está en la lista (como «Tú» al
+// mirarse) y es de origen: puede hacer y quitar administradores. Las tres cuentas de más solo salen en la lista y solo con `RESPALDO_PERSONAS=1`.
+const CUENTAS_PANEL = {
+  [ANA]: { correo: "ana@example.com", creado_en: hace(30), ultima_entrada: hace(1), visto: hoyLocal, confirmado: true },
+  [MARCOS]: { correo: "marcos@example.com", creado_en: hace(25), ultima_entrada: hace(3), visto: null, confirmado: true },
+  [ADMIN]: { correo: "admin@example.com", creado_en: hace(60), ultima_entrada: hace(0), visto: hoyLocal, confirmado: true, de_origen: true },
+};
+const personasDeMas = !CON_PERSONAS
+  ? []
+  : [
+      { id: "99999999-1111-4000-8000-000000000001", nombre: "Lucía Barragán", foto: `${RETRATOS}/lucia.png`, rol: "usuario", reservado: false, colonia: "Tequisquiapan", correo: "lucia@example.com", creado_en: hace(2), ultima_entrada: hace(2), visto: hoyLocal, confirmado: true },
+      { id: "99999999-1111-4000-8000-000000000002", nombre: "Diego Ortiz Cano", foto: null, rol: "usuario", reservado: false, colonia: null, correo: "diego@example.com", creado_en: hace(4), ultima_entrada: null, visto: null, confirmado: false },
+      { id: "99999999-1111-4000-8000-000000000003", nombre: "Valeria Méndez", foto: `${RETRATOS}/valeria.png`, rol: "usuario", reservado: true, colonia: "Centro", correo: "valeria@example.com", creado_en: hace(12), ultima_entrada: hace(5), visto: null, confirmado: true },
+    ];
+/** Las personas del panel: las del fixture con su cuenta, la de administración y, con la bandera, las de más. */
+function personasPanel(t) {
+  const conCuenta = [...t.perfiles, perfilAdmin].map((p) => ({ ...p, ...CUENTAS_PANEL[p.id] }));
+  return [...conCuenta, ...personasDeMas];
+}
+const oculto = (correo) => (correo ? `${correo.split("@")[0].slice(0, 2)}…@${correo.split("@")[1]}` : null);
+const publicadoPor = (id, t) => ({ lugares: t.lugares.filter((x) => x.creado_por === id).length, eventos: t.eventos.filter((x) => x.creado_por === id).length, artistas: t.artistas.filter((x) => x.creado_por === id).length });
+const llevaDe = (id, t) => [
+  ...t.artistas_cuentas.filter((c) => c.perfil_id === id).map((c) => ({ tipo: "artista", id: c.artista_id, nombre: t.artistas.find((a) => a.id === c.artista_id)?.nombre, creado_en: c.creado_en })),
+  ...t.lugares_cuentas.filter((c) => c.perfil_id === id).map((c) => ({ tipo: "lugar", id: c.lugar_id, nombre: t.lugares.find((l) => l.id === c.lugar_id)?.nombre, creado_en: c.creado_en })),
+].sort((a, b) => a.creado_en.localeCompare(b.creado_en));
+const vaA = (id, t) => t.asistencias.filter((a) => a.usuario_id === id && a.estado === "voy" && t.eventos.some((e) => e.id === a.evento_id && e.visible && new Date(e.termina) >= new Date())).length;
+const esNueva = (p) => p.rol !== "admin" && Date.now() - Date.parse(p.creado_en) < 7 * 86400e3;
+const ultimaActividad = (p) => Math.max(Date.parse(p.ultima_entrada ?? 0) || 0, p.visto ? Date.parse(`${p.visto}T12:00:00-06:00`) : 0, Date.parse(p.creado_en));
+Object.assign(rpcs, {
+  panel_personas: ({ p_buscar = null, p_filtro = "todas", p_limite = 30, p_desde = 0 }, t) => {
+    const q = String(p_buscar ?? "").trim().toLowerCase();
+    const filas = personasPanel(t)
+      .filter((p) => !q || p.nombre.toLowerCase().includes(q) || p.correo?.toLowerCase().includes(q))
+      .filter((p) => (p_filtro === "nuevas" ? esNueva(p) : p_filtro === "sin_entrar" ? !p.ultima_entrada : p_filtro === "administracion" ? p.rol === "admin" : true))
+      .sort((a, b) => ultimaActividad(b) - ultimaActividad(a) || a.nombre.localeCompare(b.nombre));
+    return filas.slice(p_desde, p_desde + p_limite).map((p) => {
+      const n = publicadoPor(p.id, t);
+      const lleva = llevaDe(p.id, t);
+      return {
+        id: p.id, nombre: p.nombre, foto: p.foto, rol: p.rol, reservado: p.reservado, creado_en: p.creado_en, confirmado: p.confirmado, ultima_entrada: p.ultima_entrada, visto: p.visto, correo_oculto: oculto(p.correo),
+        va_a: vaA(p.id, t), sigue: t.seguimientos.filter((s) => s.usuario_id === p.id).length, publico: n.lugares + n.eventos + n.artistas, lleva: lleva[0]?.nombre ?? null, lleva_n: lleva.length, total: filas.length,
+      };
+    });
+  },
+  panel_personas_conteos: (_args, t) => {
+    const todas = personasPanel(t);
+    return { todas: todas.length, nuevas: todas.filter(esNueva).length, sin_entrar: todas.filter((p) => !p.ultima_entrada).length, administracion: todas.filter((p) => p.rol === "admin").length };
+  },
+  panel_persona: ({ p_perfil }, t, { sub } = {}) => {
+    const p = personasPanel(t).find((x) => x.id === p_perfil);
+    if (!p) return null;
+    const n = publicadoPor(p.id, t);
+    const seguidos = t.seguimientos.filter((s) => s.usuario_id === p.id);
+    return {
+      id: p.id, nombre: p.nombre, foto: p.foto, colonia: p.colonia, reservado: p.reservado, rol: p.rol, creado_en: p.creado_en, correo_oculto: oculto(p.correo), confirmado: p.confirmado, ultima_entrada: p.ultima_entrada, visto: p.visto,
+      avisos_correo: !!p.avisos_correo, avisos_correo_motivo: null, telefonos: 0,
+      va_a: vaA(p.id, t), le_interesa: t.asistencias.filter((a) => a.usuario_id === p.id && a.estado === "me_interesa").length,
+      sigue_lugares: seguidos.filter((s) => s.lugar_id).length, sigue_artistas: seguidos.filter((s) => s.artista_id).length,
+      publico_lugares: n.lugares, publico_eventos: n.eventos, publico_artistas: n.artistas,
+      lleva: llevaDe(p.id, t).map(({ tipo, id, nombre }) => ({ tipo, id, nombre })),
+      reclamos: 0, reportes: 0, pendientes: 0, de_origen: !!p.de_origen, es_yo: p.id === sub, puedo_cambiar_rol: !!CUENTAS_PANEL[sub]?.de_origen,
+      administradores: personasPanel(t).filter((x) => x.rol === "admin").length, cambio_rol: null,
+    };
+  },
+});
 
 /**
  * Un evento que se publica desde la app (OL-323): a la memoria, con lo que guarda la base (la clave de la operación como id, su slug y la cuenta
