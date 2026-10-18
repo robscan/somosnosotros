@@ -8,7 +8,7 @@ import Campo from "@/components/ui/Campo";
 import Casilla from "@/components/ui/Casilla";
 import { Chip, Chips } from "@/components/ui/Chip";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
-import { IconoBoleto, IconoBuscar } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoBuscar, IconoEtiqueta } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import Opcion from "@/components/ui/Opcion";
 import SelectorDia from "@/components/ui/SelectorDia";
@@ -294,6 +294,26 @@ export function PasoCuanto({ precio, onCosto, onPrecio, onPorConfirmar }: { prec
         <Siguiente falta={precio ? null : "Falta el precio"} onSeguir={seguir} />
       )}
     </>
+  );
+}
+
+/** Las opciones de «¿Qué es?», en el orden del founder («festival, galería o evento»; la galería es la exposición) y el taller, que también existe. */
+const QUE_ES: readonly Clase[] = ["puntual", "festival", "exposicion", "taller"];
+
+/**
+ * «¿Qué es?» (OL-413; founder, 18 de octubre: «si hay dudas el sistema podría preguntar al usuario si es festival, galería, o evento, solo cuando el
+ * sistema no lo pueda resolver o no sea claro»): sale solo cuando el cartel no resolvió la clase (`claseDudosa`). Cuatro opciones grandes, como
+ * «¿Cuánto cuesta?»; elegir una la fija y avanza a su paso del tiempo (nombre, dónde, quién y precio se conservan). Sin preselección: es una
+ * pregunta, no una propuesta.
+ */
+export function PasoQue({ onElegir }: { onElegir: (clase: Clase) => void }) {
+  return (
+    <div className={styles.opciones} role="group" aria-label="Qué es">
+      {QUE_ES.map((clase) => {
+        const c = CLASES.find((x) => x.clase === clase) ?? CLASES[0];
+        return <Opcion key={clase} icono={<IconoEtiqueta />} titulo={c.clase === "taller" ? c.nombre : c.corto} detalle={c.frase} onClick={() => onElegir(clase)} />;
+      })}
+    </div>
   );
 }
 

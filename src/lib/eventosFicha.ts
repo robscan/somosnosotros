@@ -1,5 +1,5 @@
 import { agruparPorDia, compararEventos, type EventoAgenda, type Grupo } from "./agenda";
-import { esExposicion, esMarco, porCercania, rangosDeVisita, sinHorario, textoAbre, textoHastaEl } from "./agendaPorClase";
+import { esExposicion, esMarco, esMarcoConPrograma, porCercania, rangosDeVisita, sinHorario, textoAbre, textoHastaEl } from "./agendaPorClase";
 import { cuandoDePeriodo, HORARIO_POR_CONFIRMAR, visitaDeEvento } from "./claseEvento";
 import { notaDeClase, PROGRAMA_POR_CONFIRMAR } from "./destacados";
 import { diaLocal, ZONA_INICIAL } from "./fechas";
@@ -19,7 +19,8 @@ import { ocurrenciasDeLista } from "./ocurrencias";
  *   (`BloqueFestival`), con todas sus funciones aquí debajo, cada una con su día y su hora. El bloque se coloca por su **siguiente función** aquí
  *   (no por el día en que empezó el festival); sin funciones por venir aquí, no sale (lo que ya pasó está en el Historial o la Trayectoria). El
  *   marco nunca es un renglón suelto: si es de esta ficha (su lugar, o el artista está en él) y todavía no tiene ningún acto publicado, sale
- *   solo su cabecera con «Programa por confirmar»; si tiene actos pero ninguno aquí, no sale.
+ *   solo su cabecera con «Programa por confirmar»; si tiene actos pero ninguno aquí, no sale. Un festival sin programa de pocos días (OL-413,
+ *   `festivalComoEvento`: Cumbiachella, una noche en un lugar) no es un marco: es un renglón en su día, con su hora, como cualquier evento.
  * - Lo que empezó antes de hoy y sigue (un evento largo sin reparto) va en «Hoy», nunca bajo un día que ya pasó.
  */
 
@@ -44,11 +45,11 @@ type Colocada = { id: string; titulo: string; inicio: string; zona: string; piez
  */
 export function eventosDeFicha(eventos: readonly EventoAgenda[], marcos: readonly EventoAgenda[] = [], ahora: Date = new Date()): EventosFicha {
   const visitar = eventos.filter(esExposicion).toSorted((a, b) => porCercania(a, b, ahora));
-  const propios = eventos.filter(esMarco);
+  const propios = eventos.filter(esMarcoConPrograma);
   const festivales = new Map([...marcos, ...propios].filter(esMarco).map((m) => [m.id, m]));
   const funciones = new Map<string, EventoAgenda[]>();
   const colocadas: Colocada[] = [];
-  for (const o of ocurrenciasDeLista(eventos.filter((e) => !esExposicion(e) && !esMarco(e)), ahora)) {
+  for (const o of ocurrenciasDeLista(eventos.filter((e) => !esExposicion(e) && !esMarcoConPrograma(e)), ahora)) {
     if (o.evento_padre_id && festivales.has(o.evento_padre_id)) funciones.set(o.evento_padre_id, [...(funciones.get(o.evento_padre_id) ?? []), o]);
     else colocadas.push({ id: o.id, titulo: o.titulo, inicio: o.inicio, zona: o.zona, pieza: { tipo: "renglon", evento: o } });
   }

@@ -130,7 +130,7 @@ export default function EditarEvento({ accion, respuestas, imagen, revision, zon
       avance={0}
       salida={{ href: ficha, texto: "Volver al evento" }}
       onAtras={primero ? undefined : atrasDelPaso}
-      pregunta={cartel.espera ? undefined : preguntaDe(paso, r)}
+      pregunta={cartel.espera ? undefined : preguntaDe(paso, r, pasos.candidato)}
       guardia="guardar"
       fijo={
         <form id={FORMULARIO} action={guardar} hidden>

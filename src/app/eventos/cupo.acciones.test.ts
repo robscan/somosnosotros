@@ -114,6 +114,22 @@ describe("acciones de cupo, sin base ni IA", () => {
     expect(await leerCartelAccion(foto)).toMatchObject({ ok: true, valores: { precio: "150", gratis: false }, costoLeido: true });
   });
 
+  it("OL-413: «Lunaria Foro Expandido» (lo que leyó el modelo de verdad) cruza con «Foro lunaria» por su palabra distintiva; ambiguo, con ninguno", async () => {
+    const LUNARIA = { id: "lunaria", nombre: "Foro lunaria", ciudad: "San Luis Potosí" };
+    const lugares = [LUNARIA, { id: "roma-cafe", nombre: "Café Roma", ciudad: "San Luis Potosí" }, { id: "roma-sur", nombre: "Roma Sur", ciudad: "San Luis Potosí" }];
+    m.rpc.mockImplementation((nombre: string, args?: { p_nombre?: string }) => {
+      if (nombre !== "lugares_con_nombre") return Promise.resolve({ data: true, error: null });
+      const q = String(args?.p_nombre ?? "").toLowerCase();
+      return Promise.resolve({ data: lugares.filter((l) => l.nombre.toLowerCase().includes(q)), error: null });
+    });
+    m.modelo.mockResolvedValue({ titulo: "Cumbiachella", lugar: "Lunaria Foro Expandido", artistas: [], gratis: null });
+    expect(await leerCartelAccion(foto, "San Luis Potosí")).toMatchObject({ ok: true, lugarId: "lunaria" });
+    expect(m.rpc).toHaveBeenCalledWith("lugares_con_nombre", { p_nombre: "Lunaria Foro Expandido" });
+    expect(m.rpc).toHaveBeenCalledWith("lugares_con_nombre", { p_nombre: "lunaria" });
+    m.modelo.mockResolvedValue({ titulo: "Noche", lugar: "Roma Lab", artistas: [], gratis: null });
+    expect(await leerCartelAccion(foto, "San Luis Potosí")).toMatchObject({ ok: true, lugarId: null });
+  });
+
   it("ya no hay «pedir más lecturas»: la acción no existe", () => {
     expect("pedirMasLecturas" in acciones).toBe(false);
   });

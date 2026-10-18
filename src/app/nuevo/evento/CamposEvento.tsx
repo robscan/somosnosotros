@@ -4,7 +4,7 @@ import type { Ciudad } from "@/lib/ciudad";
 import { combinarFechaHora } from "@/lib/fechas";
 import { horarioParaEnviar } from "@/lib/horarioLugar";
 import { sesionesParaEnviar } from "@/lib/sesionesEvento";
-import { actosMarcados, finDe, inicioDe, sesionesDe, type Respuestas } from "./pasos";
+import { actosMarcados, conPrograma, finDe, inicioDe, sedeDeActo, sesionesDe, type Respuestas } from "./pasos";
 
 /**
  * Lo que viaja al servidor desde un flujo por pasos de evento, escondido: los mismos campos que leen `crearEvento` (el alta) y
@@ -13,7 +13,8 @@ import { actosMarcados, finDe, inicioDe, sesionesDe, type Respuestas } from "./p
  *
  * Cómo ocurre (OL-321): `clase` siempre; la exposición manda su horario propio (`horario`, vacío con «Horario del lugar») y su inauguración; un
  * taller de varias sesiones, sus `sesiones` (días sueltos); lo que no es festival, el festival del que es parte (`padre` o `padre_nuevo`); un
- * festival, su programa (`actos`, cada uno con su inicio, su sede y si se publica).
+ * festival con programa, su programa (`actos`, cada uno con su inicio, su sede —la propia o, sin ella, la del festival: OL-413— y si se publica).
+ * Un festival sin programa (OL-413) no manda `actos`: el servidor lo publica como un evento con clase festival.
  */
 export default function CamposEvento({ r, ciudadContexto, imagen, colores = null }: { r: Respuestas; ciudadContexto: Ciudad | null; imagen: string | null; colores?: Paleta | null }) {
   const sesiones = sesionesDe(r);
@@ -28,7 +29,7 @@ export default function CamposEvento({ r, ciudadContexto, imagen, colores = null
       {r.clase === "exposicion" && <input type="hidden" name="horario" value={r.horario ? horarioParaEnviar(r.horario) : ""} />}
       {r.clase === "exposicion" && r.inauguracion && <input type="hidden" name="inauguracion" value={JSON.stringify(r.inauguracion)} />}
       {r.clase !== "festival" && r.padre && ("id" in r.padre ? <input type="hidden" name="padre" value={r.padre.id} /> : <input type="hidden" name="padre_nuevo" value={r.padre.nuevo} />)}
-      {r.clase === "festival" && (
+      {conPrograma(r) && (
         <input
           type="hidden"
           name="actos"
@@ -37,7 +38,7 @@ export default function CamposEvento({ r, ciudadContexto, imagen, colores = null
               titulo: a.titulo,
               inicio: a.dia && a.hora ? combinarFechaHora(a.dia, a.hora) : "",
               fin: "",
-              sitio: valoresSitio({ ...a.sitio, ciudadContexto }),
+              sitio: valoresSitio({ ...sedeDeActo(a, r.sitio), ciudadContexto }),
               quien: a.quien,
               marcado: actosMarcados({ actos: [a] }).length === 1,
             })),

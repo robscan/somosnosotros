@@ -20,7 +20,7 @@ import type { LugarResumen } from "@/lib/lugares";
  * «Dónde» son tres pasos (OL-301): `donde` (buscar el sitio), `mapa` («¿Es aquí?», solo si no es un lugar del directorio) y `uso`
  * («No está en el directorio»: qué hacer con ese sitio). Un lugar del directorio ya tiene su punto confirmado y salta los otros dos.
  */
-export type Paso = "inicio" | "nombre" | "dia" | "hora" | "visita" | "sesiones" | "programa" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas" | "publicado";
+export type Paso = "inicio" | "nombre" | "que" | "dia" | "hora" | "visita" | "sesiones" | "programa" | "donde" | "mapa" | "uso" | "cuanto" | "revisa" | "mas" | "publicado";
 
 /** El camino sin cartel, de principio a fin: también da la línea de avance. */
 const ORDEN: readonly Paso[] = ["inicio", "nombre", "dia", "hora", "donde", "cuanto", "revisa"];
@@ -40,10 +40,11 @@ export const diasElegidos = (desde: string, hasta: string | null): Dias => ({ de
 
 /**
  * Un evento del programa de un festival (OL-321, H6): lo que el cartel trae de cada uno o lo que se agrega a mano. Se publica marcado; desmarcado
- * queda como borrador del festival. `sitio` es su sede (la del paso «Dónde» de siempre); `sedeLeida`, lo que el cartel dijo de ella, para
- * empezar a buscarla. `leido`: vino del cartel.
+ * queda como borrador del festival. `sitio` es su sede propia (la del paso «Dónde» de siempre) o null: **la del festival** (OL-413: la sede se
+ * pregunta una vez, en el «Dónde» del festival, y cada acto la hereda salvo que el cartel le dé otra o se le cambie a mano). `sedeLeida`, lo que el
+ * cartel dijo de ella, para empezar a buscarla. `leido`: vino del cartel.
  */
-export type Acto = { clave: string; titulo: string; dia: string; hora: string; sitio: Sitio; sedeLeida: string; quien: QuienItem[]; marcado: boolean; leido: boolean };
+export type Acto = { clave: string; titulo: string; dia: string; hora: string; sitio: Sitio | null; sedeLeida: string; quien: QuienItem[]; marcado: boolean; leido: boolean };
 
 /** El festival del que el evento es parte: uno que ya existe (elegido por su nombre) o uno nuevo, con solo el nombre. */
 export type Padre = { id: string; titulo: string } | { nuevo: string };
@@ -57,6 +58,8 @@ export type Respuestas = {
   clase: Clase;
   /** La eligió la persona (un chip bajo el nombre, OL-345, o la hoja «¿Cómo ocurre?» de «Revisa») o la dijo el cartel: el título ya no la cambia. */
   claseFijada: boolean;
+  /** El cartel no la resolvió (no la dijo, o lo leído se contradice: OL-413): se pregunta «¿Qué es?» antes del paso del tiempo. Elegirla la quita. */
+  claseDudosa: boolean;
   /** Exposición: el primer día de visita y el de cierre (inclusivo); `hasta` null mientras se elige. */
   visita: { desde: string; hasta: string | null } | null;
   /** Exposición: el horario propio en franjas; null es «Horario del lugar» (la casilla marcada) o, si el lugar no tiene, «por confirmar». */
@@ -66,7 +69,7 @@ export type Respuestas = {
   /** Taller o curso: los días de sus sesiones (YYYY-MM-DD); la hora es `hora` y `fin` y, con la casilla «Misma hora todas las sesiones»
    *  desmarcada, cada sesión lleva la suya en `sesiones`. */
   sesionesDias: string[];
-  /** Festival: su programa. */
+  /** Festival: su programa (opcional, OL-413). Sin actos marcados es un festival sin programa: un día (o varios), una hora y un lugar, como un evento. */
   actos: Acto[];
   /** Editar un festival que ya existe: cuántas actividades tiene registradas (su programa se edita en la ficha de cada una); null en el alta. */
   programaGuardado: number | null;
@@ -101,6 +104,8 @@ export type Candidato = {
   categorias: string[];
   /** «Estoy aquí» no trae dirección: el mapa se la pide al punto. */
   origen: "aqui" | "busqueda";
+  /** Un lugar del directorio que se propone (OL-413: el cartel trae su dirección, no su nombre): «¿Es en …?» y confirmarlo lo usa. */
+  lugarId?: string;
 };
 
 /** Qué hacer con un sitio que no está en el directorio. «Lugar» se resuelve fuera del reductor: crear el lugar es una acción del servidor. */
@@ -114,6 +119,8 @@ export type Estado = {
   sedeDe: string | null;
   /** El sitio que se confirma en `mapa` y se resuelve en `uso`. */
   candidato: Candidato | null;
+  /** El lugar del directorio que el cartel dice por su dirección (OL-413): al llegar a «Dónde» se pregunta primero «¿Es en …?». Se ofrece una vez. */
+  sugerido: Candidato | null;
   /** Los pasos por los que se llegó al actual (el último): Atrás quita uno. */
   pila: Paso[];
   /** Cómo se llegó al paso actual, para su transición; null al abrir la pantalla. */
@@ -140,7 +147,9 @@ export type Accion =
   /** Lo que se hace con el sitio: se vuelve su respuesta y sigue lo que falte. */
   | { tipo: "usar"; uso: UsoSitio }
   /** El servidor publicó el evento: al final, sin camino de vuelta. */
-  | { tipo: "publicado" };
+  | { tipo: "publicado" }
+  /** El lugar del directorio que el cartel dice por su dirección (OL-413): se propone al llegar a «Dónde». Sin moverse del paso. */
+  | { tipo: "sugerir"; candidato: Candidato | null };
 
 export const OTRO_VACIO: OtroSitio = { reservado: false, sitioTexto: "", direccion: "", sitioPunto: null, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: null };
 
@@ -149,6 +158,7 @@ export const RESPUESTAS_VACIAS: Respuestas = {
   nombre: "",
   clase: "puntual",
   claseFijada: false,
+  claseDudosa: false,
   dias: null,
   hora: null,
   fin: null,
@@ -173,6 +183,7 @@ export function estadoInicial(quien: QuienItem[] = []): Estado {
     r: { ...RESPUESTAS_VACIAS, quien },
     sedeDe: null,
     candidato: null,
+    sugerido: null,
     pila: ["inicio"],
     direccion: null,
   };
@@ -182,12 +193,13 @@ export function estadoInicial(quien: QuienItem[] = []): Estado {
  * Editar un evento (OL-319): no se vuelven a recorrer los pasos; se entra directo en «Revisa» con todo puesto, y cada renglón abre su pregunta,
  * que al contestarse vuelve aquí (lo mismo que «Cambiar» dentro del alta). Sin transición: es lo que se ve al llegar.
  */
-export const estadoAlEditar = (r: Respuestas): Estado => ({ r, sedeDe: null, candidato: null, pila: ["revisa"], direccion: null });
+export const estadoAlEditar = (r: Respuestas): Estado => ({ r, sedeDe: null, candidato: null, sugerido: null, pila: ["revisa"], direccion: null });
 
 export const pasoActual = (e: Estado): Paso => e.pila[e.pila.length - 1];
 
 const PREGUNTA: Partial<Record<Paso, string>> = {
   nombre: "¿Cómo se llama?",
+  que: "¿Qué es?",
   dia: "¿Qué día es?",
   hora: "¿A qué hora?",
   visita: "¿Cuándo se puede visitar?",
@@ -201,10 +213,12 @@ const PREGUNTA: Partial<Record<Paso, string>> = {
 
 /**
  * La pregunta de cada paso; con varios días la de la hora cambia: el horario del primer día vale para todos. El programa de un festival dice
- * cuántos eventos trae el cartel (H6) o, armado a mano, pregunta por sus actividades. Sin pregunta, undefined.
+ * cuántos eventos trae el cartel (H6) o, armado a mano, pregunta por sus actividades. «¿Es aquí?» con un lugar del directorio que se propone por la
+ * dirección del cartel dice cuál (OL-413: «¿Es en Laboratorio Centro Histórico?»). Sin pregunta, undefined.
  */
-export function preguntaDe(paso: Paso, r: Pick<Respuestas, "dias"> & Partial<Pick<Respuestas, "actos">>): string | undefined {
+export function preguntaDe(paso: Paso, r: Pick<Respuestas, "dias"> & Partial<Pick<Respuestas, "actos">>, candidato?: Pick<Candidato, "nombre" | "lugarId"> | null): string | undefined {
   if (paso === "hora" && r.dias?.hasta) return "¿A qué hora, cada día?";
+  if (paso === "mapa" && candidato?.lugarId && candidato.nombre.trim()) return `¿Es en ${candidato.nombre.trim()}?`;
   if (paso === "programa") {
     const leidos = (r.actos ?? []).filter((a) => a.leido).length;
     return leidos ? `El cartel trae ${leidos} ${leidos === 1 ? "evento" : "eventos"}` : "¿Qué actividades tiene?";
@@ -217,11 +231,33 @@ export function preguntaDe(paso: Paso, r: Pick<Respuestas, "dias"> & Partial<Pic
 export const dondeResuelto = ({ modo, lugarId, otro }: Sitio): boolean =>
   modo === "lugar" ? !!lugarId : sitioListo(otro) || (modo === "reservado" && !!otro.direccionRetirada && !!otro.sitioTexto.trim());
 
-/** Un acto del programa que se puede publicar: con nombre, día, hora y sede. */
-export const actoListo = (a: Acto): boolean => !!a.titulo.trim() && !!a.dia && !!a.hora && dondeResuelto(a.sitio);
+/**
+ * Un acto del programa que se puede publicar: con nombre, día y hora y, si tiene sede propia, resuelta. Sin sede propia es la del festival, que se
+ * pregunta una sola vez en su «Dónde» (OL-413): aquí no falta.
+ */
+export const actoListo = (a: Acto): boolean => !!a.titulo.trim() && !!a.dia && !!a.hora && (a.sitio === null || dondeResuelto(a.sitio));
 
 /** Los actos que se publican: los marcados. */
 export const actosMarcados = (r: Pick<Respuestas, "actos">): Acto[] => r.actos.filter((a) => a.marcado);
+
+/**
+ * ¿Lleva programa? Un festival con algún acto marcado (OL-413: el programa es opcional). Sin ninguno es un festival sin programa: se publica como
+ * un evento, con su día, su hora y su lugar.
+ */
+export const conPrograma = (r: Pick<Respuestas, "clase" | "actos">): boolean => r.clase === "festival" && actosMarcados(r).length > 0;
+
+/** La sede de un acto: la suya o, sin sede propia, la del festival. */
+export const sedeDeActo = (a: Pick<Acto, "sitio">, festival: Sitio): Sitio => a.sitio ?? festival;
+
+/**
+ * ¿Se pregunta el «Dónde» del evento? Siempre, salvo en un festival con programa donde cada acto marcado tiene su sede propia, o en uno guardado
+ * con actividades (al editar, sus sedes salen de sus actos). Con programa y algún acto sin sede propia, una sola vez: la heredan (OL-413).
+ */
+export function pideDonde(r: Pick<Respuestas, "clase" | "actos" | "programaGuardado">): boolean {
+  if (r.clase !== "festival") return true;
+  if (r.programaGuardado) return false;
+  return !conPrograma(r) || actosMarcados(r).some((a) => a.sitio === null);
+}
 
 /**
  * ¿Se puede dejar el costo por confirmar (OL-411)? Un festival, una exposición, un taller o lo que es parte de un festival (`costoOpcional`): su
@@ -230,33 +266,37 @@ export const actosMarcados = (r: Pick<Respuestas, "actos">): Acto[] => r.actos.f
 export const costoOpcionalEn = (r: Pick<Respuestas, "clase" | "padre">): boolean => costoOpcional({ clase: r.clase, evento_padre_id: r.padre ? ("id" in r.padre ? r.padre.id : r.padre.nuevo) : null });
 
 /**
- * Lo que falta para publicar, en el orden en que se pregunta. El paso del tiempo depende de la clase (doc 55 §2): un evento pregunta el día y la
- * hora; una exposición, cuándo se puede visitar; un taller, los días de sus sesiones y su hora; un festival, su programa (al menos un acto
- * marcado, y todos los marcados completos). Un festival no pregunta dónde (cada acto tiene su sede). Cuánto se pregunta siempre; en un festival,
- * una exposición, un taller o un acto de festival se puede contestar «Dejar por confirmar» (OL-411, `costoOpcionalEn`), que en un evento suelto
- * no vale (si la clase cambia a evento, vuelve a faltar). «Tiene precio» sin escribirlo falta siempre.
+ * Lo que falta para publicar, en el orden en que se pregunta. Si el cartel no resolvió la clase, primero «¿Qué es?» (OL-413). El paso del tiempo
+ * depende de la clase (doc 55 §2): un evento pregunta el día y la hora; una exposición, cuándo se puede visitar; un taller, los días de sus sesiones
+ * y su hora; un festival con programa, su programa (todos los actos marcados completos) y uno sin programa (OL-413), el día y la hora, como un
+ * evento. Dónde se pregunta una vez (`pideDonde`): en un festival con programa, solo si algún acto no tiene sede propia. Cuánto se pregunta
+ * siempre; en un festival, una exposición, un taller o un acto de festival se puede contestar «Dejar por confirmar» (OL-411, `costoOpcionalEn`),
+ * que en un evento suelto no vale (si la clase cambia a evento, vuelve a faltar). «Tiene precio» sin escribirlo falta siempre.
  */
 export function faltan(r: Respuestas): Paso[] {
   const p: Paso[] = [];
   if (!r.nombre.trim()) p.push("nombre");
+  if (r.claseDudosa) p.push("que");
   if (r.clase === "exposicion") {
     if (!r.visita?.desde || !r.visita.hasta) p.push("visita");
   } else if (r.clase === "taller") {
     if (!r.sesionesDias.length || !r.hora) p.push("sesiones");
-  } else if (r.clase === "festival") {
-    const marcados = actosMarcados(r);
-    if (r.programaGuardado === null && (!marcados.length || !marcados.every(actoListo))) p.push("programa");
+  } else if (r.clase === "festival" && r.programaGuardado) {
+    // Un festival guardado con actividades: su programa se edita en la ficha de cada una y su periodo sale de ellas.
+  } else if (conPrograma(r)) {
+    if (!actosMarcados(r).every(actoListo)) p.push("programa");
   } else {
     if (!r.dias) p.push("dia");
     if (!r.hora || r.fin === null) p.push("hora");
   }
-  if (r.clase !== "festival" && !dondeResuelto(r.sitio)) p.push("donde");
+  if (pideDonde(r) && !dondeResuelto(r.sitio)) p.push("donde");
   if (!r.costo || (r.costo === "precio" && !r.precio) || (r.costo === "por_confirmar" && !costoOpcionalEn(r))) p.push("cuanto");
   return p;
 }
 
 const FALTA: Record<Exclude<Paso, "inicio" | "mapa" | "uso" | "revisa" | "mas" | "publicado">, string> = {
   nombre: "el nombre",
+  que: "qué es",
   dia: "el día",
   hora: "la hora",
   visita: "cuándo se puede visitar",
@@ -291,7 +331,7 @@ function con(r: Respuestas, cambios: Partial<Respuestas>): Respuestas {
  * Elegir la clase: lo que mandan el chip bajo el nombre (OL-345) y la hoja «¿Cómo ocurre?» de «Revisa» (OL-321). Queda fijada: el título ya no la
  * cambia. Lo demás (el paso del tiempo que pide, lo que se conserva) lo hace `con` al recibirla, sea quien sea quien la mande.
  */
-export const claseElegida = (clase: Clase): Pick<Respuestas, "clase" | "claseFijada"> => ({ clase, claseFijada: true });
+export const claseElegida = (clase: Clase): Pick<Respuestas, "clase" | "claseFijada" | "claseDudosa"> => ({ clase, claseFijada: true, claseDudosa: false });
 
 /**
  * ¿Salen los chips de la clase bajo el nombre (OL-345)? En cuanto hay nombre (el título ya propone una) o cuando la clase ya está fijada (la trajo
@@ -324,10 +364,15 @@ function diasEntre(desde: string, hasta: string): string[] {
 
 const apilar = (e: Estado, paso: Paso): Estado => ({ ...e, pila: [...e.pila, paso], direccion: "entra" });
 
-/** A lo primero que falte; sin nada pendiente, a «Revisa»: si ya se estuvo ahí (se abrió una pregunta desde ella), se regresa. */
+/**
+ * A lo primero que falte; sin nada pendiente, a «Revisa»: si ya se estuvo ahí (se abrió una pregunta desde ella), se regresa. Si lo que falta es
+ * «Dónde» y el cartel dijo la dirección de un lugar del directorio (OL-413), primero «¿Es en …?» con ese lugar, encima de «¿Dónde es?»: «Buscar
+ * otro» (o Atrás) vuelve a la búsqueda de siempre.
+ */
 function siguiente(e: Estado): Estado {
   if (e.sedeDe !== null) return alPrograma(e);
   const paso = faltan(e.r)[0];
+  if (paso === "donde" && e.sugerido) return { ...apilar(apilar(e, "donde"), "mapa"), candidato: e.sugerido, sugerido: null };
   const revisa = e.pila.indexOf("revisa");
   if (paso || revisa < 0) return apilar(e, paso ?? "revisa");
   return { ...e, pila: e.pila.slice(0, revisa + 1), direccion: "vuelve" };
@@ -391,6 +436,8 @@ export function flujo(e: Estado, a: Accion): Estado {
     case "publicado":
       // La pila queda solo con el final: Atrás no tiene a dónde volver (en la barra va la ✕, no el Atrás).
       return { ...e, pila: ["publicado"], direccion: "entra" };
+    case "sugerir":
+      return { ...e, sugerido: a.candidato };
   }
 }
 
@@ -449,9 +496,9 @@ export function lugarAlLado(lugares: readonly LugarResumen[], punto: Punto, radi
 /** Lo recorrido, de 0 a 1 (lo opcional cuenta como «Revisa»; confirmar el sitio en el mapa y decidir qué hacer con él, como «Dónde»). */
 export function avance(paso: Paso): number {
   if (paso === "publicado") return 1;
-  // El paso del tiempo de cada clase ocupa el lugar del día: lo sustituye (doc 55 §2).
+  // El paso del tiempo de cada clase ocupa el lugar del día: lo sustituye (doc 55 §2). «¿Qué es?» va con el nombre (OL-413).
   const comoDia = paso === "visita" || paso === "sesiones" || paso === "programa";
-  return ORDEN.indexOf(paso === "mas" ? "revisa" : paso === "mapa" || paso === "uso" ? "donde" : comoDia ? "dia" : paso) / ORDEN.length;
+  return ORDEN.indexOf(paso === "mas" ? "revisa" : paso === "mapa" || paso === "uso" ? "donde" : paso === "que" ? "nombre" : comoDia ? "dia" : paso) / ORDEN.length;
 }
 
 /**
@@ -491,13 +538,14 @@ export function horariosDelTaller(r: Respuestas): HorarioDia[] {
   return r.hora ? horariosDeTaller(r.sesionesDias, r.hora, r.fin ?? "") : [];
 }
 
-/** Las sesiones que viajan al servidor: el horario por día de un evento de varios días, o las de un taller de dos o más sesiones (sus días son sueltos). */
+/** Las sesiones que viajan al servidor: el horario por día de un evento de varios días (también de un festival sin programa, OL-413), o las de un
+ *  taller de dos o más sesiones (sus días son sueltos). */
 export function sesionesDe(r: Respuestas): HorarioDia[] | null {
   if (r.clase === "taller") {
     const horarios = horariosDelTaller(r);
     return horarios.length >= 2 ? horarios : null;
   }
-  return r.clase === "puntual" ? r.sesiones : null;
+  return r.clase === "puntual" || (r.clase === "festival" && !conPrograma(r) && !r.programaGuardado) ? r.sesiones : null;
 }
 
 /** «YYYY-MM-DDTHH:MM» del inicio; "" sin día o sin hora. Con horario por día, la hora del primer día; una exposición, su primer día de visita;
@@ -595,6 +643,8 @@ export function eventoPublicado(r: Respuestas, creado: Creado, { lugar, zona, im
     lugar: modo === "lugar" && lugar ? { nombre: lugar.nombre, portada: lugar.portada } : null,
     creado_en: creado.creadoEn,
     van: null,
+    // Un festival dice cuántas actividades publicó: sin ninguna (OL-413) su renglón es el de un evento, con su día y su hora.
+    ...(r.clase === "festival" ? { clase: r.clase, programa: { registrados: actosMarcados(r).length } } : {}),
   };
 }
 

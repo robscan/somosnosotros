@@ -51,6 +51,12 @@ respaldo-local/server.mjs 8823`, un `.env.local` temporal con `NEXT_PUBLIC_SUPAB
 anon inventada, `next build && next start -p 3100`, y la sesión es la cookie `sb-127-auth-token` que exporta `fixture.mjs`
 (`cookie`). Con `PROVEEDORES=1` Entrar enseña Apple y Google (para probar la vuelta de un proveedor; `npm run medir` no lo usa). Nunca toca producción ni un `.env` real.
 
+La lectura de carteles sin la API (OL-413, bitácora 444): con la app arrancada con `ANTHROPIC_BASE_URL=<respaldo>/anthropic` y una
+`ANTHROPIC_API_KEY` inventada, el respaldo contesta `/anthropic/v1/messages` con la lectura que se le deja lista en `POST /__lectura`
+(`{ lectura, archivo }`: lo que «devolvería el modelo» y el cartel local que sirve como la imagen subida a Storage, que también simula). Con
+`RESPALDO_CARTELES=1` suma el Laboratorio Centro Histórico, Foro lunaria y un festival de una noche sin programa (`npm run medir` no lo usa).
+`capturar-cartel-leido.mjs` arma todo eso y saca las capturas del alta con cartel.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

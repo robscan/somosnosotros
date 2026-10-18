@@ -110,7 +110,8 @@ export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | 
   // Por clase (OL-322, doc 55 §3): la exposición y el marco de un festival no tienen ocurrencias (`sinOcurrencias`, lib/ocurrencias): van en
   // «Festivales y expos». Los actos de un festival salen sueltos, cada uno en su día, como cualquier evento (OL-347: el marco ya no sale
   // aquí con «3 actividades esta semana»; solo en su carril).
-  const propios = eventosEstaSemana(eventos.filter((e) => !vistos.has(e.id)), ahora).toSorted(compararEventos).slice(0, TOPE_ESTA_SEMANA);
+  // Un festival sin programa (OL-413) sí tiene su día y su hora, pero un festival sale solo en su carril (OL-347): aquí no.
+  const propios = eventosEstaSemana(sinFestivales(eventos).filter((e) => !vistos.has(e.id)), ahora).toSorted(compararEventos).slice(0, TOPE_ESTA_SEMANA);
   for (const e of propios) vistos.add(e.id);
   return propios;
 }

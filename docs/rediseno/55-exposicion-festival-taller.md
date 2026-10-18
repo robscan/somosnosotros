@@ -26,9 +26,16 @@ No hay selector de tipo al principio (regla del founder: tira de tipos solo para
 - **Evento** — «Pasa un día a una hora.»
 - **Exposición** — «Se puede visitar varios días, en un horario.»
 - **Taller o curso** — «Varias sesiones, una inscripción.»
-- **Festival** — «Agrupa varios eventos.»
+- **Festival** — «Reúne varias presentaciones.» (OL-413; antes «Agrupa varios eventos.»)
 
 Cambiar la clase cambia **solo el paso del tiempo**; nombre, dónde, quién, precio y cartel se conservan.
+
+**«¿Qué es?» (OL-413, 18 de octubre de 2026).** El founder: «si hay dudas el sistema podría preguntar al usuario si es festival, galería, o evento,
+solo cuando el sistema no lo pueda resolver o no sea claro». Cuando la lectura del cartel no trae la clase (y el título no propone ninguna) o lo
+leído se contradice (dice festival sin programa y nada lo anuncia como festival; dice exposición sin periodo de visita), el alta pregunta una
+sola vez «¿Qué es?» antes del paso del tiempo, con cuatro opciones grandes como «¿Cuánto cuesta?»: **Evento · Festival · Exposición · Taller o
+curso** (la galería es la exposición; el taller se incluye porque es una clase que existe). Sin preselección; elegir una avanza. En los casos
+claros no se pregunta nada.
 
 ### Exposición: «¿Cuándo se puede visitar?»
 Sustituye a «¿Qué día es?» y «¿A qué hora?». Dos fechas (**Desde** y **Hasta**, el calendario de siempre; «Hasta» inclusivo) y debajo la casilla **«Horario del lugar»**, marcada si el lugar lo tiene, con su resumen («Ma–Do · 10:00 a.m.–6:00 p.m. · Cierra Lu»); al desmarcarla aparece la hoja de franjas de OL-315 («Agregar otro horario», ley de Postel). Si el lugar no tiene horario, la casilla no sale y el renglón de horario queda opcional en «Revisa» («Horario · Agregar»; sin él se publica con «Horario por confirmar», como pide el modelo: no se inventa). **Inauguración:** renglón opcional en «Revisa» («Inauguración · Agregar» → fecha y hora): se publica como acto puntual ligado (`inaugura_id`); la inauguración no hereda el horario de visita ni al revés. Si el cartel ya traía «Inauguración jue 5 · 19:00 · visita del 6 al 30» (H1), los dos renglones llegan llenos.
@@ -36,11 +43,38 @@ Sustituye a «¿Qué día es?» y «¿A qué hora?». Dos fechas (**Desde** y **
 ### Taller o curso: «¿Qué días son las sesiones?»
 Sustituye a «¿Qué día es?». Calendario con **varios días marcables** (toque por día; el cartel ya los trae si los lee) y debajo la hora con la casilla **«Misma hora todas las sesiones»** (marcada) del prototipo firmado de OL-310; al desmarcar, un renglón por sesión con su hoja (ya construido en OL-311). Se publica **un** taller; «Voy» es al taller entero (prototipo aceptado); la ficha lista «Sesión n de N» y marca la que cambia de sede. Sin «sesión» en días intermedios sin evidencia.
 
-### Festival: dos entradas, ninguna obliga
+### Festival: la definición aprobada (OL-413, 18 de octubre de 2026)
+
+Founder, tras subir dos carteles que la lectura partió en «varios eventos» (Cumbiachella y Trayectos Interactivos): «es un solo evento con varias
+presentaciones», «si festival implica llenar 4 fichas por separado de manera forzosa aunque todo pase en el mismo lugar, entonces sí debemos
+cambiar la definición de festival»; y sobre la propuesta: **«Adelante con la definición»**. Donde lo de abajo diga otra cosa, vale esto:
+
+- **Festival = un nombre que reúne varias presentaciones. El programa (actos como fichas separadas) es OPCIONAL.**
+- **Un día y un lugar** (Cumbiachella: 30/10, 8 p.m.–2 a.m., Lunaria): UNA ficha de clase festival, con su día, su horario, su lugar y la
+  alineación en «Quién». Conserva lo de festival (cabecera oscura, portada del sistema, la etiqueta «Festival»). Sin actos. En el alta pide día,
+  hora y dónde como un evento, y «Revisa» ofrece «Programa · Agregar» para quien sí quiera actos. Se publica con
+  `publicar_festival_sin_programa` (migración `20261018120000_festival_sin_programa.sql`, que solo añade).
+- **Varios días o varias sedes:** festival con programa, como antes, pero los actos **heredan el lugar del festival**, que se pregunta **una
+  sola vez** (el «Dónde» del festival); la sede de un acto se pide solo si el cartel le da otra, y siempre se puede cambiar una por una.
+- **Una noche con varias actividades que no se presenta como festival** (Trayectos Interactivos): **un evento**. Las actividades van a la
+  descripción y quienes se presentan a «Quién» (supuesto: el founder no lo dijo en palabras; es lo coherente con la definición).
+- **La lectura del cartel** ya no convierte en festival todo cartel con dos o más actos: la regla vive en el código (`lib/actosLeidos`): actos el
+  mismo día (o de madrugada del siguiente) en el mismo lugar se juntan; el mismo título varios días seguidos en un lugar es un evento de varios
+  días con la hora de cada uno (una obra en temporada); solo con días distintos o sedes distintas hay programa.
+- **El lugar por su dirección:** si el nombre leído no cruza con el directorio, la dirección leída se compara (calle y número, sin acentos,
+  prefijos, código postal, ciudad ni país: `lib/direccionCartel`) con la de los lugares; con uno solo, «¿Es en Laboratorio Centro Histórico?».
+- **En las listas:** un festival sin ningún acto publicado de hasta 31 días va como un evento (`festivalComoEvento`, `lib/claseEvento`): su
+  renglón en su día con su hora en Agenda y en las fichas de lugar y de artista, su «Voy», su punto en «Cuándo», «Ahora»; en Inicio sigue solo en
+  «Festivales y expos» (OL-347), con su día y su hora y sin «Programa por confirmar»; su ficha, sin «Programa» vacío, con su día, su hora y su
+  lugar bajo el título y «cuándo · Costo · Van» en la banda. Uno más largo sin actos (un festival de meses anunciado sin programa) sigue como
+  marco con «Programa por confirmar».
+
+### Festival: dos entradas, ninguna obliga (6 de octubre; con el programa opcional desde OL-413)
 1. **El cartel trae varios eventos (H6, aceptado):** tras la lectura, «El cartel trae 3 eventos», cada uno como renglón con su fecha, hora y sede, marcados; un toque publica los marcados y los junta en el festival («Programa registrado: 3 actividades»); los desmarcados quedan como borrador. Antes de publicar se puede tocar un renglón y corregir su dato (lo que faltaba en el prototipo).
 2. **Altas separadas (H4, aceptado en punteado):** al publicar el **segundo acto distinto** con el mismo festival y edición en la fuente, la sugerencia punteada «Estos dos eventos forman parte de Festival X» → «Relacionar los dos». Además, en «Revisa» de cualquier evento, renglón opcional **«Parte de un festival · Agregar»**: busca un marco existente por nombre (no se liga por parecido: la persona lo elige) o crea uno nuevo con solo el nombre; el marco toma su periodo del programa registrado. Un festival ajeno queda como propuesta pendiente hasta que lo confirme quien lo administra (permisos del modelo).
 
-Un marco sin actos no sale en la agenda (no promete nada); se publica con al menos un acto.
+~~Un marco sin actos no sale en la agenda (no promete nada); se publica con al menos un acto.~~ Desde OL-413 un festival se publica también sin
+actos: es una ficha con su día, su hora y su lugar, y sale en la agenda en su día como un evento.
 
 ## 3. Cómo se ve en inicio, agenda, filtros y fichas
 
@@ -69,6 +103,11 @@ La tabla de arriba es la propuesta del 6 de octubre. Desde entonces se firmó y 
   - El número «Eventos · N próximos» (o «Fechas») y el de la sección cuentan lo que se lista: cada renglón, cada función de un bloque, la cabecera sola de un festival y cada exposición.
 - **U · el cuándo de un festival y una exposición, en todas las superficies** (tarjetas de Inicio y Buscar, renglones de Agenda y de las fichas, la ficha del festival y de la exposición, «Tus planes», la hoja de Lugares): ya en curso (hoy es uno de sus días) «Hasta el sáb 17 de oct»; por venir «Del 12 al 17 de oct»; de un solo día, ese día. Una sola regla: `textoDePeriodo` (`lib/fechas`) y `cuandoDePeriodo` (`lib/claseEvento`). El alta y la edición de un festival (el resumen de su periodo) siguen diciendo sus días.
 - **El costo** (C y K de la misma firma: se puede dejar vacío; sin dato, «Por confirmar») es otra pieza, OL-411.
+- **OL-413 (18 de octubre de 2026): el festival sin programa.** Con la definición aprobada (§2), un festival sin ningún acto publicado de hasta 31
+  días ya no es una cabecera con «Programa por confirmar» ni falta en la agenda: es un renglón en su día con su hora, en Agenda, en las fichas
+  de lugar y de artista, en Buscar y en «Tus planes», con «Voy»; en Inicio, en «Festivales y expos» con su día y su hora y su lugar; en «Nuevos»,
+  suelto. Su ficha no tiene «Programa» vacío ni dice «Programa registrado: 0 actividades»; su autor agrega el programa desde el menú. El de más
+  de 31 días sin actos sigue como estaba.
 
 ## 4. Piezas
 

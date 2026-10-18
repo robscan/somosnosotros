@@ -20,9 +20,9 @@ import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
 import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
-import { respuestasDelCartel, type Leido } from "./cartelPorPasos";
+import { respuestasDelCartel, sugeridoDelCartel, type Leido } from "./cartelPorPasos";
 import type { ContextoClase } from "./contextoClase";
-import { avance, claseElegida, eventoPublicado, faltaParaPublicar, inicioDe, preguntaDe, sesionesDe, type Creado } from "./pasos";
+import { avance, claseElegida, conPrograma, eventoPublicado, faltaParaPublicar, inicioDe, preguntaDe, sesionesDe, type Creado } from "./pasos";
 import { cuandoDeClase, sedesDelPrograma } from "./clasePorPasos";
 import { CartelGuardado, PasoEspera, PasoInicio } from "./PasoCartel";
 import { PasoVisita } from "./PasosClase";
@@ -89,7 +89,7 @@ export default function AltaEvento(props: Props) {
 
 function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, sugerencias, onLugarNuevo }: Interno) {
   const pasos = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : [], arranque);
-  const { r, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, atras, publicado } = pasos;
+  const { r, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, atras, publicado, sugerir, candidato } = pasos;
   const horarios = contexto?.horarios ?? {};
   const sitio = useSitioPorPasos({ pasos, lugares, ciudadContexto, onLugarNuevo });
   // Lo que leyó el cartel, para las sugerencias de «Publicado» (OL-323): la visita de una exposición y el festival que nombra.
@@ -101,10 +101,13 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     servicio: cartelActivo,
     cupo,
     alGuardar: seguir,
+    ciudad: ciudadContexto?.nombre ?? null,
     alLeer: (leido) => {
       setLeido(leido);
       const leidas = sinPisar(respuestasDelCartel(leido, r.quien), arranque);
       if (leidas.sitio?.modo === "otro") sitio.setBusqueda(leidas.sitio.otro.sitioTexto || leidas.sitio.otro.direccion || "");
+      // El lugar del directorio en la dirección del cartel (OL-413): «¿Es en …?» al llegar a «Dónde» (si el sitio no vino ya de por dónde se entró).
+      if (leidas.sitio) sugerir(sugeridoDelCartel(leido, lugares));
       contestar(leidas);
     },
   });
@@ -185,7 +188,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       salida={salida}
       onAtras={periodo ? cerrarPeriodo : primero ? undefined : atrasDelPaso}
       encima={!cartel.espera && primeraPregunta && preguntaDe(paso, r) && cartel.subido && !cartel.subido.leido ? <CartelGuardado foto={cartel.subido.url} noPude={cartel.subido.noPude} /> : undefined}
-      pregunta={cartel.espera ? undefined : periodo ? "¿Cuándo se puede visitar?" : preguntaDe(paso, r)}
+      pregunta={cartel.espera ? undefined : periodo ? "¿Cuándo se puede visitar?" : preguntaDe(paso, r, candidato)}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} colores={cartel.subido?.colores} />
@@ -267,6 +270,7 @@ function AlPublicar({ r, creado, evento: publicado, conCartel, zona, sugerencia,
       conCartel={conCartel}
       conSesiones={!!sesionesDe(r)}
       clase={r.clase}
+      sinPrograma={r.clase === "festival" && !conPrograma(r)}
       cuando={cuandoDeClase(r, zona, creado.borradores)}
       sinInauguracion={!r.inauguracion}
       sugerencia={

@@ -1,6 +1,6 @@
 import type { EventoAgenda } from "./agenda";
 import { etiquetaDisciplina, type ArtistaLista } from "./artistas";
-import { soloInteres, ultimoDiaDelPeriodo } from "./claseEvento";
+import { festivalComoEvento, soloInteres, ultimoDiaDelPeriodo } from "./claseEvento";
 import { cuandoDeTarjeta, tarjetaArtista, tarjetaConClase, type Tarjeta, type TarjetaConFecha } from "./destacados";
 import type { Asistencia } from "./deslizar";
 import { cortoDeClase } from "./eventos";
@@ -56,7 +56,7 @@ const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice
  * 2026-10-10), salvo que «Hoy» ya no es un chip sobre el cartel (E3): va al principio de esta línea («hoy · 13:00»; un festival que empieza hoy,
  * «hoy · hasta el…»).
  */
-export function cuandoEnInicio(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase">, hoy: boolean, ahora: Date = new Date()): string {
+export function cuandoEnInicio(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase"> & Partial<Pick<EventoAgenda, "programa">>, hoy: boolean, ahora: Date = new Date()): string {
   const cuando = cuandoDeTarjeta(e, ahora);
   return hoy && !/^hoy\b/.test(cuando) ? `hoy · ${minuscula(cuando)}` : cuando;
 }
@@ -64,7 +64,7 @@ export function cuandoEnInicio(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" |
 /** La tarjeta de un evento en los carriles de Inicio: la de siempre con su clase (`tarjetaConClase`), su línea de cuándo y su sello de fecha. */
 export function tarjetaDeInicio(e: EventoAgenda, ahora: Date = new Date(), festival?: string | null): TarjetaConFecha {
   const t = tarjetaConClase(e, ahora, festival);
-  return { ...t, detalle: cuandoEnInicio(e, !!t.hoy, ahora), selloFecha: selloDeFecha(e, soloInteres(e.clase), ahora) };
+  return { ...t, detalle: cuandoEnInicio(e, !!t.hoy, ahora), selloFecha: selloDeFecha(e, soloInteres(e.clase, festivalComoEvento(e)), ahora) };
 }
 
 /**

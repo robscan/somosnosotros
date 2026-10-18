@@ -1,5 +1,5 @@
 import { sumarDiasIso } from "./calendario";
-import { diaDeSemana, enVisita, HORARIO_POR_CONFIRMAR, rangosDelDia, visitaDeEvento, type Visita } from "./claseEvento";
+import { diaDeSemana, enVisita, festivalComoEvento, HORARIO_POR_CONFIRMAR, rangosDelDia, visitaDeEvento, type Visita } from "./claseEvento";
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import type { Clase } from "./eventos";
 import { diaConMesDe, diaLocal, eventoPaso } from "./fechas";
@@ -27,6 +27,14 @@ type Exposicion = ConClase & { id: string; titulo: string; inicio: string; fin: 
 
 export const esExposicion = (e: ConClase): boolean => e.clase === "exposicion";
 export const esMarco = (e: ConClase): boolean => e.clase === "festival";
+
+type ConPeriodo = ConClase & { inicio: string; fin: string | null; zona: string; programa?: { registrados: number } | null };
+
+/**
+ * ¿Es el marco de un festival que agrupa actos (o que los espera)? Un festival, salvo el que no tiene programa y va como evento (OL-413,
+ * `festivalComoEvento`): ese es un renglón más, en su día y con su hora.
+ */
+export const esMarcoConPrograma = (e: ConPeriodo): boolean => esMarco(e) && !festivalComoEvento(e);
 
 /** El grupo «Qué» de la hoja Filtros (doc 55 §3, decisión 5): una sola elección; «Todo» es no haber elegido. */
 export type Que = "todo" | "eventos" | "exposiciones" | "talleres" | "festivales";
@@ -190,4 +198,4 @@ export function tituloParaVisitar(dia: string, hoy: string, ahora: Date = new Da
 }
 
 /** ¿Sin punto en el calendario de Cuándo? Una exposición (no es una fecha: está en «Para visitar») y el marco de un festival (sus actos ponen los suyos). */
-export const sinPuntoEnCalendario = (e: ConClase): boolean => esExposicion(e) || esMarco(e);
+export const sinPuntoEnCalendario = (e: ConPeriodo): boolean => esExposicion(e) || esMarcoConPrograma(e);

@@ -102,8 +102,8 @@ describe("la clase en el primer paso (chips bajo el nombre)", () => {
     expect(orden("puntual")).toEqual(["dia", "dia", "hora", "donde", "cuanto"]);
     expect(orden("exposicion")).toEqual(["visita", "visita", "donde", "cuanto"]);
     expect(orden("taller")).toEqual(["sesiones", "sesiones", "donde", "cuanto"]);
-    // Un festival no pregunta dónde (cada actividad tiene su sede): primero su programa, armado a mano.
-    expect(orden("festival")).toEqual(["programa", "programa", "cuanto"]);
+    // OL-413: un festival sin cartel pregunta su día, su hora y su lugar como un evento; el programa es opcional y se agrega desde «Revisa».
+    expect(orden("festival")).toEqual(["dia", "dia", "hora", "donde", "cuanto"]);
     const festival = pasar(enNombre("Lectura en el jardín"), cambiar(claseElegida("festival")), { tipo: "seguir" });
     expect(preguntaDe("programa", festival.r)).toBe("¿Qué actividades tiene?");
   });
@@ -182,7 +182,7 @@ describe("el programa de un festival (H6, caso 4)", () => {
     const e = pasar(conPrograma(), { tipo: "sedeDeActo", clave: "2" }, { tipo: "atras", desde: "donde" });
     expect(pasoActual(e)).toBe("programa");
     expect(e.sedeDe).toBeNull();
-    expect(e.r.actos[1].sitio.modo).toBe("otro");
+    expect(e.r.actos[1].sitio?.modo).toBe("otro");
   });
 
   it("un festival no pregunta dónde; publica los marcados y dice su programa", () => {
@@ -194,9 +194,9 @@ describe("el programa de un festival (H6, caso 4)", () => {
     expect(inicioDe(listo.r)).toBe("2026-11-12T19:00");
   });
 
-  it("sin ningún acto marcado falta una actividad", () => {
+  it("sin ningún acto marcado es un festival sin programa (OL-413): pide su día, su hora y su lugar", () => {
     const e = flujo(conPrograma(), cambiar({ actos: conPrograma().r.actos.map((a) => ({ ...a, marcado: false })) }));
-    expect(faltaParaPublicar({ ...e.r, costo: "gratis" })).toBe("Falta una actividad");
+    expect(faltaParaPublicar({ ...e.r, costo: "gratis" })).toBe("Falta el día, la hora y el lugar");
   });
 });
 
@@ -219,8 +219,8 @@ describe("lo que el cartel dice de cómo ocurre, como respuestas", () => {
   it("dos o más actos son un festival: cada uno marcado con su sede (la del directorio si se cruzó; si no, por confirmar)", () => {
     const r = respuestasDelCartel(leido({ titulo: "Festival de Cine", lugar: "CC200", forma: { clase: null, visita: null, sesiones: [], actos: [{ titulo: "Inauguración", fecha: "2026-11-12", hora: "19:00", lugar: "CC200", lugarId: LUGAR }, { titulo: "Función", fecha: "2026-11-14", hora: "17:00", lugar: "Cineteca", lugarId: null }] } }));
     expect(r.clase).toBe("festival");
-    expect(r.actos?.map((a) => [a.titulo, a.sitio.modo, a.marcado, a.leido])).toEqual([["Inauguración", "lugar", true, true], ["Función", "otro", true, true]]);
-    expect(r.actos?.[1].sitio.otro.pinPendiente).toBe(true);
+    expect(r.actos?.map((a) => [a.titulo, a.sitio?.modo, a.marcado, a.leido])).toEqual([["Inauguración", "lugar", true, true], ["Función", "otro", true, true]]);
+    expect(r.actos?.[1].sitio?.otro.pinPendiente).toBe(true);
   });
 
   it("un cartel que dice que es un evento fija la clase y lee el día y la hora como siempre", () => {

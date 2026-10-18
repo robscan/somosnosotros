@@ -18,8 +18,8 @@ import type { Franja } from "@/lib/horarioLugar";
 import { HORARIOS_POR_DIA, cuandoVariosDias, diaConMesDe, diaLocal, formatearCuando, localAIso, rangoCorto, yaPaso } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import type { FestivalElegible } from "./contextoClase";
-import { NOMBRE_RESERVADO, actosMarcados, costoOpcionalEn, dondeResuelto, finDe, inicioDe, nombreDelSitio, resumenPrograma, type Paso, type Respuestas } from "./pasos";
-import { textoSesiones } from "./clasePorPasos";
+import { NOMBRE_RESERVADO, actosMarcados, conPrograma, costoOpcionalEn, dondeResuelto, finDe, inicioDe, nombreDelSitio, pideDonde, resumenPrograma, type Paso, type Respuestas } from "./pasos";
+import { conSedesPropias, textoSesiones } from "./clasePorPasos";
 import { HojaClase, HojaFestival, HojaInauguracion, nombreDePadre } from "./PasosClase";
 import { CabezaCartel } from "./PasoCartel";
 import type { CartelSubido } from "./useLeerCartel";
@@ -69,14 +69,16 @@ type Props = {
 /** Lo que dice el botón del pie, publicando o guardando. */
 const BOTON = { publicar: ["Publicar", "Publicando…"], editar: ["Guardar cambios", "Guardando…"] } as const;
 
-/** Lo que dice el botón al publicar según la clase (prototipo, caso 1 a 4): «Publicar exposición», «Publicar el festival y 3 eventos». */
+/** Lo que dice el botón al publicar según la clase (prototipo, caso 1 a 4): «Publicar exposición», «Publicar el festival y 3 eventos»; un festival sin
+ *  programa (OL-413), «Publicar festival». */
 function botonDeClase(r: Respuestas): string {
   if (r.clase === "exposicion") return "Publicar exposición";
   if (r.clase === "taller") return "Publicar taller";
-  if (r.clase === "festival") {
+  if (conPrograma(r)) {
     const n = actosMarcados(r).length;
     return `Publicar el festival y ${n} ${n === 1 ? "evento" : "eventos"}`;
   }
+  if (r.clase === "festival") return "Publicar festival";
   return "Publicar";
 }
 
@@ -132,20 +134,26 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   );
   // Los renglones entran del 1 al último; «Agregar…» tras ellos (Quién solo está si hay artistas).
   // Cómo ocurre (OL-321) suma su renglón arriba, el horario y la inauguración de una exposición y «Parte de un festival» (todo menos un festival).
+  // Un festival (OL-413): con programa, su cuándo es el programa; sin él, su día y su hora como un evento, y «Programa · Agregar» para quien quiera
+  // actos. Su «Dónde» se pregunta una vez (`pideDonde`); si algún acto tiene sede propia, además «Sedes».
   const conQuien = r.quien.length > 0;
   const expo = r.clase === "exposicion";
   const festival = r.clase === "festival";
+  const programa = festival && (conPrograma(r) || (festivalGuardado?.actos ?? 0) > 0);
+  const conDonde = pideDonde(r);
+  const conSedes = programa && !festivalGuardado && conSedesPropias(r);
+  const agregarPrograma = festival && !programa && !editar;
   const conInauguracion = expo && r.sitio.modo !== "reservado";
   let turnoSiguiente = 0;
   const orden = () => ++turnoSiguiente;
-  const renglones = 1 + 3 + (expo ? 1 : 0) + (conInauguracion ? 1 : 0) + (conQuien ? 1 : 0) + (festival ? 0 : 1);
+  const renglones = 1 + 1 + (conDonde ? 1 : 0) + (conSedes ? 1 : 0) + 1 + (expo ? 1 : 0) + (conInauguracion ? 1 : 0) + (conQuien ? 1 : 0) + (festival ? 0 : 1) + (agregarPrograma ? 1 : 0);
   const [boton, ocupado] = editar ? BOTON.editar : [botonDeClase(r), BOTON.publicar[1]];
   const hoy = diaLocal(ahora, zona);
   const cuandoClase = expo
     ? { valor: r.visita?.desde && r.visita.hasta ? rangoCorto(r.visita.desde, r.visita.hasta, hoy) : null, falta: "Falta cuándo se puede visitar", paso: "visita" as const }
     : r.clase === "taller"
       ? { valor: textoSesiones(r, hoy), falta: "Faltan las sesiones", paso: "sesiones" as const }
-      : festival
+      : programa
         ? { valor: festivalGuardado ? festivalGuardado.resumen : resumenPrograma(r, hoy), falta: "Falta una actividad", paso: "programa" as const }
         : null;
   // El horario de una exposición: el propio, el del lugar o «por confirmar». Con lugar con horario, «Cambiar» lleva al paso de la visita (allí
@@ -236,21 +244,20 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
             onAbrir={() => setHoja("inauguracion")}
           />
         )}
-        {festival ? (
-          !festivalGuardado && <Dato icono={<IconoPin width={20} height={20} />} clave="Sedes" orden={orden()} valor={sedes ? `Sedes: ${sedes}` : null} detalle={sedes ? "Por actividad" : undefined} falta="Las sedes, por actividad" onAbrir={festivalGuardado ? undefined : () => onAbrir("programa")} />
-        ) : (
+        {conDonde && (
           <Dato
             icono={<IconoPin width={20} height={20} />}
             clave="Dónde"
             orden={orden()}
             valor={dondeResuelto(r.sitio) ? nombreDelSitio(r.sitio, lugar) : null}
-            detalle={r.sitio.modo === "reservado" && nombreDelSitio(r.sitio, lugar) !== NOMBRE_RESERVADO ? "Sitio reservado" : undefined}
+            detalle={r.sitio.modo === "reservado" && nombreDelSitio(r.sitio, lugar) !== NOMBRE_RESERVADO ? "Sitio reservado" : programa ? "Sede del festival" : undefined}
             falta="Falta el lugar"
             error={errores.lugar_id ?? errores.sitio_texto ?? errores.sitio_direccion ?? errores.direccion_privada}
             nota={r.sitio.modo === "reservado" && r.sitio.otro.direccionRetirada ? DIRECCION_RETIRADA : undefined}
             onAbrir={() => onAbrir("donde")}
           />
         )}
+        {conSedes && <Dato icono={<IconoPin width={20} height={20} />} clave="Sedes" orden={orden()} valor={sedes ? `Sedes: ${sedes}` : null} detalle={sedes ? "Por actividad" : undefined} falta="Las sedes, por actividad" onAbrir={() => onAbrir("programa")} />}
         <Dato icono={<IconoBoleto width={20} height={20} />} clave="Cuánto" orden={orden()} valor={cuanto} falta="Falta el precio" error={errores.precio} onAbrir={() => onAbrir("cuanto")} />
         {conQuien && (
           <Dato
@@ -261,6 +268,8 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
             onAbrir={() => onAbrir("mas")}
           />
         )}
+        {/* Un festival sin programa (OL-413): sus actividades como fichas aparte son opcionales; «Agregar» abre el programa. */}
+        {agregarPrograma && <Dato icono={<IconoCalendario width={20} height={20} />} clave="Programa" orden={orden()} valor={null} falta="Programa" opcional onAbrir={() => onAbrir("programa")} />}
         {/* «Parte de un festival» (doc 55 §2): busca un festival propio por nombre o crea uno con solo el nombre. */}
         {!festival && <Dato icono={<IconoEtiqueta width={20} height={20} />} clave="Festival" orden={orden()} valor={r.padre ? `Parte de ${nombreDePadre(r.padre)}` : null} detalle={r.padre && "nuevo" in r.padre ? "Festival nuevo" : undefined} falta="Parte de un festival" opcional onAbrir={() => setHoja("festival")} />}
       </ul>

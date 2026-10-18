@@ -387,13 +387,24 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
   });
 
   it("un festival: su programa y «Me interesa» en el marco; un evento suelto sigue con «Voy»", async () => {
-    const festival = { ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-01-04T06:00:00Z" };
+    // Uno largo (dos meses) sin actos todavía sigue siendo un marco con su programa por confirmar (OL-413: uno corto sin programa va como evento).
+    const festival = { ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-03-04T06:00:00Z" };
     const elementos = await abrir(festival);
     expect(elementos.some((e) => e.props?.["aria-label"] === "Programa")).toBe(true);
     expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
     expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["Actos", "Costo", "Sedes"]);
     const suelto = await abrir(EVENTO);
     expect(suelto.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
+  });
+
+  it("un festival de una noche sin programa (OL-413, Cumbiachella): una sola ficha, sin «Programa» vacío y con «Voy»", async () => {
+    const festival = { ...EVENTO, clase: "festival", inicio: "2099-01-01T02:00:00Z", fin: "2099-01-01T08:00:00Z" };
+    const elementos = await abrir(festival);
+    expect(elementos.some((e) => e.props?.["aria-label"] === "Programa")).toBe(false);
+    expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
+    const textos = elementos.flatMap((e) => (typeof e.props?.children === "string" ? [e.props.children] : [])).join(" | ");
+    expect(textos).not.toContain("Programa registrado: 0");
+    expect(textos).not.toContain("Programa por confirmar");
   });
 });
 
@@ -411,10 +422,20 @@ describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => 
   };
 
   it("el festival: «FESTIVAL», su periodo y su programa bajo el título, y «Actos · Costo · Sedes» en la banda", async () => {
-    const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-01-04T06:00:00Z" });
+    const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-03-04T06:00:00Z" });
     expect(heroe.props.etiqueta).toBe("Festival");
     expect(heroe.props.meta).toMatch(/· Programa por confirmar$/);
     expect(enBanda).toEqual(["Actos", "Costo", "Sedes"]);
+    expect(todos).toEqual(enBanda);
+  });
+
+  it("el festival sin programa (OL-413): «FESTIVAL», su día, su hora y su lugar bajo el título, y cuándo, «Costo» y «Van» en la banda", async () => {
+    const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T02:00:00Z", fin: "2099-01-01T08:00:00Z" });
+    expect(heroe.props.etiqueta).toBe("Festival");
+    expect(heroe.props.meta).toMatch(/· Foro de prueba$/);
+    expect(enBanda).toHaveLength(2);
+    expect(enBanda[1]).toBe("Costo");
+    expect([...recorrer(heroe.props.banda)].some((e) => e.type === Suspense)).toBe(true);
     expect(todos).toEqual(enBanda);
   });
 

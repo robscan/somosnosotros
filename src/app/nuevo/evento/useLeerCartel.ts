@@ -25,6 +25,8 @@ type Opciones = {
   /** Al editar (OL-319): el cartel que ya tiene el evento (no se vuelve a leer) y la casilla «Lectura automática» desmarcada de entrada. */
   inicial?: string | null;
   marcada?: boolean;
+  /** La ciudad desde la que se publica (OL-413): el lugar del cartel se busca por su dirección solo en ella. */
+  ciudad?: string | null;
 };
 
 /**
@@ -35,7 +37,7 @@ type Opciones = {
  * con el recuadro igual para intentarlo otra vez. Nunca lanza ni se queda esperando: si se cae la señal a mitad (bitácora 095), cae en eso mismo.
  * `espera` es lo que dice la pantalla de espera (null en reposo): «leyendo» o «subiendo»; dura hasta que el cartel subido se puede dibujar.
  */
-export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, inicial = null, marcada: marcadaDeEntrada = true }: Opciones) {
+export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, inicial = null, marcada: marcadaDeEntrada = true, ciudad = null }: Opciones) {
   // La subida en curso (OL-353): la vista local del cartel y una subida a la vez. `leyendo`: si esta subida también se lee.
   const { subiendo, vista, subir } = useSubidaDeFoto();
   const [leyendo, setLeyendo] = useState(false);
@@ -79,7 +81,7 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
             gestos.current.alGuardar();
             return url;
           }
-          const r = await leerCartelAccion(url);
+          const r = await leerCartelAccion(url, ciudad);
           if (r.ok) {
             medirCliente("cartel_leido", { resultado: "ok" });
             setSubido({ url, leido: true, noPude: false, colores });
@@ -107,7 +109,7 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
           return url;
         }
       }),
-    [subir, usuarioId, servicio, marcada, cupoActual],
+    [subir, usuarioId, servicio, marcada, cupoActual, ciudad],
   );
 
   // La casilla: sin servicio no hay; agotada va apagada, con cuándo vuelven; si no, marcada o no según la persona.

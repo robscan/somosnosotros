@@ -9,7 +9,7 @@ import { contextoDondeEsta } from "@/lib/hojaDonde";
 import type { LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { PasoDonde, PasoMapa, PasoUso } from "./PasosDonde";
-import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre } from "./PasosEvento";
+import { PasoCuanto, PasoDia, PasoHora, PasoMas, PasoNombre, PasoQue } from "./PasosEvento";
 import { PasoPrograma, PasoSesiones, PasoVisita } from "./PasosClase";
 import { claseElegida, clasesALaVista, costoOpcionalEn, nombreDelSitio } from "./pasos";
 import type { usePasosEvento } from "./usePasosEvento";
@@ -43,6 +43,9 @@ export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios
   switch (paso) {
     case "nombre":
       return <PasoNombre nombre={r.nombre} clase={clases && clasesALaVista(r) ? r.clase : null} onCambio={(nombre) => cambiar({ nombre })} onClase={(clase) => cambiar(claseElegida(clase))} onSeguir={seguir} />;
+    // «¿Qué es?» (OL-413): solo cuando el cartel no resolvió la clase. Elegir una la fija y sigue con su paso del tiempo.
+    case "que":
+      return <PasoQue onElegir={(clase) => contestar(claseElegida(clase))} />;
     case "dia":
       return <PasoDia dias={r.dias} zona={zona} onElegir={(dias) => contestar({ dias })} />;
     case "hora":
@@ -62,9 +65,10 @@ export default function Preguntas({ pasos, sitio, ubicacion, zona, lugares, mios
           ciudadContexto={ciudadContexto}
           onCambiar={cambiar}
           onSede={(acto) => {
-            // «¿Dónde es?» abre con lo que se sabe de esa sede: la elegida, o lo que dijo el cartel.
-            const lugar = acto.sitio.modo === "lugar" ? lugares.find((l) => l.id === acto.sitio.lugarId) : undefined;
-            sitio.setBusqueda(nombreDelSitio(acto.sitio, lugar) || acto.sedeLeida);
+            // «¿Dónde es?» abre con lo que se sabe de esa sede: la elegida, o lo que dijo el cartel (sin sede propia, la del festival es la de partida).
+            const propia = acto.sitio;
+            const lugar = propia?.modo === "lugar" ? lugares.find((l) => l.id === propia.lugarId) : undefined;
+            sitio.setBusqueda((propia ? nombreDelSitio(propia, lugar) : "") || acto.sedeLeida);
             sedeDeActo(acto.clave);
           }}
           onSeguir={seguir}
