@@ -198,6 +198,12 @@ describe("un festival con programa: la sede se pregunta una sola vez", () => {
     expect(sedesDelPrograma(sede.r, [{ id: CC200, nombre: "CC200", tipo: "foro", direccion: null, lat: 0, lng: 0, portada: null }])).toBe("CC200");
   });
 
+  it("sin sede general en el cartel, la que comparten todos los actos es la del festival (por confirmar, una vez)", () => {
+    const r = respuestasDelCartel(varios("", null, [acto("Inauguración", "2026-11-12", "19:00", "Cineteca"), acto("Función", "2026-11-13", "18:00", "Cineteca")]));
+    expect(r.actos?.map((a) => a.sitio)).toEqual([null, null]);
+    expect(r.sitio?.otro).toMatchObject({ sitioTexto: "Cineteca", pinPendiente: true });
+  });
+
   it("con la sede del festival del directorio no se pregunta ninguna", () => {
     const r = respuestasDelCartel(varios("CC200", CC200, [acto("Inauguración", "2026-11-12", "19:00", "CC200", CC200), acto("Función", "2026-11-14", "17:00")]));
     expect(faltan({ ...estadoInicial().r, ...r })).toEqual(["cuanto"]);

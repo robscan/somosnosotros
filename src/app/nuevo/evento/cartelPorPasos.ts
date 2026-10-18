@@ -1,6 +1,6 @@
 import type { ResultadoCartel } from "@/app/eventos/acciones";
 import { quienTrasLeerCartel } from "@/app/eventos/gestosFlyer";
-import { descripcionDeNoche, formaDeActos, type FormaDeActos } from "@/lib/actosLeidos";
+import { cuantasSedes, descripcionDeNoche, formaDeActos, type FormaDeActos } from "@/lib/actosLeidos";
 import type { QuienItem } from "@/lib/artistas";
 import { claseSugerida, LIMITES_EVENTO, type Clase } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
@@ -66,9 +66,22 @@ export function respuestasDelCartel(leido: Leido, quienActual: QuienItem[] = [])
   }
   if (v.descripcion) r.descripcion = v.descripcion;
   if (v.enlace) r.enlace = v.enlace;
-  const sitio = sitioLeido(leido);
+  const sitio = sitioLeido(leido) ?? (r.actos?.length ? sedeComunDelPrograma(leido) : undefined);
   if (sitio) r.sitio = sitio;
   return r;
+}
+
+/**
+ * La sede del festival cuando el cartel no dice una general pero todos sus actos comparten la misma (OL-413): la del directorio, si alguno la
+ * cruzó, o la primera escrita, por confirmar. Así el «Dónde» del festival, que se pregunta una vez, abre con ella.
+ */
+function sedeComunDelPrograma(leido: Leido): Sitio | undefined {
+  const actos = leido.valores.forma?.actos ?? [];
+  if (cuantasSedes(actos) !== 1) return undefined;
+  const delDirectorio = actos.find((a) => a.lugarId)?.lugarId;
+  if (delDirectorio) return { modo: "lugar", lugarId: delDirectorio, otro: OTRO_VACIO };
+  const escrita = actos.find((a) => a.lugar)?.lugar;
+  return escrita ? { modo: "otro", lugarId: "", otro: { ...OTRO_VACIO, sitioTexto: escrita.slice(0, LIMITES_EVENTO.sitio), pinPendiente: true } } : undefined;
 }
 
 /** El sitio que dice el cartel: un lugar del directorio que el lector cruzó por nombre o, si no, por confirmar con lo leído. */
@@ -133,7 +146,8 @@ function seAnunciaComoFestival(leido: Leido): boolean {
 export function claseSinResolver(leido: Leido, actos: FormaDeActos | null): boolean {
   const forma = leido.valores.forma;
   if (!forma) return false;
-  if (!forma.clase) return !claseSugerida(leido.valores.titulo);
+  // Sin clase, un programa de días o sedes distintas sí es un festival (un nombre que reúne varias presentaciones): no se pregunta.
+  if (!forma.clase) return actos?.tipo !== "programa" && !claseSugerida(leido.valores.titulo);
   if (forma.clase === "festival") return actos?.tipo !== "programa" && !seAnunciaComoFestival(leido);
   if (forma.clase === "exposicion") return !forma.visita && !esApertura(leido.valores.titulo);
   return false;
