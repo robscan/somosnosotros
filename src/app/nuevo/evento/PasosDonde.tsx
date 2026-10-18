@@ -173,6 +173,9 @@ export function PasoDonde({
  * suave (la dirección es confirmación, no un campo). Si el mapa solo dio una dirección, esa es el título y «Ponle nombre» abre UNA caja
  * de texto en su lugar. Al arrastrar el pin se vuelve a pedir la dirección del punto. Sin nombre propio, un lugar del directorio a menos
  * de 50 m se ofrece como título («A 40 m de ti · lugar del directorio») y confirmar lo usa. Pie: «Sí, es aquí» y «Buscar otro».
+ *
+ * Un lugar del directorio que se propone por la dirección del cartel (OL-413, `candidato.lugarId`): la misma tarjeta con su nombre y «su dirección
+ * · lugar del directorio», y confirmar lo usa (la pregunta de arriba dice «¿Es en …?»). Si se arrastra el pin, deja de ser ese lugar.
  */
 export function PasoMapa({
   candidato,
@@ -215,15 +218,23 @@ export function PasoMapa({
 
   function mover(punto: Punto) {
     setMovido(true);
-    setC((a) => ({ ...a, punto, direccion: "", ciudad: null }));
+    setC((a) => ({ ...a, punto, direccion: "", ciudad: null, ...(a.lugarId ? { lugarId: undefined, nombre: "" } : {}) }));
     setUbicando(!!configPublica().mapboxToken);
     void pedirDireccion(punto);
   }
 
-  const alLado = c.nombre.trim() ? null : lugarAlLado(lugares, c.punto);
+  const propuesto = c.lugarId ? lugares.find((l) => l.id === c.lugarId) : undefined;
+  const alLado = propuesto || c.nombre.trim() ? null : lugarAlLado(lugares, c.punto);
   const sinTitulo = !tituloDe(c) && !ubicando && !alLado;
-  const titulo = alLado ? alLado.lugar.nombre : tituloDe(c) || (ubicando ? "Ubicando…" : "Este punto del mapa");
-  const detalle = alLado ? `A ${alLado.metros} m ${c.origen === "aqui" && !movido ? "de ti" : "del pin"} · lugar del directorio` : c.nombre.trim() ? c.direccion || (ubicando ? "Ubicando…" : "") : "";
+  const titulo = propuesto ? propuesto.nombre : alLado ? alLado.lugar.nombre : tituloDe(c) || (ubicando ? "Ubicando…" : "Este punto del mapa");
+  const detalle = propuesto
+    ? [propuesto.direccion, "lugar del directorio"].filter(Boolean).join(" · ")
+    : alLado
+      ? `A ${alLado.metros} m ${c.origen === "aqui" && !movido ? "de ti" : "del pin"} · lugar del directorio`
+      : c.nombre.trim()
+        ? c.direccion || (ubicando ? "Ubicando…" : "")
+        : "";
+  const delDirectorio = propuesto ?? alLado?.lugar;
   const nombrar = nombrando || sinTitulo;
   const bloqueo = ubicando ? "Ubicando…" : sinTitulo && !c.nombre.trim() ? "Falta el nombre" : null;
 
@@ -263,7 +274,7 @@ export function PasoMapa({
         )
       )}
       <PiePaso>
-        <Boton type="button" aria-disabled={bloqueo ? true : undefined} onClick={bloqueo ? undefined : () => (alLado ? onLugar(alLado.lugar) : onConfirmar(c))}>
+        <Boton type="button" aria-disabled={bloqueo ? true : undefined} onClick={bloqueo ? undefined : () => (delDirectorio ? onLugar(delDirectorio) : onConfirmar(c))}>
           {bloqueo ?? "Sí, es aquí"}
         </Boton>
         <Boton type="button" variante="quieto" onClick={onOtro}>

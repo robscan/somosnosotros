@@ -29,7 +29,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
-import { cuandoDePeriodo, horarioEfectivo, kpisDeExposicion, lineaDeTaller, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { cuandoDePeriodo, festivalComoEvento, horarioEfectivo, kpisDeExposicion, lineaDeFestivalSinPrograma, lineaDeTaller, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -393,6 +393,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const padre = ligados.padre ? renglonLigado(ligados.padre, ahora, "Terminó") : null;
   // El programa: los actos que no son borrador (los que la base deja ver: a quien no administra el festival, solo los visibles).
   const actosVisibles = ligados.actos.filter((a) => !a.borrador);
+  // Un festival sin programa (OL-413; definición aprobada por el founder el 18 de octubre: el programa es opcional): sin actividades publicadas y
+  // de pocos días, se presenta como un evento, con su día, su hora, su lugar y su «Voy»; conserva la cabecera oscura y la etiqueta «Festival».
+  const comoEvento = clase === "festival" && festivalComoEvento({ clase, inicio: e.inicio, fin: e.fin, zona: e.zona, programa: { registrados: actosVisibles.length } });
   // Lo que viene va en «Programa»; lo que ya pasó, aparte y plegado en «Ya pasó», cada acto con su ficha en pasado (OL-383, «X1 como pasado · X2»).
   const programa = programaDeFestival(actosVisibles, ahora);
   const borradores = puedeEditar ? ligados.actos.filter((a) => a.borrador) : [];
@@ -408,7 +411,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const rangoFestival = clase === "festival" ? cuandoDePeriodo(e, ahora) : null;
   // Sin actos publicados todavía, «Programa por confirmar», como su tarjeta en Inicio (OL-346).
   const programaFestival = actosVisibles.length ? textoProgramaRegistrado(actosVisibles.length) : PROGRAMA_POR_CONFIRMAR;
-  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" ? [rangoFestival, programaFestival].filter(Boolean).join(" · ") : null;
+  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" && !comoEvento ? [rangoFestival, programaFestival].filter(Boolean).join(" · ") : null;
   const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0, cuandoClase);
   const decididasActos = clase === "festival" ? await decididasDe(actual?.perfil.id ?? null, programa.porVenir.map((a) => a.id)) : null;
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
@@ -505,6 +508,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
       <Kpi icono={<IconoReloj width={16} height={16} />} etiqueta={kpiExpo.hoy.etiqueta} valor={kpiExpo.hoy.valor} />
     </Kpis>
+  ) : comoEvento ? (
+    // Un festival sin programa: cuándo, el costo y cuántos van, como un evento suelto, en la banda de la cabecera oscura.
+    <Kpis piel="banda">
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cancelado ? `Era · ${cuando.hora}` : consultaTrasFin ? `Fue · ${cuando.hora}` : cuando.hora} valor={cuando.dia} />
+      <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
+      <Suspense fallback={cancelado ? null : <EsqueletoKpi />}>
+        <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} pasado={consultaTrasFin} cancelado={cancelado} />
+      </Suspense>
+    </Kpis>
   ) : clase === "festival" ? (
     <Kpis piel="banda">
       <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
@@ -520,7 +532,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       </Suspense>
     </Kpis>
   ) : undefined;
-  const metaClase = clase === "festival" ? (cuandoClase ?? undefined) : clase === "taller" ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes }), ahora) : undefined;
+  const metaClase = comoEvento ? lineaDeFestivalSinPrograma(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }), ahora) : clase === "festival" ? (cuandoClase ?? undefined) : clase === "taller" ? lineaDeTaller(e, sitioEnLista({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes }), ahora) : undefined;
   // En pasado (OL-383) lo dice el chip de la cabecera; el aviso queda solo para la dirección reservada que aún se puede consultar (OL-257).
   const avisoPasado = consultaTrasFin && !!privado;
   const hayAvisos = error === "borrar" || error === "publicar" || error === "no_publicable" || avisoPasado || (!consultaTrasFin && (!e.visible || paso));
@@ -553,6 +565,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <b>Duplicar con otra fecha</b>
               </Link>
             </li>
+            {/* Un festival sin programa (OL-413): sus actividades como fichas aparte son opcionales; se agregan desde aquí. */}
+            {comoEvento && !paso && (
+              <li>
+                <Link href={enlaceAltaEvento({ festival: e.id })} className={renglon.ajuste}>
+                  <IconoCalendarioMas width={20} height={20} />
+                  <b>Agregar programa</b>
+                </Link>
+              </li>
+            )}
             <li>
               <Link href={hrefCreador(hrefEvento(e), "menu")} className={renglon.ajuste}>
                 <IconoCartel width={20} height={20} />
@@ -764,7 +785,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
         {/* Un festival (OL-321): su programa por día, cada acto con su ficha y su «Voy»; lo registrado se dice («Programa registrado: N»). Su autor
             ve también sus borradores, con «Publicar». Solo lo que viene (OL-383): lo que ya pasó va aparte, en «Ya pasó». */}
-        {clase === "festival" && (
+        {clase === "festival" && !(comoEvento && !borradores.length) && (
           <section className={ficha.bloque} aria-label="Programa">
             <h2>Programa</h2>
             {programa.porVenir.length ? (
@@ -921,7 +942,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
         {/* Una exposición o un festival no tienen «Voy» (OL-321): tampoco «Quién va». En pasado (OL-388), «Quién fue», solo si alguien dijo «Voy»: sin
             esqueleto mientras llega, para no pintar una sección que quizá no existe. */}
-        {!soloInteres(clase) && (
+        {!soloInteres(clase, comoEvento) && (
           <Suspense fallback={consultaTrasFin || cancelado ? null : <EsqueletoQuienVa />}>
             <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} pasado={consultaTrasFin} cancelado={cancelado} />
           </Suspense>
@@ -941,7 +962,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
           correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
           llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
-          soloInteres={soloInteres(clase)}
+          soloInteres={soloInteres(clase, comoEvento)}
         />
       )}
       {/* El aviso de «Se canceló» con Deshacer (OL-391): fuera del menú, que se cierra al tocar. */}

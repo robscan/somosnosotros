@@ -5,7 +5,7 @@ import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
 import { cortoDeClase, fotoDeEvento, hrefEvento, sitioEnLista } from "./eventos";
 import { diaCorto, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { etiquetaTipo, hrefLugar, textoProximo, vidaDeLugar, type LugarLista } from "./lugares";
-import { cuandoDePeriodo, HORARIO_POR_CONFIRMAR, soloInteres, textoProgramaRegistrado } from "./claseEvento";
+import { cuandoDePeriodo, festivalComoEvento, HORARIO_POR_CONFIRMAR, soloInteres, textoProgramaRegistrado } from "./claseEvento";
 import { textoParte } from "./ocurrencias";
 import { textoActosEnSede } from "./sedesFestival";
 import { comoPaleta, type Paleta } from "./coloresCartel";
@@ -81,8 +81,9 @@ const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice
  * festival con la regla de todo periodo (OL-409, «U»: en curso «Hasta el sáb 17 de oct», por venir «Del 12 al 17 de oct»; `cuandoDePeriodo`).
  * Lo demás de su clase lo dice `notaDeClase`.
  */
-export function cuandoDeTarjeta(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase">, ahora = new Date()): string {
-  if (e.clase === "exposicion" || e.clase === "festival") return cuandoDePeriodo(e, ahora);
+export function cuandoDeTarjeta(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase"> & Partial<Pick<EventoAgenda, "programa">>, ahora = new Date()): string {
+  // Un festival sin programa (OL-413) dice su día y su hora, como un evento.
+  if (e.clase === "exposicion" || (e.clase === "festival" && !festivalComoEvento(e))) return cuandoDePeriodo(e, ahora);
   return minuscula(formatearCuando(e.inicio, null, ahora, e.zona));
 }
 
@@ -95,8 +96,10 @@ export const PROGRAMA_POR_CONFIRMAR = "Programa por confirmar";
  * (OL-346; si no se pudo contar, nada). Null en lo demás. Va aparte del cuándo para que no se corte con él: en la tarjeta, en la línea del sitio;
  * en el renglón, tras el cuándo.
  */
-export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "programa">): string | null {
+export function notaDeClase(e: Pick<EventoAgenda, "clase" | "horario" | "programa"> & Partial<Pick<EventoAgenda, "inicio" | "fin" | "zona">>): string | null {
   if (e.clase === "exposicion") return e.horario && !e.horario.some((f) => f.dias.length) ? HORARIO_POR_CONFIRMAR : null;
+  // Un festival sin programa que va como evento (OL-413) no promete un programa: su lugar es el suyo.
+  if (e.clase === "festival" && e.inicio && e.zona && festivalComoEvento({ ...e, inicio: e.inicio, fin: e.fin ?? null, zona: e.zona })) return null;
   if (e.clase === "festival") {
     if (e.programa?.registrados) return textoProgramaRegistrado(e.programa.registrados);
     return e.programa ? PROGRAMA_POR_CONFIRMAR : null;
@@ -130,7 +133,7 @@ export function tarjetaEvento(e: EventoAgenda, ahora = new Date(), festival?: st
   const hoy = e.clase !== "exposicion" && diaCorto(e.inicio, ahora, e.zona) === "Hoy";
   const foto = fotoDeEvento(e);
   const colores = !foto ? null : foto === e.imagen ? comoPaleta(e.colores_cartel) : foto === e.portadaActo ? comoPaleta(e.coloresActo) : null;
-  return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto, titulo: e.titulo, corto: tituloCorto(e.titulo, festival), colores, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
+  return { ...(e.ocurrencia ? { clave: e.ocurrencia.clave } : {}), ...(parte ? { parte } : {}), ...(soloInteres(e.clase, festivalComoEvento(e)) ? { sinVoy: true } : {}), id: e.id, href: hrefEvento(e), foto, titulo: e.titulo, corto: tituloCorto(e.titulo, festival), colores, detalle: cuandoDeTarjeta(e, ahora), sitio: sitioDeTarjeta(e), van: e.van, cuando: true, hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 /**

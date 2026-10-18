@@ -1,5 +1,6 @@
 // Respaldo local 100 % inventado: imita Auth y PostgREST de Supabase sobre el fixture (nunca toca producción).
 // node server.mjs [puerto]  →  http://127.0.0.1:8823
+import fs from "node:fs";
 import http from "node:http";
 import { tablas, rpcs, sesionDe, subDe, FK, LLAVE_SERVICIO, extrasServicio } from "./fixture.mjs";
 
@@ -11,6 +12,22 @@ const CORS = {
   "Access-Control-Expose-Headers": "Content-Range, Content-Type",
 };
 const registro = [];
+
+// OL-413 (bitácora 444): la lectura de carteles sin llamar a la API de Anthropic. La app arranca con `ANTHROPIC_BASE_URL` apuntando a
+// `/anthropic` de este respaldo y una llave inventada; `POST /__lectura` deja lista la próxima lectura (`{ lectura, archivo }`: lo que
+// «devolvería el modelo» y el cartel local que se sirve como la imagen subida). Storage: la subida se anota y la imagen pública es ese archivo.
+let siguiente = { lectura: null, archivo: null };
+const subidas = new Map();
+function mensajeDeModelo(lectura) {
+  return { id: "msg_respaldo", type: "message", role: "assistant", model: "claude-sonnet-5", content: [{ type: "text", text: JSON.stringify(lectura) }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } };
+}
+function leerCrudo(req) {
+  return new Promise((ok) => {
+    const partes = [];
+    req.on("data", (d) => partes.push(d));
+    req.on("end", () => ok(Buffer.concat(partes)));
+  });
+}
 
 // ---------- select ----------
 function partirNivel0(s, sep = ",") {
@@ -252,6 +269,29 @@ const servidor = http.createServer(async (req, res) => {
   registro.push(`${req.method} ${req.url}`);
   if (req.method === "OPTIONS") return responder(res, 204);
   if (ruta === "/__registro") return responder(res, 200, registro.slice(-200));
+  if (ruta === "/__lectura" && req.method === "POST") {
+    siguiente = { lectura: null, archivo: null, ...((await leerCuerpo(req)) ?? {}) };
+    return responder(res, 200, { ok: true });
+  }
+  if (ruta.startsWith("/anthropic/v1/messages")) {
+    await leerCrudo(req);
+    if (!siguiente.lectura) return responder(res, 500, { type: "error", error: { type: "api_error", message: "sin lectura preparada" } });
+    return responder(res, 200, mensajeDeModelo(siguiente.lectura));
+  }
+  // Storage (solo el bucket `fotos`): subir anota la ruta con el cartel preparado; la URL pública sirve ese archivo.
+  const subida = ruta.match(/^\/storage\/v1\/object\/fotos\/(.+)$/);
+  if (subida && (req.method === "POST" || req.method === "PUT")) {
+    await leerCrudo(req);
+    subidas.set(subida[1], siguiente.archivo);
+    return responder(res, 200, { Key: `fotos/${subida[1]}`, Id: crypto.randomUUID() });
+  }
+  const publica = ruta.match(/^\/storage\/v1\/object\/public\/fotos\/(.+)$/);
+  if (publica && (req.method === "GET" || req.method === "HEAD")) {
+    const archivo = subidas.get(publica[1]);
+    if (!archivo || !fs.existsSync(archivo)) return responder(res, 404, { message: "sin imagen" });
+    res.writeHead(200, { ...CORS, "Content-Type": archivo.endsWith(".png") ? "image/png" : "image/jpeg", "Cache-Control": "no-store" });
+    return res.end(req.method === "HEAD" ? undefined : fs.readFileSync(archivo));
+  }
   // La cuenta de quien pide (OL-341): la del token de la sesión (Ana por omisión; Marcos con `cookieDe(MARCOS)`).
   const sub = subDe(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
   // Auth

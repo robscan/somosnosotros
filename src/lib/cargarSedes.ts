@@ -45,16 +45,17 @@ export async function cargarSedes(supabase: SupabaseClient, marcos: readonly str
  * orden. Para las listas que no cargan la agenda (Buscar, sus recientes, «Tus planes»). Un evento sin la clase (una consulta que no la pide) se
  * pregunta igual: solo un festival tiene actos.
  */
-export async function conLoDeSusActos<T extends { id: string; clase?: string | null; imagen?: string | null }>(supabase: SupabaseClient, eventos: T[], ahora: Date = new Date()): Promise<(T & { sedes?: { nombre: string }[]; portadaActo?: string; coloresActo?: unknown })[]> {
+export async function conLoDeSusActos<T extends { id: string; clase?: string | null; imagen?: string | null }>(supabase: SupabaseClient, eventos: T[], ahora: Date = new Date()): Promise<(T & { sedes?: { nombre: string }[]; portadaActo?: string; coloresActo?: unknown; programa?: { registrados: number } })[]> {
   const marcos = eventos.filter((e) => e.clase === "festival" || e.clase === undefined).map((e) => e.id);
   if (!marcos.length) return eventos;
   const actos = await cargarActosDeMarcos(supabase, marcos);
   if (!actos) return eventos;
   return eventos.map((e) => {
     const suyos = actos.get(e.id);
-    if (!suyos?.length) return e;
+    // Cuántos actos tiene un festival (OL-413): sin ninguno, va como un evento en «Tus planes» y Buscar (`festivalComoEvento`).
+    if (!suyos?.length) return e.clase === "festival" ? { ...e, programa: { registrados: 0 } } : e;
     const sedes = sedesDeFestival(suyos);
     const acto = e.imagen ? null : actoDePortada(suyos, ahora);
-    return { ...e, ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...(acto?.imagen ? { portadaActo: acto.imagen, coloresActo: acto.colores_cartel ?? null } : {}) };
+    return { ...e, ...(e.clase === "festival" ? { programa: { registrados: suyos.length } } : {}), ...(sedes.length ? { sedes: sedesParaLista(sedes) } : {}), ...(acto?.imagen ? { portadaActo: acto.imagen, coloresActo: acto.colores_cartel ?? null } : {}) };
   });
 }

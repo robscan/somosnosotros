@@ -144,6 +144,8 @@ export function respuestasAlEditar({ evento, privado, lugares, quien, sesiones, 
     return { ...base, dias: null, hora: null, fin: null, sesiones: null, visita: visitaDeEvento(evento.inicio, evento.fin, zona), horario: extra.horario?.length ? extra.horario : null, inauguracion: inaug?.fecha ? { dia: inaug.fecha, hora: inaug.hora } : null };
   }
   if (clase === "taller") return { ...base, dias: null, ...tallerAlEditar({ inicio: evento.inicio, fin: evento.fin, zona }, sesiones, zona) };
-  if (clase === "festival") return { ...base, sesiones: null, padre: null, programaGuardado: extra.actos ?? 0 };
+  // Un festival con actividades conserva su periodo (sale de ellas); uno sin programa (OL-413) se edita como un evento: su día, su hora, su horario
+  // por día y su lugar.
+  if (clase === "festival") return extra.actos ? { ...base, sesiones: null, padre: null, programaGuardado: extra.actos } : { ...base, padre: null, programaGuardado: 0 };
   return base;
 }

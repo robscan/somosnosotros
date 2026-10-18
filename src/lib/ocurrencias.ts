@@ -1,3 +1,4 @@
+import { festivalComoEvento } from "./claseEvento";
 import type { Clase } from "./eventos";
 import { MAX_DIAS_SESIONES, type SesionGuardada } from "./sesionesEvento";
 import { FIN_DEL_DIA, sumarDiasIso } from "./calendario";
@@ -35,7 +36,7 @@ export type DatosOcurrencia = {
   parte: Parte | null;
 };
 
-type Evento = { id: string; inicio: string; fin: string | null; zona: string; sesiones?: readonly SesionGuardada[]; clase?: Clase | null };
+type Evento = { id: string; inicio: string; fin: string | null; zona: string; sesiones?: readonly SesionGuardada[]; clase?: Clase | null; programa?: { registrados: number } | null };
 /** El evento tal cual, visto un día: su `inicio` y su `fin` son los de ese día y ya no lleva `sesiones`. */
 export type ConOcurrencia<T> = Omit<T, "sesiones"> & { ocurrencia?: DatosOcurrencia };
 
@@ -53,8 +54,9 @@ export const textoParte = (e: { ocurrencia?: Pick<DatosOcurrencia, "parte">; cla
   return e.evento_padre_id ? null : `Día ${e.ocurrencia.parte.n} de ${e.ocurrencia.parte.de}`;
 };
 
-/** ¿Tiene ocurrencias? Una exposición y el marco de un festival no (OL-322): no pasan un día a una hora. */
-export const sinOcurrencias = (e: { clase?: Clase | null }): boolean => e.clase === "exposicion" || e.clase === "festival";
+/** ¿Tiene ocurrencias? Una exposición y el marco de un festival no (OL-322): no pasan un día a una hora. Un festival sin programa sí (OL-413,
+ *  `festivalComoEvento`): es un evento con su día y su hora. */
+export const sinOcurrencias = (e: Pick<Evento, "clase" | "inicio" | "fin" | "zona" | "programa">): boolean => e.clase === "exposicion" || (e.clase === "festival" && !festivalComoEvento(e));
 
 /** El evento sin su horario por día: cada día de los que se reparte ya lleva el suyo. */
 function sinSesiones<T extends Evento>(e: T): Omit<T, "sesiones"> {

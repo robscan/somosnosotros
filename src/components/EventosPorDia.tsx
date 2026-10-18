@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import type { EventoAgenda } from "@/lib/agenda";
-import { soloInteres } from "@/lib/claseEvento";
+import { festivalComoEvento, soloInteres } from "@/lib/claseEvento";
 import { cabezaDeBloque, eventosDeFicha, lineaParaVisitar, type DeQuien } from "@/lib/eventosFicha";
 import { claveDe } from "@/lib/ocurrencias";
 import BloqueFestival from "./BloqueFestival";
@@ -36,8 +36,9 @@ export default function EventosPorDia({ eventos, marcos = [], de = "lugar", sinS
   const asistencia = useAsistenciaEnLista(decididas, avisos, useCanalDePantalla());
   const ahora = new Date();
   const { visitar, dias } = eventosDeFicha(eventos, marcos, ahora);
-  // Ni una exposición ni el marco de un festival llevan «Voy» en la lista (doc 55 §5, punto 2: «Me interesa», en su ficha).
-  const botonDe = (e: EventoAgenda) => (soloInteres(e.clase) ? undefined : asistencia.boton(e));
+  // Ni una exposición ni el marco de un festival llevan «Voy» en la lista (doc 55 §5, punto 2: «Me interesa», en su ficha); un festival sin
+  // programa sí (OL-413: pasa un día a una hora).
+  const botonDe = (e: EventoAgenda) => (soloInteres(e.clase, festivalComoEvento(e)) ? undefined : asistencia.boton(e));
   return (
     <>
       {visitar.length > 0 && (

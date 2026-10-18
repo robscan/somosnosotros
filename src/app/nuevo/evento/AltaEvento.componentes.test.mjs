@@ -454,9 +454,10 @@ test("tocar un chip fija la clase: el nombre ya no la cambia y «Siguiente» lle
   await boton(p, "Siguiente").click();
   assert.equal(await pregunta(p), "¿Qué días son las sesiones?");
   await boton(p, "Atrás").click();
+  // OL-413: un festival sin cartel se pregunta como un evento (su día, su hora y su lugar); el programa es opcional y se agrega en «Revisa».
   await fila(p).getByRole("button", { name: "Festival" }).click();
   await boton(p, "Siguiente").click();
-  assert.equal(await pregunta(p), "¿Qué actividades tiene?");
+  assert.equal(await pregunta(p), "¿Qué día es?");
   await boton(p, "Atrás").click();
   await fila(p).getByRole("button", { name: "Evento" }).click();
   await boton(p, "Siguiente").click();

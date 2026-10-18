@@ -67,8 +67,9 @@ export default async function EditarEventoPagina({ params }: { params: Promise<{
   const lugar = evento.lugar_id ? registrados.find((l) => l.id === evento.lugar_id) : undefined;
   const zona = zonaSegura(evento.sitio_texto || evento.sitio_reservado ? zonaSitio : (lugar?.zona ?? evento.zona));
   const respuestas = respuestasAlEditar({ evento, privado: sitioPrivado, lugares: registrados, quien: quien.map((q) => ({ id: q.id, nombre: q.nombre })), sesiones: evento.sesiones, zona, clase: { horario: horarioPropio, inauguracion, padre, actos } });
+  // Solo con actividades (OL-413): un festival sin programa se edita como un evento y nunca dice «Programa registrado: 0 actividades».
   const festivalGuardado =
-    evento.clase === "festival" && evento.fin
+    evento.clase === "festival" && evento.fin && actos > 0
       ? { actos, resumen: [rangoDelPeriodo(evento.inicio, evento.fin, evento.zona), textoProgramaRegistrado(actos)].join(" · ") }
       : undefined;
   return (

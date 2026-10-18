@@ -465,12 +465,85 @@ test("OL-411: un festival cuyo cartel no dice el costo pregunta «¿Cuánto cues
   assert.deepEqual({ clase: d.clase, gratis: d.gratis, precio: d.precio, por_confirmar: d.por_confirmar }, { clase: "festival", gratis: "no", precio: "", por_confirmar: "si" });
 });
 
+// ---------------------------------------------------------------- OL-413: festival en una sola ficha, «¿Qué es?» y el lugar por su dirección
+
+/** Cumbiachella como la lee el lector nuevo (bitácora 444): un festival de una noche en un lugar del directorio, sin programa ni costo. */
+const CUMBIACHELLA = {
+  ok: true,
+  valores: { titulo: "Cumbiachella", inicio: "2026-10-30T20:00", fin: "2026-10-30T02:00", gratis: true, precio: "", descripcion: "Festival cumbiero potosino.", enlace: "", lugar: "Teatro de la Paz", direccion: "", artistas: ["Sonido Satanás", "Vinyl Box"], forma: { clase: "festival", visita: null, sesiones: [], actos: [] } },
+  lugarId: LUGAR,
+  quien: [{ nombre: "Sonido Satanás" }, { nombre: "Vinyl Box" }],
+  horaLeida: true,
+  costoLeido: false,
+  sugerido: null,
+};
+
+test("OL-413: un festival de una noche en un lugar es una sola ficha: «¿Cuánto cuesta?», «Revisa» con su día, su hora y su lugar, «Programa · Agregar» y «Publicar festival» sin actos", TOPE, async (t) => {
+  const p = await pagina(t, { qa: conClase({ lectura: CUMBIACHELLA }) });
+  await subir(p);
+  await enPaso(p, "¿Cuánto cuesta?");
+  await boton(p, "Dejar por confirmar").click();
+  await p.getByText("Leído del cartel").waitFor();
+  const filas = await datosRevisa(p);
+  assert.match(filas[0], /Festival\nCambiar/);
+  assert.match(filas[1], /vie 30 de oct · 20:00 → sáb 31 de oct · 02:00/);
+  assert.ok(filas.some((f) => /Teatro de la Paz/.test(f)), "su lugar, una sola vez");
+  assert.ok(filas.some((f) => /Sonido Satanás y Vinyl Box/.test(f)), "la alineación en «Quién»");
+  assert.ok(filas.some((f) => /Programa\nAgregar/.test(f)), "el programa es opcional");
+  assert.equal(filas.some((f) => /Sedes|Programa registrado/.test(f)), false);
+  await foto350(p, "13-revisa-festival-una-ficha");
+  await boton(p, "Publicar festival").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ clase: d.clase, actos: d.actos, lugar: d.lugar_id, inicio: d.inicio, fin: d.fin }, { clase: "festival", actos: undefined, lugar: LUGAR, inicio: "2026-10-30T20:00", fin: "2026-10-31T02:00" });
+});
+
+test("OL-413: «Programa · Agregar» abre el programa a mano; la actividad hereda la sede del festival y no la pide", TOPE, async (t) => {
+  const p = await pagina(t, { qa: conClase({ lectura: { ...CUMBIACHELLA, costoLeido: true } }) });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  await boton(p, "Agregar programa").click();
+  assert.equal(await pregunta(p), "¿Qué actividades tiene?");
+  await boton(p, "Agregar actividad").click();
+  // La hoja se llama como la actividad: primero «Actividad nueva», luego su nombre.
+  await p.getByRole("dialog", { name: "Actividad nueva" }).getByLabel("Nombre de la actividad").fill("Sonido Satanás");
+  const hoja = p.getByRole("dialog", { name: "Sonido Satanás" });
+  assert.match(await hoja.locator("li").filter({ hasText: "Sede" }).innerText(), /Teatro de la Paz · sede del festival/);
+  // Cerrar en blanco no deja «Actividad sin nombre»: aquí ya tiene nombre, así que se queda (le faltan día y hora).
+  await hoja.getByRole("button", { name: "Listo" }).click();
+  await boton(p, "Completa «Sonido Satanás»").waitFor();
+});
+
+test("OL-413: «¿Qué es?» solo cuando el cartel no lo resuelve: cuatro opciones grandes, sin preselección; elegir «Evento» sigue con lo que falte", TOPE, async (t) => {
+  const actos = ["Concierto: Disonáuta", "Charla: Charlemos", "Cócteles: Sorpresas"].map((titulo) => ({ titulo, fecha: "2026-10-17", hora: "19:00", lugar: "", lugarId: null }));
+  const dudosa = { ...CUMBIACHELLA, valores: { ...CUMBIACHELLA.valores, titulo: "Trayectos Interactivos", inicio: "2026-10-17T19:00", fin: "", descripcion: "", artistas: ["Disonáuta"], forma: { clase: "festival", visita: null, sesiones: [], actos } }, quien: [{ nombre: "Disonáuta" }], costoLeido: true };
+  const p = await pagina(t, { qa: conClase({ lectura: dudosa }) });
+  await subir(p);
+  await enPaso(p, "¿Qué es?");
+  const opciones = p.getByRole("group", { name: "Qué es" }).getByRole("button");
+  assert.deepEqual((await opciones.allInnerTexts()).map((o) => o.split("\n")[0]), ["Evento", "Festival", "Exposición", "Taller o curso"]);
+  assert.equal(await p.locator('[aria-pressed="true"]').count(), 0, "sin preselección");
+  await foto350(p, "14-que-es");
+  await opciones.filter({ hasText: /^Evento/ }).click();
+  await p.getByText("Leído del cartel").waitFor();
+  const filas = await datosRevisa(p);
+  assert.match(filas[0], /Evento\nCambiar/);
+  assert.match(filas[1], /sáb 17 de oct · 19:00/);
+  assert.ok(filas.some((f) => /Teatro de la Paz/.test(f)));
+  // Las actividades fueron a la descripción (el lector no trajo una), con lo que no es quien se presenta.
+  await boton(p, "Publicar").click();
+  await p.waitForFunction(() => window.qa.envios.length === 1);
+  const d = await enviado(p);
+  assert.deepEqual({ clase: d.clase, descripcion: d.descripcion }, { clase: "puntual", descripcion: "Concierto, charla y cócteles: Charlemos." });
+});
+
 test("«¿Cómo ocurre?» (caso 5): las cuatro formas con su frase; cambiarla cambia solo el paso del tiempo y conserva lo demás", TOPE, async (t) => {
   const p = await pagina(t, { qa: conClase() });
   await hastaRevisa(p);
   await boton(p, "Cambiar cómo ocurre").click();
   const hoja = p.getByRole("dialog", { name: "Cómo ocurre" });
-  const opciones = await hoja.getByRole("button").filter({ hasText: /Pasa un día|Se puede visitar|Varias sesiones|Agrupa/ }).allInnerTexts();
+  // OL-413: la frase del festival es la de la definición aprobada («Reúne varias presentaciones»).
+  const opciones = await hoja.getByRole("button").filter({ hasText: /Pasa un día|Se puede visitar|Varias sesiones|Reúne varias presentaciones/ }).allInnerTexts();
   assert.deepEqual(opciones.map((o) => o.split("\n")[0]), ["Evento", "Exposición", "Taller o curso", "Festival"]);
   assert.equal(await hoja.getByRole("button", { name: /^Evento/ }).getAttribute("aria-pressed"), "true");
   await foto350(p, "03-como-ocurre");

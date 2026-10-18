@@ -27,9 +27,10 @@ const spider = acto("spider", "cartelera", [sesion("2026-10-12", "20:00", "22:00
 const demon = acto("demon", "cartelera", [sesion("2026-10-14", "19:50", "22:00"), sesion("2026-10-17", "17:00", "19:10")]);
 const cinemaXV = evento("cinema-xv", { clase: "festival", titulo: "CINEMA: XV Festival", inicio: a("2026-09-29", "18:00"), fin: a("2026-10-24", "20:00"), lugar_id: "otro", programa: { registrados: 3 } });
 const paramo = evento("paramo", { evento_padre_id: "cinema-xv", inicio: a("2026-10-16", "18:00"), fin: a("2026-10-16", "20:00") });
-// Un festival que ya no tiene funciones aquí por venir (la de aquí fue el 13) y uno de este lugar sin actos todavía.
+// Un festival que ya no tiene funciones aquí por venir (la de aquí fue el 13) y uno de este lugar sin actos todavía, largo (de dos meses: uno corto
+// sin programa va como evento, OL-413).
 const viejo = evento("viejo", { clase: "festival", titulo: "Ciclo pasado", inicio: a("2026-10-01", "18:00"), fin: a("2026-10-30", "20:00"), lugar_id: "otro", programa: { registrados: 2 } });
-const porConfirmar = evento("por-confirmar", { clase: "festival", titulo: "Muestra de otoño", inicio: a("2026-10-20", "18:00"), fin: a("2026-10-25", "20:00"), programa: { registrados: 0 } });
+const porConfirmar = evento("por-confirmar", { clase: "festival", titulo: "Muestra de otoño", inicio: a("2026-10-20", "18:00"), fin: a("2026-12-20", "20:00"), programa: { registrados: 0 } });
 // Un taller con tres sesiones y una exposición abierta (martes a domingo, 17:00–22:00) hasta el 8 de noviembre; otra que abre el 20.
 const taller = evento("taller", { clase: "taller", titulo: "Taller de guion", inicio: a("2026-10-20", "18:00"), fin: a("2026-10-27", "20:00"), sesiones: [sesion("2026-10-20", "18:00", "20:00"), sesion("2026-10-22", "18:00", "20:00"), sesion("2026-10-27", "18:00", "20:00")] });
 const fotogramas = evento("fotogramas", { clase: "exposicion", titulo: "Fotogramas", inicio: a("2026-10-05", "00:00"), fin: a("2026-11-08", "23:59"), horario: [{ dias: [2, 3, 4, 5, 6, 7], abre: "17:00", cierra: "22:00" }] });
@@ -79,7 +80,14 @@ describe("F · el festival en la ficha va en bloque, por su siguiente función a
   it("la cabecera dice su cuándo y cuántas funciones tiene aquí (o suyas, en un artista)", () => {
     expect(cabezaDeBloque(cartelera, 7, "lugar", ahora)).toBe("Hasta el sáb 17 de oct · 7 funciones aquí");
     expect(cabezaDeBloque(cartelera, 1, "artista", ahora)).toBe("Hasta el sáb 17 de oct · 1 función suya");
-    expect(cabezaDeBloque(porConfirmar, 0, "lugar", ahora)).toBe("Del 20 al 25 de oct · Programa por confirmar");
+    expect(cabezaDeBloque(porConfirmar, 0, "lugar", ahora)).toBe("Del 20 de oct al 20 de dic · Programa por confirmar");
+  });
+  it("un festival de un día sin programa (OL-413, Cumbiachella) no es una cabecera: es un renglón en su día, con su hora", () => {
+    const cumbiachella = evento("cumbiachella", { clase: "festival", titulo: "Cumbiachella", inicio: a("2026-10-30", "20:00"), fin: a("2026-10-31", "02:00"), programa: { registrados: 0 } });
+    const solo = eventosDeFicha([cumbiachella], [], ahora);
+    expect(solo.dias.map((g) => g.clave)).toEqual(["2026-10-30"]);
+    expect(solo.dias[0].eventos).toEqual([expect.objectContaining({ tipo: "renglon", evento: expect.objectContaining({ id: "cumbiachella", inicio: a("2026-10-30", "20:00") }) })]);
+    expect(solo.cuenta).toBe(1);
   });
 });
 
@@ -135,7 +143,7 @@ describe("U · una sola regla para el cuándo de un festival y una exposición (
       expect(textoProximo({ inicio: e.inicio, fin: e.fin, zona: e.zona, clase: e.clase }, ahora)).toMatch(new RegExp(`${regla.charAt(0).toLowerCase()}${regla.slice(1)}$`));
     }
     expect(cuandoDePeriodo(cinemaXV, ahora)).toBe("Hasta el sáb 24 de oct");
-    expect(cuandoDePeriodo(porConfirmar, ahora)).toBe("Del 20 al 25 de oct");
+    expect(cuandoDePeriodo(porConfirmar, ahora)).toBe("Del 20 de oct al 20 de dic");
   });
   it("el festival termina en su último acto: un fin a la medianoche es el día anterior", () => {
     expect(cuandoDePeriodo({ ...cartelera, fin: a("2026-10-18", "00:00") }, ahora)).toBe("Hasta el sáb 17 de oct");

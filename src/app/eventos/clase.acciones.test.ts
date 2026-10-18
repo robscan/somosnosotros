@@ -127,10 +127,41 @@ describe("un festival con su programa (H6)", () => {
     expect(m.rpc).not.toHaveBeenCalled();
   });
 
-  it("sin ningún acto marcado no se publica (un marco sin actos no promete nada)", async () => {
+  it("sin ningún acto marcado es un festival sin programa (OL-413): sin su día y su hora no se publica ni se llama a la base", async () => {
     const fd = formulario({ clase: "festival", titulo: "Festival de Cine", actos: JSON.stringify([acto("Charla", "2030-11-13T18:00", false)]) });
-    expect(await crearEvento(null, fd)).toMatchObject({ ok: false, general: expect.stringContaining("Falta una actividad") });
+    expect(await crearEvento(null, fd)).toMatchObject({ ok: false, errores: { inicio: expect.any(String) } });
     expect(m.rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("un festival sin programa (OL-413)", () => {
+  const CUMBIACHELLA = { clase: "festival", titulo: "Cumbiachella", inicio: "2030-10-30T20:00", fin: "2030-10-31T02:00", gratis: "no", por_confirmar: "si", quien: JSON.stringify([{ nombre: "Sonido Satanás" }, { nombre: "Vinyl Box" }]) };
+
+  it("se publica como un evento con clase festival, en una sola llamada (`publicar_festival_sin_programa`): su día, su hora de 8 pm a 2 am, su sitio y su alineación", async () => {
+    m.maybeSingle.mockResolvedValue({ data: { slug: "cumbiachella-ab12" } });
+    const r = await crearEvento(null, formulario(CUMBIACHELLA));
+    expect(r).toMatchObject({ ok: true, id: ID, slug: "cumbiachella-ab12" });
+    expect(r).not.toHaveProperty("programa");
+    expect(m.rpc).toHaveBeenCalledTimes(1);
+    const [funcion, args] = m.rpc.mock.calls[0];
+    expect(funcion).toBe("publicar_festival_sin_programa");
+    expect(args).toMatchObject({ p_operacion: ID, p_sesiones: null, p_privado: null });
+    expect(args.p_datos).toMatchObject({ titulo: "Cumbiachella", inicio: "2030-10-31T02:00:00.000Z", fin: "2030-10-31T08:00:00.000Z", sitio_texto: "Museo de prueba", precio: null, ciudad: "San Luis Potosí" });
+    expect(args.p_quien).toEqual([{ nombre: "Sonido Satanás", tipo: expect.any(String) }, { nombre: "Vinyl Box", tipo: expect.any(String) }]);
+  });
+
+  it("con su horario por día (varias noches), las sesiones viajan con él", async () => {
+    const sesiones = JSON.stringify([{ inicio: "2030-11-06T20:00", fin: "" }, { inicio: "2030-11-07T19:00", fin: "" }]);
+    await crearEvento(null, formulario({ ...CUMBIACHELLA, inicio: "2030-11-06T20:00", fin: "2030-11-07T23:59", sesiones }));
+    const [funcion, args] = m.rpc.mock.calls[0];
+    expect(funcion).toBe("publicar_festival_sin_programa");
+    expect(args.p_sesiones).toHaveLength(2);
+  });
+
+  it("si la base no lo publica (por ejemplo, sin la migración), lo dice y no inventa un evento", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { message: "sin la función", code: "PGRST202" } });
+    expect(await crearEvento(null, formulario(CUMBIACHELLA))).toMatchObject({ ok: false, general: "No se pudo publicar el festival. Intenta de nuevo." });
+    expect(m.rpc).toHaveBeenCalledTimes(1);
   });
 });
 
