@@ -38,7 +38,7 @@ const titulo=(p)=>p.locator('[role=dialog]').evaluate(d=>d.querySelector('h2')?.
 
 test('la fila: un círculo por evento, en el orden de urgencia y con su anillo; sin nada, no se pinta',async t=>{
  const p=await pagina(t);await p.getByRole('button',{name:/Caracolas/}).waitFor();
- assert.deepEqual(await circulos(p),[['ahora','Ahora'],['pronto','En 30 min'],['pronto','Último día'],['resto','21:00']]);
+ assert.deepEqual(await circulos(p),[['ahora','Ahora'],['pronto','En 30 min'],['pronto','Último día'],['resto','9:00 pm']]);
  const q=await pagina(t,'vacio');await q.getByRole('link',{name:'Otra cosa'}).waitFor();assert.equal(await q.locator("section[aria-label='Lo de hoy']").count(),0);
 });
 
@@ -46,12 +46,12 @@ test('E7: a la misma hora, la cuenta atrás solo en el primero y la hora en los 
  const p=await pagina(t,'misma-hora');await p.getByRole('button',{name:/Caracolas/}).waitFor();
  const nombres=()=>p.locator("section[aria-label='Lo de hoy'] button").evaluateAll(bs=>bs.map(b=>b.getAttribute('aria-label')));
  // El primer pintado, sin esperar ningún temporizador.
- assert.deepEqual((await circulos(p)).map(c=>c[1]),['Ahora','En 1 h','19:00','19:00','En 1 h 30 min','21:00']);
- assert.deepEqual(await nombres(),['Ahora: Caracolas para Luciana','En 1 h: Evento a','19:00 · En 1 h: Evento b','19:00 · En 1 h: Evento c','En 1 h 30 min: Evento d','21:00 · Hoy: Evento hoy']);
+ assert.deepEqual((await circulos(p)).map(c=>c[1]),['Ahora','En 1 h','7:00 pm','7:00 pm','En 1 h 30 min','9:00 pm']);
+ assert.deepEqual(await nombres(),['Ahora: Caracolas para Luciana','En 1 h: Evento a','7:00 pm · En 1 h: Evento b','7:00 pm · En 1 h: Evento c','En 1 h 30 min: Evento d','9:00 pm · Hoy: Evento hoy']);
  // Al minuto siguiente cambia la cuenta del primero y la de las 19:30; los otros dos siguen con la hora.
  await p.clock.runFor(60_000);await p.getByRole('button',{name:'En 59 min: Evento a'}).waitFor();
- assert.deepEqual((await circulos(p)).map(c=>c[1]),['Ahora','En 59 min','19:00','19:00','En 1 h 29 min','21:00']);
- assert.deepEqual((await nombres()).slice(1,4),['En 59 min: Evento a','19:00 · En 59 min: Evento b','19:00 · En 59 min: Evento c']);
+ assert.deepEqual((await circulos(p)).map(c=>c[1]),['Ahora','En 59 min','7:00 pm','7:00 pm','En 1 h 29 min','9:00 pm']);
+ assert.deepEqual((await nombres()).slice(1,4),['En 59 min: Evento a','7:00 pm · En 59 min: Evento b','7:00 pm · En 59 min: Evento c']);
 });
 
 test('tocar un círculo abre su historia; derecha avanza, izquierda vuelve, Escape cierra, el foco vuelve y el anillo se apaga',async t=>{

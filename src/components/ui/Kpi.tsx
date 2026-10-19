@@ -21,12 +21,15 @@ type Props = {
   alTocar?: { hace: () => void; nombre: string };
 };
 
+/** ¿La etiqueta lleva una hora («7:00 pm», «Fue · 8:00 pm–2:00 am»)? Entonces va tal cual, sin mayúsculas: el «pm» no se lee «PM» (OL-418). */
+const conHora = (etiqueta: string): boolean => /\d (am|pm)\b/.test(etiqueta);
+
 /** Un número de la ficha: el icono y lo que es arriba, el valor abajo. Si hay algo que hacer al tocarlo, toda la tarjeta lo hace. */
 export function Kpi({ icono, etiqueta, valor, salto, alTocar }: Props) {
   const contenido = (
     <>
       {icono}
-      <small>{etiqueta}</small>
+      <small className={conHora(etiqueta) ? styles.hora : undefined}>{etiqueta}</small>
       <b>{valor}</b>
     </>
   );

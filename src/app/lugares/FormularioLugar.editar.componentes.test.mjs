@@ -167,7 +167,7 @@ test("(d) un lugar antiguo con la ciudad guardada vacía: se envía vacía sin r
 test("editar sin tocar el horario no lo manda (no lo cambia); con uno guardado, el renglón lo dice estructurado", async (t) => {
   const p = await abrir(t, "sinContexto=1&conHorario=1");
   const renglon = p.locator("li").filter({ has: p.getByRole("button", { name: "Cambiar el horario" }) });
-  assert.match((await renglon.innerText()).replace(/\s+/g, " "), /Ma–Do 10:00 a\.m\.–6:00 p\.m\. Cierra Lu/);
+  assert.match((await renglon.innerText()).replace(/\s+/g, " "), /Ma–Do 10:00 am–6:00 pm Cierra Lu/);
   const envio = await enviar(p);
   assert.equal("horario" in envio, false);
 });
@@ -184,7 +184,7 @@ test("«Agregar el horario» abre la hoja con Ma–Do de 10 a 6; dos franjas y �
   await hoja.getByRole("group", { name: "Cierra" }).getByRole("button", { name: /^2:00/ }).click();
   await hoja.getByRole("button", { name: "Listo" }).click();
   const renglon = p.locator("li").filter({ has: p.getByRole("button", { name: "Cambiar el horario" }) });
-  assert.match((await renglon.innerText()).replace(/\s+/g, " "), /Ma–Sá 10:00 a\.m\.–6:00 p\.m\. Do 11:00 a\.m\.–2:00 p\.m\. Cierra Lu/);
+  assert.match((await renglon.innerText()).replace(/\s+/g, " "), /Ma–Sá 10:00 am–6:00 pm Do 11:00 am–2:00 pm Cierra Lu/);
   const envio = await enviar(p);
   assert.deepEqual(JSON.parse(envio.horario), [
     { dias: [2, 3, 4, 5, 6], abre: "10:00", cierra: "18:00" },

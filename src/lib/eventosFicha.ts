@@ -12,9 +12,9 @@ import { ocurrenciasDeLista } from "./ocurrencias";
  * para pintar, así lo que se cuenta es lo que se ve.
  *
  * - **E · «Para visitar»:** una exposición no pasa un día a una hora: va en su grupo, arriba de los días, sin «Voy», con lo que dice de hoy
- *   («Abre 17:00–22:00 · hasta el dom 8 de nov», `lineaParaVisitar`); la que está en curso primero, la que cierra antes primero (`porCercania`).
+ *   («Abre 5:00–10:00 pm · hasta el dom 8 de nov», `lineaParaVisitar`); la que está en curso primero, la que cierra antes primero (`porCercania`).
  * - **S · cada función en su día:** lo demás se reparte en sus días como en Agenda (`ocurrenciasDeLista`, OL-320): un taller con tres sesiones
- *   sale tres veces, cada una con su hora («18:00–20:00 · Sesión 2 de 3»); los días que ya pasaron no salen.
+ *   sale tres veces, cada una con su hora («6:00–8:00 pm · Sesión 2 de 3»); los días que ya pasaron no salen.
  * - **F · el festival en bloque:** los actos de un festival (con su marco cargado) no salen sueltos: van en el bloque de su festival
  *   (`BloqueFestival`), con todas sus funciones aquí debajo, cada una con su día y su hora. El bloque se coloca por su **siguiente función** aquí
  *   (no por el día en que empezó el festival); sin funciones por venir aquí, no sale (lo que ya pasó está en el Historial o la Trayectoria). El
@@ -78,11 +78,11 @@ export type DeQuien = "lugar" | "artista";
 
 /**
  * La línea de la cabecera del bloque de un festival en una ficha: su cuándo (OL-409, «U»: «Hasta el sáb 17 de oct» o «Del 12 al 17 de oct») y
- * cuántas funciones tiene aquí («7 funciones aquí»; en un artista, «2 funciones suyas»); sin ninguna, lo que dice su programa («Programa por
+ * cuántas actividades tiene aquí («7 actividades aquí»; en un artista, «2 actividades suyas», OL-418); sin ninguna, lo que dice su programa («Programa por
  * confirmar»).
  */
 export function cabezaDeBloque(marco: EventoAgenda, funciones: number, de: DeQuien = "lugar", ahora: Date = new Date()): string {
-  const cuantas = funciones ? `${funciones} ${funciones === 1 ? "función" : "funciones"} ${de === "artista" ? (funciones === 1 ? "suya" : "suyas") : "aquí"}` : (notaDeClase(marco) ?? PROGRAMA_POR_CONFIRMAR);
+  const cuantas = funciones ? `${funciones} ${funciones === 1 ? "actividad" : "actividades"} ${de === "artista" ? (funciones === 1 ? "suya" : "suyas") : "aquí"}` : (notaDeClase(marco) ?? PROGRAMA_POR_CONFIRMAR);
   return `${cuandoDePeriodo(marco, ahora)} · ${cuantas}`;
 }
 

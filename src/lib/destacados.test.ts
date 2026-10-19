@@ -36,7 +36,7 @@ describe("el día de un evento con varios días en la tarjeta (OL-320)", () => {
   });
   it("la tarjeta dice la fecha y la hora de inicio de ese día", () => {
     const t = tarjetaEvento(evento({ inicio: "2026-09-20T00:00:00Z", fin: "2026-09-20T02:00:00Z", ocurrencia }), AHORA);
-    expect(t.detalle).toBe("sáb 19 de sep · 18:00");
+    expect(t.detalle).toBe("sáb 19 de sep · 6:00 pm");
   });
 });
 
@@ -52,9 +52,9 @@ describe("tarjetas", () => {
     expect(tarjetaEvento(evento({ creado_en: "2026-09-16T00:00:00Z" }), AHORA)).not.toHaveProperty("reciente");
   });
   it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde en dos datos", () => {
-    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", corto: "Gala de arias", colores: null, detalle: "mañana · 19:00", sitio: "Teatro de la Paz", van: 14, cuando: true, hoy: false, inicio: MANANA_19, fin: null, zona: ZONA });
+    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", corto: "Gala de arias", colores: null, detalle: "mañana · 7:00 pm", sitio: "Teatro de la Paz", van: 14, cuando: true, hoy: false, inicio: MANANA_19, fin: null, zona: ZONA });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
-    expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: null, detalle: "mañana · 19:00", sitio: "Plaza de Armas" });
+    expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: null, detalle: "mañana · 7:00 pm", sitio: "Plaza de Armas" });
   });
   it("evento: título corto y colores de su propio cartel (OL-360)", () => {
     const colores = ["#2d2d2d", "#6d829b", "#3c2f23", "#bdbcba"];
@@ -75,21 +75,21 @@ describe("tarjetas", () => {
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Templo de San Francisco", sitio_direccion: "Calle Jardín Guerrero 7, 78000" }), AHORA).sitio).toBe("Templo de San Francisco");
   });
   it("evento: «hoy» marca lo que empieza el día de hoy en su zona, no lo de mañana", () => {
-    expect(tarjetaEvento(evento({ inicio: "2026-09-17T02:00:00Z" }), AHORA)).toMatchObject({ hoy: true, detalle: "hoy · 20:00" });
+    expect(tarjetaEvento(evento({ inicio: "2026-09-17T02:00:00Z" }), AHORA)).toMatchObject({ hoy: true, detalle: "hoy · 8:00 pm" });
     expect(tarjetaEvento(evento(), AHORA).hoy).toBe(false);
   });
   it("lugar: su próximo evento o, sin él, qué es", () => {
-    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: null, detalle: "Próximo: mañana · 19:00", cuando: true });
+    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: null, detalle: "Próximo: mañana · 7:00 pm", cuando: true });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA).cuando).toBeUndefined();
   });
   it("lugar con lo próximo con hora y una exposición abierta: dice solo lo próximo; con solo la exposición, la exposición (OL-400)", () => {
     const expo = { id: "x1", inicio: "2026-09-01T06:00:00Z", fin: "2026-10-31T05:59:00Z", zona: ZONA, titulo: "Expo", clase: "exposicion" as const };
-    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" }, enCurso: expo }), AHORA).detalle).toBe("Próximo: mañana · 19:00");
+    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" }, enCurso: expo }), AHORA).detalle).toBe("Próximo: mañana · 7:00 pm");
     expect(tarjetaLugar(lugar({ proximo: null, enCurso: expo }), AHORA)).toMatchObject({ detalle: "Exposición hasta el vie 30 de oct", cuando: true });
   });
   it("artista: la fecha sin el sitio, o lo que hace", () => {
-    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/trio-potosino", foto: null, detalle: "mañana · 19:00" });
+    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/trio-potosino", foto: null, detalle: "mañana · 7:00 pm" });
     expect(tarjetaArtista(artista({ foto: "/trio.jpg" }), AHORA)).toMatchObject({ foto: "/trio.jpg", detalle: "Música · Grupo" });
     expect(tarjetaArtista(artista({ foto: "/trio.jpg" }), AHORA).cuando).toBeUndefined(); // su detalle es la disciplina, no un cuándo
   });

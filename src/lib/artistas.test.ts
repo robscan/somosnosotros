@@ -175,9 +175,9 @@ describe("conProximaFecha y textoProximaFecha", () => {
   });
   it("escribe la próxima fecha con el sitio", () => {
     const ahora = new Date("2026-09-14T18:00:00Z");
-    expect(textoProximaFecha({ id: "e1", inicio: "2026-09-15T01:30:00Z", sitio: "Casa", zona: SLP }, ahora)).toMatch(/^Próximo: hoy · 19:30 · Casa$/);
+    expect(textoProximaFecha({ id: "e1", inicio: "2026-09-15T01:30:00Z", sitio: "Casa", zona: SLP }, ahora)).toMatch(/^Próximo: hoy · 7:30 pm · Casa$/);
     // En Madrid, la misma hora es la 3:30 del martes.
-    expect(textoProximaFecha({ id: "e2", inicio: "2026-09-15T01:30:00Z", sitio: "Sala", zona: "Europe/Madrid" }, ahora)).toBe("Próximo: mañana · 03:30 · Sala");
+    expect(textoProximaFecha({ id: "e2", inicio: "2026-09-15T01:30:00Z", sitio: "Sala", zona: "Europe/Madrid" }, ahora)).toBe("Próximo: mañana · 3:30 am · Sala");
   });
 });
 

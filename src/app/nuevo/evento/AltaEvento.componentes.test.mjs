@@ -270,7 +270,7 @@ test("recorrido completo sin cartel: la acción recibe los campos de siempre, y 
   // OL-321: arriba, cómo ocurre («Evento», propuesto por el título); abajo, «Parte de un festival», opcional.
   assert.equal(renglones.length, 5);
   assert.match(renglones[0], /Evento\nCambiar/);
-  assert.match(renglones[1], /vie 9 de oct · 19:00–21:00/);
+  assert.match(renglones[1], /vie 9 de oct · 7:00–9:00 pm/);
   assert.match(renglones[2], /Teatro de la Paz/);
   assert.match(renglones[3], /Gratis/);
   assert.match(renglones[4], /Parte de un festival\nAgregar/);
@@ -307,7 +307,7 @@ test("OL-384: si ya hay uno parecido ese día en el mismo sitio, «¿Es este?» 
   const enlace = caja.getByRole("link");
   assert.equal(await enlace.getAttribute("href"), "/eventos/lectura-en-voz-alta-de-poesia-x1");
   assert.equal(await enlace.locator("img").getAttribute("src"), "/cartel.svg");
-  assert.deepEqual((await enlace.innerText()).split("\n").map((x) => x.trim()).filter(Boolean), ["Lectura de poesía en voz alta", "vie 9 de oct · 18:30", "Teatro de la Paz"]);
+  assert.deepEqual((await enlace.innerText()).split("\n").map((x) => x.trim()).filter(Boolean), ["Lectura de poesía en voz alta", "vie 9 de oct · 6:30 pm", "Teatro de la Paz"]);
   // Nada se publicó: lo dice el botón de siempre y la guardia sigue puesta.
   assert.equal(await p.evaluate(() => window.qa.envios.length), 1);
   assert.equal(await avisa(p), true);
@@ -555,7 +555,7 @@ test("con el teclado abierto (390×508) el campo, los chips de la clase y «Sigu
   await foto374(p, "390x508-04-teclado");
 });
 
-/** Empieza a las 10:00 p.m. con la hoja de «Otra hora» (no es una hora sugerida) y deja a la vista el grupo «¿Cuánto dura?». */
+/** Empieza a las 10:00 pm con la hoja de «Otra hora» (no es una hora sugerida) y deja a la vista el grupo «¿Cuánto dura?». */
 async function hastaCuantoDura(p) {
   await hastaHora(p);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: "Otra hora" }).click();
@@ -581,7 +581,7 @@ test("«¿Cuánto dura?»: el grupo trae 1, 2 y 3 horas, «Otra hora» y «Sin h
   }
 });
 
-test("elegir una duración avanza, y al volver dice a qué hora termina: 22:00 + 3 horas es 1:00 a.m. del día siguiente", TOPE, async (t) => {
+test("elegir una duración avanza, y al volver dice a qué hora termina: 22:00 + 3 horas es 1:00 am del día siguiente", TOPE, async (t) => {
   const p = await pagina(t);
   const grupo = await hastaCuantoDura(p);
   await grupo.getByRole("button", { name: "3 horas" }).click();
@@ -589,19 +589,19 @@ test("elegir una duración avanza, y al volver dice a qué hora termina: 22:00 +
   await boton(p, "Atrás").click();
   assert.equal(await pregunta(p), "¿A qué hora?");
   assert.equal(await grupo.getByRole("button", { name: "3 horas" }).getAttribute("aria-pressed"), "true");
-  assert.match(await grupo.locator("small").innerText(), /^Termina 1:00\s*a\.?\s?m\.? del día siguiente$/);
+  assert.match(await grupo.locator("small").innerText(), /^Termina 1:00\s*am del día siguiente$/);
   if (capturas) {
     await p.waitForTimeout(400);
     await p.screenshot({ path: join(capturas, "dur-2-madrugada.png") });
   }
-  // Una hora desde las 7:00 p.m. termina ese mismo día, sin «del día siguiente».
+  // Una hora desde las 7:00 pm termina ese mismo día, sin «del día siguiente».
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
   await grupo.getByRole("button", { name: "1 hora" }).click();
   await boton(p, "Atrás").click();
-  assert.match(await grupo.locator("small").innerText(), /^Termina 8:00\s*p\.?\s?m\.?$/);
+  assert.match(await grupo.locator("small").innerText(), /^Termina 8:00\s*pm$/);
 });
 
-test("«Otra hora» ofrece las 24 horas y rotula las del día siguiente; 1:00 a.m. con inicio a las 10:00 p.m. queda el día siguiente", TOPE, async (t) => {
+test("«Otra hora» ofrece las 24 horas y rotula las del día siguiente; 1:00 am con inicio a las 10:00 pm queda el día siguiente", TOPE, async (t) => {
   const p = await pagina(t);
   const grupo = await hastaCuantoDura(p);
   await grupo.getByRole("button", { name: "Otra hora" }).click();
@@ -613,7 +613,7 @@ test("«Otra hora» ofrece las 24 horas y rotula las del día siguiente; 1:00 a.
   assert.doesNotMatch(horas[0], /día siguiente/);
   assert.match(horas[7], /^12:00\s*a/);
   assert.match(horas[7], /día siguiente/);
-  // La misma hora del inicio no se ofrece (serían 24 horas): la lista acaba a las 9:45 p.m. del día siguiente.
+  // La misma hora del inicio no se ofrece (serían 24 horas): la lista acaba a las 9:45 pm del día siguiente.
   assert.match(horas.at(-1), /^9:45\s*p[\s\S]*día siguiente/);
   assert.equal(horas.filter((h) => /día siguiente/.test(h)).length, 88);
   if (capturas) await p.screenshot({ path: join(capturas, "dur-3-hoja-otra-hora.png") });
@@ -674,24 +674,24 @@ test("varios días: la pregunta es «¿A qué hora, cada día?» y, con el inici
   const resumen = p.locator("main > p").filter({ hasText: /^Del 9 al 11 de oct/ });
   assert.equal(await resumen.count(), 0);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
-  assert.match(await resumen.innerText(), /^Del 9 al 11 de oct · cada día desde las 8:00\s*p\.?\s?m\.?$/);
+  assert.match(await resumen.innerText(), /^Del 9 al 11 de oct · cada día desde las 8:00\s*pm$/);
   if (capturas) await foto(p, "cada-dia-1-hora");
   // Un fin elegido avanza; al volver, la línea lo dice completo y «Revisa» lo enseña con días y horas.
   await termina.getByRole("button", { name: /^9:00/ }).click();
   await elegirTeatro(p);
   await boton(p, /^Gratis/).click();
   const cuando = p.locator("main ul > li").nth(1);
-  assert.match(await cuando.innerText(), /Del 9 al 11 de oct · 20:00–21:00/);
+  assert.match(await cuando.innerText(), /Del 9 al 11 de oct · 8:00–9:00 pm/);
   if (capturas) await foto(p, "cada-dia-3-revisa-cuando");
   await boton(p, "Atrás").click();
   await boton(p, "Atrás").click();
   await boton(p, "Atrás").click();
   assert.equal(await pregunta(p), "¿A qué hora, cada día?");
-  assert.match(await resumen.innerText(), /^Del 9 al 11 de oct · cada día de 8:00 a 9:00\s*p\.?\s?m\.?$/);
+  assert.match(await resumen.innerText(), /^Del 9 al 11 de oct · cada día de 8:00 a 9:00\s*pm$/);
   if (capturas) await foto(p, "cada-dia-2-resumen");
   // «Sin hora de fin»: acaba con su último día y «Revisa» solo dice la hora de inicio; lo guardado es el de siempre.
   await termina.getByRole("button", { name: "Sin hora de fin" }).click();
-  assert.match(await p.locator("main ul > li").nth(1).innerText(), /Del 9 al 11 de oct · 20:00\nCambiar/);
+  assert.match(await p.locator("main ul > li").nth(1).innerText(), /Del 9 al 11 de oct · 8:00 pm\nCambiar/);
   await boton(p, "Publicar").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
   const d = await enviado(p);
@@ -707,7 +707,7 @@ test("un solo día sigue preguntando «¿A qué hora?» y sin línea de «cada d
   assert.equal(await p.getByRole("checkbox").count(), 0);
 });
 
-/** El horario común de un evento del 9 al 11 de octubre (de 8:00 a 9:00 p.m.) ya contestado, y de vuelta en «¿A qué hora, cada día?» con todo puesto. */
+/** El horario común de un evento del 9 al 11 de octubre (de 8:00 a 9:00 pm) ya contestado, y de vuelta en «¿A qué hora, cada día?» con todo puesto. */
 async function hastaCasilla(p) {
   await hastaVariosDias(p);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^8:00/ }).click();
@@ -722,8 +722,8 @@ const listaDias = (p) => p.locator("main ul > li").allInnerTexts();
 const hoja = (p) => p.getByRole("dialog");
 /** La línea de abajo del paso (el resumen del horario). */
 const resumenDe = (p) => p.locator("main > p").filter({ hasText: /^Del 9/ });
-/** Las horas de un día en la lista, sin espacios raros: «de 8:00 p.m. a 9:00 p.m.». */
-const limpio = (texto) => texto.replace(/\s+/g, " ").replace(/ | /g, " ").replace(/p\.\s?m\./g, "p.m.").replace(/a\.\s?m\./g, "a.m.");
+/** Las horas de un día en la lista, sin espacios raros: «de 8:00 a 9:00 pm». */
+const limpio = (texto) => texto.replace(/\s+/g, " ");
 
 test("horario por día, casilla marcada: nada cambia (sin lista ni sesiones, elegir el fin avanza) y lo publicado es lo de siempre", TOPE, async (t) => {
   const p = await pagina(t);
@@ -756,9 +756,9 @@ test("horario por día: desmarcar pone un renglón por día; la hoja de un día 
   assert.equal(await p.getByRole("group", { name: "Termina", exact: true }).count(), 0);
   const antes = (await listaDias(p)).map(limpio);
   assert.equal(antes.length, 3);
-  assert.match(antes[0], /^vie 9 de oct de 8:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
-  assert.match(antes[1], /^sáb 10 de oct de 8:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
-  assert.match(antes[2], /^dom 11 de oct de 8:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
+  assert.match(antes[0], /^vie 9 de oct de 8:00 a 9:00 pm Cambiar$/);
+  assert.match(antes[1], /^sáb 10 de oct de 8:00 a 9:00 pm Cambiar$/);
+  assert.match(antes[2], /^dom 11 de oct de 8:00 a 9:00 pm Cambiar$/);
   assert.match(await resumenDe(p).innerText(), /^Del 9 al 11 de oct · cada día igual$/);
   assert.ok(await boton(p, "Siguiente").isVisible());
   if (capturas) await foto(p, "dia-2-lista-de-dias");
@@ -772,7 +772,7 @@ test("horario por día: desmarcar pone un renglón por día; la hoja de un día 
   await boton(p, "Listo").click();
   assert.equal(await hoja(p).count(), 0);
   const despues = (await listaDias(p)).map(limpio);
-  assert.match(despues[1], /^sáb 10 de oct de 7:00 p\.m\. a 9:00 p\.m\. Cambiar$/);
+  assert.match(despues[1], /^sáb 10 de oct de 7:00 a 9:00 pm Cambiar$/);
   assert.equal(despues[0], antes[0]);
   assert.equal(despues[2], antes[2]);
   // Solo el sábado lleva sus horas en tinta y en negrita; los demás, en gris.
@@ -795,7 +795,7 @@ test("horario por día: desmarcar pone un renglón por día; la hoja de un día 
   await boton(p, "Cambiar cuándo").click();
   assert.equal(await pregunta(p), "¿A qué hora, cada día?");
   assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "false");
-  assert.match(limpio((await listaDias(p))[1]), /7:00 p\.m\. a 9:00 p\.m\./);
+  assert.match(limpio((await listaDias(p))[1]), /7:00 a 9:00 pm/);
   await boton(p, "Siguiente").click();
   await boton(p, "Publicar").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
@@ -815,7 +815,7 @@ test("horario por día: el inicio del primer día y el fin del último son los d
   // El primer día empieza a las 12:00 y el último, sin hora de fin: el evento guarda el 12:00 del 9 y el fin del 11.
   await boton(p, "Cambiar vie 9 de oct").click();
   await hoja(p).getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^12:00/ }).click();
-  // Su fin (9:00 p.m.) sigue después de las 12:00; una hora propia sale de «Otra hora».
+  // Su fin (9:00 pm) sigue después de las 12:00; una hora propia sale de «Otra hora».
   await hoja(p).getByRole("group", { name: "Termina" }).getByRole("button", { name: "Otra hora" }).click();
   await p.getByRole("dialog", { name: /^Termina/ }).getByRole("button", { name: /^3:30/ }).click();
   await boton(p, "Listo").click();
@@ -823,8 +823,8 @@ test("horario por día: el inicio del primer día y el fin del último son los d
   await hoja(p).getByRole("group", { name: "Termina" }).getByRole("button", { name: "Sin hora de fin" }).click();
   await boton(p, "Listo").click();
   const lista = (await listaDias(p)).map(limpio);
-  assert.match(lista[0], /^vie 9 de oct de 12:00 p\.m\. a 3:30 p\.m\. Cambiar$/);
-  assert.match(lista[2], /^dom 11 de oct desde las 8:00 p\.m\. Cambiar$/);
+  assert.match(lista[0], /^vie 9 de oct de 12:00 a 3:30 pm Cambiar$/);
+  assert.match(lista[2], /^dom 11 de oct desde las 8:00 pm Cambiar$/);
   assert.match(await resumenDe(p).innerText(), /2 días con otro horario/);
   await boton(p, "Siguiente").click();
   await elegirTeatro(p);
@@ -851,7 +851,7 @@ test("horario por día: volver a marcar la casilla devuelve a todos el horario c
   assert.match(await resumenDe(p).innerText(), /cada día de 8:00 a 9:00/);
   // Desmarcarla otra vez arranca de nuevo con el común: el sábado ya no es distinto.
   await mismoHorario(p).click();
-  assert.match(limpio((await listaDias(p))[1]), /8:00 p\.m\. a 9:00 p\.m\./);
+  assert.match(limpio((await listaDias(p))[1]), /8:00 a 9:00 pm/);
   await mismoHorario(p).click();
   await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
   await elegirTeatro(p);
@@ -920,7 +920,7 @@ for (const ancho of [320, 390]) {
     await elegirTeatro(p);
     await boton(p, /^Gratis/).click();
     const hora = p.locator("main ul > li").nth(1).locator("b span");
-    assert.equal(await hora.innerText(), "20:00–21:00");
+    assert.equal(await hora.innerText(), "8:00–9:00 pm");
     // Una sola caja de línea: el span no se parte, aunque el renglón pase a dos líneas. Es un bloque en línea (OL-373): pasa entero al renglón de
     // abajo y solo se partiría dentro si ni en un renglón entero cupiera (la letra grande), en vez de salirse.
     assert.equal(await hora.evaluate((e) => e.getClientRects().length), 1);
@@ -1037,7 +1037,7 @@ test("tocar un dato en «Revisa» abre solo su pregunta y, al contestarla, vuelv
   assert.equal(await p.getByRole("group", { name: "¿Cuánto dura?" }).count(), 0);
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^12:00/ }).click();
   await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "3 horas" }).click();
-  await p.locator("main ul > li").filter({ hasText: "sáb 10 de oct · 12:00–15:00" }).waitFor();
+  await p.locator("main ul > li").filter({ hasText: "sáb 10 de oct · 12:00–3:00 pm" }).waitFor();
   // Dónde: abre con el sitio elegido puesto en el campo; Atrás vuelve a «Revisa» sin cambiar nada.
   await boton(p, "Cambiar dónde").click();
   await boton(p, "Atrás").click();
@@ -1302,7 +1302,7 @@ test("con la casilla marcada: subir → «Leyendo» (el cartel chico y el aviso,
   // Los cuatro renglones, los leídos como cualquier otro; no se preguntó nada.
   const filas = await renglones(p);
   assert.equal(filas.length, 4);
-  assert.match(filas[0], /jue 5 de nov · 19:00/);
+  assert.match(filas[0], /jue 5 de nov · 7:00 pm/);
   assert.match(filas[1], /Teatro de la Paz/);
   assert.match(filas[2], /Gratis/);
   assert.match(filas[3], /Lucía Montaño/);
@@ -1330,7 +1330,7 @@ test("a medias: se preguntan solo dónde y cuánto, sin la fila «Cartel guardad
   await p.getByText("Leído del cartel").waitFor();
   const filas = await renglones(p);
   assert.equal(filas.length, 4);
-  assert.match(filas[0], /sáb 14 de nov · 20:00/);
+  assert.match(filas[0], /sáb 14 de nov · 8:00 pm/);
   assert.match(filas[1], /Teatro de la Paz/);
   assert.match(filas[2], /Cooperación solidaria/);
   assert.match(filas[3], /Trío Bruma/);
@@ -1358,7 +1358,7 @@ test("una fecha sin hora pregunta solo la hora, y las 19:00 de relleno no vienen
   await empieza.getByRole("button", { name: /^8:00/ }).click();
   await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "Sin hora de fin" }).click();
   await p.getByText("Leído del cartel").waitFor();
-  assert.match((await renglones(p))[0], /sáb 14 de nov · 20:00/);
+  assert.match((await renglones(p))[0], /sáb 14 de nov · 8:00 pm/);
 });
 
 test("un sitio que el cartel nombra y no está en el directorio se pregunta igual, con lo leído de partida", TOPE, async (t) => {
@@ -2029,7 +2029,7 @@ test("publicar no sale de la pantalla: «Evento publicado» con la tarjeta como 
   assert.equal(await tarjeta(p).getAttribute("href"), "/eventos/lectura-en-voz-alta-ab11");
   const texto = await tarjeta(p).innerText();
   assert.match(texto, /Lectura en voz alta/);
-  assert.match(texto, /vie 9 de oct · 19:00/);
+  assert.match(texto, /vie 9 de oct · 7:00–9:00 pm/);
   assert.match(texto, /Teatro de la Paz/);
   // Pie (OL-365): las dos salidas, «Ver el evento» (la principal, abre la ficha) y «Compartir»; nada de descargar (no hay cartel) ni «Publicar otro».
   const ver = p.getByRole("link", { name: "Ver el evento" });
@@ -2077,7 +2077,7 @@ test("«Compartir» manda el mismo texto y la misma dirección que la ficha: tí
   const [c] = await p.evaluate(() => window.compartidos);
   assert.equal(c.titulo, "Lectura en voz alta");
   assert.equal(c.url, "https://somosnosotros.org/eventos/lectura-en-voz-alta-ab11");
-  assert.match(c.texto, /^Lectura en voz alta\nvie 9 de oct · 19:00–21:00 · Teatro de la Paz$/);
+  assert.match(c.texto, /^Lectura en voz alta\nvie 9 de oct · 7:00–9:00 pm · Teatro de la Paz$/);
 });
 
 /** El aviso flotante de confirmación (OL-318, `ui/Confirmacion`): un `status` con ese texto (el botón dice lo mismo en su letrero, por eso no se busca por texto suelto). */
@@ -2105,7 +2105,7 @@ test("con cartel: la tarjeta lleva su miniatura y «Descargar el cartel» descar
   const miniatura = tarjeta(p).locator("img");
   assert.equal(await miniatura.getAttribute("src"), "/cartel.svg");
   assert.equal(await miniatura.evaluate((e) => e.naturalWidth > 0), true);
-  assert.match(await tarjeta(p).innerText(), /jue 5 de nov · 19:00/);
+  assert.match(await tarjeta(p).innerText(), /jue 5 de nov · 7:00 pm/);
   // Con cartel propio no se ofrece crear otro (OL-365: «Si ya existe no debería de sugerirlo») y las salidas son las mismas dos.
   assert.equal(await p.getByRole("heading", { name: "Crea su cartel" }).count(), 0);
   assert.equal(await p.getByRole("link", { name: /Crear (su )?cartel/ }).count(), 0);
@@ -2217,7 +2217,7 @@ const DUPLICADO = {
   evento: { titulo: "Ecos de papel", lugar_id: LUGAR, precio: "$150", descripcion: "Lectura en voz alta con música.", enlace: "https://ejemplo.org/ecos", sitio_texto: null, sitio_direccion: null, sitio_lat: null, sitio_lng: null, sitio_reservado: false, ciudad: "San Luis Potosí" },
   quien: [ARTISTA],
 };
-/** Hasta pasar la hora: 7:00 p.m. y dos horas. */
+/** Hasta pasar la hora: 7:00 pm y dos horas. */
 async function horaYDuracion(p) {
   await p.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
   await p.getByRole("group", { name: "¿Cuánto dura?" }).getByRole("button", { name: "2 horas" }).click();
@@ -2259,7 +2259,7 @@ test("lo que vino al abrir no lo pisa el cartel: con el lugar y el artista de la
   await subir(p);
   await p.getByText("Leído del cartel").waitFor();
   const filas = await renglones(p);
-  assert.match(filas[0], /jue 5 de nov · 19:00/);
+  assert.match(filas[0], /jue 5 de nov · 7:00 pm/);
   assert.match(filas[1], /Teatro de la Paz/);
   assert.match(filas[3], /Lucía Montaño/);
   assert.doesNotMatch(filas.join(" "), /Centro de las Artes|Trío Bruma/);
@@ -2279,7 +2279,7 @@ test("«Duplicar» (`?desde=`): entra en «¿Qué día es?» con el nombre, el l
   await p.getByRole("heading", { name: "Ecos de papel" }).waitFor();
   const filas = await renglones(p);
   assert.equal(filas.length, 4);
-  assert.match(filas[0], /vie 9 de oct · 19:00–21:00/);
+  assert.match(filas[0], /vie 9 de oct · 7:00–9:00 pm/);
   assert.match(filas[1], /Teatro de la Paz/);
   assert.match(filas[2], /\$150/);
   assert.match(filas[3], /Lucía Montaño/);

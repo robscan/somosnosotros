@@ -45,7 +45,7 @@ describe("la presentación del artista", () => {
     const b = bloquesArtista({ artista: YO, pasados, proximos, ahora: AHORA });
     expect(tipos(b)).toEqual(["rotulo:Reseña", "resena", "rotulo:Trayectoria · 2 fechas · 1 cancelado · 1 lugar", "anio:2026", "fila", "fila", "anio:2025", "fila", "columnas", "rotulo:Próximas fechas", "fila", "fila"]);
     const filas = b.filter((x): x is Extract<BloqueDocumento, { tipo: "fila" }> => x.tipo === "fila").map((x) => x.fila);
-    expect(filas[0]).toEqual({ cuando: "8 oct · 19:00", titulo: "Evento e1", detalle: "Foro La Pirámide · parte de Festival X · con Ana y Bea · 3 dijeron «Voy»", cancelado: false });
+    expect(filas[0]).toEqual({ cuando: "8 oct · 7:00 pm", titulo: "Evento e1", detalle: "Foro La Pirámide · parte de Festival X · con Ana y Bea · 3 dijeron «Voy»", cancelado: false });
     // Lo cancelado se lista tachado y sin «Voy».
     expect(filas[1]).toMatchObject({ cancelado: true, detalle: "Foro La Pirámide" });
     expect(filas[2].detalle).toBe("Foro La Pirámide · con Ana · 1 dijo «Voy»");
@@ -137,14 +137,14 @@ describe("el informe del lugar: las cifras y sus reglas", () => {
 
   it("el documento: rótulo, dirección y las reglas en el pie", () => {
     const d = informeLugar({ lugar: { ...LUGAR, direccion: "Calle 1", zona: Z }, pasados: todos, periodo: "anio", ahora: AHORA });
-    expect(d).toMatchObject({ rotulo: "Informe de actividad", meta: "Calle 1", tituloCorto: "Informe de actividad · Foro La Pirámide", reglas: "un festival no se suma además de sus actos; una expo cuenta una vez" });
+    expect(d).toMatchObject({ rotulo: "Informe de actividad", meta: "Calle 1", tituloCorto: "Informe de actividad · Foro La Pirámide", reglas: "un festival no se suma además de sus actividades; una expo cuenta una vez" });
     expect((d.bloques[0] as Extract<BloqueDocumento, { tipo: "cifras" }>).periodo).toBe("Periodo: 2026");
   });
 });
 
 describe("fechas, nombres y direcciones", () => {
   it("las fechas del renglón y del pie", () => {
-    expect(cuandoDocumento({ inicio: "2026-10-09T01:00:00Z", fin: null, zona: Z })).toBe("8 oct · 19:00");
+    expect(cuandoDocumento({ inicio: "2026-10-09T01:00:00Z", fin: null, zona: Z })).toBe("8 oct · 7:00 pm");
     expect(cuandoDocumento({ inicio: "2026-10-06T16:00:00Z", fin: "2026-10-07T20:00:00Z", zona: Z })).toBe("6 oct – 7 oct");
     expect(fechaElaborado(AHORA, Z)).toBe("12 oct 2026");
     expect(nombrePeriodo("mes", AHORA, Z)).toBe("Octubre de 2026");

@@ -420,7 +420,7 @@ describe("«Para visitar» un día: también las exposiciones sin horario (OL-38
     const visitar = paraVisitarEnAgenda(datos, manana, hoy);
     expect(visitar?.dia).toBe("2026-10-13");
     expect(ids(visitar?.exposiciones)).toEqual(["desierto", "breve", "una-vez-mas"]);
-    expect(visitar?.exposiciones.map((e) => cuandoParaVisitar(e, "2026-10-13"))).toEqual(["Abre 09:00–18:00", "Horario por confirmar", "Horario por confirmar"]);
+    expect(visitar?.exposiciones.map((e) => cuandoParaVisitar(e, "2026-10-13"))).toEqual(["Abre 9:00 am–6:00 pm", "Horario por confirmar", "Horario por confirmar"]);
     expect(textoHastaEl(unaVezMas, ahora)).toBe("hasta el sáb 14 de nov");
   });
   it("el sábado DESIERTO cierra (tiene horario) y Sabatina abre; las sin horario siguen", () => {

@@ -280,7 +280,7 @@ test("exposición sin cartel (caso 2): el título la propone, «¿Cuándo se pue
   const filas = await datosRevisa(p);
   assert.match(filas[0], /Exposición\nCambiar/);
   assert.match(filas[1], /Del 9 al 31 de oct/);
-  assert.match(filas[2], /Horario del lugar[\s\S]*Ma–Do[\s\S]*10:00 a\.m\.–6:00 p\.m\.[\s\S]*Cierra Lu/);
+  assert.match(filas[2], /Horario del lugar[\s\S]*Ma–Do[\s\S]*10:00 am–6:00 pm[\s\S]*Cierra Lu/);
   assert.match(filas[3], /Inauguración\nAgregar/);
   assert.match(filas.at(-1), /Parte de un festival\nAgregar/);
   // La inauguración: su día y su hora, aparte del horario de visita.
@@ -290,7 +290,7 @@ test("exposición sin cartel (caso 2): el título la propone, «¿Cuándo se pue
   await hoja.getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
   await foto350(p, "04-inauguracion-hoja");
   await hoja.getByRole("button", { name: "Listo" }).click();
-  await p.locator("main ul > li").filter({ hasText: "Inauguración · jue 8 de oct · 7:00 p.m." }).waitFor();
+  await p.locator("main ul > li").filter({ hasText: "Inauguración · jue 8 de oct · 7:00 pm" }).waitFor();
   await foto350(p, "02-revisa-exposicion-con-inauguracion");
   await boton(p, "Publicar exposición").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
@@ -310,7 +310,7 @@ test("exposición: desmarcar «Horario del lugar» abre la hoja de franjas (la m
   // Con el lugar ya puesto, la casilla sale marcada con su resumen.
   const casilla = p.getByRole("checkbox", { name: /Horario del lugar/ });
   assert.equal(await casilla.getAttribute("aria-checked"), "true");
-  await p.getByText("Ma–Do · 10:00 a.m.–6:00 p.m. · Cierra Lu").waitFor();
+  await p.getByText("Ma–Do · 10:00 am–6:00 pm · Cierra Lu").waitFor();
   await dia(p, "viernes 9 de octubre").click();
   await dia(p, "domingo 18 de octubre").click();
   await foto350(p, "01-cuando-se-puede-visitar");
@@ -337,7 +337,7 @@ test("exposición leída del cartel (caso 1): la visita y la inauguración llega
   const filas = await datosRevisa(p);
   assert.match(filas[0], /Exposición/);
   assert.match(filas[1], /Del 6 al 30 de nov/);
-  assert.match(filas[3], /Inauguración · jue 5 de nov · 7:00 p\.m\./);
+  assert.match(filas[3], /Inauguración · jue 5 de nov · 7:00 pm/);
 });
 
 test("taller (caso 3): «¿Qué días son las sesiones?», un toque por día, la hora y la casilla «Misma hora todas las sesiones»; se publica un taller con sus sesiones", TOPE, async (t) => {
@@ -354,7 +354,7 @@ test("taller (caso 3): «¿Qué días son las sesiones?», un toque por día, la
   await boton(p, "Falta la hora").waitFor();
   await p.getByRole("group", { name: "¿A qué hora?" }).getByRole("button", { name: /^10:00/ }).click();
   await p.getByRole("group", { name: "Termina" }).getByRole("button", { name: /^12:00/ }).click();
-  await p.getByText("3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 a.m.–12:00 p.m.").waitFor();
+  await p.getByText("3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 am–12:00 pm").waitFor();
   const casilla = p.getByRole("checkbox", { name: /Misma hora todas las sesiones/ });
   assert.equal(await casilla.getAttribute("aria-checked"), "true");
   await foto350(p, "05-que-dias-son-las-sesiones");
@@ -403,13 +403,13 @@ const PROGRAMA = {
   quien: [],
 };
 
-test("festival desde el cartel (caso 4, H6): «El cartel trae 3 eventos», corregir la sede de un acto en su hoja, desmarcar otro y publicar el festival y sus eventos de una vez", TOPE, async (t) => {
+test("festival desde el cartel (caso 4, H6): «El cartel trae 3 actividades», corregir la sede de un acto en su hoja, desmarcar otro y publicar el festival y sus eventos de una vez", TOPE, async (t) => {
   const p = await pagina(t, { qa: conClase({ lectura: PROGRAMA }) });
   await subir(p);
-  await enPaso(p, "El cartel trae 3 eventos");
+  await enPaso(p, "El cartel trae 3 actividades");
   const actos = p.locator("main ul > li");
   assert.equal(await actos.count(), 3);
-  assert.match(await actos.nth(1).innerText(), /Charla con la directora[\s\S]*vie 13 de nov · 6:00 p\.m\. · Cineteca Alameda · confirmar la sede/);
+  assert.match(await actos.nth(1).innerText(), /Charla con la directora[\s\S]*vie 13 de nov · 6:00 pm · Cineteca Alameda · confirmar la sede/);
   await boton(p, "Completa «Charla con la directora»").waitFor();
   await foto350(p, "06-el-cartel-trae-3-eventos");
   // Tocar el renglón abre su hoja para corregirlo; la sede se elige en «Dónde» de siempre y se vuelve al programa.
@@ -422,7 +422,7 @@ test("festival desde el cartel (caso 4, H6): «El cartel trae 3 eventos», corre
   assert.equal(await buscar(p).inputValue(), "Cineteca Alameda");
   await buscar(p).fill("centro");
   await p.getByRole("option", { name: /Centro de las Artes/ }).click();
-  await enPaso(p, "El cartel trae 3 eventos");
+  await enPaso(p, "El cartel trae 3 actividades");
   assert.match(await actos.nth(1).innerText(), /Centro de las Artes/);
   // El tercero queda como borrador.
   await actos.nth(2).getByRole("checkbox").click();
@@ -450,7 +450,7 @@ test("festival desde el cartel (caso 4, H6): «El cartel trae 3 eventos», corre
 test("OL-411: un festival cuyo cartel no dice el costo pregunta «¿Cuánto cuesta?» con «Dejar por confirmar»; «Revisa» dice «Por confirmar» y se publica sin costo", TOPE, async (t) => {
   const p = await pagina(t, { qa: conClase({ lectura: { ...PROGRAMA, costoLeido: false } }) });
   await subir(p);
-  await enPaso(p, "El cartel trae 3 eventos");
+  await enPaso(p, "El cartel trae 3 actividades");
   // La charla espera su sede: se deja como borrador.
   await p.locator("main ul > li").nth(1).getByRole("checkbox").click();
   await boton(p, "Revisar el festival").click();
@@ -486,7 +486,8 @@ test("OL-413: un festival de una noche en un lugar es una sola ficha: «¿Cuánt
   await p.getByText("Leído del cartel").waitFor();
   const filas = await datosRevisa(p);
   assert.match(filas[0], /Festival\nCambiar/);
-  assert.match(filas[1], /vie 30 de oct · 20:00 → sáb 31 de oct · 02:00/);
+  // Una noche se dice de una sola manera (OL-418): su día con su rango, no «→ sáb 31».
+  assert.match(filas[1], /vie 30 de oct · 8:00 pm–2:00 am/);
   assert.ok(filas.some((f) => /Teatro de la Paz/.test(f)), "su lugar, una sola vez");
   assert.ok(filas.some((f) => /Sonido Satanás y Vinyl Box/.test(f)), "la alineación en «Quién»");
   assert.ok(filas.some((f) => /Programa\nAgregar/.test(f)), "el programa es opcional");
@@ -528,7 +529,7 @@ test("OL-413: «¿Qué es?» solo cuando el cartel no lo resuelve: cuatro opcion
   await p.getByText("Leído del cartel").waitFor();
   const filas = await datosRevisa(p);
   assert.match(filas[0], /Evento\nCambiar/);
-  assert.match(filas[1], /sáb 17 de oct · 19:00/);
+  assert.match(filas[1], /sáb 17 de oct · 7:00 pm/);
   assert.ok(filas.some((f) => /Teatro de la Paz/.test(f)));
   // Las actividades fueron a la descripción (el lector no trajo una), con lo que no es quien se presenta.
   await boton(p, "Publicar").click();
@@ -542,8 +543,8 @@ test("«¿Cómo ocurre?» (caso 5): las cuatro formas con su frase; cambiarla ca
   await hastaRevisa(p);
   await boton(p, "Cambiar cómo ocurre").click();
   const hoja = p.getByRole("dialog", { name: "Cómo ocurre" });
-  // OL-413: la frase del festival es la de la definición aprobada («Reúne varias presentaciones»).
-  const opciones = await hoja.getByRole("button").filter({ hasText: /Pasa un día|Se puede visitar|Varias sesiones|Reúne varias presentaciones/ }).allInnerTexts();
+  // OL-413: la frase del festival es la de la definición aprobada, con la palabra de lo de dentro de un festival (OL-418: «Reúne varias actividades»).
+  const opciones = await hoja.getByRole("button").filter({ hasText: /Pasa un día|Se puede visitar|Varias sesiones|Reúne varias actividades/ }).allInnerTexts();
   assert.deepEqual(opciones.map((o) => o.split("\n")[0]), ["Evento", "Exposición", "Taller o curso", "Festival"]);
   assert.equal(await hoja.getByRole("button", { name: /^Evento/ }).getAttribute("aria-pressed"), "true");
   await foto350(p, "03-como-ocurre");
@@ -605,7 +606,7 @@ for (const ancho of [320, 390]) {
     if (ancho === 320) await foto350(p, "11-sesiones-320");
     const q = await pagina(t, { ancho, qa: conClase({ lectura: PROGRAMA }) });
     await subir(q);
-    await enPaso(q, "El cartel trae 3 eventos");
+    await enPaso(q, "El cartel trae 3 actividades");
     assert.deepEqual(await desborda(q), { scroll: 0, fuera: [] }, "programa");
     if (ancho === 320) await foto350(q, "12-programa-320");
     await q.locator("main ul > li").nth(1).getByRole("checkbox").click();

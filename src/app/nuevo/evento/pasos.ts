@@ -221,7 +221,7 @@ export function preguntaDe(paso: Paso, r: Pick<Respuestas, "dias"> & Partial<Pic
   if (paso === "mapa" && candidato?.lugarId && candidato.nombre.trim()) return `¿Es en ${candidato.nombre.trim()}?`;
   if (paso === "programa") {
     const leidos = (r.actos ?? []).filter((a) => a.leido).length;
-    return leidos ? `El cartel trae ${leidos} ${leidos === 1 ? "evento" : "eventos"}` : "¿Qué actividades tiene?";
+    return leidos ? `El cartel trae ${leidos} ${leidos === 1 ? "actividad" : "actividades"}` : "¿Qué actividades tiene?";
   }
   return PREGUNTA[paso];
 }

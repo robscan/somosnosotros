@@ -105,11 +105,11 @@ describe("textos", () => {
   it("rótulo del círculo y línea de la historia", () => {
     const ahora = { tipo: "ahora" as const, e: ev("x", "2026-10-09", "15:30") };
     expect(rotuloCirculo(ahora, a)).toBe("Ahora");
-    expect(metaAhora(ahora)).toBe("Desde 15:30 · CEART");
-    expect(metaAhora({ ...ahora, e: { ...ahora.e, fin: iso("2026-10-09", "20:00"), parte: "Sesión 1 de 4" } })).toBe("Hasta 20:00 · CEART · Sesión 1 de 4");
+    expect(metaAhora(ahora)).toBe("Desde 3:30 pm · CEART");
+    expect(metaAhora({ ...ahora, e: { ...ahora.e, fin: iso("2026-10-09", "20:00"), parte: "Sesión 1 de 4" } })).toBe("Hasta 8:00 pm · CEART · Sesión 1 de 4");
     expect(rotuloCirculo({ tipo: "rato", e: ev("y", "2026-10-09", "16:45") }, a)).toBe("En 30 min");
-    expect(rotuloCirculo({ tipo: "hoy", e: ev("z", "2026-10-09", "20:00") }, a)).toBe("20:00");
-    expect(rotuloCirculo({ tipo: "manana", e: ev("m", "2026-10-10", "09:00") }, a)).toBe("Mañana 09:00");
+    expect(rotuloCirculo({ tipo: "hoy", e: ev("z", "2026-10-09", "20:00") }, a)).toBe("8:00 pm");
+    expect(rotuloCirculo({ tipo: "manana", e: ev("m", "2026-10-10", "09:00") }, a)).toBe("Mañana 9:00 am");
   });
   it("anillo", () => {
     expect([anilloDe("ahora", false), anilloDe("rato", false), anilloDe("expo", false), anilloDe("hoy", false), anilloDe("manana", false), anilloDe("ahora", true)]).toEqual(["ahora", "pronto", "pronto", "resto", "resto", "visto"]);
@@ -131,7 +131,7 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
       ev("hilaridad", "2026-10-10", "00:00", { exposicion: true, fin: iso("2026-12-01", "18:00") }),
     ], a);
     expect(tipos(l)).toEqual(["ahora", "rato", "rato", "rato", "rato", "rato", "expo"]);
-    expect(rotulosAhora(l, a)).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "13:00", "13:00", "En 1 h 41 min", "Abre hoy"]);
+    expect(rotulosAhora(l, a)).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "1:00 pm", "1:00 pm", "En 1 h 41 min", "Abre hoy"]);
     // El nombre accesible de cada círculo sale de `etiquetaAhora`: la cuenta atrás completa en los tres.
     expect(l.map((x) => etiquetaAhora(x, a))).toEqual(["Ahora", "En 11 min", "En 1 h 11 min", "En 1 h 11 min", "En 1 h 11 min", "En 1 h 41 min", "Abre hoy"]);
   });
@@ -145,15 +145,15 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
     expect(rotulosAhora(l, a)).toEqual(["En 1 h 11 min", "Abre hoy", "En 1 h 11 min"]);
     // Y lo que sigue a la misma hora sin ser «En un rato» (una exposición que abre a las 13:00) dice lo suyo.
     const clasificada = clasificarAhora([ev("guitarra", "2026-10-10", "13:00"), ev("viajera", "2026-10-10", "13:00"), ev("lineas", "2026-10-10", "13:00", { exposicion: true, fin: iso("2026-12-01", "18:00") })], a);
-    expect(rotulosAhora(clasificada, a)).toEqual(["En 1 h 11 min", "13:00", "Abre hoy"]);
+    expect(rotulosAhora(clasificada, a)).toEqual(["En 1 h 11 min", "1:00 pm", "Abre hoy"]);
   });
 
   it("misma hora con distinto minuto: cada uno con su cuenta atrás; se compara el inicio exacto", () => {
     const l = clasificarAhora([ev("a", "2026-10-10", "13:00"), ev("b", "2026-10-10", "13:15"), ev("c", "2026-10-10", "13:15"), ev("d", "2026-10-10", "13:16")], a);
-    expect(rotulosAhora(l, a)).toEqual(["En 1 h 11 min", "En 1 h 26 min", "13:15", "En 1 h 27 min"]);
+    expect(rotulosAhora(l, a)).toEqual(["En 1 h 11 min", "En 1 h 26 min", "1:15 pm", "En 1 h 27 min"]);
     // El mismo instante escrito de otra manera («+00:00» en vez de «Z») sigue siendo la misma hora.
     const otraForma = { ...ev("e", "2026-10-10", "13:00"), inicio: "2026-10-10T19:00:00+00:00" };
-    expect(rotulosAhora([{ tipo: "rato", e: ev("a", "2026-10-10", "13:00") }, { tipo: "rato", e: otraForma }], a)).toEqual(["En 1 h 11 min", "13:00"]);
+    expect(rotulosAhora([{ tipo: "rato", e: ev("a", "2026-10-10", "13:00") }, { tipo: "rato", e: otraForma }], a)).toEqual(["En 1 h 11 min", "1:00 pm"]);
   });
 
   it("lo demás no cambia aunque se repita: «Ahora», exposiciones, «Hoy» y «Mañana»", () => {
@@ -166,7 +166,7 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
       ev("m1", "2026-10-11", "09:00"), ev("m2", "2026-10-11", "09:00"),
     ], tarde);
     expect(tipos(l)).toEqual(["ahora", "ahora", "expo", "expo", "hoy", "hoy", "manana", "manana"]);
-    expect(rotulosAhora(l, tarde)).toEqual(["Ahora", "Ahora", "Abre hoy", "Abre hoy", "23:00", "23:00", "Mañana 09:00", "Mañana 09:00"]);
+    expect(rotulosAhora(l, tarde)).toEqual(["Ahora", "Ahora", "Abre hoy", "Abre hoy", "11:00 pm", "11:00 pm", "Mañana 9:00 am", "Mañana 9:00 am"]);
   });
 
   it("la hora se lee en la zona del evento, no en la del teléfono", () => {
@@ -174,7 +174,7 @@ describe("rotulosAhora (E7: la cuenta atrás, una vez por hora de inicio)", () =
     const madrid = (clave: string) => ({ ...ev(clave, "2026-10-10", "12:00"), zona: "Europe/Madrid", inicio: "2026-10-10T18:00:00Z" });
     const t = new Date("2026-10-10T16:49:00Z");
     const l = clasificarAhora([madrid("m1"), madrid("m2")], t);
-    expect(rotulosAhora(l, t)).toEqual(["En 1 h 11 min", "20:00"]);
+    expect(rotulosAhora(l, t)).toEqual(["En 1 h 11 min", "8:00 pm"]);
   });
 
   it("sin avisos, sin rótulos", () => {

@@ -3,7 +3,7 @@ import { diaDeSemana, enVisita, festivalComoEvento, HORARIO_POR_CONFIRMAR, rango
 import { DIAS_ESTA_SEMANA } from "./cuando";
 import type { Clase } from "./eventos";
 import { diaConMesDe, diaLocal, eventoPaso } from "./fechas";
-import { textoRangos24, type Franja, type Rango } from "./horarioLugar";
+import { textoRangos, type Franja, type Rango } from "./horarioLugar";
 import { compararNombres } from "./lugares";
 
 /**
@@ -169,8 +169,8 @@ export function porCercania(a: Vigente, b: Vigente, ahora: Date = new Date()): n
   return instante || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
 }
 
-/** «Abre 10:00–18:00»: lo que dice el renglón de «Para visitar» (Agenda y fichas), en 24 h como las horas de los demás renglones (OL-410). */
-export const textoAbre = (rangos: readonly Rango[]): string => `Abre ${textoRangos24(rangos)}`;
+/** «Abre 10:00 am–6:00 pm»: lo que dice el renglón de «Para visitar» (Agenda y fichas), con la hora de toda la app (OL-418). */
+export const textoAbre = (rangos: readonly Rango[]): string => `Abre ${textoRangos(rangos)}`;
 
 /** El cuándo de un renglón de «Para visitar hoy» (las de `paraVisitarEseDia`): sus horas ese día o, sin horario conocido, «Horario por confirmar». */
 export const cuandoParaVisitar = (e: Exposicion, dia: string): string => (sinHorario(e) ? HORARIO_POR_CONFIRMAR : textoAbre(rangosDeVisita(e, dia)));
@@ -179,7 +179,7 @@ export const cuandoParaVisitar = (e: Exposicion, dia: string): string => (sinHor
 export const textoHastaEl = (e: Exposicion, ahora: Date = new Date()): string => `hasta el ${diaConMesDe(visitaDe(e).hasta, ahora, e.zona)}`;
 
 /**
- * Lo que dice de un día la lista de exposiciones («Qué» en Exposiciones): «Abre hoy 10:00 a.m.–6:00 p.m.» (o «Abre …» si no es hoy) o «Cierra ese
+ * Lo que dice de un día la lista de exposiciones («Qué» en Exposiciones): «Abre hoy 10:00 am–6:00 pm» (o «Abre …» si no es hoy) o «Cierra ese
  * día»; null si no se pudo leer su horario, si no tiene (su cuándo ya dice «Horario por confirmar», `cuandoDeTarjeta`) o si ese día no está en su
  * periodo (antes de abrir, su cuándo dice sus días).
  */
@@ -187,7 +187,7 @@ export function notaDeVisita(e: Exposicion, dia: string, hoy: string): string | 
   if (!e.horario?.some((f) => f.dias.length) || !enVisita(visitaDe(e), dia)) return null;
   const rangos = rangosDeVisita(e, dia);
   if (!rangos.length) return dia === hoy ? "Hoy cierra" : "Cierra ese día";
-  return dia === hoy ? `Abre hoy ${textoRangos24(rangos)}` : textoAbre(rangos);
+  return dia === hoy ? `Abre hoy ${textoRangos(rangos)}` : textoAbre(rangos);
 }
 
 /** El título de la sección de un día: «Para visitar hoy», «Para visitar mañana» o «Para visitar el sáb 10 de oct». */

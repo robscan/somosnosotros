@@ -75,7 +75,7 @@ describe("contenidoPush", () => {
   it("nuevo evento: título con el lugar, cuerpo con título y cuándo, enlace a la ficha", () => {
     const c = contenidoPush("nuevo_evento", evento(), "ambos", AHORA);
     expect(c.titulo).toBe("Nuevo en Casa 1100");
-    expect(c.cuerpo).toBe("Noche de jazz · sáb 26 de sep · 19:00");
+    expect(c.cuerpo).toBe("Noche de jazz · sáb 26 de sep · 7:00 pm");
     expect(c.url).toBe("https://somosnosotros.org/eventos/evt-1");
   });
   it("cambio: dice qué cambió (fecha, lugar o ambos) y cómo queda ahora", () => {
@@ -83,18 +83,18 @@ describe("contenidoPush", () => {
     expect(contenidoPush("cambio", evento(), "donde", AHORA).titulo).toBe("Cambió el lugar: Noche de jazz");
     const c = contenidoPush("cambio", evento(), "ambos", AHORA);
     expect(c.titulo).toBe("Cambió la fecha y el lugar: Noche de jazz");
-    expect(c.cuerpo).toBe("Ahora es sáb 26 de sep · 19:00 · Casa 1100");
+    expect(c.cuerpo).toBe("Ahora es sáb 26 de sep · 7:00 pm · Casa 1100");
   });
   it("recordatorio: 'Hoy' o 'Mañana' en la zona del evento, con el título", () => {
     const hoy = contenidoPush("recordatorio", evento({ inicio: "2026-09-20T01:00:00Z" }), "ambos", AHORA);
     expect(hoy.titulo).toBe("Hoy: Noche de jazz");
-    expect(hoy.cuerpo).toBe("Hoy · 19:00 · Casa 1100");
+    expect(hoy.cuerpo).toBe("Hoy · 7:00 pm · Casa 1100");
     // Mañana a las 8:00, dentro de las 24 horas del recordatorio de las 9:00: antes decía "Hoy".
     expect(contenidoPush("recordatorio", evento({ inicio: "2026-09-20T14:00:00Z" }), "ambos", AHORA).titulo).toBe("Mañana: Noche de jazz");
     // El mismo instante en Madrid es la 1:00 del domingo: mañana allá.
     const madrid = contenidoPush("recordatorio", evento({ inicio: "2026-09-19T23:00:00Z", zona: "Europe/Madrid" }), "ambos", AHORA);
     expect(madrid.titulo).toBe("Mañana: Noche de jazz");
-    expect(madrid.cuerpo).toBe("Mañana · 01:00 · Casa 1100");
+    expect(madrid.cuerpo).toBe("Mañana · 1:00 am · Casa 1100");
   });
   it("sin lugar registrado, usa el sitio escrito a mano (o 'sitio reservado')", () => {
     const c = contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza de armas" }), "ambos", AHORA);

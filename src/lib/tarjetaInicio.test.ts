@@ -22,6 +22,8 @@ describe("selloDeFecha (E8 firmado): mes arriba, día abajo, en la zona del even
   });
   it("lo que no es un rango dice el día de su inicio aunque termine otro día", () => {
     expect(selloDeFecha({ inicio: local("2026-10-10", "22:00"), fin: local("2026-10-11", "02:00"), zona: ZONA }, false, AHORA)).toMatchObject({ mes: "oct", dia: "10", flecha: null });
+    // Tampoco un festival de una noche que acaba de madrugada (OL-418: una noche es un día, «10», no «10–11»).
+    expect(selloDeFecha({ inicio: local("2026-10-10", "20:00"), fin: local("2026-10-11", "02:00"), zona: ZONA }, true, AHORA)).toMatchObject({ mes: "oct", dia: "10", flecha: null });
   });
   it("el día es el de su zona: el mismo instante es otro día en otra ciudad", () => {
     const instante = "2026-10-10T22:30:00Z"; // 16:30 en San Luis Potosí; 00:30 del 11 en Madrid
@@ -52,8 +54,8 @@ describe("selloDeFecha (E8 firmado): mes arriba, día abajo, en la zona del even
 
 describe("cuandoEnInicio: la línea violeta bajo el lugar", () => {
   it("un evento dice su día y su hora; «hoy» va en la línea, no en un chip", () => {
-    expect(cuandoEnInicio(evento(), true, AHORA)).toBe("hoy · 13:00");
-    expect(cuandoEnInicio(evento({ inicio: local("2026-10-11", "19:00") }), false, AHORA)).toBe("mañana · 19:00");
+    expect(cuandoEnInicio(evento(), true, AHORA)).toBe("hoy · 1:00 pm");
+    expect(cuandoEnInicio(evento({ inicio: local("2026-10-11", "19:00") }), false, AHORA)).toBe("mañana · 7:00 pm");
   });
   it("un festival que ya empezó dice cuándo termina, como las exposiciones: «Hasta el sáb 24 de oct»", () => {
     const cinema = evento({ clase: "festival", inicio: local("2026-09-29", "18:00"), fin: local("2026-10-24", "23:00") });
@@ -77,7 +79,7 @@ describe("tarjetaDeInicio", () => {
   it("la tarjeta con su clase, su línea de cuándo y su sello", () => {
     const t = tarjetaDeInicio(evento({ clase: "festival", titulo: "CINEMA: XV Festival de Cine México-Alemania", inicio: local("2026-09-29", "18:00"), fin: local("2026-10-24", "23:00") }), AHORA);
     expect(t).toMatchObject({ clase: "Festival", corto: "CINEMA", detalle: "Hasta el sáb 24 de oct", sinVoy: true, selloFecha: { mes: "oct", dia: "24", flecha: "antes" } });
-    expect(tarjetaDeInicio(evento(), AHORA)).toMatchObject({ clase: "Evento", detalle: "hoy · 13:00", hoy: true, selloFecha: { mes: "oct", dia: "10", flecha: null } });
+    expect(tarjetaDeInicio(evento(), AHORA)).toMatchObject({ clase: "Evento", detalle: "hoy · 1:00 pm", hoy: true, selloFecha: { mes: "oct", dia: "10", flecha: null } });
   });
 });
 
@@ -119,12 +121,12 @@ describe("chipDeTarjeta: un solo chip sobre el cartel, cuántos van (OL-382, I1:
 
 describe("nombreDeTarjeta: lo que dice el enlace", () => {
   it("el título completo, la clase con su sesión, cuándo, dónde, «Vas» o «Te interesa» y el chip", () => {
-    const taller = { titulo: "Laboratorio de exploración sonora: escucha activa", clase: "Taller", parte: "Sesión 1 de 4", detalle: "hoy · 17:00", sitio: "Aurora Co-Lab", van: 1 };
-    expect(nombreDeTarjeta(taller, null)).toBe("Laboratorio de exploración sonora: escucha activa. Taller · Sesión 1 de 4. hoy · 17:00. Aurora Co-Lab. 1 va");
-    expect(nombreDeTarjeta({ titulo: "Presentación de Kopk Poj", clase: "Evento", detalle: "hoy · 13:00", sitio: "CEART", van: 1 }, "voy")).toBe("Presentación de Kopk Poj. hoy · 13:00. CEART. Vas. 1 va");
-    expect(nombreDeTarjeta({ titulo: "Tributo a The Beatles", clase: "Evento", detalle: "hoy · 20:00", sitio: "Cineteca Alameda", van: 0 }, "me_interesa")).toBe("Tributo a The Beatles. hoy · 20:00. Cineteca Alameda. Te interesa");
+    const taller = { titulo: "Laboratorio de exploración sonora: escucha activa", clase: "Taller", parte: "Sesión 1 de 4", detalle: "hoy · 5:00 pm", sitio: "Aurora Co-Lab", van: 1 };
+    expect(nombreDeTarjeta(taller, null)).toBe("Laboratorio de exploración sonora: escucha activa. Taller · Sesión 1 de 4. hoy · 5:00 pm. Aurora Co-Lab. 1 va");
+    expect(nombreDeTarjeta({ titulo: "Presentación de Kopk Poj", clase: "Evento", detalle: "hoy · 1:00 pm", sitio: "CEART", van: 1 }, "voy")).toBe("Presentación de Kopk Poj. hoy · 1:00 pm. CEART. Vas. 1 va");
+    expect(nombreDeTarjeta({ titulo: "Tributo a The Beatles", clase: "Evento", detalle: "hoy · 8:00 pm", sitio: "Cineteca Alameda", van: 0 }, "me_interesa")).toBe("Tributo a The Beatles. hoy · 8:00 pm. Cineteca Alameda. Te interesa");
     // OL-382 (I1): el marcador no tiene texto, así que el enlace dice «Te interesa» y, además, cuántos van (antes el chip de interés lo tapaba).
-    expect(nombreDeTarjeta({ titulo: "Tributo a The Beatles", clase: "Evento", detalle: "hoy · 20:00", sitio: "Cineteca Alameda", van: 3 }, "me_interesa")).toBe("Tributo a The Beatles. hoy · 20:00. Cineteca Alameda. Te interesa. 3 van");
+    expect(nombreDeTarjeta({ titulo: "Tributo a The Beatles", clase: "Evento", detalle: "hoy · 8:00 pm", sitio: "Cineteca Alameda", van: 3 }, "me_interesa")).toBe("Tributo a The Beatles. hoy · 8:00 pm. Cineteca Alameda. Te interesa. 3 van");
   });
 });
 
@@ -170,7 +172,7 @@ describe("tarjetaArtistaDeInicio (E9): la tarjeta de siempre con su disciplina y
   });
   it("la novedad vigente y su enlace exacto, y la próxima fecha, como `tarjetaArtista`", () => {
     const t = tarjetaArtistaDeInicio(artista({ novedad: video, proxima: { id: "e1", inicio: local("2026-10-15", "19:00"), zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA);
-    expect(t).toMatchObject({ href: `/artistas/markosblues?novedad=${video.novedad_id}`, novedad: video, detalle: "jue 15 de oct · 19:00", cuando: true });
+    expect(t).toMatchObject({ href: `/artistas/markosblues?novedad=${video.novedad_id}`, novedad: video, detalle: "jue 15 de oct · 7:00 pm", cuando: true });
   });
 });
 
@@ -181,10 +183,10 @@ describe("piezasDeArtista (E9): lo que dice la tarjeta de un artista, como un ev
   });
   it("con fecha, la fecha en la línea de cuándo y en el nombre del enlace", () => {
     const t = tarjetaArtistaDeInicio(artista({ nombre: "Un León Marinero", slug: "un-leon-marinero", detalle: "folk y canción de autor", novedad: audio, proxima: { id: "e1", inicio: local("2026-10-15", "19:00"), zona: ZONA, sitio: "Foro" } }), AHORA);
-    expect(piezasDeArtista(t, AHORA)).toMatchObject({ cuando: "jue 15 de oct · 19:00", nuevo: "Nuevo audio", nombre: "Un León Marinero. Música. folk y canción de autor. jue 15 de oct · 19:00. Nuevo audio" });
+    expect(piezasDeArtista(t, AHORA)).toMatchObject({ cuando: "jue 15 de oct · 7:00 pm", nuevo: "Nuevo audio", nombre: "Un León Marinero. Música. folk y canción de autor. jue 15 de oct · 7:00 pm. Nuevo audio" });
     // Hoy dice «hoy», como la línea de un evento.
     const hoy = tarjetaArtistaDeInicio(artista({ proxima: { id: "e2", inicio: local("2026-10-10", "18:00"), zona: ZONA, sitio: "Templo" } }), AHORA);
-    expect(piezasDeArtista(hoy, AHORA).cuando).toBe("hoy · 18:00");
+    expect(piezasDeArtista(hoy, AHORA).cuando).toBe("hoy · 6:00 pm");
   });
   it("el nombre no pasa a oración: es un nombre propio", () => {
     const t = tarjetaArtistaDeInicio(artista({ nombre: "AGRUPACION FOLKLORICA HUNAC-CEEL" }), AHORA);

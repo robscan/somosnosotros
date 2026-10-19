@@ -579,7 +579,7 @@ async function leerFilas(): Promise<FilasGrafo> {
   return { lugares, artistas, eventos, eventos_artistas, seguimientos, asistencias };
 }
 
-/** Lo que guarda la caché: el grafo, el índice de quien mira y el instante exacto del cálculo (ISO), que la pantalla enseña como «Datos de las 14:05». */
+/** Lo que guarda la caché: el grafo, el índice de quien mira y el instante exacto del cálculo (ISO), que la pantalla enseña como «Datos de las 2:05 pm». */
 export type GrafoCargado = GrafoConIndice & { calculadoEn: string };
 /** Etiqueta de la caché del grafo: `actualizarGrafo` (acción de administración) la invalida para forzar una lectura nueva sin esperar la hora. */
 export const ETIQUETA_GRAFO = "grafo-admin";

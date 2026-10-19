@@ -49,6 +49,10 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+/* La etiqueta que es una hora (la del día de un evento: «7:00 pm», «Fue · 8:00 pm–2:00 am»), tal cual: «am» y «pm» van en minúsculas (OL-418). */
+.kpi > small.hora {
+  text-transform: none;
+}
 .kpi > b {
   grid-area: valor;
   font-size: var(--letra-base);

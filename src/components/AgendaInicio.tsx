@@ -281,7 +281,7 @@ function AgendaLista({
  * se enseñó sigue siendo nuevo.
  *
  * Un renglón por serie (OL-385, `listarNuevos`): los actos nuevos de un festival, en el renglón del festival con «3 actos nuevos»; las funciones de
- * lo mismo, en el de la más próxima con «6 funciones · desde vie 16 de oct · 20:00» y sin «Voy» (es por función: se elige en su ficha).
+ * lo mismo, en el de la más próxima con «6 funciones · desde vie 16 de oct · 8:00 pm» y sin «Voy» (es por función: se elige en su ficha).
  */
 function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Promise<Agenda>; filtros: FiltrosAgenda; desde: number; ciudad: Ciudad; avisos: AvisosLista | null }) {
   const datos = use(agenda);

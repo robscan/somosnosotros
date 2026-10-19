@@ -817,7 +817,7 @@ describe("cercanía (OL-127)", () => {
     expect(esMensajeTrazoValido({ ...trazo, cerca: "sí" })).toBe(false);
   });
   it("nombre por defecto de una pared sin lugar: «Pincel · 22 sep, 13:05» en la zona de la obra", () => {
-    expect(nombreParedSinLugar(new Date("2026-09-22T19:05:00.000Z"), "America/Mexico_City")).toBe("Pincel · 22 sep, 13:05");
+    expect(nombreParedSinLugar(new Date("2026-09-22T19:05:00.000Z"), "America/Mexico_City")).toBe("Pincel · 22 sep, 1:05 pm");
   });
 });
 

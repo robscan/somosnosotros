@@ -43,7 +43,7 @@ const PASOS = {
     await page.getByRole("textbox", { name: "Nombre del evento" }).fill("Ecos de papel");
     await page.getByRole("button", { name: "Siguiente", exact: true }).click();
     await page.getByRole("button", { name: /^Este viernes/ }).click();
-    await page.getByRole("button", { name: /^7:00 p\.m\./ }).click();
+    await page.getByRole("button", { name: /^7:00 pm/ }).click();
     await page.getByRole("button", { name: "Sin hora de fin" }).click();
     await page.getByRole("button", { name: /Estoy aquí/ }).click();
     await page.getByRole("heading", { name: "¿Es aquí?" }).waitFor();

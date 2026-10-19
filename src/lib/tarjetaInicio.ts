@@ -4,7 +4,7 @@ import { festivalComoEvento, soloInteres, ultimoDiaDelPeriodo } from "./claseEve
 import { cuandoDeTarjeta, tarjetaArtista, tarjetaConClase, type Tarjeta, type TarjetaConFecha } from "./destacados";
 import type { Asistencia } from "./deslizar";
 import { cortoDeClase } from "./eventos";
-import { diaLocal } from "./fechas";
+import { diaLocal, esUnaNoche } from "./fechas";
 import { selloNovedadArtista } from "./novedadesArtista";
 import { textoActosNuevos, textoDesde, textoFunciones, type Pieza } from "./series";
 
@@ -37,11 +37,12 @@ const numero = (dia: string) => String(Number(dia.slice(8, 10)));
  * El sello de una tarjeta, en la zona del evento. Un día: «oct» / «11». `rango` (una exposición o un festival: lo que no pasa un día concreto,
  * `soloInteres`) va de su primer día al último (`ultimoDiaDelPeriodo`: un fin a la medianoche es el final del día anterior). Del mismo mes:
  * «oct» / «10–31». Entre meses: si ya empezó (hoy ya es uno de sus días), hasta cuándo, con el mes del cierre («oct» / «→ 28»), porque de lo
- * que ya está pasando importa cuándo se acaba; si no, desde cuándo («oct» / «12 →»).
+ * que ya está pasando importa cuándo se acaba; si no, desde cuándo («oct» / «12 →»). Un festival de una noche que acaba de madrugada es un día
+ * (OL-418: «17», no «17–18»).
  */
 export function selloDeFecha(e: Pick<TarjetaConFecha, "inicio" | "fin" | "zona">, rango: boolean, ahora: Date = new Date()): SelloFecha {
   const desde = diaLocal(new Date(e.inicio), e.zona);
-  const hasta = rango ? ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona) : desde;
+  const hasta = rango && !esUnaNoche(e.inicio, e.fin, e.zona) ? ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona) : desde;
   if (desde === hasta) return { mes: mes(desde), dia: numero(desde), flecha: null, texto: `${numero(desde)} de ${mesLargo(desde)}` };
   if (desde.slice(0, 7) === hasta.slice(0, 7)) return { mes: mes(desde), dia: `${numero(desde)}–${numero(hasta)}`, flecha: null, texto: `del ${numero(desde)} al ${numero(hasta)} de ${mesLargo(hasta)}` };
   if (diaLocal(ahora, e.zona) < desde) return { mes: mes(desde), dia: numero(desde), flecha: "despues", texto: `desde el ${numero(desde)} de ${mesLargo(desde)}` };
@@ -53,7 +54,7 @@ const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice
 /**
  * La línea de cuándo bajo el lugar, en violeta: la de siempre (`cuandoDeTarjeta`, que ya dice «Hasta el sáb 24 de oct» de un festival o una
  * exposición en curso y sus días si está por venir: la regla de todo periodo, OL-409 «U»; antes solo Inicio lo hacía con el festival, founder
- * 2026-10-10), salvo que «Hoy» ya no es un chip sobre el cartel (E3): va al principio de esta línea («hoy · 13:00»; un festival que empieza hoy,
+ * 2026-10-10), salvo que «Hoy» ya no es un chip sobre el cartel (E3): va al principio de esta línea («hoy · 1:00 pm»; un festival que empieza hoy,
  * «hoy · hasta el…»).
  */
 export function cuandoEnInicio(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "clase"> & Partial<Pick<EventoAgenda, "programa">>, hoy: boolean, ahora: Date = new Date()): string {
@@ -73,7 +74,7 @@ export function tarjetaDeInicio(e: EventoAgenda, ahora: Date = new Date(), festi
  *   junto a «Festival», cuántos actos nuevos trae («Festival · 3 actos nuevos»). La ceja es donde la tarjeta ya dice cuál de varios es («Sesión 1
  *   de 4»); en la línea de cuándo se cortaría con los puntos suspensivos («Hasta el sáb 2 de nov» ya la llena en la mediana). Excepción acotada a
  *   OL-347: el festival sale aquí solo porque agrupa actos nuevos, nunca por ser nuevo él (`carrilNuevos`).
- * - **serie** (funciones de lo mismo): la tarjeta de la más próxima, con «6 funciones» en la ceja y «desde vie 16 · 20:00» en su cuándo (sin el mes: lo dice el sello); el
+ * - **serie** (funciones de lo mismo): la tarjeta de la más próxima, con «6 funciones» en la ceja y «desde vie 16 · 8:00 pm» en su cuándo (sin el mes: lo dice el sello); el
  *   sello va del primer día al último («oct 16–18»; si son el mismo día, ese día). Lleva a la ficha de esa función, que enseña las otras.
  * - **suelto:** la de siempre.
  * La llave (`clave`) es la de la pieza: la cabeza de una serie no puede chocar con otra tarjeta suya.
@@ -180,7 +181,7 @@ export function piezasDeArtista(t: Pick<Tarjeta, "titulo" | "detalle" | "cuando"
 
 /**
  * E5 (OL-372): el avatar de «Lugares de la semana» y «Artistas de la semana» (de 88 desde OL-382, N). La foto redonda, el nombre debajo y, solo si
- * hay una novedad vigente, «Nuevo video» o «Nuevo audio» en violeta; nada más (lo de antes, «En curso» o «Mañana · 19:30», ya no va: así lo firmó
+ * hay una novedad vigente, «Nuevo video» o «Nuevo audio» en violeta; nada más (lo de antes, «En curso» o «Mañana · 7:30 pm», ya no va: así lo firmó
  * el founder) y sin botón (seguir queda en la ficha). El nombre del enlace lleva el nombre completo, que a la vista se corta en dos líneas, y la
  * novedad.
  */

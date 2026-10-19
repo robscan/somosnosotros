@@ -8,7 +8,7 @@ import { etiquetaHora, horasDeFin, pasoMasCercano, pasosHora } from "@/lib/calen
 import styles from "./SelectorHora.module.css";
 
 type Props = {
-  /** Título de la hoja: «Empieza» o «Termina (empieza 7:00 p.m.)». */
+  /** Título de la hoja: «Empieza» o «Termina (empieza 7:00 pm)». */
   titulo: string;
   /** "HH:MM" ya elegida; "" si ninguna (o, al terminar, si el evento no tiene hora de fin). */
   hora: string;
@@ -17,7 +17,7 @@ type Props = {
   /** Solo se ofrecen las horas posteriores a esta ("HH:MM"): la hora de fin de un evento que empieza y termina el mismo día. */
   despuesDe?: string;
   /** La hora de inicio ("HH:MM") de un evento de un solo día: se ofrecen las 24 horas, primero las posteriores a ella y después, con
-   *  «día siguiente» en letra suave, las anteriores (la madrugada: «empieza 10:00 p.m., termina 1:00 a.m.»); la misma hora no se
+   *  «día siguiente» en letra suave, las anteriores (la madrugada: «empieza 10:00 pm, termina 1:00 am»); la misma hora no se
    *  ofrece (serían 24 horas). Sin ella, esta prop no hace nada; con `despuesDe`, manda `despuesDe`. */
   diaSiguienteDe?: string;
   /** Ofrece «Sin hora de fin» (la hoja de «Termina»); elegirla da "". */

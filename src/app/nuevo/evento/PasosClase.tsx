@@ -50,7 +50,7 @@ function Siguiente({ falta, texto = "Siguiente", onSeguir }: { falta: string | n
   );
 }
 
-/** El horario como se dice en una línea («Ma–Do · 10:00 a.m.–6:00 p.m. · Cierra Lu»): el detalle de la casilla «Horario del lugar». */
+/** El horario como se dice en una línea («Ma–Do · 10:00 am–6:00 pm · Cierra Lu»): el detalle de la casilla «Horario del lugar». */
 export function horarioEnUnaLinea(franjas: readonly Franja[]): string {
   const { lineas, cierra } = lineasHorario(franjas);
   return [...lineas.map((l) => `${l.dias} · ${l.horas}`), cierra].filter(Boolean).join(" · ");
@@ -284,7 +284,7 @@ function nombreDeSede(sitio: Sitio, lugares: readonly LugarResumen[]): string {
 }
 
 /**
- * Lo que dice un acto bajo su nombre: «vie 13 de nov · 6:00 p.m. · CC200», o lo que le falta. Sin sede propia es la del festival (OL-413): su nombre
+ * Lo que dice un acto bajo su nombre: «vie 13 de nov · 6:00 pm · CC200», o lo que le falta. Sin sede propia es la del festival (OL-413): su nombre
  * si ya se eligió, o «sede del festival» (se pregunta una sola vez, después del programa).
  */
 export function detalleActo(a: Acto, lugares: readonly LugarResumen[], zona: string, ahora: Date = new Date(), festival?: Sitio): string {

@@ -34,7 +34,7 @@ function chain(resultado: unknown) {
   const promesa = Promise.resolve(resultado);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const objeto: any = {};
-  for (const metodo of ["select", "eq", "neq", "is", "ilike", "in", "or", "order", "limit", "not", "upsert"]) objeto[metodo] = () => objeto;
+  for (const metodo of ["select", "eq", "neq", "is", "ilike", "in", "or", "lt", "order", "limit", "not", "upsert"]) objeto[metodo] = () => objeto;
   objeto.maybeSingle = () => promesa;
   objeto.single = () => promesa;
   objeto.then = (resuelto: (v: unknown) => void, rechazado: (e: unknown) => void) => promesa.then(resuelto, rechazado);
@@ -282,7 +282,7 @@ describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", (
 describe("horario por día en la ficha (OL-311)", () => {
   afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
 
-  // Del 1 al 3 de enero de 2099: el jueves de 20:00 a 21:00, el viernes desde las 18:00 y el sábado de 20:00 a 21:00 (UTC−6).
+  // Del 1 al 3 de enero de 2099: el jueves de 8:00 a 9:00 pm, el viernes desde las 6:00 pm y el sábado de 8:00 a 9:00 pm (UTC−6).
   const EVENTO_POR_DIA = { ...EVENTO, inicio: "2099-01-02T02:00:00Z", fin: "2099-01-04T03:00:00Z" };
   const SESIONES = [
     { inicio: "2099-01-04T02:00:00Z", fin: "2099-01-04T03:00:00Z" },
@@ -305,9 +305,9 @@ describe("horario por día en la ficha (OL-311)", () => {
     expect(seccion).toBeTruthy();
     const filas = [...recorrer(seccion!.props.children)].filter((e) => e.type === "li").map((li) => [...recorrer(li.props.children)].filter((x) => x.type === "b" || x.type === "small").map((x) => textoDe(x.props.children)));
     expect(filas).toEqual([
-      ["jue 1 de ene de 2099", "20:00–21:00"],
-      ["vie 2 de ene de 2099", "18:00"],
-      ["sáb 3 de ene de 2099", "20:00–21:00"],
+      ["jue 1 de ene de 2099", "8:00–9:00 pm"],
+      ["vie 2 de ene de 2099", "6:00 pm"],
+      ["sáb 3 de ene de 2099", "8:00–9:00 pm"],
     ]);
   });
 
@@ -317,7 +317,7 @@ describe("horario por día en la ficha (OL-311)", () => {
     const datos = calendario?.props.datos as { inicio: string; fin: string; notas: string | null };
     expect(datos.inicio).toBe("2099-01-02T02:00:00Z");
     expect(datos.fin).toBe("2099-01-02T03:00:00Z");
-    expect(datos.notas).toBe("jue 1 de ene de 2099 · 20:00–21:00\nvie 2 de ene de 2099 · 18:00\nsáb 3 de ene de 2099 · 20:00–21:00");
+    expect(datos.notas).toBe("jue 1 de ene de 2099 · 8:00–9:00 pm\nvie 2 de ene de 2099 · 6:00 pm\nsáb 3 de ene de 2099 · 8:00–9:00 pm");
     const compartir = elementos.find((e) => e.props.texto && String(e.props.texto).includes("Foro de prueba"));
     expect(compartir?.props.texto).toContain("Del 1 al 3 de ene de 2099 · horarios por día");
   });
@@ -392,7 +392,7 @@ describe("la ficha según cómo ocurre (OL-321)", () => {
     const elementos = await abrir(festival);
     expect(elementos.some((e) => e.props?.["aria-label"] === "Programa")).toBe(true);
     expect(elementos.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(true);
-    expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["Actos", "Costo", "Sedes"]);
+    expect(elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta)).toEqual(["Actividades", "Costo", "Sedes"]);
     const suelto = await abrir(EVENTO);
     expect(suelto.find((e) => e.type === Asistencia)?.props.soloInteres).toBe(false);
   });
@@ -421,18 +421,21 @@ describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => 
     return { heroe, enBanda, todos: elementos.filter((e) => e.type === Kpi).map((e) => e.props.etiqueta) };
   };
 
-  it("el festival: «FESTIVAL», su periodo y su programa bajo el título, y «Actos · Costo · Sedes» en la banda", async () => {
+  it("el festival: «FESTIVAL», su periodo y su programa bajo el título, y «Actividades · Costo · Sedes» en la banda", async () => {
     const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T01:00:00Z", fin: "2099-03-04T06:00:00Z" });
     expect(heroe.props.etiqueta).toBe("Festival");
     expect(heroe.props.meta).toMatch(/· Programa por confirmar$/);
-    expect(enBanda).toEqual(["Actos", "Costo", "Sedes"]);
+    expect(enBanda).toEqual(["Actividades", "Costo", "Sedes"]);
     expect(todos).toEqual(enBanda);
   });
 
   it("el festival sin programa (OL-413): «FESTIVAL», su día, su hora y su lugar bajo el título, y cuándo, «Costo» y «Van» en la banda", async () => {
     const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T02:00:00Z", fin: "2099-01-01T08:00:00Z" });
     expect(heroe.props.etiqueta).toBe("Festival");
-    expect(heroe.props.meta).toMatch(/· Foro de prueba$/);
+    // Una noche (8:00 pm a 2:00 am) se dice de una sola manera (OL-418): su día con su rango, arriba y en la línea; nunca dos días.
+    expect(heroe.props.meta).toBe("mié 31 de dic de 2098 · 8:00 pm–2:00 am · Foro de prueba");
+    expect(enBanda[0]).toBe("8:00 pm–2:00 am");
+    expect([...recorrer(heroe.props.banda)].find((e) => e.type === Kpi)?.props.valor).toBe("mié 31 dic");
     expect(enBanda).toHaveLength(2);
     expect(enBanda[1]).toBe("Costo");
     expect([...recorrer(heroe.props.banda)].some((e) => e.type === Suspense)).toBe(true);
@@ -534,7 +537,7 @@ describe("la ficha en pasado (OL-383)", () => {
     expect(renglones.every((e) => e.props.nota === "ya pasó" && !e.props.boton)).toBe(true);
     // El número de actos sigue contándolos todos.
     const heroe = elementos.find((e) => e.type === Heroe)!;
-    expect([...recorrer(heroe.props.banda)].find((e) => e.type === Kpi && e.props.etiqueta === "Actos")?.props.valor).toBe(6);
+    expect([...recorrer(heroe.props.banda)].find((e) => e.type === Kpi && e.props.etiqueta === "Actividades")?.props.valor).toBe(6);
   });
 
   it("un festival sin actos pasados no lleva «Ya pasó» y su línea es la de siempre", async () => {
@@ -577,7 +580,7 @@ describe("lo ligado que ya pasó se enlaza y se ve pasado (OL-388, sustituye a O
 
   it("la expo enlaza la inauguración que ya pasó, en pasado: «Fue el …»", async () => {
     const els = await abrir(EXPO, { ...INAUG, inicio: "2000-01-08T02:00:00Z" });
-    expect(renglonA(els, "/eventos/inauguracion-de-prueba")).toMatchObject({ titulo: "Inauguración", meta: "Fue el viernes 7 de enero de 2000 · 20:00", pasado: true });
+    expect(renglonA(els, "/eventos/inauguracion-de-prueba")).toMatchObject({ titulo: "Inauguración", meta: "Fue el viernes 7 de enero de 2000 · 8:00 pm", pasado: true });
   });
 
   it("la inauguración que viene, como siempre: su fecha y su enlace, sin nada de pasado", async () => {
@@ -669,8 +672,9 @@ describe("«Quién fue» en la ficha en pasado (OL-388)", () => {
 
 describe("las otras funciones de lo mismo (OL-385)", () => {
   afterEach(() => { vi.mocked(clienteServidor).mockRestore(); vi.mocked(usuarioActual).mockRestore(); });
-  /** Un cliente cuya tabla `eventos` da la ficha a `maybeSingle` y los candidatos (mismo sitio) a la lista; anota los filtros de la lista. */
-  const abrir = async (evento: Record<string, unknown>, candidatos: Record<string, unknown>[]) => {
+  /** Un cliente cuya tabla `eventos` da la ficha a `maybeSingle` y los candidatos (mismo sitio) a la lista; las que ya pasaron (`pasadas`) a la lectura
+   *  con `lt` (OL-418: «Función n de N» cuenta todas); anota los filtros de la lista. */
+  const abrir = async (evento: Record<string, unknown>, candidatos: Record<string, unknown>[], pasadas: Record<string, unknown>[] = []) => {
     const filtros: string[] = [];
     const cliente = {
       from: (tabla: string) => {
@@ -678,6 +682,12 @@ describe("las otras funciones de lo mismo (OL-385)", () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const c: any = chain({ data: candidatos });
         for (const metodo of ["eq", "neq", "is", "ilike"]) c[metodo] = (...args: unknown[]) => (filtros.push(`${metodo}:${args.join("=")}`), c);
+        c.lt = (...args: unknown[]) => {
+          filtros.push(`lt:${args[0]}`);
+          const yaPasaron = Promise.resolve({ data: pasadas });
+          c.then = (resuelto: (v: unknown) => void, rechazado: (e: unknown) => void) => yaPasaron.then(resuelto, rechazado);
+          return c;
+        };
         c.maybeSingle = () => Promise.resolve({ data: evento });
         return c;
       },
@@ -701,6 +711,18 @@ describe("las otras funciones de lo mismo (OL-385)", () => {
     expect(heroe.props.etiqueta).toBe("Función 2 de 3");
     // Los candidatos son los del mismo lugar, visibles y sin ella misma (la comparación de títulos va en TypeScript).
     expect(filtros).toEqual(expect.arrayContaining(["eq:lugar_id=teatro", "eq:visible=true", "neq:id=ext-2"]));
+  });
+  it("«Función n de N» cuenta todas, también las que ya pasaron (OL-418: como «Sesión 2 de 3»); «Otras funciones» sigue con las que vienen", async () => {
+    const candidatos = [segunda, funcion("ext-3", "2099-01-03T02:00:00Z")];
+    const pasadas = [funcion("ext-0", "2000-01-01T02:00:00Z"), funcion("ext-1", "2000-01-02T02:00:00Z", { titulo: "las cosas EXTRAORDINARIAS" }), funcion("otra", "2000-01-02T02:00:00Z", { titulo: "Otra obra" })];
+    const { heroe, elementos, filtros } = await abrir(segunda, candidatos, pasadas);
+    expect(heroe.props.etiqueta).toBe("Función 3 de 4");
+    expect((elementos.find((e) => e.type === EventosPorDia)!.props.eventos as { id: string }[]).map((e) => e.id)).toEqual(["ext-3"]);
+    expect(filtros).toContain("lt:termina");
+    // La última función también lo dice, aunque ya no queden otras por venir.
+    const ultima = await abrir(funcion("ext-3", "2099-01-03T02:00:00Z"), [], pasadas);
+    expect(ultima.heroe.props.etiqueta).toBe("Función 3 de 3");
+    expect(ultima.seccion).toBeUndefined();
   });
   it("sin lugar, por el sitio escrito (sin importar mayúsculas, sin comodines) y en su ciudad", async () => {
     const enForo = { ...segunda, lugar_id: null, sitio_texto: "Foro 100%_café" };

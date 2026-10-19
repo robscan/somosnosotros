@@ -109,7 +109,7 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
   // En varios días las horas van en su propio `span` sin saltos de línea: un renglón angosto parte entre los días y las horas, nunca dentro de ellas.
   // Con horario por día (OL-311) no hay un horario que decir: «horarios por día».
   const varios = r.sesiones && r.dias?.hasta ? { dias: rangoCorto(r.dias.desde, r.dias.hasta, diaLocal(ahora, zona)), horas: HORARIOS_POR_DIA } : inicio && finLocal !== null ? cuandoVariosDias(inicio, fin, ahora, zona) : null;
-  // En un día, igual: las horas («17:00–19:00») van juntas tras el último « · ».
+  // En un día, igual: las horas («5:00–7:00 pm») van juntas tras el último « · ».
   const unDia = inicio && finLocal !== null && !varios ? formatearCuando(inicio, fin, ahora, zona) : "";
   const corte = unDia.lastIndexOf(" · ");
   const partes = varios ? varios : corte > 0 ? { dias: unDia.slice(0, corte), horas: unDia.slice(corte + 3) } : null;

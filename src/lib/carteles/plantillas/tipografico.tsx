@@ -41,7 +41,7 @@ function dibujarFranja(c: Contexto): Dibujo {
   const yCentro = zona.arriba + arriba.alto + 56 + Math.max(0, (libre - centro.alto) / 2);
   // La fecha girada en la franja (sin foto): a lo largo del alto útil, centrada entre lo que tapa la interfaz.
   const largo = f.alto - zona.arriba - zona.abajo;
-  // El día en mayúsculas; la hora no («19:00 h», no «19:00 H»). Un festival o una exposición, solo el mes («OCT 2026»).
+  // El día en mayúsculas; la hora no («7:00 pm», no «7:00 PM», OL-418). Un festival o una exposición, solo el mes («OCT 2026»).
   const girada = ajustarRenglon(unir(t.diaCorto.toLocaleUpperCase("es-MX"), t.hora) ?? "", { fuente: "ancha-negra", ancho: largo, mayor: 112, menor: 48 });
   const altoGirada = girada.tamano * 1.1;
   const yCentroFranja = zona.arriba + largo / 2;

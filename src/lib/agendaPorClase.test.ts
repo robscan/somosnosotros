@@ -77,8 +77,8 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
     expect(ids(paraVisitarEseDia(TODOS, "2026-10-12"))).toEqual(["futura", "grabado"]);
     // Fuera de su periodo no entra, con horario o sin él: Grabado cerró el 20 y la que no se pudo leer el 9.
     expect(ids(paraVisitarEseDia(TODOS, "2026-10-21"))).toEqual(["ecos", "futura"]);
-    expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00–18:00");
-    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00–18:00");
+    expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00 am–6:00 pm");
+    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00 am–6:00 pm");
     expect(cuandoParaVisitar(grabado, HOY)).toBe("Horario por confirmar");
     expect(cuandoParaVisitar(sinLeer, HOY)).toBe("Horario por confirmar");
     expect([ecos, grabado, sinLeer, { ...grabado, horario: [{ dias: [], abre: "10:00", cierra: "18:00" }] }].map(sinHorario)).toEqual([false, true, true, true]);
@@ -86,8 +86,8 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
     expect(rangosDeVisita(ecos, "2026-11-01")).toEqual([]); // fuera de su periodo
   });
   it("lo que dice de un día la lista de exposiciones", () => {
-    expect(notaDeVisita(ecos, HOY, HOY)).toBe("Abre hoy 10:00–18:00");
-    expect(notaDeVisita(ecos, "2026-10-10", HOY)).toBe("Abre 10:00–18:00");
+    expect(notaDeVisita(ecos, HOY, HOY)).toBe("Abre hoy 10:00 am–6:00 pm");
+    expect(notaDeVisita(ecos, "2026-10-10", HOY)).toBe("Abre 10:00 am–6:00 pm");
     expect(notaDeVisita(ecos, "2026-10-12", HOY)).toBe("Cierra ese día");
     expect(notaDeVisita(grabado, HOY, HOY)).toBeNull(); // su cuándo ya dice «Horario por confirmar»
     expect(notaDeVisita(sinLeer, HOY, HOY)).toBeNull();
@@ -281,7 +281,7 @@ describe("«Festivales y expos» (OL-342)", () => {
     const t = tarjetaConClase(vacio, ahora);
     expect(t).toMatchObject({ clase: "Festival", sitio: "Foro" });
     expect(t.sinVoy).toBeUndefined();
-    expect(t.detalle).toMatch(/18:00/);
+    expect(t.detalle).toMatch(/6:00 pm/);
     // Sin poder contar sus actos no se sabe: como marco, sin «Voy».
     expect(tarjetaConClase({ ...vacio, programa: undefined }, ahora).sinVoy).toBe(true);
   });

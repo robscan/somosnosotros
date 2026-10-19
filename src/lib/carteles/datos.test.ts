@@ -83,7 +83,7 @@ describe("armarTextos", () => {
     const t = armarTextos(CASOS.corto, null, AHORA_CASOS);
     expect(t.dia).toBe("Viernes 16 de octubre");
     expect(t.diaCorto).toBe("Vie 16 oct");
-    expect(t.hora).toBe("19:00 h");
+    expect(t.hora).toBe("7:00 pm");
     expect(t.fecha).toEqual({ numero: "16", mes: "OCT" });
     expect(t.etiqueta).toBe("Son huasteco");
     expect(t.precio).toBe("Entrada libre");
@@ -114,7 +114,7 @@ describe("fechas del cartel (OL-336)", () => {
     expect(t.diaCorto).toBe("Vie 9 oct – Mié 14 oct");
     expect(t.fecha).toEqual({ numero: "9–14", mes: "OCT" });
     // Acaba con su último día: la hora es la de inicio, sin «–00:00».
-    expect(t.hora).toBe("10:00 h");
+    expect(t.hora).toBe("10:00 am");
   });
   it("un fin a las 00:00 del día siguiente de un evento de una noche sigue siendo un solo día", () => {
     const t = armarTextos({ ...CASOS.corto, inicio: local("2026-10-14T20:00"), fin: local("2026-10-15T00:00") }, null, AHORA_CASOS);
@@ -190,5 +190,11 @@ describe("medir", () => {
   });
   it("ajustarRenglon con mayúsculas mide en mayúsculas", () => {
     expect(ajustarRenglon("entrada libre", { fuente: "media", ancho: 1000, mayor: 24, menor: 18, mayusculas: true }).renglones[0]).toBe("ENTRADA LIBRE");
+  });
+  it("en mayúsculas, el «am» y el «pm» de una hora siguen en minúsculas (OL-418)", () => {
+    expect(ajustarRenglon("vie 16 oct · 7:00 pm", { fuente: "media", ancho: 1000, mayor: 24, menor: 18, mayusculas: true }).renglones[0]).toBe("VIE 16 OCT · 7:00 pm");
+    expect(ajustarRenglon("sáb 17 oct · 8:00 pm–2:00 am", { fuente: "media", ancho: 1000, mayor: 24, menor: 18, mayusculas: true }).renglones[0]).toBe("SÁB 17 OCT · 8:00 pm–2:00 am");
+    // Solo tras una hora: una palabra que empieza igual no se toca.
+    expect(ajustarRenglon("8 ampliaciones", { fuente: "media", ancho: 1000, mayor: 24, menor: 18, mayusculas: true }).renglones[0]).toBe("8 AMPLIACIONES");
   });
 });
