@@ -1,13 +1,15 @@
 // Capturas de la bitácora 444 (OL-413): la app compilada contra el respaldo local con RESPALDO_CARTELES=1 y la lectura del cartel simulada en el
 // respaldo (`/anthropic/v1/messages`, preparada con `POST /__lectura`). Chrome real (playwright-core, channel: 'chrome'), 390×844 a 2×.
 // node scripts/ops/auditoria-ui/capturar-cartel-leido.mjs <raíz del árbol> <carpeta de salida> <carpeta con cumbiachella.png y trayectos-interactivos.png>
-// (los carteles del founder no van en el repo: son de sus autores). Correrlo en un árbol sin `.env`: compila `.next` contra el respaldo.
+// (los carteles del founder no van en el repo: son de sus autores). Compila `.next` contra el respaldo.
+// Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales (si lo encuentra, se niega a correr).
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 
 const [RAIZ, SALIDA, CARTELES] = process.argv.slice(2).map((p) => path.resolve(p));
+if (fs.existsSync(path.join(RAIZ, ".env"))) { console.error("hay un .env en el árbol: la app cargaría llaves reales. Córrelo en un árbol sin .env"); process.exit(1); }
 const { chromium } = await import(path.join(RAIZ, "node_modules/playwright-core/index.mjs"));
 const { cookie } = await import(path.join(RAIZ, "scripts/ops/auditoria-ui/respaldo-local/fixture.mjs"));
 const sharp = (await import(path.join(RAIZ, "node_modules/sharp/dist/index.mjs"))).default;

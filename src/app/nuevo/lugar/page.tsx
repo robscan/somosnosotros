@@ -31,7 +31,7 @@ export default async function NuevoLugarPorPasos({ searchParams }: { searchParam
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(enlaceAltaLugar({ ciudad, nombre, lat, lng, sitio }))}`);
   const supabase = await clienteServidor();
-  // Los registrados sirven para decir «Ya tiene ficha» al escribir y «¿Es este?» en el mapa, nunca para elegirlos (OL-211); la política de
+  // Los registrados sirven para decir «Ya está publicado» al escribir y «¿Es este?» en el mapa, nunca para elegirlos (OL-211); la política de
   // lectura deja pasar también los privados de la propia cuenta (RLS).
   const [ciudades, { data: lugares }] = await Promise.all([
     cargarCiudades(),

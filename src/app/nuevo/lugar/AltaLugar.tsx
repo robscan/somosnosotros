@@ -25,7 +25,7 @@ import Revisa from "./Revisa";
 type Props = {
   /** La acción del alta de lugar (`crearLugar`): con `quedarse`, devuelve lo creado sin salir de la pantalla. */
   accion: (previo: ResultadoLugar | null, formData: FormData) => Promise<ResultadoLugar>;
-  /** Los lugares del directorio: «Ya tiene ficha» al escribir el nombre y «¿Es este?» en el mapa. */
+  /** Los lugares del directorio: «Ya está publicado» al escribir el nombre y «¿Es este?» en el mapa. */
   lugares: LugarResumen[];
   /** La ciudad desde la que se entró (o San Luis Potosí): acerca la búsqueda y, a menos de 50 km, es la del lugar si el mapa no la dice. */
   ciudadContexto: Ciudad;
@@ -54,7 +54,7 @@ type Creado = { id: string; slug: string | null };
 
 /**
  * El alta de lugar por pasos (OL-315; prototipo firmado `lugar-artista-por-pasos.html`, casos 1 a 4, y su acta, bitácora 342): ¿Cómo se llama?
- * (con las sugerencias del mapa y «Ya tiene ficha») → confirmar en el mapa, siempre («¿Es aquí?» o «¿Dónde está?») → ¿Qué tipo de lugar es?
+ * (con las sugerencias del mapa y «Ya está publicado») → confirmar en el mapa, siempre («¿Es aquí?» o «¿Dónde está?») → ¿Qué tipo de lugar es?
  * (solo si nada lo dijo) → Revisa (con el horario y lo opcional) → Publicado. El mismo armazón que el alta de evento (`PorPasos`): una pregunta
  * por pantalla, Atrás que conserva lo contestado, pie que dice qué falta y se queda sobre el teclado, guardia de salida. Las respuestas viven
  * en el reductor de `pasos.ts`; lo que se publica viaja en un formulario escondido con los campos del alta de siempre (`crearLugar`), más el
@@ -63,7 +63,7 @@ type Creado = { id: string; slug: string | null };
  * San Luis Potosí en silencio. De «Publicado» se sale a la ficha o compartiendo (OL-365 quitó «Publicar otro»).
  *
  * Desde la ficha de un sitio fuera del directorio (OL-366) llega su clave (`sitio`): viaja con lo publicado y sus eventos pasan al lugar nuevo
- * (`crearLugar`). Si en vez de publicar se elige uno que ya existe (los enlaces a su ficha de «Ya tiene ficha», «¿Es este?» en el mapa y en
+ * (`crearLugar`). Si en vez de publicar se elige uno que ya existe (los enlaces «Verlo» de «Ya está publicado», «¿Es este?» en el mapa y en
  * «Revisa»), primero se le ligan los eventos del sitio (`ligar`) y después se abre su ficha, como antes; sin `sitio`, son enlaces de siempre.
  */
 export default function AltaLugar(props: Props) {

@@ -51,7 +51,7 @@ export type AlElegir = (e: MouseEvent<HTMLAnchorElement>, lugar: LugarResumen) =
 
 /**
  * ¿Cómo se llama? El campo con lupa, ✕ y contador; con 3 letras o más, una lista flotante bajo él: primero los lugares del directorio que
- * coinciden («Ya tiene ficha · Ir a su ficha»: la salida es ir a esa ficha, no publicar otra) y debajo lo que trae el mapa (tocar uno trae
+ * coinciden («Ya está publicado · Verlo»: la salida es ir a esa ficha, no publicar otra) y debajo lo que trae el mapa (tocar uno trae
  * dirección, punto, ciudad y, si lo dice, el tipo, y lleva a confirmarlo en el mapa). «Siguiente» sigue sin sugerencia: el mapa preguntará
  * «¿Dónde está?». Al pie, bajo «Siguiente», la tira Evento · Lugar · Artista (`tira`), solo en este paso.
  */
@@ -119,7 +119,7 @@ export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugere
             <Link href={hrefLugar(l)} replace role="option" aria-selected={false} className={`${sug.renglon} ${sug.conFicha}`} onClick={alElegir && ((e) => alElegir(e, l))}>
               <IconoPin width={20} height={20} />
               <b>{l.nombre}</b>
-              <small>{l.privado ? "Ya lo tienes guardado · Ir a su ficha" : "Ya tiene ficha · Ir a su ficha"}</small>
+              <small>{l.privado ? "Ya lo tienes guardado · Verlo" : "Ya está publicado · Verlo"}</small>
             </Link>
           </li>
         ))}
@@ -319,7 +319,7 @@ export function PasoUbicar({
           <small>
             A {alLado.metros} m hay un lugar con ficha: {alLado.lugar.nombre}.{" "}
             <Link href={hrefLugar(alLado.lugar)} replace className={styles.irFicha} onClick={alElegir && ((e) => alElegir(e, alLado.lugar))}>
-              Ir a su ficha
+              Verlo
             </Link>
           </small>
         </div>

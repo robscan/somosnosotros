@@ -219,6 +219,17 @@ test("la hoja del punto de un lugar también: «Falta la ubicación» sin punto 
   assert.equal(qa.cerro, 1);
 });
 
+test("en la hoja de un lugar, tocar uno registrado solo avisa que ya existe, con «Ver más información» hacia su ficha (OL-415)", TOPE, async (t) => {
+  const p = await hoja(t, "?para=lugar");
+  await p.getByLabel("Buscar el lugar").fill("teatro de la");
+  await p.getByRole("option", { name: /Teatro de la Paz/ }).click();
+  const aviso = dialogo(p).getByText(/«Teatro de la Paz» ya existe cerca de aquí\./);
+  await aviso.waitFor();
+  const enlace = aviso.getByRole("link", { name: "Ver más información" });
+  assert.match(await enlace.getAttribute("href"), /^\/lugares\//);
+  assert.equal(await dialogo(p).getByRole("link", { name: "Ver ficha" }).count(), 0);
+});
+
 test("con texto, «Agregar «X» como lugar» va encima del pie, sin tapar su botón ni la lista", TOPE, async (t) => {
   const p = await hoja(t);
   await p.getByLabel("Buscar el lugar").fill("teatro");

@@ -296,14 +296,14 @@ test("«Otro» no tiene tipos: se pregunta qué hace en pocas palabras, con el c
   assert.equal((await renglonesDe(p))[0], "Otro · Performance");
 });
 
-test("caso 7 · ya tiene ficha: mientras se escribe, «Ya tiene ficha · Ir a su ficha» (en otra ciudad lo dice) y la salida es ir a ella", TOPE, async (t) => {
+test("caso 7 · ya está publicado: mientras se escribe, «Ya está publicado · Verlo» (en otra ciudad lo dice) y la salida es ir a ella", TOPE, async (t) => {
   const p = await pagina(t);
   await nombre(p).fill("Trío Bru");
   const bruma = p.getByRole("option", { name: /Trío Bruma/ });
   await bruma.waitFor();
-  assert.match(await bruma.innerText(), /Ya tiene ficha · Ir a su ficha/);
+  assert.match(await bruma.innerText(), /Ya está publicado · Verlo/);
   assert.equal(await bruma.getAttribute("href"), "/artistas/trio-bruma");
-  assert.match(await p.getByRole("option", { name: /Trío Brujas/ }).innerText(), /Ya tiene ficha en Querétaro · Ir a su ficha/);
+  assert.match(await p.getByRole("option", { name: /Trío Brujas/ }).innerText(), /Ya está publicado en Querétaro · Verlo/);
   await foto(p, "artista-2-ya-tiene-ficha");
 });
 

@@ -77,7 +77,8 @@ before(async () => {
         window.qa.mostrar = () => manejo.current.mostrarLista();
         window.qa.recoger = () => manejo.current.recoger();
         // El cuerpo es un solo elemento con data-cuerpo (así lo entrega CuerpoLugar) y la pastilla, otro hijo de la ficha.
-        const piezas = {
+        // Con «?fallo», lo que llega del servidor no se pudo traer (piezas === "fallo"): la ficha lo dice y lleva a la ficha completa.
+        const piezas = new URLSearchParams(location.search).has('fallo') ? 'fallo' : {
           cuerpo: <div data-cuerpo><ul data-datos style={{ height: 130, listStyle: 'none' }}><li>datos</li></ul><div style={{ height: 1400 }}>el resto de la ficha</div></div>,
           opciones: <li>Reportar</li>,
           seguir: <SeguirDePrueba />,
@@ -638,6 +639,17 @@ test("Seguir en la ficha de la hoja: «Sigues» en verde, tocarlo otra vez deja 
   await page.getByText("No se pudo guardar").waitFor();
   const { aviso, flotante } = await page.evaluate(() => ({ aviso: document.querySelector('[role="alert"]').getBoundingClientRect(), flotante: document.querySelector("[data-flotantes] button").getBoundingClientRect() }));
   assert.ok(aviso.bottom <= flotante.top || aviso.top >= flotante.bottom, `el aviso (${aviso.top}-${aviso.bottom}) no cubre la pastilla (${flotante.top}-${flotante.bottom})`);
+  assert.deepEqual(page.errores, []);
+});
+
+test("si la ficha no se pudo traer, lo dice y «Ver más información» lleva a la ficha completa (OL-415: sin la palabra ficha en el letrero)", async () => {
+  const page = await abrir(390, 844, false, "?fallo");
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  const ficha = page.locator("[data-ficha-hoja]");
+  await ficha.waitFor();
+  assert.match(await ficha.innerText(), /No se pudo abrir la ficha aquí\. Ver más información/);
+  assert.equal(await ficha.getByRole("link", { name: "Ver más información" }).getAttribute("href"), "/lugares/l1");
+  assert.equal(await ficha.getByRole("link", { name: /Abrir la ficha completa/ }).count(), 0);
   assert.deepEqual(page.errores, []);
 });
 

@@ -1,6 +1,6 @@
 /* ==========================================================================
    Lo propio del alta de artista por pasos (OL-316; prototipo firmado `lugar-artista-por-pasos.html`, casos 5 a 7). Lo que comparte con el
-   alta de evento y el de lugar (las opciones, «Revisa» y «Publicado», con su sugerencia) viene de sus módulos, y «Ya tiene ficha» de
+   alta de evento y el de lugar (las opciones, «Revisa» y «Publicado», con su sugerencia) viene de sus módulos, y «Ya está publicado» de
    `ui/Sugerencia`; todo va como hijo directo de la columna de `PorPasos`.
    1. La casilla de «Revisa» · 2. Foto y portada · 3. «Agregar foto» en «Publicado»
    ========================================================================== */

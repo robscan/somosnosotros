@@ -800,7 +800,7 @@ describe("cercanía (OL-127)", () => {
     expect(lugarMasCercano(aMetrosAlNorte(2000), lugares)).toBeNull();
     expect(lugarMasCercano(cineteca, [])).toBeNull();
   });
-  it("textos: lejos con el lugar y «Ver ficha»; lejos sin lugar; ubicación negada; sin-pedir y cerca no dicen nada", () => {
+  it("textos: lejos con el lugar y «Ver más información»; lejos sin lugar; ubicación negada; sin-pedir y cerca no dicen nada", () => {
     expect(textoDeCercania({ tipo: "lejos", distanciaM: 900, precisionM: 10 }, "Cineteca Alameda")).toEqual({ texto: "Este pincel es para quien está en Cineteca Alameda", esAviso: true, verFicha: true });
     expect(textoDeCercania({ tipo: "lejos", distanciaM: 900, precisionM: 10 }, null)?.verFicha).toBe(false);
     expect(textoDeCercania({ tipo: "negada" }, "X")).toEqual({ texto: "Activa la ubicación para pintar", esAviso: true, verFicha: false });

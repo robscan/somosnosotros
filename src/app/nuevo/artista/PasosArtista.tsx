@@ -40,7 +40,7 @@ const conIntro = (seguir: (() => void) | null) => (e: React.KeyboardEvent<HTMLIn
 
 /**
  * ¿Cómo se llama? El campo con lupa, ✕ y contador; con 3 letras o más, una lista flotante bajo él con los artistas del directorio cuyo nombre
- * lo contiene («Ya tiene ficha · Ir a su ficha»: la salida es ir a esa ficha, no publicar otra; en otra ciudad lo dice, porque allí el mismo
+ * lo contiene («Ya está publicado · Verlo»: la salida es ir a esa ficha, no publicar otra; en otra ciudad lo dice, porque allí el mismo
  * nombre es otro artista). «Siguiente» sigue: el nombre ya dijo qué hace o se pregunta. Al pie, bajo «Siguiente», la tira Evento · Lugar ·
  * Artista (`tira`), solo en este paso.
  */
@@ -84,7 +84,7 @@ export function PasoNombre({ nombre, ciudad, candidatos, tira, onNombre, onSegui
             <Link href={hrefArtista(a)} replace role="option" aria-selected={false} className={`${sug.renglon} ${sug.conFicha}`}>
               {a.tipo === "solista" ? <IconoPersona width={20} height={20} /> : <IconoPersonas width={20} height={20} />}
               <b>{a.nombre}</b>
-              <small>{a.ciudad === ciudad ? "Ya tiene ficha · Ir a su ficha" : `Ya tiene ficha en ${a.ciudad} · Ir a su ficha`}</small>
+              <small>{a.ciudad === ciudad ? "Ya está publicado · Verlo" : `Ya está publicado en ${a.ciudad} · Verlo`}</small>
             </Link>
           </li>
         ))}
