@@ -44,8 +44,9 @@ function Segmento<T extends string>({ etiqueta, opciones, valor, alElegir }: { e
 /**
  * «Presentación» (artista) e «Informe» (lugar) en PDF (OL-396; prototipo firmado `curriculo-propuestas.html`, «O junto a "Tu año"», «Q solo quien
  * gestiona», «X solo PDF»): la pastilla con borde junto a «Tu año» y, al tocarla, la hoja de opciones sobre la ficha (`ui/Hoja`): el título, la
- * línea de ayuda con cuántas páginas salen, en el lugar el periodo (el mes · el año · Todo), el tamaño (Carta / A4), en el artista «Preparar una
- * reseña» apagado con «Pronto» y, anclado abajo, «Descargar PDF». Quien la pinta ya sabe que quien mira gestiona la ficha y que hay algo pasado.
+ * línea de ayuda con cuántas páginas salen, en el lugar el periodo (el mes · el año · Todo), el tamaño (Carta / A4) y, anclado abajo, «Descargar
+ * PDF». Quien la pinta ya sabe que quien mira gestiona la ficha y que hay algo pasado. OL-415 (bitácora 447): fuera el renglón apagado «Preparar
+ * una reseña · Pronto», que prometía algo que no existe; la reseña con IA sigue siendo una pieza futura.
  *  · El PDF se pide al abrir la hoja y al cambiar una opción, y se reutiliza: Safari solo abre la hoja de compartir dentro del mismo toque.
  *  · En el teléfono que comparte archivos (`navigator.canShare({ files })`, el iPhone), la hoja de compartir con el PDF; si no, se descarga.
  * Se mide `documento` con el medio («hoja» o «guardado»); cerrar la hoja de compartir sin compartir no cuenta.
@@ -133,15 +134,6 @@ export default function DocumentoPdf({ que, opciones, etiquetasPeriodo, classNam
               </div>
             )}
             <Segmento<FormatoDocumento> etiqueta="Tamaño de la hoja" valor={formato} alElegir={setFormato} opciones={FORMATOS} />
-            {esArtista && (
-              <div className={styles.renglon} aria-disabled="true">
-                <span>
-                  <b>Preparar una reseña</b>
-                  <small>Un borrador a partir de tus fechas, para que lo revises</small>
-                </span>
-                <span className={styles.pronto}>Pronto</span>
-              </div>
-            )}
           </div>
         </Hoja>
       )}
