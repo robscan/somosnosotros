@@ -69,14 +69,14 @@ type Props = {
 /** Lo que dice el botón del pie, publicando o guardando. */
 const BOTON = { publicar: ["Publicar", "Publicando…"], editar: ["Guardar cambios", "Guardando…"] } as const;
 
-/** Lo que dice el botón al publicar según la clase (prototipo, caso 1 a 4): «Publicar exposición», «Publicar el festival y 3 eventos»; un festival sin
+/** Lo que dice el botón al publicar según la clase (prototipo, caso 1 a 4): «Publicar exposición», «Publicar el festival y 3 actividades»; un festival sin
  *  programa (OL-413), «Publicar festival». */
 function botonDeClase(r: Respuestas): string {
   if (r.clase === "exposicion") return "Publicar exposición";
   if (r.clase === "taller") return "Publicar taller";
   if (conPrograma(r)) {
     const n = actosMarcados(r).length;
-    return `Publicar el festival y ${n} ${n === 1 ? "evento" : "eventos"}`;
+    return `Publicar el festival y ${n} ${n === 1 ? "actividad" : "actividades"}`;
   }
   if (r.clase === "festival") return "Publicar festival";
   return "Publicar";

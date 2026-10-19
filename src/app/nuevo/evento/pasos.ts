@@ -409,7 +409,7 @@ export function flujo(e: Estado, a: Accion): Estado {
         const { sitio, ...resto } = a.cambios;
         return alPrograma({ ...e, r: con(e.r, resto) }, sitio);
       }
-      // El cartel trae varios eventos (H6): primero «El cartel trae N eventos», para revisarlos antes de «Revisa», aunque todos estén completos.
+      // El cartel trae varias actividades (H6): primero «El cartel trae N actividades», para revisarlos antes de «Revisa», aunque todos estén completos.
       if (a.cambios.clase === "festival" && a.cambios.actos?.some((x) => x.leido)) return apilar({ ...e, r: con(e.r, a.cambios) }, "programa");
       return siguiente({ ...e, r: con(e.r, a.cambios) });
     }

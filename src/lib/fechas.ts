@@ -236,9 +236,7 @@ export function esDeVariosDias(inicio: string, fin: string | null | undefined, z
  */
 export function horasDelEvento(inicio: string, fin: string | null | undefined, zona: string = ZONA_INICIAL): string {
   if (!fin) return horaCorta(inicio, zona);
-  const diaInicio = diaLocal(new Date(inicio), zona);
-  const diaFin = diaLocal(new Date(fin), zona);
-  const unDia = diaFin === diaInicio || (diaFin === sumarDias(diaInicio, 1) && !esDeVariosDias(inicio, fin, zona));
+  const unDia = diaLocal(new Date(fin), zona) === diaLocal(new Date(inicio), zona) || esUnaNoche(inicio, fin, zona);
   return unDia ? rangoDeReloj(reloj24(inicio, zona), reloj24(fin, zona)) : horaCorta(inicio, zona);
 }
 

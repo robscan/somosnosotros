@@ -432,9 +432,9 @@ describe("la cabecera oscura de exposición, taller y festival (OL-351)", () => 
   it("el festival sin programa (OL-413): «FESTIVAL», su día, su hora y su lugar bajo el título, y cuándo, «Costo» y «Van» en la banda", async () => {
     const { heroe, enBanda, todos } = await abrir({ ...EVENTO, clase: "festival", inicio: "2099-01-01T02:00:00Z", fin: "2099-01-01T08:00:00Z" });
     expect(heroe.props.etiqueta).toBe("Festival");
-    // Una noche (8:00 pm a 2:00 am) se dice de una sola manera (OL-418): su día con su rango, arriba y en la línea; nunca dos días.
+    // Una noche (8:00 pm a 2:00 am) se dice de una sola manera (OL-418): un día; la línea con su rango y el número con su hora de inicio.
     expect(heroe.props.meta).toBe("mié 31 de dic de 2098 · 8:00 pm–2:00 am · Foro de prueba");
-    expect(enBanda[0]).toBe("8:00 pm–2:00 am");
+    expect(enBanda[0]).toBe("8:00 pm");
     expect([...recorrer(heroe.props.banda)].find((e) => e.type === Kpi)?.props.valor).toBe("mié 31 dic");
     expect(enBanda).toHaveLength(2);
     expect(enBanda[1]).toBe("Costo");

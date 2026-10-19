@@ -435,7 +435,7 @@ test("festival desde el cartel (caso 4, H6): «El cartel trae 3 actividades», c
   assert.match(filas[2], /Sedes: Teatro de la Paz y Centro de las Artes/);
   assert.equal(filas.some((f) => /Parte de un festival/.test(f)), false);
   await foto350(p, "08-revisa-festival");
-  await boton(p, "Publicar el festival y 2 eventos").click();
+  await boton(p, "Publicar el festival y 2 actividades").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
   const d = await enviado(p);
   assert.equal(d.clase, "festival");
@@ -459,7 +459,7 @@ test("OL-411: un festival cuyo cartel no dice el costo pregunta «¿Cuánto cues
   await p.getByText("Leído del cartel").waitFor();
   const cuanto = (await datosRevisa(p)).find((f) => /Por confirmar/.test(f));
   assert.match(cuanto, /Por confirmar\nCambiar/);
-  await boton(p, "Publicar el festival y 2 eventos").click();
+  await boton(p, "Publicar el festival y 2 actividades").click();
   await p.waitForFunction(() => window.qa.envios.length === 1);
   const d = await enviado(p);
   assert.deepEqual({ clase: d.clase, gratis: d.gratis, precio: d.precio, por_confirmar: d.por_confirmar }, { clase: "festival", gratis: "no", precio: "", por_confirmar: "si" });

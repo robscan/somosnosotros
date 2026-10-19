@@ -15,8 +15,8 @@ describe("kpiCuando (el número de fecha de una ficha de evento)", () => {
   it("sin hora de fin (acaba con su último día), la hora es solo la de inicio", () => {
     expect(kpiCuando("2026-10-11T02:00:00Z", "2026-10-13T05:59:00Z", "America/Mexico_City", new Date("2026-10-06T16:00:00Z"))).toEqual({ dia: "Del 10 al 12 de oct", hora: "8:00 pm" });
   });
-  it("una noche que cruza la medianoche es un día con su rango (OL-418), nunca «vie 2 oct – sáb 3 oct»", () => {
-    expect(kpiCuando("2026-10-03T04:00:00Z", "2026-10-03T07:00:00Z", "America/Mexico_City")).toEqual({ dia: "vie 2 oct", hora: "10:00 pm–1:00 am" });
+  it("una noche que cruza la medianoche es un día con la hora en que empieza (OL-418), nunca «vie 2 oct – sáb 3 oct»", () => {
+    expect(kpiCuando("2026-10-03T04:00:00Z", "2026-10-03T07:00:00Z", "America/Mexico_City")).toEqual({ dia: "vie 2 oct", hora: "10:00 pm" });
   });
   it("usa la zona del evento, no la de quien mira", () => {
     expect(kpiCuando("2026-10-03T06:30:00Z", null, "America/Mexico_City")).toEqual({ dia: "sáb 3 oct", hora: "12:30 am" });
