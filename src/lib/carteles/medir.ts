@@ -137,12 +137,15 @@ function recortarARenglones(texto: string, caja: Caja, tamano: number): string[]
   return ["…"];
 }
 
+/** En mayúsculas, salvo el «am» y el «pm» de una hora, que van siempre en minúsculas (OL-418: «SÁB 11 OCT · 7:00 pm», no «7:00 PM»). */
+export const mayusculasConHora = (texto: string): string => texto.toLocaleUpperCase("es-MX").replace(/(\d) (AM|PM)(?![\p{L}])/gu, (_, digito: string, sufijo: string) => `${digito} ${sufijo.toLowerCase()}`);
+
 /**
  * El tamaño mayor (de `mayor` a `menor`, de 2 en 2) con el que el texto cabe entero en la caja (sus renglones y, si lo tiene, su alto), y sus
  * renglones. Si no cabe ni al mínimo, se corta con «…» al mínimo y se avisa (`recortado`).
  */
 export function ajustar(textoOriginal: string, caja: Caja): Ajuste {
-  const texto = caja.mayusculas ? textoOriginal.toLocaleUpperCase("es-MX") : textoOriginal;
+  const texto = caja.mayusculas ? mayusculasConHora(textoOriginal) : textoOriginal;
   if (!texto.trim()) return { tamano: caja.mayor, renglones: [], recortado: false };
   for (let tamano = caja.mayor; tamano >= caja.menor; tamano -= PASO) {
     const estilo = { fuente: caja.fuente, tamano, espaciado: caja.espaciado };

@@ -1,6 +1,6 @@
 /**
  * Fechas de eventos. Cada lugar y cada evento guarda su zona horaria (migración 0029): las horas se leen y se muestran
- * en la zona del evento, no en la de quien mira ("19:00" en Madrid es a las 19:00 de Madrid). Lo que no dice zona cae
+ * en la zona del evento, no en la de quien mira («7:00 pm» en Madrid es a las 7:00 pm de Madrid), y en 12 horas (`horaDeReloj`, OL-418). Lo que no dice zona cae
  * en la de la ciudad inicial, San Luis Potosí: America/Mexico_City (sin horario de verano desde 2022, UTC−6).
  * En la base se guarda timestamptz.
  */
@@ -141,16 +141,46 @@ export function diaLargo(fecha: string, ahora: Date = new Date(), zona: string =
   return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora, zona) }).format(d).replace(",", "");
 }
 
-/** "19:00" en la zona del evento. */
+/**
+ * La hora como se lee en toda la app (OL-418; founder, 2026-10-19: «ya me señaló un usuario que 19:00 hrs era confuso, es mejor usar 7:00 pm»):
+ * en 12 horas, siempre con minutos y con «am» o «pm» en minúsculas tras un espacio: «7:00 pm», «9:30 am», «12:00 pm» (mediodía), «12:00 am»
+ * (medianoche). Recibe la hora de pared en 24 h, «HH:MM» (o «HH:MM:SS», como la guarda la base): lo guardado no cambia, solo cómo se escribe.
+ * La cadena va limpia, con un espacio normal (viaja a compartir, avisos y correos); que no se parta en un renglón angosto lo resuelve quien la pinta.
+ */
+export function horaDeReloj(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+}
+
+/**
+ * Un rango de horas, con guion corto y sin espacios: si las dos comparten «am» o «pm», se dice una vez al final («7:00–9:30 pm»); si no, cada una
+ * lleva el suyo («8:00 pm–2:00 am», «11:00 am–2:00 pm»). Las dos en «HH:MM» de 24 h.
+ */
+export function rangoDeReloj(desde: string, hasta: string): string {
+  const a = horaDeReloj(desde);
+  const b = horaDeReloj(hasta);
+  return a.slice(-2) === b.slice(-2) ? `${a.slice(0, -3)}–${b}` : `${a}–${b}`;
+}
+
+/** «las» o «la» antes de una hora («desde las 8:00 pm», «desde la 1:00 pm», «Datos de las 2:05 pm»), de «HH:MM» en 24 h. */
+export const articuloDeHora = (hhmm: string): string => (Number(hhmm.split(":")[0]) % 12 === 1 ? "la" : "las");
+
+/** «19:00»: la hora de pared en 24 h en la zona del evento, para comparar horas y rellenar campos; nunca para que la lea una persona (`horaCorta`). */
+export function reloj24(iso: string, zona: string = ZONA_INICIAL): string {
+  const p = partes(new Date(iso), zona);
+  return `${p.hour}:${p.minute}`;
+}
+
+/** «7:00 pm» en la zona del evento (`horaDeReloj`). */
 export function horaCorta(iso: string, zona: string = ZONA_INICIAL): string {
-  return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+  return horaDeReloj(reloj24(iso, zona));
 }
 
 /** La hora de fin de un evento de varios días al que nadie le puso hora (OL-298, `FIN_DEL_DIA` en `calendario.ts`): acaba con su último
  *  día y se guarda como las 23:59 de ese día. Esa hora no se escribe: el texto dice solo el día. Solo si el fin cae en otro día que el
  *  inicio (un evento de un solo día que termina a las 23:59 la conserva) y con la hora de la zona del evento. El dato guardado no cambia. */
 function acabaConSuUltimoDia(inicio: Date, fin: Date, zona: string): boolean {
-  return diaLocal(fin, zona) !== diaLocal(inicio, zona) && horaCorta(fin.toISOString(), zona) === "23:59";
+  return diaLocal(fin, zona) !== diaLocal(inicio, zona) && reloj24(fin.toISOString(), zona) === "23:59";
 }
 
 /** El mes en tres letras ("oct") de un día de calendario (YYYY-MM-DD): no depende de la zona. */
@@ -186,7 +216,7 @@ export function textoDePeriodo(desde: string, hasta: string, ahora: Date = new D
 }
 
 /**
- * ¿Dura varios días? Su fin cae un día después o más, pero una noche que solo cruza la medianoche (empieza 10:00 p.m., termina 1:00 a.m. del
+ * ¿Dura varios días? Su fin cae un día después o más, pero una noche que solo cruza la medianoche (empieza 10:00 pm, termina 1:00 am del
  * día siguiente: su fin cae antes de la hora de inicio) es una noche, no dos días. Es la regla con la que se lee el evento (`cuandoVariosDias`)
  * y con la que la agenda lo reparte en sus días (`lib/ocurrencias`, OL-320).
  */
@@ -195,14 +225,31 @@ export function esDeVariosDias(inicio: string, fin: string | null | undefined, z
   const diaInicio = diaLocal(new Date(inicio), zona);
   const diaFin = diaLocal(new Date(fin), zona);
   if (diaFin <= diaInicio) return false;
-  return !(diaFin === sumarDias(diaInicio, 1) && horaCorta(fin, zona) <= horaCorta(inicio, zona));
+  return !(diaFin === sumarDias(diaInicio, 1) && reloj24(fin, zona) <= reloj24(inicio, zona));
+}
+
+/**
+ * Las horas de un evento en su día (OL-418): la de inicio («7:00 pm»); con fin el mismo día, las dos («7:00–9:00 pm»); y una noche que acaba de
+ * madrugada, también las dos, porque una noche es un día («8:00 pm–2:00 am»: su fin cae al día siguiente antes de la hora de inicio,
+ * `esDeVariosDias`). Lo que dura varios días, solo la de inicio: sus días y su horario los dice `cuandoVariosDias`. La usan los renglones de las
+ * listas, la ficha, «Revisa», los avisos y todo lo que dice «día · hora».
+ */
+export function horasDelEvento(inicio: string, fin: string | null | undefined, zona: string = ZONA_INICIAL): string {
+  if (!fin) return horaCorta(inicio, zona);
+  const unDia = diaLocal(new Date(fin), zona) === diaLocal(new Date(inicio), zona) || esUnaNoche(inicio, fin, zona);
+  return unDia ? rangoDeReloj(reloj24(inicio, zona), reloj24(fin, zona)) : horaCorta(inicio, zona);
+}
+
+/** ¿Es una noche que acaba de madrugada? Su fin cae al día siguiente, antes de su hora de inicio (`esDeVariosDias` dice que no son dos días). */
+export function esUnaNoche(inicio: string, fin: string | null | undefined, zona: string = ZONA_INICIAL): boolean {
+  return !!fin && diaLocal(new Date(fin), zona) === sumarDias(diaLocal(new Date(inicio), zona), 1) && !esDeVariosDias(inicio, fin, zona);
 }
 
 /**
  * Un evento de varios días se lee como lo pregunta el alta (OL-309): el horario del primer día vale para todos, así que el texto dice los días
- * y, aparte, las horas de cada día («Del 10 al 12 de oct» y «20:00–21:00», en 24 h como todo el texto de la app); sin hora de fin puesta (acaba con su último día, ver
- * `acabaConSuUltimoDia`), solo la de inicio. Null si no dura varios días, también cuando solo cruza la medianoche (empieza 10:00 p.m., termina
- * 1:00 a.m. del día siguiente: su fin cae antes de la hora de inicio y es una noche, no dos días).
+ * y, aparte, las horas de cada día («Del 10 al 12 de oct» y «8:00–9:00 pm», `rangoDeReloj`); sin hora de fin puesta (acaba con su último día, ver
+ * `acabaConSuUltimoDia`), solo la de inicio. Null si no dura varios días, también cuando solo cruza la medianoche (empieza 10:00 pm, termina
+ * 1:00 am del día siguiente: su fin cae antes de la hora de inicio y es una noche, no dos días).
  */
 export function cuandoVariosDias(inicio: string, fin: string | null | undefined, ahora: Date = new Date(), zona: string = ZONA_INICIAL): { dias: string; horas: string } | null {
   if (!fin || !esDeVariosDias(inicio, fin, zona)) return null;
@@ -210,10 +257,8 @@ export function cuandoVariosDias(inicio: string, fin: string | null | undefined,
   const f = new Date(fin);
   const diaInicio = diaLocal(d, zona);
   const diaFin = diaLocal(f, zona);
-  const horaInicio = horaCorta(inicio, zona);
-  const horaFin = horaCorta(fin, zona);
   // Cadena limpia (viaja a compartir, avisos y correos); que la hora no se parta en un renglón angosto lo resuelve quien la pinta, con CSS.
-  const horas = acabaConSuUltimoDia(d, f, zona) ? horaInicio : `${horaInicio}–${horaFin}`;
+  const horas = acabaConSuUltimoDia(d, f, zona) ? horaCorta(inicio, zona) : rangoDeReloj(reloj24(inicio, zona), reloj24(fin, zona));
   return { dias: rangoCorto(diaInicio, diaFin, diaLocal(ahora, zona)), horas };
 }
 
@@ -225,21 +270,15 @@ export function cuandoPorDia(inicio: string, fin: string, zona: string, ahora: D
   return `${rangoCorto(diaLocal(new Date(inicio), zona), diaLocal(new Date(fin), zona), diaLocal(ahora, zona))} · ${HORARIOS_POR_DIA}`;
 }
 
-/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. Un evento de varios días dice sus días y su horario de cada día (`cuandoVariosDias`); uno que solo cruza la medianoche, "→ dom 21 sep · 01:00". */
+/**
+ * «sáb 20 de sep · 7:00 pm» (y «7:00–9:00 pm» si hay fin el mismo día). Con año si no es el de hoy. Un evento de varios días dice sus días y su
+ * horario de cada día (`cuandoVariosDias`); una noche que acaba de madrugada es un solo día con su rango (OL-418): «sáb 17 de oct · 8:00 pm–2:00 am»,
+ * nunca «→ dom 18 de oct · 02:00».
+ */
 export function formatearCuando(inicio: string, fin?: string | null, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
   const varios = cuandoVariosDias(inicio, fin, ahora, zona);
   if (varios) return `${varios.dias} · ${varios.horas}`;
-  const d = new Date(inicio);
-  const dia = diaLocal(d, zona);
-  const fecha = diaCorto(inicio, ahora, zona);
-  const hora = horaCorta(inicio, zona);
-  let texto = `${fecha} · ${hora}`;
-  if (fin) {
-    const f = new Date(fin);
-    const horaFin = horaCorta(fin, zona);
-    texto += diaLocal(f, zona) === dia ? `–${horaFin}` : ` → ${diaCortoDe(f, ahora, zona)} · ${horaFin}`;
-  }
-  return texto;
+  return `${diaCorto(inicio, ahora, zona)} · ${horasDelEvento(inicio, fin, zona)}`;
 }
 
 /** El día largo de la ficha: "sábado 20 de septiembre" (con año si no es el actual). */
@@ -247,16 +286,17 @@ function diaLargoDe(d: Date, ahora: Date, zona: string): string {
   return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora, zona) }).format(d).replace(",", "");
 }
 
-/** Fecha larga para la ficha: "sábado 20 de septiembre · 19:00" (con año si no es el de hoy; con " a 21:00" si hay fin el mismo día). Un fin otro día a las 23:59 va solo con su día. */
+/**
+ * Fecha larga para la ficha: «sábado 20 de septiembre · 7:00 pm» (con año si no es el de hoy; «7:00–9:00 pm» si hay fin el mismo día, y una noche
+ * que acaba de madrugada, «8:00 pm–2:00 am», `horasDelEvento`). Lo que dura varios días dice «hasta» el otro día; un fin otro día a las 23:59 va solo
+ * con su día.
+ */
 export function formatearLargo(iso: string, ahora: Date = new Date(), fin?: string | null, zona: string = ZONA_INICIAL): string {
   const d = new Date(iso);
-  let texto = `${diaLargoDe(d, ahora, zona)} · ${horaCorta(iso, zona)}`;
-  if (fin) {
-    const f = new Date(fin);
-    if (diaLocal(f, zona) === diaLocal(d, zona)) texto += ` a ${horaCorta(fin, zona)}`;
-    else texto += acabaConSuUltimoDia(d, f, zona) ? ` hasta ${diaLargoDe(f, ahora, zona)}` : ` hasta ${formatearLargo(fin, ahora, null, zona)}`;
-  }
-  return texto;
+  if (!fin || !esDeVariosDias(iso, fin, zona)) return `${diaLargoDe(d, ahora, zona)} · ${horasDelEvento(iso, fin, zona)}`;
+  const f = new Date(fin);
+  const hasta = acabaConSuUltimoDia(d, f, zona) ? diaLargoDe(f, ahora, zona) : formatearLargo(fin, ahora, null, zona);
+  return `${diaLargoDe(d, ahora, zona)} · ${horaCorta(iso, zona)} hasta ${hasta}`;
 }
 
 export type Tramo = "hoy" | "semana" | "proximos" | "pasado";
@@ -317,7 +357,7 @@ export function sumarHoras(local: string, horas: number, zona: string = ZONA_INI
   return isoALocal(new Date(new Date(iso).getTime() + horas * 3600000).toISOString(), zona);
 }
 
-/** Frase para confirmar: "sábado 19 de septiembre · 19:00" o "… · 19:00 a 21:00". */
+/** Frase para confirmar: «sábado 19 de septiembre · 7:00 pm» o «… · 7:00–9:00 pm». */
 export function fraseCuando(inicioLocal: string, finLocal?: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
   const iso = localAIso(inicioLocal, zona);
   if (!iso) return "";

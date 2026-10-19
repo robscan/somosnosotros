@@ -49,6 +49,17 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+/* La etiqueta que es una hora (la del día de un evento: «7:00 pm», «Fue · 11:00 am–2:00 pm»), tal cual: «am» y «pm» van en minúsculas (OL-418).
+   Partida en trozos (un rango, «Fue · …»), no se corta con «…»: baja de renglón entre ellos (tras « · » o el guion), nunca dentro de una hora. */
+.kpi > small.hora {
+  text-transform: none;
+}
+.kpi > small.partida {
+  white-space: normal;
+}
+.kpi > small.partida > span {
+  white-space: nowrap;
+}
 .kpi > b {
   grid-area: valor;
   font-size: var(--letra-base);

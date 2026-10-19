@@ -12,13 +12,13 @@ const leer = (franjas: Franja[]) => {
 
 describe("estructurar y lineasHorario", () => {
   it("una franja: sus días en tramo y los que cierra", () => {
-    expect(leer([f([2, 3, 4, 5, 6, 7], "10:00", "18:00")])).toEqual(["Ma–Do · 10:00 a.m.–6:00 p.m.", "Cierra Lu"]);
+    expect(leer([f([2, 3, 4, 5, 6, 7], "10:00", "18:00")])).toEqual(["Ma–Do · 10:00 am–6:00 pm", "Cierra Lu"]);
   });
   it("Lu–Vi y Sá–Do con horas distintas: dos renglones, nada cierra", () => {
-    expect(leer([f(LU_VI, "09:00", "17:00"), f([6, 7], "11:00", "14:00")])).toEqual(["Lu–Vi · 9:00 a.m.–5:00 p.m.", "Sá, Do · 11:00 a.m.–2:00 p.m."]);
+    expect(leer([f(LU_VI, "09:00", "17:00"), f([6, 7], "11:00", "14:00")])).toEqual(["Lu–Vi · 9:00 am–5:00 pm", "Sá, Do · 11:00 am–2:00 pm"]);
   });
   it("cierre a comer: el mismo día en dos franjas sale en un renglón con la «y»; el sábado va aparte y el domingo cierra", () => {
-    expect(leer([f(LU_VI, "10:00", "14:00"), f(LU_VI, "16:00", "20:00"), f([6], "16:00", "20:00")])).toEqual(["Lu–Vi · 10:00 a.m.–2:00 p.m. y 4:00 p.m.–8:00 p.m.", "Sá · 4:00 p.m.–8:00 p.m.", "Cierra Do"]);
+    expect(leer([f(LU_VI, "10:00", "14:00"), f(LU_VI, "16:00", "20:00"), f([6], "16:00", "20:00")])).toEqual(["Lu–Vi · 10:00 am–2:00 pm y 4:00–8:00 pm", "Sá · 4:00–8:00 pm", "Cierra Do"]);
   });
   it("franjas que se enciman o se tocan se unen; el orden en que se capturaron no importa", () => {
     expect(estructurar([f([1], "13:00", "18:00"), f([1], "10:00", "14:00")]).grupos).toEqual([{ dias: [1], rangos: [{ abre: "10:00", cierra: "18:00" }] }]);
@@ -26,10 +26,10 @@ describe("estructurar y lineasHorario", () => {
     expect(estructurar([f([1], "10:00", "18:00"), f([1], "11:00", "12:00")]).grupos[0].rangos).toEqual([{ abre: "10:00", cierra: "18:00" }]);
   });
   it("un día repetido (en la misma franja o en otra igual) no se cuenta dos veces", () => {
-    expect(leer([f([1, 1, 2, 3], "10:00", "18:00"), f([3], "10:00", "18:00")])).toEqual(["Lu–Mi · 10:00 a.m.–6:00 p.m.", "Cierra Ju–Do"]);
+    expect(leer([f([1, 1, 2, 3], "10:00", "18:00"), f([3], "10:00", "18:00")])).toEqual(["Lu–Mi · 10:00 am–6:00 pm", "Cierra Ju–Do"]);
   });
   it("todos los días con la misma hora: un renglón y nada cierra", () => {
-    expect(leer([f([1, 2, 3, 4, 5, 6, 7], "09:00", "21:00")])).toEqual(["Lu–Do · 9:00 a.m.–9:00 p.m."]);
+    expect(leer([f([1, 2, 3, 4, 5, 6, 7], "09:00", "21:00")])).toEqual(["Lu–Do · 9:00 am–9:00 pm"]);
   });
   it("ninguna franja, o franjas sin días: no hay horario que decir", () => {
     expect(lineasHorario([])).toEqual({ lineas: [], cierra: null });
@@ -37,14 +37,14 @@ describe("estructurar y lineasHorario", () => {
     expect(estructurar([]).cierra).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
   it("los días con las mismas horas se juntan aunque no sean seguidos, en el orden del primero", () => {
-    expect(leer([f([6], "10:00", "14:00"), f([1, 3], "10:00", "14:00"), f([2], "16:00", "20:00")])).toEqual(["Lu, Mi, Sá · 10:00 a.m.–2:00 p.m.", "Ma · 4:00 p.m.–8:00 p.m.", "Cierra Ju, Vi, Do"]);
+    expect(leer([f([6], "10:00", "14:00"), f([1, 3], "10:00", "14:00"), f([2], "16:00", "20:00")])).toEqual(["Lu, Mi, Sá · 10:00 am–2:00 pm", "Ma · 4:00–8:00 pm", "Cierra Ju, Vi, Do"]);
   });
   it("un bar que cierra pasada la medianoche cuenta para el día en que abre y se une a lo que se le encima", () => {
-    expect(leer([f([5, 6], "20:00", "02:00")])).toEqual(["Vi, Sá · 8:00 p.m.–2:00 a.m.", "Cierra Lu–Ju, Do"]);
+    expect(leer([f([5, 6], "20:00", "02:00")])).toEqual(["Vi, Sá · 8:00 pm–2:00 am", "Cierra Lu–Ju, Do"]);
     expect(estructurar([f([5], "20:00", "02:00"), f([5], "23:00", "03:00")]).grupos[0].rangos).toEqual([{ abre: "20:00", cierra: "03:00" }]);
   });
   it("tres franjas el mismo día se leen con comas y la «y» al final", () => {
-    expect(leer([f([1], "08:00", "09:00"), f([1], "12:00", "13:00"), f([1], "18:00", "19:00")])[0]).toBe("Lu · 8:00 a.m.–9:00 a.m., 12:00 p.m.–1:00 p.m. y 6:00 p.m.–7:00 p.m.");
+    expect(leer([f([1], "08:00", "09:00"), f([1], "12:00", "13:00"), f([1], "18:00", "19:00")])[0]).toBe("Lu · 8:00–9:00 am, 12:00–1:00 pm y 6:00–7:00 pm");
   });
 });
 

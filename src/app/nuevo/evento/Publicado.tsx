@@ -87,7 +87,7 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
       )}
       {clase === "festival" && (
         <div className={styles.sugerencia}>
-          <h3>{sinPrograma ? "¿Sus presentaciones tienen ficha propia?" : "¿Falta algo del programa?"}</h3>
+          <h3>{sinPrograma ? "¿Sus actividades tienen ficha propia?" : "¿Falta algo del programa?"}</h3>
           <p>{sinPrograma ? "Si cada una tiene su día o su sede, agrégalas como su programa. Si no, así está completo." : "Puedes agregar actividades después; la ficha dice cuántas lleva."}</p>
           <Boton href={enlaceAltaEvento({ festival: evento.id })} variante="secundario">
             {sinPrograma ? "Agregar programa" : "Agregar otra actividad"}

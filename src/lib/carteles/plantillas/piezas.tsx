@@ -111,7 +111,7 @@ export function fila(bloques: Bloque[], { ancho, separacion = 0, estilo }: { anc
 }
 
 /**
- * Un dato con su detalle debajo («Sábado 11 de octubre» / «19:00 h»; «Teatro de la Paz» / «Pimpolina»): el principal hasta dos renglones y el
+ * Un dato con su detalle debajo («Sábado 11 de octubre» / «7:00 pm»; «Teatro de la Paz» / «Pimpolina»): el principal hasta dos renglones y el
  * detalle hasta dos, cada uno al tamaño mayor que quepa.
  */
 export function dato(principal: string | null, detalle: string | null, ancho: number, color: string, suave: string, alinear: Alinear = "left", tamano: number = LETRA.dato): Bloque {
@@ -152,7 +152,7 @@ export function pie(c: Contexto, ancho: number, alinear: Alinear = "left", { may
 }
 
 /**
- * Partes de un renglón unidas por « · », sin las que faltan («Sáb 11 oct · 19:00 h», o solo «Oct 2026» si no hay hora); null si no queda nada.
+ * Partes de un renglón unidas por « · », sin las que faltan («Sáb 11 oct · 7:00 pm», o solo «Oct 2026» si no hay hora); null si no queda nada.
  * El punto va pegado a lo de antes con un espacio duro: si el texto se parte en renglones, ninguno empieza con «·».
  */
 export function unir(...partes: (string | null | undefined)[]): string | null {

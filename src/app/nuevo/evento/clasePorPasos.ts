@@ -8,7 +8,7 @@ import { actosMarcados, conPrograma, horariosDelTaller, nombreDelSitio, resumenP
  * de lo que no es un evento de un día («Publicado» y compartir).
  */
 
-/** «Revisa» de un taller: sus sesiones en una línea («3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 a.m.»); null sin sesiones o sin hora. */
+/** «Revisa» de un taller: sus sesiones en una línea («3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 am»); null sin sesiones o sin hora. */
 export function textoSesiones(r: Respuestas, hoy: string): string | null {
   const horarios = horariosDelTaller(r);
   return horarios.length ? resumenTaller(horarios, hoy) : null;

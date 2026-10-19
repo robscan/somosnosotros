@@ -21,12 +21,31 @@ type Props = {
   alTocar?: { hace: () => void; nombre: string };
 };
 
+/**
+ * Si la etiqueta lleva una hora («7:00 pm», «Fue · 11:00 am–2:00 pm»), sus trozos: va tal cual, sin mayúsculas (el «pm» no se lee «PM»), y en
+ * vez de cortarse con «…» puede bajar de renglón, pero solo tras « · » o tras el guion del rango, nunca dentro de una hora (OL-418: un rango en
+ * 12 horas no cabe en un tercio de ancho). Null si no lleva hora.
+ */
+const trozosDeHora = (etiqueta: string): string[] | null =>
+  // Sin «(?<=…)»: el Safari de un iPhone viejo no lo entiende y este componente también va al teléfono.
+  /\d (am|pm)\b/.test(etiqueta) ? etiqueta.replace(/(–|· )/g, "$1\n").split("\n").filter(Boolean) : null;
+
 /** Un número de la ficha: el icono y lo que es arriba, el valor abajo. Si hay algo que hacer al tocarlo, toda la tarjeta lo hace. */
 export function Kpi({ icono, etiqueta, valor, salto, alTocar }: Props) {
+  const trozos = trozosDeHora(etiqueta);
   const contenido = (
     <>
       {icono}
-      <small>{etiqueta}</small>
+      {/* Una hora sola («7:00 pm») va en un renglón, como cualquier etiqueta; solo un rango o «Fue · …» se parte, y solo entre sus trozos. */}
+      {trozos && trozos.length > 1 ? (
+        <small className={`${styles.hora} ${styles.partida}`}>
+          {trozos.map((trozo, i) => (
+            <span key={i}>{trozo}</span>
+          ))}
+        </small>
+      ) : (
+        <small className={trozos ? styles.hora : undefined}>{etiqueta}</small>
+      )}
       <b>{valor}</b>
     </>
   );

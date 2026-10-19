@@ -9,7 +9,7 @@ export type EventoLigado = { inicio: string; fin: string | null; zona: string; /
  * pasados y no se perciban activos». Sustituye a la decisión de esa mañana, OL-380, de no enlazarlo porque su ficha decía «Esto ya no está»).
  *
  * Pasado es la regla de siempre (`eventoPaso`: su fin, o 3 h después de empezar si no tiene). Lo de hoy o lo que viene lleva su fecha con el
- * mismo `formatearLargo` de la ficha («viernes 9 de octubre · 20:00»); lo que pasó, «Fue el viernes 9 de octubre · 20:00». Con `cierre` («Cerró»
+ * mismo `formatearLargo` de la ficha («viernes 9 de octubre · 8:00 pm»); lo que pasó, «Fue el viernes 9 de octubre · 8:00 pm». Con `cierre` («Cerró»
  * para una exposición, «Terminó» para un festival) y un fin, se dice el día en que acabó: «Cerró el domingo 29 de noviembre».
  *
  * Lo que ya pasó y se marcó «se canceló» (OL-391) dice «Se canceló» en vez de «Fue el …»: no ocurrió. Lo que no ha pasado no se puede marcar

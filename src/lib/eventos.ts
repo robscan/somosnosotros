@@ -94,7 +94,7 @@ export const CLASES: readonly { clase: Clase; nombre: string; corto: string; fra
   { clase: "exposicion", nombre: "Exposición", corto: "Exposición", frase: "Se puede visitar varios días, en un horario." },
   { clase: "taller", nombre: "Taller o curso", corto: "Taller", frase: "Varias sesiones, una inscripción." },
   // OL-413 (definición aprobada por el founder el 18 de octubre): un nombre que reúne varias presentaciones; el programa es opcional.
-  { clase: "festival", nombre: "Festival", corto: "Festival", frase: "Reúne varias presentaciones." },
+  { clase: "festival", nombre: "Festival", corto: "Festival", frase: "Reúne varias actividades." },
 ];
 
 /** El nombre de una clase («Exposición»); una que no se reconoce es un evento. */

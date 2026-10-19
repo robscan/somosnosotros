@@ -1,7 +1,7 @@
 import { etiquetaDisciplina } from "../artistas";
 import { ultimoDiaDelPeriodo } from "../claseEvento";
 import { claseDeCosto, COOPERACION_SOLIDARIA, type Clase } from "../eventos";
-import { cuandoVariosDias, diaLocal, horaCorta, localAIso, zonaSegura } from "../fechas";
+import { cuandoVariosDias, diaLocal, horaCorta, localAIso, reloj24, zonaSegura } from "../fechas";
 import { tieneLetra } from "./medir";
 import { DOMINIO_CARTEL } from "./tokens";
 
@@ -178,7 +178,7 @@ export type TextosCartel = {
    * (o «30–2» y «OCT–NOV»); solo el mes, «OCT» y «2026». Cada plantilla usa UNA de las tres formas: la fecha sale una vez por cartel (OL-336).
    */
   fecha: { numero: string; mes: string };
-  /** «19:00 h», «19:00–21:00 h» (varios días con el mismo horario) u «Horario por día»; null a un festival o una exposición (solo el mes). */
+  /** «7:00 pm», «7:00–9:00 pm» (varios días con el mismo horario) u «Horario por día»; null a un festival o una exposición (solo el mes). OL-418: sin «h». */
   hora: string | null;
   sitio: string | null;
   artistas: { nombres: string[]; mas: number };
@@ -214,10 +214,10 @@ function fechas(e: EventoCartel, ahora: Date): Pick<TextosCartel, "dia" | "diaCo
       diaCorto: `${diaCortoCartel(e.inicio, z)} – ${diaCortoCartel(mediodia(hasta, z), z)}`,
       fecha: { numero: `${numeroDe(desde)}–${numeroDe(hasta)}`, mes: mismoMes ? mayus(mesDe(hasta, "short")) : `${mayus(mesDe(desde, "short"))}–${mayus(mesDe(hasta, "short"))}` },
       // Con un fin a las 00:00 el evento acaba con su último día (la misma regla de arriba): la hora es solo la de inicio, como con 23:59.
-      hora: e.conSesiones ? "Horario por día" : `${varios && !(e.fin && horaCorta(e.fin, z) === "00:00") ? varios.horas : horaCorta(e.inicio, z)} h`,
+      hora: e.conSesiones ? "Horario por día" : varios && !(e.fin && reloj24(e.fin, z) === "00:00") ? varios.horas : horaCorta(e.inicio, z),
     };
   }
-  return { dia: diaLargoCartel(e.inicio, z, ahora), diaCorto: diaCortoCartel(e.inicio, z), fecha: { numero: numeroDe(desde), mes: mayus(mesDe(desde, "short")) }, hora: `${horaCorta(e.inicio, z)} h` };
+  return { dia: diaLargoCartel(e.inicio, z, ahora), diaCorto: diaCortoCartel(e.inicio, z), fecha: { numero: numeroDe(desde), mes: mayus(mesDe(desde, "short")) }, hora: horaCorta(e.inicio, z) };
 }
 
 /**

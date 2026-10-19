@@ -90,26 +90,26 @@ describe("una pieza por serie (OL-385)", () => {
 
 describe("la tarjeta de una pieza en «Nuevos eventos» (OL-385)", () => {
   const conFecha = (e: EventoAgenda) => tarjetaDeInicio(e, ahora);
-  it("festival: la tarjeta del festival, con «3 actos nuevos» en la ceja junto a «Festival», y lleva a su ficha", () => {
+  it("festival: la tarjeta del festival, con «3 actividades nuevas» en la ceja junto a «Festival», y lleva a su ficha", () => {
     const t = tarjetaDePieza({ tipo: "festival", marco: conFecha(xantolo), actos: foroInfantil.map(conFecha), nuevos: 3, primero: conFecha(foroInfantil[0]) }, ahora);
-    expect(cejaDeTarjeta(t)).toEqual(["Festival", "3 actos nuevos"]);
+    expect(cejaDeTarjeta(t)).toEqual(["Festival", "3 actividades nuevas"]);
     expect(t.href).toBe("/eventos/xantolo");
     expect(t.clave).toBe("festival-xantolo");
-    expect(textoActosNuevos(1)).toBe("1 acto nuevo");
+    expect(textoActosNuevos(1)).toBe("1 actividad nueva");
   });
   it("serie: la tarjeta de la más próxima, «6 funciones» en la ceja, «desde …» en su cuándo y el sello del primer día al último", () => {
     const funciones = extraordinarias.map(conFecha);
     const t = tarjetaDePieza({ tipo: "serie", cabeza: funciones[0], eventos: funciones, funciones: 6, desde: funciones[0].inicio, hasta: funciones[5].inicio, primero: funciones[0] }, ahora);
     expect(cejaDeTarjeta(t)).toEqual(["6 funciones"]);
-    expect(t.detalle).toBe("desde vie 16 · 18:00"); // sin el mes: lo dice el sello
-    expect(textoDesde(funciones[0], ahora, true)).toBe("desde vie 16 de oct · 18:00"); // en el renglón de la agenda, con él
+    expect(t.detalle).toBe("desde vie 16 · 6:00 pm"); // sin el mes: lo dice el sello
+    expect(textoDesde(funciones[0], ahora, true)).toBe("desde vie 16 de oct · 6:00 pm"); // en el renglón de la agenda, con él
     expect(t.selloFecha).toMatchObject({ mes: "oct", dia: "16–18" });
     expect(t.href).toBe("/eventos/ext-1");
     // Dos funciones el mismo día: el sello es ese día.
     const dos = sotano.map(conFecha);
     expect(tarjetaDePieza({ tipo: "serie", cabeza: dos[0], eventos: dos, funciones: 2, desde: dos[0].inicio, hasta: dos[1].inicio, primero: dos[0] }, ahora).selloFecha).toMatchObject({ mes: "oct", dia: "24" });
-    expect(textoDesde({ inicio: a("2026-10-12", "20:00"), zona: ZONA }, ahora)).toBe("desde hoy · 20:00");
-    expect(textoDesde({ inicio: a("2026-10-13", "20:00"), zona: ZONA }, ahora, true)).toBe("desde mañana · 20:00");
+    expect(textoDesde({ inicio: a("2026-10-12", "20:00"), zona: ZONA }, ahora)).toBe("desde hoy · 8:00 pm");
+    expect(textoDesde({ inicio: a("2026-10-13", "20:00"), zona: ZONA }, ahora, true)).toBe("desde mañana · 8:00 pm");
   });
 });
 

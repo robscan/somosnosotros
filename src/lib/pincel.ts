@@ -4,6 +4,7 @@
  * El resto (consultas, acciones de servidor) vive en src/app/admin/obras-colectivas.
  */
 
+import { horaCorta } from "./fechas";
 import { distanciaKm, type Punto as PuntoGeo } from "./geo";
 
 /** "Pincel en {lugar}": nombre sugerido al crear una obra por ubicación, sin partir de un evento. */
@@ -30,12 +31,11 @@ export function alEscribirTitulo(texto: string, lugarNombre: string | null): Tit
   return { modo: "manual", texto };
 }
 
-/** Nombre por defecto de una pared creada «aquí» sin lugar del directorio (OL-127): «Pincel · 22 sep, 13:05», en
- * la zona de la obra, editable después. */
+/** Nombre por defecto de una pared creada «aquí» sin lugar del directorio (OL-127): «Pincel · 22 sep, 1:05 pm» (la hora de toda la app,
+ * `horaCorta`, OL-418), en la zona de la obra, editable después. */
 export function nombreParedSinLugar(fecha: Date, zona: string): string {
   const dia = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: zona }).format(fecha).replace(/\.$/, "");
-  const hora = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: zona }).format(fecha);
-  return `Pincel · ${dia}, ${hora}`;
+  return `Pincel · ${dia}, ${horaCorta(fecha.toISOString(), zona)}`;
 }
 
 /**

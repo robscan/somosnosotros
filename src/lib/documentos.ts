@@ -100,7 +100,7 @@ export function fechaElaborado(ahora: Date, zona: string = ZONA_INICIAL): string
   return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), day: "numeric", month: "short", year: "numeric" }).format(ahora).replace(/[.,]/g, "");
 }
 
-/** La fecha de un renglón: «8 oct · 19:00»; si dura varios días, «6 oct – 7 oct» (una exposición, un taller). */
+/** La fecha de un renglón: «8 oct · 7:00 pm»; si dura varios días, «6 oct – 7 oct» (una exposición, un taller). */
 export function cuandoDocumento(e: Pick<EventoPasado, "inicio" | "fin" | "zona">): string {
   const zona = e.zona || ZONA_INICIAL;
   if (e.fin && esDeVariosDias(e.inicio, e.fin, zona)) return `${fechaCorta(e.inicio, zona)} – ${fechaCorta(e.fin, zona)}`;
@@ -248,14 +248,14 @@ export function etiquetasPeriodo(ahora: Date, zona: string = ZONA_INICIAL): Reco
 
 /** Las definiciones de cada cifra, tal cual el prototipo firmado (I3: «dijeron "Voy"» nunca es asistencia). */
 export const DEFINICIONES = {
-  actividades: "Eventos, talleres y expos del periodo, por su día de inicio; un festival no se suma además de sus actos.",
+  actividades: "Eventos, talleres y expos del periodo, por su día de inicio; un festival no se suma además de sus actividades.",
   realizadas: "Las registradas que nadie marcó «se canceló».",
   artistas: "Fichas distintas ligadas a esas actividades.",
   voy: "Personas que marcaron «Voy» en la app. No es asistencia medida.",
 } as const;
 
 /** Las reglas de conteo que repite el pie del informe. */
-export const REGLAS_INFORME = "un festival no se suma además de sus actos; una expo cuenta una vez";
+export const REGLAS_INFORME = "un festival no se suma además de sus actividades; una expo cuenta una vez";
 
 /** Las cuentas del informe de un periodo. */
 export type CuentasInforme = {

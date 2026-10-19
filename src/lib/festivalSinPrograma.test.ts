@@ -38,7 +38,7 @@ describe("¿un festival sin programa va como evento?", () => {
     expect(soloInteres("exposicion")).toBe(true);
   });
   it("su línea bajo el título: su día y su hora (la noche que cruza la medianoche es un día) y su lugar; de varios días, sus días", () => {
-    expect(lineaDeFestivalSinPrograma(cumbiachella, "Foro lunaria", ahora)).toBe("sáb 17 de oct · 20:00 · Foro lunaria");
+    expect(lineaDeFestivalSinPrograma(cumbiachella, "Foro lunaria", ahora)).toBe("sáb 17 de oct · 8:00 pm–2:00 am · Foro lunaria");
     expect(lineaDeFestivalSinPrograma(jazz, "Foro lunaria", ahora)).toBe("Del 20 al 21 de oct · Foro lunaria");
   });
 });

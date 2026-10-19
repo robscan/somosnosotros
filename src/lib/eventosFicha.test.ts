@@ -77,9 +77,9 @@ describe("F · el festival en la ficha va en bloque, por su siguiente función a
     const solo = eventosDeFicha([evento("huerfano", { evento_padre_id: "nadie", inicio: a("2026-10-15", "20:00") })], [], ahora);
     expect(solo.dias[0].eventos[0]).toMatchObject({ tipo: "renglon", evento: { id: "huerfano" } });
   });
-  it("la cabecera dice su cuándo y cuántas funciones tiene aquí (o suyas, en un artista)", () => {
-    expect(cabezaDeBloque(cartelera, 7, "lugar", ahora)).toBe("Hasta el sáb 17 de oct · 7 funciones aquí");
-    expect(cabezaDeBloque(cartelera, 1, "artista", ahora)).toBe("Hasta el sáb 17 de oct · 1 función suya");
+  it("la cabecera dice su cuándo y cuántas actividades tiene aquí (o suyas, en un artista; OL-418)", () => {
+    expect(cabezaDeBloque(cartelera, 7, "lugar", ahora)).toBe("Hasta el sáb 17 de oct · 7 actividades aquí");
+    expect(cabezaDeBloque(cartelera, 1, "artista", ahora)).toBe("Hasta el sáb 17 de oct · 1 actividad suya");
     expect(cabezaDeBloque(porConfirmar, 0, "lugar", ahora)).toBe("Del 20 de oct al 20 de dic · Programa por confirmar");
   });
   it("un festival de un día sin programa (OL-413, Cumbiachella) no es una cabecera: es un renglón en su día, con su hora", () => {
@@ -119,7 +119,7 @@ describe("E · las exposiciones en «Para visitar», sin Voy (OL-410)", () => {
     expect(f.dias.flatMap((g) => g.eventos).some((p) => p.tipo === "renglon" && p.evento.clase === "exposicion")).toBe(false);
   });
   it("abierta: sus horas de hoy con el reloj y hasta cuándo; nunca «00:00»", () => {
-    expect(lineaParaVisitar(fotogramas, ahora)).toEqual({ cuando: "Abre 17:00–22:00", horas: true, nota: "hasta el dom 8 de nov" }); // en 24 h, como las horas de los renglones
+    expect(lineaParaVisitar(fotogramas, ahora)).toEqual({ cuando: "5:00–10:00 pm", horas: true, nota: "hasta el dom 8 de nov" }); // sin «Abre»: así cabe el mes (founder, 2026-10-19, OL-418)
     expect(lineaParaVisitar({ ...fotogramas, horario: [] }, ahora)).toEqual({ cuando: "Horario por confirmar", horas: true, nota: "hasta el dom 8 de nov" });
     expect(lineaParaVisitar(fotogramas, new Date("2026-10-19T18:00:00Z")).cuando).toBe("Hoy cierra"); // lunes
   });

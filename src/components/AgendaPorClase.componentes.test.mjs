@@ -126,10 +126,10 @@ test("el festival es un bloque con sus actos del día, el taller dice «Sesión 
   assert.match(await bloque.innerText(), /Festival de Cine de Invierno\s+Programa registrado: 4 actividades · 2 este día/);
   assert.deepEqual(await bloque.locator("a[href^='/eventos/cine']").evaluateAll((as) => as.map((x) => x.getAttribute("href"))), ["/eventos/cine", "/eventos/cine2", "/eventos/cine3"]);
   assert.equal(await bloque.getByRole("button", { name: /^Voy/ }).count(), 2);
-  assert.match(await sabado.locator("a[href='/eventos/taller']").innerText(), /18:00–20:00\s+· Sesión 2 de 3 · \$300/);
+  assert.match(await sabado.locator("a[href='/eventos/taller']").innerText(), /6:00–8:00 pm\s+· Sesión 2 de 3 · \$300/);
   // «Para visitar hoy»: la abierta hoy según su horario y, después, la que no tiene horario, sin prometer horas (OL-381).
   const visitar = grupo(page, "Para visitar hoy");
-  assert.match(await visitar.innerText(), /Ecos de papel\s+Abre 10:00–18:00\s+· hasta el sáb 31 de oct\s+MUNI[\s\S]*Fotovisión\s+Horario por confirmar\s+· hasta el dom 20 de dic\s+Foro/);
+  assert.match(await visitar.innerText(), /Ecos de papel\s+10:00 am–6:00 pm\s+· hasta el sáb 31 de oct\s+MUNI[\s\S]*Fotovisión\s+Horario por confirmar\s+· hasta el dom 20 de dic\s+Foro/);
   assert.equal(await visitar.getByRole("button").count(), 0, "sin «Voy»");
   // Ninguna exposición ni el marco salen como renglón de un día; nada dice «00:00».
   assert.equal(await page.locator("a[href='/eventos/ecos']").count(), 1);
@@ -155,7 +155,7 @@ test("Filtros: «Qué» elige una sola cosa, el botón dice lo que se verá y ap
   assert.equal(await aplicar(page, "Filtros").innerText(), "Ver 2 exposiciones");
   await aplicar(page, "Filtros").click();
   assert.deepEqual(await titulos(page), ["Para visitar· 2"]);
-  assert.match(await grupo(page, "Para visitar").innerText(), /Ecos de papel\s+Hasta el sáb 31 de oct\s+· Abre hoy 10:00–18:00[\s\S]*Fotovisión\s+Hasta el dom 20 de dic\s+· Horario por confirmar\s+Foro/);
+  assert.match(await grupo(page, "Para visitar").innerText(), /Ecos de papel\s+Hasta el sáb 31 de oct\s+· Abre hoy 10:00 am–6:00 pm[\s\S]*Fotovisión\s+Hasta el dom 20 de dic\s+· Horario por confirmar\s+Foro/);
   assert.equal(await page.evaluate(() => history.length), largo, "filtrar no es navegar");
   // El chip para quitarlo y, con él, la agenda de siempre.
   await page.getByRole("button", { name: "Exposiciones" }).click();

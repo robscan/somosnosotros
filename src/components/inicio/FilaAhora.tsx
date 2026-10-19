@@ -44,7 +44,7 @@ function guardarVistos(vistos: Set<string>) {
  */
 /**
  * El nombre accesible de un círculo: la cuenta atrás completa y el título, y delante lo que se ve bajo el círculo cuando dice otra cosa
- * («19:00 · En 1 h: …», «21:00 · Hoy: …»). Así el texto visible está en el nombre y el control por voz lo encuentra (WCAG 2.5.3).
+ * («7:00 pm · En 1 h: …», «9:00 pm · Hoy: …»). Así el texto visible está en el nombre y el control por voz lo encuentra (WCAG 2.5.3).
  */
 function nombreCirculo(visible: string, etiqueta: string, titulo: string): string {
   return etiqueta.startsWith(visible) ? `${etiqueta}: ${titulo}` : `${visible} · ${etiqueta}: ${titulo}`;

@@ -113,14 +113,14 @@ export const eventosDePiezas = <T>(piezas: readonly Pieza<T>[], lista: readonly 
 /** Lo que representa una pieza en una lista de eventos (contar, enlazar): el evento suelto, el marco del festival o la cabeza de la serie. */
 export const cabezaDe = <T>(p: Pieza<T>): T => (p.tipo === "suelto" ? p.evento : p.tipo === "festival" ? p.marco : p.cabeza);
 
-/** «1 acto nuevo», «3 actos nuevos». */
-export const textoActosNuevos = (n: number): string => `${n} ${n === 1 ? "acto nuevo" : "actos nuevos"}`;
+/** «1 actividad nueva», «3 actividades nuevas»: lo de dentro de un festival se dice «actividades» en toda la app (OL-418; founder, 2026-10-19). */
+export const textoActosNuevos = (n: number): string => `${n} ${n === 1 ? "actividad nueva" : "actividades nuevas"}`;
 /** «6 funciones». */
 export const textoFunciones = (n: number): string => `${n} ${n === 1 ? "función" : "funciones"}`;
 /**
- * El cuándo de una serie: «desde vie 16 · 20:00» (o «desde hoy · 20:00», «desde mañana · 20:00»), el día y la hora de su función más próxima. En la
+ * El cuándo de una serie: «desde vie 16 · 8:00 pm» (o «desde hoy · 8:00 pm», «desde mañana · 8:00 pm»), el día y la hora de su función más próxima. En la
  * tarjeta de Inicio va sin el mes, que ya dice su sello («oct 16–18») y así cabe en la mediana sin cortarse; en el renglón de la agenda, que no
- * lleva sello, con él («desde vie 16 de oct · 20:00», `conMes`).
+ * lleva sello, con él («desde vie 16 de oct · 8:00 pm», `conMes`).
  */
 export function textoDesde(e: { inicio: string; zona: string }, ahora: Date = new Date(), conMes = false): string {
   const dia = diaCorto(e.inicio, ahora, e.zona);
@@ -131,18 +131,29 @@ export function textoDesde(e: { inicio: string; zona: string }, ahora: Date = ne
 // ---------- la ficha de una función (OL-385) ----------
 
 /**
- * Las otras funciones de un evento, para su ficha («Otras funciones»): de los candidatos (los del mismo lugar o el mismo sitio escrito, como los lee
- * la ficha), los que son la misma serie (`mismaSerie`), ni marco ni exposición, que no han pasado (`paso`, la regla de la app: `eventoPaso`), sin él
- * mismo; por hora. Sin funciones hermanas, vacío: la ficha no cambia.
+ * Las funciones hermanas de un evento, las que ya pasaron y las que vienen: de los candidatos (los del mismo lugar o el mismo sitio escrito, como los
+ * lee la ficha), los que son la misma serie (`mismaSerie`), ni marco ni exposición, sin él mismo; por hora. Con ellas se cuenta «Función n de N».
  */
-export function otrasFunciones<T extends Agrupable>(e: Agrupable, candidatos: readonly T[], paso: (x: T) => boolean): T[] {
+export function funcionesHermanas<T extends Agrupable>(e: Agrupable, candidatos: readonly T[]): T[] {
   if (esMarco(e) || esExposicion(e)) return [];
-  return candidatos.filter((x) => x.id !== e.id && !esMarco(x) && !esExposicion(x) && mismaSerie(e, x) && !paso(x)).toSorted(porInicio);
+  return candidatos.filter((x) => x.id !== e.id && !esMarco(x) && !esExposicion(x) && mismaSerie(e, x)).toSorted(porInicio);
 }
 
-/** «Función 2 de 6»: cuál es entre las que no han pasado, contándose ella. Null sin otras funciones. */
-export function textoFuncion(e: Pick<Agrupable, "id" | "inicio">, otras: readonly Pick<Agrupable, "id" | "inicio">[]): string | null {
-  if (!otras.length) return null;
-  const todas = [e, ...otras].toSorted(porInicio);
+/**
+ * Las otras funciones de un evento, para su ficha («Otras funciones»): sus hermanas (`funcionesHermanas`) que no han pasado (`paso`, la regla de la
+ * app: `eventoPaso`); por hora. Sin funciones hermanas por venir, vacío: la ficha no cambia.
+ */
+export function otrasFunciones<T extends Agrupable>(e: Agrupable, candidatos: readonly T[], paso: (x: T) => boolean): T[] {
+  return funcionesHermanas(e, candidatos).filter((x) => !paso(x));
+}
+
+/**
+ * «Función 2 de 6»: cuál es entre todas las de la serie, contándose ella, y cuántas son en total, también las que ya pasaron (OL-418; bitácora 446,
+ * UX 11: antes contaba solo las que faltaban, y «Sesión 2 de 3» cuenta todas). `hermanas`, las otras funciones, pasadas y por venir
+ * (`funcionesHermanas`). Null sin hermanas.
+ */
+export function textoFuncion(e: Pick<Agrupable, "id" | "inicio">, hermanas: readonly Pick<Agrupable, "id" | "inicio">[]): string | null {
+  if (!hermanas.length) return null;
+  const todas = [e, ...hermanas.filter((x) => x.id !== e.id)].toSorted(porInicio);
   return `Función ${todas.findIndex((x) => x.id === e.id) + 1} de ${todas.length}`;
 }

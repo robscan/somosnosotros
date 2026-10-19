@@ -54,31 +54,31 @@ describe("resumenCadaDia: la línea del paso «¿A qué hora, cada día?» (OL-3
   const dias = { desde: "2026-10-10", hasta: "2026-10-12" };
   const HOY = "2026-10-06";
   it("con hora de fin: «cada día de 8:00 a 9:00 p.m.»", () => {
-    expect(resumenCadaDia(dias, "20:00", "2026-10-12T21:00", HOY)).toBe("Del 10 al 12 de oct · cada día de 8:00 a 9:00 p.m.");
+    expect(resumenCadaDia(dias, "20:00", "2026-10-12T21:00", HOY)).toBe("Del 10 al 12 de oct · cada día de 8:00 a 9:00 pm");
   });
   it("si las horas no comparten a.m. o p.m., cada una lleva el suyo", () => {
-    expect(resumenCadaDia(dias, "11:00", "2026-10-12T14:00", HOY)).toBe("Del 10 al 12 de oct · cada día de 11:00 a.m. a 2:00 p.m.");
+    expect(resumenCadaDia(dias, "11:00", "2026-10-12T14:00", HOY)).toBe("Del 10 al 12 de oct · cada día de 11:00 am a 2:00 pm");
   });
   it("sin hora de fin (vacía o la de «acaba con su último día»): «cada día desde las 8:00 p.m.»", () => {
-    expect(resumenCadaDia(dias, "20:00", "", HOY)).toBe("Del 10 al 12 de oct · cada día desde las 8:00 p.m.");
-    expect(resumenCadaDia(dias, "20:00", "2026-10-12T23:59", HOY)).toBe("Del 10 al 12 de oct · cada día desde las 8:00 p.m.");
+    expect(resumenCadaDia(dias, "20:00", "", HOY)).toBe("Del 10 al 12 de oct · cada día desde las 8:00 pm");
+    expect(resumenCadaDia(dias, "20:00", "2026-10-12T23:59", HOY)).toBe("Del 10 al 12 de oct · cada día desde las 8:00 pm");
   });
   it("la una dice «la», no «las»", () => {
-    expect(resumenCadaDia(dias, "13:00", "", HOY)).toBe("Del 10 al 12 de oct · cada día desde la 1:00 p.m.");
-    expect(resumenCadaDia(dias, "12:00", "", HOY)).toBe("Del 10 al 12 de oct · cada día desde las 12:00 p.m.");
+    expect(resumenCadaDia(dias, "13:00", "", HOY)).toBe("Del 10 al 12 de oct · cada día desde la 1:00 pm");
+    expect(resumenCadaDia(dias, "12:00", "", HOY)).toBe("Del 10 al 12 de oct · cada día desde las 12:00 pm");
   });
   it("de un mes a otro y con el año si no es el actual", () => {
-    expect(resumenCadaDia({ desde: "2026-10-30", hasta: "2026-11-02" }, "19:00", "2026-11-02T21:00", HOY)).toBe("Del 30 de oct al 2 de nov · cada día de 7:00 a 9:00 p.m.");
-    expect(resumenCadaDia({ desde: "2027-02-10", hasta: "2027-02-12" }, "19:00", "", HOY)).toBe("Del 10 al 12 de feb de 2027 · cada día desde las 7:00 p.m.");
+    expect(resumenCadaDia({ desde: "2026-10-30", hasta: "2026-11-02" }, "19:00", "2026-11-02T21:00", HOY)).toBe("Del 30 de oct al 2 de nov · cada día de 7:00 a 9:00 pm");
+    expect(resumenCadaDia({ desde: "2027-02-10", hasta: "2027-02-12" }, "19:00", "", HOY)).toBe("Del 10 al 12 de feb de 2027 · cada día desde las 7:00 pm");
   });
 });
 
 describe("horasDelDia: dos horas de un mismo día en la letra de los chips", () => {
   it("sin hora de fin, solo la de inicio", () => {
-    expect(horasDelDia("20:00")).toEqual({ desde: "8:00 p.m." });
+    expect(horasDelDia("20:00")).toEqual({ desde: "8:00 pm" });
   });
   it("con el mismo «p.m.», se dice una vez; con distinto, cada una el suyo", () => {
-    expect(horasDelDia("20:00", "21:00")).toEqual({ desde: "8:00", hasta: "9:00 p.m." });
-    expect(horasDelDia("11:00", "14:00")).toEqual({ desde: "11:00 a.m.", hasta: "2:00 p.m." });
+    expect(horasDelDia("20:00", "21:00")).toEqual({ desde: "8:00", hasta: "9:00 pm" });
+    expect(horasDelDia("11:00", "14:00")).toEqual({ desde: "11:00 am", hasta: "2:00 pm" });
   });
 });

@@ -3,7 +3,7 @@ import type { Asistencia } from "@/lib/deslizar";
 import { festivalComoEvento } from "@/lib/claseEvento";
 import { cuandoDeTarjeta, notaDeClase } from "@/lib/destacados";
 import { costoEnLista, fotoDeEvento, hrefEvento, sitioEnLista } from "@/lib/eventos";
-import { cuandoPorDia, cuandoVariosDias, diaCorto, diaLocal, horaCorta } from "@/lib/fechas";
+import { cuandoPorDia, cuandoVariosDias, diaCorto, horasDelEvento } from "@/lib/fechas";
 import { textoParte } from "@/lib/ocurrencias";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
@@ -20,16 +20,16 @@ type Props = {
   /** Con botón, "Voy" o "Vas" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
   boton?: EstadoBotonRenglon;
   /**
-   * Muestra el día además de la hora ("jue 8 de oct · 19:00"). Solo lo pide la pestaña Nuevos, donde el encabezado dice
+   * Muestra el día además de la hora ("jue 8 de oct · 7:00 pm"). Solo lo pide la pestaña Nuevos, donde el encabezado dice
    * cuándo se publicó y no cuándo es el evento. En las listas por día (la agenda y las fichas de lugar y de artista) el
    * día ya lo dice su encabezado, así que ahí se queda como estaba.
    */
   conDia?: boolean;
   /** La línea de cuándo de algo que no es un evento de un día (OL-321: «Hasta el dom 30 de nov», «3 sesiones · …», el programa de un festival);
    *  sin ella, la de siempre, que ya sabe la de una exposición y la del marco de un festival (OL-322, `cuandoDeTarjeta`). La usan «Publicado» y,
-   *  en «Para visitar hoy», «Abre 10:00 a.m.–6:00 p.m.» o «Horario por confirmar» (con `horas`: lleva el reloj, no el calendario). */
+   *  en «Para visitar hoy», «Abre 10:00 am–6:00 pm» o «Horario por confirmar» (con `horas`: lleva el reloj, no el calendario). */
   cuando?: string;
-  /** El cuándo son las horas de un día («Abre 10:00 a.m.–6:00 p.m.»): con el icono del reloj. */
+  /** El cuándo son las horas de un día («Abre 10:00 am–6:00 pm»): con el icono del reloj. */
   horas?: boolean;
   /** Lo que va tras el cuándo, antes del precio: «hasta el 30 de nov» en «Para visitar hoy», «Abre hoy …» en la lista de exposiciones; sin ella,
    *  lo que añade su clase («Horario por confirmar», el programa de un festival: `notaDeClase`). */
@@ -49,21 +49,19 @@ function cuandoDeVarios(e: Pick<EventoAgenda, "inicio" | "fin" | "zona" | "sesio
 }
 
 /**
- * La hora de un renglón: la de inicio y, si termina el mismo día, la de fin («17:30–19:20»; OL-409, «S»: cada función y cada sesión con su hora
- * en su día). Sin fin, o si acaba otro día (una noche que cruza la medianoche), solo la de inicio.
+ * La hora de un renglón: la de inicio y, si termina el mismo día, la de fin («5:30–7:20 pm»; OL-409, «S»: cada función y cada sesión con su hora
+ * en su día); una noche que acaba de madrugada, también con su fin («8:00 pm–2:00 am», OL-418: una noche es un día). Sin fin, solo la de inicio
+ * (`horasDelEvento`).
  */
-function horaDelRenglon(e: Pick<EventoAgenda, "inicio" | "fin" | "zona">): string {
-  const inicio = horaCorta(e.inicio, e.zona);
-  return e.fin && diaLocal(new Date(e.fin), e.zona) === diaLocal(new Date(e.inicio), e.zona) ? `${inicio}–${horaCorta(e.fin, e.zona)}` : inicio;
-}
+const horaDelRenglon = (e: Pick<EventoAgenda, "inicio" | "fin" | "zona">): string => horasDelEvento(e.inicio, e.fin, e.zona);
 
 /**
  * Renglón de evento: foto a la izquierda (la del evento, la del próximo acto de un festival sin imagen o la del lugar: `fotoDeEvento`), el
  * título y dos líneas de datos, cada una cortada con puntos suspensivos (H-09, doc 50: antes crecía hasta 190 px con la dirección postal y cada dato en su renglón). La
- * primera es cuándo —«19:00», con el día si hace falta; en un evento de varios días, «Del 10 al 12 de oct · 8:00–9:00 p.m.»— y, tras un punto, lo que no es gratis y cuántos van (sin «Gratis» en
+ * primera es cuándo —«7:00 pm», con el día si hace falta; en un evento de varios días, «Del 10 al 12 de oct · 8:00–9:00 pm»— y, tras un punto, lo que no es gratis y cuántos van (sin «Gratis» en
  * todos); la segunda, el nombre del sitio, sin su dirección postal (esa vive en la ficha).
  *
- * El renglón de un día de un evento con varios (OL-320, `lib/ocurrencias`) dice la hora de ese día y, tras ella, cuál es: «20:00 · Día 2 de 3». El
+ * El renglón de un día de un evento con varios (OL-320, `lib/ocurrencias`) dice la hora de ese día y, tras ella, cuál es: «8:00 pm · Día 2 de 3». El
  * evento entero con horario por día (la pestaña Nuevos, donde sale una sola vez) dice sus días y «horarios por día», como su ficha.
  */
 export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false, cuando: dado, horas = false, nota = null, cancelado = false }: Props) {
