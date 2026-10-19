@@ -72,7 +72,7 @@ export default function FichaHoja({ lugar, piezas, onCerrar }: Props) {
       ) : piezas === "fallo" ? (
         <div className={ficha.cuerpo} data-cuerpo>
           <p className={styles.fallo}>
-            No se pudo abrir la ficha aquí. <Link href={hrefLugar(lugar)}>Abrir la ficha completa</Link>
+            No se pudo abrir la ficha aquí. <Link href={hrefLugar(lugar)}>Ver más información</Link>
           </p>
         </div>
       ) : (

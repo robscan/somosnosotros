@@ -9,7 +9,7 @@ export type Candidato = ArtistaResumen & { ciudad: string };
 
 /**
  * Los artistas del directorio cuyo nombre contiene lo escrito (`artistas_con_nombre`: visibles, sin acentos ni mayúsculas, seis como mucho),
- * 300 ms después de dejar de escribir, como el formulario de siempre: sirven para decir «Ya tiene ficha» mientras se escribe y, en «Revisa»,
+ * 300 ms después de dejar de escribir, como el formulario de siempre: sirven para decir «Ya está publicado» mientras se escribe y, en «Revisa»,
  * para no publicar uno repetido en la misma ciudad. Lo que llegó para otro texto se descarta: la lista siempre es la del nombre de ahora.
  */
 export default function useArtistasConNombre(nombre: string): Candidato[] {

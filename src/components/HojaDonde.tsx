@@ -687,7 +687,7 @@ export default function HojaDonde(props: Props) {
               {avisoPublico && <span className={styles.notaAjuste}>{avisoPublico}</span>}
               {avisoExiste && (
                 <span className={styles.notaAjuste}>
-                  «{avisoExiste.nombre}» ya existe cerca de aquí. <Link href={hrefLugar(avisoExiste)}>Ver ficha</Link>
+                  «{avisoExiste.nombre}» ya existe cerca de aquí. <Link href={hrefLugar(avisoExiste)}>Ver más información</Link>
                 </span>
               )}
             </div>
