@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { bloquearFondo, esCapaSuperior, soltarFondo } from "@/lib/bloqueoFondo";
 import { ordenarLugares, puntoDeCercania, type LugarLista } from "@/lib/lugares";
 import { vistaQueEncuadra, type Vista } from "@/lib/mapa";
 import { lugaresDelMapa, type SedeMapa } from "@/lib/mapaSedes";
@@ -51,10 +52,12 @@ type Props = {
  * punto) y, bajo ella, «Encuadrar» cuando la persona movió el mapa; el aviso de la ubicación, si no se pudo leer; y abajo la tarjeta del pin elegido:
  * `TarjetaSede` (el ángulo abre la ficha del lugar o del sitio, nunca un mapa) y «Cómo llegar». Tocar el mapa fuera de los pines o el mismo pin suelta la
  * tarjeta. Abre ya encuadrada (`vistaQueEncuadra`), o donde se dejó; al cerrarse, `Mapa` quita el mapa de Mapbox (`quitarMapa`).
- * Se pinta al final del body, como las hojas y el visor del cartel: lo de detrás queda inerte y sin desplazarse mientras está abierta.
+ * Se pinta al final del body, como las hojas y el visor del cartel: lo de detrás queda inerte y sin desplazarse mientras está abierta, con la pila
+ * común de capas (`lib/bloqueoFondo`, OL-419), la misma de las hojas: cerrar el mapa y una hoja en cualquier orden deja el fondo libre.
  */
 export default function CapaMapa({ sedes, etiqueta, elegido, onElegir, vista, alMover, movido, onMovido, onCerrar }: Props) {
   const capa = useRef<HTMLDivElement>(null);
+  const dueno = useId();
   const tarjeta = useRef<HTMLDivElement>(null);
   const lugares = useMemo(() => lugaresDelMapa(sedes), [sedes]);
   const sede = sedes.find((s) => s.clave === elegido) ?? null;
@@ -126,24 +129,21 @@ export default function CapaMapa({ sedes, etiqueta, elegido, onElegir, vista, al
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo cuando cambia el pin elegido
   }, [elegido]);
 
-  // Mientras está abierta: lo de detrás, inerte y quieto; Escape la cierra; al cerrarse, el foco vuelve a lo que la abrió (el mapa de la ficha).
+  // Mientras está abierta: lo de detrás, inerte y quieto (la pila común); Escape la cierra si es la capa de arriba; al cerrarse, el foco vuelve a lo
+  // que la abrió (el mapa de la ficha).
   useEffect(() => {
     const propia = capa.current!;
     const disparador = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const fondo = [...document.body.children].filter((e): e is HTMLElement => e instanceof HTMLElement && e !== propia && !e.inert);
-    fondo.forEach((e) => (e.inert = true));
-    const raiz = document.documentElement;
-    raiz.style.overflow = "hidden";
+    bloquearFondo(dueno, propia);
     propia.querySelector<HTMLElement>(`.${styles.cerrar}`)?.focus({ preventScroll: true });
-    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
+    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && esCapaSuperior(dueno) && onCerrar();
     document.addEventListener("keydown", alTeclear);
     return () => {
       document.removeEventListener("keydown", alTeclear);
-      fondo.forEach((e) => (e.inert = false));
-      raiz.style.overflow = "";
-      if (disparador?.isConnected) disparador.focus({ preventScroll: true });
+      soltarFondo(dueno);
+      if (disparador?.isConnected && !disparador.closest("[inert]")) disparador.focus({ preventScroll: true });
     };
-  }, [onCerrar]);
+  }, [onCerrar, dueno]);
 
   // La marca de Mapbox va abajo a la izquierda: sobre la tarjeta si la hay, si no sobre la zona segura.
   const marca = { "--mapa-marca-abajo": sede ? `${tapa.abajo + 8}px` : undefined } as CSSProperties;

@@ -10,7 +10,7 @@ before(async()=>{
  dir=await mkdtemp(join(tmpdir(),'fila-ahora-'));
  const mocks={
  'next/image':"import React from 'react';export default function Image({quality,priority,...p}){return React.createElement('img',p)}",
- 'next/link':"import React from 'react';export default function Link({replace,prefetch,...p}){return React.createElement('a',p)}",
+ 'next/link':"import React from 'react';export default function Link({replace,prefetch,onNavigate,...p}){return React.createElement('a',p)}",
  '@/app/eventos/acciones':"export async function cambiarAsistencia(id,estado){(window.guardados??=[]).push([id,estado]);return !window.fallar}",
  };
  await build({absWorkingDir:root,bundle:true,outfile:join(dir,'app.js'),jsx:'automatic',stdin:{resolveDir:root,loader:'tsx',contents:`

@@ -248,6 +248,11 @@
   gap: var(--espacio-2);
   align-items: center;
 }
+/* OL-419: en Safari de iPhone, mantener el dedo sobre un enlace lo levanta para arrastrarlo; el sistema se queda el toque (`pointercancel`), la
+   historia sigue sola bajo el dedo y al soltar no hay clic. Sin arrastre, la pulsación larga es un toque: la historia espera y el enlace abre. */
+.acciones a {
+  -webkit-user-drag: none;
+}
 .ficha {
   display: grid;
   place-items: center;
