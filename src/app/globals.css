@@ -448,8 +448,10 @@ button:active:not(:disabled) {
   }
 }
 
-/* Las historias de Inicio abiertas (`inicio/Historias`): la página de atrás no se desplaza. Un atributo y no un estilo en línea: se quita sin
-   adivinar qué había antes, y nunca se queda puesto si el desmontaje se retrasa. */
-html[data-historia] {
+/* Las historias de Inicio abiertas (`inicio/Historias`) o una capa de la pila del fondo (`lib/bloqueoFondo`: las hojas, el mapa de una ficha):
+   la página de atrás no se desplaza. Atributos y no un estilo en línea: cada dueño quita el suyo sin adivinar qué había antes, y nunca se queda
+   puesto si el desmontaje se retrasa. */
+html[data-historia],
+html[data-capas] {
   overflow: hidden;
 }
