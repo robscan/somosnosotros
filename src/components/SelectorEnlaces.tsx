@@ -33,6 +33,9 @@ type Arrastre = { indice: number; objetivo: number; inicioY: number; desplazamie
  * arriba/abajo mueven el enlace un puesto (mismo `mover`) para quien no puede arrastrar (teclado, VoiceOver);
  * un `aria-live` anuncia el nuevo puesto. Con un solo enlace no hay nada que reordenar: el agarre no se
  * muestra (decisión de esta pieza, más simple que mostrarlo apagado).
+ * El nuevo orden se confirma solo al soltar (`pointerup`). Si el navegador cancela el gesto (`pointercancel`: una
+ * llamada, un gesto del sistema), el arrastre se deshace y el orden queda como estaba (OL-419). Nunca se termina con
+ * `pointerleave`: Safari táctil lo dispara con el dedo aún puesto.
  */
 export default function SelectorEnlaces({ inicial, error, onCambio }: Props) {
   const [enlaces, setEnlaces] = useState<Enlace[]>(inicial);
@@ -127,6 +130,10 @@ export default function SelectorEnlaces({ inicial, error, onCambio }: Props) {
     }
     setArrastre(null);
   }
+  /** Cancelar no es soltar: los renglones vuelven a su puesto y el orden no cambia. */
+  function cancelarArrastre() {
+    setArrastre(null);
+  }
   function moverConTeclado(indice: number, delta: number) {
     const destino = indice + delta;
     if (destino < 0 || destino >= enlaces.length) return;
@@ -180,7 +187,7 @@ export default function SelectorEnlaces({ inicial, error, onCambio }: Props) {
                   onPointerDown={(ev) => iniciarArrastre(ev, i)}
                   onPointerMove={seguirArrastre}
                   onPointerUp={soltarArrastre}
-                  onPointerCancel={soltarArrastre}
+                  onPointerCancel={cancelarArrastre}
                   onKeyDown={(ev) => {
                     if (ev.key === "ArrowUp") {
                       ev.preventDefault();

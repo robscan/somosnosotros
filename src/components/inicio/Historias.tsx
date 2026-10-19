@@ -34,6 +34,9 @@ const CIERRA_DY = 90;
 const CAMBIA_DX = 50;
 /** Lo que tarda en irse (`--duracion`): mientras, ya no recibe toques. */
 const SALIDA_MS = 200;
+/** Tras soltar un enlace o un botón, lo más que el avance espera a su clic (si llega antes, sigue en ese momento): el clic nunca encuentra otra
+ *  historia ni, en la última, la capa cerrada. */
+const ESPERA_CLIC = 300;
 
 /** Colores ya leídos de cada cartel en esta visita (OL-360 los guardará con el evento). */
 const paletas = new Map<string, Paleta>();
@@ -50,6 +53,8 @@ const FOCABLES = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"
  * El cartel se acerca como en el visor (OL-408, `useZoomImagen`): pellizcar hasta 4× y, acercado, uno o dos dedos lo recorren (o la rueda, en
  * escritorio). Mientras está acercado la historia se queda quieta: el avance se pausa, deslizar mueve el cartel y un toque no pasa de historia, lo
  * devuelve a 1× y el avance sigue. Sin doble toque para acercar: el toque simple ya avanza y esperar un segundo toque retrasaría cada uno.
+ * Con un dedo sobre un enlace o un botón el avance también espera (OL-419): la historia no pasa ni se cierra bajo el dedo. Al tocar un enlace de la
+ * app la historia se va en ese momento (`onNavigate={salir}`): si la ficha tarda o no llega, la capa ya no recibe toques ni frena el desplazamiento.
  */
 export default function Historias({ avisos, inicial, conTeclado, ahora, asistencias, conSesion, onVer, onCerrar }: Props) {
   const [indice, setIndice] = useState(inicial);
@@ -62,6 +67,10 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   const [arrastre, setArrastre] = useState(0);
   /** El cartel acercado: la historia se pausa y los gestos son del cartel. */
   const [acercada, setAcercada] = useState(false);
+  /** Un dedo (o el ratón) sobre un enlace o un botón: el avance espera a que se suelte y a su clic. */
+  const [pulsando, setPulsando] = useState(false);
+  const control = useRef<number | null>(null);
+  const reanudar = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [interesan, setInteresan] = useState<Record<string, boolean>>(() => Object.fromEntries(Object.entries(asistencias ?? {}).map(([id, e]) => [id, e === "me_interesa"])));
   /** El aviso de «Me interesa» es de su historia: al pasar a otra ya no se dice. */
   const [aviso, setAviso] = useState<{ clave: string; texto: string } | null>(null);
@@ -80,6 +89,13 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   useEffect(() => {
     indiceRef.current = indice;
   }, [indice]);
+
+  const seguirTrasControl = useCallback(() => {
+    clearTimeout(reanudar.current);
+    reanudar.current = undefined;
+    setPulsando(false);
+  }, []);
+  useEffect(() => () => clearTimeout(reanudar.current), []);
 
   const salir = useCallback(() => {
     if (cerrandoRef.current) return;
@@ -224,15 +240,26 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
     [pasar, salir, dedos, soltarZoom, estaAcercada, ponerZoom],
   );
   useEffect(() => {
-    const arriba = (ev: PointerEvent) => soltar(ev, false);
-    const cancela = (ev: PointerEvent) => soltar(ev, true);
+    const arriba = (ev: PointerEvent) => {
+      if (ev.pointerId !== control.current) return soltar(ev, false);
+      // Se soltó el control: su clic llega enseguida y el avance sigue entonces (`onClickCapture`); si no llega (el dedo salió del control), al
+      // acabar la espera.
+      control.current = null;
+      clearTimeout(reanudar.current);
+      reanudar.current = setTimeout(seguirTrasControl, ESPERA_CLIC);
+    };
+    const cancela = (ev: PointerEvent) => {
+      if (ev.pointerId !== control.current) return soltar(ev, true);
+      control.current = null;
+      seguirTrasControl();
+    };
     window.addEventListener("pointerup", arriba);
     window.addEventListener("pointercancel", cancela);
     return () => {
       window.removeEventListener("pointerup", arriba);
       window.removeEventListener("pointercancel", cancela);
     };
-  }, [soltar]);
+  }, [soltar, seguirTrasControl]);
 
   // Teclado: flechas pasan, Espacio pausa, Escape cierra; Tab no sale de la historia.
   useEffect(() => {
@@ -280,7 +307,8 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
   const etiqueta = etiquetaAhora(a, ahora);
   const interesa = !!interesan[e.id];
   const titulo = e.titulo.length > 70 ? "muyLargo" : e.titulo.length > 42 ? "largo" : "corto";
-  const pausa = pausada || oculta;
+  // También mientras entra y se va: al irse (por ejemplo, al tocar «Ver más información») ninguna otra historia cuenta como vista.
+  const pausa = pausada || oculta || pulsando || !abierta;
 
   // En `body`: una capa fija no puede quedar dentro de un contenedor con transformación (la transición de pantalla), o deja de cubrir todo.
   return createPortal(
@@ -297,7 +325,13 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
       data-arrastrando={arrastre > 0 || undefined}
       style={arrastre > 0 ? { transform: `translateY(${arrastre}px) scale(${1 - Math.min(arrastre, 400) / 2000})` } : undefined}
       onPointerDown={(ev) => {
-        if ((ev.target as Element).closest("a, button")) return;
+        // Un enlace o un botón: el toque es suyo, sin captura (su clic llega); solo se pausa el avance mientras el dedo siga abajo.
+        if ((ev.target as Element).closest("a, button")) {
+          clearTimeout(reanudar.current);
+          control.current = ev.pointerId;
+          setPulsando(true);
+          return;
+        }
         if (cartel.current?.contains(ev.target as Node) || dedos() > 0 || estaAcercada()) tocarZoom(ev);
         try {
           raiz.current?.setPointerCapture(ev.pointerId);
@@ -318,6 +352,9 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
         if (!g || g.id !== ev.pointerId) return;
         const dy = ev.clientY - g.y;
         setArrastre(dy > 10 ? dy : 0);
+      }}
+      onClickCapture={() => {
+        if (reanudar.current !== undefined) seguirTrasControl();
       }}
       onContextMenu={(ev) => ev.preventDefault()}
     >
@@ -381,9 +418,10 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
           )}
         </div>
         <footer className={styles.acciones}>
-          {/* «Ver más información» (founder, 14 oct: «no se entiende ficha»). Al tocarlo la página de atrás ya puede desplazarse: si la ficha tarda
-              en llegar o no llega, Inicio no se queda trabado. */}
-          <Link className={styles.ficha} href={e.href} onClick={() => document.documentElement.removeAttribute("data-historia")}>
+          {/* «Ver más información» (founder, 14 oct: «no se entiende ficha»). Al tocarlo la historia se va ya (`salir`: suelta el desplazamiento de la
+              página y la capa deja de recibir toques), sin esperar a que la ficha llegue: si tarda o no llega, Inicio no se queda trabado (OL-412, OL-419).
+              `onNavigate` solo avisa de una navegación dentro de la app: abrirlo en otra pestaña deja la historia abierta. */}
+          <Link className={styles.ficha} href={e.href} onNavigate={salir}>
             Ver más información
           </Link>
           {conSesion ? (
@@ -391,7 +429,7 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
               <IconoMarcador fill={interesa ? "currentColor" : "none"} />
             </button>
           ) : (
-            <Link className={styles.icono} aria-label="Me interesa" href={`/entrar?siguiente=${encodeURIComponent(`${e.href}?accion=me_interesa`)}`}>
+            <Link className={styles.icono} aria-label="Me interesa" href={`/entrar?siguiente=${encodeURIComponent(`${e.href}?accion=me_interesa`)}`} onNavigate={salir}>
               <IconoMarcador />
             </Link>
           )}

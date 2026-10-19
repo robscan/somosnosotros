@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { bloquearFondo, esCapaSuperior, soltarFondo } from "@/lib/bloqueoFondo";
 import { IconoCerrar } from "./Iconos";
 import useAreaVisible from "./useAreaVisible";
 import styles from "./Hoja.module.css";
@@ -28,27 +29,10 @@ type Props = {
  * Mientras hay una hoja abierta la página de atrás no se desplaza, y arrastrar la hoja con el teclado arriba lo guarda,
  * como en las búsquedas del iPhone. Sin eso, en la hoja Ciudad (su lista crece al llegar los resultados, con el teclado
  * ya arriba) el arrastre movía la página y la hoja quedaba recortada (medido en el simulador, 2026-09-16).
+ * Lo de detrás (inerte y sin desplazarse) es de la pila común de capas (`lib/bloqueoFondo`, OL-419), la misma del mapa de
+ * una ficha: solo la capa de arriba es interactiva y el fondo se libera al cerrarse la última, en cualquier orden.
  */
 const nada = () => () => {};
-/** Cuántas hojas hay abiertas: la página se suelta cuando se cierra la última. */
-let abiertas = 0;
-/** Solo la hoja superior es interactiva. Se conservan los inert ajenos al abrir/cerrar la pila. */
-const fondos: HTMLElement[] = [];
-const inertPrevio = new Map<HTMLElement, boolean>();
-let observarFondo: MutationObserver | null = null;
-function actualizarFondo() {
-  const superior = fondos.at(-1);
-  if (!superior) {
-    for (const [elemento, previo] of inertPrevio) elemento.inert = previo;
-    inertPrevio.clear();
-    return;
-  }
-  for (const elemento of document.body.children) {
-    if (!(elemento instanceof HTMLElement)) continue;
-    if (!inertPrevio.has(elemento)) inertPrevio.set(elemento, elemento.inert);
-    elemento.inert = elemento !== superior;
-  }
-}
 function enfocables(panel: HTMLElement) {
   return [...panel.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]')]
     .filter(e => e.tabIndex >= 0 && !e.matches(':disabled') && !e.closest('[inert]') && e.getClientRects().length > 0 && getComputedStyle(e).visibility === 'visible');
@@ -65,25 +49,21 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
   const panel = useRef<HTMLDivElement>(null);
   const cerrar = useRef(onCerrar);
   const focoPropio = useRef<HTMLElement | null>(null);
+  const dueno = useId();
   // Antes de montar los hijos: un campo con autoFocus no debe reemplazar al disparador recordado.
   const [disparador] = useState(() => typeof document !== "undefined" && document.activeElement instanceof HTMLElement ? document.activeElement : null);
   useLayoutEffect(() => { cerrar.current = onCerrar; }, [onCerrar]);
   useLayoutEffect(() => {
     const fondoActual = fondo.current, panelActual = panel.current;
     if (!montada || !fondoActual || !panelActual) return;
-    fondos.push(fondoActual);
-    actualizarFondo();
-    if (!observarFondo) {
-      observarFondo = new MutationObserver(actualizarFondo);
-      observarFondo.observe(document.body, { childList: true });
-    }
+    bloquearFondo(dueno, fondoActual);
     const enfocar = () => (enfocables(panelActual)[0] ?? panelActual).focus({ preventScroll: true });
     if (!panelActual.contains(document.activeElement)) {
       if (focoPropio.current?.isConnected) focoPropio.current.focus({ preventScroll: true });
       else enfocar();
     }
     const alTeclear = (e: KeyboardEvent) => {
-      if (fondos.at(-1) !== fondoActual) return;
+      if (!esCapaSuperior(dueno)) return;
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -103,20 +83,10 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
       document.removeEventListener("keydown", alTeclear, true);
       // StrictMode repite montaje/limpieza: conservar el autofocus interno durante esa comprobación.
       if (document.activeElement instanceof HTMLElement && panelActual.contains(document.activeElement)) focoPropio.current = document.activeElement;
-      fondos.splice(fondos.indexOf(fondoActual), 1);
-      if (!fondos.length) { observarFondo?.disconnect(); observarFondo = null; }
-      actualizarFondo();
+      soltarFondo(dueno);
       if (disparador?.isConnected && !disparador.closest('[inert]')) disparador.focus({ preventScroll: true });
     };
-  }, [montada, disparador]);
-  useEffect(() => {
-    // Solo en <html>: con <html> y <body> a la vez, la página volvía arriba al abrir la hoja (medido: de 300 a 0).
-    const raiz = document.documentElement;
-    if (abiertas++ === 0) raiz.style.overflow = "hidden";
-    return () => {
-      if (--abiertas === 0) raiz.style.overflow = "";
-    };
-  }, []);
+  }, [montada, disparador, dueno]);
   // Con el teclado arriba, un arrastre dentro de la hoja lo guarda (salvo sobre el mismo campo, para mover el cursor).
   const alArrastrar = (e: React.TouchEvent) => {
     const activo = document.activeElement;
