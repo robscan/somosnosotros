@@ -1,6 +1,6 @@
 # 451 · La hora en «7:00 pm» en toda la app, «actividades» dentro de un festival, una noche de una sola manera y «Función n de N» contando todas (OL-418)
 
-**Fecha:** 2026-10-19. **Rama:** `hora-12-y-actividades`, base `main` (`0a857d1f`). **Operador:** agente de la pieza (Gestor VII), sin otros agentes.
+**Fecha:** 2026-10-19. **Rama:** `hora-12-y-actividades`, base `main` (`0a857d1f`), con `main` traído hasta `4f36b5e8` (OL-415 y OL-417; sin choques salvo OPEN_LOOPS). **Operador:** agente de la pieza (Gestor VII), sin otros agentes.
 **Sin migración** y sin variables de entorno nuevas: lo guardado (instantes ISO, horas `time` de los horarios) no cambia, solo cómo se escribe.
 **Estado:** lista para la revisión del gestor y el «publica» del founder.
 
