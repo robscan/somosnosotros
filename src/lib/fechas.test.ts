@@ -1,8 +1,82 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, esDeVariosDias, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, articuloDeHora, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, esDeVariosDias, esUnaNoche, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, horaDeReloj, horasDelEvento, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, rangoDeReloj, reloj24, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
+
+describe("la hora de toda la app, en 12 horas (OL-418: «19:00 hrs era confuso, es mejor usar 7:00 pm»)", () => {
+  it("siempre con minutos y con «am» o «pm» en minúsculas tras un espacio", () => {
+    expect(horaDeReloj("19:00")).toBe("7:00 pm");
+    expect(horaDeReloj("09:30")).toBe("9:30 am");
+    expect(horaDeReloj("07:05")).toBe("7:05 am");
+    expect(horaDeReloj("23:59")).toBe("11:59 pm");
+    // Como la guarda la base, con segundos.
+    expect(horaDeReloj("18:00:00")).toBe("6:00 pm");
+  });
+  it("mediodía es «12:00 pm» y medianoche «12:00 am»", () => {
+    expect(horaDeReloj("12:00")).toBe("12:00 pm");
+    expect(horaDeReloj("12:30")).toBe("12:30 pm");
+    expect(horaDeReloj("00:00")).toBe("12:00 am");
+    expect(horaDeReloj("00:15")).toBe("12:15 am");
+    expect(horaDeReloj("13:00")).toBe("1:00 pm");
+    expect(horaDeReloj("01:00")).toBe("1:00 am");
+  });
+  it("un rango con el mismo «am» o «pm» lo dice una vez, al final; guion corto sin espacios", () => {
+    expect(rangoDeReloj("19:00", "21:30")).toBe("7:00–9:30 pm");
+    expect(rangoDeReloj("09:00", "11:00")).toBe("9:00–11:00 am");
+    expect(rangoDeReloj("12:00", "14:00")).toBe("12:00–2:00 pm");
+  });
+  it("un rango que cambia de «am» a «pm» (o de noche a madrugada) lleva cada uno el suyo", () => {
+    expect(rangoDeReloj("20:00", "02:00")).toBe("8:00 pm–2:00 am");
+    expect(rangoDeReloj("10:00", "18:00")).toBe("10:00 am–6:00 pm");
+    expect(rangoDeReloj("11:00", "12:00")).toBe("11:00 am–12:00 pm");
+    expect(rangoDeReloj("22:00", "00:00")).toBe("10:00 pm–12:00 am");
+  });
+  it("«la» con la una y «las» con las demás", () => {
+    expect(articuloDeHora("13:00")).toBe("la");
+    expect(articuloDeHora("01:30")).toBe("la");
+    expect(articuloDeHora("12:00")).toBe("las");
+    expect(articuloDeHora("20:00")).toBe("las");
+  });
+  it("en la zona del evento, y la de 24 h solo para comparar", () => {
+    expect(horaCorta("2026-09-20T01:00:00Z")).toBe("7:00 pm");
+    expect(horaCorta("2026-09-20T18:00:00Z")).toBe("12:00 pm");
+    expect(horaCorta("2026-09-20T06:00:00Z")).toBe("12:00 am");
+    expect(reloj24("2026-09-20T01:00:00Z")).toBe("19:00");
+    expect(reloj24("2026-09-20T06:00:00Z")).toBe("00:00");
+  });
+  it("las horas de un evento en su día: sin fin, la de inicio; con fin el mismo día, el rango; una noche, también el rango", () => {
+    expect(horasDelEvento("2026-09-20T01:00:00Z", null)).toBe("7:00 pm");
+    expect(horasDelEvento("2026-09-20T01:00:00Z", "2026-09-20T03:30:00Z")).toBe("7:00–9:30 pm");
+    expect(horasDelEvento("2026-09-19T17:00:00Z", "2026-09-19T20:00:00Z")).toBe("11:00 am–2:00 pm");
+    // Sábado 8:00 pm a domingo 2:00 am: una noche es un día con su rango.
+    expect(horasDelEvento("2026-10-18T02:00:00Z", "2026-10-18T08:00:00Z")).toBe("8:00 pm–2:00 am");
+    // Lo de varios días: solo la de inicio (sus días y su horario los dice `cuandoVariosDias`).
+    expect(horasDelEvento("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z")).toBe("8:00 pm");
+  });
+  it("una noche: su fin cae al día siguiente antes de su hora de inicio", () => {
+    expect(esUnaNoche("2026-10-18T02:00:00Z", "2026-10-18T08:00:00Z")).toBe(true);
+    expect(esUnaNoche("2026-10-18T02:00:00Z", "2026-10-18T06:00:00Z")).toBe(true); // hasta las 12:00 am
+    expect(esUnaNoche("2026-10-18T02:00:00Z", "2026-10-18T04:00:00Z")).toBe(false); // termina el mismo día
+    expect(esUnaNoche("2026-10-18T02:00:00Z", "2026-10-19T03:00:00Z")).toBe(false); // dos días
+    expect(esUnaNoche("2026-10-18T02:00:00Z", null)).toBe(false);
+  });
+});
+
+describe("una noche se dice de una sola manera (OL-418)", () => {
+  // Sábado 17 de oct, de 8:00 pm a 2:00 am del domingo, en la ciudad.
+  const inicio = "2026-10-18T02:00:00Z";
+  const fin = "2026-10-18T08:00:00Z";
+  const ahora = new Date("2026-10-12T16:00:00Z");
+  it("un solo día con su rango, en la lista, la ficha y «Revisa»; nunca dos días ni «→»", () => {
+    expect(formatearCuando(inicio, fin, ahora)).toBe("sáb 17 de oct · 8:00 pm–2:00 am");
+    expect(formatearLargo(inicio, ahora, fin)).toBe("sábado 17 de octubre · 8:00 pm–2:00 am");
+    expect(fraseCuando("2026-10-17T20:00", "2026-10-18T02:00", ahora)).toBe("sábado 17 de octubre · 8:00 pm–2:00 am");
+  });
+  it("lo que de verdad dura varios días sigue con sus días («Del … al …»)", () => {
+    expect(formatearCuando(inicio, "2026-10-19T03:00:00Z", ahora)).toBe("Del 17 al 18 de oct · 8:00–9:00 pm");
+  });
+});
 
 describe("fechas", () => {
   it("convierte la hora del teléfono a ISO con la zona de la ciudad y de vuelta", () => {
@@ -13,15 +87,15 @@ describe("fechas", () => {
     expect(localAIso("")).toBeNull();
   });
   it("formatea Hoy / Mañana / día corto y el fin", () => {
-    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA)).toBe("Hoy · 19:00");
-    expect(formatearCuando("2026-09-21T01:00:00Z", "2026-09-21T03:00:00Z", AHORA)).toBe("Mañana · 19:00–21:00");
-    expect(formatearCuando("2026-09-27T01:00:00Z", null, AHORA)).toBe("sáb 26 de sep · 19:00");
+    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA)).toBe("Hoy · 7:00 pm");
+    expect(formatearCuando("2026-09-21T01:00:00Z", "2026-09-21T03:00:00Z", AHORA)).toBe("Mañana · 7:00–9:00 pm");
+    expect(formatearCuando("2026-09-27T01:00:00Z", null, AHORA)).toBe("sáb 26 de sep · 7:00 pm");
   });
   it("escribe el año solo cuando no es el actual", () => {
-    expect(formatearCuando("2027-08-23T01:00:00Z", null, AHORA)).toBe("dom 22 de ago de 2027 · 19:00");
-    expect(formatearLargo("2027-08-23T01:00:00Z", AHORA)).toBe("domingo 22 de agosto de 2027 · 19:00");
-    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA)).toBe("domingo 20 de septiembre · 19:00");
-    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA, "2026-09-21T03:00:00Z")).toBe("domingo 20 de septiembre · 19:00 a 21:00");
+    expect(formatearCuando("2027-08-23T01:00:00Z", null, AHORA)).toBe("dom 22 de ago de 2027 · 7:00 pm");
+    expect(formatearLargo("2027-08-23T01:00:00Z", AHORA)).toBe("domingo 22 de agosto de 2027 · 7:00 pm");
+    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA)).toBe("domingo 20 de septiembre · 7:00 pm");
+    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA, "2026-09-21T03:00:00Z")).toBe("domingo 20 de septiembre · 7:00–9:00 pm");
   });
   it("clasifica en hoy, semana, próximos y pasado", () => {
     expect(tramo("2026-09-20T01:00:00Z", AHORA)).toBe("hoy"); // 19:00 de hoy
@@ -52,8 +126,8 @@ describe("fechas", () => {
   it("calcula el fin como duración y arma la frase", () => {
     expect(sumarHoras("2026-09-19T19:00", 2)).toBe("2026-09-19T21:00");
     expect(sumarHoras("2026-09-19T23:00", 2)).toBe("2026-09-20T01:00");
-    expect(fraseCuando("2026-09-19T19:00", "2026-09-19T21:00", AHORA)).toBe("sábado 19 de septiembre · 19:00 a 21:00");
-    expect(fraseCuando("2026-09-19T19:00", undefined, AHORA)).toBe("sábado 19 de septiembre · 19:00");
+    expect(fraseCuando("2026-09-19T19:00", "2026-09-19T21:00", AHORA)).toBe("sábado 19 de septiembre · 7:00–9:00 pm");
+    expect(fraseCuando("2026-09-19T19:00", undefined, AHORA)).toBe("sábado 19 de septiembre · 7:00 pm");
     expect(fraseCuando("nada")).toBe("");
   });
   it("un evento ya pasó cuando terminó o, sin hora de fin, 3 horas después de empezar (OL-358)", () => {
@@ -121,16 +195,16 @@ describe("fechas en la zona del evento", () => {
     expect(sumarHoras("2026-03-28T23:00", 4, MADRID)).toBe("2026-03-29T04:00");
     // El 25 oct dura 25 horas: a las 00:30, "mañana" sigue siendo el 26.
     const madrugada = new Date("2026-10-24T22:30:00Z");
-    expect(formatearCuando("2026-10-25T22:30:00Z", null, madrugada, MADRID)).toBe("Hoy · 23:30");
-    expect(formatearCuando("2026-10-26T12:00:00Z", null, madrugada, MADRID)).toBe("Mañana · 13:00");
+    expect(formatearCuando("2026-10-25T22:30:00Z", null, madrugada, MADRID)).toBe("Hoy · 11:30 pm");
+    expect(formatearCuando("2026-10-26T12:00:00Z", null, madrugada, MADRID)).toBe("Mañana · 1:00 pm");
   });
   it("Hoy y Mañana son los de la zona del evento", () => {
-    expect(formatearCuando("2026-09-19T20:00:00Z", null, AHORA, MADRID)).toBe("Hoy · 22:00");
+    expect(formatearCuando("2026-09-19T20:00:00Z", null, AHORA, MADRID)).toBe("Hoy · 10:00 pm");
     // El mismo instante: en Madrid es la 1:30 del domingo; en San Luis, las 17:30 del sábado.
-    expect(formatearCuando("2026-09-19T23:30:00Z", null, AHORA, MADRID)).toBe("Mañana · 01:30");
-    expect(formatearCuando("2026-09-19T23:30:00Z", null, AHORA)).toBe("Hoy · 17:30");
-    expect(formatearLargo("2026-09-20T17:00:00Z", AHORA, "2026-09-20T19:00:00Z", MADRID)).toBe("domingo 20 de septiembre · 19:00 a 21:00");
-    expect(horaCorta("2026-09-20T17:00:00Z", MADRID)).toBe("19:00");
+    expect(formatearCuando("2026-09-19T23:30:00Z", null, AHORA, MADRID)).toBe("Mañana · 1:30 am");
+    expect(formatearCuando("2026-09-19T23:30:00Z", null, AHORA)).toBe("Hoy · 5:30 pm");
+    expect(formatearLargo("2026-09-20T17:00:00Z", AHORA, "2026-09-20T19:00:00Z", MADRID)).toBe("domingo 20 de septiembre · 7:00–9:00 pm");
+    expect(horaCorta("2026-09-20T17:00:00Z", MADRID)).toBe("7:00 pm");
     expect(diaCorto("2026-09-19T23:30:00Z", AHORA, MADRID)).toBe("Mañana");
     expect(diaLargo("2026-09-20", AHORA, MADRID)).toBe("domingo 20 de septiembre");
   });
@@ -154,13 +228,13 @@ describe("fechas en la zona del evento", () => {
     expect(proximosDias(medianoche, 1)[0].valor).toBe("2026-09-19");
     expect(yaPaso("2026-09-19T17:30", AHORA, MADRID)).toBe(true);
     expect(yaPaso("2026-09-19T17:30", AHORA)).toBe(false);
-    expect(fraseCuando("2026-09-20T19:00", "2026-09-20T21:00", AHORA, MADRID)).toBe("domingo 20 de septiembre · 19:00 a 21:00");
+    expect(fraseCuando("2026-09-20T19:00", "2026-09-20T21:00", AHORA, MADRID)).toBe("domingo 20 de septiembre · 7:00–9:00 pm");
   });
   it("una zona que no es cae en la de la ciudad inicial, y una fecha que no existe no se lee", () => {
     expect(zonaSegura("Europe/Madrid")).toBe("Europe/Madrid");
     expect(zonaSegura("America/Argentina/Cordoba")).toBe("America/Argentina/Cordoba");
     for (const mala of ["Marte/Olimpo", "CST", "UTC", "posix/America/Mexico_City", "", null, undefined]) expect(zonaSegura(mala)).toBe(ZONA_INICIAL);
-    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, "Marte/Olimpo")).toBe("Hoy · 19:00");
+    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, "Marte/Olimpo")).toBe("Hoy · 7:00 pm");
     expect(localAIso("2026-02-31T19:00")).toBeNull();
     expect(localAIso("2026-09-20T24:00")).toBeNull();
   });
@@ -196,14 +270,14 @@ describe("banco por zona", () => {
     // 04:30 UTC del 21 sep: 23:30 del 20 en Bogotá, 22:30 del 20 en San Luis, 06:30 del 21 en Madrid.
     const ahora = new Date("2026-09-21T04:30:00Z");
     const inicio = "2026-09-21T05:30:00Z";
-    expect(formatearCuando(inicio, null, ahora, "America/Bogota")).toBe("Mañana · 00:30");
-    expect(formatearCuando(inicio, null, ahora, "America/Mexico_City")).toBe("Hoy · 23:30");
-    expect(formatearCuando(inicio, null, ahora, "Europe/Madrid")).toBe("Hoy · 07:30");
+    expect(formatearCuando(inicio, null, ahora, "America/Bogota")).toBe("Mañana · 12:30 am");
+    expect(formatearCuando(inicio, null, ahora, "America/Mexico_City")).toBe("Hoy · 11:30 pm");
+    expect(formatearCuando(inicio, null, ahora, "Europe/Madrid")).toBe("Hoy · 7:30 am");
   });
   it("una fila sin zona se lee como de la ciudad inicial, sin romperse", () => {
     const sinZona = null as unknown as string;
-    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, sinZona)).toBe("Hoy · 19:00");
-    expect(horaCorta("2026-09-20T01:00:00Z", undefined)).toBe("19:00");
+    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, sinZona)).toBe("Hoy · 7:00 pm");
+    expect(horaCorta("2026-09-20T01:00:00Z", undefined)).toBe("7:00 pm");
     expect(terminaDe("2026-09-21T01:00:00.000Z", null, sinZona)).toBe("2026-09-21T04:00:00.000Z");
     expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA, sinZona)).toBe(true);
     expect(localAIso("2026-09-20T19:00", sinZona)).toBe("2026-09-21T01:00:00.000Z");
@@ -216,21 +290,21 @@ describe("un evento de varios días dice sus días y su horario de cada día, si
   const finDelDia = "2026-09-29T05:59:00Z";
 
   it("varios días con 23:59 (sin hora de fin): los días y solo la hora de inicio", () => {
-    expect(formatearCuando(inicio, finDelDia, AHORA)).toBe("Del 26 al 28 de sep · 19:00");
-    expect(formatearLargo(inicio, AHORA, finDelDia)).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre");
-    expect(fraseCuando("2026-09-26T19:00", "2026-09-28T23:59", AHORA)).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre");
+    expect(formatearCuando(inicio, finDelDia, AHORA)).toBe("Del 26 al 28 de sep · 7:00 pm");
+    expect(formatearLargo(inicio, AHORA, finDelDia)).toBe("sábado 26 de septiembre · 7:00 pm hasta lunes 28 de septiembre");
+    expect(fraseCuando("2026-09-26T19:00", "2026-09-28T23:59", AHORA)).toBe("sábado 26 de septiembre · 7:00 pm hasta lunes 28 de septiembre");
   });
-  it("varios días con hora de fin: el horario de cada día, en 24 h como todo el texto de la app", () => {
-    expect(formatearCuando(inicio, "2026-09-29T03:00:00Z", AHORA)).toBe("Del 26 al 28 de sep · 19:00–21:00");
-    expect(formatearCuando(inicio, "2026-09-29T05:58:00Z", AHORA)).toBe("Del 26 al 28 de sep · 19:00–23:58");
-    expect(formatearLargo(inicio, AHORA, "2026-09-29T03:00:00Z")).toBe("sábado 26 de septiembre · 19:00 hasta lunes 28 de septiembre · 21:00");
+  it("varios días con hora de fin: el horario de cada día, con la hora de toda la app", () => {
+    expect(formatearCuando(inicio, "2026-09-29T03:00:00Z", AHORA)).toBe("Del 26 al 28 de sep · 7:00–9:00 pm");
+    expect(formatearCuando(inicio, "2026-09-29T05:58:00Z", AHORA)).toBe("Del 26 al 28 de sep · 7:00–11:58 pm");
+    expect(formatearLargo(inicio, AHORA, "2026-09-29T03:00:00Z")).toBe("sábado 26 de septiembre · 7:00 pm hasta lunes 28 de septiembre · 9:00 pm");
   });
-  it("el ejemplo del alta: del 10 al 12 de oct de 20:00 a 21:00", () => {
-    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 20:00–21:00");
-    expect(cuandoVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toEqual({ dias: "Del 10 al 12 de oct", horas: "20:00–21:00" });
+  it("el ejemplo del alta: del 10 al 12 de oct de 8:00 a 9:00 pm", () => {
+    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 8:00–9:00 pm");
+    expect(cuandoVariosDias("2026-10-11T02:00:00Z", "2026-10-13T03:00:00Z", AHORA)).toEqual({ dias: "Del 10 al 12 de oct", horas: "8:00–9:00 pm" });
   });
-  it("de la mañana a la tarde, las dos horas en 24 h", () => {
-    expect(formatearCuando("2026-10-10T17:00:00Z", "2026-10-12T20:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 11:00–14:00");
+  it("de la mañana a la tarde, cada hora con su «am» o «pm»", () => {
+    expect(formatearCuando("2026-10-10T17:00:00Z", "2026-10-12T20:00:00Z", AHORA)).toBe("Del 10 al 12 de oct · 11:00 am–2:00 pm");
   });
   it("la cadena es limpia: sin espacios no separables ni unidores de palabra (viaja a compartir, avisos y correos)", () => {
     const textos = [
@@ -241,24 +315,24 @@ describe("un evento de varios días dice sus días y su horario de cada día, si
     for (const t of textos) expect(t).not.toMatch(/[\u00a0\u202f\u2060]/);
   });
   it("dos días seguidos también son varios días; un día con fin posterior a la hora de inicio, no", () => {
-    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-12T03:00:00Z", AHORA)).toBe("Del 10 al 11 de oct · 20:00–21:00");
-    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-11T04:00:00Z", AHORA)).toBe("sáb 10 de oct · 20:00–22:00");
+    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-12T03:00:00Z", AHORA)).toBe("Del 10 al 11 de oct · 8:00–9:00 pm");
+    expect(formatearCuando("2026-10-11T02:00:00Z", "2026-10-11T04:00:00Z", AHORA)).toBe("sáb 10 de oct · 8:00–10:00 pm");
   });
-  it("una noche que cruza la medianoche no es un evento de varios días: se lee como siempre", () => {
-    // Empieza vie 9 oct 22:00 y termina sáb 10 a la 1:00 a.m. (fin antes de la hora de inicio).
-    expect(formatearCuando("2026-10-10T04:00:00Z", "2026-10-10T07:00:00Z", AHORA)).toBe("vie 9 de oct · 22:00 → sáb 10 de oct · 01:00");
+  it("una noche que cruza la medianoche no es un evento de varios días: un día con su rango (OL-418)", () => {
+    // Empieza vie 9 oct 10:00 pm y termina sáb 10 a la 1:00 am (fin antes de la hora de inicio).
+    expect(formatearCuando("2026-10-10T04:00:00Z", "2026-10-10T07:00:00Z", AHORA)).toBe("vie 9 de oct · 10:00 pm–1:00 am");
     expect(cuandoVariosDias("2026-10-10T04:00:00Z", "2026-10-10T07:00:00Z", AHORA)).toBeNull();
   });
   it("un solo día que termina a las 23:59 la conserva", () => {
-    expect(formatearCuando(inicio, "2026-09-27T05:59:00Z", AHORA)).toBe("sáb 26 de sep · 19:00–23:59");
-    expect(formatearLargo(inicio, AHORA, "2026-09-27T05:59:00Z")).toBe("sábado 26 de septiembre · 19:00 a 23:59");
+    expect(formatearCuando(inicio, "2026-09-27T05:59:00Z", AHORA)).toBe("sáb 26 de sep · 7:00–11:59 pm");
+    expect(formatearLargo(inicio, AHORA, "2026-09-27T05:59:00Z")).toBe("sábado 26 de septiembre · 7:00–11:59 pm");
   });
   it("respeta la zona del evento: las 23:59 de la ciudad no son las 23:59 de Madrid", () => {
     // Las 23:59 de Madrid (21:59Z) se esconden allá; el mismo instante visto con la zona de la ciudad (15:59) lleva su hora.
-    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA, "Europe/Madrid")).toBe("Del 26 al 28 de sep · 19:00");
-    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA)).toBe("Del 26 al 28 de sep · 11:00–15:59");
+    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA, "Europe/Madrid")).toBe("Del 26 al 28 de sep · 7:00 pm");
+    expect(formatearCuando("2026-09-26T17:00:00Z", "2026-09-28T21:59:00Z", AHORA)).toBe("Del 26 al 28 de sep · 11:00 am–3:59 pm");
     // Y las 23:59 de la ciudad, vistas desde Madrid (07:59 del día siguiente), también llevan su hora.
-    expect(formatearCuando(inicio, finDelDia, AHORA, "Europe/Madrid")).toBe("Del 27 al 29 de sep · 03:00–07:59");
+    expect(formatearCuando(inicio, finDelDia, AHORA, "Europe/Madrid")).toBe("Del 27 al 29 de sep · 3:00–7:59 am");
   });
   it("sin fin no hay varios días", () => {
     expect(cuandoVariosDias(inicio, null, AHORA)).toBeNull();

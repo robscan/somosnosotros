@@ -64,7 +64,7 @@ async function conPrograma(supabase: Cliente, eventos: Buscable[]): Promise<Busc
 /**
  * Un evento encontrado: su tarjeta y, si es un festival o una exposición, el nombre de lo que es (OL-338, `CLASES_NOMBRADAS`). Un evento que se
  * reparte en varios días (un taller con sus sesiones, una película con tres funciones) dice el próximo, con su hora (OL-410, «S»:
- * `proximaOcurrencia`, como las tarjetas de Inicio) y, si es una sesión, cuál («vie 16 de oct · 18:00 · Sesión 2 de 3»); un festival y una
+ * `proximaOcurrencia`, como las tarjetas de Inicio) y, si es una sesión, cuál («vie 16 de oct · 6:00 pm · Sesión 2 de 3»); un festival y una
  * exposición, su periodo (OL-409, «U»: «Hasta el …» o «Del … al …»).
  */
 function encontradoDeEvento(e: Buscable, ahora: Date): Encontrado {

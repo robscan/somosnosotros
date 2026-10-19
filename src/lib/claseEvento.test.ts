@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaDeSemana, lineaDeTaller, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, finEnPrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
+import { cuandoDePeriodo, diaDeSemana, lineaDeTaller, rangoDelPeriodo, ultimoDiaDelPeriodo, horarioEfectivo, horariosDeTaller, kpisDeExposicion, lineaDeExposicion, periodoDePrograma, finEnPrograma, periodoDeVisita, resumenTaller, soloInteres, textoHoy, textoProgramaRegistrado, textoVisita, visitaDeEvento, yaPasoSegunClase } from "./claseEvento";
 import { CLASES, claseSugerida, cortoDeClase, esClase, formaDelCartel, cartelAFormulario, nombreDeClase } from "./eventos";
 import { localAIso } from "./fechas";
 
@@ -118,21 +118,21 @@ describe("el horario de una exposición: propio → del lugar → por confirmar"
   it("lo que dice de hoy: abre, cierra o por confirmar; fuera del periodo, nada", () => {
     const visita = { desde: "2026-11-06", hasta: "2026-11-30" };
     expect(diaDeSemana("2026-11-08")).toBe(7);
-    expect(textoHoy(visita, MUSEO, "2026-11-08")).toBe("Abre hoy 10:00 a.m.–6:00 p.m.");
+    expect(textoHoy(visita, MUSEO, "2026-11-08")).toBe("Abre hoy 10:00 am–6:00 pm");
     expect(textoHoy(visita, MUSEO, "2026-11-09")).toBe("Hoy cierra");
     expect(textoHoy(visita, [], "2026-11-08")).toBe("Horario por confirmar");
     expect(textoHoy(visita, MUSEO, "2026-12-01")).toBeNull();
   });
 
   it("la línea de la ficha: «Hasta el …» con lo de hoy; antes de abrir, sus días", () => {
-    expect(lineaDeExposicion(EXPO, MUSEO, en("2026-11-08T12:00"))).toBe("Hasta el lun 30 de nov · Abre hoy 10:00 a.m.–6:00 p.m.");
+    expect(lineaDeExposicion(EXPO, MUSEO, en("2026-11-08T12:00"))).toBe("Hasta el lun 30 de nov · Abre hoy 10:00 am–6:00 pm");
     expect(lineaDeExposicion(EXPO, [], en("2026-11-08T12:00"))).toBe("Hasta el lun 30 de nov · Horario por confirmar");
     expect(lineaDeExposicion(EXPO, MUSEO, en("2026-11-01T12:00"))).toBe("Del 6 al 30 de nov");
     expect(textoVisita({ desde: "2026-11-06", hasta: "2026-11-30" }, "2026-11-08", en("2026-11-08T12:00"), ZONA)).toBe("Hasta el lun 30 de nov");
   });
 
   it("los números de la ficha: hasta cuándo y el horario de hoy en 24 h (o cerrado, o por confirmar)", () => {
-    expect(kpisDeExposicion(EXPO, MUSEO, en("2026-11-08T12:00"))).toEqual({ hasta: "lun 30 nov", hoy: { etiqueta: "Hoy", valor: "10:00–18:00" } });
+    expect(kpisDeExposicion(EXPO, MUSEO, en("2026-11-08T12:00"))).toEqual({ hasta: "lun 30 nov", hoy: { etiqueta: "Hoy", valor: "10:00 am–6:00 pm" } });
     expect(kpisDeExposicion(EXPO, MUSEO, en("2026-11-09T12:00")).hoy).toEqual({ etiqueta: "Hoy", valor: "Cerrado" });
     expect(kpisDeExposicion(EXPO, [], en("2026-11-08T12:00")).hoy).toEqual({ etiqueta: "Horario", valor: "Por confirmar" });
   });
@@ -146,9 +146,9 @@ describe("taller y festival", () => {
   it("las sesiones de un taller: un día por sesión, en orden, con la misma hora; su línea", () => {
     const sesiones = horariosDeTaller(["2026-10-24", "2026-10-10", "2026-10-17", "2026-10-10"], "10:00", "12:00");
     expect(sesiones.map((s) => s.dia)).toEqual(["2026-10-10", "2026-10-17", "2026-10-24"]);
-    expect(resumenTaller(sesiones, "2026-10-07")).toBe("3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 a.m.–12:00 p.m.");
+    expect(resumenTaller(sesiones, "2026-10-07")).toBe("3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 am–12:00 pm");
     expect(resumenTaller([...sesiones.slice(0, 2), { dia: "2026-11-07", hora: "11:00", fin: "" }], "2026-10-07")).toBe("3 sesiones · sáb 10 y sáb 17 de oct y sáb 7 de nov · horario por sesión");
-    expect(resumenTaller([{ dia: "2027-01-09", hora: "10:00", fin: "" }], "2026-10-07")).toBe("1 sesión · sáb 9 de ene de 2027 · 10:00 a.m.");
+    expect(resumenTaller([{ dia: "2027-01-09", hora: "10:00", fin: "" }], "2026-10-07")).toBe("1 sesión · sáb 9 de ene de 2027 · 10:00 am");
   });
 
   it("OL-362: un último acto sin hora de fin no le suma un día al rango del festival; uno con fin que cruza la medianoche, sí", () => {
@@ -178,6 +178,11 @@ describe("taller y festival", () => {
     // Su fin a la medianoche (un último acto sin hora de fin) es el final del día anterior, no un día más.
     expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-15T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("Del 12 al 14 de nov");
     expect(rangoDelPeriodo(localAIso("2026-11-12T19:00", ZONA)!, localAIso("2026-11-13T00:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("jue 12 de nov");
+    // Un festival de una noche que acaba de madrugada se dice de una sola manera (OL-418): su día con su rango, no «Del 12 al 13 de nov».
+    expect(rangoDelPeriodo(localAIso("2026-11-12T20:00", ZONA)!, localAIso("2026-11-13T02:00", ZONA)!, ZONA, en("2026-10-07T12:00"))).toBe("jue 12 de nov · 8:00 pm–2:00 am");
+    expect(cuandoDePeriodo({ inicio: localAIso("2026-11-12T20:00", ZONA)!, fin: localAIso("2026-11-13T02:00", ZONA)!, zona: ZONA, clase: "festival" }, en("2026-10-07T12:00"))).toBe("jue 12 de nov · 8:00 pm–2:00 am");
+    // Ya en curso, igual: no «Hasta el vie 13 de nov».
+    expect(cuandoDePeriodo({ inicio: localAIso("2026-11-12T20:00", ZONA)!, fin: localAIso("2026-11-13T02:00", ZONA)!, zona: ZONA, clase: "festival" }, en("2026-11-12T21:00"))).toBe("jue 12 de nov · 8:00 pm–2:00 am");
     // La misma regla, sola (OL-336: la usa el cartel): las 00:00 cierran el día anterior; 23:59 y cualquier otra hora, su día; sin fin, el de inicio.
     expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, localAIso("2026-10-15T00:00", ZONA)!, ZONA)).toBe("2026-10-14");
     expect(ultimoDiaDelPeriodo(localAIso("2026-10-07T10:00", ZONA)!, localAIso("2026-10-14T23:59", ZONA)!, ZONA)).toBe("2026-10-14");
@@ -195,7 +200,7 @@ describe("la cabecera oscura (OL-351): la etiqueta y la línea del taller", () =
   });
   it("un taller de un día dice ese día, su hora y dónde; de varios, sus días y dónde (las horas van en «Sesiones»)", () => {
     const una = { inicio: localAIso("2026-10-08T17:00", ZONA)!, fin: localAIso("2026-10-08T19:00", ZONA)!, zona: ZONA };
-    expect(lineaDeTaller(una, "Foro lunaria", en("2026-10-07T12:00"))).toBe("jue 8 de oct · 17:00 · Foro lunaria");
+    expect(lineaDeTaller(una, "Foro lunaria", en("2026-10-07T12:00"))).toBe("jue 8 de oct · 5:00–7:00 pm · Foro lunaria");
     const varias = { inicio: localAIso("2026-10-09T17:00", ZONA)!, fin: localAIso("2026-10-13T19:00", ZONA)!, zona: ZONA };
     expect(lineaDeTaller(varias, "Foro lunaria", en("2026-10-07T12:00"))).toBe("Del 9 al 13 de oct · Foro lunaria");
     expect(lineaDeTaller(varias, null, en("2026-10-07T12:00"))).toBe("Del 9 al 13 de oct");

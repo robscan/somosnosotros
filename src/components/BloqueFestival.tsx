@@ -19,8 +19,8 @@ type Props = {
   esHoy: boolean;
   estado: (id: string) => Asistencia;
   boton: (e: EventoAgenda) => EstadoBotonRenglon;
-  /** La línea bajo su nombre cuando no es la de Agenda: en una ficha (OL-410), su cuándo y cuántas funciones tiene ahí («Hasta el sáb 17 de oct · 7
-   *  funciones aquí», `cabezaDeBloque`). */
+  /** La línea bajo su nombre cuando no es la de Agenda: en una ficha (OL-410), su cuándo y cuántas actividades tiene ahí («Hasta el sáb 17 de oct · 7
+   *  actividades aquí», `cabezaDeBloque`). */
   nota?: string;
   /** Sus actos son de varios días (en una ficha: todas sus funciones aquí, no las de un día): cada renglón dice su día además de su hora. */
   conDia?: boolean;

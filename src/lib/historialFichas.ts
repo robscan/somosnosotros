@@ -97,7 +97,7 @@ function diaSemana(iso: string, zona: string): string {
   return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "short", day: "numeric" }).format(new Date(iso)).replace(/[.,]/g, "");
 }
 
-/** La línea de cuándo de un renglón pasado: «jue 8 · 19:00»; si duró varios días, «del mar 6 al mié 7» (una exposición cuenta por su inicio). */
+/** La línea de cuándo de un renglón pasado: «jue 8 · 7:00 pm»; si duró varios días, «del mar 6 al mié 7» (una exposición cuenta por su inicio). */
 export function cuandoPasado(e: Pick<EventoPasado, "inicio" | "fin" | "zona">): string {
   const zona = e.zona || ZONA_INICIAL;
   if (e.fin && esDeVariosDias(e.inicio, e.fin, zona)) return `del ${diaSemana(e.inicio, zona)} al ${diaSemana(e.fin, zona)}`;

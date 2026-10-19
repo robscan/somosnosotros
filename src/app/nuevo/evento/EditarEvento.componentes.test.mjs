@@ -174,7 +174,7 @@ const avisa = (p) => p.evaluate(() => !window.dispatchEvent(new Event("beforeunl
 const casilla = (p) => p.getByRole("checkbox", { name: /Lectura automática/ });
 const mismoHorario = (p) => p.getByRole("checkbox", { name: "Mismo horario todos los días" });
 const cerrar = (p) => p.getByRole("link", { name: "Cerrar (Volver al evento)" });
-const limpio = (texto) => texto.replace(/\s+/g, " ").replace(/ | /g, " ").replace(/p\.\s?m\./g, "p.m.");
+const limpio = (texto) => texto.replace(/\s+/g, " ");
 async function guardar(p) {
   const antes = await p.evaluate(() => window.qa.envios.length);
   await boton(p, "Guardar cambios").click();
@@ -199,7 +199,7 @@ test("entra directo en «Revisa» con todo el evento puesto; guardar sin tocar n
   const filas = (await renglones(p)).map(limpio);
   assert.equal(filas.length, 4);
   assert.match(filas[0], /vie 9 de oct/);
-  assert.match(filas[0], /19:00/);
+  assert.match(filas[0], /7:00–9:00 pm/);
   assert.match(filas[1], /Teatro de la Paz/);
   assert.match(filas[2], /\$150/);
   assert.match(filas[3], /Lucía Montaño/);
@@ -419,9 +419,9 @@ test("horario por día: llega con cada día; se cambia un día, se guardan las s
   assert.equal(await pregunta(p), "¿A qué hora, cada día?");
   assert.equal(await mismoHorario(p).getAttribute("aria-checked"), "false");
   const dias = (await renglones(p)).map(limpio);
-  assert.match(dias[0], /^vie 9 de oct de 8:00 p\.m\. a 9:00 p\.m\./);
-  assert.match(dias[1], /^sáb 10 de oct de 6:00 p\.m\. a 9:00 p\.m\./);
-  assert.match(dias[2], /^dom 11 de oct de 8:00 p\.m\. a 9:00 p\.m\./);
+  assert.match(dias[0], /^vie 9 de oct de 8:00 a 9:00 pm/);
+  assert.match(dias[1], /^sáb 10 de oct de 6:00 a 9:00 pm/);
+  assert.match(dias[2], /^dom 11 de oct de 8:00 a 9:00 pm/);
   await foto(p, "04-horario-por-dia");
   await boton(p, "Cambiar dom 11 de oct").click();
   await p.getByRole("dialog").getByRole("group", { name: "Empieza" }).getByRole("button", { name: /^7:00/ }).click();
@@ -439,7 +439,7 @@ test("horario por día: llega con cada día; se cambia un día, se guardan las s
   await boton(p, "Cambiar cuándo").click();
   await mismoHorario(p).click();
   await p.getByRole("group", { name: "Termina", exact: true }).getByRole("button", { name: /^9:00/ }).click();
-  assert.match(limpio((await renglones(p))[0]), /Del 9 al 11 de oct · 20:00–21:00/);
+  assert.match(limpio((await renglones(p))[0]), /Del 9 al 11 de oct · 8:00–9:00 pm/);
   const comun = await guardar(p);
   assert.equal(comun.sesiones, undefined);
   assert.deepEqual({ inicio: comun.inicio, fin: comun.fin }, { inicio: "2026-10-09T20:00", fin: "2026-10-11T21:00" });

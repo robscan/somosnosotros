@@ -25,7 +25,7 @@ export function preguntaSiHayParecidos(clase: Clase | null | undefined): boolean
   return !clase || clase === "puntual" || clase === "taller";
 }
 
-/** El renglón del aviso: el cartel (o el símbolo SN), el título, «vie 16 oct · 19:00» en su zona y el sitio, y el enlace a su ficha. */
+/** El renglón del aviso: el cartel (o el símbolo SN), el título, «vie 16 oct · 7:00 pm» en su zona y el sitio, y el enlace a su ficha. */
 export function renglonParecido(p: EventoParecido, ahora: Date = new Date()) {
   return {
     href: hrefEvento(p),

@@ -360,8 +360,8 @@ describe("hoja de horas: horasDeFin y etiquetaHora", () => {
     expect(horasDeFin("23:45")).toEqual([]);
   });
   it("la etiqueta es de 12 horas con a. m. y p. m.", () => {
-    expect(etiquetaHora("19:00").replace(/\s/g, " ")).toBe("7:00 p.m.");
-    expect(etiquetaHora("00:15").replace(/\s/g, " ")).toBe("12:15 a.m.");
+    expect(etiquetaHora("19:00").replace(/\s/g, " ")).toBe("7:00 pm");
+    expect(etiquetaHora("00:15").replace(/\s/g, " ")).toBe("12:15 am");
   });
   it("«sin hora de fin» de un evento de varios días acaba con su último día", () => {
     expect(FIN_DEL_DIA).toBe("23:59");

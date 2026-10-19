@@ -1,6 +1,6 @@
-import { FIN_DEL_DIA, etiquetaHora } from "./calendario";
+import { FIN_DEL_DIA } from "./calendario";
 import type { Clase } from "./eventos";
-import { diaConMesDe, diaLocal, esDeVariosDias, eventoPaso, fechaCortaChip, horaCorta, localAIso, rangoCorto, terminaDe, textoDePeriodo, ZONA_INICIAL } from "./fechas";
+import { diaConMesDe, diaLocal, esDeVariosDias, esUnaNoche, eventoPaso, fechaCortaChip, horaDeReloj, horasDelEvento, localAIso, rangoCorto, rangoDeReloj, terminaDe, textoDePeriodo, ZONA_INICIAL } from "./fechas";
 import { estructurar, textoRangos, type Dia, type Franja, type Rango } from "./horarioLugar";
 import type { HorarioDia } from "./sesionesEvento";
 
@@ -56,7 +56,7 @@ export function rangosDelDia(franjas: readonly Franja[], dia: Dia): Rango[] {
 export const enVisita = (visita: Visita, dia: string): boolean => dia >= visita.desde && dia <= visita.hasta;
 
 /**
- * Lo que dice de hoy (la ficha, «Publicado»): «Abre hoy 10:00 a.m.–6:00 p.m.», «Hoy cierra» o «Horario por confirmar»; null fuera del periodo
+ * Lo que dice de hoy (la ficha, «Publicado»): «Abre hoy 10:00 am–6:00 pm», «Hoy cierra» o «Horario por confirmar»; null fuera del periodo
  * de visita (antes de abrir o ya cerrada), donde «hoy» no dice nada.
  */
 export function textoHoy(visita: Visita, franjas: readonly Franja[], hoy: string): string | null {
@@ -75,16 +75,17 @@ export function textoVisita(visita: Visita, hoy: string, ahora: Date = new Date(
 /**
  * El cuándo de una exposición o del marco de un festival en todas las superficies (OL-409, firma del founder, «U»): en curso «Hasta el …», por
  * venir «Del … al …» (`textoDePeriodo`). La exposición, por sus días de visita (`visitaDeEvento`); el festival, de su primer acto al último
- * (`ultimoDiaDelPeriodo`: un fin a la medianoche es el final del día anterior). Lo demás (un evento, un taller) no tiene periodo: su día y su hora.
+ * (`ultimoDiaDelPeriodo`: un fin a la medianoche es el final del día anterior); un festival de una noche que acaba de madrugada, ese día con sus
+ * horas (`textoDeUnaNoche`, OL-418). Lo demás (un evento, un taller) no tiene periodo: su día y su hora.
  */
 export function cuandoDePeriodo(e: { inicio: string; fin: string | null; zona: string; clase?: Clase | null }, ahora: Date = new Date()): string {
   const desde = diaLocal(new Date(e.inicio), e.zona);
-  const hasta = e.clase === "exposicion" ? visitaDeEvento(e.inicio, e.fin, e.zona).hasta : ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona);
-  return textoDePeriodo(desde, hasta, ahora, e.zona);
+  if (e.clase === "exposicion") return textoDePeriodo(desde, visitaDeEvento(e.inicio, e.fin, e.zona).hasta, ahora, e.zona);
+  return textoDeUnaNoche(e.inicio, e.fin, e.zona, ahora) ?? textoDePeriodo(desde, ultimoDiaDelPeriodo(e.inicio, e.fin, e.zona), ahora, e.zona);
 }
 
 /**
- * La línea de una exposición (ficha, compartir, «Publicado»; doc 55 §3): «Hasta el dom 30 de nov · Abre hoy 10:00 a.m.–6:00 p.m.», o con
+ * La línea de una exposición (ficha, compartir, «Publicado»; doc 55 §3): «Hasta el dom 30 de nov · Abre hoy 10:00 am–6:00 pm», o con
  * «Horario por confirmar»; antes de abrir, sus días.
  */
 export function lineaDeExposicion(evento: { inicio: string; fin: string | null; zona: string }, franjas: readonly Franja[], ahora: Date = new Date()): string {
@@ -93,7 +94,7 @@ export function lineaDeExposicion(evento: { inicio: string; fin: string | null; 
   return [textoVisita(visita, hoy, ahora, evento.zona), textoHoy(visita, franjas, hoy)].filter(Boolean).join(" · ");
 }
 
-/** Los números de la ficha de una exposición (`ui/Kpi`): «Hasta» con su día y «Hoy» con sus horas en 24 h (como todo lo que se lee en un número),
+/** Los números de la ficha de una exposición (`ui/Kpi`): «Hasta» con su día y «Hoy» con sus horas («10:00 am–6:00 pm», `rangoDeReloj`, OL-418),
  *  «Cerrado» o «Por confirmar»; fuera del periodo, sus días. */
 export function kpisDeExposicion(evento: { inicio: string; fin: string | null; zona: string }, franjas: readonly Franja[], ahora: Date = new Date()): { hasta: string; hoy: { etiqueta: string; valor: string } } {
   const visita = visitaDeEvento(evento.inicio, evento.fin, evento.zona);
@@ -102,7 +103,7 @@ export function kpisDeExposicion(evento: { inicio: string; fin: string | null; z
   if (hoy < visita.desde) return { hasta, hoy: { etiqueta: "Abre", valor: fechaCortaChip(evento.inicio, evento.zona) } };
   if (!franjas.some((f) => f.dias.length)) return { hasta, hoy: { etiqueta: "Horario", valor: "Por confirmar" } };
   const rangos = rangosDelDia(franjas, diaDeSemana(hoy));
-  return { hasta, hoy: { etiqueta: "Hoy", valor: rangos.length ? `${rangos[0].abre}–${rangos[rangos.length - 1].cierra}` : "Cerrado" } };
+  return { hasta, hoy: { etiqueta: "Hoy", valor: rangos.length ? rangoDeReloj(rangos[0].abre, rangos[rangos.length - 1].cierra) : "Cerrado" } };
 }
 
 /** El horario de cada sesión de un taller: un día por sesión, en orden y sin repetir, con la misma hora de inicio y de fin (`fin` vacío es «Sin hora de fin»). */
@@ -113,7 +114,7 @@ const mesDe = (dia: string): string => new Intl.DateTimeFormat("es-MX", { timeZo
 const lista = new Intl.ListFormat("es", { type: "conjunction" });
 
 /**
- * Las sesiones de un taller en una línea («Revisa», el paso de las sesiones): «3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 a.m.»; con
+ * Las sesiones de un taller en una línea («Revisa», el paso de las sesiones): «3 sesiones · sáb 10, sáb 17 y sáb 24 de oct · 10:00 am»; con
  * horas distintas, «· horario por sesión». Los días de un mismo mes llevan el mes una vez, al final; el año solo si no es el de `hoy`.
  */
 export function resumenTaller(horarios: readonly HorarioDia[], hoy: string): string {
@@ -135,18 +136,18 @@ export function resumenTaller(horarios: readonly HorarioDia[], hoy: string): str
     }),
   );
   const iguales = dias.every((h) => h.hora === dias[0].hora && h.fin === dias[0].fin);
-  const hora = iguales ? (dias[0].fin ? `${etiquetaHora(dias[0].hora)}–${etiquetaHora(dias[0].fin)}` : etiquetaHora(dias[0].hora)) : "horario por sesión";
+  const hora = iguales ? (dias[0].fin ? rangoDeReloj(dias[0].hora, dias[0].fin) : horaDeReloj(dias[0].hora)) : "horario por sesión";
   return `${dias.length} ${dias.length === 1 ? "sesión" : "sesiones"} · ${texto} · ${hora}`;
 }
 
 /**
  * La línea de un taller bajo su título en la cabecera oscura (OL-351): cuándo y dónde, lo que sus números («Sesiones · Costo · Van») no dicen.
- * En un día, ese día y su hora («jue 8 de oct · 17:00 · Foro lunaria»); en varios (varias sesiones o un taller de corrido), sus días («Del 9 al
- * 13 de oct · Foro lunaria»): las horas de cada sesión van en «Sesiones».
+ * En un día, ese día y sus horas («jue 8 de oct · 5:00–7:00 pm · Foro lunaria», `horasDelEvento`); en varios (varias sesiones o un taller de
+ * corrido), sus días («Del 9 al 13 de oct · Foro lunaria»): las horas de cada sesión van en «Sesiones».
  */
 export function lineaDeTaller(evento: { inicio: string; fin: string | null; zona: string }, sitio: string | null, ahora: Date = new Date()): string {
   const dia = diaLocal(new Date(evento.inicio), evento.zona);
-  const cuando = ultimoDiaDelPeriodo(evento.inicio, evento.fin, evento.zona) > dia ? rangoDelPeriodo(evento.inicio, evento.fin, evento.zona, ahora) : `${diaConMesDe(dia, ahora, evento.zona)} · ${horaCorta(evento.inicio, evento.zona)}`;
+  const cuando = ultimoDiaDelPeriodo(evento.inicio, evento.fin, evento.zona) > dia ? rangoDelPeriodo(evento.inicio, evento.fin, evento.zona, ahora) : `${diaConMesDe(dia, ahora, evento.zona)} · ${horasDelEvento(evento.inicio, evento.fin, evento.zona)}`;
   return [cuando, sitio].filter(Boolean).join(" · ");
 }
 
@@ -181,11 +182,23 @@ export function ultimoDiaDelPeriodo(inicio: string, fin: string | null, zona: st
   return fin ? diaLocal(new Date(Math.max(Date.parse(inicio), Date.parse(fin) - 60000)), zona) : diaLocal(new Date(inicio), zona);
 }
 
-/** Los días de un periodo guardado (un festival): «Del 12 al 14 de nov», o un solo día («jue 12 de nov»), con su último día (`ultimoDiaDelPeriodo`). */
+/**
+ * Una noche que acaba de madrugada se dice de una sola manera (OL-418; bitácora 446, UX 6): ese día con sus horas, «sáb 17 de oct · 8:00 pm–2:00 am»,
+ * nunca «Del 17 al 18 de oct» ni «sáb 17 oct – dom 18 oct». Null si no es una noche (`esUnaNoche`) o si su fin cae justo a la medianoche, que es el
+ * final de su día (`ultimoDiaDelPeriodo`) y se dice con el día solo.
+ */
+export function textoDeUnaNoche(inicio: string, fin: string | null, zona: string = ZONA_INICIAL, ahora: Date = new Date()): string | null {
+  const desde = diaLocal(new Date(inicio), zona);
+  if (!esUnaNoche(inicio, fin, zona) || ultimoDiaDelPeriodo(inicio, fin, zona) === desde) return null;
+  return `${diaConMesDe(desde, ahora, zona)} · ${horasDelEvento(inicio, fin, zona)}`;
+}
+
+/** Los días de un periodo guardado (un festival): «Del 12 al 14 de nov», o un solo día («jue 12 de nov»), con su último día (`ultimoDiaDelPeriodo`);
+ *  una noche que acaba de madrugada, ese día con sus horas (`textoDeUnaNoche`). */
 export function rangoDelPeriodo(inicio: string, fin: string | null, zona: string = ZONA_INICIAL, ahora: Date = new Date()): string {
   const desde = diaLocal(new Date(inicio), zona);
   const hasta = ultimoDiaDelPeriodo(inicio, fin, zona);
-  return hasta > desde ? rangoCorto(desde, hasta, diaLocal(ahora, zona)) : diaConMesDe(desde, ahora, zona);
+  return textoDeUnaNoche(inicio, fin, zona, ahora) ?? (hasta > desde ? rangoCorto(desde, hasta, diaLocal(ahora, zona)) : diaConMesDe(desde, ahora, zona));
 }
 
 /** «Programa registrado: 3 actividades» (el modelo pide decir lo parcial: un festival registra lo que se sabe, no todo su programa). */
@@ -198,12 +211,12 @@ export const textoProgramaRegistrado = (n: number): string => `Programa registra
 export const yaPasoSegunClase = (e: { inicio: string; fin: string | null; zona: string; clase?: Clase }, ahora: Date = new Date()): boolean => eventoPaso(e.inicio, e.fin, ahora, e.zona);
 
 /**
- * La línea bajo el título de un festival sin programa (OL-413): su día y su hora, como un evento (una noche que cruza la medianoche, «8 pm–2 am», es
- * un día: `esDeVariosDias`), o sus días si dura varios, y su lugar: «sáb 17 de oct · 20:00 · Foro lunaria».
+ * La línea bajo el título de un festival sin programa (OL-413): su día y sus horas, como un evento (una noche que cruza la medianoche es un día con
+ * su rango, OL-418: «sáb 17 de oct · 8:00 pm–2:00 am · Foro lunaria», `horasDelEvento`), o sus días si dura varios, y su lugar.
  */
 export function lineaDeFestivalSinPrograma(evento: { inicio: string; fin: string | null; zona: string }, sitio: string | null, ahora: Date = new Date()): string {
   const dia = diaLocal(new Date(evento.inicio), evento.zona);
-  const cuando = esDeVariosDias(evento.inicio, evento.fin, evento.zona) ? rangoDelPeriodo(evento.inicio, evento.fin, evento.zona, ahora) : `${diaConMesDe(dia, ahora, evento.zona)} · ${horaCorta(evento.inicio, evento.zona)}`;
+  const cuando = esDeVariosDias(evento.inicio, evento.fin, evento.zona) ? rangoDelPeriodo(evento.inicio, evento.fin, evento.zona, ahora) : `${diaConMesDe(dia, ahora, evento.zona)} · ${horasDelEvento(evento.inicio, evento.fin, evento.zona)}`;
   return [cuando, sitio].filter(Boolean).join(" · ");
 }
 

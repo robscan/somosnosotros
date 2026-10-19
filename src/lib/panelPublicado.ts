@@ -82,7 +82,7 @@ const CLASE: Record<string, string> = { festival: "Festival", exposicion: "Expos
 export function cuandoPublicado(e: Pick<EventoPublicado, "inicio" | "fin" | "zona" | "clase">, festival: string | null, ahora: Date = new Date()): string {
   const zona = e.zona ?? undefined;
   const dia = cuandoVariosDias(e.inicio, e.fin, ahora, zona)?.dias ?? diaCorto(e.inicio, ahora, zona);
-  return unir([e.clase ? CLASE[e.clase] : null, dia, festival && `acto de ${festival}`]);
+  return unir([e.clase ? CLASE[e.clase] : null, dia, festival && `actividad de ${festival}`]);
 }
 
 /** Dónde: el lugar con ficha o el sitio escrito. */

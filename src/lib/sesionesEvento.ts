@@ -1,6 +1,6 @@
-import { FIN_DEL_DIA, etiquetaHora, sumarDiasIso } from "./calendario";
-import { desdeLas, partirLocal } from "./cuandoEvento";
-import { combinarFechaHora, diaConMes, diaLocal, horaCorta, localAIso, rangoCorto } from "./fechas";
+import { FIN_DEL_DIA, sumarDiasIso } from "./calendario";
+import { desdeLas, horasDelDia, partirLocal } from "./cuandoEvento";
+import { combinarFechaHora, diaConMes, diaLocal, horasDelEvento, localAIso, rangoCorto } from "./fechas";
 
 /**
  * El horario por día de un evento de varios días (OL-311; prototipo firmado `horario-por-dia.html`, bitácoras 338 y 339). Con la casilla
@@ -64,8 +64,11 @@ export function finesDelDia(hora: string): string[] {
 /** Cambia la hora de inicio de un día: su fin se queda si todavía cae después; si no, el día queda sin hora de fin. */
 export const conHoraDeInicio = (h: HorarioDia, hora: string): Pick<HorarioDia, "hora" | "fin"> => ({ hora, fin: h.fin > hora ? h.fin : "" });
 
-/** Las horas de un día como se dicen en el paso (12 h, como los chips): «de 8:00 p.m. a 9:00 p.m.» o «desde las 8:00 p.m.». */
-export const horasDeHorario = ({ hora, fin }: Pick<HorarioDia, "hora" | "fin">): string => (fin ? `de ${etiquetaHora(hora)} a ${etiquetaHora(fin)}` : `desde ${desdeLas(hora)} ${etiquetaHora(hora)}`);
+/** Las horas de un día como se dicen en el paso, con la hora de toda la app (OL-418): «de 8:00 a 9:00 pm» o «desde las 8:00 pm». */
+export function horasDeHorario({ hora, fin }: Pick<HorarioDia, "hora" | "fin">): string {
+  const h = horasDelDia(hora, fin || undefined);
+  return h.hasta ? `de ${h.desde} a ${h.hasta}` : `desde ${desdeLas(hora)} ${h.desde}`;
+}
 
 /**
  * La línea de abajo con la casilla desmarcada: «Del 9 al 11 de oct · 1 día con otro horario» o «… · cada día igual». `hoy` es YYYY-MM-DD en la
@@ -104,20 +107,20 @@ export function sesionesVigentes(evento: { inicio: string; fin: string | null; z
   return coincide ? ordenadas : [];
 }
 
-/** La hora de una sesión en 24 h, como todo lo que se lee fuera del paso: «20:00–21:00»; sin hora de fin, «20:00». */
-export const horasDeSesion = (s: SesionGuardada, zona: string): string => (s.fin ? `${horaCorta(s.inicio, zona)}–${horaCorta(s.fin, zona)}` : horaCorta(s.inicio, zona));
+/** Las horas de una sesión, como las de cualquier evento en su día (`horasDelEvento`, OL-418): «8:00–9:00 pm»; sin hora de fin, «8:00 pm». */
+export const horasDeSesion = (s: SesionGuardada, zona: string): string => horasDelEvento(s.inicio, s.fin, zona);
 
-/** La lista de días de la ficha: «vie 9 de oct» y sus horas, en 24 h. */
+/** La lista de días de la ficha: «vie 9 de oct» y sus horas. */
 export function listaDeSesiones(sesiones: readonly SesionGuardada[], zona: string, ahora: Date = new Date()): { dia: string; horas: string }[] {
   return sesiones.map((s) => ({ dia: diaConMes(s.inicio, ahora, zona), horas: horasDeSesion(s, zona) }));
 }
 
-/** Cada día en una línea («vie 9 de oct · 20:00–21:00»): la descripción del calendario y de la hoja nativa, donde no cabe una lista. */
+/** Cada día en una línea («vie 9 de oct · 8:00–9:00 pm»): la descripción del calendario y de la hoja nativa, donde no cabe una lista. */
 export const lineasDeSesiones = (sesiones: readonly SesionGuardada[], zona: string, ahora: Date = new Date()): string[] => listaDeSesiones(sesiones, zona, ahora).map(({ dia, horas }) => `${dia} · ${horas}`);
 
 /**
  * Lo que lleva «A mi calendario» de la hoja nativa del iPhone, que agrega un solo evento por vez (`EKEventEditViewController`): el primer día, con
- * su hora, y en las notas todos los días con sus horas («vie 9 de oct · 20:00–21:00»). El archivo .ics de la web sí lleva un evento por día
+ * su hora, y en las notas todos los días con sus horas («vie 9 de oct · 8:00–9:00 pm»). El archivo .ics de la web sí lleva un evento por día
  * (`archivoIcs`). Sin sesiones devuelve el evento tal cual.
  */
 export function conPrimerDia<T extends { inicio: string; fin: string | null; descripcion: string | null }>(e: T, sesiones: readonly SesionGuardada[], zona: string, ahora: Date = new Date()): T {

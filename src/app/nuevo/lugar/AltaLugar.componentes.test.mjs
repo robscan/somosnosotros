@@ -356,7 +356,7 @@ for (const ancho of [390, 320, 1280]) {
     await foto(p, `lugar-8-hoja-horario-${ancho}`);
     await hoja.getByRole("button", { name: "Listo" }).click();
     await boton(p, "Cambiar horario").waitFor();
-    assert.equal((await renglonesDe(p))[2], "Lu–Vi 10:00 a.m.–2:00 p.m. y 4:00 p.m.–8:00 p.m. Sá 4:00 p.m.–8:00 p.m. Cierra Do");
+    assert.equal((await renglonesDe(p))[2], "Lu–Vi 10:00 am–2:00 pm y 4:00–8:00 pm Sá 4:00–8:00 pm Cierra Do");
     assert.ok(await sinDesborde(p));
     await foto(p, `lugar-6-revisa-horario-${ancho}`);
     await boton(p, "Publicar lugar").click();

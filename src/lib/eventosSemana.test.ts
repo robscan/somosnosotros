@@ -65,7 +65,7 @@ describe("Con eventos esta semana", () => {
     const datos = [lejano, empate, cercano, primero, aparicion("a", undefined, { visible: false })];
     const r = tarjetas(datos);
     expect(r.map((a) => a.id)).toEqual(["z", "a", "b"]);
-    expect(r[1].detalle).toBe("Mañana · 19:00");
+    expect(r[1].detalle).toBe("Mañana · 7:00 pm");
     expect(tarjetas([...datos].reverse())).toEqual(r);
   });
   it("mantiene enlaces a las fichas y su foto en ambos directorios", () => {
@@ -82,7 +82,7 @@ describe("Con eventos esta semana", () => {
     const a = aparicion("artista", "2026-09-19T01:00:00Z", { id: "a", zona: "America/Mexico_City" });
     const b = aparicion("artista", "2026-09-19T01:00:00Z", { id: "b", zona: "Europe/Madrid" });
     expect(tarjetas([b, a])).toEqual(tarjetas([a, b]));
-    expect(tarjetas([b, a])[0].detalle).toBe("Hoy · 19:00");
+    expect(tarjetas([b, a])[0].detalle).toBe("Hoy · 7:00 pm");
   });
   it("una fecha inválida no rompe el directorio", () => {
     expect(tarjetas([aparicion("malo", "incorrecto"), aparicion("fin-malo", undefined, { termina: "incorrecto" })])).toEqual([]);

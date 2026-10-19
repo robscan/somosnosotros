@@ -29,7 +29,7 @@ import TextoHorario from "@/app/lugares/TextoHorario";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
-import { cuandoDePeriodo, festivalComoEvento, horarioEfectivo, kpisDeExposicion, lineaDeFestivalSinPrograma, lineaDeTaller, soloInteres, textoProgramaRegistrado, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
+import { cuandoDePeriodo, festivalComoEvento, horarioEfectivo, kpisDeExposicion, lineaDeFestivalSinPrograma, lineaDeTaller, soloInteres, textoVisita, visitaDeEvento } from "@/lib/claseEvento";
 import { franjaDeFila, type Franja } from "@/lib/horarioLugar";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -55,7 +55,7 @@ import { programaDeFestival, textoActividades, textoProgramaConPasados, vistaDeF
 import { conPrimerDia, listaDeSesiones, sesionesVigentes, type SesionGuardada } from "@/lib/sesionesEvento";
 import { hrefCreador } from "@/lib/carteles/origen";
 import { cargarActosDeMarcos } from "@/lib/cargarSedes";
-import { otrasFunciones, textoFuncion } from "@/lib/series";
+import { funcionesHermanas, otrasFunciones, textoFuncion } from "@/lib/series";
 import { hrefSitio } from "@/lib/sitios";
 import { portadaDeFestival, proximoPorSede, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -265,24 +265,37 @@ async function cargarLigados(e: EventoConLugar) {
 /**
  * Las otras funciones de lo mismo (OL-385): los eventos visibles y sin pasar del mismo lugar (o, sin lugar, del mismo sitio escrito, sin importar
  * mayúsculas), hasta 100, y aquí, en TypeScript, los de su mismo título normalizado (`otrasFunciones`). Ni un festival ni una exposición las tienen.
- * Si la consulta falla, la ficha sigue sin el bloque.
+ * Aparte, las que ya pasaron (las 100 más recientes, solo lo que hace falta para compararlas), para que «Función n de N» cuente todas (OL-418:
+ * `hermanas` son las pasadas y las por venir). Si la consulta falla, la ficha sigue sin el bloque.
  */
-async function cargarOtrasFunciones(e: EventoConLugar, ahora: Date): Promise<EventoAgenda[]> {
-  if (e.clase === "festival" || e.clase === "exposicion" || (!e.lugar_id && !e.sitio_texto?.trim())) return [];
+async function cargarOtrasFunciones(e: EventoConLugar, ahora: Date): Promise<{ otras: EventoAgenda[]; hermanas: Pick<EventoAgenda, "id" | "inicio">[] }> {
+  const ninguna = { otras: [], hermanas: [] };
+  if (e.clase === "festival" || e.clase === "exposicion" || (!e.lugar_id && !e.sitio_texto?.trim())) return ninguna;
   const supabase = await clienteServidor();
-  if (!supabase) return [];
+  if (!supabase) return ninguna;
   let consulta = supabase
     .from("eventos")
     .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, clase, evento_padre_id, colores_cartel, lugar:lugares(nombre, portada)")
     .eq("visible", true)
     .or(filtroSinPasar(ahora))
     .neq("id", e.id);
-  // En el sitio escrito, `%`, `_` y la barra no son comodines: se escapan.
-  consulta = e.lugar_id ? consulta.eq("lugar_id", e.lugar_id) : consulta.is("lugar_id", null).eq("ciudad", e.ciudad).ilike("sitio_texto", e.sitio_texto!.trim().replace(/[\\%_]/g, "\\$&"));
-  const { data } = await consulta.order("inicio").limit(100);
-  const filas = Array.isArray(data) ? (data as unknown as (EventoAgenda & { lugar: EventoAgenda["lugar"] | NonNullable<EventoAgenda["lugar"]>[] })[]) : [];
+  let yaPasadas = supabase.from("eventos").select("id, titulo, inicio, lugar_id, sitio_texto, clase").eq("visible", true).lt("termina", ahora.toISOString()).neq("id", e.id);
+  if (e.lugar_id) {
+    consulta = consulta.eq("lugar_id", e.lugar_id);
+    yaPasadas = yaPasadas.eq("lugar_id", e.lugar_id);
+  } else {
+    // En el sitio escrito, `%`, `_` y la barra no son comodines: se escapan.
+    const sitio = e.sitio_texto!.trim().replace(/[\\%_]/g, "\\$&");
+    consulta = consulta.is("lugar_id", null).eq("ciudad", e.ciudad).ilike("sitio_texto", sitio);
+    yaPasadas = yaPasadas.is("lugar_id", null).eq("ciudad", e.ciudad).ilike("sitio_texto", sitio);
+  }
+  const [porVenir, pasadas] = await Promise.all([consulta.order("inicio").limit(100), yaPasadas.order("inicio", { ascending: false }).limit(100)]);
+  const filas = Array.isArray(porVenir.data) ? (porVenir.data as unknown as (EventoAgenda & { lugar: EventoAgenda["lugar"] | NonNullable<EventoAgenda["lugar"]>[] })[]) : [];
   const candidatos = filas.map((f) => ({ ...f, lugar: Array.isArray(f.lugar) ? (f.lugar[0] ?? null) : f.lugar, van: null }));
-  return otrasFunciones(e, candidatos, (x) => eventoPaso(x.inicio, x.fin, ahora, x.zona));
+  const otras = otrasFunciones(e, candidatos, (x) => eventoPaso(x.inicio, x.fin, ahora, x.zona));
+  const yaPasaron = funcionesHermanas(e, Array.isArray(pasadas.data) ? (pasadas.data as unknown as Pick<EventoAgenda, "id" | "titulo" | "inicio" | "lugar_id" | "sitio_texto" | "clase">[]) : []);
+  // Sin repetir: las dos lecturas no se cruzan (`termina`), pero la cuenta no depende de eso.
+  return { otras, hermanas: [...new Map([...yaPasaron, ...otras].map((x) => [x.id, x])).values()] };
 }
 
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
@@ -376,15 +389,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // Cómo ocurre (OL-321; doc 55 §3): lo ligado por su clase, la línea de cuándo de una exposición y de un festival, y «Me interesa» sin «Voy».
   const clase = e.clase ?? "puntual";
   const ahora = new Date();
-  const [ligados, funciones] = await Promise.all([cargarLigados(e), cargarOtrasFunciones(e, ahora)]);
+  const [ligados, { otras: funciones, hermanas }] = await Promise.all([cargarLigados(e), cargarOtrasFunciones(e, ahora)]);
   // El costo (OL-411; firma del founder: «K «Por confirmar»»): sin precio, «Gratis» solo en un evento suelto; en un festival, una exposición, un
   // taller, un acto de festival o una inauguración (que heredan el costo de lo suyo), «Por confirmar».
   const opcional = costoOpcional({ clase, evento_padre_id: e.evento_padre_id, inauguracion: !!ligados.inaugura });
   const costo = textoCosto(e.precio, opcional);
   const horario = horarioEfectivo(ligados.horarioPropio, ligados.horarioLugar);
-  // «Función 2 de 6» junto a la clase, si tiene funciones hermanas y no ha pasado (entre las que no han pasado no estaría ella). «Voy» sigue siendo
-  // por función (H8 de docs/investigaciones/eventos-modelo.md): cada renglón de «Otras funciones» lleva el suyo.
-  const funcion = consultaTrasFin || paso ? null : textoFuncion(e, funciones);
+  // «Función 2 de 6» junto a la clase, si tiene funciones hermanas y no ha pasado; cuenta todas, también las que ya pasaron (OL-418). «Voy» sigue
+  // siendo por función (H8 de docs/investigaciones/eventos-modelo.md): cada renglón de «Otras funciones» (las que no han pasado) lleva el suyo.
+  const funcion = consultaTrasFin || paso ? null : textoFuncion(e, hermanas);
   const decididasFunciones = funciones.length ? await decididasDe(actual?.perfil.id ?? null, funciones.map((f) => f.id)) : null;
   const hoy = diaLocal(ahora, e.zona);
   // Lo ligado que ya pasó se enlaza a su ficha en pasado y se dice en pasado (OL-388, sustituye a OL-380): «Fue el …», «Cerró el …», «Terminó el …».
@@ -409,9 +422,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes });
   // El cuándo del festival con la regla de todo periodo (OL-409, «U»): en curso «Hasta el …», por venir «Del … al …».
   const rangoFestival = clase === "festival" ? cuandoDePeriodo(e, ahora) : null;
-  // Sin actos publicados todavía, «Programa por confirmar», como su tarjeta en Inicio (OL-346).
-  const programaFestival = actosVisibles.length ? textoProgramaRegistrado(actosVisibles.length) : PROGRAMA_POR_CONFIRMAR;
-  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" && !comoEvento ? [rangoFestival, programaFestival].filter(Boolean).join(" · ") : null;
+  // Cuántas actividades tiene lo dice una sola vez el número de la banda («Actividades 3», OL-418; antes también la línea, «Programa registrado: 3
+  // actividades»): la línea dice su cuándo y, sin actos publicados todavía, «Programa por confirmar», como su tarjeta en Inicio (OL-346).
+  const cuandoClase = clase === "exposicion" ? textoVisita(visitaDeEvento(e.inicio, e.fin, e.zona), hoy, ahora, e.zona) : clase === "festival" && !comoEvento ? [rangoFestival, actosVisibles.length ? null : PROGRAMA_POR_CONFIRMAR].filter(Boolean).join(" · ") : null;
   const { url, texto } = compartirEvento(e, sitio, sesiones.length > 0, cuandoClase);
   const decididasActos = clase === "festival" ? await decididasDe(actual?.perfil.id ?? null, programa.porVenir.map((a) => a.id)) : null;
   // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
@@ -519,7 +532,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     </Kpis>
   ) : clase === "festival" ? (
     <Kpis piel="banda">
-      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actos" valor={actosVisibles.length} />
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Actividades" valor={actosVisibles.length} />
       <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
       <Kpi icono={<IconoPin width={16} height={16} />} etiqueta="Sedes" valor={sedesFestival.length} />
     </Kpis>
@@ -660,7 +673,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         {/* Un evento suelto: cuándo, el costo y cuántos van. Los de una exposición, un taller o un festival van en la banda de la cabecera. */}
         {!numerosClase && (
           <Kpis>
-            {/* Lo que se canceló (OL-391) no «fue»: «Era · 19:00». */}
+            {/* Lo que se canceló (OL-391) no «fue»: «Era · 7:00 pm». */}
             <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cancelado ? `Era · ${cuando.hora}` : consultaTrasFin ? `Fue · ${cuando.hora}` : cuando.hora} valor={cuando.dia} />
             <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={costo} />
             <Suspense fallback={cancelado ? null : <EsqueletoKpi />}>

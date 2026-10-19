@@ -324,14 +324,14 @@ describe("compartirEvento", () => {
   it("un evento de varios días comparte sus días y su horario de cada día, en 24 h y con la cadena limpia (sin espacios no separables ni unidores)", () => {
     // Del 10 al 12 de oct, de 20:00 a 21:00 en la ciudad (UTC-6).
     const { texto } = compartirEvento({ ...e, inicio: "2035-10-11T02:00:00Z", fin: "2035-10-13T03:00:00Z" }, "Teatro de la Paz");
-    expect(texto).toBe("Noche de jazz\nDel 10 al 12 de oct de 2035 · 20:00–21:00 · Teatro de la Paz");
+    expect(texto).toBe("Noche de jazz\nDel 10 al 12 de oct de 2035 · 8:00–9:00 pm · Teatro de la Paz");
     expect(texto).not.toMatch(/[\u00a0\u202f\u2060]/);
   });
   it("con horario por día (OL-311) comparte los días y «horarios por día», no un horario que no es de todos", () => {
     const varios = { ...e, inicio: "2035-10-11T02:00:00Z", fin: "2035-10-13T03:00:00Z" };
     expect(compartirEvento(varios, "Teatro de la Paz", true).texto).toBe("Noche de jazz\nDel 10 al 12 de oct de 2035 · horarios por día · Teatro de la Paz");
     // Sin la bandera, o sin fin, se lee como siempre.
-    expect(compartirEvento(varios, "Teatro de la Paz", false).texto).toContain("20:00–21:00");
+    expect(compartirEvento(varios, "Teatro de la Paz", false).texto).toContain("8:00–9:00 pm");
     expect(compartirEvento(e, "Teatro de la Paz", true).texto).not.toContain("horarios por día");
   });
   it("sin slug todavía, la dirección cae al UUID; sin sitio, el cuándo va solo", () => {

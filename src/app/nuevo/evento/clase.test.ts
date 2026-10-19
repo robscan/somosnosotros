@@ -162,7 +162,7 @@ describe("el programa de un festival (H6, caso 4)", () => {
   it("tras leer el cartel se ve primero el programa, aunque todo esté leído", () => {
     const e = conPrograma();
     expect(pasoActual(e)).toBe("programa");
-    expect(preguntaDe("programa", e.r)).toBe("El cartel trae 3 eventos");
+    expect(preguntaDe("programa", e.r)).toBe("El cartel trae 3 actividades");
     expect(faltaParaPublicar(e.r)).toBe("Falta completar una actividad y el precio");
   });
 

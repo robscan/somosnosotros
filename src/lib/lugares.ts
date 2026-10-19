@@ -236,7 +236,7 @@ export function lugaresAEncuadrar<T extends LugarLista>(p: { ficha: T | null; ha
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 /**
- * La línea de vida del renglón de un lugar: «Próximo: hoy · 19:30» · «Próximo: mié 16 de sep · 19:00», con la hora de la zona del evento.
+ * La línea de vida del renglón de un lugar: «Próximo: hoy · 7:30 pm» · «Próximo: mié 16 de sep · 7:00 pm», con la hora de la zona del evento.
  * Una exposición, un taller o un festival ya en curso no son «próximos» ni tienen una hora que decir (OL-398; founder, 2026-10-13: el MUNI
  * decía «Próximo: vie 2 de oct · 00:00» por su exposición abierta): dicen qué son y hasta cuándo, «Exposición hasta el dom 8 de nov». Una
  * exposición o un festival que todavía no abre dice sus días, «Exposición del 16 al 30 de oct»; un taller por empezar, su primera sesión como

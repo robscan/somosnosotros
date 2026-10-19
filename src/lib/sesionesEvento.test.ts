@@ -82,9 +82,10 @@ describe("el horario común de cada día", () => {
 
 describe("lo que dice el paso (12 h, como los chips)", () => {
   it("las horas de un día", () => {
-    expect(horasDeHorario({ hora: "20:00", fin: "21:00" }).replace(/\s/g, " ")).toMatch(/^de 8:00 p\.\s?m\. a 9:00 p\.\s?m\.$/);
-    expect(horasDeHorario({ hora: "20:00", fin: "" })).toMatch(/^desde las 8:00/);
-    expect(horasDeHorario({ hora: "13:00", fin: "" })).toMatch(/^desde la 1:00/);
+    expect(horasDeHorario({ hora: "20:00", fin: "21:00" })).toBe("de 8:00 a 9:00 pm");
+    expect(horasDeHorario({ hora: "11:00", fin: "14:00" })).toBe("de 11:00 am a 2:00 pm");
+    expect(horasDeHorario({ hora: "20:00", fin: "" })).toBe("desde las 8:00 pm");
+    expect(horasDeHorario({ hora: "13:00", fin: "" })).toBe("desde la 1:00 pm");
   });
   it("el resumen cuenta los días que se apartaron del común", () => {
     const igual = horarioComun(dias, "20:00", "2026-10-11T21:00");
@@ -204,15 +205,15 @@ describe("lo que lee la ficha de un evento con sesiones", () => {
     expect(sesionesVigentes({ ...evento, inicio: "2026-10-10T01:00:00.000Z" }, sesiones)).toEqual([]);
     expect(sesionesVigentes({ ...evento, fin: "2026-10-13T03:00:00.000Z" }, sesiones)).toEqual([]);
   });
-  it("la lista dice cada día con sus horas en 24 h; sin hora de fin, solo la de inicio", () => {
+  it("la lista dice cada día con sus horas (la hora de toda la app, OL-418); sin hora de fin, solo la de inicio", () => {
     const vigentes = sesionesVigentes(evento, sesiones);
     expect(listaDeSesiones(vigentes, ZONA, new Date("2026-10-06T12:00:00Z"))).toEqual([
-      { dia: "vie 9 de oct", horas: "20:00–21:00" },
-      { dia: "sáb 10 de oct", horas: "18:00" },
-      { dia: "dom 11 de oct", horas: "20:00–21:00" },
+      { dia: "vie 9 de oct", horas: "8:00–9:00 pm" },
+      { dia: "sáb 10 de oct", horas: "6:00 pm" },
+      { dia: "dom 11 de oct", horas: "8:00–9:00 pm" },
     ]);
-    expect(lineasDeSesiones(vigentes, ZONA, new Date("2026-10-06T12:00:00Z"))[0]).toBe("vie 9 de oct · 20:00–21:00");
-    expect(horasDeSesion(vigentes[1], ZONA)).toBe("18:00");
+    expect(lineasDeSesiones(vigentes, ZONA, new Date("2026-10-06T12:00:00Z"))[0]).toBe("vie 9 de oct · 8:00–9:00 pm");
+    expect(horasDeSesion(vigentes[1], ZONA)).toBe("6:00 pm");
   });
   it("el número de la fecha dice los días y «Por día»", () => {
     expect(kpiCuandoPorDia(evento.inicio, evento.fin, ZONA, new Date("2026-10-06T12:00:00Z"))).toEqual({ dia: "Del 9 al 11 de oct", hora: "Por día" });
@@ -251,7 +252,7 @@ describe("«A mi calendario» con horario por día", () => {
     const nativo = conPrimerDia(e, vigentes, ZONA, new Date("2026-10-06T12:00:00Z"));
     expect(nativo.inicio).toBe("2026-10-10T02:00:00.000Z");
     expect(nativo.fin).toBe("2026-10-10T03:00:00.000Z");
-    expect(nativo.descripcion).toBe("Tres días de lectura.\nvie 9 de oct · 20:00–21:00\nsáb 10 de oct · 18:00\ndom 11 de oct · 20:00–21:00");
+    expect(nativo.descripcion).toBe("Tres días de lectura.\nvie 9 de oct · 8:00–9:00 pm\nsáb 10 de oct · 6:00 pm\ndom 11 de oct · 8:00–9:00 pm");
     expect(conPrimerDia(e, [], ZONA)).toBe(e);
   });
 });

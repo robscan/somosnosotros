@@ -386,7 +386,7 @@ describe("conProximo", () => {
       const [muni] = conProximo([{ id: "muni" }], [expoAbierta, charla], ahora);
       expect(muni.proximo?.id).toBe("charla");
       expect(muni.enCurso?.id).toBe("expo");
-      expect(textoProximo(muni.proximo!, ahora)).toBe("Próximo: sáb 24 de oct · 12:00");
+      expect(textoProximo(muni.proximo!, ahora)).toBe("Próximo: sáb 24 de oct · 12:00 pm");
       expect(textoProximo(muni.enCurso!, ahora)).toBe("Exposición hasta el dom 8 de nov");
     });
     it("con dos cosas abiertas, la que cierra antes; solo abierto, `proximo` es null", () => {
@@ -413,8 +413,8 @@ describe("textoProximo (OL-398: lo de varios días ya en curso dice hasta cuánd
   const ZONA = "America/Mexico_City";
   const ahora = new Date("2026-10-13T16:00:00Z"); // martes 13 de octubre, 10:00 en San Luis
   it("un evento de un día: «Próximo:» con su día y su hora", () => {
-    expect(textoProximo({ inicio: "2026-10-16T01:00:00Z", zona: ZONA }, ahora)).toBe("Próximo: jue 15 de oct · 19:00");
-    expect(textoProximo({ inicio: "2026-10-14T01:00:00Z", zona: ZONA, fin: "2026-10-14T03:00:00Z", clase: "puntual" }, ahora)).toBe("Próximo: hoy · 19:00");
+    expect(textoProximo({ inicio: "2026-10-16T01:00:00Z", zona: ZONA }, ahora)).toBe("Próximo: jue 15 de oct · 7:00 pm");
+    expect(textoProximo({ inicio: "2026-10-14T01:00:00Z", zona: ZONA, fin: "2026-10-14T03:00:00Z", clase: "puntual" }, ahora)).toBe("Próximo: hoy · 7:00 pm");
   });
   it("una exposición abierta: «Exposición hasta el …», el día de cierre en su zona", () => {
     expect(textoProximo({ inicio: "2026-10-02T06:00:00Z", zona: ZONA, fin: "2026-11-09T05:59:00Z", clase: "exposicion" }, ahora)).toBe("Exposición hasta el dom 8 de nov");
@@ -427,11 +427,11 @@ describe("textoProximo (OL-398: lo de varios días ya en curso dice hasta cuánd
   });
   it("un taller o un festival en curso: «hasta el …»; un taller por empezar, su primera sesión", () => {
     expect(textoProximo({ inicio: "2026-10-10T23:00:00Z", zona: ZONA, fin: "2026-10-24T01:00:00Z", clase: "taller" }, ahora)).toBe("Taller hasta el vie 23 de oct");
-    expect(textoProximo({ inicio: "2026-10-17T16:00:00Z", zona: ZONA, fin: "2026-10-31T18:00:00Z", clase: "taller" }, ahora)).toBe("Próximo: sáb 17 de oct · 10:00");
+    expect(textoProximo({ inicio: "2026-10-17T16:00:00Z", zona: ZONA, fin: "2026-10-31T18:00:00Z", clase: "taller" }, ahora)).toBe("Próximo: sáb 17 de oct · 10:00 am");
     expect(textoProximo({ inicio: "2026-10-12T23:00:00Z", zona: ZONA, fin: "2026-10-19T04:00:00Z", clase: "festival" }, ahora)).toBe("Festival hasta el dom 18 de oct");
   });
   it("sin fin no hay hasta cuándo: «Próximo:» como siempre", () => {
-    expect(textoProximo({ inicio: "2026-10-02T06:00:00Z", zona: ZONA, fin: null, clase: "exposicion" }, ahora)).toBe("Próximo: vie 2 de oct · 00:00");
+    expect(textoProximo({ inicio: "2026-10-02T06:00:00Z", zona: ZONA, fin: null, clase: "exposicion" }, ahora)).toBe("Próximo: vie 2 de oct · 12:00 am");
   });
 });
 

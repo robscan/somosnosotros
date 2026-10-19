@@ -1,4 +1,4 @@
-import { aFechaIcs, diaLocal } from "./fechas";
+import { aFechaIcs, diaLocal, horaDeReloj } from "./fechas";
 import { hrefEvento } from "./eventos";
 
 /** Lo que va en el archivo de calendario de un evento. */
@@ -207,11 +207,8 @@ export function horasDeFin(despuesDe?: string, paso = 15): string[] {
  *  lee «Sin hora de fin». Cada día suelto (`ocurrencias`) vuelve a quedar sin fin y se ve 3 h (`terminaDe`, OL-358). */
 export const FIN_DEL_DIA = "23:59";
 
-/** "9:00 p.m." a partir de "HH:MM". */
-export function etiquetaHora(hora: string): string {
-  const [h, m] = hora.split(":").map(Number);
-  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(2000, 0, 1, h, m));
-}
+/** «9:00 pm» a partir de "HH:MM": la misma hora de toda la app (`horaDeReloj`, OL-418), en los chips y las hojas del alta. */
+export const etiquetaHora = (hora: string): string => horaDeReloj(hora);
 
 /** Lo que van marcando los toques de la hoja de días: el primero es el inicio; uno posterior, el fin (`hasta`).
  *  `hasta` null es «esperando el fin» (se tocó un inicio y falta saber si dura más); `hasta` igual a `desde` es un solo día

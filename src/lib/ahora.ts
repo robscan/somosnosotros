@@ -131,7 +131,7 @@ export function etiquetaAhora({ tipo, e }: AvisoAhora, ahora: Date): string {
   return tipo === "hoy" ? "Hoy" : "Mañana";
 }
 
-/** Lo que dice el círculo debajo, corto y en una línea: «Ahora», «En 30 min», «Último día», «20:00» o «Mañana 9:00». */
+/** Lo que dice el círculo debajo, corto y en una línea: «Ahora», «En 30 min», «Último día», «8:00 pm» o «Mañana 9:00 am». */
 export function rotuloCirculo(a: AvisoAhora, ahora: Date): string {
   if (a.tipo === "hoy") return horaCorta(a.e.inicio, a.e.zona);
   if (a.tipo === "manana") return `Mañana ${horaCorta(a.e.inicio, a.e.zona)}`;
@@ -140,8 +140,8 @@ export function rotuloCirculo(a: AvisoAhora, ahora: Date): string {
 
 /**
  * Los rótulos de la fila ya clasificada, en su orden (E7 del prototipo firmado `inicio-tarjetas.html`, bitácora 398; OL-371): si varios
- * «En un rato» seguidos empiezan a la misma hora, solo el primero dice la cuenta atrás y los demás la hora («En 1 h 11 min», «13:00»,
- * «13:00»), en vez de repetir la misma cuenta bajo cada círculo. Cada aviso se compara con el de justo antes: los dos «En un rato» y el mismo
+ * «En un rato» seguidos empiezan a la misma hora, solo el primero dice la cuenta atrás y los demás la hora («En 1 h 11 min», «1:00 pm»,
+ * «1:00 pm»), en vez de repetir la misma cuenta bajo cada círculo. Cada aviso se compara con el de justo antes: los dos «En un rato» y el mismo
  * instante de inicio. Lo demás («Ahora», exposiciones, «Hoy», «Mañana») dice lo de `rotuloCirculo`. El nombre accesible del círculo no sale
  * de aquí: sigue con la cuenta atrás completa (`etiquetaAhora`).
  */
@@ -153,7 +153,7 @@ export function rotulosAhora(avisos: readonly AvisoAhora[], ahora: Date): string
   });
 }
 
-/** El cuándo de la historia: «Desde 17:30» o «Hasta 20:00» si ya empezó (sin fin no se inventa un «hasta»); si no, la hora. */
+/** El cuándo de la historia: «Desde 5:30 pm» o «Hasta 8:00 pm» si ya empezó (sin fin no se inventa un «hasta»); si no, la hora. */
 export function cuandoAhora({ tipo, e }: AvisoAhora): string {
   if (tipo === "ahora") return e.fin ? `Hasta ${horaCorta(e.fin, e.zona)}` : `Desde ${horaCorta(e.inicio, e.zona)}`;
   if (tipo === "expo") return e.horario?.length ? "Abierta hoy" : "Horario por confirmar";

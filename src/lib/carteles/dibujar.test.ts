@@ -63,7 +63,7 @@ function fechaUnaVez(caso: string, nodos: NodoTexto[]) {
   const textos = nodos.map((n) => n.texto);
   if (caso === "corto") {
     expect(conNumero(nodos, "16"), `el día dos veces: ${textos.join(" | ")}`).toBe(1);
-    expect(nodos.filter((n) => n.texto.includes("19:00")).length, `la hora: ${textos.join(" | ")}`).toBe(1);
+    expect(nodos.filter((n) => n.texto.includes("7:00 pm")).length, `la hora: ${textos.join(" | ")}`).toBe(1);
   } else if (caso === "variosDias") {
     expect(conNumero(nodos, "9"), `el primer día: ${textos.join(" | ")}`).toBe(1);
     expect(conNumero(nodos, "14"), `el último día: ${textos.join(" | ")}`).toBe(1);

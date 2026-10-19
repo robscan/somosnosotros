@@ -72,8 +72,8 @@ describe("con quién (H5) y cuántos fueron (H4)", () => {
 describe("cuándo fue", () => {
   it("un día: «jue 8 · 19:00» en la zona del evento", () => {
     // 2026-10-09 01:00 UTC es el jueves 8 a las 19:00 en San Luis Potosí.
-    expect(cuandoPasado({ inicio: "2026-10-09T01:00:00Z", fin: "2026-10-09T03:00:00Z", zona: ZONA })).toBe("jue 8 · 19:00");
-    expect(cuandoPasado({ inicio: "2026-10-09T01:00:00Z", fin: null, zona: ZONA })).toBe("jue 8 · 19:00");
+    expect(cuandoPasado({ inicio: "2026-10-09T01:00:00Z", fin: "2026-10-09T03:00:00Z", zona: ZONA })).toBe("jue 8 · 7:00 pm");
+    expect(cuandoPasado({ inicio: "2026-10-09T01:00:00Z", fin: null, zona: ZONA })).toBe("jue 8 · 7:00 pm");
   });
 
   it("varios días: «del mar 6 al mié 7»", () => {
@@ -83,11 +83,11 @@ describe("cuándo fue", () => {
 
   it("con la regla de siempre (`esDeVariosDias`): si termina al día siguiente antes de la hora en que empezó, es un día", () => {
     // La clase magistral de Leo Traeger en el prototipo: del mar 6 a las 12:00 al mié 7 a las 11:30. Su ficha dice un día; aquí también.
-    expect(cuandoPasado({ inicio: "2026-10-06T18:00:00Z", fin: "2026-10-07T17:30:00Z", zona: ZONA })).toBe("mar 6 · 12:00");
+    expect(cuandoPasado({ inicio: "2026-10-06T18:00:00Z", fin: "2026-10-07T17:30:00Z", zona: ZONA })).toBe("mar 6 · 12:00 pm");
   });
 
   it("una noche que cruza la medianoche es un día", () => {
-    expect(cuandoPasado({ inicio: "2026-10-10T04:00:00Z", fin: "2026-10-10T07:00:00Z", zona: ZONA })).toBe("vie 9 · 22:00");
+    expect(cuandoPasado({ inicio: "2026-10-10T04:00:00Z", fin: "2026-10-10T07:00:00Z", zona: ZONA })).toBe("vie 9 · 10:00 pm");
   });
 });
 

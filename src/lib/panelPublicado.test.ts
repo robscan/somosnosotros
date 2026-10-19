@@ -70,7 +70,7 @@ describe("la meta de cada renglón", () => {
     expect(cuandoPublicado(evento({ clase: "exposicion", inicio: "2026-09-15T06:00:00Z", fin: "2026-11-09T05:59:00Z" }), null, AHORA)).toMatch(/^Exposición · Del 15 de sep al 8 de nov/);
   });
   it("un acto de festival dice su día primero y luego de qué festival es", () => {
-    expect(cuandoPublicado(evento({ evento_padre_id: "f1" }), "Festival de Cine de Invierno", AHORA)).toBe("mié 21 de oct · acto de Festival de Cine de Invierno");
+    expect(cuandoPublicado(evento({ evento_padre_id: "f1" }), "Festival de Cine de Invierno", AHORA)).toBe("mié 21 de oct · actividad de Festival de Cine de Invierno");
   });
   it("dónde: el lugar con ficha, el sitio escrito o por confirmar", () => {
     expect(dondePublicado({ lugar: { nombre: "ACHE Galería", portada: null }, sitio_texto: "otro" })).toBe("ACHE Galería");

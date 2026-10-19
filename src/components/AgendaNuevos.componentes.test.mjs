@@ -65,7 +65,7 @@ before(async () => {
       const ciudad = { slug: 'san-luis-potosi', nombre: 'San Luis Potosí', centro: { lng: -100.97, lat: 22.14 }, centroConocido: true, zoom: 13, lugares: 9, eventos: 6, zona: '${ZONA}' };
       const eventos = new URLSearchParams(location.search).has('muchos') ? ${JSON.stringify(MUCHOS)} : ${JSON.stringify(EVENTOS)};
       const agenda = Promise.resolve({ eventos, seguidos: null, eventosSeguidos: [], asistencias: null, destacados: [] });
-      const tarjetas = eventos.filter((e) => e.id !== 'viejo').map((e) => ({ id: e.id, href: '/eventos/' + e.id, foto: null, titulo: e.titulo, detalle: 'jue 8 de oct · 19:00', sitio: 'Foro', van: 0, inicio: e.inicio, fin: null, zona: e.zona, creado_en: e.creado_en }));
+      const tarjetas = eventos.filter((e) => e.id !== 'viejo').map((e) => ({ id: e.id, href: '/eventos/' + e.id, foto: null, titulo: e.titulo, detalle: 'jue 8 de oct · 7:00 pm', sitio: 'Foro', van: 0, inicio: e.inicio, fin: null, zona: e.zona, creado_en: e.creado_en }));
       window.qa = {};
       function Agenda(){
         const [n, setN] = useState(0);
@@ -140,7 +140,7 @@ test("Todos es la Agenda de siempre; Nuevos cambia la lista, vive en la URL y no
   // Por cuándo se publicó, lo último arriba; «viejo» (de hace dos semanas) no entra; el renglón lleva el día del evento.
   assert.deepEqual((await titulos(page)).map((t) => t.replace(/\s+/g, " ")), ["Lo más nuevo· 3", "Publicado ayer", "Esta semana"]);
   assert.deepEqual(await ids(page), ["suyo", "pago", "hoy", "ayer", "semana"]);
-  assert.match(await page.locator("a[href='/eventos/suyo']").innerText(), /jue 8 de oct · 19:00/);
+  assert.match(await page.locator("a[href='/eventos/suyo']").innerText(), /jue 8 de oct · 7:00 pm/);
   // Con el día, la línea es larga: lo que se corta es el precio, nunca el día ni la hora.
   const linea = await page.locator("a[href='/eventos/pago'] small > span").first().evaluate((l) => ({ cuandoCortado: l.querySelector("b").scrollWidth > l.querySelector("b").clientWidth, precioCortado: l.lastElementChild.scrollWidth > l.lastElementChild.clientWidth }));
   assert.deepEqual(linea, { cuandoCortado: false, precioCortado: true });

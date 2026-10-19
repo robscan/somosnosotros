@@ -112,7 +112,7 @@ describe("las páginas del documento (OL-396)", () => {
     expect(todo).toContain("PERIODO: OCTUBRE DE 2026");
     expect(todo.join(" ").replace(/\s+/g, " ")).toContain("Personas que marcaron «Voy» en la app. No es asistencia medida.");
     expect(todo).toContain("1 taller con sesiones; cada taller cuenta una vez.");
-    expect(todo.some((t) => t.includes("un festival no se suma además de sus actos"))).toBe(true);
+    expect(todo.some((t) => t.includes("un festival no se suma además de sus actividades"))).toBe(true);
   });
 
   it("la foto que no es imagen se ignora: la cabecera lleva el círculo con el SN", async () => {

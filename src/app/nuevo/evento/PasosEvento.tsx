@@ -138,11 +138,11 @@ export function PasoDia({ dias, zona, onElegir }: { dias: Dias | null; zona: str
 
 /**
  * Primero cuándo empieza; al elegirlo aparece cuánto dura (1, 2 o 3 horas, «Otra hora» o «Sin hora de fin»), con el fin ya calculado
- * desde el inicio: puede caer en el día siguiente («empieza 10:00 p.m., dura 3 horas, termina 1:00 a.m.»). Elegir el fin avanza. En
+ * desde el inicio: puede caer en el día siguiente («empieza 10:00 pm, dura 3 horas, termina 1:00 am»). Elegir el fin avanza. En
  * un evento de varios días «cuánto dura» no tiene sentido (un festival no dura «2 horas»): la pregunta es «¿A qué hora, cada día?» (el
  * horario del primer día vale para todos), «Termina» son horas del día y «Sin hora de fin» es que acaba con el último; debajo, la casilla
  * «Mismo horario todos los días» (marcada de entrada) y una línea suave que lo dice en palabras («Del 10 al 12 de oct · cada día de 8:00 a
- * 9:00 p.m.»). Lo guardado es el mismo: el inicio del primer día y el fin del último.
+ * 9:00 pm»). Lo guardado es el mismo: el inicio del primer día y el fin del último.
  *
  * Desmarcar la casilla (OL-311; prototipo firmado `horario-por-dia.html`) quita los chips comunes y pone un renglón por día, todos con el horario
  * común (`HorarioPorDia`): tocar uno abre su hoja. El pie dice «Siguiente» (elegir una hora ya no avanza solo) y volver a marcar la casilla
