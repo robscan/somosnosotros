@@ -10,6 +10,7 @@
 - **Boletín:** «Boletín para todos, desde que quede creado y listo para enviar, con clara la opción de des suscribirse».
 - **Contenido del boletín:** «usando criterios de inicio y distinguiendo por estado: Es decir tomar en cuanta la ubicación en la que están los usuarios (se deduce cuando consultan el catálogo y otorgan su ubicación».
 - **Ciudad por omisión:** «ya no debe ser default que se presente San Luis Potosí como ciudad de inicio, se pregunta ubicación para mostrar contenido si no se tiene su ultima ubicación conocida».
+- **Firma parcial, la misma tarde (textual):** «A favor de preguntar donde estás pero solo sin no hay ultima ubicación conocida. De acuerdo que hay que guardar la ciudad de la cuenta, pero considera que el usuario puede ir de vacaciones o quedarse a vivir en una nueva ciudad, entonces podemos hacer que esa ciudad cambie y el boletín cambie en consecuencia, si no hay info de la ciudad donde está entonces no hay boletín. Me retracto con boletín para todos, hagámoslo como dices, y si actualiza privacidad para que se considere de ahora en adelante.» Queda así: la pregunta «¿Dónde estás?» solo sin última ubicación conocida; la ciudad de la cuenta cambia con la persona (vacaciones, mudanza) y el boletín la sigue; **sin ciudad conocida no hay boletín**; boletín encendido para las cuentas nuevas y una pregunta dentro de la app a las existentes; el aviso de privacidad se actualiza y aplica de ahora en adelante.
 - **«Acepto tus otras recomendaciones»** (bitácora 449): recordatorio a las 9:00 am del día del evento y silencio de 9 pm a 9 am para «nuevo evento» y «cambio»; propuestas de la rutina una por una en la primera tanda y por fuente después; «Por confirmar» también en el evento suelto y revisar los importados sin precio; no se reescribe el historial de git por el prototipo del grafo; «¿Es este?» también para expos, festivales y actividades; compartir en redes arranca con publicación 4:5 e historia 9:16, sin reel.
 
 ## 2. Cómo está hoy (comprobado)
@@ -30,7 +31,7 @@
 4. **«Estado» como unidad queda grande o chico según la ciudad.** Recomendación: la unidad es la **ciudad ampliada** (lo que ya hace `MISMA_CIUDAD`: Oaxaca con Santa Lucía y Xoxocotlán; Ciudad de México con el Estado de México conurbado) y el **estado es el respaldo** cuando la ciudad no junta 3 eventos para el boletín.
 5. **Nadie detecta una ciudad nueva «por los usuarios».** Contar consultas por ciudad y día, sin persona, basta para que Administración diga «Querétaro: 14 consultas esta semana, 0 lugares».
 6. **La investigación de una ciudad es manual y vive en la Mac.** Para que un botón la detone hay que llevarla al servidor: tareas de minutos, por lotes encadenados, con registro de gasto y tope.
-7. **Boletín para todos** significa escribir a 69 cuentas que no lo pidieron. El founder lo decidió; se mitiga con baja de un clic, apagado automático al primer rebote o queja, ritmo quincenal y una línea en el aviso de privacidad.
+7. **Boletín para todos** habría significado escribir a 69 cuentas que no lo pidieron. El founder se retractó la misma tarde: encendido para las cuentas nuevas (con una frase clara al registrarse) y una pregunta dentro de la app, una sola vez, a las existentes. En todos los casos: baja de un clic, apagado automático al primer rebote o queja, ritmo quincenal y el aviso de privacidad actualizado.
 8. **Cambiar la grafía de la marca** toca lo que Google ya indexa, el remitente de los correos y el nombre en las tiendas. Se mantiene «Somos Nosotros» como nombre alterno en el JSON-LD y el dominio no cambia.
 
 ## 4. Propuesta
@@ -40,7 +41,7 @@
 - **Primera vez** (sin ciudad elegida ni última ubicación): Inicio abre con la tarjeta **«¿Dónde estás?»** bajo la cabecera: botón grande «Usar mi ubicación» (el permiso se pide al tocarlo) y un campo «Escribe tu ciudad» con ✕, que sugiere primero las ciudades con contenido y después cualquier ciudad vía Mapbox. Debajo, para que la primera pantalla no quede vacía: «Mientras tanto, lo más destacado en Somos Nosotrxs» con seis tarjetas de todas las ciudades. Sin agenda de ninguna ciudad hasta que conteste.
 - **Con permiso:** la ciudad ampliada más cercana con contenido. Si la ciudad detectada no tiene nada, el Inicio vacío de esa ciudad (OL de la 446: sin banner, «Publicar un evento», la ciudad más cercana con eventos) y la ciudad queda **detectada** para Administración.
 - **Permiso negado o error:** se queda el campo de ciudad, con la frase de siempre («No pudimos leer tu ubicación…»).
-- **Última ubicación conocida:** como hoy en el teléfono, y además **con cuenta** la ciudad en el servidor (`perfiles.ciudad_actual`, `ciudad_actual_en`), que se actualiza cada vez que consulta con ubicación o elige ciudad. Nunca coordenadas; una línea nueva en el aviso de privacidad.
+- **Última ubicación conocida:** como hoy en el teléfono, y además **con cuenta** la ciudad en el servidor (`perfiles.ciudad_actual`, `ciudad_actual_en`), que se actualiza cada vez que consulta con ubicación o elige ciudad: quien se va de vacaciones o se muda cambia de ciudad sin hacer nada, y el boletín la sigue (founder, firma parcial). Nunca coordenadas; una línea nueva en el aviso de privacidad, que aplica de ahora en adelante.
 - **Enlaces y robots:** una ficha abre siempre; Inicio con `?ciudad=` gana a todo; sin ciudad, un robot ve la tarjeta y la lista de ciudades (cada una con su URL canónica, como hoy).
 - **App de iPhone:** ya lee la ubicación nativa (OL-256); el flujo es el mismo.
 - **Prototipo** sobre la pantalla real (`maqueta-pantalla.mjs`): primera vez, permiso negado, ciudad detectada sin contenido.
@@ -58,8 +59,8 @@
 
 ### C. Boletín por región, para todos
 
-- **A quién:** todas las cuentas con correo, con la palanca encendida desde que el boletín exista; cada correo trae **baja de un clic** (enlace y cabecera `List-Unsubscribe`) y en el perfil la palanca dice «Boletín cada dos semanas». Se apaga sola al primer rebote o queja. Quien ya se dio de baja antes (motivo `baja`) no se reactiva.
-- **Región:** la ciudad actual de la cuenta. Sin ciudad, la del último «Voy» o seguimiento. Sin nada, el boletín abre con «Elige tu ciudad» (las tres con más actividad) y trae el contenido de la ciudad con más cuentas.
+- **A quién (firma parcial del founder):** las cuentas **nuevas** nacen con la palanca encendida y lo leen al registrarse («Te mandaremos el boletín cada dos semanas; lo apagas cuando quieras»); a las cuentas **existentes** se les pregunta **una sola vez dentro de la app**, no por correo. Cada correo trae **baja de un clic** (enlace y cabecera `List-Unsubscribe`) y en el perfil la palanca dice «Boletín cada dos semanas». Se apaga sola al primer rebote o queja. Quien ya se dio de baja antes (motivo `baja`) no se reactiva.
+- **Región:** la ciudad actual de la cuenta, que cambia con la persona. Sin ciudad conocida **no se manda** (founder: «si no hay info de la ciudad donde está entonces no hay boletín»); la primera vez que la app sepa su ciudad, entra al siguiente envío.
 - **Contenido con los criterios de Inicio** y los textos del doc 28: Tus planes (si hay), Destacados, Esta semana, Festivales y expos, lugares y artistas nuevos de la ciudad; de 3 a 8 eventos. Si la ciudad no junta 3, se completa con el estado y después con «cerca de ti».
 - **Cuándo:** jueves 9:00 am en la hora de la ciudad, cada dos semanas, por lotes; indicadores en Administración (enviados, bajas, rebotes).
 - **La ventana de «Voy»:** solo ofrece el teléfono; el correo deja de pedirse ahí.
@@ -79,15 +80,15 @@
 | 4 | «Buscar lugares» con bandeja de propuestas (B) | grande | código con migración; primera corrida: Oaxaca |
 | 5 | «Buscar agendas y eventos» (B) | mediana | sobre la 4; segunda corrida: Oaxaca, noviembre |
 | 6 | «Buscar artistas» (B) | mediana | sobre la 4 |
-| 7 | Boletín por región, para todos (C) | mediana-grande | código con migración; primer envío cuando el founder diga |
+| 7 | Boletín por región (C) | mediana-grande | código con migración; primer envío cuando el founder diga |
 
 Las piezas 1 y 3 pueden ir en paralelo con las de la bitácora 449 (hora «7:00 pm», notificaciones, gestos). Para gastar el crédito antes del 11 de noviembre: la pieza 4 debería correr Oaxaca hacia el 1 de noviembre, y CDMX antes del 11.
 
 ## 5. Para firma
 
-1. **Primera pantalla sin ubicación:** ¿con «lo más destacado de todas las ciudades» debajo de la pregunta (recomendado) o solo la pregunta?
+1. ~~Primera pantalla sin ubicación~~ **Firmado:** se pregunta solo cuando no hay última ubicación conocida; debajo, lo más destacado de todas las ciudades (recomendación aceptada con «hagámoslo como dices»).
 2. **Unidad del contenido:** ciudad ampliada con el estado como respaldo (recomendado), ¿o el estado desde el inicio?
-3. **Boletín sin región conocida:** ¿se manda con «Elige tu ciudad» y el contenido de la ciudad con más cuentas (recomendado), o se espera a conocer la región?
+3. ~~Boletín sin región conocida~~ **Firmado:** no se manda.
 4. **Marca:** ¿también el remitente de los correos y el nombre en las tiendas en la siguiente compilación? (recomendado: sí)
 5. **Fuente oficial del Sistema de Información Cultural** como primera fuente de lugares y artistas: ¿la usamos? (recomendado: sí, verificando cobertura y licencia en la primera corrida)
 
