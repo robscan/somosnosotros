@@ -1,6 +1,7 @@
 # 448 · «Invitar a tus amigxs» se muda de Ajustes a Mi perfil (OL-416)
 
-**Fecha:** 2026-10-19. **Rama:** `invitar-desde-perfil`, desde `origin/main` (`ea0104df`). **Operador:** agente de la pieza (Claude) para el
+**Fecha:** 2026-10-19. **Rama:** `invitar-desde-perfil`, desde `origin/main` (`ea0104df`), con `main` traído después hasta `4a581c47` (#534,
+OL-418: la hora en «7:00 pm»). **Operador:** agente de la pieza (Claude) para el
 Gestor VII, sin otros agentes. **Sin migración** y sin variables de entorno nuevas. **Estado:** lista para la revisión del gestor y el «publica»
 del founder.
 
@@ -47,11 +48,11 @@ tus amigxs», que es lo que pidió el founder, no se vería. Quedó como rengló
   lo buscan en Mi perfil y en Ajustes.
 - Ninguna prueba existente citaba el renglón de Ajustes: no hubo que cambiar otras.
 
-## Verificación (árbol sin `.env`)
+## Verificación (árbol sin `.env`, con `main` en `4a581c47` ya traído)
 
 - lint: 0 errores, 1 aviso que ya estaba en `main` (`VisorImagen.componentes.test.mjs`, `page` sin usar).
 - typecheck: limpio.
-- test: 230 archivos, **4 034 pruebas** en verde.
+- test: 230 archivos, **4 046 pruebas** en verde.
 - inventario: sin novedades (334 medidas en duro aceptadas, ninguna nueva).
 - medir: 41 pantallas × 4 anchos. Falló solo el presupuesto de **s05-perfil**, que subió por el renglón: de 99/99/101/101 a **104/104/106/106**
   nodos (el botón, sus dos iconos, el título y la línea de abajo); la profundidad no cambia (11). **s04-ajustes** bajó de 98/98/130/119 a
@@ -61,7 +62,7 @@ tus amigxs», que es lo que pidió el founder, no se vería. Quedó como rengló
 ## Capturas (`docs/rediseno/capturas-448/`, 390×844 a 2×, sin comprimir)
 
 Con `scripts/ops/auditoria-ui/capturar-invitar-perfil.mjs` (nuevo, mismo patrón que `capturar-persona-publicado.mjs`): respaldo local de datos
-inventados, `next build` + `next start` con el reloj fijo (lun 19 oct, 10:00), Chrome de la Mac, sesión de Ana (la cuenta de prueba del
+inventados, `next build` + `next start` con el reloj fijo (lun 19 oct, 10:00) y ya con la hora de OL-418 («7:30–9:30 pm»), Chrome de la Mac, sesión de Ana (la cuenta de prueba del
 respaldo). La hoja de compartir del teléfono se imitó para anotar lo que recibe.
 
 - `01-mi-perfil-invitar`: Mi perfil de Ana. Bajo la cabecera (con el engrane y compartir arriba a la derecha) y el aviso «Completar», el renglón

@@ -65,7 +65,8 @@ function texto(nodo: unknown): string {
   return "";
 }
 /** Un renglón de invitar armado a mano, para probar `FichaPersona` sola. */
-const renglonInvitar = () => createElement(BotonCompartir, { titulo: "Somos Nosotros", texto: TEXTO_INVITAR, url: "https://somosnosotros.org", className: "x", children: "Invitar a tus amigxs" });
+const renglonInvitar = () =>
+  createElement(BotonCompartir, { titulo: "Somos Nosotros", texto: TEXTO_INVITAR, url: "https://somosnosotros.org", className: "x" } as Parameters<typeof BotonCompartir>[0], "Invitar a tus amigxs");
 const esInvitar = (e: El) => e.type === BotonCompartir && e.props.texto === TEXTO_INVITAR;
 /** La ficha de persona que lleva la página: sus props y lo que pinta. */
 function fichaDe(arbol: unknown) {
