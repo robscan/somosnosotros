@@ -251,12 +251,12 @@ test("caso 1 · con sugerencia: tocarla confirma en el mapa («¿Es aquí?» con
   assert.equal(await boton(p, "Publicar otro").count(), 0);
 });
 
-test("si ya tiene ficha, se dice al escribir el nombre y la salida es ir a ella", TOPE, async (t) => {
+test("si ya está publicado, se dice al escribir el nombre («Ya está publicado · Verlo») y la salida es ir a él", TOPE, async (t) => {
   const p = await pagina(t);
   await nombre(p).fill("Teatro de la");
   const ficha = p.getByRole("option", { name: /Teatro de la Paz/ });
   await ficha.waitFor();
-  assert.match(await ficha.innerText(), /Ya tiene ficha · Ir a su ficha/);
+  assert.match(await ficha.innerText(), /Ya está publicado · Verlo/);
   assert.equal(await ficha.getAttribute("href"), "/lugares/teatro-de-la-paz");
   await foto(p, "lugar-3-ya-tiene-ficha");
 });
@@ -271,8 +271,8 @@ test("caso 2 · sin sugerencia: «¿Dónde está?» con el campo, «Estoy aquí�
   await boton(p, /^Estoy aquí/).click();
   const esEste = p.locator("main [role=status]").filter({ hasText: "¿Es este?" });
   await esEste.waitFor();
-  assert.match(await esEste.innerText(), /A \d+ m hay un lugar con ficha: Taller La Grieta\. Ir a su ficha/);
-  assert.equal(await esEste.getByRole("link", { name: "Ir a su ficha" }).getAttribute("href"), "/lugares/taller-la-grieta");
+  assert.match(await esEste.innerText(), /A \d+ m hay un lugar con ficha: Taller La Grieta\. Verlo/);
+  assert.equal(await esEste.getByRole("link", { name: "Verlo", exact: true }).getAttribute("href"), "/lugares/taller-la-grieta");
   await p.locator("main [role=status]").filter({ hasText: "Calle Grieta 2" }).waitFor();
   await foto(p, "lugar-4-donde-esta");
   await boton(p, "Listo").click();
@@ -627,7 +627,7 @@ test("desde un sitio, «¿Es este?» en el mapa: elegir el lugar que ya existe l
   await boton(p, "Siguiente").click();
   await enPaso(p, "¿Dónde está?");
   await boton(p, /^Estoy aquí/).click();
-  const enlace = p.locator("main [role=status]").filter({ hasText: "¿Es este?" }).getByRole("link", { name: "Ir a su ficha" });
+  const enlace = p.locator("main [role=status]").filter({ hasText: "¿Es este?" }).getByRole("link", { name: "Verlo", exact: true });
   await enlace.waitFor();
   assert.equal(await enlace.getAttribute("href"), "/lugares/taller-la-grieta");
   await tocarDeVerdad(p, enlace);
@@ -638,7 +638,7 @@ test("desde un sitio, «¿Es este?» en el mapa: elegir el lugar que ya existe l
   assert.deepEqual(await ligadoYAbierto(p), [[GRIETA], ["/lugares/taller-la-grieta"]]);
 });
 
-test("desde un sitio, «¿Es este?» en «Revisa» (el servidor encontró uno parecido) y «Ya tiene ficha» al escribir: elegirlo también liga y abre su ficha", TOPE, async (t) => {
+test("desde un sitio, «¿Es este?» en «Revisa» (el servidor encontró uno parecido) y «Ya está publicado» al escribir: elegirlo también liga y abre su ficha", TOPE, async (t) => {
   const p = await pagina(t, { qa: { sitio: SITIO, resultado: "parecidos" } });
   await hastaRevisa(p);
   await boton(p, "Publicar lugar").click();
@@ -657,7 +657,7 @@ test("desde un sitio, «¿Es este?» en «Revisa» (el servidor encontró uno pa
   assert.deepEqual(await ligadoYAbierto(q), [[TEATRO], ["/lugares/teatro-de-la-paz"]]);
 });
 
-test("abrir el lugar en otra pestaña (con la tecla) es solo mirar: no liga; y sin sitio, «Ir a su ficha» es el enlace de siempre", TOPE, async (t) => {
+test("abrir el lugar en otra pestaña (con la tecla) es solo mirar: no liga; y sin sitio, «Verlo» es el enlace de siempre", TOPE, async (t) => {
   const p = await pagina(t, { qa: { sitio: SITIO } });
   await nombre(p).fill("Teatro de la");
   const ficha = p.getByRole("option", { name: /Teatro de la Paz/ });
@@ -672,7 +672,7 @@ test("abrir el lugar en otra pestaña (con la tecla) es solo mirar: no liga; y s
   await boton(q, "Siguiente").click();
   await enPaso(q, "¿Dónde está?");
   await boton(q, /^Estoy aquí/).click();
-  const enlace = q.locator("main [role=status]").filter({ hasText: "¿Es este?" }).getByRole("link", { name: "Ir a su ficha" });
+  const enlace = q.locator("main [role=status]").filter({ hasText: "¿Es este?" }).getByRole("link", { name: "Verlo", exact: true });
   await enlace.waitFor();
   const ida = q.waitForRequest((r) => r.isNavigationRequest() && r.url() === `${origin}/lugares/taller-la-grieta`);
   await tocarDeVerdad(q, enlace);

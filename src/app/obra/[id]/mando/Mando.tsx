@@ -737,7 +737,7 @@ export default function Mando({
             {ayuda.verFicha && lugarHref && (
               // Lejos (OL-127): a la ficha del lugar, sin pedir entrar otra vez.
               <a className={styles.abrirSafari} href={lugarHref}>
-                Ver ficha
+                Ver más información
               </a>
             )}
             {ayuda.detalle && <small className={styles.detalle}>({ayuda.detalle})</small>}

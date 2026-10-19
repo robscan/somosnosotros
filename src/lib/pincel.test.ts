@@ -800,7 +800,7 @@ describe("cercanía (OL-127)", () => {
     expect(lugarMasCercano(aMetrosAlNorte(2000), lugares)).toBeNull();
     expect(lugarMasCercano(cineteca, [])).toBeNull();
   });
-  it("textos: lejos con el lugar y «Ver ficha»; lejos sin lugar; ubicación negada; sin-pedir y cerca no dicen nada", () => {
+  it("textos: lejos con el lugar y «Ver más información»; lejos sin lugar; ubicación negada; sin-pedir y cerca no dicen nada", () => {
     expect(textoDeCercania({ tipo: "lejos", distanciaM: 900, precisionM: 10 }, "Cineteca Alameda")).toEqual({ texto: "Este pincel es para quien está en Cineteca Alameda", esAviso: true, verFicha: true });
     expect(textoDeCercania({ tipo: "lejos", distanciaM: 900, precisionM: 10 }, null)?.verFicha).toBe(false);
     expect(textoDeCercania({ tipo: "negada" }, "X")).toEqual({ texto: "Activa la ubicación para pintar", esAviso: true, verFicha: false });
@@ -816,7 +816,7 @@ describe("cercanía (OL-127)", () => {
     expect(esMensajeTrazoValido({ ...trazo, cerca: true })).toBe(true);
     expect(esMensajeTrazoValido({ ...trazo, cerca: "sí" })).toBe(false);
   });
-  it("nombre por defecto de una pared sin lugar: «Pincel · 22 sep, 13:05» en la zona de la obra", () => {
+  it("nombre por defecto de una pared sin lugar: «Pincel · 22 sep, 1:05 pm» en la zona de la obra", () => {
     expect(nombreParedSinLugar(new Date("2026-09-22T19:05:00.000Z"), "America/Mexico_City")).toBe("Pincel · 22 sep, 1:05 pm");
   });
 });

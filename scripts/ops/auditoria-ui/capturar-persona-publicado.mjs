@@ -2,13 +2,15 @@
 // local con RESPALDO_PERSONAS=1 y la sesión de la cuenta de administración del respaldo. Chrome real (playwright-core, channel: 'chrome'), 390×844 a 2×.
 // Las fotos de las personas (`retratos.example`) son dibujos inventados que este script hace con sharp; las demás imágenes, gris.
 // node scripts/ops/auditoria-ui/capturar-persona-publicado.mjs <raíz del árbol> <carpeta de salida>
-// Correrlo en un árbol sin `.env`: compila `.next` contra el respaldo (SIN_BUILD=1 usa el `.next` que ya hay).
+// Compila `.next` contra el respaldo (SIN_BUILD=1 usa el `.next` que ya hay).
+// Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales (si lo encuentra, se niega a correr).
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 
 const [RAIZ, SALIDA] = process.argv.slice(2).map((p) => path.resolve(p));
+if (fs.existsSync(path.join(RAIZ, ".env"))) { console.error("hay un .env en el árbol: la app cargaría llaves reales. Córrelo en un árbol sin .env"); process.exit(1); }
 const { chromium } = await import(path.join(RAIZ, "node_modules/playwright-core/index.mjs"));
 const { ADMIN, ANA, MARCOS, cookieDe } = await import(path.join(RAIZ, "scripts/ops/auditoria-ui/respaldo-local/fixture.mjs"));
 const sharp = (await import(path.join(RAIZ, "node_modules/sharp/dist/index.mjs"))).default;

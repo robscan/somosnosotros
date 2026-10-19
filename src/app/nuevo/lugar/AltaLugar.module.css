@@ -1,6 +1,6 @@
 /* ==========================================================================
    Lo propio del alta de lugar por pasos (OL-315; prototipo firmado `lugar-artista-por-pasos.html`). Lo que comparte con el alta de evento (el
-   mapa del paso, la tarjeta que confirma, las opciones, «Revisa» y «Publicado», con su sugerencia) viene de sus módulos, y «Ya tiene ficha»
+   mapa del paso, la tarjeta que confirma, las opciones, «Revisa» y «Publicado», con su sugerencia) viene de sus módulos, y «Ya está publicado»
    de `ui/Sugerencia`; todo va como hijo directo de la columna de `PorPasos`.
    1. «¿Es este?» en el mapa (los parecidos del servidor al publicar son `ui/Parecidos`, compartidos con el alta de evento, OL-384)
    ========================================================================== */

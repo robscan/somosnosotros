@@ -18,7 +18,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* La hoja de opciones: la ayuda, el periodo (el lugar), el tamaño y «Preparar una reseña» (el artista), uno bajo otro. */
+/* La hoja de opciones: la ayuda, el periodo (el lugar) y el tamaño, uno bajo otro. */
 .cuerpo {
   display: grid;
   gap: var(--espacio-4);
@@ -60,33 +60,4 @@
   background: var(--fondo);
   color: var(--texto);
   box-shadow: var(--sombra);
-}
-
-/* «Preparar una reseña · Pronto»: apagado, no hace nada todavía. */
-.renglon {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--espacio-3);
-  padding-top: var(--espacio-3);
-  border-top: 1px solid var(--borde);
-}
-.renglon b {
-  display: block;
-  font-size: var(--letra-md);
-}
-.renglon small {
-  display: block;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-}
-.pronto {
-  padding: var(--espacio-1) var(--espacio-2);
-  border-radius: var(--radio-pildora);
-  background: var(--fondo-suave);
-  color: var(--texto-suave);
-  font-size: var(--letra-2xs);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }

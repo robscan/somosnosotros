@@ -68,7 +68,7 @@ function campos(r: Respuestas, foto = r.foto): Record<string, string> {
 
 /**
  * El alta de artista por pasos (OL-316; prototipo firmado `lugar-artista-por-pasos.html`, casos 5 a 7, y su acta, bitácora 342): ¿Cómo se
- * llama? (con «Ya tiene ficha» y la tira al pie) → ¿Qué hace? (solo si el nombre no lo dijo) → ¿Qué tipo de …? (solo tras elegirla) →
+ * llama? (con «Ya está publicado» y la tira al pie) → ¿Qué hace? (solo si el nombre no lo dijo) → ¿Qué tipo de …? (solo tras elegirla) →
  * Revisa → Publicado. El mismo armazón que el alta de evento y la de lugar (`PorPasos`): una pregunta por pantalla, Atrás que conserva lo
  * contestado, pie que dice qué falta y se queda sobre el teclado, guardia de salida. Las respuestas viven en el reductor de `pasos.ts`; lo que
  * se publica viaja en un formulario escondido con los campos del alta de siempre (`crearArtista`) más `soy` y `quedarse`, y es lo que mira la
