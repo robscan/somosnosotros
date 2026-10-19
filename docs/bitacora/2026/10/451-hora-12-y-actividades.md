@@ -35,7 +35,7 @@ Todo lo que se lee pasa por ahí:
 | Inicio: tarjetas, fila «Ahora» (círculos e historias) | sáb 24 de oct · 12:00 · «20:00» · «Desde 17:30» | … · 12:00 pm · «8:00 pm» · «Desde 5:30 pm» | `destacados.ts`, `ahora.ts` (por `horaCorta`) |
 | Número de la fecha en la ficha | 20:00 / sáb 17 oct – dom 18 oct | 8:00 pm / sáb 17 oct | `ficha.ts` |
 | Línea bajo el título (taller, festival sin programa) | jue 8 de oct · 17:00 | jue 8 de oct · 5:00–7:00 pm | `claseEvento.ts` |
-| Horario del lugar y «Para visitar» | Abre 10:00–18:00 / 10:00 a.m.–6:00 p.m. | Abre 10:00 am–6:00 pm | `horarioLugar.ts`, `agendaPorClase.ts` |
+| Horario del lugar y «Para visitar» | Abre 10:00–18:00 · hasta el dom 8 de nov / 10:00 a.m.–6:00 p.m. | 10:00 am–6:00 pm · hasta el dom 8 de nov (sin «Abre», decisión del founder abajo) | `horarioLugar.ts`, `agendaPorClase.ts`, `eventosFicha.ts` |
 | Número «Hoy» de una exposición | 10:00–18:00 | 10:00 am–6:00 pm | `claseEvento.kpisDeExposicion` |
 | Alta por pasos: chips, «cada día de…», horarios por día, «Revisa» | 7:00 p.m. · de 8:00 p.m. a 9:00 p.m. · 20:00 → sáb 31 · 02:00 | 7:00 pm · de 8:00 a 9:00 pm · vie 30 de oct · 8:00 pm–2:00 am | `calendario.ts`, `cuandoEvento.ts`, `sesionesEvento.ts`, `fechas.ts` |
 | Sesiones en la ficha y en «A mi calendario» | vie 9 de oct · 20:00–21:00 | vie 9 de oct · 8:00–9:00 pm | `sesionesEvento.ts` |
@@ -95,22 +95,33 @@ película en tres funciones) sigue diciendo «Función»: son funciones de una m
 2. **El número de la fecha dice dónde empieza una noche, no su rango.** Ver 3; la línea bajo el título, las listas y «Revisa» dicen el rango.
 3. **La cabecera del festival dice el número una vez:** el número de la banda (firmado en OL-351, tres números) se queda y la línea deja de repetirlo.
 4. **«Reúne varias presentaciones.»** era la definición que el founder aprobó el 18 de octubre; se cambia por «Reúne varias actividades.» para
-   que sea la misma palabra (por confirmar abajo).
+   que sea la misma palabra (el founder lo aceptó, abajo).
 
-## Por confirmar
+## Lo que estaba por confirmar (decidido por el founder, 19 de octubre)
 
-1. **El formato de los rangos.** El encargo pide «8:00 pm–2:00 am» (guion corto, sin espacios); el plan de la 449 escribió «8:00 pm a 2:00 am».
-   Quedó el guion, que es el de todos los rangos de la app. En las frases del alta sigue «de 8:00 a 9:00 pm» («cada día de…», horarios por día).
-2. **«Para visitar» a 390 px:** «Abre 10:00 am–6:00 pm · hasta el dom 8 de …» ya no cabe entero y se corta el mes (con 24 h cabía; OL-410 había
-   elegido 24 h justo por esto). Opciones: quitar «Abre» (el reloj ya lo dice) o el día de la semana de «hasta el …». Captura 10.
-3. **El número de la fecha de un evento suelto de una noche** dice «8:00 pm» y «sáb 17 oct»: su fin solo sale en las listas, «Revisa», los avisos
-   y la línea de un festival. Si se quiere arriba, cabe en dos renglones como el de varios días.
-4. **«Reúne varias actividades.»** en «¿Qué es?» (texto de la definición aprobada).
-5. **La etiqueta del número con un rango a 320 px** («11:00 am–2:00 pm») corta la primera hora («11:00 a…» / «2:00 pm»); antes, en 24 h,
-   también se cortaba. Captura 13.
+El founder aceptó los «por confirmar» como los recomendó el gestor, con un cambio en código:
+
+1. **El formato de los rangos:** se queda el guion en los datos («8:00 pm–2:00 am», el de todos los rangos de la app; el plan de la 449 había
+   escrito «8:00 pm a 2:00 am») y «de … a …» en las frases del alta («cada día de 8:00 a 9:00 pm», horarios por día).
+2. **«Para visitar» sin «Abre» (el cambio en código).** Con la hora en 12 horas, «Abre 10:00 am–6:00 pm · hasta el dom 8 de …» ya no cabía a 390
+   px y se cortaba el mes (OL-410 había elegido 24 h justo por esto). Decisión del founder: quitar la palabra «Abre» en el renglón de «Para
+   visitar», en las fichas de lugar y artista (`eventosFicha.lineaParaVisitar`) y en Agenda («Para visitar hoy», `agendaPorClase.cuandoParaVisitar`):
+   **«10:00 am–6:00 pm · hasta el dom 8 de nov»**, con el reloj delante. A 390 el mes ya se lee entero (capturas 03 y 10); a 320 se sigue
+   cortando «hasta el do…», como antes en 24 h (capturas 10b y 15). No cambia lo que dice una exposición en otro renglón: «Abre hoy 10:00 am–6:00
+   pm» en su ficha (`textoHoy`) y en la lista de Exposiciones de Agenda (`notaDeVisita`, tras «Hasta el …»), donde «Abre» dice que esas horas son
+   las de hoy.
+3. **El recuadro de la fecha** de un evento suelto de una noche se queda solo con el inicio («8:00 pm» y «sáb 17 oct»); el fin lo dicen las listas,
+   «Revisa», los avisos y la línea de un festival.
+4. **«Reúne varias actividades.»** se queda en «¿Qué es?».
+5. **La etiqueta del número con un rango a 320 px** («11:00 a…» / «2:00 pm») se queda como está: también se cortaba en 24 h. Captura 13.
 
 ## Verificación
 
+**Segunda vuelta (sin «Abre» en «Para visitar», 19 de octubre):** lint (sin errores), typecheck, las unitarias de `horarioLugar`, `agendaPorClase`,
+`agenda`, `eventosFicha` y `claseEvento` (148) y las de componentes de Agenda por clase y de la hoja de Lugares (22) en verde; capturas 03, 10,
+10b y 15 rehechas.
+
+**Primera vuelta:**
 En el árbol sin `.env`: `npm run lint` (sin errores; un aviso viejo en `VisorImagen.componentes.test.mjs`), `npm run typecheck`, `npm test`
 (228 archivos, **4033 pruebas** en verde), `npm run inventario` (sin novedades) y `npm run medir` (41 pantallas × 4 anchos, **sin novedades**:
 la línea base no cambia). `npm run test:componentes`: 617 de 618; la que falla, «el teclado ya estaba abierto al tocar el renglón»
@@ -129,7 +140,8 @@ respaldo fuera del repo). La lectura del cartel, simulada.
 
 1. `01-inicio.png`: «Ahora» con «6:00 pm» y «7:00 pm» bajo los círculos; la tarjeta «sáb 24 de oct · 12:00 pm».
 2. `02-inicio-festival-de-una-noche.png`: «Festivales y expos» con Noche cumbiera: sello «17» (un día) y «mañana · 8:00 pm».
-3. `03-agenda.png`: «6:00–8:00 pm», «7:00–9:00 pm», «Abre 10:00 am–6:00 pm · hasta el dom 8 de …» (el corte del punto 2), «7:30–9:30 pm».
+3. `03-agenda.png`: «6:00–8:00 pm», «7:00–9:00 pm», «Para visitar hoy» con «10:00 am–6:00 pm · hasta el dom 8 de nov» y «… · hasta el dom 15
+   de nov» enteros (sin «Abre»), «7:30–9:30 pm».
 4. `04-agenda-noche.png`: Noche cumbiera «8:00 pm–2:00 am»; «10:00 am–12:00 pm»; «5:00–7:00 pm · Sesió…».
 5. `05-ficha-festival-una-noche.png`: la línea «sáb 17 de oct · 8:00 pm–2:00 am · Foro lunaria» y el número «8:00 pm» / «sáb 17 oct».
 6. `06-ficha-festival-con-programa.png`: «Del 25 al 27 de oct» y el número «ACTIVIDADES 3» (sin «Programa registrado» en la línea).
@@ -137,12 +149,14 @@ respaldo fuera del repo). La lectura del cartel, simulada.
 8. `08-ficha-lugar-actividades-aqui.png`: Foro lunaria: Noche cumbiera «8:00 pm–2:00 am» y el bloque «lun 19 de oct · 8:00 pm–2:00 am · 2
    actividades aquí». (En la del Centro Cultural Universitario Bicentenario se lee «Del 25 al 27 de oct · 2 actividades aquí».)
 9. `09-ficha-lugar-horario.png`: MUNI: «Ma–Do / 10:00 am–6:00 pm / Cierra Lu» y «7:00–10:00 pm · 2 van».
-10. `10-ficha-lugar-para-visitar.png`: «Para visitar» del MUNI con «Abre 10:00 am–6:00 pm · hasta el dom 8 de …».
+10. `10-ficha-lugar-para-visitar.png`: «Para visitar» del MUNI con «10:00 am–6:00 pm · hasta el dom 8 de nov» y «… · hasta el dom 15 de nov»,
+    el mes entero a 390.
+    `10b-ficha-lugar-para-visitar-320.png`: lo mismo a 320: «10:00 am–6:00 pm · hasta el do…» (se corta, como en 24 h).
 11. `11-ficha-funcion-3-de-4.png`: «FUNCIÓN 3 DE 4» (dos ya pasaron), el número «7:00 pm» / «dom 18 oct» y «Otras funciones» con la que viene.
 12. `12-ficha-varios-dias-am-pm.png`: el número «11:00 am–» / «2:00 pm» en dos renglones y «Del 21 al 23 de oct».
 13. `13-ficha-varios-dias-am-pm-320.png`: lo mismo a 320 («11:00 a…» / «2:00 pm», punto 5).
 14. `14-ficha-exposicion-hoy.png`: Ecos de papel: «HOY 10:00 am–» / «6:00 pm».
-15. `15-agenda-320.png`: Agenda a 320.
+15. `15-agenda-320.png`: Agenda a 320: «Para visitar hoy» con «10:00 am–6:00 pm · hasta el do…».
 16. `16-alta-revisa-madrugada.png`: «Revisa» de Cumbiachella: «vie 30 de oct · 8:00 pm–2:00 am» (antes «20:00 → sáb 31 · 02:00»).
 17. `17-cartel-con-hora.png`: cuatro carteles generados (`CARTELES_SALIDA` de `dibujar.test.ts`): «7:00 pm» en el sol, «SON HUASTECO · VIE 16
     OCT · 7:00 pm» en la etiqueta en mayúsculas, la franja «VIE 16 OCT · 7:00 pm» y «10:00 am» en el boleto de varios días.

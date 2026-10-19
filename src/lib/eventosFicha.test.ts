@@ -119,7 +119,7 @@ describe("E · las exposiciones en «Para visitar», sin Voy (OL-410)", () => {
     expect(f.dias.flatMap((g) => g.eventos).some((p) => p.tipo === "renglon" && p.evento.clase === "exposicion")).toBe(false);
   });
   it("abierta: sus horas de hoy con el reloj y hasta cuándo; nunca «00:00»", () => {
-    expect(lineaParaVisitar(fotogramas, ahora)).toEqual({ cuando: "Abre 5:00–10:00 pm", horas: true, nota: "hasta el dom 8 de nov" }); // en 24 h, como las horas de los renglones
+    expect(lineaParaVisitar(fotogramas, ahora)).toEqual({ cuando: "5:00–10:00 pm", horas: true, nota: "hasta el dom 8 de nov" }); // sin «Abre»: así cabe el mes (founder, 2026-10-19, OL-418)
     expect(lineaParaVisitar({ ...fotogramas, horario: [] }, ahora)).toEqual({ cuando: "Horario por confirmar", horas: true, nota: "hasta el dom 8 de nov" });
     expect(lineaParaVisitar(fotogramas, new Date("2026-10-19T18:00:00Z")).cuando).toBe("Hoy cierra"); // lunes
   });

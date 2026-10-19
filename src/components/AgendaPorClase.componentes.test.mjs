@@ -129,7 +129,7 @@ test("el festival es un bloque con sus actos del día, el taller dice «Sesión 
   assert.match(await sabado.locator("a[href='/eventos/taller']").innerText(), /6:00–8:00 pm\s+· Sesión 2 de 3 · \$300/);
   // «Para visitar hoy»: la abierta hoy según su horario y, después, la que no tiene horario, sin prometer horas (OL-381).
   const visitar = grupo(page, "Para visitar hoy");
-  assert.match(await visitar.innerText(), /Ecos de papel\s+Abre 10:00 am–6:00 pm\s+· hasta el sáb 31 de oct\s+MUNI[\s\S]*Fotovisión\s+Horario por confirmar\s+· hasta el dom 20 de dic\s+Foro/);
+  assert.match(await visitar.innerText(), /Ecos de papel\s+10:00 am–6:00 pm\s+· hasta el sáb 31 de oct\s+MUNI[\s\S]*Fotovisión\s+Horario por confirmar\s+· hasta el dom 20 de dic\s+Foro/);
   assert.equal(await visitar.getByRole("button").count(), 0, "sin «Voy»");
   // Ninguna exposición ni el marco salen como renglón de un día; nada dice «00:00».
   assert.equal(await page.locator("a[href='/eventos/ecos']").count(), 1);

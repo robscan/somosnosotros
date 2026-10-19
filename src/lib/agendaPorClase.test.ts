@@ -78,7 +78,7 @@ describe("«Para visitar»: vigencia, orden y horario", () => {
     // Fuera de su periodo no entra, con horario o sin él: Grabado cerró el 20 y la que no se pudo leer el 9.
     expect(ids(paraVisitarEseDia(TODOS, "2026-10-21"))).toEqual(["ecos", "futura"]);
     expect(textoAbre(rangosDeVisita(ecos, HOY))).toBe("Abre 10:00 am–6:00 pm");
-    expect(cuandoParaVisitar(ecos, HOY)).toBe("Abre 10:00 am–6:00 pm");
+    expect(cuandoParaVisitar(ecos, HOY)).toBe("10:00 am–6:00 pm");
     expect(cuandoParaVisitar(grabado, HOY)).toBe("Horario por confirmar");
     expect(cuandoParaVisitar(sinLeer, HOY)).toBe("Horario por confirmar");
     expect([ecos, grabado, sinLeer, { ...grabado, horario: [{ dias: [], abre: "10:00", cierra: "18:00" }] }].map(sinHorario)).toEqual([false, true, true, true]);

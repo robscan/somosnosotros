@@ -169,11 +169,14 @@ export function porCercania(a: Vigente, b: Vigente, ahora: Date = new Date()): n
   return instante || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
 }
 
-/** «Abre 10:00 am–6:00 pm»: lo que dice el renglón de «Para visitar» (Agenda y fichas), con la hora de toda la app (OL-418). */
+/** «Abre 10:00 am–6:00 pm»: lo que dice de un día que no es hoy la lista de exposiciones (`notaDeVisita`), con la hora de toda la app (OL-418). */
 export const textoAbre = (rangos: readonly Rango[]): string => `Abre ${textoRangos(rangos)}`;
 
-/** El cuándo de un renglón de «Para visitar hoy» (las de `paraVisitarEseDia`): sus horas ese día o, sin horario conocido, «Horario por confirmar». */
-export const cuandoParaVisitar = (e: Exposicion, dia: string): string => (sinHorario(e) ? HORARIO_POR_CONFIRMAR : textoAbre(rangosDeVisita(e, dia)));
+/**
+ * El cuándo de un renglón de «Para visitar hoy» (las de `paraVisitarEseDia`): sus horas ese día, sin «Abre» (el reloj y el grupo ya lo dicen; founder,
+ * 2026-10-19, OL-418: así cabe el mes de «hasta el dom 8 de nov» a 390 px), o, sin horario conocido, «Horario por confirmar».
+ */
+export const cuandoParaVisitar = (e: Exposicion, dia: string): string => (sinHorario(e) ? HORARIO_POR_CONFIRMAR : textoRangos(rangosDeVisita(e, dia)));
 
 /** «hasta el dom 30 de nov», en minúscula: lo que sigue a la hora en «Para visitar hoy». */
 export const textoHastaEl = (e: Exposicion, ahora: Date = new Date()): string => `hasta el ${diaConMesDe(visitaDe(e).hasta, ahora, e.zona)}`;
