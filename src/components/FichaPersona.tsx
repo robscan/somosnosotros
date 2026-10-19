@@ -23,6 +23,8 @@ type Props = {
   gestos: Gestos | null;
   /** Origen público del sitio, para los enlaces que se comparten. */
   origen: string;
+  /** «Invitar a tus amigxs» en Mi perfil (OL-416): el renglón para compartir la app, bajo la cabecera y antes de «Mis artistas». Solo en `mia`. */
+  invitar?: ReactNode;
   /** «Mis artistas» en Mi perfil (OL-154, doc 40b), antes de la actividad: lo tuyo primero. Solo en `mia`. */
   misArtistas?: ReactNode;
   /** Quien mira bloqueó a esta persona (OL-203): el botón Desbloquear, ya armado por la página. Con esto, la
@@ -36,7 +38,7 @@ type Props = {
  * (Voy a · Sigo · Van a lo mismo) y la lista de la pestaña, con los renglones y gestos de las listas (ActividadPersona,
  * OL-057). Lo que se configura vive en Ajustes. Un perfil reservado no pinta ni manda sus listas.
  */
-export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen, misArtistas, bloqueado }: Props) {
+export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen, invitar, misArtistas, bloqueado }: Props) {
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
 
@@ -92,6 +94,7 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
           </Boton>
         </p>
       )}
+      {mia && invitar}
       {misArtistas}
     </>
   );

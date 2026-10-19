@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Borrar from "@/components/Borrar";
-import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoAyuda, IconoBloquear, IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
+import { IconoAyuda, IconoBloquear, IconoChevronDerecha, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
 import { cupoDeCartel } from "@/app/eventos/acciones";
 import { lecturaDeCartelActiva } from "@/lib/cartel";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
-import { TEXTO_INVITAR } from "@/lib/perfil";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
@@ -24,7 +22,6 @@ import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./ajustes.module.css";
 
 export const metadata = { title: "Ajustes · Somos Nosotros", robots: { index: false, follow: false } };
-const ORIGEN = "https://somosnosotros.org";
 
 /**
  * Ajustes: lo que se configura, fuera de la ficha (docs/rediseno/13, decisiones 5 y 6). Cuatro grupos en tarjetas
@@ -91,14 +88,6 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
         <h2>Somos Nosotros</h2>
         <ul className={renglon.tarjeta}>
           <InstalarApp />
-          <li>
-            <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={renglon.ajuste}>
-              <IconoCompartir width={20} height={20} />
-              <b>Invita a tus amistades</b>
-              <small>Se comparte el enlace del sitio</small>
-              <IconoChevronDerecha />
-            </BotonCompartir>
-          </li>
           {perfil.rol === "admin" && (
             <li>
               <Link href="/admin" className={renglon.ajuste}>

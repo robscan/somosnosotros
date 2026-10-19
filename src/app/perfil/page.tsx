@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import BotonCompartir from "@/components/BotonCompartir";
 import BotonTuAnio from "@/components/BotonTuAnio";
 import FichaPersona from "@/components/FichaPersona";
 import { cargarPasadosPersona } from "@/lib/cargarTuAnio";
@@ -9,10 +10,13 @@ import { avisosParaListas } from "@/app/avisos/paraListas";
 import { cargarMisArtistas } from "@/app/artistas/consultas";
 import { cargarPersona, relacionDe } from "@/app/personas/consultas";
 import { conArtistasLigados, hrefArtista } from "@/lib/artistas";
+import { TEXTO_INVITAR } from "@/lib/perfil";
 import { qrDeUrl } from "@/lib/qr";
 import Boton from "@/components/ui/Boton";
+import { IconoChevronDerecha, IconoCompartir } from "@/components/ui/Iconos";
 import MisArtistas from "./MisArtistas";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./perfil.module.css";
 
 export const metadata = { title: "Mi perfil · Somos Nosotros", robots: { index: false, follow: false } };
@@ -20,8 +24,8 @@ const ORIGEN = "https://somosnosotros.org";
 
 /**
  * Mi perfil: la misma ficha que ven los demás, con Ajustes bajo la colonia, en una pantalla raíz (docs/rediseno/50, P5): su
- * cabecera, los tres números —Voy · Interesan · Sigo— y, debajo, la lista de cada uno por día. Lo que se configura vive en
- * /ajustes (docs/rediseno/13, decisión 5).
+ * cabecera, «Invitar a tus amigxs» (OL-416), los tres números —Voy · Interesan · Sigo— y, debajo, la lista de cada uno por día. Lo que se
+ * configura vive en /ajustes (docs/rediseno/13, decisión 5).
  */
 export default async function PaginaPerfil() {
   const actual = await usuarioActual();
@@ -44,6 +48,17 @@ export default async function PaginaPerfil() {
         artistas={persona.artistas}
         gestos={gestos}
         origen={ORIGEN}
+        // «Invitar a tus amigxs» (OL-416; founder, 2026-10-19): el renglón que estaba en Ajustes, ahora bajo la cabecera de Mi perfil y antes
+        // de «Mis artistas». Comparte la app (el enlace del sitio), no la ficha: eso es el botón de la cabecera. Como en Ajustes, no se mide
+        // (BotonCompartir solo mide fichas; la app la mide el banner de Inicio, OL-388).
+        invitar={
+          <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={`${renglon.ajuste} ${renglon.sola}`}>
+            <IconoCompartir width={20} height={20} />
+            <b>Invitar a tus amigxs</b>
+            <small>Se comparte el enlace del sitio</small>
+            <IconoChevronDerecha />
+          </BotonCompartir>
+        }
         // Antes de "Lo que sigues" (lo tuyo primero, doc 40b); sin artistas ligados, ni se pinta (OL-154).
         misArtistas={conArtistasLigados(misArtistas) && <MisArtistas artistas={misArtistas} />}
       />
