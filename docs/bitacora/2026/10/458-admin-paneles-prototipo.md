@@ -133,3 +133,7 @@ llevan una clase `p-…` (A: 2; B: 11; C: 141, la tarjeta del showcase es nueva;
   piezas siguientes, con el VoBo de este prototipo.
 - El motivo al rechazar una propuesta (duplicado, no cultural, fuera de la ciudad, otro, doc 57 §4.B) y exportar para el consejo: no se
   dibujaron; se dicen en las notas de la pieza de código.
+
+## Firma del founder (2026-10-20)
+
+«Firmo», con las cuatro decisiones del agente tal como quedaron: la mira para Ciudades y el destello para Showcase; las ciudades con algo por decidir primero; «Puntaje» como orden por defecto del showcase; las propuestas por revisar suben a «Pendiente» en la portada. Con la firma arrancan las piezas de código: OL-426 (tablas y pantallas del showcase, rúbrica a mano) y OL-427 (ciudades, detección, corridas y bandeja); la rutina con la API después (OL-428).
