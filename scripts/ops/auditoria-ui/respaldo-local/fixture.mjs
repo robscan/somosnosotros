@@ -679,6 +679,26 @@ Object.assign(rpcs, {
   },
 });
 
+// OL-425: la portada de Administración (/admin) para guardarla con `maqueta-pantalla.mjs`: los contratos de `panel_resumen`, `panel_pendientes`,
+// `panel_comunidad`, `panel_aportes`, `panel_fichas` y `panel_capo` con números inventados y coherentes entre sí (sin ellos la portada caía en
+// «Algo falló»: una RPC desconocida devuelve `[]`). Solo los lee /admin; ninguna pantalla que mide `medir` cambia.
+const fotoDe = (dias, activas, coincidencias, eventos_semana, comunidad) => ({ dia: new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(new Date(Date.now() - dias * 86400e3)), activas, coincidencias, eventos_semana, comunidad });
+Object.assign(rpcs, {
+  panel_resumen: () => ({
+    ahora: {
+      activas: 23, cuentas: 80, coincidencias: 4, eventos_semana: 37, lugares_con_fecha: 18, lugares: 71, comunidad: 52, proximos: 96, comunidad_nuevos: 3,
+      desglose: { abrieron: 21, voy: 12, siguieron: 7, publicaron: 5, nuevas: 3, con_2: 2, con_3_a_5: 2, con_6_o_mas: 0, mayor: { id: "bbbb0000-0000-4000-8000-000000000001", titulo: "Noche de son huasteco", n: 4 }, personas_que_publican: 9 },
+    },
+    historia: [fotoDe(28, 15, 1, 29, 41), fotoDe(21, 17, 2, 31, 44), fotoDe(14, 19, 2, 33, 47), fotoDe(7, 20, 3, 35, 49)],
+    gestionar: { personas: 80, personas_nuevas: 3, nunca_entraron: 6, correo_con_problema: 1, lugares: 71, lugares_sin_fecha: 53, lugares_ocultos: 2, lugares_privados: 1, eventos: 383, eventos_sin_imagen: 41, artistas: 686, artistas_ocultos: 4, artistas_llevados: 19, invitaciones: 0 },
+  }),
+  panel_pendientes: () => [],
+  panel_comunidad: () => ({ registradas: 14, hicieron_algo: 9, vuelven_base: 11, vuelven: 5 }),
+  panel_aportes: () => ({ gestos_ahora: 18, gestos_antes: 13, voy: 11, me_interesa: 7, personas: 12, primeras_ahora: 2, primeras_antes: 1, han_publicado: 21 }),
+  panel_fichas: () => ({ artistas: 19, lugares: 8, vias: { solicitud: 11, alta: 9, correo: 6, otra: 1 }, serie: [12, 13, 14, 15, 16, 18, 19, 21, 22, 24, 26, 27], artistas_por_reclamar: 667, artistas_visibles: 682, artistas_con_foto: 214 }),
+  panel_capo: () => ({ invitados: 120, ya_vinculados_al_invitar: 4, elegibles: 116, solicitaron_despues: 7, vinculados_despues: 5, primer_envio: hace(20), ultimo_envio: hace(1), corte: hace(0) }),
+});
+
 /**
  * Un evento que se publica desde la app (OL-323): a la memoria, con lo que guarda la base (la clave de la operación como id, su slug y la cuenta
  * del token: Ana o Marcos). Quién (OL-341): los artistas que ya existen se ligan por su id y uno nuevo se crea en memoria con su nombre.
