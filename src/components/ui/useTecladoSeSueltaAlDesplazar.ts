@@ -24,7 +24,8 @@ type Gesto = { x: number; y: number; enElCampo: boolean; posiciones: () => numbe
  * teléfono de pruebas).
  *
  * Lo usan las pantallas con un campo arriba y una lista debajo: Buscar, el buscador de Administración (`ui/Buscador`), el nombre de las altas
- * de lugar y de artista y `ui/Hoja` (con `zona`: solo los toques dentro de la hoja). Solo escucha toques: con ratón o con el panel táctil de
+ * de lugar y de artista, «¿Dónde es?» del alta de evento, «¿Dónde está?» del alta de lugar, «Quién» (`eventos/SelectorQuien`) y `ui/Hoja`
+ * (con `zona`: solo los toques dentro de la hoja). Solo escucha toques: con ratón o con el panel táctil de
  * una computadora no hace nada. Nunca `pointerleave` (Safari táctil lo dispara en el primer movimiento del dedo).
  */
 export default function useTecladoSeSueltaAlDesplazar(zona?: RefObject<HTMLElement | null>) {

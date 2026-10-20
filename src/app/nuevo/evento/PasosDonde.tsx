@@ -8,6 +8,7 @@ import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { IconoBuscar, IconoCandado, IconoLapiz, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import ListaFlotante from "@/components/ui/ListaFlotante";
+import useTecladoSeSueltaAlDesplazar from "@/components/ui/useTecladoSeSueltaAlDesplazar";
 import Opcion from "@/components/ui/Opcion";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
@@ -56,6 +57,8 @@ export function PasoDonde({
   onCandidato: (candidato: Candidato) => void;
 }) {
   const ancla = useRef<HTMLLabelElement>(null);
+  // La lista del buscador va bajo el campo: con el teclado abierto, desplazarla (o arrastrar el paso) lo esconde (OL-421).
+  useTecladoSeSueltaAlDesplazar();
   // La lista se cierra con un toque fuera y se abre sola en cuanto el texto cambia: se guarda PARA QUÉ texto se cerró.
   const [cerradaPara, setCerradaPara] = useState<string | null>(null);
   const [eligiendo, setEligiendo] = useState(false);

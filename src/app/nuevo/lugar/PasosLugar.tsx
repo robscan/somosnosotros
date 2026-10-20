@@ -204,6 +204,8 @@ export function PasoUbicar({
   const [pidiendo, setPidiendo] = useState(sinDireccion);
   const version = useRef(0);
   const ancla = useRef<HTMLLabelElement>(null);
+  // La lista de direcciones va bajo el campo: con el teclado abierto, desplazarla (o mover el mapa) lo esconde (OL-421).
+  useTecladoSeSueltaAlDesplazar();
   const [q, setQ] = useState("");
   const [cerradaPara, setCerradaPara] = useState<string | null>(null);
   const [eligiendo, setEligiendo] = useState(false);
