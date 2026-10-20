@@ -10,7 +10,7 @@ import { cejaDeTarjeta, chipDeTarjeta, nombreDeTarjeta, piezasDeArtista, selloFe
 import { Chip } from "../ui/Chip";
 import { IconoMarcador } from "../ui/Iconos";
 import Imagen from "../ui/Imagen";
-import PortadaSistema from "./PortadaSistema";
+import PortadaSistema, { TextoCeja } from "./PortadaSistema";
 import { useTextoEnPalabra } from "./useTextoEnPalabra";
 import styles from "./TarjetaEvento.module.css";
 
@@ -115,8 +115,12 @@ function TarjetaCartel({ href, etiqueta, tamano, portada, sello, chip, interesa,
           {chip.texto}
         </Chip>
       )}
-      {/* Cada parte de la ceja no se parte; si no caben en un renglón, la segunda baja entera y el punto se queda al final del primero. */}
-      {ceja.length > 0 && <span className={styles.ceja}>{ceja.map((parte) => parte.replaceAll(" ", "\u00a0")).join("\u00a0· ")}</span>}
+      {/* La ceja nunca se corta: si no cabe en un renglón, la parte que sigue baja entera (`TextoCeja`, OL-422). */}
+      {ceja.length > 0 && (
+        <span className={styles.ceja}>
+          <TextoCeja partes={ceja} />
+        </span>
+      )}
     </>
   );
   return (

@@ -62,6 +62,10 @@ administración es `cookieDe(ADMIN)`). Con `RESPALDO_PERSONAS=1` suma fotos inve
 más en la lista y lo que Ana dio de alta además de sus eventos (un lugar y un artista a la vista y uno oculto de cada uno); `npm run medir` no lo
 pone. `capturar-persona-publicado.mjs` saca las capturas de la lista, la ficha con la foto grande, el visor y «Lo que publicó».
 
+La ceja de la tarjeta de Inicio (OL-422, bitácora 455): con `RESPALDO_NUEVAS=1` el respaldo suma dos festivales viejos con actividades nuevas (siete
+y una), para ver «FESTIVAL · 7 NUEVAS» y «FESTIVAL · 1 NUEVA» en «Nuevos eventos»; `npm run medir` no lo pone. `capturar-ceja-actividades.mjs` saca
+Inicio a 390, 320 y 430 y la pestaña Nuevos de la agenda, y mide las cejas del carril.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

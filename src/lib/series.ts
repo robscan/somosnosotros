@@ -115,6 +115,12 @@ export const cabezaDe = <T>(p: Pieza<T>): T => (p.tipo === "suelto" ? p.evento :
 
 /** «1 actividad nueva», «3 actividades nuevas»: lo de dentro de un festival se dice «actividades» en toda la app (OL-418; founder, 2026-10-19). */
 export const textoActosNuevos = (n: number): string => `${n} ${n === 1 ? "actividad nueva" : "actividades nuevas"}`;
+/**
+ * «1 nueva», «7 nuevas»: lo mismo en la ceja de la tarjeta de Inicio, junto a «Festival» («FESTIVAL · 7 NUEVAS»), donde «7 actividades nuevas» no
+ * cabía en la mediana y se cortaba (OL-422; founder, 2026-10-19: «Puedes dejar solo 1 nueva. 7 nuevas.»). El renglón de la agenda, que sí tiene
+ * sitio, dice la frase entera (`textoActosNuevos`).
+ */
+export const textoNuevasCorto = (n: number): string => `${n} ${n === 1 ? "nueva" : "nuevas"}`;
 /** «6 funciones». */
 export const textoFunciones = (n: number): string => `${n} ${n === 1 ? "función" : "funciones"}`;
 /**

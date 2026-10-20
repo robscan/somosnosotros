@@ -327,6 +327,24 @@ if (CON_CARTELES) {
   eventos.push({ ...evento({ id: E_CUMBIA, slug: "noche-cumbiera-demo", titulo: "Noche cumbiera (demo)", dias: 1, hora: "20:00", dur: 6, lugar_id: L_LUNARIA, imagen: null, creadoHace: 3, clase: "festival", descripcion: "Festival cumbiero de una noche: sonidos, baile y disfraz." }) });
 }
 
+// OL-422 (bitácora 455): dos festivales que no son nuevos con actividades nuevas, para ver en «Nuevos eventos» la ceja «FESTIVAL · 7 NUEVAS» y
+// «FESTIVAL · 1 NUEVA»: Raíces Sonoras (publicado hace 20 días, del día 14 al 20) con siete actividades de hoy, y la Muestra de Danza (hace 25 días,
+// del 15 al 17) con una de hoy. Las actividades, las más recientes de todo lo nuevo. Todo inventado.
+// Solo con `RESPALDO_NUEVAS=1`: `npm run medir` no lo pone, así ninguna pantalla medida cambia.
+export const CON_NUEVAS = process.env.RESPALDO_NUEVAS === "1";
+export const E_RAICES = "bbbb0011-0000-4000-8000-000000000001";
+export const E_DANZA = "bbbb0011-0000-4000-8000-000000000002";
+if (CON_NUEVAS) {
+  eventos.push(
+    { ...evento({ id: E_RAICES, slug: "festival-raices-sonoras-demo", titulo: "Festival Raíces Sonoras (demo)", dias: 14, hora: "18:00", lugar_id: L.ccub, creadoHace: 20, imagen: null, clase: "festival", colores: ["#18070a", "#721323", "#194541", "#232121"] }), fin: iso(fecha(21, "00:00")), termina: iso(fecha(21, "00:00")) },
+    ...["Son huasteco al atardecer", "Jarana y zapateado", "Marimba de la sierra", "Cantos del desierto", "Banda de viento infantil", "Trova potosina", "Cierre con huapango"].map((titulo, i) =>
+      evento({ id: `bbbb0011-0000-4000-8000-00000000001${i}`, slug: `raices-sonoras-demo-${i + 1}`, titulo, dias: 14 + i, hora: "19:00", lugar_id: i % 2 ? L.paz : L.ccub, creadoHace: 0.2, imagen: null, evento_padre_id: E_RAICES }),
+    ),
+    { ...evento({ id: E_DANZA, slug: "muestra-de-danza-contemporanea-demo", titulo: "Muestra de Danza Contemporánea (demo)", dias: 15, hora: "18:00", lugar_id: L.paz, creadoHace: 25, imagen: null, clase: "festival", colores: ["#0f1315", "#38505b", "#3b565c", "#424542"] }), fin: iso(fecha(18, "00:00")), termina: iso(fecha(18, "00:00")) },
+    evento({ id: "bbbb0011-0000-4000-8000-000000000020", slug: "muestra-de-danza-demo-1", titulo: "Cuerpos en tránsito", dias: 16, hora: "20:00", lugar_id: L.paz, creadoHace: 0.3, imagen: null, evento_padre_id: E_DANZA }),
+  );
+}
+
 // OL-414 (bitácora 445): Administración › Personas con fotos y «Lo que publicó» con eventos, lugares y artistas. Ana y Marcos con foto, tres cuentas
 // más en la lista (dos con foto, una sin ella), y lo que Ana dio de alta además de sus eventos: un lugar a la vista y uno oculto, un artista a la
 // vista y uno oculto; su festival y sus actos con la misma hora de alta (como los guarda la base: se dan de alta juntos). Todo inventado; las
