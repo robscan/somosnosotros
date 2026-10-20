@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
+import { Fragment, useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
 import { dibujoDePortada, paletaDeBase, type ClaseConFigura, type PaletaPortada } from "@/lib/portadasSistema";
 import { Chip } from "../ui/Chip";
 import { reaplicarGiro, registrarPortada, useGiroEncendido } from "./giroPortadas";
@@ -97,11 +97,35 @@ export default function PortadaSistema({ id, clase, paleta, tamano, sello, inter
           {chip.texto}
         </Chip>
       )}
-      {/* Cada parte de la ceja no se parte; si no caben en un renglón, la segunda baja entera (como debajo del cartel). */}
-      {ceja.length > 0 && <span className={styles.ceja}>{ceja.map((parte) => parte.replaceAll(" ", "\u00a0")).join("\u00a0· ")}</span>}
+      {ceja.length > 0 && (
+        <span className={styles.ceja}>
+          <TextoCeja partes={ceja} />
+        </span>
+      )}
       <b ref={tituloRef} className={styles.titulo}>
         {titulo}
       </b>
     </span>
+  );
+}
+
+/**
+ * El texto de la ceja, aquí y debajo del cartel (`TarjetaEvento`): sus partes separadas por « · » («Festival · 7 nuevas», «Taller · Sesión 1 de
+ * 4»). Nunca se corta (OL-422; founder, 2026-10-19: «No cabe el letrero»): si no caben en un renglón, la parte que sigue baja entera y el punto se
+ * queda al final del primero («FESTIVAL ·» / «7 NUEVAS»); cada parte después de la primera va en su trozo (`.parte`), que no se parte mientras
+ * quepa en un renglón y, si ni sola cabe, baja por sus espacios. Antes eran espacios duros: lo que no cabía se salía de la tarjeta y la portada lo
+ * recortaba («7 ACTIVIDADES NUE»). La primera parte empieza el renglón: no necesita trozo.
+ */
+export function TextoCeja({ partes }: { partes: string[] }) {
+  const conPunto = (i: number) => (i < partes.length - 1 ? `${partes[i]}\u00a0·` : partes[i]);
+  return partes.map((_, i) =>
+    i === 0 ? (
+      conPunto(0)
+    ) : (
+      <Fragment key={i}>
+        {" "}
+        <span className={styles.parte}>{conPunto(i)}</span>
+      </Fragment>
+    ),
   );
 }

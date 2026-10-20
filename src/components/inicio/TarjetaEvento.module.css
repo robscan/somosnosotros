@@ -128,6 +128,9 @@
   letter-spacing: 0.06em;
   line-height: 1.3;
   text-transform: uppercase;
+  /* OL-422: nunca se corta. Baja de renglón entre sus partes (`TextoCeja`) y por sus espacios; solo una palabra que ni sola cabe (la letra grande
+     del teléfono, OL-373) se parte donde llegue, antes que salirse de la tarjeta. */
+  overflow-wrap: anywhere;
 }
 
 /* E1 con T1 y T2 (OL-382): el título tal cual lo escribió quien publicó, en tres líneas como mucho; si no cabe, se corta en palabra entera con

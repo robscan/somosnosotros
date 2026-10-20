@@ -158,7 +158,7 @@ export const MINIMO_NUEVOS = 3;
  * Una tarjeta por serie (OL-385, `lib/series`): los actos nuevos de un festival van dentro de la tarjeta del festival y las funciones de lo mismo
  * (mismo título, mismo sitio) en una sola tarjeta. Por eso el mínimo de 3 y el tope de `LIMITE_NUEVOS` cuentan piezas (lo que se ve), no eventos:
  * tres funciones de la misma obra son una tarjeta y no llenan el carril. Aquí se devuelven los eventos de esas piezas, en su orden de publicación;
- * `CarrilNuevos`, en el teléfono, los vuelve a juntar después de quitar lo que esa persona ya vio (la cuenta de «3 actos nuevos» es la suya).
+ * `CarrilNuevos`, en el teléfono, los vuelve a juntar después de quitar lo que esa persona ya vio (la cuenta de «3 nuevas» es la suya).
  *
  * El umbral de 3 se comprueba ANTES de tocar `vistos`: un candidato que no llega al mínimo no se muta al conjunto
  * compartido, para que un carril que de todos modos no se pinta no le quite, por accidente, un evento a otro.

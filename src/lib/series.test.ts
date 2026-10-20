@@ -4,7 +4,7 @@ import { marcosDe } from "./agendaPorClase";
 import type { Agenda } from "./cargarAgenda";
 import { eventoPaso } from "./fechas";
 import { calcularCarrilesAgenda, carrilNuevos } from "./inicio";
-import { agruparSeries, cabezaDe, grupoDe, juntarPiezas, mismaSerie, otrasFunciones, textoActosNuevos, textoDesde, textoFuncion, textoFunciones, type Pieza } from "./series";
+import { agruparSeries, cabezaDe, grupoDe, juntarPiezas, mismaSerie, otrasFunciones, textoActosNuevos, textoDesde, textoFuncion, textoFunciones, textoNuevasCorto, type Pieza } from "./series";
 import { cejaDeTarjeta, tarjetaDeInicio, tarjetaDePieza } from "./tarjetaInicio";
 
 // Lunes 12 de octubre de 2026, 10:00 en San Luis Potosí (seis horas detrás de UTC): el día en que el founder vio las tarjetas repetidas.
@@ -90,12 +90,14 @@ describe("una pieza por serie (OL-385)", () => {
 
 describe("la tarjeta de una pieza en «Nuevos eventos» (OL-385)", () => {
   const conFecha = (e: EventoAgenda) => tarjetaDeInicio(e, ahora);
-  it("festival: la tarjeta del festival, con «3 actividades nuevas» en la ceja junto a «Festival», y lleva a su ficha", () => {
+  it("festival: la tarjeta del festival, con «3 nuevas» en la ceja junto a «Festival» (OL-422), y lleva a su ficha", () => {
     const t = tarjetaDePieza({ tipo: "festival", marco: conFecha(xantolo), actos: foroInfantil.map(conFecha), nuevos: 3, primero: conFecha(foroInfantil[0]) }, ahora);
-    expect(cejaDeTarjeta(t)).toEqual(["Festival", "3 actividades nuevas"]);
+    expect(cejaDeTarjeta(t)).toEqual(["Festival", "3 nuevas"]);
     expect(t.href).toBe("/eventos/xantolo");
     expect(t.clave).toBe("festival-xantolo");
-    expect(textoActosNuevos(1)).toBe("1 actividad nueva");
+    // En corto solo en la ceja de la tarjeta (founder, 2026-10-19: «Puedes dejar solo 1 nueva. 7 nuevas.»); el renglón de la agenda, entero.
+    expect([1, 7, 13].map(textoNuevasCorto)).toEqual(["1 nueva", "7 nuevas", "13 nuevas"]);
+    expect([1, 7].map(textoActosNuevos)).toEqual(["1 actividad nueva", "7 actividades nuevas"]);
   });
   it("serie: la tarjeta de la más próxima, «6 funciones» en la ceja, «desde …» en su cuándo y el sello del primer día al último", () => {
     const funciones = extraordinarias.map(conFecha);
