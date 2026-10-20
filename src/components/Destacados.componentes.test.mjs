@@ -273,7 +273,9 @@ test("firmada: la clase arriba del tÃ­tulo solo si no es un evento, con su sesiÃ
   const p = await pagina(t);
   const ceja = (id) =>
     firmada(p, "Carril firmado", id).evaluate((a) => {
-      const c = [...a.querySelectorAll("span")].find((x) => getComputedStyle(x).letterSpacing !== "normal" && !x.querySelector("span"));
+      // La ceja es el span con la letra espaciada de fuera: desde OL-422 (`TextoCeja`) lleva dentro el trozo de su segunda parte, que hereda el espaciado.
+      const espaciado = (x) => !!x && getComputedStyle(x).letterSpacing !== "normal";
+      const c = [...a.querySelectorAll("span")].find((x) => espaciado(x) && !espaciado(x.parentElement?.closest("span")));
       if (!c) return null;
       const titulo = [...a.querySelectorAll("b")].find((b) => !b.closest("span[title]")).getBoundingClientRect(), r = c.getBoundingClientRect();
       return { texto: c.innerText.replace(/\u00a0/g, " "), color: getComputedStyle(c).color, letra: getComputedStyle(c).fontSize, encima: r.bottom <= titulo.top + 0.5, renglones: Math.round(r.height / parseFloat(getComputedStyle(c).lineHeight)) };
