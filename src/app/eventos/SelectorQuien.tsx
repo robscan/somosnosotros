@@ -9,6 +9,7 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
 import { LIMITES_ARTISTA } from "@/lib/limites";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import Limpiar from "@/components/ui/Limpiar";
+import useTecladoSeSueltaAlDesplazar from "@/components/ui/useTecladoSeSueltaAlDesplazar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./SelectorQuien.module.css";
@@ -37,6 +38,8 @@ const MIN_LETRAS = 2;
  */
 export default function SelectorQuien({ valor, onCambio, mios, ciudadContexto = null }: Props) {
   const [texto, setTexto] = useState("");
+  // Las fichas encontradas van bajo el campo: con el teclado abierto, desplazarlas lo esconde (OL-421).
+  useTecladoSeSueltaAlDesplazar();
   const [encontrados, setEncontrados] = useState<Encontrado[]>([]);
   const [buscando, setBuscando] = useState(false);
   const ultima = useRef("");

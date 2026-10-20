@@ -15,6 +15,7 @@ import Limpiar from "@/components/ui/Limpiar";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import Opcion from "@/components/ui/Opcion";
 import useAlto from "@/components/ui/useAlto";
+import useTecladoSeSueltaAlDesplazar from "@/components/ui/useTecladoSeSueltaAlDesplazar";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import { lugaresPorTexto, type LugarSugerido } from "@/lib/buscarLugares";
@@ -59,6 +60,9 @@ export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugere
   const ancla = useRef<HTMLLabelElement>(null);
   const pie = useRef<HTMLElement>(null);
   const altoPie = useAlto(pie);
+  // Con el teclado abierto el campo sube bajo la barra (`data-arriba-con-teclado`) y la lista de candidatos cabe entre él y el pie; desplazarla
+  // esconde el teclado (OL-421).
+  useTecladoSeSueltaAlDesplazar();
   // La lista se cierra con un toque fuera y se abre sola en cuanto el texto cambia: se guarda PARA QUÉ texto se cerró.
   const [cerradaPara, setCerradaPara] = useState<string | null>(null);
   const [eligiendo, setEligiendo] = useState(false);
@@ -84,7 +88,7 @@ export function PasoNombre({ nombre, lugares, contexto, tira, onNombre, onSugere
 
   return (
     <>
-      <label className={`${canon.campo} ${listo ? "" : canon.campoFalta}`} ref={ancla}>
+      <label className={`${canon.campo} ${listo ? "" : canon.campoFalta}`} ref={ancla} data-arriba-con-teclado="">
         <IconoBuscar width={20} height={20} />
         <input
           type="text"
@@ -200,6 +204,8 @@ export function PasoUbicar({
   const [pidiendo, setPidiendo] = useState(sinDireccion);
   const version = useRef(0);
   const ancla = useRef<HTMLLabelElement>(null);
+  // La lista de direcciones va bajo el campo: con el teclado abierto, desplazarla (o mover el mapa) lo esconde (OL-421).
+  useTecladoSeSueltaAlDesplazar();
   const [q, setQ] = useState("");
   const [cerradaPara, setCerradaPara] = useState<string | null>(null);
   const [eligiendo, setEligiendo] = useState(false);

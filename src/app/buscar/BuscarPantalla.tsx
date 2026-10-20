@@ -11,6 +11,7 @@ import { Chip, Chips } from "@/components/ui/Chip";
 import Cerrar from "@/components/ui/Cerrar";
 import Grupo from "@/components/ui/Grupo";
 import Renglon from "@/components/ui/Renglon";
+import useTecladoSeSueltaAlDesplazar from "@/components/ui/useTecladoSeSueltaAlDesplazar";
 import { enlaceDeAlta, enlaceDeBusqueda } from "@/lib/armazon";
 import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, pedidoDeBusqueda, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
 import { CIUDAD_INICIAL, ciudadesPorCercania, raizConCiudad, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
@@ -110,6 +111,10 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }, [consultaInicial]);
 
+  // Con el teclado abierto, desplazar los resultados esconde el teclado (OL-421): la lista se ve entera. Y al enfocar el campo la pantalla
+  // vuelve arriba (`data-arriba-con-teclado` en `main`, de `ui/useCampoVisible`): los primeros resultados quedan entre el campo y el teclado.
+  useTecladoSeSueltaAlDesplazar();
+
   // Buscar no se apila sobre Buscar: su lupa, en la barra de la app, enfoca el campo.
   useEffect(() => prestarALaBarra({ buscar: () => campo.current?.focus() }), []);
 
@@ -195,7 +200,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
 
   const salida = SALIDA[desde];
   return (
-    <main className={`${plantilla.raizSinNav} ${styles.buscar}`}>
+    <main className={`${plantilla.raizSinNav} ${styles.buscar}`} data-arriba-con-teclado="">
       <form role="search" className={styles.barra} onSubmit={alEnviar}>
         <CampoBuscar inputRef={campo} valor={texto} onCambiar={escribir} placeholder="Buscar evento, lugar o artista" ariaLabel="Buscar evento, lugar o artista" autoFocus borrar={false} />
         <Cerrar href={raizConCiudad(salida.raiz, slugEnUrl ? `ciudad=${slugEnUrl}` : "")} texto={salida.texto} relieve="plano" />

@@ -8,7 +8,10 @@
 /* 1. Pantallas raíz (Inicio, Agenda, Artistas, Perfil; docs/rediseno/50, 5.3): una rejilla de una columna en el tono del contenido,
    bajo la barra de la app. La cabecera es la del área `cabecera` y cada bloque de lo que sigue, una fila. `.raiz` deja sitio abajo para
    la navegación (`--nav-abajo`: la barra fija del teléfono); `.raizSinNav` es la misma sin ella (Buscar y la ficha de una persona, que
-   en el teléfono llevan su propia barra y no la navegación): solo la zona segura. */
+   en el teléfono llevan su propia barra y no la navegación): solo la zona segura. Las dos suman a su relleno de abajo lo que tapa el
+   teclado mientras hay un campo enfocado (`--teclado`, de `ui/useCampoVisible`; 0 sin él), como `.pagina`: sin eso, en la app de la tienda
+   (donde el teclado no encoge nada y nadie desplaza solo) los últimos resultados de Buscar quedaban bajo el teclado y no había por dónde
+   subirlos (OL-421). */
 .raiz,
 .raizSinNav {
   display: grid;
@@ -20,10 +23,10 @@
   background: var(--fondo-contenido);
 }
 .raiz {
-  padding-bottom: calc(var(--nav-abajo) + var(--espacio-6));
+  padding-bottom: calc(var(--nav-abajo) + var(--espacio-6) + var(--teclado, 0px));
 }
 .raizSinNav {
-  padding-bottom: calc(var(--espacio-6) + var(--piso));
+  padding-bottom: calc(var(--espacio-6) + var(--piso) + var(--teclado, 0px));
 }
 :is(.raiz, .raizSinNav) > header {
   grid-area: cabecera;

@@ -15,6 +15,7 @@ import Limpiar from "@/components/ui/Limpiar";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import Opcion from "@/components/ui/Opcion";
 import useAlto from "@/components/ui/useAlto";
+import useTecladoSeSueltaAlDesplazar from "@/components/ui/useTecladoSeSueltaAlDesplazar";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import { DISCIPLINAS, etiquetaDisciplina, hrefArtista, LIMITES_ARTISTA, SUBCATEGORIAS_A_LA_VISTA, subcategoriaParecida, type Disciplina, type ErroresArtista, type Subcategoria } from "@/lib/artistas";
@@ -48,6 +49,9 @@ export function PasoNombre({ nombre, ciudad, candidatos, tira, onNombre, onSegui
   const ancla = useRef<HTMLLabelElement>(null);
   const pie = useRef<HTMLElement>(null);
   const altoPie = useAlto(pie);
+  // Con el teclado abierto el campo sube bajo la barra (`data-arriba-con-teclado`) y la lista de candidatos cabe entre él y el pie; desplazarla
+  // esconde el teclado (OL-421).
+  useTecladoSeSueltaAlDesplazar();
   // La lista se cierra con un toque fuera y se abre sola en cuanto el texto cambia: se guarda PARA QUÉ texto se cerró.
   const [cerradaPara, setCerradaPara] = useState<string | null>(null);
   const texto = nombre.trim();
@@ -56,7 +60,7 @@ export function PasoNombre({ nombre, ciudad, candidatos, tira, onNombre, onSegui
   const abierta = cerradaPara !== nombre && conFicha.length > 0;
   return (
     <>
-      <label className={`${canon.campo} ${listo ? "" : canon.campoFalta}`} ref={ancla}>
+      <label className={`${canon.campo} ${listo ? "" : canon.campoFalta}`} ref={ancla} data-arriba-con-teclado="">
         <IconoBuscar width={20} height={20} />
         <input
           type="text"
