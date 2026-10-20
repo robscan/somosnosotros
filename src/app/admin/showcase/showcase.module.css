@@ -1,0 +1,373 @@
+/* Administración › Showcase (OL-426, bitácora 459): lo propio del prototipo firmado en OL-425 (bitácora 458, sus clases `p-…`), con los tokens
+   del sistema y sin medidas nuevas. Lo demás es de `admin.module.css` (títulos, grupos, filas, etiquetas, menú, pendientes) y de `ui/`.
+   Maquetación plana: la tarjeta de un candidato es una rejilla con áreas y cada dato es hijo directo suyo.
+   1. Tarjeta del candidato · 2. Rúbrica · 3. Tabla · 4. Ficha · 5. Hojas */
+
+/* ---------- 1. La tarjeta del candidato ---------- */
+.tarjetas {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-1);
+}
+.tarjeta {
+  display: grid;
+  grid-template-columns: var(--foto-renglon) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "foto nombre estado"
+    "foto disciplina estado"
+    "circula circula circula"
+    "redes redes redes"
+    "actividad actividad actividad"
+    "rubrica rubrica rubrica"
+    "nota nota nota"
+    "programa programa programa"
+    "enlaces enlaces enlaces";
+  column-gap: var(--espacio-3);
+  row-gap: var(--espacio-1);
+  padding: var(--espacio-3) var(--espacio-4) var(--espacio-1);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.foto {
+  grid-area: foto;
+  width: var(--foto-renglon);
+  height: var(--foto-renglon);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+/* El nombre abre su ficha de showcase; su área de toque llega a 44 de alto sin mover el dibujo (como `a.ficha` del panel) */
+.nombre {
+  position: relative;
+  grid-area: nombre;
+  align-self: end;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+  text-decoration: none;
+}
+.nombre::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--espacio-3) * -1) calc(var(--espacio-1) * -1);
+}
+.disciplina {
+  grid-area: disciplina;
+  align-self: start;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.estado {
+  grid-area: estado;
+  align-self: start;
+  margin: var(--espacio-1) 0 0;
+}
+.cifra {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--espacio-2);
+  align-items: start;
+  margin: 0;
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.cifra > svg {
+  margin-top: 1px;
+  color: var(--texto-suave);
+}
+.cifra b {
+  font-weight: 700;
+}
+.circula {
+  grid-area: circula;
+  margin-top: var(--espacio-2);
+}
+.redes {
+  grid-area: redes;
+}
+.actividad {
+  grid-area: actividad;
+  justify-self: start;
+  margin: var(--espacio-1) 0 0;
+}
+.nota {
+  grid-area: nota;
+  margin: var(--espacio-2) 0 0;
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.programa {
+  grid-area: programa;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.programa > b {
+  color: var(--texto);
+  font-weight: 600;
+}
+.enlaces {
+  grid-area: enlaces;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--espacio-5);
+  margin: 0;
+}
+.enlaces > a {
+  gap: var(--espacio-1);
+}
+/* La píldora verde (Confirmado, Publica cada semana) y la tachada (Descartado), junto a las de `admin.module.css` */
+.ok {
+  background: var(--ok-suave);
+  color: var(--ok);
+}
+.tachada {
+  text-decoration: line-through;
+}
+
+/* ---------- 2. La rúbrica: cuatro señales 0–2 en color (2 verde, 1 naranja, 0 o sin puntuar gris) y el total en el violeta suave ---------- */
+.rubrica {
+  grid-area: rubrica;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: var(--espacio-1);
+  margin-top: var(--espacio-2);
+}
+.senal {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-width: 0;
+  /* Con la letra grande del teléfono (OL-373) el nombre de la señal parte su palabra en vez de salirse de su casilla */
+  overflow-wrap: anywhere;
+  padding: var(--espacio-1);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+.senal > b {
+  font-size: var(--letra-lg);
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.1;
+}
+.senal[data-n="1"],
+.n[data-n="1"] {
+  background: var(--destacado-suave);
+  color: var(--destacado-texto);
+}
+.senal[data-n="2"],
+.n[data-n="2"] {
+  background: var(--ok-suave);
+  color: var(--ok);
+}
+/* El puntaje a la derecha de una señal en la ficha: del tamaño de un toque */
+.chica {
+  grid-area: accion;
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+}
+.total {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: var(--espacio-1) var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-lg);
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.1;
+}
+.total > small {
+  font-size: var(--letra-2xs);
+  font-weight: 600;
+}
+
+/* ---------- 3. La tabla (Vista: tabla): en el teléfono se desliza dentro de su caja; en escritorio usa el ancho de las fichas ---------- */
+.tabla {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(100% - 2 * var(--espacio-5), var(--columna-ancha));
+  margin-top: var(--espacio-1);
+  overflow-x: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.tabla > table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--letra-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.tabla :is(th, td):first-child {
+  padding-left: var(--espacio-3);
+}
+.tabla th {
+  padding: var(--espacio-2);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tabla th[aria-sort] {
+  color: var(--primario);
+}
+.tabla td {
+  padding: var(--espacio-3) var(--espacio-2);
+  border-top: 1px solid var(--borde);
+  white-space: nowrap;
+}
+/* El nombre parte su renglón si es largo, para que las trece columnas quepan en el ancho de las fichas */
+.tabla td:first-child {
+  white-space: normal;
+}
+.tabla td > a {
+  position: relative;
+  display: inline-block;
+  color: var(--texto);
+  font-weight: 700;
+  text-decoration: none;
+}
+.tabla td > a::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--espacio-3) * -1) calc(var(--espacio-2) * -1);
+}
+.tabla td > span:only-child {
+  margin: 0;
+}
+.n {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--espacio-6);
+  padding: 0 var(--espacio-1);
+  border-radius: var(--radio-chico);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+
+/* ---------- 4. La ficha de showcase ---------- */
+/* Un renglón que es un botón (la señal, «Añadir lectura»): el de `admin .fila` sin el dibujo del botón */
+.boton {
+  /* La columna del texto puede encoger: con la letra grande (OL-373) el puntaje de la derecha no se sale de la tarjeta */
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.boton > :is(b, small) {
+  overflow-wrap: anywhere;
+}
+/* Las tarjetas de la rúbrica, una por señal, con su aire entre ellas */
+.seguida + .seguida {
+  margin-top: var(--espacio-3);
+}
+/* Lo rechazado se queda a la vista, en gris */
+.rechazada b {
+  color: var(--texto-suave);
+  text-decoration: line-through;
+}
+.sin {
+  padding: var(--espacio-3) var(--espacio-4);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* La ⓘ fija abajo a la izquierda (ui/Ayuda), sobre lo que se desplaza. La página deja abajo el sitio de la ⓘ para que lo último (las notas)
+   pueda subir por encima de ella. La clase va dos veces para pesar más que el relleno de la plantilla. */
+.conAyuda.conAyuda {
+  padding-bottom: calc(var(--espacio-8) + var(--control) + var(--espacio-4) + var(--piso) + var(--teclado, 0px));
+}
+.ayuda {
+  position: fixed;
+  left: var(--gutter);
+  bottom: calc(var(--espacio-4) + var(--piso));
+  z-index: var(--z-barra);
+}
+/* Con el teclado abierto (escribiendo las notas) la ⓘ se aparta: no es una acción del campo y taparía lo que se escribe */
+:global(html[data-teclado]) .ayuda {
+  display: none;
+}
+.guardado {
+  margin: 0 0 var(--espacio-2) var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.exportar {
+  margin-top: var(--espacio-3);
+}
+
+/* ---------- 5. Hojas: opciones con su detalle y campos ---------- */
+.menu > li:last-child {
+  margin-top: 0;
+  border-top: 0;
+}
+.opcion {
+  grid-template-rows: auto auto;
+  row-gap: 2px;
+  padding-block: var(--espacio-2);
+}
+.opcion > svg {
+  grid-row: span 2;
+}
+.opcion > small {
+  grid-column: 2;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 500;
+  line-height: 1.3;
+}
+.opcion[aria-pressed="true"],
+.opcion[aria-pressed="true"] > svg {
+  color: var(--primario);
+}
+.hueco {
+  visibility: hidden;
+}
+/* La fila de chips de una hoja (red, tipo de evidencia) con su rótulo: envuelve y deja su aire antes del campo que sigue */
+.grupoChips {
+  min-width: 0;
+  margin: 0 0 var(--espacio-4);
+  padding: 0;
+  border: 0;
+}
+.etiquetaCampo {
+  display: block;
+  margin-bottom: var(--espacio-1);
+  font-weight: 600;
+}
+.archivo {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  margin-bottom: var(--espacio-3);
+}
+.errores {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-1);
+  margin-bottom: var(--espacio-3);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}

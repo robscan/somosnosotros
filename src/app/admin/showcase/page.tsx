@@ -1,0 +1,33 @@
+import { redirect } from "next/navigation";
+import Barra from "@/components/ui/Barra";
+import plantilla from "@/components/ui/Plantilla.module.css";
+import { diaLocal } from "@/lib/fechas";
+import { leerVista } from "@/lib/showcase";
+import { usuarioActual } from "@/lib/supabase/servidor";
+import Reintentar from "../Reintentar";
+import { cargarCandidatos } from "./consultas";
+import VistaCandidatos from "./VistaCandidatos";
+import admin from "../admin.module.css";
+
+export const metadata = { title: "Showcase · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+
+/**
+ * Administración › Showcase (OL-426; lo firmado en OL-425, bitácora 458): la lista de candidatos para el showcase, al nivel de Grafo cultural y
+ * Obras colectivas. Solo administración: sin sesión pide entrar y quien no lo es vuelve al inicio; la base, además, no le devuelve nada (las
+ * tablas del showcase son de `es_admin()`). Nada de aquí va a una ruta pública ni al sitemap.
+ */
+export default async function Showcase({ searchParams }: { searchParams: Promise<{ q?: string; disciplina?: string; estado?: string; orden?: string; vista?: string; n?: string }> }) {
+  const actual = await usuarioActual();
+  if (!actual) redirect("/entrar?siguiente=/admin/showcase");
+  if (actual.perfil.rol !== "admin") redirect("/");
+  const vista = leerVista(await searchParams);
+  const ahora = new Date();
+  const todos = await cargarCandidatos(ahora);
+  return (
+    <main className={`${plantilla.paginaContenido} ${admin.lista}`}>
+      <Barra volver={{ href: "/admin", texto: "Administración" }} />
+      <h1 className={admin.titulo}>Showcase</h1>
+      {todos ? <VistaCandidatos todos={todos} vista={vista} hoy={diaLocal(ahora)} /> : <Reintentar texto="No pudimos leer el showcase." />}
+    </main>
+  );
+}

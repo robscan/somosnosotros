@@ -66,6 +66,13 @@ La ceja de la tarjeta de Inicio (OL-422, bitácora 455): con `RESPALDO_NUEVAS=1`
 y una), para ver «FESTIVAL · 7 NUEVAS» y «FESTIVAL · 1 NUEVA» en «Nuevos eventos»; `npm run medir` no lo pone. `capturar-ceja-actividades.mjs` saca
 Inicio a 390, 320 y 430 y la pestaña Nuevos de la agenda, y mide las cejas del carril.
 
+Administración › Showcase (OL-426, bitácora 459): el respaldo trae las cuatro tablas del showcase con datos inventados sobre sus artistas (estados,
+puntajes, notas neutras, lecturas de redes y evidencias con dominio `.example`; dos propuestas «por la rutina» en Feleal). Solo las leen
+`/admin/showcase` y su ficha, que mide `npm run medir` (s32 a s35, con la cuenta de administración). `capturar-showcase.mjs` saca las capturas: la
+portada (le pone al respaldo los contratos del panel desde un arranque propio en la carpeta temporal, sin tocar el fixture), la lista, la búsqueda,
+las hojas, la ficha, la ⓘ, una evidencia con un enlace que no es http(s) y la tabla a 1280. El respaldo va en el puerto 8859, así `SIN_BUILD=1`
+sirve con el `.next` que dejó la vez anterior.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes
