@@ -12,6 +12,7 @@ import { cargarArtistasDestacados, TOPE_ARTISTAS_DESTACADOS } from "@/lib/cargar
 import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
 import { CIUDAD_INICIAL, ciudadPorSlug, hrefConCiudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
+import { anotarConsulta } from "@/lib/ciudadesVistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { diaLocal } from "@/lib/fechas";
 import { conNovedades, seleccionarArtistasSemana } from "@/lib/eventosSemana";
@@ -53,6 +54,8 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   const { ciudad: slug } = await searchParams;
   const [ciudades, actual] = await Promise.all([cargarCiudades(true), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
+  // Una consulta más para esta ciudad (OL-427), sin persona y después de responder: no espera ni cambia nada de la pantalla.
+  await anotarConsulta(ciudad);
   const usuarioId = actual?.perfil.id ?? null;
   const supabase = await clienteServidor();
   const ahora = new Date();

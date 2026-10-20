@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin, IconoPincel } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin, IconoPincel, IconoUbicacion } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { propuestasPorRevisar, resumenCiudades } from "@/lib/ciudadesAdmin";
 import { diaLocal } from "@/lib/fechas";
 import { cuandoPaso, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana, renglonesGestionar } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
@@ -10,6 +11,7 @@ import { cargarAportes, cargarComunidad, cargarResumen, cargarVinculadas } from 
 import ComunidadComoVa from "./ComunidadComoVa";
 import CapoComoVa from "./CapoComoVa";
 import { cargarCapo } from "./capo-consultas";
+import { cargarPanelCiudades } from "./ciudades/consultas";
 import IconoGrafo from "./grafo/IconoGrafo";
 import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
@@ -36,8 +38,10 @@ export default async function Admin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas()]);
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades()]);
   const ahora = new Date();
+  // Las propuestas de las rutinas por revisar suben a «Pendiente» (firma de OL-425); si Ciudades no se pudo leer, solo faltan ellas.
+  const porRevisar = ciudades ? propuestasPorRevisar(ciudades.corridas, ciudades.ciudades, ahora) : [];
   // Los dos aportes nuevos (Voy / Me interesa y primeras publicaciones) vienen de su propia función: si falla, solo faltan ellos.
   const lista = resumen ? [...indicadores(resumen, diaLocal(ahora)), ...(aportes ? indicadoresAportes(aportes) : [])] : [];
   const fichas = vinculadas ? indicadoresFichas(vinculadas) : [];
@@ -47,7 +51,7 @@ export default async function Admin() {
       <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
       <h1 className={styles.titulo}>Administración</h1>
       {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
-      <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} />
+      <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} porRevisar={porRevisar} />
 
       <h2 className={resumen ? `${styles.grupo} ${styles.conNota}` : styles.grupo}>Últimos 7 días</h2>
       {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} /> : <Reintentar texto="No pudimos leer los indicadores." />}
@@ -104,6 +108,20 @@ export default async function Admin() {
             <IconoGrafo width={20} height={20} />
             <b>Grafo cultural</b>
             <small>Lugares, artistas y asistentes en 3D</small>
+            <span className={styles.total}>
+              <IconoChevronDerecha />
+            </span>
+          </Link>
+        </li>
+      </ul>
+      {/* Ciudades (OL-427, prototipo firmado OL-425): al mismo nivel que el grafo, con la mira. */}
+      <h2 className={styles.grupo}>Ciudades</h2>
+      <ul className={renglon.tarjeta}>
+        <li>
+          <Link href="/admin/ciudades" className={styles.fila}>
+            <IconoUbicacion width={20} height={20} />
+            <b>Ciudades</b>
+            <small>{ciudades ? resumenCiudades(ciudades.ciudades) : "No pudimos leer las ciudades"}</small>
             <span className={styles.total}>
               <IconoChevronDerecha />
             </span>

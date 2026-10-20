@@ -154,6 +154,13 @@ PASOS["artista-revisa"] = async (page) => {
   await aquietar(page);
 };
 
+// OL-427: Administración › Ciudades con la hoja de «Buscar lugares» de Querétaro abierta: el tope con su ✕ y «Correr» sobre el teclado.
+PASOS["admin-hoja-correr"] = async (page) => {
+  await page.getByRole("list", { name: "Querétaro" }).getByRole("button", { name: /^Buscar lugares/ }).click();
+  await page.getByRole("dialog", { name: "Buscar lugares en Querétaro" }).waitFor();
+  await aquietar(page);
+};
+
 // ---------- procesos ----------
 const hijos = [];
 process.on("exit", () => hijos.forEach((h) => h.exitCode === null && h.kill()));
