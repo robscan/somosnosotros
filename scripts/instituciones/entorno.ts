@@ -19,7 +19,8 @@ export function preparar(script: string) {
     const k = args.indexOf(`--${nombre}`);
     return k >= 0 ? args[k + 1] : undefined;
   };
-  const uso = `node scripts/instituciones/correr.mjs ${script} <archivo.json> --autor <id del admin> [--simular] [--salida <carpeta>]`;
+  const extra = script === "importar-eventos" ? " [--forzar-parecidos] [--origen <texto> --fuente <url> [--historico]]" : "";
+  const uso = `node scripts/instituciones/correr.mjs ${script} <archivo.json> --autor <id del admin> [--simular]${extra} [--salida <carpeta>]`;
   const url = requerida(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL en .env", uso);
   const llave = requerida(process.env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY en .env", uso);
   return {

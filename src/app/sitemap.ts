@@ -20,7 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Se conservan los topes de consulta actuales; la paginación del catálogo es una pieza aparte.
   const [l, e, a, ac] = await Promise.all([
     supabase.from("lugares").select("id, slug, visible, privado, actualizado_en").eq("visible", true).limit(5000),
-    supabase.from("eventos").select("id, slug, visible, termina, actualizado_en").eq("visible", true).limit(5000),
+    // Solo lo que no ha pasado (lo mismo que filtra `eventosParaSitemap`): con la carga del año (OL-424) los eventos visibles pasan de 1 000.
+    supabase.from("eventos").select("id, slug, visible, termina, actualizado_en").eq("visible", true).gte("termina", new Date().toISOString()).limit(5000),
     supabase.from("artistas").select("id, slug, visible, origen, actualizado_en").eq("visible", true).limit(5000),
     supabase.from("artistas_cuentas").select("artista_id").limit(5000),
   ]);
