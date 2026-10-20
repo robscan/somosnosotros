@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import estilos from "./ListaFlotante.module.css";
-import { leerAbajoVisible } from "./useCampoVisible";
+import { leerAbajoVisible, leerMarcoVisible } from "./useCampoVisible";
 
 type Rect = { left: number; top: number; bottom: number; width: number };
 export type PosicionFlotante = { left: number; top?: number; bottom?: number; width: number; maxHeight: number };
@@ -102,6 +102,16 @@ export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, 
       const el = ancla.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
+      // Con el armazón (`useCampoVisible` montado), lo que se ve y el bloque de lo fijo en el marco de las cajas (OL-421): en Safari de iOS 27,
+      // con el área visible desplazada, `offsetTop` e `innerHeight` no sirven y lo fijo puede quedar corrido; la lista se calcula en el marco de
+      // las cajas y su `top` se pasa al de lo fijo.
+      const marco = leerMarcoVisible();
+      if (marco) {
+        const p = calcularPosicion(r, marco.fondo, marco.arriba, marco.bajoFijo, reservaAbajoRef.current);
+        const fija = p.top === undefined ? p : { ...p, top: p.top - marco.fijo };
+        setPosicion((actual) => (actual && actual.left === fija.left && actual.top === fija.top && actual.bottom === fija.bottom && actual.width === fija.width && actual.maxHeight === fija.maxHeight ? actual : fija));
+        return;
+      }
       const vv = window.visualViewport;
       // Lo que se ve: el área visible y, en la app de la tienda (donde el `visualViewport` no se mueve), la ventana menos el teclado que
       // dice `useCampoVisible` (OL-308).
@@ -157,6 +167,7 @@ export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, 
       role="listbox"
       aria-label={etiqueta}
       className={estilos.flotante}
+      data-lista-flotante=""
       style={{ left: posicion.left, top: posicion.top, bottom: posicion.bottom, width: posicion.width, maxHeight: posicion.maxHeight }}
     >
       {children}

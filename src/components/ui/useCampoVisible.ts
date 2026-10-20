@@ -5,8 +5,14 @@ import { sinMovimiento } from "@/lib/movimiento";
 
 /** Aire que queda entre el campo y lo que lo rodea (el teclado, el pie pegado, la barra de arriba). */
 const AIRE = 12;
-/** Lo que se escribe: el campo que enfoca una persona con el teclado en pantalla. */
-const ESCRIBIBLE = 'input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="button"], [type="submit"], [type="hidden"]), textarea, select, [contenteditable="true"]';
+/** Lo que se escribe: el campo que enfoca una persona con el teclado en pantalla. También lo usa `ui/useTecladoSeSueltaAlDesplazar`. */
+export const ESCRIBIBLE = 'input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="button"], [type="submit"], [type="hidden"]), textarea, select, [contenteditable="true"]';
+/**
+ * El bloque que, con el teclado abierto, sube hasta arriba de lo que se ve (bajo lo pegado de arriba) cuando se enfoca un campo suyo (OL-421):
+ * así lo que va debajo del campo —la lista de resultados o de candidatos— queda a la vista entre él y el teclado. Lo llevan los buscadores
+ * con lista debajo (Buscar, el de Administración, el nombre de las altas de lugar y de artista). Sin él, el campo solo se lleva a la vista.
+ */
+const ARRIBA_CON_TECLADO = "data-arriba-con-teclado";
 /** Cuánto se espera, tras soltar un campo, a ver si el foco entra en otro: al pasar de uno a otro el foco sale un instante antes de entrar. */
 const ESPERA_SOLTAR_MS = 100;
 /** Los eventos que el plugin `@capacitor/keyboard` manda a `window` dentro de la app de la tienda (compatibles con `cordova-plugin-ionic-keyboard`). */
@@ -56,6 +62,27 @@ function fijarAbajoVisible(px: number) {
 /** El mismo número, leído en el momento (para quien lo consulta en un bucle de cuadros, como `ui/ListaFlotante`). */
 export function leerAbajoVisible(): number {
   return abajoVisibleActual;
+}
+
+/** La sonda del bloque de lo fijo del hook montado (null sin él). */
+let sondaActual: HTMLElement | null = null;
+/**
+ * Lo que se ve y dónde empieza el bloque de lo fijo, en el marco de `getBoundingClientRect`, medido en el momento (OL-421): para quien coloca
+ * algo `fixed` junto a un campo (`ui/ListaFlotante`). En Safari de iOS 27, con el teclado abierto y el área visible desplazada, lo que se ve
+ * empieza en `pageTop − scrollY` (no en `offsetTop`), `innerHeight` no es la ventana y el bloque de lo fijo puede quedar corrido respecto a las
+ * cajas (bitácoras 333 y 407): medido en el simulador, el alta de lugar con el campo arriba daba `offsetTop` 132, `innerHeight` 582 y el bloque
+ * de lo fijo 132 px por encima de lo que se ve, y la lista de candidatos, colocada con esas medidas, se abría hacia arriba encima del campo.
+ * `fijo` es dónde empieza ese bloque (lo que hay que restar a una caja para darle su `top` fijo) y `bajoFijo` dónde termina. Sin el hook montado
+ * (pruebas), null: quien la usa sigue con sus medidas de siempre.
+ */
+export function leerMarcoVisible(): { arriba: number; fondo: number; fijo: number; bajoFijo: number } | null {
+  const vv = window.visualViewport;
+  if (!sondaActual || !vv) return null;
+  const bajoFijo = sondaActual.getBoundingClientRect().top;
+  const arriba = desfaseVisible(vv);
+  // Lo que se ve termina donde termina el área visible, o antes si el teclado de la app de la tienda lo tapa (ahí el área no se encoge).
+  const fondo = abajoVisibleActual ? Math.min(arriba + vv.height, bajoFijo - abajoVisibleActual) : arriba + vv.height;
+  return { arriba, fondo, fijo: bajoFijo - document.documentElement.clientHeight, bajoFijo };
 }
 
 /** Lo que vuelve a llevar a la vista el campo enfocado, mientras `useCampoVisible` está montado. */
@@ -125,13 +152,17 @@ export function useAbajoVisible(): number {
  *      negativo: si Safari dejó lo fijo más arriba de lo que se ve, el pie baja por debajo de su bloque hasta el borde de lo que se ve.
  * 2. Al enfocar un campo, y cada vez que el área visible cambia (el teclado tarda en asentarse y no se espera con un temporizador a ciegas),
  *    desplaza lo que se desplaza —la hoja o la página— lo justo para que el campo quede en el centro de lo que sí se ve: entre la barra de
- *    arriba y el teclado. Si ya se ve entero no se mueve nada.
+ *    arriba y el teclado. Si ya se ve entero no se mueve nada. En un buscador con lista debajo (un bloque con `data-arriba-con-teclado`), con
+ *    el teclado abierto, el bloque sube hasta arriba de lo que se ve, para que la lista quede entre el campo y el teclado (OL-421). Lo que la
+ *    persona desplace con el dedo después de enfocar ya no se corrige (OL-421): antes, en Safari, cada desplazamiento del área visible devolvía
+ *    la página y la lista no se podía recorrer con el teclado abierto.
  */
 export default function useCampoVisible() {
   useEffect(() => {
     const raiz = document.documentElement;
     const vv = window.visualViewport;
     const sonda = crearSonda(raiz);
+    sondaActual = sonda;
     let campo: HTMLElement | null = null;
     /** El alto del teclado que dijo Capacitor en su último evento (0 en Safari, en la web instalada y con el teclado cerrado). */
     let deCapacitor = 0;
@@ -174,15 +205,34 @@ export default function useCampoVisible() {
     // movimiento (cada cuadro cambia el área visible) y en iOS 27 uno de golpe a medio camino hace que el suave siga de largo, más allá del
     // final de la página, con lo pegado abajo a media pantalla (OL-376, medido con «Accesibilidad grande»). Al terminar se vuelve a mirar.
     let suaveHasta = 0;
+    // Si la persona desplazó con el dedo desde que se enfocó el campo (OL-421). En Safari del iPhone, con el teclado abierto, desplazar la
+    // página mueve el área visible (su `scroll`), y cada movimiento volvía a llevar el campo al centro: la página regresaba sola y la lista de
+    // debajo no se podía recorrer (medido en el simulador: un `scrollBy` de −10 por cada cuadro del arrastre en Buscar). Lo que la persona
+    // desplaza es suyo: ya no se corrige hasta el siguiente foco o cambio de paso. Lo pegado sí se sigue anclando.
+    let tocando = false;
+    let loMovioLaPersona = false;
     const asegurar = (suave: boolean) => {
       if (!campo?.isConnected || campo !== document.activeElement) return;
       if (!suave && performance.now() < suaveHasta) return;
-      const libre = bandaLibre(campo, medir());
+      if (!suave && (tocando || loMovioLaPersona)) return;
+      const m = medir();
+      const libre = bandaLibre(campo, m);
       const caja = campo.getBoundingClientRect();
-      if (caja.top >= libre.arriba && caja.bottom <= libre.abajo) return;
-      // Al centro de lo libre; si es más alto que eso (un área de texto), su arranque arriba, que es donde se escribe.
-      const cabe = caja.height <= libre.abajo - libre.arriba;
-      const delta = cabe ? (caja.top + caja.bottom) / 2 - (libre.arriba + libre.abajo) / 2 : caja.top - libre.arriba;
+      // Con el teclado abierto, un buscador con lista debajo sube su bloque hasta arriba de lo libre (OL-421, `ARRIBA_CON_TECLADO`).
+      const ancla = m.teclado > 0 ? campo.closest<HTMLElement>(`[${ARRIBA_CON_TECLADO}]`) : null;
+      let delta: number;
+      if (ancla) {
+        // Con el aire que ya tiene encima, como mucho `AIRE`: así lo de antes (un título) sale entero de la vista y no queda una tira cortada.
+        const arriba = ancla.getBoundingClientRect().top;
+        const antes = ancla.previousElementSibling?.getBoundingClientRect();
+        const aire = antes ? Math.min(AIRE, Math.max(0, arriba - antes.bottom)) : AIRE;
+        delta = arriba - (libre.arriba - AIRE + aire);
+      } else {
+        if (caja.top >= libre.arriba && caja.bottom <= libre.abajo) return;
+        // Al centro de lo libre; si es más alto que eso (un área de texto), su arranque arriba, que es donde se escribe.
+        const cabe = caja.height <= libre.abajo - libre.arriba;
+        delta = cabe ? (caja.top + caja.bottom) / 2 - (libre.arriba + libre.abajo) / 2 : caja.top - libre.arriba;
+      }
       // Suave solo al enfocar; al cambiar el área visible se corrige de golpe, para no apilar desplazamientos a medias.
       const comportamiento = suave && !sinMovimiento() ? "smooth" : "auto";
       if (desplazar(campo, delta, comportamiento) && comportamiento === "smooth") {
@@ -227,6 +277,7 @@ export default function useCampoVisible() {
     const enfocado = (el: EventTarget | null) => {
       if (!(el instanceof HTMLElement) || !el.matches(ESCRIBIBLE)) return;
       campo = el;
+      loMovioLaPersona = false;
       publicar();
       vigilar();
       // Tras el siguiente cuadro, con la maquetación ya puesta; si el teclado aún no llegó, el cambio del área visible lo repite.
@@ -260,6 +311,22 @@ export default function useCampoVisible() {
     const alDesplazar = () => {
       if (campo) publicar();
     };
+    // Con el dedo abajo, lo que se desplace (la página, el área visible o una lista con su propio desplazamiento) lo desplazó la persona
+    // (OL-421): desde ahí `asegurar` ya no corrige. El foco que da un toque llega después de levantar el dedo, así que el desplazamiento con que
+    // Safari revela un campo recién tocado no cuenta. Nunca con `pointerleave` (Safari táctil lo dispara en el primer movimiento del dedo).
+    const alTocar = () => {
+      tocando = true;
+    };
+    const alLevantar = (e: TouchEvent) => {
+      if (e.touches.length === 0) tocando = false;
+    };
+    const alDesplazarConElDedo = () => {
+      if (tocando && campo) loMovioLaPersona = true;
+    };
+    const alMoverElArea = () => {
+      alDesplazarConElDedo();
+      alCambiarElArea();
+    };
 
     // La app de la tienda: los eventos del plugin de teclado de Capacitor llegan a `window` con `keyboardHeight` en el propio evento.
     const alTecladoDeCapacitor = (e: Event) => {
@@ -271,12 +338,16 @@ export default function useCampoVisible() {
     document.addEventListener("focusin", alEnfocar);
     document.addEventListener("focusout", alSoltar);
     vv?.addEventListener("resize", alCambiarElArea);
-    vv?.addEventListener("scroll", alCambiarElArea);
+    vv?.addEventListener("scroll", alMoverElArea);
     window.addEventListener("scroll", alDesplazar, { passive: true });
+    document.addEventListener("scroll", alDesplazarConElDedo, { capture: true, passive: true });
+    document.addEventListener("touchstart", alTocar, { capture: true, passive: true });
+    for (const fin of ["touchend", "touchcancel"] as const) window.addEventListener(fin, alLevantar, { capture: true, passive: true });
     for (const evento of EVENTOS_DE_CAPACITOR) window.addEventListener(evento, alTecladoDeCapacitor);
     // Dos cuadros después, como al cambiar el área: el aire de abajo que suma el pie nuevo (`--alto-pie`) tarda un cuadro en contar con «reducir
     // movimiento». Y la vigilancia, porque justo después del cambio de paso es cuando Safari desplaza la página por su cuenta.
     reasegurar = () => {
+      loMovioLaPersona = false;
       vigilar();
       requestAnimationFrame(() => requestAnimationFrame(() => asegurar(false)));
     };
@@ -289,10 +360,14 @@ export default function useCampoVisible() {
       document.removeEventListener("focusin", alEnfocar);
       document.removeEventListener("focusout", alSoltar);
       vv?.removeEventListener("resize", alCambiarElArea);
-      vv?.removeEventListener("scroll", alCambiarElArea);
+      vv?.removeEventListener("scroll", alMoverElArea);
       window.removeEventListener("scroll", alDesplazar);
+      document.removeEventListener("scroll", alDesplazarConElDedo, { capture: true });
+      document.removeEventListener("touchstart", alTocar, { capture: true });
+      for (const fin of ["touchend", "touchcancel"] as const) window.removeEventListener(fin, alLevantar, { capture: true });
       for (const evento of EVENTOS_DE_CAPACITOR) window.removeEventListener(evento, alTecladoDeCapacitor);
       sonda.remove();
+      if (sondaActual === sonda) sondaActual = null;
       raiz.style.removeProperty("--teclado");
       raiz.style.removeProperty("--abajo-visible");
       raiz.removeAttribute("data-teclado");
@@ -372,12 +447,17 @@ function bandaLibre(campo: HTMLElement, medida: Medida) {
   return { arriba: arriba + AIRE, abajo: abajo - AIRE };
 }
 
-/** Los elementos pegados (sticky o fixed) que comparten pantalla con el campo sin contenerlo: hermanos de él o de alguno de sus ancestros. */
+/**
+ * Los elementos pegados (sticky o fixed) que comparten pantalla con el campo sin contenerlo: hermanos de él o de alguno de sus ancestros. La lista
+ * flotante del propio campo (`ui/ListaFlotante`, `data-lista-flotante`) no cuenta: va con el campo. Si contara, abierta hacia arriba (el campo
+ * aún abajo) haría de techo y el campo ya no subiría, y la lista no se abriría nunca hacia abajo (medido en el simulador al volver a enfocar el
+ * nombre del alta de lugar con «Cas» escrito, OL-421).
+ */
 function pegados(campo: HTMLElement): HTMLElement[] {
   const hallados: HTMLElement[] = [];
   for (let nodo: HTMLElement | null = campo; nodo && nodo !== document.body; nodo = nodo.parentElement) {
     for (const hermano of nodo.parentElement?.children ?? []) {
-      if (hermano === nodo || !(hermano instanceof HTMLElement)) continue;
+      if (hermano === nodo || !(hermano instanceof HTMLElement) || hermano.hasAttribute("data-lista-flotante")) continue;
       const posicion = getComputedStyle(hermano).position;
       if (posicion === "sticky" || posicion === "fixed") hallados.push(hermano);
     }

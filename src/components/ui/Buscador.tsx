@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, type Ref } from "react";
 import { IconoBuscar, IconoCerrar } from "./Iconos";
+import useTecladoSeSueltaAlDesplazar from "./useTecladoSeSueltaAlDesplazar";
 import styles from "./Buscador.module.css";
 
 type PropsCampo = {
@@ -16,12 +17,15 @@ type PropsCampo = {
   inputRef?: Ref<HTMLInputElement>;
   /** Con texto, la ✕ que lo borra (por defecto sí). Buscar no la lleva: junto a su campo va la de cerrar. */
   borrar?: boolean;
+  /** Con el teclado abierto, el campo sube hasta arriba de lo que se ve y la lista de debajo queda entre él y el teclado (OL-421,
+   *  `data-arriba-con-teclado`, de `ui/useCampoVisible`). */
+  arribaConTeclado?: boolean;
 };
 
 /** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL (administración), Buscar y la hoja de ciudades. */
-export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, inputRef, borrar = true }: PropsCampo) {
+export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, inputRef, borrar = true, arribaConTeclado = false }: PropsCampo) {
   return (
-    <label className={styles.buscar}>
+    <label className={styles.buscar} data-arriba-con-teclado={arribaConTeclado ? "" : undefined}>
       <IconoBuscar width={18} height={18} />
       <input ref={inputRef} type="search" placeholder={placeholder} aria-label={ariaLabel} value={valor} onChange={(e) => onCambiar(e.target.value)} autoCapitalize="none" autoCorrect="off" autoFocus={autoFocus} enterKeyHint="search" />
       {borrar && valor && (
@@ -39,6 +43,7 @@ type Props = { valor: string; placeholder: string; ariaLabel: string };
  * Búsqueda que vive en la URL (`?q=`): lo escrito se manda al servidor 300 ms después de dejar de teclear,
  * la página vuelve filtrada y el enlace se puede compartir o volver atrás sin perder nada.
  * Al cambiar la búsqueda se vuelve a la primera página (`n` fuera). Lo usa la administración; la búsqueda de la app es Buscar.
+ * Siempre va sobre una lista (OL-421): con el teclado abierto el campo sube hasta arriba y desplazar la lista esconde el teclado.
  */
 export default function Buscador({ valor, placeholder, ariaLabel }: Props) {
   const router = useRouter();
@@ -46,6 +51,7 @@ export default function Buscador({ valor, placeholder, ariaLabel }: Props) {
   const params = useSearchParams();
   const [texto, setTexto] = useState(valor);
   const espera = useRef<number | undefined>(undefined);
+  useTecladoSeSueltaAlDesplazar();
 
   function ir(v: string) {
     const p = new URLSearchParams(params.toString());
@@ -60,5 +66,5 @@ export default function Buscador({ valor, placeholder, ariaLabel }: Props) {
     window.clearTimeout(espera.current);
     espera.current = window.setTimeout(() => ir(v), 300);
   }
-  return <CampoBuscar valor={texto} onCambiar={cambiar} placeholder={placeholder} ariaLabel={ariaLabel} />;
+  return <CampoBuscar valor={texto} onCambiar={cambiar} placeholder={placeholder} ariaLabel={ariaLabel} arribaConTeclado />;
 }

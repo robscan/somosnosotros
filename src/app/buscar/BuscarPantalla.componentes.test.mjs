@@ -1,4 +1,6 @@
-/** OL-269: q inicial ejecuta la búsqueda y se consume sin apilar historial; el estado sobrevive al regreso. */
+/** OL-269: q inicial ejecuta la búsqueda y se consume sin apilar historial; el estado sobrevive al regreso.
+ *  OL-421: con el teclado abierto la lista se recorre hasta el último resultado y arrastrarla esconde el teclado (con `ui/useCampoVisible`
+ *  montado como en el armazón). */
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -20,10 +22,11 @@ before(async () => {
   dir = await mkdtemp(join(tmpdir(), "buscar-componentes-"));
   await build({ absWorkingDir: root, bundle: true, define: { "process.env": "{}" }, outfile: join(dir, "app.js"), stdin: { resolveDir: root, loader: "tsx", contents: `
     import React from 'react';import {createRoot} from 'react-dom/client';
-    import BuscarPantalla from './src/app/buscar/BuscarPantalla';import './src/app/globals.css';
+    import BuscarPantalla from './src/app/buscar/BuscarPantalla';import useCampoVisible from './src/components/ui/useCampoVisible';import './src/app/globals.css';
+    function Armazon({children}){useCampoVisible();return children;}
     window.qa={llamadas:[],recientesPedidos:[],historial:history.length,eventos:window.eventosDePrueba,vigentes:window.vigentesDePrueba};
     const ciudad={slug:'san-luis-potosi',nombre:'San Luis Potosí',centro:{lat:22,lng:-100},centroConocido:true,zoom:13,zona:'America/Mexico_City',lugares:1,eventos:1};
-    createRoot(document.getElementById('root')).render(<React.StrictMode><BuscarPantalla consultaInicial={window.consultaAnterior ?? new URLSearchParams(location.search).get('q')??''} ciudad={ciudad} ciudades={[ciudad]} desde="artistas" hoy="2026-10-04" conSesion={false}/></React.StrictMode>);
+    createRoot(document.getElementById('root')).render(<React.StrictMode><Armazon><BuscarPantalla consultaInicial={window.consultaAnterior ?? new URLSearchParams(location.search).get('q')??''} ciudad={ciudad} ciudades={[ciudad]} desde="artistas" hoy="2026-10-04" conSesion={false}/></Armazon></React.StrictMode>);
   ` }, plugins: [{ name: "dobles", setup(b) {
     b.onResolve({ filter: /.*/ }, a => a.path in mocks ? { path: a.path, namespace: "mock" } : undefined);
     b.onLoad({ filter: /.*/, namespace: "mock" }, a => ({ contents: mocks[a.path], loader: "js", resolveDir: root }));
@@ -147,4 +150,69 @@ test("un festival lleva su sello en su grupo y el evento no; como mejor resultad
   await p.getByRole("searchbox").fill("festival de cine de invierno");
   await p.getByText("Mejor resultado").waitFor();
   assert.match(await p.getByRole("link", { name: /Festival de Cine de Invierno/ }).innerText(), /Festival · Del 16 al 18 de oct/);
+});
+
+// OL-421: la app de la tienda (Capacitor, modo `body`, bitácora 336): el teclado no encoge el área visible ni nadie desplaza solo; el plugin
+// manda su alto en `keyboardWillShow`/`keyboardDidShow` y fija el alto del `<body>`. Con doce eventos desplegados, la lista no cabe sobre el
+// teclado: tiene que poder recorrerse hasta el último (antes, sin el aire del teclado en `.raizSinNav`, los últimos quedaban bajo él), y un
+// arrastre de la lista suelta el campo y se va el teclado.
+const TECLADO = 336;
+const doce = Array.from({ length: 12 }, (_, i) => ({ ...fellini(null), id: `e${i}`, titulo: `Función ${i + 1} del ciclo Fellini`, href: `/eventos/f${i}` }));
+async function abrirEnLaApp(t) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, reducedMotion: "reduce" });
+  t.after(() => context.close());
+  await context.addInitScript((eventos) => {
+    history.replaceState({ somosnosotros: 7, somosnosotrosDesde: "/agenda" }, "", location.href);
+    window.eventosDePrueba = eventos;
+  }, doce);
+  const p = await context.newPage();
+  p.setDefaultTimeout(5000);
+  const errores = [];
+  p.on("pageerror", (e) => errores.push(e.message));
+  t.after(() => assert.deepEqual(errores, []));
+  await p.goto(origin + "/buscar");
+  await p.getByRole("searchbox").fill("fellini");
+  await p.getByRole("button", { name: "Ver 9 más" }).click();
+  await p.getByRole("link", { name: /Función 12 del ciclo/ }).waitFor();
+  await p.getByRole("searchbox").focus();
+  await p.evaluate((alto) => {
+    for (const nombre of ["keyboardWillShow", "keyboardDidShow"]) {
+      const ev = document.createEvent("Events");
+      ev.initEvent(nombre, false, false);
+      ev.keyboardHeight = alto;
+      window.dispatchEvent(ev);
+    }
+    document.body.style.height = `${window.innerHeight - alto}px`;
+  }, TECLADO);
+  await p.waitForFunction(() => document.documentElement.hasAttribute("data-teclado"));
+  await p.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))));
+  return { p, cdp: await context.newCDPSession(p) };
+}
+/** Dónde termina el último resultado con la página al fondo de su recorrido. */
+const ultimoAlFondo = (p) =>
+  p.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    return [...document.querySelectorAll("main a")].at(-1).getBoundingClientRect().bottom;
+  });
+
+test("con el teclado abierto (app de la tienda), la lista se recorre hasta el último resultado, que queda sobre el teclado", async (t) => {
+  const { p } = await abrirEnLaApp(t);
+  const fondo = await ultimoAlFondo(p);
+  assert.ok(fondo <= 844 - TECLADO, `el último resultado termina en ${fondo}, sobre el teclado (${844 - TECLADO})`);
+  // Control: sin el aire del teclado en la plantilla (como antes de OL-421), el último quedaría bajo el teclado.
+  await p.addStyleTag({ content: "main { padding-bottom: 24px !important }" });
+  // La transición de 0,01 ms de `globals.css` (movimiento reducido) deja el relleno de antes durante un cuadro.
+  await p.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))));
+  const sinAire = await ultimoAlFondo(p);
+  assert.ok(sinAire > 844 - TECLADO, `sin el aire, el último termina en ${sinAire}: bajo el teclado`);
+});
+
+test("con el teclado abierto, arrastrar los resultados suelta el campo: el teclado se va y la lista se ve", async (t) => {
+  const { p, cdp } = await abrirEnLaApp(t);
+  const toque = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: 200, y }] });
+  await toque("touchStart", 420);
+  for (const y of [415, 400, 360, 300]) await toque("touchMove", y);
+  await toque("touchEnd");
+  assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("type") ?? null), null, "el buscador ya no tiene el foco");
+  await p.waitForFunction(() => !document.documentElement.hasAttribute("data-teclado"));
 });

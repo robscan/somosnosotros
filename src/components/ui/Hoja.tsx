@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { bloquearFondo, esCapaSuperior, soltarFondo } from "@/lib/bloqueoFondo";
 import { IconoCerrar } from "./Iconos";
 import useAreaVisible from "./useAreaVisible";
+import useTecladoSeSueltaAlDesplazar from "./useTecladoSeSueltaAlDesplazar";
 import styles from "./Hoja.module.css";
 
 type Props = {
@@ -27,7 +28,8 @@ type Props = {
  * ventana entera y la hoja quedaba bajo el teclado (pedido del founder, 2026-09-15).
  * Sus campos los mantiene a la vista `ui/useCampoVisible` (desplaza el cuerpo de la hoja, que es lo que se desplaza).
  * Mientras hay una hoja abierta la página de atrás no se desplaza, y arrastrar la hoja con el teclado arriba lo guarda,
- * como en las búsquedas del iPhone. Sin eso, en la hoja Ciudad (su lista crece al llegar los resultados, con el teclado
+ * como en las búsquedas del iPhone (`ui/useTecladoSeSueltaAlDesplazar`, la misma regla que Buscar desde OL-421; solo los
+ * toques dentro de la hoja). Sin eso, en la hoja Ciudad (su lista crece al llegar los resultados, con el teclado
  * ya arriba) el arrastre movía la página y la hoja quedaba recortada (medido en el simulador, 2026-09-16).
  * Lo de detrás (inerte y sin desplazarse) es de la pila común de capas (`lib/bloqueoFondo`, OL-419), la misma del mapa de
  * una ficha: solo la capa de arriba es interactiva y el fondo se libera al cerrarse la última, en cualquier orden.
@@ -88,14 +90,11 @@ export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, c
     };
   }, [montada, disparador, dueno]);
   // Con el teclado arriba, un arrastre dentro de la hoja lo guarda (salvo sobre el mismo campo, para mover el cursor).
-  const alArrastrar = (e: React.TouchEvent) => {
-    const activo = document.activeElement;
-    if (marco && (activo instanceof HTMLInputElement || activo instanceof HTMLTextAreaElement) && e.target !== activo) activo.blur();
-  };
+  useTecladoSeSueltaAlDesplazar(panel);
   if (!montada) return null;
   return createPortal(
     <div ref={fondo} className={styles.fondo} style={marco ? { top: marco.top, height: marco.ventana, bottom: "auto", "--alto-visible": `${marco.height}px` } as CSSProperties : undefined} onClick={onCerrar}>
-      <div ref={panel} tabIndex={-1} className={[styles.hoja, titulo && styles.conCabecera].filter(Boolean).join(" ")} role="dialog" aria-modal="true" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
+      <div ref={panel} tabIndex={-1} className={[styles.hoja, titulo && styles.conCabecera].filter(Boolean).join(" ")} role="dialog" aria-modal="true" aria-label={etiqueta} onClick={(e) => e.stopPropagation()}>
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
           <IconoCerrar width={22} height={22} />
         </button>
