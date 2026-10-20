@@ -77,6 +77,13 @@ pantallas × 4 anchos, sin novedades tras anotar el presupuesto, abajo) y las pr
 36 en verde, las tres nuevas incluidas). `series.test.ts`: la ceja del festival es «Festival · 3 nuevas»; «1 nueva», «7 nuevas», «13 nuevas»;
 `textoActosNuevos` sigue en «1 actividad nueva», «7 actividades nuevas».
 
+**Segunda vuelta (la CI, corrida 39355008897, trabajo «interfaz»):** fallaba `Destacados.componentes.test.mjs` («firmada: la clase arriba del
+título…»): buscaba la ceja como el primer span con letra espaciada sin otro span dentro y, con `TextoCeja`, encontraba el trozo de la segunda parte
+(«SESIÓN 1 DE 4» en vez de «TALLER · SESIÓN 1 DE 4»). Se arregla la prueba, no el componente: la ceja es el span espaciado cuyo padre no está dentro
+de otro span espaciado (el trozo hereda el espaciado). Las demás pruebas que buscan la ceja por su espaciado miran los hijos directos o el primero en
+orden del documento (el de fuera): no cambian. Suite completa de componentes (`npm run test:componentes`): **634 de 634**; `lint`, `typecheck` y
+`npm test` (4046) en verde.
+
 **Presupuesto de `medir` (decide el gestor):** el trozo de la segunda parte es un elemento más por ceja de dos partes: `01-inicio` 372→375 nodos
 (374→377 a 820 y 1280; tres cejas de dos partes), `s01-inicio-sesion` y `s28-inicio-banner-compartir` 377→378 (379→380). La profundidad no cambia.
 Anotado con `npm run medir -- --aceptar` en `medidas.aceptadas.json` (solo esas tres pantallas cambian). Si el gestor prefiere no subirlo, hay
