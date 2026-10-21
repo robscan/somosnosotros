@@ -17,6 +17,12 @@ import { etiquetaLugar } from "./lugares";
  * `descripcion`, una o dos frases propias de la rutina (nunca copiadas). En un artista (OL-430), `detalle` es su especialidad (hasta 40, como la
  * ficha), `municipio` lo que la fuente dice de dónde trabaja y `obra` una frase propia sobre lo que la fuente dice de su obra: no van a la
  * ficha mínima que nace al aceptar; quedan para nutrirla después.
+ * Un evento trae además, desde OL-433 (todo opcional; lo de antes se lee igual), cómo ocurre (lo lee `src/lib/rutinas/formaEvento.ts`, que
+ * también da la frase para la tarjeta, `etiquetaDeForma`): `clase` (puntual · exposicion · taller · festival); `marco` { id, titulo } (acto de un
+ * festival registrado); `marco_propuesto` (id de la propuesta de su festival), `programa` y `espera` (la frase de un acto aceptado antes que su
+ * festival); en un festival, `actos` y `termina`; `sesiones` [{ inicio, fin? }] (un taller o días seguidos); `serie` { fechas, cada };
+ * en la inauguración de una exposición, `termina` y `exposicion`; `variantes` (otros títulos de la misma función); `lat`, `lng` y
+ * `direccion_mapa` (el punto que el mapa dio al sitio dentro de la ciudad).
  */
 
 export const TIPOS_PROPUESTA = ["lugar", "evento", "artista"] as const;

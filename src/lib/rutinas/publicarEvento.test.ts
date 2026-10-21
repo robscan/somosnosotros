@@ -98,3 +98,66 @@ describe("publicar un evento aceptado (OL-429)", () => {
     expect(await prepararEvento({ db: caida.db, mapbox, ahora: AHORA }, datos(), SLP, LUGARES, ADMIN)).toMatchObject({ ok: false, motivo: "base" });
   });
 });
+
+describe("publicar con su forma (OL-433)", () => {
+  const MRP = "00000000-0000-4000-8000-00000000a004";
+  const CON_MUSEO: LugarDeCiudad[] = [...LUGARES, { id: MRP, nombre: "Museo Regional Potosino", ciudad: "San Luis Potosí", zona: ZONA, direccion: "Galeana 450" }];
+  const FESTIVAL_P = "00000000-0000-4000-8000-0000000fe571";
+  const XANTOLO = "00000000-0000-4000-8000-00000000f001";
+  const dep = (db: ReturnType<typeof mundo>["db"]) => ({ db, mapbox, ahora: AHORA });
+
+  it("la base toma por parecidas dos inauguraciones distintas del mismo día en el mismo museo; la regla de la rutina, no: se publica", async () => {
+    const base = mundo([], [{ titulo: "Inauguración: Ecos del agua" }]);
+    const r = await prepararEvento(dep(base.db), datos({ titulo: "Inauguración: Raíces", lugar: "Museo Regional Potosino" }), SLP, CON_MUSEO, ADMIN);
+    expect(r.ok).toBe(true);
+    // Y lo que sí es la misma función se sigue frenando.
+    const igual = await prepararEvento(dep(mundo([], [{ titulo: "Inauguración: Raíces (exposición colectiva)" }]).db), datos({ titulo: "Inauguración: Raíces", lugar: "Museo Regional Potosino" }), SLP, CON_MUSEO, ADMIN);
+    expect(igual).toMatchObject({ ok: false, motivo: "parecido" });
+  });
+
+  it("un acto cuyo festival propuesto se rechazó se publica suelto; uno cuyo festival registrado dejó de serlo, también", async () => {
+    const base = baseFalsa(
+      { eventos: [{ id: XANTOLO, titulo: "Xantolo 2026", clase: "puntual" }], propuestas: [{ id: FESTIVAL_P, estado: "rechazada", datos: { clase: "festival", titulo: "Otoño Sonoro", actos: 1 } }] },
+      { eventos_parecidos: () => [] },
+    );
+    const acto = await prepararEvento(dep(base.db), datos({ marco_propuesto: FESTIVAL_P, programa: "Otoño Sonoro", clase: "puntual" }), SLP, LUGARES, ADMIN);
+    expect(acto.ok && !acto.espera && acto.fila.evento_padre_id === undefined).toBe(true);
+    const deXantolo = await prepararEvento(dep(base.db), datos({ marco: { id: XANTOLO, titulo: "Xantolo 2026" } }), SLP, LUGARES, ADMIN);
+    expect(deXantolo.ok && deXantolo.fila.evento_padre_id === undefined).toBe(true);
+  });
+
+  it("el festival propuesto que ya está registrado en esas fechas no se publica dos veces", async () => {
+    const base = baseFalsa(
+      { eventos: [{ id: XANTOLO, titulo: "XANTOLO", clase: "festival", inicio: localAIso("2026-10-23T10:00", ZONA), termina: localAIso("2026-11-02T22:00", ZONA), ciudad: "San Luis Potosí" }] },
+      { eventos_parecidos: () => [] },
+    );
+    const r = await prepararEvento(dep(base.db), datos({ titulo: "Xantolo 2026", clase: "festival", actos: 3, inicio: localAIso("2026-10-25T19:00", ZONA), termina: localAIso("2026-11-01T22:00", ZONA), lugar: "Plaza de Armas" }), SLP, LUGARES, ADMIN);
+    expect(r).toEqual({ ok: false, motivo: "parecido", error: "Ya está el festival «XANTOLO» en esas fechas: recházala como duplicado." });
+  });
+
+  it("la exposición que ya está en el museo no se duplica: se le liga la inauguración", async () => {
+    const expo = { id: "e-raices", titulo: "Raíces", clase: "exposicion", lugar_id: MRP, sitio_texto: null, inaugura_id: null, inicio: localAIso("2026-10-22T00:00", ZONA), termina: localAIso("2026-11-30T23:59", ZONA), ciudad: "San Luis Potosí" };
+    const base = baseFalsa({ eventos: [expo] }, { eventos_parecidos: () => [] });
+    const r = await prepararEvento(dep(base.db), datos({ titulo: "Inauguración: Raíces", lugar: "Museo Regional Potosino", clase: "exposicion", termina: localAIso("2026-11-30T23:59", ZONA), exposicion: "Raíces" }), SLP, CON_MUSEO, ADMIN);
+    if (!r.ok) throw new Error(r.error);
+    const creado = await insertarEvento(base.db, r.fila);
+    expect(base.tablas.eventos.filter((e) => e.clase === "exposicion")).toHaveLength(1);
+    expect(base.tablas.eventos.find((e) => e.id === "e-raices")?.inaugura_id).toBe(creado!.id);
+  });
+
+  it("si las sesiones de un taller no se pueden guardar, no queda el evento a medias; un taller a medias se publica con las sesiones que quedan", async () => {
+    const sesiones = ["20", "22", "24"].map((d) => ({ inicio: localAIso(`2026-10-${d}T17:00`, ZONA), fin: localAIso(`2026-10-${d}T19:00`, ZONA) }));
+    const taller = datos({ titulo: "Taller de grabado", clase: "taller", inicio: sesiones[0].inicio, fin: sesiones[0].fin, sesiones, precio: "$300" });
+    const base = mundo();
+    const r = await prepararEvento(dep(base.db), taller, SLP, LUGARES, ADMIN);
+    if (!r.ok) throw new Error(r.error);
+    // La del 20 ya pasó: quedan dos, del 22 al 24.
+    expect(r.fila).toMatchObject({ clase: "taller", inicio: localAIso("2026-10-22T17:00", ZONA), fin: localAIso("2026-10-24T19:00", ZONA) });
+    base.fallar("eventos_sesiones", "insert");
+    expect(await insertarEvento(base.db, r.fila)).toBeNull();
+    expect(base.tablas.eventos).toHaveLength(0);
+    // Todas pasadas: ya pasó.
+    const pasadas = sesiones.map((s) => ({ ...s, inicio: localAIso("2026-10-19T17:00", ZONA), fin: null }));
+    expect(await prepararEvento(dep(mundo().db), datos({ clase: "taller", sesiones: pasadas }), SLP, LUGARES, ADMIN)).toMatchObject({ ok: false, motivo: "pasado" });
+  });
+});

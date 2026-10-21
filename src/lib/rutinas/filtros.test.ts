@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarConocidos, cajaAlrededor, dentroDelArea, existeCerca, motivoPorNombre, municipioDeLaCiudad, nombresParecidos, palabrasDeCiudad, radioDeCiudadKm, rechazadosNoCulturales } from "./filtros";
+import { armarConocidos, cajaAlrededor, dentroDelArea, existeCerca, motivoPorNombre, municipioDeLaCiudad, nombresParecidos, otroMunicipioEnTexto, palabrasDeCiudad, radioDeCiudadKm, rechazadosNoCulturales } from "./filtros";
 
 const SLP = { lat: 22.1497, lng: -100.9764 };
 const NOMBRES = ["San Luis Potosí", "Soledad de Graciano Sánchez"];
@@ -83,5 +83,23 @@ describe("lo que ya se conoce en la ciudad", () => {
   it("los rechazados por no ser culturales se le enseñan al modelo; la lista de conocidos no repite", () => {
     expect(rechazadosNoCulturales([{ nombre: "Salón X", estado: "rechazada", motivo: "no_cultural" }, { nombre: "Y", estado: "rechazada", motivo: "duplicado" }])).toEqual(["Salón X"]);
     expect(conocidos.lista).toEqual(["Foro Ya Propuesto", "Galería Aceptada", "Salón de Fiestas Los Arcos", "Patio de Otro Municipio", "Centro de las Artes"]);
+  });
+});
+
+describe("otro municipio en el texto de la agenda (OL-433)", () => {
+  it("«Cd. Valles», «Ciudad Fernández» o «municipio de Rioverde» junto a la sede: es de otro municipio", () => {
+    expect(otroMunicipioEnTexto(["Museo Tamuantzán, Cd. Valles", null], NOMBRES)).toBe("valles");
+    expect(otroMunicipioEnTexto(["Casa de Cultura de Ciudad Fernández"], NOMBRES)).toBe("fernandez");
+    expect(otroMunicipioEnTexto(["Plaza principal", "municipio de Rioverde"], NOMBRES)).toBe("rioverde");
+    expect(otroMunicipioEnTexto(["Jardín, Cd. del Maíz"], NOMBRES)).toBe("del maiz");
+  });
+
+  it("la ciudad misma, sus alias, «Ciudad Universitaria» o nada de eso: no decide (decide el mapa)", () => {
+    expect(otroMunicipioEnTexto(["Teatro de la Paz", "San Luis Potosí"], NOMBRES)).toBeNull();
+    expect(otroMunicipioEnTexto(["Plaza de Armas, Ciudad de San Luis Potosí"], NOMBRES)).toBeNull();
+    expect(otroMunicipioEnTexto(["Casa de la Cultura", "municipio de Soledad de Graciano Sánchez"], NOMBRES)).toBeNull();
+    expect(otroMunicipioEnTexto(["Auditorio de Ciudad Universitaria"], NOMBRES)).toBeNull();
+    expect(otroMunicipioEnTexto(["Museo Tamuantzán"], NOMBRES)).toBeNull();
+    expect(otroMunicipioEnTexto(["Palacio de Bellas Artes", "Ciudad de México"], ["Ciudad de México"])).toBeNull();
   });
 });

@@ -257,7 +257,7 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
       ].sort(),
     );
     // Lo pasado: lo de hoy temprano (lo de ayer ni se pide: el trozo empieza hoy).
-    expect(c.resumen.descartados).toEqual({ ya_existe: 1, ya_propuesto: 1, rechazado_antes: 1, fuera_de_la_ciudad: 1, pasado: 1, sin_hora: 1, de_mas: 0 });
+    expect(c.resumen.descartados).toEqual({ ya_existe: 1, ya_propuesto: 1, rechazado_antes: 1, fuera_de_la_ciudad: 1, pasado: 1, sin_hora: 1, unido: 0, de_mas: 0 });
     expect(c.resumen).toMatchObject({ propuestos: 5, duplicados: 2 });
     const pf = c.resumen.por_fuente as Record<string, { propuestos: number; usd: number }>;
     expect(Object.fromEntries(Object.entries(pf).map(([k, v]) => [k, v.propuestos]))).toEqual({ "agenda-cultura": 3, "universidades-museos": 1, web: 1 });
@@ -275,6 +275,7 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
       municipio: "San Luis Potosí",
       precio: "Gratis",
       descripcion: "Una función de la temporada, con músicos de la ciudad.",
+      clase: "puntual", // OL-433: toda propuesta lleva su clase
     });
     const cierre = ps.find((p) => (p.datos as Fila).titulo === "Cierre de octubre")!.datos as Fila;
     expect(cierre).toMatchObject({ lugar: "Plaza de Armas", direccion: "Jardín Hidalgo s/n, Centro", inicio: local("2026-10-30T20:00"), fin: local("2026-10-30T22:00") });
