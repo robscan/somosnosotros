@@ -16,6 +16,9 @@ type Props = {
   memoria?: string;
   /** Una clase de la pantalla, para colocar el panel en su rejilla. */
   className?: string;
+  /** La entrada que enseña el panel abierto antes de que se señale ningún control (la ficha de showcase abre con la rúbrica, OL-426); sin
+   *  ella, la invitación a tocar o pasar por un control. */
+  inicial?: string;
 };
 
 /** Una «i» en un círculo, como la de Ableton: el mismo trazo de los iconos de la app. */
@@ -37,9 +40,9 @@ function IconoInfo() {
  * contenedor `raiz`, en la esquina que la pantalla quiera; el color lo toma de `--g-opaco`, `--g-borde`, `--g-texto` y `--g-suave` si la pantalla
  * los define (si no, de los tokens de la app).
  */
-export default function Ayuda({ raiz, diccionario, manual, memoria, className }: Props) {
+export default function Ayuda({ raiz, diccionario, manual, memoria, className, inicial }: Props) {
   const { clave, abierto, tactil, alternar } = useAyuda(raiz, memoria);
-  const entrada = clave ? diccionario[clave] : undefined;
+  const entrada = clave ? diccionario[clave] : inicial ? diccionario[inicial] : undefined;
   return (
     <div className={className ? `${styles.ayuda} ${className}` : styles.ayuda} data-abierta={abierto} data-ayuda-panel>
       <button
