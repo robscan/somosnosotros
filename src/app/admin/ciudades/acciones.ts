@@ -5,7 +5,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { hrefArtista, validarArtista } from "@/lib/artistas";
-import { BOTONES, HOJAS, leerTope, type TipoBoton } from "@/lib/ciudadesAdmin";
+import { CIUDAD_INICIAL, slugDeCiudad } from "@/lib/ciudad";
+import { BOTONES, estadoVisible, HOJAS, leerPanelCiudades, leerParametrosVista, leerTope, type EstadoCiudad, type TipoBoton } from "@/lib/ciudadesAdmin";
 import { configPublica } from "@/lib/config";
 import { hrefEvento } from "@/lib/eventos";
 import { esUuid } from "@/lib/formulario";
@@ -16,6 +17,8 @@ import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararE
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
+import { aliasNuevos, armarSugerencias, detalleRegion, existenteDe, municipiosDelArea, nombreCorto, RADIO_ALTA_KM, textoArea, textoHora, urlMapaArea, type Alta, type LugarMapbox, type SugerenciaCiudad } from "./alta";
+import { lugarEnPunto, lugarPorNombre, nombresAlrededor, sugerenciasMapbox } from "./mapbox";
 
 /**
  * Acciones de Administración › Ciudades (OL-427). Cada una comprueba el rol aquí y la base lo vuelve a exigir (reglas por fila y funciones
@@ -33,11 +36,11 @@ async function soloAdmin() {
   return { supabase: (await clienteServidor())!, yo: actual.perfil.id };
 }
 
-function revalidar(corrida?: string) {
+/** La portada, Corridas y todo Ciudades: la lista, el panel de cada ciudad y sus bandejas (OL-432). */
+function revalidar() {
   revalidatePath("/admin");
-  revalidatePath("/admin/ciudades");
+  revalidatePath("/admin/ciudades", "layout");
   revalidatePath("/admin/corridas");
-  if (corrida) revalidatePath(`/admin/ciudades/propuestas/${corrida}`);
 }
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -147,7 +150,7 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   if (error?.code === "23505") return { ok: false, error: `Ya hay una ficha llamada «${nombreDe(p)}»: recházala como duplicado.` };
   if (error) return { ok: false, error: "No se pudo aceptar. Intenta de nuevo." };
   const r = (data ?? {}) as { ficha_id?: string | null; slug?: string | null };
-  revalidar(p.corrida_id);
+  revalidar();
   if (p.tipo === "lugar") {
     revalidatePath("/");
     revalidatePath("/lugares");
@@ -184,7 +187,7 @@ export async function rechazarPropuesta(id: string, motivo: MotivoRechazo): Prom
     .select("id, corrida_id");
   if (error) return { ok: false, error: "No se pudo rechazar. Intenta de nuevo." };
   if (!data?.length) return { ok: false, error: "Ya se decidió. Recarga la página." };
-  revalidar(data[0].corrida_id as string);
+  revalidar();
   return { ok: true };
 }
 
@@ -199,6 +202,198 @@ export async function deshacerRechazo(id: string): Promise<Resultado> {
     .eq("estado", "rechazada")
     .select("id, corrida_id");
   if (error || !data?.length) return { ok: false, error: "No se pudo deshacer. Recarga la página." };
-  revalidar(data[0].corrida_id as string);
+  revalidar();
+  return { ok: true };
+}
+
+// ---------- «Añadir ciudad», «Abrir» y «Ocultar» (OL-432; prototipo firmado OL-431, pantallas B y C, respuestas 1, 2 y 6) ----------
+type FilaTabla = { slug: string; nombre: string; alias: string[]; parametros: Record<string, unknown>; lat: number | null; lng: number | null; zona: string; estado: EstadoCiudad };
+type Cliente = Awaited<ReturnType<typeof soloAdmin>>["supabase"];
+const ESTADOS: readonly string[] = ["abierta", "detectada", "investigando", "cerrada"];
+
+async function leerTabla(supabase: Cliente): Promise<FilaTabla[] | null> {
+  const { data, error } = await supabase.from("ciudades").select("slug, nombre, alias, parametros, lat, lng, zona, estado");
+  if (error || !Array.isArray(data)) return null;
+  return data.map((f) => ({
+    slug: String(f.slug),
+    nombre: String(f.nombre),
+    alias: Array.isArray(f.alias) ? f.alias.filter((a: unknown): a is string => typeof a === "string") : [],
+    parametros: f.parametros && typeof f.parametros === "object" && !Array.isArray(f.parametros) ? (f.parametros as Record<string, unknown>) : {},
+    lat: typeof f.lat === "number" ? f.lat : null,
+    lng: typeof f.lng === "number" ? f.lng : null,
+    zona: typeof f.zona === "string" ? f.zona : "America/Mexico_City",
+    estado: (ESTADOS.includes(f.estado) ? f.estado : "detectada") as EstadoCiudad,
+  }));
+}
+const texto = (v: unknown, tope = 80) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, tope) : "");
+const enRango = (n: unknown, min: number, max: number): n is number => typeof n === "number" && Number.isFinite(n) && n >= min && n <= max;
+const textos = (v: unknown) => (Array.isArray(v) ? v.map((x) => texto(x)).filter((x) => x.length >= 2) : []).slice(0, 30);
+
+export type ResultadoSugerir = { ok: true; sugerencias: SugerenciaCiudad[]; sinMapa: boolean } | { ok: false; error: string };
+
+/**
+ * Lo que sale bajo el campo de «Añadir ciudad» al escribir (pantalla B): las que ya están (con su píldora; una abierta lleva a su panel) y las
+ * que Mapbox sugiere, con su estado y su país. Sin Mapbox (sin token o sin respuesta) salen solo las que ya están y `sinMapa` lo dice.
+ */
+export async function sugerirCiudades(q: string): Promise<ResultadoSugerir> {
+  const t = texto(q, 60);
+  if (t.length < 2) return { ok: true, sugerencias: [], sinMapa: false };
+  const { supabase } = await soloAdmin();
+  const [filas, panel] = await Promise.all([leerTabla(supabase), supabase.rpc("panel_ciudades")]);
+  if (!filas) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
+  const consultas = new Map((leerPanelCiudades(panel.data)?.ciudades ?? []).map((c) => [c.slug, c.consultas]));
+  const existentes = filas.map((f) => ({ slug: f.slug, nombre: f.nombre, alias: f.alias, estado: estadoVisible(f.estado), consultas: consultas.get(f.slug) ?? 0 }));
+  const token = configPublica().mapboxToken;
+  const lugares = token ? await sugerenciasMapbox(t, token, CIUDAD_INICIAL.centro) : null;
+  return { ok: true, sugerencias: armarSugerencias(t, existentes, lugares ?? []), sinMapa: lugares === null };
+}
+
+/** Lo que se elige en la hoja: una ciudad que ya está (una detectada u oculta, por su slug) o una que sugirió Mapbox. */
+export type Eleccion = { slug: string } | { lugar: LugarMapbox };
+export type ResultadoResolver = { ok: true; alta: Alta } | { ok: false; error: string };
+
+function lugarLimpio(l: unknown): LugarMapbox | null {
+  const x = (l ?? {}) as Record<string, unknown>;
+  const nombre = texto(x.nombre);
+  if (!nombre || !enRango(x.lat, -90, 90) || !enRango(x.lng, -180, 180)) return null;
+  return { nombre, region: texto(x.region) || null, pais: texto(x.pais) || null, codigoPais: texto(x.codigoPais, 2).toUpperCase() || null, lat: x.lat, lng: x.lng };
+}
+
+/**
+ * Al elegir (pantalla C), el sistema resuelve todo y la persona solo confirma: el centro (el de Mapbox, o el que ya tenía la fila), el nombre
+ * en la app (respuesta 1: el corto, con el de Mapbox como detalle), la hora de su punto comparada con la de San Luis Potosí, y el área: 15 km y
+ * los municipios que caen en ella (respuesta 2), o sus alcaldías y su radio si ya los tiene (Ciudad de México, OL-429).
+ */
+export async function resolverCiudad(eleccion: Eleccion): Promise<ResultadoResolver> {
+  const { supabase } = await soloAdmin();
+  const filas = await leerTabla(supabase);
+  if (!filas) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
+  const token = configPublica().mapboxToken;
+  let lugar = "lugar" in eleccion ? lugarLimpio(eleccion.lugar) : null;
+  if ("lugar" in eleccion && !lugar) return { ok: false, error: "No entendimos esa ciudad. Búscala otra vez." };
+  const fila = "slug" in eleccion ? (filas.find((f) => f.slug === eleccion.slug) ?? null) : lugar ? existenteDe([lugar.nombre, nombreCorto(lugar)], filas) : null;
+  if ("slug" in eleccion && !fila) return { ok: false, error: "Esa ciudad ya no está. Recarga la página." };
+  let centro = fila?.lat != null && fila.lng != null ? { lat: fila.lat, lng: fila.lng } : lugar ? { lat: lugar.lat, lng: lugar.lng } : null;
+  if (!centro && fila && token) {
+    lugar = await lugarPorNombre(fila.nombre, token, CIUDAD_INICIAL.centro);
+    if (lugar) centro = { lat: lugar.lat, lng: lugar.lng };
+  }
+  if (!centro) return { ok: false, error: `No encontramos ${fila?.nombre ?? "esa ciudad"} en el mapa. Escribe su nombre en el campo.` };
+  if (!lugar && token) lugar = await lugarEnPunto(centro, token);
+  const largo = lugar?.nombre ?? fila!.nombre;
+  const nombre = nombreCorto({ nombre: fila?.nombre ?? largo, region: lugar?.region ?? null, codigoPais: lugar?.codigoPais ?? null, pais: lugar?.pais ?? null });
+  const zona = zonaDePunto(centro.lat, centro.lng);
+  const p = leerParametrosVista(fila?.parametros);
+  const radioKm = p.radioKm ?? RADIO_ALTA_KM;
+  let municipios: string[] | null = p.municipios;
+  if (!p.alcaldias.length && !p.municipios.length) {
+    const nombres = token ? await nombresAlrededor(centro, radioKm, token) : null;
+    municipios = nombres ? municipiosDelArea(nombres, [nombre, largo, fila?.nombre, ...(fila?.alias ?? [])]) : null;
+  }
+  const abiertas = filas.filter((f) => estadoVisible(f.estado) === "abierta" && f.slug !== fila?.slug);
+  const referencia = abiertas.find((f) => f.slug === CIUDAD_INICIAL.slug) ?? abiertas[0] ?? null;
+  return {
+    ok: true,
+    alta: {
+      desde: fila?.slug ?? null,
+      nombre,
+      largo,
+      region: lugar ? detalleRegion(lugar) : "",
+      lat: centro.lat,
+      lng: centro.lng,
+      zona,
+      hora: textoHora(zona, referencia ? { nombre: referencia.nombre, zona: referencia.zona } : null),
+      radioKm,
+      municipios,
+      alcaldias: p.alcaldias,
+      area: textoArea(radioKm, municipios, p.alcaldias),
+      mapa: urlMapaArea(centro, radioKm, token),
+    },
+  };
+}
+
+export type DatosAbrir = { desde: string | null; nombre: string; largo: string; lat: number; lng: number; radioKm: number; municipios: string[] | null };
+export type ResultadoAbrir = { ok: true; href: string } | { ok: false; error: string };
+
+/**
+ * «Abrir Oaxaca»: deja la ciudad abierta y entra a su panel. Nueva: la fila con su slug (del nombre en la app), el nombre corto, de alias el de
+ * Mapbox y los municipios del área (como Soledad con San Luis: las búsquedas también los cuentan), su centro, zoom 13, la zona de su punto y en
+ * `parametros` el radio, los municipios y cuándo se abrió. Una detectada u oculta se abre en su misma fila (conserva sus consultas). Nunca dos:
+ * si ya hay una abierta con ese nombre o alias, lleva a su panel sin tocar nada.
+ */
+export async function abrirCiudad(d: DatosAbrir): Promise<ResultadoAbrir> {
+  const nombre = texto(d?.nombre);
+  if (!nombre) return { ok: false, error: "Escribe el nombre de la ciudad." };
+  if (!enRango(d.lat, -90, 90) || !enRango(d.lng, -180, 180)) return { ok: false, error: "No sabemos dónde está. Búscala otra vez." };
+  const largo = texto(d.largo);
+  const { supabase } = await soloAdmin();
+  const filas = await leerTabla(supabase);
+  if (!filas) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
+  const desde = d.desde ? (filas.find((f) => f.slug === d.desde) ?? null) : null;
+  if (d.desde && !desde) return { ok: false, error: "Esa ciudad ya no está. Recarga la página." };
+  const misma = desde ?? filas.find((f) => f.slug === slugDeCiudad(nombre)) ?? existenteDe([nombre, largo], filas);
+  if (misma && estadoVisible(misma.estado) === "abierta") return { ok: true, href: `/admin/ciudades/${misma.slug}` };
+  const slug = misma?.slug ?? slugDeCiudad(nombre);
+  if (!SLUG.test(slug) || slug.length > 80) return { ok: false, error: "Ese nombre no sirve para una ciudad. Prueba con otro." };
+  const municipios = d.municipios === null ? null : textos(d.municipios);
+  const radio = enRango(d.radioKm, 0.5, 100) ? d.radioKm : RADIO_ALTA_KM;
+  const zona = zonaDePunto(d.lat, d.lng);
+  const abiertaEn = new Date().toISOString();
+  if (misma) {
+    const antes = misma.parametros;
+    const conAlcaldias = Array.isArray(antes.alcaldias) && antes.alcaldias.length > 0;
+    const { error } = await supabase
+      .from("ciudades")
+      .update({
+        nombre,
+        estado: "abierta",
+        lat: d.lat,
+        lng: d.lng,
+        zona,
+        alias: aliasNuevos(nombre, [...misma.alias, misma.nombre, largo, ...(municipios ?? [])]),
+        parametros: { ...antes, radio_km: antes.radio_km ?? radio, ...(conAlcaldias || municipios === null ? {} : { municipios }), abierta_en: abiertaEn },
+      })
+      .eq("slug", misma.slug)
+      .in("estado", ["detectada", "cerrada"])
+      .select("slug");
+    if (error) return { ok: false, error: "No se pudo abrir. Intenta de nuevo." };
+    revalidar();
+    // Si otra pestaña la abrió primero, ya está abierta: igual se entra a su panel.
+    return { ok: true, href: `/admin/ciudades/${misma.slug}` };
+  }
+  const { error } = await supabase.from("ciudades").insert({
+    slug,
+    nombre,
+    lat: d.lat,
+    lng: d.lng,
+    zoom: 13,
+    zona,
+    alias: aliasNuevos(nombre, [largo, ...(municipios ?? [])]),
+    estado: "abierta",
+    parametros: { radio_km: radio, ...(municipios === null ? {} : { municipios }), abierta_en: abiertaEn },
+  });
+  // 23505: otra pestaña la dio de alta a la vez; ya existe, se entra a su panel.
+  if (error && error.code !== "23505") return { ok: false, error: "No se pudo abrir. Intenta de nuevo." };
+  revalidar();
+  return { ok: true, href: `/admin/ciudades/${slug}` };
+}
+
+/** «Ocultar» una detectada (respuesta 6): queda cerrada y no vuelve a salir aunque siga sumando consultas. Se vuelve a abrir desde «Añadir ciudad». */
+export async function ocultarCiudad(slug: string): Promise<Resultado> {
+  return cambiarEstado(slug, "detectada", "cerrada", "Ya no está detectada. Recarga la página.");
+}
+
+/** «Deshacer» justo después de ocultarla: vuelve a detectada. */
+export async function mostrarCiudad(slug: string): Promise<Resultado> {
+  return cambiarEstado(slug, "cerrada", "detectada", "No se pudo deshacer. Recarga la página.");
+}
+
+async function cambiarEstado(slug: string, de: EstadoCiudad, a: EstadoCiudad, siNo: string): Promise<Resultado> {
+  if (typeof slug !== "string" || !SLUG.test(slug) || slug.length > 80) return { ok: false, error: "No encontramos esa ciudad. Recarga la página." };
+  const { supabase } = await soloAdmin();
+  const { data, error } = await supabase.from("ciudades").update({ estado: a }).eq("slug", slug).eq("estado", de).select("slug");
+  if (error) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
+  if (!data?.length) return { ok: false, error: siNo };
+  revalidar();
   return { ok: true };
 }

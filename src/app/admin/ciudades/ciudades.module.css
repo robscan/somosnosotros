@@ -1,30 +1,245 @@
-/* Administración › Ciudades, la bandeja de propuestas y Corridas (OL-427; prototipo firmado OL-425, bitácora 458). Todo lo demás es de
-   admin.module.css (grupo, fila, pendiente, hecho, indicador, etiqueta…) y de ui/Renglon (tarjeta): aquí solo lo propio, con los tokens del
-   sistema. Maquetación plana: cada dato, hijo directo de su renglón en su área. */
+/* Administración › Ciudades: la lista general, el panel de cada ciudad, «Añadir ciudad», la bandeja de propuestas y Corridas (OL-427, OL-432;
+   prototipos firmados OL-425 y OL-431, bitácoras 458 y 463). Todo lo demás es de admin.module.css (grupo, fila, indicador, etiqueta…), de
+   ui/Renglon (tarjeta) y de ui/Boton (también la pastilla flotante de las fichas): aquí solo lo propio, con los tokens del sistema y sin medidas
+   nuevas. Maquetación plana: cada dato, hijo directo de su renglón o de su tarjeta, en su área. */
 
-/* Una ciudad es una tarjeta de renglones; dos seguidas llevan aire entre ellas. */
-.ciudad + .ciudad {
-  margin-top: var(--espacio-3);
+/* ---------- la lista general (pantalla A) ---------- */
+.lista {
+  margin-top: var(--espacio-4);
 }
-/* La cabecera de la ciudad no se toca: sin el cursor de los renglones-botón. */
-.cabeza {
-  cursor: default;
+/* La fila de admin con una línea más, para la barra de la búsqueda que corre. */
+.filaCiudad {
+  grid-template-areas:
+    "icono etiqueta accion"
+    "icono detalle accion"
+    "icono error error"
+    "icono barra barra";
 }
-/* El renglón-botón (los tres de cada ciudad): el de admin .fila, sin el traje del botón del navegador. */
-.boton {
+.filaCiudad > b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* Los tres números con su icono: consultas en 30 días, lugares y eventos próximos. */
+.cifras {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--espacio-3);
+  row-gap: 2px;
+  margin-top: 2px;
+}
+.cifras > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  font-variant-numeric: tabular-nums;
+}
+.cifras > span > svg {
+  flex: none;
+}
+/* Las propuestas por revisar, en violeta, junto al ›. */
+.revisar {
+  color: var(--primario);
+  font-weight: 700;
+}
+.alerta {
+  color: var(--error);
+}
+.filaCiudad > .barra {
+  grid-area: barra;
+  margin-top: var(--espacio-1);
+}
+.filaCiudad > [role="alert"] {
+  grid-area: barra;
+}
+/* «Ocultar» una detectada (respuesta 6): la salida que no compite con «Abrir», en la línea de abajo. */
+.ocultar {
+  grid-area: error;
+  justify-self: start;
+  min-height: var(--toque-min);
+  padding: 0 2px;
   border: 0;
   background: none;
+  color: var(--texto-suave);
   font: inherit;
-  text-align: left;
+  font-size: var(--letra-sm);
+  text-decoration: underline;
   cursor: pointer;
 }
-/* La línea de la última investigación y la barra de avance van debajo del detalle, en el área de abajo de la fila. */
+/* «Añadir ciudad»: la pastilla flotante de las fichas, pegada al pie mientras la lista pasa por debajo. Desde 792, al final de la fila. */
+.flotante {
+  position: sticky;
+  bottom: calc(var(--espacio-4) + var(--piso));
+  z-index: calc(var(--z-flotante) + 1);
+  justify-self: center;
+  margin-top: var(--espacio-6);
+}
+@media (min-width: 792px) {
+  .flotante {
+    justify-self: end;
+  }
+}
+
+/* ---------- el panel de una ciudad (pantallas D, E y F) ---------- */
+/* Las tarjetas de «Últimos 7 días» de la portada, con la búsqueda que alimenta cada una bajo una raya. */
+.tablero {
+  margin-top: var(--espacio-4);
+}
+.ancha {
+  grid-column: 1 / -1;
+}
+.tarjeta {
+  cursor: default;
+  grid-template-areas:
+    "nombre nombre"
+    "valor tendencia"
+    "base base"
+    "cambio cambio"
+    "corrida corrida"
+    "razon razon"
+    "barra barra"
+    "accion accion";
+}
+.nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+.nombre > svg {
+  flex: none;
+  color: var(--texto-suave);
+}
+.porRevisarTarjeta > b {
+  color: var(--primario);
+}
+.corrida {
+  grid-area: corrida;
+  margin-top: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.corrida > span:first-child {
+  margin: 0 var(--espacio-2) 0 0;
+}
+.razon {
+  grid-area: razon;
+  margin-top: var(--espacio-1);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.tarjeta > .barra {
+  grid-area: barra;
+  margin-top: var(--espacio-2);
+}
+.accion {
+  grid-area: accion;
+  justify-self: start;
+  margin-top: var(--espacio-3);
+}
+/* Con la letra grande (OL-373), si el texto del botón no cabe en la tarjeta parte el suyo en dos renglones en vez de salirse; donde cabe,
+   sigue en uno (como `.fila > .pildora` en admin.module.css). */
+.tarjeta > .accion {
+  max-width: 100%;
+  white-space: normal;
+  text-wrap: balance;
+}
+.tarjeta > [role="alert"] {
+  grid-area: razon;
+  margin-top: var(--espacio-1);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+.cabeza {
+  text-wrap: balance;
+}
+.enlaceTarjeta {
+  grid-area: accion;
+  justify-self: start;
+}
+/* Desde 1048 el panel usa la columna ancha (960, como las fichas) y las tarjetas van de tres en tres: «Por revisar» a lo ancho, las tres
+   búsquedas en fila, Consultas a dos columnas y Gasto. */
+@media (min-width: 1048px) {
+  .panel {
+    --columna: var(--columna-ancha);
+    --gutter: max(var(--espacio-5), calc((100cqw - var(--columna)) / 2));
+  }
+  .tablero {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ancha {
+    grid-column: auto;
+  }
+  .banda {
+    grid-column: 1 / -1;
+  }
+  .doble {
+    grid-column: span 2;
+  }
+}
+
+/* ---------- la hoja «Añadir ciudad» (pantallas B y C) ---------- */
+/* El campo (ui/Buscador) con el borde por dentro, como en las listas de Administración (`admin.module.css` .lista, OL-426): así llena los 44
+   de su píldora y se toca entero. */
+.buscador > label {
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.buscador > label:focus-within {
+  box-shadow: inset 0 0 0 1px var(--texto);
+}
+/* El mapa chico (5:2, como «Dónde» en las fichas): la imagen de Mapbox y, encima, el área y el pin, que se ven aunque la imagen no cargue. */
+.mapa {
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr); /* la fila mide lo del 5:2, no lo que traiga la imagen */
+  flex-shrink: 0;
+  aspect-ratio: 5 / 2;
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: var(--fondo-miniatura);
+}
+.mapa > * {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+}
+.mapa > img {
+  object-fit: cover;
+}
+.area {
+  fill: var(--primario-suave);
+  fill-opacity: 0.7;
+  stroke: var(--primario);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+.pin {
+  fill: var(--primario);
+  stroke: var(--fondo);
+  stroke-width: 2;
+}
+.punto {
+  fill: var(--fondo);
+}
+.cambiar {
+  grid-area: accion;
+}
+.renombrar {
+  padding: var(--espacio-3) var(--espacio-4) 0;
+}
+
+/* ---------- la línea de abajo de una fila, y Corridas ---------- */
+/* La línea de lo que hay que decidir y la barra de avance van debajo del detalle, en el área de abajo de la fila. */
 .linea {
   grid-area: error;
   margin-top: 2px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   line-height: 1.3;
+}
+.linea.alerta {
+  color: var(--error);
 }
 .avance {
   grid-area: error;
@@ -38,6 +253,16 @@ span.ok {
 span.fallo {
   background: var(--error-suave);
   color: var(--error);
+}
+
+/* ---------- la bandeja ---------- */
+/* Cada búsqueda de la ciudad, con su nombre y lo que trajo, antes de sus fuentes. */
+.busqueda {
+  margin: var(--espacio-5) 0 0 var(--espacio-1);
+  font-size: var(--letra-lg);
+}
+.busqueda + p {
+  margin-top: 2px;
 }
 /* «Aceptar las N de esta fuente», sobre sus tarjetas. */
 .todas {
