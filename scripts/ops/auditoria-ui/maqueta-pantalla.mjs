@@ -12,7 +12,7 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { cookie, LLAVE_SERVICIO } from "./respaldo-local/fixture.mjs";
+import { ADMIN, cookie, cookieDe, LLAVE_SERVICIO } from "./respaldo-local/fixture.mjs";
 
 const AQUI = path.dirname(new URL(import.meta.url).pathname);
 const RAIZ = path.resolve(AQUI, "../../..");
@@ -25,15 +25,28 @@ const solo = (process.argv.find((a) => a.startsWith("--solo=")) ?? "").slice(7);
 if (!SALIDA) { console.error("uso: maqueta-pantalla.mjs <carpeta> [--solo=texto]"); process.exit(1); }
 if (fs.existsSync(path.join(RAIZ, ".env"))) { console.error("hay un .env en el árbol: la app cargaría llaves reales. Córrelo en un árbol sin .env"); process.exit(1); }
 
-/** Las pantallas que se guardan: con sesión (la cookie del respaldo) y, si hace falta, los pasos para llegar a ellas. */
+/** Las pantallas que se guardan: con sesión (la cookie del respaldo; `cuenta: "admin"`, la de administración) y, si hace falta, los pasos
+ *  para llegar a ellas. */
 const PANTALLAS = [
   { id: "ficha-lugar", url: "/lugares/teatro-de-la-paz", sesion: true },
   { id: "ficha-festival", url: "/eventos/festival-de-cine-de-invierno", sesion: true },
   { id: "ficha-exposicion", url: "/eventos/ecos-de-papel", sesion: true },
   { id: "agenda", url: "/agenda", sesion: true },
   { id: "alta-cuanto", url: "/nuevo/evento", sesion: true, paso: "evento-cuanto" },
+  // OL-425: Administración: la portada, una lista con buscador y chips (Personas), una hoja abierta (hacer administrador a Ana), la lista de
+  // lugares (por el CSS del campo con su ✕ y la hoja con título) y el grafo (por el panel de ayuda).
+  { id: "admin", url: "/admin", sesion: true, cuenta: "admin" },
+  { id: "admin-personas", url: "/admin/personas", sesion: true, cuenta: "admin" },
+  { id: "admin-persona-hoja", url: "/admin/personas/11111111-1111-4111-8111-111111111111", sesion: true, cuenta: "admin", paso: "admin-hoja-rol" },
+  { id: "admin-lugares", url: "/admin/lugares", sesion: true, cuenta: "admin" },
+  { id: "admin-grafo", url: "/admin/grafo", sesion: true, cuenta: "admin" },
 ];
 const PASOS = {
+  // La hoja «Hacer administrador» de la ficha de una persona en Administración (ui/Hoja sin título, con su botón principal).
+  "admin-hoja-rol": async (page) => {
+    await page.getByRole("button", { name: "Hacer administrador" }).first().click();
+    await page.getByRole("dialog").waitFor();
+  },
   // El alta de un evento hasta «¿Cuánto cuesta?»: sin cartel, nombre, este viernes a las 7, sin fin, «Estoy aquí» con un sitio nuevo usado solo aquí.
   "evento-cuanto": async (page) => {
     const ctx = page.context();
@@ -78,7 +91,7 @@ try {
   fs.mkdirSync(SALIDA, { recursive: true });
   for (const p of PANTALLAS.filter((x) => !solo || x.id.includes(solo))) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "es-MX" });
-    if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: cookie, url: base }]);
+    if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
     const page = await ctx.newPage();
     await page.goto(base + p.url, { waitUntil: "networkidle" });
     if (p.paso) await PASOS[p.paso](page);
