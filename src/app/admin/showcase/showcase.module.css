@@ -280,6 +280,11 @@
 .boton > :is(b, small) {
   overflow-wrap: anywhere;
 }
+/* «Investigar» (OL-430): la barra de la investigación en curso, debajo del detalle, a todo lo ancho del renglón */
+.barraInvestigar {
+  grid-area: error;
+  margin-top: var(--espacio-2);
+}
 /* Las tarjetas de la rúbrica, una por señal, con su aire entre ellas */
 .seguida + .seguida {
   margin-top: var(--espacio-3);

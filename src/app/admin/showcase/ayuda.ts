@@ -35,6 +35,12 @@ export const AYUDA_SHOWCASE: DiccionarioAyuda = {
     detalle: "Una evidencia que añades a mano ya cuenta (la leíste tú). Sin una dirección http o https no hay evidencia.",
     manual: "evidencias",
   },
+  investigar: {
+    titulo: "Investigar",
+    texto: "La rutina busca en la web premios, becas, prensa, festivales y obra publicada de este artista: cuatro búsquedas con su nombre, su ciudad y su disciplina. Cuesta entre 0,20 y 0,60 USD, con un tope que tú eliges (1,00 por omisión).",
+    detalle: "Solo propone lo que dice una página que abrió y leyó, con su enlace, y descarta los homónimos dudosos. No lee redes. Todo llega a «Por revisar» y nada cuenta ni sale de Administración hasta que lo aceptas.",
+    manual: "investigar",
+  },
   base: { titulo: "En la base", texto: "Sus eventos del año en la app: cuántos, en qué foros y en qué festivales. Sale solo, sin investigar.", manual: "base" },
   redes: {
     titulo: "Redes",
@@ -53,7 +59,7 @@ export const AYUDA_SHOWCASE: DiccionarioAyuda = {
 /** Las secciones del manual, en el orden de la ficha. */
 export const SECCIONES_MANUAL = [
   { id: "bloque-rubrica", titulo: "La rúbrica", entradas: ["rubrica", "circulacion", "obra", "actividad", "vinculo"] },
-  { id: "bloque-estado", titulo: "Estado y evidencias", entradas: ["estado", "evidencias"] },
+  { id: "bloque-estado", titulo: "Estado y evidencias", entradas: ["estado", "evidencias", "investigar"] },
   { id: "bloque-base", titulo: "La base y las redes", entradas: ["base", "redes"] },
   { id: "bloque-notas", titulo: "Notas", entradas: ["notas"] },
 ] as const;

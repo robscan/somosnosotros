@@ -143,7 +143,8 @@ describe("la cadena de pasos (OL-429)", () => {
       };
       await Promise.all([correr(), correr(), correr(), correr()]);
       await m.vaciar();
-      expect(["M", "G", "T"].map((id) => m.fila(id).estado), `vuelta ${vuelta}`).toEqual(["terminada", "fallida", "fallida"]);
+      // Artistas (OL-430) ya tiene rutina: sin la API, solo su parte gratis, y termina. El showcase de prueba no dice qué artista: «Falló».
+      expect(["M", "G", "T"].map((id) => m.fila(id).estado), `vuelta ${vuelta}`).toEqual(["terminada", "terminada", "fallida"]);
     }
   }, 30_000);
 });
