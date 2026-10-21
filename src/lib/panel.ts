@@ -1,6 +1,7 @@
 import { diaCorto, diaLocal, formatearCuando } from "./fechas";
 import { etiquetaDisciplina } from "./artistas";
 import { etiquetaLugar, normalizarNombre } from "./lugares";
+import { MARCA } from "./marca";
 
 /**
  * Panel de administración (docs/rediseno/18 y 19, firmados por el founder el 2026-09-16): lo que se calcula y se
@@ -575,12 +576,12 @@ export type EstadoRol = { etiqueta: string; detalle: string; accion: "hacer" | "
 export function estadoRol(f: PersonaFicha, yo: string, ahora: Date = new Date()): EstadoRol {
   if (f.rol === "admin") {
     if (f.de_origen) return { etiqueta: "Administrador", detalle: "Desde el inicio: no se quita desde la app", accion: null };
-    if (!f.puedo_cambiar_rol) return { etiqueta: "Administrador", detalle: "Solo quien fundó Somos Nosotros cambia el rol", accion: null };
+    if (!f.puedo_cambiar_rol) return { etiqueta: "Administrador", detalle: `Solo quien fundó ${MARCA} cambia el rol`, accion: null };
     if (f.es_yo) return { etiqueta: "Administrador", detalle: nombradoPor(f, yo, ahora), accion: null };
     if (f.administradores <= 1) return { etiqueta: "Administrador", detalle: "Es el único administrador", accion: null };
     return { etiqueta: "Administrador", detalle: nombradoPor(f, yo, ahora), accion: "quitar" };
   }
-  if (!f.puedo_cambiar_rol) return { etiqueta: "Usuario", detalle: "Solo quien fundó Somos Nosotros cambia el rol", accion: null };
+  if (!f.puedo_cambiar_rol) return { etiqueta: "Usuario", detalle: `Solo quien fundó ${MARCA} cambia el rol`, accion: null };
   if (!f.confirmado) return { etiqueta: "Usuario", detalle: "Aún no confirma su correo: podrás hacerlo administrador cuando entre", accion: null };
   return { etiqueta: "Usuario", detalle: "Publica, dice Voy y sigue", accion: "hacer" };
 }
@@ -602,7 +603,7 @@ export function textoCodigoRol(codigo: string): string | null {
     case "sin_cambio":
       return null;
     case "sin_permiso":
-      return "Solo quien fundó Somos Nosotros cambia el rol.";
+      return `Solo quien fundó ${MARCA} cambia el rol.`;
     case "sin_confirmar":
       return "Aún no confirma su correo: podrás hacerlo administrador cuando entre.";
     case "a_ti_mismo":

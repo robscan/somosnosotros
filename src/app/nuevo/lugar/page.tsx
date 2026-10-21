@@ -10,8 +10,9 @@ import type { LugarResumen } from "@/lib/lugares";
 import { esSlugDeSitio } from "@/lib/sitios";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import AltaLugar from "./AltaLugar";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "Registrar un lugar · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: tituloDePagina("Registrar un lugar"), robots: { index: false, follow: false } };
 
 type Consulta = { ciudad?: string; nombre?: string; lat?: string; lng?: string; sitio?: string };
 

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import BotonCompartir from "@/components/BotonCompartir";
 import FichaPersona from "@/components/FichaPersona";
 import { TEXTO_INVITAR } from "@/lib/perfil";
+import { MARCA } from "@/lib/marca";
 
 /**
  * «Invitar a tus amigxs» (OL-416; founder, 2026-10-19): el renglón para compartir la app se mudó de Ajustes a Mi perfil. Sale en el perfil propio,
@@ -66,7 +67,7 @@ function texto(nodo: unknown): string {
 }
 /** Un renglón de invitar armado a mano, para probar `FichaPersona` sola. */
 const renglonInvitar = () =>
-  createElement(BotonCompartir, { titulo: "Somos Nosotros", texto: TEXTO_INVITAR, url: "https://somosnosotros.org", className: "x" } as Parameters<typeof BotonCompartir>[0], "Invitar a tus amigxs");
+  createElement(BotonCompartir, { titulo: MARCA, texto: TEXTO_INVITAR, url: "https://somosnosotros.org", className: "x" } as Parameters<typeof BotonCompartir>[0], "Invitar a tus amigxs");
 const esInvitar = (e: El) => e.type === BotonCompartir && e.props.texto === TEXTO_INVITAR;
 /** La ficha de persona que lleva la página: sus props y lo que pinta. */
 function fichaDe(arbol: unknown) {
@@ -83,7 +84,7 @@ describe("«Invitar a tus amigxs» en Mi perfil (OL-416)", () => {
     expect(props.mia).toBe(true);
     const invitar = pinta.filter(esInvitar);
     expect(invitar).toHaveLength(1);
-    expect(invitar[0].props).toMatchObject({ titulo: "Somos Nosotros", url: "https://somosnosotros.org" });
+    expect(invitar[0].props).toMatchObject({ titulo: MARCA, url: "https://somosnosotros.org" });
     expect(texto(invitar[0])).toBe("Invitar a tus amigxsSe comparte el enlace del sitio");
   });
 
@@ -130,7 +131,7 @@ describe("«Invitar a tus amigxs» en Mi perfil (OL-416)", () => {
     expect(pinta.filter(esInvitar)).toHaveLength(0);
   });
 
-  it("Ajustes ya no lo lleva (tampoco con cuenta de administración) y su grupo «Somos Nosotros» sigue", async () => {
+  it("Ajustes ya no lo lleva (tampoco con cuenta de administración) y su grupo «Somos Nosotrxs» sigue", async () => {
     const { default: Ajustes } = await import("@/app/ajustes/page");
     try {
       for (const rol of ["usuario", "admin"]) {
@@ -138,7 +139,7 @@ describe("«Invitar a tus amigxs» en Mi perfil (OL-416)", () => {
         const arbol = [...recorrer(await Ajustes({ searchParams: Promise.resolve({}) }))];
         expect(arbol.filter((e) => e.type === BotonCompartir)).toHaveLength(0);
         expect(arbol.map(texto).join(" ")).not.toMatch(/Invita|amistades|amigxs/);
-        expect(arbol.some((e) => e.type === "h2" && texto(e) === "Somos Nosotros")).toBe(true);
+        expect(arbol.some((e) => e.type === "h2" && texto(e) === MARCA)).toBe(true);
         if (rol === "admin") expect(arbol.some((e) => e.props.href === "/admin")).toBe(true);
       }
     } finally {

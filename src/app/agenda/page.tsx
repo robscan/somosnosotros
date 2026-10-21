@@ -12,6 +12,7 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./agenda.module.css";
 import type { Metadata } from "next";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; desde?: string; hasta?: string; cuanto?: string; que?: string };
 
@@ -25,7 +26,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const ciudades = await cargarCiudades(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
-  const titulo = "Agenda cultural · Somos Nosotros";
+  const titulo = tituloDePagina("Agenda cultural");
   const descripcion = "Qué hay hoy y esta semana en los centros culturales cerca de ti. No necesitas cuenta para mirar.";
   const canonical = esInicial ? "/agenda" : `/agenda?ciudad=${resuelta.slug}`;
   return {
@@ -33,7 +34,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     description: descripcion,
     alternates: { canonical },
     // Next reemplaza openGraph y twitter enteros: sin repetirlos aquí, esta página heredaba los del layout raíz.
-    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: MARCA },
     twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
   };
 }

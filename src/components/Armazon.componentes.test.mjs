@@ -15,6 +15,9 @@ import { join } from "node:path";
 import { build } from "esbuild";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
+/** La marca (src/lib/marca.ts, OL-435), empaquetada como en Imagen.componentes.test.mjs. */
+const { MARCA } = await import(`data:text/javascript;base64,${Buffer.from((await build({ entryPoints: [join(root, "src/lib/marca.ts")], bundle: true, platform: "node", format: "esm", write: false })).outputFiles[0].text).toString("base64")}`);
+const LOGO = `a[aria-label^='${MARCA}']`;
 let dir, server, browser, origin;
 
 const mocks = {
@@ -246,7 +249,7 @@ test("la barra: el logotipo queda en el centro exacto con sesión, sin ella (ni 
     for (const sesion of ["campana", "sin-sesion", "admin"]) {
       const p = await pagina(t, ancho, 844, `?sesion=${sesion}`);
       await ir(p, "/agenda");
-      const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
+      const logo = await caja(barra(p).locator(LOGO));
       const mas = await caja(barra(p).locator("a[aria-label='Publicar un evento']"));
       const lupa = await caja(barra(p).locator("a[aria-label='Buscar']"));
       const cuando = `${ancho} · ${sesion}`;
@@ -281,7 +284,7 @@ test("desde 792: la barra está en las fichas y las tareas, con el menú solo en
   await ir(p, "/eventos/concierto");
   const botones = await barra(p).locator("a, button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
   assert.ok(botones.includes("Más acciones") && !botones.some((b) => b?.startsWith("Atrás")), `${botones}`);
-  const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
+  const logo = await caja(barra(p).locator(LOGO));
   assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, "el logotipo, al centro de la ventana");
   assert.deepEqual([(await caja(barra(p).locator("a[aria-label='Buscar']"))).x, (await caja(barra(p).locator("a[aria-label='Novedades']"))).x], [lupa, campana], "la lupa y la campana no se mueven cuando llega el menú");
   await ir(p, "/nuevo");
@@ -295,7 +298,7 @@ test("desde 792: en una ficha el logotipo sigue al centro sin sesión y con la l
   for (const sesion of ["entrar", "admin"]) {
     const p = await pagina(t, 1280, 800, `?sesion=${sesion}`);
     await ir(p, "/eventos/concierto");
-    const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
+    const logo = await caja(barra(p).locator(LOGO));
     assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, `${sesion}: centro del logotipo en ${logo.x + logo.w / 2}`);
     assert.equal(await barra(p).locator("button[aria-label='Más acciones']").count(), 1, `${sesion}: el menú a la vista`);
     assert.equal(await barra(p).locator("a[aria-label^='Atrás']").count(), 0, `${sesion}: sin Atrás en la barra de la app`);
@@ -303,7 +306,7 @@ test("desde 792: en una ficha el logotipo sigue al centro sin sesión y con la l
 });
 
 test("una tarea lleva su título en el centro de la cabecera y no el logotipo: en el teléfono no hay ninguno; desde 792 el único es el de la barra de la app", async (t) => {
-  const logotipos = (p) => p.locator("a[aria-label^='Somos Nosotros']:visible");
+  const logotipos = (p) => p.locator(`${LOGO}:visible`);
   const titulo = (p) => p.getByRole("heading", { name: "Publicar un evento" });
   const centro = async (p) => {
     const c = await caja(titulo(p));
@@ -317,7 +320,7 @@ test("una tarea lleva su título en el centro de la cabecera y no el logotipo: e
   const escritorio = await pagina(t, 1280, 800);
   await ir(escritorio, "/nuevo");
   assert.equal(await logotipos(escritorio).count(), 1);
-  assert.equal(await barra(escritorio).locator("a[aria-label^='Somos Nosotros']:visible").count(), 1, "escritorio: el de la barra de la app");
+  assert.equal(await barra(escritorio).locator(`${LOGO}:visible`).count(), 1, "escritorio: el de la barra de la app");
   assert.ok(Math.abs((await centro(escritorio)) - (88 + 296 + 300)) <= 0.5, "escritorio: el título, al centro de la columna de 600");
   assert.equal(await escritorio.locator("a[aria-label^='Cerrar']:visible").count(), 1, "y la cabecera de la tarea conserva su ✕");
 });
@@ -427,7 +430,7 @@ test("ciudad entre secciones: León gana a la memoria de San Luis y el logotipo 
   });
   await ir(p, "/artistas");
   assert.deepEqual((await hrefs(p)).slice(0, 4), ["/?ciudad=leon", "/agenda?ciudad=leon", "/lugares?ciudad=leon", "/artistas?ciudad=leon"]);
-  assert.equal(await barra(p).getByRole("link", {name:"Somos Nosotros, ir al inicio"}).getAttribute("href"), "/?ciudad=leon");
+  assert.equal(await barra(p).getByRole("link", {name:`${MARCA}, ir al inicio`}).getAttribute("href"), "/?ciudad=leon");
 });
 
 test("la memoria de la misma ciudad conserva sus filtros, sin prestar filtros a otra ciudad", async t => {

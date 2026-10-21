@@ -11,8 +11,9 @@ import InterruptorPincel from "./InterruptorPincel";
 import { cargarAjustePincel, cargarEstadoGlobalPincel, cargarLugaresParaObra, cargarObras, TOPE_OBRAS_ABIERTAS } from "./consultas";
 import Reintentar from "../Reintentar";
 import renglon from "@/components/ui/Renglon.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Obras colectivas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Obras colectivas", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * Pincel (OL-088, bitácora 123): la gente pinta junta con su celular sobre una pared proyectada. Se activa desde la

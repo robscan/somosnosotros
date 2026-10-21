@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MARCA } from "./marca";
 import {
   accionDe,
   textoDejar,
@@ -248,7 +249,7 @@ describe("rol", () => {
   it("hacer administrador solo a quien confirmó su correo y solo desde una cuenta de origen", () => {
     expect(estadoRol(ficha(), YO, AHORA)).toEqual({ etiqueta: "Usuario", detalle: "Publica, dice Voy y sigue", accion: "hacer" });
     expect(estadoRol(ficha({ confirmado: false }), YO, AHORA).accion).toBeNull();
-    expect(estadoRol(ficha({ puedo_cambiar_rol: false }), YO, AHORA)).toEqual({ etiqueta: "Usuario", detalle: "Solo quien fundó Somos Nosotros cambia el rol", accion: null });
+    expect(estadoRol(ficha({ puedo_cambiar_rol: false }), YO, AHORA)).toEqual({ etiqueta: "Usuario", detalle: `Solo quien fundó ${MARCA} cambia el rol`, accion: null });
   });
   it("quitar, con sus guardas a la vista", () => {
     const nombrado = { rol: "admin" as const, creado_en: "2026-09-17T01:00:00Z", por: YO, por_nombre: "Oscar" };

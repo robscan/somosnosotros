@@ -8,8 +8,9 @@ import Reintentar from "../Reintentar";
 import { cargarCandidatos } from "./consultas";
 import VistaCandidatos from "./VistaCandidatos";
 import admin from "../admin.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Showcase · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Showcase", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * Administración › Showcase (OL-426; lo firmado en OL-425, bitácora 458): la lista de candidatos para el showcase, al nivel de Grafo cultural y

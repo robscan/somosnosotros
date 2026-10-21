@@ -9,8 +9,9 @@ escrita en Kotlin ni en Java: la sesión, los avisos push y las capacidades del 
 ## Qué hay
 
 - `twa-manifest.json` — **la fuente**: paquete `org.somosnosotros.app`, host `somosnosotros.org`, nombre «Somos
-  Nosotros», nombre bajo el icono `SMSNSTRS` (Bubblewrap limita a 12 caracteres; confirmado por el founder el 2026-10-06, la
-  tienda sigue mostrando «Somos Nosotros»), colores blancos (la web es de tema
+  Nosotrxs» (OL-435, 2026-10-21; la marca vive en `src/lib/marca.ts`), nombre bajo el icono `SMSNSTRS` (Bubblewrap limita a
+  12 caracteres; confirmado por el founder el 2026-10-06; la ficha de la tienda lleva el nombre que el founder ponga en Play
+  Console), colores blancos (la web es de tema
   claro), iconos de producción (`icono-512.png` e `icono-maskable-512.png`), avisos activados, `appVersionCode` 1,
   `appVersion` «1.0», respaldo en pestaña personalizada (`customtabs`) y la ruta de la llave de subida.
 - El resto (`app/`, `build.gradle`, `gradle/`, `gradlew`, `store_icon.png`, `manifest-checksum.txt`) lo genera

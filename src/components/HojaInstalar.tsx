@@ -6,6 +6,7 @@ import Hoja from "./ui/Hoja";
 import { pasosInstalar, type Glifo } from "@/lib/plataforma";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import styles from "./HojaInstalar.module.css";
+import { MARCA } from "@/lib/marca";
 
 const trazo = { fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
@@ -46,7 +47,7 @@ function conPuntos(texto: string): ReactNode {
 }
 
 /**
- * Hoja "Instala Somos Nosotros" para iPhone (decisión 2 de docs/rediseno/17): los pasos del Safari de la persona, uno
+ * Hoja "Instala Somos Nosotrxs" para iPhone (decisión 2 de docs/rediseno/17): los pasos del Safari de la persona, uno
  * por renglón con el icono que va a ver, y al pie lo que sigue (tocar Activar al abrirla). En iOS 26 son cinco toques;
  * fuera de Safari (Chrome del iPhone, otra app) se le pide abrirla en Safari. Solo emerge tras un toque.
  */
@@ -56,8 +57,8 @@ export default function HojaInstalar({ onCerrar }: { onCerrar: () => void }) {
   const fueraDeSafari = !!p && p.ios && !p.safari;
 
   return (
-    <Hoja etiqueta="Instala Somos Nosotros" onCerrar={onCerrar}>
-      <h3 className={styles.titulo}>Instala Somos Nosotros</h3>
+    <Hoja etiqueta={`Instala ${MARCA}`} onCerrar={onCerrar}>
+      <h3 className={styles.titulo}>Instala {MARCA}</h3>
       <p className={styles.sub}>{fueraDeSafari ? "Los avisos del iPhone llegan a la app instalada, y se instala desde Safari: ábrela ahí y sigue estos pasos." : "Los avisos del iPhone llegan a la app instalada."}</p>
       <ol className={styles.pasos}>
         {pasos.map((paso, i) => (

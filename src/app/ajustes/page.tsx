@@ -20,12 +20,13 @@ import InstalarApp from "./InstalarApp";
 import RenglonLecturas from "./RenglonLecturas";
 import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./ajustes.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Ajustes · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Ajustes"), robots: { index: false, follow: false } };
 
 /**
  * Ajustes: lo que se configura, fuera de la ficha (docs/rediseno/13, decisiones 5 y 6). Cuatro grupos en tarjetas
- * (Tu ficha · Avisos · Cuenta · Somos Nosotros) y Borrar mi cuenta suelto al final. Editar abre su propia pantalla (/ajustes/editar).
+ * (Tu ficha · Avisos · Cuenta · Somos Nosotrxs) y Borrar mi cuenta suelto al final. Editar abre su propia pantalla (/ajustes/editar).
  */
 export default async function Ajustes({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -85,7 +86,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
           </li>
         </ul>
 
-        <h2>Somos Nosotros</h2>
+        <h2>{MARCA}</h2>
         <ul className={renglon.tarjeta}>
           <InstalarApp />
           {perfil.rol === "admin" && (

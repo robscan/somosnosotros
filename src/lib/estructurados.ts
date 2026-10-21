@@ -1,3 +1,4 @@
+import { MARCA, MARCA_ANTERIOR } from "./marca";
 /**
  * JSON-LD (schema.org) que falta según `docs/rediseno/36-indexar-catalogo.md` (OL-143, bitácora 178): `Place` en la
  * ficha de lugar, `Person`/`PerformingGroup` en la de artista, `WebSite` en el inicio y `BreadcrumbList` en las tres
@@ -61,7 +62,7 @@ export function jsonLdArtista(a: DatosJsonLdArtista): Record<string, unknown> {
 
 /** `WebSite`, una sola vez en el inicio (`src/app/layout.tsx` la manda a todas las páginas: es del sitio, no de la ficha). */
 export function jsonLdSitio(): Record<string, unknown> {
-  return { "@context": "https://schema.org", "@type": "WebSite", name: "Somos Nosotros", url: ORIGEN };
+  return { "@context": "https://schema.org", "@type": "WebSite", name: MARCA, alternateName: MARCA_ANTERIOR, url: ORIGEN };
 }
 
 export type MigajaPan = { nombre: string; url: string };

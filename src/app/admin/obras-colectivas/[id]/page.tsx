@@ -16,11 +16,12 @@ import BorrarPared from "./BorrarPared";
 import BotonImprimir from "./BotonImprimir";
 import CampoCupo from "./CampoCupo";
 import { borrarObra } from "../acciones";
+import { tituloDePagina } from "@/lib/marca";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const obra = esUuid(id) ? await cargarObra(id) : null;
-  return { title: `${obra?.nombre ?? "Obra colectiva"} · Administración · Somos Nosotros`, robots: { index: false, follow: false } };
+  return { title: tituloDePagina(obra?.nombre ?? "Obra colectiva", "Administración"), robots: { index: false, follow: false } };
 }
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> };

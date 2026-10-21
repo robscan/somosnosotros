@@ -1,8 +1,9 @@
 import Atras from "@/components/ui/Atras";
 import type { Metadata } from "next";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "No está · Somos Nosotros" };
+export const metadata: Metadata = { title: tituloDePagina("No está") };
 
 /** Un enlace que ya no lleva a nada (evento que ya pasó, evento o lugar borrado, dirección mal escrita). Se dice y se vuelve a la agenda. */
 export default function NoEncontrado() {

@@ -5,11 +5,12 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarObraParaPintar, cargarPincelActivo } from "../../consultas";
 import Pared from "./Pared";
 import styles from "./pared.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const obra = esUuid(id) ? await cargarObraParaPintar(id) : null;
-  return { title: `${obra?.nombre ?? "Obra colectiva"} · Somos Nosotros`, robots: { index: false, follow: false } };
+  return { title: tituloDePagina(obra?.nombre ?? "Obra colectiva"), robots: { index: false, follow: false } };
 }
 
 /**

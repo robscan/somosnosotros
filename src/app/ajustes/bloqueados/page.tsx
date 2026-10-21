@@ -6,8 +6,9 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./bloqueados.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Personas bloqueadas · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Personas bloqueadas"), robots: { index: false, follow: false } };
 
 /** Ajustes → Personas bloqueadas (OL-203): a quién bloqueaste, con Desbloquear en cada fila. */
 export default async function PersonasBloqueadas() {

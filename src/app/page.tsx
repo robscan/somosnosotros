@@ -20,6 +20,7 @@ import { leerNovedadesRecientes } from "@/lib/novedadesArtista";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { tarjetaArtistaDeInicio } from "@/lib/tarjetaInicio";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { MARCA } from "@/lib/marca";
 
 type SearchParams = { ciudad?: string };
 
@@ -34,7 +35,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${resuelta.slug}`;
   return {
-    title: "Somos Nosotros",
+    title: MARCA,
     description: "Lo tuyo primero: tus planes, lo destacado de esta semana, lo nuevo, y lugares y artistas de tu ciudad.",
     alternates: { canonical },
   };

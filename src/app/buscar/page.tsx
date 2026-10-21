@@ -5,8 +5,9 @@ import { cargarCiudades } from "@/lib/ciudades";
 import { diaLocal } from "@/lib/fechas";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import BuscarPantalla from "./BuscarPantalla";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "Buscar · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: tituloDePagina("Buscar"), robots: { index: false, follow: false } };
 
 type SearchParams = { ciudad?: string; desde?: string; q?: string };
 const DESDE: readonly GrupoBuscador[] = ["eventos", "lugares", "artistas"];

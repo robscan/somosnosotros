@@ -1,0 +1,83 @@
+{
+  "compartido": [
+    {
+      "desde": "Inicio (banner)",
+      "title": "Somos Nosotrxs",
+      "text": "¿Te gusta Somos Nosotrxs? Comparte con tus amigxs.",
+      "url": "https://somosnosotros.org"
+    },
+    {
+      "desde": "Mi perfil (Invitar a tus amigxs)",
+      "title": "Somos Nosotrxs",
+      "text": "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar:",
+      "url": "https://somosnosotros.org"
+    }
+  ],
+  "tituloAyuda": "Ayuda · Somos Nosotrxs",
+  "paginas": [
+    {
+      "ruta": "/",
+      "titulo": "Somos Nosotrxs",
+      "ogTitulo": "Somos Nosotrxs",
+      "ogSitio": "Somos Nosotrxs",
+      "appleTitulo": "Somos Nosotrxs",
+      "aplicacion": "Somos Nosotrxs",
+      "jsonLd": {
+        "name": "Somos Nosotrxs",
+        "alternateName": "Somos Nosotros"
+      }
+    },
+    {
+      "ruta": "/agenda",
+      "titulo": "Agenda cultural · Somos Nosotrxs",
+      "ogTitulo": "Agenda cultural · Somos Nosotrxs",
+      "ogSitio": "Somos Nosotrxs",
+      "appleTitulo": "Somos Nosotrxs",
+      "aplicacion": "Somos Nosotrxs",
+      "jsonLd": {
+        "name": "Somos Nosotrxs",
+        "alternateName": "Somos Nosotros"
+      }
+    },
+    {
+      "ruta": "/eventos/concierto-de-la-orquesta-sinfonica-de-san-luis-potosi",
+      "titulo": "Concierto de la Orquesta Sinfónica de San Luis Potosí · Somos Nosotrxs",
+      "ogTitulo": "Concierto de la Orquesta Sinfónica de San Luis Potosí",
+      "ogSitio": "Somos Nosotrxs",
+      "appleTitulo": "Somos Nosotrxs",
+      "aplicacion": "Somos Nosotrxs",
+      "jsonLd": {
+        "name": "Somos Nosotrxs",
+        "alternateName": "Somos Nosotros"
+      }
+    },
+    {
+      "ruta": "/ayuda",
+      "titulo": "Ayuda · Somos Nosotrxs",
+      "ogTitulo": "Somos Nosotrxs",
+      "ogSitio": "Somos Nosotrxs",
+      "appleTitulo": "Somos Nosotrxs",
+      "aplicacion": "Somos Nosotrxs",
+      "jsonLd": {
+        "name": "Somos Nosotrxs",
+        "alternateName": "Somos Nosotros"
+      }
+    },
+    {
+      "ruta": "/una-ruta-que-no-existe",
+      "titulo": "No está · Somos Nosotrxs",
+      "ogTitulo": "Somos Nosotrxs",
+      "ogSitio": "Somos Nosotrxs",
+      "appleTitulo": "Somos Nosotrxs",
+      "aplicacion": "Somos Nosotrxs",
+      "jsonLd": {
+        "name": "Somos Nosotrxs",
+        "alternateName": "Somos Nosotros"
+      }
+    }
+  ],
+  "manifiesto": {
+    "name": "Somos Nosotrxs",
+    "short_name": "Somos Nosotrxs"
+  }
+}

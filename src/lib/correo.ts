@@ -1,10 +1,11 @@
 import "server-only";
+import { remitenteCorreo } from "./marca";
 
 export type ResultadoEnvio = { estado: "enviada" | "reintentar" | "fallida" | "descartada"; codigo: string };
 export function correoActivo(): boolean { return !!process.env.RESEND_API_KEY; }
 
 export function cuerpoCorreo(p: { para: string; asunto: string; texto: string; html: string; bajaUrl: string }): string {
-  return JSON.stringify({ from: process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>",
+  return JSON.stringify({ from: remitenteCorreo(process.env.CORREO_REMITENTE),
     to: [p.para], subject: p.asunto, text: p.texto, html: p.html,
     headers: { "List-Unsubscribe": `<${p.bajaUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } });
 }

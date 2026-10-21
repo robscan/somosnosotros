@@ -15,8 +15,9 @@ import type { SesionGuardada } from "@/lib/sesionesEvento";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
 import { actualizarEvento } from "../../acciones";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Editar evento · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Editar evento"), robots: { index: false, follow: false } };
 
 type EventoGuardado = Evento & { actualizado_en: string; sesiones?: SesionGuardada[] | null };
 

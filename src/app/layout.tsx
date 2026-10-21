@@ -20,6 +20,7 @@ import { GUION_APP_NATIVA } from "@/lib/appNativa";
 import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
 import { jsonLdSitio } from "@/lib/estructurados";
 import "./globals.css";
+import { MARCA } from "@/lib/marca";
 
 /**
  * La única letra de la app (docs/diseno/LINEA_GRAFICA.md): Bricolage Grotesque variable, servida desde
@@ -34,17 +35,17 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Somos Nosotros",
+  title: MARCA,
   description:
     "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.",
-  applicationName: "Somos Nosotros",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Somos Nosotros" },
+  applicationName: MARCA,
+  appleWebApp: { capable: true, statusBarStyle: "default", title: MARCA },
   // El favicon (símbolo SN sobre el degradado del icono) lo sirve src/app/favicon.ico; el icono de "Añadir a inicio", apple-touch-icon y el manifiesto (docs/diseno/logotipo/iconos-sn.mjs).
   icons: { apple: "/apple-touch-icon.png" },
   // Vista previa al pegar el enlace del sitio (WhatsApp, Messages): el logotipo sobre hueso, docs/diseno/logotipo/portada.html.
   metadataBase: new URL("https://somosnosotros.org"),
-  openGraph: { title: "Somos Nosotros", description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.", url: "https://somosnosotros.org", type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
-  twitter: { card: "summary_large_image", title: "Somos Nosotros", description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.", images: ["/portada.png"] },
+  openGraph: { title: MARCA, description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.", url: "https://somosnosotros.org", type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: MARCA },
+  twitter: { card: "summary_large_image", title: MARCA, description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. No necesitas cuenta para mirar.", images: ["/portada.png"] },
   // Android (Chrome y Edge, 2026; OL-373): con `text-scale` la letra de la raíz (`100%` en globals.css) es la que la persona
   // eligió en su teléfono, y lo que va en rem crece con ella hasta `--letra-tope`. Safari la ignora: en iPhone y iPad la raíz es la letra
   // del sistema (globals.css). Referencia: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/text-scale

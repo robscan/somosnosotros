@@ -24,7 +24,7 @@ def twaManifest = [
     applicationId: 'org.somosnosotros.app',
     hostName: 'somosnosotros.org', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
-    name: 'Somos Nosotros', // The application name.
+    name: 'Somos Nosotrxs', // The application name.
     launcherName: 'SMSNSTRS', // The name shown on the Android Launcher.
     themeColor: '#FFFFFF', // The color used for the status bar.
     themeColorDark: '#FFFFFF', // The color used for the dark status bar.

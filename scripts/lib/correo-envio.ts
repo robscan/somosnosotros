@@ -5,6 +5,7 @@
  * exactamente el mismo envío; el comportamiento no cambia.
  */
 import { readFileSync } from "node:fs";
+import { remitenteCorreo } from "../../src/lib/marca";
 
 export const RUTA_ENV = "/Users/apple-1/Proyectos/somosnosotros/somosnosotros/.env";
 
@@ -44,7 +45,7 @@ export type ResultadoEnvio = { ok: boolean; id: string | null; error?: string };
 export async function mandarCorreo(p: { para: string; asunto: string; texto: string; html: string }): Promise<ResultadoEnvio> {
   const llave = process.env.RESEND_API_KEY;
   if (!llave) return { ok: false, id: null, error: "Sin RESEND_API_KEY" };
-  const remitente = process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>";
+  const remitente = remitenteCorreo(process.env.CORREO_REMITENTE);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
