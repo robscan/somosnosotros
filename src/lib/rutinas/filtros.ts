@@ -50,6 +50,31 @@ export function municipioDeLaCiudad(municipio: string | null | undefined, nombre
   });
 }
 
+/** Lo que sigue a «Ciudad» sin ser otra ciudad («Ciudad Universitaria», «Ciudad Deportiva»): no saca a nadie de la ciudad. */
+const NO_ES_OTRA_CIUDAD = /^(universitaria|deportiva|judicial|administrativa|gobierno|capital|de los ninos|del conocimiento|creativa)\b/;
+
+/**
+ * ¿El texto de la agenda dice que el sitio está en otro municipio (OL-433)? Las agendas del estado lo escriben junto a la sede: «Museo
+ * Tamuantzán, Cd. Valles», «Casa de Cultura de Ciudad Fernández», «Plaza principal, municipio de Rioverde». Se mira «Cd.», «Ciudad», «Mpio.» y
+ * «municipio de» seguidos de un nombre que no es el de la ciudad ni uno de sus alias. Sin nada de eso, no decide (decide el mapa).
+ */
+export function otroMunicipioEnTexto(textos: readonly (string | null | undefined)[], nombresCiudad: readonly string[]): string | null {
+  const propias = nombresCiudad.map((n) => normalizarNombre(n)).filter(Boolean);
+  const esDeLaCiudad = (lugar: string) => {
+    const sin = lugar.replace(/^(de |del |de la |de los )/, "");
+    return propias.some((c) => c === sin || c.startsWith(`${sin} `) || sin.startsWith(`${c} `) || c.split(" ").includes(sin.split(" ")[0]));
+  };
+  for (const t of textos) {
+    const n = ` ${normalizarNombre(t ?? "")} `;
+    for (const m of n.matchAll(/ (cd|ciudad|mpio|municipio de|municipio) ((?:del |de la |de los |de )?[a-z]+(?: [a-z]+)?)/g)) {
+      const lugar = m[2].trim();
+      if (m[1] === "ciudad" && NO_ES_OTRA_CIUDAD.test(lugar)) continue;
+      if (!esDeLaCiudad(lugar)) return lugar;
+    }
+  }
+  return null;
+}
+
 // ---------- nombres ----------
 const VACIAS = new Set(["de", "del", "la", "las", "el", "los", "y", "e", "en", "a", "al"]);
 /** Palabras que dicen qué clase de sitio es, no cuál: solas no identifican un lugar (las mismas del importador de instituciones). */

@@ -175,14 +175,23 @@ export function formularioDeEvento(e: EventoPropuesto, lugarId: string | null): 
   };
 }
 
-/** El lugar registrado con ese nombre: el igual al normalizar o, si no, el único cuyo nombre coincide. Lo ambiguo no se adivina. */
+/** La sigla que un lugar lleva entre paréntesis al final («Centro de las Artes de San Luis Potosí Centenario (CEART)» → «ceart»). */
+const siglaDe = (nombre: string): string => normalizarNombre(nombre.match(/\(([^()]{2,12})\)\s*$/)?.[1] ?? "");
+
+/**
+ * El lugar registrado con ese nombre: el igual al normalizar o, si no, el único cuyo nombre coincide; o el único cuya sigla entre paréntesis es
+ * ese nombre («CEART», OL-433). Lo ambiguo no se adivina.
+ */
 export function resolverLugar<T extends { id: string; nombre: string }>(nombre: string | null | undefined, lugares: T[]): T | null {
   if (!nombre) return null;
   const n = normalizarNombre(nombre);
   const igual = lugares.find((l) => normalizarNombre(l.nombre) === n);
   if (igual) return igual;
   const parecidos = lugares.filter((l) => nombresCoinciden(nombre, l.nombre));
-  return parecidos.length === 1 ? (parecidos[0] ?? null) : null;
+  if (parecidos.length === 1) return parecidos[0] ?? null;
+  if (parecidos.length > 1) return null;
+  const porSigla = n ? lugares.filter((l) => siglaDe(l.nombre) === n) : [];
+  return porSigla.length === 1 ? (porSigla[0] ?? null) : null;
 }
 
 
@@ -213,6 +222,69 @@ export function titulosDelMismoEvento(a: string, b: string): boolean {
   return [...palabrasConContenido(a)].filter((w) => suyas.has(w)).length >= 2;
 }
 
+/**
+ * Las palabras que dicen qué clase de actividad es, no cuál (OL-433): «Inauguración», «Concierto», «Taller», «Noche»… Dos títulos que solo
+ * comparten estas no hablan del mismo evento («Inauguración de la exposición Raíces» y «… Ecos»); una de estas en un solo lado no los separa
+ * («Xil» y «Xil en concierto»). En singular y sin acentos, como las deja `palabrasDeTitulo`.
+ */
+export const GENERICAS_EVENTO: ReadonlySet<string> = new Set([
+  "inauguracion", "exposicion", "expo", "muestra", "concierto", "recital", "presentacion", "libro", "conferencia", "charla", "platica",
+  "taller", "curso", "funcion", "obra", "teatro", "danza", "musica", "musical", "cine", "proyeccion", "pelicula", "recorrido", "visita",
+  "guiada", "guiado", "lectura", "sesion", "noche", "tarde", "dia", "festival", "fest", "encuentro", "ciclo", "homenaje", "gala", "temporada",
+  "edicion", "programa", "actividad", "evento", "jornada", "foro", "mesa", "panel", "coloquio", "seminario", "clase", "conversatorio",
+  "exhibicion", "feria", "nacional", "internacional", "estatal", "municipal", "especial", "infantil", "familiar", "cultural", "arte",
+  "artistica", "artistico", "invitado", "invitada", "entrada", "libre", "gratuita", "gratuito", "apertura", "clausura", "cierre", "inicio",
+]);
+
+/**
+ * Singular a la española, sin diccionario, igual en los dos lados (OL-433): «noches» → «noche», «recorridos» → «recorrido», «canciones» →
+ * «cancion», «festivales» → «festival». Palabras de tres letras o menos y números, tal cual.
+ */
+export function singular(w: string): string {
+  if (w.length <= 3 || /\d/.test(w) || !w.endsWith("s") || w.endsWith("ss")) return w;
+  if (w.endsWith("es") && /[lrndzj]$/.test(w.slice(0, -2)) && w.length > 4) return w.slice(0, -2);
+  return w.slice(0, -1);
+}
+
+/** Las palabras con contenido de un título (las de `palabrasConContenido`) en singular y sin las de `quitar` (las del nombre del sitio). */
+export function palabrasDeTitulo(titulo: string, quitar: ReadonlySet<string> = new Set()): Set<string> {
+  return new Set([...palabrasConContenido(titulo)].map(singular).filter((w) => w && !VACIAS_TITULO.has(w) && !quitar.has(w)));
+}
+
+/** Las palabras del nombre de un sitio, como las cuenta `palabrasDeTitulo` («Noches de Recorridos CEART» en el CEART: «ceart» no distingue). */
+export const palabrasDelSitio = (sitio: string | null | undefined): Set<string> => palabrasDeTitulo(sitio ?? "");
+
+const distintiva = (w: string) => !GENERICAS_EVENTO.has(w);
+
+/**
+ * ¿Dos títulos del mismo día, la misma hora o el mismo sitio son la misma función? La regla de la rutina de agendas (OL-433), más fina que
+ * `titulosDelMismoEvento` (la de `eventos_parecidos`, que el importador sigue usando):
+ *   · el mismo título normalizado, sí;
+ *   · se cuentan las palabras con contenido en singular, sin las del nombre del sitio («Noche de recorridos» = «Noches de Recorridos CEART» en
+ *     el CEART);
+ *   · si cada uno tiene una palabra propia que el otro no dice, son distintos («Inauguración: Raíces» y «Inauguración: Ecos»; «Concierto de la
+ *     Banda de Música del Estado» y «Concierto de la Orquesta Sinfónica del Estado»);
+ *   · si no, son el mismo cuando comparten dos palabras o una que no es genérica («Hermanos Pérez Meza Big Band» ⊂ «Los Hermanos Pérez Meza Big
+ *     Band: Esto somos»; «Xil» y «Xil en concierto»), y no cuando solo comparten una genérica («Concierto» y «Concierto de jazz»).
+ */
+export function mismoEventoDeAgenda(a: string, b: string, sitio?: string | null): boolean {
+  const na = normalizarNombre(a);
+  const nb = normalizarNombre(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const quitar = palabrasDelSitio(sitio);
+  const pa = palabrasDeTitulo(a, quitar);
+  const pb = palabrasDeTitulo(b, quitar);
+  // Si quitar el sitio deja vacío un título («CEART»), se compara sin quitarlo.
+  const [A, B] = pa.size && pb.size ? [pa, pb] : [palabrasDeTitulo(a), palabrasDeTitulo(b)];
+  if (!A.size || !B.size) return false;
+  const soloA = [...A].filter((w) => !B.has(w));
+  const soloB = [...B].filter((w) => !A.has(w));
+  if (soloA.some(distintiva) && soloB.some(distintiva)) return false;
+  const comunes = [...A].filter((w) => B.has(w));
+  return comunes.length >= 2 || comunes.some(distintiva);
+}
+
 /** Un evento ya guardado, con lo justo para compararlo (la lectura del importador). */
 export type EventoGuardado = {
   id: string;
@@ -224,18 +296,24 @@ export type EventoGuardado = {
   clase: string | null;
   borrador: boolean | null;
   visible: boolean | null;
+  /** El fin (OL-433: un festival, una exposición o un evento de varios días ocupan un periodo). Opcional: el importador no lo lee. */
+  fin?: string | null;
+  /** El festival del que es un acto (OL-433). */
+  evento_padre_id?: string | null;
 };
 
 /**
  * El evento ya guardado que parece el mismo que el que se va a cargar: el mismo día local, el mismo sitio (el mismo lugar del directorio o el
  * mismo nombre de sitio, venga del lugar o escrito a mano) y un título del mismo evento. Como `eventos_parecidos`, solo lo puntual y los talleres
  * y nunca un borrador; a diferencia de ella, también lo pasado y lo oculto (una carga histórica no debe volver a meter lo que la administración
- * ocultó). El más cercano en hora primero.
+ * ocultó). El más cercano en hora primero. `mismo` decide si dos títulos son el mismo evento: por omisión la regla de `eventos_parecidos`
+ * (el importador); la rutina de agendas pasa la suya, más fina (`mismoEventoDeAgenda`, OL-433), con el nombre del sitio.
  */
 export function parecidoGuardado(
   nuevo: { titulo: string; inicio: string; zona: string; lugar_id: string | null; sitio_texto: string | null },
   guardados: EventoGuardado[],
   lugares: { id: string; nombre: string }[],
+  mismo: (a: string, b: string) => boolean = titulosDelMismoEvento,
 ): EventoGuardado | null {
   const nombreLugar = new Map(lugares.map((l) => [l.id, l.nombre]));
   const sitioDe = (lugarId: string | null, sitio: string | null) => normalizarNombre((lugarId ? nombreLugar.get(lugarId) : null) ?? sitio ?? "");
@@ -249,7 +327,7 @@ export function parecidoGuardado(
       .filter((g) => !g.borrador)
       .filter((g) => diaLocal(new Date(g.inicio), zona) === dia)
       .filter((g) => (nuevo.lugar_id && g.lugar_id === nuevo.lugar_id) || (sitio !== "" && sitioDe(g.lugar_id, g.sitio_texto) === sitio))
-      .filter((g) => titulosDelMismoEvento(nuevo.titulo, g.titulo))
+      .filter((g) => mismo(nuevo.titulo, g.titulo))
       .sort((a, b) => Math.abs(new Date(a.inicio).getTime() - t) - Math.abs(new Date(b.inicio).getTime() - t) || a.id.localeCompare(b.id))[0] ?? null
   );
 }

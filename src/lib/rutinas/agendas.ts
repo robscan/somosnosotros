@@ -2,16 +2,21 @@ import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { parecidoGuardado, precioDeAgenda, resolverLugar, type EventoGuardado } from "../cargaEventos";
+import { randomUUID } from "node:crypto";
+import { mismoEventoDeAgenda, parecidoGuardado, precioDeAgenda, resolverLugar, type EventoGuardado } from "../cargaEventos";
 import { nombraAlcaldia } from "../ciudadParametros";
+import { finEnPrograma, ultimoDiaDelPeriodo } from "../claseEvento";
+import { claseSugerida, type Clase } from "../eventos";
 import { diaLocal, localAIso } from "../fechas";
 import { LIMITES_EVENTO } from "../limites";
 import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
 import { llamarConEntrega } from "./claude";
-import { municipioDeLaCiudad } from "./filtros";
+import { municipioDeLaCiudad, otroMunicipioEnTexto } from "./filtros";
+import { cadaCuantos, claseDeActo, claseDeLaAgenda, claveDeFestival, comoSeAgrupa, dentroDelFestival, leerFormaEvento, MARGEN_FESTIVAL_DIAS, mismoPrograma, nombraAlFestival, nombreDeExposicion, programaDeAgenda } from "./formaEvento";
 import { agendasVigentes, diasEntre, mesSiguiente, pdfsDelIndice } from "./indiceAgendas";
-import { dominioDe, FalloCorrida, nombresDe, radioDe, TIEMPO_PARA_LLAMADA_MS, zonasDe, type Contexto, type SalidaPaso } from "./lugares";
+import { dominioDe, FalloCorrida, LOTE_MAPBOX, nombresDe, radioDe, TIEMPO_PARA_LLAMADA_MS, zonasDe, type Contexto, type SalidaPaso } from "./lugares";
+import { ubicarSitioEnArea } from "./mapbox";
 import { lugaresDeCiudad, publicarAceptadasSinFicha, type CiudadDeEvento, type LugarDeCiudad } from "./publicarEvento";
 
 /**
@@ -32,6 +37,20 @@ import { lugaresDeCiudad, publicarAceptadasSinFicha, type CiudadDeEvento, type L
  * adelante. Fuera: lo que ya está en `eventos` (el mismo título a la misma hora, o la regla de `eventos_parecidos`: el mismo día, en el mismo
  * sitio, con un título parecido), lo ya propuesto en la ciudad (cualquier estado), lo rechazado antes (mismo título y día) y lo de fuera de
  * la ciudad. En `resumen` quedan los contadores (nunca nombres) y `por_fuente` (lo que propuso y gastó cada fuente).
+ *
+ * Festivales, talleres, series y exposiciones (OL-433; founder, 21 de octubre: «¿Tiene criterios para identificar festivales, galerías,
+ * talleres? Incluso si se trata de eventos faltantes de un festival ya registrado»). Antes de proponer se leen los festivales registrados de
+ * la ciudad (con sus fechas y sus actos) y cada fila se mira contra ellos y contra lo propuesto en la corrida (`formaEvento.ts`):
+ *   · un acto de un festival registrado (en sus fechas y nombrado en el título, la descripción, el programa o la agenda) va con `marco`; si ya
+ *     está bajo el festival, `ya_existe`. Un festival nuevo (varias filas bajo el mismo programa, o un programa que se lee como festival) se
+ *     propone primero como festival y sus actos con `marco_propuesto`.
+ *   · el mismo título en el mismo sitio otro día: un taller o días seguidos son UNA propuesta con `sesiones`; con otra cadencia (cada semana),
+ *     una propuesta por fecha marcada con `serie` (la app no tiene clase para series).
+ *   · la inauguración de una exposición con su periodo lleva `termina` y la clase exposición; toda propuesta lleva su `clase`.
+ *   · dos filas del mismo día, hora y sitio con títulos de la misma función son una (la más completa, `unido`); lo ya guardado se compara con
+ *     la regla de la rutina (`mismoEventoDeAgenda`: plural, palabras del sitio), no con la del importador.
+ *   · un sitio fuera del directorio que el mapa no ubica dentro de la ciudad, o que la agenda pone en otro municipio («Cd. Valles»), queda
+ *     fuera (`fuera_de_la_ciudad`).
  */
 
 export type ClaveAgenda = "agenda-cultura" | "guias" | "universidades-museos" | "web";
@@ -65,10 +84,15 @@ export type TareaAgenda =
   | { paso: "indice"; fuente: FuenteAgenda }
   | { paso: "leer"; fuente: FuenteAgenda; desde: string; hasta: string };
 
-export type CursorAgendas = { tareas: TareaAgenda[]; total: number; claves: ClaveAgenda[]; fallidas: string[] };
+/** Un sitio fuera del directorio ya buscado en el mapa en esta corrida: su punto dentro de la ciudad, o null si no está en ella. */
+type SitioUbicado = { lat: number; lng: number; direccion: string } | null;
+export type CursorAgendas = { tareas: TareaAgenda[]; total: number; claves: ClaveAgenda[]; fallidas: string[]; sitios?: Record<string, SitioUbicado> };
 
-export type MotivoEvento = "ya_existe" | "ya_propuesto" | "rechazado_antes" | "fuera_de_la_ciudad" | "pasado" | "sin_hora" | "de_mas";
-export const MOTIVOS_EVENTO: readonly MotivoEvento[] = ["ya_existe", "ya_propuesto", "rechazado_antes", "fuera_de_la_ciudad", "pasado", "sin_hora", "de_mas"];
+/** `unido`: la misma función que otra fila de la corrida con otro título (mismo día, hora y sitio); se quedó una, la más completa (OL-433). */
+export type MotivoEvento = "ya_existe" | "ya_propuesto" | "rechazado_antes" | "fuera_de_la_ciudad" | "pasado" | "sin_hora" | "unido" | "de_mas";
+export const MOTIVOS_EVENTO: readonly MotivoEvento[] = ["ya_existe", "ya_propuesto", "rechazado_antes", "fuera_de_la_ciudad", "pasado", "sin_hora", "unido", "de_mas"];
+/** Cuántos sitios guarda la corrida ya buscados en el mapa (para no volver a buscarlos en cada trozo de la agenda). */
+const SITIOS_EN_CURSOR = 300;
 
 /** Un PDF se lee por trozos de tantos días (una respuesta corta cabe en el paso); si un trozo se corta por tiempo, se parte en dos. */
 export const DIAS_POR_TROZO = 7;
@@ -102,7 +126,7 @@ export const HERRAMIENTA_AGENDA: Anthropic.Tool = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["titulo", "fecha", "hora", "hora_fin", "lugar", "direccion", "municipio", "precio", "descripcion"],
+          required: ["titulo", "fecha", "hora", "hora_fin", "lugar", "direccion", "municipio", "precio", "descripcion", "programa", "termina"],
           properties: {
             titulo: { type: "string", description: "El título como lo entendería el público, sin mayúsculas sostenidas" },
             fecha: { type: "string", description: "AAAA-MM-DD, en hora de la ciudad" },
@@ -113,6 +137,8 @@ export const HERRAMIENTA_AGENDA: Anthropic.Tool = {
             municipio: nulo("El municipio (o la alcaldía) donde es, si se sabe"),
             precio: nulo("«Gratis» o el costo tal como aparece («$150»); null si no lo dice"),
             descripcion: { type: "string", description: "Una o dos frases con redacción propia, nunca copiadas, sin adjetivos publicitarios" },
+            programa: nulo("El festival, ciclo o programa especial con nombre propio del que es parte («Xantolo 2026», «Fotovisión 31»); null si no"),
+            termina: nulo("Si es la inauguración de una exposición y la agenda dice hasta cuándo se visita: ese día, AAAA-MM-DD; null si no"),
           },
         },
       },
@@ -145,6 +171,9 @@ const EventoEntregado = z.object({
   municipio: z.string().nullable(),
   precio: z.string().nullable(),
   descripcion: z.string(),
+  // OL-433: opcionales al leer (una respuesta de antes, o una prueba, no los trae).
+  programa: z.string().nullish(),
+  termina: z.string().nullish(),
 });
 const AgendaEntregada = z.object({ nombre: z.string(), url: z.string(), tipo: z.enum(["pdf", "html"]), mes: z.string().nullable() });
 const Entrega = z.object({ eventos: z.array(EventoEntregado).max(200), agendas: z.array(AgendaEntregada).max(20) });
@@ -154,9 +183,11 @@ export type EventoEntregado = z.infer<typeof EventoEntregado>;
 export const SISTEMA_AGENDAS = `Lees agendas culturales de una ciudad de México (PDF de la Secretaría de Cultura, carteleras, guías, páginas de universidades y museos) y sacas sus eventos para una agenda pública. Lo que entregues no se publica solo: la administración lo revisa uno por uno.
 
 Reglas:
-- Un evento necesita día y hora exactos; sin hora, no entra. Una fila por función o sesión (un taller con cuatro sesiones con fecha son cuatro filas).
-- Solo los días que se te piden. Solo eventos en la ciudad que se te dice (sus municipios o alcaldías); nada de otros municipios.
-- Una exposición entra como «Inauguración: …» en su fecha de inauguración; si solo dice el periodo, no entra.
+- Un evento necesita día y hora exactos; sin hora, no entra. Una fila por función o sesión (un taller con cuatro sesiones con fecha son cuatro filas, con el mismo título).
+- Solo los días que se te piden. Solo eventos en la ciudad que se te dice (sus municipios o alcaldías); nada de otros municipios. Si la agenda pone la sede en otra ciudad o municipio («Museo Tamuantzán, Cd. Valles»), no entra.
+- municipio: el municipio o la alcaldía donde es, si la agenda lo dice o lo pone junto a la sede.
+- Una exposición entra como «Inauguración: …» en su fecha de inauguración; si solo dice el periodo, no entra. termina: si la agenda dice hasta cuándo se puede visitar, ese día; si no, null.
+- programa: si el evento es parte de un festival, una feria, un ciclo o un programa especial con nombre propio («Xantolo 2026», «Fotovisión 31», «Otoño Sonoro») —porque la agenda lo pone bajo ese encabezado, porque la agenda entera es su programa o porque el título o la descripción lo nombran—, ese nombre tal cual; si no, null. Nunca una categoría («Exposiciones», «Música», «Talleres»), un mes, el nombre del lugar ni el de la agenda.
 - lugar: si es uno de los lugares registrados que se te dan, su nombre EXACTO de la lista (fíjate en variantes y abreviaturas); si no, el sitio tal como lo escribe la agenda.
 - descripcion: una o dos frases con redacción propia, qué es y quién lo presenta. Nunca copies la agenda ni uses adjetivos publicitarios.
 - precio: «Gratis» si es gratis o de entrada libre; si no, el costo tal como aparece; null si no lo dice.
@@ -189,7 +220,13 @@ function leerFuente(v: unknown): FuenteAgenda | null {
 export function leerCursorAgendas(v: unknown): CursorAgendas | null {
   const c = objeto(v);
   if (!Array.isArray(c.tareas) || !Array.isArray(c.claves)) return null;
-  return { tareas: c.tareas as TareaAgenda[], total: Math.max(1, numero(c.total)), claves: lista(c.claves).filter(esClaveAgenda), fallidas: lista<string>(c.fallidas).filter((x) => typeof x === "string") };
+  const sitios: Record<string, SitioUbicado> = {};
+  for (const [k, s] of Object.entries(objeto(c.sitios))) {
+    const o = objeto(s);
+    if (s === null) sitios[k] = null;
+    else if (typeof o.lat === "number" && typeof o.lng === "number") sitios[k] = { lat: o.lat, lng: o.lng, direccion: typeof o.direccion === "string" ? o.direccion : "" };
+  }
+  return { tareas: c.tareas as TareaAgenda[], total: Math.max(1, numero(c.total)), claves: lista(c.claves).filter(esClaveAgenda), fallidas: lista<string>(c.fallidas).filter((x) => typeof x === "string"), sitios };
 }
 
 /** Las agendas guardadas de la ciudad, o null si todavía no tiene (la primera corrida). */
@@ -259,6 +296,13 @@ type Contadores = {
   agendas_leidas: number;
   publicados: number;
   sin_publicar: number;
+  /** OL-433: lo que se reconoció al proponer (festivales nuevos, actos de un festival, sesiones sumadas a un taller, fechas de una serie) y los
+   *  actos aceptados que siguen esperando a su festival. */
+  festivales: number;
+  actos: number;
+  sesiones: number;
+  series: number;
+  en_espera: number;
 };
 
 function leerContadores(r: Record<string, unknown>): Contadores {
@@ -276,6 +320,11 @@ function leerContadores(r: Record<string, unknown>): Contadores {
     agendas_leidas: numero(r.agendas_leidas),
     publicados: numero(r.publicados),
     sin_publicar: numero(r.sin_publicar),
+    festivales: numero(r.festivales),
+    actos: numero(r.actos),
+    sesiones: numero(r.sesiones),
+    series: numero(r.series),
+    en_espera: numero(r.en_espera),
   };
 }
 
@@ -340,21 +389,138 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     const publicadas = await publicarAceptadasSinFicha({ db: ctx.db, mapbox: ctx.mapbox, ahora }, ciudad, lugares, corridas);
     cont.publicados += publicadas.publicados;
     cont.sin_publicar += publicadas.sin_publicar;
+    cont.en_espera = publicadas.en_espera;
     if (guardadas === null) await actualizarGuardadas(() => [...(SEMILLAS[ctx.ciudad.slug] ?? [])]);
     const tareas = planDeAgendas(claves, guardadas ?? [], guias, hoy);
     cursor = { tareas, total: Math.max(1, tareas.length), claves, fallidas: [] };
     return { resumen: resumenDe(cont, cursor, tope, avisos, false), terminada: !tareas.length };
   }
 
-  // Lo que la base sabe: lo propuesto antes en la ciudad (y lo rechazado), para no repetirlo.
-  const propuestas = await cargarPropuestasDeEventos(ctx.db, corridas, zona);
+  // Lo que la base sabe: lo propuesto antes en la ciudad (con su estado y sus datos), para no repetirlo y para agrupar lo de esta corrida.
+  const conocido = await cargarPropuestasDeEventos(ctx.db, corridas, zona);
+  const propuestas = conocido.mapa;
+  const conocidas = conocido.filas;
+  const area = ctx.ciudad.lat != null && ctx.ciudad.lng != null ? { centro: { lat: ctx.ciudad.lat, lng: ctx.ciudad.lng }, radioKm: radioDe(ctx.ciudad), nombres } : null;
+
+  /** Una fila de la agenda que pasó los filtros de siempre, con lo que hace falta para decidir cómo se propone (OL-433). */
+  type Fila = {
+    titulo: string;
+    inicio: string;
+    fin: string | null;
+    dia: string;
+    donde: string;
+    lugar: LugarDeCiudad | null;
+    direccion: string | null;
+    municipio: string | null;
+    precio: string | null;
+    descripcion: string;
+    programa: string | null;
+    termina: string | null;
+    clase: Clase;
+    punto?: SitioUbicado;
+    fuera?: boolean;
+  };
+  const sitioDe = (f: Pick<Fila, "lugar" | "donde">) => f.lugar?.nombre ?? f.donde;
+  /** ¿La propuesta es en el mismo sitio que la fila? El mismo lugar del directorio, o el mismo nombre de sitio. */
+  const mismoSitio = (lugarTexto: unknown, f: Pick<Fila, "lugar" | "donde">) => {
+    const t = typeof lugarTexto === "string" ? lugarTexto : "";
+    if (!t) return false;
+    const otro = resolverLugar(t, [...lugares]);
+    if (f.lugar && otro) return f.lugar.id === otro.id;
+    return normalizarNombre(t) === normalizarNombre(sitioDe(f));
+  };
+  const comoIso = (v: unknown): string | null => (typeof v === "string" && v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null);
+  /** Los inicios de una propuesta: el suyo y el de cada sesión. */
+  const iniciosDe = (d: Record<string, unknown>): string[] => [...new Set([comoIso(d.inicio), ...leerFormaEvento(d).sesiones.map((s) => s.inicio)].filter((x): x is string => !!x))];
+  const diasDeDatos = (d: Record<string, unknown>) => iniciosDe(d).map((i) => diaLocal(new Date(i), zona));
+  const esMarcoPropuesto = (d: Record<string, unknown>) => d.clase === "festival" && numero(d.actos) > 0;
+  /** El título para agrupar sesiones: sin «sesión 2», «día 3», «1 de 4». */
+  const tituloDeGrupo = (t: unknown) =>
+    normalizarNombre(typeof t === "string" ? t : "")
+      .replace(/\b(sesion|dia|parte|clase|modulo|semana|funcion)\s+\d+\b/g, " ")
+      .replace(/\b\d+\s+de\s+\d+\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const sinAnio = (t: string) => normalizarNombre(t).replace(/\b(19|20)\d{2}\b/g, " ").replace(/\s+/g, " ").trim();
+
+  /**
+   * ¿Ya está en `eventos`? El mismo título a la misma hora; o el mismo día y el mismo sitio con un título de la misma función (la regla de la
+   * rutina, OL-433); o un evento de varios días (un taller, días seguidos) en ese sitio que cubre ese día.
+   */
+  function yaGuardado(f: Fila, guardados: EventoGuardado[], exactos: Set<string>): boolean {
+    if (exactos.has(`${normalizarNombre(f.titulo)}|${f.inicio}`)) return true;
+    const sitio = sitioDe(f);
+    const mismo = (a: string, b: string) => mismoEventoDeAgenda(a, b, sitio);
+    const nuevo = { titulo: f.titulo, inicio: f.inicio, zona: f.lugar?.zona ?? zona, lugar_id: f.lugar?.id ?? null, sitio_texto: f.lugar ? null : f.donde || null };
+    if (parecidoGuardado(nuevo, guardados, lugares, mismo)) return true;
+    const nombreLugar = new Map(lugares.map((l) => [l.id, l.nombre]));
+    return guardados.some(
+      (g) =>
+        ((g.clase ?? "puntual") === "puntual" || g.clase === "taller") &&
+        !g.borrador &&
+        !!g.fin &&
+        diaLocal(new Date(g.inicio), zona) < f.dia &&
+        f.dia <= ultimoDiaDelPeriodo(g.inicio, g.fin, zona) &&
+        ((!!nuevo.lugar_id && g.lugar_id === nuevo.lugar_id) || normalizarNombre((g.lugar_id ? nombreLugar.get(g.lugar_id) : null) ?? g.sitio_texto ?? "") === normalizarNombre(sitio)) &&
+        mismo(f.titulo, g.titulo),
+    );
+  }
+
+  /**
+   * Los sitios fuera del directorio (OL-433): su punto dentro de la ciudad, o fuera de ella si el mapa no los encuentra ahí (el Museo
+   * Tamuantzán está en Ciudad Valles). Lo ya buscado en esta corrida se guarda en el cursor. Sin mapa o sin centro de la ciudad, no se decide así.
+   */
+  async function ubicarSitios(filas: Fila[]): Promise<void> {
+    const sinFicha = filas.filter((f) => !f.lugar);
+    if (!sinFicha.length) return;
+    if (!ctx.mapbox || !area) {
+      avisos.add("Sin mapa: no se comprobó si los sitios fuera del directorio están en la ciudad");
+      return;
+    }
+    const mapbox = ctx.mapbox;
+    const cache = (cursor!.sitios ??= {});
+    const claveSitio = (f: Fila) => `${normalizarNombre(f.donde)}|${normalizarNombre(f.direccion ?? "")}`.slice(0, 200);
+    const porBuscar = [...new Map(sinFicha.filter((f) => !(claveSitio(f) in cache)).map((f) => [claveSitio(f), f])).values()];
+    const halladas: [string, SitioUbicado][] = [];
+    for (let i = 0; i < porBuscar.length; i += LOTE_MAPBOX) {
+      const lote = porBuscar.slice(i, i + LOTE_MAPBOX);
+      halladas.push(
+        ...(await Promise.all(
+          lote.map(async (f): Promise<[string, SitioUbicado]> => {
+            const e = await ubicarSitioEnArea(f.donde, f.direccion, area, mapbox);
+            return [claveSitio(f), e ? { lat: e.punto.lat, lng: e.punto.lng, direccion: e.punto.direccion } : null];
+          }),
+        )),
+      );
+    }
+    // Si el mapa no ubicó ninguno de tres o más sitios distintos, lo más probable es que no respondiera: nadie queda fuera por eso.
+    if (halladas.length >= 3 && halladas.every(([, u]) => !u)) {
+      avisos.add("El mapa no respondió: no se comprobó si los sitios fuera del directorio están en la ciudad");
+      return;
+    }
+    for (const [k, u] of halladas) cache[k] = u;
+    const claves = Object.keys(cache);
+    for (const k of claves.slice(0, Math.max(0, claves.length - SITIOS_EN_CURSOR))) delete cache[k];
+    for (const f of sinFicha) {
+      const u = cache[claveSitio(f)];
+      if (u === undefined) continue;
+      if (u) f.punto = u;
+      else f.fuera = true;
+    }
+  }
 
   async function proponer(eventos: EventoEntregado[], clave: ClaveAgenda, fuente: { nombre: string; url: string | null }, desde: string, hasta: string): Promise<void> {
     const guardados = await cargarEventos(ctx.db, nombres, sumarDias(desde, -1), sumarDias(hasta, 2));
-    const filas: { corrida_id: string; tipo: "evento"; fuente: string; datos: Record<string, unknown> }[] = [];
+    const festivales = guardados.filter((g) => g.clase === "festival" && g.visible !== false && !g.borrador);
     const exactos = new Set(guardados.map((e) => `${normalizarNombre(e.titulo)}|${new Date(e.inicio).toISOString()}`));
     const leida = ahora.toISOString();
-    for (const e of eventos) {
+    const nombreFuente = (clave === "guias" ? fuente.nombre : NOMBRE_FUENTE_AGENDA[clave]).slice(0, 120);
+
+    // 1. Lo que se descarta sin el mapa, en orden de fecha (así los días seguidos se agrupan al pasar).
+    const filas: Fila[] = [];
+    const cuando = (e: EventoEntregado) => `${e.fecha}T${e.hora.trim().padStart(5, "0")}`;
+    const ordenados = [...eventos].sort((a, b) => cuando(a).localeCompare(cuando(b)));
+    for (const e of ordenados) {
       const titulo = texto(e.titulo, LIMITES_EVENTO.titulo);
       const fecha = /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) ? e.fecha : "";
       const hora = /^\d{1,2}:\d{2}$/.test(e.hora.trim()) ? e.hora.trim().padStart(5, "0") : "";
@@ -375,16 +541,16 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       const lugar = donde ? resolverLugar(donde, [...lugares]) : null;
       const direccion = texto(e.direccion, LIMITES_EVENTO.direccion) || null;
       const municipio = texto(e.municipio, 80) || null;
-      const fuera = alcaldias.length
-        ? !nombraAlcaldia([municipio, direccion, lugar?.direccion, donde], alcaldias)
-        : !municipioDeLaCiudad(municipio, nombres);
+      const fuera =
+        (alcaldias.length ? !nombraAlcaldia([municipio, direccion, lugar?.direccion, donde], alcaldias) : !municipioDeLaCiudad(municipio, nombres)) ||
+        // Un sitio fuera del directorio que la agenda pone en otro municipio («Museo Tamuantzán, Cd. Valles»).
+        (!lugar && !!otroMunicipioEnTexto([donde, municipio], nombres));
       if (fuera) {
         descartar("fuera_de_la_ciudad");
         continue;
       }
       const dia = diaLocal(new Date(inicio), zona);
-      const clavePropuesta = `${normalizarNombre(titulo)}|${dia}`;
-      const antes = propuestas.get(clavePropuesta);
+      const antes = propuestas.get(`${normalizarNombre(titulo)}|${dia}`);
       if (antes === "rechazada") {
         descartar("rechazado_antes");
         continue;
@@ -393,40 +559,231 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         descartar("ya_propuesto");
         continue;
       }
-      const nuevo = { titulo, inicio, zona: lugar?.zona ?? zona, lugar_id: lugar?.id ?? null, sitio_texto: lugar ? null : donde || null };
-      if (exactos.has(`${normalizarNombre(titulo)}|${inicio}`) || parecidoGuardado(nuevo, guardados, lugares)) {
+      const finTexto = e.hora_fin && /^\d{1,2}:\d{2}$/.test(e.hora_fin.trim()) ? e.hora_fin.trim().padStart(5, "0") : null;
+      const finLocal = finTexto ? (finTexto > hora ? `${fecha}T${finTexto}` : `${sumarDias(fecha, 1)}T${finTexto}`) : null;
+      const terminaTexto = (e.termina ?? "").trim();
+      const termina = /^\d{4}-\d{2}-\d{2}$/.test(terminaTexto) && terminaTexto > fecha ? terminaTexto : null;
+      const fila: Fila = {
+        titulo,
+        inicio,
+        fin: finLocal ? localAIso(finLocal, zona) : null,
+        dia,
+        donde,
+        lugar,
+        direccion,
+        municipio,
+        precio: precioDeAgenda(texto(e.precio, 120)),
+        descripcion: texto(e.descripcion, LIMITES_EVENTO.descripcion),
+        programa: programaDeAgenda(e.programa, lugar?.nombre ?? donde),
+        termina,
+        clase: claseDeLaAgenda(titulo, termina),
+      };
+      // La fila del festival mismo no es un acto suyo.
+      if (fila.programa && mismoPrograma(fila.titulo, fila.programa)) fila.programa = null;
+      if (yaGuardado(fila, guardados, exactos)) {
         descartar("ya_existe");
         continue;
       }
-      if (filas.length >= TOPE_POR_TAREA) {
+      filas.push(fila);
+    }
+
+    // 2. El mapa: los sitios que no están en el directorio, dentro de la ciudad o fuera.
+    await ubicarSitios(filas);
+
+    // 3. Una por una, contra lo propuesto (en esta corrida y antes) y los festivales de la ciudad.
+    let nuevasAqui = 0;
+    const formas = { festivales: 0, actos: 0, sesiones: 0, series: 0 };
+    const tocar = (p: Conocida) => {
+      if (!p.nueva) p.cambiada = true;
+    };
+    const deLaCorrida = (p: Conocida) => p.corrida_id === ctx.corrida.id && p.estado === "propuesta";
+    /** El periodo de la propuesta de un festival crece con cada acto (y cada sesión de un acto). */
+    const extenderFestival = (festival: Conocida, inicio: string, fin: string | null) => {
+      const d = festival.datos;
+      if (!comoIso(d.inicio) || Date.parse(inicio) < Date.parse(String(d.inicio))) d.inicio = inicio;
+      const hasta = finEnPrograma(inicio, fin, zona);
+      if (!comoIso(d.termina) || Date.parse(hasta) > Date.parse(String(d.termina))) d.termina = hasta;
+      tocar(festival);
+    };
+    const hacerActo = (d: Record<string, unknown>, festival: Conocida) => {
+      const forma = leerFormaEvento(d);
+      d.marco_propuesto = festival.id;
+      d.programa = texto(festival.datos.titulo, 120);
+      d.espera = `Se publica cuando aceptes el festival «${texto(festival.datos.titulo, 120)}».`;
+      d.clase = claseDeActo(forma.clase);
+      festival.datos.actos = numero(festival.datos.actos) + 1;
+      const funciones = forma.sesiones.length ? forma.sesiones : [{ inicio: comoIso(d.inicio) ?? "", fin: comoIso(d.fin) }];
+      for (const s of funciones) if (s.inicio) extenderFestival(festival, s.inicio, s.fin);
+    };
+    /** La propuesta de festival de ese programa en la ciudad, si la hay (la de una corrida anterior sin decidir también vale). */
+    const festivalPropuesto = (programa: string) => conocidas.find((p) => p.datos.clase === "festival" && mismoPrograma(texto(p.datos.programa ?? p.datos.titulo, 120), programa));
+    const sueltasDelPrograma = (programa: string) =>
+      conocidas.filter((p) => deLaCorrida(p) && !p.datos.marco && !p.datos.marco_propuesto && p.datos.clase !== "festival" && typeof p.datos.programa === "string" && mismoPrograma(p.datos.programa, programa));
+
+    for (const f of filas) {
+      if (f.fuera) {
+        descartar("fuera_de_la_ciudad");
+        continue;
+      }
+      const k = `${normalizarNombre(f.titulo)}|${f.dia}`;
+      if (propuestas.has(k)) {
+        descartar(propuestas.get(k) === "rechazada" ? "rechazado_antes" : "ya_propuesto");
+        continue;
+      }
+      // a. La misma función con otro título: el mismo día, la misma hora y el mismo sitio («Hermanos Pérez Meza Big Band» y «Los Hermanos Pérez
+      //    Meza Big Band: Esto somos»). En esta corrida se quedan juntas (la más completa); de antes, ya está propuesta o rechazada.
+      const misma = conocidas.find(
+        (p) =>
+          (p.datos.inicio === f.inicio || Array.isArray(p.datos.sesiones)) && // primero lo barato: hay miles de propuestas en una ciudad
+          !esMarcoPropuesto(p.datos) &&
+          iniciosDe(p.datos).includes(f.inicio) &&
+          mismoSitio(p.datos.lugar, f) &&
+          mismoEventoDeAgenda(texto(p.datos.titulo, 200), f.titulo, sitioDe(f)),
+      );
+      if (misma) {
+        if (misma.estado === "rechazada") descartar("rechazado_antes");
+        else if (!deLaCorrida(misma)) descartar("ya_propuesto");
+        else {
+          unir(misma.datos, f);
+          tocar(misma);
+          descartar("unido");
+        }
+        propuestas.set(k, misma.estado === "rechazada" ? "rechazada" : "propuesta");
+        continue;
+      }
+
+      // b. ¿Un acto de un festival? Uno registrado en la ciudad, en sus fechas, que la fila nombra; o el programa que dice la agenda.
+      let marco: { id: string; titulo: string } | null = null;
+      let festival: Conocida | null = null;
+      const registrado = festivales
+        .filter((fe) => dentroDelFestival(f.dia, { inicio: fe.inicio, fin: fe.fin ?? null }, zona) && nombraAlFestival([f.titulo, f.descripcion, f.programa, fuente.nombre], fe.titulo))
+        .sort((a, b) => claveDeFestival(b.titulo).propias.length - claveDeFestival(a.titulo).propias.length)[0];
+      if (registrado) {
+        if (mismoPrograma(f.titulo, registrado.titulo) || sinAnio(f.titulo) === sinAnio(registrado.titulo)) {
+          descartar("ya_existe"); // la fila es el festival mismo
+          continue;
+        }
+        marco = { id: registrado.id, titulo: registrado.titulo };
+      } else if (f.programa) {
+        const programa = f.programa;
+        const previo = festivalPropuesto(programa);
+        if (previo?.estado === "aceptada" && previo.ficha_id) marco = { id: previo.ficha_id, titulo: texto(previo.datos.titulo, 120) };
+        else if (previo && previo.estado !== "rechazada") festival = previo;
+        else if (!previo) {
+          // Un festival nuevo: varias filas bajo el mismo programa, una suelta de antes en esta corrida, un programa que se lee como festival o
+          // la agenda misma es su programa («Agenda programación XANTOLO en tu ciudad»).
+          const varias = filas.filter((o) => !o.fuera && o.programa && mismoPrograma(o.programa, programa)).length >= 2;
+          if (varias || sueltasDelPrograma(programa).length || claseSugerida(programa) === "festival" || nombraAlFestival([fuente.nombre], programa)) {
+            if (nuevasAqui >= TOPE_POR_TAREA) {
+              descartar("de_mas");
+              continue;
+            }
+            const datos: Record<string, unknown> = { clase: "festival", titulo: programa, inicio: f.inicio, termina: finEnPrograma(f.inicio, f.fin, zona), lugar: sitioDe(f), actos: 0, programa, ciudad: ctx.ciudad.nombre, leida };
+            if (fuente.url) datos.url = fuente.url;
+            if (f.punto && !f.lugar) Object.assign(datos, { lat: f.punto.lat, lng: f.punto.lng, direccion_mapa: f.punto.direccion });
+            festival = { id: randomUUID(), corrida_id: ctx.corrida.id, estado: "propuesta", ficha_id: null, datos, fuente: nombreFuente, nueva: true };
+            conocidas.push(festival);
+            nuevasAqui++;
+            formas.festivales++;
+            // Lo que ya se propuso suelto en esta corrida con ese programa pasa a ser acto suyo.
+            for (const s of sueltasDelPrograma(programa)) {
+              hacerActo(s.datos, festival);
+              tocar(s);
+              formas.actos++;
+            }
+          }
+        }
+      }
+
+      // c. ¿Otra sesión de una propuesta de la corrida (un taller, días seguidos), u otra fecha de una serie (un cineclub)?
+      const hermanas = conocidas.filter((p) => deLaCorrida(p) && !esMarcoPropuesto(p.datos) && tituloDeGrupo(p.datos.titulo) === tituloDeGrupo(f.titulo) && mismoSitio(p.datos.lugar, f) && !diasDeDatos(p.datos).includes(f.dia));
+      let serie: Conocida[] = [];
+      if (hermanas.length) {
+        const sola = hermanas.find((p) => !leerFormaEvento(p.datos).serie);
+        const modo = sola ? comoSeAgrupa(diasDeDatos(sola.datos), f.dia, leerFormaEvento(sola.datos).clase) : "serie";
+        if (modo === "sesion" && sola) {
+          sumarSesion(sola.datos, f);
+          const delFestival = typeof sola.datos.marco_propuesto === "string" ? conocidas.find((p) => p.id === sola.datos.marco_propuesto) : null;
+          if (delFestival) extenderFestival(delFestival, f.inicio, f.fin);
+          tocar(sola);
+          formas.sesiones++;
+          propuestas.set(k, "propuesta");
+          continue;
+        }
+        // Un evento de varios días no se vuelve serie: la fila va sola.
+        if (!sola || !leerFormaEvento(sola.datos).sesiones.length) serie = hermanas.filter((p) => !leerFormaEvento(p.datos).sesiones.length);
+      }
+
+      // d. Una propuesta nueva.
+      if (nuevasAqui >= TOPE_POR_TAREA) {
         descartar("de_mas");
         continue;
       }
-      propuestas.set(clavePropuesta, "propuesta");
-      const finTexto = e.hora_fin && /^\d{1,2}:\d{2}$/.test(e.hora_fin.trim()) ? e.hora_fin.trim().padStart(5, "0") : null;
-      const finLocal = finTexto ? (finTexto > hora ? `${fecha}T${finTexto}` : `${sumarDias(fecha, 1)}T${finTexto}`) : null;
-      const fin = finLocal ? localAIso(finLocal, zona) : null;
-      const datos: Record<string, unknown> = { titulo, inicio, lugar: lugar?.nombre ?? donde, ciudad: ctx.ciudad.nombre, leida };
+      const datos: Record<string, unknown> = { titulo: f.titulo, inicio: f.inicio, lugar: sitioDe(f), ciudad: ctx.ciudad.nombre, leida };
       if (fuente.url) datos.url = fuente.url;
-      if (fin) datos.fin = fin;
-      if (direccion) datos.direccion = direccion;
-      if (municipio) datos.municipio = municipio;
-      const precio = precioDeAgenda(texto(e.precio, 120));
-      if (precio) datos.precio = precio;
-      const descripcion = texto(e.descripcion, LIMITES_EVENTO.descripcion);
-      if (descripcion) datos.descripcion = descripcion;
-      filas.push({ corrida_id: ctx.corrida.id, tipo: "evento", fuente: (clave === "guias" ? fuente.nombre : NOMBRE_FUENTE_AGENDA[clave]).slice(0, 120), datos });
+      if (f.fin) datos.fin = f.fin;
+      if (f.direccion) datos.direccion = f.direccion;
+      if (f.municipio) datos.municipio = f.municipio;
+      if (f.precio) datos.precio = f.precio;
+      if (f.descripcion) datos.descripcion = f.descripcion;
+      datos.clase = marco || festival ? claseDeActo(f.clase) : f.clase;
+      if (f.clase === "exposicion" && f.termina) {
+        datos.termina = localAIso(`${f.termina}T23:59`, zona);
+        datos.exposicion = nombreDeExposicion(f.titulo);
+      }
+      if (f.punto && !f.lugar) Object.assign(datos, { lat: f.punto.lat, lng: f.punto.lng, direccion_mapa: f.punto.direccion });
+      if (marco) {
+        datos.marco = marco;
+        formas.actos++;
+      } else if (festival) {
+        hacerActo(datos, festival);
+        formas.actos++;
+      } else if (f.programa) datos.programa = f.programa;
+      if (serie.length) {
+        const fechas = [...new Set([...serie.flatMap((p) => iniciosDe(p.datos)), f.inicio])].sort();
+        const valor = { fechas, cada: cadaCuantos(fechas.map((i) => diaLocal(new Date(i), zona))) };
+        for (const p of serie) {
+          p.datos.serie = valor;
+          tocar(p);
+        }
+        datos.serie = valor;
+        formas.series++;
+      }
+      conocidas.push({ id: randomUUID(), corrida_id: ctx.corrida.id, estado: "propuesta", ficha_id: null, datos, fuente: nombreFuente, nueva: true });
+      propuestas.set(k, "propuesta");
+      nuevasAqui++;
     }
-    if (!filas.length || !(await ctx.sigueCorriendo())) return;
-    const { error } = await ctx.db.from("propuestas").insert(filas);
-    if (error) {
-      // No se vuelve a pagar la lectura: se cuenta, se avisa y lo leído llega en la siguiente corrida (no quedó propuesto).
-      cont.errores++;
-      avisos.add("No se pudieron guardar algunas propuestas");
-      return;
+
+    // 4. Lo escrito: las nuevas de una vez (con su id: los actos ya apuntan a su festival) y lo que cambió en las de antes.
+    const nuevas = conocidas.filter((p) => p.nueva && !p.escrita);
+    const cambiadas = conocidas.filter((p) => p.cambiada);
+    if ((!nuevas.length && !cambiadas.length) || !(await ctx.sigueCorriendo())) return;
+    if (nuevas.length) {
+      const { error } = await ctx.db
+        .from("propuestas")
+        .insert(nuevas.map((p) => ({ id: p.id, corrida_id: p.corrida_id, tipo: "evento" as const, fuente: p.fuente ?? nombreFuente, datos: p.datos, estado: "propuesta" as const })));
+      if (error) {
+        // No se vuelve a pagar la lectura: se cuenta, se avisa y lo leído llega en la siguiente corrida (no quedó propuesto).
+        cont.errores++;
+        avisos.add("No se pudieron guardar algunas propuestas");
+        return;
+      }
+      for (const p of nuevas) p.escrita = true;
+      cont.propuestos += nuevas.length;
+      deFuente(clave).propuestos += nuevas.length;
     }
-    cont.propuestos += filas.length;
-    deFuente(clave).propuestos += filas.length;
+    for (const p of cambiadas) {
+      const r = await ctx.db.from("propuestas").update({ datos: p.datos }).eq("id", p.id).eq("estado", "propuesta");
+      if (r.error) {
+        cont.errores++;
+        avisos.add("No se pudieron actualizar algunas propuestas");
+      }
+      p.cambiada = false;
+    }
+    cont.festivales += formas.festivales;
+    cont.actos += formas.actos;
+    cont.sesiones += formas.sesiones;
+    cont.series += formas.series;
   }
 
   /** Lo que se le dice de la ciudad en cada llamada: dónde cuenta, qué día es hoy y los lugares registrados (para el nombre exacto). */
@@ -591,35 +948,100 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const nombreMes = (mes: string) => `${MESES[Number(mes.slice(5, 7)) - 1] ?? ""} ${mes.slice(0, 4)}`.trim();
 
-/** Lo propuesto antes en la ciudad (eventos): título normalizado y día → su estado. */
-async function cargarPropuestasDeEventos(db: SupabaseClient, corridas: readonly string[], zona: string): Promise<Map<string, string>> {
-  const mapa = new Map<string, string>();
-  if (!corridas.length) return mapa;
-  const r = await db.from("propuestas").select("datos, estado").eq("tipo", "evento").in("corrida_id", [...corridas]).limit(10_000);
-  if (r.error) throw new Error("No se pudo leer lo propuesto en la ciudad");
-  for (const p of (r.data ?? []) as { datos: unknown; estado: string }[]) {
-    const d = objeto(p.datos);
-    const titulo = typeof d.titulo === "string" ? d.titulo : "";
-    const inicio = typeof d.inicio === "string" && !Number.isNaN(Date.parse(d.inicio)) ? d.inicio : "";
-    if (!titulo || !inicio) continue;
-    const k = `${normalizarNombre(titulo)}|${diaLocal(new Date(inicio), zona)}`;
-    // Un rechazo manda: «la rutina aprende a no volver a proponerla». Cualquier otra (propuesta o aceptada) cuenta como ya propuesta.
-    if (mapa.get(k) !== "rechazada") mapa.set(k, p.estado === "rechazada" ? "rechazada" : "propuesta");
-  }
-  return mapa;
+/** Una propuesta de evento de la ciudad tal como la rutina la lee y la va cambiando en un paso (OL-433). */
+type Conocida = {
+  id: string;
+  corrida_id: string;
+  estado: string;
+  ficha_id: string | null;
+  datos: Record<string, unknown>;
+  /** La fuente con que se inserta (solo las nuevas). */
+  fuente?: string;
+  nueva?: boolean;
+  escrita?: boolean;
+  cambiada?: boolean;
+};
+
+/**
+ * La misma función con otro título en la misma corrida (OL-433): queda una sola, la más completa. El título más largo (el que dice más:
+ * «Los Hermanos Pérez Meza Big Band: Esto somos»), el otro en `variantes`, y lo que a una le falte (fin, precio, descripción, dirección) de la otra.
+ */
+function unir(datos: Record<string, unknown>, f: { titulo: string; fin: string | null; precio: string | null; descripcion: string; direccion: string | null }): void {
+  const actual = typeof datos.titulo === "string" ? datos.titulo : "";
+  const [largo, corto] = f.titulo.length > actual.length ? [f.titulo, actual] : [actual, f.titulo];
+  datos.titulo = largo;
+  const variantes = new Set((Array.isArray(datos.variantes) ? datos.variantes : []).filter((v): v is string => typeof v === "string"));
+  if (corto && normalizarNombre(corto) !== normalizarNombre(largo)) variantes.add(corto);
+  if (variantes.size) datos.variantes = [...variantes].slice(0, 5);
+  if (!datos.fin && f.fin) datos.fin = f.fin;
+  if (!datos.precio && f.precio) datos.precio = f.precio;
+  if (!datos.descripcion && f.descripcion) datos.descripcion = f.descripcion;
+  if (!datos.direccion && f.direccion) datos.direccion = f.direccion;
 }
 
-/** Los eventos ya guardados en la ciudad esos días (visibles u ocultos, como el importador con `parecidoGuardado`). */
+/** Otra sesión de la misma propuesta (un taller, o un evento de días seguidos): `sesiones` en orden, `inicio` y `fin` de la primera (OL-433). */
+function sumarSesion(datos: Record<string, unknown>, f: { inicio: string; fin: string | null }): void {
+  const forma = leerFormaEvento(datos);
+  const inicio = typeof datos.inicio === "string" ? new Date(datos.inicio).toISOString() : f.inicio;
+  const fin = typeof datos.fin === "string" && !Number.isNaN(Date.parse(datos.fin)) ? new Date(datos.fin).toISOString() : null;
+  const actuales = forma.sesiones.length ? forma.sesiones : [{ inicio, fin }];
+  const todas = [...actuales.filter((s) => s.inicio !== f.inicio), { inicio: f.inicio, fin: f.fin }].sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio)).slice(0, 31);
+  datos.sesiones = todas.map((s) => (s.fin ? { inicio: s.inicio, fin: s.fin } : { inicio: s.inicio }));
+  datos.inicio = todas[0].inicio;
+  if (todas[0].fin) datos.fin = todas[0].fin;
+  else delete datos.fin;
+}
+
+/**
+ * Lo propuesto antes en la ciudad (eventos): el mapa de título normalizado y día → su estado (también el día de cada sesión de un taller), y las
+ * filas con sus datos, para unir, agrupar y reconocer los festivales propuestos (OL-433).
+ */
+async function cargarPropuestasDeEventos(db: SupabaseClient, corridas: readonly string[], zona: string): Promise<{ mapa: Map<string, string>; filas: Conocida[] }> {
+  const mapa = new Map<string, string>();
+  const filas: Conocida[] = [];
+  if (!corridas.length) return { mapa, filas };
+  const r = await db.from("propuestas").select("id, corrida_id, datos, estado, ficha_id").eq("tipo", "evento").in("corrida_id", [...corridas]).limit(10_000);
+  if (r.error) throw new Error("No se pudo leer lo propuesto en la ciudad");
+  for (const p of (r.data ?? []) as { id: string; corrida_id: string; datos: unknown; estado: string; ficha_id: string | null }[]) {
+    const d = objeto(p.datos);
+    filas.push({ id: p.id, corrida_id: p.corrida_id, estado: p.estado, ficha_id: p.ficha_id ?? null, datos: d });
+    const titulo = typeof d.titulo === "string" ? d.titulo : "";
+    const inicios = [d.inicio, ...leerFormaEvento(d).sesiones.map((s) => s.inicio)].filter((i): i is string => typeof i === "string" && !Number.isNaN(Date.parse(i)));
+    if (!titulo) continue;
+    for (const inicio of inicios) {
+      const k = `${normalizarNombre(titulo)}|${diaLocal(new Date(inicio), zona)}`;
+      // Un rechazo manda: «la rutina aprende a no volver a proponerla». Cualquier otra (propuesta o aceptada) cuenta como ya propuesta.
+      if (mapa.get(k) !== "rechazada") mapa.set(k, p.estado === "rechazada" ? "rechazada" : "propuesta");
+    }
+  }
+  return { mapa, filas };
+}
+
+/**
+ * Los eventos ya guardados en la ciudad esos días (visibles u ocultos, como el importador con `parecidoGuardado`) y, además, lo que empezó antes
+ * y sigue (un festival con sus fechas, una exposición, un taller o un evento de varios días): para reconocer sus actos y sus días (OL-433).
+ */
 async function cargarEventos(db: SupabaseClient, nombres: readonly string[], desde: string, hasta: string): Promise<EventoGuardado[]> {
-  const r = await db
-    .from("eventos")
-    .select("id, titulo, inicio, zona, lugar_id, sitio_texto, clase, borrador, visible")
-    .in("ciudad", [...nombres])
-    .gte("inicio", `${desde}T00:00:00Z`)
-    .lte("inicio", `${hasta}T23:59:59Z`)
-    .limit(5000);
-  if (r.error) throw new Error("No se pudieron leer los eventos de la ciudad");
-  return (r.data ?? []) as EventoGuardado[];
+  const columnas = "id, titulo, inicio, fin, zona, lugar_id, sitio_texto, clase, borrador, visible, evento_padre_id";
+  const [enRango, antes] = await Promise.all([
+    db
+      .from("eventos")
+      .select(columnas)
+      .in("ciudad", [...nombres])
+      .gte("inicio", `${desde}T00:00:00Z`)
+      .lte("inicio", `${hasta}T23:59:59Z`)
+      .limit(5000),
+    db
+      .from("eventos")
+      .select(columnas)
+      .in("ciudad", [...nombres])
+      .lte("inicio", `${sumarDias(desde, -1)}T23:59:59Z`)
+      .gte("termina", `${sumarDias(desde, -MARGEN_FESTIVAL_DIAS)}T00:00:00Z`)
+      .limit(2000),
+  ]);
+  if (enRango.error || antes.error) throw new Error("No se pudieron leer los eventos de la ciudad");
+  const vistos = new Set<string>();
+  return [...((enRango.data ?? []) as EventoGuardado[]), ...((antes.data ?? []) as EventoGuardado[])].filter((e) => !vistos.has(e.id) && !!vistos.add(e.id));
 }
 
 function resumenDe(cont: Contadores, cursor: CursorAgendas, tope: boolean, avisos: Set<string>, terminada: boolean): Record<string, unknown> {
@@ -633,7 +1055,7 @@ function resumenDe(cont: Contadores, cursor: CursorAgendas, tope: boolean, aviso
     paso: `${n} de ${claves.length} ${claves.length === 1 ? "fuente" : "fuentes"}`,
     avance: Math.round(avance * 100) / 100,
     propuestos: cont.propuestos,
-    duplicados: cont.descartados.ya_existe + cont.descartados.ya_propuesto,
+    duplicados: cont.descartados.ya_existe + cont.descartados.ya_propuesto + cont.descartados.unido,
     errores: cont.errores,
     descartados: cont.descartados,
     por_fuente: Object.fromEntries(Object.entries(cont.por_fuente).map(([k, v]) => [k, { propuestos: v!.propuestos, usd: Math.round(v!.usd * 10_000) / 10_000 }])),
@@ -641,6 +1063,7 @@ function resumenDe(cont: Contadores, cursor: CursorAgendas, tope: boolean, aviso
     agendas_leidas: cont.agendas_leidas,
   };
   if (cont.publicados || cont.sin_publicar) Object.assign(resumen, { publicados: cont.publicados, sin_publicar: cont.sin_publicar });
+  for (const k of ["festivales", "actos", "sesiones", "series", "en_espera"] as const) if (cont[k]) resumen[k] = cont[k];
   if (cont.cortadas) resumen.cortadas = cont.cortadas;
   if (tope) resumen.tope = true;
   if (avisos.size) resumen.avisos = [...avisos].slice(0, 8);
