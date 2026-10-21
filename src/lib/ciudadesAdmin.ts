@@ -207,7 +207,11 @@ function pasoDe(c: Pick<CorridaPanel, "resumen">): string | null {
   return typeof c.resumen.paso === "string" && c.resumen.paso.trim() ? c.resumen.paso.trim().slice(0, 60) : null;
 }
 
-const llegoAlTope = (c: Pick<CorridaPanel, "gasto_usd" | "tope_usd">) => c.tope_usd > 0 && c.gasto_usd >= c.tope_usd;
+/**
+ * «Llegó al tope»: lo gastado alcanzó el tope, o la rutina dejó fuentes sin leer porque la siguiente llamada ya no cabía (`resumen.tope`,
+ * OL-428: el motor para antes de pasarse, así que puede quedar un poco por debajo).
+ */
+const llegoAlTope = (c: Pick<CorridaPanel, "gasto_usd" | "tope_usd"> & { resumen?: Record<string, unknown> }) => c.resumen?.tope === true || (c.tope_usd > 0 && c.gasto_usd >= c.tope_usd);
 
 /** La última corrida de cada botón de una ciudad: la que está en curso o, si no, la más reciente. */
 export function ultimaPorBoton(corridas: CorridaPanel[], ciudad: string): Record<TipoBoton, CorridaPanel | null> {
@@ -296,7 +300,7 @@ export function detalleCorrida(c: CorridaPanel, ahora: Date = new Date()): strin
 export type Pildora = { texto: string; tono: "gris" | "violeta" | "verde" | "naranja" | "rojo" };
 
 /** La píldora de estado de una corrida. */
-export function pildoraCorrida(c: Pick<CorridaPanel, "estado" | "gasto_usd" | "tope_usd">): Pildora {
+export function pildoraCorrida(c: Pick<CorridaPanel, "estado" | "gasto_usd" | "tope_usd"> & { resumen?: Record<string, unknown> }): Pildora {
   if (c.estado === "pendiente") return { texto: "Pendiente", tono: "gris" };
   if (c.estado === "corriendo") return { texto: "En curso", tono: "violeta" };
   if (c.estado === "fallida") return { texto: "Falló", tono: "rojo" };
