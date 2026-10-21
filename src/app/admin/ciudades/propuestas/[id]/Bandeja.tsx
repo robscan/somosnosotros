@@ -133,7 +133,7 @@ export default function Bandeja({ propuestas, fuentesConTanda }: { propuestas: P
               const Icono = ICONO_MOTIVO[m.valor];
               return (
                 <li key={m.valor}>
-                  <button type="button" className={`${styles.menuItem} ${css.motivo}`} onClick={() => void rechazar(rechazando, m.valor)}>
+                  <button type="button" className={`${styles.menuItem} ${styles.menuConDetalle} ${css.motivo}`} onClick={() => void rechazar(rechazando, m.valor)}>
                     <Icono width={20} height={20} />
                     <span>{m.etiqueta}</span>
                     <small>{m.detalle}</small>

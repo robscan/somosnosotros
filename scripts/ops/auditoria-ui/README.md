@@ -97,7 +97,11 @@ sirve con el `.next` que dejó la vez anterior.
 - Servir la carpeta: `python3 -m http.server 8090 --directory docs/rediseno/prototipos`.
 - `maqueta-pantalla.mjs <carpeta> [--solo=id]`: guarda pantallas REALES como HTML autónomo (el DOM pintado, todo el CSS y las imágenes
   dentro, sin scripts) y su PNG, de la app compilada contra el respaldo; un prototipo las mete en un `iframe` y solo cambia los datos, así
-  la maqueta es la de producción y no un dibujo (OL-409, bitácora 440). Correrlo en un árbol sin `.env`.
+  la maqueta es la de producción y no un dibujo (OL-409, bitácora 440). Correrlo en un árbol sin `.env`. Con `--solo=admin`, las pantallas
+  de Administración con la cuenta de administración del respaldo (la portada lee `panel_resumen` y compañía, inventadas en `fixture.mjs`).
+- `prototipo/meter-maqueta.mjs <carpeta> <prototipo.html>`: mete en un prototipo esas maquetas de Administración (el CSS sin @font-face, las
+  clases con su hash, el armazón alrededor de `<main>`, la barra de Atrás, los iconos de producción pintados con React y la imagen sin
+  foto) entre sus marcas `/*@X*/ … /*@fin*/`; lo demás del prototipo no se toca (OL-425, bitácora 458, `admin-paneles.html`).
 - `capturar-prototipo.mjs <url> <carpeta>`: las 56 capturas de la v3 (teléfono 2×, tableta 1,5×, escritorio 1×)
   navegando el prototipo de verdad (los clics se despachan como eventos para que también funcionen sobre `<g>` del SVG;
   el desplazamiento se dispara con un evento `scroll` para que actúen la barra y la navegación que se guardan); imprime

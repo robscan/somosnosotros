@@ -67,7 +67,7 @@ export default function EstadoFicha({ artistaId, slug, nombre, estado, titulo, d
               const elegida = o.valor === estado;
               return (
                 <li key={o.valor}>
-                  <button type="button" className={`${admin.menuItem} ${s.opcion}`} aria-pressed={elegida} disabled={enCamino} onClick={() => elegir(o.valor)}>
+                  <button type="button" className={`${admin.menuItem} ${admin.menuConDetalle} ${s.opcion}`} aria-pressed={elegida} disabled={enCamino} onClick={() => elegir(o.valor)}>
                     <IconoOk width={20} height={20} className={elegida ? undefined : s.hueco} />
                     {o.etiqueta}
                     <small>{o.detalle}</small>

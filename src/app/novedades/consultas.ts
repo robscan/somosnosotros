@@ -37,10 +37,11 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   const cuandoDe = (e: EventoBase) => `${formatearCuando(e.inicio, e.fin, ahora, e.zona)} · ${nombreSitio({ lugar: uno(e.lugar), sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado })}`;
 
   // 1. Nuevo en lo que sigo (lugares) y nueva fecha de quien sigo (artistas), últimos 14 días, no publicados por mí.
-  // Acotado a los últimos DIAS_NOVEDADES días; el tope es cinturón y tirantes contra el corte silencioso de PostgREST.
+  // Acotado a los últimos DIAS_NOVEDADES días; el tope es cinturón y tirantes contra el corte silencioso de PostgREST. Sin lo que ya pasó
+  // (la misma regla que `eventoPaso` abajo): una carga histórica (OL-424) no debe llenar el tope y dejar fuera lo nuevo de verdad.
   const [porLugar, porArtista] = await Promise.all([
-    lugares.size ? supabase.from("eventos").select(CAMPOS).eq("visible", true).gte("creado_en", desde).in("lugar_id", [...lugares.keys()]).limit(500) : Promise.resolve({ data: [] as EventoBase[] }),
-    artistas.size ? supabase.from("eventos_artistas").select(`artista_id, evento:eventos!inner(${CAMPOS})`).in("artista_id", [...artistas.keys()]).gte("evento.creado_en", desde).limit(500) : Promise.resolve({ data: [] as { artista_id: string; evento: EventoBase }[] }),
+    lugares.size ? supabase.from("eventos").select(CAMPOS).eq("visible", true).gte("creado_en", desde).gte("termina", ahora.toISOString()).in("lugar_id", [...lugares.keys()]).limit(500) : Promise.resolve({ data: [] as EventoBase[] }),
+    artistas.size ? supabase.from("eventos_artistas").select(`artista_id, evento:eventos!inner(${CAMPOS})`).in("artista_id", [...artistas.keys()]).gte("evento.creado_en", desde).gte("evento.termina", ahora.toISOString()).limit(500) : Promise.resolve({ data: [] as { artista_id: string; evento: EventoBase }[] }),
   ]);
   const vistos = new Set<string>();
   for (const e of (porLugar.data ?? []) as EventoBase[]) {

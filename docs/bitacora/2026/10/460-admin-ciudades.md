@@ -166,3 +166,5 @@ Inicio y Lugares incluidas, dentro de su presupuesto y sin cambiar sus cifras; `
 - Ninguna pantalla de la app cambia para la persona; la lista de ciudades sigue saliendo de lo publicado.
 - No toqué `src/app/admin/showcase/*`, `/api/showcase/*` ni la migración del showcase. El respaldo trae el mismo bloque de la portada que la rama
   del prototipo (`panel_resumen` y compañía, idéntico, para que se una sin choque) y lo de Ciudades al final del archivo.
+
+- Al unir con el showcase, el inventario detectó el mismo bloque CSS en `.motivo > small` (Ciudades) y `.opcion > small` (Showcase): ahora es una sola regla, `admin.menuConDetalle` en `admin.module.css` (icono en dos filas y detalle en la columna del texto), y los cuatro botones la componen con su clase propia (resolución del gestor, 2026-10-20).
