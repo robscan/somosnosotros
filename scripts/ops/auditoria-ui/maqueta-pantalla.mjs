@@ -40,8 +40,25 @@ const PANTALLAS = [
   { id: "admin-persona-hoja", url: "/admin/personas/11111111-1111-4111-8111-111111111111", sesion: true, cuenta: "admin", paso: "admin-hoja-rol" },
   { id: "admin-lugares", url: "/admin/lugares", sesion: true, cuenta: "admin" },
   { id: "admin-grafo", url: "/admin/grafo", sesion: true, cuenta: "admin" },
+  // OL-431: Administración › Ciudades como está hoy (OL-427): la lista con sus tarjetas, la hoja de «Buscar lugares» de Querétaro, la bandeja de
+  // una corrida y Corridas; y la hoja de ciudades de la app (el chip de la ciudad en Artistas), que es la de elegir una ciudad.
+  { id: "admin-ciudades", url: "/admin/ciudades", sesion: true, cuenta: "admin" },
+  { id: "admin-ciudades-hoja", url: "/admin/ciudades", sesion: true, cuenta: "admin", paso: "admin-ciudades-hoja" },
+  { id: "admin-propuestas", url: "/admin/ciudades/propuestas/abab0001-0000-4000-8000-000000000001", sesion: true, cuenta: "admin" },
+  { id: "admin-corridas", url: "/admin/corridas", sesion: true, cuenta: "admin" },
+  { id: "artistas-hoja-ciudad", url: "/artistas", sesion: true, paso: "hoja-ciudad" },
 ];
 const PASOS = {
+  // La hoja de «Buscar lugares» de Querétaro en Administración › Ciudades (ui/Hoja con título, ui/Campo con su ✕ y el pie).
+  "admin-ciudades-hoja": async (page) => {
+    await page.getByRole("list", { name: "Querétaro" }).getByRole("button", { name: /^Buscar lugares/ }).click();
+    await page.getByRole("dialog", { name: "Buscar lugares en Querétaro" }).waitFor();
+  },
+  // La hoja de ciudades de la app: el chip de la ciudad de Artistas (ui/Hoja plana con los renglones de cada ciudad).
+  "hoja-ciudad": async (page) => {
+    await page.getByRole("button", { name: /San Luis Potosí/ }).first().click();
+    await page.getByRole("dialog").waitFor();
+  },
   // La hoja «Hacer administrador» de la ficha de una persona en Administración (ui/Hoja sin título, con su botón principal).
   "admin-hoja-rol": async (page) => {
     await page.getByRole("button", { name: "Hacer administrador" }).first().click();
