@@ -11,12 +11,13 @@ import { urlSegura } from "../propuestas";
  * en un lugar de tipo «Otro» es lo que la ficha dice después de «Otro · » (por eso el tope), en los demás tipos la ficha no la usa.
  */
 
-export type ClaveFuente = "sic" | "cultura" | "web";
-export const CLAVES_FUENTE: readonly ClaveFuente[] = ["sic", "cultura", "web"];
+export type ClaveFuente = "guias" | "sic" | "cultura" | "web";
+export const CLAVES_FUENTE: readonly ClaveFuente[] = ["guias", "sic", "cultura", "web"];
 export const esClaveFuente = (v: unknown): v is ClaveFuente => CLAVES_FUENTE.includes(v as ClaveFuente);
 
 /** El nombre de cada fuente en la bandeja (`propuestas.fuente`): el mismo con el que se agrupan y se reconocen sus tandas aceptadas. */
 export const NOMBRE_FUENTE: Record<ClaveFuente, string> = {
+  guias: "Guías culturales",
   sic: "Sistema de Información Cultural",
   cultura: "Cultura del estado y del municipio",
   web: "Búsqueda web",
@@ -36,10 +37,46 @@ export type Candidato = {
   redes: string[];
   /** La página de donde salió. */
   url: string | null;
+  /** El nombre con el que la bandeja agrupa lo que trajo una guía cultural («Time Out México»); sin él, el de su fuente (OL-429). */
+  nombreFuente?: string;
 };
 
 const TIPOS_VALIDOS = new Set<string>(TIPOS.map((t) => t.valor));
-const texto = (v: unknown, tope: number): string => (typeof v === "string" ? v.replace(/[\p{Cc}\p{Cf}]/gu, " ").replace(/\s+/g, " ").trim().slice(0, tope) : "");
+const ENTIDADES: Record<string, string> = { amp: "&", nbsp: " ", quot: '"', apos: "'", lt: "<", gt: ">" };
+
+/**
+ * Un texto de una fuente, sin marcas (OL-429): el CSV del SIC trae nombres con etiquetas HTML («Centro Cultural Juan Ignacio <i>Juani </i>
+ * Torres») y entidades («&amp;»); se quitan antes de cortar al tope. Sin caracteres de control.
+ */
+export function textoLimpio(v: unknown, tope: number): string {
+  if (typeof v !== "string") return "";
+  return v
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(#\d{1,6}|#x[0-9a-f]{1,6}|[a-z]{2,6});/gi, (todo, e: string) => {
+      const n = e[0] === "#" ? (e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : NaN;
+      if (Number.isFinite(n)) return n > 31 && n < 0x110000 ? String.fromCodePoint(n) : " ";
+      return ENTIDADES[e.toLowerCase()] ?? todo;
+    })
+    .replace(/[\p{Cc}\p{Cf}]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, tope);
+}
+const texto = textoLimpio;
+
+/**
+ * Una dirección sin el rótulo con el que la escriben algunas páginas de Cultura («Dirección:, Av. Carranza 1815» o «Domicilio: …») ni comas
+ * sueltas al principio o al final (OL-429).
+ */
+export function limpiarDireccion(v: unknown, tope: number): string {
+  let t = texto(v, tope * 2);
+  for (let i = 0; i < 3; i++) {
+    const antes = t;
+    t = t.replace(/^(direcci[oó]n|domicilio|ubicaci[oó]n|sede)\s*:\s*/i, "").replace(/^[\s,;:.\-–—]+/, "").replace(/[\s,;:\-–—]+$/, "");
+    if (t === antes) break;
+  }
+  return t.slice(0, tope).trim();
+}
 const coordenada = (v: unknown, limite: number): number | null => {
   const x = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
   return Number.isFinite(x) && x !== 0 && Math.abs(x) <= limite ? x : null;
@@ -80,7 +117,7 @@ export function limpiarCandidato(c: {
     nombre,
     tipo,
     detalle: texto(c.detalle, LIMITES_LUGAR.detalle) || null,
-    direccion: texto(c.direccion, LIMITES_LUGAR.direccion) || null,
+    direccion: limpiarDireccion(c.direccion, LIMITES_LUGAR.direccion) || null,
     municipio: texto(c.municipio, 80) || null,
     lat: lat !== null && lng !== null ? lat : null,
     lng: lat !== null && lng !== null ? lng : null,

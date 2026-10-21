@@ -24,7 +24,9 @@ import { formatearCuando } from "../../src/lib/fechas";
 import { LIMITES_EVENTO } from "../../src/lib/limites";
 import { normalizarNombre } from "../../src/lib/lugares";
 import { CIUDAD, guardarInforme, preparar } from "./entorno";
-import { formularioDeEvento, opcionesDeCarga, parecidoGuardado, resolverLugar, type Eleccion, type EventoGuardado, type EventoPropuesto } from "./instituciones";
+// La lógica de carga es la misma del servidor (OL-429: src/lib/cargaEventos.ts, que usa también la rutina de agendas).
+import { formularioDeEvento, parecidoGuardado, resolverLugar, type Eleccion, type EventoGuardado, type EventoPropuesto } from "../../src/lib/cargaEventos";
+import { opcionesDeCarga } from "./instituciones";
 import { ubicarSitio } from "./mapbox";
 
 const { archivo, autor, salida, simular, token, db } = preparar("importar-eventos");

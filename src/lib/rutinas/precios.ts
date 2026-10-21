@@ -11,7 +11,8 @@ export type Precio = { entrada: number; escrituraCache5m: number; escrituraCache
 
 export const PRECIOS: Readonly<Record<string, Precio>> = {
   "claude-opus-5-5": { entrada: 4, escrituraCache5m: 5, escrituraCache1h: 8, lecturaCache: 0.2, salida: 20 },
-  "claude-sonnet-5-5": { entrada: 2, escrituraCache5m: 2.5, escrituraCache1h: 4, lecturaCache: 0.1, salida: 10 },
+  // OL-429: la lectura de caché de Sonnet 5.5 es 0,20 (guía de la API, 21 de octubre); estaba en 0,10 y el crédito bajaba de menos.
+  "claude-sonnet-5-5": { entrada: 2, escrituraCache5m: 2.5, escrituraCache1h: 4, lecturaCache: 0.2, salida: 10 },
   "claude-sonnet-5": { entrada: 2, escrituraCache5m: 2.5, escrituraCache1h: 4, lecturaCache: 0.2, salida: 10 },
   "claude-fable-5-1": { entrada: 10, escrituraCache5m: 12.5, escrituraCache1h: 20, lecturaCache: 0.25, salida: 50 },
 };

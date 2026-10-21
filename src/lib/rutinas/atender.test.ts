@@ -12,6 +12,8 @@ function dependencias(resultado: ResultadoPaso = { corrida: "c1", tipo: "lugares
     correr: vi.fn(async () => resultado),
     despues: (t) => void despues.push(t),
     encadenar: vi.fn(async () => "disparado"),
+    limiteMs: 300_000,
+    ahora: () => 1_000_000,
   };
   return { d, despues };
 }
@@ -39,9 +41,11 @@ describe("/api/rutinas/correr", () => {
     await despues[0]();
     expect(d.correr).toHaveBeenCalledTimes(1);
     expect(d.encadenar).toHaveBeenCalledTimes(1);
+    // OL-429: el siguiente paso se pide con lo que le queda a la función (para reintentar sin pasarse de su `maxDuration`).
+    expect(d.encadenar).toHaveBeenCalledWith(1_000_000 + 300_000 - 3_000);
   });
 
-  it("sin nada que correr no encadena (la cadena se apaga sola; el cron vuelve en 5 minutos)", async () => {
+  it("sin nada que correr no encadena (la cadena se apaga sola; Ciudades o el cron la retoman)", async () => {
     const { d, despues } = dependencias({ corrida: null, tipo: null, estado: "nada", usd: 0 });
     await atenderCorrer(pedido("Bearer s3cr3t"), d);
     await despues[0]();

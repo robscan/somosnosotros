@@ -10,8 +10,11 @@ import { etiquetaLugar } from "./lugares";
  * al aceptarlo. Lo que la rutina deja en `propuestas.datos` (OL-428 lo escribe así):
  *   · lugar   { nombre, tipo?, detalle?, direccion?, lat?, lng?, ciudad?, redes?, url?, leida? }
  *   · artista { nombre, disciplina?, detalle?, tipo?, ciudad?, redes?, url?, leida? }
- *   · evento  { titulo, inicio?, lugar?, url?, leida? }
- * `url` es la página de la fuente que la rutina abrió y leyó; `leida`, cuándo (ISO). `redes`, enlaces (texto o { url }).
+ *   · evento  { titulo, inicio, fin?, lugar, direccion?, municipio?, precio?, descripcion?, ciudad?, url?, leida? }   (OL-429)
+ * `url` es la página de la fuente que la rutina abrió y leyó (en un evento, la agenda: queda como `eventos.fuente_url` al publicarlo);
+ * `leida`, cuándo (ISO). `redes`, enlaces (texto o { url }). En un evento, `inicio` y `fin` son ISO; `lugar`, el nombre exacto del lugar
+ * registrado si la agenda es en uno, o el sitio como lo escribe la agenda; `precio`, «Gratis», «Cooperación solidaria» o el texto del costo;
+ * `descripcion`, una o dos frases propias de la rutina (nunca copiadas).
  */
 
 export const TIPOS_PROPUESTA = ["lugar", "evento", "artista"] as const;
@@ -166,8 +169,11 @@ export function entradaDeArtista(p: Pick<Propuesta, "datos">, ciudad: string | n
   };
 }
 
-/** La línea que queda al decidir. */
-export function textoDecidida(nombre: string, decision: { aceptada: true; tipo: TipoPropuesta } | { aceptada: false; motivo: MotivoRechazo }): string {
+/**
+ * La línea que queda al decidir. Un evento aceptado ya se publica al aceptarlo (OL-429), como un lugar o un artista: «Aceptaste …» y «Ver
+ * ficha». `nota`, si el servidor la manda (un evento aceptado que no se pudo publicar en ese momento), va detrás.
+ */
+export function textoDecidida(nombre: string, decision: { aceptada: true; tipo: TipoPropuesta } | { aceptada: false; motivo: MotivoRechazo }, nota?: string): string {
   if (!decision.aceptada) return `Rechazaste ${nombre} · ${MOTIVOS_RECHAZO.find((m) => m.valor === decision.motivo)?.etiqueta.toLowerCase() ?? "otro"}`;
-  return decision.tipo === "evento" ? `Aceptaste ${nombre} · se publica con la rutina de agendas` : `Aceptaste ${nombre}`;
+  return nota ? `Aceptaste ${nombre} · ${nota}` : `Aceptaste ${nombre}`;
 }

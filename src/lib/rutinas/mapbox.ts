@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { ubicarSitio, type Eleccion, type PuntoEncontrado } from "../cargaEventos";
 import type { Punto } from "../geo";
 import { normalizarNombre } from "../lugares";
 import { cajaAlrededor, dentroDelArea, nombresParecidos, palabrasDeCiudad } from "./filtros";
@@ -119,4 +120,17 @@ export async function centroDeCiudad(nombre: string, m: Mapbox): Promise<Punto |
   const r = (await pedirJson(m, "/search/geocode/v6/forward", { q: nombre, types: "place", country: "mx", language: "es", limit: "1" })) as Geocodificado | null;
   const c = r?.features?.[0]?.properties?.coordinates;
   return typeof c?.latitude === "number" && typeof c?.longitude === "number" ? { lat: c.latitude, lng: c.longitude } : null;
+}
+
+/**
+ * El punto de un sitio de una agenda que no está en el directorio (OL-429, al publicar un evento aceptado): la regla del importador
+ * (`cargaEventos.ubicarSitio`: por nombre y por dirección, contrastados) con las búsquedas de aquí, acotadas al área de la ciudad. Sin
+ * resultado, null: el evento no se publica y la bandeja lo dice.
+ */
+export async function ubicarSitioEnArea(sitio: string, direccion: string | null | undefined, area: AreaCiudad, m: Mapbox): Promise<Eleccion | null> {
+  const encontrado = (u: Ubicado | null, nombre?: string): PuntoEncontrado | null => (u ? { lat: u.lat, lng: u.lng, direccion: u.direccion ?? "", ...(nombre ? { nombre } : {}) } : null);
+  return ubicarSitio(sitio, direccion, {
+    porNombre: async (n) => encontrado(await porNombre(n, area, m), n),
+    porDireccion: async (d) => encontrado(await porDireccion(d, area, m)),
+  });
 }

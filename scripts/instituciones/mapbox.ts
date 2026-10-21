@@ -3,7 +3,8 @@
  * El `fetch` y la dirección de la API se pueden cambiar para probar sin red (la respuesta simulada de las pruebas y del ensayo local).
  */
 import { randomUUID } from "node:crypto";
-import { CAJA_CIUDAD, direccionParaBuscar, elegirPunto, enCiudad, mismaCalle, nombresCoinciden, type Candidato, type Eleccion } from "./instituciones";
+import { ubicarSitio as ubicarSitioEnCiudad } from "../../src/lib/cargaEventos";
+import { CAJA_CIUDAD, direccionParaBuscar, enCiudad, mismaCalle, nombresCoinciden, type Candidato, type Eleccion } from "./instituciones";
 
 export type Mapbox = {
   token: string;
@@ -57,12 +58,9 @@ export async function porDireccion(direccion: string, m: Mapbox): Promise<Candid
 
 /**
  * El punto de un sitio que no está en el directorio («El Meteorito. Museo Interactivo», «Plaza de Armas»), como el de un lugar nuevo: por su
- * nombre y, si la agenda trae la dirección, también por ella, contrastados con `elegirPunto`. Solo dentro de la ciudad. Sin resultado, null:
- * el evento no se carga y el informe lo lista como «sitio sin punto».
+ * nombre y, si la agenda trae la dirección, también por ella (src/lib/cargaEventos.ts · ubicarSitio, la misma regla que usa el servidor),
+ * acotado a la caja de la ciudad. Sin resultado, null: el evento no se carga y el informe lo lista como «sitio sin punto».
  */
 export async function ubicarSitio(sitio: string, direccion: string | null | undefined, m: Mapbox): Promise<Eleccion | null> {
-  const nombre = sitio.replace(/[.…]+\s*$/, "").trim();
-  if (!nombre) return null;
-  const [n, d] = await Promise.all([porNombre([nombre], m), porDireccion(direccion ?? "", m)]);
-  return elegirPunto(null, n, d, direccion ?? "");
+  return ubicarSitioEnCiudad(sitio, direccion, { porNombre: (n) => porNombre([n], m), porDireccion: (d) => porDireccion(d, m) });
 }

@@ -21,7 +21,7 @@ import {
 } from "@/lib/ciudadesAdmin";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../Reintentar";
-import { cargarPanelCiudades, conCifras } from "./consultas";
+import { cargarPanelCiudades, conCifras, pedirPasoSiHayVaradas } from "./consultas";
 import TarjetaCiudad from "./TarjetaCiudad";
 import styles from "../admin.module.css";
 
@@ -49,6 +49,8 @@ export default async function Ciudades() {
       </main>
     );
   const ahora = new Date();
+  // Si una corrida se quedó varada, se pide su paso después de responder (OL-429); la pantalla no cambia.
+  await pedirPasoSiHayVaradas(panel.corridas, ahora);
   const ciudades = ordenarCiudades(await conCifras(panel.ciudades), panel.corridas);
   const porRevisar = propuestasPorRevisar(panel.corridas, panel.ciudades, ahora);
   const n = porRevisar.reduce((t, p) => t + p.n, 0);

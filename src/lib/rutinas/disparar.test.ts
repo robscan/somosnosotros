@@ -39,6 +39,52 @@ describe("dispararPaso", () => {
     const cae = (async () => {
       throw new Error("sin red");
     }) as unknown as typeof fetch;
-    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s3cr3t", pedir: cae })).toBe("falló");
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s3cr3t", pedir: cae, esperar: async () => undefined, avisar: () => undefined })).toBe("falló");
+  });
+});
+
+describe("dispararPaso reintenta (OL-429)", () => {
+  const respuestas = (...rs: (number | Error)[]) =>
+    vi.fn(async () => {
+      const r = rs.shift();
+      if (r instanceof Error) throw r;
+      return new Response("{}", { status: r ?? 202 });
+    }) as unknown as typeof fetch;
+  const sinEspera = { esperar: async () => undefined };
+
+  it("un 404 o un tropiezo de red se reintenta; al segundo o tercer intento, «disparado»", async () => {
+    const pedir = respuestas(404, 202);
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s", pedir, ...sinEspera })).toBe("disparado");
+    expect(pedir).toHaveBeenCalledTimes(2);
+    const red = respuestas(new Error("sin red"), 503, 202);
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s", pedir: red, ...sinEspera })).toBe("disparado");
+    expect(red).toHaveBeenCalledTimes(3);
+  });
+
+  it("tres intentos fallidos: «falló» y una línea en el registro con el motivo, sin el secreto", async () => {
+    const avisos: string[] = [];
+    const pedir = respuestas(500, 500, 500, 202);
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s3cr3t", pedir, avisar: (t) => avisos.push(t), ...sinEspera })).toBe("falló");
+    expect(pedir).toHaveBeenCalledTimes(3);
+    expect(avisos).toEqual(["rutinas: no se pudo pedir el paso (respondió 500); lo retoma Ciudades o el cron"]);
+  });
+
+  it("un 401 no se reintenta (el secreto no cambia entre intentos)", async () => {
+    const avisos: string[] = [];
+    const pedir = respuestas(401, 202);
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s", pedir, avisar: (t) => avisos.push(t), ...sinEspera })).toBe("rechazado");
+    expect(pedir).toHaveBeenCalledTimes(1);
+    expect(avisos[0]).toContain("no aceptó el secreto (401)");
+  });
+
+  it("no se pasa del tiempo de la función: sin margen para otro intento, no lo hace", async () => {
+    let reloj = 0;
+    const pedir = vi.fn(async () => {
+      reloj += 2_000;
+      return new Response(null, { status: 404 });
+    }) as unknown as typeof fetch;
+    const r = await dispararPaso("https://somosnosotros.org", { secreto: "s", pedir, ahora: () => reloj, hasta: 3_500, esperar: async (ms) => void (reloj += ms), avisar: () => undefined });
+    expect(r).toBe("falló");
+    expect(pedir).toHaveBeenCalledTimes(1);
   });
 });
