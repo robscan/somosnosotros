@@ -177,7 +177,8 @@ hora). En el ensayo con los CSV reales del SIC de San Luis: 40 propuestas en el 
   cancelación a medio paso anota 0,13 y no propone nada; la suma de `gasto_usd` (lo que resta el crédito) da lo esperado.
 - `npm run inventario`: **falla, pero no por esta pieza**: «bloquesDuplicados subió de 1 a 2» por `ciudades.module.css .motivo > small` igual a
   `showcase.module.css .opcion > small`, que llegó con la unión de Ciudades y Showcase (`0f510f4f`); entre esa base y esta rama no cambia
-  ningún CSS. Lo resuelve el gestor al unir (o lo acepta).
+  ningún CSS. En `main` ya está arreglado (`0bf7c589`, la regla compartida `admin.menuConDetalle`): al traer `main` a esta rama queda en
+  verde. Traer `main` solo choca en `OPEN_LOOPS.md` (comprobado con `git merge-tree`); nada de lo que toca esta rama cambió en `main`.
 - `npm run medir`: 49 pantallas × 4 anchos, **sin novedades** (s32 a s35, Ciudades, su hoja, la bandeja y Corridas, con las mismas cifras de la
   bitácora 460: 149 · 175 · 59 · 61 nodos a 390); con el teclado, el tope de la hoja a la vista y «Cancelar» · «Correr» sobre él.
 - `npm run test:componentes` completo: 669 de 669 (Chrome real; las de Ciudades sustituyen las acciones del servidor, así que el disparo del
