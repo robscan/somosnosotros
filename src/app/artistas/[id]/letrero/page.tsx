@@ -7,8 +7,9 @@ import { ORIGEN } from "@/lib/sitemap";
 import BarraLetrero from "./BarraLetrero";
 import ImprimirAlAbrir from "./ImprimirAlAbrir";
 import styles from "./letrero.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Letrero para imprimir · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Letrero para imprimir"), robots: { index: false, follow: false } };
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -33,7 +34,7 @@ export default async function LetreroArtista({ params }: Params) {
       <main className={styles.pagina}>
         <ImprimirAlAbrir />
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG fijo de public, sin optimizar */}
-        <img src="/logotipo.svg" alt="Somos Nosotros" className={styles.logo} />
+        <img src="/logotipo.svg" alt={MARCA} className={styles.logo} />
         <div className={styles.qrCaja}>
           <CodigoQr svg={svg} alt={`Código QR de ${a.nombre}`} />
         </div>

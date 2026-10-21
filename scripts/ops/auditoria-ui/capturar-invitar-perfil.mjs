@@ -112,16 +112,16 @@ try {
     console.log("     la hoja recibió:", JSON.stringify(await page.evaluate(() => window.__compartido)));
     await ctx.close();
   }
-  // 3 · Ajustes: el grupo «Somos Nosotros» sin el renglón.
+  // 3 · Ajustes: el grupo «Somos Nosotrxs» sin el renglón.
   {
     const { ctx, page } = await contexto();
     await page.goto(`${base}/ajustes`, { waitUntil: "load" });
     await page.getByRole("heading", { name: "Ajustes", level: 1 }).waitFor();
-    await page.getByRole("heading", { name: "Somos Nosotros" }).evaluate((h) => h.scrollIntoView({ block: "start" }));
+    await page.getByRole("heading", { name: "Somos Nosotrxs" }).evaluate((h) => h.scrollIntoView({ block: "start" }));
     await page.mouse.wheel(0, -40);
     await foto(page, "02-ajustes-sin-invitar");
     console.log("    ", JSON.stringify(await invitar(page)));
-    console.log("     renglones del grupo:", JSON.stringify(await page.evaluate(() => [...document.querySelectorAll("h2")].find((h) => h.textContent === "Somos Nosotros")?.nextElementSibling?.innerText.split("\n").filter(Boolean))));
+    console.log("     renglones del grupo:", JSON.stringify(await page.evaluate(() => [...document.querySelectorAll("h2")].find((h) => h.textContent === "Somos Nosotrxs")?.nextElementSibling?.innerText.split("\n").filter(Boolean))));
     await ctx.close();
   }
   // 4 · La ficha de otra persona (Marcos): sin el renglón.

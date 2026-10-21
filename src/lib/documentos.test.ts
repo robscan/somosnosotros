@@ -20,6 +20,7 @@ import {
 } from "./documentos";
 import type { EventoPasado } from "./historialFichas";
 import { opcionesInforme, opcionesPresentacion } from "./opcionesDocumento";
+import { MARCA } from "./marca";
 
 /** La lógica de la presentación y del informe (OL-396), con datos inventados. */
 
@@ -164,7 +165,7 @@ describe("fechas, nombres y direcciones", () => {
     const p = opcionesPresentacion({ artista: YO, pasados: [ev("e1", "2026-10-09T01:00:00Z")], proximos: [], ahora: AHORA });
     expect(p.map((o) => [o.formato, o.paginas, o.archivo])).toEqual([["carta", 1, "presentacion-leo.pdf"], ["a4", 1, "presentacion-leo.pdf"]]);
     expect(p[0].href).toMatch(/^\/api\/documento\?que=artista&id=leo&formato=carta&v=[a-z0-9]+$/);
-    expect(p[0].ayuda).toBe("Tus fechas en Somos Nosotrxs, tu reseña y tus redes, listas para enviar: 1 página.");
+    expect(p[0].ayuda).toBe(`Tus fechas en ${MARCA}, tu reseña y tus redes, listas para enviar: 1 página.`);
     const i = opcionesInforme({ lugar: { ...LUGAR, zona: Z }, pasados: [ev("e1", "2026-10-09T01:00:00Z")], ahora: AHORA });
     expect(i.map((o) => `${o.periodo}/${o.formato}`)).toEqual(["mes/carta", "mes/a4", "anio/carta", "anio/a4", "todo/carta", "todo/a4"]);
     expect(i[0].ayuda).toBe("Lo que pasó en Foro La Pirámide en el periodo, con las definiciones de cada cifra: 1 página.");

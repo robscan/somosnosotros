@@ -8,8 +8,9 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { rutaSegura } from "@/lib/rutas";
 import FormularioEntrar from "./FormularioEntrar";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Entrar · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Entrar"), robots: { index: false, follow: false } };
 
 /** Dígitos del código: lo fija Supabase (Authentication → Providers → Email → OTP length); aquí, 8. */
 function largoCodigo(): number {

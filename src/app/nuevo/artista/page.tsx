@@ -7,8 +7,9 @@ import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import AltaArtista from "./AltaArtista";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: `${tituloDeAlta("artista")} · Somos Nosotros`, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: tituloDePagina(tituloDeAlta("artista")), robots: { index: false, follow: false } };
 
 type Consulta = { ciudad?: string; nombre?: string };
 

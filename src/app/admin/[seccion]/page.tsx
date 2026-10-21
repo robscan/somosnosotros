@@ -15,13 +15,14 @@ import { cargarFichas } from "../consultas";
 import Reintentar from "../Reintentar";
 import MenuFicha from "./MenuFicha";
 import styles from "../admin.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
 const TITULO = { lugares: "Lugares", eventos: "Eventos", artistas: "Artistas" } as const;
 const BUSCAR = { lugares: "Buscar lugar", eventos: "Buscar evento", artistas: "Buscar artista" } as const;
 
 export async function generateMetadata({ params }: { params: Promise<{ seccion: string }> }) {
   const { seccion } = await params;
-  return { title: `${esSeccionFichas(seccion) ? TITULO[seccion] : "Administración"} · Administración · Somos Nosotros`, robots: { index: false, follow: false } };
+  return { title: tituloDePagina(esSeccionFichas(seccion) ? TITULO[seccion] : "Administración", "Administración"), robots: { index: false, follow: false } };
 }
 
 /** `destacable`: lo que puede salir en la tira, con la misma regla que la ficha (`puedeDestacarse`). */

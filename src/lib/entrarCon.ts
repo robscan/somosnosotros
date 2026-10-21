@@ -14,7 +14,7 @@ export type Proveedor = "apple" | "google";
 export const NOMBRE_PROVEEDOR: Record<Proveedor, string> = { apple: "Apple", google: "Google" };
 
 /**
- * Identificadores de Somos Nosotros en cada proveedor. No son secretos: viajan a la vista en la dirección que abre
+ * Identificadores de Somos Nosotrxs en cada proveedor. No son secretos: viajan a la vista en la dirección que abre
  * Apple o Google. Mientras uno sea null su botón no sale. Cómo se crean: docs/ops/ENTRAR_CON_APPLE_Y_GOOGLE.md.
  */
 export const CLIENTES: Record<Proveedor, string | null> = {

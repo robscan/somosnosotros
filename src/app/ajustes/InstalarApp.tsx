@@ -8,7 +8,7 @@ import { useInstalarApp, usePlataforma } from "@/lib/useAvisosTelefono";
 import renglon from "@/components/ui/Renglon.module.css";
 
 /**
- * "Instalar la app" en Ajustes › Somos Nosotros (decisión 7 de docs/rediseno/17). Solo donde se puede y mientras no esté
+ * "Instalar la app" en Ajustes › Somos Nosotrxs (decisión 7 de docs/rediseno/17). Solo donde se puede y mientras no esté
  * instalada: en Chrome, Edge o Android abre el diálogo del navegador (un toque); en Safari del iPhone, la hoja con los
  * pasos; dentro de otra app o en Chrome del iPhone, dice dónde abrirla. En los demás casos no aparece.
  */

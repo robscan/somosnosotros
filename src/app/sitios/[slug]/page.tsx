@@ -23,6 +23,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { ligarSitioALugar } from "../acciones";
 import { eventosVigentesDelSitio } from "../sitio";
 import AccionesSitio from "./AccionesSitio";
+import { tituloDePagina } from "@/lib/marca";
 
 type Params = { params: Promise<{ slug: string }> };
 type EventoDelSitio = Omit<EventoAgenda, "lugar" | "van"> & ActoConSitio & { ciudad: string | null; creado_por: string | null };
@@ -68,8 +69,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (sitio === undefined) return {};
   // No se indexa: un sitio fuera del directorio no es una ficha del catálogo hasta que alguien lo agrega como lugar.
   const robots = { index: false, follow: false };
-  if (!sitio) return { title: "Sitio · Somos Nosotros", robots };
-  return { title: `${sitio.sede.nombre} · Somos Nosotros`, ...(sitio.sede.direccion ? { description: sitio.sede.direccion } : {}), robots };
+  if (!sitio) return { title: tituloDePagina("Sitio"), robots };
+  return { title: tituloDePagina(sitio.sede.nombre), ...(sitio.sede.direccion ? { description: sitio.sede.direccion } : {}), robots };
 }
 
 /**

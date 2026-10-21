@@ -4,6 +4,7 @@
  */
 
 import { esAppNativa } from "./appNativa";
+import { MARCA, SUFIJO_TITULO } from "./marca";
 
 export type Plataforma = {
   /** iPhone o iPad (el iPad con Safari se presenta como Mac, pero tiene pantalla táctil). */
@@ -102,13 +103,13 @@ export function pasosInstalar(versionSafari: number | null): Paso[] {
 }
 
 /**
- * El título de cada página termina en " · Somos Nosotros" (bueno para una pestaña o un resultado de Google: dice de
+ * El título de cada página termina en " · Somos Nosotrxs" (`SUFIJO_TITULO`; bueno para una pestaña o un resultado de Google: dice de
  * qué sitio es). Abierta desde el icono, esa marca ya la pone la ventana misma (el nombre con el que se instaló) y
  * el sistema operativo vuelve a sumarla en las suyas (Exposé, la lista de ventanas del Dock): se ve repetida
- * ("Somos Nosotros" al inicio y al final). Dentro de la app instalada alcanza con el nombre de la pantalla (OL-059).
+ * (la marca al inicio y al final). Dentro de la app instalada alcanza con el nombre de la pantalla (OL-059).
  */
 export function tituloInstalada(titulo: string): string {
-  return titulo.replace(/ · Somos Nosotros$/, "") || "Somos Nosotros";
+  return (titulo.endsWith(SUFIJO_TITULO) ? titulo.slice(0, -SUFIJO_TITULO.length) : titulo) || MARCA;
 }
 
 /**
@@ -136,7 +137,7 @@ export function esteAparatoInicial(p: Plataforma | null): string {
  * en vez del aviso) sin que el sitio se entere de si la persona ya decidió o no lo ha visto.
  */
 export function dondeSeActivan(p: Plataforma | null): string {
-  if (p?.ios) return "en Ajustes del iPhone › Notificaciones › Somos Nosotros";
+  if (p?.ios) return `en Ajustes del iPhone › Notificaciones › ${MARCA}`;
   if (p?.chrome) return "en Chrome: el candado junto a la dirección › Permisos del sitio › Notificaciones";
   return "en la configuración del sitio de tu navegador";
 }

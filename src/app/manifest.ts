@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
+import { MARCA } from "@/lib/marca";
 
 /** La app se instala en el teléfono desde el navegador (PWA). */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Somos Nosotros",
-    short_name: "Somos Nosotros",
+    name: MARCA,
+    short_name: MARCA,
     description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente.",
     lang: "es",
     start_url: "/",

@@ -1,5 +1,6 @@
 import { verificarBaja } from "@/lib/baja";
 import { clienteAdmin } from "@/lib/supabase/admin";
+import { tituloDePagina } from "@/lib/marca";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 }
 
 function pagina(titulo: string, texto: string, status: number): Response {
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${titulo} · Somos Nosotros</title>
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${tituloDePagina(titulo)}</title>
 <style>body{margin:0;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1a1a1a;background:#fff;line-height:1.4}h1{font-size:26px;margin:0 0 8px}p{color:#5c5c5c;margin:0 0 20px;max-width:32em}a{color:#b3261e}</style></head>
 <body><h1>${titulo}</h1><p>${texto}</p><p><a href="https://somosnosotros.org/perfil">Ir a mi perfil</a> · <a href="https://somosnosotros.org/">Ver la agenda</a></p></body></html>`;
   return new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });

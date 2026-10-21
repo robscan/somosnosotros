@@ -10,6 +10,7 @@ import type { Formato } from "./tokens";
 import type { ResumenTuAnio } from "../tuAnio";
 import { FORMATOS_DOCUMENTO, type Documento, type FormatoDocumento } from "../documentos";
 import { pdfDeImagenes } from "../pdfDeImagenes";
+import { MARCA } from "../marca";
 
 /**
  * Generar un cartel de un evento ya cargado (OL-324): trae la primera imagen que responda (por orden) y dibuja. Lo usan la ruta que da las
@@ -157,6 +158,6 @@ export async function generarDocumento(documento: Documento, formato: FormatoDoc
   const msImagen = Math.round(performance.now() - t0);
   const r = await dibujarDocumento({ documento, formato, foto, tiempoMaxFotoMs: Math.max(0, presupuesto - msImagen) });
   const t1 = performance.now();
-  const pdf = pdfDeImagenes(r.paginas, { puntos: FORMATOS_DOCUMENTO[formato].puntos, titulo: `${documento.tituloCorto}`, autor: "Somos Nosotrxs", creado: opciones.ahora });
+  const pdf = pdfDeImagenes(r.paginas, { puntos: FORMATOS_DOCUMENTO[formato].puntos, titulo: `${documento.tituloCorto}`, autor: MARCA, creado: opciones.ahora });
   return { pdf, paginas: r.paginas.length, ms: { imagen: msImagen, ...r.ms, pdf: Math.round(performance.now() - t1) } };
 }

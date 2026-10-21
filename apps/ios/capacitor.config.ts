@@ -35,7 +35,7 @@ import { KeyboardResize } from "@capacitor/keyboard";
  */
 const config: CapacitorConfig = {
   appId: "org.somosnosotros.app",
-  appName: "Somos Nosotros",
+  appName: "Somos Nosotrxs", // la marca (src/lib/marca.ts, OL-435); el nombre bajo el icono es CFBundleDisplayName en Info.plist
   webDir: "www",
   server: {
     url: "https://somosnosotros.org",

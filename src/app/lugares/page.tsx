@@ -10,6 +10,7 @@ import { conProximo, diasConEvento, type LugarLista, type LugarResumen, type Pro
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { abrirFichaEnHoja } from "./fichaEnHoja";
 import VistaLugares, { type ExtrasLugares } from "./VistaLugares";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type SearchParams = { ciudad?: string; lugar?: string };
 
@@ -28,13 +29,13 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const ciudades = await cargarCiudades(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/lugares" : `/lugares?ciudad=${resuelta.slug}`;
-  const titulo = "Lugares · Somos Nosotros";
+  const titulo = tituloDePagina("Lugares");
   const descripcion = "Centros culturales cerca de ti: mapa y lista, con su próximo evento.";
   return {
     title: titulo,
     description: descripcion,
     alternates: { canonical },
-    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: MARCA },
     twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
   };
 }

@@ -9,8 +9,9 @@ import { configPublica } from "@/lib/config";
 import { hrefEvento } from "@/lib/eventos";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import CreadorCartel, { type Opcion } from "./CreadorCartel";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "Crear cartel · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: tituloDePagina("Crear cartel"), robots: { index: false, follow: false } };
 
 /** Una versión corta de lo que cambia el cartel: si el evento o el dominio del sello cambian, las imágenes en la caché del teléfono dejan de valer. */
 function version(texto: string): string {

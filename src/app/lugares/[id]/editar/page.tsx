@@ -9,8 +9,9 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioLugar from "../../FormularioLugar";
 import { actualizarLugar } from "../../acciones";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Editar lugar · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Editar lugar"), robots: { index: false, follow: false } };
 
 /** Igual que la ficha: se busca por slug y, si no aparece, por UUID (la dirección vieja). */
 async function cargarLugar(idOSlug: string) {

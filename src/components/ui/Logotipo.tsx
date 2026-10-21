@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { raizConCiudad } from "@/lib/ciudad";
 import styles from "./Logotipo.module.css";
+import { MARCA } from "@/lib/marca";
 
 type Props = {
   /** Versión para tamaños chicos: dedos más gruesos y calzado sin cordones (barra interior). */
@@ -37,7 +38,7 @@ function EnlaceLogotipo({ chico = false, className, consulta }: Props & { consul
     router.replace(raizConCiudad("/", window.location.search));
   }
   return (
-    <Link href={raizConCiudad("/", consulta)} replace={enInicio} onClick={alTocar} className={[styles.logotipo, className].filter(Boolean).join(" ")} aria-label="Somos Nosotros, ir al inicio">
+    <Link href={raizConCiudad("/", consulta)} replace={enInicio} onClick={alTocar} className={[styles.logotipo, className].filter(Boolean).join(" ")} aria-label={`${MARCA}, ir al inicio`}>
       <Image
         src={chico ? "/logotipo-chico.svg" : "/logotipo.svg"}
         alt=""

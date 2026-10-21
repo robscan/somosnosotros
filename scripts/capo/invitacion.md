@@ -10,8 +10,8 @@ Por confirmar con el founder antes de mandar nada: el texto y cuál de las dos v
 
 ## Asunto (dos variantes, a elegir)
 
-- A: `{{nombre}}, tu ficha ya está en Somos Nosotros`
-- B: `¿Eres {{nombre}}? Tu ficha te espera en Somos Nosotros`
+- A: `{{nombre}}, tu ficha ya está en Somos Nosotrxs`
+- B: `¿Eres {{nombre}}? Tu ficha te espera en Somos Nosotrxs`
 
 ## Cuerpo (texto llano)
 
@@ -19,7 +19,7 @@ Por confirmar con el founder antes de mandar nada: el texto y cuál de las dos v
 Hola,
 
 Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal)
-para armar el directorio de Somos Nosotros, donde la gente encuentra centros culturales y eventos.
+para armar el directorio de Somos Nosotrxs, donde la gente encuentra centros culturales y eventos.
 
 Tu ficha está aquí: {{url}}
 
@@ -29,7 +29,7 @@ próximas fechas.
 Si prefieres que no aparezcas, ábrela y toca "Soy yo / es mi grupo" también: ahí puedes pedir que
 se quite.
 
-Somos Nosotros
+Somos Nosotrxs
 ```
 
 ## Notas para quien la mande

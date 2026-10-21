@@ -65,6 +65,7 @@ import RenglonCancelado, { AvisoCancelado } from "./MarcarCancelado";
 import MetaSitio from "./MetaSitio";
 import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ accion?: string; error?: string }> };
 type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null; sesiones?: SesionGuardada[] | null };
@@ -310,17 +311,17 @@ async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const e = await cargarEvento(id).catch(() => undefined);
-  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotros»), sin
+  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotrxs»), sin
   // `noindex` ni canonical; si la excepción saliera de aquí Next descartaría todas las etiquetas, también el título (OL-289).
   if (e === undefined) return {};
-  if (!e) return { title: "Evento · Somos Nosotros" };
+  if (!e) return { title: tituloDePagina("Evento") };
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14): sin imagen ni tarjeta; su ficha existe en pasado
   // (OL-383) y su título y su descripción lo dicen.
   if (eventoPaso(e.inicio, e.fin, new Date(), e.zona)) {
     // Si se marcó «se canceló» (OL-391), lo dice en vez de «Ya pasó»: sigue visible y se puede compartir.
     const cuandoFue = formatearLargo(e.inicio, new Date(), null, e.zona);
-    if (e.cancelado) return { title: `${e.titulo} · Se canceló · Somos Nosotros`, description: `Se canceló: era el ${cuandoFue}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
-    return { title: `${e.titulo} · Ya pasó · Somos Nosotros`, description: `Ya pasó: fue el ${cuandoFue}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
+    if (e.cancelado) return { title: tituloDePagina(e.titulo, "Se canceló"), description: `Se canceló: era el ${cuandoFue}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
+    return { title: tituloDePagina(e.titulo, "Ya pasó"), description: `Ya pasó: fue el ${cuandoFue}.`, alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` } };
   }
   const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);
   // Un festival dice sus sedes, derivadas de sus actos (OL-339): «Varias sedes» o la única; sin imagen propia, se comparte con el cartel de su
@@ -333,10 +334,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado, sedes })}${costo === POR_CONFIRMAR ? "" : ` · ${costo}`}`;
   const imagen = fotoDeEvento({ imagen: e.imagen, portadaActo: actos ? (portadaDeFestival(actos) ?? undefined) : undefined, lugar: e.lugar }) ?? undefined;
   return {
-    title: `${e.titulo} · Somos Nosotros`,
+    title: tituloDePagina(e.titulo),
     description: descripcion,
     alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` },
-    openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}${hrefEvento(e)}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}${hrefEvento(e)}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: MARCA },
     twitter: { card: imagen ? "summary_large_image" : "summary", title: e.titulo, description: descripcion, images: imagen ? [imagen] : undefined },
   };
 }

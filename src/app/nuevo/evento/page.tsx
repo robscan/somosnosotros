@@ -14,8 +14,9 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { arranqueDe, respuestasDeEvento, type EventoBase } from "./arranque";
 import AltaEvento from "./AltaEvento";
 import { cargarContextoClase } from "./contextoClase";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "Publicar un evento · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: tituloDePagina("Publicar un evento"), robots: { index: false, follow: false } };
 
 type Consulta = { lugar?: string; artista?: string; desde?: string; ciudad?: string; festival?: string };
 

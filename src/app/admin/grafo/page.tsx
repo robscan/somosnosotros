@@ -5,8 +5,9 @@ import { cargarGrafo, type GrafoCargado } from "@/lib/grafo";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../Reintentar";
 import Grafo from "./Grafo";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Grafo cultural · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Grafo cultural", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * El grafo cultural en 3D (OL-401, bitácora 432): lugares en su sitio real, artistas sobre el lugar donde más tocan y asistentes anónimos,

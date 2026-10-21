@@ -5,8 +5,9 @@ import plantilla from "@/components/ui/Plantilla.module.css";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { AYUDA, seccionesManual } from "../ayuda";
 import styles from "./Manual.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Manual del grafo · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Manual del grafo", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * El manual del grafo cultural (OL-402, bitácora 433): una página con cada entrada del diccionario del panel de ayuda (`../ayuda.ts`), agrupadas por

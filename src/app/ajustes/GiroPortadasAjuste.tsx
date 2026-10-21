@@ -23,7 +23,7 @@ function suscribirseMovimiento(escucha: () => void) {
 const sinSuscripcion = () => () => {};
 
 /**
- * «Mover las portadas con el teléfono» en Ajustes › Somos Nosotros (OL-375; decisión del 2026-10-11, recomendación del gestor aceptada por el
+ * «Mover las portadas con el teléfono» en Ajustes › Somos Nosotrxs (OL-375; decisión del 2026-10-11, recomendación del gestor aceptada por el
  * founder): el interruptor del giro de las portadas del sistema de Inicio, que se guarda en el teléfono. En el iPhone, el toque que lo enciende
  * pide el permiso del giroscopio (Safari solo lo pide tras un toque); si se niega, vuelve a apagado y lo dice en una línea. En Android no hay
  * permiso y viene encendido: sirve para apagarlo. Con «Reducir movimiento» no se mueve y lo dice; donde no hay giroscopio (una computadora) el

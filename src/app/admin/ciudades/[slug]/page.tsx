@@ -41,8 +41,9 @@ import { cargarDatosCiudad, cargarExtras, cargarPanelCiudades, conCifras, pedirP
 import TarjetaBusqueda from "../TarjetaBusqueda";
 import styles from "../../admin.module.css";
 import css from "../ciudades.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Ciudad · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Ciudad", "Administración"), robots: { index: false, follow: false } };
 
 const PILDORA: Record<EstadoVisible, string> = { abierta: `${styles.etiqueta} ${css.ok}`, detectada: `${styles.etiqueta} ${styles.destacada}`, cerrada: styles.etiqueta };
 

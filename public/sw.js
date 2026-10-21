@@ -3,7 +3,7 @@ self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener("push", (e) => {
-  let datos = { titulo: "somosnosotros", cuerpo: "", url: "/" };
+  let datos = { titulo: "Somos Nosotrxs", cuerpo: "", url: "/" }; // la marca (src/lib/marca.ts): un archivo estático no la importa
   try {
     datos = { ...datos, ...e.data.json() };
   } catch {}

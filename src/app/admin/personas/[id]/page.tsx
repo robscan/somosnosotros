@@ -15,8 +15,9 @@ import LoPublicado, { ANCLA_PUBLICADO } from "./LoPublicado";
 import RolPersona from "./RolPersona";
 import styles from "../../admin.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Persona · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Persona", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * La ficha de administración de una persona (decisión 8): cabecera, Cuenta y Actividad con el dibujo de Ajustes, «Lo que publicó» (OL-414) y Rol

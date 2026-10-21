@@ -7,6 +7,8 @@
  * Límite: el texto es imagen; no se selecciona ni se busca dentro del PDF (y un lector de pantalla solo lee el título del documento).
  */
 
+import { MARCA } from "./marca";
+
 /** Lo que dice la cabecera de un JPEG: su tamaño y cuántos canales trae (1 gris, 3 color, 4 CMYK). */
 export type MedidasJpeg = { ancho: number; alto: number; componentes: number };
 
@@ -90,7 +92,7 @@ export function pdfDeImagenes(jpegs: readonly Uint8Array[], o: OpcionesPdf): Buf
   const paginas = jpegs.map((_, i) => 4 + 3 * i);
   objeto(1, "<< /Type /Catalog /Pages 2 0 R >>");
   objeto(2, `<< /Type /Pages /Kids [${paginas.map((n) => `${n} 0 R`).join(" ")}] /Count ${jpegs.length} >>`);
-  const info = [o.titulo ? `/Title ${textoPdf(o.titulo)}` : "", o.autor ? `/Author ${textoPdf(o.autor)}` : "", `/Producer ${textoPdf("Somos Nosotrxs")}`, `/CreationDate (${fechaPdf(o.creado ?? new Date())})`].filter(Boolean).join(" ");
+  const info = [o.titulo ? `/Title ${textoPdf(o.titulo)}` : "", o.autor ? `/Author ${textoPdf(o.autor)}` : "", `/Producer ${textoPdf(MARCA)}`, `/CreationDate (${fechaPdf(o.creado ?? new Date())})`].filter(Boolean).join(" ");
   objeto(3, `<< ${info} >>`);
   jpegs.forEach((jpeg, i) => {
     const n = 4 + 3 * i;

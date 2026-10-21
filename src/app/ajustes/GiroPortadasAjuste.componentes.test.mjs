@@ -1,5 +1,5 @@
 /** OL-375 (bitácora 406): el renglón «Mover las portadas con el teléfono» de Ajustes, con el componente real y el CSS real, dentro de la tarjeta
- *  «Somos Nosotros» (los renglones vecinos son el real «Avisar al salir del sitio» y una copia del marcado de «Ayuda»). Toques reales con el
+ *  «Somos Nosotrxs» (`MARCA`; los renglones vecinos son el real «Avisar al salir del sitio» y una copia del marcado de «Ayuda»). Toques reales con el
  *  ratón sobre la palanca (antes, `elementFromPoint` confirma que su centro es ella). El permiso del iPhone se imita: Chrome trae
  *  `requestPermission`, pero responde que sí sin preguntar; Safari solo pregunta dentro de un toque y, sin él, solo responde si ya lo dio.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs node --test este-archivo   (o `npm run test:componentes`) */
@@ -13,6 +13,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
+/** La marca (src/lib/marca.ts, OL-435), empaquetada como en Imagen.componentes.test.mjs. */
+const { MARCA } = await import(`data:text/javascript;base64,${Buffer.from((await build({ entryPoints: [join(root, "src/lib/marca.ts")], bundle: true, platform: "node", format: "esm", write: false })).outputFiles[0].text).toString("base64")}`);
 let dir, server, browser, origin;
 
 const ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36";
@@ -35,9 +37,10 @@ before(async () => {
       import renglon from './src/components/ui/Renglon.module.css';
       import plantilla from './src/components/ui/Plantilla.module.css';
       import './src/app/globals.css';
+      import {MARCA} from './src/lib/marca';
       createRoot(document.getElementById('root')).render(
         <main className={plantilla.paginaContenido}>
-          <h2>Somos Nosotros</h2>
+          <h2>{MARCA}</h2>
           <ul className={renglon.tarjeta}>
             <AvisoSalidaAjuste />
             <GiroPortadasAjuste />
@@ -99,7 +102,7 @@ async function pagina(t, { ua, reducir = false, iphone = null, guardado = null }
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
   await p.goto(origin);
-  await p.getByRole("heading", { name: "Somos Nosotros" }).waitFor();
+  await p.getByRole("heading", { name: MARCA }).waitFor();
   await p.getByText("Avisar al salir del sitio").waitFor();
   return p;
 }

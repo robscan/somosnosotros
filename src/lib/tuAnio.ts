@@ -9,6 +9,7 @@
 import { agruparPorMes, artistasDelHistorial, lugaresDeTrayectoria, plural, type EventoPasado, type Presencia, realizados } from "./historialFichas";
 import { ZONA_INICIAL, zonaSegura } from "./fechas";
 import { respaldoDe } from "./portadasSistema";
+import { MARCA } from "./marca";
 
 /** De quién es el año: la persona (sus «Voy» que ya pasaron), un artista (sus fechas) o un lugar (sus eventos). */
 export type SujetoTuAnio = "persona" | "artista" | "lugar";
@@ -159,7 +160,7 @@ export function resumirTuAnio(e: EntradaTuAnio): ResumenTuAnio {
 
 /** La ceja de arriba, sobre el nombre: «SOMOS NOSOTRXS», «ARTISTA · SOMOS NOSOTRXS», «LUGAR · SOMOS NOSOTRXS» (se pinta en mayúsculas). */
 export function cejaDe(tipo: SujetoTuAnio): string {
-  return tipo === "persona" ? "Somos Nosotrxs" : tipo === "artista" ? "Artista · Somos Nosotrxs" : "Lugar · Somos Nosotrxs";
+  return tipo === "persona" ? MARCA : tipo === "artista" ? `Artista · ${MARCA}` : `Lugar · ${MARCA}`;
 }
 
 /** La clase cuya figura lleva la imagen (la de las portadas del sistema): taller la persona, festival el artista, exposición el lugar. */
