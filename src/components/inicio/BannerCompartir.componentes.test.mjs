@@ -14,6 +14,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
+/** La marca (src/lib/marca.ts, OL-435), empaquetada como en Imagen.componentes.test.mjs. */
+const { MARCA } = await import(`data:text/javascript;base64,${Buffer.from((await build({ entryPoints: [join(root, "src/lib/marca.ts")], bundle: true, platform: "node", format: "esm", write: false })).outputFiles[0].text).toString("base64")}`);
 const LLAVE = "somosnosotros:inicio-compartir";
 const LLAVE_CERRADO = "somosnosotros:inicio-compartir-cerrado";
 let dir, server, browser, origin;
@@ -158,7 +160,7 @@ test("sale tras el carril estelar, con las medidas firmadas y el texto de OL-407
   assert.equal(m.radio, "12px");
   assert.deepEqual(m.icono, [44, 44, "50%"]);
   assert.deepEqual(m.simbolo, [26, "rgb(109, 52, 200)", "rgb(255, 255, 255)"], "el símbolo SN de 26, en violeta, sobre el círculo blanco");
-  assert.deepEqual(m.titulo, ["¿Te gusta Somos Nosotrxs?", "18px", "800"]);
+  assert.deepEqual(m.titulo, [`¿Te gusta ${MARCA}?`, "18px", "800"]);
   assert.deepEqual(m.texto, ["Comparte con tus amigxs.", "15px"], "OL-407: «Comparte con tus amigxs.»");
   assert.deepEqual(m.cerrar, [36, 36, 10, 10], "la × de 36, metida 6 en la esquina");
   assert.deepEqual(m.boton, [318, 44, "999px", true], "«Compartir» a lo ancho, de 44, en píldora y con su icono");
@@ -241,7 +243,7 @@ test("«Compartir» con la hoja del teléfono: compartida, avisa y se queda; can
   const p = await pagina(t, { hoja: "compartida" });
   await tocar(p, banner(p).getByRole("button", { name: "Compartir" }));
   await p.getByRole("status").filter({ hasText: "Gracias por compartir" }).waitFor();
-  assert.deepEqual(await p.evaluate(() => window.compartidoCon), { title: "Somos Nosotrxs", text: "¿Te gusta Somos Nosotrxs? Comparte con tus amigxs.", url: "https://somosnosotros.org" });
+  assert.deepEqual(await p.evaluate(() => window.compartidoCon), { title: MARCA, text: `¿Te gusta ${MARCA}? Comparte con tus amigxs.`, url: "https://somosnosotros.org" });
   assert.equal(await banner(p).count(), 1, "OL-407: compartir no lo quita");
   await medido(p);
   assert.deepEqual(p.medidas, [{ nombre: "compartir", datos: { que: "app", medio: "hoja" } }], "la hoja abierta y no cancelada");

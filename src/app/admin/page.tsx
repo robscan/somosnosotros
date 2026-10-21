@@ -19,8 +19,9 @@ import Reintentar from "./Reintentar";
 import GrupoShowcase from "./showcase/GrupoShowcase";
 import styles from "./admin.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Administración"), robots: { index: false, follow: false } };
 
 const ICONO = { personas: IconoPersonas, lugares: IconoPin, eventos: IconoCalendario, artistas: IconoEstrella };
 const SECCIONES = [

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { armarCorreo, asuntoDe, type Candidato, elegirTanda, enmascarar, invitadosPrevios, normalizarCorreo, urlFicha } from "./invitar";
+import { MARCA } from "../../src/lib/marca";
 
 describe("asuntoDe y urlFicha", () => {
   it("dos variantes de asunto, con el nombre del artista", () => {
-    expect(asuntoDe("Vitalis")).toBe("Vitalis, tu ficha ya está en Somos Nosotros");
-    expect(asuntoDe("Vitalis", "B")).toBe("¿Eres Vitalis? Tu ficha te espera en Somos Nosotros");
+    expect(asuntoDe("Vitalis")).toBe(`Vitalis, tu ficha ya está en ${MARCA}`);
+    expect(asuntoDe("Vitalis", "B")).toBe(`¿Eres Vitalis? Tu ficha te espera en ${MARCA}`);
   });
   it("con slug, la ficha va a somosnosotros.org/artistas/<slug>", () => {
     expect(urlFicha("abc-123", "vitalis")).toBe("https://somosnosotros.org/artistas/vitalis");
@@ -19,7 +20,7 @@ describe("asuntoDe y urlFicha", () => {
 describe("armarCorreo", () => {
   it("con slug: un solo llamado, la URL usa el slug, no el UUID", () => {
     const c = armarCorreo("Vitalis", "abc-123", "vitalis");
-    expect(c.asunto).toBe("Vitalis, tu ficha ya está en Somos Nosotros");
+    expect(c.asunto).toBe(`Vitalis, tu ficha ya está en ${MARCA}`);
     expect(c.url).toBe("https://somosnosotros.org/artistas/vitalis");
     expect(c.texto).toContain("https://somosnosotros.org/artistas/vitalis");
     expect(c.texto).toContain('"Soy yo / es mi grupo"');

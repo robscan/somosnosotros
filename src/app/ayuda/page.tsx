@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "../privacidad/legal.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
-const DESCRIPCION = "Cómo usar Somos Nosotros: publicar un evento, seguir lugares y artistas, avisos, borrar tu cuenta y cómo escribirnos.";
+const DESCRIPCION = `Cómo usar ${MARCA}: publicar un evento, seguir lugares y artistas, avisos, borrar tu cuenta y cómo escribirnos.`;
 
-export const metadata: Metadata = { title: "Ayuda · Somos Nosotros", description: DESCRIPCION };
+export const metadata: Metadata = { title: tituloDePagina("Ayuda"), description: DESCRIPCION };
 
 /**
  * Página de ayuda: la URL de soporte que pide Apple para la ficha de la app en la tienda (App Store Connect,
@@ -19,14 +20,14 @@ export default function Ayuda() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Ayuda</h1>
-        <p className="subtitulo">Cómo escribirnos y las preguntas más comunes sobre Somos Nosotros.</p>
+        <p className="subtitulo">Cómo escribirnos y las preguntas más comunes sobre {MARCA}.</p>
 
         <h2>Cómo escribirnos</h2>
         <p>
           Manda un correo a <a href="mailto:hola@somosnosotros.org">hola@somosnosotros.org</a> y te respondemos.
         </p>
 
-        <h2>¿Qué es Somos Nosotros?</h2>
+        <h2>¿Qué es {MARCA}?</h2>
         <p>Un directorio de lugares culturales y su agenda de eventos, para que la gente se entere de qué hay en su ciudad y se conozca. Lo publican la administración y quienes se registran.</p>
 
         <h2>¿Cómo publico un evento?</h2>

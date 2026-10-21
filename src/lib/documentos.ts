@@ -14,6 +14,7 @@ import { etiquetaEnlace, normalizarRedes } from "./enlaces";
 import { sitioEnLista } from "./eventos";
 import { esDeVariosDias, horaCorta, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { artistasDelHistorial, cabeceraTrayectoria, listaCon, lugaresDeTrayectoria, otrosArtistas, plural, realizados, type EventoPasado, type Presencia } from "./historialFichas";
+import { MARCA } from "./marca";
 
 /** De quién es el documento: la presentación es del artista; el informe, del lugar. */
 export type QueDocumento = "artista" | "lugar";
@@ -384,5 +385,5 @@ export function versionDocumento(d: Documento): string {
 /** La línea de ayuda de la hoja, con cuántas páginas salen. */
 export function ayudaDocumento(que: QueDocumento, nombre: string, paginas: number): string {
   const cuantas = plural(paginas, "página", "páginas");
-  return que === "artista" ? `Tus fechas en Somos Nosotrxs, tu reseña y tus redes, listas para enviar: ${cuantas}.` : `Lo que pasó en ${nombre} en el periodo, con las definiciones de cada cifra: ${cuantas}.`;
+  return que === "artista" ? `Tus fechas en ${MARCA}, tu reseña y tus redes, listas para enviar: ${cuantas}.` : `Lo que pasó en ${nombre} en el periodo, con las definiciones de cada cifra: ${cuantas}.`;
 }

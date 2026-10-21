@@ -6,8 +6,9 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { publicarNovedadArtista } from "../acciones";
 import FormularioNovedad from "./FormularioNovedad";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Publicar novedad · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Publicar novedad"), robots: { index: false, follow: false } };
 
 /** Igual que la ficha y Editar artista: se busca por slug y, si no aparece, por UUID (la dirección vieja). */
 async function cargarArtista(idOSlug: string) {

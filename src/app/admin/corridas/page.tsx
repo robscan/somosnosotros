@@ -11,8 +11,9 @@ import Reintentar from "../Reintentar";
 import { cargarPanelCiudades, pedirPasoSiHayVaradas } from "../ciudades/consultas";
 import styles from "../admin.module.css";
 import css from "../ciudades/ciudades.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Corridas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Corridas", "Administración"), robots: { index: false, follow: false } };
 
 const ICONO: Record<TipoCorrida, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello };
 const TONO: Record<Pildora["tono"], string | undefined> = { gris: undefined, violeta: styles.etiquetaRol, verde: css.ok, naranja: styles.destacada, rojo: css.fallo };

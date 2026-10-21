@@ -7,6 +7,7 @@ import BotonCompartir from "@/components/BotonCompartir";
 import EventosPorDia from "@/components/EventosPorDia";
 import Asistencia from "./Asistencia";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { MARCA } from "@/lib/marca";
 
 /**
  * OL-161 (bitácora 196): la cabecera de la ficha (foto, nombre, cuándo, dónde, JSON-LD, canonical) tiene que salir
@@ -126,7 +127,7 @@ describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () =
     const { generateMetadata } = await import("./page");
     const metadata = await generateMetadata({ params: Promise.resolve({ id: "evento-de-prueba" }) });
     expect(metadata.alternates?.canonical).toBe("https://somosnosotros.org/eventos/evento-de-prueba");
-    expect(metadata.title).toBe("Evento de prueba · Somos Nosotros");
+    expect(metadata.title).toBe(`Evento de prueba · ${MARCA}`);
   });
 });
 
@@ -248,7 +249,7 @@ describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", (
   it("sin fila y sin error es «no existe»: notFound y título de ficha inexistente", async () => {
     await con({ data: null, error: null }, async () => {
       await expect(pedir()).rejects.toThrow("NOT_FOUND");
-      expect((await metadatos()).title).toBe("Evento · Somos Nosotros");
+      expect((await metadatos()).title).toBe(`Evento · ${MARCA}`);
     });
   });
 
@@ -512,7 +513,7 @@ describe("la ficha en pasado (OL-383)", () => {
     vi.mocked(clienteServidor).mockResolvedValue(cliente as unknown as Awaited<ReturnType<typeof clienteServidor>>);
     const { generateMetadata } = await import("./page");
     const meta = await generateMetadata({ params: Promise.resolve({ id: PASADO.slug }) });
-    expect(meta.title).toBe("Evento de prueba · Ya pasó · Somos Nosotros");
+    expect(meta.title).toBe(`Evento de prueba · Ya pasó · ${MARCA}`);
     expect(meta.openGraph).toBeUndefined();
     expect(meta.robots).toBeUndefined();
   });
@@ -815,7 +816,7 @@ describe("«Se canceló»: anunciado vs. realizado (OL-391)", () => {
     vi.mocked(clienteServidor).mockResolvedValue(clienteFalso({ eventos: { data: { ...PASADO, cancelado: true } } }) as unknown as Awaited<ReturnType<typeof clienteServidor>>);
     const { generateMetadata } = await import("./page");
     const meta = await generateMetadata({ params: Promise.resolve({ id: PASADO.slug }) });
-    expect(meta.title).toBe("Evento de prueba · Se canceló · Somos Nosotros");
+    expect(meta.title).toBe(`Evento de prueba · Se canceló · ${MARCA}`);
     expect(meta.description).toMatch(/^Se canceló: era el /);
     expect(meta.openGraph).toBeUndefined();
   });

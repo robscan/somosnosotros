@@ -36,6 +36,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cargarEnv, enmascarar, mandarCorreo, RUTA_ENV } from "../lib/correo-envio";
+import { MARCA } from "../../src/lib/marca";
 
 export const SITIO = "https://somosnosotros.org";
 export const DIAS_RECORDATORIO = 12;
@@ -284,31 +285,31 @@ export type Firma = { telefono: string };
 /** El icono de la app en la firma HTML del correo (pedido del founder, 2026-09-22, tras la comprobación
  * técnica): 40×40, esquinas redondeadas, con alt. Solo en el HTML; el texto plano no lleva nada. */
 export const ICONO_URL = `${SITIO}/icono-192.png`;
-const ICONO_HTML = `<p><img src="${ICONO_URL}" alt="Somos Nosotros" width="40" height="40" style="border-radius:8px;display:block" /></p>`;
+const ICONO_HTML = `<p><img src="${ICONO_URL}" alt="${MARCA}" width="40" height="40" style="border-radius:8px;display:block" /></p>`;
 
 function firmaTexto(f: Firma): string {
-  return `Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · Somos Nosotros\nsomosnosotros.org · ${f.telefono}`;
+  return `Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · ${MARCA}\nsomosnosotros.org · ${f.telefono}`;
 }
 
 function firmaHtml(f: Firma): string {
-  return `${ICONO_HTML}\n<p>Gracias,<br>Oscar Muñiz Blanco<br>Coordinación de agenda · Somos Nosotros<br><a href="${SITIO}">somosnosotros.org</a> · ${escapar(f.telefono)}</p>`;
+  return `${ICONO_HTML}\n<p>Gracias,<br>Oscar Muñiz Blanco<br>Coordinación de agenda · ${MARCA}<br><a href="${SITIO}">somosnosotros.org</a> · ${escapar(f.telefono)}</p>`;
 }
 
 function escapar(s: string): string {
   return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-const INTRO = "Somos Nosotros es un directorio de centros culturales y agenda de eventos, para que la gente local se conozca.";
+const INTRO = `${MARCA} es un directorio de centros culturales y agenda de eventos, para que la gente local se conozca.`;
 const SALIDA = 'Si prefieren que no les volvamos a escribir, contesten con "no me escriban más"';
 
 export function asuntoDe(d: Destino, variante: VarianteAsunto = "A", recordatorio = false): string {
   if (recordatorio) {
-    if (d.variante === "buzon_compartido") return `Recordatorio: agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} en Somos Nosotros`;
-    return d.variante === "organismo" ? `Recordatorio: agendas de ${d.nombre} en Somos Nosotros` : `Recordatorio: la agenda de ${d.nombre} en Somos Nosotros`;
+    if (d.variante === "buzon_compartido") return `Recordatorio: agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} en ${MARCA}`;
+    return d.variante === "organismo" ? `Recordatorio: agendas de ${d.nombre} en ${MARCA}` : `Recordatorio: la agenda de ${d.nombre} en ${MARCA}`;
   }
-  if (d.variante === "organismo") return `Somos Nosotros — agendas de ${d.nombre} en San Luis Potosí`;
-  if (d.variante === "buzon_compartido") return `Somos Nosotros — agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} en San Luis Potosí`;
-  return variante === "A" ? `${d.nombre}, súmate a la agenda de Somos Nosotros` : "¿Nos mandas tu agenda de este mes?";
+  if (d.variante === "organismo") return `${MARCA} — agendas de ${d.nombre} en San Luis Potosí`;
+  if (d.variante === "buzon_compartido") return `${MARCA} — agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} en San Luis Potosí`;
+  return variante === "A" ? `${d.nombre}, súmate a la agenda de ${MARCA}` : "¿Nos mandas tu agenda de este mes?";
 }
 
 function cuerpoInstitucion(d: Destino, f: Firma): { texto: string; html: string } {
@@ -398,14 +399,14 @@ function cuerpoRecordatorio(d: Destino, f: Firma): { texto: string; html: string
     : `la agenda de ${d.nombre} y sumarla`;
   const texto = `Hola de nuevo,
 
-Les escribimos hace unos días para pedirles ${que} a Somos Nosotros. Si ya nos la mandaron por otro medio, ignoren este correo. Si no, nos sirve lo que tengan a la mano — cartel, PDF o un enlace.
+Les escribimos hace unos días para pedirles ${que} a ${MARCA}. Si ya nos la mandaron por otro medio, ignoren este correo. Si no, nos sirve lo que tengan a la mano — cartel, PDF o un enlace.
 
 ${SALIDA}.
 
 ${firmaTexto(f)}`;
   const html = [
     "<p>Hola de nuevo,</p>",
-    `<p>Les escribimos hace unos días para pedirles ${escapar(que)} a Somos Nosotros. Si ya nos la mandaron por otro medio, ignoren este correo. Si no, nos sirve lo que tengan a la mano — cartel, PDF o un enlace.</p>`,
+    `<p>Les escribimos hace unos días para pedirles ${escapar(que)} a ${MARCA}. Si ya nos la mandaron por otro medio, ignoren este correo. Si no, nos sirve lo que tengan a la mano — cartel, PDF o un enlace.</p>`,
     `<p>${SALIDA.replace('"no me escriban más"', "“no me escriban más”")}.</p>`,
     firmaHtml(f),
   ].join("\n");

@@ -18,8 +18,9 @@ import MisArtistas from "./MisArtistas";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./perfil.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Mi perfil · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Mi perfil"), robots: { index: false, follow: false } };
 const ORIGEN = "https://somosnosotros.org";
 
 /**
@@ -52,7 +53,7 @@ export default async function PaginaPerfil() {
         // de «Mis artistas». Comparte la app (el enlace del sitio), no la ficha: eso es el botón de la cabecera. Como en Ajustes, no se mide
         // (BotonCompartir solo mide fichas; la app la mide el banner de Inicio, OL-388).
         invitar={
-          <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={`${renglon.ajuste} ${renglon.sola}`}>
+          <BotonCompartir titulo={MARCA} texto={TEXTO_INVITAR} url={ORIGEN} className={`${renglon.ajuste} ${renglon.sola}`}>
             <IconoCompartir width={20} height={20} />
             <b>Invitar a tus amigxs</b>
             <small>Se comparte el enlace del sitio</small>

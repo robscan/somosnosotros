@@ -7,6 +7,7 @@ import { IconoEnlace } from "./Iconos";
 import { debeAvisar, guardarSinAvisoSalida, sinAvisoSalida } from "@/lib/avisoSalida";
 import { dominioDe } from "@/lib/enlaces";
 import styles from "./EnlaceExterno.module.css";
+import { MARCA } from "@/lib/marca";
 
 type Props = { href: string; className?: string; children: ReactNode; ariaLabel?: string };
 
@@ -49,18 +50,18 @@ export default function EnlaceExterno({ href, className, children, ariaLabel }: 
         {children}
       </a>
       {abierta && (
-        <Hoja etiqueta="Vas a salir de Somos Nosotros" onCerrar={quedarme}>
+        <Hoja etiqueta={`Vas a salir de ${MARCA}`} onCerrar={quedarme}>
           {/* Todo dentro de un mismo contenedor (como ui/SalirSinPublicar), no directo hijo de la hoja: así el
               título no hereda el margen que ui/Hoja.module.css da a "h3 seguido de p" (aquí sigue una tarjeta,
               no un párrafo) y el espaciado se resuelve con una sola regla de grid, no botón por botón. */}
           <div className={styles.contenido}>
-            <h3>Vas a salir de Somos Nosotros</h3>
+            <h3>Vas a salir de {MARCA}</h3>
             <div className={styles.sitio}>
               <div className={styles.dominio}>
                 <IconoEnlace width={20} height={20} />
                 <span className={styles.texto}>{dominioDe(href)}</span>
               </div>
-              <p className={styles.porque}>Ese sitio no es de Somos Nosotros: tiene sus propias reglas.</p>
+              <p className={styles.porque}>Ese sitio no es de {MARCA}: tiene sus propias reglas.</p>
             </div>
             <Boton type="button" onClick={continuar}>
               Continuar

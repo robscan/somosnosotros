@@ -19,6 +19,7 @@
 import { fileURLToPath } from "node:url";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cargarEnv, enmascarar, mandarCorreo, RUTA_ENV } from "../lib/correo-envio";
+import { MARCA } from "../../src/lib/marca";
 
 // cargarEnv, mandarCorreo y enmascarar viven ahora en scripts/lib/correo-envio.ts (OL-122: el envío a
 // instituciones usa exactamente las mismas); se reexportan para que nada que importe de aquí cambie.
@@ -32,7 +33,7 @@ export type Variante = "A" | "B";
 
 /** Dos variantes de asunto, para que el founder elija (docs en scripts/capo/invitacion.md). */
 export function asuntoDe(nombre: string, variante: Variante = "A"): string {
-  return variante === "A" ? `${nombre}, tu ficha ya está en Somos Nosotros` : `¿Eres ${nombre}? Tu ficha te espera en Somos Nosotros`;
+  return variante === "A" ? `${nombre}, tu ficha ya está en ${MARCA}` : `¿Eres ${nombre}? Tu ficha te espera en ${MARCA}`;
 }
 
 /** La ficha por su slug (la dirección de hoy) o, si aún no tiene, por el UUID (la vieja, que el proxy
@@ -44,7 +45,7 @@ export function urlFicha(artistaId: string, slug?: string | null): string {
 export function cuerpoTexto(nombre: string, url: string): string {
   return `Hola,
 
-Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de Somos Nosotros, donde la gente encuentra centros culturales y eventos.
+Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de ${MARCA}, donde la gente encuentra centros culturales y eventos.
 
 Tu ficha está aquí: ${url}
 
@@ -52,7 +53,7 @@ Tu ficha está aquí: ${url}
 
 Si prefieres que no aparezcas, ábrela y toca "Soy yo / es mi grupo" también: ahí puedes pedir que se quite.
 
-Somos Nosotros`;
+${MARCA}`;
 }
 
 /** El cuerpo no lleva el nombre (se dice con "Hola,"; ver scripts/capo/invitacion.md); el parámetro
@@ -60,11 +61,11 @@ Somos Nosotros`;
 export function cuerpoHtml(_nombre: string, url: string): string {
   return [
     "<p>Hola,</p>",
-    `<p>Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de Somos Nosotros, donde la gente encuentra centros culturales y eventos.</p>`,
+    `<p>Tomamos tu ficha del Catálogo de Artistas Potosinos (el catálogo de la Dirección de Cultura Municipal) para armar el directorio de ${MARCA}, donde la gente encuentra centros culturales y eventos.</p>`,
     `<p>Tu ficha está aquí: <a href="${url}">${url}</a></p>`,
     `<p>Ábrela y toca “Soy yo / es mi grupo” para hacerla tuya: le pones foto, la editas y publicas tus próximas fechas.</p>`,
     `<p>Si prefieres que no aparezcas, ábrela y toca “Soy yo / es mi grupo” también: ahí puedes pedir que se quite.</p>`,
-    "<p>Somos Nosotros</p>",
+    `<p>${MARCA}</p>`,
   ].join("\n");
 }
 

@@ -12,27 +12,28 @@ import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
 import { etiquetaLugar, etiquetaTipo, hrefLugar } from "@/lib/lugares";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import CuerpoLugar, { cargarFicha, cargarLugar, OpcionesLugar, ORIGEN, SeguirLugar } from "./CuerpoLugar";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const lugar = await cargarLugar(id).catch(() => undefined);
-  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotros»), sin
+  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotrxs»), sin
   // `noindex` ni canonical; si la excepción saliera de aquí Next descartaría todas las etiquetas, también el título (OL-289).
   if (lugar === undefined) return {};
-  if (!lugar) return { title: "Lugar · Somos Nosotros" };
+  if (!lugar) return { title: tituloDePagina("Lugar") };
   const descripcion = `${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`;
   // Sin portada, la imagen por defecto del sitio: el enlace compartido nunca sale sin imagen (OL-143, doc 36).
   const imagen = lugar.portada ?? "/portada.png";
   return {
-    title: `${lugar.nombre} · Somos Nosotros`,
+    title: tituloDePagina(lugar.nombre),
     description: descripcion,
     // Un lugar privado no lo indexa Google (OL-179): en la práctica ya es inalcanzable sin sesión (la política de
     // lectura lo esconde de cualquiera que no sea su autor o la administración), pero se lo decimos igual.
     ...(lugar.privado ? { robots: { index: false, follow: false } } : {}),
     alternates: { canonical: `${ORIGEN}${hrefLugar(lugar)}` },
-    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: [{ url: imagen }], locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: [{ url: imagen }], locale: "es_MX", siteName: MARCA },
     twitter: { card: "summary_large_image", title: lugar.nombre, description: descripcion, images: [imagen] },
   };
 }

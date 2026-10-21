@@ -2,6 +2,7 @@ import type { CSSProperties, ReactElement } from "react";
 import { CAJA_SN, TRAZO_SN } from "../../simboloSN";
 import { FORMATOS_DOCUMENTO, type BloqueDocumento, type CifraDocumento, type Documento, type FilaDocumento, type FormatoDocumento, type NombreDocumento } from "../../documentos";
 import { ajustar, ajustarRenglon, anchoTexto, partirRenglones, type Fuente } from "../medir";
+import { MARCA } from "../../marca";
 
 /**
  * Las páginas de la «Presentación» del artista y del «Informe de actividad» del lugar (OL-396), con el motor del cartel (satori y sharp,
@@ -390,7 +391,7 @@ function partirPie(d: Documento, ancho: number): Trozo[][] {
   const meter = (texto: string, color: string) => texto.split(/\s+/).filter(Boolean).forEach((t) => palabras.push({ texto: t, color }));
   meter("Elaborado el", C.suave);
   meter(d.elaborado, C.tinta);
-  meter(`con Somos Nosotrxs a partir de lo publicado en la app${d.reglas ? `; ${d.reglas}` : ""}. Puede estar incompleto.`, C.suave);
+  meter(`con ${MARCA} a partir de lo publicado en la app${d.reglas ? `; ${d.reglas}` : ""}. Puede estar incompleto.`, C.suave);
   const renglones: Trozo[][] = [];
   let actual: Trozo[] = [];
   let w = 0;

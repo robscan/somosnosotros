@@ -6,11 +6,12 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarObraParaPintar, cargarPincelActivo } from "../../consultas";
 import Mando from "./Mando";
 import styles from "./mando.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const obra = esUuid(id) ? await cargarObraParaPintar(id) : null;
-  return { title: `Pintar en ${obra?.nombre ?? "una obra colectiva"} · Somos Nosotros`, robots: { index: false, follow: false } };
+  return { title: tituloDePagina(`Pintar en ${obra?.nombre ?? "una obra colectiva"}`), robots: { index: false, follow: false } };
 }
 
 /**

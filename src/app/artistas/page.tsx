@@ -20,6 +20,7 @@ import { ORIGEN } from "@/lib/sitemap";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./page.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type SearchParams = { ciudad?: string; hace?: string; que?: string; n?: string };
 
@@ -38,13 +39,13 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const ciudades = await cargarCiudadesDeArtistas(true);
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/artistas" : `/artistas?ciudad=${resuelta.slug}`;
-  const titulo = "Artistas · Somos Nosotros";
+  const titulo = tituloDePagina("Artistas");
   const descripcion = "Quiénes hacen la cultura local: artistas y grupos, con su próxima fecha.";
   return {
     title: titulo,
     description: descripcion,
     alternates: { canonical },
-    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: MARCA },
     twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
   };
 }

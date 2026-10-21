@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./legal.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "Aviso de privacidad · Somos Nosotros" };
+export const metadata: Metadata = { title: tituloDePagina("Aviso de privacidad") };
 
 /** Quién responde por los datos y por dónde se le escribe (correo personal del founder, decidido el 2026-09-14: el dominio no recibe correo). */
-export const RESPONSABLE = { nombre: "Somos Nosotros", contacto: "oscar@agenciaparadigma.com" };
+export const RESPONSABLE = { nombre: MARCA, contacto: "oscar@agenciaparadigma.com" };
 
 /**
  * Aviso de privacidad (Ley Federal de Protección de Datos Personales en Posesión de los Particulares).
@@ -57,7 +58,7 @@ export default function Privacidad() {
           Para saber cómo se usa la app medimos con Vercel Analytics y Google Analytics qué páginas se ven y acciones sin nombre, como que se publicó un evento o que alguien dijo «Voy». Sin cookies de medición y sin identificar a nadie: no se manda tu nombre, tu correo, lo que escribes al buscar ni tu ubicación. A la administración no se le mide.
         </p>
         <p>
-          Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a Somos Nosotros; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.
+          Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a {MARCA}; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.
         </p>
 
         <h2>Tus derechos</h2>

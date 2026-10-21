@@ -12,8 +12,9 @@ import Avatar from "../Avatar";
 import { cargarPersonas } from "../consultas";
 import Reintentar from "../Reintentar";
 import styles from "../admin.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Personas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Personas", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * Personas (decisión 7): buscar por nombre o correo, filtrar con conteo y leer lo más significativo de cada quien. El

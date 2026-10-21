@@ -8,8 +8,9 @@ import Reintentar from "../../../Reintentar";
 import Bandeja from "../../Bandeja";
 import { cargarBandeja } from "../../consultas";
 import styles from "../../../admin.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Propuestas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Propuestas", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * La bandeja de una corrida (OL-427). Desde OL-432 la bandeja es por ciudad (respuesta 7): una corrida con ciudad lleva a la de su ciudad, así

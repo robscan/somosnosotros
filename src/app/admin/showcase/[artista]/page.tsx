@@ -43,8 +43,9 @@ import SenalFicha from "./SenalFicha";
 import admin from "../../admin.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import s from "../showcase.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Ficha de showcase · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Ficha de showcase", "Administración"), robots: { index: false, follow: false } };
 
 const RAIZ = "ficha-showcase";
 const ICONO_BASE = { total: IconoCalendario, lugar: IconoPin, festival: IconoEtiqueta } as const;

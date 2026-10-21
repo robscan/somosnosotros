@@ -6,8 +6,9 @@ import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import { enlaceDeAlta } from "@/lib/armazon";
 import styles from "./borrado.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Borrado · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Borrado"), robots: { index: false, follow: false } };
 
 /** Confirmación de borrado con estado vacío (pedido del founder, 2026-09-15): antes, borrar abría otra ficha. */
 const TEXTOS = {

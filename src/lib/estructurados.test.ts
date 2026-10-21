@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { jsonLdArtista, jsonLdLugar, jsonLdMigajas, jsonLdSitio } from "./estructurados";
+import { MARCA, MARCA_ANTERIOR } from "./marca";
 
 describe("jsonLdLugar", () => {
   const base = { nombre: "Casa de la Cultura", descripcion: null, direccion: null, ciudad: "San Luis Potosí", lat: 22.15, lng: -100.98, imagen: null, url: "/lugares/casa-de-la-cultura" };
@@ -46,7 +47,7 @@ describe("jsonLdArtista", () => {
 
 describe("jsonLdSitio", () => {
   it("manda WebSite con el nombre y el dominio", () => {
-    expect(jsonLdSitio()).toEqual({ "@context": "https://schema.org", "@type": "WebSite", name: "Somos Nosotros", url: "https://somosnosotros.org" });
+    expect(jsonLdSitio()).toEqual({ "@context": "https://schema.org", "@type": "WebSite", name: MARCA, alternateName: MARCA_ANTERIOR, url: "https://somosnosotros.org" });
   });
 });
 

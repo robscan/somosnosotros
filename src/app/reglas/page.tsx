@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "../privacidad/legal.module.css";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
-export const metadata: Metadata = { title: "Reglas de uso · Somos Nosotros" };
+export const metadata: Metadata = { title: tituloDePagina("Reglas de uso") };
 
 /**
  * Reglas de uso, en llano. No son "términos y condiciones" de abogado: dicen qué se puede publicar
@@ -15,7 +16,7 @@ export default function Reglas() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Reglas de uso</h1>
-        <p className="subtitulo">Estas son las reglas para que Somos Nosotros siga sirviendo a la gente que lo usa.</p>
+        <p className="subtitulo">Estas son las reglas para que {MARCA} siga sirviendo a la gente que lo usa.</p>
 
         <h2>Qué se publica aquí</h2>
         <ul>

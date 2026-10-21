@@ -5,8 +5,9 @@ import plantilla from "@/components/ui/Plantilla.module.css";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { AYUDA_SHOWCASE, REGLAS_GOBIERNO, RUTA_MANUAL_SHOWCASE, SECCIONES_MANUAL } from "../ayuda";
 import styles from "../../grafo/manual/Manual.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Manual del showcase · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Manual del showcase", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * El manual del showcase (OL-426): cada entrada del panel de ayuda de la ficha (`../ayuda.ts`), con la rúbrica entera (0, 1 y 2 de cada señal) y

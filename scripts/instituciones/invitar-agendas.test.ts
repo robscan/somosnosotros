@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MARCA } from "../../src/lib/marca";
 import {
   armarCorreo, armarDestinos, asuntoDe, type Destino, type EnvioPrevio, type Fila, hashCorreo, ICONO_URL, leerArgumentos, leerCsv, leerFilas, listaCorta,
   nombreBuzonCompartido, paraRecordatorio, quitarYaEnviados, repartir, tipoDe, urlFicha,
@@ -85,13 +86,13 @@ describe("armarCorreo", () => {
   const buzon = destinos.find((d) => d.variante === "buzon_compartido")!;
   it("variante institución: enlace a su ficha por slug, un solo llamado, salida y firma con el teléfono", () => {
     const c = armarCorreo(inst, FIRMA);
-    expect(c.asunto).toBe("Museo Uno, súmate a la agenda de Somos Nosotros");
+    expect(c.asunto).toBe(`Museo Uno, súmate a la agenda de ${MARCA}`);
     expect(c.url).toBe("https://somosnosotros.org/lugares/museo-uno");
     expect(c.texto).toContain("Museo Uno ya tiene su ficha en la plataforma");
     expect(c.texto).toContain("https://somosnosotros.org/lugares/museo-uno");
     expect(c.texto).toContain("agenda o cartelera de este mes");
     expect(c.texto).toContain('"no me escriban más"');
-    expect(c.texto.endsWith("Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · Somos Nosotros\nsomosnosotros.org · 444 000 0000")).toBe(true);
+    expect(c.texto.endsWith(`Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · ${MARCA}\nsomosnosotros.org · 444 000 0000`)).toBe(true);
     expect(c.html).toContain('href="https://somosnosotros.org/lugares/museo-uno"');
     expect(c.html).toContain("<strong>agenda o cartelera de este mes</strong>");
     expect(c.html).toContain("444 000 0000");
@@ -102,7 +103,7 @@ describe("armarCorreo", () => {
   });
   it("variante organismo: lista de sedes, pide reenvío o contacto, sin enlace a ficha", () => {
     const c = armarCorreo(org, FIRMA);
-    expect(c.asunto).toBe("Somos Nosotros — agendas de Organismo X en San Luis Potosí");
+    expect(c.asunto).toBe(`${MARCA} — agendas de Organismo X en San Luis Potosí`);
     expect(c.texto).toContain("Ya tenemos fichas de Sede A y Sede B en la plataforma");
     expect(c.texto).toContain("reenviar esto a quien corresponda, o darnos el contacto de cada sede");
     expect(c.texto).not.toContain("/lugares/");
@@ -112,7 +113,7 @@ describe("armarCorreo", () => {
   });
   it("variante buzón compartido: un solo correo, cada institución con su propia ficha, sin pedir reenvío ni contacto", () => {
     const c = armarCorreo(buzon, FIRMA);
-    expect(c.asunto).toBe("Somos Nosotros — agendas de Museo Cuatro y Centro Cinco en San Luis Potosí");
+    expect(c.asunto).toBe(`${MARCA} — agendas de Museo Cuatro y Centro Cinco en San Luis Potosí`);
     expect(c.texto).toContain("Museo Cuatro y Centro Cinco ya tienen su ficha en la plataforma");
     expect(c.texto).toContain("- Museo Cuatro: https://somosnosotros.org/lugares/museo-cuatro");
     expect(c.texto).toContain("- Centro Cinco: https://somosnosotros.org/lugares/centro-cinco");
@@ -128,31 +129,31 @@ describe("armarCorreo", () => {
     for (const d of [inst, org, buzon]) {
       for (const recordatorio of [false, true]) {
         const c = armarCorreo(d, FIRMA, { recordatorio });
-        expect(c.html).toContain(`<img src="${ICONO_URL}" alt="Somos Nosotros" width="40" height="40"`);
+        expect(c.html).toContain(`<img src="${ICONO_URL}" alt="${MARCA}" width="40" height="40"`);
         expect(c.html).toContain("border-radius");
         expect(c.texto).not.toContain("icono-192");
         expect(c.texto).not.toContain("<img");
       }
     }
     // El texto plano de la variante institución termina exactamente igual que antes del icono (solo el HTML cambió).
-    expect(armarCorreo(inst, FIRMA).texto.endsWith("Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · Somos Nosotros\nsomosnosotros.org · 444 000 0000")).toBe(true);
+    expect(armarCorreo(inst, FIRMA).texto.endsWith(`Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · ${MARCA}\nsomosnosotros.org · 444 000 0000`)).toBe(true);
   });
   it("recordatorio: corto, nombra la institución o las sedes, misma salida y firma", () => {
     const r = armarCorreo(inst, FIRMA, { recordatorio: true });
-    expect(r.asunto).toBe("Recordatorio: la agenda de Museo Uno en Somos Nosotros");
+    expect(r.asunto).toBe(`Recordatorio: la agenda de Museo Uno en ${MARCA}`);
     expect(r.texto).toContain("Hola de nuevo,");
-    expect(r.texto).toContain("pedirles la agenda de Museo Uno y sumarla a Somos Nosotros");
+    expect(r.texto).toContain(`pedirles la agenda de Museo Uno y sumarla a ${MARCA}`);
     expect(r.texto).toContain("ignoren este correo");
     expect(r.texto).toContain('"no me escriban más"');
     const ro = armarCorreo(org, FIRMA, { recordatorio: true });
-    expect(ro.texto).toContain("pedirles las agendas de Sede A y Sede B y sumarlas a Somos Nosotros");
+    expect(ro.texto).toContain(`pedirles las agendas de Sede A y Sede B y sumarlas a ${MARCA}`);
     const rb = armarCorreo(buzon, FIRMA, { recordatorio: true });
-    expect(rb.asunto).toBe("Recordatorio: agendas de Museo Cuatro y Centro Cinco en Somos Nosotros");
-    expect(rb.texto).toContain("pedirles las agendas de Museo Cuatro y Centro Cinco y sumarlas a Somos Nosotros");
+    expect(rb.asunto).toBe(`Recordatorio: agendas de Museo Cuatro y Centro Cinco en ${MARCA}`);
+    expect(rb.texto).toContain(`pedirles las agendas de Museo Cuatro y Centro Cinco y sumarlas a ${MARCA}`);
   });
   it("el teléfono viene de la firma que se pasa (la variable), no del código", () => {
     expect(armarCorreo(inst, { telefono: "otro" }).texto).toContain("somosnosotros.org · otro");
-    expect(asuntoDe(org, "A", true)).toBe("Recordatorio: agendas de Organismo X en Somos Nosotros");
+    expect(asuntoDe(org, "A", true)).toBe(`Recordatorio: agendas de Organismo X en ${MARCA}`);
   });
   it("el HTML escapa el nombre", () => {
     const raro: Destino = { ...inst, nombre: "Museo <A&B>" };

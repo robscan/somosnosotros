@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { correoValido, textoAvisos, textoCompartirPersona, validarPerfil } from "./perfil";
+import { MARCA } from "./marca";
 
 describe("validarPerfil", () => {
   it("limpia espacios y acepta un perfil mínimo", () => {
@@ -42,6 +43,6 @@ describe("textoCompartirPersona", () => {
   it("cuenta los eventos próximos y distingue mi ficha de la ajena", () => {
     expect(textoCompartirPersona("Rosa", 2, false)).toBe("Rosa va a 2 eventos próximos. Mira cuáles:");
     expect(textoCompartirPersona("Rosa", 1, true)).toBe("Voy a 1 evento próximo. Mira cuál:");
-    expect(textoCompartirPersona("Rosa", 0, false)).toContain("Rosa está en Somos Nosotros");
+    expect(textoCompartirPersona("Rosa", 0, false)).toContain(`Rosa está en ${MARCA}`);
   });
 });

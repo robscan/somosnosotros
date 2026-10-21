@@ -7,8 +7,9 @@ import Reintentar from "../Reintentar";
 import { cargarExtras, cargarPanelCiudades, conCifras, pedirPasoSiHayVaradas } from "./consultas";
 import ListaCiudades, { type FilaLista } from "./ListaCiudades";
 import styles from "../admin.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Ciudades · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Ciudades", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * Administración › Ciudades, la lista general (OL-432; prototipo firmado OL-431, pantalla A, con las respuestas del gestor). Dice en qué ciudad

@@ -52,6 +52,7 @@ import { decididasDe } from "@/app/eventos/decididas";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
 import EsMiNombre from "./EsMiNombre";
 import SeccionNovedades, { type NovedadParaFicha } from "./SeccionNovedades";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; novedad?: string }> };
 type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null };
@@ -208,10 +209,10 @@ function EsqueletoSeccionFechas() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const a = await cargarArtista(id).catch(() => undefined);
-  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotros»), sin
+  // Falló la lectura (no «no existe»): sin etiquetas propias. Con `{}` rigen las del sitio (título «Somos Nosotrxs»), sin
   // `noindex` ni canonical; si la excepción saliera de aquí Next descartaría todas las etiquetas, también el título (OL-289).
   if (a === undefined) return {};
-  if (!a) return { title: "Artista · Somos Nosotros" };
+  if (!a) return { title: tituloDePagina("Artista") };
   const descripcion = etiquetaArtista(a);
   // Del CAPO y sin reclamar (OL-059): mismo interruptor que el sitemap (src/lib/sitemap.ts). Sin esto la ficha seguía
   // indexable por el enlace desde /artistas aunque el interruptor la dejara fuera del mapa del sitio.
@@ -219,11 +220,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Sin foto, la imagen por defecto del sitio: el enlace compartido nunca sale sin imagen (OL-143, doc 36).
   const imagen = a.portada ?? a.foto ?? "/portada.png";
   return {
-    title: `${a.nombre} · Somos Nosotros`,
+    title: tituloDePagina(a.nombre),
     description: descripcion,
     alternates: { canonical: `${ORIGEN}${hrefArtista(a)}` },
     ...(sinIndexar ? { robots: { index: false } } : {}),
-    openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}${hrefArtista(a)}`, type: "profile", images: [{ url: imagen }], locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}${hrefArtista(a)}`, type: "profile", images: [{ url: imagen }], locale: "es_MX", siteName: MARCA },
     twitter: { card: "summary_large_image", title: a.nombre, description: descripcion, images: [imagen] },
   };
 }

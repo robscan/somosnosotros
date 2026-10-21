@@ -1,4 +1,5 @@
 import { limpiar } from "./formulario";
+import { MARCA } from "./marca";
 export const LIMITES = { nombre: 60, colonia: 60, bio: 140 } as const;
 
 export type DatosPerfil = { nombre: string; colonia: string; bio: string; foto: string | null };
@@ -42,7 +43,7 @@ export function textoAvisos(correo: boolean, telefono: boolean): string {
 /** Texto para compartir la ficha de una persona: cuántos eventos próximos tiene, o solo que está aquí. */
 export function textoCompartirPersona(nombre: string, eventos: number, mia: boolean): string {
   const quien = mia ? "Voy" : `${nombre} va`;
-  if (eventos === 0) return mia ? "Estoy en Somos Nosotros, la agenda de la cultura local. Mira a qué voy:" : `${nombre} está en Somos Nosotros, la agenda de la cultura local:`;
+  if (eventos === 0) return mia ? `Estoy en ${MARCA}, la agenda de la cultura local. Mira a qué voy:` : `${nombre} está en ${MARCA}, la agenda de la cultura local:`;
   return `${quien} a ${eventos === 1 ? "1 evento próximo" : `${eventos} eventos próximos`}. Mira ${eventos === 1 ? "cuál" : "cuáles"}:`;
 }
 

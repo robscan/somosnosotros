@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decidirEstadoPush, decidirInstalar, dondeSeActivan, dondeSeRegistra, enEste, esteAparato, esteAparatoInicial, leerPlataforma, pasosInstalar, tituloInstalada } from "./plataforma";
+import { MARCA } from "./marca";
 
 const IPHONE_SAFARI_26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
 const IPHONE_SAFARI_18 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
@@ -130,7 +131,7 @@ describe("enEste y esteAparato", () => {
 
 describe("dondeSeActivan", () => {
   it("en el iPhone manda a Ajustes; en Chrome de escritorio, a Permisos del sitio; en otro navegador, algo genérico", () => {
-    expect(dondeSeActivan(leerPlataforma(IPHONE_SAFARI_18, 5, false))).toBe("en Ajustes del iPhone › Notificaciones › Somos Nosotros");
+    expect(dondeSeActivan(leerPlataforma(IPHONE_SAFARI_18, 5, false))).toBe(`en Ajustes del iPhone › Notificaciones › ${MARCA}`);
     expect(dondeSeActivan(leerPlataforma(MAC_CHROME, 0, false))).toBe("en Chrome: el candado junto a la dirección › Permisos del sitio › Notificaciones");
     expect(dondeSeActivan(leerPlataforma(MAC_SAFARI, 0, false))).toBe("en la configuración del sitio de tu navegador");
     expect(dondeSeActivan(null)).toBe("en la configuración del sitio de tu navegador");
@@ -153,13 +154,13 @@ describe("dondeSeRegistra", () => {
 
 describe("tituloInstalada", () => {
   it("quita la marca del final: la ventana instalada ya la pone", () => {
-    expect(tituloInstalada("Lugares · Somos Nosotros")).toBe("Lugares");
-    expect(tituloInstalada("Agenda cultural de San Luis Potosí · Somos Nosotros")).toBe("Agenda cultural de San Luis Potosí");
+    expect(tituloInstalada(`Lugares · ${MARCA}`)).toBe("Lugares");
+    expect(tituloInstalada(`Agenda cultural de San Luis Potosí · ${MARCA}`)).toBe("Agenda cultural de San Luis Potosí");
   });
   it("sin la marca al final, no toca nada", () => {
-    expect(tituloInstalada("Somos Nosotros")).toBe("Somos Nosotros");
+    expect(tituloInstalada(MARCA)).toBe(MARCA);
   });
   it("si no queda nada tras quitarla, se queda con el nombre del sitio (nunca una pestaña en blanco)", () => {
-    expect(tituloInstalada(" · Somos Nosotros")).toBe("Somos Nosotros");
+    expect(tituloInstalada(` · ${MARCA}`)).toBe(MARCA);
   });
 });

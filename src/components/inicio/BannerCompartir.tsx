@@ -8,11 +8,12 @@ import { useCanalDePantalla } from "../useCanalDeListas";
 import { IconoCerrar, IconoCompartir } from "../ui/Iconos";
 import SimboloBlanco from "./SimboloBlanco";
 import styles from "./BannerCompartir.module.css";
+import { MARCA } from "@/lib/marca";
 
 /** El enlace que se comparte: el dominio principal (el founder, 2026-10-10: somosnosotrxs.org solo va en el cartel). */
 export const ENLACE_APP = "https://somosnosotros.org";
 /** Lo que se comparte (founder, 2026-10-14, OL-407): «¿Te gusta Somos Nosotrxs? Comparte con tus amigxs. Somos Nosotrxs». */
-const DATOS_COMPARTIR = { title: "Somos Nosotrxs", text: "¿Te gusta Somos Nosotrxs? Comparte con tus amigxs.", url: ENLACE_APP };
+const DATOS_COMPARTIR = { title: MARCA, text: `¿Te gusta ${MARCA}? Comparte con tus amigxs.`, url: ENLACE_APP };
 const DE = "compartir-app";
 
 /**
@@ -87,7 +88,7 @@ export default function BannerCompartir({ zona }: { zona: string }) {
       <span className={styles.icono}>
         <SimboloBlanco className={styles.simbolo} />
       </span>
-      <p className={styles.titulo}>¿Te gusta Somos Nosotrxs?</p>
+      <p className={styles.titulo}>¿Te gusta {MARCA}?</p>
       <p className={styles.texto}>Comparte con tus amigxs.</p>
       <button type="button" className={styles.cerrar} onClick={cerrar} aria-label="Cerrar">
         <IconoCerrar width={20} height={20} />

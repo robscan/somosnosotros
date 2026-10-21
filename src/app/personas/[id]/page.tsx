@@ -9,6 +9,7 @@ import ficha from "@/components/ui/Ficha.module.css";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { cargarPersona, estaBloqueada, relacionDe } from "../consultas";
+import { MARCA, tituloDePagina } from "@/lib/marca";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,15 +21,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const d = await cargarPersona(id);
   // Fuera del índice de Google (OL-059): la ficha se comparte por enlace directo, pero no es lo que alguien busca
   // en Google, y así no hay que decidir a mano qué tanto de cada persona sale en un resultado de búsqueda.
-  if (!d) return { title: "Persona · Somos Nosotros", robots: { index: false, follow: false } };
+  if (!d) return { title: tituloDePagina("Persona"), robots: { index: false, follow: false } };
   const n = d.eventos.length;
-  const descripcion = `${n === 0 ? "Está en Somos Nosotros" : n === 1 ? "Va a 1 evento próximo" : `Va a ${n} eventos próximos`}`;
+  const descripcion = `${n === 0 ? `Está en ${MARCA}` : n === 1 ? "Va a 1 evento próximo" : `Va a ${n} eventos próximos`}`;
   const imagen = d.perfil.foto ?? undefined;
   return {
-    title: `${d.perfil.nombre} · Somos Nosotros`,
+    title: tituloDePagina(d.perfil.nombre),
     description: descripcion,
     robots: { index: false, follow: false },
-    openGraph: { title: d.perfil.nombre, description: descripcion, url: `${ORIGEN}/personas/${d.perfil.id}`, type: "profile", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: d.perfil.nombre, description: descripcion, url: `${ORIGEN}/personas/${d.perfil.id}`, type: "profile", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: MARCA },
     twitter: { card: "summary", title: d.perfil.nombre, description: descripcion, images: imagen ? [imagen] : undefined },
   };
 }

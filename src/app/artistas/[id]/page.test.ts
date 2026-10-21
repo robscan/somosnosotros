@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
 import Heroe from "@/components/ui/Heroe";
+import { MARCA } from "@/lib/marca";
 
 /**
  * OL-161 (bitácora 196): la cabecera de la ficha (foto, nombre, etiqueta, JSON-LD, canonical) tiene que salir en el
@@ -106,7 +107,7 @@ describe("ficha de artista: la cabecera pinta antes que sus fechas (OL-161)", ()
     const { generateMetadata } = await import("./page");
     const metadata = await generateMetadata({ params: Promise.resolve({ id: "artista-de-prueba" }) });
     expect(metadata.alternates?.canonical).toBe("https://somosnosotros.org/artistas/artista-de-prueba");
-    expect(metadata.title).toBe("Artista de prueba · Somos Nosotros");
+    expect(metadata.title).toBe(`Artista de prueba · ${MARCA}`);
   });
 });
 
@@ -176,7 +177,7 @@ describe("la ficha distingue «no existe» de «falló la lectura» (OL-289)", (
   it("sin fila y sin error es «no existe»: notFound y título de ficha inexistente", async () => {
     await con({ data: null, error: null }, async () => {
       await expect(pedir()).rejects.toThrow("NOT_FOUND");
-      expect((await metadatos()).title).toBe("Artista · Somos Nosotros");
+      expect((await metadatos()).title).toBe(`Artista · ${MARCA}`);
     });
   });
 
