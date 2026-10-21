@@ -9,12 +9,14 @@ import { etiquetaLugar } from "./lugares";
  * La bandeja de propuestas de una corrida (OL-427; doc 57 §4.B): lo que una rutina propone, agrupado por fuente, y cómo se vuelve una ficha
  * al aceptarlo. Lo que la rutina deja en `propuestas.datos` (OL-428 lo escribe así):
  *   · lugar   { nombre, tipo?, detalle?, direccion?, lat?, lng?, ciudad?, redes?, url?, leida? }
- *   · artista { nombre, disciplina?, detalle?, tipo?, ciudad?, redes?, url?, leida? }
+ *   · artista { nombre, disciplina?, detalle?, tipo?, ciudad?, redes?, url?, leida?, municipio?, obra? }   (municipio y obra: OL-430)
  *   · evento  { titulo, inicio, fin?, lugar, direccion?, municipio?, precio?, descripcion?, ciudad?, url?, leida? }   (OL-429)
  * `url` es la página de la fuente que la rutina abrió y leyó (en un evento, la agenda: queda como `eventos.fuente_url` al publicarlo);
  * `leida`, cuándo (ISO). `redes`, enlaces (texto o { url }). En un evento, `inicio` y `fin` son ISO; `lugar`, el nombre exacto del lugar
  * registrado si la agenda es en uno, o el sitio como lo escribe la agenda; `precio`, «Gratis», «Cooperación solidaria» o el texto del costo;
- * `descripcion`, una o dos frases propias de la rutina (nunca copiadas).
+ * `descripcion`, una o dos frases propias de la rutina (nunca copiadas). En un artista (OL-430), `detalle` es su especialidad (hasta 40, como la
+ * ficha), `municipio` lo que la fuente dice de dónde trabaja y `obra` una frase propia sobre lo que la fuente dice de su obra: no van a la
+ * ficha mínima que nace al aceptar; quedan para nutrirla después.
  */
 
 export const TIPOS_PROPUESTA = ["lugar", "evento", "artista"] as const;
@@ -162,7 +164,8 @@ export function entradaDeArtista(p: Pick<Propuesta, "datos">, ciudad: string | n
   return {
     nombre: texto(d.nombre, 200),
     disciplina: texto(d.disciplina, 40) || "por_completar",
-    detalle: texto(d.detalle, 60),
+    // La ficha admite hasta 40 (`LIMITES_ARTISTA.detalle`): más largo, `validarArtista` no la dejaría aceptar.
+    detalle: texto(d.detalle, 40),
     tipo: texto(d.tipo, 20) || "solista",
     ciudad: ciudadCanonica(texto(d.ciudad, 80) || ciudad || ""),
     enlaces: JSON.stringify(redesDe(d.redes)),

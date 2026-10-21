@@ -80,6 +80,11 @@ portada (le pone al respaldo los contratos del panel desde un arranque propio en
 las hojas, la ficha, la ⓘ, una evidencia con un enlace que no es http(s) y la tabla a 1280. El respaldo va en el puerto 8859, así `SIN_BUILD=1`
 sirve con el `.next` que dejó la vez anterior.
 
+«Investigar» en la ficha de showcase (OL-430, bitácora 465): `capturar-investigar.mjs` saca el renglón sin investigar (Feleal), su hoja con el tope,
+la ⓘ explicándolo, «Investigando» (0Backside0) e «Investigado» (Pimpolina, con cinco evidencias por revisar). Las dos corridas, el crédito y esas
+evidencias los añade un arranque propio en la carpeta temporal (el fixture no cambia), y a cada corrida la clave plana `parametros->>artista_id`,
+porque el servidor del respaldo no entiende filtros sobre jsonb. Respaldo en el puerto 8869.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

@@ -192,7 +192,7 @@
     "s35b-admin-ciudad-hoja": { "nodos": [86, 86, 120, 120], "profundidad": [8, 8, 8, 8] },
     "s36-admin-showcase": { "nodos": [261, 261, 295, 295], "profundidad": [8, 8, 8, 8] },
     "s37-admin-showcase-tabla": { "nodos": [204, 204, 238, 238], "profundidad": [9, 9, 9, 9] },
-    "s38-admin-showcase-ficha": { "nodos": [181, 181, 215, 219], "profundidad": [8, 8, 8, 8] },
-    "s39-admin-showcase-manual": { "nodos": [74, 74, 108, 108], "profundidad": [7, 7, 7, 7] }
+    "s38-admin-showcase-ficha": { "nodos": [190, 190, 224, 228], "profundidad": [8, 8, 8, 8] },
+    "s39-admin-showcase-manual": { "nodos": [78, 78, 112, 112], "profundidad": [7, 7, 7, 7] }
   }
 }
