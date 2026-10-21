@@ -37,6 +37,15 @@
 .conNota {
   margin-bottom: var(--espacio-1);
 }
+/* El buscador de las listas (ui/Buscador): el borde se dibuja por dentro, como en Buscar, para que el campo llene los 44 de su píldora y se
+   toque entero (OL-426: con el borde de verdad el campo medía 42 y `npm run medir` lo marcaba) */
+.lista > label {
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.lista > label:focus-within {
+  box-shadow: inset 0 0 0 1px var(--texto);
+}
 /* Los chips de las listas corren a todo lo ancho: la franja ocupa las tres columnas de la página, con el aire de los lados dentro */
 .lista > [role="group"] {
   grid-column: 1 / -1;

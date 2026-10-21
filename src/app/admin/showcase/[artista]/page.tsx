@@ -1,0 +1,156 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import Barra from "@/components/ui/Barra";
+import { IconoCalendario, IconoChevronDerecha, IconoEtiqueta, IconoPin } from "@/components/ui/Iconos";
+import Imagen from "@/components/ui/Imagen";
+import plantilla from "@/components/ui/Plantilla.module.css";
+import { etiquetaDisciplina } from "@/lib/artistas";
+import { diaLocal } from "@/lib/fechas";
+import { SIN_FOTO_REDONDA } from "@/lib/imagen";
+import { unir } from "@/lib/panel";
+import {
+  detalleEvidencia,
+  detalleOpcionEstado,
+  detallePropuesta,
+  diasEntre,
+  ESTADOS,
+  etiquetaRed,
+  haceDias,
+  MAXIMO_RUBRICA,
+  renglonesBase,
+  resumenSenal,
+  RUTA_SHOWCASE,
+  SENALES,
+  sumaRubrica,
+  textoEstado,
+  textoLectura,
+  ultimasPorRed,
+} from "@/lib/showcase";
+import { usuarioActual } from "@/lib/supabase/servidor";
+import Reintentar from "../../Reintentar";
+import { anioDe, cargarFichaShowcase } from "../consultas";
+import AyudaFicha from "./AyudaFicha";
+import EstadoFicha from "./EstadoFicha";
+import NotasFicha from "./NotasFicha";
+import PorRevisar from "./PorRevisar";
+import RedesFicha from "./RedesFicha";
+import SenalFicha from "./SenalFicha";
+import admin from "../../admin.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
+import s from "../showcase.module.css";
+
+export const metadata = { title: "Ficha de showcase · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+
+const RAIZ = "ficha-showcase";
+const ICONO_BASE = { total: IconoCalendario, lugar: IconoPin, festival: IconoEtiqueta } as const;
+
+/**
+ * La ficha de showcase de un artista (OL-426; lo firmado en OL-425): la cabecera de la ficha de una persona, el estado con quién y cuándo, la
+ * rúbrica señal por señal con sus evidencias enlazadas, lo que propuso la rutina por revisar, sus eventos y foros del año (de la base), sus redes
+ * con la fecha de cada lectura y las notas privadas del consejo. La ⓘ explica cada parte. Solo administración; nada de aquí se publica. Sin el
+ * botón «Investigar»: llega con la rutina (OL-428).
+ */
+export default async function FichaShowcase({ params }: { params: Promise<{ artista: string }> }) {
+  const { artista } = await params;
+  const clave = decodeURIComponent(artista);
+  const actual = await usuarioActual();
+  if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`${RUTA_SHOWCASE}/${clave}`)}`);
+  if (actual.perfil.rol !== "admin") redirect("/");
+  const ahora = new Date();
+  const f = await cargarFichaShowcase(clave, ahora);
+  const barra = <Barra volver={{ href: RUTA_SHOWCASE, texto: "Showcase" }} />;
+  if (f === "error" || !f) {
+    return (
+      <main className={plantilla.paginaContenido}>
+        {barra}
+        <h1 className={admin.titulo}>{f === "error" ? "Showcase" : "Este artista no está en el catálogo"}</h1>
+        {f === "error" ? <Reintentar texto="No pudimos leer esta ficha." /> : <p className={admin.vacio}>Quizá cambió su dirección o se borró su ficha.</p>}
+        {f !== "error" && (
+          <Link href={RUTA_SHOWCASE} className={admin.salida}>
+            Volver al showcase
+            <IconoChevronDerecha />
+          </Link>
+        )}
+      </main>
+    );
+  }
+  const hoy = diaLocal(ahora);
+  const diaDe = (iso: string) => diaLocal(new Date(iso));
+  const yo = actual.perfil.id;
+  const nombres = new Map(Object.entries(f.nombres));
+  const a = f.artista;
+  const estado = textoEstado(f.estado, f.registro, yo, nombres, hoy, diaDe);
+  const opciones = ESTADOS.map((e) => ({ valor: e.valor, etiqueta: e.etiqueta, detalle: detalleOpcionEstado(e.valor, f.registro, yo, nombres, hoy, diaDe) }));
+  const datos = { circulacion: f.circulacion, ciudad: a.ciudad, evidencias: f.evidencias, lecturas: f.lecturas, reclamada: f.reclamada, novedades: f.novedades, portada: f.portada };
+  const senales = SENALES.map((x) => ({
+    clave: x.clave,
+    titulo: x.titulo,
+    niveles: x.niveles,
+    resumen: resumenSenal(x.clave, datos, hoy),
+    puntaje: f.puntajes[x.clave],
+    evidencias: f.evidencias.filter((e) => e.senal === x.clave && e.estado !== "propuesta").map((e) => ({ ...e, detalle: detalleEvidencia(e, hoy) })),
+  }));
+  const propuestas = f.evidencias.filter((e) => e.estado === "propuesta").map((e) => ({ ...e, detalle: detallePropuesta(e, hoy), dominio: new URL(e.url).hostname.replace(/^www\./, "") }));
+  const base = renglonesBase(f.eventos, new Map(f.lugares.map((l) => [l.id, l])), new Map([...f.festivales, ...f.eventos.filter((e) => e.clase === "festival")].map((e) => [e.id, e])), a.slug, ahora, diaDe);
+  const ultimas = ultimasPorRed(f.lecturas);
+  const lecturas = ultimas.map((l) => ({ red: l.red, etiqueta: etiquetaRed(l.red), texto: textoLectura(l, hoy, true), hace: haceDias(diasEntre(diaDe(l.leido_en), hoy)) }));
+  return (
+    <main id={RAIZ} className={`${plantilla.paginaContenido} ${s.conAyuda}`}>
+      {barra}
+      <header className={admin.cabecera}>
+        <Imagen src={a.foto ?? SIN_FOTO_REDONDA} alt="" className={admin.avatar} width={144} height={144} sizes="144px" loading="eager" />
+        <h1>{a.nombre}</h1>
+        <small>{unir([etiquetaDisciplina(a.disciplina), a.ciudad, f.reclamada && "ficha reclamada"])}</small>
+      </header>
+
+      <h2 className={admin.grupo}>Estado</h2>
+      <EstadoFicha artistaId={a.id} slug={a.slug} nombre={a.nombre} estado={f.estado} titulo={estado.titulo} detalle={estado.detalle} opciones={opciones} />
+
+      <h2 className={admin.grupo} data-ayuda="rubrica">
+        Rúbrica{" "}
+        <b>
+          {sumaRubrica(f.puntajes)} de {MAXIMO_RUBRICA}
+        </b>
+      </h2>
+      {senales.map((x) => (
+        <SenalFicha key={x.clave} artistaId={a.id} slug={a.slug} senal={x} />
+      ))}
+
+      <PorRevisar propuestas={propuestas} slug={a.slug} />
+
+      <h2 className={admin.grupo} data-ayuda="base">
+        En la base · {anioDe(ahora).anio}
+      </h2>
+      {base.length ? (
+        <ul className={renglon.tarjeta} data-ayuda="base">
+          {base.map((r) => {
+            const Icono = ICONO_BASE[r.tipo];
+            return (
+              <li key={`${r.tipo}-${r.href}`}>
+                <Link href={r.href} className={admin.fila}>
+                  <Icono width={20} height={20} />
+                  <b>{r.titulo}</b>
+                  <small>{r.detalle}</small>
+                  <span className={admin.total}>
+                    <IconoChevronDerecha />
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className={admin.vacio}>Sin eventos en la base este año.</p>
+      )}
+
+      <h2 className={ultimas.length ? `${admin.grupo} ${admin.conNota}` : admin.grupo}>Redes</h2>
+      {ultimas.length > 0 && <p className={admin.nota}>Última lectura {haceDias(diasEntre(diaDe(ultimas.reduce((m, l) => (l.leido_en > m ? l.leido_en : m), ultimas[0].leido_en)), hoy))}</p>}
+      <RedesFicha artistaId={a.id} slug={a.slug} lecturas={lecturas} hoy={hoy} />
+
+      <h2 className={admin.grupo}>Notas del consejo</h2>
+      <NotasFicha artistaId={a.id} slug={a.slug} notas={f.notas} />
+
+      <AyudaFicha raizId={RAIZ} />
+    </main>
+  );
+}

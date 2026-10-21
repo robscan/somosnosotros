@@ -183,6 +183,10 @@
     "s28-inicio-banner-compartir": { "nodos": [378, 378, 380, 380], "profundidad": [11, 11, 11, 11] },
     "s29-admin-grafo": { "nodos": [460, 460, 498, 497], "profundidad": [11, 11, 11, 11] },
     "s30-admin-grafo-manual": { "nodos": [227, 227, 261, 261], "profundidad": [7, 7, 7, 7] },
-    "s31-admin-persona": { "nodos": [178, 178, 212, 212], "profundidad": [9, 9, 9, 9] }
+    "s31-admin-persona": { "nodos": [178, 178, 212, 212], "profundidad": [9, 9, 9, 9] },
+    "s32-admin-showcase": { "nodos": [261, 261, 295, 295], "profundidad": [8, 8, 8, 8] },
+    "s33-admin-showcase-tabla": { "nodos": [204, 204, 238, 238], "profundidad": [9, 9, 9, 9] },
+    "s34-admin-showcase-ficha": { "nodos": [181, 181, 215, 219], "profundidad": [8, 8, 8, 8] },
+    "s35-admin-showcase-manual": { "nodos": [74, 74, 108, 108], "profundidad": [7, 7, 7, 7] }
   }
 }
