@@ -10,8 +10,9 @@ import Bandeja from "../../Bandeja";
 import { cargarBandejasDeCiudad, cargarContextoFormas, cargarExtras, cargarPanelCiudades } from "../../consultas";
 import styles from "../../../admin.module.css";
 import css from "../../ciudades.module.css";
+import { tituloDePagina } from "@/lib/marca";
 
-export const metadata = { title: "Propuestas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDePagina("Propuestas", "Administración"), robots: { index: false, follow: false } };
 
 /**
  * La bandeja de una ciudad (OL-432, respuesta 7): todas sus búsquedas juntas, cada una con su nombre y lo que trajo y, debajo, sus propuestas

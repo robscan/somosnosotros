@@ -16,7 +16,6 @@ const CARPETAS = ["src", "public", "apps", "scripts"];
  */
 const EXCEPCIONES: Record<string, string> = {
   "src/lib/marca.ts": "MARCA_ANTERIOR: solo el alternateName del JSON-LD, para que Google relacione los dos nombres (doc 57 § D)",
-  "src/app/admin/ciudades/[slug]/propuestas/page.tsx": "OL-434 trabaja en este archivo a la vez; se cambia al unir esa pieza (bitácora 468)",
 };
 
 /** Carpetas que son registro de un prototipo ya firmado, no la app: se regeneran tal cual se firmaron. */
