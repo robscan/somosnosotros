@@ -6,6 +6,11 @@
 //
 //   node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> --solo=admin
 //   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/admin-paneles.html
+//
+// `--pantallas=a,b,c` elige de qué maquetas sale el CSS (por omisión, las cinco de OL-425); la portada y Personas tienen que estar, porque de ahí
+// salen el armazón y la barra. OL-431 (Ciudades v2) le suma Ciudades, su hoja, la bandeja, Corridas y la hoja de ciudades de Artistas:
+//   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/ciudades-v2.html \
+//     --pantallas=admin,admin-personas,admin-persona-hoja,admin-lugares,admin-grafo,admin-ciudades,admin-ciudades-hoja,admin-propuestas,admin-corridas,artistas-hoja-ciudad
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -14,9 +19,11 @@ import { pathToFileURL } from "node:url";
 
 const AQUI = path.dirname(new URL(import.meta.url).pathname);
 const RAIZ = path.resolve(AQUI, "../../../..");
-const [, , MAQ, PROTO] = process.argv;
-if (!MAQ || !PROTO) { console.error("uso: meter-maqueta.mjs <carpeta-de-maquetas> <prototipo.html>"); process.exit(1); }
-const PANTALLAS = ["admin", "admin-personas", "admin-persona-hoja", "admin-lugares", "admin-grafo"];
+const [MAQ, PROTO] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+if (!MAQ || !PROTO) { console.error("uso: meter-maqueta.mjs <carpeta-de-maquetas> <prototipo.html> [--pantallas=a,b,c]"); process.exit(1); }
+const opcion = process.argv.find((a) => a.startsWith("--pantallas="));
+const PANTALLAS = opcion ? opcion.slice("--pantallas=".length).split(",").filter(Boolean) : ["admin", "admin-personas", "admin-persona-hoja", "admin-lugares", "admin-grafo"];
+if (!PANTALLAS.includes("admin") || !PANTALLAS.includes("admin-personas")) { console.error("--pantallas necesita admin y admin-personas (el armazón y la barra)"); process.exit(1); }
 const leer = (id) => fs.readFileSync(path.join(MAQ, id + ".html"), "utf8");
 
 // 1. CSS: cada hoja una sola vez (por su ruta, sin el puerto), sin @font-face.
