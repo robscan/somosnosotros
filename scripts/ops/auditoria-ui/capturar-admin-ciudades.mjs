@@ -131,7 +131,8 @@ try {
     await foto(page, "01-lista");
     comprobar(JSON.stringify(await violetas(page)) === '["Añadir ciudad"]', "en la lista, el único violeta es «Añadir ciudad»");
     const orden = await page.getByRole("list", { name: "Ciudades" }).getByRole("listitem").evaluateAll((ls) => ls.map((l) => l.querySelector("b").firstChild.textContent.trim()));
-    comprobar(JSON.stringify(orden) === JSON.stringify(["Oaxaca", "Ciudad de México", "Querétaro", "Aguascalientes", "San Luis Potosí", "San Miguel de Allende"]), `el orden: ${orden.join(", ")} (lo que tiene algo por decidir, las detectadas, el resto; ni Zacatecas oculta ni «Oaxaca de Juárez», que se junta con Oaxaca)`);
+    // OL-434: San Luis tiene ahora una búsqueda de agendas de hoy con propuestas por revisar (las de cada forma): sube con lo que hay que decidir.
+    comprobar(JSON.stringify(orden) === JSON.stringify(["San Luis Potosí", "Oaxaca", "Ciudad de México", "Querétaro", "Aguascalientes", "San Miguel de Allende"]), `el orden: ${orden.join(", ")} (lo que tiene algo por decidir, las detectadas, el resto; ni Zacatecas oculta ni «Oaxaca de Juárez», que se junta con Oaxaca)`);
     await page.mouse.wheel(0, 600);
     await foto(page, "02-lista-abajo");
 

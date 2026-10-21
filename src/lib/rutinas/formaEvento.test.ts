@@ -119,10 +119,18 @@ describe("lo que se lee de `datos` y lo que la bandeja puede decir (para OL-432)
     });
     expect(etiquetaDeForma({ clase: "festival", actos: 6, inicio: local("2026-10-23T20:00"), termina: local("2026-11-02T23:00") }, AHORA, ZONA)).toMatchObject({ que: "Festival · 6 actos", detalle: expect.stringMatching(/23.*2 de nov/) });
     const taller = { clase: "taller", inicio: local("2026-10-22T17:00"), sesiones: ["22", "23", "24", "29"].map((d) => ({ inicio: local(`2026-10-${d}T17:00`), fin: local(`2026-10-${d}T19:00`) })) };
-    expect(etiquetaDeForma(taller, AHORA, ZONA)).toMatchObject({ que: "Taller · 4 sesiones", detalle: expect.stringMatching(/^4 sesiones · .*oct · 5:00/) });
+    // OL-434: el detalle dice los días y la hora sin repetir cuántas son (eso ya lo dice la frase).
+    expect(etiquetaDeForma(taller, AHORA, ZONA)).toMatchObject({ que: "Taller · 4 sesiones", detalle: expect.stringMatching(/^jue 22, vie 23, sáb 24 y jue 29 de oct · 5:00/) });
     const dias = { clase: "puntual", sesiones: ["30", "31"].map((d) => ({ inicio: local(`2026-10-${d}T19:00`) })) };
-    expect(etiquetaDeForma(dias, AHORA, ZONA)?.que).toBe("Evento de 2 días");
-    expect(etiquetaDeForma({ serie: { fechas: [local("2026-10-22T18:00"), local("2026-10-29T18:00")], cada: 7 } }, AHORA, ZONA)?.que).toBe("Serie · 2 fechas, cada semana");
+    expect(etiquetaDeForma(dias, AHORA, ZONA)).toMatchObject({ que: "Evento de 2 días", detalle: "vie 30 y sáb 31 de oct · 7:00 pm" });
+    expect(etiquetaDeForma({ serie: { fechas: [local("2026-10-22T18:00"), local("2026-10-29T18:00")], cada: 7 } }, AHORA, ZONA)).toEqual({
+      que: "Serie · 2 fechas, cada semana",
+      detalle: "jue 22 y jue 29 de oct · 6:00 pm",
+      espera: null,
+    });
+    // Las fechas de una serie que cruza de mes llevan cada mes una vez.
+    const cruza = { serie: { fechas: ["2026-10-28T19:00", "2026-11-04T19:00", "2026-11-11T19:00", "2026-11-18T19:00"].map(local), cada: 7 } };
+    expect(etiquetaDeForma(cruza, AHORA, ZONA)?.detalle).toBe("mié 28 de oct y mié 4, mié 11 y mié 18 de nov · 7:00 pm");
     expect(etiquetaDeForma({ clase: "exposicion", exposicion: "Raíces", termina: local("2026-11-30T23:59") }, AHORA, ZONA)?.que).toMatch(/^Exposición «Raíces» · hasta el .*30 de nov/);
   });
 });

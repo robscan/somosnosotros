@@ -7,8 +7,8 @@ import { normalizarNombre } from "../lugares";
 /**
  * Cómo ocurre lo que propone la rutina de agendas (OL-433). Pedido del founder (21 de octubre): «¿Tiene criterios para identificar festivales,
  * galerías, talleres? Incluso si se trata de eventos faltantes de un festival ya registrado». Funciones puras, sin `server-only` ni base: la
- * rutina (`agendas.ts`) decide con ellas qué propone y la publicación (`publicarEvento.ts`) las lee de `propuestas.datos`; la bandeja de
- * OL-432 puede usar `etiquetaDeForma` para decirlo en la tarjeta.
+ * rutina (`agendas.ts`) decide con ellas qué propone y la publicación (`publicarEvento.ts`) las lee de `propuestas.datos`; la
+ * bandeja de Ciudades lo dice en cada tarjeta con `etiquetaDeForma` (OL-434).
  *
  * Lo que se añade a `propuestas.datos` de un evento (todo opcional; lo de antes se lee igual):
  *   · `clase`            «puntual» · «exposicion» · «taller» · «festival» (`claseDeLaAgenda`: `claseSugerida` por el título).
@@ -198,14 +198,27 @@ export function comoSeAgrupa(diasDeLaPropuesta: readonly string[], dia: string, 
   return diasSeguidos(todos) ? "sesion" : "serie";
 }
 
-// ---------------------------------------------------------------- Lo que dice la bandeja (para OL-432)
+// ---------------------------------------------------------------- Lo que dice la bandeja (OL-434)
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 /**
- * La línea que la tarjeta de la bandeja puede decir sobre cómo ocurre (OL-432 la pondrá en pantalla; aquí solo la frase): «Acto de «Xantolo
+ * Los días y la hora de varias funciones en una línea, sin decir cuántas son (eso ya lo dice la frase: «Taller · 4 sesiones»): «mar 3, jue 5,
+ * mar 10 y jue 12 de nov · 5:00 pm»; con horas distintas, «· horario por sesión». Es `resumenTaller` (la línea de «Revisa») sin su «4 sesiones · ».
+ */
+function diasYHora(funciones: readonly SesionPropuesta[], hoy: string, zona: string): string {
+  const horarios = funciones.map((s) => {
+    const l = isoALocal(s.inicio, zona);
+    return { dia: l.slice(0, 10), hora: l.slice(11, 16), fin: s.fin ? isoALocal(s.fin, zona).slice(11, 16) : "" };
+  });
+  return resumenTaller(horarios, hoy).replace(/^\d+ sesi(?:ón|ones) · /, "");
+}
+
+/**
+ * La línea que la tarjeta de la bandeja dice sobre cómo ocurre (OL-434 la pone en pantalla, `src/lib/bandejaFormas.ts`): «Acto de «Xantolo
  * 2026»», «Festival · 6 actos», «Taller · 4 sesiones», «Evento de 3 días», «Serie · 4 fechas, cada semana», «Exposición · hasta el lun 30 de
- * nov». `detalle`, el cuándo largo si hace falta; `espera`, la frase de un acto que espera a su festival. Null si es un evento como siempre.
+ * nov». `detalle`, el cuándo largo si hace falta (el periodo del festival; los días y la hora de las sesiones o de las fechas de la serie);
+ * `espera`, la frase de un acto que espera a su festival. Null si es un evento como siempre.
  */
 export function etiquetaDeForma(datos: Record<string, unknown>, ahora: Date = new Date(), zona: string = ZONA_INICIAL): { que: string; detalle: string | null; espera: string | null } | null {
   const f = leerFormaEvento(datos);
@@ -222,16 +235,13 @@ export function etiquetaDeForma(datos: Record<string, unknown>, ahora: Date = ne
     return { que: `Exposición${nombre} · hasta el ${diaConMesDe(ultimoDiaDelPeriodo(f.termina, null, zona), ahora, zona)}`, detalle: null, espera: null };
   }
   if (f.sesiones.length) {
-    const horarios = f.sesiones.map((s) => {
-      const l = isoALocal(s.inicio, zona);
-      return { dia: l.slice(0, 10), hora: l.slice(11, 16), fin: s.fin ? isoALocal(s.fin, zona).slice(11, 16) : "" };
-    });
     const que = f.clase === "taller" ? `Taller · ${plural(f.sesiones.length, "sesión", "sesiones")}` : `Evento de ${f.sesiones.length} días`;
-    return { que, detalle: resumenTaller(horarios, hoy), espera: null };
+    return { que, detalle: diasYHora(f.sesiones, hoy, zona), espera: null };
   }
   if (f.serie) {
     const cada = f.serie.cada === 7 ? ", cada semana" : f.serie.cada === 14 ? ", cada dos semanas" : f.serie.cada === 1 ? ", cada día" : "";
-    return { que: `Serie · ${plural(f.serie.fechas.length, "fecha", "fechas")}${cada}`, detalle: null, espera: null };
+    const fechas = f.serie.fechas.map((inicio) => ({ inicio, fin: null }));
+    return { que: `Serie · ${plural(f.serie.fechas.length, "fecha", "fechas")}${cada}`, detalle: diasYHora(fechas, hoy, zona), espera: null };
   }
   if (f.clase === "taller") return { que: "Taller", detalle: null, espera: null };
   return null;

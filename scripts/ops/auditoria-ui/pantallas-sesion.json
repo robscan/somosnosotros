@@ -32,6 +32,7 @@
   { "id": "s32-admin-ciudades", "plantilla": "tarea", "url": "/admin/ciudades", "cuenta": "admin" },
   { "id": "s33-admin-ciudades-anadir", "plantilla": "tarea", "url": "/admin/ciudades", "cuenta": "admin", "paso": "admin-anadir" },
   { "id": "s34-admin-propuestas", "plantilla": "tarea", "url": "/admin/ciudades/oaxaca/propuestas", "cuenta": "admin" },
+  { "id": "s34a-admin-propuestas-formas", "plantilla": "tarea", "url": "/admin/ciudades/san-luis-potosi/propuestas", "cuenta": "admin" },
   { "id": "s35-admin-corridas", "plantilla": "tarea", "url": "/admin/corridas", "cuenta": "admin" },
   { "id": "s35a-admin-ciudad-panel", "plantilla": "tarea", "url": "/admin/ciudades/ciudad-de-mexico", "cuenta": "admin" },
   { "id": "s35b-admin-ciudad-hoja", "plantilla": "tarea", "url": "/admin/ciudades/oaxaca", "cuenta": "admin", "paso": "admin-hoja-correr" },

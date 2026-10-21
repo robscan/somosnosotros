@@ -121,8 +121,17 @@ export function nombreDe(p: Pick<Propuesta, "tipo" | "datos">): string {
 
 export type VistaPropuesta = { que: string; titulo: string; linea: string | null; fuente: { texto: string; url: string } | null; leida: string | null };
 
-/** Lo que dice la tarjeta de una propuesta: «Foro · propuesto por la rutina», el nombre, dónde, la fuente con su enlace y cuándo se leyó. */
-export function vistaPropuesta(p: Pick<Propuesta, "tipo" | "datos" | "creado_en">, ciudad: string | null, ahora: Date = new Date()): VistaPropuesta {
+/**
+ * Lo que dice la tarjeta de una propuesta: «Foro · propuesto por la rutina», el nombre, dónde, la fuente con su enlace y cuándo se leyó. En un
+ * evento, `omitir` quita de la línea el cuándo o el dónde cuando la línea de su forma ya lo dice (OL-434: los días de un taller, el periodo de
+ * un festival, cuyas sedes son las de sus actos).
+ */
+export function vistaPropuesta(
+  p: Pick<Propuesta, "tipo" | "datos" | "creado_en">,
+  ciudad: string | null,
+  ahora: Date = new Date(),
+  omitir: { cuando?: boolean; donde?: boolean } = {},
+): VistaPropuesta {
   const d = p.datos;
   const url = urlSegura(d.url);
   const fuente = url ? { texto: new URL(url).hostname.replace(/^www\./, ""), url } : null;
@@ -141,8 +150,8 @@ export function vistaPropuesta(p: Pick<Propuesta, "tipo" | "datos" | "creado_en"
     return { que: `${disciplina ? etiquetaDisciplina(disciplina) : "Artista"} · propuesto por la rutina`, titulo: nombreDe(p), linea: enCiudad("") || null, fuente, leida };
   }
   const inicio = texto(d.inicio, 40);
-  const cuando = inicio && !Number.isNaN(Date.parse(inicio)) ? `${diaMes(inicio, ahora)}, ${horaCorta(inicio, ZONA_INICIAL)}` : "";
-  const donde = texto(d.lugar, 120);
+  const cuando = !omitir.cuando && inicio && !Number.isNaN(Date.parse(inicio)) ? `${diaMes(inicio, ahora)}, ${horaCorta(inicio, ZONA_INICIAL)}` : "";
+  const donde = omitir.donde ? "" : texto(d.lugar, 120);
   return { que: "Evento · propuesto por la rutina", titulo: nombreDe(p), linea: [cuando, donde].filter(Boolean).join(" · ") || null, fuente, leida };
 }
 
@@ -180,9 +189,57 @@ export function entradaDeArtista(p: Pick<Propuesta, "datos">, ciudad: string | n
 
 /**
  * La línea que queda al decidir. Un evento aceptado ya se publica al aceptarlo (OL-429), como un lugar o un artista: «Aceptaste …» y «Ver
- * ficha». `nota`, si el servidor la manda (un evento aceptado que no se pudo publicar en ese momento), va detrás.
+ * ficha». `nota`, si el servidor la manda (un evento aceptado que no se pudo publicar en ese momento, un acto que espera a su festival, lo que
+ * se publicó con un festival), va detrás como continuación de la frase: «Se publica cuando aceptes el festival «X».» → «… · se publica cuando
+ * aceptes el festival «X»».
  */
 export function textoDecidida(nombre: string, decision: { aceptada: true; tipo: TipoPropuesta } | { aceptada: false; motivo: MotivoRechazo }, nota?: string): string {
   if (!decision.aceptada) return `Rechazaste ${nombre} · ${MOTIVOS_RECHAZO.find((m) => m.valor === decision.motivo)?.etiqueta.toLowerCase() ?? "otro"}`;
-  return nota ? `Aceptaste ${nombre} · ${nota}` : `Aceptaste ${nombre}`;
+  const sigue = (nota ?? "").trim().replace(/\.$/, "");
+  return sigue ? `Aceptaste ${nombre} · ${sigue.charAt(0).toLowerCase()}${sigue.slice(1)}` : `Aceptaste ${nombre}`;
+}
+
+// ---------- festivales y sus actos (OL-433, OL-434) ----------
+/**
+ * «Aceptar» de la propuesta de un festival: si ya hay actos suyos aceptados que esperan, dice que se publican con él («Aceptar el festival y sus
+ * 3 actos aceptados»).
+ */
+export function textoAceptarFestival(aceptados: number): string {
+  if (aceptados <= 0) return "Aceptar";
+  return aceptados === 1 ? "Aceptar el festival y su acto aceptado" : `Aceptar el festival y sus ${aceptados} actos aceptados`;
+}
+
+/**
+ * Lo que se publicó al aceptar un festival, para la línea de lo hecho: sus actos que esperaban y se publicaron con él y los que no se pudieron
+ * publicar ahora (los publica la siguiente corrida de agendas, como cualquier evento aceptado sin publicar). Sin actos que esperaban, nada.
+ */
+export function notaDeFestival(publicados: number, sinPublicar: number): string | undefined {
+  const de = (n: number) => (n === 1 ? "su acto" : `sus ${n} actos`);
+  if (!publicados && !sinPublicar) return undefined;
+  if (!sinPublicar) return `se publicó con ${de(publicados)}`;
+  if (!publicados) return `${sinPublicar === 1 ? "su acto se publica" : `sus ${sinPublicar} actos se publican`} con la siguiente corrida de agendas`;
+  return `se publicó con ${publicados} de sus ${publicados + sinPublicar} actos; ${sinPublicar === 1 ? "el otro se publica" : "los demás se publican"} con la siguiente corrida de agendas`;
+}
+
+/** La línea de un acto que esperaba a su festival y se publicó con él, al aceptar el festival en la misma bandeja. */
+export const textoActoPublicado = (nombre: string): string => `Aceptaste ${nombre} · se publicó con el festival`;
+
+/**
+ * Las propuestas de una bandeja por fuente (`agruparPorFuente`) con los actos de un festival propuesto justo debajo de él (OL-434): el festival
+ * va antes que sus actos aunque un acto haya llegado por otra fuente o antes que él. Un acto cuyo festival no está en la lista va suelto en su
+ * fuente. Cada grupo cuenta sus actos para el orden.
+ */
+export function agruparConActos<T extends { id: string; fuente: string; festival?: string | null }>(propuestas: readonly T[], fuentesConTanda: readonly string[] = []): { fuente: string; propuestas: T[] }[] {
+  const ids = new Set(propuestas.map((p) => p.id));
+  // Solo bajo un festival que va suelto: así ninguna queda fuera de la lista (un «festival» que fuera a su vez acto de otro).
+  const sueltas = new Set(propuestas.filter((p) => !p.festival || p.festival === p.id || !ids.has(p.festival)).map((p) => p.id));
+  const bajo = (p: T) => !sueltas.has(p.id) && sueltas.has(p.festival ?? "");
+  const actos = new Map<string, T[]>();
+  for (const p of propuestas) if (bajo(p)) actos.set(p.festival!, [...(actos.get(p.festival!) ?? []), p]);
+  const conTanda = (f: string) => (fuentesConTanda.includes(f) ? 0 : 1);
+  const grupos = new Map<string, T[]>();
+  for (const p of propuestas) if (!bajo(p)) grupos.set(p.fuente, [...(grupos.get(p.fuente) ?? []), p, ...(actos.get(p.id) ?? [])]);
+  return [...grupos]
+    .map(([fuente, lista]) => ({ fuente, propuestas: lista }))
+    .sort((a, b) => conTanda(a.fuente) - conTanda(b.fuente) || b.propuestas.length - a.propuestas.length || a.fuente.localeCompare(b.fuente, "es"));
 }

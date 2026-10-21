@@ -11,7 +11,7 @@ import { configPublica } from "@/lib/config";
 import { hrefEvento } from "@/lib/eventos";
 import { esUuid } from "@/lib/formulario";
 import { hrefLugar, validarLugar } from "@/lib/lugares";
-import { entradaDeArtista, entradaDeLugar, esMotivo, nombreDe, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
+import { entradaDeArtista, entradaDeLugar, esMotivo, nombreDe, notaDeFestival, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararEvento, type Preparado } from "@/lib/rutinas/publicarEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
@@ -26,8 +26,12 @@ import { lugarEnPunto, lugarPorNombre, nombresAlrededor, sugerenciasMapbox } fro
  * «Correr» deja la corrida pendiente con su tope y, después de responder, pide su primer paso al motor (OL-428), que la corre con la API.
  */
 export type Resultado = { ok: true } | { ok: false; error: string };
-/** `nota`: una frase que la bandeja añade a la línea de lo hecho (un evento aceptado que no se pudo publicar en ese momento). */
-export type ResultadoAceptar = { ok: true; href: string | null; nota?: string } | { ok: false; error: string };
+/**
+ * `nota`: una frase que la bandeja añade a la línea de lo hecho (un evento aceptado que no se pudo publicar en ese momento; OL-434: un acto que
+ * espera a su festival, con `espera`; lo que se publicó con un festival). `actos`: al aceptar un festival, las propuestas de sus actos que
+ * esperaban y se publicaron con él (la bandeja cambia sus líneas).
+ */
+export type ResultadoAceptar = { ok: true; href: string | null; nota?: string; espera?: boolean; actos?: string[] } | { ok: false; error: string };
 
 async function soloAdmin() {
   const actual = await usuarioActual();
@@ -157,6 +161,8 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   }
   if (p.tipo === "artista") revalidatePath("/artistas");
   if (p.tipo === "evento" && admin && evento?.ok) {
+    // Un acto aceptado antes que su festival (OL-433) queda aceptado sin publicarse: lo dice su frase, no «no se pudo publicar» (OL-434).
+    if (evento.espera) return { ok: true, href: null, nota: evento.espera, espera: true };
     const creado = await insertarEvento(admin, evento.fila);
     if (!creado) return { ok: true, href: null, nota: "no se pudo publicar ahora: se publica con la siguiente corrida de agendas" };
     if (!(await ligarFicha(admin, id, creado.id))) {
@@ -168,10 +174,26 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
     revalidatePath(hrefEvento(creado));
     const lugarId = evento.fila.lugar_id;
     if (typeof lugarId === "string") revalidatePath(`/lugares/${lugarId}`);
+    if (p.datos.clase === "festival") {
+      // `ligarFicha` ya publicó colgados de él los actos aceptados que lo esperaban (OL-433): la línea dice cuántos (OL-434).
+      const actos = await actosDelFestival(admin, id);
+      return { ok: true, href: hrefEvento(creado), nota: notaDeFestival(actos.publicados.length, actos.sinPublicar), actos: actos.publicados };
+    }
     return { ok: true, href: hrefEvento(creado) };
   }
   if (!r.ficha_id) return { ok: true, href: null };
   return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
+}
+
+/**
+ * Los actos aceptados de un festival propuesto (`datos.marco_propuesto`) tras aceptarlo: los que ya tienen su evento (se publicaron con él) y
+ * cuántos siguen sin publicar (los publica la siguiente corrida de agendas). Si no se puede leer, ninguno: la línea no dice nada de más.
+ */
+async function actosDelFestival(admin: NonNullable<ReturnType<typeof clienteAdmin>>, festival: string): Promise<{ publicados: string[]; sinPublicar: number }> {
+  const r = await admin.from("propuestas").select("id, ficha_id").eq("tipo", "evento").eq("estado", "aceptada").eq("datos->>marco_propuesto", festival).limit(500);
+  if (r.error) return { publicados: [], sinPublicar: 0 };
+  const filas = (r.data ?? []) as { id: string; ficha_id: string | null }[];
+  return { publicados: filas.filter((f) => f.ficha_id).map((f) => f.id), sinPublicar: filas.filter((f) => !f.ficha_id).length };
 }
 
 /** Rechazar con su motivo (duplicado, no cultural, fuera de la ciudad u otro): la rutina aprende a no proponerlo (OL-428). */

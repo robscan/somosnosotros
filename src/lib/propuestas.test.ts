@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { validarArtista } from "./artistas";
 import { validarLugar } from "./lugares";
-import { agruparPorFuente, entradaDeArtista, entradaDeLugar, esMotivo, leerBandeja, nombreDe, ofrecerTodas, textoDecidida, urlSegura, vistaPropuesta } from "./propuestas";
+import {
+  agruparConActos,
+  agruparPorFuente,
+  entradaDeArtista,
+  entradaDeLugar,
+  esMotivo,
+  leerBandeja,
+  nombreDe,
+  notaDeFestival,
+  ofrecerTodas,
+  textoActoPublicado,
+  textoAceptarFestival,
+  textoDecidida,
+  urlSegura,
+  vistaPropuesta,
+} from "./propuestas";
 
 const AHORA = new Date("2026-10-20T16:00:00Z");
 const lugar = (datos: Record<string, unknown>) => ({ tipo: "lugar" as const, datos, creado_en: "2026-10-18T17:00:00Z" });
@@ -94,5 +109,45 @@ describe("la bandeja", () => {
     expect(b?.corrida.gasto_usd).toBe(1.1);
     expect(b?.propuestas[0].datos.nombre).toBe("X");
     expect(leerBandeja(null)).toBeNull();
+  });
+});
+
+describe("festivales y sus actos en la bandeja (OL-434)", () => {
+  it("un acto que espera dice su frase como continuación de la línea, no «no se pudo publicar»", () => {
+    expect(textoDecidida("Danza de Huehues", { aceptada: true, tipo: "evento" }, "Se publica cuando aceptes el festival «Xantolo 2026».")).toBe(
+      "Aceptaste Danza de Huehues · se publica cuando aceptes el festival «Xantolo 2026»",
+    );
+    expect(textoDecidida("Noche", { aceptada: true, tipo: "evento" }, "  ")).toBe("Aceptaste Noche");
+  });
+  it("«Aceptar» del festival cuenta sus actos aceptados que esperan", () => {
+    expect(textoAceptarFestival(0)).toBe("Aceptar");
+    expect(textoAceptarFestival(1)).toBe("Aceptar el festival y su acto aceptado");
+    expect(textoAceptarFestival(3)).toBe("Aceptar el festival y sus 3 actos aceptados");
+  });
+  it("lo que se publicó con el festival", () => {
+    expect(notaDeFestival(0, 0)).toBeUndefined();
+    expect(notaDeFestival(1, 0)).toBe("se publicó con su acto");
+    expect(notaDeFestival(3, 0)).toBe("se publicó con sus 3 actos");
+    expect(notaDeFestival(2, 1)).toBe("se publicó con 2 de sus 3 actos; el otro se publica con la siguiente corrida de agendas");
+    expect(notaDeFestival(1, 2)).toBe("se publicó con 1 de sus 3 actos; los demás se publican con la siguiente corrida de agendas");
+    expect(notaDeFestival(0, 2)).toBe("sus 2 actos se publican con la siguiente corrida de agendas");
+    expect(textoActoPublicado("Danza de Huehues")).toBe("Aceptaste Danza de Huehues · se publicó con el festival");
+  });
+  it("el festival va antes que sus actos, con ellos debajo aunque lleguen por otra fuente o antes que él", () => {
+    const p = (id: string, fuente: string, festival: string | null = null) => ({ id, fuente, festival });
+    const grupos = agruparConActos([p("acto-1", "Web", "fest"), p("suelta", "Agenda"), p("fest", "Agenda"), p("acto-2", "Agenda", "fest"), p("otra", "Web")], ["Agenda"]);
+    expect(grupos.map((g) => [g.fuente, g.propuestas.map((x) => x.id)])).toEqual([
+      ["Agenda", ["suelta", "fest", "acto-1", "acto-2"]],
+      ["Web", ["otra"]],
+    ]);
+    // Un acto cuyo festival no está en la lista va suelto en su fuente; nada se pierde aunque un «festival» sea a su vez acto de otro.
+    expect(agruparConActos([p("acto", "Web", "no-esta")]).flatMap((g) => g.propuestas.map((x) => x.id))).toEqual(["acto"]);
+    expect(agruparConActos([p("a", "Web", "b"), p("b", "Web", "c"), p("c", "Web")]).flatMap((g) => g.propuestas.map((x) => x.id)).sort()).toEqual(["a", "b", "c"]);
+  });
+  it("la línea de un evento puede omitir el cuándo o el dónde (los dice su forma)", () => {
+    const e = { tipo: "evento" as const, datos: { titulo: "Xantolo 2026", inicio: "2026-10-29T01:00:00Z", lugar: "Plaza de Armas" }, creado_en: "2026-10-18T17:00:00Z" };
+    expect(vistaPropuesta(e, "San Luis Potosí", AHORA).linea).toMatch(/^28 oct, 7:00 pm · Plaza de Armas$/);
+    expect(vistaPropuesta(e, "San Luis Potosí", AHORA, { cuando: true }).linea).toBe("Plaza de Armas");
+    expect(vistaPropuesta(e, "San Luis Potosí", AHORA, { cuando: true, donde: true }).linea).toBeNull();
   });
 });

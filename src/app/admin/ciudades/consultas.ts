@@ -6,7 +6,8 @@ import { leerPanelCiudades, leerParametrosVista, slugsDe, type CiudadPanel, type
 import { cargarCiudades, cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { diaLocal, localAIso } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
-import { leerBandeja, type Bandeja } from "@/lib/propuestas";
+import { idsParaContexto, SIN_CONTEXTO, type ContextoFormas } from "@/lib/bandejaFormas";
+import { leerBandeja, type Bandeja, type Propuesta } from "@/lib/propuestas";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { corridasVaradas, rescatarVaradas, type CorridaVista } from "@/lib/rutinas/rescate";
 import { clienteServidor } from "@/lib/supabase/servidor";
@@ -120,6 +121,35 @@ export async function cargarBandejasDeCiudad(corridas: readonly CorridaPanel[], 
   const con = corridas.filter((c) => c.ciudad === ciudad && c.por_revisar > 0).sort((a, b) => Date.parse(a.creado_en) - Date.parse(b.creado_en));
   const leidas = await Promise.all(con.map((c) => cargarBandeja(c.id)));
   return { bandejas: leidas.map((l) => l.bandeja).filter((b): b is Bandeja => !!b && b.propuestas.length > 0), error: leidas.some((l) => l.error) };
+}
+
+/**
+ * Lo que la bandeja de una ciudad lee aparte para decir la forma de sus propuestas (OL-434): por cada festival propuesto, cuántos actos suyos ya
+ * aceptados lo esperan (para «Aceptar el festival y sus N actos aceptados»), y el estado de los festivales propuestos que nombran sus actos y
+ * no están por revisar aquí (uno aceptado lleva a su evento; uno rechazado deja al acto suelto). Si una lectura falla, esa parte queda vacía: la
+ * bandeja se ve igual, con «Aceptar» a secas, y aceptar el festival publica de todos modos los actos que lo esperan y lo dice en su línea.
+ */
+export async function cargarContextoFormas(propuestas: readonly Pick<Propuesta, "id" | "tipo" | "datos">[]): Promise<ContextoFormas> {
+  const { festivales, nombrados } = idsParaContexto(propuestas);
+  if (!festivales.length && !nombrados.length) return SIN_CONTEXTO;
+  const supabase = await clienteServidor();
+  if (!supabase) return SIN_CONTEXTO;
+  const [esperan, suyos] = await Promise.all([
+    festivales.length
+      ? supabase.from("propuestas").select("datos").eq("tipo", "evento").eq("estado", "aceptada").is("ficha_id", null).in("datos->>marco_propuesto", festivales).limit(500)
+      : null,
+    nombrados.length ? supabase.from("propuestas").select("id, estado, ficha_id").in("id", nombrados).limit(500) : null,
+  ]);
+  const aceptados = new Map<string, number>();
+  if (esperan && !esperan.error)
+    for (const f of (esperan.data ?? []) as { datos?: { marco_propuesto?: unknown } | null }[]) {
+      const id = f.datos?.marco_propuesto;
+      if (typeof id === "string") aceptados.set(id, (aceptados.get(id) ?? 0) + 1);
+    }
+  const deFestivales = new Map<string, { estado: string; ficha_id: string | null }>();
+  if (suyos && !suyos.error)
+    for (const f of (suyos.data ?? []) as { id: string; estado: string; ficha_id: string | null }[]) deFestivales.set(f.id, { estado: String(f.estado), ficha_id: f.ficha_id ?? null });
+  return { aceptados, festivales: deFestivales };
 }
 
 /**

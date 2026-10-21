@@ -272,6 +272,79 @@ span.fallo {
 .salidaHecho {
   grid-area: accion;
 }
+/* ---------- la forma de cada propuesta de evento (OL-434) ----------
+   La tarjeta de la bandeja con las áreas de `pendiente` (admin.module.css) y, bajo el título, la línea de su forma con su icono en la columna de
+   los iconos (icono | texto, como un renglón), su detalle y, bajo la fuente, los otros títulos con que llegó. Las mismas ocho filas: las que la
+   bandeja no usaba (mensaje, números, apagada) son ahora las suyas, así una tarjeta sin forma no crece. Rechazar y Aceptar, en su renglón. */
+li.propuesta {
+  grid-template-columns: var(--columna-icono) 1fr;
+  grid-template-areas:
+    "icono que"
+    "icono ficha"
+    "formaIcono forma"
+    ". formaDetalle"
+    ". quien"
+    ". variantes"
+    ". error"
+    "acciones acciones";
+}
+.propuesta > .formaIcono {
+  grid-area: formaIcono;
+  align-self: start;
+  margin-top: var(--espacio-1);
+}
+.propuesta > .forma {
+  grid-area: forma;
+  min-width: 0;
+  margin-top: var(--espacio-1);
+  overflow-wrap: anywhere;
+  font-size: var(--letra-md);
+  line-height: 1.3;
+}
+/* El festival que ya existe: el enlace de la tarjeta (el de su fuente) con el toque a más de 44 sin mover el dibujo, como `a.ficha`. */
+.forma > a {
+  position: relative;
+  color: var(--texto);
+  font-weight: 600;
+}
+.forma > a::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--espacio-3)) calc(-1 * var(--espacio-1));
+}
+.propuesta > .formaDetalle {
+  grid-area: formaDetalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.propuesta > .variantes {
+  grid-area: variantes;
+  min-width: 0;
+  margin-top: var(--espacio-1);
+  overflow-wrap: anywhere;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* Un acto bajo su festival: hermano en la lista, con la sangría de la columna de los iconos y su aire. */
+li.acto {
+  margin-left: var(--espacio-6);
+}
+/* Rechazar a la izquierda y Aceptar a la derecha (Fitts), en un renglón que se parte si no caben los dos: «Aceptar el festival y sus 3 actos
+   aceptados» parte su texto junto a «Rechazar» (crece hasta lo que mide su texto en una línea, nunca más) y, con la letra grande, Aceptar baja
+   al renglón de abajo, a la derecha, en vez de montarse sobre Rechazar. */
+.acciones {
+  grid-area: acciones;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--espacio-2);
+}
+.acciones > .aceptar {
+  flex: 1 1 0;
+  max-width: max-content;
+  margin-left: auto;
+  white-space: normal;
+}
+
 /* Las opciones de la hoja de «Rechazar»: el motivo y, debajo, qué quiere decir. Las cuatro son iguales: sin la raya que el menú de una ficha
    pone antes de su última opción (la de quitar). */
 ul.motivos > li:last-child {
