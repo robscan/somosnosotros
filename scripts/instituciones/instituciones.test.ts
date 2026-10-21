@@ -132,6 +132,8 @@ describe("eventos propuestos", () => {
   it("gratis o con precio, en un lugar registrado o en otro sitio", () => {
     expect(formularioDeEvento({ ...base, precio: "Gratis" }, "a")).toMatchObject({ modo_sitio: "lugar", lugar_id: "a", gratis: "si", precio: "", inicio: "2026-10-02T20:00" });
     expect(formularioDeEvento({ ...base, precio: "$150" }, "a")).toMatchObject({ gratis: "no", precio: "$150" });
+    expect(formularioDeEvento({ ...base, precio: "Cooperación solidaria" }, "a")).toMatchObject({ gratis: "no", cooperacion: "si", precio: "" });
+    expect(validarEvento(formularioDeEvento({ ...base, precio: "cooperación solidaria" }, "11111111-1111-1111-1111-111111111111")).errores).toEqual({});
     expect(formularioDeEvento({ ...base, sitio: "Plaza de Armas" }, null)).toMatchObject({ modo_sitio: "otro", sitio_texto: "Plaza de Armas", gratis: "si" });
   });
 
