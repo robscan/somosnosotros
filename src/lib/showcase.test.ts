@@ -20,7 +20,15 @@ import {
   lineaCifras,
   miles,
   ordenarCandidatos,
+  opcionesPuntaje,
   partirCsv,
+  pasanAlConsejo,
+  propuestaActividad,
+  propuestaCirculacion,
+  propuestaObra,
+  propuestaVinculo,
+  sumaValores,
+  valorDe,
   primeraLinea,
   redPrincipal,
   sumaRubrica,
@@ -29,13 +37,21 @@ import {
   urlEvidencia,
   validarEvidencia,
   validarLectura,
+  valoresDe,
+  SIN_PROPUESTAS,
+  SIN_PUNTAJES,
   type Candidato,
   type FilasShowcase,
+  type Propuestas,
+  type Puntajes,
 } from "./showcase";
 
 const HOY = "2026-10-20";
 
-function candidato(c: Partial<Candidato> & { nombre: string }): Candidato {
+/** Un candidato de prueba: con `fijados` y `propuestos` arma lo que vale y su suma. */
+function candidato(c: Partial<Candidato> & { nombre: string; fijados?: Partial<Puntajes>; propuestos?: Partial<Propuestas> }): Candidato {
+  const { fijados, propuestos, ...resto } = c;
+  const valores = valoresDe({ ...SIN_PUNTAJES, ...fijados }, { ...SIN_PROPUESTAS, ...propuestos });
   return {
     id: c.nombre,
     slug: c.nombre.toLowerCase().replace(/\s+/g, "-"),
@@ -44,15 +60,15 @@ function candidato(c: Partial<Candidato> & { nombre: string }): Candidato {
     foto: null,
     instagram: null,
     estado: "candidato",
-    puntajes: { circulacion: null, obra: null, actividad: null, vinculo: null },
-    suma: 0,
+    valores,
+    suma: Object.values(valores).reduce((n, v) => n + (v.puntaje ?? 0), 0),
     nota: null,
     eventos: 0,
     foros: 0,
     festivales: 0,
     programadoPor: [],
     redes: null,
-    ...c,
+    ...resto,
   };
 }
 
@@ -134,15 +150,50 @@ describe("armar la lista con lo de la base", () => {
     ],
     festivales: [{ id: "f1", titulo: "Festival de las Linternas" }],
   };
-  const [sangre, sinNada] = armarCandidatos(filas);
+  const [sangre, sinNada] = armarCandidatos(filas, HOY);
   it("cuenta eventos, foros y festivales de la base y dice quién lo programa", () => {
     expect(sangre).toMatchObject({ eventos: 4, foros: 2, festivales: 1, suma: 6, estado: "invitado", nota: "Circula mucho." });
     expect(sangre.programadoPor).toEqual(["Teatro de la Paz", "Casa de Cultura del Barrio de San Miguelito", "Festival de las Linternas"]);
     expect(sangre.instagram).toBe("https://www.instagram.com/sangre/");
     expect(sangre.redes?.seguidores).toBe(3200);
   });
-  it("sin fila en el showcase es candidato implícito, sin puntajes, y su enlace usa el id si no tiene slug", () => {
+  it("lo fijado a mano manda sobre lo que propone la base, aunque la base proponga otra cosa", () => {
+    // La base propone circulación 2 (un festival y una fecha en Aguascalientes) y actividad 2 (publicó hace 2 días); valen los fijados.
+    expect(sangre.valores.circulacion).toMatchObject({ puntaje: 2, origen: "fijado", fijado: 2, propuesta: { puntaje: 2 } });
+    expect(sangre.valores.obra).toEqual({ puntaje: 1, origen: "fijado", fijado: 1, propuesta: null });
+    expect(sangre.valores.vinculo).toMatchObject({ puntaje: 1, origen: "fijado", propuesta: { puntaje: 0, motivo: "Nadie lleva su ficha" } });
+  });
+  it("sin fila en el showcase es candidato implícito; sin eventos ni lecturas solo tiene la propuesta del vínculo (0), y su enlace usa el id", () => {
     expect(sinNada).toMatchObject({ estado: "candidato", suma: 0, eventos: 0, foros: 0, festivales: 0, slug: "a2", redes: null, nota: null });
+    expect(Object.fromEntries(Object.entries(sinNada.valores).map(([k, v]) => [k, v.origen]))).toEqual({ circulacion: "sin_datos", obra: "sin_datos", actividad: "sin_datos", vinculo: "propuesto" });
+  });
+  it("sin nada fijado, la base propone y la suma, el orden y quienes pasan al consejo usan lo propuesto", () => {
+    const nuevas: FilasShowcase = {
+      ...filas,
+      artistas: [...filas.artistas, { id: "a3", slug: "rosa", nombre: "Rosa Mística", disciplina: "musica", ciudad: "San Luis Potosí", foto: null, redes: [], portada: "https://img.example/r.jpg" }],
+      candidatos: [...filas.candidatos, { artista_id: "a3", estado: "revisado", puntaje_circulacion: null, puntaje_obra: null, puntaje_actividad: null, puntaje_vinculo: null, notas: null }],
+      eventos_artistas: [...filas.eventos_artistas, ...["e1", "e3", "e4"].map((evento_id) => ({ evento_id, artista_id: "a3" }))],
+      lecturas: [...filas.lecturas, { artista_id: "a3", red: "instagram", seguidores: 500, publicaciones: 90, ultima_publicacion: "2026-09-25", leido_en: "2026-10-19T00:00:00Z" }],
+      cuentas: [{ artista_id: "a3" }],
+      novedades: [],
+      evidencias: [
+        { artista_id: "a3", senal: "obra", tipo: "premio", titulo: "Premio estatal de composición", fecha: "2025-06-01", estado: "aceptada" },
+        { artista_id: "a2", senal: "obra", tipo: "premio", titulo: "Premio que nadie aceptó", fecha: null, estado: "propuesta" },
+      ],
+    };
+    const lista = armarCandidatos(nuevas, HOY);
+    const rosa = lista.find((c) => c.id === "a3")!;
+    expect(Object.fromEntries(Object.entries(rosa.valores).map(([k, v]) => [k, [v.puntaje, v.origen]]))).toEqual({
+      circulacion: [2, "propuesto"], // 2 foros y un festival, y una fecha en Aguascalientes
+      obra: [2, "propuesto"], // un premio aceptado
+      actividad: [1, "propuesto"], // publicó hace 25 días
+      vinculo: [2, "propuesto"], // reclamada y con portada
+    });
+    expect(rosa.suma).toBe(7);
+    expect(lista.find((c) => c.id === "a2")!.valores.obra.origen).toBe("sin_datos"); // lo propuesto por la rutina no cuenta
+    expect(ordenarCandidatos(lista, "puntaje").map((c) => c.id)).toEqual(["a3", "a1", "a2"]);
+    expect(pasanAlConsejo(lista)).toBe(2);
+    expect(pasanAlConsejo(lista.map((c) => (c.id === "a3" ? { ...c, estado: "descartado" as const } : c)))).toBe(1);
   });
 });
 
@@ -176,8 +227,9 @@ describe("filtrar y ordenar", () => {
     ]);
     const conteos = conteosEstado(lista);
     expect(conteos).toEqual({ todos: 4, candidato: 1, revisado: 1, invitado: 1, confirmado: 1, descartado: 0 });
-    expect(lineaCifras(4, conteos, null)).toBe("4 candidatos · 1 invitado · 1 confirmado · pasan al consejo con 5 de 8");
-    expect(lineaCifras(4, conteos, 2)).toBe("2 de 4 candidatos");
+    expect(lineaCifras(4, conteos, null, pasanAlConsejo(lista))).toBe("4 candidatos · 1 invitado · 1 confirmado · 4 pasan al consejo con 5 de 8");
+    expect(lineaCifras(4, conteos, null, 1)).toBe("4 candidatos · 1 invitado · 1 confirmado · 1 pasa al consejo con 5 de 8");
+    expect(lineaCifras(4, conteos, 2, 4)).toBe("2 de 4 candidatos");
   });
 });
 
@@ -258,14 +310,112 @@ describe("el CSV para el consejo", () => {
     expect(celdaCsv(-2)).toBe("-2");
     expect(celdaCsv(null)).toBe("");
   });
-  it("una fila por candidato con la rúbrica, el estado, los enlaces y la primera línea de la nota", () => {
+  it("una fila por candidato con la rúbrica que vale, lo propuesto y lo fijado aparte, el estado, los enlaces y la primera línea de la nota", () => {
     const csv = csvConsejo([
-      candidato({ nombre: "Sangre de Coyote", estado: "invitado", puntajes: { circulacion: 2, obra: 1, actividad: 2, vinculo: null }, suma: 5, eventos: 7, foros: 4, festivales: 1, instagram: "https://www.instagram.com/sangre/", nota: "Propuesto por dos foros, sin disco." }),
+      candidato({
+        nombre: "Sangre de Coyote",
+        estado: "invitado",
+        // Circulación: la base propone 1 y alguien fijó 2 (vale 2). Obra: fijada en 1. Actividad: propuesta en 2. Vínculo: sin datos.
+        fijados: { circulacion: 2, obra: 1 },
+        propuestos: { circulacion: { puntaje: 1, motivo: "un festival este año" }, actividad: { puntaje: 2, motivo: "Publicó ayer en Instagram" } },
+        eventos: 7,
+        foros: 4,
+        festivales: 1,
+        instagram: "https://www.instagram.com/sangre/",
+        nota: "Propuesto por dos foros, sin disco.",
+      }),
     ]);
     const lineas = csv.split("\r\n");
-    expect(lineas[0]).toBe("\uFEFFartista,disciplina,ciudad,estado,circulacion,obra,actividad,vinculo,total,eventos,foros,festivales,seguidores,publicaciones,ultima_publicacion,ficha,instagram,nota");
-    expect(lineas[1]).toBe('Sangre de Coyote,Música,San Luis Potosí,Invitado,2,1,2,,5,7,4,1,,,,https://somosnosotros.org/artistas/sangre-de-coyote,https://www.instagram.com/sangre/,"Propuesto por dos foros, sin disco."');
+    expect(lineas[0]).toBe("\uFEFFartista,disciplina,ciudad,estado,circulacion,obra,actividad,vinculo,total,circulacion_propuesto,obra_propuesto,actividad_propuesto,vinculo_propuesto,circulacion_fijado,obra_fijado,actividad_fijado,vinculo_fijado,eventos,foros,festivales,seguidores,publicaciones,ultima_publicacion,ficha,instagram,nota");
+    expect(lineas[1]).toBe('Sangre de Coyote,Música,San Luis Potosí,Invitado,2,1,2,,5,1,,2,,2,1,,,7,4,1,,,,https://somosnosotros.org/artistas/sangre-de-coyote,https://www.instagram.com/sangre/,"Propuesto por dos foros, sin disco."');
     expect(lineas[2]).toBe("");
+  });
+});
+
+describe("lo que propone la base (OL-437)", () => {
+  const circ = (foros: number, festivales = 0, fuera = 0, eventos = foros) => ({ eventos, foros, festivales, fuera });
+  it("circulación: 0, 1 y 2 foros; 4 o más; un festival; festival y fechas fuera; sin eventos, sin datos", () => {
+    const p = (c: ReturnType<typeof circ>) => propuestaCirculacion(c, "San Luis Potosí");
+    expect(p(circ(0, 0, 0, 0))).toBeNull();
+    expect(p(circ(0, 0, 0, 2))).toEqual({ puntaje: 0, motivo: "2 eventos este año, en sitios sin ficha" });
+    expect(p(circ(1))).toEqual({ puntaje: 0, motivo: "un foro este año" });
+    expect(p(circ(2))).toEqual({ puntaje: 1, motivo: "2 foros este año" });
+    expect(p(circ(3))?.puntaje).toBe(1);
+    expect(p(circ(4, 1))).toEqual({ puntaje: 2, motivo: "4 foros y un festival este año" });
+    expect(p(circ(1, 1))).toEqual({ puntaje: 1, motivo: "un foro y un festival este año" });
+    expect(p(circ(0, 1, 0, 0))).toEqual({ puntaje: 1, motivo: "un festival este año" });
+    expect(p(circ(1, 1, 2))).toEqual({ puntaje: 2, motivo: "un foro y un festival este año; 2 fechas fuera de San Luis Potosí" });
+    expect(p(circ(1, 0, 3))).toEqual({ puntaje: 0, motivo: "un foro este año; 3 fechas fuera de San Luis Potosí" }); // fuera sin festival no sube
+    expect(p(circ(2, 2))?.motivo).toBe("2 foros y 2 festivales este año");
+  });
+  it("actividad: 3, 7, 8, 20, 45, 46 y 120 días; cada semana por sus lecturas; sin lecturas o sin fecha, sin datos", () => {
+    const leida = (ultima: string | null, publicaciones: number | null = 100, leido_en = "2026-10-19T00:00:00Z", red: "instagram" | "facebook" = "instagram") => ({ red, seguidores: 10, publicaciones, ultima_publicacion: ultima, leido_en });
+    const p = (...l: ReturnType<typeof leida>[]) => propuestaActividad(l, HOY);
+    expect(p(leida("2026-10-17"))).toEqual({ puntaje: 2, motivo: "Publicó hace 3 días en Instagram" });
+    expect(p(leida("2026-10-13"))?.puntaje).toBe(2);
+    expect(p(leida("2026-10-12"))).toEqual({ puntaje: 1, motivo: "Publicó hace 8 días en Instagram" });
+    expect(p(leida("2026-09-30"))).toEqual({ puntaje: 1, motivo: "Publicó hace 20 días en Instagram" });
+    expect(p(leida("2026-09-05"))?.puntaje).toBe(1); // 45 días: la holgura de «cada mes»
+    expect(p(leida("2026-09-04"))).toEqual({ puntaje: 0, motivo: "Sin publicar desde hace 46 días en Instagram" });
+    expect(p(leida("2026-06-22"))).toEqual({ puntaje: 0, motivo: "Sin publicar desde hace 120 días en Instagram" });
+    expect(p(leida("2026-10-20"))?.motivo).toBe("Publicó hoy en Instagram");
+    expect(p()).toBeNull();
+    expect(p(leida(null))).toBeNull();
+    // La más reciente de todas sus redes manda.
+    expect(p(leida("2026-07-01", 5, "2026-10-19T00:00:00Z", "facebook"), leida("2026-10-18"))?.motivo).toBe("Publicó hace 2 días en Instagram");
+    // Cada semana por sus lecturas: 12 publicaciones en 28 días (3 por semana) con la última hace 12 días.
+    const semanal = [leida("2026-10-08", 112, "2026-10-19T00:00:00Z"), leida("2026-09-20", 100, "2026-09-21T00:00:00Z")];
+    expect(p(...semanal)).toEqual({ puntaje: 2, motivo: "Publica unas 3 veces por semana en Instagram" });
+    // El mismo ritmo, pero con la última publicación hace 40 días, ya no es semanal ahora.
+    expect(p(leida("2026-09-10", 112, "2026-10-19T00:00:00Z"), leida("2026-09-01", 100, "2026-09-21T00:00:00Z"))?.puntaje).toBe(1);
+    // Sin fecha de la última publicación, el ritmo basta si la lectura es del último mes.
+    expect(p(leida(null, 112, "2026-10-19T00:00:00Z"), leida(null, 108, "2026-10-12T00:00:00Z"))).toEqual({ puntaje: 2, motivo: "Publica unas 4 veces por semana en Instagram" });
+    // Lecturas con menos de 7 días entre ellas no dicen el ritmo.
+    expect(p(leida(null, 112, "2026-10-19T00:00:00Z"), leida(null, 100, "2026-10-16T00:00:00Z"))).toBeNull();
+  });
+  it("vínculo: sin cuenta, reclamada, con novedades o portada", () => {
+    expect(propuestaVinculo({ reclamada: false, novedades: true, portada: true })).toEqual({ puntaje: 0, motivo: "Nadie lleva su ficha" });
+    expect(propuestaVinculo({ reclamada: true, novedades: false, portada: false })).toEqual({ puntaje: 1, motivo: "Ficha reclamada, sin novedades ni portada" });
+    expect(propuestaVinculo({ reclamada: true, novedades: true, portada: false })).toEqual({ puntaje: 2, motivo: "Ficha reclamada, con novedades" });
+    expect(propuestaVinculo({ reclamada: true, novedades: true, portada: true })).toEqual({ puntaje: 2, motivo: "Ficha reclamada, con novedades y portada" });
+  });
+  it("obra: solo con evidencias aceptadas de obra; premio, beca, residencia o selección 2; obra de 24 meses 1; más vieja 0", () => {
+    const ev = (tipo: "obra" | "premio" | "beca" | "prensa", titulo: string, fecha: string | null, estado: "aceptada" | "propuesta" | "rechazada" = "aceptada", senal: "obra" | "circulacion" = "obra") => ({ senal, tipo, titulo, fecha, estado });
+    const p = (...e: ReturnType<typeof ev>[]) => propuestaObra(e, HOY);
+    expect(p()).toBeNull();
+    expect(p(ev("premio", "Premio propuesto", null, "propuesta"), ev("obra", "Disco rechazado", null, "rechazada"), ev("premio", "Otra señal", null, "aceptada", "circulacion"))).toBeNull();
+    expect(p(ev("obra", "Sencillo en plataformas", "2026-03-01"))).toEqual({ puntaje: 1, motivo: "Obra: «Sencillo en plataformas»" });
+    expect(p(ev("obra", "Disco", null), ev("prensa", "Reseña del disco", "2025-12-01"))).toEqual({ puntaje: 1, motivo: "Prensa: «Reseña del disco» y 1 más" });
+    expect(p(ev("obra", "Disco de 2022", "2022-05-01"))).toEqual({ puntaje: 0, motivo: "Su obra aceptada es de hace más de 24 meses" });
+    expect(p(ev("obra", "Disco", "2026-01-01"), ev("premio", "Mención estatal de acordeón", "2025-11-20"))).toEqual({ puntaje: 2, motivo: "Premio: «Mención estatal de acordeón»" });
+    expect(p(ev("beca", "PECDA 2024", "2024-02-01"))?.motivo).toBe("Beca: «PECDA 2024»");
+    expect(p(ev("obra", "Residencia artística en Oaxaca", null))).toEqual({ puntaje: 2, motivo: "Reconocimiento: «Residencia artística en Oaxaca»" });
+    expect(p(ev("prensa", "Seleccionada en la muestra nacional de teatro", null))?.puntaje).toBe(2);
+    expect(p(ev("obra", "Selección de canciones en vivo", null))?.puntaje).toBe(1); // «selección» sola no es reconocimiento
+    expect(p(ev("premio", "x".repeat(120), null))?.motivo).toBe(`Premio: «${"x".repeat(79)}…»`);
+  });
+  it("qué vale: lo fijado manda (también un 0 fijado); sin fijado, lo propuesto; sin los dos, sin datos y no suma", () => {
+    const dos = { puntaje: 2 as const, motivo: "4 foros este año" };
+    expect(valorDe(1, dos)).toEqual({ puntaje: 1, origen: "fijado", fijado: 1, propuesta: dos });
+    expect(valorDe(0, dos)).toMatchObject({ puntaje: 0, origen: "fijado" });
+    expect(valorDe(null, dos)).toEqual({ puntaje: 2, origen: "propuesto", fijado: null, propuesta: dos });
+    expect(valorDe(null, null)).toEqual({ puntaje: null, origen: "sin_datos", fijado: null, propuesta: null });
+    expect(sumaValores(valoresDe({ circulacion: 1, obra: null, actividad: null, vinculo: 0 }, { circulacion: dos, obra: null, actividad: dos, vinculo: dos }))).toBe(3);
+  });
+  it("la hoja: tocar un número lo fija; lo propuesto lleva el destello; con algo fijado, «Volver al propuesto» o «Sin puntuar»", () => {
+    const niveles = ["Cero", "Uno", "Dos"];
+    const dos = { puntaje: 2 as const, motivo: "4 foros este año" };
+    const marcas = (v: ReturnType<typeof valorDe>) => opcionesPuntaje(niveles, v).map((o) => [o.etiqueta, o.marca]);
+    expect(marcas(valorDe(null, dos))).toEqual([["0", null], ["1", null], ["2", "propuesto"]]);
+    expect(marcas(valorDe(null, null))).toEqual([["0", null], ["1", null], ["2", null]]);
+    expect(opcionesPuntaje(niveles, valorDe(1, dos)).map((o) => [o.etiqueta, o.marca, o.valor, o.detalle])).toEqual([
+      ["0", null, 0, "Cero"],
+      ["1", "fijado", 1, "Uno"],
+      ["2", null, 2, "Dos"],
+      ["Volver al propuesto", "propuesto", null, "Vale el 2 en vez del 1 fijado a mano"],
+    ]);
+    expect(opcionesPuntaje(niveles, valorDe(2, dos)).at(-1)?.detalle).toBe("El mismo 2, sin fijar: cambia si cambian sus datos");
+    expect(opcionesPuntaje(niveles, valorDe(0, null)).at(-1)).toEqual({ valor: null, etiqueta: "Sin puntuar", detalle: "No cuenta en la suma", marca: null });
   });
 });
 

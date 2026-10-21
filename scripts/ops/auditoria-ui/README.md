@@ -85,6 +85,12 @@ la ⓘ explicándolo, «Investigando» (0Backside0) e «Investigado» (Pimpolina
 evidencias los añade un arranque propio en la carpeta temporal (el fixture no cambia), y a cada corrida la clave plana `parametros->>artista_id`,
 porque el servidor del respaldo no entiende filtros sobre jsonb. Respaldo en el puerto 8869.
 
+Puntajes propuestos del Showcase (OL-437, bitácora 469): el fixture deja sin fijar lo que la base puede proponer (Feleal con la circulación fijada a
+mano y lo demás propuesto; Pimpolina y Abril Merlot, nada fijado; 0Backside0 y la Orquesta, todo fijado). `capturar-showcase-puntajes.mjs` saca la
+lista (lo propuesto en contorno discontinuo, lo fijado relleno, «sin datos»), la rúbrica de Feleal, la hoja de una señal propuesta y la de una
+fijada con «Volver al propuesto», la ficha y la hoja de Aaron Cadena con «sin datos», la tabla a 1280, e imprime el CSV para el consejo con sus
+columnas de propuesto y fijado. Respaldo en el puerto 8879, sin arranque propio.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

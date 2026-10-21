@@ -407,12 +407,15 @@ const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => 
 // de administración del respaldo («por ti»). Solo las leen /admin/showcase y su ficha: ninguna otra pantalla que mide `npm run medir` cambia.
 const diaHace = (dias) => fecha(-dias, "12:00").slice(0, 10);
 const candidatoShowcase = (artista_id, estado, [c, o, a, v], notas = null) => ({ artista_id, estado, puntaje_circulacion: c, puntaje_obra: o, puntaje_actividad: a, puntaje_vinculo: v, notas, actualizado_por: ADMIN, actualizado_en: hace(2) });
+// OL-437 (bitácora 469): la base propone los puntajes; null es «nadie lo fijó» y vale lo propuesto. Feleal tiene la circulación fijada a mano
+// en 2 (su fecha en Aguascalientes, aceptada, no está en la base: la base propone 1) y lo demás propuesto; 0Backside0 y la Orquesta, todo fijado;
+// Pimpolina y Abril Merlot, nada fijado (como los 692 de producción el 21 de octubre). Aaron Cadena y Rocío Lozano no tienen fila.
 const showcase_candidatos = [
-  candidatoShowcase(A.feleal, "invitado", [2, 1, 2, 1], "Circula por los foros del centro y por un festival; falta evidencia de obra grabada reciente.\nPreguntar a ACHE si le sirve el apoyo para grabar."),
+  candidatoShowcase(A.feleal, "invitado", [2, null, null, null], "Circula por los foros del centro y por un festival; falta evidencia de obra grabada reciente.\nPreguntar a ACHE si le sirve el apoyo para grabar."),
   candidatoShowcase(A.backside, "confirmado", [2, 2, 1, 1], "Obra publicada y circulación estable; confirmó su lugar en el showcase."),
-  candidatoShowcase(A.pimpolina, "invitado", [1, 1, 1, 2], "Temporada en el Teatro de la Paz; publica cada mes."),
+  candidatoShowcase(A.pimpolina, "invitado", [null, null, null, null], "Temporada en el Teatro de la Paz; publica cada mes."),
   candidatoShowcase(A.osslp, "revisado", [1, 2, 0, 0]),
-  candidatoShowcase(A.merlot, "candidato", [1, null, 2, 1], "Activa en redes; la rutina aún no la investiga."),
+  candidatoShowcase(A.merlot, "candidato", [null, null, null, null], "Activa en redes; la rutina aún no la investiga."),
 ];
 const showcase_cambios_estado = [
   { id: "cccc0026-0000-4000-8000-000000000001", artista_id: A.feleal, estado: "revisado", por: ADMIN, creado_en: hace(5) },

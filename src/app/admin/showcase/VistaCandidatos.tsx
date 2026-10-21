@@ -20,13 +20,14 @@ import {
   miles,
   ordenarCandidatos,
   paginaDe,
+  pasanAlConsejo,
   SENALES,
   textoProgramadoPor,
   type Candidato,
   type Vista,
 } from "@/lib/showcase";
 import OpcionesLista from "./OpcionesLista";
-import { IconoRed, PildoraEstado, Rubrica } from "./Piezas";
+import { IconoRed, PildoraEstado, PuntajeTabla, Rubrica } from "./Piezas";
 import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
@@ -60,7 +61,7 @@ export default function VistaCandidatos({ todos, vista, hoy }: { todos: Candidat
       </Chips>
       <OpcionesLista vista={vista} conteos={conteos} />
       <p className={admin.nota} role="status">
-        {lineaCifras(todos.length, conteos, filtrando ? filtrados.length : null)}
+        {lineaCifras(todos.length, conteos, filtrando ? filtrados.length : null, pasanAlConsejo(todos))}
       </p>
       {!filtrados.length ? (
         <p className={admin.vacio}>{vista.q ? `Nadie con «${vista.q}» aquí.` : "Nadie con este filtro."}</p>
@@ -130,7 +131,7 @@ export function TarjetaCandidato({ c, hoy }: { c: Candidato; hoy: string }) {
         </p>
       )}
       {actividad && <span className={[admin.etiqueta, CLASE_ACTIVIDAD[actividad.clave], s.actividad].filter(Boolean).join(" ")}>{actividad.texto}</span>}
-      <Rubrica puntajes={c.puntajes} suma={c.suma} />
+      <Rubrica valores={c.valores} suma={c.suma} />
       {c.nota && <p className={s.nota}>{c.nota}</p>}
       {programado && (
         <p className={s.programa}>
@@ -193,9 +194,7 @@ export function TablaCandidatos({ lista, orden, hoy }: { lista: Candidato[]; ord
               </td>
               {SENALES.map((x) => (
                 <td key={x.clave}>
-                  <span className={s.n} data-n={c.puntajes[x.clave] ?? undefined}>
-                    {c.puntajes[x.clave] ?? "–"}
-                  </span>
+                  <PuntajeTabla valor={c.valores[x.clave]} />
                 </td>
               ))}
               <td>

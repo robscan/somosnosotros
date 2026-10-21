@@ -14,15 +14,22 @@ vi.mock("@/lib/supabase/servidor", () => ({
 }));
 vi.mock("@/app/admin/showcase/consultas", () => {
   const base = { ciudad: "San Luis Potosí", foto: null, instagram: null, nota: null, programadoPor: [], redes: null, eventos: 0, foros: 0, festivales: 0 };
-  const puntajes = (c: number, o: number) => ({ circulacion: c, obra: o, actividad: null, vinculo: null });
+  // OL-437: circulación y obra fijadas a mano; actividad sin datos; vínculo propuesto por la base (0, nadie lleva su ficha).
+  const fijado = (p: number) => ({ puntaje: p, origen: "fijado", fijado: p, propuesta: null });
+  const valores = (c: number, o: number) => ({
+    circulacion: fijado(c),
+    obra: fijado(o),
+    actividad: { puntaje: null, origen: "sin_datos", fijado: null, propuesta: null },
+    vinculo: { puntaje: 0, origen: "propuesto", fijado: null, propuesta: { puntaje: 0, motivo: "Nadie lleva su ficha" } },
+  });
   return {
     cargarCandidatos: vi.fn(async () =>
       estado.falla
         ? null
         : [
-            { ...base, id: "1", slug: "pargazz", nombre: "Pargazz", disciplina: "musica", estado: "revisado", puntajes: puntajes(1, 1), suma: 2 },
-            { ...base, id: "2", slug: "sangre-de-coyote", nombre: "Sangre de Coyote", disciplina: "musica", estado: "invitado", puntajes: puntajes(2, 1), suma: 3, nota: "=1+1" },
-            { ...base, id: "3", slug: "iyari", nombre: "IYARI, teatro de la vida", disciplina: "teatro", estado: "candidato", puntajes: puntajes(0, 0), suma: 0 },
+            { ...base, id: "1", slug: "pargazz", nombre: "Pargazz", disciplina: "musica", estado: "revisado", valores: valores(1, 1), suma: 2 },
+            { ...base, id: "2", slug: "sangre-de-coyote", nombre: "Sangre de Coyote", disciplina: "musica", estado: "invitado", valores: valores(2, 1), suma: 3, nota: "=1+1" },
+            { ...base, id: "3", slug: "iyari", nombre: "IYARI, teatro de la vida", disciplina: "teatro", estado: "candidato", valores: valores(0, 0), suma: 0 },
           ],
     ),
   };
@@ -57,6 +64,11 @@ describe("GET /api/showcase/csv (OL-426)", () => {
     expect(lineas[0].startsWith("artista,disciplina,ciudad,estado,circulacion")).toBe(true);
     expect(lineas.slice(1, 4).map((l) => l.split(",")[0])).toEqual(["Sangre de Coyote", "Pargazz", '"IYARI']);
     expect(lineas[1].endsWith(",'=1+1")).toBe(true);
+    // OL-437: la rúbrica que vale (actividad sin datos: vacía; vínculo propuesto 0), el total, lo propuesto y lo fijado en columnas aparte.
+    const cabecera = lineas[0].split(",");
+    const sangre = Object.fromEntries(lineas[1].split(",").map((v, i) => [cabecera[i], v]));
+    expect(sangre).toMatchObject({ circulacion: "2", obra: "1", actividad: "", vinculo: "0", total: "3" });
+    expect(sangre).toMatchObject({ circulacion_propuesto: "", vinculo_propuesto: "0", circulacion_fijado: "2", obra_fijado: "1", actividad_fijado: "", vinculo_fijado: "" });
   });
   it("con los filtros de la pantalla: disciplina, estado y búsqueda", async () => {
     estado.quien = { id: "a-1", rol: "admin" };

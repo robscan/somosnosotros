@@ -19,6 +19,7 @@ import {
   type FilaCandidato,
   type FilaEvento,
   type FilaEventoArtista,
+  type FilaEvidencia,
   type FilaLectura,
   type FilaLugar,
   type Lectura,
@@ -73,22 +74,29 @@ async function festivalesQueFaltan(db: ClienteServidor, eventos: readonly FilaEv
   return faltan.length ? enTandas(faltan, (t) => db.from("eventos").select("id, titulo, slug").in("id", t).limit(t.length)) : [];
 }
 
-/** Todos los candidatos (los artistas visibles del catálogo) con su estado, su rúbrica y sus cifras de la base y de redes; null si falló. */
+/**
+ * Todos los candidatos (los artistas visibles del catálogo) con su estado, su rúbrica y sus cifras de la base y de redes; null si falló. OL-437:
+ * también lo que hace falta para que la base proponga los puntajes: las fichas reclamadas, las novedades visibles, la portada y las evidencias
+ * aceptadas de obra (las propuestas por la rutina no cuentan hasta que alguien las acepta).
+ */
 export async function cargarCandidatos(ahora: Date): Promise<Candidato[] | null> {
   try {
     const db = await clienteServidor();
     if (!db) return null;
     const { desde, hasta } = anioDe(ahora);
-    const [artistas, candidatos, lecturas, eventos, eventos_artistas, lugares] = await Promise.all([
-      leerTodo<FilaArtista>((d, h) => db.from("artistas").select("id, slug, nombre, disciplina, ciudad, foto, redes").eq("visible", true).order("id").range(d, h)),
+    const [artistas, candidatos, lecturas, eventos, eventos_artistas, lugares, cuentas, novedades, evidencias] = await Promise.all([
+      leerTodo<FilaArtista>((d, h) => db.from("artistas").select("id, slug, nombre, disciplina, ciudad, foto, portada, redes").eq("visible", true).order("id").range(d, h)),
       leerTodo<FilaCandidato>((d, h) => db.from("showcase_candidatos").select("artista_id, estado, puntaje_circulacion, puntaje_obra, puntaje_actividad, puntaje_vinculo, notas").order("artista_id").range(d, h)),
       leerTodo<FilaLectura>((d, h) => db.from("lecturas_redes").select("artista_id, red, seguidores, publicaciones, ultima_publicacion, leido_en").order("id").range(d, h)),
       leerTodo<FilaEvento>((d, h) => eventosDelAnio(db, desde, hasta).order("id").range(d, h)),
       leerTodo<FilaEventoArtista>((d, h) => db.from("eventos_artistas").select("evento_id, artista_id").order("evento_id").order("artista_id").range(d, h)),
       leerTodo<FilaLugar>((d, h) => db.from("lugares").select("id, nombre, slug").order("id").range(d, h)),
+      leerTodo<{ artista_id: string }>((d, h) => db.from("artistas_cuentas").select("artista_id").order("artista_id").order("perfil_id").range(d, h)),
+      leerTodo<{ artista_id: string }>((d, h) => db.from("novedades_artista").select("artista_id").eq("visible", true).order("id").range(d, h)),
+      leerTodo<FilaEvidencia>((d, h) => db.from("showcase_evidencias").select("artista_id, senal, tipo, titulo, fecha, estado").eq("senal", "obra").eq("estado", "aceptada").order("id").range(d, h)),
     ]);
     const festivales = await festivalesQueFaltan(db, eventos);
-    return armarCandidatos({ artistas, candidatos, lecturas, eventos, eventos_artistas, lugares, festivales });
+    return armarCandidatos({ artistas, candidatos, lecturas, eventos, eventos_artistas, lugares, festivales, cuentas, novedades, evidencias }, diaLocal(ahora));
   } catch (error) {
     console.error("showcase:", error instanceof Error ? error.message : error);
     return null;
@@ -118,7 +126,8 @@ export type FichaShowcase = {
   novedades: boolean;
   portada: boolean;
   estado: Estado;
-  puntajes: Puntajes;
+  /** Lo fijado a mano en cada señal (null: nadie lo fijó; vale lo que propone la base, OL-437). */
+  fijados: Puntajes;
   notas: string;
   registro: CambioEstado[];
   /** El nombre de cada cuenta que aparece en el registro. */
@@ -172,7 +181,7 @@ export async function cargarFichaShowcase(clave: string, ahora: Date): Promise<F
       novedades: (novedades.count ?? 0) > 0,
       portada: !!a.portada,
       estado: fila?.estado ?? "candidato",
-      puntajes: { circulacion: fila?.puntaje_circulacion ?? null, obra: fila?.puntaje_obra ?? null, actividad: fila?.puntaje_actividad ?? null, vinculo: fila?.puntaje_vinculo ?? null },
+      fijados: { circulacion: fila?.puntaje_circulacion ?? null, obra: fila?.puntaje_obra ?? null, actividad: fila?.puntaje_actividad ?? null, vinculo: fila?.puntaje_vinculo ?? null },
       notas: fila?.notas ?? "",
       registro: filasRegistro,
       nombres: Object.fromEntries(perfiles.map((p) => [p.id, p.nombre])),

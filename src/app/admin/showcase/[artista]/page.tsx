@@ -20,15 +20,17 @@ import {
   investigacionEnCurso,
   lineaCreditoInvestigar,
   MAXIMO_RUBRICA,
+  propuestasDe,
   renglonesBase,
   resumenSenal,
   RUTA_SHOWCASE,
   SENALES,
-  sumaRubrica,
+  sumaValores,
   textoEstado,
   textoInvestigar,
   textoLectura,
   ultimasPorRed,
+  valoresDe,
 } from "@/lib/showcase";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../../Reintentar";
@@ -89,12 +91,14 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
   const estado = textoEstado(f.estado, f.registro, yo, nombres, hoy, diaDe);
   const opciones = ESTADOS.map((e) => ({ valor: e.valor, etiqueta: e.etiqueta, detalle: detalleOpcionEstado(e.valor, f.registro, yo, nombres, hoy, diaDe) }));
   const datos = { circulacion: f.circulacion, ciudad: a.ciudad, evidencias: f.evidencias, lecturas: f.lecturas, reclamada: f.reclamada, novedades: f.novedades, portada: f.portada };
+  // OL-437: lo que propone la base y lo que vale (lo fijado a mano manda).
+  const valores = valoresDe(f.fijados, propuestasDe(datos, hoy));
   const senales = SENALES.map((x) => ({
     clave: x.clave,
     titulo: x.titulo,
     niveles: x.niveles,
     resumen: resumenSenal(x.clave, datos, hoy),
-    puntaje: f.puntajes[x.clave],
+    valor: valores[x.clave],
     evidencias: f.evidencias.filter((e) => e.senal === x.clave && e.estado !== "propuesta").map((e) => ({ ...e, detalle: detalleEvidencia(e, hoy) })),
   }));
   const propuestas = f.evidencias.filter((e) => e.estado === "propuesta").map((e) => ({ ...e, detalle: detallePropuesta(e, hoy), dominio: new URL(e.url).hostname.replace(/^www\./, "") }));
@@ -119,7 +123,7 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
       <h2 className={admin.grupo} data-ayuda="rubrica">
         Rúbrica{" "}
         <b>
-          {sumaRubrica(f.puntajes)} de {MAXIMO_RUBRICA}
+          {sumaValores(valores)} de {MAXIMO_RUBRICA}
         </b>
       </h2>
       {senales.map((x) => (

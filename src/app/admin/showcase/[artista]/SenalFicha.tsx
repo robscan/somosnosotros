@@ -5,10 +5,11 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip, Chips } from "@/components/ui/Chip";
 import Hoja from "@/components/ui/Hoja";
-import { IconoBoleto, IconoEnlace, IconoInstagram, IconoMas, IconoOk, IconoPincel } from "@/components/ui/Iconos";
-import { faltaEvidencia, LIMITES_EVIDENCIA, TIPO_DE_SENAL, TIPOS_EVIDENCIA, validarEvidencia, type DatosEvidencia, type Evidencia, type Puntaje, type Senal } from "@/lib/showcase";
+import SoloLector from "@/components/ui/SoloLector";
+import { IconoBoleto, IconoDestello, IconoEnlace, IconoInstagram, IconoMas, IconoOk, IconoPincel } from "@/components/ui/Iconos";
+import { faltaEvidencia, LIMITES_EVIDENCIA, opcionesPuntaje, TIPO_DE_SENAL, TIPOS_EVIDENCIA, validarEvidencia, type DatosEvidencia, type Evidencia, type Puntaje, type Senal, type Valor } from "@/lib/showcase";
 import { anadirEvidencia, cambiarPuntaje } from "../acciones";
-import { IconoTipo } from "../Piezas";
+import { datosCasilla, IconoTipo, PuntajeSenal } from "../Piezas";
 import admin from "../../admin.module.css";
 import hojaCss from "@/components/ui/Hoja.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -18,7 +19,8 @@ export type SenalVista = {
   clave: Senal;
   titulo: string;
   resumen: string;
-  puntaje: Puntaje;
+  /** Lo fijado a mano, lo propuesto por la base y lo que vale (OL-437). */
+  valor: Valor;
   niveles: readonly string[];
   /** Las aceptadas y las rechazadas de esta señal (las propuestas van en «Por revisar»), con su línea ya escrita. */
   evidencias: (Evidencia & { detalle: string })[];
@@ -30,16 +32,19 @@ const VACIA = (senal: Senal): DatosEvidencia => ({ senal, tipo: TIPO_DE_SENAL[se
 /**
  * Una señal de la rúbrica en la ficha de showcase (lo firmado en OL-425): su resumen (lo que dice la base o lo aceptado), su puntaje a la derecha
  * (tocar la señal abre la hoja con 0, 1 y 2 y la línea de ayuda de cada uno), sus evidencias enlazadas y «Añadir evidencia» (hoja con tipo, qué
- * es, enlace obligatorio http(s), fecha y fuente; el botón dice qué falta).
+ * es, enlace obligatorio http(s), fecha y fuente; el botón dice qué falta). OL-437: el puntaje a la derecha es el que vale (lo propuesto, en
+ * contorno discontinuo; lo fijado, relleno; «sin datos» si no hay ninguno) y la hoja empieza por «Propuesto: 2 · …» cuando la base propone algo.
  */
 export default function SenalFicha({ artistaId, slug, senal }: { artistaId: string; slug: string; senal: SenalVista }) {
   const [hoja, setHoja] = useState<"puntaje" | "evidencia" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enCamino, iniciar] = useTransition();
   const Icono = ICONO_SENAL[senal.clave];
+  const v = senal.valor;
 
   function puntuar(p: Puntaje) {
-    if (p === senal.puntaje) return setHoja(null);
+    // Solo no hace nada tocar lo que ya está fijado; tocar lo propuesto lo fija igual.
+    if (p === v.fijado) return setHoja(null);
     setError(null);
     iniciar(async () => {
       const r = await cambiarPuntaje(artistaId, senal.clave, p, slug);
@@ -47,10 +52,7 @@ export default function SenalFicha({ artistaId, slug, senal }: { artistaId: stri
       setHoja(null);
     });
   }
-  const opciones: { valor: Puntaje; etiqueta: string; detalle: string }[] = [
-    ...senal.niveles.map((n, i) => ({ valor: i as Puntaje, etiqueta: String(i), detalle: n })),
-    { valor: null, etiqueta: "Sin puntuar", detalle: "No cuenta en la suma" },
-  ];
+  const opciones = opcionesPuntaje(senal.niveles, v);
   return (
     <>
       <ul className={`${renglon.tarjeta} ${s.seguida}`} aria-label={senal.titulo}>
@@ -59,8 +61,8 @@ export default function SenalFicha({ artistaId, slug, senal }: { artistaId: stri
             <Icono width={20} height={20} />
             <b>{senal.titulo}</b>
             <small>{senal.resumen}</small>
-            <span className={`${s.senal} ${s.chica}`} data-n={senal.puntaje ?? undefined}>
-              <b>{senal.puntaje ?? "–"}</b>
+            <span className={`${s.senal} ${s.chica}`} {...datosCasilla(v)}>
+              <PuntajeSenal valor={v} />
             </span>
           </button>
         </li>
@@ -85,25 +87,38 @@ export default function SenalFicha({ artistaId, slug, senal }: { artistaId: stri
       </ul>
       {hoja === "puntaje" && (
         <Hoja etiqueta={`Puntaje de ${senal.titulo}`} titulo={senal.titulo} onCerrar={() => setHoja(null)}>
-          <p className={hojaCss.nota}>{senal.resumen}</p>
+          {v.propuesta ? (
+            <p className={hojaCss.nota}>
+              <b className={s.propuesto}>Propuesto: {v.propuesta.puntaje}</b> · {v.propuesta.motivo}
+            </p>
+          ) : (
+            <p className={hojaCss.nota}>{senal.resumen}</p>
+          )}
           {error && (
             <p className="aviso-error" role="alert">
               {error}
             </p>
           )}
           <ul className={`${admin.menu} ${s.menu}`}>
-            {opciones.map((o) => {
-              const elegida = o.valor === senal.puntaje;
-              return (
-                <li key={String(o.valor)}>
-                  <button type="button" className={`${admin.menuItem} ${admin.menuConDetalle} ${s.opcion}`} aria-pressed={elegida} disabled={enCamino} onClick={() => puntuar(o.valor)}>
-                    <IconoOk width={20} height={20} className={elegida ? undefined : s.hueco} />
-                    {o.etiqueta}
-                    <small>{o.detalle}</small>
-                  </button>
-                </li>
-              );
-            })}
+            {opciones.map((o) => (
+              <li key={String(o.valor)}>
+                <button
+                  type="button"
+                  className={`${admin.menuItem} ${admin.menuConDetalle} ${s.opcion}`}
+                  aria-pressed={o.valor === null ? undefined : o.marca === "fijado"}
+                  data-marca={o.marca ?? undefined}
+                  disabled={enCamino}
+                  onClick={() => puntuar(o.valor)}
+                >
+                  {o.marca === "propuesto" ? <IconoDestello width={20} height={20} /> : <IconoOk width={20} height={20} className={o.marca === "fijado" ? undefined : s.hueco} />}
+                  {o.etiqueta}
+                  <small>
+                    {o.detalle}
+                    {o.marca === "propuesto" && o.valor !== null && <SoloLector>, propuesto</SoloLector>}
+                  </small>
+                </button>
+              </li>
+            ))}
           </ul>
         </Hoja>
       )}
