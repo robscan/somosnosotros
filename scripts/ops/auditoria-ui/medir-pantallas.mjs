@@ -154,10 +154,16 @@ PASOS["artista-revisa"] = async (page) => {
   await aquietar(page);
 };
 
-// OL-427: Administración › Ciudades con la hoja de «Buscar lugares» de Querétaro abierta: el tope con su ✕ y «Correr» sobre el teclado.
+// OL-427 y OL-432: el panel de Oaxaca con la hoja de «Buscar lugares» abierta: el tope con su ✕ y «Correr» sobre el teclado.
 PASOS["admin-hoja-correr"] = async (page) => {
-  await page.getByRole("list", { name: "Querétaro" }).getByRole("button", { name: /^Buscar lugares/ }).click();
-  await page.getByRole("dialog", { name: "Buscar lugares en Querétaro" }).waitFor();
+  await page.getByRole("group", { name: "Lugares" }).getByRole("button", { name: "Buscar lugares" }).click();
+  await page.getByRole("dialog", { name: "Buscar lugares en Oaxaca" }).waitFor();
+  await aquietar(page);
+};
+// OL-432: Ciudades con la hoja «Añadir ciudad» abierta y sin escribir: el campo con su ✕ y las detectadas.
+PASOS["admin-anadir"] = async (page) => {
+  await page.getByRole("button", { name: "Añadir ciudad" }).click();
+  await page.getByRole("dialog", { name: "Añadir ciudad" }).waitFor();
   await aquietar(page);
 };
 

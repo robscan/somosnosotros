@@ -7,9 +7,9 @@ import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
 import { IconoCalendario, IconoDocumento, IconoEstrella, IconoMascara, IconoOk, IconoPin, IconoPuntos } from "@/components/ui/Iconos";
 import { agruparPorFuente, MOTIVOS_RECHAZO, ofrecerTodas, textoDecidida, type MotivoRechazo, type TipoPropuesta, type VistaPropuesta } from "@/lib/propuestas";
-import { aceptarPropuesta, deshacerRechazo, rechazarPropuesta } from "../../acciones";
-import styles from "../../../admin.module.css";
-import css from "../../ciudades.module.css";
+import { aceptarPropuesta, deshacerRechazo, rechazarPropuesta } from "./acciones";
+import styles from "../admin.module.css";
+import css from "./ciudades.module.css";
 
 export type PropuestaEnBandeja = { id: string; tipo: TipoPropuesta; fuente: string; nombre: string; vista: VistaPropuesta };
 type Decidida = { texto: string; href: string | null; rechazo: boolean };
@@ -19,11 +19,12 @@ const ICONO: Record<TipoPropuesta, typeof IconoPin> = { lugar: IconoPin, evento:
 const ICONO_MOTIVO: Record<MotivoRechazo, typeof IconoPin> = { duplicado: IconoDocumento, no_cultural: IconoMascara, fuera_de_la_ciudad: IconoPin, otro: IconoPuntos };
 
 /**
- * La bandeja de una corrida (prototipo firmado OL-425, pantalla B «Propuestas»): por fuente, una tarjeta de «Pendiente» por propuesta con
+ * La bandeja de una búsqueda (prototipo firmado OL-425, pantalla B «Propuestas»; en OL-432 la de una ciudad pinta una por búsqueda): por fuente, una tarjeta de «Pendiente» por propuesta con
  * Rechazar a la izquierda y Aceptar a la derecha. Rechazar pide el motivo en una hoja. «Aceptar las N de esta fuente» solo donde la fuente ya
  * tuvo una tanda aprobada antes (la primera va una por una). Al decidir, la tarjeta se vuelve la línea de lo hecho y se queda hasta salir.
  */
-export default function Bandeja({ propuestas, fuentesConTanda }: { propuestas: PropuestaEnBandeja[]; fuentesConTanda: string[] }) {
+export default function Bandeja({ propuestas, fuentesConTanda, nivel = 2 }: { propuestas: PropuestaEnBandeja[]; fuentesConTanda: string[]; /** El nivel del rótulo de cada fuente: 3 bajo el nombre de su búsqueda (la bandeja de una ciudad). */ nivel?: 2 | 3 }) {
+  const Rotulo = nivel === 3 ? "h3" : "h2";
   // La lista se toma al entrar, como en Pendiente: lo decidido se queda como línea aunque el servidor ya no lo traiga.
   const [lista] = useState(propuestas);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
@@ -59,10 +60,10 @@ export default function Bandeja({ propuestas, fuentesConTanda }: { propuestas: P
         const ocupado = grupo.some((p) => estados[p.id]?.enCamino);
         return (
           <Fragment key={fuente}>
-            <h2 className={styles.grupo}>
+            <Rotulo className={styles.grupo}>
               {fuente}
               {quedan > 0 && <b>{quedan}</b>}
-            </h2>
+            </Rotulo>
             {ofrecerTodas(fuente, quedan, fuentesConTanda) && (
               <Boton variante="secundario" className={css.todas} disabled={ocupado} aria-busy={ocupado} onClick={() => void aceptarTodas(fuente)}>
                 {`Aceptar las ${quedan} de esta fuente`}

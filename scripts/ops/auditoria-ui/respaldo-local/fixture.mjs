@@ -795,30 +795,64 @@ export const sesion = sesionDe(ANA);
 export const usuario = sesion.user;
 export const cookie = cookieDe(ANA);
 
-// OL-427: Administración › Ciudades, sus corridas y la bandeja de propuestas (la cuenta de administración del respaldo). Las tablas `ciudades`,
-// `rutinas_corridas` y `propuestas` y los contratos de `panel_ciudades`, `panel_propuestas`, `aceptar_propuesta` y `registrar_ciudad_vista`
-// (los permisos reales, en PostgreSQL: `supabase/tests/pg/ciudades-admin.test.mjs`). Todo inventado: Oaxaca investigando con cinco propuestas de
-// lugares por revisar (direcciones, coordenadas y fuentes `.example` inventadas) y una búsqueda de agendas corriendo; Querétaro detectada y sin
-// correr; San Luis con dos corridas del mes pasado (la del Sistema de Información Cultural ya tuvo una tanda aceptada). Solo lo leen las pantallas
-// de Administración y la detección de Inicio y Lugares (que no cambia nada de lo que se mide).
-const CONSULTAS_30 = { "san-luis-potosi": 1932, "san-miguel-de-allende": 87, oaxaca: 46, queretaro: 14 };
-const ciudadDe = (slug, nombre, lat, lng, estado, creado, alias = []) => ({ slug, nombre, ampliada_de: null, lat, lng, zoom: 13, zona: ZONA, alias, estado, creado_en: hace(creado) });
+// OL-427 y OL-432: Administración › Ciudades, sus corridas y la bandeja de propuestas (la cuenta de administración del respaldo). Las tablas
+// `ciudades` (con `alias` y `parametros`), `ciudades_vistas`, `rutinas_corridas` y `propuestas` y los contratos de `panel_ciudades`,
+// `panel_propuestas`, `aceptar_propuesta` y `registrar_ciudad_vista` (los permisos reales, en PostgreSQL: `supabase/tests/pg/ciudades-admin.test.mjs`).
+// Todo inventado: Oaxaca abierta hace 9 días con sus municipios, cinco propuestas de lugares por revisar (direcciones, coordenadas y fuentes
+// `.example` inventadas) y una búsqueda de agendas corriendo; Ciudad de México abierta hoy con sus alcaldías (OL-429), una búsqueda de lugares
+// que llegó al tope y otra de agendas que falló; Querétaro y Aguascalientes detectadas; «Oaxaca de Juárez» detectada, que es Oaxaca con otro
+// nombre (se junta con ella); Zacatecas oculta; San Luis con dos corridas del mes pasado (la del Sistema de Información Cultural ya tuvo una
+// tanda aceptada). Solo lo leen las pantallas de Administración y la detección de Inicio y Lugares (que no cambia nada de lo que se mide).
+const CDMX = ["Cuauhtémoc", "Miguel Hidalgo", "Coyoacán", "Benito Juárez", "Álvaro Obregón"];
+const MUNICIPIOS_OAX = ["Santa Lucía del Camino", "Santa Cruz Xoxocotlán"];
+const ciudadDe = (slug, nombre, lat, lng, estado, creado, alias = [], parametros = {}) => ({ slug, nombre, ampliada_de: null, lat, lng, zoom: 13, zona: ZONA, alias, parametros, estado, creado_en: hace(creado) });
 const ciudades = [
   ciudadDe("san-luis-potosi", CIUDAD, 22.1497, -100.9764, "abierta", 40, ["Soledad de Graciano Sánchez"]),
   ciudadDe("san-miguel-de-allende", "San Miguel de Allende", 20.9144, -100.7452, "abierta", 40),
-  ciudadDe("oaxaca", "Oaxaca", 17.0654, -96.7236, "investigando", 9),
+  ciudadDe("oaxaca", "Oaxaca", 17.0654, -96.7236, "investigando", 9, ["Oaxaca de Juárez", ...MUNICIPIOS_OAX], { radio_km: 15, municipios: MUNICIPIOS_OAX, abierta_en: hace(9) }),
+  ciudadDe("ciudad-de-mexico", "Ciudad de México", 19.4326, -99.1332, "abierta", 0.3, [], { alcaldias: CDMX, radio_km: 12, abierta_en: hace(0.3) }),
   ciudadDe("queretaro", "Querétaro", 20.5931, -100.392, "detectada", 8),
+  ciudadDe("aguascalientes", "Aguascalientes", null, null, "detectada", 2),
+  ciudadDe("oaxaca-de-juarez", "Oaxaca de Juárez", 17.0654, -96.7236, "detectada", 3),
+  ciudadDe("zacatecas", "Zacatecas", 22.7709, -102.5832, "cerrada", 6),
 ];
-const R = { oaxLugares: "abab0001-0000-4000-8000-000000000001", oaxAgendas: "abab0001-0000-4000-8000-000000000002", slpLugares: "abab0001-0000-4000-8000-000000000003", slpAgendas: "abab0001-0000-4000-8000-000000000004" };
+// Las consultas por día (en la zona de la ciudad), como las suma `registrar_ciudad_vista`: San Luis crece semana a semana (para la tendencia del
+// panel); las demás, desde que se detectaron o se abrieron.
+const diaHaceMx = (n) => new Date(Date.now() - 6 * 3600e3 - n * 86400e3).toISOString().slice(0, 10);
+const vistasDe = (ciudad, dias, cuantas) => Array.from({ length: dias }, (_, i) => ({ ciudad, dia: diaHaceMx(i), consultas: cuantas(i) })).filter((v) => v.consultas > 0);
+const ciudades_vistas = [
+  ...vistasDe("san-luis-potosi", 42, (i) => 52 + Math.floor((41 - i) * 0.9)),
+  ...vistasDe("san-miguel-de-allende", 30, (i) => (i % 3 === 0 ? 4 : 2)),
+  ...vistasDe("oaxaca", 9, () => 5),
+  ...vistasDe("ciudad-de-mexico", 1, () => 12),
+  ...vistasDe("queretaro", 8, (i) => (i % 2 ? 1 : 3)),
+  ...vistasDe("aguascalientes", 2, (i) => (i ? 4 : 5)),
+  ...vistasDe("oaxaca-de-juarez", 3, () => 2),
+  ...vistasDe("zacatecas", 6, () => 1),
+];
+const R = {
+  oaxLugares: "abab0001-0000-4000-8000-000000000001",
+  oaxAgendas: "abab0001-0000-4000-8000-000000000002",
+  slpLugares: "abab0001-0000-4000-8000-000000000003",
+  slpAgendas: "abab0001-0000-4000-8000-000000000004",
+  cdmxLugares: "abab0001-0000-4000-8000-000000000005",
+  cdmxAgendas: "abab0001-0000-4000-8000-000000000006",
+  smaLugares: "abab0001-0000-4000-8000-000000000007",
+};
 const corridaDe = (id, tipo, ciudad, { tope = 3, gasto = 0, estado = "terminada", dias = 0, fuentes = ["sic", "cultura", "web"], resumen = {} } = {}) => ({
   id, tipo, ciudad, parametros: { fuentes }, tope_usd: tope, gasto_usd: gasto, estado, resumen, creado_por: ADMIN, creado_en: hace(dias),
-  inicio: estado === "pendiente" ? null : hace(dias), fin: estado === "terminada" ? new Date(Date.parse(hace(dias)) + 6 * 60e3).toISOString() : null,
+  inicio: estado === "pendiente" ? null : hace(dias), fin: estado === "terminada" || estado === "fallida" ? new Date(Date.parse(hace(dias)) + 6 * 60e3).toISOString() : null,
 });
+const AGENDAS = ["agenda-cultura", "universidades-museos", "web"];
 const rutinas_corridas = [
-  corridaDe(R.oaxAgendas, "agendas", "oaxaca", { gasto: 0.4, estado: "corriendo", dias: 0.02, fuentes: ["agenda-cultura", "universidades-museos", "web"], resumen: { avance: 0.3, paso: "3 de 10 meses" } }),
+  corridaDe(R.oaxAgendas, "agendas", "oaxaca", { gasto: 0.4, estado: "corriendo", dias: 0.02, fuentes: AGENDAS, resumen: { avance: 0.3, paso: "1 de 3 fuentes" } }),
   corridaDe(R.oaxLugares, "lugares", "oaxaca", { gasto: 1.1, dias: 2 }),
-  corridaDe(R.slpAgendas, "agendas", "san-luis-potosi", { gasto: 2.1, dias: 19, fuentes: ["agenda-cultura", "universidades-museos", "web"] }),
+  corridaDe(R.slpAgendas, "agendas", "san-luis-potosi", { gasto: 2.1, dias: 19, fuentes: AGENDAS }),
   corridaDe(R.slpLugares, "lugares", "san-luis-potosi", { tope: 2, gasto: 0.8, dias: 19.1 }),
+  corridaDe(R.cdmxAgendas, "agendas", "ciudad-de-mexico", { gasto: 0.21, estado: "fallida", dias: 0.15, fuentes: AGENDAS, resumen: { error: "Se cortó tres veces seguidas en el mismo paso" } }),
+  corridaDe(R.cdmxLugares, "lugares", "ciudad-de-mexico", { tope: 1.5, gasto: 1.5, dias: 0.25, resumen: { tope: true, paso: "2 de 3 fuentes", descartados: { de_mas: 12 } } }),
+  // San Miguel, ayer (como en producción, bitácora 461): 40 propuestas aceptadas y 41 que esperan a la siguiente.
+  corridaDe(R.smaLugares, "lugares", "san-miguel-de-allende", { gasto: 0.36, dias: 1, resumen: { descartados: { de_mas: 41 } } }),
 ];
 const SIC = "Sistema de Información Cultural", CULTURA = "Cultura del estado y del municipio", WEB = "Búsqueda web";
 let nPropuesta = 0;
@@ -827,6 +861,7 @@ const propuestaDe = (corrida, tipo, fuente, datos, estado = "propuesta", dias = 
   motivo_rechazo: estado === "rechazada" ? "duplicado" : null, ficha_id: null, resuelto_por: estado === "propuesta" ? null : ADMIN, resuelto_en: estado === "propuesta" ? null : hace(dias - 0.5), creado_en: hace(dias),
 });
 const lugarOax = (nombre, tipo, direccion, lat, lng, url) => ({ nombre, tipo, direccion, lat, lng, url, leida: hace(2) });
+const lugarCdmx = (nombre, tipo, direccion, lat, lng, url) => ({ nombre, tipo, direccion, lat, lng, url, leida: hace(0.25) });
 const propuestas = [
   // San Luis, hace 19 días: 4 aceptadas (dos del Sistema de Información Cultural: su primera tanda) y 2 rechazadas; y 3 eventos aceptados.
   ...[SIC, SIC, CULTURA, CULTURA].map((f, i) => propuestaDe(R.slpLugares, "lugar", f, { nombre: `Lugar aceptado ${i + 1}` }, "aceptada", 19)),
@@ -839,16 +874,26 @@ const propuestas = [
   propuestaDe(R.oaxLugares, "lugar", SIC, lugarOax("Casa de Cultura del Barrio de Xochimilco", "casa_de_cultura", "Calle Rufino Tamayo 9, Xochimilco", 17.0731, -96.7262, "https://sic.example/espacios/oax/9")),
   propuestaDe(R.oaxLugares, "lugar", WEB, lugarOax("Cafebrería El Andariego", "cafe_bar", "Calle de Abasolo 207, Centro", 17.0641, -96.7209, "https://andariego.example")),
   propuestaDe(R.oaxLugares, "lugar", WEB, { ...lugarOax("Patio Escénico Tule", "foro", "Camino Real 31", 17.0629, -96.6935, "https://patio-tule.example"), ciudad: "Santa Lucía del Camino" }),
+  ...Array.from({ length: 40 }, (_, i) => propuestaDe(R.smaLugares, "lugar", i < 30 ? SIC : WEB, { nombre: `Espacio de San Miguel ${i + 1}` }, "aceptada", 1)),
+  // Ciudad de México, hoy: la búsqueda de lugares que llegó al tope dejó cuatro por revisar.
+  propuestaDe(R.cdmxLugares, "lugar", SIC, lugarCdmx("Foro Cultural Las Jacarandas", "foro", "Calle Colima 210, Roma Norte", 19.4174, -99.1622, "https://sic.example/espacios/cdmx/210"), "propuesta", 0.25),
+  propuestaDe(R.cdmxLugares, "lugar", SIC, lugarCdmx("Galería Mezzanine", "galeria", "Avenida Amsterdam 45, Hipódromo", 19.4116, -99.1712, "https://sic.example/espacios/cdmx/45"), "propuesta", 0.25),
+  propuestaDe(R.cdmxLugares, "lugar", CULTURA, lugarCdmx("Casa de Cultura de Coyoacán Centro", "casa_de_cultura", "Calle Higuera 18, Coyoacán", 19.3487, -99.1615, "https://cultura.example/cdmx/18"), "propuesta", 0.25),
+  propuestaDe(R.cdmxLugares, "lugar", CULTURA, lugarCdmx("Cine Club La Linterna", "cine", "Calle Tonalá 33, Roma Sur", 19.4093, -99.1588, "https://cultura.example/cdmx/33"), "propuesta", 0.25),
 ];
-Object.assign(tablas, { ciudades, rutinas_corridas, propuestas });
+Object.assign(tablas, { ciudades, ciudades_vistas, rutinas_corridas, propuestas });
 const cuentasDe = (id, t) => {
   const p = t.propuestas.filter((x) => x.corrida_id === id);
   return { propuestas: p.length, aceptadas: p.filter((x) => x.estado === "aceptada").length, rechazadas: p.filter((x) => x.estado === "rechazada").length, por_revisar: p.filter((x) => x.estado === "propuesta").length };
 };
 Object.assign(rpcs, {
   registrar_ciudad_vista: ({ p_slug }, t) => t.ciudades.some((c) => c.slug === p_slug),
+  // Como la base: las consultas de cada ciudad en los últimos 30 días (hoy incluido, en su zona).
   panel_ciudades: (_args, t) => ({
-    ciudades: t.ciudades.map(({ slug, nombre, estado, lat, lng, zona, creado_en }) => ({ slug, nombre, estado, lat, lng, zona, creado_en, consultas: CONSULTAS_30[slug] ?? 0 })),
+    ciudades: t.ciudades.map(({ slug, nombre, estado, lat, lng, zona, creado_en }) => ({
+      slug, nombre, estado, lat, lng, zona, creado_en,
+      consultas: t.ciudades_vistas.filter((v) => v.ciudad === slug && v.dia > diaHaceMx(30)).reduce((s, v) => s + v.consultas, 0),
+    })),
     corridas: [...t.rutinas_corridas].sort((a, b) => b.creado_en.localeCompare(a.creado_en)).map((r) => ({ ...r, ...cuentasDe(r.id, t) })),
     credito: { usd: 200, vence: "2026-11-11", gastado: t.rutinas_corridas.reduce((s, r) => s + r.gasto_usd, 0) },
   }),
@@ -871,3 +916,48 @@ Object.assign(rpcs, {
     return { estado: "aceptada", ficha_id: p.tipo === "evento" ? null : crypto.randomUUID(), slug: p.tipo === "evento" ? null : slug };
   },
 });
+
+// OL-432: lo que contesta Mapbox en el respaldo (la app lo pide desde el servidor con `MAPBOX_API_URL` apuntando a este respaldo): ciudades y
+// municipios reales con su centro aproximado, escritos a mano. «De vuelta» contesta el más cercano a cada punto, así las muestras del área de
+// Oaxaca caen en Oaxaca de Juárez, Santa Lucía del Camino y Santa Cruz Xoxocotlán.
+const lugarMapbox = (nombre, region, lat, lng, pais = "México", codigo = "mx") => ({ nombre, region, lat, lng, pais, codigo });
+export const LUGARES_MAPBOX = [
+  lugarMapbox("Oaxaca de Juárez", "Oaxaca", 17.0654, -96.7236),
+  lugarMapbox("Santa Lucía del Camino", "Oaxaca", 17.0667, -96.6833),
+  lugarMapbox("Santa Cruz Xoxocotlán", "Oaxaca", 17.0267, -96.735),
+  lugarMapbox("Juchitán de Zaragoza", "Oaxaca", 16.4342, -95.0195),
+  lugarMapbox("Salina Cruz", "Oaxaca", 16.1767, -95.1952),
+  lugarMapbox("San Luis Potosí", "San Luis Potosí", 22.1497, -100.9764),
+  lugarMapbox("Soledad de Graciano Sánchez", "San Luis Potosí", 22.1833, -100.9333),
+  lugarMapbox("San Miguel de Allende", "Guanajuato", 20.9144, -100.7452),
+  lugarMapbox("San Cristóbal de las Casas", "Chiapas", 16.737, -92.6376),
+  lugarMapbox("San Juan del Río", "Querétaro", 20.3889, -99.9961),
+  lugarMapbox("Aguascalientes", "Aguascalientes", 21.8818, -102.2916),
+  lugarMapbox("Jesús María", "Aguascalientes", 21.9614, -102.3436),
+  lugarMapbox("Santiago de Querétaro", "Querétaro", 20.5931, -100.392),
+  lugarMapbox("Guadalajara", "Jalisco", 20.6767, -103.3475),
+  lugarMapbox("Heroica Puebla de Zaragoza", "Puebla", 19.0414, -98.2063),
+  lugarMapbox("San Andrés Cholula", "Puebla", 19.0514, -98.2985),
+  lugarMapbox("San Pedro Cholula", "Puebla", 19.0633, -98.3064),
+  lugarMapbox("Cuautlancingo", "Puebla", 19.0889, -98.2731),
+  lugarMapbox("Ciudad de México", "Ciudad de México", 19.4326, -99.1332),
+  lugarMapbox("Morelia", "Michoacán", 19.7008, -101.1844),
+  lugarMapbox("Mérida", "Yucatán", 20.9674, -89.5926),
+  lugarMapbox("Zacatecas", "Zacatecas", 22.7709, -102.5832),
+];
+const llano = (t) => String(t ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const rasgo = (l) => ({ properties: { name: l.nombre, coordinates: { latitude: l.lat, longitude: l.lng }, context: { region: { name: l.region }, country: { name: l.pais, country_code: l.codigo } } } });
+/** Geocoding v6 de ida: las ciudades cuyo nombre o estado empieza (por palabra) con lo escrito, primero las que empiezan igual. */
+export function mapboxIda(q, limite = 6) {
+  const t = llano(q);
+  if (!t) return { features: [] };
+  const orden = (l) => (llano(l.nombre) === t ? 0 : llano(l.nombre).split(" ").includes(t) ? 1 : llano(l.nombre).startsWith(t) ? 2 : 3);
+  const lista = LUGARES_MAPBOX.filter((l) => ` ${llano(l.nombre)}`.includes(` ${t}`) || ` ${llano(l.region)}`.includes(` ${t}`)).sort((a, b) => orden(a) - orden(b));
+  return { features: lista.slice(0, limite).map(rasgo) };
+}
+/** Geocoding v6 de vuelta: el municipio más cercano al punto (a 40 km como mucho). */
+export function mapboxVuelta(lat, lng) {
+  const d = (l) => Math.hypot(l.lat - lat, (l.lng - lng) * Math.cos((lat * Math.PI) / 180));
+  const cerca = [...LUGARES_MAPBOX].sort((a, b) => d(a) - d(b))[0];
+  return { features: cerca && d(cerca) < 0.36 ? [rasgo(cerca)] : [] };
+}
