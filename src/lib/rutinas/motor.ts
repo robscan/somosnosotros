@@ -2,10 +2,12 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { leerParametrosCiudad } from "../ciudadParametros";
 import { pasoAgendas } from "./agendas";
+import { pasoArtistas } from "./artistas";
 import type { ClienteApi } from "./claude";
 import { FalloCorrida, pasoLugares, type CiudadRutina, type Contexto, type SalidaPaso } from "./lugares";
 import type { Mapbox } from "./mapbox";
 import { redondear } from "./precios";
+import { pasoShowcase, type ContextoSinCiudad } from "./showcase";
 
 /**
  * El motor de corridas (OL-428): cada llamada a `/api/rutinas/correr` toma UNA corrida, corre UN paso corto y guarda lo que pasó. Sin la Mac
@@ -25,6 +27,10 @@ import { redondear } from "./precios";
  * OL-429: las corridas de «Buscar agendas y eventos» van a su rutina (`agendas.ts`) con un paso más largo (leer una agenda en PDF tarda más
  * que una búsqueda); cada vez que se guarda un paso queda `resumen.actualizada` (cuándo avanzó por última vez), que es lo que mira la red de
  * seguridad de Ciudades (`rescate.ts`) para saber si una corrida se quedó varada.
+ *
+ * OL-430: «Buscar artistas» (`artistas.ts`) es una rutina más de una ciudad; «Investigar» del Showcase (`showcase.ts`) es la única sin ciudad
+ * (la corrida `showcase` lleva `parametros.artista_id`). Las dos dan pasos de hasta 120 s (una llamada que abre catálogos o páginas tarda más
+ * que una búsqueda corta).
  */
 
 export type Dependencias = {
@@ -37,14 +43,20 @@ export type Dependencias = {
   plazoMs: number;
   /** El paso de «Buscar agendas y eventos»; por omisión `PLAZO_PASO_AGENDAS_MS`. */
   plazoAgendasMs?: number;
+  /** El paso de «Buscar artistas» e «Investigar» (OL-430); por omisión `PLAZO_PASO_INVESTIGAR_MS`. */
+  plazoInvestigarMs?: number;
 };
 
-/** Las rutinas que tienen motor. Las demás (artistas, showcase) fallan con «Este botón todavía no tiene rutina» (OL-430). */
-const RUTINAS: Record<string, (ctx: Contexto) => Promise<SalidaPaso>> = { lugares: pasoLugares, agendas: pasoAgendas };
+/** Las rutinas de una ciudad. Un tipo que no esté aquí ni abajo falla con «Este botón todavía no tiene rutina». */
+const RUTINAS: Record<string, (ctx: Contexto) => Promise<SalidaPaso>> = { lugares: pasoLugares, agendas: pasoAgendas, artistas: pasoArtistas };
+/** Las que no son de una ciudad (OL-430): «Investigar» a un artista del Showcase. */
+const RUTINAS_SIN_CIUDAD: Record<string, (ctx: ContextoSinCiudad) => Promise<SalidaPaso>> = { showcase: pasoShowcase };
 
 export const PLAZO_PASO_MS = 45_000;
 /** El paso de «Buscar agendas y eventos» (OL-429): leer un trozo de una agenda en PDF con la API puede tardar un par de minutos. */
 export const PLAZO_PASO_AGENDAS_MS = 200_000;
+/** El paso de «Buscar artistas» e «Investigar» (OL-430): una llamada con dos búsquedas y hasta tres páginas. */
+export const PLAZO_PASO_INVESTIGAR_MS = 120_000;
 /** La función de la ruta (`maxDuration` de `/api/rutinas/correr`): más que el paso más largo, con margen para guardar y pedir el siguiente. */
 export const LIMITE_RUTA_MS = 300_000;
 /** El margen que se guarda al final del paso para escribir en la base. */
@@ -154,21 +166,23 @@ export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date
   const tomada = await reclamar(dep);
   if (!tomada) return { corrida: null, tipo: null, estado: "nada", usd: 0 };
   const { fila, turno } = tomada;
-  const plazo = fila.tipo === "agendas" ? (dep.plazoAgendasMs ?? PLAZO_PASO_AGENDAS_MS) : dep.plazoMs;
+  const plazo =
+    fila.tipo === "agendas"
+      ? (dep.plazoAgendasMs ?? PLAZO_PASO_AGENDAS_MS)
+      : fila.tipo === "artistas" || fila.tipo === "showcase"
+        ? (dep.plazoInvestigarMs ?? PLAZO_PASO_INVESTIGAR_MS)
+        : dep.plazoMs;
   const hasta = empezo + plazo - MARGEN_GUARDAR_MS;
   const previo = objeto(fila.resumen);
   let usd = 0;
   const fallar = (error: string) => guardar(dep, fila, turno, "fallida", { ...previo, error }, usd);
   if (numero(previo.intentos) > MAX_INTENTOS) return fallar("Se cortó tres veces seguidas en el mismo paso");
   const rutina = RUTINAS[fila.tipo];
-  if (!rutina) return fallar(SIN_RUTINA);
+  const sinCiudad = RUTINAS_SIN_CIUDAD[fila.tipo];
+  if (!rutina && !sinCiudad) return fallar(SIN_RUTINA);
   try {
-    const ciudad = await leerCiudad(dep.db, fila.ciudad);
-    if (!ciudad) return fallar("La ciudad ya no está");
-    if (ciudad.estado === "cerrada") return fallar("La ciudad está cerrada");
-    const salida = await rutina({
+    const contexto: ContextoSinCiudad = {
       corrida: { id: fila.id, tipo: fila.tipo, ciudad: fila.ciudad, parametros: objeto(fila.parametros), tope_usd: numero(fila.tope_usd), gasto_usd: numero(fila.gasto_usd), resumen: previo },
-      ciudad,
       db: dep.db,
       api: dep.api,
       mapbox: dep.mapbox,
@@ -183,7 +197,15 @@ export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date
         const r = await dep.db.from("rutinas_corridas").select("estado").eq("id", fila.id).maybeSingle();
         return r.data?.estado === "corriendo";
       },
-    });
+    };
+    let salida: SalidaPaso;
+    if (sinCiudad) salida = await sinCiudad(contexto);
+    else {
+      const ciudad = await leerCiudad(dep.db, fila.ciudad);
+      if (!ciudad) return fallar("La ciudad ya no está");
+      if (ciudad.estado === "cerrada") return fallar("La ciudad está cerrada");
+      salida = await rutina({ ...contexto, ciudad });
+    }
     return await guardar(dep, fila, turno, salida.terminada ? "terminada" : "corriendo", salida.resumen, usd);
   } catch (e) {
     if (e instanceof FalloCorrida) return fallar(e.message);

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   actividadDe,
+  avanceInvestigar,
+  investigacionEnCurso,
+  lineaCreditoInvestigar,
+  textoInvestigar,
+  type CorridaInvestigar,
   armarCandidatos,
   celdaCsv,
   chipsDisciplina,
@@ -261,5 +266,33 @@ describe("el CSV para el consejo", () => {
     expect(lineas[0]).toBe("\uFEFFartista,disciplina,ciudad,estado,circulacion,obra,actividad,vinculo,total,eventos,foros,festivales,seguidores,publicaciones,ultima_publicacion,ficha,instagram,nota");
     expect(lineas[1]).toBe('Sangre de Coyote,Música,San Luis Potosí,Invitado,2,1,2,,5,7,4,1,,,,https://somosnosotros.org/artistas/sangre-de-coyote,https://www.instagram.com/sangre/,"Propuesto por dos foros, sin disco."');
     expect(lineas[2]).toBe("");
+  });
+});
+
+describe("«Investigar» en la ficha (OL-430)", () => {
+  const dia = (iso: string) => iso.slice(0, 10);
+  const c = (cambios: Partial<CorridaInvestigar>): CorridaInvestigar => ({ id: "c", estado: "terminada", tope_usd: 1, gasto_usd: 0.38, resumen: { propuestas: 5 }, creado_en: "2026-10-21T15:00:00Z", inicio: "2026-10-21T15:00:05Z", fin: "2026-10-21T15:03:00Z", ...cambios });
+  it("cada estado en una línea", () => {
+    expect(textoInvestigar(null, 0, "2026-10-21", dia)).toBe("Prensa, premios, festivales y obra publicada");
+    expect(textoInvestigar(c({ estado: "pendiente", gasto_usd: 0 }), 0, "2026-10-21", dia)).toBe("Investigando · por empezar · 0,00 de 1,00 USD");
+    expect(textoInvestigar(c({ estado: "corriendo", gasto_usd: 0.12, resumen: { paso: "2 de 4 búsquedas", avance: 0.5 } }), 0, "2026-10-21", dia)).toBe("Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD");
+    expect(textoInvestigar(c({}), 5, "2026-10-21", dia)).toBe("Investigado el 21 oct · 5 evidencias por revisar · 0,38 USD");
+    expect(textoInvestigar(c({}), 1, "2026-10-21", dia)).toBe("Investigado el 21 oct · 1 evidencia por revisar · 0,38 USD");
+    expect(textoInvestigar(c({}), 0, "2026-10-21", dia)).toBe("Investigado el 21 oct · todo revisado · 0,38 USD");
+    expect(textoInvestigar(c({ resumen: { propuestas: 0, tope: true } }), 0, "2026-11-02", dia)).toBe("Investigado el 21 oct · llegó al tope · sin evidencias nuevas · 0,38 USD");
+    expect(textoInvestigar(c({ estado: "fallida", gasto_usd: 0.12 }), 0, "2026-10-21", dia)).toBe("No se pudo investigar el 21 oct · 0,12 USD");
+    expect(textoInvestigar(c({ estado: "cancelada" }), 0, "2026-10-21", dia)).toBe("Cancelada el 21 oct");
+  });
+  it("la barra solo mientras corre; en curso es pendiente o corriendo", () => {
+    expect(avanceInvestigar(c({ estado: "corriendo", resumen: { avance: 0.5 } }))).toBe(0.5);
+    expect(avanceInvestigar(c({ estado: "corriendo", resumen: { avance: 7 } }))).toBe(1);
+    expect(avanceInvestigar(c({ estado: "pendiente" }))).toBeNull();
+    expect(avanceInvestigar(null)).toBeNull();
+    expect([null, c({ estado: "pendiente" }), c({ estado: "corriendo" }), c({})].map(investigacionEnCurso)).toEqual([false, true, true, false]);
+  });
+  it("el crédito que queda, con su vencimiento", () => {
+    expect(lineaCreditoInvestigar({ usd: 200, gastado: 12.6, vence: "2026-11-11" }, "2026-10-21")).toBe("Crédito: 187,40 USD · vence el 11 de noviembre");
+    expect(lineaCreditoInvestigar({ usd: 200, gastado: 250, vence: "2026-11-11" }, "2026-11-12")).toBe("Crédito: 0,00 USD · venció el 11 de noviembre");
+    expect(lineaCreditoInvestigar(null, "2026-10-21")).toBeNull();
   });
 });

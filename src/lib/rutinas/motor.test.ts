@@ -295,23 +295,27 @@ describe("la cancelación", () => {
 });
 
 describe("lo que no corre", () => {
-  it("los botones sin rutina todavía (artistas, showcase) se marcan «Falló» solo cuando el motor los toma; agendas ya tiene la suya (OL-429)", async () => {
-    const base = mundo([corrida("c-art", { tipo: "artistas" }), corrida("c-sho", { tipo: "showcase", ciudad: null, creado_en: "2026-10-20T15:59:30Z" })]);
+  it("un tipo sin rutina se marca «Falló» solo cuando el motor lo toma; agendas (OL-429), artistas y showcase (OL-430) ya tienen la suya", async () => {
+    const base = mundo([corrida("c-otra", { tipo: "otra" })]);
     const { dep, pedidas } = dependencias(base);
-    expect(laCorrida(base, "c-art").estado).toBe("pendiente");
+    expect(laCorrida(base, "c-otra").estado).toBe("pendiente");
     await correrUnPaso(dep);
-    await correrUnPaso(dep);
-    for (const id of ["c-art", "c-sho"]) {
-      const c = laCorrida(base, id);
-      expect(c.estado).toBe("fallida");
-      expect(c.fin).toBe(AHORA.toISOString());
-      expect(c.resumen.error).toBe(SIN_RUTINA);
-    }
+    const c = laCorrida(base, "c-otra");
+    expect(c.estado).toBe("fallida");
+    expect(c.fin).toBe(AHORA.toISOString());
+    expect(c.resumen.error).toBe(SIN_RUTINA);
     expect(pedidas).toHaveLength(0);
     const conAgendas = mundo([corrida("c-age", { tipo: "agendas", parametros: { fuentes: ["agenda-cultura", "universidades-museos", "web"] } })]);
     const otra = dependencias(conAgendas);
     expect((await correrUnPaso(otra.dep)).estado).toBe("corriendo");
     expect(laCorrida(conAgendas, "c-age").resumen.error).toBeUndefined();
+    // Artistas lee primero el SIC (gratis) y sigue; showcase, sin ciudad, no la pide: falla solo porque esta corrida no dice qué artista.
+    const nuevas = mundo([corrida("c-art", { tipo: "artistas", parametros: { fuentes: ["padrones", "festivales", "web"] } }), corrida("c-sho", { tipo: "showcase", ciudad: null, parametros: {}, creado_en: "2026-10-20T15:59:30Z" })]);
+    const d = dependencias(nuevas);
+    expect((await correrUnPaso(d.dep)).estado).toBe("corriendo");
+    expect(laCorrida(nuevas, "c-art").resumen.error).toBeUndefined();
+    expect((await correrUnPaso(d.dep)).estado).toBe("fallida");
+    expect(laCorrida(nuevas, "c-sho").resumen.error).toBe("La corrida no dice qué artista investigar");
   });
 
   it("una ciudad cerrada no corre", async () => {

@@ -712,3 +712,66 @@ export function renglonesBase(
   }
   return filas;
 }
+
+// ---------- «Investigar» (OL-430) ----------
+/** La última corrida de «Investigar» de un artista, como la lee la ficha (`rutinas_corridas` de tipo `showcase` con su `artista_id`). */
+export type CorridaInvestigar = {
+  id: string;
+  estado: "pendiente" | "corriendo" | "terminada" | "fallida" | "cancelada";
+  tope_usd: number;
+  gasto_usd: number;
+  resumen: Record<string, unknown>;
+  creado_en: string;
+  inicio: string | null;
+  fin: string | null;
+};
+/** El tope por omisión de la hoja «Investigar» (cuatro búsquedas cuestan entre 0,20 y 0,60 USD). */
+export const TOPE_INVESTIGAR = 1;
+/** «0,38»: dos decimales con coma, como en Ciudades y Corridas. */
+export function dolares(n: number): string {
+  return (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
+}
+export const investigacionEnCurso = (c: Pick<CorridaInvestigar, "estado"> | null | undefined): boolean => c?.estado === "pendiente" || c?.estado === "corriendo";
+
+/**
+ * Lo que dice el renglón «Investigar» de la ficha:
+ *   · sin corrida: lo que hace («Prensa, premios, festivales y obra publicada»);
+ *   · pendiente: «Investigando · por empezar · 0,00 de 1,00 USD»;
+ *   · corriendo: «Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD»;
+ *   · terminada: «Investigado el 21 oct · 5 evidencias por revisar · 0,38 USD» (o «todo revisado», o «sin evidencias nuevas»; «llegó al
+ *     tope» si paró antes de terminar);
+ *   · fallida: «No se pudo investigar el 21 oct · 0,12 USD»; cancelada: «Cancelada el 21 oct».
+ * `porRevisar`: las evidencias de la rutina que siguen propuestas. `diaDe` da el día local de un instante (YYYY-MM-DD).
+ */
+export function textoInvestigar(c: CorridaInvestigar | null | undefined, porRevisar: number, hoy: string, diaDe: (iso: string) => string): string {
+  if (!c) return "Prensa, premios, festivales y obra publicada";
+  const gastoDeTope = `${dolares(c.gasto_usd)} de ${dolares(c.tope_usd)} USD`;
+  if (c.estado === "pendiente") return `Investigando · por empezar · ${gastoDeTope}`;
+  if (c.estado === "corriendo") {
+    const paso = typeof c.resumen.paso === "string" && c.resumen.paso.trim() ? c.resumen.paso.trim().slice(0, 40) : null;
+    return ["Investigando", paso, gastoDeTope].filter(Boolean).join(" · ");
+  }
+  const dia = diaMes(diaDe(c.fin ?? c.inicio ?? c.creado_en), hoy);
+  if (c.estado === "cancelada") return `Cancelada el ${dia}`;
+  if (c.estado === "fallida") return `No se pudo investigar el ${dia} · ${dolares(c.gasto_usd)} USD`;
+  const alTope = c.resumen.tope === true || (c.tope_usd > 0 && c.gasto_usd >= c.tope_usd);
+  const propuso = Number(c.resumen.propuestas) || 0;
+  const revisar = porRevisar > 0 ? `${porRevisar} ${porRevisar === 1 ? "evidencia" : "evidencias"} por revisar` : propuso > 0 ? "todo revisado" : "sin evidencias nuevas";
+  return [`Investigado el ${dia}`, alTope ? "llegó al tope" : null, revisar, `${dolares(c.gasto_usd)} USD`].filter(Boolean).join(" · ");
+}
+
+/** La barra del renglón mientras corre (0 a 1, de `resumen.avance`), o null. */
+export function avanceInvestigar(c: Pick<CorridaInvestigar, "estado" | "resumen"> | null | undefined): number | null {
+  if (c?.estado !== "corriendo") return null;
+  const a = Number(c.resumen.avance);
+  return Number.isFinite(a) ? Math.min(1, Math.max(0, a)) : null;
+}
+
+/** «Crédito: 187,40 USD · vence el 11 de noviembre»: lo que dice la hoja bajo el tope (el crédito de Corridas). */
+export function lineaCreditoInvestigar(c: { usd: number; gastado: number; vence: string | null } | null, hoy: string): string | null {
+  if (!c) return null;
+  const queda = Math.max(0, c.usd - c.gastado);
+  const vence = c.vence && /^\d{4}-\d{2}-\d{2}$/.test(c.vence) ? c.vence : null;
+  const fecha = vence ? new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", day: "numeric", month: "long" }).format(new Date(`${vence}T12:00:00Z`)) : null;
+  return [`Crédito: ${dolares(queda)} USD`, fecha ? `${vence! < hoy ? "venció" : "vence"} el ${fecha}` : null].filter(Boolean).join(" · ");
+}

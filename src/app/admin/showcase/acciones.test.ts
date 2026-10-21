@@ -1,21 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { anadirEvidencia, cambiarEstado, cambiarPuntaje, guardarNotas, importarLecturas } from "./acciones";
+import { anadirEvidencia, cambiarEstado, cambiarPuntaje, guardarNotas, importarLecturas, investigar } from "./acciones";
 
 /**
  * Las acciones del showcase (OL-426): solo la administración escribe (la base lo vuelve a exigir, `supabase/tests/pg/showcase.test.mjs`); una
  * evidencia sin enlace http(s) no llega a la base; lo que llega del navegador con otra forma no rompe la acción; el CSV dice cada fila que no entra.
  */
-const m = vi.hoisted(() => ({ actual: vi.fn(), ruta: vi.fn(), escrito: [] as { tabla: string; como: string; datos: unknown }[], artistas: [] as { id: string; slug: string }[] }));
+const m = vi.hoisted(() => ({ actual: vi.fn(), ruta: vi.fn(), despues: vi.fn(), escrito: [] as { tabla: string; como: string; datos: unknown }[], artistas: [] as { id: string; slug: string }[], enCurso: [] as { id: string }[], filtros: [] as unknown[][] }));
 vi.mock("next/cache", () => ({ revalidatePath: m.ruta }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "localhost:3000" }) }));
+vi.mock("next/server", () => ({ after: m.despues }));
 vi.mock("@/lib/supabase/servidor", () => ({
   usuarioActual: m.actual,
   clienteServidor: async () => ({
     from: (tabla: string) => {
-      const respuesta = { data: tabla === "artistas" ? m.artistas : [{ id: "x" }], error: null };
+      let escribe = false;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const q: any = { then: (ok: (v: unknown) => void) => Promise.resolve(respuesta).then(ok) };
-      for (const f of ["select", "eq", "in", "limit"]) q[f] = () => q;
-      for (const como of ["insert", "upsert", "update"]) q[como] = (datos: unknown) => (m.escrito.push({ tabla, como, datos }), q);
+      const q: any = { then: (ok: (v: unknown) => void) => Promise.resolve({ data: tabla === "artistas" ? m.artistas : tabla === "rutinas_corridas" && !escribe ? m.enCurso : [{ id: "x" }], error: null }).then(ok) };
+      for (const f of ["select", "eq", "in", "limit", "single"]) q[f] = (...args: unknown[]) => (tabla === "rutinas_corridas" && f !== "select" && m.filtros.push([f, ...args]), q);
+      for (const como of ["insert", "upsert", "update"]) q[como] = (datos: unknown) => ((escribe = true), m.escrito.push({ tabla, como, datos }), q);
       return q;
     },
   }),
@@ -28,6 +30,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   m.escrito = [];
   m.artistas = [];
+  m.enCurso = [];
+  m.filtros = [];
   m.actual.mockResolvedValue({ perfil: { id: "admin-1", rol: "admin" } });
 });
 
@@ -102,5 +106,28 @@ describe("importar el CSV de redes", () => {
     expect(await importarLecturas("x".repeat(300 * 1024), "x")).toMatchObject({ ok: false, error: "El archivo es demasiado grande (hasta 256 KB)." });
     expect(await importarLecturas("slug,red\nx,instagram", "x")).toMatchObject({ ok: false });
     expect(m.escrito).toEqual([]);
+  });
+});
+
+describe("«Investigar» (OL-430)", () => {
+  it("deja una corrida de showcase sin ciudad, con el artista y el tope, y pide su primer paso después de responder", async () => {
+    expect(await investigar(ID, "1,00", "sangre-de-coyote")).toEqual({ ok: true });
+    expect(m.escrito).toEqual([{ tabla: "rutinas_corridas", como: "insert", datos: { tipo: "showcase", ciudad: null, tope_usd: 1, creado_por: "admin-1", parametros: { artista_id: ID } } }]);
+    // Antes, si ya había una en curso de este artista (pendiente o corriendo).
+    expect(m.filtros).toEqual(expect.arrayContaining([["eq", "tipo", "showcase"], ["in", "estado", ["pendiente", "corriendo"]], ["eq", "parametros->>artista_id", ID]]));
+    expect(m.despues).toHaveBeenCalledTimes(1);
+    expect(m.ruta).toHaveBeenCalledWith("/admin/showcase/sangre-de-coyote");
+  });
+  it("una a la vez por artista; el tope tiene que valer; solo la administración", async () => {
+    m.enCurso = [{ id: "c-1" }];
+    expect(await investigar(ID, "1,00", "x")).toEqual({ ok: false, error: "Ya hay una investigación en curso de este artista." });
+    m.enCurso = [];
+    expect(await investigar(ID, "0", "x")).toEqual({ ok: false, error: "Escribe un tope de más de 0 y hasta 50 USD." });
+    expect(await investigar(ID, "80", "x")).toMatchObject({ ok: false });
+    expect(await investigar("no-es-un-id", "1", "x")).toEqual({ ok: false, error: "No encontramos a ese artista." });
+    m.actual.mockResolvedValue({ perfil: { id: "u-1", rol: "usuario" } });
+    expect(await investigar(ID, "1", "x")).toEqual({ ok: false, error: "Solo la administración puede cambiar el showcase." });
+    expect(m.escrito).toEqual([]);
+    expect(m.despues).not.toHaveBeenCalled();
   });
 });
