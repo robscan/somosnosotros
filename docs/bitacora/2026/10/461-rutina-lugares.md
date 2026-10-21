@@ -19,7 +19,7 @@ Cultura del estado y del municipio, y la búsqueda web. Ninguna pantalla nueva n
 **El motor (`src/lib/rutinas/motor.ts`) y su ruta (`/api/rutinas/correr`).**
 
 - La ruta pide `CRON_SECRET` como los otros crons (`autorizadoPorSecreto`, 401 sin él), `maxDuration = 60`, `dynamic = "force-dynamic"`; acepta
-  GET (el cron de Vercel llama con GET) y POST. Está en `vercel.json` cada 5 minutos (`*/5 * * * *`). Responde enseguida (202) y corre el paso
+  GET (el cron de Vercel llama con GET) y POST. Está en `vercel.json` una vez al día (`0 12 * * *`, 6:00 am en San Luis), como los otros crons de Vercel: la corrida avanza encadenando pasos y el cron solo retoma lo que se quedó a medias (resolución del gestor, abajo). Responde enseguida (202) y corre el paso
   **después de responder** con `after()`, así nadie espera los 45 s; con `?esperar=1` corre y devuelve el resultado del paso (para probar a mano).
 - Cada llamada toma **una** corrida: la `pendiente` más vieja; si no hay, la `corriendo` más antigua que nadie esté trabajando. Dos llamadas a la
   vez no corren la misma, sin migración ni bloqueos: una pendiente se reclama con `update … set estado = 'corriendo' where id = … and estado =
@@ -66,7 +66,7 @@ tarea de una fuente (y proponer ya lo que trae su punto dentro de la ciudad) o u
 - **`web` · Búsqueda web:** dos llamadas de dos búsquedas cada una («espacios culturales <ciudad>», «centro cultural <ciudad>»; «foro cultural
   <ciudad>», «galería de arte <ciudad>»): cuatro en toda la corrida.
 - Las llamadas (`src/lib/rutinas/claude.ts`) siguen el estilo de `src/lib/cartel.ts` (SDK oficial, salida validada con zod), con
-  `claude-opus-5-5`, esfuerzo bajo y las herramientas de servidor `web_search_20260209` / `web_fetch_20260209` (nombres de la guía de la API).
+  `claude-sonnet-5-5` (el gestor lo cambió de Opus 5.5 al revisar: mitad de costo y pasos más cortos), esfuerzo bajo y las herramientas de servidor `web_search_20260209` / `web_fetch_20260209` (nombres de la guía de la API).
   La lista llega por una herramienta propia y estricta (`proponer_lugares`, con los tipos de la app como enum): la salida tipada de la API no se
   puede mezclar con las citas que traen los resultados de búsqueda. Lo que el modelo entrega se vuelve a validar y limpiar (topes de la ficha,
   tipo de la app o «Otro», enlaces solo http(s)); una página de fuente que no salió en lo que buscó o leyó se quita. Si la API deja la
@@ -124,17 +124,22 @@ margen de sobra; la hoja dice «Se estima entre 1 y 3 USD» y sigue siendo ciert
 
 **Pasos para una ciudad típica (como San Luis):** 1 (lee el SIC y propone hasta 40 con su punto) + Cultura del estado (1) y su lote de Mapbox
 (1–2) + Cultura del municipio (1) y su lote (1–2) + búsqueda web A (1) y su lote (1–2) + búsqueda web B (1) y su lote (1–2): de 9 a 13 pasos.
-Encadenados, de 3 a 6 minutos (cada paso con la API tarda hasta unos 40 s); si la cadena se corta, el cron los retoma cada 5 minutos (hasta una
-hora). En el ensayo con los CSV reales del SIC de San Luis: 40 propuestas en el primer paso y 74 que esperan a la siguiente corrida.
+Encadenados, de 3 a 6 minutos (cada paso con la API tarda hasta unos 40 s); si la cadena se corta, el cron diario los retoma (hasta un día después; resolución del gestor en las decisiones).
+En el ensayo con los CSV reales del SIC de San Luis: 40 propuestas en el primer paso y 74 que esperan a la siguiente corrida.
 
 ## Decisiones por confirmar (founder o gestor)
 
 1. **El cron cada 5 minutos en Vercel** (lo pedido) choca con «Decidido» del 2026-09-21: «nada de tareas programadas más frecuentes que una al
    día» por si la cuenta vuelve al plan gratuito, donde un `*/5` impide desplegar. Hoy la cuenta es Pro (OL-190). Si se quiere la regla, el
    mismo llamado puede ir en `pg_cron` de Supabase como los avisos (ASIGNACIONES, OL-086) y el cron de Vercel quedarse diario.
+   **Resolución del gestor (2026-10-20):** el cron de Vercel queda diario (`0 12 * * *`), como manda la decisión del 21 de septiembre; la corrida
+   avanza encadenando pasos, y si una cadena se corta el cron la retoma al día siguiente. Si eso resulta corto, el respaldo cada 5 minutos va
+   en `pg_cron` de Supabase, como los avisos.
 2. **Encadenar pasos:** cada paso que tomó una corrida pide el siguiente (la corrida acaba en minutos, no en una hora); el cron es la red.
 3. **Modelo `claude-opus-5-5` con esfuerzo bajo** (el que pide la guía de la API); `claude-sonnet-5-5` costaría la mitad y es más rápido si
    aparecen `cortadas`. Está en una constante (`MODELO_RUTINAS`) con su precio en la tabla.
+   **Resolución del gestor (2026-10-20):** `claude-sonnet-5-5` desde el primer día (mitad de costo, pasos más cortos); el costo estimado
+   por corrida baja a la mitad de lo calculado abajo con Opus.
 4. **Sin el respaldo de la API ante un rechazo** (`fallbacks`): cartel.ts no lo usa, buscar espacios culturales no debería activarlo y
    complicaría la cuenta del gasto (otro modelo, otro precio). Un rechazo queda como aviso y la corrida sigue.
 5. **`propuestas.datos.ciudad` lleva el nombre de la ciudad, no el slug** (el encargo decía slug): así lo leen `entradaDeLugar` al aceptar y
@@ -197,7 +202,7 @@ hora). En el ensayo con los CSV reales del SIC de San Luis: 40 propuestas en el 
 ## Para la primera corrida real (gestor)
 
 1. Con `admin-ciudades` y esta rama unidas y la migración `20261020140000_ciudades.sql` aplicada: en Vercel › Settings › Cron Jobs debe
-   aparecer `/api/rutinas/correr` cada 5 minutos, y en Production deben estar `CRON_SECRET`, `ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y
+   aparecer `/api/rutinas/correr` una vez al día, y en Production deben estar `CRON_SECRET`, `ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y
    `NEXT_PUBLIC_MAPBOX_TOKEN` (ya existen).
 2. **Ciudad: San Miguel de Allende** (abierta, Guanajuato, pocas fichas: la bandeja sale corta y se ve si los filtros dejan pasar lo bueno);
    después San Luis (muchas ya existen: prueba los duplicados). **Tope: 1,50 USD** para la primera (caben las cuatro llamadas si cuestan lo

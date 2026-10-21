@@ -12,7 +12,7 @@
     },
     {
       "path": "/api/rutinas/correr",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }

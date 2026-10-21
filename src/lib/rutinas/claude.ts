@@ -16,7 +16,7 @@ import { costoDeUso } from "./precios";
  */
 
 /** El modelo de las rutinas: el que la guía de la API pide por omisión. Para cambiarlo, aquí y su precio en `precios.ts`. */
-export const MODELO_RUTINAS = "claude-opus-5-5";
+export const MODELO_RUTINAS = "claude-sonnet-5-5";
 /** Esfuerzo bajo: búsquedas directas, menos vueltas y respuestas más rápidas (el paso tiene 45 s). */
 export const ESFUERZO_RUTINAS = "low" as const;
 /** Lo que se anota cuando una llamada se corta por tiempo sin decir cuánto gastó (una llamada típica cuesta menos). */

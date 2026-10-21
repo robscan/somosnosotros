@@ -29,7 +29,7 @@ describe("buscarConApi: una búsqueda con la API", () => {
     expect(r.busquedas).toBe(2);
     expect(r.usd).toBeCloseTo(costoDeUso(USO, MODELO_RUTINAS), 10);
     const [cuerpo, opciones] = create.mock.calls[0] as unknown as [Anthropic.MessageCreateParams, { maxRetries: number; timeout: number }];
-    expect(cuerpo.model).toBe("claude-opus-5-5");
+    expect(cuerpo.model).toBe("claude-sonnet-5-5");
     expect(cuerpo.output_config).toEqual({ effort: "low" });
     expect(cuerpo.tools?.map((t) => (t as { name?: string }).name)).toEqual(["web_search", "proponer_lugares"]);
     expect(HERRAMIENTA_PROPONER.strict).toBe(true);
