@@ -1,13 +1,18 @@
 import "server-only";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { normalizarRedes } from "@/lib/enlaces";
 import { diaLocal, localAIso } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
+import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
+import { corridasVaradas, rescatarVaradas } from "@/lib/rutinas/rescate";
 import {
   armarCandidatos,
   circulacionDe,
   type Candidato,
   type CambioEstado,
   type Circulacion,
+  type CorridaInvestigar,
   type Estado,
   type Evidencia,
   type FilaArtista,
@@ -181,5 +186,58 @@ export async function cargarFichaShowcase(clave: string, ahora: Date): Promise<F
   } catch (error) {
     console.error("showcase ficha:", error instanceof Error ? error.message : error);
     return "error";
+  }
+}
+
+const ESTADOS_CORRIDA = new Set(["pendiente", "corriendo", "terminada", "fallida", "cancelada"]);
+const aNumero = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0);
+
+/**
+ * «Investigar» en la ficha (OL-430): la última corrida `showcase` del artista y el crédito de la API que queda (el de Corridas: `credito_api_usd`
+ * menos lo gastado en todas las corridas). Si esa corrida se quedó varada (pendiente o «corriendo» sin avanzar en 2 minutos), el servidor pide su
+ * paso después de responder, como Ciudades y Corridas (`rescate.ts`): la ficha no cambia ni espera. `corrida: undefined` es que no se pudo leer.
+ */
+export async function cargarInvestigacion(artistaId: string, ahora: Date): Promise<{ corrida: CorridaInvestigar | null | undefined; credito: { usd: number; gastado: number; vence: string | null } | null }> {
+  try {
+    const db = await clienteServidor();
+    if (!db || !esUuid(artistaId)) return { corrida: undefined, credito: null };
+    const [ultima, config, gastos] = await Promise.all([
+      db.from("rutinas_corridas").select("id, estado, tope_usd, gasto_usd, resumen, creado_en, inicio, fin").eq("tipo", "showcase").eq("parametros->>artista_id", artistaId).order("creado_en", { ascending: false }).limit(1),
+      db.from("configuracion").select("clave, valor").in("clave", ["credito_api_usd", "credito_api_vence"]),
+      leerTodo<{ gasto_usd: unknown }>((d, h) => db.from("rutinas_corridas").select("gasto_usd").order("id").range(d, h)).catch(() => null),
+    ]);
+    const fila = ultima.error ? undefined : ((ultima.data ?? [])[0] as Record<string, unknown> | undefined);
+    const corrida: CorridaInvestigar | null | undefined =
+      fila === undefined
+        ? ultima.error
+          ? undefined
+          : null
+        : ESTADOS_CORRIDA.has(String(fila.estado))
+          ? {
+              id: String(fila.id),
+              estado: fila.estado as CorridaInvestigar["estado"],
+              tope_usd: aNumero(fila.tope_usd),
+              gasto_usd: aNumero(fila.gasto_usd),
+              resumen: fila.resumen && typeof fila.resumen === "object" && !Array.isArray(fila.resumen) ? (fila.resumen as Record<string, unknown>) : {},
+              creado_en: String(fila.creado_en),
+              inicio: typeof fila.inicio === "string" ? fila.inicio : null,
+              fin: typeof fila.fin === "string" ? fila.fin : null,
+            }
+          : null;
+    const valores = new Map(((config.data ?? []) as { clave: string; valor: unknown }[]).map((c) => [c.clave, c.valor]));
+    const credito = config.error || !gastos || !valores.has("credito_api_usd") ? null : { usd: aNumero(valores.get("credito_api_usd")), gastado: gastos.reduce((t, g) => t + aNumero(g.gasto_usd), 0), vence: typeof valores.get("credito_api_vence") === "string" ? (valores.get("credito_api_vence") as string) : null };
+    if (corrida && corridasVaradas([corrida], ahora).length) {
+      try {
+        const h = await headers();
+        const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+        after(() => rescatarVaradas([corrida], ahora, () => dispararPaso(origen)));
+      } catch {
+        console.warn("rutinas: no se pudo pedir el paso de una investigación varada; la retoma el cron");
+      }
+    }
+    return { corrida, credito };
+  } catch (error) {
+    console.error("showcase investigar:", error instanceof Error ? error.message : error);
+    return { corrida: undefined, credito: null };
   }
 }

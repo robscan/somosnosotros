@@ -9,6 +9,7 @@ import { diaLocal } from "@/lib/fechas";
 import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import { unir } from "@/lib/panel";
 import {
+  avanceInvestigar,
   detalleEvidencia,
   detalleOpcionEstado,
   detallePropuesta,
@@ -16,6 +17,8 @@ import {
   ESTADOS,
   etiquetaRed,
   haceDias,
+  investigacionEnCurso,
+  lineaCreditoInvestigar,
   MAXIMO_RUBRICA,
   renglonesBase,
   resumenSenal,
@@ -23,14 +26,16 @@ import {
   SENALES,
   sumaRubrica,
   textoEstado,
+  textoInvestigar,
   textoLectura,
   ultimasPorRed,
 } from "@/lib/showcase";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../../Reintentar";
-import { anioDe, cargarFichaShowcase } from "../consultas";
+import { anioDe, cargarFichaShowcase, cargarInvestigacion } from "../consultas";
 import AyudaFicha from "./AyudaFicha";
 import EstadoFicha from "./EstadoFicha";
+import InvestigarFicha from "./InvestigarFicha";
 import NotasFicha from "./NotasFicha";
 import PorRevisar from "./PorRevisar";
 import RedesFicha from "./RedesFicha";
@@ -47,8 +52,9 @@ const ICONO_BASE = { total: IconoCalendario, lugar: IconoPin, festival: IconoEti
 /**
  * La ficha de showcase de un artista (OL-426; lo firmado en OL-425): la cabecera de la ficha de una persona, el estado con quién y cuándo, la
  * rúbrica señal por señal con sus evidencias enlazadas, lo que propuso la rutina por revisar, sus eventos y foros del año (de la base), sus redes
- * con la fecha de cada lectura y las notas privadas del consejo. La ⓘ explica cada parte. Solo administración; nada de aquí se publica. Sin el
- * botón «Investigar»: llega con la rutina (OL-428).
+ * con la fecha de cada lectura y las notas privadas del consejo. La ⓘ explica cada parte. Solo administración; nada de aquí se publica.
+ * OL-430: «Investigar» (la rutina con la API busca prensa, premios, festivales y obra publicada y deja evidencias propuestas en «Por revisar»),
+ * con su renglón justo antes de lo que trae.
  */
 export default async function FichaShowcase({ params }: { params: Promise<{ artista: string }> }) {
   const { artista } = await params;
@@ -92,6 +98,9 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
   }));
   const propuestas = f.evidencias.filter((e) => e.estado === "propuesta").map((e) => ({ ...e, detalle: detallePropuesta(e, hoy), dominio: new URL(e.url).hostname.replace(/^www\./, "") }));
   const base = renglonesBase(f.eventos, new Map(f.lugares.map((l) => [l.id, l])), new Map([...f.festivales, ...f.eventos.filter((e) => e.clase === "festival")].map((e) => [e.id, e])), a.slug, ahora, diaDe);
+  const inv = await cargarInvestigacion(a.id, ahora);
+  const porRevisarRutina = f.evidencias.filter((e) => e.estado === "propuesta" && e.leida_por === "rutina").length;
+  const textoInv = inv.corrida === undefined ? "No pudimos leer la última investigación" : textoInvestigar(inv.corrida, porRevisarRutina, hoy, diaDe);
   const ultimas = ultimasPorRed(f.lecturas);
   const lecturas = ultimas.map((l) => ({ red: l.red, etiqueta: etiquetaRed(l.red), texto: textoLectura(l, hoy, true), hace: haceDias(diasEntre(diaDe(l.leido_en), hoy)) }));
   return (
@@ -115,6 +124,18 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
       {senales.map((x) => (
         <SenalFicha key={x.clave} artistaId={a.id} slug={a.slug} senal={x} />
       ))}
+
+      <h2 className={admin.grupo}>Investigación</h2>
+      <InvestigarFicha
+        artistaId={a.id}
+        slug={a.slug}
+        nombre={a.nombre}
+        ciudad={a.ciudad}
+        texto={textoInv}
+        avance={avanceInvestigar(inv.corrida)}
+        enCurso={investigacionEnCurso(inv.corrida)}
+        credito={lineaCreditoInvestigar(inv.credito, hoy)}
+      />
 
       <PorRevisar propuestas={propuestas} slug={a.slug} />
 

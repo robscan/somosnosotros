@@ -1,6 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { leerTope } from "@/lib/ciudadesAdmin";
+import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { esUuid } from "@/lib/formulario";
 import {
   esEstado,
@@ -169,4 +173,39 @@ export async function importarLecturas(texto: string, slug?: string): Promise<Re
   if (error) return { ok: false, error: "No se importó nada: la base rechazó el archivo. Intenta de nuevo.", errores: todosLosErrores };
   revalidar(slug);
   return { ok: true, importadas: nuevas.length, errores: todosLosErrores };
+}
+
+/**
+ * «Investigar» (OL-430): deja una corrida `showcase` de este artista (sin ciudad, `parametros.artista_id`) con su tope y pide su primer paso
+ * después de responder, como la hoja «Correr» de Ciudades. Una a la vez por artista: si ya hay una pendiente o corriendo, lo dice. Lo que
+ * traiga la rutina llega a «Por revisar» como propuesta; nada cuenta ni se publica hasta que alguien lo acepta.
+ */
+export async function investigar(artistaId: string, tope: string, slug: string): Promise<Resultado> {
+  if (!esUuid(artistaId)) return { ok: false, error: "No encontramos a ese artista." };
+  const usd = leerTope(typeof tope === "string" ? tope : "");
+  if (usd === null) return { ok: false, error: "Escribe un tope de más de 0 y hasta 50 USD." };
+  const actual = await usuarioActual();
+  if (!actual || actual.perfil.rol !== "admin") return SIN_PERMISO;
+  const db = await clienteServidor();
+  if (!db) return SIN_BASE;
+  const enCurso = await db.from("rutinas_corridas").select("id").eq("tipo", "showcase").in("estado", ["pendiente", "corriendo"]).eq("parametros->>artista_id", artistaId).limit(1);
+  if (enCurso.error) return SIN_BASE;
+  if (enCurso.data?.length) return { ok: false, error: "Ya hay una investigación en curso de este artista." };
+  const { error } = await db.from("rutinas_corridas").insert({ tipo: "showcase", ciudad: null, tope_usd: usd, creado_por: actual.perfil.id, parametros: { artista_id: artistaId } }).select("id").single();
+  if (error) return { ok: false, error: "No se pudo dejar lista. Intenta de nuevo." };
+  revalidar(slug);
+  revalidatePath("/admin/corridas");
+  await pedirPrimerPaso();
+  return { ok: true };
+}
+
+/** El primer paso sin esperar al cron: el servidor llama al motor con `CRON_SECRET` después de responder. Si falla, la corrida espera al cron. */
+async function pedirPrimerPaso() {
+  try {
+    const h = await headers();
+    const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+    after(() => dispararPaso(origen));
+  } catch {
+    console.warn("rutinas: no se pudo pedir el primer paso; la corrida espera al cron");
+  }
 }

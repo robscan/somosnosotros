@@ -1,8 +1,9 @@
 /**
  * La ficha de showcase (OL-426, lo firmado en OL-425): cambiar el estado en su hoja, el puntaje de una señal (0, 1, 2 o sin puntuar), añadir una
  * evidencia (el botón dice qué falta; un enlace que no es http(s) se rechaza sin llamar a la acción; uno bueno sí), aceptar y deshacer una propuesta,
- * y las notas privadas (se guardan al salir del campo; la ✕ las vacía). Los componentes de verdad con las acciones del servidor de prueba: apuntan
- * lo que reciben en `window.qa.acciones`.
+ * y las notas privadas (se guardan al salir del campo; la ✕ las vacía). OL-430: «Investigar» (la hoja con el tope y su ✕; con una en curso, solo
+ * la dice y el renglón lleva su barra). Los componentes de verdad con las acciones del servidor de prueba: apuntan lo que reciben en
+ * `window.qa.acciones`.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -31,6 +32,7 @@ const mocks = {
     export async function decidirEvidencia(...a) { return apuntar('decidirEvidencia', a); }
     export async function anadirLectura(...a) { return apuntar('anadirLectura', a); }
     export async function importarLecturas(...a) { apuntar('importarLecturas', a); return { ok: true, importadas: 2, errores: [{ linea: 4, motivo: 'Elige la red.' }] }; }
+    export async function investigar(...a) { return apuntar('investigar', a); }
   `,
 };
 
@@ -51,6 +53,7 @@ before(async () => {
       import PorRevisar from './PorRevisar';
       import RedesFicha from './RedesFicha';
       import NotasFicha from './NotasFicha';
+      import InvestigarFicha from './InvestigarFicha';
       import plantilla from '../../../../components/ui/Plantilla.module.css';
       import '../../../globals.css';
       window.qa = { acciones: [], falla: false };
@@ -65,11 +68,14 @@ before(async () => {
       const obra = { clave: 'obra', titulo: 'Obra y reconocimiento', resumen: '1 evidencia aceptada: obra', puntaje: 1,
         niveles: ['Nada verificable', 'Obra publicada o expuesta en los últimos 24 meses', 'Además, beca, premio, residencia o selección oficial'],
         evidencias: [{ id: 'e1', senal: 'obra', tipo: 'obra', titulo: 'Sencillo en plataformas', url: 'https://musica.example/s', fecha: null, fuente: 'musica.example', leida_por: 'persona', estado: 'aceptada', creado_en: '2026-10-10T00:00:00Z', detalle: 'Obra · musica.example · aceptada, la leyó una persona' }] };
+      const enCurso = new URLSearchParams(location.search).has('encurso');
       const propuestas = [{ id: '22222222-2222-4222-8222-222222222222', senal: 'obra', tipo: 'premio', titulo: 'Mención estatal', url: 'https://cultura.example/p', fecha: '2025-11-20', fuente: null, leida_por: 'rutina', estado: 'propuesta', creado_en: '2026-10-20T00:00:00Z', detalle: '20 nov 2025 · leída por la rutina hoy', dominio: 'cultura.example' }];
       createRoot(document.getElementById('root')).render(
         <main id="ficha" className={plantilla.paginaContenido}>
           <EstadoFicha artistaId={ID} slug="sangre-de-coyote" nombre="Sangre de Coyote" estado="invitado" titulo="Invitado" detalle="Por ti el 18 oct · antes, revisado el 15 oct" opciones={opciones} />
           <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={obra} />
+          <InvestigarFicha artistaId={ID} slug="sangre-de-coyote" nombre="Sangre de Coyote" ciudad="San Luis Potosí" enCurso={enCurso} avance={enCurso ? 0.5 : null}
+            texto={enCurso ? 'Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD' : 'Investigado el 21 oct · 5 evidencias por revisar · 0,38 USD'} credito="Crédito: 187,40 USD · vence el 11 de noviembre" />
           <PorRevisar propuestas={propuestas} slug="sangre-de-coyote" />
           <RedesFicha artistaId={ID} slug="sangre-de-coyote" hoy="2026-10-20" lecturas={[{ red: 'instagram', etiqueta: 'Instagram', texto: '3,2 mil seguidores', hace: 'hace 4 días' }]} />
           <NotasFicha artistaId={ID} slug="sangre-de-coyote" notas="Propuesto por dos foros." />
@@ -108,7 +114,7 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(t) {
+async function abrir(t, ruta = "/") {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   t.after(() => context.close());
   const p = await context.newPage();
@@ -116,7 +122,7 @@ async function abrir(t) {
   const errores = [];
   p.on("pageerror", (e) => errores.push(e.message));
   t.after(() => assert.deepEqual(errores, []));
-  await p.goto(origin);
+  await p.goto(origin + ruta);
   await p.getByRole("button", { name: /^Invitado/ }).waitFor();
   return p;
 }
@@ -262,4 +268,57 @@ test("notas privadas: se guardan al salir del campo; la ✕ las vacía y guardar
   await p.locator("body").click({ position: { x: 5, y: 5 } });
   await p.waitForTimeout(200);
   assert.equal((await acciones(p)).length, 2);
+});
+
+test("Investigar: la hoja dice qué hace y dónde busca; el tope (1,00) con su ✕; uno que no vale no llega al servidor; «Investigar» llama a la acción y cierra", async (t) => {
+  const p = await abrir(t);
+  const renglon = p.getByRole("button", { name: /^Investigar/ });
+  assert.ok((await renglon.innerText()).includes("Investigado el 21 oct · 5 evidencias por revisar · 0,38 USD"));
+  assert.equal(await renglon.getAttribute("data-ayuda"), "investigar", "la ⓘ explica qué hace y cuánto cuesta");
+  await renglon.click();
+  const hoja = p.getByRole("dialog", { name: "Investigar a Sangre de Coyote" });
+  await hoja.waitFor();
+  const texto = await hoja.innerText();
+  for (const frase of ["premios, becas, prensa, festivales y obra publicada", "su ciudad (San Luis Potosí)", "No lee redes.", "Premios, becas y convocatorias", "Obra publicada", "Crédito: 187,40 USD · vence el 11 de noviembre."]) assert.ok(texto.includes(frase), frase);
+  const tope = hoja.getByLabel("Tope de gasto (USD)");
+  assert.equal(await tope.inputValue(), "1,00");
+  await tope.fill("0");
+  await hoja.getByRole("button", { name: "Investigar", exact: true }).click();
+  await hoja.getByText(/^Un tope de más de 0 y hasta 50 USD/).waitFor();
+  assert.deepEqual(await acciones(p), [], "un tope que no vale no llega al servidor");
+  // La ✕ vacía el campo y el botón lo vuelve a pedir.
+  await tope.click();
+  await hoja.getByRole("button", { name: "Borrar lo escrito" }).click();
+  assert.equal(await tope.inputValue(), "");
+  await hoja.getByRole("button", { name: "Investigar", exact: true }).click();
+  await hoja.getByText("Escribe el tope en dólares.").waitFor();
+  await tope.fill("0,50");
+  await hoja.getByRole("button", { name: "Investigar", exact: true }).click();
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), [["investigar", ID, "0,50", "sangre-de-coyote"]]);
+});
+
+test("Investigar: si la acción falla, la hoja lo dice y no se cierra", async (t) => {
+  const p = await abrir(t);
+  await p.evaluate(() => (window.qa.falla = true));
+  await p.getByRole("button", { name: /^Investigar/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "Investigar", exact: true }).click();
+  await p.getByRole("dialog").getByRole("alert").getByText("Sin conexión con la base. Intenta de nuevo.").waitFor();
+  assert.ok(await p.getByRole("dialog").isVisible());
+});
+
+test("Investigar en curso: el renglón dice cómo va con su barra; la hoja solo lo dice, sin tope ni botón de investigar", async (t) => {
+  const p = await abrir(t, "/?encurso=1");
+  const renglon = p.getByRole("button", { name: /^Investigar/ });
+  assert.ok((await renglon.innerText()).includes("Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD"));
+  assert.equal(await renglon.getByRole("progressbar").getAttribute("aria-valuenow"), "50");
+  await renglon.click();
+  const hoja = p.getByRole("dialog", { name: "Investigar a Sangre de Coyote" });
+  await hoja.getByText("Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD. Lo que encuentre llega a «Por revisar».").waitFor();
+  assert.equal(await hoja.getByLabel("Tope de gasto (USD)").count(), 0);
+  assert.equal(await hoja.getByRole("button", { name: "Investigar", exact: true }).count(), 0);
+  // El «Cerrar» del pie (la ✕ de la cabecera se llama igual).
+  await hoja.getByRole("button", { name: "Cerrar", exact: true }).last().click();
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), []);
 });
