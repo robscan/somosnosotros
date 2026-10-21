@@ -138,6 +138,13 @@
   justify-self: start;
   margin-top: var(--espacio-3);
 }
+/* Con la letra grande (OL-373), si el texto del botón no cabe en la tarjeta parte el suyo en dos renglones en vez de salirse; donde cabe,
+   sigue en uno (como `.fila > .pildora` en admin.module.css). */
+.tarjeta > .accion {
+  max-width: 100%;
+  white-space: normal;
+  text-wrap: balance;
+}
 .tarjeta > [role="alert"] {
   grid-area: razon;
   margin-top: var(--espacio-1);
