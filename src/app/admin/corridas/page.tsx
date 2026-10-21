@@ -8,7 +8,7 @@ import renglon from "@/components/ui/Renglon.module.css";
 import { avanceDe, credito, detalleCorrida, fechaVence, gruposDeCorridas, pildoraCorrida, tituloCorrida, usd, usdCorto, type CorridaPanel, type Pildora, type TipoCorrida } from "@/lib/ciudadesAdmin";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../Reintentar";
-import { cargarPanelCiudades } from "../ciudades/consultas";
+import { cargarPanelCiudades, pedirPasoSiHayVaradas } from "../ciudades/consultas";
 import styles from "../admin.module.css";
 import css from "../ciudades/ciudades.module.css";
 
@@ -43,6 +43,8 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
       </main>
     );
   const ahora = new Date();
+  // La misma red de seguridad que Ciudades (OL-429): una corrida varada pide su paso después de responder.
+  await pedirPasoSiHayVaradas(panel.corridas, ahora);
   const c = credito(panel.credito, ahora);
   const nombre = new Map(panel.ciudades.map((x) => [x.slug, x.nombre]));
   const filtro = FILTROS.find((f) => f.valor === tipo) ?? null;

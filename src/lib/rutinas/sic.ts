@@ -1,5 +1,5 @@
 import { normalizarNombre, type Tipo } from "../lugares";
-import { limpiarCandidato, type Candidato } from "./candidatos";
+import { limpiarCandidato, textoLimpio, type Candidato } from "./candidatos";
 
 /**
  * El catálogo del Sistema de Información Cultural (SIC) de la Secretaría de Cultura (OL-428; doc 57 §4.B, primera fuente de «Buscar
@@ -135,7 +135,8 @@ export function candidatosDeTabla(texto: string, tabla: (typeof TABLAS_SIC)[numb
   for (const fila of filas) {
     const municipio = de(fila, "nom_mun");
     if (!quieren.has(normalizarNombre(municipio)) && !quieren.has(normalizarNombre(de(fila, "nom_loc")))) continue;
-    let nombre = de(fila, `${tabla.tabla}_nombre`);
+    // Sin etiquetas ni entidades antes de comparar (OL-429: «Juan Ignacio <i>Juani </i>Torres»).
+    let nombre = textoLimpio(de(fila, `${tabla.tabla}_nombre`), 200);
     if (tabla.tabla === "rnbp" && nombre && !/bibliotec/i.test(nombre)) nombre = `Biblioteca ${nombre}`;
     const k = normalizarNombre(nombre);
     if (!k || vistos.has(k)) continue;

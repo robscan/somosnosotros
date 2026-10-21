@@ -1,6 +1,7 @@
 import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nombraAlcaldia, type ParametrosCiudad } from "../ciudadParametros";
 import type { Punto } from "../geo";
 import { normalizarNombre } from "../lugares";
 import { buscarConApi, type ClienteApi } from "./claude";
@@ -25,6 +26,8 @@ import { claveDeEstado, ESTADOS, leerSic, urlTablaSic } from "./sic";
 
 /**
  * «Buscar lugares» para una ciudad (OL-428; doc 57 §4.B), un paso a la vez. Las fuentes se leen en el orden de `parametros.fuentes`:
+ *   · guias    (OL-429) si la ciudad tiene guías culturales en `ciudades.parametros.guias`, van primero: una llamada por guía con la lectura web
+ *              acotada a su sitio. La bandeja agrupa lo de cada guía con su nombre.
  *   · sic      el catálogo del Sistema de Información Cultural del estado, filtrado por el municipio (y sus alias). Gratis.
  *   · cultura  la búsqueda web acotada a los sitios de gobierno (`*.gob.mx`): una llamada para la cultura del estado y otra para el municipio.
  *   · web      la búsqueda web general: dos llamadas de dos búsquedas cada una (cuatro en toda la corrida).
@@ -40,7 +43,11 @@ import { claveDeEstado, ESTADOS, leerSic, urlTablaSic } from "./sic";
 /** Un error que termina la corrida como «Falló» con esta frase (sin llaves ni datos privados). */
 export class FalloCorrida extends Error {}
 
-export type Tarea = { fuente: "sic" } | { fuente: "cultura"; parte: "estado" | "municipio" } | { fuente: "web"; busquedas: string[] };
+export type Tarea =
+  | { fuente: "guias"; nombre: string; url: string }
+  | { fuente: "sic" }
+  | { fuente: "cultura"; parte: "estado" | "municipio" }
+  | { fuente: "web"; busquedas: string[] };
 
 export type CursorLugares = {
   tareas: Tarea[];
@@ -61,7 +68,18 @@ export type CursorLugares = {
   fallosSeguidos: number;
 };
 
-export type CiudadRutina = { slug: string; nombre: string; lat: number | null; lng: number | null; zoom: number; zona: string; alias: string[]; estado: string };
+export type CiudadRutina = {
+  slug: string;
+  nombre: string;
+  lat: number | null;
+  lng: number | null;
+  zoom: number;
+  zona: string;
+  alias: string[];
+  estado: string;
+  /** Alcaldías, guías y radio propios de la ciudad (OL-429, `ciudades.parametros`); vacíos, la ciudad se comporta como antes. */
+  parametros: ParametrosCiudad;
+};
 export type CorridaRutina = { id: string; tipo: string; ciudad: string | null; parametros: Record<string, unknown>; tope_usd: number; gasto_usd: number; resumen: Record<string, unknown> };
 
 export type Contexto = {
@@ -104,7 +122,13 @@ const numero = (v: unknown): number => (typeof v === "number" && Number.isFinite
 const lista = <T = unknown>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 export const nombresDe = (c: Pick<CiudadRutina, "nombre" | "alias">): string[] => [c.nombre, ...c.alias.filter(Boolean)];
+/** Lo que cuenta como «dentro»: las alcaldías de la ciudad si las tiene (OL-429); si no, su nombre y sus alias. */
+export const zonasDe = (c: Pick<CiudadRutina, "nombre" | "alias" | "parametros">): string[] => (c.parametros.alcaldias.length ? c.parametros.alcaldias : nombresDe(c));
+/** El radio del área: el de los parámetros de la ciudad si lo trae (OL-429); si no, el que sale de su zoom. */
+export const radioDe = (c: Pick<CiudadRutina, "zoom" | "parametros">): number => c.parametros.radio_km ?? radioDeCiudadKm(c.zoom);
 const usaApi = (t: Tarea) => t.fuente !== "sic";
+/** El dominio de una guía, sin «www.», para acotar la lectura web a su sitio. */
+export const dominioDe = (url: string): string => new URL(url).hostname.replace(/^www\./, "");
 
 function leerContadores(r: Record<string, unknown>): Contadores {
   const d = objeto(r.descartados);
@@ -138,10 +162,12 @@ export function leerCursor(v: unknown): CursorLugares | null {
   };
 }
 
-/** Las tareas de cada fuente, en el orden de la corrida. */
-export function tareasDe(fuentes: readonly ClaveFuente[], ciudad: string): Tarea[] {
+/** Las tareas de cada fuente, en el orden de la corrida. Las guías, una tarea por guía. */
+export function tareasDe(fuentes: readonly ClaveFuente[], ciudad: string, guias: readonly { nombre: string; url: string }[] = []): Tarea[] {
   return fuentes.flatMap((f): Tarea[] =>
-    f === "sic"
+    f === "guias"
+      ? guias.map((g) => ({ fuente: "guias", nombre: g.nombre, url: g.url }))
+      : f === "sic"
       ? [{ fuente: "sic" }]
       : f === "cultura"
         ? [
@@ -158,7 +184,9 @@ export function tareasDe(fuentes: readonly ClaveFuente[], ciudad: string): Tarea
 /** La primera vez: las tareas, el centro y el radio de la ciudad, y su estado (para el SIC). */
 async function iniciar(ctx: Contexto, avisos: Set<string>): Promise<CursorLugares> {
   const pedidas = lista(ctx.corrida.parametros.fuentes);
-  const fuentes = [...new Set(pedidas.filter(esClaveFuente))];
+  // Las guías de la ciudad van primero (OL-429), aunque la hoja no las nombre.
+  const guias = ctx.ciudad.parametros.guias;
+  const fuentes = [...new Set([...(guias.length ? (["guias"] as const) : []), ...pedidas.filter(esClaveFuente).filter((f) => f !== "guias")])];
   if (pedidas.some((f) => !esClaveFuente(f))) avisos.add("Hay fuentes que esta rutina no lee");
   if (!fuentes.length) throw new FalloCorrida("La corrida no dice qué fuentes leer");
   let centro: Punto | null = ctx.ciudad.lat != null && ctx.ciudad.lng != null ? { lat: ctx.ciudad.lat, lng: ctx.ciudad.lng } : null;
@@ -171,8 +199,8 @@ async function iniciar(ctx: Contexto, avisos: Set<string>): Promise<CursorLugare
     estado = e ? claveDeEstado(e.codigo, e.nombre) : null;
     estadoNombre = estado ? (e?.nombre ?? ESTADOS.find((x) => x.clave === estado)?.nombres[0] ?? null) : null;
   }
-  const tareas = tareasDe(fuentes, ctx.ciudad.nombre);
-  return { tareas, total: tareas.length, fuentes, pendientes: [], leidos: 0, centro, radioKm: radioDeCiudadKm(ctx.ciudad.zoom), estado, estadoNombre, fallosSeguidos: 0 };
+  const tareas = tareasDe(fuentes, ctx.ciudad.nombre, guias);
+  return { tareas, total: tareas.length, fuentes, pendientes: [], leidos: 0, centro, radioKm: radioDe(ctx.ciudad), estado, estadoNombre, fallosSeguidos: 0 };
 }
 
 /** Lo que la base sabe de la ciudad: sus lugares (por nombre de ciudad y por área) y todo lo que se propuso en ella. */
@@ -211,6 +239,7 @@ function ubicacionAproximada(ctx: Contexto, cursor: CursorLugares): Anthropic.Us
 
 export function herramientasDe(tarea: Tarea, ctx: Contexto, cursor: CursorLugares): Anthropic.ToolUnion[] {
   const user_location = ubicacionAproximada(ctx, cursor);
+  if (tarea.fuente === "guias") return [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: 3, allowed_domains: [dominioDe(tarea.url)], max_content_tokens: 12_000 }];
   if (tarea.fuente === "cultura")
     return [
       { type: "web_search_20260209", name: "web_search", max_uses: 2, allowed_domains: ["gob.mx"], user_location },
@@ -224,20 +253,25 @@ export function herramientasDe(tarea: Tarea, ctx: Contexto, cursor: CursorLugare
 export function pedidoDe(tarea: Tarea, ctx: Contexto, cursor: CursorLugares, conocidos: Conocidos, propuestas: readonly PropuestaConocida[]): string {
   const ciudad = ctx.ciudad.nombre;
   const estado = cursor.estadoNombre ?? "su estado";
+  const alcaldias = ctx.ciudad.parametros.alcaldias;
   const municipios = nombresDe(ctx.ciudad).join(", ");
   const que =
-    tarea.fuente === "cultura"
+    tarea.fuente === "guias"
+      ? `Abre la guía cultural «${tarea.nombre}» (${tarea.url}) y, si hace falta, como mucho 2 de sus páginas que hablen de ${ciudad}. Propón los espacios culturales de ${ciudad} que la guía recomienda, con su dirección si la guía la da.`
+      : tarea.fuente === "cultura"
       ? tarea.parte === "estado"
         ? `Busca en las páginas del gobierno del estado de ${estado} (su secretaría o instituto de cultura) los espacios culturales que tienen en ${ciudad}: museos, teatros, centros y casas de cultura, galerías y foros, con su dirección. Haz como mucho 2 búsquedas y abre como mucho 1 página.`
         : `Busca en las páginas del Ayuntamiento de ${ciudad} (su dirección o instituto de cultura) los espacios culturales del municipio: casas de cultura, centros culturales, museos, teatros, bibliotecas y foros, con su dirección. Haz como mucho 2 búsquedas y abre como mucho 1 página.`
       : tarea.fuente === "web"
         ? `Haz estas búsquedas y no más: ${tarea.busquedas.map((b) => `«${b}»`).join(" y ")}. Propón los espacios culturales de ${ciudad} que encuentres, con su dirección si la página la da.`
-        : `El Sistema de Información Cultural publica estos archivos CSV del estado (una fila por espacio): ${["museo", "teatro", "centro_cultural", "galeria"].map((t) => urlTablaSic(cursor.estado ?? 0, t)).join(" ")}. Ábrelos y propón los espacios cuyo municipio (columna nom_mun) sea ${municipios}, con su dirección (calle y número, colonia). Tipos: museo → museo, teatro → foro, centro_cultural → casa_de_cultura, galeria → galeria.`;
+        : `El Sistema de Información Cultural publica estos archivos CSV del estado (una fila por espacio): ${["museo", "teatro", "centro_cultural", "galeria"].map((t) => urlTablaSic(cursor.estado ?? 0, t)).join(" ")}. Ábrelos y propón los espacios cuyo municipio (columna nom_mun) sea ${zonasDe(ctx.ciudad).join(", ")}, con su dirección (calle y número, colonia). Tipos: museo → museo, teatro → foro, centro_cultural → casa_de_cultura, galeria → galeria.`;
   const conocidosTexto = conocidos.lista.slice(0, 150).map((n) => n.slice(0, 60)).join("; ");
   const noCulturales = rechazadosNoCulturales(propuestas);
   const fuera = propuestas.filter((p) => p.estado === "rechazada" && p.motivo === "fuera_de_la_ciudad").length;
   return [
-    `Ciudad: ${ciudad} (${estado}, México). Municipios que cuentan: ${municipios}.`,
+    alcaldias.length
+      ? `Ciudad: ${ciudad} (${estado}, México). Solo cuentan estas alcaldías: ${alcaldias.join(", ")}. En municipio pon la alcaldía donde está.`
+      : `Ciudad: ${ciudad} (${estado}, México). Municipios que cuentan: ${municipios}.`,
     que,
     conocidosTexto ? `Ya se conocen (no los propongas): ${conocidosTexto}.` : "",
     noCulturales.length ? `La administración rechazó estos por no ser espacios culturales; no propongas nada parecido: ${noCulturales.join("; ")}.` : "",
@@ -272,6 +306,15 @@ export async function pasoLugares(ctx: Contexto): Promise<SalidaPaso> {
   let tope = previo.tope === true;
   const cursor = leerCursor(previo.cursor) ?? (await iniciar(ctx, avisos));
   const nombres = nombresDe(ctx.ciudad);
+  const alcaldias = ctx.ciudad.parametros.alcaldias;
+  /**
+   * ¿De la ciudad? Sin alcaldías, el municipio que dice la fuente tiene que ser la ciudad o un alias (o no decirlo). Con alcaldías (OL-429),
+   * el municipio o la dirección nombra una; si no nombra ninguna pero dice «Ciudad de México» (o nada), se decide al ubicarlo con Mapbox.
+   */
+  const enLaCiudad = (c: Candidato) =>
+    !alcaldias.length
+      ? municipioDeLaCiudad(c.municipio, nombres)
+      : nombraAlcaldia([c.municipio, c.direccion], alcaldias) || municipioDeLaCiudad(c.municipio, nombres);
   const area: AreaCiudad = { centro: cursor.centro, radioKm: cursor.radioKm, nombres };
   const { conocidos, propuestas } = await cargarConocidos(ctx, area);
   const leida = ctx.ahora().toISOString();
@@ -291,11 +334,13 @@ export async function pasoLugares(ctx: Contexto): Promise<SalidaPaso> {
       const u = ubicados[i];
       const porNombre = motivoPorNombre(c.nombre, conocidos);
       if (porNombre) return descartar(porNombre);
-      if (u === "fuera" || !municipioDeLaCiudad(c.municipio, nombres)) return descartar("fuera_de_la_ciudad");
+      if (u === "fuera" || !enLaCiudad(c)) return descartar("fuera_de_la_ciudad");
       if (!u) return descartar("sin_ubicacion");
+      // Con alcaldías (OL-429): la fuente o la dirección que dio Mapbox tiene que nombrar una.
+      if (alcaldias.length && !nombraAlcaldia([c.municipio, c.direccion, u.direccion], alcaldias)) return descartar("fuera_de_la_ciudad");
       if (existeCerca(c.nombre, u, conocidos)) return descartar("ya_existe");
       conocidos.propuestos.add(normalizarNombre(c.nombre));
-      filas.push({ corrida_id: ctx.corrida.id, tipo: "lugar", fuente: NOMBRE_FUENTE[c.fuente], datos: datosDePropuesta({ ...c, direccion: c.direccion ?? u.direccion }, u, ctx.ciudad.nombre, leida) });
+      filas.push({ corrida_id: ctx.corrida.id, tipo: "lugar", fuente: (c.nombreFuente ?? NOMBRE_FUENTE[c.fuente]).slice(0, 120), datos: datosDePropuesta({ ...c, direccion: c.direccion ?? u.direccion }, u, ctx.ciudad.nombre, leida) });
       guardados.push(c);
     });
     if (!filas.length) return [];
@@ -322,7 +367,7 @@ export async function pasoLugares(ctx: Contexto): Promise<SalidaPaso> {
         avisos.add("El SIC no se pudo leer: no se supo el estado de la ciudad");
         return [];
       }
-      const l = await leerSic(cursor.estado, nombres, ctx.pedir);
+      const l = await leerSic(cursor.estado, zonasDe(ctx.ciudad), ctx.pedir);
       if (l.tablasFallidas) cont.errores++;
       if (l.tablasLeidas) crudos = l.candidatos;
       else if (ctx.api && cabe()) {
@@ -345,7 +390,7 @@ export async function pasoLugares(ctx: Contexto): Promise<SalidaPaso> {
     const enCursor = new Set(cursor.pendientes.map((c) => normalizarNombre(c.nombre)));
     for (const c of crudos) {
       const k = normalizarNombre(c.nombre);
-      if (!municipioDeLaCiudad(c.municipio, nombres)) descartar("fuera_de_la_ciudad");
+      if (!enLaCiudad(c)) descartar("fuera_de_la_ciudad");
       else if (motivoPorNombre(c.nombre, conocidos)) descartar(motivoPorNombre(c.nombre, conocidos)!);
       else if (enEsta.has(k) || enCursor.has(k)) descartar("ya_propuesto");
       else if (salida.length >= TOPE_POR_TAREA) descartar("de_mas");
@@ -367,10 +412,11 @@ export async function pasoLugares(ctx: Contexto): Promise<SalidaPaso> {
       cont.errores++;
       avisos.add(`${NOMBRE_FUENTE[tarea.fuente]}: ${r.error}`);
     }
+    const guia = tarea.fuente === "guias" ? tarea : null;
     return r.lugares
       .map((l) => limpiarCandidato({ ...l, fuente: tarea.fuente }))
       .filter((c): c is Candidato => !!c)
-      .map((c) => ({ ...c, url: urlVerificada(c.url, r.paginas) }));
+      .map((c) => ({ ...c, url: urlVerificada(c.url, r.paginas) ?? guia?.url ?? null, ...(guia ? { nombreFuente: guia.nombre } : {}) }));
   }
 
   if (cursor.pendientes.length) {

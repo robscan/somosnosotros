@@ -127,13 +127,26 @@ function errorDeApi(e: unknown): string {
   return "No se pudo hacer la búsqueda";
 }
 
+/** Una llamada que termina entregando un dato por una herramienta estricta (OL-429: la usan «Buscar lugares» y «Buscar agendas y eventos»). */
+export type PedidoConEntrega<T> = {
+  sistema: string;
+  /** Lo que se le da: el encargo en texto o bloques (una agenda en PDF como documento, con su marca de caché, y el encargo). */
+  contenido: string | Anthropic.ContentBlockParam[];
+  herramientas: Anthropic.ToolUnion[];
+  entrega: Anthropic.Tool;
+  esquema: z.ZodType<T>;
+  hasta: number;
+  maxTokens?: number;
+};
+export type RespuestaConEntrega<T> = Omit<RespuestaApi, "lugares"> & { dato: T | null };
+
 /**
- * Una búsqueda: la llamada y, si la API la deja a medias (`pause_turn`) y queda tiempo, una sola continuación. Nunca lanza: el error va en
- * la respuesta, con lo que se haya gastado hasta ahí.
+ * Una llamada y, si la API la deja a medias (`pause_turn`) y queda tiempo, una sola continuación. Nunca lanza: el error va en la respuesta,
+ * con lo que se haya gastado hasta ahí. Lo que entrega el modelo se vuelve a validar con `esquema`.
  */
-export async function buscarConApi(cliente: ClienteApi, p: PedidoApi, ahora: () => number = Date.now): Promise<RespuestaApi> {
-  const salida: RespuestaApi = { lugares: [], paginas: new Set(), usd: 0, busquedas: 0, error: null, cortada: false };
-  const mensajes: Anthropic.MessageParam[] = [{ role: "user", content: p.pedido }];
+export async function llamarConEntrega<T>(cliente: ClienteApi, p: PedidoConEntrega<T>, ahora: () => number = Date.now): Promise<RespuestaConEntrega<T>> {
+  const salida: RespuestaConEntrega<T> = { dato: null, paginas: new Set(), usd: 0, busquedas: 0, error: null, cortada: false };
+  const mensajes: Anthropic.MessageParam[] = [{ role: "user", content: p.contenido }];
   for (let vuelta = 0; vuelta < 2; vuelta++) {
     const restante = p.hasta - ahora();
     if (restante < 10_000) {
@@ -145,10 +158,10 @@ export async function buscarConApi(cliente: ClienteApi, p: PedidoApi, ahora: () 
       respuesta = await cliente.messages.create(
         {
           model: MODELO_RUTINAS,
-          max_tokens: 8000,
+          max_tokens: p.maxTokens ?? 8000,
           output_config: { effort: ESFUERZO_RUTINAS },
-          system: SISTEMA,
-          tools: [...p.herramientas, HERRAMIENTA_PROPONER],
+          system: p.sistema,
+          tools: [...p.herramientas, p.entrega],
           messages: mensajes,
         },
         { timeout: restante, maxRetries: 0 },
@@ -165,11 +178,11 @@ export async function buscarConApi(cliente: ClienteApi, p: PedidoApi, ahora: () 
     salida.busquedas += respuesta.usage?.server_tool_use?.web_search_requests ?? 0;
     paginasDe(respuesta.content, salida.paginas);
 
-    const entrega = respuesta.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === HERRAMIENTA_PROPONER.name);
+    const entrega = respuesta.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === p.entrega.name);
     if (entrega) {
-      const leida = Entrega.safeParse(entrega.input);
+      const leida = p.esquema.safeParse(entrega.input);
       if (!leida.success) salida.error = "La lista llegó con otra forma";
-      else salida.lugares = leida.data.lugares.slice(0, LUGARES_POR_LLAMADA * 2);
+      else salida.dato = leida.data;
       return salida;
     }
     if (respuesta.stop_reason === "pause_turn") {
@@ -187,4 +200,11 @@ export async function buscarConApi(cliente: ClienteApi, p: PedidoApi, ahora: () 
   }
   salida.error = "La búsqueda no terminó a tiempo";
   return salida;
+}
+
+/** Una búsqueda de lugares: `llamarConEntrega` con las reglas y la herramienta de «Buscar lugares». */
+export async function buscarConApi(cliente: ClienteApi, p: PedidoApi, ahora: () => number = Date.now): Promise<RespuestaApi> {
+  const r = await llamarConEntrega(cliente, { sistema: SISTEMA, contenido: p.pedido, herramientas: p.herramientas, entrega: HERRAMIENTA_PROPONER, esquema: Entrega, hasta: p.hasta }, ahora);
+  const { dato, ...resto } = r;
+  return { ...resto, lugares: dato ? dato.lugares.slice(0, LUGARES_POR_LLAMADA * 2) : [] };
 }

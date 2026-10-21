@@ -1,8 +1,13 @@
 /**
- * Dispara un paso del motor sin esperar al cron (OL-428): al crear una corrida (la hoja «Correr») y al terminar un paso que dejó trabajo.
- * Llama a `/api/rutinas/correr` con `CRON_SECRET` desde el servidor, nunca desde el navegador. El secreto solo viaja a un sitio propio:
- * en producción, somosnosotros.org; fuera de ella, el host de la petición si es uno de los de Vercel de este despliegue o la Mac (localhost).
- * Cualquier otro host (una cabecera manipulada) no recibe nada. Sin secreto no dispara y lo dice en el registro; nunca lanza.
+ * Dispara un paso del motor sin esperar al cron (OL-428): al crear una corrida (la hoja «Correr»), al terminar un paso que dejó trabajo y
+ * cuando Ciudades o Corridas encuentran una corrida varada (OL-429, `rescate.ts`). Llama a `/api/rutinas/correr` con `CRON_SECRET` desde el
+ * servidor, nunca desde el navegador. El secreto solo viaja a un sitio propio: en producción, somosnosotros.org; fuera de ella, el host de la
+ * petición si es uno de los de Vercel de este despliegue o la Mac (localhost). Cualquier otro host (una cabecera manipulada) no recibe nada.
+ *
+ * La cadena de pasos es un solo hilo: cada paso pide el siguiente una vez. Si esa petición se pierde (la noche del 20 de octubre, con la puesta
+ * en producción de #546 a medias, una corrida de San Luis se quedó «corriendo» siete minutos), nadie la volvía a pedir hasta el cron del día
+ * siguiente y no quedaba rastro. Por eso (OL-429): hasta tres intentos dentro del tiempo que le queda a la función (un 401 no se reintenta: el
+ * secreto no cambia), la respuesta se cierra sin leerla y, si no se logra, una línea en el registro del servidor con el motivo. Nunca lanza.
  */
 
 export const ORIGEN_PRODUCCION = "https://somosnosotros.org";
@@ -20,15 +25,35 @@ export function origenPropio(host: string | null | undefined, protocolo: string 
   return PROPIOS.includes(h) || deVercel.includes(h) ? `https://${h}` : null;
 }
 
-export type Disparo = "disparado" | "sin secreto" | "sin origen" | "falló";
+export type Disparo = "disparado" | "sin secreto" | "sin origen" | "rechazado" | "falló";
 
-/** Pide un paso. La ruta responde enseguida (corre el paso después de responder), así que se espera poco. */
-export async function dispararPaso(
-  origen: string | null,
-  opciones: { secreto?: string; pedir?: typeof fetch; avisar?: (texto: string) => void } = {},
-): Promise<Disparo> {
+/** Cuánto espera cada intento la respuesta (la ruta responde 202 enseguida y corre el paso después de responder). */
+export const PLAZO_INTENTO_MS = 8_000;
+/** Las pausas entre intentos. */
+export const PAUSAS_MS = [1_000, 3_000] as const;
+/** Con menos de esto por delante no se intenta: la función se acaba antes de saber si llegó. */
+const MINIMO_MS = 1_500;
+
+export type OpcionesDisparo = {
+  secreto?: string;
+  pedir?: typeof fetch;
+  avisar?: (texto: string) => void;
+  /** Hasta cuándo (Date.now()) puede durar todo, reintentos incluidos; por omisión, lo que tarden tres intentos. */
+  hasta?: number;
+  intentos?: number;
+  /** Para las pruebas: la espera entre intentos y el reloj. */
+  esperar?: (ms: number) => Promise<void>;
+  ahora?: () => number;
+};
+
+const dormir = (ms: number) => new Promise<void>((listo) => setTimeout(listo, ms));
+
+/** Pide un paso. Devuelve qué pasó; si no se pudo, lo dice en el registro (sin el secreto ni la dirección). */
+export async function dispararPaso(origen: string | null, opciones: OpcionesDisparo = {}): Promise<Disparo> {
   const secreto = "secreto" in opciones ? opciones.secreto : process.env.CRON_SECRET;
   const avisar = opciones.avisar ?? ((t: string) => console.warn(t));
+  const ahora = opciones.ahora ?? Date.now;
+  const esperar = opciones.esperar ?? dormir;
   if (!secreto) {
     avisar("rutinas: falta CRON_SECRET; la corrida espera al cron");
     return "sin secreto";
@@ -37,15 +62,36 @@ export async function dispararPaso(
     avisar("rutinas: no se reconoce el sitio; la corrida espera al cron");
     return "sin origen";
   }
-  try {
-    const r = await (opciones.pedir ?? fetch)(`${origen}/api/rutinas/correr`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${secreto}` },
-      signal: AbortSignal.timeout(10_000),
-      cache: "no-store",
-    });
-    return r.ok ? "disparado" : "falló";
-  } catch {
-    return "falló";
+  const intentos = Math.max(1, opciones.intentos ?? 3);
+  const hasta = opciones.hasta ?? ahora() + intentos * PLAZO_INTENTO_MS + PAUSAS_MS.reduce((s, p) => s + p, 0);
+  let motivo = "sin tiempo";
+  for (let i = 0; i < intentos; i++) {
+    if (i > 0) {
+      const pausa = PAUSAS_MS[Math.min(i - 1, PAUSAS_MS.length - 1)];
+      if (hasta - ahora() < pausa + MINIMO_MS) break;
+      await esperar(pausa);
+    }
+    const queda = hasta - ahora();
+    if (queda < MINIMO_MS) break;
+    try {
+      const r = await (opciones.pedir ?? fetch)(`${origen}/api/rutinas/correr`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${secreto}` },
+        signal: AbortSignal.timeout(Math.min(PLAZO_INTENTO_MS, queda)),
+        cache: "no-store",
+      });
+      // La respuesta no se lee: se cierra para no dejar la conexión ocupada.
+      await r.body?.cancel().catch(() => undefined);
+      if (r.ok) return "disparado";
+      motivo = `respondió ${r.status}`;
+      if (r.status === 401 || r.status === 403) {
+        avisar(`rutinas: el motor no aceptó el secreto (${r.status}); la corrida espera al cron`);
+        return "rechazado";
+      }
+    } catch {
+      motivo = "no respondió";
+    }
   }
+  avisar(`rutinas: no se pudo pedir el paso (${motivo}); lo retoma Ciudades o el cron`);
+  return "falló";
 }

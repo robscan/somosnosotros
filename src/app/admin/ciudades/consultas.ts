@@ -1,8 +1,12 @@
 import "server-only";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { leerPanelCiudades, type CiudadPanel, type PanelCiudades } from "@/lib/ciudadesAdmin";
 import { cargarCiudades, cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { esUuid } from "@/lib/formulario";
 import { leerBandeja, type Bandeja } from "@/lib/propuestas";
+import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
+import { corridasVaradas, rescatarVaradas, type CorridaVista } from "@/lib/rutinas/rescate";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -39,4 +43,20 @@ export async function cargarBandeja(corrida: string): Promise<{ bandeja: Bandeja
   if (data === null) return { bandeja: null, error: false };
   const bandeja = leerBandeja(data);
   return { bandeja, error: !bandeja };
+}
+
+/**
+ * La red de seguridad de la cadena de pasos (OL-429; `src/lib/rutinas/rescate.ts`): si al cargar Ciudades o Corridas hay una corrida varada
+ * (pendiente o «corriendo» sin nadie que la trabaje y sin avanzar en más de 2 minutos), el servidor pide un paso después de responder, con
+ * `CRON_SECRET`, como la hoja «Correr». La pantalla no cambia ni espera; si algo falla aquí, solo queda una línea en el registro.
+ */
+export async function pedirPasoSiHayVaradas(corridas: readonly CorridaVista[], ahora: Date = new Date()): Promise<void> {
+  if (!corridasVaradas(corridas, ahora).length) return;
+  try {
+    const h = await headers();
+    const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+    after(() => rescatarVaradas(corridas, ahora, () => dispararPaso(origen)));
+  } catch {
+    console.warn("rutinas: no se pudo pedir el paso de una corrida varada; la retoma el cron");
+  }
 }

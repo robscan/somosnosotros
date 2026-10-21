@@ -237,12 +237,19 @@ test("bandeja: «Aceptar las 2» acepta una por una; un error se queda en su tar
   assert.equal(await cafe.getByRole("button", { name: "Aceptar" }).count(), 1, "la tarjeta sigue para decidir");
 });
 
-test("bandeja: un evento aceptado espera a la rutina de agendas; sin propuestas, una frase y nada más", async (t) => {
+test("bandeja: un evento sin punto no se publica y lo dice en su tarjeta; aceptado, se publica y «Ver ficha» lleva a él; sin propuestas, una frase", async (t) => {
   const page = await abrir(t, "vista=bandeja");
-  await page.evaluate(() => (window.qa.respuestas.aceptarPropuesta = { ok: true, href: null }));
-  await tocar(page, page.getByRole("listitem").filter({ hasText: "Noche de prueba" }).getByRole("button", { name: "Aceptar" }));
-  await page.getByText("Aceptaste Noche de prueba · se publica con la rutina de agendas").waitFor();
-  assert.equal(await page.getByRole("link", { name: "Ver ficha" }).count(), 0, "un evento aceptado no tiene ficha todavía");
+  const noche = page.getByRole("listitem").filter({ hasText: "Noche de prueba" });
+  // OL-429: el servidor no lo acepta si no lo puede publicar (sin lugar registrado ni punto en la ciudad) y dice por qué.
+  const sinPunto = "No se publicó: «Foro Fantasma» no está en el directorio y el mapa no lo encuentra en San Luis Potosí. Recházala o da de alta el lugar.";
+  await page.evaluate((error) => (window.qa.respuestas.aceptarPropuesta = { ok: false, error }), sinPunto);
+  await tocar(page, noche.getByRole("button", { name: "Aceptar" }));
+  await noche.getByRole("alert").filter({ hasText: "no está en el directorio" }).waitFor();
+  assert.equal(await noche.getByRole("button", { name: "Rechazar" }).count(), 1, "la tarjeta sigue para rechazarla");
+  await page.evaluate(() => (window.qa.respuestas.aceptarPropuesta = { ok: true, href: "/eventos/noche-de-prueba" }));
+  await tocar(page, noche.getByRole("button", { name: "Aceptar" }));
+  await page.getByText("Aceptaste Noche de prueba", { exact: true }).waitFor();
+  assert.equal(await page.getByRole("link", { name: "Ver ficha" }).getAttribute("href"), "/eventos/noche-de-prueba", "«Ver ficha» lleva al evento publicado");
   const vacia = await abrir(t, "vista=bandeja&vacia=1");
   assert.equal(await vacia.locator("main").innerText(), "Nada por revisar en esta corrida.");
 });

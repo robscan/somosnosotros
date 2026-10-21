@@ -79,7 +79,11 @@ describe("la bandeja", () => {
     expect(esMotivo("me cae mal")).toBe(false);
     expect(textoDecidida("Café X", { aceptada: false, motivo: "fuera_de_la_ciudad" })).toBe("Rechazaste Café X · fuera de la ciudad");
     expect(textoDecidida("Foro X", { aceptada: true, tipo: "lugar" })).toBe("Aceptaste Foro X");
-    expect(textoDecidida("Noche", { aceptada: true, tipo: "evento" })).toBe("Aceptaste Noche · se publica con la rutina de agendas");
+    // OL-429: un evento aceptado ya se publica al aceptarlo; si no se pudo en ese momento, la nota del servidor va detrás.
+    expect(textoDecidida("Noche", { aceptada: true, tipo: "evento" })).toBe("Aceptaste Noche");
+    expect(textoDecidida("Noche", { aceptada: true, tipo: "evento" }, "no se pudo publicar ahora: se publica con la siguiente corrida de agendas")).toBe(
+      "Aceptaste Noche · no se pudo publicar ahora: se publica con la siguiente corrida de agendas",
+    );
   });
   it("lee lo que da panel_propuestas; sin corrida, null", () => {
     const b = leerBandeja({

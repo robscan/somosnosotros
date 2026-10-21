@@ -6,10 +6,14 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { hrefArtista, validarArtista } from "@/lib/artistas";
 import { BOTONES, HOJAS, leerTope, type TipoBoton } from "@/lib/ciudadesAdmin";
+import { configPublica } from "@/lib/config";
+import { hrefEvento } from "@/lib/eventos";
 import { esUuid } from "@/lib/formulario";
 import { hrefLugar, validarLugar } from "@/lib/lugares";
 import { entradaDeArtista, entradaDeLugar, esMotivo, nombreDe, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
+import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararEvento, type Preparado } from "@/lib/rutinas/publicarEvento";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
 
@@ -19,7 +23,8 @@ import { zonaDePunto } from "@/lib/zona";
  * «Correr» deja la corrida pendiente con su tope y, después de responder, pide su primer paso al motor (OL-428), que la corre con la API.
  */
 export type Resultado = { ok: true } | { ok: false; error: string };
-export type ResultadoAceptar = { ok: true; href: string | null } | { ok: false; error: string };
+/** `nota`: una frase que la bandeja añade a la línea de lo hecho (un evento aceptado que no se pudo publicar en ese momento). */
+export type ResultadoAceptar = { ok: true; href: string | null; nota?: string } | { ok: false; error: string };
 
 async function soloAdmin() {
   const actual = await usuarioActual();
@@ -96,18 +101,34 @@ async function leerPropuesta(supabase: Awaited<ReturnType<typeof soloAdmin>>["su
 
 /**
  * Aceptar: un lugar pasa por la misma validación del alta de lugar y por «¿es este?» (150 m); un artista, por la del alta de artista. La
- * ficha y la marca de la propuesta se guardan juntas (`aceptar_propuesta`). Un evento queda aceptado: lo publica la rutina de agendas (OL-428).
+ * ficha y la marca de la propuesta se guardan juntas (`aceptar_propuesta`).
+ *
+ * Un evento (OL-429) se publica por el camino del importador (`src/lib/rutinas/publicarEvento.ts`): antes de aceptar se arma y se comprueba
+ * (lugar registrado o sitio con punto dentro de la ciudad, `validarEvento`, «¿Es este?»); si no se puede publicar, no se acepta y la tarjeta
+ * dice por qué en una frase. Si se puede: se acepta con la sesión (la base exige el rol), se inserta con la llave de servicio y sin avisos
+ * (`origen = 'rutina-agendas'`, `fuente_url` = la agenda) y la propuesta queda ligada a su evento (`ficha_id`), así «Ver ficha» lleva a él.
  */
 export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   if (!esUuid(id)) return { ok: false, error: "No encontramos esa propuesta. Recarga la página." };
-  const { supabase } = await soloAdmin();
+  const { supabase, yo } = await soloAdmin();
   const leida = await leerPropuesta(supabase, id);
   if ("error" in leida) return { ok: false, error: leida.error };
   const { p, ciudad } = leida;
   if (p.estado !== "propuesta") return { ok: false, error: "Ya se decidió. Recarga la página." };
 
   let ficha: Record<string, unknown> = {};
-  if (p.tipo === "lugar") {
+  let evento: Preparado | null = null;
+  const admin = p.tipo === "evento" ? clienteAdmin() : null;
+  if (p.tipo === "evento") {
+    if (!admin) return { ok: false, error: "No se puede publicar ahora. Intenta más tarde." };
+    const enCiudad = await ciudadDeCorrida(admin, p.corrida_id);
+    if (!enCiudad) return { ok: false, error: "Esa ciudad ya no está. Recarga la página." };
+    const lugares = await lugaresDeCiudad(admin, enCiudad);
+    if (!lugares) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
+    const token = configPublica().mapboxToken;
+    evento = await prepararEvento({ db: admin, mapbox: token ? { token } : null, ahora: new Date() }, p.datos, enCiudad, lugares, yo);
+    if (!evento.ok) return { ok: false, error: evento.error };
+  } else if (p.tipo === "lugar") {
     const { datos, errores } = validarLugar(entradaDeLugar(p, ciudad), { esAdmin: true });
     const primero = Object.values(errores)[0];
     if (primero) return { ok: false, error: primero };
@@ -132,6 +153,20 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
     revalidatePath("/lugares");
   }
   if (p.tipo === "artista") revalidatePath("/artistas");
+  if (p.tipo === "evento" && admin && evento?.ok) {
+    const creado = await insertarEvento(admin, evento.fila);
+    if (!creado) return { ok: true, href: null, nota: "no se pudo publicar ahora: se publica con la siguiente corrida de agendas" };
+    if (!(await ligarFicha(admin, id, creado.id))) {
+      // Otra pestaña la aceptó a la vez y ya tiene su evento: este sobra.
+      await admin.from("eventos").delete().eq("id", creado.id);
+      return { ok: true, href: null };
+    }
+    revalidatePath("/");
+    revalidatePath(hrefEvento(creado));
+    const lugarId = evento.fila.lugar_id;
+    if (typeof lugarId === "string") revalidatePath(`/lugares/${lugarId}`);
+    return { ok: true, href: hrefEvento(creado) };
+  }
   if (!r.ficha_id) return { ok: true, href: null };
   return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
 }

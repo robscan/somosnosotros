@@ -33,7 +33,7 @@ export default function Bandeja({ propuestas, fuentesConTanda }: { propuestas: P
   async function aceptar(p: PropuestaEnBandeja) {
     poner(p.id, { enCamino: "aceptar" });
     const r = await aceptarPropuesta(p.id);
-    poner(p.id, r.ok ? { decidida: { texto: textoDecidida(p.nombre, { aceptada: true, tipo: p.tipo }), href: r.href, rechazo: false } } : { error: r.error });
+    poner(p.id, r.ok ? { decidida: { texto: textoDecidida(p.nombre, { aceptada: true, tipo: p.tipo }, r.nota), href: r.href, rechazo: false } } : { error: r.error });
   }
   async function rechazar(p: PropuestaEnBandeja, motivo: MotivoRechazo) {
     setRechazando(null);
