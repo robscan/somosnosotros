@@ -7,6 +7,8 @@ import { ORIGEN } from "./sitemap";
  * Administración › Showcase (OL-426, bitácora 459; lo firmado en OL-425, bitácora 458). Lógica pura: la rúbrica, la píldora de actividad, el
  * orden y los filtros de la lista de candidatos, sus cifras de la base, el CSV para el consejo y la lectura del CSV de redes. Nada de aquí lee la
  * base ni sale de Administración: las notas y los puntajes son juicios sobre personas (§4.3 de la investigación del 20 de octubre).
+ * OL-437 (bitácora 469): la base propone sola el puntaje de circulación, actividad y vínculo, y el de obra con las evidencias aceptadas; lo fijado
+ * a mano manda y, sin fijado ni propuesta, la señal queda «sin datos» (no es un 0).
  */
 
 // ---------- estados ----------
@@ -50,9 +52,13 @@ export function esSenal(v: unknown): v is Senal {
 export function esPuntaje(v: unknown): v is Puntaje {
   return v === null || v === 0 || v === 1 || v === 2;
 }
-/** La suma de la rúbrica: lo que no se ha puntuado cuenta 0. */
+/** La suma de la rúbrica: lo que no tiene puntaje cuenta 0. */
 export function sumaRubrica(p: Puntajes): number {
   return SENALES.reduce((n, s) => n + (p[s.clave] ?? 0), 0);
+}
+/** Cuántos pasan al consejo: los que llegan a 5 de 8 con el puntaje que vale de cada señal; los descartados no pasan. */
+export function pasanAlConsejo(lista: readonly { estado: Estado; suma: number }[]): number {
+  return lista.filter((c) => c.estado !== "descartado" && c.suma >= UMBRAL_CONSEJO).length;
 }
 /** Cuántas señales ya tienen puntaje. */
 export function puntuadas(p: Puntajes): number {
@@ -145,7 +151,7 @@ export function textoLectura(l: Lectura, hoy: string, articulo = false): string 
 }
 
 // ---------- lo que la lista lee de la base ----------
-export type FilaArtista = { id: string; slug: string | null; nombre: string; disciplina: string; ciudad: string; foto: string | null; redes: unknown };
+export type FilaArtista = { id: string; slug: string | null; nombre: string; disciplina: string; ciudad: string; foto: string | null; redes: unknown; portada?: string | null };
 export type FilaCandidato = { artista_id: string; estado: Estado; puntaje_circulacion: Puntaje; puntaje_obra: Puntaje; puntaje_actividad: Puntaje; puntaje_vinculo: Puntaje; notas: string | null; actualizado_en?: string | null };
 export type FilaLectura = Lectura & { artista_id: string };
 export type FilaEvento = { id: string; titulo: string; slug: string | null; lugar_id: string | null; evento_padre_id: string | null; clase: string | null; inicio: string; ciudad: string | null };
@@ -161,7 +167,13 @@ export type FilasShowcase = {
   lugares: FilaLugar[];
   /** Los festivales de esos actos que no salen en `eventos` (el marco puede ser de otro año). */
   festivales?: Pick<FilaEvento, "id" | "titulo">[];
+  /** OL-437: las fichas reclamadas (`artistas_cuentas`) y las que tienen novedades visibles, para proponer el vínculo. */
+  cuentas?: { artista_id: string }[];
+  novedades?: { artista_id: string }[];
+  /** OL-437: las evidencias aceptadas de obra, para proponer la obra. */
+  evidencias?: FilaEvidencia[];
 };
+export type FilaEvidencia = EvidenciaBreve & { artista_id: string };
 
 /** Un renglón de la lista: lo del catálogo, lo del showcase y lo que se cuenta en la base. */
 export type Candidato = {
@@ -173,7 +185,9 @@ export type Candidato = {
   foto: string | null;
   instagram: string | null;
   estado: Estado;
-  puntajes: Puntajes;
+  /** Cada señal con lo fijado a mano, lo propuesto por la base y el puntaje que vale (OL-437). */
+  valores: Valores;
+  /** La suma de lo que vale. */
   suma: number;
   nota: string | null;
   eventos: number;
@@ -211,8 +225,11 @@ export function circulacionDe(eventos: readonly FilaEvento[], lugares: ReadonlyM
   return { eventos: actos, foros: porLugar.size, festivales: porFestival.size, programadoPor: nombres.map((x) => x.nombre), fuera };
 }
 
-/** Arma la lista de candidatos con lo leído: un renglón por artista visible (sin fila en el showcase, candidato implícito). */
-export function armarCandidatos(f: FilasShowcase): Candidato[] {
+/**
+ * Arma la lista de candidatos con lo leído: un renglón por artista visible (sin fila en el showcase, candidato implícito). Cada señal lleva lo que
+ * propone la base con lo leído (OL-437) y lo que vale: lo fijado a mano o, si no, lo propuesto. `hoy`, YYYY-MM-DD en la ciudad.
+ */
+export function armarCandidatos(f: FilasShowcase, hoy: string): Candidato[] {
   const candidatos = new Map(f.candidatos.map((c) => [c.artista_id, c]));
   const lugares = new Map(f.lugares.map((l) => [l.id, l]));
   const eventos = new Map(f.eventos.map((e) => [e.id, e]));
@@ -225,12 +242,19 @@ export function armarCandidatos(f: FilasShowcase): Candidato[] {
     lista.push(e);
     eventosDe.set(ea.artista_id, lista);
   }
-  const lecturasDe = new Map<string, Lectura[]>();
-  for (const l of f.lecturas) lecturasDe.set(l.artista_id, [...(lecturasDe.get(l.artista_id) ?? []), l]);
+  const lecturasDe = agrupar(f.lecturas);
+  const evidenciasDe = agrupar(f.evidencias ?? []);
+  const reclamadas = new Set((f.cuentas ?? []).map((c) => c.artista_id));
+  const conNovedades = new Set((f.novedades ?? []).map((n) => n.artista_id));
   return f.artistas.map((a) => {
     const c = candidatos.get(a.id);
-    const puntajes = puntajesDe(c);
     const circ = circulacionDe(eventosDe.get(a.id) ?? [], lugares, festivales, a.ciudad);
+    const lecturas = lecturasDe.get(a.id) ?? [];
+    const propuestas = propuestasDe(
+      { circulacion: circ, ciudad: a.ciudad, evidencias: evidenciasDe.get(a.id) ?? [], lecturas, reclamada: reclamadas.has(a.id), novedades: conNovedades.has(a.id), portada: !!a.portada },
+      hoy,
+    );
+    const valores = valoresDe(puntajesDe(c), propuestas);
     return {
       id: a.id,
       slug: a.slug || a.id,
@@ -240,16 +264,26 @@ export function armarCandidatos(f: FilasShowcase): Candidato[] {
       foto: a.foto,
       instagram: normalizarRedes(a.redes).find((e) => e.red === "instagram")?.url ?? null,
       estado: c?.estado ?? "candidato",
-      puntajes,
-      suma: sumaRubrica(puntajes),
+      valores,
+      suma: sumaValores(valores),
       nota: primeraLinea(c?.notas),
       eventos: circ.eventos,
       foros: circ.foros,
       festivales: circ.festivales,
       programadoPor: circ.programadoPor,
-      redes: redPrincipal(lecturasDe.get(a.id) ?? []),
+      redes: redPrincipal(lecturas),
     };
   });
+}
+/** Las filas de cada artista. */
+function agrupar<T extends { artista_id: string }>(filas: readonly T[]): Map<string, T[]> {
+  const por = new Map<string, T[]>();
+  for (const f of filas) {
+    const lista = por.get(f.artista_id);
+    if (lista) lista.push(f);
+    else por.set(f.artista_id, [f]);
+  }
+  return por;
 }
 
 // ---------- la vista de la lista: filtros, orden y página en la URL ----------
@@ -342,11 +376,19 @@ export function conteosEstado(lista: readonly Candidato[]): Record<Estado | "tod
   for (const x of lista) c[x.estado]++;
   return c;
 }
-/** «686 candidatos · 7 invitados · 2 confirmados · pasan al consejo con 5 de 8», o «12 de 686 candidatos» si se filtra. */
-export function lineaCifras(total: number, conteos: Record<Estado | "todos", number>, visibles: number | null): string {
+/**
+ * «686 candidatos · 7 invitados · 2 confirmados · 41 pasan al consejo con 5 de 8», o «12 de 686 candidatos» si se filtra. `pasan`, cuántos
+ * llegan a 5 de 8 con el puntaje que vale (`pasanAlConsejo`).
+ */
+export function lineaCifras(total: number, conteos: Record<Estado | "todos", number>, visibles: number | null, pasan: number): string {
   if (visibles !== null) return `${visibles} de ${total} ${total === 1 ? "candidato" : "candidatos"}`;
   const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
-  return [plural(total, "candidato", "candidatos"), plural(conteos.invitado, "invitado", "invitados"), plural(conteos.confirmado, "confirmado", "confirmados"), `pasan al consejo con ${UMBRAL_CONSEJO} de ${MAXIMO_RUBRICA}`].join(" · ");
+  return [
+    plural(total, "candidato", "candidatos"),
+    plural(conteos.invitado, "invitado", "invitados"),
+    plural(conteos.confirmado, "confirmado", "confirmados"),
+    `${plural(pasan, "pasa", "pasan")} al consejo con ${UMBRAL_CONSEJO} de ${MAXIMO_RUBRICA}`,
+  ].join(" · ");
 }
 /** «7 eventos · 4 foros · 1 festival». */
 export function textoCirculacion(c: Pick<Candidato, "eventos" | "foros" | "festivales">): string {
@@ -527,7 +569,26 @@ export function leerCsvRedes(texto: string, ahora: Date): { filas: FilaCsvRedes[
 }
 
 // ---------- el CSV para el consejo ----------
-export const COLUMNAS_CSV_CONSEJO = ["artista", "disciplina", "ciudad", "estado", "circulacion", "obra", "actividad", "vinculo", "total", "eventos", "foros", "festivales", "seguidores", "publicaciones", "ultima_publicacion", "ficha", "instagram", "nota"] as const;
+/** La rúbrica que vale, luego lo propuesto por la base y lo fijado a mano en columnas aparte (OL-437): el consejo ve de dónde sale cada número. */
+export const COLUMNAS_CSV_CONSEJO = [
+  "artista",
+  "disciplina",
+  "ciudad",
+  "estado",
+  ...SENALES.map((s) => s.clave),
+  "total",
+  ...SENALES.map((s) => `${s.clave}_propuesto` as const),
+  ...SENALES.map((s) => `${s.clave}_fijado` as const),
+  "eventos",
+  "foros",
+  "festivales",
+  "seguidores",
+  "publicaciones",
+  "ultima_publicacion",
+  "ficha",
+  "instagram",
+  "nota",
+] as const;
 /** Una celda de CSV: entre comillas si hace falta y, si es texto que empieza como una fórmula (=, +, -, @), con un apóstrofo delante para que la
  *  hoja de cálculo no la ejecute. */
 export function celdaCsv(v: string | number | null | undefined): string {
@@ -536,18 +597,20 @@ export function celdaCsv(v: string | number | null | undefined): string {
   const t = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
   return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
 }
-/** El CSV de la lista filtrada para el consejo: rúbrica, estado, cifras, enlaces y la primera línea de las notas. Con BOM, para Excel. */
+/**
+ * El CSV de la lista filtrada para el consejo: la rúbrica que vale (vacía si no hay datos), el total, lo propuesto y lo fijado de cada señal,
+ * estado, cifras, enlaces y la primera línea de las notas. Con BOM, para Excel.
+ */
 export function csvConsejo(lista: readonly Candidato[]): string {
   const filas = lista.map((c) => [
     c.nombre,
     etiquetaDisciplina(c.disciplina),
     c.ciudad,
     etiquetaEstado(c.estado),
-    c.puntajes.circulacion,
-    c.puntajes.obra,
-    c.puntajes.actividad,
-    c.puntajes.vinculo,
+    ...SENALES.map((s) => c.valores[s.clave].puntaje),
     c.suma,
+    ...SENALES.map((s) => c.valores[s.clave].propuesta?.puntaje ?? null),
+    ...SENALES.map((s) => c.valores[s.clave].fijado),
     c.eventos,
     c.foros,
     c.festivales,
@@ -629,6 +692,153 @@ export function resumenSenal(senal: Senal, d: DatosSenales, hoy: string): string
   if (!aceptadas.length) return "Sin evidencias aceptadas";
   const tipos = [...new Set(aceptadas.map((e) => etiquetaTipo(e.tipo).toLowerCase()))].join(", ");
   return `${plural(aceptadas.length, "evidencia aceptada", "evidencias aceptadas")}: ${tipos}`;
+}
+
+// ---------- lo que propone la base (OL-437) ----------
+/**
+ * El puntaje que la base propone para una señal, con su porqué en una línea («4 foros y un festival este año»). Nadie lo escribe: se calcula al
+ * leer, cada vez, con la regla de la rúbrica y lo que hay (eventos del año, lecturas de redes, la ficha y las evidencias aceptadas). Lo fijado a
+ * mano en la hoja de la señal manda; sin fijado vale el propuesto; sin los dos, la señal queda «sin datos»: no es un 0 y no suma.
+ */
+export type Propuesta = { puntaje: 0 | 1 | 2; motivo: string };
+export type Propuestas = Record<Senal, Propuesta | null>;
+export const SIN_PROPUESTAS: Propuestas = { circulacion: null, obra: null, actividad: null, vinculo: null };
+/** Lo que se necesita de una evidencia para proponer la obra. */
+export type EvidenciaBreve = Pick<Evidencia, "senal" | "tipo" | "titulo" | "fecha" | "estado">;
+/** Lo que se necesita para proponer las cuatro señales (lo mismo que el resumen, con las evidencias en breve). */
+export type DatosPropuestas = Omit<DatosSenales, "evidencias"> & { evidencias: readonly EvidenciaBreve[] };
+
+const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+const unoOVarios = (n: number, uno: string, varios: string) => (n === 1 ? uno : `${n} ${varios}`);
+
+/**
+ * Circulación: 0 = un foro o ninguno · 1 = de 2 a 3 foros, o un festival · 2 = 4 foros o más, o un festival y fechas fuera de su ciudad. Cuenta
+ * los foros distintos, los festivales y las fechas fuera de su ciudad del año (`circulacionDe`). Sin eventos en la base no se sabe si circula (la
+ * base solo tiene lo que llegó por las agendas): sin datos, no un 0.
+ */
+export function propuestaCirculacion(c: Pick<Circulacion, "eventos" | "foros" | "festivales" | "fuera">, ciudad: string): Propuesta | null {
+  if (!c.eventos && !c.festivales) return null;
+  const puntaje = c.foros >= 4 || (c.festivales > 0 && c.fuera > 0) ? 2 : c.foros >= 2 || c.festivales > 0 ? 1 : 0;
+  const donde = [c.foros ? unoOVarios(c.foros, "un foro", "foros") : null, c.festivales ? unoOVarios(c.festivales, "un festival", "festivales") : null].filter(Boolean).join(" y ");
+  const fuera = c.fuera ? `; ${cuenta(c.fuera, "fecha", "fechas")} fuera de ${ciudad}` : "";
+  return { puntaje, motivo: donde ? `${donde} este año${fuera}` : `${cuenta(c.eventos, "evento", "eventos")} este año, en sitios sin ficha${fuera}` };
+}
+
+/** Publica cada semana si sale una publicación o más por semana entre dos lecturas de la misma red con 7 días o más entre ellas. */
+type Ritmo = { red: Red; porSemana: number; leido_en: string };
+function ritmoSemanal(lecturas: readonly Lectura[]): Ritmo | null {
+  let mejor: Ritmo | null = null;
+  for (const red of new Set(lecturas.map((l) => l.red))) {
+    const [ultima, ...antes] = lecturas.filter((l) => l.red === red && l.publicaciones !== null).sort((a, b) => b.leido_en.localeCompare(a.leido_en));
+    if (!ultima) continue;
+    const dia = ultima.leido_en.slice(0, 10);
+    const previa = antes.find((l) => diasEntre(l.leido_en.slice(0, 10), dia) >= 7);
+    if (!previa) continue;
+    const nuevas = ultima.publicaciones! - previa.publicaciones!;
+    const porSemana = (nuevas / diasEntre(previa.leido_en.slice(0, 10), dia)) * 7;
+    if (nuevas > 0 && porSemana >= 1 && (!mejor || porSemana > mejor.porSemana)) mejor = { red, porSemana, leido_en: ultima.leido_en };
+  }
+  return mejor;
+}
+const textoRitmo = (r: Ritmo) => `Publica ${Math.round(r.porSemana) <= 1 ? "una vez" : `unas ${Math.round(r.porSemana)} veces`} por semana en ${etiquetaRed(r.red)}`;
+
+/**
+ * Actividad, con la última publicación de sus lecturas de redes: 2 si fue hace 7 días o menos (o si sus lecturas dicen que publica cada semana y
+ * publicó en el último mes); 1 hasta 45 días (cada mes, con la misma holgura que la píldora «Publica cada mes» de la tarjeta); 0 desde 46 días (no
+ * llega a cada mes; la tarjeta dice «Sin publicar en 45 días»). Sin lecturas, o si no dicen cuándo publicó, sin datos.
+ */
+export function propuestaActividad(lecturas: readonly Lectura[], hoy: string): Propuesta | null {
+  if (!lecturas.length) return null;
+  const ultima = ultimasPorRed(lecturas)
+    .filter((l) => l.ultima_publicacion)
+    .sort((a, b) => b.ultima_publicacion!.localeCompare(a.ultima_publicacion!))[0];
+  const ritmo = ritmoSemanal(lecturas);
+  if (!ultima) return ritmo && diasEntre(ritmo.leido_en.slice(0, 10), hoy) <= 30 ? { puntaje: 2, motivo: textoRitmo(ritmo) } : null;
+  const dias = Math.max(0, diasEntre(ultima.ultima_publicacion!.slice(0, 10), hoy));
+  const red = etiquetaRed(ultima.red);
+  if (dias <= 7) return { puntaje: 2, motivo: `Publicó ${haceDias(dias)} en ${red}` };
+  if (ritmo && dias <= 30) return { puntaje: 2, motivo: textoRitmo(ritmo) };
+  if (dias <= 45) return { puntaje: 1, motivo: `Publicó ${haceDias(dias)} en ${red}` };
+  return { puntaje: 0, motivo: `Sin publicar desde ${haceDias(dias)} en ${red}` };
+}
+
+/** Vínculo, de la ficha: 0 si nadie la lleva (sin cuenta ligada), 1 reclamada, 2 reclamada con novedades o portada. Siempre hay datos. */
+export function propuestaVinculo(d: Pick<DatosSenales, "reclamada" | "novedades" | "portada">): Propuesta {
+  if (!d.reclamada) return { puntaje: 0, motivo: "Nadie lleva su ficha" };
+  const extras = [d.novedades && "novedades", d.portada && "portada"].filter(Boolean).join(" y ");
+  return extras ? { puntaje: 2, motivo: `Ficha reclamada, con ${extras}` } : { puntaje: 1, motivo: "Ficha reclamada, sin novedades ni portada" };
+}
+
+/** Lo que cuenta como reconocimiento aunque su tipo no sea premio ni beca: una residencia o una selección oficial. */
+const RECONOCIMIENTO = /\bresidencia|\bseleccionad[oa]s?\b|\bselecci[oó]n oficial/i;
+const DIAS_OBRA = 730; // los últimos 24 meses
+const masReciente = (a: EvidenciaBreve, b: EvidenciaBreve) => (b.fecha ?? "").localeCompare(a.fecha ?? "") || a.titulo.localeCompare(b.titulo, "es");
+function citar(lista: readonly EvidenciaBreve[], etiqueta: (e: EvidenciaBreve) => string): string {
+  const [e] = [...lista].sort(masReciente);
+  const titulo = e.titulo.length > 80 ? `${e.titulo.slice(0, 79).trimEnd()}…` : e.titulo;
+  return `${etiqueta(e)}: «${titulo}»${lista.length > 1 ? ` y ${lista.length - 1} más` : ""}`;
+}
+/**
+ * Obra y reconocimiento: la base no la sabe; solo se propone con las evidencias **aceptadas** de la señal obra (las propuestas por la rutina no
+ * cuentan hasta que alguien las acepta). 2 si alguna es premio, beca, residencia o selección oficial; 1 si hay obra de los últimos 24 meses (o sin
+ * fecha); 0 si todo lo aceptado es más viejo. Sin evidencias aceptadas, sin datos.
+ */
+export function propuestaObra(evidencias: readonly EvidenciaBreve[], hoy: string): Propuesta | null {
+  const aceptadas = evidencias.filter((e) => e.senal === "obra" && e.estado === "aceptada");
+  if (!aceptadas.length) return null;
+  const reconocimiento = aceptadas.filter((e) => e.tipo === "premio" || e.tipo === "beca" || RECONOCIMIENTO.test(e.titulo));
+  if (reconocimiento.length) return { puntaje: 2, motivo: citar(reconocimiento, (e) => (e.tipo === "premio" || e.tipo === "beca" ? etiquetaTipo(e.tipo) : "Reconocimiento")) };
+  const recientes = aceptadas.filter((e) => !e.fecha || diasEntre(e.fecha.slice(0, 10), hoy) <= DIAS_OBRA);
+  if (recientes.length) return { puntaje: 1, motivo: citar(recientes, (e) => etiquetaTipo(e.tipo)) };
+  return { puntaje: 0, motivo: "Su obra aceptada es de hace más de 24 meses" };
+}
+
+/** Las cuatro propuestas de un artista. */
+export function propuestasDe(d: DatosPropuestas, hoy: string): Propuestas {
+  return { circulacion: propuestaCirculacion(d.circulacion, d.ciudad), obra: propuestaObra(d.evidencias, hoy), actividad: propuestaActividad(d.lecturas, hoy), vinculo: propuestaVinculo(d) };
+}
+
+// ---------- qué vale de cada señal (OL-437) ----------
+/** De dónde sale el puntaje que vale: fijado a mano, propuesto por la base, o sin datos. */
+export type Origen = "fijado" | "propuesto" | "sin_datos";
+export type Valor = { puntaje: Puntaje; origen: Origen; fijado: Puntaje; propuesta: Propuesta | null };
+export type Valores = Record<Senal, Valor>;
+/** Lo fijado a mano manda; si no hay, vale lo propuesto; sin los dos, sin datos. */
+export function valorDe(fijado: Puntaje, propuesta: Propuesta | null): Valor {
+  if (fijado !== null) return { puntaje: fijado, origen: "fijado", fijado, propuesta };
+  if (propuesta) return { puntaje: propuesta.puntaje, origen: "propuesto", fijado: null, propuesta };
+  return { puntaje: null, origen: "sin_datos", fijado: null, propuesta: null };
+}
+export function valoresDe(fijados: Puntajes, propuestas: Propuestas): Valores {
+  return Object.fromEntries(SENALES.map((s) => [s.clave, valorDe(fijados[s.clave], propuestas[s.clave])])) as Valores;
+}
+/** El puntaje que vale de cada señal (null: sin datos). */
+export function puntajesQueValen(v: Valores): Puntajes {
+  return Object.fromEntries(SENALES.map((s) => [s.clave, v[s.clave].puntaje])) as Puntajes;
+}
+/** La suma «de 8» con lo que vale. */
+export function sumaValores(v: Valores): number {
+  return sumaRubrica(puntajesQueValen(v));
+}
+/** Una opción de la hoja del puntaje: 0, 1 o 2 (fijar ese) o null (quitar lo fijado: vuelve lo propuesto, o queda sin datos). */
+export type OpcionPuntaje = { valor: Puntaje; etiqueta: string; detalle: string; marca: "fijado" | "propuesto" | null };
+/**
+ * Las opciones de la hoja del puntaje de una señal (OL-437). Tocar 0, 1 o 2 lo fija a mano, también el que ya propone la base («fijarlo igual»).
+ * Lo fijado lleva la paloma; lo propuesto, el destello, mientras nadie lo fije. Con algo fijado, la última opción lo quita: «Volver al
+ * propuesto» si la base propone algo, «Sin puntuar» si no.
+ */
+export function opcionesPuntaje(niveles: readonly string[], v: Valor): OpcionPuntaje[] {
+  const opciones: OpcionPuntaje[] = niveles.map((n, i) => ({
+    valor: i as Puntaje,
+    etiqueta: String(i),
+    detalle: n,
+    marca: v.origen === "fijado" && v.fijado === i ? "fijado" : v.origen === "propuesto" && v.propuesta?.puntaje === i ? "propuesto" : null,
+  }));
+  if (v.origen !== "fijado") return opciones;
+  if (!v.propuesta) return [...opciones, { valor: null, etiqueta: "Sin puntuar", detalle: "No cuenta en la suma", marca: null }];
+  const p = v.propuesta.puntaje;
+  const detalle = p === v.fijado ? `El mismo ${p}, sin fijar: cambia si cambian sus datos` : `Vale el ${p} en vez del ${v.fijado} fijado a mano`;
+  return [...opciones, { valor: null, etiqueta: "Volver al propuesto", detalle, marca: "propuesto" }];
 }
 
 /** Un cambio de estado del registro, con quién (id de su cuenta) y cuándo. */

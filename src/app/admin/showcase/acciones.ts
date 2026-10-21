@@ -68,7 +68,7 @@ export async function cambiarEstado(artistaId: string, estado: Estado, slug: str
   return { ok: true };
 }
 
-/** Poner (o quitar, con null) el puntaje de una señal. */
+/** Fijar a mano el puntaje de una señal, o quitarlo con null: entonces vale lo que propone la base (OL-437) o queda sin datos. */
 export async function cambiarPuntaje(artistaId: string, senal: Senal, puntaje: Puntaje, slug: string): Promise<Resultado> {
   if (!esUuid(artistaId) || !esSenal(senal) || !esPuntaje(puntaje)) return { ok: false, error: "Ese puntaje no existe." };
   const db = await soloAdmin();

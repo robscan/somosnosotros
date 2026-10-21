@@ -55,6 +55,7 @@ before(async () => {
       import NotasFicha from './NotasFicha';
       import InvestigarFicha from './InvestigarFicha';
       import plantilla from '../../../../components/ui/Plantilla.module.css';
+      import { valorDe } from '../../../../lib/showcase';
       import '../../../globals.css';
       window.qa = { acciones: [], falla: false };
       const ID = '11111111-1111-4111-8111-111111111111';
@@ -65,15 +66,25 @@ before(async () => {
         { valor: 'confirmado', etiqueta: 'Confirmado', detalle: 'Aceptó la invitación' },
         { valor: 'descartado', etiqueta: 'Descartado', detalle: 'No sigue; se puede volver' },
       ];
-      const obra = { clave: 'obra', titulo: 'Obra y reconocimiento', resumen: '1 evidencia aceptada: obra', puntaje: 1,
+      // OL-437: lo que vale de cada señal (valorDe: lo fijado a mano manda; si no, lo propuesto por la base; si no, sin datos).
+      const obra = { clave: 'obra', titulo: 'Obra y reconocimiento', resumen: '1 evidencia aceptada: obra', valor: valorDe(1, null),
         niveles: ['Nada verificable', 'Obra publicada o expuesta en los últimos 24 meses', 'Además, beca, premio, residencia o selección oficial'],
         evidencias: [{ id: 'e1', senal: 'obra', tipo: 'obra', titulo: 'Sencillo en plataformas', url: 'https://musica.example/s', fecha: null, fuente: 'musica.example', leida_por: 'persona', estado: 'aceptada', creado_en: '2026-10-10T00:00:00Z', detalle: 'Obra · musica.example · aceptada, la leyó una persona' }] };
+      const circulacion = { clave: 'circulacion', titulo: 'Circulación', resumen: '7 eventos en 4 foros y 1 festival este año', valor: valorDe(null, { puntaje: 2, motivo: '4 foros y un festival este año' }),
+        niveles: ['Un foro o ninguno', 'De 2 a 3 foros, o un festival', '4 foros o más, o un festival y fechas fuera de San Luis'], evidencias: [] };
+      const actividad = { clave: 'actividad', titulo: 'Actividad', resumen: 'Sin lecturas de redes', valor: valorDe(null, null),
+        niveles: ['Más de 90 días sin publicar', 'Publica cada mes', 'Publica cada semana y anuncia sus fechas'], evidencias: [] };
+      const vinculo = { clave: 'vinculo', titulo: 'Vínculo con la app', resumen: 'Ficha reclamada; con novedades', valor: valorDe(1, { puntaje: 2, motivo: 'Ficha reclamada, con novedades' }),
+        niveles: ['Sin ficha propia', 'Ficha reclamada', 'Con novedades o portada'], evidencias: [] };
       const enCurso = new URLSearchParams(location.search).has('encurso');
       const propuestas = [{ id: '22222222-2222-4222-8222-222222222222', senal: 'obra', tipo: 'premio', titulo: 'Mención estatal', url: 'https://cultura.example/p', fecha: '2025-11-20', fuente: null, leida_por: 'rutina', estado: 'propuesta', creado_en: '2026-10-20T00:00:00Z', detalle: '20 nov 2025 · leída por la rutina hoy', dominio: 'cultura.example' }];
       createRoot(document.getElementById('root')).render(
         <main id="ficha" className={plantilla.paginaContenido}>
           <EstadoFicha artistaId={ID} slug="sangre-de-coyote" nombre="Sangre de Coyote" estado="invitado" titulo="Invitado" detalle="Por ti el 18 oct · antes, revisado el 15 oct" opciones={opciones} />
+          <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={circulacion} />
           <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={obra} />
+          <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={actividad} />
+          <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={vinculo} />
           <InvestigarFicha artistaId={ID} slug="sangre-de-coyote" nombre="Sangre de Coyote" ciudad="San Luis Potosí" enCurso={enCurso} avance={enCurso ? 0.5 : null}
             texto={enCurso ? 'Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD' : 'Investigado el 21 oct · 5 evidencias por revisar · 0,38 USD'} credito="Crédito: 187,40 USD · vence el 11 de noviembre" />
           <PorRevisar propuestas={propuestas} slug="sangre-de-coyote" />
@@ -321,4 +332,73 @@ test("Investigar en curso: el renglón dice cómo va con su barra; la hoja solo 
   await hoja.getByRole("button", { name: "Cerrar", exact: true }).last().click();
   await hoja.waitFor({ state: "detached" });
   assert.deepEqual(await acciones(p), []);
+});
+
+/** La casilla del puntaje a la derecha de una señal: lo que se ve, de dónde sale y cómo se dibuja. */
+const casilla = (p, titulo) =>
+  p
+    .getByRole("list", { name: titulo })
+    .locator("span[data-origen]")
+    .evaluate((x) => {
+      const e = getComputedStyle(x);
+      // El contorno es el filete de la casilla: transparente («ninguno») salvo en lo propuesto, discontinuo.
+      return { ve: (x.querySelector("b, small") ?? x).textContent, origen: x.dataset.origen, contorno: e.borderTopColor === "rgba(0, 0, 0, 0)" ? "ninguno" : e.borderTopStyle, fondo: e.backgroundColor };
+    });
+const opcionesDe = (hoja) => hoja.locator("ul button").evaluateAll((bs) => bs.map((b) => [b.firstChild.nextSibling.textContent, b.dataset.marca ?? null, b.getAttribute("aria-pressed")]));
+
+test("OL-437 · señal propuesta: el puntaje en contorno; la hoja dice «Propuesto: 2 · …» con el destello en el 2; tocarlo lo fija igual", async (t) => {
+  const p = await abrir(t);
+  assert.deepEqual(await casilla(p, "Circulación"), { ve: "2", origen: "propuesto", contorno: "dashed", fondo: "rgba(0, 0, 0, 0)" });
+  const fila = p.getByRole("button", { name: /^Circulación/ });
+  assert.ok((await fila.textContent()).endsWith("2, propuesto"), "se oye que es propuesto");
+  await fila.click();
+  const hoja = p.getByRole("dialog", { name: "Puntaje de Circulación" });
+  await hoja.waitFor();
+  assert.equal((await hoja.locator("p").first().innerText()).trim(), "Propuesto: 2 · 4 foros y un festival este año");
+  assert.deepEqual(await opcionesDe(hoja), [["0", null, "false"], ["1", null, "false"], ["2", "propuesto", "false"]], "el destello en el 2, nada fijado, sin «Sin puntuar»");
+  assert.equal(await hoja.locator("button[data-marca=propuesto] > svg").evaluate((s) => getComputedStyle(s).color), "rgb(109, 52, 200)", "el destello, en violeta");
+  await hoja.getByRole("button", { name: /^2/ }).click();
+  await hoja.waitFor({ state: "detached" });
+  await fila.click();
+  await p.getByRole("dialog").getByRole("button", { name: /^1/ }).click();
+  assert.deepEqual(await acciones(p), [
+    ["cambiarPuntaje", ID, "circulacion", 2, "sangre-de-coyote"],
+    ["cambiarPuntaje", ID, "circulacion", 1, "sangre-de-coyote"],
+  ], "tocar el propuesto lo fija igual; tocar otro lo cambia");
+});
+
+test("OL-437 · señal fijada distinta de lo propuesto: relleno; la paloma en lo fijado y «Volver al propuesto» lo quita", async (t) => {
+  const p = await abrir(t);
+  const vinculo = await casilla(p, "Vínculo con la app");
+  assert.deepEqual([vinculo.ve, vinculo.origen, vinculo.contorno], ["1", "fijado", "ninguno"]);
+  assert.notEqual(vinculo.fondo, "rgba(0, 0, 0, 0)");
+  await p.getByRole("button", { name: /^Vínculo con la app/ }).click();
+  const hoja = p.getByRole("dialog", { name: "Puntaje de Vínculo con la app" });
+  await hoja.waitFor();
+  assert.equal((await hoja.locator("p").first().innerText()).trim(), "Propuesto: 2 · Ficha reclamada, con novedades");
+  assert.deepEqual(await opcionesDe(hoja), [["0", null, "false"], ["1", "fijado", "true"], ["2", null, "false"], ["Volver al propuesto", "propuesto", null]]);
+  assert.ok((await hoja.getByRole("button", { name: /^Volver al propuesto/ }).innerText()).includes("Vale el 2 en vez del 1 fijado a mano"));
+  // Tocar lo que ya está fijado no hace nada (cierra).
+  await hoja.getByRole("button", { name: /^1/ }).click();
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), []);
+  await p.getByRole("button", { name: /^Vínculo con la app/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: /^Volver al propuesto/ }).click();
+  await p.getByRole("dialog").waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), [["cambiarPuntaje", ID, "vinculo", null, "sangre-de-coyote"]]);
+});
+
+test("OL-437 · sin datos: el renglón lo dice (no un 0), la hoja da el resumen y tocar un número lo fija", async (t) => {
+  const p = await abrir(t);
+  const actividad = await casilla(p, "Actividad");
+  assert.deepEqual([actividad.ve, actividad.origen, actividad.contorno], ["sin datos", "sin_datos", "ninguno"]);
+  assert.equal(await p.getByRole("list", { name: "Actividad" }).locator("span[data-origen] b").count(), 0, "ningún número");
+  await p.getByRole("button", { name: /^Actividad/ }).click();
+  const hoja = p.getByRole("dialog", { name: "Puntaje de Actividad" });
+  await hoja.waitFor();
+  assert.equal((await hoja.locator("p").first().innerText()).trim(), "Sin lecturas de redes");
+  assert.deepEqual(await opcionesDe(hoja), [["0", null, "false"], ["1", null, "false"], ["2", null, "false"]], "sin destello ni «Sin puntuar»");
+  await hoja.getByRole("button", { name: /^0/ }).click();
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), [["cambiarPuntaje", ID, "actividad", 0, "sangre-de-coyote"]], "un 0 fijado a mano sí es un 0");
 });

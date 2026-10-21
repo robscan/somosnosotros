@@ -173,6 +173,25 @@
   background: var(--ok-suave);
   color: var(--ok);
 }
+/* OL-437: lo que propone la base (nadie lo fijó a mano) va en el color de su puntaje, sin relleno y con contorno discontinuo; lo fijado, relleno
+   como siempre. Toda casilla lleva su filete transparente, así lo propuesto no cambia de medida al dibujarlo. */
+.senal,
+.n {
+  border: 1px solid transparent;
+}
+.senal[data-origen="propuesto"],
+.n[data-origen="propuesto"] {
+  border-style: dashed;
+  border-color: currentColor;
+  background: none;
+}
+/* «Sin datos» no es un 0: dos palabras chicas donde iría el número */
+.sinDatos {
+  font-size: var(--letra-2xs);
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.6;
+}
 /* El puntaje a la derecha de una señal en la ficha: del tamaño de un toque */
 .chica {
   grid-area: accion;
@@ -199,6 +218,9 @@
 
 /* ---------- 3. La tabla (Vista: tabla): en el teléfono se desliza dentro de su caja; en escritorio usa el ancho de las fichas ---------- */
 .tabla {
+  /* OL-437: la caja de la tabla es la que contiene lo que solo se oye de cada celda (ui/SoloLector, en posición absoluta); sin esto, lo de las
+     columnas que se deslizan fuera estiraba la página a 453 px en un teléfono de 320 y el chip «Artes visuales» dejaba de tocarse de 44. */
+  position: relative;
   grid-column: 1 / -1;
   justify-self: center;
   width: min(100% - 2 * var(--espacio-5), var(--columna-ancha));
@@ -334,6 +356,15 @@
 .opcion[aria-pressed="true"],
 .opcion[aria-pressed="true"] > svg {
   color: var(--primario);
+}
+/* OL-437: el destello marca lo que propone la base (y «Volver al propuesto»), en el violeta de las acciones */
+.opcion[data-marca="propuesto"] > svg {
+  color: var(--primario);
+}
+/* «Propuesto: 2» al principio de la hoja de una señal */
+.propuesto {
+  color: var(--texto);
+  font-weight: 700;
 }
 .hueco {
   visibility: hidden;

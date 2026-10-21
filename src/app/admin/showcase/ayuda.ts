@@ -16,13 +16,29 @@ const niveles = (clave: (typeof SENALES)[number]["clave"]) =>
 export const AYUDA_SHOWCASE: DiccionarioAyuda = {
   rubrica: {
     titulo: "Rúbrica",
-    texto: `Cuatro señales de 0 a 2: circulación, obra, actividad y vínculo con la app. Pasa al consejo con ${UMBRAL_CONSEJO} de ${MAXIMO_RUBRICA}. Solo cuenta lo que tiene una evidencia aceptada.`,
+    texto: `Cuatro señales de 0 a 2: circulación, obra, actividad y vínculo con la app. Pasa al consejo con ${UMBRAL_CONSEJO} de ${MAXIMO_RUBRICA}. La base propone cada puntaje (contorno discontinuo) y lo que fijas a mano manda (relleno).`,
+    detalle: "Sin propuesta ni puntaje fijado, la señal dice «sin datos»: no es un 0 y no suma. En la hoja de cada señal tocas un número para fijarlo y «Volver al propuesto» lo deja otra vez en manos de la base.",
     manual: "rubrica",
   },
-  circulacion: { titulo: "Circulación", texto: `${niveles("circulacion")}.`, detalle: "El resumen sale de la base: sus eventos del año, en cuántos foros y festivales, y las fechas fuera de su ciudad.", manual: "circulacion" },
-  obra: { titulo: "Obra y reconocimiento", texto: `${niveles("obra")}.`, detalle: "Cuenta lo que tiene una evidencia aceptada con su enlace: obra publicada, beca, premio, residencia o selección oficial.", manual: "obra" },
-  actividad: { titulo: "Actividad", texto: `${niveles("actividad")}.`, detalle: "El resumen sale de la última lectura de sus redes: cuándo publicó por última vez.", manual: "actividad" },
-  vinculo: { titulo: "Vínculo con la app", texto: `${niveles("vinculo")}.`, detalle: "Sale de la ficha: si alguien la reclamó y si tiene novedades o portada propia.", manual: "vinculo" },
+  circulacion: {
+    titulo: "Circulación",
+    texto: `${niveles("circulacion")}.`,
+    detalle: "La base lo propone con sus eventos del año: foros distintos, festivales y fechas fuera de su ciudad. Sin eventos en la base, sin datos.",
+    manual: "circulacion",
+  },
+  obra: {
+    titulo: "Obra y reconocimiento",
+    texto: `${niveles("obra")}.`,
+    detalle: "La base no lo sabe: se propone con las evidencias aceptadas con su enlace (1 con obra de los últimos 24 meses; 2 con beca, premio, residencia o selección oficial). Sin ellas, sin datos.",
+    manual: "obra",
+  },
+  actividad: {
+    titulo: "Actividad",
+    texto: `${niveles("actividad")}.`,
+    detalle: "La base lo propone con la última lectura de sus redes: 2 si publicó en los últimos 7 días (o publica cada semana), 1 hasta 45 días, 0 después. Sin lecturas, sin datos.",
+    manual: "actividad",
+  },
+  vinculo: { titulo: "Vínculo con la app", texto: `${niveles("vinculo")}.`, detalle: "La base lo propone con la ficha: si alguien la reclamó y si tiene novedades o portada propia.", manual: "vinculo" },
   estado: {
     titulo: "Estado",
     texto: "Candidato, revisado, invitado, confirmado o descartado. Cada cambio queda con quién y cuándo, y nada sale de Administración.",
