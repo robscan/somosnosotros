@@ -209,6 +209,8 @@ Todo sale de `datos`, y `etiquetaDeForma(datos, ahora, zona)` (en `src/lib/rutin
 - `npm run inventario`: sin novedades. `npm run medir`: 49 pantallas × 4 anchos, **sin novedades** (Ciudades, su hoja, la bandeja y Corridas,
   s32 a s35: 149 · 175 · 59 · 61 nodos a 390, como en la 461 y la 462).
 - `npm run test:componentes` completo: **669 de 669** (Chrome real; la bandeja no cambió).
+- **Con `main` unido** (`0eb456bf`, OL-430 #550; choques en `src/lib/propuestas.ts` y OPEN_LOOPS resueltos conservando lo de las dos ramas):
+  typecheck y lint en verde, **4 275 unitarias**, **test:db 2 225/0**, inventario y medir sin novedades, **componentes 672 de 672**.
 
 ## Lo que se dejó fuera
 
