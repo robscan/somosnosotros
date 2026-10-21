@@ -171,10 +171,20 @@ function parseCond(texto) {
   const valor = partes.join(".");
   return { tipo: "cond", col, op, valor, neg };
 }
+/** El valor de una columna o de una ruta JSON como la lee PostgREST (OL-434: `datos->>marco_propuesto`, `datos->marco->>id`); `->>`, en texto. */
+function valorDe(fila, col) {
+  const partes = String(col).split(/(->>?)/);
+  let v = fila[partes[0]];
+  for (let i = 1; i < partes.length; i += 2) {
+    v = v && typeof v === "object" ? v[partes[i + 1]] : undefined;
+    if (partes[i] === "->>" && v !== null && v !== undefined && typeof v !== "string") v = JSON.stringify(v);
+  }
+  return v;
+}
 function cumple(fila, c) {
   if (!fila) return false;
   if (c.tipo === "cond") {
-    const r = comparar(fila[c.col], c.op, c.valor);
+    const r = comparar(valorDe(fila, c.col), c.op, c.valor);
     return c.neg ? !r : r;
   }
   const r = c.tipo === "and" ? c.hijos.every((h) => cumple(fila, h)) : c.hijos.some((h) => cumple(fila, h));
@@ -350,6 +360,27 @@ const servidor = http.createServer(async (req, res) => {
     const filas = cambiadas.map((fila) => proyectar("eventos", fila, parseSelect(url.searchParams.get("select")), []));
     if (quiereObjeto(req)) return filas.length === 1 ? responder(res, 200, filas[0]) : responder(res, 406, { code: "PGRST116", message: `${filas.length} filas` });
     return responder(res, 200, filas);
+  }
+  // OL-434: lo que cambia de una propuesta (rechazar, deshacer, ligar su evento) y los eventos que publica la rutina al aceptar en la bandeja
+  // (`origen = rutina-agendas`) se guardan en memoria (otro arranque empieza limpio), para recorrer con toques reales «Aceptar» un acto que
+  // espera y luego su festival: el festival se publica, sus actos que esperaban cuelgan de él y la línea dice cuántos. Los permisos reales, en
+  // PostgreSQL (`supabase/tests/pg/ciudades-admin.test.mjs`); la publicación, con su base falsa (`publicarEvento.test.ts`).
+  if (tabla === "propuestas" && req.method === "PATCH") {
+    const { propios } = parseFiltros(url.searchParams);
+    const cambiadas = tablas.propuestas.filter((fila) => propios.every((c) => cumple(fila, c)));
+    for (const fila of cambiadas) Object.assign(fila, cuerpo);
+    const salida = cambiadas.map((fila) => proyectar(tabla, fila, parseSelect(url.searchParams.get("select")), []));
+    if (quiereObjeto(req)) return salida.length === 1 ? responder(res, 200, salida[0]) : responder(res, 406, { code: "PGRST116", message: `${salida.length} filas` });
+    return responder(res, 200, salida);
+  }
+  const deLaRutina = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean);
+  if (tabla === "eventos" && req.method === "POST" && deLaRutina.length && deLaRutina.every((e) => e.origen === "rutina-agendas")) {
+    const slugDe = (t) => String(t ?? "evento").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const creadas = deLaRutina.map((e) => ({ id: crypto.randomUUID(), slug: slugDe(e.titulo), visible: true, borrador: false, cancelado: false, evento_padre_id: null, termina: e.fin ?? e.inicio, creado_en: new Date().toISOString(), ...e }));
+    tablas.eventos.push(...creadas);
+    const salida = creadas.map((fila) => proyectar(tabla, fila, parseSelect(url.searchParams.get("select")), []));
+    if (quiereObjeto(req)) return responder(res, 201, salida[0]);
+    return responder(res, 201, salida);
   }
   // OL-432: dar de alta, abrir u ocultar una ciudad y correr o cancelar una búsqueda se guardan en memoria (otro arranque empieza limpio), para
   // recorrer «Añadir ciudad» → el panel y «Correr» → «Pendiente» con toques reales. Como la base: una ciudad por slug y una búsqueda en curso

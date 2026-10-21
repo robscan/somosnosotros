@@ -1,5 +1,6 @@
-/** OL-427 y OL-432 (bitácoras 460 y 464): Administración › Ciudades con sus componentes reales —la lista general con «Añadir ciudad», las
- *  tarjetas del panel de una ciudad con la hoja de «Correr» y la bandeja—, su CSS y Chrome real vía Playwright, a 390×844. Las acciones del
+/** OL-427, OL-432 y OL-434 (bitácoras 460, 464 y 467): Administración › Ciudades con sus componentes reales —la lista general con «Añadir
+ *  ciudad», las tarjetas del panel de una ciudad con la hoja de «Correr» y la bandeja, con la forma de cada propuesta de evento armada por
+ *  `armarBandejas` como en la página—, su CSS y Chrome real vía Playwright, a 390×844. Las acciones del
  *  servidor se sustituyen por unas que anotan con qué se llamaron y contestan lo que cada prueba pide (Mapbox, simulado ahí): así se ve qué manda
  *  cada toque. Toques reales por coordenadas, nunca `element.click()`. No corre con `npm test`; se corre con `npm run test:componentes`.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs node --test este-archivo */
@@ -40,6 +41,7 @@ const responder = async (nombre, args) => {
   window.qa.llamadas.push([nombre, ...args]);
   const r = window.qa.respuestas[nombre];
   if (r === "espera") return new Promise((ok) => (window.qa.soltar = () => ok({ ok: true, href: null })));
+  if (typeof r === "function") return r(...args);
   if (r) return r;
   const d = POR_OMISION[nombre];
   return typeof d === "function" ? d(...args) : (d ?? { ok: true });
@@ -68,6 +70,30 @@ const PROPUESTAS = [
   { id: "p3", tipo: "lugar", fuente: "Sistema de Información Cultural", nombre: "Galería de prueba", vista: VISTA("Galería de prueba", "Calle 3, Oaxaca") },
   { id: "p4", tipo: "evento", fuente: "Búsqueda web", nombre: "Noche de prueba", vista: { ...VISTA("Noche de prueba", null), que: "Evento · propuesto por la rutina" } },
 ];
+// OL-434: lo que deja la rutina de agendas (OL-433) en San Luis Potosí, como lo lee `panel_propuestas`. Las horas, en la de San Luis (-06:00).
+const mx = (fechaHora) => new Date(`${fechaHora}:00-06:00`).toISOString();
+const FEST = "f0000000-0000-4000-8000-000000000001";
+const AGENDA = "Agenda de Cultura del estado";
+const WEB = "Búsqueda web";
+const ev = (id, fuente, datos) => ({ id, tipo: "evento", fuente, datos: { url: "https://cultura.example/agenda", leida: mx("2026-10-21T09:00"), ...datos }, creado_en: mx("2026-10-21T09:30") });
+const actoX = (id, titulo, fuente, dia, extra = {}) =>
+  ev(id, fuente, { titulo, inicio: mx(`2026-10-${dia}T19:00`), lugar: "Plaza de Armas", marco_propuesto: FEST, programa: "Xantolo 2026", espera: "Se publica cuando aceptes el festival «Xantolo 2026».", ...extra });
+const FORMAS = [
+  // Un acto que llegó por otra fuente antes que su festival: va debajo de él de todos modos.
+  actoX("acto-son", "Son huasteco en la plaza", WEB, "30", { variantes: ["Noche de son huasteco"] }),
+  ev("recital", AGENDA, { titulo: "Recital de guitarra", inicio: mx("2026-10-25T18:00"), lugar: "Teatro de la Paz" }),
+  ev(FEST, AGENDA, { titulo: "Xantolo 2026", clase: "festival", actos: 4, programa: "Xantolo 2026", inicio: mx("2026-10-28T19:00"), termina: mx("2026-11-02T23:00"), lugar: "Plaza de Armas" }),
+  actoX("acto-danza", "Danza de Huehues", AGENDA, "29"),
+  ev("taller", AGENDA, { titulo: "Taller de grabado en linóleo", clase: "taller", inicio: mx("2026-11-03T17:00"), lugar: "ACHE Galería", sesiones: ["03", "05", "10", "12"].map((d) => ({ inicio: mx(`2026-11-${d}T17:00`), fin: mx(`2026-11-${d}T19:00`) })) }),
+  ev("cineclub", AGENDA, { titulo: "Cineclub: Macario", inicio: mx("2026-10-28T19:00"), lugar: "Casa del Poeta Ramón López Velarde", serie: { fechas: ["10-28", "11-04", "11-11", "11-18"].map((d) => mx(`2026-${d}T19:00`)), cada: 7 } }),
+  ev("expo", AGENDA, { titulo: "Inauguración: Raíces", clase: "exposicion", exposicion: "Raíces", termina: mx("2026-11-30T23:59"), inicio: mx("2026-10-23T19:00"), lugar: "Museo Nacional de la Máscara" }),
+  ev("cine", WEB, { titulo: "Función de clausura", inicio: mx("2026-11-01T19:00"), lugar: "Centro Cultural Universitario Bicentenario", marco: { id: "e0000000-0000-4000-8000-000000000009", titulo: "Festival de Cine de Invierno" } }),
+];
+const BANDEJA_FORMAS = {
+  corrida: { id: "c-agendas", tipo: "agendas", ciudad: "san-luis-potosi", ciudad_nombre: "San Luis Potosí", estado: "terminada", creado_en: mx("2026-10-21T09:00"), tope_usd: 3, gasto_usd: 1.2, propuestas: 8, aceptadas: 0, rechazadas: 0, por_revisar: 8 },
+  propuestas: FORMAS,
+  fuentes_con_tanda: [AGENDA],
+};
 const FILAS = [
   { slug: "san-luis-potosi", nombre: "San Luis Potosí", estado: "abierta", consultas: 125, lugares: 71, eventos: 64, porRevisar: 17, linea: { texto: "Buscando agendas y eventos · 1 de 3 fuentes", alerta: false, avance: 0.3 } },
   { slug: "ciudad-de-mexico", nombre: "Ciudad de México", estado: "abierta", consultas: 12, lugares: 0, eventos: 3, porRevisar: 40, linea: { texto: "Una búsqueda falló y otra llegó al tope", alerta: true, avance: null } },
@@ -95,6 +121,7 @@ before(async () => {
       import ListaCiudades from './src/app/admin/ciudades/ListaCiudades';
       import TarjetaBusqueda from './src/app/admin/ciudades/TarjetaBusqueda';
       import Bandeja from './src/app/admin/ciudades/Bandeja';
+      import { armarBandejas } from './src/lib/bandejaFormas';
       import Boton from './src/components/ui/Boton';
       import { BOTONES, lineaBusqueda, siguientePaso, textoRevisar, vezPasada } from './src/lib/ciudadesAdmin';
       import admin from './src/app/admin/admin.module.css';
@@ -126,7 +153,11 @@ before(async () => {
         </ul>;
       }
       const vista = q.get('vista');
-      createRoot(document.getElementById('root')).render(<main>{vista === 'bandeja'
+      // OL-434: como la página, con armarBandejas y dos actos de Xantolo ya aceptados que lo esperan.
+      const formas = () => armarBandejas([${JSON.stringify(BANDEJA_FORMAS)}], { aceptados: new Map([['${FEST}', 2]]), festivales: new Map() }, { nombre: 'San Luis Potosí', zona: 'America/Mexico_City' }, AHORA)[0];
+      createRoot(document.getElementById('root')).render(<main>{vista === 'formas'
+        ? <Bandeja propuestas={formas().propuestas} fuentesConTanda={formas().fuentes_con_tanda} nivel={3} />
+        : vista === 'bandeja'
         ? <Bandeja propuestas={q.has('vacia') ? [] : ${JSON.stringify(PROPUESTAS)}} fuentesConTanda={['Sistema de Información Cultural']} nivel={3} />
         : vista === 'panel' ? <Panel caso={q.get('caso')} />
         : <ListaCiudades filas={${JSON.stringify(FILAS)}} credito="Crédito: 197,20 USD · vence el 11 de noviembre" />}</main>);
@@ -432,4 +463,106 @@ test("bandeja: un evento sin punto no se publica y lo dice en su tarjeta; acepta
   assert.equal(await page.getByRole("link", { name: "Ver ficha" }).getAttribute("href"), "/eventos/noche-de-prueba");
   const vacia = await abrir(t, "vista=bandeja&vacia=1");
   assert.equal(await vacia.locator("main").innerText(), "Nada por revisar en esta corrida.");
+});
+
+// ---------- la forma de cada propuesta de evento (OL-434) ----------
+const tarjeta = (page, titulo) => page.getByRole("listitem").filter({ has: page.getByText(titulo, { exact: true }) });
+/** El texto de una tarjeta renglón por renglón (`innerText` deja una línea en blanco alrededor de cada párrafo). */
+const renglones = async (l) => (await l.innerText()).replace(/\n+/g, "\n");
+
+test("formas: el festival va antes que sus actos, que van debajo con sangría aunque uno llegara por otra fuente; dice sus actos y su periodo", async (t) => {
+  const page = await abrir(t, "vista=formas");
+  const titulos = await page.locator("li").evaluateAll((lis) => lis.map((li) => li.querySelector("span")?.textContent));
+  // En su fuente, en el orden en que llegaron; el festival, justo antes que sus actos (el de la búsqueda web llegó antes que él).
+  assert.deepEqual(titulos, ["Recital de guitarra", "Xantolo 2026", "Son huasteco en la plaza", "Danza de Huehues", "Taller de grabado en linóleo", "Cineclub: Macario", "Inauguración: Raíces", "Función de clausura"]);
+  assert.deepEqual(await page.locator("h3").evaluateAll((hs) => hs.map((h) => h.textContent)), ["Agenda de Cultura del estado7", "Búsqueda web1"], "el acto de la búsqueda web va con su festival");
+  const fest = tarjeta(page, "Xantolo 2026");
+  assert.match(await renglones(fest), /Festival · 4 actos\nDel 28 de oct al 2 de nov\nfuente: cultura\.example · leída el 21 oct/);
+  const x = async (l) => (await l.boundingBox()).x;
+  const sangria = (await x(tarjeta(page, "Danza de Huehues"))) - (await x(fest));
+  assert.equal(sangria, 24, "los actos, con la sangría de la columna de los iconos");
+  assert.equal(await x(tarjeta(page, "Recital de guitarra")), await x(fest), "lo que no es suyo, sin sangría");
+  for (const acto of ["Son huasteco en la plaza", "Danza de Huehues"]) {
+    const texto = await tarjeta(page, acto).innerText();
+    assert.match(texto, /^Acto · propuesto por la rutina/);
+    assert.doesNotMatch(texto, /Acto de «Xantolo 2026»/, "bajo su festival no lo repite");
+  }
+  assert.match(await tarjeta(page, "Son huasteco en la plaza").innerText(), /También llegó como: «Noche de son huasteco»/);
+  assert.equal(await fest.getByRole("button", { name: "Aceptar el festival y sus 2 actos aceptados" }).count(), 1);
+  // El botón largo parte su texto y cabe en la tarjeta junto a «Rechazar», con su toque de 44.
+  const [caja, boton, rechazar] = await Promise.all([fest.boundingBox(), fest.getByRole("button", { name: /^Aceptar/ }).boundingBox(), fest.getByRole("button", { name: "Rechazar" }).boundingBox()]);
+  assert.ok(boton.x + boton.width <= caja.x + caja.width && boton.x > rechazar.x + rechazar.width, "cabe a la derecha de «Rechazar»");
+  assert.ok(boton.height >= 44 && rechazar.height >= 44);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390, "nada se sale a lo ancho");
+});
+
+test("formas: un acto aceptado antes que su festival dice que espera, y el festival cuenta un acto aceptado más", async (t) => {
+  const page = await abrir(t, "vista=formas");
+  await page.evaluate(() => (window.qa.respuestas.aceptarPropuesta = { ok: true, href: null, nota: "Se publica cuando aceptes el festival «Xantolo 2026».", espera: true }));
+  await tocar(page, tarjeta(page, "Danza de Huehues").getByRole("button", { name: "Aceptar" }));
+  const linea = page.getByRole("status").filter({ hasText: "Danza de Huehues" });
+  await linea.waitFor();
+  assert.equal(await linea.innerText(), "Aceptaste Danza de Huehues · se publica cuando aceptes el festival «Xantolo 2026»");
+  assert.equal(await linea.getByRole("link").count(), 0, "sin «Ver ficha»: todavía no hay evento");
+  assert.doesNotMatch(await page.locator("main").innerText(), /siguiente corrida de agendas/, "nunca la frase de antes");
+  await tarjeta(page, "Xantolo 2026").getByRole("button", { name: "Aceptar el festival y sus 3 actos aceptados" }).waitFor();
+  assert.deepEqual(await llamadas(page), [["aceptarPropuesta", "acto-danza"]]);
+});
+
+test("formas: aceptar el festival con sus actos dice qué se publicó, «Ver ficha» al festival y los actos que esperaban dejan de esperar", async (t) => {
+  const page = await abrir(t, "vista=formas");
+  await page.evaluate((fest) => {
+    window.qa.respuestas.aceptarPropuesta = (id) =>
+      id === fest ? { ok: true, href: "/eventos/xantolo-2026", nota: "se publicó con sus 3 actos", actos: ["acto-danza", "acto-viejo-1", "acto-viejo-2"] } : { ok: true, href: null, nota: "Se publica cuando aceptes el festival «Xantolo 2026».", espera: true };
+  }, FEST);
+  await tocar(page, tarjeta(page, "Danza de Huehues").getByRole("button", { name: "Aceptar" }));
+  await page.getByRole("status").filter({ hasText: "se publica cuando aceptes" }).waitFor();
+  await tocar(page, tarjeta(page, "Xantolo 2026").getByRole("button", { name: "Aceptar el festival y sus 3 actos aceptados" }));
+  const fest = page.getByRole("status").filter({ hasText: "Aceptaste Xantolo 2026" });
+  await fest.waitFor();
+  assert.equal(await fest.innerText(), "Aceptaste Xantolo 2026 · se publicó con sus 3 actos\nVer ficha");
+  assert.equal(await fest.getByRole("link", { name: "Ver ficha" }).getAttribute("href"), "/eventos/xantolo-2026");
+  assert.equal(await page.getByRole("status").filter({ hasText: "Danza de Huehues" }).innerText(), "Aceptaste Danza de Huehues · se publicó con el festival");
+  // El que no se había aceptado sigue por decidir bajo su festival (aceptarlo ahora lo cuelga de él directamente).
+  assert.equal(await tarjeta(page, "Son huasteco en la plaza").getByRole("button", { name: "Aceptar" }).count(), 1);
+  assert.deepEqual(await llamadas(page), [["aceptarPropuesta", "acto-danza"], ["aceptarPropuesta", FEST]]);
+});
+
+test("formas: taller, serie, exposición y el acto de un festival registrado, cada una con su icono en la columna de los iconos", async (t) => {
+  const page = await abrir(t, "vista=formas");
+  const esperado = {
+    "Taller de grabado en linóleo": /Taller · 4 sesiones\nmar 3, jue 5, mar 10 y jue 12 de nov · 5:00\s?–\s?7:00\spm\nACHE Galería · fuente/,
+    "Cineclub: Macario": /Serie · 4 fechas, cada semana\nmié 28 de oct y mié 4, mié 11 y mié 18 de nov · 7:00\spm\n28 oct, 7:00\spm · Casa del Poeta/,
+    "Inauguración: Raíces": /Exposición «Raíces» · hasta el lun 30 de nov\n23 oct, 7:00\spm · Museo Nacional de la Máscara/,
+    "Función de clausura": /Acto de «Festival de Cine de Invierno»\n1 nov, 7:00\spm · Centro Cultural/,
+  };
+  for (const [titulo, forma] of Object.entries(esperado)) {
+    const li = tarjeta(page, titulo);
+    assert.match(await renglones(li), forma, titulo);
+    // El icono de la forma, en la columna de los iconos y a la altura de la primera línea de su forma.
+    const [tipo, icono, linea] = await li.evaluate((el) =>
+      [...el.children]
+        .filter((c) => c.tagName.toLowerCase() === "svg" || c.tagName === "P")
+        .slice(0, 3)
+        .map((c) => {
+          const r = c.getBoundingClientRect();
+          return { x: r.x, y: r.y, h: r.height, tag: c.tagName.toLowerCase() };
+        }),
+    );
+    assert.deepEqual([tipo.tag, icono.tag, linea.tag], ["svg", "svg", "p"], titulo);
+    assert.equal(Math.round(icono.x), Math.round(tipo.x), "en la misma columna que el icono de la tarjeta");
+    const primera = await li.locator("p").first().evaluate((p) => parseFloat(getComputedStyle(p).lineHeight));
+    assert.ok(Math.abs(icono.y + icono.h / 2 - (linea.y + primera / 2)) <= 2, `${titulo}: el icono, a la altura de su línea`);
+  }
+  const enlace = tarjeta(page, "Función de clausura").getByRole("link", { name: "«Festival de Cine de Invierno»" });
+  assert.equal(await enlace.getAttribute("href"), "/eventos/e0000000-0000-4000-8000-000000000009");
+  assert.equal(await tarjeta(page, "Recital de guitarra").locator("p").count(), 0, "un evento como siempre no lleva línea de forma");
+});
+
+test("formas: «Aceptar las 7 de esta fuente» acepta el festival antes que sus actos (también el que llegó por otra fuente)", async (t) => {
+  const page = await abrir(t, "vista=formas");
+  await tocar(page, page.getByRole("button", { name: "Aceptar las 7 de esta fuente" }));
+  await page.getByRole("status").filter({ hasText: "Inauguración: Raíces" }).waitFor();
+  assert.deepEqual((await llamadas(page)).map(([, id]) => id), ["recital", FEST, "acto-son", "acto-danza", "taller", "cineclub", "expo"]);
+  assert.equal(await tarjeta(page, "Función de clausura").getByRole("button", { name: "Aceptar" }).count(), 1, "la de otra fuente, por decidir");
 });

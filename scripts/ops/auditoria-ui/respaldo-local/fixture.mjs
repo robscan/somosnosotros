@@ -838,6 +838,7 @@ const R = {
   cdmxLugares: "abab0001-0000-4000-8000-000000000005",
   cdmxAgendas: "abab0001-0000-4000-8000-000000000006",
   smaLugares: "abab0001-0000-4000-8000-000000000007",
+  slpFormas: "abab0001-0000-4000-8000-000000000008",
 };
 const corridaDe = (id, tipo, ciudad, { tope = 3, gasto = 0, estado = "terminada", dias = 0, fuentes = ["sic", "cultura", "web"], resumen = {} } = {}) => ({
   id, tipo, ciudad, parametros: { fuentes }, tope_usd: tope, gasto_usd: gasto, estado, resumen, creado_por: ADMIN, creado_en: hace(dias),
@@ -853,6 +854,8 @@ const rutinas_corridas = [
   corridaDe(R.cdmxLugares, "lugares", "ciudad-de-mexico", { tope: 1.5, gasto: 1.5, dias: 0.25, resumen: { tope: true, paso: "2 de 3 fuentes", descartados: { de_mas: 12 } } }),
   // San Miguel, ayer (como en producción, bitácora 461): 40 propuestas aceptadas y 41 que esperan a la siguiente.
   corridaDe(R.smaLugares, "lugares", "san-miguel-de-allende", { gasto: 0.36, dias: 1, resumen: { descartados: { de_mas: 41 } } }),
+  // OL-434: San Luis, hoy: la búsqueda de agendas que dejó una propuesta de cada forma (abajo).
+  corridaDe(R.slpFormas, "agendas", "san-luis-potosi", { gasto: 1.24, dias: 0.12, fuentes: AGENDAS, resumen: { festivales: 1, actos: 5, sesiones: 5, series: 4 } }),
 ];
 const SIC = "Sistema de Información Cultural", CULTURA = "Cultura del estado y del municipio", WEB = "Búsqueda web";
 let nPropuesta = 0;
@@ -881,6 +884,40 @@ const propuestas = [
   propuestaDe(R.cdmxLugares, "lugar", CULTURA, lugarCdmx("Casa de Cultura de Coyoacán Centro", "casa_de_cultura", "Calle Higuera 18, Coyoacán", 19.3487, -99.1615, "https://cultura.example/cdmx/18"), "propuesta", 0.25),
   propuestaDe(R.cdmxLugares, "lugar", CULTURA, lugarCdmx("Cine Club La Linterna", "cine", "Calle Tonalá 33, Roma Sur", 19.4093, -99.1588, "https://cultura.example/cdmx/33"), "propuesta", 0.25),
 ];
+// OL-434: lo que deja la rutina de agendas de OL-433 (`src/lib/rutinas/formaEvento.ts`) en una búsqueda de hoy en San Luis, para ver la forma
+// de cada propuesta en su bandeja (`/admin/ciudades/san-luis-potosi/propuestas`) y recorrer «Aceptar» con toques reales: el festival «Xantolo
+// 2026» con dos actos por revisar (uno llegó por la búsqueda web, con otro título en `variantes`) y dos ya aceptados que lo esperan; un recital
+// como siempre; un taller con cuatro sesiones; una feria de tres días seguidos; dos fechas de un cineclub semanal (las otras dos, ya aceptadas);
+// la inauguración de una exposición con su periodo; y un acto del Festival de Cine de Invierno, que ya está en la agenda. Todo inventado: los
+// sitios son lugares del respaldo o llevan su punto dentro de San Luis. Al final del arreglo, así los ids de antes no se mueven.
+const AGENDAS_GOB = "Agendas de gobierno", UNIVERSIDADES = "Universidades y museos", BUSQUEDA_WEB = "Búsqueda web";
+const XANTOLO = "acac0434-0000-4000-8000-000000000001";
+const en = (dias, hora) => iso(fecha(dias, hora));
+const formaDe = (n, fuente, datos, estado = "propuesta") => ({
+  ...propuestaDe(R.slpFormas, "evento", fuente, { url: "https://cultura.example/agenda-octubre.pdf", leida: hace(0.12), ...datos }, estado, 0.12),
+  id: `acac0434-0000-4000-8000-${String(n).padStart(12, "0")}`,
+});
+const PLAZA = { lugar: "Plaza de Armas", direccion: "Plaza de Armas, Centro Histórico, San Luis Potosí", lat: 22.152, lng: -100.9765, direccion_mapa: "Plaza de Armas, Centro, 78000 San Luis Potosí" };
+const actoDeXantolo = (n, fuente, titulo, dias, extra = {}, estado = "propuesta") =>
+  formaDe(n, fuente, { titulo, clase: "puntual", inicio: en(dias, "19:00"), ...PLAZA, marco_propuesto: XANTOLO, programa: "Xantolo 2026", espera: "Se publica cuando aceptes el festival «Xantolo 2026».", ...extra }, estado);
+const cineclub = (n, dias, estado) =>
+  formaDe(n, UNIVERSIDADES, { titulo: "Cineclub de los miércoles", inicio: en(dias, "19:00"), lugar: "Casa del Poeta Ramón López Velarde", serie: { fechas: [7, 14, 21, 28].map((d) => en(d, "19:00")), cada: 7 } }, estado);
+propuestas.push(
+  formaDe(1, AGENDAS_GOB, { titulo: "Xantolo 2026", clase: "festival", actos: 4, programa: "Xantolo 2026", inicio: en(7, "19:00"), termina: en(12, "23:00"), ...PLAZA }),
+  actoDeXantolo(2, AGENDAS_GOB, "Danza de Huehues", 8),
+  actoDeXantolo(3, BUSQUEDA_WEB, "Son huasteco en la plaza", 9, { variantes: ["Noche de son huasteco"] }),
+  actoDeXantolo(4, AGENDAS_GOB, "Altar monumental de Xantolo", 7, { lugar: "Museo Nacional de la Máscara", lat: null, lng: null, direccion: null, direccion_mapa: null }, "aceptada"),
+  actoDeXantolo(5, AGENDAS_GOB, "Concurso de calaveritas literarias", 10, { lugar: "Casa del Poeta Ramón López Velarde", lat: null, lng: null, direccion: null, direccion_mapa: null }, "aceptada"),
+  formaDe(6, AGENDAS_GOB, { titulo: "Recital de guitarra clásica", clase: "puntual", inicio: en(4, "18:00"), lugar: "Teatro de la Paz" }),
+  formaDe(7, AGENDAS_GOB, { titulo: "Taller de papel picado", clase: "taller", inicio: en(13, "17:00"), fin: en(13, "19:00"), lugar: "Casa de Cultura del Barrio de San Miguelito", sesiones: [13, 15, 20, 22].map((d) => ({ inicio: en(d, "17:00"), fin: en(d, "19:00") })) }),
+  formaDe(8, AGENDAS_GOB, { titulo: "Feria del libro infantil", clase: "puntual", inicio: en(2, "11:00"), lugar: "Jardín de San Francisco", lat: 22.1497, lng: -100.979, direccion_mapa: "Jardín de San Francisco, Centro, 78000 San Luis Potosí", sesiones: [2, 3, 4].map((d) => ({ inicio: en(d, "11:00") })) }),
+  cineclub(9, 7),
+  cineclub(10, 14),
+  cineclub(11, 21, "aceptada"),
+  cineclub(12, 28, "aceptada"),
+  formaDe(13, UNIVERSIDADES, { titulo: "Inauguración: Raíces", clase: "exposicion", exposicion: "Raíces", inicio: en(2, "19:00"), termina: en(40, "23:59"), lugar: "Museo Nacional de la Máscara" }),
+  formaDe(14, BUSQUEDA_WEB, { titulo: "Función de clausura: cortometrajes potosinos", clase: "puntual", inicio: en(11, "19:00"), lugar: "Centro Cultural Universitario Bicentenario", marco: { id: E.cine, titulo: "Festival de Cine de Invierno" } }),
+);
 Object.assign(tablas, { ciudades, ciudades_vistas, rutinas_corridas, propuestas });
 const cuentasDe = (id, t) => {
   const p = t.propuestas.filter((x) => x.corrida_id === id);
@@ -909,11 +946,16 @@ Object.assign(rpcs, {
       fuentes_con_tanda: [...new Set(t.propuestas.filter((p) => p.estado === "aceptada" && antes.has(p.corrida_id) && tipos.has(p.tipo) && pendientes.some((q) => q.fuente === p.fuente)).map((p) => p.fuente))],
     };
   },
-  aceptar_propuesta: ({ p_propuesta, p_ficha }, t) => {
+  // Como la base: marca la propuesta (en memoria: otro arranque empieza limpio), así la publicación de un evento aceptado la encuentra
+  // aceptada (OL-434: un acto que espera a su festival y el festival que lo publica). La segunda llamada devuelve lo que ya quedó.
+  aceptar_propuesta: ({ p_propuesta, p_ficha }, t, { sub } = {}) => {
     const p = t.propuestas.find((x) => x.id === p_propuesta);
     if (!p) return null;
+    if (p.estado !== "propuesta") return { estado: p.estado, ficha_id: p.ficha_id, slug: null };
     const slug = String(p_ficha?.nombre ?? "ficha").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    return { estado: "aceptada", ficha_id: p.tipo === "evento" ? null : crypto.randomUUID(), slug: p.tipo === "evento" ? null : slug };
+    const ficha_id = p.tipo === "evento" ? null : crypto.randomUUID();
+    Object.assign(p, { estado: "aceptada", ficha_id, resuelto_por: sub ?? ADMIN, resuelto_en: new Date().toISOString() });
+    return { estado: "aceptada", ficha_id, slug: p.tipo === "evento" ? null : slug };
   },
 });
 
