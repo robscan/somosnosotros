@@ -2,7 +2,9 @@
  * Instituciones culturales de San Luis Potosí investigadas a mano (museos, casas de cultura, teatros, escuelas,
  * galerías, bibliotecas…) para darlas de alta como lugares. Funciones puras; las llamadas viven en importar.ts.
  */
+import { diaLocal, zonaSegura } from "../../src/lib/fechas";
 import { normalizarNombre, TIPOS, type Tipo } from "../../src/lib/lugares";
+import { titulosParecidos } from "../../src/lib/sugerenciasParecido";
 
 export type Punto = { lat: number; lng: number };
 
@@ -161,6 +163,11 @@ export type EventoPropuesto = {
   /** Nombre del lugar registrado donde es. Si no hay lugar registrado, `sitio` con el texto público ("Plaza de Armas"). */
   lugar?: string | null;
   sitio?: string | null;
+  /** El punto del `sitio` (todo sitio lleva el suyo, OL-348) y su dirección si la agenda la trae. Sin punto, con `--historico` se busca en
+   *  Mapbox por el nombre del sitio y la dirección (mapbox.ts · ubicarSitio). */
+  sitio_direccion?: string | null;
+  sitio_lat?: number | null;
+  sitio_lng?: number | null;
   /** YYYY-MM-DD y HH:MM, en hora de la ciudad. */
   fecha: string;
   hora: string;
@@ -189,6 +196,9 @@ export function formularioDeEvento(e: EventoPropuesto, lugarId: string | null): 
     modo_sitio: lugarId ? "lugar" : "otro",
     lugar_id: lugarId ?? "",
     sitio_texto: lugarId ? "" : (e.sitio ?? "").trim(),
+    sitio_direccion: lugarId ? "" : (e.sitio_direccion ?? "").trim(),
+    sitio_lat: lugarId || e.sitio_lat == null ? "" : String(e.sitio_lat),
+    sitio_lng: lugarId || e.sitio_lng == null ? "" : String(e.sitio_lng),
     titulo: e.titulo,
     inicio: `${e.fecha}T${e.hora}`,
     fin: finLocal(e.fecha, e.hora, e.hora_fin),
@@ -207,4 +217,102 @@ export function resolverLugar<T extends { id: string; nombre: string }>(nombre: 
   if (igual) return igual;
   const parecidos = lugares.filter((l) => nombresCoinciden(nombre, l.nombre));
   return parecidos.length === 1 ? (parecidos[0] ?? null) : null;
+}
+
+// ---------------------------------------------------------------- Cargas históricas (OL-424)
+
+/** Lo que dice de dónde sale una carga: `--origen`, `--fuente` y `--historico`. */
+export type OpcionesCarga = { historico: boolean; origen: string | null; fuente: string | null };
+
+/** El origen como lo guarda la base (`eventos_origen_valido`): minúsculas, números y guiones, hasta 60. */
+export const ORIGEN_VALIDO = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Lee `--origen <texto>`, `--fuente <url>` y `--historico` de la línea de órdenes. Con `--historico` los dos primeros son obligatorios: una
+ * carga de eventos pasados tiene que decir de qué agenda salió («agenda-secult-2026-01») y dónde se leyó (la URL del PDF). Sin él son opcionales.
+ */
+export function opcionesDeCarga(args: string[]): OpcionesCarga | { error: string } {
+  const valor = (nombre: string): string | null => {
+    const k = args.indexOf(`--${nombre}`);
+    if (k < 0) return null;
+    const v = args[k + 1];
+    return v && !v.startsWith("--") ? v.trim() : "";
+  };
+  const historico = args.includes("--historico");
+  const origen = valor("origen");
+  const fuente = valor("fuente");
+  if (origen === "") return { error: "--origen va seguido del origen (ej. agenda-secult-2026-01)." };
+  if (fuente === "") return { error: "--fuente va seguido de la dirección del documento (ej. https://…/enero.pdf)." };
+  if (historico && (!origen || !fuente)) return { error: "Con --historico van --origen <texto> y --fuente <url>: una carga del pasado dice de dónde salió." };
+  if (origen && (origen.length > 60 || !ORIGEN_VALIDO.test(origen))) return { error: `El origen «${origen}» no vale: minúsculas, números y guiones, hasta 60 (ej. agenda-secult-2026-01).` };
+  if (fuente && (fuente.length > 500 || !/^https?:\/\/\S+$/i.test(fuente))) return { error: `La fuente «${fuente}» no vale: una dirección que empiece con http:// o https://.` };
+  return { historico, origen, fuente };
+}
+
+/** Las palabras que no cuentan (las mismas de `eventos_parecidos` y de `tituloDistintivo`). */
+const VACIAS_TITULO = new Set(["de", "del", "la", "las", "los", "el", "y", "e", "en", "con", "a", "al", "para", "por", "un", "una", "o", "u", "the", "of", "and"]);
+
+/** Las palabras con contenido de un título, como las cuenta `eventos_parecidos`: sin las vacías ni los años; un ordinal se queda con su número. */
+function palabrasConContenido(titulo: string): Set<string> {
+  return new Set(
+    normalizarNombre(titulo)
+      .split(" ")
+      .filter((w) => w && !VACIAS_TITULO.has(w) && !/^(19|20)[0-9]{2}$/.test(w))
+      .map((w) => w.replace(/^([0-9]+)(a|o|er|ra|da|do|ro|to|ta|vo|va|no|na|mo|ma)$/, "$1")),
+  );
+}
+
+/**
+ * ¿Dos títulos del mismo día y el mismo sitio son el mismo evento? La regla de `eventos_parecidos` (migración 20261012120000, OL-384), aquí
+ * porque esa función solo mira lo que no ha pasado y una carga histórica compara contra lo pasado: (1) el mismo título normalizado; (2) uno
+ * dentro del otro por palabras enteras y el corto distintivo (`titulosParecidos`); o (3) al menos dos palabras con contenido en común.
+ */
+export function titulosDelMismoEvento(a: string, b: string): boolean {
+  const na = normalizarNombre(a);
+  const nb = normalizarNombre(b);
+  if (!na || !nb) return false;
+  if (na === nb || titulosParecidos(a, b)) return true;
+  const suyas = palabrasConContenido(b);
+  return [...palabrasConContenido(a)].filter((w) => suyas.has(w)).length >= 2;
+}
+
+/** Un evento ya guardado, con lo justo para compararlo (la lectura del importador). */
+export type EventoGuardado = {
+  id: string;
+  titulo: string;
+  inicio: string;
+  zona: string | null;
+  lugar_id: string | null;
+  sitio_texto: string | null;
+  clase: string | null;
+  borrador: boolean | null;
+  visible: boolean | null;
+};
+
+/**
+ * El evento ya guardado que parece el mismo que el que se va a cargar: el mismo día local, el mismo sitio (el mismo lugar del directorio o el
+ * mismo nombre de sitio, venga del lugar o escrito a mano) y un título del mismo evento. Como `eventos_parecidos`, solo lo puntual y los talleres
+ * y nunca un borrador; a diferencia de ella, también lo pasado y lo oculto (una carga histórica no debe volver a meter lo que la administración
+ * ocultó). El más cercano en hora primero.
+ */
+export function parecidoGuardado(
+  nuevo: { titulo: string; inicio: string; zona: string; lugar_id: string | null; sitio_texto: string | null },
+  guardados: EventoGuardado[],
+  lugares: { id: string; nombre: string }[],
+): EventoGuardado | null {
+  const nombreLugar = new Map(lugares.map((l) => [l.id, l.nombre]));
+  const sitioDe = (lugarId: string | null, sitio: string | null) => normalizarNombre((lugarId ? nombreLugar.get(lugarId) : null) ?? sitio ?? "");
+  const zona = zonaSegura(nuevo.zona);
+  const dia = diaLocal(new Date(nuevo.inicio), zona);
+  const sitio = sitioDe(nuevo.lugar_id, nuevo.sitio_texto);
+  const t = new Date(nuevo.inicio).getTime();
+  return (
+    guardados
+      .filter((g) => (g.clase ?? "puntual") === "puntual" || g.clase === "taller")
+      .filter((g) => !g.borrador)
+      .filter((g) => diaLocal(new Date(g.inicio), zona) === dia)
+      .filter((g) => (nuevo.lugar_id && g.lugar_id === nuevo.lugar_id) || (sitio !== "" && sitioDe(g.lugar_id, g.sitio_texto) === sitio))
+      .filter((g) => titulosDelMismoEvento(nuevo.titulo, g.titulo))
+      .sort((a, b) => Math.abs(new Date(a.inicio).getTime() - t) - Math.abs(new Date(b.inicio).getTime() - t) || a.id.localeCompare(b.id))[0] ?? null
+  );
 }

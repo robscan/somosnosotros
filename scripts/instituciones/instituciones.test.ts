@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { validarEvento } from "../../src/lib/eventos";
-import { direccionParaBuscar, elegirPunto, enCiudad, finLocal, formularioDeEvento, mismaCalle, mismaCalleYNumero, nombresCoinciden, resolverLugar, tipoDeInstitucion } from "./instituciones";
+import {
+  direccionParaBuscar,
+  elegirPunto,
+  enCiudad,
+  finLocal,
+  formularioDeEvento,
+  mismaCalle,
+  mismaCalleYNumero,
+  nombresCoinciden,
+  opcionesDeCarga,
+  parecidoGuardado,
+  resolverLugar,
+  tipoDeInstitucion,
+  titulosDelMismoEvento,
+  type EventoGuardado,
+} from "./instituciones";
 
 describe("tipoDeInstitucion", () => {
   it("museo y escuela con su tipo, teatro con Foro, centro cultural con Casa de cultura, librería con Otro", () => {
@@ -126,5 +141,75 @@ describe("eventos propuestos", () => {
     expect(datos.inicio).toBe("2026-10-03T02:00:00.000Z");
     expect(datos.fin).toBe("2026-10-03T04:00:00.000Z");
     expect(datos.precio).toBe("$150");
+  });
+});
+
+describe("cargas históricas (OL-424)", () => {
+  const ENERO = "https://cultura.slp.gob.mx/wp-content/uploads/2026/01/enero.pdf";
+
+  it("--historico exige --origen y --fuente; sin él son opcionales", () => {
+    expect(opcionesDeCarga(["eventos.json", "--autor", "x", "--historico", "--origen", "agenda-secult-2026-01", "--fuente", ENERO])).toEqual({ historico: true, origen: "agenda-secult-2026-01", fuente: ENERO });
+    expect(opcionesDeCarga(["eventos.json", "--autor", "x"])).toEqual({ historico: false, origen: null, fuente: null });
+    expect(opcionesDeCarga(["eventos.json", "--origen", "agenda-secult-2026-11"])).toEqual({ historico: false, origen: "agenda-secult-2026-11", fuente: null });
+    expect(opcionesDeCarga(["eventos.json", "--historico"])).toHaveProperty("error");
+    expect(opcionesDeCarga(["eventos.json", "--historico", "--origen", "agenda-secult-2026-01"])).toHaveProperty("error");
+    expect(opcionesDeCarga(["eventos.json", "--historico", "--fuente", ENERO])).toHaveProperty("error");
+  });
+
+  it("el origen y la fuente tienen la forma que guarda la base", () => {
+    expect(opcionesDeCarga(["--origen", "Agenda SECULT"])).toHaveProperty("error");
+    expect(opcionesDeCarga(["--origen", "agenda--secult"])).toHaveProperty("error");
+    expect(opcionesDeCarga(["--origen", "--historico"])).toHaveProperty("error");
+    expect(opcionesDeCarga(["--fuente", "cultura.slp.gob.mx/enero.pdf"])).toHaveProperty("error");
+    expect(opcionesDeCarga(["--fuente", "ftp://cultura/enero.pdf"])).toHaveProperty("error");
+  });
+
+  it("títulos del mismo evento, con la regla de eventos_parecidos", () => {
+    expect(titulosDelMismoEvento("Gitanos mexicanos 2.ª edición: Pargazz", "Pargazz: Gitanos mexicanos, 2ª Edición")).toBe(true);
+    expect(titulosDelMismoEvento("Concierto", "Concierto")).toBe(true);
+    expect(titulosDelMismoEvento("Cine de barrio: ciclo Fellini", "Ciclo Fellini")).toBe(true);
+    expect(titulosDelMismoEvento("Concierto", "Concierto de la Sinfónica")).toBe(false);
+    expect(titulosDelMismoEvento("Danza mexicana", "Música mexicana")).toBe(false);
+    expect(titulosDelMismoEvento("Gala 2026 México", "Gala de ópera 2026")).toBe(false);
+  });
+
+  it("lo pasado se compara el mismo día local, en el mismo sitio, también si está oculto; nunca un borrador ni una exposición", () => {
+    const lugares = [
+      { id: "cossio", nombre: "Museo Francisco Cossío" },
+      { id: "paz", nombre: "Teatro de la Paz" },
+    ];
+    // 16 de enero de 2026 a las 19:00 en San Luis = 01:00 UTC del 17.
+    const nuevo = { titulo: "Gitanos mexicanos 2.ª edición: Pargazz", inicio: "2026-01-17T01:00:00.000Z", zona: "America/Mexico_City", lugar_id: "cossio", sitio_texto: null };
+    const g = (id: string, cambios: Partial<EventoGuardado>): EventoGuardado => ({
+      id,
+      titulo: "Pargazz: Gitanos mexicanos, 2ª Edición",
+      inicio: "2026-01-17T02:00:00.000Z",
+      zona: "America/Mexico_City",
+      lugar_id: "cossio",
+      sitio_texto: null,
+      clase: "puntual",
+      borrador: false,
+      visible: true,
+      ...cambios,
+    });
+    expect(parecidoGuardado(nuevo, [g("1", {})], lugares)?.id).toBe("1");
+    expect(parecidoGuardado(nuevo, [g("1", { visible: false })], lugares)?.id).toBe("1");
+    expect(parecidoGuardado(nuevo, [g("1", { lugar_id: null, sitio_texto: "Museo Francisco Cossio" })], lugares)?.id).toBe("1");
+    expect(parecidoGuardado(nuevo, [g("1", { inicio: "2026-01-18T01:00:00.000Z" })], lugares)).toBeNull();
+    expect(parecidoGuardado(nuevo, [g("1", { lugar_id: "paz" })], lugares)).toBeNull();
+    expect(parecidoGuardado(nuevo, [g("1", { borrador: true })], lugares)).toBeNull();
+    expect(parecidoGuardado(nuevo, [g("1", { clase: "exposicion" })], lugares)).toBeNull();
+    expect(parecidoGuardado(nuevo, [g("1", { titulo: "Lectura de poesía joven" })], lugares)).toBeNull();
+    // Las 23:30 del 16 en San Luis ya son el 17 en UTC: cuenta el día local, no el de UTC.
+    expect(parecidoGuardado(nuevo, [g("1", { inicio: "2026-01-17T05:30:00.000Z" })], lugares)?.id).toBe("1");
+    expect(parecidoGuardado(nuevo, [g("lejos", { inicio: "2026-01-16T18:00:00.000Z" }), g("cerca", {})], lugares)?.id).toBe("cerca");
+  });
+
+  it("un sitio con su punto pasa la validación del alta; sin punto, no", () => {
+    const e = { titulo: "Noche de estrellas", fecha: "2026-01-10", hora: "19:00", descripcion: "Observación.", sitio: "El Meteorito. Museo Interactivo" };
+    expect(validarEvento(formularioDeEvento(e, null)).errores).toHaveProperty("sitio_direccion");
+    const { datos, errores } = validarEvento(formularioDeEvento({ ...e, sitio_lat: 22.1, sitio_lng: -100.9, sitio_direccion: "Av. Himno Nacional 4000" }, null));
+    expect(errores).toEqual({});
+    expect(datos).toMatchObject({ lugar_id: null, sitio_texto: "El Meteorito. Museo Interactivo", sitio_lat: 22.1, sitio_lng: -100.9, sitio_direccion: "Av. Himno Nacional 4000" });
   });
 });

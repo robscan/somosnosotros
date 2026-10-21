@@ -21,14 +21,21 @@ describe("sitemap completo ante fallos de consulta (OL-278)", () => {
         data: vacio || (tabla === falla && !conDatosParciales) ? [] : filas[tabla],
         error: tabla === falla ? { message: "Error de prueba" } : null,
       };
-      const consulta = { select: vi.fn(() => consulta), eq: vi.fn(() => consulta), limit: vi.fn(async () => resultado) };
+      const consulta = {
+        select: vi.fn(() => consulta),
+        eq: vi.fn(() => consulta),
+        gte: vi.fn((columna: string) => (desdeEn.push(`${tabla}.${columna}`), consulta)),
+        limit: vi.fn(async () => resultado),
+      };
       return consulta;
     });
     vi.mocked(clienteServidor).mockResolvedValue({ from } as unknown as NonNullable<Awaited<ReturnType<typeof clienteServidor>>>);
     return from;
   }
+  const desdeEn: string[] = [];
 
   it("devuelve las páginas generales y los tres catálogos cuando todas las consultas responden bien", async () => {
+    desdeEn.length = 0;
     const from = preparar();
     expect(await sitemap()).toEqual([
       ...rutasEstaticas(),
@@ -37,6 +44,8 @@ describe("sitemap completo ante fallos de consulta (OL-278)", () => {
       { url: `${ORIGEN}/artistas/artista`, lastModified: "2026-10-04T00:00:00Z" },
     ]);
     expect(from.mock.calls.map(([tabla]) => tabla)).toEqual(Object.keys(filas));
+    // OL-424: los eventos se piden ya sin lo pasado; con la carga del año, los visibles pasan del corte de 1 000 filas de PostgREST.
+    expect(desdeEn).toEqual(["eventos.termina"]);
   });
 
   it.each(Object.keys(filas) as (keyof typeof filas)[])("rechaza el sitemap si falla %s, aunque las otras consultas tengan filas", async (tabla) => {

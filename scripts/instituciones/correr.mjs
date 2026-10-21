@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Compila con esbuild un importador de scripts/instituciones/ (que reutiliza src/lib) y lo corre con las variables de .env.
 // Uso: node scripts/instituciones/correr.mjs importar <lugares.json> --autor <id del admin> [--simular] [--salida <carpeta>]
-//      node scripts/instituciones/correr.mjs importar-eventos <eventos.json> --autor <id del admin> [--simular] [--forzar-parecidos] [--salida <carpeta>]
+//      node scripts/instituciones/correr.mjs importar-eventos <eventos.json> --autor <id del admin> [--simular] [--forzar-parecidos]
+//        [--origen <texto> --fuente <url> [--historico]] [--salida <carpeta>]   (OL-424: procedencia y eventos pasados)
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
