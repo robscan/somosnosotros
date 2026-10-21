@@ -156,6 +156,9 @@ describe("propuestas y corridas", () => {
     expect(pildoraCorrida(corrida({ estado: "corriendo" }))).toEqual({ texto: "En curso", tono: "violeta" });
     expect(pildoraCorrida(corrida({ gasto_usd: 1 }))).toEqual({ texto: "Terminada", tono: "verde" });
     expect(pildoraCorrida(corrida({ gasto_usd: 3 }))).toEqual({ texto: "Llegó al tope", tono: "naranja" });
+    // OL-428: el motor para antes de pasarse y lo deja dicho en el resumen.
+    expect(pildoraCorrida(corrida({ gasto_usd: 2.73, resumen: { tope: true } }))).toEqual({ texto: "Llegó al tope", tono: "naranja" });
+    expect(textoBoton(corrida({ propuestas: 4, gasto_usd: 2.73, resumen: { tope: true } }), AHORA)).toBe("18 oct · llegó al tope · 4 propuestos · 2,73 USD");
     expect(pildoraCorrida(corrida({ estado: "fallida" }))).toEqual({ texto: "Falló", tono: "rojo" });
   });
   it("por cuándo: en curso, esta semana y por mes", () => {

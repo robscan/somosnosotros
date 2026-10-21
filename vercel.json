@@ -9,6 +9,10 @@
     {
       "path": "/api/purgar-sitios-privados",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/rutinas/correr",
+      "schedule": "0 12 * * *"
     }
   ]
 }

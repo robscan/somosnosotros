@@ -1,0 +1,172 @@
+import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ClienteApi } from "./claude";
+import { FalloCorrida, pasoLugares, type CiudadRutina } from "./lugares";
+import type { Mapbox } from "./mapbox";
+import { redondear } from "./precios";
+
+/**
+ * El motor de corridas (OL-428): cada llamada a `/api/rutinas/correr` toma UNA corrida, corre UN paso corto y guarda lo que pasó. Sin la Mac
+ * y sin migración: el estado vive en `rutinas_corridas` (estado, gasto_usd, inicio, fin) y en `resumen` (jsonb).
+ *
+ * Qué corrida toma: primero la `pendiente` más vieja; si no hay, la `corriendo` más antigua que nadie esté trabajando.
+ * Cómo se asegura de que dos llamadas a la vez no corran la misma (sin bloqueos de la base):
+ *   · una pendiente se reclama con `update … set estado = 'corriendo' where id = … and estado = 'pendiente' returning`: solo una de dos
+ *     llamadas recibe la fila;
+ *   · una que ya corre lleva en su resumen un número de turno (`turno`) y hasta cuándo está ocupada (`ocupada_hasta`, 70 s: más que el
+ *     tiempo máximo de la función, así un paso que se cae la deja libre). Se reclama con `… where resumen->>'turno' = <el que se leyó>` y
+ *     el turno sube: la segunda llamada ya no encuentra ese turno.
+ *   · al guardar, lo mismo: solo si sigue «corriendo» y con su turno. Si a medio paso alguien la canceló, solo se anota lo gastado.
+ * Un tropiezo (la base no respondió) suelta la corrida para reintentar; a la tercera seguida en el mismo paso, «Falló». El gasto de cada paso
+ * se suma a `gasto_usd` aunque el paso falle: el crédito de Corridas baja solo.
+ */
+
+export type Dependencias = {
+  db: SupabaseClient;
+  api: ClienteApi | null;
+  mapbox: Mapbox | null;
+  pedir: typeof fetch;
+  ahora: () => Date;
+  plazoMs: number;
+};
+
+export const PLAZO_PASO_MS = 45_000;
+/** El margen que se guarda al final del paso para escribir en la base. */
+const MARGEN_GUARDAR_MS = 5_000;
+export const OCUPADA_MS = 70_000;
+export const MAX_INTENTOS = 3;
+export const SIN_RUTINA = "Este botón todavía no tiene rutina";
+
+export type EstadoPaso = "nada" | "corriendo" | "terminada" | "fallida" | "cancelada";
+export type ResultadoPaso = { corrida: string | null; tipo: string | null; estado: EstadoPaso; usd: number };
+
+const COLUMNAS = "id, tipo, ciudad, parametros, tope_usd, gasto_usd, estado, resumen, inicio";
+type Fila = { id: string; tipo: string; ciudad: string | null; parametros: unknown; tope_usd: unknown; gasto_usd: unknown; estado: string; resumen: unknown; inicio: string | null };
+
+const objeto = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+const numero = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : Number(v) || 0);
+
+/** La corrida que toca, ya marcada como suya, o null si no hay nada que correr. */
+export async function reclamar(dep: Pick<Dependencias, "db" | "ahora">): Promise<{ fila: Fila; turno: number } | null> {
+  const ahora = dep.ahora();
+  const ocupada_hasta = new Date(ahora.getTime() + OCUPADA_MS).toISOString();
+  const pendientes = await dep.db.from("rutinas_corridas").select(COLUMNAS).eq("estado", "pendiente").order("creado_en", { ascending: true }).limit(5);
+  if (pendientes.error) throw new Error("No se pudieron leer las corridas");
+  for (const p of (pendientes.data ?? []) as Fila[]) {
+    const resumen = { ...objeto(p.resumen), turno: 1, ocupada_hasta, intentos: 1 };
+    const r = await dep.db.from("rutinas_corridas").update({ estado: "corriendo", inicio: ahora.toISOString(), resumen }).eq("id", p.id).eq("estado", "pendiente").select(COLUMNAS);
+    if (r.error) throw new Error("No se pudo tomar la corrida");
+    if (r.data?.length) return { fila: r.data[0] as Fila, turno: 1 };
+  }
+  const corriendo = await dep.db.from("rutinas_corridas").select(COLUMNAS).eq("estado", "corriendo").order("inicio", { ascending: true, nullsFirst: true }).limit(10);
+  if (corriendo.error) throw new Error("No se pudieron leer las corridas");
+  for (const c of (corriendo.data ?? []) as Fila[]) {
+    const previo = objeto(c.resumen);
+    if (typeof previo.ocupada_hasta === "string" && Date.parse(previo.ocupada_hasta) > ahora.getTime()) continue;
+    const turno = numero(previo.turno);
+    const resumen = { ...previo, turno: turno + 1, ocupada_hasta, intentos: numero(previo.intentos) + 1 };
+    const pedido = dep.db.from("rutinas_corridas").update({ resumen }).eq("id", c.id).eq("estado", "corriendo");
+    const r = await (typeof previo.turno === "number" ? pedido.eq("resumen->>turno", String(turno)) : pedido.is("resumen->turno", null)).select(COLUMNAS);
+    if (r.error) throw new Error("No se pudo tomar la corrida");
+    if (r.data?.length) return { fila: r.data[0] as Fila, turno: turno + 1 };
+  }
+  return null;
+}
+
+async function leerCiudad(db: SupabaseClient, slug: string | null): Promise<CiudadRutina | null> {
+  if (!slug) return null;
+  const r = await db.from("ciudades").select("slug, nombre, lat, lng, zoom, zona, alias, estado").eq("slug", slug).maybeSingle();
+  if (r.error) throw new Error("No se pudo leer la ciudad");
+  if (!r.data) return null;
+  const c = r.data as Record<string, unknown>;
+  return {
+    slug: String(c.slug),
+    nombre: String(c.nombre),
+    lat: typeof c.lat === "number" ? c.lat : null,
+    lng: typeof c.lng === "number" ? c.lng : null,
+    zoom: numero(c.zoom) || 13,
+    zona: typeof c.zona === "string" ? c.zona : "America/Mexico_City",
+    alias: Array.isArray(c.alias) ? c.alias.filter((a): a is string => typeof a === "string") : [],
+    estado: String(c.estado),
+  };
+}
+
+/** Guarda el paso: el resumen, el gasto acumulado y, si terminó o falló, su estado y `fin`. Solo si la corrida sigue siendo suya. */
+async function guardar(dep: Dependencias, fila: Fila, turno: number, estado: Exclude<EstadoPaso, "nada" | "cancelada">, resumen: Record<string, unknown>, usd: number): Promise<ResultadoPaso> {
+  const gasto = redondear(numero(fila.gasto_usd) + usd);
+  const final = estado !== "corriendo";
+  const nuevo: Record<string, unknown> = { ...resumen, turno, ocupada_hasta: null, intentos: final ? numero(objeto(fila.resumen).intentos) : 0 };
+  if (final) delete nuevo.cursor;
+  const campos = { resumen: nuevo, gasto_usd: gasto, ...(final ? { estado, fin: dep.ahora().toISOString() } : {}) };
+  const escribir = () => dep.db.from("rutinas_corridas").update(campos).eq("id", fila.id).eq("estado", "corriendo").eq("resumen->>turno", String(turno)).select("id");
+  const r = await escribir();
+  if (!r.error && r.data?.length) return { corrida: fila.id, tipo: fila.tipo, estado, usd };
+  const actual = await dep.db.from("rutinas_corridas").select("estado, resumen").eq("id", fila.id).maybeSingle();
+  const suya = !!actual.data && numero(objeto(actual.data.resumen).turno) === turno;
+  if (suya && actual.data!.estado === "corriendo") {
+    // La base falló al guardar: un segundo intento igual. Si tampoco, la corrida queda ocupada y otra llamada la retoma al vencer.
+    const otra = await escribir();
+    return { corrida: fila.id, tipo: fila.tipo, estado: !otra.error && otra.data?.length ? estado : "corriendo", usd };
+  }
+  if (suya) {
+    // La cancelaron a medio paso: lo gastado se anota igual; lo que quedaba a medias, no.
+    const { cursor: _cursor, ...sinCursor } = nuevo;
+    void _cursor;
+    await dep.db.from("rutinas_corridas").update({ gasto_usd: gasto, resumen: sinCursor }).eq("id", fila.id).eq("resumen->>turno", String(turno));
+  }
+  return { corrida: fila.id, tipo: fila.tipo, estado: actual.data?.estado === "cancelada" ? "cancelada" : estado, usd };
+}
+
+/** Un tropiezo: se suelta (sin cambiar el avance) para reintentar en la siguiente llamada, con lo gastado anotado. */
+async function soltar(dep: Dependencias, fila: Fila, turno: number, usd: number): Promise<ResultadoPaso> {
+  const previo = objeto(fila.resumen);
+  const resumen = { ...previo, ocupada_hasta: null, errores: numero(previo.errores) + 1 };
+  await dep.db
+    .from("rutinas_corridas")
+    .update({ resumen, gasto_usd: redondear(numero(fila.gasto_usd) + usd) })
+    .eq("id", fila.id)
+    .eq("estado", "corriendo")
+    .eq("resumen->>turno", String(turno));
+  return { corrida: fila.id, tipo: fila.tipo, estado: "corriendo", usd };
+}
+
+/** Un paso de la corrida que toca. Nunca deja una corrida tomada para siempre: o la guarda, o la suelta, o la da por fallida. */
+export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date.now): Promise<ResultadoPaso> {
+  const hasta = reloj() + dep.plazoMs - MARGEN_GUARDAR_MS;
+  const tomada = await reclamar(dep);
+  if (!tomada) return { corrida: null, tipo: null, estado: "nada", usd: 0 };
+  const { fila, turno } = tomada;
+  const previo = objeto(fila.resumen);
+  let usd = 0;
+  const fallar = (error: string) => guardar(dep, fila, turno, "fallida", { ...previo, error }, usd);
+  if (numero(previo.intentos) > MAX_INTENTOS) return fallar("Se cortó tres veces seguidas en el mismo paso");
+  if (fila.tipo !== "lugares") return fallar(SIN_RUTINA);
+  try {
+    const ciudad = await leerCiudad(dep.db, fila.ciudad);
+    if (!ciudad) return fallar("La ciudad ya no está");
+    if (ciudad.estado === "cerrada") return fallar("La ciudad está cerrada");
+    const salida = await pasoLugares({
+      corrida: { id: fila.id, tipo: fila.tipo, ciudad: fila.ciudad, parametros: objeto(fila.parametros), tope_usd: numero(fila.tope_usd), gasto_usd: numero(fila.gasto_usd), resumen: previo },
+      ciudad,
+      db: dep.db,
+      api: dep.api,
+      mapbox: dep.mapbox,
+      pedir: dep.pedir,
+      ahora: dep.ahora,
+      hasta,
+      gastar: (x) => {
+        usd += x;
+      },
+      gastado: () => usd,
+      sigueCorriendo: async () => {
+        const r = await dep.db.from("rutinas_corridas").select("estado").eq("id", fila.id).maybeSingle();
+        return r.data?.estado === "corriendo";
+      },
+    });
+    return await guardar(dep, fila, turno, salida.terminada ? "terminada" : "corriendo", salida.resumen, usd);
+  } catch (e) {
+    if (e instanceof FalloCorrida) return fallar(e.message);
+    console.warn("rutinas: un paso no terminó; se reintenta en la siguiente llamada");
+    return soltar(dep, fila, turno, usd);
+  }
+}

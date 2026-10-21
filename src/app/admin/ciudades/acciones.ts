@@ -1,19 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { hrefArtista, validarArtista } from "@/lib/artistas";
 import { BOTONES, HOJAS, leerTope, type TipoBoton } from "@/lib/ciudadesAdmin";
 import { esUuid } from "@/lib/formulario";
 import { hrefLugar, validarLugar } from "@/lib/lugares";
 import { entradaDeArtista, entradaDeLugar, esMotivo, nombreDe, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
+import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
 
 /**
  * Acciones de Administración › Ciudades (OL-427). Cada una comprueba el rol aquí y la base lo vuelve a exigir (reglas por fila y funciones
  * que miran el rol por dentro); ninguna falla en silencio: devuelve la causa en palabras para que la pantalla la diga en su sitio.
- * «Correr» solo deja la corrida pendiente con su tope: la corre la rutina con la API (OL-428).
+ * «Correr» deja la corrida pendiente con su tope y, después de responder, pide su primer paso al motor (OL-428), que la corre con la API.
  */
 export type Resultado = { ok: true } | { ok: false; error: string };
 export type ResultadoAceptar = { ok: true; href: string | null } | { ok: false; error: string };
@@ -50,10 +53,25 @@ export async function crearCorrida(ciudad: string, tipo: string, tope: string): 
   if (error?.code === "23503") return { ok: false, error: "Esa ciudad ya no está. Recarga la página." };
   if (error) return { ok: false, error: "No se pudo dejar lista. Intenta de nuevo." };
   revalidar();
+  await pedirPrimerPaso();
   return { ok: true };
 }
 
-/** Cancelar una corrida que todavía no empieza (la que ya corre la detiene la rutina, OL-428). */
+/**
+ * El primer paso sin esperar al cron (OL-428): después de responder, el servidor llama al motor con `CRON_SECRET` (nunca el navegador).
+ * Sin secreto no dispara y lo dice en el registro; si algo falla aquí, la corrida queda pendiente y la toma el cron. Nunca tumba la acción.
+ */
+async function pedirPrimerPaso() {
+  try {
+    const h = await headers();
+    const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+    after(() => dispararPaso(origen));
+  } catch {
+    console.warn("rutinas: no se pudo pedir el primer paso; la corrida espera al cron");
+  }
+}
+
+/** Cancelar una corrida que todavía no empieza. Si una cancelación llega mientras corre, el motor no da otro paso y solo anota lo gastado. */
 export async function cancelarCorrida(id: string): Promise<Resultado> {
   if (!esUuid(id)) return { ok: false, error: "No encontramos esa búsqueda. Recarga la página." };
   const { supabase } = await soloAdmin();
