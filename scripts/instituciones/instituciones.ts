@@ -2,6 +2,7 @@
  * Instituciones culturales de San Luis Potosí investigadas a mano (museos, casas de cultura, teatros, escuelas,
  * galerías, bibliotecas…) para darlas de alta como lugares. Funciones puras; las llamadas viven en importar.ts.
  */
+import { COOPERACION_SOLIDARIA } from "../../src/lib/eventos";
 import { diaLocal, zonaSegura } from "../../src/lib/fechas";
 import { normalizarNombre, TIPOS, type Tipo } from "../../src/lib/lugares";
 import { titulosParecidos } from "../../src/lib/sugerenciasParecido";
@@ -192,6 +193,8 @@ export function finLocal(fecha: string, hora: string, horaFin: string | null | u
 export function formularioDeEvento(e: EventoPropuesto, lugarId: string | null): Record<string, string> {
   const precio = (e.precio ?? "").trim();
   const gratis = !precio || /^gratis$/i.test(precio);
+  // «Cooperación solidaria» (el costo sin cifra, OL-140) va en su casilla, no en el precio: el formulario lo rechaza como precio.
+  const cooperacion = !gratis && normalizarNombre(precio) === normalizarNombre(COOPERACION_SOLIDARIA);
   return {
     modo_sitio: lugarId ? "lugar" : "otro",
     lugar_id: lugarId ?? "",
@@ -203,7 +206,8 @@ export function formularioDeEvento(e: EventoPropuesto, lugarId: string | null): 
     inicio: `${e.fecha}T${e.hora}`,
     fin: finLocal(e.fecha, e.hora, e.hora_fin),
     gratis: gratis ? "si" : "no",
-    precio: gratis ? "" : precio,
+    cooperacion: cooperacion ? "si" : "no",
+    precio: gratis || cooperacion ? "" : precio,
     descripcion: e.descripcion,
     enlace: e.enlace ?? "",
   };
