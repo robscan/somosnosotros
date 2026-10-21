@@ -2,7 +2,7 @@
 // node server.mjs [puerto]  →  http://127.0.0.1:8823
 import fs from "node:fs";
 import http from "node:http";
-import { tablas, rpcs, sesionDe, subDe, FK, LLAVE_SERVICIO, extrasServicio } from "./fixture.mjs";
+import { tablas, rpcs, sesionDe, subDe, FK, LLAVE_SERVICIO, extrasServicio, mapboxIda, mapboxVuelta } from "./fixture.mjs";
 
 const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8823);
 const CORS = {
@@ -293,6 +293,10 @@ const servidor = http.createServer(async (req, res) => {
     res.writeHead(200, { ...CORS, "Content-Type": archivo.endsWith(".png") ? "image/png" : "image/jpeg", "Cache-Control": "no-store" });
     return res.end(req.method === "HEAD" ? undefined : fs.readFileSync(archivo));
   }
+  // OL-432: Mapbox para «Añadir ciudad»: la app lo pide desde el servidor con `MAPBOX_API_URL=http://127.0.0.1:<puerto>/mapbox` (solo acepta
+  // 127.0.0.1) y aquí contestan ciudades y municipios escritos a mano (`LUGARES_MAPBOX`). Nunca llega un token real.
+  if (ruta === "/mapbox/search/geocode/v6/forward") return responder(res, 200, mapboxIda(url.searchParams.get("q"), Number(url.searchParams.get("limit") || 6)));
+  if (ruta === "/mapbox/search/geocode/v6/reverse") return responder(res, 200, mapboxVuelta(Number(url.searchParams.get("latitude")), Number(url.searchParams.get("longitude"))));
   // La cuenta de quien pide (OL-341): la del token de la sesión (Ana por omisión; Marcos con `cookieDe(MARCOS)`).
   const sub = subDe(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
   // Auth
@@ -346,6 +350,35 @@ const servidor = http.createServer(async (req, res) => {
     const filas = cambiadas.map((fila) => proyectar("eventos", fila, parseSelect(url.searchParams.get("select")), []));
     if (quiereObjeto(req)) return filas.length === 1 ? responder(res, 200, filas[0]) : responder(res, 406, { code: "PGRST116", message: `${filas.length} filas` });
     return responder(res, 200, filas);
+  }
+  // OL-432: dar de alta, abrir u ocultar una ciudad y correr o cancelar una búsqueda se guardan en memoria (otro arranque empieza limpio), para
+  // recorrer «Añadir ciudad» → el panel y «Correr» → «Pendiente» con toques reales. Como la base: una ciudad por slug y una búsqueda en curso
+  // por botón y ciudad (23505). Los permisos reales, en PostgreSQL (`supabase/tests/pg/ciudades-admin.test.mjs`).
+  if ((tabla === "ciudades" || tabla === "rutinas_corridas") && (req.method === "POST" || req.method === "PATCH")) {
+    const nodos = parseSelect(url.searchParams.get("select"));
+    let cambiadas;
+    if (req.method === "POST") {
+      const nuevas = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean);
+      const repetida = (n) =>
+        tabla === "ciudades"
+          ? tablas.ciudades.some((c) => c.slug === n.slug)
+          : tablas.rutinas_corridas.some((r) => r.tipo === n.tipo && r.ciudad === n.ciudad && (r.estado === "pendiente" || r.estado === "corriendo"));
+      if (nuevas.some(repetida)) return responder(res, 409, { code: "23505", message: "duplicate key value violates unique constraint" });
+      const ahora = new Date().toISOString();
+      cambiadas = nuevas.map((n) =>
+        tabla === "ciudades"
+          ? { ampliada_de: null, lat: null, lng: null, zoom: 13, zona: "America/Mexico_City", alias: [], parametros: {}, estado: "detectada", creado_en: ahora, ...n }
+          : { id: crypto.randomUUID(), parametros: {}, gasto_usd: 0, estado: "pendiente", resumen: {}, creado_por: null, creado_en: ahora, inicio: null, fin: null, ...n },
+      );
+      tablas[tabla].push(...cambiadas);
+    } else {
+      const { propios } = parseFiltros(url.searchParams);
+      cambiadas = tablas[tabla].filter((fila) => propios.every((c) => cumple(fila, c)));
+      for (const fila of cambiadas) Object.assign(fila, cuerpo);
+    }
+    const salida = cambiadas.map((fila) => proyectar(tabla, fila, nodos, []));
+    if (quiereObjeto(req)) return salida.length === 1 ? responder(res, 200, salida[0]) : responder(res, 406, { code: "PGRST116", message: `${salida.length} filas` });
+    return responder(res, req.method === "POST" ? 201 : 200, salida);
   }
   const filas = Array.isArray(cuerpo) ? cuerpo : cuerpo ? [cuerpo] : [];
   const conId = filas.map((f) => ({ id: crypto.randomUUID(), ...f }));
