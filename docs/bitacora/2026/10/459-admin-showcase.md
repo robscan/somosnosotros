@@ -143,3 +143,5 @@ Herramienta: `scripts/ops/auditoria-ui/capturar-showcase.mjs` (README de la audi
 
 - La rutina «Investigar» con la API y su bandeja (OL-428), las corridas y el crédito (OL-427), el PDF para el consejo y la autopostulación.
 - Que la base proponga sola el puntaje de circulación y de vínculo (queda como pregunta, punto 9).
+
+- Al unir con OL-427 (Ciudades, que ya usaba s32 a s35) las cuatro pantallas del showcase pasaron a `s36-admin-showcase`, `s37-admin-showcase-tabla`, `s38-admin-showcase-ficha` y `s39-admin-showcase-manual` en `pantallas-sesion.json` y `medidas.aceptadas.json` (resolución del gestor, 2026-10-20).

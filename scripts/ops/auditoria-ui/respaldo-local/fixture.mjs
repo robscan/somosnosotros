@@ -794,3 +794,80 @@ export function subDe(token) {
 export const sesion = sesionDe(ANA);
 export const usuario = sesion.user;
 export const cookie = cookieDe(ANA);
+
+// OL-427: Administración › Ciudades, sus corridas y la bandeja de propuestas (la cuenta de administración del respaldo). Las tablas `ciudades`,
+// `rutinas_corridas` y `propuestas` y los contratos de `panel_ciudades`, `panel_propuestas`, `aceptar_propuesta` y `registrar_ciudad_vista`
+// (los permisos reales, en PostgreSQL: `supabase/tests/pg/ciudades-admin.test.mjs`). Todo inventado: Oaxaca investigando con cinco propuestas de
+// lugares por revisar (direcciones, coordenadas y fuentes `.example` inventadas) y una búsqueda de agendas corriendo; Querétaro detectada y sin
+// correr; San Luis con dos corridas del mes pasado (la del Sistema de Información Cultural ya tuvo una tanda aceptada). Solo lo leen las pantallas
+// de Administración y la detección de Inicio y Lugares (que no cambia nada de lo que se mide).
+const CONSULTAS_30 = { "san-luis-potosi": 1932, "san-miguel-de-allende": 87, oaxaca: 46, queretaro: 14 };
+const ciudadDe = (slug, nombre, lat, lng, estado, creado, alias = []) => ({ slug, nombre, ampliada_de: null, lat, lng, zoom: 13, zona: ZONA, alias, estado, creado_en: hace(creado) });
+const ciudades = [
+  ciudadDe("san-luis-potosi", CIUDAD, 22.1497, -100.9764, "abierta", 40, ["Soledad de Graciano Sánchez"]),
+  ciudadDe("san-miguel-de-allende", "San Miguel de Allende", 20.9144, -100.7452, "abierta", 40),
+  ciudadDe("oaxaca", "Oaxaca", 17.0654, -96.7236, "investigando", 9),
+  ciudadDe("queretaro", "Querétaro", 20.5931, -100.392, "detectada", 8),
+];
+const R = { oaxLugares: "abab0001-0000-4000-8000-000000000001", oaxAgendas: "abab0001-0000-4000-8000-000000000002", slpLugares: "abab0001-0000-4000-8000-000000000003", slpAgendas: "abab0001-0000-4000-8000-000000000004" };
+const corridaDe = (id, tipo, ciudad, { tope = 3, gasto = 0, estado = "terminada", dias = 0, fuentes = ["sic", "cultura", "web"], resumen = {} } = {}) => ({
+  id, tipo, ciudad, parametros: { fuentes }, tope_usd: tope, gasto_usd: gasto, estado, resumen, creado_por: ADMIN, creado_en: hace(dias),
+  inicio: estado === "pendiente" ? null : hace(dias), fin: estado === "terminada" ? new Date(Date.parse(hace(dias)) + 6 * 60e3).toISOString() : null,
+});
+const rutinas_corridas = [
+  corridaDe(R.oaxAgendas, "agendas", "oaxaca", { gasto: 0.4, estado: "corriendo", dias: 0.02, fuentes: ["agenda-cultura", "universidades-museos", "web"], resumen: { avance: 0.3, paso: "3 de 10 meses" } }),
+  corridaDe(R.oaxLugares, "lugares", "oaxaca", { gasto: 1.1, dias: 2 }),
+  corridaDe(R.slpAgendas, "agendas", "san-luis-potosi", { gasto: 2.1, dias: 19, fuentes: ["agenda-cultura", "universidades-museos", "web"] }),
+  corridaDe(R.slpLugares, "lugares", "san-luis-potosi", { tope: 2, gasto: 0.8, dias: 19.1 }),
+];
+const SIC = "Sistema de Información Cultural", CULTURA = "Cultura del estado y del municipio", WEB = "Búsqueda web";
+let nPropuesta = 0;
+const propuestaDe = (corrida, tipo, fuente, datos, estado = "propuesta", dias = 2) => ({
+  id: `acac0001-0000-4000-8000-${String(++nPropuesta).padStart(12, "0")}`, corrida_id: corrida, tipo, fuente, datos, estado,
+  motivo_rechazo: estado === "rechazada" ? "duplicado" : null, ficha_id: null, resuelto_por: estado === "propuesta" ? null : ADMIN, resuelto_en: estado === "propuesta" ? null : hace(dias - 0.5), creado_en: hace(dias),
+});
+const lugarOax = (nombre, tipo, direccion, lat, lng, url) => ({ nombre, tipo, direccion, lat, lng, url, leida: hace(2) });
+const propuestas = [
+  // San Luis, hace 19 días: 4 aceptadas (dos del Sistema de Información Cultural: su primera tanda) y 2 rechazadas; y 3 eventos aceptados.
+  ...[SIC, SIC, CULTURA, CULTURA].map((f, i) => propuestaDe(R.slpLugares, "lugar", f, { nombre: `Lugar aceptado ${i + 1}` }, "aceptada", 19)),
+  ...[WEB, WEB].map((f, i) => propuestaDe(R.slpLugares, "lugar", f, { nombre: `Lugar rechazado ${i + 1}` }, "rechazada", 19)),
+  ...[1, 2, 3].map((i) => propuestaDe(R.slpAgendas, "evento", CULTURA, { titulo: `Evento aceptado ${i}` }, "aceptada", 19)),
+  // Oaxaca, hace 2 días: 9 aceptadas y 5 por revisar (tres del Sistema de Información Cultural y dos de la búsqueda web).
+  ...[SIC, SIC, SIC, SIC, SIC, CULTURA, CULTURA, CULTURA, CULTURA].map((f, i) => propuestaDe(R.oaxLugares, "lugar", f, { nombre: `Espacio aceptado ${i + 1}` }, "aceptada")),
+  propuestaDe(R.oaxLugares, "lugar", SIC, lugarOax("Foro Cultural La Nopalera", "foro", "Calle de Murguía 115, Centro", 17.0626, -96.7238, "https://sic.example/espacios/oax/115")),
+  propuestaDe(R.oaxLugares, "lugar", SIC, lugarOax("Galería Siete Regiones", "galeria", "Avenida Juárez 402, Jalatlaco", 17.0672, -96.7181, "https://sic.example/espacios/oax/402")),
+  propuestaDe(R.oaxLugares, "lugar", SIC, lugarOax("Casa de Cultura del Barrio de Xochimilco", "casa_de_cultura", "Calle Rufino Tamayo 9, Xochimilco", 17.0731, -96.7262, "https://sic.example/espacios/oax/9")),
+  propuestaDe(R.oaxLugares, "lugar", WEB, lugarOax("Cafebrería El Andariego", "cafe_bar", "Calle de Abasolo 207, Centro", 17.0641, -96.7209, "https://andariego.example")),
+  propuestaDe(R.oaxLugares, "lugar", WEB, { ...lugarOax("Patio Escénico Tule", "foro", "Camino Real 31", 17.0629, -96.6935, "https://patio-tule.example"), ciudad: "Santa Lucía del Camino" }),
+];
+Object.assign(tablas, { ciudades, rutinas_corridas, propuestas });
+const cuentasDe = (id, t) => {
+  const p = t.propuestas.filter((x) => x.corrida_id === id);
+  return { propuestas: p.length, aceptadas: p.filter((x) => x.estado === "aceptada").length, rechazadas: p.filter((x) => x.estado === "rechazada").length, por_revisar: p.filter((x) => x.estado === "propuesta").length };
+};
+Object.assign(rpcs, {
+  registrar_ciudad_vista: ({ p_slug }, t) => t.ciudades.some((c) => c.slug === p_slug),
+  panel_ciudades: (_args, t) => ({
+    ciudades: t.ciudades.map(({ slug, nombre, estado, lat, lng, zona, creado_en }) => ({ slug, nombre, estado, lat, lng, zona, creado_en, consultas: CONSULTAS_30[slug] ?? 0 })),
+    corridas: [...t.rutinas_corridas].sort((a, b) => b.creado_en.localeCompare(a.creado_en)).map((r) => ({ ...r, ...cuentasDe(r.id, t) })),
+    credito: { usd: 200, vence: "2026-11-11", gastado: t.rutinas_corridas.reduce((s, r) => s + r.gasto_usd, 0) },
+  }),
+  panel_propuestas: ({ p_corrida }, t) => {
+    const r = t.rutinas_corridas.find((x) => x.id === p_corrida);
+    if (!r) return null;
+    const pendientes = t.propuestas.filter((p) => p.corrida_id === r.id && p.estado === "propuesta").sort((a, b) => a.fuente.localeCompare(b.fuente) || a.creado_en.localeCompare(b.creado_en));
+    const antes = new Set(t.rutinas_corridas.filter((o) => o.id !== r.id && o.creado_en < r.creado_en).map((o) => o.id));
+    const tipos = new Set(t.propuestas.filter((p) => p.corrida_id === r.id).map((p) => p.tipo));
+    return {
+      corrida: { id: r.id, tipo: r.tipo, ciudad: r.ciudad, ciudad_nombre: t.ciudades.find((c) => c.slug === r.ciudad)?.nombre ?? null, estado: r.estado, creado_en: r.creado_en, tope_usd: r.tope_usd, gasto_usd: r.gasto_usd, ...cuentasDe(r.id, t) },
+      propuestas: pendientes.map(({ id, tipo, fuente, datos, creado_en }) => ({ id, tipo, fuente, datos, creado_en })),
+      fuentes_con_tanda: [...new Set(t.propuestas.filter((p) => p.estado === "aceptada" && antes.has(p.corrida_id) && tipos.has(p.tipo) && pendientes.some((q) => q.fuente === p.fuente)).map((p) => p.fuente))],
+    };
+  },
+  aceptar_propuesta: ({ p_propuesta, p_ficha }, t) => {
+    const p = t.propuestas.find((x) => x.id === p_propuesta);
+    if (!p) return null;
+    const slug = String(p_ficha?.nombre ?? "ficha").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return { estado: "aceptada", ficha_id: p.tipo === "evento" ? null : crypto.randomUUID(), slug: p.tipo === "evento" ? null : slug };
+  },
+});

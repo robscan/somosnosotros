@@ -64,7 +64,7 @@ export default function OpcionesLista({ vista, conteos }: { vista: Vista; conteo
               const elegida = o.valor === abierta.actual;
               return (
                 <li key={o.valor}>
-                  <button type="button" className={`${admin.menuItem} ${s.opcion}`} aria-pressed={elegida} onClick={() => elegir(hoja, o.valor)}>
+                  <button type="button" className={`${admin.menuItem} ${admin.menuConDetalle} ${s.opcion}`} aria-pressed={elegida} onClick={() => elegir(hoja, o.valor)}>
                     <IconoOk width={20} height={20} className={elegida ? undefined : s.hueco} />
                     {o.etiqueta}
                     <small>{o.detalle}</small>

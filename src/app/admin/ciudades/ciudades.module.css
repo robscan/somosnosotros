@@ -1,0 +1,74 @@
+/* Administración › Ciudades, la bandeja de propuestas y Corridas (OL-427; prototipo firmado OL-425, bitácora 458). Todo lo demás es de
+   admin.module.css (grupo, fila, pendiente, hecho, indicador, etiqueta…) y de ui/Renglon (tarjeta): aquí solo lo propio, con los tokens del
+   sistema. Maquetación plana: cada dato, hijo directo de su renglón en su área. */
+
+/* Una ciudad es una tarjeta de renglones; dos seguidas llevan aire entre ellas. */
+.ciudad + .ciudad {
+  margin-top: var(--espacio-3);
+}
+/* La cabecera de la ciudad no se toca: sin el cursor de los renglones-botón. */
+.cabeza {
+  cursor: default;
+}
+/* El renglón-botón (los tres de cada ciudad): el de admin .fila, sin el traje del botón del navegador. */
+.boton {
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* La línea de la última investigación y la barra de avance van debajo del detalle, en el área de abajo de la fila. */
+.linea {
+  grid-area: error;
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+}
+.avance {
+  grid-area: error;
+  margin-top: var(--espacio-1);
+}
+/* La píldora verde de «Abierta» y «Terminada»; la roja de «Falló». Las demás (violeta, naranja, gris) son las de admin. */
+span.ok {
+  background: var(--ok-suave);
+  color: var(--ok);
+}
+span.fallo {
+  background: var(--error-suave);
+  color: var(--error);
+}
+/* «Aceptar las N de esta fuente», sobre sus tarjetas. */
+.todas {
+  margin-bottom: var(--espacio-3);
+}
+/* En la línea de lo hecho, «Ver ficha» va donde va la acción. */
+.salidaHecho {
+  grid-area: accion;
+}
+/* Las opciones de la hoja de «Rechazar»: el motivo y, debajo, qué quiere decir. Las cuatro son iguales: sin la raya que el menú de una ficha
+   pone antes de su última opción (la de quitar). */
+ul.motivos > li:last-child {
+  margin-top: 0;
+  border-top: 0;
+}
+.motivo {
+  align-content: center; /* el motivo y su detalle juntos; el aire va entre una opción y la otra */
+  padding-block: var(--espacio-3);
+}
+/* La lista de fuentes de la hoja de «Correr» deja su aire antes del campo del tope. */
+.fuentes {
+  margin-bottom: var(--espacio-4);
+}
+/* Corridas: los dos indicadores del crédito se leen, no se tocan. */
+.credito {
+  margin-bottom: var(--espacio-3);
+}
+div.quieto {
+  cursor: default;
+}
+/* En la portada, las propuestas por revisar van antes de los reclamos y reportes de «Pendiente». */
+.porRevisar + * {
+  margin-top: var(--espacio-3);
+}

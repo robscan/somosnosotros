@@ -96,7 +96,7 @@ export default function SenalFicha({ artistaId, slug, senal }: { artistaId: stri
               const elegida = o.valor === senal.puntaje;
               return (
                 <li key={String(o.valor)}>
-                  <button type="button" className={`${admin.menuItem} ${s.opcion}`} aria-pressed={elegida} disabled={enCamino} onClick={() => puntuar(o.valor)}>
+                  <button type="button" className={`${admin.menuItem} ${admin.menuConDetalle} ${s.opcion}`} aria-pressed={elegida} disabled={enCamino} onClick={() => puntuar(o.valor)}>
                     <IconoOk width={20} height={20} className={elegida ? undefined : s.hueco} />
                     {o.etiqueta}
                     <small>{o.detalle}</small>

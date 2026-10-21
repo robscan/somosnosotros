@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
+import { anotarConsulta } from "@/lib/ciudadesVistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { leerTira } from "@/lib/destacados";
 import type { Clase } from "@/lib/eventos";
@@ -83,6 +84,8 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const { ciudad: slug, lugar } = await searchParams;
   const ciudades = await cargarCiudades(true);
   const ciudad = ciudadPorSlug(slug, ciudades);
+  // Una consulta más para esta ciudad (OL-427), sin persona y después de responder. Abrir una ficha en la hoja (`?lugar=`) no es otra consulta.
+  if (!lugar) await anotarConsulta(ciudad);
   // `lugares` es lo único que pide la fila de contexto: se espera aquí, aparte de `extras` (destacados, seguidos, avisos), que solo
   // necesitan el mapa y la hoja y se difieren abajo.
   const lugares = await cargar(ciudad.nombre);

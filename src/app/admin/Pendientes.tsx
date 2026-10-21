@@ -2,36 +2,64 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { IconoBandera, IconoCamara, IconoOk, IconoPersona } from "@/components/ui/Iconos";
+import { IconoBandera, IconoCalendario, IconoCamara, IconoChevronDerecha, IconoDestello, IconoEstrella, IconoOk, IconoPersona, IconoPin } from "@/components/ui/Iconos";
+import renglon from "@/components/ui/Renglon.module.css";
+import type { PorRevisar } from "@/lib/ciudadesAdmin";
 import { accionDe, esReclamo, etiquetaFicha, quePide, rutaFicha, textoDejar, textoHecho, type Decision, type Pendiente } from "@/lib/panel";
 import { cambiarVisibilidad, decidirPendiente } from "./acciones";
 import Reintentar from "./Reintentar";
 import styles from "./admin.module.css";
+import ciudades from "./ciudades/ciudades.module.css";
 
 export type PendienteConCuando = Pendiente & { cuando: string };
+
+const ICONO_CORRIDA: Record<PorRevisar["tipo"], typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello };
 
 /**
  * Pendiente (decisiones 1 a 3): el rótulo con cuántos quedan y una tarjeta por reclamo o reporte, del más viejo al más
  * nuevo. Al decidir, la tarjeta se vuelve la línea de lo hecho y se queda hasta salir del panel, aunque el servidor
- * ya la haya quitado de la lista (la lista se toma al entrar).
+ * ya la haya quitado de la lista (la lista se toma al entrar). Antes, las propuestas de las rutinas por revisar (OL-427, firma de
+ * OL-425): un renglón por corrida que lleva a su bandeja, y su cuenta se suma al rótulo.
  */
-export default function Pendientes({ iniciales, error }: { iniciales: PendienteConCuando[]; error: boolean }) {
+export default function Pendientes({ iniciales, error, porRevisar = [] }: { iniciales: PendienteConCuando[]; error: boolean; porRevisar?: PorRevisar[] }) {
   const [lista] = useState(iniciales);
   const [decididos, setDecididos] = useState<string[]>([]);
-  const quedan = lista.length - decididos.length;
+  const quedan = lista.length - decididos.length + porRevisar.reduce((t, p) => t + p.n, 0);
   return (
     <>
       <h2 className={styles.grupo}>
         Pendiente{quedan > 0 && <b>{quedan}</b>}
       </h2>
+      {porRevisar.length > 0 && (
+        <ul className={`${renglon.tarjeta} ${ciudades.porRevisar}`} aria-label="Propuestas por revisar">
+          {porRevisar.map((p) => {
+            const Icono = ICONO_CORRIDA[p.tipo];
+            return (
+              <li key={p.corrida}>
+                <Link href={`/admin/ciudades/propuestas/${p.corrida}`} className={styles.fila}>
+                  <Icono width={20} height={20} />
+                  <b>{p.titulo}</b>
+                  <small>{p.detalle}</small>
+                  <span className={styles.total}>
+                    {p.n}
+                    <IconoChevronDerecha />
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {error ? (
         <Reintentar texto="No pudimos leer lo pendiente." />
       ) : lista.length === 0 ? (
-        <p className={styles.nada}>
-          <IconoOk width={20} height={20} />
-          <b>Nada pendiente</b>
-          <small>Sin reportes ni reclamos</small>
-        </p>
+        porRevisar.length > 0 ? null : (
+          <p className={styles.nada}>
+            <IconoOk width={20} height={20} />
+            <b>Nada pendiente</b>
+            <small>Sin reportes ni reclamos</small>
+          </p>
+        )
       ) : (
         <ul className={styles.pendientes}>
           {lista.map((p) => (
