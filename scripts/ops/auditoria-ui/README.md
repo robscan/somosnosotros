@@ -73,6 +73,13 @@ compañía, los números de OL-425). `npm run medir` mide Ciudades, su hoja de �
 `capturar-admin-ciudades.mjs` saca sus capturas con toques reales y comprueba la detección (Inicio y Lugares llaman a `registrar_ciudad_vista` después
 de responder; una ficha en la hoja y un robot, no).
 
+Administración › Showcase (OL-426, bitácora 459): el respaldo trae las cuatro tablas del showcase con datos inventados sobre sus artistas (estados,
+puntajes, notas neutras, lecturas de redes y evidencias con dominio `.example`; dos propuestas «por la rutina» en Feleal). Solo las leen
+`/admin/showcase` y su ficha, que mide `npm run medir` (s36 a s39, con la cuenta de administración). `capturar-showcase.mjs` saca las capturas: la
+portada (le pone al respaldo los contratos del panel desde un arranque propio en la carpeta temporal, sin tocar el fixture), la lista, la búsqueda,
+las hojas, la ficha, la ⓘ, una evidencia con un enlace que no es http(s) y la tabla a 1280. El respaldo va en el puerto 8859, así `SIN_BUILD=1`
+sirve con el `.next` que dejó la vez anterior.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

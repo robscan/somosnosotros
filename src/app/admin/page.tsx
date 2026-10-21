@@ -16,6 +16,7 @@ import IconoGrafo from "./grafo/IconoGrafo";
 import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
+import GrupoShowcase from "./showcase/GrupoShowcase";
 import styles from "./admin.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 
@@ -128,6 +129,8 @@ export default async function Admin() {
           </Link>
         </li>
       </ul>
+      {/* El showcase (OL-426, lo firmado en OL-425): al nivel del grafo, con su propio grupo. */}
+      <GrupoShowcase />
     </main>
   );
 }

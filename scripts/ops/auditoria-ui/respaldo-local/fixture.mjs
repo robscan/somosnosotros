@@ -401,9 +401,50 @@ const seguimientos = [
 ];
 const destacados = [E.colocaos, E.master, E.leonora, E.desierto].map((id, i) => ({ id: `ffff0001-0000-4000-8000-00000000000${i + 1}`, evento_id: id, lugar_id: null, artista_id: null, quitado: false, hasta: null, creado_en: hace(2) }));
 
+// OL-426 (bitácora 459): Administración › Showcase. Las cuatro tablas del showcase (migración 20261020130000) con datos inventados sobre los
+// artistas del respaldo: estados, puntajes, notas neutras, lecturas de redes con cifras inventadas y evidencias con dominio `.example` (dos
+// aceptadas, una rechazada y dos propuestas «por la rutina» en Feleal, que tiene ficha reclamada y novedades). Los cambios de estado son de la cuenta
+// de administración del respaldo («por ti»). Solo las leen /admin/showcase y su ficha: ninguna otra pantalla que mide `npm run medir` cambia.
+const diaHace = (dias) => fecha(-dias, "12:00").slice(0, 10);
+const candidatoShowcase = (artista_id, estado, [c, o, a, v], notas = null) => ({ artista_id, estado, puntaje_circulacion: c, puntaje_obra: o, puntaje_actividad: a, puntaje_vinculo: v, notas, actualizado_por: ADMIN, actualizado_en: hace(2) });
+const showcase_candidatos = [
+  candidatoShowcase(A.feleal, "invitado", [2, 1, 2, 1], "Circula por los foros del centro y por un festival; falta evidencia de obra grabada reciente.\nPreguntar a ACHE si le sirve el apoyo para grabar."),
+  candidatoShowcase(A.backside, "confirmado", [2, 2, 1, 1], "Obra publicada y circulación estable; confirmó su lugar en el showcase."),
+  candidatoShowcase(A.pimpolina, "invitado", [1, 1, 1, 2], "Temporada en el Teatro de la Paz; publica cada mes."),
+  candidatoShowcase(A.osslp, "revisado", [1, 2, 0, 0]),
+  candidatoShowcase(A.merlot, "candidato", [1, null, 2, 1], "Activa en redes; la rutina aún no la investiga."),
+];
+const showcase_cambios_estado = [
+  { id: "cccc0026-0000-4000-8000-000000000001", artista_id: A.feleal, estado: "revisado", por: ADMIN, creado_en: hace(5) },
+  { id: "cccc0026-0000-4000-8000-000000000002", artista_id: A.feleal, estado: "invitado", por: ADMIN, creado_en: hace(2) },
+  { id: "cccc0026-0000-4000-8000-000000000003", artista_id: A.backside, estado: "confirmado", por: ADMIN, creado_en: hace(3) },
+  { id: "cccc0026-0000-4000-8000-000000000004", artista_id: A.pimpolina, estado: "invitado", por: ADMIN, creado_en: hace(4) },
+  { id: "cccc0026-0000-4000-8000-000000000005", artista_id: A.osslp, estado: "revisado", por: ADMIN, creado_en: hace(6) },
+];
+const evidencia = (n, artista_id, senal, tipo, titulo, url, fechaEv, estado, leida_por, dias) => ({ id: `cccc0027-0000-4000-8000-00000000000${n}`, artista_id, senal, tipo, titulo, url, fecha: fechaEv, fuente: new URL(url).hostname, leida_por, estado, creado_en: hace(dias) });
+const showcase_evidencias = [
+  evidencia(1, A.feleal, "circulacion", "presentacion", "Fecha en un foro de Aguascalientes", "https://agenda-ags.example/fechas/feleal", diaHace(100), "aceptada", "rutina", 8),
+  evidencia(2, A.feleal, "obra", "obra", "Sencillo en plataformas de música", "https://musica.example/feleal/sencillo", diaHace(200), "aceptada", "persona", 8),
+  evidencia(3, A.feleal, "actividad", "redes", "Perfil de Instagram duplicado", "https://perfiles.example/feleal-2", null, "rechazada", "rutina", 8),
+  evidencia(4, A.feleal, "obra", "premio", "Mención en un concurso estatal de acordeón, 2025", "https://cultura-estatal.example/premios/2025", "2025-11-20", "propuesta", "rutina", 0),
+  evidencia(5, A.feleal, "circulacion", "prensa", "Nota sobre su gira por el Bajío", "https://prensa-local.example/notas/gira-bajio", diaHace(95), "propuesta", "rutina", 0),
+  evidencia(6, A.backside, "obra", "obra", "Disco en plataformas de música", "https://musica.example/0backside0/disco", diaHace(300), "aceptada", "persona", 20),
+];
+const lectura = (n, artista_id, red, seguidores, publicaciones, ultima, leido) => ({ id: `cccc0028-0000-4000-8000-00000000000${n}`, artista_id, red, seguidores, publicaciones, ultima_publicacion: ultima === null ? null : diaHace(ultima), leido_en: hace(leido), leido_por: ADMIN });
+const lecturas_redes = [
+  lectura(1, A.feleal, "instagram", 3200, 412, 2, 4),
+  lectura(2, A.feleal, "youtube", 640, 38, 21, 4),
+  lectura(3, A.feleal, "instagram", 2900, 380, 30, 40),
+  lectura(4, A.backside, "instagram", 5800, 640, 6, 4),
+  lectura(5, A.pimpolina, "instagram", 1100, 205, 12, 9),
+  lectura(6, A.osslp, "facebook", 12400, 1320, 60, 9),
+  lectura(7, A.merlot, "instagram", 2400, 330, 4, 4),
+];
+
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
   artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios, ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
+  showcase_candidatos, showcase_cambios_estado, showcase_evidencias, lecturas_redes,
 };
 
 // OL-401: lo que el grafo cultural lee con la llave de servicio (`cargarGrafo`, que salta las reglas por fila): filas de más que SOLO ve quien manda

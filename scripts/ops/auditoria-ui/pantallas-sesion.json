@@ -32,5 +32,9 @@
   { "id": "s32-admin-ciudades", "plantilla": "tarea", "url": "/admin/ciudades", "cuenta": "admin" },
   { "id": "s33-admin-ciudades-hoja", "plantilla": "tarea", "url": "/admin/ciudades", "cuenta": "admin", "paso": "admin-hoja-correr" },
   { "id": "s34-admin-propuestas", "plantilla": "tarea", "url": "/admin/ciudades/propuestas/abab0001-0000-4000-8000-000000000001", "cuenta": "admin" },
-  { "id": "s35-admin-corridas", "plantilla": "tarea", "url": "/admin/corridas", "cuenta": "admin" }
+  { "id": "s35-admin-corridas", "plantilla": "tarea", "url": "/admin/corridas", "cuenta": "admin" },
+  { "id": "s36-admin-showcase", "plantilla": "tarea", "url": "/admin/showcase", "cuenta": "admin" },
+  { "id": "s37-admin-showcase-tabla", "plantilla": "tarea", "url": "/admin/showcase?vista=tabla", "cuenta": "admin" },
+  { "id": "s38-admin-showcase-ficha", "plantilla": "tarea", "url": "/admin/showcase/feleal", "cuenta": "admin" },
+  { "id": "s39-admin-showcase-manual", "plantilla": "tarea", "url": "/admin/showcase/manual", "cuenta": "admin" }
 ]
