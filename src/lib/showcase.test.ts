@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   actividadDe,
   avanceInvestigar,
+  avisoLote,
+  botonLote,
+  cadenaParada,
+  investigadoHacePoco,
+  LIMITE_LOTE,
+  lineaLote,
+  lineaTotalLote,
+  mostrarLote,
+  resumenLote,
+  seleccionLote,
+  textoInvestigarTarjeta,
+  ultimasInvestigaciones,
+  type CorridaLista,
   investigacionEnCurso,
   lineaCreditoInvestigar,
   textoInvestigar,
@@ -60,6 +73,7 @@ function candidato(c: Partial<Candidato> & { nombre: string; fijados?: Partial<P
     foto: null,
     instagram: null,
     estado: "candidato",
+    marcado: false,
     valores,
     suma: Object.values(valores).reduce((n, v) => n + (v.puntaje ?? 0), 0),
     nota: null,
@@ -164,7 +178,8 @@ describe("armar la lista con lo de la base", () => {
     expect(sangre.valores.vinculo).toMatchObject({ puntaje: 1, origen: "fijado", propuesta: { puntaje: 0, motivo: "Nadie lleva su ficha" } });
   });
   it("sin fila en el showcase es candidato implícito; sin eventos ni lecturas solo tiene la propuesta del vínculo (0), y su enlace usa el id", () => {
-    expect(sinNada).toMatchObject({ estado: "candidato", suma: 0, eventos: 0, foros: 0, festivales: 0, slug: "a2", redes: null, nota: null });
+    expect(sangre.marcado).toBe(true); // OL-439: tiene fila en el showcase
+    expect(sinNada).toMatchObject({ marcado: false, estado: "candidato", suma: 0, eventos: 0, foros: 0, festivales: 0, slug: "a2", redes: null, nota: null });
     expect(Object.fromEntries(Object.entries(sinNada.valores).map(([k, v]) => [k, v.origen]))).toEqual({ circulacion: "sin_datos", obra: "sin_datos", actividad: "sin_datos", vinculo: "propuesto" });
   });
   it("sin nada fijado, la base propone y la suma, el orden y quienes pasan al consejo usan lo propuesto", () => {
@@ -444,5 +459,146 @@ describe("«Investigar» en la ficha (OL-430)", () => {
     expect(lineaCreditoInvestigar({ usd: 200, gastado: 12.6, vence: "2026-11-11" }, "2026-10-21")).toBe("Crédito: 187,40 USD · vence el 11 de noviembre");
     expect(lineaCreditoInvestigar({ usd: 200, gastado: 250, vence: "2026-11-11" }, "2026-11-12")).toBe("Crédito: 0,00 USD · venció el 11 de noviembre");
     expect(lineaCreditoInvestigar(null, "2026-10-21")).toBeNull();
+  });
+});
+
+describe("«Investigar» a varios desde la lista (OL-439)", () => {
+  const AHORA = new Date("2026-10-21T16:00:00Z");
+  const dia = (iso: string) => iso.slice(0, 10);
+  const corrida = (artista_id: string, cambios: Partial<CorridaLista> = {}): CorridaLista => ({
+    id: `c-${artista_id}-${cambios.creado_en ?? ""}`,
+    artista_id,
+    lote: null,
+    estado: "terminada",
+    tope_usd: 1,
+    gasto_usd: 0.39,
+    resumen: { propuestas: 3 },
+    creado_en: "2026-10-21T15:00:00Z",
+    inicio: "2026-10-21T15:00:05Z",
+    fin: "2026-10-21T15:03:00Z",
+    ...cambios,
+  });
+
+  it("la última investigación de cada artista, y si cuenta como reciente: en curso, o terminada hace menos de 30 días", () => {
+    const viejas = [corrida("a", { creado_en: "2026-09-01T00:00:00Z", fin: "2026-09-01T00:05:00Z" }), corrida("a", { estado: "fallida" }), corrida("b")];
+    const ultimas = ultimasInvestigaciones(viejas);
+    expect(ultimas.get("a")?.estado).toBe("fallida");
+    expect(ultimas.size).toBe(2);
+    expect(investigadoHacePoco(corrida("x", { estado: "pendiente", fin: null }), AHORA)).toBe(true);
+    expect(investigadoHacePoco(corrida("x", { estado: "corriendo", fin: null }), AHORA)).toBe(true);
+    expect(investigadoHacePoco(corrida("x", { fin: "2026-09-22T17:00:00Z" }), AHORA)).toBe(true); // hace 29 días
+    expect(investigadoHacePoco(corrida("x", { fin: "2026-09-20T15:00:00Z" }), AHORA)).toBe(false); // hace 31 días
+    expect(investigadoHacePoco(corrida("x", { estado: "fallida" }), AHORA)).toBe(false); // se puede repetir
+    expect(investigadoHacePoco(corrida("x", { estado: "cancelada" }), AHORA)).toBe(false);
+    expect(investigadoHacePoco(null, AHORA)).toBe(false);
+  });
+
+  describe("a quiénes", () => {
+    const lista = [
+      candidato({ nombre: "Marcado sin investigar", marcado: true }),
+      candidato({ nombre: "Marcado revisado", marcado: true, estado: "revisado" }),
+      candidato({ nombre: "Marcado investigado ayer", marcado: true }),
+      candidato({ nombre: "Marcado investigando", marcado: true }),
+      candidato({ nombre: "Marcado que falló", marcado: true }),
+      candidato({ nombre: "Invitado", marcado: true, estado: "invitado" }),
+      candidato({ nombre: "Descartado", marcado: true, estado: "descartado" }),
+      candidato({ nombre: "Implícito", disciplina: "teatro" }),
+    ];
+    const ultimas = new Map([
+      ["Marcado investigado ayer", corrida("Marcado investigado ayer", { fin: "2026-10-20T15:00:00Z" })],
+      ["Marcado investigando", corrida("Marcado investigando", { estado: "corriendo", fin: null })],
+      ["Marcado que falló", corrida("Marcado que falló", { estado: "fallida" })],
+    ]);
+    it("por omisión, los candidatos marcados (candidato o revisado) sin investigación en curso ni de los últimos 30 días; nunca descartados ni invitados", () => {
+      expect(seleccionLote(lista, lista, ultimas, AHORA).candidatos).toEqual(["Marcado sin investigar", "Marcado revisado", "Marcado que falló"]);
+    });
+    it("los que se ven: con el filtro de ahora, sin descartados ni investigados hace poco, y cuántos quedan fuera por cada cosa", () => {
+      expect(seleccionLote(lista, lista, ultimas, AHORA)).toMatchObject({
+        visibles: ["Marcado sin investigar", "Marcado revisado", "Marcado que falló", "Invitado", "Implícito"],
+        fueraRecientes: 2,
+        fueraDescartados: 1,
+      });
+      const teatro = filtrarCandidatos(lista, { q: null, disciplina: "teatro", estado: "todos" });
+      expect(seleccionLote(lista, teatro, ultimas, AHORA)).toEqual({ candidatos: ["Marcado sin investigar", "Marcado revisado", "Marcado que falló"], visibles: ["Implícito"], fueraRecientes: 0, fueraDescartados: 0 });
+    });
+    it("hasta 60 en una orden: con más, la hoja lo dice y su salida es filtrar; con nadie, también lo dice", () => {
+      expect(LIMITE_LOTE).toBe(60);
+      expect(avisoLote(26)).toBeNull();
+      expect(avisoLote(60)).toBeNull();
+      expect(avisoLote(61)).toBe("Son 61: elige hasta 60 o filtra por disciplina.");
+      expect(avisoLote(692)).toBe("Son 692: elige hasta 60 o filtra por disciplina.");
+      expect(avisoLote(0)).toBe("Nadie por investigar con esta opción.");
+      expect(botonLote(26)).toBe("Investigar a los 26");
+      expect(botonLote(1)).toBe("Investigar a 1 artista");
+    });
+  });
+
+  it("el total antes de investigar: a cuántos, hasta cuánto y el crédito que queda", () => {
+    expect(lineaTotalLote(26, 1, 192.4)).toBe("26 artistas · hasta 26,00 USD · crédito 192,40");
+    expect(lineaTotalLote(1, 0.5, 192.4)).toBe("1 artista · hasta 0,50 USD · crédito 192,40");
+    expect(lineaTotalLote(26, null, 192.4)).toBe("26 artistas · crédito 192,40"); // tope que no vale: el campo lo dice
+    expect(lineaTotalLote(26, 1.5, null)).toBe("26 artistas · hasta 39,00 USD"); // sin crédito leído
+  });
+
+  describe("la línea de la orden", () => {
+    const LOTE = "lote-1";
+    const de = (artista: string, cambios: Partial<CorridaLista>) => corrida(artista, { lote: LOTE, creado_en: "2026-10-21T15:00:00Z", ...cambios });
+    const enCurso = [
+      de("a", { gasto_usd: 0.4 }),
+      de("b", { gasto_usd: 0.35 }),
+      de("c", { estado: "corriendo", gasto_usd: 0.12, fin: null, resumen: { paso: "2 de 4 búsquedas", avance: 0.5 } }),
+      de("d", { estado: "pendiente", gasto_usd: 0, fin: null, inicio: null }),
+      // Una de la ficha (sin lote) y una de una orden anterior no cuentan.
+      corrida("e", { estado: "corriendo", fin: null }),
+      corrida("f", { lote: "lote-viejo", creado_en: "2026-10-01T15:00:00Z" }),
+    ];
+    it("mientras corre: a cuántos, cuántos terminaron, lo gastado y su barra", () => {
+      const r = resumenLote(enCurso, { a: 2, c: 1, f: 9 })!;
+      expect(r).toMatchObject({ lote: LOTE, total: 4, enCurso: 2, terminados: 2, fallidos: 0, usd: 0.87, porRevisar: 3, fin: null });
+      expect(r.avance).toBeCloseTo((1 + 1 + 0.5 + 0) / 4);
+      expect(lineaLote(r, "2026-10-21", dia)).toBe("Investigando a 4 · 2 terminados · 0,87 USD");
+      expect(mostrarLote(r, "2026-10-21", dia)).toBe(true);
+    });
+    it("acabada: cuántos y cuándo, lo que dejó por revisar (o todo revisado) y lo gastado; se dice mientras deja algo o el día que acabó", () => {
+      const hecha = [de("a", { fin: "2026-10-21T16:10:00Z" }), de("b", { estado: "fallida", fin: "2026-10-21T16:20:00Z" })];
+      const r = resumenLote(hecha, { a: 3 })!;
+      expect(r).toMatchObject({ total: 2, enCurso: 0, terminados: 1, fallidos: 1, porRevisar: 3, fin: "2026-10-21T16:20:00Z" });
+      expect(lineaLote(r, "2026-10-21", dia)).toBe("2 investigados hoy · 1 no se pudo · 3 evidencias por revisar · 0,78 USD");
+      expect(lineaLote({ ...r, porRevisar: 0 }, "2026-10-22", dia)).toBe("2 investigados ayer · 1 no se pudo · todo revisado · 0,78 USD");
+      expect(mostrarLote({ ...r, porRevisar: 0 }, "2026-10-21", dia)).toBe(true); // el día que acabó
+      expect(mostrarLote({ ...r, porRevisar: 0 }, "2026-10-22", dia)).toBe(false); // después, el renglón vuelve a proponer
+      expect(mostrarLote({ ...r, porRevisar: 1 }, "2026-11-30", dia)).toBe(true); // mientras deje algo por revisar
+      expect(resumenLote([corrida("a")], {})).toBeNull(); // sin órdenes de la lista
+      expect(mostrarLote(null, "2026-10-21", dia)).toBe(false);
+    });
+  });
+
+  it("la tarjeta dice cómo va su investigación o cuántas evidencias deja por revisar", () => {
+    const hoy = "2026-10-21";
+    expect(textoInvestigarTarjeta(null, 0, hoy, dia)).toBeNull();
+    expect(textoInvestigarTarjeta(null, 2, hoy, dia)).toBe("2 evidencias por revisar");
+    expect(textoInvestigarTarjeta(corrida("a", { estado: "pendiente", fin: null }), 0, hoy, dia)).toBe("Investigando · por empezar");
+    expect(textoInvestigarTarjeta(corrida("a", { estado: "corriendo", fin: null, resumen: { paso: "2 de 4 búsquedas" } }), 0, hoy, dia)).toBe("Investigando · 2 de 4 búsquedas");
+    expect(textoInvestigarTarjeta(corrida("a", { estado: "corriendo", fin: null, resumen: { paso: "2 de 4 búsquedas" } }), 1, hoy, dia)).toBe("Investigando · 2 de 4 búsquedas · 1 evidencia por revisar");
+    expect(textoInvestigarTarjeta(corrida("a"), 3, hoy, dia)).toBe("Investigado hoy · 3 evidencias por revisar");
+    expect(textoInvestigarTarjeta(corrida("a"), 1, "2026-10-22", dia)).toBe("Investigado ayer · 1 evidencia por revisar");
+    expect(textoInvestigarTarjeta(corrida("a"), 0, "2026-11-02", dia)).toBe("Investigado el 21 oct · todo revisado");
+    expect(textoInvestigarTarjeta(corrida("a", { resumen: { propuestas: 0 } }), 0, hoy, dia)).toBe("Investigado hoy · sin evidencias nuevas");
+    expect(textoInvestigarTarjeta(corrida("a", { estado: "fallida" }), 0, hoy, dia)).toBe("No se pudo investigar hoy");
+    expect(textoInvestigarTarjeta(corrida("a", { estado: "cancelada" }), 2, hoy, dia)).toBe("2 evidencias por revisar");
+  });
+
+  it("la cadena del motor se paró solo si TODAS las corridas en curso están varadas: en una orden, las que esperan su turno no", () => {
+    const iso = (min: number) => new Date(AHORA.getTime() - min * 60_000).toISOString();
+    const esperando = (min: number) => ({ id: `p${min}`, estado: "pendiente", resumen: {}, creado_en: iso(min) });
+    const avanzando = { id: "c1", estado: "corriendo", resumen: { actualizada: iso(0.5) }, creado_en: iso(20), inicio: iso(19) };
+    const ocupada = { id: "c2", estado: "corriendo", resumen: { ocupada_hasta: new Date(AHORA.getTime() + 60_000).toISOString(), actualizada: iso(10) }, creado_en: iso(20), inicio: iso(19) };
+    const quieta = { id: "c3", estado: "corriendo", resumen: { ocupada_hasta: null, actualizada: iso(10) }, creado_en: iso(20), inicio: iso(19) };
+    expect(cadenaParada([], AHORA)).toBe(false);
+    expect(cadenaParada([esperando(10), esperando(10), avanzando], AHORA)).toBe(false); // una avanzó hace 30 s: la cadena llegará a las demás
+    expect(cadenaParada([esperando(10), quieta, ocupada], AHORA)).toBe(false); // una se está trabajando
+    expect(cadenaParada([esperando(1)], AHORA)).toBe(false); // su primer paso se pidió hace un minuto
+    expect(cadenaParada([esperando(10), esperando(3), quieta], AHORA)).toBe(true); // nadie avanza: se pide UN paso
+    expect(cadenaParada([{ ...quieta, estado: "terminada" }], AHORA)).toBe(false);
   });
 });
