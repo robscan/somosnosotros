@@ -1,5 +1,5 @@
 import type { DiccionarioAyuda } from "@/components/ui/useAyuda";
-import { MAXIMO_RUBRICA, SENALES, UMBRAL_CONSEJO } from "@/lib/showcase";
+import { LIMITE_LOTE, MAXIMO_RUBRICA, SENALES, UMBRAL_CONSEJO } from "@/lib/showcase";
 
 /**
  * Lo que dice el panel de ayuda (ⓘ, `ui/Ayuda`) en la ficha de showcase (OL-426): cada control lleva su clave en `data-ayuda` y aquí vive lo que
@@ -57,6 +57,12 @@ export const AYUDA_SHOWCASE: DiccionarioAyuda = {
     detalle: "Solo propone lo que dice una página que abrió y leyó, con su enlace, y descarta los homónimos dudosos. No lee redes. Todo llega a «Por revisar» y nada cuenta ni sale de Administración hasta que lo aceptas.",
     manual: "investigar",
   },
+  investigarLote: {
+    titulo: "Investigar a varios",
+    texto: `El renglón «Investigar» de la lista manda la misma rutina a varios a la vez: por omisión, los candidatos marcados (candidatos o revisados) sin investigar en 30 días; o los que se ven en la lista con el filtro de ahora. Hasta ${LIMITE_LOTE} por orden, con un tope por artista (1,00 USD por omisión) y el total antes de confirmar.`,
+    detalle: "Nunca entran los descartados ni quien ya tiene una investigación en curso. El motor las corre una tras otra; el renglón dice cómo va («Investigando a 26 · 5 terminados · 1,95 USD») y la lista se vuelve a leer sola cada 20 segundos mientras corre. Cada tarjeta dice cómo va su investigación y cuántas evidencias deja por revisar.",
+    manual: "investigarLote",
+  },
   base: { titulo: "En la base", texto: "Sus eventos del año en la app: cuántos, en qué foros y en qué festivales. Sale solo, sin investigar.", manual: "base" },
   redes: {
     titulo: "Redes",
@@ -75,7 +81,7 @@ export const AYUDA_SHOWCASE: DiccionarioAyuda = {
 /** Las secciones del manual, en el orden de la ficha. */
 export const SECCIONES_MANUAL = [
   { id: "bloque-rubrica", titulo: "La rúbrica", entradas: ["rubrica", "circulacion", "obra", "actividad", "vinculo"] },
-  { id: "bloque-estado", titulo: "Estado y evidencias", entradas: ["estado", "evidencias", "investigar"] },
+  { id: "bloque-estado", titulo: "Estado y evidencias", entradas: ["estado", "evidencias", "investigar", "investigarLote"] },
   { id: "bloque-base", titulo: "La base y las redes", entradas: ["base", "redes"] },
   { id: "bloque-notas", titulo: "Notas", entradas: ["notas"] },
 ] as const;
