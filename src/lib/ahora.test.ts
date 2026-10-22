@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
-import { anilloDe, candidatosAhora, clasificarAhora, cuentaAtras, etiquetaAhora, metaAhora, rotuloCirculo, rotulosAhora, TOPE_AHORA, type AvisoAhora, type EventoAhora } from "./ahora";
+import { actoDeInauguracion, anilloDe, candidatosAhora, clasificarAhora, cuentaAtras, etiquetaAhora, metaAhora, rotuloCirculo, rotulosAhora, TOPE_AHORA, type AvisoAhora, type EventoAhora } from "./ahora";
 
 const ZONA = "America/Mexico_City"; // UTC−6: las 16:15 de San Luis son las 22:15Z
 /** Un instante de San Luis Potosí: «2026-10-09 16:15» → Date. */
@@ -212,7 +212,7 @@ describe("candidatosAhora", () => {
   });
 });
 
-describe("OL-379: «Inaugura hoy» solo si el acto de inauguración es hoy («hoy se visita solamente»)", () => {
+describe("OL-379 y OL-442: el día de su acto de inauguración la exposición no sale (sale el acto); sin acto hoy, su primer día «Abre hoy»", () => {
   // El caso real: «DESIERTO: Observación y Espacio.» se visita desde el lunes 12 de octubre (00:00 de San Luis) y su inauguración fue el
   // viernes 9 a las 20:00. El 12 a las 11:00 salía «Inaugura hoy».
   const DESIERTO = { inicio: "2026-10-12T06:00:00Z", fin: "2026-11-16T05:59:00Z" };
@@ -223,8 +223,9 @@ describe("OL-379: «Inaugura hoy» solo si el acto de inauguración es hoy («ho
   it("inaugurada el viernes 9: el lunes 12, su primer día, «Abre hoy»", () => {
     expect(etiqueta(desierto({ inaugura: "2026-10-10T02:00:00Z" }), lunes)).toEqual([["expo", "Abre hoy", "Abre hoy"]]);
   });
-  it("con la inauguración el mismo 12 a las 20:00: «Inaugura hoy», también antes de que empiece", () => {
-    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), lunes)).toEqual([["expo", "Inaugura hoy", "Inaugura hoy"]]);
+  it("con la inauguración el mismo 12 a las 20:00: la exposición no sale ese día, también antes de que empiece el acto (OL-442)", () => {
+    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), lunes)).toEqual([]);
+    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), sl("2026-10-12", "21:30"))).toEqual([]);
   });
   it("sin acto de inauguración, su primer día: «Abre hoy»", () => {
     expect(etiqueta(desierto(), lunes)).toEqual([["expo", "Abre hoy", "Abre hoy"]]);
@@ -244,11 +245,11 @@ describe("OL-379: «Inaugura hoy» solo si el acto de inauguración es hoy («ho
     expect(clasificarAhora([e], sl("2026-10-13", "00:01"))).toEqual([]);
     const mismaNoche = { ...e, inicio: iso("2026-10-13", "00:00") };
     expect(etiqueta(mismaNoche, sl("2026-10-12", "23:59"))).toEqual([]);
-    expect(etiqueta(mismaNoche, sl("2026-10-13", "00:01"))).toEqual([["expo", "Inaugura hoy", "Inaugura hoy"]]);
+    expect(etiqueta(mismaNoche, sl("2026-10-13", "00:01"))).toEqual([]);
   });
   it("el día se lee en la zona de la exposición: las 20:00 de San Luis del 12 son el 13 en UTC y siguen siendo hoy", () => {
     expect(iso("2026-10-12", "20:00").slice(0, 10)).toBe("2026-10-13");
-    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), sl("2026-10-12", "17:00"))).toEqual([["expo", "Inaugura hoy", "Inaugura hoy"]]);
+    expect(etiqueta(desierto({ inaugura: iso("2026-10-12", "20:00") }), sl("2026-10-12", "17:00"))).toEqual([]);
   });
 
   describe("candidatosAhora trae el inicio de su acto de inauguración", () => {
@@ -256,15 +257,65 @@ describe("OL-379: «Inaugura hoy» solo si el acto de inauguración es hoy («ho
     const e = (id: string, cambios: Partial<EventoAgenda>): EventoAgenda => ({ ...base, id, titulo: id, inicio: iso("2026-10-12", "19:00"), fin: null, ...cambios }) as EventoAgenda;
     const expo = e("desierto", { clase: "exposicion", ...DESIERTO, inaugura_id: "acto" });
 
-    it("si el acto está en la agenda (todavía no termina), viaja su inicio y la etiqueta es «Inaugura hoy»", () => {
-      const [x] = candidatosAhora([expo, e("acto", { clase: "puntual", inicio: iso("2026-10-12", "20:00") })], "San Luis Potosí", lunes).filter((c) => c.exposicion);
-      expect(x.inaugura).toBe(iso("2026-10-12", "20:00"));
-      expect(etiquetaAhora(clasificarAhora([x], lunes)[0], lunes)).toBe("Inaugura hoy");
+    it("si el acto está en la agenda (todavía no termina), viaja su inicio y ese día sale solo el acto", () => {
+      const l = candidatosAhora([expo, e("acto", { clase: "puntual", inicio: iso("2026-10-12", "20:00") })], "San Luis Potosí", lunes);
+      expect(l.find((c) => c.exposicion)?.inaugura).toBe(iso("2026-10-12", "20:00"));
+      expect(clasificarAhora(l, lunes).map((a) => [a.tipo, a.e.id])).toEqual([["hoy", "acto"]]);
     });
     it("si ya pasó, la agenda no lo trae: sin inauguración y «Abre hoy» (el caso del 12 de octubre)", () => {
       const [x] = candidatosAhora([expo], "San Luis Potosí", lunes);
       expect("inaugura" in x).toBe(false);
       expect(etiquetaAhora(clasificarAhora([x], lunes)[0], lunes)).toBe("Abre hoy");
     });
+  });
+});
+
+describe("OL-442: una exposición que inaugura ese día sale una sola vez, como su inauguración", () => {
+  // Founder (22 oct): «Si una expo inaugura solo se muestra la inauguración ese día. Abrir e inaugurar en términos prácticos es lo mismo.»
+  const base = { slug: null, imagen: null, precio: null, lugar_id: "ceart", sitio_texto: null, sitio_direccion: null, sitio_reservado: false, zona: ZONA, lugar: { nombre: "Centro de las Artes", portada: null }, creado_en: "2026-09-01T00:00:00Z", van: 0 };
+  const e = (id: string, cambios: Partial<EventoAgenda>): EventoAgenda => ({ ...base, id, titulo: id, inicio: iso("2026-10-22", "19:00"), fin: null, ...cambios }) as EventoAgenda;
+  /** La exposición «Raíces» se visita del 22 de octubre al 30 de noviembre. */
+  const raices = (cambios: Partial<EventoAgenda> = {}) => e("raices", { clase: "exposicion", titulo: "Raíces", inicio: iso("2026-10-22", "19:00"), fin: iso("2026-11-30", "18:00"), ...cambios });
+  const acto = (cambios: Partial<EventoAgenda> = {}) => e("acto", { clase: "puntual", titulo: "Inauguración: Raíces", inicio: iso("2026-10-22", "19:00"), fin: iso("2026-10-22", "21:00"), ...cambios });
+  const historias = (agenda: EventoAgenda[], a: Date) => clasificarAhora(candidatosAhora(agenda, "San Luis Potosí", a), a).map((x) => [x.e.id, etiquetaAhora(x, a)]);
+  const jueves = sl("2026-10-22", "12:00");
+
+  it("ligadas por inaugura_id: el día que abre, solo la inauguración", () => {
+    expect(historias([raices({ inaugura_id: "acto" }), acto({ titulo: "Noche de apertura" })], jueves)).toEqual([["acto", "Hoy"]]);
+  });
+  it("sin liga, por título, lugar y día: «Inauguración: Raíces» en el mismo lugar el día que abre «Raíces»", () => {
+    expect(historias([raices(), acto()], jueves)).toEqual([["acto", "Hoy"]]);
+    expect(historias([raices({ titulo: "Exposición Raíces" }), acto({ titulo: "Inauguración de la exposición «Raíces»" })], jueves)).toEqual([["acto", "Hoy"]]);
+    // También en un sitio escrito a mano (sin lugar del directorio), con el mismo nombre.
+    expect(historias([raices({ lugar_id: null, sitio_texto: "Galería Toro" }), acto({ lugar_id: null, sitio_texto: "galeria toro" })], jueves)).toEqual([["acto", "Hoy"]]);
+  });
+  it("mientras dura la inauguración, y después de que termine, la exposición tampoco sale ese día", () => {
+    const agenda = [raices(), acto()];
+    expect(historias(agenda, sl("2026-10-22", "19:30"))).toEqual([["acto", "Ahora"]]);
+    // A las 21:30 el acto ya terminó (el teléfono reclasifica con lo que cargó): no queda nada, la exposición no vuelve.
+    const cargado = candidatosAhora(agenda, "San Luis Potosí", jueves);
+    expect(clasificarAhora(cargado, sl("2026-10-22", "21:30"))).toEqual([]);
+  });
+  it("los días siguientes sale la exposición (su último día, «Último día»)", () => {
+    const ultimo = sl("2026-11-30", "12:00");
+    expect(historias([raices({ inaugura_id: "acto" })], ultimo)).toEqual([["raices", "Último día"]]);
+    expect(historias([raices()], ultimo)).toEqual([["raices", "Último día"]]);
+  });
+  it("sin inauguración registrada, la exposición sale normal su primer día: «Abre hoy»", () => {
+    expect(historias([raices()], jueves)).toEqual([["raices", "Abre hoy"]]);
+  });
+  it("no se confunde: otra muestra, otro lugar, otro día u otra exposición no cuentan como su inauguración", () => {
+    expect(historias([raices(), acto({ titulo: "Inauguración: Ecos" })], jueves).map(([c]) => c).sort()).toEqual(["acto", "raices"]);
+    expect(historias([raices(), acto({ lugar_id: "otro" })], jueves).map(([c]) => c).sort()).toEqual(["acto", "raices"]);
+    expect(historias([raices(), acto({ inicio: iso("2026-10-23", "19:00"), fin: iso("2026-10-23", "21:00") })], jueves)).toEqual([["raices", "Abre hoy"]]);
+    // Un concierto del mismo lugar y día que se llama como la muestra no es su inauguración (no dice que inaugura).
+    expect(historias([raices(), acto({ titulo: "Raíces" })], jueves).map(([c]) => c).sort()).toEqual(["acto", "raices"]);
+    // Otra exposición que se anuncia como «Inauguración: Raíces» es una ficha sola, no un acto aparte.
+    expect(historias([raices(), acto({ clase: "exposicion", fin: iso("2026-11-30", "18:00") })], jueves).map(([c]) => c).sort()).toEqual(["acto", "raices"]);
+  });
+  it("actoDeInauguracion: el ligado gana; sin él en la agenda (ya terminó), nada", () => {
+    expect(actoDeInauguracion(raices({ inaugura_id: "acto" }), [acto({ titulo: "Otro título" })])?.id).toBe("acto");
+    expect(actoDeInauguracion(raices({ inaugura_id: "acto" }), [])).toBeNull();
+    expect(actoDeInauguracion(raices(), [raices(), acto()])?.id).toBe("acto");
   });
 });
