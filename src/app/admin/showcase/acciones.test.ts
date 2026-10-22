@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { anadirEvidencia, cambiarEstado, cambiarPuntaje, guardarNotas, importarLecturas, investigar } from "./acciones";
+import { anadirEvidencia, cambiarEstado, cambiarPuntaje, guardarNotas, importarLecturas, investigar, investigarVarios } from "./acciones";
 
 /**
  * Las acciones del showcase (OL-426): solo la administración escribe (la base lo vuelve a exigir, `supabase/tests/pg/showcase.test.mjs`); una
  * evidencia sin enlace http(s) no llega a la base; lo que llega del navegador con otra forma no rompe la acción; el CSV dice cada fila que no entra.
  */
-const m = vi.hoisted(() => ({ actual: vi.fn(), ruta: vi.fn(), despues: vi.fn(), escrito: [] as { tabla: string; como: string; datos: unknown }[], artistas: [] as { id: string; slug: string }[], enCurso: [] as { id: string }[], filtros: [] as unknown[][] }));
+const m = vi.hoisted(() => ({ actual: vi.fn(), ruta: vi.fn(), despues: vi.fn(), escrito: [] as { tabla: string; como: string; datos: unknown }[], artistas: [] as { id: string; slug: string }[], enCurso: [] as Record<string, unknown>[], descartados: [] as { artista_id: string }[], filtros: [] as unknown[][] }));
 vi.mock("next/cache", () => ({ revalidatePath: m.ruta }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "localhost:3000" }) }));
 vi.mock("next/server", () => ({ after: m.despues }));
@@ -15,7 +15,7 @@ vi.mock("@/lib/supabase/servidor", () => ({
     from: (tabla: string) => {
       let escribe = false;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const q: any = { then: (ok: (v: unknown) => void) => Promise.resolve({ data: tabla === "artistas" ? m.artistas : tabla === "rutinas_corridas" && !escribe ? m.enCurso : [{ id: "x" }], error: null }).then(ok) };
+      const q: any = { then: (ok: (v: unknown) => void) => Promise.resolve({ data: tabla === "artistas" ? m.artistas : tabla === "rutinas_corridas" && !escribe ? m.enCurso : tabla === "showcase_candidatos" && !escribe ? m.descartados : [{ id: "x" }], error: null }).then(ok) };
       for (const f of ["select", "eq", "in", "limit", "single"]) q[f] = (...args: unknown[]) => (tabla === "rutinas_corridas" && f !== "select" && m.filtros.push([f, ...args]), q);
       for (const como of ["insert", "upsert", "update"]) q[como] = (datos: unknown) => ((escribe = true), m.escrito.push({ tabla, como, datos }), q);
       return q;
@@ -31,6 +31,7 @@ beforeEach(() => {
   m.escrito = [];
   m.artistas = [];
   m.enCurso = [];
+  m.descartados = [];
   m.filtros = [];
   m.actual.mockResolvedValue({ perfil: { id: "admin-1", rol: "admin" } });
 });
@@ -112,14 +113,14 @@ describe("importar el CSV de redes", () => {
 describe("«Investigar» (OL-430)", () => {
   it("deja una corrida de showcase sin ciudad, con el artista y el tope, y pide su primer paso después de responder", async () => {
     expect(await investigar(ID, "1,00", "sangre-de-coyote")).toEqual({ ok: true });
-    expect(m.escrito).toEqual([{ tabla: "rutinas_corridas", como: "insert", datos: { tipo: "showcase", ciudad: null, tope_usd: 1, creado_por: "admin-1", parametros: { artista_id: ID } } }]);
-    // Antes, si ya había una en curso de este artista (pendiente o corriendo).
-    expect(m.filtros).toEqual(expect.arrayContaining([["eq", "tipo", "showcase"], ["in", "estado", ["pendiente", "corriendo"]], ["eq", "parametros->>artista_id", ID]]));
+    expect(m.escrito).toEqual([{ tabla: "rutinas_corridas", como: "insert", datos: [{ tipo: "showcase", ciudad: null, tope_usd: 1, creado_por: "admin-1", parametros: { artista_id: ID } }] }]);
+    // Antes, las corridas en curso (pendientes o corriendo): si ya hay una de este artista, no se crea otra (OL-439: la misma función que la lista).
+    expect(m.filtros).toEqual(expect.arrayContaining([["in", "estado", ["pendiente", "corriendo"]]]));
     expect(m.despues).toHaveBeenCalledTimes(1);
     expect(m.ruta).toHaveBeenCalledWith("/admin/showcase/sangre-de-coyote");
   });
   it("una a la vez por artista; el tope tiene que valer; solo la administración", async () => {
-    m.enCurso = [{ id: "c-1" }];
+    m.enCurso = [{ id: "c-1", tipo: "showcase", estado: "pendiente", parametros: { artista_id: ID }, resumen: {}, creado_en: new Date().toISOString() }];
     expect(await investigar(ID, "1,00", "x")).toEqual({ ok: false, error: "Ya hay una investigación en curso de este artista." });
     m.enCurso = [];
     expect(await investigar(ID, "0", "x")).toEqual({ ok: false, error: "Escribe un tope de más de 0 y hasta 50 USD." });
@@ -129,5 +130,55 @@ describe("«Investigar» (OL-430)", () => {
     expect(await investigar(ID, "1", "x")).toEqual({ ok: false, error: "Solo la administración puede cambiar el showcase." });
     expect(m.escrito).toEqual([]);
     expect(m.despues).not.toHaveBeenCalled();
+  });
+});
+
+describe("«Investigar» a varios desde la lista (OL-439)", () => {
+  const OTRO = "22222222-2222-4222-8222-222222222222";
+  const TERCERO = "33333333-3333-4333-8333-333333333333";
+  const insertado = () => m.escrito.find((e) => e.tabla === "rutinas_corridas" && e.como === "insert")?.datos as { parametros: { artista_id: string; lote?: string } }[] | undefined;
+
+  it("una corrida por artista, de la misma orden (lote), con la misma forma que la de la ficha; el primer paso, una sola vez", async () => {
+    expect(await investigarVarios([ID, OTRO, ID, "no-es-un-id", 7], "0,50")).toEqual({ ok: true, creadas: 2, omitidas: 0 });
+    const filas = insertado()!;
+    expect(filas).toHaveLength(2);
+    expect(filas.map((f) => f.parametros.artista_id)).toEqual([ID, OTRO]);
+    expect(filas[0]).toMatchObject({ tipo: "showcase", ciudad: null, tope_usd: 0.5, creado_por: "admin-1" });
+    expect(filas[0].parametros.lote).toMatch(/^[0-9a-f-]{36}$/);
+    expect(filas[1].parametros.lote).toBe(filas[0].parametros.lote);
+    expect(m.despues).toHaveBeenCalledTimes(1);
+    expect(m.ruta).toHaveBeenCalledWith("/admin/showcase");
+    expect(m.ruta).toHaveBeenCalledWith("/admin/corridas");
+  });
+  it("los descartados y quien ya tiene una en curso no entran; se cuentan como omitidos", async () => {
+    m.descartados = [{ artista_id: OTRO }];
+    m.enCurso = [{ id: "c-1", tipo: "showcase", estado: "corriendo", parametros: { artista_id: TERCERO }, resumen: { ocupada_hasta: new Date(Date.now() + 60_000).toISOString() }, creado_en: new Date().toISOString() }];
+    expect(await investigarVarios([ID, OTRO, TERCERO], "1")).toEqual({ ok: true, creadas: 1, omitidas: 2 });
+    expect(insertado()!.map((f) => f.parametros.artista_id)).toEqual([ID]);
+  });
+  it("si el motor ya está corriendo otras, no pide otro paso: las nuevas esperan su turno en la misma cadena", async () => {
+    m.enCurso = [{ id: "c-9", tipo: "lugares", estado: "corriendo", parametros: {}, resumen: { actualizada: new Date().toISOString() }, creado_en: new Date().toISOString() }];
+    expect(await investigarVarios([ID], "1")).toMatchObject({ ok: true, creadas: 1 });
+    expect(m.despues).not.toHaveBeenCalled();
+  });
+  it("si todas las que esperan están varadas (la cadena se paró), sí lo pide", async () => {
+    const hace5min = new Date(Date.now() - 5 * 60_000).toISOString();
+    m.enCurso = [{ id: "c-9", tipo: "showcase", estado: "pendiente", parametros: { artista_id: TERCERO }, resumen: {}, creado_en: hace5min }];
+    expect(await investigarVarios([ID], "1")).toMatchObject({ ok: true, creadas: 1 });
+    expect(m.despues).toHaveBeenCalledTimes(1);
+  });
+  it("hasta 60 por orden; nadie, un tope que no vale o sin ser admin: nada se crea", async () => {
+    const muchos = Array.from({ length: 61 }, (_, i) => `11111111-1111-4111-8111-${String(i).padStart(12, "0")}`);
+    expect(await investigarVarios(muchos, "1")).toEqual({ ok: false, error: "Son 61: elige hasta 60 o filtra por disciplina." });
+    expect(await investigarVarios(muchos.slice(0, 60), "1")).toMatchObject({ ok: true, creadas: 60 });
+    m.escrito = [];
+    expect(await investigarVarios([], "1")).toEqual({ ok: false, error: "Elige a quién investigar." });
+    expect(await investigarVarios("todos", "1")).toEqual({ ok: false, error: "Elige a quién investigar." });
+    expect(await investigarVarios([ID], "0")).toEqual({ ok: false, error: "Escribe un tope de más de 0 y hasta 50 USD." });
+    m.descartados = [{ artista_id: ID }];
+    expect(await investigarVarios([ID], "1")).toEqual({ ok: false, error: "Ya están todos en curso o descartados. Recarga la página." });
+    m.actual.mockResolvedValue({ perfil: { id: "u-1", rol: "usuario" } });
+    expect(await investigarVarios([OTRO], "1")).toEqual({ ok: false, error: "Solo la administración puede cambiar el showcase." });
+    expect(m.escrito).toEqual([]);
   });
 });

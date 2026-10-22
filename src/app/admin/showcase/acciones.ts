@@ -6,9 +6,12 @@ import { after } from "next/server";
 import { leerTope } from "@/lib/ciudadesAdmin";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { esUuid } from "@/lib/formulario";
+import { type CorridaVista } from "@/lib/rutinas/rescate";
 import {
+  cadenaParada,
   esEstado,
   esPuntaje,
+  LIMITE_LOTE,
   esSenal,
   leerCsvRedes,
   RUTA_SHOWCASE,
@@ -188,15 +191,62 @@ export async function investigar(artistaId: string, tope: string, slug: string):
   if (!actual || actual.perfil.rol !== "admin") return SIN_PERMISO;
   const db = await clienteServidor();
   if (!db) return SIN_BASE;
-  const enCurso = await db.from("rutinas_corridas").select("id").eq("tipo", "showcase").in("estado", ["pendiente", "corriendo"]).eq("parametros->>artista_id", artistaId).limit(1);
-  if (enCurso.error) return SIN_BASE;
-  if (enCurso.data?.length) return { ok: false, error: "Ya hay una investigación en curso de este artista." };
-  const { error } = await db.from("rutinas_corridas").insert({ tipo: "showcase", ciudad: null, tope_usd: usd, creado_por: actual.perfil.id, parametros: { artista_id: artistaId } }).select("id").single();
-  if (error) return { ok: false, error: "No se pudo dejar lista. Intenta de nuevo." };
+  const r = await crearInvestigaciones(db, actual.perfil.id, [artistaId], usd, null);
+  if (!r.ok) return r;
+  if (!r.creadas) return { ok: false, error: "Ya hay una investigación en curso de este artista." };
   revalidar(slug);
-  revalidatePath("/admin/corridas");
-  await pedirPrimerPaso();
   return { ok: true };
+}
+
+export type ResultadoLote = { ok: true; creadas: number; omitidas: number } | { ok: false; error: string };
+
+/**
+ * «Investigar» a varios desde la lista (OL-439): una corrida `showcase` por artista, como la de la ficha (la misma función), todas de una orden
+ * (`parametros.lote`) para que la lista diga cómo va. Hasta 60 por orden. La hoja ya eligió a quiénes; aquí se vuelve a mirar la base: los
+ * descartados y los que ya tienen una investigación en curso no entran (se cuentan en `omitidas`). Se pide el primer paso una sola vez y solo si
+ * el motor no está ya corriendo otras: el motor toma las pendientes en orden, una por llamada.
+ */
+export async function investigarVarios(ids: unknown, tope: string): Promise<ResultadoLote> {
+  const lista = Array.isArray(ids) ? [...new Set(ids.filter((id): id is string => typeof id === "string" && esUuid(id)))] : [];
+  if (!lista.length) return { ok: false, error: "Elige a quién investigar." };
+  if (lista.length > LIMITE_LOTE) return { ok: false, error: `Son ${lista.length}: elige hasta ${LIMITE_LOTE} o filtra por disciplina.` };
+  const usd = leerTope(typeof tope === "string" ? tope : "");
+  if (usd === null) return { ok: false, error: "Escribe un tope de más de 0 y hasta 50 USD." };
+  const actual = await usuarioActual();
+  if (!actual || actual.perfil.rol !== "admin") return SIN_PERMISO;
+  const db = await clienteServidor();
+  if (!db) return SIN_BASE;
+  const descartados = await db.from("showcase_candidatos").select("artista_id").eq("estado", "descartado").in("artista_id", lista).limit(LIMITE_LOTE);
+  if (descartados.error) return SIN_BASE;
+  const fuera = new Set(((descartados.data ?? []) as { artista_id: string }[]).map((d) => d.artista_id));
+  const quedan = lista.filter((id) => !fuera.has(id));
+  const r = quedan.length ? await crearInvestigaciones(db, actual.perfil.id, quedan, usd, crypto.randomUUID()) : ({ ok: true, creadas: 0 } as const);
+  if (!r.ok) return r;
+  if (!r.creadas) return { ok: false, error: "Ya están todos en curso o descartados. Recarga la página." };
+  revalidar();
+  return { ok: true, creadas: r.creadas, omitidas: lista.length - r.creadas };
+}
+
+/**
+ * Lo que comparten «Investigar» de la ficha y el de la lista: lee las corridas en curso (de cualquier rutina), deja fuera a los artistas que ya
+ * tienen una investigación pendiente o corriendo, crea una corrida `showcase` pendiente por cada uno de los demás (con su tope y, si salen de la
+ * lista, su lote) y pide el primer paso después de responder si la cadena del motor no está viva (`cadenaParada`: si alguna corrida avanza, el
+ * motor llegará a las nuevas por su cuenta; otro paso abriría una cadena en paralelo). Corridas sigue mostrando el crédito.
+ */
+async function crearInvestigaciones(db: NonNullable<Awaited<ReturnType<typeof clienteServidor>>>, creadoPor: string, ids: readonly string[], usd: number, lote: string | null): Promise<{ ok: true; creadas: number } | { ok: false; error: string }> {
+  const enCurso = await db.from("rutinas_corridas").select("id, tipo, estado, resumen, parametros, creado_en, inicio").in("estado", ["pendiente", "corriendo"]).limit(1000);
+  if (enCurso.error) return SIN_BASE;
+  const filas = (enCurso.data ?? []) as (CorridaVista & { tipo: string; parametros: unknown })[];
+  const ocupados = new Set(filas.filter((f) => f.tipo === "showcase").map((f) => (f.parametros as { artista_id?: unknown } | null)?.artista_id));
+  const nuevos = ids.filter((id) => !ocupados.has(id));
+  if (!nuevos.length) return { ok: true, creadas: 0 };
+  const filasNuevas = nuevos.map((artista_id) => ({ tipo: "showcase", ciudad: null, tope_usd: usd, creado_por: creadoPor, parametros: lote ? { artista_id, lote } : { artista_id } }));
+  const { error } = await db.from("rutinas_corridas").insert(filasNuevas).select("id");
+  if (error) return { ok: false, error: "No se pudo dejar lista. Intenta de nuevo." };
+  revalidatePath("/admin/corridas");
+  const ahora = new Date();
+  if (!filas.length || cadenaParada(filas, ahora)) await pedirPrimerPaso();
+  return { ok: true, creadas: nuevos.length };
 }
 
 /** El primer paso sin esperar al cron: el servidor llama al motor con `CRON_SECRET` después de responder. Si falla, la corrida espera al cron. */
