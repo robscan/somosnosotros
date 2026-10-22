@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { IconoBandera, IconoBoleto, IconoCalendario, IconoCampana, IconoCaret, IconoChevronDerecha, IconoEstrella, IconoLapiz, IconoPersona, IconoReloj } from "@/components/ui/Iconos";
+import { IconoBandera, IconoBoleto, IconoCalendario, IconoCampana, IconoCaret, IconoChevronDerecha, IconoEstrella, IconoLapiz, IconoReloj } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import Salto from "@/components/ui/Salto";
 import { datosPersona, estadoRol, unir } from "@/lib/panel";
@@ -10,6 +10,8 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarPersona, cargarPublicado } from "../../consultas";
 import Reintentar from "../../Reintentar";
 import CorreoPersona from "./CorreoPersona";
+import { cargarAdministradas } from "./fichas";
+import FichasAdministradas from "./FichasAdministradas";
 import FotoPersona from "./FotoPersona";
 import LoPublicado, { ANCLA_PUBLICADO } from "./LoPublicado";
 import RolPersona from "./RolPersona";
@@ -20,7 +22,8 @@ import { tituloDePagina } from "@/lib/marca";
 export const metadata = { title: tituloDePagina("Persona", "Administración"), robots: { index: false, follow: false } };
 
 /**
- * La ficha de administración de una persona (decisión 8): cabecera, Cuenta y Actividad con el dibujo de Ajustes, «Lo que publicó» (OL-414) y Rol
+ * La ficha de administración de una persona (decisión 8): cabecera, Cuenta y Actividad con el dibujo de Ajustes, «Fichas que administra» con
+ * «Quitar» y «Asignar una ficha» (OL-447: sustituye a los renglones «Lleva» de Actividad), «Lo que publicó» (OL-414) y Rol
  * al final y solo. Si la cuenta ya no existe, lo dice (P9). La foto de la cabecera es grande y se abre entera (OL-414); el renglón «Publicó» baja a
  * «Lo que publicó», y su número es el de esa lista (sale de la misma lectura).
  */
@@ -30,7 +33,7 @@ export default async function PersonaAdmin({ params, searchParams }: { params: P
   if (!actual) redirect(`/entrar?siguiente=/admin/personas/${id}`);
   if (actual.perfil.rol !== "admin") redirect("/");
   const paginas = leerPaginasPublicado(await searchParams);
-  const [{ persona: f, error }, publicado] = await Promise.all([cargarPersona(id), cargarPublicado(id, paginas)]);
+  const [{ persona: f, error }, publicado, administradas] = await Promise.all([cargarPersona(id), cargarPublicado(id, paginas), cargarAdministradas(id)]);
   if (error) {
     return (
       <main className={plantilla.paginaContenido}>
@@ -117,32 +120,14 @@ export default async function PersonaAdmin({ params, searchParams }: { params: P
             <b>{d.publico}</b>
           </li>
         )}
-        {f.lleva.length === 0 ? (
-          <li className={styles.dato}>
-            <IconoPersona width={20} height={20} />
-            <small>Lleva</small>
-            <b>Ninguna ficha</b>
-          </li>
-        ) : (
-          f.lleva.map((x) => (
-            <li key={`${x.tipo}-${x.id}`}>
-              <Link href={x.tipo === "artista" ? `/artistas/${x.id}` : `/lugares/${x.id}`} className={styles.dato}>
-                <IconoPersona width={20} height={20} />
-                <small>Lleva</small>
-                <b>{x.nombre}</b>
-                <span className={styles.total}>
-                  <IconoChevronDerecha />
-                </span>
-              </Link>
-            </li>
-          ))
-        )}
         <li className={styles.dato}>
           <IconoBandera width={20} height={20} />
           <small>Reclamos y reportes</small>
           <b>{d.reportes}</b>
         </li>
       </ul>
+
+      <FichasAdministradas perfilId={f.id} nombre={f.nombre} fichas={administradas} />
 
       {publicado === null ? (
         <>
