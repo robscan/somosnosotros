@@ -5,7 +5,7 @@ import { Fragment, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
-import { IconoCalendario, IconoDocumento, IconoEstrella, IconoEtiqueta, IconoMascara, IconoOk, IconoPin, IconoPuntos } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCartel, IconoDocumento, IconoEstrella, IconoEtiqueta, IconoMascara, IconoOk, IconoPin, IconoPuntos } from "@/components/ui/Iconos";
 import type { IconoForma, PropuestaEnBandeja } from "@/lib/bandejaFormas";
 import { pegado } from "@/lib/ciudadesAdmin";
 import {
@@ -37,7 +37,7 @@ type Tanda = { alcance: string; total: number; va: number };
 /** El alcance de la búsqueda entera (ninguna fuente se llama así). */
 const TODA = "\u0000búsqueda";
 
-const ICONO: Record<TipoPropuesta, typeof IconoPin> = { lugar: IconoPin, evento: IconoCalendario, artista: IconoEstrella };
+const ICONO: Record<TipoPropuesta, typeof IconoPin> = { lugar: IconoPin, evento: IconoCalendario, artista: IconoEstrella, cartel: IconoCartel };
 const ICONO_MOTIVO: Record<MotivoRechazo, typeof IconoPin> = { duplicado: IconoDocumento, no_cultural: IconoMascara, fuera_de_la_ciudad: IconoPin, otro: IconoPuntos };
 /** Los de la ficha de un evento: la etiqueta de «Parte de…» (festival y acto) y el calendario de «Sesiones», «Horarios» y «Hasta». */
 const ICONO_FORMA: Record<IconoForma, typeof IconoPin> = { festival: IconoEtiqueta, fechas: IconoCalendario };
@@ -253,6 +253,14 @@ export default function Bandeja({
                     {forma?.detalle && <p className={css.formaDetalle}>{pegado(forma.detalle)}</p>}
                     <small>
                       {vista.linea && `${pegado(vista.linea)} · `}
+                      {vista.imagen && (
+                        <>
+                          <a href={vista.imagen} target="_blank" rel="noopener noreferrer">
+                            ver el cartel
+                          </a>
+                          {" · "}
+                        </>
+                      )}
                       {vista.fuente && (
                         <>
                           fuente:{" "}
@@ -311,7 +319,7 @@ export default function Bandeja({
       )}
       {rechazando && (
         <Hoja etiqueta={`Rechazar ${rechazando.nombre}`} titulo="¿Por qué la rechazas?" onCerrar={() => setRechazando(null)}>
-          <p className={hoja.nota}>{rechazando.nombre}. La rutina aprende a no volver a proponerla.</p>
+          <p className={hoja.nota}>{rechazando.nombre.charAt(0).toUpperCase() + rechazando.nombre.slice(1)}. La rutina aprende a no volver a proponerla.</p>
           <ul className={`${styles.menu} ${css.motivos}`}>
             {MOTIVOS_RECHAZO.map((m) => {
               const Icono = ICONO_MOTIVO[m.valor];

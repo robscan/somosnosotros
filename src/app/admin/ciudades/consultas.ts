@@ -65,6 +65,8 @@ export type DatosCiudad = {
   eventosPorOrigen: { origen: string | null; n: number }[] | null;
   capo: number | null;
   vistas: { dia: string; consultas: number }[] | null;
+  /** Eventos próximos sin cartel (OL-444, la tarjeta de «Buscar carteles»): visibles, sin borrador ni cancelados, que no han terminado. */
+  sinCartel: number | null;
 };
 
 /**
@@ -73,7 +75,7 @@ export type DatosCiudad = {
  * (los de los agregados cuya ciudad canónica es ella o uno de sus alias); las consultas, de su slug y de las filas que junta (`juntadas`).
  */
 export async function cargarDatosCiudad(c: { slug: string; nombre: string; alias: readonly string[]; zona: string }, juntadas: readonly string[], ahora: Date = new Date()): Promise<DatosCiudad> {
-  const nada: DatosCiudad = { nuevos: null, eventosPorOrigen: null, capo: null, vistas: null };
+  const nada: DatosCiudad = { nuevos: null, eventosPorOrigen: null, capo: null, vistas: null, sinCartel: null };
   const supabase = await clienteServidor();
   if (!supabase) return nada;
   const slugs = new Set(slugsDe(c));
@@ -84,12 +86,15 @@ export async function cargarDatosCiudad(c: { slug: string; nombre: string; alias
   const inicioMes = localAIso(`${hoy.slice(0, 7)}-01T00:00`, c.zona) ?? `${hoy.slice(0, 7)}-01T06:00:00Z`;
   const ya = ahora.toISOString();
   const sinCiudad = Promise.resolve({ count: 0, data: [] as { origen: string | null }[], error: null });
-  const [nuevos, deSuGente, conOrigen, capo, vistas] = await Promise.all([
+  const [nuevos, deSuGente, conOrigen, capo, vistas, sinCartel] = await Promise.all([
     crudos.length ? supabase.from("lugares").select("id", { count: "exact", head: true }).in("ciudad", crudos).eq("visible", true).eq("privado", false).gte("creado_en", inicioMes) : sinCiudad,
     crudos.length ? supabase.from("eventos").select("id", { count: "exact", head: true }).in("ciudad", crudos).eq("visible", true).gte("termina", ya).is("origen", null) : sinCiudad,
     crudos.length ? supabase.from("eventos").select("origen").in("ciudad", crudos).eq("visible", true).gte("termina", ya).not("origen", "is", null).limit(1000) : sinCiudad,
     crudos.length ? supabase.from("artistas").select("id", { count: "exact", head: true }).in("ciudad", crudos).eq("visible", true).eq("origen", "capo") : sinCiudad,
     supabase.from("ciudades_vistas").select("dia, consultas").in("ciudad", [c.slug, ...juntadas]).gte("dia", sumarDias(hoy, -41)),
+    crudos.length
+      ? supabase.from("eventos").select("id", { count: "exact", head: true }).in("ciudad", crudos).eq("visible", true).eq("borrador", false).eq("cancelado", false).gte("termina", ya).is("imagen", null)
+      : sinCiudad,
   ]);
   const porOrigen = new Map<string, number>();
   for (const f of (conOrigen.data ?? []) as { origen: string | null }[]) if (f.origen) porOrigen.set(f.origen, (porOrigen.get(f.origen) ?? 0) + 1);
@@ -97,6 +102,7 @@ export async function cargarDatosCiudad(c: { slug: string; nombre: string; alias
     nuevos: nuevos.error ? null : (nuevos.count ?? 0),
     eventosPorOrigen: deSuGente.error || conOrigen.error ? null : [{ origen: null, n: deSuGente.count ?? 0 }, ...[...porOrigen].map(([origen, n]) => ({ origen, n }))],
     capo: capo.error ? null : (capo.count ?? 0),
+    sinCartel: sinCartel.error ? null : (sinCartel.count ?? 0),
     vistas: vistas.error || !Array.isArray(vistas.data) ? null : (vistas.data as { dia: string; consultas: number }[]).map((v) => ({ dia: String(v.dia).slice(0, 10), consultas: Number(v.consultas) || 0 })),
   };
 }

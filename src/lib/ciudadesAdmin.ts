@@ -18,9 +18,12 @@ const objeto = z.record(z.string(), z.unknown()).catch({});
 
 export const ESTADOS_CIUDAD = ["abierta", "detectada", "investigando", "cerrada"] as const;
 export type EstadoCiudad = (typeof ESTADOS_CIUDAD)[number];
-export const TIPOS_CORRIDA = ["lugares", "agendas", "artistas", "showcase"] as const;
+export const TIPOS_CORRIDA = ["lugares", "agendas", "artistas", "showcase", "carteles"] as const;
 export type TipoCorrida = (typeof TIPOS_CORRIDA)[number];
-export type TipoBoton = Exclude<TipoCorrida, "showcase">;
+/** Las tres búsquedas que alimentan la ciudad (las que cuentan para su siguiente paso y su línea en la lista). */
+export type TipoBoton = Exclude<TipoCorrida, "showcase" | "carteles">;
+/** Un botón con hoja de tope en el panel de la ciudad: las tres búsquedas y «Buscar carteles» (OL-444), que completa eventos que ya están. */
+export type TipoHoja = TipoBoton | "carteles";
 export const ESTADOS_CORRIDA = ["pendiente", "corriendo", "terminada", "fallida", "cancelada"] as const;
 export type EstadoCorrida = (typeof ESTADOS_CORRIDA)[number];
 
@@ -73,8 +76,16 @@ export const BOTONES: readonly { tipo: TipoBoton; verbo: string }[] = [
   { tipo: "artistas", verbo: "Buscar artistas" },
 ];
 
-/** Lo que dice la hoja de cada botón: qué hace, con qué fuentes (en orden) y cuánto se estima. Las claves de las fuentes viajan en la corrida. */
-export const HOJAS: Record<TipoBoton, { que: string; fuentes: readonly { clave: string; texto: (ciudad: string) => string }[]; estimado: string }> = {
+/** «Buscar carteles» (OL-444): va aparte de `BOTONES` porque no es el siguiente paso de una ciudad recién abierta, solo completa sus eventos. */
+export const BOTON_CARTELES = { tipo: "carteles", verbo: "Buscar carteles" } as const;
+/** Todos los botones del panel, en su orden. */
+export const BOTONES_PANEL: readonly { tipo: TipoHoja; verbo: string }[] = [...BOTONES, BOTON_CARTELES];
+
+/**
+ * Lo que dice la hoja de cada botón: qué hace, con qué fuentes (en orden), cuánto se estima y su tope por omisión (si no, `TOPE_POR_DEFECTO`).
+ * Las claves de las fuentes viajan en la corrida.
+ */
+export const HOJAS: Record<TipoHoja, { que: string; fuentes: readonly { clave: string; texto: (ciudad: string) => string }[]; estimado: string; tope?: number }> = {
   lugares: {
     que: "Busca los espacios culturales de la ciudad y te los propone uno por uno: nombre, tipo, dirección en el mapa, redes y de dónde salió. Nada se publica hasta que lo aceptas.",
     fuentes: [
@@ -101,6 +112,15 @@ export const HOJAS: Record<TipoBoton, { que: string; fuentes: readonly { clave: 
       { clave: "web", texto: () => "Búsqueda web" },
     ],
     estimado: "Se estima entre 1 y 3 USD.",
+  },
+  carteles: {
+    que: "Busca el cartel ya publicado de los eventos próximos que no tienen, en el sitio de su lugar, en la página del evento, en notas de prensa o en agendas, y te lo propone con la página donde aparece. Instagram y Facebook no se pueden leer desde aquí: esos se revisan a mano. Nada se pone hasta que lo aceptas.",
+    fuentes: [
+      { clave: "sitio", texto: () => "Sitio del lugar y página del evento" },
+      { clave: "web", texto: () => "Búsqueda web: notas de prensa y agendas" },
+    ],
+    estimado: "Se estima entre 0,50 y 2 USD.",
+    tope: 2,
   },
 };
 
@@ -206,9 +226,12 @@ export function estadoBusqueda(c: Pick<CorridaPanel, "estado" | "gasto_usd" | "t
 export type Busquedas = Record<TipoBoton, CorridaPanel | null>;
 /** La búsqueda de cada botón en una ciudad: la que está en curso o, si no, la más reciente que corrió (una cancelada no cuenta). */
 export function busquedasDe(corridas: readonly CorridaPanel[], ciudad: string): Busquedas {
-  const propias = corridas.filter((c) => c.ciudad === ciudad && estadoBusqueda(c) !== null).sort((a, b) => Date.parse(b.creado_en) - Date.parse(a.creado_en));
-  const de = (tipo: TipoBoton) => propias.find((c) => c.tipo === tipo && enCurso(c)) ?? propias.find((c) => c.tipo === tipo) ?? null;
-  return { lugares: de("lugares"), agendas: de("agendas"), artistas: de("artistas") };
+  return { lugares: busquedaDe(corridas, ciudad, "lugares"), agendas: busquedaDe(corridas, ciudad, "agendas"), artistas: busquedaDe(corridas, ciudad, "artistas") };
+}
+/** La búsqueda de un botón en una ciudad (también «Buscar carteles», OL-444): la que está en curso o la más reciente que corrió. */
+export function busquedaDe(corridas: readonly CorridaPanel[], ciudad: string, tipo: TipoHoja): CorridaPanel | null {
+  const propias = corridas.filter((c) => c.ciudad === ciudad && c.tipo === tipo && estadoBusqueda(c) !== null).sort((a, b) => Date.parse(b.creado_en) - Date.parse(a.creado_en));
+  return propias.find(enCurso) ?? propias[0] ?? null;
 }
 const estadoDe = (b: Busquedas, tipo: TipoBoton) => (b[tipo] ? estadoBusqueda(b[tipo]!) : null);
 
@@ -217,7 +240,7 @@ export function porRevisarDe(corridas: readonly Pick<CorridaPanel, "ciudad" | "p
   return corridas.reduce((t, c) => t + (c.ciudad === ciudad ? c.por_revisar : 0), 0);
 }
 
-export const verboDe = (tipo: TipoBoton): string => BOTONES.find((b) => b.tipo === tipo)!.verbo;
+export const verboDe = (tipo: TipoHoja): string => BOTONES_PANEL.find((b) => b.tipo === tipo)!.verbo;
 const BUSCANDO: Record<TipoBoton, string> = { lugares: "Buscando lugares", agendas: "Buscando agendas y eventos", artistas: "Buscando artistas" };
 const RECIENTE_MS = 2 * 60_000;
 const VARIAS = ["Una", "Dos", "Las tres"] as const;
@@ -302,7 +325,7 @@ export function vezPasada(c: CorridaPanel | null): string | null {
 
 export type Pildora = { texto: string; tono: "gris" | "violeta" | "verde" | "naranja" | "rojo" };
 export type LineaBusqueda = { pildora: Pildora; texto: string; razon: string | null; alerta: boolean; avance: number | null };
-const LA_DE: Record<TipoBoton, string> = { lugares: "la de lugares", agendas: "la de agendas", artistas: "la de artistas" };
+const LA_DE: Record<TipoHoja, string> = { lugares: "la de lugares", agendas: "la de agendas", artistas: "la de artistas", carteles: "la de carteles" };
 
 /**
  * Bajo la raya de una tarjeta del panel: la última búsqueda de su botón con la píldora de Corridas y su detalle («Terminada · 20 oct · 30
@@ -396,7 +419,7 @@ const conArticulo = (t: string) => (/^\d/.test(t) ? `el ${t}` : t);
 export function detallePorRevisar(corridas: readonly CorridaPanel[], ciudad: string, ahora: Date = new Date()): string {
   const con = corridas.filter((c) => c.ciudad === ciudad && c.por_revisar > 0 && c.tipo !== "showcase").sort((a, b) => Date.parse(a.creado_en) - Date.parse(b.creado_en));
   if (!con.length) return "";
-  const verbos = BOTONES.filter((b) => con.some((c) => c.tipo === b.tipo)).map((b) => `«${b.verbo}»`);
+  const verbos = BOTONES_PANEL.filter((b) => con.some((c) => c.tipo === b.tipo)).map((b) => `«${b.verbo}»`);
   if (con.length > 1) return verbos.length === 1 ? `De ${con.length} búsquedas de ${verbos[0]}` : `De ${con.length} búsquedas: ${listaY(verbos)}`;
   const c = con[0];
   const cu = cuando(c.creado_en, ahora);
@@ -405,6 +428,9 @@ export function detallePorRevisar(corridas: readonly CorridaPanel[], ciudad: str
 }
 /** El botón de «Por revisar»: «Revisar las 17». */
 export const textoRevisar = (n: number): string => (n === 1 ? "Revisar la propuesta" : `Revisar las ${n}`);
+
+/** Bajo el número de la tarjeta de «Buscar carteles» (OL-444): «eventos próximos sin cartel». */
+export const baseCarteles = (n: number): string => (n === 1 ? "evento próximo sin cartel" : "eventos próximos sin cartel");
 
 /** «3 nuevos este mes» bajo el número de lugares; sin lugares, nada. */
 export function baseLugares(total: number, nuevos: number): string | null {
@@ -473,7 +499,7 @@ export function resumenCiudades(ciudades: readonly Pick<CiudadPanel, "estado">[]
 }
 
 // ---------- propuestas por revisar ----------
-const TITULO_BANDEJA: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase" };
+const TITULO_BANDEJA: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase", carteles: "Carteles" };
 
 /** «0,33 USD», «9:12 am»: que «USD», «am» y «pm» no queden solos al partir el renglón (como en el prototipo firmado). Se aplica al pintar. */
 export const pegado = (t: string): string => t.replace(/ (USD|am|pm)\b/g, "\u00a0$1");
@@ -551,7 +577,7 @@ export function juntarAlias<T extends Pick<CiudadPanel, "slug" | "estado" | "con
 }
 
 // ---------- la lista de corridas ----------
-export const TITULO_TIPO: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase" };
+export const TITULO_TIPO: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase", carteles: "Carteles" };
 
 /** «Lugares · Oaxaca». */
 export function tituloCorrida(c: Pick<CorridaPanel, "tipo">, ciudad: string | null): string {
