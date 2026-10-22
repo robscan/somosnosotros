@@ -71,23 +71,33 @@ jobs:
       - run: npm ci
       # Los estilos, componentes y DOM siguen comprobándose con sus presupuestos y cuarentenas vigentes.
       - run: npm run inventario
-      # OL-344: el 7 de octubre este paso se colgó tres veces (22 min, 46 min y 6 h, hasta cancelarlo) en el
-      # `apt-get update` que lanza `--with-deps`: el espejo de Azure no respondía y, tras pasar a archive.ubuntu.com,
-      # apt se quedaba callado para siempre después de «noble-security InRelease». Suele tardar 20 s. Cada intento
-      # tiene su propio tope (`timeout` corta también a sus hijos, sudo y apt-get) y se reintenta hasta tres veces;
-      # apt se rinde antes con sus propios plazos. La instalación es la misma de siempre.
-      - name: Chromium y sus dependencias del sistema (con tope y reintento)
+      # OL-344: el 7 de octubre este paso se colgó tres veces en el `apt-get update` que lanzaba `--with-deps`; el 22 de
+      # octubre un espejo a 50 kB/s agotó los tres intentos bajando las mismas fuentes de siempre (OL-449). Ahora el
+      # navegador y los .deb de lo que la imagen no trae se guardan en la caché de GitHub, con la versión de
+      # playwright-core y la imagen en la clave: con la caché llena no se usa apt ni la red de Ubuntu. apt solo corre
+      # la primera vez o cuando cambia la clave, con el mismo tope y reintento de antes (ver `scripts/ops/ci-chromium.sh`).
+      - name: Clave de la caché de Chromium
+        id: clave-chromium
+        run: echo "clave=chromium-$ImageOS-pw$(node -p "require('playwright-core/package.json').version")-v1" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v5.0.5
+        id: cache-chromium
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/debs-chromium
+          key: ${{ steps.clave-chromium.outputs.clave }}
+      - name: Chromium y sus dependencias del sistema (de la caché; apt con tope y reintento solo si falta)
         timeout-minutes: 15
-        run: |
-          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/99-tope-ci > /dev/null
-          for intento in 1 2 3; do
-            if timeout --kill-after=15s 4m npx playwright-core install --with-deps --only-shell chromium; then exit 0; fi
-            echo "::warning::La instalación de Chromium no terminó en el intento $intento (apt colgado o caído); se reintenta."
-            # Un apt-get que sobreviva al corte dejaría tomado el candado de apt para el siguiente intento.
-            sudo pkill -x apt-get || true
-            sleep 5
-          done
-          exit 1
+        run: bash scripts/ops/ci-chromium.sh
+      # Se guarda en cuanto queda instalado, aunque luego fallen las pruebas (el `post` de actions/cache solo guarda si todo
+      # el trabajo pasa).
+      - if: steps.cache-chromium.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5.0.5
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/debs-chromium
+          key: ${{ steps.clave-chromium.outputs.clave }}
       - name: Pruebas de componentes en Chromium
         run: npm run test:componentes
         timeout-minutes: 10

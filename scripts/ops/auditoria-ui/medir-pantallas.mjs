@@ -347,21 +347,45 @@ const dondeQuedo = ([i, alto]) => {
   }
   return { activo: document.activeElement === el, top: Math.round(r.top), bottom: Math.round(r.bottom), alto, tapa: encimaDe(r, el), botones };
 };
-/** Espera a que el desplazamiento se asiente: la página sin moverse durante 12 cuadros seguidos (el de `useCampoVisible` es suave y llega tras dos cuadros). */
+/**
+ * Lo que `useCampoVisible` sigue vigilando y corrigiendo después del foco (su `VIGILA_MS`): antes de ese rato la página todavía puede moverse
+ * por su cuenta, así que no se da por asentada. Copia del número de `src/components/ui/useCampoVisible.ts`; si cambia allí, cambia aquí.
+ */
+const VIGILA_MS = 1200;
+/**
+ * Espera a que el desplazamiento se asiente, con el campo ya enfocado: pasó el rato en que `useCampoVisible` vigila, ningún desplazamiento
+ * suave está en curso (cada `scroll` espera su `scrollend`, de la página o de una hoja) y ni la página ni el campo se movieron durante 12
+ * cuadros seguidos. Solo los 12 cuadros quietos no bastaban (OL-449): con la máquina cargada, el desplazamiento suave del hook empieza tarde o
+ * se queda quieto varios cuadros a medio camino, y la medición tomaba la página a medio desplazar (19 de 60 en el escenario s38 con la CPU
+ * llena). Si en 6 s no se asienta, se mide como esté: si el campo no quedó a la vista, la prueba falla igual.
+ */
 const asentar = (page) =>
   page.evaluate(
-    () =>
+    (vigila) =>
       new Promise((ok) => {
-        let antes = -1;
+        const t0 = performance.now();
+        let enCurso = false;
+        const alDesplazar = () => (enCurso = true);
+        const alTerminar = () => (enCurso = false);
+        document.addEventListener("scroll", alDesplazar, { capture: true, passive: true });
+        document.addEventListener("scrollend", alTerminar, { capture: true, passive: true });
+        const posicion = () => `${window.scrollY} ${document.activeElement?.getBoundingClientRect().top}`;
+        let antes = null;
         let quieto = 0;
-        let cuadros = 0;
         (function paso() {
-          quieto = window.scrollY === antes ? quieto + 1 : 0;
-          antes = window.scrollY;
-          if (quieto >= 12 || ++cuadros > 120) return ok();
+          const ahora = posicion();
+          quieto = ahora === antes ? quieto + 1 : 0;
+          antes = ahora;
+          const transcurrido = performance.now() - t0;
+          if ((quieto >= 12 && !enCurso && transcurrido >= vigila) || transcurrido > 6000) {
+            document.removeEventListener("scroll", alDesplazar, { capture: true });
+            document.removeEventListener("scrollend", alTerminar, { capture: true });
+            return ok();
+          }
           requestAnimationFrame(paso);
         })();
       }),
+    VIGILA_MS,
   );
 /** `modo`: «ventana» (390×508 de verdad) o «area» (390×844 con el `visualViewport` simulado). */
 async function medirTeclado(browser, base, p, modo) {
