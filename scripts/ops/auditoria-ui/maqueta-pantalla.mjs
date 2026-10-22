@@ -47,8 +47,17 @@ const PANTALLAS = [
   { id: "admin-propuestas", url: "/admin/ciudades/oaxaca/propuestas", sesion: true, cuenta: "admin" },
   { id: "admin-corridas", url: "/admin/corridas", sesion: true, cuenta: "admin" },
   { id: "artistas-hoja-ciudad", url: "/artistas", sesion: true, paso: "hoja-ciudad" },
+  // OL-443: el Showcase como está hoy: la lista, la ficha de Feleal con sus dos evidencias por revisar y su hoja de Estado.
+  { id: "admin-showcase", url: "/admin/showcase", sesion: true, cuenta: "admin" },
+  { id: "admin-showcase-ficha", url: "/admin/showcase/feleal", sesion: true, cuenta: "admin" },
+  { id: "admin-showcase-estado", url: "/admin/showcase/feleal", sesion: true, cuenta: "admin", paso: "admin-showcase-estado" },
 ];
 const PASOS = {
+  // La hoja de los cinco estados en la ficha de showcase (el renglón «Invitado» con su chevron).
+  "admin-showcase-estado": async (page) => {
+    await page.locator("button[aria-haspopup='dialog'][data-ayuda='estado']").click();
+    await page.getByRole("dialog").waitFor();
+  },
   // La hoja de «Buscar lugares» de Oaxaca en su panel de Administración › Ciudades (ui/Hoja con título, ui/Campo con su ✕ y el pie).
   "admin-ciudades-hoja": async (page) => {
     await page.getByRole("group", { name: "Lugares" }).getByRole("button", { name: "Buscar lugares" }).click();

@@ -38,6 +38,29 @@ const SALIDA_MS = 200;
  *  historia ni, en la última, la capa cerrada. */
 const ESPERA_CLIC = 300;
 
+/**
+ * El toque que cierra la capa no abre lo de debajo (OL-442). En táctil el navegador manda el `click` de un toque después del `touchend`, al elemento
+ * que entonces está bajo el dedo; la capa ya no recibe toques desde ese `pointerup` (o ya no existe, con «Reducir movimiento»), así que el clic
+ * caía en la tarjeta del carril de abajo y la abría. Al cerrar con un toque se traga ese clic en `window` (fase de captura, antes que nadie) y el
+ * escudo se va: con él, al empezar otro toque (el clic no llegó) o pasado `ESPERA_CLIC`. Vive fuera del componente: la capa puede desmontarse
+ * antes de que llegue el clic.
+ */
+function tragarClicDelToque() {
+  const quitar = () => {
+    clearTimeout(vence);
+    window.removeEventListener("click", tragar, true);
+    window.removeEventListener("pointerdown", quitar, true);
+  };
+  const tragar = (ev: MouseEvent) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    quitar();
+  };
+  const vence = setTimeout(quitar, ESPERA_CLIC);
+  window.addEventListener("click", tragar, true);
+  window.addEventListener("pointerdown", quitar, true);
+}
+
 /** Colores ya leídos de cada cartel en esta visita (OL-360 los guardará con el evento). */
 const paletas = new Map<string, Paleta>();
 
@@ -232,12 +255,15 @@ export default function Historias({ avisos, inicial, conTeclado, ahora, asistenc
       if (Math.abs(dx) > CAMBIA_DX && Math.abs(dx) > Math.abs(dy)) return pasar(dx < 0 ? 1 : -1);
       if (duro < TOQUE_CORTO && Math.abs(dx) < 12 && Math.abs(dy) < 12) {
         // Fuera del marco (tableta y escritorio): cierra, como tocar el velo de una hoja.
-        if (g.fuera) return salir();
         const r = marco.current?.getBoundingClientRect();
-        if (r) pasar(ev.clientX - r.left < r.width * 0.3 ? -1 : 1);
+        const d = g.fuera || !r ? 0 : ev.clientX - r.left < r.width * 0.3 ? -1 : 1;
+        // Este toque cierra (fuera del marco o «siguiente» en la última): su clic, que llega después, no es de lo que quede debajo (OL-442).
+        if (g.fuera || (d === 1 && indiceRef.current + 1 >= avisos.length)) tragarClicDelToque();
+        if (g.fuera) return salir();
+        if (d) pasar(d);
       }
     },
-    [pasar, salir, dedos, soltarZoom, estaAcercada, ponerZoom],
+    [pasar, salir, dedos, soltarZoom, estaAcercada, ponerZoom, avisos.length],
   );
   useEffect(() => {
     const arriba = (ev: PointerEvent) => {
