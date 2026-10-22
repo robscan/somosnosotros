@@ -36,7 +36,8 @@ export default function Pendientes({ iniciales, error, porRevisar = [] }: { inic
             const Icono = ICONO_CORRIDA[p.tipo];
             return (
               <li key={p.corrida}>
-                <Link href={`/admin/ciudades/propuestas/${p.corrida}`} className={styles.fila}>
+                {/* OL-446: las evidencias del showcase van a «Por aprobar»; las propuestas de las rutinas, a su bandeja. */}
+                <Link href={p.tipo === "showcase" ? p.href : `/admin/ciudades/propuestas/${p.corrida}`} className={styles.fila}>
                   <Icono width={20} height={20} />
                   <b>{p.titulo}</b>
                   <small>{p.detalle}</small>

@@ -3,6 +3,7 @@ import { normalizarRedes } from "./enlaces";
 import { normalizarNombre } from "./lugares";
 import { corridasVaradas, type CorridaVista } from "./rutinas/rescate";
 import { ORIGEN } from "./sitemap";
+import { BLOQUES, leerFiltros, pasa, SIN_FILTROS, type EstadoInvestigacion, type Filtros, type Hechos } from "./showcaseFiltros";
 
 /**
  * Administración › Showcase (OL-426, bitácora 459; lo firmado en OL-425, bitácora 458). Lógica pura: la rúbrica, la píldora de actividad, el
@@ -152,7 +153,7 @@ export function textoLectura(l: Lectura, hoy: string, articulo = false): string 
 }
 
 // ---------- lo que la lista lee de la base ----------
-export type FilaArtista = { id: string; slug: string | null; nombre: string; disciplina: string; ciudad: string; foto: string | null; redes: unknown; portada?: string | null };
+export type FilaArtista = { id: string; slug: string | null; nombre: string; disciplina: string; ciudad: string; foto: string | null; redes: unknown; portada?: string | null; tipo?: string | null };
 export type FilaCandidato = { artista_id: string; estado: Estado; puntaje_circulacion: Puntaje; puntaje_obra: Puntaje; puntaje_actividad: Puntaje; puntaje_vinculo: Puntaje; notas: string | null; actualizado_en?: string | null };
 export type FilaLectura = Lectura & { artista_id: string };
 export type FilaEvento = { id: string; titulo: string; slug: string | null; lugar_id: string | null; evento_padre_id: string | null; clase: string | null; inicio: string; ciudad: string | null };
@@ -199,6 +200,10 @@ export type Candidato = {
   /** Los foros y festivales que lo programan, del que más al que menos. */
   programadoPor: string[];
   redes: Lectura | null;
+  /** OL-446: para filtrar. La ficha la lleva alguien (cuenta vinculada), solista, grupo o colectivo, y la última publicación en cualquier red. */
+  reclamada: boolean;
+  tipo: string;
+  ultimaPublicacion: string | null;
 };
 
 const puntajesDe = (c: FilaCandidato | undefined): Puntajes =>
@@ -276,8 +281,15 @@ export function armarCandidatos(f: FilasShowcase, hoy: string): Candidato[] {
       festivales: circ.festivales,
       programadoPor: circ.programadoPor,
       redes: redPrincipal(lecturas),
+      reclamada: reclamadas.has(a.id),
+      tipo: a.tipo || "solista",
+      ultimaPublicacion: ultimaPublicacionDe(lecturas),
     };
   });
+}
+/** La última publicación (YYYY-MM-DD) en cualquiera de sus redes, de la última lectura de cada una; null si ninguna lo dice. */
+export function ultimaPublicacionDe(lecturas: readonly Lectura[]): string | null {
+  return ultimasPorRed(lecturas).reduce<string | null>((m, l) => (l.ultima_publicacion && (!m || l.ultima_publicacion > m) ? l.ultima_publicacion.slice(0, 10) : m), null);
 }
 /** Las filas de cada artista. */
 function agrupar<T extends { artista_id: string }>(filas: readonly T[]): Map<string, T[]> {
@@ -299,24 +311,27 @@ export const ORDENES = [
   { valor: "nombre", etiqueta: "Nombre", detalle: "De la A a la Z" },
 ] as const;
 export type Orden = (typeof ORDENES)[number]["valor"];
-export type Vista = { q: string | null; disciplina: string; estado: Estado | "todos"; orden: Orden; tabla: boolean; n: number };
+/** La vista de la lista: la búsqueda, los filtros de la hoja (OL-446, `showcaseFiltros`), el orden, tarjetas o tabla y cuántas se ven. */
+export type Vista = Filtros & { q: string | null; orden: Orden; tabla: boolean; n: number };
 /** Cuántas tarjetas se ven de entrada (diez, como el prototipo) y cuántas filas de la tabla; «Ver más» suma otra página. */
 export const PAGINA_TARJETAS = 10;
 export const PAGINA_TABLA = 50;
 const TOPE_PAGINA = 1000;
 export const paginaDe = (tabla: boolean) => (tabla ? PAGINA_TABLA : PAGINA_TARJETAS);
 
-const disciplinaValida = (d: unknown): d is string => typeof d === "string" && (d === "por_completar" || DISCIPLINAS.some((x) => x.valor === d));
+/** Lo que se lee de la URL de la lista: la búsqueda, los filtros, el orden, la vista y la página. */
+export type ConsultaVista = { q?: string; orden?: string; vista?: string; n?: string } & Partial<Record<keyof Filtros, string>>;
 
 /** Lee la vista de la URL con valores seguros (lo que no existe vale lo de siempre). */
-export function leerVista(p: { q?: string; disciplina?: string; estado?: string; orden?: string; vista?: string; n?: string }): Vista {
+export function leerVista(p: ConsultaVista): Vista {
   const tabla = p.vista === "tabla";
   const pagina = paginaDe(tabla);
   const n = Number(p.n);
+  const f = leerFiltros(p);
   return {
     q: p.q?.trim().slice(0, 80) || null,
-    disciplina: disciplinaValida(p.disciplina) ? p.disciplina : "todas",
-    estado: esEstado(p.estado) ? p.estado : "todos",
+    ...f,
+    estado: esEstado(f.estado) ? f.estado : "todos",
     orden: ORDENES.some((o) => o.valor === p.orden) ? (p.orden as Orden) : "puntaje",
     tabla,
     n: Number.isInteger(n) && n > pagina ? Math.min(Math.ceil(n / pagina) * pagina, TOPE_PAGINA) : pagina,
@@ -326,27 +341,60 @@ export function leerVista(p: { q?: string; disciplina?: string; estado?: string;
 export function consultaDe(v: Partial<Vista>): string {
   const p = new URLSearchParams();
   if (v.q?.trim()) p.set("q", v.q.trim());
-  if (v.disciplina && v.disciplina !== "todas") p.set("disciplina", v.disciplina);
-  if (v.estado && v.estado !== "todos") p.set("estado", v.estado);
+  // Los filtros de la hoja, en el orden de sus bloques; lo que vale «sin filtro» no se escribe.
+  for (const b of BLOQUES) {
+    const valor = v[b.clave];
+    if (valor !== undefined && valor !== SIN_FILTROS[b.clave]) p.set(b.clave, String(valor));
+  }
   if (v.orden && v.orden !== "puntaje") p.set("orden", v.orden);
   if (v.tabla) p.set("vista", "tabla");
   if (v.n && v.n > paginaDe(!!v.tabla)) p.set("n", String(v.n));
   return p.toString();
 }
 export const RUTA_SHOWCASE = "/admin/showcase";
+/** «Por aprobar» (OL-446): todo lo que trajo la rutina, de todos los artistas. Con un artista, baja a su grupo. */
+export const RUTA_POR_APROBAR = `${RUTA_SHOWCASE}/por-aprobar`;
+export const anclaArtista = (id: string) => `a-${id}`;
+export function hrefPorAprobar(artistaId?: string): string {
+  return artistaId ? `${RUTA_POR_APROBAR}#${anclaArtista(artistaId)}` : RUTA_POR_APROBAR;
+}
 export function hrefShowcase(v: Partial<Vista>): string {
   const c = consultaDe(v);
   return c ? `${RUTA_SHOWCASE}?${c}` : RUTA_SHOWCASE;
 }
-/** La ficha de showcase por la dirección del artista; si su dirección es la del manual (`/admin/showcase/manual`), por su id. */
+/** La ficha de showcase por la dirección del artista; si su dirección es la del manual o la de «Por aprobar», por su id. */
 export function hrefFicha(c: Pick<Candidato, "slug" | "id">): string {
-  return `${RUTA_SHOWCASE}/${c.slug === "manual" ? c.id : encodeURIComponent(c.slug)}`;
+  return `${RUTA_SHOWCASE}/${c.slug === "manual" || c.slug === "por-aprobar" ? c.id : encodeURIComponent(c.slug)}`;
 }
 
-/** Busca por nombre sin acentos ni mayúsculas, y filtra por disciplina y estado. */
-export function filtrarCandidatos(lista: readonly Candidato[], v: Pick<Vista, "q" | "disciplina" | "estado">): Candidato[] {
-  const q = v.q ? normalizarNombre(v.q) : "";
-  return lista.filter((c) => (v.disciplina === "todas" || c.disciplina === v.disciplina) && (v.estado === "todos" || c.estado === v.estado) && (!q || normalizarNombre(c.nombre).includes(q)));
+/**
+ * Lo que la lista sabe de las investigaciones para filtrar (OL-446): cómo va la de cada artista y cuántas evidencias deja por revisar. Sin él (o
+ * con `investigacion` null: no se pudieron leer), el filtro «Investigación» no deja fuera a nadie.
+ */
+export type ContextoFiltro = { hoy: string; investigacion?: ReadonlyMap<string, EstadoInvestigacion> | null; porRevisar?: Readonly<Record<string, number>> };
+/** Lo que hace falta de un candidato para filtrarlo (y para contar los chips de la hoja en el teléfono). */
+export function hechosDe(c: Candidato, ctx?: Omit<ContextoFiltro, "hoy">): Hechos {
+  return {
+    id: c.id,
+    nombre: c.nombre,
+    disciplina: c.disciplina,
+    estado: c.estado,
+    suma: c.suma,
+    reclamada: c.reclamada,
+    eventos: c.eventos,
+    foros: c.foros,
+    festivales: c.festivales,
+    tipo: c.tipo,
+    ultima: c.ultimaPublicacion,
+    inv: ctx?.investigacion ? (ctx.investigacion.get(c.id) ?? "nunca") : null,
+    revisar: ctx?.porRevisar?.[c.id] ?? 0,
+  };
+}
+/** Busca por nombre sin acentos ni mayúsculas y aplica los filtros puestos (se combinan con «y»). Lo que no viene vale «sin filtro». */
+export function filtrarCandidatos(lista: readonly Candidato[], v: Pick<Vista, "q" | "disciplina" | "estado"> & Partial<Filtros>, ctx?: ContextoFiltro): Candidato[] {
+  const f = { ...SIN_FILTROS, ...v } as Filtros;
+  const hoy = ctx?.hoy ?? new Date().toISOString().slice(0, 10);
+  return lista.filter((c) => pasa(hechosDe(c, ctx), f, hoy, v.q));
 }
 /** Convocatoria: cuántos foros y festivales lo programan. */
 export const convocatoria = (c: Pick<Candidato, "foros" | "festivales">) => c.foros + c.festivales;
@@ -381,17 +429,18 @@ export function conteosEstado(lista: readonly Candidato[]): Record<Estado | "tod
   return c;
 }
 /**
- * «686 candidatos · 7 invitados · 2 confirmados · 41 pasan al consejo con 5 de 8», o «12 de 686 candidatos» si se filtra. `pasan`, cuántos
- * llegan a 5 de 8 con el puntaje que vale (`pasanAlConsejo`).
+ * «692 artistas · 7 invitados · 2 confirmados · 41 pasan al consejo con 5 de 8», o, si se filtra, «7 de 692 artistas · 5 pasan al consejo con 5
+ * de 8» (lo firmado en OL-443). `pasan`, cuántos llegan a 5 de 8 con el puntaje que vale (`pasanAlConsejo`), de los que se cuentan.
  */
 export function lineaCifras(total: number, conteos: Record<Estado | "todos", number>, visibles: number | null, pasan: number): string {
-  if (visibles !== null) return `${visibles} de ${total} ${total === 1 ? "candidato" : "candidatos"}`;
   const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+  const consejo = `${plural(pasan, "pasa", "pasan")} al consejo con ${UMBRAL_CONSEJO} de ${MAXIMO_RUBRICA}`;
+  if (visibles !== null) return `${visibles} de ${plural(total, "artista", "artistas")} · ${consejo}`;
   return [
-    plural(total, "candidato", "candidatos"),
+    plural(total, "artista", "artistas"),
     plural(conteos.invitado, "invitado", "invitados"),
     plural(conteos.confirmado, "confirmado", "confirmados"),
-    `${plural(pasan, "pasa", "pasan")} al consejo con ${UMBRAL_CONSEJO} de ${MAXIMO_RUBRICA}`,
+    consejo,
   ].join(" · ");
 }
 /** «7 eventos · 4 foros · 1 festival». */
@@ -1099,7 +1148,7 @@ export function resumenLote(corridas: readonly CorridaLista[], porRevisar: Reado
 }
 
 /** «hoy», «ayer» o «el 21 oct»: cuándo, desde `hoy` (los dos YYYY-MM-DD). */
-function cuandoFue(dia: string, hoy: string): string {
+export function cuandoFue(dia: string, hoy: string): string {
   const dias = diasEntre(dia, hoy);
   if (dias <= 0) return "hoy";
   if (dias === 1) return "ayer";
@@ -1141,6 +1190,21 @@ export function textoInvestigarTarjeta(c: CorridaInvestigar | null | undefined, 
   const cuando = cuandoFue(diaDe(c.fin ?? c.inicio ?? c.creado_en), hoy);
   if (c.estado === "fallida") return [`No se pudo investigar ${cuando}`, revisar].filter(Boolean).join(" · ");
   return [`Investigado ${cuando}`, revisar ?? (Number(c.resumen.propuestas) > 0 ? "todo revisado" : "sin evidencias nuevas")].join(" · ");
+}
+
+/**
+ * Cómo va la investigación de cada artista, para el filtro «Investigación» (OL-446): «reciente» si tiene una en curso o la última terminó hace
+ * menos de 30 días, «viejo» si terminó antes; quien no sale aquí nunca se investigó. `terminadas`: el fin (ISO) de la última terminada de cada
+ * artista, de siempre; `corridas`: las recientes de la lista (las en curso cuentan como recientes).
+ */
+export function estadosInvestigacion(corridas: readonly Pick<CorridaLista, "artista_id" | "estado">[], terminadas: Readonly<Record<string, string>>, ahora: Date): Map<string, EstadoInvestigacion> {
+  const m = new Map<string, EstadoInvestigacion>();
+  for (const [id, fin] of Object.entries(terminadas)) {
+    const t = Date.parse(fin);
+    m.set(id, Number.isFinite(t) && ahora.getTime() - t < DIAS_INVESTIGACION_RECIENTE * 86_400_000 ? "reciente" : "viejo");
+  }
+  for (const c of corridas) if (investigacionEnCurso(c)) m.set(c.artista_id, "reciente");
+  return m;
 }
 
 /**
