@@ -13,11 +13,11 @@ import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
 import { llamarConEntrega } from "./claude";
 import {
-  alcaldiaDeDireccion,
   clienteCartelera,
   cruzarRecinto,
   datosDeRecinto,
   filasDeFicha,
+  fueraDeLaCiudadDeMexico,
   NOMBRE_FUENTE_CARTELERA,
   nombreDeTipo,
   peticionesPorPaso,
@@ -25,7 +25,7 @@ import {
   MS_POR_PETICION,
   type FilaCartelera,
 } from "./carteleraCdmx";
-import { armarConocidos, dentroDelArea, motivoPorNombre, municipioDeLaCiudad, otroMunicipioEnTexto, palabrasDeCiudad } from "./filtros";
+import { armarConocidos, motivoPorNombre, municipioDeLaCiudad, otroMunicipioEnTexto, palabrasDeCiudad } from "./filtros";
 import { cadaCuantos, claseDeActo, claseDeLaAgenda, claveDeFestival, comoSeAgrupa, dentroDelFestival, leerFormaEvento, MARGEN_FESTIVAL_DIAS, mismoPrograma, nombraAlFestival, nombreDeExposicion, programaDeAgenda } from "./formaEvento";
 import { agendasVigentes, diasEntre, mesSiguiente, pdfsDelIndice } from "./indiceAgendas";
 import { dominioDe, FalloCorrida, LOTE_MAPBOX, nombresDe, radioDe, TIEMPO_PARA_LLAMADA_MS, zonasDe, type Contexto, type SalidaPaso } from "./lugares";
@@ -70,8 +70,10 @@ import { lugaresDeCiudad, publicarAceptadasSinFicha, type CiudadDeEvento, type L
  * con calma para no tirar el sitio.»). En Ciudad de México, `agenda-cultura` empieza por la tarea `cartelera`, sin la API (0 USD), con el lector
  * de `carteleraCdmx.ts`, y la guía de cartelera.cdmx.gob.mx ya no se le da a la API. Por pasos, con la calma (una petición cada 1,5 s o más): las
  * páginas de la lista (con las de recintos) y luego las fichas, tantas como caben en el paso dejando la reserva para proponer; lo que falta
- * queda en `cursor.cartelera` (página siguiente, fichas por leer, recintos) y sigue en el siguiente latido. Lo de fuera del radio de la ciudad
- * no se pide; lo ya propuesto antes desde la cartelera (`datos.cartelera_id`), tampoco. Cada ficha se vuelve filas (`filasDeFicha`) que pasan
+ * queda en `cursor.cartelera` (página siguiente, fichas por leer, recintos) y sigue en el siguiente latido. Lo ya propuesto antes desde la
+ * cartelera (`datos.cartelera_id`) no se pide. OL-450 (founder: «Incluye todo lo que ya viene en la guía, no quites nada»): la cartelera es la
+ * guía oficial de la ciudad y entra completa, en cualquiera de sus 16 alcaldías, sin el radio ni las alcaldías turísticas de sus parámetros
+ * (que siguen valiendo para las demás fuentes); solo queda fuera lo que su dirección pone en otro estado (`fueraDeLaCiudadDeMexico`). Cada ficha se vuelve filas (`filasDeFicha`) que pasan
  * por el mismo `proponer` de siempre (duplicados, ya propuesto, rechazado, fuera de la ciudad, sesiones, series), con su ficha como `url`, su
  * imagen como cartel (`imagen`, se pone al aceptar), el punto del recinto y la clase por su tipo; nada se descarta por tipo. El recinto se cruza
  * con los lugares de la ciudad (`cruzarRecinto`); si no está, se propone como lugar (tipo `lugar`, con nombre, dirección, punto e imagen) y sus
@@ -677,8 +679,10 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       const lugar = donde ? resolverLugar(donde, [...lugares]) : null;
       const direccion = texto(e.direccion, LIMITES_EVENTO.direccion) || null;
       const municipio = texto(e.municipio, 80) || null;
-      const fuera =
-        (alcaldias.length ? !nombraAlcaldia([municipio, direccion, lugar?.direccion, donde], alcaldias) : !municipioDeLaCiudad(municipio, nombres)) ||
+      // La cartelera de la Ciudad de México (OL-450) es la guía oficial: lo suyo es de la ciudad salvo que su dirección diga otro estado.
+      const fuera = e.cartelera_id
+        ? fueraDeLaCiudadDeMexico(direccion)
+        : (alcaldias.length ? !nombraAlcaldia([municipio, direccion, lugar?.direccion, donde], alcaldias) : !municipioDeLaCiudad(municipio, nombres)) ||
         // Un sitio fuera del directorio que la agenda pone en otro municipio («Museo Tamuantzán, Cd. Valles»).
         (!lugar && !!otroMunicipioEnTexto([donde, municipio], nombres));
       if (fuera) {
@@ -1181,8 +1185,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     r: { id: string | null; nombre: string; punto: { lat: number; lng: number }; direccion: string | null; imagen: string | null; enlace: string | null },
     url: string,
   ): Promise<string | null> {
-    if (area && !dentroDelArea(r.punto, area.centro, area.radioKm)) return null;
-    if (alcaldias.length && !nombraAlcaldia([alcaldiaDeDireccion(r.direccion), r.direccion], alcaldias)) return null;
+    // OL-450: un recinto de la cartelera es de la ciudad aunque no esté en sus alcaldías turísticas (solo no, si su dirección es de otro estado).
+    if (fueraDeLaCiudadDeMexico(r.direccion)) return null;
     const { conocidos, ids } = await propuestasDeLugar();
     const k = normalizarNombre(r.nombre);
     const motivo = motivoPorNombre(r.nombre, conocidos);
@@ -1244,11 +1248,7 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
           if (vistos.has(e.id)) continue;
           vistos.add(e.id);
           c.eventos++;
-          // Lo que está lejos de la ciudad no se pide; lo ya propuesto antes desde la cartelera, tampoco.
-          if (area && e.punto && !dentroDelArea(e.punto, area.centro, area.radioKm)) {
-            descartar("fuera_de_la_ciudad");
-            continue;
-          }
+          // Lo ya propuesto antes desde la cartelera no se pide (OL-450: lo lejano sí: la cartelera entra completa).
           if (yaPropuestos.has(e.id)) {
             descartar("ya_propuesto");
             continue;
@@ -1301,9 +1301,9 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
           descartar(ficha.funciones.some((f) => f.dias.some((d) => d >= hoy)) ? "sin_hora" : "pasado");
           continue;
         }
-        // Fuera de la ciudad (la misma regla que `proponer`, una vez por evento y no por función; su recinto tampoco se propone).
-        const municipio = filas[0].municipio;
-        if (alcaldias.length ? !nombraAlcaldia([municipio, ficha.direccion, lugar?.direccion, recinto.nombre], alcaldias) : !municipioDeLaCiudad(municipio, nombres)) {
+        // Fuera de la ciudad solo si su dirección es de otro estado (OL-450: la cartelera es la guía oficial y entra completa, en cualquiera
+        // de las 16 alcaldías); una vez por evento y no por función, y su recinto tampoco se propone.
+        if (fueraDeLaCiudadDeMexico(ficha.direccion)) {
           descartar("fuera_de_la_ciudad");
           continue;
         }
