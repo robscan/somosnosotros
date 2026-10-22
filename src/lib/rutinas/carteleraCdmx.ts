@@ -1,10 +1,8 @@
-import { resolverLugar } from "../cargaEventos";
 import { claseSugerida, type Clase } from "../eventos";
 import { distanciaKm, type Punto } from "../geo";
 import { LIMITES_EVENTO, LIMITES_LUGAR } from "../limites";
 import { normalizarNombre, type Tipo } from "../lugares";
 import { enlaceSeguro, textoLimpio } from "./candidatos";
-import { METROS_MISMO_LUGAR, nombresParecidos } from "./filtros";
 
 /**
  * El lector de la Cartelera de la Ciudad de México (OL-448; cartelera.cdmx.gob.mx, de la Secretaría de Cultura de la ciudad). El founder preguntó
@@ -573,22 +571,81 @@ export function tipoDeRecinto(nombre: string): Tipo {
 
 export type LugarParaCruce = { id: string; nombre: string; lat?: number | null; lng?: number | null };
 
+const VACIAS_RECINTO = new Set(["de", "del", "la", "las", "el", "los", "y", "e", "en", "a", "al"]);
+/** Lo que se puede tener de más sin dejar de ser el mismo sitio: «Antiguo Colegio…», «… de México», «… CDMX». */
+const SOBRANTES_RECINTO = new Set(["antiguo", "antigua", "ex", "mexico", "cdmx", "df"]);
+const palabrasDeRecinto = (t: string) => normalizarNombre(t).split(" ").filter((w) => w && !VACIAS_RECINTO.has(w) && !SOBRANTES_RECINTO.has(w));
+
+/** Cómo cruzó un recinto con el directorio (OL-451): el mismo nombre, el nombre con lo que sobra quitado, o muy cerca y el nombre que lo continúa. */
+export type ComoCruza = "exacto" | "parecido" | "cercania";
+export type Cruce<T> = { lugar: T; como: ComoCruza; metros: number | null };
+
 /**
- * El lugar del directorio que es este recinto, o null: el mismo nombre (o el único que coincide, `resolverLugar`), o uno a menos de 150 m con un
- * nombre parecido (`nombresParecidos`, el criterio de «Buscar lugares»; las palabras de la ciudad no cuentan).
+ * ¿Dos nombres hablan del mismo recinto? Estricto (OL-451: «Museo de la Ciudad de México» cruzaba con «Museo de la Policía de la Ciudad de
+ * México»): nunca si uno tiene palabras propias que el otro no tiene. Solo:
+ *   · «parecido»: las mismas palabras, sin artículos ni lo que sobra («Antiguo», «de México», «CDMX»): «Antiguo Colegio de San Ildefonso» ≈
+ *     «Colegio de San Ildefonso»; «Museo de la Ciudad de México» ≈ «Museo de la Ciudad».
+ *   · «cercania»: a menos de 60 m, el corto (de dos palabras o más) es el principio del largo: «Teatro de la Ciudad» ≈ «Teatro de la Ciudad
+ *     Esperanza Iris». Ni «Museo de Arte Moderno» ≈ «Museo de Arte Popular» ni «Museo de la Ciudad» ≈ «Museo del Estanquillo».
+ * Ante la duda, no: el recinto se propone como lugar y la administración lo une.
  */
-export function cruzarRecinto<T extends LugarParaCruce>(recinto: { nombre: string; punto: Punto | null }, lugares: readonly T[], palabrasCiudad: Set<string> = new Set()): T | null {
-  if (!recinto.nombre) return null;
-  const porNombre = resolverLugar(recinto.nombre, [...lugares]);
-  if (porNombre) return porNombre;
-  if (!recinto.punto) return null;
-  const cerca = lugares
-    .filter((l) => l.lat != null && l.lng != null)
-    .map((l) => ({ l, m: distanciaKm(recinto.punto!, { lat: l.lat!, lng: l.lng! }) * 1000 }))
-    .filter((x) => x.m <= METROS_MISMO_LUGAR && nombresParecidos(recinto.nombre, x.l.nombre, palabrasCiudad))
-    .sort((a, b) => a.m - b.m);
-  return cerca[0]?.l ?? null;
+export function comoCruzanNombres(a: string, b: string, metros: number | null): ComoCruza | null {
+  if (normalizarNombre(a) && normalizarNombre(a) === normalizarNombre(b)) return "exacto";
+  const pa = palabrasDeRecinto(a), pb = palabrasDeRecinto(b);
+  if (!pa.length || !pb.length) return null;
+  if (pa.join(" ") === pb.join(" ")) return "parecido";
+  const [corta, larga] = pa.length <= pb.length ? [pa, pb] : [pb, pa];
+  if (metros !== null && metros <= 60 && corta.length >= 2 && corta.every((w, i) => larga[i] === w)) return "cercania";
+  return null;
 }
+/** Igual que `comoCruzanNombres`, como sí o no. */
+export const mismoRecinto = (a: string, b: string, metros: number | null): boolean => comoCruzanNombres(a, b, metros) !== null;
+
+/** Un nombre «parecido» lejos (más de 1 km) no es el mismo sitio: hay nombres que se repiten en la ciudad. */
+const LEJOS_M = 1000;
+
+/** El cruce de un recinto con el directorio (el lugar, cómo y a qué distancia), o null. Si cruza con varios, el mejor y el más cercano. */
+export function cruceDeRecinto<T extends LugarParaCruce>(recinto: { nombre: string; punto: Punto | null }, lugares: readonly T[]): Cruce<T> | null {
+  if (!recinto.nombre) return null;
+  const orden: Record<ComoCruza, number> = { exacto: 0, parecido: 1, cercania: 2 };
+  const cruces = lugares
+    .map((l) => {
+      const metros = recinto.punto && l.lat != null && l.lng != null ? Math.round(distanciaKm(recinto.punto, { lat: l.lat, lng: l.lng }) * 1000) : null;
+      const como = comoCruzanNombres(recinto.nombre, l.nombre, metros);
+      return como && !(como !== "exacto" && metros !== null && metros > LEJOS_M) ? { lugar: l, como, metros } : null;
+    })
+    .filter((x): x is Cruce<T> => !!x)
+    .sort((x, y) => orden[x.como] - orden[y.como] || (x.metros ?? 1e9) - (y.metros ?? 1e9));
+  return cruces[0] ?? null;
+}
+
+/** El lugar del directorio que es este recinto, o null (`cruceDeRecinto`). */
+export function cruzarRecinto<T extends LugarParaCruce>(recinto: { nombre: string; punto: Punto | null }, lugares: readonly T[]): T | null {
+  return cruceDeRecinto(recinto, lugares)?.lugar ?? null;
+}
+
+/** El lugar del directorio con exactamente ese nombre (uno solo), para una fila de la cartelera: nunca por parecido (OL-451). */
+export function lugarExacto<T extends { nombre: string }>(nombre: string | null | undefined, lugares: readonly T[]): T | null {
+  const n = normalizarNombre(nombre ?? "");
+  const iguales = n ? lugares.filter((l) => normalizarNombre(l.nombre) === n) : [];
+  return iguales.length === 1 ? iguales[0] : null;
+}
+
+/** El lugar del directorio más cercano a un punto, a menos de 1 km (para el informe: qué hay cerca de un recinto que no cruzó). */
+export function lugarMasCercano<T extends LugarParaCruce>(punto: Punto | null, lugares: readonly T[]): { nombre: string; metros: number } | null {
+  if (!punto) return null;
+  const x = lugares
+    .filter((l) => l.lat != null && l.lng != null)
+    .map((l) => ({ nombre: l.nombre, metros: Math.round(distanciaKm(punto, { lat: l.lat!, lng: l.lng! }) * 1000) }))
+    .sort((a, b) => a.metros - b.metros)[0];
+  return x && x.metros <= 1000 ? x : null;
+}
+
+/** Lo que la lectura le cuenta a quien la corre (el guion de la Mac lo pone en su informe; el resumen de la corrida no lleva nombres). */
+export type NotaCartelera =
+  | { tipo: "sin_hora"; url: string; titulo: string; descripcion: string }
+  | { tipo: "recinto"; id: string | null; nombre: string; lugar: string | null; como?: ComoCruza | null; metros?: number | null; cercano: { nombre: string; metros: number } | null }
+  | { tipo: "no_propuesta"; motivo: "otra_ficha" | "no_guardada"; url: string; titulo: string; con?: string | null };
 
 /** `propuestas.datos` de un recinto que no está en el directorio (el contrato de OL-427 para un lugar, más su imagen y su id en la cartelera). */
 export function datosDeRecinto(r: { id: string | null; nombre: string; punto: Punto; direccion: string | null; imagen: string | null; enlace: string | null }, ciudad: string, leida: string, url: string): Record<string, unknown> {

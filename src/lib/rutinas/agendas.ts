@@ -14,10 +14,13 @@ import { urlSegura } from "../propuestas";
 import { llamarConEntrega } from "./claude";
 import {
   clienteCartelera,
-  cruzarRecinto,
+  cruceDeRecinto,
   datosDeRecinto,
   filasDeFicha,
   fueraDeLaCiudadDeMexico,
+  lugarExacto,
+  lugarMasCercano,
+  urlFicha,
   NOMBRE_FUENTE_CARTELERA,
   nombreDeTipo,
   peticionesPorPaso,
@@ -25,7 +28,7 @@ import {
   MS_POR_PETICION,
   type FilaCartelera,
 } from "./carteleraCdmx";
-import { armarConocidos, motivoPorNombre, municipioDeLaCiudad, otroMunicipioEnTexto, palabrasDeCiudad } from "./filtros";
+import { armarConocidos, motivoPorNombre, municipioDeLaCiudad, otroMunicipioEnTexto } from "./filtros";
 import { cadaCuantos, claseDeActo, claseDeLaAgenda, claveDeFestival, comoSeAgrupa, dentroDelFestival, leerFormaEvento, MARGEN_FESTIVAL_DIAS, mismoPrograma, nombraAlFestival, nombreDeExposicion, programaDeAgenda } from "./formaEvento";
 import { agendasVigentes, diasEntre, mesSiguiente, pdfsDelIndice } from "./indiceAgendas";
 import { dominioDe, FalloCorrida, LOTE_MAPBOX, nombresDe, radioDe, TIEMPO_PARA_LLAMADA_MS, zonasDe, type Contexto, type SalidaPaso } from "./lugares";
@@ -130,6 +133,8 @@ export type EstadoCartelera = {
   recintos: Record<string, { n: string; img: string | null; lat: number | null; lng: number | null }>;
   ultima: number;
   fallos: number;
+  /** Los recintos ya decididos en esta corrida, por su id en la cartelera: la propuesta de lugar (o null si no se propone). OL-451. */
+  propuestos?: Record<string, string | null>;
 };
 export type CursorAgendas = { tareas: TareaAgenda[]; total: number; claves: ClaveAgenda[]; fallidas: string[]; sitios?: Record<string, SitioUbicado>; cartelera?: EstadoCartelera };
 
@@ -311,6 +316,7 @@ function leerEstadoCartelera(v: unknown): EstadoCartelera | null {
     recintos,
     ultima: numero(o.ultima),
     fallos: numero(o.fallos),
+    propuestos: Object.fromEntries(Object.entries(objeto(o.propuestos)).filter(([, v]) => v === null || typeof v === "string")) as Record<string, string | null>,
   };
 }
 
@@ -407,17 +413,29 @@ export type ContadoresCartelera = {
   eventos: number;
   leidas: number;
   fallidas: number;
+  /** Fichas propuestas (una propuesta por ficha, OL-451). */
   propuestos: number;
   recintos_nuevos: number;
+  /** Eventos de la lista que no se pidieron porque ya se habían propuesto antes. */
+  ya_propuestos: number;
+  /** Por ficha leída y no propuesta, su motivo: leídas = propuestos + la suma de los motivos. */
+  motivos: Partial<Record<MotivoFicha, number>>;
   por_tipo: Record<string, { leidos: number; propuestos: number }>;
 };
+/**
+ * El motivo de una ficha que no se propuso: los de siempre; `otra_ficha`, sus funciones se sumaron a la propuesta de otra ficha con el mismo
+ * título en el mismo sitio; `no_guardada`, ningún motivo y nada escrito (la base no la guardó, o la corrida dejó de correr a medio paso).
+ */
+export type MotivoFicha = MotivoEvento | "otra_ficha" | "no_guardada";
 
 function leerContadoresCartelera(v: unknown): ContadoresCartelera | null {
   const o = objeto(v);
   if (!Object.keys(o).length) return null;
   const por_tipo: ContadoresCartelera["por_tipo"] = {};
   for (const [k, t] of Object.entries(objeto(o.por_tipo))) por_tipo[k.slice(0, 60)] = { leidos: numero(objeto(t).leidos), propuestos: numero(objeto(t).propuestos) };
-  return { eventos: numero(o.eventos), leidas: numero(o.leidas), fallidas: numero(o.fallidas), propuestos: numero(o.propuestos), recintos_nuevos: numero(o.recintos_nuevos), por_tipo };
+  const motivos: ContadoresCartelera["motivos"] = {};
+  for (const [k, v] of Object.entries(objeto(o.motivos))) if ((MOTIVOS_EVENTO as readonly string[]).includes(k) || k === "otra_ficha" || k === "no_guardada") motivos[k as MotivoFicha] = numero(v);
+  return { eventos: numero(o.eventos), leidas: numero(o.leidas), fallidas: numero(o.fallidas), propuestos: numero(o.propuestos), recintos_nuevos: numero(o.recintos_nuevos), ya_propuestos: numero(o.ya_propuestos), motivos, por_tipo };
 }
 
 function leerContadores(r: Record<string, unknown>): Contadores {
@@ -676,7 +694,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         continue;
       }
       const donde = texto(e.lugar, LIMITES_EVENTO.sitio);
-      const lugar = donde ? resolverLugar(donde, [...lugares]) : null;
+      // Una fila de la cartelera trae ya su lugar cruzado (OL-451): solo el nombre exacto, nunca uno parecido («Museo de la Policía…»).
+      const lugar = donde ? (e.cartelera_id ? lugarExacto(donde, lugares) : resolverLugar(donde, [...lugares])) : null;
       const direccion = texto(e.direccion, LIMITES_EVENTO.direccion) || null;
       const municipio = texto(e.municipio, 80) || null;
       // La cartelera de la Ciudad de México (OL-450) es la guía oficial: lo suyo es de la ciudad salvo que su dirección diga otro estado.
@@ -798,6 +817,20 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         continue;
       }
 
+      // a'. Una ficha de la cartelera es UNA propuesta (OL-451): sus otras funciones se suman como sesiones a la propuesta de esa ficha, sea cual
+      //     sea su cadencia (una temporada de teatro, un recorrido diario), nunca una propuesta por fecha.
+      const deLaFicha = f.extra?.cartelera_id ? conocidas.find((p) => deLaCorrida(p) && p.datos.cartelera_id === f.extra!.cartelera_id) : undefined;
+      if (deLaFicha) {
+        if (diasDeDatos(deLaFicha.datos).includes(f.dia)) descartar("unido");
+        else {
+          sumarSesion(deLaFicha.datos, f);
+          tocar(deLaFicha);
+          formas.sesiones++;
+        }
+        propuestas.set(k, "propuesta");
+        continue;
+      }
+
       // b. ¿Un acto de un festival? Uno registrado en la ciudad, en sus fechas, que la fila nombra; o el programa que dice la agenda.
       let marco: { id: string; titulo: string } | null = null;
       let festival: Conocida | null = null;
@@ -848,6 +881,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         const sola = hermanas.find((p) => !leerFormaEvento(p.datos).serie);
         const modo = sola ? comoSeAgrupa(diasDeDatos(sola.datos), f.dia, leerFormaEvento(sola.datos).clase) : "serie";
         if (modo === "sesion" && sola) {
+          // Una ficha de la cartelera sumada a la propuesta de otra con el mismo título en el mismo sitio (OL-451): se dice en sus cuentas.
+          if (f.extra?.cartelera_id && sola.datos.cartelera_id !== f.extra.cartelera_id) sumadasAOtra.set(f.extra.cartelera_id, texto(sola.datos.titulo, 120));
           sumarSesion(sola.datos, f);
           const delFestival = typeof sola.datos.marco_propuesto === "string" ? conocidas.find((p) => p.id === sola.datos.marco_propuesto) : null;
           if (delFestival) extenderFestival(delFestival, f.inicio, f.fin);
@@ -1158,40 +1193,59 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     }
   }
 
-  // ---------- la Cartelera de la Ciudad de México (OL-448) ----------
-  /** Las propuestas de lugar de la ciudad (para no proponer dos veces un recinto, ni uno rechazado): se leen la primera vez que hacen falta. */
-  let lugaresPropuestos: { conocidos: ReturnType<typeof armarConocidos>; ids: Map<string, string> } | null = null;
+  // ---------- la Cartelera de la Ciudad de México (OL-448, OL-450, OL-451) ----------
+  /** Las fichas de la cartelera que `proponer` sumó a la propuesta de otra ficha (mismo título, mismo sitio): su id → el título de esa. */
+  const sumadasAOtra = new Map<string, string>();
+  /**
+   * Las propuestas de lugar de la ciudad (para no proponer dos veces un recinto, ni uno rechazado): por nombre y por su id en la cartelera
+   * (`cartelera_recinto`). Se leen la primera vez que hacen falta en el paso.
+   */
+  let lugaresPropuestos: { conocidos: ReturnType<typeof armarConocidos>; ids: Map<string, string>; porRecinto: Map<string, string | null> } | null = null;
   async function propuestasDeLugar() {
     if (lugaresPropuestos) return lugaresPropuestos;
     const r = corridas.length ? await ctx.db.from("propuestas").select("id, datos, estado, motivo_rechazo").eq("tipo", "lugar").in("corrida_id", [...corridas]).limit(5000) : { data: [], error: null };
     if (r.error) throw new Error("No se pudo leer lo propuesto en la ciudad");
     const filas = (r.data ?? []) as { id: string; datos: unknown; estado: string; motivo_rechazo: string | null }[];
     const ids = new Map<string, string>();
-    for (const f of filas) if (f.estado !== "rechazada") ids.set(normalizarNombre(texto(objeto(f.datos).nombre, 200)), f.id);
+    const porRecinto = new Map<string, string | null>();
+    for (const f of filas) {
+      const d = objeto(f.datos);
+      if (f.estado !== "rechazada") ids.set(normalizarNombre(texto(d.nombre, 200)), f.id);
+      if (typeof d.cartelera_recinto === "string") porRecinto.set(d.cartelera_recinto, f.estado === "rechazada" ? null : f.id);
+    }
     const conocidos = armarConocidos(
       lugares.map((l) => ({ nombre: l.nombre, lat: l.lat ?? null, lng: l.lng ?? null })),
       filas.map((f) => ({ nombre: texto(objeto(f.datos).nombre, 200), estado: f.estado, motivo: f.motivo_rechazo })),
       nombres,
     );
-    lugaresPropuestos = { conocidos, ids };
+    lugaresPropuestos = { conocidos, ids, porRecinto };
     return lugaresPropuestos;
   }
 
   /**
    * El recinto que no está en el directorio, como propuesta de lugar (con su nombre, dirección, punto e imagen): su id, el de la propuesta que ya
-   * había (sin decidir o aceptada), o null si se rechazó antes o está fuera de la ciudad (sus eventos se descartan igual por eso).
+   * había (sin decidir o aceptada), o null si se rechazó antes o es de otro estado. UNA sola vez por recinto (OL-451): por su id en la cartelera
+   * (en esta corrida, `cursor.cartelera.propuestos`, y en las anteriores, `datos.cartelera_recinto`), por su nombre y por cercanía.
    */
   async function recintoPropuesto(
+    est: EstadoCartelera,
     r: { id: string | null; nombre: string; punto: { lat: number; lng: number }; direccion: string | null; imagen: string | null; enlace: string | null },
     url: string,
   ): Promise<string | null> {
+    const propuestos = (est.propuestos ??= {});
+    if (r.id && r.id in propuestos) return propuestos[r.id];
+    const recordar = (id: string | null) => {
+      if (r.id) propuestos[r.id] = id;
+      return id;
+    };
     // OL-450: un recinto de la cartelera es de la ciudad aunque no esté en sus alcaldías turísticas (solo no, si su dirección es de otro estado).
-    if (fueraDeLaCiudadDeMexico(r.direccion)) return null;
-    const { conocidos, ids } = await propuestasDeLugar();
+    if (fueraDeLaCiudadDeMexico(r.direccion)) return recordar(null);
+    const { conocidos, ids, porRecinto } = await propuestasDeLugar();
+    if (r.id && porRecinto.has(r.id)) return recordar(porRecinto.get(r.id) ?? null);
     const k = normalizarNombre(r.nombre);
     const motivo = motivoPorNombre(r.nombre, conocidos);
-    if (motivo === "rechazado_antes" || motivo === "ya_existe") return null;
-    if (motivo === "ya_propuesto") return ids.get(k) ?? null;
+    if (motivo === "rechazado_antes" || motivo === "ya_existe") return recordar(null);
+    if (motivo === "ya_propuesto") return recordar(ids.get(k) ?? null);
     if (!(await ctx.sigueCorriendo())) return null;
     const id = randomUUID();
     const { error } = await ctx.db
@@ -1204,19 +1258,21 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     }
     conocidos.propuestos.add(k);
     ids.set(k, id);
+    if (r.id) porRecinto.set(r.id, id);
     cont.propuestos++;
     cont.cartelera!.recintos_nuevos++;
-    return id;
+    return recordar(id);
   }
 
   /**
    * Un paso de la cartelera, sin la API: primero las páginas de la lista (con las de recintos), luego las fichas, tantas como caben en el paso
-   * con la calma y la reserva para proponer. Lo leído se propone por lotes con el `proponer` de siempre (fuente «Cartelera de la Ciudad de
-   * México», sin tope de propuestas: lo que la cartelera publica, entra). true si terminó; si no, la tarea sigue en el siguiente paso.
+   * con la calma y la reserva para proponer. Cada ficha se propone en seguida con el `proponer` de siempre y es UNA propuesta (OL-451): sus
+   * funciones van como sesiones. Fuente «Cartelera de la Ciudad de México», sin tope de propuestas: lo que la cartelera publica, entra. Las
+   * cuentas son por ficha (`cartelera.motivos`): fichas leídas = propuestas + cada motivo. true si terminó; si no, sigue en el siguiente paso.
    */
   async function cartelera(): Promise<boolean> {
     const est: EstadoCartelera = (cursor!.cartelera ??= { pagina: 1, paginas: null, paginasRecintos: 0, pendientes: [], vistos: [], recintos: {}, ultima: 0, fallos: 0 });
-    const c = (cont.cartelera ??= { eventos: 0, leidas: 0, fallidas: 0, propuestos: 0, recintos_nuevos: 0, por_tipo: {} });
+    const c = (cont.cartelera ??= { eventos: 0, leidas: 0, fallidas: 0, propuestos: 0, recintos_nuevos: 0, ya_propuestos: 0, motivos: {}, por_tipo: {} });
     const cliente = clienteCartelera({ pedir: ctx.pedir, dormir: ctx.dormir, ultima: est.ultima });
     const caben = peticionesPorPaso(ctx.hasta - Date.now());
     const hayTiempo = () => cliente.peticiones() < caben && ctx.hasta - Date.now() > RESERVA_PASO_MS + MS_POR_PETICION;
@@ -1224,7 +1280,10 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     // Lo ya propuesto desde la cartelera en la ciudad (cualquier estado): su ficha no se vuelve a pedir.
     const yaPropuestos = new Set(conocidas.map((p) => p.datos.cartelera_id).filter((x): x is string => typeof x === "string"));
     const porTipo = (t: string) => (c.por_tipo[t] ??= { leidos: 0, propuestos: 0 });
-    const palabras = palabrasDeCiudad(ctx.ciudad.nombre);
+    const motivo = (m: MotivoFicha, t: string) => {
+      c.motivos[m] = (c.motivos[m] ?? 0) + 1;
+      porTipo(t);
+    };
     try {
       // 1. La lista: cada página trae 9 eventos y, mientras haya, 9 recintos.
       while (est.paginas === null || est.pagina <= est.paginas) {
@@ -1251,6 +1310,7 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
           // Lo ya propuesto antes desde la cartelera no se pide (OL-450: lo lejano sí: la cartelera entra completa).
           if (yaPropuestos.has(e.id)) {
             descartar("ya_propuesto");
+            c.ya_propuestos++;
             continue;
           }
           est.pendientes.push([e.id, e.dia, e.tipo]);
@@ -1258,22 +1318,7 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         est.pagina++;
       }
 
-      // 2. Las fichas, por lotes: lo leído se propone enseguida (si el paso se corta, la siguiente lectura lo reconoce como ya propuesto).
-      let lote: FilaConExtras[] = [];
-      const tipos = new Map<string, string>();
-      const soltar = async () => {
-        if (!lote.length) return;
-        const fechas = lote.map((f) => f.fecha).sort();
-        const escritas = new Set(conocidas.filter((p) => p.escrita).map((p) => p.id));
-        await proponer(lote, "agenda-cultura", { nombre: NOMBRE_FUENTE_CARTELERA, url: null, etiqueta: NOMBRE_FUENTE_CARTELERA }, fechas[0], fechas.at(-1)!, Number.POSITIVE_INFINITY);
-        for (const p of conocidas) {
-          const id = p.datos.cartelera_id;
-          if (!p.escrita || escritas.has(p.id) || typeof id !== "string") continue;
-          c.propuestos++;
-          porTipo(tipos.get(id) ?? "Sin tipo").propuestos++;
-        }
-        lote = [];
-      };
+      // 2. Las fichas, una por una: cada una se propone en seguida (si el paso se corta, la siguiente lectura la reconoce como ya propuesta).
       while (est.pendientes.length && hayTiempo()) {
         const [id, dia, tipo] = est.pendientes[0];
         const ficha = await cliente.ficha(id, dia, "evento");
@@ -1289,32 +1334,58 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         est.pendientes.shift();
         c.leidas++;
         const t = nombreDeTipo(ficha, tipo);
-        tipos.set(ficha.id, t);
         porTipo(t).leidos++;
         const deLista = ficha.recinto.id ? est.recintos[ficha.recinto.id] : undefined;
         const punto = deLista?.lat != null && deLista.lng != null ? { lat: deLista.lat, lng: deLista.lng } : ficha.punto;
         const recinto = { nombre: ficha.recinto.nombre || deLista?.n || "", punto };
-        const lugar = cruzarRecinto(recinto, lugares, palabras);
+        const cruce = cruceDeRecinto(recinto, lugares);
+        const lugar = cruce?.lugar ?? null;
         const filas = filasDeFicha(ficha, { hoy, lugar: lugar?.nombre ?? recinto.nombre, tipoDeLista: tipo });
         if (!filas.length) {
           // Con funciones de hoy en adelante, es que no dice a qué hora (ni la ficha ni su descripción); si no, ya pasó.
-          descartar(ficha.funciones.some((f) => f.dias.some((d) => d >= hoy)) ? "sin_hora" : "pasado");
+          const sinHora = ficha.funciones.some((f) => f.dias.some((d) => d >= hoy));
+          descartar(sinHora ? "sin_hora" : "pasado");
+          motivo(sinHora ? "sin_hora" : "pasado", t);
+          if (sinHora) ctx.anotarCartelera?.({ tipo: "sin_hora", url: urlFicha(ficha.id, ficha.dia ?? dia, ficha.titulo), titulo: ficha.titulo, descripcion: ficha.descripcion });
           continue;
         }
         // Fuera de la ciudad solo si su dirección es de otro estado (OL-450: la cartelera es la guía oficial y entra completa, en cualquiera
-        // de las 16 alcaldías); una vez por evento y no por función, y su recinto tampoco se propone.
+        // de las 16 alcaldías); y su recinto tampoco se propone.
         if (fueraDeLaCiudadDeMexico(ficha.direccion)) {
           descartar("fuera_de_la_ciudad");
+          motivo("fuera_de_la_ciudad", t);
           continue;
         }
         const propuesto =
           !lugar && recinto.nombre && recinto.punto
-            ? await recintoPropuesto({ id: ficha.recinto.id, nombre: recinto.nombre, punto: recinto.punto, direccion: ficha.direccion, imagen: deLista?.img ?? null, enlace: ficha.enlace }, filas[0].url)
+            ? await recintoPropuesto(est, { id: ficha.recinto.id, nombre: recinto.nombre, punto: recinto.punto, direccion: ficha.direccion, imagen: deLista?.img ?? null, enlace: ficha.enlace }, filas[0].url)
             : null;
-        lote.push(...filas.map((f) => ({ ...f, lugar_propuesto: propuesto })));
-        if (lote.length >= 150) await soltar();
+        ctx.anotarCartelera?.({ tipo: "recinto", id: ficha.recinto.id, nombre: recinto.nombre, lugar: lugar?.nombre ?? null, como: cruce?.como ?? null, metros: cruce?.metros ?? null, cercano: lugar ? null : lugarMasCercano(recinto.punto, lugares) });
+        // La ficha, sola: así se sabe qué pasó con ella (propuesta, o el motivo por el que no).
+        const antes = { ...cont.descartados };
+        const escritas = new Set(conocidas.filter((p) => p.escrita).map((p) => p.id));
+        const fechas = filas.map((f) => f.fecha).sort();
+        await proponer(
+          filas.map((f) => ({ ...f, lugar_propuesto: propuesto })),
+          "agenda-cultura",
+          { nombre: NOMBRE_FUENTE_CARTELERA, url: null, etiqueta: NOMBRE_FUENTE_CARTELERA },
+          fechas[0],
+          fechas.at(-1)!,
+          Number.POSITIVE_INFINITY,
+        );
+        if (conocidas.some((p) => p.escrita && !escritas.has(p.id) && p.datos.cartelera_id === ficha.id)) {
+          c.propuestos++;
+          porTipo(t).propuestos++;
+        } else if (sumadasAOtra.has(ficha.id)) {
+          // Sus funciones se sumaron a la propuesta de otra ficha con el mismo título en el mismo sitio (la misma obra listada dos veces).
+          motivo("otra_ficha", t);
+          ctx.anotarCartelera?.({ tipo: "no_propuesta", motivo: "otra_ficha", url: filas[0].url, titulo: ficha.titulo, con: sumadasAOtra.get(ficha.id) ?? null });
+        } else {
+          const m = MOTIVOS_EVENTO.find((x) => cont.descartados[x] > antes[x]);
+          motivo(m ?? "no_guardada", t);
+          if (!m) ctx.anotarCartelera?.({ tipo: "no_propuesta", motivo: "no_guardada", url: filas[0].url, titulo: ficha.titulo });
+        }
       }
-      await soltar();
       const termino = est.paginas !== null && est.pagina > est.paginas && !est.pendientes.length;
       if (termino) cont.agendas_leidas++;
       return termino;

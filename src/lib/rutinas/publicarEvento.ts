@@ -10,8 +10,9 @@ import { diaLocal, isoALocal, localAIso, zonaSegura } from "../fechas";
 import { LIMITES_EVENTO } from "../limites";
 import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
+import { lugarExacto } from "./carteleraCdmx";
 import { dentroDelArea, radioDeCiudadKm } from "./filtros";
-import { claseDeActo, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type SesionPropuesta } from "./formaEvento";
+import { claseDeActo, diasSeguidos, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type SesionPropuesta } from "./formaEvento";
 import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
 
 /**
@@ -168,7 +169,8 @@ export async function prepararEvento(
   if (paso) return { ok: false, motivo: "pasado", error: "No se publicó: ese evento ya pasó. Recházala." };
   const donde = texto(datos.lugar, LIMITES_EVENTO.sitio);
   if (!donde) return { ok: false, motivo: "invalido", error: "No se publicó: la propuesta no dice dónde es." };
-  const lugar = resolverLugar(donde, [...lugares]);
+  // Lo de la cartelera (OL-451): solo el lugar con ese nombre exacto (el cruce ya se hizo al proponer; uno «parecido» puede ser otro museo).
+  const lugar = typeof datos.cartelera_id === "string" ? lugarExacto(donde, lugares) : resolverLugar(donde, [...lugares]);
   const zona = zonaSegura(lugar?.zona ?? ciudad.zona);
 
   const delMarco = esMarco ? { padre: null, espera: null } : await marcoDelActo(dep.db, forma);
@@ -247,8 +249,9 @@ export async function prepararEvento(
     entrada.fin = ultima.fin ? isoALocal(ultima.fin, zona).slice(0, 16) : `${ultima.fecha}T23:59`;
     const horas = (f: SesionFila) => `${isoALocal(f.inicio, zona).slice(11, 16)}-${f.fin ? isoALocal(f.fin, zona).slice(11, 16) : ""}`;
     const mismoHorario = filas.every((f) => horas(f) === horas(filas[0]));
-    // «Mismo horario todos los días» en días seguidos: sin filas (OL-310). Un taller, siempre con sus sesiones (días sueltos).
-    if (clase === "taller" || !mismoHorario) extras.sesiones = filas;
+    // «Mismo horario todos los días» en días seguidos: sin filas (OL-310). Un taller, siempre con sus sesiones (días sueltos). Días que no van
+    // seguidos (una temporada de la cartelera de jueves a domingo, OL-451), también con sus sesiones: si no, el evento diría que es todos los días.
+    if (clase === "taller" || !mismoHorario || !diasSeguidos(filas.map((f) => f.fecha))) extras.sesiones = filas;
   }
   const { datos: evento, errores } = validarEvento(entrada, zona, { marco: esMarco, costoOpcional: opcional || porConfirmar });
   const primero = Object.values(errores)[0];
