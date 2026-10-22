@@ -1,6 +1,6 @@
-/** OL-427, OL-432 y OL-434 (bitácoras 460, 464 y 467): Administración › Ciudades con sus componentes reales —la lista general con «Añadir
- *  ciudad», las tarjetas del panel de una ciudad con la hoja de «Correr» y la bandeja, con la forma de cada propuesta de evento armada por
- *  `armarBandejas` como en la página—, su CSS y Chrome real vía Playwright, a 390×844. Las acciones del
+/** OL-427, OL-432, OL-434 y OL-438 (bitácoras 460, 464, 467 y 470): Administración › Ciudades con sus componentes reales —la lista general con
+ *  «Añadir ciudad», las tarjetas del panel de una ciudad con la hoja de «Correr» y la bandeja, con la forma de cada propuesta de evento armada
+ *  por `armarBandejas` como en la página y la cabecera de su búsqueda con «Aceptar las N»—, su CSS y Chrome real vía Playwright, a 390×844. Las acciones del
  *  servidor se sustituyen por unas que anotan con qué se llamaron y contestan lo que cada prueba pide (Mapbox, simulado ahí): así se ve qué manda
  *  cada toque. Toques reales por coordenadas, nunca `element.click()`. No corre con `npm test`; se corre con `npm run test:componentes`.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs node --test este-archivo */
@@ -120,7 +120,7 @@ before(async () => {
       import React from 'react';import {createRoot} from 'react-dom/client';import './src/app/globals.css';
       import ListaCiudades from './src/app/admin/ciudades/ListaCiudades';
       import TarjetaBusqueda from './src/app/admin/ciudades/TarjetaBusqueda';
-      import Bandeja from './src/app/admin/ciudades/Bandeja';
+      import Bandeja, { BandejasDeCiudad } from './src/app/admin/ciudades/Bandeja';
       import { armarBandejas } from './src/lib/bandejaFormas';
       import Boton from './src/components/ui/Boton';
       import { BOTONES, lineaBusqueda, siguientePaso, textoRevisar, vezPasada } from './src/lib/ciudadesAdmin';
@@ -155,8 +155,24 @@ before(async () => {
       const vista = q.get('vista');
       // OL-434: como la página, con armarBandejas y dos actos de Xantolo ya aceptados que lo esperan.
       const formas = () => armarBandejas([${JSON.stringify(BANDEJA_FORMAS)}], { aceptados: new Map([['${FEST}', 2]]), festivales: new Map() }, { nombre: 'San Luis Potosí', zona: 'America/Mexico_City' }, AHORA)[0];
-      createRoot(document.getElementById('root')).render(<main>{vista === 'formas'
+      // OL-438: la bandeja con la cabecera de su búsqueda, como la página; \`solo\` deja solo lo de la fuente de la agenda (y el acto que va con su festival).
+      const busqueda = () => {
+        const ps = formas().propuestas.filter((p) => !q.has('solo') || p.fuente === '${AGENDA}' || p.festival);
+        return <Bandeja propuestas={ps} fuentesConTanda={[]} nivel={3} cabecera={{ titulo: 'Buscar agendas y eventos', nota: 'Hoy, 9:00 am · 8 propuestos', ciudad: 'San Luis Potosí' }} />;
+      };
+      // La página de una ciudad: \`refrescar\` hace lo que el servidor tras aceptar la última (ya no trae la búsqueda; trae lo que trajo al día).
+      function Ciudad() {
+        const nota = 'Hoy, 9:00 am · 8 propuestos';
+        const [datos, setDatos] = React.useState(() => ({ busquedas: q.has('vacia') ? [] : [{ id: 'c-agendas', titulo: 'Buscar agendas y eventos', nota, propuestas: formas().propuestas, fuentesConTanda: [] }], notas: { 'c-agendas': nota } }));
+        window.qa.refrescar = (notas) => setDatos({ busquedas: [], notas });
+        return <BandejasDeCiudad busquedas={datos.busquedas} notas={datos.notas} ciudad="San Luis Potosí" vacio="Nada por revisar en San Luis Potosí: las propuestas llegan al correr una búsqueda." />;
+      }
+      createRoot(document.getElementById('root')).render(<main>{vista === 'ciudad'
+        ? <Ciudad />
+        : vista === 'formas'
         ? <Bandeja propuestas={formas().propuestas} fuentesConTanda={formas().fuentes_con_tanda} nivel={3} />
+        : vista === 'busqueda'
+        ? busqueda()
         : vista === 'bandeja'
         ? <Bandeja propuestas={q.has('vacia') ? [] : ${JSON.stringify(PROPUESTAS)}} fuentesConTanda={['Sistema de Información Cultural']} nivel={3} />
         : vista === 'panel' ? <Panel caso={q.get('caso')} />
@@ -420,15 +436,21 @@ test("el tope: la ✕ lo borra y deja el foco; vacío no corre y lo dice; con In
 });
 
 // ---------- la bandeja ----------
-test("bandeja: por fuente bajo su búsqueda, «Aceptar las N» solo donde ya hubo una tanda; aceptar deja la línea con «Ver ficha»", async (t) => {
+test("bandeja: por fuente bajo su búsqueda, «Aceptar las N de esta fuente» también donde no hubo tanda antes (OL-438); aceptar deja la línea con «Ver ficha»", async (t) => {
   const page = await abrir(t, "vista=bandeja");
   assert.deepEqual(await page.locator("h3").evaluateAll((hs) => hs.map((h) => h.textContent)), ["Sistema de Información Cultural2", "Búsqueda web2"], "la fuente con tanda, primero");
-  assert.equal(await page.getByRole("button", { name: "Aceptar las 2 de esta fuente" }).count(), 1);
+  // La búsqueda web nunca tuvo una tanda aceptada: desde OL-438 también ofrece aceptar las suyas.
+  assert.equal(await page.getByRole("button", { name: "Aceptar las 2 de esta fuente" }).count(), 2);
   await tocar(page, page.getByRole("listitem").filter({ hasText: "Foro de prueba" }).getByRole("button", { name: "Aceptar" }));
   await page.getByText("Aceptaste Foro de prueba").waitFor();
   assert.equal(await page.getByRole("link", { name: "Ver ficha" }).getAttribute("href"), "/lugares/foro-de-prueba");
   assert.deepEqual(await llamadas(page), [["aceptarPropuesta", "p2"]]);
-  assert.equal(await page.getByRole("button", { name: /^Aceptar las/ }).count(), 0, "con una sola por decidir ya no hay «todas»");
+  assert.equal(await page.getByRole("button", { name: /^Aceptar las/ }).count(), 1, "la fuente con una sola por decidir ya no ofrece «todas»; la otra, sí");
+  // Sin tanda previa: «Aceptar las 2 de esta fuente» de la búsqueda web acepta las dos, en su orden.
+  await tocar(page, page.getByRole("button", { name: "Aceptar las 2 de esta fuente" }));
+  await page.getByText("Aceptaste Noche de prueba").waitFor();
+  assert.deepEqual((await llamadas(page)).map(([, id]) => id), ["p2", "p1", "p4"]);
+  assert.equal(await page.getByRole("button", { name: /^Aceptar las/ }).count(), 0);
 });
 
 test("bandeja: rechazar pide el motivo en una hoja; sin motivo no se rechaza; «Deshacer» la devuelve", async (t) => {
@@ -565,4 +587,138 @@ test("formas: «Aceptar las 7 de esta fuente» acepta el festival antes que sus 
   await page.getByRole("status").filter({ hasText: "Inauguración: Raíces" }).waitFor();
   assert.deepEqual((await llamadas(page)).map(([, id]) => id), ["recital", FEST, "acto-son", "acto-danza", "taller", "cineclub", "expo"]);
   assert.equal(await tarjeta(page, "Función de clausura").getByRole("button", { name: "Aceptar" }).count(), 1, "la de otra fuente, por decidir");
+});
+
+// ---------- «Aceptar todas» (OL-438) ----------
+const ORDEN = ["recital", FEST, "acto-son", "acto-danza", "taller", "cineclub", "expo", "cine"];
+const SIN_PUNTO = "No se publicó: «ACHE Galería» no está en el directorio y el mapa no lo encuentra en San Luis Potosí. Recházala o da de alta el lugar.";
+/** Lo que contesta el servidor en una tanda: el taller no se puede publicar; lo demás, aceptado (con su ficha). `pausa`: esa espera a `soltar`. */
+const tandaDeOmision = (page, { pausa = null, fallan = { taller: SIN_PUNTO } } = {}) =>
+  page.evaluate(
+    ([pausa, fallan]) => {
+      window.qa.respuestas.aceptarPropuesta = (id) => {
+        const r = fallan[id] ? { ok: false, error: fallan[id] } : { ok: true, href: `/eventos/${id}` };
+        return id === pausa ? new Promise((ok) => (window.qa.soltar = () => ok(r))) : r;
+      };
+    },
+    [pausa, fallan],
+  );
+const cabecera = (page) => page.getByRole("heading", { name: "Buscar agendas y eventos", level: 2 });
+
+test("todas: «Aceptar las 8» bajo lo que trajo la búsqueda; la hoja dice cuántas y qué pasa con las que no se puedan; Cancelar no acepta nada", async (t) => {
+  const page = await abrir(t, "vista=busqueda");
+  // La cabecera: su nombre, lo que trajo y, debajo, el botón de contorno, a la izquierda.
+  const orden = await page.locator("main > *").evaluateAll((els) => els.slice(0, 4).map((e) => `${e.tagName.toLowerCase()}:${e.textContent}`));
+  assert.deepEqual(orden, ["h2:Buscar agendas y eventos", "p:Hoy, 9:00 am · 8 propuestos", "button:Aceptar las 8", "h3:Agenda de Cultura del estado7"]);
+  const boton = page.getByRole("button", { name: "Aceptar las 8", exact: true });
+  const [caja, titulo] = await Promise.all([boton.boundingBox(), cabecera(page).boundingBox()]);
+  assert.ok(caja.height >= 44, "su toque, de 44 o más");
+  assert.ok(Math.abs(caja.x - 16) <= 1 && caja.x < titulo.x + 8 && caja.width < 390 - 32, "a la izquierda, lo que mide su texto");
+  assert.equal(await boton.evaluate((b) => getComputedStyle(b).borderTopStyle), "solid", "de contorno");
+  assert.ok(!(await violetas(page)).includes("Aceptar las 8"), "no es violeta: el violeta es el «Aceptar» de cada tarjeta");
+  // La fuente de la agenda (7 de 8) conserva su «Aceptar las 7 de esta fuente»; la búsqueda web, con una, no.
+  assert.equal(await page.getByRole("button", { name: "Aceptar las 7 de esta fuente" }).count(), 1);
+  assert.equal(await page.getByRole("button", { name: /Rechazar (todas|las)/ }).count(), 0, "Rechazar sigue una por una");
+  await tocar(page, boton);
+  const hoja = page.getByRole("dialog", { name: "Aceptar todas" });
+  await hoja.waitFor();
+  assert.equal(
+    (await hoja.innerText()).replace(/\n+/g, "\n"),
+    "Aceptar todas\nVas a aceptar 8 propuestas de eventos de San Luis Potosí.\nLas que no se puedan publicar (un repetido, un sitio sin punto, un acto cuyo festival no se ha aceptado) se quedan por revisar con su razón.\nCancelar\nAceptar las 8",
+  );
+  assert.equal(await hoja.getByRole("button", { name: /Rechazar/ }).count(), 0, "en la hoja, nada de rechazar todas");
+  await tocar(page, hoja.getByRole("button", { name: "Cancelar" }));
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await llamadas(page), [], "Cancelar no acepta nada");
+  await boton.waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390, "nada se sale a lo ancho");
+});
+
+test("todas: una por una en el orden de la pantalla (el festival antes que sus actos), el avance en el botón; la que no se puede publicar se queda con su razón y sus botones", async (t) => {
+  const page = await abrir(t, "vista=busqueda");
+  await tandaDeOmision(page, { pausa: "acto-son" });
+  await tocar(page, page.getByRole("button", { name: "Aceptar las 8", exact: true }));
+  await tocar(page, page.getByRole("dialog", { name: "Aceptar todas" }).getByRole("button", { name: "Aceptar las 8" }));
+  // En la tercera (el acto que llegó por la búsqueda web, bajo su festival): el avance en el mismo botón, latiendo, y sin los de cada fuente.
+  const avance = page.getByRole("button", { name: "Aceptando 3 de 8…" });
+  await avance.waitFor();
+  assert.equal(await avance.getAttribute("aria-busy"), "true");
+  assert.equal(await avance.isDisabled(), false, "no se apaga: late");
+  assert.equal(await page.getByRole("button", { name: /de esta fuente/ }).count(), 0, "mientras acepta todas, sin los de cada fuente");
+  assert.equal(await tarjeta(page, "Son huasteco en la plaza").getByRole("button", { name: "Aceptando…" }).count(), 1);
+  assert.equal(await page.getByRole("status").filter({ hasText: "Aceptaste Xantolo 2026" }).count(), 1, "el festival, ya aceptado");
+  await page.evaluate(() => window.qa.soltar());
+  const hecho = page.getByRole("status").filter({ hasText: /aceptadas/ });
+  await hecho.waitFor();
+  assert.equal(await hecho.innerText(), "7 aceptadas · 1 por revisar");
+  assert.deepEqual((await llamadas(page)).map(([, id]) => id), ORDEN, "el festival antes que sus actos; cada una, una sola vez");
+  // La que falló: su razón y sus dos botones; las demás, su línea de lo hecho.
+  const taller = tarjeta(page, "Taller de grabado en linóleo");
+  assert.equal(await taller.getByRole("alert").innerText(), SIN_PUNTO);
+  assert.equal(await taller.getByRole("button", { name: "Rechazar" }).count(), 1);
+  assert.equal(await taller.getByRole("button", { name: "Aceptar" }).count(), 1);
+  assert.equal(await page.getByRole("status").filter({ hasText: /^Aceptaste/ }).count(), 7);
+  assert.equal(await page.getByRole("button", { name: /^Aceptar las/ }).count(), 0, "tras la tanda, lo que queda va una por una");
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390, "nada se sale a lo ancho");
+  // Aceptarla a mano después: la cuenta de la cabecera sigue a lo que queda.
+  await page.evaluate(() => (window.qa.respuestas.aceptarPropuesta = { ok: true, href: "/eventos/taller" }));
+  await tocar(page, taller.getByRole("button", { name: "Aceptar" }));
+  await page.getByRole("status").filter({ hasText: "Aceptaste Taller de grabado en linóleo" }).waitFor();
+  assert.equal(await hecho.innerText(), "7 aceptadas");
+});
+
+test("todas: si el festival no se acepta, sus actos se quedan por revisar con su razón, sin mandarse", async (t) => {
+  const page = await abrir(t, "vista=busqueda");
+  await tandaDeOmision(page, { fallan: { [FEST]: "Ya está el festival «Xantolo 2026» en esas fechas: recházala como duplicado." } });
+  await tocar(page, page.getByRole("button", { name: "Aceptar las 8", exact: true }));
+  await tocar(page, page.getByRole("dialog", { name: "Aceptar todas" }).getByRole("button", { name: "Aceptar las 8" }));
+  const hecho = page.getByRole("status").filter({ hasText: /aceptadas/ });
+  await hecho.waitFor();
+  assert.equal(await hecho.innerText(), "5 aceptadas · 3 por revisar");
+  assert.deepEqual((await llamadas(page)).map(([, id]) => id), ["recital", FEST, "taller", "cineclub", "expo", "cine"], "sus actos no se mandan");
+  for (const acto of ["Son huasteco en la plaza", "Danza de Huehues"]) {
+    assert.equal(await tarjeta(page, acto).getByRole("alert").innerText(), "Su festival «Xantolo 2026» no se aceptó: acéptalo antes que este acto.", acto);
+    assert.equal(await tarjeta(page, acto).getByRole("button", { name: "Aceptar" }).count(), 1, `${acto}: sus botones`);
+  }
+  assert.match(await tarjeta(page, "Xantolo 2026").getByRole("alert").innerText(), /recházala como duplicado/);
+});
+
+test("todas: lo que se decide a mano mientras corre no se vuelve a mandar", async (t) => {
+  const page = await abrir(t, "vista=busqueda");
+  await tandaDeOmision(page, { pausa: FEST, fallan: {} });
+  await tocar(page, page.getByRole("button", { name: "Aceptar las 8", exact: true }));
+  await tocar(page, page.getByRole("dialog", { name: "Aceptar todas" }).getByRole("button", { name: "Aceptar las 8" }));
+  await page.getByRole("button", { name: "Aceptando 2 de 8…" }).waitFor();
+  // Mientras el festival va en camino, se rechaza la exposición con su motivo.
+  await tocar(page, tarjeta(page, "Inauguración: Raíces").getByRole("button", { name: "Rechazar" }));
+  await tocar(page, page.getByRole("dialog").getByRole("button", { name: /No es cultural/ }));
+  await page.getByText("Rechazaste Inauguración: Raíces · no es cultural").waitFor();
+  await page.evaluate(() => window.qa.soltar());
+  const hecho = page.getByRole("status").filter({ hasText: /aceptadas/ });
+  await hecho.waitFor();
+  assert.equal(await hecho.innerText(), "7 aceptadas");
+  const ids = (await llamadas(page)).map(([nombre, id]) => `${nombre === "aceptarPropuesta" ? "" : `${nombre} `}${id}`);
+  assert.deepEqual(ids, ["recital", FEST, "rechazarPropuesta expo", "acto-son", "acto-danza", "taller", "cineclub", "cine"], "la rechazada a mano no se acepta después");
+});
+
+test("todas: si una fuente es todo lo que queda, solo sale «Aceptar las N» de la cabecera", async (t) => {
+  const page = await abrir(t, "vista=busqueda&solo=1");
+  assert.equal(await page.getByRole("button", { name: "Aceptar las 7", exact: true }).count(), 1);
+  assert.equal(await page.getByRole("button", { name: /de esta fuente/ }).count(), 0, "no repite el de la cabecera");
+});
+
+test("todas: cuando el servidor ya no trae la búsqueda (no le queda nada por revisar), se queda con sus líneas, su cuenta y lo que trajo al día", async (t) => {
+  const page = await abrir(t, "vista=ciudad");
+  await tandaDeOmision(page, { fallan: {} });
+  await tocar(page, page.getByRole("button", { name: "Aceptar las 8", exact: true }));
+  await tocar(page, page.getByRole("dialog", { name: "Aceptar todas" }).getByRole("button", { name: "Aceptar las 8" }));
+  const hecho = page.getByRole("status").filter({ hasText: /aceptadas/ });
+  await hecho.waitFor();
+  await page.evaluate(() => window.qa.refrescar({ "c-agendas": "Hoy, 9:00 am · 8 propuestos · 8 aceptados" }));
+  await page.getByText("Hoy, 9:00 am · 8 propuestos · 8 aceptados").waitFor();
+  assert.equal(await hecho.innerText(), "8 aceptadas");
+  assert.equal(await page.getByRole("status").filter({ hasText: /^Aceptaste/ }).count(), 8, "sus líneas de lo hecho siguen");
+  assert.equal(await page.getByText(/Nada por revisar/).count(), 0);
+  const vacia = await abrir(t, "vista=ciudad&vacia=1");
+  assert.equal(await vacia.locator("main").innerText(), "Nada por revisar en San Luis Potosí: las propuestas llegan al correr una búsqueda.", "sin búsquedas al entrar, la frase");
 });

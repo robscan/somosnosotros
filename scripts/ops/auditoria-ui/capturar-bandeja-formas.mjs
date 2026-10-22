@@ -119,7 +119,8 @@ try {
   const titulos = await page.locator("main li").evaluateAll((lis) => lis.map((li) => li.querySelector("span")?.textContent));
   comprobar(
     JSON.stringify(titulos) ===
-      JSON.stringify(["Xantolo 2026", "Danza de Huehues", "Son huasteco en la plaza", "Recital de guitarra clásica", "Taller de papel picado", "Feria del libro infantil", "Cineclub de los miércoles", "Cineclub de los miércoles", "Inauguración: Raíces", "Función de clausura: cortometrajes potosinos"]),
+      // OL-438: «Feleal…», al final de su fuente, es la que el respaldo trae repetida para «Aceptar todas».
+      JSON.stringify(["Xantolo 2026", "Danza de Huehues", "Son huasteco en la plaza", "Recital de guitarra clásica", "Taller de papel picado", "Feria del libro infantil", "Feleal: un viaje por el mundo en acordeón", "Cineclub de los miércoles", "Cineclub de los miércoles", "Inauguración: Raíces", "Función de clausura: cortometrajes potosinos"]),
     `el festival antes que sus actos, y el que llegó por la búsqueda web con ellos: ${titulos.join(" · ")}`,
   );
   const x = async (l) => (await l.boundingBox()).x;
