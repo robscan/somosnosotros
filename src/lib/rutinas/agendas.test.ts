@@ -213,7 +213,8 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     expect(c.estado).toBe("terminada");
     expect(pasos.at(-1)?.estado).toBe("terminada");
     // El índice de San Luis se leyó desde el servidor, sin la API, y solo valen el PDF de octubre y el programa de Xantolo (sin mes: 31 días).
-    expect(pedidas).toEqual(["https://cultura.slp.gob.mx/agenda-cultural/"]);
+    // OL-444: la agenda en HTML de la UASLP también se intenta bajar desde el servidor (gratis); aquí no responde (404) y la abre la API como antes.
+    expect(pedidas).toEqual(["https://cultura.slp.gob.mx/agenda-cultural/", "https://www.uaslp.mx/agenda-cultural"]);
     const orden = create.mock.calls.map((_, i) => queLeyo(pedidoDe(create, i)));
     expect(orden).toEqual([
       "pdf Programa_Xantolo_2026.pdf 2026-10-21…2026-10-27",

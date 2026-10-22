@@ -6,7 +6,10 @@ import { IconoEtiqueta, IconoOjo, IconoPendiente } from "@/components/ui/Iconos"
 import plantilla from "@/components/ui/Plantilla.module.css";
 import {
   baseArtistas,
+  baseCarteles,
   baseEventos,
+  BOTON_CARTELES,
+  busquedaDe,
   baseLugares,
   BOTONES,
   busquedasDe,
@@ -51,7 +54,8 @@ const PILDORA: Record<EstadoVisible, string> = { abierta: `${styles.etiqueta} ${
  * El panel de una ciudad (OL-432; prototipo firmado OL-431, pantallas D, E y F): cómo va y sus búsquedas. Arriba, su nombre, su píldora y desde
  * cuándo, con lo que cuenta con ella. Luego las tarjetas de «Últimos 7 días»: Por revisar (a la bandeja de la ciudad), Lugares, Eventos próximos
  * y Artistas con la búsqueda que alimenta cada una y su botón, y Consultas y Gasto. Un solo botón violeta: el siguiente paso. Desde 1048, en la
- * columna ancha, de tres en tres. Atrás vuelve a la lista.
+ * columna ancha, de tres en tres. Al final, «Carteles» (OL-444): los eventos próximos sin cartel y su botón «Buscar carteles», que nunca es el
+ * siguiente paso (completa lo que ya está). Atrás vuelve a la lista.
  */
 export default async function PanelCiudad({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -82,6 +86,7 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
   const suyas = [...juntadas].filter(([, a]) => a === slug).map(([s]) => s);
   const [[cifras], datos] = await Promise.all([conCifras([ciudad], extras ?? new Map()), cargarDatosCiudad({ slug, nombre: ciudad.nombre, alias: extra.alias, zona: ciudad.zona }, suyas, ahora)]);
   const b = busquedasDe(panel.corridas, slug);
+  const carteles = busquedaDe(panel.corridas, slug, BOTON_CARTELES.tipo);
   const n = porRevisarDe(panel.corridas, slug);
   const siguiente = siguientePaso(b, n);
   const c = credito(panel.credito, ahora);
@@ -166,6 +171,19 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
             </Link>
           </div>
         </li>
+        <TarjetaBusqueda
+          slug={slug}
+          ciudad={ciudad.nombre}
+          tipo={BOTON_CARTELES.tipo}
+          valor={cifra(datos.sinCartel ?? 0)}
+          base={datos.sinCartel === null ? null : baseCarteles(datos.sinCartel)}
+          linea={carteles ? lineaBusqueda(carteles, panel.corridas, ahora) : null}
+          principal={false}
+          pendiente={carteles?.estado === "pendiente" ? carteles.id : null}
+          corre={carteles?.estado === "corriendo"}
+          credito={fraseCredito}
+          vezPasada={vezPasada(carteles)}
+        />
       </ul>
     </main>
   );

@@ -35,7 +35,7 @@ describe("dispararPaso", () => {
     expect(await dispararPaso("https://somosnosotros.org", { secreto: undefined, pedir, avisar: (t) => avisos.push(t) })).toBe("sin secreto");
     expect(await dispararPaso(null, { secreto: "s3cr3t", pedir, avisar: (t) => avisos.push(t) })).toBe("sin origen");
     expect(pedir).not.toHaveBeenCalled();
-    expect(avisos).toEqual(["rutinas: falta CRON_SECRET; la corrida espera al cron", "rutinas: no se reconoce el sitio; la corrida espera al cron"]);
+    expect(avisos).toEqual(["rutinas: falta CRON_SECRET; la corrida espera al latido", "rutinas: no se reconoce el sitio; la corrida espera al latido"]);
     const cae = (async () => {
       throw new Error("sin red");
     }) as unknown as typeof fetch;
@@ -66,7 +66,7 @@ describe("dispararPaso reintenta (OL-429)", () => {
     const pedir = respuestas(500, 500, 500, 202);
     expect(await dispararPaso("https://somosnosotros.org", { secreto: "s3cr3t", pedir, avisar: (t) => avisos.push(t), ...sinEspera })).toBe("falló");
     expect(pedir).toHaveBeenCalledTimes(3);
-    expect(avisos).toEqual(["rutinas: no se pudo pedir el paso (respondió 500); lo retoma Ciudades o el cron"]);
+    expect(avisos).toEqual(["rutinas: no se pudo pedir el paso (respondió 500); lo retoma el latido de Supabase"]);
   });
 
   it("un 401 no se reintenta (el secreto no cambia entre intentos)", async () => {
@@ -86,5 +86,15 @@ describe("dispararPaso reintenta (OL-429)", () => {
     const r = await dispararPaso("https://somosnosotros.org", { secreto: "s", pedir, ahora: () => reloj, hasta: 3_500, esperar: async (ms) => void (reloj += ms), avisar: () => undefined });
     expect(r).toBe("falló");
     expect(pedir).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("dispararPaso ante un 508 (OL-444)", () => {
+  it("Vercel corta la cadena con 508 («Loop Detected»): no se reintenta, no cuenta como fallo y el registro dice quién la retoma", async () => {
+    const avisos: string[] = [];
+    const pedir = vi.fn(async () => new Response("INFINITE_LOOP_DETECTED", { status: 508 })) as unknown as typeof fetch;
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s3cr3t", pedir, avisar: (t) => avisos.push(t), esperar: async () => undefined })).toBe("cortado");
+    expect(pedir).toHaveBeenCalledTimes(1);
+    expect(avisos).toEqual(["rutinas: Vercel cortó la cadena (508); lo retoma el latido de Supabase"]);
   });
 });
