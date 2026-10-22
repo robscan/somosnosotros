@@ -6,7 +6,9 @@
  * Tampoco carga lo que se parece a un evento ya publicado (OL-384, como «¿Es este?» del alta): el mismo día, en el mismo sitio y con un título
  * parecido según `eventos_parecidos` (por ejemplo «Gitanos mexicanos 2.ª edición: Pargazz» y «Pargazz: Gitanos mexicanos, 2ª Edición»); queda en
  * el informe con el evento al que se parece. Con --forzar-parecidos se cargan igual (y el informe lo dice). Con --simular solo informa.
- * Quién se presenta se liga solo si ya hay una ficha de artista con ese nombre exacto; aquí no se crean artistas.
+ * Quién se presenta se liga con el cruce de OL-440 (`artistasDelEvento` de src/lib/cargaEventos.ts: el mismo nombre aunque se escriba distinto,
+ * apellidos de más, el mismo grupo, integrante de un grupo, o la ficha que el título nombra); aquí no se crean artistas: los nombres sin ficha
+ * quedan en el informe y los propone scripts/instituciones/ligar-artistas.ts.
  *
  * Procedencia (OL-424): --origen <texto> y --fuente <url> quedan en cada fila cargada (`eventos.origen`, `eventos.fuente_url`) y en el informe.
  * Sin --historico, lo pasado se salta («ya pasó»), como siempre. Con --historico (que exige --origen y --fuente) lo pasado entra, visible: la
@@ -25,7 +27,8 @@ import { LIMITES_EVENTO } from "../../src/lib/limites";
 import { normalizarNombre } from "../../src/lib/lugares";
 import { CIUDAD, guardarInforme, preparar } from "./entorno";
 // La lógica de carga es la misma del servidor (OL-429: src/lib/cargaEventos.ts, que usa también la rutina de agendas).
-import { formularioDeEvento, parecidoGuardado, resolverLugar, type Eleccion, type EventoGuardado, type EventoPropuesto } from "../../src/lib/cargaEventos";
+import { artistasDelEvento, formularioDeEvento, parecidoGuardado, resolverLugar, type Eleccion, type EventoGuardado, type EventoPropuesto } from "../../src/lib/cargaEventos";
+import { COMO_CRUCE, indiceDeArtistas, type FichaArtista } from "../../src/lib/cruceArtistas";
 import { opcionesDeCarga } from "./instituciones";
 import { ubicarSitio } from "./mapbox";
 
@@ -63,12 +66,12 @@ async function main() {
   const [lugares, eventos, artistas] = await Promise.all([
     todas<{ id: string; nombre: string }>("lugares", "id, nombre"),
     todas<EventoGuardado>("eventos", "id, titulo, inicio, zona, lugar_id, sitio_texto, clase, borrador, visible"),
-    todas<{ id: string; nombre: string }>("artistas", "id, nombre"),
+    todas<FichaArtista>("artistas", "id, nombre, tipo, disciplina, detalle, descripcion, visible"),
   ]);
   const clave = (titulo: string, inicio: string) => `${normalizarNombre(titulo)}|${new Date(inicio).toISOString()}`;
   const yaEstan = new Set(eventos.map((e) => clave(e.titulo, e.inicio)));
-  const artistaPorNombre = new Map(artistas.map((a) => [normalizarNombre(a.nombre), a.id]));
-  const informe = { entran: [] as string[], ya: [] as string[], parecidos: [] as string[], sinPunto: [] as string[], sinLugar: [] as string[], fallidos: [] as string[] };
+  const indiceArtistas = indiceDeArtistas(artistas, CIUDAD);
+  const informe = { entran: [] as string[], ya: [] as string[], parecidos: [] as string[], sinPunto: [] as string[], sinLugar: [] as string[], fallidos: [] as string[], sinFicha: [] as string[] };
   const cargados: { id: string; nombre: string }[] = [];
   const ahora = new Date();
   const mapbox = token ? { token } : null;
@@ -129,9 +132,18 @@ async function main() {
       if (!forzarParecidos) continue;
     }
     yaEstan.add(clave(datos.titulo, datos.inicio));
-    // El informe dice con quién se liga cada evento: un nombre común puede ser otra persona del catálogo.
-    const conFicha = (e.artistas ?? []).filter((n) => artistaPorNombre.has(normalizarNombre(n)));
-    const ligados = [...new Set(conFicha.map((n) => artistaPorNombre.get(normalizarNombre(n)) ?? ""))];
+    // El informe dice con quién se liga cada evento y cómo se supo: un nombre común puede ser otra persona del catálogo.
+    const quienes = artistasDelEvento(e, indiceArtistas);
+    const ligados = quienes.ligados.map((l) => l.id);
+    const conFicha = quienes.ligados.map((l) =>
+      l.como === "igual" ? l.ficha : `${l.ficha} (${COMO_CRUCE[l.como]}${l.nombres.length ? `: ${l.nombres.map((n) => `«${n.nombre}»`).join(", ")}` : ""})`,
+    );
+    const sinFicha = [
+      ...quienes.sinFicha,
+      ...quienes.ambiguos.map((a) => `${a.nombre} (se parece a ${a.fichas.join(" y ")})`),
+      ...quienes.ocultos.map((o) => `${o.nombre} (ficha oculta «${o.ficha}»)`),
+    ];
+    if (sinFicha.length) informe.sinFicha.push(`- ${e.fecha} ${e.titulo}: ${sinFicha.join(", ")}`);
     const linea = `- ${e.fecha} ${e.hora} · ${e.titulo} · ${lugar?.nombre ?? datos.sitio_texto}${ubicado} · ${datos.precio ?? "gratis"}${conFicha.length ? ` · con ${conFicha.join(", ")}` : ""}`;
     const enEstaVuelta = (id: string): EventoGuardado => ({ id, titulo: datos.titulo, inicio: datos.inicio, zona: datos.zona, lugar_id: datos.lugar_id, sitio_texto: datos.sitio_texto, clase: "puntual", borrador: false, visible: true });
     if (simular) {
@@ -190,6 +202,9 @@ async function main() {
       "",
       "## Fallaron o ya pasaron",
       ...informe.fallidos,
+      "",
+      "## Artistas sin ficha, parecidos a varias u ocultas (no se ligaron; ligar-artistas propone los que no tienen ficha)",
+      ...informe.sinFicha,
       "",
     ],
     cargados,

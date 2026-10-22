@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { formularioDeEvento, mismoEventoDeAgenda, parecidoGuardado, precioDeAgenda, resolverLugar, singular, titulosDelMismoEvento, ubicarSitio } from "./cargaEventos";
+import { artistasDelEvento, formularioDeEvento, mismoEventoDeAgenda, parecidoGuardado, precioDeAgenda, resolverLugar, singular, titulosDelMismoEvento, ubicarSitio } from "./cargaEventos";
+import { indiceDeArtistas } from "./cruceArtistas";
 import { validarEvento } from "./eventos";
 
 describe("la carga de eventos compartida entre el importador y el servidor (OL-429)", () => {
@@ -78,5 +79,43 @@ describe("la misma función con otro título (OL-433)", () => {
     expect(resolverLugar("ipba", lugares)?.id).toBe("ipba");
     expect(resolverLugar("FX", lugares)).toBeNull();
     expect(resolverLugar("Centro de las Artes", lugares)).toBeNull();
+  });
+});
+
+describe("artistasDelEvento: con qué fichas se liga un evento de agenda (OL-440)", () => {
+  const indice = indiceDeArtistas([
+    { id: "osslp", nombre: "Orquesta Sinfónica de San Luis Potosí", tipo: "grupo", disciplina: "musica" },
+    { id: "pargazz", nombre: "Pargazz", tipo: "grupo", disciplina: "musica", descripcion: "Carlos de Santos y Óscar Loredo." },
+    { id: "oculta", nombre: "Ficha Oculta", visible: false },
+    { id: "go1", nombre: "Renata Ibarra Solís" },
+    { id: "go2", nombre: "Renata Ibarra Cano" },
+  ]);
+
+  it("antes solo el nombre exacto; ahora el cruce, una vez por ficha, con los nombres que llevaron a ella", () => {
+    const r = artistasDelEvento(
+      { titulo: "Gitanos mexicanos 2ª edición: PARGAZZ", descripcion: "Concierto.", artistas: ["Orquesta Sinfónica de San Luis", "Carlos de Santos", "Óscar Loredo", "Ana Nueva", "Ana  Nueva"] },
+      indice,
+    );
+    expect(r.ligados).toEqual([
+      { id: "osslp", ficha: "Orquesta Sinfónica de San Luis Potosí", como: "igual", nombres: [{ nombre: "Orquesta Sinfónica de San Luis", como: "igual" }] },
+      {
+        id: "pargazz",
+        ficha: "Pargazz",
+        como: "integrante",
+        nombres: [
+          { nombre: "Carlos de Santos", como: "integrante" },
+          { nombre: "Óscar Loredo", como: "integrante" },
+        ],
+      },
+    ]);
+    expect(r.sinFicha).toEqual(["Ana Nueva"]);
+  });
+
+  it("la ficha que nombra el título, aunque la agenda no la liste; una oculta no se liga; lo ambiguo no se adivina", () => {
+    const r = artistasDelEvento({ titulo: "Gitanos mexicanos: PARGAZZ", descripcion: "Concierto de jazz.", artistas: ["Ficha Oculta", "Renata Ibarra"] }, indice);
+    expect(r.ligados).toEqual([{ id: "pargazz", ficha: "Pargazz", como: "titulo", nombres: [] }]);
+    expect(r.ocultos).toEqual([{ nombre: "Ficha Oculta", ficha: "Ficha Oculta" }]);
+    expect(r.ambiguos).toEqual([{ nombre: "Renata Ibarra", fichas: ["Renata Ibarra Solís", "Renata Ibarra Cano"] }]);
+    expect(r.sinFicha).toEqual([]);
   });
 });

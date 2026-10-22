@@ -39,6 +39,7 @@ export function baseFalsa(tablas: Record<string, Fila[]>, funciones: FuncionesFa
     filtros: ((f: Fila) => boolean)[] = [];
     orden: { columna: string; asc: boolean; nulosPrimero: boolean } | null = null;
     limite: number | null = null;
+    desde = 0;
     valores: Fila | null = null;
     nuevas: Fila[] = [];
     conflicto = "id";
@@ -101,6 +102,12 @@ export function baseFalsa(tablas: Record<string, Fila[]>, funciones: FuncionesFa
       this.limite = n;
       return this;
     }
+    /** Las filas de `desde` a `hasta`, ambas incluidas (como PostgREST; OL-440 lee de mil en mil). */
+    range(desde: number, hasta: number) {
+      this.desde = desde;
+      this.limite = hasta - desde + 1;
+      return this;
+    }
     maybeSingle() {
       this.uno = true;
       return this;
@@ -147,7 +154,7 @@ export function baseFalsa(tablas: Record<string, Fila[]>, funciones: FuncionesFa
           return (String(x) < String(y) ? -1 : String(x) > String(y) ? 1 : 0) * (asc ? 1 : -1);
         });
       }
-      if (this.limite != null) elegidas = elegidas.slice(0, this.limite);
+      if (this.desde || this.limite != null) elegidas = elegidas.slice(this.desde, this.limite != null ? this.desde + this.limite : undefined);
       const copia = structuredClone(elegidas);
       return { data: this.uno ? (copia[0] ?? null) : copia, error: null };
     }
