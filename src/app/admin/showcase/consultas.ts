@@ -5,14 +5,17 @@ import { normalizarRedes } from "@/lib/enlaces";
 import { diaLocal, localAIso } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
-import { corridasVaradas, rescatarVaradas } from "@/lib/rutinas/rescate";
+import type { CorridaVista } from "@/lib/rutinas/rescate";
 import {
   armarCandidatos,
+  cadenaParada,
   circulacionDe,
+  investigacionEnCurso,
   type Candidato,
   type CambioEstado,
   type Circulacion,
   type CorridaInvestigar,
+  type CorridaLista,
   type Estado,
   type Evidencia,
   type FilaArtista,
@@ -200,53 +203,115 @@ export async function cargarFichaShowcase(clave: string, ahora: Date): Promise<F
 
 const ESTADOS_CORRIDA = new Set(["pendiente", "corriendo", "terminada", "fallida", "cancelada"]);
 const aNumero = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0);
+const COLUMNAS_CORRIDA = "id, estado, tope_usd, gasto_usd, resumen, creado_en, inicio, fin";
+
+/** Una fila de `rutinas_corridas` como la usan la ficha y la lista, o null si su estado no es uno de los conocidos. */
+function comoCorrida(fila: Record<string, unknown>): CorridaInvestigar | null {
+  if (!ESTADOS_CORRIDA.has(String(fila.estado))) return null;
+  return {
+    id: String(fila.id),
+    estado: fila.estado as CorridaInvestigar["estado"],
+    tope_usd: aNumero(fila.tope_usd),
+    gasto_usd: aNumero(fila.gasto_usd),
+    resumen: fila.resumen && typeof fila.resumen === "object" && !Array.isArray(fila.resumen) ? (fila.resumen as Record<string, unknown>) : {},
+    creado_en: String(fila.creado_en),
+    inicio: typeof fila.inicio === "string" ? fila.inicio : null,
+    fin: typeof fila.fin === "string" ? fila.fin : null,
+  };
+}
+
+export type Credito = { usd: number; gastado: number; vence: string | null };
+/** El crédito de la API (el de Corridas): `credito_api_usd` y lo gastado en todas las corridas; null si no se pudo leer. */
+async function cargarCredito(db: ClienteServidor): Promise<Credito | null> {
+  const [config, gastos] = await Promise.all([
+    db.from("configuracion").select("clave, valor").in("clave", ["credito_api_usd", "credito_api_vence"]),
+    leerTodo<{ gasto_usd: unknown }>((d, h) => db.from("rutinas_corridas").select("gasto_usd").order("id").range(d, h)).catch(() => null),
+  ]);
+  const valores = new Map(((config.data ?? []) as { clave: string; valor: unknown }[]).map((c) => [c.clave, c.valor]));
+  if (config.error || !gastos || !valores.has("credito_api_usd")) return null;
+  const vence = valores.get("credito_api_vence");
+  return { usd: aNumero(valores.get("credito_api_usd")), gastado: gastos.reduce((t, g) => t + aNumero(g.gasto_usd), 0), vence: typeof vence === "string" ? vence : null };
+}
+
+/**
+ * La red de seguridad de la cadena de pasos en el Showcase (OL-439, sobre `rescate.ts`): si hay corridas en curso de cualquier rutina y TODAS están
+ * varadas (`cadenaParada`), el servidor pide UN paso después de responder; el motor sigue solo desde ahí. Mientras alguna avance, nada: en una
+ * orden de 26, las que esperan su turno no se rescatan una por una (eso abría una cadena en paralelo por cada carga de la pantalla). Nunca falla.
+ */
+async function pedirPasoSiParo(db: ClienteServidor, ahora: Date, yaLeidas?: readonly CorridaVista[]): Promise<void> {
+  try {
+    let enCurso = yaLeidas;
+    if (!enCurso) {
+      const r = await db.from("rutinas_corridas").select("id, estado, resumen, creado_en, inicio").in("estado", ["pendiente", "corriendo"]).limit(1000);
+      if (r.error) return;
+      enCurso = (r.data ?? []) as CorridaVista[];
+    }
+    if (!cadenaParada(enCurso, ahora)) return;
+    const h = await headers();
+    const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+    console.warn("rutinas: la cadena de pasos se paró; se pide un paso");
+    after(() => dispararPaso(origen));
+  } catch {
+    console.warn("rutinas: no se pudo pedir el paso de una investigación varada; la retoma el cron");
+  }
+}
 
 /**
  * «Investigar» en la ficha (OL-430): la última corrida `showcase` del artista y el crédito de la API que queda (el de Corridas: `credito_api_usd`
- * menos lo gastado en todas las corridas). Si esa corrida se quedó varada (pendiente o «corriendo» sin avanzar en 2 minutos), el servidor pide su
- * paso después de responder, como Ciudades y Corridas (`rescate.ts`): la ficha no cambia ni espera. `corrida: undefined` es que no se pudo leer.
+ * menos lo gastado en todas las corridas). Si esa corrida está en curso y la cadena del motor se paró, el servidor pide un paso después de
+ * responder (`pedirPasoSiParo`, OL-439): la ficha no cambia ni espera. `corrida: undefined` es que no se pudo leer.
  */
-export async function cargarInvestigacion(artistaId: string, ahora: Date): Promise<{ corrida: CorridaInvestigar | null | undefined; credito: { usd: number; gastado: number; vence: string | null } | null }> {
+export async function cargarInvestigacion(artistaId: string, ahora: Date): Promise<{ corrida: CorridaInvestigar | null | undefined; credito: Credito | null }> {
   try {
     const db = await clienteServidor();
     if (!db || !esUuid(artistaId)) return { corrida: undefined, credito: null };
-    const [ultima, config, gastos] = await Promise.all([
-      db.from("rutinas_corridas").select("id, estado, tope_usd, gasto_usd, resumen, creado_en, inicio, fin").eq("tipo", "showcase").eq("parametros->>artista_id", artistaId).order("creado_en", { ascending: false }).limit(1),
-      db.from("configuracion").select("clave, valor").in("clave", ["credito_api_usd", "credito_api_vence"]),
-      leerTodo<{ gasto_usd: unknown }>((d, h) => db.from("rutinas_corridas").select("gasto_usd").order("id").range(d, h)).catch(() => null),
+    const [ultima, credito] = await Promise.all([
+      db.from("rutinas_corridas").select(COLUMNAS_CORRIDA).eq("tipo", "showcase").eq("parametros->>artista_id", artistaId).order("creado_en", { ascending: false }).limit(1),
+      cargarCredito(db),
     ]);
     const fila = ultima.error ? undefined : ((ultima.data ?? [])[0] as Record<string, unknown> | undefined);
-    const corrida: CorridaInvestigar | null | undefined =
-      fila === undefined
-        ? ultima.error
-          ? undefined
-          : null
-        : ESTADOS_CORRIDA.has(String(fila.estado))
-          ? {
-              id: String(fila.id),
-              estado: fila.estado as CorridaInvestigar["estado"],
-              tope_usd: aNumero(fila.tope_usd),
-              gasto_usd: aNumero(fila.gasto_usd),
-              resumen: fila.resumen && typeof fila.resumen === "object" && !Array.isArray(fila.resumen) ? (fila.resumen as Record<string, unknown>) : {},
-              creado_en: String(fila.creado_en),
-              inicio: typeof fila.inicio === "string" ? fila.inicio : null,
-              fin: typeof fila.fin === "string" ? fila.fin : null,
-            }
-          : null;
-    const valores = new Map(((config.data ?? []) as { clave: string; valor: unknown }[]).map((c) => [c.clave, c.valor]));
-    const credito = config.error || !gastos || !valores.has("credito_api_usd") ? null : { usd: aNumero(valores.get("credito_api_usd")), gastado: gastos.reduce((t, g) => t + aNumero(g.gasto_usd), 0), vence: typeof valores.get("credito_api_vence") === "string" ? (valores.get("credito_api_vence") as string) : null };
-    if (corrida && corridasVaradas([corrida], ahora).length) {
-      try {
-        const h = await headers();
-        const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
-        after(() => rescatarVaradas([corrida], ahora, () => dispararPaso(origen)));
-      } catch {
-        console.warn("rutinas: no se pudo pedir el paso de una investigación varada; la retoma el cron");
-      }
-    }
+    const corrida: CorridaInvestigar | null | undefined = ultima.error ? undefined : fila ? comoCorrida(fila) : null;
+    if (investigacionEnCurso(corrida)) await pedirPasoSiParo(db, ahora);
     return { corrida, credito };
   } catch (error) {
     console.error("showcase investigar:", error instanceof Error ? error.message : error);
     return { corrida: undefined, credito: null };
+  }
+}
+
+/** Lo que la lista sabe de las investigaciones (OL-439): las corridas `showcase` recientes, las evidencias de la rutina por revisar de cada artista y el crédito. */
+export type Investigaciones = { corridas: CorridaLista[]; porRevisar: Record<string, number>; credito: Credito | null };
+/** Cuánto atrás lee la lista: lo que cuenta para «investigado hace poco» (30 días) y lo que dice cada tarjeta, con holgura. */
+const DIAS_LISTA = 90;
+
+/**
+ * Las investigaciones para la lista del Showcase (OL-439); null si no se pudieron leer (la lista sigue, sin el renglón «Investigar» ni las líneas
+ * de las tarjetas). Si hay corridas en curso y la cadena del motor se paró, pide un paso después de responder (`pedirPasoSiParo`).
+ */
+export async function cargarInvestigaciones(ahora: Date): Promise<Investigaciones | null> {
+  try {
+    const db = await clienteServidor();
+    if (!db) return null;
+    const desde = new Date(ahora.getTime() - DIAS_LISTA * 86_400_000).toISOString();
+    const [corridas, evidencias, enCurso, credito] = await Promise.all([
+      leerTodo<Record<string, unknown>>((d, h) => db.from("rutinas_corridas").select(`${COLUMNAS_CORRIDA}, parametros`).eq("tipo", "showcase").gte("creado_en", desde).order("creado_en", { ascending: false }).order("id").range(d, h)),
+      leerTodo<{ artista_id: string }>((d, h) => db.from("showcase_evidencias").select("artista_id").eq("estado", "propuesta").eq("leida_por", "rutina").order("id").range(d, h)),
+      db.from("rutinas_corridas").select("id, estado, resumen, creado_en, inicio").in("estado", ["pendiente", "corriendo"]).limit(1000),
+      cargarCredito(db),
+    ]);
+    if (enCurso.error) throw new Error(enCurso.error.message);
+    const lista = corridas.flatMap((f): CorridaLista[] => {
+      const c = comoCorrida(f);
+      const p = f.parametros && typeof f.parametros === "object" ? (f.parametros as Record<string, unknown>) : {};
+      if (!c || typeof p.artista_id !== "string") return [];
+      return [{ ...c, artista_id: p.artista_id, lote: typeof p.lote === "string" ? p.lote : null }];
+    });
+    const porRevisar: Record<string, number> = {};
+    for (const e of evidencias) porRevisar[e.artista_id] = (porRevisar[e.artista_id] ?? 0) + 1;
+    await pedirPasoSiParo(db, ahora, (enCurso.data ?? []) as CorridaVista[]);
+    return { corridas: lista, porRevisar, credito };
+  } catch (error) {
+    console.error("showcase investigaciones:", error instanceof Error ? error.message : error);
+    return null;
   }
 }

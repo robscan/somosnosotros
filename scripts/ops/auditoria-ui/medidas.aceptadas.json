@@ -186,14 +186,14 @@
     "s31-admin-persona": { "nodos": [178, 178, 212, 212], "profundidad": [9, 9, 9, 9] },
     "s32-admin-ciudades": { "nodos": [114, 114, 148, 148], "profundidad": [9, 9, 9, 9] },
     "s33-admin-ciudades-anadir": { "nodos": [138, 138, 172, 172], "profundidad": [9, 9, 9, 9] },
-    "s34-admin-propuestas": { "nodos": [66, 66, 100, 100], "profundidad": [7, 7, 7, 7] },
-    "s34a-admin-propuestas-formas": { "nodos": [134, 134, 168, 168], "profundidad": [7, 7, 7, 7] },
+    "s34-admin-propuestas": { "nodos": [68, 68, 102, 102], "profundidad": [7, 7, 7, 7] },
+    "s34a-admin-propuestas-formas": { "nodos": [146, 146, 180, 180], "profundidad": [7, 7, 7, 7] },
     "s35-admin-corridas": { "nodos": [89, 89, 123, 123], "profundidad": [8, 8, 8, 8] },
     "s35a-admin-ciudad-panel": { "nodos": [62, 62, 96, 96], "profundidad": [8, 8, 8, 8] },
     "s35b-admin-ciudad-hoja": { "nodos": [86, 86, 120, 120], "profundidad": [8, 8, 8, 8] },
-    "s36-admin-showcase": { "nodos": [283, 283, 317, 317], "profundidad": [8, 8, 8, 8] },
-    "s37-admin-showcase-tabla": { "nodos": [232, 232, 266, 266], "profundidad": [9, 9, 9, 9] },
+    "s36-admin-showcase": { "nodos": [294, 294, 328, 328], "profundidad": [8, 8, 8, 8] },
+    "s37-admin-showcase-tabla": { "nodos": [240, 240, 274, 274], "profundidad": [9, 9, 9, 9] },
     "s38-admin-showcase-ficha": { "nodos": [194, 194, 228, 232], "profundidad": [8, 8, 8, 8] },
-    "s39-admin-showcase-manual": { "nodos": [79, 79, 113, 113], "profundidad": [7, 7, 7, 7] }
+    "s39-admin-showcase-manual": { "nodos": [83, 83, 117, 117], "profundidad": [7, 7, 7, 7] }
   }
 }

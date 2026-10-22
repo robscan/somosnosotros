@@ -20,7 +20,9 @@ export function preparar(script: string) {
     return k >= 0 ? args[k + 1] : undefined;
   };
   const extra = script === "importar-eventos" ? " [--forzar-parecidos] [--origen <texto> --fuente <url> [--historico]]" : "";
-  const uso = `node scripts/instituciones/correr.mjs ${script} <archivo.json> --autor <id del admin> [--simular]${extra} [--salida <carpeta>]`;
+  // OL-440: ligar-artistas lee la carpeta de la lectura de las agendas (o uno de sus JSON).
+  const que = script === "ligar-artistas" ? "<carpeta de los JSON o archivo.json>" : "<archivo.json>";
+  const uso = `node scripts/instituciones/correr.mjs ${script} ${que} --autor <id del admin> [--simular]${extra} [--salida <carpeta>]`;
   const url = requerida(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL en .env", uso);
   const llave = requerida(process.env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY en .env", uso);
   return {

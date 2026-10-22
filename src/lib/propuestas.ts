@@ -75,8 +75,8 @@ export function leerBandeja(datos: unknown): Bandeja | null {
 }
 
 /**
- * Por fuente: primero las que ya tuvieron una tanda aprobada (donde se puede aceptar todo de un toque), luego las que traen más por revisar y
- * después por nombre. Dentro de cada fuente, en el orden en que llegan (la base las da por cuándo se propusieron).
+ * Por fuente: primero las que ya tuvieron una tanda aprobada en una corrida anterior (fuentes en las que ya se confió), luego las que traen más
+ * por revisar y después por nombre. Dentro de cada fuente, en el orden en que llegan (la base las da por cuándo se propusieron).
  */
 export function agruparPorFuente<T extends Pick<Propuesta, "fuente">>(propuestas: readonly T[], fuentesConTanda: readonly string[] = []): { fuente: string; propuestas: T[] }[] {
   const grupos = new Map<string, T[]>();
@@ -87,9 +87,16 @@ export function agruparPorFuente<T extends Pick<Propuesta, "fuente">>(propuestas
     .sort((a, b) => conTanda(a.fuente) - conTanda(b.fuente) || b.propuestas.length - a.propuestas.length || a.fuente.localeCompare(b.fuente, "es"));
 }
 
-/** «Aceptar las N de esta fuente» solo donde la fuente ya tuvo una tanda aprobada y queda más de una (la primera tanda va una por una). */
-export function ofrecerTodas(fuente: string, quedan: number, fuentesConTanda: readonly string[]): boolean {
-  return quedan > 1 && fuentesConTanda.includes(fuente);
+/**
+ * «Aceptar las N» de una búsqueda (en su cabecera) y «Aceptar las N de esta fuente» (OL-438; founder: «por qué no hay un botón para aceptar
+ * todas las propuestas de una búsqueda de api» y «sí, agregar aceptar todas»): siempre que queden 2 o más por decidir. Se retira la regla de
+ * OL-427 de que la primera tanda de una fuente fuera una por una (solo se ofrecía donde la fuente ya tuvo una tanda aceptada en una corrida
+ * anterior, `fuentes_con_tanda`): ninguna fuente la tenía y el founder no veía el botón en ninguna bandeja. Rechazar sigue una por una, con su
+ * motivo (es lo que enseña a la rutina). `deLaBusqueda`: en una fuente bajo la cabecera de su búsqueda, lo que queda en toda la búsqueda; si la
+ * fuente es todo lo que queda, su botón repetiría el de la cabecera y no sale.
+ */
+export function ofrecerTodas(quedan: number, deLaBusqueda?: number): boolean {
+  return quedan > 1 && (deLaBusqueda === undefined || quedan < deLaBusqueda);
 }
 
 // ---------- lo que se lee de `datos` ----------
@@ -242,4 +249,71 @@ export function agruparConActos<T extends { id: string; fuente: string; festival
   return [...grupos]
     .map(([fuente, lista]) => ({ fuente, propuestas: lista }))
     .sort((a, b) => conTanda(a.fuente) - conTanda(b.fuente) || b.propuestas.length - a.propuestas.length || a.fuente.localeCompare(b.fuente, "es"));
+}
+
+// ---------- «Aceptar todas» (OL-438) ----------
+/**
+ * El orden de una tanda: el de la pantalla, fuente por fuente (`agruparConActos`), así un festival se acepta antes que sus actos (después
+ * cuelgan de él directamente) aunque un acto haya llegado antes que él o por otra fuente.
+ */
+export function enOrdenDeAceptar<T extends { id: string; fuente: string; festival?: string | null }>(propuestas: readonly T[], fuentesConTanda: readonly string[] = []): T[] {
+  return agruparConActos(propuestas, fuentesConTanda).flatMap((g) => g.propuestas);
+}
+
+/** Lo que la tanda mira de cada tarjeta justo antes de mandarla. */
+export type EstadoEnTanda = { decidida?: { rechazo: boolean } | null; enCamino?: string | null };
+export type PasoDeTanda = { accion: "aceptar" } | { accion: "saltar" } | { accion: "dejar"; razon: string };
+
+/** La razón de un acto que se queda por revisar porque su festival, en la misma bandeja, no se aceptó. */
+export const textoActoSinFestival = (festival: string): string => `Su festival «${festival}» no se aceptó: acéptalo antes que este acto.`;
+
+/**
+ * En una tanda, qué hacer con la siguiente justo antes de mandarla (lo decidido a mano mientras corre cuenta): `saltar` la que ya se decidió o
+ * va en camino; `dejar`, con su razón, un acto cuyo festival está en esta bandeja y no se aceptó (falló antes en la misma tanda o sigue por
+ * decidir): aceptarlo lo dejaría esperando a un festival que quizá se rechace; si no, `aceptar`. Un acto cuyo festival se rechazó se acepta
+ * (se publica suelto, OL-433). `festivalAqui` da el nombre del festival si está en esta bandeja.
+ */
+export function pasoDeTanda(
+  p: { id: string; festival?: string | null },
+  estado: (id: string) => EstadoEnTanda | undefined,
+  festivalAqui: (id: string) => string | undefined,
+): PasoDeTanda {
+  const propio = estado(p.id);
+  if (propio?.decidida || propio?.enCamino) return { accion: "saltar" };
+  const nombre = p.festival && p.festival !== p.id ? festivalAqui(p.festival) : undefined;
+  if (nombre === undefined) return { accion: "aceptar" };
+  const suyo = estado(p.festival!)?.decidida;
+  return suyo ? { accion: "aceptar" } : { accion: "dejar", razon: textoActoSinFestival(nombre) };
+}
+
+const PLURAL: Record<TipoPropuesta, string> = { lugar: "lugares", evento: "eventos", artista: "artistas" };
+
+/**
+ * La hoja de «Aceptar las N» de una búsqueda: cuántas, de qué y de qué ciudad, y qué pasa con las que no se puedan publicar. Los ejemplos son
+ * los de lo que se acepta: un repetido siempre; un sitio sin punto con lugares o eventos; un acto cuyo festival no se ha aceptado solo si hay
+ * actos de un festival propuesto en la misma bandeja.
+ */
+export function textoConfirmarTodas(propuestas: readonly { tipo: TipoPropuesta; festival?: string | null }[], ciudad: string | null): { que: string; siNo: string } {
+  const tipos = new Set(propuestas.map((p) => p.tipo));
+  const de = tipos.size === 1 ? ` de ${PLURAL[[...tipos][0]]}` : "";
+  const n = propuestas.length;
+  const ejemplos = [
+    "un repetido",
+    ...(tipos.has("lugar") || tipos.has("evento") ? ["un sitio sin punto"] : []),
+    ...(propuestas.some((p) => p.festival) ? ["un acto cuyo festival no se ha aceptado"] : []),
+  ];
+  return {
+    que: `Vas a aceptar ${n === 1 ? "1 propuesta" : `${n} propuestas`}${de}${ciudad ? ` de ${ciudad}` : ""}.`,
+    siNo: `Las que no se puedan publicar (${ejemplos.join(", ")}) se quedan por revisar con su razón.`,
+  };
+}
+
+export const textoAceptarTodas = (n: number): string => `Aceptar las ${n}`;
+/** El avance, en el mismo botón: la que va en camino de todas las de la tanda. */
+export const textoAvanceTodas = (va: number, de: number): string => `Aceptando ${va} de ${de}…`;
+
+/** La cabecera al terminar una tanda: cuántas se aceptaron en ella y cuántas quedan por revisar en la búsqueda (cuenta en vivo). */
+export function textoTandaHecha(aceptadas: number, quedan: number): string {
+  const hechas = aceptadas === 0 ? "Ninguna aceptada" : aceptadas === 1 ? "1 aceptada" : `${aceptadas} aceptadas`;
+  return quedan > 0 ? `${hechas} · ${quedan} por revisar` : hechas;
 }

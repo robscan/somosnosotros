@@ -1,3 +1,4 @@
+import { cruzarNombre, disciplinaDeEvento, fichaDelTitulo, type ComoCruce, type FichaArtista, type IndiceArtistas } from "./cruceArtistas";
 import { COOPERACION_SOLIDARIA } from "./eventos";
 import { diaLocal, zonaSegura } from "./fechas";
 import { normalizarNombre } from "./lugares";
@@ -13,6 +14,7 @@ import { costoDeAgenda } from "./costoDeAgenda";
  *   · `formularioDeEvento`: lo que mandaría el formulario de alta (gratis, «Cooperación solidaria» en su casilla, precio), para `validarEvento`.
  *   · `parecidoGuardado`: el evento ya guardado que parece el mismo (la regla de `eventos_parecidos`, también para lo pasado y lo oculto).
  *   · `elegirPunto` y `ubicarSitio`: dónde va el pin de un sitio que no está en el directorio, contrastando nombre y dirección.
+ *   · `artistasDelEvento`: con qué fichas de artista se liga el evento (el cruce de OL-440, `src/lib/cruceArtistas.ts`).
  */
 
 export type Punto = { lat: number; lng: number };
@@ -351,4 +353,52 @@ export async function ubicarSitio(sitio: string, direccion: string | null | unde
   const pedida = (direccion ?? "").trim();
   const [n, d] = await Promise.all([buscar.porNombre(nombre), pedida ? buscar.porDireccion(pedida) : Promise.resolve(null)]);
   return elegirPunto(null, n, d, pedida);
+}
+
+
+/** Quién se presenta en un evento de agenda, según las fichas que ya existen (OL-440). */
+export type ArtistasDelEvento = {
+  /** Las fichas con las que se liga, una vez cada una: cómo se supo la primera vez y los nombres de la agenda que llevaron a ella (cada uno
+   *  con su cómo; ninguno si solo la nombra el título). */
+  ligados: { id: string; ficha: string; como: ComoCruce; nombres: { nombre: string; como: ComoCruce }[] }[];
+  /** Los nombres sin ficha (los propone `scripts/instituciones/ligar-artistas.ts`; aquí no se crean artistas). */
+  sinFicha: string[];
+  /** Los que son de una ficha oculta: no se ligan (la administración la ocultó) ni se proponen. */
+  ocultos: { nombre: string; ficha: string }[];
+  /** Los que se parecen a dos fichas o más: no se adivina. */
+  ambiguos: { nombre: string; fichas: string[] }[];
+};
+
+/**
+ * Con qué fichas se liga un evento de agenda (OL-440): cada nombre de `artistas` por el cruce de `cruzarNombre` (el mismo nombre, parte de
+ * un alias, apellidos de más, el mismo grupo o integrante de un grupo) y, además, la ficha que el título nombra como uno de sus tramos, de la
+ * misma disciplina que el evento («Gitanos mexicanos 2ª edición: PARGAZZ»). Antes solo se ligaba el nombre exacto.
+ */
+export function artistasDelEvento(e: Pick<EventoPropuesto, "titulo" | "descripcion" | "artistas">, indice: IndiceArtistas): ArtistasDelEvento {
+  const r: ArtistasDelEvento = { ligados: [], sinFicha: [], ocultos: [], ambiguos: [] };
+  const sinFicha = new Set<string>();
+  const ligar = (ficha: FichaArtista, nombre: string | null, como: ComoCruce) => {
+    if (ficha.visible === false) {
+      if (nombre) r.ocultos.push({ nombre, ficha: ficha.nombre });
+      return;
+    }
+    const ya = r.ligados.find((l) => l.id === ficha.id);
+    if (ya) {
+      if (nombre) ya.nombres.push({ nombre, como });
+      return;
+    }
+    r.ligados.push({ id: ficha.id, ficha: ficha.nombre, como, nombres: nombre ? [{ nombre, como }] : [] });
+  };
+  for (const n of e.artistas ?? [])
+    for (const u of cruzarNombre(n, indice)) {
+      if (u.ficha) ligar(u.ficha, u.nombre, u.como);
+      else if (u.ambiguas) r.ambiguos.push({ nombre: u.nombre, fichas: u.ambiguas.map((f) => f.nombre) });
+      else if (!sinFicha.has(normalizarNombre(u.nombre))) {
+        sinFicha.add(normalizarNombre(u.nombre));
+        r.sinFicha.push(u.nombre);
+      }
+    }
+  const delTitulo = fichaDelTitulo(e.titulo, disciplinaDeEvento(e.titulo, e.descripcion), indice);
+  if (delTitulo) ligar(delTitulo, null, "titulo");
+  return r;
 }

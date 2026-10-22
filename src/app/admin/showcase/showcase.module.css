@@ -19,6 +19,7 @@
     "circula circula circula"
     "redes redes redes"
     "actividad actividad actividad"
+    "investiga investiga investiga"
     "rubrica rubrica rubrica"
     "nota nota nota"
     "programa programa programa"
@@ -95,6 +96,19 @@
   grid-area: actividad;
   justify-self: start;
   margin: var(--espacio-1) 0 0;
+}
+/* OL-439: cómo va su investigación («Investigando · 2 de 4 búsquedas», «Investigado hoy · 3 evidencias por revisar»); con algo por revisar, en el
+   violeta de las acciones (icono incluido): es a quién entrar */
+.investiga {
+  grid-area: investiga;
+  margin-top: var(--espacio-1);
+}
+.investiga[data-revisar] {
+  color: var(--primario);
+  font-weight: 600;
+}
+.investiga[data-revisar] > svg {
+  color: currentColor;
 }
 .nota {
   grid-area: nota;
@@ -307,6 +321,10 @@
   grid-area: error;
   margin-top: var(--espacio-2);
 }
+/* OL-439: el renglón «Investigar» de la lista, entre la línea de cifras y las tarjetas */
+.investigarLote {
+  margin-bottom: var(--espacio-2);
+}
 /* Las tarjetas de la rúbrica, una por señal, con su aire entre ellas */
 .seguida + .seguida {
   margin-top: var(--espacio-3);
@@ -368,6 +386,15 @@
 }
 .hueco {
   visibility: hidden;
+}
+/* OL-439: la hoja «Investigar a varios»: las dos opciones de a quiénes, el aviso si traen más de 60 (o a nadie) y el total */
+.aQuienes {
+  margin-bottom: var(--espacio-4);
+}
+.avisoLote,
+.totalLote {
+  color: var(--texto);
+  font-weight: 700;
 }
 /* La fila de chips de una hoja (red, tipo de evidencia) con su rótulo: envuelve y deja su aire antes del campo que sigue */
 .grupoChips {

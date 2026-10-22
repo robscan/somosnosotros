@@ -3,8 +3,9 @@ import Boton, { claseBoton } from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
 import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import Imagen from "@/components/ui/Imagen";
-import { IconoCalendario, IconoDescarga, IconoEstrella, IconoInstagram } from "@/components/ui/Iconos";
+import { IconoBuscar, IconoCalendario, IconoDescarga, IconoEstrella, IconoInstagram } from "@/components/ui/Iconos";
 import { etiquetaDisciplina, hrefArtista } from "@/lib/artistas";
+import { diaLocal } from "@/lib/fechas";
 import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import {
   actividadDe,
@@ -16,16 +17,26 @@ import {
   haceDias,
   hrefFicha,
   hrefShowcase,
+  investigacionEnCurso,
+  LIMITE_LOTE,
   lineaCifras,
+  lineaLote,
   miles,
+  mostrarLote,
   ordenarCandidatos,
   paginaDe,
   pasanAlConsejo,
+  resumenLote,
+  seleccionLote,
   SENALES,
+  textoInvestigarTarjeta,
   textoProgramadoPor,
+  ultimasInvestigaciones,
   type Candidato,
   type Vista,
 } from "@/lib/showcase";
+import type { Investigaciones } from "./consultas";
+import InvestigarLote from "./InvestigarLote";
 import OpcionesLista from "./OpcionesLista";
 import { IconoRed, PildoraEstado, PuntajeTabla, Rubrica } from "./Piezas";
 import admin from "../admin.module.css";
@@ -39,8 +50,13 @@ const CLASE_ACTIVIDAD = { semana: s.ok, mes: admin.destacada, inactivo: "" } as 
  * línea de cifras y una tarjeta (o una fila de la tabla) por artista visible del catálogo. La búsqueda, los filtros, el orden, la vista y la página
  * viven en la URL: se comparten y sobreviven al volver de una ficha (memoria de pantalla). Sin datos propios: recibe la lista ya leída, así la
  * prueban los componentes sin servidor. Va como hijos directos de la página (maquetación plana).
+ * OL-439: bajo la línea de cifras, el renglón «Investigar» (a varios, `InvestigarLote`) y, en cada tarjeta, cómo va su investigación o cuántas
+ * evidencias deja por revisar. Sin `investigaciones` (las pruebas de antes) no hay corridas ni evidencias; con null (no se pudieron leer), sin renglón.
  */
-export default function VistaCandidatos({ todos, vista, hoy }: { todos: Candidato[]; vista: Vista; hoy: string }) {
+const SIN_INVESTIGACIONES: Investigaciones = { corridas: [], porRevisar: {}, credito: null };
+const diaDe = (iso: string) => diaLocal(new Date(iso));
+
+export default function VistaCandidatos({ todos, vista, hoy, ahora, investigaciones = SIN_INVESTIGACIONES }: { todos: Candidato[]; vista: Vista; hoy: string; ahora?: string; investigaciones?: Investigaciones | null }) {
   const filtrados = ordenarCandidatos(filtrarCandidatos(todos, vista), vista.orden);
   const visibles = filtrados.slice(0, vista.n);
   const conteos = conteosEstado(todos);
@@ -48,6 +64,8 @@ export default function VistaCandidatos({ todos, vista, hoy }: { todos: Candidat
   const sinPagina = { ...vista, n: undefined };
   // El CSV es la lista filtrada entera, en su orden: sin la página ni la vista.
   const consultaCsv = consultaDe({ ...sinPagina, tabla: false });
+  const inv = investigaciones ?? SIN_INVESTIGACIONES;
+  const ultimas = ultimasInvestigaciones(inv.corridas);
   return (
     <>
       <Buscador valor={vista.q ?? ""} placeholder="Buscar artista" ariaLabel="Buscar artista del showcase" />
@@ -63,6 +81,7 @@ export default function VistaCandidatos({ todos, vista, hoy }: { todos: Candidat
       <p className={admin.nota} role="status">
         {lineaCifras(todos.length, conteos, filtrando ? filtrados.length : null, pasanAlConsejo(todos))}
       </p>
+      {investigaciones && <RenglonInvestigar todos={todos} filtrados={filtrados} filtrando={filtrando} inv={investigaciones} hoy={hoy} ahora={ahora ? new Date(ahora) : new Date(`${hoy}T12:00:00`)} />}
       {!filtrados.length ? (
         <p className={admin.vacio}>{vista.q ? `Nadie con «${vista.q}» aquí.` : "Nadie con este filtro."}</p>
       ) : vista.tabla ? (
@@ -70,7 +89,7 @@ export default function VistaCandidatos({ todos, vista, hoy }: { todos: Candidat
       ) : (
         <ul className={s.tarjetas} aria-label="Candidatos">
           {visibles.map((c) => (
-            <TarjetaCandidato key={c.id} c={c} hoy={hoy} />
+            <TarjetaCandidato key={c.id} c={c} hoy={hoy} investigacion={textoInvestigarTarjeta(ultimas.get(c.id), inv.porRevisar[c.id] ?? 0, hoy, diaDe)} porRevisar={(inv.porRevisar[c.id] ?? 0) > 0} />
           ))}
         </ul>
       )}
@@ -90,8 +109,36 @@ export default function VistaCandidatos({ todos, vista, hoy }: { todos: Candidat
   );
 }
 
-/** La tarjeta de un candidato: foto, nombre (abre su ficha de showcase), estado, la base, las redes, la actividad, la rúbrica, la nota y los enlaces. */
-export function TarjetaCandidato({ c, hoy }: { c: Candidato; hoy: string }) {
+/**
+ * El renglón «Investigar» de la lista (OL-439): lo que dice (la última orden mientras corre, deja algo por revisar o acabó hoy; si no, a cuántos
+ * candidatos propone investigar), su barra y lo que necesita la hoja: las dos selecciones (con sus ids solo si caben en una orden) y el crédito.
+ */
+function RenglonInvestigar({ todos, filtrados, filtrando, inv, hoy, ahora }: { todos: Candidato[]; filtrados: Candidato[]; filtrando: boolean; inv: Investigaciones; hoy: string; ahora: Date }) {
+  const sel = seleccionLote(todos, filtrados, ultimasInvestigaciones(inv.corridas), ahora);
+  const lote = resumenLote(inv.corridas, inv.porRevisar);
+  const conLote = mostrarLote(lote, hoy, diaDe);
+  const n = sel.candidatos.length;
+  const texto = conLote ? lineaLote(lote, hoy, diaDe) : n ? `${n} ${n === 1 ? "candidato" : "candidatos"} por investigar` : "Prensa, premios, festivales y obra publicada";
+  const enCurso = conLote && lote.enCurso > 0;
+  const ids = (lista: string[]) => (lista.length <= LIMITE_LOTE ? lista : null);
+  return (
+    <InvestigarLote
+      texto={texto}
+      avance={enCurso ? lote.avance : null}
+      corriendo={inv.corridas.some(investigacionEnCurso)}
+      lote={enCurso ? lineaLote(lote, hoy, diaDe) : null}
+      candidatos={{ n, ids: ids(sel.candidatos) }}
+      visibles={{ n: sel.visibles.length, ids: ids(sel.visibles), fueraRecientes: sel.fueraRecientes, fueraDescartados: sel.fueraDescartados, filtrando }}
+      disponible={inv.credito ? Math.max(0, inv.credito.usd - inv.credito.gastado) : null}
+    />
+  );
+}
+
+/**
+ * La tarjeta de un candidato: foto, nombre (abre su ficha de showcase), estado, la base, las redes, la actividad, cómo va su investigación (OL-439),
+ * la rúbrica, la nota y los enlaces.
+ */
+export function TarjetaCandidato({ c, hoy, investigacion = null, porRevisar = false }: { c: Candidato; hoy: string; investigacion?: string | null; porRevisar?: boolean }) {
   const actividad = actividadDe(c.redes?.ultima_publicacion ?? null, hoy);
   const programado = textoProgramadoPor(c.programadoPor);
   const r = c.redes;
@@ -131,6 +178,13 @@ export function TarjetaCandidato({ c, hoy }: { c: Candidato; hoy: string }) {
         </p>
       )}
       {actividad && <span className={[admin.etiqueta, CLASE_ACTIVIDAD[actividad.clave], s.actividad].filter(Boolean).join(" ")}>{actividad.texto}</span>}
+      {investigacion && (
+        // Con evidencias por revisar, en el violeta de las acciones: es a quién entrar.
+        <p className={`${s.cifra} ${s.investiga}`} data-revisar={porRevisar || undefined}>
+          <IconoBuscar width={18} height={18} />
+          <span>{investigacion}</span>
+        </p>
+      )}
       <Rubrica valores={c.valores} suma={c.suma} />
       {c.nota && <p className={s.nota}>{c.nota}</p>}
       {programado && (

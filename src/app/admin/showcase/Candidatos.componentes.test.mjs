@@ -3,6 +3,9 @@
  * disciplina con su cuenta y su enlace, la hoja «Estado» que filtra, la hoja «Orden» con «Puntaje» por defecto y la vista en tabla. El
  * componente de verdad (`VistaCandidatos`, con `OpcionesLista`, `ui/Buscador`, `ui/Chip` y `ui/Hoja`) con una lista inventada; el router de
  * prueba cambia la URL sin apilar historial y la página se vuelve a pintar con lo que dice la URL, como hace el servidor.
+ * OL-439: el renglón «Investigar» a varios (`InvestigarLote`) con su hoja, la acción de prueba (apunta lo que recibe en `window.qa.acciones`), la
+ * línea de cada tarjeta y la recarga suave (`router.refresh`, contada en `window.qa.refrescos`). El escenario de datos se elige antes de cargar
+ * la página (`window.escenario`, con `addInitScript`): «propone», «corriendo», «muchos» o «sin» (las investigaciones no se pudieron leer).
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -22,7 +25,10 @@ const mocks = {
   "next/image": "import React from 'react';export default function Image({quality,priority,...p}){return React.createElement('img',p)}",
   // Reemplazar la URL (filtrar no es navegar): sin apilar historial, y la página se pinta otra vez con lo que dice la URL.
   "next/navigation":
-    "export const useRouter=()=>({push(){},refresh(){},back(){},replace(u){window.qa.reemplazos.push(u);history.replaceState(history.state,'',u);window.qa.pintar()}});export const usePathname=()=>location.pathname;export const useSearchParams=()=>new URLSearchParams(location.search);",
+    "const router={push(){},refresh(){window.qa.refrescos++},back(){},replace(u){window.qa.reemplazos.push(u);history.replaceState(history.state,'',u);window.qa.pintar()}};export const useRouter=()=>router;export const usePathname=()=>location.pathname;export const useSearchParams=()=>new URLSearchParams(location.search);",
+  // OL-439: la acción del servidor de «Investigar a varios»: apunta lo que recibe y contesta bien (o mal, con `window.qa.falla`).
+  "./acciones":
+    "export async function investigarVarios(...a){window.qa.acciones.push(['investigarVarios',...a]);return window.qa.falla?{ok:false,error:'Sin conexión con la base. Intenta de nuevo.'}:{ok:true,creadas:a[0].length,omitidas:0}}",
 };
 
 before(async () => {
@@ -50,18 +56,37 @@ before(async () => {
       const base = { ciudad: 'San Luis Potosí', foto: null, instagram: null, nota: null, programadoPor: [], redes: null };
       const lectura = (seguidores, ultima) => ({ red: 'instagram', seguidores, publicaciones: 100, ultima_publicacion: ultima, leido_en: '2026-10-16T00:00:00Z' });
       const lista = [
-        { ...base, id: 'a1', slug: 'sangre-de-coyote', nombre: 'Sangre de Coyote', disciplina: 'musica', estado: 'invitado', valores: f(2, 1, 2, 1), eventos: 7, foros: 4, festivales: 1, instagram: 'https://www.instagram.com/sangre/', nota: 'Circula mucho por los foros del centro.', programadoPor: ['Teatro de la Paz', 'Casa de Cultura', 'Festival de las Linternas', 'ACHE Galería'], redes: lectura(3200, '2026-10-18') },
-        { ...base, id: 'a2', slug: 'pargazz', nombre: 'Pargazz', disciplina: 'musica', estado: 'revisado', valores: p(1, 1, 1, 2), eventos: 4, foros: 2, festivales: 1, redes: lectura(1100, '2026-10-08') },
-        { ...base, id: 'a3', slug: 'iyari', nombre: 'IYARI, teatro de la vida', disciplina: 'teatro', estado: 'invitado', valores: { ...p(null, 1, 1, 1), circulacion: f(2, null, null, null).circulacion }, eventos: 4, foros: 2, festivales: 1, redes: lectura(980, '2026-08-01') },
-        { ...base, id: 'a4', slug: 'un-leon-marinero', nombre: 'Un León Marinero', disciplina: 'musica', estado: 'confirmado', valores: f(2, 2, 1, 1), eventos: 5, foros: 3, festivales: 1 },
-        { ...base, id: 'a5', slug: 'yanel-villarreal', nombre: 'Yanel Villarreal', disciplina: 'artes_visuales', estado: 'candidato', valores: p(null, null, null, null), eventos: 1, foros: 1, festivales: 0 },
+        { ...base, id: 'a1', marcado: true, slug: 'sangre-de-coyote', nombre: 'Sangre de Coyote', disciplina: 'musica', estado: 'invitado', valores: f(2, 1, 2, 1), eventos: 7, foros: 4, festivales: 1, instagram: 'https://www.instagram.com/sangre/', nota: 'Circula mucho por los foros del centro.', programadoPor: ['Teatro de la Paz', 'Casa de Cultura', 'Festival de las Linternas', 'ACHE Galería'], redes: lectura(3200, '2026-10-18') },
+        { ...base, id: 'a2', marcado: true, slug: 'pargazz', nombre: 'Pargazz', disciplina: 'musica', estado: 'revisado', valores: p(1, 1, 1, 2), eventos: 4, foros: 2, festivales: 1, redes: lectura(1100, '2026-10-08') },
+        { ...base, id: 'a3', marcado: true, slug: 'iyari', nombre: 'IYARI, teatro de la vida', disciplina: 'teatro', estado: 'invitado', valores: { ...p(null, 1, 1, 1), circulacion: f(2, null, null, null).circulacion }, eventos: 4, foros: 2, festivales: 1, redes: lectura(980, '2026-08-01') },
+        { ...base, id: 'a4', marcado: true, slug: 'un-leon-marinero', nombre: 'Un León Marinero', disciplina: 'musica', estado: 'confirmado', valores: f(2, 2, 1, 1), eventos: 5, foros: 3, festivales: 1 },
+        { ...base, id: 'a5', marcado: true, slug: 'yanel-villarreal', nombre: 'Yanel Villarreal', disciplina: 'artes_visuales', estado: 'candidato', valores: p(null, null, null, null), eventos: 1, foros: 1, festivales: 0 },
       ].map((c) => ({ ...c, suma: sumaValores(c.valores) }));
-      window.qa = { reemplazos: [], pintar: () => {} };
+      // OL-439: «muchos» suma 66 artistas sin marcar (música): «Los que se ven» pasa de 60.
+      if (window.escenario === 'muchos') for (let i = 1; i <= 66; i++) lista.push({ ...base, id: 'm' + i, marcado: false, slug: 'artista-' + i, nombre: 'Artista ' + i, disciplina: 'musica', estado: 'candidato', valores: p(null, null, null, null), suma: 0, eventos: 0, foros: 0, festivales: 0 });
+      const credito = { usd: 200, gastado: 7.6, vence: '2026-11-11' };
+      const corrida = (artista_id, estado, cambios) => ({ id: 'c-' + artista_id, artista_id, lote: 'lote-1', estado, tope_usd: 1, gasto_usd: 0, resumen: {}, creado_en: '2026-10-20T15:00:00Z', inicio: '2026-10-20T15:00:05Z', fin: null, ...cambios });
+      const INVESTIGACIONES = {
+        propone: { corridas: [], porRevisar: {}, credito },
+        muchos: { corridas: [], porRevisar: {}, credito },
+        corriendo: {
+          corridas: [
+            corrida('a1', 'terminada', { gasto_usd: 0.39, resumen: { propuestas: 3 }, fin: '2026-10-20T15:30:00Z' }),
+            corrida('a2', 'corriendo', { gasto_usd: 0.12, resumen: { paso: '2 de 4 búsquedas', avance: 0.5 } }),
+            corrida('a5', 'pendiente', { inicio: null }),
+          ],
+          porRevisar: { a1: 3, a4: 1 },
+          credito,
+        },
+        sin: null,
+      };
+      window.qa = { reemplazos: [], pintar: () => {}, acciones: [], refrescos: 0, falla: false };
       function App() {
         const [, pintar] = useReducer((n) => n + 1, 0);
         window.qa.pintar = pintar;
         const vista = leerVista(Object.fromEntries(new URLSearchParams(location.search)));
-        return <main className={plantilla.paginaContenido + ' ' + admin.lista}><h1 className={admin.titulo}>Showcase</h1><VistaCandidatos todos={lista} vista={vista} hoy="2026-10-20" /></main>;
+        const inv = window.escenario ? { investigaciones: INVESTIGACIONES[window.escenario], ahora: '2026-10-20T16:00:00Z' } : {};
+        return <main className={plantilla.paginaContenido + ' ' + admin.lista}><h1 className={admin.titulo}>Showcase</h1><VistaCandidatos todos={lista} vista={vista} hoy="2026-10-20" {...inv} /></main>;
       }
       createRoot(document.getElementById('root')).render(<App />);
     `,
@@ -98,10 +123,12 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(t, consulta = "") {
+async function abrir(t, consulta = "", escenario = null, reloj = false) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   t.after(() => context.close());
+  if (escenario) await context.addInitScript((e) => (window.escenario = e), escenario);
   const p = await context.newPage();
+  if (reloj) await p.clock.install({ time: new Date("2026-10-20T16:00:00Z") });
   p.setDefaultTimeout(5000);
   const errores = [];
   p.on("pageerror", (e) => errores.push(e.message));
@@ -260,4 +287,149 @@ test("OL-437 · en un teléfono de 320, la tabla no ensancha la página (lo que 
   await p.goto(`${origin}/admin/showcase?vista=tabla`);
   await p.getByRole("region", { name: "Candidatos en tabla" }).waitFor();
   assert.equal(await p.evaluate(() => innerWidth), 320, "la vista no se aleja");
+});
+
+// ---------- OL-439: «Investigar» a varios desde la lista ----------
+const renglonInvestigar = (p) => p.getByRole("button", { name: /^Investigar/ });
+const acciones = (p) => p.evaluate(() => window.qa.acciones);
+const tarjeta = (p, nombre) => p.locator("ul[aria-label=Candidatos] > li", { hasText: nombre });
+
+test("OL-439 · el renglón propone a los candidatos por investigar; la hoja dice a quiénes, el tope y el total, y confirmar los manda", async (t) => {
+  const p = await abrir(t, "", "propone");
+  const renglon = renglonInvestigar(p);
+  assert.equal((await renglon.innerText()).replace(/\s+/g, " ").trim(), "Investigar 2 candidatos por investigar", "los marcados candidato o revisado: Pargazz y Yanel");
+  // Entre la línea de cifras y las tarjetas.
+  const [cifrasY, renglonY, listaY] = await Promise.all([p.locator("p[role=status]"), renglon, p.locator("ul[aria-label=Candidatos]")].map((l) => l.boundingBox().then((b) => b.y)));
+  assert.ok(cifrasY < renglonY && renglonY < listaY, "el renglón va bajo la línea de cifras y antes de las tarjetas");
+  await renglon.click();
+  const hoja = p.getByRole("dialog", { name: "Investigar a varios" });
+  await hoja.waitFor();
+  const candidatos = hoja.getByRole("button", { name: /^Candidatos por investigar/ });
+  assert.equal(await candidatos.getAttribute("aria-pressed"), "true", "por omisión, los candidatos por investigar");
+  assert.ok((await candidatos.innerText()).includes("2 artistas · candidatos o revisados, sin investigar en 30 días"));
+  assert.ok((await hoja.getByRole("button", { name: /^Los que se ven en la lista/ }).innerText()).includes("5 artistas de la lista"));
+  const tope = hoja.getByRole("textbox", { name: /Tope por artista/ });
+  assert.equal(await tope.inputValue(), "1,00");
+  const total = hoja.locator("p[role=status]");
+  assert.equal(await total.innerText(), "2 artistas · hasta 2,00 USD · crédito 192,40");
+  await tope.fill("0,50");
+  assert.equal(await total.innerText(), "2 artistas · hasta 1,00 USD · crédito 192,40", "el total sigue al tope");
+  // La ✕ del campo lo limpia y el botón no manda nada sin tope.
+  await hoja.getByRole("button", { name: /Borrar|Limpiar/ }).click();
+  assert.equal(await tope.inputValue(), "");
+  await hoja.getByRole("button", { name: "Investigar a los 2" }).click();
+  await hoja.getByText("Escribe el tope en dólares.").waitFor();
+  assert.deepEqual(await acciones(p), [], "un tope que no vale no llega al servidor");
+  await tope.fill("0,50");
+  await hoja.getByRole("button", { name: "Investigar a los 2" }).click();
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), [["investigarVarios", ["a2", "a5"], "0,50"]]);
+});
+
+test("OL-439 · «Los que se ven en la lista» sigue el filtro y dice quién queda fuera; con una orden en curso la hoja la dice", async (t) => {
+  const p = await abrir(t, "?disciplina=musica", "corriendo");
+  await renglonInvestigar(p).click();
+  const hoja = p.getByRole("dialog", { name: "Investigar a varios" });
+  await hoja.waitFor();
+  assert.ok(await hoja.getByText("Ahora: Investigando a 3 · 1 terminado · 0,51 USD.").isVisible(), "la orden en curso, primero");
+  // Ningún marcado queda por investigar (Pargazz investiga, Yanel espera su turno): la hoja abre en «Los que se ven».
+  assert.equal(await hoja.getByRole("button", { name: /^Candidatos por investigar/ }).getAttribute("aria-pressed"), "false");
+  const visibles = hoja.getByRole("button", { name: /^Los que se ven en la lista/ });
+  assert.equal(await visibles.getAttribute("aria-pressed"), "true");
+  assert.ok((await visibles.innerText()).includes("1 artista con este filtro · sin 2 investigados en 30 días"), "de música: León sí; Sangre (hoy) y Pargazz (investigando), no");
+  assert.equal(await hoja.locator("p[role=status]").last().innerText(), "1 artista · hasta 1,00 USD · crédito 192,40");
+  await hoja.getByRole("button", { name: "Investigar a 1 artista" }).click();
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), [["investigarVarios", ["a4"], "1,00"]]);
+  // Con «Candidatos por investigar» (nadie), la hoja lo dice y solo se cierra.
+  await renglonInvestigar(p).click();
+  await hoja.getByRole("button", { name: /^Candidatos por investigar/ }).click();
+  assert.ok(await hoja.getByText("Nadie por investigar con esta opción.").isVisible());
+  assert.equal(await hoja.getByRole("button", { name: /^Investigar a/ }).count(), 0);
+  assert.equal(await hoja.getByRole("button", { name: "Cerrar", exact: true }).count(), 2, "la ✕ de la hoja y el «Cerrar» del pie");
+});
+
+test("OL-439 · pasar del crédito que queda se dice, con el foco en el tope, y no se manda; un tope de más de 50 tampoco", async (t) => {
+  const p = await abrir(t, "", "propone");
+  await renglonInvestigar(p).click();
+  const hoja = p.getByRole("dialog", { name: "Investigar a varios" });
+  await hoja.getByRole("button", { name: /^Los que se ven en la lista/ }).click();
+  const tope = hoja.getByRole("textbox", { name: /Tope por artista/ });
+  await tope.fill("50");
+  assert.equal(await hoja.locator("p[role=status]").innerText(), "5 artistas · hasta 250,00 USD · crédito 192,40");
+  await hoja.getByRole("button", { name: "Investigar a los 5" }).click();
+  await hoja.getByRole("alert").getByText("Pasa del crédito que queda (192,40 USD): baja el tope o elige a menos.").waitFor();
+  assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("name")), "tope-lote");
+  await tope.fill("99");
+  await hoja.getByRole("button", { name: "Investigar a los 5" }).click();
+  await hoja.getByText(/Un tope de más de 0 y hasta 50 USD/).waitFor();
+  assert.deepEqual(await acciones(p), []);
+  // Si el servidor no puede, la hoja sigue abierta y lo dice.
+  await p.evaluate(() => (window.qa.falla = true));
+  await tope.fill("1");
+  await hoja.getByRole("button", { name: "Investigar a los 5" }).click();
+  await hoja.getByRole("alert").getByText("Sin conexión con la base. Intenta de nuevo.").waitFor();
+  assert.equal((await acciones(p)).length, 1);
+});
+
+test("OL-439 · más de 60: la hoja lo dice y su salida es filtrar por disciplina (los chips quedan a la vista y con el foco)", async (t) => {
+  const p = await abrir(t, "", "muchos");
+  await renglonInvestigar(p).click();
+  const hoja = p.getByRole("dialog", { name: "Investigar a varios" });
+  await hoja.getByRole("button", { name: /^Los que se ven en la lista/ }).click();
+  assert.ok(await hoja.getByText("Son 71: elige hasta 60 o filtra por disciplina.").isVisible());
+  assert.equal(await hoja.getByRole("textbox", { name: /Tope por artista/ }).count(), 0, "sin tope ni total: no se puede mandar");
+  await hoja.getByRole("button", { name: "Filtrar por disciplina" }).click();
+  await hoja.waitFor({ state: "detached" });
+  await p.waitForFunction(() => document.activeElement?.closest("[aria-label='Filtrar por disciplina']"));
+  assert.equal(await p.evaluate(() => document.activeElement.innerText.replace(/\s+/g, " ").trim()), "Todas 71");
+  assert.deepEqual(await acciones(p), []);
+});
+
+test("OL-439 · mientras corre: el renglón dice cómo va con su barra, cada tarjeta su investigación, «por revisar» en violeta, y la lista se vuelve a leer cada 20 s", async (t) => {
+  const p = await abrir(t, "", "corriendo", true);
+  const renglon = renglonInvestigar(p);
+  assert.equal((await renglon.locator("small").innerText()), "Investigando a 3 · 1 terminado · 0,51 USD");
+  assert.equal(await renglon.getByRole("progressbar").getAttribute("aria-valuenow"), "50", "(1 + 0,5 + 0) / 3");
+  assert.equal(await tarjeta(p, "Sangre de Coyote").locator("p[data-revisar]").innerText(), "Investigado hoy · 3 evidencias por revisar");
+  assert.equal(await tarjeta(p, "Pargazz").innerText().then((x) => x.includes("Investigando · 2 de 4 búsquedas")), true);
+  assert.equal(await tarjeta(p, "Yanel").innerText().then((x) => x.includes("Investigando · por empezar")), true);
+  assert.equal(await tarjeta(p, "Un León Marinero").locator("p[data-revisar]").innerText(), "1 evidencia por revisar", "sin investigación propia, solo lo que deja por revisar");
+  assert.ok(!/Investig|por revisar/.test(await tarjeta(p, "IYARI").innerText()), "nada que decir: sin línea");
+  const violeta = await tarjeta(p, "Sangre de Coyote").locator("p[data-revisar]").evaluate((e) => getComputedStyle(e).color);
+  const primario = await p.evaluate(() => {
+    const x = document.body.appendChild(document.createElement("i"));
+    x.style.color = "var(--primario)";
+    const c = getComputedStyle(x).color;
+    x.remove();
+    return c;
+  });
+  assert.equal(violeta, primario, "con algo por revisar, en el violeta de las acciones");
+  // La recarga suave: cada 20 s con la hoja cerrada; con la hoja abierta, nada; al volver a la pantalla, enseguida.
+  const refrescos = () => p.evaluate(() => window.qa.refrescos);
+  const historial = await p.evaluate(() => history.length);
+  await p.clock.runFor(19_000);
+  assert.equal(await refrescos(), 0);
+  await p.clock.runFor(1_000);
+  assert.equal(await refrescos(), 1);
+  await renglon.click();
+  await p.getByRole("dialog", { name: "Investigar a varios" }).waitFor();
+  await p.clock.runFor(45_000);
+  assert.equal(await refrescos(), 1, "con la hoja abierta no se recarga");
+  await p.keyboard.press("Escape");
+  await p.getByRole("dialog").waitFor({ state: "detached" });
+  await p.clock.runFor(20_000);
+  assert.equal(await refrescos(), 2);
+  await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  assert.equal(await refrescos(), 3, "al volver a la pantalla");
+  assert.equal(await p.evaluate(() => history.length), historial, "recargar no es navegar");
+});
+
+test("OL-439 · sin investigaciones leídas no hay renglón; sin nada corriendo, la lista no se recarga", async (t) => {
+  const sin = await abrir(t, "", "sin");
+  assert.equal(await renglonInvestigar(sin).count(), 0);
+  assert.equal(await sin.locator("p[data-revisar]").count(), 0);
+  const p = await abrir(t, "", "propone", true);
+  await p.clock.runFor(60_000);
+  assert.equal(await p.evaluate(() => window.qa.refrescos), 0);
 });
