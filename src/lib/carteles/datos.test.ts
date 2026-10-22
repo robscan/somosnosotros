@@ -19,6 +19,8 @@ describe("textoPrecio", () => {
   });
   it("sin precio en un festival, una exposición, un taller o un acto (costo opcional, OL-411): nada, nunca «Entrada libre»", () => {
     for (const p of [null, "", "  "]) expect(textoPrecio(p, true)).toBeNull();
+    // Ni el «Por confirmar» escrito de un evento suelto de una agenda (OL-441).
+    expect(textoPrecio("Por confirmar")).toBeNull();
     expect(textoPrecio("Gratis", true)).toBe("Entrada libre");
     expect(textoPrecio("$150", true)).toBe("$150");
   });

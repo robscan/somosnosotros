@@ -66,6 +66,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("./mapbox", () => ({ sugerenciasMapbox: vi.fn(), lugarEnPunto: vi.fn(), lugarPorNombre: vi.fn(), nombresAlrededor: vi.fn() }));
 
 const { aceptarPropuesta } = await import("./acciones");
+const { textoDecidida } = await import("@/lib/propuestas");
 
 const propuesta = (id: string, datos: Record<string, unknown>) => m.propuestas.set(id, { id, tipo: "evento", datos, estado: "propuesta", corrida_id: "c0000000-0000-4000-8000-000000000001" });
 
@@ -130,5 +131,16 @@ describe("aceptar un evento en la bandeja (OL-434)", () => {
     // Si no se pudo insertar, la frase de siempre.
     m.insertar.mockResolvedValue(null);
     expect(await aceptarPropuesta(SUELTO)).toEqual({ ok: true, href: null, nota: "no se pudo publicar ahora: se publica con la siguiente corrida de agendas" });
+  });
+
+  it("OL-441: un costo de la agenda que no es cifra quedó «Por confirmar» y la línea de lo hecho lo dice", async () => {
+    m.preparar.mockResolvedValue({ ok: true, fila: {}, titulo: "Altar vivo, instalación inmersiva", nota: "se publicó con costo por confirmar" });
+    m.insertar.mockResolvedValue({ id: "e0000000-0000-4000-8000-000000000003", slug: "altar-vivo-instalacion-inmersiva" });
+    m.ligar.mockResolvedValue(true);
+    const r = await aceptarPropuesta(SUELTO);
+    expect(r).toEqual({ ok: true, href: "/eventos/altar-vivo-instalacion-inmersiva", nota: "se publicó con costo por confirmar" });
+    expect(m.insertar).toHaveBeenCalled();
+    // Así la lee la bandeja.
+    expect(textoDecidida("Altar vivo, instalación inmersiva", { aceptada: true, tipo: "evento" }, r.ok ? r.nota : undefined)).toBe("Aceptaste Altar vivo, instalación inmersiva · se publicó con costo por confirmar");
   });
 });

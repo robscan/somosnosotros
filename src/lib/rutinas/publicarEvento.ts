@@ -1,10 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { formularioDeEvento, mismoEventoDeAgenda, precioDeAgenda, resolverLugar, type EventoPropuesto } from "../cargaEventos";
+import { formularioDeEvento, mismoEventoDeAgenda, resolverLugar, type EventoPropuesto } from "../cargaEventos";
 import { leerParametrosCiudad, type ParametrosCiudad } from "../ciudadParametros";
 import { periodoDePrograma, ultimoDiaDelPeriodo } from "../claseEvento";
 import { configPublica } from "../config";
-import { validarEvento, type Clase } from "../eventos";
+import { conNotaDeCosto, costoDeAgenda } from "../costoDeAgenda";
+import { COOPERACION_SOLIDARIA, costoOpcional, GRATIS, POR_CONFIRMAR, validarEvento, type Clase } from "../eventos";
 import { diaLocal, isoALocal, localAIso, zonaSegura } from "../fechas";
 import { LIMITES_EVENTO } from "../limites";
 import { normalizarNombre } from "../lugares";
@@ -34,6 +35,10 @@ import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
  *     («Mismo horario todos los días», OL-310), y con horarios distintos, una fila por día (OL-311).
  *   · Una inauguración con su periodo (`clase: exposicion`, `termina`): la inauguración como evento y la exposición ligada por `inaugura_id`
  *     (del primer minuto de ese día al último del de cierre, sin su hora ni su precio), como `publicar_exposicion_de_inauguracion`.
+ * El costo (OL-441, `costoDeAgenda`): una cifra, gratis o cooperación como en el formulario; cualquier otro texto («Entrada con acceso al museo»)
+ * queda «Por confirmar» en cualquier clase, con el texto de la agenda al final de la descripción («Costo: …»), así que nunca deja de publicarse
+ * por el precio. En un evento suelto (donde el costo es obligatorio y un precio vacío se lee «Gratis») «Por confirmar» se guarda escrito, como
+ * «Gratis» donde el costo es opcional; la bandeja lo dice: «se publicó con costo por confirmar» (`nota`).
  * Lo que va además de la fila (las sesiones, la exposición, el festival que recalcular o que el acto espera) viaja aparte, en `EXTRAS`: la
  * bandeja llama `prepararEvento` → `insertarEvento(fila)` → `ligarFicha` y la fila se inserta tal cual en `eventos`.
  */
@@ -53,8 +58,14 @@ export type CiudadDeEvento = {
 export type LugarDeCiudad = { id: string; nombre: string; ciudad: string; zona: string | null; direccion: string | null };
 
 export type MotivoSinPublicar = "sin_punto" | "invalido" | "parecido" | "pasado" | "base";
-/** `espera`: un acto aceptado antes que su festival; `insertarEvento` no lo inserta (se publica al aceptar el festival). */
-export type Preparado = { ok: true; fila: Record<string, unknown>; titulo: string; espera?: string } | { ok: false; motivo: MotivoSinPublicar; error: string };
+/**
+ * `espera`: un acto aceptado antes que su festival; `insertarEvento` no lo inserta (se publica al aceptar el festival). `nota`: lo que la línea
+ * de lo hecho añade («se publicó con costo por confirmar», OL-441).
+ */
+export type Preparado = { ok: true; fila: Record<string, unknown>; titulo: string; espera?: string; nota?: string } | { ok: false; motivo: MotivoSinPublicar; error: string };
+
+/** La línea de lo hecho cuando la agenda decía un costo que no es cifra, gratis ni cooperación (OL-441). */
+export const NOTA_COSTO_POR_CONFIRMAR = "se publicó con costo por confirmar";
 
 type SesionFila = { fecha: string; inicio: string; fin: string | null };
 type Extras = { espera?: string; sesiones?: SesionFila[]; exposicion?: Record<string, unknown>; exposicionExistente?: string; padre?: string };
@@ -161,7 +172,7 @@ export async function prepararEvento(
   const conExposicion = forma.clase === "exposicion" && !!forma.termina;
   // La clase de la fila: la inauguración de una exposición es un evento (la exposición va aparte); un acto, la suya sin ser festival.
   const clase: Clase = forma.clase === "exposicion" ? "puntual" : esActo ? claseDeActo(forma.clase) : forma.clase;
-  const costoOpcional = clase !== "puntual" || esActo || conExposicion;
+  const opcional = clase !== "puntual" || esActo || conExposicion;
 
   // El cuándo: el de la propuesta; con sesiones, de la primera a la última; un marco, del primer al último acto.
   const local = isoALocal(inicio, zona);
@@ -171,7 +182,9 @@ export async function prepararEvento(
   const dura = finDatos ? Date.parse(finDatos) - Date.parse(inicioDatos) : 0;
   const horaFin = finDatos && dura > 0 && dura < 86_400_000 ? isoALocal(finDatos, zona).slice(11, 16) : null;
   const enlace = urlSegura(datos.url);
-  const precio = precioDeAgenda(texto(datos.precio, 120));
+  const costoTexto = texto(datos.precio, 120);
+  const costo = costoDeAgenda(costoTexto, opcional);
+  const porConfirmar = costo.costo === "por_confirmar";
   const propuesto: EventoPropuesto = {
     titulo,
     lugar: lugar?.nombre ?? null,
@@ -179,8 +192,9 @@ export async function prepararEvento(
     hora: local.slice(11, 16),
     // Con una sola sesión que queda, la hora de fin es la suya; con varias, el fin sale de la última (abajo).
     hora_fin: sesiones.length === 1 ? (sesiones[0].fin ? isoALocal(sesiones[0].fin, zona).slice(11, 16) : null) : sesiones.length ? null : horaFin,
-    precio,
-    descripcion: texto(datos.descripcion, LIMITES_EVENTO.descripcion),
+    precio: costo.costo === "gratis" ? GRATIS : costo.costo === "cooperacion" ? COOPERACION_SOLIDARIA : costo.costo === "precio" ? `$${costo.precio}` : null,
+    // Lo que la agenda decía del costo y no cabe en él («Entrada con acceso al museo», «$150 general, $100 niños»), al final: no se pierde.
+    descripcion: conNotaDeCosto(texto(datos.descripcion, LIMITES_EVENTO.descripcion), costo.nota, LIMITES_EVENTO.descripcion),
     enlace: enlace?.startsWith("https://") ? enlace : null,
   };
   if (!lugar) {
@@ -199,8 +213,9 @@ export async function prepararEvento(
     } else Object.assign(propuesto, { sitio: donde });
   }
   const entrada = formularioDeEvento(propuesto, lugar?.id ?? null);
-  // Donde el costo es opcional (OL-411), lo que la agenda no dice queda «Por confirmar» y «Gratis» se guarda escrito.
-  if (costoOpcional && !precio) Object.assign(entrada, { gratis: "no", por_confirmar: "si" });
+  // «Por confirmar» (OL-411, OL-441): donde el costo es opcional, lo que la agenda no dice; en cualquier clase, lo que dice sin ser cifra,
+  // gratis ni cooperación. `validarEvento` lo acepta como en un festival; donde es opcional, «Gratis» se guarda escrito.
+  if (porConfirmar) Object.assign(entrada, { gratis: "no", por_confirmar: "si" });
   const extras: Extras = {};
   if (esMarco && forma.termina) entrada.fin = isoALocal(forma.termina, zona).slice(0, 16);
   if (sesiones.length >= 2) {
@@ -220,7 +235,7 @@ export async function prepararEvento(
     // «Mismo horario todos los días» en días seguidos: sin filas (OL-310). Un taller, siempre con sus sesiones (días sueltos).
     if (clase === "taller" || !mismoHorario) extras.sesiones = filas;
   }
-  const { datos: evento, errores } = validarEvento(entrada, zona, { marco: esMarco, costoOpcional });
+  const { datos: evento, errores } = validarEvento(entrada, zona, { marco: esMarco, costoOpcional: opcional || porConfirmar });
   const primero = Object.values(errores)[0];
   if (primero) return { ok: false, motivo: "invalido", error: `No se publicó: ${primero}` };
   const sitioNombre = lugar?.nombre ?? donde;
@@ -302,8 +317,13 @@ export async function prepararEvento(
       fila.sugerencias = { exposicion: { estado: "aceptada" } };
     }
   }
+  // Donde la ficha lee un precio vacío como «Gratis» (un evento suelto: ni festival, exposición o taller, ni acto, ni inauguración ligada),
+  // «Por confirmar» se guarda escrito (`textoCosto` lo muestra tal cual; al editar, `costoDeEvento` vuelve a preguntar el costo).
+  const inauguracion = !!(extras.exposicion || extras.exposicionExistente);
+  if (porConfirmar && !costoOpcional({ clase, evento_padre_id: padre?.id ?? null, inauguracion })) fila.precio = POR_CONFIRMAR;
   EXTRAS.set(fila, extras);
-  return espera ? { ok: true, titulo: evento.titulo, fila, espera } : { ok: true, titulo: evento.titulo, fila };
+  if (espera) return { ok: true, titulo: evento.titulo, fila, espera };
+  return porConfirmar && costoTexto ? { ok: true, titulo: evento.titulo, fila, nota: NOTA_COSTO_POR_CONFIRMAR } : { ok: true, titulo: evento.titulo, fila };
 }
 
 /**

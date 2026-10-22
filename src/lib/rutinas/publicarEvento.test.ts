@@ -161,3 +161,76 @@ describe("publicar con su forma (OL-433)", () => {
     expect(await prepararEvento(dep(mundo().db), datos({ clase: "taller", sesiones: pasadas }), SLP, LUGARES, ADMIN)).toMatchObject({ ok: false, motivo: "pasado" });
   });
 });
+
+describe("el costo que no es cifra se publica «Por confirmar» (OL-441)", () => {
+  const MUSEO = "00000000-0000-4000-8000-00000000a005";
+  const CON_MUSEO: LugarDeCiudad[] = [...LUGARES, { id: MUSEO, nombre: "Museo Regional Potosino", ciudad: "San Luis Potosí", zona: ZONA, direccion: "Galeana 450" }];
+  const XANTOLO = "00000000-0000-4000-8000-00000000f001";
+  const dep = (db: ReturnType<typeof mundo>["db"]) => ({ db, mapbox, ahora: AHORA });
+  const altar = (cambios: Record<string, unknown> = {}) =>
+    datos({ titulo: "Altar vivo, instalación inmersiva", lugar: "Museo Regional Potosino", clase: "puntual", precio: "Entrada con acceso al museo", descripcion: "Una instalación inmersiva sobre el Día de Muertos.", ...cambios });
+
+  it("el caso del founder: un evento suelto con «Entrada con acceso al museo» se publica con «Por confirmar» y el texto al final de la descripción", async () => {
+    const base = mundo();
+    const r = await prepararEvento(dep(base.db), altar(), SLP, CON_MUSEO, ADMIN);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.nota).toBe("se publicó con costo por confirmar");
+    // Escrito: en un evento suelto un precio vacío se lee «Gratis» (`textoCosto`), y no lo es.
+    expect(r.fila).toMatchObject({ titulo: "Altar vivo, instalación inmersiva", lugar_id: MUSEO, clase: "puntual", precio: "Por confirmar" });
+    expect(r.fila.descripcion).toBe("Una instalación inmersiva sobre el Día de Muertos. Costo: Entrada con acceso al museo.");
+    const creado = await insertarEvento(base.db, r.fila);
+    expect(creado?.id).toBeTruthy();
+    expect(base.tablas.eventos[0]).toMatchObject({ precio: "Por confirmar", origen: "rutina-agendas" });
+    expect(await ligarFicha(base.db, "p1", creado!.id)).toBe(true);
+  });
+
+  it("donde el costo es opcional (taller, acto de festival) queda vacío, como lo firmado en OL-411, con la misma nota", async () => {
+    const sesiones = ["27", "29"].map((d) => ({ inicio: localAIso(`2026-10-${d}T17:00`, ZONA), fin: localAIso(`2026-10-${d}T19:00`, ZONA) }));
+    const taller = await prepararEvento(dep(mundo().db), altar({ titulo: "Taller de papel picado", clase: "taller", inicio: sesiones[0].inicio, sesiones, precio: "Incluida en el boleto" }), SLP, CON_MUSEO, ADMIN);
+    if (!taller.ok) throw new Error(taller.error);
+    expect(taller.fila).toMatchObject({ clase: "taller", precio: null });
+    expect(taller.nota).toBe("se publicó con costo por confirmar");
+    expect(String(taller.fila.descripcion).endsWith("Costo: Incluida en el boleto.")).toBe(true);
+    const conFestival = baseFalsa({ eventos: [{ id: XANTOLO, titulo: "Xantolo 2026", clase: "festival" }] }, { eventos_parecidos: () => [] });
+    const acto = await prepararEvento(dep(conFestival.db), altar({ marco: { id: XANTOLO, titulo: "Xantolo 2026" }, precio: "Consultar" }), SLP, CON_MUSEO, ADMIN);
+    if (!acto.ok) throw new Error(acto.error);
+    expect(acto.fila).toMatchObject({ evento_padre_id: XANTOLO, precio: null });
+    expect(String(acto.fila.descripcion).endsWith("Costo: Consultar.")).toBe(true);
+  });
+
+  it("los demás costos de las agendas: cifra, gratis y cooperación como en el formulario; lo que dice de más, a la descripción y sin nota en la línea", async () => {
+    const casos: [string, unknown, string | null][] = [
+      ["$150 general, $100 niños", "$150", "Costo: $150 general, $100 niños."],
+      ["Gratis con boleto", null, "Costo: Gratis con boleto."],
+      ["Costo de recuperación", "Cooperación solidaria", null],
+      ["Donativo", "Cooperación solidaria", null],
+      ["Entrada libre", null, null],
+      ["$150", "$150", null],
+    ];
+    for (const [precio, guardado, nota] of casos) {
+      const r = await prepararEvento(dep(mundo().db), altar({ precio }), SLP, CON_MUSEO, ADMIN);
+      if (!r.ok) throw new Error(`${precio}: ${r.error}`);
+      expect(r.fila.precio, precio).toBe(guardado);
+      expect(r.nota, precio).toBeUndefined();
+      const descripcion = String(r.fila.descripcion);
+      if (nota) expect(descripcion.endsWith(nota), precio).toBe(true);
+      else expect(descripcion, precio).toBe("Una instalación inmersiva sobre el Día de Muertos.");
+    }
+  });
+
+  it("sin costo en la agenda, como antes: gratis en un evento suelto y vacío donde es opcional, sin nota", async () => {
+    const suelto = await prepararEvento(dep(mundo().db), altar({ precio: null }), SLP, CON_MUSEO, ADMIN);
+    expect(suelto.ok && suelto.fila.precio === null && suelto.nota === undefined).toBe(true);
+    const festival = await prepararEvento(dep(mundo().db), altar({ precio: "", clase: "festival", titulo: "Festival de Altares" }), SLP, CON_MUSEO, ADMIN);
+    expect(festival.ok && festival.fila.precio === null && festival.nota === undefined).toBe(true);
+  });
+
+  it("ningún texto de costo deja el evento sin publicar, en ninguna clase", async () => {
+    const textos = ["Entrada con acceso al museo", "Gratis con boleto", "Incluida en el boleto", "Costo de recuperación", "$150 general, $100 niños", "Donativo", "Consultar", "Para mayores de 18 años", "Por confirmar", "$9,999,999"];
+    for (const clase of ["puntual", "taller", "festival"])
+      for (const precio of textos) {
+        const r = await prepararEvento(dep(mundo().db), altar({ precio, clase, titulo: `Altar vivo ${clase}` }), SLP, CON_MUSEO, ADMIN);
+        expect(r.ok ? "publica" : r.error, `${clase} · ${precio}`).toBe("publica");
+      }
+  });
+});

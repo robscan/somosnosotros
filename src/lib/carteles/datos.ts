@@ -1,6 +1,6 @@
 import { etiquetaDisciplina } from "../artistas";
 import { ultimoDiaDelPeriodo } from "../claseEvento";
-import { claseDeCosto, COOPERACION_SOLIDARIA, type Clase } from "../eventos";
+import { claseDeCosto, COOPERACION_SOLIDARIA, POR_CONFIRMAR, type Clase } from "../eventos";
 import { cuandoVariosDias, diaLocal, horaCorta, localAIso, reloj24, zonaSegura } from "../fechas";
 import { tieneLetra } from "./medir";
 import { DOMINIO_CARTEL } from "./tokens";
@@ -85,9 +85,10 @@ export function partirTitulo(titulo: string): { titulo: string; subtitulo: strin
 /**
  * El precio en el cartel: «Entrada libre», «Cooperación solidaria» o lo que escribió quien publicó, con su tope. Sin precio en un evento de costo
  * opcional (`opcional`, OL-411: su ficha dice «Por confirmar»), nada: un cartel no anuncia lo que no se sabe, y «Entrada libre» sería inventarlo.
+ * Tampoco el «Por confirmar» guardado escrito en un evento suelto de una agenda (OL-441).
  */
 export function textoPrecio(precio: string | null | undefined, opcional = false): string | null {
-  if (opcional && !(precio ?? "").trim()) return null;
+  if ((opcional && !(precio ?? "").trim()) || (precio ?? "").trim() === POR_CONFIRMAR) return null;
   const clase = claseDeCosto(precio);
   if (clase === "gratis") return "Entrada libre";
   const texto = limpiarTexto(precio ?? "");

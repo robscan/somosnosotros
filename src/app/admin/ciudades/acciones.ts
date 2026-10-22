@@ -179,7 +179,8 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
       const actos = await actosDelFestival(admin, id);
       return { ok: true, href: hrefEvento(creado), nota: notaDeFestival(actos.publicados.length, actos.sinPublicar), actos: actos.publicados };
     }
-    return { ok: true, href: hrefEvento(creado) };
+    // Un costo de la agenda que no es cifra, gratis ni cooperación quedó «Por confirmar» (OL-441): la línea lo dice.
+    return evento.nota ? { ok: true, href: hrefEvento(creado), nota: evento.nota } : { ok: true, href: hrefEvento(creado) };
   }
   if (!r.ficha_id) return { ok: true, href: null };
   return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
