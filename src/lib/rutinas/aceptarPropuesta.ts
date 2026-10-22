@@ -15,7 +15,8 @@ import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararE
  * que acepta una corrida entera (OL-453, `scripts/instituciones/aceptar-corrida.ts`; founder: «no me pongas a aprobar en front, aprueba tú por
  * favor»). Lo que cambia entre los dos va en `DepAceptar`:
  *   · `marcar`: crear la ficha (lugar o artista) y marcar la propuesta aceptada. La bandeja llama `aceptar_propuesta` con la sesión (la base
- *     exige el rol de quien acepta); el guion, con la llave de servicio y `marcarConServicio` (lo mismo que esa función, a nombre del admin).
+ *     exige el rol de quien acepta); el guion, con la llave de servicio, `aceptar_propuesta_como` (la misma función a nombre del admin, migración
+ *     20261022170000).
  *   · `consultas`: con qué se pregunta «¿es este?» (`lugares_parecidos`): la sesión en la bandeja, la llave de servicio en el guion.
  *   · `admin`: la llave de servicio, para publicar el evento, ligarlo y poner su cartel.
  *   · `revalidar`: lo que la bandeja vuelve a pintar (nada en el guion).
@@ -130,66 +131,4 @@ export async function aceptarLeida(dep: DepAceptar, p: PropuestaLeida, ciudad: s
   }
   if (!r.ficha_id) return { ok: true, href: null };
   return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
-}
-
-/**
- * `aceptar_propuesta` hecho con la llave de servicio a nombre de un admin (OL-453): la función de la base exige una sesión de admin
- * (`auth.uid()`), y el guion de la Mac no tiene sesión. Hace lo mismo que su versión vigente (migración 20261021190000): una propuesta ya
- * decidida no se toca (devuelve su estado y su ficha); un lugar o un artista se crean con `creado_por` = el admin; un artista se liga a los
- * eventos de `datos.eventos` que existen, cada uno detrás de los que ya tenía; la propuesta queda aceptada por el admin. Sin la transacción de la
- * base: si la propuesta ya no estaba sin decidir al marcarla, la ficha recién creada se borra.
- */
-export function marcarConServicio(db: SupabaseClient, autor: string, ahora: () => Date = () => new Date()): DepAceptar["marcar"] {
-  return async (propuesta, ficha) => {
-    const leida = await db.from("propuestas").select("id, tipo, estado, ficha_id, datos").eq("id", propuesta).maybeSingle();
-    if (leida.error) return { data: null, error: { message: leida.error.message } };
-    const v = leida.data as { id: string; tipo: string; estado: string; ficha_id: string | null; datos: Record<string, unknown> | null } | null;
-    if (!v) return { data: null, error: { code: "P0002", message: "no existe esa propuesta" } };
-    if (v.estado !== "propuesta") return { data: { estado: v.estado, ficha_id: v.ficha_id }, error: null };
-    let fichaId: string | null = null;
-    let slug: string | null = null;
-    let tabla: "lugares" | "artistas" | null = null;
-    const texto = (k: string) => (typeof ficha[k] === "string" && ficha[k] ? (ficha[k] as string) : null);
-    if (v.tipo === "lugar") {
-      tabla = "lugares";
-      const r = await db
-        .from("lugares")
-        .insert({ nombre: ficha.nombre, tipo: ficha.tipo, detalle: texto("detalle"), direccion: texto("direccion"), lat: ficha.lat, lng: ficha.lng, ciudad: ficha.ciudad, zona: texto("zona") ?? "America/Mexico_City", redes: ficha.redes ?? [], creado_por: autor })
-        .select("id, slug")
-        .single();
-      if (r.error) return { data: null, error: { code: r.error.code, message: r.error.message } };
-      ({ id: fichaId, slug } = r.data as { id: string; slug: string | null });
-    } else if (v.tipo === "artista") {
-      tabla = "artistas";
-      const r = await db
-        .from("artistas")
-        .insert({ nombre: ficha.nombre, disciplina: texto("disciplina") ?? "por_completar", detalle: texto("detalle"), tipo: texto("tipo") ?? "solista", ciudad: ficha.ciudad, redes: ficha.redes ?? [], creado_por: autor })
-        .select("id, slug")
-        .single();
-      if (r.error) return { data: null, error: { code: r.error.code, message: r.error.message } };
-      ({ id: fichaId, slug } = r.data as { id: string; slug: string | null });
-      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const pedidos = [...new Set((Array.isArray(v.datos?.eventos) ? v.datos!.eventos : []).filter((x): x is string => typeof x === "string" && uuid.test(x)))];
-      for (const eventoId of pedidos) {
-        const existe = await db.from("eventos").select("id").eq("id", eventoId).maybeSingle();
-        if (!existe.data) continue;
-        const orden = await db.from("eventos_artistas").select("orden").eq("evento_id", eventoId).order("orden", { ascending: false }).limit(1);
-        const siguiente = ((orden.data ?? [])[0] as { orden?: number } | undefined)?.orden;
-        // Lo ya ligado no se repite (en la base, `on conflict do nothing`).
-        const ya = await db.from("eventos_artistas").select("evento_id").eq("evento_id", eventoId).eq("artista_id", fichaId!).maybeSingle();
-        if (!ya.data) await db.from("eventos_artistas").insert({ evento_id: eventoId, artista_id: fichaId, orden: typeof siguiente === "number" ? siguiente + 1 : 0 });
-      }
-    }
-    const marcada = await db
-      .from("propuestas")
-      .update({ estado: "aceptada", ficha_id: fichaId, motivo_rechazo: null, resuelto_por: autor, resuelto_en: ahora().toISOString() })
-      .eq("id", v.id)
-      .eq("estado", "propuesta")
-      .select("id");
-    if (marcada.error || !marcada.data?.length) {
-      if (tabla && fichaId) await db.from(tabla).delete().eq("id", fichaId);
-      return marcada.error ? { data: null, error: { message: marcada.error.message } } : { data: { estado: "decidida", ficha_id: null }, error: null };
-    }
-    return { data: { estado: "aceptada", ficha_id: fichaId, slug: slug ?? null }, error: null };
-  };
 }

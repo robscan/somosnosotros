@@ -5,8 +5,8 @@
  * Usa `aceptarLeida` (`src/lib/rutinas/aceptarPropuesta.ts`), la misma función que «Aceptar» de la bandeja: un lugar o un artista, validado y con
  * «¿es este?»; un evento, armado y comprobado (`prepararEvento`), publicado con la llave de servicio, ligado a su propuesta y con su imagen como
  * cartel; las mismas notas («se publicó sin cartel», «se publicó con costo por confirmar», un acto que espera a su festival…). Lo único distinto:
- * no hay sesión, así que la ficha se crea y la propuesta se marca con `marcarConServicio` (lo mismo que `aceptar_propuesta`, a nombre de --autor,
- * que tiene que ser un admin).
+ * no hay sesión, así que la ficha se crea y la propuesta se marca con `aceptar_propuesta_como` (migración 20261022170000: llama
+ * `aceptar_propuesta` tal cual, a nombre de --autor, que tiene que ser un admin; solo la llave de servicio puede llamarla).
  *
  * En orden: lugares primero, luego artistas, luego eventos (los festivales antes que los demás), para que los eventos se liguen a sus recintos
  * recién aceptados y los actos encuentren su festival. Solo las propuestas sin decidir: se puede volver a correr y lo ya aceptado no se toca. Lo
@@ -20,7 +20,7 @@
 import { basename } from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { almacenDeSupabase } from "../../src/lib/rutinas/aceptarCartel";
-import { aceptarLeida, marcarConServicio, NOTA_NO_PUBLICADO, NOTA_SIN_CARTEL, type DepAceptar, type PropuestaLeida, type ResultadoAceptar } from "../../src/lib/rutinas/aceptarPropuesta";
+import { aceptarLeida, NOTA_NO_PUBLICADO, NOTA_SIN_CARTEL, type DepAceptar, type PropuestaLeida, type ResultadoAceptar } from "../../src/lib/rutinas/aceptarPropuesta";
 import { guardarInforme, requerida } from "./entorno";
 
 const USO = "node scripts/instituciones/correr.mjs aceptar-corrida <corrida_id> --autor <id del admin> [--simular] [--solo lugar|evento|artista] [--limite N] [--salida <carpeta>]";
@@ -80,7 +80,8 @@ export async function aceptarCorrida(dep: DepCorrida, o: OpcionesAceptar): Promi
     yo: o.autor,
     admin: dep.db,
     consultas: dep.db,
-    marcar: marcarConServicio(dep.db, o.autor, ahora),
+    // `aceptar_propuesta` tal cual, a nombre del admin (migración 20261022170000: solo la llave de servicio puede llamarla).
+    marcar: async (propuesta, ficha) => await dep.db.rpc("aceptar_propuesta_como", { p_autor: o.autor, p_id: propuesta, p_ficha: ficha }),
     mapbox: dep.mapboxToken ? { token: dep.mapboxToken } : null,
     almacen: dep.almacen ?? almacenDeSupabase,
     ahora,

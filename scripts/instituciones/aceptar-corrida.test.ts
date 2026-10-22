@@ -1,7 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { localAIso } from "../../src/lib/fechas";
 import { baseFalsa, type Fila } from "../../src/lib/rutinas/baseFalsa";
-import { marcarConServicio, NOTA_SIN_CARTEL } from "../../src/lib/rutinas/aceptarPropuesta";
+import { NOTA_SIN_CARTEL } from "../../src/lib/rutinas/aceptarPropuesta";
 import { aceptarCorrida, lineasDeInforme, motivoAgrupado, ordenar, PAUSA_MS } from "./aceptar-corrida";
 
 // ---------- el mundo de la prueba (todo inventado, sin red) ----------
@@ -46,9 +47,27 @@ function mundo() {
         propuesta(6, "cartel", { evento_id: "x", imagen: "https://x.example/a.jpg" }),
       ],
     },
-    { eventos_parecidos: () => [], lugares_parecidos: () => [] },
+    {
+      eventos_parecidos: () => [],
+      lugares_parecidos: () => [],
+      // `aceptar_propuesta_como` (migración 20261022170000, probada en el banco de PostgreSQL): aquí, lo que hace con un lugar o un evento.
+      aceptar_propuesta_como: (args, tablas) => {
+        llamadas.push(args);
+        const p = tablas.propuestas.find((x) => x.id === args.p_id)!;
+        if (tablas.perfiles.find((x) => x.id === args.p_autor)?.rol !== "admin") throw new Error("solo la administración");
+        if (p.estado !== "propuesta") return { estado: p.estado, ficha_id: p.ficha_id ?? null };
+        let fichaId: string | null = null;
+        if (p.tipo === "lugar") {
+          fichaId = randomUUID();
+          tablas.lugares.push({ id: fichaId, ...(args.p_ficha as Fila), creado_por: args.p_autor });
+        }
+        Object.assign(p, { estado: "aceptada", ficha_id: fichaId, resuelto_por: args.p_autor, resuelto_en: AHORA.toISOString() });
+        return { estado: "aceptada", ficha_id: fichaId, slug: null };
+      },
+    },
   );
 }
+const llamadas: Record<string, unknown>[] = [];
 
 function dependencias(base: ReturnType<typeof mundo>) {
   const esperas: number[] = [];
@@ -100,6 +119,8 @@ describe("aceptar una corrida desde la Mac (OL-453)", () => {
     expect(estado(3)).toMatchObject({ estado: "propuesta" });
     expect(estado(3)!.motivo_rechazo).toBeUndefined();
     expect(estado(6)).toMatchObject({ estado: "propuesta" });
+    // Se marcó con `aceptar_propuesta_como`, a nombre del admin.
+    expect(llamadas.filter((l) => l.p_autor === ADMIN).map((l) => l.p_id)).toEqual(expect.arrayContaining([ID(2), ID(1), ID(4)]));
 
     const texto = lineasDeInforme({ simular: false, corrida: CORRIDA, resumen: { lineas }, minutos: 1 }).join("\n");
     expect(texto).toContain("- Aceptadas: 3 (lugar 1 · artista 0 · evento 2)");
@@ -166,25 +187,5 @@ describe("aceptar una corrida desde la Mac (OL-453)", () => {
     ];
     expect(ordenar(ps).map((p) => `${p.tipo}${p.datos.clase ? `:${p.datos.clase}` : ""}`)).toEqual(["lugar", "artista", "evento:festival", "evento:puntual"]);
     expect(motivoAgrupado("Ya está «Hamlet» ese día en ese sitio: recházala como duplicado.")).toBe("Ya está «…» ese día en ese sitio: recházala como duplicado.");
-  });
-
-  it("marcar con la llave de servicio hace lo de `aceptar_propuesta`: la ficha a nombre del admin, el artista ligado a sus eventos, lo decidido no se toca", async () => {
-    const base = mundo();
-    base.tablas.eventos.push({ id: "e0000000-0000-4000-8000-000000000001", titulo: "Concierto" });
-    base.tablas.eventos_artistas = [{ evento_id: "e0000000-0000-4000-8000-000000000001", artista_id: "otro", orden: 0 }];
-    base.tablas.propuestas.push(propuesta(7, "artista", { nombre: "Los Pájaros", eventos: ["e0000000-0000-4000-8000-000000000001", "no-es-id", "e0000000-0000-4000-8000-000000000099"] }));
-    const marcar = marcarConServicio(base.db, ADMIN, () => AHORA);
-    const r = await marcar(ID(7), { nombre: "Los Pájaros", disciplina: "musica", tipo: "grupo", ciudad: "Ciudad de México", redes: [] });
-    const artista = base.tablas.artistas[0];
-    expect(r).toEqual({ data: { estado: "aceptada", ficha_id: artista.id, slug: null }, error: null });
-    expect(artista).toMatchObject({ nombre: "Los Pájaros", disciplina: "musica", tipo: "grupo", creado_por: ADMIN, detalle: null });
-    expect(base.tablas.eventos_artistas.map(({ evento_id, artista_id, orden }) => ({ evento_id, artista_id, orden }))).toEqual([
-      { evento_id: "e0000000-0000-4000-8000-000000000001", artista_id: "otro", orden: 0 },
-      { evento_id: "e0000000-0000-4000-8000-000000000001", artista_id: artista.id, orden: 1 },
-    ]);
-    expect(base.tablas.propuestas.find((p) => p.id === ID(7))).toMatchObject({ estado: "aceptada", ficha_id: artista.id, resuelto_por: ADMIN, resuelto_en: AHORA.toISOString() });
-    // Ya decidida: devuelve su estado y no crea nada.
-    expect(await marcar(ID(7), { nombre: "Otra vez" })).toEqual({ data: { estado: "aceptada", ficha_id: artista.id }, error: null });
-    expect(base.tablas.artistas).toHaveLength(1);
   });
 });
