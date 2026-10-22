@@ -8,6 +8,7 @@
  */
 import { agruparPorMes, artistasDelHistorial, lugaresDeTrayectoria, plural, type EventoPasado, type Presencia, realizados } from "./historialFichas";
 import { ZONA_INICIAL, zonaSegura } from "./fechas";
+import { hitosDelAnio, resumenHitos, TITULO_HITOS, type Hito } from "./hitos";
 import { respaldoDe } from "./portadasSistema";
 import { MARCA } from "./marca";
 
@@ -30,6 +31,11 @@ export type ResumenTuAnio = {
   secundarios: { n: number; palabra: string }[];
   /** Una sola línea: «Donde más fuiste: Museo de Arte Contemporáneo (MAC) · 5 veces»; null si no hay nada que destacar. */
   mas: { que: string; quien: string; cuantas: string } | null;
+  /**
+   * Solo el artista (OL-445): sus hitos del año en una frase, «2 premios · 1 disco · 5 presentaciones» (lo aceptado del showcase con fecha de
+   * este año); null o ausente si no hay.
+   */
+  logros?: string | null;
   /** El color de origen de la figura (la de las portadas del sistema). */
   color: string;
 };
@@ -97,6 +103,8 @@ export type EntradaTuAnio = {
   zona?: string;
   /** El color de la ficha si lo guarda; si no, el de respaldo por id (o el violeta en la persona). */
   color?: string | null;
+  /** Los hitos públicos del artista (OL-445); aquí se quedan los de este año. */
+  hitos?: readonly Hito[];
 };
 
 /**
@@ -148,12 +156,15 @@ export function resumirTuAnio(e: EntradaTuAnio): ResumenTuAnio {
     const artista = elQueRepite(artistas);
     mas = artista ? { que: "Quien más pasó", quien: artista.nombre, cuantas: veces(artista.veces) } : mesMasMovido(lista, "evento", "eventos");
   }
+  const logros = e.tipo === "artista" ? resumenHitos(hitosDelAnio(e.hitos ?? [], anioDe(e.ahora, zona)), 3) : null;
   return {
     quien: { nombre: e.nombre, foto: e.foto, tipo: e.tipo },
     periodo: { titulo: `Tu ${anioDe(e.ahora, zona)}`, desde: textoDesde(lista, e.ahora, zona) },
     protagonista,
     secundarios: secundarios.filter((s) => s.n > 0).map((s) => ({ n: s.n, palabra: s.n === 1 ? s.uno : s.varios })),
     mas,
+    // Sin hitos del año la clave ni existe: el resumen (y su versión) de quien no los tiene sigue igual que antes.
+    ...(logros ? { logros } : {}),
     color: e.color || (e.tipo === "persona" ? COLOR_PERSONA : respaldoDe(e.id)),
   };
 }
@@ -188,6 +199,7 @@ export function versionTuAnio(resumen: ResumenTuAnio): string {
 /** Lo que lee el lector de pantalla de la imagen: lo mismo que dice, en una frase. */
 export function textoAlternativo(r: ResumenTuAnio): string {
   const partes = [`${r.periodo.titulo} de ${r.quien.nombre}, ${r.periodo.desde}: ${r.protagonista.n} ${r.protagonista.frase}`, ...r.secundarios.map((s) => `${s.n} ${s.palabra}`)];
+  if (r.logros) partes.push(`${TITULO_HITOS}: ${r.logros}`);
   if (r.mas) partes.push(`${r.mas.que}: ${r.mas.quien}${r.mas.cuantas ? `, ${r.mas.cuantas}` : ""}`);
   return `${partes.join(". ")}.`;
 }

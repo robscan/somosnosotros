@@ -44,6 +44,20 @@ const ARTISTA: ResumenTuAnio = {
   color: "#b0306a",
 };
 
+// OL-445: el peor caso con la línea de los hitos: nombre a dos renglones, tres cifras, dos secundarios y «lo más».
+const ARTISTA_CON_LOGROS: ResumenTuAnio = {
+  quien: { nombre: "Ensamble de Música Antigua del Altiplano Potosino y sus Invitados", foto: "x", tipo: "artista" },
+  periodo: { titulo: "Tu 2026", desde: "del 5 ene al 12 oct" },
+  protagonista: { n: 128, frase: "fechas en 14 lugares" },
+  secundarios: [
+    { n: 14, palabra: "lugares" },
+    { n: 2300, palabra: "fueron" },
+  ],
+  mas: { que: "Donde más tocó", quien: "Centro de Difusión Cultural Raúl Gamboa", cuantas: "9 veces" },
+  logros: "2 premios · 1 disco · 5 presentaciones · 2 más",
+  color: "#b0306a",
+};
+
 const LUGAR: ResumenTuAnio = {
   quien: { nombre: "Centro Cultural Universitario Bicentenario (CC200)", foto: "x", tipo: "lugar" },
   periodo: { titulo: "Tu 2026", desde: "del 5 ene al 12 oct" },
@@ -82,6 +96,7 @@ describe("la imagen de «Tu año» (OL-394)", () => {
     ["persona-sin-foto", PERSONA, false],
     ["artista-sin-foto", ARTISTA, false],
     ["lugar-cifras-grandes", LUGAR, true],
+    ["artista-con-logros", ARTISTA_CON_LOGROS, true],
   ] as const)("%s: 1080×1350, nada fuera del lienzo ni encimado", async (nombre, resumen, conFoto) => {
     const r = await dibujar(nombre, resumen, conFoto);
     expect(r.tipo).toBe("image/jpeg");
@@ -95,6 +110,14 @@ describe("la imagen de «Tu año» (OL-394)", () => {
     expect(textos).toContain(resumen.protagonista.frase);
     expect(textos.some((t) => t.startsWith(`${resumen.periodo.titulo} · `))).toBe(true);
     expect(textos).toContain("somosnosotros.org");
+  });
+
+  it("los hitos del artista (OL-445): su línea dice «Reconocimientos y obra» y el número empieza en 360", async () => {
+    const r = await dibujarImagenTuAnio({ resumen: ARTISTA_CON_LOGROS, id: "x", foto: null, soloSvg: true, conNodos: true });
+    const textos = r.nodos.map((n) => n.texto);
+    expect(textos.some((t) => t.startsWith("Reconocimientos y obra"))).toBe(true);
+    expect(textos.some((t) => t.includes("2 premios · 1 disco"))).toBe(true);
+    expect(tamanoHero("36", undefined, 360)).toBe(360);
   });
 
   it("a 720 de ancho (la vista previa) sale proporcionada", async () => {

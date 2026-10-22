@@ -50,7 +50,9 @@ import { videoEmbedDe } from "@/lib/video";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
+import { cargarHitos } from "@/lib/cargarHitos";
 import EsMiNombre from "./EsMiNombre";
+import SeccionHitos from "./SeccionHitos";
 import SeccionNovedades, { type NovedadParaFicha } from "./SeccionNovedades";
 import { MARCA, tituloDePagina } from "@/lib/marca";
 
@@ -172,8 +174,11 @@ async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
 async function SeccionTrayectoria({ artista, puedeEditar }: { artista: ArtistaConAutor; puedeEditar: boolean }) {
   const historial = await cargarTrayectoria(artista.id);
   const tuAnio = puedeEditar && hayTuAnio(historial.eventos) ? hrefVistaTuAnio("artista", hrefArtista(artista)) : null;
-  // La «Presentación» en PDF (OL-396): solo quien gestiona y con algo pasado; sus próximas fechas se leen solo entonces.
-  const documento = puedeEditar && historial.eventos.length ? { que: "artista" as const, opciones: opcionesPresentacion({ artista, pasados: historial.eventos, lleno: historial.lleno, proximos: await cargarProximasArtista(artista.id), ahora: new Date() }), etiquetasPeriodo: null } : null;
+  // La «Presentación» en PDF (OL-396): solo quien gestiona y con algo pasado; sus próximas fechas y sus hitos (OL-445) se leen solo entonces.
+  const documento =
+    puedeEditar && historial.eventos.length
+      ? { que: "artista" as const, opciones: opcionesPresentacion({ artista, pasados: historial.eventos, lleno: historial.lleno, proximos: await cargarProximasArtista(artista.id), hitos: await cargarHitos(artista.id), ahora: new Date() }), etiquetasPeriodo: null }
+      : null;
   return <Historial de="artista" artistaId={artista.id} historial={historial} tuAnio={tuAnio} documento={documento} />;
 }
 
@@ -416,6 +421,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         {/* Lo que ya pasó (OL-390): plegado bajo lo próximo. Mientras llega no se adivina si existe: nada en su sitio. */}
         <Suspense fallback={null}>
           <SeccionTrayectoria artista={a} puedeEditar={puedeEditar} />
+        </Suspense>
+
+        {/* «Reconocimientos y obra» (OL-445): lo aceptado de lo que descubren las rutinas, plegado bajo la trayectoria. Sin hitos, nada. */}
+        <Suspense fallback={null}>
+          <SeccionHitos artistaId={a.id} />
         </Suspense>
 
         {/* Novedades, fase 1 (doc 44 §1, OL-175): después de las fechas, antes de «Sobre». Sin novedades y sin poder publicar,

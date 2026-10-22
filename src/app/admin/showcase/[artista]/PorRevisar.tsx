@@ -13,7 +13,8 @@ type Hecha = { como: "aceptada" | "rechazada"; propuesta: Propuesta };
 /**
  * «Por revisar» (lo firmado en OL-425): lo que propuso la rutina (OL-428) con su enlace, en la tarjeta de «Pendiente» del panel: qué es, el título
  * que abre el enlace (el único enlace de la tarjeta: dos seguidos se pisaban el toque), la fuente y cuándo se leyó; Rechazar a la izquierda y Aceptar a la derecha. Al decidir queda la línea de lo hecho con
- * «Deshacer» (vuelve a propuesta). Solo lo aceptado cuenta para la rúbrica. Sin propuestas ni nada recién decidido, no se pinta.
+ * «Deshacer» (vuelve a propuesta). Solo lo aceptado cuenta para la rúbrica y, desde OL-445, se publica en su perfil («Reconocimientos y obra»,
+ * salvo redes); deshacer o rechazar lo retira. Sin propuestas ni nada recién decidido, no se pinta.
  */
 export default function PorRevisar({ propuestas, slug }: { propuestas: Propuesta[]; slug: string }) {
   const [hechas, setHechas] = useState<Record<string, Hecha>>({});
@@ -44,7 +45,7 @@ export default function PorRevisar({ propuestas, slug }: { propuestas: Propuesta
       <h2 className={`${admin.grupo} ${admin.conNota}`}>
         Por revisar {quedan > 0 && <b>{quedan}</b>}
       </h2>
-      <p className={admin.nota}>Lo que trajo la rutina. Solo cuenta lo que aceptas.</p>
+      <p className={admin.nota}>Lo que trajo la rutina. Lo que aceptas cuenta para la rúbrica y se publica en su perfil.</p>
       <ul className={admin.pendientes}>
         {lista.map((p) => {
           const hecha = hechas[p.id];
@@ -55,6 +56,7 @@ export default function PorRevisar({ propuestas, slug }: { propuestas: Propuesta
                   <IconoOk width={20} height={20} />
                   <span>
                     {hecha.como === "aceptada" ? "Aceptaste" : "Rechazaste"} <b>{p.titulo}</b>
+                    {hecha.como === "aceptada" && p.tipo !== "redes" && " · ya está en su perfil"}
                   </span>
                   <button type="button" className={admin.enlace} disabled={enCamino} onClick={() => deshacer(p)}>
                     Deshacer

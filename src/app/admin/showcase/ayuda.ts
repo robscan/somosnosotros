@@ -47,8 +47,8 @@ export const AYUDA_SHOWCASE: DiccionarioAyuda = {
   },
   evidencias: {
     titulo: "Evidencias",
-    texto: "Lo que sostiene un puntaje, siempre con su enlace. Lo que trae la rutina llega propuesto: solo cuenta lo que aceptas.",
-    detalle: "Una evidencia que añades a mano ya cuenta (la leíste tú). Sin una dirección http o https no hay evidencia.",
+    texto: "Lo que sostiene un puntaje, siempre con su enlace. Lo que trae la rutina llega propuesto: solo cuenta lo que aceptas, y lo aceptado (salvo redes) se publica en su perfil, su presentación en PDF y su «Tu año».",
+    detalle: "Una evidencia que añades a mano ya cuenta y se publica (la leíste tú). Rechazarla o deshacerla la retira de su perfil. Sin una dirección http o https no hay evidencia.",
     manual: "evidencias",
   },
   investigar: {
@@ -90,5 +90,5 @@ export const SECCIONES_MANUAL = [
 export const REGLAS_GOBIERNO = [
   "Solo administración: el showcase no se ve ni se cambia desde ninguna otra cuenta.",
   "Las notas del consejo y los puntajes son privados: nunca salen de Administración (el CSV para el consejo se descarga desde aquí).",
-  "Nada se publica sobre un artista sin su consentimiento: ninguna ficha pública lee el showcase.",
+  "Lo que aceptas (premios, becas, obra, presentaciones y prensa) se publica en su perfil como «Reconocimientos y obra»; lo propuesto, lo rechazado, los puntajes y las notas nunca salen de aquí.",
 ] as const;
