@@ -150,10 +150,12 @@
 .chips::-webkit-scrollbar {
   display: none;
 }
-/* En una hoja los chips no se deslizan: pasan al renglón de abajo. */
+/* En una hoja los chips no se deslizan: pasan al renglón de abajo. Entre renglones, 12 (OL-446, firmado en OL-443): con 8, el toque de 44 de
+   un chip de 36 pisaba el del renglón de abajo y cada uno medía 43. */
 .envuelve {
   flex-wrap: wrap;
   overflow: visible;
+  row-gap: var(--espacio-3);
 }
 
 /* El campo nativo va encima del chip, invisible y del mismo tamaño: el toque lo recibe él. */

@@ -191,9 +191,10 @@
     "s35-admin-corridas": { "nodos": [89, 89, 123, 123], "profundidad": [8, 8, 8, 8] },
     "s35a-admin-ciudad-panel": { "nodos": [69, 69, 103, 103], "profundidad": [8, 8, 8, 8] },
     "s35b-admin-ciudad-hoja": { "nodos": [93, 93, 127, 127], "profundidad": [8, 8, 8, 8] },
-    "s36-admin-showcase": { "nodos": [294, 294, 328, 328], "profundidad": [8, 8, 8, 8] },
-    "s37-admin-showcase-tabla": { "nodos": [240, 240, 274, 274], "profundidad": [9, 9, 9, 9] },
-    "s38-admin-showcase-ficha": { "nodos": [194, 194, 228, 232], "profundidad": [8, 8, 8, 8] },
-    "s39-admin-showcase-manual": { "nodos": [83, 83, 117, 117], "profundidad": [7, 7, 7, 7] }
+    "s36-admin-showcase": { "nodos": [310, 310, 344, 344], "profundidad": [8, 8, 8, 8] },
+    "s37-admin-showcase-tabla": { "nodos": [250, 250, 284, 284], "profundidad": [9, 9, 9, 9] },
+    "s38-admin-showcase-ficha": { "nodos": [202, 202, 236, 240], "profundidad": [8, 8, 8, 8] },
+    "s39-admin-showcase-manual": { "nodos": [83, 83, 117, 117], "profundidad": [7, 7, 7, 7] },
+    "s40-admin-showcase-por-aprobar": { "nodos": [74, 74, 108, 108], "profundidad": [8, 8, 8, 8] }
   }
 }

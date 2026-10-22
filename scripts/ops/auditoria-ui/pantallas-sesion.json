@@ -39,5 +39,6 @@
   { "id": "s36-admin-showcase", "plantilla": "tarea", "url": "/admin/showcase", "cuenta": "admin" },
   { "id": "s37-admin-showcase-tabla", "plantilla": "tarea", "url": "/admin/showcase?vista=tabla", "cuenta": "admin" },
   { "id": "s38-admin-showcase-ficha", "plantilla": "tarea", "url": "/admin/showcase/feleal", "cuenta": "admin" },
-  { "id": "s39-admin-showcase-manual", "plantilla": "tarea", "url": "/admin/showcase/manual", "cuenta": "admin" }
+  { "id": "s39-admin-showcase-manual", "plantilla": "tarea", "url": "/admin/showcase/manual", "cuenta": "admin" },
+  { "id": "s40-admin-showcase-por-aprobar", "plantilla": "tarea", "url": "/admin/showcase/por-aprobar", "cuenta": "admin" }
 ]

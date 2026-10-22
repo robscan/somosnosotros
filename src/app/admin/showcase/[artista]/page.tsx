@@ -4,7 +4,7 @@ import Barra from "@/components/ui/Barra";
 import { IconoCalendario, IconoChevronDerecha, IconoEtiqueta, IconoPin } from "@/components/ui/Iconos";
 import Imagen from "@/components/ui/Imagen";
 import plantilla from "@/components/ui/Plantilla.module.css";
-import { etiquetaDisciplina } from "@/lib/artistas";
+import { etiquetaDisciplina, hrefArtista } from "@/lib/artistas";
 import { diaLocal } from "@/lib/fechas";
 import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import { unir } from "@/lib/panel";
@@ -41,7 +41,8 @@ import CompletarFicha from "./CompletarFicha";
 import EstadoFicha from "./EstadoFicha";
 import InvestigarFicha from "./InvestigarFicha";
 import NotasFicha from "./NotasFicha";
-import PorRevisar from "./PorRevisar";
+import AvisoPorRevisar from "./AvisoPorRevisar";
+import Hallazgos from "../Hallazgos";
 import RedesFicha from "./RedesFicha";
 import SenalFicha from "./SenalFicha";
 import admin from "../../admin.module.css";
@@ -105,7 +106,14 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
     valor: valores[x.clave],
     evidencias: f.evidencias.filter((e) => e.senal === x.clave && e.estado !== "propuesta").map((e) => ({ ...e, detalle: detalleEvidencia(e, hoy) })),
   }));
-  const propuestas = f.evidencias.filter((e) => e.estado === "propuesta").map((e) => ({ ...e, detalle: detallePropuesta(e, hoy), dominio: new URL(e.url).hostname.replace(/^www\./, "") }));
+  // OL-446: lo que trajo la rutina, con lo que cambia al aceptar cada una (el mismo componente que «Por aprobar»).
+  const propuestas = f.evidencias.filter((e) => e.estado === "propuesta").map((e) => ({ ...e, detalle: detallePropuesta(e, hoy), fuenteTexto: e.fuente || new URL(e.url).hostname.replace(/^www\./, "") }));
+  const grupo = {
+    artista: { id: a.id, slug: a.slug, nombre: a.nombre, foto: a.foto, href: `${RUTA_SHOWCASE}/${a.slug}`, disciplina: etiquetaDisciplina(a.disciplina), estado: estado.titulo },
+    valores,
+    obraAceptada: f.evidencias.filter((e) => e.senal === "obra" && e.estado === "aceptada"),
+    hallazgos: propuestas,
+  };
   const base = renglonesBase(f.eventos, new Map(f.lugares.map((l) => [l.id, l])), new Map([...f.festivales, ...f.eventos.filter((e) => e.clase === "festival")].map((e) => [e.id, e])), a.slug, ahora, diaDe);
   // OL-445: lo que trajeron las rutinas y su ficha pública no tiene.
   const sugerencias = sugerenciasCompletar({ ...f.completar, evidencias: f.evidencias });
@@ -119,9 +127,16 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
       {barra}
       <header className={admin.cabecera}>
         <Imagen src={a.foto ?? SIN_FOTO_REDONDA} alt="" className={admin.avatar} width={144} height={144} sizes="144px" loading="eager" />
-        <h1>{a.nombre}</h1>
+        <h1>
+          {/* OL-446: el nombre lleva a su ficha pública (chevron derecho: entra a otra pantalla). */}
+          <Link href={hrefArtista({ id: a.id, slug: a.slug })} className={s.publica}>
+            {a.nombre}
+            <IconoChevronDerecha width={24} height={24} />
+          </Link>
+        </h1>
         <small>{unir([etiquetaDisciplina(a.disciplina), a.ciudad, f.reclamada && "ficha reclamada"])}</small>
       </header>
+      {propuestas.length > 0 && <AvisoPorRevisar n={propuestas.length} />}
 
       <h2 className={admin.grupo}>Estado</h2>
       <EstadoFicha artistaId={a.id} slug={a.slug} nombre={a.nombre} estado={f.estado} titulo={estado.titulo} detalle={estado.detalle} opciones={opciones} />
@@ -148,7 +163,7 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
         credito={lineaCreditoInvestigar(inv.credito, hoy)}
       />
 
-      <PorRevisar propuestas={propuestas} slug={a.slug} />
+      <Hallazgos grupos={[grupo]} hoy={hoy} modo="ficha" />
 
       <CompletarFicha artistaId={a.id} slug={a.slug} sugerencias={sugerencias} reclamada={f.reclamada} />
 

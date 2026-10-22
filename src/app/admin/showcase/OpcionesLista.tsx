@@ -5,27 +5,25 @@ import { useState } from "react";
 import { Chip, Chips } from "@/components/ui/Chip";
 import Hoja from "@/components/ui/Hoja";
 import { IconoCaret, IconoDocumento, IconoFiltros, IconoOk, IconoPersonas } from "@/components/ui/Iconos";
-import { ESTADOS, hrefShowcase, ORDENES, type Estado, type Vista } from "@/lib/showcase";
+import { hrefShowcase, ORDENES, type Vista } from "@/lib/showcase";
+import { filtrosDe, nPuestos, type Grupo, type Hechos } from "@/lib/showcaseFiltros";
+import { HojaFiltrosShowcase } from "./FiltrosShowcase";
 import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
 type Opcion = { valor: string; etiqueta: string; detalle: string };
-type Que = "estado" | "orden" | "vista";
+type Que = "orden" | "vista";
 
 /**
- * Estado, Orden y Vista de la lista de candidatos (lo firmado en OL-425): tres chips de contexto que abren su hoja; elegir una opción la cierra y
- * reemplaza la URL (filtrar no es navegar: no se apila en el historial y Atrás no la repite). «Puntaje» es el orden por defecto.
+ * Filtros, Orden y Vista de la lista de candidatos (lo firmado en OL-425; OL-446: Estado entra a la hoja Filtros, firmada en OL-443): tres chips
+ * de contexto que abren su hoja; elegir una opción la cierra y reemplaza la URL (filtrar no es navegar: no se apila en el historial y Atrás no la
+ * repite). «Puntaje» es el orden por defecto. Filtros dice cuántos hay puestos.
  */
-export default function OpcionesLista({ vista, conteos }: { vista: Vista; conteos: Record<Estado | "todos", number> }) {
+export default function OpcionesLista({ vista, hechos, grupos, hoy }: { vista: Vista; hechos: Hechos[]; grupos: Grupo[]; hoy: string }) {
   const router = useRouter();
-  const [hoja, setHoja] = useState<Que | null>(null);
-  const plural = (n: number) => `${n} ${n === 1 ? "artista" : "artistas"}`;
+  const [hoja, setHoja] = useState<Que | "filtros" | null>(null);
+  const puestos = nPuestos(filtrosDe(vista));
   const OPCIONES: Record<Que, { titulo: string; actual: string; opciones: Opcion[] }> = {
-    estado: {
-      titulo: "Ver por estado",
-      actual: vista.estado,
-      opciones: [{ valor: "todos", etiqueta: "Todos", detalle: `${conteos.todos} ${conteos.todos === 1 ? "candidato" : "candidatos"}` }, ...ESTADOS.map((e) => ({ valor: e.valor, etiqueta: e.etiqueta, detalle: plural(conteos[e.valor]) }))],
-    },
     orden: { titulo: "Ordenar por", actual: vista.orden, opciones: ORDENES.map((o) => ({ ...o })) },
     vista: {
       titulo: "Ver como",
@@ -38,17 +36,16 @@ export default function OpcionesLista({ vista, conteos }: { vista: Vista; conteo
   };
   function elegir(que: Que, valor: string) {
     setHoja(null);
-    const cambio: Partial<Vista> = que === "estado" ? { estado: valor as Vista["estado"] } : que === "orden" ? { orden: valor as Vista["orden"] } : { tabla: valor === "tabla" };
+    const cambio: Partial<Vista> = que === "orden" ? { orden: valor as Vista["orden"] } : { tabla: valor === "tabla" };
     router.replace(hrefShowcase({ ...vista, n: undefined, ...cambio }), { scroll: false });
   }
-  const nombreEstado = OPCIONES.estado.opciones.find((o) => o.valor === vista.estado)!.etiqueta;
   const nombreOrden = ORDENES.find((o) => o.valor === vista.orden)!.etiqueta;
-  const abierta = hoja ? OPCIONES[hoja] : null;
+  const abierta = hoja && hoja !== "filtros" ? OPCIONES[hoja] : null;
   return (
     <>
-      <Chips ariaLabel="Estado, orden y vista">
-        <Chip variante="contexto" activo={vista.estado !== "todos"} icono={<IconoFiltros width={18} height={18} />} fin={<IconoCaret width={16} height={16} />} onClick={() => setHoja("estado")}>
-          Estado: {nombreEstado}
+      <Chips ariaLabel="Filtros, orden y vista">
+        <Chip variante="contexto" activo={puestos > 0} cuenta={puestos} icono={<IconoFiltros width={18} height={18} />} fin={<IconoCaret width={16} height={16} />} onClick={() => setHoja("filtros")}>
+          Filtros
         </Chip>
         <Chip variante="contexto" activo={vista.orden !== "puntaje"} icono={<IconoFiltros width={18} height={18} />} fin={<IconoCaret width={16} height={16} />} onClick={() => setHoja("orden")}>
           Orden: {nombreOrden}
@@ -57,7 +54,8 @@ export default function OpcionesLista({ vista, conteos }: { vista: Vista; conteo
           Vista: {vista.tabla ? "tabla" : "tarjetas"}
         </Chip>
       </Chips>
-      {hoja && abierta && (
+      {hoja === "filtros" && <HojaFiltrosShowcase vista={vista} hechos={hechos} grupos={grupos} hoy={hoy} onCerrar={() => setHoja(null)} />}
+      {hoja && hoja !== "filtros" && abierta && (
         <Hoja etiqueta={abierta.titulo} titulo={abierta.titulo} onCerrar={() => setHoja(null)}>
           <ul className={`${admin.menu} ${s.menu}`}>
             {abierta.opciones.map((o) => {

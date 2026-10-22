@@ -19,6 +19,7 @@ import {
   type CorridaLista,
   type Estado,
   type Evidencia,
+  type EvidenciaBreve,
   type FilaArtista,
   type FilaCandidato,
   type FilaEvento,
@@ -29,6 +30,7 @@ import {
   type Lectura,
   type Puntajes,
 } from "@/lib/showcase";
+import { leerFiltros, type Grupo } from "@/lib/showcaseFiltros";
 import { clienteServidor, type ClienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -89,7 +91,7 @@ export async function cargarCandidatos(ahora: Date): Promise<Candidato[] | null>
     if (!db) return null;
     const { desde, hasta } = anioDe(ahora);
     const [artistas, candidatos, lecturas, eventos, eventos_artistas, lugares, cuentas, novedades, evidencias] = await Promise.all([
-      leerTodo<FilaArtista>((d, h) => db.from("artistas").select("id, slug, nombre, disciplina, ciudad, foto, portada, redes").eq("visible", true).order("id").range(d, h)),
+      leerTodo<FilaArtista>((d, h) => db.from("artistas").select("id, slug, nombre, disciplina, ciudad, foto, portada, redes, tipo").eq("visible", true).order("id").range(d, h)),
       leerTodo<FilaCandidato>((d, h) => db.from("showcase_candidatos").select("artista_id, estado, puntaje_circulacion, puntaje_obra, puntaje_actividad, puntaje_vinculo, notas").order("artista_id").range(d, h)),
       leerTodo<FilaLectura>((d, h) => db.from("lecturas_redes").select("artista_id, red, seguidores, publicaciones, ultima_publicacion, leido_en").order("id").range(d, h)),
       leerTodo<FilaEvento>((d, h) => eventosDelAnio(db, desde, hasta).order("id").range(d, h)),
@@ -289,8 +291,11 @@ export async function cargarInvestigacion(artistaId: string, ahora: Date): Promi
   }
 }
 
-/** Lo que la lista sabe de las investigaciones (OL-439): las corridas `showcase` recientes, las evidencias de la rutina por revisar de cada artista y el crédito. */
-export type Investigaciones = { corridas: CorridaLista[]; porRevisar: Record<string, number>; credito: Credito | null };
+/**
+ * Lo que la lista sabe de las investigaciones (OL-439): las corridas `showcase` recientes, las evidencias de la rutina por revisar de cada artista y
+ * el crédito. OL-446: `terminadas`, el fin de la última investigación terminada de cada artista, de siempre (para el filtro «Investigación»).
+ */
+export type Investigaciones = { corridas: CorridaLista[]; porRevisar: Record<string, number>; credito: Credito | null; terminadas?: Record<string, string> };
 /** Cuánto atrás lee la lista: lo que cuenta para «investigado hace poco» (30 días) y lo que dice cada tarjeta, con holgura. */
 const DIAS_LISTA = 90;
 
@@ -303,11 +308,12 @@ export async function cargarInvestigaciones(ahora: Date): Promise<Investigacione
     const db = await clienteServidor();
     if (!db) return null;
     const desde = new Date(ahora.getTime() - DIAS_LISTA * 86_400_000).toISOString();
-    const [corridas, evidencias, enCurso, credito] = await Promise.all([
+    const [corridas, evidencias, enCurso, credito, terminadas] = await Promise.all([
       leerTodo<Record<string, unknown>>((d, h) => db.from("rutinas_corridas").select(`${COLUMNAS_CORRIDA}, parametros`).eq("tipo", "showcase").gte("creado_en", desde).order("creado_en", { ascending: false }).order("id").range(d, h)),
       leerTodo<{ artista_id: string }>((d, h) => db.from("showcase_evidencias").select("artista_id").eq("estado", "propuesta").eq("leida_por", "rutina").order("id").range(d, h)),
       db.from("rutinas_corridas").select("id, estado, resumen, creado_en, inicio").in("estado", ["pendiente", "corriendo"]).limit(1000),
       cargarCredito(db),
+      leerTodo<{ parametros: unknown; fin: string | null; creado_en: string }>((d, h) => db.from("rutinas_corridas").select("parametros, fin, creado_en").eq("tipo", "showcase").eq("estado", "terminada").order("id").range(d, h)),
     ]);
     if (enCurso.error) throw new Error(enCurso.error.message);
     const lista = corridas.flatMap((f): CorridaLista[] => {
@@ -319,9 +325,68 @@ export async function cargarInvestigaciones(ahora: Date): Promise<Investigacione
     const porRevisar: Record<string, number> = {};
     for (const e of evidencias) porRevisar[e.artista_id] = (porRevisar[e.artista_id] ?? 0) + 1;
     await pedirPasoSiParo(db, ahora, (enCurso.data ?? []) as CorridaVista[]);
-    return { corridas: lista, porRevisar, credito };
+    // La última terminada de cada artista (por su fin; si no lo tiene, su alta).
+    const ultimas: Record<string, string> = {};
+    for (const t of terminadas) {
+      const id = t.parametros && typeof t.parametros === "object" ? (t.parametros as Record<string, unknown>).artista_id : null;
+      const fin = t.fin ?? t.creado_en;
+      if (typeof id === "string" && (!ultimas[id] || fin > ultimas[id])) ultimas[id] = fin;
+    }
+    return { corridas: lista, porRevisar, credito, terminadas: ultimas };
   } catch (error) {
     console.error("showcase investigaciones:", error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+// ---------- «Por aprobar» y los grupos (OL-446) ----------
+/** Un hallazgo por aprobar: la evidencia propuesta con su artista. */
+export type Hallazgo = Evidencia & { artista_id: string };
+/**
+ * «Por aprobar»: todas las evidencias propuestas (de todos los artistas) y, de esos artistas, las de obra ya aceptadas (para decir qué cambia al
+ * aceptar). null si no se pudo leer.
+ */
+export async function cargarPorAprobar(): Promise<{ hallazgos: Hallazgo[]; obraAceptada: Record<string, EvidenciaBreve[]> } | null> {
+  try {
+    const db = await clienteServidor();
+    if (!db) return null;
+    const hallazgos = await leerTodo<Hallazgo>((d, h) =>
+      db.from("showcase_evidencias").select("id, artista_id, senal, tipo, titulo, url, fecha, fuente, leida_por, estado, creado_en").eq("estado", "propuesta").order("creado_en", { ascending: true }).order("id").range(d, h),
+    );
+    const ids = [...new Set(hallazgos.map((x) => x.artista_id))];
+    const aceptadas = ids.length
+      ? await enTandas<FilaEvidencia>(ids, (t) => db.from("showcase_evidencias").select("artista_id, senal, tipo, titulo, fecha, estado").eq("senal", "obra").eq("estado", "aceptada").in("artista_id", t).limit(5000))
+      : [];
+    const obraAceptada: Record<string, EvidenciaBreve[]> = {};
+    for (const e of aceptadas) (obraAceptada[e.artista_id] ??= []).push({ senal: e.senal, tipo: e.tipo, titulo: e.titulo, fecha: e.fecha, estado: e.estado });
+    return { hallazgos, obraAceptada };
+  } catch (error) {
+    console.error("showcase por aprobar:", error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/** Lo que dice el renglón de «Pendiente» en la portada: cuántas evidencias por aprobar, de cuántos artistas y la más reciente; null si falló. */
+export async function cargarResumenPorAprobar(): Promise<{ n: number; artistas: number; ultima: string | null } | null> {
+  try {
+    const db = await clienteServidor();
+    if (!db) return null;
+    const filas = await leerTodo<{ artista_id: string; creado_en: string }>((d, h) => db.from("showcase_evidencias").select("artista_id, creado_en").eq("estado", "propuesta").order("id").range(d, h));
+    return { n: filas.length, artistas: new Set(filas.map((f) => f.artista_id)).size, ultima: filas.reduce<string | null>((m, f) => (!m || f.creado_en > m ? f.creado_en : m), null) };
+  } catch {
+    return null;
+  }
+}
+
+/** Los grupos guardados, del más viejo al más nuevo, con sus filtros ya leídos; null si no se pudieron leer (la hoja sigue sin «Tus grupos»). */
+export async function cargarGrupos(): Promise<Grupo[] | null> {
+  try {
+    const db = await clienteServidor();
+    if (!db) return null;
+    const { data, error } = await db.from("showcase_grupos").select("id, nombre, filtros, creado_en").order("creado_en", { ascending: true }).limit(200);
+    if (error) return null;
+    return ((data ?? []) as { id: string; nombre: string; filtros: unknown }[]).map((g) => ({ id: g.id, nombre: g.nombre, filtros: leerFiltros(g.filtros as Record<string, unknown>) }));
+  } catch {
     return null;
   }
 }

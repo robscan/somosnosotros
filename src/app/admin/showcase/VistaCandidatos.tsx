@@ -2,20 +2,22 @@ import Link from "next/link";
 import Boton, { claseBoton } from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
 import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
-import Imagen from "@/components/ui/Imagen";
-import { IconoBuscar, IconoCalendario, IconoDescarga, IconoEstrella, IconoInstagram } from "@/components/ui/Iconos";
-import { etiquetaDisciplina, hrefArtista } from "@/lib/artistas";
+import { IconoChevronDerecha, IconoDescarga, IconoPendiente } from "@/components/ui/Iconos";
+import renglon from "@/components/ui/Renglon.module.css";
+import { etiquetaDisciplina } from "@/lib/artistas";
 import { diaLocal } from "@/lib/fechas";
-import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import {
-  actividadDe,
   chipsDisciplina,
   consultaDe,
   conteosEstado,
-  diasEntre,
+  cuandoFue,
+  estadosInvestigacion,
   filtrarCandidatos,
   haceDias,
+  diasEntre,
+  hechosDe,
   hrefFicha,
+  hrefPorAprobar,
   hrefShowcase,
   investigacionEnCurso,
   LIMITE_LOTE,
@@ -30,45 +32,71 @@ import {
   seleccionLote,
   SENALES,
   textoInvestigarTarjeta,
-  textoProgramadoPor,
   ultimasInvestigaciones,
   type Candidato,
+  type ContextoFiltro,
   type Vista,
 } from "@/lib/showcase";
+import { filtrosDe, nPuestos, type Grupo } from "@/lib/showcaseFiltros";
 import type { Investigaciones } from "./consultas";
+import { FiltrosPuestos } from "./FiltrosShowcase";
 import InvestigarLote from "./InvestigarLote";
+import ListaSeleccionable from "./ListaSeleccionable";
 import OpcionesLista from "./OpcionesLista";
-import { IconoRed, PildoraEstado, PuntajeTabla, Rubrica } from "./Piezas";
+import { PildoraEstado, PuntajeTabla } from "./Piezas";
 import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
-/** La píldora de actividad: verde cada semana, naranja cada mes, gris si no publica. */
-const CLASE_ACTIVIDAD = { semana: s.ok, mes: admin.destacada, inactivo: "" } as const;
-
 /**
- * Showcase › Candidatos (OL-426, lo firmado en OL-425): buscador con ✕, chips de disciplina con su cuenta, las hojas de Estado, Orden y Vista, la
- * línea de cifras y una tarjeta (o una fila de la tabla) por artista visible del catálogo. La búsqueda, los filtros, el orden, la vista y la página
- * viven en la URL: se comparten y sobreviven al volver de una ficha (memoria de pantalla). Sin datos propios: recibe la lista ya leída, así la
- * prueban los componentes sin servidor. Va como hijos directos de la página (maquetación plana).
+ * Showcase › Candidatos (OL-426, lo firmado en OL-425): buscador con ✕, las hojas de Filtros, Orden y Vista, los chips de disciplina con su cuenta,
+ * la línea de cifras y una tarjeta (o una fila de la tabla) por artista visible del catálogo. La búsqueda, los filtros, el orden, la vista y la
+ * página viven en la URL: se comparten y sobreviven al volver de una ficha (memoria de pantalla). Sin datos propios: recibe la lista ya leída, así
+ * la prueban los componentes sin servidor. Va como hijos directos de la página (maquetación plana).
  * OL-439: bajo la línea de cifras, el renglón «Investigar» (a varios, `InvestigarLote`) y, en cada tarjeta, cómo va su investigación o cuántas
  * evidencias deja por revisar. Sin `investigaciones` (las pruebas de antes) no hay corridas ni evidencias; con null (no se pudieron leer), sin renglón.
+ * OL-446 (lo firmado en OL-443): la hoja Filtros con sus cuentas y los grupos guardados (`FiltrosShowcase`); la fila de disciplinas se queda a la
+ * vista (respuesta 1) y Estado entra a la hoja; lo puesto con su ✕; «Por aprobar» antes de «Investigar»; el indicador tocable en cada tarjeta; y
+ * «Seleccionar» para investigar a los elegidos (`ListaSeleccionable`).
  */
 const SIN_INVESTIGACIONES: Investigaciones = { corridas: [], porRevisar: {}, credito: null };
 const diaDe = (iso: string) => diaLocal(new Date(iso));
+const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
-export default function VistaCandidatos({ todos, vista, hoy, ahora, investigaciones = SIN_INVESTIGACIONES }: { todos: Candidato[]; vista: Vista; hoy: string; ahora?: string; investigaciones?: Investigaciones | null }) {
-  const filtrados = ordenarCandidatos(filtrarCandidatos(todos, vista), vista.orden);
+export default function VistaCandidatos({
+  todos,
+  vista,
+  hoy,
+  ahora,
+  investigaciones = SIN_INVESTIGACIONES,
+  grupos = null,
+}: {
+  todos: Candidato[];
+  vista: Vista;
+  hoy: string;
+  ahora?: string;
+  investigaciones?: Investigaciones | null;
+  /** Los grupos guardados (OL-446); null si no se pudieron leer: la hoja sigue sin «Tus grupos» ni «Guardar como grupo». */
+  grupos?: Grupo[] | null;
+}) {
+  const instante = ahora ? new Date(ahora) : new Date(`${hoy}T12:00:00`);
+  const inv = investigaciones ?? SIN_INVESTIGACIONES;
+  const ctx: ContextoFiltro = { hoy, investigacion: investigaciones ? estadosInvestigacion(inv.corridas, inv.terminadas ?? {}, instante) : null, porRevisar: inv.porRevisar };
+  const filtrados = ordenarCandidatos(filtrarCandidatos(todos, vista, ctx), vista.orden);
   const visibles = filtrados.slice(0, vista.n);
   const conteos = conteosEstado(todos);
-  const filtrando = !!vista.q || vista.disciplina !== "todas" || vista.estado !== "todos";
+  const filtrando = !!vista.q || nPuestos(filtrosDe(vista)) > 0;
   const sinPagina = { ...vista, n: undefined };
   // El CSV es la lista filtrada entera, en su orden: sin la página ni la vista.
   const consultaCsv = consultaDe({ ...sinPagina, tabla: false });
-  const inv = investigaciones ?? SIN_INVESTIGACIONES;
   const ultimas = ultimasInvestigaciones(inv.corridas);
+  const hechos = todos.map((c) => hechosDe(c, ctx));
+  const pasan = pasanAlConsejo(filtrando ? filtrados : todos);
+  const resumen = resumenLote(inv.corridas, inv.porRevisar);
+  const loteEnCurso = resumen && resumen.enCurso > 0 ? resumen : null;
   return (
     <>
       <Buscador valor={vista.q ?? ""} placeholder="Buscar artista" ariaLabel="Buscar artista del showcase" />
+      <OpcionesLista vista={vista} hechos={hechos} grupos={grupos ?? []} hoy={hoy} />
       <Chips ariaLabel="Filtrar por disciplina">
         {chipsDisciplina(todos).map((d) => (
           <Chip key={d.valor} activo={vista.disciplina === d.valor} href={hrefShowcase({ ...sinPagina, disciplina: d.valor })}>
@@ -77,35 +105,73 @@ export default function VistaCandidatos({ todos, vista, hoy, ahora, investigacio
           </Chip>
         ))}
       </Chips>
-      <OpcionesLista vista={vista} conteos={conteos} />
-      <p className={admin.nota} role="status">
-        {lineaCifras(todos.length, conteos, filtrando ? filtrados.length : null, pasanAlConsejo(todos))}
-      </p>
-      {investigaciones && <RenglonInvestigar todos={todos} filtrados={filtrados} filtrando={filtrando} inv={investigaciones} hoy={hoy} ahora={ahora ? new Date(ahora) : new Date(`${hoy}T12:00:00`)} />}
-      {!filtrados.length ? (
-        <p className={admin.vacio}>{vista.q ? `Nadie con «${vista.q}» aquí.` : "Nadie con este filtro."}</p>
-      ) : vista.tabla ? (
-        <TablaCandidatos lista={visibles} orden={vista.orden} hoy={hoy} />
-      ) : (
-        <ul className={s.tarjetas} aria-label="Candidatos">
-          {visibles.map((c) => (
-            <TarjetaCandidato key={c.id} c={c} hoy={hoy} investigacion={textoInvestigarTarjeta(ultimas.get(c.id), inv.porRevisar[c.id] ?? 0, hoy, diaDe)} porRevisar={(inv.porRevisar[c.id] ?? 0) > 0} />
-          ))}
-        </ul>
-      )}
-      {filtrados.length > visibles.length && (
-        <Boton href={hrefShowcase({ ...vista, n: vista.n + paginaDe(vista.tabla) })} variante="secundario" className={admin.verMas} scroll={false} replace>
-          Ver más ({filtrados.length - visibles.length} más)
-        </Boton>
-      )}
-      {filtrados.length > 0 && (
-        // Una descarga, no una pantalla: un enlace de siempre (sin el Link de Next) con la lista filtrada, sin la página.
-        <a className={`${claseBoton({ variante: "secundario" })} ${s.exportar}`} href={`/api/showcase/csv${consultaCsv ? `?${consultaCsv}` : ""}`} download>
-          <IconoDescarga width={20} height={20} />
-          Exportar para el consejo (CSV)
-        </a>
-      )}
+      <FiltrosPuestos vista={vista} grupos={grupos} hechos={hechos} hoy={hoy} />
+      <ListaSeleccionable
+        cifras={lineaCifras(todos.length, conteos, filtrando ? filtrados.length : null, pasan)}
+        seleccionable={!vista.tabla && filtrados.length > 0}
+        tarjetas={visibles.map((c) => ({ c, investigacion: textoInvestigarTarjeta(ultimas.get(c.id), inv.porRevisar[c.id] ?? 0, hoy, diaDe), porRevisar: inv.porRevisar[c.id] ?? 0 }))}
+        elegibles={filtrados.map((c) => ({ id: c.id, nombre: c.nombre }))}
+        filtrando={filtrando}
+        hoy={hoy}
+        renglones={
+          investigaciones && (
+            <>
+              <RenglonPorAprobar inv={investigaciones} hoy={hoy} />
+              <RenglonInvestigar todos={todos} filtrados={filtrados} filtrando={filtrando} inv={investigaciones} hoy={hoy} ahora={instante} />
+            </>
+          )
+        }
+        enLugar={!filtrados.length ? <p className={admin.vacio}>{vista.q ? `Nadie con «${vista.q}» aquí.` : "Nadie con estos filtros. Quita uno de arriba."}</p> : vista.tabla ? <TablaCandidatos lista={visibles} orden={vista.orden} hoy={hoy} /> : null}
+        verMas={
+          filtrados.length > visibles.length && (
+            <Boton href={hrefShowcase({ ...vista, n: vista.n + paginaDe(vista.tabla) })} variante="secundario" className={admin.verMas} scroll={false} replace>
+              Ver más ({filtrados.length - visibles.length} más)
+            </Boton>
+          )
+        }
+        exportar={
+          filtrados.length > 0 && (
+            // Una descarga, no una pantalla: un enlace de siempre (sin el Link de Next) con la lista filtrada, sin la página.
+            <a className={`${claseBoton({ variante: "secundario" })} ${s.exportar}`} href={`/api/showcase/csv${consultaCsv ? `?${consultaCsv}` : ""}`} download>
+              <IconoDescarga width={20} height={20} />
+              Exportar para el consejo (CSV)
+            </a>
+          )
+        }
+        lote={loteEnCurso ? lineaLote(loteEnCurso, hoy, diaDe) : null}
+        disponible={inv.credito ? Math.max(0, inv.credito.usd - inv.credito.gastado) : null}
+      />
     </>
+  );
+}
+
+/**
+ * «Por aprobar» en la lista (OL-446): cuántas evidencias trajo la rutina y de cuántos artistas, con su cuenta y el chevron derecho (entra a otra
+ * pantalla). Sin nada por aprobar no se pinta.
+ */
+function RenglonPorAprobar({ inv, hoy }: { inv: Investigaciones; hoy: string }) {
+  const ids = Object.keys(inv.porRevisar).filter((id) => inv.porRevisar[id] > 0);
+  const n = ids.reduce((t, id) => t + inv.porRevisar[id], 0);
+  if (!n) return null;
+  const ultimas = ultimasInvestigaciones(inv.corridas);
+  const fin = ids.map((id) => ultimas.get(id)?.fin).reduce<string | null>((m, f) => (f && (!m || f > m) ? f : m), null);
+  return (
+    <ul className={`${renglon.tarjeta} ${s.aprobar}`}>
+      <li>
+        <Link href={hrefPorAprobar()} className={admin.fila}>
+          <IconoPendiente width={20} height={20} />
+          <b>Por aprobar</b>
+          <small>
+            {plural(n, "evidencia", "evidencias")} de {plural(ids.length, "artista", "artistas")}
+            {fin ? ` · las trajo la rutina ${cuandoFue(diaDe(fin), hoy)}` : ""}
+          </small>
+          <span className={admin.total}>
+            <b className={s.cuenta}>{n}</b>
+            <IconoChevronDerecha />
+          </span>
+        </Link>
+      </li>
+    </ul>
   );
 }
 
@@ -131,80 +197,6 @@ function RenglonInvestigar({ todos, filtrados, filtrando, inv, hoy, ahora }: { t
       visibles={{ n: sel.visibles.length, ids: ids(sel.visibles), fueraRecientes: sel.fueraRecientes, fueraDescartados: sel.fueraDescartados, filtrando }}
       disponible={inv.credito ? Math.max(0, inv.credito.usd - inv.credito.gastado) : null}
     />
-  );
-}
-
-/**
- * La tarjeta de un candidato: foto, nombre (abre su ficha de showcase), estado, la base, las redes, la actividad, cómo va su investigación (OL-439),
- * la rúbrica, la nota y los enlaces.
- */
-export function TarjetaCandidato({ c, hoy, investigacion = null, porRevisar = false }: { c: Candidato; hoy: string; investigacion?: string | null; porRevisar?: boolean }) {
-  const actividad = actividadDe(c.redes?.ultima_publicacion ?? null, hoy);
-  const programado = textoProgramadoPor(c.programadoPor);
-  const r = c.redes;
-  return (
-    <li className={s.tarjeta}>
-      <Imagen src={c.foto ?? SIN_FOTO_REDONDA} alt="" className={s.foto} width={56} height={56} sizes="56px" />
-      <Link href={hrefFicha(c)} className={s.nombre}>
-        {c.nombre}
-      </Link>
-      <small className={s.disciplina}>
-        {etiquetaDisciplina(c.disciplina)} · {c.ciudad}
-      </small>
-      <PildoraEstado estado={c.estado} className={s.estado} />
-      <p className={`${s.cifra} ${s.circula}`}>
-        <IconoCalendario width={18} height={18} />
-        <span>
-          <b>{c.eventos}</b> {c.eventos === 1 ? "evento" : "eventos"} · <b>{c.foros}</b> {c.foros === 1 ? "foro" : "foros"} · <b>{c.festivales}</b> {c.festivales === 1 ? "festival" : "festivales"}
-        </span>
-      </p>
-      {r && (
-        <p className={`${s.cifra} ${s.redes}`}>
-          <IconoRed red={r.red} width={18} height={18} />
-          <span>
-            {r.seguidores !== null && (
-              <>
-                <b>{miles(r.seguidores)}</b> seguidores
-              </>
-            )}
-            {r.seguidores !== null && r.publicaciones !== null && " · "}
-            {r.publicaciones !== null && (
-              <>
-                <b>{r.publicaciones}</b> publicaciones
-              </>
-            )}
-            {r.ultima_publicacion && `${r.seguidores !== null || r.publicaciones !== null ? " · " : ""}última ${haceDias(diasEntre(r.ultima_publicacion, hoy))}`}
-          </span>
-        </p>
-      )}
-      {actividad && <span className={[admin.etiqueta, CLASE_ACTIVIDAD[actividad.clave], s.actividad].filter(Boolean).join(" ")}>{actividad.texto}</span>}
-      {investigacion && (
-        // Con evidencias por revisar, en el violeta de las acciones: es a quién entrar.
-        <p className={`${s.cifra} ${s.investiga}`} data-revisar={porRevisar || undefined}>
-          <IconoBuscar width={18} height={18} />
-          <span>{investigacion}</span>
-        </p>
-      )}
-      <Rubrica valores={c.valores} suma={c.suma} />
-      {c.nota && <p className={s.nota}>{c.nota}</p>}
-      {programado && (
-        <p className={s.programa}>
-          Programado por: <b>{programado}</b>
-        </p>
-      )}
-      <p className={s.enlaces}>
-        <Link className={admin.enlace} href={hrefArtista({ id: c.id, slug: c.slug })}>
-          <IconoEstrella width={18} height={18} />
-          Ficha
-        </Link>
-        {c.instagram && (
-          <a className={admin.enlace} href={c.instagram} target="_blank" rel="noopener noreferrer">
-            <IconoInstagram width={18} height={18} />
-            Instagram
-          </a>
-        )}
-      </p>
-    </li>
   );
 }
 

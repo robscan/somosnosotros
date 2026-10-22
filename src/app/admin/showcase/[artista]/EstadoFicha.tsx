@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Hoja from "@/components/ui/Hoja";
-import { IconoBandera, IconoChevronDerecha, IconoOk } from "@/components/ui/Iconos";
+import { IconoBandera, IconoCaret, IconoOk } from "@/components/ui/Iconos";
 import type { Estado } from "@/lib/showcase";
 import { cambiarEstado } from "../acciones";
 import admin from "../../admin.module.css";
@@ -49,7 +49,7 @@ export default function EstadoFicha({ artistaId, slug, nombre, estado, titulo, d
             <b>{titulo}</b>
             <small>{detalle}</small>
             <span className={admin.total}>
-              <IconoChevronDerecha />
+              <IconoCaret width={16} height={16} />
             </span>
           </button>
         </li>
