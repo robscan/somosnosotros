@@ -61,6 +61,10 @@ Administración › Personas (OL-414, bitácora 445): el respaldo contesta `pane
 administración es `cookieDe(ADMIN)`). Con `RESPALDO_PERSONAS=1` suma fotos inventadas (`retratos.example`, que dibuja quien captura), tres cuentas
 más en la lista y lo que Ana dio de alta además de sus eventos (un lugar y un artista a la vista y uno oculto de cada uno); `npm run medir` no lo
 pone. `capturar-persona-publicado.mjs` saca las capturas de la lista, la ficha con la foto grande, el visor y «Lo que publicó».
+«Fichas que administra» (OL-447, bitácora 479): el respaldo contesta `admin_buscar_fichas`, `admin_asignar_ficha` y `admin_quitar_ficha` (solo a
+`ADMIN`); asignar y quitar cambian `lugares_cuentas` y `artistas_cuentas` en memoria, así la ficha vuelve con la lista al día. `capturar-asignar-fichas.mjs`
+recorre la ficha de Lucía (con `RESPALDO_PERSONAS=1`): la hoja vacía, «fe» con resultados, Feleal elegido (lo administra Marcos), asignado, una
+segunda ficha, «Quitar» y lo que queda.
 
 La ceja de la tarjeta de Inicio (OL-422, bitácora 455): con `RESPALDO_NUEVAS=1` el respaldo suma dos festivales viejos con actividades nuevas (siete
 y una), para ver «FESTIVAL · 7 NUEVAS» y «FESTIVAL · 1 NUEVA» en «Nuevos eventos»; `npm run medir` no lo pone. `capturar-ceja-actividades.mjs` saca

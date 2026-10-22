@@ -1,0 +1,57 @@
+/* ==========================================================================
+   Fichas que administra (OL-447): la lista con «Quitar», el renglón «Asignar una ficha» y la hoja de buscar.
+   Todo lo demás es de ui/Renglon, ui/Hoja y la hoja de ciudades (Ciudad.module.css); aquí solo lo que les falta.
+   ========================================================================== */
+
+/* «Quitar» es la píldora del panel (admin.module.css .pildora) en el renglón de lista, que no tiene áreas con nombre: su sitio es la columna de
+   la acción, la segunda. Con el `li` delante, porque `admin.module.css` puede cargar después y su `grid-area: accion` mandaba la píldora a una
+   fila nueva, bajo la ficha (visto en la captura 05 de la bitácora 479). */
+li > .quitar {
+  grid-area: auto;
+}
+
+/* Tras la lista, el renglón «Asignar una ficha» deja su aire; solo, va tras el rótulo del grupo. */
+.asignar {
+  margin-top: var(--espacio-3);
+}
+h2 + .asignar {
+  margin-top: 0;
+}
+
+/* El campo con el borde por dentro, como en «Añadir ciudad» (ciudades.module.css .buscador): llena los 44 de su píldora y se toca entero. */
+.buscador > label {
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--borde);
+}
+.buscador > label:focus-within {
+  box-shadow: inset 0 0 0 1px var(--texto);
+}
+
+/* Los resultados: el renglón de lista de la app (foto, nombre y meta) hecho botón, uno bajo otro con su raya. */
+.halladas {
+  list-style: none;
+}
+.hallada {
+  width: 100%;
+  padding: var(--espacio-3) 0;
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.halladas > li:last-child > .hallada {
+  border-bottom: 0;
+}
+
+/* Ya elegida: el mismo renglón, quieto, dentro de una tarjeta. */
+.elegida {
+  padding: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+/* «La administra Bea»: el dato que decide, en el color del texto y no en el suave. */
+.llevada {
+  color: var(--texto);
+}

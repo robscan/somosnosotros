@@ -723,6 +723,50 @@ Object.assign(rpcs, {
   },
 });
 
+// OL-447: asignar desde la ficha de una persona en Administración una ficha de lugar o de artista. Los contratos de `admin_buscar_fichas`,
+// `admin_asignar_ficha` y `admin_quitar_ficha` (migración 20261022150000) sobre las ligas del respaldo, que asignar y quitar cambian EN MEMORIA
+// (otro arranque empieza limpio) para ver la lista tras el toque. Los permisos reales y el registro se prueban en PostgreSQL
+// (`supabase/tests/pg/admin-asignar-fichas.test.mjs`); aquí solo la cuenta de administración del respaldo puede.
+const sinAcentos = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const LIGAS = { lugar: ["lugares_cuentas", "lugar_id"], artista: ["artistas_cuentas", "artista_id"] };
+Object.assign(rpcs, {
+  admin_buscar_fichas: ({ p_buscar, p_perfil, p_limite = 20 }, t, { sub } = {}) => {
+    const q = sinAcentos(p_buscar);
+    if (sub !== ADMIN || !q) return [];
+    const nombreDe = (id) => personasPanel(t).find((p) => p.id === id)?.nombre ?? null;
+    const fila = (tipo, x, clase, foto) => {
+      const [tabla, col] = LIGAS[tipo];
+      const ligas = t[tabla].filter((c) => c[col] === x.id).sort((a, b) => a.creado_en.localeCompare(b.creado_en));
+      const otras = ligas.filter((c) => c.perfil_id !== p_perfil);
+      return { tipo, id: x.id, nombre: x.nombre, foto, ciudad: x.ciudad ?? "San Luis Potosí", clase, detalle: x.detalle ?? null, visible: x.visible !== false, suya: ligas.some((c) => c.perfil_id === p_perfil), otros: otras[0] ? nombreDe(otras[0].perfil_id) : null, otros_n: otras.length };
+    };
+    const todas = [
+      ...t.lugares.filter((l) => !l.privado).map((l) => fila("lugar", l, l.tipo, l.portada ?? null)),
+      ...t.artistas.map((a) => fila("artista", a, a.disciplina, a.foto ?? null)),
+    ].filter((f) => sinAcentos(f.nombre).includes(q));
+    const empieza = (f) => (sinAcentos(f.nombre).startsWith(q) ? 0 : 1);
+    return todas.sort((a, b) => empieza(a) - empieza(b) || a.nombre.localeCompare(b.nombre)).slice(0, Math.min(Number(p_limite) || 20, 50));
+  },
+  admin_asignar_ficha: ({ p_tipo, p_ficha, p_perfil }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return "no_admin";
+    if (!LIGAS[p_tipo]) return "sin_ficha";
+    const [tabla, col] = LIGAS[p_tipo];
+    if (!(p_tipo === "lugar" ? t.lugares.some((l) => l.id === p_ficha && !l.privado) : t.artistas.some((a) => a.id === p_ficha))) return "sin_ficha";
+    if (t[tabla].some((c) => c[col] === p_ficha && c.perfil_id === p_perfil)) return "ya";
+    t[tabla].push({ [col]: p_ficha, perfil_id: p_perfil, creado_en: new Date().toISOString() });
+    return "ok";
+  },
+  admin_quitar_ficha: ({ p_tipo, p_ficha, p_perfil }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return "no_admin";
+    if (!LIGAS[p_tipo]) return "sin_ficha";
+    const [tabla, col] = LIGAS[p_tipo];
+    const i = t[tabla].findIndex((c) => c[col] === p_ficha && c.perfil_id === p_perfil);
+    if (i < 0) return "no_estaba";
+    t[tabla].splice(i, 1);
+    return "ok";
+  },
+});
+
 // OL-425: la portada de Administración (/admin) para guardarla con `maqueta-pantalla.mjs`: los contratos de `panel_resumen`, `panel_pendientes`,
 // `panel_comunidad`, `panel_aportes`, `panel_fichas` y `panel_capo` con números inventados y coherentes entre sí (sin ellos la portada caía en
 // «Algo falló»: una RPC desconocida devuelve `[]`). Solo los lee /admin; ninguna pantalla que mide `medir` cambia.
