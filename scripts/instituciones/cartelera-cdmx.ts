@@ -18,14 +18,17 @@ import { randomUUID } from "node:crypto";
 import { basename } from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { leerParametrosCiudad } from "../../src/lib/ciudadParametros";
-import { esCiudadDeMexico, pasoAgendas, MOTIVOS_EVENTO, type ContadoresCartelera } from "../../src/lib/rutinas/agendas";
-import { dormirDeVerdad, NOMBRE_FUENTE_CARTELERA } from "../../src/lib/rutinas/carteleraCdmx";
+import { esCiudadDeMexico, pasoAgendas, type ContadoresCartelera } from "../../src/lib/rutinas/agendas";
+import { isoALocal } from "../../src/lib/fechas";
+import { dormirDeVerdad, NOMBRE_FUENTE_CARTELERA, type NotaCartelera } from "../../src/lib/rutinas/carteleraCdmx";
 import type { CiudadRutina, Contexto } from "../../src/lib/rutinas/lugares";
 import { guardarInforme, requerida } from "./entorno";
 
 const USO = "node scripts/instituciones/correr.mjs cartelera-cdmx --autor <id del admin> [--simular] [--ciudad <slug>] [--salida <carpeta>]";
 /** Cada paso del guion: 10 minutos de lectura (unas 220 peticiones); al terminar cada uno se guarda el avance y se imprime. */
 export const PASO_GUION_MS = 10 * 60_000;
+/** Con --simular, todo en un solo paso (hasta 3 h). */
+const SIMULACION_MS = 3 * 3600_000;
 /** Lo que la corrida queda tomada mientras corre el guion (el latido no la toca); se renueva en cada paso. */
 const OCUPADA_GUION_MS = 30 * 60_000;
 
@@ -73,25 +76,51 @@ export function soloLectura(db: SupabaseClient, anotar: (e: Escrita) => void): S
   });
 }
 
-/** El informe, sin datos de personas: cuántos, por qué no y por tipo; y unos títulos de muestra (son eventos públicos de la cartelera). */
-export function lineasDeInforme(o: { simular: boolean; ciudad: string; corrida: string | null; resumen: Record<string, unknown>; minutos: number; muestra: { tipo: string; titulo: string; cuando: string }[] }): string[] {
+/** La hora de la ciudad de un instante guardado (ISO en UTC): «2026-10-25 11:00». */
+export const horaDeLaCiudad = (iso: unknown): string => (typeof iso === "string" && !Number.isNaN(Date.parse(iso)) ? isoALocal(new Date(iso).toISOString(), ZONA_CDMX).replace("T", " ").slice(0, 16) : "—");
+const ZONA_CDMX = "America/Mexico_City";
+
+export type DatosInforme = {
+  simular: boolean;
+  ciudad: string;
+  corrida: string | null;
+  resumen: Record<string, unknown>;
+  minutos: number;
+  /** Lo que se escribiría (simulación) o se escribió: propuestas de evento y de lugar. */
+  escritas: { eventos: number; lugares: number };
+  muestra: { tipo: string; titulo: string; inicio: unknown; sesiones: number }[];
+  sinHora: Extract<NotaCartelera, { tipo: "sin_hora" }>[];
+  recintos: Extract<NotaCartelera, { tipo: "recinto" }>[];
+};
+
+/** Los recintos que se pidió revisar (OL-451): si cruzan con el directorio. */
+export const RECINTOS_A_REVISAR = ["Palacio de Bellas Artes", "Teatro de la Ciudad Esperanza Iris", "Museo de la Ciudad de México", "Colegio de San Ildefonso"];
+
+/**
+ * El informe, sin datos de personas. Las cuentas cuadran por ficha (OL-451): listados = ya propuestos antes + leídos + sin respuesta (+ por leer);
+ * leídos = propuestos + cada motivo. Las horas, en la de la ciudad. Unos ejemplos sin hora y cómo cruzó cada recinto con el directorio.
+ */
+export function lineasDeInforme(o: DatosInforme): string[] {
   const r = o.resumen;
   const c = (r.cartelera ?? {}) as Partial<ContadoresCartelera>;
-  const d = (r.descartados ?? {}) as Record<string, number>;
   const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  const motivos = (c.motivos ?? {}) as Record<string, number>;
+  const sumaMotivos = Object.values(motivos).reduce((a, b) => a + n(b), 0);
+  const porLeer = Array.isArray((r.cursor as { cartelera?: { pendientes?: unknown[] } } | undefined)?.cartelera?.pendientes) ? (r.cursor as { cartelera: { pendientes: unknown[] } }).cartelera.pendientes.length : 0;
+  const verbo = o.simular ? "se escribirían" : "se escribieron";
   const lineas = [
     `# Cartelera de la Ciudad de México · ${o.simular ? "simulación (no se escribió nada)" : "carga"} · ${new Date().toISOString().slice(0, 16)}`,
     "",
-    `Ciudad: ${o.ciudad}${o.corrida ? ` · corrida ${o.corrida}` : ""} · ${o.minutos} min`,
+    `Ciudad: ${o.ciudad}${o.corrida ? ` · corrida ${o.corrida}` : ""} · ${o.minutos} min · horas en la de la ciudad (${ZONA_CDMX})`,
     "",
-    `- Eventos listados en la cartelera: ${n(c.eventos)}`,
-    `- Fichas leídas: ${n(c.leidas)} (sin respuesta: ${n(c.fallidas)})`,
-    `- Eventos nuevos ${o.simular ? "que se propondrían" : "propuestos"}: ${n(c.propuestos)}`,
-    `- Recintos nuevos ${o.simular ? "que se propondrían" : "propuestos"} como lugares: ${n(c.recintos_nuevos)}`,
-    `- Duplicados (ya estaban, ya propuestos o la misma función): ${n(d.ya_existe) + n(d.ya_propuesto) + n(d.unido)}`,
-    `- Fuera de la ciudad (lejos o en otra alcaldía): ${n(d.fuera_de_la_ciudad)}`,
-    `- Descartados por motivo: ${MOTIVOS_EVENTO.map((m) => `${m} ${n(d[m])}`).join(" · ")}`,
-    `- Sesiones sumadas a un taller o evento de varios días: ${n(r.sesiones)} · fechas de series: ${n(r.series)} · actos de festival: ${n(r.actos)}`,
+    "## Las cuentas (por ficha: una ficha es una propuesta)",
+    "",
+    `- Eventos listados: ${n(c.eventos)} = ya propuestos antes (no se pidieron) ${n(c.ya_propuestos)} + fichas leídas ${n(c.leidas)} + sin respuesta ${n(c.fallidas)}${porLeer ? ` + por leer ${porLeer}` : ""}`,
+    `- Fichas leídas: ${n(c.leidas)} = propuestas ${n(c.propuestos)} + no propuestas ${sumaMotivos}${n(c.leidas) === n(c.propuestos) + sumaMotivos ? "" : " (NO CUADRA)"}`,
+    `- No propuestas, por motivo: ${Object.keys(motivos).length ? Object.entries(motivos).map(([m, v]) => `${m} ${v}`).join(" · ") : "ninguna"}`,
+    `- Recintos nuevos como lugares: ${n(c.recintos_nuevos)}`,
+    `- Funciones sumadas a la propuesta de su ficha (sesiones): ${n(r.sesiones)}`,
+    `- En total ${verbo} **${o.escritas.eventos} propuestas de evento y ${o.escritas.lugares} de lugar** (fuente «${NOMBRE_FUENTE_CARTELERA}»).`,
     "",
     "## Por tipo de la cartelera",
     "",
@@ -103,7 +132,21 @@ export function lineasDeInforme(o: { simular: boolean; ciudad: string; corrida: 
   ];
   const avisos = Array.isArray(r.avisos) ? (r.avisos as string[]) : [];
   if (avisos.length) lineas.push("", "## Avisos", "", ...avisos.map((a) => `- ${a}`));
-  if (o.muestra.length) lineas.push("", `## Muestra (${o.muestra.length})`, "", ...o.muestra.map((m) => `- ${m.cuando} · ${m.tipo} · ${m.titulo}`));
+  if (o.sinHora.length)
+    lineas.push("", `## Sin hora (${n(motivos.sin_hora)}; ${Math.min(10, o.sinHora.length)} ejemplos)`, "", ...o.sinHora.slice(0, 10).map((x) => `- «${x.titulo}» · ${x.url}\n  > ${x.descripcion.slice(0, 220) || "(sin descripción)"}`));
+  // Cada recinto una vez: cómo cruzó.
+  const unicos = [...new Map(o.recintos.map((x) => [x.id ?? x.nombre, x])).values()];
+  const cruzados = unicos.filter((x) => x.lugar);
+  const nuevos = unicos.filter((x) => !x.lugar);
+  if (unicos.length) {
+    lineas.push("", `## Recintos (${unicos.length}: ${cruzados.length} cruzan con el directorio, ${nuevos.length} no)`, "");
+    for (const nombre of RECINTOS_A_REVISAR) {
+      const x = unicos.find((u) => u.nombre === nombre);
+      lineas.push(`- ${nombre}: ${!x ? "no vino en la cartelera" : x.lugar ? `cruza con «${x.lugar}»` : `NO cruza${x.cercano ? ` (lo más cercano: «${x.cercano.nombre}» a ${x.cercano.metros} m)` : ""}`}`);
+    }
+    lineas.push("", "No cruzan (con lo más cercano del directorio a menos de 1 km):", "", ...nuevos.slice(0, 60).map((x) => `- ${x.nombre}${x.cercano ? ` · cerca: «${x.cercano.nombre}» a ${x.cercano.metros} m` : ""}`));
+  }
+  if (o.muestra.length) lineas.push("", `## Muestra (${o.muestra.length})`, "", ...o.muestra.map((m) => `- ${horaDeLaCiudad(m.inicio)} · ${m.tipo}${m.sesiones ? ` · ${m.sesiones} funciones` : ""} · ${m.titulo}`));
   return lineas;
 }
 
@@ -168,6 +211,7 @@ async function main() {
   }
 
   let resumen: Record<string, unknown> = {};
+  const notas: NotaCartelera[] = [];
   let turno = 1;
   for (let paso = 1; ; paso++) {
     const ctx: Contexto = {
@@ -178,7 +222,8 @@ async function main() {
       mapbox: process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? { token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN } : null,
       pedir: fetch,
       ahora: () => new Date(),
-      hasta: Date.now() + PASO_GUION_MS,
+      // Simulando, de un tirón (lo «escrito» no queda en la base: un paso nuevo no lo vería); de verdad, por pasos que guardan el avance.
+      hasta: Date.now() + (simular ? SIMULACION_MS : PASO_GUION_MS),
       gastar: () => undefined,
       gastado: () => 0,
       sigueCorriendo: async () => {
@@ -187,6 +232,7 @@ async function main() {
         return r.data?.estado === "corriendo";
       },
       dormir: dormirDeVerdad,
+      anotarCartelera: (nota) => notas.push(nota),
     };
     const salidaPaso = await pasoAgendas(ctx);
     resumen = salidaPaso.resumen;
@@ -218,13 +264,24 @@ async function main() {
   const deEventos: { id?: string; tipo: string; datos: Record<string, unknown> }[] = simular
     ? escritas.filter((e) => e.tabla === "propuestas" && e.op === "insert").flatMap((e) => (Array.isArray(e.filas) ? e.filas : [e.filas]) as { id?: string; tipo: string; datos: Record<string, unknown> }[])
     : (((await real.from("propuestas").select("id, tipo, datos").eq("corrida_id", corridaId!).limit(5000)).data ?? []) as { id?: string; tipo: string; datos: Record<string, unknown> }[]);
-  const muestra = deEventos.slice(0, 40).map((p) => ({
-    tipo: p.tipo === "lugar" ? "lugar" : String(p.datos.clase ?? "evento"),
-    titulo: String(p.datos.titulo ?? p.datos.nombre ?? ""),
-    cuando: typeof p.datos.inicio === "string" ? p.datos.inicio.slice(0, 16) : "—",
+  const eventos = deEventos.filter((p) => p.tipo === "evento");
+  const muestra = eventos.slice(0, 40).map((p) => ({
+    tipo: String(p.datos.clase ?? "evento"),
+    titulo: String(p.datos.titulo ?? ""),
+    inicio: p.datos.inicio,
+    sesiones: Array.isArray(p.datos.sesiones) ? p.datos.sesiones.length : 0,
   }));
-  const lineas = lineasDeInforme({ simular, ciudad: ciudad.nombre, corrida: corridaId, resumen, minutos: Math.round((Date.now() - empezo) / 60_000), muestra });
-  if (simular) lineas.push("", `Lo que se habría escrito: ${escritas.length} operaciones (${escritas.filter((e) => e.tabla === "propuestas").length} en propuestas, fuente «${NOMBRE_FUENTE_CARTELERA}»).`);
+  const lineas = lineasDeInforme({
+    simular,
+    ciudad: ciudad.nombre,
+    corrida: corridaId,
+    resumen,
+    minutos: Math.round((Date.now() - empezo) / 60_000),
+    escritas: { eventos: eventos.length, lugares: deEventos.filter((p) => p.tipo === "lugar").length },
+    muestra,
+    sinHora: notas.filter((x): x is Extract<NotaCartelera, { tipo: "sin_hora" }> => x.tipo === "sin_hora"),
+    recintos: notas.filter((x): x is Extract<NotaCartelera, { tipo: "recinto" }> => x.tipo === "recinto"),
+  });
   console.log(`\n${lineas.join("\n")}`);
   // Sin --simular, los ids de lo propuesto (para deshacer: borrar esas propuestas o la corrida entera).
   const entraron = deEventos.filter((p) => typeof p.id === "string").map((p) => ({ id: p.id!, nombre: String(p.datos.titulo ?? p.datos.nombre ?? "") }));

@@ -573,9 +573,30 @@ export function tipoDeRecinto(nombre: string): Tipo {
 
 export type LugarParaCruce = { id: string; nombre: string; lat?: number | null; lng?: number | null };
 
+const VACIAS_RECINTO = new Set(["de", "del", "la", "las", "el", "los", "y", "e", "en", "a", "al", "antiguo", "antigua", "ex"]);
+/** Las palabras que dicen qué clase de sitio es: si los dos nombres dicen una, tiene que ser la misma («Museo de la Ciudad» no es «Teatro de la Ciudad»). */
+const CLASE_RECINTO = new Set(["museo", "teatro", "foro", "galeria", "biblioteca", "auditorio", "sala", "cine", "cineteca", "faro", "plaza", "jardin", "parque", "escuela", "libreria"]);
+
 /**
- * El lugar del directorio que es este recinto, o null: el mismo nombre (o el único que coincide, `resolverLugar`), o uno a menos de 150 m con un
- * nombre parecido (`nombresParecidos`, el criterio de «Buscar lugares»; las palabras de la ciudad no cuentan).
+ * ¿Dos nombres hablan del mismo recinto, sabiendo que están cerca? Las palabras propias del más corto (sin artículos, «antiguo» ni la clase de
+ * sitio) están todas en el otro; si los dos dicen su clase, comparten una; y si el corto tiene una sola palabra propia («Teatro de la Ciudad»),
+ * solo a menos de 60 m. «Antiguo Colegio de San Ildefonso» ≈ «Colegio de San Ildefonso»; «Museo del Palacio de Bellas Artes» ≈ «Palacio de
+ * Bellas Artes»; «Teatro de la Ciudad Esperanza Iris» ≈ «Teatro de la Ciudad» (a menos de 60 m).
+ */
+export function mismoRecinto(a: string, b: string, metros: number): boolean {
+  const palabras = (t: string) => normalizarNombre(t).split(" ").filter((w) => w && !VACIAS_RECINTO.has(w));
+  const pa = palabras(a), pb = palabras(b);
+  const propias = (p: string[]) => new Set(p.filter((w) => !CLASE_RECINTO.has(w)));
+  const [ca, cb] = [pa.filter((w) => CLASE_RECINTO.has(w)), new Set(pb.filter((w) => CLASE_RECINTO.has(w)))];
+  if (ca.length && cb.size && !ca.some((w) => cb.has(w))) return false;
+  const [corta, larga] = [propias(pa), propias(pb)].sort((x, y) => x.size - y.size);
+  if (!corta.size || ![...corta].every((w) => larga.has(w))) return false;
+  return corta.size >= 2 || metros <= 60;
+}
+
+/**
+ * El lugar del directorio que es este recinto, o null: el mismo nombre (o el único que coincide, `resolverLugar`), o el más cercano a menos de
+ * 150 m con un nombre parecido (`nombresParecidos` de «Buscar lugares», o `mismoRecinto`, OL-451).
  */
 export function cruzarRecinto<T extends LugarParaCruce>(recinto: { nombre: string; punto: Punto | null }, lugares: readonly T[], palabrasCiudad: Set<string> = new Set()): T | null {
   if (!recinto.nombre) return null;
@@ -585,10 +606,25 @@ export function cruzarRecinto<T extends LugarParaCruce>(recinto: { nombre: strin
   const cerca = lugares
     .filter((l) => l.lat != null && l.lng != null)
     .map((l) => ({ l, m: distanciaKm(recinto.punto!, { lat: l.lat!, lng: l.lng! }) * 1000 }))
-    .filter((x) => x.m <= METROS_MISMO_LUGAR && nombresParecidos(recinto.nombre, x.l.nombre, palabrasCiudad))
+    .filter((x) => x.m <= METROS_MISMO_LUGAR && (nombresParecidos(recinto.nombre, x.l.nombre, palabrasCiudad) || mismoRecinto(recinto.nombre, x.l.nombre, x.m)))
     .sort((a, b) => a.m - b.m);
   return cerca[0]?.l ?? null;
 }
+
+/** El lugar del directorio más cercano a un punto, a menos de 1 km (para el informe: qué hay cerca de un recinto que no cruzó). */
+export function lugarMasCercano<T extends LugarParaCruce>(punto: Punto | null, lugares: readonly T[]): { nombre: string; metros: number } | null {
+  if (!punto) return null;
+  const x = lugares
+    .filter((l) => l.lat != null && l.lng != null)
+    .map((l) => ({ nombre: l.nombre, metros: Math.round(distanciaKm(punto, { lat: l.lat!, lng: l.lng! }) * 1000) }))
+    .sort((a, b) => a.metros - b.metros)[0];
+  return x && x.metros <= 1000 ? x : null;
+}
+
+/** Lo que la lectura le cuenta a quien la corre (el guion de la Mac lo pone en su informe; el resumen de la corrida no lleva nombres). */
+export type NotaCartelera =
+  | { tipo: "sin_hora"; url: string; titulo: string; descripcion: string }
+  | { tipo: "recinto"; id: string | null; nombre: string; lugar: string | null; cercano: { nombre: string; metros: number } | null };
 
 /** `propuestas.datos` de un recinto que no está en el directorio (el contrato de OL-427 para un lugar, más su imagen y su id en la cartelera). */
 export function datosDeRecinto(r: { id: string | null; nombre: string; punto: Punto; direccion: string | null; imagen: string | null; enlace: string | null }, ciudad: string, leida: string, url: string): Record<string, unknown> {

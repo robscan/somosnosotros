@@ -13,6 +13,7 @@ import {
   extraerObjetoJs,
   filasDeFicha,
   fueraDeLaCiudadDeMexico,
+  mismoRecinto,
   leerFicha,
   leerLista,
   NOMBRE_FUENTE_CARTELERA,
@@ -27,7 +28,8 @@ import {
 } from "./carteleraCdmx";
 import { FICHA_EXPOSICION, FICHA_FESTIVAL, FICHA_SAN_ILDEFONSO, FICHA_TALLER, FICHA_TENIS, LISTA_1, LISTA_2 } from "./carteleraCdmxMuestras";
 import { correrUnPaso, PLAZO_PASO_AGENDAS_MS, type Dependencias } from "./motor";
-import { prepararEvento } from "./publicarEvento";
+import { insertarEvento, prepararEvento } from "./publicarEvento";
+import type { NotaCartelera } from "./carteleraCdmx";
 
 const ZONA = "America/Mexico_City";
 const local = (fechaHora: string) => localAIso(fechaHora, ZONA)!;
@@ -431,6 +433,9 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     expect(museo.datos).toMatchObject({ lat: 19.429329, lng: -99.132441, ciudad: "Ciudad de México", cartelera_recinto: "64" });
     const xantolo = eventos.find((p) => p.datos.cartelera_id === "41628")!.datos;
     expect(xantolo).toMatchObject({ clase: "festival", lugar: "Museo de la Ciudad de México", lugar_propuesto: museo.id, lat: 19.429329, lng: -99.132441, fin: local("2026-10-25T17:00") });
+    // OL-451: lo guardado es la hora de la ciudad (las 11:00 en Ciudad de México son las 17:00 UTC).
+    expect(xantolo.inicio).toBe(local("2026-10-25T11:00"));
+    expect(xantolo.inicio).toBe("2026-10-25T17:00:00.000Z");
     // OL-450: el de Álvaro Obregón no es de las alcaldías turísticas, pero la cartelera entra completa: se propone, con su recinto.
     expect(c.resumen.descartados).toMatchObject({ fuera_de_la_ciudad: 0 });
     expect(c.resumen.cartelera).toEqual({
@@ -439,6 +444,8 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
       fallidas: 0,
       propuestos: 5,
       recintos_nuevos: 3,
+      ya_propuestos: 0,
+      motivos: {},
       por_tipo: {
         "Museos y Exposiciones": { leidos: 2, propuestos: 2 },
         "Cursos y Talleres": { leidos: 2, propuestos: 2 },
@@ -608,5 +615,103 @@ describe("la cartelera entra completa (OL-450)", () => {
     const ciudad = { slug: "ciudad-de-mexico", nombre: "Ciudad de México", alias: [], lat: 19.432, lng: -99.14, zona: ZONA, radioKm: 12, parametros: { alcaldias: ["Cuauhtémoc"], guias: [], radio_km: 12 } };
     const listo = await prepararEvento({ db: base.db, mapbox: null, ahora: AHORA }, xochimilco, ciudad, LUGARES, ADMIN);
     expect(listo).toMatchObject({ ok: true, fila: { sitio_texto: "FARO Xochimilco", sitio_lat: 19.258, sitio_lng: -99.105, lugar_id: null } });
+  });
+});
+
+describe("una ficha de la cartelera = una propuesta (OL-451)", () => {
+  const fichaDe = (o: { id: number; titulo: string; tipo: string; recinto: string; venue: string; dias: string[]; hora: string; lat?: string; lng?: string; descripcion?: string }) =>
+    `<script>var cdmx_billboard_event_info = ${JSON.stringify({
+      event_id: o.id,
+      event_location: { lat: o.lat ?? "19.4352", lng: o.lng ?? "-99.1412", address: "Av. Juárez 1, Centro, Cuauhtémoc, C.P. 06050, Ciudad de México" },
+      event_name: o.titulo,
+      event_description: o.descripcion ?? "<p>Una temporada.</p>",
+      event_duration: "02:00",
+      event_type: { id: o.tipo, name: o.tipo },
+      schedule: { "1": { event_dates: o.dias, event_hours: [o.hora] } },
+      costs: { "1": { cost_name: "General", cost_price: "$ 150" } },
+      venue_id_id: o.venue,
+      venue_name: o.recinto,
+      event_image: "https://cartelera.cdmx.gob.mx/wp-content/uploads/x.jpg",
+    })};</script>`;
+  // Una temporada de jueves a domingo, un recorrido diario salvo los lunes, otra obra en el mismo teatro (mismo recinto, otro nombre escrito)
+  // y una sin hora.
+  const jueADom = ["22/10/2026", "23/10/2026", "24/10/2026", "25/10/2026", "29/10/2026", "30/10/2026", "31/10/2026", "01/11/2026"];
+  const diario = Array.from({ length: 40 }, (_, i) => new Date(Date.UTC(2026, 9, 23 + i))).filter((d) => d.getUTCDay() !== 1).map((d) => `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/2026`);
+  const fichas: Record<string, string> = {
+    "11": fichaDe({ id: 11, titulo: "Temporada: La vida es sueño", tipo: "ARTES_ESCENICAS", recinto: "Teatro Julio Jiménez Rueda", venue: "700", dias: jueADom, hora: "19:00" }),
+    "12": fichaDe({ id: 12, titulo: "ZooAventuras Chapultepec", tipo: "RECORRIDOS", recinto: "Zoológico de Chapultepec", venue: "701", dias: diario, hora: "09:00", lat: "19.4234", lng: "-99.1885" }),
+    "13": fichaDe({ id: 13, titulo: "Temporada: Hamlet", tipo: "ARTES_ESCENICAS", recinto: "Teatro Julio Jiménez Rueda ", venue: "700", dias: ["24/10/2026", "31/10/2026"], hora: "18:00" }),
+    "14": fichaDe({ id: 14, titulo: "Fantasmitas", tipo: "CURSOS_Y_TALLERES", recinto: "Teatro Julio Jiménez Rueda", venue: "700", dias: ["29/10/2026"], hora: "00:00", descripcion: "Se utilizará pintura." }),
+  };
+  const item = (id: string) => ({ event_id: id, event_type: id === "12" ? "Recorridos" : "Artes Escénicas", event_name: `Evento ${id}`, event_venue: "x", event_date_located: "22/10/2026", event_lat: "19.4352", event_lon: "-99.1412" });
+  const lista = JSON.stringify({ status: "OK", data: { event_data: { event_pages_total: 1, event_items_total: 4, event_items_list: ["11", "12", "13", "14"].map(item) }, venue_data: { venue_pages_total: 0, venue_items_list: [] } } });
+  const pedir = (async (url: string) => {
+    if (url.endsWith("/search_builder")) return new Response(lista);
+    const id = url.match(/^https:\/\/cartelera\.cdmx\.gob\.mx\/(\d+)\//)?.[1];
+    return id && fichas[id] ? new Response(fichas[id]) : new Response("no", { status: 404 });
+  }) as typeof fetch;
+
+  it("una temporada y un recorrido diario son UNA propuesta cada uno, con sus funciones como sesiones; el recinto, una sola vez; las cuentas cuadran", async () => {
+    const base = mundo();
+    const notas: NotaCartelera[] = [];
+    // Un paso por ficha (plazo corto): el recinto repetido se reconoce también entre pasos.
+    const { dep } = dependencias(base, { ...carteleraFalsa(), pedir }, { plazoAgendasMs: 5_000 + 45_000 + 2 * 2_500 + 100, anotarCartelera: (n) => notas.push(n) });
+    await hastaTerminar(dep);
+    const c = laCorrida(base);
+    expect(c.estado).toBe("terminada");
+    const ps = deLaCorrida(base);
+    const eventos = ps.filter((p) => p.tipo === "evento");
+    expect(eventos.map((p) => p.datos.titulo).sort()).toEqual(["Temporada: Hamlet", "Temporada: La vida es sueño", "ZooAventuras Chapultepec"]);
+    const temporada = eventos.find((p) => p.datos.cartelera_id === "11")!.datos;
+    expect((temporada.sesiones as { inicio: string }[]).map((x) => x.inicio)).toEqual(
+      ["2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"].map((d) => local(`${d}T19:00`)),
+    );
+    expect(temporada.serie).toBeUndefined();
+    const zoo = eventos.find((p) => p.datos.cartelera_id === "12")!.datos;
+    // Las funciones de los próximos 60 días, hasta 31 (el tope de sesiones de un evento).
+    expect((zoo.sesiones as unknown[]).length).toBe(31);
+    // El teatro, una sola propuesta de lugar aunque tres fichas lo nombran (una con un espacio de más).
+    expect(ps.filter((p) => p.tipo === "lugar").map((p) => [p.datos.nombre, p.datos.cartelera_recinto])).toEqual([
+      ["Teatro Julio Jiménez Rueda", "700"],
+      ["Zoológico de Chapultepec", "701"],
+    ]);
+    const cc = c.resumen.cartelera as { leidas: number; propuestos: number; motivos: Record<string, number>; recintos_nuevos: number };
+    expect(cc).toMatchObject({ leidas: 4, propuestos: 3, recintos_nuevos: 2, motivos: { sin_hora: 1 } });
+    expect(cc.leidas).toBe(cc.propuestos + Object.values(cc.motivos).reduce((a, b) => a + b, 0));
+    // Lo que se le cuenta al guion: la ficha sin hora (para revisarla) y cómo cruzó cada recinto.
+    expect(notas.filter((n) => n.tipo === "sin_hora")).toEqual([{ tipo: "sin_hora", url: "https://cartelera.cdmx.gob.mx/14/22-10-2026/fantasmitas", titulo: "Fantasmitas", descripcion: "Se utilizará pintura." }]);
+    expect(notas.filter((n) => n.tipo === "recinto").map((n) => n.tipo === "recinto" && n.nombre)).toEqual(["Teatro Julio Jiménez Rueda", "Zoológico de Chapultepec", "Teatro Julio Jiménez Rueda"]);
+
+    // Al publicar, una temporada que no va en días seguidos lleva sus sesiones (si no, diría que es todos los días).
+    const ciudad = { slug: "ciudad-de-mexico", nombre: "Ciudad de México", alias: [], lat: 19.432, lng: -99.14, zona: ZONA, radioKm: 12, parametros: { alcaldias: [], guias: [], radio_km: 12 } };
+    const listo = await prepararEvento({ db: base.db, mapbox: null, ahora: AHORA }, temporada, ciudad, LUGARES, ADMIN);
+    expect(listo.ok).toBe(true);
+    if (!listo.ok) return;
+    expect(listo.fila).toMatchObject({ inicio: local("2026-10-22T19:00"), fin: local("2026-11-01T21:00"), clase: "puntual" });
+    const creado = await insertarEvento(base.db, listo.fila);
+    expect(base.tablas.eventos_sesiones.filter((x) => x.evento_id === creado!.id)).toHaveLength(8);
+  });
+});
+
+describe("el cruce de recintos con el directorio (OL-451)", () => {
+  it("los que debían cruzar cruzan: Bellas Artes, el Teatro de la Ciudad, el Museo de la Ciudad de México, San Ildefonso", () => {
+    const directorio = [
+      { id: "l-ba", nombre: "Museo del Palacio de Bellas Artes", lat: 19.43524, lng: -99.14121 },
+      { id: "l-tc", nombre: "Teatro de la Ciudad", lat: 19.43625, lng: -99.13773 },
+      { id: "l-mc", nombre: "Museo de la Ciudad", lat: 19.42935, lng: -99.13248 },
+      { id: "l-si", nombre: "Antiguo Colegio de San Ildefonso", lat: 19.43605, lng: -99.13068 },
+      { id: "l-mn", nombre: "Museo Nacional de Arte", lat: 19.43598, lng: -99.13926 },
+    ];
+    const ciudad = new Set(["ciudad", "mexico"]);
+    expect(cruzarRecinto({ nombre: "Palacio de Bellas Artes", punto: { lat: 19.43521, lng: -99.14125 } }, directorio, ciudad)?.id).toBe("l-ba");
+    expect(cruzarRecinto({ nombre: "Teatro de la Ciudad Esperanza Iris", punto: { lat: 19.43628, lng: -99.13776 } }, directorio, ciudad)?.id).toBe("l-tc");
+    expect(cruzarRecinto({ nombre: "Museo de la Ciudad de México", punto: { lat: 19.429329, lng: -99.132441 } }, directorio, ciudad)?.id).toBe("l-mc");
+    expect(cruzarRecinto({ nombre: "Colegio de San Ildefonso", punto: { lat: 19.436122, lng: -99.130752 } }, directorio, ciudad)?.id).toBe("l-si");
+    // Cerca, pero otro sitio: no.
+    expect(cruzarRecinto({ nombre: "Teatro de la Ciudad Esperanza Iris", punto: { lat: 19.43598, lng: -99.13926 } }, [directorio[4]], ciudad)).toBeNull();
+    expect(mismoRecinto("Museo de la Ciudad", "Teatro de la Ciudad", 10)).toBe(false);
+    // Con una sola palabra propia, solo muy cerca (60 m).
+    expect(mismoRecinto("Teatro de la Ciudad Esperanza Iris", "Teatro de la Ciudad", 59)).toBe(true);
+    expect(mismoRecinto("Teatro de la Ciudad Esperanza Iris", "Teatro de la Ciudad", 120)).toBe(false);
   });
 });
