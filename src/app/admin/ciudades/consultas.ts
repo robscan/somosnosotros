@@ -164,6 +164,6 @@ export async function pedirPasoSiHayVaradas(corridas: readonly CorridaVista[], a
     const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
     after(() => rescatarVaradas(corridas, ahora, () => dispararPaso(origen)));
   } catch {
-    console.warn("rutinas: no se pudo pedir el paso de una corrida varada; la retoma el cron");
+    console.warn("rutinas: no se pudo pedir el paso de una corrida varada; la retoma el latido de Supabase");
   }
 }

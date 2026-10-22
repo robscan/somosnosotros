@@ -3,13 +3,14 @@ import { atenderCorrer } from "./atender";
 import { baseFalsa, type Fila } from "./baseFalsa";
 import { MODELO_RUTINAS, type ClienteApi } from "./claude";
 import { dispararPaso, ORIGEN_PRODUCCION } from "./disparar";
-import { correrUnPaso, LIMITE_RUTA_MS, type Dependencias } from "./motor";
+import { correrUnPaso, LIMITE_RUTA_MS, PLAZO_PASO_AGENDAS_MS, type Dependencias } from "./motor";
 import { corridasVaradas, rescatarVaradas } from "./rescate";
 
 /**
- * La cadena de pasos de punta a punta (OL-429): la hoja «Correr» pide el primer paso, la ruta responde 202 y corre el paso «después de
- * responder», y cada paso pide el siguiente. Aquí la red es falsa (cada POST llega a `atenderCorrer` con el motor real y una base en memoria) y
- * se le puede pedir que pierda peticiones, como pasó la noche del 20 de octubre con la puesta en producción de #546 a medias.
+ * La cadena de pasos de punta a punta (OL-429, OL-444): la hoja «Correr» pide el primer paso, la ruta responde 202 y corre los pasos «después
+ * de responder». Aquí la red es falsa (cada POST llega a `atenderCorrer` con el motor real y una base en memoria) y hace lo que hace Vercel:
+ * una petición que sale de dentro de la función que está corriendo (un paso que llama a la misma ruta) recibe 508 «Loop Detected». También se
+ * le puede pedir que pierda peticiones, como la noche del 20 de octubre con la puesta en producción de #546 a medias.
  */
 
 const AHORA = new Date("2026-10-20T03:12:00Z");
@@ -56,74 +57,98 @@ const api = {
   },
 } as unknown as ClienteApi;
 
-/** El mundo: la base, la ruta del motor y una red que entrega (o pierde) cada POST a la ruta. */
-function mundo(corridas: Fila[], perder: (n: number) => boolean = () => false, intentosCadena?: number) {
+/** El mundo: la base, la ruta del motor y una red que entrega (o pierde, o corta con 508) cada POST a la ruta. */
+function mundo(corridas: Fila[], opciones: { perder?: (n: number) => boolean; maxPasos?: number; cadenaVieja?: boolean } = {}) {
   const base = baseFalsa({ ciudades: [structuredClone(SLP)], lugares: [], rutinas_corridas: corridas, propuestas: [] });
   const dep: Dependencias = { db: base.db, api, mapbox: { token: "t", pedir: servicios }, pedir: servicios, ahora: () => AHORA, plazoMs: 45_000 };
   const despues: (() => Promise<unknown>)[] = [];
   const registro: string[] = [];
+  const respuestas: number[] = [];
   let peticiones = 0;
+  /** ¿Se está corriendo una tarea de `after()`? Lo que pida por la red desde ahí es la función llamándose a sí misma. */
+  let dentro = false;
   const red = (async (url: string, init?: RequestInit) => {
     const n = ++peticiones;
+    const responder = (r: Response) => (respuestas.push(r.status), r);
+    if (dentro) return responder(new Response("INFINITE_LOOP_DETECTED", { status: 508 }));
     // Una petición perdida: la del despliegue a medio cambiar (404) o la que no llega.
-    if (perder(n)) return new Response("no encontrado", { status: 404 });
-    return atenderCorrer(new Request(url, init), { secreto: SECRETO, correr: () => correrUnPaso(dep), despues: (t) => void despues.push(t), encadenar, limiteMs: LIMITE_RUTA_MS });
+    if (opciones.perder?.(n)) return responder(new Response("no encontrado", { status: 404 }));
+    return responder(await atenderCorrer(new Request(url, init), { secreto: SECRETO, correr, despues: (t) => void despues.push(t), limiteMs: LIMITE_RUTA_MS, pasoMaximoMs: PLAZO_PASO_AGENDAS_MS, maxPasos: opciones.maxPasos }));
   }) as typeof fetch;
-  const opciones = { secreto: SECRETO, pedir: red, avisar: (t: string) => void registro.push(t), esperar: async () => undefined };
-  const encadenar = (hasta: number) => dispararPaso(ORIGEN_PRODUCCION, { ...opciones, hasta, intentos: intentosCadena });
+  const disparo = { secreto: SECRETO, pedir: red, avisar: (t: string) => void registro.push(t), esperar: async () => undefined };
+  /**
+   * El paso. Con `cadenaVieja`, como antes de OL-444: cada paso que tomó una corrida pide el siguiente llamando a la ruta por la red, desde
+   * dentro de la función (y la ruta da un solo paso por llamada).
+   */
+  const correr = async () => {
+    const r = await correrUnPaso(dep);
+    if (opciones.cadenaVieja && r.corrida) await dispararPaso(ORIGEN_PRODUCCION, disparo);
+    return r;
+  };
   /** Lo que hace `after()`: correr las tareas pendientes, y las que esas dejen, hasta que no quede ninguna. */
   async function vaciar() {
-    for (let i = 0; despues.length && i < 200; i++) await despues.shift()!();
+    for (let i = 0; despues.length && i < 200; i++) {
+      dentro = true;
+      try {
+        await despues.shift()!();
+      } finally {
+        dentro = false;
+      }
+    }
   }
   const fila = (id: string) => base.tablas.rutinas_corridas.find((c) => c.id === id)! as Fila & { resumen: Record<string, unknown> };
-  return { base, fila, registro, vaciar, peticiones: () => peticiones, disparar: (intentos?: number) => dispararPaso(ORIGEN_PRODUCCION, { ...opciones, intentos }) };
+  return { base, fila, registro, respuestas, vaciar, peticiones: () => peticiones, disparar: (intentos?: number) => dispararPaso(ORIGEN_PRODUCCION, { ...disparo, intentos }) };
 }
 
-describe("la cadena de pasos (OL-429)", () => {
-  it("sin pérdidas: la hoja pide el primer paso y la corrida encadena sola hasta «Terminada»", async () => {
+describe("la cadena de pasos (OL-429, OL-444)", () => {
+  it("reproduce el 508 de producción (22 oct): si cada paso pide el siguiente a la misma ruta, Vercel lo corta y la corrida se queda «corriendo»", async () => {
+    const m = mundo([corrida("L")], { cadenaVieja: true, maxPasos: 1 });
+    expect(await m.disparar()).toBe("disparado");
+    await m.vaciar();
+    expect(m.respuestas).toEqual([202, 508]);
+    const L = m.fila("L");
+    expect(L.estado).toBe("corriendo");
+    expect(L.resumen).toMatchObject({ paso: "2 de 3 fuentes", turno: 1, ocupada_hasta: null });
+    // El 508 ya no se cuenta como fallo ni se reintenta: lo dice así en el registro.
+    expect(m.registro).toEqual(["rutinas: Vercel cortó la cadena (508); lo retoma el latido de Supabase"]);
+  });
+
+  it("el arreglo: la hoja pide el primer paso y la misma función da los siguientes; ningún paso sale a la red y la corrida termina", async () => {
     const m = mundo([corrida("L")]);
     expect(await m.disparar()).toBe("disparado");
     await m.vaciar();
     expect(m.fila("L").estado).toBe("terminada");
+    expect(m.peticiones()).toBe(1);
+    expect(m.respuestas).toEqual([202]);
     expect(m.registro).toEqual([]);
   });
 
-  it("reproduce lo de San Luis: si se pierde la petición del segundo paso y nadie la repite, la corrida se queda «corriendo» como la vio el gestor", async () => {
-    // Antes de OL-429 cada paso pedía el siguiente una sola vez y no dejaba rastro: aquí, un intento y la segunda petición perdida.
-    const m = mundo([corrida("L")], (n) => n === 2, 1);
-    await m.disparar(1);
-    await m.vaciar();
-    const L = m.fila("L");
-    expect(L.estado).toBe("corriendo");
-    expect(L.resumen).toMatchObject({ paso: "2 de 3 fuentes", turno: 1, ocupada_hasta: null, intentos: 0 });
-  });
-
-  it("arreglo 1: el paso que pide el siguiente reintenta (hasta tres veces) y deja rastro si no lo logra", async () => {
-    const m = mundo([corrida("L")], (n) => n === 2);
+  it("lo que no cabe en una llamada lo retoma el latido de Supabase (una llamada por minuto mientras haya corridas vivas)", async () => {
+    const m = mundo([corrida("L")], { maxPasos: 2 });
     await m.disparar();
     await m.vaciar();
+    expect(m.fila("L").estado).toBe("corriendo");
+    let latidos = 0;
+    while (m.fila("L").estado === "corriendo" && latidos < 20) {
+      latidos++;
+      await m.disparar(1);
+      await m.vaciar();
+    }
     expect(m.fila("L").estado).toBe("terminada");
-    expect(m.registro).toEqual([]);
-    // Si se pierden los tres intentos, queda la línea en el registro (sin el secreto ni la dirección).
-    const peor = mundo([corrida("L")], (n) => n >= 2 && n <= 4);
-    await peor.disparar();
-    await peor.vaciar();
-    expect(peor.fila("L").estado).toBe("corriendo");
-    expect(peor.registro).toEqual(["rutinas: no se pudo pedir el paso (respondió 404); lo retoma Ciudades o el cron"]);
-    expect(peor.registro.join(" ")).not.toContain(SECRETO);
+    expect(latidos).toBeGreaterThan(1);
+    expect(m.respuestas.every((s) => s === 202)).toBe(true);
   });
 
-  it("arreglo 2: si aun así se queda varada, al cargar Ciudades se pide su paso y la corrida termina", async () => {
-    const m = mundo([corrida("L")], (n) => n >= 2 && n <= 4);
-    await m.disparar();
-    await m.vaciar();
+  it("si se pierde la petición de la hoja, Ciudades (o el latido) la encuentra varada y la corrida termina", async () => {
+    const m = mundo([corrida("L")], { perder: (n) => n <= 3 });
+    expect(await m.disparar()).toBe("falló");
+    expect(m.registro).toEqual(["rutinas: no se pudo pedir el paso (respondió 404); lo retoma el latido de Supabase"]);
+    expect(m.registro.join(" ")).not.toContain(SECRETO);
     const L = m.fila("L");
-    expect(L.estado).toBe("corriendo");
-    // Recién guardado el paso, no está varada (el siguiente puede ir en camino); dos minutos sin avanzar, sí.
-    const vista = [{ id: "L", estado: String(L.estado), resumen: L.resumen, creado_en: String(L.creado_en), inicio: String(L.inicio) }];
+    expect(L.estado).toBe("pendiente");
+    const vista = [{ id: "L", estado: String(L.estado), resumen: L.resumen, creado_en: String(L.creado_en), inicio: null }];
     expect(corridasVaradas(vista, new Date(AHORA.getTime() + 60_000))).toEqual([]);
-    const mas = new Date(AHORA.getTime() + 3 * 60_000);
-    expect(await rescatarVaradas(vista, mas, () => m.disparar())).toBe(1);
+    expect(await rescatarVaradas(vista, new Date(AHORA.getTime() + 3 * 60_000), () => m.disparar())).toBe(1);
     await m.vaciar();
     expect(m.fila("L").estado).toBe("terminada");
   });
@@ -136,7 +161,7 @@ describe("la cadena de pasos (OL-429)", () => {
         corrida("G", { tipo: "artistas", creado_en: "2026-10-20T03:12:20Z" }),
         corrida("T", { tipo: "showcase", ciudad: null, creado_en: "2026-10-20T03:12:30Z" }),
       ]);
-      // Cuatro peticiones a la vez (la cadena de M y las tres de la hoja), intercaladas al azar entre operaciones de la base.
+      // Cuatro peticiones a la vez (el latido y tres de la hoja), intercaladas al azar entre operaciones de la base.
       const correr = async () => {
         await espera();
         await m.disparar();

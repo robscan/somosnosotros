@@ -1,19 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
-import { atenderCorrer, type DependenciasRuta } from "./atender";
+import { atenderCorrer, MAX_PASOS_POR_LLAMADA, type DependenciasRuta } from "./atender";
 import type { ResultadoPaso } from "./motor";
 
 const URL_RUTA = "https://somosnosotros.org/api/rutinas/correr";
 const pedido = (autorizacion?: string, url = URL_RUTA) => new Request(url, { method: "POST", headers: autorizacion ? { authorization: autorizacion } : {} });
 
-function dependencias(resultado: ResultadoPaso = { corrida: "c1", tipo: "lugares", estado: "corriendo", usd: 0.2 }) {
+const NADA: ResultadoPaso = { corrida: null, tipo: null, estado: "nada", usd: 0 };
+
+/** `resultados`: lo que devuelve cada paso, en orden; después, «nada». `reloj`: cuánto avanza el reloj en cada paso. */
+function dependencias(resultados: ResultadoPaso[] = [{ corrida: "c1", tipo: "lugares", estado: "corriendo", usd: 0.2 }], reloj = 40_000) {
   const despues: (() => Promise<unknown>)[] = [];
+  let t = 1_000_000;
+  const cola = [...resultados];
   const d: DependenciasRuta = {
     secreto: "s3cr3t",
-    correr: vi.fn(async () => resultado),
-    despues: (t) => void despues.push(t),
-    encadenar: vi.fn(async () => "disparado"),
+    correr: vi.fn(async () => {
+      t += reloj;
+      return cola.shift() ?? NADA;
+    }),
+    despues: (tarea) => void despues.push(tarea),
     limiteMs: 300_000,
-    ahora: () => 1_000_000,
+    pasoMaximoMs: 200_000,
+    ahora: () => t,
   };
   return { d, despues };
 }
@@ -32,24 +40,37 @@ describe("/api/rutinas/correr", () => {
     expect((await atenderCorrer(pedido("Bearer undefined"), sinSecreto.d)).status).toBe(401);
   });
 
-  it("con el secreto: responde enseguida (202) y corre UN paso después de responder; si tomó una corrida, pide el siguiente", async () => {
+  it("con el secreto: responde enseguida (202) y corre los pasos después de responder, sin llamar a la red", async () => {
     const { d, despues } = dependencias();
     const r = await atenderCorrer(pedido("Bearer s3cr3t"), d);
     expect(r.status).toBe(202);
     expect(d.correr).not.toHaveBeenCalled();
     expect(despues).toHaveLength(1);
     await despues[0]();
-    expect(d.correr).toHaveBeenCalledTimes(1);
-    expect(d.encadenar).toHaveBeenCalledTimes(1);
-    // OL-429: el siguiente paso se pide con lo que le queda a la función (para reintentar sin pasarse de su `maxDuration`).
-    expect(d.encadenar).toHaveBeenCalledWith(1_000_000 + 300_000 - 3_000);
+    // Un paso tomó la corrida; el siguiente no encontró nada que tomar y la función se apaga.
+    expect(d.correr).toHaveBeenCalledTimes(2);
+    expect("encadenar" in d).toBe(false);
   });
 
-  it("sin nada que correr no encadena (la cadena se apaga sola; Ciudades o el cron la retoman)", async () => {
-    const { d, despues } = dependencias({ corrida: null, tipo: null, estado: "nada", usd: 0 });
+  it("OL-444: da otro paso en la misma función mientras quepa el paso más largo (200 s antes de los 297 s), y no más", async () => {
+    const paso: ResultadoPaso = { corrida: "c1", tipo: "lugares", estado: "corriendo", usd: 0.1 };
+    // Pasos de 40 s: tras el primero quedan 257 s (cabe otro), tras el segundo 217 s (cabe otro), tras el tercero 177 s (no cabe).
+    const { d, despues } = dependencias([paso, paso, paso, paso, paso]);
     await atenderCorrer(pedido("Bearer s3cr3t"), d);
     await despues[0]();
-    expect(d.encadenar).not.toHaveBeenCalled();
+    expect(d.correr).toHaveBeenCalledTimes(3);
+    // Pasos que vuelven enseguida (un tropiezo de la base): como mucho `MAX_PASOS_POR_LLAMADA`.
+    const rapidos = dependencias(Array.from({ length: 40 }, () => paso), 0);
+    await atenderCorrer(pedido("Bearer s3cr3t"), rapidos.d);
+    await rapidos.despues[0]();
+    expect(rapidos.d.correr).toHaveBeenCalledTimes(MAX_PASOS_POR_LLAMADA);
+  });
+
+  it("sin nada que correr, un solo intento y se apaga (el latido de Supabase la retoma)", async () => {
+    const { d, despues } = dependencias([]);
+    await atenderCorrer(pedido("Bearer s3cr3t"), d);
+    await despues[0]();
+    expect(d.correr).toHaveBeenCalledTimes(1);
   });
 
   it("con ?esperar=1 corre el paso y devuelve su resultado; si el motor falla, 503 sin detalles", async () => {
@@ -57,6 +78,7 @@ describe("/api/rutinas/correr", () => {
     const r = await atenderCorrer(pedido("Bearer s3cr3t", `${URL_RUTA}?esperar=1`), d);
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ ok: true, corrida: "c1", tipo: "lugares", estado: "corriendo", usd: 0.2 });
+    expect(d.correr).toHaveBeenCalledTimes(1);
     const cae = dependencias();
     cae.d.correr = vi.fn(async () => {
       throw new Error("sin base");

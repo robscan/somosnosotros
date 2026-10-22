@@ -79,7 +79,7 @@ async function pedirPrimerPaso() {
     const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
     after(() => dispararPaso(origen));
   } catch {
-    console.warn("rutinas: no se pudo pedir el primer paso; la corrida espera al cron");
+    console.warn("rutinas: no se pudo pedir el primer paso; la corrida espera al latido");
   }
 }
 
