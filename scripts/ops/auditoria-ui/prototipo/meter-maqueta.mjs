@@ -11,6 +11,9 @@
 // salen el armazón y la barra. OL-431 (Ciudades v2) le suma Ciudades, su hoja, la bandeja, Corridas y la hoja de ciudades de Artistas:
 //   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/ciudades-v2.html \
 //     --pantallas=admin,admin-personas,admin-persona-hoja,admin-lugares,admin-grafo,admin-ciudades,admin-ciudades-hoja,admin-propuestas,admin-corridas,artistas-hoja-ciudad
+// OL-443 (Showcase v2) le suma la lista del Showcase, su ficha y su hoja de Estado; de la lista salen también las fotos de las tarjetas (IMG.fotos):
+//   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/showcase-v2.html \
+//     --pantallas=admin,admin-personas,admin-persona-hoja,admin-lugares,admin-grafo,admin-ciudades,admin-ciudades-hoja,admin-showcase,admin-showcase-ficha,admin-showcase-estado
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -79,6 +82,14 @@ ICONOS.Info = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" strok
 
 // 5. La imagen sin foto redonda (el símbolo SN).
 const IMG = { sinFotoRedonda: "data:image/png;base64," + fs.readFileSync(path.join(RAIZ, "public/sin-foto-redonda.png")).toString("base64") };
+// OL-443: con la lista del Showcase entre las pantallas, también las fotos de sus tarjetas (por el slug de la ficha), solo las chicas (< 40 KB):
+// la de la Orquesta es un cartel entero y no hace falta.
+if (PANTALLAS.includes("admin-showcase")) {
+  IMG.fotos = {};
+  for (const m of leer("admin-showcase").matchAll(/<img[^>]*class="showcase-module__[^"]*__foto"[^>]*src="(data:[^"]+)"[^>]*><a class="showcase-module__[^"]*__nombre" href="\/admin\/showcase\/([^"]+)"/g)) {
+    if (m[1].length < 40000 && !m[1].startsWith("data:image/png")) IMG.fotos[m[2]] = m[1];
+  }
+}
 
 // 6. Al prototipo.
 const js = (x) => JSON.stringify(x).replace(/<\//g, "<\\/");
