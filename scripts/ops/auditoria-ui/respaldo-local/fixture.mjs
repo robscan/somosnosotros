@@ -432,7 +432,13 @@ const showcase_evidencias = [
   evidencia(4, A.feleal, "obra", "premio", "Mención en un concurso estatal de acordeón, 2025", "https://cultura-estatal.example/premios/2025", "2025-11-20", "propuesta", "rutina", 0),
   evidencia(5, A.feleal, "circulacion", "prensa", "Nota sobre su gira por el Bajío", "https://prensa-local.example/notas/gira-bajio", diaHace(95), "propuesta", "rutina", 0),
   evidencia(6, A.backside, "obra", "obra", "Disco en plataformas de música", "https://musica.example/0backside0/disco", diaHace(300), "aceptada", "persona", 20),
+  // OL-446: Abril Merlot (candidata, nada fijado) con tres hallazgos de la rutina de ayer, para «Por aprobar» con dos artistas.
+  evidencia(7, A.merlot, "obra", "obra", "Serie «Bordes» expuesta en una galería de Zacatecas", "https://galeria-zac.example/bordes", diaHace(60), "propuesta", "rutina", 1),
+  evidencia(8, A.merlot, "circulacion", "presentacion", "Mesa en un encuentro de arte joven del Bajío", "https://encuentro-bajio.example/mesas", diaHace(120), "propuesta", "rutina", 1),
+  evidencia(9, A.merlot, "obra", "beca", "Beca estatal de creación, 2025", "https://cultura-estatal.example/becas/2025", "2025-06-30", "propuesta", "rutina", 1),
 ];
+// OL-446: un grupo guardado (un filtro con nombre), para ver «Tus grupos» en la hoja Filtros.
+const showcase_grupos = [{ id: "cccc0029-0000-4000-8000-000000000001", nombre: "Música con cuenta, 4+", filtros: { puntaje: 4, cuenta: "con", disciplina: "musica" }, creado_por: ADMIN, creado_en: hace(1) }];
 const lectura = (n, artista_id, red, seguidores, publicaciones, ultima, leido) => ({ id: `cccc0028-0000-4000-8000-00000000000${n}`, artista_id, red, seguidores, publicaciones, ultima_publicacion: ultima === null ? null : diaHace(ultima), leido_en: hace(leido), leido_por: ADMIN });
 const lecturas_redes = [
   lectura(1, A.feleal, "instagram", 3200, 412, 2, 4),
@@ -447,7 +453,7 @@ const lecturas_redes = [
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
   artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios, ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
-  showcase_candidatos, showcase_cambios_estado, showcase_evidencias, lecturas_redes,
+  showcase_candidatos, showcase_cambios_estado, showcase_evidencias, lecturas_redes, showcase_grupos,
 };
 
 // OL-401: lo que el grafo cultural lee con la llave de servicio (`cargarGrafo`, que salta las reglas por fila): filas de más que SOLO ve quien manda

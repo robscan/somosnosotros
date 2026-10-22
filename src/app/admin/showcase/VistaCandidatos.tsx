@@ -37,9 +37,9 @@ import {
   type ContextoFiltro,
   type Vista,
 } from "@/lib/showcase";
-import { nPuestos, type Grupo } from "@/lib/showcaseFiltros";
+import { filtrosDe, nPuestos, type Grupo } from "@/lib/showcaseFiltros";
 import type { Investigaciones } from "./consultas";
-import { filtrosDe, FiltrosPuestos } from "./FiltrosShowcase";
+import { FiltrosPuestos } from "./FiltrosShowcase";
 import InvestigarLote from "./InvestigarLote";
 import ListaSeleccionable from "./ListaSeleccionable";
 import OpcionesLista from "./OpcionesLista";

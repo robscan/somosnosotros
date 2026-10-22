@@ -136,7 +136,7 @@ test("filtro: deshabilitado no se toca y se apaga; la cuenta va suave a su derec
   assert.equal(await todos.locator("span").evaluate((s) => getComputedStyle(s).fontSize), "14px");
 });
 
-test("una fila que envuelve deja los toques de 44 sin pisarse (36 + 8 de hueco)", async (t) => {
+test("una fila que envuelve deja los toques de 44 sin pisarse (36 + 12 de hueco, OL-446)", async (t) => {
   const p = await pagina(t);
   const fila = await p.getByRole("group", { name: "Envuelve" }).evaluate((g) => {
     const cajas = [...g.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
@@ -144,7 +144,8 @@ test("una fila que envuelve deja los toques de 44 sin pisarse (36 + 8 de hueco)"
     return { renglones: renglones.length, paso: renglones.length > 1 ? renglones[1] - renglones[0] : 0 };
   });
   assert.ok(fila.renglones >= 2, "los chips no caben en un renglón y pasan al de abajo");
-  assert.equal(fila.paso, 44, "un renglón cada 44: los toques se tocan sin encimarse");
+  // OL-446 (firmado en OL-443): con 8 de hueco los toques de 44 de dos renglones se tocaban y el de cada chip medía 43; con 12 queda aire.
+  assert.equal(fila.paso, 48, "un renglón cada 48: cada toque de 44 con su aire, sin tocar el de abajo");
 });
 
 test("contexto: en negrita, con su icono y flecha, abre una hoja; con valor va activo; con cuenta lleva su círculo", async (t) => {

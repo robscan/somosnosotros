@@ -160,6 +160,8 @@ export function leerFiltros(p: Partial<Record<ClaveFiltro, unknown>> | null | un
 export function filtrosPuestos(f: Filtros): Partial<Filtros> {
   return Object.fromEntries(puestos(f).map((b) => [b.clave, f[b.clave]])) as Partial<Filtros>;
 }
+/** Los filtros de una vista (sin la búsqueda, el orden, la tabla ni la página). */
+export const filtrosDe = (v: Filtros): Filtros => ({ puntaje: v.puntaje, actividad: v.actividad, cuenta: v.cuenta, circ: v.circ, disciplina: v.disciplina, estado: v.estado, inv: v.inv, tipo: v.tipo });
 /** Si dos filtros son el mismo (para saber si un grupo está puesto). */
 export const mismosFiltros = (a: Filtros, b: Filtros) => BLOQUES.every((x) => a[x.clave] === b[x.clave]);
 

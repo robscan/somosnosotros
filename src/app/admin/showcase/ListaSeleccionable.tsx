@@ -84,7 +84,7 @@ export default function ListaSeleccionable({ cifras, seleccionable, tarjetas, el
       )}
       {verMas}
       {seleccionando ? (
-        <div className={s.barra} role="group" aria-label="Con los elegidos">
+        <div className={s.barra} role="toolbar" aria-label="Con los elegidos">
           <Boton variante="texto" ancho="contenido" onClick={() => setSel(null)}>
             Cancelar
           </Boton>

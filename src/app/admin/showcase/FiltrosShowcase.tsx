@@ -14,6 +14,7 @@ import { hrefShowcase, type Vista } from "@/lib/showcase";
 import {
   BLOQUES,
   faltaNombreGrupo,
+  filtrosDe,
   filtrosPuestos,
   grupoPuesto,
   LIMITE_NOMBRE_GRUPO,
@@ -35,8 +36,6 @@ import { borrarGrupo, guardarGrupo, renombrarGrupo } from "./accionesGrupos";
 import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
-/** Los filtros de una vista (sin la búsqueda, el orden, la tabla ni la página). */
-export const filtrosDe = (v: Vista): Filtros => ({ puntaje: v.puntaje, actividad: v.actividad, cuenta: v.cuenta, circ: v.circ, disciplina: v.disciplina, estado: v.estado, inv: v.inv, tipo: v.tipo });
 const artistas = (n: number) => `${n} ${n === 1 ? "artista" : "artistas"}`;
 
 /** Lo que cambia la URL al poner otros filtros: sin la página (vuelve a la primera) y sin apilar historial. */

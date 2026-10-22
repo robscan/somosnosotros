@@ -154,7 +154,7 @@ describe("lo que el candidato trae para filtrar (OL-446)", () => {
   });
 
   it("filtrar candidatos con la vista de la URL y lo que se sabe de sus investigaciones", () => {
-    const base = { slug: "x", ciudad: "SLP", foto: null, instagram: null, marcado: true, valores: {} as Candidato["valores"], nota: null, eventos: 0, foros: 0, festivales: 0, programadoPor: [], redes: null, tipo: "solista", ultimaPublicacion: null } as const;
+    const base: Omit<Candidato, "id" | "nombre" | "disciplina" | "estado" | "suma" | "reclamada"> = { slug: "x", ciudad: "SLP", foto: null, instagram: null, marcado: true, valores: {} as Candidato["valores"], nota: null, eventos: 0, foros: 0, festivales: 0, programadoPor: [], redes: null, tipo: "solista", ultimaPublicacion: null };
     const lista: Candidato[] = [
       { ...base, id: "a", nombre: "A", disciplina: "musica", estado: "candidato", suma: 6, reclamada: true },
       { ...base, id: "b", nombre: "B", disciplina: "musica", estado: "candidato", suma: 2, reclamada: false },

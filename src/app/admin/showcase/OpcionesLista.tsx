@@ -6,8 +6,8 @@ import { Chip, Chips } from "@/components/ui/Chip";
 import Hoja from "@/components/ui/Hoja";
 import { IconoCaret, IconoDocumento, IconoFiltros, IconoOk, IconoPersonas } from "@/components/ui/Iconos";
 import { hrefShowcase, ORDENES, type Vista } from "@/lib/showcase";
-import { nPuestos, type Grupo, type Hechos } from "@/lib/showcaseFiltros";
-import { filtrosDe, HojaFiltrosShowcase } from "./FiltrosShowcase";
+import { filtrosDe, nPuestos, type Grupo, type Hechos } from "@/lib/showcaseFiltros";
+import { HojaFiltrosShowcase } from "./FiltrosShowcase";
 import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
