@@ -34,6 +34,9 @@ export type Resultado = { ok: true } | { ok: false; error: string };
  */
 export type ResultadoAceptar = { ok: true; href: string | null; nota?: string; espera?: boolean; actos?: string[] } | { ok: false; error: string };
 
+/** La línea de lo hecho cuando la imagen de la propuesta (la de la cartelera, OL-448) no se pudo poner como cartel: el evento ya está publicado. */
+const NOTA_SIN_CARTEL = "se publicó sin cartel: su imagen no se pudo bajar";
+
 async function soloAdmin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin/ciudades");
@@ -172,6 +175,10 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
       await admin.from("eventos").delete().eq("id", creado.id);
       return { ok: true, href: null };
     }
+    // La imagen que trae la propuesta (la de la Cartelera de la Ciudad de México, OL-448) se pone como cartel por el camino de «Buscar
+    // carteles»: se baja, se prepara y se guarda en Storage. Si no se puede, el evento queda publicado sin cartel y la línea lo dice.
+    const sinCartel = typeof p.datos.imagen === "string" && !(await ponerCartel({ db: admin, almacen: almacenDeSupabase(admin), ahora: () => new Date() }, { evento_id: creado.id, imagen: p.datos.imagen }, yo)).ok;
+    if (sinCartel) evento.nota = [evento.nota, NOTA_SIN_CARTEL].filter(Boolean).join(" · ");
     revalidatePath("/");
     revalidatePath(hrefEvento(creado));
     const lugarId = evento.fila.lugar_id;

@@ -46,6 +46,8 @@ export type Dependencias = {
   plazoAgendasMs?: number;
   /** El paso de «Buscar artistas» e «Investigar» (OL-430); por omisión `PLAZO_PASO_INVESTIGAR_MS`. */
   plazoInvestigarMs?: number;
+  /** Esperar entre peticiones a la cartelera (OL-448); por omisión, de verdad. */
+  dormir?: (ms: number) => Promise<void>;
 };
 
 /** Las rutinas de una ciudad. Un tipo que no esté aquí ni abajo falla con «Este botón todavía no tiene rutina». */
@@ -189,6 +191,7 @@ export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date
       mapbox: dep.mapbox,
       pedir: dep.pedir,
       ahora: dep.ahora,
+      dormir: dep.dormir,
       hasta,
       gastar: (x) => {
         usd += x;
