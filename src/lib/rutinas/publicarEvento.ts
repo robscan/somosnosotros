@@ -10,6 +10,7 @@ import { diaLocal, isoALocal, localAIso, zonaSegura } from "../fechas";
 import { LIMITES_EVENTO } from "../limites";
 import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
+import { lugarExacto } from "./carteleraCdmx";
 import { dentroDelArea, radioDeCiudadKm } from "./filtros";
 import { claseDeActo, diasSeguidos, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type SesionPropuesta } from "./formaEvento";
 import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
@@ -168,7 +169,8 @@ export async function prepararEvento(
   if (paso) return { ok: false, motivo: "pasado", error: "No se publicó: ese evento ya pasó. Recházala." };
   const donde = texto(datos.lugar, LIMITES_EVENTO.sitio);
   if (!donde) return { ok: false, motivo: "invalido", error: "No se publicó: la propuesta no dice dónde es." };
-  const lugar = resolverLugar(donde, [...lugares]);
+  // Lo de la cartelera (OL-451): solo el lugar con ese nombre exacto (el cruce ya se hizo al proponer; uno «parecido» puede ser otro museo).
+  const lugar = typeof datos.cartelera_id === "string" ? lugarExacto(donde, lugares) : resolverLugar(donde, [...lugares]);
   const zona = zonaSegura(lugar?.zona ?? ciudad.zona);
 
   const delMarco = esMarco ? { padre: null, espera: null } : await marcoDelActo(dep.db, forma);

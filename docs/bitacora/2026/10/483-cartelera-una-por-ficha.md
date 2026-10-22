@@ -90,3 +90,41 @@ Si en la base el lugar se llama distinto o su punto está a más de 150 m, segui
 La siguiente simulación (`node scripts/instituciones/correr.mjs cartelera-cdmx --autor <id del admin> --simular`) debería dar, como mucho, una
 propuesta de evento por ficha leída y, como mucho, un recinto nuevo por recinto de la cartelera; su informe trae ya los ejemplos sin hora y el
 cruce de recintos para decidir antes de la carga.
+
+## Segunda vuelta (misma rama, PR #571)
+
+El gestor corrió la simulación real con lo de arriba (`cartelera-cdmx-simulado-2026-10-22T22-27-51-289Z.md`): las cuentas ya cuadran (911
+leídas → 740 propuestas de evento + 187 de lugar), pero:
+
+1. **Un cruce equivocado:** «Museo de la Ciudad de México» cruzaba con «Museo de la Policía de la Ciudad de México». Venía de `resolverLugar`
+   (el nombre «contenido» en otro: `nombresCoinciden`), que la cartelera usaba antes que nada, y que además `proponer` y `publicarEvento`
+   volvían a aplicar al nombre del sitio. Ahora el cruce es estricto (`comoCruzanNombres` / `cruceDeRecinto`), y ante la duda **no cruza**: el
+   recinto se propone como lugar y la administración lo une. Solo cruza:
+   - **por el mismo nombre** (exacto);
+   - **por nombre parecido**: las mismas palabras quitando artículos y lo que sobra («Antiguo», «de México», «CDMX»), y no a más de 1 km;
+   - **por cercanía**: a menos de 60 m, el nombre corto (de dos palabras o más) es el principio del largo («Teatro de la Ciudad» ≈ «Teatro de
+     la Ciudad Esperanza Iris»).
+   Nunca si uno tiene palabras propias que el otro no tiene: «Museo de la Policía…», «Museo del Estanquillo», «Museo de Arte Moderno» frente a
+   «Museo de Arte Popular», y tampoco «Museo del Palacio de Bellas Artes» frente a «Palacio de Bellas Artes» ni «Museo Panteón de San Fernando»
+   frente a «Panteón de San Fernando» (palabra de más al principio). Y una fila de la cartelera ya no se vuelve a resolver por parecido: al
+   proponer y al publicar solo vale el lugar con ese **nombre exacto** (`lugarExacto`).
+2. **El informe lista todos los que cruzan** (eran 38): recinto → lugar del directorio · distancia · por qué (el mismo nombre, nombre parecido
+   o cercanía), para revisarlos uno por uno; siguen los cuatro pedidos y los que no cruzan con lo más cercano.
+3. **«no_guardada 7».** Era una ficha que no se propuso sin que ningún motivo la descartara. La causa más probable: `proponer` sumó sus funciones
+   a la propuesta de **otra ficha** con el mismo título en el mismo sitio (la misma actividad listada dos veces, un taller o días seguidos), y
+   eso no se contaba como descarte. Ahora eso tiene su motivo, **`otra_ficha`**, y el informe lista esas fichas con su enlace y a cuál se sumaron
+   («Sumadas a otra ficha»). Lo que quede como `no_guardada` es de verdad que no se guardó (la base falló, aviso «No se pudieron guardar algunas
+   propuestas», o la corrida dejó de correr a medio paso); el informe lo explica y las lista con su enlace («No guardadas»). La próxima simulación
+   dirá cuántas de las 7 eran de cada una.
+
+Pruebas nuevas: el par real (Museo de la Ciudad de México / Museo de la Policía de la Ciudad de México) y los parecidos (Estanquillo, Arte
+Moderno / Arte Popular, Museo / Teatro de la Ciudad, Museo del Palacio de Bellas Artes) **no cruzan**; Palacio de Bellas Artes (exacto), Teatro de
+la Ciudad Esperanza Iris (cercanía a 5 m, no a 120 m) y Colegio de San Ildefonso (parecido) **sí**, con cómo y a qué distancia; un nombre
+parecido a más de 1 km no; el mismo taller en dos fichas da una propuesta con dos sesiones y la segunda cuenta como `otra_ficha` con su enlace;
+con la base fallando, las 5 fichas cuentan como `no_guardada` con su enlace; el informe lista los que cruzan, las sumadas y las no guardadas.
+Verificación: lint (0 errores), typecheck, **test 4 626**, **test:db 2 359**, inventario y medir sin novedades, **componentes 719 de 719**. Ninguna
+petición real a la cartelera.
+
+**Por confirmar:** con la regla estricta cruzarán menos recintos que los 38 de la simulación (los que solo cruzaban por un nombre «contenido» en
+otro); esos llegarán como propuestas de lugar para que la administración los una o los rechace como duplicado.
+

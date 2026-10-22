@@ -36,7 +36,7 @@ describe("la carga inicial de la cartelera (OL-448)", () => {
           fallidas: 2,
           propuestos: 700,
           recintos_nuevos: 95,
-          motivos: { pasado: 99, sin_hora: 77, fuera_de_la_ciudad: 3, ya_existe: 20, unido: 9 },
+          motivos: { pasado: 99, sin_hora: 77, fuera_de_la_ciudad: 3, ya_existe: 18, unido: 9, otra_ficha: 1, no_guardada: 1 },
           por_tipo: { "Cursos y Talleres": { leidos: 100, propuestos: 60 }, "Artes Escénicas": { leidos: 128, propuestos: 120 } },
         },
         avisos: ["La cartelera pidió esperar: se sigue en el siguiente paso"],
@@ -45,9 +45,14 @@ describe("la carga inicial de la cartelera (OL-448)", () => {
       muestra: [{ tipo: "festival", titulo: "4° Festival de Xantolo", inicio: "2026-10-25T17:00:00.000Z", sesiones: 0 }, { tipo: "puntual", titulo: "Temporada: Hamlet", inicio: "2026-10-24T00:00:00.000Z", sesiones: 8 }],
       sinHora: [{ tipo: "sin_hora", url: "https://cartelera.cdmx.gob.mx/40980/22-10-2026/fantasmitas", titulo: "Fantasmitas", descripcion: "Se utilizará pintura." }],
       recintos: [
-        { tipo: "recinto", id: "651", nombre: "Colegio de San Ildefonso", lugar: "Antiguo Colegio de San Ildefonso", cercano: null },
-        { tipo: "recinto", id: "651", nombre: "Colegio de San Ildefonso", lugar: "Antiguo Colegio de San Ildefonso", cercano: null },
+        { tipo: "recinto", id: "651", nombre: "Colegio de San Ildefonso", lugar: "Antiguo Colegio de San Ildefonso", como: "parecido", metros: 70, cercano: null },
+        { tipo: "recinto", id: "651", nombre: "Colegio de San Ildefonso", lugar: "Antiguo Colegio de San Ildefonso", como: "parecido", metros: 70, cercano: null },
+        { tipo: "recinto", id: "80", nombre: "Palacio de Bellas Artes", lugar: "Palacio de Bellas Artes", como: "exacto", metros: 4, cercano: null },
         { tipo: "recinto", id: "64", nombre: "Museo de la Ciudad de México", lugar: null, cercano: { nombre: "Templo Mayor", metros: 420 } },
+      ],
+      noPropuestas: [
+        { tipo: "no_propuesta", motivo: "otra_ficha", url: "https://cartelera.cdmx.gob.mx/16/30-10-2026/taller-de-titeres", titulo: "Taller de títeres", con: "Taller de títeres" },
+        { tipo: "no_propuesta", motivo: "no_guardada", url: "https://cartelera.cdmx.gob.mx/7/24-10-2026/concierto", titulo: "Concierto" },
       ],
     });
     const texto = lineas.join("\n");
@@ -63,11 +68,20 @@ describe("la carga inicial de la cartelera (OL-448)", () => {
     expect(texto).toContain("- 2026-10-23 18:00 · puntual · 8 funciones · Temporada: Hamlet");
     expect(texto).toContain("## Sin hora (77; 1 ejemplos)");
     expect(texto).toContain("- «Fantasmitas» · https://cartelera.cdmx.gob.mx/40980/22-10-2026/fantasmitas\n  > Se utilizará pintura.");
-    expect(texto).toContain("## Recintos (2: 1 cruzan con el directorio, 1 no)");
+    expect(texto).toContain("## Recintos (3: 2 cruzan con el directorio, 1 no)");
+    // Todos los que cruzan, con el lugar, la distancia y por qué.
+    expect(texto).toContain("Cruzan (2): recinto de la cartelera → lugar del directorio · distancia · por qué");
+    expect(texto).toContain("- Colegio de San Ildefonso → «Antiguo Colegio de San Ildefonso» · 70 m · nombre parecido");
+    expect(texto).toContain("- Palacio de Bellas Artes → «Palacio de Bellas Artes» · 4 m · el mismo nombre");
+    // Las que no se propusieron por otra ficha o sin guardarse: qué es y cuáles, con su enlace.
+    expect(texto).toContain("## Sumadas a otra ficha (1)");
+    expect(texto).toContain("- «Taller de títeres» · https://cartelera.cdmx.gob.mx/16/30-10-2026/taller-de-titeres → se sumó a «Taller de títeres»");
+    expect(texto).toContain("## No guardadas (1)");
+    expect(texto).toContain("- «Concierto» · https://cartelera.cdmx.gob.mx/7/24-10-2026/concierto");
     expect(texto).toContain("- Colegio de San Ildefonso: cruza con «Antiguo Colegio de San Ildefonso»");
     expect(texto).toContain("- Museo de la Ciudad de México: NO cruza (lo más cercano: «Templo Mayor» a 420 m)");
-    expect(texto).toContain("- Palacio de Bellas Artes: no vino en la cartelera");
+    expect(texto).toContain("- Palacio de Bellas Artes: cruza con «Palacio de Bellas Artes»");
     // Si no cuadra, lo dice.
-    expect(lineasDeInforme({ simular: false, ciudad: "x", corrida: "c", minutos: 1, resumen: { cartelera: { leidas: 5, propuestos: 3, motivos: { pasado: 1 } } }, escritas: { eventos: 3, lugares: 0 }, muestra: [], sinHora: [], recintos: [] }).join("\n")).toContain("(NO CUADRA)");
+    expect(lineasDeInforme({ simular: false, ciudad: "x", corrida: "c", minutos: 1, resumen: { cartelera: { leidas: 5, propuestos: 3, motivos: { pasado: 1 } } }, escritas: { eventos: 3, lugares: 0 }, muestra: [], sinHora: [], recintos: [], noPropuestas: [] }).join("\n")).toContain("(NO CUADRA)");
   });
 });

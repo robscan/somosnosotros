@@ -14,10 +14,11 @@ import { urlSegura } from "../propuestas";
 import { llamarConEntrega } from "./claude";
 import {
   clienteCartelera,
-  cruzarRecinto,
+  cruceDeRecinto,
   datosDeRecinto,
   filasDeFicha,
   fueraDeLaCiudadDeMexico,
+  lugarExacto,
   lugarMasCercano,
   urlFicha,
   NOMBRE_FUENTE_CARTELERA,
@@ -27,7 +28,7 @@ import {
   MS_POR_PETICION,
   type FilaCartelera,
 } from "./carteleraCdmx";
-import { armarConocidos, motivoPorNombre, municipioDeLaCiudad, otroMunicipioEnTexto, palabrasDeCiudad } from "./filtros";
+import { armarConocidos, motivoPorNombre, municipioDeLaCiudad, otroMunicipioEnTexto } from "./filtros";
 import { cadaCuantos, claseDeActo, claseDeLaAgenda, claveDeFestival, comoSeAgrupa, dentroDelFestival, leerFormaEvento, MARGEN_FESTIVAL_DIAS, mismoPrograma, nombraAlFestival, nombreDeExposicion, programaDeAgenda } from "./formaEvento";
 import { agendasVigentes, diasEntre, mesSiguiente, pdfsDelIndice } from "./indiceAgendas";
 import { dominioDe, FalloCorrida, LOTE_MAPBOX, nombresDe, radioDe, TIEMPO_PARA_LLAMADA_MS, zonasDe, type Contexto, type SalidaPaso } from "./lugares";
@@ -421,8 +422,11 @@ export type ContadoresCartelera = {
   motivos: Partial<Record<MotivoFicha, number>>;
   por_tipo: Record<string, { leidos: number; propuestos: number }>;
 };
-/** El motivo de una ficha que no se propuso; `no_guardada`: se iba a proponer y la base no la guardó. */
-export type MotivoFicha = MotivoEvento | "no_guardada";
+/**
+ * El motivo de una ficha que no se propuso: los de siempre; `otra_ficha`, sus funciones se sumaron a la propuesta de otra ficha con el mismo
+ * título en el mismo sitio; `no_guardada`, ningún motivo y nada escrito (la base no la guardó, o la corrida dejó de correr a medio paso).
+ */
+export type MotivoFicha = MotivoEvento | "otra_ficha" | "no_guardada";
 
 function leerContadoresCartelera(v: unknown): ContadoresCartelera | null {
   const o = objeto(v);
@@ -430,7 +434,7 @@ function leerContadoresCartelera(v: unknown): ContadoresCartelera | null {
   const por_tipo: ContadoresCartelera["por_tipo"] = {};
   for (const [k, t] of Object.entries(objeto(o.por_tipo))) por_tipo[k.slice(0, 60)] = { leidos: numero(objeto(t).leidos), propuestos: numero(objeto(t).propuestos) };
   const motivos: ContadoresCartelera["motivos"] = {};
-  for (const [k, v] of Object.entries(objeto(o.motivos))) if ((MOTIVOS_EVENTO as readonly string[]).includes(k) || k === "no_guardada") motivos[k as MotivoFicha] = numero(v);
+  for (const [k, v] of Object.entries(objeto(o.motivos))) if ((MOTIVOS_EVENTO as readonly string[]).includes(k) || k === "otra_ficha" || k === "no_guardada") motivos[k as MotivoFicha] = numero(v);
   return { eventos: numero(o.eventos), leidas: numero(o.leidas), fallidas: numero(o.fallidas), propuestos: numero(o.propuestos), recintos_nuevos: numero(o.recintos_nuevos), ya_propuestos: numero(o.ya_propuestos), motivos, por_tipo };
 }
 
@@ -690,7 +694,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         continue;
       }
       const donde = texto(e.lugar, LIMITES_EVENTO.sitio);
-      const lugar = donde ? resolverLugar(donde, [...lugares]) : null;
+      // Una fila de la cartelera trae ya su lugar cruzado (OL-451): solo el nombre exacto, nunca uno parecido («Museo de la Policía…»).
+      const lugar = donde ? (e.cartelera_id ? lugarExacto(donde, lugares) : resolverLugar(donde, [...lugares])) : null;
       const direccion = texto(e.direccion, LIMITES_EVENTO.direccion) || null;
       const municipio = texto(e.municipio, 80) || null;
       // La cartelera de la Ciudad de México (OL-450) es la guía oficial: lo suyo es de la ciudad salvo que su dirección diga otro estado.
@@ -876,6 +881,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         const sola = hermanas.find((p) => !leerFormaEvento(p.datos).serie);
         const modo = sola ? comoSeAgrupa(diasDeDatos(sola.datos), f.dia, leerFormaEvento(sola.datos).clase) : "serie";
         if (modo === "sesion" && sola) {
+          // Una ficha de la cartelera sumada a la propuesta de otra con el mismo título en el mismo sitio (OL-451): se dice en sus cuentas.
+          if (f.extra?.cartelera_id && sola.datos.cartelera_id !== f.extra.cartelera_id) sumadasAOtra.set(f.extra.cartelera_id, texto(sola.datos.titulo, 120));
           sumarSesion(sola.datos, f);
           const delFestival = typeof sola.datos.marco_propuesto === "string" ? conocidas.find((p) => p.id === sola.datos.marco_propuesto) : null;
           if (delFestival) extenderFestival(delFestival, f.inicio, f.fin);
@@ -1187,6 +1194,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
   }
 
   // ---------- la Cartelera de la Ciudad de México (OL-448, OL-450, OL-451) ----------
+  /** Las fichas de la cartelera que `proponer` sumó a la propuesta de otra ficha (mismo título, mismo sitio): su id → el título de esa. */
+  const sumadasAOtra = new Map<string, string>();
   /**
    * Las propuestas de lugar de la ciudad (para no proponer dos veces un recinto, ni uno rechazado): por nombre y por su id en la cartelera
    * (`cartelera_recinto`). Se leen la primera vez que hacen falta en el paso.
@@ -1275,7 +1284,6 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       c.motivos[m] = (c.motivos[m] ?? 0) + 1;
       porTipo(t);
     };
-    const palabras = palabrasDeCiudad(ctx.ciudad.nombre);
     try {
       // 1. La lista: cada página trae 9 eventos y, mientras haya, 9 recintos.
       while (est.paginas === null || est.pagina <= est.paginas) {
@@ -1330,7 +1338,8 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         const deLista = ficha.recinto.id ? est.recintos[ficha.recinto.id] : undefined;
         const punto = deLista?.lat != null && deLista.lng != null ? { lat: deLista.lat, lng: deLista.lng } : ficha.punto;
         const recinto = { nombre: ficha.recinto.nombre || deLista?.n || "", punto };
-        const lugar = cruzarRecinto(recinto, lugares, palabras);
+        const cruce = cruceDeRecinto(recinto, lugares);
+        const lugar = cruce?.lugar ?? null;
         const filas = filasDeFicha(ficha, { hoy, lugar: lugar?.nombre ?? recinto.nombre, tipoDeLista: tipo });
         if (!filas.length) {
           // Con funciones de hoy en adelante, es que no dice a qué hora (ni la ficha ni su descripción); si no, ya pasó.
@@ -1351,7 +1360,7 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
           !lugar && recinto.nombre && recinto.punto
             ? await recintoPropuesto(est, { id: ficha.recinto.id, nombre: recinto.nombre, punto: recinto.punto, direccion: ficha.direccion, imagen: deLista?.img ?? null, enlace: ficha.enlace }, filas[0].url)
             : null;
-        ctx.anotarCartelera?.({ tipo: "recinto", id: ficha.recinto.id, nombre: recinto.nombre, lugar: lugar?.nombre ?? null, cercano: lugar ? null : lugarMasCercano(recinto.punto, lugares) });
+        ctx.anotarCartelera?.({ tipo: "recinto", id: ficha.recinto.id, nombre: recinto.nombre, lugar: lugar?.nombre ?? null, como: cruce?.como ?? null, metros: cruce?.metros ?? null, cercano: lugar ? null : lugarMasCercano(recinto.punto, lugares) });
         // La ficha, sola: así se sabe qué pasó con ella (propuesta, o el motivo por el que no).
         const antes = { ...cont.descartados };
         const escritas = new Set(conocidas.filter((p) => p.escrita).map((p) => p.id));
@@ -1367,7 +1376,15 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         if (conocidas.some((p) => p.escrita && !escritas.has(p.id) && p.datos.cartelera_id === ficha.id)) {
           c.propuestos++;
           porTipo(t).propuestos++;
-        } else motivo(MOTIVOS_EVENTO.find((m) => cont.descartados[m] > antes[m]) ?? "no_guardada", t);
+        } else if (sumadasAOtra.has(ficha.id)) {
+          // Sus funciones se sumaron a la propuesta de otra ficha con el mismo título en el mismo sitio (la misma obra listada dos veces).
+          motivo("otra_ficha", t);
+          ctx.anotarCartelera?.({ tipo: "no_propuesta", motivo: "otra_ficha", url: filas[0].url, titulo: ficha.titulo, con: sumadasAOtra.get(ficha.id) ?? null });
+        } else {
+          const m = MOTIVOS_EVENTO.find((x) => cont.descartados[x] > antes[x]);
+          motivo(m ?? "no_guardada", t);
+          if (!m) ctx.anotarCartelera?.({ tipo: "no_propuesta", motivo: "no_guardada", url: filas[0].url, titulo: ficha.titulo });
+        }
       }
       const termino = est.paginas !== null && est.pagina > est.paginas && !est.pendientes.length;
       if (termino) cont.agendas_leidas++;

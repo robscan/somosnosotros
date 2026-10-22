@@ -91,7 +91,11 @@ export type DatosInforme = {
   muestra: { tipo: string; titulo: string; inicio: unknown; sesiones: number }[];
   sinHora: Extract<NotaCartelera, { tipo: "sin_hora" }>[];
   recintos: Extract<NotaCartelera, { tipo: "recinto" }>[];
+  /** Las fichas que no se propusieron por `otra_ficha` o `no_guardada` (OL-451), con su enlace. */
+  noPropuestas: Extract<NotaCartelera, { tipo: "no_propuesta" }>[];
 };
+
+const COMO: Record<string, string> = { exacto: "el mismo nombre", parecido: "nombre parecido", cercania: "cercanía" };
 
 /** Los recintos que se pidió revisar (OL-451): si cruzan con el directorio. */
 export const RECINTOS_A_REVISAR = ["Palacio de Bellas Artes", "Teatro de la Ciudad Esperanza Iris", "Museo de la Ciudad de México", "Colegio de San Ildefonso"];
@@ -144,8 +148,35 @@ export function lineasDeInforme(o: DatosInforme): string[] {
       const x = unicos.find((u) => u.nombre === nombre);
       lineas.push(`- ${nombre}: ${!x ? "no vino en la cartelera" : x.lugar ? `cruza con «${x.lugar}»` : `NO cruza${x.cercano ? ` (lo más cercano: «${x.cercano.nombre}» a ${x.cercano.metros} m)` : ""}`}`);
     }
+    // Todos los que cruzan, para revisarlos uno por uno: con qué lugar, a qué distancia y por qué.
+    lineas.push(
+      "",
+      `Cruzan (${cruzados.length}): recinto de la cartelera → lugar del directorio · distancia · por qué`,
+      "",
+      ...cruzados.map((x) => `- ${x.nombre} → «${x.lugar}» · ${x.metros != null ? `${x.metros} m` : "sin punto"} · ${x.como ? COMO[x.como] : "—"}`),
+    );
     lineas.push("", "No cruzan (con lo más cercano del directorio a menos de 1 km):", "", ...nuevos.slice(0, 60).map((x) => `- ${x.nombre}${x.cercano ? ` · cerca: «${x.cercano.nombre}» a ${x.cercano.metros} m` : ""}`));
   }
+  const otras = o.noPropuestas.filter((x) => x.motivo === "otra_ficha");
+  const noGuardadas = o.noPropuestas.filter((x) => x.motivo === "no_guardada");
+  if (otras.length)
+    lineas.push(
+      "",
+      `## Sumadas a otra ficha (${n(motivos.otra_ficha)})`,
+      "",
+      "La misma actividad listada en dos fichas, con el mismo título y en el mismo sitio: sus funciones se sumaron a la propuesta de la otra.",
+      "",
+      ...otras.map((x) => `- «${x.titulo}» · ${x.url}${x.con ? ` → se sumó a «${x.con}»` : ""}`),
+    );
+  if (noGuardadas.length || n(motivos.no_guardada))
+    lineas.push(
+      "",
+      `## No guardadas (${n(motivos.no_guardada)})`,
+      "",
+      "Se iban a proponer, no tenían ningún motivo para quedar fuera y no quedó nada escrito: la base no guardó la propuesta (aviso «No se pudieron guardar algunas propuestas») o la corrida dejó de estar «corriendo» a medio paso. Hay que volver a leerlas.",
+      "",
+      ...noGuardadas.map((x) => `- «${x.titulo}» · ${x.url}`),
+    );
   if (o.muestra.length) lineas.push("", `## Muestra (${o.muestra.length})`, "", ...o.muestra.map((m) => `- ${horaDeLaCiudad(m.inicio)} · ${m.tipo}${m.sesiones ? ` · ${m.sesiones} funciones` : ""} · ${m.titulo}`));
   return lineas;
 }
@@ -281,6 +312,7 @@ async function main() {
     muestra,
     sinHora: notas.filter((x): x is Extract<NotaCartelera, { tipo: "sin_hora" }> => x.tipo === "sin_hora"),
     recintos: notas.filter((x): x is Extract<NotaCartelera, { tipo: "recinto" }> => x.tipo === "recinto"),
+    noPropuestas: notas.filter((x): x is Extract<NotaCartelera, { tipo: "no_propuesta" }> => x.tipo === "no_propuesta"),
   });
   console.log(`\n${lineas.join("\n")}`);
   // Sin --simular, los ids de lo propuesto (para deshacer: borrar esas propuestas o la corrida entera).
