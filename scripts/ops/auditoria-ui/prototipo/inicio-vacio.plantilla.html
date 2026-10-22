@@ -15,7 +15,8 @@
    Sobre la pantalla REAL (regla de OL-409): Inicio de Querétaro, Ciudad de México y Zacatecas, con y sin sesión, las tres altas y Entrar se
    guardaron con `maqueta-pantalla.mjs` (la app compilada contra el respaldo local, `RESPALDO_VACIO=1`) y `prototipo/inicio-vacio.mjs` arma este
    archivo: el teléfono es un `iframe` con el CSS servido tal cual y el cuerpo de cada pantalla tal cual. La propuesta solo añade piezas que ya
-   existen, con su marcado y sus clases de producción (Lista/vacio, TiraTipos, Destacados, TarjetaEvento, TarjetaAvatar). Nada dibujado a mano.
+   existen, con su marcado y sus clases de producción (Lista/vacio y ui/Boton con IconoMas). Nada dibujado a mano. Segunda vuelta (founder):
+   sin banner en una ciudad sin eventos, sin la ciudad más cercana, lugares y artistas como hoy, y un solo botón grande «+ Publicar un evento».
    Lo de este archivo (fuera del marco) es solo el armazón del prototipo. */
 :root {
   --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
@@ -69,22 +70,22 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     <section aria-labelledby="t-caso"><h2 id="t-caso">Este caso</h2><p id="texto-caso"></p></section>
     <section aria-labelledby="t-pantalla"><h2 id="t-pantalla">Lo que ves</h2><ul id="texto-pantalla"></ul></section>
     <section aria-labelledby="t-medida">
-      <h2 id="t-medida">Medida del bloque nuevo</h2>
+      <h2 id="t-medida">Medida del llamado</h2>
       <div class="cifras">
         <div class="cifra"><small>Nodos</small><b id="m-nodos">–</b></div>
         <div class="cifra"><small>Profundidad</small><b id="m-prof">–</b></div>
         <div class="cifra"><small>Sin clase</small><b id="m-sin">–</b></div>
       </div>
-      <p class="chica" id="m-texto">El llamado a crear, medido dentro del marco como medir.js (lo que se pinta; un svg cuenta uno). La profundidad es la de toda la pantalla. «Sin clase»: div o span sin clase dentro de lo nuevo.</p>
+      <p class="chica" id="m-texto">El llamado a crear, medido dentro del marco como medir.js (lo que se pinta; un svg cuenta uno). La profundidad es la de toda la pantalla. «Sin clase»: div o span sin clase dentro de lo nuevo. La accesibilidad (nombre, toque, contraste, foco, orden) la comprueba capturar-inicio-vacio.mjs; sus cifras, en la bitácora 486.</p>
     </section>
     <section aria-labelledby="t-recomienda">
-      <h2 id="t-recomienda">Recomendación</h2>
+      <h2 id="t-recomienda">Lo decidido (segunda vuelta)</h2>
       <ul>
-        <li><b>Solo cuando la ciudad no tiene ningún evento próximo</b> (lo que hoy cuenta como vacío, sin contar Tus planes, que son de otra ciudad).</li>
-        <li><b>Arriba, el llamado a crear</b> en el sitio del carril estelar: «¿Sabes de algo que pase en …?» y la tira Evento · Lugar · Artista de las altas, con la ciudad puesta. Sin sesión, pasa por Entrar y vuelve al alta.</li>
-        <li><b>Debajo, lo de siempre</b>: el banner de compartir y Tus planes, en su orden firmado.</li>
-        <li><b>Lo más cercano</b>: el carril de tarjetas de la ciudad más cercana con eventos, con su distancia en el título.</li>
-        <li><b>Al final, lo que sí hay</b>: Lugares y Artistas de la ciudad, en avatares, solo si los hay. Seguir un lugar o a alguien desde su ficha ya avisa de su próximo evento.</li>
+        <li><b>Solo cuando la ciudad no tiene ningún evento próximo</b>; Tus planes, que son de otra ciudad, ya no cuentan para decidirlo.</li>
+        <li><b>Sin el banner de compartir</b> en esa ciudad: en su sitio, el llamado.</li>
+        <li><b>Un solo botón grande: «+ Publicar un evento»</b> (ui/Boton primario con el «+»), al alta de evento con la ciudad puesta; sin sesión pasa por Entrar y vuelve. Lugar y artista, en el «+» de la barra, como hoy.</li>
+        <li><b>Sin la ciudad más cercana</b> y lugares y artistas como hoy.</li>
+        <li><b>Variante</b> (recomendación): debajo del botón, el enlace quieto de ui/Boton «Registrar un lugar o a un artista», para no esconder las otras dos altas en la barra.</li>
       </ul>
     </section>
   </aside>
@@ -100,7 +101,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
 
   const CASOS = {
     cdmx: { titulo: '1 · Casi nueva', texto: 'Ciudad de México en el respaldo: una artista (Rocío Lozano) y nada más: ni lugares ni eventos. Es lo más «nueva» que una ciudad puede estar en Inicio: una ciudad sin ninguna ficha ni siquiera entra al catálogo y Inicio abre San Luis Potosí en su lugar.' },
-    qro: { titulo: '2 · Lugares, sin eventos', texto: 'Querétaro en el respaldo: tres lugares y dos artistas, y ningún evento próximo. El caso que describe el founder: una ciudad del catálogo que se quedó sin agenda.' },
+    qro: { titulo: '2 · Lugares, sin eventos', texto: 'Querétaro en el respaldo: tres lugares y dos artistas, y ningún evento próximo. El caso que describe el founder: una ciudad del catálogo que se quedó sin agenda. Sus lugares y artistas no salen en Inicio porque no tienen evento esta semana; se quedan así (decisión del founder).' },
     zac: { titulo: '3 · Eventos más adelante', texto: 'Zacatecas en el respaldo: un lugar y tres eventos que empiezan pasada esta semana (19 y 26 de octubre y 9 de noviembre). Nada esta semana.' },
   };
   const TEXTOS = {
@@ -109,8 +110,12 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
       zac: ['«Más adelante» ya sale: con nada esta semana, Inicio enseña los próximos veinte de la ciudad con la tarjeta mediana y «Ver la agenda». Este caso ya está cubierto.', 'Con sesión, Tus planes va antes, en su orden firmado.'],
     },
     propuesta: {
-      vacia: ['Arriba, el llamado a crear: el aviso de vacío de las listas (su título y su texto) con la tira Evento · Lugar · Artista de las altas debajo, cada tipo un enlace a su alta con la ciudad puesta. Toca «Evento», «Lugar» o «Artista».', 'Sin sesión, el alta pasa por Entrar («Entra para publicar») y vuelve a ella; aquí, «Mandarme el código» hace de entrar. Con sesión, va directo. La ✕ del alta vuelve a Inicio.', 'Después, lo de siempre: el banner y, con sesión, Tus planes.', 'Lo más cercano: el carril «Esta semana» de San Luis Potosí tal cual, con su distancia en el título («A 183 km, en San Luis Potosí»); «Ver la agenda» lleva a la agenda de esa ciudad.', 'Lo que sí hay: Lugares y Artistas de la ciudad en avatares (el carril de «Lugares de la semana»), solo si los hay; cada avatar abre su ficha, donde Seguir ya avisa de su próximo evento.'],
+      vacia: ['Sin banner de compartir. En su sitio, el llamado: el aviso de vacío de las listas («¿Sabes de algo que pase en …?» y «Aún no hay eventos próximos aquí. Publica el primero.») con un solo botón grande, «+ Publicar un evento» (ui/Boton primario con el «+»).', 'Toca el botón: sin sesión pasa por Entrar («Entra para publicar») y vuelve al alta de evento con la ciudad puesta; aquí «Mandarme el código» hace de entrar. Con sesión va directo. La ✕ del alta vuelve a Inicio.', 'Con sesión, Tus planes debajo, como hoy. Lugar y artista se publican desde el «+» de la barra, como hoy.'],
       zac: ['Sin cambios: «Más adelante» ya resuelve este caso y la ciudad no está vacía, así que no sale el llamado.'],
+    },
+    variante: {
+      vacia: ['La propuesta y, debajo del botón, el enlace quieto de ui/Boton (gris y subrayado): «Registrar un lugar o a un artista», al alta de lugar con la ciudad puesta (su tira pasa a artista). El texto dice las tres cosas.', 'Por qué: en una ciudad vacía lo que más falta suele ser el directorio; así las otras dos altas no quedan escondidas en la barra, y el botón grande sigue siendo uno solo.'],
+      zac: ['Sin cambios, como en la propuesta.'],
     },
   };
 
@@ -120,7 +125,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
   const guardar = () => { try { localStorage.setItem('proto-inicio-vacio', JSON.stringify(estado)); } catch {} };
   let aviso = '';
 
-  const inicioId = () => (estado.version === 'propuesta' && estado.caso !== 'zac' ? 'propuesta-' : 'inicio-') + estado.caso + (estado.sesion ? '-sesion' : '');
+  const inicioId = () => (estado.version !== 'hoy' && estado.caso !== 'zac' ? estado.version + '-' : 'inicio-') + estado.caso + (estado.sesion ? '-sesion' : '');
   const documento = (cuerpo) => `<!doctype html>${HTML_TAG}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body>${cuerpo}</body></html>`;
 
   const tel = $('tel');
@@ -140,10 +145,10 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
       tel.srcdoc = documento(PANTALLAS[id]);
     });
     botones('sel-caso', Object.entries(CASOS).map(([v, x]) => [v, x.titulo]), estado.caso, (v) => ir({ caso: v }));
-    botones('sel-version', [['hoy', 'Hoy'], ['propuesta', 'Propuesta']], estado.version, (v) => ir({ version: v }));
+    botones('sel-version', [['hoy', 'Hoy'], ['propuesta', 'Propuesta'], ['variante', 'Variante']], estado.version, (v) => ir({ version: v }));
     botones('sel-sesion', [['sin', 'Sin sesión'], ['con', 'Con sesión (planes en San Luis)']], estado.sesion ? 'con' : 'sin', (v) => ir({ sesion: v === 'con' }));
     const nombre = { 'alta-evento': 'Alta de evento', 'alta-lugar': 'Alta de lugar', 'alta-artista': 'Alta de artista', 'entrar-alta': 'Entrar para publicar' }[estado.pantalla];
-    $('etiqueta').innerHTML = aviso ? esc(aviso) : `<b>${esc(CASOS[estado.caso].titulo)} · ${estado.version === 'hoy' ? 'Hoy' : 'Propuesta'}</b> · ${estado.sesion ? 'con sesión' : 'sin sesión'}${nombre ? ` · ${esc(nombre)}` : ''} · 390 × 844`;
+    $('etiqueta').innerHTML = aviso ? esc(aviso) : `<b>${esc(CASOS[estado.caso].titulo)} · ${{ hoy: 'Hoy', propuesta: 'Propuesta', variante: 'Variante' }[estado.version]}</b> · ${estado.sesion ? 'con sesión' : 'sin sesión'}${nombre ? ` · ${esc(nombre)}` : ''} · 390 × 844`;
     aviso = '';
     $('texto-caso').textContent = CASOS[estado.caso].texto;
     $('texto-pantalla').innerHTML = TEXTOS[estado.version][estado.caso === 'zac' ? 'zac' : 'vacia'].map((x) => `<li>${esc(x)}</li>`).join('');
@@ -205,7 +210,7 @@ button { font: inherit; font-variation-settings: inherit; color: inherit; border
     medir: () => medir(tel.contentDocument),
     listo: () => pintado,
   };
-  if (!CASOS[estado.caso]) estado = { ...INICIAL };
+  if (!CASOS[estado.caso] || !TEXTOS[estado.version]) estado = { ...INICIAL };
   pintar();
 })();
 </script>
