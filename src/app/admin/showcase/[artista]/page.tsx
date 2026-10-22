@@ -35,7 +35,9 @@ import {
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../../Reintentar";
 import { anioDe, cargarFichaShowcase, cargarInvestigacion } from "../consultas";
+import { sugerenciasCompletar } from "@/lib/completarFicha";
 import AyudaFicha from "./AyudaFicha";
+import CompletarFicha from "./CompletarFicha";
 import EstadoFicha from "./EstadoFicha";
 import InvestigarFicha from "./InvestigarFicha";
 import NotasFicha from "./NotasFicha";
@@ -56,7 +58,9 @@ const ICONO_BASE = { total: IconoCalendario, lugar: IconoPin, festival: IconoEti
 /**
  * La ficha de showcase de un artista (OL-426; lo firmado en OL-425): la cabecera de la ficha de una persona, el estado con quién y cuándo, la
  * rúbrica señal por señal con sus evidencias enlazadas, lo que propuso la rutina por revisar, sus eventos y foros del año (de la base), sus redes
- * con la fecha de cada lectura y las notas privadas del consejo. La ⓘ explica cada parte. Solo administración; nada de aquí se publica.
+ * con la fecha de cada lectura y las notas privadas del consejo. La ⓘ explica cada parte. Solo administración: lo único que sale de aquí son las
+ * evidencias aceptadas (salvo redes), que se publican en su perfil como «Reconocimientos y obra» (OL-445), y lo que «Completar ficha» escribe
+ * en su ficha cuando alguien lo acepta.
  * OL-430: «Investigar» (la rutina con la API busca prensa, premios, festivales y obra publicada y deja evidencias propuestas en «Por revisar»),
  * con su renglón justo antes de lo que trae.
  */
@@ -111,6 +115,8 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
     hallazgos: propuestas,
   };
   const base = renglonesBase(f.eventos, new Map(f.lugares.map((l) => [l.id, l])), new Map([...f.festivales, ...f.eventos.filter((e) => e.clase === "festival")].map((e) => [e.id, e])), a.slug, ahora, diaDe);
+  // OL-445: lo que trajeron las rutinas y su ficha pública no tiene.
+  const sugerencias = sugerenciasCompletar({ ...f.completar, evidencias: f.evidencias });
   const inv = await cargarInvestigacion(a.id, ahora);
   const porRevisarRutina = f.evidencias.filter((e) => e.estado === "propuesta" && e.leida_por === "rutina").length;
   const textoInv = inv.corrida === undefined ? "No pudimos leer la última investigación" : textoInvestigar(inv.corrida, porRevisarRutina, hoy, diaDe);
@@ -158,6 +164,8 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
       />
 
       <Hallazgos grupos={[grupo]} hoy={hoy} modo="ficha" />
+
+      <CompletarFicha artistaId={a.id} slug={a.slug} sugerencias={sugerencias} reclamada={f.reclamada} />
 
       <h2 className={admin.grupo} data-ayuda="base">
         En la base · {anioDe(ahora).anio}

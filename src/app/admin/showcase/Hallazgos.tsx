@@ -130,6 +130,7 @@ export default function Hallazgos({ grupos, hoy, modo, cuando = null }: { grupos
                   <IconoOk width={20} height={20} />
                   <span>
                     {hecha.como === "aceptada" ? "Aceptaste" : "Rechazaste"} <b>{h.titulo}</b>
+                    {hecha.como === "aceptada" && h.tipo !== "redes" && " · ya está en su perfil"}
                     {hecha.corto && (
                       <>
                         {" · "}
@@ -220,7 +221,7 @@ export default function Hallazgos({ grupos, hoy, modo, cuando = null }: { grupos
         <h2 id="por-revisar" tabIndex={-1} className={`${admin.grupo} ${admin.conNota} ${s.porRevisar}`}>
           Por revisar {n > 0 && <b>{n}</b>}
         </h2>
-        <p className={admin.nota}>Lo que trajo la rutina. Solo cuenta lo que aceptas.</p>
+        <p className={admin.nota}>Lo que trajo la rutina. Lo que aceptas cuenta para la rúbrica y se publica en su perfil.</p>
         {lista(g)}
         {todas(g, false)}
         {hoja}

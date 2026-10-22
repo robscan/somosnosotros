@@ -3,6 +3,7 @@ import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hrefArtista } from "./artistas";
 import { cargarTrayectoria, cargarHistorialLugar, COLUMNAS_PASADO, completar, type FilaPasado } from "./cargarHistorial";
+import { cargarHitos } from "./cargarHitos";
 import { esUuid } from "./formulario";
 import type { EventoPasado } from "./historialFichas";
 import { hrefLugar } from "./lugares";
@@ -89,9 +90,10 @@ export async function cargarTuAnio(que: SujetoTuAnio, id?: string | null, ahora:
     type Fila = { id: string; slug: string; nombre: string; foto: string | null; portada: string | null; creado_por: string | null };
     const a = await leerFicha<Fila>(supabase as SupabaseClient, "artistas", "id, slug, nombre, foto, portada, creado_por", id);
     if (!a || !(await gestiona(supabase as SupabaseClient, quien, "artistas_cuentas", "artista_id", a.id, a.creado_por))) return null;
-    const { eventos } = await cargarTrayectoria(a.id);
+    const [{ eventos }, hitos] = await Promise.all([cargarTrayectoria(a.id), cargarHitos(a.id)]);
     const zona = zonaDelAnio(eventos);
-    const resumen = resumirTuAnio({ tipo: "artista", id: a.id, nombre: a.nombre, foto: a.foto ?? a.portada, eventos, ahora, zona });
+    // OL-445: sus hitos del año (lo aceptado del showcase) se cuentan además de sus fechas.
+    const resumen = resumirTuAnio({ tipo: "artista", id: a.id, nombre: a.nombre, foto: a.foto ?? a.portada, eventos, ahora, zona, hitos });
     if (resumen.protagonista.n === 0) return null;
     return { resumen, id: a.id, volver: hrefArtista(a), archivo: nombreTuAnio(anioDe(ahora, zona), a.slug) };
   }
