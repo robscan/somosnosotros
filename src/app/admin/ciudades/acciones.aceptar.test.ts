@@ -18,6 +18,7 @@ const m = vi.hoisted(() => ({
   ligar: vi.fn(),
   actos: { data: [] as { id: string; ficha_id: string | null }[], error: null as null | { message: string } },
   filtrosActos: [] as [string, unknown][],
+  cartel: vi.fn(),
 }));
 
 /** La sesión: lee la propuesta y su corrida; `aceptar_propuesta` la marca. */
@@ -55,6 +56,7 @@ vi.mock("@/lib/rutinas/publicarEvento", () => ({
   insertarEvento: m.insertar,
   ligarFicha: m.ligar,
 }));
+vi.mock("@/lib/rutinas/aceptarCartel", () => ({ almacenDeSupabase: () => ({}), ponerCartel: m.cartel }));
 vi.mock("next/cache", () => ({ revalidatePath: m.revalidar }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("next/server", () => ({ after: () => {} }));
@@ -142,5 +144,26 @@ describe("aceptar un evento en la bandeja (OL-434)", () => {
     expect(m.insertar).toHaveBeenCalled();
     // Así la lee la bandeja.
     expect(textoDecidida("Altar vivo, instalación inmersiva", { aceptada: true, tipo: "evento" }, r.ok ? r.nota : undefined)).toBe("Aceptaste Altar vivo, instalación inmersiva · se publicó con costo por confirmar");
+  });
+
+  it("OL-448: la imagen de la cartelera se pone como cartel al publicar; si no se puede, se publica sin él y la línea lo dice", async () => {
+    const IMG = "https://cartelera.cdmx.gob.mx/wp-content/uploads/ae_usercontent/usercontent/expo.jpg";
+    propuesta(SUELTO, { titulo: "Esencia del Arte Popular Mexicano", imagen: IMG });
+    m.preparar.mockResolvedValue({ ok: true, fila: {}, titulo: "Esencia del Arte Popular Mexicano" });
+    m.insertar.mockResolvedValue({ id: "e0000000-0000-4000-8000-000000000004", slug: "esencia" });
+    m.ligar.mockResolvedValue(true);
+    m.cartel.mockResolvedValue({ ok: true, evento: { id: "e0000000-0000-4000-8000-000000000004", slug: "esencia", lugar_id: null }, url: "https://x.supabase.co/fotos/a.jpg" });
+    expect(await aceptarPropuesta(SUELTO)).toEqual({ ok: true, href: "/eventos/esencia" });
+    expect(m.cartel).toHaveBeenCalledWith(expect.objectContaining({ almacen: {} }), { evento_id: "e0000000-0000-4000-8000-000000000004", imagen: IMG }, "admin-1");
+    propuesta(SUELTO, { titulo: "Esencia del Arte Popular Mexicano", imagen: IMG });
+    m.cartel.mockResolvedValue({ ok: false, error: "La imagen ya no se pudo bajar de esa página. Recházala." });
+    m.preparar.mockResolvedValue({ ok: true, fila: {}, titulo: "Esencia del Arte Popular Mexicano", nota: "se publicó con costo por confirmar" });
+    expect(await aceptarPropuesta(SUELTO)).toEqual({ ok: true, href: "/eventos/esencia", nota: "se publicó con costo por confirmar · se publicó sin cartel: su imagen no se pudo bajar" });
+    // Sin imagen, ni se intenta.
+    m.cartel.mockClear();
+    propuesta(SUELTO, { titulo: "Recital de guitarra" });
+    m.preparar.mockResolvedValue({ ok: true, fila: {}, titulo: "Recital de guitarra" });
+    await aceptarPropuesta(SUELTO);
+    expect(m.cartel).not.toHaveBeenCalled();
   });
 });

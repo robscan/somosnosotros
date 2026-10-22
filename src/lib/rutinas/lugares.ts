@@ -97,6 +97,8 @@ export type Contexto = {
   gastado: () => number;
   /** ¿Sigue «corriendo»? (Si la cancelaron a medio paso, no se propone nada más.) */
   sigueCorriendo: () => Promise<boolean>;
+  /** Esperar (la calma de la cartelera, OL-448); por omisión, de verdad. Las pruebas pasan un reloj falso. */
+  dormir?: (ms: number) => Promise<void>;
 };
 
 export const LOTE_MAPBOX = 10;
