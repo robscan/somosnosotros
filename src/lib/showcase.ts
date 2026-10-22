@@ -1,6 +1,7 @@
 import { DISCIPLINAS, etiquetaDisciplina } from "./artistas";
 import { normalizarRedes } from "./enlaces";
 import { normalizarNombre } from "./lugares";
+import { corridasVaradas, type CorridaVista } from "./rutinas/rescate";
 import { ORIGEN } from "./sitemap";
 
 /**
@@ -185,6 +186,8 @@ export type Candidato = {
   foto: string | null;
   instagram: string | null;
   estado: Estado;
+  /** OL-439: tiene fila en `showcase_candidatos` (alguien lo marcó o lo trabajó en el showcase); sin fila es candidato implícito. */
+  marcado: boolean;
   /** Cada señal con lo fijado a mano, lo propuesto por la base y el puntaje que vale (OL-437). */
   valores: Valores;
   /** La suma de lo que vale. */
@@ -264,6 +267,7 @@ export function armarCandidatos(f: FilasShowcase, hoy: string): Candidato[] {
       foto: a.foto,
       instagram: normalizarRedes(a.redes).find((e) => e.red === "instagram")?.url ?? null,
       estado: c?.estado ?? "candidato",
+      marcado: !!c,
       valores,
       suma: sumaValores(valores),
       nota: primeraLinea(c?.notas),
@@ -984,4 +988,167 @@ export function lineaCreditoInvestigar(c: { usd: number; gastado: number; vence:
   const vence = c.vence && /^\d{4}-\d{2}-\d{2}$/.test(c.vence) ? c.vence : null;
   const fecha = vence ? new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", day: "numeric", month: "long" }).format(new Date(`${vence}T12:00:00Z`)) : null;
   return [`Crédito: ${dolares(queda)} USD`, fecha ? `${vence! < hoy ? "venció" : "vence"} el ${fecha}` : null].filter(Boolean).join(" · ");
+}
+
+// ---------- «Investigar» a varios desde la lista (OL-439) ----------
+/** Como mucho, cuántas investigaciones salen en una sola orden (límite de seguridad del gasto). */
+export const LIMITE_LOTE = 60;
+/** Una investigación terminada hace menos de esto no se repite por omisión. */
+export const DIAS_INVESTIGACION_RECIENTE = 30;
+
+/** Una corrida `showcase` como la lee la lista: la de la ficha con su artista y su lote (la orden que la creó; null si salió de la ficha). */
+export type CorridaLista = CorridaInvestigar & { artista_id: string; lote: string | null };
+
+/** La última investigación de cada artista (la más reciente por creación). */
+export function ultimasInvestigaciones(corridas: readonly CorridaLista[]): Map<string, CorridaLista> {
+  const por = new Map<string, CorridaLista>();
+  for (const c of corridas) {
+    const antes = por.get(c.artista_id);
+    if (!antes || c.creado_en > antes.creado_en) por.set(c.artista_id, c);
+  }
+  return por;
+}
+
+/**
+ * Si ya hay una investigación que cuenta: en curso (no se puede correr otra a la vez) o terminada en los últimos 30 días. Una que falló o se
+ * canceló se puede repetir.
+ */
+export function investigadoHacePoco(c: Pick<CorridaInvestigar, "estado" | "fin" | "inicio" | "creado_en"> | null | undefined, ahora: Date): boolean {
+  if (!c) return false;
+  if (investigacionEnCurso(c)) return true;
+  if (c.estado !== "terminada") return false;
+  const t = Date.parse(c.fin ?? c.inicio ?? c.creado_en);
+  return Number.isFinite(t) && ahora.getTime() - t < DIAS_INVESTIGACION_RECIENTE * 86_400_000;
+}
+
+/** A quién se puede investigar en una orden: las dos opciones de la hoja, en el orden de la lista. */
+export type SeleccionLote = {
+  /** Los candidatos marcados (con fila en el showcase, candidato o revisado) sin una investigación en curso ni de los últimos 30 días. */
+  candidatos: string[];
+  /** Los que se ven en la lista con el filtro de ahora, sin descartados ni investigados hace poco. */
+  visibles: string[];
+  /** De los que se ven, cuántos quedan fuera por tener una investigación en curso o de los últimos 30 días. */
+  fueraRecientes: number;
+  /** De los que se ven, cuántos quedan fuera por descartados (nunca se investigan en lote). */
+  fueraDescartados: number;
+};
+export function seleccionLote(todos: readonly Candidato[], filtrados: readonly Candidato[], ultimas: ReadonlyMap<string, Pick<CorridaInvestigar, "estado" | "fin" | "inicio" | "creado_en">>, ahora: Date): SeleccionLote {
+  const reciente = (c: Candidato) => investigadoHacePoco(ultimas.get(c.id), ahora);
+  const candidatos = todos.filter((c) => c.marcado && (c.estado === "candidato" || c.estado === "revisado") && !reciente(c)).map((c) => c.id);
+  let fueraRecientes = 0;
+  let fueraDescartados = 0;
+  const visibles: string[] = [];
+  for (const c of filtrados) {
+    if (c.estado === "descartado") fueraDescartados++;
+    else if (reciente(c)) fueraRecientes++;
+    else visibles.push(c.id);
+  }
+  return { candidatos, visibles, fueraRecientes, fueraDescartados };
+}
+
+const artistasN = (n: number) => `${n} ${n === 1 ? "artista" : "artistas"}`;
+
+/** «26 artistas · hasta 26,00 USD · crédito 192,40»: lo que dice la hoja antes de investigar (sin tope válido o sin crédito, lo que haya). */
+export function lineaTotalLote(n: number, tope: number | null, disponible: number | null): string {
+  return [artistasN(n), tope !== null ? `hasta ${dolares(n * tope)} USD` : null, disponible !== null ? `crédito ${dolares(disponible)}` : null].filter(Boolean).join(" · ");
+}
+
+/** El botón de la hoja: «Investigar a los 26», «Investigar a 1 artista». */
+export function botonLote(n: number): string {
+  return n === 1 ? "Investigar a 1 artista" : `Investigar a los ${n}`;
+}
+
+/** Lo que dice la hoja si una opción trae más de la cuenta o a nadie; null si se puede investigar. */
+export function avisoLote(n: number): string | null {
+  if (n === 0) return "Nadie por investigar con esta opción.";
+  if (n > LIMITE_LOTE) return `Son ${n}: elige hasta ${LIMITE_LOTE} o filtra por disciplina.`;
+  return null;
+}
+
+/** Lo que cuenta la lista de una orden (un lote): cuántos, cuántos acabaron, lo gastado, el avance y lo que dejó por revisar. */
+export type ResumenLote = { lote: string; total: number; enCurso: number; terminados: number; fallidos: number; usd: number; avance: number; porRevisar: number; creado: string; fin: string | null };
+
+/** El avance de una corrida para la barra del lote: por empezar 0, corriendo lo que diga su resumen, acabada 1. */
+function avanceDe(c: Pick<CorridaInvestigar, "estado" | "resumen">): number {
+  if (c.estado === "pendiente") return 0;
+  if (c.estado === "corriendo") return avanceInvestigar(c) ?? 0;
+  return 1;
+}
+
+/** La orden más reciente (por la creación de sus corridas), o null si nunca se investigó en lote. `porRevisar`: evidencias de la rutina sin decidir, por artista. */
+export function resumenLote(corridas: readonly CorridaLista[], porRevisar: Readonly<Record<string, number>>): ResumenLote | null {
+  let ultimo: string | null = null;
+  let creado = "";
+  for (const c of corridas) if (c.lote && c.creado_en > creado) [ultimo, creado] = [c.lote, c.creado_en];
+  if (!ultimo) return null;
+  const suyas = corridas.filter((c) => c.lote === ultimo);
+  const enCurso = suyas.filter((c) => investigacionEnCurso(c)).length;
+  const fines = suyas.map((c) => c.fin).filter((f): f is string => !!f);
+  return {
+    lote: ultimo,
+    total: suyas.length,
+    enCurso,
+    terminados: suyas.filter((c) => c.estado === "terminada").length,
+    fallidos: suyas.filter((c) => c.estado === "fallida").length,
+    usd: Math.round(suyas.reduce((t, c) => t + c.gasto_usd, 0) * 100) / 100,
+    avance: suyas.length ? suyas.reduce((t, c) => t + avanceDe(c), 0) / suyas.length : 0,
+    porRevisar: [...new Set(suyas.map((c) => c.artista_id))].reduce((t, id) => t + (porRevisar[id] ?? 0), 0),
+    creado,
+    fin: enCurso ? null : (fines.sort().at(-1) ?? null),
+  };
+}
+
+/** «hoy», «ayer» o «el 21 oct»: cuándo, desde `hoy` (los dos YYYY-MM-DD). */
+function cuandoFue(dia: string, hoy: string): string {
+  const dias = diasEntre(dia, hoy);
+  if (dias <= 0) return "hoy";
+  if (dias === 1) return "ayer";
+  return `el ${diaMes(dia, hoy)}`;
+}
+const evidenciasPorRevisar = (n: number) => `${n} ${n === 1 ? "evidencia" : "evidencias"} por revisar`;
+
+/**
+ * La línea de la orden en el renglón «Investigar» de la lista:
+ *   · en curso: «Investigando a 26 · 5 terminados · 1,95 USD» (y «· 1 no se pudo» si alguna falló);
+ *   · acabada: «26 investigados hoy · 41 evidencias por revisar · 9,80 USD» (o «todo revisado»).
+ * Una orden acabada solo se dice mientras deja algo por revisar o el día que acabó (`mostrarLote`); después el renglón vuelve a proponer.
+ */
+export function lineaLote(r: ResumenLote, hoy: string, diaDe: (iso: string) => string): string {
+  const usd = `${dolares(r.usd)} USD`;
+  const fallos = r.fallidos ? `${r.fallidos} no se ${r.fallidos === 1 ? "pudo" : "pudieron"}` : null;
+  if (r.enCurso) return [`Investigando a ${r.total}`, `${r.terminados} ${r.terminados === 1 ? "terminado" : "terminados"}`, fallos, usd].filter(Boolean).join(" · ");
+  const cuando = cuandoFue(diaDe(r.fin ?? r.creado), hoy);
+  return [`${r.total} ${r.total === 1 ? "investigado" : "investigados"} ${cuando}`, fallos, r.porRevisar ? evidenciasPorRevisar(r.porRevisar) : "todo revisado", usd].filter(Boolean).join(" · ");
+}
+export function mostrarLote(r: ResumenLote | null, hoy: string, diaDe: (iso: string) => string): r is ResumenLote {
+  return !!r && (r.enCurso > 0 || r.porRevisar > 0 || diaDe(r.fin ?? r.creado) === hoy);
+}
+
+/**
+ * Lo que dice la tarjeta de un candidato de su última investigación, para saber a quién entrar: «Investigando · 2 de 4 búsquedas» (y «· 1
+ * evidencia por revisar» si ya trajo algo: cada búsqueda deja lo suyo), «Investigando · por empezar», «Investigado hoy · 3 evidencias por
+ * revisar», «Investigado el 3 oct · todo revisado», «No se pudo investigar ayer» o, sin investigación (o cancelada), solo «3 evidencias por
+ * revisar» si las hay. null: nada que decir.
+ */
+export function textoInvestigarTarjeta(c: CorridaInvestigar | null | undefined, porRevisar: number, hoy: string, diaDe: (iso: string) => string): string | null {
+  const revisar = porRevisar > 0 ? evidenciasPorRevisar(porRevisar) : null;
+  if (!c || c.estado === "cancelada") return revisar;
+  if (c.estado === "pendiente") return ["Investigando · por empezar", revisar].filter(Boolean).join(" · ");
+  if (c.estado === "corriendo") {
+    const paso = typeof c.resumen.paso === "string" && c.resumen.paso.trim() ? c.resumen.paso.trim().slice(0, 40) : null;
+    return ["Investigando", paso, revisar].filter(Boolean).join(" · ");
+  }
+  const cuando = cuandoFue(diaDe(c.fin ?? c.inicio ?? c.creado_en), hoy);
+  if (c.estado === "fallida") return [`No se pudo investigar ${cuando}`, revisar].filter(Boolean).join(" · ");
+  return [`Investigado ${cuando}`, revisar ?? (Number(c.resumen.propuestas) > 0 ? "todo revisado" : "sin evidencias nuevas")].join(" · ");
+}
+
+/**
+ * Si la cadena de pasos del motor se paró (OL-439): hay corridas en curso (de cualquier rutina: el motor toma cualquiera, pendientes primero) y
+ * TODAS están varadas según `rescate.ts`. Mientras una sola avance, se trabaje o se haya pedido hace menos de 2 minutos, la cadena sigue viva y
+ * llegará a las demás: pedir otro paso abriría una segunda cadena en paralelo. En una orden de 26, las que esperan su turno no están varadas.
+ */
+export function cadenaParada(corridas: readonly CorridaVista[], ahora: Date): boolean {
+  const enCurso = corridas.filter((c) => c.estado === "pendiente" || c.estado === "corriendo");
+  return enCurso.length > 0 && corridasVaradas(enCurso, ahora).length === enCurso.length;
 }

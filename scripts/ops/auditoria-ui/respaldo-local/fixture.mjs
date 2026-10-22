@@ -920,6 +920,9 @@ propuestas.push(
   cineclub(12, 28, "aceptada"),
   formaDe(13, UNIVERSIDADES, { titulo: "Inauguración: Raíces", clase: "exposicion", exposicion: "Raíces", inicio: en(2, "19:00"), termina: en(40, "23:59"), lugar: "Museo Nacional de la Máscara" }),
   formaDe(14, BUSQUEDA_WEB, { titulo: "Función de clausura: cortometrajes potosinos", clase: "puntual", inicio: en(11, "19:00"), lugar: "Centro Cultural Universitario Bicentenario", marco: { id: E.cine, titulo: "Festival de Cine de Invierno" } }),
+  // OL-438: una que «Aceptar todas» no puede publicar: la agenda trae un evento que ya está en la app (el mismo título a la misma hora en el
+  // Teatro de la Paz), así la tanda la deja por revisar con su razón («Ya está … a esa hora: recházala como duplicado»).
+  formaDe(15, AGENDAS_GOB, { titulo: "Feleal: un viaje por el mundo en acordeón", clase: "puntual", inicio: en(7, "19:00"), lugar: "Teatro de la Paz", precio: "$120 a $250" }),
 );
 Object.assign(tablas, { ciudades, ciudades_vistas, rutinas_corridas, propuestas });
 const cuentasDe = (id, t) => {

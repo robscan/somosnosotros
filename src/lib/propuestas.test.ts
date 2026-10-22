@@ -4,6 +4,7 @@ import { validarLugar } from "./lugares";
 import {
   agruparConActos,
   agruparPorFuente,
+  enOrdenDeAceptar,
   entradaDeArtista,
   entradaDeLugar,
   esMotivo,
@@ -11,9 +12,15 @@ import {
   nombreDe,
   notaDeFestival,
   ofrecerTodas,
+  pasoDeTanda,
+  textoAceptarTodas,
   textoActoPublicado,
+  textoActoSinFestival,
   textoAceptarFestival,
+  textoAvanceTodas,
+  textoConfirmarTodas,
   textoDecidida,
+  textoTandaHecha,
   urlSegura,
   vistaPropuesta,
 } from "./propuestas";
@@ -84,10 +91,15 @@ describe("la bandeja", () => {
     expect(agruparPorFuente(lista, ["SIC"]).map((x) => [x.fuente, x.propuestas.map((p) => p.id)])).toEqual([["SIC", [4]], ["Búsqueda web", [1, 2]], ["Agenda", [5]], ["Cultura", [3]]]);
     expect(agruparPorFuente(lista).map((x) => x.fuente)).toEqual(["Búsqueda web", "Agenda", "Cultura", "SIC"]);
   });
-  it("«Aceptar las N» solo con una tanda aprobada antes y más de una por decidir", () => {
-    expect(ofrecerTodas("SIC", 3, ["SIC"])).toBe(true);
-    expect(ofrecerTodas("SIC", 1, ["SIC"])).toBe(false);
-    expect(ofrecerTodas("Web", 3, ["SIC"])).toBe(false);
+  it("«Aceptar las N» siempre que queden 2 o más, sin esperar a una tanda anterior (OL-438)", () => {
+    expect(ofrecerTodas(3)).toBe(true);
+    expect(ofrecerTodas(2)).toBe(true);
+    expect(ofrecerTodas(1)).toBe(false);
+    expect(ofrecerTodas(0)).toBe(false);
+    // Una fuente bajo la cabecera de su búsqueda: sale si no es todo lo que queda (si lo es, repetiría «Aceptar las N» de la cabecera).
+    expect(ofrecerTodas(3, 5)).toBe(true);
+    expect(ofrecerTodas(5, 5)).toBe(false);
+    expect(ofrecerTodas(1, 5)).toBe(false);
   });
   it("los cuatro motivos y la línea de lo hecho", () => {
     expect(esMotivo("duplicado")).toBe(true);
@@ -149,5 +161,59 @@ describe("festivales y sus actos en la bandeja (OL-434)", () => {
     expect(vistaPropuesta(e, "San Luis Potosí", AHORA).linea).toMatch(/^28 oct, 7:00 pm · Plaza de Armas$/);
     expect(vistaPropuesta(e, "San Luis Potosí", AHORA, { cuando: true }).linea).toBe("Plaza de Armas");
     expect(vistaPropuesta(e, "San Luis Potosí", AHORA, { cuando: true, donde: true }).linea).toBeNull();
+  });
+});
+
+describe("«Aceptar todas» (OL-438)", () => {
+  const p = (id: string, fuente: string, festival: string | null = null) => ({ id, fuente, festival });
+  it("el orden de la tanda es el de la pantalla: el festival antes que sus actos, aunque un acto llegara antes o por otra fuente", () => {
+    const orden = enOrdenDeAceptar([p("acto-1", "Web", "fest"), p("suelta", "Agenda"), p("fest", "Agenda"), p("acto-2", "Agenda", "fest"), p("otra", "Web")]);
+    expect(orden.map((x) => x.id)).toEqual(["suelta", "fest", "acto-1", "acto-2", "otra"]);
+    expect(orden.indexOf(orden.find((x) => x.id === "fest")!)).toBeLessThan(orden.findIndex((x) => x.id === "acto-1"));
+    // Ninguna se pierde ni sale dos veces.
+    expect(orden.map((x) => x.id).sort()).toEqual(["acto-1", "acto-2", "fest", "otra", "suelta"]);
+  });
+  it("antes de cada una: salta lo decidido o en camino, acepta, y deja con su razón un acto cuyo festival no se aceptó", () => {
+    type E = { decidida?: { rechazo: boolean }; enCamino?: string };
+    const estados: Record<string, E> = {};
+    const nombres: Record<string, string> = { fest: "Xantolo 2026" };
+    const paso = (x: { id: string; festival?: string | null }) => pasoDeTanda(x, (id) => estados[id], (id) => nombres[id]);
+    expect(paso(p("suelta", "Agenda"))).toEqual({ accion: "aceptar" });
+    estados.suelta = { decidida: { rechazo: true } };
+    expect(paso(p("suelta", "Agenda"))).toEqual({ accion: "saltar" });
+    estados.otra = { enCamino: "aceptar" };
+    expect(paso(p("otra", "Web"))).toEqual({ accion: "saltar" });
+    // El festival falló (sigue sin decidir): su acto se queda por revisar con su razón.
+    expect(paso(p("acto-1", "Web", "fest"))).toEqual({ accion: "dejar", razon: "Su festival «Xantolo 2026» no se aceptó: acéptalo antes que este acto." });
+    expect(textoActoSinFestival("Xantolo 2026")).toBe("Su festival «Xantolo 2026» no se aceptó: acéptalo antes que este acto.");
+    // Aceptado, el acto cuelga de él; rechazado, el acto se publica suelto (OL-433): en los dos casos se acepta.
+    estados.fest = { decidida: { rechazo: false } };
+    expect(paso(p("acto-1", "Web", "fest"))).toEqual({ accion: "aceptar" });
+    estados.fest = { decidida: { rechazo: true } };
+    expect(paso(p("acto-1", "Web", "fest"))).toEqual({ accion: "aceptar" });
+    // Un acto cuyo festival no está en esta bandeja va como siempre (el servidor dice si espera).
+    expect(paso(p("acto-x", "Web", "en-otra"))).toEqual({ accion: "aceptar" });
+  });
+  it("la hoja: cuántas, de qué y de qué ciudad, con los ejemplos de lo que se acepta", () => {
+    const lugares = Array.from({ length: 17 }, () => ({ tipo: "lugar" as const }));
+    expect(textoConfirmarTodas(lugares, "San Luis Potosí")).toEqual({
+      que: "Vas a aceptar 17 propuestas de lugares de San Luis Potosí.",
+      siNo: "Las que no se puedan publicar (un repetido, un sitio sin punto) se quedan por revisar con su razón.",
+    });
+    const eventos = [{ tipo: "evento" as const }, { tipo: "evento" as const, festival: "fest" }, { tipo: "evento" as const }];
+    expect(textoConfirmarTodas(eventos, "San Luis Potosí")).toEqual({
+      que: "Vas a aceptar 3 propuestas de eventos de San Luis Potosí.",
+      siNo: "Las que no se puedan publicar (un repetido, un sitio sin punto, un acto cuyo festival no se ha aceptado) se quedan por revisar con su razón.",
+    });
+    expect(textoConfirmarTodas([{ tipo: "artista" }, { tipo: "artista" }], "Oaxaca").siNo).toBe("Las que no se puedan publicar (un repetido) se quedan por revisar con su razón.");
+    expect(textoConfirmarTodas([{ tipo: "artista" }, { tipo: "lugar" }], null).que).toBe("Vas a aceptar 2 propuestas.");
+  });
+  it("el botón, su avance y la cuenta final", () => {
+    expect(textoAceptarTodas(17)).toBe("Aceptar las 17");
+    expect(textoAvanceTodas(5, 17)).toBe("Aceptando 5 de 17…");
+    expect(textoTandaHecha(15, 2)).toBe("15 aceptadas · 2 por revisar");
+    expect(textoTandaHecha(17, 0)).toBe("17 aceptadas");
+    expect(textoTandaHecha(1, 1)).toBe("1 aceptada · 1 por revisar");
+    expect(textoTandaHecha(0, 3)).toBe("Ninguna aceptada · 3 por revisar");
   });
 });
