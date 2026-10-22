@@ -98,7 +98,8 @@ export const HOJAS: Record<TipoHoja, { que: string; fuentes: readonly { clave: s
   agendas: {
     que: "Busca las agendas que juntan los eventos del mes, las guarda como fuentes y lee sus eventos; si un lugar no existe, te propone darlo de alta. Cada mes se vuelve a correr sobre las fuentes guardadas.",
     fuentes: [
-      { clave: "agenda-cultura", texto: () => "Agenda de la Secretaría de Cultura del estado y del municipio" },
+      // OL-448: en Ciudad de México esta fuente empieza por su cartelera, que se lee sin la API.
+      { clave: "agenda-cultura", texto: (ciudad) => (/^ciudad de m[eé]xico$/i.test(ciudad.trim()) ? "Cartelera de la Ciudad de México y agendas de gobierno" : "Agenda de la Secretaría de Cultura del estado y del municipio") },
       { clave: "universidades-museos", texto: () => "Universidades y museos" },
       { clave: "web", texto: (ciudad) => `Búsqueda web: «agenda cultural ${ciudad}»` },
     ],
