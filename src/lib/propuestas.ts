@@ -11,6 +11,8 @@ import { etiquetaLugar } from "./lugares";
  *   · lugar   { nombre, tipo?, detalle?, direccion?, lat?, lng?, ciudad?, redes?, url?, leida? }
  *   · artista { nombre, disciplina?, detalle?, tipo?, ciudad?, redes?, url?, leida?, municipio?, obra? }   (municipio y obra: OL-430)
  *   · evento  { titulo, inicio, fin?, lugar, direccion?, municipio?, precio?, descripcion?, ciudad?, url?, leida? }   (OL-429)
+ *   · cartel  { evento_id, titulo, inicio, lugar, imagen, pagina, url, ciudad?, leida? }   (OL-444: el cartel ya publicado de un evento que no
+ *             tiene; `imagen` es el archivo, `pagina` (= `url`) la página donde aparece; aceptarlo lo sube a Storage y lo pone en el evento)
  * `url` es la página de la fuente que la rutina abrió y leyó (en un evento, la agenda: queda como `eventos.fuente_url` al publicarlo);
  * `leida`, cuándo (ISO). `redes`, enlaces (texto o { url }). En un evento, `inicio` y `fin` son ISO; `lugar`, el nombre exacto del lugar
  * registrado si la agenda es en uno, o el sitio como lo escribe la agenda; `precio`, «Gratis», «Cooperación solidaria» o el texto del costo;
@@ -25,7 +27,7 @@ import { etiquetaLugar } from "./lugares";
  * `direccion_mapa` (el punto que el mapa dio al sitio dentro de la ciudad).
  */
 
-export const TIPOS_PROPUESTA = ["lugar", "evento", "artista"] as const;
+export const TIPOS_PROPUESTA = ["lugar", "evento", "artista", "cartel"] as const;
 export type TipoPropuesta = (typeof TIPOS_PROPUESTA)[number];
 
 export const MOTIVOS_RECHAZO = [
@@ -121,12 +123,14 @@ function redesDe(v: unknown): string[] {
   return v.map((r) => urlSegura(typeof r === "string" ? r : (r as { url?: unknown } | null)?.url)).filter((u): u is string => !!u).slice(0, 8);
 }
 
-/** El nombre de la propuesta: el del lugar o artista, o el título del evento. */
+/** El nombre de la propuesta: el del lugar o artista, o el título del evento (también el de un cartel: es el de su evento). */
 export function nombreDe(p: Pick<Propuesta, "tipo" | "datos">): string {
+  if (p.tipo === "cartel") return texto(p.datos.titulo, 120) ? `el cartel de «${texto(p.datos.titulo, 120)}»` : "el cartel";
   return texto(p.tipo === "evento" ? p.datos.titulo : p.datos.nombre, 120) || "Sin nombre";
 }
 
-export type VistaPropuesta = { que: string; titulo: string; linea: string | null; fuente: { texto: string; url: string } | null; leida: string | null };
+/** `imagen` (OL-444): en un cartel, el archivo que se propone, para abrirlo antes de aceptarlo. */
+export type VistaPropuesta = { que: string; titulo: string; linea: string | null; fuente: { texto: string; url: string } | null; leida: string | null; imagen?: string | null };
 
 /**
  * Lo que dice la tarjeta de una propuesta: «Foro · propuesto por la rutina», el nombre, dónde, la fuente con su enlace y cuándo se leyó. En un
@@ -159,7 +163,9 @@ export function vistaPropuesta(
   const inicio = texto(d.inicio, 40);
   const cuando = !omitir.cuando && inicio && !Number.isNaN(Date.parse(inicio)) ? `${diaMes(inicio, ahora)}, ${horaCorta(inicio, ZONA_INICIAL)}` : "";
   const donde = omitir.donde ? "" : texto(d.lugar, 120);
-  return { que: "Evento · propuesto por la rutina", titulo: nombreDe(p), linea: [cuando, donde].filter(Boolean).join(" · ") || null, fuente, leida };
+  const linea = [cuando, donde].filter(Boolean).join(" · ") || null;
+  if (p.tipo === "cartel") return { que: "Cartel · propuesto por la rutina", titulo: texto(d.titulo, 120) || "Sin título", linea, fuente, leida, imagen: urlSegura(d.imagen) };
+  return { que: "Evento · propuesto por la rutina", titulo: nombreDe(p), linea, fuente, leida };
 }
 
 // ---------- de la propuesta a la ficha ----------
@@ -286,7 +292,7 @@ export function pasoDeTanda(
   return suyo ? { accion: "aceptar" } : { accion: "dejar", razon: textoActoSinFestival(nombre) };
 }
 
-const PLURAL: Record<TipoPropuesta, string> = { lugar: "lugares", evento: "eventos", artista: "artistas" };
+const PLURAL: Record<TipoPropuesta, string> = { lugar: "lugares", evento: "eventos", artista: "artistas", cartel: "carteles" };
 
 /**
  * La hoja de «Aceptar las N» de una búsqueda: cuántas, de qué y de qué ciudad, y qué pasa con las que no se puedan publicar. Los ejemplos son
@@ -301,6 +307,7 @@ export function textoConfirmarTodas(propuestas: readonly { tipo: TipoPropuesta; 
     "un repetido",
     ...(tipos.has("lugar") || tipos.has("evento") ? ["un sitio sin punto"] : []),
     ...(propuestas.some((p) => p.festival) ? ["un acto cuyo festival no se ha aceptado"] : []),
+    ...(tipos.has("cartel") ? ["una imagen que ya no responde"] : []),
   ];
   return {
     que: `Vas a aceptar ${n === 1 ? "1 propuesta" : `${n} propuestas`}${de}${ciudad ? ` de ${ciudad}` : ""}.`,

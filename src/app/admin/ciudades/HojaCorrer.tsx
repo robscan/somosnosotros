@@ -6,7 +6,7 @@ import Campo from "@/components/ui/Campo";
 import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
 import { IconoOk } from "@/components/ui/Iconos";
-import { errorTope, HOJAS, pegado, TOPE_POR_DEFECTO, usd, verboDe, type TipoBoton } from "@/lib/ciudadesAdmin";
+import { errorTope, HOJAS, pegado, TOPE_POR_DEFECTO, usd, verboDe, type TipoHoja } from "@/lib/ciudadesAdmin";
 import { crearCorrida } from "./acciones";
 import styles from "../admin.module.css";
 import css from "./ciudades.module.css";
@@ -14,7 +14,7 @@ import css from "./ciudades.module.css";
 type Props = {
   slug: string;
   ciudad: string;
-  tipo: TipoBoton;
+  tipo: TipoHoja;
   credito: string;
   /** Si la vez pasada falló o llegó al tope, su razón (en minúscula: va tras «La vez pasada»). */
   vezPasada: string | null;
@@ -23,13 +23,13 @@ type Props = {
 
 /**
  * La hoja de un botón (OL-427; la de hoy en el prototipo firmado OL-431): qué va a hacer, con qué fuentes y en qué orden, y el tope en USD
- * (campo con su ✕; 3,00 por omisión). «Correr» deja la corrida pendiente y la corre la rutina con la API. Si la vez pasada falló o llegó al
+ * (campo con su ✕; 3,00 por omisión, 2,00 en «Buscar carteles»). «Correr» deja la corrida pendiente y la corre la rutina con la API. Si la vez pasada falló o llegó al
  * tope, la hoja empieza por recordarlo. Una búsqueda en curso no abre esta hoja: su tarjeta no lleva botón (o lleva «Cancelar la búsqueda»).
  */
 export default function HojaCorrer({ slug, ciudad, tipo, credito, vezPasada, onCerrar }: Props) {
   const verbo = verboDe(tipo);
   const h = HOJAS[tipo];
-  const [tope, setTope] = useState(usd(TOPE_POR_DEFECTO));
+  const [tope, setTope] = useState(usd(h.tope ?? TOPE_POR_DEFECTO));
   const [tocado, setTocado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enCamino, iniciar] = useTransition();

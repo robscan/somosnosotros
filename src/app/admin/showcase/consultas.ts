@@ -1,6 +1,7 @@
 import "server-only";
 import { headers } from "next/headers";
 import { after } from "next/server";
+import type { FichaACompletar, PropuestaAceptada } from "@/lib/completarFicha";
 import { normalizarRedes } from "@/lib/enlaces";
 import { diaLocal, localAIso } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
@@ -125,6 +126,8 @@ export async function cargarResumenShowcase(): Promise<{ candidatos: number; inv
 /** La ficha de showcase de un artista: lo del catálogo, lo del showcase y lo que dice la base de su año. */
 export type FichaShowcase = {
   artista: { id: string; slug: string; nombre: string; disciplina: string; ciudad: string; foto: string | null; instagram: string | null };
+  /** OL-445: lo que «Completar ficha» compara (qué le falta) y lo que trae la propuesta aceptada de la que nació. */
+  completar: { ficha: FichaACompletar; propuestas: PropuestaAceptada[]; descartadas: string[] };
   reclamada: boolean;
   novedades: boolean;
   portada: boolean;
@@ -148,22 +151,24 @@ export async function cargarFichaShowcase(clave: string, ahora: Date): Promise<F
   try {
     const db = await clienteServidor();
     if (!db) return "error";
-    const consulta = db.from("artistas").select("id, slug, nombre, disciplina, ciudad, foto, portada, redes, visible");
+    const consulta = db.from("artistas").select("id, slug, nombre, disciplina, detalle, descripcion, ciudad, foto, portada, redes, visible");
     const { data: a, error } = await (esUuid(clave) ? consulta.eq("id", clave) : consulta.eq("slug", clave)).maybeSingle();
     if (error) return "error";
     if (!a) return null;
     const id = a.id as string;
     const { desde, hasta } = anioDe(ahora);
-    const [c, registro, evidencias, lecturas, cuentas, novedades, ligados] = await Promise.all([
-      db.from("showcase_candidatos").select("estado, puntaje_circulacion, puntaje_obra, puntaje_actividad, puntaje_vinculo, notas").eq("artista_id", id).maybeSingle(),
+    const [c, registro, evidencias, lecturas, cuentas, novedades, ligados, propuestas] = await Promise.all([
+      db.from("showcase_candidatos").select("estado, puntaje_circulacion, puntaje_obra, puntaje_actividad, puntaje_vinculo, notas, completar_descartadas").eq("artista_id", id).maybeSingle(),
       db.from("showcase_cambios_estado").select("estado, por, creado_en").eq("artista_id", id).order("creado_en", { ascending: true }).limit(200),
       db.from("showcase_evidencias").select("id, senal, tipo, titulo, url, fecha, fuente, leida_por, estado, creado_en").eq("artista_id", id).order("creado_en", { ascending: false }).limit(500),
       db.from("lecturas_redes").select("red, seguidores, publicaciones, ultima_publicacion, leido_en").eq("artista_id", id).order("leido_en", { ascending: false }).limit(200),
       db.from("artistas_cuentas").select("perfil_id", { count: "exact", head: true }).eq("artista_id", id),
       db.from("novedades_artista").select("id", { count: "exact", head: true }).eq("artista_id", id).eq("visible", true),
       leerTodo<FilaEventoArtista>((d, h) => db.from("eventos_artistas").select("evento_id, artista_id").eq("artista_id", id).order("evento_id").range(d, h)),
+      // OL-445: la propuesta de artista aceptada de la que nació la ficha (lo que trajo y la ficha quizá no tiene).
+      db.from("propuestas").select("id, fuente, datos").eq("tipo", "artista").eq("estado", "aceptada").eq("ficha_id", id).limit(20),
     ]);
-    if (c.error || registro.error || evidencias.error || lecturas.error || cuentas.error || novedades.error) return "error";
+    if (c.error || registro.error || evidencias.error || lecturas.error || cuentas.error || novedades.error || propuestas.error) return "error";
     const ids = ligados.map((x) => x.evento_id);
     const eventos = ids.length ? await enTandas<FilaEvento>(ids, (t) => eventosDelAnio(db, desde, hasta).in("id", t).limit(t.length)) : [];
     const idsLugares = [...new Set(eventos.map((e) => e.lugar_id).filter((x): x is string => !!x))];
@@ -174,12 +179,17 @@ export async function cargarFichaShowcase(clave: string, ahora: Date): Promise<F
     const filasRegistro = (registro.data ?? []) as CambioEstado[];
     const cuentasNombradas = [...new Set(filasRegistro.map((r) => r.por).filter((x): x is string => !!x))];
     const perfiles = cuentasNombradas.length ? await enTandas<{ id: string; nombre: string }>(cuentasNombradas, (t) => db.from("perfiles").select("id, nombre").in("id", t).limit(t.length)) : [];
-    const fila = c.data as Omit<FilaCandidato, "artista_id"> | null;
+    const fila = c.data as (Omit<FilaCandidato, "artista_id"> & { completar_descartadas?: string[] | null }) | null;
     const mapaLugares = new Map(lugares.map((l) => [l.id, l]));
     const mapaFestivales = new Map<string, string>([...festivales, ...eventos.filter((e) => e.clase === "festival")].map((e) => [e.id, e.titulo]));
     const redes = (a.redes ?? []) as unknown;
     return {
       artista: { id, slug: (a.slug as string | null) || id, nombre: a.nombre as string, disciplina: a.disciplina as string, ciudad: a.ciudad as string, foto: (a.foto as string | null) ?? null, instagram: normalizarRedes(redes).find((e) => e.red === "instagram")?.url ?? null },
+      completar: {
+        ficha: { disciplina: a.disciplina as string, detalle: (a.detalle as string | null) ?? null, descripcion: (a.descripcion as string | null) ?? null, redes },
+        propuestas: (propuestas.data ?? []) as PropuestaAceptada[],
+        descartadas: fila?.completar_descartadas ?? [],
+      },
       reclamada: (cuentas.count ?? 0) > 0,
       novedades: (novedades.count ?? 0) > 0,
       portada: !!a.portada,

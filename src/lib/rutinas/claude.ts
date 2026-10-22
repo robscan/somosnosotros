@@ -106,15 +106,20 @@ export type RespuestaApi = {
   error: string | null;
   /** La llamada se cortó por tiempo: `usd` lleva lo estimado. */
   cortada: boolean;
+  /** Cuántas lecturas web devolvió la API con error (página que no se dejó abrir): OL-444, para decir por qué una agenda salió vacía. */
+  lecturasFallidas?: number;
 };
 
 type Bloque = Anthropic.ContentBlock;
 
-function paginasDe(bloques: readonly Bloque[], paginas: Set<string>) {
+function paginasDe(bloques: readonly Bloque[], paginas: Set<string>): number {
+  let fallidas = 0;
   for (const b of bloques) {
     if (b.type === "web_search_tool_result" && Array.isArray(b.content)) for (const r of b.content) if (r.url) paginas.add(r.url);
     if (b.type === "web_fetch_tool_result" && b.content.type === "web_fetch_result" && b.content.url) paginas.add(b.content.url);
+    if (b.type === "web_fetch_tool_result" && b.content.type === "web_fetch_tool_result_error") fallidas++;
   }
+  return fallidas;
 }
 
 function errorDeApi(e: unknown): string {
@@ -145,7 +150,7 @@ export type RespuestaConEntrega<T> = Omit<RespuestaApi, "lugares"> & { dato: T |
  * con lo que se haya gastado hasta ahí. Lo que entrega el modelo se vuelve a validar con `esquema`.
  */
 export async function llamarConEntrega<T>(cliente: ClienteApi, p: PedidoConEntrega<T>, ahora: () => number = Date.now): Promise<RespuestaConEntrega<T>> {
-  const salida: RespuestaConEntrega<T> = { dato: null, paginas: new Set(), usd: 0, busquedas: 0, error: null, cortada: false };
+  const salida: RespuestaConEntrega<T> = { dato: null, paginas: new Set(), usd: 0, busquedas: 0, error: null, cortada: false, lecturasFallidas: 0 };
   const mensajes: Anthropic.MessageParam[] = [{ role: "user", content: p.contenido }];
   for (let vuelta = 0; vuelta < 2; vuelta++) {
     const restante = p.hasta - ahora();
@@ -176,7 +181,7 @@ export async function llamarConEntrega<T>(cliente: ClienteApi, p: PedidoConEntre
     }
     salida.usd += costoDeUso(respuesta.usage, respuesta.model || MODELO_RUTINAS);
     salida.busquedas += respuesta.usage?.server_tool_use?.web_search_requests ?? 0;
-    paginasDe(respuesta.content, salida.paginas);
+    salida.lecturasFallidas = (salida.lecturasFallidas ?? 0) + paginasDe(respuesta.content, salida.paginas);
 
     const entrega = respuesta.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === p.entrega.name);
     if (entrega) {
