@@ -93,9 +93,10 @@ describe("ficha de artista: la cabecera pinta antes que sus fechas (OL-161)", ()
     const datos = JSON.parse((jsonLd!.props.dangerouslySetInnerHTML as { __html: string }).__html);
     expect(datos.name).toBe("Artista de prueba");
 
-    // Sus tres números (un Suspense), "Próximas fechas" (otro) y la trayectoria (OL-390, otro): tres límites.
+    // Sus tres números (un Suspense), "Próximas fechas" (otro), la trayectoria (OL-390, otro) y «Reconocimientos y obra» (OL-445, otro):
+    // cuatro límites.
     const suspenses = elementos.filter((e) => e.type === Suspense);
-    expect(suspenses.length).toBe(3);
+    expect(suspenses.length).toBe(4);
   });
 
   it("una ficha por UUID redirige (308 permanente) a su slug", async () => {
