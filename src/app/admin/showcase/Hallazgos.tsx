@@ -130,7 +130,6 @@ export default function Hallazgos({ grupos, hoy, modo, cuando = null }: { grupos
                   <IconoOk width={20} height={20} />
                   <span>
                     {hecha.como === "aceptada" ? "Aceptaste" : "Rechazaste"} <b>{h.titulo}</b>
-                    {hecha.como === "aceptada" && h.tipo !== "redes" && " · ya está en su perfil"}
                     {hecha.corto && (
                       <>
                         {" · "}
@@ -138,6 +137,7 @@ export default function Hallazgos({ grupos, hoy, modo, cuando = null }: { grupos
                       </>
                     )}
                     {hecha.motivo && ` · ${etiquetaMotivo(hecha.motivo).toLowerCase()}`}
+                    {hecha.como === "aceptada" && h.tipo !== "redes" && " · ya está en su perfil"}
                   </span>
                   <button type="button" className={admin.enlace} disabled={enCamino} onClick={() => deshacer(h, g.artista.slug)}>
                     Deshacer

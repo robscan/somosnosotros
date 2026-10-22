@@ -139,7 +139,7 @@ test("aceptar sube el renglón (8 de 8) y baja las cuentas; la línea de lo hech
   const p = await abrir(t);
   await tocar(p, hallazgo(p, "Mención en un concurso estatal").getByRole("button", { name: "Aceptar" }));
   await p.getByText("Aceptaste").waitFor();
-  assert.ok((await p.getByRole("status").filter({ hasText: "Aceptaste" }).innerText()).includes("Mención en un concurso estatal · Obra 1 → 2"));
+  assert.ok((await p.getByRole("status").filter({ hasText: "Aceptaste" }).innerText()).includes("Mención en un concurso estatal · Obra 1 → 2 · ya está en su perfil"));
   assert.equal(await texto(renglon(p, "Feleal")), "Feleal Música · Invitado · 8 de 8 1");
   assert.equal(await linea(p), "3 evidencias de 2 artistas · las trajo la rutina ayer. Solo cuenta lo que aceptas.");
   assert.equal(await p.getByRole("button", { name: "Aceptar las 2 de Feleal" }).count(), 0, "con una sola, sin «Aceptar las N»");

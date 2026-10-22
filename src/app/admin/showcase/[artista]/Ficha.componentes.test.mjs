@@ -242,7 +242,7 @@ async function tocar(p, l) {
   await p.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
 }
 
-test("OL-446 · por revisar: cada hallazgo dice qué cambia; primero el que sube; aceptar deja «Aceptaste … · Obra 1 → 2» con «Deshacer»", async (t) => {
+test("OL-446 · por revisar: cada hallazgo dice qué cambia; primero el que sube; aceptar deja «Aceptaste … · Obra 1 → 2 · ya está en su perfil» con «Deshacer»", async (t) => {
   const p = await abrir(t);
   assert.ok((await p.getByRole("heading", { name: /Por revisar/ }).innerText()).includes("2"));
   const titulos = await p.locator("li > a[target=_blank]").filter({ hasNotText: "Sencillo" }).allInnerTexts();
@@ -251,7 +251,7 @@ test("OL-446 · por revisar: cada hallazgo dice qué cambia; primero el que sube
   assert.equal(await hallazgo(p, "Nota sobre su gira").locator("p").last().innerText(), "No cambia el puntaje: Circulación está fijada a mano en 2");
   await tocar(p, hallazgo(p, "Mención estatal").getByRole("button", { name: "Aceptar" }));
   await p.getByText("Aceptaste").waitFor();
-  assert.ok((await p.getByRole("status").filter({ hasText: "Aceptaste" }).innerText()).includes("Mención estatal · Obra 1 → 2"));
+  assert.ok((await p.getByRole("status").filter({ hasText: "Aceptaste" }).innerText()).includes("Mención estatal · Obra 1 → 2 · ya está en su perfil"));
   assert.ok((await p.getByRole("heading", { name: /Por revisar/ }).innerText()).includes("1"), "la cuenta baja");
   await tocar(p, p.getByRole("button", { name: "Deshacer" }));
   await hallazgo(p, "Mención estatal").getByRole("button", { name: "Aceptar" }).waitFor();
