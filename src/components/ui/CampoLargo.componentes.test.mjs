@@ -129,8 +129,20 @@ test("el teclado ya estaba abierto al tocar el renglón: la capa nace sobre el �
   await p.goto(origin);
   await p.getByRole("textbox", { name: "Título" }).focus();
   await teclado(p, 508, 43);
+  // Dónde está la capa al entrar al DOM (antes de pintarse): nace ahí, no se pinta un cuadro arriba y luego baja (OL-449: con `useEffect` en
+  // `useAreaVisible` nacía en 0 y la prueba solo pasaba si React la movía antes de que Playwright mirara).
+  await p.evaluate(() => {
+    const o = new MutationObserver(() => {
+      const capa = document.querySelector("[role=dialog]");
+      if (!capa) return;
+      window.alNacer = capa.getBoundingClientRect().top;
+      o.disconnect();
+    });
+    o.observe(document.body, { childList: true, subtree: true });
+  });
   await p.getByRole("button", { name: "Texto (opcional)" }).click();
   await p.getByRole("dialog").waitFor();
+  assert.equal(await p.evaluate(() => window.alNacer), 43, "la capa nace en el top del área visible");
   const c = await cajas(p);
   assert.equal(c.capa[0], 43);
   assert.ok(c.capa[1] >= 844);

@@ -2064,6 +2064,9 @@ test("OL-365: «Ver el evento», tocado en su sitio a 390×844, abre la ficha de
   const y = caja.y + caja.height / 2;
   assert.ok(y + caja.height / 2 <= 844, "el botón cabe en la pantalla");
   assert.equal(await p.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("a")?.textContent, [x, y]), "Ver el evento");
+  // La ficha de destino la contesta la prueba (OL-449): el servidor de prueba da 404 sin cuerpo a lo que no conoce, y Chrome lo convierte en
+  // su página de error y `waitForURL` en `net::ERR_HTTP_RESPONSE_CODE_FAILURE` (siempre con el Chrome de la Mac, a veces con el de la CI).
+  await p.route("**/eventos/**", (r) => r.fulfill({ contentType: "text/html; charset=utf-8", body: "<!doctype html><title>Ficha</title>" }));
   await p.mouse.click(x, y);
   await p.waitForURL(/\/eventos\/lectura-en-voz-alta-ab11$/);
 });
