@@ -3,6 +3,7 @@ import { COOPERACION_SOLIDARIA } from "./eventos";
 import { diaLocal, zonaSegura } from "./fechas";
 import { normalizarNombre } from "./lugares";
 import { titulosParecidos } from "./sugerenciasParecido";
+import { costoDeAgenda } from "./costoDeAgenda";
 
 /**
  * Cómo se carga un evento de una agenda (OL-429): lo que antes vivía en `scripts/instituciones/instituciones.ts` (OL-384, OL-424) y ahora usan
@@ -141,15 +142,16 @@ export function finLocal(fecha: string, hora: string, horaFin: string | null | u
 }
 
 /**
- * El costo como lo escribe una agenda, a lo que entiende el formulario (OL-429): «Entrada libre», «Acceso gratuito», «Sin costo» → «Gratis»;
- * «Cooperación voluntaria» → «Cooperación solidaria» (su casilla); lo demás tal cual («$150», «$100 general, $50 estudiantes»). Vacío, null.
+ * El costo de la agenda tal como se guarda en la propuesta (`datos.precio`): «Gratis» y «Cooperación solidaria» cuando es solo eso; lo demás, el
+ * texto de la agenda tal cual (al publicar, `costoDeAgenda` lo lee otra vez y su nota no se pierde). Vacío, null. La regla, en
+ * `costoDeAgenda.ts` (OL-441).
  */
 export function precioDeAgenda(texto: string | null | undefined): string | null {
   const t = (texto ?? "").replace(/\s+/g, " ").trim();
   if (!t) return null;
-  const n = normalizarNombre(t);
-  if (/^(entrada |acceso |evento )?(libre|gratis|gratuit[oa]|sin costo)( (entrada|acceso))?$/.test(n) || /^(entrada|acceso) (libre|gratuita|gratis)/.test(n)) return "Gratis";
-  if (/^cooperacion (voluntaria|solidaria)/.test(n)) return COOPERACION_SOLIDARIA;
+  const c = costoDeAgenda(t, false);
+  if (c.costo === "gratis" && !c.nota) return "Gratis";
+  if (c.costo === "cooperacion" && !c.nota) return COOPERACION_SOLIDARIA;
   return t;
 }
 

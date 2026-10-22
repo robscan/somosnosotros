@@ -163,6 +163,10 @@ describe("el costo por confirmar (OL-411)", () => {
     expect(sabidoGratis("Gratis", true)).toBe(true);
     expect(sabidoGratis("$150", false)).toBe(false);
     for (const p of [null, "", " ", "Gratis"]) expect(costoEnLista(p)).toBeNull();
+    // El «Por confirmar» escrito de un evento suelto de una agenda (OL-441): la ficha lo dice; el renglón, no.
+    expect(costoEnLista(POR_CONFIRMAR)).toBeNull();
+    expect(textoCosto(POR_CONFIRMAR, false)).toBe(POR_CONFIRMAR);
+    expect(sabidoGratis(POR_CONFIRMAR, false)).toBe(false);
     expect(costoEnLista("Entrada libre")).toBe("Entrada libre");
     expect(costoEnLista("$150")).toBe("$150");
     expect(costoEnLista(COOPERACION_SOLIDARIA)).toBe(COOPERACION_SOLIDARIA);

@@ -190,11 +190,12 @@ export const sabidoGratis = (precio: string | null | undefined, opcional: boolea
 
 /**
  * El costo en un renglón o una tarjeta, como hasta ahora: el texto guardado; sin precio, nada (ni «Gratis» ni «Por confirmar»). El «Gratis» que se
- * guarda escrito en un evento de costo opcional (OL-411) tampoco: antes era vacío y no se decía. Lo escrito a mano («Entrada libre») sigue.
+ * guarda escrito en un evento de costo opcional (OL-411) tampoco: antes era vacío y no se decía; ni el «Por confirmar» que se guarda escrito en
+ * un evento suelto publicado de una agenda (OL-441). Lo escrito a mano («Entrada libre») sigue.
  */
 export const costoEnLista = (precio: string | null | undefined): string | null => {
   const texto = (precio ?? "").trim();
-  return texto && texto !== GRATIS ? texto : null;
+  return texto && texto !== GRATIS && texto !== POR_CONFIRMAR ? texto : null;
 };
 
 export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
