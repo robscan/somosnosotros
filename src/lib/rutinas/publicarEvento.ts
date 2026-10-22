@@ -210,7 +210,10 @@ export async function prepararEvento(
     const centro = ciudad.lat != null && ciudad.lng != null ? { lat: ciudad.lat, lng: ciudad.lng } : null;
     const area: AreaCiudad | null = centro ? { centro, radioKm: ciudad.radioKm, nombres: nombresDe(ciudad) } : null;
     const lat = numeroO(datos.lat), lng = numeroO(datos.lng);
-    const yaUbicado = area && lat != null && lng != null && dentroDelArea({ lat, lng }, area.centro, area.radioKm) ? { lat, lng, direccion: texto(datos.direccion_mapa, LIMITES_EVENTO.direccion) } : null;
+    // El punto de la cartelera de la Ciudad de México (OL-450) vale aunque quede fuera del radio de la ciudad: la cartelera entra completa.
+    const deCartelera = typeof datos.cartelera_id === "string" && lat != null && lng != null;
+    const yaUbicado =
+      (area && lat != null && lng != null && dentroDelArea({ lat, lng }, area.centro, area.radioKm)) || deCartelera ? { lat: lat!, lng: lng!, direccion: texto(datos.direccion_mapa, LIMITES_EVENTO.direccion) } : null;
     const eleccion = yaUbicado ?? (area && dep.mapbox ? (await ubicarSitioEnArea(donde, direccion, area, dep.mapbox))?.punto ?? null : null);
     if (!eleccion && !esMarco) return { ok: false, motivo: "sin_punto", error: `No se publicó: «${donde}» no está en el directorio y el mapa no lo encuentra en ${ciudad.nombre}. Recházala o da de alta el lugar.` };
     if (eleccion) {

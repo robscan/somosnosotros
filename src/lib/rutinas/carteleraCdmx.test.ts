@@ -12,6 +12,7 @@ import {
   ESPERA_REINTENTO_MS,
   extraerObjetoJs,
   filasDeFicha,
+  fueraDeLaCiudadDeMexico,
   leerFicha,
   leerLista,
   NOMBRE_FUENTE_CARTELERA,
@@ -403,7 +404,7 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     const eventos = ps.filter((p) => p.tipo === "evento");
     const lugares = ps.filter((p) => p.tipo === "lugar");
     expect(eventos.map((p) => p.datos.titulo).sort()).toEqual(
-      ["4° Festival de Xantolo de la Ciudad de México: Movimiento Sonoro", "Esencia del Arte Popular Mexicano", "Taller. Teatro popular y máscaras", "Universidad de México +475 Años de concebir futuros"].sort(),
+      ["4° Festival de Xantolo de la Ciudad de México: Movimiento Sonoro", "Esencia del Arte Popular Mexicano", "Taller. Teatro popular y máscaras", "Tenis de Mesa", "Universidad de México +475 Años de concebir futuros"].sort(),
     );
     // El taller: una propuesta con sus siete sesiones, en el lugar del directorio (cruzado por cercanía), con su ficha y su imagen.
     const taller = eventos.find((p) => p.datos.cartelera_id === "40293")!.datos;
@@ -424,26 +425,27 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     expect(lugares.map((p) => [p.datos.nombre, p.datos.tipo, p.datos.direccion]).sort()).toEqual([
       ["Colegio de San Ildefonso", "escuela", "Justo Sierra 16, Centro (Área 3), Cuauhtémoc, C.P. 06020, Ciudad de México"],
       ["Museo de la Ciudad de México", "museo", "Pino Suárez 30, Centro (Área 6), Cuauhtémoc, C.P. 06060, Ciudad de México"],
+      ["Talleres Tonatiuh", "otro", "Calle 10, Tolteca, Álvaro Obregón, C.P. 01150, Ciudad de México"],
     ]);
     const museo = lugares.find((p) => p.datos.nombre === "Museo de la Ciudad de México")!;
     expect(museo.datos).toMatchObject({ lat: 19.429329, lng: -99.132441, ciudad: "Ciudad de México", cartelera_recinto: "64" });
     const xantolo = eventos.find((p) => p.datos.cartelera_id === "41628")!.datos;
     expect(xantolo).toMatchObject({ clase: "festival", lugar: "Museo de la Ciudad de México", lugar_propuesto: museo.id, lat: 19.429329, lng: -99.132441, fin: local("2026-10-25T17:00") });
-    // El de Álvaro Obregón no es de las alcaldías de la ciudad: fuera (ni el evento ni su recinto).
-    expect(c.resumen.descartados).toMatchObject({ fuera_de_la_ciudad: 1 });
+    // OL-450: el de Álvaro Obregón no es de las alcaldías turísticas, pero la cartelera entra completa: se propone, con su recinto.
+    expect(c.resumen.descartados).toMatchObject({ fuera_de_la_ciudad: 0 });
     expect(c.resumen.cartelera).toEqual({
       eventos: 5,
       leidas: 5,
       fallidas: 0,
-      propuestos: 4,
-      recintos_nuevos: 2,
+      propuestos: 5,
+      recintos_nuevos: 3,
       por_tipo: {
         "Museos y Exposiciones": { leidos: 2, propuestos: 2 },
-        "Cursos y Talleres": { leidos: 2, propuestos: 1 },
+        "Cursos y Talleres": { leidos: 2, propuestos: 2 },
         "Festivales y Ferias": { leidos: 1, propuestos: 1 },
       },
     });
-    expect(c.resumen).toMatchObject({ propuestos: 6, agendas_leidas: 1, paso: "1 de 1 fuente", avance: 1 });
+    expect(c.resumen).toMatchObject({ propuestos: 8, agendas_leidas: 1, paso: "1 de 1 fuente", avance: 1 });
     expect(JSON.stringify(c.resumen)).not.toMatch(/Xantolo|Arte Popular|Ildefonso/);
   });
 
@@ -457,9 +459,9 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     expect(laCorrida(base, "c-2").estado).toBe("terminada");
     expect(base.tablas.propuestas.length).toBe(antes);
     expect(deLaCorrida(base, "c-2")).toEqual([]);
-    // Solo la lista y la ficha de la de fuera de la ciudad (no se propuso: se vuelve a mirar).
-    expect(cartelera.pedidas.map((p) => p.pagina ?? p.url.split("/")[3])).toEqual(["1", "2", "35394"]);
-    expect(laCorrida(base, "c-2").resumen.descartados).toMatchObject({ ya_propuesto: 4, fuera_de_la_ciudad: 1 });
+    // Solo la lista: todas sus fichas ya se propusieron.
+    expect(cartelera.pedidas.map((p) => p.pagina ?? p.url.split("/")[3])).toEqual(["1", "2"]);
+    expect(laCorrida(base, "c-2").resumen.descartados).toMatchObject({ ya_propuesto: 5, fuera_de_la_ciudad: 0 });
     expect(laCorrida(base, "c-2").resumen.propuestos).toBe(0);
   });
 
@@ -483,8 +485,8 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     expect(pasos.length).toBe(2);
     expect(laCorrida(base).estado).toBe("terminada");
     expect(cartelera.pedidas).toHaveLength(7);
-    expect(deLaCorrida(base).filter((p) => p.tipo === "evento")).toHaveLength(4);
-    expect(deLaCorrida(base).filter((p) => p.tipo === "lugar")).toHaveLength(2);
+    expect(deLaCorrida(base).filter((p) => p.tipo === "evento")).toHaveLength(5);
+    expect(deLaCorrida(base).filter((p) => p.tipo === "lugar")).toHaveLength(3);
   });
 
   it("si la cartelera pide esperar (429 sin fin), el paso se detiene y la ficha se lee en el siguiente", async () => {
@@ -502,7 +504,7 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     limitar = false;
     await hastaTerminar(dep);
     expect(laCorrida(base).estado).toBe("terminada");
-    expect(deLaCorrida(base).filter((p) => p.tipo === "evento")).toHaveLength(4);
+    expect(deLaCorrida(base).filter((p) => p.tipo === "evento")).toHaveLength(5);
   });
 
   it("con `solo_cartelera` (el guion de la Mac) solo lee la cartelera: no publica lo aceptado ni toca las agendas guardadas", async () => {
@@ -511,7 +513,7 @@ describe("«Buscar agendas y eventos» en Ciudad de México con la cartelera (OL
     expect(laCorrida(base).estado).toBe("terminada");
     expect(base.tablas.configuracion).toEqual([]);
     expect(base.operaciones.filter((o) => o.tabla === "eventos" && o.op !== "select")).toEqual([]);
-    expect(deLaCorrida(base).filter((p) => p.tipo === "evento")).toHaveLength(4);
+    expect(deLaCorrida(base).filter((p) => p.tipo === "evento")).toHaveLength(5);
   });
 });
 
@@ -529,5 +531,82 @@ describe("publicar una exposición abierta de la cartelera", () => {
     base.tablas.eventos.push({ id: "e-expo", titulo: "Esencia del Arte Popular Mexicano", clase: "exposicion", ciudad: "Ciudad de México", inicio: local("2026-10-01T00:00"), termina: local("2026-12-31T23:59"), lugar_id: LUGARES[0].id, sitio_texto: null });
     const otra = await prepararEvento({ db: base.db, mapbox: null, ahora: tarde }, datos, ciudad, LUGARES, ADMIN);
     expect(otra).toMatchObject({ ok: false, motivo: "parecido" });
+  });
+});
+
+describe("la cartelera entra completa (OL-450)", () => {
+  it("lo suyo es de la ciudad salvo que su dirección diga otro estado", () => {
+    expect(fueraDeLaCiudadDeMexico("Av. Insurgentes Norte s/n, Gustavo A. Madero, C.P. 07300, Ciudad de México")).toBe(false);
+    expect(fueraDeLaCiudadDeMexico("Calle 2 de abril, Xochimilco, C.P. 16000, Ciudad de México")).toBe(false);
+    // Calles y colonias con nombre de estado no la sacan.
+    expect(fueraDeLaCiudadDeMexico("Av. Puebla 120, Guerrero, Cuauhtémoc, C.P. 06300, Ciudad de México")).toBe(false);
+    expect(fueraDeLaCiudadDeMexico("Calle Morelos 5, Morelos, Venustiano Carranza, Ciudad de México")).toBe(false);
+    expect(fueraDeLaCiudadDeMexico(null)).toBe(false);
+    // Otro estado: el código postal, «Edo. Méx.», un municipio mexiquense o el estado al final.
+    expect(fueraDeLaCiudadDeMexico("Av. Gustavo Baz 2160, La Loma, Naucalpan, Edo. Méx.")).toBe(true);
+    expect(fueraDeLaCiudadDeMexico("Periférico 100, Satélite, C.P. 53100, Ciudad de México")).toBe(true);
+    expect(fueraDeLaCiudadDeMexico("Av. Central 10, Ecatepec, Ciudad de México")).toBe(true);
+    expect(fueraDeLaCiudadDeMexico("Plaza de Armas 1, Centro, Cuernavaca, Morelos")).toBe(true);
+  });
+
+  it("un FARO de Indios Verdes (Gustavo A. Madero) y uno de Xochimilco entran, lejos y fuera de las alcaldías turísticas, con su recinto como lugar; uno en Naucalpan, no", async () => {
+    const ficha = (id: number, titulo: string, recinto: string, venue: string, lat: string, lng: string, address: string) =>
+      `<script>var cdmx_billboard_event_info = ${JSON.stringify({
+        event_id: id,
+        event_location: { lat, lng, address },
+        event_name: titulo,
+        event_description: "<p>Taller abierto | 17 horas</p>",
+        event_duration: "02:00",
+        event_type: { id: "CURSOS_Y_TALLERES", name: "Cursos Y Talleres" },
+        schedule: { "1": { event_dates: ["24/10/2026"], event_hours: ["17:00"] } },
+        costs: { "1": { cost_name: "General", cost_price: "Gratuito" } },
+        venue_id_id: venue,
+        venue_name: recinto,
+        event_image: "https://cartelera.cdmx.gob.mx/wp-content/uploads/x.jpg",
+      })};</script>`;
+    const fichas: Record<string, string> = {
+      "1": ficha(1, "Grabado en linóleo", "FARO Indios Verdes", "36", "19.500719", "-99.112930", "Av. Insurgentes Norte s/n, Gustavo A. Madero, C.P. 07300, Ciudad de México"),
+      "2": ficha(2, "Cartonería", "FARO Xochimilco", "90", "19.258", "-99.105", "Calle 2 de abril, Xochimilco, C.P. 16000, Ciudad de México"),
+      "3": ficha(3, "Danza urbana", "Centro Cultural Naucalpan", "91", "19.478", "-99.238", "Av. Gustavo Baz 2160, La Loma, Naucalpan, Edo. Méx."),
+    };
+    const item = (id: string, lat: string, lng: string) => ({ event_id: id, event_type: "Cursos y Talleres", event_name: `Evento ${id}`, event_venue: "x", event_date_located: "24/10/2026", event_lat: lat, event_lon: lng });
+    const lista = JSON.stringify({
+      status: "OK",
+      data: {
+        event_data: { event_pages_total: 1, event_pages_current: 1, event_items_total: 3, event_items_list: [item("1", "19.500719", "-99.112930"), item("2", "19.258", "-99.105"), item("3", "19.478", "-99.238")] },
+        venue_data: { venue_pages_total: 1, venue_items_list: [{ venue_id: "36", venue_name: "FARO Indios Verdes", venue_image: "https://cartelera.cdmx.gob.mx/wp-content/uploads/usercontent/indiosp.jpg", venue_lat: "19.500719", venue_lon: "-99.112930" }] },
+      },
+    });
+    const pedidas: string[] = [];
+    const pedir = (async (url: string) => {
+      pedidas.push(url);
+      if (url.endsWith("/search_builder")) return new Response(lista);
+      const id = url.match(/^https:\/\/cartelera\.cdmx\.gob\.mx\/(\d+)\//)?.[1];
+      return id && fichas[id] ? new Response(fichas[id]) : new Response("no", { status: 404 });
+    }) as typeof fetch;
+    const base = mundo();
+    const { dep } = dependencias(base, { ...carteleraFalsa(), pedir });
+    await hastaTerminar(dep);
+    const c = laCorrida(base);
+    expect(c.estado).toBe("terminada");
+    // Las tres fichas se piden (lo lejano ya no se salta) y solo la de Naucalpan queda fuera.
+    expect(pedidas.filter((u) => !u.endsWith("/search_builder")).map((u) => u.split("/")[3])).toEqual(["1", "2", "3"]);
+    expect(c.resumen.descartados).toMatchObject({ fuera_de_la_ciudad: 1 });
+    const ps = deLaCorrida(base);
+    expect(ps.filter((p) => p.tipo === "evento").map((p) => [p.datos.titulo, p.datos.lugar]).sort()).toEqual([
+      ["Cartonería", "FARO Xochimilco"],
+      ["Grabado en linóleo", "FARO Indios Verdes"],
+    ]);
+    expect(ps.filter((p) => p.tipo === "lugar").map((p) => [p.datos.nombre, p.datos.tipo]).sort()).toEqual([
+      ["FARO Indios Verdes", "casa_de_cultura"],
+      ["FARO Xochimilco", "casa_de_cultura"],
+    ]);
+    expect(ps.find((p) => p.datos.nombre === "FARO Indios Verdes")!.datos.imagen).toBe("https://cartelera.cdmx.gob.mx/wp-content/uploads/usercontent/indiosp.jpg");
+
+    // Al publicar, el punto de la cartelera vale aunque quede fuera del radio de la ciudad (12 km): el FARO de Xochimilco está a ~20 km.
+    const xochimilco = ps.find((p) => p.datos.titulo === "Cartonería")!.datos;
+    const ciudad = { slug: "ciudad-de-mexico", nombre: "Ciudad de México", alias: [], lat: 19.432, lng: -99.14, zona: ZONA, radioKm: 12, parametros: { alcaldias: ["Cuauhtémoc"], guias: [], radio_km: 12 } };
+    const listo = await prepararEvento({ db: base.db, mapbox: null, ahora: AHORA }, xochimilco, ciudad, LUGARES, ADMIN);
+    expect(listo).toMatchObject({ ok: true, fila: { sitio_texto: "FARO Xochimilco", sitio_lat: 19.258, sitio_lng: -99.105, lugar_id: null } });
   });
 });

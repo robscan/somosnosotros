@@ -377,6 +377,35 @@ export function alcaldiaDeDireccion(direccion: string | null | undefined): strin
   return antes && /\p{L}/u.test(antes) ? antes.slice(0, 80) : null;
 }
 
+/** Municipios del Estado de México que rodean la ciudad (los que una dirección de la cartelera podría nombrar). */
+const MUNICIPIOS_EDOMEX = [
+  "naucalpan", "naucalpan de juarez", "ecatepec", "ecatepec de morelos", "tlalnepantla", "tlalnepantla de baz", "nezahualcoyotl", "huixquilucan",
+  "atizapan", "atizapan de zaragoza", "cuautitlan", "cuautitlan izcalli", "chimalhuacan", "texcoco", "toluca", "coacalco", "tultitlan", "chalco",
+  "valle de chalco", "ixtapaluca", "tecamac", "nicolas romero", "metepec", "los reyes la paz", "zumpango", "teotihuacan", "lerma", "ocoyoacac",
+];
+/** Los estados que no son la Ciudad de México, como los escribe el último trozo de una dirección. */
+const OTROS_ESTADOS = [
+  "estado de mexico", "edo mex", "edo de mexico", "edomex", "mexico edo", "morelos", "puebla", "hidalgo", "queretaro", "tlaxcala", "guerrero",
+  "michoacan", "jalisco", "veracruz", "oaxaca", "guanajuato", "san luis potosi", "nuevo leon",
+];
+
+/**
+ * ¿La dirección de la cartelera pone el sitio claramente fuera de la Ciudad de México (OL-450)? La cartelera es la guía oficial de la ciudad:
+ * todo lo suyo cuenta como de la ciudad (cualquiera de sus 16 alcaldías), salvo que la dirección diga otro estado: un código postal que no es de
+ * la ciudad (los suyos van del 01000 al 16999), «Estado de México» o «Edo. Méx.» en cualquier parte, o un trozo que sea un municipio mexiquense
+ * («Naucalpan»), u otro estado como último trozo. Las calles y colonias con nombre de estado («Av. Puebla», la colonia Guerrero) no cuentan.
+ */
+export function fueraDeLaCiudadDeMexico(direccion: string | null | undefined): boolean {
+  if (!direccion) return false;
+  const cp = /\bc\.?\s*p\.?\s*(\d{5})\b/i.exec(direccion)?.[1];
+  if (cp && (Number(cp) < 1000 || Number(cp) > 16999)) return true;
+  const n = ` ${normalizarNombre(direccion)} `;
+  if (/ (estado de mexico|edo mex|edo de mexico|edomex) /.test(n)) return true;
+  const trozos = direccion.split(",").map((t) => normalizarNombre(t)).filter(Boolean);
+  // Un estado solo como último trozo («…, Cuernavaca, Morelos»): en medio puede ser una colonia de la ciudad («Guerrero», «Morelos»).
+  return trozos.some((t) => MUNICIPIOS_EDOMEX.includes(t)) || OTROS_ESTADOS.includes(trozos.at(-1) ?? "");
+}
+
 /** «Gratuito» → «Gratis»; «$ 60» → «$60»; lo demás tal cual. */
 function precioLimpio(p: string): string {
   const t = p.replace(/\s+/g, " ").trim();
