@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
-import { IconoCalendario, IconoDestello, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCartel, IconoDestello, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { avanceDe, credito, detalleCorrida, fechaVence, gruposDeCorridas, pildoraCorrida, tituloCorrida, usd, usdCorto, type CorridaPanel, type Pildora, type TipoCorrida } from "@/lib/ciudadesAdmin";
@@ -15,7 +15,7 @@ import { tituloDePagina } from "@/lib/marca";
 
 export const metadata = { title: tituloDePagina("Corridas", "Administración"), robots: { index: false, follow: false } };
 
-const ICONO: Record<TipoCorrida, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello };
+const ICONO: Record<TipoCorrida, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello, carteles: IconoCartel };
 const TONO: Record<Pildora["tono"], string | undefined> = { gris: undefined, violeta: styles.etiquetaRol, verde: css.ok, naranja: styles.destacada, rojo: css.fallo };
 /** Los filtros: las corridas de Ciudades (sus tres botones) y las del showcase. Solo salen si hay de más de un tipo. */
 const FILTROS = [

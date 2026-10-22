@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { leerParametrosCiudad } from "../ciudadParametros";
 import { pasoAgendas } from "./agendas";
 import { pasoArtistas } from "./artistas";
+import { pasoCarteles } from "./carteles";
 import type { ClienteApi } from "./claude";
 import { FalloCorrida, pasoLugares, type CiudadRutina, type Contexto, type SalidaPaso } from "./lugares";
 import type { Mapbox } from "./mapbox";
@@ -30,7 +31,7 @@ import { pasoShowcase, type ContextoSinCiudad } from "./showcase";
  *
  * OL-430: «Buscar artistas» (`artistas.ts`) es una rutina más de una ciudad; «Investigar» del Showcase (`showcase.ts`) es la única sin ciudad
  * (la corrida `showcase` lleva `parametros.artista_id`). Las dos dan pasos de hasta 120 s (una llamada que abre catálogos o páginas tarda más
- * que una búsqueda corta).
+ * que una búsqueda corta). OL-444: «Buscar carteles» (`carteles.ts`) también, por lo mismo (y baja las imágenes que propone).
  */
 
 export type Dependencias = {
@@ -48,7 +49,7 @@ export type Dependencias = {
 };
 
 /** Las rutinas de una ciudad. Un tipo que no esté aquí ni abajo falla con «Este botón todavía no tiene rutina». */
-const RUTINAS: Record<string, (ctx: Contexto) => Promise<SalidaPaso>> = { lugares: pasoLugares, agendas: pasoAgendas, artistas: pasoArtistas };
+const RUTINAS: Record<string, (ctx: Contexto) => Promise<SalidaPaso>> = { lugares: pasoLugares, agendas: pasoAgendas, artistas: pasoArtistas, carteles: pasoCarteles };
 /** Las que no son de una ciudad (OL-430): «Investigar» a un artista del Showcase. */
 const RUTINAS_SIN_CIUDAD: Record<string, (ctx: ContextoSinCiudad) => Promise<SalidaPaso>> = { showcase: pasoShowcase };
 
@@ -169,7 +170,7 @@ export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date
   const plazo =
     fila.tipo === "agendas"
       ? (dep.plazoAgendasMs ?? PLAZO_PASO_AGENDAS_MS)
-      : fila.tipo === "artistas" || fila.tipo === "showcase"
+      : fila.tipo === "artistas" || fila.tipo === "showcase" || fila.tipo === "carteles"
         ? (dep.plazoInvestigarMs ?? PLAZO_PASO_INVESTIGAR_MS)
         : dep.plazoMs;
   const hasta = empezo + plazo - MARGEN_GUARDAR_MS;

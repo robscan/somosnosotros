@@ -6,12 +6,13 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { hrefArtista, validarArtista } from "@/lib/artistas";
 import { CIUDAD_INICIAL, slugDeCiudad } from "@/lib/ciudad";
-import { BOTONES, estadoVisible, HOJAS, leerPanelCiudades, leerParametrosVista, leerTope, type EstadoCiudad, type TipoBoton } from "@/lib/ciudadesAdmin";
+import { BOTONES_PANEL, estadoVisible, HOJAS, leerPanelCiudades, leerParametrosVista, leerTope, type EstadoCiudad, type TipoHoja } from "@/lib/ciudadesAdmin";
 import { configPublica } from "@/lib/config";
 import { hrefEvento } from "@/lib/eventos";
 import { esUuid } from "@/lib/formulario";
 import { hrefLugar, validarLugar } from "@/lib/lugares";
 import { entradaDeArtista, entradaDeLugar, esMotivo, nombreDe, notaDeFestival, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
+import { almacenDeSupabase, ponerCartel } from "@/lib/rutinas/aceptarCartel";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararEvento, type Preparado } from "@/lib/rutinas/publicarEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
@@ -48,7 +49,7 @@ function revalidar() {
 }
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const esBoton = (t: string): t is TipoBoton => BOTONES.some((b) => b.tipo === t);
+const esBoton = (t: string): t is TipoHoja => BOTONES_PANEL.some((b) => b.tipo === t);
 
 /** «Correr»: deja una corrida pendiente de ese botón en esa ciudad, con su tope y las fuentes de la hoja. */
 export async function crearCorrida(ciudad: string, tipo: string, tope: string): Promise<Resultado> {
@@ -79,7 +80,7 @@ async function pedirPrimerPaso() {
     const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
     after(() => dispararPaso(origen));
   } catch {
-    console.warn("rutinas: no se pudo pedir el primer paso; la corrida espera al cron");
+    console.warn("rutinas: no se pudo pedir el primer paso; la corrida espera al latido");
   }
 }
 
@@ -122,6 +123,7 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   if ("error" in leida) return { ok: false, error: leida.error };
   const { p, ciudad } = leida;
   if (p.estado !== "propuesta") return { ok: false, error: "Ya se decidió. Recarga la página." };
+  if (p.tipo === "cartel") return aceptarCartel(supabase, yo, p);
 
   let ficha: Record<string, unknown> = {};
   let evento: Preparado | null = null;
@@ -184,6 +186,27 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   }
   if (!r.ficha_id) return { ok: true, href: null };
   return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
+}
+
+/**
+ * Aceptar un cartel de «Buscar carteles» (OL-444): primero se pone en el evento (`ponerCartel`: se baja la imagen otra vez, se prepara como un
+ * cartel que sube una persona, se guarda en Storage y se pone en `eventos.imagen` si el evento sigue sin cartel); si eso no se puede, no se
+ * acepta y la tarjeta dice por qué. Luego se marca con la sesión (la base exige el rol) y se liga a su evento: «Ver ficha» lleva a él.
+ */
+async function aceptarCartel(supabase: Cliente, yo: string, p: Leida): Promise<ResultadoAceptar> {
+  const admin = clienteAdmin();
+  if (!admin) return { ok: false, error: "No se puede poner el cartel ahora. Intenta más tarde." };
+  const puesto = await ponerCartel({ db: admin, almacen: almacenDeSupabase(admin), ahora: () => new Date() }, p.datos, yo);
+  if (!puesto.ok) return puesto;
+  const href = hrefEvento(puesto.evento);
+  revalidatePath("/");
+  revalidatePath(href);
+  if (puesto.evento.lugar_id) revalidatePath(`/lugares/${puesto.evento.lugar_id}`);
+  const { error } = await supabase.rpc("aceptar_propuesta", { p_propuesta: p.id, p_ficha: {} });
+  if (error) return { ok: false, error: "El cartel ya quedó en el evento, pero la propuesta no se pudo marcar: recárgala y recházala como duplicado." };
+  await ligarFicha(admin, p.id, puesto.evento.id);
+  revalidar();
+  return { ok: true, href };
 }
 
 /**
