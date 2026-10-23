@@ -22,9 +22,8 @@ export default async function ManualGrafo() {
   const secciones = seccionesManual();
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/admin/grafo", texto: "Grafo cultural" }} />
+      <Barra volver={{ href: "/admin/grafo", texto: "Grafo cultural" }} titulo="Manual del grafo cultural" />
       <article className={styles.manual}>
-        <h1>Manual del grafo cultural</h1>
         <p className={styles.intro}>{AYUDA.pantalla.texto}</p>
         <nav className={styles.indice} aria-label="Bloques del manual">
           {secciones.map((b) => (

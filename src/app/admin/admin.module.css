@@ -521,29 +521,6 @@ a.ficha::after,
 .quitar {
   color: var(--error);
 }
-/* La cabecera de la ficha de una persona (OL-414): la foto grande arriba y al centro, y debajo el nombre y su detalle, como la ficha de un contacto
-   del teléfono. Con la foto al lado, el nombre se quedaba con 200 px a 390. */
-.cabecera {
-  display: grid;
-  grid-template-areas:
-    "avatar"
-    "nombre"
-    "detalle";
-  justify-items: center;
-  row-gap: var(--espacio-1);
-  text-align: center;
-}
-.cabecera > h1 {
-  grid-area: nombre;
-  margin-top: var(--espacio-2);
-  overflow-wrap: anywhere;
-  font-size: var(--letra-2xl);
-}
-.cabecera > small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
 .salida {
   display: flex;
   align-items: center;
@@ -560,80 +537,34 @@ a.ficha::after,
   height: 16px;
 }
 
-/* ---------- 5. Listas: Personas y fichas ---------- */
-.renglones {
-  list-style: none;
-  margin-top: var(--espacio-1);
+/* ---------- 5. Listas: Personas, Lugares, Eventos y Artistas (OL-456) ----------
+   Las del front: una columna (cada pieza pone su aire: la cabecera, el conteo, el grupo de renglones), la barra de las fichas arriba y debajo
+   `ui/Cabecera`, que se queda pegada bajo ella. */
+.listado {
+  grid-template-columns: minmax(0, 1fr);
 }
-.renglones > li + li {
-  border-top: 1px solid var(--borde);
+.listado > * {
+  grid-column: 1 / -1;
 }
-/* El renglón de Personas: la foto del lado de las listas de la app (`--foto-renglon`, 56; OL-414, antes 44). */
-.persona {
-  display: grid;
-  grid-template-columns: var(--foto-renglon) 1fr 16px;
-  grid-template-areas:
-    "avatar nombre chevron"
-    "avatar detalle chevron";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  padding: 10px 0;
-  color: var(--texto);
-  text-decoration: none;
+/* La barra va por encima de la cabecera, como la barra de la app en el front: el relleno blanco de la cabecera (su `::before`, el del rebote)
+   sube detrás de ella y no la tapa. */
+.listado > header:first-child {
+  z-index: calc(var(--z-pegajoso) + 1);
 }
-/* La foto redonda o la inicial (`Avatar`, `FotoPersona`); su lado lo pone su sitio. */
-.avatar {
-  grid-area: avatar;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-  color: var(--texto-suave);
-  font-weight: 700;
+.listado > header + header {
+  top: calc(var(--barra-vista, 0px) + var(--alto-barra) + env(safe-area-inset-top, 0px));
 }
-.persona > .avatar {
-  width: var(--foto-renglon);
-  height: var(--foto-renglon);
+/* El buscador (ui/Buscador), con el aire de la columna; el borde, por dentro, para que el campo llene los 44 de su píldora (OL-426) */
+.listado > label {
+  margin: var(--espacio-3) var(--gutter) 0;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--borde);
 }
-/* La de la cabecera de la ficha (OL-414): el doble del avatar de la cabecera de una persona en la app (Mi perfil y su ficha pública, 72), 144; con
-   foto es un botón que la abre entera (VisorImagen). */
-.cabecera > .avatar {
-  width: calc(var(--avatar-perfil) * 2);
-  height: calc(var(--avatar-perfil) * 2);
-  font-size: var(--letra-cifra); /* la inicial, a la medida de la cifra de los indicadores */
+.listado > label:focus-within {
+  box-shadow: inset 0 0 0 1px var(--texto);
 }
-button.avatar {
-  cursor: zoom-in;
-}
-.avatar > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.persona > b,
-.renglonFicha > a > b {
-  grid-area: nombre;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: var(--letra-md);
-  font-weight: 600;
-  line-height: 1.25;
-}
-.persona > small,
-.renglonFicha > a > small {
-  grid-area: detalle;
-  min-width: 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.3;
-}
-.persona > svg {
-  grid-area: chevron;
-  color: var(--texto-suave);
+.listado > .verMas {
+  justify-self: center;
 }
 .etiqueta {
   display: inline-block;
@@ -654,44 +585,6 @@ button.avatar {
 .etiquetaRol {
   background: var(--primario-suave);
   color: var(--primario);
-}
-.renglonFicha {
-  display: grid;
-  grid-template-columns: 1fr var(--toque-min);
-  column-gap: var(--espacio-1);
-  align-items: center;
-}
-.renglonFicha > a {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  grid-template-areas:
-    "foto nombre"
-    "foto detalle";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  min-width: 0;
-  min-height: 68px;
-  padding: 10px 0;
-  color: var(--texto);
-  text-decoration: none;
-}
-.foto {
-  grid-area: foto;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radio-chico);
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
-.redonda {
-  border-radius: 50%;
-}
-.oculta > a > b,
-.oculta > a > small {
-  color: var(--texto-suave);
-}
-.oculta > a > .foto {
-  opacity: 0.45;
 }
 .verMas {
   margin-top: var(--espacio-4);

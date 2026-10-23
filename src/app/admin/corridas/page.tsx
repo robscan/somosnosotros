@@ -34,12 +34,11 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
   if (actual.perfil.rol !== "admin") redirect("/");
   const { tipo } = await searchParams;
   const panel = await cargarPanelCiudades();
-  const barra = <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} />;
+  const barra = <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo="Corridas" />;
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
         {barra}
-        <h1 className={styles.titulo}>Corridas</h1>
         <Reintentar texto="No pudimos leer las corridas." />
       </main>
     );
@@ -55,7 +54,6 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
   return (
     <main className={`${plantilla.paginaContenido} ${styles.lista}`}>
       {barra}
-      <h1 className={styles.titulo}>Corridas</h1>
       <ul className={`${styles.indicadores} ${css.credito}`}>
         <li>
           <div className={`${styles.indicador} ${css.quieto}`}>

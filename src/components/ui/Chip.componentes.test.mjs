@@ -196,17 +196,18 @@ test("estado y sello son rótulos: ni se enfocan ni son botones; el estado en el
   assert.ok(sello.alto < 36 && estado.alto < 36, "los rótulos son más bajos que un chip que se toca");
 });
 
-test("nativo: el campo de hora va encima del chip, invisible y del mismo tamaño (salvo su borde), y recibe el toque", async (t) => {
+test("nativo: el campo de hora va encima del chip, invisible y del tamaño de su toque (el ancho del chip y 44 de alto), y recibe el toque también fuera de los 36 del chip", async (t) => {
   const p = await pagina(t);
   const campo = p.getByLabel("Hora de cierre");
   const datos = await campo.evaluate((i) => {
     const chip = i.parentElement.getBoundingClientRect();
     const c = i.getBoundingClientRect();
     const centro = document.elementFromPoint(chip.left + chip.width / 2, chip.top + chip.height / 2);
-    const mismoTamano = Math.abs(c.width - chip.width) <= 2 && Math.abs(c.height - chip.height) <= 2; // menos el borde de 1 px por lado
-    return { mismoTamano, alto: Math.round(chip.height), invisible: getComputedStyle(i).opacity, recibe: centro === i };
+    // OL-456: el campo medía 34 de alto (el chip sin sus bordes); ahora cubre el toque de 44, como el `::before` de los chips que se tocan.
+    const arriba = document.elementFromPoint(chip.left + chip.width / 2, chip.top - 3);
+    return { mismoAncho: Math.abs(c.width - chip.width) <= 1, alto: Math.round(chip.height), altoCampo: Math.round(c.height), invisible: getComputedStyle(i).opacity, recibe: centro === i, recibeFuera: arriba === i };
   });
-  assert.deepEqual(datos, { mismoTamano: true, alto: 36, invisible: "0", recibe: true });
+  assert.deepEqual(datos, { mismoAncho: true, alto: 36, altoCampo: 44, invisible: "0", recibe: true, recibeFuera: true });
 });
 
 test("enlace: es un <a>; el que ya está puesto lo dice con aria-current", async (t) => {

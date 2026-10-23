@@ -46,6 +46,7 @@ import Hallazgos from "../Hallazgos";
 import RedesFicha from "./RedesFicha";
 import SenalFicha from "./SenalFicha";
 import admin from "../../admin.module.css";
+import ficha from "@/components/FichaPersona.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import s from "../showcase.module.css";
 import { tituloDePagina } from "@/lib/marca";
@@ -72,12 +73,10 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
   if (actual.perfil.rol !== "admin") redirect("/");
   const ahora = new Date();
   const f = await cargarFichaShowcase(clave, ahora);
-  const barra = <Barra volver={{ href: RUTA_SHOWCASE, texto: "Showcase" }} />;
   if (f === "error" || !f) {
     return (
       <main className={plantilla.paginaContenido}>
-        {barra}
-        <h1 className={admin.titulo}>{f === "error" ? "Showcase" : "Este artista no está en el catálogo"}</h1>
+        <Barra volver={{ href: RUTA_SHOWCASE, texto: "Showcase" }} titulo={f === "error" ? "Showcase" : "Este artista no está en el catálogo"} />
         {f === "error" ? <Reintentar texto="No pudimos leer esta ficha." /> : <p className={admin.vacio}>Quizá cambió su dirección o se borró su ficha.</p>}
         {f !== "error" && (
           <Link href={RUTA_SHOWCASE} className={admin.salida}>
@@ -124,18 +123,18 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
   const lecturas = ultimas.map((l) => ({ red: l.red, etiqueta: etiquetaRed(l.red), texto: textoLectura(l, hoy, true), hace: haceDias(diasEntre(diaDe(l.leido_en), hoy)) }));
   return (
     <main id={RAIZ} className={`${plantilla.paginaContenido} ${s.conAyuda}`}>
-      {barra}
-      <header className={admin.cabecera}>
-        <Imagen src={a.foto ?? SIN_FOTO_REDONDA} alt="" className={admin.avatar} width={144} height={144} sizes="144px" loading="eager" />
-        <h1>
+      <Barra volver={{ href: RUTA_SHOWCASE, texto: "Showcase" }} titulo={a.nombre} tituloEnPagina />
+      <div className={ficha.cabecera}>
+        <Imagen src={a.foto ?? SIN_FOTO_REDONDA} alt="" className={ficha.avatar} width={72} height={72} sizes="72px" loading="eager" />
+        <h1 className={ficha.nombre}>
           {/* OL-446: el nombre lleva a su ficha pública (chevron derecho: entra a otra pantalla). */}
           <Link href={hrefArtista({ id: a.id, slug: a.slug })} className={s.publica}>
             {a.nombre}
             <IconoChevronDerecha width={24} height={24} />
           </Link>
         </h1>
-        <small>{unir([etiquetaDisciplina(a.disciplina), a.ciudad, f.reclamada && "ficha reclamada"])}</small>
-      </header>
+        <p className={ficha.colonia}>{unir([etiquetaDisciplina(a.disciplina), a.ciudad, f.reclamada && "ficha reclamada"])}</p>
+      </div>
       {propuestas.length > 0 && <AvisoPorRevisar n={propuestas.length} />}
 
       <h2 className={admin.grupo}>Estado</h2>

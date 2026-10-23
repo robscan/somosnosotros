@@ -22,6 +22,21 @@
   padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   border-bottom: 1px solid var(--borde);
 }
+/* Con título (Administración, OL-456): la barra sólida de las fichas (`Ficha.module.css` `.barraSolida`): el regreso redondo a la izquierda, el
+   nombre al centro y del otro lado el mismo ancho vacío, para que quede al centro exacto; sin aire debajo (lo que sigue pone el suyo). */
+.conTitulo {
+  grid-template-columns: var(--control) minmax(0, 1fr) var(--control);
+  margin-bottom: 0;
+}
+.conTitulo > .titulo {
+  text-align: center;
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+}
+/* Lo que sigue a la barra (que no sea otra cabecera pegada a ella) empieza con el aire de la cabecera de una ficha de persona. */
+.conTitulo + :not(header) {
+  margin-top: var(--espacio-4);
+}
 /* El regreso, a la izquierda */
 .interior > :first-child {
   justify-self: start;

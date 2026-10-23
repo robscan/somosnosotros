@@ -717,9 +717,10 @@ const vaA = (id, t) => t.asistencias.filter((a) => a.usuario_id === id && a.esta
 const esNueva = (p) => p.rol !== "admin" && Date.now() - Date.parse(p.creado_en) < 7 * 86400e3;
 const ultimaActividad = (p) => Math.max(Date.parse(p.ultima_entrada ?? 0) || 0, p.visto ? Date.parse(`${p.visto}T12:00:00-06:00`) : 0, Date.parse(p.creado_en));
 Object.assign(rpcs, {
-  panel_personas: ({ p_buscar = null, p_filtro = "todas", p_limite = 30, p_desde = 0 }, t) => {
+  panel_personas: ({ p_ciudad = null, p_buscar = null, p_filtro = "todas", p_limite = 30, p_desde = 0 }, t) => {
     const q = String(p_buscar ?? "").trim().toLowerCase();
     const filas = personasPanel(t)
+      .filter((p) => !p_ciudad || (ciudadDePersona(p.id, t) ?? "sin") === p_ciudad)
       .filter((p) => !q || p.nombre.toLowerCase().includes(q) || p.correo?.toLowerCase().includes(q))
       .filter((p) => (p_filtro === "nuevas" ? esNueva(p) : p_filtro === "sin_entrar" ? !p.ultima_entrada : p_filtro === "administracion" ? p.rol === "admin" : true))
       .sort((a, b) => ultimaActividad(b) - ultimaActividad(a) || a.nombre.localeCompare(b.nombre));
@@ -732,8 +733,8 @@ Object.assign(rpcs, {
       };
     });
   },
-  panel_personas_conteos: (_args, t) => {
-    const todas = personasPanel(t);
+  panel_personas_conteos: ({ p_ciudad = null } = {}, t) => {
+    const todas = personasPanel(t).filter((p) => !p_ciudad || (ciudadDePersona(p.id, t) ?? "sin") === p_ciudad);
     return { todas: todas.length, nuevas: todas.filter(esNueva).length, sin_entrar: todas.filter((p) => !p.ultima_entrada).length, administracion: todas.filter((p) => p.rol === "admin").length };
   },
   panel_persona: ({ p_perfil }, t, { sub } = {}) => {
@@ -751,6 +752,64 @@ Object.assign(rpcs, {
       reclamos: 0, reportes: 0, pendientes: 0, de_origen: !!p.de_origen, es_yo: p.id === sub, puedo_cambiar_rol: !!CUENTAS_PANEL[sub]?.de_origen,
       administradores: personasPanel(t).filter((x) => x.rol === "admin").length, cambio_rol: null,
     };
+  },
+});
+
+// OL-456: Administración › Lugares, Eventos y Artistas con renglones, para compararlas con su par del front (maqueta-pantalla.mjs): los
+// contratos de `panel_lugares`, `panel_eventos`, `panel_artistas`, `panel_fichas_conteos` y `panel_destacados` (migración 20260917090000) sobre
+// las fichas del respaldo, solo con el filtro por omisión y la búsqueda; los demás filtros devuelven lo mismo (no se miden aquí).
+// La ciudad, como `ciudad_slug` (migración 20261023120000): sin acentos ni signos; Soledad y el texto vacío, San Luis Potosí.
+const slugCiudad = (c) => { const s = sinAcentosPanel(c).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); return !s || s === "soledad-de-graciano-sanchez" ? "san-luis-potosi" : s; };
+const enCiudad = (filas, ciudad) => (ciudad ? filas.filter((x) => slugCiudad(x.ciudad) === ciudad) : filas);
+// La ciudad de una persona, como `ciudad_de_persona`: la que más se repite en lo que lleva, publicó y marcó «Voy»; null si nada.
+function ciudadDePersona(id, t) {
+  const de = (tabla, fichaId) => t[tabla].find((x) => x.id === fichaId)?.ciudad;
+  const c = [
+    ...t.lugares_cuentas.filter((x) => x.perfil_id === id).map((x) => de("lugares", x.lugar_id)),
+    ...t.artistas_cuentas.filter((x) => x.perfil_id === id).map((x) => de("artistas", x.artista_id)),
+    ...["lugares", "eventos", "artistas"].flatMap((tabla) => t[tabla].filter((x) => x.creado_por === id).map((x) => x.ciudad)),
+    ...t.asistencias.filter((a) => a.usuario_id === id && a.estado === "voy").map((a) => de("eventos", a.evento_id)),
+  ].map(slugCiudad);
+  if (!c.length) return null;
+  const n = new Map();
+  for (const s of c) n.set(s, (n.get(s) ?? 0) + 1);
+  return [...n].sort((a, b) => b[1] - a[1])[0][0];
+}
+const proximasDe = (campo, id, t) => t.eventos.filter((e) => e.visible && new Date(e.termina ?? e.inicio) >= new Date() && (campo === "lugar_id" ? e.lugar_id === id : t.eventos_artistas.some((x) => x.evento_id === e.id && x.artista_id === id))).length;
+const conBusqueda = (filas, q, campo = "nombre") => (q ? filas.filter((x) => sinAcentosPanel(x[campo]).includes(sinAcentosPanel(q))) : filas);
+const sinAcentosPanel = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const llevaFicha = (tabla, col, id, t) => { const l = t[tabla].filter((c) => c[col] === id); return { lleva: l[0] ? personasPanel(t).find((p) => p.id === l[0].perfil_id)?.nombre ?? null : null, lleva_n: l.length }; };
+Object.assign(rpcs, {
+  panel_lugares: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(enCiudad(t.lugares, p_ciudad), p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return filas.slice(p_desde, p_desde + p_limite).map((l) => ({ id: l.id, nombre: l.nombre, foto: l.portada ?? null, tipo: l.tipo, detalle: l.detalle ?? null, visible: l.visible !== false, privado: !!l.privado, origen: l.origen ?? null, proximas: proximasDe("lugar_id", l.id, t), ...llevaFicha("lugares_cuentas", "lugar_id", l.id, t), total: filas.length }));
+  },
+  panel_eventos: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(enCiudad(t.eventos, p_ciudad).filter((e) => !e.evento_padre_id && new Date(e.termina ?? e.inicio) >= new Date()), p_buscar, "titulo").sort((a, b) => a.inicio.localeCompare(b.inicio));
+    return filas.slice(p_desde, p_desde + p_limite).map((e) => {
+      const autor = personasPanel(t).find((p) => p.id === e.creado_por);
+      return { id: e.id, titulo: e.titulo, imagen: e.imagen ?? null, inicio: e.inicio, fin: e.fin ?? null, visible: e.visible !== false, sitio: t.lugares.find((l) => l.id === e.lugar_id)?.nombre ?? e.sitio_texto ?? null, autor: autor?.nombre ?? null, autor_admin: !autor || autor.rol === "admin", van: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "voy").length, total: filas.length };
+    });
+  },
+  panel_artistas: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(enCiudad(t.artistas, p_ciudad), p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return filas.slice(p_desde, p_desde + p_limite).map((a) => ({ id: a.id, nombre: a.nombre, foto: a.foto ?? null, disciplina: a.disciplina, detalle: a.detalle ?? null, visible: a.visible !== false, origen: a.origen ?? null, proximas: proximasDe("artista_id", a.id, t), ...llevaFicha("artistas_cuentas", "artista_id", a.id, t), total: filas.length }));
+  },
+  panel_fichas_conteos: ({ p_tipo, p_ciudad = null }, todo) => {
+    const t = { ...todo, lugares: enCiudad(todo.lugares, p_ciudad), eventos: enCiudad(todo.eventos, p_ciudad), artistas: enCiudad(todo.artistas, p_ciudad) };
+    if (p_tipo === "lugares") return { todos: t.lugares.length, ocultos: t.lugares.filter((l) => l.visible === false).length, sin_fecha: t.lugares.filter((l) => !proximasDe("lugar_id", l.id, t)).length, sin_foto: t.lugares.filter((l) => !l.portada).length, catalogo: t.lugares.filter((l) => l.origen === "capo").length };
+    if (p_tipo === "eventos") { const p = t.eventos.filter((e) => !e.evento_padre_id && new Date(e.termina ?? e.inicio) >= new Date()); return { proximos: p.length, semana: p.filter((e) => Date.parse(e.inicio) < Date.now() + 7 * 86400e3).length, coincidencias: 0, sin_imagen: p.filter((e) => !e.imagen).length, comunidad: p.filter((e) => e.creado_por && e.creado_por !== ADMIN).length, ocultos: p.filter((e) => e.visible === false).length }; }
+    return { todos: t.artistas.length, por_reclamar: t.artistas.filter((a) => a.origen === "capo").length, llevados: t.artistas_cuentas.length, sin_foto: t.artistas.filter((a) => !a.foto).length, ocultos: t.artistas.filter((a) => a.visible === false).length };
+  },
+  panel_destacados: () => [],
+  panel_en_ciudad: ({ p_tipo, p_ciudad, p_ids }, t) => enCiudad(t[p_tipo] ?? [], p_ciudad).filter((x) => p_ids.includes(x.id)).map((x) => x.id),
+  // La hoja de ciudades: cada ciudad con cuántas tiene la sección, de la que más a la que menos; en Personas, «Sin ciudad» al final.
+  panel_ciudades_de: ({ p_tipo }, t) => {
+    const slugs = p_tipo === "personas" ? personasPanel(t).map((p) => ciudadDePersona(p.id, t) ?? "sin") : (p_tipo === "eventos" ? t.eventos.filter((e) => e.visible && new Date(e.termina ?? e.inicio) >= new Date()) : t[p_tipo]).map((x) => slugCiudad(x.ciudad));
+    const n = new Map();
+    for (const s of slugs) n.set(s, (n.get(s) ?? 0) + 1);
+    const nombre = (s) => (s === "sin" ? "Sin ciudad" : (t.ciudades ?? []).find((c) => c.slug === s)?.nombre ?? [...t.lugares, ...t.eventos, ...t.artistas].find((x) => slugCiudad(x.ciudad) === s)?.ciudad ?? s);
+    return [...n].sort(([a, x], [b, y]) => (a === "sin") - (b === "sin") || y - x).map(([slug, cuenta]) => ({ slug, nombre: nombre(slug), n: cuenta }));
   },
 });
 

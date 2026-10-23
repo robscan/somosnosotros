@@ -28,8 +28,7 @@ export default async function Showcase({ searchParams }: { searchParams: Promise
   const [todos, investigaciones, grupos] = await Promise.all([cargarCandidatos(ahora), cargarInvestigaciones(ahora), cargarGrupos()]);
   return (
     <main className={`${plantilla.paginaContenido} ${admin.lista}`}>
-      <Barra volver={{ href: "/admin", texto: "Administración" }} />
-      <h1 className={admin.titulo}>Showcase</h1>
+      <Barra volver={{ href: "/admin", texto: "Administración" }} titulo="Showcase" />
       {todos ? <VistaCandidatos todos={todos} vista={vista} hoy={diaLocal(ahora)} ahora={ahora.toISOString()} investigaciones={investigaciones} grupos={grupos} /> : <Reintentar texto="No pudimos leer el showcase." />}
     </main>
   );

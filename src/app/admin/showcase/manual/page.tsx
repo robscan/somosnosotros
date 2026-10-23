@@ -20,9 +20,8 @@ export default async function ManualShowcase() {
   if (actual.perfil.rol !== "admin") redirect("/");
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/admin/showcase", texto: "Showcase" }} />
+      <Barra volver={{ href: "/admin/showcase", texto: "Showcase" }} titulo="Manual del showcase" />
       <article className={styles.manual}>
-        <h1>Manual del showcase</h1>
         <p className={styles.intro}>La lista de candidatos para el showcase, con una rúbrica de cuatro señales, las evidencias que la sostienen y las notas del consejo. Solo para administración.</p>
         <nav className={styles.indice} aria-label="Bloques del manual">
           {SECCIONES_MANUAL.map((b) => (

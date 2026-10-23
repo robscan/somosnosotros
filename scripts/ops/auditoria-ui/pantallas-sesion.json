@@ -40,5 +40,10 @@
   { "id": "s37-admin-showcase-tabla", "plantilla": "tarea", "url": "/admin/showcase?vista=tabla", "cuenta": "admin" },
   { "id": "s38-admin-showcase-ficha", "plantilla": "tarea", "url": "/admin/showcase/feleal", "cuenta": "admin" },
   { "id": "s39-admin-showcase-manual", "plantilla": "tarea", "url": "/admin/showcase/manual", "cuenta": "admin" },
-  { "id": "s40-admin-showcase-por-aprobar", "plantilla": "tarea", "url": "/admin/showcase/por-aprobar", "cuenta": "admin" }
+  { "id": "s40-admin-showcase-por-aprobar", "plantilla": "tarea", "url": "/admin/showcase/por-aprobar", "cuenta": "admin" },
+  { "id": "s41-admin-lugares", "plantilla": "tarea", "url": "/admin/lugares", "cuenta": "admin" },
+  { "id": "s42-admin-eventos-ciudad", "plantilla": "tarea", "url": "/admin/eventos?ciudad=san-luis-potosi", "cuenta": "admin" },
+  { "id": "s43-admin-artistas", "plantilla": "tarea", "url": "/admin/artistas", "cuenta": "admin" },
+  { "id": "s44-admin-personas", "plantilla": "tarea", "url": "/admin/personas", "cuenta": "admin" },
+  { "id": "s45-admin-portada", "plantilla": "tarea", "url": "/admin", "cuenta": "admin" }
 ]

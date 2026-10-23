@@ -65,8 +65,40 @@ const PANTALLAS = [
   { id: "alta-lugar", url: "/nuevo/lugar?ciudad=queretaro", sesion: true },
   { id: "alta-artista", url: "/nuevo/artista?ciudad=queretaro", sesion: true },
   { id: "entrar-alta", url: "/entrar?siguiente=%2Fnuevo%2Fevento%3Fciudad%3Dqueretaro" },
+  // OL-456: el resto de Administración y el par del front de cada pantalla, para compararlas lado a lado (comparar-admin-front.mjs).
+  { id: "admin-eventos", url: "/admin/eventos", sesion: true, cuenta: "admin" },
+  { id: "admin-artistas", url: "/admin/artistas", sesion: true, cuenta: "admin" },
+  { id: "admin-ciudad", url: "/admin/ciudades/oaxaca", sesion: true, cuenta: "admin" },
+  { id: "admin-persona", url: "/admin/personas/11111111-1111-4111-8111-111111111111", sesion: true, cuenta: "admin" },
+  { id: "admin-por-aprobar", url: "/admin/showcase/por-aprobar", sesion: true, cuenta: "admin" },
+  { id: "admin-obras", url: "/admin/obras-colectivas", sesion: true, cuenta: "admin" },
+  { id: "admin-grafo-manual", url: "/admin/grafo/manual", sesion: true, cuenta: "admin" },
+  { id: "front-lugares", url: "/lugares", sesion: true },
+  { id: "front-lugares-hoja-ciudad", url: "/lugares", sesion: true, paso: "hoja-ciudad" },
+  { id: "front-artistas", url: "/artistas", sesion: true },
+  { id: "front-buscar", url: "/buscar", sesion: true },
+  { id: "front-persona", url: "/personas/11111111-1111-4111-8111-111111111111", sesion: true },
+  { id: "front-perfil", url: "/perfil", sesion: true },
+  { id: "front-ajustes", url: "/ajustes", sesion: true },
+  { id: "front-ficha-artista", url: "/artistas/feleal", sesion: true },
+  { id: "front-ayuda", url: "/ayuda", sesion: true },
+  // OL-456, parte A: la cabecera nueva de las listas con su hoja de ciudades y su hoja Filtros, una ciudad elegida y su par del front.
+  { id: "admin-lugares-hoja-ciudad", url: "/admin/lugares", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "admin-lugares-filtros", url: "/admin/lugares", sesion: true, cuenta: "admin", paso: "hoja-filtros" },
+  { id: "admin-artistas-cdmx", url: "/admin/artistas?ciudad=ciudad-de-mexico", sesion: true, cuenta: "admin" },
+  { id: "admin-personas-hoja-ciudad", url: "/admin/personas", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "front-lugares-filtros", url: "/lugares", sesion: true, paso: "hoja-filtros" },
 ];
 const PASOS = {
+  // OL-456: la hoja de ciudades de una lista de Administración (el chip «Todas las ciudades») y la hoja Filtros (de Administración o de Lugares).
+  "admin-hoja-ciudad": async (page) => {
+    await page.getByRole("button", { name: "Todas las ciudades" }).click();
+    await page.getByRole("dialog").waitFor();
+  },
+  "hoja-filtros": async (page) => {
+    await page.getByRole("button", { name: /^Filtros/ }).click();
+    await page.getByRole("dialog", { name: "Filtros" }).waitFor();
+  },
   // La hoja de los cinco estados en la ficha de showcase (el renglón «Invitado» con su chevron).
   "admin-showcase-estado": async (page) => {
     await page.locator("button[aria-haspopup='dialog'][data-ayuda='estado']").click();

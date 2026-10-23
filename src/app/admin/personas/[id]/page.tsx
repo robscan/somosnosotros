@@ -16,6 +16,7 @@ import FotoPersona from "./FotoPersona";
 import LoPublicado, { ANCLA_PUBLICADO } from "./LoPublicado";
 import RolPersona from "./RolPersona";
 import styles from "../../admin.module.css";
+import ficha from "@/components/FichaPersona.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { tituloDePagina } from "@/lib/marca";
 
@@ -37,8 +38,7 @@ export default async function PersonaAdmin({ params, searchParams }: { params: P
   if (error) {
     return (
       <main className={plantilla.paginaContenido}>
-        <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
-        <h1 className={styles.titulo}>Persona</h1>
+        <Barra volver={{ href: "/admin/personas", texto: "Personas" }} titulo="Persona" />
         <Reintentar texto="No pudimos leer esta cuenta." />
       </main>
     );
@@ -46,8 +46,7 @@ export default async function PersonaAdmin({ params, searchParams }: { params: P
   if (!f) {
     return (
       <main className={plantilla.paginaContenido}>
-        <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
-        <h1 className={styles.titulo}>Esta cuenta ya no existe</h1>
+        <Barra volver={{ href: "/admin/personas", texto: "Personas" }} titulo="Esta cuenta ya no existe" />
         <p className={styles.vacio}>Quizá se borró. Lo que publicó se queda, sin su nombre.</p>
         <Link href="/admin/personas" className={styles.salida}>
           Volver a Personas
@@ -63,12 +62,12 @@ export default async function PersonaAdmin({ params, searchParams }: { params: P
   const hayPublicado = !!publicado && totalPublicado(publicado) > 0;
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
-      <header className={styles.cabecera}>
+      <Barra volver={{ href: "/admin/personas", texto: "Personas" }} titulo={f.nombre || "Sin nombre"} tituloEnPagina />
+      <div className={ficha.cabecera}>
         <FotoPersona foto={f.foto} nombre={f.nombre} />
-        <h1>{f.nombre || "Sin nombre"}</h1>
-        <small>{unir([f.es_yo && "Tú", f.colonia, f.reservado ? "perfil reservado" : "perfil público"])}</small>
-      </header>
+        <h1 className={ficha.nombre}>{f.nombre || "Sin nombre"}</h1>
+        {(f.es_yo || f.colonia || f.reservado) && <p className={ficha.colonia}>{unir([f.es_yo && "Tú", f.colonia, f.reservado && "perfil reservado"])}</p>}
+      </div>
 
       <h2 className={styles.grupo}>Cuenta</h2>
       <ul className={renglon.tarjeta}>
