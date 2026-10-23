@@ -77,11 +77,11 @@ export default async function Admin() {
           const Icono = ICONO[r.clave];
           return (
             <li key={r.clave}>
-              <Link href={r.href} className={styles.fila}>
+              <Link href={r.href} className={renglon.ajuste}>
                 <Icono width={20} height={20} />
                 <b>{r.titulo}</b>
                 {r.detalle && <small>{r.detalle}</small>}
-                <span className={styles.total}>
+                <span>
                   {r.total}
                   <IconoChevronDerecha />
                 </span>
@@ -96,10 +96,10 @@ export default async function Admin() {
       <h2 className={styles.grupo}>Obras colectivas</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/obras-colectivas" className={styles.fila}>
+          <Link href="/admin/obras-colectivas" className={renglon.ajuste}>
             <IconoPincel width={20} height={20} />
             <b>Obras colectivas</b>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>
@@ -109,11 +109,11 @@ export default async function Admin() {
       <h2 className={styles.grupo}>Grafo cultural</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/grafo" className={styles.fila}>
+          <Link href="/admin/grafo" className={renglon.ajuste}>
             <IconoGrafo width={20} height={20} />
             <b>Grafo cultural</b>
             <small>Lugares, artistas y asistentes en 3D</small>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>
@@ -123,11 +123,11 @@ export default async function Admin() {
       <h2 className={styles.grupo}>Ciudades</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/ciudades" className={styles.fila}>
+          <Link href="/admin/ciudades" className={renglon.ajuste}>
             <IconoUbicacion width={20} height={20} />
             <b>Ciudades</b>
             <small>{ciudades ? resumenCiudades(ciudades.ciudades) : "No pudimos leer las ciudades"}</small>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>

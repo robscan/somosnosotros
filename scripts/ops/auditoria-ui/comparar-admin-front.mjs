@@ -13,6 +13,7 @@ import { pathToFileURL } from "node:url";
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../..");
 const [MAQ, SALIDA] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const ANTES = (process.argv.find((a) => a.startsWith("--antes=")) ?? "").slice(8) || null;
+const PARTE = (process.argv.find((a) => a.startsWith("--parte=")) ?? "--parte=A").slice(8);
 if (!MAQ || !SALIDA) { console.error("uso: comparar-admin-front.mjs <maquetas> <salida>"); process.exit(1); }
 const requerir = createRequire(path.join(RAIZ, "package.json"));
 const { chromium } = requerir("playwright-core");
@@ -34,6 +35,23 @@ const PAREJAS_A = [
   ["A-10-ciudad", "admin-ciudad", "admin-ciudad", "front-persona"],
   ["A-11-showcase-ficha", "admin-showcase-ficha", "admin-showcase-ficha", "front-persona"],
   ["A-12-obras", "admin-obras", "admin-obras", null],
+];
+
+/** Las de la parte B (OL-457, `--parte=B`): el resto de Administración, con el prefijo `B-`. */
+const PAREJAS_B = [
+  ["B-01-portada", "admin", "admin", "front-ajustes"],
+  ["B-02-ciudades", "admin-ciudades", "admin-ciudades", "front-lugares-hoja-ciudad"],
+  ["B-03-ciudad", "admin-ciudad", "admin-ciudad", "front-persona"],
+  ["B-04-propuestas", "admin-propuestas", "admin-propuestas", null],
+  ["B-05-corridas", "admin-corridas", "admin-corridas", "front-ajustes"],
+  ["B-06-showcase", "admin-showcase", "admin-showcase", "front-lugares"],
+  ["B-07-showcase-ficha", "admin-showcase-ficha", "admin-showcase-ficha", "front-persona"],
+  ["B-08-showcase-estado", "admin-showcase-estado", "admin-showcase-estado", "front-lugares-hoja-ciudad"],
+  ["B-09-por-aprobar", "admin-por-aprobar", "admin-por-aprobar", null],
+  ["B-10-grafo", "admin-grafo", "admin-grafo", "ficha-lugar"],
+  ["B-11-obras", "admin-obras", "admin-obras", "front-ajustes"],
+  ["B-12-manual", "admin-grafo-manual", "admin-grafo-manual", "front-ayuda"],
+  ["B-13-manual-showcase", "admin-grafo-manual", "admin-showcase-manual", "front-ayuda"],
 ];
 
 export const PAREJAS = [
@@ -98,7 +116,7 @@ async function medir(id, carpeta = MAQ, clave = id) {
   return medidas[clave];
 }
 const rotulo = (texto) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="780" height="72"><rect width="780" height="72" fill="#1a1a1a"/><text x="24" y="47" font-family="Helvetica, Arial" font-size="30" font-weight="700" fill="#fff">${texto}</text></svg>`);
-for (const [nombre, antes, despues, front] of ANTES ? PAREJAS_A : []) {
+for (const [nombre, antes, despues, front] of ANTES ? (PARTE === "B" ? PAREJAS_B : PAREJAS_A) : []) {
   await medir(antes, ANTES, `antes:${antes}`);
   await medir(despues);
   if (front) await medir(front);
@@ -123,8 +141,38 @@ for (const [nombre, admin, front] of ANTES ? [] : PAREJAS) {
   await sharp({ create: { width: 1580, height: 1760, channels: 3, background: "#e6e4de" } }).composite(capas).png().toFile(path.join(SALIDA, nombre + ".png"));
   console.log(nombre);
 }
+// OL-457 (revisión del gestor): ningún texto cortado. En cada pantalla de después, a 320, 390 y 430: lo que tiene más contenido que caja
+// (`scrollWidth > clientWidth`) y lo esconde (`cortado`: overflow que recorta, «…»), y las filas que hay que deslizar para verlas enteras (`desliza`).
+const CORTES = () => {
+  const out = { cortados: [], desliza: [] };
+  for (const e of document.body.querySelectorAll("*")) {
+    const r = e.getBoundingClientRect();
+    if (!r.width || e.scrollWidth <= e.clientWidth + 1 || !e.textContent.trim()) continue;
+    const c = getComputedStyle(e);
+    // Lo que no se ve: oculto, solo para el lector de pantalla (`clip`), o fuera de la pantalla (una hoja cerrada, corrida abajo o de lado).
+    if (c.display === "none" || c.visibility === "hidden" || c.position === "absolute" && c.clipPath !== "none" || e.closest("[aria-hidden=true], svg, canvas")) continue;
+    if (r.left >= innerWidth || r.right <= 0 || r.top >= document.documentElement.scrollHeight) continue;
+    const quien = `${e.tagName.toLowerCase()}.${[...e.classList].map((x) => x.replace(/^(.+?)-module__[\w-]{5,8}__/, "$1/")).join(".")} «${e.textContent.trim().slice(0, 40)}» ${e.scrollWidth}>${e.clientWidth}`;
+    if (/auto|scroll/.test(c.overflowX)) out.desliza.push(quien);
+    else if (c.overflowX !== "visible" || c.textOverflow === "ellipsis") out.cortados.push(quien);
+  }
+  return out;
+};
+const cortes = {};
+if (ANTES) {
+  for (const ancho of [320, 390, 430]) {
+    const pg = await (await browser.newContext({ viewport: { width: ancho, height: 844 } })).newPage();
+    for (const [, , despues] of PARTE === "B" ? PAREJAS_B : PAREJAS_A) {
+      await pg.goto(pathToFileURL(path.join(MAQ, despues + ".html")).href, { waitUntil: "load" });
+      await pg.waitForTimeout(150);
+      const c = await pg.evaluate(CORTES);
+      if (c.cortados.length || c.desliza.length) cortes[`${despues}@${ancho}`] = c;
+    }
+  }
+  console.log("textos cortados o que deslizan:", Object.keys(cortes).length ? JSON.stringify(cortes, null, 1) : "ninguno");
+}
+fs.writeFileSync(path.join(SALIDA, ANTES ? `${PARTE}-medidas.json` : "medidas.json"), JSON.stringify({ ...medidas, cortes }, null, 1));
 await browser.close();
-fs.writeFileSync(path.join(SALIDA, ANTES ? "A-medidas.json" : "medidas.json"), JSON.stringify(medidas, null, 1));
 const fila = (id) => {
   const m = medidas[id];
   return { id, cabecera: m.cabecera ? `${m.cabecera.pieza.split(" ")[0]} ${m.cabecera.h}` : "—", atras: m.atras ? `${m.atras.w}×${m.atras.h} @${m.atras.x},${m.atras.y}` : "—", h1: m.titulo ? `${m.titulo.y} ${m.titulo.letra}` : "—", x: m.columna?.x, renglon: m.renglones ? `${m.renglones.altos.join("/")} hueco ${m.renglones.huecos.join("/")}` : "—", abajo: m.barraAbajo ? m.barraAbajo.h : "—", nodos: m.nodos, prof: m.profundidad, sinClase: m.sinClase };

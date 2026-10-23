@@ -175,11 +175,11 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
             const Icono = ICONO_BASE[r.tipo];
             return (
               <li key={`${r.tipo}-${r.href}`}>
-                <Link href={r.href} className={admin.fila}>
+                <Link href={r.href} className={renglon.ajuste}>
                   <Icono width={20} height={20} />
                   <b>{r.titulo}</b>
                   <small>{r.detalle}</small>
-                  <span className={admin.total}>
+                  <span>
                     <IconoChevronDerecha />
                   </span>
                 </Link>

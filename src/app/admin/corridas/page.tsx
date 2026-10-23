@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
+import Cabecera from "@/components/ui/Cabecera";
+import { Chip, Cuenta } from "@/components/ui/Chip";
 import { IconoCalendario, IconoCartel, IconoDestello, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -54,6 +55,25 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
   return (
     <main className={`${plantilla.paginaContenido} ${styles.lista}`}>
       {barra}
+      {/* Los filtros, en la fila de ui/Cabecera bajo la barra (OL-457), como en las listas del front. */}
+      {conFiltros && (
+        <Cabecera
+          contexto={
+            <>
+              <Chip activo={!filtro} href="/admin/corridas">
+                Todas
+                <Cuenta n={panel.corridas.length} />
+              </Chip>
+              {FILTROS.map((f) => (
+                <Chip key={f.valor} activo={filtro?.valor === f.valor} href={`/admin/corridas?tipo=${f.valor}`}>
+                  {f.etiqueta}
+                  <Cuenta n={panel.corridas.filter(f.es).length} />
+                </Chip>
+              ))}
+            </>
+          }
+        />
+      )}
       <ul className={`${styles.indicadores} ${css.credito}`}>
         <li>
           <div className={`${styles.indicador} ${css.quieto}`}>
@@ -72,20 +92,6 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
           </div>
         </li>
       </ul>
-      {conFiltros && (
-        <Chips ariaLabel="Filtrar corridas">
-          <Chip activo={!filtro} href="/admin/corridas">
-            Todas
-            <Cuenta n={panel.corridas.length} />
-          </Chip>
-          {FILTROS.map((f) => (
-            <Chip key={f.valor} activo={filtro?.valor === f.valor} href={`/admin/corridas?tipo=${f.valor}`}>
-              {f.etiqueta}
-              <Cuenta n={panel.corridas.filter(f.es).length} />
-            </Chip>
-          ))}
-        </Chips>
-      )}
       {visibles.length === 0 && <p className={styles.vacio}>Todavía no hay corridas: las deja cada botón de una ciudad al tocar «Correr».</p>}
       {gruposDeCorridas(visibles, ahora).map((g) => (
         <GrupoCorridas key={g.titulo} titulo={g.titulo} corridas={g.corridas} nombre={nombre} ahora={ahora} />
@@ -111,7 +117,7 @@ function GrupoCorridas({ titulo, corridas, nombre, ahora }: { titulo: string; co
               <Icono width={20} height={20} />
               <b>{tituloCorrida(r, r.ciudad ? (nombre.get(r.ciudad) ?? r.ciudad) : null)}</b>
               <small>{detalleCorrida(r, ahora)}</small>
-              <span className={styles.total}>
+              <span>
                 <span className={[styles.etiqueta, TONO[p.tono]].filter(Boolean).join(" ")}>{p.texto}</span>
               </span>
               {avance !== null && (
@@ -124,11 +130,11 @@ function GrupoCorridas({ titulo, corridas, nombre, ahora }: { titulo: string; co
           return (
             <li key={r.id}>
               {r.propuestas > 0 ? (
-                <Link href={`/admin/ciudades/propuestas/${r.id}`} className={styles.fila}>
+                <Link href={`/admin/ciudades/propuestas/${r.id}`} className={renglon.ajuste}>
                   {contenido}
                 </Link>
               ) : (
-                <div className={styles.fila}>{contenido}</div>
+                <div className={renglon.ajuste}>{contenido}</div>
               )}
             </li>
           );

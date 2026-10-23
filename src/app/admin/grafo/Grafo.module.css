@@ -18,9 +18,10 @@
   display: grid;
   height: calc(100dvh - var(--barra-flujo, 0px));
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   grid-template-areas:
     "barra"
+    "cuentas"
     "capas"
     "escena";
   background: var(--g-fondo);
@@ -53,44 +54,56 @@
 .barra {
   grid-area: barra;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  /* La barra de las fichas (OL-457): Atrás, el nombre y las acciones. Los lados crecen por igual para que el nombre quede al centro; si no
+     cabe así (a 320 la derecha lleva dos iconos), el nombre se corre antes de cortarse. */
+  grid-template-columns: minmax(var(--control), 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   gap: var(--espacio-2);
   min-height: var(--alto-barra);
-  padding: env(safe-area-inset-top, 0px) var(--espacio-4) 0 var(--espacio-2);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   border-bottom: 1px solid var(--g-borde);
   background: var(--g-fondo);
   z-index: var(--z-pegajoso);
 }
 .barra h1 {
-  font-size: var(--letra-xl);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
   white-space: nowrap;
 }
-.atras,
-.icono {
-  display: grid;
-  place-items: center;
-  width: var(--control);
-  height: var(--control);
+.acciones {
+  justify-self: end;
+  display: flex;
+  gap: var(--espacio-2);
+}
+/* Los botones redondos (ui/BotonIcono con borde, el Atrás incluido) en los colores del grafo, que cambian con el tema. */
+.barra :is(a, button) {
+  border-color: var(--g-borde);
+  background: var(--g-opaco);
   color: var(--g-texto);
 }
-.icono:disabled {
+.barra button:disabled {
   opacity: 0.5;
   cursor: progress;
 }
-.cifras {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--letra-xs);
+.barra button[aria-pressed="true"] {
+  border-color: var(--g-texto);
+}
+/* Las cuentas, en su línea bajo la barra (OL-457: en la barra se cortaban); parten renglón si no caben. */
+.cuentas {
+  grid-area: cuentas;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-1) var(--gutter);
   color: var(--g-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.35;
+  background: var(--g-fondo);
 }
 .fps {
   display: none;
   font-variant-numeric: tabular-nums;
-  font-size: var(--letra-xs);
-  color: var(--g-suave);
 }
 .pildora {
   display: inline-flex;
@@ -116,24 +129,23 @@
   border-color: var(--g-texto);
 }
 @media (min-width: 792px) {
-  .barra {
-    grid-template-columns: auto auto minmax(0, 1fr) auto auto auto auto;
-  }
   .soloAncho {
-    display: inline-flex;
+    display: grid;
   }
   .fps {
-    display: block;
+    display: inline;
   }
 }
 
 /* Las capas, en una fila de píldoras bajo la barra (OL-405): cada una se ve de `--alto-chip` y se toca de `--toque-min` (su ::after sale de la caja,
    y la fila les deja ese aire arriba y abajo). Corre hasta los bordes con el mismo aire lateral que la barra y, si no cabe, se desliza de lado. */
+/* OL-457: si no caben (a 320), pasan al renglón de abajo en vez de deslizarse y cortar «Yo» en el borde. */
 .capas {
   grid-area: capas;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--espacio-2);
+  gap: var(--espacio-3) var(--espacio-2);
   padding: calc((var(--toque-min) - var(--alto-chip)) / 2) var(--espacio-4);
   overflow-x: auto;
   scrollbar-width: none;
@@ -676,9 +688,10 @@
 @media (min-width: 1048px) {
   .app {
     grid-template-columns: calc(var(--panel) * 0.68) minmax(0, 1fr) calc(var(--panel) * 0.8);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     grid-template-areas:
       "barra barra barra"
+      "cuentas cuentas cuentas"
       "arbol capas lista"
       "arbol escena lista";
   }

@@ -44,11 +44,11 @@ export default function EstadoFicha({ artistaId, slug, nombre, estado, titulo, d
     <>
       <ul className={renglon.tarjeta}>
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" data-ayuda="estado" onClick={() => (setError(null), setAbierta(true))}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" data-ayuda="estado" onClick={() => (setError(null), setAbierta(true))}>
             <IconoBandera width={20} height={20} />
             <b>{titulo}</b>
             <small>{detalle}</small>
-            <span className={admin.total}>
+            <span>
               <IconoCaret width={16} height={16} />
             </span>
           </button>

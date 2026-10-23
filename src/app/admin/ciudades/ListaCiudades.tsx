@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
-import { IconoCalendario, IconoChevronDerecha, IconoMas, IconoOjo, IconoPin, IconoReloj, IconoUbicacion } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoChevronDerecha, IconoMas, IconoOjo, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import renglon from "@/components/ui/Renglon.module.css";
 import { cifra, ETIQUETA_ESTADO, pegado, type EstadoVisible, type LineaFila } from "@/lib/ciudadesAdmin";
 import { mostrarCiudad, ocultarCiudad } from "./acciones";
@@ -42,11 +42,11 @@ export default function ListaCiudades({ filas: alEntrar, credito }: { filas: rea
       <h2 className={styles.grupo}>Corridas</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/corridas" className={styles.fila}>
+          <Link href="/admin/corridas" className={renglon.ajuste}>
             <IconoReloj width={20} height={20} />
             <b>Corridas</b>
             <small>{credito}</small>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>
@@ -94,11 +94,11 @@ function Nombre({ f, estado = f.estado }: { f: FilaLista; estado?: EstadoVisible
 /** Una abierta: toda la fila lleva a su panel. */
 function FilaAbierta({ f }: { f: FilaLista }) {
   return (
-    <Link href={`/admin/ciudades/${f.slug}`} className={`${styles.fila} ${css.filaCiudad}`}>
-      <IconoUbicacion width={20} height={20} />
+    <Link href={`/admin/ciudades/${f.slug}`} className={`${renglon.ajuste} ${css.filaCiudad}`}>
+      <IconoPin width={20} height={20} />
       <Nombre f={f} />
       <Cifras f={f} />
-      <span className={styles.total}>
+      <span>
         {f.porRevisar > 0 && (
           <b className={css.revisar} role="img" aria-label={`${f.porRevisar} ${f.porRevisar === 1 ? "propuesta" : "propuestas"} por revisar`}>
             {cifra(f.porRevisar)}
@@ -131,8 +131,8 @@ function FilaDetectada({ f, onAbrir }: { f: FilaLista; onAbrir: () => void }) {
   };
   if (oculta)
     return (
-      <div className={`${styles.fila} ${css.filaCiudad}`}>
-        <IconoUbicacion width={20} height={20} />
+      <div className={`${renglon.ajuste} ${css.filaCiudad}`}>
+        <IconoPin width={20} height={20} />
         <Nombre f={f} estado="cerrada" />
         <small role="status">No vuelve a salir aunque la consulten</small>
         <button type="button" className={`${styles.enlace} ${css.cambiar}`} disabled={enCamino} aria-busy={enCamino} onClick={() => cambiar(false)}>
@@ -142,8 +142,8 @@ function FilaDetectada({ f, onAbrir }: { f: FilaLista; onAbrir: () => void }) {
       </div>
     );
   return (
-    <div className={`${styles.fila} ${css.filaCiudad}`}>
-      <IconoUbicacion width={20} height={20} />
+    <div className={`${renglon.ajuste} ${css.filaCiudad}`}>
+      <IconoPin width={20} height={20} />
       <Nombre f={f} />
       <Cifras f={f} />
       <button type="button" className={styles.pildora} aria-haspopup="dialog" aria-label={`Abrir ${f.nombre}`} onClick={onAbrir}>

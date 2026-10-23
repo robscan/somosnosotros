@@ -158,7 +158,7 @@ export default function HojaAnadir({ detectadas, desde, onCerrar }: Props) {
               </li>
             ) : (
               <li>
-                <div className={styles.fila}>
+                <div className={renglon.ajuste}>
                   <IconoPin width={20} height={20} />
                   <b>{nombre}</b>
                   <small>{[alta.largo !== nombre ? alta.largo : null, alta.region || null].filter(Boolean).join(", ")}</small>
@@ -169,14 +169,14 @@ export default function HojaAnadir({ detectadas, desde, onCerrar }: Props) {
               </li>
             )}
             <li>
-              <div className={styles.fila}>
+              <div className={renglon.ajuste}>
                 <IconoReloj width={20} height={20} />
                 <b>{alta.hora.titulo}</b>
                 {alta.hora.detalle && <small>{alta.hora.detalle}</small>}
               </div>
             </li>
             <li>
-              <div className={styles.fila}>
+              <div className={renglon.ajuste}>
                 <IconoUbicacion width={20} height={20} />
                 <b>{alta.area.titulo}</b>
                 <small>{alta.area.detalle}</small>

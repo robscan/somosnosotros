@@ -15,11 +15,11 @@ export default async function GrupoShowcase() {
       <h2 className={admin.grupo}>Showcase</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/showcase" className={admin.fila}>
+          <Link href="/admin/showcase" className={renglon.ajuste}>
             <IconoDestello width={20} height={20} />
             <b>Showcase</b>
             {r && <small>{`${r.candidatos} ${r.candidatos === 1 ? "candidato" : "candidatos"} · ${r.invitados} ${r.invitados === 1 ? "invitado" : "invitados"}`}</small>}
-            <span className={admin.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>

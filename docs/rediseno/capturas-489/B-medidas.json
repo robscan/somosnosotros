@@ -1,0 +1,1537 @@
+{
+ "antes:admin": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Ajustes)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Administración",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 2707
+  },
+  "renglones": {
+   "pieza": "admin/fila",
+   "altos": [
+    79,
+    80,
+    80,
+    104
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 6,
+  "nodos": 202,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Ajustes)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Administración",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 2703
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste",
+   "altos": [
+    79,
+    80,
+    80,
+    104
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 18,
+  "nodos": 202,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-ajustes": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ajustes",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1160
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste",
+   "altos": [
+    59,
+    80,
+    79,
+    99
+   ],
+   "huecos": [
+    0,
+    46,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 81,
+  "profundidad": 9,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-ciudades": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ciudades",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 846
+  },
+  "renglones": {
+   "pieza": "admin/fila ciudades/filaCiudad",
+   "altos": [
+    61,
+    115,
+    84,
+    106
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 111,
+  "profundidad": 9,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-ciudades": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ciudades",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 846
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste ciudades/filaCiudad",
+   "altos": [
+    61,
+    115,
+    84,
+    106
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 5,
+  "nodos": 111,
+  "profundidad": 9,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-lugares-hoja-ciudad": {
+  "cabecera": {
+   "pieza": "BarraApp/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": null,
+  "titulo": null,
+  "columna": {
+   "pieza": "lugares/lugares",
+   "x": 0,
+   "relleno": "0px 0px 60px 0px",
+   "alto": 788
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    138,
+    95,
+    95,
+    161
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": {
+   "pieza": "NavSecciones/nav",
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60
+  },
+  "sinClase": 13,
+  "nodos": 211,
+  "profundidad": 13,
+  "desbordes": 2,
+  "toquesChicos": []
+ },
+ "antes:admin-ciudad": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Ciudades)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Oaxaca",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido ciudades/panel",
+   "x": 24,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1335
+  },
+  "renglones": {
+   "pieza": "ciudades/ancha ciudades/banda",
+   "altos": [
+    193,
+    218,
+    153,
+    152
+   ],
+   "huecos": [
+    8,
+    8,
+    8
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 64,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-ciudad": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Ciudades)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Oaxaca",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido ciudades/panel",
+   "x": 24,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1335
+  },
+  "renglones": {
+   "pieza": "ciudades/ancha ciudades/banda",
+   "altos": [
+    193,
+    218,
+    153,
+    152
+   ],
+   "huecos": [
+    8,
+    8,
+    8
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 64,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-persona": {
+  "cabecera": {
+   "pieza": "Ficha/barraSolida",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Mi perfil)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ana Rentería",
+   "x": 108,
+   "y": 169,
+   "w": 202,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/raizSinNav Ficha/persona",
+   "x": 0,
+   "relleno": "0px 0px 24px 0px",
+   "alto": 844
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    117,
+    117
+   ],
+   "huecos": [
+    41
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 8,
+  "nodos": 58,
+  "profundidad": 11,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-propuestas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Oaxaca)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Propuestas de Oaxaca",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 24,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1629
+  },
+  "renglones": {
+   "pieza": "admin/pendiente ciudades/propuesta",
+   "altos": [
+    197,
+    197,
+    241,
+    239
+   ],
+   "huecos": [
+    12,
+    12,
+    104
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 65,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-propuestas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Oaxaca)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Propuestas de Oaxaca",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 24,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1629
+  },
+  "renglones": {
+   "pieza": "admin/pendiente ciudades/propuesta",
+   "altos": [
+    197,
+    197,
+    241,
+    239
+   ],
+   "huecos": [
+    12,
+    12,
+    104
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 65,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-corridas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Ciudades)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Corridas",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1371
+  },
+  "renglones": {
+   "pieza": "admin/fila",
+   "altos": [
+    115,
+    142,
+    104,
+    123
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 86,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-corridas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Ciudades)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Corridas",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1371
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste",
+   "altos": [
+    115,
+    142,
+    104,
+    123
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 8,
+  "nodos": 86,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-showcase": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Showcase",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 3260
+  },
+  "renglones": {
+   "pieza": "admin/fila",
+   "altos": [
+    59,
+    59,
+    486,
+    389
+   ],
+   "huecos": [
+    10,
+    13,
+    12
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 18,
+  "nodos": 307,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-showcase": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Showcase",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 3296
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste",
+   "altos": [
+    59,
+    59,
+    486,
+    389
+   ],
+   "huecos": [
+    10,
+    13,
+    12
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 18,
+  "nodos": 299,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-lugares": {
+  "cabecera": {
+   "pieza": "BarraApp/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": null,
+  "titulo": null,
+  "columna": {
+   "pieza": "lugares/lugares",
+   "x": 0,
+   "relleno": "0px 0px 60px 0px",
+   "alto": 788
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    138,
+    95,
+    95,
+    161
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": {
+   "pieza": "NavSecciones/nav",
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60
+  },
+  "sinClase": 13,
+  "nodos": 194,
+  "profundidad": 13,
+  "desbordes": 2,
+  "toquesChicos": [
+   "a.mapboxgl-ctrl-logo 88×23"
+  ]
+ },
+ "antes:admin-showcase-ficha": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Feleal",
+   "x": 108,
+   "y": 73,
+   "w": 246,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido showcase/conAyuda",
+   "x": 20,
+   "relleno": "0px 0px 100px 0px",
+   "alto": 3087
+  },
+  "renglones": {
+   "pieza": "admin/fila showcase/boton",
+   "altos": [
+    79,
+    79,
+    104,
+    57
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 200,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-showcase-ficha": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Feleal",
+   "x": 108,
+   "y": 73,
+   "w": 246,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido showcase/conAyuda",
+   "x": 20,
+   "relleno": "0px 0px 100px 0px",
+   "alto": 3071
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste showcase/boton",
+   "altos": [
+    79,
+    79,
+    104,
+    53
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 10,
+  "nodos": 200,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-showcase-estado": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Feleal",
+   "x": 108,
+   "y": 73,
+   "w": 246,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido showcase/conAyuda",
+   "x": 20,
+   "relleno": "0px 0px 100px 0px",
+   "alto": 3087
+  },
+  "renglones": {
+   "pieza": "admin/fila showcase/boton",
+   "altos": [
+    79,
+    79,
+    104,
+    57
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 228,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-showcase-estado": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Feleal",
+   "x": 108,
+   "y": 73,
+   "w": 246,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido showcase/conAyuda",
+   "x": 20,
+   "relleno": "0px 0px 100px 0px",
+   "alto": 3071
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste showcase/boton",
+   "altos": [
+    79,
+    79,
+    104,
+    53
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 10,
+  "nodos": 228,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-por-aprobar": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Por aprobar",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 24,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1806
+  },
+  "renglones": {
+   "pieza": "admin/fila showcase/filaArtista",
+   "altos": [
+    79,
+    248,
+    245,
+    79
+   ],
+   "huecos": [
+    9,
+    12,
+    85
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 71,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-por-aprobar": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Por aprobar",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 24,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1806
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste showcase/filaArtista",
+   "altos": [
+    79,
+    248,
+    245,
+    79
+   ],
+   "huecos": [
+    9,
+    12,
+    85
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 71,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-grafo": {
+  "cabecera": {
+   "pieza": "Grafo/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Grafo/atras",
+   "texto": "Volver a Administración",
+   "x": 8,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Grafo cultural",
+   "x": 60,
+   "y": 17,
+   "w": 120,
+   "h": 22,
+   "letra": "19px"
+  },
+  "columna": {
+   "pieza": "Grafo/app",
+   "x": 0,
+   "relleno": "0px 0px 0px 0px",
+   "alto": 1384
+  },
+  "renglones": {
+   "pieza": "Grafo/fila Grafo/lente",
+   "altos": [
+    46,
+    46,
+    46,
+    44
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": -312,
+   "w": 295
+  },
+  "barraAbajo": null,
+  "sinClase": 62,
+  "nodos": 460,
+  "profundidad": 11,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-grafo": {
+  "cabecera": {
+   "pieza": "Grafo/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Grafo cultural",
+   "x": 141,
+   "y": 18,
+   "w": 108,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Grafo/app",
+   "x": 0,
+   "relleno": "0px 0px 0px 0px",
+   "alto": 1384
+  },
+  "renglones": {
+   "pieza": "Grafo/fila Grafo/lente",
+   "altos": [
+    46,
+    46,
+    46,
+    44
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": -312,
+   "w": 295
+  },
+  "barraAbajo": null,
+  "sinClase": 62,
+  "nodos": 463,
+  "profundidad": 11,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "ficha-lugar": {
+  "cabecera": {
+   "pieza": "Ficha/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 64
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/accion BotonIcono/elevado",
+   "texto": "Atrás (Lugares)",
+   "x": 20,
+   "y": 8,
+   "w": 48,
+   "h": 48
+  },
+  "titulo": {
+   "texto": "Teatro de la Paz",
+   "x": 20,
+   "y": 215,
+   "w": 198,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Ficha/ficha Ficha/enPagina",
+   "x": 0,
+   "relleno": "0px 0px 16px 0px",
+   "alto": 1359
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    94,
+    94
+   ],
+   "huecos": [
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 4,
+  "nodos": 94,
+  "profundidad": 12,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "antes:admin-obras": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Obras colectivas",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 845
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 42,
+  "profundidad": 8,
+  "desbordes": 1,
+  "toquesChicos": []
+ },
+ "admin-obras": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Administración)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Obras colectivas",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 845
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 42,
+  "profundidad": 8,
+  "desbordes": 1,
+  "toquesChicos": []
+ },
+ "antes:admin-grafo-manual": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Grafo cultural)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Manual del grafo cultural",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 20,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 10403
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 224,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-grafo-manual": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Grafo cultural)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Manual del grafo cultural",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/pagina",
+   "x": 20,
+   "relleno": "0px 0px 24px 0px",
+   "alto": 10694
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 223,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-ayuda": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ayuda",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/pagina",
+   "x": 20,
+   "relleno": "0px 0px 24px 0px",
+   "alto": 1462
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 30,
+  "profundidad": 6,
+  "desbordes": 0,
+  "toquesChicos": [
+   "a 204×22",
+   "a 211×18"
+  ]
+ },
+ "admin-showcase-manual": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior Barra/conTitulo",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Showcase)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Manual del showcase",
+   "x": 72,
+   "y": 18,
+   "w": 246,
+   "h": 19,
+   "letra": "17px"
+  },
+  "columna": {
+   "pieza": "Plantilla/pagina",
+   "x": 20,
+   "relleno": "0px 0px 24px 0px",
+   "alto": 4000
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 0,
+  "nodos": 76,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "cortes": {}
+}

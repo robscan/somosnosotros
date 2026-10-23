@@ -10,7 +10,7 @@ import hojaCss from "@/components/ui/Hoja.module.css";
 import HojaFiltros, { BloqueFiltro } from "@/components/ui/HojaFiltros";
 import { IconoCaret, IconoFiltros, IconoMarcador } from "@/components/ui/Iconos";
 import renglon from "@/components/ui/Renglon.module.css";
-import { hrefShowcase, type Vista } from "@/lib/showcase";
+import { hrefShowcase, ORDENES, type Orden, type Vista } from "@/lib/showcase";
 import {
   BLOQUES,
   faltaNombreGrupo,
@@ -33,7 +33,6 @@ import {
   type Hechos,
 } from "@/lib/showcaseFiltros";
 import { borrarGrupo, guardarGrupo, renombrarGrupo } from "./accionesGrupos";
-import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
 const artistas = (n: number) => `${n} ${n === 1 ? "artista" : "artistas"}`;
@@ -41,19 +40,22 @@ const artistas = (n: number) => `${n} ${n === 1 ? "artista" : "artistas"}`;
 /** Lo que cambia la URL al poner otros filtros: sin la página (vuelve a la primera) y sin apilar historial. */
 function useAplicar(vista: Vista) {
   const router = useRouter();
-  return (f: Filtros) => router.replace(hrefShowcase({ ...vista, ...f, n: undefined }), { scroll: false });
+  return (f: Filtros, extra: Partial<Pick<Vista, "orden" | "tabla">> = {}) => router.replace(hrefShowcase({ ...vista, ...f, ...extra, n: undefined }), { scroll: false });
 }
 
 /**
  * La hoja Filtros del Showcase (OL-446; lo firmado en OL-443): la de Artistas de la app (`ui/HojaFiltros`). «Tus grupos» primero; a la vista
  * Puntaje, Actividad en redes, Cuenta en la app, Circulación este año y Disciplina; «Más filtros» (chevron abajo, se abre solo si algo de ahí está
  * puesto) guarda Estado, Investigación y Solista o grupo. Cada chip dice cuántos quedarían con lo demás puesto y los que darían 0 se esconden. Lo
- * elegido es un borrador: «Ver N artistas» lo pone en la URL (sin apilar historial); la ✕ o tocar fuera no aplica nada.
+ * elegido es un borrador: «Ver N artistas» lo pone en la URL (sin apilar historial); la ✕ o tocar fuera no aplica nada. Al final, «Ordenar por» y
+ * «Ver como» (OL-457): lo que no es lo principal va en la hoja, como en el front, y la cabecera cabe entera con solo Filtros.
  */
 export function HojaFiltrosShowcase({ vista, hechos, grupos, hoy, onCerrar }: { vista: Vista; hechos: Hechos[]; grupos: Grupo[]; hoy: string; onCerrar: () => void }) {
   const aplicar = useAplicar(vista);
   const [f, setF] = useState<Filtros>(() => filtrosDe(vista));
   const [mas, setMas] = useState(false);
+  const [orden, setOrden] = useState<Orden>(vista.orden);
+  const [tabla, setTabla] = useState(vista.tabla);
   const conInvestigacion = hechos.some((h) => h.inv !== null);
   const bloques = BLOQUES.filter((b) => b.clave !== "inv" || conInvestigacion);
   const masAbierto = mas || bloques.some((b) => b.mas && puesto(f, b.clave));
@@ -77,10 +79,14 @@ export function HojaFiltrosShowcase({ vista, hechos, grupos, hoy, onCerrar }: { 
       titulo="Filtros"
       resultado={total ? `Ver ${artistas(total)}` : "Nadie con estos filtros"}
       sinResultados={!total}
-      onLimpiar={() => setF({ ...SIN_FILTROS })}
+      onLimpiar={() => {
+        setF({ ...SIN_FILTROS });
+        setOrden("puntaje");
+        setTabla(false);
+      }}
       onVer={() => {
         onCerrar();
-        aplicar(f);
+        aplicar(f, { orden, tabla });
       }}
       onCerrar={onCerrar}
     >
@@ -104,6 +110,25 @@ export function HojaFiltrosShowcase({ vista, hechos, grupos, hoy, onCerrar }: { 
         <IconoCaret width={16} height={16} />
       </button>
       {masAbierto && bloques.filter((b) => b.mas).map((b) => bloque(b.clave, b.rotulo))}
+      <BloqueFiltro rotulo="Ordenar por">
+        <Chips ariaLabel="Ordenar por" envuelve>
+          {ORDENES.map((o) => (
+            <Chip key={o.valor} activo={orden === o.valor} onClick={() => setOrden(o.valor)}>
+              {o.etiqueta}
+            </Chip>
+          ))}
+        </Chips>
+      </BloqueFiltro>
+      <BloqueFiltro rotulo="Ver como">
+        <Chips ariaLabel="Ver como" envuelve>
+          <Chip activo={!tabla} onClick={() => setTabla(false)}>
+            Tarjetas
+          </Chip>
+          <Chip activo={tabla} onClick={() => setTabla(true)}>
+            Tabla
+          </Chip>
+        </Chips>
+      </BloqueFiltro>
     </HojaFiltros>
   );
 }
@@ -196,7 +221,7 @@ function HojaGrupo({ f, grupo, n, onCerrar }: { f: Filtros; grupo: Grupo | null;
       <p className={hojaCss.nota}>Guarda los filtros, no a las personas: quien los cumpla después entra solo. Sale primero en la hoja Filtros.</p>
       <ul className={`${renglon.tarjeta} ${s.resumen}`}>
         <li>
-          <div className={admin.fila}>
+          <div className={renglon.ajuste}>
             <IconoFiltros width={20} height={20} />
             <b>{resumenFiltros(f)}</b>
             <small>Hoy, {artistas(n)}</small>

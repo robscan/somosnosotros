@@ -88,6 +88,8 @@ const PANTALLAS = [
   { id: "admin-artistas-cdmx", url: "/admin/artistas?ciudad=ciudad-de-mexico", sesion: true, cuenta: "admin" },
   { id: "admin-personas-hoja-ciudad", url: "/admin/personas", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
   { id: "front-lugares-filtros", url: "/lugares", sesion: true, paso: "hoja-filtros" },
+  // OL-457, parte B: el manual del showcase y la ficha pública de un artista con su menú (par de la ficha del showcase).
+  { id: "admin-showcase-manual", url: "/admin/showcase/manual", sesion: true, cuenta: "admin" },
 ];
 const PASOS = {
   // OL-456: la hoja de ciudades de una lista de Administración (el chip «Todas las ciudades») y la hoja Filtros (de Administración o de Lugares).

@@ -12,6 +12,16 @@ export function IconoActualizar(p: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Claro u oscuro: un círculo con su mitad rellena (el tema de la pantalla). */
+export function IconoTema(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width={24} height={24} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden {...p}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** El grafo: tres nodos unidos por líneas (24×24, trazo del color del texto, como los iconos de la app). */
 export default function IconoGrafo(p: SVGProps<SVGSVGElement>) {
   return (

@@ -44,7 +44,7 @@ export default function RolPersona({ perfilId, nombre, estado }: { perfilId: str
         </p>
       )}
       <ul className={renglon.tarjeta}>
-        <li className={styles.fila}>
+        <li className={renglon.ajuste}>
           <IconoEscudo width={20} height={20} />
           <b>{estado.etiqueta}</b>
           <small>{estado.detalle}</small>
