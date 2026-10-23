@@ -141,8 +141,38 @@ for (const [nombre, admin, front] of ANTES ? [] : PAREJAS) {
   await sharp({ create: { width: 1580, height: 1760, channels: 3, background: "#e6e4de" } }).composite(capas).png().toFile(path.join(SALIDA, nombre + ".png"));
   console.log(nombre);
 }
+// OL-457 (revisión del gestor): ningún texto cortado. En cada pantalla de después, a 320, 390 y 430: lo que tiene más contenido que caja
+// (`scrollWidth > clientWidth`) y lo esconde (`cortado`: overflow que recorta, «…»), y las filas que hay que deslizar para verlas enteras (`desliza`).
+const CORTES = () => {
+  const out = { cortados: [], desliza: [] };
+  for (const e of document.body.querySelectorAll("*")) {
+    const r = e.getBoundingClientRect();
+    if (!r.width || e.scrollWidth <= e.clientWidth + 1 || !e.textContent.trim()) continue;
+    const c = getComputedStyle(e);
+    // Lo que no se ve: oculto, solo para el lector de pantalla (`clip`), o fuera de la pantalla (una hoja cerrada, corrida abajo o de lado).
+    if (c.display === "none" || c.visibility === "hidden" || c.position === "absolute" && c.clipPath !== "none" || e.closest("[aria-hidden=true], svg, canvas")) continue;
+    if (r.left >= innerWidth || r.right <= 0 || r.top >= document.documentElement.scrollHeight) continue;
+    const quien = `${e.tagName.toLowerCase()}.${[...e.classList].map((x) => x.replace(/^(.+?)-module__[\w-]{5,8}__/, "$1/")).join(".")} «${e.textContent.trim().slice(0, 40)}» ${e.scrollWidth}>${e.clientWidth}`;
+    if (/auto|scroll/.test(c.overflowX)) out.desliza.push(quien);
+    else if (c.overflowX !== "visible" || c.textOverflow === "ellipsis") out.cortados.push(quien);
+  }
+  return out;
+};
+const cortes = {};
+if (ANTES) {
+  for (const ancho of [320, 390, 430]) {
+    const pg = await (await browser.newContext({ viewport: { width: ancho, height: 844 } })).newPage();
+    for (const [, , despues] of PARTE === "B" ? PAREJAS_B : PAREJAS_A) {
+      await pg.goto(pathToFileURL(path.join(MAQ, despues + ".html")).href, { waitUntil: "load" });
+      await pg.waitForTimeout(150);
+      const c = await pg.evaluate(CORTES);
+      if (c.cortados.length || c.desliza.length) cortes[`${despues}@${ancho}`] = c;
+    }
+  }
+  console.log("textos cortados o que deslizan:", Object.keys(cortes).length ? JSON.stringify(cortes, null, 1) : "ninguno");
+}
+fs.writeFileSync(path.join(SALIDA, ANTES ? `${PARTE}-medidas.json` : "medidas.json"), JSON.stringify({ ...medidas, cortes }, null, 1));
 await browser.close();
-fs.writeFileSync(path.join(SALIDA, ANTES ? `${PARTE}-medidas.json` : "medidas.json"), JSON.stringify(medidas, null, 1));
 const fila = (id) => {
   const m = medidas[id];
   return { id, cabecera: m.cabecera ? `${m.cabecera.pieza.split(" ")[0]} ${m.cabecera.h}` : "—", atras: m.atras ? `${m.atras.w}×${m.atras.h} @${m.atras.x},${m.atras.y}` : "—", h1: m.titulo ? `${m.titulo.y} ${m.titulo.letra}` : "—", x: m.columna?.x, renglon: m.renglones ? `${m.renglones.altos.join("/")} hueco ${m.renglones.huecos.join("/")}` : "—", abajo: m.barraAbajo ? m.barraAbajo.h : "—", nodos: m.nodos, prof: m.profundidad, sinClase: m.sinClase };

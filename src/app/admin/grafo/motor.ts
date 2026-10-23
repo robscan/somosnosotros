@@ -1522,7 +1522,8 @@ export function crearMotor(DATOS: Grafo, raiz: HTMLElement, S: Estilos, yo: numb
   escuchar(botonTema, "click", () => {
     const aClaro = raiz.dataset.tema !== "claro";
     raiz.dataset.tema = aClaro ? "claro" : "oscuro";
-    botonTema.textContent = aClaro ? "Oscuro" : "Claro";
+    // El botón es un icono (OL-457): su nombre dice a qué tema pasa.
+    botonTema.setAttribute("aria-label", aClaro ? "Tema oscuro" : "Tema claro");
     botonTema.setAttribute("aria-pressed", String(aClaro));
     leerTema();
     pintar();

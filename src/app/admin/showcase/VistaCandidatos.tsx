@@ -98,7 +98,8 @@ export default function VistaCandidatos({
     <>
       {/* La cabecera de las listas del front (ui/Cabecera, OL-457): Filtros, Orden y Vista en su fila; debajo, las disciplinas y lo puesto. */}
       <Cabecera contexto={<OpcionesLista vista={vista} hechos={hechos} grupos={grupos ?? []} hoy={hoy} />}>
-        <Chips ariaLabel="Filtrar por disciplina">
+        {/* Pasan al renglón de abajo en vez de deslizarse: ninguna disciplina queda cortada en el borde (OL-457). */}
+        <Chips ariaLabel="Filtrar por disciplina" envuelve>
           {chipsDisciplina(todos).map((d) => (
             <Chip key={d.valor} activo={vista.disciplina === d.valor} href={hrefShowcase({ ...sinPagina, disciplina: d.valor })}>
               {d.etiqueta}

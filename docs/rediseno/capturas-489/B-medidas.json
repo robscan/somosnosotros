@@ -73,7 +73,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -232,7 +232,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -383,7 +383,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -538,7 +538,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -644,7 +644,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -750,14 +750,14 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
    "pieza": "Plantilla/paginaContenido admin/lista",
    "x": 20,
    "relleno": "0px 0px 40px 0px",
-   "alto": 3248
+   "alto": 3296
   },
   "renglones": {
    "pieza": "Renglon/ajuste",
@@ -776,8 +776,8 @@
    "w": 348
   },
   "barraAbajo": null,
-  "sinClase": 20,
-  "nodos": 306,
+  "sinClase": 18,
+  "nodos": 299,
   "profundidad": 8,
   "desbordes": 0,
   "toquesChicos": []
@@ -1115,7 +1115,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -1209,7 +1209,7 @@
    "h": 56
   },
   "atras": {
-   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/elevado",
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
    "texto": "Atrás (Administración)",
    "x": 20,
    "y": 6,
@@ -1218,11 +1218,11 @@
   },
   "titulo": {
    "texto": "Grafo cultural",
-   "x": 72,
-   "y": 17,
-   "w": 120,
-   "h": 22,
-   "letra": "19px"
+   "x": 141,
+   "y": 18,
+   "w": 108,
+   "h": 20,
+   "letra": "17px"
   },
   "columna": {
    "pieza": "Grafo/app",
@@ -1248,7 +1248,7 @@
   },
   "barraAbajo": null,
   "sinClase": 62,
-  "nodos": 460,
+  "nodos": 463,
   "profundidad": 11,
   "desbordes": 0,
   "toquesChicos": []
@@ -1361,7 +1361,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -1437,7 +1437,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -1516,7 +1516,7 @@
    "x": 72,
    "y": 18,
    "w": 246,
-   "h": 20,
+   "h": 19,
    "letra": "17px"
   },
   "columna": {
@@ -1532,5 +1532,6 @@
   "profundidad": 7,
   "desbordes": 0,
   "toquesChicos": []
- }
+ },
+ "cortes": {}
 }

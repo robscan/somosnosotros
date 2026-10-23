@@ -259,7 +259,7 @@ test("OL-446 · la hoja Filtros: cada chip con su cuenta (los de 0, escondidos),
   await tocar(p, p.getByRole("button", { name: /^Filtros/ }));
   const hoja = p.getByRole("dialog", { name: "Filtros" });
   await hoja.waitFor();
-  assert.deepEqual(await hoja.locator("h4").allInnerTexts(), ["PUNTAJE", "ACTIVIDAD EN REDES", "CUENTA EN LA APP", "CIRCULACIÓN ESTE AÑO", "DISCIPLINA"], "Origen ya no está (founder, 22 oct)");
+  assert.deepEqual(await hoja.locator("h4").allInnerTexts(), ["PUNTAJE", "ACTIVIDAD EN REDES", "CUENTA EN LA APP", "CIRCULACIÓN ESTE AÑO", "DISCIPLINA", "ORDENAR POR", "VER COMO"], "Origen ya no está (founder, 22 oct); Orden y Vista al final (OL-457)");
   assert.deepEqual(await chipsDe(hoja, "Puntaje"), ["Todos 5", "3 o más 4", "4 o más 4", "5 o más 4", "6 o más 2"]);
   assert.deepEqual(await chipsDe(hoja, "Actividad en redes"), ["Cualquiera 5", "Publicó en 15 días 2", "En 30 días 2", "En 90 días 3", "Sin publicar en 90 días 2"]);
   assert.deepEqual(await chipsDe(hoja, "Cuenta en la app"), ["Cualquiera 5", "Con cuenta vinculada 2", "Sin cuenta 3"]);
@@ -380,21 +380,25 @@ test("OL-446 · el indicador de la tarjeta entra a «Por aprobar» en el artista
   assert.ok(aprobarY.y < investigarY.y, "«Por aprobar» antes de «Investigar»");
 });
 
-test("orden: «Puntaje» por defecto; «Nombre» ordena de la A a la Z", async (t) => {
+test("orden: en la hoja Filtros (OL-457), «Puntaje» por defecto; «Nombre» ordena de la A a la Z", async (t) => {
   const p = await abrir(t);
-  await p.getByRole("button", { name: /^Orden: Puntaje/ }).click();
-  const hoja = p.getByRole("dialog", { name: "Ordenar por" });
-  assert.deepEqual((await hoja.getByRole("button").filter({ hasNot: p.locator("[aria-label=Cerrar]") }).allInnerTexts()).map((x) => x.split("\n")[0]).filter((x) => x), ["Puntaje", "Convocatoria", "Seguidores", "Última publicación", "Nombre"]);
-  assert.equal(await hoja.getByRole("button", { name: /^Puntaje/ }).getAttribute("aria-pressed"), "true");
-  await hoja.getByRole("button", { name: /^Nombre/ }).click();
+  await p.getByRole("button", { name: /^Filtros/ }).click();
+  const hoja = p.getByRole("dialog", { name: "Filtros" });
+  const orden = hoja.getByRole("group", { name: "Ordenar por" });
+  assert.deepEqual((await orden.getByRole("button").allInnerTexts()).map((x) => x.trim()), ["Puntaje", "Convocatoria", "Seguidores", "Última publicación", "Nombre"]);
+  assert.equal(await orden.getByRole("button", { name: "Puntaje" }).getAttribute("aria-pressed"), "true");
+  await orden.getByRole("button", { name: "Nombre" }).click();
+  await hoja.getByRole("button", { name: /^Ver / }).click();
   await p.waitForFunction(() => location.search === "?orden=nombre");
   assert.deepEqual(await nombres(p), ["IYARI, teatro de la vida", "Pargazz", "Sangre de Coyote", "Un León Marinero", "Yanel Villarreal"]);
 });
 
 test("vista: en tabla, las mismas cifras en columnas y el orden elegido marcado", async (t) => {
   const p = await abrir(t);
-  await p.getByRole("button", { name: /^Vista: tarjetas/ }).click();
-  await p.getByRole("dialog", { name: "Ver como" }).getByRole("button", { name: /^Tabla/ }).click();
+  await p.getByRole("button", { name: /^Filtros/ }).click();
+  const hoja = p.getByRole("dialog", { name: "Filtros" });
+  await hoja.getByRole("group", { name: "Ver como" }).getByRole("button", { name: "Tabla" }).click();
+  await hoja.getByRole("button", { name: /^Ver / }).click();
   const tabla = p.getByRole("region", { name: "Candidatos en tabla" });
   await tabla.waitFor();
   assert.equal(await p.evaluate(() => location.search), "?vista=tabla");

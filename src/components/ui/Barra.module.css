@@ -28,7 +28,12 @@
   grid-template-columns: var(--control) minmax(0, 1fr) var(--control);
   margin-bottom: 0;
 }
+/* Un nombre largo («Manual del grafo cultural» a 320) parte en dos renglones en vez de cortarse con «…» (OL-457). */
 .conTitulo > .titulo {
+  overflow: visible;
+  white-space: normal;
+  text-wrap: balance;
+  line-height: 1.1;
   text-align: center;
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);

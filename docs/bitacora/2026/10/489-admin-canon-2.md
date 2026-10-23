@@ -61,16 +61,40 @@ propuesta y de evidencia (Propuestas, Por aprobar); las tarjetas de candidato de
 - `B-03-ciudad.png` — el panel de Oaxaca: «Abierta» ya sin el aire de 6 px al principio de la línea.
 - `B-04-propuestas.png` — la bandeja, igual (tarjetas sin par), con la barra de la parte A.
 - `B-05-corridas.png` — los renglones de Ajustes con su píldora de estado; la barra de avance empieza bajo el texto; al lado, Ajustes.
-- `B-06-showcase.png` — Filtros, Orden y Vista en la cabecera pegada bajo la barra (Filtros sin flecha), las disciplinas debajo con el aire de la
-  columna, el buscador y los renglones «Por aprobar» e «Investigar»; al lado, Lugares del front.
+- `B-06-showcase.png` — (tras la revisión) solo Filtros en la cabecera, como Lugares del front; las disciplinas debajo en dos renglones, enteras;
+  el buscador y los renglones «Por aprobar» e «Investigar»; al lado, Lugares del front.
 - `B-07-showcase-ficha.png` — «2 por revisar» a la izquierda bajo la cabecera de ficha; Estado y la rúbrica en renglones de Ajustes.
 - `B-08-showcase-estado.png` — la hoja de Estado sobre la ficha nueva.
 - `B-09-por-aprobar.png` — igual a la vista: el renglón del artista es ya el de Ajustes.
-- `B-10-grafo.png` — el Atrás redondo blanco de 44 en el margen de 20, como el de una ficha sobre su portada (al lado, la ficha de un lugar).
+- `B-10-grafo.png` — (tras la revisión) la barra de las fichas: Atrás redondo con borde, «Grafo cultural» al centro, tema y actualizar como iconos
+  redondos de 44; debajo, la línea de las cuentas entera («38 nodos · 73 conexiones · 13 lugares · 14 artistas · 11 asistentes»); el lienzo y sus
+  mandos, iguales (al lado, la ficha de un lugar).
 - `B-11-obras.png` — igual: la barra de la parte A y el chip de hora de 44.
 - `B-12-manual.png` — el manual del grafo como la página de Ayuda: texto corrido, el índice en chips, títulos por bloque y entrada.
 - `B-13-manual-showcase.png` — el manual del showcase igual, con «Gobierno» en el índice y su texto corrido.
 - `B-medidas.json` — las medidas de antes, después y del front.
+
+## Revisión del gestor (PR #576) y lo que se arregló
+
+1. **Showcase:** «Vista: tarjetas» se cortaba en el borde. Elegí llevar **Orden y Vista a la hoja Filtros** (bloques «Ordenar por» y «Ver como» al
+   final, borrador que aplica el mismo «Ver N artistas»; «Limpiar» los devuelve a Puntaje y Tarjetas), como hace el front con lo que no es lo
+   principal: la cabecera queda con un solo chip, Filtros, que cabe a 320. Chips cortos sin prefijo no cabían a 320 (Filtros + «Puntaje» +
+   «Tarjetas» ≈ 416 px) y perdían qué es cada uno. La cuenta de Filtros suma un orden distinto de Puntaje y la tabla. Las disciplinas (fila
+   firmada en OL-446) pasan al renglón de abajo en vez de deslizarse: a 390 y 430 también se cortaban.
+2. **Grafo:** la barra pasa a la de las fichas: `AtrasIcono` con borde (el del resto de Administración), «Grafo cultural» al centro y a la derecha
+   tema (icono nuevo de medio círculo, `IconoTema`, con nombre «Tema claro»/«Tema oscuro» que el motor cambia) y actualizar como `ui/BotonIcono` de
+   44, en los colores del grafo; «Manual» como icono desde 792. Las cuentas salen de la barra a su línea debajo, que parte renglón si no cabe; los
+   cuadros por segundo siguen solo desde 792. A 320 el nombre se corre lo justo para no cortarse (la derecha lleva dos iconos). Las capas («Lugar,
+   Artista, Asistente, Yo») pasan al renglón de abajo a 320 en vez de cortar «Yo»; el lienzo y sus mandos no se tocan.
+3. **Títulos de barra:** «Propuestas de Oaxaca» y «Manual del grafo cultural» se cortaban con «…» a 320: el título de la barra con nombre parte en
+   dos renglones (cabe en los 56).
+4. **Medición nueva** (`comparar-admin-front.mjs`): en las 13 pantallas, a 320, 390 y 430, todo texto con `scrollWidth > clientWidth` que se
+   recorta o que hay que deslizar (sin lo que solo oye el lector ni lo que está fuera de pantalla). Antes del arreglo: 2 títulos, la fila de
+   disciplinas (los tres anchos) y las capas del grafo a 320. Ahora: **ninguno** (`cortes` en `B-medidas.json`).
+
+Pruebas tras la revisión: lint, typecheck, 4 636 unitarias, componentes de Administración y de `ui/Chip` 60 de 60 (las de Orden y Vista del
+Showcase, al día con la hoja), inventario, `medir` sin novedades (el grafo sube de 460 a 463 nodos por la línea de cuentas y el grupo de acciones,
+anotado) y build.
 
 ## Archivos
 
