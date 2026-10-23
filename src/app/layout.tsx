@@ -82,14 +82,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {GUION_APP_NATIVA}
         </Script>
         {/* El armazón (docs/rediseno/50, P4 y P7): la barra de la app, la pantalla y la navegación, una sola vez para todas las
-            rutas. La sesión (la campana; sin sesión, nada) se lee aquí, en el servidor, sin frenar a la pantalla. La barra lee
-            la ciudad de la consulta: en la pantalla «No está», que se prerenderiza, esa lectura espera al teléfono. */}
+            rutas. La sesión (la campana; sin sesión, nada) se lee aquí, en el servidor, sin frenar a la pantalla. La barra no va
+            dentro de un `<Suspense>` (OL-455): así llega en el primer HTML. Solo sus dos enlaces con ciudad esperan la consulta (`BarraApp`). */}
         <Armazon
-          barra={
-            <Suspense fallback={null}>
-              <BarraApp admin={<Suspense fallback={null}><AccesoAdmin /></Suspense>} sesion={<Suspense fallback={null}><Sesion /></Suspense>} />
-            </Suspense>
-          }
+          barra={<BarraApp admin={<Suspense fallback={null}><AccesoAdmin /></Suspense>} sesion={<Suspense fallback={null}><Sesion /></Suspense>} />}
           nav={<NavSecciones perfil={<Suspense fallback={<IconoPersona width={26} height={26} />}><PerfilEnNav /></Suspense>} />}
         >
           {children}

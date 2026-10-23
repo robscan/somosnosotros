@@ -11,18 +11,25 @@ import styles from "./ListaEsqueleto.module.css";
 export default function ListaEsqueleto({ redonda = false }: { redonda?: boolean }) {
   return (
     <div aria-hidden="true">
-      <Cabecera
-        contexto={
-          <>
-            <EsqueletoCaja className={styles.chip} />
-            <EsqueletoCaja className={styles.chip} />
-            <EsqueletoCaja className={styles.chip} />
-          </>
-        }
-      />
+      <CabeceraEsqueleto />
       <div className={styles.lista}>
         <EsqueletoRenglones cantidad={6} redonda={redonda} />
       </div>
     </div>
+  );
+}
+
+/** La cabecera de las raíces con sus tres chips en gris (ciudad, Cuándo y Filtros): la de Agenda y Artistas, y la de Inicio (`InicioEsqueleto`). */
+export function CabeceraEsqueleto() {
+  return (
+    <Cabecera
+      contexto={
+        <>
+          <EsqueletoCaja className={styles.chip} />
+          <EsqueletoCaja className={styles.chip} />
+          <EsqueletoCaja className={styles.chip} />
+        </>
+      }
+    />
   );
 }
