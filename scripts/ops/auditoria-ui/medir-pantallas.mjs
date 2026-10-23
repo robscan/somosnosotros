@@ -508,6 +508,23 @@ try {
     fallos.push({ regla: "carga", pantalla: "layout", ancho: 0, que: "/", detalle: `viewport: ${String(e.message).split("\n")[0]}` });
   }
 
+  // El primer cuadro al abrir la app (OL-455): lo que el navegador pinta antes de que React revele nada es el HTML hasta el primer trozo
+  // escondido (`<div hidden id="S:…">`, lo que llega después y se pone en su sitio con al menos 300 ms de retraso). Ahí ya tienen que estar la
+  // barra de la app y el esqueleto de Inicio, y no el símbolo SN solo: si no, vuelve el «momento en blanco».
+  try {
+    const html = await (await fetch(`${base}/`, { headers: { "user-agent": UA_IPHONE } })).text();
+    const corte = html.search(/<div hidden id="S:/);
+    const primero = corte < 0 ? html : html.slice(0, corte);
+    const falta = [
+      [/<header class="BarraApp/, "la barra de la app"],
+      [/class="[^"]*CarrilEsqueleto[^"]*respira/, "el esqueleto de los carriles de Inicio"],
+    ].filter(([patron]) => !patron.test(primero));
+    if (/class="[^"]*SimboloCargando/.test(primero)) falta.push([null, "sin el símbolo SN de `ui/CargandoRaiz`, que en Inicio no va"]);
+    for (const [, que] of falta) fallos.push({ regla: "primer-cuadro", pantalla: "inicio", ancho: 0, que: "/", detalle: `el primer HTML de Inicio (${primero.length} bytes) no cumple: ${que}` });
+  } catch (e) {
+    fallos.push({ regla: "carga", pantalla: "inicio", ancho: 0, que: "/", detalle: `primer cuadro: ${String(e.message).split("\n")[0]}` });
+  }
+
   // El teclado: cada campo de texto visible de cada pantalla y los botones de abajo, de las dos maneras (ver `medirTeclado`).
   const conTeclado = new Map();
   const botonesDeAbajo = new Map();

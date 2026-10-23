@@ -18,6 +18,7 @@ const CABECERAS = [
 // metadata llegue en el <head> y de que cada página lo recuerde. Esta cabecera no depende de ninguna de las dos
 // cosas: Google la lee siempre, esté donde esté el <title>. No sustituye el `robots` de cada página, lo respalda.
 const NOINDEX = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
+const LOGOTIPO_EN_CACHE = [{ key: "Cache-Control", value: "public, max-age=86400" }];
 
 /**
  * Copiado de `node_modules/next/dist/shared/lib/router/utils/html-bots.js` (Next 16.3.8, patrón revisado sin cambios), más Googlebot: Next 16
@@ -83,6 +84,10 @@ const nextConfig: NextConfig = {
       { source: "/artistas/:id/editar", headers: NOINDEX },
       { source: "/eventos/:id/editar", headers: NOINDEX },
       { source: "/novedades", headers: NOINDEX },
+      // El logotipo de la barra (OL-455): con la cabecera de fábrica de `public/` (`max-age=0`) el teléfono lo vuelve a pedir en cada apertura y la
+      // barra sale sin él hasta que el servidor contesta. Un día en la caché: un logotipo nuevo llega a más tardar al día siguiente.
+      { source: "/logotipo.svg", headers: LOGOTIPO_EN_CACHE },
+      { source: "/logotipo-chico.svg", headers: LOGOTIPO_EN_CACHE },
     ];
   },
 };

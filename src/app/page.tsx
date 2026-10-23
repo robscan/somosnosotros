@@ -48,8 +48,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * esperan aquí: se pasan como promesas sin resolver a cada carril (un componente de servidor propio, dentro de su
  * `<Suspense>` en `Inicio.tsx`), que las espera por su cuenta y transmite (streaming del App Router) en cuanto
  * responde. Antes de esta pieza, `InicioPagina` esperaba todo con un solo `Promise.all` y Next mostraba el cargador
- * de página completa (`app/loading.tsx`, el logo SN) hasta que la consulta más lenta terminaba; con esto, esa
- * pantalla nunca vuelve a aparecer para esta ruta.
+ * de página completa (`app/loading.tsx`, el logo SN) hasta que la consulta más lenta terminaba. Mientras se leen la ciudad
+ * y la sesión sí se ve `app/loading.tsx`: desde OL-455, en esta ruta, el esqueleto de Inicio (`InicioEsqueleto`), no el símbolo SN.
  */
 export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug } = await searchParams;

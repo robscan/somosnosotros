@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import type { MouseEvent, ReactNode } from "react";
+import { Suspense, type MouseEvent, type ReactNode } from "react";
 import { altaDeRuta, buscarDesdeRuta, enlaceDeAlta, enlaceDeBusqueda, fichaConMenu, vistaDeRuta } from "@/lib/armazon";
 import { borrarMemoria } from "@/lib/memoriaPantalla";
 import { usePrestadoALaBarra } from "./prestamoBarra";
@@ -33,42 +33,66 @@ function alzarTeclado() {
  */
 export default function BarraApp({ admin, sesion }: { admin: ReactNode; sesion: ReactNode }) {
   const ruta = usePathname();
-  const ciudad = useSearchParams().get("ciudad");
   const { buscar, menu } = usePrestadoALaBarra();
-  const alta = enlaceDeAlta(altaDeRuta(ruta), ciudad);
-  const hrefBuscar = enlaceDeBusqueda(ciudad, buscarDesdeRuta(ruta));
   const ficha = vistaDeRuta(ruta) === "ficha";
   // El menú lo presta la ficha al hidratar; mientras, su botón ya está donde va (en el HTML del servidor), sin hacer nada todavía.
   const menuDeLaFicha = menu ?? (fichaConMenu(ruta) ? <BotonIcono aria-label="Más acciones" aria-haspopup="dialog" tabIndex={-1}><IconoPuntos /></BotonIcono> : null);
 
-  function alBuscar(e: MouseEvent<HTMLAnchorElement>) {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (buscar) {
-      e.preventDefault();
-      buscar();
-    } else {
-      borrarMemoria(hrefBuscar); // una búsqueda que se abre empieza vacía; solo al volver de una ficha se repone
-      alzarTeclado();
-    }
-  }
-
   return (
     <header className={styles.barra}>
       <div className={styles.lado}>
-        <BotonIcono href={alta.href} aria-label={alta.etiqueta}>
-          <IconoCrear width={26} height={26} />
-        </BotonIcono>
+        <ConCiudad>
+          {(ciudad) => {
+            const alta = enlaceDeAlta(altaDeRuta(ruta), ciudad);
+            return (
+              <BotonIcono href={alta.href} aria-label={alta.etiqueta}>
+                <IconoCrear width={26} height={26} />
+              </BotonIcono>
+            );
+          }}
+        </ConCiudad>
         <div className={styles.hueco} />
         {admin}
       </div>
       <Logotipo className={styles.logotipo} />
       <div className={`${styles.lado} ${styles.derecho}`}>
-        <BotonIcono href={hrefBuscar} prefetch={false} onClick={alBuscar} aria-label="Buscar">
-          <IconoBuscar width={26} height={26} />
-        </BotonIcono>
+        <ConCiudad>
+          {(ciudad) => {
+            const hrefBuscar = enlaceDeBusqueda(ciudad, buscarDesdeRuta(ruta));
+            function alBuscar(e: MouseEvent<HTMLAnchorElement>) {
+              if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+              if (buscar) {
+                e.preventDefault();
+                buscar();
+              } else {
+                borrarMemoria(hrefBuscar); // una búsqueda que se abre empieza vacía; solo al volver de una ficha se repone
+                alzarTeclado();
+              }
+            }
+            return (
+              <BotonIcono href={hrefBuscar} prefetch={false} onClick={alBuscar} aria-label="Buscar">
+                <IconoBuscar width={26} height={26} />
+              </BotonIcono>
+            );
+          }}
+        </ConCiudad>
         {sesion}
         <div className={styles.hueco}>{ficha && menuDeLaFicha}</div>
       </div>
     </header>
   );
+}
+
+/**
+ * La ciudad de la consulta, solo para los dos enlaces que la llevan («+» y la lupa), como hace `Logotipo` (OL-455). La barra entera ya no
+ * espera dentro de un `<Suspense>`: en Inicio llegaba aparte del primer HTML (React saca a un trozo posterior lo que va en un `<Suspense>`
+ * cuando lo de antes ya pesa) y la app abría sin barra. En las pantallas que se prerenderizan («No está»), la ciudad se lee ya en el
+ * teléfono y, mientras, el enlace va sin ella, en su sitio.
+ */
+function ConCiudad({ children }: { children: (ciudad: string | null) => ReactNode }) {
+  return <Suspense fallback={children(null)}><LeerCiudad>{children}</LeerCiudad></Suspense>;
+}
+
+function LeerCiudad({ children }: { children: (ciudad: string | null) => ReactNode }) {
+  return children(useSearchParams().get("ciudad"));
 }
