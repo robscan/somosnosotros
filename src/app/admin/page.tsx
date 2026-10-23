@@ -54,8 +54,7 @@ export default async function Admin() {
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
-      <h1 className={styles.titulo}>Administración</h1>
+      <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} titulo="Administración" />
       {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
       <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} porRevisar={porRevisar} />
 

@@ -62,13 +62,11 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/admin/ciudades/${slug}`)}`);
   if (actual.perfil.rol !== "admin") redirect("/");
-  const barra = <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} />;
   const [panel, extras] = await Promise.all([cargarPanelCiudades(), cargarExtras()]);
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
-        {barra}
-        <h1 className={styles.titulo}>Ciudad</h1>
+        <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo="Ciudad" />
         <Reintentar texto="No pudimos leer la ciudad." />
       </main>
     );
@@ -105,11 +103,11 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
 
   return (
     <main className={`${plantilla.paginaContenido} ${css.panel}`}>
-      {barra}
-      <h1 className={styles.titulo}>
-        {ciudad.nombre} <span className={PILDORA[estado]}>{ETIQUETA_ESTADO[estado]}</span>
-      </h1>
-      <p className={`${styles.nota} ${css.cabeza}`}>{pegado(cabeceraCiudad({ estado: ciudad.estado, creado_en: ciudad.creado_en, alias: extra.alias, parametros: extra.parametros }, b, ahora))}</p>
+      <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo={ciudad.nombre} />
+      {/* El nombre ya va en la barra (OL-456): aquí, su estado y la línea de lo que pasa. */}
+      <p className={`${styles.nota} ${css.cabeza}`}>
+        <span className={PILDORA[estado]}>{ETIQUETA_ESTADO[estado]}</span> {pegado(cabeceraCiudad({ estado: ciudad.estado, creado_en: ciudad.creado_en, alias: extra.alias, parametros: extra.parametros }, b, ahora))}
+      </p>
       <ul className={`${styles.indicadores} ${css.tablero}`} aria-label={`Cómo va ${ciudad.nombre}`}>
         {n > 0 && (
           <li className={`${css.ancha} ${css.banda}`}>

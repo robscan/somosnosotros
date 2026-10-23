@@ -36,8 +36,7 @@ export default async function ObrasColectivas() {
 
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/admin", texto: "Administración" }} />
-      <h1 className={styles.titulo}>Obras colectivas</h1>
+      <Barra volver={{ href: "/admin", texto: "Administración" }} titulo="Obras colectivas" />
 
       <h2 className={styles.grupo}>Pincel</h2>
       {ajustePincel ? (

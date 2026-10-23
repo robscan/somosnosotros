@@ -4,12 +4,15 @@
 // lado a lado (izquierda: Administración; derecha: el front) en `<salida>/NN-<pareja>.png`. Imprime la tabla y la guarda en `medidas.json`.
 //   node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <maquetas>
 //   node scripts/ops/auditoria-ui/comparar-admin-front.mjs <maquetas> <salida>
+// Después del cambio (OL-456, parte A): `--antes=<maquetas de antes>` pega tres columnas por pareja (antes, después y el par del front) con el
+// prefijo `A-` y mide las tres; las pantallas de después y las del front salen de <maquetas>.
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../..");
-const [MAQ, SALIDA] = process.argv.slice(2);
+const [MAQ, SALIDA] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const ANTES = (process.argv.find((a) => a.startsWith("--antes=")) ?? "").slice(8) || null;
 if (!MAQ || !SALIDA) { console.error("uso: comparar-admin-front.mjs <maquetas> <salida>"); process.exit(1); }
 const requerir = createRequire(path.join(RAIZ, "package.json"));
 const { chromium } = requerir("playwright-core");
@@ -17,6 +20,22 @@ const sharp = requerir("sharp");
 const MEDIR = fs.readFileSync(path.join(RAIZ, "scripts/ops/auditoria-ui/medir.js"), "utf8");
 
 /** Cada pantalla de Administración con su par del front (null: no tiene). */
+/** Las de la parte A, antes y después: [nombre, pantalla de Administración de antes, la misma después, su par del front]. */
+const PAREJAS_A = [
+  ["A-01-lugares", "admin-lugares", "admin-lugares", "front-lugares"],
+  ["A-02-lugares-hoja-ciudad", "admin-lugares", "admin-lugares-hoja-ciudad", "front-lugares-hoja-ciudad"],
+  ["A-03-lugares-filtros", "admin-lugares", "admin-lugares-filtros", "front-lugares-filtros"],
+  ["A-04-artistas-cdmx", "admin-artistas", "admin-artistas-cdmx", "front-artistas"],
+  ["A-05-eventos", "admin-eventos", "admin-eventos", "agenda"],
+  ["A-06-personas", "admin-personas", "admin-personas", "front-artistas"],
+  ["A-07-personas-sin-ciudad", "admin-personas", "admin-personas-hoja-ciudad", "front-lugares-hoja-ciudad"],
+  ["A-08-persona", "admin-persona", "admin-persona", "front-persona"],
+  ["A-09-portada", "admin", "admin", "front-ajustes"],
+  ["A-10-ciudad", "admin-ciudad", "admin-ciudad", "front-persona"],
+  ["A-11-showcase-ficha", "admin-showcase-ficha", "admin-showcase-ficha", "front-persona"],
+  ["A-12-obras", "admin-obras", "admin-obras", null],
+];
+
 export const PAREJAS = [
   ["01-portada", "admin", "front-ajustes"],
   ["02-personas", "admin-personas", "front-artistas"],
@@ -70,16 +89,29 @@ const browser = await chromium.launch({ executablePath: "/Applications/Google Ch
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "es-MX" });
 const page = await ctx.newPage();
 const medidas = {};
-async function medir(id) {
-  if (medidas[id]) return medidas[id];
-  await page.goto(pathToFileURL(path.join(MAQ, id + ".html")).href, { waitUntil: "load" });
+async function medir(id, carpeta = MAQ, clave = id) {
+  if (medidas[clave]) return medidas[clave];
+  await page.goto(pathToFileURL(path.join(carpeta, id + ".html")).href, { waitUntil: "load" });
   await page.waitForTimeout(400);
   const m = await page.evaluate(MEDIR);
-  medidas[id] = { ...(await page.evaluate(MEDIDAS)), nodos: m.nodos, profundidad: m.profundidadMax, desbordes: m.desbordes.length, toquesChicos: m.toquesChicos.map((t) => `${t.el} ${t.w}×${t.h}`) };
-  return medidas[id];
+  medidas[clave] = { ...(await page.evaluate(MEDIDAS)), nodos: m.nodos, profundidad: m.profundidadMax, desbordes: m.desbordes.length, toquesChicos: m.toquesChicos.map((t) => `${t.el} ${t.w}×${t.h}`) };
+  return medidas[clave];
 }
 const rotulo = (texto) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="780" height="72"><rect width="780" height="72" fill="#1a1a1a"/><text x="24" y="47" font-family="Helvetica, Arial" font-size="30" font-weight="700" fill="#fff">${texto}</text></svg>`);
-for (const [nombre, admin, front] of PAREJAS) {
+for (const [nombre, antes, despues, front] of ANTES ? PAREJAS_A : []) {
+  await medir(antes, ANTES, `antes:${antes}`);
+  await medir(despues);
+  if (front) await medir(front);
+  const columnas = [[ANTES, antes, `Antes · ${antes}`], [MAQ, despues, `Después · ${despues}`], [MAQ, front, front ? `Front · ${front}` : "Sin par en el front"]];
+  const capas = [];
+  for (const [i, [carpeta, id, texto]] of columnas.entries()) {
+    capas.push({ input: rotulo(texto), left: i * 800, top: 0 });
+    if (id) capas.push({ input: path.join(carpeta, id + ".png"), left: i * 800, top: 72 });
+  }
+  await sharp({ create: { width: 2380, height: 1760, channels: 3, background: "#e6e4de" } }).composite(capas).png().toFile(path.join(SALIDA, nombre + ".png"));
+  console.log(nombre);
+}
+for (const [nombre, admin, front] of ANTES ? [] : PAREJAS) {
   await medir(admin);
   if (front) await medir(front);
   const lados = [admin, front];
@@ -92,7 +124,7 @@ for (const [nombre, admin, front] of PAREJAS) {
   console.log(nombre);
 }
 await browser.close();
-fs.writeFileSync(path.join(SALIDA, "medidas.json"), JSON.stringify(medidas, null, 1));
+fs.writeFileSync(path.join(SALIDA, ANTES ? "A-medidas.json" : "medidas.json"), JSON.stringify(medidas, null, 1));
 const fila = (id) => {
   const m = medidas[id];
   return { id, cabecera: m.cabecera ? `${m.cabecera.pieza.split(" ")[0]} ${m.cabecera.h}` : "—", atras: m.atras ? `${m.atras.w}×${m.atras.h} @${m.atras.x},${m.atras.y}` : "—", h1: m.titulo ? `${m.titulo.y} ${m.titulo.letra}` : "—", x: m.columna?.x, renglon: m.renglones ? `${m.renglones.altos.join("/")} hueco ${m.renglones.huecos.join("/")}` : "—", abajo: m.barraAbajo ? m.barraAbajo.h : "—", nodos: m.nodos, prof: m.profundidad, sinClase: m.sinClase };

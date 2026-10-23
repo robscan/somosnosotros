@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import Atras from "./Atras";
+import Atras, { AtrasIcono } from "./Atras";
 import Cerrar from "./Cerrar";
 import Logotipo from "./Logotipo";
 import styles from "./Barra.module.css";
@@ -7,8 +7,12 @@ import styles from "./Barra.module.css";
 type Destino = { href: string; texto: string };
 type Props =
   | {
-      /** Pantalla interior (Ajustes, una edición): regreso a la izquierda y logotipo al centro. */
+      /** Pantalla interior (Ajustes, una edición): regreso a la izquierda y logotipo al centro. Con `titulo` (Administración, OL-456), la
+       *  barra de las fichas del front: el regreso redondo y el nombre de la pantalla al centro, sin logotipo; ese nombre es su encabezado,
+       *  salvo que la página ya lleve el suyo (`tituloEnPagina`: la ficha de una persona, como la barra sólida de la ficha pública). */
       volver: Destino;
+      titulo?: string;
+      tituloEnPagina?: boolean;
       cerrar?: undefined;
       paso?: undefined;
     }
@@ -58,6 +62,20 @@ export default function Barra(props: Props) {
     );
   }
   const { volver } = props;
+  if (props.titulo) {
+    return (
+      <header className={`${styles.barra} ${styles.interior} ${styles.conTitulo}`}>
+        <AtrasIcono href={volver.href} texto={volver.texto} tamano="control" relieve="contorno" />
+        {props.tituloEnPagina ? (
+          <b className={styles.titulo} aria-hidden="true">
+            {props.titulo}
+          </b>
+        ) : (
+          <h1 className={styles.titulo}>{props.titulo}</h1>
+        )}
+      </header>
+    );
+  }
   return (
     <header className={`${styles.barra} ${styles.interior}`}>
       <Atras href={volver.href} texto={volver.texto} />

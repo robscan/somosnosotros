@@ -1,9 +1,10 @@
-# 488 · Administración contra el canon del front: la comparación (OL-456)
+# 488 · Administración con el canon del front: la comparación y la parte A (OL-456)
 
 **Fecha:** 2026-10-23. **Rama:** `admin-canon`, desde `origin/main` (`85d5c2b8`). **Operador:** agente de la pieza (Claude) para el Gestor VII,
 sin otros agentes. **Entrega:** solo la comparación; ningún cambio de la app. **Migración:** ninguna. **Capturas:**
-[`docs/rediseno/capturas-488/`](../../../rediseno/capturas-488/) (16 parejas lado a lado y `medidas.json`). **Estado:** espera la decisión del
-founder. **Sustituye a OL-452** (prototipo del filtro por ciudad, bitácora 484, rama `admin-filtro-ciudad`), que queda descartada: el filtro por
+[`docs/rediseno/capturas-488/`](../../../rediseno/capturas-488/) (16 parejas lado a lado y `medidas.json`). **Estado:** la comparación, aprobada («Adelante, y acepto tus
+recomendaciones»); la **parte A**, hecha en esta misma rama (abajo), espera la revisión del gestor; la parte B irá en `admin-canon-2`.
+**Migración de la parte A:** `20261023120000_admin_ciudad.sql` (solo añade). **Sustituye a OL-452** (prototipo del filtro por ciudad, bitácora 484, rama `admin-filtro-ciudad`), que queda descartada: el filtro por
 ciudad sale de esta pieza, con el chip y la hoja de ciudad que ya existen en el front.
 
 ## El pedido
@@ -207,6 +208,110 @@ en el hueco de acción de `ui/Renglon` (hoy ese hueco es Seguir / Voy).
 4. **¿La ciudad elegida se recuerda** en las cuatro listas mientras no cierres la app, o hasta que la cambies?
 5. **¿El Grafo, el panel de ciudad, Corridas y las bandejas** (Propuestas, Por aprobar) se quedan con su diseño, solo con la barra nueva?
 
+## Parte A: lo que se cambió (2026-10-23)
+
+El founder: «Adelante, y acepto tus recomendaciones para optimizar toda la sección que mencionas, incluido el grafo.» Decisiones que se
+aplican: (1) la barra de las fichas en toda Administración; (2) los filtros en la hoja «Filtros», con el chip de ciudad delante; (3) la ciudad de
+una persona es la que más se repite entre lo que administra, publica y marca «Voy»; si nada, «Sin ciudad»; cuenta en una sola; (4) la ciudad
+elegida se recuerda en las cuatro listas mientras la app esté abierta (`?ciudad=` y una galleta de sesión); (5) todas las pantallas pasan al
+canon: esta parte A hace la barra de todas y las cuatro listas con la ficha de persona; la parte B, el resto (Grafo incluido).
+
+**Migración `20261023120000_admin_ciudad.sql`** (solo añade; por aplicar antes de desplegar):
+
+- `ciudad_slug(texto)`: el slug de la ciudad de una ficha, unificado con la tabla `ciudades` (slug, nombre, alias y ciudad ampliada); vacío o
+  Soledad, San Luis Potosí (como la app).
+- `ciudad_de_persona(uuid)`: la que más se repite entre lo que lleva (`lugares_cuentas`, `artistas_cuentas`), lo que publicó (`creado_por`) y
+  sus «Voy» (no «Me interesa»); empate, la de lo más reciente; null si nada. Solo la llaman las funciones del panel (revocada para todos).
+- Una versión con `p_ciudad` de `panel_lugares`, `panel_eventos`, `panel_artistas`, `panel_personas`, `panel_fichas_conteos` y
+  `panel_personas_conteos`: letra por letra las de hoy más la condición de la ciudad, sin valores por omisión (no chocan con las de hoy, que se
+  quedan). Y `panel_en_ciudad` (los destacados de una sección en una ciudad) y `panel_ciudades_de` (la hoja: cada ciudad con su cuenta,
+  «Sin ciudad» al final en Personas).
+- Banco nuevo `supabase/tests/pg/admin-ciudad.test.mjs`: alias, nombre, Soledad y vacío; con null las listas y las cuentas son las de hoy; con
+  una ciudad, solo lo suyo (también lo oculto); la ciudad de Beto (dos «Voy» en San Luis pesan más que un artista en la Ciudad de México), la de
+  Ana y la de quien no tiene nada; «Sin ciudad»; la hoja con su orden; y que ni una cuenta cualquiera ni un visitante las leen.
+
+**Qué pieza del front reemplaza a cuál:**
+
+| Antes (propio de Administración) | Ahora (del front) | Dónde |
+| --- | --- | --- |
+| `ui/Barra` con la píldora «Atrás» (83 × 44), el logotipo y el título repetido debajo | `ui/Barra` con título: el Atrás redondo de las fichas (`AtrasIcono`, 44 × 44, contorno) y el nombre al centro, como la barra sólida de la ficha pública de una persona. Ese nombre es el encabezado de la página; si la página ya trae el suyo (una ficha), la barra lo enseña sin repetirlo al lector de pantalla | las 17 pantallas de Administración |
+| Buscador y una fila de 6–7 chips con su cuenta | `ui/Cabecera` con el chip de ciudad (`ui/Chip` contexto) y el chip Filtros, que abre `ui/HojaFiltros` («Mostrar» con cada filtro y su cuenta, «Ver N lugares», Limpiar); el filtro puesto, con su ✕; el buscador debajo | Personas, Lugares, Eventos, Artistas (`CabeceraLista.tsx`) |
+| — | La hoja de ciudades de la app (ui/Hoja plana, renglones de `ui/Renglon` con su cuenta y ✓, el campo con ✕ si hay más de 8), con «Todas las ciudades» arriba y, en Personas, «Sin ciudad» al final | las cuatro listas |
+| `admin/renglonFicha` (foto 48), `admin/persona`, las etiquetas «Oculto» / «Destacado» | `ui/Renglon` lista (foto 56, título en la letra de las listas, dos líneas de meta) dentro de `ui/Grupo`, con los tres puntos en el hueco de la acción; «Oculto» y «Destacado» al principio de la meta; sin foto, el símbolo SN | las cuatro listas |
+| «Ver más» a todo lo ancho | El de `ui/CargarMas` (píldora chica, al centro) | las cuatro listas |
+| Avatar de 144 al centro con el nombre debajo | La cabecera de `FichaPersona` (avatar 72 a la izquierda, nombre y colonia al lado) | ficha de una persona, ficha del Showcase |
+
+**Lo que se borró:** `Avatar.tsx` y, de `admin.module.css`, el renglón propio (`renglones`, `persona`, `renglonFicha`, `foto`, `redonda`,
+`oculta`) y la cabecera de 144 (`cabecera`, `avatar`): de 859 a 752 líneas, sin clases sin uso. El título repetido bajo la barra, en todas.
+
+**Lo poco nuevo, justificado:** la variante con título de `ui/Barra` (copia la barra sólida de las fichas: Administración es una tarea y desde
+792 su barra va bajo la de la app, donde `BarraFicha` no se pega); «Todas las ciudades» y «Sin ciudad» en la hoja; los tres puntos en el
+hueco de acción del renglón; y `.listado` en `admin.module.css` (la rejilla de una columna de las listas del front, con la cabecera pegada bajo
+la barra).
+
+**Arreglos:**
+
+- «Alta» ya no repite la fecha: pasadas dos semanas dice solo «lun 7 de sep» (`src/lib/panel.ts`, con su prueba).
+- «Cómo se cuenta» mide 44 de alto (antes 37).
+- El campo de la hora de los chips nativos (`ui/Chip` `ChipNativo`; también el de Cuándo del front) cubre el toque de 44, no los 34 del chip
+  sin bordes; su prueba de componente se puso al día. `comparar` lo marca ahora como «se sale de su caja»: es a propósito, como el `::before`
+  de los chips que se tocan.
+- En el panel de una ciudad el nombre ya no sale dos veces (barra y título): su estado va al principio de la línea de abajo.
+- `medir.js` deja de medir lo que guarda un `<details>` cerrado (no se pinta): era un falso «se sale de su caja» en la portada.
+
+**Medido después, contra el par del front** (`A-medidas.json`; `getBoundingClientRect` a 390 × 844):
+
+| | Antes | Después | El front |
+| --- | --- | --- | --- |
+| Atrás | píldora 83 × 44 en (20, 6) | 44 × 44 en (20, 6) | persona: 44 × 44 en (20, 6) |
+| Barra | 56, logotipo; título de 26 px debajo, en y 68 | 56, título de 17 px en la barra | 56, nombre de 17 px en la barra |
+| Renglón de Lugares | 69–103, foto 48 | 81–95, foto 56 | 95–161, foto 56 |
+| Renglón de Eventos | 100–142 | 95–117 | Agenda: 95–117 |
+| Renglón de Personas | 76–81 | 81–95 | Artistas: 95–117 |
+| Relleno extra | — | ninguno: barra y cabecera juntas; lo que sigue a la barra empieza a 16, como la cabecera de una ficha | |
+| Profundidad | 7–8 | 8–10 | 10–13 |
+| Toques de menos de 44 | 2 (portada, Obras) | 0 | 0 |
+
+Los envoltorios sin clase que suben (de 1 a 22 en Lugares) son los `<span>` de la meta de `ui/Renglon`: los mismos que en el front.
+
+**Pruebas:**
+
+- `npm run lint` (2 avisos de antes, ajenos), `npm run typecheck`, `npm test`: 282 archivos, 4 636 pruebas, todas bien.
+- `TEST_DATABASE_URL=postgres://127.0.0.1:5432/sn_control npm run test:db`: 110 migraciones, **2 403 pruebas, 0 fallaron** (con el banco nuevo).
+- `npm run test:componentes`: 724 pruebas, 723 bien; la que falló era la de `ChipNativo`, que esperaba el campo de 34 de alto: se puso al día y su
+  archivo pasa entero (11 de 11). Nueva: `src/app/admin/CabeceraLista.componentes.test.mjs`, cinco pruebas con toques reales (clics de ratón
+  por coordenadas), todas bien: la hoja de ciudades con «Todas» y sus cuentas; elegir reemplaza (no apila), conserva la búsqueda, quita la
+  página y guarda la galleta; «Todas» la borra; con más de 8, el campo con ✕; «Sin ciudad» en Personas; Filtros con sus cuentas, «Sin lugares»
+  apagado, cerrar no aplica y el ✕ quita el filtro.
+- `npm run inventario`: sin novedades (las medidas en duro bajaron de 334 a 328, anotado). `npm run medir`: 58 pantallas × 4 anchos, sin
+  novedades; se sumaron Lugares, Eventos con ciudad, Artistas, Personas y la portada de Administración (s41–s45), con el teclado comprobado en
+  sus buscadores; 14 pantallas bajaron de nodos.
+- `next build`: correcto.
+
+**Capturas de la parte A** (tres columnas: antes, después y el par del front; 390 × 844 a 2×), abiertas y descritas:
+
+- `A-01-lugares.png` — antes la píldora «Atrás», el logotipo, «Lugares» grande y la fila de chips cortada; después el Atrás redondo con
+  «Lugares» en la barra, «Todas las ciudades» y Filtros pegados debajo, el buscador, «9 lugares» y los renglones de la app con sus tres puntos;
+  a la derecha Lugares del front, con la misma fila de ciudad y Filtros.
+- `A-02-lugares-hoja-ciudad.png` — la hoja «Ciudades con lugares»: «Todas las ciudades · 9 lugares» con ✓ y San Luis Potosí; al lado, la del front.
+- `A-03-lugares-filtros.png` — la hoja Filtros: «Mostrar» con Todos 9, Destacados 0, Ocultos 0, Sin fecha próxima 2, Sin foto 2, Del catálogo 0,
+  Limpiar y «Ver 9 lugares»; al lado, la Filtros de Lugares del front con el mismo pie.
+- `A-04-artistas-cdmx.png` — `?ciudad=ciudad-de-mexico`: el chip en violeta, «1 artista», Rocío Lozano con el símbolo SN redondo.
+- `A-05-eventos.png` — Eventos: la barra, la fila, «21 eventos» y renglones de 95–117 con la fecha en la primera línea y el lugar en la segunda,
+  «Oculto» al principio de la meta de «Ecos de papel»; al lado, la Agenda.
+- `A-06-personas.png` — Personas: «3 personas» con el renglón de la app («Administración · Abriste la app hoy»); al lado, Artistas.
+- `A-07-personas-sin-ciudad.png` — la hoja «Ciudades con personas» con su nota: Todas 3, San Luis Potosí 2 y «Sin ciudad · 1 persona».
+- `A-08-persona.png` — la ficha de Ana: barra con su nombre, la cabecera del front (avatar 72, nombre y colonia), «Alta: lun 7 de sep» sin
+  repetir; al lado, su ficha pública.
+- `A-09-portada.png` — la portada: la barra con «Administración» y «Pendiente» justo debajo; al lado, Ajustes.
+- `A-10-ciudad.png` — el panel de Oaxaca: «Oaxaca» en la barra y «Abierta» al principio de su línea, sin el nombre repetido.
+- `A-11-showcase-ficha.png` — la ficha de Feleal en el Showcase con la cabecera de ficha (avatar 72 a la izquierda); el resto es de la parte B.
+- `A-12-obras.png` — Obras colectivas con la barra nueva; el chip de la hora ya recibe el toque en sus 44.
+- `A-medidas.json` — las medidas de antes, después y del front.
+
+**Para la parte B** (rama `admin-canon-2`): el resto de cada pantalla con piezas del front (Ciudades, su panel, Corridas, Propuestas, Showcase y su
+ficha, Por aprobar, Obras, manuales y el Grafo).
+
 ## Archivos
 
 - `scripts/ops/auditoria-ui/comparar-admin-front.mjs` (nuevo: medidas y capturas lado a lado).
@@ -215,4 +320,10 @@ en el hueco de acción de `ui/Renglon` (hoy ese hueco es Seguir / Voy).
 - `docs/rediseno/capturas-488/` (16 PNG, 1,9 MB, y `medidas.json`).
 - `docs/ops/OPEN_LOOPS.md` (OL-456 en «Ahora», «Last updated»; OL-452 sustituida).
 
-No toqué la app ni los archivos de OL-451.
+La comparación no tocó la app; ninguna de las dos entregas toca los archivos de OL-451.
+
+Parte A: `supabase/migrations/20261023120000_admin_ciudad.sql`, `supabase/tests/pg/admin-ciudad.test.mjs`, `src/app/admin/CabeceraLista.tsx` y su
+prueba, `src/components/ui/Barra.tsx` y `Barra.module.css`, `src/lib/panel.ts` y su prueba, las páginas de `src/app/admin/**`,
+`src/app/admin/consultas.ts`, `admin.module.css`, `FichaPersona.module.css`, `Chip.module.css` y su prueba, `CapoComoVa.module.css`, `medir.js`,
+`pantallas-sesion.json`, `medidas.aceptadas.json`, `inventario.aceptado.json`, `comparar-admin-front.mjs`, `maqueta-pantalla.mjs`, el respaldo
+local y `docs/rediseno/capturas-488/A-*`.

@@ -11,6 +11,8 @@
   const recorrer = (padre) => {
     for (const e of padre.children) {
       if (OMITIDOS.has(e.tagName) || getComputedStyle(e).display === "none") continue;
+      // Un <details> cerrado no pinta lo que guarda (solo su <summary>), aunque su estilo no diga `display: none` (OL-456: «Cómo se cuenta»).
+      if (padre.tagName === "DETAILS" && !padre.open && e.tagName !== "SUMMARY") continue;
       todos.push(e);
       if (!(e instanceof SVGSVGElement)) recorrer(e);
     }
@@ -94,6 +96,7 @@
     }
     if (cs.overflow === "visible" && r.width > 0) {
       for (const h of el.children) {
+        if (el.tagName === "DETAILS" && !el.open && h.tagName !== "SUMMARY") continue;
         const hr = h.getBoundingClientRect();
         if (hr.width === 0 && hr.height === 0) continue;
         const hcs = getComputedStyle(h);

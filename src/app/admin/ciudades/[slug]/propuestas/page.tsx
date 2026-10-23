@@ -30,8 +30,7 @@ export default async function PropuestasDeCiudad({ params }: { params: Promise<{
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
-        <Barra volver={{ href: `/admin/ciudades/${slug}`, texto: "Ciudad" }} />
-        <h1 className={styles.titulo}>Propuestas</h1>
+        <Barra volver={{ href: `/admin/ciudades/${slug}`, texto: "Ciudad" }} titulo="Propuestas" />
         <Reintentar texto="No pudimos leer las propuestas." />
       </main>
     );
@@ -49,8 +48,7 @@ export default async function PropuestasDeCiudad({ params }: { params: Promise<{
   const notas = Object.fromEntries(panel.corridas.filter((c) => c.ciudad === slug).map((c) => [c.id, notaBandeja(c, ahora)]));
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: `/admin/ciudades/${slug}`, texto: ciudad.nombre }} />
-      <h1 className={styles.titulo}>Propuestas de {ciudad.nombre}</h1>
+      <Barra volver={{ href: `/admin/ciudades/${slug}`, texto: ciudad.nombre }} titulo={`Propuestas de ${ciudad.nombre}`} />
       <p className={styles.nota}>{n ? `${n} por revisar${armadas.length > 1 ? ` · de ${armadas.length} búsquedas` : ""}. Nada se publica hasta que lo aceptas.` : "Nada se publica hasta que lo aceptas."}</p>
       {error && <Reintentar texto="No pudimos leer una de sus búsquedas." />}
       <BandejasDeCiudad

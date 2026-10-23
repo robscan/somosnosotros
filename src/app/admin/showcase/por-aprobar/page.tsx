@@ -38,12 +38,11 @@ export default async function PorAprobar() {
   const ahora = new Date();
   const hoy = diaLocal(ahora);
   const [todos, pa] = await Promise.all([cargarCandidatos(ahora), cargarPorAprobar()]);
-  const barra = <Barra volver={{ href: RUTA_SHOWCASE, texto: "Showcase" }} />;
+  const barra = <Barra volver={{ href: RUTA_SHOWCASE, texto: "Showcase" }} titulo="Por aprobar" />;
   if (!todos || !pa) {
     return (
       <main className={`${plantilla.paginaContenido} ${admin.lista}`}>
         {barra}
-        <h1 className={admin.titulo}>Por aprobar</h1>
         <Reintentar texto="No pudimos leer lo que hay por aprobar." />
       </main>
     );
@@ -66,7 +65,6 @@ export default async function PorAprobar() {
   return (
     <main className={`${plantilla.paginaContenido} ${admin.lista}`}>
       {barra}
-      <h1 className={admin.titulo}>Por aprobar</h1>
       {grupos.length ? (
         <Hallazgos grupos={grupos} hoy={hoy} modo="pantalla" cuando={ultima ? cuandoFue(diaLocal(new Date(ultima)), hoy) : null} />
       ) : (

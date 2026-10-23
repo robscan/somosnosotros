@@ -28,7 +28,7 @@ export default async function PaginaGrafo() {
   if (!cargado)
     return (
       <main className={plantilla.paginaContenido}>
-        <Barra volver={{ href: "/admin", texto: "Administración" }} />
+        <Barra volver={{ href: "/admin", texto: "Administración" }} titulo="Grafo cultural" />
         <Reintentar texto="No pudimos leer el grafo." />
       </main>
     );

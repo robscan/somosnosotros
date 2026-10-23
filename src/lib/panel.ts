@@ -559,7 +559,8 @@ export function textoAvisos(f: Pick<PersonaFicha, "telefonos" | "avisos_correo" 
 export function datosPersona(f: PersonaFicha, ahora: Date = new Date()) {
   const publico = unir([contar(f.publico_eventos, "evento", "eventos"), contar(f.publico_lugares, "lugar", "lugares"), contar(f.publico_artistas, "artista", "artistas")], "Nada aún");
   return {
-    alta: `${diaCorto(f.creado_en, ahora)} · ${hace(f.creado_en, ahora)}`,
+    // Pasadas dos semanas, `hace` ya dice la fecha («el lun 7 de sep»): sola, para no repetirla (OL-456).
+    alta: hace(f.creado_en, ahora).startsWith("el ") ? diaCorto(f.creado_en, ahora) : `${diaCorto(f.creado_en, ahora)} · ${hace(f.creado_en, ahora)}`,
     ultimaVez: ultimaVez(f, ahora, f.es_yo) + (!f.visto && !f.ultima_entrada && !f.confirmado ? ": no confirmó su correo" : ""),
     avisos: textoAvisos(f),
     vaA: unir([contar(f.va_a, "evento próximo", "eventos próximos"), contar(f.le_interesa, "le interesa", "le interesan")], "Nada próximo"),
@@ -656,18 +657,31 @@ export const FILTROS = {
   ],
 } as const;
 export type SeccionPanel = keyof typeof FILTROS;
-export type Lista = { q: string | null; filtro: string; n: number };
+/** `ciudad`: el slug de la ciudad elegida (`?ciudad=`, o la de la sesión); 'sin' es «Sin ciudad» (solo Personas); null, todas. */
+export type Lista = { q: string | null; filtro: string; n: number; ciudad: string | null };
+
+/** La galleta de sesión que recuerda la ciudad elegida en las cuatro listas mientras la app está abierta (sin fecha: se va al cerrarla). */
+export const GALLETA_CIUDAD = "sn_admin_ciudad";
+const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+/** Un slug de ciudad que se puede usar (o 'sin', solo en Personas); cualquier otra cosa es «todas». */
+export function leerCiudad(seccion: SeccionPanel, valor: string | null | undefined): string | null {
+  const v = valor?.trim().toLowerCase() ?? "";
+  if (v === "sin") return seccion === "personas" ? "sin" : null;
+  return v.length <= 80 && SLUG.test(v) ? v : null;
+}
 
 export function esSeccionFichas(s: string): s is "lugares" | "eventos" | "artistas" {
   return s === "lugares" || s === "eventos" || s === "artistas";
 }
 
 /** El filtro de la URL con valores seguros: el filtro debe existir; `n`, múltiplo de la página y con tope. */
-export function leerLista(seccion: SeccionPanel, p: { q?: string; filtro?: string; n?: string }): Lista {
+export function leerLista(seccion: SeccionPanel, p: { q?: string; filtro?: string; n?: string; ciudad?: string }, deLaSesion: string | null = null): Lista {
   const filtros = FILTROS[seccion];
   const filtro = filtros.some((f) => f.valor === p.filtro) ? p.filtro! : filtros[0].valor;
   const n = Number(p.n);
-  return { q: p.q?.trim().slice(0, 80) || null, filtro, n: Number.isInteger(n) && n > PAGINA_PANEL ? Math.min(Math.ceil(n / PAGINA_PANEL) * PAGINA_PANEL, 600) : PAGINA_PANEL };
+  // La de la dirección manda; sin ella, la que se eligió en esta sesión (en otra de las cuatro listas). `?ciudad=todas` es «todas».
+  const ciudad = p.ciudad === "todas" ? null : leerCiudad(seccion, p.ciudad ?? deLaSesion);
+  return { q: p.q?.trim().slice(0, 80) || null, filtro, n: Number.isInteger(n) && n > PAGINA_PANEL ? Math.min(Math.ceil(n / PAGINA_PANEL) * PAGINA_PANEL, 600) : PAGINA_PANEL, ciudad };
 }
 
 /** La URL de una lista del panel, sin lo que vale por defecto. */
@@ -676,8 +690,16 @@ export function hrefLista(seccion: SeccionPanel, l: Partial<Lista>): string {
   if (l.q?.trim()) p.set("q", l.q.trim());
   if (l.filtro && l.filtro !== FILTROS[seccion][0].valor) p.set("filtro", l.filtro);
   if (l.n && l.n > PAGINA_PANEL) p.set("n", String(l.n));
+  if (l.ciudad) p.set("ciudad", l.ciudad);
   const s = p.toString();
   return `/admin/${seccion}${s ? `?${s}` : ""}`;
+}
+
+/** El detalle de un renglón de lista (`ui/Renglon`) en las dos líneas de su meta, un dato por línea y cada una cortada en su borde: lo primero
+ *  (qué es, o cuándo) y lo demás (OL-456). */
+export function enDosLineas(detalle: string): string[] {
+  const partes = detalle.split(" · ");
+  return [partes.slice(0, 2).join(" · "), partes.slice(2).join(" · ")].filter(Boolean);
 }
 
 export function vacioDe(seccion: SeccionPanel, filtro: string, q: string | null): string {
