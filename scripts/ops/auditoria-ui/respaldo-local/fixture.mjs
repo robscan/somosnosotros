@@ -754,6 +754,37 @@ Object.assign(rpcs, {
   },
 });
 
+// OL-456: Administración › Lugares, Eventos y Artistas con renglones, para compararlas con su par del front (maqueta-pantalla.mjs): los
+// contratos de `panel_lugares`, `panel_eventos`, `panel_artistas`, `panel_fichas_conteos` y `panel_destacados` (migración 20260917090000) sobre
+// las fichas del respaldo, solo con el filtro por omisión y la búsqueda; los demás filtros devuelven lo mismo (no se miden aquí).
+const proximasDe = (campo, id, t) => t.eventos.filter((e) => e.visible && new Date(e.termina ?? e.inicio) >= new Date() && (campo === "lugar_id" ? e.lugar_id === id : t.eventos_artistas.some((x) => x.evento_id === e.id && x.artista_id === id))).length;
+const conBusqueda = (filas, q, campo = "nombre") => (q ? filas.filter((x) => sinAcentosPanel(x[campo]).includes(sinAcentosPanel(q))) : filas);
+const sinAcentosPanel = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const llevaFicha = (tabla, col, id, t) => { const l = t[tabla].filter((c) => c[col] === id); return { lleva: l[0] ? personasPanel(t).find((p) => p.id === l[0].perfil_id)?.nombre ?? null : null, lleva_n: l.length }; };
+Object.assign(rpcs, {
+  panel_lugares: ({ p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(t.lugares, p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return filas.slice(p_desde, p_desde + p_limite).map((l) => ({ id: l.id, nombre: l.nombre, foto: l.portada ?? null, tipo: l.tipo, detalle: l.detalle ?? null, visible: l.visible !== false, privado: !!l.privado, origen: l.origen ?? null, proximas: proximasDe("lugar_id", l.id, t), ...llevaFicha("lugares_cuentas", "lugar_id", l.id, t), total: filas.length }));
+  },
+  panel_eventos: ({ p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(t.eventos.filter((e) => !e.evento_padre_id && new Date(e.termina ?? e.inicio) >= new Date()), p_buscar, "titulo").sort((a, b) => a.inicio.localeCompare(b.inicio));
+    return filas.slice(p_desde, p_desde + p_limite).map((e) => {
+      const autor = personasPanel(t).find((p) => p.id === e.creado_por);
+      return { id: e.id, titulo: e.titulo, imagen: e.imagen ?? null, inicio: e.inicio, fin: e.fin ?? null, visible: e.visible !== false, sitio: t.lugares.find((l) => l.id === e.lugar_id)?.nombre ?? e.sitio_texto ?? null, autor: autor?.nombre ?? null, autor_admin: !autor || autor.rol === "admin", van: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "voy").length, total: filas.length };
+    });
+  },
+  panel_artistas: ({ p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(t.artistas, p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return filas.slice(p_desde, p_desde + p_limite).map((a) => ({ id: a.id, nombre: a.nombre, foto: a.foto ?? null, disciplina: a.disciplina, detalle: a.detalle ?? null, visible: a.visible !== false, origen: a.origen ?? null, proximas: proximasDe("artista_id", a.id, t), ...llevaFicha("artistas_cuentas", "artista_id", a.id, t), total: filas.length }));
+  },
+  panel_fichas_conteos: ({ p_tipo }, t) => {
+    if (p_tipo === "lugares") return { todos: t.lugares.length, ocultos: t.lugares.filter((l) => l.visible === false).length, sin_fecha: t.lugares.filter((l) => !proximasDe("lugar_id", l.id, t)).length, sin_foto: t.lugares.filter((l) => !l.portada).length, catalogo: t.lugares.filter((l) => l.origen === "capo").length };
+    if (p_tipo === "eventos") { const p = t.eventos.filter((e) => !e.evento_padre_id && new Date(e.termina ?? e.inicio) >= new Date()); return { proximos: p.length, semana: p.filter((e) => Date.parse(e.inicio) < Date.now() + 7 * 86400e3).length, coincidencias: 0, sin_imagen: p.filter((e) => !e.imagen).length, comunidad: p.filter((e) => e.creado_por && e.creado_por !== ADMIN).length, ocultos: p.filter((e) => e.visible === false).length }; }
+    return { todos: t.artistas.length, por_reclamar: t.artistas.filter((a) => a.origen === "capo").length, llevados: t.artistas_cuentas.length, sin_foto: t.artistas.filter((a) => !a.foto).length, ocultos: t.artistas.filter((a) => a.visible === false).length };
+  },
+  panel_destacados: () => [],
+});
+
 // OL-447: asignar desde la ficha de una persona en Administración una ficha de lugar o de artista. Los contratos de `admin_buscar_fichas`,
 // `admin_asignar_ficha` y `admin_quitar_ficha` (migración 20261022150000) sobre las ligas del respaldo, que asignar y quitar cambian EN MEMORIA
 // (otro arranque empieza limpio) para ver la lista tras el toque. Los permisos reales y el registro se prueban en PostgreSQL
