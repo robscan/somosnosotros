@@ -1,8 +1,8 @@
 # 486 · Prototipo: Inicio vacío, una ciudad sin eventos próximos (OL-454)
 
 **Fecha:** 2026-10-22. **Rama:** `inicio-vacio`, base `origin/main` (`5325e236`). **Operador:** agente de la pieza (Gestor VII), sin otros
-agentes. **Solo prototipo:** nada en `src/**`, sin migración ni variables de entorno. **Estado:** segunda vuelta con las decisiones del founder; espera la revisión del gestor y la firma del
-founder. Prototipo: `docs/rediseno/prototipos/inicio-vacio.html`. Capturas: `docs/rediseno/capturas-486/`.
+agentes. **Prototipo firmado y en código** (sin migración ni variables de entorno). **Estado:** firmado por el founder («solo botón. iguala título de
+carril.») y en código en la misma rama; espera la revisión del gestor y el «publica» del founder. Prototipo: `docs/rediseno/prototipos/inicio-vacio.html`. Capturas: `docs/rediseno/capturas-486/`.
 
 ## El pedido (founder, textual)
 
@@ -134,11 +134,59 @@ De la propuesta (nuevas):
 - `15-recorrido-barra-alta-lugar.png`: desde el «+» de la barra, el alta de lugar («¿Cómo se llama?») con la tira en LUGAR.
 - `16-prototipo-1280.png`: la página del prototipo: selectores (Hoy · Propuesta · Variante), el teléfono y las notas (5 · 10 · 0).
 
-## Preguntas al founder (frases llanas)
+## Preguntas al founder (respondidas: «solo botón. iguala título de carril.»)
 
 1. **¿Propuesta o variante?** Un solo botón «+ Publicar un evento», o el mismo botón con un enlace discreto debajo, «Registrar un lugar o a un
    artista».
 2. **El título del llamado** es el del aviso de vacío de las listas (19 px), más chico que el de los carriles (26 px). ¿Se queda así o lo subimos?
+
+## Código (firmado: «solo botón. iguala título de carril.»)
+
+Rama `inicio-vacio`, con `origin/main` unido antes (OPEN_LOOPS resuelto con `resolver_ol.py`, conservando la entrada de OL-453 y todos los
+trozos). Solo la propuesta de una acción; nada del enlace de la variante.
+
+- **`src/lib/inicio.ts`**: `ciudadSinEventos(estado)` y `eventosDeCiudadResueltos(estado)`, puras: la ciudad está sin eventos solo si los cuatro
+  carriles de eventos (`CARRILES_DE_EVENTOS`) y «Más adelante» dijeron que no tienen nada; un pendiente o un error nunca es vacío. «Tus planes»
+  y los carriles de lugares y artistas no cuentan.
+- **`inicio/EstadoCarriles.tsx`**: las usa (`vacio`, `resuelto`); `CarrilesDeInicio` ya no necesita `conSesion`.
+- **`Inicio.tsx`**: en el sitio del banner (tras el carril estelar), `BannerOLlamado`: mientras no se sabe si hay eventos, nada; con eventos, el
+  `BannerCompartir` de siempre; sin ninguno, `PublicarAqui`: el aviso de vacío de las listas (`Lista.module.css` `.vacio`) con su título,
+  «¿Sabes de algo que pase en Querétaro?», su texto, «Aún no hay eventos próximos aquí. Publica el primero.», y `ui/Boton` primario como
+  enlace con `IconoMas` (oculto al lector, como todo icono) y «Publicar un evento», a `enlaceAltaEvento({ ciudad })`. Sin sesión, el alta ya
+  manda a Entrar y vuelve. Se quita el `InicioVacio` viejo del final (y su uso de `Vacio` de `AgendaInicio`, que sigue para Agenda).
+- **`Lista.module.css`**: `.vacioInicio h2` con el estilo del título de carril (`--letra-2xl`, interlineado 1,1, como `.destacados h2`; el 700
+  y lo condensado ya los da el `h2` de la app). Sin medida suelta.
+- Plano: un `div` con clase y tres hijos directos (h2, p, a); dentro del enlace, el svg y el texto. Ningún envoltorio sin clase.
+- **Un cambio de tiempo, no de forma:** el banner ya no sale antes de saber si la ciudad tiene eventos (para que en una ciudad vacía no
+  aparezca y se vaya). En una ciudad con eventos aparece cuando llega la agenda, a la vez que el carril estelar que tiene encima; su sitio y su
+  aspecto no cambian (`npm run medir`: sin novedades, también s28 «inicio-banner-compartir»). Si la agenda fallara, el banner no sale.
+
+### Pruebas
+
+- **Unitarias** (`src/lib/inicio.test.ts`, 3 nuevas): sin eventos aunque haya Tus planes, artistas o lugares; cualquier carril de eventos o «Más
+  adelante» con algo la llena; un pendiente o un error nunca es vacío ni está resuelto.
+- **Componentes** (`inicio/Inicio.componentes.test.mjs`, 2 nuevas y 2 cambiadas): con Tus planes o artistas sale el llamado y no el banner,
+  con el llamado arriba y Tus planes debajo; mientras un carril de eventos no llega no sale ni el banner ni el llamado; al llegar, el texto, el
+  enlace «Publicar un evento» (exacto) a `/nuevo/evento?ciudad=puebla` con el «+» `aria-hidden`, h2 → p → a sin nada sin clase, el título a
+  26 px, toque ≥ 44, foco con Tab de verdad (contorno sólido de 2 px) y un clic por coordenadas que lleva al alta; con eventos, el banner y
+  ningún llamado.
+- **La app real** (`capturar-inicio-vacio-codigo.mjs`, compilada contra el respaldo con `RESPALDO_VACIO=1`, clics por coordenadas): 9 de 9.
+  Querétaro sin sesión: llamado, sin banner y sin el aviso viejo; título de 26 px, botón de 48, nombre «Publicar un evento», «+» oculto; el
+  toque lleva a `/entrar?siguiente=/nuevo/evento?ciudad=queretaro`. Con sesión: el llamado aunque haya Tus planes, sin banner, el llamado arriba
+  y Tus planes debajo; el toque lleva al alta de evento con la ciudad («No tengo cartel» en pantalla). San Luis con eventos: el banner y ningún
+  llamado.
+- **Verificación completa en verde:** `lint` (0 errores; 2 avisos que ya estaban en otros archivos), `typecheck`, `test` (282 archivos, 4 634
+  pruebas), `test:db` (2 373 pruebas, PostgreSQL local), `inventario` (sin novedades), `medir` (53 pantallas × 4 anchos, sin novedades),
+  `test:componentes` (719 de 719) y `build`.
+
+### Capturas del código (390×844, abiertas)
+
+- `17-codigo-queretaro-sin-sesion.png`: la barra, la fila de Querétaro y, arriba, «¿Sabes de algo que pase en Querétaro?» en dos líneas al
+  tamaño de los títulos de carril, el texto gris y el botón violeta a todo lo ancho «+ Publicar un evento»; sin banner; abajo, vacío. Igual que
+  la firmada 06/07 con el título más grande.
+- `18-codigo-queretaro-con-sesion.png`: lo mismo con la campana y «A» en la barra, y debajo «Tus planes» con sus tarjetas de San Luis, como la
+  firmada 07.
+- `19-codigo-san-luis-con-eventos.png`: San Luis con eventos como hoy: «Seleccionados para ti» y debajo el banner de compartir; ningún llamado.
 
 ## Archivos
 
@@ -147,9 +195,12 @@ De la propuesta (nuevas):
   y Entrar) y `--solo=` con varios ids.
 - `scripts/ops/auditoria-ui/prototipo/inicio-vacio.mjs` y `inicio-vacio.plantilla.html` (nuevos): arman el prototipo desde las maquetas; las
   clases de la propuesta se buscan en el CSS servido y falla si alguna no existe.
-- `scripts/ops/auditoria-ui/capturar-inicio-vacio.mjs` (nuevo): capturas, medida, accesibilidad y recorrido.
+- `scripts/ops/auditoria-ui/capturar-inicio-vacio.mjs` (nuevo): capturas, medida, accesibilidad y recorrido del prototipo.
+- `scripts/ops/auditoria-ui/capturar-inicio-vacio-codigo.mjs` (nuevo): la app real contra el respaldo, capturas 17 a 19 y el recorrido.
+- Código: `src/lib/inicio.ts`, `src/lib/inicio.test.ts`, `src/components/Inicio.tsx`, `src/components/inicio/EstadoCarriles.tsx`,
+  `src/components/inicio/Inicio.componentes.test.mjs`, `src/components/Lista.module.css`.
 - `docs/rediseno/prototipos/inicio-vacio.html` (1 MB: el CSS servido y las imágenes de las maquetas, cada una una vez).
-- `docs/rediseno/capturas-486/` (16 PNG).
+- `docs/rediseno/capturas-486/` (19 PNG).
 
 Para rehacerlo:
 

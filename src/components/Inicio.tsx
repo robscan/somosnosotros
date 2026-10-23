@@ -4,12 +4,15 @@ import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { hrefAgenda, SIN_FILTROS } from "@/lib/agenda";
 import type { Agenda } from "@/lib/cargarAgenda";
+import { enlaceAltaEvento } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import CarrilEsqueleto from "./CarrilEsqueleto";
 import FilaEventos from "./FilaEventos";
+import Boton from "./ui/Boton";
 import Cabecera from "./ui/Cabecera";
+import { IconoMas } from "./ui/Iconos";
+import comun from "./Lista.module.css";
 import PantallaConAviso from "./useCanalDeListas";
-import { Vacio } from "./AgendaInicio";
 import { CarrilesDeInicio, useEstadoCarriles } from "./inicio/EstadoCarriles";
 import BannerCompartir from "./inicio/BannerCompartir";
 
@@ -64,7 +67,7 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
 
   return (
     <PantallaConAviso>
-      <CarrilesDeInicio conSesion={conSesion}>
+      <CarrilesDeInicio>
         <Cabecera
           contexto={
             <FilaEventos
@@ -94,7 +97,9 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
             sesión y, de eso, solo desde la tercera visita (lo decide el teléfono tras el primer pintado: sin él, no ocupa nada). */}
         {/* Para todo el mundo, con o sin sesión (OL-397; antes solo con sesión, OL-387). Compartir no lo quita; la × lo esconde hasta la siguiente vez
             que se abre la app (OL-407). */}
-        <BannerCompartir zona={zona} />
+        {/* OL-454 (firmado: «solo botón. iguala título de carril»): en una ciudad sin ningún evento próximo, el banner no sale y en su sitio va el
+            llamado a publicar (`PublicarAqui`); con eventos, el banner de siempre. */}
+        <BannerOLlamado ciudad={ciudad} zona={zona} />
         {conSesion && <Suspense fallback={<CarrilEsqueleto forma="grande" />}>{slotTusPlanes}</Suspense>}
         <Suspense fallback={<CarrilEsqueleto forma="mediana" />}>{slotEstaSemana}</Suspense>
         {/* OL-347: «Festivales y expos» va con la tarjeta grande de «Destacados» (founder, 2026-10-08). OL-375: todas con la portada del sistema,
@@ -108,13 +113,38 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
         <Suspense fallback={<CarrilEsqueleto forma="artista" />}>{slotArtistasDestacados}</Suspense>
         {/* OL-253: va después de los destacados porque no los repite (`app/page.tsx`). */}
         <Suspense fallback={<CarrilEsqueleto forma="avatar" />}>{slotArtistasSemana}</Suspense>
-        <InicioVacio ciudad={ciudad.nombre} />
       </CarrilesDeInicio>
     </PantallaConAviso>
   );
 }
 
-function InicioVacio({ ciudad }: { ciudad: string }) {
-  const { vacio } = useEstadoCarriles();
-  return vacio ? <Vacio titulo="Próximos días" texto={`Aún no hay eventos próximos en ${ciudad}. Si sabes de uno, publícalo.`} /> : null;
+/**
+ * Tras el carril estelar, una sola de dos cosas, ya que se sabe si la ciudad tiene eventos (`useEstadoCarriles`, `ciudadSinEventos`: «Tus
+ * planes» no cuenta): con eventos, el banner para compartir la app (OL-387, OL-397, OL-407); sin ninguno (OL-454), el llamado a publicar en su
+ * sitio. Mientras no se sabe, nada: así ni el banner sale para irse ni el llamado entra tarde sobre él. El carril estelar va colapsado en una
+ * ciudad sin eventos, así que el llamado queda arriba, y con sesión «Tus planes» debajo, en su orden firmado.
+ */
+function BannerOLlamado({ ciudad, zona }: { ciudad: Ciudad; zona: string }) {
+  const { resuelto, vacio } = useEstadoCarriles();
+  if (!resuelto) return null;
+  return vacio ? <PublicarAqui ciudad={ciudad} /> : <BannerCompartir zona={zona} />;
+}
+
+/**
+ * El llamado de una ciudad sin eventos (OL-454, prototipo firmado `inicio-vacio.html`, «solo botón»): el aviso de vacío de las listas (su título,
+ * al tamaño del de los carriles, y su texto) y un solo `Boton` primario, «+ Publicar un evento», al alta de evento con la ciudad puesta. Su
+ * nombre accesible es el texto (el «+» va oculto al lector, como todo `Icono…`); sin sesión, el alta pasa por Entrar y vuelve. Lugar y artista,
+ * en el «+» de la barra. Sustituye al aviso que salía al final, en gris y sin acción («Si sabes de uno, publícalo.»).
+ */
+function PublicarAqui({ ciudad }: { ciudad: Ciudad }) {
+  return (
+    <div className={`${comun.vacio} ${comun.vacioInicio}`}>
+      <h2>¿Sabes de algo que pase en {ciudad.nombre}?</h2>
+      <p>Aún no hay eventos próximos aquí. Publica el primero.</p>
+      <Boton href={enlaceAltaEvento({ ciudad: ciudad.slug })} prefetch={false}>
+        <IconoMas width={20} height={20} />
+        Publicar un evento
+      </Boton>
+    </div>
+  );
 }

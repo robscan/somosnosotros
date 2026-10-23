@@ -7,6 +7,8 @@ import {
   carrilNuevos,
   carrilMasAdelante,
   carrilTusPlanes,
+  ciudadSinEventos,
+  eventosDeCiudadResueltos,
   eventosEstaSemana,
   MINIMO_NUEVOS,
   sinRepetidos,
@@ -456,5 +458,29 @@ describe("Inicio: los eventos con varios días (OL-320)", () => {
     expect(r.estelar[0]).toMatchObject({ id: "taller", inicio: sesiones[1].inicio });
     expect(textoParte(r.estelar[0])).toBe("Día 2 de 3");
     expect(carrilMasAdelante(agenda({ eventos: [taller], asistencias: null }), despues)[0].inicio).toBe(sesiones[1].inicio);
+  });
+});
+
+// OL-454 (firmado: «solo botón»): la ciudad está sin eventos solo si los cuatro carriles de eventos y «Más adelante» dijeron que no tienen nada.
+describe("ciudadSinEventos", () => {
+  const vacios = { "inicio-estelar": false, "inicio-esta-semana": false, "inicio-festivales": false, "inicio-nuevos": false, "inicio-mas-adelante": false };
+  it("sin ningún evento, aunque haya Tus planes (de otra ciudad) o artistas y lugares", () => {
+    expect(ciudadSinEventos(vacios)).toBe(true);
+    expect(ciudadSinEventos({ ...vacios, "inicio-tus-planes": true })).toBe(true);
+    expect(ciudadSinEventos({ ...vacios, "inicio-artistas-destacados": true, "inicio-lugares-semana": true })).toBe(true);
+    expect(eventosDeCiudadResueltos({ ...vacios, "inicio-tus-planes": true })).toBe(true);
+  });
+  it("cualquier carril de eventos o «Más adelante» con algo la llena", () => {
+    for (const clave of Object.keys(vacios)) expect(ciudadSinEventos({ ...vacios, [clave]: true })).toBe(false);
+  });
+  it("un pendiente o un error nunca es vacío ni está resuelto", () => {
+    for (const clave of Object.keys(vacios)) {
+      const sinUno: Record<string, boolean> = { ...vacios };
+      delete sinUno[clave];
+      expect(ciudadSinEventos(sinUno)).toBe(false);
+      expect(eventosDeCiudadResueltos(sinUno)).toBe(false);
+      expect(ciudadSinEventos({ ...vacios, [clave]: null })).toBe(false);
+      expect(eventosDeCiudadResueltos({ ...vacios, [clave]: null })).toBe(false);
+    }
   });
 });

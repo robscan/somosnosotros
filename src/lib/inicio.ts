@@ -209,3 +209,25 @@ export function carrilMasAdelante(agenda: Agenda, ahora: Date = new Date()): Eve
   const propios = new Set(Object.keys(agenda.asistencias ?? {}));
   return sinFestivales(agenda.eventos.filter(e => !propios.has(e.id))).toSorted(compararEventos).slice(0, 20).map((e) => proximaOcurrencia(e, ahora));
 }
+
+/** Los carriles de eventos de la ciudad en Inicio (la memoria de cada uno) y su respaldo «Más adelante». */
+export const CARRILES_DE_EVENTOS = ["inicio-estelar", "inicio-esta-semana", "inicio-festivales", "inicio-nuevos"] as const;
+export const CARRIL_MAS_ADELANTE = "inicio-mas-adelante";
+const DE_LA_CIUDAD = [...CARRILES_DE_EVENTOS, CARRIL_MAS_ADELANTE];
+
+/** Lo que cada carril informó al pintarse: true si enseña algo, false si quedó vacío; null (o sin clave) mientras no se sabe o si falló. */
+export type EstadoDeCarriles = Record<string, boolean | null | undefined>;
+
+/**
+ * ¿La ciudad de Inicio está sin eventos próximos? (OL-454, firmado: «solo botón»). Solo cuando los cuatro carriles de eventos y «Más adelante»
+ * dijeron que no tienen nada; un pendiente o un error nunca cuenta como vacío. «Tus planes» no cuenta: son de cualquier ciudad, y con planes en
+ * San Luis una ciudad sin agenda pasaba por «llena» y el aviso no salía. Los carriles de lugares y artistas tampoco: se quedan como están.
+ */
+export function ciudadSinEventos(estado: EstadoDeCarriles): boolean {
+  return DE_LA_CIUDAD.every((clave) => estado[clave] === false);
+}
+
+/** Ya se sabe si la ciudad tiene eventos o no: los cuatro carriles y «Más adelante» informaron, con algo o vacíos. */
+export function eventosDeCiudadResueltos(estado: EstadoDeCarriles): boolean {
+  return DE_LA_CIUDAD.every((clave) => typeof estado[clave] === "boolean");
+}
