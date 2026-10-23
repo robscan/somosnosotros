@@ -369,6 +369,31 @@ if (CON_PERSONAS) {
   for (const e of eventos) if (e.id === E.cine || e.evento_padre_id === E.cine) e.creado_en = altaDelFestival;
 }
 
+// OL-454 (bitácora 486): Inicio vacío. Dos ciudades más para ver Inicio sin eventos: Querétaro con tres lugares y dos artistas y ningún evento
+// próximo (la ciudad «vieja» sin agenda) y Zacatecas con un lugar y tres eventos que empiezan pasada esta semana (el caso de «Más adelante»).
+// Todo inventado. Solo con `RESPALDO_VACIO=1`: `npm run medir` no lo pone, así ninguna pantalla medida cambia.
+const CON_VACIO = process.env.RESPALDO_VACIO === "1";
+if (CON_VACIO) {
+  const QRO = "Querétaro", ZAC = "Zacatecas";
+  const L_ZAC = "aaaa0001-0000-4000-8000-000000000074";
+  lugares.push(
+    { ...lugar("aaaa0001-0000-4000-8000-000000000071", "foro-del-rio-demo", "Foro del Río (demo)", "foro", "Calle inventada 8, Centro, Querétaro, Qro.", 20.5925, -100.3920), ciudad: QRO },
+    { ...lugar("aaaa0001-0000-4000-8000-000000000072", "casa-de-cultura-norte-demo", "Casa de Cultura Norte (demo)", "casa_de_cultura", "Calle inventada 31, Querétaro, Qro.", 20.6050, -100.3900), ciudad: QRO },
+    { ...lugar("aaaa0001-0000-4000-8000-000000000073", "galeria-la-canada-demo", "Galería La Cañada (demo)", "galeria", "Calle inventada 4, Querétaro, Qro.", 20.5880, -100.3850), ciudad: QRO },
+    { ...lugar(L_ZAC, "teatro-del-cerro-demo", "Teatro del Cerro (demo)", "foro", "Calle inventada 2, Centro, Zacatecas, Zac.", 22.7709, -102.5832), ciudad: ZAC },
+  );
+  artistas.push(
+    { ...artista("cccc0005-0000-4000-8000-000000000001", "lucia-arteaga-demo", "Lucía Arteaga (demo)", "musica", "Canción", "solista"), ciudad: QRO },
+    { ...artista("cccc0005-0000-4000-8000-000000000002", "colectivo-tierra-fertil-demo", "Colectivo Tierra Fértil (demo)", "teatro", "Teatro comunitario", "grupo"), ciudad: QRO },
+  );
+  const enZac = (id, slug, titulo, dias) => ({ ...evento({ id, slug, titulo, dias, hora: "19:00", lugar_id: L_ZAC, imagen: null, creadoHace: 20 }), ciudad: ZAC });
+  eventos.push(
+    enZac("bbbb0012-0000-4000-8000-000000000001", "noche-de-son-jarocho-demo", "Noche de son jarocho (demo)", 12),
+    enZac("bbbb0012-0000-4000-8000-000000000002", "lectura-en-voz-alta-demo", "Lectura en voz alta (demo)", 19),
+    enZac("bbbb0012-0000-4000-8000-000000000003", "muestra-de-grabado-demo", "Muestra de grabado (demo)", 33),
+  );
+}
+
 // ---------- lo de las personas ----------
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },

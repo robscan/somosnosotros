@@ -6,7 +6,7 @@
 //
 //   node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> [--solo=texto]
 //
-// Las pantallas están abajo (`PANTALLAS`); `--solo=` filtra por id. Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales.
+// Las pantallas están abajo (`PANTALLAS`); `--solo=` filtra por id (varios, separados por comas). Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales.
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -51,6 +51,20 @@ const PANTALLAS = [
   { id: "admin-showcase", url: "/admin/showcase", sesion: true, cuenta: "admin" },
   { id: "admin-showcase-ficha", url: "/admin/showcase/feleal", sesion: true, cuenta: "admin" },
   { id: "admin-showcase-estado", url: "/admin/showcase/feleal", sesion: true, cuenta: "admin", paso: "admin-showcase-estado" },
+  // OL-454: Inicio como está hoy, con sus carriles (San Luis) y vacío, sin sesión y con la de Ana (que tiene planes en San Luis); con
+  // `RESPALDO_VACIO=1`, Querétaro (lugares y artistas sin eventos) y Zacatecas (eventos solo pasada esta semana). Ciudad de México solo tiene una
+  // artista. Y el primer paso de las tres altas (la tira Evento · Lugar · Artista) y Entrar, a donde lleva un alta sin sesión.
+  { id: "inicio-slp", url: "/", sesion: true },
+  { id: "inicio-qro", url: "/?ciudad=queretaro" },
+  { id: "inicio-qro-sesion", url: "/?ciudad=queretaro", sesion: true },
+  { id: "inicio-zac", url: "/?ciudad=zacatecas" },
+  { id: "inicio-zac-sesion", url: "/?ciudad=zacatecas", sesion: true },
+  { id: "inicio-cdmx", url: "/?ciudad=ciudad-de-mexico" },
+  { id: "inicio-cdmx-sesion", url: "/?ciudad=ciudad-de-mexico", sesion: true },
+  { id: "alta-evento", url: "/nuevo/evento?ciudad=queretaro", sesion: true },
+  { id: "alta-lugar", url: "/nuevo/lugar?ciudad=queretaro", sesion: true },
+  { id: "alta-artista", url: "/nuevo/artista?ciudad=queretaro", sesion: true },
+  { id: "entrar-alta", url: "/entrar?siguiente=%2Fnuevo%2Fevento%3Fciudad%3Dqueretaro" },
 ];
 const PASOS = {
   // La hoja de los cinco estados en la ficha de showcase (el renglón «Invitado» con su chevron).
@@ -115,7 +129,7 @@ try {
   await esperar(base + "/entrar");
   browser = await chromium.launch({ executablePath: process.env.CHROME_EXECUTABLE || (fs.existsSync(MAC) ? MAC : undefined), headless: true, args: ["--hide-scrollbars"] });
   fs.mkdirSync(SALIDA, { recursive: true });
-  for (const p of PANTALLAS.filter((x) => !solo || x.id.includes(solo))) {
+  for (const p of PANTALLAS.filter((x) => !solo || solo.split(",").some((t) => x.id.includes(t)))) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "es-MX" });
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
     const page = await ctx.newPage();
