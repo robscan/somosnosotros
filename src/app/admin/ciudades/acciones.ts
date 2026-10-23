@@ -4,17 +4,16 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { hrefArtista, validarArtista } from "@/lib/artistas";
 import { CIUDAD_INICIAL, slugDeCiudad } from "@/lib/ciudad";
 import { BOTONES_PANEL, estadoVisible, HOJAS, leerPanelCiudades, leerParametrosVista, leerTope, type EstadoCiudad, type TipoHoja } from "@/lib/ciudadesAdmin";
 import { configPublica } from "@/lib/config";
 import { hrefEvento } from "@/lib/eventos";
 import { esUuid } from "@/lib/formulario";
-import { hrefLugar, validarLugar } from "@/lib/lugares";
-import { entradaDeArtista, entradaDeLugar, esMotivo, nombreDe, notaDeFestival, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
+import { esMotivo, TIPOS_PROPUESTA, type MotivoRechazo, type TipoPropuesta } from "@/lib/propuestas";
 import { almacenDeSupabase, ponerCartel } from "@/lib/rutinas/aceptarCartel";
+import { aceptarLeida, type ResultadoAceptar as ResultadoDeAceptar } from "@/lib/rutinas/aceptarPropuesta";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
-import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararEvento, type Preparado } from "@/lib/rutinas/publicarEvento";
+import { ligarFicha } from "@/lib/rutinas/publicarEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
@@ -32,10 +31,7 @@ export type Resultado = { ok: true } | { ok: false; error: string };
  * espera a su festival, con `espera`; lo que se publicó con un festival). `actos`: al aceptar un festival, las propuestas de sus actos que
  * esperaban y se publicaron con él (la bandeja cambia sus líneas).
  */
-export type ResultadoAceptar = { ok: true; href: string | null; nota?: string; espera?: boolean; actos?: string[] } | { ok: false; error: string };
-
-/** La línea de lo hecho cuando la imagen de la propuesta (la de la cartelera, OL-448) no se pudo poner como cartel: el evento ya está publicado. */
-const NOTA_SIN_CARTEL = "se publicó sin cartel: su imagen no se pudo bajar";
+export type ResultadoAceptar = ResultadoDeAceptar;
 
 async function soloAdmin() {
   const actual = await usuarioActual();
@@ -127,72 +123,22 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   const { p, ciudad } = leida;
   if (p.estado !== "propuesta") return { ok: false, error: "Ya se decidió. Recarga la página." };
   if (p.tipo === "cartel") return aceptarCartel(supabase, yo, p);
-
-  let ficha: Record<string, unknown> = {};
-  let evento: Preparado | null = null;
-  const admin = p.tipo === "evento" ? clienteAdmin() : null;
-  if (p.tipo === "evento") {
-    if (!admin) return { ok: false, error: "No se puede publicar ahora. Intenta más tarde." };
-    const enCiudad = await ciudadDeCorrida(admin, p.corrida_id);
-    if (!enCiudad) return { ok: false, error: "Esa ciudad ya no está. Recarga la página." };
-    const lugares = await lugaresDeCiudad(admin, enCiudad);
-    if (!lugares) return { ok: false, error: "Sin conexión con la base. Intenta de nuevo." };
-    const token = configPublica().mapboxToken;
-    evento = await prepararEvento({ db: admin, mapbox: token ? { token } : null, ahora: new Date() }, p.datos, enCiudad, lugares, yo);
-    if (!evento.ok) return { ok: false, error: evento.error };
-  } else if (p.tipo === "lugar") {
-    const { datos, errores } = validarLugar(entradaDeLugar(p, ciudad), { esAdmin: true });
-    const primero = Object.values(errores)[0];
-    if (primero) return { ok: false, error: primero };
-    const { data: parecidos } = await supabase.rpc("lugares_parecidos", { p_nombre: datos.nombre, p_lat: datos.lat, p_lng: datos.lng });
-    const parecido = Array.isArray(parecidos) ? (parecidos[0] as { nombre?: string } | undefined) : undefined;
-    if (parecido) return { ok: false, error: `Ya está «${parecido.nombre ?? datos.nombre}» muy cerca: recházala como duplicado.` };
-    ficha = { nombre: datos.nombre, tipo: datos.tipo, detalle: datos.detalle, direccion: datos.direccion, lat: datos.lat, lng: datos.lng, ciudad: datos.ciudad, zona: zonaDePunto(datos.lat, datos.lng), redes: datos.redes };
-  } else if (p.tipo === "artista") {
-    const { datos, errores } = validarArtista(entradaDeArtista(p, ciudad), { esAdmin: true });
-    const primero = Object.values(errores)[0];
-    if (primero) return { ok: false, error: primero };
-    ficha = { nombre: datos.nombre, disciplina: datos.disciplina, detalle: datos.detalle, tipo: datos.tipo, ciudad: datos.ciudad, redes: datos.redes };
-  }
-
-  const { data, error } = await supabase.rpc("aceptar_propuesta", { p_propuesta: id, p_ficha: ficha });
-  if (error?.code === "23505") return { ok: false, error: `Ya hay una ficha llamada «${nombreDe(p)}»: recházala como duplicado.` };
-  if (error) return { ok: false, error: "No se pudo aceptar. Intenta de nuevo." };
-  const r = (data ?? {}) as { ficha_id?: string | null; slug?: string | null };
-  revalidar();
-  if (p.tipo === "lugar") {
-    revalidatePath("/");
-    revalidatePath("/lugares");
-  }
-  if (p.tipo === "artista") revalidatePath("/artistas");
-  if (p.tipo === "evento" && admin && evento?.ok) {
-    // Un acto aceptado antes que su festival (OL-433) queda aceptado sin publicarse: lo dice su frase, no «no se pudo publicar» (OL-434).
-    if (evento.espera) return { ok: true, href: null, nota: evento.espera, espera: true };
-    const creado = await insertarEvento(admin, evento.fila);
-    if (!creado) return { ok: true, href: null, nota: "no se pudo publicar ahora: se publica con la siguiente corrida de agendas" };
-    if (!(await ligarFicha(admin, id, creado.id))) {
-      // Otra pestaña la aceptó a la vez y ya tiene su evento: este sobra.
-      await admin.from("eventos").delete().eq("id", creado.id);
-      return { ok: true, href: null };
-    }
-    // La imagen que trae la propuesta (la de la Cartelera de la Ciudad de México, OL-448) se pone como cartel por el camino de «Buscar
-    // carteles»: se baja, se prepara y se guarda en Storage. Si no se puede, el evento queda publicado sin cartel y la línea lo dice.
-    const sinCartel = typeof p.datos.imagen === "string" && !(await ponerCartel({ db: admin, almacen: almacenDeSupabase(admin), ahora: () => new Date() }, { evento_id: creado.id, imagen: p.datos.imagen }, yo)).ok;
-    if (sinCartel) evento.nota = [evento.nota, NOTA_SIN_CARTEL].filter(Boolean).join(" · ");
-    revalidatePath("/");
-    revalidatePath(hrefEvento(creado));
-    const lugarId = evento.fila.lugar_id;
-    if (typeof lugarId === "string") revalidatePath(`/lugares/${lugarId}`);
-    if (p.datos.clase === "festival") {
-      // `ligarFicha` ya publicó colgados de él los actos aceptados que lo esperaban (OL-433): la línea dice cuántos (OL-434).
-      const actos = await actosDelFestival(admin, id);
-      return { ok: true, href: hrefEvento(creado), nota: notaDeFestival(actos.publicados.length, actos.sinPublicar), actos: actos.publicados };
-    }
-    // Un costo de la agenda que no es cifra, gratis ni cooperación quedó «Por confirmar» (OL-441): la línea lo dice.
-    return evento.nota ? { ok: true, href: hrefEvento(creado), nota: evento.nota } : { ok: true, href: hrefEvento(creado) };
-  }
-  if (!r.ficha_id) return { ok: true, href: null };
-  return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
+  // Lo mismo que el guion de la Mac que acepta una corrida (OL-453): `aceptarLeida`, con la sesión para marcarla y la llave de servicio para publicar.
+  const token = p.tipo === "evento" ? configPublica().mapboxToken : null;
+  return aceptarLeida(
+    {
+      yo,
+      admin: p.tipo === "evento" ? clienteAdmin() : null,
+      consultas: supabase,
+      marcar: async (propuesta, ficha) => await supabase.rpc("aceptar_propuesta", { p_propuesta: propuesta, p_ficha: ficha }),
+      mapbox: token ? { token } : null,
+      almacen: almacenDeSupabase,
+      ahora: () => new Date(),
+      revalidar: { todo: revalidar, ruta: (r) => revalidatePath(r) },
+    },
+    p,
+    ciudad,
+  );
 }
 
 /**
@@ -214,17 +160,6 @@ async function aceptarCartel(supabase: Cliente, yo: string, p: Leida): Promise<R
   await ligarFicha(admin, p.id, puesto.evento.id);
   revalidar();
   return { ok: true, href };
-}
-
-/**
- * Los actos aceptados de un festival propuesto (`datos.marco_propuesto`) tras aceptarlo: los que ya tienen su evento (se publicaron con él) y
- * cuántos siguen sin publicar (los publica la siguiente corrida de agendas). Si no se puede leer, ninguno: la línea no dice nada de más.
- */
-async function actosDelFestival(admin: NonNullable<ReturnType<typeof clienteAdmin>>, festival: string): Promise<{ publicados: string[]; sinPublicar: number }> {
-  const r = await admin.from("propuestas").select("id, ficha_id").eq("tipo", "evento").eq("estado", "aceptada").eq("datos->>marco_propuesto", festival).limit(500);
-  if (r.error) return { publicados: [], sinPublicar: 0 };
-  const filas = (r.data ?? []) as { id: string; ficha_id: string | null }[];
-  return { publicados: filas.filter((f) => f.ficha_id).map((f) => f.id), sinPublicar: filas.filter((f) => !f.ficha_id).length };
 }
 
 /** Rechazar con su motivo (duplicado, no cultural, fuera de la ciudad u otro): la rutina aprende a no proponerlo (OL-428). */
