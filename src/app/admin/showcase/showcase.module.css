@@ -304,7 +304,7 @@
 }
 
 /* ---------- 4. La ficha de showcase ---------- */
-/* Un renglón que es un botón (la señal, «Añadir lectura»): el de `admin .fila` sin el dibujo del botón */
+/* Un renglón que es un botón (la señal, «Añadir lectura»): el de Ajustes (`ui/Renglon` `.ajuste`), sin el dibujo del botón */
 .boton {
   /* La columna del texto puede encoger: con la letra grande (OL-373) el puntaje de la derecha no se sale de la tarjeta */
   grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
@@ -316,9 +316,14 @@
 .boton > :is(b, small) {
   overflow-wrap: anywhere;
 }
+/* La casilla del puntaje en su renglón: rejilla centrada, no el `span` en línea de la acción de un ajuste (`ui/Renglon`). */
+.boton > .senal {
+  display: grid;
+}
 /* «Investigar» (OL-430): la barra de la investigación en curso, debajo del detalle, a todo lo ancho del renglón */
 .barraInvestigar {
-  grid-area: error;
+  grid-area: cuerpo;
+  grid-column: 2 / -1;
   margin-top: var(--espacio-2);
 }
 /* OL-439: el renglón «Investigar» de la lista, entre la línea de cifras y las tarjetas */
@@ -565,7 +570,7 @@
   grid-template-columns: calc(var(--columna-icono) + var(--espacio-4)) minmax(0, 1fr) auto;
 }
 .fotoChica {
-  grid-area: icono;
+  grid-area: foto;
   width: calc(var(--columna-icono) + var(--espacio-4));
   height: calc(var(--columna-icono) + var(--espacio-4));
   border-radius: 50%;
@@ -612,8 +617,9 @@
 .publica > svg {
   flex: none;
 }
+/* Bajo la cabecera de la ficha (la de `FichaPersona`, alineada a la izquierda, OL-456), también a la izquierda (OL-457: iba al centro) */
 .aviso {
-  justify-self: center;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-2);

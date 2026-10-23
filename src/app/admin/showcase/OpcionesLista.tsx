@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Chip, Chips } from "@/components/ui/Chip";
+import { Chip } from "@/components/ui/Chip";
 import Hoja from "@/components/ui/Hoja";
 import { IconoCaret, IconoDocumento, IconoFiltros, IconoOk, IconoPersonas } from "@/components/ui/Iconos";
 import { hrefShowcase, ORDENES, type Vista } from "@/lib/showcase";
@@ -16,7 +16,7 @@ type Que = "orden" | "vista";
 
 /**
  * Filtros, Orden y Vista de la lista de candidatos (lo firmado en OL-425; OL-446: Estado entra a la hoja Filtros, firmada en OL-443): tres chips
- * de contexto que abren su hoja; elegir una opción la cierra y reemplaza la URL (filtrar no es navegar: no se apila en el historial y Atrás no la
+ * de contexto, en la fila de `ui/Cabecera` (OL-457), que abren su hoja; elegir una opción la cierra y reemplaza la URL (filtrar no es navegar: no se apila en el historial y Atrás no la
  * repite). «Puntaje» es el orden por defecto. Filtros dice cuántos hay puestos.
  */
 export default function OpcionesLista({ vista, hechos, grupos, hoy }: { vista: Vista; hechos: Hechos[]; grupos: Grupo[]; hoy: string }) {
@@ -43,17 +43,17 @@ export default function OpcionesLista({ vista, hechos, grupos, hoy }: { vista: V
   const abierta = hoja && hoja !== "filtros" ? OPCIONES[hoja] : null;
   return (
     <>
-      <Chips ariaLabel="Filtros, orden y vista">
-        <Chip variante="contexto" activo={puestos > 0} cuenta={puestos} icono={<IconoFiltros width={18} height={18} />} fin={<IconoCaret width={16} height={16} />} onClick={() => setHoja("filtros")}>
-          Filtros
-        </Chip>
-        <Chip variante="contexto" activo={vista.orden !== "puntaje"} icono={<IconoFiltros width={18} height={18} />} fin={<IconoCaret width={16} height={16} />} onClick={() => setHoja("orden")}>
-          Orden: {nombreOrden}
-        </Chip>
-        <Chip variante="contexto" icono={vista.tabla ? <IconoDocumento width={18} height={18} /> : <IconoPersonas width={18} height={18} />} fin={<IconoCaret width={16} height={16} />} onClick={() => setHoja("vista")}>
-          Vista: {vista.tabla ? "tabla" : "tarjetas"}
-        </Chip>
-      </Chips>
+      {/* Los chips de la fila de contexto de ui/Cabecera, como Lugares del front (OL-457): Filtros con su cuenta y sin flecha; Orden y Vista, que
+          eligen un valor, con la flecha de la ciudad. */}
+      <Chip variante="contexto" cuenta={puestos} icono={<IconoFiltros width={16} height={16} />} onClick={() => setHoja("filtros")}>
+        Filtros
+      </Chip>
+      <Chip variante="contexto" activo={vista.orden !== "puntaje"} fin={<IconoCaret width={12} height={12} />} onClick={() => setHoja("orden")}>
+        Orden: {nombreOrden}
+      </Chip>
+      <Chip variante="contexto" icono={vista.tabla ? <IconoDocumento width={16} height={16} /> : <IconoPersonas width={16} height={16} />} fin={<IconoCaret width={12} height={12} />} onClick={() => setHoja("vista")}>
+        Vista: {vista.tabla ? "tabla" : "tarjetas"}
+      </Chip>
       {hoja === "filtros" && <HojaFiltrosShowcase vista={vista} hechos={hechos} grupos={grupos} hoy={hoy} onCerrar={() => setHoja(null)} />}
       {hoja && hoja !== "filtros" && abierta && (
         <Hoja etiqueta={abierta.titulo} titulo={abierta.titulo} onCerrar={() => setHoja(null)}>

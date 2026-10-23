@@ -41,14 +41,14 @@ export default function RedesFicha({ artistaId, slug, lecturas, hoy }: { artista
           </li>
         )}
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" onClick={() => setHoja("lectura")}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" onClick={() => setHoja("lectura")}>
             <IconoMas width={20} height={20} />
             <b>Añadir lectura</b>
             <small>Las cifras de una red, leídas hoy</small>
           </button>
         </li>
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" onClick={() => setHoja("csv")}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" onClick={() => setHoja("csv")}>
             <IconoDocumento width={20} height={20} />
             <b>Importar CSV</b>
             <small>El archivo de la rutina, con varios artistas a la vez</small>

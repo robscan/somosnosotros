@@ -7,13 +7,13 @@
 .lista {
   margin-top: var(--espacio-4);
 }
-/* La fila de admin con una línea más, para la barra de la búsqueda que corre. */
+/* El renglón de Ajustes (`ui/Renglon` `.ajuste`) con una línea más, para la barra de la búsqueda que corre. */
 .filaCiudad {
   grid-template-areas:
-    "icono etiqueta accion"
-    "icono detalle accion"
-    "icono error error"
-    "icono barra barra";
+    "foto titulo accion"
+    "foto meta accion"
+    "foto cuerpo cuerpo"
+    "foto barra barra";
 }
 .filaCiudad > b {
   min-width: 0;
@@ -53,7 +53,7 @@
 }
 /* «Ocultar» una detectada (respuesta 6): la salida que no compite con «Abrir», en la línea de abajo. */
 .ocultar {
-  grid-area: error;
+  grid-area: cuerpo;
   justify-self: start;
   min-height: var(--toque-min);
   padding: 0 2px;
@@ -154,6 +154,10 @@
 .cabeza {
   text-wrap: balance;
 }
+/* El estado va al principio de la línea (OL-456): sin el aire de la etiqueta que sigue a un nombre (OL-457). */
+.cabeza > span:first-child {
+  margin-left: 0;
+}
 .enlaceTarjeta {
   grid-area: accion;
   justify-self: start;
@@ -232,7 +236,7 @@
 /* ---------- la línea de abajo de una fila, y Corridas ---------- */
 /* La línea de lo que hay que decidir y la barra de avance van debajo del detalle, en el área de abajo de la fila. */
 .linea {
-  grid-area: error;
+  grid-area: cuerpo;
   margin-top: 2px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
@@ -241,8 +245,10 @@
 .linea.alerta {
   color: var(--error);
 }
+/* En el renglón de Ajustes, el cuerpo cruza las tres columnas: la barra empieza bajo el texto, no bajo el icono. */
 .avance {
-  grid-area: error;
+  grid-area: cuerpo;
+  grid-column: 2 / -1;
   margin-top: var(--espacio-1);
 }
 /* La píldora verde de «Abierta» y «Terminada»; la roja de «Falló». Las demás (violeta, naranja, gris) son las de admin. */

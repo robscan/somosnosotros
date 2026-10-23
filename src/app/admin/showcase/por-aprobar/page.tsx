@@ -76,11 +76,11 @@ export default async function PorAprobar() {
           </p>
           <ul className={renglon.tarjeta}>
             <li>
-              <Link href={RUTA_SHOWCASE} className={admin.fila}>
+              <Link href={RUTA_SHOWCASE} className={renglon.ajuste}>
                 <IconoBuscar width={20} height={20} />
                 <b>Investigar desde la lista</b>
                 <small>Filtra, selecciona y manda a investigar</small>
-                <span className={admin.total}>
+                <span>
                   <IconoChevronDerecha />
                 </span>
               </Link>

@@ -33,7 +33,6 @@ import {
   type Hechos,
 } from "@/lib/showcaseFiltros";
 import { borrarGrupo, guardarGrupo, renombrarGrupo } from "./accionesGrupos";
-import admin from "../admin.module.css";
 import s from "./showcase.module.css";
 
 const artistas = (n: number) => `${n} ${n === 1 ? "artista" : "artistas"}`;
@@ -196,7 +195,7 @@ function HojaGrupo({ f, grupo, n, onCerrar }: { f: Filtros; grupo: Grupo | null;
       <p className={hojaCss.nota}>Guarda los filtros, no a las personas: quien los cumpla después entra solo. Sale primero en la hoja Filtros.</p>
       <ul className={`${renglon.tarjeta} ${s.resumen}`}>
         <li>
-          <div className={admin.fila}>
+          <div className={renglon.ajuste}>
             <IconoFiltros width={20} height={20} />
             <b>{resumenFiltros(f)}</b>
             <small>Hoy, {artistas(n)}</small>

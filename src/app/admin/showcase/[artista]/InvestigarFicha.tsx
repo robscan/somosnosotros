@@ -42,11 +42,11 @@ export default function InvestigarFicha({ artistaId, slug, nombre, ciudad, texto
     <>
       <ul className={renglon.tarjeta}>
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" data-ayuda="investigar" onClick={() => setAbierta(true)}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" data-ayuda="investigar" onClick={() => setAbierta(true)}>
             <IconoBuscar width={20} height={20} />
             <b>Investigar</b>
             <small>{texto}</small>
-            <span className={admin.total}>
+            <span>
               <IconoCaret width={16} height={16} />
             </span>
             {avance != null && (

@@ -242,11 +242,11 @@ export default function Hallazgos({ grupos, hoy, modo, cuando = null }: { grupos
           <Fragment key={g.artista.id}>
             <ul className={`${renglon.tarjeta} ${s.quien}`} id={anclaArtista(g.artista.id)} aria-label={g.artista.nombre}>
               <li>
-                <Link href={g.artista.href} className={`${admin.fila} ${s.filaArtista}`}>
+                <Link href={g.artista.href} className={`${renglon.ajuste} ${s.filaArtista}`}>
                   <Imagen src={g.artista.foto ?? SIN_FOTO_REDONDA} alt="" className={s.fotoChica} width={40} height={40} sizes="40px" />
                   <b>{g.artista.nombre}</b>
                   <small>{detalleArtista(g.artista.disciplina, g.artista.estado, suma, totalConTodo(a.valores, a.obra, quedan, hoy))}</small>
-                  <span className={admin.total}>
+                  <span>
                     {quedan.length > 0 && <b className={s.cuenta}>{quedan.length}</b>}
                     <IconoChevronDerecha />
                   </span>

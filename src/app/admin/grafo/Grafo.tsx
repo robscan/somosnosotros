@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { useVolver } from "@/components/ui/Atras";
+import { AtrasIcono } from "@/components/ui/Atras";
 import Ayuda from "@/components/ui/Ayuda";
-import { IconoChevronIzquierda } from "@/components/ui/Iconos";
 import type { Grafo as DatosGrafo } from "@/lib/grafo";
 import { actualizarGrafo } from "./acciones";
 import { AYUDA, RUTA_MANUAL } from "./ayuda";
@@ -24,7 +23,6 @@ import styles from "./Grafo.module.css";
 export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; yo: number | null; calculadoEn: string }) {
   const raiz = useRef<HTMLDivElement>(null);
   const [sinWebgl, setSinWebgl] = useState(false);
-  const volver = useVolver("/admin");
   const router = useRouter();
   const [actualizando, actualizar] = useTransition();
 
@@ -55,9 +53,8 @@ export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; y
   return (
     <main ref={raiz} className={styles.app} data-tema="oscuro">
       <header className={styles.barra}>
-        <Link href="/admin" className={styles.atras} onClick={volver} aria-label="Volver a Administración">
-          <IconoChevronIzquierda />
-        </Link>
+        {/* El Atrás de las fichas del front (OL-457): el redondo de 44, blanco sobre lo oscuro, como sobre la portada de una ficha. */}
+        <AtrasIcono href="/admin" texto="Administración" tamano="control" relieve="elevado" />
         <h1 data-ayuda="pantalla">Grafo cultural</h1>
         <div className={styles.cifras} data-g="cifras" data-ayuda="cifras" />
         <div className={styles.fps} data-g="fps" data-ayuda="fps">

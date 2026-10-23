@@ -57,7 +57,7 @@
   align-items: center;
   gap: var(--espacio-2);
   min-height: var(--alto-barra);
-  padding: env(safe-area-inset-top, 0px) var(--espacio-4) 0 var(--espacio-2);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   border-bottom: 1px solid var(--g-borde);
   background: var(--g-fondo);
   z-index: var(--z-pegajoso);
@@ -66,7 +66,10 @@
   font-size: var(--letra-xl);
   white-space: nowrap;
 }
-.atras,
+/* El Atrás (ui/Atras `AtrasIcono`, elevado): su chevron en tinta, como sobre la portada de una ficha (`Ficha.module.css` `.barra`). */
+.barra > a:first-child {
+  color: var(--texto);
+}
 .icono {
   display: grid;
   place-items: center;

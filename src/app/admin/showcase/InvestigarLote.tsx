@@ -80,14 +80,14 @@ export default function InvestigarLote(props: Props) {
         <li>
           <button
             type="button"
-            className={`${admin.fila} ${s.boton}`}
+            className={`${renglon.ajuste} ${s.boton}`}
             aria-haspopup="dialog"
             onClick={() => setAbierta(true)}
           >
             <IconoBuscar width={20} height={20} />
             <b>Investigar</b>
             <small>{texto}</small>
-            <span className={admin.total}>
+            <span>
               <IconoCaret width={16} height={16} />
             </span>
             {avance != null && (
@@ -270,7 +270,7 @@ export function HojaLote({
       {elegidos ? (
         <ul className={`${renglon.tarjeta} ${s.resumen}`}>
           <li>
-            <div className={admin.fila}>
+            <div className={renglon.ajuste}>
               <IconoPersonas width={20} height={20} />
               <b>
                 {grupo.n === 1

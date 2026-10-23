@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Boton, { claseBoton } from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
+import Cabecera from "@/components/ui/Cabecera";
 import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import { IconoChevronDerecha, IconoDescarga, IconoPendiente } from "@/components/ui/Iconos";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -95,17 +96,19 @@ export default function VistaCandidatos({
   const loteEnCurso = resumen && resumen.enCurso > 0 ? resumen : null;
   return (
     <>
+      {/* La cabecera de las listas del front (ui/Cabecera, OL-457): Filtros, Orden y Vista en su fila; debajo, las disciplinas y lo puesto. */}
+      <Cabecera contexto={<OpcionesLista vista={vista} hechos={hechos} grupos={grupos ?? []} hoy={hoy} />}>
+        <Chips ariaLabel="Filtrar por disciplina">
+          {chipsDisciplina(todos).map((d) => (
+            <Chip key={d.valor} activo={vista.disciplina === d.valor} href={hrefShowcase({ ...sinPagina, disciplina: d.valor })}>
+              {d.etiqueta}
+              <Cuenta n={d.n} />
+            </Chip>
+          ))}
+        </Chips>
+        <FiltrosPuestos vista={vista} grupos={grupos} hechos={hechos} hoy={hoy} />
+      </Cabecera>
       <Buscador valor={vista.q ?? ""} placeholder="Buscar artista" ariaLabel="Buscar artista del showcase" />
-      <OpcionesLista vista={vista} hechos={hechos} grupos={grupos ?? []} hoy={hoy} />
-      <Chips ariaLabel="Filtrar por disciplina">
-        {chipsDisciplina(todos).map((d) => (
-          <Chip key={d.valor} activo={vista.disciplina === d.valor} href={hrefShowcase({ ...sinPagina, disciplina: d.valor })}>
-            {d.etiqueta}
-            <Cuenta n={d.n} />
-          </Chip>
-        ))}
-      </Chips>
-      <FiltrosPuestos vista={vista} grupos={grupos} hechos={hechos} hoy={hoy} />
       <ListaSeleccionable
         cifras={lineaCifras(todos.length, conteos, filtrando ? filtrados.length : null, pasan)}
         seleccionable={!vista.tabla && filtrados.length > 0}
@@ -158,14 +161,14 @@ function RenglonPorAprobar({ inv, hoy }: { inv: Investigaciones; hoy: string }) 
   return (
     <ul className={`${renglon.tarjeta} ${s.aprobar}`}>
       <li>
-        <Link href={hrefPorAprobar()} className={admin.fila}>
+        <Link href={hrefPorAprobar()} className={renglon.ajuste}>
           <IconoPendiente width={20} height={20} />
           <b>Por aprobar</b>
           <small>
             {plural(n, "evidencia", "evidencias")} de {plural(ids.length, "artista", "artistas")}
             {fin ? ` · las trajo la rutina ${cuandoFue(diaDe(fin), hoy)}` : ""}
           </small>
-          <span className={admin.total}>
+          <span>
             <b className={s.cuenta}>{n}</b>
             <IconoChevronDerecha />
           </span>

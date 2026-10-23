@@ -37,11 +37,11 @@ export default function Pendientes({ iniciales, error, porRevisar = [] }: { inic
             return (
               <li key={p.corrida}>
                 {/* OL-446: las evidencias del showcase van a «Por aprobar»; las propuestas de las rutinas, a su bandeja. */}
-                <Link href={p.tipo === "showcase" ? p.href : `/admin/ciudades/propuestas/${p.corrida}`} className={styles.fila}>
+                <Link href={p.tipo === "showcase" ? p.href : `/admin/ciudades/propuestas/${p.corrida}`} className={renglon.ajuste}>
                   <Icono width={20} height={20} />
                   <b>{p.titulo}</b>
                   <small>{p.detalle}</small>
-                  <span className={styles.total}>
+                  <span>
                     {p.n}
                     <IconoChevronDerecha />
                   </span>

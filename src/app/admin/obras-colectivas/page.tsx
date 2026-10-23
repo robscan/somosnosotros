@@ -57,7 +57,7 @@ export default async function ObrasColectivas() {
         <ul className={renglon.tarjeta}>
           {obras.map((o) => (
             <li key={o.id}>
-              <Link href={`/admin/obras-colectivas/${o.id}`} className={styles.fila}>
+              <Link href={`/admin/obras-colectivas/${o.id}`} className={renglon.ajuste}>
                 <IconoPincel width={20} height={20} />
                 <b>{o.nombre}</b>
                 {/* Un lugar puede tener varias obras con el tiempo (founder, 2026-09-21): la fecha y hora en que se
@@ -65,7 +65,7 @@ export default async function ObrasColectivas() {
                 <small>
                   {o.lugarNombre} · {o.estado === "abierta" ? "Abierta" : "Cerrada"} · {formatearCuando(o.creadoEn, null, new Date(), o.zona)}
                 </small>
-                <span className={styles.total}>
+                <span>
                   <IconoChevronDerecha />
                 </span>
               </Link>
