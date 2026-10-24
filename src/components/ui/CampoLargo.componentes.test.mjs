@@ -32,7 +32,7 @@ before(async () => {
       const q = new URLSearchParams(location.search);
       const texto = q.has('largo') ? Array.from({ length: 60 }, (_, i) => 'Línea ' + i).join('\\n') : 'Hola\\nmundo';
       createRoot(document.getElementById('root')).render(
-        <form><input aria-label="Título" /><CampoLargo id="texto" name="texto" etiqueta="Texto (opcional)" defaultValue={texto} maxLength={2000} mostrarContador /></form>
+        <form><input aria-label="Título" /><CampoLargo id="texto" name="texto" etiqueta="Texto (opcional)" defaultValue={texto} maxLength={2000} mostrarContador contadorSiempre={q.has('siempre')} /></form>
       );
     `,
     },
@@ -173,4 +173,22 @@ test("Listo cierra y deja el renglón con el texto", async (t) => {
   await p.getByRole("button", { name: "Texto (opcional)" }).waitFor();
   assert.equal(await p.locator("input[type=hidden][name=texto]").inputValue(), "Hola\nmundo");
   assert.equal(redondo(await p.evaluate(() => scrollY)), 0, "la página de debajo no se movió");
+});
+
+// OL-458 (bitácora 490): el texto de Instagram lleva el contador siempre a la vista (`contadorSiempre`), cerrado y abierto, y se mueve al
+// escribir; sin él, con un texto corto no sale (al 75 %, como siempre).
+test("contadorSiempre: el contador se ve desde el primer carácter, cerrado y abierto", async (t) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  t.after(() => context.close());
+  const p = await context.newPage();
+  p.setDefaultTimeout(5000);
+  await p.goto(origin + "?siempre=1");
+  const renglon = p.getByRole("button", { name: "Texto (opcional)" });
+  assert.match(await renglon.innerText(), /10\/2000/);
+  await renglon.click();
+  await p.getByRole("dialog").waitFor();
+  await p.keyboard.type("!!");
+  assert.match(await p.getByRole("dialog").innerText(), /12\/2000/);
+  await p.goto(origin);
+  assert.doesNotMatch(await p.getByRole("button", { name: "Texto (opcional)" }).innerText(), /\/2000/);
 });

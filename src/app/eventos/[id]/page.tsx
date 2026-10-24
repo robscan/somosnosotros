@@ -4,6 +4,9 @@ import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
+import { cuandoSePublico } from "@/app/admin/instagram/datos";
+import { HojaInstagramDeFicha, RenglonPublicarInstagram } from "@/components/instagram/PublicarDesdeFicha";
+import { sePuedePublicar } from "@/lib/instagram/elegir";
 import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
@@ -386,6 +389,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const miEstado = await cargarMiEstado(e.id, actual?.perfil.id ?? null);
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
+  // OL-458: «Publicar en Instagram» en el «···», solo la administración y solo lo que está por venir (`sePuedePublicar`); un evento que ya pasó
+  // no lo ofrece. Si ya se publicó, el renglón dice cuándo.
+  const otros = e as unknown as { termina?: string; cancelado?: boolean; borrador?: boolean; retirado_por_admin?: boolean };
+  const publicable = esAdmin && sePuedePublicar({ inicio: e.inicio, termina: otros.termina ?? e.fin ?? e.inicio, zona: e.zona, clase: e.clase ?? "puntual", visible: e.visible, cancelado: otros.cancelado, borrador: otros.borrador, retirado_por_admin: otros.retirado_por_admin, sesiones: e.sesiones ?? null }, new Date());
+  const clienteIg = publicable ? await clienteServidor() : null;
+  const yaEnInstagram = clienteIg ? (await clienteIg.from("instagram_publicaciones").select("creado_en").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string }>()).data : null;
   // Con horario por día (OL-311) cada día lleva sus horas; si se editó el evento por el formulario de siempre y ya no coinciden, se ignoran.
   const sesiones = sesionesVigentes(e, e.sesiones);
   // Cómo ocurre (OL-321; doc 55 §3): lo ligado por su clase, la línea de cuándo de una exposición y de un festival, y «Me interesa» sin «Voy».
@@ -601,6 +610,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </>
         )}
         {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
+        {publicable && <RenglonPublicarInstagram publicado={yaEnInstagram ? cuandoSePublico(yaEnInstagram.creado_en, new Date(), e.zona).toLowerCase() : null} />}
         {esAdmin && (
           <li>
             <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
@@ -631,6 +641,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </li>
         )}
       </BarraFicha>
+      {publicable && <HojaInstagramDeFicha eventoId={e.id} />}
       <Heroe
         portada={portada}
         alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`}
