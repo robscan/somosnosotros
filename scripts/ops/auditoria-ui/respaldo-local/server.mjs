@@ -307,6 +307,21 @@ const servidor = http.createServer(async (req, res) => {
   // 127.0.0.1) y aquí contestan ciudades y municipios escritos a mano (`LUGARES_MAPBOX`). Nunca llega un token real.
   if (ruta === "/mapbox/search/geocode/v6/forward") return responder(res, 200, mapboxIda(url.searchParams.get("q"), Number(url.searchParams.get("limit") || 6)));
   if (ruta === "/mapbox/search/geocode/v6/reverse") return responder(res, 200, mapboxVuelta(Number(url.searchParams.get("latitude")), Number(url.searchParams.get("longitude"))));
+  // OL-458: la API de Instagram, de mentira, para recorrer «Publicar en Instagram» sin tocar la real: la app la pide desde el servidor con
+  // `INSTAGRAM_API_URL=http://127.0.0.1:<puerto>/graph` (solo acepta 127.0.0.1) y un token inventado. Contenedor → FINISHED → publicar → enlace;
+  // el cupo (3 de 100) y una página con ubicación para «Ubicación en Instagram». Con `INSTAGRAM_FALLA=permiso|cupo|imagen`, el contenedor falla.
+  const graph = ruta.match(/^\/graph\/v[0-9.]+\/(.+)$/);
+  if (graph) {
+    const [primero, segundo] = graph[1].split("/");
+    if (req.method === "POST") await leerCrudo(req);
+    const falla = { permiso: { code: 190 }, cupo: { code: 4, error_subcode: 2207042 }, imagen: { code: 9004, error_subcode: 2207052 } }[process.env.INSTAGRAM_FALLA ?? ""];
+    if (segundo === "media" && req.method === "POST") return falla ? responder(res, 400, { error: falla }) : responder(res, 200, { id: "900458" });
+    if (segundo === "media_publish") return responder(res, 200, { id: "17900000000000458" });
+    if (segundo === "content_publishing_limit") return responder(res, 200, { data: [{ quota_usage: 3, config: { quota_total: 100 } }] });
+    if (primero === "900458") return responder(res, 200, { id: "900458", status_code: "FINISHED" });
+    if (primero === "17900000000000458") return responder(res, 200, { id: "17900000000000458", permalink: "https://www.instagram.com/p/DEMO458C/" });
+    return responder(res, 200, { id: "108000000000459", name: "Oaxaca, Oaxaca", location: { city: "Oaxaca" } });
+  }
   // La cuenta de quien pide (OL-341): la del token de la sesión (Ana por omisión; Marcos con `cookieDe(MARCOS)`).
   const sub = subDe(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
   // Auth
@@ -372,6 +387,14 @@ const servidor = http.createServer(async (req, res) => {
     const salida = cambiadas.map((fila) => proyectar(tabla, fila, parseSelect(url.searchParams.get("select")), []));
     if (quiereObjeto(req)) return salida.length === 1 ? responder(res, 200, salida[0]) : responder(res, 406, { code: "PGRST116", message: `${salida.length} filas` });
     return responder(res, 200, salida);
+  }
+  // OL-458: lo publicado en Instagram y las ubicaciones se guardan en memoria (otro arranque empieza limpio), para ver «Ya en Instagram» y el
+  // renglón de la ciudad después de los toques. Los permisos reales, en PostgreSQL (`supabase/tests/pg/instagram.test.mjs`).
+  if ((tabla === "instagram_publicaciones" || tabla === "instagram_ubicaciones") && req.method === "POST") {
+    const nuevas = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean).map((f) => (tabla === "instagram_publicaciones" ? { id: crypto.randomUUID(), etiquetas: [], creado_en: new Date().toISOString(), publicado_por: sub, ...f } : { actualizado_en: new Date().toISOString(), actualizado_por: sub, ...f }));
+    if (tabla === "instagram_ubicaciones") tablas[tabla] = tablas[tabla].filter((u) => !nuevas.some((n) => n.tipo === u.tipo && n.clave === u.clave));
+    tablas[tabla].push(...nuevas);
+    return responder(res, 201, quiereObjeto(req) ? nuevas[0] : nuevas);
   }
   const deLaRutina = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean);
   if (tabla === "eventos" && req.method === "POST" && deLaRutina.length && deLaRutina.every((e) => e.origen === "rutina-agendas")) {

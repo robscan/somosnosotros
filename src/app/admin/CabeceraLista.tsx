@@ -27,7 +27,7 @@ const PALABRAS: Record<SeccionPanel, { una: string; varias: string; nota: string
 const cuantos = (s: SeccionPanel, n: number) => (n === 0 ? `Sin ${PALABRAS[s].varias}` : n === 1 ? `Ver 1 ${PALABRAS[s].una}` : `Ver ${n} ${PALABRAS[s].varias}`);
 
 /** Recuerda la ciudad elegida en las cuatro listas mientras la app está abierta: una galleta sin fecha (de sesión); «todas» la borra. */
-function recordarCiudad(slug: string | null) {
+export function recordarCiudad(slug: string | null) {
   document.cookie = slug ? `${GALLETA_CIUDAD}=${slug}; path=/admin; SameSite=Lax` : `${GALLETA_CIUDAD}=; path=/admin; max-age=0; SameSite=Lax`;
 }
 
@@ -101,9 +101,10 @@ export default function CabeceraLista({ seccion, lista, conteos, ciudades }: Pro
 }
 
 /** La hoja de ciudades de la app (`components/Ciudad.tsx`): un renglón por ciudad con su cuenta y ✓ en la elegida; con más de 8, su campo con ✕. */
-function HojaCiudades({ seccion, ciudades, elegida, onElegir, onCerrar }: { seccion: SeccionPanel; ciudades: CiudadPanel[]; elegida: string | null; onElegir: (slug: string | null) => void; onCerrar: () => void }) {
+export function HojaCiudades({ seccion, palabras, ciudades, elegida, onElegir, onCerrar }: { seccion?: SeccionPanel; palabras?: { una: string; varias: string; nota: string }; ciudades: CiudadPanel[]; elegida: string | null; onElegir: (slug: string | null) => void; onCerrar: () => void }) {
   const [texto, setTexto] = useState("");
-  const { una, varias, nota } = PALABRAS[seccion];
+  // OL-458: Instagram la usa con sus palabras («Cuenta los eventos de los próximos 7 días de cada ciudad»).
+  const { una, varias, nota } = palabras ?? PALABRAS[seccion ?? "eventos"];
   const titulo = `Ciudades con ${varias}`;
   const buscado = normalizarNombre(texto);
   const filas = ciudades.filter((c) => normalizarNombre(c.nombre).includes(buscado));

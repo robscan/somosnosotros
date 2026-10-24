@@ -95,6 +95,15 @@ lista (lo propuesto en contorno discontinuo, lo fijado relleno, «sin datos»), 
 fijada con «Volver al propuesto», la ficha y la hoja de Aaron Cadena con «sin datos», la tabla a 1280, e imprime el CSV para el consejo con sus
 columnas de propuesto y fijado. Respaldo en el puerto 8879, sin arranque propio.
 
+Administración › Instagram (OL-458, bitácora 490): el respaldo contesta `instagram_sugerencias` y `ciudad_slug` (la regla de la base: por venir en
+7 días, exposiciones y festivales en curso que terminan después de hoy, talleres con una sesión por delante), trae dos publicaciones y la ubicación de
+San Luis Potosí, y guarda en memoria lo que se publica y las ubicaciones. También hace de API de Instagram DE MENTIRA en `/graph/v23.0/…`
+(contenedor → FINISHED → publicar → enlace, el cupo y una página con ubicación; `INSTAGRAM_FALLA=permiso|cupo|imagen` hace fallar el contenedor):
+la app la usa solo con `INSTAGRAM_API_URL=http://127.0.0.1:<puerto>/graph` (cualquier otra dirección se ignora) y un token inventado. `npm run
+medir` mide la lista y su hoja (s46, s47). `capturar-admin-instagram-codigo.mjs` saca las capturas `codigo-*` con toques reales (portada, lista,
+hoja de ciudades, la hoja de vista previa, quitar una etiqueta, el texto, historia, publicar, la ficha y su «···», un evento pasado, la ubicación de
+una ciudad, escritorio) y mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889. `capturar-admin-instagram.mjs` es la del prototipo.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

@@ -166,6 +166,15 @@ PASOS["admin-anadir"] = async (page) => {
   await page.getByRole("dialog", { name: "Añadir ciudad" }).waitFor();
   await aquietar(page);
 };
+// OL-458: Administración › Instagram con la hoja «Publicar en Instagram» abierta (el primer evento por publicar): la imagen ya dibujada.
+PASOS["admin-instagram-hoja"] = async (page) => {
+  await page.locator("main li a").first().click();
+  const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
+  await hoja.waitFor();
+  await hoja.locator("img").first().waitFor();
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] img')].every((i) => i.complete));
+  await aquietar(page);
+};
 
 // ---------- procesos ----------
 const hijos = [];
