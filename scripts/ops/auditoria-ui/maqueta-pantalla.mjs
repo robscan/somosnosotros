@@ -90,8 +90,17 @@ const PANTALLAS = [
   { id: "front-lugares-filtros", url: "/lugares", sesion: true, paso: "hoja-filtros" },
   // OL-457, parte B: el manual del showcase y la ficha pública de un artista con su menú (par de la ficha del showcase).
   { id: "admin-showcase-manual", url: "/admin/showcase/manual", sesion: true, cuenta: "admin" },
+  // OL-458: publicar en Instagram. La lista de eventos de Administración con su hoja de ciudades, la ficha de un evento con el «···» abierto
+  // (cuenta de administración). Crear cartel no se puede guardar: con el respaldo su página responde «Esto ya no está».
+  { id: "admin-eventos-hoja-ciudad", url: "/admin/eventos", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "admin-evento-menu", url: "/eventos/concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", sesion: true, cuenta: "admin", paso: "menu-acciones" },
 ];
 const PASOS = {
+  // OL-458: el «···» de la barra de una ficha (ui/MenuAcciones).
+  "menu-acciones": async (page) => {
+    await page.getByRole("button", { name: "Más acciones" }).first().click();
+    await page.getByRole("dialog", { name: "Más acciones" }).waitFor();
+  },
   // OL-456: la hoja de ciudades de una lista de Administración (el chip «Todas las ciudades») y la hoja Filtros (de Administración o de Lugares).
   "admin-hoja-ciudad": async (page) => {
     await page.getByRole("button", { name: "Todas las ciudades" }).click();

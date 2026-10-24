@@ -11,6 +11,11 @@
 // salen el armazón y la barra. OL-431 (Ciudades v2) le suma Ciudades, su hoja, la bandeja, Corridas y la hoja de ciudades de Artistas:
 //   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/ciudades-v2.html \
 //     --pantallas=admin,admin-personas,admin-persona-hoja,admin-lugares,admin-grafo,admin-ciudades,admin-ciudades-hoja,admin-propuestas,admin-corridas,artistas-hoja-ciudad
+// OL-458 (Instagram) suma `--cuerpos=a,b`: el <body> entero de esas maquetas, tal cual, en la marca /*@CUERPOS*/ (por id; las imágenes de más de
+// 60 KB se vuelven a comprimir a 720 de ancho y los `action` de formulario de React salen), para pintar una pantalla de la app que no es de
+// Administración (la ficha de un evento con su «···») sin dibujarla:
+//   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/admin-instagram.html \
+//     --pantallas=admin,admin-personas,admin-eventos,admin-eventos-hoja-ciudad,admin-evento-menu --cuerpos=admin-evento-menu
 // OL-443 (Showcase v2) le suma la lista del Showcase, su ficha y su hoja de Estado; de la lista salen también las fotos de las tarjetas (IMG.fotos):
 //   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/showcase-v2.html \
 //     --pantallas=admin,admin-personas,admin-persona-hoja,admin-lugares,admin-grafo,admin-ciudades,admin-ciudades-hoja,admin-showcase,admin-showcase-ficha,admin-showcase-estado
@@ -91,7 +96,25 @@ if (PANTALLAS.includes("admin-showcase")) {
   }
 }
 
-// 6. Al prototipo.
+// 6. OL-458: los cuerpos enteros de las maquetas pedidas con `--cuerpos=` (para pantallas que no son de Administración).
+const opcionCuerpos = process.argv.find((a) => a.startsWith("--cuerpos="));
+let CUERPOS = null;
+if (opcionCuerpos) {
+  const sharp = requerir("sharp");
+  CUERPOS = {};
+  for (const id of opcionCuerpos.slice("--cuerpos=".length).split(",").filter(Boolean)) {
+    const html = leer(id);
+    let cuerpo = html.slice(html.indexOf(">", html.indexOf("<body")) + 1, html.lastIndexOf("</body>"));
+    for (const uri of new Set([...cuerpo.matchAll(/data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+/g)].map((m) => m[0]).filter((u) => u.length > 60000))) {
+      const bytes = Buffer.from(uri.slice(uri.indexOf(",") + 1), "base64");
+      const chica = await sharp(bytes).resize({ width: 720, withoutEnlargement: true }).jpeg({ quality: 72 }).toBuffer();
+      cuerpo = cuerpo.split(uri).join("data:image/jpeg;base64," + chica.toString("base64"));
+    }
+    CUERPOS[id] = cuerpo.replace(/ action="javascript:[^"]*"/g, "");
+  }
+}
+
+// 7. Al prototipo.
 const js = (x) => JSON.stringify(x).replace(/<\//g, "<\\/");
 let proto = fs.readFileSync(PROTO, "utf8");
 const poner = (marca, valor) => {
@@ -104,6 +127,7 @@ poner("ICONOS", js(ICONOS));
 poner("ENV", js(ENV));
 poner("BARRA", js(BARRA));
 poner("IMG", js(IMG));
+if (CUERPOS) poner("CUERPOS", js(CUERPOS));
 const a = '<template id="maqueta-css"><style>', b = "</style></template>";
 const i = proto.indexOf(a), j = proto.indexOf(b);
 if (i < 0 || j < 0) throw new Error("falta <template id=maqueta-css>");
