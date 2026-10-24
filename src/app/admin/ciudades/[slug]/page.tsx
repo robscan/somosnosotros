@@ -38,7 +38,8 @@ import {
 } from "@/lib/ciudadesAdmin";
 import { diaLocal } from "@/lib/fechas";
 import { trazoTendencia } from "@/lib/panel";
-import { usuarioActual } from "@/lib/supabase/servidor";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import UbicacionInstagram from "@/components/instagram/UbicacionInstagram";
 import Reintentar from "../../Reintentar";
 import { cargarDatosCiudad, cargarExtras, cargarPanelCiudades, conCifras, pedirPasoSiHayVaradas } from "../consultas";
 import TarjetaBusqueda from "../TarjetaBusqueda";
@@ -62,7 +63,13 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/admin/ciudades/${slug}`)}`);
   if (actual.perfil.rol !== "admin") redirect("/");
-  const [panel, extras] = await Promise.all([cargarPanelCiudades(), cargarExtras()]);
+  const supabase = await clienteServidor();
+  const [panel, extras, ubicacion] = await Promise.all([
+    cargarPanelCiudades(),
+    cargarExtras(),
+    supabase?.from("instagram_ubicaciones").select("nombre, pagina_id").eq("tipo", "ciudad").eq("clave", slug).maybeSingle<{ nombre: string | null; pagina_id: string }>(),
+  ]);
+  const ubicacionIg = ubicacion?.data ? (ubicacion.data.nombre ?? ubicacion.data.pagina_id) : null;
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
@@ -108,6 +115,8 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
       <p className={`${styles.nota} ${css.cabeza}`}>
         <span className={PILDORA[estado]}>{ETIQUETA_ESTADO[estado]}</span> {pegado(cabeceraCiudad({ estado: ciudad.estado, creado_en: ciudad.creado_en, alias: extra.alias, parametros: extra.parametros }, b, ahora))}
       </p>
+      {/* OL-458: la ubicación de Instagram de la ciudad, guardada a mano una vez (decisión del founder al firmar). */}
+      <UbicacionInstagram tipo="ciudad" clave={slug} nombre={ciudad.nombre} guardada={ubicacionIg} />
       <ul className={`${styles.indicadores} ${css.tablero}`} aria-label={`Cómo va ${ciudad.nombre}`}>
         {n > 0 && (
           <li className={`${css.ancha} ${css.banda}`}>

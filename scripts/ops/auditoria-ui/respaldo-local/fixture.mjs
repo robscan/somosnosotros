@@ -1143,3 +1143,45 @@ export function mapboxVuelta(lat, lng) {
   const cerca = [...LUGARES_MAPBOX].sort((a, b) => d(a) - d(b))[0];
   return { features: cerca && d(cerca) < 0.36 ? [rasgo(cerca)] : [] };
 }
+
+// OL-458: publicar en Instagram desde Administración. El contrato de `instagram_sugerencias` y de `ciudad_slug` (migración 20261023140000) sobre
+// los eventos del respaldo, con la misma regla que la base (por venir en 7 días; exposiciones y festivales en curso que terminan después de hoy;
+// talleres con una sesión por delante; nunca lo oculto, cancelado, retirado ni un borrador); lo publicado (la Master Class y Susurros) y la
+// ubicación de San Luis Potosí. Todo inventado; los permisos reales, en PostgreSQL (`supabase/tests/pg/instagram.test.mjs`).
+tablas.instagram_publicaciones = [
+  { id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, media_id: "17900000000000001", permalink: "https://www.instagram.com/p/DEMO458A/", imagen: null, etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(1) },
+  { id: "eeee0458-0000-4000-8000-000000000002", evento_id: E.susurros, formato: "9x16", estado: "publicada", error: null, media_id: "17900000000000002", permalink: "https://www.instagram.com/p/DEMO458B/", imagen: null, etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(2) },
+];
+tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagina_id: "108000000000458", nombre: "San Luis Potosí", enlace: "https://www.facebook.com/demo", actualizado_por: ADMIN, actualizado_en: hace(3) }];
+const sugeribleIg = (e, t, ahora) => {
+  if (e.visible === false || e.borrador || e.retirado_por_admin || e.cancelado) return false;
+  const inicio = new Date(e.inicio);
+  if (inicio > ahora) return inicio <= new Date(ahora.getTime() + 7 * 86_400_000);
+  const dia = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: e.zona ?? ZONA }).format(d);
+  if (e.clase === "exposicion" || e.clase === "festival") return dia(new Date(e.termina ?? e.fin ?? e.inicio)) > dia(ahora);
+  if (e.clase === "taller") return t.eventos_sesiones.some((s) => s.evento_id === e.id && new Date(s.inicio) > ahora);
+  return false;
+};
+Object.assign(rpcs, {
+  ciudad_slug: ({ p_ciudad }) => slugCiudad(p_ciudad),
+  instagram_sugerencias: ({ p_ciudad = null }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return [];
+    const ahora = new Date();
+    return enCiudad(t.eventos, p_ciudad)
+      .filter((e) => sugeribleIg(e, t, ahora))
+      .sort((a, b) => a.inicio.localeCompare(b.inicio))
+      .map((e) => {
+        const l = t.lugares.find((x) => x.id === e.lugar_id);
+        const p = t.instagram_publicaciones.filter((x) => x.evento_id === e.id && x.estado === "publicada").sort((a, b) => b.creado_en.localeCompare(a.creado_en))[0];
+        return {
+          id: e.id, slug: e.slug ?? null, titulo: e.titulo, inicio: e.inicio, fin: e.fin ?? null, termina: e.termina ?? e.fin ?? e.inicio, zona: e.zona ?? ZONA, clase: e.clase ?? "puntual",
+          imagen: e.imagen ?? null, precio: e.precio ?? null, ciudad: slugCiudad(e.ciudad), ciudad_nombre: e.ciudad, lugar_id: e.lugar_id ?? null, lugar_nombre: l?.nombre ?? null,
+          lugar_redes: l?.redes ?? [], sitio_texto: e.sitio_texto ?? null,
+          van: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "voy").length,
+          interesa: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "me_interesa").length,
+          destacado: t.destacados.some((d) => d.evento_id === e.id && !d.quitado),
+          publicado_en: p?.creado_en ?? null, publicado_formato: p?.formato ?? null,
+        };
+      });
+  },
+});

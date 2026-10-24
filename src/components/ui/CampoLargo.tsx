@@ -14,6 +14,8 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   error?: string;
   describedBy?: string;
   mostrarContador?: boolean;
+  /** El contador a la vista desde el primer carácter (OL-458, el texto de Instagram); sin él, sale al 75 %. */
+  contadorSiempre?: boolean;
 };
 
 /**
@@ -28,7 +30,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
  * `<textarea>`: cerrado, un `<input type="hidden">` con el mismo `name` sigue llevando el valor al FormData del
  * formulario, controlado o no lo haya montado quien llama.
  */
-export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mostrarContador, ...resto }: Props) {
+export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mostrarContador, contadorSiempre = false, ...resto }: Props) {
   const { value, defaultValue, onChange, placeholder, name, ...campos } = resto;
   const [abierto, setAbierto] = useState(false);
   // Controlado (lo opcional de los pasos del evento: value+onChange), el valor de fuera manda siempre; sin controlar (Lugar,
@@ -71,7 +73,7 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
         >
           <span className={styles.filaEtiqueta}>
             <span className={styles.etiquetaRenglon}>{etiqueta}</span>
-            {mostrarContador && tope > 0 && <ContadorCaracteres valor={texto} tope={tope} error={error} />}
+            {mostrarContador && tope > 0 && <ContadorCaracteres valor={texto} tope={tope} error={error} siempre={contadorSiempre} />}
           </span>
           <span className={texto ? styles.resumen : styles.resumenVacio}>{texto || placeholder}</span>
           <IconoChevronDerecha width={18} height={18} className={styles.chevron} />
@@ -95,7 +97,7 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
     <div className={styles.capa} role="dialog" aria-label={etiqueta} style={visible ? { top: visible.top, height: visible.ventana, bottom: "auto", paddingBottom: visible.ventana - visible.height } : undefined}>
       <div className={styles.cabecera}>
         <h2>{etiqueta}</h2>
-        {mostrarContador && tope > 0 && <ContadorCaracteres valor={texto} tope={tope} error={error} />}
+        {mostrarContador && tope > 0 && <ContadorCaracteres valor={texto} tope={tope} error={error} siempre={contadorSiempre} />}
         <button type="button" className={styles.listo} onClick={() => setAbierto(false)}>
           Listo
         </button>
