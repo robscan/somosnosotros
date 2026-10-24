@@ -11,7 +11,7 @@ export async function run({ as, check, query }) {
     for (const [i, u] of [admin, autor, ligado, persona, otra].entries()) {
       await query('insert into auth.users(id,email,email_confirmed_at) values ($1,$2,now())', [u, i === 0 ? 'ol275-pruebas-admin@local.test' : `ol275-pruebas-${i}@local.test`]);
     }
-    for (let n = 1; n <= 30; n++) await query(
+    for (let n = 1; n <= 40; n++) await query(
       'insert into public.artistas(id,nombre,ciudad,foto,creado_por,visible) values ($1,$2,$3,$4,$5,$6)',
       [id(n), `Artista OL275 ${n}`, n === 7 ? 'Otra OL275' : CIUDAD, n === 5 ? null : FOTO, autor, n !== 6],
     );
@@ -80,18 +80,19 @@ export async function run({ as, check, query }) {
     check(t.length === 12 && t[0].motivo === 'elegido' && t.at(-1).motivo === 'asistentes', 'tope12 mezcla elegidos, diez novedades y asistentes');
     await novedad(1119, 19, 'youtube', '8 hours');
     check((await tira()).length === 12, 'el grupo de novedades no rebasa12');
-    // Borde heredado de8: no cambiar la fuente editorial. La novena elección puede entrar por novedad.
-    await query('delete from public.destacados where artista_id=any($1)', [Array.from({ length: 30 }, (_, i) => id(i + 1))]);
-    for (let a = 20; a <= 28; a++) await query("insert into public.destacados(artista_id,hasta,creado_en) values ($1,now()+interval '7 days',now()-$2*interval '1 minute')", [id(a), a]);
-    await novedad(1128, 28, 'youtube', '0 hours');
+    // Borde heredado de la tira (12 desde OL-460): no cambiar la fuente editorial. La elección 13 queda fuera de la tira; con el carril
+    // lleno de elegidos no cabe, y en cuanto hay hueco entra por su novedad.
+    await query('delete from public.destacados where artista_id=any($1)', [Array.from({ length: 40 }, (_, i) => id(i + 1))]);
+    for (let a = 20; a <= 32; a++) await query("insert into public.destacados(artista_id,hasta,creado_en) values ($1,now()+interval '7 days',now()-$2*interval '1 minute')", [id(a), a]);
+    await novedad(1132, 32, 'youtube', '0 hours');
     t = await tira();
-    check(t.filter(n => n.motivo === 'elegido').length === 8 && t.find(n => n.id === id(28))?.motivo === 'novedad', 'noveno elegido fuera de la tira8 entra como novedad');
+    check(t.length === 12 && t.filter(n => n.motivo === 'elegido').length === 12 && !t.find(n => n.id === id(32)), 'elección 13 fuera de la tira de 12: el carril lleno de elegidos no la muestra');
     await query('update public.artistas set foto=null where id=$1', [id(20)]);
     t = await tira();
-    check(t.filter(n => n.motivo === 'elegido').length === 7 && t.find(n => n.id === id(28))?.motivo === 'novedad', 'foto filtrada después de8 conserva la limitación existente');
-    await query("insert into public.destacados(artista_id,hasta) values ($1,now()+interval '7 days')", [id(29)]);
-    await novedad(1129, 29, 'youtube', '168 hours');
-    check((await tira()).find(n => n.id === id(29))?.motivo === 'elegido' && !(await tira()).find(n => n.id === id(29))?.novedad_id, 'al vencer la novedad un elegido permanece sin sello');
+    check(t.filter(n => n.motivo === 'elegido').length === 11 && t.find(n => n.id === id(32))?.motivo === 'novedad', 'foto filtrada después de 12 conserva la limitación existente: la elección 13 entra como novedad');
+    await query("insert into public.destacados(artista_id,hasta) values ($1,now()+interval '7 days')", [id(33)]);
+    await novedad(1133, 33, 'youtube', '168 hours');
+    check((await tira()).find(n => n.id === id(33))?.motivo === 'elegido' && !(await tira()).find(n => n.id === id(33))?.novedad_id, 'al vencer la novedad un elegido permanece sin sello');
     const { rows: funciones } = await query(`select prosecdef,provolatile,proconfig,
       not exists(select 1 from aclexplode(proacl) where grantee=0 and privilege_type='EXECUTE') as sin_public
       from pg_proc where oid in ('public.novedades_recientes_artistas(text,uuid[])'::regprocedure,'public.artistas_destacados_novedades(text)'::regprocedure)`);

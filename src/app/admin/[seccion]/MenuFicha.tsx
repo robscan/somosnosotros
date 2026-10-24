@@ -15,7 +15,7 @@ import styles from "../admin.module.css";
 /**
  * Los tres puntos de cada renglón (decisión 10): el mismo menú de las fichas, con ocultar al final y aparte. Ocultar no
  * pregunta: el menú es la capa y la etiqueta "Oculto" del renglón, que llega de nuevo del servidor, es la evidencia.
- * «Destacar» o «Quitar de destacados» sale de lo decidido, como en la ficha, no de la tira de 8.
+ * «Destacar» o «Quitar de destacados» sale de lo decidido, como en la ficha, no de la tira de 12 (OL-460).
  */
 export default function MenuFicha({ seccion, id, nombre, visible, destacable, decidido, enTira }: { seccion: "lugares" | "eventos" | "artistas"; id: string; nombre: string; visible: boolean; destacable: boolean; decidido: Decidido; enTira: Destacado | null }) {
   const [abierto, setAbierto] = useState(false);

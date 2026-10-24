@@ -99,10 +99,12 @@ export async function run({ as, check, query }) {
     await asistir(p2, 1, 'voy'); await asistir(p3, 1, 'voy');
     check((await tira('lugares')).find((r) => r.id === lugar)?.motivo === 'asistentes', 'lugar con 3 personas entra como antes');
 
-    // Tope de 8.
-    for (let n = 20; n < 30; n++) { await evento(n, '3 days'); await asistir(p4, n, 'voy'); }
+    // Tope de 12 (OL-460): ya entran 6 (9, 1, 10, 2, 3 y 4); con 7 más son 13 candidatos y salen 12.
+    for (let n = 20; n < 27; n++) { await evento(n, '3 days'); await asistir(p4, n, 'voy'); }
     const t = await tira();
-    check(t.length === 8 && t[0].id === id(9), 'tope de 8 con el elegido primero', t.length);
+    check(t.length === 12 && t[0].id === id(9), 'tope de 12 con 13 candidatos y el elegido primero', t.length);
+    // Sale el de menos puntos: el 3 o el 4 (6 visitas); el resto (Voy y Me interesa) se queda.
+    check([id(1), id(2), id(10), ...Array.from({ length: 7 }, (_, i) => id(20 + i))].every((x) => t.some((r) => r.id === x)) && t.filter((r) => r.motivo === 'vistas').length === 1, 'con 13 candidatos queda fuera uno de los de menos puntos');
 
     // Permisos: nadie fuera del servidor cuenta vistas ni lee las tablas.
     for (const [rol, sujeto] of [['anon', null], ['authenticated', p1], ['authenticated', admin]]) {
