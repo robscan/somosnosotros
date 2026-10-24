@@ -98,6 +98,14 @@ await foto(page, "22-D-error-imagen", { ir: ["D", "imagen", "telefono"] });
 await foto(page, "23-D-error-permiso", { ir: ["D", "permiso", "telefono"] });
 await foto(page, "24-E-ficha-menu", { ir: ["E", "menu", "telefono"] });
 await foto(page, "25-E-hoja-desde-la-ficha", { ir: ["E", "hoja", "telefono"] });
+await foto(page, "28-C-etiquetas", { ir: ["C", "etiquetas", "telefono"], hoja: 2000 });
+await foto(page, "29-C-etiqueta-quitada", { ir: ["C", "quitada", "telefono"], hoja: 2000 });
+await foto(page, "30-C-sin-ubicacion", { ir: ["C", "sinubic", "telefono"], hoja: 2000 });
+await foto(page, "31-D-ya-empezo", { ir: ["D", "empezo", "telefono"] });
+await foto(page, "32-E-menu-evento-pasado", { ir: ["E", "paso", "telefono"] });
+await foto(page, "33-F-ciudad-falta", { ir: ["F", "falta", "telefono"] });
+await foto(page, "34-F-hoja-ubicacion", { ir: ["F", "hoja", "telefono"] });
+await foto(page, "35-F-ubicacion-guardada", { ir: ["F", "guardada", "telefono"] });
 await ctx.close();
 
 // Escritorio: 1280×800 a escala 1.
@@ -228,7 +236,44 @@ const menu = await dialogo.locator("li b").allInnerTexts();
 comprobar(`el «···»: «Publicar en Instagram» después de «Destacar» (${menu.join(" · ")})`, menu.indexOf("Publicar en Instagram") === menu.indexOf("Destacar") + 1);
 await toca(dialogo.getByRole("button", { name: /Publicar en Instagram/ }));
 comprobar("abre la hoja con el cartel de la ficha", (await dialogo.getAttribute("aria-label")) === "Publicar en Instagram" && (await dialogo.locator(".ps-vista").getAttribute("alt")).includes("Orquesta Sinfónica"));
-// 9 · Las notas en el teléfono: a 390 de ancho, la hoja sube con «Notas» y no hay desplazamiento horizontal.
+// 9 · Etiquetas: Delirium Pollum etiqueta al Teatro de la Paz y a Pimpolina; quitar una la saca de la foto y del texto.
+await pageR.evaluate(() => window.prototipo.ir("C", "etiquetas"));
+await pageR.waitForTimeout(300);
+const tags = () => dialogo.getByRole("group", { name: "Etiquetas en la foto" }).getByRole("button").allInnerTexts();
+comprobar(`etiqueta al lugar y al artista (${(await tags()).join(" · ")})`, JSON.stringify(await tags()) === JSON.stringify(["@teatrodelapazslp", "@pimpolina.clown"]));
+comprobar("la ubicación es la del lugar", (await dialogo.locator(".ps-ubicacion").innerText()).includes("Ubicación: Teatro de la Paz"));
+const textoPim = () => pageR.evaluate(() => window.prototipo.texto("pimpolina"));
+comprobar("el texto los menciona y dice «📍 Teatro de la Paz @teatrodelapazslp · San Luis Potosí»", (await textoPim()).includes("📍 Teatro de la Paz @teatrodelapazslp · San Luis Potosí") && (await textoPim()).includes("Con @pimpolina.clown"));
+comprobar("el texto invita a seguir la cuenta y a la app", (await textoPim()).includes("Sigue a @smsnstrsapp para enterarte de más planes. Este y otros eventos, en somosnosotrxs.org (enlace en la bio)."));
+await toca(dialogo.getByRole("button", { name: "Quitar @pimpolina.clown" }));
+comprobar("quitar @pimpolina.clown la saca de la foto y del texto (queda su nombre)", JSON.stringify(await tags()) === JSON.stringify(["@teatrodelapazslp"]) && (await textoPim()).includes("Con Pimpolina") && !(await textoPim()).includes("@pimpolina.clown"));
+await toca(dialogo.getByRole("button", { name: "Volver a etiquetar" }));
+comprobar("«Volver a etiquetar» la repone", (await tags()).length === 2);
+comprobar("el contador se ve siempre (con el texto corto)", /^\d+\/2200$/.test((await dialogo.locator('[class*="ContadorCaracteres"]').innerText()).trim()));
+// 10 · Sin ubicación en Ciudad de México: «Ponerla» lleva al panel de la ciudad; guardar el enlace.
+await pageR.evaluate(() => window.prototipo.ir("C", "sinubic"));
+await pageR.waitForTimeout(300);
+comprobar("Danzón: «Sin ubicación: falta la de Ciudad de México en Ciudades»", (await dialogo.locator(".ps-ubicacion").innerText()).includes("Sin ubicación: falta la de Ciudad de México en Ciudades."));
+await toca(dialogo.getByRole("button", { name: "Ponerla" }));
+comprobar("«Ponerla» abre el panel de la ciudad con «Ubicación en Instagram»", (await tel.getByRole("button", { name: /Ubicación en Instagram/ }).count()) === 1);
+await toca(tel.getByRole("button", { name: /Ubicación en Instagram/ }));
+comprobar("sin enlace, el botón dice «Falta el enlace»", (await dialogo.locator("[data-guardar-ubic]").innerText()) === "Falta el enlace");
+await toca(dialogo.locator("#campo-ubic"));
+await pageR.keyboard.type("facebook.com/OaxacaMx", { delay: 5 });
+comprobar("con enlace, «Guardar» y la ✕", (await dialogo.locator("[data-guardar-ubic]").innerText()) === "Guardar" && (await dialogo.getByRole("button", { name: "Borrar lo escrito" }).count()) === 1);
+await toca(dialogo.locator("[data-guardar-ubic]"));
+comprobar("guardada: el renglón lo dice", (await tel.getByRole("button", { name: /Ubicación en Instagram/ }).innerText()).includes("la usan sus publicaciones"));
+// 11 · Solo lo que está por venir.
+await pageR.evaluate(() => window.prototipo.ir("B", "slp"));
+await pageR.waitForTimeout(300);
+comprobar("el mercado de libros (ya empezó a las 9:00) no sale en la lista; LXS COLOCAOS (exposición abierta) sí", (await tel.getByRole("link", { name: /Mercado de libros/ }).count()) === 0 && (await tel.getByRole("link", { name: /LXS COLOCAOS/ }).count()) === 1);
+await pageR.evaluate(() => window.prototipo.ir("D", "empezo"));
+await pageR.waitForTimeout(300);
+comprobar("si empieza antes de publicar: aviso y el botón «Ya empezó», quieto", (await dialogo.getByRole("alert").innerText()).includes("ya empezó") && (await dialogo.locator("[data-publicar]").innerText()) === "Ya empezó" && (await dialogo.locator("[data-publicar]").isDisabled()));
+await pageR.evaluate(() => window.prototipo.ir("E", "paso"));
+await pageR.waitForTimeout(300);
+comprobar("el «···» de un evento que ya pasó no trae «Publicar en Instagram»", (await dialogo.getByRole("button", { name: /Publicar en Instagram/ }).count()) === 0 && (await dialogo.locator("li").count()) > 0);
+// 12 · Las notas en el teléfono: a 390 de ancho, la hoja sube con «Notas» y no hay desplazamiento horizontal.
 const chica = await browser.newPage({ viewport: { width: 390, height: 844 } });
 await chica.goto(PROTO, { waitUntil: "load" });
 await chica.waitForFunction(() => document.documentElement.dataset.pintado);

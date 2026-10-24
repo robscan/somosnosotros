@@ -15,7 +15,7 @@
 // 60 KB se vuelven a comprimir a 720 de ancho y los `action` de formulario de React salen), para pintar una pantalla de la app que no es de
 // Administración (la ficha de un evento con su «···») sin dibujarla:
 //   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/admin-instagram.html \
-//     --pantallas=admin,admin-personas,admin-eventos,admin-eventos-hoja-ciudad,admin-evento-menu --cuerpos=admin-evento-menu
+//     --pantallas=admin,admin-personas,admin-eventos,admin-eventos-hoja-ciudad,admin-evento-menu,admin-ciudad --cuerpos=admin-evento-menu,admin-ciudad
 // OL-443 (Showcase v2) le suma la lista del Showcase, su ficha y su hoja de Estado; de la lista salen también las fotos de las tarjetas (IMG.fotos):
 //   node scripts/ops/auditoria-ui/prototipo/meter-maqueta.mjs <carpeta> docs/rediseno/prototipos/showcase-v2.html \
 //     --pantallas=admin,admin-personas,admin-persona-hoja,admin-lugares,admin-grafo,admin-ciudades,admin-ciudades-hoja,admin-showcase,admin-showcase-ficha,admin-showcase-estado
