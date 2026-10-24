@@ -14,13 +14,18 @@ import { tituloCorto } from "./tituloCorto";
 
 /**
  * Destacados (docs/rediseno/20, firmado por el founder el 2026-09-16): arriba de la Agenda, de Lugares y de Artistas, lo
- * que elige la administración y lo que tiene al menos 3 «Voy». Qué entra y en qué orden lo decide la base
+ * que elige la administración y lo que tiene al menos 3 «Voy». Desde OL-459 (founder, 2026-10-23: «los eventos con un me
+ * interesa, voy o con más de 5 vistas se formen en destacados de manera automática»), un evento entra solo con 1 «Voy», 1
+ * «Me interesa» o 6 vistas de su ficha; lugares y artistas siguen igual. Qué entra y en qué orden lo decide la base
  * (`tira_destacados`); aquí, cómo se lee y cómo se dice.
  */
 export type TipoFicha = "evento" | "lugar" | "artista";
 export type Seccion = "eventos" | "lugares" | "artistas";
 /** Un renglón de la tira como llega de la base. */
-export type Destacado = { id: string; motivo: "elegido" | "asistentes"; hasta: string | null; van: number };
+/** Por qué está en la tira: lo eligió la administración, tiene «Voy» (`asistentes`), tiene «Me interesa» (`interes`) o más de 5
+ *  vistas (`vistas`). Los dos últimos solo en eventos (OL-459). */
+export type MotivoDestacado = "elegido" | "asistentes" | "interes" | "vistas";
+export type Destacado = { id: string; motivo: MotivoDestacado; hasta: string | null; van: number };
 /** Un destacado como lo ve el panel: con su nombre y su foto. */
 export type FilaDestacada = Destacado & { nombre: string; foto: string | null };
 /** El tipo de ficha de cada sección, y al revés. */
@@ -176,7 +181,9 @@ export function textoDestacar(tipo: TipoFicha, ahora = new Date(), zona = ZONA_I
 
 /** Por qué está destacada una ficha, en el menú y en el panel. */
 export function textoMotivo(d: Pick<Destacado, "motivo" | "hasta" | "van">, tipo: TipoFicha, ahora = new Date(), zona = ZONA_INICIAL): string {
-  if (d.motivo === "asistentes") return `Destacado: ${d.van} van${tipo === "evento" ? "" : " a sus eventos"}`;
+  if (d.motivo === "asistentes") return `Destacado: ${d.van} ${d.van === 1 ? "va" : "van"}${tipo === "evento" ? "" : " a sus eventos"}`;
+  if (d.motivo === "interes") return "Destacado: a alguien le interesa";
+  if (d.motivo === "vistas") return "Destacado: más de 5 visitas a su ficha";
   return d.hasta ? `Destacado ${hasta(d.hasta, ahora, zona)}` : "Destacado hasta que pase";
 }
 
@@ -212,7 +219,7 @@ export function puedeDestacarse(ficha: { visible: boolean; privado?: boolean; pa
 
 /**
  * El renglón «Destacar» del menú de una ficha y del panel. Está destacada si la administración la eligió (aunque no quepa
- * en la tira de 8) o si entra por asistentes y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido
+ * en la tira de 8) o si entra sola (por «Voy», «Me interesa» o vistas) y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido
  * y, si no hay nada decidido, de la tira.
  */
 export function opcionDestacar(tipo: TipoFicha, decidido: Decidido, enTira: Destacado | null, ahora = new Date(), zona = ZONA_INICIAL): { quitar: boolean; detalle: string } {
