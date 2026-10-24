@@ -59,6 +59,7 @@ import { funcionesHermanas, otrasFunciones, textoFuncion } from "@/lib/series";
 import { hrefSitio } from "@/lib/sitios";
 import { portadaDeFestival, proximoPorSede, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import ContarVista from "./ContarVista";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
 import RenglonCancelado, { AvisoCancelado } from "./MarcarCancelado";
@@ -564,6 +565,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       )}
       {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
+      {/* Las vistas que cuentan para Destacados (OL-459): no las de quien lo gestiona, ni de lo oculto o lo que ya pasó. */}
+      {!puedeEditar && e.visible && !paso && <ContarVista evento={e.id} />}
       <BarraFicha volver={{ href: "/", texto: "Agenda" }} titulo={e.titulo}>
         {puedeEditar && (
           <>

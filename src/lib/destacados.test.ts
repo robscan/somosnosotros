@@ -103,6 +103,10 @@ describe("textos del menú", () => {
   it("el motivo dice por qué y hasta cuándo", () => {
     expect(textoMotivo({ motivo: "asistentes", hasta: null, van: 14 }, "evento", AHORA)).toBe("Destacado: 14 van");
     expect(textoMotivo({ motivo: "asistentes", hasta: null, van: 5 }, "lugar", AHORA)).toBe("Destacado: 5 van a sus eventos");
+    // OL-459: un evento entra solo con 1 «Voy», 1 «Me interesa» o más de 5 vistas.
+    expect(textoMotivo({ motivo: "asistentes", hasta: null, van: 1 }, "evento", AHORA)).toBe("Destacado: 1 va");
+    expect(textoMotivo({ motivo: "interes", hasta: null, van: 0 }, "evento", AHORA)).toBe("Destacado: a alguien le interesa");
+    expect(textoMotivo({ motivo: "vistas", hasta: null, van: 0 }, "evento", AHORA)).toBe("Destacado: más de 5 visitas a su ficha");
     expect(textoMotivo({ motivo: "elegido", hasta: "2026-09-25T20:00:00Z", van: 0 }, "artista", AHORA)).toBe("Destacado hasta el vie 25 de sep");
     expect(textoMotivo({ motivo: "elegido", hasta: MANANA_19, van: 0 }, "lugar", AHORA)).toBe("Destacado hasta mañana");
     expect(textoMotivo({ motivo: "elegido", hasta: null, van: 0 }, "evento", AHORA)).toBe("Destacado hasta que pase");
