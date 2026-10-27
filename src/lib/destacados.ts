@@ -219,7 +219,7 @@ export function puedeDestacarse(ficha: { visible: boolean; privado?: boolean; pa
 
 /**
  * El renglón «Destacar» del menú de una ficha y del panel. Está destacada si la administración la eligió (aunque no quepa
- * en la tira de 8) o si entra sola (por «Voy», «Me interesa» o vistas) y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido
+ * en la tira de 12) o si entra sola (por «Voy», «Me interesa» o vistas) y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido
  * y, si no hay nada decidido, de la tira.
  */
 export function opcionDestacar(tipo: TipoFicha, decidido: Decidido, enTira: Destacado | null, ahora = new Date(), zona = ZONA_INICIAL): { quitar: boolean; detalle: string } {
