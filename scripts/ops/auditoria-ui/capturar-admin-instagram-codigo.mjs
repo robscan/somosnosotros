@@ -3,6 +3,7 @@
 // (`INSTAGRAM_API_URL=http://127.0.0.1:<puerto>/graph`, token inventado): nunca se llama a Instagram. Chrome real (playwright-core), 390×844 a 2×;
 // una a 1280×800. Toques reales: clics por coordenadas. Mide los textos cortados (`scrollWidth > clientWidth`) a 320, 390 y 430.
 //   node scripts/ops/auditoria-ui/capturar-admin-instagram-codigo.mjs <raíz del árbol> <carpeta de salida>
+// Desde OL-461 (bitácora 493) el botón dice «Publicar» y el resultado «Instagram: publicado · Ver» (con la página de Facebook de mentira también).
 // SIN_BUILD=1 usa el `.next` que ya hay, compilado por este script (el respaldo va en el puerto 8889). Correrlo en un árbol SIN `.env`.
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -48,7 +49,7 @@ const respaldo = `http://127.0.0.1:${pr}`;
 const base = `http://127.0.0.1:${pa}`;
 const reloj = { RELOJ_FIJO: AHORA, TZ: "America/Mexico_City", NODE_OPTIONS: `--require=${path.join(AQUI, "reloj-fijo.cjs")}` };
 const app = { NEXT_PUBLIC_SUPABASE_URL: respaldo, NEXT_PUBLIC_SUPABASE_ANON_KEY: "llave-anon-inventada", NEXT_PUBLIC_MAPBOX_TOKEN: "pk.inventado", SUPABASE_SERVICE_ROLE_KEY: "llave-servicio-inventada" };
-const instagram = { INSTAGRAM_API_URL: `${respaldo}/graph`, INSTAGRAM_TOKEN: "token-inventado", INSTAGRAM_USER_ID: "17841400000000458" };
+const instagram = { INSTAGRAM_API_URL: `${respaldo}/graph`, INSTAGRAM_TOKEN: "token-inventado", INSTAGRAM_USER_ID: "17841400000000458", FACEBOOK_PAGE_ID: "1374800000000461" };
 const r = lanzar([path.join(AQUI, "respaldo-local/server.mjs"), String(pr)], reloj);
 await esperar(`${respaldo}/rest/v1/eventos?select=id&limit=1`, r);
 if (!process.env.SIN_BUILD) {
@@ -148,7 +149,7 @@ try {
     await tocar(page, fila);
     const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
     await hoja.waitFor();
-    await hoja.getByRole("button", { name: "Publicar en Instagram" }).waitFor({ timeout: 15000 }).catch(async (e) => {
+    await hoja.getByRole("button", { name: "Publicar", exact: true }).waitFor({ timeout: 15000 }).catch(async (e) => {
       await page.screenshot({ path: path.join(SALIDA, "error-hoja.png") });
       console.log("HOJA:", await hoja.innerText(), "\nSERVIDOR:", s.registro());
       throw e;
@@ -182,10 +183,10 @@ try {
     await tocar(page, hoja.getByRole("button", { name: "Publicación 4:5" }));
     await imagenesListas(page);
     // Publicar (contra la API de mentira del respaldo).
-    await tocar(page, hoja.getByRole("button", { name: "Publicar en Instagram" }));
+    await tocar(page, hoja.getByRole("button", { name: "Publicar", exact: true }));
     await hoja.getByRole("status").waitFor({ timeout: 60000 });
     await foto(page, "codigo-10-publicado");
-    comprobar((await hoja.getByRole("status").innerText()).includes("Publicado en @smsnstrsapp") && (await hoja.getByRole("link", { name: "Ver en Instagram" }).getAttribute("href")) === "https://www.instagram.com/p/DEMO458C/", "publicado, con «Ver en Instagram»");
+    comprobar((await hoja.getByRole("status").innerText()).includes("Instagram: publicado") && (await hoja.getByRole("link", { name: "Ver en Instagram" }).getAttribute("href")) === "https://www.instagram.com/p/DEMO458C/", "publicado, con «Ver en Instagram» (desde OL-461: «Instagram: publicado · Ver»)");
     const pedidos = await (await fetch(`${respaldo}/__registro`)).json();
     const alGraph = pedidos.filter((l) => l.includes("/graph/"));
     console.log("     a la API de mentira:", alGraph.map((l) => l.replace(/access_token=[^&\s]+/, "access_token=…").slice(0, 110)).join(" | "));
@@ -210,7 +211,7 @@ try {
     await tocar(page, menu.getByRole("button", { name: /Publicar en Instagram/ }));
     const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
     await hoja.waitFor();
-    await hoja.getByRole("button", { name: "Publicar en Instagram" }).waitFor();
+    await hoja.getByRole("button", { name: "Publicar", exact: true }).waitFor();
     await imagenesListas(page);
     await foto(page, "codigo-13-hoja-desde-la-ficha");
     comprobar((await hoja.innerText()).includes("Sin cartel: un diseño de Crear cartel"), "sin cartel, el diseño de Crear cartel");

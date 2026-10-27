@@ -17,7 +17,7 @@ import "server-only";
 export const VERSION_GRAPH = "v23.0";
 /** La API. Solo para probar en local (el respaldo de `scripts/ops/auditoria-ui`, como `MAPBOX_API_URL`): `INSTAGRAM_API_URL`, y solo si es
  *  http://127.0.0.1; cualquier otra cosa se ignora y va a Facebook. */
-function base(): string {
+export function baseGraph(): string {
   const local = process.env.INSTAGRAM_API_URL;
   return local && /^http:\/\/127\.0\.0\.1:[0-9]{2,5}\/[a-z]+$/.test(local) ? `${local}/${VERSION_GRAPH}` : `https://graph.facebook.com/${VERSION_GRAPH}`;
 }
@@ -27,7 +27,7 @@ export type Pedido = { imagen: string; texto: string | null; etiquetas: string[]
 export type Resultado = { ok: true; mediaId: string; permalink: string | null; sinEtiquetas: boolean } | { ok: false; error: ErrorInstagram };
 export type Opciones = { traer?: typeof fetch; token?: string; usuario?: string; esperar?: (ms: number) => Promise<void>; intentos?: number };
 
-type RespuestaGraph = { id?: string; status_code?: string; permalink?: string; error?: { code?: number; error_subcode?: number; type?: string } };
+export type RespuestaGraph = { id?: string; status_code?: string; permalink?: string; error?: { code?: number; error_subcode?: number; type?: string } };
 
 /** Las credenciales de la cuenta (de las opciones en las pruebas; si no, del entorno). */
 function credenciales(o: Opciones): { token: string; usuario: string } | null {
@@ -46,10 +46,11 @@ export function claveDeError(e: RespuestaGraph["error"] | undefined): ErrorInsta
   return "otro";
 }
 
-async function llamar(traer: typeof fetch, metodo: "GET" | "POST", ruta: string, params: Record<string, string>, token: string): Promise<RespuestaGraph> {
+/** Una llamada a la Graph API (también la usa el cliente de la página de Facebook, `lib/facebook/api`). Nunca lanza: la red caída es el código -1. */
+export async function llamarGraph(traer: typeof fetch, metodo: "GET" | "POST", ruta: string, params: Record<string, string>, token: string): Promise<RespuestaGraph> {
   const cuerpo = new URLSearchParams({ ...params, access_token: token });
   try {
-    const r = metodo === "GET" ? await traer(`${base()}${ruta}?${cuerpo}`, { method: "GET", cache: "no-store" }) : await traer(`${base()}${ruta}`, { method: "POST", body: cuerpo, cache: "no-store" });
+    const r = metodo === "GET" ? await traer(`${baseGraph()}${ruta}?${cuerpo}`, { method: "GET", cache: "no-store" }) : await traer(`${baseGraph()}${ruta}`, { method: "POST", body: cuerpo, cache: "no-store" });
     const json = (await r.json().catch(() => ({}))) as RespuestaGraph;
     if (!r.ok && !json.error) return { error: { code: r.status } };
     return json;
@@ -71,7 +72,7 @@ async function crearContenedor(traer: typeof fetch, c: { token: string; usuario:
   else if (p.texto) params.caption = p.texto;
   if (conExtras && p.etiquetas.length) params.user_tags = JSON.stringify(etiquetasConPosicion(p.etiquetas, p.historia));
   if (conExtras && p.ubicacion && !p.historia) params.location_id = p.ubicacion;
-  return llamar(traer, "POST", `/${c.usuario}/media`, params, c.token);
+  return llamarGraph(traer, "POST", `/${c.usuario}/media`, params, c.token);
 }
 
 /** Publica una imagen (o una historia) en la cuenta de la marca. */
@@ -96,16 +97,16 @@ export async function publicar(p: Pedido, o: Opciones = {}): Promise<Resultado> 
   if (!contenedor.id) return { ok: false, error: claveDeError(contenedor.error) };
   // Esperar a que Instagram baje y revise la imagen.
   for (let i = 0, listo = false; !listo; i++) {
-    const estado = await llamar(traer, "GET", `/${contenedor.id}`, { fields: "status_code" }, c.token);
+    const estado = await llamarGraph(traer, "GET", `/${contenedor.id}`, { fields: "status_code" }, c.token);
     if (estado.error) return { ok: false, error: claveDeError(estado.error) };
     if (estado.status_code === "FINISHED") listo = true;
     else if (estado.status_code === "ERROR" || estado.status_code === "EXPIRED") return { ok: false, error: "imagen" };
     else if (i >= (o.intentos ?? 20)) return { ok: false, error: "otro" };
     else await esperar(1500);
   }
-  const publicado = await llamar(traer, "POST", `/${c.usuario}/media_publish`, { creation_id: contenedor.id }, c.token);
+  const publicado = await llamarGraph(traer, "POST", `/${c.usuario}/media_publish`, { creation_id: contenedor.id }, c.token);
   if (!publicado.id) return { ok: false, error: claveDeError(publicado.error) };
-  const enlace = await llamar(traer, "GET", `/${publicado.id}`, { fields: "permalink" }, c.token);
+  const enlace = await llamarGraph(traer, "GET", `/${publicado.id}`, { fields: "permalink" }, c.token);
   const permalink = typeof enlace.permalink === "string" && /^https:\/\/(www\.)?instagram\.com\//.test(enlace.permalink) ? enlace.permalink : null;
   return { ok: true, mediaId: publicado.id, permalink, sinEtiquetas };
 }
@@ -114,7 +115,7 @@ export async function publicar(p: Pedido, o: Opciones = {}): Promise<Resultado> 
 export async function cupo(o: Opciones = {}): Promise<{ usadas: number; tope: number } | null> {
   const c = credenciales(o);
   if (!c) return null;
-  const r = (await llamar(o.traer ?? fetch, "GET", `/${c.usuario}/content_publishing_limit`, { fields: "quota_usage,config" }, c.token)) as RespuestaGraph & {
+  const r = (await llamarGraph(o.traer ?? fetch, "GET", `/${c.usuario}/content_publishing_limit`, { fields: "quota_usage,config" }, c.token)) as RespuestaGraph & {
     data?: { quota_usage?: number; config?: { quota_total?: number } }[];
   };
   const d = r.data?.[0];
@@ -149,6 +150,6 @@ export type Pagina = { id: string; nombre: string };
 export async function leerPagina(idONombre: string, o: Opciones = {}): Promise<Pagina | null> {
   const c = credenciales(o);
   if (!c || !/^[A-Za-z0-9.\-]{1,80}$/.test(idONombre)) return null;
-  const r = (await llamar(o.traer ?? fetch, "GET", `/${idONombre}`, { fields: "id,name,location" }, c.token)) as RespuestaGraph & { name?: string; location?: unknown };
+  const r = (await llamarGraph(o.traer ?? fetch, "GET", `/${idONombre}`, { fields: "id,name,location" }, c.token)) as RespuestaGraph & { name?: string; location?: unknown };
   return r.id && /^[0-9]{5,40}$/.test(r.id) && r.location ? { id: r.id, nombre: typeof r.name === "string" ? r.name.slice(0, 120) : r.id } : null;
 }

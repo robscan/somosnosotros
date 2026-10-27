@@ -63,6 +63,22 @@ describe("POST /api/vista (OL-459)", () => {
     expect((await pedir({ evento: EVENTO, relleno: "x".repeat(200) })).status).toBe(413);
     expect(tareas).toHaveLength(0);
   });
+  it("OL-461: con la marca de origen de un enlace de la marca, cuenta con la red y el medio", async () => {
+    const r = await pedir({ evento: EVENTO, origen: "facebook", medio: "post" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
+    expect(r.status).toBe(204);
+    await correr();
+    expect(rpc).toHaveBeenCalledWith("contar_vista_evento_origen", { p_evento: EVENTO, p_visitante: "abcdefabcdefabcdefabcdefabcdef12", p_usuario: null, p_origen: "facebook", p_medio: "post" });
+  });
+  it("OL-461: un origen que no es de la lista cuenta como siempre, sin origen", async () => {
+    await pedir({ evento: EVENTO, origen: "tiktok", medio: "post" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
+    await correr();
+    expect(rpc).toHaveBeenCalledWith("contar_vista_evento", { p_evento: EVENTO, p_visitante: "abcdefabcdefabcdefabcdefabcdef12", p_usuario: null });
+  });
+  it("OL-461: la red sin medio válido va sin medio", async () => {
+    await pedir({ evento: EVENTO, origen: "instagram", medio: "<b>" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
+    await correr();
+    expect(rpc).toHaveBeenCalledWith("contar_vista_evento_origen", expect.objectContaining({ p_origen: "instagram", p_medio: null }));
+  });
   it("sin la llave de servicio (local): responde igual y no cuenta", async () => {
     conLlave = false;
     expect((await pedir({ evento: EVENTO })).status).toBe(204);

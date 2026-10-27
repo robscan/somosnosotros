@@ -1150,7 +1150,11 @@ export function mapboxVuelta(lat, lng) {
 // ubicación de San Luis Potosí. Todo inventado; los permisos reales, en PostgreSQL (`supabase/tests/pg/instagram.test.mjs`).
 tablas.instagram_publicaciones = [
   { id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, media_id: "17900000000000001", permalink: "https://www.instagram.com/p/DEMO458A/", imagen: null, etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(1) },
-  { id: "eeee0458-0000-4000-8000-000000000002", evento_id: E.susurros, formato: "9x16", estado: "publicada", error: null, media_id: "17900000000000002", permalink: "https://www.instagram.com/p/DEMO458B/", imagen: null, etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(2) },
+  { id: "eeee0458-0000-4000-8000-000000000002", evento_id: E.susurros, formato: "9x16", estado: "publicada", error: null, media_id: "17900000000000002", permalink: "https://www.instagram.com/p/DEMO458B/", imagen: "https://respaldo.local.test/fotos/instagram-demo-458b.jpg", etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(2) },
+];
+// OL-461: la Master Class ya está también en Facebook; Susurros, no (su renglón ofrece «Publicar en Facebook»).
+tablas.facebook_publicaciones = [
+  { id: "eeee0461-0000-4000-8000-000000000001", instagram_id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, post_id: "1374800000000461_122100000000000001", permalink: "https://www.facebook.com/1374800000000461/posts/122100000000000001", publicado_por: ADMIN, creado_en: hace(1) },
 ];
 tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagina_id: "108000000000458", nombre: "San Luis Potosí", enlace: "https://www.facebook.com/demo", actualizado_por: ADMIN, actualizado_en: hace(3) }];
 const sugeribleIg = (e, t, ahora) => {

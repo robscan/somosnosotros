@@ -12,6 +12,8 @@ const CORS = {
   "Access-Control-Expose-Headers": "Content-Range, Content-Type",
 };
 const registro = [];
+// OL-461: la falla de la página de Facebook de mentira (permiso | imagen | nada), que el recorrido cambia sin reiniciar (`/__falla-facebook?clave=`).
+let fallaFacebook = process.env.FACEBOOK_FALLA ?? "";
 
 // OL-413 (bitácora 444): la lectura de carteles sin llamar a la API de Anthropic. La app arranca con `ANTHROPIC_BASE_URL` apuntando a
 // `/anthropic` de este respaldo y una llave inventada; `POST /__lectura` deja lista la próxima lectura (`{ lectura, archivo }`: lo que
@@ -280,6 +282,10 @@ const servidor = http.createServer(async (req, res) => {
   registro.push(`${req.method} ${req.url}`);
   if (req.method === "OPTIONS") return responder(res, 204);
   if (ruta === "/__registro") return responder(res, 200, registro.slice(-200));
+  if (ruta === "/__falla-facebook") {
+    fallaFacebook = url.searchParams.get("clave") ?? "";
+    return responder(res, 200, { fallaFacebook });
+  }
   if (ruta === "/__lectura" && req.method === "POST") {
     siguiente = { lectura: null, archivo: null, ...((await leerCuerpo(req)) ?? {}) };
     return responder(res, 200, { ok: true });
@@ -313,7 +319,19 @@ const servidor = http.createServer(async (req, res) => {
   const graph = ruta.match(/^\/graph\/v[0-9.]+\/(.+)$/);
   if (graph) {
     const [primero, segundo] = graph[1].split("/");
-    if (req.method === "POST") await leerCrudo(req);
+    const params = req.method === "POST" ? new URLSearchParams(String(await leerCrudo(req))) : url.searchParams;
+    // OL-461: la página de Facebook, de mentira (la app la pide con `FACEBOOK_PAGE_ID` y el mismo token inventado): foto con texto → enlace;
+    // historia: foto sin publicar → photo_stories → enlace. Con `FACEBOOK_FALLA=permiso|imagen` (o `/__falla-facebook?clave=`), la foto falla
+    // (sin `pages_manage_posts`: 200). El texto que llega a la página queda en el registro, para comprobarlo.
+    const fallaFb = { permiso: { code: 200, message: "(#200) requires pages_manage_posts" }, imagen: { code: 324 } }[fallaFacebook];
+    const POST_FB = `${primero}_122100000000000461`;
+    if (segundo === "photos" && req.method === "POST") {
+      registro.push(`  facebook: ${JSON.stringify({ url: params.get("url"), message: params.get("message"), published: params.get("published") })}`);
+      if (fallaFb) return responder(res, 400, { error: fallaFb });
+      return params.get("published") === "false" ? responder(res, 200, { id: "122100000000000999" }) : responder(res, 200, { id: "122100000000000461", post_id: POST_FB });
+    }
+    if (segundo === "photo_stories" && req.method === "POST") return responder(res, 200, { success: true, post_id: POST_FB });
+    if (/^[0-9]+_[0-9]+$/.test(primero)) return responder(res, 200, { id: primero, permalink_url: `https://www.facebook.com/${primero.split("_")[0]}/posts/${primero.split("_")[1]}` });
     const falla = { permiso: { code: 190 }, cupo: { code: 4, error_subcode: 2207042 }, imagen: { code: 9004, error_subcode: 2207052 } }[process.env.INSTAGRAM_FALLA ?? ""];
     if (segundo === "media" && req.method === "POST") return falla ? responder(res, 400, { error: falla }) : responder(res, 200, { id: "900458" });
     if (segundo === "media_publish") return responder(res, 200, { id: "17900000000000458" });
@@ -390,8 +408,9 @@ const servidor = http.createServer(async (req, res) => {
   }
   // OL-458: lo publicado en Instagram y las ubicaciones se guardan en memoria (otro arranque empieza limpio), para ver «Ya en Instagram» y el
   // renglón de la ciudad después de los toques. Los permisos reales, en PostgreSQL (`supabase/tests/pg/instagram.test.mjs`).
-  if ((tabla === "instagram_publicaciones" || tabla === "instagram_ubicaciones") && req.method === "POST") {
-    const nuevas = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean).map((f) => (tabla === "instagram_publicaciones" ? { id: crypto.randomUUID(), etiquetas: [], creado_en: new Date().toISOString(), publicado_por: sub, ...f } : { actualizado_en: new Date().toISOString(), actualizado_por: sub, ...f }));
+  // OL-461: lo publicado en Facebook, igual (la regla de solo espejar lo que salió en Instagram, en `espejo-facebook.test.mjs`).
+  if ((tabla === "instagram_publicaciones" || tabla === "instagram_ubicaciones" || tabla === "facebook_publicaciones") && req.method === "POST") {
+    const nuevas = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean).map((f) => (tabla === "instagram_ubicaciones" ? { actualizado_en: new Date().toISOString(), actualizado_por: sub, ...f } : { id: crypto.randomUUID(), ...(tabla === "instagram_publicaciones" ? { etiquetas: [] } : {}), creado_en: new Date().toISOString(), publicado_por: sub, ...f }));
     if (tabla === "instagram_ubicaciones") tablas[tabla] = tablas[tabla].filter((u) => !nuevas.some((n) => n.tipo === u.tipo && n.clave === u.clave));
     tablas[tabla].push(...nuevas);
     return responder(res, 201, quiereObjeto(req) ? nuevas[0] : nuevas);

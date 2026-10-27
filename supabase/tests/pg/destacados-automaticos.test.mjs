@@ -70,7 +70,7 @@ export async function run({ as, check, query }) {
     const { rows: claves } = await query('select clave from public.vistas_evento where evento_id=$1', [id(3)]);
     check(claves.every((r) => /^[0-9a-f]{64}$/.test(r.clave) && !r.clave.includes(p4.replaceAll('-', ''))), 'la clave es un resumen: no guarda la cuenta ni la cookie');
     const { rows: cols } = await query("select column_name from information_schema.columns where table_schema='public' and table_name='vistas_evento' order by ordinal_position");
-    check(cols.map((r) => r.column_name).join() === 'evento_id,dia,clave', 'la tabla de vistas solo guarda evento, día y clave');
+    check(cols.map((r) => r.column_name).join() === 'evento_id,dia,clave,origen,medio', 'la tabla de vistas solo guarda evento, día, clave y, desde OL-461, la red y el medio del enlace');
 
     for (const [rol, sujeto] of [['anon', null], ['authenticated', p1], ['authenticated', admin], ['service_role', null]]) await as(rol, sujeto, async () => {
       const t = await tira();

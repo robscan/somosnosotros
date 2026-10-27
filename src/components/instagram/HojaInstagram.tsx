@@ -3,16 +3,35 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
 import CampoLargo from "@/components/ui/CampoLargo";
+import Casilla from "@/components/ui/Casilla";
 import { Chip, Chips } from "@/components/ui/Chip";
 import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
-import { IconoOk, IconoPin } from "@/components/ui/Iconos";
+import { IconoFacebook, IconoInstagram, IconoPin } from "@/components/ui/Iconos";
 import admin from "@/app/admin/admin.module.css";
-import { prepararInstagram, publicarEnInstagram, type Preparado, type Publicado } from "@/app/admin/instagram/acciones";
+import { prepararInstagram, publicarEnFacebook, publicarEnInstagram, type Espejo, type Preparado, type Publicado } from "@/app/admin/instagram/acciones";
+import { ESTADO_FACEBOOK, FRASES_FACEBOOK } from "@/lib/instagram/frases";
 import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, TOPE_CARACTERES } from "@/lib/instagram/texto";
 import styles from "./HojaInstagram.module.css";
 
 type Formato = "4x5" | "9x16";
+
+/** La última elección de «También en Facebook», en la sesión del navegador (OL-461). Sin almacenamiento, marcada. */
+const RECUERDO_FACEBOOK = "sn:instagram:facebook";
+function leerConFacebook(): boolean {
+  try {
+    return window.sessionStorage.getItem(RECUERDO_FACEBOOK) !== "0";
+  } catch {
+    return true;
+  }
+}
+function guardarConFacebook(si: boolean) {
+  try {
+    window.sessionStorage.setItem(RECUERDO_FACEBOOK, si ? "1" : "0");
+  } catch {
+    // sin almacenamiento: vale solo mientras la hoja está abierta
+  }
+}
 
 /**
  * La hoja «Publicar en Instagram» (OL-458, prototipo firmado `admin-instagram.html`, pantallas C y D; bitácora 490). La abren la lista de
@@ -21,6 +40,9 @@ type Formato = "4x5" | "9x16";
  * «Otro diseño»); a quién se etiqueta (chips con ✕); la ubicación; el texto ya armado (`ui/CampoLargo`, contador siempre a la vista); y un solo
  * botón. Publicando, el botón espera y la hoja no se cierra; publicado, la imagen y lo hecho con «Ver en Instagram»; un error, en una frase.
  * Las historias no llevan texto ni ubicación (Instagram no los publica en historias).
+ * OL-461 (bitácora 493): la casilla «También en Facebook» (marcada; recuerda la última elección en la sesión) y un solo botón «Publicar» que manda
+ * a las dos redes. El resultado, en dos líneas: «Instagram: publicado · Ver» y «Facebook: publicado · Ver» o su error llano; si Instagram falla
+ * no se intenta Facebook, y si Facebook falla Instagram queda publicado y el botón ofrece «Reintentar en Facebook».
  */
 export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eventoId: string; onCerrar: () => void; onPublicado?: () => void }) {
   const [prep, setPrep] = useState<Preparado | null>(null);
@@ -31,6 +53,12 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
   const [propio, setPropio] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Publicado | null>(null);
   const [publicando, empezar] = useTransition();
+  // La elección de esta vez; sin ella, la última de la sesión. Se lee al pintar: la casilla solo sale con la hoja ya preparada en el teléfono
+  // (nunca en lo que pinta el servidor), así que no cambia nada al hidratar.
+  const [elegido, setConFacebook] = useState<boolean | null>(null);
+  const conFacebook = elegido ?? leerConFacebook();
+  const [espejo, setEspejo] = useState<Espejo | null>(null);
+  const [reintentando, reintentar] = useTransition();
 
   useEffect(() => {
     let vivo = true;
@@ -49,14 +77,25 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
   const error = resultado && !resultado.ok ? resultado : null;
   const empezo = !!listo && (!listo.sePuede || error?.error === "empezo");
   const cerrar = () => {
-    if (!publicando) onCerrar();
+    if (!publicando && !reintentando) onCerrar();
   };
 
   const publicar = () =>
     empezar(async () => {
       if (!listo) return;
-      const r = await publicarEnInstagram({ eventoId: listo.id, formato, recorte, diseno, texto: formato === "4x5" ? texto : null, quitadas }).catch((): Publicado => ({ ok: false, error: "otro", mensaje: "No se pudo publicar. Vuelve a intentar en un momento; no se publicó nada." }));
+      const r = await publicarEnInstagram({ eventoId: listo.id, formato, recorte, diseno, texto: formato === "4x5" ? texto : null, quitadas, facebook: conFacebook }).catch((): Publicado => ({ ok: false, error: "otro", mensaje: "No se pudo publicar. Vuelve a intentar en un momento; no se publicó nada." }));
       setResultado(r);
+      if (r.ok) {
+        setEspejo(r.facebook);
+        onPublicado?.();
+      }
+    });
+
+  const reintentarFacebook = () =>
+    reintentar(async () => {
+      if (!listo) return;
+      const r = await publicarEnFacebook(listo.id, formato === "4x5" ? texto : null).catch((): Espejo => ({ ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro }));
+      setEspejo(r);
       if (r.ok) onPublicado?.();
     });
 
@@ -75,7 +114,13 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
   const alOpcion = () => (listo?.conCartel ? setRecorte((r) => !r) : setDiseno((d) => d + 1));
 
   let pie;
-  if (publicado) {
+  if (publicado && espejo && !espejo.ok && espejo.error !== "empezo") {
+    pie = (
+      <Boton type="button" onClick={reintentarFacebook} disabled={reintentando} aria-busy={reintentando || undefined}>
+        {reintentando ? "Publicando en Facebook…" : "Reintentar en Facebook"}
+      </Boton>
+    );
+  } else if (publicado) {
     pie = (
       <Boton type="button" variante="secundario" onClick={onCerrar}>
         Listo
@@ -85,7 +130,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
     const quieto = empezo || publicando || error?.error === "cupo";
     pie = (
       <Boton type="button" onClick={publicar} disabled={quieto} aria-busy={publicando || undefined}>
-        {empezo ? "Ya empezó" : publicando ? "Publicando…" : error?.error === "cupo" ? "Se puede otra vez mañana" : listo.publicado ? "Publicar otra vez" : "Publicar en Instagram"}
+        {empezo ? "Ya empezó" : publicando ? "Publicando…" : error?.error === "cupo" ? "Se puede otra vez mañana" : listo.publicado ? "Publicar otra vez" : "Publicar"}
       </Boton>
     );
   }
@@ -174,22 +219,56 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
             </p>
           )}
           {publicado ? (
-            <p className={admin.hecho} role="status">
-              <IconoOk />
-              <span>
-                {formato === "4x5" ? "Publicado" : "Historia publicada"} en @{CUENTA_INSTAGRAM}
-                {publicado.sinEtiquetas ? ". Instagram no dejó etiquetar o poner la ubicación: salió sin ellas." : ""}
-              </span>
-              {publicado.permalink && (
-                <a className={admin.enlace} href={publicado.permalink} target="_blank" rel="noopener noreferrer">
-                  Ver en Instagram
-                </a>
+            <div role="status">
+              <p className={admin.hecho}>
+                <IconoInstagram width={22} height={22} />
+                <span>Instagram: {formato === "4x5" ? "publicado" : "historia publicada"}</span>
+                {publicado.permalink && (
+                  <a className={admin.enlace} href={publicado.permalink} target="_blank" rel="noopener noreferrer" aria-label="Ver en Instagram">
+                    Ver
+                  </a>
+                )}
+              </p>
+              {espejo?.ok && (
+                <p className={admin.hecho}>
+                  <IconoFacebook width={22} height={22} />
+                  <span>Facebook: {formato === "4x5" ? "publicado" : "historia publicada"}</span>
+                  {espejo.permalink && (
+                    <a className={admin.enlace} href={espejo.permalink} target="_blank" rel="noopener noreferrer" aria-label="Ver en Facebook">
+                      Ver
+                    </a>
+                  )}
+                </p>
               )}
-            </p>
+              {espejo && !espejo.ok && (
+                <>
+                  <p className={`${admin.hecho} ${styles.falla}`}>
+                    <IconoFacebook width={22} height={22} />
+                    <span>
+                      Facebook: <em>{ESTADO_FACEBOOK[espejo.error]}</em>
+                    </span>
+                  </p>
+                  <p className={hoja.nota}>{espejo.mensaje}</p>
+                </>
+              )}
+              {publicado.sinEtiquetas && <p className={hoja.nota}>Instagram no dejó etiquetar o poner la ubicación: salió sin ellas.</p>}
+            </div>
           ) : (
             <>
               {listo.publicado && !empezo && <p className={hoja.nota}>Ya se publicó: {listo.publicado.formato === "4x5" ? "publicación" : "historia"}, {listo.publicado.cuando}.</p>}
-              {!empezo && <p className={hoja.nota}>Se publica en @{CUENTA_INSTAGRAM}.</p>}
+              {!empezo && (
+                <Casilla
+                  titulo="También en Facebook"
+                  detalle={formato === "4x5" ? "En la página Somos Nosotrxs, con el enlace a la ficha del evento." : "En las historias de la página Somos Nosotrxs."}
+                  marcada={conFacebook}
+                  disabled={publicando}
+                  onCambio={(si) => {
+                    setConFacebook(si);
+                    guardarConFacebook(si);
+                  }}
+                />
+              )}
+              {!empezo && <p className={`${hoja.nota} ${styles.trasCasilla}`}>Se publica en @{CUENTA_INSTAGRAM}{conFacebook ? " y en su página de Facebook" : ""}.</p>}
             </>
           )}
         </>
