@@ -71,7 +71,7 @@ import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 import { MARCA, tituloDePagina } from "@/lib/marca";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ accion?: string; error?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ accion?: string; error?: string; utm_source?: string; utm_medium?: string; utm_campaign?: string }> };
 type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null; sesiones?: SesionGuardada[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
@@ -348,16 +348,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
-  const { accion, error } = (await searchParams) ?? {};
+  const consulta = (await searchParams) ?? {};
+  const { accion, error } = consulta;
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
   // La dirección vieja (/eventos/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
   // porque es el mismo evento para siempre (OL-119, mismo criterio que artistas y lugares). Se preservan los
-  // parámetros con los que haya llegado.
+  // parámetros con los que haya llegado (y la marca de origen de un enlace de Instagram o Facebook, OL-461).
   if (id !== e.slug) {
     const p = new URLSearchParams();
     if (accion) p.set("accion", accion);
     if (error) p.set("error", error);
+    for (const k of ["utm_source", "utm_medium", "utm_campaign"] as const) {
+      const v = consulta[k];
+      if (typeof v === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(v)) p.set(k, v);
+    }
     const q = p.toString();
     permanentRedirect(`${hrefEvento(e)}${q ? `?${q}` : ""}`);
   }

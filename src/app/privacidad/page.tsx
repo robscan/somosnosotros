@@ -20,7 +20,7 @@ export default function Privacidad() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
-        <p className="subtitulo">Última actualización: 23 de octubre de 2026.</p>
+        <p className="subtitulo">Última actualización: 27 de octubre de 2026.</p>
 
         <h2>Quién responde por tus datos</h2>
         <p>
@@ -68,7 +68,7 @@ export default function Privacidad() {
         </p>
 
         <h2>Cookies</h2>
-        <p>Usamos la cookie de sesión que te mantiene dentro y, mientras entras con Apple o con Google, otra que dura 10 minutos y comprueba que la vuelta es tuya. Si no has entrado y abres la ficha de un evento, una más que dura un día: un número al azar para no contar dos veces tu visita. No dice quién eres y no sale del sitio. Ninguna cookie de rastreo ni de publicidad.</p>
+        <p>Usamos la cookie de sesión que te mantiene dentro y, mientras entras con Apple o con Google, otra que dura 10 minutos y comprueba que la vuelta es tuya. Si no has entrado y abres la ficha de un evento, una más que dura un día: un número al azar para no contar dos veces tu visita. No dice quién eres y no sale del sitio. Si llegas por un enlace nuestro en Instagram o Facebook, anotamos con esa visita de cuál red vino, nada más. Ninguna cookie de rastreo ni de publicidad.</p>
 
         <h2>Cambios</h2>
         <p>Si este aviso cambia, lo verás aquí con la fecha nueva. Si el cambio afecta a cómo usamos tus datos, te lo diremos por correo.</p>

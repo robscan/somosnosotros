@@ -104,6 +104,13 @@ medir` mide la lista y su hoja (s46, s47). `capturar-admin-instagram-codigo.mjs`
 hoja de ciudades, la hoja de vista previa, quitar una etiqueta, el texto, historia, publicar, la ficha y su «···», un evento pasado, la ubicación de
 una ciudad, escritorio) y mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889. `capturar-admin-instagram.mjs` es la del prototipo.
 
+El espejo a Facebook (OL-461, bitácora 493): el mismo `/graph/v23.0/…` hace de página de Facebook DE MENTIRA (`/{página}/photos` con o sin
+`published=false`, `/{página}/photo_stories` y el enlace de `<página>_<publicación>`), apunta en el registro lo que llega a la página (`  facebook:
+{url, message, published}`) y falla con `FACEBOOK_FALLA=permiso|imagen` o, sin reiniciar, con `/__falla-facebook?clave=permiso` (vacío la quita). Lo
+publicado en Facebook se guarda en memoria (`facebook_publicaciones`; la Master Class ya está, Susurros no). `capturar-espejo-facebook.mjs` saca las
+capturas de la bitácora 493 con toques reales (portada, «Ya en Instagram», la casilla y su recuerdo, publicar en las dos, «Publicar en Facebook»
+desde la lista, sin permiso y «Reintentar en Facebook», solo Instagram) y mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

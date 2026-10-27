@@ -33,8 +33,22 @@ export type FilaSugerencia = {
   publicado_formato: string | null;
 };
 
-/** Un renglón de la lista, ya dicho. */
-export type Sugerencia = { id: string; href: string; titulo: string; foto: string | null; cuando: string; donde: string; linea: string; publicado: boolean };
+/** Cómo va el espejo en Facebook de un evento ya publicado en Instagram (OL-461): publicado, el último error o nada todavía. */
+export type EstadoFacebook = { estado: "publicada" } | { estado: "error"; error: "permiso" | "imagen" | "otro" } | { estado: "nada" };
+
+/** Un renglón de la lista, ya dicho. `facebook`: solo en lo que ya está en Instagram. */
+export type Sugerencia = { id: string; href: string; titulo: string; foto: string | null; cuando: string; donde: string; linea: string; publicado: boolean; facebook: EstadoFacebook | null };
+
+/** El estado de Facebook de cada evento, de sus intentos (del más nuevo al más viejo): con uno publicado, publicado; si no, el último error. */
+export function estadosFacebook(filas: { evento_id: string; estado: string; error: string | null }[]): Map<string, EstadoFacebook> {
+  const m = new Map<string, EstadoFacebook>();
+  for (const f of filas) {
+    const antes = m.get(f.evento_id);
+    if (f.estado === "publicada") m.set(f.evento_id, { estado: "publicada" });
+    else if (!antes && (f.error === "permiso" || f.error === "imagen" || f.error === "otro")) m.set(f.evento_id, { estado: "error", error: f.error });
+  }
+  return m;
+}
 
 const FORMATO = { "4x5": "Publicación", "9x16": "Historia" } as const;
 
@@ -58,6 +72,12 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
   if (error || !Array.isArray(data)) return null;
   // La base ya dejó solo lo que se puede publicar (por venir, o en curso con días o sesiones por delante).
   const filas = data as FilaSugerencia[];
+  // Lo ya publicado en Instagram: cómo va en Facebook (OL-461). Si no se pudo leer, sin estado (el renglón no ofrece publicar en Facebook).
+  const publicados = filas.filter((f) => f.publicado_en).map((f) => f.id);
+  const fb = publicados.length
+    ? await supabase.from("facebook_publicaciones").select("evento_id, estado, error").in("evento_id", publicados).order("creado_en", { ascending: false }).limit(1000)
+    : null;
+  const enFacebook = fb && !fb.error ? estadosFacebook((fb.data ?? []) as { evento_id: string; estado: string; error: string | null }[]) : null;
   const renglon = (f: FilaSugerencia): Sugerencia => ({
     id: f.id,
     href: `/eventos/${f.slug || f.id}`,
@@ -69,6 +89,7 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
       ? `${FORMATO[f.publicado_formato === "9x16" ? "9x16" : "4x5"]} · ${cuandoSePublico(f.publicado_en, ahora, f.zona)}`
       : lineaDeSenal({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio }),
     publicado: !!f.publicado_en,
+    facebook: f.publicado_en && enFacebook ? (enFacebook.get(f.id) ?? { estado: "nada" }) : null,
   });
   const senal = (f: FilaSugerencia) => ({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio });
   const para = filas.filter((f) => !f.publicado_en).sort((a, b) => porSenal(senal(a), senal(b))).map(renglon);
@@ -88,16 +109,21 @@ export async function cargarCiudadesInstagram(supabase: ClienteServidor, ahora =
   return [...cuenta.values()].sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre, "es"));
 }
 
-/** Lo de la portada: cuántas se publicaron en los últimos 7 días y cuántas esperan en la ciudad. Null si no se pudo leer. */
-export async function cargarResumenInstagram(supabase: ClienteServidor, ciudad: string | null, ahora = new Date()): Promise<{ semana: number; porPublicar: number; ciudad: string | null } | null> {
+/**
+ * Lo de la portada: cuántas se publicaron en Instagram en los últimos 7 días, cuántas salieron en Facebook en esos días (OL-461; null si no se
+ * pudo leer) y cuántas esperan en la ciudad. Null si no se pudo leer.
+ */
+export async function cargarResumenInstagram(supabase: ClienteServidor, ciudad: string | null, ahora = new Date()): Promise<{ semana: number; facebook: number | null; porPublicar: number; ciudad: string | null } | null> {
   const desde = new Date(ahora.getTime() - 7 * 86_400_000).toISOString();
-  const [publicadas, sugerencias] = await Promise.all([
+  const [publicadas, fb, sugerencias] = await Promise.all([
     supabase.from("instagram_publicaciones").select("id", { count: "exact", head: true }).eq("estado", "publicada").gte("creado_en", desde),
+    supabase.from("facebook_publicaciones").select("instagram_id").eq("estado", "publicada").gte("creado_en", desde).limit(1000),
     cargarSugerencias(supabase, ciudad, ahora),
   ]);
   if (publicadas.error || !sugerencias) return null;
   const nombre = sugerencias.filas[0]?.ciudad_nombre ?? null;
-  return { semana: publicadas.count ?? 0, porPublicar: sugerencias.para.length, ciudad: ciudad ? nombre : null };
+  const facebook = fb.error ? null : new Set(((fb.data ?? []) as { instagram_id: string }[]).map((x) => x.instagram_id)).size;
+  return { semana: publicadas.count ?? 0, facebook, porPublicar: sugerencias.para.length, ciudad: ciudad ? nombre : null };
 }
 
 type FilaEvento = {

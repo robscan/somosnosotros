@@ -9,3 +9,22 @@ export const FRASES: Record<Exclude<ClaveError, "texto">, string> = {
   empezo: "Este evento ya empezó mientras lo preparabas: ya no se publica. Aquí solo se publica lo que está por venir.",
   otro: "No se pudo publicar. Vuelve a intentar en un momento; no se publicó nada.",
 };
+
+/** Lo que dice la hoja del espejo en Facebook (OL-461, bitácora 493). Instagram ya quedó publicado: nunca se dice «no se publicó nada». */
+export type ClaveFacebook = "permiso" | "imagen" | "otro" | "empezo";
+
+/** La línea corta del resultado y de la lista: «Facebook: falta permiso». */
+export const ESTADO_FACEBOOK: Record<ClaveFacebook, string> = {
+  permiso: "falta permiso",
+  imagen: "no aceptó la imagen",
+  otro: "no se publicó",
+  empezo: "el evento ya empezó",
+};
+
+/** La frase llana que la acompaña en la hoja. */
+export const FRASES_FACEBOOK: Record<ClaveFacebook, string> = {
+  permiso: "Hay que volver a conectar la página de Facebook con el permiso para publicar. En Instagram sí quedó publicado.",
+  imagen: "Facebook no aceptó la imagen. En Instagram sí quedó publicado; vuelve a intentar en un momento.",
+  otro: "No se pudo publicar en Facebook. En Instagram sí quedó publicado; vuelve a intentar en un momento.",
+  empezo: "Este evento ya empezó: ya no se publica en Facebook. Aquí solo se publica lo que está por venir.",
+};

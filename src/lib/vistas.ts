@@ -40,3 +40,26 @@ export function nuevoVisitante(): string {
 export function cookieDeVisita(visitante: string, segura = true): string {
   return `${COOKIE_VISITA}=${visitante}; Path=/; Max-Age=${DURACION_VISITA_S}; HttpOnly; SameSite=Lax${segura ? "; Secure" : ""}`;
 }
+
+/**
+ * De qué red llegó una vista (OL-461): la marca de origen de los enlaces que la marca publica en Instagram y Facebook
+ * (`?utm_source=instagram|facebook&utm_medium=post|story`, ver `lib/facebook/texto`). Listas cerradas: cualquier otro valor
+ * se descarta y la vista cuenta sin origen. No dice nada de la persona.
+ */
+export const ORIGENES_VISTA = ["instagram", "facebook"] as const;
+export const MEDIOS_VISTA = ["post", "story"] as const;
+export type OrigenVista = (typeof ORIGENES_VISTA)[number];
+export type MedioVista = (typeof MEDIOS_VISTA)[number];
+
+/** El origen y el medio válidos (o null cada uno); sin origen no hay medio. */
+export function origenDeVista(origen: unknown, medio: unknown): { origen: OrigenVista | null; medio: MedioVista | null } {
+  const o = (ORIGENES_VISTA as readonly unknown[]).includes(origen) ? (origen as OrigenVista) : null;
+  const m = o && (MEDIOS_VISTA as readonly unknown[]).includes(medio) ? (medio as MedioVista) : null;
+  return { origen: o, medio: m };
+}
+
+/** El origen de la consulta de la dirección (`location.search`). */
+export function origenDeConsulta(consulta: string): { origen: OrigenVista | null; medio: MedioVista | null } {
+  const p = new URLSearchParams(consulta);
+  return origenDeVista(p.get("utm_source"), p.get("utm_medium"));
+}

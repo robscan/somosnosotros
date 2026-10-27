@@ -97,7 +97,8 @@ export default async function Admin() {
         })}
       </ul>
 
-      {/* Instagram (OL-458, firmado): la cuenta de la marca, lo publicado esta semana y lo que espera en la ciudad de la sesión; abre la lista. */}
+      {/* Instagram (OL-458, firmado): la cuenta de la marca, lo publicado esta semana (y cuántas en Facebook, OL-461) y lo que espera en la ciudad
+          de la sesión; abre la lista. */}
       <h2 className={styles.grupo}>Instagram</h2>
       <ul className={renglon.tarjeta}>
         <li>
@@ -106,7 +107,7 @@ export default async function Admin() {
             <b>@{CUENTA_INSTAGRAM}</b>
             <small>
               {instagram
-                ? `${instagram.semana === 1 ? "1 publicada" : `${instagram.semana} publicadas`} esta semana · ${instagram.porPublicar} por publicar${instagram.ciudad ? ` en ${instagram.ciudad}` : ""}`
+                ? `${instagram.semana === 1 ? "1 publicada" : `${instagram.semana} publicadas`} esta semana${instagram.facebook !== null ? ` · ${instagram.facebook} en Facebook` : ""} · ${instagram.porPublicar} por publicar${instagram.ciudad ? ` en ${instagram.ciudad}` : ""}`
                 : "Publicar eventos en la cuenta de la marca"}
             </small>
             <span>

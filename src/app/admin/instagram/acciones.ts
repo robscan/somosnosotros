@@ -2,20 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { cargarParaCartel } from "@/lib/carteles/cargar";
+import { publicarEnPagina } from "@/lib/facebook/api";
+import { enlaceConOrigen, textoDeFacebook } from "@/lib/facebook/texto";
 import { esUuid } from "@/lib/formulario";
 import { cupo, leerPagina, paginaDeEnlace, publicar } from "@/lib/instagram/api";
 import { sePuedePublicar } from "@/lib/instagram/elegir";
 import { armarImagen, bajarCartel, convieneRecortar } from "@/lib/instagram/imagen";
 import { armarTexto, etiquetasDeLaFoto, revisarTexto } from "@/lib/instagram/texto";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { cargarParaHoja } from "./datos";
-import { FRASES, type ClaveError } from "@/lib/instagram/frases";
+import { cargarParaHoja, type ParaHoja } from "./datos";
+import { FRASES, FRASES_FACEBOOK, type ClaveError, type ClaveFacebook } from "@/lib/instagram/frases";
 import type { EventoIg } from "@/lib/instagram/texto";
 
 /**
  * Publicar en Instagram desde Administración (OL-458, firmado; bitácora 490): lo que pide la hoja de vista previa (`prepararInstagram`), publicar
  * (`publicarEnInstagram`) y guardar la ubicación de una ciudad o de un lugar (`guardarUbicacionInstagram`). Solo la administración: se comprueba
  * aquí y la base lo vuelve a comprobar (RLS). El token de Instagram nunca sale del servidor (`lib/instagram/api`).
+ * OL-461 (bitácora 493): el espejo en la página de Facebook. Con «También en Facebook», lo que sale en Instagram se publica también en la página
+ * (la misma imagen; el texto con el enlace a la ficha y sin @, `lib/facebook/texto`); si Instagram falla no se intenta Facebook, y si Facebook
+ * falla Instagram queda publicado y se puede reintentar (`publicarEnFacebook`, también desde «Ya en Instagram»).
  */
 
 /** La sesión, solo si es de la administración (como `soloAdmin` del panel: el rol de su perfil). */
@@ -67,8 +72,29 @@ export async function prepararInstagram(eventoId: string): Promise<Preparado> {
   };
 }
 
-export type PedidoPublicar = { eventoId: string; formato: "4x5" | "9x16"; recorte: boolean; diseno: number; texto: string | null; quitadas: string[] };
-export type Publicado = { ok: true; permalink: string | null; sinEtiquetas: boolean } | { ok: false; error: ClaveError; mensaje: string };
+export type PedidoPublicar = { eventoId: string; formato: "4x5" | "9x16"; recorte: boolean; diseno: number; texto: string | null; quitadas: string[]; facebook?: boolean };
+/** Lo que pasó en Facebook (OL-461). */
+export type Espejo = { ok: true; permalink: string | null } | { ok: false; error: ClaveFacebook; mensaje: string };
+/** `facebook`: null si no se pidió o si Instagram falló (entonces no se intenta). */
+export type Publicado = { ok: true; permalink: string | null; sinEtiquetas: boolean; facebook: Espejo | null } | { ok: false; error: ClaveError; mensaje: string };
+
+type PublicacionIg = { id: string; formato: "4x5" | "9x16"; imagen: string | null };
+
+/** Publica en la página de Facebook lo que ya salió en Instagram y lo anota (con la sesión: la base comprueba que es de la administración). */
+async function espejar(supabase: NonNullable<Awaited<ReturnType<typeof sesionAdmin>>>["supabase"], ig: PublicacionIg, h: ParaHoja, textoInstagram: string | null): Promise<Espejo> {
+  const anotar = (fila: Record<string, unknown>) => supabase.from("facebook_publicaciones").insert({ instagram_id: ig.id, evento_id: h.id, formato: ig.formato, ...fila });
+  if (!ig.imagen) {
+    await anotar({ estado: "error", error: "imagen" });
+    return { ok: false, error: "imagen", mensaje: FRASES_FACEBOOK.imagen };
+  }
+  const historia = ig.formato === "9x16";
+  const texto = historia ? null : textoDeFacebook(textoInstagram ?? armarTexto(h.evento, new Date()), h.evento, enlaceConOrigen({ id: h.id, slug: h.slug }, "facebook", "post"));
+  const r = await publicarEnPagina({ imagen: ig.imagen, texto, historia });
+  await anotar(r.ok ? { estado: "publicada", post_id: r.postId, permalink: r.permalink } : { estado: "error", error: r.error });
+  revalidatePath("/admin/instagram");
+  revalidatePath("/admin");
+  return r.ok ? { ok: true, permalink: r.permalink } : { ok: false, error: r.error, mensaje: FRASES_FACEBOOK[r.error] };
+}
 
 /** Publica: vuelve a comprobar que el evento está por venir, el texto, el cupo; arma el JPEG, lo sube, publica y lo anota. */
 export async function publicarEnInstagram(p: PedidoPublicar): Promise<Publicado> {
@@ -110,10 +136,41 @@ export async function publicarEnInstagram(p: PedidoPublicar): Promise<Publicado>
   const etiquetas = etiquetasDeLaFoto(h.evento, quitadas);
   const r = await publicar({ imagen, texto, etiquetas, ubicacion: h.ubicacion?.id ?? null, historia: formato === "9x16" });
   if (!r.ok) return fallo(r.error);
-  await anotar({ estado: "publicada", media_id: r.mediaId, permalink: r.permalink, imagen, etiquetas: r.sinEtiquetas ? [] : etiquetas, ubicacion: r.sinEtiquetas || formato === "9x16" ? null : (h.ubicacion?.id ?? null) });
+  const anotada = await anotar({ estado: "publicada", media_id: r.mediaId, permalink: r.permalink, imagen, etiquetas: r.sinEtiquetas ? [] : etiquetas, ubicacion: r.sinEtiquetas || formato === "9x16" ? null : (h.ubicacion?.id ?? null) })
+    .select("id")
+    .maybeSingle<{ id: string }>();
   revalidatePath("/admin/instagram");
   revalidatePath("/admin");
-  return { ok: true, permalink: r.permalink, sinEtiquetas: r.sinEtiquetas && (etiquetas.length > 0 || !!h.ubicacion) };
+  // El espejo en Facebook, solo si salió en Instagram. Sin la fila de Instagram no se puede anotar: no se publica en Facebook y se dice.
+  const facebook: Espejo | null = !p.facebook ? null : anotada.data?.id ? await espejar(s.supabase, { id: anotada.data.id, formato, imagen }, h, texto) : { ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro };
+  return { ok: true, permalink: r.permalink, sinEtiquetas: r.sinEtiquetas && (etiquetas.length > 0 || !!h.ubicacion), facebook };
+}
+
+/**
+ * Publica en Facebook lo que ya está en Instagram y no salió en Facebook (la hoja, «Reintentar en Facebook»; la lista, «Publicar en Facebook»):
+ * la última publicación de Instagram del evento, con su misma imagen. `texto`: el que llevó Instagram, si la hoja lo tiene; si no, el que arma el
+ * sistema. Si esa publicación ya está en Facebook, no se publica otra vez. Solo lo que está por venir, como en Instagram.
+ */
+export async function publicarEnFacebook(eventoId: string, texto: string | null = null): Promise<Espejo> {
+  const s = esUuid(eventoId) ? await sesionAdmin() : null;
+  if (!s) return { ok: false, error: "permiso", mensaje: "Solo la administración publica en Facebook." };
+  const ahora = new Date();
+  const h = await cargarParaHoja(s.supabase, eventoId, ahora);
+  if (!h) return { ok: false, error: "otro", mensaje: "No encontramos ese evento." };
+  if (!sePuedePublicar(h.datos, ahora)) return { ok: false, error: "empezo", mensaje: FRASES_FACEBOOK.empezo };
+  const { data: ig } = await s.supabase
+    .from("instagram_publicaciones")
+    .select("id, formato, imagen")
+    .eq("evento_id", h.id)
+    .eq("estado", "publicada")
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle<PublicacionIg>();
+  if (!ig) return { ok: false, error: "otro", mensaje: "Este evento todavía no está en Instagram." };
+  const { data: ya } = await s.supabase.from("facebook_publicaciones").select("permalink").eq("instagram_id", ig.id).eq("estado", "publicada").limit(1).maybeSingle<{ permalink: string | null }>();
+  if (ya) return { ok: true, permalink: ya.permalink };
+  const propio = ig.formato === "4x5" && typeof texto === "string" && texto.trim() ? texto.trim().slice(0, 5000) : null;
+  return espejar(s.supabase, ig, h, propio);
 }
 
 export type Guardado = { ok: true; nombre: string } | { ok: false; mensaje: string };
