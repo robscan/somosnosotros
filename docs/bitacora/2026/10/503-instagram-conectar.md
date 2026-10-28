@@ -1,6 +1,7 @@
 # 503 · «Conectar Instagram» en Administración: la app consigue y guarda sola su token de Meta en Vault (OL-471)
 
-**Fecha:** 2026-10-28. **Rama:** `instagram-conectar`, base `origin/main` (`12ab4582`, con OL-467 unido). **Operador:** agente de la pieza
+**Fecha:** 2026-10-28. **Rama:** `instagram-conectar`, base `origin/main` (`12ab4582`, con OL-467 unido); al cerrar se trajo `main`
+(`e0e65408`, con OL-468 y OL-469: choque solo en OPEN_LOOPS, resuelto conservando todo). **Operador:** agente de la pieza
 (Gestor VII), sin otros agentes. **Estado:** en código, espera la revisión del gestor, la configuración de Meta y Vercel y una prueba real en
 producción. **Migración `20261028180000_instagram_conexion.sql`** (solo añade; el nombre lo eligió el operador: el encargo no traía uno, y es el
 siguiente a la última de `main`, `20261028150000`). **Variable nueva:** `META_APP_SECRET` (sensible, la pega el founder). Capturas:
@@ -137,6 +138,11 @@ Vuelve a intentarlo.»
   «Para publicar»; nada cortado a 320, 390 y 430; tocar «Conectar Instagram» en local (http) no sale a Meta y vuelve con su frase; la vuelta en
   local con una sesión de administración: 303 a `?error=origen`; sin sesión, `/api/instagram/conectar` da 403; con una cuenta que no es de la
   administración, `/api/instagram/vuelta` da 403.
+
+**Después de traer `main`** (`e0e65408`): typecheck sin errores, `npm test` 4 865 de 4 865, `npm run medir` sin novedades y
+`npm run test:componentes` 759 de 760: la que falla es «al soltar, la hoja va directo a su altura…» de `src/app/lugares/HojaLugares.componentes.test.mjs`,
+una prueba de gestos con tiempos que ya está en cuarentena (`pruebaConCuarentena`, se salta en la CI); no toca nada de esta pieza y falla igual
+con el `useCampoVisible` de antes de OL-468. Antes de traer `main` había pasado (758 de 758).
 
 **No se probó contra Meta de verdad** (ni producción ni el `META_APP_SECRET`): eso es la prueba del gestor de abajo.
 
