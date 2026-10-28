@@ -7,11 +7,15 @@
 //   node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> [--solo=texto]
 //
 // Las pantallas están abajo (`PANTALLAS`); `--solo=` filtra por id (varios, separados por comas). Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales.
+// OL-466: con `MAQUETA_LECTURA=1` la app arranca con la lectura del cartel simulada en el respaldo (`/anthropic`, una llave inventada; la lectura
+// la deja lista cada paso con `POST /__lectura`):
+//   RESPALDO_CARTEL_EXISTENTE=1 MAQUETA_LECTURA=1 node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> --solo=cartel-
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { createRequire } from "node:module";
+import os from "node:os";
 import { ADMIN, cookie, cookieDe, LLAVE_SERVICIO } from "./respaldo-local/fixture.mjs";
 
 const AQUI = path.dirname(new URL(import.meta.url).pathname);
@@ -94,8 +98,75 @@ const PANTALLAS = [
   // (cuenta de administración). Crear cartel no se puede guardar: con el respaldo su página responde «Esto ya no está».
   { id: "admin-eventos-hoja-ciudad", url: "/admin/eventos", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
   { id: "admin-evento-menu", url: "/eventos/concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", sesion: true, cuenta: "admin", paso: "menu-acciones" },
+  // OL-466 (con `RESPALDO_CARTEL_EXISTENTE=1 MAQUETA_LECTURA=1`): el alta con un cartel de un evento que ya está. La espera «Leyendo el cartel…»
+  // (la subida se queda en camino), «Revisa» con «¿Es este?» de un parecido sin cartel (la Noche de danzón) y de uno con cartel (Feleal, de
+  // Marcos), «Publicado» tras «No, es otro» y la ficha del evento que ya estaba, con la sesión de Ana. `reloj`: el navegador con el reloj fijo
+  // (sin él, «Revisa» dice «Esa hora ya pasó» de un evento del vie 9 de oct).
+  { id: "cartel-espera", reloj: true, url: "/nuevo/evento?ciudad=san-luis-potosi", sesion: true, paso: "cartel-espera" },
+  { id: "cartel-revisa-sin", reloj: true, url: "/nuevo/evento?ciudad=san-luis-potosi", sesion: true, paso: "cartel-parecido-sin" },
+  { id: "cartel-revisa-con", reloj: true, url: "/nuevo/evento?ciudad=san-luis-potosi", sesion: true, paso: "cartel-parecido-con" },
+  { id: "cartel-publicado", reloj: true, url: "/nuevo/evento?ciudad=san-luis-potosi", sesion: true, paso: "cartel-no-es-otro" },
+  { id: "cartel-ficha", reloj: true, url: "/eventos/noche-de-danzon-con-la-orquesta-tipica", sesion: true },
+  { id: "cartel-ficha-feleal", reloj: true, url: "/eventos/feleal-un-viaje-por-el-mundo-en-acordeon", sesion: true },
+  // Con `RESPALDO_CARTEL_EXISTENTE=despues` (en otra corrida): la misma ficha con el cartel de Ana, el precio y la descripción del cartel.
+  { id: "cartel-ficha-despues", reloj: true, url: "/eventos/noche-de-danzon-con-la-orquesta-tipica", sesion: true },
 ];
+// OL-466: los dos carteles que se suben (inventados, dibujados aquí) y lo que «leería» el modelo de cada uno. Las fechas salen del reloj fijo
+// (`AHORA`, mié 7 de oct): la Noche de danzón es pasado mañana (vie 9) a las 20:00 y Feleal el mié 14 a las 19:00, los dos en el Teatro de la Paz.
+const NULOS = { titulo: null, fecha: null, hora: null, hora_fin: null, lugar: null, direccion: null, gratis: null, precio: null, descripcion: null, enlace: null, artistas: null, clase: null, visita: null, sesiones: null, actos: null, festival: null };
+const CARTELES = {
+  danzon: {
+    lectura: { ...NULOS, titulo: "Noche de Danzón", fecha: "2026-10-09", hora: "20:00", hora_fin: "23:00", lugar: "Teatro de la Paz", precio: "$150", descripcion: "Baile de salón con orquesta en vivo: danzón, mambo y chachachá. Clase abierta para principiantes a las 19:30.", artistas: ["Orquesta Típica de San Luis"], clase: "puntual" },
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="#7a1f2b"/><circle cx="400" cy="330" r="190" fill="#e9b949"/><text x="400" y="610" fill="#fff6e0" font-family="Georgia" font-size="96" font-style="italic" text-anchor="middle">Noche de</text><text x="400" y="720" fill="#e9b949" font-family="Georgia" font-size="120" font-weight="700" text-anchor="middle">DANZÓN</text><text x="400" y="820" fill="#fff6e0" font-family="Arial" font-size="34" text-anchor="middle">Orquesta Típica de San Luis</text><text x="400" y="900" fill="#fff6e0" font-family="Arial" font-size="34" font-weight="700" text-anchor="middle">VIE 9 OCT · 20:00 · TEATRO DE LA PAZ</text></svg>',
+  },
+  feleal: {
+    lectura: { ...NULOS, titulo: "Feleal: un viaje en acordeón", fecha: "2026-10-14", hora: "19:00", lugar: "Teatro de la Paz", precio: "$120 a $250", artistas: ["Feleal"], clase: "puntual" },
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="#123b4a"/><rect x="60" y="60" width="680" height="880" fill="none" stroke="#f4d35e" stroke-width="8"/><text x="400" y="420" fill="#f4d35e" font-family="Arial" font-size="150" font-weight="800" text-anchor="middle">FELEAL</text><text x="400" y="520" fill="#fff" font-family="Arial" font-size="52" text-anchor="middle">un viaje en acordeón</text><text x="400" y="820" fill="#fff" font-family="Arial" font-size="38" font-weight="700" text-anchor="middle">MIÉ 14 OCT · 19:00</text><text x="400" y="880" fill="#fff" font-family="Arial" font-size="34" text-anchor="middle">Teatro de la Paz</text></svg>',
+  },
+};
+async function archivoDe(clave, tipo = "png") {
+  const sharp = (await import(path.join(RAIZ, "node_modules/sharp/dist/index.mjs"))).default;
+  const archivo = path.join(os.tmpdir(), `ol466-${clave}.${tipo}`);
+  if (!fs.existsSync(archivo)) await sharp(Buffer.from(CARTELES[clave].svg)).toFormat(tipo === "jpg" ? "jpeg" : "png").toFile(archivo);
+  return archivo;
+}
+/** Sube el cartel con su lectura lista y sigue hasta «Revisa» (contesta «¿Es en …?» si el cartel lo pregunta). */
+async function hastaRevisa(page, { respaldo }, clave) {
+  const archivo = await archivoDe(clave);
+  await fetch(`${respaldo}/__lectura`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lectura: CARTELES[clave].lectura, archivo }) });
+  await page.locator("input[type=file]").setInputFiles(archivo);
+  const revisa = page.getByRole("heading", { name: "Revisa", exact: true });
+  for (let i = 0; i < 6 && !(await revisa.isVisible()); i++) {
+    const esAqui = page.getByRole("button", { name: /^Sí, es aquí/ });
+    await Promise.race([revisa.waitFor({ timeout: 30000 }), esAqui.waitFor({ timeout: 30000 })]).catch(() => {});
+    if (await esAqui.isVisible()) await esAqui.click();
+  }
+  await revisa.waitFor();
+}
+// El respaldo es http y `imagenPermitida` pide https: al armar lo que se manda (el evento `formdata`) se vacía el campo `imagen`, así
+// el servidor no se queda en «La imagen no se subió bien» y contesta «¿Es este?» como en producción. En pantalla no cambia nada: la cabeza de
+// «Revisa» y «Publicado» pintan el cartel con lo que ya tiene el alta.
+const sinImagenAlServidor = (page) => page.locator("form#publicar-evento").evaluate((f) => f.addEventListener("formdata", (e) => e.formData.set("imagen", "")));
+async function preguntarParecido(page, ctx, clave) {
+  await hastaRevisa(page, ctx, clave);
+  await sinImagenAlServidor(page);
+  await page.getByRole("button", { name: "Publicar", exact: true }).click();
+  await page.getByText("Ya hay uno parecido ese día en el mismo sitio").waitFor();
+}
 const PASOS = {
+  // OL-466: la espera con la lectura en curso (la subida a Storage se queda en camino para que la pantalla no avance) y los demás estados del alta.
+  "cartel-espera": async (page) => {
+    await page.route(/\/storage\/v1\/object\/fotos\//, () => {});
+    await page.locator("input[type=file]").setInputFiles(await archivoDe("danzon"));
+    await page.getByText("Leyendo el cartel…").waitFor();
+  },
+  "cartel-parecido-sin": (page, ctx) => preguntarParecido(page, ctx, "danzon"),
+  "cartel-parecido-con": (page, ctx) => preguntarParecido(page, ctx, "feleal"),
+  "cartel-no-es-otro": async (page, ctx) => {
+    await preguntarParecido(page, ctx, "danzon");
+    await page.getByRole("button", { name: "No, es otro: publicar de todos modos" }).click();
+    await page.getByRole("heading", { name: "Evento publicado" }).waitFor();
+  },
   // OL-458: el «···» de la barra de una ficha (ui/MenuAcciones).
   "menu-acciones": async (page) => {
     await page.getByRole("button", { name: "Más acciones" }).first().click();
@@ -160,24 +231,29 @@ const app = { NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${puertoRespaldo}`, NE
 const reloj = { RELOJ_FIJO: AHORA, TZ: "America/Mexico_City", NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --require=${path.join(AQUI, "reloj-fijo.cjs")}` };
 let browser;
 try {
-  lanzar([path.join(AQUI, "respaldo-local/server.mjs"), String(puertoRespaldo)], reloj);
+  // OL-466: la ficha «después» pide al respaldo el cartel de Ana (`demo-carrusel/ol466-danzon.jpg` en la carpeta temporal).
+  const despues = process.env.RESPALDO_CARTEL_EXISTENTE === "despues" ? { RESPALDO_URL: `http://127.0.0.1:${puertoRespaldo}`, RESPALDO_CARRUSEL_DIR: path.dirname(await archivoDe("danzon", "jpg")) } : {};
+  lanzar([path.join(AQUI, "respaldo-local/server.mjs"), String(puertoRespaldo)], { ...reloj, ...despues });
   await esperar(`http://127.0.0.1:${puertoRespaldo}/rest/v1/eventos?select=id&limit=1`);
   process.stdout.write("compilando la app contra el respaldo… ");
   const t = Date.now();
   const r = spawnSync(process.execPath, [NEXT, "build"], { cwd: RAIZ, env: { ...process.env, ...app }, encoding: "utf8", maxBuffer: 1 << 26 });
   if (r.status !== 0) throw new Error(`next build falló\n${(r.stdout + r.stderr).slice(-3000)}`);
   console.log(`${Math.round((Date.now() - t) / 1000)} s`);
-  lanzar([NEXT, "start", "-p", String(puertoApp)], { ...app, ...reloj });
+  const lectura = process.env.MAQUETA_LECTURA === "1" ? { ANTHROPIC_API_KEY: "llave-inventada", ANTHROPIC_BASE_URL: `http://127.0.0.1:${puertoRespaldo}/anthropic` } : {};
+  lanzar([NEXT, "start", "-p", String(puertoApp)], { ...app, ...reloj, ...lectura });
   const base = `http://127.0.0.1:${puertoApp}`;
   await esperar(base + "/entrar");
   browser = await chromium.launch({ executablePath: process.env.CHROME_EXECUTABLE || (fs.existsSync(MAC) ? MAC : undefined), headless: true, args: ["--hide-scrollbars"] });
   fs.mkdirSync(SALIDA, { recursive: true });
   for (const p of PANTALLAS.filter((x) => !solo || solo.split(",").some((t) => x.id.includes(t)))) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "es-MX" });
+    if (p.reloj) await ctx.clock.setFixedTime(new Date(AHORA));
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
     const page = await ctx.newPage();
     await page.goto(base + p.url, { waitUntil: "networkidle" });
-    if (p.paso) await PASOS[p.paso](page);
+    // Si un paso no llega, la captura de cómo se quedó va al lado, con «-fallo».
+    if (p.paso) await PASOS[p.paso](page, { respaldo: `http://127.0.0.1:${puertoRespaldo}` }).catch(async (e) => { await page.screenshot({ path: path.join(SALIDA, `${p.id}-fallo.png`) }); throw e; });
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1500);
     await page.screenshot({ path: path.join(SALIDA, `${p.id}.png`) });

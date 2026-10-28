@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartel a un evento que ya está</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-466 (bitácora 498), armazón de propuestas. Founder (2026-10-28): «cuando se sube un cartel de un evento, y después de analizarlo
+   con IA, notamos que ya está registrado, pero el registro no tiene cartel, esta va a ser una situación bastante común. Entonces, al decirle al
+   usuario que el evento tal vez ya existe, también hay que presentar la opción de mantener el evento original, pero usar el nuevo [cartel]».
+
+   Sobre la pantalla REAL (regla de OL-409): la espera, «Revisa» con «¿Es este?», «Publicado» y las fichas se guardaron con
+   `maqueta-pantalla.mjs` (la app compilada contra el respaldo local, con la lectura del cartel simulada) y `prototipo/alta-cartel-existente.mjs`
+   arma este archivo: el teléfono es un `iframe` con el CSS servido tal cual y el cuerpo de cada pantalla tal cual. La propuesta solo mueve y
+   cambia de texto piezas que ya existen (ui/Parecidos, ui/Boton, el pie de PorPasos, la nota bajo un botón del canon, la cabeza de Revisa, la
+   espera del cartel y Publicado). Lo de este archivo fuera del marco es solo el armazón del prototipo. */
+:root {
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-bien: #1f6f43; --pg-mal: #b3261e; --pg-reco: #e6f4ea;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ancho-tel: 390px; --alto-tel: 844px;
+}
+* { box-sizing: border-box; }
+html { font: 400 1rem / 1.45 var(--fuente); font-variation-settings: "wdth" 80; color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+.escena { display: grid; gap: 16px; padding: 16px; align-content: start; }
+.columna { display: grid; gap: 8px; justify-items: center; align-content: start; min-width: 0; }
+.selector { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.selector button { min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--pg-panel); color: var(--pg-suave); font-size: 0.875rem; font-weight: 700; }
+.selector button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.selector.sub button { background: transparent; box-shadow: inset 0 0 0 1px var(--pg-borde); }
+.selector.sub button[aria-pressed="true"] { background: var(--pg-texto); color: var(--pg-panel); box-shadow: none; }
+.selector.sub button[data-reco="true"]::after { content: " ★"; color: var(--pg-bien); }
+.selector.tam button { min-height: 44px; min-width: 56px; font-weight: 500; }
+.etiqueta { margin: 0; min-height: 2.6em; color: var(--pg-suave); font-size: 0.875rem; line-height: 1.3; text-align: center; max-width: 430px; }
+.etiqueta b { color: var(--pg-texto); }
+.tel { display: block; width: var(--ancho-tel); max-width: 100%; height: var(--alto-tel); border: 0; border-radius: 28px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.medidor { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; max-width: 560px; font-size: 0.8125rem; color: var(--pg-suave); }
+.medidor b { color: var(--pg-texto); font-size: 1rem; margin-right: 3px; }
+.medidor [data-mal="true"] b { color: var(--pg-mal); }
+.notas { display: grid; gap: 16px; align-content: start; padding: 20px; border-radius: 16px; background: var(--pg-panel); }
+.notas h1 { margin: 0; font-size: 1.5rem; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.notas h2 { margin: 0 0 6px; font-size: 1.0625rem; font-variation-settings: "wdth" 75; }
+.notas p, .notas ul, .notas ol { margin: 0; font-size: 0.9375rem; }
+.notas ul, .notas ol { padding-left: 1.1em; display: grid; gap: 6px; }
+.notas .chica { color: var(--pg-suave); font-size: 0.875rem; }
+.notas .reco { justify-self: start; padding: 2px 10px; border-radius: 999px; background: var(--pg-reco); color: var(--pg-bien); font-size: 0.8125rem; font-weight: 700; }
+.plegar { justify-self: start; min-height: 44px; padding: 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--pg-borde); font-size: 0.875rem; font-weight: 700; }
+.notas[data-plegadas="true"] > :not(.cabeza-notas) { display: none; }
+.cabeza-notas { display: grid; gap: 8px; }
+@media (min-width: 900px) { .escena { grid-template-columns: minmax(0, 1fr) 440px; align-items: start; } .notas { position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow: auto; } }
+</style>
+</head>
+<body>
+<main class="escena">
+  <section class="columna" aria-label="El teléfono">
+    <div class="selector" role="group" aria-label="Pantalla" id="sel-pantalla"></div>
+    <div class="selector sub" role="group" aria-label="Variante y estado" id="sel-estado"></div>
+    <div class="selector sub tam" role="group" aria-label="Ancho" id="sel-ancho"></div>
+    <p class="etiqueta" id="etiqueta"></p>
+    <iframe class="tel" id="tel" title="La pantalla (maqueta real)"></iframe>
+    <div class="medidor" id="medidor" aria-live="polite"></div>
+  </section>
+  <aside class="notas" id="notas" aria-labelledby="notas-titulo">
+    <div class="cabeza-notas">
+      <h1 id="notas-titulo">Tu cartel a un evento que ya está</h1>
+      <p class="chica">OL-466 · prototipo, espera firma · mié 28 de oct · sobre la pantalla real (respaldo local, reloj fijo del mié 7 de oct; Ana con sesión)</p>
+      <button type="button" class="plegar" id="plegar" aria-expanded="true">Plegar las notas</button>
+    </div>
+    <section aria-labelledby="t-estado"><h2 id="t-estado">Lo que ves</h2><p id="reco-estado"></p><div id="texto-estado"></div></section>
+    <section aria-labelledby="t-reco">
+      <h2 id="t-reco">La recomendación</h2>
+      <ul>
+        <li><b>Preguntar en cuanto se lee el cartel</b> (C2): el cartel se queda grande donde estaba y «Leyendo el cartel…» se vuelve la pregunta «¿Es este?», con el que ya está debajo. Así se ven los dos juntos y nadie llena nada de un evento que ya existe.</li>
+        <li><b>La respuesta principal va en el pie</b> (A1): «Sí, es este: ponerle mi cartel», donde siempre está el botón grande. En la caja queda «No, es otro», como hoy. Un solo botón principal en pantalla.</li>
+        <li><b>Si ya tiene cartel</b> (B): el pie dice «Sí, es este: ir al evento» (lo que hoy hace tocar el renglón, dicho en voz alta) y cambiar su cartel va en segundo plano; solo quien lo publicó o la administración.</li>
+        <li><b>Al terminar</b>, «Publicado» de siempre con otra frase: «Listo: tu cartel ya está en el evento», la tarjeta del evento que ya estaba con tu cartel y «Ver el evento».</li>
+      </ul>
+    </section>
+    <section aria-labelledby="t-reglas">
+      <h2 id="t-reglas">Quién puede y qué se toca</h2>
+      <ul>
+        <li><b>Poner cartel a un evento sin cartel:</b> cualquier persona con sesión. El evento original se queda: su ficha, sus «Voy» y «Me interesa», sus enlaces y quien lo publicó.</li>
+        <li><b>Lo que se completa:</b> solo lo que le falta al original (descripción, precio, horario de fin, artistas). Lo que ya tiene no se toca.</li>
+        <li><b>Cambiar un cartel que ya está:</b> solo quien lo publicó o la administración. A los demás, el botón apagado y «Solo quien lo publicó puede cambiarlo».</li>
+        <li><b>Aviso:</b> a quien lo publicó, al teléfono («Ana le puso cartel a tu evento», con lo de OL-465); a la administración, un motivo nuevo en sus avisos agrupados. Sin pantallas nuevas.</li>
+      </ul>
+    </section>
+    <section aria-labelledby="t-preguntas">
+      <h2 id="t-preguntas">Preguntas para ti</h2>
+      <ol>
+        <li>¿Preguntamos en cuanto se lee el cartel (C2, recomendado) o solo al final, en «Revisa», como hoy?</li>
+        <li>Si el evento dice «Gratis» porque nadie puso precio y el cartel dice $150, ¿lo cambiamos? (Hoy la app guarda «sin precio» y lo enseña como «Gratis».)</li>
+        <li>A quien no publicó un evento que ya tiene cartel, ¿le enseñamos el botón apagado o mejor «Ofrecer mi cartel», que le llega a quien lo publicó para que decida?</li>
+        <li>Si hay dos o más parecidos (raro: el mismo día, el mismo sitio y un nombre parecido), ¿basta con que cada renglón abra su ficha y ahí se ponga el cartel, o lo quieres elegir aquí mismo?</li>
+      </ol>
+    </section>
+    <section aria-labelledby="t-medida">
+      <h2 id="t-medida">Cómo se mide</h2>
+      <p class="chica">Bajo el teléfono, dentro del marco: nodos y profundidad de toda la pantalla (como medir.js: lo que se pinta, un svg cuenta uno); del bloque nuevo (<code>data-propuesta</code>: la caja, el pie y el final) sus nodos, su profundidad y los div o span sin clase; textos cortados y desborde horizontal de la pantalla; y los toques menores de 44 px en el bloque. Las cifras por estado y ancho, y el recorrido con toques reales, en la bitácora 498.</p>
+    </section>
+  </aside>
+</main>
+<template id="maqueta-css"><style>/*@CSS*/</style></template>
+<script>
+(() => {
+  /*@DATOS*/
+  const CSS = document.getElementById('maqueta-css').content.querySelector('style').textContent;
+  for (const [id, cuerpo] of Object.entries(CUERPOS)) CUERPOS[id] = cuerpo.replace(/__IMG_(\d+)__/g, (_, n) => IMAGENES[n]);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[x]);
+
+  // Cada pantalla del flujo con sus estados: «hoy» es la referencia (la app como está), las letras son variantes y la ★ la recomendada.
+  const PANTALLAS = [
+    { id: 'leer', nombre: '1 · Al leer el cartel', estados: [
+      { id: 'leer-hoy', variante: 'Hoy', nombre: 'Hoy: «Leyendo el cartel…»', notas: ['La espera real: el cartel que eligió Ana, atenuado y latiendo, y «Leyendo el cartel…». Hoy, al terminar, el alta sigue a las preguntas que falten o a «Revisa», y solo al tocar «Publicar» el servidor dice «¿Es este?».', 'El caso del founder: la IA leyó «Noche de Danzón», vie 9 de oct a las 8 pm en el Teatro de la Paz, y ya hay «Noche de danzón con la Orquesta Típica» ese día y en ese sitio, sin cartel (la cargó una agenda).'] },
+      { id: 'leer-c2-a', variante: 'C2', reco: true, nombre: 'C2 · sin cartel', notas: ['En cuanto se lee: el cartel se queda grande (ya sin latir) y la frase se vuelve la pregunta. Es la misma caja de «Revisa» (ui/Parecidos), con el renglón del que ya está: el símbolo SN porque no tiene cartel.', 'El pie dice la respuesta principal, «Sí, es este: ponerle mi cartel» (ui/Boton primario en el pie de PorPasos). En la caja, «No, es otro: seguir» (secundario): sigue a las preguntas que falten o a «Revisa», como hoy, y allá ya no vuelve a preguntar.', 'Por qué aquí: la pregunta llega donde la persona está mirando, su cartel grande y el renglón del que ya está se ven juntos, no hay pantalla nueva, y nadie revisa los datos de un evento que ya existe. Solo sale si el cartel trae nombre, día y sitio.', 'Toca el botón del pie, «No, es otro» o el renglón.'] },
+      { id: 'leer-c2-b', variante: 'C2', nombre: 'C2 · ya tiene cartel (de otra persona)', notas: ['Feleal, que Marcos publicó con su cartel. Ana subió otro. El pie: «Sí, es este: ir al evento» (abre su ficha; el alta se descarta). Cambiar su cartel, apagado con su nota, porque Ana no lo publicó. «No, es otro: seguir».', 'Los dos carteles a la vista sin piezas nuevas: el de Ana grande arriba, el que ya está en la miniatura del renglón.'] },
+      { id: 'leer-c1-a', variante: 'C1', nombre: 'C1 · como primer paso', notas: ['La alternativa: tras la espera, un paso propio con la cabeza de «Revisa» (miniatura, «Leído del cartel» y el título leído) y la misma caja.', 'Funciona igual, pero cambia la pantalla de golpe y el cartel de Ana se ve chico: cuesta más comparar. Por eso C2.'] },
+    ] },
+    { id: 'revisa', nombre: '2 · Revisa, al publicar', estados: [
+      { id: 'revisa-hoy', variante: 'Hoy', nombre: 'Hoy', notas: ['«Revisa» real tras tocar «Publicar»: el servidor encontró la Noche de danzón (OL-384) y pinta la caja con el renglón y «No, es otro: publicar de todos modos». El pie sigue diciendo «Publicar», que vuelve a preguntar lo mismo.', 'Tocar el renglón abre la ficha y se pierde lo capturado: es la única forma de decir «sí, es este».'] },
+      { id: 'revisa-a1', variante: 'A1', reco: true, nombre: 'A1 · sin cartel', notas: ['La pregunta final se queda (por si se cambió el día o el sitio después de la primera). El pie deja de decir «Publicar» mientras se pregunta: dice la respuesta principal, «Sí, es este: ponerle mi cartel». Si la persona toca donde siempre, no duplica el evento.', 'En la caja, «No, es otro: publicar de todos modos», como hoy. El renglón sigue abriendo la ficha (no se quita lo que existe).', 'Al llegar la pregunta, la caja se desplaza a la vista: así el pie nunca dice «es este» de algo que no se ve (hoy la caja aparece abajo y puede quedar fuera de la pantalla).', 'Reutiliza: ui/Parecidos y RenglonParecido tal cual, ui/Boton primario en el pie de PorPasos. Nuevo: solo los textos.'] },
+      { id: 'revisa-a2', variante: 'A2', nombre: 'A2 · los dos en la caja', notas: ['Lo que dice el encargo al pie de la letra: en la caja, primero «Sí, es este: ponerle mi cartel» (primario) y debajo «No, es otro»; el pie sigue en «Publicar».', 'Quedan dos botones morados en la misma pantalla y el del pie no sirve mientras se pregunta. Por eso A1.'] },
+      { id: 'revisa-b-dueno', variante: 'B', nombre: 'B · ya tiene cartel (quien lo publicó)', notas: ['El parecido ya tiene cartel (Feleal). Lo más probable es que sea el mismo y no haya nada que hacer: el pie dice «Sí, es este: ir al evento».', 'Cambiar su cartel va en segundo plano (secundario): «Sí, es este: cambiar su cartel por el mío». Así lo ve quien lo publicó o la administración.', 'Los dos carteles lado a lado pedirían una pieza nueva: el de la persona está arriba, en la cabeza de «Revisa», y el que ya está en la miniatura del renglón. Se deja así.'] },
+      { id: 'revisa-b-ajeno', variante: 'B', nombre: 'B · ya tiene cartel (otra persona)', notas: ['A quien no lo publicó: el mismo botón apagado (ui/Boton con aria-disabled, como el «Publicar» cuando falta algo) y debajo la nota del canon «Solo quien lo publicó puede cambiarlo.».', 'Alternativa (pregunta 3): en vez del botón apagado, «Ofrecer mi cartel», que le llega a quien lo publicó para que decida.'] },
+      { id: 'revisa-tras-c', variante: 'C2', nombre: 'Tras «No, es otro» en 1', notas: ['Si en el paso 1 dijo «No, es otro: seguir» y no cambió el nombre, el día ni el sitio, «Revisa» ya no vuelve a preguntar: se publica de una vez (la misma firma que hoy usa «No, es otro»).'] },
+    ] },
+    { id: 'final', nombre: '3 · Al terminar', estados: [
+      { id: 'final-a', variante: 'A1', reco: true, nombre: 'Listo: tu cartel', notas: ['«Publicado» de siempre (sello verde, la tarjeta y el pie) con otra frase: «Listo: tu cartel ya está en el evento» y qué se completó, en una línea.', 'La tarjeta es la del evento que ya estaba (su nombre, su ficha), con el cartel de Ana y el precio que leyó. «Ver el evento» abre su ficha; «Compartir» y «Descargar el cartel», como hoy.', 'No se publica nada nuevo: no hay «Evento publicado» ni un segundo evento.'] },
+      { id: 'final-b', variante: 'B', nombre: 'Listo: cambiamos su cartel', notas: ['Quien lo publicó cambió su cartel: «Listo: cambiamos su cartel por el tuyo» y «Todo lo demás sigue igual».'] },
+      { id: 'ficha-despues', variante: 'A1', nombre: 'La ficha, después', notas: ['La ficha real del evento que ya estaba, ya con el cartel de Ana: el cartel arriba, «$150», «Cartel» para descargarlo y «Sobre el evento» con lo que leyó la IA. Su nombre, su día, su sitio y sus «Voy» no cambian.'] },
+      { id: 'ficha-antes', variante: 'Hoy', nombre: 'Hoy: la ficha sin cartel', notas: ['La ficha real antes: sin cartel enseña la foto del lugar, «Gratis» porque nadie puso precio y sin descripción.'] },
+      { id: 'final-publicado-hoy', variante: 'Hoy', nombre: 'Hoy: «No, es otro»', notas: ['Lo que pasa hoy con «No, es otro: publicar de todos modos»: un segundo evento, «Noche de Danzón», con su cartel. Se queda igual para cuando de verdad es otro.'] },
+      { id: 'ficha-feleal', variante: 'Hoy', nombre: 'Hoy: la ficha de Feleal', notas: ['A donde lleva «Sí, es este: ir al evento» cuando ya tiene cartel: su ficha, como hoy.'] },
+    ] },
+  ];
+  const ESTADOS = Object.fromEntries(PANTALLAS.flatMap((p) => p.estados.map((e) => [e.id, { ...e, pantalla: p.id }])));
+  const ANCHOS = [320, 390, 430, 1280];
+
+  const INICIAL = { estado: 'leer-c2-a', ancho: 390 };
+  let estado = { ...INICIAL };
+  try { Object.assign(estado, JSON.parse(localStorage.getItem('proto-alta-cartel-existente') || '{}')); } catch {}
+  if (!ESTADOS[estado.estado] || !ANCHOS.includes(estado.ancho)) estado = { ...INICIAL };
+  const guardar = () => { try { localStorage.setItem('proto-alta-cartel-existente', JSON.stringify(estado)); } catch {} };
+  let anterior = null;
+  let aviso = '';
+
+  const documento = (cuerpo) => `<!doctype html>${HTML_TAG}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body>${cuerpo}</body></html>`;
+  const tel = $('tel');
+  let pintado = Promise.resolve();
+  function pintar() {
+    guardar();
+    const e = ESTADOS[estado.estado];
+    tel.style.setProperty('--ancho-tel', estado.ancho + 'px');
+    tel.style.setProperty('--alto-tel', (estado.ancho >= 1024 ? 800 : 844) + 'px');
+    pintado = new Promise((ok) => {
+      tel.addEventListener('load', async () => {
+        const doc = tel.contentDocument;
+        conectar(doc);
+        try { await doc.fonts.ready; } catch {}
+        const r = medir(doc);
+        document.documentElement.dataset.pintado = e.id + '@' + estado.ancho;
+        ok(r);
+      }, { once: true });
+      tel.srcdoc = documento(CUERPOS[e.id]);
+    });
+    botones('sel-pantalla', PANTALLAS.map((p) => [p.id, p.nombre]), e.pantalla, (v) => ir(PANTALLAS.find((p) => p.id === v).estados.find((x) => x.reco)?.id ?? PANTALLAS.find((p) => p.id === v).estados[0].id));
+    const pantalla = PANTALLAS.find((p) => p.id === e.pantalla);
+    botones('sel-estado', pantalla.estados.map((x) => [x.id, x.nombre, x.reco]), e.id, (v) => ir(v));
+    botones('sel-ancho', ANCHOS.map((a) => [String(a), String(a)]), String(estado.ancho), (v) => { estado.ancho = Number(v); pintar(); });
+    $('etiqueta').innerHTML = aviso ? esc(aviso) : `<b>${esc(pantalla.nombre)} · ${esc(e.nombre)}</b> · ${estado.ancho} × ${estado.ancho >= 1024 ? 800 : 844}`;
+    aviso = '';
+    $('reco-estado').innerHTML = e.reco ? '<span class="reco">Recomendada</span>' : '';
+    $('texto-estado').innerHTML = `<ul>${e.notas.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    return pintado;
+  }
+  function botones(id, opciones, actual, alElegir) {
+    const caja = $(id);
+    caja.innerHTML = opciones.map(([v, t, reco]) => `<button type="button" data-v="${v}" aria-pressed="${v === actual}"${reco ? ' data-reco="true" aria-description="recomendada"' : ''}>${esc(t)}</button>`).join('');
+    caja.onclick = (ev) => { const b = ev.target.closest('button[data-v]'); if (b) alElegir(b.dataset.v); };
+  }
+  function ir(id) { if (id !== estado.estado) anterior = estado.estado; estado.estado = id; return pintar(); }
+
+  // Los toques dentro del teléfono: las respuestas de «¿Es este?», «Ver el evento», el renglón y Atrás; lo demás solo dice a dónde lleva.
+  function conectar(doc) {
+    doc.addEventListener('submit', (ev) => ev.preventDefault(), true);
+    doc.addEventListener('click', (ev) => {
+      const el = ev.target.closest('a, button');
+      if (!el) return;
+      ev.preventDefault();
+      const texto = el.textContent.trim();
+      const etiqueta = el.getAttribute('aria-label') ?? '';
+      const href = el.getAttribute('href') ?? '';
+      const actual = estado.estado;
+      const decir = (t) => { aviso = t; $('etiqueta').textContent = t; aviso = ''; };
+      if (el.getAttribute('aria-disabled') === 'true') return decir('Apagado: solo quien lo publicó (o la administración) puede cambiar su cartel.');
+      if (texto === 'Sí, es este: ponerle mi cartel') return ir('final-a');
+      if (texto === 'Sí, es este: cambiar su cartel por el mío') return ir('final-b');
+      if (texto === 'No, es otro: seguir') return ir('revisa-tras-c');
+      if (texto === 'No, es otro: publicar de todos modos') return ir('final-publicado-hoy');
+      if (href === '/eventos/feleal-un-viaje-por-el-mundo-en-acordeon') return ir('ficha-feleal');
+      if (href === '/eventos/noche-de-danzon-con-la-orquesta-tipica') return ir(actual === 'final-a' ? 'ficha-despues' : 'ficha-antes');
+      if (/^(Atrás|Cerrar)/.test(etiqueta) && anterior && ESTADOS[actual].pantalla === 'final') return ir(anterior);
+      if (texto === 'Publicar' && actual === 'revisa-tras-c') return ir('final-publicado-hoy');
+      decir(href ? `En la app, esto lleva a ${href}` : `En la app: «${texto || etiqueta}»`);
+    }, true);
+  }
+
+  // Como medir.js: lo que se pinta bajo <body> (sin lo oculto; un svg cuenta uno). Del bloque nuevo (`data-propuesta`): nodos, profundidad,
+  // div o span sin clase y toques menores de 44 px; de la pantalla: nodos, profundidad, textos cortados y desborde horizontal.
+  function medir(doc) {
+    const win = doc.defaultView;
+    const OMITIDOS = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'TEMPLATE', 'NOSCRIPT']);
+    const visible = (el) => !OMITIDOS.has(el.tagName) && !el.hidden && win.getComputedStyle(el).display !== 'none';
+    let prof = 0, nodos = 0;
+    const recorrer = (el, d) => { for (const h of el.children) { if (!visible(h)) continue; nodos++; prof = Math.max(prof, d + 1); if (h.tagName.toLowerCase() !== 'svg') recorrer(h, d + 1); } };
+    recorrer(doc.body, 0);
+    const bloques = [...doc.querySelectorAll('[data-propuesta]')];
+    let bNodos = 0, bProf = 0, sin = 0;
+    // «Sin clase» cuenta solo lo nuevo: el renglón del evento (`RenglonParecido`, dentro de su `ul`) va tal cual, con los `span` de su meta
+    // que maqueta `ui/Renglon` (`.frente > small > span`).
+    const contar = (el, d) => { bNodos++; bProf = Math.max(bProf, d); if (/^(DIV|SPAN)$/.test(el.tagName) && !el.getAttribute('class') && !el.closest('[data-propuesta] ul')) sin++; if (el.tagName.toLowerCase() !== 'svg') for (const h of el.children) if (visible(h)) contar(h, d + 1); };
+    for (const b of bloques) contar(b, 1);
+    // Textos cortados: sin las claves que solo oye el lector de pantalla (1 px de ancho, `sinClave` de ui/Renglon) y aparte lo que la regla
+    // H-17 deja ceder a propósito: el último dato de la línea de un renglón (el precio), con puntos suspensivos; y el título corto de la barra
+    // de una ficha (`tituloBarra`, que el lector no oye: el título entero está en el h1).
+    const todosCortados = [...doc.body.querySelectorAll('*')].filter((el) => { if (!visible(el) || el.children.length || (el.clientWidth <= 1 && el.clientHeight <= 1)) return false; const s = win.getComputedStyle(el); return (s.overflow !== 'visible' || s.textOverflow === 'ellipsis') && el.scrollWidth > el.clientWidth + 1; });
+    const cede = todosCortados.filter((el) => (el.matches('small > span > span:last-child') && el.closest('a')?.matches('[class*="__frente"]')) || el.matches('[aria-hidden="true"][class*="__tituloBarra"]')).length;
+    const cortados = todosCortados.length - cede;
+    const desborde = doc.documentElement.scrollWidth > doc.documentElement.clientWidth + 1 ? 1 : 0;
+    const toques = bloques.flatMap((b) => [...b.querySelectorAll('a, button')]).filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && (r.width < 44 || r.height < 44); }).length;
+    const r = { nodos, prof, bloque: bNodos, profBloque: bProf, sinClase: sin, cortados, cede, desborde, toques, bloques: bloques.map((b) => b.dataset.propuesta) };
+    $('medidor').innerHTML = [
+      ['nodos', nodos, false], ['profundidad', prof, prof > 14], ['nodos del bloque', bloques.length ? bNodos : '–', false], ['profundidad del bloque', bloques.length ? bProf : '–', false],
+      ['sin clase', bloques.length ? sin : '–', sin > 0], ['textos cortados', cortados, cortados > 0], ['cortes a propósito', cede, false], ['desborde', desborde, desborde > 0], ['toques < 44', bloques.length ? toques : '–', toques > 0],
+    ].map(([n, v, mal]) => `<span data-mal="${mal}"><b>${v}</b>${n}</span>`).join('');
+    return r;
+  }
+
+  $('plegar').addEventListener('click', (ev) => {
+    const notas = $('notas');
+    const plegadas = notas.dataset.plegadas !== 'true';
+    notas.dataset.plegadas = String(plegadas);
+    ev.currentTarget.setAttribute('aria-expanded', String(!plegadas));
+    ev.currentTarget.textContent = plegadas ? 'Abrir las notas' : 'Plegar las notas';
+  });
+  window.prototipo = { ir: (id, ancho) => { if (ancho) estado.ancho = ancho; return ir(id); }, estado: () => ({ ...estado }), medir: () => medir(tel.contentDocument), listo: () => pintado, estados: () => Object.keys(ESTADOS) };
+  pintar();
+})();
+</script>
+</body>
+</html>
