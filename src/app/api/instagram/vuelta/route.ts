@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
         { appId: META_APP_ID, appSecret: process.env.META_APP_SECRET, paginaId: process.env.FACEBOOK_PAGE_ID, instagramId: process.env.INSTAGRAM_USER_ID, secreto: secretoDeEstado() },
         { traer: fetch, guardar: (c) => guardarConexion(c) },
       );
-  const r = NextResponse.redirect(new URL(clave === "conectado" ? "/admin/instagram?conectado=1" : `/admin/instagram?error=${clave}`, req.nextUrl), 303);
+  // Sobre el origen propio si lo hay (en `next start` local, `nextUrl` dice localhost aunque se haya entrado por 127.0.0.1).
+  const r = NextResponse.redirect(new URL(clave === "conectado" ? "/admin/instagram?conectado=1" : `/admin/instagram?error=${clave}`, origen ?? req.nextUrl), 303);
   r.cookies.set(GALLETA_ESTADO, "", { httpOnly: true, secure: true, sameSite: "lax", path: "/api/instagram", maxAge: 0 });
   r.headers.set("Cache-Control", "no-store");
   r.headers.set("Referrer-Policy", "no-referrer");

@@ -7,8 +7,10 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 export const dynamic = "force-dynamic";
 
 const SIN_CACHE = { "Cache-Control": "no-store" };
-const aInstagram = (req: NextRequest, error: string) => {
-  const r = NextResponse.redirect(new URL(`/admin/instagram?error=${error}`, req.nextUrl), 303);
+/** De vuelta a Administración › Instagram con la clave del error: sobre el origen propio si lo hay (en `next start` local, `nextUrl` dice
+ *  localhost aunque se haya entrado por 127.0.0.1, y la sesión no viajaría) o, si no, sobre el de la petición. */
+const aInstagram = (req: NextRequest, origen: string | null, error: string) => {
+  const r = NextResponse.redirect(new URL(`/admin/instagram?error=${error}`, origen ?? req.nextUrl), 303);
   r.headers.set("Cache-Control", "no-store");
   return r;
 };
@@ -25,10 +27,10 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get("host");
   const origen = origenPropio(host, req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(/:$/, ""));
   const vuelta = origen ? uriDeVuelta(origen) : null;
-  if (!origen || !vuelta) return aInstagram(req, "origen");
+  if (!origen || !vuelta) return aInstagram(req, origen, "origen");
   if (new URL(origen).host !== (host ?? "").toLowerCase()) return NextResponse.redirect(new URL("/api/instagram/conectar", origen), 307);
   const secreto = secretoDeEstado();
-  if (!secreto) return aInstagram(req, "config");
+  if (!secreto) return aInstagram(req, origen, "config");
   const estado = firmarEstado(actual.perfil.id, Date.now(), secreto);
   const r = NextResponse.redirect(urlDeConexion(META_APP_ID, vuelta, estado), 303);
   r.cookies.set(GALLETA_ESTADO, estado, { httpOnly: true, secure: true, sameSite: "lax", path: "/api/instagram", maxAge: VIGENCIA_ESTADO_MS / 1000 });
