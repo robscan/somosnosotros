@@ -7,7 +7,9 @@ import type { LugarResumen } from "@/lib/lugares";
 import { normalizarNombre } from "@/lib/lugares";
 import { esApertura } from "@/lib/sugerencias";
 import { horarioComun } from "@/lib/sesionesEvento";
-import { OTRO_VACIO, estadoInicial, faltan, finConHora, type Acto, type Candidato, type Paso, type Respuestas, type Sitio } from "./pasos";
+import type { DatosParaParecidos } from "@/lib/cartelExistente";
+import { preguntaSiHayParecidos } from "@/lib/eventosParecidos";
+import { OTRO_VACIO, estadoInicial, faltan, finConHora, inicioDe, type Acto, type Candidato, type Paso, type Respuestas, type Sitio } from "./pasos";
 
 /**
  * El camino con cartel del alta por pasos (OL-302; prototipo firmado `publicar-por-pasos.html`, bitácora 323), sin DOM: lo que lee
@@ -69,6 +71,21 @@ export function respuestasDelCartel(leido: Leido, quienActual: QuienItem[] = [])
   const sitio = sitioLeido(leido) ?? (r.actos?.length ? sedeComunDelPrograma(leido) : undefined);
   if (sitio) r.sitio = sitio;
   return r;
+}
+
+/**
+ * «¿Es este?» en cuanto se lee el cartel (OL-467, C2; decisión 1 del founder): solo si el cartel trae el nombre, el día y la hora, y el sitio (un
+ * lugar del directorio o el nombre de uno escrito), y solo de lo que se pregunta al publicar (un evento o un taller). null: no se pregunta aquí
+ * (se pregunta al publicar, como siempre).
+ */
+export function datosParaParecidos(r: Respuestas): DatosParaParecidos | null {
+  const titulo = r.nombre.trim();
+  const inicio = inicioDe(r);
+  if (!titulo || !inicio || !preguntaSiHayParecidos(r.clase)) return null;
+  const { modo, lugarId, otro } = r.sitio;
+  if (modo === "lugar" && lugarId) return { titulo, inicio, clase: r.clase, lugarId, sitioTexto: null };
+  if (modo === "otro" && otro.sitioTexto.trim()) return { titulo, inicio, clase: r.clase, lugarId: null, sitioTexto: otro.sitioTexto.trim(), lat: otro.sitioPunto?.lat ?? null, lng: otro.sitioPunto?.lng ?? null };
+  return null;
 }
 
 /**

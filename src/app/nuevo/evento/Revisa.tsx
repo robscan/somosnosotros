@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { HojaHorario } from "@/app/lugares/Horario";
 import TextoHorario from "@/app/lugares/TextoHorario";
 import { PiePaso } from "@/components/PorPasos";
@@ -22,6 +22,8 @@ import { NOMBRE_RESERVADO, actosMarcados, conPrograma, costoOpcionalEn, dondeRes
 import { conSedesPropias, textoSesiones } from "./clasePorPasos";
 import { HojaClase, HojaFestival, HojaInauguracion, nombreDePadre } from "./PasosClase";
 import { CabezaCartel } from "./PasoCartel";
+import { CambiarSuCartel, PieRespuesta, TEXTO_PARECIDOS } from "./CartelExistente";
+import type { RespuestaParecido } from "@/lib/cartelExistente";
 import type { CartelSubido } from "./useLeerCartel";
 import styles from "./AltaEvento.module.css";
 
@@ -43,6 +45,9 @@ type Props = {
   parecidos?: EventoParecido[];
   /** «No, es otro: publicar de todos modos»: publica sin volver a preguntar. */
   onConfirmar?: () => void;
+  /** Tu cartel al que ya está (OL-467, A1): con un solo parecido, la respuesta principal va en el pie («Sí, es este: ponerle mi cartel» o «ir al
+   *  evento») y cambiar un cartel que ya está, en la caja. Sin ella (editar, o dos o más parecidos), el pie sigue en «Publicar». */
+  cartelExistente?: { respuesta: RespuestaParecido | null; onPoner: () => void; onCambiar: () => void; enviando: boolean; error: string | null };
   enviando: boolean;
   /** Lo que falta todavía, dicho en el botón; null si ya se puede publicar. */
   falta: string | null;
@@ -65,6 +70,9 @@ type Props = {
   /** Editar un festival que ya existe: su programa se ve, no se cambia aquí (cada acto se edita en su ficha), y sigue siendo festival. */
   festivalGuardado?: { actos: number; resumen: string };
 };
+
+/** La caja de «¿Es este?» en «Revisa», para desplazarla a la vista al llegar. */
+const CAJA_PARECIDOS = "parecidos-al-publicar";
 
 /** Lo que dice el botón del pie, publicando o guardando. */
 const BOTON = { publicar: ["Publicar", "Publicando…"], editar: ["Guardar cambios", "Guardando…"] } as const;
@@ -96,8 +104,14 @@ export const DIRECCION_RETIRADA = "La dirección ya no está disponible por priv
  * miniatura (el cartel, o el símbolo SN si no tiene) y dos lápices sin letreros, uno sobre la miniatura y otro junto al nombre (OL-349), y lo
  * opcional que ya tiene algo dice «Cambiar…» en vez de «Agregar…».
  */
-export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, parecidos, onConfirmar, enviando, falta, formulario, onAbrir, editar, onCambiar, onClase, horarioLugar = [], festivales = [], sedes, festivalGuardado }: Props) {
+export default function Revisa({ r, zona, lugar, mios, cartel, errores, general, parecidos, onConfirmar, cartelExistente, enviando, falta, formulario, onAbrir, editar, onCambiar, onClase, horarioLugar = [], festivales = [], sedes, festivalGuardado }: Props) {
   const [hoja, setHoja] = useState<"clase" | "horario" | "inauguracion" | "festival" | null>(null);
+  // «¿Es este?» llega al publicar, abajo de los renglones: se desplaza a la vista (OL-467).
+  const preguntando = !!(parecidos && parecidos.length > 0 && onConfirmar);
+  useEffect(() => {
+    if (preguntando) document.getElementById(CAJA_PARECIDOS)?.scrollIntoView({ block: "center" });
+  }, [preguntando, parecidos]);
+  const respuesta = preguntando ? (cartelExistente?.respuesta ?? null) : null;
   const cambiar = (cambios: Partial<Respuestas>) => {
     onCambiar?.(cambios);
     setHoja(null);
@@ -295,31 +309,35 @@ export default function Revisa({ r, zona, lugar, mios, cartel, errores, general,
           {extras}
         </p>
       )}
-      {parecidos && parecidos.length > 0 && onConfirmar && (
-        <Parecidos texto="Ya hay uno parecido ese día en el mismo sitio:" conFoto onConfirmar={onConfirmar}>
+      {preguntando && parecidos && onConfirmar && (
+        <Parecidos id={CAJA_PARECIDOS} texto={TEXTO_PARECIDOS} conFoto onConfirmar={onConfirmar} antes={cartelExistente && <CambiarSuCartel respuesta={respuesta} onCambiar={cartelExistente.onCambiar} enviando={cartelExistente.enviando} />}>
           {parecidos.map((p) => (
             <RenglonParecido key={p.id} {...renglonParecido(p)} />
           ))}
         </Parecidos>
       )}
-      <PiePaso>
-        {general && (
-          <p className="aviso-error" role="alert">
-            {general}
-            {editar?.conflicto && (
-              <>
-                {" "}
-                <a href={editar.conflicto} target="_blank" rel="noopener noreferrer">
-                  Ver versión actual en otra pestaña
-                </a>
-              </>
-            )}
-          </p>
-        )}
-        <Boton type={falta ? "button" : "submit"} form={formulario} disabled={enviando} aria-busy={enviando || undefined} aria-disabled={falta ? true : undefined}>
-          {enviando ? ocupado : (falta ?? boton)}
-        </Boton>
-      </PiePaso>
+      {respuesta && cartelExistente ? (
+        <PieRespuesta respuesta={respuesta} onPoner={cartelExistente.onPoner} enviando={cartelExistente.enviando} error={cartelExistente.error} />
+      ) : (
+        <PiePaso>
+          {general && (
+            <p className="aviso-error" role="alert">
+              {general}
+              {editar?.conflicto && (
+                <>
+                  {" "}
+                  <a href={editar.conflicto} target="_blank" rel="noopener noreferrer">
+                    Ver versión actual en otra pestaña
+                  </a>
+                </>
+              )}
+            </p>
+          )}
+          <Boton type={falta ? "button" : "submit"} form={formulario} disabled={enviando} aria-busy={enviando || undefined} aria-disabled={falta ? true : undefined}>
+            {enviando ? ocupado : (falta ?? boton)}
+          </Boton>
+        </PiePaso>
+      )}
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PorPasos from "@/components/PorPasos";
 import type { Cupo, ResultadoEvento } from "@/app/eventos/acciones";
+import type { parecidosDelCartel, ponerMiCartel, ResultadoMiCartel } from "@/app/eventos/cartelExistente";
 import { operacionEvento } from "@/app/eventos/operacionEvento";
 import { useEstoyAqui } from "@/app/eventos/useEstoyAqui";
 import type { ArtistaResumen } from "@/lib/artistas";
@@ -15,12 +16,14 @@ import { horarioParaEnviar } from "@/lib/horarioLugar";
 import { pistasDe } from "@/lib/sugerencias";
 import { apartarGuardia, reponerGuardia } from "@/lib/guardiaSalida";
 import { claseMedida, medirCliente } from "@/lib/medir";
-import { firmaParecidos } from "@/lib/eventosParecidos";
+import { firmaParecidos, type EventoParecido } from "@/lib/eventosParecidos";
+import { finalDeCartel, respuestaDe } from "@/lib/cartelExistente";
 import type { LugarResumen } from "@/lib/lugares";
 import TiraTipos from "../TiraTipos";
 import { sinPisar, type Arranque } from "./arranque";
 import CamposEvento from "./CamposEvento";
-import { respuestasDelCartel, sugeridoDelCartel, type Leido } from "./cartelPorPasos";
+import { datosParaParecidos, respuestasDelCartel, sugeridoDelCartel, type Leido } from "./cartelPorPasos";
+import { PreguntaAlLeer } from "./CartelExistente";
 import type { ContextoClase } from "./contextoClase";
 import { avance, claseElegida, conPrograma, eventoPublicado, faltaParaPublicar, inicioDe, preguntaDe, sesionesDe, type Creado } from "./pasos";
 import { cuandoDeClase, sedesDelPrograma } from "./clasePorPasos";
@@ -57,7 +60,15 @@ type Props = {
   contexto?: ContextoClase;
   /** Las acciones de la sugerencia de «Publicado» (OL-323); sin ellas, el final sale sin sugerencia. */
   sugerencias?: AccionesSugerencia;
+  /** Tu cartel a un evento que ya está (OL-467): buscar los parecidos en cuanto se lee el cartel y ponerle el cartel. Sin ellas, como antes. */
+  cartelExistente?: AccionesCartelExistente;
 };
+
+/** Las acciones del servidor de OL-467 (`app/eventos/cartelExistente.ts`): la página las pasa al alta, como `accion`. */
+export type AccionesCartelExistente = { buscar: typeof parecidosDelCartel; poner: typeof ponerMiCartel };
+
+/** «¿Es este?» en cuanto se lee el cartel (C2): buscando (la espera sigue) o preguntando. */
+type AlLeer = { fase: "buscando" } | { fase: "pregunta"; parecidos: EventoParecido[] };
 
 const FORMULARIO = "publicar-evento";
 
@@ -87,13 +98,16 @@ export default function AltaEvento(props: Props) {
   return <AltaPorPasos {...props} lugares={lugares} onLugarNuevo={agregar} />;
 }
 
-function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, sugerencias, onLugarNuevo }: Interno) {
+function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId, cartelActivo, cupo, arranque, contexto, sugerencias, cartelExistente, onLugarNuevo }: Interno) {
   const pasos = usePasosEvento(mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : [], arranque);
   const { r, paso, direccion, primero, primeraPregunta, cambiar, contestar, seguir, atras, publicado, sugerir, candidato } = pasos;
   const horarios = contexto?.horarios ?? {};
   const sitio = useSitioPorPasos({ pasos, lugares, ciudadContexto, onLugarNuevo });
   // Lo que leyó el cartel, para las sugerencias de «Publicado» (OL-323): la visita de una exposición y el festival que nombra.
   const [leido, setLeido] = useState<Leido | null>(null);
+  // OL-467 (C2): en cuanto se lee el cartel con nombre, día y sitio, «¿Es este?» en la misma espera si ya hay uno parecido.
+  const [alLeer, setAlLeer] = useState<AlLeer | null>(null);
+  const busqueda = useRef(0);
   // Con cartel: se sube siempre y se lee si toca; lo leído rellena las respuestas y el flujo sigue en lo primero que falte (o en «Revisa»); sin
   // lectura, sigue la primera pregunta. Si el cartel nombra un sitio que no es del directorio, «¿Dónde es?» abre con ese nombre ya escrito.
   const cartel = useLeerCartel({
@@ -109,6 +123,18 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
       // El lugar del directorio en la dirección del cartel (OL-413): «¿Es en …?» al llegar a «Dónde» (si el sitio no vino ya de por dónde se entró).
       if (leidas.sitio) sugerir(sugeridoDelCartel(leido, lugares));
       contestar(leidas);
+      // OL-467: la misma pregunta que al publicar, ya. Mientras busca, la espera sigue; sin parecidos (o si falla), sigue como siempre.
+      const datos = cartelExistente ? datosParaParecidos({ ...r, ...leidas }) : null;
+      if (!cartelExistente || !datos) return;
+      const turno = ++busqueda.current;
+      setAlLeer({ fase: "buscando" });
+      cartelExistente
+        .buscar(datos)
+        .catch(() => [] as EventoParecido[])
+        .then((parecidos) => {
+          if (turno !== busqueda.current) return;
+          setAlLeer(parecidos.length ? { fase: "pregunta", parecidos } : null);
+        });
     },
   });
   const ubicacion = useEstoyAqui();
@@ -142,6 +168,31 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     (document.getElementById(FORMULARIO) as HTMLFormElement | null)?.requestSubmit();
   }, [confirmado, firma]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
+  // OL-467: «Sí, es este: ponerle mi cartel» (o «cambiar su cartel por el mío»): el evento que ya estaba, con el cartel, y su final.
+  const [conMiCartel, setConMiCartel] = useState<Extract<ResultadoMiCartel, { ok: true }> | null>(null);
+  const [poniendo, setPoniendo] = useState(false);
+  const [errorCartel, setErrorCartel] = useState<string | null>(null);
+  const ponerCartel = useCallback(
+    async (parecido: EventoParecido, reemplazar: boolean) => {
+      const form = document.getElementById(FORMULARIO) as HTMLFormElement | null;
+      if (!cartelExistente || !form || poniendo) return;
+      setPoniendo(true);
+      setErrorCartel(null);
+      apartarGuardia();
+      const hecho = await cartelExistente.poner(parecido.id, new FormData(form), reemplazar).catch(() => ({ ok: false as const, mensaje: "No se pudo poner tu cartel. Intenta de nuevo." }));
+      setPoniendo(false);
+      if (!hecho.ok) {
+        reponerGuardia();
+        setErrorCartel(hecho.mensaje);
+        return;
+      }
+      busqueda.current++;
+      setAlLeer(null);
+      setConMiCartel(hecho);
+      publicado();
+    },
+    [cartelExistente, poniendo, publicado],
+  );
   // Las horas son las del sitio del evento: las del lugar, si es en uno; si no, las de la ciudad inicial (el servidor guarda en la del punto).
   const zona = zonaSegura(sitio.lugar?.zona);
   const falta = faltaParaPublicar(r);
@@ -179,16 +230,25 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
     enviar(fd);
   }
 
+  // La espera del cartel (y, tras leerlo, mientras se buscan los parecidos o se pregunta «¿Es este?», OL-467): la misma pantalla, con la ✕.
+  const pregunta = alLeer?.fase === "pregunta" && cartel.subido && paso !== "publicado" ? alLeer : null;
+  // Mientras busca o pregunta, la barra es la de la espera (la ✕ y el título «Publicar»), aunque lo leído ya haya movido el paso.
+  const conAlLeer = alLeer?.fase === "buscando" || !!pregunta;
+  const enEspera = !!cartel.espera || conAlLeer;
+  const respuestaAlLeer = pregunta ? respuestaDe(pregunta.parecidos) : null;
+  const parecidosRevisa = resultado && !resultado.ok && preguntado === firma && confirmado !== firma ? resultado.parecidos : undefined;
+  const respuestaRevisa = respuestaDe(parecidosRevisa);
+
   return (
     <PorPasos
-      titulo={paso === "revisa" ? "Revisa" : "Publicar"}
-      paso={cartel.espera ? "espera" : periodo ? "periodo" : paso}
-      direccion={cartel.espera ? null : periodo || direccionPeriodo ? direccionPeriodo : direccion}
-      avance={avance(paso)}
+      titulo={paso === "revisa" && !conAlLeer ? "Revisa" : "Publicar"}
+      paso={enEspera ? "espera" : periodo ? "periodo" : paso}
+      direccion={enEspera ? null : periodo || direccionPeriodo ? direccionPeriodo : direccion}
+      avance={conAlLeer ? avance("inicio") : avance(paso)}
       salida={salida}
-      onAtras={periodo ? cerrarPeriodo : primero ? undefined : atrasDelPaso}
-      encima={!cartel.espera && primeraPregunta && preguntaDe(paso, r) && cartel.subido && !cartel.subido.leido ? <CartelGuardado foto={cartel.subido.url} noPude={cartel.subido.noPude} /> : undefined}
-      pregunta={cartel.espera ? undefined : periodo ? "¿Cuándo se puede visitar?" : preguntaDe(paso, r, candidato)}
+      onAtras={conAlLeer ? undefined : periodo ? cerrarPeriodo : primero ? undefined : atrasDelPaso}
+      encima={!enEspera && primeraPregunta && preguntaDe(paso, r) && cartel.subido && !cartel.subido.leido ? <CartelGuardado foto={cartel.subido.url} noPude={cartel.subido.noPude} /> : undefined}
+      pregunta={enEspera ? undefined : periodo ? "¿Cuándo se puede visitar?" : preguntaDe(paso, r, candidato)}
       fijo={
         <form id={FORMULARIO} action={publicar} hidden>
           <CamposEvento r={r} ciudadContexto={ciudadContexto} imagen={cartel.subido?.url ?? null} colores={cartel.subido?.colores} />
@@ -197,8 +257,25 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         </form>
       }
     >
-      {cartel.espera && <PasoEspera foto={cartel.miniatura} leyendo={cartel.espera === "leyendo"} />}
-      {!cartel.espera && paso === "inicio" && (
+      {enEspera && !pregunta && <PasoEspera foto={cartel.miniatura ?? cartel.subido?.url ?? null} leyendo={cartel.espera !== "subiendo"} />}
+      {pregunta && cartel.subido && (
+        <PreguntaAlLeer
+          foto={cartel.subido.url}
+          parecidos={pregunta.parecidos}
+          respuesta={respuestaAlLeer}
+          onSeguir={() => {
+            // «No, es otro: seguir»: sigue el alta donde iba, y «Revisa» ya no vuelve a preguntar si no cambia el nombre, el día ni el sitio.
+            setConfirmado(firma);
+            setErrorCartel(null);
+            setAlLeer(null);
+          }}
+          onPoner={() => respuestaAlLeer && void ponerCartel(respuestaAlLeer.parecido, false)}
+          onCambiar={() => respuestaAlLeer && void ponerCartel(respuestaAlLeer.parecido, true)}
+          enviando={poniendo}
+          error={errorCartel}
+        />
+      )}
+      {!enEspera && paso === "inicio" && (
         <>
           <PasoInicio casilla={cartel.casilla} error={cartel.error} onElegir={cartel.elegir} onSinCartel={seguir} />
           {/* Solo en el primer paso, donde aún no hay nada escrito: la salida a registrar un lugar o un artista (sus altas por pasos). */}
@@ -206,8 +283,8 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
         </>
       )}
       {/* La espera del cartel dura hasta que la imagen subida se ve (OL-353): mientras, solo ella, aunque el paso ya haya avanzado. */}
-      {!cartel.espera && <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} clases />}
-      {!cartel.espera && paso === "revisa" && (
+      {!enEspera && <Preguntas pasos={pasos} sitio={sitio} ubicacion={ubicacion} zona={zona} lugares={lugares} mios={mios} ciudadContexto={ciudadContexto} errores={errores} horarios={horarios} clases />}
+      {!enEspera && paso === "revisa" && (
         <Revisa
           r={r}
           zona={zona}
@@ -216,12 +293,23 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           cartel={cartel.subido}
           errores={errores}
           general={resultado && !resultado.ok ? resultado.general : undefined}
-          parecidos={resultado && !resultado.ok && preguntado === firma && confirmado !== firma ? resultado.parecidos : undefined}
+          parecidos={parecidosRevisa}
           onConfirmar={() => {
             // «No, es otro: publicar de todos modos»: publica ya, con la confirmación (el formulario la pone al ver la firma confirmada).
             setConfirmado(firma);
             confirmar.current = true;
           }}
+          cartelExistente={
+            cartelExistente && cartel.subido && respuestaRevisa
+              ? {
+                  respuesta: respuestaRevisa,
+                  onPoner: () => void ponerCartel(respuestaRevisa.parecido, false),
+                  onCambiar: () => void ponerCartel(respuestaRevisa.parecido, true),
+                  enviando: poniendo,
+                  error: errorCartel,
+                }
+              : undefined
+          }
           enviando={enviando}
           falta={falta}
           formulario={FORMULARIO}
@@ -250,6 +338,7 @@ function AltaPorPasos({ accion, lugares, mios, ciudadContexto, salida, usuarioId
           }}
         />
       )}
+      {paso === "publicado" && conMiCartel && <Publicado evento={conMiCartel.evento} conCartel clase={conMiCartel.evento.clase} {...finalDeCartel(conMiCartel)} />}
       {paso === "publicado" && creado && !periodo && (
         <AlPublicar r={r} creado={creado} evento={eventoPublicado(r, creado, { lugar: sitio.lugar, zona, imagen: cartel.subido?.url ?? null })} conCartel={!!cartel.subido} zona={zona} sugerencia={conSugerencia ? sugerencia : null} onPeriodo={abrirPeriodo} />
       )}

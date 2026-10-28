@@ -6,7 +6,7 @@ import type { EventoAgenda } from "@/lib/agenda";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { carpetaFotoPropia, esFotoPropia } from "@/lib/carteles/fotoPropia";
 import { huellaDeCartel } from "@/lib/carteles/huellaServidor";
-import { avisoAlDueno, completarDelFormulario, mensajeDeError, type Completado } from "@/lib/cartelExistente";
+import { avisoAlDueno, completarDelFormulario, mensajeDeError, type Completado, type DatosParaParecidos } from "@/lib/cartelExistente";
 import { conPermisoDeCambiar } from "@/lib/cartelExistenteServidor";
 import { comoPaleta } from "@/lib/coloresCartel";
 import { coloresDeImagenEnMemoria } from "@/lib/coloresCartelServidor";
@@ -33,8 +33,6 @@ import { zonaDePunto } from "@/lib/zona";
  *   administración. Aquí: que la imagen sea un archivo de la carpeta de quien la sube, sus colores y su huella, el aviso al teléfono de quien lo
  *   publicó (si no es uno mismo; respeta sus avisos apagados) y la tarjeta del final con el evento como quedó.
  */
-
-export type DatosParaParecidos = { titulo: string; inicio: string; clase: string; lugarId: string | null; sitioTexto: string | null; lat?: number | null; lng?: number | null };
 
 export async function parecidosDelCartel(d: DatosParaParecidos): Promise<EventoParecido[]> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);

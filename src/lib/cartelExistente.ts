@@ -9,6 +9,9 @@ import { COOPERACION_SOLIDARIA, GRATIS, LIMITES_EVENTO, costoOpcional, esClase }
 import { localAIso, zonaSegura } from "./fechas";
 import type { EventoParecido } from "./eventosParecidos";
 
+/** Lo que se pregunta a `eventos_parecidos` en cuanto se lee el cartel (C2): el nombre, el inicio en la hora del sitio, la clase y el sitio. */
+export type DatosParaParecidos = { titulo: string; inicio: string; clase: string; lugarId: string | null; sitioTexto: string | null; lat?: number | null; lng?: number | null };
+
 /** Lo que la base completó del evento que ya estaba (en este orden se dice). */
 export type Completado = "precio" | "fin" | "descripcion" | "artistas";
 const ORDEN: Completado[] = ["precio", "fin", "descripcion", "artistas"];

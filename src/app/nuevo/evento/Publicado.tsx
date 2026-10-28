@@ -36,6 +36,10 @@ type Props = {
   sugerenciaAbierta?: boolean;
   /** La sugerencia de OL-323 se ve (abierta o ya hecha): «Crea su cartel» va después, en una línea (OL-336). */
   sugerenciaVisible?: boolean;
+  /** Tu cartel a un evento que ya estaba (OL-467): «Listo: tu cartel ya está en el evento» y la frase con lo que se completó, en vez de
+   *  «Evento publicado» y «Ya está en la agenda». La tarjeta es la del evento que ya estaba, con el cartel nuevo. */
+  titulo?: string;
+  frase?: string;
 };
 
 const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion: "Exposición publicada", taller: "Taller publicado", festival: "Festival publicado" };
@@ -59,7 +63,7 @@ const TITULO: Record<Clase, string> = { puntual: "Evento publicado", exposicion:
  * en una línea quieta (nunca dos cajas). Su botón no es el principal. Abre el creador reemplazando «Publicado» (terminar el alta no la deja en
  * el historial): desde el creador y desde la ficha, Atrás lleva adonde mandaba el alta.
  */
-export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", sinPrograma = false, cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false }: Props) {
+export default function Publicado({ evento, conCartel, conSesiones, clase = "puntual", sinPrograma = false, cuando, sinInauguracion, sugerencia, sugerenciaAbierta = false, sugerenciaVisible = false, titulo, frase }: Props) {
   const { url, texto } = compartirEvento(evento, nombreSitio(evento), conSesiones, cuando);
   const otraSugerencia = sugerenciaVisible || (clase === "exposicion" && sinInauguracion) || clase === "festival";
   const ficha = hrefEvento(evento);
@@ -70,8 +74,8 @@ export default function Publicado({ evento, conCartel, conSesiones, clase = "pun
         <span className={styles.sello} aria-hidden="true">
           <IconoOk />
         </span>
-        <h2 tabIndex={-1}>{TITULO[clase]}</h2>
-        <p>Ya está en la agenda. Así lo ve la gente:</p>
+        <h2 tabIndex={-1}>{titulo ?? TITULO[clase]}</h2>
+        <p>{frase ?? "Ya está en la agenda. Así lo ve la gente:"}</p>
       </div>
       <ul className={styles.tarjeta}>
         <RenglonEvento evento={evento} conDia cuando={cuando} />

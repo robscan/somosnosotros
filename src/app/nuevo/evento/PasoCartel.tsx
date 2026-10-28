@@ -59,6 +59,17 @@ export function PasoEspera({ foto, leyendo }: { foto: string | null; leyendo: bo
   );
 }
 
+/** La espera ya leída, cuando el cartel trae un evento que ya está (OL-467, C2): el mismo cartel, del mismo tamaño y en el mismo sitio, ya sin
+ *  latir; debajo, «¿Es este?» (lo pone el alta). */
+export function CartelLeido({ foto }: { foto: string }) {
+  return (
+    <div className={styles.leyendo}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+      <img src={foto} alt="" />
+    </div>
+  );
+}
+
 /** La fila chica sobre la primera pregunta cuando el cartel quedó guardado sin leer: la miniatura y el sello «Cartel guardado» (con «no pude leerlo» si la lectura falló). */
 export function CartelGuardado({ foto, noPude }: { foto: string; noPude: boolean }) {
   return (
