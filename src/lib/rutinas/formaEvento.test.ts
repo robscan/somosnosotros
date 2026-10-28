@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { localAIso } from "../fechas";
 import {
+  artistasDeDatos,
   cadaCuantos,
   claseDeActo,
   claseDeLaAgenda,
@@ -132,5 +133,23 @@ describe("lo que se lee de `datos` y lo que la bandeja puede decir (para OL-432)
     const cruza = { serie: { fechas: ["2026-10-28T19:00", "2026-11-04T19:00", "2026-11-11T19:00", "2026-11-18T19:00"].map(local), cada: 7 } };
     expect(etiquetaDeForma(cruza, AHORA, ZONA)?.detalle).toBe("mié 28 de oct y mié 4, mié 11 y mié 18 de nov · 7:00 pm");
     expect(etiquetaDeForma({ clase: "exposicion", exposicion: "Raíces", termina: local("2026-11-30T23:59") }, AHORA, ZONA)?.que).toMatch(/^Exposición «Raíces» · hasta el .*30 de nov/);
+  });
+});
+
+describe("los artistas de un evento propuesto (OL-462)", () => {
+  it("por nombre, por ficha o por propuesta; sin repetir ni lo que no es un uuid", () => {
+    const P = "00000000-0000-4000-8000-00000000f002";
+    expect(
+      artistasDeDatos({
+        artistas: ["Martha Franco", { nombre: "Ballroom SLP", id: UUID }, { nombre: "DJ Afalefe", propuesta: P }, "martha franco", { nombre: "Otra", id: "no-es-uuid" }, { nombre: "Repetida", id: UUID }, 7, ""],
+      }),
+    ).toEqual([
+      { nombre: "Martha Franco", id: null, propuesta: null },
+      { nombre: "Ballroom SLP", id: UUID, propuesta: null },
+      { nombre: "DJ Afalefe", id: null, propuesta: P },
+      { nombre: "Otra", id: null, propuesta: null },
+    ]);
+    expect(artistasDeDatos({})).toEqual([]);
+    expect(artistasDeDatos({ artistas: "Martha" })).toEqual([]);
   });
 });

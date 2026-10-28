@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SIN_PARAMETROS } from "../ciudadParametros";
 import { localAIso } from "../fechas";
 import { baseFalsa, type Fila } from "./baseFalsa";
-import { insertarEvento, ligarFicha, prepararEvento, type CiudadDeEvento, type LugarDeCiudad } from "./publicarEvento";
+import { fichasDeArtistas, insertarEvento, ligarFicha, prepararEvento, type CiudadDeEvento, type LugarDeCiudad } from "./publicarEvento";
 
 const AHORA = new Date("2026-10-21T16:00:00Z");
 const ZONA = "America/Mexico_City";
@@ -232,5 +232,52 @@ describe("el costo que no es cifra se publica «Por confirmar» (OL-441)", () =>
         const r = await prepararEvento(dep(mundo().db), altar({ precio, clase, titulo: `Altar vivo ${clase}` }), SLP, CON_MUSEO, ADMIN);
         expect(r.ok ? "publica" : r.error, `${clase} · ${precio}`).toBe("publica");
       }
+  });
+});
+
+describe("los artistas del evento al publicarlo (OL-462)", () => {
+  const A = "a0000000-0000-4000-8000-000000000001";
+  const B = "a0000000-0000-4000-8000-000000000002";
+  const OCULTO = "a0000000-0000-4000-8000-000000000003";
+  const PROP = "b0000000-0000-4000-8000-000000000001";
+  const SIN = "b0000000-0000-4000-8000-000000000002";
+  const base = () =>
+    baseFalsa({
+      eventos: [],
+      eventos_artistas: [],
+      artistas: [
+        { id: A, nombre: "Ballroom SLP", ciudad: "San Luis Potosí", visible: true },
+        { id: B, nombre: "Martha Franco", ciudad: "San Luis Potosí", visible: true },
+        { id: OCULTO, nombre: "Oculto", ciudad: "San Luis Potosí", visible: false },
+        { id: "a0000000-0000-4000-8000-000000000009", nombre: "Lena", ciudad: "Morelia", visible: true },
+      ],
+      propuestas: [
+        { id: PROP, estado: "aceptada", ficha_id: B },
+        { id: SIN, estado: "propuesta", ficha_id: null },
+      ],
+    }, { eventos_parecidos: () => [] });
+  it("la ficha de `id`, la de la propuesta aceptada y la del mismo nombre en la ciudad; ni ocultas, ni sin aceptar, ni de otra ciudad", async () => {
+    const b = base();
+    const lista = [
+      { nombre: "Martha Franco", id: null, propuesta: PROP },
+      { nombre: "Ballroom SLP", id: null, propuesta: null },
+      { nombre: "Nadie", id: null, propuesta: SIN },
+      { nombre: "Oculto", id: OCULTO, propuesta: null },
+      { nombre: "Lena", id: null, propuesta: null },
+      { nombre: "Otra vez", id: B, propuesta: null },
+    ];
+    expect(await fichasDeArtistas(b.db, lista, ["San Luis Potosí"])).toEqual([B, A]);
+    b.fallar("propuestas", "select");
+    expect(await fichasDeArtistas(b.db, lista, ["San Luis Potosí"])).toBe("error");
+  });
+  it("se ligan al insertar el evento, en su orden", async () => {
+    const b = base();
+    const p = await prepararEvento({ db: b.db, mapbox: null, ahora: AHORA }, datos({ artistas: [{ nombre: "Ballroom SLP", id: A }, "Martha Franco"] }), SLP, LUGARES, ADMIN);
+    if (!p.ok) throw new Error(p.error);
+    const creado = await insertarEvento(b.db, p.fila);
+    expect(b.tablas.eventos_artistas.map(({ evento_id, artista_id, orden }) => ({ evento_id, artista_id, orden }))).toEqual([
+      { evento_id: creado!.id, artista_id: A, orden: 0 },
+      { evento_id: creado!.id, artista_id: B, orden: 1 },
+    ]);
   });
 });

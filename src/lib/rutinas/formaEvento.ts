@@ -24,6 +24,9 @@ import { normalizarNombre } from "../lugares";
  *   · `exposicion`       el nombre de la exposición que abre esa inauguración.
  *   · `variantes`        otros títulos con que la agenda trajo la misma función (se quedó la más completa).
  *   · `lat`, `lng`, `direccion_mapa`   el punto que el mapa dio al sitio (fuera del directorio) dentro de la ciudad.
+ *   · `artistas`         [{ nombre, id?, propuesta? }] (OL-462): quién se presenta. `id`, la ficha que ya existe; `propuesta`, la propuesta de
+ *                        artista (de la misma corrida) que la crea al aceptarse. Al publicar el evento se liga en `eventos_artistas` a las
+ *                        fichas que ya existen (`artistasDeDatos`); lo que no tiene ficha todavía se queda sin ligar (sin fallar).
  */
 
 export type SesionPropuesta = { inicio: string; fin: string | null };
@@ -71,6 +74,29 @@ export function leerFormaEvento(datos: Record<string, unknown>): FormaEvento {
     termina: iso(datos.termina),
     exposicion: texto(datos.exposicion, 120) || null,
   };
+}
+
+/** Un artista que se presenta en un evento propuesto (OL-462): su nombre y su ficha (`id`) o la propuesta que la crea (`propuesta`). */
+export type ArtistaPropuesto = { nombre: string; id: string | null; propuesta: string | null };
+
+/**
+ * Los artistas de `datos.artistas` (OL-462), sin repetir y en su orden: un texto es solo el nombre; un objeto, { nombre, id?, propuesta? } (lo
+ * que no es un uuid se ignora). Como mucho 20.
+ */
+export function artistasDeDatos(datos: Record<string, unknown>): ArtistaPropuesto[] {
+  const vistos = new Set<string>();
+  const salida: ArtistaPropuesto[] = [];
+  for (const a of Array.isArray(datos.artistas) ? datos.artistas : []) {
+    const o = typeof a === "string" ? { nombre: a } : objeto(a);
+    const nombre = texto(o.nombre, 80);
+    const id = typeof o.id === "string" && UUID.test(o.id) ? o.id : null;
+    const propuesta = typeof o.propuesta === "string" && UUID.test(o.propuesta) ? o.propuesta : null;
+    const clave = id ?? propuesta ?? normalizarNombre(nombre);
+    if (!clave || vistos.has(clave)) continue;
+    vistos.add(clave);
+    salida.push({ nombre, id, propuesta });
+  }
+  return salida.slice(0, 20);
 }
 
 // ---------------------------------------------------------------- La clase
