@@ -10,6 +10,9 @@
 // OL-466: con `MAQUETA_LECTURA=1` la app arranca con la lectura del cartel simulada en el respaldo (`/anthropic`, una llave inventada; la lectura
 // la deja lista cada paso con `POST /__lectura`):
 //   RESPALDO_CARTEL_EXISTENTE=1 MAQUETA_LECTURA=1 node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> --solo=cartel-
+// OL-469: con `RESPALDO_HISTORIAL=1`, el historial grande (el Museo Leonora Carrington y Valeria Quiroz, de demo), sus fotos dibujadas aquí y nada
+// que salga de 127.0.0.1:
+//   RESPALDO_HISTORIAL=1 node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> --solo=hist-
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -110,6 +113,19 @@ const PANTALLAS = [
   { id: "cartel-ficha-feleal", reloj: true, url: "/eventos/feleal-un-viaje-por-el-mundo-en-acordeon", sesion: true },
   // Con `RESPALDO_CARTEL_EXISTENTE=despues` (en otra corrida): la misma ficha con el cartel de Ana, el precio y la descripción del cartel.
   { id: "cartel-ficha-despues", reloj: true, url: "/eventos/noche-de-danzon-con-la-orquesta-tipica", sesion: true },
+  // OL-469 (con `RESPALDO_HISTORIAL=1`): el Historial del museo Leonora Carrington (demo) y la Trayectoria de Valeria Quiroz (demo) como están hoy,
+  // sin sesión y con la de Ana (que gestiona las dos fichas: «Tu año» e «Informe» / «Presentación»), con la hoja del PDF abierta y con el «···».
+  // Y Agenda y Artistas, por las piezas que la propuesta reutiliza (las pestañas, los chips y el renglón de un artista).
+  { id: "hist-lugar", reloj: true, url: "/lugares/museo-leonora-carrington-demo" },
+  { id: "hist-lugar-ana", reloj: true, url: "/lugares/museo-leonora-carrington-demo", sesion: true },
+  { id: "hist-lugar-informe", reloj: true, url: "/lugares/museo-leonora-carrington-demo", sesion: true, paso: "hist-documento" },
+  { id: "hist-lugar-menu", reloj: true, url: "/lugares/museo-leonora-carrington-demo", sesion: true, paso: "menu-acciones" },
+  { id: "hist-artista", reloj: true, url: "/artistas/valeria-quiroz-demo" },
+  { id: "hist-artista-ana", reloj: true, url: "/artistas/valeria-quiroz-demo", sesion: true },
+  { id: "hist-artista-presentacion", reloj: true, url: "/artistas/valeria-quiroz-demo", sesion: true, paso: "hist-documento" },
+  { id: "hist-agenda", reloj: true, url: "/agenda", sesion: true },
+  { id: "hist-artistas", reloj: true, url: "/artistas", sesion: true },
+  { id: "hist-lugares", reloj: true, url: "/lugares", sesion: true },
 ];
 // OL-466: los dos carteles que se suben (inventados, dibujados aquí) y lo que «leería» el modelo de cada uno. Las fechas salen del reloj fijo
 // (`AHORA`, mié 7 de oct): la Noche de danzón es pasado mañana (vie 9) a las 20:00 y Feleal el mié 14 a las 19:00, los dos en el Teatro de la Paz.
@@ -154,6 +170,13 @@ async function preguntarParecido(page, ctx, clave) {
   await page.getByText("Ya hay uno parecido ese día en el mismo sitio").waitFor();
 }
 const PASOS = {
+  // OL-469: abre lo pasado de la ficha («Historial» o «Trayectoria») y toca «Informe» o «Presentación»: la hoja del PDF (DocumentoPdf).
+  "hist-documento": async (page) => {
+    await page.locator("details#historial > summary, details#trayectoria > summary").first().click();
+    // Hoy el botón cae fuera de la pantalla (bitácora 501: el plegado mide más que ella) y nada lo deja tocar: la maqueta lo pulsa por dentro.
+    await page.getByRole("button", { name: /^(Informe|Presentación)$/ }).dispatchEvent("click");
+    await page.getByRole("dialog").waitFor();
+  },
   // OL-466: la espera con la lectura en curso (la subida a Storage se queda en camino para que la pantalla no avance) y los demás estados del alta.
   "cartel-espera": async (page) => {
     await page.route(/\/storage\/v1\/object\/fotos\//, () => {});
@@ -233,6 +256,12 @@ let browser;
 try {
   // OL-466: la ficha «después» pide al respaldo el cartel de Ana (`demo-carrusel/ol466-danzon.jpg` en la carpeta temporal).
   const despues = process.env.RESPALDO_CARTEL_EXISTENTE === "despues" ? { RESPALDO_URL: `http://127.0.0.1:${puertoRespaldo}`, RESPALDO_CARRUSEL_DIR: path.dirname(await archivoDe("danzon", "jpg")) } : {};
+  // OL-469: las fotos y los carteles del historial grande, dibujados en una carpeta temporal que el respaldo sirve.
+  if (process.env.RESPALDO_HISTORIAL === "1") {
+    const carpeta = fs.mkdtempSync(path.join(os.tmpdir(), "ol469-"));
+    await (await import("./respaldo-local/fotos-historial.mjs")).dibujarFotosHistorial(carpeta);
+    Object.assign(despues, { RESPALDO_URL: `http://127.0.0.1:${puertoRespaldo}`, RESPALDO_CARRUSEL_DIR: carpeta });
+  }
   lanzar([path.join(AQUI, "respaldo-local/server.mjs"), String(puertoRespaldo)], { ...reloj, ...despues });
   await esperar(`http://127.0.0.1:${puertoRespaldo}/rest/v1/eventos?select=id&limit=1`);
   process.stdout.write("compilando la app contra el respaldo… ");
@@ -250,6 +279,8 @@ try {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "es-MX" });
     if (p.reloj) await ctx.clock.setFixedTime(new Date(AHORA));
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
+    // OL-469: con el historial grande, nada sale de 127.0.0.1 (las imágenes del respaldo de siempre son de Storage: se quedan sin pintar).
+    if (process.env.RESPALDO_HISTORIAL === "1") await ctx.route((u) => u.hostname !== "127.0.0.1", (q) => q.abort());
     const page = await ctx.newPage();
     await page.goto(base + p.url, { waitUntil: "networkidle" });
     // Si un paso no llega, la captura de cómo se quedó va al lado, con «-fallo».
