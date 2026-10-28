@@ -394,6 +394,8 @@ const servidor = http.createServer(async (req, res) => {
     const args = (await leerCuerpo(req)) || Object.fromEntries(url.searchParams);
     const fn = rpcs[rpc[1]];
     const datos = fn ? fn(args, tablas, { sub }) : [];
+    // OL-467: una función que contesta como un «no» de la base (`{ __error: { code, message } }`), como PostgREST.
+    if (datos && typeof datos === "object" && datos.__error) return responder(res, 400, { ...datos.__error, details: null, hint: null });
     if (quiereObjeto(req)) return Array.isArray(datos) ? (datos.length === 1 ? responder(res, 200, datos[0]) : responder(res, 406, { code: "PGRST116", message: `${datos.length} filas` })) : responder(res, 200, datos);
     return responder(res, 200, datos);
   }

@@ -94,7 +94,7 @@ before(async () => {
         if (window.qa.resultado === 'pendiente') return new Promise(() => {});
         if (window.qa.resultado === 'enlace') return {ok:false, errores:{enlace:'Ese enlace no se ve bien.'}};
         // OL-384: uno parecido el mismo día en el mismo sitio, hasta que se confirma con «No, es otro» (como \`crearEvento\`).
-        if (window.qa.resultado === 'parecidos' && fd.get('confirmado') !== '1') return {ok:false, errores:{}, parecidos:[{id:'0d0d0d0d-0000-4000-8000-000000000001', slug:'lectura-en-voz-alta-de-poesia-x1', titulo:'Lectura de poesía en voz alta', inicio:'2026-10-10T00:30:00.000Z', zona:'America/Mexico_City', imagen:window.qa.conCartel ? '/cartel.svg' : null, lugar_id:'${LUGAR}', lugar_nombre:'Teatro de la Paz', sitio_texto:null}]};
+        if (window.qa.resultado === 'parecidos' && fd.get('confirmado') !== '1') return {ok:false, errores:{}, parecidos:[{id:'0d0d0d0d-0000-4000-8000-000000000001', slug:'lectura-en-voz-alta-de-poesia-x1', titulo:'Lectura de poesía en voz alta', inicio:'2026-10-10T00:30:00.000Z', zona:'America/Mexico_City', imagen:window.qa.conCartel ? '/cartel.svg' : null, lugar_id:'${LUGAR}', lugar_nombre:'Teatro de la Paz', sitio_texto:null, ...(window.qa.conCartel && window.qa.existente ? {puede_cambiar: !!window.qa.puedeCambiar} : {})}]};
         if (window.qa.resultado === 'parecidos') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
         if (window.qa.resultado === 'publica') { const n = window.qa.envios.length; return {ok:true, id:'0e0e0e0e-0000-4000-8000-00000000000'+n, slug:'lectura-en-voz-alta-ab1'+n, href:'/eventos/lectura-en-voz-alta-ab1'+n}; }
         return {ok:false, errores:{}, general:${JSON.stringify(GENERAL)}};
@@ -107,8 +107,20 @@ before(async () => {
       // o \`abrir.desde\` ({evento, quien}); la ✕ sale a \`abrir.salida\`.
       const abrir = window.qa.abrir ?? {};
       const arranque = arranqueDe({ desde: abrir.desde ? respuestasDeEvento(abrir.desde.evento, lugares, abrir.desde.quien) : null, lugar: lugares.find((l) => l.id === abrir.lugar) ?? null, artista: abrir.artista ?? null });
+      // OL-467: con \`window.qa.existente\`, las dos acciones de tu cartel a un evento que ya está: \`buscar\` contesta \`existente.parecidos\` (y anota lo
+      // que se le pidió en \`buscados\`; con \`esperaBuscar\`, hasta \`liberarBuscar\`) y \`poner\` anota en \`puestos\` y contesta el evento que ya
+      // estaba con el cartel (o, con \`existente.poner = 'error'\`, «Alguien le acaba de poner cartel»).
+      const cartelExistente = window.qa.existente ? {
+        buscar: async (d) => { const q = window.qa; q.buscados = [...(q.buscados ?? []), d]; if (q.existente.esperaBuscar) await new Promise((r) => { q.liberarBuscar = r; }); return structuredClone(q.existente.parecidos ?? []); },
+        poner: async (id, fd, reemplazar) => {
+          const q = window.qa; q.puestos = [...(q.puestos ?? []), { id, reemplazar, datos: Object.fromEntries(fd.entries()) }];
+          if (q.existente.poner === 'error') return { ok:false, mensaje:'Alguien le acaba de poner cartel a ese evento.', yaTieneCartel:true };
+          const p = [...(q.existente.parecidos ?? []), ...(q.existente.revisa ?? [])].find((x) => x.id === id) ?? { id, slug:'el-que-ya-estaba', titulo:'Lectura de poesía en voz alta', inicio:'2026-10-10T00:30:00.000Z', zona:'America/Mexico_City', lugar_id:'${LUGAR}' };
+          return { ok:true, evento:{ id, slug:p.slug, titulo:p.titulo, inicio:p.inicio, fin:null, zona:p.zona, imagen:'/cartel.svg', precio:'$150', lugar_id:p.lugar_id, sitio_texto:null, sitio_direccion:null, sitio_reservado:false, creado_en:'2026-10-01T00:00:00.000Z', clase:'puntual', lugar:{ nombre:'Teatro de la Paz', portada:null }, van:null }, completado: reemplazar ? [] : (q.existente.completado ?? ['precio', 'descripcion', 'artistas']), reemplazado: !!reemplazar };
+        },
+      } : undefined;
       createRoot(document.getElementById('root')).render(
-        <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={window.qa.ciudad ?? null} salida={{href: abrir.salida ?? '/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} arranque={arranque} />
+        <AltaEvento accion={accion} lugares={lugares} mios={[]} ciudadContexto={window.qa.ciudad ?? null} salida={{href: abrir.salida ?? '/', texto:'Volver'}} usuarioId="usuaria-1" cartelActivo={window.qa.cartelActivo} cupo={window.qa.cupoAlAbrir} arranque={arranque} cartelExistente={cartelExistente} />
       );
     `,
     },
@@ -2381,4 +2393,171 @@ test("sin lectura y con Storage lento, la foto elegida espera atenuada en el hue
   assert.equal(await q.locator('[aria-busy="true"]').count(), 0);
   assert.equal(await q.locator("main img").count(), 0, "sin la foto que no se subió");
   assert.equal(await q.locator("input[type=file]").isEnabled(), true);
+});
+
+/* ---- OL-467 (bitácora 499; prototipo firmado de OL-466, bitácora 498): tu cartel a un evento que ya está ---- */
+
+/** El que ya estaba: «Inauguración de Ecos de papel» el mismo día en el Teatro de la Paz, de otra persona, sin cartel (o con uno). */
+const YA_ESTABA = { id: "0d0d0d0d-0000-4000-8000-0000000000e1", slug: "inauguracion-de-ecos-de-papel", titulo: "Inauguración de Ecos de papel (Marcos)", inicio: "2026-11-06T01:00:00.000Z", zona: "America/Mexico_City", imagen: null, lugar_id: LUGAR, lugar_nombre: "Teatro de la Paz", sitio_texto: null };
+const caja = (p) => p.getByRole("alert").filter({ hasText: "¿Es este?" });
+const pie = (p) => p.locator("main footer");
+/** Un toque de verdad: el centro del botón no lo tapa nada (`elementFromPoint`) y se toca ahí con el ratón. */
+async function tocar(p, locator) {
+  await locator.scrollIntoViewIfNeeded();
+  const libre = await locator.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !!e && (e === el || el.contains(e));
+  });
+  assert.ok(libre, `algo tapa «${await locator.innerText()}»`);
+  const c = await locator.boundingBox();
+  await p.mouse.click(c.x + c.width / 2, c.y + c.height / 2);
+}
+
+test("OL-467 C2: en cuanto se lee el cartel, «¿Es este?» en la misma espera; «Sí, es este: ponerle mi cartel» → «Listo: tu cartel ya está en el evento»", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, existente: { parecidos: [YA_ESTABA], esperaBuscar: true } } });
+  await subir(p);
+  // Mientras se buscan los parecidos, la espera sigue («Leyendo el cartel…»).
+  await p.waitForFunction(() => window.qa.buscados?.length === 1);
+  await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).waitFor();
+  assert.deepEqual(await p.evaluate(() => window.qa.buscados[0]), { titulo: "Inauguración de Ecos de papel", inicio: "2026-11-05T19:00", clase: "puntual", lugarId: LUGAR, sitioTexto: null });
+  await p.evaluate(() => window.qa.liberarBuscar());
+  await caja(p).waitFor();
+  // El cartel grande, ya sin latir ni la frase de espera; la caja con el renglón y «No, es otro: seguir»; el pie con la respuesta principal.
+  assert.equal(await p.getByRole("status").count(), 0);
+  assert.equal(await p.locator('[aria-busy="true"]').count(), 0);
+  const cartel = p.locator("main > div > img").first();
+  assert.equal(await cartel.getAttribute("src"), "/cartel.svg");
+  assert.equal(Math.round((await cartel.boundingBox()).width), 168);
+  assert.equal(await cartel.evaluate((e) => getComputedStyle(e).opacity), "1");
+  assert.equal(await caja(p).getByRole("link").getAttribute("href"), "/eventos/inauguracion-de-ecos-de-papel");
+  assert.deepEqual(await caja(p).getByRole("button").allInnerTexts(), ["No, es otro: seguir"]);
+  assert.deepEqual(await pie(p).getByRole("button").allInnerTexts(), ["Sí, es este: ponerle mi cartel"]);
+  // La barra de la espera: «Publicar» con la ✕, sin Atrás ni la pregunta de un paso.
+  assert.equal(await p.locator("main h2").count(), 0);
+  assert.equal(await boton(p, "Atrás").count(), 0);
+  // Cabe entero a 390: la caja y el pie a la vista sin desplazar.
+  const fin = await caja(p).boundingBox();
+  const arriba = await pie(p).boundingBox();
+  assert.ok(fin.y + fin.height <= arriba.y, `la caja termina sobre el pie: ${fin.y + fin.height} ≤ ${arriba.y}`);
+  assert.deepEqual((await desborda(p)).fuera, []);
+  await foto(p, "499-c2-sin-cartel");
+  await tocar(p, pie(p).getByRole("button", { name: "Sí, es este: ponerle mi cartel" }));
+  await p.getByRole("heading", { name: "Listo: tu cartel ya está en el evento" }).waitFor();
+  // Se puso en el evento que ya estaba, con lo leído del cartel; no se publicó otro.
+  const [puesto] = await p.evaluate(() => window.qa.puestos);
+  assert.equal(puesto.id, YA_ESTABA.id);
+  assert.equal(puesto.reemplazar, false);
+  assert.deepEqual({ imagen: puesto.datos.imagen, titulo: puesto.datos.titulo, gratis: puesto.datos.gratis, quien: puesto.datos.quien }, { imagen: "/cartel.svg", titulo: "Inauguración de Ecos de papel", gratis: "si", quien: JSON.stringify([{ nombre: "Lucía Montaño" }]) });
+  assert.equal(await p.evaluate(() => window.qa.envios.length), 0);
+  await p.getByText("Le pusimos tu cartel y completamos su precio, su descripción y quién se presenta. Así lo ve la gente:").waitFor();
+  // La tarjeta es la del que ya estaba, con el cartel; «Ver el evento» abre su ficha. Con cartel no se ofrece crear uno.
+  assert.equal(await p.locator("main ul a").first().getAttribute("href"), "/eventos/inauguracion-de-ecos-de-papel");
+  assert.match(await p.locator("main ul").first().innerText(), /Inauguración de Ecos de papel \(Marcos\)/);
+  assert.equal(await p.getByRole("link", { name: "Ver el evento" }).getAttribute("href"), "/eventos/inauguracion-de-ecos-de-papel");
+  assert.equal(await p.getByText("Crear su cartel").count(), 0);
+  assert.equal(await avisa(p), false, "terminado, la guardia ya no pregunta");
+  await foto(p, "499-final-tu-cartel");
+});
+
+test("OL-467 C2: «No, es otro: seguir» sigue el alta donde iba y «Revisa» no vuelve a preguntar (publica con la confirmación)", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, resultado: "publica", existente: { parecidos: [YA_ESTABA] } } });
+  await subir(p);
+  await caja(p).waitFor();
+  await tocar(p, caja(p).getByRole("button", { name: "No, es otro: seguir" }));
+  await p.getByText("Leído del cartel").waitFor();
+  assert.equal(await pregunta(p), "Inauguración de Ecos de papel");
+  assert.equal(await caja(p).count(), 0);
+  await boton(p, "Publicar").click();
+  await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
+  assert.equal((await enviado(p)).confirmado, "1");
+  assert.equal(await p.evaluate(() => (window.qa.puestos ?? []).length), 0);
+});
+
+test("OL-467 B: si el que ya está tiene cartel, el pie lleva a su ficha; a quien no lo publicó, cambiarlo va apagado con su nota", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, existente: { parecidos: [{ ...YA_ESTABA, imagen: "/cartel.svg", puede_cambiar: false }] } } });
+  await subir(p);
+  await caja(p).waitFor();
+  const ir = pie(p).getByRole("link", { name: "Sí, es este: ir al evento" });
+  assert.equal(await ir.getAttribute("href"), "/eventos/inauguracion-de-ecos-de-papel");
+  const cambiar = caja(p).getByRole("button", { name: "Sí, es este: cambiar su cartel por el mío" });
+  assert.equal(await cambiar.getAttribute("aria-disabled"), "true");
+  const nota = caja(p).getByText("Solo quien lo publicó puede cambiarlo.");
+  assert.equal(await cambiar.getAttribute("aria-describedby"), await nota.getAttribute("id"));
+  // El orden en la caja: el renglón, cambiar (apagado) con su nota y «No, es otro: seguir».
+  assert.deepEqual(await caja(p).getByRole("button").allInnerTexts(), ["Sí, es este: cambiar su cartel por el mío", "No, es otro: seguir"]);
+  await tocar(p, cambiar);
+  await p.waitForTimeout(200);
+  assert.equal(await p.evaluate(() => (window.qa.puestos ?? []).length), 0, "el apagado no hace nada");
+  assert.deepEqual((await desborda(p)).fuera, []);
+  await foto(p, "499-c2-ya-tiene-cartel-otra-persona");
+});
+
+test("OL-467 B: quien lo publicó cambia su cartel por el suyo → «Listo: cambiamos su cartel por el tuyo»", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, existente: { parecidos: [{ ...YA_ESTABA, imagen: "/cartel.svg", puede_cambiar: true }] } } });
+  await subir(p);
+  await caja(p).waitFor();
+  await tocar(p, caja(p).getByRole("button", { name: "Sí, es este: cambiar su cartel por el mío" }));
+  await p.getByRole("heading", { name: "Listo: cambiamos su cartel por el tuyo" }).waitFor();
+  await p.getByText("Todo lo demás sigue igual. Así lo ve la gente:").waitFor();
+  assert.equal((await p.evaluate(() => window.qa.puestos))[0].reemplazar, true);
+});
+
+test("OL-467: sin sitio en el cartel no se pregunta al leer; con dos parecidos, cada renglón abre su ficha y no hay respuesta en el pie", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: MEDIAS, existente: { parecidos: [YA_ESTABA] } } });
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Dónde es?");
+  assert.equal(await p.evaluate(() => (window.qa.buscados ?? []).length), 0);
+
+  const q = await pagina(t, { qa: { lectura: LEIDO, existente: { parecidos: [YA_ESTABA, { ...YA_ESTABA, id: "0d0d0d0d-0000-4000-8000-0000000000e2", slug: "otra-ecos" }] } } });
+  await subir(q);
+  await caja(q).waitFor();
+  assert.equal(await caja(q).getByRole("link").count(), 2);
+  assert.equal(await pie(q).count(), 0);
+  assert.deepEqual(await caja(q).getByRole("button").allInnerTexts(), ["No, es otro: seguir"]);
+});
+
+test("OL-467: si no se pudo poner el cartel, lo dice encima del botón y la guardia vuelve", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, existente: { parecidos: [YA_ESTABA], poner: "error" } } });
+  await subir(p);
+  await caja(p).waitFor();
+  await tocar(p, pie(p).getByRole("button", { name: "Sí, es este: ponerle mi cartel" }));
+  await pie(p).getByRole("alert").filter({ hasText: "Alguien le acaba de poner cartel a ese evento." }).waitFor();
+  assert.equal(await avisa(p), true);
+  await caja(p).waitFor();
+});
+
+test("OL-467 A1: en «Revisa», con uno parecido sin cartel, el pie dice «Sí, es este: ponerle mi cartel» y la caja «No, es otro: publicar de todos modos»", TOPE, async (t) => {
+  // Al leer no había parecido (otra persona lo publicó mientras); al publicar, sí.
+  const p = await pagina(t, { qa: { lectura: LEIDO, resultado: "parecidos", existente: { parecidos: [] } } });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  await boton(p, "Publicar").click();
+  await caja(p).waitFor();
+  assert.deepEqual(await pie(p).getByRole("button").allInnerTexts(), ["Sí, es este: ponerle mi cartel"]);
+  assert.deepEqual(await caja(p).getByRole("button").allInnerTexts(), ["No, es otro: publicar de todos modos"]);
+  // La caja llega a la vista sola (está debajo de los renglones).
+  const c = await caja(p).boundingBox();
+  const f = await pie(p).boundingBox();
+  assert.ok(c.y >= 0 && c.y + c.height <= f.y, `la caja a la vista: ${JSON.stringify({ c, f })}`);
+  await foto(p, "499-revisa-a1-sin-cartel");
+  await tocar(p, pie(p).getByRole("button", { name: "Sí, es este: ponerle mi cartel" }));
+  await p.getByRole("heading", { name: "Listo: tu cartel ya está en el evento" }).waitFor();
+  assert.equal((await p.evaluate(() => window.qa.puestos))[0].id, "0d0d0d0d-0000-4000-8000-000000000001");
+  // Solo el primer intento de publicar; no se publicó otro.
+  assert.equal(await p.evaluate(() => window.qa.envios.length), 1);
+});
+
+test("OL-467 A1/B: en «Revisa», con uno parecido con cartel de otra persona, «ir al evento» en el pie y cambiarlo apagado; «No, es otro» publica", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: LEIDO, resultado: "parecidos", conCartel: true, puedeCambiar: false, existente: { parecidos: [] } } });
+  await subir(p);
+  await p.getByText("Leído del cartel").waitFor();
+  await boton(p, "Publicar").click();
+  await caja(p).waitFor();
+  assert.equal(await pie(p).getByRole("link", { name: "Sí, es este: ir al evento" }).getAttribute("href"), "/eventos/lectura-en-voz-alta-de-poesia-x1");
+  assert.equal(await caja(p).getByRole("button", { name: "Sí, es este: cambiar su cartel por el mío" }).getAttribute("aria-disabled"), "true");
+  await caja(p).getByText("Solo quien lo publicó puede cambiarlo.").waitFor();
+  await foto(p, "499-revisa-b-otra-persona");
+  await tocar(p, caja(p).getByRole("button", { name: "No, es otro: publicar de todos modos" }));
+  await p.getByRole("heading", { name: "Evento publicado" }).waitFor();
 });

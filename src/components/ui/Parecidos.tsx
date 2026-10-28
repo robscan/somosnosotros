@@ -15,21 +15,30 @@ type Props = {
   conFoto?: boolean;
   /** «No, es otro: publicar de todos modos». */
   onConfirmar: () => void;
+  /** Lo que dice el botón de «No, es otro» (OL-467: en la espera del cartel, «No, es otro: seguir»). */
+  confirmar?: string;
+  /** Las respuestas en segundo plano que van antes de «No, es otro» (OL-467: «Sí, es este: cambiar su cartel por el mío», con su nota). */
+  antes?: ReactNode;
+  /** Para desplazarla a la vista al llegar (OL-467, «Revisa»). */
+  id?: string;
 };
 
 /**
  * «¿Es este?» del servidor al publicar (el lugar desde la Fase 2; el evento desde OL-384): lo que ya está publicado y se parece, con el enlace a
  * su ficha, y «No, es otro: publicar de todos modos». Va en «Revisa», encima del pie. Un solo bloque para los dos, para que se vean iguales.
+ * En el alta de evento (OL-467) sale también en la espera del cartel, en cuanto se lee, con «No, es otro: seguir»; la respuesta principal
+ * («Sí, es este: ponerle mi cartel» o «ir al evento») va en el pie, y cambiar un cartel que ya está, en segundo plano dentro de la caja (`antes`).
  */
-export default function Parecidos({ texto, children, conFoto, onConfirmar }: Props) {
+export default function Parecidos({ texto, children, conFoto, onConfirmar, confirmar = "No, es otro: publicar de todos modos", antes, id }: Props) {
   return (
-    <div className={styles.parecidos} role="alert">
+    <div id={id} className={styles.parecidos} role="alert">
       <p>
         <b>¿Es este?</b> {texto}
       </p>
       <ul className={conFoto ? styles.conFoto : undefined}>{children}</ul>
+      {antes}
       <Boton type="button" variante="secundario" onClick={onConfirmar}>
-        No, es otro: publicar de todos modos
+        {confirmar}
       </Boton>
     </div>
   );

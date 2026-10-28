@@ -22,6 +22,7 @@ import { mencionDeFestival } from "@/lib/sugerencias";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
 import { preguntaSiHayParecidos, type EventoParecido } from "@/lib/eventosParecidos";
+import { conPermisoDeCambiar } from "@/lib/cartelExistenteServidor";
 import { validarSesiones, type SesionEvento } from "@/lib/sesionesEvento";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
@@ -266,7 +267,8 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   // «¿Es este?» (OL-384): si ya hay uno parecido y no se confirmó con «No, es otro», no publica y lo devuelve para preguntar.
   if (formData.get("confirmado") !== "1" && preguntaSiHayParecidos(clase.clase)) {
     const parecidos = await eventosParecidos(supabase, datos, formData.get("operacion"), user.id);
-    if (parecidos.length) return { ok: false, errores: {}, parecidos };
+    // OL-467: de los que ya tienen cartel, si quien publica puede cambiarlo (lo publicó o es de la administración).
+    if (parecidos.length) return { ok: false, errores: {}, parecidos: await conPermisoDeCambiar(supabase, user.id, esAdmin, parecidos) };
   }
   const quien = quienDesdeJson(formData.get("quien"));
   const { data } =

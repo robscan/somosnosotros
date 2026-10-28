@@ -18,6 +18,8 @@ export type EventoParecido = {
   lugar_id: string | null;
   lugar_nombre: string | null;
   sitio_texto: string | null;
+  /** Solo si ya tiene cartel (OL-467): quien mira lo publicó o es de la administración, y puede cambiarlo por el suyo. La base lo vuelve a comprobar. */
+  puede_cambiar?: boolean;
 };
 
 /** Lo que se pregunta antes de publicar: lo puntual y los talleres. Una exposición o un festival ocupan un periodo (la base no los compara). */

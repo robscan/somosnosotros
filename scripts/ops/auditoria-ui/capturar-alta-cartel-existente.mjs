@@ -6,6 +6,7 @@
 // evento», el renglón y Atrás, comprobando antes con elementFromPoint que nada tapa el botón. Las capturas salen sin comprimir; al repo van con
 // comprimir.mjs.
 //   node scripts/ops/auditoria-ui/capturar-alta-cartel-existente.mjs <carpeta>
+// La misma evidencia sobre la app real, ya con el código de OL-467 (bitácora 499): `capturar-alta-cartel-existente-app.mjs`.
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
