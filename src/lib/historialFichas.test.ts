@@ -38,14 +38,14 @@ describe("la cabecera de la sección (OL-390)", () => {
   });
 
   it("el historial cuenta eventos y artistas", () => {
-    expect(cabeceraHistorial(13, 11)).toBe("13 eventos · 11 artistas");
-    expect(cabeceraHistorial(1, 1)).toBe("1 evento · 1 artista");
+    expect(cabeceraHistorial(13, 11)).toBe("13 eventos · 11 artistas registrados");
+    expect(cabeceraHistorial(1, 1)).toBe("1 evento · 1 artista registrado");
     expect(cabeceraHistorial(2, 0)).toBe("2 eventos");
   });
 
   it("con el tope de la lectura lleno dice «200+»", () => {
     expect(cabeceraTrayectoria(200, 12, true)).toBe("200+ fechas · 12 lugares");
-    expect(cabeceraHistorial(200, 40, true)).toBe("200+ eventos · 40 artistas");
+    expect(cabeceraHistorial(200, 40, true)).toBe("200+ eventos · 40 artistas registrados");
   });
 });
 
@@ -124,8 +124,8 @@ describe("quiénes pasaron (Q1)", () => {
       evento("d", "2026-10-05T18:00:00Z", { sitio_texto: "Jardín Colón" }),
     ];
     expect(lugaresDeTrayectoria(eventos)).toEqual([
-      { id: CDC.id, href: `/lugares/${CDC.slug}`, nombre: CDC.nombre, foto: CDC.portada, veces: 2 },
-      { id: COSSIO.id, href: `/lugares/${COSSIO.slug}`, nombre: COSSIO.nombre, foto: null, veces: 1 },
+      { id: CDC.id, href: `/lugares/${CDC.slug}`, nombre: CDC.nombre, foto: CDC.portada, veces: 2, lugar: { slug: CDC.slug, tipo: "otro", direccion: null, privado: false } },
+      { id: COSSIO.id, href: `/lugares/${COSSIO.slug}`, nombre: COSSIO.nombre, foto: null, veces: 1, lugar: { slug: COSSIO.slug, tipo: "otro", direccion: null, privado: false } },
     ]);
     expect(lugaresDeTrayectoria([evento("d", "2026-10-05T18:00:00Z", { sitio_texto: "Jardín Colón" })])).toEqual([]);
   });
@@ -167,7 +167,7 @@ describe("«Se canceló»: anunciado vs. realizado (OL-391, C1)", () => {
   it("la cabecera: «2 fechas · 1 cancelado · 2 lugares»; el cancelado no cuenta en las fechas", () => {
     expect(cabeceraTrayectoria(2, 2, false, 1)).toBe("2 fechas · 1 cancelado · 2 lugares");
     expect(cabeceraTrayectoria(3, 1, false, 2)).toBe("3 fechas · 2 cancelados · 1 lugar");
-    expect(cabeceraHistorial(12, 11, false, 1)).toBe("12 eventos · 1 cancelado · 11 artistas");
+    expect(cabeceraHistorial(12, 11, false, 1)).toBe("12 eventos · 1 cancelado · 11 artistas registrados");
     // Sin cancelados, la de siempre.
     expect(cabeceraTrayectoria(2, 2, false, 0)).toBe("2 fechas · 2 lugares");
     // Todo lo pasado se canceló: solo eso, sin «0 fechas»; y con el tope lleno, la cuenta sigue diciendo «200+».

@@ -12,13 +12,17 @@ export type Seccion = "inicio" | "agenda" | "lugares" | "artistas";
  * Al montar, si hay memoria de esta URL, `aplicar` recibe el estado guardado antes de pintar (sin parpadeo);
  * después, cada cambio de estado se guarda y la URL queda como última de su sección para la navegación (una pantalla que no es
  * sección, como Buscar, pasa `null`: solo recuerda su estado).
- * El scroll lo repone MemoriaScroll (global, en el layout), en cuanto la lista está en su sitio.
+ * El scroll lo repone MemoriaScroll (global, en el layout), en cuanto la lista está en su sitio. `parte`: el estado de una parte de la pantalla
+ * (OL-473, el historial de una ficha), guardado aparte del de la pantalla.
  */
-export function useMemoriaPantalla<T>(seccion: Seccion | null, estado: T, aplicar: (estado: T) => void) {
+export function useMemoriaPantalla<T>(seccion: Seccion | null, estado: T, aplicar: (estado: T) => void, parte?: string) {
   const ruta = usePathname();
   const params = useSearchParams();
   const cadena = params.toString();
-  const clave = cadena ? `${ruta}?${cadena}` : ruta;
+  const url = cadena ? `${ruta}?${cadena}` : ruta;
+  // Una parte de la pantalla con su propio estado (el historial de una ficha, que también puede ir dentro de la hoja de Lugares) guarda el suyo
+  // aparte del de la pantalla: `parte` lo separa sin pisar el del listado de esa misma URL.
+  const clave = parte ? `${url}#${parte}` : url;
 
   const estadoActual = useRef(estado);
   const aplicarActual = useRef(aplicar);
@@ -37,8 +41,8 @@ export function useMemoriaPantalla<T>(seccion: Seccion | null, estado: T, aplica
 
   // Cada URL que se ve queda como la última de su sección, y cada cambio de estado se guarda.
   useEffect(() => {
-    if (seccion) guardarUrlSeccion(seccion, clave);
-  }, [seccion, clave]);
+    if (seccion) guardarUrlSeccion(seccion, url);
+  }, [seccion, url]);
   useEffect(() => {
     guardarMemoria(clave, { estado: estadoActual.current });
   }, [clave, estadoJson]);

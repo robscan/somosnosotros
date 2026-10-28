@@ -236,7 +236,16 @@ describe("el historial del lugar (OL-390)", () => {
     const raiz = await historial([pasado("a", [LEO, LATIFE]), pasado("b", [LEO]), pasado("c", [])]);
     expect(raiz?.props.titulo).toBe("Historial");
     expect(raiz?.props.id).toBe("historial");
-    expect(raiz?.props.cuenta).toBe("3 eventos · 2 artistas");
+    expect(raiz?.props.cuenta).toBe("3 eventos · 2 artistas registrados");
+  });
+
+  it("el «Seguir» de la hoja «Ver los N» (OL-473): sin sesión, nada que seguir; con sesión, lo que sigue y la pregunta de avisos", async () => {
+    const LEO = { id: "a-leo", slug: "leo", nombre: "Leo Traeger" };
+    const sin = (await seccionCon([pasado("a", [LEO])])).props;
+    expect([sin.seguidos, sin.avisos]).toEqual([null, null]);
+    const con = (await seccionCon([pasado("a", [LEO])], { id: "otra", rol: "usuario" })).props;
+    expect(Array.isArray(con.seguidos)).toBe(true);
+    expect(con.avisos?.cuenta).toBe("otra");
   });
 
   describe("«Tu año» al final (OL-394)", () => {

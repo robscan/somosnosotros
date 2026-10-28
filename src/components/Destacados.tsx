@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
+import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type ReactNode, type UIEvent } from "react";
 import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
@@ -39,6 +39,47 @@ import styles from "./Destacados.module.css";
  */
 export default function Destacados({ tarjetas, forma, encabezado = "Destacados", memoria = "destacados", estadoDe, verTodos }: { tarjetas: Tarjeta[]; forma: FormaCarril; encabezado?: string; memoria?: string; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; etiqueta: string } }) {
   const titulo = useId();
+  // Un carril que resulta vacío no deja hueco (OL-156, segunda vuelta): el esqueleto que ocupaba su lugar se recoge y se desvanece
+  // (`.vacio`, CSS) en vez de desaparecer de golpe — sin salto para quien lo vio mientras cargaba, y sin nada que ver para quien
+  // no (sin JavaScript, o entrando ya con la respuesta).
+  if (tarjetas.length === 0) {
+    return (
+      <div className={styles.vacio} aria-hidden="true">
+        <div>
+          <CarrilEsqueleto forma={forma} />
+        </div>
+      </div>
+    );
+  }
+  const ordenadas = ordenarTarjetasPorFoto(tarjetas);
+  // OL-375: las portadas del sistema del carril, con la regla de las vecinas (dos seguidas de casi el mismo color no se repiten).
+  const paletas = forma === "xl" || forma === "grande" || forma === "mediana" ? paletasDeCarril(ordenadas) : null;
+  return (
+    <section className={styles.destacados} aria-labelledby={titulo}>
+      <div className={styles.cabecera}>
+        <h2 id={titulo}>{encabezado}</h2>
+        {verTodos && (
+          <Link href={verTodos.href} className={styles.verTodo} aria-label={`${verTodos.etiqueta}: ${encabezado}`}>
+            {verTodos.etiqueta}
+            <IconoChevronDerecha width={18} height={18} strokeWidth={2} />
+          </Link>
+        )}
+      </div>
+      <TiraCarril memoria={memoria} className={`${styles.carril} ${columnasDe(forma)}`}>
+        {ordenadas.map((t, i) => (
+          <li key={t.clave ?? t.id}>{forma === "avatar" ? <TarjetaAvatar t={t} /> : forma === "artista" ? <TarjetaArtista t={t} /> : <TarjetaEvento t={t} tamano={forma} decision={estadoDe?.(t.id) ?? null} paleta={paletas?.[i]} />}</li>
+        ))}
+      </TiraCarril>
+    </section>
+  );
+}
+
+/**
+ * La tira que se desliza de un carril (la `<ul>`): scroll nativo con el dedo, sin avance automático; al volver de una ficha queda donde estaba
+ * (su desplazamiento se guarda por URL y `memoria`, aparte del de la página) y recorrerla no abre la tarjeta donde se soltó el dedo. La usan los
+ * carriles de Inicio y, desde OL-473, el carril de avatares de «Han pasado por aquí» y «Se ha presentado en» de una ficha. Sus hijos son los `<li>`.
+ */
+export function TiraCarril({ memoria, className, ariaLabel, children }: { memoria: string; className: string; ariaLabel?: string; children: ReactNode }) {
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
   /** Dónde bajó el dedo la última vez, para no confundir recorrer el carril con tocar una tarjeta (founder,
@@ -86,38 +127,10 @@ export default function Destacados({ tarjetas, forma, encabezado = "Destacados",
     }, 100);
     pendiente.current = { clave, temporizador };
   }
-  // Un carril que resulta vacío no deja hueco (OL-156, segunda vuelta): el esqueleto que ocupaba su lugar se recoge y se desvanece
-  // (`.vacio`, CSS) en vez de desaparecer de golpe — sin salto para quien lo vio mientras cargaba, y sin nada que ver para quien
-  // no (sin JavaScript, o entrando ya con la respuesta).
-  if (tarjetas.length === 0) {
-    return (
-      <div className={styles.vacio} aria-hidden="true">
-        <div>
-          <CarrilEsqueleto forma={forma} />
-        </div>
-      </div>
-    );
-  }
-  const ordenadas = ordenarTarjetasPorFoto(tarjetas);
-  // OL-375: las portadas del sistema del carril, con la regla de las vecinas (dos seguidas de casi el mismo color no se repiten).
-  const paletas = forma === "xl" || forma === "grande" || forma === "mediana" ? paletasDeCarril(ordenadas) : null;
   return (
-    <section className={styles.destacados} aria-labelledby={titulo}>
-      <div className={styles.cabecera}>
-        <h2 id={titulo}>{encabezado}</h2>
-        {verTodos && (
-          <Link href={verTodos.href} className={styles.verTodo} aria-label={`${verTodos.etiqueta}: ${encabezado}`}>
-            {verTodos.etiqueta}
-            <IconoChevronDerecha width={18} height={18} strokeWidth={2} />
-          </Link>
-        )}
-      </div>
-      <ul ref={recordar} className={`${styles.carril} ${columnasDe(forma)}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
-        {ordenadas.map((t, i) => (
-          <li key={t.clave ?? t.id}>{forma === "avatar" ? <TarjetaAvatar t={t} /> : forma === "artista" ? <TarjetaArtista t={t} /> : <TarjetaEvento t={t} tamano={forma} decision={estadoDe?.(t.id) ?? null} paleta={paletas?.[i]} />}</li>
-        ))}
-      </ul>
-    </section>
+    <ul ref={recordar} className={className} aria-label={ariaLabel} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
+      {children}
+    </ul>
   );
 }
 
