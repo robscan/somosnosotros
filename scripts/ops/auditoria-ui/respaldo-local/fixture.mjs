@@ -584,9 +584,11 @@ function cartelEnMemoria({ p_evento, p_imagen, p_colores = null, p_completar = n
   const c = p_completar ?? {};
   e.imagen = p_imagen;
   e.colores_cartel = p_colores;
-  if (!e.descripcion && c.descripcion) (e.descripcion = c.descripcion), r.completado.push("descripcion");
-  if (!e.precio && c.precio) (e.precio = c.precio), r.completado.push("precio");
-  if (!e.fin && c.fin) (e.fin = c.fin), r.completado.push("fin");
+  for (const campo of ["descripcion", "precio", "fin"]) {
+    if (e[campo] || !c[campo]) continue;
+    e[campo] = c[campo];
+    r.completado.push(campo);
+  }
   if (Array.isArray(c.quien) && c.quien.length && !t.eventos_artistas.some((x) => x.evento_id === e.id)) {
     c.quien.forEach((q, orden) => {
       let a = t.artistas.find((x) => x.id === q.id || normal(x.nombre) === normal(q.nombre));

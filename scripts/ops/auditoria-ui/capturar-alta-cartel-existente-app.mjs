@@ -140,7 +140,10 @@ async function hastaRevisaSinHora(page, clave, hora, dura) {
     const esAqui = page.getByRole("button", { name: /^Sí, es aquí/ });
     await Promise.race([revisa, empieza, duracion, esAqui].map((l) => l.waitFor({ timeout: 30000 }))).catch(() => {});
     if (await esAqui.isVisible()) await tocar(page, esAqui);
-    else if (!conHora && (await empieza.isVisible())) (await tocar(page, empieza), (conHora = true));
+    else if (!conHora && (await empieza.isVisible())) {
+      await tocar(page, empieza);
+      conHora = true;
+    }
     else if (await duracion.isVisible()) await tocar(page, duracion);
     await page.waitForTimeout(300);
   }
