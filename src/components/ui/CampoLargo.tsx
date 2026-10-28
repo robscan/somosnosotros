@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type TextareaHTMLAttributes } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type TextareaHTMLAttributes } from "react";
 import ContadorCaracteres from "./ContadorCaracteres";
 import { IconoChevronDerecha } from "./Iconos";
 import useAreaVisible from "./useAreaVisible";
@@ -39,6 +39,10 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
   const [interno, setInterno] = useState(() => (typeof defaultValue === "string" ? defaultValue : ""));
   const texto = controlado ? value : interno;
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const renglonRef = useRef<HTMLButtonElement>(null);
+  // Dónde estaba lo que se desplaza bajo el renglón al abrir (OL-468): con la capa abierta el renglón sale de ahí, lo de debajo se acorta y su
+  // desplazamiento se recorta solo; al cerrar con «Listo» se repone, para volver al renglón y no a otra parte (en la hoja de Instagram, arriba).
+  const vuelta = useRef<{ donde: Element; top: number } | null>(null);
   const tope = typeof resto.maxLength === "number" ? resto.maxLength : 0;
 
   // Con el teclado abierto, la capa arranca donde arranca el área visible (no en la ventana de maquetación, que el teclado deja
@@ -55,6 +59,33 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
     area.scrollTop = area.scrollHeight;
   }, [abierto]);
 
+  // Mientras la capa está abierta, la página de detrás no se mueve (OL-468). En la app de la tienda (WKWebView con el teclado en modo `body`) iOS
+  // desplaza la página para revelar el área de texto al salir el teclado, aunque la capa ya la tenga a la vista y la página esté quieta
+  // (`html[data-capas]`); con la página desplazada, lo fijo queda pintado más abajo de donde recibe los toques (medido en el simulador: 46 px, y
+  // «Listo» no respondía: el toque caía en el área de texto). Detrás de una capa que lo cubre todo no hay nada que revelar: se devuelve.
+  useEffect(() => {
+    if (!abierto) return;
+    const quieta = window.scrollY;
+    const devolver = () => {
+      if (Math.abs(window.scrollY - quieta) >= 1) window.scrollTo(0, quieta);
+    };
+    window.addEventListener("scroll", devolver, { passive: true });
+    return () => window.removeEventListener("scroll", devolver);
+  }, [abierto]);
+
+  useLayoutEffect(() => {
+    const antes = vuelta.current;
+    if (abierto || !antes) return;
+    vuelta.current = null;
+    if (Math.abs(antes.donde.scrollTop - antes.top) >= 1) antes.donde.scrollTop = antes.top;
+  }, [abierto]);
+
+  function abrir() {
+    const donde = renglonRef.current ? desplazableDe(renglonRef.current) : null;
+    vuelta.current = donde ? { donde, top: donde.scrollTop } : null;
+    setAbierto(true);
+  }
+
   function alCambiar(e: React.ChangeEvent<HTMLTextAreaElement>) {
     if (!controlado) setInterno(e.target.value);
     onChange?.(e);
@@ -64,12 +95,13 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
     return (
       <div className={campo.campo}>
         <button
+          ref={renglonRef}
           type="button"
           id={id}
           className={error ? `${styles.renglon} ${styles.renglonError}` : styles.renglon}
           aria-describedby={describedBy}
           aria-label={etiqueta}
-          onClick={() => setAbierto(true)}
+          onClick={abrir}
         >
           <span className={styles.filaEtiqueta}>
             <span className={styles.etiquetaRenglon}>{etiqueta}</span>
@@ -117,4 +149,13 @@ export default function CampoLargo({ id, etiqueta, ayuda, error, describedBy, mo
       />
     </div>
   );
+}
+
+/** Lo que se desplaza bajo el renglón: el ancestro más cercano con desplazamiento propio (el cuerpo de una hoja) o, si no hay, la página. */
+function desplazableDe(el: HTMLElement): Element | null {
+  for (let nodo = el.parentElement; nodo && nodo !== document.body; nodo = nodo.parentElement) {
+    const { overflowY } = getComputedStyle(nodo);
+    if (overflowY === "auto" || overflowY === "scroll") return nodo;
+  }
+  return document.scrollingElement;
 }
