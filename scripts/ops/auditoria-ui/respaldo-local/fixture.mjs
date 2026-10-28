@@ -531,6 +531,39 @@ const lecturas_redes = [
   lectura(7, A.merlot, "instagram", 2400, 330, 4, 4),
 ];
 
+// OL-466 (bitácora 498): el alta con cartel de un evento que ya está publicado. Con `RESPALDO_CARTEL_EXISTENTE=1` el respaldo suma «Noche de
+// danzón con la Orquesta Típica», de Marcos, en el Teatro de la Paz pasado mañana a las 20:00, sin cartel, sin precio ni descripción (el caso
+// común: lo cargó una agenda y nadie le puso cartel), y contesta `eventos_parecidos` con la regla de la base en corto (el mismo día local, el mismo
+// sitio, el mismo título o dos palabras con contenido en común). Sin la marca, `eventos_parecidos` sigue contestando nada: `npm run medir` y las
+// demás capturas no cambian. Todo inventado.
+// Con `RESPALDO_CARTEL_EXISTENTE=despues`, la misma ficha como queda tras «Sí, es este: ponerle mi cartel»: con el cartel de Ana (servido por el
+// respaldo desde `RESPALDO_CARRUSEL_DIR`, como los del carrusel) y el precio y la descripción que leyó el cartel; lo demás, igual.
+export const CON_CARTEL_EXISTENTE = ["1", "despues"].includes(process.env.RESPALDO_CARTEL_EXISTENTE ?? "");
+const DANZON_DESPUES = process.env.RESPALDO_CARTEL_EXISTENTE === "despues";
+export const E_DANZON = "bbbb0014-0000-4000-8000-000000000001";
+if (CON_CARTEL_EXISTENTE) {
+  const despues = DANZON_DESPUES ? { imagen: `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/ol466-danzon.jpg`, precio: "$150", descripcion: "Baile de salón con orquesta en vivo: danzón, mambo y chachachá. Clase abierta para principiantes a las 19:30." } : { imagen: null };
+  eventos.push(evento({ id: E_DANZON, slug: "noche-de-danzon-con-la-orquesta-tipica", titulo: "Noche de danzón con la Orquesta Típica", dias: 2, hora: "20:00", dur: 3, lugar_id: L.paz, creadoHace: 6, ...despues }));
+}
+const VACIAS = new Set(["de", "del", "la", "las", "los", "el", "y", "e", "en", "con", "a", "al", "para", "por", "un", "una", "o", "u", "the", "of", "and"]);
+const normal = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const palabras = (s) => new Set(normal(s).split(" ").filter((w) => w && !VACIAS.has(w) && !/^(19|20)[0-9]{2}$/.test(w)));
+const diaEn = (inicio, zona) => new Intl.DateTimeFormat("en-CA", { timeZone: zona || ZONA }).format(new Date(inicio));
+/** `eventos_parecidos` en corto (la regla completa y sus pruebas viven en la base, OL-384): solo con `RESPALDO_CARTEL_EXISTENTE=1`. */
+function parecidosEnMemoria({ p_titulo, p_inicio, p_zona, p_lugar_id, p_sitio_texto, p_excluir }, t) {
+  if (!CON_CARTEL_EXISTENTE || !p_inicio) return [];
+  const sitioDe = (lugarId, texto) => normal(t.lugares.find((l) => l.id === lugarId)?.nombre ?? texto);
+  const sitio = sitioDe(p_lugar_id, p_sitio_texto);
+  const dia = diaEn(p_inicio, p_zona);
+  const mias = palabras(p_titulo);
+  return t.eventos
+    .filter((e) => e.visible && !e.borrador && !e.retirado_por_admin && new Date(e.termina) >= new Date() && ["puntual", "taller"].includes(e.clase) && e.id !== p_excluir)
+    .filter((e) => sitio && sitioDe(e.lugar_id, e.sitio_texto) === sitio && diaEn(e.inicio, e.zona) === diaEn(p_inicio, e.zona) && diaEn(p_inicio, p_zona) === dia)
+    .filter((e) => normal(e.titulo) === normal(p_titulo) || [...palabras(e.titulo)].filter((w) => mias.has(w)).length >= 2)
+    .slice(0, 5)
+    .map((e) => ({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, zona: e.zona, imagen: e.imagen, lugar_id: e.lugar_id, lugar_nombre: t.lugares.find((l) => l.id === e.lugar_id)?.nombre ?? null, sitio_texto: e.sitio_texto }));
+}
+
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
   artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios, ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
@@ -665,6 +698,8 @@ export const rpcs = {
   artistas_con_nombre: ({ p_nombre }) => artistas.filter((a) => a.nombre.toLowerCase().includes(String(p_nombre || "").toLowerCase())).slice(0, 6).map((a) => ({ ...resumenArtista(a), ciudad: a.ciudad })),
   lugares_con_nombre: ({ p_nombre }) => lugares.filter((l) => l.nombre.toLowerCase().includes(String(p_nombre || "").toLowerCase())).map((l) => ({ id: l.id, slug: l.slug, nombre: l.nombre, tipo: l.tipo, direccion: l.direccion, lat: l.lat, lng: l.lng, portada: l.portada, zona: l.zona, privado: false, ciudad: l.ciudad })),
   lugares_parecidos: () => [],
+  // OL-466: «¿Es este?» del alta de evento, solo con `RESPALDO_CARTEL_EXISTENTE=1` (sin la marca, nada, como antes).
+  eventos_parecidos: (args, t) => parecidosEnMemoria(args, t),
   // OL-315: el alta de lugar con horario contesta lo creado (sin guardarlo: las escrituras no cambian el fixture); el horario se reemplaza sin más.
   crear_lugar_con_horario: ({ p_datos }) => ({ id: crypto.randomUUID(), slug: String(p_datos?.nombre ?? "lugar").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") }),
   guardar_horario_lugar: () => null,
