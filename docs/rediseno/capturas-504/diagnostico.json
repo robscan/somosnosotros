@@ -1,0 +1,1715 @@
+{
+  "01-lugar-ana@390": {
+    "antes": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 394,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 298,
+        "der": 370,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 9872,
+      "meses": 32,
+      "renglones": 84
+    }
+  },
+  "02-lugar-ana-regla@390+regla": {
+    "antes": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 394,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 298,
+        "der": 370,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 9872,
+      "meses": 32,
+      "renglones": 84
+    }
+  },
+  "03-lugar-sin-sesion@390": {
+    "antes": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 394,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 298,
+        "der": 370,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 9,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 9808,
+      "meses": 32,
+      "renglones": 84
+    }
+  },
+  "04-artista-ana@390": {
+    "antes": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 8,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 660,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 8,
+        "enteras": 4,
+        "asoman": 0,
+        "scrollWidth": 660,
+        "clientWidth": 350,
+        "scrollLeft": 310,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 298,
+        "der": 370,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 8,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 660,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 4479,
+      "meses": 27,
+      "renglones": 30
+    }
+  },
+  "05-artista-ana-regla@390+regla": {
+    "antes": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 8,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 660,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 8,
+        "enteras": 4,
+        "asoman": 0,
+        "scrollWidth": 660,
+        "clientWidth": 350,
+        "scrollLeft": 310,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 298,
+        "der": 370,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 390,
+      "documento": {
+        "ancho": 390,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 390,
+        "ancho": 390,
+        "columnas": "350px",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 370,
+        "ancho": 350,
+        "fotos": 8,
+        "enteras": 4,
+        "asoman": 1,
+        "scrollWidth": 660,
+        "clientWidth": 350,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 191,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 199,
+          "der": 370,
+          "ancho": 171,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 4479,
+      "meses": 27,
+      "renglones": 30
+    }
+  },
+  "06-lugar-ana-320@320": {
+    "antes": {
+      "pantalla": 320,
+      "documento": {
+        "ancho": 320,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 320,
+        "ancho": 320,
+        "columnas": "280px",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "fotos": 9,
+        "enteras": 3,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 280,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 156,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 164,
+          "der": 300,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 320,
+      "documento": {
+        "ancho": 320,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 320,
+        "ancho": 320,
+        "columnas": "280px",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "fotos": 9,
+        "enteras": 3,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 280,
+        "scrollLeft": 464,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 228,
+        "der": 300,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 156,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 164,
+          "der": 300,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 320,
+      "documento": {
+        "ancho": 320,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 320,
+        "ancho": 320,
+        "columnas": "280px",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "fotos": 9,
+        "enteras": 3,
+        "asoman": 1,
+        "scrollWidth": 744,
+        "clientWidth": 280,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 156,
+          "ancho": 136,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 164,
+          "der": 300,
+          "ancho": 136,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 10414,
+      "meses": 32,
+      "renglones": 84
+    }
+  },
+  "07-artista-ana-320@320": {
+    "antes": {
+      "pantalla": 320,
+      "documento": {
+        "ancho": 320,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 320,
+        "ancho": 320,
+        "columnas": "280px",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "fotos": 8,
+        "enteras": 3,
+        "asoman": 1,
+        "scrollWidth": 660,
+        "clientWidth": 280,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 156,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 164,
+          "der": 300,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 320,
+      "documento": {
+        "ancho": 320,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 320,
+        "ancho": 320,
+        "columnas": "280px",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "fotos": 8,
+        "enteras": 3,
+        "asoman": 0,
+        "scrollWidth": 660,
+        "clientWidth": 280,
+        "scrollLeft": 380,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 228,
+        "der": 300,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 156,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 164,
+          "der": 300,
+          "ancho": 136,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 320,
+      "documento": {
+        "ancho": 320,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 320,
+        "ancho": 320,
+        "columnas": "280px",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 300,
+        "ancho": 280,
+        "fotos": 8,
+        "enteras": 3,
+        "asoman": 1,
+        "scrollWidth": 660,
+        "clientWidth": 280,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 156,
+          "ancho": 136,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 164,
+          "der": 300,
+          "ancho": 136,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 4807,
+      "meses": 27,
+      "renglones": 30
+    }
+  },
+  "06-lugar-ana-430@430": {
+    "antes": {
+      "pantalla": 430,
+      "documento": {
+        "ancho": 430,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 430,
+        "ancho": 430,
+        "columnas": "390px",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "fotos": 9,
+        "enteras": 5,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 390,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 211,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 219,
+          "der": 410,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 430,
+      "documento": {
+        "ancho": 430,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 430,
+        "ancho": 430,
+        "columnas": "390px",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "fotos": 9,
+        "enteras": 5,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 390,
+        "scrollLeft": 354,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 338,
+        "der": 410,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 211,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 219,
+          "der": 410,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 430,
+      "documento": {
+        "ancho": 430,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 430,
+        "ancho": 430,
+        "columnas": "390px",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "fotos": 9,
+        "enteras": 5,
+        "asoman": 0,
+        "scrollWidth": 744,
+        "clientWidth": 390,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 692,
+        "der": 764,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 211,
+          "ancho": 191,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Informe",
+          "izq": 219,
+          "der": 410,
+          "ancho": 191,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 9353,
+      "meses": 32,
+      "renglones": 84
+    }
+  },
+  "07-artista-ana-430@430": {
+    "antes": {
+      "pantalla": 430,
+      "documento": {
+        "ancho": 430,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 430,
+        "ancho": 430,
+        "columnas": "390px",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "fotos": 8,
+        "enteras": 5,
+        "asoman": 0,
+        "scrollWidth": 660,
+        "clientWidth": 390,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 211,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 219,
+          "der": 410,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "despues": {
+      "pantalla": 430,
+      "documento": {
+        "ancho": 430,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 430,
+        "ancho": 430,
+        "columnas": "390px",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "fotos": 8,
+        "enteras": 5,
+        "asoman": 0,
+        "scrollWidth": 660,
+        "clientWidth": 390,
+        "scrollLeft": 270,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 338,
+        "der": 410,
+        "ancho": 72,
+        "enElCentro": "el mismo"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 211,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 219,
+          "der": 410,
+          "ancho": 191,
+          "enElCentro": "nadie (fuera de la pantalla)",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "alFinal": {
+      "pantalla": 430,
+      "documento": {
+        "ancho": 430,
+        "desborda": false,
+        "scrollX": 0,
+        "panoramica": 0
+      },
+      "cuerpo": {
+        "izq": 0,
+        "der": 430,
+        "ancho": 430,
+        "columnas": "390px",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflowX": "visible"
+      },
+      "plegado": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "minWidth": "auto",
+        "overflowX": "visible",
+        "display": "block"
+      },
+      "fila": {
+        "izq": 20,
+        "der": 410,
+        "ancho": 390,
+        "fotos": 8,
+        "enteras": 5,
+        "asoman": 0,
+        "scrollWidth": 660,
+        "clientWidth": 390,
+        "scrollLeft": 0,
+        "sePuedeDesplazar": true
+      },
+      "ultimaFoto": {
+        "izq": 608,
+        "der": 680,
+        "ancho": 72,
+        "enElCentro": "nadie (fuera de la pantalla)"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "izq": 20,
+          "der": 211,
+          "ancho": 191,
+          "enElCentro": "el mismo",
+          "cortado": false
+        },
+        {
+          "texto": "Presentación",
+          "izq": 219,
+          "der": 410,
+          "ancho": 191,
+          "enElCentro": "el mismo",
+          "cortado": false
+        }
+      ],
+      "cortadoPor": []
+    },
+    "fin": {
+      "alto": 4173,
+      "meses": 27,
+      "renglones": 30
+    }
+  }
+}

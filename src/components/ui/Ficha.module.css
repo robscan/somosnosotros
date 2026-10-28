@@ -223,6 +223,9 @@
 .cuerpo {
   grid-area: cuerpo;
   display: grid;
+  /* La columna mide la pantalla, nunca lo que lleva dentro (OL-472, bitácora 504): una fila que se desliza (Han pasado por aquí con 5 o
+     más fotos) ensanchaba el cuerpo entero y el dedo corría la página en vez de la fila; «Informe» y los títulos largos se salían. */
+  grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: max-content;
   align-content: start;
   padding: var(--espacio-4) var(--gutter) 0;
