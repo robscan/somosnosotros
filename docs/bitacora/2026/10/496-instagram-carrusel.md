@@ -2,8 +2,9 @@
 
 **Fecha:** 2026-10-27. **Rama:** `instagram-carrusel`, base `origin/instagram-festival` (OL-463, `f06ea344`), y luego `origin/main` (`190f4664`,
 OL-463 ya unido; avance rápido). **Operador:** agente de la pieza (Gestor VII), sin otros agentes. **Estado:** en código, espera la revisión del
-gestor y una publicación real de prueba. **Migración `20261028120000_instagram_carrusel.sql`** (añade columnas y un valor de formato; ninguna fila
-cambia). Sin variables nuevas. Capturas: `docs/rediseno/capturas-496/`.
+gestor y una publicación real de prueba. **Migraciones `20261028120000_instagram_carrusel.sql`** (añade columnas y un valor de formato; ninguna
+fila cambia) **y `20261028130000_cartel_huella.sql`** (la huella del cartel, de la corrección de abajo). Sin variables nuevas. Capturas:
+`docs/rediseno/capturas-496/`. PR #583.
 
 ## El pedido
 
@@ -90,9 +91,60 @@ cambia). Sin variables nuevas. Capturas: `docs/rediseno/capturas-496/`.
 - `RESPALDO_CARRUSEL_IG=1` (lleva al festival de OL-463 consigo): el marco y los once actos con cartel (la Fogata con el de los Tambores), servidos
   desde `RESPALDO_CARRUSEL_DIR`. La API de mentira contesta los hijos (`900458001`…), el carrusel (`900464`) y `/feed`, y apunta lo que llega.
 
+## Corrección: carteles repetidos (founder, por el gestor, el mismo día)
+
+**El pedido.** El gestor detuvo la publicación del PR #583. Founder: «Este festival tiene más eventos que carteles. Asegúrate de que no se repitan
+las imágenes». **La causa:** el «sin repetir» comparaba direcciones, pero al aceptar cada acto `ponerCartel` guarda su propia copia del cartel del
+día en Storage (`evento-<uuid>.jpg`, otra dirección por acto): en «Cultura Mística» los 11 actos tienen 11 direcciones aunque solo hay 3 carteles
+de programa, y el carrusel salía con 10 imágenes casi todas repetidas.
+
+**Qué se hizo.**
+
+- **La huella de un cartel** (`src/lib/carteles/huella.ts`, puro; `huellaServidor.ts`, con sharp): `<forma>.<color>.<bytes>` en hexadecimal: la
+  forma, un dHash de 256 bits (gris a 17 × 16, sin el «shrink-on-load» de JPEG, que mueve la imagen medio píxel según el tamaño de la copia); el
+  color, la media RGB de una rejilla de 4 × 4; los bytes, su SHA-256. Dos carteles son el mismo si sus bytes son idénticos, o si la forma difiere en
+  40 bits o menos **y** el color en 6 niveles o menos de media.
+- **Por qué no el dHash de 8 × 8 con 6 bits que proponía el encargo.** Medido con los seis carteles reales de «Cultura Mística» (en
+  `privado/gestor/cargas/cultura-mistica/`, fuera del repo, solo leídos) y cinco copias de cada uno (re-codificada a calidad 72 y 60, reducida a
+  1080 px, a 720 px en WebP y a 600 px con calidad 50):
+
+  | | Copias del mismo cartel | Carteles distintos |
+  |---|---|---|
+  | dHash 8 × 8 (64 bits) | hasta 7 bits | desde **3** (el programa del viernes y el del sábado, misma plantilla) |
+  | dHash 16 × 16 (256 bits) | hasta 28 | desde 57 |
+  | color 4 × 4 (media por canal) | hasta 2,3 | desde 16 (entre los de forma parecida) |
+
+  Con 8 × 8 el viernes y el sábado se habrían juntado (se perdía un día del carrusel). La forma sola tampoco basta: los once carteles del respaldo
+  (la misma plantilla en otros colores) distan desde 21 bits; por eso el color también tiene que coincidir. Con forma y color juntos, en esas
+  muestras: ninguna copia sin unir y ningún par distinto unido.
+- **`eventos.cartel_huella`** (migración `20261028130000_cartel_huella.sql`, solo añade): la huella con su forma (`check`), o null. La pone
+  `ponerCartel` al guardar un cartel (junto con sus colores). Un disparador: solo el servidor la escribe (lo que mande una cuenta se ignora) y un
+  cartel nuevo sin su huella no hereda la del anterior (como `colores_cartel`, OL-360). Las que ya están no se rellenan: se calculan al vuelo.
+- **`armarCarrusel`** junta dos carteles si tienen la misma dirección **o** la misma huella (`mismoCartel`); los actos de un cartel repetido van en
+  una sola imagen con los artistas de todos, como antes.
+- **`cargarParaHoja`** lee `cartel_huella` del marco y de los actos; si falta, baja el cartel (una dirección nuestra de Storage, con `bajarCartel`,
+  que ya guarda las descargas un rato) y la calcula, una vez por dirección (se recuerda un minuto en memoria).
+- **Respaldo:** `respaldo-local/carteles-carrusel.mjs` dibuja los carteles del festival de prueba (lo usan el recorrido y la prueba de
+  componentes); la Fogata ya no comparte la dirección de los Tambores: trae `acto-8-copia.jpg`, el mismo cartel reducido a 900 px y re-codificado a
+  calidad 68 (otra dirección, otros bytes). El carrusel la reconoce por su huella (calculada al vuelo en el servidor de la app).
+
+**Límite.** Dos carteles que solo cambian un texto chico sobre la misma plantilla, el mismo fondo y los mismos colores (p. ej. solo la fecha) pueden
+verse como el mismo: la huella no lee el texto. Los mismos bytes nunca fallan.
+
 ## Comprobado
 
-- `npm run lint` (0 errores; los 2 avisos son de archivos ajenos), `npm run typecheck`, `npm test` (**4 772 pruebas** en 294 archivos; nuevas:
+- Tras la corrección: `npm run lint` (0 errores; los 2 avisos son de archivos ajenos), `npm run typecheck`, `npm test` (**4 779** en 295 archivos;
+  nuevas: `src/lib/carteles/huella.test.ts` —la huella y su forma, dos copias re-codificadas (otra calidad, 720 px en WebP) que son el mismo cartel
+  con otros bytes, dos programas del día con la misma plantilla que no, el mismo diseño en otros colores que no, los mismos bytes, once actos con
+  sus copias de tres carteles que dan la portada y tres imágenes con los artistas de cada día—, y la huella que guarda `ponerCartel` en
+  `aceptarCartel.test.ts`), `test:db` (116 migraciones, **2 578, 0 fallaron**: 7 más de la huella —la guarda el servidor, una cuenta no la cambia
+  ni la pone al dar de alta, un cartel nuevo no hereda la anterior, cambiar cartel y huella a la vez, editar otra cosa no la toca, una mal formada
+  no entra—), `inventario` (sin novedades), `test:componentes` (**738 de 738**), `medir` (sin novedades) y `build`. La prueba de componentes del
+  carrusel calcula las huellas con el código del servidor sobre los carteles del respaldo y comprueba que la Fogata y los Tambores tienen otra
+  dirección y otros bytes y que la tira lleva una sola. El recorrido (la app de verdad, huellas al vuelo): **todo bien**, la tira igual que antes
+  (la portada y nueve carteles; el de los Tambores etiqueta a los artistas de los dos actos). Las capturas 03, 04, 05, 06 y 08 se volvieron a sacar
+  (mismo contenido).
+- Antes de la corrección: `npm run lint` (0 errores; los 2 avisos son de archivos ajenos), `npm run typecheck`, `npm test` (**4 772 pruebas** en 294 archivos; nuevas:
   `carrusel.test.ts` —portada primero, carteles distintos en orden de fecha, el de la portada que se suma, solo lo por venir y las funciones, tope de
   10 y las que quedan fuera, quitar deja entrar, el orden de la hoja, las claves pedidas, etiquetas por imagen con el lugar en todas y las sueltas en
   la portada, 20 por imagen, las permitidas de OL-463, «Esta semana» con portada aparte y diseños, lo que dice la hoja—; `api-carrusel.test.ts` —hijos
@@ -132,8 +184,8 @@ cambia). Sin variables nuevas. Capturas: `docs/rediseno/capturas-496/`.
 - `02-hoja-carrusel`: la portada grande (morado y amarillo), «Carrusel de 10 imágenes, en este orden:» y la tira con la portada, la Meditación y el
   Taller de escritura asomando; sus botones ‹ ✕ › (el ‹ de la primera, gris).
 - `03-tira`: la tira a la vista y debajo «Instagram deja 10: queda fuera «Concierto de cuencos».» y las primeras etiquetas.
-- `04-tira-al-final`: la tira deslizada hasta el final: Lectura de cartas, Tambores y fogata (un cartel vertical, con margen negro) y Astrología
-  (apaisado, con margen de su morado); el › de la última, gris.
+- `04-tira-al-final`: la tira deslizada hasta el final: Lectura de cartas, Tambores y fogata (un cartel vertical, con margen negro; una sola vez
+  aunque la Fogata traiga su propia copia) y Astrología (apaisado, con margen de su morado); el › de la última, gris.
 - `05-quitada`: quitado el Yoga, el Concierto de cuencos entra al final, ya no dice qué queda fuera y aparece «Volver a poner».
 - `06-reordenada`: la Meditación primero (grande, cuadrada con su margen verde), «Va completo, con margen de su color.» y la tira con la portada
   segunda.
@@ -156,14 +208,18 @@ cambia). Sin variables nuevas. Capturas: `docs/rediseno/capturas-496/`.
 4. **«Recortar» y «Otro diseño» son solo de la portada**; los carteles de los actos van siempre completos con margen de su color.
 5. **Volver a poner** deshace quitar y mover a la vez (vuelve al orden del sistema), como «Volver a etiquetar».
 6. Si al publicar el cartel de un acto ya no se puede bajar, se deja fuera y se publica con las que quedan (el resultado dice cuántas salieron).
-7. Las direcciones de cada imagen quedan en `instagram_publicaciones.carrusel` para el espejo y su reintento; las imágenes siguen en `fotos/lugares/<admin>/`
+7. **Huella de forma y color** (16 × 16 y rejilla de 4 × 4) en vez del dHash de 8 × 8 con 6 bits del encargo, por lo medido arriba. Las huellas
+   de los carteles que ya están no se rellenan: se calculan al vuelo cada vez que se abre la hoja (unas 11 descargas en «Cultura Mística»). Si se
+   quiere, un relleno como el de `colores_cartel`.
+8. Las direcciones de cada imagen quedan en `instagram_publicaciones.carrusel` para el espejo y su reintento; las imágenes siguen en `fotos/lugares/<admin>/`
    como las de OL-458 (se podrían borrar a las 24 h; sin cambio).
 
 ## Lo que el gestor debe hacer y probar en producción
 
-1. Aplicar la migración `20261028120000_instagram_carrusel.sql` antes de unir. Sin variables nuevas (las de OL-458 y OL-461).
-2. Administración › Instagram: abrir «Cultura Mística» (tiene carteles por día en sus actos): debe salir la tira con la portada y los carteles
-   distintos de lo que falta del festival, sin repetir.
+1. Aplicar las migraciones `20261028120000_instagram_carrusel.sql` y `20261028130000_cartel_huella.sql` antes de unir (`cargarParaHoja` ya lee
+   `cartel_huella`). Sin variables nuevas (las de OL-458 y OL-461).
+2. Administración › Instagram: abrir «Cultura Mística» (11 actos con su copia de 3 carteles de programa): la tira debe llevar la portada y solo
+   los programas del día que faltan, cada uno una vez (como mucho 4 imágenes), con los artistas de cada día.
 3. Quitar o mover alguno y **Publicar** (con «También en Facebook»). En Instagram: un carrusel con esas imágenes en ese orden, el texto y, en cada
    imagen, el lugar y los artistas de su acto. En Facebook: una publicación con las mismas fotos y el texto con el enlace.
 4. Si Facebook falla, «Reintentar en Facebook» publica las mismas fotos.

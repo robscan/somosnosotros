@@ -1,3 +1,4 @@
+import { mismoCartel } from "../carteles/huella";
 import { eventoPaso } from "../fechas";
 import { TOPE_ETIQUETAS_FOTO } from "./texto";
 
@@ -6,7 +7,9 @@ import { TOPE_ETIQUETAS_FOTO } from "./texto";
  * `carrusel.test.ts` y lo usan la hoja (en el teléfono), la vista previa y la acción de publicar (en el servidor).
  *
  * Un festival: la primera imagen es su portada (el cartel del marco o, sin él, su diseño de Crear cartel); después, los carteles DISTINTOS de sus
- * actos por venir, en orden de fecha y sin repetir (varios actos con el mismo cartel → una imagen, con los artistas de todos). Instagram deja 10:
+ * actos por venir, en orden de fecha y sin repetir (varios actos con el mismo cartel → una imagen, con los artistas de todos). «El mismo» se
+ * decide por la dirección o, si no coincide, por el contenido (`huella`, `lib/carteles/huella`): al aceptar cada acto se guarda su propia copia
+ * del cartel del día, con otra dirección (founder: «Este festival tiene más eventos que carteles. Asegúrate de que no se repitan las imágenes»). Instagram deja 10:
  * las que no caben son las últimas, y la hoja lo dice. Todas van a 4:5 con el margen de su color (Instagram recorta a la proporción de la primera).
  *
  * La misma función sirve para una lista cualquiera de eventos con una portada aparte (p. ej. «Esta semana»: una portada de la semana y sus 9
@@ -29,6 +32,8 @@ export type ParaCarrusel = {
   sesiones?: { inicio: string; fin: string | null }[];
   /** Las cuentas de Instagram de sus artistas (sin @). */
   usuarios: string[];
+  /** La huella de su cartel (`eventos.cartel_huella` o calculada al vuelo); sin ella solo se compara la dirección. */
+  huella?: string | null;
 };
 
 /** Una imagen del carrusel. `imagen` null: un diseño de Crear cartel (la portada sin cartel, o un evento sin cartel con `sinCartel: "diseno"`). */
@@ -40,6 +45,8 @@ export type ImagenCarrusel = {
   eventos: string[];
   /** Las cuentas de sus artistas, sin repetir: se etiquetan en esta imagen. */
   usuarios: string[];
+  /** La huella de su cartel, para reconocer otra copia del mismo. */
+  huella?: string | null;
 };
 
 /** Un cartel, para comparar: sin espacios ni consulta (la misma imagen con otra versión en la URL es la misma). */
@@ -60,32 +67,30 @@ const unir = (a: readonly string[], b: readonly string[]) => [...new Set([...a, 
  * diseño de Crear cartel (`"diseno"`, una lista como «Esta semana»). Un evento con el mismo cartel que la portada se suma a la portada.
  */
 export function armarCarrusel(o: {
-  portada: { titulo: string; imagen: string | null; usuarios?: string[] };
+  portada: { titulo: string; imagen: string | null; usuarios?: string[]; huella?: string | null };
   eventos: readonly ParaCarrusel[];
   ahora: Date;
   zona: string;
   sinCartel?: "fuera" | "diseno";
 }): ImagenCarrusel[] {
-  const portada: ImagenCarrusel = { clave: PORTADA, titulo: o.portada.titulo, imagen: o.portada.imagen, eventos: [], usuarios: [...new Set(o.portada.usuarios ?? [])] };
-  const porCartel = new Map<string, ImagenCarrusel>();
-  if (portada.imagen) porCartel.set(mismaImagen(portada.imagen), portada);
+  const portada: ImagenCarrusel = { clave: PORTADA, titulo: o.portada.titulo, imagen: o.portada.imagen, eventos: [], usuarios: [...new Set(o.portada.usuarios ?? [])], huella: o.portada.huella ?? null };
   const lista: ImagenCarrusel[] = [portada];
+  // El mismo cartel: la misma dirección o, si no, el mismo contenido (dos copias en Storage).
+  const igual = (i: ImagenCarrusel, cartel: string, huella: string | null | undefined) => !!i.imagen && (mismaImagen(i.imagen) === cartel || mismoCartel(i.huella, huella));
   const vienen = o.eventos
     .map((e) => ({ e, cuando: proximaFuncion(e, o.ahora, o.zona) }))
     .filter((x): x is { e: ParaCarrusel; cuando: string } => !!x.cuando)
     .sort((a, b) => a.cuando.localeCompare(b.cuando) || a.e.id.localeCompare(b.e.id));
   for (const { e } of vienen) {
     const cartel = e.imagen?.trim() ? mismaImagen(e.imagen) : null;
-    const ya = cartel ? porCartel.get(cartel) : undefined;
+    const ya = cartel ? lista.find((i) => igual(i, cartel, e.huella)) : undefined;
     if (ya) {
       ya.eventos.push(e.id);
       ya.usuarios = unir(ya.usuarios, e.usuarios);
       continue;
     }
     if (!cartel && o.sinCartel !== "diseno") continue;
-    const nueva: ImagenCarrusel = { clave: e.id, titulo: e.titulo, imagen: cartel ? e.imagen!.trim() : null, eventos: [e.id], usuarios: [...new Set(e.usuarios)] };
-    if (cartel) porCartel.set(cartel, nueva);
-    lista.push(nueva);
+    lista.push({ clave: e.id, titulo: e.titulo, imagen: cartel ? e.imagen!.trim() : null, eventos: [e.id], usuarios: [...new Set(e.usuarios)], huella: cartel ? (e.huella ?? null) : null });
   }
   return lista;
 }

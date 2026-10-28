@@ -4,10 +4,13 @@ import { randomUUID } from "node:crypto";
  * OL-464 (bitácora 496, migración 20261028120000): el carrusel. `instagram_publicaciones` guarda cuántas imágenes llevó y, publicado, sus
  * direcciones en orden; el formato `carrusel` lleva de 2 a 10 y lo demás una. `facebook_publicaciones` toma el formato y cuántas fotos de la
  * publicación de Instagram que espeja (los pone la base). Lo de antes sigue valiendo: una publicación o una historia, una imagen.
+ * Migración 20261028130000: `eventos.cartel_huella` (la huella del cartel, para no repetir copias del mismo cartel en un carrusel): solo el
+ * servidor la escribe, con su forma; un cartel nuevo no hereda la del anterior.
  */
 const ADMIN = randomUUID();
 const AUTOR = randomUUID();
-const url = (n) => `https://x.supabase.co/storage/v1/object/public/fotos/lugares/a/instagram-${n}.jpg`;
+const url = (n) => `https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/a/instagram-${n}.jpg`;
+const huella = (c) => `${c.repeat(64)}.${"8".repeat(96)}.${c.repeat(64)}`;
 const urls = (n) => `{${Array.from({ length: n }, (_, i) => `"${url(i + 1)}"`).join(",")}}`;
 
 export async function run({ as, check, expectError, query }) {
@@ -58,4 +61,22 @@ export async function run({ as, check, expectError, query }) {
     }
   });
   check(cambio === "42501", "lo publicado no se cambia (tampoco cuántas imágenes)", cambio);
+
+  // --- La huella del cartel (migración 20261028130000).
+  const leer = async () => (await query("select imagen, cartel_huella from public.eventos where id = $1", [E])).rows[0];
+  await as("service_role", null, () => query("update public.eventos set imagen = $2, cartel_huella = $3 where id = $1", [E, url(1), huella("a")]));
+  check((await leer()).cartel_huella === huella("a"), "el servidor guarda la huella con el cartel", await leer());
+  await as("authenticated", AUTOR, () => query("update public.eventos set cartel_huella = $2 where id = $1", [E, huella("b")]));
+  check((await leer()).cartel_huella === huella("a"), "una cuenta (quien lo creó) no cambia la huella", await leer());
+  await as("authenticated", AUTOR, () => query("update public.eventos set imagen = $2 where id = $1", [E, url(2)]));
+  const nuevo = await leer();
+  check(nuevo.imagen === url(2) && nuevo.cartel_huella === null, "un cartel nuevo sin su huella no hereda la del anterior", nuevo);
+  await as("service_role", null, () => query("update public.eventos set imagen = $2, cartel_huella = $3 where id = $1", [E, url(3), huella("c")]));
+  check((await leer()).cartel_huella === huella("c"), "cambiar cartel y huella a la vez (ponerCartel) deja la nueva", await leer());
+  await as("service_role", null, () => query("update public.eventos set titulo = 'Festival carrusel (editado)' where id = $1", [E]));
+  check((await leer()).cartel_huella === huella("c"), "editar otra cosa no toca la huella", await leer());
+  await as("service_role", null, () => expectError(() => query("update public.eventos set cartel_huella = 'abc' where id = $1", [E]), "23514", "una huella mal formada no entra"));
+  const otro = await as("authenticated", AUTOR, async () =>
+    (await query("insert into public.eventos (lugar_id, titulo, inicio, fin, ciudad, creado_por, imagen, cartel_huella) values ($1, 'Con huella inventada', now() + interval '3 days', now() + interval '3 days 2 hours', 'Ciudad Carrusel', $2, $3, $4) returning cartel_huella", [L, AUTOR, url(4), huella("d")])).rows[0]);
+  check(otro.cartel_huella === null, "una cuenta que da de alta un evento no pone la huella", otro);
 }

@@ -1,6 +1,6 @@
 // Capturas de la bitácora 496 (OL-464): el carrusel de un festival con varios carteles en Instagram y Facebook. Con la app compilada contra el
 // respaldo local (la sesión de la cuenta de administración y el festival «Cultura Mística (demo)» con carteles, `RESPALDO_CARRUSEL_IG=1`: el marco
-// y once actos; la Fogata comparte el de los Tambores), la API de Instagram y la página de Facebook DE MENTIRA del respaldo
+// y once actos; la Fogata trae su propia copia del de los Tambores, otra dirección y otros bytes), la API de Instagram y la página de Facebook DE MENTIRA del respaldo
 // (`INSTAGRAM_API_URL=http://127.0.0.1:<puerto>/graph`, token y página inventados): nunca se llama a Instagram ni a Facebook. Los carteles los
 // dibuja este script con sharp (inventados, de medidas distintas: 4:5, cuadrados, verticales y apaisados).
 // Chrome real (playwright-core), 390×844 a 2×. Toques reales: clics por coordenadas. Mide los textos cortados (`scrollWidth > clientWidth`) a 320,
@@ -53,32 +53,10 @@ const base = `http://127.0.0.1:${pa}`;
 const reloj = { RELOJ_FIJO: AHORA, TZ: "America/Mexico_City", NODE_OPTIONS: `--require=${path.join(AQUI, "reloj-fijo.cjs")}` };
 const app = { NEXT_PUBLIC_SUPABASE_URL: respaldo, NEXT_PUBLIC_SUPABASE_ANON_KEY: "llave-anon-inventada", NEXT_PUBLIC_MAPBOX_TOKEN: "pk.inventado", SUPABASE_SERVICE_ROLE_KEY: "llave-servicio-inventada" };
 const instagram = { INSTAGRAM_API_URL: `${respaldo}/graph`, INSTAGRAM_TOKEN: "token-inventado", INSTAGRAM_USER_ID: "17841400000000458", FACEBOOK_PAGE_ID: "1374800000000461" };
-// Los carteles inventados: el marco y diez de sus actos, cada uno de un color y una medida (la Fogata usa el de los Tambores).
-const { default: sharp } = await import(path.join(RAIZ, "node_modules/sharp/dist/index.mjs"));
+// Los carteles inventados (`respaldo-local/carteles-carrusel.mjs`): el marco, diez actos y la copia del de los Tambores que trae la Fogata.
+const { dibujarCartelesCarrusel } = await import(path.join(AQUI, "respaldo-local/carteles-carrusel.mjs"));
 const CARTELES = fs.mkdtempSync(path.join(os.tmpdir(), "carrusel-496-"));
-const MEDIDAS = { "4x5": [1080, 1350], "1x1": [1080, 1080], "9x16": [1080, 1920], "3x2": [1200, 800] };
-const DIBUJOS = [
-  ["marco", "Cultura Mística", "9 al 11 de oct · Aether", "#2b1846", "#f4c95d", "4x5"],
-  ["acto-1", "Meditación", "vie 9 · 5:30 pm", "#123c3a", "#c8f1e4", "1x1"],
-  ["acto-2", "Taller de escritura", "vie 9 · 6:30 pm", "#f1e3c8", "#4a2a12", "4x5"],
-  ["acto-3", "Charla de tarot", "vie 9 · 9:00 pm", "#3b0d2c", "#f7b2d9", "9x16"],
-  ["acto-4", "Yoga kundalini", "sáb 10 · 11:00 am", "#e7f0d2", "#2f4a10", "3x2"],
-  ["acto-5", "Mercadito místico", "sáb 10 · 1:00 pm", "#7a2e12", "#ffe2c2", "4x5"],
-  ["acto-6", "Ceremonia de cacao", "sáb 10 · 5:00 pm", "#3d2314", "#e9c08f", "1x1"],
-  ["acto-7", "Lectura de cartas", "sáb 10 · 7:00 pm", "#0e1f4d", "#9fc0ff", "4x5"],
-  ["acto-8", "Tambores y fogata", "sáb 10 y dom 11", "#1b1b1b", "#ff8a3d", "9x16"],
-  ["acto-9", "Astrología básica", "dom 11 · 12:00 pm", "#2d0f57", "#e2d0ff", "3x2"],
-  ["acto-10", "Concierto de cuencos", "dom 11 · 6:00 pm", "#0f3d2a", "#b7f5d2", "4x5"],
-];
-for (const [nombre, titulo, cuando, fondo, tinta, medida] of DIBUJOS) {
-  const [w, h] = MEDIDAS[medida];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fondo}"/>
-    <circle cx="${w / 2}" cy="${h * 0.36}" r="${Math.min(w, h) * 0.2}" fill="none" stroke="${tinta}" stroke-width="18"/>
-    <text x="${w / 2}" y="${h * 0.7}" font-family="Helvetica, Arial" font-weight="700" font-size="${Math.round(w / 13)}" fill="${tinta}" text-anchor="middle">${titulo}</text>
-    <text x="${w / 2}" y="${h * 0.7 + w / 11}" font-family="Helvetica, Arial" font-size="${Math.round(w / 24)}" fill="${tinta}" text-anchor="middle">${cuando}</text>
-    <text x="${w / 2}" y="${h * 0.95}" font-family="Helvetica, Arial" font-size="${Math.round(w / 34)}" fill="${tinta}" text-anchor="middle">(demo) · cartel inventado</text></svg>`;
-  await sharp(Buffer.from(svg)).jpeg({ quality: 82 }).toFile(path.join(CARTELES, `${nombre}.jpg`));
-}
+await dibujarCartelesCarrusel(CARTELES);
 const r = lanzar([path.join(AQUI, "respaldo-local/server.mjs"), String(pr)], { ...reloj, RESPALDO_CARRUSEL_IG: "1", RESPALDO_CARRUSEL_DIR: CARTELES, RESPALDO_URL: `http://127.0.0.1:${pr}` });
 await esperar(`${respaldo}/rest/v1/eventos?select=id&limit=1`, r);
 if (!process.env.SIN_BUILD) {
@@ -179,7 +157,7 @@ try {
     comprobar(dice.includes("Carrusel de 10 imágenes, en este orden:") && dice.includes("Instagram deja 10: queda fuera «Concierto de cuencos»."), "«Carrusel de 10 imágenes» y el que queda fuera, dicho");
     const orden = await ordenDe(hoja);
     console.log("     tira:", orden.map((c) => (c === "portada" ? c : c.slice(-2))).join(" "));
-    comprobar(JSON.stringify(orden) === JSON.stringify(ESPERADO), "la portada y nueve carteles distintos en orden de fecha (la Fogata comparte el de los Tambores)");
+    comprobar(JSON.stringify(orden) === JSON.stringify(ESPERADO), "la portada y nueve carteles distintos en orden de fecha (la copia del cartel de los Tambores que trae la Fogata no se repite)");
     await verTira(hoja);
     await imagenesListas(page);
     await foto(page, "03-tira");

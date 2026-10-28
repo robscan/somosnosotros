@@ -400,8 +400,9 @@ if (CON_VACIO) {
 // hoja las etiquetas de todos, el programa y el precio que sale de sus actos. Todo inventado. Solo con `RESPALDO_FESTIVAL_IG=1`: `npm run medir` no
 // lo pone, así ninguna pantalla medida cambia.
 // OL-464 (bitácora 496): con `RESPALDO_CARRUSEL_IG=1` (lleva al festival consigo), el marco y sus once actos tienen cartel, servidos por el
-// respaldo desde `demo-carrusel/<n>.jpg` (los dibuja el recorrido en `RESPALDO_CARRUSEL_DIR`): la «Fogata» comparte el de los «Tambores»; así el
-// carrusel sale con la portada y diez carteles distintos, y el último («Concierto de cuencos») queda fuera del tope de 10.
+// respaldo desde `demo-carrusel/<n>.jpg` (los dibuja `carteles-carrusel.mjs` en `RESPALDO_CARRUSEL_DIR`): la «Fogata» trae su propia copia del
+// de los «Tambores» (`acto-8-copia`: otra dirección y otros bytes, la misma imagen, como las que guarda `ponerCartel`); así el carrusel sale con la
+// portada y diez carteles distintos (la copia reconocida por su huella), y el último («Concierto de cuencos») queda fuera del tope de 10.
 export const CON_CARRUSEL_IG = process.env.RESPALDO_CARRUSEL_IG === "1";
 export const CON_FESTIVAL_IG = process.env.RESPALDO_FESTIVAL_IG === "1" || CON_CARRUSEL_IG;
 const cartelCarrusel = (n) => (CON_CARRUSEL_IG ? `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/${n}.jpg` : null);
@@ -442,8 +443,8 @@ if (CON_FESTIVAL_IG) {
     [4, "20:30", "Fogata y cantos de cierre", "Gratis", ["tambor", "martha"]],
   ].forEach(([dias, hora, titulo, precio, quienes], i) => {
     const id = `bbbb0013-0000-4000-8000-0000000000${String(i + 2).padStart(2, "0")}`;
-    // Los carteles del carrusel: cada acto el suyo, salvo la Fogata (el de los Tambores).
-    const cartel = cartelCarrusel(i === 10 ? "acto-8" : `acto-${i + 1}`);
+    // Los carteles del carrusel: cada acto el suyo; la Fogata, una copia del de los Tambores en otra dirección.
+    const cartel = cartelCarrusel(i === 10 ? "acto-8-copia" : `acto-${i + 1}`);
     eventos.push(evento({ id, slug: `mistica-demo-${i + 1}`, titulo, dias, hora, dur: 1, lugar_id: L.aether, precio, imagen: cartel, creadoHace: 4, evento_padre_id: E_MISTICA }));
     quienes.forEach((q, j) => eventos_artistas.push({ evento_id: id, artista_id: AM[q], orden: j + 1 }));
   });

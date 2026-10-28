@@ -1,21 +1,22 @@
 /**
  * OL-464 (bitácora 496): el carrusel en la hoja «Publicar en Instagram», con el festival del respaldo local con carteles
- * (`RESPALDO_CARRUSEL_IG=1` en `scripts/ops/auditoria-ui/respaldo-local/fixture.mjs`: el marco y sus once actos con cartel; la Fogata comparte
- * el de los Tambores). Los componentes de verdad (`ListaInstagram` con su `HojaInstagram`) y las acciones del servidor de prueba,
+ * (`RESPALDO_CARRUSEL_IG=1` en `scripts/ops/auditoria-ui/respaldo-local/fixture.mjs`: el marco y sus once actos con cartel; la Fogata trae su
+ * propia copia del de los Tambores, en otra dirección y con otros bytes). Las huellas de los carteles las calcula aquí `huellaDeCartel` (la del
+ * servidor) sobre los carteles que dibuja `carteles-carrusel.mjs`, como haría `cargarParaHoja` al vuelo. Los componentes de verdad (`ListaInstagram` con su `HojaInstagram`) y las acciones del servidor de prueba,
  * que arman lo que prepararía `prepararInstagram` (`armarCarrusel` con las filas del respaldo). Toques reales: el ratón en coordenadas.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { join } from "node:path";
 import { build } from "esbuild";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
-let dir, server, browser, origin;
+let dir, server, browser, origin, huellas;
 
 process.env.RESPALDO_CARRUSEL_IG = "1";
 const { tablas, E_MISTICA } = await import(pathToFileURL(join(root, "scripts/ops/auditoria-ui/respaldo-local/fixture.mjs")).href);
@@ -56,6 +57,36 @@ const mocks = {
 
 before(async () => {
   dir = await mkdtemp(join(tmpdir(), "hoja-carrusel-"));
+  // Los carteles del respaldo y su huella con el código del servidor (sharp de verdad; `server-only` no aplica fuera de Next).
+  const { dibujarCartelesCarrusel } = await import(pathToFileURL(join(root, "scripts/ops/auditoria-ui/respaldo-local/carteles-carrusel.mjs")).href);
+  const carteles = join(dir, "carteles");
+  await mkdir(carteles);
+  await dibujarCartelesCarrusel(carteles);
+  await build({
+    absWorkingDir: root,
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    outfile: join(dir, "huella.mjs"),
+    entryPoints: [join(root, "src/lib/carteles/huellaServidor.ts")],
+    plugins: [
+      {
+        name: "servidor",
+        setup(b) {
+          // `server-only` no hace nada fuera de Next; sharp, el del proyecto.
+          b.onResolve({ filter: /^server-only$/ }, () => ({ path: "server-only", namespace: "vacio" }));
+          b.onLoad({ filter: /.*/, namespace: "vacio" }, () => ({ contents: "" }));
+          b.onResolve({ filter: /^sharp$/ }, () => ({ path: pathToFileURL(join(root, "node_modules/sharp/dist/index.mjs")).href, external: true }));
+        },
+      },
+    ],
+  });
+  const { huellaDeCartel } = await import(pathToFileURL(join(dir, "huella.mjs")).href);
+  huellas = {};
+  for (const e of [marco, ...actos]) {
+    const nombre = e.imagen?.match(/demo-carrusel\/([a-z0-9-]+\.jpg)$/)?.[1];
+    if (nombre) huellas[e.id] = await huellaDeCartel(await readFile(join(carteles, nombre)));
+  }
   await build({
     absWorkingDir: root,
     bundle: true,
@@ -73,6 +104,7 @@ before(async () => {
       import admin from '../admin.module.css';
       import '../../globals.css';
       const f = ${JSON.stringify(filas)};
+      const huellas = ${JSON.stringify(huellas)};
       const artista = (id) => { const a = f.artistas.find((x) => x.id === id); return { id: a.id, nombre: a.nombre, usuario: usuarioDeInstagram(a.redes), disciplina: a.disciplina }; };
       const de = (eventoId) => f.ligados.filter((x) => x.evento_id === eventoId).sort((a, b) => a.orden - b.orden).map((x) => artista(x.artista_id));
       const festival = {
@@ -82,8 +114,8 @@ before(async () => {
       };
       // Lo que arma cargarParaHoja (y prepararInstagram manda al teléfono): las claves y los títulos del carrusel.
       const usuarios = (xs) => xs.map((a) => a.usuario).filter(Boolean);
-      const todas = armarCarrusel({ portada: { titulo: f.marco.titulo, imagen: f.marco.imagen, usuarios: usuarios(de(f.marco.id)) },
-        eventos: f.actos.map((a) => ({ id: a.id, titulo: a.titulo, imagen: a.imagen, inicio: a.inicio, fin: a.fin, usuarios: usuarios(de(a.id)) })),
+      const todas = armarCarrusel({ portada: { titulo: f.marco.titulo, imagen: f.marco.imagen, usuarios: usuarios(de(f.marco.id)), huella: huellas[f.marco.id] },
+        eventos: f.actos.map((a) => ({ id: a.id, titulo: a.titulo, imagen: a.imagen, inicio: a.inicio, fin: a.fin, usuarios: usuarios(de(a.id)), huella: huellas[a.id] })),
         ahora: new Date(), zona: f.marco.zona });
       window.qa = { acciones: [], refrescos: 0, festival, etiquetas: etiquetasDeLaFoto(festival), carrusel: todas.map((i) => ({ clave: i.clave, titulo: i.titulo })),
         unaSola: location.search.includes('una') };
@@ -172,7 +204,14 @@ test("la tira: la portada y diez carteles distintos en orden de fecha; el últim
   assert.match(await texto(hoja), /Carrusel de 10 imágenes, en este orden:/);
   assert.match(await texto(hoja), /Instagram deja 10: queda fuera «Concierto de cuencos»\./);
   const orden = await ordenDe(hoja);
-  // Sin repetir: la Fogata comparte el cartel de los Tambores (una imagen); el Concierto de cuencos es el undécimo y queda fuera.
+  // Sin repetir (founder: «Este festival tiene más eventos que carteles. Asegúrate de que no se repitan las imágenes»): la Fogata trae su propia
+  // copia del cartel de los Tambores, en otra dirección y con otros bytes, y la tira lleva una sola; el Concierto de cuencos es el undécimo y queda
+  // fuera.
+  const tambores = filas.actos.find((a) => a.titulo.startsWith("Tambores"));
+  const fogata = filas.actos.find((a) => a.titulo.startsWith("Fogata"));
+  assert.notEqual(tambores.imagen, fogata.imagen);
+  assert.notEqual(huellas[tambores.id].split(".")[2], huellas[fogata.id].split(".")[2], "otros bytes");
+  assert.ok(!orden.includes(fogata.id));
   assert.deepEqual(orden, ["portada", ...["Meditación", "Taller de escritura", "Charla de tarot", "Yoga", "Mercadito", "Ceremonia", "Lectura", "Tambores", "Astrología"].map(acto)]);
   assert.equal(await grande(hoja), "portada", "la imagen grande es la primera del carrusel");
   // Cada miniatura con tres botones de 44 × 44 (antes, quitar, después); la primera no va antes y la última no va después.
