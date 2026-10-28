@@ -14,6 +14,8 @@ const CORS = {
 const registro = [];
 // OL-461: la falla de la página de Facebook de mentira (permiso | imagen | nada), que el recorrido cambia sin reiniciar (`/__falla-facebook?clave=`).
 let fallaFacebook = process.env.FACEBOOK_FALLA ?? "";
+// OL-464: cuántos contenedores hijos de carrusel van (sus ids de mentira).
+let hijosCarrusel = 0;
 
 // OL-413 (bitácora 444): la lectura de carteles sin llamar a la API de Anthropic. La app arranca con `ANTHROPIC_BASE_URL` apuntando a
 // `/anthropic` de este respaldo y una llave inventada; `POST /__lectura` deja lista la próxima lectura (`{ lectura, archivo }`: lo que
@@ -304,7 +306,9 @@ const servidor = http.createServer(async (req, res) => {
   }
   const publica = ruta.match(/^\/storage\/v1\/object\/public\/fotos\/(.+)$/);
   if (publica && (req.method === "GET" || req.method === "HEAD")) {
-    const archivo = subidas.get(publica[1]);
+    // OL-464: los carteles del festival del carrusel (`RESPALDO_CARRUSEL_IG=1`), que el recorrido dibuja en `RESPALDO_CARRUSEL_DIR`.
+    const demo = publica[1].match(/^demo-carrusel\/([a-z0-9-]+\.jpg)$/);
+    const archivo = demo && process.env.RESPALDO_CARRUSEL_DIR ? `${process.env.RESPALDO_CARRUSEL_DIR}/${demo[1]}` : subidas.get(publica[1]);
     if (!archivo || !fs.existsSync(archivo)) return responder(res, 404, { message: "sin imagen" });
     res.writeHead(200, { ...CORS, "Content-Type": archivo.endsWith(".png") ? "image/png" : "image/jpeg", "Cache-Control": "no-store" });
     return res.end(req.method === "HEAD" ? undefined : fs.readFileSync(archivo));
@@ -331,14 +335,26 @@ const servidor = http.createServer(async (req, res) => {
       return params.get("published") === "false" ? responder(res, 200, { id: "122100000000000999" }) : responder(res, 200, { id: "122100000000000461", post_id: POST_FB });
     }
     if (segundo === "photo_stories" && req.method === "POST") return responder(res, 200, { success: true, post_id: POST_FB });
+    // OL-464: varias fotos en una publicación (las fotos sin publicar → el muro con `attached_media`).
+    if (segundo === "feed" && req.method === "POST") {
+      const adjuntas = [...params.keys()].filter((k) => k.startsWith("attached_media")).map((k) => JSON.parse(params.get(k)).media_fbid);
+      registro.push(`  facebook: ${JSON.stringify({ feed: true, attached_media: adjuntas, message: params.get("message") })}`);
+      if (fallaFb) return responder(res, 400, { error: fallaFb });
+      return responder(res, 200, { id: POST_FB });
+    }
     if (/^[0-9]+_[0-9]+$/.test(primero)) return responder(res, 200, { id: primero, permalink_url: `https://www.facebook.com/${primero.split("_")[0]}/posts/${primero.split("_")[1]}` });
     const falla = { permiso: { code: 190 }, cupo: { code: 4, error_subcode: 2207042 }, imagen: { code: 9004, error_subcode: 2207052 } }[process.env.INSTAGRAM_FALLA ?? ""];
     // OL-463: el texto y las etiquetas que llegan a Instagram quedan en el registro, para comprobarlos.
-    if (segundo === "media" && req.method === "POST") registro.push(`  instagram: ${JSON.stringify({ caption: params.get("caption"), user_tags: params.get("user_tags") })}`);
-    if (segundo === "media" && req.method === "POST") return falla ? responder(res, 400, { error: falla }) : responder(res, 200, { id: "900458" });
+    // OL-464: el carrusel: cada hijo (`is_carousel_item`) con su id (900458001, 900458002…) y el carrusel (900464) con sus `children`.
+    if (segundo === "media" && req.method === "POST")
+      registro.push(`  instagram: ${JSON.stringify({ caption: params.get("caption"), user_tags: params.get("user_tags"), image_url: params.get("image_url"), is_carousel_item: params.get("is_carousel_item"), media_type: params.get("media_type"), children: params.get("children"), location_id: params.get("location_id") })}`);
+    if (segundo === "media" && req.method === "POST" && falla) return responder(res, 400, { error: falla });
+    if (segundo === "media" && req.method === "POST" && params.get("is_carousel_item") === "true") return responder(res, 200, { id: `900458${String(++hijosCarrusel).padStart(3, "0")}` });
+    if (segundo === "media" && req.method === "POST" && params.get("media_type") === "CAROUSEL") return responder(res, 200, { id: "900464" });
+    if (segundo === "media" && req.method === "POST") return responder(res, 200, { id: "900458" });
     if (segundo === "media_publish") return responder(res, 200, { id: "17900000000000458" });
     if (segundo === "content_publishing_limit") return responder(res, 200, { data: [{ quota_usage: 3, config: { quota_total: 100 } }] });
-    if (primero === "900458") return responder(res, 200, { id: "900458", status_code: "FINISHED" });
+    if (/^900458[0-9]{0,3}$|^900464$/.test(primero)) return responder(res, 200, { id: primero, status_code: "FINISHED" });
     if (primero === "17900000000000458") return responder(res, 200, { id: "17900000000000458", permalink: "https://www.instagram.com/p/DEMO458C/" });
     return responder(res, 200, { id: "108000000000459", name: "Oaxaca, Oaxaca", location: { city: "Oaxaca" } });
   }

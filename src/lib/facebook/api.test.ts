@@ -125,3 +125,44 @@ describe("claveDeErrorFacebook", () => {
     expect(claveDeErrorFacebook({ code: 299 })).toBe("permiso");
   });
 });
+
+describe("publicarEnPagina con varias fotos (OL-464, el espejo de un carrusel)", () => {
+  const fotos = [1, 2, 3].map((n) => `https://x.supabase.co/storage/v1/object/public/fotos/lugares/u/instagram-${n}.jpg`);
+  const MURO = `${PAGINA}_122100000000000464`;
+  const varias = (extra: Record<string, (p: URLSearchParams) => Response> = {}) => {
+    let n = 0;
+    return falso({
+      [`POST /${PAGINA}/photos`]: () => json({ id: `12210000000000100${++n}` }),
+      [`POST /${PAGINA}/feed`]: () => json({ id: MURO }),
+      [`GET /${MURO}`]: () => json({ id: MURO, permalink_url: `https://www.facebook.com/${PAGINA}/posts/122100000000000464` }),
+      ...extra,
+    });
+  };
+
+  it("cada foto sin publicar; luego una publicación en el muro con attached_media en orden y el texto; lee el enlace", async () => {
+    const { traer, pedidos } = varias();
+    const r = await publicarEnPagina({ ...pedido, imagenes: fotos }, op(traer));
+    expect(r).toEqual({ ok: true, postId: MURO, permalink: `https://www.facebook.com/${PAGINA}/posts/122100000000000464` });
+    expect(pedidos.map((p) => `${p.metodo} ${p.ruta}`)).toEqual([`POST /${PAGINA}/photos`, `POST /${PAGINA}/photos`, `POST /${PAGINA}/photos`, `POST /${PAGINA}/feed`, `GET /${MURO}`]);
+    expect(pedidos.slice(0, 3).map((p) => [p.params.get("url"), p.params.get("published"), p.params.get("message")])).toEqual(fotos.map((f) => [f, "false", null]));
+    const muro = pedidos[3].params;
+    expect([0, 1, 2].map((i) => JSON.parse(muro.get(`attached_media[${i}]`)!))).toEqual([1, 2, 3].map((n) => ({ media_fbid: `12210000000000100${n}` })));
+    expect(muro.get("attached_media[3]")).toBeNull();
+    expect(muro.get("message")).toBe(pedido.texto);
+  });
+
+  it("una foto que falla no deja publicación; el muro sin permiso es «permiso»", async () => {
+    const { traer, pedidos } = varias({ [`POST /${PAGINA}/photos`]: (p) => (p.get("url") === fotos[1] ? json({ error: { code: 324 } }, 400) : json({ id: "122100000000001001" })) });
+    expect(await publicarEnPagina({ ...pedido, imagenes: fotos }, op(traer))).toEqual({ ok: false, error: "imagen" });
+    expect(pedidos.some((p) => p.ruta.endsWith("/feed"))).toBe(false);
+    const sinPermiso = varias({ [`POST /${PAGINA}/feed`]: () => json({ error: { code: 200 } }, 400) });
+    expect(await publicarEnPagina({ ...pedido, imagenes: fotos }, op(sinPermiso.traer))).toEqual({ ok: false, error: "permiso" });
+  });
+
+  it("con una sola foto en la lista es la publicación de siempre (/photos con el texto)", async () => {
+    const { traer, pedidos } = exito();
+    await publicarEnPagina({ ...pedido, imagenes: [pedido.imagen] }, op(traer));
+    expect(pedidos[0].params.get("message")).toBe(pedido.texto);
+    expect(pedidos.some((p) => p.ruta.endsWith("/feed"))).toBe(false);
+  });
+});
