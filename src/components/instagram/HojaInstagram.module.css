@@ -4,7 +4,9 @@
       desplazar la hoja: su caja tiene la proporción del formato desde el primer cuadro; la historia, más alta, se angosta.
    2. La línea bajo la imagen y la de la ubicación, con su enlace o su icono en el renglón.
    3. OL-461: la línea bajo la casilla «También en Facebook», con aire arriba (la casilla no lleva margen); y el resultado en Facebook cuando
-      falló, con el icono en el color del error, no en el verde de lo hecho. */
+      falló, con el icono en el color del error, no en el verde de lo hecho.
+   4. OL-464 (bitácora 496): la tira del carrusel. Una fila que se desliza a lo ancho dentro de la hoja (nunca la página), cada imagen en su
+      orden con sus tres botones de 44 debajo (antes, quitar, después); la miniatura mide lo que los tres botones. */
 .vista {
   --alto-vista: max(calc(16 * var(--letra-base)), min(calc(100dvh - 31 * var(--letra-base)), calc(40 * var(--letra-base))));
   display: block;
@@ -41,4 +43,31 @@
 }
 .falla > svg {
   color: var(--error);
+}
+
+.tira {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(3 * var(--control));
+  gap: var(--espacio-3);
+  margin: 0 0 var(--espacio-2);
+  padding: 0 0 var(--espacio-1);
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+.lamina {
+  display: grid;
+  grid-template-columns: repeat(3, var(--control));
+  scroll-snap-align: start;
+}
+.miniatura {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
 }

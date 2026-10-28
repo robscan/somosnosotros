@@ -399,7 +399,13 @@ if (CON_VACIO) {
 // Martha Franco y el Tambor Ancestral en dos actos), para ver en Administración › Instagram el festival como un solo renglón con «11 actos» y en su
 // hoja las etiquetas de todos, el programa y el precio que sale de sus actos. Todo inventado. Solo con `RESPALDO_FESTIVAL_IG=1`: `npm run medir` no
 // lo pone, así ninguna pantalla medida cambia.
-export const CON_FESTIVAL_IG = process.env.RESPALDO_FESTIVAL_IG === "1";
+// OL-464 (bitácora 496): con `RESPALDO_CARRUSEL_IG=1` (lleva al festival consigo), el marco y sus once actos tienen cartel, servidos por el
+// respaldo desde `demo-carrusel/<n>.jpg` (los dibuja `carteles-carrusel.mjs` en `RESPALDO_CARRUSEL_DIR`): la «Fogata» trae su propia copia del
+// de los «Tambores» (`acto-8-copia`: otra dirección y otros bytes, la misma imagen, como las que guarda `ponerCartel`); así el carrusel sale con la
+// portada y diez carteles distintos (la copia reconocida por su huella), y el último («Concierto de cuencos») queda fuera del tope de 10.
+export const CON_CARRUSEL_IG = process.env.RESPALDO_CARRUSEL_IG === "1";
+export const CON_FESTIVAL_IG = process.env.RESPALDO_FESTIVAL_IG === "1" || CON_CARRUSEL_IG;
+const cartelCarrusel = (n) => (CON_CARRUSEL_IG ? `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/${n}.jpg` : null);
 export const E_MISTICA = "bbbb0013-0000-4000-8000-000000000001";
 if (CON_FESTIVAL_IG) {
   const ig = (usuario) => [{ url: `https://www.instagram.com/${usuario}` }];
@@ -421,7 +427,7 @@ if (CON_FESTIVAL_IG) {
       return [clave, id];
     }),
   );
-  eventos.push({ ...evento({ id: E_MISTICA, slug: "cultura-mistica-demo", titulo: "Cultura Mística (demo)", dias: 2, hora: "17:30", lugar_id: L.aether, imagen: null, creadoHace: 4, clase: "festival", descripcion: "Tres días de meditación, tarot, sonido y cantos." }), fin: iso(fecha(4, "23:59")), termina: iso(fecha(4, "23:59")) });
+  eventos.push({ ...evento({ id: E_MISTICA, slug: "cultura-mistica-demo", titulo: "Cultura Mística (demo)", dias: 2, hora: "17:30", lugar_id: L.aether, imagen: cartelCarrusel("marco"), creadoHace: 4, clase: "festival", descripcion: "Tres días de meditación, tarot, sonido y cantos." }), fin: iso(fecha(4, "23:59")), termina: iso(fecha(4, "23:59")) });
   eventos_artistas.push({ evento_id: E_MISTICA, artista_id: AM.organiza, orden: 1 });
   [
     [2, "17:30", "Meditación con Martha Franco (demo)", "Gratis", ["martha"]],
@@ -437,7 +443,9 @@ if (CON_FESTIVAL_IG) {
     [4, "20:30", "Fogata y cantos de cierre", "Gratis", ["tambor", "martha"]],
   ].forEach(([dias, hora, titulo, precio, quienes], i) => {
     const id = `bbbb0013-0000-4000-8000-0000000000${String(i + 2).padStart(2, "0")}`;
-    eventos.push(evento({ id, slug: `mistica-demo-${i + 1}`, titulo, dias, hora, dur: 1, lugar_id: L.aether, precio, imagen: null, creadoHace: 4, evento_padre_id: E_MISTICA }));
+    // Los carteles del carrusel: cada acto el suyo; la Fogata, una copia del de los Tambores en otra dirección.
+    const cartel = cartelCarrusel(i === 10 ? "acto-8-copia" : `acto-${i + 1}`);
+    eventos.push(evento({ id, slug: `mistica-demo-${i + 1}`, titulo, dias, hora, dur: 1, lugar_id: L.aether, precio, imagen: cartel, creadoHace: 4, evento_padre_id: E_MISTICA }));
     quienes.forEach((q, j) => eventos_artistas.push({ evento_id: id, artista_id: AM[q], orden: j + 1 }));
   });
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import sharp from "sharp";
+import { huellaDeCartel } from "../carteles/huellaServidor";
 import { coloresDeImagenEnMemoria } from "../coloresCartelServidor";
 import { LADOS, TAMANO_MAX_FOTO } from "../imagen";
 import { bajarImagen, direccionPublica } from "./imagenWeb";
@@ -11,6 +12,8 @@ import { bajarImagen, direccionPublica } from "./imagenWeb";
  * en el tope del bucket), se sube a la misma carpeta que esos carteles (`lugares/<quien acepta>/evento-<uuid>.jpg` en el bucket `fotos`) y
  * se pone en `eventos.imagen` con sus colores (OL-360), solo si el evento sigue sin cartel. Cambiar la imagen no avisa a nadie (los avisos
  * de cambio son de cuándo y dónde). Si no se puede, no se acepta y la tarjeta dice por qué en una frase.
+ * OL-464 (bitácora 496): también su huella (`eventos.cartel_huella`): cada acto de un festival guarda su propia copia del cartel del día y el
+ * carrusel de Instagram las reconoce como el mismo cartel sin bajarlas.
  */
 
 /** Dónde se guarda la imagen: en producción, el bucket `fotos` con la llave de servicio (`almacenDeSupabase`); en las pruebas, uno falso. */
@@ -72,10 +75,10 @@ export async function ponerCartel(dep: DepCartel, datos: Record<string, unknown>
   const ruta = `lugares/${yo}/evento-${crypto.randomUUID()}.jpg`;
   const url = await dep.almacen.subir(ruta, listo, "image/jpeg");
   if (!url) return { ok: false, error: "No se pudo guardar el cartel. Intenta de nuevo." };
-  const colores = await coloresDeImagenEnMemoria(listo);
+  const [colores, huella] = await Promise.all([coloresDeImagenEnMemoria(listo), huellaDeCartel(listo)]);
   const r = await dep.db
     .from("eventos")
-    .update({ imagen: url, ...(colores ? { colores_cartel: colores } : {}) })
+    .update({ imagen: url, ...(colores ? { colores_cartel: colores } : {}), ...(huella ? { cartel_huella: huella } : {}) })
     .eq("id", e.id)
     .is("imagen", null)
     .select("id, slug, lugar_id");

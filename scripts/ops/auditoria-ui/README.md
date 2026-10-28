@@ -119,6 +119,14 @@ actos, quitar una etiqueta, publicar en las dos, el «···» de un acto, un ta
 mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889. La prueba de componentes `HojaFestival.componentes.test.mjs` usa las mismas
 filas.
 
+El carrusel (OL-464, bitácora 496): con `RESPALDO_CARRUSEL_IG=1` (lleva consigo al festival de arriba) el marco y sus once actos tienen cartel
+(`demo-carrusel/<n>.jpg`, que dibuja `respaldo-local/carteles-carrusel.mjs` y el respaldo sirve desde `RESPALDO_CARRUSEL_DIR`; la Fogata trae su
+propia copia del de los Tambores, otra dirección y otros bytes, que el carrusel reconoce por su huella) y la API de mentira contesta
+el carrusel (hijos `is_carousel_item` y el contenedor `CAROUSEL`) y las varias fotos de la página (`/feed` con `attached_media`), apuntando en el
+registro lo que llega. `capturar-instagram-carrusel.mjs` dibuja esos carteles (inventados, de medidas distintas), saca las capturas de la
+bitácora 496 con toques reales (la tira, quitar, mover, publicar en las dos, «Ya en Instagram», la historia, un evento de una imagen) y mide los
+textos cortados a 320, 390 y 430. La prueba de componentes `HojaCarrusel.componentes.test.mjs` usa las mismas filas.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

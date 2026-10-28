@@ -11,13 +11,16 @@ import { llamarGraph, type RespuestaGraph } from "../instagram/api";
  *   · Publicación con foto: POST /{page-id}/photos con `url` (el JPEG público que ya se usó en Instagram) y `message` → `{ id, post_id }`.
  *   · Historia: POST /{page-id}/photos con `url` y `published=false` → `{ id }`; luego POST /{page-id}/photo_stories con `photo_id` →
  *     `{ success, post_id }`. Las historias no llevan texto.
+ *   · Varias fotos (el espejo de un carrusel, OL-464): cada una a POST /{page-id}/photos con `published=false` → `{ id }`; luego
+ *     POST /{page-id}/feed con `attached_media[i]={"media_fbid":…}` (en orden) y `message` → `{ id }` (la publicación).
  *   · El enlace: GET /{post-id}?fields=permalink_url (si no se puede leer, se publica igual y queda sin enlace).
  * Permisos del token: `pages_manage_posts`, `pages_read_engagement` y `pages_show_list` (y la tarea CREATE_CONTENT en la página). Sin
  * `pages_manage_posts`, Facebook responde con el código 200 y aquí se dice «permiso»: la hoja lo dice sin tocar lo publicado en Instagram.
  */
 
 export type ErrorFacebook = "imagen" | "permiso" | "otro";
-export type PedidoFacebook = { imagen: string; texto: string | null; historia: boolean };
+/** `imagenes`: varias fotos en una sola publicación (el espejo de un carrusel, OL-464); entonces `imagen` no se usa. */
+export type PedidoFacebook = { imagen: string; texto: string | null; historia: boolean; imagenes?: string[] };
 export type ResultadoFacebook = { ok: true; postId: string; permalink: string | null } | { ok: false; error: ErrorFacebook };
 export type OpcionesFacebook = { traer?: typeof fetch; token?: string; pagina?: string };
 
@@ -59,6 +62,19 @@ export async function publicarEnPagina(p: PedidoFacebook, o: OpcionesFacebook = 
     const historia = (await llamarGraph(traer, "POST", `/${c.pagina}/photo_stories`, { photo_id: foto.id }, c.token)) as Respuesta;
     if (!historia.post_id || !ID.test(historia.post_id)) return { ok: false, error: claveDeErrorFacebook(historia.error) };
     postId = historia.post_id;
+  } else if (p.imagenes && p.imagenes.length > 1) {
+    // Varias fotos (OL-464, bitácora 496; https://developers.facebook.com/docs/pages-api/posts#publish-a-multi-photo-post): cada una se sube sin
+    // publicar (`published=false`) y luego una publicación en el muro con todas (`attached_media`, en orden) y el texto.
+    const params: Record<string, string> = {};
+    for (const [i, url] of p.imagenes.slice(0, 10).entries()) {
+      const foto = (await llamarGraph(traer, "POST", `/${c.pagina}/photos`, { url, published: "false" }, c.token)) as Respuesta;
+      if (!foto.id || !ID.test(foto.id)) return { ok: false, error: claveDeErrorFacebook(foto.error) };
+      params[`attached_media[${i}]`] = JSON.stringify({ media_fbid: foto.id });
+    }
+    if (p.texto) params.message = p.texto;
+    const muro = (await llamarGraph(traer, "POST", `/${c.pagina}/feed`, params, c.token)) as Respuesta;
+    if (!muro.id || !ID.test(muro.id)) return { ok: false, error: claveDeErrorFacebook(muro.error) };
+    postId = muro.id;
   } else {
     const params: Record<string, string> = { url: p.imagen };
     if (p.texto) params.message = p.texto;

@@ -2,6 +2,10 @@ import "server-only";
 import { diaLocal, formatearCuando, textoDePeriodo, esDeVariosDias } from "@/lib/fechas";
 import { costoOpcional } from "@/lib/eventos";
 import { lineaDeSenal, porSenal, sePuedePublicar, textoActos, unRenglonPorFestival } from "@/lib/instagram/elegir";
+import { esHuella } from "@/lib/carteles/huella";
+import { huellaDeCartel } from "@/lib/carteles/huellaServidor";
+import { armarCarrusel, type ImagenCarrusel, type ParaCarrusel } from "@/lib/instagram/carrusel";
+import { bajarCartel } from "@/lib/instagram/imagen";
 import { armarTexto, etiquetasDeLaFoto, usuarioDeInstagram, type ActoIg, type ArtistaIg, type EventoIg } from "@/lib/instagram/texto";
 import { nombreDeSedes, sedesDeFestival } from "@/lib/sedesFestival";
 import type { ClienteServidor } from "@/lib/supabase/servidor";
@@ -52,7 +56,7 @@ export function estadosFacebook(filas: { evento_id: string; estado: string; erro
   return m;
 }
 
-const FORMATO = { "4x5": "Publicación", "9x16": "Historia" } as const;
+const FORMATO = { "4x5": "Publicación", "9x16": "Historia", carrusel: "Carrusel" } as const;
 
 /** «Ayer, 7:40 pm», «jue 1 de oct, 6:15 pm». */
 export function cuandoSePublico(iso: string, ahora: Date, zona = "America/Mexico_City"): string {
@@ -96,7 +100,7 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
     cuando: [cuandoDelRenglon(f, ahora), agrupadas.actos.get(f.id) ? textoActos(agrupadas.actos.get(f.id)!) : null].filter(Boolean).join(" · "),
     donde: [f.lugar_nombre ?? f.sitio_texto, ciudad ? null : f.ciudad_nombre].filter(Boolean).join(" · ") || f.ciudad_nombre,
     linea: f.publicado_en
-      ? `${FORMATO[f.publicado_formato === "9x16" ? "9x16" : "4x5"]} · ${cuandoSePublico(f.publicado_en, ahora, f.zona)}`
+      ? `${FORMATO[f.publicado_formato === "9x16" || f.publicado_formato === "carrusel" ? f.publicado_formato : "4x5"]} · ${cuandoSePublico(f.publicado_en, ahora, f.zona)}`
       : lineaDeSenal({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio }),
     publicado: !!f.publicado_en,
     facebook: f.publicado_en && enFacebook ? (enFacebook.get(f.id) ?? { estado: "nada" }) : null,
@@ -151,6 +155,7 @@ type FilaEvento = {
   clase: string;
   precio: string | null;
   imagen: string | null;
+  cartel_huella?: string | null;
   ciudad: string;
   visible: boolean;
   cancelado: boolean;
@@ -167,6 +172,8 @@ type FilaEvento = {
 type FilaActo = {
   id: string;
   titulo: string;
+  imagen: string | null;
+  cartel_huella?: string | null;
   inicio: string;
   fin: string | null;
   precio: string | null;
@@ -191,8 +198,11 @@ export type ParaHoja = {
   ciudad: { slug: string; nombre: string };
   imagen: string | null;
   sePuede: boolean;
-  publicado: { cuando: string; formato: "4x5" | "9x16" } | null;
+  publicado: { cuando: string; formato: "4x5" | "9x16" | "carrusel" } | null;
   zona: string;
+  /** Las imágenes posibles de un carrusel (OL-464): en un festival con carteles en sus actos, la portada y un cartel por cada cartel distinto de
+   *  sus actos por venir; si no, vacío (se publica una imagen, como siempre). */
+  carrusel: ImagenCarrusel[];
   datos: { inicio: string; termina: string; zona: string; clase: string; sesiones: { inicio: string }[] };
 };
 
@@ -206,10 +216,10 @@ const aArtista = (x: FilaArtista): ArtistaIg | null => {
  * etiquetas; el programa solo dice lo que falta), cada uno con sus artistas y sus sesiones, y la sede que dicen sus actos («Varias sedes», la única,
  * o null si ninguno dice dónde). Null si no se pudieron leer (el festival se publica como antes, como un evento).
  */
-async function cargarActos(supabase: ClienteServidor, festivalId: string): Promise<{ actos: ActoIg[]; sede: { nombre: string; usuario: string | null } | null } | null> {
+async function cargarActos(supabase: ClienteServidor, festivalId: string): Promise<{ actos: ActoIg[]; paraCarrusel: ParaCarrusel[]; sede: { nombre: string; usuario: string | null } | null } | null> {
   const { data, error } = await supabase
     .from("eventos")
-    .select("id, titulo, inicio, fin, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(id, nombre, redes), sesiones:eventos_sesiones(inicio, fin)")
+    .select("id, titulo, imagen, cartel_huella, inicio, fin, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(id, nombre, redes), sesiones:eventos_sesiones(inicio, fin)")
     .eq("evento_padre_id", festivalId)
     .eq("visible", true)
     .eq("borrador", false)
@@ -219,7 +229,7 @@ async function cargarActos(supabase: ClienteServidor, festivalId: string): Promi
     .limit(200);
   if (error || !Array.isArray(data)) return null;
   const filas = data as FilaActo[];
-  if (!filas.length) return { actos: [], sede: null };
+  if (!filas.length) return { actos: [], paraCarrusel: [], sede: null };
   const ligados = await supabase.from("eventos_artistas").select("evento_id, orden, artista:artistas(id, nombre, redes, disciplina)").in("evento_id", filas.map((a) => a.id)).order("orden").limit(1000);
   const porActo = new Map<string, ArtistaIg[]>();
   for (const x of (ligados.data ?? []) as FilaArtista[]) {
@@ -227,18 +237,52 @@ async function cargarActos(supabase: ClienteServidor, festivalId: string): Promi
     if (a && x.evento_id) porActo.set(x.evento_id, [...(porActo.get(x.evento_id) ?? []), a]);
   }
   const actos = filas.map((a) => ({ titulo: a.titulo, inicio: a.inicio, fin: a.fin, precio: a.precio, artistas: porActo.get(a.id) ?? [], ...(a.sesiones?.length ? { sesiones: a.sesiones } : {}) }));
+  // OL-464: lo que cada acto aporta al carrusel (su cartel y las cuentas de sus artistas).
+  const paraCarrusel = filas.map((a) => ({
+    id: a.id,
+    titulo: a.titulo,
+    imagen: a.imagen,
+    huella: a.cartel_huella ?? null,
+    inicio: a.inicio,
+    fin: a.fin,
+    usuarios: (porActo.get(a.id) ?? []).map((x) => x.usuario).filter((u): u is string => !!u),
+    ...(a.sesiones?.length ? { sesiones: a.sesiones } : {}),
+  }));
   // La sede, como la dice la app (OL-339: el «Dónde» de un festival sale de sus actos).
   const sedes = sedesDeFestival(filas.map((a) => ({ inicio: a.inicio, fin: a.fin, lugar_id: a.lugar_id, lugar: uno(a.lugar), sitio_texto: a.sitio_texto, sitio_reservado: !!a.sitio_reservado })));
   const nombre = nombreDeSedes(sedes);
   const lugarUnico = sedes.length === 1 && sedes[0].lugar ? filas.map((a) => uno(a.lugar)).find((l) => l?.id === sedes[0].lugar!.id) : null;
-  return { actos, sede: nombre ? { nombre, usuario: lugarUnico ? usuarioDeInstagram(lugarUnico.redes) : null } : null };
+  return { actos, paraCarrusel, sede: nombre ? { nombre, usuario: lugarUnico ? usuarioDeInstagram(lugarUnico.redes) : null } : null };
+}
+
+const soloSiVarias = (xs: ImagenCarrusel[]) => (xs.length > 1 ? xs : []);
+
+/**
+ * La huella de un cartel para no repetirlo en el carrusel (OL-464): la guardada (`eventos.cartel_huella`, la pone `ponerCartel`) o, si falta,
+ * se baja el cartel (una dirección nuestra de Storage) y se calcula. Las del mismo cartel se calculan una vez por petición (y la descarga ya la
+ * guarda `traerImagen` un rato). Null si no hay cartel o no se pudo leer: entonces solo se compara la dirección.
+ */
+const huellasAlVuelo = new Map<string, Promise<string | null>>();
+function huellaDe(imagen: string | null, guardada: string | null | undefined): Promise<string | null> {
+  if (!imagen) return Promise.resolve(null);
+  if (esHuella(guardada)) return Promise.resolve(guardada);
+  let h = huellasAlVuelo.get(imagen);
+  if (!h) {
+    h = bajarCartel(imagen)
+      .then((c) => (c ? huellaDeCartel(c.bytes) : null))
+      .catch(() => null);
+    huellasAlVuelo.set(imagen, h);
+    // Solo mientras dura: la memoria no crece con cada cartel que se mira.
+    h.finally(() => setTimeout(() => huellasAlVuelo.delete(imagen), 60_000).unref?.());
+  }
+  return h;
 }
 
 /** Todo lo de un evento para su hoja y para publicarlo. Null si no existe o no se ve. */
 export async function cargarParaHoja(supabase: ClienteServidor, eventoId: string, ahora = new Date()): Promise<ParaHoja | null> {
   const { data: e } = await supabase
     .from("eventos")
-    .select("id, slug, titulo, inicio, fin, termina, zona, clase, precio, imagen, ciudad, visible, cancelado, borrador, retirado_por_admin, evento_padre_id, inaugura_id, lugar_id, sitio_texto, lugar:lugares(nombre, redes), sesiones:eventos_sesiones(inicio, fin)")
+    .select("id, slug, titulo, inicio, fin, termina, zona, clase, precio, imagen, cartel_huella, ciudad, visible, cancelado, borrador, retirado_por_admin, evento_padre_id, inaugura_id, lugar_id, sitio_texto, lugar:lugares(nombre, redes), sesiones:eventos_sesiones(inicio, fin)")
     .eq("id", eventoId)
     .maybeSingle<FilaEvento>();
   if (!e) return null;
@@ -246,7 +290,7 @@ export async function cargarParaHoja(supabase: ClienteServidor, eventoId: string
   const [artistas, slugCiudad, ultima, festival] = await Promise.all([
     supabase.from("eventos_artistas").select("orden, artista:artistas(id, nombre, redes, disciplina)").eq("evento_id", e.id).order("orden").limit(20),
     supabase.rpc("ciudad_slug", { p_ciudad: e.ciudad }),
-    supabase.from("instagram_publicaciones").select("creado_en, formato").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string; formato: "4x5" | "9x16" }>(),
+    supabase.from("instagram_publicaciones").select("creado_en, formato").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string; formato: "4x5" | "9x16" | "carrusel" }>(),
     e.clase === "festival" ? cargarActos(supabase, e.id) : null,
   ]);
   const ciudadSlug = typeof slugCiudad.data === "string" ? slugCiudad.data : "";
@@ -285,6 +329,18 @@ export async function cargarParaHoja(supabase: ClienteServidor, eventoId: string
     sePuede: sePuedePublicar({ ...e, sesiones }, ahora),
     publicado: ultima.data ? { cuando: cuandoSePublico(ultima.data.creado_en, ahora, e.zona), formato: ultima.data.formato } : null,
     zona: e.zona,
+    // Un carrusel solo si hay más de una imagen (la portada y al menos un cartel de sus actos). Sin repetir carteles: por la dirección o por su
+    // huella (la guardada o, si falta, calculada al vuelo).
+    carrusel: festival?.paraCarrusel.length
+      ? soloSiVarias(
+          armarCarrusel({
+            portada: { titulo: e.titulo, imagen: e.imagen, usuarios: lista.map((a) => a.usuario).filter((u): u is string => !!u), huella: await huellaDe(e.imagen, e.cartel_huella) },
+            eventos: await Promise.all(festival.paraCarrusel.map(async (a) => ({ ...a, huella: await huellaDe(a.imagen, a.huella) }))),
+            ahora,
+            zona: e.zona,
+          }),
+        )
+      : [],
     datos: { inicio: e.inicio, termina: e.termina, zona: e.zona, clase: e.clase, sesiones },
   };
 }

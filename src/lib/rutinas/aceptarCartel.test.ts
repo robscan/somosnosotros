@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { huellaDeCartel } from "../carteles/huellaServidor";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { LADOS, TAMANO_MAX_FOTO } from "../imagen";
 import { ponerCartel, type Almacen } from "./aceptarCartel";
@@ -53,6 +54,9 @@ describe("aceptar un cartel (OL-444)", () => {
     const ev = m.base.tablas.eventos[0];
     expect(ev.imagen).toBe(r.url);
     expect(ev.colores_cartel).toBeTruthy();
+    // OL-464: su huella, la del JPEG que se subió (el carrusel reconoce otra copia del mismo cartel sin bajarla).
+    expect(ev.cartel_huella).toBe(await huellaDeCartel(s.bytes));
+    expect(ev.cartel_huella).toMatch(/^[0-9a-f]{64}\.[0-9a-f]{96}\.[0-9a-f]{64}$/);
   });
 
   it("no acepta si el evento ya tiene cartel, ya pasó o ya no está, ni si la imagen ya no se baja: lo dice en una frase y no sube nada", async () => {
