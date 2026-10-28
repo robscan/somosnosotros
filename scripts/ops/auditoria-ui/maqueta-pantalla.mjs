@@ -107,6 +107,7 @@ const PANTALLAS = [
   { id: "cartel-revisa-con", reloj: true, url: "/nuevo/evento?ciudad=san-luis-potosi", sesion: true, paso: "cartel-parecido-con" },
   { id: "cartel-publicado", reloj: true, url: "/nuevo/evento?ciudad=san-luis-potosi", sesion: true, paso: "cartel-no-es-otro" },
   { id: "cartel-ficha", reloj: true, url: "/eventos/noche-de-danzon-con-la-orquesta-tipica", sesion: true },
+  { id: "cartel-ficha-feleal", reloj: true, url: "/eventos/feleal-un-viaje-por-el-mundo-en-acordeon", sesion: true },
   // Con `RESPALDO_CARTEL_EXISTENTE=despues` (en otra corrida): la misma ficha con el cartel de Ana, el precio y la descripción del cartel.
   { id: "cartel-ficha-despues", reloj: true, url: "/eventos/noche-de-danzon-con-la-orquesta-tipica", sesion: true },
 ];

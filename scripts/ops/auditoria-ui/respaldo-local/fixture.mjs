@@ -537,13 +537,19 @@ const lecturas_redes = [
 // sitio, el mismo título o dos palabras con contenido en común). Sin la marca, `eventos_parecidos` sigue contestando nada: `npm run medir` y las
 // demás capturas no cambian. Todo inventado.
 // Con `RESPALDO_CARTEL_EXISTENTE=despues`, la misma ficha como queda tras «Sí, es este: ponerle mi cartel»: con el cartel de Ana (servido por el
-// respaldo desde `RESPALDO_CARRUSEL_DIR`, como los del carrusel) y el precio y la descripción que leyó el cartel; lo demás, igual.
+// respaldo desde `RESPALDO_CARRUSEL_DIR`, como los del carrusel), el precio, la descripción y quién se presenta, que leyó el cartel; lo demás, igual.
 export const CON_CARTEL_EXISTENTE = ["1", "despues"].includes(process.env.RESPALDO_CARTEL_EXISTENTE ?? "");
 const DANZON_DESPUES = process.env.RESPALDO_CARTEL_EXISTENTE === "despues";
 export const E_DANZON = "bbbb0014-0000-4000-8000-000000000001";
 if (CON_CARTEL_EXISTENTE) {
   const despues = DANZON_DESPUES ? { imagen: `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/ol466-danzon.jpg`, precio: "$150", descripcion: "Baile de salón con orquesta en vivo: danzón, mambo y chachachá. Clase abierta para principiantes a las 19:30." } : { imagen: null };
   eventos.push(evento({ id: E_DANZON, slug: "noche-de-danzon-con-la-orquesta-tipica", titulo: "Noche de danzón con la Orquesta Típica", dias: 2, hora: "20:00", dur: 3, lugar_id: L.paz, creadoHace: 6, ...despues }));
+  // Después, también quién se presenta (lo leyó el cartel): la ficha nueva que el alta crea para un nombre que no está en el directorio.
+  if (DANZON_DESPUES) {
+    const orquesta = "cccc0014-0000-4000-8000-000000000001";
+    artistas.push(artista(orquesta, "orquesta-tipica-de-san-luis", "Orquesta Típica de San Luis", "musica", "Orquesta", "grupo"));
+    eventos_artistas.push({ evento_id: E_DANZON, artista_id: orquesta, orden: 1 });
+  }
 }
 const VACIAS = new Set(["de", "del", "la", "las", "los", "el", "y", "e", "en", "con", "a", "al", "para", "por", "un", "una", "o", "u", "the", "of", "and"]);
 const normal = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
