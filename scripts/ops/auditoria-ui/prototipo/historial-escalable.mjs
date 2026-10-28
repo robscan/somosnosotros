@@ -198,7 +198,7 @@ function armar({ K, e, P, HIGIENE, NUEVO_CSS, TANDA }) {
   // y los anteriores plegados con su cuenta; L3: todo por mes, en tandas de 20.
   const tanda = e.tanda ?? TANDA;
   const elegido = e.anio ?? anios[0];
-  const masBoton = (quedan) => nodo(`<div class="${c("CargarMas/zona")}" data-propuesta="mas"><button type="button" class="${c("Boton/boton", "Boton/secundario", "Boton/contenido", "Boton/pildora", "Boton/control", "CargarMas/boton")}" data-accion="mas">Ver más</button></div>`);
+  const masBoton = () => nodo(`<div class="${c("CargarMas/zona")}" data-propuesta="mas"><button type="button" class="${c("Boton/boton", "Boton/secundario", "Boton/contenido", "Boton/pildora", "Boton/control", "CargarMas/boton")}" data-accion="mas">Ver más</button></div>`);
   const ponerGrupos = (lista, destino, limite = Infinity) => {
     let vistos = 0, total = lista.reduce((n, g) => n + g.ul.children.length, 0);
     for (const g of lista) {
@@ -208,7 +208,7 @@ function armar({ K, e, P, HIGIENE, NUEVO_CSS, TANDA }) {
       vistos += ul.children.length;
       destino.append(g.h3.cloneNode(true), ul);
     }
-    if (vistos < total) { const m = masBoton(total - vistos); destino.append(m); marcar(m, "mas"); }
+    if (vistos < total) { const m = masBoton(); destino.append(m); marcar(m, "mas"); }
     return vistos;
   };
   if (e.lista === "L1") {
