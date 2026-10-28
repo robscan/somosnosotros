@@ -1288,6 +1288,17 @@ tablas.facebook_publicaciones = [
   { id: "eeee0461-0000-4000-8000-000000000001", instagram_id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, post_id: "1374800000000461_122100000000000001", permalink: "https://www.facebook.com/1374800000000461/posts/122100000000000001", publicado_por: ADMIN, creado_en: hace(1) },
 ];
 tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagina_id: "108000000000458", nombre: "San Luis Potosí", enlace: "https://www.facebook.com/demo", actualizado_por: ADMIN, actualizado_en: hace(3) }];
+// OL-471: el estado de «Conectar Instagram» (sin token: el token vive en Vault y aquí no hay). Vacío al arrancar («Sin conexión propia»); con
+// `RESPALDO_INSTAGRAM_CONEXION=todo`, conectada con todos los permisos; con `=sin-lectura`, sin el de leer cuentas. Los permisos reales, en
+// `supabase/tests/pg/instagram-conexion.test.mjs`.
+{
+  const modo = process.env.RESPALDO_INSTAGRAM_CONEXION;
+  const permisos = ["business_management", "instagram_basic", "instagram_content_publish", "instagram_manage_insights", "pages_manage_posts", "pages_read_engagement", "pages_show_list"];
+  tablas.instagram_conexion =
+    modo === "todo" || modo === "sin-lectura"
+      ? [{ id: 1, pagina_id: "1374800000000461", pagina_nombre: "Somos Nosotrxs", instagram_id: "17841400000000458", instagram_usuario: "smsnstrsapp", permisos: modo === "todo" ? permisos : permisos.filter((x) => x !== "instagram_manage_insights"), conectado_por: ADMIN, conectado_en: hace(0) }]
+      : [];
+}
 // OL-465: la cola de redes (vacía al arrancar) y lo leído de los carteles; `redes_reciente` y `redes_encolar` con la regla de la base (en camino, o
 // publicado hace menos de 15 minutos; un carrusel cuenta como 4:5). Los permisos y el candado reales, en `supabase/tests/pg/redes-en-cola.test.mjs`.
 tablas.redes_trabajos = [];
