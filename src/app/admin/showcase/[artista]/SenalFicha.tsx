@@ -57,7 +57,7 @@ export default function SenalFicha({ artistaId, slug, senal }: { artistaId: stri
     <>
       <ul className={`${renglon.tarjeta} ${s.seguida}`} aria-label={senal.titulo}>
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" data-ayuda={senal.clave} onClick={() => (setError(null), setHoja("puntaje"))}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" data-ayuda={senal.clave} onClick={() => (setError(null), setHoja("puntaje"))}>
             <Icono width={20} height={20} />
             <b>{senal.titulo}</b>
             <small>{senal.resumen}</small>
@@ -68,18 +68,18 @@ export default function SenalFicha({ artistaId, slug, senal }: { artistaId: stri
         </li>
         {senal.evidencias.map((e) => (
           <li key={e.id} className={e.estado === "rechazada" ? s.rechazada : undefined}>
-            <a href={e.url} target="_blank" rel="noopener noreferrer" className={admin.fila} data-ayuda="evidencias">
+            <a href={e.url} target="_blank" rel="noopener noreferrer" className={renglon.ajuste} data-ayuda="evidencias">
               <IconoTipo tipo={e.tipo} width={20} height={20} />
               <b>{e.titulo}</b>
               <small>{e.detalle}</small>
-              <span className={admin.total}>
+              <span>
                 <IconoEnlace width={18} height={18} />
               </span>
             </a>
           </li>
         ))}
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" data-ayuda="evidencias" onClick={() => setHoja("evidencia")}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" data-ayuda="evidencias" onClick={() => setHoja("evidencia")}>
             <IconoMas width={20} height={20} />
             <b>Añadir evidencia</b>
           </button>

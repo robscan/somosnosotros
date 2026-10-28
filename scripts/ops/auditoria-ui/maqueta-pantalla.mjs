@@ -6,7 +6,7 @@
 //
 //   node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> [--solo=texto]
 //
-// Las pantallas están abajo (`PANTALLAS`); `--solo=` filtra por id. Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales.
+// Las pantallas están abajo (`PANTALLAS`); `--solo=` filtra por id (varios, separados por comas). Correrlo en un árbol SIN `.env`: con él, `next build` carga llaves reales.
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -47,8 +47,74 @@ const PANTALLAS = [
   { id: "admin-propuestas", url: "/admin/ciudades/oaxaca/propuestas", sesion: true, cuenta: "admin" },
   { id: "admin-corridas", url: "/admin/corridas", sesion: true, cuenta: "admin" },
   { id: "artistas-hoja-ciudad", url: "/artistas", sesion: true, paso: "hoja-ciudad" },
+  // OL-443: el Showcase como está hoy: la lista, la ficha de Feleal con sus dos evidencias por revisar y su hoja de Estado.
+  { id: "admin-showcase", url: "/admin/showcase", sesion: true, cuenta: "admin" },
+  { id: "admin-showcase-ficha", url: "/admin/showcase/feleal", sesion: true, cuenta: "admin" },
+  { id: "admin-showcase-estado", url: "/admin/showcase/feleal", sesion: true, cuenta: "admin", paso: "admin-showcase-estado" },
+  // OL-454: Inicio como está hoy, con sus carriles (San Luis) y vacío, sin sesión y con la de Ana (que tiene planes en San Luis); con
+  // `RESPALDO_VACIO=1`, Querétaro (lugares y artistas sin eventos) y Zacatecas (eventos solo pasada esta semana). Ciudad de México solo tiene una
+  // artista. Y el primer paso de las tres altas (la tira Evento · Lugar · Artista) y Entrar, a donde lleva un alta sin sesión.
+  { id: "inicio-slp", url: "/", sesion: true },
+  { id: "inicio-qro", url: "/?ciudad=queretaro" },
+  { id: "inicio-qro-sesion", url: "/?ciudad=queretaro", sesion: true },
+  { id: "inicio-zac", url: "/?ciudad=zacatecas" },
+  { id: "inicio-zac-sesion", url: "/?ciudad=zacatecas", sesion: true },
+  { id: "inicio-cdmx", url: "/?ciudad=ciudad-de-mexico" },
+  { id: "inicio-cdmx-sesion", url: "/?ciudad=ciudad-de-mexico", sesion: true },
+  { id: "alta-evento", url: "/nuevo/evento?ciudad=queretaro", sesion: true },
+  { id: "alta-lugar", url: "/nuevo/lugar?ciudad=queretaro", sesion: true },
+  { id: "alta-artista", url: "/nuevo/artista?ciudad=queretaro", sesion: true },
+  { id: "entrar-alta", url: "/entrar?siguiente=%2Fnuevo%2Fevento%3Fciudad%3Dqueretaro" },
+  // OL-456: el resto de Administración y el par del front de cada pantalla, para compararlas lado a lado (comparar-admin-front.mjs).
+  { id: "admin-eventos", url: "/admin/eventos", sesion: true, cuenta: "admin" },
+  { id: "admin-artistas", url: "/admin/artistas", sesion: true, cuenta: "admin" },
+  { id: "admin-ciudad", url: "/admin/ciudades/oaxaca", sesion: true, cuenta: "admin" },
+  { id: "admin-persona", url: "/admin/personas/11111111-1111-4111-8111-111111111111", sesion: true, cuenta: "admin" },
+  { id: "admin-por-aprobar", url: "/admin/showcase/por-aprobar", sesion: true, cuenta: "admin" },
+  { id: "admin-obras", url: "/admin/obras-colectivas", sesion: true, cuenta: "admin" },
+  { id: "admin-grafo-manual", url: "/admin/grafo/manual", sesion: true, cuenta: "admin" },
+  { id: "front-lugares", url: "/lugares", sesion: true },
+  { id: "front-lugares-hoja-ciudad", url: "/lugares", sesion: true, paso: "hoja-ciudad" },
+  { id: "front-artistas", url: "/artistas", sesion: true },
+  { id: "front-buscar", url: "/buscar", sesion: true },
+  { id: "front-persona", url: "/personas/11111111-1111-4111-8111-111111111111", sesion: true },
+  { id: "front-perfil", url: "/perfil", sesion: true },
+  { id: "front-ajustes", url: "/ajustes", sesion: true },
+  { id: "front-ficha-artista", url: "/artistas/feleal", sesion: true },
+  { id: "front-ayuda", url: "/ayuda", sesion: true },
+  // OL-456, parte A: la cabecera nueva de las listas con su hoja de ciudades y su hoja Filtros, una ciudad elegida y su par del front.
+  { id: "admin-lugares-hoja-ciudad", url: "/admin/lugares", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "admin-lugares-filtros", url: "/admin/lugares", sesion: true, cuenta: "admin", paso: "hoja-filtros" },
+  { id: "admin-artistas-cdmx", url: "/admin/artistas?ciudad=ciudad-de-mexico", sesion: true, cuenta: "admin" },
+  { id: "admin-personas-hoja-ciudad", url: "/admin/personas", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "front-lugares-filtros", url: "/lugares", sesion: true, paso: "hoja-filtros" },
+  // OL-457, parte B: el manual del showcase y la ficha pública de un artista con su menú (par de la ficha del showcase).
+  { id: "admin-showcase-manual", url: "/admin/showcase/manual", sesion: true, cuenta: "admin" },
+  // OL-458: publicar en Instagram. La lista de eventos de Administración con su hoja de ciudades, la ficha de un evento con el «···» abierto
+  // (cuenta de administración). Crear cartel no se puede guardar: con el respaldo su página responde «Esto ya no está».
+  { id: "admin-eventos-hoja-ciudad", url: "/admin/eventos", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "admin-evento-menu", url: "/eventos/concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", sesion: true, cuenta: "admin", paso: "menu-acciones" },
 ];
 const PASOS = {
+  // OL-458: el «···» de la barra de una ficha (ui/MenuAcciones).
+  "menu-acciones": async (page) => {
+    await page.getByRole("button", { name: "Más acciones" }).first().click();
+    await page.getByRole("dialog", { name: "Más acciones" }).waitFor();
+  },
+  // OL-456: la hoja de ciudades de una lista de Administración (el chip «Todas las ciudades») y la hoja Filtros (de Administración o de Lugares).
+  "admin-hoja-ciudad": async (page) => {
+    await page.getByRole("button", { name: "Todas las ciudades" }).click();
+    await page.getByRole("dialog").waitFor();
+  },
+  "hoja-filtros": async (page) => {
+    await page.getByRole("button", { name: /^Filtros/ }).click();
+    await page.getByRole("dialog", { name: "Filtros" }).waitFor();
+  },
+  // La hoja de los cinco estados en la ficha de showcase (el renglón «Invitado» con su chevron).
+  "admin-showcase-estado": async (page) => {
+    await page.locator("button[aria-haspopup='dialog'][data-ayuda='estado']").click();
+    await page.getByRole("dialog").waitFor();
+  },
   // La hoja de «Buscar lugares» de Oaxaca en su panel de Administración › Ciudades (ui/Hoja con título, ui/Campo con su ✕ y el pie).
   "admin-ciudades-hoja": async (page) => {
     await page.getByRole("group", { name: "Lugares" }).getByRole("button", { name: "Buscar lugares" }).click();
@@ -106,7 +172,7 @@ try {
   await esperar(base + "/entrar");
   browser = await chromium.launch({ executablePath: process.env.CHROME_EXECUTABLE || (fs.existsSync(MAC) ? MAC : undefined), headless: true, args: ["--hide-scrollbars"] });
   fs.mkdirSync(SALIDA, { recursive: true });
-  for (const p of PANTALLAS.filter((x) => !solo || x.id.includes(solo))) {
+  for (const p of PANTALLAS.filter((x) => !solo || solo.split(",").some((t) => x.id.includes(t)))) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "es-MX" });
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
     const page = await ctx.newPage();

@@ -1,12 +1,16 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin, IconoPincel, IconoUbicacion } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoInstagram, IconoPersonas, IconoPin, IconoPincel, IconoUbicacion } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import { propuestasPorRevisar, resumenCiudades } from "@/lib/ciudadesAdmin";
 import { diaLocal } from "@/lib/fechas";
 import { cuandoPaso, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana, renglonesGestionar } from "@/lib/panel";
-import { usuarioActual } from "@/lib/supabase/servidor";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { GALLETA_CIUDAD, leerCiudad } from "@/lib/panel";
+import { CUENTA_INSTAGRAM } from "@/lib/instagram/texto";
+import { cargarResumenInstagram } from "./instagram/datos";
 import { cargarAportes, cargarComunidad, cargarResumen, cargarVinculadas } from "./consultas";
 import ComunidadComoVa from "./ComunidadComoVa";
 import CapoComoVa from "./CapoComoVa";
@@ -17,6 +21,8 @@ import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
 import GrupoShowcase from "./showcase/GrupoShowcase";
+import { cargarResumenPorAprobar } from "./showcase/consultas";
+import { renglonPorAprobar } from "@/lib/showcasePorAprobar";
 import styles from "./admin.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { tituloDePagina } from "@/lib/marca";
@@ -40,18 +46,21 @@ export default async function Admin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades()]);
+  const ciudadSesion = leerCiudad("eventos", (await cookies()).get(GALLETA_CIUDAD)?.value ?? null);
+  const supabase = await clienteServidor();
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null]);
   const ahora = new Date();
   // Las propuestas de las rutinas por revisar suben a «Pendiente» (firma de OL-425); si Ciudades no se pudo leer, solo faltan ellas.
-  const porRevisar = ciudades ? propuestasPorRevisar(ciudades.corridas, ciudades.ciudades, ahora) : [];
+  // OL-446: primero las evidencias del showcase por aprobar (un solo renglón a «Por aprobar»); si no se pudieron leer, solo falta él.
+  const showcase = renglonPorAprobar(porAprobar && { ...porAprobar, ultima: porAprobar.ultima && diaLocal(new Date(porAprobar.ultima)) }, diaLocal(ahora));
+  const porRevisar = [...(showcase ? [showcase] : []), ...(ciudades ? propuestasPorRevisar(ciudades.corridas, ciudades.ciudades, ahora).filter((p) => p.tipo !== "showcase") : [])];
   // Los dos aportes nuevos (Voy / Me interesa y primeras publicaciones) vienen de su propia función: si falla, solo faltan ellos.
   const lista = resumen ? [...indicadores(resumen, diaLocal(ahora)), ...(aportes ? indicadoresAportes(aportes) : [])] : [];
   const fichas = vinculadas ? indicadoresFichas(vinculadas) : [];
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
-      <h1 className={styles.titulo}>Administración</h1>
+      <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} titulo="Administración" />
       {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
       <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} porRevisar={porRevisar} />
 
@@ -74,11 +83,11 @@ export default async function Admin() {
           const Icono = ICONO[r.clave];
           return (
             <li key={r.clave}>
-              <Link href={r.href} className={styles.fila}>
+              <Link href={r.href} className={renglon.ajuste}>
                 <Icono width={20} height={20} />
                 <b>{r.titulo}</b>
                 {r.detalle && <small>{r.detalle}</small>}
-                <span className={styles.total}>
+                <span>
                   {r.total}
                   <IconoChevronDerecha />
                 </span>
@@ -88,15 +97,35 @@ export default async function Admin() {
         })}
       </ul>
 
+      {/* Instagram (OL-458, firmado): la cuenta de la marca, lo publicado esta semana (y cuántas en Facebook, OL-461) y lo que espera en la ciudad
+          de la sesión; abre la lista. */}
+      <h2 className={styles.grupo}>Instagram</h2>
+      <ul className={renglon.tarjeta}>
+        <li>
+          <Link href="/admin/instagram" className={renglon.ajuste}>
+            <IconoInstagram width={20} height={20} />
+            <b>@{CUENTA_INSTAGRAM}</b>
+            <small>
+              {instagram
+                ? `${instagram.semana === 1 ? "1 publicada" : `${instagram.semana} publicadas`} esta semana${instagram.facebook !== null ? ` · ${instagram.facebook} en Facebook` : ""} · ${instagram.porPublicar} por publicar${instagram.ciudad ? ` en ${instagram.ciudad}` : ""}`
+                : "Publicar eventos en la cuenta de la marca"}
+            </small>
+            <span>
+              <IconoChevronDerecha />
+            </span>
+          </Link>
+        </li>
+      </ul>
+
       {/* Obras colectivas (OL-088) es alta, no moderación: no encaja en SECCIONES/renglonesGestionar(), así que va
           en su propio bloque, no dentro de "Gestionar". */}
       <h2 className={styles.grupo}>Obras colectivas</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/obras-colectivas" className={styles.fila}>
+          <Link href="/admin/obras-colectivas" className={renglon.ajuste}>
             <IconoPincel width={20} height={20} />
             <b>Obras colectivas</b>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>
@@ -106,11 +135,11 @@ export default async function Admin() {
       <h2 className={styles.grupo}>Grafo cultural</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/grafo" className={styles.fila}>
+          <Link href="/admin/grafo" className={renglon.ajuste}>
             <IconoGrafo width={20} height={20} />
             <b>Grafo cultural</b>
             <small>Lugares, artistas y asistentes en 3D</small>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>
@@ -120,11 +149,11 @@ export default async function Admin() {
       <h2 className={styles.grupo}>Ciudades</h2>
       <ul className={renglon.tarjeta}>
         <li>
-          <Link href="/admin/ciudades" className={styles.fila}>
+          <Link href="/admin/ciudades" className={renglon.ajuste}>
             <IconoUbicacion width={20} height={20} />
             <b>Ciudades</b>
             <small>{ciudades ? resumenCiudades(ciudades.ciudades) : "No pudimos leer las ciudades"}</small>
-            <span className={styles.total}>
+            <span>
               <IconoChevronDerecha />
             </span>
           </Link>

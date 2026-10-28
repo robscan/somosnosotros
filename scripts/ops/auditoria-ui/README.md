@@ -61,6 +61,10 @@ Administración › Personas (OL-414, bitácora 445): el respaldo contesta `pane
 administración es `cookieDe(ADMIN)`). Con `RESPALDO_PERSONAS=1` suma fotos inventadas (`retratos.example`, que dibuja quien captura), tres cuentas
 más en la lista y lo que Ana dio de alta además de sus eventos (un lugar y un artista a la vista y uno oculto de cada uno); `npm run medir` no lo
 pone. `capturar-persona-publicado.mjs` saca las capturas de la lista, la ficha con la foto grande, el visor y «Lo que publicó».
+«Fichas que administra» (OL-447, bitácora 479): el respaldo contesta `admin_buscar_fichas`, `admin_asignar_ficha` y `admin_quitar_ficha` (solo a
+`ADMIN`); asignar y quitar cambian `lugares_cuentas` y `artistas_cuentas` en memoria, así la ficha vuelve con la lista al día. `capturar-asignar-fichas.mjs`
+recorre la ficha de Lucía (con `RESPALDO_PERSONAS=1`): la hoja vacía, «fe» con resultados, Feleal elegido (lo administra Marcos), asignado, una
+segunda ficha, «Quitar» y lo que queda.
 
 La ceja de la tarjeta de Inicio (OL-422, bitácora 455): con `RESPALDO_NUEVAS=1` el respaldo suma dos festivales viejos con actividades nuevas (siete
 y una), para ver «FESTIVAL · 7 NUEVAS» y «FESTIVAL · 1 NUEVA» en «Nuevos eventos»; `npm run medir` no lo pone. `capturar-ceja-actividades.mjs` saca
@@ -90,6 +94,22 @@ mano y lo demás propuesto; Pimpolina y Abril Merlot, nada fijado; 0Backside0 y 
 lista (lo propuesto en contorno discontinuo, lo fijado relleno, «sin datos»), la rúbrica de Feleal, la hoja de una señal propuesta y la de una
 fijada con «Volver al propuesto», la ficha y la hoja de Aaron Cadena con «sin datos», la tabla a 1280, e imprime el CSV para el consejo con sus
 columnas de propuesto y fijado. Respaldo en el puerto 8879, sin arranque propio.
+
+Administración › Instagram (OL-458, bitácora 490): el respaldo contesta `instagram_sugerencias` y `ciudad_slug` (la regla de la base: por venir en
+7 días, exposiciones y festivales en curso que terminan después de hoy, talleres con una sesión por delante), trae dos publicaciones y la ubicación de
+San Luis Potosí, y guarda en memoria lo que se publica y las ubicaciones. También hace de API de Instagram DE MENTIRA en `/graph/v23.0/…`
+(contenedor → FINISHED → publicar → enlace, el cupo y una página con ubicación; `INSTAGRAM_FALLA=permiso|cupo|imagen` hace fallar el contenedor):
+la app la usa solo con `INSTAGRAM_API_URL=http://127.0.0.1:<puerto>/graph` (cualquier otra dirección se ignora) y un token inventado. `npm run
+medir` mide la lista y su hoja (s46, s47). `capturar-admin-instagram-codigo.mjs` saca las capturas `codigo-*` con toques reales (portada, lista,
+hoja de ciudades, la hoja de vista previa, quitar una etiqueta, el texto, historia, publicar, la ficha y su «···», un evento pasado, la ubicación de
+una ciudad, escritorio) y mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889. `capturar-admin-instagram.mjs` es la del prototipo.
+
+El espejo a Facebook (OL-461, bitácora 493): el mismo `/graph/v23.0/…` hace de página de Facebook DE MENTIRA (`/{página}/photos` con o sin
+`published=false`, `/{página}/photo_stories` y el enlace de `<página>_<publicación>`), apunta en el registro lo que llega a la página (`  facebook:
+{url, message, published}`) y falla con `FACEBOOK_FALLA=permiso|imagen` o, sin reiniciar, con `/__falla-facebook?clave=permiso` (vacío la quita). Lo
+publicado en Facebook se guarda en memoria (`facebook_publicaciones`; la Master Class ya está, Susurros no). `capturar-espejo-facebook.mjs` saca las
+capturas de la bitácora 493 con toques reales (portada, «Ya en Instagram», la casilla y su recuerdo, publicar en las dos, «Publicar en Facebook»
+desde la lista, sin permiso y «Reintentar en Facebook», solo Instagram) y mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889.
 
 ## Lo que queda de la auditoría
 

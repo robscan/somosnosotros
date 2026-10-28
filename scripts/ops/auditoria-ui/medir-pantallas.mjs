@@ -166,6 +166,15 @@ PASOS["admin-anadir"] = async (page) => {
   await page.getByRole("dialog", { name: "Añadir ciudad" }).waitFor();
   await aquietar(page);
 };
+// OL-458: Administración › Instagram con la hoja «Publicar en Instagram» abierta (el primer evento por publicar): la imagen ya dibujada.
+PASOS["admin-instagram-hoja"] = async (page) => {
+  await page.locator("main li a").first().click();
+  const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
+  await hoja.waitFor();
+  await hoja.locator("img").first().waitFor();
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] img')].every((i) => i.complete));
+  await aquietar(page);
+};
 
 // ---------- procesos ----------
 const hijos = [];
@@ -347,21 +356,45 @@ const dondeQuedo = ([i, alto]) => {
   }
   return { activo: document.activeElement === el, top: Math.round(r.top), bottom: Math.round(r.bottom), alto, tapa: encimaDe(r, el), botones };
 };
-/** Espera a que el desplazamiento se asiente: la página sin moverse durante 12 cuadros seguidos (el de `useCampoVisible` es suave y llega tras dos cuadros). */
+/**
+ * Lo que `useCampoVisible` sigue vigilando y corrigiendo después del foco (su `VIGILA_MS`): antes de ese rato la página todavía puede moverse
+ * por su cuenta, así que no se da por asentada. Copia del número de `src/components/ui/useCampoVisible.ts`; si cambia allí, cambia aquí.
+ */
+const VIGILA_MS = 1200;
+/**
+ * Espera a que el desplazamiento se asiente, con el campo ya enfocado: pasó el rato en que `useCampoVisible` vigila, ningún desplazamiento
+ * suave está en curso (cada `scroll` espera su `scrollend`, de la página o de una hoja) y ni la página ni el campo se movieron durante 12
+ * cuadros seguidos. Solo los 12 cuadros quietos no bastaban (OL-449): con la máquina cargada, el desplazamiento suave del hook empieza tarde o
+ * se queda quieto varios cuadros a medio camino, y la medición tomaba la página a medio desplazar (19 de 60 en el escenario s38 con la CPU
+ * llena). Si en 6 s no se asienta, se mide como esté: si el campo no quedó a la vista, la prueba falla igual.
+ */
 const asentar = (page) =>
   page.evaluate(
-    () =>
+    (vigila) =>
       new Promise((ok) => {
-        let antes = -1;
+        const t0 = performance.now();
+        let enCurso = false;
+        const alDesplazar = () => (enCurso = true);
+        const alTerminar = () => (enCurso = false);
+        document.addEventListener("scroll", alDesplazar, { capture: true, passive: true });
+        document.addEventListener("scrollend", alTerminar, { capture: true, passive: true });
+        const posicion = () => `${window.scrollY} ${document.activeElement?.getBoundingClientRect().top}`;
+        let antes = null;
         let quieto = 0;
-        let cuadros = 0;
         (function paso() {
-          quieto = window.scrollY === antes ? quieto + 1 : 0;
-          antes = window.scrollY;
-          if (quieto >= 12 || ++cuadros > 120) return ok();
+          const ahora = posicion();
+          quieto = ahora === antes ? quieto + 1 : 0;
+          antes = ahora;
+          const transcurrido = performance.now() - t0;
+          if ((quieto >= 12 && !enCurso && transcurrido >= vigila) || transcurrido > 6000) {
+            document.removeEventListener("scroll", alDesplazar, { capture: true });
+            document.removeEventListener("scrollend", alTerminar, { capture: true });
+            return ok();
+          }
           requestAnimationFrame(paso);
         })();
       }),
+    VIGILA_MS,
   );
 /** `modo`: «ventana» (390×508 de verdad) o «area» (390×844 con el `visualViewport` simulado). */
 async function medirTeclado(browser, base, p, modo) {
@@ -482,6 +515,23 @@ try {
     if (!/content="scale"/.test(escala)) fallos.push({ regla: "viewport", pantalla: "layout", ancho: 0, que: "meta text-scale", detalle: `falta <meta name="text-scale" content="scale"> (Android): ${escala || "sin meta text-scale"}` });
   } catch (e) {
     fallos.push({ regla: "carga", pantalla: "layout", ancho: 0, que: "/", detalle: `viewport: ${String(e.message).split("\n")[0]}` });
+  }
+
+  // El primer cuadro al abrir la app (OL-455): lo que el navegador pinta antes de que React revele nada es el HTML hasta el primer trozo
+  // escondido (`<div hidden id="S:…">`, lo que llega después y se pone en su sitio con al menos 300 ms de retraso). Ahí ya tienen que estar la
+  // barra de la app y el esqueleto de Inicio, y no el símbolo SN solo: si no, vuelve el «momento en blanco».
+  try {
+    const html = await (await fetch(`${base}/`, { headers: { "user-agent": UA_IPHONE } })).text();
+    const corte = html.search(/<div hidden id="S:/);
+    const primero = corte < 0 ? html : html.slice(0, corte);
+    const falta = [
+      [/<header class="BarraApp/, "la barra de la app"],
+      [/class="[^"]*CarrilEsqueleto[^"]*respira/, "el esqueleto de los carriles de Inicio"],
+    ].filter(([patron]) => !patron.test(primero));
+    if (/class="[^"]*SimboloCargando/.test(primero)) falta.push([null, "sin el símbolo SN de `ui/CargandoRaiz`, que en Inicio no va"]);
+    for (const [, que] of falta) fallos.push({ regla: "primer-cuadro", pantalla: "inicio", ancho: 0, que: "/", detalle: `el primer HTML de Inicio (${primero.length} bytes) no cumple: ${que}` });
+  } catch (e) {
+    fallos.push({ regla: "carga", pantalla: "inicio", ancho: 0, que: "/", detalle: `primer cuadro: ${String(e.message).split("\n")[0]}` });
   }
 
   // El teclado: cada campo de texto visible de cada pantalla y los botones de abajo, de las dos maneras (ver `medirTeclado`).

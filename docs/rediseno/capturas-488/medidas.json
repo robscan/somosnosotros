@@ -1,0 +1,1249 @@
+{
+ "admin": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Administración",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 2746
+  },
+  "renglones": {
+   "pieza": "admin/fila",
+   "altos": [
+    79,
+    80,
+    80,
+    104
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 7,
+  "nodos": 210,
+  "profundidad": 8,
+  "desbordes": 5,
+  "toquesChicos": [
+   "summary 324×37"
+  ]
+ },
+ "front-ajustes": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ajustes",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1160
+  },
+  "renglones": {
+   "pieza": "Renglon/ajuste",
+   "altos": [
+    59,
+    80,
+    79,
+    99
+   ],
+   "huecos": [
+    0,
+    46,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 2,
+  "nodos": 81,
+  "profundidad": 9,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-personas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Personas",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 844
+  },
+  "renglones": {
+   "pieza": "admin/persona",
+   "altos": [
+    76,
+    77,
+    81
+   ],
+   "huecos": [
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 43,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-artistas": {
+  "cabecera": {
+   "pieza": "BarraApp/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": null,
+  "titulo": null,
+  "columna": {
+   "pieza": "Plantilla/raiz",
+   "x": 0,
+   "relleno": "0px 0px 84px 0px",
+   "alto": 1053
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    117,
+    95,
+    95,
+    95
+   ],
+   "huecos": [
+    41,
+    41,
+    41
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": {
+   "pieza": "NavSecciones/nav",
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60
+  },
+  "sinClase": 19,
+  "nodos": 145,
+  "profundidad": 10,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-persona": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ana Rentería",
+   "x": 114,
+   "y": 224,
+   "w": 162,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 2331
+  },
+  "renglones": {
+   "pieza": "admin/dato",
+   "altos": [
+    60,
+    56,
+    56,
+    56
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 37,
+  "nodos": 182,
+  "profundidad": 9,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-persona": {
+  "cabecera": {
+   "pieza": "Ficha/barraSolida",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/control BotonIcono/contorno",
+   "texto": "Atrás (Mi perfil)",
+   "x": 20,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ana Rentería",
+   "x": 108,
+   "y": 169,
+   "w": 202,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/raizSinNav Ficha/persona",
+   "x": 0,
+   "relleno": "0px 0px 24px 0px",
+   "alto": 844
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    117,
+    117
+   ],
+   "huecos": [
+    41
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 8,
+  "nodos": 58,
+  "profundidad": 11,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-lugares": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Lugares",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 982
+  },
+  "renglones": {
+   "pieza": "admin/renglonFicha",
+   "altos": [
+    80,
+    69,
+    103,
+    83
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 91,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-lugares": {
+  "cabecera": {
+   "pieza": "BarraApp/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": null,
+  "titulo": null,
+  "columna": {
+   "pieza": "lugares/lugares",
+   "x": 0,
+   "relleno": "0px 0px 60px 0px",
+   "alto": 788
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    138,
+    95,
+    95,
+    161
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": {
+   "pieza": "NavSecciones/nav",
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60
+  },
+  "sinClase": 13,
+  "nodos": 194,
+  "profundidad": 13,
+  "desbordes": 2,
+  "toquesChicos": [
+   "a.mapboxgl-ctrl-logo 88×23"
+  ]
+ },
+ "admin-eventos": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Eventos",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 2734
+  },
+  "renglones": {
+   "pieza": "admin/renglonFicha",
+   "altos": [
+    100,
+    142,
+    122,
+    101
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 180,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "agenda": {
+  "cabecera": {
+   "pieza": "BarraApp/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": null,
+  "titulo": null,
+  "columna": {
+   "pieza": "Plantilla/raiz",
+   "x": 0,
+   "relleno": "0px 0px 84px 0px",
+   "alto": 2534
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    117,
+    117,
+    95,
+    117
+   ],
+   "huecos": [
+    0,
+    41,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": {
+   "pieza": "NavSecciones/nav",
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60
+  },
+  "sinClase": 61,
+  "nodos": 306,
+  "profundidad": 10,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-artistas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Artistas",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 844
+  },
+  "renglones": {
+   "pieza": "admin/renglonFicha",
+   "altos": [
+    80,
+    81,
+    81,
+    101
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 77,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-ciudades": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ciudades",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 892
+  },
+  "renglones": {
+   "pieza": "admin/fila ciudades/filaCiudad",
+   "altos": [
+    61,
+    115,
+    84,
+    106
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 114,
+  "profundidad": 9,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-lugares-hoja-ciudad": {
+  "cabecera": {
+   "pieza": "BarraApp/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": null,
+  "titulo": null,
+  "columna": {
+   "pieza": "lugares/lugares",
+   "x": 0,
+   "relleno": "0px 0px 60px 0px",
+   "alto": 788
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    138,
+    95,
+    95,
+    161
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": {
+   "pieza": "NavSecciones/nav",
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60
+  },
+  "sinClase": 13,
+  "nodos": 211,
+  "profundidad": 13,
+  "desbordes": 2,
+  "toquesChicos": []
+ },
+ "admin-ciudad": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Oaxaca Abierta",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido ciudades/panel",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1344
+  },
+  "renglones": {
+   "pieza": "ciudades/ancha ciudades/banda",
+   "altos": [
+    193,
+    218,
+    153,
+    152
+   ],
+   "huecos": [
+    8,
+    8,
+    8
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 3,
+  "nodos": 67,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "ficha-lugar": {
+  "cabecera": {
+   "pieza": "Ficha/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 64
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/accion BotonIcono/elevado",
+   "texto": "Atrás (Lugares)",
+   "x": 20,
+   "y": 8,
+   "w": 48,
+   "h": 48
+  },
+  "titulo": {
+   "texto": "Teatro de la Paz",
+   "x": 20,
+   "y": 215,
+   "w": 198,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Ficha/ficha Ficha/enPagina",
+   "x": 0,
+   "relleno": "0px 0px 16px 0px",
+   "alto": 1359
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    94,
+    94
+   ],
+   "huecos": [
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 4,
+  "nodos": 94,
+  "profundidad": 12,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-propuestas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Propuestas de Oaxaca",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1659
+  },
+  "renglones": {
+   "pieza": "admin/pendiente ciudades/propuesta",
+   "altos": [
+    197,
+    197,
+    241,
+    239
+   ],
+   "huecos": [
+    12,
+    12,
+    104
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 68,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-corridas": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Corridas",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1401
+  },
+  "renglones": {
+   "pieza": "admin/fila",
+   "altos": [
+    115,
+    142,
+    104,
+    123
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 89,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-showcase": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Showcase",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 3289
+  },
+  "renglones": {
+   "pieza": "admin/fila",
+   "altos": [
+    59,
+    59,
+    486,
+    389
+   ],
+   "huecos": [
+    10,
+    13,
+    12
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 19,
+  "nodos": 310,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-showcase-ficha": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Feleal",
+   "x": 144,
+   "y": 224,
+   "w": 103,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido showcase/conAyuda",
+   "x": 106,
+   "relleno": "0px 0px 100px 0px",
+   "alto": 3210
+  },
+  "renglones": {
+   "pieza": "admin/fila showcase/boton",
+   "altos": [
+    79,
+    79,
+    104,
+    57
+   ],
+   "huecos": [
+    46,
+    0,
+    0
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 202,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-ficha-artista": {
+  "cabecera": {
+   "pieza": "Ficha/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 64
+  },
+  "atras": {
+   "pieza": "BotonIcono/boton BotonIcono/accion BotonIcono/elevado",
+   "texto": "Atrás (Artistas)",
+   "x": 20,
+   "y": 8,
+   "w": 48,
+   "h": 48
+  },
+  "titulo": {
+   "texto": "Feleal",
+   "x": 96,
+   "y": 186,
+   "w": 75,
+   "h": 29,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Ficha/ficha Ficha/enPagina",
+   "x": 0,
+   "relleno": "0px 0px 16px 0px",
+   "alto": 1240
+  },
+  "renglones": {
+   "pieza": "Renglon/lista",
+   "altos": [
+    117,
+    140,
+    95,
+    118
+   ],
+   "huecos": [
+    302,
+    33,
+    0
+   ],
+   "x": 20,
+   "w": 350
+  },
+  "barraAbajo": null,
+  "sinClase": 17,
+  "nodos": 154,
+  "profundidad": 12,
+  "desbordes": 6,
+  "toquesChicos": []
+ },
+ "admin-por-aprobar": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Por aprobar",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido admin/lista",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 1836
+  },
+  "renglones": {
+   "pieza": "admin/fila showcase/filaArtista",
+   "altos": [
+    79,
+    248,
+    245,
+    79
+   ],
+   "huecos": [
+    9,
+    12,
+    85
+   ],
+   "x": 21,
+   "w": 348
+  },
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 74,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-grafo": {
+  "cabecera": {
+   "pieza": "Grafo/barra",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Grafo/atras",
+   "texto": "Volver a Administración",
+   "x": 8,
+   "y": 6,
+   "w": 44,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Grafo cultural",
+   "x": 60,
+   "y": 17,
+   "w": 120,
+   "h": 22,
+   "letra": "19px"
+  },
+  "columna": {
+   "pieza": "Grafo/app",
+   "x": 0,
+   "relleno": "0px 0px 0px 0px",
+   "alto": 1384
+  },
+  "renglones": {
+   "pieza": "Grafo/fila Grafo/lente",
+   "altos": [
+    46,
+    46,
+    46,
+    44
+   ],
+   "huecos": [
+    0,
+    0,
+    0
+   ],
+   "x": -312,
+   "w": 295
+  },
+  "barraAbajo": null,
+  "sinClase": 62,
+  "nodos": 460,
+  "profundidad": 11,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "admin-obras": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Obras colectivas",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 891
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 3,
+  "nodos": 45,
+  "profundidad": 8,
+  "desbordes": 0,
+  "toquesChicos": [
+   "input[time].Chip/encima 64×34"
+  ]
+ },
+ "admin-grafo-manual": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Manual del grafo cultural",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/paginaContenido",
+   "x": 20,
+   "relleno": "0px 0px 40px 0px",
+   "alto": 10441
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 227,
+  "profundidad": 7,
+  "desbordes": 0,
+  "toquesChicos": []
+ },
+ "front-ayuda": {
+  "cabecera": {
+   "pieza": "Barra/barra Barra/interior",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 56
+  },
+  "atras": {
+   "pieza": "Boton/boton Boton/secundario Boton/contenido Boton/pildora Boton/control Atras/atras",
+   "texto": "Atrás",
+   "x": 20,
+   "y": 6,
+   "w": 83,
+   "h": 44
+  },
+  "titulo": {
+   "texto": "Ayuda",
+   "x": 20,
+   "y": 68,
+   "w": 350,
+   "h": 30,
+   "letra": "26px"
+  },
+  "columna": {
+   "pieza": "Plantilla/pagina",
+   "x": 20,
+   "relleno": "0px 0px 24px 0px",
+   "alto": 1462
+  },
+  "renglones": null,
+  "barraAbajo": null,
+  "sinClase": 1,
+  "nodos": 30,
+  "profundidad": 6,
+  "desbordes": 0,
+  "toquesChicos": [
+   "a 204×22",
+   "a 211×18"
+  ]
+ }
+}

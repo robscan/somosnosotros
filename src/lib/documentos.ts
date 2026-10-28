@@ -14,6 +14,7 @@ import { etiquetaEnlace, normalizarRedes } from "./enlaces";
 import { sitioEnLista } from "./eventos";
 import { esDeVariosDias, horaCorta, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { artistasDelHistorial, cabeceraTrayectoria, listaCon, lugaresDeTrayectoria, otrosArtistas, plural, realizados, type EventoPasado, type Presencia } from "./historialFichas";
+import { detalleHito, etiquetaHito, hitosPorAnio, resumenHitos, TITULO_HITOS, type Hito } from "./hitos";
 import { MARCA } from "./marca";
 
 /** De quién es el documento: la presentación es del artista; el informe, del lugar. */
@@ -154,6 +155,8 @@ export type EntradaPresentacion = {
   /** Se llenó la lectura de lo pasado (`TOPE_HISTORIAL`): la cuenta dice «200+ fechas». */
   lleno?: boolean;
   proximos: readonly EventoPasado[];
+  /** Sus hitos públicos (OL-445: premios, becas, obra, presentaciones y prensa que la administración aceptó). */
+  hitos?: readonly Hito[];
   ahora: Date;
 };
 
@@ -171,6 +174,7 @@ export function bloquesArtista(e: EntradaPresentacion): BloqueDocumento[] {
     b.push({ tipo: "rotulo", texto: "Reseña" });
     b.push({ tipo: "resena", texto: descripcion, redes });
   }
+  b.push(...bloquesHitos(e.hitos ?? []));
   const pasados = [...e.pasados].sort((x, y) => Date.parse(y.inicio) - Date.parse(x.inicio) || x.id.localeCompare(y.id));
   const ocurridos = realizados(pasados);
   const lugares = lugaresDeTrayectoria(pasados);
@@ -196,6 +200,22 @@ export function bloquesArtista(e: EntradaPresentacion): BloqueDocumento[] {
     for (const x of [...e.proximos].sort((p, q) => Date.parse(p.inicio) - Date.parse(q.inicio) || p.id.localeCompare(q.id))) {
       b.push({ tipo: "fila", fila: filaDocumento(x, { que: "artista", artistaId: a.id, pasado: false }) });
     }
+  }
+  return b;
+}
+
+/**
+ * «Reconocimientos y obra · 2 premios · 1 disco · 5 presentaciones» (OL-445): sus hitos por año, de lo más reciente a lo más viejo y sin fecha
+ * al final; en cada año premios y becas primero, luego la obra, luego las presentaciones y la prensa. Cada renglón como el de un evento: a la
+ * izquierda qué es («Premio», «Disco»), el título y, en gris, la fuente y el día. Va tras la reseña: es lo primero que lee quien programa.
+ * Sin hitos, no hay sección.
+ */
+export function bloquesHitos(hitos: readonly Hito[]): BloqueDocumento[] {
+  if (!hitos.length) return [];
+  const b: BloqueDocumento[] = [{ tipo: "rotulo", texto: `${TITULO_HITOS} · ${resumenHitos(hitos)}` }];
+  for (const g of hitosPorAnio(hitos)) {
+    b.push({ tipo: "anio", texto: g.titulo });
+    for (const h of g.hitos) b.push({ tipo: "fila", fila: { cuando: etiquetaHito(h), titulo: h.titulo, detalle: detalleHito(h) || null, cancelado: false } });
   }
   return b;
 }

@@ -74,6 +74,9 @@ function candidato(c: Partial<Candidato> & { nombre: string; fijados?: Partial<P
     instagram: null,
     estado: "candidato",
     marcado: false,
+    reclamada: false,
+    tipo: "solista",
+    ultimaPublicacion: null,
     valores,
     suma: Object.values(valores).reduce((n, v) => n + (v.puntaje ?? 0), 0),
     nota: null,
@@ -242,22 +245,29 @@ describe("filtrar y ordenar", () => {
     ]);
     const conteos = conteosEstado(lista);
     expect(conteos).toEqual({ todos: 4, candidato: 1, revisado: 1, invitado: 1, confirmado: 1, descartado: 0 });
-    expect(lineaCifras(4, conteos, null, pasanAlConsejo(lista))).toBe("4 candidatos · 1 invitado · 1 confirmado · 4 pasan al consejo con 5 de 8");
-    expect(lineaCifras(4, conteos, null, 1)).toBe("4 candidatos · 1 invitado · 1 confirmado · 1 pasa al consejo con 5 de 8");
-    expect(lineaCifras(4, conteos, 2, 4)).toBe("2 de 4 candidatos");
+    // OL-446 (firmado en OL-443): «artistas», y filtrando, cuántos de los que quedan pasan al consejo.
+    expect(lineaCifras(4, conteos, null, pasanAlConsejo(lista))).toBe("4 artistas · 1 invitado · 1 confirmado · 4 pasan al consejo con 5 de 8");
+    expect(lineaCifras(4, conteos, null, 1)).toBe("4 artistas · 1 invitado · 1 confirmado · 1 pasa al consejo con 5 de 8");
+    expect(lineaCifras(4, conteos, 2, 1)).toBe("2 de 4 artistas · 1 pasa al consejo con 5 de 8");
   });
 });
 
 describe("la vista en la URL", () => {
   it("lee valores seguros y escribe solo lo que no vale por defecto", () => {
-    expect(leerVista({})).toEqual({ q: null, disciplina: "todas", estado: "todos", orden: "puntaje", tabla: false, n: 10 });
-    expect(leerVista({ q: "  co ", disciplina: "danza", estado: "invitado", orden: "nombre", vista: "tabla", n: "51" })).toEqual({ q: "co", disciplina: "danza", estado: "invitado", orden: "nombre", tabla: true, n: 100 });
+    const sin = { puntaje: 0, actividad: "", cuenta: "", circ: "", inv: "", tipo: "" };
+    expect(leerVista({})).toEqual({ q: null, ...sin, disciplina: "todas", estado: "todos", orden: "puntaje", tabla: false, n: 10 });
+    expect(leerVista({ q: "  co ", disciplina: "danza", estado: "invitado", orden: "nombre", vista: "tabla", n: "51" })).toEqual({ q: "co", ...sin, disciplina: "danza", estado: "invitado", orden: "nombre", tabla: true, n: 100 });
+    // OL-446: los filtros de la hoja, con valores seguros; lo que no es una opción vale «sin filtro».
+    expect(leerVista({ puntaje: "4", actividad: "15", cuenta: "con", circ: "foros2", inv: "nunca", tipo: "grupo" })).toMatchObject({ puntaje: 4, actividad: "15", cuenta: "con", circ: "foros2", inv: "nunca", tipo: "grupo" });
+    expect(leerVista({ puntaje: "7", actividad: "8", cuenta: "quizá", circ: "x", inv: "ayer", tipo: "trío" })).toMatchObject(sin);
+    expect(hrefShowcase({ ...leerVista({}), puntaje: 5, actividad: "30", disciplina: "musica", tipo: "solista" })).toBe("/admin/showcase?puntaje=5&actividad=30&disciplina=musica&tipo=solista");
     expect(leerVista({ disciplina: "magia", estado: "ganador", orden: "fama", n: "-4" })).toMatchObject({ disciplina: "todas", estado: "todos", orden: "puntaje", n: 10 });
     expect(hrefShowcase({ q: "co", disciplina: "todas", estado: "todos", orden: "puntaje", tabla: false, n: 10 })).toBe("/admin/showcase?q=co");
     expect(hrefShowcase({ disciplina: "teatro", orden: "seguidores", tabla: true, n: 100 })).toBe("/admin/showcase?disciplina=teatro&orden=seguidores&vista=tabla&n=100");
     expect(hrefShowcase({})).toBe("/admin/showcase");
     expect(hrefFicha({ id: "a1", slug: "sangre-de-coyote" })).toBe("/admin/showcase/sangre-de-coyote");
     expect(hrefFicha({ id: "a2", slug: "manual" })).toBe("/admin/showcase/a2");
+    expect(hrefFicha({ id: "a3", slug: "por-aprobar" })).toBe("/admin/showcase/a3");
   });
 });
 

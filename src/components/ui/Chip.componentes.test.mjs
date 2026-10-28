@@ -136,7 +136,7 @@ test("filtro: deshabilitado no se toca y se apaga; la cuenta va suave a su derec
   assert.equal(await todos.locator("span").evaluate((s) => getComputedStyle(s).fontSize), "14px");
 });
 
-test("una fila que envuelve deja los toques de 44 sin pisarse (36 + 8 de hueco)", async (t) => {
+test("una fila que envuelve deja los toques de 44 sin pisarse (36 + 12 de hueco, OL-446)", async (t) => {
   const p = await pagina(t);
   const fila = await p.getByRole("group", { name: "Envuelve" }).evaluate((g) => {
     const cajas = [...g.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
@@ -144,7 +144,8 @@ test("una fila que envuelve deja los toques de 44 sin pisarse (36 + 8 de hueco)"
     return { renglones: renglones.length, paso: renglones.length > 1 ? renglones[1] - renglones[0] : 0 };
   });
   assert.ok(fila.renglones >= 2, "los chips no caben en un renglón y pasan al de abajo");
-  assert.equal(fila.paso, 44, "un renglón cada 44: los toques se tocan sin encimarse");
+  // OL-446 (firmado en OL-443): con 8 de hueco los toques de 44 de dos renglones se tocaban y el de cada chip medía 43; con 12 queda aire.
+  assert.equal(fila.paso, 48, "un renglón cada 48: cada toque de 44 con su aire, sin tocar el de abajo");
 });
 
 test("contexto: en negrita, con su icono y flecha, abre una hoja; con valor va activo; con cuenta lleva su círculo", async (t) => {
@@ -195,17 +196,18 @@ test("estado y sello son rótulos: ni se enfocan ni son botones; el estado en el
   assert.ok(sello.alto < 36 && estado.alto < 36, "los rótulos son más bajos que un chip que se toca");
 });
 
-test("nativo: el campo de hora va encima del chip, invisible y del mismo tamaño (salvo su borde), y recibe el toque", async (t) => {
+test("nativo: el campo de hora va encima del chip, invisible y del tamaño de su toque (el ancho del chip y 44 de alto), y recibe el toque también fuera de los 36 del chip", async (t) => {
   const p = await pagina(t);
   const campo = p.getByLabel("Hora de cierre");
   const datos = await campo.evaluate((i) => {
     const chip = i.parentElement.getBoundingClientRect();
     const c = i.getBoundingClientRect();
     const centro = document.elementFromPoint(chip.left + chip.width / 2, chip.top + chip.height / 2);
-    const mismoTamano = Math.abs(c.width - chip.width) <= 2 && Math.abs(c.height - chip.height) <= 2; // menos el borde de 1 px por lado
-    return { mismoTamano, alto: Math.round(chip.height), invisible: getComputedStyle(i).opacity, recibe: centro === i };
+    // OL-456: el campo medía 34 de alto (el chip sin sus bordes); ahora cubre el toque de 44, como el `::before` de los chips que se tocan.
+    const arriba = document.elementFromPoint(chip.left + chip.width / 2, chip.top - 3);
+    return { mismoAncho: Math.abs(c.width - chip.width) <= 1, alto: Math.round(chip.height), altoCampo: Math.round(c.height), invisible: getComputedStyle(i).opacity, recibe: centro === i, recibeFuera: arriba === i };
   });
-  assert.deepEqual(datos, { mismoTamano: true, alto: 36, invisible: "0", recibe: true });
+  assert.deepEqual(datos, { mismoAncho: true, alto: 36, altoCampo: 44, invisible: "0", recibe: true, recibeFuera: true });
 });
 
 test("enlace: es un <a>; el que ya está puesto lo dice con aria-current", async (t) => {

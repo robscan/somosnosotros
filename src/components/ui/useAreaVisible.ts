@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 /** Área visible de la ventana cuando difiere de la de maquetación (teclado abierto): su `top` y alto, y el alto de la ventana. */
 export type AreaVisible = { top: number; height: number; ventana: number };
@@ -10,10 +10,12 @@ export type AreaVisible = { top: number; height: number; ventana: number };
  * entera, que el teclado deja desplazada: lo que se ancla ahí queda bajo el teclado o arriba, fuera de la vista.
  * Devuelve `null` cuando no hay diferencia (sin teclado) o el navegador no tiene `visualViewport`: ahí manda el CSS (`inset: 0`).
  * Lo usan `ui/Hoja` y `ui/CampoLargo`.
+ * Se mide en `useLayoutEffect` (OL-449): con `useEffect` lo que se abre con el teclado ya abierto se pintaba un cuadro con el CSS de siempre
+ * (arriba de la ventana de maquetación, fuera de la vista) antes de moverse al área visible.
  */
 export default function useAreaVisible(activo = true): AreaVisible | null {
   const [area, setArea] = useState<AreaVisible | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const vv = window.visualViewport;
     if (!activo || !vv) return;
     const ajustar = () => setArea(Math.abs(vv.height - window.innerHeight) > 1 || vv.offsetTop > 0 ? { top: vv.offsetTop, height: vv.height, ventana: window.innerHeight } : null);

@@ -2,15 +2,16 @@
 
 import { useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
-import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
-import { pegado, verboDe, type LineaBusqueda, type Pildora, type TipoBoton } from "@/lib/ciudadesAdmin";
+import { IconoCalendario, IconoCartel, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
+import { pegado, verboDe, type LineaBusqueda, type Pildora, type TipoHoja } from "@/lib/ciudadesAdmin";
 import { cancelarCorrida } from "./acciones";
 import HojaCorrer from "./HojaCorrer";
 import styles from "../admin.module.css";
 import css from "./ciudades.module.css";
 
-const ICONO: Record<TipoBoton, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella };
-const TITULO: Record<TipoBoton, string> = { lugares: "Lugares", agendas: "Eventos próximos", artistas: "Artistas" };
+const ICONO: Record<TipoHoja, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, carteles: IconoCartel };
+/** «Carteles» (OL-444): su número son los eventos próximos sin cartel. */
+const TITULO: Record<TipoHoja, string> = { lugares: "Lugares", agendas: "Eventos próximos", artistas: "Artistas", carteles: "Carteles" };
 /** La píldora de una búsqueda es la de Corridas (`corridas/page.tsx`). */
 const CLASE_PILDORA: Record<Pildora["tono"], string> = {
   gris: styles.etiqueta,
@@ -23,8 +24,8 @@ const CLASE_PILDORA: Record<Pildora["tono"], string> = {
 type Props = {
   slug: string;
   ciudad: string;
-  tipo: TipoBoton;
-  /** El número de la tarjeta (lugares, eventos próximos o artistas) ya escrito, y lo que dice debajo. */
+  tipo: TipoHoja;
+  /** El número de la tarjeta (lugares, eventos próximos, artistas o eventos próximos sin cartel) ya escrito, y lo que dice debajo. */
   valor: string;
   base: string | null;
   /** La última búsqueda de este botón, bajo la raya; null si nunca corrió. */

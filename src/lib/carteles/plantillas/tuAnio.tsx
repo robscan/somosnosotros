@@ -1,6 +1,7 @@
 import { createElement, type ReactElement } from "react";
 import { CAJA_SN, TRAZO_SN } from "../../simboloSN";
 import { composicionDe, CREMA, NEGRO, paleta } from "../../portadasSistema";
+import { TITULO_HITOS } from "../../hitos";
 import { cejaDe, cifra, claseDeFigura, type ResumenTuAnio } from "../../tuAnio";
 import { ajustar, ajustarRenglon, anchoTexto, type Fuente } from "../medir";
 import { FORMATOS, type Formato } from "../tokens";
@@ -41,13 +42,18 @@ const ENTRE_FIGURA = 40;
 /** El ancho de la columna del número: lo útil menos la figura y su aire. */
 const ANCHO_HERO = ANCHO_UTIL - FIGURA - ENTRE_FIGURA; // 580
 const HERO = { mayor: 440, menor: 160, interlineado: 0.82, espaciado: -0.03 };
+/**
+ * Con la línea de los hitos del artista (OL-445: «Reconocimientos y obra: 2 premios · 1 disco») el número protagonista empieza en 360: la línea
+ * cuesta 48 + 50 px y el lienzo de 1350 no se estira; así cabe todo sin tocar el resto de la composición firmada.
+ */
+const HERO_CON_LOGROS = 360;
 const NEGRA: Fuente = "condensada-negra";
 /** Lo suave (el «Donde más fuiste:», el dominio): la misma condensada, en gris. */
 const SUAVE: Fuente = NEGRA;
 
-/** El tamaño mayor (de 440 a 160, de 4 en 4) con el que el número cabe en su columna, con su espaciado de −0,03 em. */
-export function tamanoHero(texto: string, ancho = ANCHO_HERO): number {
-  for (let t = HERO.mayor; t > HERO.menor; t -= 4) if (anchoTexto(texto, NEGRA, t, HERO.espaciado * t) <= ancho) return t;
+/** El tamaño mayor (de 440 —o el que se pida— a 160, de 4 en 4) con el que el número cabe en su columna, con su espaciado de −0,03 em. */
+export function tamanoHero(texto: string, ancho = ANCHO_HERO, mayor = HERO.mayor): number {
+  for (let t = mayor; t > HERO.menor; t -= 4) if (anchoTexto(texto, NEGRA, t, HERO.espaciado * t) <= ancho) return t;
   return HERO.menor;
 }
 
@@ -118,10 +124,12 @@ export function dibujarTuAnio({ resumen: r, id, foto }: ContextoTuAnio): { eleme
   const nombre = renglones(ajustar(r.quien.nombre, { fuente: NEGRA, ancho: anchoNombre, renglones: 2, mayor: 44, menor: 32 }), NEGRA, tinta, { interlineado: 1.05 });
   // El número, su frase y el periodo.
   const numero = cifra(r.protagonista.n);
-  const tamano = tamanoHero(numero);
+  const tamano = tamanoHero(numero, ANCHO_HERO, r.logros ? HERO_CON_LOGROS : HERO.mayor);
   const frase = renglones(ajustar(r.protagonista.frase, { fuente: NEGRA, ancho: ANCHO_HERO, renglones: 2, mayor: 50, menor: 36 }), NEGRA, tinta, { interlineado: 1.1 });
   const periodo = renglones(ajustarRenglon(`${r.periodo.titulo} · ${r.periodo.desde}`, { fuente: NEGRA, ancho: ANCHO_HERO, mayor: 50, menor: 32 }), NEGRA, suave, { interlineado: 1.1 });
   const mas = r.mas ? lineaMas(r.mas) : null;
+  // OL-445: sus hitos del año, en la misma línea que «lo más» («Reconocimientos y obra: **2 premios · 1 disco**»), antes de ella.
+  const logros = r.logros ? lineaMas({ que: TITULO_HITOS, quien: r.logros, cuantas: "" }) : null;
   const anchoSimbolo = 96;
   const altoSimbolo = Math.round((anchoSimbolo * CAJA_SN.alto) / CAJA_SN.ancho);
   const elemento = (
@@ -154,7 +162,8 @@ export function dibujarTuAnio({ resumen: r, id, foto }: ContextoTuAnio): { eleme
           ))}
         </div>
       )}
-      {mas && <div style={{ display: "flex", marginTop: SEPARACION }}>{mas.el}</div>}
+      {logros && <div style={{ display: "flex", marginTop: SEPARACION }}>{logros.el}</div>}
+      {mas && <div style={{ display: "flex", marginTop: logros ? 16 : SEPARACION }}>{mas.el}</div>}
       <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: ANCHO_UTIL, marginTop: SEPARACION }}>
         <svg width={anchoSimbolo} height={altoSimbolo} viewBox={`0 0 ${CAJA_SN.ancho} ${CAJA_SN.alto}`}>
           <path fill={tinta} d={TRAZO_SN} />

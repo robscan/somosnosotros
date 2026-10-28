@@ -1,0 +1,5 @@
+/* El renglón «Ubicación en Instagram» del panel de una ciudad (OL-458, bitácora 490): la tarjeta de renglones de Ajustes, con su aire
+   antes del tablero. */
+.renglon {
+  margin-bottom: var(--espacio-3);
+}

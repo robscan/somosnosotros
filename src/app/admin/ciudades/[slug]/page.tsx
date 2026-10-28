@@ -6,7 +6,10 @@ import { IconoEtiqueta, IconoOjo, IconoPendiente } from "@/components/ui/Iconos"
 import plantilla from "@/components/ui/Plantilla.module.css";
 import {
   baseArtistas,
+  baseCarteles,
   baseEventos,
+  BOTON_CARTELES,
+  busquedaDe,
   baseLugares,
   BOTONES,
   busquedasDe,
@@ -35,7 +38,8 @@ import {
 } from "@/lib/ciudadesAdmin";
 import { diaLocal } from "@/lib/fechas";
 import { trazoTendencia } from "@/lib/panel";
-import { usuarioActual } from "@/lib/supabase/servidor";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import UbicacionInstagram from "@/components/instagram/UbicacionInstagram";
 import Reintentar from "../../Reintentar";
 import { cargarDatosCiudad, cargarExtras, cargarPanelCiudades, conCifras, pedirPasoSiHayVaradas } from "../consultas";
 import TarjetaBusqueda from "../TarjetaBusqueda";
@@ -51,20 +55,25 @@ const PILDORA: Record<EstadoVisible, string> = { abierta: `${styles.etiqueta} ${
  * El panel de una ciudad (OL-432; prototipo firmado OL-431, pantallas D, E y F): cómo va y sus búsquedas. Arriba, su nombre, su píldora y desde
  * cuándo, con lo que cuenta con ella. Luego las tarjetas de «Últimos 7 días»: Por revisar (a la bandeja de la ciudad), Lugares, Eventos próximos
  * y Artistas con la búsqueda que alimenta cada una y su botón, y Consultas y Gasto. Un solo botón violeta: el siguiente paso. Desde 1048, en la
- * columna ancha, de tres en tres. Atrás vuelve a la lista.
+ * columna ancha, de tres en tres. Al final, «Carteles» (OL-444): los eventos próximos sin cartel y su botón «Buscar carteles», que nunca es el
+ * siguiente paso (completa lo que ya está). Atrás vuelve a la lista.
  */
 export default async function PanelCiudad({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/admin/ciudades/${slug}`)}`);
   if (actual.perfil.rol !== "admin") redirect("/");
-  const barra = <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} />;
-  const [panel, extras] = await Promise.all([cargarPanelCiudades(), cargarExtras()]);
+  const supabase = await clienteServidor();
+  const [panel, extras, ubicacion] = await Promise.all([
+    cargarPanelCiudades(),
+    cargarExtras(),
+    supabase?.from("instagram_ubicaciones").select("nombre, pagina_id").eq("tipo", "ciudad").eq("clave", slug).maybeSingle<{ nombre: string | null; pagina_id: string }>(),
+  ]);
+  const ubicacionIg = ubicacion?.data ? (ubicacion.data.nombre ?? ubicacion.data.pagina_id) : null;
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
-        {barra}
-        <h1 className={styles.titulo}>Ciudad</h1>
+        <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo="Ciudad" />
         <Reintentar texto="No pudimos leer la ciudad." />
       </main>
     );
@@ -82,6 +91,7 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
   const suyas = [...juntadas].filter(([, a]) => a === slug).map(([s]) => s);
   const [[cifras], datos] = await Promise.all([conCifras([ciudad], extras ?? new Map()), cargarDatosCiudad({ slug, nombre: ciudad.nombre, alias: extra.alias, zona: ciudad.zona }, suyas, ahora)]);
   const b = busquedasDe(panel.corridas, slug);
+  const carteles = busquedaDe(panel.corridas, slug, BOTON_CARTELES.tipo);
   const n = porRevisarDe(panel.corridas, slug);
   const siguiente = siguientePaso(b, n);
   const c = credito(panel.credito, ahora);
@@ -100,11 +110,13 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
 
   return (
     <main className={`${plantilla.paginaContenido} ${css.panel}`}>
-      {barra}
-      <h1 className={styles.titulo}>
-        {ciudad.nombre} <span className={PILDORA[estado]}>{ETIQUETA_ESTADO[estado]}</span>
-      </h1>
-      <p className={`${styles.nota} ${css.cabeza}`}>{pegado(cabeceraCiudad({ estado: ciudad.estado, creado_en: ciudad.creado_en, alias: extra.alias, parametros: extra.parametros }, b, ahora))}</p>
+      <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo={ciudad.nombre} />
+      {/* El nombre ya va en la barra (OL-456): aquí, su estado y la línea de lo que pasa. */}
+      <p className={`${styles.nota} ${css.cabeza}`}>
+        <span className={PILDORA[estado]}>{ETIQUETA_ESTADO[estado]}</span> {pegado(cabeceraCiudad({ estado: ciudad.estado, creado_en: ciudad.creado_en, alias: extra.alias, parametros: extra.parametros }, b, ahora))}
+      </p>
+      {/* OL-458: la ubicación de Instagram de la ciudad, guardada a mano una vez (decisión del founder al firmar). */}
+      <UbicacionInstagram tipo="ciudad" clave={slug} nombre={ciudad.nombre} guardada={ubicacionIg} />
       <ul className={`${styles.indicadores} ${css.tablero}`} aria-label={`Cómo va ${ciudad.nombre}`}>
         {n > 0 && (
           <li className={`${css.ancha} ${css.banda}`}>
@@ -166,6 +178,19 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
             </Link>
           </div>
         </li>
+        <TarjetaBusqueda
+          slug={slug}
+          ciudad={ciudad.nombre}
+          tipo={BOTON_CARTELES.tipo}
+          valor={cifra(datos.sinCartel ?? 0)}
+          base={datos.sinCartel === null ? null : baseCarteles(datos.sinCartel)}
+          linea={carteles ? lineaBusqueda(carteles, panel.corridas, ahora) : null}
+          principal={false}
+          pendiente={carteles?.estado === "pendiente" ? carteles.id : null}
+          corre={carteles?.estado === "corriendo"}
+          credito={fraseCredito}
+          vezPasada={vezPasada(carteles)}
+        />
       </ul>
     </main>
   );

@@ -48,7 +48,7 @@ export default async function DetalleObra({ params, searchParams }: Params) {
 
   return (
     <main className={`${plantilla.paginaContenido} ${styles.fichaObra}`}>
-      <Barra volver={{ href: "/admin/obras-colectivas", texto: "Obras colectivas" }} />
+      <Barra volver={{ href: "/admin/obras-colectivas", texto: "Obras colectivas" }} titulo={obra.nombre} tituloEnPagina />
       <h1 className={`${admin.titulo} ${styles.nombre}`}>{obra.nombre}</h1>
       <div className={styles.datos}>
         <div className={styles.dato}>

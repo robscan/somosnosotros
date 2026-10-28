@@ -12,6 +12,7 @@ import {
   detallePersona,
   estadoRol,
   haceUnaSemana,
+  enDosLineas,
   hrefLista,
   indicadores,
   indicadoresAportes,
@@ -237,6 +238,8 @@ describe("personas", () => {
   it("los datos de su ficha", () => {
     const d = datosPersona(ficha(), AHORA);
     expect(d.alta).toBe("dom 13 de sep · hace 3 días");
+    // Pasadas dos semanas, la fecha una sola vez (OL-456: «lun 7 de sep · el lun 7 de sep»).
+    expect(datosPersona(ficha({ creado_en: "2026-08-20T18:00:00Z" }), AHORA).alta).toBe("jue 20 de ago");
     expect(d.vaA).toBe("3 eventos próximos · 1 le interesa");
     expect(d.sigue).toBe("4 lugares · 2 artistas");
     expect(d.publico).toBe("Nada aún");
@@ -271,11 +274,27 @@ describe("rol", () => {
 
 describe("listas", () => {
   it("lee la URL con valores seguros", () => {
-    expect(leerLista("lugares", {})).toEqual({ q: null, filtro: "todos", n: PAGINA_PANEL });
-    expect(leerLista("lugares", { filtro: "ocultos", q: "  foro ", n: "60" })).toEqual({ q: "foro", filtro: "ocultos", n: 60 });
-    expect(leerLista("eventos", { filtro: "inventado", n: "abc" })).toEqual({ q: null, filtro: "proximos", n: PAGINA_PANEL });
+    expect(leerLista("lugares", {})).toEqual({ q: null, filtro: "todos", n: PAGINA_PANEL, ciudad: null });
+    expect(leerLista("lugares", { filtro: "ocultos", q: "  foro ", n: "60" })).toEqual({ q: "foro", filtro: "ocultos", n: 60, ciudad: null });
+    expect(leerLista("eventos", { filtro: "inventado", n: "abc" })).toEqual({ q: null, filtro: "proximos", n: PAGINA_PANEL, ciudad: null });
     expect(leerLista("personas", { n: "45" }).n).toBe(60);
     expect(leerLista("personas", { n: "99999" }).n).toBe(600);
+  });
+  it("la ciudad: la de la URL manda; sin ella, la de la sesión; «todas» la quita; «sin» solo en Personas (OL-456)", () => {
+    expect(leerLista("lugares", { ciudad: "ciudad-de-mexico" }).ciudad).toBe("ciudad-de-mexico");
+    expect(leerLista("lugares", {}, "oaxaca").ciudad).toBe("oaxaca");
+    expect(leerLista("lugares", { ciudad: "san-luis-potosi" }, "oaxaca").ciudad).toBe("san-luis-potosi");
+    expect(leerLista("lugares", { ciudad: "todas" }, "oaxaca").ciudad).toBeNull();
+    expect(leerLista("personas", { ciudad: "sin" }).ciudad).toBe("sin");
+    expect(leerLista("lugares", { ciudad: "sin" }).ciudad).toBeNull();
+    expect(leerLista("lugares", { ciudad: "Ciudad de México" }).ciudad).toBeNull();
+    expect(leerLista("lugares", { ciudad: "x".repeat(81) }).ciudad).toBeNull();
+    expect(hrefLista("eventos", { filtro: "semana", ciudad: "oaxaca" })).toBe("/admin/eventos?filtro=semana&ciudad=oaxaca");
+  });
+  it("el detalle de un renglón, en dos líneas: lo primero y lo demás", () => {
+    expect(enDosLineas("Galería · 2 fechas próximas · la lleva Marcos Ledesma")).toEqual(["Galería · 2 fechas próximas", "la lleva Marcos Ledesma"]);
+    expect(enDosLineas("Museo · sin fecha próxima")).toEqual(["Museo · sin fecha próxima"]);
+    expect(enDosLineas("Abrió la app hoy")).toEqual(["Abrió la app hoy"]);
   });
   it("la URL no lleva lo que vale por defecto", () => {
     expect(hrefLista("lugares", { filtro: "todos", n: PAGINA_PANEL })).toBe("/admin/lugares");

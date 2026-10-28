@@ -46,11 +46,21 @@
 .lista > label:focus-within {
   box-shadow: inset 0 0 0 1px var(--texto);
 }
-/* Los chips de las listas corren a todo lo ancho: la franja ocupa las tres columnas de la página, con el aire de los lados dentro */
-.lista > [role="group"] {
-  grid-column: 1 / -1;
-  margin: var(--espacio-3) 0 0;
+.lista > label {
+  margin-top: var(--espacio-3);
+}
+/* La cabecera de las listas del front (ui/Cabecera, OL-457: Showcase, Corridas) corre de borde a borde bajo la barra, que va por encima de su
+   relleno blanco (el del rebote), como la barra de la app en el front; y se queda pegada bajo ella. */
+.lista > header:first-child {
+  z-index: calc(var(--z-pegajoso) + 1);
+}
+/* Su segundo nivel (las disciplinas del Showcase y lo puesto) con el aire de la columna, como la fila de contexto. */
+.lista > header > [role="group"] {
   padding-inline: var(--gutter);
+}
+.lista > header + header {
+  grid-column: 1 / -1;
+  top: calc(var(--barra-vista, 0px) + var(--alto-barra) + env(safe-area-inset-top, 0px));
 }
 
 /* ---------- 2. Pendiente: nada, una tarjeta por reclamo o reporte y la línea de lo hecho ---------- */
@@ -411,7 +421,8 @@ a.ficha::after,
   line-height: 1.35;
 }
 
-/* ---------- 4. Renglones en tarjeta: Gestionar (etiqueta y detalle) y la ficha de una persona (clave y valor) ---------- */
+/* ---------- 4. Renglones en tarjeta: la ficha de una persona (clave y valor). Los demás renglones de Administración son los de Ajustes del
+   front (`ui/Renglon` `.ajuste`, OL-457). ---------- */
 /* "Leyó 20 y publicó 18 este mes": con esto se decide una petición de más lecturas (docs/rediseno/23). */
 .numeros {
   grid-area: numeros;
@@ -425,7 +436,6 @@ a.ficha::after,
   font-weight: 700;
 }
 
-.fila,
 .dato {
   display: grid;
   grid-template-columns: var(--columna-icono) 1fr auto;
@@ -442,21 +452,9 @@ a.ficha::after,
   color: var(--texto);
   text-decoration: none;
 }
-.fila > svg,
 .dato > svg {
   grid-area: icono;
   color: var(--texto-suave);
-}
-.fila > b {
-  grid-area: etiqueta;
-  font-size: var(--letra-md);
-  font-weight: 600;
-}
-.fila > small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.3;
 }
 .total {
   grid-area: accion;
@@ -487,7 +485,6 @@ a.ficha::after,
   font-weight: 600;
   line-height: 1.25;
 }
-.fila > [role="alert"],
 .dato > [role="alert"] {
   grid-area: error;
   margin-top: 2px;
@@ -504,45 +501,18 @@ a.ficha::after,
   color: var(--primario);
   font-size: var(--letra-sm);
   font-weight: 700;
-  white-space: nowrap;
+  /* Si no cabe junto al texto de su renglón (Rol: «Hacer administrador»), parte el suyo en dos en vez de salirse de la tarjeta (OL-414: a 320, con
+     la letra de Linux de la CI, salía 5 px). Donde cabe, sigue en uno. */
+  text-align: center;
+  text-wrap: balance;
   cursor: pointer;
 }
 .pildora:disabled {
   opacity: 0.55;
   cursor: default;
 }
-/* En una fila (Rol: «Hacer administrador»), si no cabe junto al texto la píldora parte el suyo en dos renglones en vez de salirse de la tarjeta
-   (OL-414: a 320, con la letra de Linux de la CI, salía 5 px). Donde cabe, sigue en uno. */
-.fila > .pildora {
-  white-space: normal;
-  text-align: center;
-  text-wrap: balance;
-}
 .quitar {
   color: var(--error);
-}
-/* La cabecera de la ficha de una persona (OL-414): la foto grande arriba y al centro, y debajo el nombre y su detalle, como la ficha de un contacto
-   del teléfono. Con la foto al lado, el nombre se quedaba con 200 px a 390. */
-.cabecera {
-  display: grid;
-  grid-template-areas:
-    "avatar"
-    "nombre"
-    "detalle";
-  justify-items: center;
-  row-gap: var(--espacio-1);
-  text-align: center;
-}
-.cabecera > h1 {
-  grid-area: nombre;
-  margin-top: var(--espacio-2);
-  overflow-wrap: anywhere;
-  font-size: var(--letra-2xl);
-}
-.cabecera > small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
 }
 .salida {
   display: flex;
@@ -560,80 +530,34 @@ a.ficha::after,
   height: 16px;
 }
 
-/* ---------- 5. Listas: Personas y fichas ---------- */
-.renglones {
-  list-style: none;
-  margin-top: var(--espacio-1);
+/* ---------- 5. Listas: Personas, Lugares, Eventos y Artistas (OL-456) ----------
+   Las del front: una columna (cada pieza pone su aire: la cabecera, el conteo, el grupo de renglones), la barra de las fichas arriba y debajo
+   `ui/Cabecera`, que se queda pegada bajo ella. */
+.listado {
+  grid-template-columns: minmax(0, 1fr);
 }
-.renglones > li + li {
-  border-top: 1px solid var(--borde);
+.listado > * {
+  grid-column: 1 / -1;
 }
-/* El renglón de Personas: la foto del lado de las listas de la app (`--foto-renglon`, 56; OL-414, antes 44). */
-.persona {
-  display: grid;
-  grid-template-columns: var(--foto-renglon) 1fr 16px;
-  grid-template-areas:
-    "avatar nombre chevron"
-    "avatar detalle chevron";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  padding: 10px 0;
-  color: var(--texto);
-  text-decoration: none;
+/* La barra va por encima de la cabecera, como la barra de la app en el front: el relleno blanco de la cabecera (su `::before`, el del rebote)
+   sube detrás de ella y no la tapa. */
+.listado > header:first-child {
+  z-index: calc(var(--z-pegajoso) + 1);
 }
-/* La foto redonda o la inicial (`Avatar`, `FotoPersona`); su lado lo pone su sitio. */
-.avatar {
-  grid-area: avatar;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-  color: var(--texto-suave);
-  font-weight: 700;
+.listado > header + header {
+  top: calc(var(--barra-vista, 0px) + var(--alto-barra) + env(safe-area-inset-top, 0px));
 }
-.persona > .avatar {
-  width: var(--foto-renglon);
-  height: var(--foto-renglon);
+/* El buscador (ui/Buscador), con el aire de la columna; el borde, por dentro, para que el campo llene los 44 de su píldora (OL-426) */
+.listado > label {
+  margin: var(--espacio-3) var(--gutter) 0;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--borde);
 }
-/* La de la cabecera de la ficha (OL-414): el doble del avatar de la cabecera de una persona en la app (Mi perfil y su ficha pública, 72), 144; con
-   foto es un botón que la abre entera (VisorImagen). */
-.cabecera > .avatar {
-  width: calc(var(--avatar-perfil) * 2);
-  height: calc(var(--avatar-perfil) * 2);
-  font-size: var(--letra-cifra); /* la inicial, a la medida de la cifra de los indicadores */
+.listado > label:focus-within {
+  box-shadow: inset 0 0 0 1px var(--texto);
 }
-button.avatar {
-  cursor: zoom-in;
-}
-.avatar > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.persona > b,
-.renglonFicha > a > b {
-  grid-area: nombre;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: var(--letra-md);
-  font-weight: 600;
-  line-height: 1.25;
-}
-.persona > small,
-.renglonFicha > a > small {
-  grid-area: detalle;
-  min-width: 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.3;
-}
-.persona > svg {
-  grid-area: chevron;
-  color: var(--texto-suave);
+.listado > .verMas {
+  justify-self: center;
 }
 .etiqueta {
   display: inline-block;
@@ -654,44 +578,6 @@ button.avatar {
 .etiquetaRol {
   background: var(--primario-suave);
   color: var(--primario);
-}
-.renglonFicha {
-  display: grid;
-  grid-template-columns: 1fr var(--toque-min);
-  column-gap: var(--espacio-1);
-  align-items: center;
-}
-.renglonFicha > a {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  grid-template-areas:
-    "foto nombre"
-    "foto detalle";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  min-width: 0;
-  min-height: 68px;
-  padding: 10px 0;
-  color: var(--texto);
-  text-decoration: none;
-}
-.foto {
-  grid-area: foto;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radio-chico);
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
-.redonda {
-  border-radius: 50%;
-}
-.oculta > a > b,
-.oculta > a > small {
-  color: var(--texto-suave);
-}
-.oculta > a > .foto {
-  opacity: 0.45;
 }
 .verMas {
   margin-top: var(--espacio-4);

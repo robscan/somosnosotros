@@ -23,12 +23,10 @@ export default async function Propuestas({ params }: { params: Promise<{ id: str
   if (actual.perfil.rol !== "admin") redirect("/");
   const { bandeja, error } = await cargarBandeja(id);
   if (bandeja?.corrida.ciudad) redirect(hrefPropuestas(bandeja.corrida.ciudad));
-  const barra = <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} />;
   if (error || !bandeja)
     return (
       <main className={plantilla.paginaContenido}>
-        {barra}
-        <h1 className={styles.titulo}>Propuestas</h1>
+        <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo="Propuestas" />
         {error ? <Reintentar texto="No pudimos leer las propuestas." /> : <p className={styles.vacio}>Esa corrida ya no está.</p>}
       </main>
     );
@@ -36,8 +34,7 @@ export default async function Propuestas({ params }: { params: Promise<{ id: str
   const propuestas = bandeja.propuestas.map((p) => ({ id: p.id, tipo: p.tipo, fuente: p.fuente, nombre: nombreDe(p), vista: vistaPropuesta(p, null, ahora) }));
   return (
     <main className={plantilla.paginaContenido}>
-      {barra}
-      <h1 className={styles.titulo}>{tituloBandeja(bandeja.corrida.tipo, null)}</h1>
+      <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo={tituloBandeja(bandeja.corrida.tipo, null)} />
       <p className={styles.nota}>{notaBandeja(bandeja.corrida, ahora)}</p>
       {/* Siempre la misma pieza: al decidir la última, el servidor ya no la trae, pero su línea de lo hecho se queda hasta salir. */}
       <Bandeja propuestas={propuestas} fuentesConTanda={bandeja.fuentes_con_tanda} />

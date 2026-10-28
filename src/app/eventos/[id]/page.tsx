@@ -4,6 +4,9 @@ import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
+import { cuandoSePublico } from "@/app/admin/instagram/datos";
+import { HojaInstagramDeFicha, RenglonPublicarInstagram } from "@/components/instagram/PublicarDesdeFicha";
+import { sePuedePublicar } from "@/lib/instagram/elegir";
 import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
@@ -59,6 +62,7 @@ import { funcionesHermanas, otrasFunciones, textoFuncion } from "@/lib/series";
 import { hrefSitio } from "@/lib/sitios";
 import { portadaDeFestival, proximoPorSede, sedesDeFestival, textoActosEnSede, VARIAS_SEDES } from "@/lib/sedesFestival";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import ContarVista from "./ContarVista";
 import { borrarEvento, cambiarVisibleEvento, publicarBorrador, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
 import RenglonCancelado, { AvisoCancelado } from "./MarcarCancelado";
@@ -67,7 +71,7 @@ import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 import { MARCA, tituloDePagina } from "@/lib/marca";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ accion?: string; error?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ accion?: string; error?: string; utm_source?: string; utm_medium?: string; utm_campaign?: string }> };
 type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null; sesiones?: SesionGuardada[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
@@ -344,16 +348,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
-  const { accion, error } = (await searchParams) ?? {};
+  const consulta = (await searchParams) ?? {};
+  const { accion, error } = consulta;
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
   // La dirección vieja (/eventos/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
   // porque es el mismo evento para siempre (OL-119, mismo criterio que artistas y lugares). Se preservan los
-  // parámetros con los que haya llegado.
+  // parámetros con los que haya llegado (y la marca de origen de un enlace de Instagram o Facebook, OL-461).
   if (id !== e.slug) {
     const p = new URLSearchParams();
     if (accion) p.set("accion", accion);
     if (error) p.set("error", error);
+    for (const k of ["utm_source", "utm_medium", "utm_campaign"] as const) {
+      const v = consulta[k];
+      if (typeof v === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(v)) p.set(k, v);
+    }
     const q = p.toString();
     permanentRedirect(`${hrefEvento(e)}${q ? `?${q}` : ""}`);
   }
@@ -385,6 +394,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const miEstado = await cargarMiEstado(e.id, actual?.perfil.id ?? null);
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
+  // OL-458: «Publicar en Instagram» en el «···», solo la administración y solo lo que está por venir (`sePuedePublicar`); un evento que ya pasó
+  // no lo ofrece. Si ya se publicó, el renglón dice cuándo.
+  const otros = e as unknown as { termina?: string; cancelado?: boolean; borrador?: boolean; retirado_por_admin?: boolean };
+  const publicable = esAdmin && sePuedePublicar({ inicio: e.inicio, termina: otros.termina ?? e.fin ?? e.inicio, zona: e.zona, clase: e.clase ?? "puntual", visible: e.visible, cancelado: otros.cancelado, borrador: otros.borrador, retirado_por_admin: otros.retirado_por_admin, sesiones: e.sesiones ?? null }, new Date());
+  const clienteIg = publicable ? await clienteServidor() : null;
+  const yaEnInstagram = clienteIg ? (await clienteIg.from("instagram_publicaciones").select("creado_en").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string }>()).data : null;
   // Con horario por día (OL-311) cada día lleva sus horas; si se editó el evento por el formulario de siempre y ya no coinciden, se ignoran.
   const sesiones = sesionesVigentes(e, e.sesiones);
   // Cómo ocurre (OL-321; doc 55 §3): lo ligado por su clase, la línea de cuándo de una exposición y de un festival, y «Me interesa» sin «Voy».
@@ -564,6 +579,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       )}
       {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
+      {/* Las vistas que cuentan para Destacados (OL-459): no las de quien lo gestiona, ni de lo oculto o lo que ya pasó. */}
+      {!puedeEditar && e.visible && !paso && <ContarVista evento={e.id} />}
       <BarraFicha volver={{ href: "/", texto: "Agenda" }} titulo={e.titulo}>
         {puedeEditar && (
           <>
@@ -598,6 +615,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </>
         )}
         {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
+        {publicable && <RenglonPublicarInstagram publicado={yaEnInstagram ? cuandoSePublico(yaEnInstagram.creado_en, new Date(), e.zona).toLowerCase() : null} />}
         {esAdmin && (
           <li>
             <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
@@ -628,6 +646,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </li>
         )}
       </BarraFicha>
+      {publicable && <HojaInstagramDeFicha eventoId={e.id} />}
       <Heroe
         portada={portada}
         alt={e.imagen || portadaActo ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`}

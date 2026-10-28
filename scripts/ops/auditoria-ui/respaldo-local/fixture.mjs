@@ -369,6 +369,31 @@ if (CON_PERSONAS) {
   for (const e of eventos) if (e.id === E.cine || e.evento_padre_id === E.cine) e.creado_en = altaDelFestival;
 }
 
+// OL-454 (bitácora 486): Inicio vacío. Dos ciudades más para ver Inicio sin eventos: Querétaro con tres lugares y dos artistas y ningún evento
+// próximo (la ciudad «vieja» sin agenda) y Zacatecas con un lugar y tres eventos que empiezan pasada esta semana (el caso de «Más adelante»).
+// Todo inventado. Solo con `RESPALDO_VACIO=1`: `npm run medir` no lo pone, así ninguna pantalla medida cambia.
+const CON_VACIO = process.env.RESPALDO_VACIO === "1";
+if (CON_VACIO) {
+  const QRO = "Querétaro", ZAC = "Zacatecas";
+  const L_ZAC = "aaaa0001-0000-4000-8000-000000000074";
+  lugares.push(
+    { ...lugar("aaaa0001-0000-4000-8000-000000000071", "foro-del-rio-demo", "Foro del Río (demo)", "foro", "Calle inventada 8, Centro, Querétaro, Qro.", 20.5925, -100.3920), ciudad: QRO },
+    { ...lugar("aaaa0001-0000-4000-8000-000000000072", "casa-de-cultura-norte-demo", "Casa de Cultura Norte (demo)", "casa_de_cultura", "Calle inventada 31, Querétaro, Qro.", 20.6050, -100.3900), ciudad: QRO },
+    { ...lugar("aaaa0001-0000-4000-8000-000000000073", "galeria-la-canada-demo", "Galería La Cañada (demo)", "galeria", "Calle inventada 4, Querétaro, Qro.", 20.5880, -100.3850), ciudad: QRO },
+    { ...lugar(L_ZAC, "teatro-del-cerro-demo", "Teatro del Cerro (demo)", "foro", "Calle inventada 2, Centro, Zacatecas, Zac.", 22.7709, -102.5832), ciudad: ZAC },
+  );
+  artistas.push(
+    { ...artista("cccc0005-0000-4000-8000-000000000001", "lucia-arteaga-demo", "Lucía Arteaga (demo)", "musica", "Canción", "solista"), ciudad: QRO },
+    { ...artista("cccc0005-0000-4000-8000-000000000002", "colectivo-tierra-fertil-demo", "Colectivo Tierra Fértil (demo)", "teatro", "Teatro comunitario", "grupo"), ciudad: QRO },
+  );
+  const enZac = (id, slug, titulo, dias) => ({ ...evento({ id, slug, titulo, dias, hora: "19:00", lugar_id: L_ZAC, imagen: null, creadoHace: 20 }), ciudad: ZAC });
+  eventos.push(
+    enZac("bbbb0012-0000-4000-8000-000000000001", "noche-de-son-jarocho-demo", "Noche de son jarocho (demo)", 12),
+    enZac("bbbb0012-0000-4000-8000-000000000002", "lectura-en-voz-alta-demo", "Lectura en voz alta (demo)", 19),
+    enZac("bbbb0012-0000-4000-8000-000000000003", "muestra-de-grabado-demo", "Muestra de grabado (demo)", 33),
+  );
+}
+
 // ---------- lo de las personas ----------
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },
@@ -432,7 +457,13 @@ const showcase_evidencias = [
   evidencia(4, A.feleal, "obra", "premio", "Mención en un concurso estatal de acordeón, 2025", "https://cultura-estatal.example/premios/2025", "2025-11-20", "propuesta", "rutina", 0),
   evidencia(5, A.feleal, "circulacion", "prensa", "Nota sobre su gira por el Bajío", "https://prensa-local.example/notas/gira-bajio", diaHace(95), "propuesta", "rutina", 0),
   evidencia(6, A.backside, "obra", "obra", "Disco en plataformas de música", "https://musica.example/0backside0/disco", diaHace(300), "aceptada", "persona", 20),
+  // OL-446: Abril Merlot (candidata, nada fijado) con tres hallazgos de la rutina de ayer, para «Por aprobar» con dos artistas.
+  evidencia(7, A.merlot, "obra", "obra", "Serie «Bordes» expuesta en una galería de Zacatecas", "https://galeria-zac.example/bordes", diaHace(60), "propuesta", "rutina", 1),
+  evidencia(8, A.merlot, "circulacion", "presentacion", "Mesa en un encuentro de arte joven del Bajío", "https://encuentro-bajio.example/mesas", diaHace(120), "propuesta", "rutina", 1),
+  evidencia(9, A.merlot, "obra", "beca", "Beca estatal de creación, 2025", "https://cultura-estatal.example/becas/2025", "2025-06-30", "propuesta", "rutina", 1),
 ];
+// OL-446: un grupo guardado (un filtro con nombre), para ver «Tus grupos» en la hoja Filtros.
+const showcase_grupos = [{ id: "cccc0029-0000-4000-8000-000000000001", nombre: "Música con cuenta, 4+", filtros: { puntaje: 4, cuenta: "con", disciplina: "musica" }, creado_por: ADMIN, creado_en: hace(1) }];
 const lectura = (n, artista_id, red, seguidores, publicaciones, ultima, leido) => ({ id: `cccc0028-0000-4000-8000-00000000000${n}`, artista_id, red, seguidores, publicaciones, ultima_publicacion: ultima === null ? null : diaHace(ultima), leido_en: hace(leido), leido_por: ADMIN });
 const lecturas_redes = [
   lectura(1, A.feleal, "instagram", 3200, 412, 2, 4),
@@ -447,7 +478,7 @@ const lecturas_redes = [
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
   artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios, ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
-  showcase_candidatos, showcase_cambios_estado, showcase_evidencias, lecturas_redes,
+  showcase_candidatos, showcase_cambios_estado, showcase_evidencias, lecturas_redes, showcase_grupos,
 };
 
 // OL-401: lo que el grafo cultural lee con la llave de servicio (`cargarGrafo`, que salta las reglas por fila): filas de más que SOLO ve quien manda
@@ -686,9 +717,10 @@ const vaA = (id, t) => t.asistencias.filter((a) => a.usuario_id === id && a.esta
 const esNueva = (p) => p.rol !== "admin" && Date.now() - Date.parse(p.creado_en) < 7 * 86400e3;
 const ultimaActividad = (p) => Math.max(Date.parse(p.ultima_entrada ?? 0) || 0, p.visto ? Date.parse(`${p.visto}T12:00:00-06:00`) : 0, Date.parse(p.creado_en));
 Object.assign(rpcs, {
-  panel_personas: ({ p_buscar = null, p_filtro = "todas", p_limite = 30, p_desde = 0 }, t) => {
+  panel_personas: ({ p_ciudad = null, p_buscar = null, p_filtro = "todas", p_limite = 30, p_desde = 0 }, t) => {
     const q = String(p_buscar ?? "").trim().toLowerCase();
     const filas = personasPanel(t)
+      .filter((p) => !p_ciudad || (ciudadDePersona(p.id, t) ?? "sin") === p_ciudad)
       .filter((p) => !q || p.nombre.toLowerCase().includes(q) || p.correo?.toLowerCase().includes(q))
       .filter((p) => (p_filtro === "nuevas" ? esNueva(p) : p_filtro === "sin_entrar" ? !p.ultima_entrada : p_filtro === "administracion" ? p.rol === "admin" : true))
       .sort((a, b) => ultimaActividad(b) - ultimaActividad(a) || a.nombre.localeCompare(b.nombre));
@@ -701,8 +733,8 @@ Object.assign(rpcs, {
       };
     });
   },
-  panel_personas_conteos: (_args, t) => {
-    const todas = personasPanel(t);
+  panel_personas_conteos: ({ p_ciudad = null } = {}, t) => {
+    const todas = personasPanel(t).filter((p) => !p_ciudad || (ciudadDePersona(p.id, t) ?? "sin") === p_ciudad);
     return { todas: todas.length, nuevas: todas.filter(esNueva).length, sin_entrar: todas.filter((p) => !p.ultima_entrada).length, administracion: todas.filter((p) => p.rol === "admin").length };
   },
   panel_persona: ({ p_perfil }, t, { sub } = {}) => {
@@ -720,6 +752,108 @@ Object.assign(rpcs, {
       reclamos: 0, reportes: 0, pendientes: 0, de_origen: !!p.de_origen, es_yo: p.id === sub, puedo_cambiar_rol: !!CUENTAS_PANEL[sub]?.de_origen,
       administradores: personasPanel(t).filter((x) => x.rol === "admin").length, cambio_rol: null,
     };
+  },
+});
+
+// OL-456: Administración › Lugares, Eventos y Artistas con renglones, para compararlas con su par del front (maqueta-pantalla.mjs): los
+// contratos de `panel_lugares`, `panel_eventos`, `panel_artistas`, `panel_fichas_conteos` y `panel_destacados` (migración 20260917090000) sobre
+// las fichas del respaldo, solo con el filtro por omisión y la búsqueda; los demás filtros devuelven lo mismo (no se miden aquí).
+// La ciudad, como `ciudad_slug` (migración 20261023120000): sin acentos ni signos; Soledad y el texto vacío, San Luis Potosí.
+const slugCiudad = (c) => { const s = sinAcentosPanel(c).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); return !s || s === "soledad-de-graciano-sanchez" ? "san-luis-potosi" : s; };
+const enCiudad = (filas, ciudad) => (ciudad ? filas.filter((x) => slugCiudad(x.ciudad) === ciudad) : filas);
+// La ciudad de una persona, como `ciudad_de_persona`: la que más se repite en lo que lleva, publicó y marcó «Voy»; null si nada.
+function ciudadDePersona(id, t) {
+  const de = (tabla, fichaId) => t[tabla].find((x) => x.id === fichaId)?.ciudad;
+  const c = [
+    ...t.lugares_cuentas.filter((x) => x.perfil_id === id).map((x) => de("lugares", x.lugar_id)),
+    ...t.artistas_cuentas.filter((x) => x.perfil_id === id).map((x) => de("artistas", x.artista_id)),
+    ...["lugares", "eventos", "artistas"].flatMap((tabla) => t[tabla].filter((x) => x.creado_por === id).map((x) => x.ciudad)),
+    ...t.asistencias.filter((a) => a.usuario_id === id && a.estado === "voy").map((a) => de("eventos", a.evento_id)),
+  ].map(slugCiudad);
+  if (!c.length) return null;
+  const n = new Map();
+  for (const s of c) n.set(s, (n.get(s) ?? 0) + 1);
+  return [...n].sort((a, b) => b[1] - a[1])[0][0];
+}
+const proximasDe = (campo, id, t) => t.eventos.filter((e) => e.visible && new Date(e.termina ?? e.inicio) >= new Date() && (campo === "lugar_id" ? e.lugar_id === id : t.eventos_artistas.some((x) => x.evento_id === e.id && x.artista_id === id))).length;
+const conBusqueda = (filas, q, campo = "nombre") => (q ? filas.filter((x) => sinAcentosPanel(x[campo]).includes(sinAcentosPanel(q))) : filas);
+const sinAcentosPanel = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const llevaFicha = (tabla, col, id, t) => { const l = t[tabla].filter((c) => c[col] === id); return { lleva: l[0] ? personasPanel(t).find((p) => p.id === l[0].perfil_id)?.nombre ?? null : null, lleva_n: l.length }; };
+Object.assign(rpcs, {
+  panel_lugares: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(enCiudad(t.lugares, p_ciudad), p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return filas.slice(p_desde, p_desde + p_limite).map((l) => ({ id: l.id, nombre: l.nombre, foto: l.portada ?? null, tipo: l.tipo, detalle: l.detalle ?? null, visible: l.visible !== false, privado: !!l.privado, origen: l.origen ?? null, proximas: proximasDe("lugar_id", l.id, t), ...llevaFicha("lugares_cuentas", "lugar_id", l.id, t), total: filas.length }));
+  },
+  panel_eventos: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(enCiudad(t.eventos, p_ciudad).filter((e) => !e.evento_padre_id && new Date(e.termina ?? e.inicio) >= new Date()), p_buscar, "titulo").sort((a, b) => a.inicio.localeCompare(b.inicio));
+    return filas.slice(p_desde, p_desde + p_limite).map((e) => {
+      const autor = personasPanel(t).find((p) => p.id === e.creado_por);
+      return { id: e.id, titulo: e.titulo, imagen: e.imagen ?? null, inicio: e.inicio, fin: e.fin ?? null, visible: e.visible !== false, sitio: t.lugares.find((l) => l.id === e.lugar_id)?.nombre ?? e.sitio_texto ?? null, autor: autor?.nombre ?? null, autor_admin: !autor || autor.rol === "admin", van: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "voy").length, total: filas.length };
+    });
+  },
+  panel_artistas: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
+    const filas = conBusqueda(enCiudad(t.artistas, p_ciudad), p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return filas.slice(p_desde, p_desde + p_limite).map((a) => ({ id: a.id, nombre: a.nombre, foto: a.foto ?? null, disciplina: a.disciplina, detalle: a.detalle ?? null, visible: a.visible !== false, origen: a.origen ?? null, proximas: proximasDe("artista_id", a.id, t), ...llevaFicha("artistas_cuentas", "artista_id", a.id, t), total: filas.length }));
+  },
+  panel_fichas_conteos: ({ p_tipo, p_ciudad = null }, todo) => {
+    const t = { ...todo, lugares: enCiudad(todo.lugares, p_ciudad), eventos: enCiudad(todo.eventos, p_ciudad), artistas: enCiudad(todo.artistas, p_ciudad) };
+    if (p_tipo === "lugares") return { todos: t.lugares.length, ocultos: t.lugares.filter((l) => l.visible === false).length, sin_fecha: t.lugares.filter((l) => !proximasDe("lugar_id", l.id, t)).length, sin_foto: t.lugares.filter((l) => !l.portada).length, catalogo: t.lugares.filter((l) => l.origen === "capo").length };
+    if (p_tipo === "eventos") { const p = t.eventos.filter((e) => !e.evento_padre_id && new Date(e.termina ?? e.inicio) >= new Date()); return { proximos: p.length, semana: p.filter((e) => Date.parse(e.inicio) < Date.now() + 7 * 86400e3).length, coincidencias: 0, sin_imagen: p.filter((e) => !e.imagen).length, comunidad: p.filter((e) => e.creado_por && e.creado_por !== ADMIN).length, ocultos: p.filter((e) => e.visible === false).length }; }
+    return { todos: t.artistas.length, por_reclamar: t.artistas.filter((a) => a.origen === "capo").length, llevados: t.artistas_cuentas.length, sin_foto: t.artistas.filter((a) => !a.foto).length, ocultos: t.artistas.filter((a) => a.visible === false).length };
+  },
+  panel_destacados: () => [],
+  panel_en_ciudad: ({ p_tipo, p_ciudad, p_ids }, t) => enCiudad(t[p_tipo] ?? [], p_ciudad).filter((x) => p_ids.includes(x.id)).map((x) => x.id),
+  // La hoja de ciudades: cada ciudad con cuántas tiene la sección, de la que más a la que menos; en Personas, «Sin ciudad» al final.
+  panel_ciudades_de: ({ p_tipo }, t) => {
+    const slugs = p_tipo === "personas" ? personasPanel(t).map((p) => ciudadDePersona(p.id, t) ?? "sin") : (p_tipo === "eventos" ? t.eventos.filter((e) => e.visible && new Date(e.termina ?? e.inicio) >= new Date()) : t[p_tipo]).map((x) => slugCiudad(x.ciudad));
+    const n = new Map();
+    for (const s of slugs) n.set(s, (n.get(s) ?? 0) + 1);
+    const nombre = (s) => (s === "sin" ? "Sin ciudad" : (t.ciudades ?? []).find((c) => c.slug === s)?.nombre ?? [...t.lugares, ...t.eventos, ...t.artistas].find((x) => slugCiudad(x.ciudad) === s)?.ciudad ?? s);
+    return [...n].sort(([a, x], [b, y]) => (a === "sin") - (b === "sin") || y - x).map(([slug, cuenta]) => ({ slug, nombre: nombre(slug), n: cuenta }));
+  },
+});
+
+// OL-447: asignar desde la ficha de una persona en Administración una ficha de lugar o de artista. Los contratos de `admin_buscar_fichas`,
+// `admin_asignar_ficha` y `admin_quitar_ficha` (migración 20261022150000) sobre las ligas del respaldo, que asignar y quitar cambian EN MEMORIA
+// (otro arranque empieza limpio) para ver la lista tras el toque. Los permisos reales y el registro se prueban en PostgreSQL
+// (`supabase/tests/pg/admin-asignar-fichas.test.mjs`); aquí solo la cuenta de administración del respaldo puede.
+const sinAcentos = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const LIGAS = { lugar: ["lugares_cuentas", "lugar_id"], artista: ["artistas_cuentas", "artista_id"] };
+Object.assign(rpcs, {
+  admin_buscar_fichas: ({ p_buscar, p_perfil, p_limite = 20 }, t, { sub } = {}) => {
+    const q = sinAcentos(p_buscar);
+    if (sub !== ADMIN || !q) return [];
+    const nombreDe = (id) => personasPanel(t).find((p) => p.id === id)?.nombre ?? null;
+    const fila = (tipo, x, clase, foto) => {
+      const [tabla, col] = LIGAS[tipo];
+      const ligas = t[tabla].filter((c) => c[col] === x.id).sort((a, b) => a.creado_en.localeCompare(b.creado_en));
+      const otras = ligas.filter((c) => c.perfil_id !== p_perfil);
+      return { tipo, id: x.id, nombre: x.nombre, foto, ciudad: x.ciudad ?? "San Luis Potosí", clase, detalle: x.detalle ?? null, visible: x.visible !== false, suya: ligas.some((c) => c.perfil_id === p_perfil), otros: otras[0] ? nombreDe(otras[0].perfil_id) : null, otros_n: otras.length };
+    };
+    const todas = [
+      ...t.lugares.filter((l) => !l.privado).map((l) => fila("lugar", l, l.tipo, l.portada ?? null)),
+      ...t.artistas.map((a) => fila("artista", a, a.disciplina, a.foto ?? null)),
+    ].filter((f) => sinAcentos(f.nombre).includes(q));
+    const empieza = (f) => (sinAcentos(f.nombre).startsWith(q) ? 0 : 1);
+    return todas.sort((a, b) => empieza(a) - empieza(b) || a.nombre.localeCompare(b.nombre)).slice(0, Math.min(Number(p_limite) || 20, 50));
+  },
+  admin_asignar_ficha: ({ p_tipo, p_ficha, p_perfil }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return "no_admin";
+    if (!LIGAS[p_tipo]) return "sin_ficha";
+    const [tabla, col] = LIGAS[p_tipo];
+    if (!(p_tipo === "lugar" ? t.lugares.some((l) => l.id === p_ficha && !l.privado) : t.artistas.some((a) => a.id === p_ficha))) return "sin_ficha";
+    if (t[tabla].some((c) => c[col] === p_ficha && c.perfil_id === p_perfil)) return "ya";
+    t[tabla].push({ [col]: p_ficha, perfil_id: p_perfil, creado_en: new Date().toISOString() });
+    return "ok";
+  },
+  admin_quitar_ficha: ({ p_tipo, p_ficha, p_perfil }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return "no_admin";
+    if (!LIGAS[p_tipo]) return "sin_ficha";
+    const [tabla, col] = LIGAS[p_tipo];
+    const i = t[tabla].findIndex((c) => c[col] === p_ficha && c.perfil_id === p_perfil);
+    if (i < 0) return "no_estaba";
+    t[tabla].splice(i, 1);
+    return "ok";
   },
 });
 
@@ -1009,3 +1143,49 @@ export function mapboxVuelta(lat, lng) {
   const cerca = [...LUGARES_MAPBOX].sort((a, b) => d(a) - d(b))[0];
   return { features: cerca && d(cerca) < 0.36 ? [rasgo(cerca)] : [] };
 }
+
+// OL-458: publicar en Instagram desde Administración. El contrato de `instagram_sugerencias` y de `ciudad_slug` (migración 20261023140000) sobre
+// los eventos del respaldo, con la misma regla que la base (por venir en 7 días; exposiciones y festivales en curso que terminan después de hoy;
+// talleres con una sesión por delante; nunca lo oculto, cancelado, retirado ni un borrador); lo publicado (la Master Class y Susurros) y la
+// ubicación de San Luis Potosí. Todo inventado; los permisos reales, en PostgreSQL (`supabase/tests/pg/instagram.test.mjs`).
+tablas.instagram_publicaciones = [
+  { id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, media_id: "17900000000000001", permalink: "https://www.instagram.com/p/DEMO458A/", imagen: null, etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(1) },
+  { id: "eeee0458-0000-4000-8000-000000000002", evento_id: E.susurros, formato: "9x16", estado: "publicada", error: null, media_id: "17900000000000002", permalink: "https://www.instagram.com/p/DEMO458B/", imagen: "https://respaldo.local.test/fotos/instagram-demo-458b.jpg", etiquetas: [], ubicacion: null, publicado_por: ADMIN, creado_en: hace(2) },
+];
+// OL-461: la Master Class ya está también en Facebook; Susurros, no (su renglón ofrece «Publicar en Facebook»).
+tablas.facebook_publicaciones = [
+  { id: "eeee0461-0000-4000-8000-000000000001", instagram_id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, post_id: "1374800000000461_122100000000000001", permalink: "https://www.facebook.com/1374800000000461/posts/122100000000000001", publicado_por: ADMIN, creado_en: hace(1) },
+];
+tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagina_id: "108000000000458", nombre: "San Luis Potosí", enlace: "https://www.facebook.com/demo", actualizado_por: ADMIN, actualizado_en: hace(3) }];
+const sugeribleIg = (e, t, ahora) => {
+  if (e.visible === false || e.borrador || e.retirado_por_admin || e.cancelado) return false;
+  const inicio = new Date(e.inicio);
+  if (inicio > ahora) return inicio <= new Date(ahora.getTime() + 7 * 86_400_000);
+  const dia = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: e.zona ?? ZONA }).format(d);
+  if (e.clase === "exposicion" || e.clase === "festival") return dia(new Date(e.termina ?? e.fin ?? e.inicio)) > dia(ahora);
+  if (e.clase === "taller") return t.eventos_sesiones.some((s) => s.evento_id === e.id && new Date(s.inicio) > ahora);
+  return false;
+};
+Object.assign(rpcs, {
+  ciudad_slug: ({ p_ciudad }) => slugCiudad(p_ciudad),
+  instagram_sugerencias: ({ p_ciudad = null }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return [];
+    const ahora = new Date();
+    return enCiudad(t.eventos, p_ciudad)
+      .filter((e) => sugeribleIg(e, t, ahora))
+      .sort((a, b) => a.inicio.localeCompare(b.inicio))
+      .map((e) => {
+        const l = t.lugares.find((x) => x.id === e.lugar_id);
+        const p = t.instagram_publicaciones.filter((x) => x.evento_id === e.id && x.estado === "publicada").sort((a, b) => b.creado_en.localeCompare(a.creado_en))[0];
+        return {
+          id: e.id, slug: e.slug ?? null, titulo: e.titulo, inicio: e.inicio, fin: e.fin ?? null, termina: e.termina ?? e.fin ?? e.inicio, zona: e.zona ?? ZONA, clase: e.clase ?? "puntual",
+          imagen: e.imagen ?? null, precio: e.precio ?? null, ciudad: slugCiudad(e.ciudad), ciudad_nombre: e.ciudad, lugar_id: e.lugar_id ?? null, lugar_nombre: l?.nombre ?? null,
+          lugar_redes: l?.redes ?? [], sitio_texto: e.sitio_texto ?? null,
+          van: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "voy").length,
+          interesa: t.asistencias.filter((a) => a.evento_id === e.id && a.estado === "me_interesa").length,
+          destacado: t.destacados.some((d) => d.evento_id === e.id && !d.quitado),
+          publicado_en: p?.creado_en ?? null, publicado_formato: p?.formato ?? null,
+        };
+      });
+  },
+});

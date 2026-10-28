@@ -10,8 +10,9 @@ import { diaLocal, isoALocal, localAIso, zonaSegura } from "../fechas";
 import { LIMITES_EVENTO } from "../limites";
 import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
+import { lugarExacto } from "./carteleraCdmx";
 import { dentroDelArea, radioDeCiudadKm } from "./filtros";
-import { claseDeActo, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type SesionPropuesta } from "./formaEvento";
+import { claseDeActo, diasSeguidos, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type SesionPropuesta } from "./formaEvento";
 import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
 
 /**
@@ -39,6 +40,9 @@ import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
  * queda «Por confirmar» en cualquier clase, con el texto de la agenda al final de la descripción («Costo: …»), así que nunca deja de publicarse
  * por el precio. En un evento suelto (donde el costo es obligatorio y un precio vacío se lee «Gratis») «Por confirmar» se guarda escrito, como
  * «Gratis» donde el costo es opcional; la bandeja lo dice: «se publicó con costo por confirmar» (`nota`).
+ * Lo de la Cartelera de la Ciudad de México (OL-448): una exposición abierta (`visita`, con `termina`) se publica como exposición, del primer
+ * minuto de su primer día (hoy, si ya abrió) al último del de cierre, sin inauguración, y no si ya está esa exposición en ese sitio esas fechas;
+ * la imagen de la propuesta (`imagen`) la pone la bandeja como cartel al aceptar (`ponerCartel`).
  * Lo que va además de la fila (las sesiones, la exposición, el festival que recalcular o que el acto espera) viaja aparte, en `EXTRAS`: la
  * bandeja llama `prepararEvento` → `insertarEvento(fila)` → `ligarFicha` y la fila se inserta tal cual en `eventos`.
  */
@@ -55,7 +59,8 @@ export type CiudadDeEvento = {
   radioKm: number;
   parametros: ParametrosCiudad;
 };
-export type LugarDeCiudad = { id: string; nombre: string; ciudad: string; zona: string | null; direccion: string | null };
+/** `lat` y `lng`: para cruzar los recintos de la cartelera por cercanía (OL-448). */
+export type LugarDeCiudad = { id: string; nombre: string; ciudad: string; zona: string | null; direccion: string | null; lat?: number | null; lng?: number | null };
 
 export type MotivoSinPublicar = "sin_punto" | "invalido" | "parecido" | "pasado" | "base";
 /**
@@ -102,7 +107,7 @@ export async function ciudadDeCorrida(db: SupabaseClient, corridaId: string): Pr
 
 /** Los lugares registrados de la ciudad (por su nombre y sus alias), como los lee el importador. */
 export async function lugaresDeCiudad(db: SupabaseClient, ciudad: Pick<CiudadDeEvento, "nombre" | "alias">): Promise<LugarDeCiudad[] | null> {
-  const r = await db.from("lugares").select("id, nombre, ciudad, zona, direccion").in("ciudad", nombresDe(ciudad)).limit(5000);
+  const r = await db.from("lugares").select("id, nombre, ciudad, zona, direccion, lat, lng").in("ciudad", nombresDe(ciudad)).limit(5000);
   if (r.error) return null;
   return (r.data ?? []) as LugarDeCiudad[];
 }
@@ -154,24 +159,27 @@ export async function prepararEvento(
   if (!titulo || !inicioDatos || Number.isNaN(Date.parse(inicioDatos))) return { ok: false, motivo: "invalido", error: "No se publicó: la propuesta no trae título, fecha y hora." };
   const ahora = dep.ahora.getTime();
   const esMarco = forma.clase === "festival" && forma.actos > 0;
+  // Una exposición abierta de la cartelera (OL-448, `datos.visita`): se publica como exposición, del primer al último día, sin inauguración.
+  const visita = forma.clase === "exposicion" && datos.visita === true && !!forma.termina;
   // Un taller aceptado a medias se publica con las sesiones que quedan.
   const sesiones: SesionPropuesta[] = forma.sesiones.filter((s) => Date.parse(s.inicio) >= ahora);
   const inicio = sesiones[0]?.inicio ?? new Date(inicioDatos).toISOString();
   // Ya pasó: un marco, cuando acabó su último acto; con sesiones, cuando no queda ninguna; si no, cuando empezó.
-  const paso = esMarco ? Date.parse(forma.termina ?? inicio) < ahora : forma.sesiones.length ? !sesiones.length : Date.parse(inicio) < ahora;
+  const paso = esMarco || visita ? Date.parse(forma.termina ?? inicio) < ahora : forma.sesiones.length ? !sesiones.length : Date.parse(inicio) < ahora;
   if (paso) return { ok: false, motivo: "pasado", error: "No se publicó: ese evento ya pasó. Recházala." };
   const donde = texto(datos.lugar, LIMITES_EVENTO.sitio);
   if (!donde) return { ok: false, motivo: "invalido", error: "No se publicó: la propuesta no dice dónde es." };
-  const lugar = resolverLugar(donde, [...lugares]);
+  // Lo de la cartelera (OL-451): solo el lugar con ese nombre exacto (el cruce ya se hizo al proponer; uno «parecido» puede ser otro museo).
+  const lugar = typeof datos.cartelera_id === "string" ? lugarExacto(donde, lugares) : resolverLugar(donde, [...lugares]);
   const zona = zonaSegura(lugar?.zona ?? ciudad.zona);
 
   const delMarco = esMarco ? { padre: null, espera: null } : await marcoDelActo(dep.db, forma);
   if (delMarco === "error") return errorBase;
   const { padre, espera } = delMarco;
   const esActo = !!padre || !!espera;
-  const conExposicion = forma.clase === "exposicion" && !!forma.termina;
+  const conExposicion = forma.clase === "exposicion" && !!forma.termina && !visita;
   // La clase de la fila: la inauguración de una exposición es un evento (la exposición va aparte); un acto, la suya sin ser festival.
-  const clase: Clase = forma.clase === "exposicion" ? "puntual" : esActo ? claseDeActo(forma.clase) : forma.clase;
+  const clase: Clase = visita ? "exposicion" : forma.clase === "exposicion" ? "puntual" : esActo ? claseDeActo(forma.clase) : forma.clase;
   const opcional = clase !== "puntual" || esActo || conExposicion;
 
   // El cuándo: el de la propuesta; con sesiones, de la primera a la última; un marco, del primer al último acto.
@@ -204,7 +212,10 @@ export async function prepararEvento(
     const centro = ciudad.lat != null && ciudad.lng != null ? { lat: ciudad.lat, lng: ciudad.lng } : null;
     const area: AreaCiudad | null = centro ? { centro, radioKm: ciudad.radioKm, nombres: nombresDe(ciudad) } : null;
     const lat = numeroO(datos.lat), lng = numeroO(datos.lng);
-    const yaUbicado = area && lat != null && lng != null && dentroDelArea({ lat, lng }, area.centro, area.radioKm) ? { lat, lng, direccion: texto(datos.direccion_mapa, LIMITES_EVENTO.direccion) } : null;
+    // El punto de la cartelera de la Ciudad de México (OL-450) vale aunque quede fuera del radio de la ciudad: la cartelera entra completa.
+    const deCartelera = typeof datos.cartelera_id === "string" && lat != null && lng != null;
+    const yaUbicado =
+      (area && lat != null && lng != null && dentroDelArea({ lat, lng }, area.centro, area.radioKm)) || deCartelera ? { lat: lat!, lng: lng!, direccion: texto(datos.direccion_mapa, LIMITES_EVENTO.direccion) } : null;
     const eleccion = yaUbicado ?? (area && dep.mapbox ? (await ubicarSitioEnArea(donde, direccion, area, dep.mapbox))?.punto ?? null : null);
     if (!eleccion && !esMarco) return { ok: false, motivo: "sin_punto", error: `No se publicó: «${donde}» no está en el directorio y el mapa no lo encuentra en ${ciudad.nombre}. Recházala o da de alta el lugar.` };
     if (eleccion) {
@@ -213,6 +224,12 @@ export async function prepararEvento(
     } else Object.assign(propuesto, { sitio: donde });
   }
   const entrada = formularioDeEvento(propuesto, lugar?.id ?? null);
+  // La exposición abierta: del primer minuto de su primer día (hoy, si ya abrió) al último del de cierre, como la de una inauguración.
+  if (visita) {
+    const desde = [diaLocal(new Date(inicio), zona), diaLocal(dep.ahora, zona)].sort().at(-1)!;
+    entrada.inicio = `${desde}T00:00`;
+    entrada.fin = `${ultimoDiaDelPeriodo(forma.termina!, null, zona)}T23:59`;
+  }
   // «Por confirmar» (OL-411, OL-441): donde el costo es opcional, lo que la agenda no dice; en cualquier clase, lo que dice sin ser cifra,
   // gratis ni cooperación. `validarEvento` lo acepta como en un festival; donde es opcional, «Gratis» se guarda escrito.
   if (porConfirmar) Object.assign(entrada, { gratis: "no", por_confirmar: "si" });
@@ -232,8 +249,9 @@ export async function prepararEvento(
     entrada.fin = ultima.fin ? isoALocal(ultima.fin, zona).slice(0, 16) : `${ultima.fecha}T23:59`;
     const horas = (f: SesionFila) => `${isoALocal(f.inicio, zona).slice(11, 16)}-${f.fin ? isoALocal(f.fin, zona).slice(11, 16) : ""}`;
     const mismoHorario = filas.every((f) => horas(f) === horas(filas[0]));
-    // «Mismo horario todos los días» en días seguidos: sin filas (OL-310). Un taller, siempre con sus sesiones (días sueltos).
-    if (clase === "taller" || !mismoHorario) extras.sesiones = filas;
+    // «Mismo horario todos los días» en días seguidos: sin filas (OL-310). Un taller, siempre con sus sesiones (días sueltos). Días que no van
+    // seguidos (una temporada de la cartelera de jueves a domingo, OL-451), también con sus sesiones: si no, el evento diría que es todos los días.
+    if (clase === "taller" || !mismoHorario || !diasSeguidos(filas.map((f) => f.fecha))) extras.sesiones = filas;
   }
   const { datos: evento, errores } = validarEvento(entrada, zona, { marco: esMarco, costoOpcional: opcional || porConfirmar });
   const primero = Object.values(errores)[0];
@@ -246,6 +264,13 @@ export async function prepararEvento(
     if (ya.error) return errorBase;
     const igual = ((ya.data ?? []) as { titulo: string }[]).find((f) => mismoPrograma(f.titulo, evento.titulo) || mismoEventoDeAgenda(f.titulo, evento.titulo));
     if (igual) return { ok: false, motivo: "parecido", error: `Ya está el festival «${igual.titulo}» en esas fechas: recházala como duplicado.` };
+  } else if (visita) {
+    // ¿Ya está esa exposición en ese sitio, en esas fechas?
+    const ya = await dep.db.from("eventos").select("titulo, lugar_id, sitio_texto").eq("clase", "exposicion").in("ciudad", nombresDe(ciudad)).lte("inicio", evento.fin ?? evento.inicio).gte("termina", evento.inicio).limit(200);
+    if (ya.error) return errorBase;
+    const mismoSitio = (x: { lugar_id: string | null; sitio_texto: string | null }) => (evento.lugar_id ? x.lugar_id === evento.lugar_id : normalizarNombre(x.sitio_texto ?? "") === normalizarNombre(evento.sitio_texto ?? ""));
+    const igual = ((ya.data ?? []) as { titulo: string; lugar_id: string | null; sitio_texto: string | null }[]).find((x) => mismoSitio(x) && mismoEventoDeAgenda(x.titulo, evento.titulo, sitioNombre));
+    if (igual) return { ok: false, motivo: "parecido", error: `Ya está la exposición «${igual.titulo}» en esas fechas: recházala como duplicado.` };
   } else {
     // «¿Es este?» como en el alta: el mismo día, en el mismo sitio, con un título parecido; y el mismo título a la misma hora en la ciudad. Lo
     // que la base toma por parecido se vuelve a mirar con la regla de la rutina (OL-433): dos inauguraciones distintas el mismo día en el

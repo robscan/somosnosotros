@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { IconoBandera, IconoCalendario, IconoCamara, IconoChevronDerecha, IconoDestello, IconoEstrella, IconoOk, IconoPersona, IconoPin } from "@/components/ui/Iconos";
+import { IconoBandera, IconoCalendario, IconoCamara, IconoCartel, IconoChevronDerecha, IconoDestello, IconoEstrella, IconoOk, IconoPersona, IconoPin } from "@/components/ui/Iconos";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { PorRevisar } from "@/lib/ciudadesAdmin";
 import { accionDe, esReclamo, etiquetaFicha, quePide, rutaFicha, textoDejar, textoHecho, type Decision, type Pendiente } from "@/lib/panel";
@@ -13,7 +13,7 @@ import ciudades from "./ciudades/ciudades.module.css";
 
 export type PendienteConCuando = Pendiente & { cuando: string };
 
-const ICONO_CORRIDA: Record<PorRevisar["tipo"], typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello };
+const ICONO_CORRIDA: Record<PorRevisar["tipo"], typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello, carteles: IconoCartel };
 
 /**
  * Pendiente (decisiones 1 a 3): el rótulo con cuántos quedan y una tarjeta por reclamo o reporte, del más viejo al más
@@ -36,11 +36,12 @@ export default function Pendientes({ iniciales, error, porRevisar = [] }: { inic
             const Icono = ICONO_CORRIDA[p.tipo];
             return (
               <li key={p.corrida}>
-                <Link href={`/admin/ciudades/propuestas/${p.corrida}`} className={styles.fila}>
+                {/* OL-446: las evidencias del showcase van a «Por aprobar»; las propuestas de las rutinas, a su bandeja. */}
+                <Link href={p.tipo === "showcase" ? p.href : `/admin/ciudades/propuestas/${p.corrida}`} className={renglon.ajuste}>
                   <Icono width={20} height={20} />
                   <b>{p.titulo}</b>
                   <small>{p.detalle}</small>
-                  <span className={styles.total}>
+                  <span>
                     {p.n}
                     <IconoChevronDerecha />
                   </span>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { leerTope } from "@/lib/ciudadesAdmin";
+import { aplicarSugerencia, sugerenciasCompletar, type EvidenciaParaCompletar, type FichaACompletar, type PropuestaAceptada } from "@/lib/completarFicha";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { esUuid } from "@/lib/formulario";
 import { type CorridaVista } from "@/lib/rutinas/rescate";
@@ -59,6 +60,10 @@ function revalidar(slug?: string) {
   if (slug) revalidatePath(`${RUTA_SHOWCASE}/${slug}`);
   revalidatePath("/admin");
 }
+/** OL-445: lo aceptado se publica en su perfil («Reconocimientos y obra») y «Completar ficha» escribe en él: su ficha pública se vuelve a leer. */
+function revalidarPerfil(slug: string) {
+  if (slug) revalidatePath(`/artistas/${slug}`);
+}
 
 /** Cambiar el estado de un candidato: la base guarda quién y cuándo y lo anota en el registro. */
 export async function cambiarEstado(artistaId: string, estado: Estado, slug: string): Promise<Resultado> {
@@ -108,10 +113,15 @@ export async function anadirEvidencia(artistaId: string, datos: DatosEvidencia, 
   const { error } = await db.from("showcase_evidencias").insert({ artista_id: artistaId, ...v.evidencia, leida_por: "persona", estado: "aceptada" });
   if (error) return { ok: false, error: "No se pudo añadir la evidencia. Intenta de nuevo." };
   revalidar(slug);
+  revalidarPerfil(slug);
   return { ok: true };
 }
 
-/** Aceptar o rechazar una propuesta, o deshacerlo (vuelve a propuesta). La base anota quién y cuándo. */
+/**
+ * Aceptar o rechazar una propuesta, o deshacerlo (vuelve a propuesta). La base anota quién y cuándo y, desde OL-445, publica lo aceptado como
+ * hito de su perfil (salvo redes) o lo retira (el disparador de la migración 20261022130000): por eso también se vuelve a leer su ficha pública.
+ * El panel «Por aprobar» que vendrá usa esta misma acción.
+ */
 export async function decidirEvidencia(evidenciaId: string, estado: "aceptada" | "rechazada" | "propuesta", slug: string): Promise<Resultado> {
   if (!esUuid(evidenciaId) || !["aceptada", "rechazada", "propuesta"].includes(estado)) return { ok: false, error: "No encontramos esa evidencia." };
   const db = await soloAdmin();
@@ -119,6 +129,68 @@ export async function decidirEvidencia(evidenciaId: string, estado: "aceptada" |
   const { data, error } = await db.from("showcase_evidencias").update({ estado }).eq("id", evidenciaId).select("id");
   if (error) return SIN_BASE;
   if (!data?.length) return { ok: false, error: "Esa evidencia ya no existe. Recarga la página." };
+  revalidar(slug);
+  revalidarPerfil(slug);
+  return { ok: true };
+}
+
+/** Lo que «Completar ficha» mira, leído de nuevo en el servidor (nunca lo que manda la pantalla). null si no se pudo leer o no existe. */
+async function leerParaCompletar(db: NonNullable<Awaited<ReturnType<typeof soloAdmin>>>, artistaId: string) {
+  const [a, c, propuestas, evidencias, cuentas] = await Promise.all([
+    db.from("artistas").select("disciplina, detalle, descripcion, redes, actualizado_en").eq("id", artistaId).maybeSingle(),
+    db.from("showcase_candidatos").select("completar_descartadas").eq("artista_id", artistaId).maybeSingle(),
+    db.from("propuestas").select("id, fuente, datos").eq("tipo", "artista").eq("estado", "aceptada").eq("ficha_id", artistaId).limit(20),
+    db.from("showcase_evidencias").select("id, tipo, titulo, url, estado").eq("artista_id", artistaId).eq("estado", "aceptada").limit(500),
+    db.from("artistas_cuentas").select("perfil_id", { count: "exact", head: true }).eq("artista_id", artistaId),
+  ]);
+  if (a.error || c.error || propuestas.error || evidencias.error || cuentas.error || !a.data) return null;
+  const fila = a.data as FichaACompletar & { actualizado_en: string };
+  return {
+    ficha: { disciplina: fila.disciplina, detalle: fila.detalle, descripcion: fila.descripcion, redes: fila.redes } as FichaACompletar,
+    actualizadoEn: fila.actualizado_en,
+    propuestas: (propuestas.data ?? []) as PropuestaAceptada[],
+    evidencias: (evidencias.data ?? []) as EvidenciaParaCompletar[],
+    descartadas: ((c.data as { completar_descartadas?: string[] | null } | null)?.completar_descartadas ?? []) as string[],
+    reclamada: (cuentas.count ?? 0) > 0,
+  };
+}
+
+const claveValida = (clave: unknown): clave is string => typeof clave === "string" && clave.length > 0 && clave.length <= 300;
+
+/**
+ * «Completar ficha» (OL-445): escribe en la ficha lo que la sugerencia trae, solo si sigue faltando y nunca encima de lo que hay; con la ficha
+ * reclamada no cambia nada. La sugerencia se vuelve a calcular aquí con lo de la base (la pantalla solo manda su clave) y la escritura exige
+ * que la ficha no haya cambiado desde esa lectura (`actualizado_en`).
+ */
+export async function completarFicha(artistaId: string, clave: string, slug: string): Promise<Resultado> {
+  if (!esUuid(artistaId) || !claveValida(clave)) return { ok: false, error: "No encontramos esa sugerencia." };
+  const db = await soloAdmin();
+  if (!db) return SIN_PERMISO;
+  const leido = await leerParaCompletar(db, artistaId);
+  if (!leido) return SIN_BASE;
+  const s = sugerenciasCompletar(leido).find((x) => x.clave === clave);
+  if (!s) return { ok: false, error: "Esa sugerencia ya no aplica: la ficha cambió. Recarga la página." };
+  const r = aplicarSugerencia(leido.ficha, s, leido.reclamada);
+  if (!r.ok) return { ok: false, error: r.motivo };
+  const { data, error } = await db.from("artistas").update(r.cambios).eq("id", artistaId).eq("actualizado_en", leido.actualizadoEn).select("id");
+  if (error) return { ok: false, error: "No se pudo completar la ficha. Intenta de nuevo." };
+  if (!data?.length) return { ok: false, error: "La ficha cambió mientras tanto. Recarga la página." };
+  revalidar(slug);
+  revalidarPerfil(slug);
+  return { ok: true };
+}
+
+/** Descartar una sugerencia de «Completar ficha» (o deshacerlo): su clave se guarda en el candidato y no vuelve a salir. */
+export async function descartarSugerencia(artistaId: string, clave: string, slug: string, deshacer = false): Promise<Resultado> {
+  if (!esUuid(artistaId) || !claveValida(clave)) return { ok: false, error: "No encontramos esa sugerencia." };
+  const db = await soloAdmin();
+  if (!db) return SIN_PERMISO;
+  const c = await db.from("showcase_candidatos").select("completar_descartadas").eq("artista_id", artistaId).maybeSingle();
+  if (c.error) return SIN_BASE;
+  const antes = ((c.data as { completar_descartadas?: string[] | null } | null)?.completar_descartadas ?? []) as string[];
+  const despues = deshacer ? antes.filter((x) => x !== clave) : [...new Set([...antes, clave])].slice(-200);
+  const { error } = await db.from("showcase_candidatos").upsert({ artista_id: artistaId, completar_descartadas: despues }, { onConflict: "artista_id" });
+  if (error) return { ok: false, error: "No se pudo descartar. Intenta de nuevo." };
   revalidar(slug);
   return { ok: true };
 }

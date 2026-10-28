@@ -3,7 +3,8 @@
  * evidencia (el botón dice qué falta; un enlace que no es http(s) se rechaza sin llamar a la acción; uno bueno sí), aceptar y deshacer una propuesta,
  * y las notas privadas (se guardan al salir del campo; la ✕ las vacía). OL-430: «Investigar» (la hoja con el tope y su ✕; con una en curso, solo
  * la dice y el renglón lleva su barra). Los componentes de verdad con las acciones del servidor de prueba: apuntan lo que reciben en
- * `window.qa.acciones`.
+ * `window.qa.acciones`. OL-446: «Por revisar» con lo que cambia al aceptar (`Hallazgos`), rechazar con su motivo, «Aceptar las 2» y el aviso «2 por
+ * revisar» que baja hasta ahí.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -34,6 +35,13 @@ const mocks = {
     export async function importarLecturas(...a) { apuntar('importarLecturas', a); return { ok: true, importadas: 2, errores: [{ linea: 4, motivo: 'Elige la red.' }] }; }
     export async function investigar(...a) { return apuntar('investigar', a); }
   `,
+  // OL-446: las acciones de «Por aprobar» (pasan por decidirEvidencia en el servidor).
+  "./accionesPorAprobar": `
+    const apuntar = (nombre, args) => { window.qa.acciones.push([nombre, ...args]); return window.qa.falla ? { ok: false, error: 'Sin conexión con la base. Intenta de nuevo.' } : ${ok}; };
+    export async function decidir(...a) { return apuntar('decidir', a); }
+    export async function rechazarConMotivo(...a) { return apuntar('rechazarConMotivo', a); }
+    export async function aceptarVarias(ids, slug) { window.qa.acciones.push(['aceptarVarias', ids, slug]); return { ok: true, aceptadas: ids }; }
+  `,
 };
 
 before(async () => {
@@ -50,12 +58,13 @@ before(async () => {
       import React from 'react';import {createRoot} from 'react-dom/client';
       import EstadoFicha from './EstadoFicha';
       import SenalFicha from './SenalFicha';
-      import PorRevisar from './PorRevisar';
+      import Hallazgos from '../Hallazgos';
+      import AvisoPorRevisar from './AvisoPorRevisar';
       import RedesFicha from './RedesFicha';
       import NotasFicha from './NotasFicha';
       import InvestigarFicha from './InvestigarFicha';
       import plantilla from '../../../../components/ui/Plantilla.module.css';
-      import { valorDe } from '../../../../lib/showcase';
+      import { valorDe, valoresDe } from '../../../../lib/showcase';
       import '../../../globals.css';
       window.qa = { acciones: [], falla: false };
       const ID = '11111111-1111-4111-8111-111111111111';
@@ -77,9 +86,18 @@ before(async () => {
       const vinculo = { clave: 'vinculo', titulo: 'Vínculo con la app', resumen: 'Ficha reclamada; con novedades', valor: valorDe(1, { puntaje: 2, motivo: 'Ficha reclamada, con novedades' }),
         niveles: ['Sin ficha propia', 'Ficha reclamada', 'Con novedades o portada'], evidencias: [] };
       const enCurso = new URLSearchParams(location.search).has('encurso');
-      const propuestas = [{ id: '22222222-2222-4222-8222-222222222222', senal: 'obra', tipo: 'premio', titulo: 'Mención estatal', url: 'https://cultura.example/p', fecha: '2025-11-20', fuente: null, leida_por: 'rutina', estado: 'propuesta', creado_en: '2026-10-20T00:00:00Z', detalle: '20 nov 2025 · leída por la rutina hoy', dominio: 'cultura.example' }];
+      // OL-446: la nota (circulación, fijada a mano en 2) llegó antes que la mención (obra 1 → 2), pero la que sube el puntaje va primero.
+      const propuestas = [
+        { id: '33333333-3333-4333-8333-333333333333', senal: 'circulacion', tipo: 'prensa', titulo: 'Nota sobre su gira', url: 'https://prensa.example/n', fecha: null, fuente: 'prensa.example', leida_por: 'rutina', estado: 'propuesta', creado_en: '2026-10-19T00:00:00Z', detalle: 'leída por la rutina ayer', fuenteTexto: 'prensa.example' },
+        { id: '22222222-2222-4222-8222-222222222222', senal: 'obra', tipo: 'premio', titulo: 'Mención estatal', url: 'https://cultura.example/p', fecha: '2025-11-20', fuente: null, leida_por: 'rutina', estado: 'propuesta', creado_en: '2026-10-20T00:00:00Z', detalle: '20 nov 2025 · leída por la rutina hoy', fuenteTexto: 'cultura.example' },
+      ];
+      const prop = (n) => ({ puntaje: n, motivo: 'de la base' });
+      const valores = valoresDe({ circulacion: 2, obra: null, actividad: null, vinculo: null }, { circulacion: prop(2), obra: prop(1), actividad: prop(2), vinculo: prop(2) });
+      const grupo = { artista: { id: ID, slug: 'sangre-de-coyote', nombre: 'Sangre de Coyote', foto: null, href: '/admin/showcase/sangre-de-coyote', disciplina: 'Música', estado: 'Invitado' }, valores,
+        obraAceptada: [{ senal: 'obra', tipo: 'obra', titulo: 'Sencillo en plataformas', fecha: '2026-03-21', estado: 'aceptada' }], hallazgos: propuestas };
       createRoot(document.getElementById('root')).render(
         <main id="ficha" className={plantilla.paginaContenido}>
+          <AvisoPorRevisar n={2} />
           <EstadoFicha artistaId={ID} slug="sangre-de-coyote" nombre="Sangre de Coyote" estado="invitado" titulo="Invitado" detalle="Por ti el 18 oct · antes, revisado el 15 oct" opciones={opciones} />
           <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={circulacion} />
           <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={obra} />
@@ -87,7 +105,7 @@ before(async () => {
           <SenalFicha artistaId={ID} slug="sangre-de-coyote" senal={vinculo} />
           <InvestigarFicha artistaId={ID} slug="sangre-de-coyote" nombre="Sangre de Coyote" ciudad="San Luis Potosí" enCurso={enCurso} avance={enCurso ? 0.5 : null}
             texto={enCurso ? 'Investigando · 2 de 4 búsquedas · 0,12 de 1,00 USD' : 'Investigado el 21 oct · 5 evidencias por revisar · 0,38 USD'} credito="Crédito: 187,40 USD · vence el 11 de noviembre" />
-          <PorRevisar propuestas={propuestas} slug="sangre-de-coyote" />
+          <Hallazgos grupos={[grupo]} hoy="2026-10-20" modo="ficha" />
           <RedesFicha artistaId={ID} slug="sangre-de-coyote" hoy="2026-10-20" lecturas={[{ red: 'instagram', etiqueta: 'Instagram', texto: '3,2 mil seguidores', hace: 'hace 4 días' }]} />
           <NotasFicha artistaId={ID} slug="sangre-de-coyote" notas="Propuesto por dos foros." />
         </main>,
@@ -214,17 +232,63 @@ test("añadir evidencia: el botón dice qué falta; un enlace que no es http(s) 
   assert.deepEqual(await acciones(p), [["anadirEvidencia", ID, { senal: "obra", tipo: "premio", titulo: "Disco en vivo", url: "https://musica.example/disco-en-vivo", fecha: "", fuente: "" }, "sangre-de-coyote"]]);
 });
 
-test("por revisar: aceptar deja la línea de lo hecho con «Deshacer», que la vuelve a propuesta", async (t) => {
+const MENCION = "22222222-2222-4222-8222-222222222222";
+const NOTA = "33333333-3333-4333-8333-333333333333";
+const hallazgo = (p, titulo) => p.locator("li", { has: p.getByRole("link", { name: titulo }) });
+/** Un toque real: el ratón en el centro del elemento (no `element.click()`, que no ve si algo lo tapa). */
+async function tocar(p, l) {
+  await l.scrollIntoViewIfNeeded();
+  const b = await l.boundingBox();
+  await p.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+}
+
+test("OL-446 · por revisar: cada hallazgo dice qué cambia; primero el que sube; aceptar deja «Aceptaste … · Obra 1 → 2 · ya está en su perfil» con «Deshacer»", async (t) => {
   const p = await abrir(t);
-  assert.ok((await p.getByRole("heading", { name: /Por revisar/ }).innerText()).includes("1"));
-  await p.getByRole("button", { name: "Aceptar" }).click();
+  assert.ok((await p.getByRole("heading", { name: /Por revisar/ }).innerText()).includes("2"));
+  const titulos = await p.locator("li > a[target=_blank]").filter({ hasNotText: "Sencillo" }).allInnerTexts();
+  assert.deepEqual(titulos, ["Mención estatal", "Nota sobre su gira"], "primero lo que sube el puntaje");
+  assert.equal(await hallazgo(p, "Mención estatal").locator("p[data-sube]").innerText(), "Si la aceptas: Obra 1 → 2 · total 7 → 8");
+  assert.equal(await hallazgo(p, "Nota sobre su gira").locator("p").last().innerText(), "No cambia el puntaje: Circulación está fijada a mano en 2");
+  await tocar(p, hallazgo(p, "Mención estatal").getByRole("button", { name: "Aceptar" }));
   await p.getByText("Aceptaste").waitFor();
-  await p.getByRole("button", { name: "Deshacer" }).click();
-  await p.getByRole("button", { name: "Aceptar" }).waitFor();
+  assert.ok((await p.getByRole("status").filter({ hasText: "Aceptaste" }).innerText()).includes("Mención estatal · Obra 1 → 2 · ya está en su perfil"));
+  assert.ok((await p.getByRole("heading", { name: /Por revisar/ }).innerText()).includes("1"), "la cuenta baja");
+  await tocar(p, p.getByRole("button", { name: "Deshacer" }));
+  await hallazgo(p, "Mención estatal").getByRole("button", { name: "Aceptar" }).waitFor();
   assert.deepEqual(await acciones(p), [
-    ["decidirEvidencia", "22222222-2222-4222-8222-222222222222", "aceptada", "sangre-de-coyote"],
-    ["decidirEvidencia", "22222222-2222-4222-8222-222222222222", "propuesta", "sangre-de-coyote"],
+    ["decidir", MENCION, "aceptada", "sangre-de-coyote"],
+    ["decidir", MENCION, "propuesta", "sangre-de-coyote"],
   ]);
+});
+
+test("OL-446 · rechazar pide el motivo en una hoja; elegirlo rechaza y lo dice; cerrar la hoja no rechaza", async (t) => {
+  const p = await abrir(t);
+  await tocar(p, hallazgo(p, "Nota sobre su gira").getByRole("button", { name: "Rechazar" }));
+  const hoja = p.getByRole("dialog", { name: "Rechazar «Nota sobre su gira»" });
+  await hoja.waitFor();
+  assert.deepEqual((await hoja.getByRole("button").filter({ hasNot: p.locator("[aria-label=Cerrar]") }).allInnerTexts()).map((x) => x.split("\n")[0]).filter(Boolean), ["Duplicado", "No es esta persona", "No es relevante", "Otro"]);
+  await p.keyboard.press("Escape");
+  await hoja.waitFor({ state: "detached" });
+  assert.deepEqual(await acciones(p), [], "cerrar no rechaza");
+  await tocar(p, hallazgo(p, "Nota sobre su gira").getByRole("button", { name: "Rechazar" }));
+  await tocar(p, hoja.getByRole("button", { name: /^No es esta persona/ }));
+  await p.getByText("Rechazaste").waitFor();
+  assert.ok((await p.getByRole("status").filter({ hasText: "Rechazaste" }).innerText()).includes("Nota sobre su gira · no es esta persona"));
+  assert.deepEqual(await acciones(p), [["rechazarConMotivo", NOTA, "no_es_esta_persona", "sangre-de-coyote"]]);
+});
+
+test("OL-446 · «Aceptar las 2» las acepta en orden y deja la línea de cada una; el aviso «2 por revisar» baja hasta ahí sin navegar", async (t) => {
+  const p = await abrir(t);
+  const aviso = p.getByRole("button", { name: "2 por revisar" });
+  const historial = await p.evaluate(() => history.length);
+  await tocar(p, aviso);
+  await p.waitForFunction(() => document.activeElement?.id === "por-revisar");
+  assert.equal(await p.evaluate(() => history.length), historial, "bajar no es navegar");
+  await tocar(p, p.getByRole("button", { name: "Aceptar las 2" }));
+  await p.getByText("Aceptaste").first().waitFor();
+  assert.equal(await p.getByRole("status").filter({ hasText: "Aceptaste" }).count(), 2);
+  assert.equal(await p.getByRole("button", { name: /^Aceptar las/ }).count(), 0, "sin pendientes, sin botón");
+  assert.deepEqual(await acciones(p), [["aceptarVarias", [MENCION, NOTA], "sangre-de-coyote"]]);
 });
 
 test("redes: «leída hace N días», añadir una lectura (el botón dice qué falta) e importar un CSV", async (t) => {

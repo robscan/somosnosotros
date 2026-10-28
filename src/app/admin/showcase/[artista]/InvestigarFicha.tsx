@@ -5,7 +5,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Hoja from "@/components/ui/Hoja";
 import hojaCss from "@/components/ui/Hoja.module.css";
-import { IconoBuscar, IconoChevronDerecha, IconoOk } from "@/components/ui/Iconos";
+import { IconoBuscar, IconoCaret, IconoOk } from "@/components/ui/Iconos";
 import renglon from "@/components/ui/Renglon.module.css";
 import { errorTope } from "@/lib/ciudadesAdmin";
 import { dolares, TOPE_INVESTIGAR } from "@/lib/showcase";
@@ -42,12 +42,12 @@ export default function InvestigarFicha({ artistaId, slug, nombre, ciudad, texto
     <>
       <ul className={renglon.tarjeta}>
         <li>
-          <button type="button" className={`${admin.fila} ${s.boton}`} aria-haspopup="dialog" data-ayuda="investigar" onClick={() => setAbierta(true)}>
+          <button type="button" className={`${renglon.ajuste} ${s.boton}`} aria-haspopup="dialog" data-ayuda="investigar" onClick={() => setAbierta(true)}>
             <IconoBuscar width={20} height={20} />
             <b>Investigar</b>
             <small>{texto}</small>
-            <span className={admin.total}>
-              <IconoChevronDerecha />
+            <span>
+              <IconoCaret width={16} height={16} />
             </span>
             {avance != null && (
               <span className={`${admin.barraEmbudo} ${s.barraInvestigar}`} role="progressbar" aria-label="Avance de la investigación" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(avance * 100)}>

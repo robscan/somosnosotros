@@ -304,7 +304,7 @@
 }
 
 /* ---------- 4. La ficha de showcase ---------- */
-/* Un renglón que es un botón (la señal, «Añadir lectura»): el de `admin .fila` sin el dibujo del botón */
+/* Un renglón que es un botón (la señal, «Añadir lectura»): el de Ajustes (`ui/Renglon` `.ajuste`), sin el dibujo del botón */
 .boton {
   /* La columna del texto puede encoger: con la letra grande (OL-373) el puntaje de la derecha no se sale de la tarjeta */
   grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
@@ -316,9 +316,14 @@
 .boton > :is(b, small) {
   overflow-wrap: anywhere;
 }
+/* La casilla del puntaje en su renglón: rejilla centrada, no el `span` en línea de la acción de un ajuste (`ui/Renglon`). */
+.boton > .senal {
+  display: grid;
+}
 /* «Investigar» (OL-430): la barra de la investigación en curso, debajo del detalle, a todo lo ancho del renglón */
 .barraInvestigar {
-  grid-area: error;
+  grid-area: cuerpo;
+  grid-column: 2 / -1;
   margin-top: var(--espacio-2);
 }
 /* OL-439: el renglón «Investigar» de la lista, entre la línea de cifras y las tarjetas */
@@ -421,4 +426,214 @@
   margin-bottom: var(--espacio-3);
   color: var(--error);
   font-size: var(--letra-sm);
+}
+
+/* ---------- 6. Showcase v2 (OL-446; lo firmado en OL-443, bitácora 475, sus clases `ps-…`) ---------- */
+/* La línea de cifras con «Seleccionar» a la derecha */
+.cifras {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+}
+.cifras > button {
+  justify-self: end;
+}
+/* «Por aprobar» antes de «Investigar»; su cuenta en el violeta de las acciones */
+.aprobar {
+  margin-bottom: var(--espacio-2);
+}
+.cuenta {
+  color: var(--primario);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* El indicador de la tarjeta: la línea de lo que hay por revisar, tocable a todo lo ancho, con su chevron (abre Por aprobar en el artista) */
+.revisar {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: var(--toque-min);
+  text-decoration: none;
+}
+.revisar > svg:last-child {
+  margin-top: 0;
+}
+/* Seleccionar: la casilla de cada tarjeta sobre su foto (su toque llega a 48), la tarjeta elegida en el violeta suave y la barra al pie */
+.marca {
+  position: relative;
+  grid-area: foto;
+  justify-self: start;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: var(--columna-icono);
+  height: var(--columna-icono);
+  padding: 0;
+  border: 2px solid var(--texto-suave);
+  border-radius: var(--radio-chico);
+  background: var(--fondo);
+  color: var(--primario-texto);
+  cursor: pointer;
+}
+.marca::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--espacio-3) * -1);
+}
+.marca[aria-checked="true"] {
+  border-color: var(--primario);
+  background: var(--primario);
+}
+.elegible {
+  cursor: pointer;
+}
+.elegible[data-elegido] {
+  border-color: var(--primario);
+  background: var(--primario-suave);
+}
+.todos {
+  margin-bottom: var(--espacio-2);
+}
+.barra {
+  position: sticky;
+  bottom: calc(var(--espacio-4) + var(--piso));
+  z-index: var(--z-barra);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-4);
+  padding: var(--espacio-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+  box-shadow: var(--sombra-flotante);
+}
+/* La hoja Filtros: «Más filtros» con el chevron abajo, que gira al abrir */
+.mas {
+  display: grid;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icono titulo flecha"
+    "icono detalle flecha";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  width: 100%;
+  min-height: var(--toque);
+  margin: var(--espacio-4) 0 0;
+  padding: var(--espacio-2) 0;
+  border: 0;
+  border-top: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mas > svg:first-child {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.mas > b {
+  grid-area: titulo;
+  font-size: var(--letra-md);
+  font-weight: 600;
+}
+.mas > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.mas > svg:last-child {
+  grid-area: flecha;
+  color: var(--texto-suave);
+  transition: transform var(--duracion) var(--curva);
+}
+.mas[aria-expanded="true"] > svg:last-child {
+  transform: rotate(180deg);
+}
+.mas + section {
+  margin-top: var(--espacio-3);
+}
+/* El resumen de la hoja «Guardar como grupo» (y «Los 5 que elegiste» en la de Investigar) */
+.resumen {
+  margin-bottom: var(--espacio-4);
+}
+/* Por aprobar: el renglón del artista con su foto (40: la columna del icono más su aire), sus hallazgos, el aire entre artistas y lo que cambia */
+.quien {
+  margin-top: var(--espacio-6);
+  scroll-margin-top: calc(var(--toque) + var(--espacio-6));
+}
+.quien:first-of-type {
+  margin-top: var(--espacio-3);
+}
+.filaArtista {
+  grid-template-columns: calc(var(--columna-icono) + var(--espacio-4)) minmax(0, 1fr) auto;
+}
+.fotoChica {
+  grid-area: foto;
+  width: calc(var(--columna-icono) + var(--espacio-4));
+  height: calc(var(--columna-icono) + var(--espacio-4));
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.hallazgos {
+  margin-top: var(--espacio-2);
+}
+.efecto {
+  grid-area: error;
+  margin: var(--espacio-2) 0 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.efecto[data-sube],
+.sube {
+  color: var(--ok);
+  font-weight: 600;
+}
+.todas {
+  justify-self: start;
+  margin-top: var(--espacio-3);
+}
+.nadaPorAprobar {
+  margin-top: var(--espacio-4);
+  margin-bottom: var(--espacio-3);
+}
+/* La ficha: el nombre en el color de acción con su chevron (abre la ficha pública); el aviso de lo que hay por revisar */
+.publica {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  color: var(--primario);
+  text-decoration: none;
+}
+.publica::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--espacio-2) * -1) calc(var(--espacio-1) * -1);
+}
+.publica > svg {
+  flex: none;
+}
+/* Bajo la cabecera de la ficha (la de `FichaPersona`, alineada a la izquierda, OL-456), también a la izquierda (OL-457: iba al centro) */
+.aviso {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque-min);
+  margin-top: var(--espacio-2);
+  padding: 0 var(--espacio-4);
+  border: 0;
+  border-radius: var(--radio-pildora);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.porRevisar {
+  scroll-margin-top: calc(var(--toque) + var(--espacio-6));
 }

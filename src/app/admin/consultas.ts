@@ -54,7 +54,10 @@ type Cargado<T> = { filas: T[]; total: number; conteos: Record<string, number> |
 
 export async function cargarPersonas(l: Lista): Promise<Cargado<PersonaFila>> {
   const supabase = (await clienteServidor())!;
-  const [f, c] = await Promise.all([supabase.rpc("panel_personas", { p_buscar: l.q, p_filtro: l.filtro, p_limite: l.n, p_desde: 0 }), supabase.rpc("panel_personas_conteos")]);
+  const [f, c] = await Promise.all([
+    supabase.rpc("panel_personas", { p_ciudad: l.ciudad, p_buscar: l.q, p_filtro: l.filtro, p_limite: l.n, p_desde: 0 }),
+    supabase.rpc("panel_personas_conteos", { p_ciudad: l.ciudad }),
+  ]);
   const filas = (f.data ?? []) as PersonaFila[];
   return { filas, total: Number(filas[0]?.total ?? 0), conteos: (c.data as Record<string, number> | null) ?? null, error: !!f.error };
 }
@@ -119,8 +122,8 @@ export async function cargarFichas<S extends keyof FilaDe>(seccion: S, l: Lista)
   const supabase = (await clienteServidor())!;
   // Con el filtro Destacados, los renglones salen de panel_destacados (docs/rediseno/20, A5).
   const [f, c, d] = await Promise.all([
-    l.filtro === "destacados" ? Promise.resolve({ data: [], error: null }) : supabase.rpc(`panel_${seccion}`, { p_buscar: l.q, p_filtro: l.filtro, p_limite: Math.max(l.n, PAGINA_PANEL), p_desde: 0 }),
-    supabase.rpc("panel_fichas_conteos", { p_tipo: seccion }),
+    l.filtro === "destacados" ? Promise.resolve({ data: [], error: null }) : supabase.rpc(`panel_${seccion}`, { p_ciudad: l.ciudad, p_buscar: l.q, p_filtro: l.filtro, p_limite: Math.max(l.n, PAGINA_PANEL), p_desde: 0 }),
+    supabase.rpc("panel_fichas_conteos", { p_tipo: seccion, p_ciudad: l.ciudad }),
     supabase.rpc("panel_destacados", { p_tipo: seccion }),
   ]);
   const filas = (f.data ?? []) as FilaDe[S][];
@@ -136,11 +139,38 @@ export async function cargarFichas<S extends keyof FilaDe>(seccion: S, l: Lista)
       x.lugar = leido?.lugar;
     }
   }
-  const destacados = (d.data ?? []) as FilaDestacada[];
+  // Los destacados son los de la tira de cada ciudad: con una ciudad elegida, solo los suyos (OL-456).
+  let destacados = (d.data ?? []) as FilaDestacada[];
+  if (l.ciudad && destacados.length) {
+    const deLaCiudad = await supabase.rpc("panel_en_ciudad", { p_tipo: seccion, p_ciudad: l.ciudad, p_ids: destacados.map((x) => x.id) });
+    const ids = new Set(((deLaCiudad.data ?? []) as unknown[]).map((x) => (typeof x === "string" ? x : Object.values(x as Record<string, string>)[0])));
+    destacados = destacados.filter((x) => ids.has(x.id));
+  }
   // Lo decidido sobre lo que se ve: el menú de cada renglón dice lo mismo que el de su ficha.
   const decididos = await leerDecididos(supabase, TIPO_DE[seccion], (l.filtro === "destacados" ? destacados : filas).map((x) => x.id));
   const conteos = c.data ? { ...(c.data as Record<string, number>), destacados: destacados.length } : null;
   return { filas, total: Number(filas[0]?.total ?? 0), conteos, error: !!f.error || (l.filtro === "destacados" && !!d.error), destacados, decididos };
+}
+
+/** Una ciudad de la hoja de ciudades de una lista: su slug, su nombre y cuántas tiene la sección ('sin' es «Sin ciudad», solo en Personas). */
+export type CiudadPanel = { slug: string; nombre: string; n: number };
+
+/** La hoja de ciudades de Personas, Lugares, Eventos o Artistas (`panel_ciudades_de`, OL-456): de la que más tiene a la que menos. Vacía si falla
+ *  (el chip sigue diciendo la ciudad elegida). */
+export async function cargarCiudades(seccion: "personas" | keyof FilaDe): Promise<CiudadPanel[]> {
+  const supabase = (await clienteServidor())!;
+  const { data } = await supabase.rpc("panel_ciudades_de", { p_tipo: seccion });
+  return ((data ?? []) as { slug: string; nombre: string; n: number | string }[]).map((c) => ({ slug: c.slug, nombre: c.nombre, n: Number(c.n) }));
+}
+
+/** La ciudad elegida va en la hoja aunque esta sección no tenga nada en ella (se eligió en otra de las cuatro listas): con su nombre de la tabla de
+ *  ciudades y cero. */
+export async function conLaElegida(ciudades: CiudadPanel[], elegida: string | null): Promise<CiudadPanel[]> {
+  if (!elegida || ciudades.some((c) => c.slug === elegida)) return ciudades;
+  if (elegida === "sin") return [...ciudades, { slug: "sin", nombre: "Sin ciudad", n: 0 }];
+  const supabase = (await clienteServidor())!;
+  const { data } = await supabase.from("ciudades").select("nombre").eq("slug", elegida).maybeSingle<{ nombre: string }>();
+  return [...ciudades, { slug: elegida, nombre: data?.nombre ?? elegida, n: 0 }];
 }
 
 /**

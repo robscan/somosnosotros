@@ -213,7 +213,8 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     expect(c.estado).toBe("terminada");
     expect(pasos.at(-1)?.estado).toBe("terminada");
     // El índice de San Luis se leyó desde el servidor, sin la API, y solo valen el PDF de octubre y el programa de Xantolo (sin mes: 31 días).
-    expect(pedidas).toEqual(["https://cultura.slp.gob.mx/agenda-cultural/"]);
+    // OL-444: la agenda en HTML de la UASLP también se intenta bajar desde el servidor (gratis); aquí no responde (404) y la abre la API como antes.
+    expect(pedidas).toEqual(["https://cultura.slp.gob.mx/agenda-cultural/", "https://www.uaslp.mx/agenda-cultural"]);
     const orden = create.mock.calls.map((_, i) => queLeyo(pedidoDe(create, i)));
     expect(orden).toEqual([
       "pdf Programa_Xantolo_2026.pdf 2026-10-21…2026-10-27",
@@ -317,24 +318,22 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     expect(laCorrida(base).resumen).toMatchObject({ publicados: 1, sin_publicar: 0 });
   });
 
-  it("Ciudad de México: su cartelera de gobierno va primero, luego sus guías; solo cuentan sus alcaldías", async () => {
+  it("Ciudad de México: su cartelera la lee el lector sin la API (OL-448) y su guía ya no se le da a la API; luego sus guías; solo cuentan sus alcaldías", async () => {
     const base = mundo([corrida("c-cdmx", { ciudad: "ciudad-de-mexico", parametros: { fuentes: ["agenda-cultura", "web"] } })]);
-    const { dep, create } = dependencias(base);
+    const { dep, create, pedidas } = dependencias(base);
+    dep.dormir = async () => undefined;
     await hastaTerminar(dep);
     const orden = create.mock.calls.map((_, i) => queLeyo(pedidoDe(create, i)));
-    expect(orden).toEqual(["página https://cartelera.cdmx.gob.mx/", "página https://www.cultura.unam.mx/", "buscar web"]);
-    const ps = nuevas(base, "c-cdmx");
-    expect(ps.map((p) => [p.fuente, (p.datos as Fila).titulo])).toEqual([
-      ["Agendas de gobierno", "Ópera en Bellas Artes"],
-      ["Cultura UNAM", "Danza en la Sala Miguel Covarrubias"],
-    ]);
+    expect(orden).toEqual(["página https://www.cultura.unam.mx/", "buscar web"]);
+    // Aquí la cartelera no responde (404): tres pasos con una petición cada uno, sin reintentos (un 404 no se reintenta), y se dice.
+    expect(pedidas.filter((u) => u.startsWith("https://cartelera.cdmx.gob.mx/"))).toEqual(Array(3).fill("https://cartelera.cdmx.gob.mx/api/v1/internal/events/search_builder"));
     const c = laCorrida(base, "c-cdmx");
-    expect((c.resumen.descartados as Record<string, number>).fuera_de_la_ciudad).toBe(1);
+    expect(c.resumen.avisos).toContain("La cartelera no respondió: no se leyó su lista");
+    const ps = nuevas(base, "c-cdmx");
+    expect(ps.map((p) => [p.fuente, (p.datos as Fila).titulo])).toEqual([["Cultura UNAM", "Danza en la Sala Miguel Covarrubias"]]);
     expect(c.resumen.paso).toBe("3 de 3 fuentes");
-    expect(Object.keys(c.resumen.por_fuente as object)).toEqual(["agenda-cultura", "guias", "web"]);
-    const cartelera = pedidoDe(create, 0);
-    expect(cartelera.tools?.find((t) => (t as { name?: string }).name === "web_fetch")).toMatchObject({ allowed_domains: ["cartelera.cdmx.gob.mx"] });
-    expect(String(cartelera.messages[0].content)).toContain("Solo cuentan estas alcaldías: Cuauhtémoc, Coyoacán.");
+    expect(Object.keys(c.resumen.por_fuente as object)).toEqual(["guias", "web"]);
+    expect(String(pedidoDe(create, 0).messages[0].content)).toContain("Solo cuentan estas alcaldías: Cuauhtémoc, Coyoacán.");
   });
 
   it("el tope corta las lecturas con la API; el índice (gratis) se lee igual y Corridas dirá «Llegó al tope»", async () => {

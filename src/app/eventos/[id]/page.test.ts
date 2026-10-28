@@ -6,6 +6,7 @@ import BotonCalendario from "@/components/BotonCalendario";
 import BotonCompartir from "@/components/BotonCompartir";
 import EventosPorDia from "@/components/EventosPorDia";
 import Asistencia from "./Asistencia";
+import ContarVista from "./ContarVista";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { MARCA } from "@/lib/marca";
 
@@ -116,6 +117,9 @@ describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () =
     // El número «Van», el bloque «Artistas» y la sección «Quién va»: cada uno su límite, con su propia consulta.
     const suspenses = elementos.filter((e) => e.type === Suspense);
     expect(suspenses.length).toBe(3);
+
+    // OL-459: quien visita un evento próximo cuenta una vista (después de pintar, sin esperar).
+    expect(elementos.find((e) => e.type === ContarVista)?.props.evento).toBe(EVENTO.id);
   });
 
   it("una ficha por UUID redirige (308 permanente) a su slug — el candado y el resto de la cabecera no esperan nada más", async () => {
@@ -217,6 +221,8 @@ describe("dirección reservada tras el fin (OL-257)", () => {
     const elementos = [...recorrer(await ficha())];
     expect(elementos.find(e => e.type === Heroe)?.props.titulo).toBe(EVENTO.titulo);
     expect(elementos.some(e => e.type === "small" && e.props.children === "La dirección ya no está disponible por privacidad.")).toBe(true);
+    // OL-459: ni quien lo publicó ni un evento que ya pasó cuentan vistas.
+    expect(elementos.some(e => e.type === ContarVista)).toBe(false);
   });
 });
 

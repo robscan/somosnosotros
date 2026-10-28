@@ -20,7 +20,7 @@ export default function Privacidad() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
-        <p className="subtitulo">Última actualización: 7 de octubre de 2026.</p>
+        <p className="subtitulo">Última actualización: 27 de octubre de 2026.</p>
 
         <h2>Quién responde por tus datos</h2>
         <p>
@@ -35,6 +35,7 @@ export default function Privacidad() {
           <li>Si activas avisos en el teléfono: la suscripción que nos da tu navegador para mandarte notificaciones. No es tu número.</li>
           <li>El último día que abriste la app: solo el día, no la hora ni qué miraste. Lo ve solo la administración, para saber si la gente vuelve.</li>
           <li>Tu ubicación, solo cuando la pides con un toque (por ejemplo «Cerca de mí» o al buscar una dirección al publicar un lugar o evento): sirve para ordenar la lista, centrar el mapa o acercar la búsqueda de direcciones. Vive en tu teléfono, aproximada y por poco tiempo; puede viajar a Mapbox para esa búsqueda, pero nunca se guarda en nuestra base ni queda asociada a tu cuenta.</li>
+          <li>Cuántas veces se abre la ficha de un evento: una por persona al día, sin tu nombre, tu cuenta ni tu IP. Sirve para que lo más visto salga en Destacados. A quien publicó el evento y a la administración no se les cuenta.</li>
           <li>Lo que publicas: lugares, eventos, artistas, fotos y enlaces. Es público por definición.</li>
         </ul>
 
@@ -55,7 +56,7 @@ export default function Privacidad() {
           Con las empresas que hacen funcionar el sitio, y solo para eso: Supabase (base de datos y acceso), Vercel (servidor), Resend (correos), Mapbox (mapa y direcciones) y Anthropic (lectura automática del cartel de un evento, solo la imagen que subes).
         </p>
         <p>
-          Para saber cómo se usa la app medimos con Vercel Analytics y Google Analytics qué páginas se ven y acciones sin nombre, como que se publicó un evento o que alguien dijo «Voy». Sin cookies de medición y sin identificar a nadie: no se manda tu nombre, tu correo, lo que escribes al buscar ni tu ubicación. A la administración no se le mide.
+          Para saber cómo se usa la app medimos con Vercel Analytics y Google Analytics qué páginas se ven y acciones sin nombre, como que se publicó un evento o que alguien dijo «Voy». Sin sus cookies y sin identificar a nadie: no se manda tu nombre, tu correo, lo que escribes al buscar ni tu ubicación. A la administración no se le mide.
         </p>
         <p>
           Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a {MARCA}; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.
@@ -67,7 +68,7 @@ export default function Privacidad() {
         </p>
 
         <h2>Cookies</h2>
-        <p>Usamos solo la cookie de sesión que te mantiene dentro y, mientras entras con Apple o con Google, otra que dura 10 minutos y comprueba que la vuelta es tuya. Ninguna cookie de medición, de rastreo ni de publicidad.</p>
+        <p>Usamos la cookie de sesión que te mantiene dentro y, mientras entras con Apple o con Google, otra que dura 10 minutos y comprueba que la vuelta es tuya. Si no has entrado y abres la ficha de un evento, una más que dura un día: un número al azar para no contar dos veces tu visita. No dice quién eres y no sale del sitio. Si llegas por un enlace nuestro en Instagram o Facebook, anotamos con esa visita de cuál red vino, nada más. Ninguna cookie de rastreo ni de publicidad.</p>
 
         <h2>Cambios</h2>
         <p>Si este aviso cambia, lo verás aquí con la fecha nueva. Si el cambio afecta a cómo usamos tus datos, te lo diremos por correo.</p>

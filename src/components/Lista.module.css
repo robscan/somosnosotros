@@ -17,3 +17,9 @@
   font-size: var(--letra-sm);
   line-height: 1.4;
 }
+/* El vacío de Inicio (OL-454, firmado: «iguala título de carril»): su título con el estilo del de los carriles (`Destacados`, `.destacados h2`,
+   OL-361): --letra-2xl e interlineado 1,1; lo demás (700, condensado) ya lo da el título de toda la app. */
+.vacioInicio h2 {
+  font-size: var(--letra-2xl);
+  line-height: 1.1;
+}

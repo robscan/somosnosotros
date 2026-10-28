@@ -21,6 +21,7 @@ import {
   type Motivo,
   type PropuestaConocida,
 } from "./filtros";
+import type { NotaCartelera } from "./carteleraCdmx";
 import { centroDeCiudad, estadoDePunto, ubicar, type AreaCiudad, type Mapbox } from "./mapbox";
 import { claveDeEstado, ESTADOS, leerSic, urlTablaSic } from "./sic";
 
@@ -97,6 +98,10 @@ export type Contexto = {
   gastado: () => number;
   /** ¿Sigue «corriendo»? (Si la cancelaron a medio paso, no se propone nada más.) */
   sigueCorriendo: () => Promise<boolean>;
+  /** Esperar (la calma de la cartelera, OL-448); por omisión, de verdad. Las pruebas pasan un reloj falso. */
+  dormir?: (ms: number) => Promise<void>;
+  /** Lo que la lectura de la cartelera cuenta además (OL-451): sin hora y cómo cruzó cada recinto; solo lo usa el informe del guion de la Mac. */
+  anotarCartelera?: (nota: NotaCartelera) => void;
 };
 
 export const LOTE_MAPBOX = 10;

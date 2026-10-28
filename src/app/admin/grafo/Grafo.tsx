@@ -1,15 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { useVolver } from "@/components/ui/Atras";
+import { AtrasIcono } from "@/components/ui/Atras";
 import Ayuda from "@/components/ui/Ayuda";
-import { IconoChevronIzquierda } from "@/components/ui/Iconos";
+import BotonIcono from "@/components/ui/BotonIcono";
+import { IconoLibro } from "@/components/ui/Iconos";
 import type { Grafo as DatosGrafo } from "@/lib/grafo";
 import { actualizarGrafo } from "./acciones";
 import { AYUDA, RUTA_MANUAL } from "./ayuda";
-import { IconoActualizar } from "./IconoGrafo";
+import { IconoActualizar, IconoTema } from "./IconoGrafo";
 import styles from "./Grafo.module.css";
 
 /**
@@ -24,7 +24,6 @@ import styles from "./Grafo.module.css";
 export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; yo: number | null; calculadoEn: string }) {
   const raiz = useRef<HTMLDivElement>(null);
   const [sinWebgl, setSinWebgl] = useState(false);
-  const volver = useVolver("/admin");
   const router = useRouter();
   const [actualizando, actualizar] = useTransition();
 
@@ -54,38 +53,41 @@ export default function Grafo({ datos, yo, calculadoEn }: { datos: DatosGrafo; y
 
   return (
     <main ref={raiz} className={styles.app} data-tema="oscuro">
+      {/* La barra de las fichas del front (OL-457): Atrás redondo, el nombre al centro y las acciones como iconos redondos de 44, con su nombre
+          para el lector; los tres, `ui/BotonIcono` con borde, en los colores del grafo. Las cuentas, en su línea debajo. */}
       <header className={styles.barra}>
-        <Link href="/admin" className={styles.atras} onClick={volver} aria-label="Volver a Administración">
-          <IconoChevronIzquierda />
-        </Link>
+        <AtrasIcono href="/admin" texto="Administración" tamano="control" relieve="contorno" />
         <h1 data-ayuda="pantalla">Grafo cultural</h1>
-        <div className={styles.cifras} data-g="cifras" data-ayuda="cifras" />
-        <div className={styles.fps} data-g="fps" data-ayuda="fps">
-          en reposo
+        <div className={styles.acciones}>
+          <BotonIcono href={RUTA_MANUAL} relieve="contorno" className={styles.soloAncho} data-ayuda="manual" aria-label="Manual">
+            <IconoLibro width={22} height={22} />
+          </BotonIcono>
+          <BotonIcono relieve="contorno" data-g="tema" data-ayuda="tema" aria-pressed="false" aria-label="Tema claro">
+            <IconoTema width={22} height={22} />
+          </BotonIcono>
+          <BotonIcono
+            relieve="contorno"
+            data-ayuda="actualizar"
+            aria-label="Actualizar"
+            aria-busy={actualizando}
+            disabled={actualizando}
+            onClick={() =>
+              actualizar(async () => {
+                await actualizarGrafo();
+                router.refresh();
+              })
+            }
+          >
+            <IconoActualizar width={22} height={22} />
+          </BotonIcono>
         </div>
-        <Link href={RUTA_MANUAL} className={`${styles.pildora} ${styles.soloAncho}`} data-ayuda="manual">
-          Manual
-        </Link>
-        <button type="button" className={styles.pildora} data-g="tema" data-ayuda="tema" aria-pressed="false">
-          Claro
-        </button>
-        <button
-          type="button"
-          className={styles.icono}
-          data-ayuda="actualizar"
-          aria-label="Actualizar"
-          aria-busy={actualizando}
-          disabled={actualizando}
-          onClick={() =>
-            actualizar(async () => {
-              await actualizarGrafo();
-              router.refresh();
-            })
-          }
-        >
-          <IconoActualizar />
-        </button>
       </header>
+      <p className={styles.cuentas}>
+        <span data-g="cifras" data-ayuda="cifras" />
+        <span className={styles.fps} data-g="fps" data-ayuda="fps">
+          en reposo
+        </span>
+      </p>
 
       <div className={styles.capas} role="group" aria-label="Capas">
         <button type="button" className={styles.capaBoton} data-g="capa-lugar" data-ayuda="capa-lugar" aria-pressed="true" style={{ "--c": "var(--g-c-lugar, var(--primario))" } as CSSProperties}>

@@ -150,18 +150,22 @@
 .chips::-webkit-scrollbar {
   display: none;
 }
-/* En una hoja los chips no se deslizan: pasan al renglón de abajo. */
+/* En una hoja los chips no se deslizan: pasan al renglón de abajo. Entre renglones, 12 (OL-446, firmado en OL-443): con 8, el toque de 44 de
+   un chip de 36 pisaba el del renglón de abajo y cada uno medía 43. */
 .envuelve {
   flex-wrap: wrap;
   overflow: visible;
+  row-gap: var(--espacio-3);
 }
 
-/* El campo nativo va encima del chip, invisible y del mismo tamaño: el toque lo recibe él. */
+/* El campo nativo va encima del chip, invisible y del tamaño de su toque (el `::before` de `.toque`: 44 de alto aunque el chip mida 36): el
+   toque lo recibe él (OL-456: medía 34 de alto, el chip sin sus bordes). */
 .encima {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: calc((var(--alto-chip) - var(--toque-min)) / 2 - 1px);
+  left: -1px;
+  width: calc(100% + 2px);
+  height: var(--toque-min);
   opacity: 0;
   margin: 0;
   padding: 0;

@@ -6,7 +6,6 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../Reintentar";
 import { cargarExtras, cargarPanelCiudades, conCifras, pedirPasoSiHayVaradas } from "./consultas";
 import ListaCiudades, { type FilaLista } from "./ListaCiudades";
-import styles from "../admin.module.css";
 import { tituloDePagina } from "@/lib/marca";
 
 export const metadata = { title: tituloDePagina("Ciudades", "Administración"), robots: { index: false, follow: false } };
@@ -25,8 +24,7 @@ export default async function Ciudades() {
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
-        <Barra volver={{ href: "/admin", texto: "Administración" }} />
-        <h1 className={styles.titulo}>Ciudades</h1>
+        <Barra volver={{ href: "/admin", texto: "Administración" }} titulo="Ciudades" />
         <Reintentar texto="No pudimos leer las ciudades." />
       </main>
     );
@@ -48,8 +46,7 @@ export default async function Ciudades() {
   }));
   return (
     <main className={plantilla.paginaContenido}>
-      <Barra volver={{ href: "/admin", texto: "Administración" }} />
-      <h1 className={styles.titulo}>Ciudades</h1>
+      <Barra volver={{ href: "/admin", texto: "Administración" }} titulo="Ciudades" />
       <ListaCiudades filas={filas} credito={lineaCredito(credito(panel.credito, ahora))} />
     </main>
   );
