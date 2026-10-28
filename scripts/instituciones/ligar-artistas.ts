@@ -502,7 +502,7 @@ type Consulta = PromiseLike<Respuesta> & {
 };
 
 /** Todas las filas, de mil en mil (PostgREST corta en 1 000 sin avisar). */
-async function todas<T>(db: SupabaseClient, tabla: string, columnas: string, orden: string[], filtro: (q: Consulta) => Consulta = (q) => q): Promise<T[]> {
+export async function todas<T>(db: SupabaseClient, tabla: string, columnas: string, orden: string[], filtro: (q: Consulta) => Consulta = (q) => q): Promise<T[]> {
   let filas: T[] = [];
   for (let desde = 0; ; desde += 1000) {
     let q = filtro(db.from(tabla).select(columnas) as unknown as Consulta);

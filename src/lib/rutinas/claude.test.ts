@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it, vi } from "vitest";
-import { buscarConApi, COSTO_SI_SE_CORTA, HERRAMIENTA_PROPONER, MODELO_RUTINAS, type ClienteApi } from "./claude";
+import { z } from "zod";
+import { buscarConApi, COSTO_SI_SE_CORTA, HERRAMIENTA_PROPONER, llamarConEntrega, MODELO_RUTINAS, type ClienteApi } from "./claude";
 import { costoDeUso } from "./precios";
 
 const USO = { input_tokens: 20_000, output_tokens: 1_500, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, server_tool_use: { web_search_requests: 2, web_fetch_requests: 0 } };
@@ -75,5 +76,17 @@ describe("buscarConApi: una búsqueda con la API", () => {
     const r = await buscarConApi(c, pedido(Date.now() + 5_000));
     expect(create).not.toHaveBeenCalled();
     expect(r.error).toBe("No quedó tiempo para buscar");
+  });
+});
+
+describe("llamarConEntrega: otro modelo (OL-470)", () => {
+  it("pide con el modelo que se le da y cobra con su precio", async () => {
+    const uso = { input_tokens: 10_000, output_tokens: 2_000 };
+    const { c, create } = cliente({ ...mensaje([entrega([])], "tool_use", uso), model: "claude-haiku-5-5" });
+    const r = await llamarConEntrega(c, { sistema: "s", contenido: "c", herramientas: [], entrega: HERRAMIENTA_PROPONER, esquema: z.object({ lugares: z.array(z.unknown()) }), hasta: Date.now() + 40_000, modelo: "claude-haiku-5-5" });
+    expect((create.mock.calls[0] as unknown as [Anthropic.MessageCreateParams])[0].model).toBe("claude-haiku-5-5");
+    expect(r.dato).toEqual({ lugares: [] });
+    expect(r.usd).toBeCloseTo(costoDeUso(uso, "claude-haiku-5-5"), 10);
+    expect(r.usd).toBeCloseTo((10_000 * 0.1 + 2_000 * 0.5) / 1_000_000, 10);
   });
 });
