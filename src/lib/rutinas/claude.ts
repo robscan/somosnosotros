@@ -142,6 +142,8 @@ export type PedidoConEntrega<T> = {
   esquema: z.ZodType<T>;
   hasta: number;
   maxTokens?: number;
+  /** OL-470: otro modelo que el de las rutinas (la relectura de artistas usa Haiku 5.5 por omisión). Su precio, en `precios.ts`. */
+  modelo?: string;
 };
 export type RespuestaConEntrega<T> = Omit<RespuestaApi, "lugares"> & { dato: T | null };
 
@@ -162,7 +164,7 @@ export async function llamarConEntrega<T>(cliente: ClienteApi, p: PedidoConEntre
     try {
       respuesta = await cliente.messages.create(
         {
-          model: MODELO_RUTINAS,
+          model: p.modelo ?? MODELO_RUTINAS,
           max_tokens: p.maxTokens ?? 8000,
           output_config: { effort: ESFUERZO_RUTINAS },
           system: p.sistema,
@@ -179,7 +181,7 @@ export async function llamarConEntrega<T>(cliente: ClienteApi, p: PedidoConEntre
       } else salida.error = errorDeApi(e);
       return salida;
     }
-    salida.usd += costoDeUso(respuesta.usage, respuesta.model || MODELO_RUTINAS);
+    salida.usd += costoDeUso(respuesta.usage, respuesta.model || p.modelo || MODELO_RUTINAS);
     salida.busquedas += respuesta.usage?.server_tool_use?.web_search_requests ?? 0;
     salida.lecturasFallidas = (salida.lecturasFallidas ?? 0) + paginasDe(respuesta.content, salida.paginas);
 
