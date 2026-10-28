@@ -555,6 +555,95 @@ const VACIAS = new Set(["de", "del", "la", "las", "los", "el", "y", "e", "en", "
 const normal = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const palabras = (s) => new Set(normal(s).split(" ").filter((w) => w && !VACIAS.has(w) && !/^(19|20)[0-9]{2}$/.test(w)));
 const diaEn = (inicio, zona) => new Intl.DateTimeFormat("en-CA", { timeZone: zona || ZONA }).format(new Date(inicio));
+// OL-469 (bitácora 501): un historial grande, para el prototipo del Historial del lugar y la Trayectoria del artista escalables. El «Museo Leonora
+// Carrington (demo)» (el caso del founder: «se dice "han pasado por aquí 9"… Solo se muestran 5 de 9») con 81 eventos pasados en tres años (47
+// de 2026, 24 de 2025 y 10 de 2024): exposiciones colectivas, visitas y talleres sin artistas ligados y conciertos, charlas y lecturas con nueve
+// artistas con ficha; y «Valeria Quiroz (demo)», con 29 fechas pasadas en ocho lugares con ficha y una en un sitio sin ficha. Los dos de Ana
+// (con su sesión, gestiona las dos fichas: «Tu año» e «Informe» / «Presentación»). Las fotos y los carteles son dibujos inventados que el
+// respaldo sirve desde `RESPALDO_CARRUSEL_DIR` (`fotos-historial.mjs`); con la marca, las portadas de los lugares de San Luis también, así ninguna
+// imagen sale del respaldo. Todo inventado salvo el nombre y la dirección del museo. Solo con `RESPALDO_HISTORIAL=1`: `npm run medir` no lo pone,
+// así ninguna pantalla medida cambia.
+export const CON_HISTORIAL = process.env.RESPALDO_HISTORIAL === "1";
+export const L_LEONORA = "aaaa0001-0000-4000-8000-000000000081";
+export const A_VALERIA = "cccc0015-0000-4000-8000-000000000009";
+if (CON_HISTORIAL) {
+  const fotoH = (n) => `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/${n}.jpg`;
+  lugares.forEach((l, i) => { l.portada = fotoH(`hist-lugar-${i + 1}`); });
+  lugares.push({ ...lugar(L_LEONORA, "museo-leonora-carrington-demo", "Museo Leonora Carrington (demo)", "museo", "Calzada de Guadalupe 705, Centro, 78000, San Luis Potosí, S.L.P.", 22.1432, -100.9765, [{ url: "https://www.instagram.com/museoleonoracarrington.demo" }], "Museo dedicado a la obra surrealista de Leonora Carrington, con salas de exposición temporal, talleres y un foro."), portada: fotoH("hist-leonora"), creado_por: ANA });
+  const AH = [
+    ["valeria", "valeria-quiroz-demo", "Valeria Quiroz (demo)", "musica", "Canción", "solista", true],
+    ["inigo", "inigo-montalvo-demo", "Íñigo Montalvo (demo)", "musica", "Guitarra", "solista", true],
+    ["renata", "renata-saldana-demo", "Renata Saldaña (demo)", "artes_visuales", "Pintura", "solista", true],
+    ["ecos", "los-ecos-del-tangamanga-demo", "Los Ecos del Tangamanga (demo)", "musica", "Son huasteco", "grupo", true],
+    ["maripaz", "maripaz-oyarzabal-demo", "Maripaz Oyarzábal (demo)", "danza", "Danza contemporánea", "solista", false],
+    ["ximena", "ximena-urquidi-demo", "Ximena Urquidi (demo)", "letras", "Poesía", "solista", true],
+    ["piedra", "taller-de-grabado-la-piedra-demo", "Taller de Grabado La Piedra (demo)", "artes_visuales", "Grabado", "grupo", false],
+    ["teodoro", "teodoro-alcantara-demo", "Teodoro Alcántara (demo)", "teatro", "Performance", "solista", true],
+    ["nube", "colectivo-nube-de-papel-demo", "Colectivo Nube de Papel (demo)", "artes_visuales", "Ilustración", "grupo", true],
+  ];
+  const idA = (i) => (i === 0 ? A_VALERIA : `cccc0015-0000-4000-8000-00000000000${i}`);
+  AH.forEach(([clave, slug, nombre, disciplina, detalle, tipo, conFoto], i) =>
+    artistas.push({ ...artista(idA(i), slug, nombre, disciplina, detalle, tipo, i === 0 ? "Cantautora potosina que toca en museos, galerías y foros de la ciudad desde 2024." : null, [], conFoto ? fotoH(`hist-artista-${clave}`) : null, i === 0 ? fotoH("hist-valeria-portada") : null), creado_por: i === 0 ? ANA : null }),
+  );
+  const utc = (ymd) => { const [a, m, d] = ymd.split("-").map(Number); return Date.UTC(a, m - 1, d); };
+  const diasA = (ymd) => Math.round((utc(ymd) - utc(hoyLocal)) / 86400e3);
+  let n = 0;
+  const idE = () => `bbbb0015-0000-4000-8000-${String(++n).padStart(12, "0")}`;
+  const slugDe = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  /** Un evento pasado en una fecha dicha (AAAA-MM-DD); `semanas` lo vuelve exposición (termina tantas semanas después, a las 23:59). */
+  const pasado = ({ ymd, hora = "19:00", titulo, lugar_id = L_LEONORA, sitio = null, cartel = null, semanas = 0, quien = [] }) => {
+    const id = idE();
+    const base = evento({ id, slug: `${slugDe(titulo)}-${ymd}`, titulo, dias: diasA(ymd), hora: semanas ? "00:00" : hora, lugar_id: sitio ? null : lugar_id, sitio, creadoHace: 400, imagen: cartel ? fotoH(cartel) : null, autor: ANA, clase: semanas ? "exposicion" : "puntual" });
+    const fin = semanas ? iso(fecha(diasA(ymd) + semanas * 7, "23:59")) : null;
+    eventos.push(semanas ? { ...base, fin, termina: fin } : base);
+    quien.forEach((a, orden) => eventos_artistas.push({ evento_id: id, artista_id: idA(a), orden: orden + 1 }));
+  };
+  // El museo: por mes, en orden; un tercio sin artistas ligados (las colectivas, las visitas y los talleres: el caso «aparecen exposiciones
+  // colectivas y eventos que pudieron tener artistas y no se detectaron»).
+  const SIN = ["Exposición colectiva: Surrealismo en San Luis", "Visita guiada nocturna", "Taller infantil de máscaras", "Muestra colectiva de gráfica potosina", "Noche de museos", "Recorrido por el jardín escultórico", "Exposición colectiva: Mujeres que sueñan", "Cineclub: las amigas surrealistas", "Taller de collage para familias", "Muestra de fin de cursos"];
+  const CON = [(a) => `Concierto de ${a}`, (a) => `Charla con ${a}`, (a) => `Lectura en voz alta con ${a}`, (a) => `${a} en el foro del museo`, (a) => `Inauguración con ${a}`];
+  const porMes = (anio, mes) => (anio === 2024 ? 1 : anio === 2025 ? 2 : mes === 10 ? 2 : 5);
+  const meses = [];
+  for (let m = 3; m <= 12; m++) meses.push([2024, m]);
+  for (let m = 1; m <= 12; m++) meses.push([2025, m]);
+  for (let m = 1; m <= 10; m++) meses.push([2026, m]);
+  let k = 0;
+  for (const [anio, mes] of meses) {
+    const cuantos = porMes(anio, mes);
+    for (let j = 0; j < cuantos; j++, k++) {
+      const dia = mes === 10 && anio === 2026 ? 2 + j * 2 : 3 + j * Math.floor(24 / cuantos);
+      const ymd = `${anio}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+      const cartel = k % 4 === 1 ? `hist-cartel-${k % 6}` : null;
+      if (k % 3 === 0) {
+        const t = SIN[(k / 3) % SIN.length];
+        const expo = (t.startsWith("Exposición") || t.startsWith("Muestra")) && !(anio === 2026 && mes >= 9);
+        pasado({ ymd, titulo: t, cartel, hora: t.startsWith("Taller") ? "11:00" : "19:00", semanas: expo ? 3 : 0 });
+      } else {
+        const a = 1 + (k % 8);
+        const quien = k % 7 === 0 ? [a, 1 + ((k + 3) % 8)] : [a];
+        pasado({ ymd, titulo: CON[k % CON.length](AH[a][2].replace(" (demo)", "")), cartel, quien });
+      }
+    }
+  }
+  // Valeria Quiroz: también en el museo y en siete lugares más de San Luis, de marzo de 2024 a la semana pasada; y una vez en un jardín sin ficha.
+  const SITIOS = [L.paz, L.ferro, L.muni, L.ache, L.ccub, L.aether, L.poeta, L_LEONORA];
+  const fechasV = ["2024-03-15", "2024-05-24", "2024-08-09", "2024-10-18", "2024-12-06", "2025-01-24", "2025-02-21", "2025-03-28", "2025-04-25", "2025-05-30", "2025-06-27", "2025-08-22", "2025-09-26", "2025-10-31", "2025-11-28", "2025-12-12", "2026-01-23", "2026-02-13", "2026-02-27", "2026-03-20", "2026-04-17", "2026-05-08", "2026-05-29", "2026-06-19", "2026-07-17", "2026-08-07", "2026-08-28", "2026-09-18", "2026-10-02"];
+  fechasV.forEach((ymd, i) => {
+    const duo = i % 5 === 2;
+    pasado({ ymd, hora: "20:00", titulo: duo ? "Valeria Quiroz e Íñigo Montalvo a dúo" : i % 3 === 0 ? "Valeria Quiroz: canciones del desierto" : "Valeria Quiroz en concierto", lugar_id: SITIOS[i % SITIOS.length], cartel: i % 3 === 1 ? `hist-cartel-${i % 6}` : null, quien: duo ? [0, 1] : [0] });
+  });
+  pasado({ ymd: "2025-07-12", hora: "12:00", titulo: "Valeria Quiroz en el Jardín de San Juan de Dios", sitio: { texto: "Jardín de San Juan de Dios", direccion: "Calle Madero 1, Centro Histórico, San Luis Potosí", lat: 22.1511, lng: -100.9772 }, quien: [0] });
+  // Lo que viene: una fecha de Valeria en el Teatro de la Paz y dos eventos en el museo, para que «Próximas fechas» / «Próximos eventos» no estén vacíos.
+  const proximo = (dias, titulo, quien = []) => {
+    const id = idE();
+    eventos.push(evento({ id, slug: `${slugDe(titulo)}-proximo`, titulo, dias, hora: "19:00", lugar_id: quien.includes(0) ? L.paz : L_LEONORA, creadoHace: 5, imagen: null, autor: ANA }));
+    quien.forEach((a, orden) => eventos_artistas.push({ evento_id: id, artista_id: idA(a), orden: orden + 1 }));
+  };
+  proximo(9, "Valeria Quiroz: canciones nuevas", [0]);
+  proximo(4, "Visita guiada: Leonora y el teatro");
+  proximo(12, "Charla con Renata Saldaña", [2]);
+}
+
 /** `eventos_parecidos` en corto (la regla completa y sus pruebas viven en la base, OL-384): solo con `RESPALDO_CARTEL_EXISTENTE=1`. */
 function parecidosEnMemoria({ p_titulo, p_inicio, p_zona, p_lugar_id, p_sitio_texto, p_excluir }, t) {
   if (!CON_CARTEL_EXISTENTE || !p_inicio) return [];
