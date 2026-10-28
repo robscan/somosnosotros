@@ -26,7 +26,8 @@ export type OpcionesFacebook = { traer?: typeof fetch; token?: string; pagina?: 
 
 type Respuesta = RespuestaGraph & { post_id?: string; success?: boolean; permalink_url?: string };
 
-/** Las credenciales de la página (de las opciones en las pruebas; si no, del entorno). Null si falta el token o la página no es un número. */
+/** Las credenciales de la página: el token de las opciones (en la app, el de Vault, `lib/instagram/token`, OL-471) o `INSTAGRAM_TOKEN`; la
+ *  página, de las opciones o de `FACEBOOK_PAGE_ID`. Null si falta el token o la página no es un número. */
 function credenciales(o: OpcionesFacebook): { token: string; pagina: string } | null {
   const token = o.token ?? process.env.INSTAGRAM_TOKEN;
   const pagina = o.pagina ?? process.env.FACEBOOK_PAGE_ID;
