@@ -570,6 +570,35 @@ function parecidosEnMemoria({ p_titulo, p_inicio, p_zona, p_lugar_id, p_sitio_te
     .map((e) => ({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, zona: e.zona, imagen: e.imagen, lugar_id: e.lugar_id, lugar_nombre: t.lugares.find((l) => l.id === e.lugar_id)?.nombre ?? null, sitio_texto: e.sitio_texto }));
 }
 
+/** `poner_cartel_a_evento` en corto (OL-467). Lo que no se puede contesta como la base: `{ code, message }`, que `server.mjs` responde como error. */
+function cartelEnMemoria({ p_evento, p_imagen, p_colores = null, p_completar = null, p_reemplazar = false }, t, yo) {
+  const e = t.eventos.find((x) => x.id === p_evento && x.visible && !x.borrador && !x.retirado_por_admin);
+  if (!e) return { __error: { code: "P0002", message: "evento_no_disponible" } };
+  const r = { id: e.id, slug: e.slug, lugar_id: e.lugar_id, dueno: e.creado_por, completado: [], reemplazado: !!e.imagen, repetido: false, artistas: [] };
+  if (e.imagen) {
+    if (!p_reemplazar) return { __error: { code: "23505", message: "ya_tiene_cartel" } };
+    if (e.creado_por !== yo && yo !== ADMIN) return { __error: { code: "42501", message: "solo_quien_lo_publico" } };
+    Object.assign(e, { imagen: p_imagen, colores_cartel: p_colores });
+    return r;
+  }
+  const c = p_completar ?? {};
+  e.imagen = p_imagen;
+  e.colores_cartel = p_colores;
+  if (!e.descripcion && c.descripcion) (e.descripcion = c.descripcion), r.completado.push("descripcion");
+  if (!e.precio && c.precio) (e.precio = c.precio), r.completado.push("precio");
+  if (!e.fin && c.fin) (e.fin = c.fin), r.completado.push("fin");
+  if (Array.isArray(c.quien) && c.quien.length && !t.eventos_artistas.some((x) => x.evento_id === e.id)) {
+    c.quien.forEach((q, orden) => {
+      let a = t.artistas.find((x) => x.id === q.id || normal(x.nombre) === normal(q.nombre));
+      if (!a) t.artistas.push((a = { ...t.artistas[0], id: crypto.randomUUID(), slug: normal(q.nombre).replace(/ /g, "-"), nombre: q.nombre, nombre_orden: normal(q.nombre), disciplina: "por_completar", detalle: null, tipo: q.tipo ?? "solista", foto: null, portada: null, descripcion: null, redes: [], creado_por: yo }));
+      t.eventos_artistas.push({ evento_id: e.id, artista_id: a.id, orden: orden + 1 });
+      r.artistas.push(a.id);
+    });
+    r.completado.push("artistas");
+  }
+  return r;
+}
+
 export const tablas = {
   perfiles, lugares, eventos, artistas, eventos_artistas, asistencias, seguimientos, destacados,
   artistas_cuentas, lugares_cuentas, bloqueos: [], novedades: [], novedades_artista, reportes: [], suscripciones_push: [], fotos: [], eventos_sitio_privado: [], eventos_sesiones: [...eventos_sesiones, ...sesiones], lugares_horarios, eventos_horarios, ajustes_sitio: [], obras_colectivas: [], dispositivos_apns: [], cifrado: [],
@@ -706,6 +735,9 @@ export const rpcs = {
   lugares_parecidos: () => [],
   // OL-466: «¿Es este?» del alta de evento, solo con `RESPALDO_CARTEL_EXISTENTE=1` (sin la marca, nada, como antes).
   eventos_parecidos: (args, t) => parecidosEnMemoria(args, t),
+  // OL-467: «Sí, es este: ponerle mi cartel», en memoria y en corto (la regla completa y sus pruebas viven en la base,
+  // supabase/tests/pg/cartel-a-evento-existente.test.mjs): sin cartel, a cualquiera, completando solo lo vacío; con cartel, a quien lo publicó.
+  poner_cartel_a_evento: (args, t, { sub } = {}) => cartelEnMemoria(args, t, sub ?? ANA),
   // OL-315: el alta de lugar con horario contesta lo creado (sin guardarlo: las escrituras no cambian el fixture); el horario se reemplaza sin más.
   crear_lugar_con_horario: ({ p_datos }) => ({ id: crypto.randomUUID(), slug: String(p_datos?.nombre ?? "lugar").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") }),
   guardar_horario_lugar: () => null,
