@@ -21,7 +21,10 @@ import {
   lectorConApi,
   lectorFalso,
   lineaDeCifras,
+  oficioArtistico,
   porLeer,
+  sinPreposicion,
+  tipoPorNombre,
   SISTEMA,
   type Base,
   type EventoRelectura,
@@ -138,6 +141,67 @@ describe("comprobar", () => {
   });
 });
 
+// ---------- lo que salió en la simulación del gestor (28 oct, 50 eventos con Haiku) ----------
+describe("comprobar: papeles sin oficio artístico, preposiciones y detalle", () => {
+  const ev = (titulo: string, descripcion: string | null = null) => evento("x", titulo, descripcion);
+  const motivo = (titulo: string, x: Hallazgo, descripcion: string | null = null) => {
+    const r = comprobar(x, ev(titulo, descripcion), null);
+    return r.ok ? r.valor : r.motivo;
+  };
+  it("quien solo conversa, guía, da una charla o es cronista no entra sin un oficio artístico en el texto", () => {
+    expect(motivo("Conversación a cargo del Dr. Joserra Ortiz.", h("Joserra Ortiz", "Conversación a cargo del Dr. Joserra Ortiz.", "imparte", "Dr."))).toBe("papel sin oficio artístico");
+    expect(motivo("Programa Motivos", h("Josué David Martínez Mejía", "Josué David Martínez Mejía, cronista honorario", "otro", "cronista honorario"), "Con Laura Espinosa y Josué David Martínez Mejía, cronista honorario.")).toBe(
+      "papel sin oficio artístico",
+    );
+    expect(motivo("Recorrido a pie por la calle Zaragoza guiado por Augusto Alejandro Hernández López", h("Augusto Alejandro Hernández López", "guiado por Augusto Alejandro Hernández López", "imparte"))).toBe(
+      "papel sin oficio artístico",
+    );
+    expect(motivo("Charla", h("Ma. Eugenia Martínez Juache", "Charla de Ma. Eugenia Martínez Juache sobre portafolios fotográficos.", "imparte"), "Charla de Ma. Eugenia Martínez Juache sobre portafolios fotográficos.")).toBe(
+      "papel sin oficio artístico",
+    );
+    expect(motivo("Charla del maestro Jesús Martínez Melgarejo", h("Jesús Martínez Melgarejo", "Charla del maestro Jesús Martínez Melgarejo", "imparte", "maestro"))).toBe("papel sin oficio artístico");
+    expect(motivo("Plática de Maru Urbina sobre literatura infantil", h("Maru Urbina", "Plática de Maru Urbina sobre literatura infantil", "imparte"))).toBe("papel sin oficio artístico");
+  });
+  it("sí entran quien expone, escribe o tiene su oficio escrito, aunque imparta; el detalle es ese oficio y nada más", () => {
+    expect(motivo("Exposición del escultor Ramón Vázquez", h("Ramón Vázquez", "Exposición del escultor Ramón Vázquez", "expone", "escultor"))).toMatchObject({ nombre: "Ramón Vázquez", detalle: "Escultor" });
+    expect(motivo("Presentación del libro de Alberto Leyva", h("Alberto Leyva", "Presentación del libro de Alberto Leyva", "escribe"))).toMatchObject({ nombre: "Alberto Leyva", detalle: null });
+    expect(motivo("Inauguración de la exposición de Kambria Antón", h("Kambria Antón", "Inauguración de la exposición de Kambria Antón", "expone"))).toMatchObject({ detalle: null });
+    expect(motivo("Charla del maestro de teatro Jesús Martínez Melgarejo", h("Jesús Martínez Melgarejo", "Charla del maestro de teatro Jesús Martínez Melgarejo", "imparte", "maestro de teatro"))).toMatchObject({
+      detalle: "Maestro de teatro",
+    });
+    expect(motivo("Taller de acuarela", h("Ana López", "impartido por la acuarelista Ana López", "imparte"), "Taller impartido por la acuarelista Ana López.")).toMatchObject({ detalle: "Acuarelista" });
+    // Lo que no es un oficio no queda como detalle.
+    expect(motivo("Exposición fotográfica, pictórica y escultórica de Ariel Robles", h("Ariel Robles", "Exposición fotográfica, pictórica y escultórica de Ariel Robles", "expone", "Fotográfica, pictórica y escultórica"))).toMatchObject({ detalle: null });
+    expect(motivo("Exposición de acuarelas de Hugo Castillo", h("Hugo Castillo", "Exposición de acuarelas de Hugo Castillo", "expone", "acuarelas"))).toMatchObject({ detalle: null });
+  });
+  it("sin la preposición de la frase pegada al nombre: «De Tere Palaú» es «Tere Palaú»", () => {
+    expect(motivo("Inauguración de la exposición de De Tere Palaú", h("De Tere Palaú", "Inauguración de la exposición de De Tere Palaú", "expone"))).toMatchObject({ nombre: "Tere Palaú" });
+    expect(sinPreposicion("De Tere Palaú", "la exposición de De Tere Palaú")).toBe("Tere Palaú");
+    expect(sinPreposicion("Del Valle Rivera", "obra de Del Valle Rivera")).toBe("Valle Rivera");
+    expect(sinPreposicion("La Orquesta Típica", "con la Orquesta Típica")).toBe("Orquesta Típica");
+    expect(sinPreposicion("La Lupita", "con La Lupita")).toBe("La Lupita");
+    expect(sinPreposicion("El Muñiz", "Bernabé Ávila «El Muñiz»")).toBe("El Muñiz");
+    expect(sinPreposicion("Tere Palaú", "de Tere Palaú")).toBe("Tere Palaú");
+  });
+});
+
+describe("tipoPorNombre y oficioArtistico", () => {
+  it("una persona es solista; grupo o colectivo solo si el nombre lo dice", () => {
+    for (const n of ["Fabiola Amaro", "Maru Urbina", "Mario Alonso", "Ma. Eugenia Martínez Juache", "Bernabé Ávila Ramírez «El Muñiz»"]) expect(tipoPorNombre(n)).toBe("solista");
+    expect(tipoPorNombre("Colectivo Pan y Sal")).toBe("colectivo");
+    expect(tipoPorNombre("Pan y Sal", ["Colectivo Pan y Sal"])).toBe("colectivo");
+    for (const n of ["Ensamble Lunaria", "Dúo Acuarela", "Compañía de Teatro Rojo", "Orquesta Típica", "Coro Allegro", "Banda El Recodo", "Los Vagos"]) expect(tipoPorNombre(n)).toBe("grupo");
+  });
+  it("un oficio artístico, con su disciplina; un título o un cargo, no", () => {
+    expect(oficioArtistico("escultor")).toEqual({ disciplina: "artes_visuales" });
+    expect(oficioArtistico("la pintora")).toEqual({ disciplina: "artes_visuales" });
+    expect(oficioArtistico("Escritora")).toEqual({ disciplina: "letras" });
+    expect(oficioArtistico("directora de escena")).toEqual({ disciplina: "teatro" });
+    expect(oficioArtistico("artista plástica")).toEqual({ disciplina: null });
+    for (const t of ["Dr.", "cronista honorario", "maestro", "investigadora", "Libro infantil", null]) expect(oficioArtistico(t)).toBeNull();
+  });
+});
+
 // ---------- el tope ----------
 describe("leerTandas", () => {
   const tanda = (n: number): Tanda => ({ eventos: [evento(`e${n}`, `E${n}`, null)], texto: "" });
@@ -198,7 +262,7 @@ function baseDePrueba(): Base {
       evento("e-tere", "Inauguración: exposición de Tere Palaú", "Pintura y grabado.", "2026-03-05"),
       evento("e-tere-2", "Visita guiada a la exposición de Tere Palau", null, "2026-03-12"),
       evento("e-noche", "Noche de Museo: Mujeres en transmutación", "Vestuario y Alquimia, con la soprano Irma Hermoso y el Ensamble Lunaria.", "2026-03-20"),
-      evento("e-libro", "Presentación editorial: El viaje de la Centella", "Presenta la autora Ana Sofía Ruiz Méndez; comentan Carlos de Santos y Selene.", "2026-04-02"),
+      evento("e-libro", "Presentación editorial: El viaje de la Centella", "Presenta la autora Ana Sofía Ruiz Méndez; acompañan el guitarrista Carlos de Santos y la cantante Selene.", "2026-04-02"),
       evento("e-colectivo", "Taller de grabado con Pan y Sal", null, "2026-04-03"),
       evento("e-colectivo-2", "Exposición del Colectivo Pan y Sal", null, "2026-04-10"),
       evento("e-rechazada", "Concierto de Los Vagos", null, "2026-04-11"),
@@ -235,7 +299,7 @@ const LEIDO: Record<string, Hallazgo[]> = {
     // Inventado: no está en el texto.
     h("Leonora Carrington", "homenaje a Leonora Carrington", "otro"),
   ],
-  "e-libro": [h("Ana Sofía Ruiz Méndez", "Presenta la autora Ana Sofía Ruiz Méndez", "presenta", "autora"), h("Carlos de Santos", "comentan Carlos de Santos", "otro"), h("Selene", "y Selene", "otro")],
+  "e-libro": [h("Ana Sofía Ruiz Méndez", "Presenta la autora Ana Sofía Ruiz Méndez", "presenta", "autora"), h("Carlos de Santos", "el guitarrista Carlos de Santos", "toca", "guitarrista"), h("Selene", "la cantante Selene", "canta", "cantante")],
   "e-colectivo": [h("Pan y Sal", "Taller de grabado con Pan y Sal", "imparte")],
   "e-colectivo-2": [h("Colectivo Pan y Sal", "Exposición del Colectivo Pan y Sal", "expone")],
   "e-rechazada": [h("Los Vagos", "Concierto de Los Vagos", "toca")],
@@ -268,12 +332,14 @@ describe("armarPlan", () => {
     expect(motivos).toContain("Leonora Carrington: el fragmento no está en el texto del evento");
     expect(motivos).toContain("Nadie: número de evento que no está en la tanda");
     expect(motivos).toContain("Los Vagos: rechazado antes como «Los Vagos»: no vuelve");
+    // Quien solo imparte un taller, sin oficio artístico en el texto, no se liga ni se propone.
+    expect(motivos).toContain("Pan y Sal: papel sin oficio artístico");
   });
 
   it("propone una vez por artista, juntando variantes y eventos, con fragmento, papel, detalle, disciplina y el PDF", async () => {
     const plan = await planDePrueba();
     expect(plan.nuevas.map((p) => [p.nombre, p.eventos]).sort()).toEqual([
-      ["Colectivo Pan y Sal", 2],
+      ["Colectivo Pan y Sal", 1],
       ["Ensamble Lunaria", 1],
       ["Tere Palaú", 2],
     ]);
@@ -288,24 +354,25 @@ describe("armarPlan", () => {
       papel: "expone",
       fragmento: "exposición de Tere Palaú",
       eventos: ["e-tere", "e-tere-2"],
-      detalle: "Expone su obra",
       url: PDF,
       variantes: ["Tere Palau"],
     });
-    // A igual número de eventos manda el orden alfabético (como OL-440); la otra forma queda como variante.
-    const pan = plan.nuevas.find((p) => p.nombre === "Colectivo Pan y Sal")!;
-    expect(pan.datos).toMatchObject({ tipo: "colectivo", eventos: ["e-colectivo", "e-colectivo-2"], variantes: ["Pan y Sal"] });
-    expect(plan.nuevas.find((p) => p.nombre === "Ensamble Lunaria")!.datos).toMatchObject({ disciplina: "musica", tipo: "grupo", detalle: "Interpretación musical" });
+    // Sin oficio en el texto, sin detalle (la ficha queda «por completar»); el tipo, por el nombre.
+    expect(tere.datos).not.toHaveProperty("detalle");
+    expect(plan.nuevas.find((p) => p.nombre === "Colectivo Pan y Sal")!.datos).toMatchObject({ tipo: "colectivo", eventos: ["e-colectivo-2"] });
+    const lunaria = plan.nuevas.find((p) => p.nombre === "Ensamble Lunaria")!.datos;
+    expect(lunaria).toMatchObject({ disciplina: "musica", tipo: "grupo" });
+    expect(lunaria).not.toHaveProperty("detalle");
   });
 
   it("lo ya propuesto sin decidir suma sus eventos; las cifras cuadran", async () => {
     const plan = await planDePrueba();
     expect(plan.actualizar).toEqual([{ id: "p-coro", nombre: "Coro Allegro", datos: { nombre: "Coro Allegro", eventos: ["e-viejo", "e-pendiente"] }, nuevos: 1 }]);
-    expect(plan.cifras).toMatchObject({ porLeer: 11, leidos: 11, tandas: 1, tandasFallidas: 0, ligas: 2, propuestas: 3, eventosEnPropuestas: 5, actualizadas: 1 });
+    expect(plan.cifras).toMatchObject({ porLeer: 11, leidos: 11, tandas: 1, tandasFallidas: 0, ligas: 2, propuestas: 3, eventosEnPropuestas: 4, actualizadas: 1 });
     expect(plan.cifras.hallados).toBe(14);
     expect(plan.leidos).toHaveLength(11);
     expect(plan.gasto).toBeCloseTo(0.002, 10);
-    expect(lineaDeCifras(plan, true)).toContain("se propondrían 3 artistas con 5 eventos");
+    expect(lineaDeCifras(plan, true)).toContain("se propondrían 3 artistas con 4 eventos");
   });
 
   it("una tanda que falla no cuenta como leída (se vuelve a leer la próxima vez)", async () => {
