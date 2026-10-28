@@ -11,15 +11,19 @@
 //        [--limite N] [--salida <carpeta>]   (OL-453: acepta las propuestas de una corrida por el camino de la bandeja)
 //      node scripts/instituciones/correr.mjs proponer <carpeta con propuestas.json> --autor <id del admin> [--simular] [--salida <carpeta>]
 //        (OL-462: carga a mano lugares, artistas y eventos —un festival con sus actos— como una corrida de la bandeja)
+//      node scripts/instituciones/correr.mjs releer-artistas --autor <id del admin> [--ciudad <nombre>] [--origen agenda-secult-2026-] [--limite N]
+//        [--tanda 25] [--modelo haiku|sonnet] [--tope-usd 5] [--releer] [--simular] [--sin-modelo] [--salida <carpeta>]
+//        (OL-470: relee títulos y descripciones de los eventos sin artista con la API para ligar y proponer artistas)
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 const [paso, ...resto] = process.argv.slice(2);
-if (!["importar", "importar-eventos", "ligar-artistas", "cartelera-cdmx", "aceptar-corrida", "proponer"].includes(paso ?? "")) {
+if (!["importar", "importar-eventos", "ligar-artistas", "cartelera-cdmx", "aceptar-corrida", "proponer", "releer-artistas"].includes(paso ?? "")) {
   console.error("Uso: node scripts/instituciones/correr.mjs importar | importar-eventos | ligar-artistas <archivo.json o carpeta> --autor <id del admin> [--simular] [--salida <carpeta>]");
   console.error("     node scripts/instituciones/correr.mjs cartelera-cdmx --autor <id del admin> [--simular] [--ciudad <slug>] [--salida <carpeta>]");
   console.error("     node scripts/instituciones/correr.mjs aceptar-corrida <corrida_id> --autor <id del admin> [--simular] [--solo lugar|evento|artista] [--limite N]");
   console.error("     node scripts/instituciones/correr.mjs proponer <carpeta con propuestas.json> --autor <id del admin> [--simular] [--salida <carpeta>]");
+  console.error("     node scripts/instituciones/correr.mjs releer-artistas --autor <id del admin> [--origen agenda-secult-2026-] [--limite N] [--modelo haiku|sonnet] [--tope-usd 5] [--simular] [--sin-modelo]");
   process.exit(1);
 }
 // Dentro de node_modules: el paquete compilado encuentra @supabase/supabase-js y no ensucia git.
