@@ -1,0 +1,1352 @@
+{
+  "lugar-hoy-plegado@390": {
+    "nodos": 1138,
+    "prof": 12,
+    "bloque": 0,
+    "profBloque": 0,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 12,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": []
+  },
+  "lugar-hoy-fila@390": {
+    "nodos": 1138,
+    "prof": 12,
+    "bloque": 0,
+    "profBloque": 0,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 1,
+    "fuera": 92,
+    "toques": 0,
+    "bloques": []
+  },
+  "lugar-hoy-final@390": {
+    "nodos": 1138,
+    "prof": 12,
+    "bloque": 0,
+    "profBloque": 0,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 1,
+    "fuera": 92,
+    "toques": 0,
+    "bloques": []
+  },
+  "artista-hoy-fila@390": {
+    "nodos": 557,
+    "prof": 12,
+    "bloque": 0,
+    "profBloque": 0,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 5,
+    "desborde": 1,
+    "fuera": 36,
+    "toques": 0,
+    "bloques": []
+  },
+  "artista-hoy-final@390": {
+    "nodos": 557,
+    "prof": 12,
+    "bloque": 0,
+    "profBloque": 0,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 5,
+    "desborde": 1,
+    "fuera": 36,
+    "toques": 0,
+    "bloques": []
+  },
+  "lugar-r-ana@390": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-ana@320": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-ana@430": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-sin-sesion@390": {
+    "nodos": 385,
+    "prof": 12,
+    "bloque": 58,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-sin-sesion@320": {
+    "nodos": 385,
+    "prof": 12,
+    "bloque": 58,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-sin-sesion@430": {
+    "nodos": 385,
+    "prof": 12,
+    "bloque": 58,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-plegado@390": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-plegado@320": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-plegado@430": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-carril-movido@390": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-carril-movido@320": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-carril-movido@430": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-todos@390": {
+    "nodos": 515,
+    "prof": 12,
+    "bloque": 187,
+    "profBloque": 8,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "hoja"
+    ]
+  },
+  "lugar-r-todos@320": {
+    "nodos": 515,
+    "prof": 12,
+    "bloque": 187,
+    "profBloque": 8,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 9,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "hoja"
+    ]
+  },
+  "lugar-r-todos@430": {
+    "nodos": 515,
+    "prof": 12,
+    "bloque": 187,
+    "profBloque": 8,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "hoja"
+    ]
+  },
+  "lugar-r-2025@390": {
+    "nodos": 400,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-2025@320": {
+    "nodos": 400,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-2025@430": {
+    "nodos": 400,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 2,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-ver-mas@390": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-ver-mas@320": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-ver-mas@430": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-tanda-2@390": {
+    "nodos": 617,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 5,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-tanda-2@320": {
+    "nodos": 617,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 17,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-tanda-2@430": {
+    "nodos": 617,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 5,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-r-informe@390": {
+    "nodos": 410,
+    "prof": 12,
+    "bloque": 82,
+    "profBloque": 6,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "hoja"
+    ]
+  },
+  "lugar-r-informe@320": {
+    "nodos": 410,
+    "prof": 12,
+    "bloque": 82,
+    "profBloque": 6,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "hoja"
+    ]
+  },
+  "lugar-r-informe@430": {
+    "nodos": 410,
+    "prof": 12,
+    "bloque": 82,
+    "profBloque": 6,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "hoja"
+    ]
+  },
+  "lugar-f2@390": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 5,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-f2@320": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 10,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-f2@430": {
+    "nodos": 390,
+    "prof": 12,
+    "bloque": 63,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 5,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-f3@390": {
+    "nodos": 344,
+    "prof": 12,
+    "bloque": 17,
+    "profBloque": 3,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 2,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-f3@320": {
+    "nodos": 344,
+    "prof": 12,
+    "bloque": 17,
+    "profBloque": 3,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 7,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-f3@430": {
+    "nodos": 344,
+    "prof": 12,
+    "bloque": 17,
+    "profBloque": 3,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 2,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-l2@390": {
+    "nodos": 1150,
+    "prof": 13,
+    "bloque": 504,
+    "profBloque": 7,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 10,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "anio",
+      "anio"
+    ]
+  },
+  "lugar-l2@320": {
+    "nodos": 1150,
+    "prof": 13,
+    "bloque": 504,
+    "profBloque": 7,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 34,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "anio",
+      "anio"
+    ]
+  },
+  "lugar-l2@430": {
+    "nodos": 1150,
+    "prof": 13,
+    "bloque": 504,
+    "profBloque": 7,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 9,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "anio",
+      "anio"
+    ]
+  },
+  "lugar-l3@390": {
+    "nodos": 383,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "mas"
+    ]
+  },
+  "lugar-l3@320": {
+    "nodos": 383,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "mas"
+    ]
+  },
+  "lugar-l3@430": {
+    "nodos": 383,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "mas"
+    ]
+  },
+  "lugar-a2@390": {
+    "nodos": 385,
+    "prof": 12,
+    "bloque": 58,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-a2@320": {
+    "nodos": 385,
+    "prof": 12,
+    "bloque": 58,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-a2@430": {
+    "nodos": 385,
+    "prof": 12,
+    "bloque": 58,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas"
+    ]
+  },
+  "lugar-a2-menu@390": {
+    "nodos": 410,
+    "prof": 12,
+    "bloque": 66,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "menu",
+      "menu"
+    ]
+  },
+  "lugar-a2-menu@320": {
+    "nodos": 410,
+    "prof": 12,
+    "bloque": 66,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [
+      "Distancia"
+    ],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "menu",
+      "menu"
+    ]
+  },
+  "lugar-a2-menu@430": {
+    "nodos": 410,
+    "prof": 12,
+    "bloque": 66,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 3,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips",
+      "mas",
+      "menu",
+      "menu"
+    ]
+  },
+  "artista-r-ana@390": {
+    "nodos": 319,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-ana@320": {
+    "nodos": 319,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 12,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-ana@430": {
+    "nodos": 319,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 4,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-sin-sesion@390": {
+    "nodos": 309,
+    "prof": 12,
+    "bloque": 51,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-sin-sesion@320": {
+    "nodos": 309,
+    "prof": 12,
+    "bloque": 51,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 12,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-sin-sesion@430": {
+    "nodos": 309,
+    "prof": 12,
+    "bloque": 51,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 4,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-todos@390": {
+    "nodos": 423,
+    "prof": 12,
+    "bloque": 159,
+    "profBloque": 8,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "hoja"
+    ]
+  },
+  "artista-r-todos@320": {
+    "nodos": 423,
+    "prof": 12,
+    "bloque": 159,
+    "profBloque": 8,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 13,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "hoja"
+    ]
+  },
+  "artista-r-todos@430": {
+    "nodos": 423,
+    "prof": 12,
+    "bloque": 159,
+    "profBloque": 8,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 4,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "hoja"
+    ]
+  },
+  "artista-r-2025@390": {
+    "nodos": 308,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 6,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-2025@320": {
+    "nodos": 308,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 12,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-2025@430": {
+    "nodos": 308,
+    "prof": 12,
+    "bloque": 56,
+    "profBloque": 4,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 4,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips"
+    ]
+  },
+  "artista-r-presentacion@390": {
+    "nodos": 333,
+    "prof": 12,
+    "bloque": 69,
+    "profBloque": 5,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 8,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "hoja"
+    ]
+  },
+  "artista-r-presentacion@320": {
+    "nodos": 333,
+    "prof": 12,
+    "bloque": 69,
+    "profBloque": 5,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 12,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "hoja"
+    ]
+  },
+  "artista-r-presentacion@430": {
+    "nodos": 333,
+    "prof": 12,
+    "bloque": 69,
+    "profBloque": 5,
+    "sinClase": 0,
+    "cortados": 0,
+    "queCorta": [],
+    "ajenos": [],
+    "cede": 4,
+    "desborde": 0,
+    "fuera": 0,
+    "toques": 0,
+    "bloques": [
+      "acciones",
+      "cabeza",
+      "carril",
+      "chips",
+      "hoja"
+    ]
+  }
+}

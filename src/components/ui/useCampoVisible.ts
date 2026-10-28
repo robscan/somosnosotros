@@ -465,18 +465,25 @@ function pegados(campo: HTMLElement): HTMLElement[] {
   return hallados;
 }
 
-/** El ancestro más cercano que se desplaza por su cuenta (una hoja, su cuerpo); null si lo que se desplaza es la página. */
+/**
+ * El ancestro más cercano que se desplaza por su cuenta (una hoja, su cuerpo); null si lo que se desplaza es la página o si antes hay una capa
+ * fija. Una capa fija (`ui/CampoLargo` a pantalla completa) es su propia pantalla: lo que se desplaza fuera de ella no la mueve, así que no se
+ * busca más arriba (OL-468, bitácora 500). Sin ese alto, el texto de Instagram (la capa dentro de `ui/Hoja`) encontraba el cuerpo de la hoja,
+ * de detrás: lo libre se recortaba a esa caja y se desplazaba ese cuerpo; en la app de la tienda eso desplazaba además la página 46 px y lo
+ * fijo quedaba pintado 46 px más abajo de donde recibe los toques: «Listo» no respondía.
+ */
 function desplazable(campo: HTMLElement): HTMLElement | null {
   for (let nodo = campo.parentElement; nodo && nodo !== document.documentElement; nodo = nodo.parentElement) {
-    const { overflowY } = getComputedStyle(nodo);
+    const { overflowY, position } = getComputedStyle(nodo);
     if ((overflowY === "auto" || overflowY === "scroll") && nodo.scrollHeight > nodo.clientHeight) return nodo;
+    if (position === "fixed") return null;
   }
   return null;
 }
 
 /**
  * Mueve `delta` px lo que se desplaza: el ancestro que lo hace, o la página. Una capa fija sin desplazamiento propio (`ui/CampoLargo`) no
- * tiene nada que mover. La página, nunca más allá de su final (lo que mide menos lo que se ve): Safari de iOS 27 deja que un desplazamiento
+ * tiene nada que mover, tampoco dentro de una hoja (ver `desplazable`). La página, nunca más allá de su final (lo que mide menos lo que se ve): Safari de iOS 27 deja que un desplazamiento
  * suave siga de largo si otro lo alcanza mientras se cierra el teclado (OL-376).
  */
 function desplazar(campo: HTMLElement, delta: number, behavior: ScrollBehavior): boolean {
