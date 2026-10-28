@@ -12,7 +12,7 @@ import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
 import { lugarExacto } from "./carteleraCdmx";
 import { dentroDelArea, radioDeCiudadKm } from "./filtros";
-import { claseDeActo, diasSeguidos, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type SesionPropuesta } from "./formaEvento";
+import { artistasDeDatos, claseDeActo, diasSeguidos, leerFormaEvento, mismoPrograma, nombreDeExposicion, sumarDias, type ArtistaPropuesto, type SesionPropuesta } from "./formaEvento";
 import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
 
 /**
@@ -43,8 +43,10 @@ import { ubicarSitioEnArea, type AreaCiudad, type Mapbox } from "./mapbox";
  * Lo de la Cartelera de la Ciudad de México (OL-448): una exposición abierta (`visita`, con `termina`) se publica como exposición, del primer
  * minuto de su primer día (hoy, si ya abrió) al último del de cierre, sin inauguración, y no si ya está esa exposición en ese sitio esas fechas;
  * la imagen de la propuesta (`imagen`) la pone la bandeja como cartel al aceptar (`ponerCartel`).
- * Lo que va además de la fila (las sesiones, la exposición, el festival que recalcular o que el acto espera) viaja aparte, en `EXTRAS`: la
- * bandeja llama `prepararEvento` → `insertarEvento(fila)` → `ligarFicha` y la fila se inserta tal cual en `eventos`.
+ * Quién se presenta (OL-462, `datos.artistas`): las fichas que ya existen (la de `id`, o la que creó su `propuesta` al aceptarse) se ligan en
+ * `eventos_artistas` con el evento, en su orden; una ficha oculta o una propuesta sin aceptar no se liga (el evento se publica igual).
+ * Lo que va además de la fila (las sesiones, la exposición, el festival que recalcular o que el acto espera, los artistas) viaja aparte, en
+ * `EXTRAS`: la bandeja llama `prepararEvento` → `insertarEvento(fila)` → `ligarFicha` y la fila se inserta tal cual en `eventos`.
  */
 
 export const ORIGEN_RUTINA_AGENDAS = "rutina-agendas";
@@ -73,7 +75,7 @@ export type Preparado = { ok: true; fila: Record<string, unknown>; titulo: strin
 export const NOTA_COSTO_POR_CONFIRMAR = "se publicó con costo por confirmar";
 
 type SesionFila = { fecha: string; inicio: string; fin: string | null };
-type Extras = { espera?: string; sesiones?: SesionFila[]; exposicion?: Record<string, unknown>; exposicionExistente?: string; padre?: string };
+type Extras = { espera?: string; sesiones?: SesionFila[]; exposicion?: Record<string, unknown>; exposicionExistente?: string; padre?: string; artistas?: string[] };
 /** Lo que se hace con la fila al insertarla (o en vez de insertarla), por fila preparada. */
 const EXTRAS = new WeakMap<Record<string, unknown>, Extras>();
 
@@ -119,6 +121,38 @@ async function festivalVigente(db: SupabaseClient, id: string): Promise<{ id: st
   const f = r.data as { id: string; titulo: string; clase: string | null } | null;
   return f && f.clase === "festival" ? { id: f.id, titulo: f.titulo } : null;
 }
+
+/**
+ * Las fichas de quienes se presentan (OL-462), en su orden y sin repetir: la de `id`, la que creó su `propuesta` si ya se aceptó y, sin ninguna
+ * de las dos, la del mismo nombre en la ciudad. Solo fichas visibles; lo demás no se liga.
+ */
+export async function fichasDeArtistas(db: SupabaseClient, lista: readonly ArtistaPropuesto[], ciudades: readonly string[]): Promise<string[] | "error"> {
+  if (!lista.length) return [];
+  const propuestas = lista.map((a) => a.propuesta).filter((x): x is string => !!x);
+  const deLaPropuesta = new Map<string, string>();
+  if (propuestas.length) {
+    const r = await db.from("propuestas").select("id, estado, ficha_id").in("id", propuestas);
+    if (r.error) return "error";
+    for (const p of (r.data ?? []) as { id: string; estado: string; ficha_id: string | null }[]) if (p.estado === "aceptada" && p.ficha_id) deLaPropuesta.set(p.id, p.ficha_id);
+  }
+  const nombres = lista.filter((a) => !a.id && !a.propuesta && a.nombre).map((a) => a.nombre);
+  const porNombre = new Map<string, string>();
+  if (nombres.length) {
+    const r = await db.from("artistas").select("id, nombre").in("nombre", nombres).in("ciudad", [...ciudades]).limit(50);
+    if (r.error) return "error";
+    for (const a of (r.data ?? []) as { id: string; nombre: string }[]) if (!porNombre.has(a.nombre)) porNombre.set(a.nombre, a.id);
+  }
+  const pedidas = lista.map((a) => a.id ?? (a.propuesta ? deLaPropuesta.get(a.propuesta) : porNombre.get(a.nombre)) ?? null);
+  const ids = [...new Set(pedidas.filter((x): x is string => !!x))];
+  if (!ids.length) return [];
+  const r = await db.from("artistas").select("id, visible").in("id", ids);
+  if (r.error) return "error";
+  const visibles = new Set(((r.data ?? []) as { id: string; visible: boolean | null }[]).filter((a) => a.visible !== false).map((a) => a.id));
+  return ids.filter((id) => visibles.has(id));
+}
+
+/** Cuántas fichas de artista se ligarán al publicar lo preparado (OL-462: el informe del guion lo dice). */
+export const artistasPreparados = (fila: Record<string, unknown>): number => EXTRAS.get(fila)?.artistas?.length ?? 0;
 
 /** Del acto: el festival del que cuelga, si hay que esperar a uno propuesto, o nada (suelto). */
 async function marcoDelActo(db: SupabaseClient, forma: ReturnType<typeof leerFormaEvento>): Promise<{ padre: { id: string; titulo: string } | null; espera: string | null } | "error"> {
@@ -301,6 +335,9 @@ export async function prepararEvento(
     extras.padre = padre.id;
   }
   if (espera) extras.espera = espera;
+  const artistas = await fichasDeArtistas(dep.db, artistasDeDatos(datos), nombresDe(ciudad));
+  if (artistas === "error") return errorBase;
+  if (artistas.length) extras.artistas = artistas;
   if (conExposicion) {
     // La exposición que abre esta inauguración: del primer minuto de su día al último del de cierre, en el mismo sitio, sin su hora ni su precio.
     const dia = diaLocal(new Date(evento.inicio), zona);
@@ -367,8 +404,8 @@ async function recalcularFestival(db: SupabaseClient, id: string): Promise<void>
 
 /**
  * Inserta lo preparado con la llave de servicio (sin sesión: sin avisos) y lo que va con ello: las sesiones de un taller, la exposición de una
- * inauguración, el periodo del festival de un acto. Un acto que espera a su festival no se inserta (null: se publica al aceptar el festival).
- * Si las sesiones o la exposición no se pueden guardar, no queda nada a medias: se borra y devuelve null (lo retoma la siguiente corrida).
+ * inauguración, el periodo del festival de un acto, sus artistas (OL-462). Un acto que espera a su festival no se inserta (null: se publica al
+ * aceptar el festival). Si las sesiones, los artistas o la exposición no se pueden guardar, no queda nada a medias: se borra y devuelve null (lo retoma la siguiente corrida).
  */
 export async function insertarEvento(db: SupabaseClient, fila: Record<string, unknown>): Promise<{ id: string; slug: string | null } | null> {
   const extras = EXTRAS.get(fila) ?? {};
@@ -383,6 +420,11 @@ export async function insertarEvento(db: SupabaseClient, fila: Record<string, un
   if (extras.sesiones?.length) {
     const s = await db.from("eventos_sesiones").insert(extras.sesiones.map((x) => ({ evento_id: d.id, ...x })));
     if (s.error) return deshacer();
+  }
+  if (extras.artistas?.length) {
+    // Quién se presenta (OL-462), en su orden; si no se puede guardar, no queda el evento a medias.
+    const a = await db.from("eventos_artistas").insert(extras.artistas.map((artista_id, orden) => ({ evento_id: d.id, artista_id, orden })));
+    if (a.error) return deshacer();
   }
   if (extras.exposicion) {
     const x = await db.from("eventos").insert({ ...extras.exposicion, inaugura_id: d.id }).select("id").single();

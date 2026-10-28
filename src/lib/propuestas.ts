@@ -24,7 +24,9 @@ import { etiquetaLugar } from "./lugares";
  * festival registrado); `marco_propuesto` (id de la propuesta de su festival), `programa` y `espera` (la frase de un acto aceptado antes que su
  * festival); en un festival, `actos` y `termina`; `sesiones` [{ inicio, fin? }] (un taller o días seguidos); `serie` { fechas, cada };
  * en la inauguración de una exposición, `termina` y `exposicion`; `variantes` (otros títulos de la misma función); `lat`, `lng` y
- * `direccion_mapa` (el punto que el mapa dio al sitio dentro de la ciudad).
+ * `direccion_mapa` (el punto que el mapa dio al sitio dentro de la ciudad); desde OL-462, `artistas` [{ nombre, id?, propuesta? }] (quién se
+ * presenta: al publicarse se liga a las fichas que ya existen) e `imagen` también fuera de la cartelera (la sube el cargador de la Mac,
+ * `scripts/instituciones/proponer.ts`).
  */
 
 export const TIPOS_PROPUESTA = ["lugar", "evento", "artista", "cartel"] as const;
