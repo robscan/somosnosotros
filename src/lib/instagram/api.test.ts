@@ -153,4 +153,10 @@ describe("cupo y páginas", () => {
   it("las etiquetas de una imagen, repartidas abajo", () => {
     expect(etiquetasConPosicion(["a"], false)).toEqual([{ username: "a", x: 0.5, y: 0.9 }]);
   });
+  it("con más de 10 (un festival, OL-463), en dos alturas para que no se encimen; todas dentro de la foto", () => {
+    const veinte = etiquetasConPosicion(Array.from({ length: 20 }, (_, i) => `u${i}`), false);
+    expect(veinte.map((e) => e.y)).toEqual(Array.from({ length: 20 }, (_, i) => (i % 2 ? 0.94 : 0.84)));
+    expect(new Set(veinte.map((e) => e.x)).size).toBe(20);
+    expect(veinte.every((e) => e.x! > 0 && e.x! < 1)).toBe(true);
+  });
 });

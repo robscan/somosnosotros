@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineaDeSenal, porSenal, sePuedePublicar, yaEmpezo } from "./elegir";
+import { lineaDeSenal, porSenal, sePuedePublicar, textoActos, unRenglonPorFestival, yaEmpezo } from "./elegir";
 
 /** OL-458 (bitácora 490): solo se sugiere y se publica lo que está por venir; el orden de la lista. */
 const ahora = new Date("2026-10-03T17:00:00Z"); // sábado 3 de octubre, 11:00 en San Luis Potosí
@@ -44,5 +44,32 @@ describe("el orden de la lista", () => {
   it("la línea de por qué está arriba", () => {
     expect(lineaDeSenal({ destacado: true, van: 31, interesa: 54, conCartel: true, inicio: "" })).toBe("Destacado · 31 van · 54 les interesa");
     expect(lineaDeSenal({ destacado: false, van: 6, interesa: 15, conCartel: false, inicio: "" })).toBe("Sin cartel · 6 van · 15 les interesa");
+  });
+});
+
+/** OL-463 (bitácora 495): un festival por venir es un solo renglón; sus actos no se sugieren aparte. */
+describe("unRenglonPorFestival", () => {
+  const fila = (id: string, clase = "puntual") => ({ id, clase });
+  const filas = [fila("mistica", "festival"), fila("meditacion"), fila("tarot"), fila("suelto"), fila("acto-de-otro")];
+  const actos = [
+    { id: "meditacion", evento_padre_id: "mistica" },
+    { id: "tarot", evento_padre_id: "mistica" },
+    // Un acto que todavía no entra en los 7 días también cuenta en «N actos».
+    { id: "cierre", evento_padre_id: "mistica" },
+    // El festival de este acto no está en la lista (ya terminó o está oculto): el acto se sugiere solo.
+    { id: "acto-de-otro", evento_padre_id: "otro-festival" },
+  ];
+  it("el festival queda, sus actos se van y dice cuántos lleva", () => {
+    const r = unRenglonPorFestival(filas, actos);
+    expect(r.filas.map((f) => f.id)).toEqual(["mistica", "suelto", "acto-de-otro"]);
+    expect(r.actos.get("mistica")).toBe(3);
+    expect(r.actos.has("otro-festival")).toBe(false);
+  });
+  it("sin actos leídos, la lista va como antes", () => {
+    expect(unRenglonPorFestival(filas, []).filas).toHaveLength(5);
+  });
+  it("«1 acto», «11 actos»", () => {
+    expect(textoActos(1)).toBe("1 acto");
+    expect(textoActos(11)).toBe("11 actos");
   });
 });

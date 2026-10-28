@@ -333,6 +333,8 @@ const servidor = http.createServer(async (req, res) => {
     if (segundo === "photo_stories" && req.method === "POST") return responder(res, 200, { success: true, post_id: POST_FB });
     if (/^[0-9]+_[0-9]+$/.test(primero)) return responder(res, 200, { id: primero, permalink_url: `https://www.facebook.com/${primero.split("_")[0]}/posts/${primero.split("_")[1]}` });
     const falla = { permiso: { code: 190 }, cupo: { code: 4, error_subcode: 2207042 }, imagen: { code: 9004, error_subcode: 2207052 } }[process.env.INSTAGRAM_FALLA ?? ""];
+    // OL-463: el texto y las etiquetas que llegan a Instagram quedan en el registro, para comprobarlos.
+    if (segundo === "media" && req.method === "POST") registro.push(`  instagram: ${JSON.stringify({ caption: params.get("caption"), user_tags: params.get("user_tags") })}`);
     if (segundo === "media" && req.method === "POST") return falla ? responder(res, 400, { error: falla }) : responder(res, 200, { id: "900458" });
     if (segundo === "media_publish") return responder(res, 200, { id: "17900000000000458" });
     if (segundo === "content_publishing_limit") return responder(res, 200, { data: [{ quota_usage: 3, config: { quota_total: 100 } }] });

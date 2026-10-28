@@ -11,7 +11,7 @@ import { IconoFacebook, IconoInstagram, IconoPin } from "@/components/ui/Iconos"
 import admin from "@/app/admin/admin.module.css";
 import { prepararInstagram, publicarEnFacebook, publicarEnInstagram, type Espejo, type Preparado, type Publicado } from "@/app/admin/instagram/acciones";
 import { ESTADO_FACEBOOK, FRASES_FACEBOOK } from "@/lib/instagram/frases";
-import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, TOPE_CARACTERES } from "@/lib/instagram/texto";
+import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, etiquetasQueNoCaben, TOPE_CARACTERES, TOPE_ETIQUETAS_FOTO } from "@/lib/instagram/texto";
 import styles from "./HojaInstagram.module.css";
 
 type Formato = "4x5" | "9x16";
@@ -73,6 +73,8 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
   const armado = useMemo(() => (listo ? armarTexto(listo.evento, new Date(listo.ahora), quitadas) : ""), [listo, quitadas]);
   const texto = propio ?? armado;
   const etiquetas = listo ? etiquetasDeLaFoto(listo.evento, quitadas) : [];
+  // Un festival con más de 20 cuentas (OL-463): se dice cuántas no caben en la foto.
+  const sobran = listo ? etiquetasQueNoCaben(listo.evento, quitadas) : 0;
   const publicado = resultado?.ok ? resultado : null;
   const error = resultado && !resultado.ok ? resultado : null;
   const empezo = !!listo && (!listo.sePuede || error?.error === "empezo");
@@ -192,6 +194,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
                   ))}
                 </Chips>
               )}
+              {sobran > 0 && <p className={`${hoja.nota} ${styles.linea}`}>Instagram deja etiquetar a {TOPE_ETIQUETAS_FOTO}: van primero las de más actividades y {sobran === 1 ? "1 cuenta queda" : `${sobran} cuentas quedan`} fuera.</p>}
               {formato === "4x5" && (
                 <p className={`${hoja.nota} ${styles.ubicacion}`}>
                   <IconoPin width={16} height={16} />
