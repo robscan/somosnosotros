@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Historial escalable</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-469 (bitácora 501), armazón de propuestas. Founder (2026-10-28), en la ficha del Museo Leonora Carrington: «se dice "han pasado
+   por aquí 9" y luego aparecen círculos de artistas en carrusel pero no se puede navegar. Solo se muestran 5 de 9. Luego debajo hay una lista
+   larga (depende del año) y al final de la lista las opciones de tu año y el reporte. Debemos pensar mejor este diseño para que sea escalable y
+   fácil de consultar».
+
+   Sobre la pantalla REAL (regla de OL-409): las fichas se guardaron con `maqueta-pantalla.mjs` (la app compilada contra el respaldo local con
+   el historial grande: 84 eventos pasados en el museo, 30 fechas de Valeria Quiroz) y `prototipo/historial-escalable.mjs` arma este archivo: el
+   teléfono es un `iframe` con el CSS servido tal cual y el cuerpo de cada ficha tal cual. La propuesta solo mueve piezas que ya existen (el carril
+   de avatares de Inicio, su «Ver todos», los chips, «Ver más», ui/Plegado, ui/Hoja con los renglones de Artistas y Lugares, la hoja del PDF y el
+   «···»), más ocho reglas nuevas con prefijo `he-` y la regla de higiene. Lo de este archivo fuera del marco es solo el armazón del prototipo. */
+:root {
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-bien: #1f6f43; --pg-mal: #b3261e; --pg-reco: #e6f4ea;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ancho-tel: 390px; --alto-tel: 844px;
+}
+* { box-sizing: border-box; }
+html { font: 400 1rem / 1.45 var(--fuente); font-variation-settings: "wdth" 80; color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+.escena { display: grid; gap: 16px; padding: 16px; align-content: start; }
+.columna { display: grid; gap: 8px; justify-items: center; align-content: start; min-width: 0; }
+.selector { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.selector button { min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--pg-panel); color: var(--pg-suave); font-size: 0.875rem; font-weight: 700; }
+.selector button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.selector.sub button { background: transparent; box-shadow: inset 0 0 0 1px var(--pg-borde); }
+.selector.sub button[aria-pressed="true"] { background: var(--pg-texto); color: var(--pg-panel); box-shadow: none; }
+.selector.sub button[data-reco="true"]::after { content: " ★"; color: var(--pg-bien); }
+.selector.tam button { min-height: 44px; min-width: 56px; font-weight: 500; }
+.etiqueta { margin: 0; min-height: 2.6em; color: var(--pg-suave); font-size: 0.875rem; line-height: 1.3; text-align: center; max-width: 430px; }
+.etiqueta b { color: var(--pg-texto); }
+.tel { display: block; width: var(--ancho-tel); max-width: 100%; height: var(--alto-tel); border: 0; border-radius: 28px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.medidor { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; max-width: 560px; font-size: 0.8125rem; color: var(--pg-suave); }
+.medidor b { color: var(--pg-texto); font-size: 1rem; margin-right: 3px; }
+.medidor [data-mal="true"] b { color: var(--pg-mal); }
+.notas { display: grid; gap: 16px; align-content: start; padding: 20px; border-radius: 16px; background: var(--pg-panel); }
+.notas h1 { margin: 0; font-size: 1.5rem; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.notas h2 { margin: 0 0 6px; font-size: 1.0625rem; font-variation-settings: "wdth" 75; }
+.notas p, .notas ul, .notas ol { margin: 0; font-size: 0.9375rem; }
+.notas ul, .notas ol { padding-left: 1.1em; display: grid; gap: 6px; }
+.notas .chica { color: var(--pg-suave); font-size: 0.875rem; }
+.notas .reco { justify-self: start; padding: 2px 10px; border-radius: 999px; background: var(--pg-reco); color: var(--pg-bien); font-size: 0.8125rem; font-weight: 700; }
+.plegar { justify-self: start; min-height: 44px; padding: 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--pg-borde); font-size: 0.875rem; font-weight: 700; }
+.notas[data-plegadas="true"] > :not(.cabeza-notas) { display: none; }
+.cabeza-notas { display: grid; gap: 8px; }
+@media (min-width: 900px) { .escena { grid-template-columns: minmax(0, 1fr) 440px; align-items: start; } .notas { position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow: auto; } }
+</style>
+</head>
+<body>
+<main class="escena">
+  <section class="columna" aria-label="El teléfono">
+    <div class="selector" role="group" aria-label="Pantalla" id="sel-pantalla"></div>
+    <div class="selector sub" role="group" aria-label="Variante y estado" id="sel-estado"></div>
+    <div class="selector sub tam" role="group" aria-label="Ancho" id="sel-ancho"></div>
+    <p class="etiqueta" id="etiqueta"></p>
+    <iframe class="tel" id="tel" title="La pantalla (maqueta real)"></iframe>
+    <div class="medidor" id="medidor" aria-live="polite"></div>
+  </section>
+  <aside class="notas" id="notas" aria-labelledby="notas-titulo">
+    <div class="cabeza-notas">
+      <h1 id="notas-titulo">Historial y Trayectoria, escalables</h1>
+      <p class="chica">OL-469 · prototipo, espera firma · mié 28 de oct · sobre la pantalla real (respaldo local, reloj fijo del mié 7 de oct; Ana gestiona las dos fichas)</p>
+      <button type="button" class="plegar" id="plegar" aria-expanded="true">Plegar las notas</button>
+    </div>
+    <section aria-labelledby="t-estado"><h2 id="t-estado">Lo que ves</h2><p id="reco-estado"></p><div id="texto-estado"></div></section>
+    <section aria-labelledby="t-causa">
+      <h2 id="t-causa">Por qué hoy no se desplaza</h2>
+      <p>No es la fila: es la ficha. Su cuerpo es una rejilla de una columna que crece con lo que lleva dentro, y la fila de fotos le pide su ancho entero (9 fotos = 744 px). La columna crece a 744, la fila ya cabe en ella y no tiene nada que desplazar; lo que se mueve con el dedo es la página entera, de lado. Por eso se ven 4 fotos y media, el «Informe» queda fuera (de 396 a 764 px en una pantalla de 390) y los títulos largos de la lista se salen. Con una regla (la columna mide la pantalla: <code>minmax(0, 1fr)</code>) todo cabe y la fila se desliza. Es un arreglo de higiene aparte; aquí la propuesta ya lo lleva.</p>
+    </section>
+    <section aria-labelledby="t-reco">
+      <h2 id="t-reco">La recomendación</h2>
+      <ul>
+        <li><b>Quiénes pasaron (F1):</b> el carril de avatares de Inicio («Artistas de la semana», con sus medidas) y, a la derecha de su título, «Ver los 9», como el «Ver todos» de cada carril. Abre una hoja con todos, cada uno con sus veces. La cuenta dice «9 artistas registrados»: los que tienen ficha, no todos los que pasaron.</li>
+        <li><b>La lista (L1):</b> un chip por año con su cuenta («2026 · 48», «2025 · 26», «2024 · 10»); se ve un año, por mes, de 20 en 20 con «Ver más». Elegir un año no apila nada en Atrás y, al volver de una ficha, el año y lo que se veía vuelven igual.</li>
+        <li><b>Tu año e Informe (A1):</b> lo primero al abrir la sección, a lo ancho y enteros. Solo para quien gestiona la ficha; para los demás no existen.</li>
+        <li><b>La Trayectoria del artista</b> con la misma pieza: «Se ha presentado en», «Ver los 8», los años y «Presentación».</li>
+      </ul>
+    </section>
+    <section aria-labelledby="t-preguntas">
+      <h2 id="t-preguntas">Preguntas para ti</h2>
+      <ol>
+        <li>¿Firmas F1 · L1 · A1? Si no, ¿cuál cambias (F2 la fila de hoy arreglada, F3 sin fila; L2 años plegados, L3 todo junto con «Ver más»; A2 en el «···»)?</li>
+        <li>¿«9 artistas registrados» te basta, o prefieres «9 artistas con ficha»? En el artista, ¿«8 lugares» o «8 lugares con ficha»?</li>
+        <li>En la hoja de «Ver los 9», ¿se queda el botón «Seguir» de cada artista (como en Artistas) o solo la lista?</li>
+        <li>¿El arreglo de higiene (que la fila se deslice y el «Informe» quepa) sale ya, antes que el rediseño?</li>
+      </ol>
+    </section>
+    <section aria-labelledby="t-medida">
+      <h2 id="t-medida">Cómo se mide</h2>
+      <p class="chica">Bajo el teléfono, dentro del marco: nodos y profundidad de toda la pantalla (como medir.js: lo que se pinta, un svg cuenta uno); de lo nuevo (<code>data-propuesta</code>: la cabeza de la fila, el carril, los chips, «Ver más», los botones y las hojas) sus nodos, su profundidad y los div o span sin clase; textos cortados y desborde horizontal de la pantalla; y los toques menores de 44 px en lo nuevo. Las cifras por estado y ancho, y el recorrido con toques reales, en la bitácora 501.</p>
+    </section>
+  </aside>
+</main>
+<template id="maqueta-css"><style>/*@CSS*/</style></template>
+<script>
+(() => {
+  /*@DATOS*/
+  const CSS = document.getElementById('maqueta-css').content.querySelector('style').textContent;
+  for (const [id, cuerpo] of Object.entries(CUERPOS)) CUERPOS[id] = cuerpo.replace(/__IMG_(\d+)__/g, (_, n) => IMAGENES[n]);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[x]);
+
+  // Cada pantalla con sus estados: «Hoy» es la referencia (la app como está), las letras son variantes y la ★ la recomendada.
+  const PANTALLAS = [
+    { id: 'hoy', nombre: '1 · Hoy (el fallo)', estados: [
+      { id: 'lugar-hoy-plegado', variante: 'Hoy', nombre: 'Lugar · plegado', notas: ['La ficha real del Museo Leonora Carrington (demo), con la sesión de Ana: «Historial» plegado bajo «Publicar un evento aquí», con «84 eventos · 9 artistas».', 'Plegado, la ficha se ve bien: el fallo sale al abrirlo.'] },
+      { id: 'lugar-hoy-fila', variante: 'Hoy', nombre: 'Lugar · la fila', notas: ['Abierto: «Han pasado por aquí · 9» y cuatro fotos y media. Desliza la fila con el dedo (o el ratón): no se mueve. Lo que se mueve es la página entera, de lado, porque el plegado mide 744 px en una pantalla de 390.', 'Los títulos largos de la lista también se salen por la derecha, sin puntos suspensivos («Lectura en voz alta con Taller de Grabado La P…»).', 'Debajo, 32 meses seguidos: 84 renglones y 8 900 px de lista.'] },
+      { id: 'lugar-hoy-final', variante: 'Hoy', nombre: 'Lugar · al final', notas: ['Al final de los 84 renglones: «Tu año» ocupa toda la pantalla y de «Informe» solo se ve el borde, a la derecha. Medido: «Tu año» de 20 a 388 px e «Informe» de 396 a 764, en una pantalla de 390.', 'La tarjeta de «Dónde» y su mapa también se salen: todo lo de la ficha que viene después del plegado toma su ancho.'] },
+      { id: 'artista-hoy-fila', variante: 'Hoy', nombre: 'Artista · la fila', notas: ['La Trayectoria real de Valeria Quiroz (demo): «Se ha presentado en · 8», cuatro lugares y medio; el plegado mide 660 px y pasa lo mismo.'] },
+      { id: 'artista-hoy-final', variante: 'Hoy', nombre: 'Artista · al final', notas: ['Al final de sus 30 fechas: «Tu año» entero y «Presentación» cortada (de 354 a 680 px).'] },
+    ] },
+    { id: 'lugar', nombre: '2 · Historial del lugar', estados: [
+      { id: 'lugar-r-ana', variante: 'F1·L1·A1', reco: true, nombre: 'Propuesta · quien gestiona', notas: ['Al abrir «Historial»: primero «Tu año» e «Informe», a lo ancho y enteros (A1), porque son de la sección y antes quedaban tras 84 renglones.', 'Luego «Han pasado por aquí» con «Ver los 9» a la derecha y el carril de avatares de Inicio (88 px, se ven tres y asoma el cuarto: se entiende que se desliza). Cada uno con sus veces, en gris.', 'Debajo, los años como chips con su cuenta y el año más reciente, por mes, de 20 en 20.', 'La cuenta del renglón: «84 eventos · 9 artistas registrados».', 'Reutiliza: Destacados/carril y TarjetaAvatar (Inicio), Destacados/verTodo, ui/Chip en su fila, ui/CargarMas, Historial/botones. Nuevo: ocho reglas de aire y de color.'] },
+      { id: 'lugar-r-sin-sesion', variante: 'F1·L1·A1', reco: true, nombre: 'Propuesta · sin sesión', notas: ['Sin sesión (o sin gestionar la ficha), «Tu año» e «Informe» no existen: la sección empieza por quién pasó.'] },
+      { id: 'lugar-r-plegado', variante: 'F1·L1·A1', reco: true, nombre: 'Propuesta · plegado', notas: ['Plegado, como hoy; solo cambia la cuenta: «84 eventos · 9 artistas registrados».'] },
+      { id: 'lugar-r-carril-movido', variante: 'F1·L1·A1', reco: true, nombre: 'Carril deslizado', notas: ['El carril al final: Teodoro Alcántara, Valeria Quiroz y el resto. Se desliza con el dedo, se detiene en cada avatar (como en Inicio) y no mueve la página.'] },
+      { id: 'lugar-r-todos', variante: 'F1·L1·A1', reco: true, nombre: '«Ver los 9»', notas: ['La hoja (ui/Hoja) con los nueve: el renglón de Artistas tal cual (foto, nombre, disciplina) y, donde Artistas dice lo próximo, sus veces aquí. Ordenados por veces.', 'Arriba, en una línea, qué cuenta: «los que tienen ficha en el catálogo y están en algún evento de aquí. Una exposición colectiva o un evento sin artistas ligados no suma.»', 'Para 40 artistas es la misma hoja, que se desplaza. Se cierra con la ✕, el velo o Atrás.'] },
+      { id: 'lugar-r-2025', variante: 'F1·L1·A1', reco: true, nombre: 'Año 2025', notas: ['Tocar «2025» cambia la lista a ese año, sin apilar nada en Atrás (filtrar no es navegar). Al volver de la ficha de un evento, la sección vuelve abierta en 2025 y donde estaba (memoria de pantalla).'] },
+      { id: 'lugar-r-ver-mas', variante: 'F1·L1·A1', reco: true, nombre: '«Ver más»', notas: ['Tras los primeros 20 renglones del año, «Ver más» (ui/CargarMas: en la app la tanda siguiente también llega sola al bajar).'] },
+      { id: 'lugar-r-tanda-2', variante: 'F1·L1·A1', reco: true, nombre: 'Segunda tanda', notas: ['Con 40 a la vista y otro «Ver más» para los 8 que faltan de 2026.'] },
+      { id: 'lugar-r-informe', variante: 'F1·L1·A1', reco: true, nombre: '«Informe»', notas: ['La hoja del PDF tal cual (OL-396): periodo, tamaño y «Descargar PDF». Ya no queda cortada: hoy hereda el ancho de la página rota.'] },
+      { id: 'lugar-f2', variante: 'F2', nombre: 'F2 · la fila de hoy', notas: ['La fila de hoy (fotos de 60) arreglada, con «Ver los 9». Caben cuatro y asoma la quinta; más chica que Inicio y más fácil de no ver.'] },
+      { id: 'lugar-f3', variante: 'F3', nombre: 'F3 · sin fila', notas: ['Solo el renglón «Han pasado por aquí · 9» con «Ver los 9». Lo más corto, pero se pierden las caras, que son lo que vuelve útil la sección.'] },
+      { id: 'lugar-l2', variante: 'L2', nombre: 'L2 · años plegados', notas: ['El año en curso por mes y, debajo, cada año anterior plegado con su cuenta («2025 · 26 eventos»). En un lugar grande el año en curso sigue siendo larguísimo (cientos de renglones) y para llegar a 2024 hay que pasar todo 2026.'] },
+      { id: 'lugar-l3', variante: 'L3', nombre: 'L3 · todo con «Ver más»', notas: ['Sin años: todo por mes, de 20 en 20. Escala, pero para ver 2024 hay que tocar «Ver más» varias veces.'] },
+      { id: 'lugar-a2', variante: 'A2', nombre: 'A2 · en el «···»', notas: ['Sin botones en la sección: «Tu año» e «Informe» van en el «···» de la ficha, junto a Editar. Se llega desde cualquier parte de la ficha, pero no se ven: hay que saber que están.'] },
+      { id: 'lugar-a2-menu', variante: 'A2', nombre: 'A2 · el «···» abierto', notas: ['El «···» real con dos renglones arriba: «Tu año 2026» y «Informe de actividad», con los iconos de hoy.'] },
+    ] },
+    { id: 'artista', nombre: '3 · Trayectoria del artista', estados: [
+      { id: 'artista-r-ana', variante: 'F1·L1·A1', reco: true, nombre: 'Propuesta · quien gestiona', notas: ['La misma pieza: «Tu año» y «Presentación» arriba; «Se ha presentado en» con «Ver los 8» y el carril de Inicio con las portadas de los lugares (como «Lugares de la semana»); los años («2026 · 13», «2025 · 12», «2024 · 5»).'] },
+      { id: 'artista-r-sin-sesion', variante: 'F1·L1·A1', reco: true, nombre: 'Propuesta · sin sesión', notas: ['Sin sesión, sin botones: lugares y años.'] },
+      { id: 'artista-r-todos', variante: 'F1·L1·A1', reco: true, nombre: '«Ver los 8»', notas: ['La hoja con el renglón de Lugares tal cual (foto, tipo y calle) y sus veces. La línea de arriba: «8 lugares con ficha. Una fecha en un sitio sin ficha cuenta en la trayectoria, pero no aquí.»'] },
+      { id: 'artista-r-2025', variante: 'F1·L1·A1', reco: true, nombre: 'Año 2025', notas: ['Sus fechas de 2025, por mes.'] },
+      { id: 'artista-r-presentacion', variante: 'F1·L1·A1', reco: true, nombre: '«Presentación»', notas: ['La hoja del PDF de la Presentación, tal cual.'] },
+    ] },
+  ];
+  const ESTADOS = Object.fromEntries(PANTALLAS.flatMap((p) => p.estados.map((e) => [e.id, { ...e, pantalla: p.id }])));
+  const ANCHOS = [320, 390, 430, 1280];
+
+  const INICIAL = { estado: 'lugar-r-ana', ancho: 390 };
+  let estado = { ...INICIAL };
+  try { Object.assign(estado, JSON.parse(localStorage.getItem('proto-historial-escalable') || '{}')); } catch {}
+  if (!ESTADOS[estado.estado] || !ANCHOS.includes(estado.ancho)) estado = { ...INICIAL };
+  const guardar = () => { try { localStorage.setItem('proto-historial-escalable', JSON.stringify(estado)); } catch {} };
+  let anterior = null;
+  let aviso = '';
+
+  const documento = (cuerpo) => `<!doctype html>${HTML_TAG}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body>${cuerpo}</body></html>`;
+  const tel = $('tel');
+  let pintado = Promise.resolve();
+  function pintar() {
+    guardar();
+    const e = ESTADOS[estado.estado];
+    tel.style.setProperty('--ancho-tel', estado.ancho + 'px');
+    tel.style.setProperty('--alto-tel', (estado.ancho >= 1024 ? 800 : 844) + 'px');
+    pintado = new Promise((ok) => {
+      tel.addEventListener('load', async () => {
+        const doc = tel.contentDocument;
+        conectar(doc);
+        try { await doc.fonts.ready; } catch {}
+        colocar(doc);
+        const r = medir(doc);
+        document.documentElement.dataset.pintado = e.id + '@' + estado.ancho;
+        ok(r);
+      }, { once: true });
+      tel.srcdoc = documento(CUERPOS[e.id]);
+    });
+    botones('sel-pantalla', PANTALLAS.map((p) => [p.id, p.nombre]), e.pantalla, (v) => ir(PANTALLAS.find((p) => p.id === v).estados.find((x) => x.reco)?.id ?? PANTALLAS.find((p) => p.id === v).estados[0].id));
+    const pantalla = PANTALLAS.find((p) => p.id === e.pantalla);
+    botones('sel-estado', pantalla.estados.map((x) => [x.id, x.nombre, x.reco]), e.id, (v) => ir(v));
+    botones('sel-ancho', ANCHOS.map((a) => [String(a), String(a)]), String(estado.ancho), (v) => { estado.ancho = Number(v); pintar(); });
+    $('etiqueta').innerHTML = aviso ? esc(aviso) : `<b>${esc(pantalla.nombre)} · ${esc(e.nombre)}</b> · ${estado.ancho} × ${estado.ancho >= 1024 ? 800 : 844}`;
+    aviso = '';
+    $('reco-estado').innerHTML = e.reco ? '<span class="reco">Recomendada</span>' : '';
+    $('texto-estado').innerHTML = `<ul>${e.notas.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    return pintado;
+  }
+  /** Baja la ficha a lo que el estado enseña (`data-ver`), bajo la barra de la ficha, y desliza el carril si el estado lo pide. */
+  function colocar(doc) {
+    const win = doc.defaultView;
+    const v = doc.querySelector('[data-ver="' + (ESTADO_VER[estado.estado] ?? 'resumen') + '"]') ?? doc.querySelector('[data-ver="resumen"]');
+    if (v) win.scrollTo(0, v.getBoundingClientRect().top + win.scrollY - (ESTADO_VER[estado.estado] === 'final' ? 520 : 150));
+    for (const el of doc.querySelectorAll('[data-desplazar]')) el.scrollLeft = Number(el.dataset.desplazar);
+    // La barra de la ficha se vuelve compacta (fondo y título) al bajar, como en la app (`data-compacta`).
+    const ficha = doc.querySelector('header[class*="Ficha-module"][class*="__barra"]')?.parentElement;
+    const compactar = () => ficha?.toggleAttribute('data-compacta', win.scrollY > 200);
+    compactar();
+    win.addEventListener('scroll', compactar, { passive: true });
+  }
+  const ESTADO_VER = {
+    'lugar-hoy-plegado': 'resumen', 'lugar-hoy-fila': 'fila', 'lugar-hoy-final': 'final', 'artista-hoy-fila': 'fila', 'artista-hoy-final': 'final',
+    'lugar-r-plegado': 'resumen', 'lugar-r-ana': 'resumen', 'lugar-r-sin-sesion': 'resumen', 'lugar-r-carril-movido': 'fila', 'lugar-r-todos': 'fila',
+    'lugar-r-2025': 'chips', 'lugar-r-ver-mas': 'mas', 'lugar-r-tanda-2': 'mas', 'lugar-r-informe': 'resumen', 'lugar-f2': 'fila', 'lugar-f3': 'resumen',
+    'lugar-l2': 'anios', 'lugar-l3': 'resumen', 'lugar-a2': 'resumen', 'lugar-a2-menu': 'resumen',
+    'artista-r-ana': 'resumen', 'artista-r-sin-sesion': 'resumen', 'artista-r-todos': 'fila', 'artista-r-2025': 'chips', 'artista-r-presentacion': 'resumen',
+  };
+  function botones(id, opciones, actual, alElegir) {
+    const caja = $(id);
+    caja.innerHTML = opciones.map(([v, t, reco]) => `<button type="button" data-v="${v}" aria-pressed="${v === actual}"${reco ? ' data-reco="true" aria-description="recomendada"' : ''}>${esc(t)}</button>`).join('');
+    caja.onclick = (ev) => { const b = ev.target.closest('button[data-v]'); if (b) alElegir(b.dataset.v); };
+  }
+  function ir(id) { if (id !== estado.estado) anterior = estado.estado; estado.estado = id; return pintar(); }
+
+  // Los toques dentro del teléfono: «Ver los N», los chips de año, «Ver más», «Tu año», «Informe» / «Presentación», el «···», la ✕ de una hoja
+  // y su velo. El renglón del plegado se abre y se cierra solo (es un <details>) y el carril se desliza solo; lo demás dice a dónde lleva.
+  function conectar(doc) {
+    doc.addEventListener('submit', (ev) => ev.preventDefault(), true);
+    doc.addEventListener('click', (ev) => {
+      const actual = estado.estado;
+      const ficha = actual.startsWith('artista') ? 'artista' : 'lugar';
+      const decir = (t) => { aviso = t; $('etiqueta').textContent = t; aviso = ''; };
+      if (ev.target.matches('[class*="Hoja-module"][class*="__fondo"]')) { ev.preventDefault(); return anterior ? ir(anterior) : null; }
+      const el = ev.target.closest('a, button');
+      if (!el) return;
+      ev.preventDefault();
+      const texto = el.textContent.trim();
+      const etiqueta = el.getAttribute('aria-label') ?? '';
+      const href = el.getAttribute('href') ?? '';
+      if (el.dataset.accion === 'todos') return ir(`${ficha}-r-todos`);
+      if (el.dataset.anio) {
+        const destino = `${ficha}-r-${el.dataset.anio}`;
+        if (ESTADOS[destino]) return ir(destino);
+        if (el.getAttribute('aria-pressed') === 'true') return decir(`${el.dataset.anio} ya está elegido.`);
+        return ir(`${ficha}-r-ana`).then(() => decir(`En la app, la lista cambia a ${el.dataset.anio} (en el prototipo solo 2025 está armado).`));
+      }
+      if (el.dataset.accion === 'mas') return actual === 'lugar-r-tanda-2' ? decir('En la app, llegan los 8 que faltan de 2026.') : ir('lugar-r-tanda-2');
+      if (/^(Informe|Presentación)$/.test(texto)) return ir(ficha === 'artista' ? 'artista-r-presentacion' : 'lugar-r-informe');
+      if (/^(Informe de actividad)$/.test(texto) && actual === 'lugar-a2-menu') return ir('lugar-r-informe');
+      if (etiqueta === 'Más acciones') return actual === 'lugar-a2' ? ir('lugar-a2-menu') : decir('En la app: el «···» de la ficha (Editar, Reportar…).');
+      if (etiqueta === 'Cerrar' && anterior) return ir(anterior);
+      if (/Tu año/.test(texto)) return decir('En la app: la vista previa de «Tu año» (OL-394).');
+      decir(href ? `En la app, esto lleva a ${href}` : `En la app: «${texto || etiqueta}»`);
+    }, true);
+  }
+
+  // Como medir.js: lo que se pinta bajo <body> (sin lo oculto; un svg cuenta uno). De lo nuevo (`data-propuesta`): nodos, profundidad,
+  // div o span sin clase y toques menores de 44 px; de la pantalla: nodos, profundidad, textos cortados y desborde horizontal.
+  function medir(doc) {
+    const win = doc.defaultView;
+    const OMITIDOS = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'TEMPLATE', 'NOSCRIPT']);
+    const visible = (el) => !OMITIDOS.has(el.tagName) && !el.hidden && win.getComputedStyle(el).display !== 'none';
+    let prof = 0, nodos = 0;
+    const recorrer = (el, d) => { for (const h of el.children) { if (!visible(h)) continue; nodos++; prof = Math.max(prof, d + 1); if (h.tagName.toLowerCase() !== 'svg') recorrer(h, d + 1); } };
+    recorrer(doc.body, 0);
+    const bloques = [...doc.querySelectorAll('[data-propuesta]')].filter((b) => b.tagName !== 'STYLE' && !b.parentElement.closest('[data-propuesta]'));
+    let bNodos = 0, bProf = 0, sin = 0;
+    // «Sin clase» cuenta solo lo nuevo: los renglones que se reutilizan tal cual (ui/Renglon, dentro de su `ul`) llevan los `span` de su meta.
+    const contar = (el, d) => { bNodos++; bProf = Math.max(bProf, d); if (/^(DIV|SPAN)$/.test(el.tagName) && !el.getAttribute('class') && !el.closest('ul')) sin++; if (el.tagName.toLowerCase() !== 'svg') for (const h of el.children) if (visible(h)) contar(h, d + 1); };
+    for (const b of bloques) contar(b, 1);
+    // Textos cortados: sin las claves que solo oye el lector de pantalla y aparte lo que se corta a propósito con puntos suspensivos: el título
+    // de un renglón en dos líneas y el último dato de su línea (ui/Renglon), el título corto de la barra de una ficha, el nombre de dos líneas de
+    // un avatar y su línea de abajo. Y aparte lo que se corta fuera de la sección (la cabecera de la ficha, que esta pieza no toca).
+    const enFila = (el) => { const f = el.closest('ul'); return f && ['auto', 'scroll'].includes(win.getComputedStyle(f).overflowX) && f !== el; };
+    const todosCortados = [...doc.body.querySelectorAll('*')].filter((el) => { if (!visible(el) || el.children.length || (el.clientWidth <= 1 && el.clientHeight <= 1)) return false; const s = win.getComputedStyle(el); return (s.overflow !== 'visible' || s.textOverflow === 'ellipsis') && (el.scrollWidth > el.clientWidth + 1 || (s.overflowY !== 'visible' && el.scrollHeight > el.clientHeight + 1)); });
+    const aProposito = (el) => (el.matches('small > span > span:last-child, small > span > b:last-child') && el.closest('a')?.matches('[class*="__frente"]')) || el.matches('a[class*="__frente"] > b') || el.matches('[aria-hidden="true"][class*="__tituloBarra"]') || el.matches('[class*="TarjetaAvatar-module"][class*="__nombre"], [class*="Historial-module"][class*="__nombre"]') || el.matches('[class*="TarjetaAvatar-module"][class*="__nuevo"]');
+    const enLaPieza = (el) => !!el.closest('details#historial, details#trayectoria, [role="dialog"]');
+    const cede = todosCortados.filter(aProposito).length;
+    const ajenos = todosCortados.filter((el) => !aProposito(el) && !enLaPieza(el));
+    const queCorta = todosCortados.filter((el) => !aProposito(el) && enLaPieza(el)).map((el) => `${el.tagName.toLowerCase()}: ${el.textContent.trim().slice(0, 40)}`);
+    // Un icono aplastado (el de «Presentación» a 320 medía 2 px de ancho) también es un corte.
+    for (const svg of doc.querySelectorAll('details#historial svg, details#trayectoria svg, [role="dialog"] svg')) { const r = svg.getBoundingClientRect(); const w = Number(svg.getAttribute('width')) || 0; if (visible(svg) && w && r.height > 0 && r.width < w - 1) queCorta.push(`icono aplastado (${Math.round(r.width)} de ${w} px)`); }
+    const cortados = queCorta.length;
+    const vw = doc.documentElement.clientWidth;
+    const desborde = doc.documentElement.scrollWidth > vw + 1 ? 1 : 0;
+    // Fuera de la pantalla: lo que se toca y cae a la derecha del borde (no dentro de una fila que se desliza): el «Informe» de hoy.
+    const fuera = [...doc.querySelectorAll('a, button')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > vw + 1 && !enFila(el); }).length;
+    // Un chip mide 36 a la vista y 44 al tacto (su `::before`, ui/Chip): cuenta su área de toque.
+    const alTacto = (el) => { const r = el.getBoundingClientRect(); const extra = el.matches('[class*="Chip-module"][class*="__toque"]') ? Math.max(0, 44 - r.height) : 0; return { w: r.width, h: r.height + extra }; };
+    const toques = bloques.flatMap((b) => [...b.querySelectorAll('a, button')]).filter((el) => { const t = alTacto(el); return t.w > 0 && (t.w < 44 || t.h < 44); }).length;
+    const r = { nodos, prof, bloque: bNodos, profBloque: bProf, sinClase: sin, cortados, queCorta, ajenos: ajenos.map((el) => el.textContent.trim().slice(0, 30)), cede, desborde, fuera, toques, bloques: bloques.map((b) => b.dataset.propuesta) };
+    $('medidor').innerHTML = [
+      ['nodos', nodos, false], ['profundidad', prof, prof > 14], ['nodos de lo nuevo', bloques.length ? bNodos : '–', false], ['profundidad de lo nuevo', bloques.length ? bProf : '–', false],
+      ['sin clase', bloques.length ? sin : '–', sin > 0], ['textos cortados', cortados, cortados > 0], ['cortes a propósito', cede, false], ['cortes fuera de la sección', ajenos.length, false], ['desborde', desborde, desborde > 0], ['toques fuera de la pantalla', fuera, fuera > 0], ['toques < 44', bloques.length ? toques : '–', toques > 0],
+    ].map(([n, v, mal]) => `<span data-mal="${mal}"><b>${v}</b>${n}</span>`).join('');
+    return r;
+  }
+
+  $('plegar').addEventListener('click', (ev) => {
+    const notas = $('notas');
+    const plegadas = notas.dataset.plegadas !== 'true';
+    notas.dataset.plegadas = String(plegadas);
+    ev.currentTarget.setAttribute('aria-expanded', String(!plegadas));
+    ev.currentTarget.textContent = plegadas ? 'Abrir las notas' : 'Plegar las notas';
+  });
+  window.prototipo = { ir: (id, ancho) => { if (ancho) estado.ancho = ancho; return ir(id); }, estado: () => ({ ...estado }), medir: () => medir(tel.contentDocument), listo: () => pintado, estados: () => Object.keys(ESTADOS) };
+  pintar();
+})();
+</script>
+</body>
+</html>
