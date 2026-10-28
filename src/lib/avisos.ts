@@ -29,9 +29,9 @@ export function contenidoCorreo(tipo: TipoAviso, evento: EventoParaAviso, cambio
 }
 
 // ---------- OL-115: aviso al administrador (avisos_admin_jobs/entregas, migración 20260922150000) ----------
-/** Los seis motivos que hoy encolan un aviso al administrador (L39): pedir/reclamar una ficha, publicar
- *  evento/lugar/artista y registrarse. Sin datos personales: el cuerpo nunca lleva nombres ni ids. */
-export type MotivoAdmin = "reclamo_ficha" | "reporte" | "nuevo_evento" | "nuevo_lugar" | "nuevo_artista" | "registro";
+/** Los motivos que encolan un aviso al administrador (L39): pedir/reclamar una ficha, publicar evento/lugar/artista, registrarse y
+ *  (OL-467) ponerle cartel a un evento que ya estaba (`poner_cartel_a_evento`). Sin datos personales: el cuerpo nunca lleva nombres ni ids. */
+export type MotivoAdmin = "reclamo_ficha" | "reporte" | "nuevo_evento" | "nuevo_lugar" | "nuevo_artista" | "registro" | "cartel_puesto";
 const TEXTO_MOTIVO_ADMIN: Record<MotivoAdmin, string> = {
   reclamo_ficha: "Alguien reclamó una ficha",
   reporte: "Alguien envió un reporte",
@@ -39,6 +39,7 @@ const TEXTO_MOTIVO_ADMIN: Record<MotivoAdmin, string> = {
   nuevo_lugar: "Se publicó un lugar nuevo",
   nuevo_artista: "Se publicó una ficha de artista nueva",
   registro: "Alguien se registró",
+  cartel_puesto: "Alguien le puso cartel a un evento",
 };
 
 /** El texto corto del push al administrador. Con un solo motivo, dice cuál; agrupado (bucket de 10 min, tope de

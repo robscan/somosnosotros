@@ -112,6 +112,8 @@ describe("contenidoPushAdmin (OL-115)", () => {
     expect(contenidoPushAdmin({ nuevo_lugar: 1 }).cuerpo).toBe("Se publicó un lugar nuevo");
     expect(contenidoPushAdmin({ nuevo_artista: 1 }).cuerpo).toBe("Se publicó una ficha de artista nueva");
     expect(contenidoPushAdmin({ reporte: 1 }).cuerpo).toBe("Alguien envió un reporte");
+    // OL-467: tu cartel a un evento que ya estaba.
+    expect(contenidoPushAdmin({ cartel_puesto: 1 }).cuerpo).toBe("Alguien le puso cartel a un evento");
   });
   it("agrupado: dice cuántas cosas, nunca un nombre ni un motivo suelto", () => {
     expect(contenidoPushAdmin({ registro: 3, reclamo_ficha: 2 }).cuerpo).toBe("5 cosas por revisar");
