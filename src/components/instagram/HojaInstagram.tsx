@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoLargo from "@/components/ui/CampoLargo";
@@ -10,10 +10,11 @@ import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
 import { IconoCerrar, IconoChevronDerecha, IconoChevronIzquierda, IconoFacebook, IconoInstagram, IconoPin } from "@/components/ui/Iconos";
 import admin from "@/app/admin/admin.module.css";
-import { prepararInstagram, publicarEnFacebook, publicarEnInstagram, type Espejo, type Preparado, type Publicado } from "@/app/admin/instagram/acciones";
+import { estadoTrabajo, prepararInstagram, publicarEnFacebook, publicarEnInstagram, type Encolado, type Preparado } from "@/app/admin/instagram/acciones";
 import { elegirImagenes, PORTADA, resumenCarrusel, textoImagenes } from "@/lib/instagram/carrusel";
-import { ESTADO_FACEBOOK, FRASES_FACEBOOK } from "@/lib/instagram/frases";
+import { ESTADO_FACEBOOK } from "@/lib/instagram/frases";
 import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, etiquetasQueNoCaben, TOPE_CARACTERES, TOPE_ETIQUETAS_FOTO } from "@/lib/instagram/texto";
+import { botonReciente, enCamino, mensajeDeFallo, preguntaRepetir, REFRESCO_MS, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
 import styles from "./HojaInstagram.module.css";
 
 type Formato = "4x5" | "9x16";
@@ -35,47 +36,87 @@ function guardarConFacebook(si: boolean) {
   }
 }
 
+const NO_SE_GUARDO: Encolado = { ok: false, error: "otro", mensaje: "No se pudo guardar la publicación. Intenta de nuevo en un momento; no se publicó nada." };
+
 /**
  * La hoja «Publicar en Instagram» (OL-458, prototipo firmado `admin-instagram.html`, pantallas C y D; bitácora 490). La abren la lista de
  * Administración › Instagram y el «···» de la ficha de un evento. Arriba, Publicación 4:5 o Historia 9:16 (los chips de «Así queda» de Crear
  * cartel); la imagen tal cual saldrá; lo que se hizo con el cartel (completo con margen, o «Recortar»; sin cartel, un diseño de Crear cartel y
  * «Otro diseño»); a quién se etiqueta (chips con ✕); la ubicación; el texto ya armado (`ui/CampoLargo`, contador siempre a la vista); y un solo
- * botón. Publicando, el botón espera y la hoja no se cierra; publicado, la imagen y lo hecho con «Ver en Instagram»; un error, en una frase.
- * Las historias no llevan texto ni ubicación (Instagram no los publica en historias).
+ * botón. Las historias no llevan texto ni ubicación (Instagram no los publica en historias).
  * OL-461 (bitácora 493): la casilla «También en Facebook» (marcada; recuerda la última elección en la sesión) y un solo botón «Publicar» que manda
- * a las dos redes. El resultado, en dos líneas: «Instagram: publicado · Ver» y «Facebook: publicado · Ver» o su error llano; si Instagram falla
- * no se intenta Facebook, y si Facebook falla Instagram queda publicado y el botón ofrece «Reintentar en Facebook».
- * OL-464 (bitácora 496): un festival con carteles en sus actos es un carrusel. Bajo la imagen (la primera del carrusel), «Carrusel de N
- * imágenes, en este orden:» y una tira horizontal con las miniaturas, cada una con ✕ para quitarla y flechas para moverla antes o después; si
- * hay más de 10, las últimas quedan fuera y se dice cuáles; «Volver a poner» lo deshace. Con una sola imagen la hoja queda como siempre, y la
- * historia lleva solo la portada.
+ * a las dos redes; si Facebook falla, Instagram queda publicado y se ofrece «Reintentar en Facebook».
+ * OL-464 (bitácora 496): un festival con carteles en sus actos es un carrusel (la tira de miniaturas para quitar y mover; «Volver a poner»).
+ *
+ * OL-465 (bitácora 497): publicar va en segundo plano. «Publicar» guarda el trabajo en la cola y la hoja se cierra en seguida (el renglón de la
+ * lista dice «Publicando…» y al terminar llega el aviso al teléfono). Al abrirla otra vez, la hoja dice cómo va el último trabajo de ese evento
+ * (en camino, publicado con sus «Ver», o por qué no se pudo) y, mientras va, lo pregunta cada 20 s y al volver a la app. Si ese evento con ese
+ * formato está en camino o salió hace menos de 15 minutos, el botón lo dice («Se está publicando», «Ya se publicó hace 3 min») y pide
+ * confirmar antes de repetir.
  */
 export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eventoId: string; onCerrar: () => void; onPublicado?: () => void }) {
   const [prep, setPrep] = useState<Preparado | null>(null);
-  const [formato, setFormato] = useState<Formato>("4x5");
+  const [formato, setFormatoElegido] = useState<Formato>("4x5");
   const [recorte, setRecorte] = useState(false);
   const [diseno, setDiseno] = useState(0);
   const [quitadas, setQuitadas] = useState<string[]>([]);
   const [propio, setPropio] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<Publicado | null>(null);
-  const [publicando, empezar] = useTransition();
+  const [enviando, enviar] = useTransition();
   // La elección de esta vez; sin ella, la última de la sesión. Se lee al pintar: la casilla solo sale con la hoja ya preparada en el teléfono
   // (nunca en lo que pinta el servidor), así que no cambia nada al hidratar.
   const [elegido, setConFacebook] = useState<boolean | null>(null);
   const conFacebook = elegido ?? leerConFacebook();
-  const [espejo, setEspejo] = useState<Espejo | null>(null);
-  const [reintentando, reintentar] = useTransition();
   // El carrusel (OL-464): el orden que dejó la hoja (null: el suyo) y las imágenes quitadas.
   const [orden, setOrden] = useState<string[] | null>(null);
   const [fuera, setFuera] = useState<string[]>([]);
+  // OL-465: el último trabajo de este evento (al día mientras va), lo que respondió el último toque y si se está confirmando repetir.
+  const [trabajo, setTrabajo] = useState<EstadoTrabajo | null>(null);
+  const [respuesta, setRespuesta] = useState<Encolado | null>(null);
+  const [confirmar, setConfirmar] = useState<"instagram" | "facebook" | null>(null);
 
   useEffect(() => {
     let vivo = true;
-    prepararInstagram(eventoId).then((p) => vivo && setPrep(p), () => vivo && setPrep({ ok: false, mensaje: "No se pudo preparar. Intenta de nuevo." }));
+    prepararInstagram(eventoId).then(
+      (p) => {
+        if (!vivo) return;
+        setPrep(p);
+        if (p.ok) setTrabajo(p.trabajo ?? null);
+      },
+      () => vivo && setPrep({ ok: false, mensaje: "No se pudo preparar. Intenta de nuevo." }),
+    );
     return () => {
       vivo = false;
     };
   }, [eventoId]);
+
+  // Mientras el trabajo va: preguntar cada 20 s (si la pantalla se ve) y al volver a la app. Al terminar, la lista se refresca.
+  const idEnCamino = enCamino(trabajo) ? trabajo!.id : null;
+  const alPublicar = useRef(onPublicado);
+  useEffect(() => {
+    alPublicar.current = onPublicado;
+  });
+  useEffect(() => {
+    if (!idEnCamino) return;
+    let vivo = true;
+    const preguntar = () => {
+      if (document.visibilityState !== "visible") return;
+      estadoTrabajo(idEnCamino).then(
+        (e) => {
+          if (!vivo || !e) return;
+          setTrabajo(e);
+          if (!enCamino(e)) alPublicar.current?.();
+        },
+        () => undefined,
+      );
+    };
+    document.addEventListener("visibilitychange", preguntar);
+    const reloj = window.setInterval(preguntar, REFRESCO_MS);
+    return () => {
+      vivo = false;
+      document.removeEventListener("visibilitychange", preguntar);
+      window.clearInterval(reloj);
+    };
+  }, [idEnCamino]);
 
   const listo = prep?.ok ? prep : null;
   // El texto que arma el sistema (el mismo código que el servidor), con lo que se quitó; lo escrito a mano manda.
@@ -84,7 +125,6 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
   const etiquetas = listo ? etiquetasDeLaFoto(listo.evento, quitadas) : [];
   // Un festival con más de 20 cuentas (OL-463): se dice cuántas no caben en la foto.
   const sobran = listo ? etiquetasQueNoCaben(listo.evento, quitadas) : 0;
-  const publicado = resultado?.ok ? resultado : null;
   // Sin `carrusel` (una respuesta de antes) es una imagen, como siempre.
   const opciones = listo?.carrusel ?? [];
   const carrusel = listo && formato === "4x5" && opciones.length > 1 ? elegirImagenes(opciones, { orden, quitadas: fuera }) : null;
@@ -99,29 +139,62 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
     [claves[n], claves[n + paso]] = [claves[n + paso], claves[n]];
     setOrden(claves);
   };
-  const error = resultado && !resultado.ok ? resultado : null;
+  const error = respuesta && !respuesta.ok && "error" in respuesta ? respuesta : null;
   const empezo = !!listo && (!listo.sePuede || error?.error === "empezo");
   const cerrar = () => {
-    if (!publicando && !reintentando) onCerrar();
+    if (!enviando) onCerrar();
+  };
+  const setFormato = (f: Formato) => {
+    if (enviando) return;
+    setFormatoElegido(f);
+    setConfirmar(null);
+    setRespuesta(null);
   };
 
+  // ¿Ya está en camino o se acaba de publicar este formato? Lo que diga el último toque manda; luego, el trabajo que se ve; luego, lo que dijo la
+  // base al abrir.
+  const duplicado = respuesta && !respuesta.ok && "duplicado" in respuesta ? respuesta.duplicado : null;
+  const reciente = ((): Reciente | null => {
+    if (duplicado && confirmar !== "facebook") return duplicado;
+    const mio = trabajo && trabajo.red === "instagram" && trabajo.formato === formato ? trabajo : null;
+    if (mio && enCamino(mio)) return { estado: "publicando" };
+    // Una respuesta sin `reciente` (de antes de la cola) no dice nada.
+    const alAbrir = listo?.reciente?.[formato] ?? null;
+    // Lo que iba en camino al abrir ya terminó mientras la hoja estaba abierta.
+    if (alAbrir?.estado === "publicando" && mio) return mio.estado === "publicado" ? { estado: "publicado", minutos: 0 } : null;
+    return alAbrir;
+  })();
+
   const publicar = () =>
-    empezar(async () => {
+    enviar(async () => {
       if (!listo) return;
-      const r = await publicarEnInstagram({ eventoId: listo.id, formato, recorte, diseno, texto: formato === "4x5" ? texto : null, quitadas, facebook: conFacebook, imagenes: carrusel?.van.map((i) => i.clave) }).catch((): Publicado => ({ ok: false, error: "otro", mensaje: "No se pudo publicar. Vuelve a intentar en un momento; no se publicó nada." }));
-      setResultado(r);
-      if (r.ok) {
-        setEspejo(r.facebook);
-        onPublicado?.();
+      const repetir = confirmar === "instagram";
+      // Repetido: primero se pregunta (sin ir al servidor).
+      if (reciente && !repetir) {
+        setConfirmar("instagram");
+        return;
       }
+      const r = await publicarEnInstagram({ eventoId: listo.id, formato, recorte, diseno, texto: formato === "4x5" ? texto : null, quitadas, facebook: conFacebook, imagenes: carrusel?.van.map((i) => i.clave), repetir }).catch(() => NO_SE_GUARDO);
+      if (r.ok) {
+        onPublicado?.();
+        onCerrar();
+        return;
+      }
+      setRespuesta(r);
+      setConfirmar("duplicado" in r ? "instagram" : null);
     });
 
-  const reintentarFacebook = () =>
-    reintentar(async () => {
+  const aFacebook = () =>
+    enviar(async () => {
       if (!listo) return;
-      const r = await publicarEnFacebook(listo.id, formato === "4x5" ? texto : null).catch((): Espejo => ({ ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro }));
-      setEspejo(r);
-      if (r.ok) onPublicado?.();
+      const r = await publicarEnFacebook(listo.id, formato === "4x5" ? texto : null, confirmar === "facebook").catch(() => NO_SE_GUARDO);
+      if (r.ok) {
+        onPublicado?.();
+        onCerrar();
+        return;
+      }
+      setRespuesta(r);
+      setConfirmar("duplicado" in r ? "facebook" : null);
     });
 
   // La imagen: la portada (con su recorte o su diseño) o el cartel de un acto (OL-464); `mini`, la de la tira.
@@ -135,35 +208,99 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
       : primera !== PORTADA
         ? { texto: "Va completo, con margen de su color.", opcion: null }
         : listo.conCartel
-        ? listo.recortar
-          ? recorte
-            ? { texto: "Recortado a 4:5: se pierde un poco arriba y abajo.", opcion: "Usar el cartel completo" }
-            : { texto: "Va completo, con margen de su color.", opcion: "Recortar" }
-          : null
-        : { texto: "Sin cartel: un diseño de Crear cartel.", opcion: "Otro diseño" };
+          ? listo.recortar
+            ? recorte
+              ? { texto: "Recortado a 4:5: se pierde un poco arriba y abajo.", opcion: "Usar el cartel completo" }
+              : { texto: "Va completo, con margen de su color.", opcion: "Recortar" }
+            : null
+          : { texto: "Sin cartel: un diseño de Crear cartel.", opcion: "Otro diseño" };
   const alOpcion = () => (listo?.conCartel ? setRecorte((r) => !r) : setDiseno((d) => d + 1));
 
   let pie;
-  if (publicado && espejo && !espejo.ok && espejo.error !== "empezo") {
+  if (listo && confirmar) {
     pie = (
-      <Boton type="button" onClick={reintentarFacebook} disabled={reintentando} aria-busy={reintentando || undefined}>
-        {reintentando ? "Publicando en Facebook…" : "Reintentar en Facebook"}
-      </Boton>
-    );
-  } else if (publicado) {
-    pie = (
-      <Boton type="button" variante="secundario" onClick={onCerrar}>
-        Listo
+      <Boton type="button" onClick={confirmar === "facebook" ? aFacebook : publicar} disabled={enviando} aria-busy={enviando || undefined}>
+        {enviando ? "Publicando…" : confirmar === "facebook" ? "Sí, publicar otra vez en Facebook" : "Sí, publicar otra vez"}
       </Boton>
     );
   } else if (listo) {
-    const quieto = empezo || publicando || error?.error === "cupo";
     pie = (
-      <Boton type="button" onClick={publicar} disabled={quieto} aria-busy={publicando || undefined}>
-        {empezo ? "Ya empezó" : publicando ? "Publicando…" : error?.error === "cupo" ? "Se puede otra vez mañana" : listo.publicado ? "Publicar otra vez" : "Publicar"}
+      <Boton type="button" onClick={publicar} disabled={empezo || enviando} aria-busy={enviando || undefined}>
+        {empezo ? "Ya empezó" : enviando ? "Publicando…" : reciente ? botonReciente(reciente) : listo.publicado ? "Publicar otra vez" : "Publicar"}
       </Boton>
     );
   }
+
+  // Lo que pasó con el último trabajo (o cómo va).
+  const ig = trabajo?.resultado?.instagram ?? null;
+  const fb = trabajo?.resultado?.facebook ?? null;
+  const formatoDe = (f: "4x5" | "9x16" | "carrusel" | undefined) => (f === "9x16" ? "historia publicada" : f === "carrusel" ? `carrusel publicado, ${textoImagenes(ig?.imagenes ?? 2)}` : "publicado");
+  const estado = !trabajo ? null : enCamino(trabajo) ? (
+    <div role="status">
+      <p className={`${admin.hecho} ${styles.enCamino}`}>
+        {trabajo.red === "facebook" ? <IconoFacebook width={22} height={22} /> : <IconoInstagram width={22} height={22} />}
+        <span>{trabajo.red === "facebook" ? "Facebook: publicando…" : "Instagram: publicando…"}</span>
+      </p>
+      {trabajo.conFacebook && (
+        <p className={`${admin.hecho} ${styles.enCamino}`}>
+          <IconoFacebook width={22} height={22} />
+          <span>Facebook: después de Instagram</span>
+        </p>
+      )}
+      <p className={hoja.nota}>Te avisamos en el teléfono cuando termine. Puedes cerrar la hoja o salir de la app.</p>
+    </div>
+  ) : trabajo.estado === "fallido" ? (
+    <p className="aviso-error" role="alert">
+      {mensajeDeFallo(trabajo)}
+    </p>
+  ) : (
+    <div role="status">
+      {ig && (
+        <p className={admin.hecho}>
+          <IconoInstagram width={22} height={22} />
+          <span>Instagram: {formatoDe(ig.formato)}</span>
+          {ig.permalink && (
+            <a className={admin.enlace} href={ig.permalink} target="_blank" rel="noopener noreferrer" aria-label="Ver en Instagram">
+              Ver
+            </a>
+          )}
+        </p>
+      )}
+      {fb?.ok && (
+        <p className={admin.hecho}>
+          <IconoFacebook width={22} height={22} />
+          <span>Facebook: {ig?.formato === "9x16" ? "historia publicada" : ig?.formato === "carrusel" ? `publicado, ${ig.imagenes} fotos` : "publicado"}</span>
+          {fb.permalink && (
+            <a className={admin.enlace} href={fb.permalink} target="_blank" rel="noopener noreferrer" aria-label="Ver en Facebook">
+              Ver
+            </a>
+          )}
+        </p>
+      )}
+      {fb && !fb.ok && (
+        <>
+          <p className={`${admin.hecho} ${styles.falla}`}>
+            <IconoFacebook width={22} height={22} />
+            <span>
+              Facebook: <em>{ESTADO_FACEBOOK[fb.error]}</em>
+            </span>
+          </p>
+          <p className={hoja.nota}>
+            {fb.mensaje}
+            {fb.error !== "empezo" && !empezo && (
+              <>
+                {" "}
+                <button type="button" className={admin.enlace} onClick={aFacebook} disabled={enviando}>
+                  Reintentar en Facebook
+                </button>
+              </>
+            )}
+          </p>
+        </>
+      )}
+      {ig?.sinEtiquetas && <p className={hoja.nota}>Instagram no dejó etiquetar o poner la ubicación: salió sin ellas.</p>}
+    </div>
+  );
 
   return (
     <Hoja etiqueta="Publicar en Instagram" titulo="Publicar en Instagram" pie={pie} onCerrar={cerrar}>
@@ -175,22 +312,21 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
         </p>
       ) : (
         <>
-          {!publicado && (
-            <Chips ariaLabel="Formato">
-              <Chip activo={formato === "4x5"} onClick={() => !publicando && setFormato("4x5")}>
-                Publicación 4:5
-              </Chip>
-              <Chip activo={formato === "9x16"} onClick={() => !publicando && setFormato("9x16")}>
-                Historia 9:16
-              </Chip>
-            </Chips>
-          )}
+          <Chips ariaLabel="Formato">
+            <Chip activo={formato === "4x5"} onClick={() => setFormato("4x5")}>
+              Publicación 4:5
+            </Chip>
+            <Chip activo={formato === "9x16"} onClick={() => setFormato("9x16")}>
+              Historia 9:16
+            </Chip>
+          </Chips>
           {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho, ya JPEG */}
           <img key={src} className={styles.vista} data-formato={formato} src={src!} alt={`Vista previa de la ${formato === "4x5" ? "publicación" : "historia"}: ${listo.titulo}`} width={720} height={formato === "4x5" ? 900 : 1280} />
-          {!publicado && linea && (
+          {estado}
+          {linea && (
             <p className={`${hoja.nota} ${styles.linea}`}>
               {linea.texto}
-              {linea.opcion && !publicando && (
+              {linea.opcion && !enviando && (
                 <>
                   {" "}
                   <button type="button" className={admin.enlace} onClick={alOpcion}>
@@ -200,11 +336,11 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
               )}
             </p>
           )}
-          {!publicado && carrusel && resumen && (
+          {carrusel && resumen && (
             <>
               <p className={`${hoja.nota} ${styles.linea}`}>
                 {resumen.resumen}
-                {fuera.length > 0 && !publicando && (
+                {fuera.length > 0 && !enviando && (
                   <>
                     {" "}
                     <button
@@ -225,13 +361,13 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
                   <li key={i.clave} className={styles.lamina}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- la miniatura la dibuja el servidor a 240 de ancho, ya JPEG */}
                     <img className={styles.miniatura} src={imagenDe(i.clave, true)!} alt={`${n + 1}: ${nombreDe(i)}`} width={240} height={300} />
-                    <BotonIcono aria-label={`Mover antes: ${nombreDe(i)}`} disabled={n === 0 || publicando} onClick={() => mover(i.clave, -1)}>
+                    <BotonIcono aria-label={`Mover antes: ${nombreDe(i)}`} disabled={n === 0 || enviando} onClick={() => mover(i.clave, -1)}>
                       <IconoChevronIzquierda width={20} height={20} />
                     </BotonIcono>
-                    <BotonIcono aria-label={`Quitar del carrusel: ${nombreDe(i)}`} disabled={carrusel.van.length === 1 || publicando} onClick={() => setFuera((q) => [...q, i.clave])}>
+                    <BotonIcono aria-label={`Quitar del carrusel: ${nombreDe(i)}`} disabled={carrusel.van.length === 1 || enviando} onClick={() => setFuera((q) => [...q, i.clave])}>
                       <IconoCerrar width={20} height={20} />
                     </BotonIcono>
-                    <BotonIcono aria-label={`Mover después: ${nombreDe(i)}`} disabled={n === carrusel.van.length - 1 || publicando} onClick={() => mover(i.clave, 1)}>
+                    <BotonIcono aria-label={`Mover después: ${nombreDe(i)}`} disabled={n === carrusel.van.length - 1 || enviando} onClick={() => mover(i.clave, 1)}>
                       <IconoChevronDerecha width={20} height={20} />
                     </BotonIcono>
                   </li>
@@ -240,7 +376,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
               {resumen.fuera && <p className={`${hoja.nota} ${styles.linea}`}>{resumen.fuera}</p>}
             </>
           )}
-          {!publicado && !empezo && (
+          {!empezo && (
             <>
               <p className={`${hoja.nota} ${styles.linea}`}>
                 {listo.etiquetas.length === 0 ? "Ni el lugar ni sus artistas tienen Instagram en su ficha: sin etiquetas." : etiquetas.length ? (formato === "4x5" ? "Se etiqueta en la foto y se menciona en el texto:" : "Se etiqueta en la historia:") : "Sin etiquetas."}
@@ -289,58 +425,27 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
               {error.mensaje}
             </p>
           )}
-          {publicado ? (
-            <div role="status">
-              <p className={admin.hecho}>
-                <IconoInstagram width={22} height={22} />
-                <span>Instagram: {formato === "9x16" ? "historia publicada" : publicado.imagenes > 1 ? `carrusel publicado, ${textoImagenes(publicado.imagenes)}` : "publicado"}</span>
-                {publicado.permalink && (
-                  <a className={admin.enlace} href={publicado.permalink} target="_blank" rel="noopener noreferrer" aria-label="Ver en Instagram">
-                    Ver
-                  </a>
-                )}
-              </p>
-              {espejo?.ok && (
-                <p className={admin.hecho}>
-                  <IconoFacebook width={22} height={22} />
-                  <span>Facebook: {formato === "9x16" ? "historia publicada" : publicado.imagenes > 1 ? `publicado, ${publicado.imagenes} fotos` : "publicado"}</span>
-                  {espejo.permalink && (
-                    <a className={admin.enlace} href={espejo.permalink} target="_blank" rel="noopener noreferrer" aria-label="Ver en Facebook">
-                      Ver
-                    </a>
-                  )}
-                </p>
-              )}
-              {espejo && !espejo.ok && (
-                <>
-                  <p className={`${admin.hecho} ${styles.falla}`}>
-                    <IconoFacebook width={22} height={22} />
-                    <span>
-                      Facebook: <em>{ESTADO_FACEBOOK[espejo.error]}</em>
-                    </span>
-                  </p>
-                  <p className={hoja.nota}>{espejo.mensaje}</p>
-                </>
-              )}
-              {publicado.sinEtiquetas && <p className={hoja.nota}>Instagram no dejó etiquetar o poner la ubicación: salió sin ellas.</p>}
-            </div>
-          ) : (
-            <>
-              {listo.publicado && !empezo && <p className={hoja.nota}>Ya se publicó: {{ "4x5": "publicación", "9x16": "historia", carrusel: "carrusel" }[listo.publicado.formato]}, {listo.publicado.cuando}.</p>}
-              {!empezo && (
-                <Casilla
-                  titulo="También en Facebook"
-                  detalle={formato === "4x5" ? "En la página Somos Nosotrxs, con el enlace a la ficha del evento." : "En las historias de la página Somos Nosotrxs."}
-                  marcada={conFacebook}
-                  disabled={publicando}
-                  onCambio={(si) => {
-                    setConFacebook(si);
-                    guardarConFacebook(si);
-                  }}
-                />
-              )}
-              {!empezo && <p className={`${hoja.nota} ${styles.trasCasilla}`}>Se publica en @{CUENTA_INSTAGRAM}{conFacebook ? " y en su página de Facebook" : ""}.</p>}
-            </>
+          {listo.publicado && !empezo && !trabajo && <p className={hoja.nota}>Ya se publicó: {{ "4x5": "publicación", "9x16": "historia", carrusel: "carrusel" }[listo.publicado.formato]}, {listo.publicado.cuando}.</p>}
+          {!empezo && (
+            <Casilla
+              titulo="También en Facebook"
+              detalle={formato === "4x5" ? "En la página Somos Nosotrxs, con el enlace a la ficha del evento." : "En las historias de la página Somos Nosotrxs."}
+              marcada={conFacebook}
+              disabled={enviando}
+              onCambio={(si) => {
+                setConFacebook(si);
+                guardarConFacebook(si);
+              }}
+            />
+          )}
+          {!empezo && !confirmar && <p className={`${hoja.nota} ${styles.trasCasilla}`}>Se publica en @{CUENTA_INSTAGRAM}{conFacebook ? " y en su página de Facebook" : ""}. Te avisamos en el teléfono cuando termine.</p>}
+          {confirmar && (reciente || duplicado) && (
+            <p className={`${hoja.nota} ${styles.trasCasilla}`} role="status">
+              {preguntaRepetir((confirmar === "facebook" ? duplicado : reciente) ?? { estado: "publicando" }, confirmar)}{" "}
+              <button type="button" className={admin.enlace} onClick={() => setConfirmar(null)} disabled={enviando}>
+                Mejor no
+              </button>
+            </p>
           )}
         </>
       )}

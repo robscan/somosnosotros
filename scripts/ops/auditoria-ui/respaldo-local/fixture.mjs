@@ -1213,6 +1213,18 @@ tablas.facebook_publicaciones = [
   { id: "eeee0461-0000-4000-8000-000000000001", instagram_id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, post_id: "1374800000000461_122100000000000001", permalink: "https://www.facebook.com/1374800000000461/posts/122100000000000001", publicado_por: ADMIN, creado_en: hace(1) },
 ];
 tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagina_id: "108000000000458", nombre: "San Luis Potosí", enlace: "https://www.facebook.com/demo", actualizado_por: ADMIN, actualizado_en: hace(3) }];
+// OL-465: la cola de redes (vacía al arrancar) y lo leído de los carteles; `redes_reciente` y `redes_encolar` con la regla de la base (en camino, o
+// publicado hace menos de 15 minutos; un carrusel cuenta como 4:5). Los permisos y el candado reales, en `supabase/tests/pg/redes-en-cola.test.mjs`.
+tablas.redes_trabajos = [];
+tablas.cartel_lecturas = [];
+const recienteRedes = (t, evento, red, formato) => {
+  const vivo = t.redes_trabajos.some((x) => x.evento_id === evento && ["en_cola", "publicando"].includes(x.estado) && x.formato === formato && (x.red === red || (red === "facebook" && x.red === "instagram" && x.pedido?.facebook === true)));
+  if (vivo) return { estado: "publicando" };
+  const hace15 = Date.now() - 15 * 60_000;
+  const tabla = red === "instagram" ? t.instagram_publicaciones : t.facebook_publicaciones;
+  const ultima = tabla.filter((x) => x.evento_id === evento && x.estado === "publicada" && (x.formato === "carrusel" ? "4x5" : x.formato) === formato && Date.parse(x.creado_en) > hace15).sort((a, b) => b.creado_en.localeCompare(a.creado_en))[0];
+  return ultima ? { estado: "publicado", minutos: Math.max(0, Math.floor((Date.now() - Date.parse(ultima.creado_en)) / 60_000)) } : null;
+};
 const sugeribleIg = (e, t, ahora) => {
   if (e.visible === false || e.borrador || e.retirado_por_admin || e.cancelado) return false;
   const inicio = new Date(e.inicio);
@@ -1223,6 +1235,16 @@ const sugeribleIg = (e, t, ahora) => {
   return false;
 };
 Object.assign(rpcs, {
+  redes_reciente: ({ p_evento, p_red, p_formato }, t, { sub } = {}) => (sub === ADMIN ? recienteRedes(t, p_evento, p_red, p_formato) : null),
+  redes_encolar: ({ p_evento, p_red, p_formato, p_pedido, p_repetir }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return null;
+    const reciente = recienteRedes(t, p_evento, p_red, p_formato);
+    if (reciente && !p_repetir) return { duplicado: reciente };
+    const ahora = new Date().toISOString();
+    const fila = { id: crypto.randomUUID(), evento_id: p_evento, red: p_red, formato: p_formato, pedido: p_pedido ?? {}, estado: "en_cola", avance: {}, resultado: null, intentos: 0, fallos: 0, error: null, turno: 0, ocupada_hasta: null, siguiente_en: ahora, avisado_en: null, pedido_por: sub, creado_en: ahora, actualizado_en: ahora, terminado_en: null };
+    t.redes_trabajos.push(fila);
+    return { id: fila.id };
+  },
   ciudad_slug: ({ p_ciudad }) => slugCiudad(p_ciudad),
   instagram_sugerencias: ({ p_ciudad = null }, t, { sub } = {}) => {
     if (sub !== ADMIN) return [];

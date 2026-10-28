@@ -30,6 +30,8 @@ const CARTEL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><r
 let dir, server, browser, origin, MEDIR;
 const mocks = {
   "@/app/eventos/acciones": `
+    // OL-465: lo que dejó el servidor de una lectura cuya respuesta se perdió (\`window.qa.guardada\`: null, 'leyendo' o un resultado).
+    export async function lecturaGuardada(url){const q=window.qa;q.recogidas=(q.recogidas??0)+1;const g=q.guardada;if(g==null)return null;if(g==='leyendo'){q.guardada=q.despues??null;return {estado:'leyendo'}}return {estado:'lista',resultado:structuredClone(g)}}
     export async function leerCartelAccion(url){
       const q=window.qa;q.lecturas.push(url);
       if(q.espera)await new Promise((r)=>{q.liberar=r});
@@ -1540,6 +1542,26 @@ test("si se corta a mitad: antes de subir lo dice y no guarda nada; con el carte
   await subir(p);
   assert.equal(await pregunta(p), "¿Cómo se llama?");
   assert.equal(await guardado(p).innerText(), "Cartel guardado · no pude leerlo");
+});
+
+test("OL-465: si la respuesta de la lectura se pierde (el teléfono se fue a otra app) pero el servidor la terminó, la espera la recoge y sigue a «Revisa» con lo leído", TOPE, async (t) => {
+  // El servidor todavía lee en la primera pregunta y en la segunda ya dejó lo leído; la acción, del lado del teléfono, se cortó.
+  const p = await pagina(t, { qa: { lectura: "throw", guardada: "leyendo", despues: LEIDO } });
+  await subir(p);
+  await p.getByRole("status").filter({ hasText: "Leyendo el cartel…" }).waitFor();
+  await p.getByText("Leído del cartel").waitFor({ timeout: 15000 });
+  assert.equal((await renglones(p)).length, 4);
+  assert.equal(await pregunta(p), "Inauguración de Ecos de papel");
+  assert.equal(await p.evaluate(() => window.qa.recogidas), 2);
+  assert.equal(await guardado(p).count(), 0);
+});
+
+test("OL-465: si el servidor no dejó nada (o no pudo leerlo), el corte es el de siempre: «Cartel guardado · no pude leerlo»", TOPE, async (t) => {
+  const p = await pagina(t, { qa: { lectura: "throw", guardada: { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." } } });
+  await subir(p);
+  assert.equal(await pregunta(p), "¿Cómo se llama?");
+  assert.equal(await guardado(p).innerText(), "Cartel guardado · no pude leerlo");
+  assert.equal(await p.evaluate(() => window.qa.recogidas), 1);
 });
 
 test("sin servicio de lectura el marco solo lleva el recuadro, sin casilla; el cartel se sube y se sigue a las preguntas", TOPE, async (t) => {

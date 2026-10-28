@@ -40,12 +40,13 @@ const acciones = `
       ciudad: { slug: 'san-luis-potosi', nombre: 'San Luis Potosí' }, conCartel: true, recortar: false, sePuede: true, publicado: null, evento,
       carrusel: window.qa.unaSola ? [] : window.qa.carrusel };
   }
+  // OL-465: publicar guarda el trabajo en la cola y la hoja se cierra.
   export async function publicarEnInstagram(p) {
     apuntar('publicarEnInstagram', [p]);
-    const n = p.imagenes?.length ?? 1;
-    return { ok: true, permalink: 'https://www.instagram.com/p/DEMO/', sinEtiquetas: false, imagenes: n, facebook: p.facebook ? { ok: true, permalink: 'https://www.facebook.com/1/posts/2' } : null };
+    return { ok: true, id: 't1' };
   }
-  export async function publicarEnFacebook(...a) { apuntar('publicarEnFacebook', a); return { ok: true, permalink: null }; }
+  export async function estadoTrabajo() { return null; }
+  export async function publicarEnFacebook(...a) { apuntar('publicarEnFacebook', a); return { ok: true, id: 't2' }; }
 `;
 const mocks = {
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link({prefetch,replace,scroll,...p}){return React.createElement('a',p)}",
@@ -252,11 +253,11 @@ test("las flechas cambian el orden; la imagen grande es la nueva primera; public
   await tocar(p, hoja.getByRole("button", { name: "Quitar del carrusel: Astrología básica" }));
   orden = await ordenDe(hoja);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
-  await hoja.getByRole("status").waitFor();
+  // OL-465: el trabajo queda en la cola y la hoja se cierra.
+  await hoja.waitFor({ state: "detached" });
   const publicar = (await qa(p)).acciones.find((a) => a[0] === "publicarEnInstagram");
   assert.deepEqual(publicar[1].imagenes, orden);
   assert.equal(publicar[1].formato, "4x5");
-  assert.equal(await texto(hoja.getByRole("status")), "Instagram: carrusel publicado, 10 imágenes Ver Facebook: publicado, 10 fotos Ver");
 });
 
 test("la historia lleva solo la portada (sin tira) y una sola imagen deja la hoja como siempre", async (t) => {
@@ -266,7 +267,8 @@ test("la historia lleva solo la portada (sin tira) y una sola imagen deja la hoj
   assert.equal(await tira(hoja).count(), 0);
   assert.match(await texto(hoja), /Las historias no llevan texto y duran 24 horas\. Lleva solo la portada\./);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
-  await hoja.getByRole("status").waitFor();
+  // OL-465: el trabajo queda en la cola y la hoja se cierra.
+  await hoja.waitFor({ state: "detached" });
   const publicar = (await qa(p)).acciones.find((a) => a[0] === "publicarEnInstagram");
   assert.equal(publicar[1].imagenes, undefined);
 

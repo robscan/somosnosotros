@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import HojaInstagram from "@/components/instagram/HojaInstagram";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
@@ -13,8 +13,9 @@ import renglonCss from "@/components/ui/Renglon.module.css";
 import lista from "@/components/Lista.module.css";
 import { HojaCiudades, recordarCiudad } from "../CabeceraLista";
 import type { CiudadPanel } from "../consultas";
-import { ESTADO_FACEBOOK, FRASES_FACEBOOK } from "@/lib/instagram/frases";
-import { publicarEnFacebook, type Espejo } from "./acciones";
+import { ESTADO_FACEBOOK, type ClaveFacebook } from "@/lib/instagram/frases";
+import { preguntaRepetir, REFRESCO_MS } from "@/lib/redes/reglas";
+import { publicarEnFacebook, type Encolado } from "./acciones";
 import type { Sugerencia } from "./datos";
 
 const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos de los próximos 7 días de cada ciudad." };
@@ -25,31 +26,57 @@ const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos d
  * el de las listas; tocarlo abre la hoja de vista previa (sin JavaScript, lleva a la ficha). `abrir`: el evento con el que llega abierta la hoja.
  * OL-461: en «Ya en Instagram», cada renglón dice cómo va en Facebook y, si no está ahí, lleva el botón «Publicar en Facebook» (el icono de
  * Facebook a la derecha, como el «Voy» de las listas): publica la misma imagen en la página y el renglón lo dice.
+ * OL-465 (bitácora 497): publicar va en segundo plano: el renglón dice «Publicando…» (o «Facebook: publicando…») mientras el trabajo está en la
+ * cola, y la lista se refresca sola cada 20 s mientras lo haya y al volver a la app. Si ese evento ya se publicó en Facebook hace menos de 15
+ * minutos, el botón pregunta antes de repetir.
  */
 export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null }) {
   const router = useRouter();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [evento, setEvento] = useState<string | null>(abrir);
   const [enCurso, setEnCurso] = useState<string | null>(null);
-  const [hechos, setHechos] = useState<Record<string, Espejo>>({});
+  // Lo que respondió el botón de Facebook de cada renglón, solo mientras la lista no se refresque (luego manda lo que dice el servidor).
+  const [hechos, setHechos] = useState<Record<string, { r: Encolado; ya: Sugerencia[] }>>({});
   const [, empezar] = useTransition();
+  const hecho = (s: Sugerencia) => (hechos[s.id]?.ya === ya ? hechos[s.id].r : null);
   const aFacebook = (s: Sugerencia) =>
     empezar(async () => {
       setEnCurso(s.id);
-      const r = await publicarEnFacebook(s.id).catch((): Espejo => ({ ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro }));
-      setHechos((h) => ({ ...h, [s.id]: r }));
+      const r = await publicarEnFacebook(s.id, null, pideConfirmar(s)).catch((): Encolado => ({ ok: false, error: "otro", mensaje: "No se pudo guardar la publicación." }));
+      setHechos((h) => ({ ...h, [s.id]: { r, ya } }));
       setEnCurso(null);
       if (r.ok) router.refresh();
     });
   /** La línea de Facebook de lo que ya está en Instagram. */
   const lineaFacebook = (s: Sugerencia): string | null => {
-    const r = hechos[s.id];
+    const r = hecho(s);
     if (enCurso === s.id) return "Facebook: publicando…";
-    if (r) return r.ok ? "Facebook: publicado" : `Facebook: ${ESTADO_FACEBOOK[r.error]}`;
-    if (!s.facebook) return null;
-    return s.facebook.estado === "publicada" ? "Facebook: publicado" : s.facebook.estado === "error" ? `Facebook: ${ESTADO_FACEBOOK[s.facebook.error]}` : "Facebook: sin publicar";
+    if (r) return r.ok ? (r.yaEstaba ? "Facebook: publicado" : "Facebook: publicando…") : "duplicado" in r ? preguntaRepetir(r.duplicado, "facebook") : `Facebook: ${ESTADO_FACEBOOK[r.error as ClaveFacebook] ?? "no se publicó"}`;
+    const f = s.facebook;
+    if (!f) return null;
+    if (f.estado === "publicada") return "Facebook: publicado";
+    if (f.estado === "publicando") return "Facebook: publicando…";
+    if (f.estado === "error") return `Facebook: ${ESTADO_FACEBOOK[f.error]}`;
+    return "Facebook: sin publicar";
   };
-  const faltaFacebook = (s: Sugerencia) => !!s.facebook && s.facebook.estado !== "publicada" && !hechos[s.id]?.ok;
+  const pideConfirmar = (s: Sugerencia) => {
+    const r = hecho(s);
+    return !!r && !r.ok && "duplicado" in r;
+  };
+  const faltaFacebook = (s: Sugerencia) => !!s.facebook && s.facebook.estado !== "publicada" && s.facebook.estado !== "publicando" && !hecho(s)?.ok;
+  // Mientras algo está en la cola: la lista se refresca cada 20 s (si la pantalla se ve) y al volver a la app.
+  const hayEnCamino = para.some((s) => s.publicando) || ya.some((s) => s.publicando);
+  useEffect(() => {
+    const refrescar = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    document.addEventListener("visibilitychange", refrescar);
+    const reloj = hayEnCamino ? window.setInterval(refrescar, REFRESCO_MS) : null;
+    return () => {
+      document.removeEventListener("visibilitychange", refrescar);
+      if (reloj) window.clearInterval(reloj);
+    };
+  }, [hayEnCamino, router]);
   const renglon = (s: Sugerencia) => {
     const facebook = lineaFacebook(s);
     return (
@@ -64,7 +91,7 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
         }}
         accion={
           faltaFacebook(s) ? (
-            <BotonIcono aria-label={`Publicar en Facebook: ${s.titulo}`} disabled={enCurso !== null} aria-busy={enCurso === s.id || undefined} onClick={() => aFacebook(s)}>
+            <BotonIcono aria-label={`${pideConfirmar(s) ? "Publicar otra vez en Facebook" : "Publicar en Facebook"}: ${s.titulo}`} disabled={enCurso !== null} aria-busy={enCurso === s.id || undefined} onClick={() => aFacebook(s)}>
               <IconoFacebook width={22} height={22} />
             </BotonIcono>
           ) : undefined

@@ -38,6 +38,8 @@ export const PAUSAS_MS = [1_000, 3_000] as const;
 const MINIMO_MS = 1_500;
 
 export type OpcionesDisparo = {
+  /** La ruta que se pide: la del motor de rutinas (por omisión) o la de la cola de redes (OL-465), con el mismo secreto. */
+  ruta?: "/api/rutinas/correr" | "/api/redes/correr";
   secreto?: string;
   pedir?: typeof fetch;
   avisar?: (texto: string) => void;
@@ -77,7 +79,7 @@ export async function dispararPaso(origen: string | null, opciones: OpcionesDisp
     const queda = hasta - ahora();
     if (queda < MINIMO_MS) break;
     try {
-      const r = await (opciones.pedir ?? fetch)(`${origen}/api/rutinas/correr`, {
+      const r = await (opciones.pedir ?? fetch)(`${origen}${opciones.ruta ?? "/api/rutinas/correr"}`, {
         method: "POST",
         headers: { authorization: `Bearer ${secreto}` },
         signal: AbortSignal.timeout(Math.min(PLAZO_INTENTO_MS, queda)),

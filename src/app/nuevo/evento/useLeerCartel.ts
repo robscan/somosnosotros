@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { leerCartelAccion, type Cupo } from "@/app/eventos/acciones";
+import { leerCartelAccion, lecturaGuardada, type Cupo, type ResultadoCartel } from "@/app/eventos/acciones";
 import { detalleDeLecturas, falloAlSubir, falloDeCorte, lecturaAgotada, seLee } from "@/app/eventos/estadoCartel";
 import { medirCliente } from "@/lib/medir";
 import useSubidaDeFoto from "@/components/ui/useSubidaDeFoto";
@@ -28,6 +28,51 @@ type Opciones = {
   /** La ciudad desde la que se publica (OL-413): el lugar del cartel se busca por su dirección solo en ella. */
   ciudad?: string | null;
 };
+
+/** Cuánto se espera, con la pantalla a la vista, a que el servidor termine una lectura que se cortó (OL-465). */
+export const ESPERA_LECTURA_MS = 90_000;
+const PAUSA_LECTURA_MS = 3_000;
+
+/**
+ * OL-465 (bitácora 497): si la respuesta de la lectura se perdió (el teléfono se fue a otra app, se cayó la señal), la lectura sigue en el
+ * servidor y deja lo que salió en `cartel_lecturas`: se pregunta cada 3 s, solo con la pantalla a la vista (al volver a la app, en seguida),
+ * hasta 90 s. Null si no hay nada que recoger (entonces es el corte de siempre).
+ */
+export async function recogerLectura(url: string, o: { preguntar?: typeof lecturaGuardada; esperar?: (ms: number) => Promise<void>; ahora?: () => number; visible?: () => boolean } = {}): Promise<ResultadoCartel | null> {
+  const preguntar = o.preguntar ?? lecturaGuardada;
+  const ahora = o.ahora ?? Date.now;
+  const visible = o.visible ?? (() => typeof document === "undefined" || document.visibilityState === "visible");
+  const esperar = o.esperar ?? ((ms: number) => new Promise<void>((listo) => {
+    // Con la app en segundo plano no corre el reloj: se pregunta al volver.
+    const alVolver = () => {
+      if (!visible()) return;
+      document.removeEventListener("visibilitychange", alVolver);
+      window.clearTimeout(reloj);
+      listo();
+    };
+    const reloj = window.setTimeout(() => {
+      document.removeEventListener("visibilitychange", alVolver);
+      listo();
+    }, ms);
+    document.addEventListener("visibilitychange", alVolver);
+  }));
+  let visto = 0;
+  let antes = ahora();
+  while (visto <= ESPERA_LECTURA_MS) {
+    try {
+      const r = await preguntar(url);
+      if (!r) return null;
+      if (r.estado === "lista") return r.resultado;
+    } catch {
+      // sin señal todavía: se vuelve a preguntar
+    }
+    await esperar(PAUSA_LECTURA_MS);
+    const t = ahora();
+    if (visible()) visto += Math.min(t - antes, PAUSA_LECTURA_MS * 2);
+    antes = t;
+  }
+  return null;
+}
 
 /**
  * Subir el cartel y, si toca, leerlo, para el primer paso del alta por pasos (OL-302 y OL-307): el cartel se sube siempre (`subirFoto`) y
@@ -81,7 +126,8 @@ export function useLeerCartel({ usuarioId, servicio, cupo, alLeer, alGuardar, in
             gestos.current.alGuardar();
             return url;
           }
-          const r = await leerCartelAccion(url, ciudad);
+          // OL-465: si la respuesta se pierde (el teléfono se fue a otra app a media lectura), se recoge lo que dejó el servidor.
+          const r = await leerCartelAccion(url, ciudad).catch(async (e: unknown) => (await recogerLectura(url!)) ?? Promise.reject(e));
           if (r.ok) {
             medirCliente("cartel_leido", { resultado: "ok" });
             setSubido({ url, leido: true, noPude: false, colores });

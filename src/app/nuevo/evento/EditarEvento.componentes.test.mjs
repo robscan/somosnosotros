@@ -43,6 +43,7 @@ let dir, server, browser, origin;
 const atras = "import React from 'react';import {pedirSalida} from './src/lib/guardiaSalida';export function useVolver(){return (e)=>{e.preventDefault();const ir=()=>window.qa.salio++;if(!pedirSalida(ir))ir();}}export function useTerminar(){return (destino)=>{window.qa.terminado=destino}}export default function Atras(){return null}export function AtrasIcono(){return null}";
 const mocks = {
   "@/app/eventos/acciones": `
+    export async function lecturaGuardada(){return null}
     export async function leerCartelAccion(url){const q=window.qa;q.lecturas.push(url);return structuredClone(q.lectura)}
     export async function zonaDelPunto(){return 'America/Mexico_City'}
   `,

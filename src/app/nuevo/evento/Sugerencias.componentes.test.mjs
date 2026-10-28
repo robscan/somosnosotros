@@ -27,6 +27,7 @@ const CARTEL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><r
 let dir, server, browser, origin;
 const mocks = {
   "@/app/eventos/acciones": `
+    export async function lecturaGuardada(){return null}
     export async function leerCartelAccion(url){
       const q=window.qa;q.lecturas.push(url);
       if(q.espera)await new Promise((r)=>{q.liberar=r});

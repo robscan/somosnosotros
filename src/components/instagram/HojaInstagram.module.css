@@ -6,7 +6,8 @@
    3. OL-461: la línea bajo la casilla «También en Facebook», con aire arriba (la casilla no lleva margen); y el resultado en Facebook cuando
       falló, con el icono en el color del error, no en el verde de lo hecho.
    4. OL-464 (bitácora 496): la tira del carrusel. Una fila que se desliza a lo ancho dentro de la hoja (nunca la página), cada imagen en su
-      orden con sus tres botones de 44 debajo (antes, quitar, después); la miniatura mide lo que los tres botones. */
+      orden con sus tres botones de 44 debajo (antes, quitar, después); la miniatura mide lo que los tres botones.
+   5. OL-465 (bitácora 497): lo que va en camino («Instagram: publicando…»), con el icono en el gris del texto suave, no en el verde de lo hecho. */
 .vista {
   --alto-vista: max(calc(16 * var(--letra-base)), min(calc(100dvh - 31 * var(--letra-base)), calc(40 * var(--letra-base))));
   display: block;
@@ -43,6 +44,9 @@
 }
 .falla > svg {
   color: var(--error);
+}
+.enCamino > svg {
+  color: var(--texto-suave);
 }
 
 .tira {
