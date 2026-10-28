@@ -1,7 +1,9 @@
 import "server-only";
 import { diaLocal, formatearCuando, textoDePeriodo, esDeVariosDias } from "@/lib/fechas";
-import { lineaDeSenal, porSenal, sePuedePublicar } from "@/lib/instagram/elegir";
-import { armarTexto, etiquetasDeLaFoto, usuarioDeInstagram, type ArtistaIg, type EventoIg } from "@/lib/instagram/texto";
+import { costoOpcional } from "@/lib/eventos";
+import { lineaDeSenal, porSenal, sePuedePublicar, textoActos, unRenglonPorFestival } from "@/lib/instagram/elegir";
+import { armarTexto, etiquetasDeLaFoto, usuarioDeInstagram, type ActoIg, type ArtistaIg, type EventoIg } from "@/lib/instagram/texto";
+import { nombreDeSedes, sedesDeFestival } from "@/lib/sedesFestival";
 import type { ClienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -70,8 +72,15 @@ function cuandoDelRenglon(f: FilaSugerencia, ahora: Date): string {
 export async function cargarSugerencias(supabase: ClienteServidor, ciudad: string | null, ahora = new Date()): Promise<{ para: Sugerencia[]; ya: Sugerencia[]; filas: FilaSugerencia[] } | null> {
   const { data, error } = await supabase.rpc("instagram_sugerencias", { p_ciudad: ciudad, p_dias: 7 });
   if (error || !Array.isArray(data)) return null;
-  // La base ya dejó solo lo que se puede publicar (por venir, o en curso con días o sesiones por delante).
-  const filas = data as FilaSugerencia[];
+  // La base ya dejó solo lo que se puede publicar (por venir, o en curso con días o sesiones por delante). Un festival es un solo renglón: sus
+  // actos no van aparte mientras él esté en la lista (OL-463). Si sus actos no se pudieron leer, la lista va como antes.
+  const todas = data as FilaSugerencia[];
+  const festivales = todas.filter((f) => f.clase === "festival").map((f) => f.id);
+  const actos = festivales.length
+    ? await supabase.from("eventos").select("id, evento_padre_id").in("evento_padre_id", festivales).eq("visible", true).eq("borrador", false).eq("cancelado", false).eq("retirado_por_admin", false).limit(2000)
+    : null;
+  const agrupadas = unRenglonPorFestival(todas, actos && !actos.error ? ((actos.data ?? []) as { id: string; evento_padre_id: string | null }[]) : []);
+  const filas = agrupadas.filas;
   // Lo ya publicado en Instagram: cómo va en Facebook (OL-461). Si no se pudo leer, sin estado (el renglón no ofrece publicar en Facebook).
   const publicados = filas.filter((f) => f.publicado_en).map((f) => f.id);
   const fb = publicados.length
@@ -83,7 +92,8 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
     href: `/eventos/${f.slug || f.id}`,
     titulo: f.titulo,
     foto: f.imagen,
-    cuando: cuandoDelRenglon(f, ahora),
+    // Un festival dice cuántos actos lleva (OL-463): se publica una vez, con su programa.
+    cuando: [cuandoDelRenglon(f, ahora), agrupadas.actos.get(f.id) ? textoActos(agrupadas.actos.get(f.id)!) : null].filter(Boolean).join(" · "),
     donde: [f.lugar_nombre ?? f.sitio_texto, ciudad ? null : f.ciudad_nombre].filter(Boolean).join(" · ") || f.ciudad_nombre,
     linea: f.publicado_en
       ? `${FORMATO[f.publicado_formato === "9x16" ? "9x16" : "4x5"]} · ${cuandoSePublico(f.publicado_en, ahora, f.zona)}`
@@ -126,6 +136,10 @@ export async function cargarResumenInstagram(supabase: ClienteServidor, ciudad: 
   return { semana: publicadas.count ?? 0, facebook, porPublicar: sugerencias.para.length, ciudad: ciudad ? nombre : null };
 }
 
+type LugarFila = { id?: string; nombre: string; redes: unknown };
+type Uno<T> = T | T[] | null;
+const uno = <T,>(x: Uno<T>): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
+
 type FilaEvento = {
   id: string;
   slug: string | null;
@@ -142,11 +156,28 @@ type FilaEvento = {
   cancelado: boolean;
   borrador: boolean;
   retirado_por_admin: boolean;
+  evento_padre_id: string | null;
+  inaugura_id: string | null;
   lugar_id: string | null;
   sitio_texto: string | null;
-  lugar: { nombre: string; redes: unknown } | { nombre: string; redes: unknown }[] | null;
-  sesiones: { inicio: string }[] | null;
+  lugar: Uno<LugarFila>;
+  sesiones: { inicio: string; fin: string | null }[] | null;
 };
+
+type FilaActo = {
+  id: string;
+  titulo: string;
+  inicio: string;
+  fin: string | null;
+  precio: string | null;
+  lugar_id: string | null;
+  sitio_texto: string | null;
+  sitio_reservado: boolean | null;
+  lugar: Uno<LugarFila>;
+  sesiones: { inicio: string; fin: string | null }[] | null;
+};
+
+type FilaArtista = { evento_id?: string; artista: Uno<{ id: string; nombre: string; redes: unknown; disciplina: string | null }> };
 
 export type ParaHoja = {
   id: string;
@@ -165,25 +196,63 @@ export type ParaHoja = {
   datos: { inicio: string; termina: string; zona: string; clase: string; sesiones: { inicio: string }[] };
 };
 
+const aArtista = (x: FilaArtista): ArtistaIg | null => {
+  const a = uno(x.artista);
+  return a ? { id: a.id, nombre: a.nombre, usuario: usuarioDeInstagram(a.redes), disciplina: a.disciplina } : null;
+};
+
+/**
+ * Los actos de un festival para el texto (OL-463): los publicados y no cancelados (también los que ya pasaron: cuentan para el precio y las
+ * etiquetas; el programa solo dice lo que falta), cada uno con sus artistas y sus sesiones, y la sede que dicen sus actos («Varias sedes», la única,
+ * o null si ninguno dice dónde). Null si no se pudieron leer (el festival se publica como antes, como un evento).
+ */
+async function cargarActos(supabase: ClienteServidor, festivalId: string): Promise<{ actos: ActoIg[]; sede: { nombre: string; usuario: string | null } | null } | null> {
+  const { data, error } = await supabase
+    .from("eventos")
+    .select("id, titulo, inicio, fin, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(id, nombre, redes), sesiones:eventos_sesiones(inicio, fin)")
+    .eq("evento_padre_id", festivalId)
+    .eq("visible", true)
+    .eq("borrador", false)
+    .eq("cancelado", false)
+    .eq("retirado_por_admin", false)
+    .order("inicio")
+    .limit(200);
+  if (error || !Array.isArray(data)) return null;
+  const filas = data as FilaActo[];
+  if (!filas.length) return { actos: [], sede: null };
+  const ligados = await supabase.from("eventos_artistas").select("evento_id, orden, artista:artistas(id, nombre, redes, disciplina)").in("evento_id", filas.map((a) => a.id)).order("orden").limit(1000);
+  const porActo = new Map<string, ArtistaIg[]>();
+  for (const x of (ligados.data ?? []) as FilaArtista[]) {
+    const a = aArtista(x);
+    if (a && x.evento_id) porActo.set(x.evento_id, [...(porActo.get(x.evento_id) ?? []), a]);
+  }
+  const actos = filas.map((a) => ({ titulo: a.titulo, inicio: a.inicio, fin: a.fin, precio: a.precio, artistas: porActo.get(a.id) ?? [], ...(a.sesiones?.length ? { sesiones: a.sesiones } : {}) }));
+  // La sede, como la dice la app (OL-339: el «Dónde» de un festival sale de sus actos).
+  const sedes = sedesDeFestival(filas.map((a) => ({ inicio: a.inicio, fin: a.fin, lugar_id: a.lugar_id, lugar: uno(a.lugar), sitio_texto: a.sitio_texto, sitio_reservado: !!a.sitio_reservado })));
+  const nombre = nombreDeSedes(sedes);
+  const lugarUnico = sedes.length === 1 && sedes[0].lugar ? filas.map((a) => uno(a.lugar)).find((l) => l?.id === sedes[0].lugar!.id) : null;
+  return { actos, sede: nombre ? { nombre, usuario: lugarUnico ? usuarioDeInstagram(lugarUnico.redes) : null } : null };
+}
+
 /** Todo lo de un evento para su hoja y para publicarlo. Null si no existe o no se ve. */
 export async function cargarParaHoja(supabase: ClienteServidor, eventoId: string, ahora = new Date()): Promise<ParaHoja | null> {
   const { data: e } = await supabase
     .from("eventos")
-    .select("id, slug, titulo, inicio, fin, termina, zona, clase, precio, imagen, ciudad, visible, cancelado, borrador, retirado_por_admin, lugar_id, sitio_texto, lugar:lugares(nombre, redes), sesiones:eventos_sesiones(inicio)")
+    .select("id, slug, titulo, inicio, fin, termina, zona, clase, precio, imagen, ciudad, visible, cancelado, borrador, retirado_por_admin, evento_padre_id, inaugura_id, lugar_id, sitio_texto, lugar:lugares(nombre, redes), sesiones:eventos_sesiones(inicio, fin)")
     .eq("id", eventoId)
     .maybeSingle<FilaEvento>();
   if (!e) return null;
-  const lugar = Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar;
-  const [artistas, slugCiudad, ultima] = await Promise.all([
-    supabase.from("eventos_artistas").select("orden, artista:artistas(nombre, redes, disciplina)").eq("evento_id", e.id).order("orden").limit(20),
+  const lugar = uno(e.lugar);
+  const [artistas, slugCiudad, ultima, festival] = await Promise.all([
+    supabase.from("eventos_artistas").select("orden, artista:artistas(id, nombre, redes, disciplina)").eq("evento_id", e.id).order("orden").limit(20),
     supabase.rpc("ciudad_slug", { p_ciudad: e.ciudad }),
     supabase.from("instagram_publicaciones").select("creado_en, formato").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string; formato: "4x5" | "9x16" }>(),
+    e.clase === "festival" ? cargarActos(supabase, e.id) : null,
   ]);
   const ciudadSlug = typeof slugCiudad.data === "string" ? slugCiudad.data : "";
-  const lista: ArtistaIg[] = ((artistas.data ?? []) as { artista: { nombre: string; redes: unknown; disciplina: string | null } | { nombre: string; redes: unknown; disciplina: string | null }[] | null }[])
-    .map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista))
-    .filter((a): a is { nombre: string; redes: unknown; disciplina: string | null } => !!a)
-    .map((a) => ({ nombre: a.nombre, usuario: usuarioDeInstagram(a.redes), disciplina: a.disciplina }));
+  const lista = ((artistas.data ?? []) as FilaArtista[]).map(aArtista).filter((a): a is ArtistaIg => !!a);
+  const sesiones = e.sesiones ?? [];
+  const propio = lugar ? { nombre: lugar.nombre, usuario: usuarioDeInstagram(lugar.redes) } : e.sitio_texto ? { nombre: e.sitio_texto, usuario: null } : null;
   const evento: EventoIg = {
     titulo: e.titulo,
     inicio: e.inicio,
@@ -191,15 +260,18 @@ export async function cargarParaHoja(supabase: ClienteServidor, eventoId: string
     zona: e.zona,
     clase: e.clase,
     precio: e.precio,
-    lugar: lugar ? { nombre: lugar.nombre, usuario: usuarioDeInstagram(lugar.redes) } : e.sitio_texto ? { nombre: e.sitio_texto, usuario: null } : null,
+    // Un festival con actos que dicen dónde: su sede o «Varias sedes» (OL-339, OL-463); si no, lo capturado en el marco.
+    lugar: festival?.sede ?? propio,
     ciudad: e.ciudad,
     artistas: lista,
+    opcional: costoOpcional({ clase: e.clase, evento_padre_id: e.evento_padre_id, inauguracion: !!e.inaugura_id }),
+    ...(sesiones.length > 1 ? { sesiones } : {}),
+    ...(festival?.actos.length ? { actos: festival.actos } : {}),
   };
   // La ubicación: la del lugar si la tiene; si no, la de la ciudad.
   const { data: ubic } = await supabase.from("instagram_ubicaciones").select("tipo, clave, pagina_id, nombre").or(`and(tipo.eq.ciudad,clave.eq.${ciudadSlug || "-"}),and(tipo.eq.lugar,clave.eq.${e.lugar_id ?? "-"})`);
   const filas = (ubic ?? []) as { tipo: string; pagina_id: string; nombre: string | null }[];
   const u = filas.find((x) => x.tipo === "lugar") ?? filas.find((x) => x.tipo === "ciudad") ?? null;
-  const sesiones = e.sesiones ?? [];
   return {
     id: e.id,
     slug: e.slug,

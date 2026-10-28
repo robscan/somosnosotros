@@ -61,9 +61,13 @@ export async function llamarGraph(traer: typeof fetch, metodo: "GET" | "POST", r
 
 const dormir = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
 
-/** Las etiquetas de la foto: en una imagen, repartidas abajo a lo ancho (Instagram pide x e y de 0 a 1); en una historia, sin posición. */
+/**
+ * Las etiquetas de la foto: en una imagen, repartidas abajo a lo ancho (Instagram pide x e y de 0 a 1); con más de 10 (un festival, OL-463), en
+ * dos alturas alternadas para que no se encimen; en una historia, sin posición.
+ */
 export function etiquetasConPosicion(usuarios: string[], historia: boolean): { username: string; x?: number; y?: number }[] {
-  return usuarios.map((username, i) => (historia ? { username } : { username, x: Math.round(((i + 1) / (usuarios.length + 1)) * 100) / 100, y: 0.9 }));
+  const y = (i: number) => (usuarios.length > 10 ? (i % 2 ? 0.94 : 0.84) : 0.9);
+  return usuarios.map((username, i) => (historia ? { username } : { username, x: Math.round(((i + 1) / (usuarios.length + 1)) * 100) / 100, y: y(i) }));
 }
 
 async function crearContenedor(traer: typeof fetch, c: { token: string; usuario: string }, p: Pedido, conExtras: boolean): Promise<RespuestaGraph> {

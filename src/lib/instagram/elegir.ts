@@ -31,7 +31,28 @@ export function sePuedePublicar(e: ParaPublicar, ahora: Date): boolean {
 /** ¿Empezó mientras se preparaba? Lo mismo, dicho al revés, para el aviso «Ya empezó» de la hoja y del servidor. */
 export const yaEmpezo = (e: ParaPublicar, ahora: Date): boolean => !sePuedePublicar(e, ahora);
 
-export type Senal = { destacado: boolean; van: number; interesa: number; conCartel: boolean; inicio: string };
+/**
+ * Un festival por venir es un solo renglón (OL-463): sus actos no se sugieren aparte mientras él esté en la lista (once publicaciones del mismo
+ * festival no sirven). `actos`: los actos publicados de los festivales de la lista (su id y el de su festival). Devuelve la lista sin esos actos y
+ * cuántos actos tiene cada festival. Un acto cuyo festival no está en la lista (oculto, cancelado, ya terminó) se sugiere como cualquier evento; y
+ * desde el «···» de su ficha se puede publicar siempre.
+ */
+export function unRenglonPorFestival<T extends { id: string; clase: string }>(filas: readonly T[], actos: readonly { id: string; evento_padre_id: string | null }[]): { filas: T[]; actos: Map<string, number> } {
+  const festivales = new Set(filas.filter((f) => f.clase === "festival").map((f) => f.id));
+  const cuenta = new Map<string, number>();
+  const ocultos = new Set<string>();
+  for (const a of actos) {
+    if (!a.evento_padre_id || !festivales.has(a.evento_padre_id)) continue;
+    cuenta.set(a.evento_padre_id, (cuenta.get(a.evento_padre_id) ?? 0) + 1);
+    ocultos.add(a.id);
+  }
+  return { filas: filas.filter((f) => !ocultos.has(f.id)), actos: cuenta };
+}
+
+/** «1 acto», «11 actos». */
+export const textoActos = (n: number): string => `${n} ${n === 1 ? "acto" : "actos"}`;
+
+export type Senal ={ destacado: boolean; van: number; interesa: number; conCartel: boolean; inicio: string };
 
 /** El orden de la lista: primero lo destacado, luego lo que más «Voy» y «Me interesa» suma, con cartel antes que sin él, y lo más próximo. */
 export function porSenal(a: Senal, b: Senal): number {

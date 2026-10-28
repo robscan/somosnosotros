@@ -394,6 +394,54 @@ if (CON_VACIO) {
   );
 }
 
+// OL-463 (bitácora 495): un festival como «Cultura Mística» (el que probó el founder): un marco en Aether, de pasado mañana a dentro de cuatro días,
+// sin precio, ligado a quien lo organiza, con once actos con precios distintos (gratis, $80, $100, $130) y nueve artistas (siete con Instagram;
+// Martha Franco y el Tambor Ancestral en dos actos), para ver en Administración › Instagram el festival como un solo renglón con «11 actos» y en su
+// hoja las etiquetas de todos, el programa y el precio que sale de sus actos. Todo inventado. Solo con `RESPALDO_FESTIVAL_IG=1`: `npm run medir` no
+// lo pone, así ninguna pantalla medida cambia.
+export const CON_FESTIVAL_IG = process.env.RESPALDO_FESTIVAL_IG === "1";
+export const E_MISTICA = "bbbb0013-0000-4000-8000-000000000001";
+if (CON_FESTIVAL_IG) {
+  const ig = (usuario) => [{ url: `https://www.instagram.com/${usuario}` }];
+  const AM = Object.fromEntries(
+    [
+      ["organiza", "Colectivo Cultura Mística (demo)", "otro", "Colectivo", "grupo", "culturamistica.demo"],
+      ["martha", "Martha Franco (demo)", "otro", "Meditación", "solista", "marthafranco.demo"],
+      ["gustono", "Gustoño (demo)", "letras", "Escritura", "solista", null],
+      ["luna", "Luna Arcana (demo)", "otro", "Tarot", "solista", "luna.arcana.demo"],
+      ["sahumerio", "Sahumerio Colectivo (demo)", "otro", "Ceremonia", "grupo", "sahumerio.demo"],
+      ["ixchel", "Ixchel Ramos (demo)", "otro", "Cartas", "solista", "ixchel.ramos.demo"],
+      ["tambor", "Tambor Ancestral (demo)", "musica", "Percusión", "grupo", "tamborancestral.demo"],
+      ["paloma", "Paloma Ríos (demo)", "danza", "Yoga", "solista", null],
+      ["oraculo", "Oráculo Sonoro (demo)", "musica", "Cuencos", "grupo", "oraculo.sonoro.demo"],
+      ["rocio", "Rocío Mendoza (demo)", "otro", "Astrología", "solista", "rocio.mendoza.demo"],
+    ].map(([clave, nombre, disciplina, detalle, tipo, usuario], i) => {
+      const id = `cccc0006-0000-4000-8000-0000000000${String(i + 1).padStart(2, "0")}`;
+      artistas.push(artista(id, `${clave}-mistica-demo`, nombre, disciplina, detalle, tipo, null, usuario ? ig(usuario) : []));
+      return [clave, id];
+    }),
+  );
+  eventos.push({ ...evento({ id: E_MISTICA, slug: "cultura-mistica-demo", titulo: "Cultura Mística (demo)", dias: 2, hora: "17:30", lugar_id: L.aether, imagen: null, creadoHace: 4, clase: "festival", descripcion: "Tres días de meditación, tarot, sonido y cantos." }), fin: iso(fecha(4, "23:59")), termina: iso(fecha(4, "23:59")) });
+  eventos_artistas.push({ evento_id: E_MISTICA, artista_id: AM.organiza, orden: 1 });
+  [
+    [2, "17:30", "Meditación con Martha Franco (demo)", "Gratis", ["martha"]],
+    [2, "18:30", "Taller de escritura", "$80", ["gustono"]],
+    [2, "21:00", "Charla de tarot", "$130", ["luna"]],
+    [3, "11:00", "Yoga kundalini", "$100", ["paloma"]],
+    [3, "13:00", "Mercadito místico", "Gratis", []],
+    [3, "17:00", "Ceremonia de cacao", "$100", ["sahumerio"]],
+    [3, "19:00", "Lectura de cartas", "$80", ["ixchel"]],
+    [3, "21:00", "Tambores al atardecer", "Gratis", ["tambor"]],
+    [4, "12:00", "Astrología básica", "$80", ["rocio"]],
+    [4, "18:00", "Concierto de cuencos", "$130", ["oraculo"]],
+    [4, "20:30", "Fogata y cantos de cierre", "Gratis", ["tambor", "martha"]],
+  ].forEach(([dias, hora, titulo, precio, quienes], i) => {
+    const id = `bbbb0013-0000-4000-8000-0000000000${String(i + 2).padStart(2, "0")}`;
+    eventos.push(evento({ id, slug: `mistica-demo-${i + 1}`, titulo, dias, hora, dur: 1, lugar_id: L.aether, precio, imagen: null, creadoHace: 4, evento_padre_id: E_MISTICA }));
+    quienes.forEach((q, j) => eventos_artistas.push({ evento_id: id, artista_id: AM[q], orden: j + 1 }));
+  });
+}
+
 // ---------- lo de las personas ----------
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },

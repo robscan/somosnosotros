@@ -111,6 +111,14 @@ publicado en Facebook se guarda en memoria (`facebook_publicaciones`; la Master 
 capturas de la bitácora 493 con toques reales (portada, «Ya en Instagram», la casilla y su recuerdo, publicar en las dos, «Publicar en Facebook»
 desde la lista, sin permiso y «Reintentar en Facebook», solo Instagram) y mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889.
 
+Un festival en Instagram (OL-463, bitácora 495): con `RESPALDO_FESTIVAL_IG=1` el respaldo suma «Cultura Mística (demo)», un marco en Aether sin
+precio con once actos de precios distintos y nueve artistas (siete con Instagram) más quien lo organiza (`npm run medir` no lo usa). La API de
+mentira apunta en el registro lo que llega a Instagram (`  instagram: {caption, user_tags}`). `capturar-instagram-festival.mjs` saca las capturas de
+la bitácora 495 con toques reales (el festival como un renglón con «11 actos», la hoja con las etiquetas de todos, el programa y el precio de sus
+actos, quitar una etiqueta, publicar en las dos, el «···» de un acto, un taller con sesiones, una exposición sin precio y la ficha del festival) y
+mide los textos cortados a 320, 390 y 430. Respaldo en el puerto 8889. La prueba de componentes `HojaFestival.componentes.test.mjs` usa las mismas
+filas.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes

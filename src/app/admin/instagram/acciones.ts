@@ -110,7 +110,7 @@ export async function publicarEnInstagram(p: PedidoPublicar): Promise<Publicado>
     return { ok: false, error, mensaje: FRASES[error] };
   };
   if (!sePuedePublicar(h.datos, ahora)) return fallo("empezo");
-  const quitadas = Array.isArray(p.quitadas) ? p.quitadas.filter((x) => typeof x === "string").slice(0, 20) : [];
+  const quitadas = Array.isArray(p.quitadas) ? p.quitadas.filter((x) => typeof x === "string").slice(0, 60) : [];
   // El texto: lo que mandó la hoja o, si no, el que arma el sistema; nunca en una historia (Instagram no lo publica).
   const texto = formato === "4x5" ? (typeof p.texto === "string" && p.texto.trim() ? p.texto.trim() : armarTexto(h.evento, ahora, quitadas)) : null;
   if (texto) {

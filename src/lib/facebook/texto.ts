@@ -1,4 +1,4 @@
-import { CUENTA_INSTAGRAM, INVITACION, type EventoIg } from "../instagram/texto";
+import { artistasDe, CUENTA_INSTAGRAM, INVITACION, yaDice, type EventoIg } from "../instagram/texto";
 import { MARCA } from "../marca";
 import type { MedioVista, OrigenVista } from "../vistas";
 
@@ -36,7 +36,7 @@ const FIN = "(?![A-Za-z0-9_]|\\.[A-Za-z0-9_])";
 const mencion = (usuario: string) => new RegExp(`@${escapar(usuario)}${FIN}`, "gi");
 
 /** El texto de Facebook a partir del de Instagram (ver arriba). `enlace`: el de la ficha con su marca de origen. */
-export function textoDeFacebook(textoInstagram: string, e: Pick<EventoIg, "lugar" | "artistas">, enlace: string): string {
+export function textoDeFacebook(textoInstagram: string, e: Pick<EventoIg, "lugar" | "artistas" | "actos">, enlace: string): string {
   let t = textoInstagram.trim();
   // 2. Menciones: «Lugar @lugar» → «Lugar»; «@artista» → su nombre.
   if (e.lugar?.usuario) {
@@ -45,7 +45,15 @@ export function textoDeFacebook(textoInstagram: string, e: Pick<EventoIg, "lugar
     t = t.replace(mencion(e.lugar.usuario), () => nombreLugar);
   }
   // (Con función: un nombre con «$» no se lee como patrón de reemplazo.)
-  for (const a of e.artistas) if (a.usuario) t = t.replace(mencion(a.usuario), () => a.nombre);
+  // En un festival, también los de sus actos (OL-463: salen en el programa). Si su nombre ya está en el mismo tramo («6:30 pm Meditación con
+  // Martha Franco @martha»), el @ se quita sin repetir el nombre.
+  for (const a of artistasDe(e)) {
+    if (!a.usuario) continue;
+    t = t.replace(new RegExp(` ?@${escapar(a.usuario)}${FIN}`, "gi"), (hallado: string, donde: number, todo: string) => {
+      const desde = Math.max(todo.lastIndexOf("\n", donde), todo.lastIndexOf(" · ", donde));
+      return yaDice(todo.slice(desde + 1, donde), a.nombre) ? "" : `${hallado.startsWith(" ") ? " " : ""}${a.nombre}`;
+    });
+  }
   // 1. La invitación de Instagram se cambia por el enlace y la de Facebook; si se quitó a mano, el enlace va antes de las etiquetas.
   const bloque = `Ficha del evento: ${enlace}`;
   if (t.includes(INVITACION)) {
