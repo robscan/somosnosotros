@@ -112,7 +112,7 @@ describe("comprobar", () => {
   it("pasa si el fragmento está en el título o la descripción (sin acentos ni signos) y el nombre está entero en él", () => {
     expect(comprobar(h("Tere Palaú", "exposición de Tere Palaú", "expone"), e, "Museo Leonora Carrington")).toEqual({
       ok: true,
-      valor: { nombre: "Tere Palaú", fragmento: "exposición de Tere Palaú", papel: "expone", detalle: null },
+      valor: { nombre: "Tere Palaú", fragmento: "exposición de Tere Palaú", papel: "expone", detalle: null, sinOficio: false },
     });
     expect(comprobar(h("Tere Palau", "EXPOSICION DE TERE PALAU", "expone"), e, null).ok).toBe(true);
     expect(comprobar(h("Luis Pérez Ríos", "del grabador Luis Pérez Ríos.", "expone", "grabador"), e, null)).toMatchObject({ ok: true, valor: { detalle: "Grabador" } });
@@ -146,7 +146,7 @@ describe("comprobar: papeles sin oficio artístico, preposiciones y detalle", ()
   const ev = (titulo: string, descripcion: string | null = null) => evento("x", titulo, descripcion);
   const motivo = (titulo: string, x: Hallazgo, descripcion: string | null = null) => {
     const r = comprobar(x, ev(titulo, descripcion), null);
-    return r.ok ? r.valor : r.motivo;
+    return !r.ok ? r.motivo : r.valor.sinOficio ? "papel sin oficio artístico" : r.valor;
   };
   it("quien solo conversa, guía, da una charla o es cronista no entra sin un oficio artístico en el texto", () => {
     expect(motivo("Conversación a cargo del Dr. Joserra Ortiz.", h("Joserra Ortiz", "Conversación a cargo del Dr. Joserra Ortiz.", "imparte", "Dr."))).toBe("papel sin oficio artístico");
@@ -174,6 +174,19 @@ describe("comprobar: papeles sin oficio artístico, preposiciones y detalle", ()
     expect(motivo("Exposición fotográfica, pictórica y escultórica de Ariel Robles", h("Ariel Robles", "Exposición fotográfica, pictórica y escultórica de Ariel Robles", "expone", "Fotográfica, pictórica y escultórica"))).toMatchObject({ detalle: null });
     expect(motivo("Exposición de acuarelas de Hugo Castillo", h("Hugo Castillo", "Exposición de acuarelas de Hugo Castillo", "expone", "acuarelas"))).toMatchObject({ detalle: null });
   });
+  it("«presenta» es obra propia: quien presenta, modera o comenta la de otro queda como «otro» y sin oficio", () => {
+    const titulo = "Presentación editorial";
+    const texto = "Libro infantil de Luis Infante, presentado por Eva Ortega Jiménez.";
+    expect(motivo(titulo, h("Luis Infante", "Libro infantil de Luis Infante", "escribe"), texto)).toMatchObject({ nombre: "Luis Infante", papel: "escribe", sinOficio: false });
+    expect(motivo(titulo, h("Eva Ortega Jiménez", "presentado por Eva Ortega Jiménez", "presenta"), texto)).toBe("papel sin oficio artístico");
+    expect(motivo("Charla", h("Víctor Manuel Espinoza", "presentada y moderada por Víctor Manuel Espinoza", "presenta"), "Charla presentada y moderada por Víctor Manuel Espinoza.")).toBe("papel sin oficio artístico");
+    expect(motivo("Novela", h("Ana Ruiz", "comentarios de Ana Ruiz", "presenta"), "Con comentarios de Ana Ruiz.")).toBe("papel sin oficio artístico");
+    // Con oficio escrito, entra aunque presente lo de otro.
+    expect(motivo("Novela", h("Ana Ruiz", "presentado por la poeta Ana Ruiz", "presenta"), "Libro de Luis Infante presentado por la poeta Ana Ruiz.")).toMatchObject({ papel: "otro", detalle: "Poeta", sinOficio: false });
+    // Presentar su propio libro es «presenta».
+    expect(motivo("Presentación del libro de Ingrid Kühn", h("Ingrid Kühn", "Presentación del libro de Ingrid Kühn", "presenta"))).toMatchObject({ papel: "presenta", sinOficio: false });
+  });
+
   it("sin la preposición de la frase pegada al nombre: «De Tere Palaú» es «Tere Palaú»", () => {
     expect(motivo("Inauguración de la exposición de De Tere Palaú", h("De Tere Palaú", "Inauguración de la exposición de De Tere Palaú", "expone"))).toMatchObject({ nombre: "Tere Palaú" });
     expect(sinPreposicion("De Tere Palaú", "la exposición de De Tere Palaú")).toBe("Tere Palaú");
@@ -393,6 +406,37 @@ describe("armarPlan", () => {
     const plan = armarPlan([{ tanda: t, lectura: r }], { ...baseDePrueba(), propuestas: [] }, { ciudad: CIUDAD, tope: 5, porLeer: 1, gasto: 0, topeAlcanzado: false, leida: LEIDA });
     expect(plan.nuevas.map((p) => p.nombre)).toEqual(expect.arrayContaining(["Tere Palaú", "Luis Pérez Ríos"]));
     expect(plan.descartes.map((d) => d.motivo)).toContain("no parece un artista: institución o asociación");
+  });
+});
+
+describe("armarPlan: con ficha se liga siempre; sin ficha, solo quien el texto muestra como artista", () => {
+  it("Gabriela Olvera (papel «otro») se liga a su ficha; Laura Espinosa sin ficha no se propone; Luis Infante sí, Eva Ortega no", async () => {
+    const eventos = [
+      evento("e-motivos", "Programa Motivos: Nuestros barrios", "Con Gabriela Olvera, Laura Espinosa y Josué David Martínez Mejía, cronista honorario."),
+      evento("e-infante", "Presentación editorial", "Libro infantil de Luis Infante, presentado por Eva Ortega Jiménez."),
+    ];
+    const base: Base = {
+      eventos,
+      lugares: LUGARES,
+      artistas: [{ id: "f-olvera", nombre: "Gabriela Olvera Zavala", tipo: "solista", disciplina: "letras", visible: true }],
+      ligas: [],
+      propuestas: [],
+      leidos: new Set(),
+    };
+    const leido: Record<string, Hallazgo[]> = {
+      "e-motivos": [
+        h("Gabriela Olvera", "Con Gabriela Olvera, Laura Espinosa", "otro"),
+        h("Laura Espinosa", "Gabriela Olvera, Laura Espinosa", "otro"),
+        h("Josué David Martínez Mejía", "Josué David Martínez Mejía, cronista honorario", "otro", "cronista honorario"),
+      ],
+      "e-infante": [h("Luis Infante", "Libro infantil de Luis Infante", "escribe"), h("Eva Ortega Jiménez", "presentado por Eva Ortega Jiménez", "presenta")],
+    };
+    const lector: Lector = async (t) => ({ dato: { eventos: t.eventos.map((e, j) => ({ n: j + 1, artistas: leido[e.id] ?? [] })) }, usd: 0, error: null });
+    const plan = await planDePrueba(base, lector);
+    expect(plan.ligas.map((l) => [l.evento_id, l.artista_id])).toEqual([["e-motivos", "f-olvera"]]);
+    expect(plan.nuevas.map((p) => p.nombre)).toEqual(["Luis Infante"]);
+    expect(plan.nuevas[0].datos).toMatchObject({ disciplina: "letras", tipo: "solista", papel: "escribe", eventos: ["e-infante"] });
+    expect(plan.descartes.filter((d) => d.motivo === "papel sin oficio artístico").map((d) => d.nombre).sort()).toEqual(["Eva Ortega Jiménez", "Josué David Martínez Mejía", "Laura Espinosa"]);
   });
 });
 
