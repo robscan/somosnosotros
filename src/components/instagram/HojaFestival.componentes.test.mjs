@@ -39,11 +39,13 @@ const acciones = `
     return { ok: true, id, titulo: evento.titulo, ahora: new Date().toISOString(), etiquetas: window.qa.etiquetas, ubicacion: { nombre: 'San Luis Potosí' },
       ciudad: { slug: 'san-luis-potosi', nombre: 'San Luis Potosí' }, conCartel: false, recortar: false, sePuede: true, publicado: null, evento };
   }
+  // OL-465: publicar guarda el trabajo en la cola y la hoja se cierra.
   export async function publicarEnInstagram(p) {
     apuntar('publicarEnInstagram', [p]);
-    return { ok: true, permalink: 'https://www.instagram.com/p/DEMO/', sinEtiquetas: false, facebook: p.facebook ? { ok: true, permalink: 'https://www.facebook.com/1/posts/2' } : null };
+    return { ok: true, id: 't1' };
   }
-  export async function publicarEnFacebook(...a) { apuntar('publicarEnFacebook', a); return { ok: true, permalink: null }; }
+  export async function estadoTrabajo() { return null; }
+  export async function publicarEnFacebook(...a) { apuntar('publicarEnFacebook', a); return { ok: true, id: 't2' }; }
 `;
 const mocks = {
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link({prefetch,replace,scroll,...p}){return React.createElement('a',p)}",
@@ -180,9 +182,9 @@ test("quitar una etiqueta la saca del programa (queda su nombre) y publicar mand
   assert.doesNotMatch(t1, /@luna\.arcana\.demo/);
   assert.equal(await hoja.getByRole("button", { name: "Volver a etiquetar" }).count(), 1);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
-  await hoja.getByRole("status").waitFor();
+  // OL-465: el trabajo queda en la cola y la hoja se cierra.
+  await hoja.waitFor({ state: "detached" });
   const publicar = (await qa(p)).acciones.find((a) => a[0] === "publicarEnInstagram");
   assert.deepEqual(publicar[1].quitadas, ["luna.arcana.demo"]);
   assert.equal(publicar[1].texto, t1);
-  assert.equal(await texto(hoja.getByRole("status")), "Instagram: publicado Ver Facebook: publicado Ver");
 });

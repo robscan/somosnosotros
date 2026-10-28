@@ -51,10 +51,12 @@ type ArtistaFila = { nombre: string; disciplina: string; detalle: string | null;
 
 const COLUMNAS = "id, slug, titulo, inicio, fin, zona, precio, clase, evento_padre_id, imagen, creado_por, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre, tipo, portada), sesiones:eventos_sesiones(inicio)";
 
-/** El evento por slug o UUID con lo que hace falta para su cartel; null si no existe, no se ve o no hay sesión. */
-export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: string): Promise<ParaCartel | null> {
-  const { data: claims } = await supabase.auth.getClaims();
-  const perfilId = claims?.claims?.sub;
+/**
+ * El evento por slug o UUID con lo que hace falta para su cartel; null si no existe, no se ve o no hay sesión. `como`: sin sesión, a nombre de
+ * esa cuenta (OL-465: el trabajador de la cola de redes, con la llave de servicio, dibuja el diseño sin cartel de quien pidió publicar).
+ */
+export async function cargarParaCartel(supabase: ClienteServidor, idOSlug: string, como?: { perfilId: string }): Promise<ParaCartel | null> {
+  const perfilId = como?.perfilId ?? (await supabase.auth.getClaims()).data?.claims?.sub;
   if (!perfilId) return null;
   const porSlug = await supabase.from("eventos").select(COLUMNAS).eq("slug", idOSlug).maybeSingle<Fila>();
   const fila = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("eventos").select(COLUMNAS).eq("id", idOSlug).maybeSingle<Fila>()).data : null);

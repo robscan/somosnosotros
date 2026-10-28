@@ -497,11 +497,55 @@ async function lugarConDireccion(supabase: Cliente, direccion: string, ciudad: s
 /**
  * Lee el cartel ya subido a Storage y devuelve los valores para llenar el formulario. `ciudad` (OL-413): la ciudad desde la que se publica, para
  * buscar el lugar por su dirección solo en ella; sin ella, en todas (con dos iguales no se propone ninguno).
+ *
+ * OL-465 (bitácora 497): la lectura termina aunque el teléfono se vaya a otra app a la mitad. Corre con `after()` (la función sigue viva hasta
+ * acabarla aunque nadie espere la respuesta) y deja lo que salió en `cartel_lecturas` (por persona e imagen, con la llave de servicio); al volver,
+ * la pantalla de espera del alta lo recoge con `lecturaGuardada` y sigue como si hubiera esperado. El flujo firmado del alta no cambia.
  */
 export async function leerCartelAccion(urlImagen: string, ciudad: string | null = null): Promise<ResultadoCartel> {
   const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const { supabaseUrl } = configPublica();
   if (!supabaseUrl || !urlImagen.startsWith(`${supabaseUrl}/storage/v1/object/public/fotos/`)) return { ok: false, mensaje: "La imagen no es de aquí." };
+  const lecturas = clienteAdmin();
+  const anotar = async (fila: { estado: "leyendo" | "leida" | "fallida" | "sin_cupo"; resultado?: ResultadoCartel | null }) => {
+    try {
+      await lecturas?.from("cartel_lecturas").upsert({ usuario_id: user.id, imagen: urlImagen, estado: fila.estado, resultado: fila.resultado ?? null, creado_en: new Date().toISOString(), terminado_en: fila.estado === "leyendo" ? null : new Date().toISOString() });
+    } catch {
+      // sin la anotación, la lectura vale igual (solo no se puede recoger al volver)
+    }
+  };
+  await anotar({ estado: "leyendo" });
+  const tarea = leerYCruzar(supabase, user.id, urlImagen, ciudad).then(
+    async (r) => {
+      await anotar({ estado: r.ok ? "leida" : "sinCupo" in r ? "sin_cupo" : "fallida", resultado: r });
+      return r;
+    },
+    async (e) => {
+      await anotar({ estado: "fallida", resultado: { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." } });
+      throw e;
+    },
+  );
+  after(() => tarea.catch(() => undefined));
+  return tarea;
+}
+
+/** Lo que dejó la lectura de un cartel (OL-465), para recogerlo al volver a la app; null si no hay nada (o no es de quien pregunta). */
+export async function lecturaGuardada(urlImagen: string): Promise<{ estado: "leyendo" } | { estado: "lista"; resultado: ResultadoCartel } | null> {
+  if (typeof urlImagen !== "string" || !urlImagen || urlImagen.length > 500) return null;
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data } = await supabase.from("cartel_lecturas").select("estado, resultado").eq("imagen", urlImagen).maybeSingle<{ estado: string; resultado: ResultadoCartel | null }>();
+  if (!data) return null;
+  if (data.estado === "leyendo") return { estado: "leyendo" };
+  if (data.estado === "sin_cupo") return { estado: "lista", resultado: { ok: false, sinCupo: true } };
+  return { estado: "lista", resultado: data.resultado && typeof data.resultado === "object" ? data.resultado : { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." } };
+}
+
+type ClienteDeSesion = Awaited<ReturnType<typeof sesionOEntrar>>["supabase"];
+
+/** La lectura de siempre: aparta el cupo, lee con la API y cruza lo leído con el directorio. */
+async function leerYCruzar(supabase: ClienteDeSesion, usuarioId: string, urlImagen: string, ciudad: string | null): Promise<ResultadoCartel> {
+  const user = { id: usuarioId };
   // El cupo se aparta aquí, antes de llamar al modelo, y en un solo paso: en el cliente se saltaría en diez
   // segundos, y en dos pasos dos toques seguidos pasarían los dos (docs/rediseno/23).
   const { data: apartada, error: eCupo } = await supabase.rpc("apartar_lectura_de_cartel");

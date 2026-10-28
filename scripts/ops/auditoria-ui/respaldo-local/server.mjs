@@ -16,6 +16,10 @@ const registro = [];
 let fallaFacebook = process.env.FACEBOOK_FALLA ?? "";
 // OL-464: cuántos contenedores hijos de carrusel van (sus ids de mentira).
 let hijosCarrusel = 0;
+// OL-465: Instagram lento (ms que tarda `media_publish`) y su falla (permiso | cupo | imagen | nada), que el recorrido cambia sin reiniciar
+// (`/__lento?ms=`, `/__falla-instagram?clave=`): así se ve «Publicando…» un rato y lo que no se pudo publicar.
+let lentoInstagram = 0;
+let fallaInstagram = process.env.INSTAGRAM_FALLA ?? "";
 
 // OL-413 (bitácora 444): la lectura de carteles sin llamar a la API de Anthropic. La app arranca con `ANTHROPIC_BASE_URL` apuntando a
 // `/anthropic` de este respaldo y una llave inventada; `POST /__lectura` deja lista la próxima lectura (`{ lectura, archivo }`: lo que
@@ -288,6 +292,14 @@ const servidor = http.createServer(async (req, res) => {
     fallaFacebook = url.searchParams.get("clave") ?? "";
     return responder(res, 200, { fallaFacebook });
   }
+  if (ruta === "/__lento") {
+    lentoInstagram = Number(url.searchParams.get("ms") ?? 0) || 0;
+    return responder(res, 200, { lentoInstagram });
+  }
+  if (ruta === "/__falla-instagram") {
+    fallaInstagram = url.searchParams.get("clave") ?? "";
+    return responder(res, 200, { fallaInstagram });
+  }
   if (ruta === "/__lectura" && req.method === "POST") {
     siguiente = { lectura: null, archivo: null, ...((await leerCuerpo(req)) ?? {}) };
     return responder(res, 200, { ok: true });
@@ -343,7 +355,7 @@ const servidor = http.createServer(async (req, res) => {
       return responder(res, 200, { id: POST_FB });
     }
     if (/^[0-9]+_[0-9]+$/.test(primero)) return responder(res, 200, { id: primero, permalink_url: `https://www.facebook.com/${primero.split("_")[0]}/posts/${primero.split("_")[1]}` });
-    const falla = { permiso: { code: 190 }, cupo: { code: 4, error_subcode: 2207042 }, imagen: { code: 9004, error_subcode: 2207052 } }[process.env.INSTAGRAM_FALLA ?? ""];
+    const falla = { permiso: { code: 190 }, cupo: { code: 4, error_subcode: 2207042 }, imagen: { code: 9004, error_subcode: 2207052 } }[fallaInstagram];
     // OL-463: el texto y las etiquetas que llegan a Instagram quedan en el registro, para comprobarlos.
     // OL-464: el carrusel: cada hijo (`is_carousel_item`) con su id (900458001, 900458002…) y el carrusel (900464) con sus `children`.
     if (segundo === "media" && req.method === "POST")
@@ -352,7 +364,10 @@ const servidor = http.createServer(async (req, res) => {
     if (segundo === "media" && req.method === "POST" && params.get("is_carousel_item") === "true") return responder(res, 200, { id: `900458${String(++hijosCarrusel).padStart(3, "0")}` });
     if (segundo === "media" && req.method === "POST" && params.get("media_type") === "CAROUSEL") return responder(res, 200, { id: "900464" });
     if (segundo === "media" && req.method === "POST") return responder(res, 200, { id: "900458" });
-    if (segundo === "media_publish") return responder(res, 200, { id: "17900000000000458" });
+    if (segundo === "media_publish") {
+      if (lentoInstagram) await new Promise((listo) => setTimeout(listo, lentoInstagram));
+      return responder(res, 200, { id: "17900000000000458" });
+    }
     if (segundo === "content_publishing_limit") return responder(res, 200, { data: [{ quota_usage: 3, config: { quota_total: 100 } }] });
     if (/^900458[0-9]{0,3}$|^900464$/.test(primero)) return responder(res, 200, { id: primero, status_code: "FINISHED" });
     if (primero === "17900000000000458") return responder(res, 200, { id: "17900000000000458", permalink: "https://www.instagram.com/p/DEMO458C/" });
@@ -432,6 +447,25 @@ const servidor = http.createServer(async (req, res) => {
     if (tabla === "instagram_ubicaciones") tablas[tabla] = tablas[tabla].filter((u) => !nuevas.some((n) => n.tipo === u.tipo && n.clave === u.clave));
     tablas[tabla].push(...nuevas);
     return responder(res, 201, quiereObjeto(req) ? nuevas[0] : nuevas);
+  }
+  // OL-465: el trabajador de la cola de redes (con la llave de servicio) cambia sus trabajos y anota lo leído de un cartel: en memoria, con los
+  // filtros del reclamo por turno (`turno`, `estado`, `avisado_en is null`), para recorrer «Publicar» → «Publicando…» → «Publicado» con el latido
+  // simulado (la ruta del trabajador pedida a mano). Los permisos reales, en PostgreSQL (`supabase/tests/pg/redes-en-cola.test.mjs`).
+  if ((tabla === "redes_trabajos" && req.method === "PATCH") || (tabla === "cartel_lecturas" && req.method === "POST")) {
+    let cambiadas;
+    if (tabla === "cartel_lecturas") {
+      const nuevas = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean);
+      tablas.cartel_lecturas = tablas.cartel_lecturas.filter((x) => !nuevas.some((n) => n.usuario_id === x.usuario_id && n.imagen === x.imagen));
+      tablas.cartel_lecturas.push(...nuevas);
+      cambiadas = nuevas;
+    } else {
+      const { propios } = parseFiltros(url.searchParams);
+      cambiadas = tablas.redes_trabajos.filter((fila) => propios.every((c) => cumple(fila, c)));
+      for (const fila of cambiadas) Object.assign(fila, cuerpo);
+    }
+    const salida = cambiadas.map((fila) => proyectar(tabla, fila, parseSelect(url.searchParams.get("select")), []));
+    if (quiereObjeto(req)) return salida.length === 1 ? responder(res, 200, salida[0]) : responder(res, 406, { code: "PGRST116", message: `${salida.length} filas` });
+    return responder(res, 200, salida);
   }
   const deLaRutina = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).filter(Boolean);
   if (tabla === "eventos" && req.method === "POST" && deLaRutina.length && deLaRutina.every((e) => e.origen === "rutina-agendas")) {

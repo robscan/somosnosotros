@@ -7,6 +7,8 @@ import { huellaDeCartel } from "@/lib/carteles/huellaServidor";
 import { armarCarrusel, type ImagenCarrusel, type ParaCarrusel } from "@/lib/instagram/carrusel";
 import { bajarCartel } from "@/lib/instagram/imagen";
 import { armarTexto, etiquetasDeLaFoto, usuarioDeInstagram, type ActoIg, type ArtistaIg, type EventoIg } from "@/lib/instagram/texto";
+import { enCamino, lineaDeTrabajo } from "@/lib/redes/reglas";
+import { trabajosPorEvento } from "./colaPorEvento";
 import { nombreDeSedes, sedesDeFestival } from "@/lib/sedesFestival";
 import type { ClienteServidor } from "@/lib/supabase/servidor";
 
@@ -39,11 +41,15 @@ export type FilaSugerencia = {
   publicado_formato: string | null;
 };
 
-/** Cómo va el espejo en Facebook de un evento ya publicado en Instagram (OL-461): publicado, el último error o nada todavía. */
-export type EstadoFacebook = { estado: "publicada" } | { estado: "error"; error: "permiso" | "imagen" | "otro" } | { estado: "nada" };
+/** Cómo va el espejo en Facebook de un evento ya publicado en Instagram (OL-461): publicado, el último error, en la cola (OL-465) o nada todavía. */
+export type EstadoFacebook = { estado: "publicada" } | { estado: "error"; error: "permiso" | "imagen" | "otro" } | { estado: "publicando" } | { estado: "nada" };
 
-/** Un renglón de la lista, ya dicho. `facebook`: solo en lo que ya está en Instagram. */
-export type Sugerencia = { id: string; href: string; titulo: string; foto: string | null; cuando: string; donde: string; linea: string; publicado: boolean; facebook: EstadoFacebook | null };
+/**
+ * Un renglón de la lista, ya dicho. `facebook`: solo en lo que ya está en Instagram. `publicando` (OL-465): algo de este evento está en la cola de
+ * redes (la lista se refresca sola mientras lo haya).
+ */
+export type Sugerencia = { id: string; href: string; titulo: string; foto: string | null; cuando: string; donde: string; linea: string; publicado: boolean; facebook: EstadoFacebook | null; publicando: boolean };
+
 
 /** El estado de Facebook de cada evento, de sus intentos (del más nuevo al más viejo): con uno publicado, publicado; si no, el último error. */
 export function estadosFacebook(filas: { evento_id: string; estado: string; error: string | null }[]): Map<string, EstadoFacebook> {
@@ -91,6 +97,23 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
     ? await supabase.from("facebook_publicaciones").select("evento_id, estado, error").in("evento_id", publicados).order("creado_en", { ascending: false }).limit(1000)
     : null;
   const enFacebook = fb && !fb.error ? estadosFacebook((fb.data ?? []) as { evento_id: string; estado: string; error: string | null }[]) : null;
+  // OL-465: lo que está en la cola o no se pudo publicar en las últimas 24 horas. Si no se pudo leer, la lista va como antes.
+  const cola = filas.length
+    ? await supabase
+        .from("redes_trabajos")
+        .select("id, evento_id, red, formato, estado, pedido, error")
+        .in("evento_id", filas.map((f) => f.id))
+        .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
+        .order("creado_en", { ascending: false })
+        .limit(500)
+    : null;
+  const trabajos = trabajosPorEvento(cola && !cola.error ? ((cola.data ?? []) as Record<string, unknown>[]) : []);
+  const lineaDeCola = (f: FilaSugerencia): string | null => {
+    const t = trabajos.instagram.get(f.id);
+    if (!t) return null;
+    // Un fallo solo se dice si no salió después (lo que ya está en Instagram dice cuándo se publicó).
+    return enCamino(t) || (t.estado === "fallido" && !f.publicado_en) ? lineaDeTrabajo(t) : null;
+  };
   const renglon = (f: FilaSugerencia): Sugerencia => ({
     id: f.id,
     href: `/eventos/${f.slug || f.id}`,
@@ -99,11 +122,12 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
     // Un festival dice cuántos actos lleva (OL-463): se publica una vez, con su programa.
     cuando: [cuandoDelRenglon(f, ahora), agrupadas.actos.get(f.id) ? textoActos(agrupadas.actos.get(f.id)!) : null].filter(Boolean).join(" · "),
     donde: [f.lugar_nombre ?? f.sitio_texto, ciudad ? null : f.ciudad_nombre].filter(Boolean).join(" · ") || f.ciudad_nombre,
-    linea: f.publicado_en
+    linea: lineaDeCola(f) ?? (f.publicado_en
       ? `${FORMATO[f.publicado_formato === "9x16" || f.publicado_formato === "carrusel" ? f.publicado_formato : "4x5"]} · ${cuandoSePublico(f.publicado_en, ahora, f.zona)}`
-      : lineaDeSenal({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio }),
+      : lineaDeSenal({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio })),
     publicado: !!f.publicado_en,
-    facebook: f.publicado_en && enFacebook ? (enFacebook.get(f.id) ?? { estado: "nada" }) : null,
+    facebook: f.publicado_en && enFacebook ? (trabajos.facebook.has(f.id) ? { estado: "publicando" } : (enFacebook.get(f.id) ?? { estado: "nada" })) : null,
+    publicando: enCamino(trabajos.instagram.get(f.id)) || (!!f.publicado_en && trabajos.facebook.has(f.id)),
   });
   const senal = (f: FilaSugerencia) => ({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio });
   const para = filas.filter((f) => !f.publicado_en).sort((a, b) => porSenal(senal(a), senal(b))).map(renglon);

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as acciones from "./acciones";
-import { cupoDeCartel, leerCartelAccion } from "./acciones";
+import { cupoDeCartel, lecturaGuardada, leerCartelAccion } from "./acciones";
 
 const m = vi.hoisted(() => ({ cliente: vi.fn(), sesion: vi.fn(), rpc: vi.fn(), cuota: vi.fn(), modelo: vi.fn(), admin: vi.fn(), devolver: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -128,6 +128,45 @@ describe("acciones de cupo, sin base ni IA", () => {
     expect(m.rpc).toHaveBeenCalledWith("lugares_con_nombre", { p_nombre: "lunaria" });
     m.modelo.mockResolvedValue({ titulo: "Noche", lugar: "Roma Lab", artistas: [], gratis: null });
     expect(await leerCartelAccion(foto, "San Luis Potosí")).toMatchObject({ ok: true, lugarId: null });
+  });
+
+  it("OL-465: la lectura se anota («leyendo» y luego lo que salió) con la llave de servicio, y sigue viva con after() aunque nadie espere", async () => {
+    const anotadas: { estado: string; resultado: unknown; imagen: string; usuario_id: string }[] = [];
+    m.admin.mockReturnValue({ rpc: m.devolver, from: () => ({ upsert: async (f: (typeof anotadas)[number]) => void anotadas.push(f) }) });
+    m.modelo.mockResolvedValue({ titulo: "Cartel", artistas: [], gratis: true });
+    const r = await leerCartelAccion(foto);
+    expect(r.ok).toBe(true);
+    expect(anotadas.map((a) => a.estado)).toEqual(["leyendo", "leida"]);
+    expect(anotadas[1]).toMatchObject({ usuario_id: "persona", imagen: foto, resultado: r });
+    const { after } = await import("next/server");
+    expect(after).toHaveBeenCalledOnce();
+    anotadas.length = 0;
+    m.modelo.mockResolvedValue(null);
+    await leerCartelAccion(foto);
+    expect(anotadas.map((a) => a.estado)).toEqual(["leyendo", "fallida"]);
+    anotadas.length = 0;
+    m.rpc.mockResolvedValue({ data: false, error: null });
+    await leerCartelAccion(foto);
+    expect(anotadas.map((a) => a.estado)).toEqual(["leyendo", "sin_cupo"]);
+    anotadas.length = 0;
+    m.rpc.mockResolvedValue({ data: true, error: null });
+    m.modelo.mockRejectedValue(new Error("corte"));
+    await expect(leerCartelAccion(foto)).rejects.toThrow("corte");
+    expect(anotadas.map((a) => a.estado)).toEqual(["leyendo", "fallida"]);
+  });
+
+  it("OL-465: lo que dejó la lectura se recoge con la sesión: «leyendo», el resultado, sin cupo o nada", async () => {
+    const fila = vi.fn();
+    m.cliente.mockResolvedValue({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: fila }) }) }) });
+    fila.mockResolvedValueOnce({ data: { estado: "leyendo", resultado: null } });
+    expect(await lecturaGuardada(foto)).toEqual({ estado: "leyendo" });
+    fila.mockResolvedValueOnce({ data: { estado: "leida", resultado: { ok: true, valores: {} } } });
+    expect(await lecturaGuardada(foto)).toEqual({ estado: "lista", resultado: { ok: true, valores: {} } });
+    fila.mockResolvedValueOnce({ data: { estado: "sin_cupo", resultado: null } });
+    expect(await lecturaGuardada(foto)).toEqual({ estado: "lista", resultado: { ok: false, sinCupo: true } });
+    fila.mockResolvedValueOnce({ data: null });
+    expect(await lecturaGuardada(foto)).toBeNull();
+    expect(await lecturaGuardada("")).toBeNull();
   });
 
   it("ya no hay «pedir más lecturas»: la acción no existe", () => {

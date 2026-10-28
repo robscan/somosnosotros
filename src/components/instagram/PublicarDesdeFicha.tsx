@@ -13,9 +13,10 @@ const ABRIR = "sn:instagram";
 /**
  * «Publicar en Instagram» en el «···» de la ficha de un evento (OL-458, prototipo firmado, pantalla E; bitácora 490), junto a «Destacar»: solo
  * la administración y solo si el evento está por venir (lo decide la página con `sePuedePublicar`). El menú se cierra y se abre la hoja de
- * vista previa, que vive fuera del menú (`HojaInstagramDeFicha`, en la página): el menú desmonta lo suyo al cerrarse.
+ * vista previa, que vive fuera del menú (`HojaInstagramDeFicha`, en la página): el menú desmonta lo suyo al cerrarse. OL-465: mientras algo de
+ * este evento está en la cola de redes, el renglón dice «Publicando…».
  */
-export function RenglonPublicarInstagram({ publicado }: { publicado: string | null }) {
+export function RenglonPublicarInstagram({ publicado, publicando = false }: { publicado: string | null; publicando?: boolean }) {
   const cerrarMenu = useContext(CerrarMenu);
   return (
     <li>
@@ -29,7 +30,7 @@ export function RenglonPublicarInstagram({ publicado }: { publicado: string | nu
       >
         <IconoInstagram width={20} height={20} />
         <b>Publicar en Instagram</b>
-        <small>{publicado ? `Ya se publicó ${publicado}` : `En @${CUENTA_INSTAGRAM}`}</small>
+        <small>{publicando ? "Publicando…" : publicado ? `Ya se publicó ${publicado}` : `En @${CUENTA_INSTAGRAM}`}</small>
       </button>
     </li>
   );

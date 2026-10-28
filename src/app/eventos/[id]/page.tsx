@@ -399,7 +399,13 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const otros = e as unknown as { termina?: string; cancelado?: boolean; borrador?: boolean; retirado_por_admin?: boolean };
   const publicable = esAdmin && sePuedePublicar({ inicio: e.inicio, termina: otros.termina ?? e.fin ?? e.inicio, zona: e.zona, clase: e.clase ?? "puntual", visible: e.visible, cancelado: otros.cancelado, borrador: otros.borrador, retirado_por_admin: otros.retirado_por_admin, sesiones: e.sesiones ?? null }, new Date());
   const clienteIg = publicable ? await clienteServidor() : null;
-  const yaEnInstagram = clienteIg ? (await clienteIg.from("instagram_publicaciones").select("creado_en").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string }>()).data : null;
+  const [yaEnInstagram, publicandoEnRedes] = clienteIg
+    ? await Promise.all([
+        clienteIg.from("instagram_publicaciones").select("creado_en").eq("evento_id", e.id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string }>().then((r) => r.data),
+        // OL-465: algo de este evento en la cola de redes (el renglón del «···» dice «Publicando…»).
+        clienteIg.from("redes_trabajos").select("id").eq("evento_id", e.id).in("estado", ["en_cola", "publicando"]).limit(1).then((r) => !!r.data?.length),
+      ])
+    : [null, false];
   // Con horario por día (OL-311) cada día lleva sus horas; si se editó el evento por el formulario de siempre y ya no coinciden, se ignoran.
   const sesiones = sesionesVigentes(e, e.sesiones);
   // Cómo ocurre (OL-321; doc 55 §3): lo ligado por su clase, la línea de cuándo de una exposición y de un festival, y «Me interesa» sin «Voy».
@@ -615,7 +621,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </>
         )}
         {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
-        {publicable && <RenglonPublicarInstagram publicado={yaEnInstagram ? cuandoSePublico(yaEnInstagram.creado_en, new Date(), e.zona).toLowerCase() : null} />}
+        {publicable && <RenglonPublicarInstagram publicado={yaEnInstagram ? cuandoSePublico(yaEnInstagram.creado_en, new Date(), e.zona).toLowerCase() : null} publicando={publicandoEnRedes} />}
         {esAdmin && (
           <li>
             <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>

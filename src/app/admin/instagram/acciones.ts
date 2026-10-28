@@ -1,30 +1,31 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cargarParaCartel } from "@/lib/carteles/cargar";
-import { publicarEnPagina } from "@/lib/facebook/api";
-import { enlaceConOrigen, textoDeFacebook } from "@/lib/facebook/texto";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { esUuid } from "@/lib/formulario";
-import { cupo, leerPagina, paginaDeEnlace, publicar, publicarCarrusel } from "@/lib/instagram/api";
-import { etiquetasPorImagen, imagenesPedidas, PORTADA, type ImagenCarrusel } from "@/lib/instagram/carrusel";
+import { leerPagina, paginaDeEnlace } from "@/lib/instagram/api";
 import { sePuedePublicar } from "@/lib/instagram/elegir";
-import { armarImagen, bajarCartel, convieneRecortar, encajarCartel } from "@/lib/instagram/imagen";
-import { armarTexto, etiquetasDeLaFoto, revisarTexto } from "@/lib/instagram/texto";
+import { bajarCartel, convieneRecortar } from "@/lib/instagram/imagen";
+import { revisarTexto } from "@/lib/instagram/texto";
+import { FRASES, FRASES_FACEBOOK, type ClaveError } from "@/lib/instagram/frases";
+import { leerEstadoTrabajo, leerReciente, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
+import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { cargarParaHoja, type ParaHoja } from "./datos";
-import { FRASES, FRASES_FACEBOOK, type ClaveError, type ClaveFacebook } from "@/lib/instagram/frases";
+import { cargarParaHoja } from "./datos";
 import type { EventoIg } from "@/lib/instagram/texto";
 
 /**
  * Publicar en Instagram desde Administración (OL-458, firmado; bitácora 490): lo que pide la hoja de vista previa (`prepararInstagram`), publicar
  * (`publicarEnInstagram`) y guardar la ubicación de una ciudad o de un lugar (`guardarUbicacionInstagram`). Solo la administración: se comprueba
  * aquí y la base lo vuelve a comprobar (RLS). El token de Instagram nunca sale del servidor (`lib/instagram/api`).
- * OL-461 (bitácora 493): el espejo en la página de Facebook. Con «También en Facebook», lo que sale en Instagram se publica también en la página
- * (la misma imagen; el texto con el enlace a la ficha y sin @, `lib/facebook/texto`); si Instagram falla no se intenta Facebook, y si Facebook
- * falla Instagram queda publicado y se puede reintentar (`publicarEnFacebook`, también desde «Ya en Instagram»).
- * OL-464 (bitácora 496): un festival con carteles en sus actos se publica como carrusel (la portada y un cartel por cada cartel distinto de sus
- * actos por venir, hasta 10, en el orden que dejó la hoja; `lib/instagram/carrusel`), y en Facebook como una publicación con varias fotos. Las
- * historias siguen con una imagen.
+ * OL-461 (bitácora 493): el espejo en la página de Facebook («También en Facebook»; «Reintentar en Facebook» y «Publicar en Facebook»).
+ * OL-464 (bitácora 496): un festival con carteles en sus actos se publica como carrusel (y en Facebook como una publicación con varias fotos).
+ *
+ * OL-465 (bitácora 497): publicar va en segundo plano. «Publicar» ya no espera a Instagram: guarda un trabajo en la cola (`redes_encolar`, con
+ * todo lo decidido en la hoja) y responde enseguida; la hoja se cierra y el renglón dice «Publicando…». Lo trabaja `/api/redes/correr`
+ * (`lib/redes/trabajar`): el primer intento empieza en seguida (`after()` pide la ruta) y el latido de Supabase recoge lo que falte; al terminar,
+ * el aviso al teléfono. Si ese evento con ese formato ya está en camino o salió hace menos de 15 minutos, no se guarda otro sin confirmar.
  */
 
 /** La sesión, solo si es de la administración (como `soloAdmin` del panel: el rol de su perfil). */
@@ -34,6 +35,8 @@ async function sesionAdmin() {
   const supabase = await clienteServidor();
   return supabase ? { supabase, user: { id: actual.perfil.id } } : null;
 }
+
+type Supabase = NonNullable<Awaited<ReturnType<typeof sesionAdmin>>>["supabase"];
 
 export type Preparado =
   | {
@@ -51,8 +54,29 @@ export type Preparado =
       ahora: string;
       /** Las imágenes posibles del carrusel, en su orden (la hoja las dibuja con `/api/instagram/<id>?imagen=<clave>`); vacío: una imagen. */
       carrusel: { clave: string; titulo: string }[];
+      /** OL-465: el último trabajo de este evento en las últimas 24 horas (en camino o lo que pasó), y si cada formato está en camino o recién salió. */
+      trabajo: EstadoTrabajo | null;
+      reciente: { "4x5": Reciente | null; "9x16": Reciente | null };
     }
   | { ok: false; mensaje: string };
+
+/** El último trabajo de un evento en las últimas 24 horas. */
+async function ultimoTrabajo(supabase: Supabase, eventoId: string, ahora: Date): Promise<EstadoTrabajo | null> {
+  const { data } = await supabase
+    .from("redes_trabajos")
+    .select("id, red, formato, estado, pedido, resultado, error")
+    .eq("evento_id", eventoId)
+    .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle<Record<string, unknown>>();
+  return leerEstadoTrabajo(data);
+}
+
+const reciente = async (supabase: Supabase, eventoId: string, red: "instagram" | "facebook", formato: "4x5" | "9x16"): Promise<Reciente | null> => {
+  const { data, error } = await supabase.rpc("redes_reciente", { p_evento: eventoId, p_red: red, p_formato: formato });
+  return error ? null : leerReciente(data);
+};
 
 /** Lo que la hoja necesita para un evento: el texto se arma en el teléfono con el mismo código (`armarTexto`) para quitar etiquetas al momento. */
 export async function prepararInstagram(eventoId: string): Promise<Preparado> {
@@ -61,7 +85,7 @@ export async function prepararInstagram(eventoId: string): Promise<Preparado> {
   const ahora = new Date();
   const h = await cargarParaHoja(s.supabase, eventoId, ahora);
   if (!h) return { ok: false, mensaje: "No encontramos ese evento." };
-  const cartel = await bajarCartel(h.imagen);
+  const [cartel, trabajo, r4x5, r9x16] = await Promise.all([bajarCartel(h.imagen), ultimoTrabajo(s.supabase, h.id, ahora), reciente(s.supabase, h.id, "instagram", "4x5"), reciente(s.supabase, h.id, "instagram", "9x16")]);
   return {
     ok: true,
     id: h.id,
@@ -76,150 +100,107 @@ export async function prepararInstagram(eventoId: string): Promise<Preparado> {
     publicado: h.publicado,
     ahora: ahora.toISOString(),
     carrusel: h.carrusel.map((i) => ({ clave: i.clave, titulo: i.titulo })),
+    trabajo,
+    reciente: { "4x5": r4x5, "9x16": r9x16 },
   };
 }
 
-/** `imagenes`: las claves del carrusel en el orden de la hoja (OL-464); sin ellas, una imagen como siempre. */
-export type PedidoPublicar = { eventoId: string; formato: "4x5" | "9x16"; recorte: boolean; diseno: number; texto: string | null; quitadas: string[]; facebook?: boolean; imagenes?: string[] };
-/** Lo que pasó en Facebook (OL-461). */
-export type Espejo = { ok: true; permalink: string | null } | { ok: false; error: ClaveFacebook; mensaje: string };
-/** `facebook`: null si no se pidió o si Instagram falló (entonces no se intenta). */
-export type Publicado = { ok: true; permalink: string | null; sinEtiquetas: boolean; facebook: Espejo | null; imagenes: number } | { ok: false; error: ClaveError; mensaje: string };
-
-type PublicacionIg = { id: string; formato: "4x5" | "9x16" | "carrusel"; imagen: string | null; carrusel: string[] | null };
-
-/** Publica en la página de Facebook lo que ya salió en Instagram y lo anota (con la sesión: la base comprueba que es de la administración). */
-async function espejar(supabase: NonNullable<Awaited<ReturnType<typeof sesionAdmin>>>["supabase"], ig: PublicacionIg, h: ParaHoja, textoInstagram: string | null): Promise<Espejo> {
-  const anotar = (fila: Record<string, unknown>) => supabase.from("facebook_publicaciones").insert({ instagram_id: ig.id, evento_id: h.id, formato: ig.formato, ...fila });
-  if (!ig.imagen) {
-    await anotar({ estado: "error", error: "imagen" });
-    return { ok: false, error: "imagen", mensaje: FRASES_FACEBOOK.imagen };
-  }
-  const historia = ig.formato === "9x16";
-  const texto = historia ? null : textoDeFacebook(textoInstagram ?? armarTexto(h.evento, new Date()), h.evento, enlaceConOrigen({ id: h.id, slug: h.slug }, "facebook", "post"));
-  // Un carrusel, con todas sus fotos en una publicación (OL-464).
-  const varias = ig.formato === "carrusel" && ig.carrusel && ig.carrusel.length > 1 ? ig.carrusel : undefined;
-  const r = await publicarEnPagina({ imagen: ig.imagen, texto, historia, imagenes: varias });
-  await anotar(r.ok ? { estado: "publicada", post_id: r.postId, permalink: r.permalink } : { estado: "error", error: r.error });
-  revalidatePath("/admin/instagram");
-  revalidatePath("/admin");
-  return r.ok ? { ok: true, permalink: r.permalink } : { ok: false, error: r.error, mensaje: FRASES_FACEBOOK[r.error] };
+/** Cómo va un trabajo (la hoja lo pregunta cada 20 s mientras está en camino, y al volver a la app). */
+export async function estadoTrabajo(id: string): Promise<EstadoTrabajo | null> {
+  const s = esUuid(id) ? await sesionAdmin() : null;
+  if (!s) return null;
+  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error").eq("id", id).maybeSingle<Record<string, unknown>>();
+  return leerEstadoTrabajo(data);
 }
 
-/** Publica: vuelve a comprobar que el evento está por venir, el texto, el cupo; arma el JPEG, lo sube, publica y lo anota. */
-export async function publicarEnInstagram(p: PedidoPublicar): Promise<Publicado> {
+/** `imagenes`: las claves del carrusel en el orden de la hoja (OL-464); sin ellas, una imagen como siempre. `repetir`: ya se confirmó (OL-465). */
+export type PedidoPublicar = { eventoId: string; formato: "4x5" | "9x16"; recorte: boolean; diseno: number; texto: string | null; quitadas: string[]; facebook?: boolean; imagenes?: string[]; repetir?: boolean };
+/**
+ * Lo que responde «Publicar» (OL-465): en la cola (la hoja se cierra), repetido (la hoja pide confirmar), o por qué no se guardó.
+ * `yaEstaba`: en Facebook, si esa publicación ya estaba en la página (no se guarda otro trabajo).
+ */
+export type Encolado = { ok: true; id: string | null; yaEstaba?: boolean } | { ok: false; duplicado: Reciente } | { ok: false; error: ClaveError; mensaje: string };
+
+/** El evento, ligero (sin bajar carteles): para comprobar que sigue por venir antes de guardar el trabajo. */
+async function porVenir(supabase: Supabase, eventoId: string, ahora: Date): Promise<boolean | null> {
+  const { data: e } = await supabase
+    .from("eventos")
+    .select("inicio, termina, zona, clase, visible, cancelado, borrador, retirado_por_admin, sesiones:eventos_sesiones(inicio)")
+    .eq("id", eventoId)
+    .maybeSingle<{ inicio: string; termina: string; zona: string; clase: string; visible: boolean; cancelado: boolean; borrador: boolean; retirado_por_admin: boolean; sesiones: { inicio: string }[] | null }>();
+  return e ? sePuedePublicar(e, ahora) : null;
+}
+
+/** Guarda el trabajo y pide el primer intento enseguida (sin esperar al latido). */
+async function encolar(supabase: Supabase, eventoId: string, red: "instagram" | "facebook", formato: "4x5" | "9x16", pedido: Record<string, unknown>, repetir: boolean): Promise<Encolado> {
+  const { data, error } = await supabase.rpc("redes_encolar", { p_evento: eventoId, p_red: red, p_formato: formato, p_pedido: pedido, p_repetir: repetir });
+  const r = (data ?? {}) as { id?: string; duplicado?: unknown };
+  if (error || (!r.id && !r.duplicado)) return { ok: false, error: "otro", mensaje: "No se pudo guardar la publicación. Intenta de nuevo; no se publicó nada." };
+  const duplicado = leerReciente(r.duplicado);
+  if (duplicado) return { ok: false, duplicado };
+  try {
+    const h = await headers();
+    const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+    after(() => dispararPaso(origen, { ruta: "/api/redes/correr" }));
+  } catch {
+    console.warn("redes: no se pudo pedir el primer intento; lo toma el latido");
+  }
+  // Sin `revalidatePath`: repintaría aquí mismo la lista entera y la respuesta tardaría; la hoja se cierra y la lista se refresca sola.
+  return { ok: true, id: r.id ?? null };
+}
+
+/**
+ * «Publicar» de la hoja: comprueba lo que se puede comprobar al momento (que es de la administración, que el evento sigue por venir y que el
+ * texto cabe) y guarda el trabajo. Lo demás (el cupo del día, las imágenes, Instagram, Facebook) lo hace el trabajador en segundo plano.
+ */
+export async function publicarEnInstagram(p: PedidoPublicar): Promise<Encolado> {
   const s = esUuid(p?.eventoId) ? await sesionAdmin() : null;
   if (!s) return { ok: false, error: "permiso", mensaje: "Solo la administración publica en Instagram." };
   const formato = p.formato === "9x16" ? "9x16" : "4x5";
-  const ahora = new Date();
-  const h = await cargarParaHoja(s.supabase, p.eventoId, ahora);
-  if (!h) return { ok: false, error: "otro", mensaje: "No encontramos ese evento." };
-  // OL-464: las imágenes del carrusel que dejó la hoja, en su orden (solo de las que el servidor sabe; nunca una que mande el teléfono).
-  let pedidas = formato === "4x5" ? imagenesPedidas(h.carrusel, p.imagenes) : [];
-  const enCarrusel = () => (pedidas.length > 1 ? { formato: "carrusel", imagenes: pedidas.length } : { formato, imagenes: 1 });
-  const anotar = (fila: Record<string, unknown>) => s.supabase.from("instagram_publicaciones").insert({ evento_id: h.id, ...enCarrusel(), ...fila });
-  const fallo = async (error: Exclude<ClaveError, "texto">): Promise<Publicado> => {
-    await anotar({ estado: "error", error });
-    return { ok: false, error, mensaje: FRASES[error] };
-  };
-  if (!sePuedePublicar(h.datos, ahora)) return fallo("empezo");
-  const quitadas = Array.isArray(p.quitadas) ? p.quitadas.filter((x) => typeof x === "string").slice(0, 60) : [];
-  // El texto: lo que mandó la hoja o, si no, el que arma el sistema; nunca en una historia (Instagram no lo publica).
-  const texto = formato === "4x5" ? (typeof p.texto === "string" && p.texto.trim() ? p.texto.trim() : armarTexto(h.evento, ahora, quitadas)) : null;
+  const sigue = await porVenir(s.supabase, p.eventoId, new Date());
+  if (sigue === null) return { ok: false, error: "otro", mensaje: "No encontramos ese evento." };
+  if (!sigue) return { ok: false, error: "empezo", mensaje: FRASES.empezo };
+  const texto = formato === "4x5" && typeof p.texto === "string" && p.texto.trim() ? p.texto.trim().slice(0, 5000) : null;
   if (texto) {
     const r = revisarTexto(texto);
     if (r.problema) return { ok: false, error: "texto", mensaje: r.problema };
   }
-  const usado = await cupo();
-  if (usado && usado.usadas >= usado.tope) return fallo("cupo");
-  // La imagen: el cartel encajado, o el diseño de Crear cartel; un JPEG público en la carpeta de quien publica. En un carrusel, también el cartel de
-  // cada acto a 4:5 con el margen de su color (uno que ya no se pudo bajar se deja fuera).
-  const [cartel, datos] = await Promise.all([bajarCartel(h.imagen), cargarParaCartel(s.supabase, h.id)]);
-  if (!datos) return fallo("otro");
-  const portada = () => armarImagen({ cartel: cartel?.bytes ?? null, datos, formato, recorte: !!p.recorte, diseno: Number(p.diseno) || 0 });
-  const dibujar = async (i: ImagenCarrusel): Promise<Buffer | null> => {
-    if (i.clave === PORTADA || !i.imagen) return portada();
-    const suyo = await bajarCartel(i.imagen);
-    return suyo ? encajarCartel(suyo.bytes, "4x5", false) : null;
+  const pedido = {
+    recorte: !!p.recorte,
+    diseno: Number(p.diseno) || 0,
+    texto,
+    quitadas: Array.isArray(p.quitadas) ? p.quitadas.filter((x) => typeof x === "string").slice(0, 60) : [],
+    facebook: !!p.facebook,
+    ...(Array.isArray(p.imagenes) ? { imagenes: p.imagenes.filter((x) => typeof x === "string").slice(0, 20) } : {}),
   };
-  let jpegs: { item: ImagenCarrusel | null; bytes: Buffer }[];
-  try {
-    if (pedidas.length) {
-      const dibujadas = await Promise.all(pedidas.map(async (item) => ({ item, bytes: await dibujar(item) })));
-      jpegs = dibujadas.filter((x): x is { item: ImagenCarrusel; bytes: Buffer } => !!x.bytes);
-      pedidas = jpegs.map((x) => x.item!);
-      if (!jpegs.length) return fallo("imagen");
-    } else jpegs = [{ item: null, bytes: await portada() }];
-  } catch {
-    return fallo("imagen");
-  }
-  const subidas: string[] = [];
-  for (const j of jpegs) {
-    const ruta = `lugares/${s.user.id}/instagram-${crypto.randomUUID()}.jpg`;
-    const subida = await s.supabase.storage.from("fotos").upload(ruta, j.bytes, { contentType: "image/jpeg", upsert: false });
-    if (subida.error) return fallo("otro");
-    subidas.push(s.supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl);
-  }
-  const imagen = subidas[0];
-  // Solo se etiqueta a quien la ficha dice (nunca un nombre que mande el teléfono). En un carrusel, el lugar en todas y cada artista en la imagen
-  // de su cartel (`etiquetasPorImagen`).
-  const etiquetas = etiquetasDeLaFoto(h.evento, quitadas);
-  const carrusel = pedidas.length > 1;
-  const r = carrusel
-    ? await publicarCarrusel({
-        imagenes: etiquetasPorImagen(pedidas, { lugar: h.evento.lugar?.usuario ?? null, permitidas: etiquetas }).map((us, i) => ({ imagen: subidas[i], etiquetas: us })),
-        texto,
-        ubicacion: h.ubicacion?.id ?? null,
-      })
-    : await publicar({ imagen, texto, etiquetas, ubicacion: h.ubicacion?.id ?? null, historia: formato === "9x16" });
-  if (!r.ok) return fallo(r.error);
-  const anotada = await anotar({
-    estado: "publicada",
-    media_id: r.mediaId,
-    permalink: r.permalink,
-    imagen,
-    ...(carrusel ? { carrusel: subidas } : {}),
-    etiquetas: r.sinEtiquetas ? [] : etiquetas,
-    ubicacion: r.sinEtiquetas || formato === "9x16" ? null : (h.ubicacion?.id ?? null),
-  })
-    .select("id")
-    .maybeSingle<{ id: string }>();
-  revalidatePath("/admin/instagram");
-  revalidatePath("/admin");
-  // El espejo en Facebook, solo si salió en Instagram. Sin la fila de Instagram no se puede anotar: no se publica en Facebook y se dice.
-  const facebook: Espejo | null = !p.facebook
-    ? null
-    : anotada.data?.id
-      ? await espejar(s.supabase, { id: anotada.data.id, formato: carrusel ? "carrusel" : formato, imagen, carrusel: carrusel ? subidas : null }, h, texto)
-      : { ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro };
-  return { ok: true, permalink: r.permalink, sinEtiquetas: r.sinEtiquetas && (etiquetas.length > 0 || !!h.ubicacion), facebook, imagenes: subidas.length };
+  return encolar(s.supabase, p.eventoId, "instagram", formato, pedido, !!p.repetir);
 }
 
 /**
  * Publica en Facebook lo que ya está en Instagram y no salió en Facebook (la hoja, «Reintentar en Facebook»; la lista, «Publicar en Facebook»):
  * la última publicación de Instagram del evento, con su misma imagen. `texto`: el que llevó Instagram, si la hoja lo tiene; si no, el que arma el
- * sistema. Si esa publicación ya está en Facebook, no se publica otra vez. Solo lo que está por venir, como en Instagram.
+ * sistema. Si esa publicación ya está en Facebook, no se publica otra vez. Solo lo que está por venir, como en Instagram. OL-465: también va a la
+ * cola.
  */
-export async function publicarEnFacebook(eventoId: string, texto: string | null = null): Promise<Espejo> {
+export async function publicarEnFacebook(eventoId: string, texto: string | null = null, repetir = false): Promise<Encolado> {
   const s = esUuid(eventoId) ? await sesionAdmin() : null;
   if (!s) return { ok: false, error: "permiso", mensaje: "Solo la administración publica en Facebook." };
-  const ahora = new Date();
-  const h = await cargarParaHoja(s.supabase, eventoId, ahora);
-  if (!h) return { ok: false, error: "otro", mensaje: "No encontramos ese evento." };
-  if (!sePuedePublicar(h.datos, ahora)) return { ok: false, error: "empezo", mensaje: FRASES_FACEBOOK.empezo };
+  const sigue = await porVenir(s.supabase, eventoId, new Date());
+  if (sigue === null) return { ok: false, error: "otro", mensaje: "No encontramos ese evento." };
+  if (!sigue) return { ok: false, error: "empezo", mensaje: FRASES_FACEBOOK.empezo };
   const { data: ig } = await s.supabase
     .from("instagram_publicaciones")
-    .select("id, formato, imagen, carrusel")
-    .eq("evento_id", h.id)
+    .select("id, formato")
+    .eq("evento_id", eventoId)
     .eq("estado", "publicada")
     .order("creado_en", { ascending: false })
     .limit(1)
-    .maybeSingle<PublicacionIg>();
+    .maybeSingle<{ id: string; formato: "4x5" | "9x16" | "carrusel" }>();
   if (!ig) return { ok: false, error: "otro", mensaje: "Este evento todavía no está en Instagram." };
-  const { data: ya } = await s.supabase.from("facebook_publicaciones").select("permalink").eq("instagram_id", ig.id).eq("estado", "publicada").limit(1).maybeSingle<{ permalink: string | null }>();
-  if (ya) return { ok: true, permalink: ya.permalink };
+  const { data: ya } = await s.supabase.from("facebook_publicaciones").select("id").eq("instagram_id", ig.id).eq("estado", "publicada").limit(1).maybeSingle<{ id: string }>();
+  if (ya && !repetir) return { ok: true, id: null, yaEstaba: true };
   const propio = ig.formato !== "9x16" && typeof texto === "string" && texto.trim() ? texto.trim().slice(0, 5000) : null;
-  return espejar(s.supabase, ig, h, propio);
+  return encolar(s.supabase, eventoId, "facebook", ig.formato === "9x16" ? "9x16" : "4x5", { texto: propio }, repetir);
 }
 
 export type Guardado = { ok: true; nombre: string } | { ok: false; mensaje: string };
