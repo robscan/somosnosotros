@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import { aniosDeFilas, MINIMO_VER_LOS, notaPresencias, TANDA_HISTORIAL, tandaDelAnio, textoVeces, TOPE_CARRIL, type FilaPasada, type Presencia } from "@/lib/historialFichas";
 import { TiraCarril } from "./Destacados";
 import TarjetaAvatar from "./inicio/TarjetaAvatar";
@@ -40,8 +41,8 @@ type Estado = { abierto: boolean; anio: string; cuantos: number };
 /**
  * Lo de dentro del «Historial» de un lugar y la «Trayectoria» de un artista, escalable (OL-473; prototipo firmado `historial-escalable.html`,
  * bitácora 501, «F1 · L1 · A1»), todo hijo directo del plegado (maquetación plana):
- * - F1: quiénes pasaron en el carril de avatares de Inicio (`TiraCarril` y `inicio/TarjetaAvatar`, hasta 12, con «9 veces» en gris), que se
- *   desliza con el dedo y asoma el siguiente; desde 4, «Ver los 9 ›» abre una hoja (`ui/Hoja`) con todos en el renglón de Artistas o de Lugares,
+ * - F1: quiénes pasaron en el carril de avatares de Inicio (`TiraCarril` y `inicio/TarjetaAvatar`, hasta 12, con «9 veces» en gris; sin foto,
+ *   el círculo oscuro con el símbolo SN, como la fila de OL-390), que se desliza con el dedo y asoma el siguiente; desde 4, «Ver los 9 ›» abre una hoja (`ui/Hoja`) con todos en el renglón de Artistas o de Lugares,
  *   con sus veces donde va lo próximo y su «Seguir» (firmado: «Sí»).
  * - L1: un chip por año con su cuenta («2026 48»; con un solo año, sin chips), el más reciente elegido, y ese año por mes de 20 en 20 con
  *   «Ver más» (`ui/CargarMas`). Elegir un año o ver más no navega (filtrar no es navegar): no apila nada en Atrás.
@@ -93,7 +94,7 @@ export default function HistorialCuerpo({ de, plegado, titulo, presencias, filas
           <TiraCarril memoria={plegado} className={`${destacados.carril} ${destacados.avatar} ${styles.carril}`} ariaLabel={titulo}>
             {presencias.slice(0, TOPE_CARRIL).map((p) => (
               <li key={p.id}>
-                <TarjetaAvatar t={{ id: p.id, href: p.href, foto: p.foto, titulo: p.nombre, detalle: "", van: null }} nota={textoVeces(p.veces)} />
+                <TarjetaAvatar t={{ id: p.id, href: p.href, foto: p.foto ?? SIN_FOTO_REDONDA, titulo: p.nombre, detalle: "", van: null }} nota={textoVeces(p.veces)} />
               </li>
             ))}
           </TiraCarril>
@@ -103,8 +104,7 @@ export default function HistorialCuerpo({ de, plegado, titulo, presencias, filas
         <Chips ariaLabel="Año" className={styles.anios}>
           {anios.map((a) => (
             <Chip key={a.anio} activo={a.anio === anio} onClick={() => setEstado((e) => ({ ...e, anio: a.anio, cuantos: TANDA_HISTORIAL }))}>
-              {a.anio}
-              <Cuenta n={a.n} />
+              {a.anio} <Cuenta n={a.n} />
             </Chip>
           ))}
         </Chips>

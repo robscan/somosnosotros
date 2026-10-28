@@ -1,0 +1,4455 @@
+{
+  "lugarAna": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "carril": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": -656,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": -666,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": -656,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": -666,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "todos": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": {
+        "etiqueta": "Han pasado por aquí",
+        "ancho": 390,
+        "alto": 796,
+        "renglones": 9,
+        "primero": 95,
+        "nota": "9 artistas registrados: los que tienen ficha en el catálogo y están en algún evento de aquí. Una exposición colectiva o un evento sin artistas ligados no suma."
+      }
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": {
+        "etiqueta": "Han pasado por aquí",
+        "ancho": 390,
+        "alto": 796,
+        "renglones": 9,
+        "primero": 95,
+        "nota": "9 artistas registrados: los que tienen ficha en el catálogo y están en algún evento de aquí. Una exposición colectiva o un evento sin artistas ligados no suma."
+      }
+    },
+    "dif": []
+  },
+  "anio": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Diciembre de 2025",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 81
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2821,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Diciembre de 2025",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 81
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2821,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "verMas": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "tanda2": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 40,
+      "verMas": {
+        "arriba": 4744,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 40,
+      "verMas": {
+        "arriba": 4744,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "informe": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": {
+        "etiqueta": "Informe de actividad",
+        "ancho": 390,
+        "alto": 360,
+        "renglones": 0,
+        "primero": null,
+        "nota": "Lo que pasó en Museo Leonora Carrington (demo) en el periodo, con las definiciones de cada cifra: 1 página."
+      }
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2589,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": {
+        "etiqueta": "Informe de actividad",
+        "ancho": 390,
+        "alto": 360,
+        "renglones": 0,
+        "primero": null,
+        "nota": "Lo que pasó en Museo Leonora Carrington (demo) en el periodo, con las definiciones de cada cifra: 1 página."
+      }
+    },
+    "dif": []
+  },
+  "volver": {
+    "antes": {
+      "y": 3578,
+      "renglones": 26
+    },
+    "despues": {
+      "y": 3578,
+      "renglones": 26,
+      "anio": "2025 26"
+    }
+  },
+  "lugarSin": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 56,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2525,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 56,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2525,
+        "izq": 154,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "lugarAna320": {
+    "app": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 112,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 176,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 220,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 224,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 224,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 413,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 457,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2802,
+        "izq": 119,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 112,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 176,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 220,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 224,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 224,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 413,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 457,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2802,
+        "izq": 119,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "lugarSin320": {
+    "app": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 56,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2682,
+        "izq": 119,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 56,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2682,
+        "izq": 119,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "lugarAna430": {
+    "app": {
+      "pantalla": 430,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 191,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 219,
+          "ancho": 191,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 338,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 410,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2511,
+        "izq": 174,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 412,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 182,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 56,
+          "izq": 210,
+          "ancho": 182,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 120,
+          "izq": 320,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 392,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2511,
+        "izq": 165,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "lugarSin430": {
+    "app": {
+      "pantalla": 430,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 56,
+          "izq": 338,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 410,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2447,
+        "izq": 174,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 412,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 56,
+          "izq": 320,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 392,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2447,
+        "izq": 165,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": null
+    },
+    "dif": []
+  },
+  "todos320": {
+    "app": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 112,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 176,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 220,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 224,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 224,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 413,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 457,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2802,
+        "izq": 119,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": {
+        "etiqueta": "Han pasado por aquí",
+        "ancho": 320,
+        "alto": 796,
+        "renglones": 9,
+        "primero": 117,
+        "nota": "9 artistas registrados: los que tienen ficha en el catálogo y están en algún evento de aquí. Una exposición colectiva o un evento sin artistas ligados no suma."
+      }
+    },
+    "ref": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "84 eventos · 9 artistas registrados"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        },
+        {
+          "texto": "Informe",
+          "arriba": 112,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Han pasado por aquí",
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 9",
+          "arriba": 176,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 220,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 9,
+        "foto": {
+          "arriba": 224,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 224,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 165
+        },
+        "separacion": 8,
+        "veces": "9 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 413,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 48",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 26",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 10",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 457,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 20,
+      "verMas": {
+        "arriba": 2802,
+        "izq": 119,
+        "ancho": 82,
+        "alto": 44
+      },
+      "hoja": {
+        "etiqueta": "Han pasado por aquí",
+        "ancho": 320,
+        "alto": 796,
+        "renglones": 9,
+        "primero": 117,
+        "nota": "9 artistas registrados: los que tienen ficha en el catálogo y están en algún evento de aquí. Una exposición colectiva o un evento sin artistas ligados no suma."
+      }
+    },
+    "dif": []
+  },
+  "artistaAna": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  },
+  "artistaTodos": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": {
+        "etiqueta": "Se ha presentado en",
+        "ancho": 390,
+        "alto": 796,
+        "renglones": 8,
+        "primero": 95,
+        "nota": "8 lugares con ficha. Una fecha en un sitio sin ficha cuenta en la trayectoria, pero no aquí."
+      }
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": {
+        "etiqueta": "Se ha presentado en",
+        "ancho": 390,
+        "alto": 796,
+        "renglones": 8,
+        "primero": 95,
+        "nota": "8 lugares con ficha. Una fecha en un sitio sin ficha cuenta en la trayectoria, pero no aquí."
+      }
+    },
+    "dif": []
+  },
+  "artista2025": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Diciembre de 2025",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 12,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Diciembre de 2025",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 12,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  },
+  "presentacion": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": {
+        "etiqueta": "Presentación",
+        "ancho": 390,
+        "alto": 263,
+        "renglones": 0,
+        "primero": null,
+        "nota": "Tus fechas en Somos Nosotrxs, tu reseña y tus redes, listas para enviar: 4 páginas."
+      }
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 171,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 199,
+          "ancho": 171,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": {
+        "etiqueta": "Presentación",
+        "ancho": 390,
+        "alto": 263,
+        "renglones": 0,
+        "primero": null,
+        "nota": "Tus fechas en Somos Nosotrxs, tu reseña y tus redes, listas para enviar: 4 páginas."
+      }
+    },
+    "dif": []
+  },
+  "artistaSin": {
+    "app": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 56,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 390,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 56,
+          "izq": 298,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 370,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 350,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  },
+  "artistaAna320": {
+    "app": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 112,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 176,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 220,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 224,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 224,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 413,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 457,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 112,
+          "izq": 20,
+          "ancho": 280,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 176,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 220,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 224,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 224,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 413,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 457,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  },
+  "artistaSin320": {
+    "app": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 56,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 320,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 56,
+          "izq": 228,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 300,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 280,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 117
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  },
+  "artistaAna430": {
+    "app": {
+      "pantalla": 430,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 191,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 219,
+          "ancho": 191,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 338,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 410,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 412,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [
+        {
+          "texto": "Tu año",
+          "arriba": 56,
+          "izq": 20,
+          "ancho": 182,
+          "alto": 48
+        },
+        {
+          "texto": "Presentación",
+          "arriba": 56,
+          "izq": 210,
+          "ancho": 182,
+          "alto": 48
+        }
+      ],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 108,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 120,
+          "izq": 320,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 164,
+        "izq": 20,
+        "ancho": 392,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 168,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 168,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 357,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 401,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  },
+  "artistaSin430": {
+    "app": {
+      "pantalla": 430,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 56,
+          "izq": 338,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 410,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 390,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "ref": {
+      "pantalla": 412,
+      "desborda": false,
+      "resumen": {
+        "alto": 44,
+        "cuenta": "30 fechas · 8 lugares"
+      },
+      "botones": [],
+      "cabeza": {
+        "texto": "Se ha presentado en",
+        "arriba": 44,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 56,
+        "verLos": {
+          "texto": "Ver los 8",
+          "arriba": 56,
+          "izq": 320,
+          "ancho": 72,
+          "alto": 44
+        }
+      },
+      "carril": {
+        "arriba": 100,
+        "izq": 20,
+        "ancho": 392,
+        "alto": 177,
+        "avatares": 8,
+        "foto": {
+          "arriba": 104,
+          "izq": 30,
+          "ancho": 88,
+          "alto": 88
+        },
+        "columna": {
+          "arriba": 104,
+          "izq": 20,
+          "ancho": 108,
+          "alto": 146
+        },
+        "separacion": 8,
+        "veces": "4 veces",
+        "desplazable": true
+      },
+      "chips": {
+        "arriba": 293,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 44,
+        "cada": [
+          {
+            "texto": "2026 13",
+            "alto": 36,
+            "ancho": 74,
+            "elegido": true
+          },
+          {
+            "texto": "2025 12",
+            "alto": 36,
+            "ancho": 72,
+            "elegido": false
+          },
+          {
+            "texto": "2024 5",
+            "alto": 36,
+            "ancho": 66,
+            "elegido": false
+          }
+        ]
+      },
+      "primerMes": {
+        "texto": "Octubre de 2026",
+        "arriba": 337,
+        "izq": 20,
+        "ancho": 372,
+        "alto": 33
+      },
+      "renglon": {
+        "alto": 95
+      },
+      "renglones": 13,
+      "verMas": null,
+      "hoja": null
+    },
+    "dif": []
+  }
+}
