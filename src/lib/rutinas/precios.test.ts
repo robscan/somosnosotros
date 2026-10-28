@@ -30,11 +30,26 @@ describe("costoDeUso: lo que cuesta una respuesta de la API", () => {
   it("cada modelo con su precio, y uno que no está en la tabla al más caro (el crédito nunca baja de menos)", () => {
     const uso = { input_tokens: 1_000_000, output_tokens: 1_000_000 };
     expect(costoDeUso(uso, "claude-sonnet-5-5")).toBeCloseTo(12, 10);
-    // La lectura de caché de Sonnet 5.5: 0,20 USD por millón (la guía de la API).
-    expect(costoDeUso({ cache_read_input_tokens: 1_000_000 }, "claude-sonnet-5-5")).toBeCloseTo(0.2, 10);
+    // La lectura de caché de Sonnet 5.5: 0,10 USD por millón (tabla oficial, 28 de octubre: 0,05 veces la entrada); la de Sonnet 5, 0,20.
+    expect(costoDeUso({ cache_read_input_tokens: 1_000_000 }, "claude-sonnet-5-5")).toBeCloseTo(0.1, 10);
+    expect(costoDeUso({ cache_read_input_tokens: 1_000_000 }, "claude-sonnet-5")).toBeCloseTo(0.2, 10);
     expect(costoDeUso(uso, "claude-opus-5-5")).toBeCloseTo(24, 10);
     const masCaro = Math.max(...Object.values(PRECIOS).map((p) => p.entrada + p.salida));
     expect(costoDeUso(uso, "un-modelo-nuevo")).toBeCloseTo(masCaro, 10);
+  });
+
+  it("Haiku 5.5: 0,10 · 0,125 · 0,20 · 0,01 · 0,50 hasta 100 000 tokens de entrada; más de eso, la tarifa larga en todo el pedido", () => {
+    // 50 000×0,10 + 10 000×0,50 = 5 000 + 5 000 millonésimas
+    expect(costoDeUso({ input_tokens: 50_000, output_tokens: 10_000 }, "claude-haiku-5-5")).toBeCloseTo(0.01, 10);
+    // Justo 100 000 (contando la caché) sigue en la corta: 60 000×0,10 + 30 000×0,01 + 10 000×0,125 = 6 000 + 300 + 1 250
+    expect(costoDeUso({ input_tokens: 60_000, cache_read_input_tokens: 30_000, cache_creation_input_tokens: 10_000 }, "claude-haiku-5-5")).toBeCloseTo(0.00755, 10);
+    // Uno más y todo a la larga: 60 001×0,50 + 30 000×0,05 + 10 000×0,625 + 1 000×2,50
+    expect(costoDeUso({ input_tokens: 60_001, cache_read_input_tokens: 30_000, cache_creation_input_tokens: 10_000, output_tokens: 1_000 }, "claude-haiku-5-5")).toBeCloseTo(
+      (60_001 * 0.5 + 30_000 * 0.05 + 10_000 * 0.625 + 1_000 * 2.5) / 1_000_000,
+      10,
+    );
+    expect(costoDeUso({ cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 1_000_000 } }, "claude-haiku-5-5")).toBeCloseTo(1, 10);
+    expect(precioDe("claude-haiku-5-5-20261001")).toBe(PRECIOS["claude-haiku-5-5"]);
   });
 
   it("un nombre con fecha se cobra como su modelo (la clave más larga: Sonnet 5.5 no es Sonnet 5)", () => {
