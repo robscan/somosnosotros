@@ -228,6 +228,7 @@ export function lectorConApi(cliente: ClienteApi, modelo: string, ahora: () => n
  * La lectura falsa de --sin-modelo (sin red, sin gasto): en cada evento, las secuencias de dos a cuatro palabras con mayúscula del título y la
  * descripción, con papel «otro». Solo sirve para probar el flujo: saca también títulos de obras, que el control y la bandeja dejan ver.
  */
+const DE_ENTRADA = new Set(["con", "de", "del", "y", "la", "el", "los", "las", "en", "por", "para", "a", "al", "inauguracion", "exposicion", "concierto", "presentacion", "taller", "recital", "noche", "obra", "lectura", "funcion", "visita"]);
 export const lectorFalso: Lector = async (tanda) => {
   const propio = /(?:\p{Lu}[\p{L}'’.-]+)(?:\s+(?:de|del|la|las|los|y)?\s*\p{Lu}[\p{L}'’.-]+){1,3}/gu;
   const eventos = tanda.eventos.map((e, j) => {
@@ -235,8 +236,10 @@ export const lectorFalso: Lector = async (tanda) => {
     const artistas: Hallazgo[] = [];
     for (const texto of [e.titulo, e.descripcion ?? ""])
       for (const m of texto.matchAll(propio)) {
-        const nombre = m[0].trim();
-        if (vistos.has(normalizarNombre(nombre))) continue;
+        const palabras = m[0].trim().split(/\s+/);
+        while (palabras.length > 2 && DE_ENTRADA.has(normalizarNombre(palabras[0]))) palabras.shift();
+        const nombre = palabras.join(" ");
+        if (DE_ENTRADA.has(normalizarNombre(palabras[0])) || vistos.has(normalizarNombre(nombre))) continue;
         vistos.add(normalizarNombre(nombre));
         artistas.push({ nombre, fragmento: nombre, papel: "otro", detalle: null });
       }
