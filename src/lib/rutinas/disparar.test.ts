@@ -29,6 +29,14 @@ describe("dispararPaso", () => {
     expect(new Headers(init.headers).get("authorization")).toBe("Bearer s3cr3t");
   });
 
+  it("OL-465: la cola de redes pide su ruta hermana, con el mismo secreto", async () => {
+    const pedir = vi.fn(async () => new Response(null, { status: 202 })) as unknown as typeof fetch;
+    expect(await dispararPaso("https://somosnosotros.org", { secreto: "s3cr3t", pedir, ruta: "/api/redes/correr" })).toBe("disparado");
+    const [url, init] = (pedir as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0];
+    expect(url).toBe("https://somosnosotros.org/api/redes/correr");
+    expect(new Headers(init.headers).get("authorization")).toBe("Bearer s3cr3t");
+  });
+
   it("sin secreto no dispara y lo dice en el registro (sin el secreto); sin origen, igual; si falla, no lanza", async () => {
     const avisos: string[] = [];
     const pedir = vi.fn() as unknown as typeof fetch;
