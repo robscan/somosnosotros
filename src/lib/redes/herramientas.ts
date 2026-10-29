@@ -6,7 +6,7 @@ import { publicarEnPagina } from "../facebook/api";
 import { cupo, publicar, publicarCarrusel } from "../instagram/api";
 import { PORTADA, type ImagenCarrusel } from "../instagram/carrusel";
 import { armarImagen, bajarCartel, encajarCartel } from "../instagram/imagen";
-import { enviarPush, pushActivo, type AvisoPush } from "../push";
+import { enviarPush, marcarDireccionMuerta, pushActivo, type AvisoPush } from "../push";
 import type { ClienteServidor } from "../supabase/servidor";
 import type { Herramientas } from "./trabajar";
 
@@ -26,15 +26,16 @@ export async function avisarAlTelefono(db: SupabaseClient, usuarioId: string | n
     // Quien apagó los avisos al teléfono no recibe este tampoco; sin la llave de Web Push, solo los de la app de iPhone.
     if (perfil && perfil.avisos_push === false) return;
     const [web, apns] = await Promise.all([
-      pushActivo() ? db.from("suscripciones_push").select("endpoint, p256dh, auth").eq("usuario_id", usuarioId).limit(10) : Promise.resolve({ data: [] as unknown[] }),
-      db.from("dispositivos_apns").select("token, entorno").eq("usuario_id", usuarioId).limit(10),
+      // Sin las direcciones que el proveedor ya dio por muertas (OL-476).
+      pushActivo() ? db.from("suscripciones_push").select("endpoint, p256dh, auth").eq("usuario_id", usuarioId).is("muerta_en", null).limit(10) : Promise.resolve({ data: [] as unknown[] }),
+      db.from("dispositivos_apns").select("token, entorno").eq("usuario_id", usuarioId).is("muerta_en", null).limit(10),
     ]);
     const cuerpo = JSON.stringify(aviso);
     const envios = [
       ...((web.data ?? []) as { endpoint: string; p256dh: string; auth: string }[]).map((s) => ({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } })),
       ...((apns.data ?? []) as { token: string; entorno: "sandbox" | "produccion" }[]).map((d) => ({ apns: { token: d.token, entorno: d.entorno } })),
     ];
-    await Promise.allSettled(envios.map((s) => enviarPush(s, cuerpo, 3600)));
+    await Promise.allSettled(envios.map(async (s) => marcarDireccionMuerta(s, await enviarPush(s, cuerpo, 3600))));
   } catch {
     console.warn("redes: no se pudo mandar el aviso al teléfono");
   }

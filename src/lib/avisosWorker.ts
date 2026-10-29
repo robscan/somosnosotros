@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { contenidoCorreo, contenidoPush, contenidoPushAdmin, type Cambio, type EventoParaAviso, type TipoAviso } from "./avisos";
 import { urlBaja } from "./baja";
 import { cuerpoCorreo, enviarCorreoIdempotente, type ResultadoEnvio } from "./correo";
-import { enviarPush } from "./push";
+import { codigoSeguro, enviarPush } from "./push";
 import { clienteAdmin } from "./supabase/admin";
 import { configPublica } from "./config";
 
@@ -30,7 +30,8 @@ function dependencias(): DependenciasAvisos {
   return {
     rpc: async <T>(nombre: string, args?: Record<string, unknown>, timeoutMs = 5_000) => {
       const { data, error } = await admin.rpc(nombre, args).abortSignal(AbortSignal.timeout(timeoutMs));
-      if (error) throw new Error("avisos_base");
+      // Qué llamada y qué código de PostgREST/Postgres (p. ej. 57014 = tiempo agotado), nunca el mensaje ni los datos.
+      if (error) throw new Error(codigoSeguro(`avisos_base_${nombre.replace(/^avisos_/, "")}${error.code ? `_${error.code}` : ""}`));
       return data as T;
     },
     correoDe: async (id, timeoutMs = 5_000) => {
@@ -59,6 +60,30 @@ async function conPlazo<T>(promesa: Promise<T>, ms: number): Promise<T> {
   finally { clearTimeout(timer); }
 }
 
+/**
+ * OL-476 (bitácora 508): el motivo real de una excepción, corto y sin datos personales, en vez de `worker_dependencia`
+ * (que escondió 12 entregas a la app de iPhone). Los errores propios de este archivo ya traen un código
+ * (`avisos_base`, `avisos_auth`, `avisos_timeout`, `avisos_presupuesto`…); cualquier otro queda como `excepcion_<clase>`.
+ */
+export function codigoDeExcepcion(e: unknown): string {
+  const mensaje = e instanceof Error ? e.message : "";
+  if (/^[a-z0-9_]{1,60}$/.test(mensaje)) return mensaje;
+  return codigoSeguro(`excepcion_${e instanceof Error ? e.name : typeof e}`);
+}
+
+/** Al registro va la clase y el mensaje, sin el cuerpo del aviso, correos, tokens ni direcciones (pueden venir citados en el mensaje). */
+export function mensajeSeguro(e: unknown): string {
+  const nombre = e instanceof Error ? e.name : typeof e;
+  const mensaje = e instanceof Error ? e.message : "";
+  const limpio = mensaje
+    .replace(/"[^"]*"|'[^']*'|`[^`]*`/g, "…")
+    .replace(/[^\s@]+@[^\s@]+/g, "…")
+    .replace(/https?:\/\/\S+/g, "…")
+    .replace(/[0-9a-fA-F-]{32,}/g, "…")
+    .slice(0, 200);
+  return `${nombre}: ${limpio}`;
+}
+
 function plazo(d: DependenciasAvisos, fin: number, reserva = 0, maximo = 5_000) {
   const ms = Math.floor(Math.min(maximo, fin - d.ahora() - reserva));
   if (ms < 1) throw new Error("avisos_presupuesto");
@@ -68,7 +93,7 @@ function plazo(d: DependenciasAvisos, fin: number, reserva = 0, maximo = 5_000) 
 export async function procesarEntrega(c: Claim, d: DependenciasAvisos, fin = d.ahora() + 40_000): Promise<boolean> {
   const args = { p_id: c.id, p_token: c.token };
   const rpc = <T>(nombre: string, a: Record<string, unknown>) => d.rpc<T>(nombre, a, plazo(d, fin, 1_000));
-  const terminar = (r: ResultadoEnvio) => d.rpc<boolean>("avisos_terminar", { ...args, p_resultado: r.estado, p_codigo: r.codigo }, plazo(d, fin));
+  const terminar = (r: ResultadoEnvio) => d.rpc<boolean>("avisos_terminar", { ...args, p_resultado: r.estado, p_codigo: codigoSeguro(r.codigo) }, plazo(d, fin));
   try {
     const entrega = await rpc<Entrega | null>("avisos_autorizar", args);
     if (!entrega) return false;
@@ -99,8 +124,10 @@ export async function procesarEntrega(c: Claim, d: DependenciasAvisos, fin = d.a
     // Si se pierde este ACK, el lease se recupera: misma clave/cuerpo de correo.
     const confirmado = await terminar(resultado);
     return confirmado && resultado.estado === "enviada";
-  } catch {
-    try { await terminar({ estado: "reintentar", codigo: "worker_dependencia" }); } catch { /* El lease conserva la recuperacion. */ }
+  } catch (e) {
+    const codigo = codigoDeExcepcion(e);
+    console.error(`avisos: la entrega se aplaza (${codigo}) · ${mensajeSeguro(e)}`);
+    try { await terminar({ estado: "reintentar", codigo }); } catch { /* El lease conserva la recuperacion. */ }
     return false;
   }
 }
@@ -142,7 +169,7 @@ export type EntregaAdmin = { id: string; job_id: string; usuario_id: string; cue
 export async function procesarEntregaAdmin(c: ClaimAdmin, d: DependenciasAvisos, fin = d.ahora() + 15_000): Promise<boolean> {
   const args = { p_id: c.id, p_token: c.token };
   const rpc = <T>(nombre: string, a: Record<string, unknown>) => d.rpc<T>(nombre, a, plazo(d, fin, 500));
-  const terminar = (r: ResultadoEnvio) => d.rpc<boolean>("avisos_admin_terminar", { ...args, p_resultado: r.estado, p_codigo: r.codigo }, plazo(d, fin));
+  const terminar = (r: ResultadoEnvio) => d.rpc<boolean>("avisos_admin_terminar", { ...args, p_resultado: r.estado, p_codigo: codigoSeguro(r.codigo) }, plazo(d, fin));
   try {
     const entrega = await rpc<EntregaAdmin | null>("avisos_admin_autorizar", args);
     if (!entrega) return false;
@@ -157,8 +184,10 @@ export async function procesarEntregaAdmin(c: ClaimAdmin, d: DependenciasAvisos,
     const resultado = await d.push(vigente.suscripcion, cuerpo, 3_600, signal);
     const confirmado = await terminar(resultado);
     return confirmado && resultado.estado === "enviada";
-  } catch {
-    try { await terminar({ estado: "reintentar", codigo: "worker_dependencia" }); } catch { /* El lease conserva la recuperacion. */ }
+  } catch (e) {
+    const codigo = codigoDeExcepcion(e);
+    console.error(`avisos (admin): la entrega se aplaza (${codigo}) · ${mensajeSeguro(e)}`);
+    try { await terminar({ estado: "reintentar", codigo }); } catch { /* El lease conserva la recuperacion. */ }
     return false;
   }
 }

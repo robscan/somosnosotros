@@ -1,6 +1,6 @@
 # 510 · Avisos al teléfono: hora, forma y resumen diario (OL-478, prototipo)
 
-**Fecha:** 2026-10-29. **Rama:** `avisos-hora-y-forma`, desde `origin/main` (`42319716`). **Gestor:** Gestor de cambios VII (operador: agente Claude, árbol aislado). **Sin código de la app ni migración.** Solo el prototipo, sus guiones y las capturas.
+**Fecha:** 2026-10-29. **Rama:** `avisos-hora-y-forma`, desde `origin/main` (`42319716`), con `main` unido al final (`4dd7a8d6`, que trae OL-476 y OL-474). **Gestor:** Gestor de cambios VII (operador: agente Claude, árbol aislado). **Sin código de la app ni migración.** Solo el prototipo, sus guiones y las capturas.
 **Estado:** prototipo, espera firma. El código va después de la firma.
 
 Términos (una línea cada uno):
@@ -12,7 +12,7 @@ Términos (una línea cada uno):
 
 ## El encargo
 
-El founder, el 29 de octubre: «Quiero que las notificaciones funcionen muy bien. Ese es nuestro gancho para mantener fresca la información y el interés de los usuarios». Aceptó las recomendaciones de `docs/investigaciones/avisos-con-la-app-nativa.md`: un resumen diario de lo nuevo de lo que sigues (a las 9 am, o al publicar si es de día), también lo que cargan las rutinas, «Me interesa» solo con cambios y cancelación, «Esta semana en {ciudad}» los jueves a las 7 pm con 3 destacados y permiso propio (no se manda si no hay 3), guardar la ciudad de quien lo pide, título = nombre del evento con la razón debajo, y no duplicar en el iPhone que tiene web y app. La fase 1 (fiabilidad, OL-476, bitácora 508) está en su rama; esta pieza es la fase 2 (hora y forma) y la 5 («Esta semana») del plan del documento, en prototipo.
+El founder, el 29 de octubre: «Quiero que las notificaciones funcionen muy bien. Ese es nuestro gancho para mantener fresca la información y el interés de los usuarios». Aceptó las recomendaciones de `docs/investigaciones/avisos-con-la-app-nativa.md`: un resumen diario de lo nuevo de lo que sigues (a las 9 am, o al publicar si es de día), también lo que cargan las rutinas, «Me interesa» solo con cambios y cancelación, «Esta semana en {ciudad}» los jueves a las 7 pm con 3 destacados y permiso propio (no se manda si no hay 3), guardar la ciudad de quien lo pide, título = nombre del evento con la razón debajo, y no duplicar en el iPhone que tiene web y app. La fase 1 (fiabilidad, OL-476, bitácora 508) quedó unida a `main` mientras se hacía esta (PR #598; la rama trae ese `main`); esta pieza es la fase 2 (hora y forma) y la 5 («Esta semana») del plan del documento, en prototipo.
 
 ## El prototipo
 
@@ -77,7 +77,7 @@ El peor caso es a las 9:00: recordatorio, el cambio de anoche y el resumen junto
 
 ## Plan de código por piezas (después de la firma; migraciones que solo añaden; nombres los reserva el gestor)
 
-Antes: OL-476 unida y la prueba de humo con el iPhone del founder (sin ella, ningún aviso llega a la app y nada de esto se puede ver).
+Antes: la prueba de humo de OL-476 (ya unida) con el iPhone del founder; sin ella no se sabe si llegan los avisos a la app y nada de esto se puede ver.
 
 1. **Forma y medición.** `contenidoPush` devuelve título, subtítulo, cuerpo, URL e hilo; `cuandoCorto` («vie 9 · 8 pm»); la razón por persona (artista antes que lugar), guardada al expandir en una columna nueva y nula `avisos_entregas.motivo`; `payloadApns` con `subtitle` y `thread-id`; en la web la razón al principio del cuerpo (el cuerpo ya se prepara por entrega, y la entrega sabe si es `apns:` o web); URL con `?desde=aviso&tipo=`; vida del aviso hasta su hora límite. Medición: `aviso_abierto` con `tipo` en la lista cerrada de `medir.ts`; un componente del layout que, al abrir con `desde=aviso`, lo mide, suma uno en una tabla nueva de conteos (`día`, `tipo`, `n`, sin cuenta ni teléfono, por una función con lista cerrada de tipos y solo del propio sitio) y quita los dos datos de la dirección (`replaceState`; no entran a la medición de páginas, que ya tiene lista blanca). El indicador «Avisos abiertos» suma las entregas enviadas de 7 días y esos conteos. Pruebas: textos con nombres largos (los 34 y los 72), web y app, el componente con la dirección limpia.
 2. **Hora.** Una función de la base «siguiente hora permitida» (zona, instante); las entregas nacen con `disponible` en esa hora; cambio y cancelación con su excepción; `avisos_recordatorios` crea el de las 9:00 del día (y el de la víspera a las 7 pm); la hora límite de lo nuevo ya no se corta a la medianoche (los textos ya no dicen «Hoy»). Banco de la base con relojes en silencio, en la frontera de las 9 y en otra zona.
