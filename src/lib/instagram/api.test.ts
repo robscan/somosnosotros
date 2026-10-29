@@ -160,3 +160,27 @@ describe("cupo y páginas", () => {
     expect(veinte.every((e) => e.x! > 0 && e.x! < 1)).toBe(true);
   });
 });
+
+describe("coautores (OL-479)", () => {
+  it("el artista va como coautor en `collaborators`; nunca en una historia", async () => {
+    const { traer, pedidos } = exito();
+    const r = await publicar({ ...pedido, coautores: ["valeriaquiroz"] }, op(traer));
+    expect(r).toEqual({ ok: true, mediaId: "17900000000000001", permalink: "https://www.instagram.com/p/ABC123/", sinEtiquetas: false, sinCoautor: false });
+    expect(JSON.parse(pedidos[0].params.get("collaborators")!)).toEqual(["valeriaquiroz"]);
+    const h = exito();
+    await publicar({ ...pedido, historia: true, coautores: ["valeriaquiroz"] }, op(h.traer));
+    expect(h.pedidos[0].params.get("collaborators")).toBeNull();
+  });
+  it("si Instagram no acepta al coautor (no es cuenta profesional), sale sin él, con sus etiquetas, y se dice", async () => {
+    const { traer, pedidos } = exito({ "POST /17841400000000000/media": (p) => (p.get("collaborators") ? json({ error: { code: 100, error_subcode: 2207051 } }, 400) : json({ id: "900" })) });
+    const r = await publicar({ ...pedido, coautores: ["personal"] }, op(traer));
+    expect(r).toMatchObject({ ok: true, sinEtiquetas: false, sinCoautor: true });
+    expect(pedidos[1].params.get("user_tags")).not.toBeNull();
+    expect(pedidos[1].params.get("collaborators")).toBeNull();
+  });
+  it("el permiso no se reintenta sin coautor", async () => {
+    const { traer, pedidos } = exito({ "POST /17841400000000000/media": () => json({ error: { code: 190 } }, 400) });
+    expect(await publicar({ ...pedido, coautores: ["x"] }, op(traer))).toEqual({ ok: false, error: "permiso" });
+    expect(pedidos).toHaveLength(1);
+  });
+});

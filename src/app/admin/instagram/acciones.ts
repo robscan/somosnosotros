@@ -62,12 +62,16 @@ export type Preparado =
   | { ok: false; mensaje: string };
 
 /** El último trabajo de un evento en las últimas 24 horas. */
+/** OL-479: un trabajo que la semana de Instagram programó para más tarde (en cola, con su día y con su hora por delante) no está en camino. */
+const sinProgramados = (ahora: Date) => `pedido->>casilla.is.null,siguiente_en.lte.${new Date(ahora.getTime() + 60_000).toISOString()},estado.neq.en_cola`;
+
 async function ultimoTrabajo(supabase: Supabase, eventoId: string, ahora: Date): Promise<EstadoTrabajo | null> {
   const { data } = await supabase
     .from("redes_trabajos")
     .select("id, red, formato, estado, pedido, resultado, error")
     .eq("evento_id", eventoId)
     .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
+    .or(sinProgramados(ahora))
     .order("creado_en", { ascending: false })
     .limit(1)
     .maybeSingle<Record<string, unknown>>();
@@ -76,7 +80,13 @@ async function ultimoTrabajo(supabase: Supabase, eventoId: string, ahora: Date):
 
 const reciente = async (supabase: Supabase, eventoId: string, red: "instagram" | "facebook", formato: "4x5" | "9x16"): Promise<Reciente | null> => {
   const { data, error } = await supabase.rpc("redes_reciente", { p_evento: eventoId, p_red: red, p_formato: formato });
-  return error ? null : leerReciente(data);
+  const r = error ? null : leerReciente(data);
+  if (r?.estado !== "publicando") return r;
+  // OL-479: `redes_reciente` cuenta como «en camino» lo que la semana programó para más tarde; si eso es todo lo que hay, no se está publicando
+  // (y si se publica ahora, el día de la semana ya no lo repite: el trabajador lo ve publicado).
+  const ahora = new Date();
+  const { data: vivos } = await supabase.from("redes_trabajos").select("id").eq("evento_id", eventoId).in("estado", ["en_cola", "publicando"]).or(sinProgramados(ahora)).limit(1);
+  return vivos?.length ? r : null;
 };
 
 /** Lo que la hoja necesita para un evento: el texto se arma en el teléfono con el mismo código (`armarTexto`) para quitar etiquetas al momento. */
@@ -174,7 +184,15 @@ export async function publicarEnInstagram(p: PedidoPublicar): Promise<Encolado> 
     facebook: !!p.facebook,
     ...(Array.isArray(p.imagenes) ? { imagenes: p.imagenes.filter((x) => typeof x === "string").slice(0, 20) } : {}),
   };
-  return encolar(s.supabase, p.eventoId, "instagram", formato, pedido, !!p.repetir);
+  // OL-479: si lo único «en camino» es el día de la semana que lo programó para más tarde, no es repetido (ese día ya no lo vuelve a publicar).
+  const soloProgramado = !p.repetir && (await reciente(s.supabase, p.eventoId, "instagram", formato)) === null;
+  return encolar(s.supabase, p.eventoId, "instagram", formato, pedido, !!p.repetir || (soloProgramado && (await hayProgramado(s.supabase, p.eventoId))));
+}
+
+/** ¿La semana de Instagram tiene este evento programado para más tarde? */
+async function hayProgramado(supabase: Supabase, eventoId: string): Promise<boolean> {
+  const { data } = await supabase.from("redes_trabajos").select("id").eq("evento_id", eventoId).eq("estado", "en_cola").not("pedido->>casilla", "is", null).gt("siguiente_en", new Date(Date.now() + 60_000).toISOString()).limit(1);
+  return !!data?.length;
 }
 
 /**
