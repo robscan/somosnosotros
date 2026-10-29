@@ -16,8 +16,9 @@ import { TOPE_HISTORIAL, type ArtistaDelEvento, type EventoPasado, type Historia
 
 /** Las columnas de un evento pasado y su lugar con ficha (también las lee «Tu año» de la persona, OL-394, por sus asistencias).
  * `cancelado` (OL-391): lo que se marcó «se canceló» viene igual (se queda en la lista, tachado) y las cuentas lo apartan (`realizados`).
- * `clase` y `evento_padre_id` (OL-396): el informe del lugar aparta el festival marco cuando cuenta sus actos y nombra los talleres. */
-export const COLUMNAS_PASADO = "id, slug, titulo, inicio, fin, zona, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, cancelado, clase, evento_padre_id, lugar:lugares(id, slug, nombre, portada)";
+ * `clase` y `evento_padre_id` (OL-396): el informe del lugar aparta el festival marco cuando cuenta sus actos y nombra los talleres.
+ * El tipo, la calle y si es privado del lugar (OL-473): su renglón de Lugares en la hoja «Ver los N» de la trayectoria. */
+export const COLUMNAS_PASADO = "id, slug, titulo, inicio, fin, zona, imagen, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, cancelado, clase, evento_padre_id, lugar:lugares(id, slug, nombre, portada, tipo, direccion, privado)";
 /** Cuántos ids van en un `in` por la URL (200 UUID pasan de los 7 000 caracteres). */
 const TANDA = 100;
 
@@ -39,13 +40,14 @@ async function enTandas<T>(ids: string[], leer: (tanda: string[]) => PromiseLike
   return respuestas.flatMap((r) => (r.data ?? []) as T[]);
 }
 
-/** Lo que falta de cada fila: sus artistas, su festival y cuántos fueron (también para «Tu año» de la persona, OL-394). */
+/** Lo que falta de cada fila: sus artistas (con qué hacen, para su renglón en la hoja «Ver los N», OL-473), su festival y cuántos fueron
+ * (también para «Tu año» de la persona, OL-394). */
 export async function completar(supabase: SupabaseClient, filas: FilaPasado[]): Promise<EventoPasado[]> {
   if (filas.length === 0) return [];
   const ids = filas.map((f) => f.id);
   const padres = [...new Set(filas.map((f) => f.evento_padre_id).filter((x): x is string => !!x))];
   const [artistas, festivales, van] = await Promise.all([
-    enTandas<FilaArtista>(ids, (t) => supabase.from("eventos_artistas").select("evento_id, orden, artista:artistas(id, slug, nombre, foto)").in("evento_id", t).order("orden").limit(1000)),
+    enTandas<FilaArtista>(ids, (t) => supabase.from("eventos_artistas").select("evento_id, orden, artista:artistas(id, slug, nombre, foto, disciplina, detalle, tipo)").in("evento_id", t).order("orden").limit(1000)),
     padres.length ? enTandas<{ id: string; titulo: string }>(padres, (t) => supabase.from("eventos").select("id, titulo").in("id", t).limit(t.length)) : Promise.resolve([]),
     supabase.rpc("van_por_evento", { ids }).then((r) => (r.data ?? []) as { evento_id: string; n: number }[]),
   ]);
@@ -122,3 +124,16 @@ export const cargarProximasArtista = cache(async (artistaId: string): Promise<Ev
     .limit(30);
   return completar(supabase, (data ?? []) as FilaPasado[]);
 });
+
+/**
+ * De esos artistas o lugares, los que sigue quien mira (OL-473): el «Seguir» de cada renglón en la hoja «Ver los N», como en Artistas y Lugares.
+ * Sin sesión o sin ids, nadie; la misma lectura que la lista de Artistas (`seguimientos` por `usuario_id`).
+ */
+export async function seguidosEntre(usuarioId: string | null, que: "artista" | "lugar", ids: readonly string[]): Promise<string[]> {
+  if (!usuarioId || ids.length === 0) return [];
+  const supabase = await clienteServidor();
+  if (!supabase) return [];
+  const columna = que === "artista" ? "artista_id" : "lugar_id";
+  const filas = await enTandas<Record<string, string>>([...ids], (t) => supabase.from("seguimientos").select(columna).eq("usuario_id", usuarioId).in(columna, t).limit(t.length));
+  return filas.map((f) => f[columna]).filter(Boolean);
+}

@@ -61,3 +61,7 @@
   font-variation-settings: var(--ancho-lista-meta);
   line-height: 1.3;
 }
+/* OL-473 (F1): en el carril de una ficha, cuántas veces pasó por ahí («9 veces»), en el gris de los datos en vez del violeta de lo que pasa. */
+.nota {
+  color: var(--texto-suave);
+}
