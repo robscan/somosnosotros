@@ -1,59 +1,51 @@
 /* ==========================================================================
-   La trayectoria de un artista y el historial de un lugar (OL-390, prototipo firmado `historial-propuestas.html`). El bloque plegado y el gris
-   de lo pasado son de `ui/Plegado`; aquí, lo propio: la fila de fotos (Q1) y lo de la derecha de un renglón pasado (H4).
-   1. La fila de fotos · 2. El renglón pasado · 3. «Tu año»
+   La trayectoria de un artista y el historial de un lugar (OL-390, prototipo firmado `historial-propuestas.html`; escalables desde OL-473,
+   prototipo firmado `historial-escalable.html`, «F1 · L1 · A1», bitácora 501). El bloque plegado y el gris de lo pasado son de `ui/Plegado`; el
+   carril y su «Ver todos», de Inicio (`Destacados`, `inicio/TarjetaAvatar`); los años, `ui/Chip`. Aquí, lo propio: dónde va cada pieza dentro
+   del plegado (todas hijas directas: maquetación plana) y lo de la derecha de un renglón pasado (H4).
+   1. «Tu año» y el PDF · 2. Quiénes pasaron · 3. Los años · 4. El renglón pasado · 5. La hoja «Ver los N»
    ========================================================================== */
 
-/* 1. «Se ha presentado en · 2» / «Han pasado por aquí · 11»: el título en gris (un `p`, como el `h3` de un mes: `ui/Plegado`) y debajo la
-   fila, que se desliza de lado. Cada foto es un enlace a su ficha: el círculo, el nombre en dos líneas y «2 veces» si repite, una rejilla de
-   una columna. */
-.fila {
+/* 1. A1: «Tu año» (OL-394) y, junto a él, «Presentación» o «Informe» (OL-396), lo primero al abrir la sección y a lo ancho: dos columnas
+   iguales si cada uno cabe entero, uno bajo otro si no (a 320); con uno solo, a todo lo ancho. El icono nunca se aplasta. */
+.botones {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc(var(--avatar-historial) + var(--espacio-3));
-  justify-content: start;
-  column-gap: var(--espacio-3);
-  padding: var(--espacio-2) 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  grid-template-columns: repeat(auto-fit, minmax(var(--ancho-boton-historial), 1fr));
+  gap: var(--espacio-2);
+  margin: var(--espacio-3) 0 var(--espacio-1);
 }
-.fila::-webkit-scrollbar {
-  display: none;
-}
-.presencia {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  row-gap: var(--espacio-1);
-  color: var(--texto);
-  font-size: var(--letra-2xs);
-  font-weight: 700;
-  line-height: 1.15;
-  text-align: center;
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.foto {
-  width: var(--avatar-historial);
-  height: var(--avatar-historial);
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
-.nombre {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow-wrap: break-word;
-  hyphens: auto; /* «Bicentenario» no cabe en 72: se parte con guion, en español */
-}
-.veces {
-  color: var(--texto-suave);
-  font-weight: 500;
+.botones svg {
+  flex: none;
 }
 
-/* 2. A la derecha de un renglón pasado, en gris y sin nada que parezca un botón: «2 fueron» (el número arriba, la palabra debajo) si alguien
+/* 2. F1: «Han pasado por aquí» / «Se ha presentado en» en gris (el `p` de `ui/Plegado`), y a su derecha «Ver los 9 ›», el «Ver todos» de un
+   carril de Inicio (`Destacados/verTodo`), que aquí es un botón: abre la hoja. Debajo, el carril de avatares de Inicio, que empieza en el margen
+   del contenido y llega hasta el borde de la pantalla (más ancho que su caja por la derecha, sin margen negativo): asoma el siguiente. */
+details > p.cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: var(--espacio-2);
+  padding-top: var(--espacio-3);
+}
+.verLos {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+details > ul.carril {
+  width: calc(100% + var(--gutter));
+  padding-inline: 0 var(--gutter);
+  scroll-padding-inline: 0;
+}
+
+/* 3. L1: los años en su fila de chips («2026 48»), con aire arriba; debajo, ese año por mes (el `h3` y la lista de `ui/Plegado`). */
+details > .anios {
+  margin: var(--espacio-4) 0 0;
+}
+
+/* 4. A la derecha de un renglón pasado, en gris y sin nada que parezca un botón: «2 fueron» (el número arriba, la palabra debajo) si alguien
    dijo «Voy», o el chevrón. El festival de un acto, tras el sitio, también en gris. */
 .fueron {
   display: grid;
@@ -79,12 +71,7 @@ li small > span > span.sitio:not(:last-child) {
   flex: 0 1 auto;
 }
 
-/* 3. «Tu año» (OL-394, «O en la sección») y, junto a él, «Presentación» o «Informe» (OL-396, «O junto a "Tu año"»): al final de la sección
-   abierta, separados del último renglón, en una fila de dos pastillas iguales; con una sola, a todo lo ancho. */
-.botones {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: var(--espacio-2);
-  margin-top: var(--espacio-4);
+/* 5. La hoja «Ver los N» (`ui/Hoja`): los renglones de Artistas o de Lugares, sin viñetas (el aire ya lo pone la hoja). */
+.lista {
+  list-style: none;
 }

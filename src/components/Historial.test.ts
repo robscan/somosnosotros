@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import BotonTuAnio from "./BotonTuAnio";
 import DocumentoPdf from "./DocumentoPdf";
 import Historial from "./Historial";
+import HistorialCuerpo from "./HistorialCuerpo";
 import type { EventoPasado } from "@/lib/historialFichas";
 import type { PropsDocumento } from "@/lib/opcionesDocumento";
 
 /**
- * La fila de botones al final de «Trayectoria» / «Historial» (OL-396, «O junto a "Tu año"»): «Tu año» y «Presentación» o «Informe», cada uno
- * solo si quien pinta la sección se lo pasa (quien gestiona la ficha; «Tu año» con algo de este año, el PDF con algo pasado).
+ * La fila de botones de «Trayectoria» / «Historial» (OL-396, «O junto a "Tu año"»): «Tu año» y «Presentación» o «Informe», cada uno
+ * solo si quien pinta la sección se lo pasa (quien gestiona la ficha; «Tu año» con algo de este año, el PDF con algo pasado). Desde OL-473 (A1)
+ * es lo primero de la sección, antes de quiénes pasaron y la lista (`HistorialCuerpo`).
  */
 
 function* recorrer(n: ReactNode): Generator<ReactElement<Record<string, unknown>>> {
@@ -42,5 +44,31 @@ describe("la fila de «Tu año» y el PDF (OL-396)", () => {
   it("sin permiso (ni uno ni otro): ninguna fila", () => {
     const el = pinta({});
     expect(el.filter((e) => e.type === BotonTuAnio || e.type === DocumentoPdf)).toHaveLength(0);
+  });
+});
+
+describe("A1: «Tu año» y el PDF, lo primero de la sección (OL-473)", () => {
+  /** Los hijos directos del plegado, en su orden. */
+  const hijos = (extra: { tuAnio?: string | null; documento?: PropsDocumento | null }) => {
+    const raiz = Historial({ de: "artista", artistaId: "a-1", historial: { eventos: [EVENTO], lleno: false }, ...extra }) as ReactElement<{ children: ReactNode }>;
+    return ([raiz.props.children].flat(2) as unknown[]).filter((x): x is ReactElement<Record<string, unknown>> => isValidElement(x));
+  };
+
+  it("con sesión de quien gestiona: la fila de botones va antes que el cuerpo (quiénes pasaron, los años y la lista)", () => {
+    const h = hijos({ tuAnio: "/artistas/x/tu-anio", documento: DOC });
+    expect(h).toHaveLength(2);
+    expect([...recorrer(h[0])].some((e) => e.type === BotonTuAnio)).toBe(true);
+    expect(h[1].type).toBe(HistorialCuerpo);
+  });
+
+  it("sin botones, el plegado empieza por el cuerpo", () => {
+    const h = hijos({});
+    expect(h.map((e) => e.type)).toEqual([HistorialCuerpo]);
+  });
+
+  it("el cuerpo recibe los renglones ya hechos, quiénes pasaron y, sin sesión, nada que seguir (Seguir lleva a entrar)", () => {
+    const cuerpo = hijos({}).find((e) => e.type === HistorialCuerpo)!;
+    expect(cuerpo.props).toMatchObject({ de: "artista", plegado: "trayectoria", titulo: "Se ha presentado en", seguidos: null, avisos: null });
+    expect((cuerpo.props.filas as { id: string; sitio: string }[]).map((f) => [f.id, f.sitio])).toEqual([["e1", "Jardín"]]);
   });
 });
