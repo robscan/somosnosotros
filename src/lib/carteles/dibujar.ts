@@ -8,9 +8,11 @@ import { ENTRADA_SEGURA, imagenAdmitida, TIEMPO_MAX_FOTO_MS } from "./imagenSegu
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
+import { ALTO_PORTADA, arbolDestacado, arbolPortadaSemana, LADO_FOTO, PALETAS_DESTACADO, type Destacado, type PortadaSemana } from "./plantillas/destacado";
 import { COLORES_DOCUMENTO, dibujarPaginaDocumento, maquetar } from "./plantillas/documento";
 import { COLORES_TU_ANIO, dibujarTuAnio, FORMATO_TU_ANIO } from "./plantillas/tuAnio";
-import type { Formato } from "./tokens";
+import { FORMATOS, type Formato } from "./tokens";
+import type { ReactElement } from "react";
 import type { ResumenTuAnio } from "../tuAnio";
 import type { Documento, FormatoDocumento } from "../documentos";
 
@@ -321,4 +323,82 @@ export async function dibujarDocumento(p: PedidoDocumento): Promise<ResultadoDoc
     nodos,
     ms: { foto: Math.round(t1 - t0), svg: Math.round(t2 - t1), raster: Math.round(t3 - t2) },
   };
+}
+
+// ===== La semana de Instagram (OL-479): la tarjeta de un artista o de un lugar destacado y la portada de «Esta semana», con la misma
+// rasterización. Las imágenes llegan en bytes (la portada y la foto de la ficha, ya bajadas de nuestro almacenamiento); si una no se puede leer,
+// la tarjeta lleva la imagen de relleno con el símbolo SN (`imagenDeRelleno`, ya generada, nunca compuesta aquí).
+
+export type PedidoDestacado = Omit<Destacado, "portada" | "foto"> & {
+  portada: Buffer | null;
+  foto?: Buffer | null;
+  /** El ancho de salida (la vista previa va a 720); sin él, 1080. */
+  ancho?: number;
+  conNodos?: boolean;
+  png?: boolean;
+};
+
+export type ResultadoDestacado = { imagen: Buffer; tipo: "image/jpeg" | "image/png"; ancho: number; alto: number; paleta: Paleta; recortado: boolean; nodos: NodoTexto[] };
+
+/** Una imagen a la medida (recortada a lo que importa) como data URL de un JPEG; null si no es una imagen admitida. */
+async function aDataUrl(imagen: Buffer | null | undefined, ancho: number, alto: number): Promise<string | null> {
+  if (!imagen || !(await imagenAdmitida(imagen))) return null;
+  try {
+    const jpeg = await sharp(imagen, ENTRADA_SEGURA).timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 }).rotate().resize(ancho, alto, { fit: "cover", position: "attention" }).jpeg({ quality: 86 }).toBuffer();
+    return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+let relleno: Buffer | null = null;
+/** La imagen de relleno de la app (el símbolo SN al centro, `public/sin-foto.png`): la portada o la foto que no se pudo leer. */
+export function imagenDeRelleno(): Buffer {
+  relleno ??= readFileSync(path.join(process.cwd(), "public/sin-foto.png"));
+  return relleno;
+}
+
+async function rasterizar(elemento: ReactElement, f: Formato, fondo: string, o: { ancho?: number; conNodos?: boolean; png?: boolean }): Promise<{ imagen: Buffer; nodos: NodoTexto[]; ancho: number; alto: number }> {
+  const nodos: NodoTexto[] = [];
+  const svg = await satori(elemento, {
+    width: f.ancho,
+    height: f.alto,
+    fonts: cargarFuentes(),
+    onNodeDetected: o.conNodos
+      ? (n) => {
+          if (typeof n.textContent === "string" && n.textContent.trim()) nodos.push({ texto: n.textContent, x: n.left, y: n.top, ancho: n.width, alto: n.height, girado: false });
+        }
+      : undefined,
+  });
+  const ancho = Math.round(o.ancho ?? f.ancho);
+  const raster = sharp(Buffer.from(svg), { density: (72 * ancho) / f.ancho });
+  const imagen = o.png ? await raster.png().toBuffer() : await raster.flatten({ background: fondo }).jpeg({ quality: 90, chromaSubsampling: "4:4:4" }).toBuffer();
+  return { imagen, nodos, ancho, alto: Math.round((ancho * f.alto) / f.ancho) };
+}
+
+/** Dibuja la tarjeta de un artista o de un lugar de la semana: la paleta de «Crear cartel» más parecida al tono de su portada. */
+export async function dibujarDestacado(p: PedidoDestacado): Promise<ResultadoDestacado> {
+  const f = FORMATOS[p.formato];
+  const alto = ALTO_PORTADA[p.formato];
+  const portada = (await aDataUrl(p.portada, f.ancho, alto)) ?? (await aDataUrl(imagenDeRelleno(), f.ancho, alto))!;
+  const foto = p.tipo === "artista" ? ((await aDataUrl(p.foto, LADO_FOTO * 2, LADO_FOTO * 2)) ?? (await aDataUrl(imagenDeRelleno(), LADO_FOTO * 2, LADO_FOTO * 2))) : null;
+  let tono: Rgb | null = null;
+  try {
+    tono = await tonoDominante(Buffer.from(portada.split(",")[1], "base64"));
+  } catch {
+    tono = null;
+  }
+  const paleta = elegirPaleta(PALETAS_DESTACADO, tono);
+  const { elemento, recortado } = arbolDestacado({ ...p, portada, foto }, paleta);
+  const r = await rasterizar(elemento, f, paleta.fondo, p);
+  return { ...r, tipo: p.png ? "image/png" : "image/jpeg", paleta, recortado };
+}
+
+/** Dibuja la portada del carrusel «Esta semana» (papel). */
+export async function dibujarPortadaSemana(p: PortadaSemana & { ancho?: number; conNodos?: boolean; png?: boolean }): Promise<ResultadoDestacado> {
+  const f = FORMATOS["4x5"];
+  const paleta = elegirPaleta(["papel"], null);
+  const { elemento, recortado } = arbolPortadaSemana(p, paleta);
+  const r = await rasterizar(elemento, f, paleta.fondo, p);
+  return { ...r, tipo: p.png ? "image/png" : "image/jpeg", paleta, recortado };
 }
