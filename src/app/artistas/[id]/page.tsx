@@ -38,9 +38,9 @@ import { cargarEventosDeArtista } from "@/lib/cargarEventosFicha";
 import { eventosDeFicha } from "@/lib/eventosFicha";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { kpiProximos } from "@/lib/ficha";
-import { cargarProximasArtista, cargarTrayectoria } from "@/lib/cargarHistorial";
+import { cargarProximasArtista, cargarTrayectoria, seguidosEntre } from "@/lib/cargarHistorial";
 import { opcionesPresentacion } from "@/lib/opcionesDocumento";
-import { contarLugares, realizados, saltoLugares } from "@/lib/historialFichas";
+import { contarLugares, lugaresDeTrayectoria, realizados, saltoLugares } from "@/lib/historialFichas";
 import { hayTuAnio, hrefVistaTuAnio } from "@/lib/tuAnio";
 import { incrustadoDeNovedad } from "@/lib/incrustado";
 import { leerNovedadesRecientes, selloNovedadArtista, type NovedadArtista } from "@/lib/novedadesArtista";
@@ -167,19 +167,20 @@ async function KpisArtista({ artista }: { artista: ArtistaConAutor }) {
 }
 
 /**
- * «Trayectoria» (OL-390): sus fechas pasadas, plegadas bajo «Próximas fechas»; sin ninguna, no existe. Consulta aparte, en `<Suspense>`. Al final,
- * «Tu año» (OL-394) si quien mira gestiona la ficha y hay alguna fecha pasada de este año, y junto a él la «Presentación» en PDF (OL-396) si la
- * gestiona y hay algo pasado.
+ * «Trayectoria» (OL-390): sus fechas pasadas, plegadas bajo «Próximas fechas»; sin ninguna, no existe. Consulta aparte, en `<Suspense>`. Arriba
+ * (OL-473, A1), «Tu año» (OL-394) si quien mira gestiona la ficha y hay alguna fecha pasada de este año, y junto a él la «Presentación» en PDF
+ * (OL-396) si la gestiona y hay algo pasado. Con sesión, los lugares que sigue entre donde se presentó: el «Seguir» de la hoja «Ver los N».
  */
-async function SeccionTrayectoria({ artista, puedeEditar }: { artista: ArtistaConAutor; puedeEditar: boolean }) {
+async function SeccionTrayectoria({ artista, puedeEditar, actual }: { artista: ArtistaConAutor; puedeEditar: boolean; actual: { correo: string | null; perfil: Perfil } | null }) {
   const historial = await cargarTrayectoria(artista.id);
+  const seguidos = actual ? await seguidosEntre(actual.perfil.id, "lugar", lugaresDeTrayectoria(historial.eventos).map((p) => p.id)) : null;
   const tuAnio = puedeEditar && hayTuAnio(historial.eventos) ? hrefVistaTuAnio("artista", hrefArtista(artista)) : null;
   // La «Presentación» en PDF (OL-396): solo quien gestiona y con algo pasado; sus próximas fechas y sus hitos (OL-445) se leen solo entonces.
   const documento =
     puedeEditar && historial.eventos.length
       ? { que: "artista" as const, opciones: opcionesPresentacion({ artista, pasados: historial.eventos, lleno: historial.lleno, proximos: await cargarProximasArtista(artista.id), hitos: await cargarHitos(artista.id), ahora: new Date() }), etiquetasPeriodo: null }
       : null;
-  return <Historial de="artista" artistaId={artista.id} historial={historial} tuAnio={tuAnio} documento={documento} />;
+  return <Historial de="artista" artistaId={artista.id} historial={historial} tuAnio={tuAnio} documento={documento} seguidos={seguidos} avisos={avisosParaListas(actual)} />;
 }
 
 /** «Próximas fechas» entero: la misma consulta que `KpisArtista`, memoizada por `cache()`, más quién decidió qué. */
@@ -420,7 +421,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
         {/* Lo que ya pasó (OL-390): plegado bajo lo próximo. Mientras llega no se adivina si existe: nada en su sitio. */}
         <Suspense fallback={null}>
-          <SeccionTrayectoria artista={a} puedeEditar={puedeEditar} />
+          <SeccionTrayectoria artista={a} puedeEditar={puedeEditar} actual={actual} />
         </Suspense>
 
         {/* «Reconocimientos y obra» (OL-445): lo aceptado de lo que descubren las rutinas, plegado bajo la trayectoria. Sin hitos, nada. */}

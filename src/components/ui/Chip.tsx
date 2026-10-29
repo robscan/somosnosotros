@@ -145,11 +145,12 @@ export function Cuenta({ n }: { n: number }) {
 
 /**
  * Fila de chips que se desliza a lo ancho sin barra de scroll; con `envuelve`, los chips pasan al renglón de abajo (una hoja). `ref`, para quien
- * necesita deslizarla hasta un chip (la clase marcada bajo el nombre del alta de evento, OL-345).
+ * necesita deslizarla hasta un chip (la clase marcada bajo el nombre del alta de evento, OL-345). `className`, para quien la coloca (los años del
+ * historial de una ficha, OL-473, con su aire arriba).
  */
-export function Chips({ children, ariaLabel, envuelve = false, ref }: { children: ReactNode; ariaLabel: string; envuelve?: boolean; ref?: Ref<HTMLDivElement> }) {
+export function Chips({ children, ariaLabel, envuelve = false, ref, className }: { children: ReactNode; ariaLabel: string; envuelve?: boolean; ref?: Ref<HTMLDivElement>; className?: string }) {
   return (
-    <div ref={ref} className={envuelve ? `${styles.chips} ${styles.envuelve}` : styles.chips} role="group" aria-label={ariaLabel}>
+    <div ref={ref} className={[styles.chips, envuelve && styles.envuelve, className].filter(Boolean).join(" ")} role="group" aria-label={ariaLabel}>
       {children}
     </div>
   );
