@@ -63,6 +63,12 @@ describe("POST /api/vista (OL-459)", () => {
     expect((await pedir({ evento: EVENTO, relleno: "x".repeat(200) })).status).toBe(413);
     expect(tareas).toHaveLength(0);
   });
+  it("OL-485: sin la cabecera Sec-Fetch-Site (curl, un programa) o con otro valor: 403 y no cuenta", async () => {
+    const sinCabecera = new Request("https://somosnosotros.org/api/vista", { method: "POST", headers: { "user-agent": SAFARI }, body: JSON.stringify({ evento: EVENTO }) });
+    expect((await POST(sinCabecera)).status).toBe(403);
+    for (const sitio of ["same-site", "none", "cross-site", ""]) expect((await pedir({ evento: EVENTO }, { "sec-fetch-site": sitio })).status).toBe(403);
+    expect(tareas).toHaveLength(0);
+  });
   it("OL-461: con la marca de origen de un enlace de la marca, cuenta con la red y el medio", async () => {
     const r = await pedir({ evento: EVENTO, origen: "facebook", medio: "post" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
     expect(r.status).toBe(204);
