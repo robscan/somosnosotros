@@ -22,7 +22,7 @@
     "@supabase/supabase-js": "^2.116.0",
     "@vercel/analytics": "^2.0.1",
     "mapbox-gl": "^3.30.0",
-    "next": "^16.3.8",
+    "next": "^16.4.3",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -31,7 +31,7 @@
     "sharp": "^0.35.5",
     "three": "^0.186.1",
     "web-push": "^3.6.7",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.16",
@@ -42,7 +42,7 @@
     "@types/three": "^0.186.0",
     "@types/web-push": "^3.6.4",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.8",
+    "eslint-config-next": "^16.4.3",
     "pg": "^8.16.3",
     "playwright-core": "^1.63.0",
     "typescript": "^5.9.3",
