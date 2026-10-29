@@ -68,7 +68,7 @@ const sinProgramados = (ahora: Date) => `pedido->>casilla.is.null,siguiente_en.l
 async function ultimoTrabajo(supabase: Supabase, eventoId: string, ahora: Date): Promise<EstadoTrabajo | null> {
   const { data } = await supabase
     .from("redes_trabajos")
-    .select("id, red, formato, estado, pedido, resultado, error")
+    .select("id, red, formato, estado, pedido, resultado, error, intentos, fallos")
     .eq("evento_id", eventoId)
     .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
     .or(sinProgramados(ahora))
@@ -116,12 +116,29 @@ export async function prepararInstagram(eventoId: string): Promise<Preparado> {
   };
 }
 
-/** Cómo va un trabajo (la hoja lo pregunta cada 20 s mientras está en camino, y al volver a la app). */
+/** Cómo va un trabajo (la hoja lo pregunta cada 5 s mientras está en camino, y al volver a la app). */
 export async function estadoTrabajo(id: string): Promise<EstadoTrabajo | null> {
   const s = esUuid(id) ? await sesionAdmin() : null;
   if (!s) return null;
-  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error").eq("id", id).maybeSingle<Record<string, unknown>>();
+  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error, intentos, fallos").eq("id", id).maybeSingle<Record<string, unknown>>();
   return leerEstadoTrabajo(data);
+}
+
+/**
+ * OL-488: cómo van varios trabajos a la vez (la lista y la semana lo preguntan cada 5 s mientras algo dice «Publicando…»): su estado y si van en
+ * otro intento. Lo que no se pudo leer no sale (quien pregunta lo deja como estaba).
+ */
+export async function estadosTrabajos(ids: string[]): Promise<Record<string, { estado: EstadoTrabajo["estado"]; reintentando: boolean }>> {
+  const validos = Array.isArray(ids) ? [...new Set(ids.filter((x) => esUuid(x)))].slice(0, 50) : [];
+  const s = validos.length ? await sesionAdmin() : null;
+  if (!s) return {};
+  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error, intentos, fallos").in("id", validos);
+  const fuera: Record<string, { estado: EstadoTrabajo["estado"]; reintentando: boolean }> = {};
+  for (const f of (data ?? []) as Record<string, unknown>[]) {
+    const e = leerEstadoTrabajo(f);
+    if (e) fuera[e.id] = { estado: e.estado, reintentando: e.reintentando };
+  }
+  return fuera;
 }
 
 /** `imagenes`: las claves del carrusel en el orden de la hoja (OL-464); sin ellas, una imagen como siempre. `repetir`: ya se confirmó (OL-465). */

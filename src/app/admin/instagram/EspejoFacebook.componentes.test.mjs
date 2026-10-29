@@ -5,7 +5,9 @@
  * con `router.refresh()` como en la app (el doble vuelve a armar sus renglones con lo que diga la cola). Toques reales: el ratón en coordenadas.
  *   · la casilla «También en Facebook» (marcada, se recuerda en la sesión);
  *   · «Publicar» → la hoja se cierra → el renglón dice «Publicando…» → latido → «Ya en Instagram» con «Facebook: publicado»;
- *   · la hoja abierta mientras va dice cómo va y lo pregunta cada 20 s (reloj de Playwright) hasta «publicado» con sus «Ver»;
+ *   · la hoja abierta mientras va dice cómo va y lo pregunta cada 5 s (reloj de Playwright; OL-488, antes 20 s) hasta «publicado» con sus «Ver»;
+ *   · OL-488 (añadido del founder): «Publicando…» lleva su cargador; la lista pregunta cada 5 s por lo que va en camino y se refresca en cuanto
+ *     termina o pasa a otro intento («Reintentando…»);
  *   · sin duplicados: «Ya se publicó hace 3 min» / «Se está publicando» piden confirmar; Facebook desde la lista, igual;
  *   · Facebook que falla después de Instagram: «Facebook: falta permiso» con «Reintentar en Facebook», que va a la cola;
  *   · lo que no se pudo publicar lo dicen el renglón y la hoja.
@@ -29,7 +31,7 @@ const MASTER = "33333333-3333-4333-8333-333333333333";
 
 const acciones = `
   const apuntar = (nombre, args) => window.qa.acciones.push([nombre, ...args]);
-  const comoEstado = (t) => t && { id: t.id, red: t.red, formato: t.formato, estado: t.estado, conFacebook: t.red === 'instagram' && !!t.pedido.facebook, resultado: t.resultado, error: t.error };
+  const comoEstado = (t) => t && { id: t.id, red: t.red, formato: t.formato, estado: t.estado, conFacebook: t.red === 'instagram' && !!t.pedido.facebook, resultado: t.resultado, error: t.error, reintentando: (t.estado === 'en_cola' || t.estado === 'publicando') && (t.fallos ?? 0) >= 1 };
   const ultimo = (id) => [...window.qa.cola].reverse().find((t) => t.evento === id) ?? null;
   // Como redes_reciente: en camino, o publicado hace poco (lo que diga qa.recientes).
   const reciente = (id, red, formato) => {
@@ -44,6 +46,10 @@ const acciones = `
       trabajo: comoEstado(ultimo(id)), reciente: { '4x5': reciente(id, 'instagram', '4x5'), '9x16': reciente(id, 'instagram', '9x16') },
       evento: { titulo: 'Feleal en el Museo', inicio: '2026-10-11T23:00:00Z', fin: '2026-10-12T01:00:00Z', zona: 'America/Mexico_City', clase: 'puntual', precio: null,
         lugar: { nombre: 'Museo Nacional de la Máscara', usuario: null }, ciudad: 'San Luis Potosí', artistas: [] } };
+  }
+  export async function estadosTrabajos(ids) {
+    apuntar('estadosTrabajos', [ids]);
+    return Object.fromEntries(window.qa.cola.filter((t) => ids.includes(t.id)).map((t) => [t.id, { estado: t.estado, reintentando: comoEstado(t).reintentando }]));
   }
   export async function estadoTrabajo(id) {
     apuntar('estadoTrabajo', [id]);
@@ -121,13 +127,13 @@ before(async () => {
       // Los renglones como los arma el servidor (\`cargarSugerencias\`), con lo que diga la cola.
       const filas = () => {
         const q = window.qa;
-        const cola = trabajosPorEvento([...q.cola].reverse().map((t) => ({ ...t, evento_id: t.evento })));
+        const cola = trabajosPorEvento([...q.cola].reverse().map((t) => ({ ...t, evento_id: t.evento, intentos: t.intentos ?? 0, fallos: t.fallos ?? 0 })));
         const s = (id, titulo) => {
           const t = cola.instagram.get(id);
           const publicado = !!q.ig[id];
           const linea = (t && (enCamino(t) || (t.estado === 'fallido' && !publicado)) ? lineaDeTrabajo(t) : null) ?? (publicado ? q.ig[id] : 'Destacado');
           const facebook = !publicado ? null : cola.facebook.has(id) ? { estado: 'publicando' } : q.fb[id] === 'publicada' ? { estado: 'publicada' } : q.fb[id] === 'error' ? { estado: 'error', error: 'permiso' } : { estado: 'nada' };
-          return { id, href: '/eventos/' + id, titulo, foto: null, cuando: 'Sábado 10 de octubre · 6:00 pm', donde: 'Teatro de la Paz', linea, publicado, facebook, publicando: enCamino(t) || (publicado && cola.facebook.has(id)) };
+          return { id, href: '/eventos/' + id, titulo, foto: null, cuando: 'Sábado 10 de octubre · 6:00 pm', donde: 'Teatro de la Paz', linea, publicado, facebook, publicando: enCamino(t) || (publicado && cola.facebook.has(id)), enCamino: cola.vivos.get(id) ?? [] };
         };
         const todas = [s('${FELEAL}', 'Feleal en el Museo'), s('${SUSURROS}', 'Susurros del agua'), s('${MASTER}', 'Master Class de danzón')];
         return { para: todas.filter((x) => !x.publicado), ya: todas.filter((x) => x.publicado) };
@@ -283,39 +289,67 @@ test("OL-465: «Mejor no» deshace la pregunta; un segundo toque mientras se pub
   assert.equal((await qa(p)).cola.length, 1, "no se guardó otro");
 });
 
-test("OL-465: con la hoja abierta mientras se publica, se pregunta cada 20 s y llega «publicado» con sus «Ver»", async (t) => {
+test("OL-465 + OL-488: con la hoja abierta mientras se publica, se pregunta cada 5 s y llega «publicado» con sus «Ver»", async (t) => {
   const p = await abrir(t, "", { reloj: true });
   let hoja = await hojaDe(p);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
   hoja = await hojaDe(p);
   await hoja.getByText("Instagram: publicando…").waitFor();
+  assert.equal(await hoja.locator('[role=status] [class*="anillo"]').count(), 1, "«Instagram: publicando…» lleva su cargador");
   await latido(p);
-  await p.clock.runFor(19_000);
-  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadoTrabajo").length, 0, "antes de 20 s no pregunta");
+  await p.clock.runFor(4_000);
+  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadoTrabajo").length, 0, "antes de 5 s no pregunta");
   await p.clock.runFor(1_500);
   await hoja.getByText("Instagram: publicado").waitFor();
   assert.equal(await texto(hoja.getByRole("status").first()), "Instagram: publicado Ver Facebook: publicado Ver");
   assert.ok((await qa(p)).refrescos >= 2, "al terminar, la lista se refresca");
-  // La lista también se refresca sola cada 20 s mientras algo va en camino.
+  // La lista también se refresca sola mientras algo va en camino.
   await p.keyboard.press("Escape");
   await hoja.waitFor({ state: "detached" });
   assert.match(await texto(renglon(p, "Feleal en el Museo")), /Facebook: publicado/);
 });
 
-test("OL-465: la lista se refresca sola cada 20 s mientras haya algo «Publicando…»", async (t) => {
+test("OL-465 + OL-488: la lista pregunta cada 5 s mientras haya algo «Publicando…» y se refresca sola en cuanto termina", async (t) => {
   const p = await abrir(t, "", { reloj: true });
   const hoja = await hojaDe(p);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
+  const feleal = renglon(p, "Feleal en el Museo");
+  await feleal.getByText("Publicando…").waitFor();
+  assert.equal(await feleal.locator('[class*="anillo"]').count(), 1, "el renglón «Publicando…» lleva su cargador");
   const antes = (await qa(p)).refrescos;
+  // Mientras sigue en camino, pregunta pero no refresca.
+  await p.clock.runFor(5_500);
+  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length, 1, "a los 5 s pregunta por el trabajo");
+  assert.equal((await qa(p)).refrescos, antes, "nada cambió: no refresca");
   await latido(p);
-  await p.clock.runFor(20_500);
-  await renglon(p, "Feleal en el Museo").getByText("Facebook: publicado").waitFor();
-  assert.equal((await qa(p)).refrescos, antes + 1);
-  // Ya sin nada en camino, no se refresca más.
+  await p.clock.runFor(5_500);
+  await feleal.getByText("Facebook: publicado").waitFor();
+  assert.equal((await qa(p)).refrescos, antes + 1, "terminó: se refresca sola, sin recargar");
+  assert.equal(await feleal.locator('[class*="anillo"]').count(), 0, "ya sin cargador");
+  // Ya sin nada en camino, no pregunta ni se refresca más.
+  const preguntas = (await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length;
   await p.clock.runFor(60_000);
   assert.equal((await qa(p)).refrescos, antes + 1);
+  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length, preguntas);
+});
+
+test("OL-488: si la cola va en otro intento, el renglón pasa solo a «Reintentando…» con su cargador, y luego a publicado", async (t) => {
+  const p = await abrir(t, "", { reloj: true });
+  const hoja = await hojaDe(p);
+  await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
+  await hoja.waitFor({ state: "detached" });
+  const feleal = renglon(p, "Feleal en el Museo");
+  await feleal.getByText("Publicando…").waitFor();
+  // El primer intento falla con algo pasajero: la cola lo devuelve con un fallo anotado (como `devolverACola`).
+  await p.evaluate(() => Object.assign(window.qa.cola[0], { fallos: 1, intentos: 1 }));
+  await p.clock.runFor(5_500);
+  await feleal.getByText("Reintentando…").waitFor();
+  assert.equal(await feleal.locator('[class*="anillo"]').count(), 1);
+  await latido(p);
+  await p.clock.runFor(5_500);
+  await feleal.getByText("Facebook: publicado").waitFor();
 });
 
 test("si Facebook falla después de Instagram, la hoja lo dice en llano y «Reintentar en Facebook» va a la cola con el mismo texto", async (t) => {

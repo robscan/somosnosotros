@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaDeLaQueViene, lunesDe, lunesDeLaSemana, motivoDe, rangoDeLaSemana, resumenSemana, salePara, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
+import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaDeLaQueViene, lineaDelPasado, lunesDe, lunesDeLaSemana, motivoDe, NADIE_ARTISTA, nadieConMaterial, queFalta, rangoDeLaSemana, razonDelPedido, resumenDeLaFalta, resumenSemana, salePara, SIN_CARTEL_DIA, sugerirDia, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
 
 const ZONA = "America/Mexico_City";
 // Miércoles 7 de octubre de 2026, 10:00 en San Luis Potosí.
@@ -145,5 +145,58 @@ describe("cuándo se arma sola la que viene", () => {
     expect(lineaDeLaQueViene(null, new Date("2026-10-07T15:30:00Z"), ZONA)).toBe("la que viene se arma el miércoles"); // mié 9:30
     expect(lineaDeLaQueViene(null, AHORA, ZONA)).toBe("la que viene no se armó"); // mié 10:00
     expect(lineaDeLaQueViene(null, new Date("2026-10-09T18:00:00Z"), ZONA)).toBe("la que viene no se armó"); // vie
+  });
+});
+
+describe("OL-488: solo con material, y la sugerencia de un día sin publicación", () => {
+  // Jueves 8 de octubre de 2026, 10:30 en San Luis Potosí: «Esta semana» (9:00) ya pasó.
+  const JUEVES = new Date("2026-10-08T16:30:00Z");
+  const LUNES = "2026-10-05";
+  const FOTOS = "https://app.test/storage/v1/object/public/fotos/";
+  const propio = (e: EventoCandidato) => !!e.imagen?.startsWith(FOTOS);
+  const eventos = [
+    ev("e-vie", "2026-10-10T02:00:00Z", { imagen: `${FOTOS}vie.jpg`, van: 3 }),
+    ev("e-sab-sin", "2026-10-10T20:00:00Z", { imagen: null, destacado: true }),
+    ev("e-sab-ajeno", "2026-10-10T21:00:00Z", { imagen: "https://otra.test/c.jpg", van: 9 }),
+    ev("e-sab", "2026-10-10T22:00:00Z", { imagen: `${FOTOS}sab.jpg` }),
+  ];
+
+  it("un evento sin cartel, o con uno que la app no puede bajar, no sale el día del evento ni en «Esta semana»", () => {
+    const semana = armarSemana({ lunes: LUNES, zona: ZONA, ahora: new Date("2026-10-04T16:00:00Z"), artistas: [], lugares: [], eventos, existentes: new Set(), conCartel: propio });
+    const de = (fecha: string) => semana.find((c) => c.fecha === fecha)!;
+    expect(de("2026-10-10").evento_id).toBe("e-sab");
+    expect(de("2026-10-08").eventos).toEqual(["e-vie"]);
+    // Sin ningún evento con cartel ese día, descansa y dice por qué.
+    const sinCartel = armarSemana({ lunes: LUNES, zona: ZONA, ahora: new Date("2026-10-04T16:00:00Z"), artistas: [], lugares: [], eventos: [ev("e-mar", "2026-10-06T20:00:00Z", { imagen: null })], existentes: new Set(), conCartel: propio });
+    expect(sinCartel.find((c) => c.fecha === "2026-10-06")).toMatchObject({ tipo: "descanso", motivo: SIN_CARTEL_DIA });
+  });
+
+  it("la sugerencia de hoy aunque su hora ya pasó (para «Publicar ahora»); el domingo y fuera de la semana, nada", () => {
+    const hoy = sugerirDia({ fecha: "2026-10-08", lunes: LUNES, zona: ZONA, ahora: JUEVES, artistas: [], lugares: [], eventos, conCartel: propio });
+    // Solo ese día: los dos del fin con cartel (el sábado no está apartado), nunca los que no tienen cartel propio.
+    expect(hoy).toMatchObject({ fecha: "2026-10-08", tipo: "semana", hora: "09:00", eventos: ["e-vie", "e-sab"] });
+    expect(sugerirDia({ fecha: "2026-10-11", lunes: LUNES, zona: ZONA, ahora: JUEVES, artistas: [], lugares: [], eventos })).toBeNull();
+    expect(sugerirDia({ fecha: "2026-10-14", lunes: LUNES, zona: ZONA, ahora: JUEVES, artistas: [], lugares: [], eventos })).toBeNull();
+    // Un día de artista sin nadie con material: descansa con el motivo de la regla.
+    expect(sugerirDia({ fecha: "2026-10-09", lunes: LUNES, zona: ZONA, ahora: JUEVES, artistas: [], lugares: [], eventos })).toMatchObject({ tipo: "descanso", motivo: NADIE_ARTISTA });
+    // Lo ya usado en la semana no se sugiere otra vez.
+    const a = [cand("a-1"), cand("a-2")];
+    expect(sugerirDia({ fecha: "2026-10-09", lunes: LUNES, zona: ZONA, ahora: JUEVES, artistas: a, lugares: [], eventos, usados: new Set(["a-1"]) })?.artista_id).toBe("a-2");
+  });
+
+  it("lo que dicen los renglones nuevos", () => {
+    expect(nadieConMaterial("2026-10-08", JUEVES, ZONA)).toBe("Nadie con material para hoy");
+    expect(nadieConMaterial("2026-10-09", JUEVES, ZONA)).toBe("Nadie con material para el vie 9");
+    expect(lineaDelPasado("2026-10-07", "sin-armar", JUEVES, ZONA)).toBe("Mié 7 · antes de armar la semana");
+    expect(lineaDelPasado("2026-10-06", "nadie", JUEVES, ZONA)).toBe("Mar 6 · nadie con material");
+    expect(queFalta(["portada"])).toBe("Falta la portada");
+    expect(queFalta(["foto", "portada"])).toBe("Falta la foto y la portada");
+    expect(queFalta(["portada_ajena"])).toBe("Su portada es de otra página: hay que subirla a la app");
+    expect(queFalta(["foto", "portada_ajena"])).toBe("Falta la foto; su portada es de otra página: hay que subirla a la app");
+    expect(resumenDeLaFalta(3, 2)).toBe("3 artistas y 2 lugares con fecha se quedaron fuera por falta de foto o portada");
+    expect(resumenDeLaFalta(1, 0)).toBe("1 artista con fecha se quedó fuera por falta de foto o portada");
+    expect(resumenDeLaFalta(0, 0)).toBeNull();
+    expect(razonDelPedido(["portada"])).toBe("Completa tu portada y te presentamos en Instagram");
+    expect(razonDelPedido(["foto", "portada_ajena"])).toBe("Completa tu foto y tu portada y te presentamos en Instagram");
   });
 });

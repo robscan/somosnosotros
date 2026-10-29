@@ -55,7 +55,7 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
     <main className={`${plantilla.paginaContenido} ${styles.listado}`}>
       <Barra volver={{ href: "/admin", texto: "Administración" }} titulo="Instagram" />
       <PantallaInstagram
-        semana={{ ciudad: { slug: ciudad, nombre }, ciudades: elegidas, semana, cual, abrir: esUuid(p.dia) ? p.dia! : null, conexion: bloqueConexion }}
+        semana={{ ciudad: { slug: ciudad, nombre }, ciudades: elegidas, semana, cual, abrir: esUuid(p.dia) ? p.dia! : null, conexion: bloqueConexion, usuarioId: actual.perfil.id }}
         eventos={{
           ciudad: { slug: ciudad, nombre },
           ciudades: elegidas,

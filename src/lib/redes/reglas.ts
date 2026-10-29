@@ -14,8 +14,11 @@ export const MAX_REINTENTOS = 3;
 export const ESPERAS_MS = [60_000, 180_000, 420_000] as const;
 /** Cuánto queda tomado un trabajo al reclamarlo: más que lo que puede vivir la función (300 s), así uno que se cae queda libre. */
 export const OCUPADO_MS = 320_000;
-/** La lista y la hoja se refrescan solas cada 20 s mientras algo dice «Publicando…». */
-export const REFRESCO_MS = 20_000;
+/**
+ * La lista y la hoja vuelven a leer cómo va cada 5 s mientras algo dice «Publicando…» (OL-488, añadido del founder del 2026-10-29: la pantalla
+ * se quedaba en «Publicando» aunque la cola ya había terminado; antes, cada 20 s).
+ */
+export const REFRESCO_MS = 5_000;
 
 /**
  * ¿Vale la pena reintentar? Sí ante lo pasajero: Instagram todavía procesando la imagen o sin responder, un 5xx, la red («imagen» y «otro»).
@@ -120,6 +123,8 @@ export type EstadoTrabajo = {
   conFacebook: boolean;
   resultado: ResultadoTrabajo | null;
   error: ClaveFallo | null;
+  /** OL-488: en camino y ya no es el primer intento (la cola lo repite tras un error pasajero): «Reintentando…». */
+  reintentando: boolean;
 };
 
 export const enCamino = (e: Pick<EstadoTrabajo, "estado"> | null | undefined): boolean => e?.estado === "en_cola" || e?.estado === "publicando";
@@ -136,7 +141,19 @@ export function leerEstadoTrabajo(f: Record<string, unknown> | null | undefined)
     conFacebook: f.red !== "facebook" && pedido.facebook === true,
     resultado: f.resultado && typeof f.resultado === "object" ? (f.resultado as ResultadoTrabajo) : null,
     error: typeof f.error === "string" ? (f.error as ClaveFallo) : null,
+    reintentando: reintenta(estado, f),
   };
+}
+
+/** OL-488: ¿la cola va en otro intento? (en camino, con un fallo pasajero anotado o más de un intento). Sin esas columnas, no. */
+export function reintenta(estado: string, f: { intentos?: unknown; fallos?: unknown }): boolean {
+  return (estado === "en_cola" || estado === "publicando") && (Number(f.fallos) >= 1 || Number(f.intentos) >= 2);
+}
+
+/** OL-488: lo que dice el cargador mientras va: «Publicando…» o «Reintentando…» (con la red delante si se pide). */
+export function textoEnCamino(e: Pick<EstadoTrabajo, "red" | "reintentando">, conRed = false): string {
+  const que = e.reintentando ? "reintentando…" : "publicando…";
+  return conRed ? `${e.red === "facebook" ? "Facebook" : "Instagram"}: ${que}` : `${que[0].toUpperCase()}${que.slice(1)}`;
 }
 
 /** La frase larga de un trabajo que no se pudo publicar (la hoja). */
@@ -147,7 +164,7 @@ export function mensajeDeFallo(e: EstadoTrabajo): string {
 
 /** La línea del renglón de la lista mientras va o si no se pudo: «Publicando…», «No se publicó: Instagram no aceptó la imagen». */
 export function lineaDeTrabajo(e: EstadoTrabajo): string | null {
-  if (enCamino(e)) return e.red === "facebook" ? "Facebook: publicando…" : "Publicando…";
+  if (enCamino(e)) return e.red === "facebook" ? textoEnCamino(e, true) : textoEnCamino(e);
   if (e.estado === "fallido") return e.red === "facebook" ? `Facebook: no se publicó (${motivoLlano("facebook", e.error ?? "otro")})` : `No se publicó: ${motivoLlano("instagram", e.error ?? "otro")}`;
   return null;
 }

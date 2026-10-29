@@ -22,7 +22,7 @@ export async function run({ as, check, expectError, query }) {
   const servicio = (sql, valores) => as("service_role", null, () => query(sql, valores));
   const artista = async (nombre, o = {}) =>
     (await servicio("insert into public.artistas (nombre, disciplina, ciudad, foto, portada, descripcion, redes, creado_por) values ($1, 'musica', $2, $3, $4, $5, $6, $7) returning id",
-      [nombre, o.ciudad ?? NOMBRE_CIUDAD, o.foto === undefined ? "https://x.test/f.jpg" : o.foto, "https://x.test/p.jpg", o.descripcion ?? LARGA, o.redes ?? ig(nombre.toLowerCase().replace(/[^a-z]/g, "")), o.autor ?? null])).rows[0].id;
+      [nombre, o.ciudad ?? NOMBRE_CIUDAD, o.foto === undefined ? "https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/f.jpg" : o.foto, "https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/p.jpg", o.descripcion ?? LARGA, o.redes ?? ig(nombre.toLowerCase().replace(/[^a-z]/g, "")), o.autor ?? null])).rows[0].id;
   const A1 = await artista("Semana Uno");
   const A2 = await artista("Semana Dos");
   const A3 = await artista("Semana Tres", { ciudad: "Otra Ciudad" });
@@ -30,7 +30,7 @@ export async function run({ as, check, expectError, query }) {
   const CORTA = await artista("Semana Corta", { descripcion: "Muy corta." });
   const SIN_IG = await artista("Semana Sin Instagram", { redes: "[]" });
   const GESTIONADA = await artista("Semana Gestionada", { autor: GESTORA });
-  const L1 = (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion, redes) values ('Foro Semana', 'foro', 22.15, -100.97, $1, 'https://x.test/l.jpg', $2, '[]') returning id", [NOMBRE_CIUDAD, LARGA])).rows[0].id;
+  const L1 = (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion, redes) values ('Foro Semana', 'foro', 22.15, -100.97, $1, 'https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/l.jpg', $2, '[]') returning id", [NOMBRE_CIUDAD, LARGA])).rows[0].id;
   const L2 = (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion) values ('Foro Semana Sin Portada', 'foro', 22.15, -100.97, $1, null, $2) returning id", [NOMBRE_CIUDAD, LARGA])).rows[0].id;
   // El lunes de la semana que viene (en la zona de la ciudad) y un evento de A2 ese viernes en L1.
   const lunes = (await query("select (date_trunc('week', (now() at time zone 'America/Mexico_City')::date + 7))::date::text as d")).rows[0].d;

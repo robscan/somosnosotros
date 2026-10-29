@@ -179,7 +179,8 @@ PASOS["admin-instagram-hoja"] = async (page) => {
 };
 
 // OL-479: la hoja del día de hoy en la pestaña «Semana» (sin la marca de la semana de Instagram, el respaldo no tiene fichas completas: el día
-// que toca puede descansar y su hoja lo dice).
+// que toca puede descansar y su hoja lo dice). OL-488: hoy (miércoles, día de lugar) nadie tiene material: el renglón dice «Nadie con material
+// para hoy» y abre «Falta material» (la lista de quién se quedó fuera).
 PASOS["admin-instagram-dia"] = async (page) => {
   await page.locator("main section li", { hasText: "Hoy" }).locator("a").first().click();
   await page.getByRole("dialog").waitFor();

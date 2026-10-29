@@ -467,6 +467,15 @@ const servidor = http.createServer(async (req, res) => {
     tablas.instagram_fuera = tablas.instagram_fuera.filter((fila) => !propios.every((c) => cumple(fila, c)));
     return responder(res, antes === tablas.instagram_fuera.length ? 200 : 204, antes === tablas.instagram_fuera.length ? [] : undefined);
   }
+  // OL-488: «Subir yo» guarda la foto o la portada de una ficha (solo esas dos columnas): en memoria.
+  if ((tabla === "artistas" || tabla === "lugares") && req.method === "PATCH" && cuerpo && Object.keys(cuerpo).length && Object.keys(cuerpo).every((k) => k === "foto" || k === "portada")) {
+    const { propios } = parseFiltros(url.searchParams);
+    const cambiadas = tablas[tabla].filter((fila) => propios.every((c) => cumple(fila, c)));
+    for (const fila of cambiadas) Object.assign(fila, cuerpo);
+    const salida = cambiadas.map((fila) => proyectar(tabla, fila, parseSelect(url.searchParams.get("select")), []));
+    if (quiereObjeto(req)) return salida.length === 1 ? responder(res, 200, salida[0]) : responder(res, 406, { code: "PGRST116", message: `${salida.length} filas` });
+    return responder(res, 200, salida);
+  }
   if (tabla === "instagram_semana" && req.method === "PATCH") {
     const { propios } = parseFiltros(url.searchParams);
     const cambiadas = tablas.instagram_semana.filter((fila) => propios.every((c) => cumple(fila, c)));

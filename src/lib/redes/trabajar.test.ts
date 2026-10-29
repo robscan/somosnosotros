@@ -3,7 +3,7 @@ import type { ParaHoja } from "@/app/admin/instagram/datos";
 import type { FichaParaPublicar, SemanaParaPublicar } from "../instagram/ficha";
 import { baseFalsa, type Fila } from "../rutinas/baseFalsa";
 import { reclamarTrabajo } from "./cola";
-import { correrUnTrabajo, PLAZOS_MS, type Herramientas } from "./trabajar";
+import { correrUnTrabajo, FRASE_SIN_MATERIAL, PLAZOS_MS, type Herramientas } from "./trabajar";
 
 /**
  * OL-465 (bitácora 497): el trabajador de la cola de redes con una base en memoria (`baseFalsa`) y herramientas de mentira (sin Instagram,
@@ -328,6 +328,21 @@ describe("la semana de Instagram (OL-479)", () => {
     expect((await correrUnTrabajo(dep)).estado).toBe("fallida");
     expect(h.publicar).not.toHaveBeenCalled();
     expect(tablas.instagram_semana[0].estado).toBe("fallido");
+  });
+
+  it("OL-488: sin su foto o su portada en la app no se publica con la imagen de relleno: el día queda «no se pudo» y dice qué falta", async () => {
+    const conMaterial = vi.fn(() => false);
+    const { dep, h, tablas } = conSemana([deFicha()], { conMaterial });
+    expect((await correrUnTrabajo(dep)).estado).toBe("fallida");
+    expect(conMaterial).toHaveBeenCalledWith(expect.objectContaining({ id: ARTISTA }));
+    expect(h.dibujarFicha).not.toHaveBeenCalled();
+    expect(h.publicar).not.toHaveBeenCalled();
+    expect(tablas.redes_trabajos[0]).toMatchObject({ estado: "fallido", resultado: { mensaje: FRASE_SIN_MATERIAL } });
+    expect(tablas.instagram_semana[0].estado).toBe("fallido");
+    // Con su material, sale como siempre.
+    const otro = conSemana([deFicha()], { conMaterial: vi.fn(() => true) });
+    expect((await correrUnTrabajo(otro.dep)).estado).toBe("terminada");
+    expect(otro.h.publicar).toHaveBeenCalled();
   });
 
   it("un día quitado mientras tanto no se marca publicado", async () => {
