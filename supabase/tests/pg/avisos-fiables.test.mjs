@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
 
+// OL-480 (bitácora 512): la cola ya no crea entregas por correo (el correo queda para el boletín). Los escenarios de la cola que antes se
+// probaban con el canal de correo ahora usan una suscripción de navegador por persona; la regla nueva tiene su propia prueba
+// (avisos-forma.test.mjs).
+const LLAVE = Buffer.concat([Buffer.from([4]), Buffer.alloc(64)]).toString("base64url"), AUTENTICA = Buffer.alloc(16).toString("base64url");
+const suscribir = (query, ids, prefijo) => query(`insert into public.suscripciones_push(endpoint,usuario_id,p256dh,auth)
+  select 'https://fcm.googleapis.com/fcm/send/'||$2||'-'||u::text,u,$3,$4 from unnest($1::uuid[]) u`, [ids, prefijo, LLAVE, AUTENTICA]);
+
 export async function run({ as, query, check, expectError, connection }) {
   const AUTHOR = randomUUID(), USER = randomUUID(), OTHER = randomUUID(), ROOT = randomUUID();
   await query("insert into public.admin_correos values('outbox-root@local.test')");
@@ -64,7 +71,10 @@ export async function run({ as, query, check, expectError, connection }) {
   await query("insert into public.seguimientos(usuario_id,artista_id) values($1,$2),($3,$2)",[USER,artist,AUTHOR]);
   const key=Buffer.concat([Buffer.from([4]),Buffer.alloc(64)]).toString("base64url"), auth=Buffer.alloc(16).toString("base64url");
   await as("authenticated",USER,()=>query(`insert into public.suscripciones_push(endpoint,usuario_id,p256dh,auth)
-    values('https://fcm.googleapis.com/fcm/send/outbox1',auth.uid(),$1,$2),('https://fcm.googleapis.com/fcm/send/outbox2',auth.uid(),$1,$2)`,[key,auth]));
+    values('https://fcm.googleapis.com/fcm/send/outbox1',auth.uid(),$1,$2),('https://fcm.googleapis.com/fcm/send/outbox2',auth.uid(),$1,$2),
+      ('https://fcm.googleapis.com/fcm/send/outbox3',auth.uid(),$1,$2)`,[key,auth]));
+  await as("authenticated",OTHER,()=>query(`insert into public.suscripciones_push(endpoint,usuario_id,p256dh,auth)
+    values('https://fcm.googleapis.com/fcm/send/outbox-other',auth.uid(),$1,$2)`,[key,auth]));
   await expandir();
   const deliveries=(await query("select * from public.avisos_entregas where job_id=$1",[inicial.id])).rows;
   check((await query("select contenido_en>=creado_en and contenido_en<vence as r from public.avisos_jobs where id=$1",[inicial.id])).rows[0].r,"texto relativo queda anclado a materializacion, no al guardado");
@@ -72,7 +82,7 @@ export async function run({ as, query, check, expectError, connection }) {
   await query("update public.avisos_config set entregar=true");
   check((await servicio("select public.avisos_recordatorios() as r")).rows[0].r===0,"recordatorios requieren habilitacion separada");
   await query("update public.avisos_config set recordatorios_desde=clock_timestamp()");
-  check(deliveries.length===3 && deliveries.every(d=>d.usuario_id===USER),"artista final llega al worker; autor excluido; correo y dos endpoints separados");
+  check(deliveries.length===3 && deliveries.every(d=>d.usuario_id===USER && d.canal==='push'),"artista final llega al worker; autor excluido; tres endpoints separados y ningún correo (OL-480)");
   const snapshot=JSON.stringify((await jobs(op))[0].contenido);
   check(!snapshot.includes(privado.direccion) && !snapshot.includes(privado.indicaciones) && !snapshot.includes(String(privado.lat)),"ningun campo privado entra al payload");
 
@@ -183,7 +193,8 @@ export async function run({ as, query, check, expectError, connection }) {
   const place=(await as("authenticated",MASS,()=>query("insert into public.lugares(nombre,tipo,lat,lng,creado_por) values('Outbox grande','foro',22,-100,auth.uid()) returning id"))).rows[0].id;
   const ids=Array.from({length:1007},()=>randomUUID());
   await query("insert into auth.users(id,email) select u,u::text||'@local.test' from unnest($1::uuid[]) u",[ids]);
-  await query("update public.perfiles set avisos_correo=true where id=any($1::uuid[])",[ids]);
+  await query("update public.perfiles set avisos_push=true where id=any($1::uuid[])",[ids]);
+  await suscribir(query, ids, "masa");
   await query("insert into public.seguimientos(usuario_id,lugar_id) select u,$2 from unnest($1::uuid[]) u",[ids,place]);
   const massPayload={...capPayload,lugar_id:place,sitio_texto:null,inicio:new Date(Date.now()+7200000).toISOString()};
   const mass=(await as("authenticated",MASS,()=>query(rpcSql,[null,JSON.stringify(massPayload),'null','[]',null,randomUUID()]))).rows[0].r.id;
@@ -203,7 +214,7 @@ export async function run({ as, query, check, expectError, connection }) {
   const recovered=await tomar();
   check(recovered.id===lost.id && recovered.token!==lost.token && !await terminar(lost),"caida: lease recuperable con fencing de ACK antiguo");
   const person=(await autorizar(recovered)).usuario_id;
-  await query("update public.perfiles set avisos_correo=false where id=$1",[person]);
+  await query("update public.perfiles set avisos_push=false where id=$1",[person]);
   check(await autorizar(recovered)===null,"recheck cancela consentimiento revocado despues del claim");
   for(const c of active.slice(1)) await terminar(c,'descartada');
   const stale=await tomar();
@@ -221,8 +232,8 @@ export async function run({ as, query, check, expectError, connection }) {
   await expandir();
   const rec=(await jobs(mass)).find(j=>j.tipo==='recordatorio');
   const beforeRec=(await query("select * from public.avisos_entregas where job_id=$1",[rec.id])).rows;
-  check(beforeRec.length===4,"recordatorio separa correo y endpoints tambien");
-  await query("update public.avisos_entregas set estado='enviada',primer_intento=clock_timestamp() where job_id=$1 and usuario_id=$2 and canal='correo'",[rec.id,USER]);
+  check(beforeRec.length===4 && beforeRec.every(d=>d.canal==='push'),"recordatorio separa endpoints tambien, sin correo");
+  await query("update public.avisos_entregas set estado='enviada',primer_intento=clock_timestamp() where job_id=$1 and usuario_id=$2 and endpoint like '%outbox3'",[rec.id,USER]);
   await query("update public.avisos_entregas set primer_intento=clock_timestamp() where job_id=$1 and endpoint like '%outbox1'",[rec.id]);
   const massRev=(await query("select actualizado_en::text as r from public.eventos where id=$1",[mass])).rows[0].r;
   await as("authenticated",MASS,()=>query(rpcSql,[mass,JSON.stringify({...massPayload,lugar_id:null,sitio_texto:'Otra sede'}),'null','[]',massRev,randomUUID()]));
@@ -231,8 +242,8 @@ export async function run({ as, query, check, expectError, connection }) {
   const recs=(await jobs(mass)).filter(j=>j.tipo==='recordatorio');
   check(recs.length===2 && recs[0].estado==='obsoleto',"sede corregida genera un solo recordatorio de reemplazo");
   const afterRec=(await query("select * from public.avisos_entregas where job_id=$1",[recs[1].id])).rows;
-  check(afterRec.length===2 && afterRec.some(d=>d.usuario_id===OTHER && d.canal==='correo') && afterRec.some(d=>d.endpoint.endsWith('outbox2')),
-    "reemplazo no repite correo aceptado ni push con ACK incierto, conserva canales sin intento");
+  check(afterRec.length===2 && afterRec.some(d=>d.usuario_id===OTHER && d.endpoint.endsWith('outbox-other')) && afterRec.some(d=>d.endpoint.endsWith('outbox2')),
+    "reemplazo no repite push aceptado ni push con ACK incierto, conserva canales sin intento");
   // Compatibilidad de snapshot con la columna posterior de Terra; DDL solo en
   // transaccion revertida si este banco aun no carga 181600.
   await query('begin');
@@ -286,6 +297,7 @@ async function correcciones({ as, query, check, connection }) {
     const author=randomUUID(), id=randomUUID(), users=Array.from({length:n},()=>randomUUID());
     await query("insert into auth.users(id,email) select u,u::text||'@local.test' from unnest($1::uuid[]) u",[[author,...users]]);
     await query('update public.perfiles set avisos_correo=true,avisos_push=true where id=any($1::uuid[])',[users]);
+    await suscribir(query, users, 'correccion');
     const artist=(await as('authenticated',author,()=>query("insert into public.artistas(nombre,disciplina,creado_por) values($1,'musica',auth.uid()) returning id",['Correccion '+author]))).rows[0].id;
     await query('insert into public.seguimientos(usuario_id,artista_id) select u,$2 from unnest($1::uuid[]) u',[users,artist]);
     const data={titulo:'Anuncio pendiente',ciudad:'Outbox',inicio:new Date(Date.now()+7200000).toISOString(),zona:'America/Mexico_City',
@@ -334,7 +346,7 @@ async function correcciones({ as, query, check, connection }) {
   const repetida=await fixture(2);
   await expandir();
   const altaOriginal=(await altas(repetida.id))[0];
-  const originalCorreo=(await query("select id from public.avisos_entregas where job_id=$1 and usuario_id=$2 and canal='correo'",[altaOriginal.id,repetida.users[0]])).rows[0].id;
+  const originalCorreo=(await query("select id from public.avisos_entregas where job_id=$1 and usuario_id=$2 and canal='push'",[altaOriginal.id,repetida.users[0]])).rows[0].id;
   await query("update public.avisos_entregas set disponible=clock_timestamp()+interval '1 hour' where job_id=$1 and id<>$2",[altaOriginal.id,originalCorreo]);
   const reclamado=await tomar();
   check(reclamado?.id===originalCorreo && (await autorizar(reclamado)) !== null && (await preparar(reclamado)) !== null,
@@ -348,7 +360,7 @@ async function correcciones({ as, query, check, connection }) {
   check((await altas(repetida.id)).filter(j=>j.estado==='obsoleto').length===1 && altaFinal.contenido.sitio_direccion==='Direccion tres',
     'cambios repetidos dejan una sola alta vigente con el ultimo snapshot');
   check(finales.length===1 && finales[0].usuario_id===repetida.users[1],
-    'alta de reemplazo no duplica correo aceptado y conserva el otro seguidor');
+    'alta de reemplazo no duplica el canal aceptado y conserva el otro seguidor');
   await expandir();
   check((await entregas(altaFinal.id)).length===1,'reexpandir una correccion idempotente no duplica entregas');
   await query("update public.avisos_jobs set estado='obsoleto',expandido=true where evento_id=$1",[repetida.id]);

@@ -61,7 +61,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
 
         <h2>Avisos</h2>
         <ul className={renglon.tarjeta}>
-          <AvisosPerfil correo={perfil.avisos_correo === true} correoTexto={correo} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+          <AvisosPerfil correo={perfil.avisos_correo === true} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
         </ul>
 
         <h2>Cuenta</h2>

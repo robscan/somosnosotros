@@ -29,7 +29,7 @@ export default function Privacidad() {
 
         <h2>Qué datos guardamos</h2>
         <ul>
-          <li>Al entrar: tu correo. Con él te mandamos el código de acceso y, si lo pides, los avisos. Si entras con Apple o con Google, ellos nos dan tu correo y tu nombre (Google, también tu foto de perfil); los cambias en «Mi perfil». Si en Apple eliges ocultar tu correo, guardamos la dirección que Apple te da y los avisos te llegan a través de Apple.</li>
+          <li>Al entrar: tu correo. Con él te mandamos el código de acceso y, cuando exista, el boletín. Si entras con Apple o con Google, ellos nos dan tu correo y tu nombre (Google, también tu foto de perfil); los cambias en «Mi perfil». Si en Apple eliges ocultar tu correo, guardamos la dirección que Apple te da y nuestros correos te llegan a través de Apple.</li>
           <li>Tu perfil, si lo llenas: nombre, foto, colonia y una línea sobre ti. El nombre y la foto son públicos: aparecen en «quién va» a un evento.</li>
           <li>Lo que haces en la app: a qué eventos dices «Voy» o «Me interesa», y qué lugares y artistas sigues. Quien abre tu perfil puede ver los eventos próximos a los que vas.</li>
           <li>Si activas avisos en el teléfono: la suscripción que nos da tu navegador para mandarte notificaciones. No es tu número.</li>
@@ -43,7 +43,8 @@ export default function Privacidad() {
         <h2>Para qué</h2>
         <ul>
           <li>Para que entres sin contraseña y para que lo que publicas lleve tu nombre.</li>
-          <li>Para avisarte, si lo pediste, de eventos nuevos en los lugares que sigues y para recordarte el día de un evento al que vas. Cada aviso trae un enlace para dejar de recibirlos, sin entrar.</li>
+          <li>Para avisarte en el teléfono, si lo pediste, de eventos nuevos de lo que sigues, de cambios de fecha o lugar y del día de un evento al que vas. Lo mismo queda en Novedades, dentro de la app.</li>
+          <li>El correo de avisos viene encendido al crear tu cuenta, pero no te mandamos nada por correo hasta que exista el boletín. Lo apagas en Ajustes o con el enlace de baja que trae cada correo.</li>
           <li>Para que la administración pueda revisar reportes, contactarte si reclamas una ficha y escribirte si hace falta por tu cuenta o por lo que publicaste. Tu correo solo lo ve la administración.</li>
         </ul>
 

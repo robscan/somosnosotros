@@ -12,6 +12,11 @@
 --      solo llama el servidor (`POST /api/avisos/abierto`) con la llave de servicio.
 --   4. `panel_avisos()`: la fila «Avisos abiertos» de Administración › Últimos 7 días: cuántos salieron (entregas al teléfono enviadas) y
 --      cuántos se abrieron, por tipo, contra los 7 días anteriores; sin contar a la administración. Solo la administración.
+--   5. El correo se separa (founder, 2026-10-29: «separamos solicitud de aprobación por correo, la vamos a usar después para el boletín.
+--      Pero actívala default para usuarios nuevos, aún sin enviar nada»): ninguna entrega de la cola sale por correo (expandir ya no las crea
+--      y autorizar descarta con `correo_pausado` las que quedaran pendientes de antes), `avisos_correo` queda para el boletín (OL-138), y las
+--      cuentas nuevas nacen con él encendido y su fecha (`crear_perfil`, copiado de 20261003160000_imagenes_origen_permitido.sql). Ninguna
+--      fila de `perfiles` cambia. Los correos de cuenta (código de entrada, bienvenida, ficha recibida, administración) no pasan por aquí.
 begin;
 
 alter table public.avisos_entregas add column if not exists motivo text
@@ -68,14 +73,8 @@ begin
         where a.evento_id=j.evento_id order by a.orden, ar.nombre limit 1;
       v_motivo := coalesce(v_motivo,'lugar');
     end if;
-    if p.avisos_correo and not (j.tipo in ('recordatorio','nuevo_evento') and exists (
-      select 1 from public.avisos_entregas anterior join public.avisos_jobs origen on origen.id=anterior.job_id
-      where origen.evento_id=j.evento_id and origen.tipo=j.tipo
-        and (j.tipo='nuevo_evento' or origen.recordatorio_inicio=j.recordatorio_inicio)
-        and origen.id<>j.id and anterior.usuario_id=u and anterior.canal='correo'
-        and (anterior.primer_intento is not null or anterior.estado='enviada'))) then
-      insert into public.avisos_entregas(job_id,usuario_id,canal,motivo) values(j.id,u,'correo',v_motivo) on conflict do nothing;
-    end if;
+    -- OL-480: ya no se crean entregas por correo, de ningún tipo; `avisos_correo` es del boletín. El cambio ya quedó en Novedades (arriba),
+    -- tenga o no teléfono dado de alta la persona.
     if p.avisos_push then
       insert into public.avisos_entregas(job_id,usuario_id,canal,endpoint,motivo)
         select j.id,u,'push',destino.endpoint,v_motivo from (
@@ -115,6 +114,12 @@ begin
     or (d.canal='correo' and not p.avisos_correo) or (d.canal='push' and not p.avisos_push)
     or d.primer_intento<clock_timestamp()-interval '23 hours' then
     update public.avisos_entregas set estado='descartada',codigo='ya_no_aplica',terminado_en=clock_timestamp() where id=d.id;
+    update public.avisos_slots set token=null,vence='-infinity' where token=p_token;
+    return null;
+  end if;
+  -- OL-480: por correo no sale ningún aviso de la cola, tampoco uno que quedó pendiente de antes.
+  if d.canal='correo' then
+    update public.avisos_entregas set estado='descartada',codigo='correo_pausado',terminado_en=clock_timestamp() where id=d.id;
     update public.avisos_slots set token=null,vence='-infinity' where token=p_token;
     return null;
   end if;
@@ -202,6 +207,29 @@ begin
 end $$;
 revoke all on function public.panel_avisos() from public, anon;
 grant execute on function public.panel_avisos() to authenticated;
+
+-- ---------- el correo, encendido por omisión solo para las cuentas nuevas (sin mandar nada) ----------
+alter table public.perfiles alter column avisos_correo set default true;
+comment on column public.perfiles.avisos_correo is
+  'Consentimiento para el boletín por correo (OL-138). Desde OL-480 (2026-10-29) ningún aviso de eventos sale por correo; las cuentas nuevas nacen con él encendido y su fecha en avisos_correo_desde. Se apaga en Ajustes o con la baja de cada correo.';
+
+-- Igual que en 20261003160000_imagenes_origen_permitido.sql, más el correo encendido con su fecha (la evidencia de desde cuándo).
+create or replace function public.crear_perfil() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.perfiles (id, nombre, foto, rol, avisos_correo, avisos_correo_desde)
+  values (
+    new.id,
+    left(coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', split_part(new.email, '@', 1), ''), 60),
+    case when public.imagen_origen_permitido(new.raw_user_meta_data ->> 'avatar_url', false, true)
+      then new.raw_user_meta_data ->> 'avatar_url' else null end,
+    case when exists (select 1 from public.admin_correos where lower(correo) = lower(new.email)) then 'admin' else 'usuario' end,
+    true,
+    now()
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
 
 -- ---------- permisos: los mismos de antes, dichos otra vez ----------
 revoke all on function public.avisos_expandir(), public.avisos_autorizar(uuid, uuid) from public, anon, authenticated;

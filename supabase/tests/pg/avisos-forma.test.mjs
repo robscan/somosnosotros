@@ -4,6 +4,7 @@
 // detrás y solo la escribe el servidor; `panel_avisos` es solo de la administración y no la cuenta a ella.
 // Como push-direcciones-muertas.test.mjs, no usa `avisos_tomar` (sus cuatro slots son globales a toda la suite): toma a mano sus entregas.
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 const KEY = Buffer.concat([Buffer.from([4]), Buffer.alloc(64)]).toString("base64url");
 const AUTH = Buffer.alloc(16).toString("base64url");
@@ -86,6 +87,10 @@ export async function run({ as, check, expectError, query }) {
     "sin lugar, solo llega a quien sigue a un artista del cartel, con su motivo", deReservado);
   await query("update public.avisos_entregas set estado='descartada',token=null,lease_hasta=null where estado in ('pendiente','tomada') and job_id in (select id from public.avisos_jobs where evento_id in ($1,$2))", [evento, reservado]);
 
+  // El panel es de toda la base (los bancos comparten una): se comparan las diferencias con lo de antes de esta prueba.
+  const leerPanel = async () => (await as("authenticated", ADMIN, () => query("select public.panel_avisos() as r"))).rows[0].r;
+  const antes = await leerPanel();
+
   // ---------- avisos_abiertos: solo el servidor cuenta, sin nadie detrás ----------
   const columnas = (await query(`select column_name from information_schema.columns where table_schema='public' and table_name='avisos_abiertos' order by 1`)).rows.map((r) => r.column_name);
   check(columnas.join(",") === "dia,n,tipo", "avisos_abiertos solo tiene día, tipo y conteo", columnas);
@@ -109,11 +114,12 @@ export async function run({ as, check, expectError, query }) {
   const deAdmin = lista.find((e) => e.usuario_id === ADMIN).id;
   await query("update public.avisos_entregas set estado='enviada', terminado_en=clock_timestamp() where id = any($1)", [[a, b, c, deAdmin].filter(Boolean)]);
   await query("update public.avisos_entregas set estado='enviada', terminado_en=clock_timestamp() - interval '10 days' where id=$1", [lista.find((e) => e.usuario_id === ARTE).id]);
-  const panel = (await as("authenticated", ADMIN, () => query("select public.panel_avisos() as r"))).rows[0].r;
-  check(panel.mandados === 2 && panel.mandados_antes === 1, "salieron: los de 7 días sin la administración, y los de antes aparte", panel);
-  check(panel.abiertos === 3 && panel.abiertos_antes === 5, "abiertos: los de 7 días y los de la semana anterior", panel);
-  check(panel.tipos?.nuevo?.mandados === 2 && panel.tipos?.nuevo?.abiertos === 2 && panel.tipos?.recordatorio?.abiertos === 1 && panel.tipos?.cancelado?.mandados === 0,
-    "con el desglose por tipo", panel.tipos);
+  const panel = await leerPanel();
+  const mas = (f) => f(panel) - f(antes);
+  check(mas((x) => x.mandados) === 2 && mas((x) => x.mandados_antes) === 1, "salieron: los de 7 días sin la administración, y los de antes aparte", { antes, panel });
+  check(mas((x) => x.abiertos) === 3 && mas((x) => x.abiertos_antes) === 5, "abiertos: los de 7 días y los de la semana anterior", { antes, panel });
+  check(mas((x) => x.tipos.nuevo.mandados) === 2 && mas((x) => x.tipos.nuevo.abiertos) === 2 && mas((x) => x.tipos.recordatorio.abiertos) === 1
+    && mas((x) => x.tipos.cancelado.mandados) === 0, "con el desglose por tipo", panel.tipos);
   check(!JSON.stringify(panel).match(/[0-9a-f]{8}-[0-9a-f]{4}/), "sin ids de nadie", panel);
 
   // ---------- permisos y search_path ----------
@@ -130,5 +136,41 @@ export async function run({ as, check, expectError, query }) {
   check(!puede("public.panel_avisos()", "anon") && puede("public.panel_avisos()", "authenticated"), "el panel: con sesión (y por dentro solo la administración)");
   const rls = (await query("select relrowsecurity from pg_class where oid='public.avisos_abiertos'::regclass")).rows[0];
   check(rls.relrowsecurity, "avisos_abiertos con RLS encendida");
-  console.log("Forma de los avisos (OL-480): motivo por persona, autorizar con lo público, conteo de abiertos sin nadie y panel solo de la administración");
+
+  // ---------- el correo se separa: encendido para cuentas nuevas, sin mandar nada (founder, 2026-10-29) ----------
+  const SINTEL = randomUUID();
+  await query("insert into auth.users(id,email) values ($1,'forma-sintel@local.test')", [SINTEL]);
+  const nueva = (await query("select avisos_correo, avisos_correo_desde, avisos_push from public.perfiles where id=$1", [SINTEL])).rows[0];
+  check(nueva.avisos_correo === true && nueva.avisos_correo_desde !== null && nueva.avisos_push === false,
+    "una cuenta nueva nace con el correo encendido y su fecha (y el teléfono apagado)", nueva);
+  const omision = (await query(`select column_default from information_schema.columns where table_schema='public' and table_name='perfiles' and column_name='avisos_correo'`)).rows[0];
+  check(omision?.column_default === "true", "avisos_correo: true por omisión", omision);
+  const sql = readFileSync(new URL("../../migrations/20261029170000_avisos_forma.sql", import.meta.url), "utf8");
+  check(!/update\s+public\.perfiles/i.test(sql), "la migración no cambia ninguna fila de perfiles que ya exista");
+  const porCorreo = (await query(`select count(*)::int as n from public.avisos_entregas e join public.avisos_jobs j on j.id=e.job_id
+    where j.evento_id = any($1::uuid[]) and e.canal='correo'`, [[evento, reservado]])).rows[0].n;
+  check(porCorreo === 0, "la cola no crea ninguna entrega por correo, aunque quien sigue tenga el correo encendido", porCorreo);
+
+  // Un cambio de fecha a quien va sin teléfono dado de alta: queda en Novedades y no sale por ningún lado más.
+  await query("insert into public.asistencias(usuario_id,evento_id,estado) values($1,$2,'voy')", [SINTEL, evento]);
+  const revision = (await query("select actualizado_en::text as r from public.eventos where id=$1", [evento])).rows[0].r;
+  const cambiado = { titulo: "Noche forma", inicio: new Date(Date.now() + 4 * 86400000).toISOString(), fin: null, lugar_id: lugar, sitio_texto: null,
+    sitio_lat: null, sitio_lng: null, sitio_reservado: false, sitio_revelar_desde: null, ciudad: "Prueba", zona: "America/Mexico_City",
+    descripcion: "Baile de salón con orquesta en vivo", imagen: null, precio: null, enlace: null };
+  await as("authenticated", AUTOR, () => query("select public.guardar_evento_con_avisos($1,$2::jsonb,null,$3::jsonb,$4,$5) as r",
+    [evento, JSON.stringify(cambiado), JSON.stringify([{ id: artistas[0], nombre: "Luna forma" }, { id: artistas[1], nombre: "Sol forma" }]), revision, randomUUID()]));
+  for (let n = 0; n < 100; n++) if (!(await servicio("select public.avisos_expandir() as r")).rows[0].r) break;
+  const novedad = (await query("select tipo, detalle from public.novedades where usuario_id=$1 and evento_id=$2", [SINTEL, evento])).rows;
+  check(novedad.length === 1 && novedad[0].tipo === "cambio" && novedad[0].detalle === "cuando", "el cambio queda en Novedades de quien va, sin teléfono", novedad);
+  const deSintel = (await query("select canal from public.avisos_entregas where usuario_id=$1", [SINTEL])).rows;
+  check(deSintel.length === 0, "y ninguna entrega por correo para esa persona", deSintel);
+
+  // Una entrega por correo que quedara pendiente de antes de la migración no sale: se descarta con su código.
+  const job = (await query("select id from public.avisos_jobs where evento_id=$1 and tipo='cambio' order by creado_en desc limit 1", [evento])).rows[0].id;
+  const vieja = (await query("insert into public.avisos_entregas(job_id,usuario_id,canal) values($1,$2,'correo') returning id", [job, SINTEL])).rows[0].id;
+  check(await autorizar(await tomarPropia(vieja)) === null, "autorizar no deja salir una entrega por correo");
+  const descartada = (await query("select estado, codigo from public.avisos_entregas where id=$1", [vieja])).rows[0];
+  check(descartada.estado === "descartada" && descartada.codigo === "correo_pausado", "queda descartada con correo_pausado", descartada);
+
+  console.log("Forma de los avisos (OL-480): motivo por persona, autorizar con lo público, conteo de abiertos sin nadie, panel solo de la administración y el correo apartado para el boletín");
 }
