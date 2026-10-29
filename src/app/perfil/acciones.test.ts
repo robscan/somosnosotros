@@ -65,7 +65,7 @@ describe("guardarSuscripcionPush", () => {
   });
   it("registra solo en la cuenta autenticada", async () => {
     expect(await guardarSuscripcionPush(sub)).toBe(true);
-    expect(mocks.upsert).toHaveBeenCalledWith({ endpoint: sub.endpoint, usuario_id: "persona", ...sub.keys });
+    expect(mocks.upsert).toHaveBeenCalledWith({ endpoint: sub.endpoint, usuario_id: "persona", ...sub.keys, muerta_en: null });
     expect(mocks.rpc).toHaveBeenCalledWith("activar_mis_avisos_push");
     expect(mocks.invalidar).toHaveBeenCalledTimes(2);
   });
@@ -157,7 +157,7 @@ describe("suscripcionPushActiva", () => {
 describe("guardarSuscripcionPush: token APNs (dentro de la app)", () => {
   it("registra en dispositivos_apns, no en suscripciones_push", async () => {
     expect(await guardarSuscripcionPush({ apns: { token: TOKEN_APNS, entorno: "sandbox" } })).toBe(true);
-    expect(mocks.apnsUpsert).toHaveBeenCalledWith({ token: TOKEN_APNS, usuario_id: "persona", entorno: "sandbox", actualizado_en: expect.any(String) });
+    expect(mocks.apnsUpsert).toHaveBeenCalledWith({ token: TOKEN_APNS, usuario_id: "persona", entorno: "sandbox", actualizado_en: expect.any(String), muerta_en: null });
     expect(mocks.upsert).not.toHaveBeenCalled();
     expect(mocks.invalidar).toHaveBeenCalledTimes(2);
   });
