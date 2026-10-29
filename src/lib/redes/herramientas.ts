@@ -5,6 +5,7 @@ import { cargarParaCartel } from "../carteles/cargar";
 import { publicarEnPagina } from "../facebook/api";
 import { cupo, publicar, publicarCarrusel } from "../instagram/api";
 import { PORTADA, type ImagenCarrusel } from "../instagram/carrusel";
+import { cargarFicha, cargarSemana, dibujarFicha, imagenesDeSemana } from "../instagram/ficha";
 import { armarImagen, bajarCartel, encajarCartel } from "../instagram/imagen";
 import { enviarPush, marcarDireccionMuerta, pushActivo, type AvisoPush } from "../push";
 import type { ClienteServidor } from "../supabase/servidor";
@@ -68,6 +69,10 @@ export function herramientasReales(): Herramientas {
     publicar: (p) => publicar(p),
     publicarCarrusel: (p) => publicarCarrusel(p),
     publicarEnPagina: (p) => publicarEnPagina(p),
+    cargarFicha: (db, tipo, id, ahora) => cargarFicha(db, tipo, id, ahora),
+    dibujarFicha: (f, formato, ahora) => dibujarFicha(f, formato, ahora),
+    cargarSemana: (db, eventos, ahora) => cargarSemana(db, eventos, ahora),
+    imagenesSemana: (s, ahora) => imagenesDeSemana(s, ahora),
     avisar: avisarAlTelefono,
   };
 }

@@ -8,7 +8,7 @@ import { ENTRADA_SEGURA, imagenAdmitida, TIEMPO_MAX_FOTO_MS } from "./imagenSegu
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
-import { ALTO_PORTADA, arbolDestacado, arbolPortadaSemana, LADO_FOTO, PALETAS_DESTACADO, type Destacado, type PortadaSemana } from "./plantillas/destacado";
+import { ALTO_PORTADA, arbolDestacado, arbolPortadaSemana, LADO_FOTO as LADO_FOTO_DESTACADO, PALETAS_DESTACADO, type Destacado, type PortadaSemana } from "./plantillas/destacado";
 import { COLORES_DOCUMENTO, dibujarPaginaDocumento, maquetar } from "./plantillas/documento";
 import { COLORES_TU_ANIO, dibujarTuAnio, FORMATO_TU_ANIO } from "./plantillas/tuAnio";
 import { FORMATOS, type Formato } from "./tokens";
@@ -381,7 +381,7 @@ export async function dibujarDestacado(p: PedidoDestacado): Promise<ResultadoDes
   const f = FORMATOS[p.formato];
   const alto = ALTO_PORTADA[p.formato];
   const portada = (await aDataUrl(p.portada, f.ancho, alto)) ?? (await aDataUrl(imagenDeRelleno(), f.ancho, alto))!;
-  const foto = p.tipo === "artista" ? ((await aDataUrl(p.foto, LADO_FOTO * 2, LADO_FOTO * 2)) ?? (await aDataUrl(imagenDeRelleno(), LADO_FOTO * 2, LADO_FOTO * 2))) : null;
+  const foto = p.tipo === "artista" ? ((await aDataUrl(p.foto, LADO_FOTO_DESTACADO * 2, LADO_FOTO_DESTACADO * 2)) ?? (await aDataUrl(imagenDeRelleno(), LADO_FOTO_DESTACADO * 2, LADO_FOTO_DESTACADO * 2))) : null;
   let tono: Rgb | null = null;
   try {
     tono = await tonoDominante(Buffer.from(portada.split(",")[1], "base64"));
