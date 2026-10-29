@@ -37,14 +37,15 @@ El founder aceptó las recomendaciones del barrido de seguridad del 2026-10-29 (
    `conexion.test.ts` ahora contesta error si la prueba no cuadra (como Meta con «Exigir el secreto de la app») y la vuelta completa sigue en
    «conectado». Las pruebas que ya había de `api.test.ts`, `api-carrusel.test.ts`, `conexion.test.ts` y `redes` siguen en verde (con
    `META_APP_SECRET` inventado en el entorno de la prueba).
-4. **Permisos pedidos al conectar: sin `business_management`.** Ninguna llamada del código usa la API de negocios (`/me/businesses`,
-   `/{business-id}/owned_pages`, `client_pages`…): la página sale de `/me/accounts`, que pide `pages_show_list`; publicar pide `instagram_basic`,
-   `instagram_content_publish`, `pages_read_engagement` y, para el espejo, `pages_manage_posts`; leer cuentas, `instagram_manage_insights`.
-   `PERMISOS_PEDIDOS` (`src/lib/instagram/conexionEstado.ts`) pasa de siete a seis. No cambia nada más de la conexión: la conexión ya guardada
-   sigue igual (sus permisos concedidos no se tocan) y `business_management` nunca estuvo en `PERMISOS_PARA_PUBLICAR`.
-   **Riesgo, anotado:** según Meta, si el rol de la cuenta sobre la página llega por el portafolio de negocio y no directo, `/me/accounts` podría
-   no listar la página sin ese permiso. Se vería al reconectar como «La cuenta que entró no administra la página Somos Nosotrxs» (clave
-   `pagina`); entonces se repone `business_management` en `PERMISOS_PEDIDOS` (una línea) y se reconecta.
+4. **Permisos pedidos al conectar: `business_management` se conserva, por precaución.** Ninguna llamada del código usa la API de negocios
+   (`/me/businesses`, `/{business-id}/owned_pages`, `client_pages`…): la página sale de `/me/accounts`, que pide `pages_show_list`; publicar pide
+   `instagram_basic`, `instagram_content_publish`, `pages_read_engagement` y, para el espejo, `pages_manage_posts`; leer cuentas,
+   `instagram_manage_insights`. El operador lo había quitado. El gestor decidió reponerlo: la app de Meta vive en un portafolio de negocio
+   (`business_id` 1429457415248810) y la página muy probablemente llega por ahí. Según Meta, en ese caso `/me/accounts` podría no listar la
+   página sin este permiso, y el founder todavía no ha logrado conectar: no conviene sumar otra causa de fallo. `PERMISOS_PEDIDOS`
+   (`src/lib/instagram/conexionEstado.ts`) sigue con siete permisos y lo dice en su comentario. **Se puede quitar cuando la conexión lleve una
+   semana funcionando**: si después de quitarlo la vuelta dice «La cuenta que entró no administra la página Somos Nosotrxs» (clave `pagina`),
+   se repone.
 5. **La captura de «Conectar Instagram»** (`scripts/ops/auditoria-ui/capturar-instagram-conectar.mjs`) lleva ahora un `META_APP_SECRET`
    inventado, porque la firma del `state` ya no sale de `CRON_SECRET`.
 
@@ -80,11 +81,9 @@ los dos; por eso queda fuera de esta pieza.
    historia de prueba.
 6. **Cuando la conexión de Vault lleve una semana sin fallos:** retirar `INSTAGRAM_TOKEN` de Vercel (el token de respaldo pegado a mano).
    Con «Exigir el secreto de la app» activo, ese token ya no serviría sin la prueba, pero sigue siendo un token sin caducidad fuera de Vault.
-7. **Al reconectar** (cuando toque): el diálogo de Meta pide seis permisos, ya no `business_management`. Si la vuelta dice «La cuenta que entró no
-   administra la página Somos Nosotrxs», reponerlo (ver «Riesgo» arriba).
+7. **Cuando la conexión lleve una semana funcionando:** se puede quitar `business_management` de `PERMISOS_PEDIDOS` como pieza aparte y
+   reconectar; si la vuelta dice «La cuenta que entró no administra la página Somos Nosotrxs», reponerlo (ver punto 4).
 
 ## Preguntas al founder
 1. ¿Activas «Exigir el secreto de la app» en Meta en cuanto el gestor confirme la historia de prueba, o prefieres esperar unos días?
-2. ¿Tu acceso a la página Somos Nosotrxs es directo (rol en la página) o por el portafolio de negocio? Si es por el portafolio, conviene
-   conservar `business_management` y lo reponemos antes de unir.
-3. ¿Abrimos como pieza aparte el secreto propio de los latidos de la base (`LATIDO_SECRET`), con su migración?
+2. ¿Abrimos como pieza aparte el secreto propio de los latidos de la base (`LATIDO_SECRET`), con su migración?

@@ -67,7 +67,7 @@ describe("la dirección del diálogo de Meta", () => {
     expect(uriDeVuelta("http://localhost:3000")).toBeNull();
     expect(uriDeVuelta("https://somosnosotros.org/otra")).toBeNull();
   });
-  it("lleva la app, la vuelta, el state, el código como respuesta y los seis permisos (sin business_management, OL-484)", () => {
+  it("lleva la app, la vuelta, el state, el código como respuesta y los siete permisos (business_management por precaución, OL-484)", () => {
     const u = new URL(urlDeConexion("1459504089615420", VUELTA, "estado-inventado"));
     expect(u.origin + u.pathname).toBe("https://www.facebook.com/v23.0/dialog/oauth");
     expect(u.searchParams.get("client_id")).toBe("1459504089615420");
@@ -75,8 +75,7 @@ describe("la dirección del diálogo de Meta", () => {
     expect(u.searchParams.get("state")).toBe("estado-inventado");
     expect(u.searchParams.get("response_type")).toBe("code");
     expect(u.searchParams.get("scope")?.split(",")).toEqual([...PERMISOS_PEDIDOS]);
-    expect(u.searchParams.get("scope")).toBe("pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish,instagram_manage_insights");
-    expect(PERMISOS_PEDIDOS).not.toContain("business_management");
+    expect(u.searchParams.get("scope")).toBe("pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish,instagram_manage_insights,business_management");
     expect(u.searchParams.has("client_secret")).toBe(false);
   });
 });
