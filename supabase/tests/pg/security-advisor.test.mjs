@@ -40,8 +40,217 @@ const GROUPS = [
   ]],
 ];
 
+// ---------------------------------------------------------------------------------------------------------------
+// Regla general (OL-486, bitácora 518). La matriz de arriba es una lista fija de 2026-09-18: lo que se creó después
+// no entraba y una función nueva mal hecha pasaba sin aviso. Esta regla recorre TODAS las funciones, tablas y vistas
+// de los esquemas propios (hoy solo `public`; las funciones de extensiones como pgcrypto no son nuestras y se saltan)
+// y exige lo que pide el Security Advisor de Supabase:
+//   - toda función fija `search_path = ''` (lint function_search_path_mutable; obligatorio en las SECURITY DEFINER,
+//     y hoy también lo cumplen todas las invoker, así que se exige a todas);
+//   - ninguna función tiene EXECUTE para PUBLIC (PostgreSQL se lo da por omisión a toda función nueva: quien crea
+//     una tiene que hacer `revoke all … from public` y conceder solo a quien la necesita);
+//   - anon solo ejecuta las de ANON_PERMITIDAS; authenticated solo las de ANON_PERMITIDAS o AUTH_PERMITIDAS;
+//   - toda tabla tiene RLS, toda vista es security_invoker y ninguna vista materializada ni tabla foránea queda a la
+//     vista de anon o authenticated, salvo que esté en EXCEPCIONES con su razón (hoy no hay ninguna).
+// Las listas son exactas: una entrada que ya no existe o que ya no tiene ese permiso también falla, para que no se
+// pudran. Una función nueva para clientes entra aquí con su razón en el mismo PR.
+
+// Esquemas que crea la plataforma (o el banco que la imita, scripts/test-db.mjs) y que no son nuestros.
+const ESQUEMAS_DE_PLATAFORMA = new Set([
+  "auth", "storage", "extensions", "realtime", "graphql", "graphql_public", "vault", "pgsodium", "pgsodium_masks",
+  "net", "cron", "supabase_functions", "supabase_migrations", "pgbouncer", "pgmq", "topology", "tiger", "tiger_data",
+]);
+// Esquemas propios que la regla recorre. Una migración que cree otro esquema hace fallar la prueba hasta añadirlo aquí.
+const ESQUEMAS_PROPIOS = new Set(["public"]);
+
+// anon (sin sesión) solo ejecuta estas. Cada una con su razón.
+const ANON_PERMITIDAS = new Map([
+  ["public.artistas_con_nombre(text)", "buscador y alta de artista sin sesión; invoker, lee bajo RLS"],
+  ["public.artistas_destacados_novedades(text)", "carril público de Inicio; definer que solo devuelve artistas visibles con novedades visibles"],
+  ["public.bloqueado_por_mi(uuid)", "la evalúan las políticas de lectura de eventos y novedades_artista, también para anon; sin sesión devuelve false"],
+  ["public.ciudades_agregadas(timestamp with time zone)", "conteos públicos por ciudad del selector; invoker con RLS"],
+  ["public.ciudades_artistas_agregadas()", "conteo público de artistas por ciudad; invoker con RLS"],
+  ["public.cuenta_seguidores(uuid,uuid)", "conteo público de seguidores de una ficha; definer sin identidades y sin abrir fichas ocultas"],
+  ["public.detalles_de_disciplina(text,text,integer)", "filtros públicos de Artistas; invoker"],
+  ["public.disciplinas_con_artistas(text)", "filtros públicos de Artistas; invoker"],
+  ["public.distancia_m(double precision,double precision,double precision,double precision)", "cálculo puro que usa lugares_parecidos"],
+  ["public.es_admin()", "la evalúan las políticas de RLS para cualquier rol; invoker, sin sesión false"],
+  ["public.eventos_parecidos(text,timestamp with time zone,text,uuid,text,uuid)", "«¿Es este?» antes de publicar; invoker, solo lo visible"],
+  ["public.gestiona_artista(uuid)", "ayudante de la RLS de lectura de artistas (definer para no ser recursiva); sin sesión false"],
+  ["public.gestiona_evento(uuid)", "ayudante de RLS; invoker, sin sesión false"],
+  ["public.gestiona_lugar(uuid)", "ayudante de la RLS de lectura de lugares (definer para no ser recursiva); sin sesión false"],
+  ["public.lugares_con_nombre(text)", "buscador público de lugares; invoker con RLS"],
+  ["public.lugares_parecidos(text,double precision,double precision,uuid)", "«¿Es este?» del alta de lugar; invoker con RLS"],
+  ["public.normalizar_nombre(text)", "función pura de las búsquedas públicas"],
+  ["public.novedades_recientes_artistas(text,uuid[])", "carril público de novedades; definer que solo devuelve lo visible"],
+  ["public.pincel_activo()", "la pared y el mando la consultan desde el servidor, también sin sesión; invoker, falla cerrado"],
+  ["public.push_endpoint_permitido(text)", "check de push_suscripciones; función pura"],
+  ["public.registrar_ciudad_vista(text)", "Inicio y Lugares la llaman sin sesión; suma 1 a una ciudad existente, sin persona y con techo"],
+  ["public.subcategorias_de(text)", "sugerencias del alta de artista; solo agrega lo visible"],
+  ["public.tira_destacados(text,text)", "tira pública de Inicio; definer que excluye ocultos y lugares privados"],
+  ["public.van_por_evento(uuid[])", "conteo público de asistentes sin identidades"],
+  ["public.zona_valida(text)", "check de lugares y eventos; función pura"],
+]);
+
+// authenticated (con sesión) ejecuta además estas, por grupos con su razón.
+const AUTH_GRUPOS = [
+  ["administración: cada una exige es_admin() (o el origen) por dentro y devuelve vacío, null o sin_permiso al resto", [
+    "aceptar_propuesta(uuid,jsonb)", "admin_asignar_ficha(text,uuid,uuid)", "admin_buscar_fichas(text,uuid,integer)",
+    "admin_quitar_ficha(text,uuid,uuid)", "borrar_lugar_excepcional_admin(uuid,text,text)",
+    "cambiar_destacado(text,uuid,text,timestamp with time zone,timestamp with time zone)", "cambiar_rol(uuid,text)",
+    "dar_mas_lecturas(uuid)", "impacto_borrado_lugar_admin(uuid)", "instagram_sugerencias(text,integer)",
+    "panel_aportes()", "panel_artistas(text,text,integer,integer)", "panel_artistas(text,text,text,integer,integer)",
+    "panel_avisos()", "panel_capo()", "panel_ciudades_de(text)", "panel_ciudades()", "panel_comunidad()", "panel_correo(uuid)",
+    "panel_destacados(text)", "panel_en_ciudad(text,text,uuid[])", "panel_eventos(text,text,integer,integer)",
+    "panel_eventos(text,text,text,integer,integer)", "panel_fichas_conteos(text,text)", "panel_fichas_conteos(text)",
+    "panel_fichas()", "panel_lugares(text,text,integer,integer)", "panel_lugares(text,text,text,integer,integer)",
+    "panel_pendientes()", "panel_persona(uuid)", "panel_personas_conteos()", "panel_personas_conteos(text)",
+    "panel_personas(text,text,integer,integer)", "panel_personas(text,text,text,integer,integer)", "panel_propuestas(uuid)",
+    "panel_resumen()", "redes_encolar(uuid,text,text,jsonb,boolean)", "redes_reciente(uuid,text,text)",
+    "rol_en_para_admin(uuid,timestamp with time zone)", "vistas_por_origen(integer)",
+  ]],
+  ["la propia cuenta: actúan solo sobre auth.uid()", [
+    "activar_mis_avisos_push()", "anotar_sugerencia(uuid,text,text,text)", "apartar_lectura_de_cartel()",
+    "artistas_con_mi_correo()", "borrar_mi_cuenta()", "marcar_visto()", "mi_cupo_de_cartel()", "mi_perfil()",
+    "mi_push_activo(text,text)", "reclamar_si_correo_coincide(uuid)",
+  ]],
+  ["publicar y editar: el alta y la edición de fichas propias; las invoker pasan por la RLS y las definer comprueban autor, gestor o admin", [
+    "borrar_lugar(uuid)", "crear_lugar_con_horario(jsonb,jsonb)",
+    "editar_evento_con_sesiones(uuid,jsonb,jsonb,jsonb,jsonb,timestamp with time zone,uuid)",
+    "festival_de_dos_parecidos(uuid,uuid,text,uuid)",
+    "guardar_evento_completo(uuid,jsonb,jsonb,jsonb,timestamp with time zone,uuid)",
+    "guardar_evento_con_avisos(uuid,jsonb,jsonb,jsonb,timestamp with time zone,uuid)",
+    "guardar_evento_con_clase(uuid,jsonb,jsonb,jsonb,jsonb,jsonb,timestamp with time zone,uuid)",
+    "guardar_evento_con_sesiones(uuid,jsonb,jsonb,jsonb,jsonb,timestamp with time zone,uuid)",
+    "guardar_horario_lugar(uuid,jsonb)", "ligar_inauguracion(uuid,uuid)",
+    "poner_cartel_a_evento(uuid,text,jsonb,jsonb,boolean)", "programa_ocultar_borrador(uuid)",
+    "publicar_borrador_de_programa(uuid)",
+    "publicar_exposicion_de_inauguracion(uuid,text,timestamp with time zone,timestamp with time zone,jsonb,uuid)",
+    "publicar_festival_sin_programa(jsonb,jsonb,jsonb,jsonb,uuid)", "publicar_programa(jsonb,jsonb,uuid)",
+    "recalcular_festival(uuid)", "relacionar_en_festival(uuid[],uuid,text,uuid)", "religar_sitio_a_lugar(uuid,uuid[])",
+    "unir_a_festival_parecido(uuid,uuid,text)",
+  ]],
+  ["ayudantes de cálculo que usan las de arriba (invoker, sin datos propios)", [
+    "ciudad_slug(text)", "fin_en_programa(timestamp with time zone,timestamp with time zone,text)",
+    "imagen_origen_permitido(text,boolean,boolean)", "inicio_del_mes()", "slug_de_evento(text,timestamp with time zone,text,uuid)",
+    "slug_de_nombre(text)",
+  ]],
+];
+const AUTH_PERMITIDAS = new Map(AUTH_GRUPOS.flatMap(([razon, firmas]) => firmas.map((f) => [`public.${f}`, razon])));
+
+// Tablas sin RLS, vistas sin security_invoker y vistas materializadas o tablas foráneas a la vista de los clientes que
+// se aceptan, cada una con su razón. Hoy no hay ninguna.
+const EXCEPCIONES = new Map([]);
+
+// Devuelve la lista de incumplimientos de la regla sobre el catálogo actual (vacía = cumple) y cuántas funciones revisó.
+async function incumplimientosDeLaRegla(query) {
+  const fallos = [];
+  const { rows: esquemas } = await query(`select nspname from pg_namespace
+    where nspname not like 'pg\\_%' and nspname <> 'information_schema' order by 1`);
+  for (const { nspname } of esquemas) {
+    if (!ESQUEMAS_PROPIOS.has(nspname) && !ESQUEMAS_DE_PLATAFORMA.has(nspname)) {
+      fallos.push(`esquema ${nspname}: no es de la plataforma ni está en ESQUEMAS_PROPIOS (añádelo para que la regla lo recorra)`);
+    }
+  }
+  const propios = [...ESQUEMAS_PROPIOS];
+  const { rows: funciones } = await query(`
+    select n.nspname || '.' || p.proname || '(' || replace(oidvectortypes(p.proargtypes), ', ', ',') || ')' as firma,
+      p.prosecdef as definer, coalesce(p.proconfig, '{}') @> array['search_path=""'] as path_vacio,
+      exists (select 1 from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+        where a.grantee = 0 and a.privilege_type = 'EXECUTE') as publico,
+      has_function_privilege('anon', p.oid, 'execute') as anon,
+      has_function_privilege('authenticated', p.oid, 'execute') as authenticated
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = any($1::text[]) and p.prokind in ('f', 'p', 'a', 'w')
+      and not exists (select 1 from pg_depend d where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e')
+    order by 1`, [propios]);
+  const porFirma = new Map(funciones.map((f) => [f.firma, f]));
+  for (const f of funciones) {
+    if (!f.path_vacio) fallos.push(`${f.firma}: ${f.definer ? "SECURITY DEFINER" : "función"} sin search_path = ''`);
+    if (f.publico) fallos.push(`${f.firma}: EXECUTE concedido a PUBLIC (falta revoke all … from public)`);
+    if (f.anon && !ANON_PERMITIDAS.has(f.firma)) fallos.push(`${f.firma}: anon la ejecuta y no está en ANON_PERMITIDAS`);
+    if (f.authenticated && !ANON_PERMITIDAS.has(f.firma) && !AUTH_PERMITIDAS.has(f.firma)) {
+      fallos.push(`${f.firma}: authenticated la ejecuta y no está en AUTH_PERMITIDAS`);
+    }
+  }
+  for (const firma of ANON_PERMITIDAS.keys()) {
+    const f = porFirma.get(firma);
+    if (!f?.anon) fallos.push(`${firma}: está en ANON_PERMITIDAS pero ${f ? "anon ya no la ejecuta" : "ya no existe"} (lista desactualizada)`);
+  }
+  for (const firma of AUTH_PERMITIDAS.keys()) {
+    const f = porFirma.get(firma);
+    if (!f?.authenticated || f.anon) {
+      fallos.push(`${firma}: está en AUTH_PERMITIDAS pero ${!f ? "ya no existe" : f.anon ? "anon también la ejecuta (va en ANON_PERMITIDAS)" : "authenticated ya no la ejecuta"} (lista desactualizada)`);
+    }
+  }
+
+  const { rows: relaciones } = await query(`
+    select n.nspname || '.' || c.relname as nombre, c.relkind, c.relrowsecurity,
+      coalesce(c.reloptions, '{}') && array['security_invoker=true', 'security_invoker=on', 'security_invoker=1'] as invoker,
+      has_table_privilege('anon', c.oid, 'select') or has_table_privilege('authenticated', c.oid, 'select') as expuesta
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = any($1::text[]) and c.relkind in ('r', 'p', 'v', 'm', 'f')
+      and not exists (select 1 from pg_depend d where d.classid = 'pg_class'::regclass and d.objid = c.oid and d.deptype = 'e')
+    order by 1`, [propios]);
+  for (const r of relaciones) {
+    if (EXCEPCIONES.has(r.nombre)) continue;
+    if ((r.relkind === "r" || r.relkind === "p") && !r.relrowsecurity) fallos.push(`${r.nombre}: tabla sin RLS`);
+    if (r.relkind === "v" && !r.invoker) fallos.push(`${r.nombre}: vista sin security_invoker (corre con los permisos de su dueño)`);
+    if ((r.relkind === "m" || r.relkind === "f") && r.expuesta) {
+      fallos.push(`${r.nombre}: ${r.relkind === "m" ? "vista materializada" : "tabla foránea"} legible por anon o authenticated (sin RLS posible)`);
+    }
+  }
+  for (const nombre of EXCEPCIONES.keys()) {
+    if (!relaciones.some((r) => r.nombre === nombre)) fallos.push(`${nombre}: está en EXCEPCIONES pero ya no existe (lista desactualizada)`);
+  }
+  return { fallos, funciones: funciones.length, relaciones: relaciones.length };
+}
+
+// Control negativo: cada caso crea algo mal hecho DENTRO de una transacción, comprueba que la regla lo señala con el
+// motivo esperado y deshace todo con rollback. Si la regla dejara pasar alguno, la prueba falla.
+const CONTROLES = [
+  ["SECURITY DEFINER sin search_path", `create function public.sa_control_definer() returns int
+     language sql security definer as $$ select 1 $$`, /sa_control_definer\(\): SECURITY DEFINER sin search_path/],
+  ["EXECUTE concedido a PUBLIC", `create function public.sa_control_publico() returns int
+     language sql set search_path = '' as $$ select 1 $$;
+   revoke all on function public.sa_control_publico() from public, anon, authenticated;
+   grant execute on function public.sa_control_publico() to public`, /sa_control_publico\(\): EXECUTE concedido a PUBLIC/],
+  ["anon fuera de la lista", `create function public.sa_control_anon() returns int
+     language sql set search_path = '' as $$ select 1 $$;
+   revoke all on function public.sa_control_anon() from public, authenticated;
+   grant execute on function public.sa_control_anon() to anon`, /sa_control_anon\(\): anon la ejecuta y no está en ANON_PERMITIDAS/],
+  ["authenticated fuera de la lista", `create function public.sa_control_auth() returns int
+     language sql set search_path = '' as $$ select 1 $$;
+   revoke all on function public.sa_control_auth() from public, anon;
+   grant execute on function public.sa_control_auth() to authenticated`, /sa_control_auth\(\): authenticated la ejecuta y no está en AUTH_PERMITIDAS/],
+  ["tabla sin RLS", "create table public.sa_control_tabla(id int)", /public\.sa_control_tabla: tabla sin RLS/],
+  ["vista sin security_invoker", "create view public.sa_control_vista as select 1 as uno", /public\.sa_control_vista: vista sin security_invoker/],
+  ["esquema nuevo sin declarar", "create schema sa_control_esquema", /esquema sa_control_esquema: no es de la plataforma/],
+];
+
 export async function run({ as, check, expectError, query }) {
   const start = Date.now();
+
+  // Regla general sobre el catálogo real. Con FORZAR_ADVISOR_MAL=1 se deja a propósito una función mal hecha (sin
+  // rollback) para ver que la corrida entera falla: es el control negativo forzado de la bitácora 518.
+  if (process.env.FORZAR_ADVISOR_MAL === "1") {
+    await query("create function public.sa_forzada_mal() returns int language sql security definer as $$ select 1 $$");
+  }
+  const regla = await incumplimientosDeLaRegla(query);
+  check(regla.funciones > 100 && regla.relaciones > 30, "regla general: recorre las funciones y tablas propias", regla);
+  for (const fallo of regla.fallos) check(false, `regla general: ${fallo}`);
+  for (const [caso, sql, esperado] of CONTROLES) {
+    await query("begin");
+    try {
+      await query(sql);
+      const { fallos } = await incumplimientosDeLaRegla(query);
+      check(fallos.some((f) => esperado.test(f)), `control negativo: la regla señala «${caso}»`, fallos);
+    } finally {
+      await query("rollback");
+    }
+  }
+  check((await incumplimientosDeLaRegla(query)).fallos.length === regla.fallos.length,
+    "control negativo: el rollback no deja nada de los controles");
   for (const [access, definer, signatures] of GROUPS) {
     for (const signature of signatures) {
       const { rows: [p] } = await query(`
@@ -299,5 +508,7 @@ export async function run({ as, check, expectError, query }) {
     && (await query("select creado_por from public.lugares where id=$1", [authored])).rows[0].creado_por === null
     && (await query("select id from auth.users where id=$1", [OWNER])).rowCount === 1,
   "borrar_mi_cuenta solo borra la propia y conserva fichas sin autor");
-  console.log(`Security Advisor: matriz de 53 firmas y contratos negativos/positivos (${Date.now() - start} ms)`);
+  console.log(`Security Advisor: regla general sobre ${regla.funciones} funciones y ${regla.relaciones} tablas y vistas propias`
+    + ` (${ANON_PERMITIDAS.size} para anon, ${AUTH_PERMITIDAS.size} más para authenticated, ${CONTROLES.length} controles negativos),`
+    + ` matriz fija de 53 firmas y contratos negativos/positivos (${Date.now() - start} ms)`);
 }
