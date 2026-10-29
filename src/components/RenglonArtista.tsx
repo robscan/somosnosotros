@@ -29,13 +29,15 @@ type Props = {
   artista: Pick<ArtistaResumen, "id" | "slug" | "nombre" | "foto" | "disciplina" | "detalle" | "tipo" | "novedad"> & { proxima?: ProximaFecha | null };
   /** Con botón, "Seguir" o "Sigues" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
   boton?: EstadoBotonRenglon;
+  /** «9 veces» (OL-473): en la hoja «Ver los N» de un lugar, cuántas veces pasó por ahí, con el calendario y en gris, donde va lo próximo. */
+  veces?: string;
 };
 
 /**
  * Renglón de artista (OL-057): foto redonda, nombre y, en los datos, qué hace y su próxima fecha. Uno solo para todas
  * las listas de artistas, como RenglonEvento para los eventos.
  */
-export default function RenglonArtista({ artista: a, boton }: Props) {
+export default function RenglonArtista({ artista: a, boton, veces }: Props) {
   const sello = selloNovedadArtista(a.novedad);
   return (
     <Renglon href={hrefArtista(a)} foto={a.foto} redonda perezosa titulo={a.nombre} accion={boton && <BotonRenglon {...boton} />}>
@@ -47,6 +49,12 @@ export default function RenglonArtista({ artista: a, boton }: Props) {
         <span>
           <IconoCalendario width={15} height={15} />
           <b>{textoProximaFecha(a.proxima)}</b>
+        </span>
+      )}
+      {veces && (
+        <span>
+          <IconoCalendario width={15} height={15} />
+          <span>{veces}</span>
         </span>
       )}
       {sello && <Chip variante="sello">{sello}</Chip>}

@@ -3,7 +3,7 @@
 **Fecha:** 2026-10-28. **Rama:** `instagram-conectar`, base `origin/main` (`12ab4582`, con OL-467 unido); al cerrar se trajo `main`
 (`e0e65408`, con OL-468 y OL-469: choque solo en OPEN_LOOPS, resuelto conservando todo). **Operador:** agente de la pieza
 (Gestor VII), sin otros agentes. **Estado:** en código, espera la revisión del gestor, la configuración de Meta y Vercel y una prueba real en
-producción. **Migración `20261028180000_instagram_conexion.sql`** (solo añade; el nombre lo eligió el operador: el encargo no traía uno, y es el
+producción. **Migración `20261029180000_instagram_conexion.sql`** (solo añade; el nombre lo eligió el operador: el encargo no traía uno, y es el
 siguiente a la última de `main`, `20261028150000`). **Variable nueva:** `META_APP_SECRET` (sensible, la pega el founder). Capturas:
 `docs/rediseno/capturas-503/`.
 
@@ -38,7 +38,7 @@ evita que una pieza quede atrás. Si el gestor prefiere `v21.0`, es una línea (
 
 ## Qué se hizo
 
-### Base (migración `20261028180000_instagram_conexion.sql`, solo añade; banco `supabase/tests/pg/instagram-conexion.test.mjs`)
+### Base (migración `20261029180000_instagram_conexion.sql`, solo añade; banco `supabase/tests/pg/instagram-conexion.test.mjs`)
 
 - **`instagram_conexion`**: una sola fila (`id = 1`) con el estado **sin token**: página (id y nombre), cuenta de Instagram (id y usuario),
   `permisos` (los concedidos), `conectado_por` y `conectado_en`. RLS: la lee la administración (`es_admin()`); `anon` no tiene nada;
@@ -162,7 +162,7 @@ con el `useCampoVisible` de antes de OL-468. Antes de traer `main` había pasado
 
 ## Lo que hay que configurar (antes de la prueba)
 
-1. **Supabase:** aplicar la migración `20261028180000_instagram_conexion.sql`. Vault ya está (lo usan los latidos de OL-444 y OL-465); si no,
+1. **Supabase:** aplicar la migración `20261029180000_instagram_conexion.sql`. Vault ya está (lo usan los latidos de OL-444 y OL-465); si no,
    guardar responde «No se pudo guardar la conexión» y nada cambia.
 2. **Vercel (el founder):** `META_APP_SECRET` = el secreto de la app «Somos Nosotrxs Publicador» (Meta › Configuración de la app › Básica),
    **sensible**, en Production (y en Preview solo si se quiere probar ahí; ver 3). Ya están y se usan: `CRON_SECRET` (firma el `state`),
@@ -198,5 +198,5 @@ con el `useCampoVisible` de antes de OL-468. Antes de traer `main` había pasado
   ¿Es lo que quiere el gestor, o prefiere no guardar nada si falta el de leer?
 - Una vez guardado, el token de Vault manda sobre `INSTAGRAM_TOKEN`. Si la conexión propia perdiera un permiso, el respaldo no entra solo:
   hay que reconectar (el bloque lo dice).
-- El nombre de la migración no venía en el encargo: `20261028180000` (confirmar que ninguna otra pieza en curso tomó un número posterior que
+- El nombre de la migración no venía en el encargo: `20261029180000` (confirmar que ninguna otra pieza en curso tomó un número posterior que
   deba ir antes).

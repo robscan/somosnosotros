@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 /**
- * OL-471 (bitácora 503, migración 20261028180000): «Conectar Instagram». El token de la página vive en Vault (`instagram_token`) y solo la llave
+ * OL-471 (bitácora 503, migración 20261029180000): «Conectar Instagram». El token de la página vive en Vault (`instagram_token`) y solo la llave
  * de servicio lo guarda (`instagram_guardar_conexion`) o lo lee (`instagram_token`); el estado de la conexión, sin token, en `instagram_conexion`,
  * que lee la administración y nadie más. El banco no tiene Vault: primero se prueba sin él (no guarda nada y lo dice) y luego con un Vault de
  * mentira (tabla, vista y funciones con la forma de las de Supabase) dentro de una transacción que se deshace.
