@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Administración más simple</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-493 (bitácora 525), armazón de propuestas. Founder (2026-10-29): «la versión de admin ya está bastante compleja… simplificar,
+   reestructurar la arquitectura de las secciones… la va a administrar cualquier administrador sin experiencia e incluso con pocas habilidades
+   digitales». Sobre la pantalla REAL (regla de OL-409): la portada de Administración y Administración › Instagram se guardaron con
+   `maqueta-pantalla.mjs` (la app compilada contra el respaldo local) y `prototipo/admin-simple.mjs` arma este archivo: el teléfono es un
+   `iframe` con el CSS servido tal cual y el cuerpo de cada pantalla armado con piezas que ya existen (con sus clases de producción).
+   Lo de este archivo fuera del marco es solo el armazón del prototipo. */
+:root {
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-bien: #1f6f43; --pg-mal: #b3261e; --pg-reco: #e6f4ea;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ancho-tel: 390px; --alto-tel: 844px;
+}
+* { box-sizing: border-box; }
+html { font: 400 1rem / 1.45 var(--fuente); font-variation-settings: "wdth" 80; color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+.escena { display: grid; gap: 16px; padding: 16px; align-content: start; }
+.columna { display: grid; gap: 8px; justify-items: center; align-content: start; min-width: 0; }
+.selector { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.selector button { min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--pg-panel); color: var(--pg-suave); font-size: 0.875rem; font-weight: 700; }
+.selector button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.selector.sub button { background: transparent; box-shadow: inset 0 0 0 1px var(--pg-borde); }
+.selector.sub button[aria-pressed="true"] { background: var(--pg-texto); color: var(--pg-panel); box-shadow: none; }
+.selector.sub button[data-reco="true"]::after { content: " ★"; color: var(--pg-bien); }
+.selector.tam button { min-height: 44px; min-width: 56px; font-weight: 500; }
+.etiqueta { margin: 0; min-height: 2.6em; color: var(--pg-suave); font-size: 0.875rem; line-height: 1.3; text-align: center; max-width: 430px; }
+.etiqueta b { color: var(--pg-texto); }
+.tel { display: block; width: var(--ancho-tel); max-width: 100%; height: var(--alto-tel); border: 0; border-radius: 28px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.medidor { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; max-width: 620px; font-size: 0.8125rem; color: var(--pg-suave); }
+.medidor b { color: var(--pg-texto); font-size: 1rem; margin-right: 3px; }
+.medidor [data-mal="true"] b { color: var(--pg-mal); }
+.notas { display: grid; gap: 16px; align-content: start; padding: 20px; border-radius: 16px; background: var(--pg-panel); min-width: 0; }
+.notas h1 { margin: 0; font-size: 1.5rem; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.notas h2 { margin: 0 0 6px; font-size: 1.0625rem; font-variation-settings: "wdth" 75; }
+.notas p, .notas ul, .notas ol { margin: 0; font-size: 0.9375rem; }
+.notas ul, .notas ol { padding-left: 1.1em; display: grid; gap: 6px; }
+.notas table { border-collapse: collapse; font-size: 0.875rem; width: 100%; }
+.notas td, .notas th { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--pg-borde); vertical-align: top; }
+.notas .chica { color: var(--pg-suave); font-size: 0.875rem; }
+.notas .reco { justify-self: start; padding: 2px 10px; border-radius: 999px; background: var(--pg-reco); color: var(--pg-bien); font-size: 0.8125rem; font-weight: 700; }
+.plegar { justify-self: start; min-height: 44px; padding: 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--pg-borde); font-size: 0.875rem; font-weight: 700; }
+.notas[data-plegadas="true"] > :not(.cabeza-notas) { display: none; }
+.cabeza-notas { display: grid; gap: 8px; }
+.cabeza-notas > svg { width: 52px; height: auto; }
+@media (min-width: 900px) { .escena { grid-template-columns: minmax(0, 1fr) 460px; align-items: start; } .notas { position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow: auto; } }
+</style>
+</head>
+<body>
+<main class="escena">
+  <section class="columna" aria-label="El teléfono">
+    <div class="selector" role="group" aria-label="Pantalla" id="sel-pantalla"></div>
+    <div class="selector sub" role="group" aria-label="Variante y estado" id="sel-estado"></div>
+    <div class="selector sub tam" role="group" aria-label="Ancho" id="sel-ancho"></div>
+    <p class="etiqueta" id="etiqueta"></p>
+    <iframe class="tel" id="tel" title="La pantalla (maqueta real)"></iframe>
+    <div class="medidor" id="medidor" aria-live="polite"></div>
+  </section>
+  <aside class="notas" id="notas" aria-labelledby="notas-titulo">
+    <div class="cabeza-notas">
+      <!--@SN-->
+      <h1 id="notas-titulo">Administración más simple</h1>
+      <p class="chica">OL-493 · prototipo, espera firma · jue 29 de oct · sobre la pantalla real (respaldo local, reloj fijo del mié 7 de oct de 2026, cuenta de administración; datos de demo)</p>
+      <button type="button" class="plegar" id="plegar" aria-expanded="true">Plegar las notas</button>
+    </div>
+    <section aria-labelledby="t-estado"><h2 id="t-estado">Lo que ves</h2><p id="reco-estado"></p><div id="texto-estado"></div></section>
+    <section aria-labelledby="t-mision">
+      <h2 id="t-mision">La idea</h2>
+      <p>Al abrir Administración, una sola pregunta: <b>¿qué tengo que atender hoy?</b> Lo demás, a un toque y con palabras de todos los días. Hoy la portada tiene 12 rótulos y mide 3,7 pantallas a 390; la propuesta, 5 rótulos y 2.</p>
+    </section>
+    <section aria-labelledby="t-estructura">
+      <h2 id="t-estructura">Los cinco bloques</h2>
+      <table>
+        <tr><th>Bloque</th><th>Qué tiene</th></tr>
+        <tr><td>Pendiente</td><td>Como hoy: lo único en rojo y lo primero.</td></tr>
+        <tr><td>Esta semana en números</td><td>Cuatro cuadros y «Ver todos los números» (hoja con el resto, el embudo, Fichas y «Campañas pasadas», el CAPO).</td></tr>
+        <tr><td>Gestionar</td><td>Personas, Lugares, Eventos, Artistas (y Obras colectivas en A y B).</td></tr>
+        <tr><td>Difusión</td><td>Instagram, Showcase.</td></tr>
+        <tr><td>Herramientas</td><td>Ciudades, Rutinas, Grafo cultural (y Obras colectivas en C).</td></tr>
+      </table>
+    </section>
+    <section aria-labelledby="t-preguntas">
+      <h2 id="t-preguntas">Preguntas para ti</h2>
+      <ol>
+        <li>¿Firmas A (dos números por fila), B (tres por fila, con tres números) o C (A con los dos ajustes del operador)?</li>
+        <li>¿El cuarto número es «Avisos abiertos» o «Eventos esta semana»? El segundo es el que una persona de administración puede mover (buscar agendas); los avisos los mueve el producto.</li>
+        <li>¿Obras colectivas (Pincel) va en Gestionar o en Herramientas? No es una lista de fichas: es una actividad que se prende en un evento.</li>
+        <li>Si Instagram deja de publicar, ¿lo subimos también a «Pendiente» de la portada?</li>
+        <li>¿La ciudad de cada administración es la que más se repite en lo que publica y marca (la que ya calcula la app), o prefieres que cada quien la elija una vez en su perfil?</li>
+      </ol>
+    </section>
+    <section aria-labelledby="t-medida">
+      <h2 id="t-medida">Cómo se mide</h2>
+      <p class="chica">Bajo el teléfono, dentro del marco: nodos y profundidad (como medir.js), de lo nuevo (<code>data-propuesta</code>) sus nodos y toques menores de 44 px, textos cortados, desborde y toques fuera de la pantalla. En la portada, además: cuántos rótulos tiene, cuántas pantallas mide, y en los cuadros el ancho que le queda al texto, los renglones de la frase y el alto del cuadro más alto. Las cifras por estado y ancho, y el recorrido con toques reales, en la bitácora 525.</p>
+    </section>
+  </aside>
+</main>
+<template id="maqueta-css"><style>/*@CSS*/</style></template>
+<script>
+(() => {
+  /*@DATOS*/
+  const CSS = document.getElementById('maqueta-css').content.querySelector('style').textContent;
+  for (const [id, cuerpo] of Object.entries(CUERPOS)) CUERPOS[id] = cuerpo.replace(/__IMG_(\d+)__/g, (_, n) => IMAGENES[n]);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[x]);
+
+  // Cada pantalla con sus estados: «Hoy» es la referencia (la app como está), las letras son variantes y la ★ la recomendada.
+  const PANTALLAS = [
+    { id: 'portada', nombre: '1 · Portada', estados: [
+      { id: 'p-hoy', variante: 'Hoy', nombre: 'Hoy', notas: ['La portada de producción: Pendiente, «Últimos 7 días» con 7 cuadros, «Cómo va la comunidad», «Fichas» con 2 cuadros, «Invitaciones CAPO» con su medición, Gestionar y seis rótulos más de un renglón cada uno (Instagram, Obras colectivas, Grafo cultural, Ciudades, Rutinas con su interruptor y Corridas, Showcase). 12 rótulos; baja unas 6 pantallas.'] },
+      { id: 'p-a', variante: 'A', reco: true, nombre: 'A · 2 por fila', notas: ['Pendiente como hoy. «Esta semana en números»: los cuatro cuadros de la propuesta del gestor (personas nuevas, eventos de la comunidad, Voy y Me interesa, avisos abiertos), dos por fila, cada uno con su frase. Debajo, «Ver todos los números».', 'Tres grupos de renglones con icono y una línea de estado cada uno: Gestionar, Difusión y Herramientas. «KPI» no aparece; «Grafo» y «Showcase» llevan su frase llana.', 'En tableta (768 y 1024) los cuatro cuadros caben en una sola fila, sin tocar nada: la rejilla se acomoda sola.'] },
+      { id: 'p-a-abierto', variante: 'A', reco: true, nombre: 'Un cuadro abierto', notas: ['Tocar un cuadro abre debajo qué cuenta, el desglose y la lista que lo respalda (como hoy). Tocarlo otra vez lo cierra.'] },
+      { id: 'p-a-hoja', variante: 'A', reco: true, nombre: 'Todos los números', notas: ['La hoja «Todos los números» (ui/Hoja con título: la cabecera fija y el cuerpo se desplaza): los otros cinco cuadros de hoy, «Cómo va la comunidad», «Fichas» y, al final, «Campañas pasadas»: el CAPO con su medición entera y la nota de que ya no se mandan.', 'Nada se borra: todo lo que hoy está en la portada sigue a dos toques.'] },
+      { id: 'p-b', variante: 'B', nombre: 'B · 3 por fila', notas: ['Tres por fila, con tres números (en tres columnas, cuatro dejan uno solo abajo): «Avisos abiertos» pasa a la hoja.', 'A 390 a cada cuadro le quedan 85 px para el texto (en A, 145): la frase se parte en 4 renglones y el cuadro mide 186 px (A, 151). A 320 quedan 62 px: 5 renglones, 222 px de alto, y «administración» se sale del cuadro. Ver las cifras bajo el teléfono.'] },
+      { id: 'p-b-hoja', variante: 'B', nombre: 'B · Todos los números', notas: ['La misma hoja, con «Avisos abiertos» entre los demás.'] },
+      { id: 'p-c', variante: 'C', nombre: 'C · ajustes del operador', notas: ['A con dos cambios: el cuarto número es «Eventos esta semana» (37 en 18 de 71 lugares), el que una persona de administración sí puede mover buscando agendas; «Avisos abiertos» se va a la hoja.', 'Obras colectivas (Pincel) pasa a Herramientas: no es una lista de fichas, es una actividad que se prende en un evento.'] },
+      { id: 'p-c-hoja', variante: 'C', nombre: 'C · Todos los números', notas: ['La hoja de C, con «Avisos abiertos» entre los de 7 días.'] },
+    ] },
+    { id: 'instagram', nombre: '2 · Instagram', estados: [
+      { id: 'i-hoy-todas', variante: 'Hoy', nombre: 'Hoy al entrar', notas: ['Como abre hoy en una sesión nueva: «Todas las ciudades», la pestaña Semana sin nada («elige una arriba») y el bloque «Conexión» a media pantalla, aunque ya esté conectada.'] },
+      { id: 'i-hoy-slp', variante: 'Hoy', nombre: 'Hoy con ciudad', notas: ['Con San Luis elegida: la conexión sigue ocupando el primer tercio antes de la semana.'] },
+      { id: 'i-ok', variante: 'P', reco: true, nombre: 'Conectada', notas: ['Abre con la ciudad de la administración ya elegida (la de su sesión y, si no hay, la que más se repite en lo que publica y marca: `ciudad_de_persona`).', 'La conexión es un botón con el icono de Instagram y un punto verde, a la derecha del renglón de las pestañas, a la altura de los filtros: ahí sobra lugar y los chips de la fila (ciudad, Esta semana, La que viene) siguen enteros a 390. El primer día de la semana sube de 394 a 251 px (143 px; a 320, 167).'] },
+      { id: 'i-ok-junto', variante: 'P2', nombre: 'P2 · junto a la ciudad', notas: ['El botón en la fila, justo después del chip de la ciudad (lo literal de «junto al filtro de ciudad»). La fila ya no cabe a 390: «La que viene» queda a medias y hay que deslizar para verla (a 320 tampoco se ve «Esta semana» entera). Ver «chips enteros» bajo el teléfono.'] },
+      { id: 'i-ok-hoja', variante: 'P', reco: true, nombre: 'Hoja · conectada', notas: ['Al tocar el icono: la cuenta, desde cuándo, qué puede en palabras llanas y «Reconectar» (secundario, abajo).'] },
+      { id: 'i-no', variante: 'P', reco: true, nombre: 'Sin conexión', notas: ['Sin conexión nada sale, así que el renglón «Conectar Instagram» se queda a la vista (sin el rótulo «Conexión») y el punto es gris.'] },
+      { id: 'i-no-hoja', variante: 'P', reco: true, nombre: 'Hoja · sin conexión', notas: ['La hoja dice con qué cuenta entrar y lleva «Conectar Instagram» como botón principal.'] },
+      { id: 'i-mal', variante: 'P', reco: true, nombre: 'Dejó de publicar', notas: ['Si la última publicación falló por permiso (el error de Meta que hoy se guarda como «permiso»), punto rojo y el renglón en rojo: «Instagram dejó de publicar · La conexión caducó el lun 5 de oct: reconecta».'] },
+      { id: 'i-mal-hoja', variante: 'P', reco: true, nombre: 'Hoja · caducó', notas: ['Por qué pasa, en una frase, y «Reconectar» como botón principal; lo que se quedó sin salir sale solo al reconectar.'] },
+      { id: 'i-vacia', variante: 'P', reco: true, nombre: 'Semana sin nada', notas: ['Simulado sobre San Luis (en el respaldo su semana tiene seis programadas). Si de hoy al domingo no hay nada programado, Instagram abre en «Eventos»: primero una línea que lo dice y «Falta material» (OL-488, con «Pedírselo» y «Subir yo»), luego la lista de eventos para publicar uno a mano.'] },
+      { id: 'i-hoja-ciudad', variante: 'Hoy', nombre: 'Hoja de ciudades', notas: ['La hoja de ciudades de hoy, sin cambios: solo salen las ciudades con eventos en 7 días. Con Querétaro en la dirección, el chip dice «queretaro» (sin acento ni mayúscula): el nombre se toma de esa lista. Se arregla en la misma pieza.'] },
+    ] },
+  ];
+  const ESTADOS = Object.fromEntries(PANTALLAS.flatMap((p) => p.estados.map((e) => [e.id, { ...e, pantalla: p.id }])));
+  const ANCHOS = [320, 390, 430, 768, 1024];
+  const INICIAL = { estado: 'p-a', ancho: 390 };
+  let estado = { ...INICIAL };
+  try { Object.assign(estado, JSON.parse(localStorage.getItem('proto-admin-simple') || '{}')); } catch {}
+  if (!ESTADOS[estado.estado] || !ANCHOS.includes(estado.ancho)) estado = { ...INICIAL };
+  const guardar = () => { try { localStorage.setItem('proto-admin-simple', JSON.stringify(estado)); } catch {} };
+  let anterior = null;
+
+  const documento = (id) => `<!doctype html>${HTML_TAG}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body>${CUERPOS[id]}</body></html>`;
+  const tel = $('tel');
+  let pintado = Promise.resolve();
+  function pintar() {
+    guardar();
+    const e = ESTADOS[estado.estado];
+    tel.style.setProperty('--ancho-tel', estado.ancho + 'px');
+    tel.style.setProperty('--alto-tel', (estado.ancho >= 1024 ? 768 : estado.ancho >= 768 ? 1024 : 844) + 'px');
+    pintado = new Promise((ok) => {
+      tel.addEventListener('load', async () => {
+        const doc = tel.contentDocument;
+        conectar(doc);
+        try { await doc.fonts.ready; } catch {}
+        const r = medir(doc);
+        document.documentElement.dataset.pintado = e.id + '@' + estado.ancho;
+        ok(r);
+      }, { once: true });
+      tel.srcdoc = documento(e.id);
+    });
+    botones('sel-pantalla', PANTALLAS.map((p) => [p.id, p.nombre]), e.pantalla, (v) => ir(PANTALLAS.find((p) => p.id === v).estados.find((x) => x.reco)?.id ?? PANTALLAS.find((p) => p.id === v).estados[0].id));
+    const pantalla = PANTALLAS.find((p) => p.id === e.pantalla);
+    botones('sel-estado', pantalla.estados.map((x) => [x.id, x.nombre, x.reco]), e.id, (v) => ir(v));
+    botones('sel-ancho', ANCHOS.map((a) => [String(a), String(a)]), String(estado.ancho), (v) => { estado.ancho = Number(v); pintar(); });
+    const alto = estado.ancho >= 1024 ? 768 : estado.ancho >= 768 ? 1024 : 844;
+    $('etiqueta').innerHTML = `<b>${esc(pantalla.nombre)} · ${esc(e.nombre)}</b> · ${estado.ancho} × ${alto}`;
+    $('reco-estado').innerHTML = e.reco ? '<span class="reco">Recomendada</span>' : '';
+    $('texto-estado').innerHTML = `<ul>${e.notas.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    return pintado;
+  }
+  function botones(id, opciones, actual, alElegir) {
+    const caja = $(id);
+    caja.innerHTML = opciones.map(([v, t, reco]) => `<button type="button" data-v="${v}" aria-pressed="${v === actual}"${reco ? ' data-reco="true" aria-description="recomendada"' : ''}>${esc(t)}</button>`).join('');
+    caja.onclick = (ev) => { const b = ev.target.closest('button[data-v]'); if (b) alElegir(b.dataset.v); };
+  }
+  function ir(id) { if (id !== estado.estado) anterior = estado.estado; estado.estado = id; return pintar(); }
+
+  // Los toques dentro del teléfono.
+  const HOJA_NUMEROS = { 'p-a': 'p-a-hoja', 'p-a-abierto': 'p-a-hoja', 'p-b': 'p-b-hoja', 'p-c': 'p-c-hoja' };
+  const HOJA_CONEXION = { 'i-ok': 'i-ok-hoja', 'i-no': 'i-no-hoja', 'i-mal': 'i-mal-hoja', 'i-vacia': 'i-ok-hoja' };
+  const SIN_HOJA = { 'p-a-hoja': 'p-a', 'p-b-hoja': 'p-b', 'p-c-hoja': 'p-c', 'i-ok-hoja': 'i-ok', 'i-no-hoja': 'i-no', 'i-mal-hoja': 'i-mal' };
+  function conectar(doc) {
+    doc.addEventListener('submit', (ev) => ev.preventDefault(), true);
+    doc.addEventListener('click', (ev) => {
+      const actual = estado.estado;
+      const decir = (t) => { $('etiqueta').textContent = t; };
+      const cerrarHoja = () => ir(SIN_HOJA[actual] ?? (anterior && anterior !== actual ? anterior : 'p-a'));
+      if (ev.target.matches('[role="dialog"]') === false && ev.target.closest('[role="dialog"]') === null && ev.target.matches('[class$="_fondo"]')) { ev.preventDefault(); return cerrarHoja(); }
+      const el = ev.target.closest('a, button');
+      if (!el) return;
+      ev.preventDefault();
+      const texto = el.textContent.trim();
+      const etiqueta = el.getAttribute('aria-label') ?? '';
+      const accion = el.dataset.accion;
+      if (etiqueta === 'Cerrar') return cerrarHoja();
+      if (accion === 'todos') return HOJA_NUMEROS[actual] ? ir(HOJA_NUMEROS[actual]) : decir('En la app, abre «Todos los números».');
+      if (accion === 'conexion') return HOJA_CONEXION[actual] ? ir(HOJA_CONEXION[actual]) : decir('En la app, abre la hoja de la conexión.');
+      if (accion === 'reconectar') return decir('En la app, lleva al inicio de sesión de Meta (/api/instagram/conectar) y vuelve aquí.');
+      if (el.dataset.cuadro) {
+        if (el.dataset.cuadro === 'voy' && actual === 'p-a') return ir('p-a-abierto');
+        if (actual === 'p-a-abierto' && el.dataset.cuadro === 'voy') return ir('p-a');
+        return decir('En la app, abre debajo qué cuenta ese número (armado en «Voy y Me interesa» de A).');
+      }
+      const href = el.getAttribute('href') ?? '';
+      if (href === '/admin/instagram' && actual.startsWith('p-')) return ir('i-ok');
+      if (href === '/admin' && actual.startsWith('i-')) return ir('p-a');
+      if (el.getAttribute('aria-haspopup') === 'dialog' && actual.startsWith('i-') && /ciudad|Potos|Todas/i.test(texto)) return ir('i-hoja-ciudad');
+      if (el.getAttribute('aria-expanded') !== null && !el.dataset.cuadro) return decir('En la app, abre debajo qué cuenta ese número.');
+      decir(href && !href.startsWith('#') ? `En la app, esto lleva a ${href}` : `En la app: «${texto || etiqueta}»`);
+    }, true);
+  }
+
+  // Como medir.js: lo que se pinta bajo <body> (sin lo oculto; un svg cuenta uno). De lo nuevo (`data-propuesta`): nodos, profundidad y toques
+  // menores de 44 px; de la pantalla: nodos, profundidad, textos cortados, desborde horizontal y toques fuera. En la portada: rótulos, pantallas
+  // de alto y, de los cuadros, el ancho del texto, los renglones de la frase y el alto.
+  function medir(doc) {
+    const win = doc.defaultView;
+    const OMITIDOS = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'TEMPLATE', 'NOSCRIPT']);
+    const visible = (el) => !OMITIDOS.has(el.tagName) && !el.hidden && win.getComputedStyle(el).display !== 'none';
+    let prof = 0, nodos = 0;
+    const recorrer = (el, d) => { for (const h of el.children) { if (!visible(h)) continue; nodos++; prof = Math.max(prof, d + 1); if (h.tagName.toLowerCase() !== 'svg') recorrer(h, d + 1); } };
+    recorrer(doc.body, 0);
+    const bloques = [...doc.querySelectorAll('[data-propuesta]')].filter((b) => !b.parentElement.closest('[data-propuesta]'));
+    let bNodos = 0;
+    const contar = (el) => { bNodos++; if (el.tagName.toLowerCase() !== 'svg') for (const h of el.children) if (visible(h)) contar(h); };
+    for (const b of bloques) contar(b);
+    const todosCortados = [...doc.body.querySelectorAll('*')].filter((el) => { if (!visible(el) || el.children.length || (el.clientWidth <= 1 && el.clientHeight <= 1)) return false; const s = win.getComputedStyle(el); return (s.overflow !== 'visible' || s.textOverflow === 'ellipsis') && (el.scrollWidth > el.clientWidth + 1 || (s.overflowY !== 'visible' && el.scrollHeight > el.clientHeight + 1)); });
+    const aProposito = (el) => el.matches('a[class*="_frente"] > b') || el.matches('[class*="_titulo"]');
+    const cortadosLista = todosCortados.filter((el) => !aProposito(el));
+    const cortados = cortadosLista.length;
+    const vw = doc.documentElement.clientWidth;
+    const desborde = doc.documentElement.scrollWidth > vw + 1 ? 1 : 0;
+    const enFila = (el) => { for (let p = el.parentElement; p && p !== doc.body; p = p.parentElement) if (['auto', 'scroll'].includes(win.getComputedStyle(p).overflowX)) return true; return false; };
+    const fuera = [...doc.querySelectorAll('a, button')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > vw + 1 && !enFila(el) && !el.closest('[inert]'); }).length;
+    const alTacto = (el) => { const r = el.getBoundingClientRect(); const extra = el.matches('[class*="_toque"]') ? Math.max(0, 44 - r.height) : 0; return { w: r.width, h: r.height + extra }; };
+    const enFrase = (el) => el.parentElement?.tagName === 'P' && el.parentElement.textContent.trim() !== el.textContent.trim();
+    const objetivos = bloques.flatMap((b) => [...(b.matches('a, button') ? [b] : []), ...b.querySelectorAll('a, button')]);
+    const chicos = objetivos.filter((el) => { const t = alTacto(el); return t.w > 0 && !enFrase(el) && (t.w < 44 || t.h < 44); });
+    // La portada: los rótulos de grupo de la pantalla (no de la hoja), su alto en pantallas y los cuadros de la propuesta.
+    const main = doc.querySelector('main');
+    const rotulos = main ? [...main.querySelectorAll(':scope > h2')].filter(visible).length : 0;
+    const pantallas = main ? Math.round((main.scrollHeight / win.innerHeight) * 10) / 10 : 0;
+    const cuadros = [...doc.querySelectorAll('[data-propuesta="numeros"] button[data-cuadro]')];
+    let anchoTexto = null, renglones = null, altoCuadro = null;
+    if (cuadros.length) {
+      anchoTexto = Math.min(...cuadros.map((b) => { const s = win.getComputedStyle(b); return Math.round(b.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight)); }));
+      renglones = Math.max(...cuadros.map((b) => { const sm = b.querySelector('small'); const lh = parseFloat(win.getComputedStyle(sm).lineHeight); return Math.round(sm.getBoundingClientRect().height / lh); }));
+      altoCuadro = Math.max(...cuadros.map((b) => Math.round(b.getBoundingClientRect().height)));
+    }
+    // Los chips de la fila de contexto que se ven enteros (sin deslizar) y lo que se sale de su cuadro (una palabra más ancha que él).
+    const fila = doc.querySelector('[class$="_contexto"]');
+    let chipsEnteros = null, chipsTotal = null;
+    if (fila) { const rf = fila.getBoundingClientRect(); const hijos = [...fila.children].filter((h) => h.matches('button, a')); chipsTotal = hijos.length; chipsEnteros = hijos.filter((h) => { const r = h.getBoundingClientRect(); return r.left >= rf.left - 1 && r.right <= Math.min(rf.right, vw) + 1; }).length; }
+    const seSale = cuadros.filter((b) => { const rb = b.getBoundingClientRect(); return [...b.querySelectorAll('span, b, small')].some((x) => x.getBoundingClientRect().right > rb.right - 2 || x.scrollWidth > x.clientWidth + 1); }).length;
+    const r = { chipsEnteros, chipsTotal, seSale, nodos, prof, bloque: bNodos, cortados, queCorta: cortadosLista.map((el) => `${el.tagName.toLowerCase()}: ${el.textContent.trim().slice(0, 40)}`), desborde, fuera, toques: chicos.length, chicos: chicos.map((el) => el.textContent.trim().slice(0, 30) || el.getAttribute('aria-label')), rotulos, pantallas, anchoTexto, renglones, altoCuadro, porFila: cuadros.length ? new Set(cuadros.map((b) => Math.round(b.getBoundingClientRect().top))).size : null, cuadros: cuadros.length };
+    $('medidor').innerHTML = [
+      ['nodos', nodos, false], ['profundidad', prof, prof > 16], ['nodos de lo nuevo', bloques.length ? bNodos : '–', false],
+      ['textos cortados', cortados, cortados > 0], ['desborde', desborde, desborde > 0], ['toques fuera', fuera, fuera > 0], ['toques < 44 en lo nuevo', bloques.length ? chicos.length : '–', chicos.length > 0],
+      ...(main && estado.estado.startsWith('p-') ? [['rótulos', rotulos, false], ['pantallas de alto', pantallas, false]] : []),
+      ...(fila && estado.estado.startsWith('i-') ? [['chips enteros en la fila', `${chipsEnteros} de ${chipsTotal}`, chipsEnteros < chipsTotal]] : []),
+      ...(cuadros.length ? [['se sale del cuadro', seSale, seSale > 0], ['px para el texto del cuadro', anchoTexto, anchoTexto < 100], ['renglones de la frase', renglones, renglones > 2], ['alto del cuadro', altoCuadro, false]] : []),
+    ].map(([n, v, mal]) => `<span data-mal="${mal}"><b>${v}</b>${n}</span>`).join('');
+    return r;
+  }
+
+  $('plegar').addEventListener('click', (ev) => {
+    const notas = $('notas');
+    const plegadas = notas.dataset.plegadas !== 'true';
+    notas.dataset.plegadas = String(plegadas);
+    ev.currentTarget.setAttribute('aria-expanded', String(!plegadas));
+    ev.currentTarget.textContent = plegadas ? 'Abrir las notas' : 'Plegar las notas';
+  });
+  window.prototipo = { ir: (id, ancho) => { if (ancho) estado.ancho = ancho; return ir(id); }, estado: () => ({ ...estado }), medir: () => medir(tel.contentDocument), listo: () => pintado, estados: () => Object.keys(ESTADOS) };
+  pintar();
+})();
+</script>
+</body>
+</html>

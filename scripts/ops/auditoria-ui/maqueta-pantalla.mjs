@@ -145,6 +145,19 @@ const PANTALLAS = [
   { id: "av-novedades", reloj: true, url: "/novedades", sesion: true },
   { id: "av-admin", reloj: true, url: "/admin", sesion: true, cuenta: "admin" },
   { id: "av-hoja-ciudad", reloj: true, url: "/artistas", sesion: true, paso: "hoja-ciudad" },
+  // OL-493 (con `RESPALDO_HISTORIAL=1 RESPALDO_INSTAGRAM_SEMANA=1`, y `RESPALDO_INSTAGRAM_CONEXION=todo` en la corrida de «conectada»): la portada de
+  // Administración como está hoy, Administración › Instagram sin ciudad (como abre hoy en una sesión nueva), con San Luis (Semana, la que viene y
+  // Eventos), Querétaro (por una semana sin material), la hoja de ciudades de Instagram, una hoja con título (la de «Buscar lugares») y Corridas.
+  { id: "simple-admin", reloj: true, url: "/admin", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-todas", reloj: true, url: "/admin/instagram", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-slp", reloj: true, url: "/admin/instagram?ciudad=san-luis-potosi", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-viene", reloj: true, url: "/admin/instagram?ciudad=san-luis-potosi&semana=viene", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-eventos", reloj: true, url: "/admin/instagram?ciudad=san-luis-potosi&pestana=eventos", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-qro", reloj: true, url: "/admin/instagram?ciudad=queretaro", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-qro-eventos", reloj: true, url: "/admin/instagram?ciudad=queretaro&pestana=eventos", sesion: true, cuenta: "admin" },
+  { id: "simple-ig-hoja-ciudad", reloj: true, url: "/admin/instagram", sesion: true, cuenta: "admin", paso: "admin-hoja-ciudad" },
+  { id: "simple-hoja-titulo", reloj: true, url: "/admin/ciudades/oaxaca", sesion: true, cuenta: "admin", paso: "admin-ciudades-hoja" },
+  { id: "simple-corridas", reloj: true, url: "/admin/corridas", sesion: true, cuenta: "admin" },
 ];
 // OL-466: los dos carteles que se suben (inventados, dibujados aquí) y lo que «leería» el modelo de cada uno. Las fechas salen del reloj fijo
 // (`AHORA`, mié 7 de oct): la Noche de danzón es pasado mañana (vie 9) a las 20:00 y Feleal el mié 14 a las 19:00, los dos en el Teatro de la Paz.
