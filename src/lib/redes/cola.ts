@@ -18,6 +18,10 @@ export type PedidoTrabajo = {
   quitadas?: string[];
   facebook?: boolean;
   imagenes?: string[];
+  /** OL-479: el día de la semana de Instagram que lo programó (`instagram_semana.id`), qué es y, en «Esta semana», sus eventos. */
+  casilla?: string;
+  tipo?: "artista" | "evento" | "lugar" | "semana";
+  eventos?: string[];
 };
 
 export type AvanceTrabajo = {
@@ -25,12 +29,17 @@ export type AvanceTrabajo = {
   imagenes?: string[];
   claves?: string[];
   /** Lo ya publicado en Instagram (la fila anotada en `instagram_publicaciones`). */
-  instagram?: { fila: string | null; mediaId: string; permalink: string | null; sinEtiquetas: boolean; formato: "4x5" | "9x16" | "carrusel"; texto: string | null; etiquetas: string[] };
+  instagram?: { fila: string | null; mediaId: string; permalink: string | null; sinEtiquetas: boolean; formato: "4x5" | "9x16" | "carrusel"; texto: string | null; etiquetas: string[]; sinCoautor?: boolean };
+  /** OL-479: la historia de una ficha de la semana (después de su publicación; si no se pudo, `ok: false`). */
+  historia?: { ok: boolean; permalink: string | null };
 };
 
 export type Trabajo = {
   id: string;
-  evento_id: string;
+  /** De un evento, de un artista o de un lugar (exactamente uno; OL-479). */
+  evento_id: string | null;
+  artista_id: string | null;
+  lugar_id: string | null;
   red: Red;
   formato: "4x5" | "9x16";
   pedido: PedidoTrabajo;
@@ -42,9 +51,11 @@ export type Trabajo = {
   error: ClaveFallo | null;
   turno: number;
   pedido_por: string | null;
+  /** Cuándo se guardó (OL-479: un día de la semana que ya salió por otro lado desde entonces no se repite). */
+  creado_en?: string;
 };
 
-export const COLUMNAS = "id, evento_id, red, formato, pedido, estado, avance, resultado, intentos, fallos, error, turno, ocupada_hasta, siguiente_en, pedido_por, creado_en";
+export const COLUMNAS = "id, evento_id, artista_id, lugar_id, red, formato, pedido, estado, avance, resultado, intentos, fallos, error, turno, ocupada_hasta, siguiente_en, pedido_por, creado_en";
 
 const objeto = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const numero = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : Number(v) || 0);
@@ -52,7 +63,9 @@ const numero = (v: unknown): number => (typeof v === "number" && Number.isFinite
 export function leerTrabajo(f: Record<string, unknown>): Trabajo {
   return {
     id: String(f.id),
-    evento_id: String(f.evento_id),
+    evento_id: typeof f.evento_id === "string" ? f.evento_id : null,
+    artista_id: typeof f.artista_id === "string" ? f.artista_id : null,
+    lugar_id: typeof f.lugar_id === "string" ? f.lugar_id : null,
     red: f.red === "facebook" ? "facebook" : "instagram",
     formato: f.formato === "9x16" ? "9x16" : "4x5",
     pedido: objeto(f.pedido) as PedidoTrabajo,
@@ -64,6 +77,7 @@ export function leerTrabajo(f: Record<string, unknown>): Trabajo {
     error: typeof f.error === "string" ? (f.error as ClaveFallo) : null,
     turno: numero(f.turno),
     pedido_por: typeof f.pedido_por === "string" ? f.pedido_por : null,
+    ...(typeof f.creado_en === "string" ? { creado_en: f.creado_en } : {}),
   };
 }
 
@@ -140,6 +154,15 @@ export async function terminar(db: SupabaseClient, t: Trabajo, o: { ahora: Date;
     terminado_en: o.ahora.toISOString(),
     actualizado_en: o.ahora.toISOString(),
   });
+}
+
+/**
+ * OL-479: el día de la semana de Instagram que programó este trabajo queda publicado o «no se pudo» (solo si sigue siendo su trabajo y no se
+ * quitó mientras tanto).
+ */
+export async function cerrarCasilla(db: SupabaseClient, t: Trabajo, estado: "publicado" | "fallido", ahora: Date): Promise<void> {
+  if (!t.pedido.casilla) return;
+  await db.from("instagram_semana").update({ estado, actualizado_en: ahora.toISOString() }).eq("id", t.pedido.casilla).eq("trabajo_id", t.id).eq("estado", "programado");
 }
 
 /** Marca que ya se avisó (una vez: si el aviso se repite en otra llamada, no sale dos veces). */

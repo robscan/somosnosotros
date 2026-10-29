@@ -645,6 +645,69 @@ if (CON_HISTORIAL) {
   proximo(12, "Charla con Renata Saldaña", [2]);
 }
 
+// OL-477 (bitácora 509): la semana de Instagram con artistas y lugares destacados (prototipo). Sobre el historial grande (`RESPALDO_HISTORIAL=1`), con
+// `RESPALDO_INSTAGRAM_SEMANA=1` seis artistas y dos lugares quedan con la ficha completa (foto, portada, descripción de 120 o más y su Instagram):
+// Valeria Quiroz (música, con fecha el vie 16), Íñigo Montalvo (música, con fecha el sáb 10), Renata Saldaña (pintura), el Colectivo Nube de Papel
+// (ilustración, sin nada por venir) y, para «Cambiar», Ximena Urquidi y Teodoro Alcántara; el museo Leonora Carrington (dos eventos esta semana)
+// y el Museo del Ferrocarril; y tres eventos más con su cartel dibujado: el martes 6 (ya pasó: el «evento del día» publicado), el taller del
+// sábado 10 en el museo y la noche de Íñigo. Las portadas nuevas las dibuja `fotos-instagram.mjs` en la misma carpeta (`RESPALDO_CARRUSEL_DIR`).
+// Todo inventado; `npm run medir` no lo pone.
+export const CON_IG_SEMANA = CON_HISTORIAL && process.env.RESPALDO_INSTAGRAM_SEMANA === "1";
+if (CON_IG_SEMANA) {
+  const fotoI = (n) => `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/${n}.jpg`;
+  const igDe = (usuario) => [{ url: `https://www.instagram.com/${usuario}` }];
+  const completar = (slug, cambios) => {
+    const a = artistas.find((x) => x.slug === slug);
+    if (!a) throw new Error("sin artista " + slug);
+    Object.assign(a, cambios);
+    return a;
+  };
+  completar("valeria-quiroz-demo", {
+    descripcion: "Cantautora potosina. Escribe canciones sobre el desierto, la carretera y las abuelas, con guitarra y una loop station. Toca en museos, galerías y foros de la ciudad desde 2024 y prepara su primer disco.",
+    redes: igDe("valeriaquiroz.demo"),
+  });
+  const inigo = completar("inigo-montalvo-demo", {
+    descripcion: "Guitarrista de San Luis Potosí. Toca música latinoamericana para guitarra sola, de Agustín Barrios a Chabuca Granda, y acompaña a cantautoras de la ciudad. Da clases en el barrio de San Miguelito.",
+    redes: igDe("inigomontalvo.demo"),
+    portada: fotoI("ig-inigo-portada"),
+  });
+  completar("renata-saldana-demo", {
+    descripcion: "Pintora potosina. Trabaja el paisaje del altiplano en óleo y acuarela grande, con los colores del atardecer y de la tierra roja. Ha expuesto en el museo Leonora Carrington y en galerías del Centro.",
+    redes: igDe("renatasaldana.demo"),
+    portada: fotoI("ig-renata-portada"),
+  });
+  completar("colectivo-nube-de-papel-demo", {
+    descripcion: "Colectivo de ilustración y fanzine de San Luis Potosí. Hacen libros de artista, carteles y talleres de dibujo para gente de todas las edades, y una feria de gráfica cada primavera en el Centro.",
+    redes: igDe("nubedepapel.demo"),
+    portada: fotoI("ig-nube-portada"),
+  });
+  // Dos más, sin nada por venir, para la hoja «Cambiar» (con portadas de las que ya dibuja el historial).
+  completar("ximena-urquidi-demo", {
+    descripcion: "Poeta potosina. Escribe sobre el barrio, las fiestas y la gente que lo habita; lee en voz alta en librerías y cafés y coordina un taller de escritura para jóvenes los sábados.",
+    redes: igDe("ximenaurquidi.demo"),
+    portada: fotoI("hist-lugar-5"),
+  });
+  completar("teodoro-alcantara-demo", {
+    descripcion: "Artista de performance y teatro de calle. Sus piezas suceden en plazas, mercados y paradas de camión, y siempre invitan a quien pasa a entrar en la obra un rato.",
+    redes: igDe("teodoroalcantara.demo"),
+    portada: fotoI("hist-lugar-7"),
+  });
+  const museo = lugares.find((l) => l.id === L_LEONORA);
+  museo.descripcion = "Museo dedicado a la obra surrealista de Leonora Carrington, con salas de exposición temporal, talleres para familias, visitas guiadas de noche y un foro para conciertos y charlas.";
+  const ferro = lugares.find((l) => l.id === L.ferro);
+  ferro.descripcion = "Antigua estación de ferrocarril convertida en museo, con locomotoras de vapor, salas de exposición sobre la historia del tren en San Luis y un foro al aire libre para conciertos.";
+  let m = 0;
+  const idI = () => `bbbb0477-0000-4000-8000-${String(++m).padStart(12, "0")}`;
+  const ecos = artistas.find((x) => x.slug === "los-ecos-del-tangamanga-demo");
+  const martes = idI();
+  eventos.push(evento({ id: martes, slug: "los-ecos-del-tangamanga-en-aether-demo", titulo: "Los Ecos del Tangamanga en Aether", dias: -1, hora: "20:00", lugar_id: L.aether, precio: "$100", creadoHace: 9, imagen: fotoI("hist-cartel-2"), descripcion: "Son huasteco con violín, jarana y huapanguera." }));
+  eventos_artistas.push({ evento_id: martes, artista_id: ecos.id, orden: 1 });
+  eventos.push(evento({ id: idI(), slug: "taller-de-mascaras-para-familias-demo", titulo: "Taller de máscaras para familias", dias: 3, hora: "11:00", lugar_id: L_LEONORA, creadoHace: 6, imagen: fotoI("hist-cartel-4"), autor: ANA }));
+  const guitarra = idI();
+  eventos.push(evento({ id: guitarra, slug: "inigo-montalvo-guitarra-sola-demo", titulo: "Íñigo Montalvo: guitarra sola", dias: 3, hora: "20:00", lugar_id: L.aether, precio: "$120", creadoHace: 7, imagen: fotoI("hist-cartel-5") }));
+  eventos_artistas.push({ evento_id: guitarra, artista_id: inigo.id, orden: 1 });
+}
+
 /** `eventos_parecidos` en corto (la regla completa y sus pruebas viven en la base, OL-384): solo con `RESPALDO_CARTEL_EXISTENTE=1`. */
 function parecidosEnMemoria({ p_titulo, p_inicio, p_zona, p_lugar_id, p_sitio_texto, p_excluir }, t) {
   if (!CON_CARTEL_EXISTENTE || !p_inicio) return [];
@@ -1404,10 +1467,11 @@ const recienteRedes = (t, evento, red, formato) => {
   const ultima = tabla.filter((x) => x.evento_id === evento && x.estado === "publicada" && (x.formato === "carrusel" ? "4x5" : x.formato) === formato && Date.parse(x.creado_en) > hace15).sort((a, b) => b.creado_en.localeCompare(a.creado_en))[0];
   return ultima ? { estado: "publicado", minutos: Math.max(0, Math.floor((Date.now() - Date.parse(ultima.creado_en)) / 60_000)) } : null;
 };
-const sugeribleIg = (e, t, ahora) => {
+const sugeribleIg = (e, t, ahora, dias = 7) => {
   if (e.visible === false || e.borrador || e.retirado_por_admin || e.cancelado) return false;
   const inicio = new Date(e.inicio);
-  if (inicio > ahora) return inicio <= new Date(ahora.getTime() + 7 * 86_400_000);
+  // `p_dias` como la base (de 1 a 31; la semana de Instagram de OL-479 pide 14).
+  if (inicio > ahora) return inicio <= new Date(ahora.getTime() + Math.max(1, Math.min(31, Number(dias) || 7)) * 86_400_000);
   const dia = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: e.zona ?? ZONA }).format(d);
   if (e.clase === "exposicion" || e.clase === "festival") return dia(new Date(e.termina ?? e.fin ?? e.inicio)) > dia(ahora);
   if (e.clase === "taller") return t.eventos_sesiones.some((s) => s.evento_id === e.id && new Date(s.inicio) > ahora);
@@ -1425,11 +1489,11 @@ Object.assign(rpcs, {
     return { id: fila.id };
   },
   ciudad_slug: ({ p_ciudad }) => slugCiudad(p_ciudad),
-  instagram_sugerencias: ({ p_ciudad = null }, t, { sub } = {}) => {
+  instagram_sugerencias: ({ p_ciudad = null, p_dias = 7 }, t, { sub } = {}) => {
     if (sub !== ADMIN) return [];
     const ahora = new Date();
     return enCiudad(t.eventos, p_ciudad)
-      .filter((e) => sugeribleIg(e, t, ahora))
+      .filter((e) => sugeribleIg(e, t, ahora, p_dias))
       .sort((a, b) => a.inicio.localeCompare(b.inicio))
       .map((e) => {
         const l = t.lugares.find((x) => x.id === e.lugar_id);
@@ -1446,3 +1510,166 @@ Object.assign(rpcs, {
       });
   },
 });
+
+// OL-479 (bitácora 511): la semana de Instagram en Administración. `instagram_semana` e `instagram_fuera` en memoria (otro arranque empieza limpio) y
+// los contratos de sus funciones (migración 20261029160000) en corto: quién puede salir (`instagram_candidatos`, la misma regla: ficha completa,
+// nadie que dijo que no ni que salió en 6 meses; con fecha primero, luego la ciudad), guardar la semana que arma la app (cada día por delante a la
+// cola, a su hora), «Cambiar», «Quitar», «Publicar ahora», el texto, el aviso, «Dijo que no», lo que dio y la página de la bio. Los permisos y las
+// reglas reales, en PostgreSQL (`supabase/tests/pg/instagram-semana.test.mjs`). Con `RESPALDO_INSTAGRAM_SEMANA=1` (sobre el historial grande) el
+// lunes y el martes de esta semana ya salieron (Renata Saldaña y Los Ecos del Tangamanga, con sus visitas); lo demás lo arma la app al abrir la
+// pestaña. Todo inventado.
+tablas.instagram_semana = [];
+tablas.instagram_fuera = [];
+const MEDIDAS_SEMANA = new Map();
+const ZONA_OFFSET = "-06:00";
+const sumarDiaIso = (dia, n) => { const [a, m, d] = dia.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10); };
+const lunesIso = (dia) => { const [a, m, d] = dia.split("-").map(Number); const n = (new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7; return sumarDiaIso(dia, -n); };
+const conInstagram = (redes) => /instagram\.com\/[A-Za-z0-9._]/i.test(JSON.stringify(redes ?? []));
+const hashEstable = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+const pedidoDia = (c, extra = {}) => {
+  const resto = Object.fromEntries(Object.entries(extra ?? {}).filter(([k]) => !["casilla", "tipo", "eventos"].includes(k)));
+  return { facebook: true, casilla: c.id, tipo: c.tipo, ...(c.tipo === "semana" ? { eventos: c.eventos } : {}), ...resto };
+};
+function encolarDia(t, c, ahora, extra, sub) {
+  if (c.tipo === "descanso") return null;
+  const cuando = ahora || Date.parse(c.programado_para) <= Date.now() ? new Date().toISOString() : c.programado_para;
+  const ids = { evento_id: c.evento_id ?? (c.tipo === "semana" ? c.eventos[0] : null), artista_id: c.artista_id, lugar_id: c.lugar_id };
+  let tr = t.redes_trabajos.find((x) => x.id === c.trabajo_id && x.estado === "en_cola");
+  if (tr) Object.assign(tr, ids, { formato: "4x5", pedido: pedidoDia(c, extra ?? tr.pedido), siguiente_en: cuando, actualizado_en: new Date().toISOString() });
+  else {
+    const n = new Date().toISOString();
+    tr = { id: crypto.randomUUID(), ...ids, red: "instagram", formato: "4x5", pedido: pedidoDia(c, extra), estado: "en_cola", avance: {}, resultado: null, intentos: 0, fallos: 0, error: null, turno: 0, ocupada_hasta: null, siguiente_en: cuando, avisado_en: null, pedido_por: sub ?? ADMIN, creado_en: n, actualizado_en: n, terminado_en: null };
+    t.redes_trabajos.push(tr);
+  }
+  Object.assign(c, { trabajo_id: tr.id, estado: "programado", actualizado_en: new Date().toISOString() });
+  return tr.id;
+}
+const cerradaDia = (t, c) => c.estado === "publicado" || t.redes_trabajos.some((x) => x.id === c.trabajo_id && ["publicando", "publicado"].includes(x.estado));
+const casillaDe = (t, id) => t.instagram_semana.find((c) => c.id === id) ?? null;
+const errorSql = (code, message) => ({ __error: { code, message } });
+function candidatosEnMemoria({ p_ciudad, p_tipo, p_desde }, t) {
+  const desde = Date.parse(`${p_desde}T00:00:00${ZONA_OFFSET}`);
+  const fuera = (id) => t.instagram_fuera.some((f) => f.artista_id === id || f.lugar_id === id);
+  const fichas = p_tipo === "artista"
+    ? t.artistas.filter((a) => a.visible && a.foto && a.portada && (a.descripcion ?? "").length >= 120 && conInstagram(a.redes) && !fuera(a.id)).map((a) => ({ ...a, clase: a.disciplina, direccion: null }))
+    : t.lugares.filter((l) => l.visible && !l.privado && l.portada && (l.descripcion ?? "").length >= 120 && !fuera(l.id)).map((l) => ({ ...l, clase: l.tipo, foto: null }));
+  const vale = (e) => e.visible !== false && !e.borrador && !e.cancelado && !e.retirado_por_admin;
+  return fichas
+    .map((f) => {
+      const ultima = t.instagram_publicaciones.filter((p) => p.estado === "publicada" && (p.artista_id === f.id || p.lugar_id === f.id)).map((p) => p.creado_en).sort().at(-1) ?? null;
+      const ocupado = t.instagram_semana.filter((s) => (s.artista_id === f.id || s.lugar_id === f.id) && s.estado !== "quitado" && !s.dijo_no_en && s.fecha >= sumarDiaIso(p_desde, -182)).map((s) => s.fecha).sort()[0] ?? null;
+      const suyos = t.eventos.filter((e) => vale(e) && (p_tipo === "artista" ? t.eventos_artistas.some((x) => x.evento_id === e.id && x.artista_id === f.id) : e.lugar_id === f.id));
+      const prox = suyos.filter((e) => Date.parse(e.inicio) >= desde && Date.parse(e.inicio) < desde + 30 * 86400e3).sort((a, b) => a.inicio.localeCompare(b.inicio))[0] ?? null;
+      const lugar = prox ? t.lugares.find((l) => l.id === prox.lugar_id) : null;
+      return {
+        id: f.id, slug: f.slug, nombre: f.nombre, ciudad: f.ciudad, ciudad_slug: slugCiudad(f.ciudad), clase: f.clase, detalle: f.detalle ?? null, foto: f.foto ?? null, portada: f.portada, descripcion: f.descripcion, redes: f.redes, direccion: f.direccion ?? null,
+        proxima_id: prox?.id ?? null, proxima_titulo: prox?.titulo ?? null, proxima_inicio: prox?.inicio ?? null, proxima_zona: prox ? (prox.zona ?? ZONA) : null, proxima_lugar: prox ? (lugar?.nombre ?? prox.sitio_texto ?? null) : null, proxima_lugar_redes: lugar?.redes ?? [],
+        eventos_semana: p_tipo === "lugar" ? suyos.filter((e) => Date.parse(e.inicio) >= desde && Date.parse(e.inicio) < desde + 7 * 86400e3).length : 0,
+        ultima_vez: ultima, ocupado_en: ocupado,
+      };
+    })
+    .filter((c) => !c.ultima_vez || Date.parse(c.ultima_vez) < Date.now() - 182 * 86400e3)
+    .sort((a, b) => Number(!!b.proxima_id) - Number(!!a.proxima_id) || Number(b.ciudad_slug === p_ciudad) - Number(a.ciudad_slug === p_ciudad) || (a.ultima_vez ?? "").localeCompare(b.ultima_vez ?? "") || hashEstable(a.id + p_desde) - hashEstable(b.id + p_desde))
+    .slice(0, 200);
+}
+Object.assign(rpcs, {
+  instagram_candidatos: (args, t, { sub } = {}) => (sub === ADMIN ? candidatosEnMemoria(args, t) : []),
+  instagram_semana_guardar: ({ p_ciudad, p_casillas }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración arma la semana de Instagram.");
+    let n = 0;
+    for (const f of p_casillas ?? []) {
+      if (t.instagram_semana.some((c) => c.ciudad === p_ciudad && c.fecha === f.fecha)) continue;
+      const hora = f.tipo === "descanso" ? null : `${String(f.hora).slice(0, 5)}:00`;
+      const c = {
+        id: crypto.randomUUID(), ciudad: p_ciudad, fecha: f.fecha, tipo: f.tipo, artista_id: f.artista_id ?? null, lugar_id: f.lugar_id ?? null, evento_id: f.evento_id ?? null, eventos: f.eventos ?? null,
+        hora, programado_para: hora ? new Date(`${f.fecha}T${hora}${ZONA_OFFSET}`).toISOString() : null, estado: f.tipo === "descanso" ? "descanso" : "programado", elegido_por: "sistema",
+        motivo: f.motivo ?? null, reemplaza: null, trabajo_id: null, aviso_en: null, dijo_no_en: null, actualizado_por: sub, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
+      };
+      t.instagram_semana.push(c);
+      n++;
+      if (c.tipo !== "descanso" && Date.parse(c.programado_para) > Date.now()) encolarDia(t, c, false, null, sub);
+    }
+    return n;
+  },
+  instagram_semana_cambiar: ({ p_casilla, p_tipo, p_ficha, p_motivo, p_reemplaza = null }, t, { sub } = {}) => {
+    const c = casillaDe(t, p_casilla);
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración.");
+    if (!c) return errorSql("23503", "No existe ese día.");
+    if (c.tipo !== "descanso" && c.tipo !== p_tipo) return errorSql("22023", "Cambio inválido.");
+    if (cerradaDia(t, c)) return errorSql("55000", "Ese día ya salió en Instagram.");
+    if (t.instagram_fuera.some((f) => f.artista_id === p_ficha || f.lugar_id === p_ficha)) return errorSql("22023", "Fuera de Instagram.");
+    const hora = c.hora ?? "19:00:00";
+    Object.assign(c, { tipo: p_tipo, artista_id: p_tipo === "artista" ? p_ficha : null, lugar_id: p_tipo === "lugar" ? p_ficha : null, evento_id: p_tipo === "evento" ? p_ficha : null, eventos: null, hora, programado_para: new Date(`${c.fecha}T${hora}${ZONA_OFFSET}`).toISOString(), estado: "programado", elegido_por: "persona", motivo: p_motivo, reemplaza: p_reemplaza, aviso_en: null, dijo_no_en: null });
+    return Date.parse(c.programado_para) > Date.now() ? encolarDia(t, c, false, {}, sub) : null;
+  },
+  instagram_semana_quitar: ({ p_casilla }, t, { sub } = {}) => {
+    const c = casillaDe(t, p_casilla);
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración.");
+    if (!c || c.tipo === "descanso") return false;
+    if (cerradaDia(t, c)) return errorSql("55000", "Ese día ya salió en Instagram.");
+    t.redes_trabajos = t.redes_trabajos.filter((x) => !(x.id === c.trabajo_id && x.estado === "en_cola"));
+    Object.assign(c, { estado: "quitado", trabajo_id: null });
+    return true;
+  },
+  instagram_semana_ahora: ({ p_casilla, p_pedido }, t, { sub } = {}) => {
+    const c = casillaDe(t, p_casilla);
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración.");
+    if (!c || c.tipo === "descanso") return errorSql("23503", "No existe ese día.");
+    if (cerradaDia(t, c)) return errorSql("55000", "Ese día ya salió en Instagram.");
+    return encolarDia(t, c, true, p_pedido ?? {}, sub);
+  },
+  instagram_semana_texto: ({ p_casilla, p_texto, p_quitadas = [], p_facebook = true }, t, { sub } = {}) => {
+    const c = casillaDe(t, p_casilla);
+    const tr = c && t.redes_trabajos.find((x) => x.id === c.trabajo_id && x.estado === "en_cola");
+    if (sub !== ADMIN || !tr) return false;
+    tr.pedido = { ...tr.pedido, texto: p_texto?.trim() || null, quitadas: p_quitadas ?? [], facebook: p_facebook !== false };
+    return true;
+  },
+  instagram_semana_avisado: ({ p_casilla }, t, { sub } = {}) => {
+    const c = casillaDe(t, p_casilla);
+    if (sub !== ADMIN || !c) return null;
+    c.aviso_en ??= new Date().toISOString();
+    return c.aviso_en;
+  },
+  instagram_semana_dijo_no: ({ p_casilla }, t, { sub } = {}) => {
+    const c = casillaDe(t, p_casilla);
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración.");
+    if (!c || !["artista", "lugar"].includes(c.tipo)) return errorSql("23503", "No existe ese día.");
+    if (!t.instagram_fuera.some((f) => (c.artista_id && f.artista_id === c.artista_id) || (c.lugar_id && f.lugar_id === c.lugar_id))) t.instagram_fuera.push({ id: crypto.randomUUID(), artista_id: c.artista_id, lugar_id: c.lugar_id, desde: new Date().toISOString(), marcado_por: sub });
+    t.redes_trabajos = t.redes_trabajos.filter((x) => !(x.id === c.trabajo_id && x.estado === "en_cola"));
+    Object.assign(c, { dijo_no_en: new Date().toISOString(), trabajo_id: null });
+    return (t.artistas.find((a) => a.id === c.artista_id) ?? t.lugares.find((l) => l.id === c.lugar_id))?.nombre ?? null;
+  },
+  instagram_resultado: ({ p_casillas = [] }, t, { sub } = {}) =>
+    sub === ADMIN ? t.instagram_semana.filter((c) => p_casillas.includes(c.id) && c.estado === "publicado").map((c) => ({ casilla: c.id, ...(MEDIDAS_SEMANA.get(c.id) ?? { visitas: 0, van: 0 }) })) : [],
+  instagram_semana_bio: ({ p_ciudad, p_dia }, t) => {
+    const lunes = lunesIso(p_dia);
+    return t.instagram_semana
+      .filter((c) => c.ciudad === p_ciudad && c.estado === "publicado" && c.fecha >= lunes && c.fecha < sumarDiaIso(lunes, 7))
+      .map((c) => {
+        const a = t.artistas.find((x) => x.id === c.artista_id && x.visible);
+        const l = t.lugares.find((x) => x.id === c.lugar_id && x.visible && !x.privado);
+        const e = t.eventos.find((x) => x.id === c.evento_id && x.visible !== false);
+        return { fecha: c.fecha, tipo: c.tipo, slug: a?.slug ?? l?.slug ?? e?.slug ?? e?.id ?? null, nombre: a?.nombre ?? l?.nombre ?? e?.titulo ?? null, imagen: a?.foto ?? l?.portada ?? e?.imagen ?? null, eventos: c.eventos };
+      })
+      .filter((x) => x.tipo === "semana" || x.nombre)
+      .sort((x, y) => x.fecha.localeCompare(y.fecha));
+  },
+});
+if (CON_IG_SEMANA) {
+  // Lo ya publicado de esta semana: el lunes (Renata Saldaña, a las 7:00 pm) y el martes (Los Ecos del Tangamanga, a las 9:00 am).
+  const lunes = lunesIso(hoyLocal);
+  const renata = artistas.find((a) => a.slug === "renata-saldana-demo");
+  const ecos = eventos.find((e) => e.slug === "los-ecos-del-tangamanga-en-aether-demo");
+  const publicado = (fecha, hora, tipo, ids, medida, n) => {
+    const cuando = new Date(`${fecha}T${hora}${ZONA_OFFSET}`).toISOString();
+    const id = `eeee0479-0000-4000-8000-00000000000${n}`;
+    const trabajo = `eeee0479-0000-4000-8000-00000000010${n}`;
+    tablas.redes_trabajos.push({ id: trabajo, evento_id: ids.evento_id ?? null, artista_id: ids.artista_id ?? null, lugar_id: null, red: "instagram", formato: "4x5", pedido: { facebook: true, casilla: id, tipo }, estado: "publicado", avance: {}, resultado: { instagram: { permalink: `https://www.instagram.com/p/DEMO479${n}/`, imagenes: 1, sinEtiquetas: false, formato: "4x5" }, facebook: { ok: true, permalink: `https://www.facebook.com/1374800000000461/posts/12210000000047${n}` }, ...(tipo === "artista" ? { historia: { ok: true, permalink: `https://www.instagram.com/stories/smsnstrsapp/47${n}/` } } : {}) }, intentos: 1, fallos: 0, error: null, turno: 1, ocupada_hasta: null, siguiente_en: cuando, avisado_en: cuando, pedido_por: ADMIN, creado_en: hace(5), actualizado_en: cuando, terminado_en: cuando });
+    tablas.instagram_semana.push({ id, ciudad: "san-luis-potosi", fecha, tipo, artista_id: ids.artista_id ?? null, lugar_id: null, evento_id: ids.evento_id ?? null, eventos: null, hora: `${hora}:00`, programado_para: cuando, estado: "publicado", elegido_por: "sistema", motivo: ids.motivo, reemplaza: null, trabajo_id: trabajo, aviso_en: tipo === "artista" ? hace(9) : null, dijo_no_en: null, actualizado_por: ADMIN, creado_en: hace(9), actualizado_en: cuando });
+    tablas.instagram_publicaciones.push({ id: `eeee0479-0000-4000-8000-00000000020${n}`, ...(ids.artista_id ? { artista_id: ids.artista_id } : { evento_id: ids.evento_id }), formato: "4x5", imagenes: 1, estado: "publicada", error: null, media_id: `1790000000000047${n}`, permalink: `https://www.instagram.com/p/DEMO479${n}/`, imagen: null, etiquetas: [], coautores: tipo === "artista" ? ["renatasaldana.demo"] : [], ubicacion: null, publicado_por: ADMIN, creado_en: cuando });
+    MEDIDAS_SEMANA.set(id, medida);
+  };
+  if (renata) publicado(lunes, "19:00", "artista", { artista_id: renata.id, motivo: "Artista sin fecha próxima, de San Luis Potosí, nunca en Instagram." }, { visitas: 31, van: 3 }, 1);
+  if (ecos) publicado(sumarDiaIso(lunes, 1), "09:00", "evento", { evento_id: ecos.id, motivo: "El evento de ese día con más señal: 4 les interesa." }, { visitas: 12, van: 2 }, 2);
+}

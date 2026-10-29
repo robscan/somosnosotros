@@ -11,6 +11,8 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { GALLETA_CIUDAD, leerCiudad } from "@/lib/panel";
 import { CUENTA_INSTAGRAM } from "@/lib/instagram/texto";
 import { cargarResumenInstagram } from "./instagram/datos";
+import { resumenDeLaPortada } from "./instagram/semana";
+import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { cargarAportes, cargarAvisos, cargarComunidad, cargarResumen, cargarVinculadas } from "./consultas";
 import ComunidadComoVa from "./ComunidadComoVa";
 import CapoComoVa from "./CapoComoVa";
@@ -48,7 +50,7 @@ export default async function Admin() {
   if (actual.perfil.rol !== "admin") redirect("/");
   const ciudadSesion = leerCiudad("eventos", (await cookies()).get(GALLETA_CIUDAD)?.value ?? null);
   const supabase = await clienteServidor();
-  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram, avisos] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null, cargarAvisos()]);
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram, avisos, semanaIg] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null, cargarAvisos(), supabase ? resumenDeLaPortada(supabase, ciudadSesion ?? CIUDAD_INICIAL.slug).catch(() => null) : null]);
   const ahora = new Date();
   // Las propuestas de las rutinas por revisar suben a «Pendiente» (firma de OL-425); si Ciudades no se pudo leer, solo faltan ellas.
   // OL-446: primero las evidencias del showcase por aprobar (un solo renglón a «Por aprobar»); si no se pudieron leer, solo falta él.
@@ -108,7 +110,7 @@ export default async function Admin() {
             <b>@{CUENTA_INSTAGRAM}</b>
             <small>
               {instagram
-                ? `${instagram.semana === 1 ? "1 publicada" : `${instagram.semana} publicadas`} esta semana${instagram.facebook !== null ? ` · ${instagram.facebook} en Facebook` : ""} · ${instagram.porPublicar} por publicar${instagram.ciudad ? ` en ${instagram.ciudad}` : ""}`
+                ? `${instagram.semana === 1 ? "1 publicada" : `${instagram.semana} publicadas`} esta semana${instagram.facebook !== null ? ` · ${instagram.facebook} en Facebook` : ""} · ${instagram.porPublicar} por publicar${instagram.ciudad ? ` en ${instagram.ciudad}` : ""}${semanaIg ? ` · ${semanaIg}` : ""}`
                 : "Publicar eventos en la cuenta de la marca"}
             </small>
             <span>
