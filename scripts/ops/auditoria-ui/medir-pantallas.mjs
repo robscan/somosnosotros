@@ -23,6 +23,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ADMIN, cookie, cookieDe, LLAVE_SERVICIO } from "./respaldo-local/fixture.mjs";
+import { conNombres, nombresLargos, tablaDeModulos } from "./clases-css.mjs";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.resolve(AQUI, "../../..");
@@ -493,6 +494,9 @@ try {
   const r = spawnSync(process.execPath, [NEXT, "build"], { cwd: RAIZ, env: { ...process.env, ...app }, encoding: "utf8", maxBuffer: 1 << 26 });
   if (r.status !== 0) throw new Error(`next build falló\n${(r.stdout + r.stderr).slice(-3000)}`);
   console.log(`${Math.round((Date.now() - t) / 1000)} s`);
+  // Next 16.4 acorta en producción los nombres de los módulos CSS (`<hash>_clase`): se devuelven a «Archivo/clase» (OL-483, `clases-css.mjs`).
+  const modulos = tablaDeModulos(path.join(RAIZ, ".next"));
+  if (!modulos.size) console.log("aviso: los mapas de fuentes de `.next/server` no dieron ningún módulo CSS; las clases cortas quedan como vienen");
   const servidor = lanzar("next start", [NEXT, "start", "-p", String(puertoApp)], { ...app, ...reloj });
   await esperar(base + "/entrar", servidor);
   const ejecutable = process.env.CHROME_EXECUTABLE || (fs.existsSync(MAC) ? MAC : undefined);
@@ -506,7 +510,7 @@ try {
     Array.from({ length: Math.min(Number(process.env.MEDIR_HILOS) || 4, os.availableParallelism()) }, async () => {
       for (let t = trabajos.shift(); t; t = trabajos.shift()) {
         try {
-          const m = await medirPantalla(browser, medirJs, base, t.p, t.i);
+          const m = conNombres(await medirPantalla(browser, medirJs, base, t.p, t.i), modulos);
           medidas.set(`${t.p.id}@${t.i}`, m);
           fallos.push(...juzgar(t.p, t.i, m).map((f) => ({ ...f, pantalla: t.p.id, ancho: ANCHOS[t.i] })));
         } catch (e) {
@@ -532,7 +536,7 @@ try {
   // escondido (`<div hidden id="S:…">`, lo que llega después y se pone en su sitio con al menos 300 ms de retraso). Ahí ya tienen que estar la
   // barra de la app y el esqueleto de Inicio, y no el símbolo SN solo: si no, vuelve el «momento en blanco».
   try {
-    const html = await (await fetch(`${base}/`, { headers: { "user-agent": UA_IPHONE } })).text();
+    const html = nombresLargos(await (await fetch(`${base}/`, { headers: { "user-agent": UA_IPHONE } })).text(), modulos);
     const corte = html.search(/<div hidden id="S:/);
     const primero = corte < 0 ? html : html.slice(0, corte);
     const falta = [
@@ -554,7 +558,7 @@ try {
       for (let t = colaTeclado.shift(); t; t = colaTeclado.shift()) {
         const { p, modo } = t;
         try {
-          const m = await medirTeclado(browser, base, p, modo);
+          const m = conNombres(await medirTeclado(browser, base, p, modo), modulos);
           conTeclado.set(p.id, m.campos);
           botonesDeAbajo.set(`${p.id}@${modo}`, m.botones);
           for (const h of m.hallazgos) if (!permitido("teclado", p.id, ANCHO_TECLADO, h.que)) fallos.push({ regla: "teclado", pantalla: p.id, ancho: ANCHO_TECLADO, ...h, detalle: `(${modo}) ${h.detalle}` });
