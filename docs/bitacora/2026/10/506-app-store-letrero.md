@@ -74,6 +74,7 @@ $ curl -sS https://somosnosotros.org/ | grep -o '<meta name="apple-itunes-app"[^
 - Por qué basta: `AppPlugin.swift` de `@capacitor/app` emite `appUrlOpen` tanto para `capacitorOpenURL` (el `app-argument` del letrero) como para `capacitorOpenUniversalLink`, y con `retainUntilConsumed: true`. Es decir, si llega con la app cerrada, el evento espera a que la página ponga su oyente. Como el envoltorio ya carga los enlaces universales él mismo (`SceneDelegate.swift`), ese mismo evento puede volver a llegar a la página que ya los cargó: si la ruta es la que ya se ve, no se navega (sin doble carga).
 - Comentario de `route.ts`: quitada la frase sobre la forma `.json` del archivo (propuesta 3).
 - `src/lib/enlaceApp.test.ts` (3 pruebas): nuestras rutas con consulta y ancla, dominios y esquemas ajenos ignorados, exclusiones.
+- Con `origin/main` unido (OL-475, `229593f7`; OPEN_LOOPS a mano: main entero más la línea de OL-474): `npm run lint` (0 errores, los 2 avisos ajenos), `npm run typecheck`, `npm test` (302 archivos, 4 875 pruebas), `npm run build` en verde.
 - Sin probar en la app: el WKWebView de la tienda solo se ve en el iPhone (paso 2 de abajo: «Abrir» debe llevar ya a la misma ficha).
 
 ## Lo que no se pudo probar sin un iPhone con la app de la tienda
