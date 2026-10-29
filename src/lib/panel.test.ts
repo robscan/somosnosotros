@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { MARCA } from "./marca";
 import {
   accionDe,
+  indicadorAvisos,
+  leerAvisos,
   textoDejar,
   cuandoPaso,
   datosPersona,
@@ -151,7 +153,7 @@ describe("indicadores", () => {
     expect(lista[1].partes).toEqual(["5 con 2 personas", "3 con 3 a 5", "1 con 6 o más", "La más grande: Jam de jazz, 7 van"]);
     expect(lista[3].cambio).toBe("▲ 7 esta semana");
     expect(lista[3].partes).toEqual(["23 de 97 eventos próximos", "11 personas los publican", "7 publicados esta semana"]);
-    expect(lista[1].enlace.href).toBe("/admin/eventos?filtro=coincidencias");
+    expect(lista[1].enlace?.href).toBe("/admin/eventos?filtro=coincidencias");
   });
 });
 
@@ -385,7 +387,7 @@ describe("fichas vinculadas (OL-326): cuentan por cualquier vía, no solo las so
     expect(foto.nombre).toBe("Artistas con foto");
     expect([foto.valor, foto.base, foto.cambio, foto.serie]).toEqual([56, "de 560 artistas visibles · 10\u00a0%", null, null]);
     expect(foto.partes).toEqual(["504 sin foto"]);
-    expect(foto.enlace.href).toBe("/admin/artistas?filtro=sin_foto");
+    expect(foto.enlace?.href).toBe("/admin/artistas?filtro=sin_foto");
     expect(indicadoresFichas(fichas({ artistas_visibles: 1, artistas_con_foto: 1 }))[1].base).toBe("de 1 artista visible · 100\u00a0%");
     const todas = indicadoresFichas(fichas({ artistas_visibles: 3, artistas_con_foto: 3 }))[1];
     expect(todas.partes).toEqual([]);
@@ -434,5 +436,24 @@ describe("aportes de la semana (OL-326): Voy / Me interesa y primera vez que pub
     const base = indicadores({ ahora: ahora(), historia: [], gestionar }, HOY);
     expect(notaSemana(base)).toBe("Primera semana: aún sin comparación");
     expect(notaSemana([...base, ...indicadoresAportes(aportes())])).toBe("Comparado con hace una semana");
+  });
+});
+
+describe("Avisos abiertos (OL-480)", () => {
+  const datos = { mandados: 48, mandados_antes: 40, abiertos: 11, abiertos_antes: 7,
+    tipos: { nuevo: { mandados: 28, abiertos: 8 }, cambio: { mandados: 9, abiertos: 2 }, recordatorio: { mandados: 11, abiertos: 1 }, cancelado: { mandados: 0, abiertos: 0 } } };
+  it("lee lo que devuelve panel_avisos y rechaza una respuesta a medias", () => {
+    expect(leerAvisos(datos)).toEqual(datos);
+    expect(leerAvisos({ ...datos, abiertos: "11" })).toBeNull();
+    expect(leerAvisos({ ...datos, tipos: { nuevo: datos.tipos.nuevo } })).toBeNull();
+    expect(leerAvisos(null)).toBeNull();
+  });
+  it("«11 · de 48 mandados, sin saber quién», contra la semana anterior, con el desglose por tipo y sin lista de personas", () => {
+    const i = indicadorAvisos(datos);
+    expect([i.nombre, i.valor, i.base, i.cambio]).toEqual(["Avisos abiertos", 11, "de 48 mandados, sin saber quién", "▲ 4 más"]);
+    expect(i.partes).toEqual(["Evento nuevo: 8 de 28", "Cambio de fecha o lugar: 2 de 9", "Recordatorio: 1 de 11"]);
+    expect(i.enlace).toBeUndefined();
+    expect(i.que).toMatch(/nunca por persona/);
+    expect(indicadorAvisos({ ...datos, mandados: 1 }).base).toBe("de 1 mandado, sin saber quién");
   });
 });

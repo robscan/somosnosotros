@@ -37,7 +37,7 @@ export default function Ayuda() {
         <p>Si ya existe una ficha con tu nombre, ábrela y toca «Soy yo / es mi grupo»: puedes pedir llevarla tú o pedir que se quite. La administración la revisa y, si hace falta, te escribe a tu correo.</p>
 
         <h2>¿Cómo sigo artistas y lugares, y activo avisos?</h2>
-        <p>En la ficha de un lugar o de artista, toca «Seguir». Te preguntamos si quieres avisos de sus eventos nuevos, por correo o con notificaciones del teléfono; lo cambias cuando quieras en Ajustes.</p>
+        <p>En la ficha de un lugar o de artista, toca «Seguir». Te preguntamos si quieres notificaciones de sus eventos nuevos en el teléfono; lo cambias cuando quieras en Ajustes.</p>
 
         <h2>¿Cómo borro mi cuenta?</h2>
         <p>Entra a Ajustes y, al final, toca «Borrar mi cuenta». Se borran tu correo, tu perfil, lo que sigues y a qué eventos vas; lo que publicaste se queda para la comunidad, sin tu nombre.</p>

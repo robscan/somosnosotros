@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, articuloDeHora, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, esDeVariosDias, esUnaNoche, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, horaDeReloj, horasDelEvento, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, rangoDeReloj, reloj24, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, articuloDeHora, conMayuscula, cuandoCorto, horaDeAviso, combinarFechaHora, cuandoPorDia, cuandoVariosDias, diaConMes, diaConMesDe, diaCorto, diaLargo, diaPin, esDeVariosDias, esUnaNoche, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, horaDeReloj, horasDelEvento, inicioDelDia, isoALocal, localAIso, proximosDias, rangoCorto, rangoDeReloj, reloj24, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -388,5 +388,40 @@ describe("esDeVariosDias (OL-320)", () => {
     expect(esDeVariosDias("2026-10-11T04:00:00Z", "2026-10-11T07:00:00Z", "America/Mexico_City")).toBe(false); // 22:00 → 01:00
     expect(esDeVariosDias("2026-10-11T04:00:00Z", "2026-10-12T04:00:00Z", "America/Mexico_City")).toBe(false); // 22:00 → 22:00 del día siguiente: todavía una noche
     expect(esDeVariosDias("2026-10-11T04:00:00Z", "2026-10-12T05:00:00Z", "America/Mexico_City")).toBe(true); // 22:00 → 23:00 del día siguiente
+  });
+});
+
+describe("cuandoCorto: la fecha corta de los avisos (OL-480)", () => {
+  // Jueves 8 de octubre de 2026, 10:00 en San Luis (las fechas del prototipo firmado, bitácora 510).
+  const JUEVES = new Date("2026-10-08T16:00:00Z");
+  const Z = "America/Mexico_City";
+  it("«vie 9 · 8 pm»: día de la semana y número, la hora sin «:00»", () => {
+    expect(cuandoCorto("2026-10-10T02:00:00Z", null, JUEVES, Z)).toBe("vie 9 · 8 pm");
+    expect(cuandoCorto("2026-10-10T02:30:00Z", null, JUEVES, Z)).toBe("vie 9 · 8:30 pm");
+    expect(horaDeAviso("2026-10-09T19:00:00Z", Z)).toBe("1 pm");
+  });
+  it("sin «Hoy» ni «Mañana» salvo que se pida: con `relativo`, en minúscula para ir a media frase", () => {
+    expect(cuandoCorto("2026-10-09T02:00:00Z", null, JUEVES, Z)).toBe("jue 8 · 8 pm");
+    expect(cuandoCorto("2026-10-09T02:00:00Z", null, JUEVES, Z, true)).toBe("hoy a las 8 pm");
+    expect(cuandoCorto("2026-10-10T02:00:00Z", null, JUEVES, Z, true)).toBe("mañana a las 8 pm");
+    expect(cuandoCorto("2026-10-09T19:00:00Z", null, JUEVES, Z, true)).toBe("mañana a la 1 pm");
+    // Más lejos que mañana, `relativo` no inventa nada: la fecha corta.
+    expect(cuandoCorto("2026-10-11T02:00:00Z", null, JUEVES, Z, true)).toBe("sáb 10 · 8 pm");
+    expect(conMayuscula("hoy a las 8 pm")).toBe("Hoy a las 8 pm");
+  });
+  it("a dos semanas o más, con el mes (sin él, «vie 9» se repite cada mes); otro año, con el año", () => {
+    expect(cuandoCorto("2026-10-22T02:00:00Z", null, JUEVES, Z)).toBe("mié 21 · 8 pm");
+    expect(cuandoCorto("2026-10-23T02:00:00Z", null, JUEVES, Z)).toBe("jue 22 de oct · 8 pm");
+    expect(cuandoCorto("2027-01-09T02:00:00Z", null, JUEVES, Z)).toBe("vie 8 de ene de 2027 · 8 pm");
+  });
+  it("lo que dura varios días dice sus días; ya empezado, hasta cuándo", () => {
+    expect(cuandoCorto("2026-10-09T17:00:00Z", "2026-10-19T05:59:00Z", JUEVES, Z)).toBe("del vie 9 al dom 18");
+    expect(cuandoCorto("2026-10-01T17:00:00Z", "2026-10-19T05:59:00Z", JUEVES, Z)).toBe("hasta el dom 18");
+    // Una noche que cruza la medianoche es un solo día.
+    expect(cuandoCorto("2026-10-10T04:00:00Z", "2026-10-10T08:00:00Z", JUEVES, Z)).toBe("vie 9 · 10 pm");
+  });
+  it("en la zona del evento: el mismo instante es otro día en Madrid", () => {
+    expect(cuandoCorto("2026-10-08T23:00:00Z", null, JUEVES, "Europe/Madrid", true)).toBe("mañana a la 1 am");
+    expect(cuandoCorto("2026-10-08T23:00:00Z", null, JUEVES, Z, true)).toBe("hoy a las 5 pm");
   });
 });
