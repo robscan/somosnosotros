@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { claveDeErrorFacebook, publicarEnPagina, type PedidoFacebook } from "./api";
+
+// OL-484 (bitácora 516): cada llamada lleva `appsecret_proof` con un secreto inventado; el vector es HMAC-SHA256(SECRETO_APP, TOKEN) en hex.
+const SECRETO_APP = "secreto-de-app-inventado-484";
+const PRUEBA = "4cd70800af6d0e6a3189def5a8ca3cbde5bf3b352824f5334a284ba87b53045d";
+beforeEach(() => vi.stubEnv("META_APP_SECRET", SECRETO_APP));
+afterEach(() => vi.unstubAllEnvs());
 
 /**
  * OL-461 (bitácora 493): el cliente de la página de Facebook con un `fetch` falso. Nunca se llama a la API real. Comprueba la publicación con
@@ -110,6 +116,22 @@ describe("publicarEnPagina", () => {
     expect(JSON.stringify(r)).not.toContain(TOKEN);
     const malo = falso({ [`POST /${PAGINA}/photos`]: () => json({ error: { code: 190, message: `token ${TOKEN} vencido` } }, 400) });
     expect(JSON.stringify(await publicarEnPagina(pedido, op(malo.traer)))).not.toContain(TOKEN);
+  });
+  it("OL-484: cada llamada (foto y enlace) lleva su appsecret_proof correcto", async () => {
+    const { traer, pedidos } = exito();
+    const r = await publicarEnPagina(pedido, op(traer));
+    expect(pedidos.length).toBeGreaterThanOrEqual(2);
+    expect(pedidos.every((p) => p.params.get("appsecret_proof") === PRUEBA)).toBe(true);
+    expect(r).not.toHaveProperty("sinPrueba");
+  });
+  it("OL-484: sin META_APP_SECRET sale sin la prueba y el resultado lo dice (sinPrueba)", async () => {
+    vi.stubEnv("META_APP_SECRET", "");
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { traer, pedidos } = exito();
+    const r = await publicarEnPagina(pedido, op(traer));
+    expect(r).toMatchObject({ ok: true, sinPrueba: true });
+    expect(pedidos.some((p) => p.params.has("appsecret_proof"))).toBe(false);
+    aviso.mockRestore();
   });
   it("va a graph.facebook.com", async () => {
     const { traer, pedidos } = exito();

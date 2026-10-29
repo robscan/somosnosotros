@@ -3,7 +3,11 @@
  * Sin nada del servidor: lo usan la página (que arma el estado) y el componente del bloque (que dice las frases). El token nunca pasa por aquí.
  */
 
-/** Lo que se pide al conectar (el diálogo de Meta, `scope`). */
+/**
+ * Lo que se pide al conectar (el diálogo de Meta, `scope`). OL-484 (bitácora 516): `business_management` se conserva por precaución, aunque
+ * ninguna llamada del código usa la API de negocios: la app de Meta vive en un portafolio de negocio y la página muy probablemente llega por
+ * ahí, y sin él `/me/accounts` podría no listarla. Se puede quitar cuando la conexión lleve una semana funcionando.
+ */
 export const PERMISOS_PEDIDOS = [
   "pages_show_list",
   "pages_read_engagement",
