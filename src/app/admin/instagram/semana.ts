@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { diaLocal, ZONA_INICIAL } from "@/lib/fechas";
+import { diaConMes, diaLocal, ZONA_INICIAL } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { armarSemana, cuandoDelDia, diaIso, diasDe, REGLA, estadoDelDia, lineaDelAviso, lineaDelEstado, lunesDeLaSemana, rangoDeLaSemana, resumenSemana, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
 import { usuarioDeInstagram } from "@/lib/instagram/texto";
@@ -200,6 +200,13 @@ export async function resumenDeLaPortada(supabase: ClienteServidor, ciudad: stri
   const vivos = filas.filter((f) => f.tipo !== "descanso");
   const listos = vivos.filter((f) => f.estado === "publicado" || (f.estado === "programado" && f.trabajo_id)).length;
   return `Semana: ${listos} de ${vivos.length} ${vivos.length === 1 ? "programada" : "programadas"}`;
+}
+
+/** «el mié 7 de oct» si la ficha dijo que no a salir en Instagram (solo lo ve la administración: la base no se lo da a nadie más); null si no. */
+export async function fueraDeInstagram(supabase: ClienteServidor | null, tipo: "artista" | "lugar", id: string, ahora = new Date()): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.from("instagram_fuera").select("desde").eq(tipo === "artista" ? "artista_id" : "lugar_id", id).maybeSingle<{ desde: string }>();
+  return data ? `el ${diaConMes(data.desde, ahora, ZONA_INICIAL)}` : null;
 }
 
 export { db as comoCliente, uno };

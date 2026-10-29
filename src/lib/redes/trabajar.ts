@@ -144,6 +144,11 @@ async function enInstagram(dep: Dependencias, t: Trabajo): Promise<"corriendo" |
   const quitadas = Array.isArray(p.quitadas) ? p.quitadas.filter((x): x is string => typeof x === "string").slice(0, 60) : [];
   const avance: AvanceTrabajo = { ...t.avance };
 
+  // OL-479: el evento del día de la semana que ya se publicó por otro lado (la lista de hoy) desde que se programó, no sale dos veces.
+  if (!avance.instagram && t.pedido.casilla && t.creado_en) {
+    const { data: ya } = await dep.db.from("instagram_publicaciones").select("permalink, formato, imagenes").eq("evento_id", t.evento_id!).eq("estado", "publicada").gte("creado_en", t.creado_en).limit(1).maybeSingle<{ permalink: string | null; formato: "4x5" | "9x16" | "carrusel"; imagenes: number | null }>();
+    if (ya) return cerrar(dep, t, h, "publicado", { instagram: { permalink: ya.permalink, imagenes: ya.imagenes ?? 1, sinEtiquetas: false, formato: ya.formato }, facebook: null, mensaje: "Ya estaba en Instagram: no se publicó otra vez." });
+  }
   if (!avance.instagram) {
     // Antes de publicar: que siga por venir y que el texto quepa (lo mismo que comprobaba la acción).
     if (!sePuedePublicar(h.datos, ahora)) {
@@ -359,20 +364,24 @@ const deInstagramDe = (avance: AvanceTrabajo) => {
   return { permalink: ig.permalink, imagenes: avance.imagenes?.length ?? 1, sinEtiquetas: ig.sinEtiquetas, formato: ig.formato, ...(ig.sinCoautor ? { sinCoautor: true } : {}) };
 };
 
-/** La publicación de un artista o de un lugar de la semana: su tarjeta, su texto, su cuenta etiquetada y (el artista) invitada como coautora. */
+/**
+ * La publicación de un artista o de un lugar de la semana: su tarjeta 4:5, su texto, su cuenta etiquetada y (el artista) invitada como coautora;
+ * luego su historia 9:16 (la tarjeta alta, «la historia sale con la publicación»: si no se puede, la publicación queda y se dice) y el espejo en
+ * Facebook con el enlace a su ficha.
+ */
 async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "terminada" | "fallida" | "sin_tiempo"> {
   const ahora = dep.ahora();
   const tipo = t.artista_id ? "artista" : "lugar";
   const f = await dep.h.cargarFicha(dep.db, tipo, (t.artista_id ?? t.lugar_id)!, ahora);
   if (!f || !f.visible) return cerrar(dep, t, null, "fallido", { mensaje: "Esa ficha ya no se ve en la app: no se publicó." }, "otro", f?.nombre);
-  const formato = t.pedido.formato === "9x16" ? "9x16" : t.formato;
+  const formato = "4x5" as const;
   const quitadas = quitadasDe(t);
   const avance: AvanceTrabajo = { ...t.avance };
   const etiquetas = f.cuenta && !quitadas.includes(f.cuenta) ? [f.cuenta] : [];
   const ubicacion = f.ubicacion?.id ?? null;
 
   if (!avance.instagram) {
-    const texto = formato === "4x5" ? (propioDe(t) ?? textoDeFicha(f, ahora, quitadas)) : null;
+    const texto = propioDe(t) ?? textoDeFicha(f, ahora, quitadas);
     if (texto) {
       const r = revisarTexto(texto);
       if (r.problema) return cerrar(dep, t, null, "fallido", { mensaje: r.problema }, "texto", f.nombre);
@@ -399,8 +408,8 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
       return cerrar(dep, t, null, "fallido", { mensaje: FRASES.cupo }, "cupo", f.nombre);
     }
     // El artista, invitado como coautor (si acepta, sale también en su perfil); un lugar, solo etiquetado.
-    const coautores = tipo === "artista" && formato === "4x5" ? etiquetas : [];
-    const r = await dep.h.publicar({ imagen: avance.imagenes![0], texto, etiquetas, ubicacion, historia: formato === "9x16", coautores });
+    const coautores = tipo === "artista" ? etiquetas : [];
+    const r = await dep.h.publicar({ imagen: avance.imagenes![0], texto, etiquetas, ubicacion, historia: false, coautores });
     if (!r.ok) {
       const clave = r.error;
       return fallo(dep, t, clave, async () => (await anotarErrorInstagram(dep, t, clave, 1, formato), cerrar(dep, t, null, "fallido", { mensaje: FRASES[clave] }, clave, f.nombre)));
@@ -408,15 +417,41 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
     await anotarPublicada(dep, t, avance, r, { formato, imagenes: avance.imagenes!, texto, etiquetas, ubicacion, coautores });
   }
 
+  // La historia 9:16, una sola vez y sin reintentos: lo que importa ya salió.
+  if (!avance.historia) {
+    if (!cabe(dep, "instagram")) return sinTiempo(dep, t);
+    avance.historia = await historiaDeFicha(dep, t, f, etiquetas);
+    await guardarAvance(dep.db, t, avance, dep.ahora());
+  }
+
   const ig = avance.instagram!;
   const deInstagram = deInstagramDe(avance);
-  if (!t.pedido.facebook) return cerrar(dep, t, null, "publicado", { instagram: deInstagram, facebook: null }, null, f.nombre);
+  const historia = avance.historia;
+  if (!t.pedido.facebook) return cerrar(dep, t, null, "publicado", { instagram: deInstagram, historia, facebook: null }, null, f.nombre);
   if (!cabe(dep, "facebook")) return sinTiempo(dep, t);
-  if (!ig.fila) return cerrar(dep, t, null, "publicado", { instagram: deInstagram, facebook: { ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro } }, null, f.nombre);
-  const enlace = enlaceFichaConOrigen(tipo === "artista" ? "artistas" : "lugares", f.slug, "facebook", ig.formato === "9x16" ? "story" : "post", campanaDe(t));
+  if (!ig.fila) return cerrar(dep, t, null, "publicado", { instagram: deInstagram, historia, facebook: { ok: false, error: "otro", mensaje: FRASES_FACEBOOK.otro } }, null, f.nombre);
+  const enlace = enlaceFichaConOrigen(tipo === "artista" ? "artistas" : "lugares", f.slug, "facebook", "post", campanaDe(t));
   const espejo = await espejar(dep, t, { id: ig.fila, formato: ig.formato, imagenes: avance.imagenes ?? [] }, () => textoDeFacebookFicha(ig.texto ?? textoDeFicha(f, dep.ahora(), quitadas), f.cuenta, enlace));
   if (espejo === "reintentar") return "corriendo";
-  return cerrar(dep, t, null, "publicado", { instagram: deInstagram, facebook: espejo }, null, f.nombre);
+  return cerrar(dep, t, null, "publicado", { instagram: deInstagram, historia, facebook: espejo }, null, f.nombre);
+}
+
+/** La historia de una ficha: la tarjeta alta, con su cuenta etiquetada; anotada como cualquier publicación. Nunca lanza. */
+async function historiaDeFicha(dep: Dependencias, t: Trabajo, f: FichaParaPublicar, etiquetas: string[]): Promise<{ ok: boolean; permalink: string | null }> {
+  try {
+    const bytes = await dep.h.dibujarFicha(f, "9x16", dep.ahora());
+    const [url] = (await subirTodas(dep, t, [bytes])) ?? [];
+    if (!url) return { ok: false, permalink: null };
+    const r = await dep.h.publicar({ imagen: url, texto: null, etiquetas, ubicacion: null, historia: true });
+    if (!r.ok) {
+      await anotarErrorInstagram(dep, t, r.error, 1, "9x16");
+      return { ok: false, permalink: null };
+    }
+    await dep.db.from("instagram_publicaciones").insert({ ...deQue(t), formato: "9x16", imagenes: 1, estado: "publicada", media_id: r.mediaId, permalink: r.permalink, imagen: url, etiquetas: r.sinEtiquetas ? [] : etiquetas, publicado_por: t.pedido_por });
+    return { ok: true, permalink: r.permalink };
+  } catch {
+    return { ok: false, permalink: null };
+  }
 }
 
 /** «Esta semana»: el carrusel con su portada y los carteles de los eventos del fin (o la portada sola, si ningún cartel se pudo bajar). */

@@ -3,6 +3,9 @@ import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
+import { fueraDeInstagram } from "@/app/admin/instagram/semana";
+import FueraDeInstagram from "@/components/instagram/FueraDeInstagram";
+import ContarVistaFicha from "@/components/ContarVistaFicha";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -271,6 +274,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse(a) ? await cargarDestacado("artista", a.id) : null;
+  const fuera = esAdmin ? await fueraDeInstagram(supabase, "artista", a.id) : null;
   const porConfirmar = !!a.origen && !a.autor;
   const esAutor = !!actual && actual.perfil.id === a.creado_por;
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
@@ -328,6 +332,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
             </form>
           </li>
         )}
+        {fuera && <FueraDeInstagram tipo="artista" id={a.id} cuando={fuera} />}
         <li>
           <Reportar tipo="artista" objetoId={a.id} volver={hrefArtista(a)} conSesion={!!actual} />
         </li>
@@ -344,6 +349,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       </BarraFicha>
       {/* Volvió de entrar con "Soy yo / es mi grupo" en la mano: la hoja se abre sola. */}
       {actual && accion === "mio" && !puedeEditar && <EsMiNombre artistaId={a.id} slug={a.slug} nombre={a.nombre} conSesion correo={correo} soloHoja />}
+      {a.visible && <ContarVistaFicha tipo="artista" id={a.id} />}
       <Heroe
         portada={a.portada}
         alt={`Portada de ${a.nombre}`}

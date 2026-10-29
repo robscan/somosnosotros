@@ -3,6 +3,9 @@ import Link from "next/link";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
+import { fueraDeInstagram } from "@/app/admin/instagram/semana";
+import FueraDeInstagram from "@/components/instagram/FueraDeInstagram";
+import ContarVistaFicha from "@/components/ContarVistaFicha";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import Borrar from "@/components/Borrar";
@@ -63,6 +66,8 @@ export type FichaLugar = {
   destacable: Awaited<ReturnType<typeof cargarDestacado>> | null;
   /** Su horario en franjas (OL-315); vacío si no lo dijo o si no se pudo leer (la ficha no depende de él). */
   horario: Franja[];
+  /** OL-479: «el mié 7 de oct» si dijo que no a salir en el Instagram de la marca (solo para la administración). */
+  fueraDeInstagram: string | null;
 };
 
 /** El correo de quien mira, enmascarado, para las confirmaciones (la de «¿Es tu espacio?» y la de los avisos de Seguir). */
@@ -117,6 +122,7 @@ export async function cargarFicha(idOSlug: string): Promise<FichaLugar | null> {
     puedeBorrar: esAdmin || esAutor,
     destacable: esAdmin && puedeDestacarse(lugar) ? await cargarDestacado("lugar", lugar.id) : null,
     horario: ((horas.data ?? []) as { dias: number[]; abre: string; cierra: string }[]).map(franjaDeFila),
+    fueraDeInstagram: esAdmin ? await fueraDeInstagram(supabase, "lugar", lugar.id) : null,
   };
 }
 
@@ -210,6 +216,7 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
 
   return (
     <div className={ficha.cuerpo} data-cuerpo>
+      {lugar.visible && <ContarVistaFicha tipo="lugar" id={lugar.id} />}
       <Kpis>
         <KpiDistancia lat={lugar.lat} lng={lugar.lng} />
         <Suspense
@@ -328,7 +335,7 @@ export function SeguirLugar({ f: { lugar, actual, sigo } }: { f: FichaLugar }) {
 }
 
 /** Lo secundario de la ficha, dentro de su menú «···»: editar, destacar, ocultar, reportar y borrar, según quien mira. Cada uno, una fila como las de Ajustes. */
-export function OpcionesLugar({ f: { lugar, actual, esAdmin, puedeEditar, puedeBorrar, destacable } }: { f: FichaLugar }) {
+export function OpcionesLugar({ f: { lugar, actual, esAdmin, puedeEditar, puedeBorrar, destacable, fueraDeInstagram: fuera } }: { f: FichaLugar }) {
   // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos eventos tiene: el menú de administración sigue
   // en el HTML inicial y no puede esperar esa consulta aparte.
   const avisoBorrar = "Se borra el lugar, con sus eventos (próximos y pasados).";
@@ -353,6 +360,7 @@ export function OpcionesLugar({ f: { lugar, actual, esAdmin, puedeEditar, puedeB
           </form>
         </li>
       )}
+      {esAdmin && fuera && <FueraDeInstagram tipo="lugar" id={lugar.id} cuando={fuera} />}
       <li>
         <Reportar tipo="lugar" objetoId={lugar.id} volver={hrefLugar(lugar)} conSesion={!!actual} />
       </li>

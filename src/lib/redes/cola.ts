@@ -22,8 +22,6 @@ export type PedidoTrabajo = {
   casilla?: string;
   tipo?: "artista" | "evento" | "lugar" | "semana";
   eventos?: string[];
-  /** OL-479: «Publicar ahora» de un día, en historia (9:16). */
-  formato?: "4x5" | "9x16";
 };
 
 export type AvanceTrabajo = {
@@ -32,6 +30,8 @@ export type AvanceTrabajo = {
   claves?: string[];
   /** Lo ya publicado en Instagram (la fila anotada en `instagram_publicaciones`). */
   instagram?: { fila: string | null; mediaId: string; permalink: string | null; sinEtiquetas: boolean; formato: "4x5" | "9x16" | "carrusel"; texto: string | null; etiquetas: string[]; sinCoautor?: boolean };
+  /** OL-479: la historia de una ficha de la semana (después de su publicación; si no se pudo, `ok: false`). */
+  historia?: { ok: boolean; permalink: string | null };
 };
 
 export type Trabajo = {
@@ -51,6 +51,8 @@ export type Trabajo = {
   error: ClaveFallo | null;
   turno: number;
   pedido_por: string | null;
+  /** Cuándo se guardó (OL-479: un día de la semana que ya salió por otro lado desde entonces no se repite). */
+  creado_en?: string;
 };
 
 export const COLUMNAS = "id, evento_id, artista_id, lugar_id, red, formato, pedido, estado, avance, resultado, intentos, fallos, error, turno, ocupada_hasta, siguiente_en, pedido_por, creado_en";
@@ -75,6 +77,7 @@ export function leerTrabajo(f: Record<string, unknown>): Trabajo {
     error: typeof f.error === "string" ? (f.error as ClaveFallo) : null,
     turno: numero(f.turno),
     pedido_por: typeof f.pedido_por === "string" ? f.pedido_por : null,
+    ...(typeof f.creado_en === "string" ? { creado_en: f.creado_en } : {}),
   };
 }
 
