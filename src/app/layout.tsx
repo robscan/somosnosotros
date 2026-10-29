@@ -7,6 +7,7 @@ import BarraApp from "@/components/BarraApp";
 import Navegacion from "@/components/Navegacion";
 import NavSecciones from "@/components/NavSecciones";
 import PerfilEnNav from "@/components/PerfilEnNav";
+import AbrirEnlaceApp from "@/components/AbrirEnlaceApp";
 import AnalyticsGoogle from "@/components/AnalyticsGoogle";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import MarcaAdmin from "@/components/MarcaAdmin";
@@ -16,6 +17,7 @@ import MemoriaScroll from "@/components/MemoriaScroll";
 import Sesion, { AccesoAdmin } from "@/components/Sesion";
 import TituloInstalada from "@/components/TituloInstalada";
 import { IconoPersona } from "@/components/ui/Iconos";
+import LetreroAppStore from "@/components/LetreroAppStore";
 import { GUION_APP_NATIVA } from "@/lib/appNativa";
 import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
 import { jsonLdSitio } from "@/lib/estructurados";
@@ -69,6 +71,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={bricolage.variable}>
       <body>
+        {/* El letrero de Apple arriba de Safari («Ver» o «Abrir» la app de la tienda; OL-474): fuera de todo `<Suspense>`, para que llegue en el
+            primer HTML y React lo suba al `<head>`. Sin letrero en Administración, entrar y la API (`lib/letreroAppStore`). */}
+        <LetreroAppStore />
         {/* WebSite (OL-143, bitácora 178): una sola vez, para todo el sitio; sin datos de personas. */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSitio()).replace(/</g, "\\u003c") }} />
         {/* Guarda el aviso de instalar de Chrome, Edge o Android antes de que cargue React: llega una sola vez. */}
@@ -91,6 +96,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </Armazon>
         <RegistroSW />
+        {/* Dentro de la app de la tienda: «Abrir» del letrero de Apple y los enlaces con la app abierta llevan a su ruta (OL-474). */}
+        <AbrirEnlaceApp />
         <Navegacion />
         {/* El campo escondido que la lupa de la barra enfoca con el toque, para que el teclado del iPhone no se cierre al llegar a Buscar (`BarraApp`). */}
         <input id="cebo-de-teclado" className="cebo-de-teclado" type="text" tabIndex={-1} aria-hidden="true" autoComplete="off" />
