@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 /**
- * OL-479 (bitácora 511, migración 20261029160000): la semana de Instagram. Una publicación es de un evento, de un artista o de un lugar (exactamente
+ * OL-479 (bitácora 511, migración 20261029200000): la semana de Instagram. Una publicación es de un evento, de un artista o de un lugar (exactamente
  * uno); la semana de una ciudad, un día por fila, la arma y la cambia solo la administración por sus funciones; cada día por delante espera en la
  * cola de OL-465 a su hora (el latido no lo toma antes); «Quitar», «Publicar ahora», el texto, el aviso y «Dijo que no»; quién puede salir
  * (`instagram_candidatos`); las vistas con origen a una ficha y lo que dio cada día; y la página de la bio (solo lo ya publicado).

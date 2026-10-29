@@ -1,4 +1,4 @@
--- somosnosotros · OL-479 · migración 20261029160000 · la semana de Instagram en Administración (bitácora 511)
+-- somosnosotros · OL-479 · migración 20261029200000 · la semana de Instagram en Administración (bitácora 511)
 -- Lo firmado por el founder el 29 de octubre sobre el prototipo de OL-477 («Tomo todas tus recomendaciones», bitácora 509): la pestaña «Semana»
 -- en Administración › Instagram, un día por renglón; el domingo descansa; artista y lugar a las 7:00 pm, el evento del día y «Esta semana» a las
 -- 9:00 am, en la hora de la ciudad; entran todos los lugares completos (los que no tienen Instagram, sin etiqueta, sin crédito y sin aviso); la

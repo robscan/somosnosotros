@@ -8,7 +8,7 @@ ahora»); **el domingo descansa**; horas fijas (**artista y lugar a las 7:00 pm;
 ciudad); **entran todos los lugares** (los que no tienen Instagram, sin etiqueta, sin crédito y sin aviso); **la página «Esta semana en Instagram»
 para la bio** con las fichas de la semana y su marca de origen; **el artista invitado como coautor** además del aviso; **el aviso previo lo manda
 el founder a mano** desde su teléfono, con el texto listo y «Copiar y abrir su Instagram».
-**Estado:** hecho, con **una migración** (`20261029160000_instagram_semana.sql`) y **sin variables nuevas**. Espera revisión del gestor y el
+**Estado:** hecho, con **una migración** (`20261029200000_instagram_semana.sql`) y **sin variables nuevas**. Espera revisión del gestor y el
 «publica» del founder (aplicar la migración antes de desplegar). No toqué producción, `.env` ni `main`.
 
 Términos (una línea cada uno):
@@ -65,7 +65,7 @@ Términos (una línea cada uno):
   `utm_source=instagram&utm_medium=bio&utm_campaign=semana-<lunes>&utm_content=<ficha>`. Lo programado no se adelanta.
 - **La portada de Administración** suma «· Semana: N de M programadas» al renglón de Instagram.
 
-## 2. La migración (`20261029160000_instagram_semana.sql`)
+## 2. La migración (`20261029200000_instagram_semana.sql`)
 
 - **Lo único que se afloja (permitido por el gestor; ninguna fila cambia):** `evento_id` deja de ser obligatorio en `redes_trabajos`,
   `instagram_publicaciones` y `facebook_publicaciones`, que ganan `artista_id` y `lugar_id` (on delete cascade, como el evento) con un `check` de que
