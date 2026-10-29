@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { leerCuerpoAcotado } from "@/lib/cuerpoAcotado";
 import { esUuid } from "@/lib/formulario";
+import { vieneDelSitio } from "@/lib/mismoSitio";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { cookieDeVisita, esRobot, nuevoVisitante, origenDeVista, visitanteDeCookie } from "@/lib/vistas";
@@ -21,13 +22,14 @@ const listo = (cookie?: string) => new Response(null, { status: 204, headers: { 
  * responder (`after`): nadie puede sumar vistas con la llave pública. Sin la llave (local), responde igual y no cuenta.
  * OL-461: si la ficha se abrió desde un enlace de la marca en Instagram o Facebook, `ContarVista` manda también `origen` y `medio`
  * (de `utm_source` y `utm_medium`, listas cerradas) y la vista se cuenta con ellos (`contar_vista_evento_origen`); sin origen, como antes.
+ * OL-485: sin `Sec-Fetch-Site: same-origin` (también si falta), 403; y la base solo guarda 30 vistas sin cuenta por evento y hora (las de
+ * más responden igual, 204, y no se guardan).
  * OL-479: la ficha de un artista o de un lugar (`{"artista":…}` o `{"lugar":…}`) solo cuenta con origen (la semana de Instagram mide lo que llega
  * de ahí: la bio, la historia, Facebook), con la misma regla (`contar_vista_ficha`); el medio puede ser también `bio`.
  */
 export async function POST(request: Request) {
   try {
-    const sitio = request.headers.get("sec-fetch-site");
-    if (sitio && sitio !== "same-origin") return new Response(null, { status: 403 });
+    if (!vieneDelSitio(request)) return new Response(null, { status: 403 });
     if (esRobot(request.headers.get("user-agent"))) return listo();
     const texto = await leerCuerpoAcotado(request, MAX_CUERPO);
     if (texto === null) return new Response(null, { status: 413 });
