@@ -17,6 +17,8 @@ describe("POST /api/avisos/abierto (OL-480)", () => {
   });
   it("otra página no puede contar; un tipo fuera de la lista o un cuerpo raro, tampoco", async () => {
     expect((await pedir({ tipo: "nuevo" }, "cross-site")).status).toBe(403);
+    expect((await pedir({ tipo: "nuevo" }, null)).status).toBe(403); // OL-485: sin la cabecera (curl, un programa), tampoco
+    expect((await pedir({ tipo: "nuevo" }, "none")).status).toBe(403);
     expect((await pedir({ tipo: "fulano" })).status).toBe(400);
     expect((await pedir("no es json")).status).toBe(400);
     expect((await pedir({ tipo: "nuevo", relleno: "x".repeat(300) })).status).toBe(413);
