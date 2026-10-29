@@ -140,7 +140,8 @@ export async function decirDias(supabase: ClienteServidor, filas: FilaDia[], aho
     const delFin = (f.eventos ?? []).map((id) => eventos.get(id)).filter((x): x is Evento => !!x);
     const nombre =
       f.tipo === "descanso" ? "Sin publicación" : ficha?.nombre ?? evento?.titulo ?? (f.tipo === "semana" ? nombreDelFin(delFin) : "Sin ficha");
-    const tarjeta = `/api/instagram/semana/${f.id}?mini=1`;
+    // De qué ficha es la tarjeta (`f`): tras «Cambiar», el teléfono no enseña la miniatura que guardó de la anterior.
+    const tarjeta = `/api/instagram/semana/${f.id}?mini=1&f=${f.artista_id ?? f.lugar_id ?? (f.eventos ?? []).join(",").slice(0, 120)}`;
     const imagen = f.tipo === "descanso" || estado === "quitado" ? SIN_FOTO : f.tipo === "evento" ? (evento?.imagen ?? SIN_FOTO) : tarjeta;
     const m = medidas.get(f.id);
     return {

@@ -277,11 +277,8 @@ export async function volverAProgramarDia(id: string): Promise<Hecho> {
   const s = esUuid(id) ? await sesionAdmin() : null;
   if (!s) return { ok: false, mensaje: "Solo la administración maneja la semana de Instagram." };
   const d = await leerDia(s, id);
-  if (!d || d.estado !== "quitado") return NO_SE_PUDO;
-  if (d.tipo === "semana") {
-    const { error } = await s.rpc("instagram_semana_ahora", { p_casilla: id, p_pedido: {} });
-    return error ? frase(error) : { ok: true };
-  }
+  // «Esta semana» no se cambia de ficha: quitada, solo sale con «Publicar ahora».
+  if (!d || d.estado !== "quitado" || d.tipo === "semana") return NO_SE_PUDO;
   const ficha = d.artista_id ?? d.lugar_id ?? d.evento_id;
   return ficha && d.tipo !== "descanso" ? poner(s, d, d.tipo, ficha) : NO_SE_PUDO;
 }

@@ -178,7 +178,8 @@ try {
     await page.goto(semanaUrl, { waitUntil: "load" });
     await listaLista(page);
     await foto(page, "01-semana-esta");
-    const renglones = await page.locator("main section li").count();
+    // Los renglones del grupo de la semana (el bloque «Conexión» de OL-471 lleva el suyo aparte).
+    const renglones = await page.locator("main section", { hasText: "· 7 días" }).locator("li").count();
     comprobar(renglones === 7, `siete renglones, uno por día (${renglones})`);
     comprobar((await page.getByRole("tab", { name: "Semana" }).getAttribute("aria-selected")) === "true", "la pestaña «Semana» va primero y elegida");
     const resumen = await texto(page.locator("main p").first());
@@ -260,6 +261,7 @@ try {
     await page.goto(`${semanaUrl}&semana=viene`, { waitUntil: "load" });
     await listaLista(page);
     const antes = (await fila(page, "Lun 12").locator("b").first().innerText()).trim();
+    const miniaturaAntes = await fila(page, "Lun 12").locator("img").first().getAttribute("src");
     const primera = await abrirDia(page, "Lun 12");
     await tocar(page, primera.getByRole("button", { name: "Cambiar" }), "Cambiar");
     await page.getByRole("dialog", { name: /^Cambiar el lunes 12/ }).waitFor();
@@ -279,6 +281,10 @@ try {
     fueraHref = await lunes.locator("a").first().getAttribute("href");
     const hoja = await abrirDia(page, "Lun 12");
     await foto(page, "08-dia-artista-viene");
+    const src = await hoja.locator("img").first().getAttribute("src");
+    const deLaLista = await fila(page, "Lun 12").locator("img").first().getAttribute("src");
+    const slug = fueraHref.split("/").pop();
+    comprobar(src.includes(`f=${slug}`) && deLaLista !== miniaturaAntes, `la tarjeta y la miniatura son de ${fueraNombre}, no las guardadas de ${antes}`);
     const t = await texto(hoja);
     comprobar(/Aviso a @[a-z0-9._]+: falta mandarlo/.test(t), "el artista: «Aviso a @…: falta mandarlo» con «Avisar»");
     comprobar(/se invita a su cuenta como coautora/.test(t), "dice que se le invita como coautora");

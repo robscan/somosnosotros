@@ -158,7 +158,9 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
     hacer(() => avisadoDia(id));
   };
 
-  const src = !listo || !c ? null : c.tipo === "evento" ? `/api/instagram/${c.eventoId}?formato=4x5&recorte=0&diseno=0` : c.tipo === "descanso" ? null : `/api/instagram/semana/${id}?formato=${formato}`;
+  // La tarjeta lleva en su dirección de qué ficha es (`f`): tras «Cambiar», el teléfono no enseña la que guardó de la anterior.
+  const deQuien = c?.tipo === "artista" || c?.tipo === "lugar" ? c.datos.slug : c?.tipo === "semana" ? String(c.imagenes) : "";
+  const src = !listo || !c ? null : c.tipo === "evento" ? `/api/instagram/${c.eventoId}?formato=4x5&recorte=0&diseno=0` : c.tipo === "descanso" ? null : `/api/instagram/semana/${id}?formato=${formato}&f=${encodeURIComponent(deQuien)}`;
   const ficha = c?.tipo === "artista" || c?.tipo === "lugar";
 
   // ----- Las vistas de «Cambiar», «Avisar» y «Dijo que no».
@@ -256,7 +258,7 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
           </Boton>
         }
       >
-        <p className={hoja.nota}>No vuelve a salir en la semana. Su lugar de {listo.cuandoSale} lo toma la siguiente ficha de la rotación. Se puede volver a poner desde el «···» de su ficha.</p>
+        <p className={hoja.nota}>No vuelve a salir en la semana. Su lugar {listo.cuandoSale.startsWith("el ") ? `del ${listo.cuandoSale.slice(3)}` : `de ${listo.cuandoSale}`} lo toma la siguiente ficha de la rotación. Se puede volver a poner desde el «···» de su ficha.</p>
         <p className={hoja.nota}>
           ¿Te equivocaste?{" "}
           <button type="button" className={admin.enlace} onClick={() => setVista("dia")} disabled={enviando}>
@@ -394,10 +396,15 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
               )}
               {listo.estado === "quitado" && (
                 <p className={hoja.nota}>
-                  Quitado: este día no se publica.{" "}
-                  <button type="button" className={admin.enlace} onClick={() => hacer(() => volverAProgramarDia(id))} disabled={enviando}>
-                    Volver a programar
-                  </button>
+                  Quitado: este día no se publica.
+                  {listo.tipo !== "semana" && (
+                    <>
+                      {" "}
+                      <button type="button" className={admin.enlace} onClick={() => hacer(() => volverAProgramarDia(id))} disabled={enviando}>
+                        Volver a programar
+                      </button>
+                    </>
+                  )}
                 </p>
               )}
               {pub?.fallo && (
