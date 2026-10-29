@@ -1,10 +1,12 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import HojaDia from "@/components/instagram/HojaDia";
 import HojaMaterial from "@/components/instagram/HojaMaterial";
 import HojaSugerencia from "@/components/instagram/HojaSugerencia";
+import useAlDia from "@/components/instagram/useAlDia";
+import Girando from "@/components/ui/Girando";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Cabecera from "@/components/ui/Cabecera";
 import { Chip } from "@/components/ui/Chip";
@@ -14,7 +16,6 @@ import Renglon from "@/components/ui/Renglon";
 import renglonCss from "@/components/ui/Renglon.module.css";
 import lista from "@/components/Lista.module.css";
 import { SIN_FOTO } from "@/lib/imagen";
-import { REFRESCO_MS } from "@/lib/redes/reglas";
 import admin from "../admin.module.css";
 import { HojaCiudades, recordarCiudad } from "../CabeceraLista";
 import type { CiudadPanel } from "../consultas";
@@ -55,18 +56,8 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
     const consulta = s.toString();
     router.replace(consulta ? `${ruta}?${consulta}` : ruta, { scroll: false });
   };
-  const hayEnCamino = !!semana?.dias.some((d) => d.estado === "publicando");
-  useEffect(() => {
-    const refrescar = () => {
-      if (document.visibilityState === "visible") router.refresh();
-    };
-    document.addEventListener("visibilitychange", refrescar);
-    const reloj = hayEnCamino ? window.setInterval(refrescar, REFRESCO_MS) : null;
-    return () => {
-      document.removeEventListener("visibilitychange", refrescar);
-      if (reloj) window.clearInterval(reloj);
-    };
-  }, [hayEnCamino, router]);
+  // OL-488 (añadido): mientras un día se publica, cada 5 s se pregunta por su trabajo y la semana se refresca en cuanto termina (y al volver).
+  useAlDia((semana?.dias ?? []).flatMap((d) => (d.estado === "publicando" && d.trabajoId ? [{ id: d.trabajoId, reintentando: !!d.reintentando }] : [])), () => router.refresh());
 
   const renglon = (d: DiaSemana) =>
     d.pasado ? (
@@ -96,7 +87,7 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
       }
     >
       <span className={renglonCss.envuelve}>{d.cuando}</span>
-      <span className={unir(renglonCss.envuelve, d.estado === "publicado" && styles.hecho, (d.sugerencia || d.nadie?.abreFalta) && styles.falta)}>{d.lineaEstado}</span>
+      <span className={unir(renglonCss.envuelve, d.estado === "publicado" && styles.hecho, (d.sugerencia || d.nadie?.abreFalta) && styles.falta)}>{d.estado === "publicando" ? <Girando texto={d.lineaEstado} /> : d.lineaEstado}</span>
       {d.aviso && <span className={unir(renglonCss.envuelve, d.aviso.falta && styles.falta)}>{d.aviso.texto}</span>}
       {d.medida && <span className={renglonCss.envuelve}>{d.medida}</span>}
     </Renglon>

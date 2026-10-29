@@ -189,10 +189,45 @@ try {
   const trabajo = delJueves?.trabajo_id ? (await leer("redes_trabajos", `select=id,estado,siguiente_en&id=eq.${delJueves.trabajo_id}`))[0] : null;
   comprobar(!!trabajo && Date.parse(trabajo.siguiente_en) <= Date.parse(AHORA) + 1000, `el trabajo sale ya (siguiente_en ${trabajo?.siguiente_en}, estado ${trabajo?.estado})`);
   await page.locator("main li", { hasText: /Hoy · 9:00 am · Esta semana/ }).first().waitFor();
-  await page.waitForTimeout(1500);
+  let cargas = 0;
+  page.on("load", () => cargas++);
+  const filaHoy = fila(page, "Hoy · 9:00 am · Esta semana");
+  await filaHoy.getByText(/Publicando…|Reintentando…/).waitFor({ timeout: 10000 }).catch(() => undefined);
+  const conAnillo = await filaHoy.locator('[class*="anillo"]').count();
+  await filaHoy.evaluate((e) => e.scrollIntoView({ block: "center" }));
   await foto(page, "03-publicando-hoy");
-  const tHoy = await texto(fila(page, "Hoy · 9:00 am · Esta semana"));
-  comprobar(/Publicando…|Publicado/.test(tHoy), `el renglón de hoy pasa a «Publicando…» o «Publicado»: «${tHoy.slice(0, 100)}»`);
+  const tHoy = await texto(filaHoy);
+  comprobar(/Publicando…|Reintentando…/.test(tHoy) && conAnillo === 1, `el renglón de hoy dice «Publicando…» con su cargador: «${tHoy.slice(0, 100)}»`);
+  // Añadido del founder (16:20): la pantalla se entera sola de que terminó, sin recargar (pregunta cada 5 s).
+  await filaHoy.getByText("Publicado").waitFor({ timeout: 45000 });
+  await foto(page, "03b-publicado-solo");
+  comprobar(cargas === 0 && (await filaHoy.locator('[class*="anillo"]').count()) === 0, `sin recargar, el renglón de hoy pasa solo a «Publicado» y el cargador se va (${cargas} cargas de página)`);
+
+  // ---- 2b. La lista de eventos: «Publicar» un evento, su renglón con el cargador y, solo, «Ya en Instagram».
+  await page.goto(`${SEMANA}&pestana=eventos`, { waitUntil: "load" });
+  const paraPublicar = page.locator("main section", { has: page.locator("h2", { hasText: "Para publicar" }) });
+  await paraPublicar.locator("li").first().waitFor({ timeout: 30000 });
+  const primero = paraPublicar.locator("li").first();
+  const titulo = (await primero.locator("b").first().innerText()).trim();
+  await tocar(page, primero.locator("a"), `abrir ${titulo}`);
+  const hojaEv = hojaAbierta(page);
+  const botonPublicar = hojaEv.getByRole("button", { name: "Publicar", exact: true });
+  await botonPublicar.waitFor({ timeout: 30000 });
+  await tocar(page, botonPublicar, "Publicar");
+  await page.waitForFunction(() => !document.querySelector("[role=dialog]"), null, { timeout: 30000 });
+  cargas = 0;
+  const filaEv = page.locator("main li", { hasText: titulo }).first();
+  await filaEv.getByText(/Publicando…|Reintentando…/).waitFor({ timeout: 15000 }).catch(() => undefined);
+  const anilloEv = await filaEv.locator('[class*="anillo"]').count();
+  await filaEv.evaluate((e) => e.scrollIntoView({ block: "center" }));
+  await foto(page, "03c-eventos-publicando");
+  comprobar(anilloEv === 1 && /Publicando…|Reintentando…/.test(await texto(filaEv)), `en la lista de eventos, «${titulo}» dice «Publicando…» con su cargador`);
+  const yaEnInstagram = page.locator("main section", { has: page.locator("h2", { hasText: "Ya en Instagram" }) }).locator("li", { hasText: titulo });
+  await yaEnInstagram.first().waitFor({ timeout: 45000 });
+  await yaEnInstagram.first().evaluate((e) => e.scrollIntoView({ block: "center" }));
+  await foto(page, "03d-eventos-publicado-solo");
+  comprobar(cargas === 0 && (await yaEnInstagram.first().locator('[class*="anillo"]').count()) === 0, `sin recargar, «${titulo}» pasa solo a «Ya en Instagram» (${cargas} cargas de página): «${(await texto(yaEnInstagram)).slice(0, 90)}»`);
+  await abrirSemana(page);
 
   // ---- 3. «Falta material»: la lista, la ficha de Íñigo y «Pedírselo» (el aviso queda creado para Marcos).
   await tocar(page, filaFalta(page).locator("a"), "abrir «Falta material»");

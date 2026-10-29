@@ -33,6 +33,7 @@ import {
   type TipoDia,
 } from "@/lib/instagram/semana";
 import { usuarioDeInstagram } from "@/lib/instagram/texto";
+import { reintenta } from "@/lib/redes/reglas";
 import type { ClienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -81,6 +82,9 @@ export type DiaSemana = {
   permalink: string | null;
   /** Sin JavaScript, el renglón lleva a la ficha (o a la lista de hoy). */
   href: string;
+  /** OL-488 (añadido): el trabajo en camino de este día (la semana pregunta por él cada 5 s mientras dice «Publicando…»). */
+  trabajoId?: string | null;
+  reintentando?: boolean;
   /** OL-488: un día que ya pasó sin publicación: una sola línea gris («Mié 7 · antes de armar la semana»), sin hoja. */
   pasado?: string;
   /** OL-488: de hoy en adelante, sin publicación: lo que sugiere la regla, para «Programar» o «Publicar ahora». */
@@ -338,7 +342,7 @@ export async function leerFalta(supabase: ClienteServidor, ciudad: string, lunes
 
 type Ficha = { id: string; slug: string; nombre: string; redes: unknown; imagen: string | null };
 type Evento = { id: string; slug: string | null; titulo: string; imagen: string | null; inicio: string; zona: string };
-type Trabajo = { id: string; estado: string; siguiente_en: string; resultado: { instagram?: { permalink?: string | null } } | null };
+type Trabajo = { id: string; estado: string; siguiente_en: string; resultado: { instagram?: { permalink?: string | null } } | null; intentos?: number; fallos?: number };
 
 /** Lo que dice cada día: el nombre, la miniatura, cómo va, el aviso y (ya publicado) lo que dio. */
 export async function decirDias(supabase: ClienteServidor, filas: FilaDia[], ahora: Date, zona: string): Promise<DiaSemana[]> {
@@ -350,7 +354,7 @@ export async function decirDias(supabase: ClienteServidor, filas: FilaDia[], aho
     ids("artista_id").length ? supabase.from("artistas").select("id, slug, nombre, redes, imagen:foto").in("id", ids("artista_id")) : null,
     ids("lugar_id").length ? supabase.from("lugares").select("id, slug, nombre, redes, imagen:portada").in("id", ids("lugar_id")) : null,
     deEventos.length ? supabase.from("eventos").select("id, slug, titulo, imagen, inicio, zona").in("id", deEventos) : null,
-    trabajos.length ? supabase.from("redes_trabajos").select("id, estado, siguiente_en, resultado").in("id", trabajos) : null,
+    trabajos.length ? supabase.from("redes_trabajos").select("id, estado, siguiente_en, resultado, intentos, fallos").in("id", trabajos) : null,
     publicados.length ? supabase.rpc("instagram_resultado", { p_casillas: publicados }) : null,
   ]);
   const por = <T extends { id: string }>(x: { data: unknown } | null) => new Map(((x?.data ?? []) as T[]).map((y) => [y.id, y]));
@@ -379,7 +383,9 @@ export async function decirDias(supabase: ClienteServidor, filas: FilaDia[], aho
       imagen,
       cuando: cuandoDelDia({ fecha: f.fecha, hora: f.hora, tipo: f.tipo }, ahora, zona, f.tipo === "semana" ? delFin.length + 1 : 0),
       estado,
-      lineaEstado: lineaDelEstado(estado, f.hora, f.tipo === "descanso" ? f.motivo : null),
+      lineaEstado: estado === "publicando" && trabajo && reintenta(trabajo.estado, trabajo) ? "Reintentando…" : lineaDelEstado(estado, f.hora, f.tipo === "descanso" ? f.motivo : null),
+      trabajoId: estado === "publicando" ? (trabajo?.id ?? null) : null,
+      reintentando: estado === "publicando" && !!trabajo && reintenta(trabajo.estado, trabajo),
       aviso: lineaDelAviso({ tipo: f.tipo, cuenta: ficha ? usuarioDeInstagram(ficha.redes) : null, aviso_en: f.aviso_en, reemplaza: f.reemplaza }, estado, ahora, zona),
       medida: m ? `${m.visitas === 1 ? "1 visita" : `${m.visitas} visitas`} · ${m.van} van` : null,
       permalink: trabajo?.resultado?.instagram?.permalink ?? null,

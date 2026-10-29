@@ -48,7 +48,20 @@ export type EstadoFacebook = { estado: "publicada" } | { estado: "error"; error:
  * Un renglón de la lista, ya dicho. `facebook`: solo en lo que ya está en Instagram. `publicando` (OL-465): algo de este evento está en la cola de
  * redes (la lista se refresca sola mientras lo haya).
  */
-export type Sugerencia = { id: string; href: string; titulo: string; foto: string | null; cuando: string; donde: string; linea: string; publicado: boolean; facebook: EstadoFacebook | null; publicando: boolean };
+export type Sugerencia = {
+  id: string;
+  href: string;
+  titulo: string;
+  foto: string | null;
+  cuando: string;
+  donde: string;
+  linea: string;
+  publicado: boolean;
+  facebook: EstadoFacebook | null;
+  publicando: boolean;
+  /** OL-488: los trabajos en camino de este evento (la lista pregunta por ellos cada 5 s y se refresca en cuanto terminan). */
+  enCamino?: { id: string; reintentando: boolean }[];
+};
 
 
 /** El estado de Facebook de cada evento, de sus intentos (del más nuevo al más viejo): con uno publicado, publicado; si no, el último error. */
@@ -101,7 +114,7 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
   const cola = filas.length
     ? await supabase
         .from("redes_trabajos")
-        .select("id, evento_id, red, formato, estado, pedido, error")
+        .select("id, evento_id, red, formato, estado, pedido, error, intentos, fallos")
         .in("evento_id", filas.map((f) => f.id))
         .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
         // OL-479: lo que la semana de Instagram programó para más tarde no está «Publicando…» (lo dice la pestaña Semana).
@@ -130,6 +143,7 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
     publicado: !!f.publicado_en,
     facebook: f.publicado_en && enFacebook ? (trabajos.facebook.has(f.id) ? { estado: "publicando" } : (enFacebook.get(f.id) ?? { estado: "nada" })) : null,
     publicando: enCamino(trabajos.instagram.get(f.id)) || (!!f.publicado_en && trabajos.facebook.has(f.id)),
+    enCamino: trabajos.vivos.get(f.id) ?? [],
   });
   const senal = (f: FilaSugerencia) => ({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio });
   const para = filas.filter((f) => !f.publicado_en).sort((a, b) => porSenal(senal(a), senal(b))).map(renglon);

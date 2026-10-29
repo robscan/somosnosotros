@@ -102,8 +102,8 @@ en la app (`cartelDescargable`), y «Falta material» dice aparte «Su portada e
 - **Recorrido en la app** (`node scripts/ops/auditoria-ui/capturar-instagram-material.mjs . docs/rediseno/capturas-520`: la app compilada contra el
   respaldo con `RESPALDO_HISTORIAL=1 RESPALDO_INSTAGRAM_SEMANA=1 RESPALDO_IG_MATERIAL=1`, el reloj fijo el **jueves 8 de octubre a las 10:30 de San
   Luis**, el trabajador de verdad y la API de Instagram de mentira; Chrome real a 2×, toques por coordenadas): **30 de 30, sin errores de página ni de
-  consola** (`capturas-520/recorrido.txt`, con lo que había bajo el dedo en cada toque): el miércoles gris; hoy con la sugerencia y solo «Publicar
-  ahora» (su hora pasó); el trabajo en la cola ya y el renglón «Publicando…» (y luego «Publicado»); «Falta material» con Íñigo (lo lleva Marcos), el
+  consola** (`capturas-520/recorrido.txt`, con lo que había bajo el dedo en cada toque; 33 con las del añadido de la sección 9): el miércoles gris;
+  hoy con la sugerencia y solo «Publicar ahora» (su hora pasó); el trabajo en la cola ya y el renglón «Publicando…» (y luego, solo, «Publicado»); «Falta material» con Íñigo (lo lleva Marcos), el
   Ferrocarril (portada de otra página) y quien nadie lleva (solo «Subir yo»); «Pedírselo» deja el pedido para Marcos y ya no se ofrece; la que viene
   con «Nadie con material para el mié 14»; «Subir yo» la portada del museo (subida de verdad al Storage del respaldo) y vuelve sin él; el mié 14 pasa
   a sugerir al museo, «Programar» lo deja en la cola a las 7:00 pm y el renglón dice «Programado»; la portada de Administración con «· 7 sin
@@ -122,8 +122,12 @@ en la app (`cartelDescargable`), y «Falta material» dice aparte «Su portada e
   fecha se quedaron fuera por falta de foto o portada · Pedírselo o subirla tú»**.
 - `02-sugerencia-hoy`: la hoja: el cartel, «El domingo 11», por qué («Carrusel de 3 imágenes…»), «Su hora (hoy a las 9:00 am) ya pasó: con «Publicar
   ahora» sale ya en @smsnstrsapp. Si no lo tocas, ese día no sale nada.» y «Publicar ahora» anclado.
-- `03-publicando-hoy`: tras «Publicar ahora», el renglón de hoy con la portada del carrusel y «Publicando…» (lo poco visible que el founder pidió
-  mejorar: sección 9).
+- `03-publicando-hoy`: tras «Publicar ahora», el renglón de hoy con la portada del carrusel y **«Publicando…» con su cargador** (el anillo violeta
+  del añadido, sección 9).
+- `03b-publicado-solo`: el mismo renglón, **sin recargar la página**: «Publicado · 0 visitas · 0 van · Ver», ya sin cargador.
+- `03c-eventos-publicando`: la pestaña «Eventos», tras «Publicar» en «LXS COLOCAOS: La última fogueada»: su renglón con **«Publicando…» y el
+  cargador**.
+- `03d-eventos-publicado-solo`: sin recargar, el evento ya en «Ya en Instagram» con «Publicación · Hoy, 10:30 am» y «Facebook: publicado».
 - `04-falta-material`: la lista: 0Backside0, Abril Merlot (foto y portada), el Museo del Ferrocarril («Su portada es de otra página: hay que subirla a
   la app»), el museo Leonora Carrington («La lleva Ana») y Pimpolina, cada una con su próxima fecha.
 - `05-ficha-inigo`, `06-pedido`: Íñigo: «Falta la portada.», «Próxima fecha: dom 11 · Íñigo Montalvo: guitarra sola.», «La lleva Marcos…» con
@@ -133,7 +137,7 @@ en la app (`cartelDescargable`), y «Falta material» dice aparte «Su portada e
   portada», «Volver» y «Guardar»; de vuelta en la lista, «Museo Leonora Carrington (demo) ya tiene su material: entra a la semana.» y él ya no está.
 - `11-viene-museo`, `12-sugerencia-programar`, `13-viene-programado`: el mié 14 sugiere al museo («Sin programar: prográmalo»), su hoja con
   «Programar» («sale sola el mié 14 a las 7:00 pm»), y el renglón ya con su tarjeta, «Programado» y «Falta avisarle».
-- `14-portada-admin`: «@smsnstrsapp · 5 publicadas esta semana · 2 en Facebook · 14 por publicar · Semana: 5 de 5 programadas · la que viene, armada
+- `14-portada-admin`: «@smsnstrsapp · 6 publicadas esta semana · 3 en Facebook · 13 por publicar · Semana: 5 de 5 programadas · la que viene, armada
   el jue 8 · **7 sin material**».
 - `15-novedades-marcos`: Novedades de Marcos, «Hoy»: el icono de la cámara, «Completa tu portada y te presentamos en Instagram», «Íñigo Montalvo
   (demo)», «Toca para completar tu ficha».
@@ -169,6 +173,32 @@ en la app (`cartelDescargable`), y «Falta material» dice aparte «Su portada e
 3. «Pedírselo» le llega a quien lleva la ficha una vez por semana. ¿Una vez por semana está bien, o solo una vez y ya?
 4. Si un día de esta semana no tiene publicación y no la tocas, ese día no sale nada. ¿Así, o quieres que lo de hoy salga solo al rato?
 
-## 9. Añadido del founder (16:20): «Publicando» más visible
+## 9. Añadido del founder (16:20): «Publicando» más visible (commit aparte)
 
-(En su propio commit; ver abajo.)
+**Manda:** «Pon el estado "Publicando" para las publicaciones de Instagram más visible en el admin y si se puede agrega un cargador». Lo que pasó: al
+publicar desde Administración › Instagram, «Publicando» se veía poco y se quedó así aunque la cola ya había terminado (el trabajo `aa1a2c09` falló al
+primer intento, la cola lo repitió al minuto y publicó; la pantalla no se refrescó).
+
+- **El cargador** (`ui/Girando`): un anillo que gira, del violeta de lo que pide atención, con su texto en negritas; una vuelta por segundo (con
+  «reducir movimiento», despacio). Va en el renglón del evento de la lista («Publicando…», «Facebook: publicando…»), en la hoja del evento
+  («Instagram: publicando…»), en el renglón del día de la semana y en la hoja del día. **«Reintentando…»** cuando la cola va en otro intento (un
+  fallo pasajero anotado, `fallos ≥ 1`, o más de un intento): `leerEstadoTrabajo` lo lee de `intentos` y `fallos`, que ahora se piden en todas las
+  lecturas de la cola de esas pantallas.
+- **La pantalla se entera sola:** mientras algo va en camino, la lista de eventos y la semana preguntan **cada 5 s** por esos trabajos
+  (`estadosTrabajos`, una consulta chica: estado e intento de unos cuantos ids) y, en cuanto uno termina o pasa a otro intento, se vuelven a pedir
+  (`router.refresh()`): «Publicado» con su enlace o el error con su frase, sin recargar (`useAlDia`). Las hojas (del evento y del día) preguntan
+  también cada 5 s (antes, 20 s: `REFRESCO_MS`). Además, al volver a la app: `visibilitychange` y `pageshow` cuando la página vuelve de la memoria
+  del navegador (en el iPhone, una app instalada que vuelve del fondo no siempre avisa con el primero). Sin nada en camino no se pregunta nada. No
+  hay canal en tiempo real para la cola de OL-465 (la cola vive en la base y la mira el latido), así que es preguntar.
+- **Por qué se quedaba:** no lo pude reproducir con la cola de prueba (allí el refresco cada 20 s sí llegaba). Lo más probable es que la pantalla
+  estuviera en el fondo o en una app instalada que volvió sin avisar (`visibilitychange` no saltó) y que el siguiente refresco tardara hasta 20 s;
+  con la pregunta cada 5 s, el `pageshow` y el refresco al cambiar el intento, eso queda cubierto. Si se vuelve a ver, el gestor puede mirar en
+  `redes_trabajos` el `actualizado_en` de ese trabajo contra la hora en que se tomó la captura.
+- **Comprobado:** `npm test` **5 075 de 5 075** (2 nuevas en `reglas.test.ts`: «Reintentando…» y la cola por evento con sus trabajos vivos; la de
+  `leerEstadoTrabajo` suma `reintentando`); `npm run test:componentes` **789 de 789** (en `EspejoFacebook.componentes.test.mjs`, con el reloj de
+  Playwright y toques reales: la hoja pregunta a los 5 s y no antes; el renglón «Publicando…» lleva su cargador, a los 5 s pregunta y, sin cambio,
+  no refresca; al terminar, se refresca una vez y el cargador se va; sin nada en camino no pregunta más; y una nueva: el trabajo pasa a otro intento
+  → «Reintentando…» con su cargador → publicado). En el recorrido (`capturas-520`, ahora **33 de 33**): el renglón de hoy con «Publicando…» y el
+  cargador pasa solo a «Publicado» **sin ninguna carga de página**, y lo mismo un evento de la lista que pasa solo a «Ya en Instagram» (`03`,
+  `03b`, `03c`, `03d`). `npm run medir -- --solo=admin-instagram`: sin novedades (el cargador solo sale mientras se publica). `lint`, `typecheck` e
+  `inventario`, limpios.

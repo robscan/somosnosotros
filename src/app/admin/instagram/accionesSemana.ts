@@ -14,6 +14,7 @@ import { estadoDelDia, lineaCandidato, lunesDe, motivoDe, motivoDeEvento, nombre
 import { revisarTexto, type EventoIg } from "@/lib/instagram/texto";
 import { LARGO_CUERPO, LARGO_TITULO, recortar } from "@/lib/avisos";
 import { avisarAlTelefono } from "@/lib/redes/herramientas";
+import { reintenta } from "@/lib/redes/reglas";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -53,6 +54,8 @@ export type PreparadoDia =
       /** Por qué lo eligió el sistema (o «Elegido a mano»). */
       por: string | null;
       estado: EstadoDia;
+      /** OL-488 (añadido): mientras se publica, si la cola va en otro intento («Reintentando…»). */
+      reintentando: boolean;
       /** Se puede cambiar, quitar o publicar ahora (no ha salido ni se está publicando). */
       abierto: boolean;
       /** El día del renglón, dicho para las frases: «hoy», «el lunes 12». */
@@ -80,7 +83,7 @@ function cuandoEnFrase(fecha: string, ahora: Date, zona: string): string {
   return `el ${diaLargo(fecha, ahora, zona).replace(/ de \S+( de \d+)?$/, "")}`;
 }
 
-type TrabajoDia = { id: string; estado: string; siguiente_en: string; pedido: Record<string, unknown> | null; resultado: { instagram?: { permalink?: string | null; sinCoautor?: boolean }; facebook?: { ok?: boolean; permalink?: string | null; mensaje?: string } | null; historia?: { ok: boolean; permalink: string | null }; mensaje?: string } | null; terminado_en: string | null; error: string | null };
+type TrabajoDia = { id: string; estado: string; siguiente_en: string; pedido: Record<string, unknown> | null; resultado: { instagram?: { permalink?: string | null; sinCoautor?: boolean }; facebook?: { ok?: boolean; permalink?: string | null; mensaje?: string } | null; historia?: { ok: boolean; permalink: string | null }; mensaje?: string } | null; terminado_en: string | null; error: string | null; intentos?: number; fallos?: number };
 
 /** Prepara la hoja de un día. */
 export async function prepararDia(id: string): Promise<PreparadoDia> {
@@ -91,7 +94,7 @@ export async function prepararDia(id: string): Promise<PreparadoDia> {
   const ahora = new Date();
   const zona = await zonaDeCiudad(s, d.ciudad);
   const [trabajo, ciudad, resultado] = await Promise.all([
-    d.trabajo_id ? s.from("redes_trabajos").select("id, estado, siguiente_en, pedido, resultado, terminado_en, error").eq("id", d.trabajo_id).maybeSingle<TrabajoDia>() : Promise.resolve({ data: null }),
+    d.trabajo_id ? s.from("redes_trabajos").select("id, estado, siguiente_en, pedido, resultado, terminado_en, error, intentos, fallos").eq("id", d.trabajo_id).maybeSingle<TrabajoDia>() : Promise.resolve({ data: null }),
     s.from("ciudades").select("nombre").eq("slug", d.ciudad).maybeSingle<{ nombre: string }>(),
     d.estado === "publicado" ? s.rpc("instagram_resultado", { p_casillas: [d.id] }) : Promise.resolve({ data: null }),
   ]);
@@ -155,6 +158,7 @@ export async function prepararDia(id: string): Promise<PreparadoDia> {
     nombre,
     por: d.elegido_por === "persona" ? (d.motivo ?? "Elegido a mano.") : d.motivo,
     estado,
+    reintentando: !!t && estado === "publicando" && reintenta(t.estado, t),
     abierto,
     cuandoSale,
     hora: d.hora,

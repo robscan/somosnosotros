@@ -10,7 +10,12 @@ ok · la hoja de la sugerencia: sin textos cortados, sin toques menores de 44 y 
 Publicar ahora → bajo el dedo: «Publicar ahora»
 ok · el jueves queda guardado como «Esta semana» con su trabajo en la cola (2 eventos)
 ok · el trabajo sale ya (siguiente_en 2026-10-08T16:30:00.000Z, estado en_cola)
-ok · el renglón de hoy pasa a «Publicando…» o «Publicado»: «El domingo 11 Hoy · 9:00 am · Esta semana · carrusel de 3 Publicando…»
+ok · el renglón de hoy dice «Publicando…» con su cargador: «El domingo 11 Hoy · 9:00 am · Esta semana · carrusel de 3 Publicando…»
+ok · sin recargar, el renglón de hoy pasa solo a «Publicado» y el cargador se va (0 cargas de página)
+abrir LXS COLOCAOS: La última fogueada → bajo el dedo: «LXS COLOCAOS: La última fogueadalun 12 de oct · 7:00–10:00 pmMUNI Muse»
+Publicar → bajo el dedo: «Publicar»
+ok · en la lista de eventos, «LXS COLOCAOS: La última fogueada» dice «Publicando…» con su cargador
+ok · sin recargar, «LXS COLOCAOS: La última fogueada» pasa solo a «Ya en Instagram» (0 cargas de página): «LXS COLOCAOS: La última fogueada lun 12 de oct · 7:00–10:00 pm MUNI Museo Universitario UA»
 abrir «Falta material» → bajo el dedo: «Falta material6 artistas y 2 lugares con fecha se quedaron fuera por f»
 ok · Íñigo: qué falta, su próxima fecha y quién lo lleva: «Íñigo Montalvo (demo) Falta la portada Próxima fecha: dom 11 · Íñigo Montalvo: guitarra sola La lleva Marcos»
 ok · una portada de otra página se dice aparte: «Museo del Ferrocarril Jesús García Corona Su portada es de otra página: hay que subirla a la app Pró»
@@ -31,16 +36,16 @@ abrir el museo → bajo el dedo: «Museo Leonora Carrington (demo)Falta la porta
 Subir yo → bajo el dedo: «Subir yo»
 Elegir la portada → bajo el dedo: «Elegir la portada»
 Guardar → bajo el dedo: «Guardar»
-ok · la portada del museo queda en su ficha, en el Storage de la app (http://127.0.0.1:62124/storage/v1/object/public/fotos/lugares/55555555-5555-4555-8555-555555555555/portada-12b80be2-ce45-4f8b-ba78-d3a851dbb3b3.jpg)
+ok · la portada del museo queda en su ficha, en el Storage de la app (http://127.0.0.1:63132/storage/v1/object/public/fotos/lugares/55555555-5555-4555-8555-555555555555/portada-590a9118-dada-4a3a-be9b-85caa3d18806.jpg)
 ok · vuelve a la lista y el museo ya no está en «Falta material»
 ✕ → bajo el dedo: «»
 ok · el museo ya entra: «Museo Leonora Carrington (demo) Mié 14 · 7:00 pm · Lugar Sin programar: prográmalo»
 abrir la sugerencia del mié 14 → bajo el dedo: «Museo Leonora Carrington (demo)Mié 14 · 7:00 pm · LugarSin programar: »
 ok · un día que no es hoy: solo «Programar»
 Programar → bajo el dedo: «Programar»
-ok · el mié 14 queda programado a las 7:00 pm ({"tipo":"lugar","estado":"programado","trabajo_id":"4bea42a0-6f05-4223-a343-6f6881e615d0","programado_para":"2026-10-15T01:00:00.000Z"} · {"estado":"en_cola","siguiente_en":"2026-10-15T01:00:00.000Z"})
+ok · el mié 14 queda programado a las 7:00 pm ({"tipo":"lugar","estado":"programado","trabajo_id":"00eb48a0-4748-4acd-891a-66a80d73320f","programado_para":"2026-10-15T01:00:00.000Z"} · {"estado":"en_cola","siguiente_en":"2026-10-15T01:00:00.000Z"})
 ok · el renglón dice «Programado»: «Museo Leonora Carrington (demo) Mié 14 · 7:00 pm · Lugar Programado Falta avisarle»
-ok · la portada de Administración: «@smsnstrsapp 5 publicadas esta semana · 2 en Facebook · 14 por publicar · Semana: 5 de 5 programadas · la que viene, armada el jue 8 · 7 sin material»
+ok · la portada de Administración: «@smsnstrsapp 6 publicadas esta semana · 3 en Facebook · 13 por publicar · Semana: 5 de 5 programadas · la que viene, armada el jue 8 · 7 sin material»
 ok · Marcos: «Completa tu portada y te presentamos en Instagram Íñigo Montalvo (demo) Toca para completar tu ficha» → /artistas/inigo-montalvo-demo/editar
 ok · la semana a 320: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
 abrir «Falta material» a 320 → bajo el dedo: «Falta material6 artistas y 1 lugar con fecha se quedaron fuera por fal»
