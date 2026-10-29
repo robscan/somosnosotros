@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { baseGraph, VERSION_GRAPH } from "./api";
 import { PERMISOS_PARA_PUBLICAR, PERMISOS_PEDIDOS, type ClaveVuelta } from "./conexionEstado";
+import { conPrueba, secretoDeApp } from "./prueba-secreto";
 
 /**
  * «Conectar Instagram» (OL-471, bitácora 503; decisión del founder del 2026-10-28, «Opción 1»: que la app consiga el token sola en vez de pegarlo
@@ -22,10 +23,13 @@ export const GALLETA_ESTADO = "sn_ig_conectar";
 export const VIGENCIA_ESTADO_MS = 10 * 60 * 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-/** La llave de la firma: derivada de `CRON_SECRET` (para que una firma de aquí no sirva en ningún otro sitio que use ese secreto). */
+/**
+ * La llave de la firma: derivada de `META_APP_SECRET` (OL-484, bitácora 516; antes de `CRON_SECRET`, que ya servía para demasiadas cosas). La
+ * firma usa `instagram-conectar:<secreto>` como llave, así que no se confunde con `appsecret_proof` (que usa el secreto solo). Sin el secreto,
+ * null: la conexión dice `config`.
+ */
 export function secretoDeEstado(env: Record<string, string | undefined> = process.env): string | null {
-  const s = env.CRON_SECRET?.trim();
-  return s && s.length >= 16 ? s : null;
+  return secretoDeApp(env);
 }
 const firma = (carga: string, secreto: string) => createHmac("sha256", `instagram-conectar:${secreto}`).update(carga).digest("base64url");
 
@@ -89,10 +93,15 @@ export type DependenciasVuelta = { traer: typeof fetch; guardar: (c: Conexion) =
 
 type Respuesta = Record<string, unknown> & { error?: unknown };
 
-/** Una llamada a la Graph API sin token en la cabecera. Nunca lanza ni registra nada: la red caída o una respuesta rara son null. */
-async function pedir(traer: typeof fetch, ruta: string, params: Record<string, string>): Promise<Respuesta | null> {
+/**
+ * Una llamada a la Graph API sin token en la cabecera. Nunca lanza ni registra nada: la red caída o una respuesta rara son null. Con `conToken`
+ * (OL-484), lleva el `access_token` y su `appsecret_proof` (`prueba-secreto.ts`); el cambio del código (`/oauth/access_token`) no lleva token,
+ * sino `client_secret`, y va sin prueba.
+ */
+async function pedir(traer: typeof fetch, ruta: string, params: Record<string, string>, conToken?: { token: string; secreto: string }): Promise<Respuesta | null> {
+  const todos = conToken ? conPrueba(params, conToken.token, conToken.secreto).params : params;
   try {
-    const r = await traer(`${baseGraph()}${ruta}?${new URLSearchParams(params)}`, { method: "GET", cache: "no-store" });
+    const r = await traer(`${baseGraph()}${ruta}?${new URLSearchParams(todos)}`, { method: "GET", cache: "no-store" });
     const json = (await r.json().catch(() => null)) as Respuesta | null;
     return r.ok && json && typeof json === "object" && !json.error ? json : null;
   } catch {
@@ -122,9 +131,10 @@ export async function atenderVuelta(e: EntradaVuelta, c: ConfigVuelta, dep: Depe
   if (!esToken(corto)) return "meta";
   const tokenUsuario = (await pedir(dep.traer, "/oauth/access_token", { grant_type: "fb_exchange_token", client_id: c.appId, client_secret: c.appSecret, fb_exchange_token: corto }))?.access_token;
   if (!esToken(tokenUsuario)) return "meta";
+  const conToken = { token: tokenUsuario, secreto: c.appSecret };
 
   // 3. Qué permisos concedió. Sin los de publicar no se guarda (seguiría mandando el token de respaldo).
-  const permisos = await pedir(dep.traer, "/me/permissions", { access_token: tokenUsuario });
+  const permisos = await pedir(dep.traer, "/me/permissions", {}, conToken);
   if (!permisos || !Array.isArray(permisos.data)) return "meta";
   const concedidos = (permisos.data as { permission?: unknown; status?: unknown }[])
     .filter((p) => p.status === "granted" && typeof p.permission === "string" && /^[a-z_]{1,60}$/.test(p.permission))
@@ -133,7 +143,7 @@ export async function atenderVuelta(e: EntradaVuelta, c: ConfigVuelta, dep: Depe
   if (PERMISOS_PARA_PUBLICAR.some((p) => !concedidos.includes(p))) return "permisos";
 
   // 4. La página de la marca entre las suyas, con su token y su cuenta de Instagram.
-  const cuentas = await pedir(dep.traer, "/me/accounts", { fields: "id,name,access_token,instagram_business_account{id,username}", limit: "100", access_token: tokenUsuario });
+  const cuentas = await pedir(dep.traer, "/me/accounts", { fields: "id,name,access_token,instagram_business_account{id,username}", limit: "100" }, conToken);
   if (!cuentas || !Array.isArray(cuentas.data)) return "meta";
   const pagina = (cuentas.data as { id?: unknown; name?: unknown; access_token?: unknown; instagram_business_account?: { id?: unknown; username?: unknown } }[]).find((p) => p.id === c.paginaId);
   const tokenPagina = pagina?.access_token;

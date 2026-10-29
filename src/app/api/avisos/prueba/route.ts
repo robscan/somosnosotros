@@ -22,6 +22,9 @@ type Dispositivo = { token: string; entorno: EntornoApns; muerta_en: string | nu
  * forma nueva, tal cual lo armaría la cola para la app (título = el evento, «Nuevo en …» de subtítulo, la fecha corta, el hilo del evento y la
  * dirección con `?desde=aviso&tipo=nuevo`), y devuelve en `aviso` lo que se mandó (solo datos públicos del evento) para compararlo con la
  * pantalla del teléfono.
+ *
+ * OL-484 (bitácora 516): solo a cuentas de la administración. `CRON_SECRET` lo tienen también los crons y los latidos de la base; si se filtra,
+ * que no sirva para mandar avisos a cualquier persona: si el `usuario_id` no es de un perfil con `rol = 'admin'`, 403 sin llamar a Apple.
  */
 export async function POST(request: Request) {
   if (!autorizadoPorSecreto(request.headers, process.env.CRON_SECRET)) return new Response("No autorizado", { status: 401 });
@@ -33,6 +36,9 @@ export async function POST(request: Request) {
   const apns = diagnosticoLlaveApns();
   const admin = clienteAdmin();
   if (!admin) return Response.json({ ok: false, error: "sin_config_supabase", apns }, { status: 503 });
+  const { data: perfil, error: errorPerfil } = await admin.from("perfiles").select("rol").eq("id", usuarioId).maybeSingle<{ rol: string | null }>();
+  if (errorPerfil) return Response.json({ ok: false, error: "base", apns }, { status: 503 });
+  if (perfil?.rol !== "admin") return Response.json({ ok: false, error: "solo_administracion" }, { status: 403 });
   const { data, error } = await admin.from("dispositivos_apns").select("token, entorno, muerta_en, actualizado_en")
     .eq("usuario_id", usuarioId).order("actualizado_en", { ascending: false }).limit(10);
   if (error) return Response.json({ ok: false, error: "base", apns }, { status: 503 });

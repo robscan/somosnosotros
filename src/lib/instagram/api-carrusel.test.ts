@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { publicarCarrusel, type PedidoCarrusel } from "./api";
+
+// OL-484 (bitácora 516): con un secreto de app inventado, como en producción (sin él, el resultado diría `sinPrueba`).
+beforeEach(() => vi.stubEnv("META_APP_SECRET", "secreto-de-app-inventado-484"));
+afterEach(() => vi.unstubAllEnvs());
 
 /**
  * OL-464 (bitácora 496): el carrusel con un `fetch` falso. Nunca se llama a la API real. Cada imagen es un contenedor hijo (`is_carousel_item`,

@@ -1,5 +1,5 @@
 import "server-only";
-import { llamarGraph, type RespuestaGraph } from "../instagram/api";
+import { llamarGraph, marcaSinPrueba, type RespuestaGraph } from "../instagram/api";
 
 /**
  * El cliente de la página de Facebook de la marca («Somos Nosotrxs»), para espejar ahí lo que se publica en Instagram desde Administración
@@ -21,7 +21,8 @@ import { llamarGraph, type RespuestaGraph } from "../instagram/api";
 export type ErrorFacebook = "imagen" | "permiso" | "otro";
 /** `imagenes`: varias fotos en una sola publicación (el espejo de un carrusel, OL-464); entonces `imagen` no se usa. */
 export type PedidoFacebook = { imagen: string; texto: string | null; historia: boolean; imagenes?: string[] };
-export type ResultadoFacebook = { ok: true; postId: string; permalink: string | null } | { ok: false; error: ErrorFacebook };
+/** `sinPrueba` (OL-484): falta `META_APP_SECRET` y las llamadas salieron sin `appsecret_proof` (la prueba la pone `llamarGraph`). */
+export type ResultadoFacebook = { ok: true; postId: string; permalink: string | null; sinPrueba?: true } | { ok: false; error: ErrorFacebook; sinPrueba?: true };
 export type OpcionesFacebook = { traer?: typeof fetch; token?: string; pagina?: string };
 
 type Respuesta = RespuestaGraph & { post_id?: string; success?: boolean; permalink_url?: string };
@@ -53,6 +54,10 @@ const ENLACE = /^https:\/\/(www\.|m\.|web\.)?facebook\.com\/\S{1,450}$/;
 
 /** Publica en la página de la marca una foto con su texto o, si `historia`, una historia. */
 export async function publicarEnPagina(p: PedidoFacebook, o: OpcionesFacebook = {}): Promise<ResultadoFacebook> {
+  return { ...(await publicarSinMarca(p, o)), ...marcaSinPrueba() };
+}
+
+async function publicarSinMarca(p: PedidoFacebook, o: OpcionesFacebook): Promise<ResultadoFacebook> {
   const c = credenciales(o);
   if (!c) return { ok: false, error: "permiso" };
   const traer = o.traer ?? fetch;
