@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
-const m = vi.hoisted(() => ({ enviar: vi.fn(), marcar: vi.fn(), diagnostico: vi.fn(), filas: vi.fn(), eq: vi.fn(), evento: vi.fn() }));
+const m = vi.hoisted(() => ({ enviar: vi.fn(), marcar: vi.fn(), diagnostico: vi.fn(), filas: vi.fn(), eq: vi.fn(), evento: vi.fn(), perfil: vi.fn() }));
 vi.mock("@/lib/push", async (original) => ({
   huellaToken: (await original<typeof import("@/lib/push")>()).huellaToken,
   enviarPushApns: m.enviar, marcarDireccionMuerta: m.marcar, diagnosticoLlaveApns: m.diagnostico,
 }));
 vi.mock("@/lib/supabase/admin", () => ({ clienteAdmin: () => ({ from: (tabla: string) => ({ select: () => ({
-  eq: (col: string, val: string) => { m.eq(col, val); return tabla === "eventos" ? { maybeSingle: m.evento } : { order: () => ({ limit: m.filas }) }; } }) }) }) }));
+  eq: (col: string, val: string) => { m.eq(col, val); return tabla === "eventos" ? { maybeSingle: m.evento } : tabla === "perfiles" ? { maybeSingle: m.perfil } : { order: () => ({ limit: m.filas }) }; } }) }) }) }));
 
 const PERSONA = "0b6f2a54-8c1e-4c55-9d5e-1f0a7b3c2d41";
 const VIVO = "a".repeat(64), MUERTO = "b".repeat(64);
@@ -16,6 +16,7 @@ const pedir = (cuerpo: unknown, secreto = "prueba") => POST(new Request("https:/
 
 beforeEach(() => {
   vi.stubEnv("CRON_SECRET", "prueba");
+  m.perfil.mockResolvedValue({ data: { rol: "admin" }, error: null });
   m.diagnostico.mockReturnValue({ keyId: "ok", llave: "pem_escapada", legible: true, jwt: "ok" });
   m.filas.mockResolvedValue({ data: [
     { token: VIVO, entorno: "produccion", muerta_en: null, actualizado_en: "2026-10-29T10:00:00Z" },
@@ -37,6 +38,20 @@ describe("prueba de humo de los avisos a la app (OL-476)", () => {
   it("pide un id de persona válido", async () => {
     expect((await pedir({})).status).toBe(400);
     expect((await pedir({ usuario_id: "no-es-uuid" })).status).toBe(400);
+    expect(m.enviar).not.toHaveBeenCalled();
+  });
+  it("OL-484: solo a cuentas de la administración; a cualquier otra persona, 403 sin llamar a Apple", async () => {
+    for (const data of [{ rol: "usuario" }, { rol: null }, null]) {
+      m.perfil.mockResolvedValueOnce({ data, error: null });
+      const res = await pedir({ usuario_id: PERSONA });
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ ok: false, error: "solo_administracion" });
+    }
+    expect(m.eq).toHaveBeenCalledWith("id", PERSONA);
+    expect(m.filas).not.toHaveBeenCalled();
+    expect(m.enviar).not.toHaveBeenCalled();
+    m.perfil.mockResolvedValueOnce({ data: null, error: { code: "57014" } });
+    expect((await pedir({ usuario_id: PERSONA })).status).toBe(503);
     expect(m.enviar).not.toHaveBeenCalled();
   });
   it("manda UN aviso «Prueba de avisos · <hora>» a cada teléfono y devuelve el código por teléfono, sin tokens", async () => {

@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { atenderVuelta, firmarEstado, leerEstado, secretoDeEstado, uriDeVuelta, urlDeConexion, VIGENCIA_ESTADO_MS, type Conexion, type EntradaVuelta } from "./conexion";
 import { PERMISOS_PEDIDOS } from "./conexionEstado";
@@ -13,6 +14,8 @@ const VUELTA = "https://somosnosotros.org/api/instagram/vuelta";
 const T_CORTO = "EAAcortoinventado471xxxxxxxxxxxxxxxx";
 const T_LARGO = "EAAlargoinventado471yyyyyyyyyyyyyyyy";
 const T_PAGINA = "EAApaginainventado471zzzzzzzzzzzzzzz";
+/** El `appsecret_proof` del token largo con el secreto de la app de CONFIG, calculado aquí con `crypto` (OL-484). */
+const PRUEBA_LARGO = createHmac("sha256", "secreto-de-app-inventado").update(T_LARGO).digest("hex");
 const TODOS = ["pages_show_list", "pages_read_engagement", "pages_manage_posts", "instagram_basic", "instagram_content_publish", "instagram_manage_insights", "business_management"];
 
 describe("el state firmado", () => {
@@ -41,10 +44,20 @@ describe("el state firmado", () => {
   it("cada state es distinto (lleva azar)", () => {
     expect(firmarEstado(ADMIN, AHORA, SECRETO)).not.toBe(firmarEstado(ADMIN, AHORA, SECRETO));
   });
-  it("el secreto sale de CRON_SECRET y tiene que ser largo", () => {
-    expect(secretoDeEstado({ CRON_SECRET: SECRETO })).toBe(SECRETO);
-    expect(secretoDeEstado({ CRON_SECRET: "corto" })).toBeNull();
+  it("OL-484: el secreto sale de META_APP_SECRET, ya no de CRON_SECRET", () => {
+    expect(secretoDeEstado({ META_APP_SECRET: SECRETO })).toBe(SECRETO);
+    expect(secretoDeEstado({ META_APP_SECRET: ` ${SECRETO} ` })).toBe(SECRETO);
+    expect(secretoDeEstado({ CRON_SECRET: SECRETO })).toBeNull();
+    expect(secretoDeEstado({ META_APP_SECRET: "  " })).toBeNull();
     expect(secretoDeEstado({})).toBeNull();
+  });
+  it("OL-484: un state firmado con la llave vieja (CRON_SECRET) ya no sirve", () => {
+    const viejo = "cron-secreto-inventado-para-pruebas-484";
+    const env = { CRON_SECRET: viejo, META_APP_SECRET: "app-secreto-inventado-484" };
+    const llave = secretoDeEstado(env)!;
+    expect(llave).toBe("app-secreto-inventado-484");
+    expect(leerEstado(firmarEstado(ADMIN, AHORA, viejo), llave, AHORA + 1000)).toBeNull();
+    expect(leerEstado(firmarEstado(ADMIN, AHORA, llave), llave, AHORA + 1000)).toEqual({ adminId: ADMIN });
   });
 });
 
@@ -54,7 +67,7 @@ describe("la dirección del diálogo de Meta", () => {
     expect(uriDeVuelta("http://localhost:3000")).toBeNull();
     expect(uriDeVuelta("https://somosnosotros.org/otra")).toBeNull();
   });
-  it("lleva la app, la vuelta, el state, el código como respuesta y los siete permisos", () => {
+  it("lleva la app, la vuelta, el state, el código como respuesta y los seis permisos (sin business_management, OL-484)", () => {
     const u = new URL(urlDeConexion("1459504089615420", VUELTA, "estado-inventado"));
     expect(u.origin + u.pathname).toBe("https://www.facebook.com/v23.0/dialog/oauth");
     expect(u.searchParams.get("client_id")).toBe("1459504089615420");
@@ -62,7 +75,8 @@ describe("la dirección del diálogo de Meta", () => {
     expect(u.searchParams.get("state")).toBe("estado-inventado");
     expect(u.searchParams.get("response_type")).toBe("code");
     expect(u.searchParams.get("scope")?.split(",")).toEqual([...PERMISOS_PEDIDOS]);
-    expect(u.searchParams.get("scope")).toBe("pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish,instagram_manage_insights,business_management");
+    expect(u.searchParams.get("scope")).toBe("pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish,instagram_manage_insights");
+    expect(PERMISOS_PEDIDOS).not.toContain("business_management");
     expect(u.searchParams.has("client_secret")).toBe(false);
   });
 });
@@ -81,6 +95,8 @@ function graphFalsa(o: { permisos?: string[]; paginas?: unknown[]; fallaEn?: str
       return u.searchParams.get("code") === "codigo-inventado" && u.searchParams.get("redirect_uri") === VUELTA ? responde({ access_token: T_CORTO, token_type: "bearer", expires_in: 3600 }) : responde({ error: { code: 100 } }, false);
     }
     if (u.searchParams.get("access_token") !== T_LARGO) return responde({ error: { code: 190 } }, false);
+    // OL-484: como Meta con «Exigir el secreto de la app»: sin la prueba correcta, error.
+    if (u.searchParams.get("appsecret_proof") !== PRUEBA_LARGO) return responde({ error: { code: 100, message: "appsecret_proof inventado" } }, false);
     if (ruta === "/me/permissions") return responde({ data: [...(o.permisos ?? TODOS).map((permission) => ({ permission, status: "granted" })), { permission: "ads_read", status: "declined" }] });
     if (ruta === "/me/accounts")
       return responde({
@@ -110,6 +126,9 @@ describe("la vuelta", () => {
     expect(g.llamadas[0].q.get("client_secret")).toBe("secreto-de-app-inventado");
     expect(g.llamadas[1].q.get("grant_type")).toBe("fb_exchange_token");
     expect(g.llamadas[3].q.get("fields")).toContain("instagram_business_account");
+    // OL-484: las que llevan token, con su appsecret_proof; el cambio del código (con client_secret) no.
+    expect(g.llamadas.map((l) => l.q.get("appsecret_proof"))).toEqual([null, null, PRUEBA_LARGO, PRUEBA_LARGO]);
+    expect(PRUEBA_LARGO).toMatch(/^[0-9a-f]{64}$/);
     expect(guardadas).toEqual([
       { token: T_PAGINA, paginaId: PAGINA, paginaNombre: "Somos Nosotrxs", instagramId: IG, instagramUsuario: "smsnstrsapp", permisos: [...TODOS].sort(), conectadoPor: ADMIN },
     ]);

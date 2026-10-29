@@ -3,7 +3,11 @@
  * Sin nada del servidor: lo usan la página (que arma el estado) y el componente del bloque (que dice las frases). El token nunca pasa por aquí.
  */
 
-/** Lo que se pide al conectar (el diálogo de Meta, `scope`). */
+/**
+ * Lo que se pide al conectar (el diálogo de Meta, `scope`). OL-484 (bitácora 516): sin `business_management`; ninguna llamada del código usa
+ * la API de negocios (`/me/businesses`, `/{business-id}/…`): la página sale de `/me/accounts`, que pide `pages_show_list`. Si un día la página
+ * solo llega por el portafolio de negocio y la vuelta dice `pagina`, se repone aquí.
+ */
 export const PERMISOS_PEDIDOS = [
   "pages_show_list",
   "pages_read_engagement",
@@ -11,7 +15,6 @@ export const PERMISOS_PEDIDOS = [
   "instagram_basic",
   "instagram_content_publish",
   "instagram_manage_insights",
-  "business_management",
 ] as const;
 
 /** Sin estos no se publica en Instagram: si faltan, la conexión no se guarda (seguiría mandando el token de respaldo). */

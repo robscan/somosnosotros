@@ -1,4 +1,5 @@
 import "server-only";
+import { conPrueba, secretoDeApp } from "./prueba-secreto";
 
 /**
  * El cliente de la API de Instagram (Graph API, con la página de Facebook de la marca) para publicar desde Administración (OL-458, firmado;
@@ -25,11 +26,17 @@ export function baseGraph(): string {
 export type ErrorInstagram = "cupo" | "imagen" | "permiso" | "otro";
 /** `coautores` (OL-479): las cuentas invitadas como coautoras (`collaborators`; solo en una publicación, nunca en una historia). */
 export type Pedido = { imagen: string; texto: string | null; etiquetas: string[]; ubicacion: string | null; historia: boolean; coautores?: string[] };
-/** `sinCoautor` (OL-479): se pidió invitar a un coautor e Instagram no lo aceptó (una cuenta que no es profesional): salió sin él. */
-export type Resultado = { ok: true; mediaId: string; permalink: string | null; sinEtiquetas: boolean; sinCoautor?: boolean } | { ok: false; error: ErrorInstagram };
+/** `sinCoautor` (OL-479): se pidió invitar a un coautor e Instagram no lo aceptó (una cuenta que no es profesional): salió sin él.
+ *  `sinPrueba` (OL-484): falta `META_APP_SECRET` y las llamadas salieron sin `appsecret_proof`. */
+export type Resultado =
+  | { ok: true; mediaId: string; permalink: string | null; sinEtiquetas: boolean; sinCoautor?: boolean; sinPrueba?: true }
+  | { ok: false; error: ErrorInstagram; sinPrueba?: true };
 export type Opciones = { traer?: typeof fetch; token?: string; usuario?: string; esperar?: (ms: number) => Promise<void>; intentos?: number };
 
-export type RespuestaGraph = { id?: string; status_code?: string; permalink?: string; error?: { code?: number; error_subcode?: number; type?: string } };
+export type RespuestaGraph = { id?: string; status_code?: string; permalink?: string; error?: { code?: number; error_subcode?: number; type?: string }; sinPrueba?: true };
+
+/** OL-484: `{ sinPrueba: true }` si las llamadas salen sin `appsecret_proof` (falta `META_APP_SECRET`); si no, nada. */
+export const marcaSinPrueba = (): { sinPrueba?: true } => (secretoDeApp() ? {} : { sinPrueba: true });
 
 /** Las credenciales de la cuenta: el token de las opciones (en la app, el de Vault que guardó «Conectar Instagram», `lib/instagram/token`, OL-471;
  *  en las pruebas, uno inventado) o, si no llega, `INSTAGRAM_TOKEN`; la cuenta, de las opciones o del entorno. */
@@ -49,16 +56,29 @@ export function claveDeError(e: RespuestaGraph["error"] | undefined): ErrorInsta
   return "otro";
 }
 
-/** Una llamada a la Graph API (también la usa el cliente de la página de Facebook, `lib/facebook/api`). Nunca lanza: la red caída es el código -1. */
-export async function llamarGraph(traer: typeof fetch, metodo: "GET" | "POST", ruta: string, params: Record<string, string>, token: string): Promise<RespuestaGraph> {
-  const cuerpo = new URLSearchParams({ ...params, access_token: token });
+/**
+ * Una llamada a la Graph API (también la usa el cliente de la página de Facebook, `lib/facebook/api`). Nunca lanza: la red caída es el código -1.
+ * OL-484: cada llamada lleva `appsecret_proof` (`prueba-secreto.ts`, con `META_APP_SECRET`); sin el secreto sale sin ella y la respuesta lo dice
+ * (`sinPrueba: true`).
+ */
+export async function llamarGraph(
+  traer: typeof fetch,
+  metodo: "GET" | "POST",
+  ruta: string,
+  params: Record<string, string>,
+  token: string,
+  secreto: string | null = secretoDeApp(),
+): Promise<RespuestaGraph> {
+  const conLaPrueba = conPrueba(params, token, secreto);
+  const cuerpo = new URLSearchParams(conLaPrueba.params);
+  const marca: { sinPrueba?: true } = conLaPrueba.sinPrueba ? { sinPrueba: true } : {};
   try {
     const r = metodo === "GET" ? await traer(`${baseGraph()}${ruta}?${cuerpo}`, { method: "GET", cache: "no-store" }) : await traer(`${baseGraph()}${ruta}`, { method: "POST", body: cuerpo, cache: "no-store" });
     const json = (await r.json().catch(() => ({}))) as RespuestaGraph;
-    if (!r.ok && !json.error) return { error: { code: r.status } };
-    return json;
+    if (!r.ok && !json.error) return { error: { code: r.status }, ...marca };
+    return { ...json, ...marca };
   } catch {
-    return { error: { code: -1 } };
+    return { error: { code: -1 }, ...marca };
   }
 }
 
@@ -89,6 +109,10 @@ async function crearContenedor(traer: typeof fetch, c: { token: string; usuario:
  * permiso o el cupo, se intenta una vez sin coautores (y se dice: `sinCoautor`) antes de quitar las etiquetas y la ubicación.
  */
 export async function publicar(p: Pedido, o: Opciones = {}): Promise<Resultado> {
+  return { ...(await publicarImagen(p, o)), ...marcaSinPrueba() };
+}
+
+async function publicarImagen(p: Pedido, o: Opciones): Promise<Resultado> {
   const c = credenciales(o);
   if (!c) return { ok: false, error: "permiso" };
   const traer = o.traer ?? fetch;
@@ -156,6 +180,10 @@ async function publicarContenedor(traer: typeof fetch, c: { token: string; usuar
  * (o ubicación), se intenta una vez sin ellas y se dice (`sinEtiquetas`). Nada queda a medias: los contenedores que no se publican caducan solos.
  */
 export async function publicarCarrusel(p: PedidoCarrusel, o: Opciones = {}): Promise<Resultado> {
+  return { ...(await publicarVarias(p, o)), ...marcaSinPrueba() };
+}
+
+async function publicarVarias(p: PedidoCarrusel, o: Opciones): Promise<Resultado> {
   const c = credenciales(o);
   if (!c) return { ok: false, error: "permiso" };
   if (p.imagenes.length < 2 || p.imagenes.length > 10) return { ok: false, error: "otro" };

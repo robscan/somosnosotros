@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { claveDeError, cupo, etiquetasConPosicion, leerPagina, paginaDeEnlace, publicar, type Pedido } from "./api";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { claveDeError, cupo, etiquetasConPosicion, leerPagina, paginaDeEnlace, publicar, publicarCarrusel, type Pedido } from "./api";
+
+// OL-484 (bitácora 516): cada llamada lleva `appsecret_proof` con un secreto inventado; el vector es HMAC-SHA256(SECRETO_APP, TOKEN) en hex.
+const SECRETO_APP = "secreto-de-app-inventado-484";
+const PRUEBA = "4cd70800af6d0e6a3189def5a8ca3cbde5bf3b352824f5334a284ba87b53045d";
+beforeEach(() => vi.stubEnv("META_APP_SECRET", SECRETO_APP));
+afterEach(() => vi.unstubAllEnvs());
 
 /**
  * OL-458 (bitácora 490): el cliente de la API de Instagram con un `fetch` falso. Nunca se llama a la API real. Comprueba el camino de una
@@ -104,6 +110,36 @@ describe("publicar", () => {
     const r = await publicar(pedido, op(traer));
     expect(pedidos[0].params.get("access_token")).toBe(TOKEN);
     expect(JSON.stringify(r)).not.toContain(TOKEN);
+  });
+  it("OL-484: cada llamada (contenedor, espera, publicar, enlace) lleva su appsecret_proof correcto, y nunca sale en lo que se devuelve", async () => {
+    const { traer, pedidos } = exito();
+    const r = await publicar(pedido, op(traer));
+    expect(pedidos.map((p) => `${p.metodo} ${p.ruta}`)).toEqual(["POST /17841400000000000/media", "GET /900", "POST /17841400000000000/media_publish", "GET /17900000000000001"]);
+    expect(pedidos.every((p) => p.params.get("appsecret_proof") === PRUEBA)).toBe(true);
+    expect(pedidos.some((p) => p.params.has("appsecret_time"))).toBe(false);
+    expect(r).not.toHaveProperty("sinPrueba");
+    expect(JSON.stringify(r)).not.toContain(PRUEBA);
+  });
+  it("OL-484: el carrusel, el cupo y la página también llevan la prueba", async () => {
+    const { traer, pedidos } = exito({
+      "GET /17841400000000000/content_publishing_limit": () => json({ data: [{ quota_usage: 1, config: { quota_total: 100 } }] }),
+      "GET /OaxacaMx": () => json({ id: "108000000000001", name: "Oaxaca", location: { city: "Oaxaca" } }),
+    });
+    await publicarCarrusel({ imagenes: [{ imagen: pedido.imagen, etiquetas: [] }, { imagen: pedido.imagen, etiquetas: ["teatro"] }], texto: "x", ubicacion: null }, op(traer));
+    await cupo(op(traer));
+    await leerPagina("OaxacaMx", op(traer));
+    expect(pedidos.length).toBeGreaterThan(6);
+    expect(pedidos.every((p) => p.params.get("appsecret_proof") === PRUEBA)).toBe(true);
+  });
+  it("OL-484: sin META_APP_SECRET sale sin la prueba y el resultado lo dice (sinPrueba)", async () => {
+    vi.stubEnv("META_APP_SECRET", "");
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { traer, pedidos } = exito();
+    const r = await publicar(pedido, op(traer));
+    expect(r).toEqual({ ok: true, mediaId: "17900000000000001", permalink: "https://www.instagram.com/p/ABC123/", sinEtiquetas: false, sinPrueba: true });
+    expect(pedidos.some((p) => p.params.has("appsecret_proof"))).toBe(false);
+    expect(pedidos[0].params.get("access_token")).toBe(TOKEN);
+    aviso.mockRestore();
   });
 });
 
