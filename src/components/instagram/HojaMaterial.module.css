@@ -1,0 +1,42 @@
+/* «Falta material» de la semana de Instagram (OL-488, bitácora 520). Lo demás son piezas de la app (ui/Hoja, ui/Renglon, el «subir» del
+   canon de formularios y la espera de ui/FotoSubida); aquí solo:
+   1. Lo que falta, en el violeta de lo que pide un toque (--primario), como «Falta avisarle» de la semana.
+   2. El hueco de cada imagen por subir: la foto redonda (es gente) y la portada 3:2, con su botón debajo; plano, una columna.
+   3. La línea de lo hecho («Se lo pedimos hoy»), en el verde de lo ya decidido.
+   4. La lista va suelta dentro de la hoja (ui/Grupo pone el aire de la pantalla a los lados y en la hoja se salía de su caja). */
+.falta {
+  color: var(--primario);
+  font-weight: 600;
+}
+
+.hueco {
+  display: grid;
+  justify-items: start;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+.foto,
+.portada {
+  display: block;
+  border: 1px dashed var(--borde);
+  background: var(--fondo-miniatura);
+  object-fit: cover;
+}
+.foto {
+  width: calc(var(--toque-min) * 2);
+  height: calc(var(--toque-min) * 2);
+  border-radius: 50%;
+}
+.portada {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radio);
+}
+
+.hecho {
+  color: var(--ok);
+}
+
+.lista {
+  list-style: none;
+}

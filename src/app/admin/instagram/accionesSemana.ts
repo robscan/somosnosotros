@@ -1,18 +1,24 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { after } from "next/server";
+import { cartelDescargable } from "@/lib/cartelDescarga";
+import { configPublica } from "@/lib/config";
 import { diaConMes, diaLargo, diaLocal, horaCorta, horaDeReloj } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { avisoPrevio, conversacionDe, saludoDe, type ArtistaDestacado, type LugarDestacado } from "@/lib/instagram/destacado";
 import { lineaDeSenal, porSenal } from "@/lib/instagram/elegir";
 import { cargarFicha, cargarSemana as cargarSemanaParaPublicar, textoDeSemana } from "@/lib/instagram/ficha";
-import { estadoDelDia, lineaCandidato, lunesDe, motivoDe, motivoDeEvento, nombreDelDia, REGLA, diaIso, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
+import { estadoDelDia, lineaCandidato, lunesDe, motivoDe, motivoDeEvento, nombreDelDia, razonDelPedido, REGLA, diaIso, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
 import { revisarTexto, type EventoIg } from "@/lib/instagram/texto";
+import { LARGO_CUERPO, LARGO_TITULO, recortar } from "@/lib/avisos";
+import { avisarAlTelefono } from "@/lib/redes/herramientas";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cargarParaHoja } from "./datos";
-import { candidatos, comoCliente, leerDia, zonaDeCiudad, type FilaDia } from "./semana";
+import { candidatos, cartelPublicable, comoCliente, leerDia, sugerenciaDelDia, zonaDeCiudad, type FilaDia } from "./semana";
 
 /**
  * Lo que hace la hoja de un día de la semana de Instagram (OL-479; firmada en el prototipo de OL-477, bitácora 509): prepararla, «Cambiar» (los
@@ -192,11 +198,12 @@ export async function candidatosDia(id: string): Promise<Candidatos> {
   if (d.tipo === "evento") {
     const { data } = await s.rpc("instagram_sugerencias", { p_ciudad: d.ciudad, p_dias: 14 });
     const lista = ((data ?? []) as EventoCandidato[])
-      .filter((e) => e.id !== d.evento_id && e.clase !== "festival" && diaLocal(new Date(e.inicio), e.zona) === d.fecha)
+      // OL-488: solo con material: un evento sin cartel (o con uno que la app no puede bajar) no entra a «Cambiar».
+      .filter((e) => e.id !== d.evento_id && e.clase !== "festival" && diaLocal(new Date(e.inicio), e.zona) === d.fecha && cartelPublicable(e))
       .sort((a, b) => porSenal({ ...a, conCartel: !!a.imagen }, { ...b, conCartel: !!b.imagen }))
       .slice(0, 20)
       .map((e) => ({ id: e.id, nombre: e.titulo, foto: e.imagen, linea: lineaDeSenal({ destacado: e.destacado, van: e.van, interesa: e.interesa, conCartel: !!e.imagen, inicio: e.inicio }), redonda: false, href: `/eventos/${e.slug ?? e.id}` }));
-    return { ok: true, titulo, nota: "Los eventos de ese día que se pueden publicar, primero los de más señal (destacados, «Voy» y «Me interesa», con cartel).", lista, fuera: null };
+    return { ok: true, titulo, nota: "Los eventos de ese día con cartel, primero los de más señal (destacados, «Voy» y «Me interesa»).", lista, fuera: null };
   }
   const tipo = d.tipo === "descanso" ? "lugar" : d.tipo === "lugar" ? "lugar" : "artista";
   if (d.tipo === "semana") return { ok: false, mensaje: "«Esta semana» lleva los eventos del fin con más señal; se arma sola." };
@@ -215,7 +222,14 @@ export async function candidatosDia(id: string): Promise<Candidatos> {
 export type Hecho = { ok: true } | { ok: false; mensaje: string };
 const NO_SE_PUDO: Hecho = { ok: false, mensaje: "No se pudo guardar. Intenta de nuevo." };
 /** Lo que dice la base cuando no se puede, en una frase llana. */
-const frase = (e: { code?: string } | null): Hecho => (e?.code === "55000" ? { ok: false, mensaje: "Ese día ya salió en Instagram (o se está publicando): ya no se cambia." } : e?.code === "22023" ? { ok: false, mensaje: "Eso no se puede poner ese día." } : NO_SE_PUDO);
+const frase = (e: { code?: string; message?: string } | null): Hecho =>
+  e?.code === "55000"
+    ? { ok: false, mensaje: "Ese día ya salió en Instagram (o se está publicando): ya no se cambia." }
+    : e?.code === "22023" && /material/.test(e.message ?? "")
+      ? { ok: false, mensaje: "A esa ficha le falta su foto o su portada: súbela o pídesela en «Falta material»." }
+      : e?.code === "22023"
+        ? { ok: false, mensaje: "Eso no se puede poner ese día." }
+        : NO_SE_PUDO;
 
 /** Pide el primer intento enseguida (sin esperar al latido), como «Publicar» de la hoja de hoy. */
 async function empujar() {
@@ -349,4 +363,84 @@ export async function volverAPonerEnInstagram(tipo: "artista" | "lugar", fichaId
   if (!s) return { ok: false, mensaje: "Solo la administración maneja la semana de Instagram." };
   const { error } = await s.from("instagram_fuera").delete().eq(tipo === "artista" ? "artista_id" : "lugar_id", fichaId);
   return error ? NO_SE_PUDO : { ok: true };
+}
+
+// ---------- OL-488 (bitácora 520): un día sin publicación, «Falta material», «Pedírselo» y «Subir yo» ----------
+
+/** Lo que dice la base cuando no se puede programar una sugerencia: sus frases ya son llanas («Esa hora ya pasó: publícalo ahora.»). */
+const fraseDeProgramar = (e: { code?: string; message?: string } | null): Hecho =>
+  e?.code === "23505" ? { ok: false, mensaje: "Ese día ya tiene su publicación." } : e?.code === "22023" && e.message ? { ok: false, mensaje: e.message } : NO_SE_PUDO;
+
+/**
+ * «Programar» (a su hora) o «Publicar ahora» (solo hoy) lo que sugiere la regla para un día sin publicación de esta semana: se vuelve a calcular
+ * aquí con la misma función que la pantalla (`sugerenciaDelDia`) y la base comprueba el material, el día y la hora (`instagram_semana_programar`).
+ */
+export async function programarSugerencia(ciudad: string, fecha: string, ahora: boolean): Promise<Hecho> {
+  const s = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(ciudad) && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? await sesionAdmin() : null;
+  if (!s) return { ok: false, mensaje: "Solo la administración maneja la semana de Instagram." };
+  const c = await sugerenciaDelDia(s, ciudad, fecha);
+  if (!c) return { ok: false, mensaje: "Ya no hay nadie con material para ese día. Vuelve a abrir la semana." };
+  const { error } = await s.rpc("instagram_semana_programar", { p_ciudad: ciudad, p_casilla: c, p_ahora: ahora === true });
+  if (error) return fraseDeProgramar(error);
+  if (ahora === true) await empujar();
+  return { ok: true };
+}
+
+/**
+ * El aviso de «Pedírselo» a quien lleva la ficha, con la forma de los avisos de la app (OL-480): el título es el nombre de la ficha y la razón va
+ * debajo («Completa tu portada y te presentamos en Instagram»); abre la edición de su ficha.
+ */
+function avisoDeMaterial(nombre: string, falta: readonly string[], ficha: string, id: string) {
+  return { titulo: recortar(nombre, LARGO_TITULO), cuerpo: recortar(razonDelPedido(falta), LARGO_CUERPO), url: `${ficha}/editar`, tag: `material-${id}` };
+}
+
+/**
+ * «Pedírselo»: a quien lleva la ficha le llega, una sola vez por semana, el aviso dentro de la app (Novedades) y al teléfono. La base lo anota y
+ * dice a quién (`instagram_pedir_material`); aquí sale el aviso al teléfono, después de contestar.
+ */
+export async function pedirMaterial(tipo: "artista" | "lugar", id: string, lunes: string): Promise<Hecho> {
+  const s = esUuid(id) && (tipo === "artista" || tipo === "lugar") && /^\d{4}-\d{2}-\d{2}$/.test(lunes) ? await sesionAdmin() : null;
+  if (!s) return { ok: false, mensaje: "Solo la administración maneja la semana de Instagram." };
+  const { data: para, error } = await s.rpc("instagram_pedir_material", { p_tipo: tipo, p_ficha: id, p_desde: lunes });
+  if (error) {
+    if (error.code === "23505") return { ok: false, mensaje: "Ya se lo pedimos esta semana." };
+    if (error.code === "P0002") return { ok: false, mensaje: "Nadie lleva esa ficha todavía: súbela tú." };
+    return error.code === "22023" && error.message ? { ok: false, mensaje: error.message } : NO_SE_PUDO;
+  }
+  const { data: f } = await s.from(tipo === "artista" ? "artistas" : "lugares").select(tipo === "artista" ? "slug, nombre, foto, portada" : "slug, nombre, portada").eq("id", id).maybeSingle<{ slug: string; nombre: string; foto?: string | null; portada: string | null }>();
+  const admin = clienteAdmin();
+  const destinos = Array.isArray(para) ? (para as string[]) : [];
+  if (f && admin && destinos.length) {
+    const url = configPublica().supabaseUrl;
+    const falta = [...(tipo === "artista" && !cartelDescargable(f.foto ?? null, url) ? ["foto"] : []), ...(!cartelDescargable(f.portada, url) ? ["portada"] : [])];
+    const aviso = avisoDeMaterial(f.nombre, falta, `/${tipo === "artista" ? "artistas" : "lugares"}/${f.slug}`, id);
+    after(() => Promise.all(destinos.map((u) => avisarAlTelefono(admin, u, aviso))).then(() => undefined));
+  }
+  revalidatePath("/admin/instagram");
+  return { ok: true };
+}
+
+/**
+ * «Subir yo»: la foto o la portada que subió la administración desde la hoja de «Falta material» (ya en el Storage de la app; el teléfono la
+ * reduce antes, OL-352). Solo se aceptan imágenes del Storage propio (lo único que la tarjeta puede dibujar) y solo esas dos columnas.
+ */
+export async function ponerMaterial(tipo: "artista" | "lugar", id: string, imagenes: { foto?: string | null; portada?: string | null }): Promise<Hecho> {
+  const s = esUuid(id) && (tipo === "artista" || tipo === "lugar") ? await sesionAdmin() : null;
+  if (!s) return { ok: false, mensaje: "Solo la administración maneja la semana de Instagram." };
+  const url = configPublica().supabaseUrl;
+  const cambios: Record<string, string> = {};
+  for (const campo of tipo === "artista" ? (["foto", "portada"] as const) : (["portada"] as const)) {
+    const valor = imagenes?.[campo];
+    if (valor === undefined || valor === null) continue;
+    if (typeof valor !== "string" || !cartelDescargable(valor, url)) return { ok: false, mensaje: "La imagen no se subió bien. Intenta de nuevo." };
+    cambios[campo] = valor;
+  }
+  if (!Object.keys(cambios).length) return { ok: false, mensaje: "Elige una imagen." };
+  const { data, error } = await s.from(tipo === "artista" ? "artistas" : "lugares").update(cambios).eq("id", id).select("id, slug").maybeSingle<{ id: string; slug: string }>();
+  if (error || !data) return NO_SE_PUDO;
+  const ruta = `/${tipo === "artista" ? "artistas" : "lugares"}`;
+  revalidatePath(`${ruta}/${data.slug}`);
+  revalidatePath(ruta);
+  revalidatePath("/admin/instagram");
+  return { ok: true };
 }

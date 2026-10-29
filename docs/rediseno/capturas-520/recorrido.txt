@@ -1,0 +1,53 @@
+ok · el miércoles que ya pasó sin publicación: una línea gris «Mié 7 · antes de armar la semana»
+ok · la línea gris no lleva miniatura ni abre hoja
+ok · ningún «Sin publicación» en grande en lo que ya pasó
+ok · hoy trae la sugerencia de la regla: «El domingo 11 Hoy · 9:00 am · Esta semana · carrusel de 3 Sin programar: publícalo ahora»
+ok · el renglón «Falta material» al final de la semana: «Falta material 6 artistas y 2 lugares con fecha se quedaron fuera por falta de foto o portada Pedírselo o subirla tú»
+ok · la semana en curso a 390: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
+abrir la sugerencia de hoy → bajo el dedo: «El domingo 11Hoy · 9:00 am · Esta semana · carrusel de 3Sin programar:»
+ok · hoy, con su hora ya pasada, solo «Publicar ahora» (no «Programar»)
+ok · la hoja de la sugerencia: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
+Publicar ahora → bajo el dedo: «Publicar ahora»
+ok · el jueves queda guardado como «Esta semana» con su trabajo en la cola (2 eventos)
+ok · el trabajo sale ya (siguiente_en 2026-10-08T16:30:00.000Z, estado en_cola)
+ok · el renglón de hoy pasa a «Publicando…» o «Publicado»: «El domingo 11 Hoy · 9:00 am · Esta semana · carrusel de 3 Publicando…»
+abrir «Falta material» → bajo el dedo: «Falta material6 artistas y 2 lugares con fecha se quedaron fuera por f»
+ok · Íñigo: qué falta, su próxima fecha y quién lo lleva: «Íñigo Montalvo (demo) Falta la portada Próxima fecha: dom 11 · Íñigo Montalvo: guitarra sola La lleva Marcos»
+ok · una portada de otra página se dice aparte: «Museo del Ferrocarril Jesús García Corona Su portada es de otra página: hay que subirla a la app Pró»
+ok · la lista de «Falta material»: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
+abrir Íñigo → bajo el dedo: «Íñigo Montalvo (demo)Falta la portadaPróxima fecha: dom 11 · Íñigo Mon»
+ok · Íñigo: «Pedírselo» y «Subir yo»
+Pedírselo → bajo el dedo: «Pedírselo»
+ok · el aviso queda creado para Marcos ([{"usuario_id":"22222222-2222-4222-8222-222222222222","artista_id":"cccc0015-0000-4000-8000-000000000001","falta":["portada"],"semana":"2026-10-05"}])
+ok · ya pedido, no se vuelve a pedir esta semana
+Volver a la lista → bajo el dedo: «Volver a la lista»
+abrir una ficha que nadie lleva → bajo el dedo: «0Backside0Falta la portadaPróxima fecha: jue 8 · Macario, Xantolo cami»
+ok · si nadie lleva la ficha, solo «Subir yo»
+Volver a la lista → bajo el dedo: «Volver a la lista»
+✕ → bajo el dedo: «»
+ok · la que viene: «Nadie con material para el mié 14 Mié 14 · 7:00 pm · Lugar Falta material: ve quién se quedó fuera»
+abrir «Falta material» → bajo el dedo: «Falta material6 artistas y 2 lugares con fecha se quedaron fuera por f»
+abrir el museo → bajo el dedo: «Museo Leonora Carrington (demo)Falta la portadaPróxima fecha: dom 11 ·»
+Subir yo → bajo el dedo: «Subir yo»
+Elegir la portada → bajo el dedo: «Elegir la portada»
+Guardar → bajo el dedo: «Guardar»
+ok · la portada del museo queda en su ficha, en el Storage de la app (http://127.0.0.1:62124/storage/v1/object/public/fotos/lugares/55555555-5555-4555-8555-555555555555/portada-12b80be2-ce45-4f8b-ba78-d3a851dbb3b3.jpg)
+ok · vuelve a la lista y el museo ya no está en «Falta material»
+✕ → bajo el dedo: «»
+ok · el museo ya entra: «Museo Leonora Carrington (demo) Mié 14 · 7:00 pm · Lugar Sin programar: prográmalo»
+abrir la sugerencia del mié 14 → bajo el dedo: «Museo Leonora Carrington (demo)Mié 14 · 7:00 pm · LugarSin programar: »
+ok · un día que no es hoy: solo «Programar»
+Programar → bajo el dedo: «Programar»
+ok · el mié 14 queda programado a las 7:00 pm ({"tipo":"lugar","estado":"programado","trabajo_id":"4bea42a0-6f05-4223-a343-6f6881e615d0","programado_para":"2026-10-15T01:00:00.000Z"} · {"estado":"en_cola","siguiente_en":"2026-10-15T01:00:00.000Z"})
+ok · el renglón dice «Programado»: «Museo Leonora Carrington (demo) Mié 14 · 7:00 pm · Lugar Programado Falta avisarle»
+ok · la portada de Administración: «@smsnstrsapp 5 publicadas esta semana · 2 en Facebook · 14 por publicar · Semana: 5 de 5 programadas · la que viene, armada el jue 8 · 7 sin material»
+ok · Marcos: «Completa tu portada y te presentamos en Instagram Íñigo Montalvo (demo) Toca para completar tu ficha» → /artistas/inigo-montalvo-demo/editar
+ok · la semana a 320: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
+abrir «Falta material» a 320 → bajo el dedo: «Falta material6 artistas y 1 lugar con fecha se quedaron fuera por fal»
+ok · «Falta material» a 320: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
+abrir Íñigo a 320 → bajo el dedo: «Íñigo Montalvo (demo)Falta la portadaPróxima fecha: dom 11 · Íñigo Mon»
+ok · la ficha de «Falta material» a 320: sin textos cortados, sin toques menores de 44 y sin desplazamiento a lo ancho
+
+todo bien
+sin errores de página ni de consola
+sin avisos «redes:» en los registros de la ruta
