@@ -7,7 +7,11 @@ export async function run({ query, as, check, expectError, connection }) {
   const hijos = (await query("select conrelid::regclass::text tabla from pg_constraint where contype='f' and confrelid='public.lugares'::regclass order by tabla")).rows.map(r=>r.tabla.replace(/^public\./,''));
   // OL-315 (bitácora 343) revisó `lugares_horarios`: es el horario del propio lugar (on delete cascade) y se va con él, como su dirección; no es
   // contenido de nadie más ni cambia el impacto que se confirma.
-  check(JSON.stringify(hijos)===JSON.stringify(['agendas_invitaciones_enviadas','contactos_importados','destacados','eventos','lugares_cuentas','lugares_horarios','obras_colectivas','seguimientos']), 'impacto cubre todas las FK del lugar; una dependencia nueva requiere revisar esta operación');
+  // OL-479 (bitácora 511) revisó `facebook_publicaciones`, `instagram_fuera`, `instagram_publicaciones`, `instagram_semana`, `redes_trabajos` y
+  // `vistas_ficha`: son la cuenta de Instagram de la marca (lo que publicó del lugar, su día en la semana, «Fuera de Instagram») y las vistas que
+  // llegaron desde ahí; solo administración, on delete cascade como las de un evento. No son contenido de nadie más ni cambian el impacto que se
+  // confirma.
+  check(JSON.stringify(hijos)===JSON.stringify(['agendas_invitaciones_enviadas','contactos_importados','destacados','eventos','facebook_publicaciones','instagram_fuera','instagram_publicaciones','instagram_semana','lugares_cuentas','lugares_horarios','obras_colectivas','redes_trabajos','seguimientos','vistas_ficha']), 'impacto cubre todas las FK del lugar; una dependencia nueva requiere revisar esta operación');
   const admin = randomUUID(), otra = randomUUID(), tercero = randomUUID();
   const lugares = [], eventos = [];
   await query("insert into public.admin_correos(correo) values ('ol259-admin@example.com')");

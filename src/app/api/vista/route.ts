@@ -24,6 +24,8 @@ const listo = (cookie?: string) => new Response(null, { status: 204, headers: { 
  * (de `utm_source` y `utm_medium`, listas cerradas) y la vista se cuenta con ellos (`contar_vista_evento_origen`); sin origen, como antes.
  * OL-485: sin `Sec-Fetch-Site: same-origin` (también si falta), 403; y la base solo guarda 30 vistas sin cuenta por evento y hora (las de
  * más responden igual, 204, y no se guardan).
+ * OL-479: la ficha de un artista o de un lugar (`{"artista":…}` o `{"lugar":…}`) solo cuenta con origen (la semana de Instagram mide lo que llega
+ * de ahí: la bio, la historia, Facebook), con la misma regla (`contar_vista_ficha`); el medio puede ser también `bio`.
  */
 export async function POST(request: Request) {
   try {
@@ -31,10 +33,13 @@ export async function POST(request: Request) {
     if (esRobot(request.headers.get("user-agent"))) return listo();
     const texto = await leerCuerpoAcotado(request, MAX_CUERPO);
     if (texto === null) return new Response(null, { status: 413 });
-    const cuerpo = JSON.parse(texto) as { evento?: unknown; origen?: unknown; medio?: unknown } | null;
+    const cuerpo = JSON.parse(texto) as { evento?: unknown; artista?: unknown; lugar?: unknown; origen?: unknown; medio?: unknown } | null;
     const evento = cuerpo?.evento;
-    if (!esUuid(evento)) return new Response(null, { status: 400 });
+    const ficha = esUuid(cuerpo?.artista) ? { tipo: "artista" as const, id: cuerpo!.artista as string } : esUuid(cuerpo?.lugar) ? { tipo: "lugar" as const, id: cuerpo!.lugar as string } : null;
+    if (!esUuid(evento) && !ficha) return new Response(null, { status: 400 });
     const { origen, medio } = origenDeVista(cuerpo?.origen, cuerpo?.medio);
+    // Una ficha sin origen no se cuenta (no hace falta para nada).
+    if (ficha && !origen) return listo();
 
     const supabase = await clienteServidor();
     const sub = supabase ? (await supabase.auth.getClaims()).data?.claims?.sub : undefined;
@@ -44,7 +49,8 @@ export async function POST(request: Request) {
     after(async () => {
       const admin = clienteAdmin();
       if (!admin) return;
-      if (origen) await admin.rpc("contar_vista_evento_origen", { p_evento: evento, p_visitante: visitante, p_usuario: usuario, p_origen: origen, p_medio: medio });
+      if (ficha) await admin.rpc("contar_vista_ficha", { p_tipo: ficha.tipo, p_ficha: ficha.id, p_visitante: visitante, p_usuario: usuario, p_origen: origen, p_medio: cuerpo?.medio === "bio" ? "bio" : medio });
+      else if (origen) await admin.rpc("contar_vista_evento_origen", { p_evento: evento, p_visitante: visitante, p_usuario: usuario, p_origen: origen, p_medio: medio });
       else await admin.rpc("contar_vista_evento", { p_evento: evento, p_visitante: visitante, p_usuario: usuario });
     });
     return listo(usuario || deCookie ? undefined : cookieDeVisita(visitante, new URL(request.url).protocol === "https:"));

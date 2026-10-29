@@ -68,3 +68,37 @@ export function textoDeFacebook(textoInstagram: string, e: Pick<EventoIg, "lugar
   // 3. La cuenta de la marca.
   return t.replace(mencion(CUENTA_INSTAGRAM), () => MARCA);
 }
+
+/**
+ * OL-479: el enlace a la ficha de un artista o de un lugar con la marca de origen (la red, el medio y el día de la semana que la publicó). La ficha
+ * lo lee al contar la vista (`ContarVistaFicha`, `POST /api/vista`) sin guardar nada de la persona.
+ */
+export function enlaceFichaConOrigen(ruta: "artistas" | "lugares", slug: string, red: OrigenVista, medio: MedioVista | "bio", campana: string): string {
+  const consulta = new URLSearchParams({ utm_source: red, utm_medium: medio, utm_campaign: campana });
+  return `https://${DOMINIO_VISIBLE}/${ruta}/${encodeURIComponent(slug)}?${consulta}`;
+}
+
+/**
+ * OL-479: el texto de Facebook de un artista, un lugar o «Esta semana», a partir del de Instagram: «Lee su ficha … (enlace en la bio)» se cambia
+ * por el enlace completo y tocable; la cuenta de la ficha va como su dirección de Instagram (en Facebook un @ no lleva a ningún lado) y las demás
+ * menciones se quitan (el nombre ya va al lado); la invitación, a seguir la página. Si el enlace no estaba (se cambió el texto a mano), va antes de
+ * las etiquetas.
+ */
+export function textoDeFacebookFicha(textoInstagram: string, cuenta: string | null, enlace: string | null): string {
+  let t = textoInstagram.trim();
+  const tenia = /Lee su ficha en \S+ \(enlace en la bio\)\./.test(t);
+  if (enlace) t = t.replace(/Lee su ficha en \S+ \(enlace en la bio\)\./, () => `Lee su ficha: ${enlace}`);
+  t = t.replace(new RegExp(`Sigue a @${escapar(CUENTA_INSTAGRAM)} para`, "g"), "Sigue la página para");
+  t = t.replace(/\s*\(enlace en la bio\)/gi, "");
+  if (cuenta) t = t.replace(mencion(cuenta), () => `instagram.com/${cuenta}`);
+  t = t.replace(mencion(CUENTA_INSTAGRAM), () => MARCA);
+  t = t.replace(new RegExp(` @[A-Za-z0-9._]*[A-Za-z0-9_]${FIN}`, "g"), "");
+  if (enlace && !tenia) {
+    const partes = t.split(/\n{2,}/);
+    const ultima = partes.at(-1) ?? "";
+    const soloEtiquetas = partes.length > 1 && /^(#[\p{L}\p{N}_]+\s*)+$/u.test(ultima.trim());
+    const bloque = `Ficha: ${enlace}`;
+    t = soloEtiquetas ? [...partes.slice(0, -1), bloque, ultima].join("\n\n") : `${t}\n\n${bloque}`;
+  }
+  return t;
+}

@@ -13,6 +13,9 @@
 // OL-469: con `RESPALDO_HISTORIAL=1`, el historial grande (el Museo Leonora Carrington y Valeria Quiroz, de demo), sus fotos dibujadas aquí y nada
 // que salga de 127.0.0.1:
 //   RESPALDO_HISTORIAL=1 node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> --solo=hist-
+// OL-477: con `RESPALDO_INSTAGRAM_SEMANA=1` además, las fichas completas de la semana de Instagram y sus portadas dibujadas; los carteles de
+// siempre (`imagenes.json`, públicos) sí se piden, como en el prototipo de OL-458:
+//   RESPALDO_HISTORIAL=1 RESPALDO_INSTAGRAM_SEMANA=1 node scripts/ops/auditoria-ui/maqueta-pantalla.mjs <carpeta> --solo=igc-
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -126,6 +129,14 @@ const PANTALLAS = [
   { id: "hist-agenda", reloj: true, url: "/agenda", sesion: true },
   { id: "hist-artistas", reloj: true, url: "/artistas", sesion: true },
   { id: "hist-lugares", reloj: true, url: "/lugares", sesion: true },
+  // OL-477 (con `RESPALDO_HISTORIAL=1 RESPALDO_INSTAGRAM_SEMANA=1`): Administración › Instagram como está hoy (la lista de San Luis y la hoja de
+  // vista previa de Delirium Pollum), la portada de Administración, la ficha del Colectivo Nube de Papel con su «···» (cuenta de administración)
+  // y Agenda (por las pestañas `ui/Pestanas`, que la propuesta reutiliza).
+  { id: "igc-admin", reloj: true, url: "/admin", sesion: true, cuenta: "admin" },
+  { id: "igc-lista", reloj: true, url: "/admin/instagram?ciudad=san-luis-potosi", sesion: true, cuenta: "admin" },
+  { id: "igc-hoja", reloj: true, url: "/admin/instagram?ciudad=san-luis-potosi&evento=bbbb0001-0000-4000-8000-000000000005", sesion: true, cuenta: "admin", paso: "igc-hoja" },
+  { id: "igc-artista-menu", reloj: true, url: "/artistas/colectivo-nube-de-papel-demo", sesion: true, cuenta: "admin", paso: "menu-acciones" },
+  { id: "igc-agenda", reloj: true, url: "/agenda", sesion: true },
   // OL-478: lo que vive en la app para los avisos con hora y forma: Inicio con su carril Destacados (sin sesión y con la de Ana), Ajustes con su
   // grupo Avisos, Novedades (a donde abre el resumen diario), la portada de Administración (sus indicadores de 7 días) y la hoja de ciudades.
   { id: "av-inicio", reloj: true, url: "/" },
@@ -178,6 +189,12 @@ async function preguntarParecido(page, ctx, clave) {
   await page.getByText("Ya hay uno parecido ese día en el mismo sitio").waitFor();
 }
 const PASOS = {
+  // OL-477: la hoja de vista previa de Instagram abierta desde la dirección (`?evento=`), con su imagen ya pintada.
+  "igc-hoja": async (page) => {
+    await page.getByRole("dialog").waitFor();
+    await page.getByRole("dialog").locator("img").first().waitFor();
+    await page.waitForFunction(() => [...document.querySelectorAll("[role=dialog] img")].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 30000 });
+  },
   // OL-469: abre lo pasado de la ficha («Historial» o «Trayectoria») y toca «Informe» o «Presentación»: la hoja del PDF (DocumentoPdf).
   "hist-documento": async (page) => {
     await page.locator("details#historial > summary, details#trayectoria > summary").first().click();
@@ -268,6 +285,7 @@ try {
   if (process.env.RESPALDO_HISTORIAL === "1") {
     const carpeta = fs.mkdtempSync(path.join(os.tmpdir(), "ol469-"));
     await (await import("./respaldo-local/fotos-historial.mjs")).dibujarFotosHistorial(carpeta);
+    if (process.env.RESPALDO_INSTAGRAM_SEMANA === "1") await (await import("./respaldo-local/fotos-instagram.mjs")).dibujarFotosInstagram(carpeta);
     Object.assign(despues, { RESPALDO_URL: `http://127.0.0.1:${puertoRespaldo}`, RESPALDO_CARRUSEL_DIR: carpeta });
   }
   lanzar([path.join(AQUI, "respaldo-local/server.mjs"), String(puertoRespaldo)], { ...reloj, ...despues });
@@ -288,7 +306,7 @@ try {
     if (p.reloj) await ctx.clock.setFixedTime(new Date(AHORA));
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: p.cuenta === "admin" ? cookieDe(ADMIN) : cookie, url: base }]);
     // OL-469: con el historial grande, nada sale de 127.0.0.1 (las imágenes del respaldo de siempre son de Storage: se quedan sin pintar).
-    if (process.env.RESPALDO_HISTORIAL === "1") await ctx.route((u) => u.hostname !== "127.0.0.1", (q) => q.abort());
+    if (process.env.RESPALDO_HISTORIAL === "1" && process.env.RESPALDO_INSTAGRAM_SEMANA !== "1") await ctx.route((u) => u.hostname !== "127.0.0.1", (q) => q.abort());
     const page = await ctx.newPage();
     await page.goto(base + p.url, { waitUntil: "networkidle" });
     // Si un paso no llega, la captura de cómo se quedó va al lado, con «-fallo».

@@ -85,6 +85,26 @@ describe("POST /api/vista (OL-459)", () => {
     await correr();
     expect(rpc).toHaveBeenCalledWith("contar_vista_evento_origen", expect.objectContaining({ p_origen: "instagram", p_medio: null }));
   });
+  it("OL-479: la ficha de un artista o de un lugar cuenta solo con origen (la bio, la historia, Facebook)", async () => {
+    await pedir({ artista: EVENTO, origen: "instagram", medio: "bio" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
+    await correr();
+    expect(rpc).toHaveBeenCalledWith("contar_vista_ficha", { p_tipo: "artista", p_ficha: EVENTO, p_visitante: "abcdefabcdefabcdefabcdefabcdef12", p_usuario: null, p_origen: "instagram", p_medio: "bio" });
+    rpc.mockReset();
+    tareas.length = 0;
+    await pedir({ lugar: EVENTO, origen: "facebook", medio: "post" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
+    await correr();
+    expect(rpc).toHaveBeenCalledWith("contar_vista_ficha", expect.objectContaining({ p_tipo: "lugar", p_origen: "facebook", p_medio: "post" }));
+    rpc.mockReset();
+    tareas.length = 0;
+    expect((await pedir({ artista: EVENTO })).status).toBe(204);
+    await correr();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("OL-479: «bio» no es un medio de un evento: cuenta con la red, sin medio", async () => {
+    await pedir({ evento: EVENTO, origen: "instagram", medio: "bio" }, { cookie: "sn_visita=abcdefabcdefabcdefabcdefabcdef12" });
+    await correr();
+    expect(rpc).toHaveBeenCalledWith("contar_vista_evento_origen", expect.objectContaining({ p_origen: "instagram", p_medio: null }));
+  });
   it("sin la llave de servicio (local): responde igual y no cuenta", async () => {
     conLlave = false;
     expect((await pedir({ evento: EVENTO })).status).toBe(204);

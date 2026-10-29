@@ -393,7 +393,13 @@ const servidor = http.createServer(async (req, res) => {
   if (rpc) {
     const args = (await leerCuerpo(req)) || Object.fromEntries(url.searchParams);
     const fn = rpcs[rpc[1]];
-    const datos = fn ? fn(args, tablas, { sub }) : [];
+    let datos;
+    try {
+      datos = fn ? fn(args, tablas, { sub }) : [];
+    } catch (e) {
+      registro.push(`  rpc ${rpc[1]} lanzó: ${String(e?.message ?? e).slice(0, 300)}`);
+      return responder(res, 500, { code: "XX000", message: String(e?.message ?? e) });
+    }
     // OL-467: una función que contesta como un «no» de la base (`{ __error: { code, message } }`), como PostgREST.
     if (datos && typeof datos === "object" && datos.__error) return responder(res, 400, { ...datos.__error, details: null, hint: null });
     if (quiereObjeto(req)) return Array.isArray(datos) ? (datos.length === 1 ? responder(res, 200, datos[0]) : responder(res, 406, { code: "PGRST116", message: `${datos.length} filas` })) : responder(res, 200, datos);
@@ -453,6 +459,20 @@ const servidor = http.createServer(async (req, res) => {
   // OL-465: el trabajador de la cola de redes (con la llave de servicio) cambia sus trabajos y anota lo leído de un cartel: en memoria, con los
   // filtros del reclamo por turno (`turno`, `estado`, `avisado_en is null`), para recorrer «Publicar» → «Publicando…» → «Publicado» con el latido
   // simulado (la ruta del trabajador pedida a mano). Los permisos reales, en PostgreSQL (`supabase/tests/pg/redes-en-cola.test.mjs`).
+  // OL-479: el trabajador cierra el día de la semana de Instagram que publicó (PATCH a `instagram_semana`, con sus filtros) y «Volver a poner»
+  // saca una ficha de `instagram_fuera` (DELETE): en memoria.
+  if (tabla === "instagram_fuera" && req.method === "DELETE") {
+    const { propios } = parseFiltros(url.searchParams);
+    const antes = tablas.instagram_fuera.length;
+    tablas.instagram_fuera = tablas.instagram_fuera.filter((fila) => !propios.every((c) => cumple(fila, c)));
+    return responder(res, antes === tablas.instagram_fuera.length ? 200 : 204, antes === tablas.instagram_fuera.length ? [] : undefined);
+  }
+  if (tabla === "instagram_semana" && req.method === "PATCH") {
+    const { propios } = parseFiltros(url.searchParams);
+    const cambiadas = tablas.instagram_semana.filter((fila) => propios.every((c) => cumple(fila, c)));
+    for (const fila of cambiadas) Object.assign(fila, cuerpo);
+    return responder(res, 200, cambiadas.map((fila) => proyectar(tabla, fila, parseSelect(url.searchParams.get("select")), [])));
+  }
   if ((tabla === "redes_trabajos" && req.method === "PATCH") || (tabla === "cartel_lecturas" && req.method === "POST")) {
     let cambiadas;
     if (tabla === "cartel_lecturas") {
