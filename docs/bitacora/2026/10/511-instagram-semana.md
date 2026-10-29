@@ -1,7 +1,7 @@
 # 511 · La semana de Instagram en Administración (código, OL-479)
 
 **Pieza:** OL-479. **Rama:** `instagram-semana`, base `origin/main` (`4dd7a8d6`) más `instagram-calendario` (el prototipo de OL-477, PR #599); `main`
-unido al final (`23a98daf`). **Fecha:** 2026-10-29. **Operador:** agente del Gestor de cambios VII (Opus 5.5, árbol aislado, sin otros agentes).
+unido al final (`945be550`). **Fecha:** 2026-10-29. **Operador:** agente del Gestor de cambios VII (Opus 5.5, árbol aislado, sin otros agentes).
 **Manda:** la firma del founder del 29 de octubre sobre el prototipo de OL-477 («Tomo todas tus recomendaciones», bitácora 509): **A · R** (pestaña
 «Semana» antes de «Eventos», un renglón por día con la tarjeta en pequeño; la hoja del día con «Cambiar», «Quitar de la semana» y «Publicar
 ahora»); **el domingo descansa**; horas fijas (**artista y lugar a las 7:00 pm; el evento del día y «Esta semana» a las 9:00 am**, en la hora de la
@@ -82,7 +82,7 @@ Términos (una línea cada uno):
 ## 3. Comprobado
 
 - `npm run lint`: 0 errores (los avisos que quedan son de archivos ajenos). `npm run typecheck`: limpio.
-- `npm test`: **5 044 de 5 044** (312 archivos; nuevas: `carteles/destacado.test.ts` —5 casos × 2 formatos, nada fuera ni encimado ni cortado, la
+- `npm test`: **5 045 de 5 045** (312 archivos; nuevas: `carteles/destacado.test.ts` —5 casos × 2 formatos, nada fuera ni encimado ni cortado, la
   imagen de relleno, la paleta, la de 720 y la portada de «Esta semana»—, `instagram/destacado.test.ts`, `instagram/semana.test.ts`, 3 de coautor en
   `api.test.ts`, 3 de Facebook en `facebook/texto.test.ts`, 9 del trabajador en `trabajar.test.ts` y 2 de `/api/vista`).
 - `TEST_DATABASE_URL=postgres://127.0.0.1:5432/sn_control npm run test:db`: **122 migraciones, 2 847 pruebas, 0 fallaron** (banco nuevo
