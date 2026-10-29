@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estilo propio en Instagram</title>
+<meta name="robots" content="noindex">
+<style>
+/* Prototipo OL-490 (bitácora 522), armazón de propuestas. Founder (2026-10-29): «continúes con la línea de diseño que ya habíamos definido y que
+   está reflejada en la sección de Inicio: este corte Bauhaus… con figuras geométricas basadas en pregnancia. Revisa cuál es ese estilo, sobre todo
+   las tonalidades… creando un nuevo estilo propio, específico para nosotros, reemplaza esas plantillas. Este estilo es específico para las
+   publicaciones que hagamos desde nuestra cuenta».
+   Las tarjetas son imágenes reales (satori y sharp, las cinco instancias de Bricolage, `paleta()` de las portadas del sistema y el pie de «Crear
+   cartel»), dibujadas por `scripts/ops/auditoria-ui/prototipo/instagram-estilo-propio.mjs`; aquí van en JPEG de 540 (las PNG de 1080, en
+   `docs/rediseno/capturas-522/`). Las portadas de Inicio son recortes de la maqueta real (respaldo local). */
+:root { --fondo: #f4f4f1; --tinta: #1a1a1a; --gris: #5f5f5a; --linea: #d9d9d4; --acento: #6d34c8; --blanco: #fff; --radio: 12px; --gutter: 16px; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fondo: #161615; --tinta: #f0efe9; --gris: #b4b3ac; --linea: #3a3a37; --blanco: #222220; --acento: #a888f0; } }
+:root[data-theme="dark"] { --fondo: #161615; --tinta: #f0efe9; --gris: #b4b3ac; --linea: #3a3a37; --blanco: #222220; --acento: #a888f0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fondo); color: var(--tinta); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-rows: auto auto 1fr auto; grid-template-areas: "selector notas" "subselector notas" "pantalla notas" "medidor notas"; min-height: 100vh; }
+body[data-notas="cerradas"] { grid-template-columns: minmax(0, 1fr) 56px; }
+.selector { grid-area: selector; display: flex; flex-wrap: wrap; gap: 8px; padding: 12px var(--gutter) 0; }
+.selector.sub { grid-area: subselector; padding-top: 8px; }
+.chip { min-height: 44px; padding: 0 16px; border: 1px solid var(--linea); border-radius: 22px; background: var(--blanco); color: var(--tinta); font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
+.chip:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.chip.variante::before { content: attr(data-letra) " · "; opacity: .75; }
+.chip .rec { margin-left: 6px; font-size: 12px; }
+.pantalla { grid-area: pantalla; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: start; padding: 16px var(--gutter); overflow: auto; }
+.caja-tel { width: 390px; height: 844px; max-width: 100%; border: 1px solid var(--linea); border-radius: 28px; background: #fff; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,.10); }
+.caja-tel iframe { display: block; width: 100%; height: 100%; border: 0; }
+.preajustes { display: flex; gap: 6px; margin-bottom: 10px; }
+.preajustes .chip { padding: 0 12px; font-weight: 500; }
+.medidor { grid-area: medidor; display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 10px var(--gutter); border-top: 1px solid var(--linea); background: var(--blanco); font-size: 13px; color: var(--gris); }
+.cifra b { color: var(--tinta); font-size: 16px; margin-right: 4px; }
+.cifra[data-mal="true"] b { color: #c0392b; }
+.notas { grid-area: notas; border-left: 1px solid var(--linea); background: var(--blanco); display: grid; grid-template-rows: auto 1fr; overflow: hidden; max-height: 100vh; position: sticky; top: 0; }
+.notas-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--linea); }
+.notas-cab h2 { margin: 0; font-size: 15px; }
+.notas-cuerpo { padding: 14px; overflow: auto; font-size: 14px; }
+.notas-cuerpo h3 { margin: 16px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--gris); }
+.notas-cuerpo p, .notas-cuerpo li { margin: 4px 0; }
+.notas-cuerpo ul { padding-left: 18px; margin: 4px 0; }
+.notas-cuerpo code { font-size: 12.5px; }
+.recomendada { display: inline-block; padding: 2px 8px; border-radius: 10px; background: #e3f4e8; color: #17622f; font-size: 12px; font-weight: 700; }
+body[data-notas="cerradas"] .notas-cuerpo, body[data-notas="cerradas"] .notas-cab h2 { display: none; }
+.icono { width: 44px; height: 44px; border: 1px solid var(--linea); border-radius: 22px; background: var(--blanco); color: var(--tinta); cursor: pointer; font-size: 18px; }
+@media (max-width: 900px) {
+  body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "selector" "subselector" "pantalla" "medidor" "notas"; }
+  body[data-notas="cerradas"] { grid-template-columns: minmax(0, 1fr); }
+  .notas { border-left: 0; border-top: 1px solid var(--linea); max-height: none; position: static; }
+  .selector { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .caja-tel { width: 100%; }
+}
+</style>
+</head>
+<body data-notas="abiertas">
+
+<div class="selector" role="group" aria-label="Pieza" id="selector"></div>
+<div class="selector sub" role="group" aria-label="Variante" id="subselector"></div>
+
+<section class="pantalla" aria-label="La vista">
+  <div class="preajustes" role="group" aria-label="Ancho">
+    <button class="chip" type="button" data-ancho="320">320</button>
+    <button class="chip" type="button" data-ancho="390" aria-pressed="true">390</button>
+    <button class="chip" type="button" data-ancho="430">430</button>
+    <button class="chip" type="button" data-ancho="1280">1280</button>
+  </div>
+  <div class="caja-tel" id="caja-tel"><iframe id="marco" title="La vista del prototipo"></iframe></div>
+</section>
+
+<section class="medidor" aria-label="Medidor" id="medidor"></section>
+
+<aside class="notas" aria-labelledby="notas-titulo">
+  <header class="notas-cab">
+    <h2 id="notas-titulo">Notas</h2>
+    <button class="icono" type="button" id="plegar" aria-label="Plegar las notas" aria-expanded="true">☰</button>
+  </header>
+  <div class="notas-cuerpo" id="notas-cuerpo"></div>
+</aside>
+
+<template id="base-css">
+  :root { --tinta: #1a1a1a; --gris: #5f5f5a; --linea: #e3e3df; --fondo: #f6f5f1; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--fondo); color: var(--tinta); font: 15px/1.4 system-ui, -apple-system, sans-serif; }
+  main { display: grid; gap: 14px; padding: 16px 16px 32px; }
+  h1 { margin: 0; font-size: 17px; }
+  h2 { margin: 10px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--gris); }
+  p { margin: 0; color: var(--gris); font-size: 14px; }
+  img.tarjeta { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 14px rgba(0,0,0,.14); }
+  .junto { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .junto img { display: block; width: 100%; height: auto; border-radius: 8px; }
+  .muestras { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .muestra { display: grid; grid-template-columns: 28px minmax(0, 1fr); grid-template-areas: "color nombre" "color valor"; column-gap: 8px; align-items: center; font-size: 12px; }
+  .muestra i { grid-area: color; width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+  .muestra b { grid-area: nombre; font-weight: 600; }
+  .muestra span { grid-area: valor; color: var(--gris); font-family: ui-monospace, Menlo, monospace; }
+  .bien { color: #17622f; font-weight: 600; }
+  .mal { color: #b3261e; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 6px 4px; border-bottom: 1px solid var(--linea); text-align: left; vertical-align: top; }
+  th { color: var(--gris); font-weight: 600; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .info, .caso { display: grid; gap: 12px; align-content: start; }
+  @media (min-width: 900px) {
+    main { max-width: 1180px; margin: 0 auto; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; column-gap: 24px; }
+    main > h1, main > p, main > .ancho { grid-column: 1 / -1; }
+    main.pieza { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+</template>
+
+<script>
+const DATOS = /*__DATOS__*/null;
+
+const LETRAS = { hoy: "Hoy", A: "A", B: "B", C: "C" };
+const NOMBRE_VAR = { hoy: "Las plantillas de hoy", A: "Repisa", B: "Cruce", C: "Papel" };
+const t = (clave) => DATOS.tarjetas[clave];
+const img = (src, alt) => `<img class="tarjeta" src="${src}" alt="${alt}" width="540">`;
+
+/** Las dos portadas de Inicio que se comparan con cada pieza: la misma banda (oscura o clara) y figuras de la misma familia. */
+const INICIO = {
+  oscura: [["inicio-festival", "Inicio: Festival de Cine de Invierno (Anidados, base #b0306a)"], ["inicio-festival-ritmo", "Inicio: KOWAIFEST (Ritmo, base #821729)"]],
+  clara: [["inicio-expo-ritmo", "Inicio: Reflejo atemporal (Ritmo, base #e6ca70)"], ["inicio-taller", "Inicio: Taller de grabado (Anidados, base #979a4f)"]],
+};
+function familia(banda) {
+  const par = INICIO[banda] ?? INICIO.oscura;
+  return `<h2>La misma familia en Inicio</h2><div class="junto">${par.map(([k, alt]) => (DATOS.inicio[k] ? `<img src="${DATOS.inicio[k]}" alt="${alt}">` : "")).join("")}</div>`;
+}
+function muestras(c) {
+  const fila = (nombre, valor) => `<div class="muestra"><i style="background:${valor}"></i><b>${nombre}</b><span>${valor}</span></div>`;
+  return `<h2>Su color</h2><p>Origen ${c.origen} (${c.deDonde === "portada" ? "el más vivo de la portada de la ficha" : "respaldo del sistema, por el id"}) · banda ${c.banda}</p>
+    <div class="muestras">${fila("Fondo", c.fondo)}${fila("Tinta", c.tinta)}${fila("Figura 1", c.figuras[0])}${fila("Figura 2", c.figuras[1])}${fila("Figura 3", c.figuras[2])}${fila("Acento", c.figuras[3])}</div>`;
+}
+function revision(claves) {
+  const malas = claves.flatMap((k) => (DATOS.revision[k] ?? []).map((m) => `${k}: ${m}`));
+  return malas.length ? `<p class="mal">${malas.join("<br>")}</p>` : `<p class="bien">Revisado en ${claves.length === 1 ? "la tarjeta" : `las ${claves.length}`}: ningún texto fuera de su zona, encimado ni cortado; todo el texto a 4,5:1 o más.</p>`;
+}
+function pieza(v, caso, formato, titulo, alt) {
+  const k = `${v}-${caso}-${formato}`;
+  const d = t(k);
+  return `<h1>${titulo}</h1>${img(d.src, alt)}<section class="info">${revision([k])}${muestras(d.color)}${familia(d.color.banda)}</section>`;
+}
+
+const NOTAS = {
+  A: `<span class="recomendada">Recomendada</span>
+    <h3>Qué es</h3><p>La portada del sistema de Inicio hecha tarjeta de Instagram: <b>un color plano</b> que sale de la portada de la ficha (la misma cuenta de <code>paleta()</code>: tono de la portada, medio tono, banda oscura con crema o clara con negro), <b>la figura apoyada en la línea del título</b> como un objeto en una repisa, alineada con el margen y dejando libre la esquina del sello de fecha, y <b>la foto dentro de la figura</b>.</p>
+    <h3>Figuras (una por pieza)</h3><ul><li><b>Artista = círculo</b> (el avatar de la app): dos aros del mismo color, la foto adentro y el punto crema del anidado de Inicio.</li><li><b>Lugar = arco</b> (la puerta): tres arcos que comparten la base, la portada del lugar adentro y un sol crema al lado.</li><li><b>Esta semana = barras</b> (el ritmo de Inicio): una por día, que crecen, con el día al pie.</li></ul>
+    <h3>Reutiliza</h3><ul><li><code>paleta</code>, <code>origenDe</code>, <code>respaldoDe</code>, <code>CREMA</code>, <code>NEGRO</code> de <code>portadasSistema.ts</code>; <code>paletaDePixeles</code> de <code>coloresCartel.ts</code>.</li><li>El sello de fecha de las tarjetas de Inicio; el pie de «Crear cartel» (<code>pie()</code>: símbolo SN y somosnosotrxs.org) en la tinta.</li><li><code>ajustar</code>, <code>renglones</code>, <code>FORMATOS</code>, <code>MARGEN</code> y las cinco instancias de Bricolage.</li></ul>
+    <h3>Por qué</h3><p>Es la que más se parece a Inicio sin copiarla: mismos tonos, misma regla de figura sobre la repisa, mismo sello. En el feed se reconoce como «lo de Somos Nosotrxs» y cada semana cambia de color con la portada, sin inventar color.</p>
+    <h3>Riesgos</h3><ul><li>Una portada casi gris toma el respaldo (como un cartel gris en Inicio): la tarjeta ya no recuerda a la obra.</li><li>La foto queda más chica que en la tarjeta de hoy (círculo de 744 contra la portada a lo ancho).</li></ul>`,
+  B: `<h3>Qué cambia contra A</h3><p>Solo la composición. Mismo color y misma tinta. La figura grande <b>se sale del borde</b> y una <b>barra la cruza</b> en la repisa, translúcida (el cruce toma un tercer tono, la transparencia de la Bauhaus); un triángulo o un sol crema hacen el contrapeso. El sello pasa al lado contrario de la figura.</p>
+    <h3>Gana</h3><p>Más cartel y más movimiento; la foto, más grande.</p>
+    <h3>Pierde</h3><ul><li>Se aleja de Inicio: allá la figura nunca se sale del borde ni se cruza.</li><li>La cara puede quedar cerca del borde o bajo la barra si la foto no viene centrada.</li><li>Tres figuras por tarjeta: más ruido en una cuadrícula de perfil.</li></ul>`,
+  C: `<h3>Qué cambia contra A</h3><p>Solo el color. La composición es la de A, pero <b>el fondo es el crema del sistema</b> (<code>#f4efd6</code>, el de lawsofux) y el color de la portada pasa a <b>las figuras</b>; el texto va siempre en negro.</p>
+    <h3>Gana</h3><ul><li>La cuadrícula del perfil se ve pareja (todas en crema) y el negro sobre crema se lee a 15:1.</li></ul>
+    <h3>Pierde</h3><ul><li>En Inicio la portada <b>es</b> el color: aquí el color se achica a la figura y la familia se nota menos.</li><li>Los amarillos (banda clara) sobre crema se apagan.</li></ul>`,
+  hoy: `<h3>Hoy</h3><p>Lo que hace OL-479 con las piezas de «Crear cartel»: la portada a lo ancho arriba, la foto redonda sobre su borde y una paleta de «Crear cartel» elegida por el tono de la portada (durazno, cielo, papel). El founder pidió reemplazarlas en lo que publica la cuenta por un estilo propio de la línea de Inicio. Las plantillas de «Crear cartel» para eventos sin cartel de la gente <b>no se tocan</b>.</p>`,
+};
+
+const PANTALLAS = [
+  { id: "artista", nombre: "Artista 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Artista destacado, hoy</h1>${img(DATOS.hoy.artista, "Tarjeta de hoy de Valeria Quiroz")}` : pieza(v, "artista", "4x5", `Artista destacado · ${NOMBRE_VAR[v]}`, "Tarjeta de Valeria Quiroz: su foto en un círculo, su nombre, su cuenta y su próxima fecha")) })) },
+  { id: "lugar", nombre: "Lugar 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Lugar destacado, hoy</h1>${img(DATOS.hoy.lugar, "Tarjeta de hoy del museo Leonora Carrington")}` : pieza(v, "lugar", "4x5", `Lugar destacado · ${NOMBRE_VAR[v]}`, "Tarjeta del Teatro de la Paz: su portada en un arco, su nombre, su cuenta y sus eventos de la semana")) })) },
+  { id: "semana", nombre: "Esta semana 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Portada de «Esta semana», hoy</h1>${img(DATOS.hoy.semana, "Portada de hoy de «Esta semana»")}` : pieza(v, "semana", "4x5", `Portada de «Esta semana» · ${NOMBRE_VAR[v]}`, "Portada de «Esta semana»: tres barras con los días, el título de la semana y tres eventos")) })) },
+  {
+    id: "historia", nombre: "Historia 9:16",
+    estados: ["hoy", "A", "B", "C"].map((v) => ({
+      variante: v,
+      html: () => v === "hoy"
+        ? `<h1>Historias de hoy</h1><p>«Esta semana» no tenía historia.</p>${img(DATOS.hoy["artista-9x16"], "Historia de hoy de Valeria Quiroz")}${img(DATOS.hoy["lugar-9x16"], "Historia de hoy del museo Leonora Carrington")}`
+        : `<h1>Historias 9:16 · ${NOMBRE_VAR[v]}</h1><p>Todo el texto queda fuera de lo que tapa Instagram (250 arriba, 340 abajo); las figuras sí pueden pasar por ahí.</p>${img(t(`${v}-artista-9x16`).src, "Historia de Valeria Quiroz")}${img(t(`${v}-lugar-9x16`).src, "Historia del Teatro de la Paz")}${img(t(`${v}-semana-9x16`).src, "Historia de «Esta semana»")}${revision([`${v}-artista-9x16`, `${v}-lugar-9x16`, `${v}-semana-9x16`])}`,
+    })),
+  },
+  {
+    id: "limites", nombre: "Casos límite",
+    estados: ["A", "B", "C"].map((v) => ({
+      variante: v,
+      html: () => `<h1>Casos límite · ${NOMBRE_VAR[v]}</h1>
+        <section class="caso"><h2>Banda clara: el amarillo va con negro</h2><p>El museo Leonora Carrington: el color más vivo de su portada es el sol amarillo; como en Inicio, los amarillos, mostazas y olivos llevan texto y figura en negro.</p>${img(t(`${v}-clara-4x5`).src, "Tarjeta del museo Leonora Carrington en amarillo con negro")}</section>
+        <section class="caso"><h2>Sin portada ni foto: el símbolo SN</h2><p>Aaron Cadena (ficha real del respaldo, sin imágenes): el color sale del respaldo del sistema por su id y el símbolo SN ocupa la figura.</p>${img(t(`${v}-sinportada-4x5`).src, "Tarjeta de Aaron Cadena con el símbolo SN en el círculo")}</section>
+        <section class="caso"><h2>Nombre de 41 letras: dos renglones parejos</h2><p>El Museo del Ferrocarril Jesús García Corona: el nombre baja a dos renglones parejos a 120 px y la figura se achica lo que haga falta.</p>${img(t(`${v}-largo-4x5`).src, "Tarjeta del Museo del Ferrocarril Jesús García Corona con el nombre en dos renglones")}</section>
+        ${revision([`${v}-clara-4x5`, `${v}-sinportada-4x5`, `${v}-largo-4x5`])}`,
+    })),
+  },
+  {
+    id: "nombres", nombre: "Medida de nombres",
+    estados: [{ variante: "A", html: () => `<h1>¿Cabe el nombre?</h1><p>La regla, igual en las tres variantes: en un renglón mientras quepa a 84 px o más; si no, en dos renglones parejos (de 120 a 64). Medido con las anchuras de la propia fuente (<code>medir.ts</code>), en el ancho útil de 952.</p>
+      <table class="ancho"><thead><tr><th>Nombre</th><th class="n">Letras</th><th class="n">Renglones</th><th class="n">Tamaño</th><th>¿Cortado?</th></tr></thead><tbody>${DATOS.nombres.map((n) => `<tr><td>${n.nombre}</td><td class="n">${n.letras}</td><td class="n">${n.renglones}</td><td class="n">${n.tamano}</td><td class="${n.recortado ? "mal" : "bien"}">${n.recortado ? "sí" : "no"}</td></tr>`).join("")}</tbody></table>` }],
+  },
+  {
+    id: "inicio", nombre: "Inicio hoy",
+    estados: [{ variante: "hoy", html: () => `<h1>Las portadas del sistema en Inicio</h1><p>Recortes de la maqueta real de Inicio (la app compilada contra el respaldo local). De aquí sale el estilo: color plano, figura sobre la línea del título, sello de fecha en su esquina, título en crema o en negro.</p><div class="junto ancho">${Object.entries(DATOS.inicio).map(([k, src]) => `<img src="${src}" alt="Portada del sistema de Inicio (${k})">`).join("")}</div>` }],
+  },
+];
+const NOTAS_PANTALLA = {
+  nombres: `<h3>La regla</h3><p>Ningún nombre se corta hasta 32 letras (tampoco más allá: el de 64 letras cabe en dos renglones a 84 px). Hasta unas 34 letras va en un renglón; los más largos, en dos renglones parejos.</p>`,
+  inicio: `<h3>Para comparar</h3><p>Las tonalidades: medios tonos (saturación de 0,32 a 0,7), banda oscura con crema <code>#f4efd6</code> o clara con negro <code>#1a1a1a</code>, y los escalones del mismo color para las figuras (claro, oscuro, más oscuro).</p>`,
+};
+
+/* ===== El armazón ===== */
+const $ = (s) => document.querySelector(s);
+const marco = $("#marco"), sel = $("#selector"), sub = $("#subselector"), notas = $("#notas-cuerpo"), medidor = $("#medidor");
+let pantalla = PANTALLAS[0], estado = pantalla.estados.find((e) => e.variante === "A") ?? pantalla.estados[0];
+function chip(texto, pressed, onClick, extra = {}) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "chip" + (extra.variante ? " variante" : "");
+  b.textContent = texto;
+  b.setAttribute("aria-pressed", String(pressed));
+  if (extra.variante) b.dataset.letra = extra.variante;
+  if (extra.rec) { const s = document.createElement("span"); s.className = "rec"; s.textContent = "★"; s.setAttribute("aria-label", "recomendada"); b.append(s); }
+  b.addEventListener("click", onClick);
+  return b;
+}
+function pintarSelectores() {
+  sel.replaceChildren(...PANTALLAS.map((p) => chip(p.nombre, p === pantalla, () => { const v = estado.variante; pantalla = p; estado = p.estados.find((e) => e.variante === v) ?? p.estados.find((e) => e.variante === "A") ?? p.estados[0]; pintarSelectores(); pintar(); })));
+  sub.replaceChildren(...pantalla.estados.map((e) => chip(NOMBRE_VAR[e.variante], e === estado, () => { estado = e; pintarSelectores(); pintar(); }, { variante: LETRAS[e.variante], rec: e.variante === "A" })));
+}
+function pintar() {
+  // textContent y no innerHTML: innerHTML devuelve «>» como «&gt;» y rompe los selectores de hijo.
+  const css = $("#base-css").content.textContent;
+  marco.srcdoc = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body data-variante="${estado.variante}"><main class="${pantalla.estados.length > 1 && ["artista", "lugar", "semana"].includes(pantalla.id) && estado.variante !== "hoy" ? "pieza" : ""}">${estado.html()}</main></body></html>`;
+  notas.innerHTML = `<p><b>${pantalla.nombre}</b> · ${LETRAS[estado.variante]} · ${NOMBRE_VAR[estado.variante]}</p>` + (NOTAS_PANTALLA[pantalla.id] ?? NOTAS[estado.variante] ?? "") + PREGUNTAS;
+  marco.addEventListener("load", medir, { once: true });
+  try { history.replaceState(null, "", `#${pantalla.id}/${estado.variante}`); } catch {}
+}
+const PREGUNTAS = `<h3>Preguntas al founder</h3><ol>
+  <li>¿Firmas A («Repisa»), con qué cambios?</li>
+  <li>Figuras: ¿artista = círculo, lugar = arco y semana = barras? (En Inicio el círculo es el festival; aquí es la persona, como su avatar).</li>
+  <li>¿El sello de fecha va también en la tarjeta del lugar cuando tiene eventos (su próximo día), o solo en el artista y en la semana?</li>
+  <li>¿«Esta semana» lleva también historia 9:16 (hoy no la tiene), y el evento del día se queda con su cartel tal cual?</li></ol>`;
+function medir() {
+  const d = marco.contentDocument;
+  if (!d) return;
+  const todos = [...d.body.querySelectorAll("*")];
+  const profundidad = Math.max(0, ...todos.map((e) => { let n = 0; for (let p = e; p && p !== d.body; p = p.parentElement) n++; return n; }));
+  const cortados = todos.filter((e) => { const s = d.defaultView.getComputedStyle(e); return (s.overflow !== "visible" || s.textOverflow === "ellipsis") && e.scrollWidth > e.clientWidth + 1 && e.children.length === 0; }).length;
+  const desborde = d.documentElement.scrollWidth > d.documentElement.clientWidth + 1 ? 1 : 0;
+  const toques = [...d.body.querySelectorAll("button, a, input, select, textarea, [role=button]")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.width < 44 || r.height < 44); }).length;
+  const malas = (d.body.querySelectorAll(".mal").length);
+  medidor.replaceChildren(...[["nodos", todos.length, false], ["profundidad", profundidad, profundidad > 12], ["textos cortados", cortados, cortados > 0], ["desborde horizontal", desborde, desborde > 0], ["toques < 44 px", toques, toques > 0], ["tarjetas con falla", malas, malas > 0]].map(([n, v, mal]) => { const s = document.createElement("span"); s.className = "cifra"; s.dataset.mal = String(mal); s.innerHTML = `<b>${v}</b>${n}`; return s; }));
+}
+document.querySelectorAll(".preajustes .chip").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".preajustes .chip").forEach((x) => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  const w = Number(b.dataset.ancho);
+  $("#caja-tel").style.width = w + "px";
+  $("#caja-tel").style.height = (w >= 1024 ? 800 : 844) + "px";
+  setTimeout(medir, 80);
+}));
+$("#plegar").addEventListener("click", (ev) => { const abiertas = document.body.dataset.notas === "abiertas"; document.body.dataset.notas = abiertas ? "cerradas" : "abiertas"; ev.currentTarget.setAttribute("aria-expanded", String(!abiertas)); ev.currentTarget.setAttribute("aria-label", abiertas ? "Abrir las notas" : "Plegar las notas"); });
+{
+  const [p, v] = (location.hash.slice(1) || "").split("/");
+  const hallada = PANTALLAS.find((x) => x.id === p);
+  if (hallada) { pantalla = hallada; estado = hallada.estados.find((e) => e.variante === v) ?? hallada.estados[0]; }
+}
+pintarSelectores();
+pintar();
+</script>
+</body>
+</html>
