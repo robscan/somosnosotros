@@ -1,4 +1,4 @@
-// OL-480 (bitácora 512): la forma de los avisos y cuántos se abren (migración 20261029170000_avisos_forma.sql).
+// OL-480 (bitácora 512): la forma de los avisos y cuántos se abren (migración 20261029190000_avisos_forma.sql).
 // `avisos_expandir` guarda por persona por qué le llega un evento nuevo (`motivo`: el artista que sigue va antes que el lugar); `avisos_autorizar`
 // lo devuelve con la descripción y la dirección del lugar (nunca la de un sitio reservado); `avisos_abiertos` cuenta por día y tipo sin nadie
 // detrás y solo la escribe el servidor; `panel_avisos` es solo de la administración y no la cuenta a ella.
@@ -145,7 +145,7 @@ export async function run({ as, check, expectError, query }) {
     "una cuenta nueva nace con el correo encendido y su fecha (y el teléfono apagado)", nueva);
   const omision = (await query(`select column_default from information_schema.columns where table_schema='public' and table_name='perfiles' and column_name='avisos_correo'`)).rows[0];
   check(omision?.column_default === "true", "avisos_correo: true por omisión", omision);
-  const sql = readFileSync(new URL("../../migrations/20261029170000_avisos_forma.sql", import.meta.url), "utf8");
+  const sql = readFileSync(new URL("../../migrations/20261029190000_avisos_forma.sql", import.meta.url), "utf8");
   check(!/update\s+public\.perfiles/i.test(sql), "la migración no cambia ninguna fila de perfiles que ya exista");
   const porCorreo = (await query(`select count(*)::int as n from public.avisos_entregas e join public.avisos_jobs j on j.id=e.job_id
     where j.evento_id = any($1::uuid[]) and e.canal='correo'`, [[evento, reservado]])).rows[0].n;

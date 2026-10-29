@@ -2,7 +2,7 @@
 
 **Pieza:** OL-480. **Rama:** `avisos-forma`, desde `origin/main` (`4dd7a8d6`) con `origin/avisos-hora-y-forma` unido (PR #601, el prototipo de OL-478, bitácora [510](510-avisos-hora-y-forma.md)). **Fecha:** 2026-10-29. **Operador:** agente del Gestor de cambios VII (Opus 5.5, árbol aislado).
 **Manda:** la firma del founder del 2026-10-29 sobre el prototipo de OL-478 («Tomo todas tus recomendaciones») y, el mismo día, el añadido de las 13:40 («recuerda que de momento separamos solicitud de aprobación por correo, la vamos a usar después para el boletín. Pero actívala default para usuarios nuevos, aún sin enviar nada») con sus precisiones de las 14:00.
-**Estado:** hecho, con **una migración** (`20261029170000_avisos_forma.sql`, solo añade) y una ruta nueva (`POST /api/avisos/abierto`); sin variables nuevas. Espera revisión del gestor y el «publica» del founder. No toqué producción, `.env` ni llaves. Es la pieza 1 de 5 del plan de código de la bitácora 510; las piezas 2 a 5 (hora, resumen en la cola, sin duplicados, «Esta semana») vienen después.
+**Estado:** hecho, con **una migración** (`20261029190000_avisos_forma.sql`, solo añade) y una ruta nueva (`POST /api/avisos/abierto`); sin variables nuevas. Espera revisión del gestor y el «publica» del founder. No toqué producción, `.env` ni llaves. Es la pieza 1 de 5 del plan de código de la bitácora 510; las piezas 2 a 5 (hora, resumen en la cola, sin duplicados, «Esta semana») vienen después.
 
 Términos (una línea cada uno):
 - **Subtítulo:** la segunda línea en negritas de un aviso de la app del iPhone (APNs `alert.subtitle`); la web no lo tiene.
