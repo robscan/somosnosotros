@@ -31,7 +31,7 @@ const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos d
  * minutos, el botón pregunta antes de repetir.
  * OL-471 (bitácora 503): `conexion`, el bloque «Conexión» (`ConexionInstagram`), va bajo la cabecera y arriba de la lista.
  */
-export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode }) {
+export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion, pestanas }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode; pestanas?: ReactNode }) {
   const router = useRouter();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [evento, setEvento] = useState<string | null>(abrir);
@@ -114,7 +114,10 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
             {ciudad.nombre}
           </Chip>
         }
-      />
+      >
+        {/* OL-479: las pestañas «Semana · Eventos», si la pantalla las trae. */}
+        {pestanas}
+      </Cabecera>
       {hojaCiudad && (
         <HojaCiudades
           palabras={PALABRAS}
@@ -123,7 +126,7 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
           onElegir={(slug) => {
             setHojaCiudad(false);
             recordarCiudad(slug);
-            if (slug !== ciudad.slug) router.replace(`/admin/instagram${slug ? `?ciudad=${slug}` : "?ciudad=todas"}`, { scroll: false });
+            if (slug !== ciudad.slug) router.replace(`/admin/instagram${slug ? `?ciudad=${slug}` : "?ciudad=todas"}${pestanas ? "&pestana=eventos" : ""}`, { scroll: false });
           }}
           onCerrar={() => setHojaCiudad(false)}
         />

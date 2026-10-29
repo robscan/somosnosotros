@@ -1,0 +1,40 @@
+La que viene → La que viene
+Eventos → Eventos
+abrir Hoy · 7:00 pm → Museo Leonora Carrington (demo)Hoy · 7:00 pm · LugarSale hoy
+Historia 9:16 → Historia 9:16
+Publicación 4:5 → Publicación 4:5
+Cambiar → Cambiar
+Volver al día → Volver al día
+abrir Lun 12 → Colectivo Nube de Papel (demo)Lun 12 · 7:00 pm · ArtistaProg
+Cambiar → Cambiar
+elegir Ximena Urquidi (demo) → Ximena Urquidi (demo)Sin fecha próxima · nunca en Instagram
+✕ → 
+abrir Lun 12 → Ximena Urquidi (demo)Lun 12 · 7:00 pm · ArtistaProgramadoFal
+Avisar → Avisar
+Copiar y abrir su Instagram → Copiar y abrir su Instagram
+Dijo que no → Dijo que no
+Mejor no → Mejor no
+Dijo que no → Dijo que no
+Sí, sacarlo de Instagram → Sí, sacarlo de Instagram
+✕ → 
+Más acciones → {"@context":"https://schema.org","@type":"Person","name":"Xi
+Volver a poner → Fuera de InstagramDijo que no el mié 7 de oct · Volver a pon
+abrir Vie 9 → Íñigo Montalvo (demo)Vie 9 · 7:00 pm · Artista con fecha el 
+Publicar ahora → Publicar ahora
+abrir Íñigo Montalvo (demo) → Íñigo Montalvo (demo)Vie 9 · 7:00 pm · Artista con fecha el 
+✕ → 
+abrir Renata Saldaña → Renata Saldaña (demo)Lun 5 · 7:00 pm · ArtistaPublicado31 vi
+✕ → 
+abrir Sáb 10 → Taller de máscaras para familiasSáb 10 · 9:00 am · Evento de
+Quitar de la semana → Quitar de la semana
+✕ → 
+abrir Jue 8 → Del viernes 9 al domingo 11Jue 8 · 9:00 am · Esta semana · c
+✕ → 
+abrir Dom 11 → Sin publicaciónDom 11 · DescansoLa cuenta descansa
+✕ → 
+abrir Vie 16 → Valeria Quiroz (demo)Vie 16 · 7:00 pm · Artista con fecha el
+abrir Vie 16 → Valeria Quiroz (demo)Vie 16 · 7:00 pm · Artista con fecha el
+abrir Vie 16 → Valeria Quiroz (demo)Vie 16 · 7:00 pm · Artista con fecha el
+
+todo bien
+sin errores de página ni de consola

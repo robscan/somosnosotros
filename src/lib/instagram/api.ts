@@ -23,8 +23,10 @@ export function baseGraph(): string {
 }
 
 export type ErrorInstagram = "cupo" | "imagen" | "permiso" | "otro";
-export type Pedido = { imagen: string; texto: string | null; etiquetas: string[]; ubicacion: string | null; historia: boolean };
-export type Resultado = { ok: true; mediaId: string; permalink: string | null; sinEtiquetas: boolean } | { ok: false; error: ErrorInstagram };
+/** `coautores` (OL-479): las cuentas invitadas como coautoras (`collaborators`; solo en una publicación, nunca en una historia). */
+export type Pedido = { imagen: string; texto: string | null; etiquetas: string[]; ubicacion: string | null; historia: boolean; coautores?: string[] };
+/** `sinCoautor` (OL-479): se pidió invitar a un coautor e Instagram no lo aceptó (una cuenta que no es profesional): salió sin él. */
+export type Resultado = { ok: true; mediaId: string; permalink: string | null; sinEtiquetas: boolean; sinCoautor?: boolean } | { ok: false; error: ErrorInstagram };
 export type Opciones = { traer?: typeof fetch; token?: string; usuario?: string; esperar?: (ms: number) => Promise<void>; intentos?: number };
 
 export type RespuestaGraph = { id?: string; status_code?: string; permalink?: string; error?: { code?: number; error_subcode?: number; type?: string } };
@@ -71,23 +73,35 @@ export function etiquetasConPosicion(usuarios: string[], historia: boolean): { u
   return usuarios.map((username, i) => (historia ? { username } : { username, x: Math.round(((i + 1) / (usuarios.length + 1)) * 100) / 100, y: y(i) }));
 }
 
-async function crearContenedor(traer: typeof fetch, c: { token: string; usuario: string }, p: Pedido, conExtras: boolean): Promise<RespuestaGraph> {
+async function crearContenedor(traer: typeof fetch, c: { token: string; usuario: string }, p: Pedido, conExtras: boolean, conCoautores = conExtras): Promise<RespuestaGraph> {
   const params: Record<string, string> = { image_url: p.imagen };
   if (p.historia) params.media_type = "STORIES";
   else if (p.texto) params.caption = p.texto;
   if (conExtras && p.etiquetas.length) params.user_tags = JSON.stringify(etiquetasConPosicion(p.etiquetas, p.historia));
   if (conExtras && p.ubicacion && !p.historia) params.location_id = p.ubicacion;
+  // OL-479: el artista invitado como coautor (si acepta, la publicación sale también en su perfil). Solo cuentas profesionales; hasta 3.
+  if (conCoautores && !p.historia && p.coautores?.length) params.collaborators = JSON.stringify(p.coautores.slice(0, 3));
   return llamarGraph(traer, "POST", `/${c.usuario}/media`, params, c.token);
 }
 
-/** Publica una imagen (o una historia) en la cuenta de la marca. */
+/**
+ * Publica una imagen (o una historia) en la cuenta de la marca. OL-479: con coautores, si Instagram rechaza el contenedor por otra cosa que el
+ * permiso o el cupo, se intenta una vez sin coautores (y se dice: `sinCoautor`) antes de quitar las etiquetas y la ubicación.
+ */
 export async function publicar(p: Pedido, o: Opciones = {}): Promise<Resultado> {
   const c = credenciales(o);
   if (!c) return { ok: false, error: "permiso" };
   const traer = o.traer ?? fetch;
   const conExtras = p.etiquetas.length > 0 || (!!p.ubicacion && !p.historia);
+  const conCoautores = !p.historia && !!p.coautores?.length;
   let contenedor = await crearContenedor(traer, c, p, true);
   let sinEtiquetas = false;
+  let sinCoautor = false;
+  if (!contenedor.id && conCoautores && ["otro", "imagen"].includes(claveDeError(contenedor.error))) {
+    const sinEl = await crearContenedor(traer, c, p, true, false);
+    sinCoautor = true;
+    if (sinEl.id) contenedor = sinEl;
+  }
   if (!contenedor.id && conExtras) {
     const clave = claveDeError(contenedor.error);
     if (clave === "otro" || clave === "imagen") {
@@ -95,6 +109,7 @@ export async function publicar(p: Pedido, o: Opciones = {}): Promise<Resultado> 
       if (segundo.id) {
         contenedor = segundo;
         sinEtiquetas = true;
+        sinCoautor = conCoautores;
       }
     }
   }
@@ -103,7 +118,7 @@ export async function publicar(p: Pedido, o: Opciones = {}): Promise<Resultado> 
   const espera = await esperarContenedor(traer, c, contenedor.id, o);
   if (espera) return { ok: false, error: espera };
   const r = await publicarContenedor(traer, c, contenedor.id);
-  return r.ok ? { ...r, sinEtiquetas } : r;
+  return r.ok ? { ...r, sinEtiquetas, ...(conCoautores ? { sinCoautor } : {}) } : r;
 }
 
 export type ImagenDelCarrusel = { imagen: string; etiquetas: string[] };
